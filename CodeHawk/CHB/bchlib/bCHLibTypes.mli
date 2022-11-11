@@ -68,16 +68,18 @@ type arg_io_t =
 (* ======================================================== Data export spec === *)
 
 type data_export_spec_item_t = {
-  dex_offset : int ;
-  dex_name   : string ;
-  dex_type   : string ;
-  dex_size   : int
+  dex_offset : int;
+  dex_name: string;
+  dex_type: string;
+  dex_size: int
 }
 
+
 type data_export_spec_t = {
-  dex_description : string ;
-  dex_items       : data_export_spec_item_t list
+  dex_description: string;
+  dex_items: data_export_spec_item_t list
 }
+
 
 class type data_export_value_int =
 object
@@ -85,22 +87,22 @@ object
   method get_spec: data_export_spec_t
   method get_size: int                             (* number of bytes *)
   method get_values: (data_export_spec_item_t * string) list
-  method write_xml : xml_element_int -> unit
-  method toPretty  : pretty_t
+  method write_xml: xml_element_int -> unit
+  method toPretty: pretty_t
 end
 
 (* ============================================================== java types === *)
 
 class type class_name_int =
 object ('a)
-  method index       : int
-  method name        : string
-  method simple_name : string
-  method equal       : 'a -> bool
-  method compare     : 'a -> int
-  method package     : string list
+  method index: int
+  method name: string
+  method simple_name: string
+  method equal: 'a -> bool
+  method compare: 'a -> int
+  method package: string list
   method package_name: string
-  method toPretty    : pretty_t
+  method toPretty: pretty_t
 end
 
 
@@ -118,13 +120,16 @@ type java_basic_type_t =
   | Object
   | Void
 
+
 type object_type_t =
   | TClass of class_name_int
   | TArray of value_type_t
-      
+
+
 and value_type_t =
   | TBasic of java_basic_type_t
   | TObject of object_type_t
+
 
 type access_t =
   | Default
@@ -132,73 +137,80 @@ type access_t =
   | Private
   | Protected
 
+
 class type field_signature_data_int =
 object ('a)
-  method name      : string
+  method name: string
   method descriptor: value_type_t
-  method compare   : 'a -> int
-  method to_string : string
-  method toPretty  : pretty_t
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
 end
+
 
 class type field_signature_int =
 object ('a)
-  method index     : int
-  method name      : string
+  method index: int
+  method name: string
   method field_signature_data: field_signature_data_int
   method descriptor: value_type_t
-  method equal     : 'a -> bool
-  method compare   : 'a -> int
-  method to_string : string
-  method toPretty  : pretty_t
+  method equal: 'a -> bool
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
 end
+
 
 class type method_descriptor_int =
 object ('a)
-  method arguments : value_type_t list
+  method arguments: value_type_t list
   method return_value: value_type_t option
-  method compare   : 'a -> int
-  method to_string : string
-  method toPretty  : pretty_t
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
 end
+
 
 class type method_signature_data_int =
 object ('a)
-  method name       : string
-  method descriptor : method_descriptor_int
-  method compare    : 'a -> int
-  method to_string  : string
-  method toPretty   : pretty_t
+  method name: string
+  method descriptor: method_descriptor_int
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
 end
+
 
 class type method_signature_int =
 object ('a)
-  method index      : int
+  method index: int
   method method_signature_data: method_signature_data_int
-  method name       : string
-  method descriptor : method_descriptor_int
-  method equal      : 'a -> bool
-  method compare    : 'a -> int
-  method to_string  : string
-  method toPretty   : pretty_t
+  method name: string
+  method descriptor: method_descriptor_int
+  method equal: 'a -> bool
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
 end
 
+
 type java_native_method_api_t =
-  { jnm_signature : method_signature_int ;
-    jnm_access    : access_t ;
-    jnm_static    : bool
+  { jnm_signature: method_signature_int;
+    jnm_access: access_t;
+    jnm_static: bool
   }
       
 
 class type java_dictionary_int =
 object
-  method make_class_name      : string -> class_name_int
-  method make_field_signature : string -> value_type_t -> field_signature_int
+  method make_class_name: string -> class_name_int
+  method make_field_signature: string -> value_type_t -> field_signature_int
   method make_method_signature: string -> method_descriptor_int -> method_signature_int
 end
 
+
 type java_native_method_class_t = 
-{ jnmc_class : class_name_int ;
+{ jnmc_class: class_name_int ;
   jnmc_native_methods: java_native_method_api_t list
 }
 
@@ -211,12 +223,12 @@ object
   method add_argument_type: value_type_t -> unit
 
   (* accessors *)
-  method get_class_name : string
+  method get_class_name: string
   method get_method_name: string
-  method get_arguments  : value_type_t list
+  method get_arguments: value_type_t list
 
   (* predicates *)
-  method has_arguments : bool
+  method has_arguments: bool
 
   (* printing *)
   method toPretty: pretty_t
@@ -267,6 +279,7 @@ type cpureg_t =
 | Dh
 | Bh
 
+
 type segment_t = 
 | StackSegment   (* 2 *)
 | CodeSegment    (* 1 *)
@@ -310,6 +323,7 @@ type mips_reg_t =
   | MRsp      (* 29: stack pointer *)
   | MRfp      (* 30: frame pointer, or saved temporary *)
   | MRra      (* 31: return address *)
+
 
 type mips_special_reg_t =
   | MMHi   (* high multiplication unit register *)
@@ -491,66 +505,67 @@ end
 class type virtual stream_wrapper_int = 
 object
     
-  method read : char
-  method nread : int -> string
-  method really_nread : int -> string
-  method input : string -> int -> int -> int
-  method close_in : unit
+  method read: char
+  method nread: int -> string
+  method really_nread: int -> string
+  method input: string -> int -> int -> int
+  method close_in: unit
     
-  method read_byte : int
-  method read_signed_byte : int
-  method virtual read_ui16 : int
-  method virtual read_i16 : int
-  method virtual read_i32 : int
-  method virtual read_real_i32 : int32
-  method virtual read_i64 : int64
-  method virtual read_double : float
-  method read_string : string
-  method read_line : string
+  method read_byte: int
+  method read_signed_byte: int
+  method virtual read_ui16: int
+  method virtual read_i16: int
+  method virtual read_i32: int
+  method virtual read_real_i32: int32
+  method virtual read_i64: int64
+  method virtual read_double: float
+  method read_string: string
+  method read_line: string
     
-  method virtual read_doubleword : doubleword_int
+  method virtual read_doubleword: doubleword_int
 end
+
 
 class type pushback_stream_int =
 object
-  method skip_bytes      : int -> unit
-  method read            : char
-  method nread           : int -> string
-  method really_nread    : int -> string
+  method skip_bytes: int -> unit
+  method read: char
+  method nread: int -> string
+  method really_nread: int -> string
     
-  method read_byte       : int
+  method read_byte: int
   method read_signed_byte: int
-  method read_ui16       : int
-  method read_i16        : int
-  method read_i32        : int
-  method read_real_i32   : int32
-  method read_i64        : int64
-  method read_string     : string
+  method read_ui16: int
+  method read_i16: int
+  method read_i32: int
+  method read_real_i32: int32
+  method read_i64: int64
+  method read_string: string
 
   method read_doubleword: doubleword_int
 
-  method read_num_signed_byte      : numerical_t
-  method read_num_unsigned_byte    : numerical_t 
-  method read_num_signed_word      : numerical_t
+  method read_num_signed_byte: numerical_t
+  method read_num_unsigned_byte: numerical_t
+  method read_num_signed_word: numerical_t
   method read_num_signed_doubleword: numerical_t
 
-  method read_imm_signed_byte      : immediate_int
-  method read_imm_signed_word      : immediate_int
+  method read_imm_signed_byte: immediate_int
+  method read_imm_signed_word: immediate_int
   method read_imm_signed_doubleword: immediate_int
-  method read_imm_signed:     int -> immediate_int
+  method read_imm_signed: int -> immediate_int
 
-  method read_imm_unsigned_byte      : immediate_int
-  method read_imm_unsigned_word      : immediate_int
+  method read_imm_unsigned_byte: immediate_int
+  method read_imm_unsigned_word: immediate_int
   method read_imm_unsigned_doubleword: immediate_int
-  method read_imm_unsigned:     int -> immediate_int
+  method read_imm_unsigned: int -> immediate_int
 
-  method read_null_terminated_string : string
-  method read_sized_unicode_string   : string
+  method read_null_terminated_string: string
+  method read_sized_unicode_string: string
 
-  method pushback        : int -> unit
+  method pushback: int -> unit
 
   (* accessors *)
-  method pos : int
+  method pos: int
 end
 
 
@@ -611,11 +626,13 @@ object
 
   (* printing *)
   method toPretty:
-           is_function_entry_point:(doubleword_int -> bool) ->
-           get_opt_function_name:(doubleword_int -> string option) -> pretty_t
+           is_function_entry_point:(doubleword_int -> bool)
+           -> get_opt_function_name:(doubleword_int -> string option)
+           -> pretty_t
   method toString:
-           is_function_entry_point:(doubleword_int -> bool) ->
-           get_opt_function_name:(doubleword_int -> string option) -> string
+           is_function_entry_point:(doubleword_int -> bool)
+           -> get_opt_function_name:(doubleword_int -> string option)
+           -> string
 
 end
 
@@ -668,6 +685,7 @@ class type struct_table_int =
     method write_xml: xml_element_int -> unit
 
   end
+
 
 class type struct_tables_int =
   object
@@ -763,19 +781,22 @@ class type call_back_tables_int =
 (* ============================================================= Location === *)
 
 type base_location_t = {
-    loc_faddr: doubleword_int ;
-    loc_iaddr: doubleword_int ;
+    loc_faddr: doubleword_int;
+    loc_iaddr: doubleword_int;
   }
 
+
 type fcontext_t = {
-    ctxt_faddr: doubleword_int ;
-    ctxt_callsite: doubleword_int ;
+    ctxt_faddr: doubleword_int;
+    ctxt_callsite: doubleword_int;
     ctxt_returnsite: doubleword_int
   }
+
 
 type context_t =
   | FunctionContext of fcontext_t
   | BlockContext of doubleword_int
+
 
 (* ctxt_iaddress_t spec:
 
@@ -820,12 +841,12 @@ class type location_int =
 class type string_table_int =
 object
   (* setters *)
-  method add_string  : doubleword_int -> string -> unit
+  method add_string: doubleword_int -> string -> unit
   method add_xref    :
            doubleword_int -> string -> doubleword_int -> ctxt_iaddress_t -> unit
 
   (* accessors *)
-  method get_string : doubleword_int -> string
+  method get_string: doubleword_int -> string
   method get_strings: (doubleword_int * string) list
 
   (* predicates *)
@@ -833,7 +854,7 @@ object
 
   (* saving *)
   method write_xml: xml_element_int -> unit
-  method read_xml : xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
 
 end
 
@@ -935,6 +956,7 @@ class type function_data_int =
 
   end
 
+
 class type functions_data_int =
   object
 
@@ -971,16 +993,16 @@ class type user_provided_directions_int =
 object
   (* setters *)
   method load_dll_ordinal_mappings: string -> unit
-  method set_dll_ordinal_mappings : string -> (int * string) list -> unit
+  method set_dll_ordinal_mappings: string -> (int * string) list -> unit
 
   (* getters *)
-  method get_dll_ordinal_mapping : string -> int -> string
+  method get_dll_ordinal_mapping: string -> int -> string
 
   (* predicates *)
   method are_DS_and_ES_the_same_segment: bool
 
   (* xml *)
-  method write_xml_ordinal_table : xml_element_int -> string -> unit
+  method write_xml_ordinal_table: xml_element_int -> string -> unit
 end
 
 
@@ -1012,6 +1034,7 @@ type struct_field_t = {
   fld_type: btype_t
 }
 
+
 class type c_struct_int =
 object
   method get_name: string
@@ -1030,6 +1053,7 @@ type constant_definition_t = {
   xconst_desc: string;
   xconst_is_addr: bool
 }
+
 
 type flag_definition_t = {
   xflag_name: string;
@@ -1067,20 +1091,20 @@ end
 (* ======================================================== Demangled name === *)
 
 type demangled_name_t = {
-  dm_name : tname_t ;
-  dm_name_space : tname_t list ;
-  dm_parameter_types : btype_t list ;
-  dm_returntype      : btype_t option ;
-  dm_calling_convention: string ;
-  dm_accessibility: string ;
-  dm_storage_class: string ;
-  dm_constructor  : bool ;
-  dm_destructor   : bool ;
-  dm_static       : bool ;
-  dm_virtual      : bool ;
-  dm_operator     : bool ;
-  dm_const        : bool ;
-  dm_vbtable      : bool ;
+  dm_name : tname_t;
+  dm_name_space : tname_t list;
+  dm_parameter_types : btype_t list;
+  dm_returntype      : btype_t option;
+  dm_calling_convention: string;
+  dm_accessibility: string;
+  dm_storage_class: string;
+  dm_constructor  : bool;
+  dm_destructor   : bool;
+  dm_static       : bool;
+  dm_virtual      : bool;
+  dm_operator     : bool;
+  dm_const        : bool;
+  dm_vbtable      : bool;
   dm_vftable      : bool 
   }
 
@@ -1166,6 +1190,7 @@ type type_invariant_fact_t =
 | ConstTypeFact of numerical_t * btype_t
 | XprTypeFact of xpr_t * btype_t
 
+
 class type type_invariant_int =
 object ('a)
   method index: int
@@ -1175,6 +1200,7 @@ object ('a)
   method write_xml: xml_element_int -> unit
   method toPretty: pretty_t
 end
+
 
 class type location_type_invariant_int =
 object
@@ -1191,6 +1217,7 @@ object
   (* printing *)
   method toPretty: pretty_t
 end
+
 
 class type type_invariant_io_int =
 object
@@ -1231,7 +1258,7 @@ type non_relational_value_t =
 
 (* c1 f1 + c2 f2 .... + cn fn = constant *)
 type linear_equality_t = {
-  leq_factors: (numerical_t * variable_t) list ;
+  leq_factors: (numerical_t * variable_t) list;
   leq_constant: numerical_t
 }
 
@@ -1244,6 +1271,7 @@ type invariant_fact_t =
   | InitialVarDisEquality of variable_t * variable_t (* variable, initial value *)
   | TestVarEquality of variable_t * variable_t * ctxt_iaddress_t * ctxt_iaddress_t
          (* variable, test value *)
+
 
 class type invariant_int =
 object ('a)
@@ -1269,43 +1297,44 @@ class type location_invariant_int =
 object
 
   (* setters *)
-  method reset          : unit
-  method add_fact       : invariant_fact_t -> unit
-  method get_facts      : invariant_int list
-  method get_count      : int
+  method reset: unit
+  method add_fact: invariant_fact_t -> unit
+  method get_facts: invariant_int list
+  method get_count: int
 
   (* accessors *)
-  method get_constant       : variable_t -> numerical_t
-  method get_interval       : variable_t -> interval_t
-  method get_base_offset    : variable_t -> symbol_t * interval_t
+  method get_constant: variable_t -> numerical_t
+  method get_interval: variable_t -> interval_t
+  method get_base_offset: variable_t -> symbol_t * interval_t
   method get_base_offset_constant: variable_t -> symbol_t * numerical_t
-  method get_affine_offset  : variable_t -> variable_t -> numerical_t option
+  method get_affine_offset: variable_t -> variable_t -> numerical_t option
   method get_interval_offset: variable_t -> variable_t -> interval_t
-  method get_external_exprs : variable_t -> xpr_t list
+  method get_external_exprs: variable_t -> xpr_t list
   method get_known_variables: variable_t list
   method get_known_initial_values: variable_t list 
-  method get_init_disequalities  : variable_t list (* initial values *)
-  method get_init_equalities     : variable_t list (* initial values *)
-  method rewrite_expr      : xpr_t -> (variable_t -> variable_t -> int) ->  xpr_t
+  method get_init_disequalities: variable_t list (* initial values *)
+  method get_init_equalities: variable_t list (* initial values *)
+  method rewrite_expr: xpr_t -> (variable_t -> variable_t -> int) ->  xpr_t
 
   (* predicates *)
   method is_unreachable: bool
-  method is_constant   : variable_t -> bool
-  method is_interval   : variable_t -> bool
+  method is_constant: variable_t -> bool
+  method is_interval: variable_t -> bool
   method is_base_offset: variable_t -> bool
   method is_base_offset_constant: variable_t -> bool
-  method are_equal     : variable_t -> variable_t -> bool
+  method are_equal: variable_t -> variable_t -> bool
 
-  method test_var_is_equal    : variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t -> bool
+  method test_var_is_equal:
+           variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t -> bool
   method var_has_initial_value: variable_t -> bool
   method var_has_symbolic_expr: variable_t -> bool
 
   (* xml *)
   method write_xml: xml_element_int -> unit
-  method read_xml : xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
 
   (* printing *)
-  method toPretty : pretty_t
+  method toPretty: pretty_t
   method toPrettyVar : (variable_t -> string) option -> pretty_t
 end
 
@@ -1476,24 +1505,28 @@ type parameter_location_t =
 | GlobalParameter of doubleword_int
 | UnknownParameterLocation
 
+
 type formatstring_type_t =
   | NoFormat
   | PrintFormat
   | ScanFormat
 
+
 type fts_parameter_t = {
-  apar_name: string ;
-  apar_type: btype_t ;
-  apar_desc: string ;
-  apar_roles: (string * string) list ;
-  apar_io: arg_io_t ;
-  apar_size: int ;
-  apar_location: parameter_location_t ;
+  apar_name: string;
+  apar_type: btype_t;
+  apar_desc: string;
+  apar_roles: (string * string) list;
+  apar_io: arg_io_t;
+  apar_size: int;
+  apar_location: parameter_location_t;
   apar_fmt: formatstring_type_t
 }
-    
+
+
 type arithmetic_op_t =
   PPlus | PMinus | PDivide | PTimes
+
 
 type relational_op_t = 
   PEquals | PLessThan | PLessEqual | PGreaterThan | PGreaterEqual | PNotEqual
@@ -1510,12 +1543,14 @@ type function_signature_t = {
   fts_registers_preserved: register_t list;
 }
 
+
 type function_interface_t = {
     fintf_name: string;
     fintf_jni_index: int option;
     fintf_syscall_index: int option;
     fintf_type_signature: function_signature_t;
   }
+
 
 type bterm_t =
   | ArgValue of fts_parameter_t
@@ -1577,6 +1612,7 @@ type call_target_t =
   | CallbackTableTarget of doubleword_int * int (* table address, offset *)
   | UnknownTarget
 
+
 type c_struct_constant_t =
 | FieldValues of (int * c_struct_constant_t) list
 | FieldConstant of bterm_t
@@ -1594,8 +1630,10 @@ type precondition_t =
 | PreFunctionPointer of btype_t * bterm_t   
 | PreNoOverlap of bterm_t * bterm_t
 | PreFormatString of bterm_t
-| PreEnum of bterm_t * string * bool   (* value must be one of defined enumeration values;
-                                          true if constant is set of flags *)
+
+(* value must be one of defined enumeration values;
+   true if constant is set of flags *)
+| PreEnum of bterm_t * string * bool
 | PreRelationalExpr of relational_op_t * bterm_t * bterm_t
 | PreDisjunction of precondition_t list
 | PreConditional of precondition_t * precondition_t
@@ -1603,8 +1641,8 @@ type precondition_t =
 
 
 type postcondition_t =
-| PostNewMemoryRegion of bterm_t * bterm_t    (* pointer returned, size in bytes *)
-| PostFunctionPointer of bterm_t * bterm_t     (* return value, name of function *)
+| PostNewMemoryRegion of bterm_t * bterm_t   (* pointer returned, size in bytes *)
+| PostFunctionPointer of bterm_t * bterm_t   (* return value, name of function *)
 | PostAllocationBase of bterm_t
   (* the return value is a pointer to the base
      of a dynamically allocated memory region *)
@@ -1622,7 +1660,7 @@ type sideeffect_t =
 | BlockWrite of btype_t * bterm_t * bterm_t 
 | Modifies of bterm_t
 | AllocatesStackMemory of bterm_t
-| StartsThread of bterm_t * bterm_t list           (* start address, parameters *)
+| StartsThread of bterm_t * bterm_t list   (* start address, parameters *)
 | Invalidates of bterm_t
 | SetsErrno
 | ConditionalSideeffect of precondition_t * sideeffect_t
@@ -1630,26 +1668,28 @@ type sideeffect_t =
 
 
 type io_action_t = {
-  iox_cat : string ;
-  iox_desc: string ;                               (* description *)
-  iox_pre : precondition_t option ;                (* condition for inclusion *)
+  iox_cat: string;
+  iox_desc: string;                  (* description *)
+  iox_pre: precondition_t option;    (* condition for inclusion *)
 }
+
 
 type function_semantics_t = {
-  fsem_pre             : precondition_t list ;
-  fsem_post            : postcondition_t list ;
-  fsem_errorpost       : postcondition_t list ;
-  fsem_sideeffects     : sideeffect_t list ;
-  fsem_io_actions      : io_action_t list ;
-  fsem_desc            : string ;
-  fsem_throws          : string list
+  fsem_pre: precondition_t list;
+  fsem_post: postcondition_t list;
+  fsem_errorpost: postcondition_t list;
+  fsem_sideeffects: sideeffect_t list;
+  fsem_io_actions: io_action_t list;
+  fsem_desc: string;
+  fsem_throws: string list
 }
 
+
 type function_documentation_t = {
-  fdoc_desc   : string ;
-  fdoc_remarks: string ;
-  fdoc_caution: string ;
-  fdoc_apidoc : pretty_t ;
+  fdoc_desc: string;
+  fdoc_remarks: string;
+  fdoc_caution: string;
+  fdoc_apidoc: pretty_t;
   fdoc_xapidoc: xml_element_int
 }
 
@@ -1676,9 +1716,12 @@ object ('a)
   method get_io_actions: io_action_t list
 
   method get_enums_referenced: string list
-  method get_enum_type: fts_parameter_t -> (btype_t * bool) option  (* name, specified as flags *)
 
-  method get_registers_preserved: register_t list   (* deviation from default (Eax,Ecx,Edx) *)
+  (* name, specified as flags *)
+  method get_enum_type: fts_parameter_t -> (btype_t * bool) option
+
+  (* deviation from default (Eax,Ecx,Edx) *)
+  method get_registers_preserved: register_t list
 
   (* modifiers *)
   method modify_types: string -> type_transformer_t -> 'a
@@ -1795,7 +1838,9 @@ type cpp_datamember_t = {
   cppdm_type: btype_t
 }
 
+
 type cppvf_table_t = (int, function_interface_t) Hashtbl.t
+
 
 type cpp_vfpointer_t = {
   cppvf_offset: int;
@@ -1803,9 +1848,11 @@ type cpp_vfpointer_t = {
   cppvf_table: cppvf_table_t
 }
 
+
 type cpp_member_t =
 | DataMember of cpp_datamember_t
 | VFPtr of cpp_vfpointer_t
+
 
 class type cpp_class_int =
   object
@@ -1840,18 +1887,19 @@ type memory_offset_t =
   | ConstantOffset of numerical_t * memory_offset_t
   | IndexOffset of variable_t * int * memory_offset_t
   | UnknownOffset 
-  
+
+
 class type memory_reference_int =
 object ('a)
   (* identification *)
   method index: int
 
   (* comparison *)
-  method compare      : 'a -> int
+  method compare: 'a -> int
 
   (* accessors *)
-  method get_base : memory_base_t
-  method get_name : string
+  method get_base: memory_base_t
+  method get_name: string
   method get_external_base: variable_t
 
   (* predicates *)
@@ -1864,6 +1912,7 @@ object ('a)
   (* printing *)
   method toPretty : pretty_t
 end
+
 
 class type memory_reference_manager_int =
 object
@@ -1881,7 +1930,7 @@ object
   method get_memory_reference: int -> memory_reference_int
 
   (* predicates *)
-  method is_unknown_reference       : int -> bool
+  method is_unknown_reference: int -> bool
 
   (* save and restore *)
   method read_xml: xml_element_int -> unit
@@ -1959,6 +2008,7 @@ and constant_value_variable_t =
   | Special of string
   | RuntimeConstant of string
   | ChifTemp
+
 
 class type vardictionary_int =
   object
@@ -2052,6 +2102,7 @@ object ('a)
   method toPretty: pretty_t
 
 end
+
 
 class type variable_manager_int =
 object
@@ -2152,9 +2203,6 @@ object
     
   method has_global_address: variable_t -> bool
     
-  (* save and restore *)
-                                             (* method write_xml  : xml_element_int -> unit *)
-
 end
 
 (* ============================================================ Global state === *)
@@ -2168,33 +2216,36 @@ type gterm_t =
 | GArgValue of doubleword_int * int * int list (* function, arg index, offset *)
 | GUnknownValue
 | GArithmeticExpr of g_arithmetic_op * gterm_t * gterm_t
-  
+
+
 class type gv_reader_int =
 object
-  method get_type : btype_t
-  method get_size : int option
+  method get_type: btype_t
+  method get_size: int option
   method get_offset: int list
   method is_function_pointer: bool
-  method write_xml : xml_element_int -> unit
-  method toPretty  : pretty_t
+  method write_xml: xml_element_int -> unit
+  method toPretty: pretty_t
 end
-	
+
+
 class type gv_writer_int =
 object
   (* accessors *)
   method get_type: btype_t
   method get_size: int option 
   method get_offset: int list
-  method get_value : gterm_t
+  method get_value: gterm_t
 
   (* xml *)
-  method write_xml : xml_element_int -> unit
+  method write_xml: xml_element_int -> unit
 
   (* printing *)
-  method toPretty         : pretty_t
+  method toPretty: pretty_t
   method to_report_pretty : (gterm_t -> pretty_t) -> pretty_t
 end
-	
+
+
 class type global_variable_int =
 object
   method add_reader: 
@@ -2221,13 +2272,14 @@ object
   method is_function_pointer: bool
     
   (* xml *)
-  method write_xml : xml_element_int -> unit
-  method read_xml  : xml_element_int -> unit
+  method write_xml: xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
 
   (* printing *)
-  method toPretty        : pretty_t
+  method toPretty: pretty_t
   method to_report_pretty: (gterm_t -> pretty_t) -> pretty_t
 end
+
 
 class type global_system_state_int =
 object
@@ -2306,6 +2358,7 @@ class type bdictionary_int =
     method read_xml: xml_element_int -> unit
 
   end
+
 
 class type interface_dictionary_int =
   object
@@ -2424,6 +2477,7 @@ type jump_target_t =
 | DllJumpTarget of string * string   (* PE *)
 | SOJumpTarget of string  (* shared object, ELF *)
 | UnknownJumpTarget
+
 
 (* The function environment keeps track of all variables known to the
    function
@@ -2726,7 +2780,7 @@ object
      function is not complete its summary is not used for calls to this function,
      instead the default summary is used *)
   method set_incomplete: unit
-  method set_complete  : unit
+  method set_complete: unit
   method set_dynlib_stub: call_target_t -> unit
 
   method set_instruction_bytes: ctxt_iaddress_t -> string -> unit
@@ -2817,25 +2871,25 @@ object
            ctxt_iaddress_t -> (variable_t * variable_t) list
 
   (* indirect jump targets *)
-  method get_dll_jumptarget        : ctxt_iaddress_t -> (string * string)
-  method get_jump_target           : ctxt_iaddress_t -> jump_target_t
-  method get_jumptable_jumps       : ctxt_iaddress_t list 
-  method get_jumptable_count       : int
-  method get_offsettable_count     : int
-  method get_global_jump_count     : int
-  method get_argument_jump_count   : int
-  method get_unknown_jumps_count   : int
-  method get_dll_jumps_count       : int
-  method get_indirect_jumps_count  : int
+  method get_dll_jumptarget: ctxt_iaddress_t -> (string * string)
+  method get_jump_target: ctxt_iaddress_t -> jump_target_t
+  method get_jumptable_jumps: ctxt_iaddress_t list
+  method get_jumptable_count: int
+  method get_offsettable_count: int
+  method get_global_jump_count: int
+  method get_argument_jump_count: int
+  method get_unknown_jumps_count: int
+  method get_dll_jumps_count: int
+  method get_indirect_jumps_count: int
 
-  method get_return_values   : xpr_t list
+  method get_return_values: xpr_t list
 
-  method get_call_count : int
+  method get_call_count: int
   method get_call_category_count: string -> int
 
   (* predicates *)
-  method is_complete : bool
-  method is_dynlib_stub : bool
+  method is_complete: bool
+  method is_dynlib_stub: bool
   method were_invariants_reset: bool
   method sideeffects_changed  : bool
   method call_targets_were_set: bool
@@ -2970,8 +3024,8 @@ object
   method get_stackpointer_offset: string -> int * interval_t
 
   (* returns the targets for the indirect jump instruction *)
-  method get_jump_target         : jump_target_t
-  method get_jump_successors     : doubleword_int list
+  method get_jump_target: jump_target_t
+  method get_jump_successors: doubleword_int list
 
   method get_call_target: call_target_info_int
   method get_call_args: (fts_parameter_t * xpr_t) list
@@ -3068,6 +3122,7 @@ end
 type block_restriction_t =
   | BranchAssert of bool
 
+
 class type specialization_int =
   object
     method get_name: string
@@ -3077,6 +3132,7 @@ class type specialization_int =
     method has_block_restriction: string -> string -> bool
     method toPretty: pretty_t
   end
+
 
 class type specializations_int =
   object
@@ -3118,6 +3174,7 @@ class type section_header_info_int =
     method read_xml: xml_element_int -> unit
     method toPretty: pretty_t
   end
+
 
 class type section_header_infos_int  =
   object
@@ -3383,191 +3440,211 @@ class type ['a] metrics_handler_int =
     method toPretty: 'a -> pretty_t
   end
 
+
 type exports_metrics_t = {
-  exm_count  : int ;       (* number of functions exported *)
-  exm_cpp    : int ;       (* C++ functions *)
-  exm_java   : int         (* Java native methods *)
+  exm_count: int;     (* number of functions exported *)
+  exm_cpp: int;       (* C++ functions *)
+  exm_java: int       (* Java native methods *)
   }
 
+
 type disassembly_metrics_t = {
-  dm_unknown_instrs : int ;     (* # unknown or inconsisten instructions *)
-  dm_instrs         : int ;     (* total number of instructions from disassembly *)
-  dm_functions      : int ;     (* # functions *)
-  dm_coverage       : int ;     (* # instructions within functions *)
-  dm_pcoverage      : float ;   (* percent coverage of all instructions *) 
-  dm_overlap        : int ;     (* # instructions in multiple functions *)
-  dm_alloverlap     : int ;     (* total number of instructions in multiple functions *)
-  dm_jumptables     : int ;     (* # jumptables identified *)
-  dm_datablocks     : int ;     (* # datablocks provided and identified *)
-  dm_imports        : (string * int * int * bool) list ; 
-                                (* number of functions imported per dll, LoadLib *)
-  dm_exports        : exports_metrics_t 
+  dm_unknown_instrs: int;     (* # unknown or inconsisten instructions *)
+  dm_instrs: int;     (* total number of instructions from disassembly *)
+  dm_functions: int;     (* # functions *)
+  dm_coverage: int;      (* # instructions within functions *)
+  dm_pcoverage: float;   (* percent coverage of all instructions *)
+  dm_overlap: int;       (* # instructions in multiple functions *)
+  dm_alloverlap: int;    (* total number of instructions in multiple functions *)
+  dm_jumptables: int;    (* # jumptables identified *)
+  dm_datablocks: int;    (* # datablocks provided and identified *)
+  dm_imports: (string * int * int * bool) list;
+                         (* number of functions imported per dll, LoadLib *)
+  dm_exports: exports_metrics_t
 }
+
 
 type memacc_metrics_t = {
-  mmem_reads : int ;
-  mmem_qreads: int ;      (* memory reads from unknown address *)
-  mmem_writes: int ;
-  mmem_qwrites: int ;     (* memory writes to unknown address *)
-  mmem_esptop : int ;     (* locations where esp is unknown *)
-  mmem_esprange: int      (* locations where only range is known for esp *)
+  mmem_reads : int;
+  mmem_qreads: int;      (* memory reads from unknown address *)
+  mmem_writes: int;
+  mmem_qwrites: int;     (* memory writes to unknown address *)
+  mmem_esptop : int;     (* locations where esp is unknown *)
+  mmem_esprange: int     (* locations where only range is known for esp *)
 }
 
+
 type prec_metrics_t = {
-  prec_esp : float ;
-  prec_reads: float ;
+  prec_esp : float;
+  prec_reads: float;
   prec_writes: float
 }
 
+
 type cfg_metrics_t = {
-  mcfg_instrs : int ;
-  mcfg_bblocks: int ;
-  mcfg_loops: int ;
-  mcfg_loopdepth: int ;
-  mcfg_complexity: int ;
+  mcfg_instrs : int;
+  mcfg_bblocks: int;
+  mcfg_loops: int;
+  mcfg_loopdepth: int;
+  mcfg_complexity: int;
   mcfg_vc_complexity: float        (* product of cfg complexity and variable count *)
 }
 
+
 type vars_metrics_t = {
-  mvars_count  : int ;
-  mvars_global : int ;
-  mvars_args   : int ;
-  mvars_return : int ;
+  mvars_count : int;
+  mvars_global: int;
+  mvars_args: int;
+  mvars_return: int;
   mvars_sideeff: int
 }
 
+
 type calls_metrics_t = {
-  mcalls_count : int ;
-  mcalls_dll   : int ;
-  mcalls_app   : int ;        (* known application calls *)
-  mcalls_jni   : int ;        (* jni call-backs *)
-  mcalls_arg   : int ;        (* calls on an argument value *)
-  mcalls_arg_x : int ;        (* calls on an argument value without targets *)
-  mcalls_global: int ;        (* calls on global variable *)
-  mcalls_global_x: int ;      (* calls on global variable without targets *)
-  mcalls_unr   : int ;        (* unresolved indirect calls *)
-  mcalls_nosum : int ;        (* dll calls without a function summary *)
-  mcalls_inlined: int ;       (* inlined application calls *)
-  mcalls_staticdll: int ;     (* calls to statically linked dll functions *)
-  mcalls_staticlib: int ;     (* calls to statically linked library functions *)
-  mcalls_appwrapped: int ;    (* calls to a function that wraps an application call *)
-  mcalls_dllwrapped: int ;    (* calls to a function that wraps a dll call *)
+  mcalls_count: int;
+  mcalls_dll: int;
+  mcalls_app: int;           (* known application calls *)
+  mcalls_jni: int;           (* jni call-backs *)
+  mcalls_arg: int;           (* calls on an argument value *)
+  mcalls_arg_x: int;         (* calls on an argument value without targets *)
+  mcalls_global: int;        (* calls on global variable *)
+  mcalls_global_x: int;      (* calls on global variable without targets *)
+  mcalls_unr: int;           (* unresolved indirect calls *)
+  mcalls_nosum: int;         (* dll calls without a function summary *)
+  mcalls_inlined: int;       (* inlined application calls *)
+  mcalls_staticdll: int;     (* calls to statically linked dll functions *)
+  mcalls_staticlib: int;     (* calls to statically linked library functions *)
+  mcalls_appwrapped: int;    (* calls to a function that wraps an application call *)
+  mcalls_dllwrapped: int;    (* calls to a function that wraps a dll call *)
 }
+
 
 type jumps_metrics_t = {
-  mjumps_indirect: int ;
-  mjumps_unknown    : int ;           (* no information *)
-  mjumps_dll        : int ;           (* indirect jump to import table *)
-  mjumps_jumptable  : int ;           (* target is a jump table *)
-  mjumps_jumptable_norange: int ;     (* target is a jump table, no range info on index reg *)
-  mjumps_global     : int ;           (* target is provided in global variable *)
-  mjumps_argument   : int ;           (* target is provided in argument variable *)
-  mjumps_offsettable: int             (* target is a jump table accessed via offset table *)
+  mjumps_indirect: int;
+  mjumps_unknown: int;           (* no information *)
+  mjumps_dll: int;               (* indirect jump to import table *)
+  mjumps_jumptable : int;        (* target is a jump table *)
+  mjumps_jumptable_norange: int; (* target is a jump table, no range info on index reg *)
+  mjumps_global: int;            (* target is provided in global variable *)
+  mjumps_argument: int;          (* target is provided in argument variable *)
+  mjumps_offsettable: int        (* target is a jump table accessed via offset table *)
 }
+
 
 type cc_metrics_t = {
-  mcc_instrs : int ;           (* instructions that depend on a condition code *)
-  mcc_assoc  : int ;           (* cc-instructions associated with cc-setting instruction *)
-  mcc_test   : int             (* cc-instructions with a test expression *)
+  mcc_instrs: int;    (* instructions that depend on a condition code *)
+  mcc_assoc: int;     (* cc-instructions associated with cc-setting instruction *)
+  mcc_test: int       (* cc-instructions with a test expression *)
 }
+
 
 type invs_metrics_t = {
-  minvs_table : int ;          (* number of distinct invariants *)
-  minvs_count : int            (* total number of invariants *)
+  minvs_table: int;       (* number of distinct invariants *)
+  minvs_count: int        (* total number of invariants *)
 }
+
 
 type tinvs_metrics_t = {
-  mtinvs_table : int ;            (* number of distinct type invariants *)
-  mtinvs_count : int              (* total number of type invariants *)
+  mtinvs_table: int;      (* number of distinct type invariants *)
+  mtinvs_count: int       (* total number of type invariants *)
 }
 
+
 type result_metrics_t = {
-  mres_prec : prec_metrics_t ;
-  mres_memacc: memacc_metrics_t ;
-  mres_cfg: cfg_metrics_t ;
-  mres_vars: vars_metrics_t ;
-  mres_calls: calls_metrics_t ;
-  mres_jumps: jumps_metrics_t ;
-  mres_cc: cc_metrics_t ;
-  mres_invs: invs_metrics_t ;
+  mres_prec : prec_metrics_t;
+  mres_memacc: memacc_metrics_t;
+  mres_cfg: cfg_metrics_t;
+  mres_vars: vars_metrics_t;
+  mres_calls: calls_metrics_t;
+  mres_jumps: jumps_metrics_t;
+  mres_cc: cc_metrics_t;
+  mres_invs: invs_metrics_t;
   mres_tinvs: tinvs_metrics_t
 }
 
+
 type function_run_t = {
-  frun_index : int ;
-  frun_time  : float ;
-  frun_skip  : bool ;
-  frun_nonrel: bool ;
-  frun_reset : bool ;         (* invariants were reset *)
-  frun_delta_instrs: int ;    (* difference in number of instrs compared to previous *)
-  frun_unresolved_calls: int ; 
-  frun_unresolved_jumps: int ; 
-  frun_delta_vars: int ;      (* difference in number of variables *)
-  frun_delta_invs: int        (* difference in number of invariants *)
+  frun_index : int;
+  frun_time  : float;
+  frun_skip  : bool;
+  frun_nonrel: bool;
+  frun_reset : bool;         (* invariants were reset *)
+  frun_delta_instrs: int;    (* difference in number of instrs compared to previous *)
+  frun_unresolved_calls: int;
+  frun_unresolved_jumps: int;
+  frun_delta_vars: int;      (* difference in number of variables *)
+  frun_delta_invs: int       (* difference in number of invariants *)
 }
 
+
 type function_results_t = {
-  fres_addr   : string ;
-  fres_stable : bool ;
-  fres_time   : float ;
-  fres_runs   : function_run_t list ;
+  fres_addr   : string;
+  fres_stable : bool;
+  fres_time   : float;
+  fres_runs   : function_run_t list;
   fres_results: result_metrics_t
 }
 
+
 type file_run_t = {
-  ffrun_index : int ;
-  ffrun_ftime : float ;          (* sum of function analysis times *)
-  ffrun_time  : float ;          (* total analysis time, including disassembly *)
-  ffrun_propagation_time: float ; (* time to propagate arguments forward to callees *)
-  ffrun_fns_analyzed: int ;
-  ffrun_skips : int ;
-  ffrun_nonrel: int ;
-  ffrun_resets: int ;            (* number of functions for which invariants were reset *)
-  ffrun_vc_complexity : float ;  (* composite variable-cfg complexity measure *)
-  ffrun_fns          : int ;     (* functions in the system *)
-  ffrun_delta_instrs : int ;     (* instructions added or removed during this run *)
-  ffrun_unresolved_calls : int ;  
-  ffrun_unresolved_jumps : int ;  
-  ffrun_delta_vars : int ;       (* variables added during this run *)
-  ffrun_delta_invs : int         (* invariants added during this run *)
+  ffrun_index: int;
+  ffrun_ftime: float;            (* sum of function analysis times *)
+  ffrun_time: float;             (* total analysis time, including disassembly *)
+  ffrun_propagation_time: float; (* time to propagate arguments forward to callees *)
+  ffrun_fns_analyzed: int;
+  ffrun_skips: int;
+  ffrun_nonrel: int;
+  ffrun_resets: int;            (* number of functions for which invariants were reset *)
+  ffrun_vc_complexity: float;   (* composite variable-cfg complexity measure *)
+  ffrun_fns: int;               (* functions in the system *)
+  ffrun_delta_instrs: int;      (* instructions added or removed during this run *)
+  ffrun_unresolved_calls: int;
+  ffrun_unresolved_jumps: int;
+  ffrun_delta_vars: int;        (* variables added during this run *)
+  ffrun_delta_invs: int         (* invariants added during this run *)
 }
 
+
 type aggregate_metrics_t = {
-  agg_avg_function_size: float ;
-  agg_max_function_size: int ;
-  agg_avg_block_count: float ;
-  agg_avg_cfgc: float ;
-  agg_max_cfgc: int ;
-  agg_max_vc_complexity: float ;
-  agg_median_function_size: int ;
-  agg_median_block_count: int ;
-  agg_median_cfgc: int ;
+  agg_avg_function_size: float;
+  agg_max_function_size: int;
+  agg_avg_block_count: float;
+  agg_avg_cfgc: float;
+  agg_max_cfgc: int;
+  agg_max_vc_complexity: float;
+  agg_median_function_size: int;
+  agg_median_block_count: int;
+  agg_median_cfgc: int;
   agg_loop_activity: float 
 }
 
+
 type userdata_metrics_t = {
-  um_function_entry : int ;
-  um_data_block : int ;
-  um_struct : int ;
-  um_nonreturning : int ;
-  um_class : int 
+  um_function_entry: int;
+  um_data_block: int;
+  um_struct: int;
+  um_nonreturning: int;
+  um_class: int
 }
+
 
 type ida_data_t = {
-  ida_function_entry_points : doubleword_int list
-}
+  ida_function_entry_points: doubleword_int list
+  }
+
 
 type file_results_t = {
-  ffres_stable: bool ;
-  ffres_time : float ;
-  ffres_runs : file_run_t list ;
-  ffres_functions: function_results_t list ;
-  ffres_totals: result_metrics_t ; 
-  ffres_aggregate: aggregate_metrics_t ;
-  ffres_disassembly : disassembly_metrics_t ;
-  ffres_userdata : userdata_metrics_t ;
-  ffres_idadata : ida_data_t
+  ffres_stable: bool;
+  ffres_time: float;
+  ffres_runs: file_run_t list;
+  ffres_functions: function_results_t list;
+  ffres_totals: result_metrics_t;
+  ffres_aggregate: aggregate_metrics_t;
+  ffres_disassembly: disassembly_metrics_t;
+  ffres_userdata: userdata_metrics_t;
+  ffres_idadata: ida_data_t
 }
+
 
 class type file_metrics_int =
 object
@@ -3595,12 +3672,13 @@ object
   method toPretty : pretty_t
 end
 
+
 class type disassembly_summary_int =
 object
   method record_disassembly_time: float -> unit
   method record_construct_functions_time: float -> unit
   method set_disassembly_metrics: disassembly_metrics_t -> unit
-  method write_xml : xml_element_int -> unit
-  method toPretty  : pretty_t
+  method write_xml: xml_element_int -> unit
+  method toPretty: pretty_t
 end
                            
