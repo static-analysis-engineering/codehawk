@@ -32,6 +32,12 @@
 (* chlib *)
 open CHPretty
 
+
+val activate_diagnostics: unit -> unit
+val deactivate_diagnostics: unit -> unit
+val collect_diagnostics: unit -> bool
+
+
 class type logger_int =
   object
     method set_max_entry_size: int -> unit
@@ -42,7 +48,9 @@ class type logger_int =
     method toPretty: pretty_t
   end
 
+
 val mk_logger: unit -> logger_int
+
 
 val chlog: logger_int
 val ch_error_log: logger_int

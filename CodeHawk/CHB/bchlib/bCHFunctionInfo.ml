@@ -2104,7 +2104,7 @@ object (self)
            (reg:register_t) =
     begin
       H.replace jump_targets jumpAddr (JumptableTarget (base,jt,reg));
-      (if system_settings#collect_diagnostics then
+      (if collect_diagnostics () then
          chlog#add
            "set jumptable target"
            (LBLOCK [

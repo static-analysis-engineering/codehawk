@@ -138,14 +138,14 @@ let get_string_reference (floc:floc_int) (xpr:xpr_t) =
 	| Some str ->
 	  begin
 	    string_table#add_xref address str floc#fa floc#cia;
-            (if system_settings#collect_diagnostics then
+            (if collect_diagnostics () then
                ch_diagnostics_log#add
                  "add string" (LBLOCK [floc#l#toPretty; STR "; "; STR str]));
 	    Some str
 	  end
 	| _ ->
            begin
-             (if system_settings#collect_diagnostics then
+             (if collect_diagnostics () then
                 ch_diagnostics_log#add
                   "no string found"
                   (LBLOCK [floc#l#toPretty; STR ": "; address#toPretty]));

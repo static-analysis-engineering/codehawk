@@ -69,7 +69,7 @@ object (self)
 
   method set_inlined_call =
     let _ =
-      if system_settings#collect_diagnostics then
+      if collect_diagnostics () then
         ch_diagnostics_log#add
           "inlined call"
           (LBLOCK [vaddr#toPretty; STR ": "; self#toPretty]) in

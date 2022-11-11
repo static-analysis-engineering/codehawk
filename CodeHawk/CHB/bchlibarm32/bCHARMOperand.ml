@@ -272,7 +272,7 @@ object (self:'a)
                   XOp (XPlus, [shifted; xoffset])
                | _ ->
                   begin
-                    (if system_settings#collect_diagnostics then
+                    (if collect_diagnostics () then
                        ch_diagnostics_log#add
                          "operand#to_address"
                          (LBLOCK [STR "ARMShiftedIndexOffset: "; self#toPretty]));
@@ -280,7 +280,7 @@ object (self:'a)
                   end)
            | _ ->
               begin
-                (if system_settings#collect_diagnostics then
+                (if collect_diagnostics () then
                    ch_diagnostics_log#add
                      "operand#to_address"
                      (LBLOCK [STR "memoff: "; self#toPretty]));
@@ -300,7 +300,7 @@ object (self:'a)
     | ARMLiteralAddress dw -> num_constant_expr dw#to_numerical
     | _ ->
        begin
-         (if system_settings#collect_diagnostics then
+         (if collect_diagnostics () then
             ch_diagnostics_log#add
               "operand#to_address"
               (LBLOCK [STR "Other address: "; self#toPretty]));
@@ -385,7 +385,7 @@ object (self:'a)
                          floc#env#mk_global_variable n
                       | _ ->
                          let _ =
-                           if system_settings#collect_diagnostics then
+                           if collect_diagnostics () then
                              ch_diagnostics_log#add
                                "shifted index offset memory variable"
                                (LBLOCK [
@@ -399,7 +399,7 @@ object (self:'a)
                      floc#get_memory_variable_3 rvar ivar scale (mkNumerical i)
                 | _ ->
                    let _ =
-                     if system_settings#collect_diagnostics then
+                     if collect_diagnostics () then
                        ch_diagnostics_log#add
                          "unknown memory variable"
                          (LBLOCK [
@@ -408,7 +408,7 @@ object (self:'a)
                    env#mk_unknown_memory_variable "operand")
             | _ ->
                let _ =
-                 if system_settings#collect_diagnostics then
+                 if collect_diagnostics () then
                    ch_diagnostics_log#add
                      "unknonwn memory variable"
                      (LBLOCK [
@@ -417,7 +417,7 @@ object (self:'a)
                env#mk_unknown_memory_variable "operand")
         | _ ->
            let _ =
-             if system_settings#collect_diagnostics then
+             if collect_diagnostics () then
                ch_diagnostics_log#add
                  "unknown memory variable"
                  (LBLOCK [

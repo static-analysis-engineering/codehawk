@@ -74,7 +74,6 @@ object (self)
   val mutable so_libraries = []    (* names of so-libraries *)
   val mutable exportdir = ""
   val mutable verbose = false
-  val mutable collect_diagnostics = false
   val mutable thumb = false
   val mutable jni_enabled = false
   val mutable set_vftables_enabled = false
@@ -86,8 +85,6 @@ object (self)
   val mutable app_name = None
 
   method set_verbose = verbose <- true
-
-  method set_collect_diagnostics = collect_diagnostics <- true
 
   method set_thumb =
     begin
@@ -200,8 +197,6 @@ object (self)
   method get_jsignature_paths = jsignature_paths
 
   method is_verbose = verbose
-
-  method collect_diagnostics = collect_diagnostics
 
   method is_abstract_stackvars_disabled = abstract_stackvars_disabled
 

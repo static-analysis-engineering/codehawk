@@ -171,7 +171,7 @@ let speclist =
      "save function summary of exported functions in named directory");
     ("-verbose", Arg.Unit (fun () -> system_settings#set_verbose),
      "print out analysis intermediate results and progress messages");
-    ("-diagnostics", Arg.Unit (fun () -> system_settings#set_collect_diagnostics),
+    ("-diagnostics", Arg.Unit (fun () -> activate_diagnostics ()),
      "collect diagnostic messages and save in diagnostics log");
     ("-show_chif", Arg.String (fun s -> set_chif s),
      "print out CHIF code");

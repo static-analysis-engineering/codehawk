@@ -948,7 +948,7 @@ let save_log_files name =
   begin
     file_output#saveFile logfilename chlog#toPretty ;
     file_output#saveFile errorlogfilename ch_error_log#toPretty;
-    (if system_settings#collect_diagnostics then
+    (if collect_diagnostics () then
        let diagnosticsfilename =
          Filename.concat fdir (name ^ ".ch_diagnostics_log") in
        file_output#saveFile diagnosticsfilename ch_diagnostics_log#toPretty)

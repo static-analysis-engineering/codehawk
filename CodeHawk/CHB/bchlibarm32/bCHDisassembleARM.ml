@@ -237,7 +237,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                            (match opt_cmpinstr with
                             | Some _ ->
                                let _ =
-                                 if system_settings#collect_diagnostics then
+                                 if collect_diagnostics () then
                                    ch_diagnostics_log#add
                                      "bx-jumptable found"
                                      (LBLOCK [addr#toPretty]) in
@@ -298,7 +298,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                        begin
                          system_info#add_jumptable jt;
                          !arm_assembly_instructions#set_jumptables [jt];
-                         (if system_settings#collect_diagnostics then
+                         (if collect_diagnostics () then
                             ch_diagnostics_log#add
                               "ldr-jumptable"
                               (LBLOCK [
@@ -385,7 +385,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                                        begin
                                          system_info#add_jumptable jt;
                                          !arm_assembly_instructions#set_jumptables [jt];
-                                         (if system_settings#collect_diagnostics then
+                                         (if collect_diagnostics () then
                                             ch_diagnostics_log#add
                                               "bx-jumptable"
                                               (LBLOCK [
@@ -466,7 +466,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                    begin
                      system_info#add_jumptable jt;
                      !arm_assembly_instructions#set_jumptables [jt];
-                     (if system_settings#collect_diagnostics then
+                     (if collect_diagnostics () then
                         ch_diagnostics_log#add
                           "tbb-jumptable"
                           (LBLOCK [
@@ -492,7 +492,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                    begin
                      system_info#add_jumptable jt;
                      !arm_assembly_instructions#set_jumptables [jt];
-                     (if system_settings#collect_diagnostics then
+                     (if collect_diagnostics () then
                         ch_diagnostics_log#add
                           "tbh-jumptable"
                           (LBLOCK [
@@ -514,7 +514,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
     if pos + len <= String.length x then
       let _ = Bytes.blit (Bytes.of_string x) pos sdata 0 len in
       begin
-        (if system_settings#collect_diagnostics then
+        (if collect_diagnostics () then
            ch_diagnostics_log#add
              "skip data block"
              (LBLOCK [STR "pos: "; INT pos; STR "; length: "; INT len]));
@@ -844,7 +844,7 @@ let collect_data_references () =
   let add (a:doubleword_int) (instr: arm_assembly_instruction_int) =
     let hxa = a#to_hex_string in
     let _ =
-      if system_settings#collect_diagnostics then
+      if collect_diagnostics () then
         ch_diagnostics_log#add
           "load literals"
           (LBLOCK [
@@ -1001,7 +1001,7 @@ let set_block_boundaries () =
               let va3 =
                 !arm_assembly_instructions#get_next_valid_instruction_address va2 in
               begin
-                (if system_settings#collect_diagnostics then
+                (if collect_diagnostics () then
                    ch_diagnostics_log#add
                      "ITT block"
                      (LBLOCK [va1#toPretty; STR ", "; va3#toPretty]));
@@ -1095,7 +1095,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
         [!arm_assembly_instructions#get_next_valid_instruction_address iaddr]
       else
         begin
-          (if system_settings#collect_diagnostics then
+          (if collect_diagnostics () then
              ch_diagnostics_log#add
                "disassembly"
                (LBLOCK [
@@ -1185,7 +1185,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
              true
            else
              begin
-               (if system_settings#collect_diagnostics then
+               (if collect_diagnostics () then
                   ch_diagnostics_log#add
                     "disassembly"
                     (LBLOCK [
@@ -1240,7 +1240,7 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       (Some [], va, [])
     else if is_tail_call floc va then
       let _ =
-        if system_settings#collect_diagnostics then
+        if collect_diagnostics () then
           ch_diagnostics_log#add
             "tail call"
             (LBLOCK [
@@ -1548,7 +1548,7 @@ let aggregate_ite () =
                      get_ite_predicate_dstop
                        thenfloc theninstr elsefloc elseinstr in
                    begin
-                     (if system_settings#collect_diagnostics then
+                     (if collect_diagnostics () then
                         ch_diagnostics_log#add
                           "aggregate ite"
                           (LBLOCK [STR ciaddr; STR ": "; instr#toPretty]));

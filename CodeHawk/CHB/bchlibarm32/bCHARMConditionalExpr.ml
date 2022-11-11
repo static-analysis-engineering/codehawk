@@ -230,7 +230,7 @@ let arm_conditional_expr
     | Some expr ->
        if is_false expr then (frozenVars#listOfValues, None) else
 	 begin
-           (if system_settings#collect_diagnostics then
+           (if collect_diagnostics () then
               ch_diagnostics_log#add "condition" (x2p expr));
 	   condfloc#set_test_expr expr;
 	   testfloc#set_test_variables frozenVars#listOfPairs;
@@ -239,7 +239,7 @@ let arm_conditional_expr
     | _ -> (frozenVars#listOfValues, None)
   else
     begin
-      (if system_settings#collect_diagnostics then
+      (if collect_diagnostics () then
          ch_diagnostics_log#add
            "unused condition"
            (LBLOCK [
@@ -285,7 +285,7 @@ let arm_conditional_conditional_expr
   match (cond1, cond2, cond3) with
   | (Some cond1, Some cond2, Some cond3) ->
      let _ =
-       if system_settings#collect_diagnostics then
+       if collect_diagnostics () then
          ch_diagnostics_log#add
            "conditional condition expressions"
            (LBLOCK [
@@ -303,7 +303,7 @@ let arm_conditional_conditional_expr
 
      let xpr = XOp (XLOr, [XOp (XLAnd, [XOp (XLNot, [cond1]); cond3]); cond2]) in
      begin
-       (if system_settings#collect_diagnostics then
+       (if collect_diagnostics () then
           ch_diagnostics_log#add "condition" (x2p xpr));
        condfloc#set_test_expr xpr;
        (frozenVars#toList, Some xpr)
