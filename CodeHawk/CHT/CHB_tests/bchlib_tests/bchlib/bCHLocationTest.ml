@@ -52,6 +52,10 @@ module D = BCHDoubleword
 module L = BCHLocation
 
 
+let testname = "bCHLocationTest"
+let lastupdated = "2022-11-14"
+
+
 let make_dw = D.string_to_doubleword
 
 
@@ -96,7 +100,7 @@ let cloc =
 
 let () =
   begin
-    TS.new_testsuite "bCHLocationTest";
+    TS.new_testsuite testname lastupdated;
 
     TS.add_simple_test
       (fun () -> A.equal_string baseloc#ci (c [iaddr11]));

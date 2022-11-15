@@ -44,6 +44,10 @@ module BS = TCHBchlibSpecification
 module D = BCHDoubleword
 
 
+let testname = "bCHDoublewordTest"
+let lastupdated = "2022-11-14"
+
+
 let equal_dw = BA.equal_doubleword
 
 
@@ -54,7 +58,7 @@ let word1000 = D.string_to_doubleword "0x0000100"
 let () =
   begin
 
-    TS.new_testsuite "bCHDoublewordTest";
+    TS.new_testsuite testname lastupdated;
 
     TS.add_simple_test
       (fun () ->
