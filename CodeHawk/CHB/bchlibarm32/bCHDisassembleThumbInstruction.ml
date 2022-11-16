@@ -2456,7 +2456,7 @@ let parse_t32_30_0
   | 0 ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in     
      (* AND{S}<c> <Rd>, <Rn>, #<const> *)
-     BitwiseAnd (setflags, cc, rd WR, rn RD, const, false)
+     BitwiseAnd (setflags, cc, rd WR, rn RD, const, true)
 
   (* < 30>i<  1>S<rn>0<i><rd><-imm8->   BIC (immediate) - T1 *)
   | 1 ->
@@ -2927,7 +2927,7 @@ let parse_thumb32_31_0
      (* STR<c> <Rt>, [<Rn>, #-<imm8>] 
         STR<c> <Rt>, [<Rn>], #+/-<imm8>
         STR<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
-     StoreRegister (cc, rt RD, rn RD, immop, mem WR, false)
+     StoreRegister (cc, rt RD, rn RD, immop, mem WR, true)
 
   (* < 31>00<  5><13><rt>101100000100   POP - T3 *)
   | 5 when (b 19 16) = 13 && (b 11 11) = 1 && (b 10 8) = 3 && (b 7 0) = 4 ->

@@ -31,5 +31,22 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+
+(** [disassemble_thumb_instruction ch base bytes] tries to disassemble an
+    instruction represented by [bytes], an integer with range [0, 65535] (16 bits).
+    If the most significant 5 bits are equal to 29, 30, or 31, an additional two
+    bytes are read from the stream and combined with the first 2 bytes to make
+    a 4-byte Thumb-2 instruction to be disassembled. This function is the
+    primary interface of this module.
+ *)
 val disassemble_thumb_instruction:
   pushback_stream_int -> doubleword_int -> int -> arm_opcode_t
+
+
+(** [parse_thumb_opcode ch base iaddr bytes] tries to disassemble an
+    instruction represented by [bytes], similar to
+    [disassemble_thumb_instruction], with the addition of an argument that
+    provides the virtual address of the instruction. This function is
+    provided solely for unit tests to check pc-relative instructions. *)
+val parse_thumb_opcode:
+  pushback_stream_int -> doubleword_int -> doubleword_int -> int -> arm_opcode_t

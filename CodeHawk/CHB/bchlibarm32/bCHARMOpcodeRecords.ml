@@ -174,7 +174,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "ASR" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "ASR" ~writeback:s c [rd; rn; rm])
     }
   | BitFieldClear (c, rd, lsb, width, msb) ->
      let postops = ", " ^ (string_of_int lsb) ^ ", " ^ (string_of_int width) in
@@ -218,21 +218,21 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rd; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "MVN" c [rd;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "MVN" c [rd;rm])
     }
   | BitwiseOr (s, c, rd, rn, rm, tw) -> {
       mnemonic = "ORR";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "ORR" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "ORR" c [rd; rn; rm])
     }
   | BitwiseOrNot (s, c, rd, rn, rm) -> {
       mnemonic = "ORN";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "ORN" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc "ORN" ~writeback:s c [rd; rn; rm])
     }
   | Branch (cc, addr, tw) -> {
       mnemonic = "B";
@@ -438,14 +438,14 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "LSL" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "LSL" c [rd; rn; rm])
     }
   | LogicalShiftRight (s, c, rd, rn, rm, tw) -> {
       mnemonic = "LSR";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "LSR" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "LSR" c [rd; rn; rm])
     }
   | Move (s, c, rd, rm, tw, aw) ->
      let mnem = if aw then "MOVW" else "MOV" in
@@ -564,7 +564,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "RSB" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "RSB" c [rd; rn; rm])
     }
   | ReverseSubtractCarry (s, c, rd, rn, rm) -> {
       mnemonic = "RSC";
@@ -766,7 +766,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        operands = [rd; rn; rm];
        flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
        ccode = Some c;
-       ida_asm = (fun f -> f#opscc ~thumbw:tw mnemonic c [rd; rn; rm])
+       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s mnemonic c [rd; rn; rm])
     }
   | SubtractCarry (s, c, rd, rn, rm, tw) -> {
       mnemonic = "SBC";
