@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,19 +33,54 @@ open CHXmlDocument
 (* bchlib *)
 open BCHLibTypes
 
-val get_aligned_address  : doubleword_int -> doubleword_int
-  
+(** Provides utilities to read and write binary data *)
+
+
+(** [get_aligned_address dw] returns the smallest multiple of 16 greater than
+    or equal to the value of dw, represented as a doubleword *)
+val get_aligned_address: doubleword_int -> doubleword_int
+
+
+(** [get_1kaligned_address dw] returns the smallest multiple of 1024 greater than
+    or equal to the value of dw, represented as a doubleword *)
 val get_1kaligned_address: doubleword_int -> doubleword_int 
+
 
 val rawdata_to_string:
   ?markwritten:doubleword_int list -> string -> doubleword_int -> string
 
+
+(** [write_xml_raw_data elt s dw] writes byte string [s] to the xml element
+    [elt] in the form of sub elements with tag {aline} and attributes
+    {bytes} and {print} that contain 4 space-separated groups of 4 bytes in
+    hexadecimal and a print represenation of those 16 bytes, respectively.
+
+    This format is used in saving binary content of the sections to xml.*)
 val write_xml_raw_data: xml_element_int -> string -> doubleword_int -> unit
-  
+
+
+(** [write_doubleword_to_bytestring dw] writes the constituting four bytes
+    to a bytestring, least significant byte first.*)
+val write_doubleword_to_bytestring: doubleword_int -> string
+
+
+(** [write_hex_bytes_to_bytestring s] converts the hexadecimal byte
+    representation in [s] to a string of bytes.*)
+val write_hex_bytes_to_bytestring: string -> string
+
+
+(** [read_xml_raw_data elt] reads data written by write_xml_raw_data and
+    returns the original byte string.*)
 val read_xml_raw_data : xml_element_int -> string
 
+
+(** [byte_string_to_spaced_string s] writes the byte string [s] to hexadecimal
+    bytes separated by spaces.*)
 val byte_string_to_spaced_string: string -> string
 
+
+(** [byte_string_to_printed_string s] writes the byte string [s] to hexadecimal
+    bytes as a continuous string.*)
 val byte_string_to_printed_string: string -> string
 
 val littleendian_hexstring_todwstring: string -> string
