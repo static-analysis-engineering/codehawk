@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,14 +47,18 @@ module DoublewordCollections = CHCollections.Make
     let toPretty dw = STR dw#to_fixed_length_hex_string
    end)
 
+
 let is_printable c = (c >= 32 && c < 127) 
-  
+
+
 let is_printable_char c = is_printable (Char.code c)
+
 
 let byte_to_string (b:int):string = 
   let l = b mod 16 in
   let h = b lsr 4 in
   Printf.sprintf "%x%x" h l
+
 
 let get_aligned_address (a:doubleword_int) =
   let n16 = mkNumerical 16 in
@@ -65,6 +69,7 @@ let get_aligned_address (a:doubleword_int) =
     let n = ((n#div n16)#mult n16)#add n16 in
     numerical_to_doubleword n
 
+
 let get_1kaligned_address (a:doubleword_int) =
   let n1024 = mkNumerical 1024 in
   let n = a#to_numerical in
@@ -73,6 +78,7 @@ let get_1kaligned_address (a:doubleword_int) =
   else
     let n = ((n#div n1024)#mult n1024)#add n1024 in
     numerical_to_doubleword n
+
 
 (* return the byte_string to a string containing 16 bytes in hexadecimal form
    per line *)
@@ -156,6 +162,7 @@ let rawdata_to_string ?(markwritten:(doubleword_int list option)) (byte_string:s
     !s
   end
 
+
 let write_xml_raw_data_block
     (node:xml_element_int) 
     (byte_string:string) 
@@ -222,6 +229,7 @@ let write_xml_raw_data_block
     append (List.rev !nodes)
   end
 
+
 let write_xml_raw_data
     (node:xml_element_int) 
     (byte_string:string) 
@@ -284,6 +292,7 @@ let read_xml_raw_data_block (node:xml_element_int) =
       IO.close_out ch
   end
 
+
 let write_doubleword_to_bytestring (dw:doubleword_int) =
   let ch = IO.output_string () in
   let hexstring = dw#to_fixed_length_hex_string in
@@ -292,19 +301,50 @@ let write_doubleword_to_bytestring (dw:doubleword_int) =
       let s = "0x" ^ (String.sub hexstring ((3-i)*2) 2) in
       try
 	let b = int_of_string s in IO.write_byte ch b
-      with Failure _ ->
+      with
+      |Failure m ->
 	begin
-	  pr_debug [ STR "Failure: " ; STR s ; NL ] ;
-	  raise (Failure "int-of-string") 
+	  pr_debug [
+              STR "Failure in bCHByteUtilities:write_doubleword_to_bytestring ";
+              STR s;
+              STR ": ";
+              STR m;
+              NL];
+	  raise
+            (Failure
+               "bCHByteUtilities:write_doubleword_to_byte_string:int-of-string")
 	end
     done ;
     IO.close_out ch
   end
-      
+
+
+let write_hex_bytes_to_bytestring (s: string) =
+  let ch = IO.output_string () in
+  let _ =
+    if ((String.length s) mod 2) = 1 then
+      raise
+        (Failure "bCHByteUtilities:write_hex_bytes_to_bytestring:odd") in
+  let len = (String.length s) / 2 in
+  begin
+    for i = 0 to (len - 1) do
+      let bx = "0x" ^ (String.sub s (i * 2) 2) in
+      try
+        let b = int_of_string bx in IO.write_byte ch b
+      with
+      | Failure m ->
+         raise
+           (Failure
+              "bCHByteUtilities:write_hex_bytes_to_bytestring:int_of_string")
+    done;
+    IO.close_out ch
+  end
+
 
 let read_xml_raw_data (node:xml_element_int) =
   String.concat
     "" (List.map read_xml_raw_data_block (node#getTaggedChildren "ablock"))
+
 
 let byte_string_to_spaced_string (byte_string:string):string =
   let ch = IO.input_string byte_string in
@@ -315,6 +355,7 @@ let byte_string_to_spaced_string (byte_string:string):string =
     !s
   end
 
+
 let byte_string_to_printed_string (byte_string:string):string =
   let ch = IO.input_string byte_string in
   let s = ref "" in
@@ -323,7 +364,8 @@ let byte_string_to_printed_string (byte_string:string):string =
     for i = 0 to len-1 do s := !s ^ (byte_to_string (IO.read_byte ch)) done;
     !s
   end
-  
+
+
 (* converts a little-endian hex string for a doubleword extracted by pattern 
    matching to the corresponding doubleword string *)
 let littleendian_hexstring_todwstring (s:string) =
@@ -331,29 +373,31 @@ let littleendian_hexstring_todwstring (s:string) =
   let bnew = Bytes.copy b in
   let cp pn po = Bytes.set bnew pn (Bytes.get b po) in
   begin
-    cp 0 6 ;
-    cp 1 7 ;
-    cp 2 4 ;
-    cp 3 5 ;
-    cp 4 2 ;
-    cp 5 3 ;
-    cp 6 0 ;
-    cp 7 1 ;
+    cp 0 6;
+    cp 1 7;
+    cp 2 4;
+    cp 3 5;
+    cp 4 2;
+    cp 5 3;
+    cp 6 0;
+    cp 7 1;
     "0x" ^ Bytes.to_string bnew
   end
+
 
 let littleendian_hexstring_towstring (s:string) =
   let b = Bytes.of_string s in
   let bnew = Bytes.copy b in
   let cp pn po = Bytes.set bnew pn (Bytes.get b po) in
   begin
-    cp 0 2 ;
-    cp 1 3 ;
-    cp 2 0 ;
-    cp 3 1 ;
+    cp 0 2;
+    cp 1 3;
+    cp 2 0;
+    cp 3 1;
     "0x" ^ Bytes.to_string bnew
   end
-  
+
+
 let decode_string_aux (s:string) (va:doubleword_int) 
     (enc:(string * doubleword_int * doubleword_int * doubleword_int * int)) = 
   let (_, start, size, key, width) = enc in
@@ -389,7 +433,7 @@ let decode_string_aux (s:string) (va:doubleword_int)
 	for i = 0 to ((size#to_int / 4) - 2) do
 	  let dw = read_doubleword ch in
 	  let decoded = dw#xor key in
-	  result := !result ^ (write_doubleword_to_bytestring decoded) ;
+	  result := !result ^ (write_doubleword_to_bytestring decoded);
 	done;
 	!result ^ suffix
       end
@@ -434,7 +478,7 @@ let decode_string_aux (s:string) (va:doubleword_int)
               NL;
 	      STR " and offset ";
               INT offset;
-              NL] ;
+              NL];
 	raise (BCH_failure (STR "Error in decoding"))
       end
 
@@ -458,7 +502,7 @@ let read_hex_stream_file (filename:string) =
           with
           | Failure _ ->
              begin
-               pr_debug [ STR "Failure in reading stream file: "; STR s; NL] ;
+               pr_debug [ STR "Failure in reading stream file: "; STR s; NL];
                raise (Failure "read_stream:int_of_string")
              end
         done
