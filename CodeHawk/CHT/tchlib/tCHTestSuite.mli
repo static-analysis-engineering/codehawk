@@ -47,9 +47,9 @@ open TCHTestApi
  *)
 
 
-(** [new_testsuite name] sets up a new test suite with the given name and an
-    empty set of tests *)   
-val new_testsuite: string -> unit
+(** [new_testsuite name date] sets up a new test suite with the given name and
+    date and an empty set of tests *)
+val new_testsuite: string -> string -> unit
 
 
 (** [add_simple_test ~title:t f] adds a test with name [t] to the test suite that

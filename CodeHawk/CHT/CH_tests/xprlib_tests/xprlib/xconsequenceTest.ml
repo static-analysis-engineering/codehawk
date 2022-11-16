@@ -39,10 +39,14 @@ module C = Xconsequence
 module X = Xprt
 
 
+let testname = "xconsequenceTest"
+let lastupdated = "2022-11-14"
+
+
 let () =
   begin
 
-    TS.new_testsuite "xconsequence";
+    TS.new_testsuite testname lastupdated;
 
     (* v <= 0 implies v <= 0 *)
     TS.add_simple_test

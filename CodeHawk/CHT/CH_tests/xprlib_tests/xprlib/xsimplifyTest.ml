@@ -38,14 +38,17 @@ module TS = TCHTestSuite
 
 module S = Xsimplify
 
-
 let simplify = S.simplify_xpr
+
+
+let testname = "xsimplifyTest"
+let lastupdate = "2022-11-14"
 
 
 let () =
   begin
 
-    TS.new_testsuite "xsimplify";
+    TS.new_testsuite testname lastupdate;
 
     (* 0 + 0 = 0 *)
     TS.add_simple_test
