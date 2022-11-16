@@ -221,9 +221,10 @@ let add_random_test
   H.add tests name (get_seqnumber (), test)
 
 
-let new_testsuite (name: string) =
+let new_testsuite (name: string) (date: string) =
   begin
     testsuitename := name;
+    testsuitedate := date;
     H.clear tests
   end
 
