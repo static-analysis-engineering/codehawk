@@ -61,14 +61,17 @@ module TF = BCHDisassembleThumbInstruction
 
 
 let testname = "bCHDisassembleThumbInstructionTest"
-let lastupdated = "2022-11-15"
+let lastupdated = "2022-11-16"
+
 
 let two_byte_instr_opcode_failures = [
     ("03c4", "STM            R4!, {R0,R1}");  (* needs writeback register *)    
   ]
 
+
 let four_byte_instr_opcode_failures = [
   ]    
+
 
 let make_stream ?(len=0) (s: string) =
   let bytestring = U.write_hex_bytes_to_bytestring s in
@@ -117,7 +120,6 @@ let thumb_2_basic () =
   begin
     TS.new_testsuite (testname ^ "_thumb_2_basic") lastupdated;
 
-    (* 2-byte thumb opcodes *)
     List.iter (fun (title, bytes, result) ->
         TS.add_simple_test
           ~title
@@ -135,6 +137,7 @@ let thumb_2_basic () =
 (* 2-byte thumb opcodes, pc-relative *)
 let thumb_2_pc_relative () =
   let tests = [
+      ("ADDS","0x11cde", "7b44", "ADDS           R3, R3, PC");
       ("ADR", "0x112a8", "f1a7", "ADR            R7, 0x11670");
       ("B",   "0x11cf4", "e1e7", "B              0x11cba");
       ("BCC", "0x1105c", "02d3", "BCC            0x11064");
@@ -154,7 +157,7 @@ let thumb_2_pc_relative () =
   begin
     TS.new_testsuite (testname ^ "_thumb_2_pc_relative") lastupdated;
 
-    (* 2-byte pc-relative thumb opcodes *)
+    (* set code extent so checks on absolute code addresses pass *)
     SI.system_info#set_elf_is_code_address D.wordzero base;
     List.iter (fun (title, iaddr, bytes, result) ->
         TS.add_simple_test
@@ -190,6 +193,7 @@ let thumb_4_basic () =
       ("MLS",    "0efb1202", "MLS            R2, LR, R2, R0");
       ("MOVT",   "c8f20214", "MOVT           R4, #0x8102");
       ("MOVW",   "40f20944", "MOVW           R4, #0x409");
+      ("MRC",    "1dee705f", "MRC           p15, 0,  R5, c13, c0, 3");
       ("MVN",    "6ff06300", "MVN            R0, #0x63");
       ("NOP",    "aff30080", "NOP           ");
       ("POP.W",  "bde83840", "POP.W          {R3,R4,R5,LR}");
@@ -226,12 +230,45 @@ let thumb_4_basic () =
     TS.launch_tests ()
   end
 
+(* 4-byte thumb opcodes, pc-relative *)
+let thumb_4_pc_relative () =
+  let tests = [
+      ("B.W",     "0x11a7a", "24f1e3be", "B.W            0x136844");
+      ("BEQ.W",   "0x1119e", "00f0ed81", "BEQ.W          0x1157c");
+      ("BHI.W",   "0x11e6a", "3ff626af", "BHI.W          0x11cba");
+      ("BLE.W",   "0x111a2", "40f3e181", "BLE.W          0x11568");
+      ("BL-b",    "0x1030e", "fff757ff", "BL             0x101c0");
+      ("BL-f",    "0x10340", "01f08cfa", "BL             0x1185c");
+      ("BLX",     "0x110fa", "27f1baee", "BLX            0x138e70");
+      ("BNE.W",   "0x1156e", "7ff40eae", "BNE.W          0x1118e");
+      ("LDR.W",   "0x11184", "dff8fc64", "LDR.W          R6, 0x11684");
+    ] in
+  begin
+    TS.new_testsuite (testname ^ "_thumb_4_pc_relative") lastupdated;
+
+    (* set code extent so checks on absolute code addresses pass *)
+    SI.system_info#set_elf_is_code_address D.wordzero base;
+    List.iter (fun (title, iaddr, bytes, result) ->
+        TS.add_simple_test
+          ~title
+          (fun () ->
+            let ch = make_stream bytes in
+            let instrbytes = ch#read_ui16 in
+            let iaddr = D.string_to_doubleword iaddr in
+            let opcode = TF.parse_thumb_opcode ch base iaddr instrbytes in
+            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            A.equal_string result opcodetxt)) tests;
+
+    TS.launch_tests ()
+  end
+
 
 let () =
   begin
     thumb_2_basic ();
     thumb_2_pc_relative ();
-    thumb_4_basic ()
+    thumb_4_basic ();
+    thumb_4_pc_relative ()
   end
 
         
