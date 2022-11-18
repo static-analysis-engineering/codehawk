@@ -773,7 +773,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "SBC" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "SBC" c [rd; rn; rm])
     }
   | SupervisorCall (cc, imm) -> {
       mnemonic = "SVC";
