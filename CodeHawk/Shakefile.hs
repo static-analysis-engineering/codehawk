@@ -82,8 +82,8 @@ runBuild flags = do
         return $ if Warnings `elem` flags then ["-warn-error", "A"] else []
 
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
-        mlis <- getDirectoryFilesIO "" ["CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli", "CH_gui//*.mli"]
-        mls <- getDirectoryFilesIO "" ["CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml", "CH_gui//*.ml"]
+        mlis <- getDirectoryFilesIO "" ["CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli", "CH_gui//*.mli", "CHT//*.mli"]
+        mls <- getDirectoryFilesIO "" ["CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml", "CH_gui//*.ml", "CHT//*.ml"]
         let inputs = ignoredOriginalFiles $ mlis ++ mls
         let pairs = [(takeFileName file, file) | file <- inputs]
         return $ Map.fromList pairs
@@ -290,7 +290,7 @@ runBuild flags = do
                 ("chx86_inspect_summaries", "bCHXInspectSummaries.ml"),
                 ("xanalyzer", "bCHXBinaryAnalyzer.ml"),
                 ("canalyzer", "cCHXCAnalyzer.ml"),
-		("parseFile", "cCHXParseFile.ml"),
+                ("parseFile", "cCHXParseFile.ml"),
                 ("classinvariants", "jCHXClassInvariants.ml"),
                 ("translateclass", "jCHXTranslateClass.ml"),
                 ("usertemplate", "jCHXTemplate.ml"),
@@ -305,7 +305,15 @@ runBuild flags = do
                 ("poly", "jCHXClassPoly.ml"),
                 ("pattern", "jCHXCollectPatterns.ml")]
 
-    forM_ exes (\pair -> do
+    let tests = [("xsimplifyTest", "xsimplifyTest.ml"),
+                 ("xconsequenceTest", "xconsequenceTest.ml"),
+                 ("bCHDoublewordTest", "bCHDoublewordTest.ml"),
+                 ("bCHLocationTest", "bCHLocationTest.ml"),
+                 ("bCHImmediateTest", "bCHImmediateTest.ml"),
+                 ("bCHDisassembleThumbInstructionTest", "bCHDisassembleThumbInstructionTest.ml"),
+                 ("bCHDisassembleARMInstructionTest", "bCHDisassembleARMInstructionTest.ml")]
+
+    forM_ (exes ++ tests) (\pair -> do
         let (name, main_file) = pair
         makeExecutable name main_file)
 
@@ -315,7 +323,12 @@ runBuild flags = do
         let mls = filter (\file -> isInfixOf ".ml" file) files
         askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
         -- actual dependencies
-        need ["_bin/" </> name | (name, _) <- exes]
+        need ["_bin/" </> name | (name, _) <- exes ++ tests]
+
+    phony "tests" $ do
+        forM_ tests (\(name, main_file) -> do
+            need ["_bin/" ++ name]
+            cmd_ ("_bin/" ++ name))
     
     phony "bytecodes" $ do
         -- warm ModuleDependencies cache
@@ -323,7 +336,7 @@ runBuild flags = do
         --let mls = filter (\file -> isInfixOf ".ml" file) files
         --askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
         -- actual dependencies
-        need [("_bin/" </> name -<.> "byte") | (name, _) <- exes]
+        need [("_bin/" </> name -<.> "byte") | (name, _) <- exes ++ tests]
     
     let makeDocs dir private = do
         -- warm ModuleDependencies cache
@@ -331,7 +344,7 @@ runBuild flags = do
         let mls = filter (\file -> isInfixOf ".ml" file) files
         askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
         -- actual dependencies
-        let exe_files = ["_build" </> filename | (_, filename) <- exes]
+        let exe_files = ["_build" </> filename | (_, filename) <- exes ++ tests]
         let foldCall accum file = do
             recCall <- implDeps file (Set.toList accum) [] "cmx"
             return $ Set.union accum $ Set.fromList recCall
