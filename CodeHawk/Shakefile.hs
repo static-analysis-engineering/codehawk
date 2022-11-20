@@ -31,6 +31,11 @@ moduleToFile modul =
     let firstChar : rest = modul in
     (toLower firstChar) : rest
 
+fileToModule :: String -> String
+fileToModule modul =
+    let firstChar : rest = modul in
+    (toUpper firstChar) : rest
+
 dropLibraryModules :: [String] -> [String] -> [String]
 dropLibraryModules libraryModules modules =
     let knownLibraryModules = HashSet.fromList libraryModules in
@@ -77,8 +82,8 @@ runBuild flags = do
         return $ if Warnings `elem` flags then ["-warn-error", "A"] else []
 
     originalToMap <- liftIO $ unsafeInterleaveIO $ do
-        mlis <- getDirectoryFilesIO "" ["CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli", "CH_gui//*.mli"]
-        mls <- getDirectoryFilesIO "" ["CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml", "CH_gui//*.ml"]
+        mlis <- getDirectoryFilesIO "" ["CH//*.mli", "CHC//*.mli", "CHB//*.mli", "CHJ//*.mli", "CH_gui//*.mli", "CHT//*.mli"]
+        mls <- getDirectoryFilesIO "" ["CH//*.ml", "CHC//*.ml", "CHB//*.ml", "CHJ//*.ml", "CH_gui//*.ml", "CHT//*.ml"]
         let inputs = ignoredOriginalFiles $ mlis ++ mls
         let pairs = [(takeFileName file, file) | file <- inputs]
         return $ Map.fromList pairs
@@ -87,6 +92,7 @@ runBuild flags = do
         putNormal "Cleaning files in _bin, _build, _docs_private, _docs_public"
         removeFilesAfter "_bin" ["//*"]
         removeFilesAfter "_build" ["//*"]
+        removeFilesAfter "_odoc" ["//*"]
         removeFilesAfter "_docs_private" ["//*"]
         removeFilesAfter "_docs_public" ["//*"]
 
@@ -106,11 +112,116 @@ runBuild flags = do
         libraryModules <- getLibraryModules $ NonFileModules ()
         return $ dropLibraryModules libraryModules modules
 
-    "_build/*.cmi" %> \out -> do
+    let documentDir directory = do
+        "_build" </> takeBaseName directory -<.> "mld" %> \out -> do
+            mlis_full_path <- getDirectoryFiles directory ["*.mli"]
+            let children = unwords [takeBaseName mli | mli <- mlis_full_path]
+            let contents = "{0 " ++ takeBaseName directory ++ "}\n\n{!modules: " ++ children ++ "}"
+            writeFileChanged out contents
+
+        "_build" </> "page-" ++ takeBaseName directory -<.> "odoc" %> \out -> do
+            need ["_build/page-_odoc.odoc"]
+            need ["_build" </> takeBaseName directory -<.> "mld"]
+            mlis_full_path <- getDirectoryFiles directory ["*.mli"]
+            let children = ["--child=" ++ takeBaseName mli | mli <- mlis_full_path]
+            cmd_ (Cwd "_build") "odoc compile" (takeBaseName directory -<.> "mld") children "-I . --parent=_odoc"
+
+        "_build" </> "page-" ++ takeBaseName directory -<.> "odocl" %> \out -> do
+            need [out -<.> "odoc"]
+            need ["_build" </> takeBaseName directory -<.> "mld"]
+            mlis_full_path <- getDirectoryFiles directory ["*.mli"]
+            need ["_build" </> takeBaseName mli -<.> "odoc" | mli <- mlis_full_path]
+            cmd_ (Cwd "_build") "odoc link" ("page-" ++ takeBaseName directory -<.> "odoc") "-I ."
+
+        "_odoc" </> takeBaseName directory </> "index.html" %> \out -> do
+            let odocl = "_build" </> "page-" ++ takeBaseName directory -<.> "odocl"
+            need [odocl]
+            mlis_full_path <- getDirectoryFiles directory ["*.mli"]
+            need ["_odoc" </> takeBaseName directory </> fileToModule (takeBaseName mli) </> "index.html" | mli <- mlis_full_path]
+            cmd_ "odoc html-generate" odocl "--output-dir . --support-uri=_odoc --theme-uri=_odoc"
+
+    "_odoc" </> "*" </> "*" </> "index.html" %> \out -> do
+        let modul = moduleToFile $ takeBaseName $ takeDirectory out
+        let odocl = "_build" </> modul -<.> "odocl"
+        need [odocl]
+        cmd_ "odoc html-generate" odocl "--output-dir . --support-uri=_odoc --theme-uri=_odoc"
+
+    let docDirectories = [
+                            "CH/xprlib",
+                            "CH/chutil",
+                            "CH/chlib",
+                            "CHB/bchlib",
+                            "CHB/bchlibx86",
+                            "CHB/bchlibpower32",
+                            "CHB/bchcil",
+                            "CHB/bchlibarm32",
+                            "CHB/bchlibpe",
+                            "CHB/bchlibmips32",
+                            "CHB/bchanalyze",
+                            "CHB/bchcmdline",
+                            "CHB/bchlibelf",
+                            "CHC/cchcmdline",
+                            "CHC/cchlib",
+                            "CHC/cchcil",
+                            "CHC/cchpre",
+                            "CHC/cchanalyze",
+                            "CHJ/jchpre",
+                            "CHJ/jchmuse",
+                            "CHJ/jchstac",
+                            "CHJ/jchlib",
+                            "CHJ/jchpoly",
+                            "CHJ/jchcost",
+                            "CHJ/jchfeatures",
+                            "CHJ/jchsys"
+                         ]
+    forM_ docDirectories documentDir
+
+    "_build" </> "_odoc.mld" %> \out -> do
+        let children = intercalate "\n" ["- {!page-" ++ takeBaseName dir ++ "}" | dir <- docDirectories]
+        let contents = "{0 CodeHawk}\n\n" ++ children
+        writeFileChanged out contents
+
+    "_build" </> "page-_odoc.odoc" %> \out -> do
+        need ["_build/_odoc.mld"]
+        let children = ["--child=" ++ takeBaseName dir | dir <- docDirectories]
+        cmd_ (Cwd "_build") "odoc compile _odoc.mld" children "-I ."
+
+    "_build" </> "page-_odoc.odocl" %> \out -> do
+        need ["_build/page-_odoc.odoc"]
+        need ["_build/page-" ++ takeBaseName dir ++ ".odoc" | dir <- docDirectories]
+        cmd_ (Cwd "_build") "odoc link page-_odoc.odoc -I ."
+
+    "_odoc" </> "index.html" %> \out -> do
+        need ["_build/page-_odoc.odocl"]
+        cmd_ "odoc html-generate _build/page-_odoc.odocl --output-dir . --support-uri=_odoc --theme-uri=_odoc"
+        cmd_ "odoc support-files --output-dir _odoc"
+
+    phony "odoc" $ do
+        need ["_odoc/index.html"]
+        need ["_odoc" </> takeBaseName dir </> "index.html" | dir <- docDirectories]
+
+    "_build/*.odoc" %> \out -> do
+        let cmti = takeFileName out -<.> "cmti"
+        need ["_build" </> cmti]
+        let mli = takeFileName out -<.> "mli"
+        let parent = "page-" ++ case Map.lookup mli originalToMap of
+             Just original -> takeFileName $ takeDirectory original
+             Nothing -> error $ "No file matching \"" ++ mli ++ "\""
+        need ["_build" </> parent -<.> "odoc"]
+        cmd_ (Cwd "_build") "odoc compile" cmti ("--parent=" ++ parent) "-I ."
+
+    "_build/*.odocl" %> \out -> do
+        let mli = out -<.> "mli"
+        need [out -<.> "odoc"]
+        dep_mlis <- getModuleDeps $ ModuleDependencies mli
+        need ["_build" </> moduleToFile mli -<.> ".odoc" | mli <- dep_mlis]
+        cmd_ (Cwd "_build") "odoc link" (takeFileName out -<.> "odoc") "-I ."
+
+    ["_build/*.cmi", "_build/*.cmti"] &%> \[out, annot] -> do
         let mli = out -<.> "mli"
         mli_dependencies <- getModuleDeps $ ModuleDependencies mli
         need $ [mli] ++ ["_build" </> moduleToFile modul <.> "cmi" | modul <- mli_dependencies]
-        cmd_ (Cwd "_build") "ocamlfind ocamlopt -color=always -opaque -package " (intercalate "," ocamlfind_libraries) (takeFileName mli) "-o" (takeFileName out)
+        cmd_ (Cwd "_build") "ocamlfind ocamlopt -bin-annot -color=always -opaque -package " (intercalate "," ocamlfind_libraries) (takeFileName mli) "-o" (takeFileName out)
 
     "_build/*.ml" %> \out ->
         case Map.lookup (dropDirectory1 out) originalToMap of
@@ -179,7 +290,7 @@ runBuild flags = do
                 ("chx86_inspect_summaries", "bCHXInspectSummaries.ml"),
                 ("xanalyzer", "bCHXBinaryAnalyzer.ml"),
                 ("canalyzer", "cCHXCAnalyzer.ml"),
-		("parseFile", "cCHXParseFile.ml"),
+                ("parseFile", "cCHXParseFile.ml"),
                 ("classinvariants", "jCHXClassInvariants.ml"),
                 ("translateclass", "jCHXTranslateClass.ml"),
                 ("usertemplate", "jCHXTemplate.ml"),
@@ -194,7 +305,15 @@ runBuild flags = do
                 ("poly", "jCHXClassPoly.ml"),
                 ("pattern", "jCHXCollectPatterns.ml")]
 
-    forM_ exes (\pair -> do
+    let tests = [("xsimplifyTest", "xsimplifyTest.ml"),
+                 ("xconsequenceTest", "xconsequenceTest.ml"),
+                 ("bCHDoublewordTest", "bCHDoublewordTest.ml"),
+                 ("bCHLocationTest", "bCHLocationTest.ml"),
+                 ("bCHImmediateTest", "bCHImmediateTest.ml"),
+                 ("bCHDisassembleThumbInstructionTest", "bCHDisassembleThumbInstructionTest.ml"),
+                 ("bCHDisassembleARMInstructionTest", "bCHDisassembleARMInstructionTest.ml")]
+
+    forM_ (exes ++ tests) (\pair -> do
         let (name, main_file) = pair
         makeExecutable name main_file)
 
@@ -204,7 +323,12 @@ runBuild flags = do
         let mls = filter (\file -> isInfixOf ".ml" file) files
         askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
         -- actual dependencies
-        need ["_bin/" </> name | (name, _) <- exes]
+        need ["_bin/" </> name | (name, _) <- exes ++ tests]
+
+    phony "tests" $ do
+        forM_ tests (\(name, main_file) -> do
+            need ["_bin/" ++ name]
+            cmd_ ("_bin/" ++ name))
     
     phony "bytecodes" $ do
         -- warm ModuleDependencies cache
@@ -212,7 +336,7 @@ runBuild flags = do
         --let mls = filter (\file -> isInfixOf ".ml" file) files
         --askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
         -- actual dependencies
-        need [("_bin/" </> name -<.> "byte") | (name, _) <- exes]
+        need [("_bin/" </> name -<.> "byte") | (name, _) <- exes ++ tests]
     
     let makeDocs dir private = do
         -- warm ModuleDependencies cache
@@ -220,7 +344,7 @@ runBuild flags = do
         let mls = filter (\file -> isInfixOf ".ml" file) files
         askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
         -- actual dependencies
-        let exe_files = ["_build" </> filename | (_, filename) <- exes]
+        let exe_files = ["_build" </> filename | (_, filename) <- exes ++ tests]
         let foldCall accum file = do
             recCall <- implDeps file (Set.toList accum) [] "cmx"
             return $ Set.union accum $ Set.fromList recCall
