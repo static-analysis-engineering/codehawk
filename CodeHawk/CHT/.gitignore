@@ -1,0 +1,9 @@
+# tests generated
+
+CHB_tests/bchlib_tests/bchlib/bCHDoublewordTest
+CHB_tests/bchlib_tests/bchlib/bCHImmediateTest
+CHB_tests/bchlib_tests/bchlib/bCHLocationTest
+CHB_tests/bchlibarm32_tests/bchlibarm32/bCHDisassembleARMInstructionTest
+CHB_tests/bchlibarm32_tests/bchlibarm32/bCHDisassembleThumbInstructionTest
+CH_tests/xprlib_tests/xprlib/xconsequenceTest
+CH_tests/xprlib_tests/xprlib/xsimplifyTest
