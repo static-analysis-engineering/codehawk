@@ -58,6 +58,13 @@ type power_instruction_type_t = | PWR | VLE16 | VLE32
 
 (** Special registers
 
+    Condition Register (CR)
+    The Condition Register (CR) is a 32-bit registers with bits numbered
+    32 (most-significant) to 63 (least-significant). The Condition Register
+    reflects the result of certain operations, and provides a mechanism
+    for testing (and branching).
+    (BookE, pg 45)
+
     Count Register (CTR)
     Bits 32:63 can be used to hold a loop count that can be decremented during
     execution of branch instructions that contain an appropriately encoded BO
@@ -72,11 +79,78 @@ type power_instruction_type_t = | PWR | VLE16 | VLE32
     Branch Conditional to Link Register instruction, and it holds the return
     address after Branch and Link instructions.
     (BookE, pg 48)
- *)
 
+    Machine State Register (MSR)
+    The Machine State Register is a 32-bit register, numbered 32 (msb) to 63
+    (lsb). This register defines the state of the processor (i.e., enabling
+    and disabling of interrupts and debugging exceptions, selection of address
+    space for instruction and data storage access, and specifying whether the
+    processor is in supervisor or user mode).
+    (BookE, pg 39)
+
+    Integer Exception Register (XER)
+    The Integer Exception Register is a 64-bit register. Integer Exception
+    Register bits are set based on the operation of an instruction considered
+    as a whole, not on intermediate results.
+    bit 32: Summary Overflow (SO)
+    bit 33: Overflow (OV)
+    bit 34: Carry (CA)
+    (BookE, pg 54)
+
+    Save/Restore Register 0 (SRR0)
+    Save/Restore Register 0 (SRR0) is a 64-bit register with bits numbered
+    0 (most-significant) to 63 (least-significant). The register is used to
+    save machine state on non-critical interrupts, and to restore machine
+    state when an rfi is executed. On a non-critical interrupt, SRR0 is set
+    to the current or next instruction address. When rfi is executed,
+    instruction execution continues at the the address in SRR0.
+    (BookE, pg 144)
+
+    Save/Restore Register 1 (SRR1)
+    Save/Restore Register 1 (SRR1) is a 32-bit register with bits numbered
+    32 (most-significant) through 63 (least-significant). The register is
+    used to save machine state on non-critical interrupts, and to restore
+    machine state when an rfi is executed. When a non-critical interrupt is
+    taken, the contents of the MSR are placed in SRR1. When rfi is executed,
+    the contents of SRR1 are placed into MSR.
+    (BookE, pg 144)
+
+    Critical Save/Restore Register 0 (CSRR0)
+    Critical Save/Restore Register 0 (CSRR0) is a 64-bit register with bits
+    numbered 0 (most-significant) through 63 (least-significant). The register
+    is used to save machine state on critical interrupts, and to restore
+    machine state when an rfci is executed.
+    (BookE, pg 144)
+
+    Critical Save/Restore Register 1 (CSRR1)
+    Critical Save/Restore Register 1 (CSRR1) is a 32-bit register with bits
+    numbered 32 (least-significant) through 63 (most-significant). The register
+    is used to save machine state on critical interrupts, and to restore
+    machine state when an rfci is executed.
+    (BookE, pg 145)
+
+    Data Exception Address Register (DEAR)
+    The Data Exception Address Register (DEAR) is a 64-bit register with bits
+    numbered 0 (most-significant) through 63 (least-significant). The DEAR
+    contains the address that was referenced by a Load, Store, Cache Management
+    instruction that caused an Alignment, DATA TLB Miss, or Data Storage
+    interrupt.
+    (BookE, pg 145)
+
+    References:
+    BookE: Book E: Enhanced PowerPC Architecture, Version 1.0, May 7 2002, NXP.
+ *)
 type power_special_reg_t =
+  | PowerCR    (* Condition Register *)
   | PowerCTR   (* Count Register *)
+  | PowerMSR   (* Machine Status Register *)
   | PowerLR    (* Link Register *)
+  | PowerXER   (* Integer Exception Register *)
+  | PowerSRR0  (* Save/Restore Register 0 *)
+  | PowerSRR1  (* Save/Restore Register 1 *)
+  | PowerCSRR0 (* Critical Save/Restore Register 0 *)
+  | PowerCSRR1 (* Critical Save/Restore Register 0 *)
+
 
 type power_operand_kind_t =
   | PowerGPReg of int
@@ -129,6 +203,10 @@ type power_opcode_t =
       * power_operand_int  (* destination register *)
       * power_operand_int  (* source operand *)
       * power_operand_int  (* immediate *)
+  | And of
+      power_instruction_type_t
+      * power_operand_int  (* rx: dst/src register *)
+      * power_operand_int  (* ry: src register *)
   | BitGenerateImmediate of
       power_instruction_type_t
       * power_operand_int  (* destination register *)
@@ -143,16 +221,16 @@ type power_opcode_t =
       * power_operand_int  (* immediate *)
   | BranchCountRegister of
       power_instruction_type_t
-      * power_operand_int  (* count register *)
+      * power_operand_int  (* count register (CTR) *)
   | BranchCountRegisterLink of
       power_instruction_type_t
-      * power_operand_int  (* count_register *)
+      * power_operand_int  (* count_register (CTR) *)
   | BranchLinkRegister of
       power_instruction_type_t
-      * power_operand_int  (* link register *)
+      * power_operand_int  (* link register (LR) *)
   | BranchLinkRegisterLink of
       power_instruction_type_t
-      * power_operand_int  (* link register *)
+      * power_operand_int  (* link register (LR) *)
   | CompareImmediate of
       power_instruction_type_t
       * power_operand_int  (* register operand *)
@@ -168,6 +246,13 @@ type power_opcode_t =
   | ExtendZeroHalfword of
       power_instruction_type_t
       * power_operand_int  (* src/dst *)
+  | InstructionSynchronize of
+      power_instruction_type_t
+  | LoadByteZeroUpdate of
+      power_instruction_type_t
+      * power_operand_int  (* rD: destination register *)
+      * power_operand_int  (* rA: memory base address register *)
+      * power_operand_int  (* effective address *)
   | LoadHalfwordZero of
       power_instruction_type_t
       * power_operand_int  (* destination register *)
@@ -177,9 +262,37 @@ type power_opcode_t =
       * bool (* shifted *)
       * power_operand_int  (* destination register *)
       * power_operand_int  (* source operand *)
+  | LoadMultipleVolatileGPRWord of
+      power_instruction_type_t
+      * power_operand_int  (* ra: memory base address register *)
+      * power_operand_int  (* effective address *)
+  | LoadMultipleVolatileSPRWord of
+      power_instruction_type_t
+      * power_operand_int  (* ra: memory base address register *)
+      * power_operand_int  (* CR *)
+      * power_operand_int  (* LR *)
+      * power_operand_int  (* CTR *)
+      * power_operand_int  (* XER *)
+      * power_operand_int  (* effective address *)
+  | LoadMultipleVolatileSRRWord of
+      power_instruction_type_t
+      * power_operand_int  (* ra: memory base address register *)
+      * power_operand_int  (* SRR0 *)
+      * power_operand_int  (* SRR1 *)
+      * power_operand_int  (* effective address *)
+  | LoadMultipleWord of
+      power_instruction_type_t
+      * power_operand_int  (* rd: destination register *)
+      * power_operand_int  (* ra: memory base register *)
+      * power_operand_int  (* effective address *)
   | LoadWordZero of
       power_instruction_type_t
       * power_operand_int  (* destination register *)
+      * power_operand_int  (* effective address *)
+  | LoadWordZeroUpdate of
+      power_instruction_type_t
+      * power_operand_int  (* rd: destination register *)
+      * power_operand_int  (* ra: memory base register *)
       * power_operand_int  (* effective address *)
   | MoveFromAlternateRegister of
       power_instruction_type_t
@@ -204,6 +317,13 @@ type power_opcode_t =
   | NotRegister of
       power_instruction_type_t
       * power_operand_int  (* src/dst register *)
+  | Or of
+      power_instruction_type_t
+      * power_operand_int  (* src/dst register *)
+      * power_operand_int  (* dst register *)
+  | ReturnFromInterrupt of
+      power_instruction_type_t
+      * power_operand_int  (* machine status register (MSR) *)
   | ShiftLeftWordImmediate of
       power_instruction_type_t
       * power_operand_int  (* destination register *)
@@ -214,13 +334,46 @@ type power_opcode_t =
       * power_operand_int  (* destination register *)
       * power_operand_int  (* source register *)
       * power_operand_int  (* imm: shift amount *)
+  | StoreByteUpdate of
+      power_instruction_type_t
+      * power_operand_int  (* rs: source register *)
+      * power_operand_int  (* ra: memory base address register *)
+      * power_operand_int  (* effective address *)
   | StoreHalfword of
       power_instruction_type_t
       * power_operand_int  (* source register *)
       * power_operand_int  (* effective address *)
+  | StoreMultipleWord of
+      power_instruction_type_t
+      * power_operand_int  (* first source register *)
+      * power_operand_int  (* memory base address register *)
+      * power_operand_int  (* effective-address *)
+  | StoreMultipleVolatileGPRWord of
+      power_instruction_type_t
+      * power_operand_int  (* ra: memory base address register *)
+      * power_operand_int  (* effective address *)
+  | StoreMultipleVolatileSPRWord of
+      power_instruction_type_t
+      * power_operand_int  (* ra: memory base address register *)
+      * power_operand_int  (* CR *)
+      * power_operand_int  (* LR *)
+      * power_operand_int  (* CTR *)
+      * power_operand_int  (* XER *)
+      * power_operand_int  (* effective address *)
+  | StoreMultipleVolatileSRRWord of
+      power_instruction_type_t
+      * power_operand_int  (* ra: memory base address register *)
+      * power_operand_int  (* SRR0 *)
+      * power_operand_int  (* SRR1 *)
+      * power_operand_int  (* effective address *)
   | StoreWord of
       power_instruction_type_t
       * power_operand_int  (* source register *)
+      * power_operand_int  (* effective address *)
+  | StoreWordUpdate of
+      power_instruction_type_t
+      * power_operand_int  (* rs: source register *)
+      * power_operand_int  (* ra: memory base address register *)
       * power_operand_int  (* effective address *)
   | Subtract of
       power_instruction_type_t

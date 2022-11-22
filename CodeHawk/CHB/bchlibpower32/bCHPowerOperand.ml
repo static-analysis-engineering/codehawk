@@ -73,8 +73,15 @@ let e64 = e32 * e32
 
 let power_special_reg_to_string (reg: power_special_reg_t) =
   match reg with
+  | PowerCR -> "CR"
   | PowerCTR -> "CTR"
+  | PowerMSR -> "MSR"
   | PowerLR -> "LR"
+  | PowerXER -> "XER"
+  | PowerSRR0 -> "SSR0"
+  | PowerSRR1 -> "SSR1"
+  | PowerCSRR0 -> "CSRR0"
+  | PowerCSRR1 -> "CSRR1"
 
 
 class power_operand_t

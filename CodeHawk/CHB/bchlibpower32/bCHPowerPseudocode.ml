@@ -48,3 +48,5 @@ let oim5 (v: int): int = v + 1
 let rindex (v: int): int = if v < 8 then v else v + 16
 
 let arindex (v: int): int = v + 8
+
+let d8_sign_extend (d8: int) = if d8 >= 128 then d8 - 256 else d8

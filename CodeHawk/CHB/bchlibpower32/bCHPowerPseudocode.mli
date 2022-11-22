@@ -38,7 +38,14 @@ open BCHPowerTypes
 (* 5 bit value with 1 added *)
 val oim5: int -> int
 
+
+(** Return index of primary GPR register *)
 val rindex: int -> int
 
+
+(** Return index of alternate GPR register *)
 val arindex: int -> int
-       
+
+
+(** Return sign extension of 8-bit value *)
+val d8_sign_extend: int -> int
