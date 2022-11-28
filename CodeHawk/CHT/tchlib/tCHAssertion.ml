@@ -94,3 +94,14 @@ let equal_string = make_equal (=) U.string_of_string
 let raises ?(msg="") (f: unit -> 'a) =
   let exn = try begin ignore (f ()); false end with _ -> true in
   if not exn then fail "any exception" "no exception" msg
+
+
+let assertionfailure ?(msg="") (f: unit -> 'a) =
+  let exn =
+    try
+      begin ignore (f ()); false end
+    with
+    | Assert_failure _ -> true
+    | _ -> false in
+  if not exn then
+    fail "failed assertion" "no failed assertion" msg

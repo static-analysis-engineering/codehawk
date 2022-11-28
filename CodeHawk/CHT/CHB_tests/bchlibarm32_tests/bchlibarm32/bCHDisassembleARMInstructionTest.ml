@@ -61,7 +61,7 @@ module TF = BCHDisassembleARMInstruction
 
 
 let testname = "bCHDisassembleARMInstructionTest"
-let lastupdated = "2022-11-16"
+let lastupdated = "2022-11-28"
 
 
 let make_stream ?(len=0) (s: string) =
@@ -178,7 +178,9 @@ let arm_pc_relative () =
 
 let () =
   begin
+    TS.new_testfile testname lastupdated;
     arm_basic ();
-    arm_pc_relative ()
+    arm_pc_relative ();
+    TS.exit_file ()
   end
                 

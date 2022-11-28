@@ -5,5 +5,6 @@ CHB_tests/bchlib_tests/bchlib/bCHImmediateTest
 CHB_tests/bchlib_tests/bchlib/bCHLocationTest
 CHB_tests/bchlibarm32_tests/bchlibarm32/bCHDisassembleARMInstructionTest
 CHB_tests/bchlibarm32_tests/bchlibarm32/bCHDisassembleThumbInstructionTest
+CHB_tests/bchlibpower32_tests/bchlibpower32/bCHDisassembleVLEInstructionTest
 CH_tests/xprlib_tests/xprlib/xconsequenceTest
 CH_tests/xprlib_tests/xprlib/xsimplifyTest

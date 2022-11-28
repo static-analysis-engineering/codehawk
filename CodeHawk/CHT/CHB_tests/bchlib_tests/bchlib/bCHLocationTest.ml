@@ -53,7 +53,7 @@ module L = BCHLocation
 
 
 let testname = "bCHLocationTest"
-let lastupdated = "2022-11-14"
+let lastupdated = "2022-11-28"
 
 
 let make_dw = D.string_to_doubleword
@@ -98,9 +98,9 @@ let cloc =
         ctxt_returnsite = make_dw iaddr22})
 
 
-let () =
+let loc_basic () =
   begin
-    TS.new_testsuite testname lastupdated;
+    TS.new_testsuite (testname ^ "_basic") lastupdated;
 
     TS.add_simple_test
       (fun () -> A.equal_string baseloc#ci (c [iaddr11]));
@@ -138,6 +138,13 @@ let () =
                 ctxt_returnsite = make_dw iaddr32}) in
         A.equal_string s2 (fc [iaddr31; iaddr21; iaddr11]));
 
-    TS.launch_tests ();
-    exit 0
+    TS.launch_tests ()
+  end
+
+
+let () =
+  begin
+    TS.new_testfile testname lastupdated;
+    loc_basic ();
+    TS.exit_file ()
   end
