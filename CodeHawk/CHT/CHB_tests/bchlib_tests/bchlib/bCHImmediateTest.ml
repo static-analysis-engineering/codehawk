@@ -43,12 +43,12 @@ let unsigned_imm (width: int) (value: int) =
 
 
 let testname = "bCHImmediateTest"
-let lastupdated = "2022-11-14"
+let lastupdated = "2022-11-28"
 
 
-let () =
+let imm_basic () =
   begin
-    TS.new_testsuite testname lastupdated;
+    TS.new_testsuite (testname ^ "_basic") lastupdated;
 
     TS.add_simple_test
       (fun () -> A.equal_string "0x1" (I.imm1#sign_extend 4)#to_hex_string);
@@ -79,5 +79,12 @@ let () =
           ((signed_imm 1 (-1))#sign_extend 4)#to_unsigned#to_hex_string);
 
     TS.launch_tests ();
-    exit 0
+  end
+
+
+let () =
+  begin
+    TS.new_testfile testname lastupdated;
+    imm_basic ();
+    TS.exit_file ()
   end

@@ -40,10 +40,10 @@ module X = Xprt
 
 
 let testname = "xconsequenceTest"
-let lastupdated = "2022-11-14"
+let lastupdated = "2022-11-28"
 
 
-let () =
+let basic () =
   begin
 
     TS.new_testsuite testname lastupdated;
@@ -92,6 +92,13 @@ let () =
         let x2 = XOp (XPlus, [xfourpzm; XG.xone]) in
         XA.implies x1 x2 (C.xfimplies x1 x2));
     
-    TS.launch_tests ();
-    exit 0
+    TS.launch_tests ()
+  end
+
+
+let () =
+  begin
+    TS.new_testfile testname lastupdated;
+    basic ();
+    TS.exit_file ()
   end

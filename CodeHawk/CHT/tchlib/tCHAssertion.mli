@@ -98,5 +98,9 @@ val make_equal_list:
 
 val equal_string: ?msg:string -> string -> string -> unit
 
+
 (* [raise ~msg:m f] raise [Failed] if [f ()] evaluates without raising an exception *)
 val raises: ?msg:string -> (unit -> 'a) -> unit
+
+
+val assertionfailure: ?msg:string -> (unit -> 'a) -> unit

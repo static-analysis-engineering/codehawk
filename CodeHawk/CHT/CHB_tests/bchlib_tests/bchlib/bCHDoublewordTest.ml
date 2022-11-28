@@ -28,6 +28,10 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHPretty
+open CHNumerical
+
 (* tchblib *)
 open TCHSpecification
 
@@ -45,8 +49,7 @@ module D = BCHDoubleword
 
 
 let testname = "bCHDoublewordTest"
-let lastupdated = "2022-11-14"
-
+let lastupdated = "2022-11-28"
 
 let equal_dw = BA.equal_doubleword
 
@@ -54,65 +57,116 @@ let equal_dw = BA.equal_doubleword
 let wordmaxm1 = D.string_to_doubleword "0xfffffffe"
 let word1000 = D.string_to_doubleword "0x0000100"
 
+let numzero = mkNumerical 0
+let numnegone = mkNumerical (-1)
 
-let () =
+
+let doubleword_basic () =
   begin
 
-    TS.new_testsuite testname lastupdated;
+    TS.new_testsuite (testname ^ "_basic") lastupdated;
 
     TS.add_simple_test
+      ~title:"zero"
       (fun () ->
         A.equal_string "0x0" (D.string_to_doubleword "0x0")#to_hex_string);
 
+    TS.add_simple_test
+      ~title:"num-zero"
+      (fun () ->
+        A.equal_string "0x0" (D.numerical_to_doubleword numzero)#to_hex_string);
+
+    TS.add_simple_test
+      ~title:"num-neg-one"
+      (fun () ->
+        A.equal_string
+          "0xffffffff" (D.numerical_to_doubleword numnegone)#to_hex_string);
+
+    TS.add_simple_test
+      ~title:"neg-one-signed"
+      (fun () ->
+        A.equal_string "-0x1" (D.numerical_to_signed_hex_string numnegone));
+
     TS.add_random_test
+      ~title:"random"
       (G.make_int 0 BA.e32) (fun i -> (D.int_to_doubleword i)#to_hex_string)
       [S.always => BS.is_int_doublewordstring];
 
     TS.add_simple_test
+      ~title:"add-zero"
       (fun () -> equal_dw D.wordzero (D.wordzero#add D.wordzero));
 
     TS.add_simple_test
+      ~title:"add-max"
       (fun () -> equal_dw D.wordmax (D.wordzero#add D.wordmax));
 
     TS.add_simple_test
+      ~title:"wrap-max"
       (fun () ->
         equal_dw
           ~msg:"addition wraps around" wordmaxm1 (D.wordmax#add D.wordmax));
 
     TS.add_simple_test
+      ~title:"wrap-zero"
       (fun () ->
         let dw31 = D.int_to_doubleword BA.e31 in
         equal_dw ~msg:"addition wraps around" D.wordzero (dw31#add dw31));
 
     TS.add_random_test
+      ~title:"msb"
       ~classifier:BG.msb_pair_classifier
       BG.doubleword_pair
       (fun (dw1, dw2) -> dw1#add dw2)
       [S.always => BS.is_sum_doubleword];
 
     TS.add_simple_test
+      ~title:"subtract-zero"
       (fun () -> equal_dw D.wordzero (D.wordzero#subtract D.wordzero));
 
     TS.add_simple_test
+      ~title:"subtract-max-zero"
       (fun () -> equal_dw D.wordmax (D.wordmax#subtract D.wordzero));
 
     TS.add_simple_test
+      ~title:"subtract-max-max"
       (fun () -> equal_dw D.wordzero (D.wordmax#subtract D.wordmax));
 
     TS.add_simple_test
+      ~title:"xor-max"
       (fun () -> equal_dw D.wordzero (D.wordmax#xor D.wordmax));
 
     TS.add_simple_test
+      ~title:"xor-zero-max"
       (fun () -> equal_dw D.wordmax (D.wordzero#xor D.wordmax));
 
-    TS.add_simple_test
-      (fun () ->
-        try
-          ignore (D.wordzero#subtract D.wordmax);
-          A.fail "expected" "exception" "subtraction does not wrap around"
-        with
-        | Invalid_argument _ -> ());
+    TS.launch_tests ()
+  end
 
-    TS.launch_tests ();
-    exit 0
+
+let doubleword_assertions () =
+  begin
+    TS.new_testsuite (testname ^ "_assertions") lastupdated;
+
+    TS.add_simple_test
+      ~title:"hex-too-large"
+      (fun () ->
+        A.assertionfailure ~msg:"hex string is too large"
+          (fun () -> ignore (D.string_to_doubleword "0xfffffffff")));
+
+    TS.add_simple_test
+      ~title:"subtract-no-wrap"
+      (fun () ->
+        A.raises ~msg:"subtraction does not wrap around"
+          (fun () -> ignore (D.wordzero#subtract D.wordmax)));
+
+    TS.launch_tests ()
+  end
+
+
+let () =
+  begin
+    TS.new_testfile testname lastupdated;
+    doubleword_basic ();
+    doubleword_assertions ();
+    TS.exit_file ()
   end

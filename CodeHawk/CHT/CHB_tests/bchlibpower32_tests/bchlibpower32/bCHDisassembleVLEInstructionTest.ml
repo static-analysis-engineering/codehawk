@@ -61,7 +61,7 @@ module TF = BCHDisassembleVLEInstruction
 
 
 let testname = "bCHDisassembleVLEInstructionTest"
-let lastupdated = "2022-11-21"
+let lastupdated = "2022-11-28"
 
 
 let make_stream ?(len=0) (s: string) =
@@ -158,6 +158,8 @@ let vle32_basic () =
 
 let () =
   begin
+    TS.new_testfile testname lastupdated;
     vle16_basic ();
-    vle32_basic ()
+    vle32_basic ();
+    TS.exit_file ()
   end

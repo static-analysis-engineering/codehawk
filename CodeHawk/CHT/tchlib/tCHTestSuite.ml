@@ -176,6 +176,10 @@ let testcounter = ref 0
 let testsuitename = ref "testsuite"
 let testsuitedate = ref "2022-11-13"
 
+let fileresults = H.create 3
+let testfilename = ref "testfile"
+let testfiledate = ref "2022-11-28"
+
 
 let get_title () =
   begin
@@ -219,6 +223,49 @@ let add_random_test
       f
       spec in
   H.add tests name (get_seqnumber (), test)
+
+
+let new_testfile (name: string) (date: string) =
+  begin
+    testfilename := name;
+    testfiledate := date;
+    H.clear fileresults
+  end
+
+
+let add_results (tsname: string) (results: int * int * int * int) =
+  H.add fileresults tsname results
+
+
+let report_results () =
+  let (passed, failed, uncaught, total) =
+    H.fold (fun _ (p, f, u, t) (tp, tf, tu, tt) ->
+      (tp + p, tf + f, tu + u, tt + t)) fileresults (0, 0, 0, 0) in
+  print_totals !testfilename passed failed uncaught total
+
+
+let exit_file () =
+  let (passed, failed, uncaught, total) =
+    H.fold (fun _ (p, f, u, t) (tp, tf, tu, tt) ->
+      (tp + p, tf + f, tu + u, tt + t)) fileresults (0, 0, 0, 0) in
+  begin
+    print_totals !testfilename passed failed uncaught total;
+    if failed + uncaught > 0 then
+    begin
+      pr_debug [
+          STR "Encountered ";
+          INT (failed +  uncaught);
+          STR " failure(s)";
+          NL;
+          NL];
+      exit 1
+    end
+  else
+    begin
+      pr_debug [STR "All tests passed!"; NL; NL];
+      exit 0
+    end
+  end
 
 
 let new_testsuite (name: string) (date: string) =
@@ -275,15 +322,16 @@ let run_tests (names: string list) =
               end);
           print_result namelen index name result
         end) names;
-    print_totals !testsuitename !passed !failed !uncaught !total
+    print_totals !testsuitename !passed !failed !uncaught !total;
+    add_results !testsuitename (!passed, !failed, !uncaught, !total)
   end
 
 
 let launch_tests () =
   let lst = ref [] in
   let _ = H.iter (fun name (index, _) -> lst := (index, name) :: !lst) tests in
-  let lst = List.map snd (List.sort (fun (i1, _) (i2, _) -> Stdlib.compare i1 i2) !lst) in
+  let lst =
+    List.map snd (List.sort (fun (i1, _) (i2, _) -> Stdlib.compare i1 i2) !lst) in
   begin
     run_tests lst
   end
-                          

@@ -46,6 +46,10 @@ open TCHTestApi
     The framework has been adapted from Kaputt (https://kaputt.x9c.fr/index.html).
  *)
 
+(** [new_testfile name date] sets up a new test file with the given name and
+    date to collect the results of all test suites in the file.*)
+val new_testfile: string -> string -> unit
+
 
 (** [new_testsuite name date] sets up a new test suite with the given name and
     date and an empty set of tests *)
@@ -101,3 +105,9 @@ val add_random_test:
 
 
 val launch_tests: unit -> unit
+
+
+val report_results: unit -> unit
+
+
+val exit_file: unit -> unit
