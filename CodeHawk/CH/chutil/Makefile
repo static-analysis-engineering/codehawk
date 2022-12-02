@@ -11,6 +11,7 @@ CAMLLINK := ocamlopt
 CAMLDOC := ocamldoc
 
 MLIS := \
+	cHTraceResult \
 	cHPrettyUtil \
 	cHSumTypeSerializer \
 	cHTiming \
@@ -40,6 +41,7 @@ MLIS := \
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
+	cHTraceResult \
 	cHPrettyUtil \
 	cHSumTypeSerializer \
 	cHTiming \
