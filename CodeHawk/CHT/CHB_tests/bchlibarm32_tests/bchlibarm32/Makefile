@@ -16,6 +16,7 @@ ELFLIB = $(CODEHAWK)/CHB/bchlibelf
 ARMLIB = $(CODEHAWK)/CHB/bchlibarm32
 TESTLIB = $(CHT)/tchlib
 BCHLIBTESTLIB = $(CHT)/CHB_tests/bchlib_tests/tbchlib
+BCHARMTESTLIB = $(CHT)/CHB_tests/bchlibarm32_tests/tbchlibarm32
 
 CAMLDOC := ocamldoc
 
@@ -31,6 +32,8 @@ CAMLC := ocamlopt  -I str -I cmi -I cmx \
 	-I $(ARMLIB)/cmi \
 	-I $(TESTLIB)/cmi \
 	-I $(BCHLIBTESTLIB)/cmi \
+	-I $(BCHARMTESTLIB)/cmi \
+
 
 CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	-I $(ZARITHLIB) \
@@ -49,6 +52,7 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(ARMLIB)/bchlibarm32.cmxa \
 	$(TESTLIB)/tchlib.cmxa \
 	$(BCHLIBTESTLIB)/tbchlib.cmxa \
+	$(BCHARMTESTLIB)/tbchlibarm32.cmxa \
 
 MLIS := \
 
@@ -72,10 +76,13 @@ bCHDisassembleARMInstructionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTI
 bCHDisassembleThumbInstructionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHDisassembleThumbInstructionTest.cmi cmx/bCHDisassembleThumbInstructionTest.cmx
 	$(CAMLLINK) -o bCHDisassembleThumbInstructionTest $(OBJECTS) cmx/bCHDisassembleThumbInstructionTest.cmx
 
+bCHARMJumptableTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHARMJumptableTest.cmi cmx/bCHARMJumptableTest.cmx
+	$(CAMLLINK) -o bCHARMJumptableTest $(OBJECTS) cmx/bCHARMJumptableTest.cmx
 
-run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest
+run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHARMJumptableTest
 	./bCHDisassembleARMInstructionTest
 	./bCHDisassembleThumbInstructionTest
+	./bCHARMJumptableTest
 
 cmi/%.cmi: %.mli
 	$(CAMLC) -o $@ -c -opaque $<
@@ -98,4 +105,6 @@ clean:
 	rm -f *.mli~
 	rm -f Makefile~
 	rm -f bCHDisassembleThumbInstructionTest
+	rm -f bCHDisassembleARMInstructionTest
+	rm -f bCHARMJumptableTest
 	rm -rf doc
