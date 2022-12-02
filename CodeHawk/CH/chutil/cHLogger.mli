@@ -32,6 +32,9 @@
 (* chlib *)
 open CHPretty
 
+(* chutil *)
+open CHTraceResult
+
 
 val activate_diagnostics: unit -> unit
 val deactivate_diagnostics: unit -> unit
@@ -49,10 +52,63 @@ class type logger_int =
   end
 
 
+(** Create a new logger object.*)
 val mk_logger: unit -> logger_int
 
 
+(** Default logger used in all analyzers.*)
 val chlog: logger_int
+
+
+(** Default error logger used in all analyzers.*)
 val ch_error_log: logger_int
+
+
+(** Optional logger for information messages.*)
 val ch_info_log: logger_int
+
+
+(** Logger for diagnostic messages; can be activated/deactivated with
+    [activate_diagnostics] and [deactivate_diagnostics] respectively;
+    [collect_diagnostics] reports it diagnostic logging is active.*)
 val ch_diagnostics_log: logger_int
+
+
+(** [log_traceresult logger tag f r] is [f v] if [r] is [Ok v] and
+    enters the concatenation of messages in [e] in [logger]
+    under [tag] if [r] is [Error e].*)
+val log_traceresult:
+  logger_int -> string -> ('a -> unit) -> 'a traceresult -> unit
+
+
+(** [log_traceresult_list logger tag f r] is [f v] if [r] is [Ok v]
+    and enters the concatenation of messages in [e] in [logger] under
+    [tag] and returns [[]] if [r] is [Error e].*)
+val log_traceresult_list:
+  logger_int -> string -> ('a -> 'b list) -> 'a traceresult -> 'b list
+
+
+(** [log_traceresult logger tag f r1 r2] is [f v1 v2] if [r1] and
+    [r2] are [Ok v1] and [Ok v2], respectively. If [r1] or [r2] is
+    [Error e] messages in [e] are concatenated and entered in [logger]
+    under [tag].*)
+val log_traceresult2:
+  logger_int
+  -> string
+  -> ('a -> 'b -> unit)
+  -> 'a traceresult
+  -> 'b traceresult
+  -> unit
+
+
+(** [log_traceresult2_list logger tag f r1 r2] is [f v1 v2] if [r1] and
+    [r2] are [Ok v1] and [Ok v2], respectively. If [r1] or [r2] is
+    [Error e] messages in [e] are concatenated and entered in [logger]
+    under [tag], and [[]] is returned.*)
+val log_traceresult2_list:
+  logger_int
+  -> string
+  -> ('a -> 'b -> 'c list)
+  -> 'a traceresult
+  -> 'b traceresult
+  -> 'c list

@@ -46,6 +46,10 @@
 (* chlib *)
 open CHPretty
 
+(* chutil *)
+open CHTraceResult
+
+
 module H = Hashtbl
 
 let diagnostics = ref false
@@ -137,7 +141,7 @@ object (self)
           let ppl = ref [] in
           let _ =
             List.iter
-              (fun p -> ppl := (LBLOCK [ STR "     "; p; NL]) :: !ppl) entry in
+              (fun p -> ppl := (LBLOCK [STR "     "; p; NL]) :: !ppl) entry in
           pp :=
             (LBLOCK [
                  NL;
@@ -165,3 +169,59 @@ let chlog = new logger_t
 let ch_info_log = new logger_t
 let ch_error_log = new logger_t
 let ch_diagnostics_log = new logger_t
+
+
+let log_traceresult
+      (logger: logger_int) (tag: string) (f:('a -> unit)) (r: 'a traceresult) =
+  match r with
+  | Ok v -> f v
+  | Error lst ->
+     let msg = String.concat "; " lst in
+     logger#add tag (STR msg)
+
+
+let log_traceresult_list
+      (logger: logger_int)
+      (tag: string)
+      (f: ('a -> 'b list))
+      (r: 'a traceresult) =
+  match r with
+  | Ok v -> f v
+  | Error lst ->
+     let msg = String.concat "; " lst in
+     begin
+       logger#add tag (STR msg);
+       []
+     end
+
+
+let log_traceresult2
+      (logger: logger_int)
+      (tag: string)
+      (f: ('a -> 'b -> unit))
+      (r1: 'a traceresult)
+      (r2: 'b traceresult) =
+  let do_log (l: string list) = logger#add tag (STR (String.concat "; " l)) in
+  match (r1, r2) with
+  | (Ok v1, Ok v2) -> f v1 v2
+  | (Ok v1, Error e2) -> do_log e2
+  | (Error e1, Ok v2) -> do_log e1
+  | (Error e1, Error e2) -> do_log (e1 @ e2)
+
+
+let log_traceresult2_list
+      (logger: logger_int)
+      (tag: string)
+      (f: ('a -> 'b -> 'c list))
+      (r1: 'a traceresult)
+      (r2: 'b traceresult): 'c list =
+  let do_log (l: string list) =
+    begin
+      logger#add tag (STR (String.concat "; " l));
+      []
+    end in
+  match (r1, r2) with
+  | (Ok v1, Ok v2) -> f v1 v2
+  | (Ok v1, Error e2) -> do_log e2
+  | (Error e1, Ok v2) -> do_log e1
+  | (Error e1, Error e2) -> do_log (e1 @ e2)
