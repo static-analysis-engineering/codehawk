@@ -61,7 +61,7 @@ module TF = BCHDisassembleThumbInstruction
 
 
 let testname = "bCHDisassembleThumbInstructionTest"
-let lastupdated = "2022-11-28"
+let lastupdated = "2022-12-02"
 
 
 let two_byte_instr_opcode_failures = [
@@ -167,7 +167,7 @@ let thumb_2_pc_relative () =
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
             let iaddr = D.string_to_doubleword iaddr in
-            let opcode = TF.parse_thumb_opcode ch base iaddr instrbytes in
+            let opcode = TF.disassemble_thumb_instruction ch iaddr instrbytes in
             let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
@@ -257,7 +257,7 @@ let thumb_4_pc_relative () =
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
             let iaddr = D.string_to_doubleword iaddr in
-            let opcode = TF.parse_thumb_opcode ch base iaddr instrbytes in
+            let opcode = TF.disassemble_thumb_instruction ch iaddr instrbytes in
             let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
@@ -275,5 +275,4 @@ let () =
     TS.exit_file ()
   end
 
-        
   

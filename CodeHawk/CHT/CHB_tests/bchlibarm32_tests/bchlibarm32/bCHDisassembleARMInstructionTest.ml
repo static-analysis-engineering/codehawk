@@ -61,7 +61,7 @@ module TF = BCHDisassembleARMInstruction
 
 
 let testname = "bCHDisassembleARMInstructionTest"
-let lastupdated = "2022-11-28"
+let lastupdated = "2022-12-02"
 
 
 let make_stream ?(len=0) (s: string) =
@@ -168,7 +168,7 @@ let arm_pc_relative () =
             let ch = make_stream bytes in
             let instrbytes = ch#read_doubleword in
             let iaddr = D.string_to_doubleword iaddr in
-            let opcode = TF.parse_opcode ch base iaddr instrbytes in
+            let opcode = TF.disassemble_arm_instruction ch iaddr instrbytes in
             let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 

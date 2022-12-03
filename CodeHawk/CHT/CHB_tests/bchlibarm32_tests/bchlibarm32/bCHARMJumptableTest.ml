@@ -85,8 +85,8 @@ let add_instruction
       (bytes: string) =
   let instr = make_arm_assembly_instruction iaddr false opcode bytes in
   begin
-    (* pr_debug [STR (ARMU.string_of_opcode opcode); NL]; *)
-    !ARMIS.arm_assembly_instructions#set pos instr;
+    pr_debug [iaddr#toPretty; STR "  "; STR (ARMU.string_of_opcode opcode); NL];
+    ARMIS.set_arm_assembly_instruction instr;
     instr
   end
 
@@ -102,7 +102,7 @@ let jt_setup hexbase bytes: arm_jumptable_int TR.traceresult =
       let prevpos = ch#pos in
       let iaddr = base#add_int ch#pos in
       let instrbytes = ch#read_ui16 in
-      let opcode = DT.disassemble_thumb_instruction ch base instrbytes in
+      let opcode = DT.disassemble_thumb_instruction ch iaddr instrbytes in
       let currentpos = ch#pos in
       let instrlen = currentpos - prevpos in
       let instrbytes = String.sub bytestring prevpos instrlen in
@@ -167,7 +167,8 @@ let tb_table_branch () =
           (fun () ->
             match jtresult with
             | Ok jt ->
-               ARMA.equal_jumptable_targets jt expectedtargets
+               ARMA.equal_jumptable_targets
+                 ~msg:"" ~expected:expectedtargets ~received:jt
             | Error e ->
                A.fail_msg (String.concat "; " e));
 
@@ -176,7 +177,7 @@ let tb_table_branch () =
           (fun () ->
             match jtresult with
             | Ok jt ->
-               A.equal_string jt#default_target#to_hex_string expecteddefault
+               A.equal_string expecteddefault jt#default_target#to_hex_string
             | Error e ->
                A.fail_msg (String.concat "; " e))
       ) tests;
@@ -204,7 +205,8 @@ let ldr_table_branch () =
           (fun () ->
             match jtresult with
             | Ok jt ->
-               ARMA.equal_jumptable_targets jt expectedtargets
+               ARMA.equal_jumptable_targets
+                 ~msg:"" ~expected:expectedtargets ~received:jt
             | Error e ->
                A.fail_msg (String.concat "; " e));
 
@@ -213,7 +215,7 @@ let ldr_table_branch () =
           (fun () ->
             match jtresult with
             | Ok jt ->
-               A.equal_string jt#default_target#to_hex_string expecteddefault
+               A.equal_string expecteddefault jt#default_target#to_hex_string
             | Error e ->
                A.fail_msg (String.concat "; " e))
       ) tests;
@@ -255,7 +257,8 @@ let bx_table_branch () =
           (fun () ->
             match jtresult with
             | Ok jt ->
-               ARMA.equal_jumptable_targets jt expectedtargets
+               ARMA.equal_jumptable_targets
+                 ~msg:"" ~expected:expectedtargets ~received:jt
             | Error e ->
                A.fail_msg (String.concat "; " e));
 
@@ -264,7 +267,7 @@ let bx_table_branch () =
           (fun () ->
             match jtresult with
             | Ok jt ->
-               A.equal_string jt#default_target#to_hex_string expecteddefault
+               A.equal_string expecteddefault jt#default_target#to_hex_string
             | Error e ->
                A.fail_msg (String.concat "; " e))
       ) tests;
