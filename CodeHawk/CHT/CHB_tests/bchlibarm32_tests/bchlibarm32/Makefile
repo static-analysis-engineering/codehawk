@@ -62,7 +62,10 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest
+all: make_dirs \
+	bCHDisassembleARMInstructionTest \
+	bCHDisassembleThumbInstructionTest \
+	bCHARMJumptableTest
 
 doc: 
 

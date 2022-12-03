@@ -37,6 +37,6 @@ open BCHARMTypes
    
 val equal_jumptable_targets:
   ?msg:string
-  -> arm_jumptable_int
-  -> (string * int list) list
+  -> expected:(string * int list) list
+  -> received:arm_jumptable_int
   -> unit

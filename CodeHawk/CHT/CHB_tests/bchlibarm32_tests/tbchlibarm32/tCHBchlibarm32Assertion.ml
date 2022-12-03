@@ -39,8 +39,8 @@ module A = TCHAssertion
    
 let equal_jumptable_targets
       ?(msg="")
-      (jt: arm_jumptable_int)
-      (indexedtgts: (string * int list) list) =
+      ~(expected: (string * int list) list)
+      ~(received: arm_jumptable_int) =
     A.make_equal_list
       (fun (tgt1, ixs1) (tgt2, ixs2) ->
              (tgt1 = tgt2)
@@ -52,5 +52,5 @@ let equal_jumptable_targets
          ^ (String.concat ", " (List.map string_of_int ixs))
          ^ "]"))
       ~msg
-      indexedtgts      
-      (List.map (fun (dw, ixs) -> (dw#to_hex_string, ixs)) jt#indexed_targets)
+      expected
+      (List.map (fun (dw, ixs) -> (dw#to_hex_string, ixs)) received#indexed_targets)
