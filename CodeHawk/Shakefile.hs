@@ -172,7 +172,15 @@ runBuild flags = do
                             "CHJ/jchpoly",
                             "CHJ/jchcost",
                             "CHJ/jchfeatures",
-                            "CHJ/jchsys"
+                            "CHJ/jchsys",
+                            "CHT/tchlib",
+                            "CHT/CH_tests/xprlib_tests/txprlib",
+                            "CHT/CH_tests/xprlib_tests/txxprlib",
+                            "CHT/CHB_tests/bchlib_tests/tbchlib",
+                            "CHT/CHB_tests/bchlib_tests/txbchlib",
+                            "CHT/CHB_tests/bchlibarm32_tests/tbchlibarm32",
+                            "CHT/CHB_tests/bchlibarm32_tests/txbchlibarm32",
+                            "CHT/CHB_tests/bchlibpower32_tests/txbchlibpower32"
                          ]
     forM_ docDirectories documentDir
 
