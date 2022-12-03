@@ -84,5 +84,5 @@ clean:
 	rm -f *.mli~
 	rm -f Makefile~ 
 	rm -f xsimplifyTest
-	rm -r xconsequenceTest
+	rm -f xconsequenceTest
 	rm -rf doc
