@@ -32,6 +32,9 @@ open CHPretty
 open CHLanguage
 open CHNumericalConstraints
 
+(* chutil *)
+open CHTraceResult
+
 (* bchlib *)
 open BCHLibTypes
 open BCHUtilities
@@ -50,6 +53,16 @@ exception Invalid_input of string
 
 (* raised when control flow is found to be altered *)
 exception Request_function_retracing
+
+
+let fail_traceresult (p: pretty_t) (r: 'a traceresult): 'a =
+  match r with
+  | Ok v -> v
+  | Error e ->
+     let msg =
+       LBLOCK [p; STR "; trace: ["; STR (String.concat "; " e); STR "]"] in
+     raise (BCH_failure msg)
+
 
 let eflags_to_string_table = H.create 6
 

@@ -2071,6 +2071,10 @@ let get_floc (loc:location_int) =
   new floc_t (get_function_info loc#f) loc
 
 
+let get_floc_by_address (faddr: doubleword_int) (iaddr: doubleword_int) =
+  get_floc (make_location {loc_faddr = faddr; loc_iaddr = iaddr})
+
+
 let get_i_floc (floc:floc_int) (iaddr:doubleword_int) =
   let loc = make_i_location floc#l iaddr in
   new floc_t (get_function_info floc#fa) loc

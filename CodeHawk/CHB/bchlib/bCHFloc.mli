@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,12 +30,32 @@
 (* bchlib *)
 open BCHLibTypes
 
+
+(** A [floc] represents a function location.
+
+    It can be used to access various properties about that location, such as
+    invariants, call target and call arguments (if the instruction at the location
+    is a call instruction), branch target (if the instruction at the location is a
+    branch instruction), branch condition (in case of a conditional branch), etc.
+ *)
+
+
+(** [get_floc loc] returns a [floc] object at the location loc, that can be
+    used to both retrieve and set properties of the instruction at that location *)
 val get_floc : location_int -> floc_int
 
-(* same function, same context, different instruction *)
+
+(** [get_floc_by_address faddr iaddr] returns a [floc] object for the context-free
+    instruction address [iaddr] in the function with address [faddr] *)
+val get_floc_by_address: doubleword_int -> doubleword_int -> floc_int
+
+
+
+(** [get_i_floc floc iaddr] returns a [floc] object for the same function/context
+    as [floc], but for the (potentially) different instruction address [iaddr] *)
 val get_i_floc:
-  floc_int             (* original floc *)
-  -> doubleword_int    (* new instruction address  *)
-  -> floc_int          (* floc for same function/context with new instruction address *) 
+  floc_int
+  -> doubleword_int
+  -> floc_int
 
 

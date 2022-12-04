@@ -54,7 +54,10 @@ let e32  = e16 * e16
 let ffff = e16 - 1
 let ffff_ffff = e32 - 1
 
+let bige31 = B.big_int_of_int e31
+let bige32 = B.big_int_of_int e32
 
+let nume31 = mkNumerical e31
 let nume32 = mkNumerical e32
 
 
@@ -94,9 +97,9 @@ let get_bytes v n =
 let dw_index_to_pretty (index:dw_index_t) = INT index
 
 
-(** doubleword_t ---------------------------------------------------------------
-    32-bit word constructed from an unsigned 64-bit integer (immutable)
-    ---------------------------------------------------------------------------- *)
+(* doubleword_t ---------------------------------------------------------------
+   32-bit word constructed from an unsigned 64-bit integer (immutable)
+   ---------------------------------------------------------------------------- *)
 class doubleword_t (n:int):doubleword_int =
 object (self:'a)
 
@@ -401,65 +404,76 @@ let wordnegone = wordmax
 let wordnegtwo = new doubleword_t (e32 - 2)
 
 
-let create_doubleword (n:int) =
-  let sanitized_n = 
-    if n >= 0 && n < e32 then n
-    else if abs n <= e31 then n + e32
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "create_doubleword: ";
-                INT n;
-                STR " cannot be represented as a 32 bit value"])) in
-  new doubleword_t sanitized_n
+let create_doubleword (n: int): doubleword_int =
+  if n >= 0 && n < e32 then
+    new doubleword_t n
+  else if abs n <= e31 then
+    new doubleword_t (n + e32)
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [
+              STR "create_doubleword: ";
+              INT n;
+              STR " cannot be represented as a 32 bit value"]))
 
 
-(* create a doubleword from two 16-bit words, low and high resp *)
-let make_doubleword (l:int) (h:int) = 
-  try
-    create_doubleword ((h * e16) + l)
-  with
-  | BCH_failure p ->
-     raise
-       (BCH_failure
-          (LBLOCK [
-               STR "make_doubleword with low: ";
-               INT l;
-               STR " and high: ";
-               INT h; STR " (";
-               p;
-               STR ")"]))
+let assert_make_doubleword (low: int) (high: int) =
+  assert (
+      let cond1 = (0 <= low && low < e16) in
+      let cond2 = (0 <= high && high < e16) in
+      let cond = cond1 && cond2 in
+      begin
+        (if not cond then
+           pr_debug [STR "make_doubleword: "; INT low; STR ", "; INT high; NL]);
+        cond
+      end)
 
 
-(* return the doubleword associated with a hash index value *)
-let index_to_doubleword (index:dw_index_t) = 
-  try
-    create_doubleword index
-  with
-  | BCH_failure p ->
-     raise
-       (BCH_failure
-          (LBLOCK [STR "index_to_doubleword: "; p]))
+let make_doubleword (l: int) (h: dw_index_t) =
+  let _ = assert_make_doubleword l h in
+  create_doubleword ((h * e16) + l)
 
 
-(* create a doubleword from an integer *)
-let int_to_doubleword i = 
-  try
-    create_doubleword i
-  with
-  | BCH_failure p ->
-     raise
-       (BCH_failure
-          (LBLOCK [
-               STR "int_to_doubleword: ";
-               INT i;
-               STR " (";
-               p;
-               STR ")"]))
+let assert_index_to_doubleword ?(msg="index_to_doubleword") (n: int) =
+  assert (
+      let cond = (abs n < e31) || (n >= 0 && n < e32) in
+      begin
+        (if not cond then pr_debug [STR msg; STR ": "; INT n; NL]);
+        cond
+      end)
 
 
-let align_doubleword (dw:doubleword_int) (alignment:int) =
+let index_to_doubleword (index: dw_index_t) =
+  let _ = assert_index_to_doubleword index in
+  create_doubleword index
+
+
+let assert_int_to_doubleword (n: int) =
+  assert (
+      let cond = ((n >= 0) || (abs n < e31)) && (n < e32) in
+      begin
+        (if not cond then
+           pr_debug [STR "int_to_doublewoord: "; INT n; NL]);
+        cond
+      end)
+
+
+let int_to_doubleword (i: int): doubleword_int = create_doubleword i
+
+
+let assert_align_doubleword (n: int) =
+  assert (
+      let cond = n > 0 in
+      begin
+        (if not cond then
+           pr_debug [STR "align_doubleword: "; INT n; NL]);
+        cond
+      end)
+
+
+let align_doubleword (dw: doubleword_int) (alignment: int) =
+  let _ = assert_align_doubleword alignment in
   let rem = dw#to_int mod alignment in
   if rem = 0 then
     dw
@@ -467,52 +481,55 @@ let align_doubleword (dw:doubleword_int) (alignment:int) =
     int_to_doubleword (((dw#to_int / alignment) + 1) * 4)
 
 
-let big_int_to_doubleword bi = 
-  try
-    create_doubleword (B.int_of_big_int bi)
-  with
-  | BCH_failure p ->
-     raise
-       (BCH_failure
-          (LBLOCK [
-               STR "big_int_to_doubleword: ";
+let assert_big_int_to_doubleword
+      ?(msg="big_int_to_doubleword") (bi: B.big_int) =
+  assert (
+      let cond =
+        (B.le_big_int bi bige32)
+        && ((B.ge_big_int bi B.zero_big_int)
+            || (B.le_big_int (B.abs_big_int bi) bige31)) in
+      begin
+        (if not cond then
+           pr_debug [
+               STR msg;
+               STR ": ";
                STR (B.string_of_big_int bi);
-               STR " (";
-               p;
-               STR ")"]))
+               NL]);
+        cond
+      end)
+
+
+let big_int_to_doubleword bi =
+  let _ = assert_big_int_to_doubleword bi in
+  create_doubleword (B.int_of_big_int bi)
+
+
+let assert_numerical_to_doubleword
+      ?(msg="numerical_to_doubleword") (num: numerical_t) =
+  assert (
+      let cond = (num#lt nume32 && num#abs#leq nume31) in
+      begin
+        (if not cond then
+           pr_debug [STR msg; STR ": "; num#toPretty; NL]);
+        cond
+      end)
 
 
 let numerical_to_doubleword (num:numerical_t) =
-  try
-    big_int_to_doubleword num#getNum
-  with
-  |  BCH_failure p ->
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "numerical_to_doubleword: ";
-                num#toPretty;
-                STR " (";
-                p;
-                STR ")"]))
+  let _ = assert_numerical_to_doubleword num in
+  big_int_to_doubleword num#getNum
 
 
 let dw_index_to_string (index:dw_index_t) =
-  try
-    (index_to_doubleword index)#to_numerical#toString
-  with
-  | BCH_failure p ->
-     raise (BCH_failure (LBLOCK [STR "dw_index_to_string: "; p ]))
+  let _ = assert_index_to_doubleword ~msg:"dw_index_to_string" index in
+  (index_to_doubleword index)#to_numerical#toString
 
 
-let string_to_dw_index (s:string) = 
-  try
-    (numerical_to_doubleword (mkNumericalFromString s))#index
-  with
-  | BCH_failure p ->
-     raise
-       (BCH_failure
-          (LBLOCK [STR "string_to_dw_index: "; STR s; STR " ("; p; STR ")"]))
+let string_to_dw_index (s:string) =
+  let num = mkNumericalFromString s in
+  let _ = assert_numerical_to_doubleword ~msg:"string_to_dw_index" num in
+  (numerical_to_doubleword num)#index
+
 
 let dw_index_to_int (index:dw_index_t) = index
 
@@ -520,56 +537,62 @@ let dw_index_to_int (index:dw_index_t) = index
 let int_to_dw_index (index:int) = index
 
 
-let string_to_doubleword s =
-  try
-    let i64 = Int64.of_string s in
-    let bi = B.big_int_of_int64 i64 in
-    big_int_to_doubleword bi
-  with
-  | Failure f ->
-     raise
-       (BCH_failure
-          (LBLOCK [STR "string_to_doubleword: "; STR s; STR ": "; STR f]))
-  | BCH_failure p ->
-     raise
-       (BCH_failure
-          (LBLOCK [STR "string_to_doubleword: "; STR s; STR " ("; p; STR ")"]))
+let assert_string_to_doubleword (s: string) =
+  assert (
+      try
+        let i64 = Int64.of_string s in
+        let bi = B.big_int_of_int64 i64 in
+        let cond =
+          (B.le_big_int bi bige32)
+          && ((B.ge_big_int bi B.zero_big_int)
+              || (B.le_big_int (B.abs_big_int bi) bige31)) in
+        begin
+          (if not cond then
+             pr_debug [
+                 STR "string_to_doubleword: string: ";
+                 STR s;
+                 STR " is converted to int64: ";
+                 STR (Int64.to_string i64);
+                 STR " which is converted to big int: ";
+                 STR (B.string_of_big_int bi);
+                 NL]);
+          cond
+        end
+      with
+      | Failure _ ->
+         begin
+           pr_debug [
+               STR "Failure in Int64.of_string s in string_to_doubleword: ";
+               STR s;
+               NL];
+           false
+         end)
 
 
-let numerical_to_hex_string num = 
-  try
-    (big_int_to_doubleword num#getNum)#to_hex_string
-  with
-  | BCH_failure p  ->
-     raise
-       (BCH_failure
-          (LBLOCK [
-               STR "numerical_to_hex_string: ";
-               num#toPretty;
-               STR " (";
-               p;
-               STR ")"]))
+let string_to_doubleword (s: string) =
+  let _ = assert_string_to_doubleword s in
+  let i64 = Int64.of_string s in
+  let bi = B.big_int_of_int64 i64 in
+  big_int_to_doubleword bi
 
 
-let numerical_to_signed_hex_string num = 
-  try
-    let big_val = num#getNum in
-    let abs_val = B.abs_big_int big_val in
-    let dw = big_int_to_doubleword abs_val in
-    if B.lt_big_int big_val B.zero_big_int then
-      "-" ^ dw#to_hex_string
-    else
-      dw#to_hex_string
-  with
-  | BCH_failure p ->
-     raise
-       (BCH_failure
-          (LBLOCK [
-               STR "numerical_to_signed_hex_string: ";
-               num#toPretty;
-               STR " (";
-               p;
-               STR ")"]))
+let numerical_to_hex_string num =
+  let _ =
+    assert_big_int_to_doubleword ~msg:"numerical_to_hex_string" num#getNum in
+  (big_int_to_doubleword num#getNum)#to_hex_string
+
+
+let numerical_to_signed_hex_string num =
+  let _ =
+    assert_big_int_to_doubleword
+      ~msg:"numerical_to_signed_hex_string" num#getNum in
+  let big_val = num#getNum in
+  let abs_val = B.abs_big_int big_val in
+  let dw = big_int_to_doubleword abs_val in
+  if B.lt_big_int big_val B.zero_big_int then
+    "-" ^ dw#to_hex_string
+  else
+    dw#to_hex_string
 
 
 let symbol_to_doubleword (symbol:symbol_t) =

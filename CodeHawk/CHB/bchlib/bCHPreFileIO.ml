@@ -869,6 +869,7 @@ let read_vars (fname:string) =
        end in
   make_variable_manager optnode
 
+
 let save_invs (fname:string) (invio:invariant_io_int) =
   let filename = get_invs_filename fname in
   let doc = xmlDocument () in
@@ -882,9 +883,11 @@ let save_invs (fname:string) (invio:invariant_io_int) =
     file_output#saveFile filename doc#toPretty
   end
 
+
 let read_invs (fname:string) (vard:vardictionary_int):invariant_io_int =
   let optnode = extract_function_file fname "invs.xml" "function" in
   mk_invariant_io optnode vard fname
+
 
 let save_tinvs (fname:string) (tinvio:type_invariant_io_int) =
   let filename = get_tinvs_filename fname in
@@ -898,6 +901,7 @@ let save_tinvs (fname:string) (tinvio:type_invariant_io_int) =
     root#appendChildren [ tnode ] ;
     file_output#saveFile filename doc#toPretty
   end
+
 
 let read_tinvs (fname:string) (vard:vardictionary_int):type_invariant_io_int =
   let optnode = extract_function_file fname "tinvs.xml" "function" in

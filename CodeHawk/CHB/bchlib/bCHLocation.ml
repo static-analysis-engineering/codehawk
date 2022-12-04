@@ -43,6 +43,7 @@ open BCHXmlUtil
 
 module H = Hashtbl
 
+
 let nsplit (separator:char) (s:string):string list =
   let result = ref [] in
   let len = String.length s in
@@ -96,6 +97,16 @@ let ctxt_string_to_string (s:ctxt_iaddress_t):string = s
 
 let mk_base_location (faddr:doubleword_int) (iaddr:doubleword_int) =
   { loc_faddr = faddr ; loc_iaddr = iaddr }
+
+
+let mk_function_context
+      ~(faddr: doubleword_int)
+      ~(callsite: doubleword_int)
+      ~(returnsite: doubleword_int) =
+  FunctionContext
+    {ctxt_faddr = faddr;
+     ctxt_callsite = callsite;
+     ctxt_returnsite = returnsite}
 
 
 let contexts = H.create 3
@@ -226,12 +237,16 @@ object (self:'a)
   method has_context = match ctxt with [] -> false | _ -> true
 
   method toPretty =
-    LBLOCK [ STR "(" ; self#f#toPretty ; STR "," ; self#i#toPretty ; STR ")" ]
+    LBLOCK [STR "("; self#f#toPretty; STR ","; self#i#toPretty; STR ")"]
 
 end
 
 
 let make_location = new location_t
+
+
+let make_location_by_address (faddr: doubleword_int) (iaddr: doubleword_int) =
+  make_location {loc_faddr = faddr; loc_iaddr = iaddr}
 
 
 let make_i_location (loc:location_int) (iaddr:doubleword_int) =
@@ -243,6 +258,16 @@ let make_i_location (loc:location_int) (iaddr:doubleword_int) =
 let make_c_location (loc:location_int) (ctxt:context_t) =
   let newctxt = ctxt :: loc#ctxt in
   make_location ~ctxt:newctxt loc#base_loc
+
+
+let make_function_context_location
+      ~(faddr: doubleword_int)
+      ~(callsite: doubleword_int)
+      ~(returnsite: doubleword_int)
+      ~(calltgt: doubleword_int) =
+  let ctxt = mk_function_context ~faddr ~callsite ~returnsite in
+  let loc = make_location {loc_faddr = calltgt; loc_iaddr = calltgt} in
+  make_c_location loc ctxt
 
 
 let ctxt_string_to_location (faddr:doubleword_int) (s:ctxt_iaddress_t) =

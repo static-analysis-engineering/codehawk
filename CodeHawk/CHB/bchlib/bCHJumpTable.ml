@@ -58,7 +58,8 @@ object (self)
   method invalidate_startaddress = startaddress_valid <- false
 
   method get_start_address = start_address
-  method get_end_address   = end_address
+
+  method get_end_address = end_address
 
   method get_all_targets = 
     let tgts = if startaddress_valid then targets else List.tl targets in
@@ -225,6 +226,7 @@ let split_jumptable
         (offset + size, newtable::jts)) (0,[]) sizes in
   jtables
 
+
 let read_xml_jumptable (node:xml_element_int) =
   let get = node#getAttribute in
   let has = node#hasNamedAttribute in
@@ -282,7 +284,10 @@ let find_jumptable is_code_address ch len start_address target1 =
 	    begin
 	      while is_code_address !target do
 		targets := !target :: !targets ;
-		if ch#pos <= len - 4 then target := ch#read_doubleword else target := wordzero
+		if ch#pos <= len - 4 then
+                  target := ch#read_doubleword
+                else
+                  target := wordzero
 	      done;
 	      extract_jumptable start_address (List.rev !targets)
 	    end
@@ -291,7 +296,8 @@ let find_jumptable is_code_address ch len start_address target1 =
       else None
     else None
   else None
-    
+
+
 let find_jumptables_in_section
     (base:doubleword_int)
     (is_code_address:doubleword_int -> bool)
@@ -318,13 +324,13 @@ let find_jumptables_in_section
   else
     []
 
+
 let find_jumptables 
     ~(is_code_address:doubleword_int -> bool) 
     ~(read_only_section_strings:(doubleword_int * string) list) =
   List.concat 
     (List.map (fun (base,s) -> find_jumptables_in_section base is_code_address s) 
        read_only_section_strings)
-    
     
 
 let find2_jumptable is_code_address ch len start_address target1 =
@@ -337,13 +343,17 @@ let find2_jumptable is_code_address ch len start_address target1 =
 	begin
 	  while is_code_address !target do
 	    targets := !target :: !targets ;
-	    if ch#pos <= len - 4 then target := ch#read_doubleword else target := wordzero
+	    if ch#pos <= len - 4 then
+              target := ch#read_doubleword
+            else
+              target := wordzero
 	  done;
 	  Some (make_jumptable start_address (List.rev !targets))
 	end
       else None
     else None
   else None
+
 
 let create_jumptable 
     ~(base:doubleword_int) 
@@ -385,4 +395,3 @@ let create_jumptable
       ch_error_log#add "create jumptable" (LBLOCK [STR "Unknown error"]);
       None
     end
-    

@@ -27,7 +27,7 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* Utility to wrap input for big or little-endian *)
+(** Utility to wrap file/string input for big or little-endian *)
 
 (* chlib *)
 open CHNumerical
@@ -37,6 +37,7 @@ open BCHLibTypes
 
 
 val make_little_endian_stream_wrapper: IO.input -> stream_wrapper_int
+
 val make_big_endian_stream_wrapper: IO.input -> stream_wrapper_int
 
 val make_pushback_stream: ?little_endian:bool -> string -> pushback_stream_int

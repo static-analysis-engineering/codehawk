@@ -1202,4 +1202,3 @@ end
 let mk_invariant_io (optnode:xml_element_int option) (vard:vardictionary_int) =
   let invd = mk_invdictionary vard in
   new invariant_io_t optnode invd
-
