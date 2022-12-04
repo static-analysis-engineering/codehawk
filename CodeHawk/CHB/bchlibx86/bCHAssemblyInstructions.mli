@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,11 +34,38 @@ open BCHLibTypes
 open BCHLibx86Types
 open BCHAssemblyInstruction
 
+
+(** Holds an array of all of the assembly instructions, made available through
+    a class instance reference.
+
+    This is the backing store of all assembly instructions.
+*)
+
+
+(** Return a reference to the class wrapper of the array of assembly
+    instructions.*)
 val assembly_instructions: assembly_instructions_int ref
 
-(* Creates an array of the given size *)
+
+(** Create an array of the given size to hold the assembly instructions. *)
 val initialize_instructions: int -> unit
 
-(* Initializes the instruction array with instructions *)
+
+(** Initialize the instruction array with [OpInvalid] instructions
+
+    [initialize_assembly_instructions displacement endindex length code_baseaddr
+    jumptables data_blocks] initializes an array of size at least [length] and
+    initializes each element with either a proxy [OpInvalid] instruction or marks
+    it as a data block or jump table, according to the start and end addresses
+    of the jumptables and data blocks given in [jumptables] and [data_blocks];
+    it then creates an instance of the assembly_instructions class to populate
+    the array and provide other access.
+*)
 val initialize_assembly_instructions: 
-  int -> int -> int -> doubleword_int -> jumptable_int list -> data_block_int list -> unit
+  int
+  -> int
+  -> int
+  -> doubleword_int
+  -> jumptable_int list
+  -> data_block_int list
+  -> unit

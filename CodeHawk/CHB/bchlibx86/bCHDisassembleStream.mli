@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,5 +30,10 @@
 (* bchlib *)
 open BCHLibTypes
 
+(** Facility to disassemble a stream of bytes into x86 instructions. *)
+
+
+(** [disassemble_stream va codestring] disassembles the bytes in [codestring] with
+    [va] as the address of the first instruction. *)
 val disassemble_stream: doubleword_int -> string -> unit
 

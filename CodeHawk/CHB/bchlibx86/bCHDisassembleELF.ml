@@ -88,7 +88,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
     let addr = base#add_int position in
     let instruction = make_assembly_instruction addr opcode bytes in
     !assembly_instructions#set index instruction in
-  let ch = system_info#get_string_stream x in
+  let ch = make_pushback_stream x in
   let size = String.length x in
   try
     while ch#pos < size do

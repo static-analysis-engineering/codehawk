@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -139,7 +139,7 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
     let va = sectionVA#add_int position in
     let instruction = make_assembly_instruction va opcode bytes in
     !assembly_instructions#set index instruction in
-  let ch = system_info#get_string_stream codeString in
+  let ch = make_pushback_stream codeString in
   let size = String.length codeString in
   let is_data_block (pos:int) = 
     (!assembly_instructions#at_index (pos+displacement))#is_non_code_block in
