@@ -67,13 +67,17 @@ open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
+open BCHARMInstructionAggregate
+open BCHARMJumptable
 open BCHARMPseudocode
 open BCHARMOpcodeRecords
 open BCHARMTypes
+open BCHConstructARMFunction
 open BCHDisassembleARMInstruction
 open BCHDisassembleThumbInstruction
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 module DoublewordCollections = CHCollections.Make (
@@ -83,22 +87,24 @@ module DoublewordCollections = CHCollections.Make (
     let toPretty d = d#toPretty
   end)
 
+
 let x2p = xpr_formatter#pr_expr
 
-let disassemble (base:doubleword_int) (displacement:int) (x:string) =
-  let size = String.length x in  
-  (* let opcode_monitor = new opcode_monitor_t base size in *)
+
+let disassemble_arm_section
+      (sectionbase: doubleword_int) (sectionbytes: string) =
+  let sectionsize = String.length sectionbytes in
   let mode = ref "arm" in
 
-  let add_instruction position opcode bytes =
-    let index = position + displacement in 
-    let addr = base#add_int position in
-    let instr = make_arm_assembly_instruction addr (!mode="arm") opcode bytes in
+  let add_instruction
+        (iaddr: doubleword_int) (opcode: arm_opcode_t) (bytes: string) =
+    let instr =
+      make_arm_assembly_instruction iaddr (!mode="arm") opcode bytes in
     begin
-      !arm_assembly_instructions#set index instr;
-      (* opcode_monitor#check_instruction instr *)
+      set_arm_assembly_instruction instr;
+      instr
     end in
-  let ch = system_info#get_string_stream x in
+  let ch = make_pushback_stream sectionbytes in
 
   let not_code_length nc =
     match nc with
@@ -110,440 +116,54 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
     | DataBlock db -> db#set_data_string s
     | _ -> () in
 
-  let is_data_block (pos:int) =
-    (!arm_assembly_instructions#at_index (displacement+pos))#is_non_code_block in
+  let is_data_block (iaddr: doubleword_int) =
+    TR.to_bool
+      (fun instr -> instr#is_non_code_block)
+      (get_arm_assembly_instruction iaddr) in
 
-  let find_instr
-        (testf: arm_assembly_instruction_int -> bool)
-        (offsets: int list)
-        (addr: doubleword_int):arm_assembly_instruction_int option =
-    List.fold_left
-      (fun acc offset ->
-        match acc with
-        | Some _ -> acc
-        | _ ->
-           let caddr = addr#add_int offset in
-           let cinstr = !arm_assembly_instructions#at_address caddr in
-           if testf cinstr then
-             Some cinstr
-           else
-             None) None offsets in
+  let skip_data_block (pos: int) ch =
+    let iaddr = sectionbase#add_int pos in
+    log_traceresult
+      ch_error_log
+      "skip_data_block"
+      (fun instr ->
+        let nonCodeBlock = instr#get_non_code_block in
+        let dblen = not_code_length nonCodeBlock in
+        if pos + dblen <= sectionsize then
+          let blockbytes =
+            log_traceresult_value
+              ch_error_log "skip data block"(ch#sub pos dblen) ~default:"" in
+          begin
+            (if collect_diagnostics () then
+               ch_diagnostics_log#add
+                 "skip data block"
+                 (LBLOCK [STR "pos: "; INT pos; STR "; length: "; INT dblen]));
+            ch#skip_bytes dblen;
+            not_code_set_string nonCodeBlock blockbytes
+          end
+        else
+          ch_error_log#add
+            "data block problem"
+            (LBLOCK [
+                 STR "Data block at ";
+                 (sectionbase#add_int pos)#toPretty;
+                 STR " extends beyond end of section. Ignore"]))
+      (get_arm_assembly_instruction iaddr) in
 
-  (* format of BX-based jumptable (in Thumb2):
-
-     [2 bytes] CMP indexreg, maxcase
-     [2 bytes] BHI default address
-     [2 bytes] ADR basereg, start address
-     [4 bytes] LDR.W indexreg, [basereg, indexreg, LSL#2]
-     [2 bytes] ADD basereg, basereg, indexreg
-     [2 bytes] BX basereg
-
-     [4 bytes] CMP.W indexreg, maxcase
-     [4 bytes] BHI.W default address
-     [2 bytes] ADR basereg, start_address
-     [4 bytes] LDR.W tmpreg, [basereg, indexreg, LSL#2]
-     [2 bytes] ADDs basereg, basereg, tmpreg
-     [2 bytes] BX basereg
-
-     [2 bytes] CMP indexreg, maxcase
-     [4 bytes] BHI.W default address
-     [2 bytes] ADR basereg, start_address
-     [4 bytes] LDR.W indexreg, [basereg, indexreg, LSL#2]
-     [2 bytes] ADD basereg, indexreg
-     [2 bytes] BX basereg
-
-     format of LDR-based jumptable (in Thumb2):
-
-     [2 bytes] CMP indexreg, maxcase
-     [4 bytes] BHI.W default_address
-     [2 bytes] ADR basereg, start_address
-     [4 bytes] LDR.W PC, [basereg, indexreg, LSL #2]
-   *)
-  let cmptest reg instr =
-    match instr#get_opcode with
-    | Compare (_, rn, imm, _) ->
-       rn#is_register && rn#get_register = reg && imm#is_immediate
-    | _ -> false in
-
-  let adrtest reg instr =
-    match instr#get_opcode with
-    | Adr (_, rd, _) -> rd#is_register && rd#get_register = reg
-    | _ -> false in
-
-  let addtest reg instr =
-    match instr#get_opcode with
-    | Add (_, ACCAlways, rd, rn, _, _) ->
-       rd#is_register
-       && rn#is_register
-       && rd#get_register = reg
-       && rn#get_register = reg
-    | _ -> false in
-
-  let ldrtest tmpreg basereg instr =
-    match instr#get_opcode with
-    | LoadRegister (ACCAlways, rt, rn, rm, _, true) ->
-       rt#is_register
-       && rt#get_register = tmpreg
-       && rn#is_register
-       && rn#get_register = basereg
-       && rm#is_register
-    | _ -> false in
-
-  let is_ldr_jumptable (pos: int) (opcode: arm_opcode_t) =
-    match opcode with
-    | LoadRegister (_, dst, basereg, index, _, true)
-         when dst#get_register = ARPC && index#is_register ->
-       let addr = base#add_int pos in
-       let cmpinstr = find_instr (cmptest index#get_register) [(-8)] addr in
-       (match cmpinstr with
-        | Some _ ->
-           let adrinstr =
-             find_instr (adrtest basereg#get_register) [(-2)] addr in
-           (match adrinstr with
-            | Some _ -> true
-            | _ -> false)
-        | _ -> false)
-    | _ -> false in
-
-  let is_bx_jumptable (pos: int) (opcode: arm_opcode_t) =
-    match opcode with
-    | BranchExchange (ACCAlways, baseregop) when baseregop#is_register ->
-       let addr = base#add_int pos in
-       let basereg = baseregop#get_register in
-       let opt_addinstr = find_instr (addtest basereg) [(-2)] addr in
-       (match opt_addinstr with
-        | Some addinstr ->
-           (match addinstr#get_opcode with
-            | Add (_, _, rd, rn, rm, _)
-                 when rd#is_register
-                      && rn#is_register
-                      && rm#is_register
-                      && rd#get_register = basereg
-                      && rn#get_register = basereg ->
-               let tmpreg = rm#get_register in
-               let opt_ldrinstr =
-                 find_instr (ldrtest tmpreg basereg) [(-6)] addr in
-               (match opt_ldrinstr with
-                | Some ldrinstr ->
-                   (match ldrinstr#get_opcode with
-                    | LoadRegister (_, _, _, rm, _, _) ->
-                       let indexreg = rm#get_register in
-                       let opt_adrinstr =
-                         find_instr (adrtest basereg) [(-8)] addr in
-                       (match opt_adrinstr with
-                        | Some _ ->
-                           let opt_cmpinstr =
-                             find_instr (cmptest indexreg) [(-12); (-14); (-16)] addr in
-                           (match opt_cmpinstr with
-                            | Some _ ->
-                               let _ =
-                                 if collect_diagnostics () then
-                                   ch_diagnostics_log#add
-                                     "bx-jumptable found"
-                                     (LBLOCK [addr#toPretty]) in
-                               true
-                            | _ -> false)
-                        | _ -> false)
-                    | _ -> false)
-                | _ -> false)
-            | _ -> false)
-        |_ -> false)
-    | _ -> false in
-
-  let create_ldr_jumptable ch (pos: int) (opcode: arm_opcode_t) =
-    match opcode with
-    | LoadRegister (_, dst, basereg, index, _, true)
-         when dst#get_register = ARPC && index#is_register ->
-       let addr = base#add_int pos in
-       let cmpinstr = find_instr (cmptest index#get_register) [(-8)] addr in
-       (match cmpinstr with
-        | Some instr ->
-           (match instr#get_opcode with
-            | Compare (_, _, imm, _) when imm#is_immediate ->
-               let size = imm#to_numerical#toInt in
-               let adrinstr =
-                 find_instr (adrtest basereg#get_register) [(-2)] addr in
-               (match adrinstr with
-                | Some ainstr ->
-                   (match ainstr#get_opcode with
-                    | Adr (_, _, imm) when imm#is_absolute_address ->
-                       let jtaddr = imm#get_absolute_address in
-                       let skips =
-                         try
-                           (jtaddr#subtract addr)#to_int - 4
-                         with
-                         | Invalid_argument s ->
-                            raise
-                              (BCH_failure
-                                 (LBLOCK [
-                                      STR "Error in create_ldr_jumptable. ";
-                                      STR "jtaddr: ";
-                                      jtaddr#toPretty;
-                                      STR "; addr: ";
-                                      addr#toPretty;
-                                      STR ": ";
-                                      STR s])) in
-                       let _ = if skips > 0 then ch#skip_bytes skips in
-                       let targets = ref [] in
-                       let _ =
-                         for i = 0 to size do
-                           let tgt = ch#read_doubleword in
-                           targets := (align_dw tgt 2) :: !targets
-                         done in
-                       let jt:jumptable_int =
-                         make_jumptable
-                           ~end_address:None
-                           ~start_address:jtaddr
-                           ~targets:(List.rev !targets) in
-                       begin
-                         system_info#add_jumptable jt;
-                         !arm_assembly_instructions#set_jumptables [jt];
-                         (if collect_diagnostics () then
-                            ch_diagnostics_log#add
-                              "ldr-jumptable"
-                              (LBLOCK [
-                                   STR "base: ";
-                                   jtaddr#toPretty;
-                                   STR "; number of targets: ";
-                                   INT (List.length !targets)]))
-                       end
-                    | _ -> ())
-                | _ -> ())
-            | _ -> ())
-        | _ -> ())
-    | _ -> () in
-
-  let create_bx_jumptable ch (pos: int) (opcode: arm_opcode_t) =
-    match opcode with
-    | BranchExchange(ACCAlways, baseregop) when baseregop#is_register ->
-       let addr = base#add_int pos in
-       let basereg = baseregop#get_register in
-       let opt_addinstr = find_instr (addtest basereg) [(-2)] addr in
-       (match opt_addinstr with
-        | Some addinstr ->
-           (match addinstr#get_opcode with
-            | Add (_, _, _, _, rm, _) when rm#is_register ->
-               let tmpreg = rm#get_register in
-               let opt_ldrinstr = find_instr (ldrtest tmpreg basereg) [(-6)] addr in
-               (match opt_ldrinstr with
-                | Some ldrinstr ->
-                   (match ldrinstr#get_opcode with
-                    | LoadRegister (_, _, _, rm, _, _) ->
-                       let indexreg = rm#get_register in
-                       let opt_cmpinstr =
-                         find_instr (cmptest indexreg) [(-12); (-14); (-16)] addr in
-                       (match opt_cmpinstr with
-                        | Some cmpinstr ->
-                           (match cmpinstr#get_opcode with
-                            | Compare (_, _, imm, _) when imm#is_immediate ->
-                               let size = imm#to_numerical#toInt in
-                               let opt_adrinstr =
-                                 find_instr (adrtest basereg) [(-8)] addr in
-                               (match opt_adrinstr with
-                                | Some adrinstr ->
-                                   (match adrinstr#get_opcode with
-                                    | Adr (_, _, imm) when imm#is_absolute_address ->
-                                       let jtaddr = imm#get_absolute_address in
-                                       let skips =
-                                         try
-                                           (jtaddr#subtract addr)#to_int - 2
-                                         with
-                                         | Invalid_argument s ->
-                                            raise
-                                              (BCH_failure
-                                                 (LBLOCK [
-                                                      STR "Error in create_bx_jumptable. ";
-                                                      STR "jtaddr: ";
-                                                      jtaddr#toPretty;
-                                                      STR "; addr: ";
-                                                      addr#toPretty;
-                                                      STR ": ";
-                                                      STR s])) in
-                                       let _ = if skips > 0 then ch#skip_bytes skips in
-                                       let targets = ref [] in
-                                       let _ =
-                                         for i = 0 to size do
-                                           let tgtoffset = ch#read_imm_signed_doubleword in
-                                           match tgtoffset#to_int with
-                                           | Some intoffset ->
-                                              (* compensate for BX bit in address *)
-                                              let tgt = jtaddr#add_int (intoffset - 1) in
-                                              targets := tgt :: !targets
-                                           | _ ->
-                                              raise
-                                                (BCH_failure
-                                                   (LBLOCK [
-                                                        STR "create_bx_jumptable: ";
-                                                        STR "error in offset: ";
-                                                        tgtoffset#toPretty]))
-                                         done in
-                                       let jt:jumptable_int =
-                                         make_jumptable
-                                           ~end_address:None
-                                           ~start_address:jtaddr
-                                           ~targets:(List.rev !targets) in
-                                       begin
-                                         system_info#add_jumptable jt;
-                                         !arm_assembly_instructions#set_jumptables [jt];
-                                         (if collect_diagnostics () then
-                                            ch_diagnostics_log#add
-                                              "bx-jumptable"
-                                              (LBLOCK [
-                                                   STR "base: ";
-                                                   jtaddr#toPretty;
-                                                   STR "; number of targets: ";
-                                                   INT (List.length !targets)]))
-                                       end
-                                    | _ -> ())
-                                | _ -> ())
-                            | _ -> ())
-                        | _ -> ())
-                    | _ -> ())
-                | _ -> ())
-            | _ -> ())
-        | _ -> ())
-    | _ -> () in
-
-  let is_table_branch (pos: int) (opcode: arm_opcode_t) =
-    let cmptest instr =
-      match instr#get_opcode with Compare _ -> true | _ -> false in
-    match opcode with
-    | TableBranchByte (_, basereg, indexop, _)
-      |TableBranchHalfword (_, basereg, indexop, _)
-         when basereg#get_register = ARPC ->
-       let addr = base#add_int pos in
-       let cmpinstr = find_instr cmptest [(-4); (-6); (-8)] addr in
-       let indexreg =
-         if indexop#is_register then
-           indexop#get_register
-         else
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "Register not recognized in table branch: ";
-                     indexop#toPretty])) in
-       (match cmpinstr with
-        | Some instr ->
-           (match instr#get_opcode with
-            | Compare (_, rn, imm, _) when rn#is_register && imm#is_immediate ->
-               rn#get_register = indexreg
-            | _ -> false)
-        | _ -> false)
-    | _ -> false in
-
-  let create_table_branch ch (pos: int) (opcode: arm_opcode_t) =
-    let cmptest instr =
-      match instr#get_opcode with Compare _ -> true | _ -> false in
-    match opcode with
-    | TableBranchByte (_, basereg, indexop, _)
-      | TableBranchHalfword (_, basereg, indexop, _)
-         when basereg#get_register = ARPC ->
-       let addr = base#add_int pos in
-       let cmpinstr = find_instr cmptest [(-4); (-6); (-8)] addr in
-       (match cmpinstr with
-        | Some instr ->
-           (match instr#get_opcode with
-            | Compare (_, _, imm, _) when imm#is_immediate ->
-               let size = imm#to_numerical#toInt in
-               let jtaddr = addr#add_int 4 in
-               (match opcode with
-                | TableBranchByte _ ->
-                   let size = if size mod 2 = 0 then size + 1 else size in
-                   let targets = ref [] in
-                   let _ =
-                     for i = 0 to size do
-                       let byte = ch#read_byte in
-                       if byte > 0 then
-                         let tgt = addr#add_int ((2 * byte) + 4) in
-                         targets := tgt :: !targets
-                     done in
-                   let end_address = jtaddr#add_int (size + 1) in
-                   let jt =
-                     make_jumptable
-                       ~end_address:(Some end_address)
-                       ~start_address:jtaddr
-                       ~targets:(List.rev !targets) in
-                   begin
-                     system_info#add_jumptable jt;
-                     !arm_assembly_instructions#set_jumptables [jt];
-                     (if collect_diagnostics () then
-                        ch_diagnostics_log#add
-                          "tbb-jumptable"
-                          (LBLOCK [
-                               STR "base: ";
-                               jtaddr#toPretty;
-                               STR "; number of targets: ";
-                               INT (List.length !targets)]))
-                   end
-                | TableBranchHalfword _ ->
-                   let targets = ref [] in
-                   let _ =
-                     for i = 0 to size do
-                       let hw = ch#read_ui16 in
-                       let tgt = addr#add_int ((2 * hw) + 4) in
-                       targets := tgt :: !targets
-                     done in
-                   let end_address = jtaddr#add_int (2 * (size + 1)) in
-                   let jt =
-                     make_jumptable
-                       ~end_address:(Some end_address)
-                       ~start_address:jtaddr
-                       ~targets:(List.rev !targets) in
-                   begin
-                     system_info#add_jumptable jt;
-                     !arm_assembly_instructions#set_jumptables [jt];
-                     (if collect_diagnostics () then
-                        ch_diagnostics_log#add
-                          "tbh-jumptable"
-                          (LBLOCK [
-                               STR "base: ";
-                               jtaddr#toPretty;
-                               STR "; number of targets: ";
-                               INT (List.length !targets)]))
-                   end
-                | _ -> ())
-            | _ -> ())
-        | _ -> ())
-    | _ -> () in
-
-  let skip_data_block (pos:int) ch =
-    let nonCodeBlock =
-      (!arm_assembly_instructions#at_index (displacement+pos))#get_non_code_block in
-    let len = not_code_length nonCodeBlock in
-    let sdata = Bytes.make len ' ' in
-    if pos + len <= String.length x then
-      let _ = Bytes.blit (Bytes.of_string x) pos sdata 0 len in
-      begin
-        (if collect_diagnostics () then
-           ch_diagnostics_log#add
-             "skip data block"
-             (LBLOCK [STR "pos: "; INT pos; STR "; length: "; INT len]));
-        ch#skip_bytes len;
-        not_code_set_string nonCodeBlock (Bytes.to_string sdata)
-      end
-    else
-      ch_error_log#add
-        "data block problem"
-        (LBLOCK [
-             STR "Data block at ";
-             (base#add_int pos)#toPretty;
-             STR " extends beyond end of section. Ignore"]) in
   let _ =
     chlog#add
       "disassembly"
       (LBLOCK [
-           STR "base: ";
-           base#toPretty ;
-           STR "; displacement: ";
-           INT displacement;
+           STR "sectionbase: ";
+           sectionbase#toPretty ;
            STR "; size: ";
-           INT size]) in
+           INT sectionsize]) in
   try
     let _ = pverbose [STR "disassemble thumb instructions"; NL] in
     begin
-      while ch#pos + 2 < size do   (* <= causes problems at section end *)
+      while ch#pos + 2 < sectionsize do   (* <= causes problems at section end *)
         let prevPos = ch#pos in
-        let iaddr = base#add_int ch#pos in
+        let iaddr = sectionbase#add_int ch#pos in
         let _ =
           let iaddrh = iaddr#to_hex_string in
           if system_settings#has_thumb then
@@ -564,93 +184,62 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
                end
             | _ -> () in
         try
-          if is_data_block prevPos then
+          if is_data_block iaddr then
             skip_data_block prevPos ch
           else
             if system_settings#has_thumb && !mode = "thumb" then
+              (* Thumb mode *)
               let instrbytes = ch#read_ui16 in
               let opcode =
                 try
-                  disassemble_thumb_instruction ch base instrbytes
+                  disassemble_thumb_instruction ch iaddr instrbytes
                 with
                 | _ -> OpInvalid in
               let currentPos = ch#pos in
               let instrlen = currentPos - prevPos in
-              let instrBytes = Bytes.make instrlen ' ' in
-              let _ =
-                try
-                  Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen
-                with _ ->
-                  raise
-                    (BCH_failure
-                       (LBLOCK [
-                            STR "Error in Bytes.blit (Thumb): ";
-                            STR "prevPos: ";
-                            INT prevPos;
-                            STR "; instrlen: ";
-                            INT instrlen;
-                            STR "; ch#pos: ";
-                            INT ch#pos;
-                            STR "; size: ";
-                            INT size])) in
-              let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
-              let _ =
-                pverbose [
-                    (base#add_int prevPos)#toPretty;
-                    STR "  ";
-                    STR (arm_opcode_to_string opcode);
-                    NL] in
-              let _ =
-                if is_table_branch prevPos opcode then
-                  create_table_branch ch prevPos opcode in
-              let _ =
-                if is_ldr_jumptable prevPos opcode then
-                  create_ldr_jumptable ch prevPos opcode in
-              let _ =
-                if is_bx_jumptable prevPos opcode then
-                  create_bx_jumptable ch prevPos opcode in
-              ()
+              let instrbytes =
+                fail_traceresult
+                  (STR "disassemble_section")
+                  (ch#sub prevPos instrlen) in
+              let instr = add_instruction iaddr opcode instrbytes in
+              let optagg = identify_arm_aggregate ch instr in
+              match optagg with
+              | Some agg -> set_aggregate iaddr agg
+              | _ -> ()
+
             else
+              (* ARM mode *)
               let instrbytes = ch#read_doubleword in
               let opcode =
                   try
-                    disassemble_arm_instruction ch base instrbytes
+                    disassemble_arm_instruction ch iaddr instrbytes
                   with
                   | BCH_failure p ->
                      begin
                        ch_error_log#add
                          "instruction disassembly error"
-                         (LBLOCK [
-                              (base#add_int ch#pos)#toPretty; STR ": "; p]);
+                         (LBLOCK [iaddr#toPretty; STR ": "; p]);
                        NotRecognized ("error", instrbytes)
                      end
                   | _ -> OpInvalid in
               let currentPos = ch#pos in
               let instrLen = currentPos - prevPos in
-              let instrBytes = Bytes.make instrLen ' ' in
-              let _ =
-                try
-                  Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrLen
-                with _ ->
-                  raise
-                    (BCH_failure
-                       (LBLOCK [
-                            STR "Error in Bytes.blit (ARM): ";
-                            STR "prevPos: ";
-                            INT prevPos;
-                            STR "; instrlen: ";
-                            INT instrLen])) in
-              let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
+              let instrBytes =
+                fail_traceresult
+                  (STR "disassemble_section")
+                  (ch#sub prevPos instrLen) in
+              let _ = add_instruction iaddr opcode instrBytes in
               ()
         with
         | BCH_failure p ->
            begin
              ch_error_log#add
                "disassembly"
-               (LBLOCK [STR "failure in disassembling instruction at ";
-                        (base#add_int prevPos)#toPretty;
-                        STR " in mode ";
-                        STR !mode]);
+               (LBLOCK [
+                    STR "failure in disassembling instruction at ";
+                    iaddr#toPretty;
+                    STR " in mode ";
+                    STR !mode]);
              raise (BCH_failure p)
            end
       done
@@ -713,31 +302,21 @@ let disassemble_arm_sections () =
                  STR s])) in
   let datablocks = system_info#get_data_blocks in
   let _ = initialize_arm_instructions sizeOfCode#to_int in 
-  let _ = pverbose 
-            [ STR "Create space for " ; sizeOfCode#toPretty ; STR " (" ;
-	      INT sizeOfCode#to_int ; STR ") instructions" ; NL ; NL ] in
+  let _ =
+    pverbose [
+        STR "Create space for ";
+        sizeOfCode#toPretty;
+        STR " (";
+	INT sizeOfCode#to_int;
+        STR ") instructions";
+        NL;
+        NL] in
   let _ =
     initialize_arm_assembly_instructions
       sizeOfCode#to_int startOfCode datablocks in
   let _ =
     List.iter
-      (fun (h, x) ->
-        let displacement =
-          try
-            (h#get_addr#subtract startOfCode)#to_int
-          with
-          | Invalid_argument s ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Error in disassemble_arm_sections: displacement ";
-                       STR "header address: ";
-                       h#get_addr#toPretty;
-                       STR "; startOfCode: ";
-                       startOfCode#toPretty;
-                       STR ": ";
-                       STR s])) in
-        disassemble h#get_addr displacement x) xSections in
+      (fun (h, x) -> disassemble_arm_section h#get_addr x) xSections in
   sizeOfCode
 
 (* recognizes patterns of library function calls
@@ -888,6 +467,7 @@ let collect_data_references () =
     H.fold (fun k v a -> (k,v)::a) table []
   end
 
+
 (* can be used before functions have been constructed *)
 let is_nr_call_instruction (instr:arm_assembly_instruction_int) =
   match instr#get_opcode with
@@ -915,21 +495,33 @@ let collect_function_entry_points () =
     addresses#toList
   end
 
+
 let set_block_boundaries () =
   let _ = pverbose [STR "Set block boundaries"; NL] in
   let set_inlined_call (a: doubleword_int) =
-    (!arm_assembly_instructions#at_address a)#set_inlined_call in
+    log_traceresult
+      ch_error_log
+      "set_inlined_call"
+      (fun instr -> instr#set_inlined_call)
+      (get_arm_assembly_instruction a) in
   let set_block_entry a =
-    try
-      (!arm_assembly_instructions#at_address a)#set_block_entry
-    with
-    | BCH_failure p ->
-       begin
-         ch_error_log#add "set-block-entry" p;
-         raise
-           (BCH_failure
-              (LBLOCK [STR "Error in set-block-entry: "; p]))
-       end in
+    let instr =
+      fail_traceresult
+      (LBLOCK [STR "set_block_boundaries:set_block_entry: "; a#toPretty])
+      (get_arm_assembly_instruction a) in
+    instr#set_block_entry in
+  let get_iftxf iaddr =   (* if then x follow *)
+    let get_next_iaddr = get_next_valid_instruction_address in
+    match TR.to_option (get_next_iaddr iaddr) with
+    | None -> None
+    | Some va1 ->
+       (match TR.to_option (get_next_iaddr va1) with
+        | None -> None
+        | Some va2 ->
+           (match TR.to_option (get_next_iaddr va2) with
+            | None -> None
+            | Some va3 -> Some (va1, va2, va3))) in
+
   let feps = functions_data#get_function_entry_points in
   let datablocks = system_info#get_data_blocks in
   begin
@@ -990,27 +582,36 @@ let set_block_boundaries () =
               else
                 ()
 
-           (* create a block for IT block with two T instructions *)
+           (* Thumb-2 IfThen construct:
+              va0: ITT c
+              va1: if c .. .
+              va2: if   c ...
+              va3: next instruction (fall-through)
+            *)
            | IfThen (c, xyz) when xyz = "T" ->
-              let va1 =
-                !arm_assembly_instructions#get_next_valid_instruction_address va in
-              let instr1 = !arm_assembly_instructions#at_address va1 in
-              let va2 =
-                !arm_assembly_instructions#get_next_valid_instruction_address va1 in
-              let instr2 = !arm_assembly_instructions#at_address va2 in
-              let va3 =
-                !arm_assembly_instructions#get_next_valid_instruction_address va2 in
-              begin
-                (if collect_diagnostics () then
-                   ch_diagnostics_log#add
-                     "ITT block"
-                     (LBLOCK [va1#toPretty; STR ", "; va3#toPretty]));
-                set_block_entry va1;
-                set_block_entry va3;
-                instr#set_block_condition;
-                instr1#set_condition_covered_by va;
-                instr2#set_condition_covered_by va
-              end
+              (match get_iftxf va with
+               | Some (va1, va2, va3) ->
+                  log_traceresult2
+                    ch_error_log
+                    ("set_block_boundaries:IfThen")
+                    (fun instr1 instr2 ->
+                      begin
+                        (if collect_diagnostics () then
+                           ch_diagnostics_log#add
+                             "ITT block"
+                             (LBLOCK [va1#toPretty; STR ", "; va3#toPretty]));
+                        set_block_entry va1;
+                        set_block_entry va3;
+                        instr#set_block_condition;
+                        instr1#set_condition_covered_by va;
+                        instr2#set_condition_covered_by va
+                      end)
+                    (get_arm_assembly_instruction va1)
+                    (get_arm_assembly_instruction va2)
+               | _ ->
+                  ch_error_log#add
+                    "set_block_boundaries:IfThen"
+                    (LBLOCK [STR "Instructions not found at "; va#toPretty]))
 
            | BranchLink _ | BranchLinkExchange _
                 when is_nr_call_instruction instr ->
@@ -1065,311 +666,21 @@ let set_block_boundaries () =
                true
              end
           | _ -> false in
-        if is_block_ending
-           && !arm_assembly_instructions#has_next_valid_instruction va then
-          set_block_entry
-            (!arm_assembly_instructions#get_next_valid_instruction_address va)
+        if is_block_ending && has_next_valid_instruction va then
+          let nextva =
+            fail_traceresult
+              (LBLOCK [STR "Internal error in set_block_boundaries"])
+              (get_next_valid_instruction_address va) in
+          set_block_entry nextva
         else
           ())
   end
 
 
-let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
-  if system_info#is_nonreturning_call faddr iaddr then
-    []
-  else
-    let instr =
-      try
-        !arm_assembly_instructions#at_address iaddr
-      with
-      | BCH_failure p ->
-         begin
-           ch_error_log#add "get-successors" p;
-           raise
-             (BCH_failure
-                (LBLOCK [STR "Error in get-successors: "; p]))
-         end in
-    let opcode = instr#get_opcode in
-    let next () =
-      if !arm_assembly_instructions#has_next_valid_instruction iaddr then
-        [!arm_assembly_instructions#get_next_valid_instruction_address iaddr]
-      else
-        begin
-          (if collect_diagnostics () then
-             ch_diagnostics_log#add
-               "disassembly"
-               (LBLOCK [
-                    STR "Next instruction for ";
-                    iaddr#toPretty ;
-                    STR " ";
-                    instr#toPretty;
-                    STR " was not found"]));
-          []
-        end in
-    let successors =
-      match system_info#get_successors iaddr with
-      | [] ->
-         (match opcode with
-          | Pop (ACCAlways, _, rl, _) when rl#includes_pc -> []
-          | Pop (_, _, rl, _)
-               when rl#includes_pc && instr#is_condition_covered -> []
-          | LoadMultipleDecrementBefore (_, ACCAlways, _, rl, _)
-            | LoadMultipleDecrementAfter (_, ACCAlways, _, rl, _)
-            | LoadMultipleIncrementBefore (_, ACCAlways, _, rl, _)
-            | LoadMultipleIncrementAfter (_, ACCAlways, _, rl, _)
-               when rl#includes_pc -> []
-          | Move (_, ACCAlways, dst, src, _, _)
-               when dst#is_register
-                    && dst#get_register = ARPC
-                    && src#is_register
-                    && src#get_register = ARLR -> []
-          | Branch (ACCAlways, op, _)
-            | BranchExchange (ACCAlways, op)
-               when op#is_register && op#get_register = ARLR ->
-             []
-          | Branch (ACCAlways, op, _)
-            | BranchExchange (ACCAlways, op) when op#is_absolute_address ->
-             [op#get_absolute_address]
-          | Branch (_, op, _)
-            | BranchExchange (_, op)
-               when op#is_register && op#get_register = ARLR ->
-             (next ())
-          | Branch (_, op, _)
-            | BranchExchange (_, op)
-            | CompareBranchZero (_, op)
-            | CompareBranchNonzero (_, op) when op#is_absolute_address ->
-             (* false branch first, true branch second *)
-             (next ()) @ [op#get_absolute_address]
-          | IfThen (_, xyz) when xyz = "T" ->
-             let va1 =
-               !arm_assembly_instructions#get_next_valid_instruction_address iaddr in
-             let va2 =
-               !arm_assembly_instructions#get_next_valid_instruction_address va1 in
-             let va3 =
-               !arm_assembly_instructions#get_next_valid_instruction_address va2 in
-             (* here va3 is the false branch, va1 is the true branch *)
-             [va3; va1]
-          | TableBranchByte _
-            | TableBranchHalfword _
-               when system_info#has_jumptable (iaddr#add_int 4) ->
-             (system_info#get_jumptable (iaddr#add_int 4))#get_all_targets
-          | LoadRegister _
-               when system_info#has_jumptable (iaddr#add_int 4) ->
-             (system_info#get_jumptable (iaddr#add_int 4))#get_all_targets
-          | LoadRegister _
-               when system_info#has_jumptable (iaddr#add_int 6) ->
-             (* accomodate cases with alignment at 4-byte boundary *)
-             (system_info#get_jumptable (iaddr#add_int 6))#get_all_targets
-          | LoadRegister (_, dst, _, _, _, _)
-               (* may or may not be return *)
-               when dst#is_register && dst#get_register = ARPC -> []
-          | Move (_, ACCAlways, dst, _, _, _)
-               when dst#is_register && dst#get_register = ARPC -> []
-          | BranchExchange _
-               when system_info#has_jumptable (iaddr#add_int 2) ->
-             (system_info#get_jumptable (iaddr#add_int 2))#get_all_targets
-          | BranchExchange _
-               when system_info#has_jumptable (iaddr#add_int 4) ->
-             (* accomodate cases with alignment at 4-byte boundary *)
-             (system_info#get_jumptable (iaddr#add_int 4))#get_all_targets
-          | Branch _ | BranchExchange _ ->
-             (* no information available *)
-             []
-          | _ -> (next ()))
-      | l -> l in
-    List.map
-      (fun va -> (make_location {loc_faddr = faddr; loc_iaddr = va})#ci)
-      (List.filter
-         (fun va ->
-           if !arm_assembly_instructions#is_code_address va then
-             true
-           else
-             begin
-               (if collect_diagnostics () then
-                  ch_diagnostics_log#add
-                    "disassembly"
-                    (LBLOCK [
-                         STR "Successor of (";
-                         faddr#toPretty;
-                         STR ", ";
-                         iaddr#toPretty;
-                         STR "): ";
-                         va#toPretty;
-                         STR " is not a valid code address"]));
-               false
-             end) successors)
-
-
-let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
-  let set_block_entry a =
-    (!arm_assembly_instructions#at_address a)#set_block_entry in
-  let get_instr a =
-    try
-      !arm_assembly_instructions#at_address a
-    with
-    | BCH_failure p ->
-       begin
-         ch_error_log#add "trace-block" p;
-         raise
-           (BCH_failure
-              (LBLOCK [STR "Error in trace-block: "; p]))
-       end in
-  let get_next_instr_address =
-    !arm_assembly_instructions#get_next_valid_instruction_address in
-
-  let is_tail_call floc va =
-    let instr = get_instr va in
-    match instr#get_opcode with
-    | Branch (ACCAlways, tgt, _) ->
-       tgt#is_absolute_address
-          && functions_data#is_function_entry_point tgt#get_absolute_address
-    | _ -> false in
-
-  let rec find_last_instruction (va:doubleword_int) (prev:doubleword_int) =
-    let instr = get_instr va in
-    let floc = get_floc (make_location { loc_faddr = faddr; loc_iaddr = va }) in
-    let _ = floc#set_instruction_bytes instr#get_instruction_bytes in
-    if va#equal wordzero then
-      (Some [], prev, [])
-    else if instr#is_block_entry then
-      (None, prev, [])
-    else if is_nr_call_instruction instr then
-      let _ =
-        chlog#add
-          "non-returning call" (LBLOCK [faddr#toPretty; STR " "; va#toPretty]) in
-      (Some [], va, [])
-    else if is_tail_call floc va then
-      let _ =
-        if collect_diagnostics () then
-          ch_diagnostics_log#add
-            "tail call"
-            (LBLOCK [
-                 faddr#toPretty;
-                 STR " ";
-                 va#toPretty;
-                 STR "  ";
-                 instr#toPretty]) in
-      (Some [], va, [])
-    else if
-      (match instr#get_opcode with
-       | PermanentlyUndefined _ -> true | _ -> false) then
-      let _ =
-        chlog#add
-          "permanently undefined instruction"
-          (LBLOCK [faddr#toPretty; STR "  "; va#toPretty]) in
-      (Some [], va, [])
-    else if floc#has_call_target && floc#get_call_target#is_nonreturning then
-      let _ = chlog#add "non-returning" floc#l#toPretty in
-      (Some [], va, [])
-    else if instr#is_inlined_call then
-      let a =
-        match instr#get_opcode with
-        | BranchLink (_, op) | BranchLinkExchange (_, op)
-             when op#is_absolute_address ->
-           op#get_absolute_address
-        | _ ->
-           raise
-             (BCH_failure
-                (LBLOCK [STR "Internal error in trace block: inlined call"])) in
-      let fn = arm_assembly_functions#get_function_by_address a in
-      let returnsite = get_next_instr_address va in
-      let  _ = set_block_entry returnsite in
-      let _ =
-        chlog#add
-          "inline blocks"
-          (LBLOCK [
-               STR "fn: ";
-               a#toPretty;
-               STR " with return to: ";
-               returnsite#toPretty]) in
-      let ctxt =
-        FunctionContext
-          {ctxt_faddr = faddr;
-           ctxt_callsite = va;
-           ctxt_returnsite = returnsite} in
-      let tgtloc = make_location {loc_faddr = a; loc_iaddr = a} in
-      let ctxttgtloc = make_c_location tgtloc ctxt in
-      let callsucc = ctxttgtloc#ci in
-      let inlinedblocks =
-        List.map
-          (fun b ->
-            let succ =
-              match b#get_successors with
-              | [] ->
-                 [(make_location {loc_faddr = faddr; loc_iaddr = returnsite})#ci]
-              | l ->
-                 List.map (fun s -> add_ctxt_to_ctxt_string faddr s ctxt) l in
-            make_ctxt_arm_assembly_block ctxt b succ) fn#get_blocks in
-      (Some [callsucc], va, inlinedblocks)
-    else if !arm_assembly_instructions#has_next_valid_instruction va then
-      find_last_instruction (get_next_instr_address va) va
-    else (None, va, []) in
-
-  let (succ, lastaddr, inlinedblocks) =
-    if is_nr_call_instruction (get_instr baddr) then
-      (Some [] ,baddr, [])
-    else if
-      (match (get_instr baddr)#get_opcode with
-       | PermanentlyUndefined _ -> true | _ -> false) then
-      (Some [], baddr, [])
-    else if !arm_assembly_instructions#has_next_valid_instruction baddr then
-      let floc = get_floc (make_location {loc_faddr = faddr; loc_iaddr = baddr }) in
-      let _ = floc#set_instruction_bytes (get_instr baddr)#get_instruction_bytes in
-      find_last_instruction (get_next_instr_address baddr) baddr
-    else (None,baddr,[]) in
-  let successors = match succ with
-    | Some s -> s
-    | _ -> get_successors faddr lastaddr in
-  (inlinedblocks, make_arm_assembly_block faddr baddr lastaddr successors)
-
-
-let trace_function (faddr:doubleword_int) =
-  let _ = pverbose [STR "Trace function "; faddr#toPretty; NL] in
-  let workset = new DoublewordCollections.set_t in
-  let doneset = new DoublewordCollections.set_t in
-  let set_block_entry a =
-    (!arm_assembly_instructions#at_address a)#set_block_entry in
-  let get_iaddr s = (ctxt_string_to_location faddr s)#i in
-  let add_to_workset l =
-    List.iter (fun a -> if doneset#has a then () else workset#add a) l in
-  let blocks = ref [] in
-  let rec add_block (blockentry:doubleword_int) =
-    let (inlinedblocks, block) = trace_block faddr blockentry in
-    let blocksuccessors =
-      match inlinedblocks with
-      | [] -> block#get_successors
-      | _ -> [] in
-    let inlinedblocksuccessors =
-      List.fold_left
-        (fun acc b ->
-          match b#get_successors with
-          | [h] when is_iaddress h -> h::acc
-          | _ -> acc) [] inlinedblocks in
-    begin
-      set_block_entry blockentry;
-      workset#remove blockentry;
-      doneset#add blockentry;
-      blocks := (block :: inlinedblocks) @ !blocks;
-      add_to_workset
-        (List.map get_iaddr (blocksuccessors @ inlinedblocksuccessors));
-      match workset#choose with Some a -> add_block a | _ -> ()
-    end in
-  let _ = add_block faddr in
-  let blocklist =
-    List.sort (fun b1 b2 ->
-        Stdlib.compare b1#get_context_string b2#get_context_string) !blocks in
-  let successors =
-    List.fold_left
-      (fun acc b ->
-        let src = b#get_context_string in
-        (List.map (fun tgt -> (src,tgt)) b#get_successors) @ acc) [] blocklist in
-  make_arm_assembly_function faddr blocklist successors
-
-
 let construct_assembly_function (count:int) (faddr:doubleword_int) =
       try
         if !arm_assembly_instructions#is_code_address faddr then
-          let fn = trace_function faddr in
+          let fn = construct_arm_assembly_function faddr in
           arm_assembly_functions#add_function fn
       with
       | BCH_failure p ->
@@ -1456,9 +767,14 @@ let associate_condition_code_users () =
     let rec set l =
       match l with
       | [] ->
-	  disassembly_log#add "cc user without setter"
-	    (LBLOCK [loc#toPretty ; STR ": " ;
-		     (!arm_assembly_instructions#at_address loc#i)#toPretty ])
+         log_traceresult
+           ch_error_log
+           "associate_condition_code_users"
+           (fun instr ->
+	     disassembly_log#add
+               "cc user without setter"
+	       (LBLOCK [loc#toPretty; STR ": " ; instr#toPretty]))
+	   (get_arm_assembly_instruction loc#i)
       | instr :: tl ->
 	match get_arm_flags_set instr#get_opcode with
 	| [] -> set tl
@@ -1478,85 +794,6 @@ let associate_condition_code_users () =
 	      | [] -> ()
 	      | flags -> set_condition flags faddr iaddr block) ) )
 
-
-(* Return true if the two instructions encode the assignment of a
-   predicate to a variable.
-
-   Pattern:
-   ITE  c                                   ITE  c
-   MOV  Rx, #0x0   ->  Rx := !c     or      MOV  Rx, #0x1   ->  Rx := c
-   MOV  Rx, #0x1                            MOV  Rx, #0x0
- *)
-let is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr =
-  let iszero (op: arm_operand_int) (floc: floc_int): bool =
-    match op#to_expr floc with
-    | XConst (IntConst n) -> n#equal numerical_zero
-    | _ -> false in
-  let isone (op: arm_operand_int) (floc: floc_int): bool =
-    match op#to_expr floc with
-    | XConst (IntConst n) -> n#equal numerical_one
-    | _ -> false in
-  match (theninstr#get_opcode, elseinstr#get_opcode) with
-  | (Move (_, _, tr, thenop, _, _), Move (_, _, er, elseop, _, _)) ->
-     if tr#is_register && er#is_register then
-       if tr#get_register = er#get_register then
-         isone thenop thenfloc && iszero elseop elsefloc
-       else
-         false
-     else
-       false
-  | _ -> false
-
-
-(* Return the lhs to which the predicate expression should be assigned *)
-let get_ite_predicate_dstop thenfloc theninstr elsefloc elseinstr =
-  if is_ite_predicate_assignment thenfloc theninstr elsefloc elseinstr then
-    match theninstr#get_opcode with
-    | Move(_, _, r, _, _, _) -> r
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Internal error in get_ite_predicate_dst"]))
-  else
-    raise
-      (BCH_failure
-         (LBLOCK [STR "Internal error in get_ite_predicate_dst"]))
-
-
-let aggregate_ite () =
-  let _ = pverbose [STR "Aggregate ITE conditions"; NL] in
-  arm_assembly_functions#itera
-    (fun faddr f ->
-      f#iter
-        (fun block ->
-          block#itera
-            (fun ciaddr instr ->
-              let loc = ctxt_string_to_location faddr ciaddr in
-              let iaddr = loc#i in
-              let itefloc = get_floc loc in
-              match instr#get_opcode with
-              | IfThen (c, xyz) when xyz = "E" ->
-                 let thenaddr = iaddr#add_int 2 in
-                 let elseaddr = iaddr#add_int 4 in
-                 let theninstr = !arm_assembly_instructions#at_address thenaddr in
-                 let elseinstr = !arm_assembly_instructions#at_address elseaddr in
-                 let thenfloc = get_i_floc itefloc thenaddr in
-                 let elsefloc = get_i_floc itefloc elseaddr in
-                 if is_ite_predicate_assignment
-                      thenfloc theninstr elsefloc elseinstr then
-                   let dstop =
-                     get_ite_predicate_dstop
-                       thenfloc theninstr elsefloc elseinstr in
-                   begin
-                     (if collect_diagnostics () then
-                        ch_diagnostics_log#add
-                          "aggregate ite"
-                          (LBLOCK [STR ciaddr; STR ": "; instr#toPretty]));
-                     instr#set_aggregate dstop [thenaddr; elseaddr];
-                     theninstr#set_subsumed_by iaddr;
-                     elseinstr#set_subsumed_by iaddr
-                   end
-              | _ -> ())))
 
 let construct_functions_arm () =
   let _ = pverbose [STR "Construction functions"; NL] in
@@ -1615,5 +852,5 @@ let construct_functions_arm () =
         end) arm_assembly_functions#add_functions_by_preamble;
     record_call_targets_arm ();
     associate_condition_code_users ();
-    aggregate_ite ()
+    (* aggregate_ite () *)
   end

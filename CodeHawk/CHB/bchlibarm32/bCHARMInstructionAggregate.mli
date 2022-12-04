@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2022 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,20 @@
    SOFTWARE.
    ============================================================================= *)
 
+(** Sequence of consecutive assembly instructions that represents a semantic unit.
+    
+    Examples:
+    - switch statement constructed by 
+      - table branch instructions (TBB/TBH), or
+      - load from table into pc
+      - indirect jump from table
+      
+    - question expression constructed by Thumb-2 if-then instruction
+    
+    In translation to CHIF, semantics are obtained from the anchor, all other
+    instructions belonging to the aggregate are ignored.
+ *)
+
 (* bchlib *)
 open BCHLibTypes
 
@@ -32,12 +46,25 @@ open BCHLibTypes
 open BCHARMTypes
 
 
-(** [disassemble_thumb_instruction ch iaddr bytes] tries to disassemble an
-    instruction represented by [bytes], an integer with range [0, 65535] (16 bits).
-    If the most significant 5 bits are equal to 29, 30, or 31, an additional two
-    bytes are read from the stream and combined with the first 2 bytes to make
-    a 4-byte Thumb-2 instruction to be disassembled. This function is the
-    primary interface of this module.
- *)
-val disassemble_thumb_instruction:
-  pushback_stream_int -> doubleword_int -> int -> arm_opcode_t
+val make_arm_instruction_aggregate:
+  kind:arm_aggregate_kind_t
+  -> instrs:arm_assembly_instruction_int list
+  -> entry:arm_assembly_instruction_int
+  -> exitinstr:arm_assembly_instruction_int
+  -> anchor:arm_assembly_instruction_int
+  -> arm_instruction_aggregate_int
+
+
+val make_arm_jumptable_aggregate:
+  jt:arm_jumptable_int
+  -> instrs:arm_assembly_instruction_int list
+  -> entry:arm_assembly_instruction_int
+  -> exitinstr:arm_assembly_instruction_int
+  -> anchor:arm_assembly_instruction_int
+  -> arm_instruction_aggregate_int
+
+
+val identify_arm_aggregate:
+  pushback_stream_int
+  -> arm_assembly_instruction_int
+  -> arm_instruction_aggregate_int option

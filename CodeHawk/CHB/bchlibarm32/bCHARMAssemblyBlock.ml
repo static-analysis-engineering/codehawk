@@ -45,6 +45,9 @@ open BCHARMAssemblyInstructions
 open BCHARMTypes
 
 
+module TR = CHTraceResult
+
+
 class arm_assembly_block_t
         ?(ctxt=[])
         (faddr:doubleword_int)                (* inner context function address *)
@@ -68,10 +71,20 @@ object (self)
   method get_context_string = loc#ci
 
   method get_instructions_rev ?(high=last_address) () =
+    let high =
+      if self#get_last_address#lt high then
+        self#get_last_address
+      else if high#lt self#get_first_address then
+        self#get_first_address
+      else
+        high in
     let addrsRev =
       !arm_assembly_instructions#get_code_addresses_rev
         ~low:first_address ~high () in
-    List.map !arm_assembly_instructions#at_address addrsRev
+    TR.tfold_list
+      ~ok:(fun acc v -> v::acc)
+      []
+      (List.map (fun a -> get_arm_assembly_instruction a) (List.rev addrsRev))
 
   method get_instructions = List.rev (self#get_instructions_rev ())
 

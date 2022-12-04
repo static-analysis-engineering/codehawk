@@ -35,7 +35,7 @@ open BCHLibTypes
 open BCHARMTypes
 
 
-val disassemble: doubleword_int -> int -> string -> unit
+val disassemble_arm_section: doubleword_int -> string -> unit
 
 val disassemble_arm_sections: unit -> doubleword_int
 

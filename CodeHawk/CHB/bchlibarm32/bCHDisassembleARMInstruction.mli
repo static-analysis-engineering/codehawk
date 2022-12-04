@@ -32,12 +32,5 @@ open BCHLibTypes
 open BCHARMTypes
 
 
-val parse_opcode:
-  pushback_stream_int
-  -> doubleword_int
-  -> doubleword_int
-  -> doubleword_int
-  -> arm_opcode_t
-
 val disassemble_arm_instruction:
   pushback_stream_int -> doubleword_int -> doubleword_int -> arm_opcode_t

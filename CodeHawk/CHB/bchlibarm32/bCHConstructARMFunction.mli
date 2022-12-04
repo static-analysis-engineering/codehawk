@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,12 +32,6 @@ open BCHLibTypes
 open BCHARMTypes
 
 
-(** [disassemble_thumb_instruction ch iaddr bytes] tries to disassemble an
-    instruction represented by [bytes], an integer with range [0, 65535] (16 bits).
-    If the most significant 5 bits are equal to 29, 30, or 31, an additional two
-    bytes are read from the stream and combined with the first 2 bytes to make
-    a 4-byte Thumb-2 instruction to be disassembled. This function is the
-    primary interface of this module.
- *)
-val disassemble_thumb_instruction:
-  pushback_stream_int -> doubleword_int -> int -> arm_opcode_t
+(** Create and return an assembly function from assembly instructions starting at
+    the given address.*)
+val construct_arm_assembly_function: doubleword_int -> arm_assembly_function_int 

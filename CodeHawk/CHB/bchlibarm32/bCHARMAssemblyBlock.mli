@@ -38,6 +38,9 @@ open BCHLibTypes
 open BCHARMTypes
 
 
+(** [make_arm_assembly_block ctxt faddr baddr laddr succ] returns a new basic
+    block with context [ctxt], function address [faddr], first address [baddr],
+    last address [laddr], and successors [succ].*)
 val make_arm_assembly_block:
   ?ctxt:context_t list    (* inline context, other function first *)
   -> doubleword_int       (* function address *)
@@ -46,6 +49,10 @@ val make_arm_assembly_block:
   -> ctxt_iaddress_t list (* addresses of successor blocks *)
   -> arm_assembly_block_int
 
+
+(** [make_ctxt_arm_assembly_block ctxt blk succ] returns a new arm basic block
+    that is a copy of [blk] with added context [ctxt] and added successors
+    [succ]. This can be used to create an inlined block.*)
 val make_ctxt_arm_assembly_block:
   context_t               (* new context to be prepended *)
   -> arm_assembly_block_int

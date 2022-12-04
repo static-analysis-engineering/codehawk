@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs, LLC
+   Copyright (c) 2021-2022 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,19 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+
+(** Provides the access point to retrieve assembly functions. *)
+
+
+(** Return the (sole instance) [arm_assembly_functions] object with access to all
+    assembly functions *)
 val arm_assembly_functions: arm_assembly_functions_int
 
+
+(** [get_arm_assembly_function faddr] returns the assembly function with
+    address [faddr]. *)
 val get_arm_assembly_function: doubleword_int -> arm_assembly_function_int
 
+
+(** Return metrics on all functions. *)
 val get_arm_disassembly_metrics: unit -> disassembly_metrics_t

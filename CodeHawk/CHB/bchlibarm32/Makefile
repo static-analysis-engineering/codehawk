@@ -43,7 +43,12 @@ MLIS := \
 	bCHARMCHIFSystem \
 	bCHDisassembleARMInstruction \
 	bCHDisassembleThumbInstruction \
+	bCHThumbITSequence \
+	bCHARMJumptable \
+	bCHARMInstructionAggregate \
+	bCHConstructARMFunction \
 	bCHDisassembleARM \
+	bCHDisassembleARMStream \
 	bCHARMLoopStructure \
 	bCHTranslateARMToCHIF \
 	bCHARMMetrics \
@@ -69,7 +74,12 @@ SOURCES := \
 	bCHARMCHIFSystem \
 	bCHDisassembleARMInstruction \
 	bCHDisassembleThumbInstruction \
+	bCHThumbITSequence \
+	bCHARMJumptable \
+	bCHARMInstructionAggregate \
+	bCHConstructARMFunction \
 	bCHDisassembleARM \
+	bCHDisassembleARMStream \
 	bCHARMLoopStructure \
 	bCHTranslateARMToCHIF \
 	bCHARMMetrics \

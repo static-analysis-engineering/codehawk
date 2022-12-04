@@ -845,12 +845,10 @@ let arm_literal_op
   new arm_operand_t (ARMLiteralAddress addr) RD
 
 let mk_arm_absolute_target_op
-      (ch:pushback_stream_int)
       (base:doubleword_int)
       (imm:int)
       (mode:arm_operand_mode_t) =
-  let addr = base#add_int (ch#pos + 4) in
-  let tgtaddr = addr#add_int imm in
+  let tgtaddr = base#add_int imm in
   if system_info#is_code_address tgtaddr then
     arm_absolute_op tgtaddr mode
   else

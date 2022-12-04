@@ -421,6 +421,7 @@ let unpredictable (iaddr: doubleword_int) (msg: string) =
     "thumb unpredictable"
     (LBLOCK [iaddr#toPretty; STR ": "; STR msg])
 
+
 class itblock_t =
 object
   val mutable conditionlist = []
@@ -447,12 +448,14 @@ object
 
 end
 
+
 let itblock = new itblock_t
+
+
 let parse_thumb32_29_0
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -637,7 +640,6 @@ let parse_thumb32_29_1
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -793,7 +795,6 @@ let parse_thumb32_29_2
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -1148,7 +1149,6 @@ let parse_thumb32_29_12
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -1290,7 +1290,6 @@ let parse_thumb32_29_13
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -1593,7 +1592,6 @@ let parse_thumb32_29_110
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -1612,16 +1610,15 @@ let parse_thumb32_29_110
 
   else
     if (bv 23) = 0 then
-      parse_thumb32_29_12 ~in_it ~cc ch base iaddr instr
+      parse_thumb32_29_12 ~in_it ~cc ch iaddr instr
     else
-      parse_thumb32_29_13 ~in_it ~cc ch base iaddr instr
+      parse_thumb32_29_13 ~in_it ~cc ch iaddr instr
 
 
 let parse_thumb32_29_14
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -1832,7 +1829,6 @@ let parse_thumb32_29_15
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -2436,7 +2432,6 @@ let parse_t32_30_0
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -2627,7 +2622,6 @@ let parse_t32_branch
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -2767,13 +2761,12 @@ let parse_thumb32_30
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   match b 15 15 with
-  | 0 -> parse_t32_30_0 ~in_it ~cc ch base iaddr instr
-  | 1 -> parse_t32_branch ~in_it ~cc ch base iaddr instr
+  | 0 -> parse_t32_30_0 ~in_it ~cc ch iaddr instr
+  | 1 -> parse_t32_branch ~in_it ~cc ch iaddr instr
   | _ ->
      NotRecognized ("parse_thumb32_30", instr)
 
@@ -2782,7 +2775,6 @@ let parse_thumb32_31_0
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -3146,7 +3138,6 @@ let parse_thumb32_31_1
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -3330,7 +3321,6 @@ let parse_thumb32_31_2
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -3343,7 +3333,6 @@ let parse_thumb32_31_110
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -3357,7 +3346,6 @@ let parse_thumb32_31_14
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -3412,7 +3400,6 @@ let parse_thumb32_31_15
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -4148,21 +4135,20 @@ let parse_thumb32_opcode
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   match (b 31 27) with
   | 29 ->
      (match (b 26 25) with
-      | 0 -> parse_thumb32_29_0 ~in_it ~cc ch base iaddr instr
-      | 1 -> parse_thumb32_29_1 ~in_it ~cc ch base iaddr instr
-      | 2 -> parse_thumb32_29_2 ~in_it ~cc ch base iaddr instr
+      | 0 -> parse_thumb32_29_0 ~in_it ~cc ch iaddr instr
+      | 1 -> parse_thumb32_29_1 ~in_it ~cc ch iaddr instr
+      | 2 -> parse_thumb32_29_2 ~in_it ~cc ch iaddr instr
       | 3 ->
          (match (b 24 23) with
-          | 0 | 1 -> parse_thumb32_29_110 ~in_it ~cc ch base iaddr instr
-          | 2 -> parse_thumb32_29_14 ~in_it ~cc ch base iaddr instr
-          | 3 -> parse_thumb32_29_15 ~in_it ~cc ch base iaddr instr
+          | 0 | 1 -> parse_thumb32_29_110 ~in_it ~cc ch iaddr instr
+          | 2 -> parse_thumb32_29_14 ~in_it ~cc ch iaddr instr
+          | 3 -> parse_thumb32_29_15 ~in_it ~cc ch iaddr instr
           | _ ->
              raise
                (BCH_failure
@@ -4172,17 +4158,17 @@ let parse_thumb32_opcode
            (BCH_failure
               (LBLOCK [STR "Unexpected value in parse_thumb32:29"])))
 
-  | 30 -> parse_thumb32_30 ~in_it ~cc ch base iaddr instr
+  | 30 -> parse_thumb32_30 ~in_it ~cc ch iaddr instr
   | 31 ->
      (match (b 26 25) with
-      | 0 ->  parse_thumb32_31_0 ~in_it ~cc ch base iaddr instr
-      | 1 ->  parse_thumb32_31_1 ~in_it ~cc ch base iaddr instr
-      | 2 ->  parse_thumb32_31_2 ~in_it ~cc ch base iaddr instr
+      | 0 ->  parse_thumb32_31_0 ~in_it ~cc ch iaddr instr
+      | 1 ->  parse_thumb32_31_1 ~in_it ~cc ch iaddr instr
+      | 2 ->  parse_thumb32_31_2 ~in_it ~cc ch iaddr instr
       | 3 ->
          (match (b 24 23) with
-          | 0 | 1 -> parse_thumb32_31_110 ~in_it ~cc ch base iaddr instr
-          | 2 -> parse_thumb32_31_14 ~in_it ~cc ch base iaddr instr
-          | 3 -> parse_thumb32_31_15 ~in_it ~cc ch base iaddr instr
+          | 0 | 1 -> parse_thumb32_31_110 ~in_it ~cc ch iaddr instr
+          | 2 -> parse_thumb32_31_14 ~in_it ~cc ch iaddr instr
+          | 3 -> parse_thumb32_31_15 ~in_it ~cc ch iaddr instr
           | _ ->
              raise
                (BCH_failure
@@ -4902,7 +4888,6 @@ let parse_thumb16_opcode
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -4940,7 +4925,6 @@ let parse_thumb16_opcode
 
 let parse_thumb_opcode
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instrbytes: int): arm_opcode_t =
   let prefix = instrbytes lsr 11 in
@@ -4955,17 +4939,16 @@ let parse_thumb_opcode
      let sndhalfword = ch#read_ui16 in
      let instr32 = (instrbytes lsl 16) + sndhalfword in
      let instr32 = int_to_doubleword instr32 in
-     parse_thumb32_opcode ~in_it ~cc ch base iaddr instr32
+     parse_thumb32_opcode ~in_it ~cc ch iaddr instr32
   | _ ->
      let instr16 = int_to_doubleword instrbytes in
-     parse_thumb16_opcode ~in_it ~cc ch base iaddr instr16
+     parse_thumb16_opcode ~in_it ~cc ch iaddr instr16
 
 
 let disassemble_thumb_instruction
-      (ch:pushback_stream_int) (base:doubleword_int) (instrbytes:int) =
-  let iaddr = base#add_int (ch#pos - 2) in
+      (ch:pushback_stream_int) (iaddr:doubleword_int) (instrbytes:int) =
   try
-    parse_thumb_opcode ch base iaddr instrbytes
+    parse_thumb_opcode ch iaddr instrbytes
   with
   | ARM_undefined s ->
      begin
