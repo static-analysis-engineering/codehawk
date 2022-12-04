@@ -81,7 +81,7 @@ let disassemble
     let addr = base#add_int position in
     let instr = make_power_assembly_instruction addr is_vle opcode bytes in
     !power_assembly_instructions#set index instr in
-  let ch = system_info#get_string_stream x in
+  let ch = make_pushback_stream ~little_endian:system_info#is_little_endian x in
   let _ =
     chlog#add
       "disassembly"

@@ -332,6 +332,7 @@ let analyze_mips starttime =
     file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime);
   end
 
+
 let analyze_arm_function faddr f count =
   let fstarttime = Unix.gettimeofday () in
   let finfo = load_function_info faddr in
