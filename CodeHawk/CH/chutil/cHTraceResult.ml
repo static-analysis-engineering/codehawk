@@ -29,6 +29,9 @@
 type 'a traceresult = ('a, string list) result 
 
 
+let tvalue (r: 'a traceresult) ~(default: 'a) = Result.value r ~default
+
+
 let tmap ?(msg="") (f: 'a -> 'c) (r: 'a traceresult) =
   match r with
   | Ok v -> Ok (f v)

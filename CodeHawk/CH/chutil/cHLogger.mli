@@ -74,6 +74,11 @@ val ch_info_log: logger_int
 val ch_diagnostics_log: logger_int
 
 
+(** [log_traceresult_value logger tag ~default] is [v] if [r] is [Ok v] and
+    [default] otherwise. If [r] is [Error e] the concatenation of
+    messages in [e] is entered in [logger] under [tag].*)
+val log_traceresult_value:
+  logger_int -> string -> 'a traceresult -> default:'a -> 'a
 (** [log_traceresult logger tag f r] is [f v] if [r] is [Ok v] and
     enters the concatenation of messages in [e] in [logger]
     under [tag] if [r] is [Error e].*)
@@ -86,6 +91,13 @@ val log_traceresult:
     [tag] and returns [[]] if [r] is [Error e].*)
 val log_traceresult_list:
   logger_int -> string -> ('a -> 'b list) -> 'a traceresult -> 'b list
+
+
+(** [log_traceresult_string logger tag f r] is [f v] if [r] is [Ok v]
+    and enters the concatenation of messages in [e] in [logger] under
+    [tag] and returns [""] if [r] is [Error e].*)
+val log_traceresult_string:
+  logger_int -> string -> ('a -> string) -> 'a traceresult -> string
 
 
 (** [log_traceresult logger tag f r1 r2] is [f v1 v2] if [r1] and
