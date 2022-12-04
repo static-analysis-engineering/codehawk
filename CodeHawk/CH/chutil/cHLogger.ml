@@ -171,6 +171,18 @@ let ch_error_log = new logger_t
 let ch_diagnostics_log = new logger_t
 
 
+let log_traceresult_value
+      (logger: logger_int) (tag: string) (r: 'a traceresult) ~(default: 'a) =
+  match r with
+  | Ok v -> v
+  | Error lst ->
+     let msg = String.concat "; " lst in
+     begin
+       logger#add tag (STR msg);
+       default
+     end
+
+
 let log_traceresult
       (logger: logger_int) (tag: string) (f:('a -> unit)) (r: 'a traceresult) =
   match r with
@@ -192,6 +204,21 @@ let log_traceresult_list
      begin
        logger#add tag (STR msg);
        []
+     end
+
+
+let log_traceresult_string
+      (logger: logger_int)
+      (tag: string)
+      (f: ('a -> string))
+      (r: 'a traceresult) =
+  match r with
+  | Ok v -> f v
+  | Error lst ->
+     let msg = String.concat "; " lst in
+     begin
+       logger#add tag (STR msg);
+       ""
      end
 
 

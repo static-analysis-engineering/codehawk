@@ -33,6 +33,10 @@
 type 'a traceresult = ('a, string list) result
 
 
+(** tvalue r ~default] is [v] if r is [Ok v] and [default] otherwise.*)
+val tvalue: 'a traceresult -> default:'a -> 'a
+
+
 (** [tmap f r] is [Ok (f v)] if [r] is [Ok v] and [r] if [r] is [Error _];
     [tmap msg f r] is [Ok (f v)] if [r] is [Ok v] and [Error (msg::e)] if
     [r] is [Error e].*)
