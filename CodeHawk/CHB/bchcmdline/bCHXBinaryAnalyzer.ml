@@ -46,6 +46,7 @@ open BCHBasicTypes
 open BCHByteUtilities
 open BCHDisassemblySummary
 open BCHDoubleword
+open BCHFunctionInfo
 open BCHGlobalState
 open BCHMetrics
 open BCHPreFileIO
@@ -83,6 +84,7 @@ open BCHMIPSAssemblyInstructions
 open BCHARMAnalysisResults
 open BCHARMAssemblyFunctions
 open BCHDisassembleARM
+open BCHDisassembleARMStream
 
 (* bchlibpower32 *)
 open BCHDisassemblePower
@@ -128,9 +130,9 @@ let speclist =
     ("-extracthex", Arg.Unit (fun () -> cmd := "extracthex"),
      "extract executable content from lisphex encoded executable") ;
     ("-stream", Arg.Unit (fun () -> cmd := "stream"),
-     "stream disassemble a hex-encoded stream of bytes") ;
+     "stream disassemble a hex-encoded stream of bytes");
     ("-startaddress",  Arg.String set_stream_start_address,
-     "start address of the code stream") ;
+     "start address of the code stream");
     ("-arm", Arg.Unit (fun () -> architecture := "arm"), "arm executable");
     ("-thumb", Arg.Unit (fun () -> system_settings#set_thumb),
      "arm executable includes thumb instructions");
@@ -258,32 +260,46 @@ let main () =
     let _ = chlog#set_max_entry_size 1000 in
     if !cmd = "version" then
       begin
-	pr_debug [ version#toPretty ; NL ] ;
+	pr_debug [version#toPretty; NL];
 	exit 0
       end
 	
     else if !cmd = "gc" then
       begin
-	pr_debug [ garbage_collector_settings_to_pretty () ; NL ] ;
+	pr_debug [garbage_collector_settings_to_pretty (); NL];
 	exit 0
       end
 
     else if !cmd = "stream" then
-      let codestring = read_hex_stream_file system_info#get_filename in
-      begin
-        disassemble_stream !stream_start_address codestring ;
-        pr_debug
-	  [ STR ((!BCHAssemblyInstructions.assembly_instructions)#toString ()) ]
-      end
+      (* disable address checking in the creation of absolute addresses *)
+      let _ = system_info#set_elf_is_code_address wordzero wordmax in
+      (let codestring = read_hex_stream_file system_info#get_filename in
+       if !architecture = "x86" then
+         begin
+           disassemble_stream !stream_start_address codestring;
+           pr_debug
+	     [STR ((!BCHAssemblyInstructions.assembly_instructions)#toString ())]
+         end
+       else if !architecture = "arm" then
+         let starttime = Unix.gettimeofday () in
+         begin
+           BCHDisassembleARMStream.disassemble_stream !stream_start_address codestring;
+           for i = 1 to 10 do
+             analyze_arm starttime
+           done;
+           pr_debug [(get_function_info !stream_start_address)#finv#toPretty]
+         end
+       else
+         pr_debug [STR "Stream disassembly currently not supported"; NL])
 
     else if !cmd = "extracthex" then
       let _ = register_hashed_functions () in
       let (success,msg) = read_hexlified_pe_file system_info#get_filename in
       if success then
         begin
-          pverbose [ msg ; NL ] ;
-          save_pe_files () ;
-          save_log_files "extracthex" ;
+          pverbose [msg; NL];
+          save_pe_files ();
+          save_log_files "extracthex";
           exit 0
         end
       else

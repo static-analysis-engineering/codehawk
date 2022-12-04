@@ -148,7 +148,8 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
       !mips_assembly_instructions#set index instr ;
       opcode_monitor#check_instruction instr
     end in
-  let ch = system_info#get_string_stream x in
+  let ch =
+    make_pushback_stream ~little_endian:system_info#is_little_endian x in
   let _ =
     chlog#add
       "disassembly"
