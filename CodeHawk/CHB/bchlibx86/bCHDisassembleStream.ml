@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +51,7 @@ let disassemble_stream (vastart:doubleword_int) (codestring:string) =
   let _ = initialize_assembly_instructions 0 size size vastart [] [] in
   let add_instruction position opcode bytes =
     let va = vastart#add_int position in
-    let instr =  make_assembly_instruction va opcode bytes in
+    let instr = make_assembly_instruction va opcode bytes in
     !assembly_instructions#set position instr in
   try
     while ch#pos < size do
@@ -57,17 +59,18 @@ let disassemble_stream (vastart:doubleword_int) (codestring:string) =
       try
         let firstbyte = ch#read_byte in
         let opcode = disassemble_instruction ch vastart firstbyte in
-        let curpos = ch#pos  in
+        let curpos = ch#pos in
         let instrlen = curpos - prevpos in
         let instrbytes = String.sub codestring prevpos instrlen in
-        add_instruction prevpos  opcode instrbytes
+        add_instruction prevpos opcode instrbytes
       with
       | Invalid_argument s ->
          begin
            ch_error_log#add
              "stream disassembly"
-             (LBLOCK [ STR "failure disassembling instruction at " ;
-                       (vastart#add_int prevpos)#toPretty ]) ;
+             (LBLOCK [
+                  STR "failure disassembling instruction at ";
+                  (vastart#add_int prevpos)#toPretty ]);
            raise (Invalid_argument s)
          end
     done
@@ -75,6 +78,6 @@ let disassemble_stream (vastart:doubleword_int) (codestring:string) =
   | BCH_failure p ->
      ch_error_log#add
        "stream disassembly"
-       (LBLOCK [ STR "failure in disassembling codestring: " ;  p ])
-  |  IO.No_more_input -> ()
+       (LBLOCK [STR "failure in disassembling codestring: ";  p])
+  | IO.No_more_input -> ()
 

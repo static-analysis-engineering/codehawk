@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -74,23 +74,29 @@ let initialize_instructions len =
                (LBLOCK [ STR "Not sufficient array space to store all instruction bytes"]))
   end
 
+
 let get_indices (index:int) = (index/arrayLength, index mod arrayLength)
+
 
 let set_instruction (index:int) (instruction:assembly_instruction_int) =
   let (i,j) = get_indices index in
   instructions.(i).(j) <- instruction
+
 
 let initialize_instruction_segment (start:int) (endindex:int) =
   for index = start to (endindex - 1) do
     set_instruction index (make_assembly_instruction wordzero OpInvalid "")
   done
 
+
 let get_instruction (index:int) =	
   let (i,j) = get_indices index in instructions.(i).(j)
+
 
 let fold_instructions (f:'a -> assembly_instruction_int -> 'a) (init:'a) =
   Array.fold_left (fun a arr ->
     Array.fold_left (fun a1 opc -> f a1 opc) a arr) init instructions
+
 
 let iter_instructions (f: assembly_instruction_int -> unit) =
   Array.iter (fun arr ->	Array.iter f arr) instructions
@@ -368,7 +374,9 @@ object (self)
     
 end
 
+
 let assembly_instructions = ref (new assembly_instructions_t 1 wordzero)
+
 
 let initialize_assembly_instructions 
     (displacement:int)
@@ -378,17 +386,26 @@ let initialize_assembly_instructions
     (jumptables:jumptable_int list)
     (data_blocks: data_block_int list) =
   let endCode = code_base#add_int length in
-  let jumptablesInCode = List.filter 
-    (fun j -> code_base#le j#get_start_address && j#get_end_address#le endCode) jumptables in
+  let jumptablesInCode =
+    List.filter
+      (fun j ->
+        code_base#le j#get_start_address && j#get_end_address#le endCode)
+      jumptables in
   begin
-    chlog#add "initialization"
-      (LBLOCK [ STR "Initialize instructions of section at displacement " ; 
-		INT displacement ; STR " to " ; INT end_section ; STR " with " ;
-		INT (List.length jumptables) ; STR " jumptables and " ; 
-		INT (List.length data_blocks) ; STR " data blocks" ]) ;
-    initialize_instruction_segment displacement end_section ;
-    assembly_instructions := new assembly_instructions_t length code_base ;
-    !assembly_instructions#set_jumptables jumptablesInCode ;
+    chlog#add
+      "initialization"
+      (LBLOCK [
+           STR "Initialize instructions of section at displacement ";
+	   INT displacement;
+           STR " to ";
+           INT end_section;
+           STR " with ";
+	   INT (List.length jumptables);
+           STR " jumptables and ";
+	   INT (List.length data_blocks);
+           STR " data blocks"]);
+    initialize_instruction_segment displacement end_section;
+    assembly_instructions := new assembly_instructions_t length code_base;
+    !assembly_instructions#set_jumptables jumptablesInCode;
     !assembly_instructions#set_not_code data_blocks
   end
-    
