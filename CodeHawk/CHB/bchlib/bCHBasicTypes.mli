@@ -32,7 +32,10 @@ open CHPretty
 open CHLanguage
 open CHNumericalConstraints
 
-(* chlib *)
+(* chutil *)
+open CHTraceResult
+
+(* bchlib *)
 open BCHLibTypes
 
 
@@ -54,6 +57,9 @@ exception Invalid_input of string
 
 (* raised when control flow is found to be altered *)
 exception Request_function_retracing
+
+
+val fail_traceresult: pretty_t -> 'a traceresult -> 'a
 
 val get_version: unit -> string
 

@@ -1794,8 +1794,6 @@ object (self)
     | [] -> s
     | encodings -> decode_string s va encodings
 
-  method get_string_stream s = make_pushback_stream ~little_endian s
-    
   method get_file_string ?(hexSize=wordzero) (hexOffset:doubleword_int) =
     let offset = hexOffset#to_int in
     let size = hexSize#to_int in

@@ -37,6 +37,7 @@ open CHNumericalConstraints
 open CHPretty
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -411,14 +412,14 @@ type flag_t =
   | X86Flag of eflag_t
   | ARMCCFlag of arm_cc_flag_t
 
-(* ============================================================ Doubleword === *)
+(* =========================================================== Doubleword === *)
 
-(** doubleword_int -----------------------------------------------------------
-    32-bit word constructed from an unsigned 64-bit integer (immutable)
-    -------------------------------------------------------------------------- *)
 
 type dw_index_t = int
 
+
+(** representation of a 32-bit unsigned value (created from and indexed by a
+    64-bit ocaml integer, assumed to be the default width).*)
 class type doubleword_int =
 object ('a)
   (* identification *)
@@ -566,6 +567,7 @@ object
 
   (* accessors *)
   method pos: int
+  method sub: int -> int -> string traceresult
 end
 
 
@@ -2460,9 +2462,9 @@ end
 (* Indirect jump target types:
    JumptableTarget (offset,jumptable,reg)
       jmp* offset(.,reg,4) with offset within a jump table
-   OffsettableTarget (joffset,jumptable,datablock)
-      movzx (reg, doffset(_)) where doffset is the start of an an offset table
-      jmp* joffset(.,reg,4) where joffset is within a jump table
+   OffsettableTarget (joffset, jumptable, datablock)
+      x86:movzx (reg, doffset(_)) where doffset is the start of an offset table
+      x86:jmp* joffset(., reg, 4) where joffset is within a jump table
    JumpOnGlobal gvar
       jump target is provided in a global variable
    JumpOnArgument avar
@@ -3271,7 +3273,6 @@ object
   method get_file_string: ?hexSize:doubleword_int -> doubleword_int -> string
   method get_file_input:
            ?hexSize:doubleword_int -> doubleword_int ->  stream_wrapper_int
-  method get_string_stream: string -> pushback_stream_int
   method get_image_base: doubleword_int
   method get_base_of_code_rva: doubleword_int    (* relative virtual address *)
   method get_address_of_entry_point: doubleword_int

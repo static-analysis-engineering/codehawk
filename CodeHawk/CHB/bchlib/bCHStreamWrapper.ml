@@ -36,6 +36,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 
 (* bchlib *)
 open BCHBasicTypes
@@ -131,8 +132,15 @@ object (self)
     else 
       new big_endian_stream_wrapper_t input
   val mutable pos = 0
+  val s = s
 
   method pos = pos
+
+  method sub (pos: int) (len: int) =
+    try
+      Ok (String.sub s pos len)
+    with
+    | Invalid_argument m -> Error [m]
 
   method skip_bytes n = 
     try
