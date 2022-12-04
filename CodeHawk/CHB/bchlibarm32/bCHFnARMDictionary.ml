@@ -527,8 +527,9 @@ object (self)
          let tcond = rewrite_test_expr csetter txpr in
          let fcond = rewrite_test_expr csetter fxpr in
          let instr =
-           (!arm_assembly_instructions)#at_address
-             (string_to_doubleword csetter) in
+           fail_traceresult
+             (LBLOCK [STR "Internal error in FnARMDictionary:Branch"])
+             (get_arm_assembly_instruction (string_to_doubleword csetter)) in
          let bytestr = instr#get_bytes_ashexstring in
          let rdefs = get_all_rdefs tcond in
          let (tagstring, args) =
@@ -707,41 +708,46 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | IfThen (c, xyz) when instr#is_aggregate ->
+      | IfThen (c, xyz) when instr#is_aggregate_anchor ->
          let finfo = floc#f in
          let ctxtiaddr = floc#l#ci in
          if finfo#has_associated_cc_setter ctxtiaddr then
            let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
            let testloc = ctxt_string_to_location faddr testiaddr in
            let testaddr = testloc#i in
-           let testinstr = !arm_assembly_instructions#at_address testaddr in
-           let dstop = instr#get_aggregate_dst in
-           let (_, optpredicate) =
-             arm_conditional_expr
-               ~condopc:instr#get_opcode
-               ~testopc:testinstr#get_opcode
-               ~condloc:floc#l
-               ~testloc:testloc in
-           let (tags, args) =
-             (match optpredicate with
-              | Some p ->
-                 let lhs = dstop#to_variable floc in
-                 let rdefs = get_all_rdefs p in
-                 let (tagstring, args) =
-                   mk_instrx_data
-                     ~vars:[lhs]
-                     ~xprs:[p]
-                     ~rdefs:rdefs
-                     ~uses:[get_def_use lhs]
-                     ~useshigh:[get_def_use_high lhs]
-                     () in
-                 ([tagstring], args)
-              | _ ->
-                 ([], [])) in
-           let dependents =
-             List.map (fun d -> d#to_hex_string) instr#get_dependents in
-           let tags = tags @ ["subsumes"] @ dependents in
-           (tags, args)
+           let testinstr =
+             fail_traceresult
+               (LBLOCK [STR "FnDictionary:IfThen: "; floc#ia#toPretty])
+               (get_arm_assembly_instruction testaddr) in
+           let agg = get_aggregate floc#ia in
+           (match agg#it_sequence#kind with
+            | ITPredicateAssignment dstop ->
+               let (_, optpredicate) =
+                 arm_conditional_expr
+                   ~condopc:instr#get_opcode
+                   ~testopc:testinstr#get_opcode
+                   ~condloc:floc#l
+                   ~testloc:testloc in
+               let (tags, args) =
+                 (match optpredicate with
+                  | Some p ->
+                     let lhs = dstop#to_variable floc in
+                     let rdefs = get_all_rdefs p in
+                     let (tagstring, args) =
+                       mk_instrx_data
+                         ~vars:[lhs]
+                         ~xprs:[p]
+                         ~rdefs:rdefs
+                         ~uses:[get_def_use lhs]
+                         ~useshigh:[get_def_use_high lhs]
+                         () in
+                     ([tagstring], args)
+                  | _ ->
+                     ([], [])) in
+               let dependents =
+                 List.map (fun d -> d#get_address#to_hex_string) agg#instrs in
+               let tags = tags @ ["subsumes"] @ dependents in
+               (tags, args))
          else
            ([], [])
 
@@ -752,7 +758,10 @@ object (self)
          let testloc = ctxt_string_to_location floc#fa csetter in
          let tcond = rewrite_test_expr csetter txpr in
          let fcond = rewrite_test_expr csetter fxpr in
-         let instr = (!arm_assembly_instructions)#at_address testloc#i in
+         let instr =
+           fail_traceresult
+             (LBLOCK [STR "Internal error in FnARMDictionary:IfThen"])
+             (get_arm_assembly_instruction testloc#i) in
          let bytestr = instr#get_bytes_ashexstring in
          let rdefs = get_all_rdefs tcond in
          let (tagstring, args) =
@@ -1067,11 +1076,11 @@ object (self)
              ~useshigh:[get_def_use_high vrd]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
-         if instr#is_subsumed then
-           let subsumedby = instr#subsumed_by#to_hex_string in
-           (tags @ ["subsumed"; subsumedby], args)
-         else
-           (tags, args)
+         let (tags, args) =
+           match instr#is_in_aggregate with
+           | Some va -> (tags @ ["subsumed"; va#to_hex_string], args)
+           | _ -> (tags, args) in
+         (tags, args)
 
       | MoveRegisterCoprocessor (_, _, _, dst, _, _, _) ->
          let vdst = dst#to_variable floc in

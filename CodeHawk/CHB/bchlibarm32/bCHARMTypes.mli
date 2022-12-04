@@ -32,6 +32,7 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -1125,10 +1126,12 @@ class type arm_assembly_instruction_int =
     (* setters *)
     method set_block_entry: unit
     method set_inlined_call: unit
-    method set_aggregate: arm_operand_int -> doubleword_int list -> unit
-    method set_subsumed_by: doubleword_int -> unit
     method set_block_condition: unit
     method set_condition_covered_by: doubleword_int -> unit
+    method set_aggregate_entry: unit
+    method set_aggregate_exit: unit
+    method set_aggregate_anchor: unit
+    method set_in_aggregate: doubleword_int -> unit
 
     (* accessors *)
     method get_address: doubleword_int
@@ -1136,9 +1139,6 @@ class type arm_assembly_instruction_int =
     method get_instruction_bytes: string
     method get_bytes_ashexstring: string
     method get_non_code_block: not_code_t
-    method get_aggregate_dst: arm_operand_int
-    method get_dependents: doubleword_int list
-    method subsumed_by: doubleword_int
     method condition_covered_by: doubleword_int
 
     (* predicates *)
@@ -1148,10 +1148,12 @@ class type arm_assembly_instruction_int =
     method is_valid_instruction: bool
     method is_non_code_block: bool
     method is_not_code: bool
-    method is_aggregate: bool    (* IT turned into assignment *)
-    method is_subsumed: bool     (* subsumed by IT turned into assignment *)
     method is_block_condition: bool  (* IT turned into conditional jump *)
     method is_condition_covered: bool  (* condition covered by IT cond. jump *)
+    method is_in_aggregate: doubleword_int option
+    method is_aggregate_entry: bool
+    method is_aggregate_exit: bool
+    method is_aggregate_anchor: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
@@ -1161,25 +1163,129 @@ class type arm_assembly_instruction_int =
   end
 
 
+type arm_assembly_instruction_result = arm_assembly_instruction_int traceresult
+
+
+type thumb_it_sequence_kind_t =
+  | ITPredicateAssignment of arm_operand_int
+
+
+class type thumb_it_sequence_int =
+  object
+    (* accessors *)
+    method kind: thumb_it_sequence_kind_t
+    method instrs: arm_assembly_instruction_int list
+    method anchor: doubleword_int
+
+    (* translation *)
+    method toCHIF: cmd_t list
+
+    (* i/o *)
+    method write_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
+
+class type arm_jumptable_int =
+  object
+    (* accessors *)
+    method target_addrs: doubleword_int list
+    method default_target: doubleword_int
+    method indexed_targets: (doubleword_int * int list) list
+
+    (* translation *)
+    method toCHIF: doubleword_int -> cmd_t list
+
+    (* i/o *)
+    method write_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
+
+type arm_aggregate_kind_t =
+  | ARMJumptable of arm_jumptable_int
+  | ThumbITSequence of thumb_it_sequence_int
+
+
+class type arm_instruction_aggregate_int =
+  object
+    method kind: arm_aggregate_kind_t
+    method instrs: arm_assembly_instruction_int list
+    method addrs: doubleword_int list
+    method anchor: arm_assembly_instruction_int
+    method entry: arm_assembly_instruction_int
+    method exitinstr: arm_assembly_instruction_int
+    method jumptable: arm_jumptable_int
+    method it_sequence: thumb_it_sequence_int
+
+    (* translation *)
+    method toCHIF: doubleword_int -> cmd_t list
+
+    (* predicates *)
+    method is_jumptable: bool
+    method is_it_sequence: bool
+
+    (* i/o *)
+    method write_xml: xml_element_int -> unit
+    method toPretty: pretty_t
+  end
+
+
 class type arm_assembly_instructions_int =
   object
 
     (* setters *)
-    method set: int -> arm_assembly_instruction_int -> unit
+
+    method set_instruction:
+             doubleword_int -> arm_assembly_instruction_int -> unit
+
+    (** [set_not_code lst] marks the addresses contained within the data blocks
+        in [lst] as [NotCode]. Data blocks whose start or end address lie outside
+        the declared code space are ignored (an error message is logged for these
+        blocks).*)
     method set_not_code: data_block_int list -> unit
-    method set_jumptables: jumptable_int list -> unit
+
+    (** [set_aggregate va agg] records the presence of aggregate semantic unit
+        [agg] at virtual address [va], and marks the participating assembly
+        instructions accordingly. If the aggregate is a jumptable, and the
+        jumptable addresses or offsets are located within the code space, these
+        locations are marked as [NotCode].*)
+    method set_aggregate: doubleword_int -> arm_instruction_aggregate_int -> unit
 
     (* accessors *)
+
+    (** Return the length of code space (in bytes).*)
     method length: int
-    method at_index: int -> arm_assembly_instruction_int
-    method at_address: doubleword_int -> arm_assembly_instruction_int
+
+    (** [get_instruction va] returns the instruction located at virtual address
+        [va]. If no instruction has been entered yet, a new instruction, with
+        opcode [OpInvalid] is assigned and returned. If [va] is out-of-range
+        an Error result is returned. *)
+    method get_instruction: doubleword_int -> arm_assembly_instruction_result
+
+    (** [get_code_addresses_rev low high] returns the list of virtual addresses
+        bounded by [low] and [high] that hold valid instructions, in reverse
+        order. [low] defaults to [0x0], [high] defaults to [0xffffffff] *)
     method get_code_addresses_rev:
              ?low:doubleword_int
              -> ?high:doubleword_int
              -> unit
              -> doubleword_int list
-    method get_next_valid_instruction_address: doubleword_int -> doubleword_int
+
+    (** [get_next_valid_instruction_address va] returns the least virtual
+        address strictly larger than [va] with a valid assembly instruction.
+        If no such address exists, or if [va] is out-of-range, None is
+        returned.*)
+    method get_next_valid_instruction_address:
+             doubleword_int -> doubleword_int traceresult
+
+    method get_aggregate: doubleword_int -> arm_instruction_aggregate_int
+
+    (** Return the number of valid instructions in the code space.*)
     method get_num_instructions: int
+
+    (** Return the number of valid instructions in the code space with unknown
+        opcode.*)
     method get_num_unknown_instructions: int
 
     (* iterators *)
@@ -1187,8 +1293,17 @@ class type arm_assembly_instructions_int =
     method itera: (doubleword_int -> arm_assembly_instruction_int -> unit) -> unit
 
     (* predicates *)
+
+    (** [is_code_address va] returns true if [va] is a virtual address within
+        the code space and if the address holds a valid assembly instruction
+        (i.e., it is the starting address of an assembly instruction). *)
     method is_code_address: doubleword_int -> bool
+
+    (** [has_next_valid_instruction va] returns true if [va] is a virtual address
+        within the code and there exists a virtual address with a valid instruction 
+        that is strictly larger than [va].*)
     method has_next_valid_instruction: doubleword_int -> bool
+    method has_aggregate: doubleword_int -> bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
@@ -1202,20 +1317,56 @@ class type arm_assembly_block_int =
   object
 
     (* accessors *)
+
+    (** Return the address of the function to which this block belongs. If this
+        block is part of an inlined function, the address of the address of the
+        orginal function is returned (the inner function), not the address of
+        the function in which the block is inlined.*)
     method get_faddr: doubleword_int
+
+    (** Return the address of the first instruction in this block.*)
     method get_first_address: doubleword_int
+
+    (** Return the location of this block (with full context, if inlined).*)
     method get_location: location_int
+
+    (** Return the context of this block (empty if not inlined).*)
     method get_context: context_t list
+
+    (** Return the context of this block as a string (the first address, if
+        not inlined).*)
     method get_context_string: ctxt_iaddress_t
+
+    (** Return the address of the last instruction in this block.*)
     method get_last_address: doubleword_int
+
+    (** [get_instructions_rev high] returns the list of instructions in this
+        block from the instruction at the first address to the instruction
+        at address [high] or the last address, whichever is smaller, in reverse
+        order. [high] defaults to the last address.*)
     method get_instructions_rev:
              ?high:doubleword_int
              -> unit
              -> arm_assembly_instruction_int list
+
+    (** Return the list of instructions contained in this basic block.*)
     method get_instructions: arm_assembly_instruction_int list
+
+    (** Return the successors of this block, including blocks of the inlining
+        function if this block is part of an inlined function.*)
     method get_successors: ctxt_iaddress_t list
+
+    (** [get_instruction va] returns the instruction at address [va].
+
+        Raises an exception if [va] is not within this block, or if [va] does
+        not have a valid instruction.*)
     method get_instruction: doubleword_int -> arm_assembly_instruction_int
+
+    (** Return the bytes that make up the instructions of this block as a string
+        of hexadecimial characters.*)
     method get_bytes_as_hexstring: string
+
+    (** Return the number of instructions in this basic block.*)
     method get_instruction_count: int
 
     (* predicates *)

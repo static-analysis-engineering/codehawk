@@ -162,7 +162,10 @@ let make_instr_local_tests
         let testtestiaddr = finfo#get_associated_cc_setter testloc#ci in
         let testtestloc = ctxt_string_to_location faddr testtestiaddr in
         let testtestaddr = testtestloc#i in
-        let testtestinstr = !arm_assembly_instructions#at_address testtestaddr in
+        let testtestinstr =
+          fail_traceresult
+            (LBLOCK [STR "Internal error in make_instr_local_tests"])
+            (get_arm_assembly_instruction testtestaddr) in
         let _ =
           if collect_diagnostics () then
             ch_diagnostics_log#add
@@ -271,7 +274,10 @@ let make_tests
         let testtestiaddr = finfo#get_associated_cc_setter testloc#ci in
         let testtestloc = ctxt_string_to_location faddr testtestiaddr in
         let testtestaddr = testtestloc#i in
-        let testtestinstr = !arm_assembly_instructions#at_address testtestaddr in
+        let testtestinstr =
+          fail_traceresult
+            (LBLOCK [STR "Internal error in make_instr_local_tests"])
+            (get_arm_assembly_instruction testtestaddr) in
         let _ =
           if collect_diagnostics () then
             ch_diagnostics_log#add
@@ -534,7 +540,11 @@ let translate_arm_instruction
       let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
       let testloc = ctxt_string_to_location faddr testiaddr in
       let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
-      let testinstr = (!arm_assembly_instructions#at_address testaddr) in
+      let testinstr =
+          fail_traceresult
+            (LBLOCK [STR "Internal error in make_instr_local_tests"])
+            (get_arm_assembly_instruction testaddr) in
+
       let (frozenvars, tests) =
         make_instr_local_tests ~condloc:loc ~testloc ~condinstr:instr ~testinstr in
       match tests with
@@ -586,10 +596,14 @@ let translate_arm_instruction
        let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
        let testloc = ctxt_string_to_location faddr testiaddr in
        let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
+       let testinstr =
+          fail_traceresult
+            (LBLOCK [STR "Internal error in make_instr_local_tests"])
+            (get_arm_assembly_instruction testaddr) in
        let (nodes, edges) =
          make_condition
            ~condinstr:instr
-           ~testinstr:(!arm_assembly_instructions#at_address testaddr)
+           ~testinstr:testinstr
            ~condloc:loc
            ~testloc
            ~blocklabel
@@ -1108,58 +1122,64 @@ let translate_arm_instruction
   | DataMemoryBarrier _ ->
      default []
 
-  | IfThen (c, xyz) when instr#is_aggregate ->
+  | IfThen (c, xyz) when instr#is_aggregate_anchor ->
      let floc = get_floc loc in
      if finfo#has_associated_cc_setter ctxtiaddr then
        let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
        let testloc = ctxt_string_to_location faddr testiaddr in
        let testaddr = testloc#i in
-       let testinstr = !arm_assembly_instructions#at_address testaddr in
-       let dstop = instr#get_aggregate_dst in
-       let (frozenvars, optpredicate) =
-         make_conditional_predicate
-           ~condinstr:instr
-           ~testinstr:testinstr
-           ~condloc:loc
-           ~testloc:testloc in
-       let cmds =
-         match optpredicate with
-         | Some p ->
-            let (lhs, lhscmds) = dstop#to_lhs floc in
-            let cmds = floc#get_assign_commands lhs p in
-            let usevars = vars_in_expr_list [p] in
-            let usehigh = get_use_high_vars [p] in
-            let defcmds =
-              floc#get_vardef_commands
-                ~defs:[lhs]
-                ~use:usevars
-                ~usehigh:usehigh
-                ~flagdefs:flagdefs
-                ctxtiaddr in
-            let _ =
-              if collect_diagnostics () then
-                begin
-                  ch_diagnostics_log#add
-                    "assign ite predicate"
-                    (LBLOCK [
-                         testaddr#toPretty;
-                         STR ": ";
-                         lhs#toPretty;
-                         STR " := ";
-                         x2p p]);
-                  ch_diagnostics_log#add
-                    "ite assign cmds"
-                    (LBLOCK (List.map (command_to_pretty 0) cmds))
-                end in
-            lhscmds @ defcmds @ cmds
-       | _ ->
-          let _ =
-            if collect_diagnostics () then
-              ch_diagnostics_log#add
-                "no ite predicate"
-                (LBLOCK [testaddr#toPretty; STR ": " ; testinstr#toPretty]) in
-          [] in
-       default cmds
+       let testinstr =
+         fail_traceresult
+           (LBLOCK [STR "Translate IfThenin: "; STR ctxtiaddr])
+           (get_arm_assembly_instruction testaddr) in
+       let itagg = get_aggregate loc#i in
+       let its = itagg#it_sequence in
+       (match its#kind with
+        | ITPredicateAssignment dstop ->
+           let (frozenvars, optpredicate) =
+             make_conditional_predicate
+               ~condinstr:instr
+               ~testinstr:testinstr
+               ~condloc:loc
+               ~testloc:testloc in
+           let cmds =
+             match optpredicate with
+             | Some p ->
+                let (lhs, lhscmds) = dstop#to_lhs floc in
+                let cmds = floc#get_assign_commands lhs p in
+                let usevars = vars_in_expr_list [p] in
+                let usehigh = get_use_high_vars [p] in
+                let defcmds =
+                  floc#get_vardef_commands
+                    ~defs:[lhs]
+                    ~use:usevars
+                    ~usehigh:usehigh
+                    ~flagdefs:flagdefs
+                    ctxtiaddr in
+                let _ =
+                  if collect_diagnostics () then
+                    begin
+                      ch_diagnostics_log#add
+                        "assign ite predicate"
+                        (LBLOCK [
+                             testaddr#toPretty;
+                             STR ": ";
+                             lhs#toPretty;
+                             STR " := ";
+                             x2p p]);
+                      ch_diagnostics_log#add
+                        "ite assign cmds"
+                        (LBLOCK (List.map (command_to_pretty 0) cmds))
+                    end in
+                lhscmds @ defcmds @ cmds
+             | _ ->
+                let _ =
+                  if collect_diagnostics () then
+                    ch_diagnostics_log#add
+                      "no ite predicate"
+                      (LBLOCK [testaddr#toPretty; STR ": " ; testinstr#toPretty]) in
+                [] in
+           default cmds)
      else
        let _ =
          if collect_diagnostics () then
@@ -1177,6 +1197,10 @@ let translate_arm_instruction
        let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
        let testloc = ctxt_string_to_location faddr testiaddr in
        let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
+       let testinstr =
+          fail_traceresult
+            (LBLOCK [STR "Internal error in make_instr_local_tests"])
+            (get_arm_assembly_instruction testaddr) in
        let _ =
          if collect_diagnostics () then
            ch_diagnostics_log#add
@@ -1185,7 +1209,7 @@ let translate_arm_instruction
        let (nodes, edges) =
          make_condition
            ~condinstr:instr
-           ~testinstr:(!arm_assembly_instructions#at_address testaddr)
+           ~testinstr:testinstr
            ~condloc:loc
            ~testloc
            ~blocklabel
@@ -1660,11 +1684,11 @@ let translate_arm_instruction
    *    APSR.N = result<31>;
    *    APSR.Z = IsZeroBit(result);
    * ------------------------------------------------------------------------ *)
-  | Move (_, c, rd, rm, _, _) when instr#is_subsumed ->
+  | Move (_, c, rd, rm, _, _) when Option.is_some instr#is_in_aggregate ->
      let _ =
        if collect_diagnostics () then
          ch_diagnostics_log#add
-           "instr subsumed"
+           "instr part of aggregate"
            (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in

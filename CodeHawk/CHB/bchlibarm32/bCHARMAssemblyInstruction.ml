@@ -50,6 +50,7 @@ open BCHARMDictionary
 open BCHARMOpcodeRecords
 open BCHARMTypes
 
+
 class arm_assembly_instruction_t
         (vaddr: doubleword_int)
         (is_arm: bool)
@@ -59,9 +60,13 @@ object (self)
      
   val mutable block_entry = false
   val mutable inlined_call = false
-  val mutable aggregate_dst = None
+  val mutable in_aggregate = None
+  val mutable aggregate_entry = false
+  val mutable aggregate_exit = false
+  val mutable aggregate_anchor = false
+  (* val mutable aggregate_dst = None
   val mutable aggregate = []
-  val mutable subsumedby = None  (* refers to IT instruction *)
+  val mutable subsumedby = None  (* refers to IT instruction *)  *)
   val mutable blockcondition = false
   val mutable conditioncoveredby = None  (* refers to IT instruction *)
 
@@ -75,8 +80,25 @@ object (self)
           (LBLOCK [vaddr#toPretty; STR ": "; self#toPretty]) in
     inlined_call <- true
 
+  method set_aggregate_entry = aggregate_entry <- true
+
+  method set_aggregate_exit = aggregate_exit <- true
+
+  method set_aggregate_anchor = aggregate_anchor <- true
+
+  method set_in_aggregate (agg_addr: doubleword_int) =
+    in_aggregate <- Some agg_addr
+
+  method is_aggregate_entry = aggregate_entry
+
+  method is_aggregate_exit = aggregate_exit
+
+  method is_aggregate_anchor = aggregate_anchor
+
+  method is_in_aggregate = in_aggregate
+
   (* applies to IfThen instruction:
-     aggregates the dependents into one assignment *)
+     aggregates the dependents into one assignment
   method set_aggregate (dstop: arm_operand_int) (dependents: doubleword_int list) =
     begin
       aggregate <- dependents;
@@ -108,7 +130,7 @@ object (self)
     | Some iaddr -> iaddr
     | _ ->
        raise
-         (BCH_failure (LBLOCK [STR "Instruction is not subsumed"]))
+         (BCH_failure (LBLOCK [STR "Instruction is not subsumed"]))   *)
 
   method set_block_condition = blockcondition <- true
 
@@ -179,8 +201,8 @@ object (self)
     begin
       (if self#is_function_entry_point then stat := !stat ^ "F");
       (if self#is_block_entry then stat := !stat ^ "B");
-      (if self#is_aggregate then stat := !stat ^ "A");
-      (if self#is_subsumed then stat := !stat ^ "S");
+      (* (if self#is_aggregate then stat := !stat ^ "A");
+      (if self#is_subsumed then stat := !stat ^ "S"); *)
       (if !stat = "" then () else set "stat" !stat);
       set "ia" self#get_address#to_hex_string;
       arm_dictionary#write_xml_arm_opcode node opc;

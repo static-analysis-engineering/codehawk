@@ -752,7 +752,7 @@ let parse_data_proc_reg_type (instr: doubleword_int) (cond: int) =
 
 let parse_data_proc_imm_type
       (ch: pushback_stream_int)
-      (base: doubleword_int)
+      (iaddr: doubleword_int)
       (instr: doubleword_int)
       (cond: int) =
   let b = instr#get_segval in
@@ -792,7 +792,8 @@ let parse_data_proc_imm_type
      let rd = r15 WR in
      let imm32 = arm_expand_imm (b 11 8) (b 7 0) in
      (try
-        let imm = mk_arm_absolute_target_op ch base (-imm32) RD in
+        let base = iaddr#add_int 8 in
+        let imm = mk_arm_absolute_target_op base (-imm32) RD in
         (* ADR<c> <Rd>, <label> *)
         Adr (c, rd, imm)
       with
@@ -820,7 +821,7 @@ let parse_data_proc_imm_type
      let rd = r15 WR in
      let imm32 = arm_expand_imm (b 11 8) (b 7 0) in
      (try
-        let imm = mk_arm_absolute_target_op ch base imm32 RD in
+        let imm = mk_arm_absolute_target_op iaddr imm32 RD in
         (* ADR<c> <Rd>, <label> *)
         Adr (c, rd, imm)
       with
@@ -4291,7 +4292,6 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
 
 let parse_opcode
       (ch: pushback_stream_int)
-      (base: doubleword_int)
       (iaddr: doubleword_int)
       (instrbytes: doubleword_int):arm_opcode_t =
   let b = instrbytes#get_segval in
@@ -4307,7 +4307,7 @@ let parse_opcode
     | 0 when (bv 4) = 1 && (bv 7) = 1 ->
        parse_data_proc_reg_load_stores instrbytes cond
     | 0 -> parse_data_proc_reg_type instrbytes cond
-    | 1 -> parse_data_proc_imm_type ch base instrbytes cond
+    | 1 -> parse_data_proc_imm_type ch iaddr instrbytes cond
     | 2 -> parse_load_store_imm_type instrbytes cond
     | 3 when (instrbytes#get_bitval 4) = 1 ->
        parse_media_type instrbytes cond
@@ -4322,10 +4322,9 @@ let parse_opcode
 
 
 let disassemble_arm_instruction
-      (ch:pushback_stream_int) (base:doubleword_int) (instrbytes:doubleword_int) =
-  let iaddr = base#add_int (ch#pos - 4) in
+      (ch:pushback_stream_int) (iaddr:doubleword_int) (instrbytes:doubleword_int) =
   try
-    parse_opcode ch base iaddr instrbytes
+    parse_opcode ch iaddr instrbytes
   with
   | ARM_undefined s ->
      begin
@@ -4353,7 +4352,7 @@ let disassemble_arm_instruction
        raise (BCH_failure p)
      end
   | IO.No_more_input ->
-     let address = base#add_int ch#pos in
+     let address = iaddr#add_int 4 in
      begin
        ch_error_log#add
          "no more input"

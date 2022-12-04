@@ -160,8 +160,7 @@ val mk_arm_immediate_op:
   -> arm_operand_int
 
 val mk_arm_absolute_target_op:
-  pushback_stream_int
-  -> doubleword_int
+  doubleword_int
   -> int
   -> arm_operand_mode_t
   -> arm_operand_int
