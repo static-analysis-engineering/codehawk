@@ -32,6 +32,12 @@ type 'a traceresult = ('a, string list) result
 let tvalue (r: 'a traceresult) ~(default: 'a) = Result.value r ~default
 
 
+let tget_ok (r: 'a traceresult) = Result.get_ok r
+
+
+let tget_error (r: 'a traceresult) = Result.get_error r
+
+
 let tmap ?(msg="") (f: 'a -> 'c) (r: 'a traceresult) =
   match r with
   | Ok v -> Ok (f v)
@@ -43,6 +49,23 @@ let tbind ?(msg="") (f: 'a -> 'c traceresult) (r: 'a traceresult) =
   match r with
   | Ok v -> f v
   | Error e when msg = "" -> Error e
+  | Error e -> Error (msg :: e)
+
+let tfold ~(ok:'a -> 'c) ~(error:string list -> 'c) (r: 'a traceresult): 'c =
+  match r with
+  | Ok v -> ok v
+  | Error e -> error e
+
+
+let tfold_default (ok: 'a -> 'c) (d: 'c) (r: 'a traceresult): 'c =
+  match r with
+  | Ok v -> ok v
+  | Error _ -> d
+
+
+let tprop (r: 'a traceresult) (msg: string): 'a traceresult =
+  match r with
+  | Ok v -> Ok v
   | Error e -> Error (msg :: e)
 
 
