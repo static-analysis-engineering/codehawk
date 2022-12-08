@@ -55,13 +55,26 @@ exception Invalid_input of string
 exception Request_function_retracing
 
 
-let fail_traceresult (p: pretty_t) (r: 'a traceresult): 'a =
+let trerror_record (p: pretty_t) (e: string list) =
+  LBLOCK [p; STR " ("; STR (String.concat "; " e); STR ")"]
+
+
+let fail_tvalue (p: string list -> pretty_t) (r: 'a traceresult): 'a =
   match r with
   | Ok v -> v
-  | Error e ->
-     let msg =
-       LBLOCK [p; STR "; trace: ["; STR (String.concat "; " e); STR "]"] in
-     raise (BCH_failure msg)
+  | Error e -> raise (BCH_failure (p e))
+
+
+let fail_tfold (p: string list -> pretty_t) (f: 'a -> 'c) (r: 'a traceresult) =
+  match r with
+  | Ok v -> f v
+  | Error e -> raise (BCH_failure (p e))
+
+
+let fail_titer (p: string list -> pretty_t) (f: 'a -> unit) (r: 'a traceresult) =
+  match r with
+  | Ok v -> f v
+  | Error e -> raise (BCH_failure (p e))
 
 
 let eflags_to_string_table = H.create 6

@@ -59,7 +59,33 @@ exception Invalid_input of string
 exception Request_function_retracing
 
 
-val fail_traceresult: pretty_t -> 'a traceresult -> 'a
+val trerror_record: pretty_t -> string list -> pretty_t
+
+
+(** [fail_tvalue p r] is [v] if [r] is [Ok v] and raises
+    [BCH_failure (p e)] if [r] is [Error e].
+
+    @raise BCH_failure
+*)
+val fail_tvalue: (string list -> pretty_t) -> 'a traceresult -> 'a
+
+
+(** [fail_tfold p f r] is [f v] if [r] is [Ok v] and raises
+    [BCH_failure (p e)] if [r] is [Error e].
+
+    @raise BCH_failure
+*)
+val fail_tfold: (string list -> pretty_t) -> ('a -> 'c) -> 'a traceresult -> 'c
+
+
+(** [fail_titer p f r] is [f v] if [r] is [Ok v] and raises
+    [BCH_failure (p e)] if [r] is [Error e].
+
+    @raise BCH_failure
+ *)
+val fail_titer:
+  (string list -> pretty_t) -> ('a -> unit) -> 'a traceresult -> unit
+
 
 val get_version: unit -> string
 
