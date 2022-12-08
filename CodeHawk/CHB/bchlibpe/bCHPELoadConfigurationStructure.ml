@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +40,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
@@ -48,6 +51,21 @@ open BCHStreamWrapper
 
 (* bchlibpe *)
 open BCHLibPETypes
+
+module TR = CHTraceResult
+
+
+let check_tr_result (msg: string) (r: 'a traceresult): 'a =
+  if Result.is_ok r then
+    TR.tget_ok r
+  else
+    fail_tvalue
+      (trerror_record
+         (LBLOCK [
+              STR "BCHPELoadConfigurationStructure:";
+              STR msg]))
+      r
+
 
 class load_configuration_directory_t:load_configuration_directory_int =
 object (self)
@@ -78,15 +96,21 @@ object (self)
 
   val mutable se_handler_table = Array.make 1 wordzero
 
-  method set_section_RVA (address:doubleword_int)   = sectionRVA <- address
+  method set_section_RVA (address:doubleword_int) = sectionRVA <- address
   method set_directory_RVA (address:doubleword_int) = directoryRVA <- address
 
-  method get_SE_handler_table_VA   = seHandlerTable
-  method get_SE_handler_table_size = seHandlerCount#multiply_int 4
+  method get_SE_handler_table_VA = seHandlerTable
+  method get_SE_handler_table_size =
+    check_tr_result
+      "load_configuration_directory#get_SE_handler_table_size"
+      (seHandlerCount#multiply_int 4)
 
   method read (byte_string:string) =
     try
-      let offset = (directoryRVA#subtract sectionRVA)#to_int in
+      let offset =
+        check_tr_result
+          "load_configuration_directory#read offset"
+          (directoryRVA#subtract_to_int sectionRVA) in
       let ch = make_pushback_stream (string_suffix byte_string offset) in
       begin
     (* 0, 4, Characteristics ---------------------------------------------------
@@ -213,33 +237,45 @@ object (self)
 	
   method read_SE_handler_table (imageBase:doubleword_int) (byte_string:string) =
     try
-      let rva = seHandlerTable#subtract imageBase in
-      let offset = (rva#subtract sectionRVA)#to_int in
+      let rva =
+        check_tr_result
+          "load_configuration_directory#read_SE_handler_table rva"
+          (seHandlerTable#subtract imageBase) in
+      let offset =
+        check_tr_result
+          "load_configuration_directory#read_SE_handler_table offset"
+          (rva#subtract_to_int sectionRVA) in
       if offset < String.length byte_string then
 	let ch = make_pushback_stream (string_suffix byte_string offset) in
 	let count = seHandlerCount#to_int in
 	begin
-	  se_handler_table <- Array.make count wordzero ;
+	  se_handler_table <- Array.make count wordzero;
 	  for i=0 to (count-1) do
 	    se_handler_table.(i) <- ch#read_doubleword
 	  done
 	end
       else
-	ch_error_log#add "PE headers" 
-	  (LBLOCK [ STR "Unable to read SE handler table: " ; 
-		    STR "offset: " ; INT offset ; 
-		    STR "; byte string length: " ; INT (String.length byte_string) ] )
+	ch_error_log#add
+          "PE headers"
+	  (LBLOCK [
+               STR "Unable to read SE handler table: ";
+	       STR "offset: ";
+               INT offset;
+	       STR "; byte string length: ";
+               INT (String.length byte_string)])
     with
     | IO.No_more_input ->
       begin
-	ch_error_log#add "no more input" 
-	  (STR "load_configuration_directory_t#read_SE_handler_table") ;
+	ch_error_log#add
+          "no more input"
+	  (STR "load_configuration_directory_t#read_SE_handler_table");
 	raise IO.No_more_input
       end
     | Invalid_argument s ->
       begin
-	ch_error_log#add "invalid argument" 
-	  (STR "load_configuration_directory#read_SE_handler_table") ;
+	ch_error_log#add
+          "invalid argument"
+	  (STR "load_configuration_directory#read_SE_handler_table");
       end
 	
   method get_SE_handlers = Array.fold_left (fun a v -> v::a) [] se_handler_table
@@ -285,7 +321,7 @@ object (self)
     
   method private se_handler_table_to_pretty =
     Array.fold_left
-      (fun a v -> LBLOCK [ a ; NL ; STR v#to_hex_string ]) (STR "") se_handler_table
+      (fun a v -> LBLOCK [a; NL; STR v#to_hex_string]) (STR "") se_handler_table
       
   method toPretty =
     LBLOCK [
@@ -309,7 +345,7 @@ object (self)
       STR "Security cookie                  " ; STR securityCookie#to_fixed_length_hex_string ; NL ;
       STR "SEHandler table                  " ; STR seHandlerTable#to_fixed_length_hex_string ; NL ;
       STR "SEHandler count                  " ; STR seHandlerCount#to_fixed_length_hex_string ; NL ; NL ;
-      STR "SEHandler table" ; NL ; INDENT (5, self#se_handler_table_to_pretty) ; NL ; NL ]
+      STR "SEHandler table"; NL; INDENT (5, self#se_handler_table_to_pretty); NL; NL]
       
 end     
   

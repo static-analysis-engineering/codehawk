@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -54,6 +56,9 @@ open BCHSystemInfo
 
 (* bchlibpe *)
 open BCHLibPETypes
+
+module TR = CHTraceResult
+
 
 class pe_symboltable_entry_t =
 object (self)
@@ -193,10 +198,14 @@ object (self)
     let get = node#getAttribute in
     let has = node#hasNamedAttribute in
     let geti t = if has t then node#getIntAttribute t else 0 in
-    let getx t = if has t then string_to_doubleword (get t) else wordzero in
+    let getx t =
+      if has t then
+        TR.tget_ok (string_to_doubleword (get t))
+      else
+        wordzero in
     begin
-      name <- get "name" ;
-      stValue <- getx "st-value" ;
+      name <- get "name";
+      stValue <- getx "st-value";
       sectionNumber <- geti "section-number" ;
       stType <- geti "symbol-type" ;
       storageClass <- geti "storage-class" ;
@@ -225,10 +234,10 @@ object (self)
 
   method reset =
     begin
-      imageBase <- wordzero ;
-      baseOfCode <- wordzero ;
-      symboltable#removeList symboltable#listOfKeys ;
-      Hashtbl.clear function_address_name_table ;
+      imageBase <- wordzero;
+      baseOfCode <- wordzero;
+      symboltable#removeList symboltable#listOfKeys;
+      Hashtbl.clear function_address_name_table;
       Hashtbl.clear function_name_address_table 
     end
 
@@ -246,15 +255,20 @@ object (self)
     with
       Not_found ->
 	begin
-	  ch_error_log#add "invocation error"
-	    (LBLOCK [ STR "pe_symbol_table_t#find_function_address_name: No name found for " ;
-		      dw#toPretty]);
-	  raise (Invocation_error "pe_symbol_table_t#find_function_address_name")
+	  ch_error_log#add
+            "invocation error"
+	    (LBLOCK [
+                 STR "pe_symbol_table_t#find_function_address_name: ";
+                 STR "No name found for ";
+		 dw#toPretty]);
+	  raise
+            (Invocation_error "pe_symbol_table_t#find_function_address_name")
 	end
 	  
   method private fold_function_address_name fn initial_value =
     Hashtbl.fold (fun k v a -> 
-      fn (index_to_doubleword k) v a) function_address_name_table initial_value
+        fn (TR.tget_ok (index_to_doubleword k)) v a)
+      function_address_name_table initial_value
       
   method private add_function_name_address (name:string) (address:doubleword_int) =
     Hashtbl.add function_name_address_table name address
@@ -342,10 +356,14 @@ object (self)
     with
       Not_found ->
 	begin
-	  ch_error_log#add "invocation error"
-	    (LBLOCK [ STR "pe_symbol_table_t#find_function_address: No address found for " ;
-		      STR fname]);
-	  raise (Invocation_error "pe_symbol_table_t#find_function_address")
+	  ch_error_log#add
+            "invocation error"
+	    (LBLOCK [
+                 STR "pe_symbol_table_t#find_function_address: ";
+                 STR "No address found for ";
+		 STR fname]);
+	  raise
+            (Invocation_error "pe_symbol_table_t#find_function_address")
 	end
 	  
 	  
@@ -358,7 +376,11 @@ object (self)
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
     symboltable#iter (fun _ v ->
-      let sNode = xmlElement "symbol" in begin v#write_xml sNode ; append [ sNode ] end)
+        let sNode = xmlElement "symbol" in
+        begin
+          v#write_xml sNode;
+          append [sNode]
+        end)
 
   method read_xml (node:xml_element_int) =
     List.iter (fun sNode ->

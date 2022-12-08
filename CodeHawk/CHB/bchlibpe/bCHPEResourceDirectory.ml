@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,15 +40,30 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 open BCHStreamWrapper
 
 (* bchlibpe *)
 open BCHLibPETypes
+
+module TR = CHTraceResult
+
+
+let fail_traceresult (msg: string) (r: 'a traceresult): 'a =
+  if Result.is_ok r then
+    TR.tget_ok r
+  else
+    fail_tvalue
+      (trerror_record
+         (LBLOCK [STR "BCHPEResourceDirectory:"; STR msg]))
+      r
+
 
 (* Note: all RVA's in this module, except for sectionRVA,  are relative to the start of 
    the section rather than to the start of the image
@@ -324,16 +341,18 @@ object
       rootnode <- RData (new resource_data_entry_t wordzero)
     end
 
-  method set_section_RVA (address:doubleword_int)   = sectionRVA   <- address
+  method set_section_RVA (address:doubleword_int) = sectionRVA <- address
+
   method set_directory_RVA (address:doubleword_int) = directoryRVA <- address
 
   method read (byte_string) =
-    try
-      let address = directoryRVA#subtract sectionRVA in
-      rootnode <- resource_root_directory_node address byte_string
-    with
-    | Invalid_argument s ->
-      ch_error_log#add "invalid argument" (STR ("read_resource_directory_table: " ^ s))
+    log_titer
+      (mk_tracelog_spec
+         ~tag:"disassembly"
+         "BCHPEResourceDirectory.resource_directory_table#read")
+      (fun address ->
+        rootnode <- resource_root_directory_node address byte_string)
+      (directoryRVA#subtract sectionRVA)
 
   method write_xml (node:xml_element_int) =
     let setx t x = node#setAttribute t x#to_hex_string in
@@ -345,5 +364,6 @@ object
   method toPretty = resource_directory_to_pretty rootnode
 
 end
+
 
 let resource_directory_table = new resource_directory_table_t

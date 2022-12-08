@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -84,12 +84,26 @@ object (self)
   val mutable export_name_ordinal_table:export_name_ordinal_table_entry_t array =
     Array.make 1 {nameRVA = wordzero ; ordinal = 0 ; exportName = "" }
 
-  method get_export_address_table_RVA   = exportAddressTableRVA
-  method get_export_address_table_size  = addressTableEntries#multiply_int 4
-  method get_name_pointer_table_RVA     = namePointerRVA
-  method get_name_pointer_table_size    = numberOfNamePointers#multiply_int 4
-  method get_ordinal_table_RVA          = ordinalTableRVA
-  method get_ordinal_table_size         = numberOfNamePointers#multiply_int 2
+  method get_export_address_table_RVA= exportAddressTableRVA
+
+  method get_export_address_table_size =
+    fail_tvalue
+      (trerror_record (STR "export_directory_table#get_export_address_table_size"))
+      (addressTableEntries#multiply_int 4)
+
+  method get_name_pointer_table_RVA = namePointerRVA
+
+  method get_name_pointer_table_size =
+    fail_tvalue
+      (trerror_record (STR "export_directory_table#get_name_pointer_table_size"))
+      (numberOfNamePointers#multiply_int 4)
+
+  method get_ordinal_table_RVA = ordinalTableRVA
+
+  method get_ordinal_table_size =
+    fail_tvalue
+      (trerror_record (STR "export_directory_table#get_ordinal_table_size"))
+      (numberOfNamePointers#multiply_int 2)
 
   method get_export_name_low_high (byte_string:string) =
     let lst = Array.to_list export_name_ordinal_table in
@@ -102,146 +116,190 @@ object (self)
 	    let lo = if rva#lt alow then rva else alow in
 	    let hi = if ahigh#lt rva then rva else ahigh in
 	    (lo,hi)) (rva,rva) rvas in
-    let offset = (high#subtract sectionRVA)#to_int in
-    let ch = make_pushback_stream (string_suffix byte_string offset) in
-    let s = ch#read_null_terminated_string  in
-    let high = high#add_int ((String.length s) + 1) in
-    (low, high)
+    let troffset = high#subtract_to_int sectionRVA in
+    fail_tfold
+      (trerror_record (STR "BCHPEExportDirector.get_export_name_low_high"))
+      (fun offset ->
+        let ch = make_pushback_stream (string_suffix byte_string offset) in
+        let s = ch#read_null_terminated_string  in
+        let high = high#add_int ((String.length s) + 1) in
+        (low, high))
+      troffset
     
   method set_section_RVA (address:doubleword_int)          = sectionRVA <- address
   method set_export_directory_RVA (address:doubleword_int) = exportDirectoryRVA <- address
   method set_export_size (size:doubleword_int)             = exportSize <- size
 
   method read (byte_string:string) =
-    if exportDirectoryRVA#equal wordzero then () else
-    let offset = (exportDirectoryRVA#subtract sectionRVA)#to_int in
-    let ch = make_pushback_stream (string_suffix byte_string offset) in
-    begin
-      (* 0, 4, Export flags ----------------------------------------------------
-	 Reserved, must be 0
-	 ----------------------------------------------------------------------- *)
-      exportFlags <- ch#read_doubleword ;
+    if exportDirectoryRVA#equal wordzero then
+      ()
+    else
+      let offset =
+        fail_tvalue
+          (trerror_record (STR "BCHPEExportDirectory.read"))
+          (exportDirectoryRVA#subtract_to_int sectionRVA) in
+      let ch = make_pushback_stream (string_suffix byte_string offset) in
+      begin
+        (* 0, 4, Export flags -----------------------------------------------
+	   Reserved, must be 0
+	   ------------------------------------------------------------------ *)
+        exportFlags <- ch#read_doubleword;
 
-      (* 4, 4, Time/Date Stamp -------------------------------------------------
-	 The time and date that the export was created.
-	 ----------------------------------------------------------------------- *)
-      timeDateStamp <- ch#read_doubleword ;
+        (* 4, 4, Time/Date Stamp --------------------------------------------
+	   The time and date that the export was created.
+	   ------------------------------------------------------------------ *)
+        timeDateStamp <- ch#read_doubleword;
 
-      (* 8, 2, Major version ---------------------------------------------------
-	 The major version number. 
-	 ----------------------------------------------------------------------- *)
-      majorVersion <- ch#read_ui16 ;
+        (* 8, 2, Major version ----------------------------------------------
+	   The major version number.
+	   ------------------------------------------------------------------ *)
+        majorVersion <- ch#read_ui16;
 
-      (* 10, 2, Minor version -------------------------------------------------- 
-	 The minor version number
-	 ----------------------------------------------------------------------- *)
-      minorVersion <- ch#read_ui16 ;
+        (* 10, 2, Minor version ---------------------------------------------
+	   The minor version number
+	   ------------------------------------------------------------------ *)
+        minorVersion <- ch#read_ui16;
 
-      (* 12, 4, Name RVA -------------------------------------------------------
-	 The address of the ascii string that contains the name of the DLL. This
-	 address is relative to the image base.
-	 ----------------------------------------------------------------------- *)
-      nameRVA <- ch#read_doubleword ;
+        (* 12, 4, Name RVA --------------------------------------------------
+	   The address of the ascii string that contains the name of the DLL.
+           This address is relative to the image base.
+	   ------------------------------------------------------------------ *)
+        nameRVA <- ch#read_doubleword;
 
-      (* 16, 4, Ordinal base ---------------------------------------------------
-	 The starting ordinal number for exports in this image. This field
-	 specifies the starting ordinal number for the export address table. It 
-	 is usually set to 1.
-	 ----------------------------------------------------------------------- *)
-      ordinalBase <- ch#read_doubleword ;
+        (* 16, 4, Ordinal base ----------------------------------------------
+	   The starting ordinal number for exports in this image. This field
+	   specifies the starting ordinal number for the export address table.
+           It  is usually set to 1.
+	   ------------------------------------------------------------------ *)
+        ordinalBase <- ch#read_doubleword ;
 
-      (* 20, 4, Address Table Entries ------------------------------------------
-	 The number of entries in the export address table.
-	 ----------------------------------------------------------------------- *)
-      addressTableEntries <- ch#read_doubleword ;
+        (* 20, 4, Address Table Entries -------------------------------------
+	   The number of entries in the export address table.
+	   ------------------------------------------------------------------ *)
+        addressTableEntries <- ch#read_doubleword ;
 
-      (* 24, 4, Number of Name Pointers ---------------------------------------- 
-	 The number of entries in the name pointer table. This is also the 
-	 number of entries in the ordinal table.
-	 ----------------------------------------------------------------------- *)
-      numberOfNamePointers <- ch#read_doubleword ;
+        (* 24, 4, Number of Name Pointers -----------------------------------
+	   The number of entries in the name pointer table. This is also the
+	   number of entries in the ordinal table.
+	   ------------------------------------------------------------------ *)
+        numberOfNamePointers <- ch#read_doubleword ;
 
-      (* 28, 4, Export Address Table RVA ---------------------------------------
-	 The address of the export address table, relative to the image base.
-	 ----------------------------------------------------------------------- *)
-      exportAddressTableRVA <- ch#read_doubleword ;
+        (* 28, 4, Export Address Table RVA ----------------------------------
+	   The address of the export address table, relative to the image base.
+	   ------------------------------------------------------------------ *)
+        exportAddressTableRVA <- ch#read_doubleword ;
 
-      (* 32, 4, Name Pointer RVA -----------------------------------------------
-	 The address of the export name pointer table, relative to the image
-	 base. The table size is given by the Number of Name Pointers field.
-	 ----------------------------------------------------------------------- *)
-      namePointerRVA <- ch#read_doubleword ;
+        (* 32, 4, Name Pointer RVA ------------------------------------------
+	   The address of the export name pointer table, relative to the image
+	   base. The table size is given by the Number of Name Pointers field.
+	   ------------------------------------------------------------------ *)
+        namePointerRVA <- ch#read_doubleword ;
 
-      (* 36, 4, Ordinal Table RVA ----------------------------------------------
-	 The address of the ordinal table, relative to the image base.
-	 ----------------------------------------------------------------------- *)
-      ordinalTableRVA <- ch#read_doubleword ;
-    end
+        (* 36, 4, Ordinal Table RVA -----------------------------------------
+	   The address of the ordinal table, relative to the image base.
+	   ------------------------------------------------------------------ *)
+        ordinalTableRVA <- ch#read_doubleword ;
+      end
 
   method get_name_RVA = nameRVA
 
   method read_export_address_table (byte_string:string) =
-    if exportAddressTableRVA#equal wordzero then () else
-    try
-      let endRVA = exportDirectoryRVA#add exportSize in
-      let inExportSection a = exportDirectoryRVA#le a && a#le endRVA in 
-      let offset = (exportAddressTableRVA#subtract sectionRVA)#to_int in
-      let ch = make_pushback_stream (string_suffix byte_string offset) in
-      let entries  = addressTableEntries#to_int in
-      begin
-	export_address_table <- Array.make entries (ExportRVA wordzero) ;
-	for i = 0 to entries - 1 do
-          let entry = ch#read_doubleword in
-          if inExportSection entry then
-            let name_offset = (entry#subtract sectionRVA)#to_int in
-            let name_ch = make_pushback_stream (string_suffix byte_string name_offset) in
-            let name = name_ch#read_null_terminated_string in
-            export_address_table.(i) <- ForwarderRVA (entry, name)
-          else
-            export_address_table.(i) <- ExportRVA entry
-	done
-      end
-    with
-    | IO.No_more_input ->
-      ch_error_log#add "invalid input" 
-	(LBLOCK [ STR "No more input in read_export_address_table" ])
-    | Invalid_input e ->
-      ch_error_log#add "invalid input"
-	(LBLOCK [ STR "export_directory_table_t#read_export_address_table: " ; STR e]) 
-    | Invalid_argument e ->
-      ch_error_log#add "invalid argument"
-	(LBLOCK [ STR "export_directory_table_t#read_export_address_table: " ; STR e ])
-	  
+    if exportAddressTableRVA#equal wordzero then
+      ()
+    else
+      try
+        let endRVA = exportDirectoryRVA#add exportSize in
+        let inExportSection a = exportDirectoryRVA#le a && a#le endRVA in
+        let offset =
+          fail_tvalue
+            (trerror_record (STR "BCHPEExportDirectory.read_export_address_table"))
+            (exportAddressTableRVA#subtract_to_int sectionRVA) in
+        let ch = make_pushback_stream (string_suffix byte_string offset) in
+        let entries  = addressTableEntries#to_int in
+        begin
+	  export_address_table <- Array.make entries (ExportRVA wordzero) ;
+	  for i = 0 to entries - 1 do
+            let entry = ch#read_doubleword in
+            if inExportSection entry then
+              let name_offset =
+                fail_tvalue
+                  (trerror_record
+                     (STR "BCHPEExportDirectory.read_export_address_table"))
+                  (entry#subtract_to_int sectionRVA) in
+              let name_ch = make_pushback_stream (string_suffix byte_string name_offset) in
+              let name = name_ch#read_null_terminated_string in
+              export_address_table.(i) <- ForwarderRVA (entry, name)
+            else
+              export_address_table.(i) <- ExportRVA entry
+	  done
+        end
+      with
+      | IO.No_more_input ->
+         ch_error_log#add
+           "invalid input"
+	   (LBLOCK [STR "No more input in read_export_address_table"])
+      | Invalid_input e ->
+         ch_error_log#add
+           "invalid input"
+	   (LBLOCK [
+                STR "export_directory_table_t#read_export_address_table: ";
+                STR e])
+      | Invalid_argument e ->
+         ch_error_log#add
+           "invalid argument"
+	   (LBLOCK [
+                STR "export_directory_table_t#read_export_address_table: ";
+                STR e])
 
   method read_name_ordinal_table (byte_string:string) =
-    if namePointerRVA#equal wordzero then () else
-    try
-      let nametable_offset = (namePointerRVA#subtract sectionRVA)#to_int in
-      let ordinaltable_offset = (ordinalTableRVA#subtract sectionRVA)#to_int in
-      let nametable_ch = make_pushback_stream (string_suffix byte_string nametable_offset) in
-      let ordinaltable_ch = make_pushback_stream (string_suffix byte_string ordinaltable_offset) in
-      let entries = numberOfNamePointers#to_int in
-      begin
-	export_name_ordinal_table <- 
-	  Array.make entries {nameRVA = wordzero ; ordinal = 0 ; exportName = "" } ;
-	for i = 0 to entries - 1 do
-          let nameRVA = nametable_ch#read_doubleword in
-          let ordinal = ordinaltable_ch#read_ui16 in
-          let name_offset = (nameRVA#subtract sectionRVA)#to_int in
-          let name_ch = make_pushback_stream (string_suffix byte_string name_offset) in
-          let exportName = name_ch#read_null_terminated_string  in
-          export_name_ordinal_table.(i) <- 
-	    { nameRVA = nameRVA ; ordinal = ordinal ; exportName = exportName }
-	done
-      end
-    with
+    if namePointerRVA#equal wordzero then
+      ()
+    else
+      try
+        let nametable_offset =
+          fail_tvalue
+            (trerror_record
+               (STR "BCHPEExportDirectory.read_name_ordinal_table"))
+            (namePointerRVA#subtract_to_int sectionRVA) in
+        let ordinaltable_offset =
+          fail_tvalue
+            (trerror_record
+               (STR "BCHPEExportDirectory.read_name_ordinal_table"))
+            (ordinalTableRVA#subtract_to_int sectionRVA) in
+        let nametable_ch =
+          make_pushback_stream (string_suffix byte_string nametable_offset) in
+        let ordinaltable_ch =
+          make_pushback_stream (string_suffix byte_string ordinaltable_offset) in
+        let entries = numberOfNamePointers#to_int in
+        begin
+	  export_name_ordinal_table <-
+	    Array.make entries {nameRVA = wordzero; ordinal = 0; exportName = ""};
+	  for i = 0 to entries - 1 do
+            let nameRVA = nametable_ch#read_doubleword in
+            let ordinal = ordinaltable_ch#read_ui16 in
+            let name_offset =
+              fail_tvalue
+                (trerror_record
+                   (STR "BCHPEExportDirectory.read_name_ordinal_table"))
+                (nameRVA#subtract_to_int sectionRVA) in
+            let name_ch =
+              make_pushback_stream (string_suffix byte_string name_offset) in
+            let exportName = name_ch#read_null_terminated_string  in
+            export_name_ordinal_table.(i) <-
+	      {nameRVA = nameRVA; ordinal = ordinal; exportName = exportName}
+	  done
+        end
+      with
 	IO.No_more_input ->
-	  ch_error_log#add "invalid input"
-	    (LBLOCK [ STR "No more input in read_name_ordinal_table" ])
+	 ch_error_log#add
+           "invalid input"
+	   (LBLOCK [STR "No more input in read_name_ordinal_table"])
       | Invalid_argument e ->
-	ch_error_log#add "invalid argument"
-	  (LBLOCK [ STR "export_directory_table_t#read_name_ordinal_table: " ; STR e ])
-
+	 ch_error_log#add
+           "invalid argument"
+	   (LBLOCK [
+                STR "export_directory_table_t#read_name_ordinal_table: ";
+                STR e])
 
   method get_exported_function_names =
     let imageBase = system_info#get_image_base in

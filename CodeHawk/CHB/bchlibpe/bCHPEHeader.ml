@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -66,6 +66,8 @@ open BCHPESections
 open BCHSystemInfo
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 (*
 let attribute_formats = [ ("coff-file-header", [ RightJustifiedColumn ]) ;
@@ -74,6 +76,7 @@ let attribute_formats = [ ("coff-file-header", [ RightJustifiedColumn ]) ;
 			  ("section", [ RightJustifiedColumn ]) ; ]
 let _ = List.iter (fun (e,f) -> set_attribute_format e f) attribute_formats
 *)
+
 
 class pe_coff_file_header_t =
 object (self)
@@ -176,10 +179,10 @@ object (self)
 
   method private characteristics_to_pretty =
     let descr  = self#characteristic_to_string in
-    let c = int_to_doubleword characteristics in
+    let c = TR.tget_ok (int_to_doubleword characteristics) in
     let bitsSet = c#get_bits_set in
     List.fold_left
-      (fun a i -> LBLOCK [ a ; NL ; STR (descr i) ]) (STR "") bitsSet
+      (fun a i -> LBLOCK [a; NL; STR (descr i)]) (STR "") bitsSet
 
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
@@ -188,33 +191,43 @@ object (self)
     let setx t x = if x#equal wordzero then () else set t x#to_hex_string in
     let cNode = xmlElement "file-characteristics" in
     begin
-      cNode#appendChildren (List.map (fun b ->
-	let ccNode = xmlElement "charx" in 
-	begin ccNode#setAttribute "name" (self#characteristic_to_string b) ; ccNode end) 
-			      ((int_to_doubleword characteristics)#get_bits_set) ) ;
-      append [ cNode ] ;
-      seti "machine" machine ; 
-      seti "number-of-sections" numberOfSections ;
-      setx "timestamp-dw" timeDateStamp ;
-      set "time-stamp" timeDateStamp#to_time_date_string ;
-      setx "pointer-to-symbol-table" pointerToSymbolTable ;
-      setx "number-of-symbols" numberOfSymbols ;
-      seti "size" sizeOfOptionalHeader ;
-      seti "characteristics" characteristics ;
+      cNode#appendChildren
+        (List.map (fun b ->
+	     let ccNode = xmlElement "charx" in
+	     begin
+               ccNode#setAttribute
+                 "name"
+                 (self#characteristic_to_string b);
+               ccNode
+             end)
+	   ((TR.tget_ok (int_to_doubleword characteristics))#get_bits_set));
+      append [cNode];
+      seti "machine" machine;
+      seti "number-of-sections" numberOfSections;
+      setx "timestamp-dw" timeDateStamp;
+      set "time-stamp" timeDateStamp#to_time_date_string;
+      setx "pointer-to-symbol-table" pointerToSymbolTable;
+      setx "number-of-symbols" numberOfSymbols;
+      seti "size" sizeOfOptionalHeader;
+      seti "characteristics" characteristics;
     end
 
   method read_xml (node:xml_element_int) =
     let get = node#getAttribute in
     let has = node#hasNamedAttribute in
     let geti t = if has t then node#getIntAttribute t else 0 in
-    let getx t = if has t then string_to_doubleword (get t) else wordzero in
+    let getx t =
+      if has t then
+        TR.tget_ok (string_to_doubleword (get t))
+      else
+        wordzero in
     begin
-      machine <- geti "machine" ;
-      numberOfSections <- geti "number-of-sections" ;
-      timeDateStamp <- getx "timestamp-dw" ;
-      pointerToSymbolTable <- getx "pointer-to-symbol-table" ;
-      numberOfSymbols <- getx "number-of-symbols" ;
-      sizeOfOptionalHeader <- geti "size" ;
+      machine <- geti "machine";
+      numberOfSections <- geti "number-of-sections";
+      timeDateStamp <- getx "timestamp-dw";
+      pointerToSymbolTable <- getx "pointer-to-symbol-table";
+      numberOfSymbols <- getx "number-of-symbols";
+      sizeOfOptionalHeader <- geti "size";
       characteristics <- geti "characteristics"
     end
 
@@ -506,10 +519,10 @@ object (self)
 
   method private dll_characteristics_to_pretty =
     let descr = self#dll_characteristic_to_string in
-    let c = int_to_doubleword dllCharacteristics in
+    let c = TR.tget_ok (int_to_doubleword dllCharacteristics) in
     let bitsSet = c#get_bits_set in
     List.fold_left
-      (fun a i -> LBLOCK [ a ; NL ; STR (descr i) ]) (STR "") bitsSet
+      (fun a i -> LBLOCK [a; NL; STR (descr i)]) (STR "") bitsSet
 
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
@@ -518,40 +531,44 @@ object (self)
     let setx t x = if x#equal wordzero then () else set t x#to_hex_string in
     let cNode = xmlElement "dll-charxs" in
     begin
-      cNode#appendChildren (List.map (fun i ->
-	let ccNode = xmlElement "dll-charx" in 
-	begin ccNode#setAttribute "name" (self#dll_characteristic_to_string i) ; ccNode end)
-			      (int_to_doubleword dllCharacteristics)#get_bits_set) ;
-      append [ cNode ] ;
-      seti "magic-number" magicNumber ;
-      seti "major-linker-version" majorLinkerVersion ;
-      seti "minor-linker-version" minorLinkerVersion ;
-      setx "size-of-code" sizeOfCode ;
-      setx "size-of-initialized-data" sizeOfInitializedData ;
-      setx "size-of-uninitialized-data" sizeOfUninitializedData ;
-      setx "address-of-entry-point" addressOfEntryPoint ;
-      setx "base-of-code" baseOfCode ;
-      setx "base-of-data" baseOfData ;
-      setx "image-base" imageBase ;
-      setx "section-alignment" sectionAlignment ;
-      setx "file-alignment" fileAlignment ;
-      seti "major-os-version" majorOperatingSystemVersion ;
-      seti "minor-os-version" minorOperatingSystemVersion ;
-      seti "major-image-version" majorImageVersion ;
-      seti "minor-image-version" minorImageVersion ;
-      seti "major-subsystem-version" majorSubsystemVersion ;
-      seti "minor-subsystem-version" minorSubsystemVersion ;
-      setx "win32-version-value" win32VersionValue ;
-      setx "size-of-image" sizeOfImage ;
-      setx "size-of-headers" sizeOfHeaders ;
-      setx "checksum" checkSum ;
-      seti "subsystem" subsystem ;
-      seti "dll-characteristics" dllCharacteristics ;
-      setx "size-of-stack-reserve" sizeOfStackReserve ;
-      setx "size-of-stack-commit" sizeOfStackCommit ;
-      setx "size-of-heap-reserve" sizeOfHeapReserve ;
-      setx "size-of-heap-commit" sizeOfHeapCommit ;
-      setx "loader-flags" loaderFlags ;
+      cNode#appendChildren
+        (List.map (fun i ->
+	     let ccNode = xmlElement "dll-charx" in
+	     begin
+               ccNode#setAttribute "name" (self#dll_characteristic_to_string i);
+               ccNode
+             end)
+	   (TR.tget_ok (int_to_doubleword dllCharacteristics))#get_bits_set);
+      append [cNode];
+      seti "magic-number" magicNumber;
+      seti "major-linker-version" majorLinkerVersion;
+      seti "minor-linker-version" minorLinkerVersion;
+      setx "size-of-code" sizeOfCode;
+      setx "size-of-initialized-data" sizeOfInitializedData;
+      setx "size-of-uninitialized-data" sizeOfUninitializedData;
+      setx "address-of-entry-point" addressOfEntryPoint;
+      setx "base-of-code" baseOfCode;
+      setx "base-of-data" baseOfData;
+      setx "image-base" imageBase;
+      setx "section-alignment" sectionAlignment;
+      setx "file-alignment" fileAlignment;
+      seti "major-os-version" majorOperatingSystemVersion;
+      seti "minor-os-version" minorOperatingSystemVersion;
+      seti "major-image-version" majorImageVersion;
+      seti "minor-image-version" minorImageVersion;
+      seti "major-subsystem-version" majorSubsystemVersion;
+      seti "minor-subsystem-version" minorSubsystemVersion;
+      setx "win32-version-value" win32VersionValue;
+      setx "size-of-image" sizeOfImage;
+      setx "size-of-headers" sizeOfHeaders;
+      setx "checksum" checkSum;
+      seti "subsystem" subsystem;
+      seti "dll-characteristics" dllCharacteristics;
+      setx "size-of-stack-reserve" sizeOfStackReserve;
+      setx "size-of-stack-commit" sizeOfStackCommit;
+      setx "size-of-heap-reserve" sizeOfHeapReserve;
+      setx "size-of-heap-commit" sizeOfHeapCommit;
+      setx "loader-flags" loaderFlags;
       setx "number-of-rva-and-sizes" numberOfRvaAndSizes
     end
 
@@ -559,75 +576,79 @@ object (self)
     let get = node#getAttribute in
     let has = node#hasNamedAttribute in
     let geti t = if has t then node#getIntAttribute t else 0 in
-    let getx t = if has t then string_to_doubleword (get t) else wordzero in
+    let getx t =
+      if has t then
+        TR.tget_ok (string_to_doubleword (get t))
+      else
+        wordzero in
     begin
-      magicNumber <- geti "magic-number" ;
-      majorLinkerVersion <- geti "major-linker-version" ;
-      minorLinkerVersion <- geti "minor-linker-version" ;
-      sizeOfCode <- getx "size-of-code" ;
-      sizeOfInitializedData <- getx "size-of-initialized-data" ;
-      sizeOfUninitializedData <- getx "size-of-uninitialized-data" ;
-      addressOfEntryPoint <- getx "address-of-entry-point" ;
-      baseOfCode <- getx "base-of-code" ;
-      baseOfData <- getx "base-of-data" ;
-      imageBase <- getx "image-base" ;
-      sectionAlignment <- getx "section-alignment" ;
-      fileAlignment <- getx "file-alignment" ;
-      majorOperatingSystemVersion <- geti "major-os-version" ;
-      minorOperatingSystemVersion <- geti "minor-os-version" ;
-      majorImageVersion <- geti "major-image-version" ;
-      minorImageVersion <- geti "minor-image-version" ;
-      majorSubsystemVersion <- geti "major-subsystem-version" ;
-      minorSubsystemVersion <- geti "minor-subsystem-version" ;
-      win32VersionValue <- getx "win32-version-value" ;
-      sizeOfImage <- getx "size-of-image" ;
-      sizeOfHeaders <- getx "size-of-headers" ;
-      checkSum <- getx "checksum" ;
-      subsystem <- geti "subsystem" ;
-      dllCharacteristics <- geti "dll-characteristics" ;
-      sizeOfStackReserve <- getx "size-of-stack-reserve" ;
-      sizeOfStackCommit <- getx "size-of-stack-commit" ;
-      sizeOfHeapReserve <- getx "size-of-heap-reserve" ;
-      sizeOfHeapCommit <- getx "size-of-heap-commit" ;
-      loaderFlags <- getx "loader-flags" ;
+      magicNumber <- geti "magic-number";
+      majorLinkerVersion <- geti "major-linker-version";
+      minorLinkerVersion <- geti "minor-linker-version";
+      sizeOfCode <- getx "size-of-code";
+      sizeOfInitializedData <- getx "size-of-initialized-data";
+      sizeOfUninitializedData <- getx "size-of-uninitialized-data";
+      addressOfEntryPoint <- getx "address-of-entry-point";
+      baseOfCode <- getx "base-of-code";
+      baseOfData <- getx "base-of-data";
+      imageBase <- getx "image-base";
+      sectionAlignment <- getx "section-alignment";
+      fileAlignment <- getx "file-alignment";
+      majorOperatingSystemVersion <- geti "major-os-version";
+      minorOperatingSystemVersion <- geti "minor-os-version";
+      majorImageVersion <- geti "major-image-version";
+      minorImageVersion <- geti "minor-image-version";
+      majorSubsystemVersion <- geti "major-subsystem-version";
+      minorSubsystemVersion <- geti "minor-subsystem-version";
+      win32VersionValue <- getx "win32-version-value";
+      sizeOfImage <- getx "size-of-image";
+      sizeOfHeaders <- getx "size-of-headers";
+      checkSum <- getx "checksum";
+      subsystem <- geti "subsystem";
+      dllCharacteristics <- geti "dll-characteristics";
+      sizeOfStackReserve <- getx "size-of-stack-reserve";
+      sizeOfStackCommit <- getx "size-of-stack-commit";
+      sizeOfHeapReserve <- getx "size-of-heap-reserve";
+      sizeOfHeapCommit <- getx "size-of-heap-commit";
+      loaderFlags <- getx "loader-flags";
       numberOfRvaAndSizes <- getx "number-of-rva-and-sizes"
     end
 
   method toPretty =
     let fls s = STR (fixed_length_int_string s 35) in
-    let flsx s v = LBLOCK [ fls s ; STR v#to_hex_string ; NL ] in
-    let flsi s i = LBLOCK [ fls s ; INT i ; NL ] in
+    let flsx s v = LBLOCK [fls s; STR v#to_hex_string; NL] in
+    let flsi s i = LBLOCK [fls s; INT i; NL] in
     LBLOCK [
-    flsi "Magic" magicNumber ;
-    flsi "Major Linker Version" majorLinkerVersion ;
-    flsi "Minor Linker Version" minorLinkerVersion ;
-    flsx "Size of Code" sizeOfCode ;
-    flsx "Size of Initialized Data" sizeOfInitializedData ;
-    flsx "Size of Uninitialized Data" sizeOfUninitializedData ;
-    flsx "Address of Entry Point" addressOfEntryPoint ;
-    flsx "Base of Code" baseOfCode ;
-    flsx "Base of Data" baseOfData ;
-    flsx "Image Base" imageBase ;
-    flsx "Section Alignment" sectionAlignment ;
-    flsx "File Alignment" fileAlignment ;
-    flsi "Major Operating System Version" majorOperatingSystemVersion ;
-    flsi "Minor Operating System Version" minorOperatingSystemVersion ;
-    flsi "Major Image Version" majorImageVersion ;
-    flsi "Minor Image Version" minorImageVersion ;
-    flsi "Major Subsystem Version" majorSubsystemVersion ;
-    flsi "Minor Subsystem Version" minorSubsystemVersion ;
-    flsx "Win32 Version Value" win32VersionValue ;
-    flsx "Size of Image" sizeOfImage ;
-    flsx "Size of Headers" sizeOfHeaders ;
-    flsx "Checksum" checkSum ;
-    flsi "Subsystem" subsystem ;
-    LBLOCK [ fls "Dll characteristics" ; INT dllCharacteristics ] ;
-    INDENT (3, self#dll_characteristics_to_pretty) ; NL ; NL ;
-    flsx "Size of Stack Reserve" sizeOfStackReserve ;
-    flsx "Size of Stack Commit" sizeOfStackCommit ;
-    flsx "Size of Heap Reserve" sizeOfHeapReserve ;
-    flsx "Size of Heap Commit" sizeOfHeapCommit ;
-    flsx "Loader flags" loaderFlags ;
+    flsi "Magic" magicNumber;
+    flsi "Major Linker Version" majorLinkerVersion;
+    flsi "Minor Linker Version" minorLinkerVersion;
+    flsx "Size of Code" sizeOfCode;
+    flsx "Size of Initialized Data" sizeOfInitializedData;
+    flsx "Size of Uninitialized Data" sizeOfUninitializedData;
+    flsx "Address of Entry Point" addressOfEntryPoint;
+    flsx "Base of Code" baseOfCode;
+    flsx "Base of Data" baseOfData;
+    flsx "Image Base" imageBase;
+    flsx "Section Alignment" sectionAlignment;
+    flsx "File Alignment" fileAlignment;
+    flsi "Major Operating System Version" majorOperatingSystemVersion;
+    flsi "Minor Operating System Version" minorOperatingSystemVersion;
+    flsi "Major Image Version" majorImageVersion;
+    flsi "Minor Image Version" minorImageVersion;
+    flsi "Major Subsystem Version" majorSubsystemVersion;
+    flsi "Minor Subsystem Version" minorSubsystemVersion;
+    flsx "Win32 Version Value" win32VersionValue;
+    flsx "Size of Image" sizeOfImage;
+    flsx "Size of Headers" sizeOfHeaders;
+    flsx "Checksum" checkSum;
+    flsi "Subsystem" subsystem;
+    LBLOCK [ fls "Dll characteristics"; INT dllCharacteristics ];
+    INDENT (3, self#dll_characteristics_to_pretty); NL; NL;
+    flsx "Size of Stack Reserve" sizeOfStackReserve;
+    flsx "Size of Stack Commit" sizeOfStackCommit;
+    flsx "Size of Heap Reserve" sizeOfHeapReserve;
+    flsx "Size of Heap Commit" sizeOfHeapCommit;
+    flsx "Loader flags" loaderFlags;
     flsx "Number of Rva and Sizes" numberOfRvaAndSizes 
   ]
     
@@ -655,21 +676,21 @@ object (self)
 
   method reset =
     begin
-      exportTable <- (wordzero, wordzero) ;
-      importTable <- (wordzero, wordzero) ;
-      resourceTable <- (wordzero, wordzero) ;
-      exceptionTable <- (wordzero, wordzero) ;
-      certificateTable <- (wordzero, wordzero) ;
-      baseRelocationTable <- (wordzero, wordzero) ;
-      debugData <- (wordzero, wordzero) ;
-      architecture <- (wordzero, wordzero) ;
-      globalPtr <- (wordzero, wordzero) ;
-      tlsTable <- (wordzero, wordzero) ;
-      loadConfigTable <- (wordzero, wordzero) ;
-      boundImport <- (wordzero, wordzero) ;
-      iat <- (wordzero, wordzero) ;
-      delayImportDescriptor <- (wordzero, wordzero) ;
-      clrRuntimeHeader <- (wordzero, wordzero) ;
+      exportTable <- (wordzero, wordzero);
+      importTable <- (wordzero, wordzero);
+      resourceTable <- (wordzero, wordzero);
+      exceptionTable <- (wordzero, wordzero);
+      certificateTable <- (wordzero, wordzero);
+      baseRelocationTable <- (wordzero, wordzero);
+      debugData <- (wordzero, wordzero);
+      architecture <- (wordzero, wordzero);
+      globalPtr <- (wordzero, wordzero);
+      tlsTable <- (wordzero, wordzero);
+      loadConfigTable <- (wordzero, wordzero);
+      boundImport <- (wordzero, wordzero);
+      iat <- (wordzero, wordzero);
+      delayImportDescriptor <- (wordzero, wordzero);
+      clrRuntimeHeader <- (wordzero, wordzero);
       reserved <- (wordzero, wordzero)
     end
 	
@@ -684,81 +705,81 @@ object (self)
       (* 96, 8, Export Table ---------------------------------------------------
 	 The export table address and size.
 	 ----------------------------------------------------------------------- *)
-      exportTable <- self#read_entry ch ;
+      exportTable <- self#read_entry ch;
       
       (* 104, 8, Import Table --------------------------------------------------
 	 The import table address and size.
 	 ----------------------------------------------------------------------- *)
-      importTable <- self#read_entry ch ;
+      importTable <- self#read_entry ch;
 
       (* 112, 8, Resource Table ------------------------------------------------
 	 The resource table address and size.
 	 ----------------------------------------------------------------------- *)
-      resourceTable <- self#read_entry ch ;
+      resourceTable <- self#read_entry ch;
 
       (* 120, 8, Exception Table -----------------------------------------------
 	 The exception table address and size.
 	 ----------------------------------------------------------------------- *)
-      exceptionTable <- self#read_entry ch ;
+      exceptionTable <- self#read_entry ch;
 
       (* 128, 8, Certificate Table ---------------------------------------------
 	 The attribute certificate table address and size.
 	 ----------------------------------------------------------------------- *)
-      certificateTable <- self#read_entry ch ;
+      certificateTable <- self#read_entry ch;
 
       (* 136. 8, Base Relocation Table -----------------------------------------
 	 The base relocation table address and size.
 	 ----------------------------------------------------------------------- *)
-      baseRelocationTable <- self#read_entry ch ;
+      baseRelocationTable <- self#read_entry ch;
 
       (* 144, 8, Debug ---------------------------------------------------------
 	 The debug starting address and size.
 	 ----------------------------------------------------------------------- *)
-      debugData <- self#read_entry ch ;
+      debugData <- self#read_entry ch;
 										
       (* 152, 8, Architecture --------------------------------------------------
 	 Reserved, must be 0.
 	 ----------------------------------------------------------------------- *)
-      architecture <- self#read_entry ch ;
+      architecture <- self#read_entry ch;
 
       (* 160, 8, Global Ptr ----------------------------------------------------
 	 The RVA of the value to be stored in the global pointer register. The
 	 size member of this structure must be set to zero.
 	 ----------------------------------------------------------------------- *)
-      globalPtr <- self#read_entry ch ;
+      globalPtr <- self#read_entry ch;
 
       (* 168, 8, TLS Table -----------------------------------------------------
 	 The thread local storage (TLS) table address and size.
 	 ----------------------------------------------------------------------- *)
-      tlsTable <- self#read_entry ch ;
+      tlsTable <- self#read_entry ch;
 
       (* 176, 8, Load Config Table ---------------------------------------------
 	 The load configuration table address and size.
 	 ----------------------------------------------------------------------- *)
-      loadConfigTable <- self#read_entry ch ;
+      loadConfigTable <- self#read_entry ch;
 
       (* 184, 8, Bound Import -------------------------------------------------- 
 	 The bound import table address and size.
 	 ----------------------------------------------------------------------- *)
-      boundImport <- self#read_entry ch ;
+      boundImport <- self#read_entry ch;
 
       (* 192, 8, IAT -----------------------------------------------------------
 	 The import address table address and size.
 	 ----------------------------------------------------------------------- *)
-      iat <- self#read_entry ch ;
+      iat <- self#read_entry ch;
 
       (* 200, 8, Delay Import Descriptor ---------------------------------------
 	 The delay import descriptor address and size.
 	 ----------------------------------------------------------------------- *)
-      delayImportDescriptor <- self#read_entry ch ;
+      delayImportDescriptor <- self#read_entry ch;
 
       (* 208, 8, CLR Runtime Header --------------------------------------------
 	 The CLR runtime header address and size.
 	 ----------------------------------------------------------------------- *)
-      clrRuntimeHeader <- self#read_entry ch ;
+      clrRuntimeHeader <- self#read_entry ch;
 
       (* 216, 8, Reserved, must be zero ---------------------------------------- *)
-      reserved <- self#read_entry ch ;
+      reserved <- self#read_entry ch;
 
     end
 
@@ -773,29 +794,29 @@ object (self)
     let append = node#appendChildren in
     let set n = n#setAttribute in
     let setx n t x = set n t x#to_hex_string in
-    let sete n (a,s) = begin setx n "va" a ; setx n "size" s end in
+    let sete n (a,s) = begin setx n "va" a; setx n "size" s end in
     let is_zero (a,s) = a#equal wordzero && s#equal wordzero in
     let f i e t = 
       if is_zero e then () else
 	let eNode = xmlElement "entry" in 
-	begin set eNode "index" i ; set eNode "tag" t ; sete eNode e ; append [ eNode ] end in
+	begin set eNode "index" i; set eNode "tag" t; sete eNode e; append [ eNode ] end in
     begin
-      f "0" exportTable "export-table" ;
-      f "1" importTable "import-table" ;
-      f "2" resourceTable "resource-table" ;
-      f "3" exceptionTable "exception-table" ;
-      f "4" certificateTable "certificate-table" ;
-      f "5" baseRelocationTable "base-relocation-table" ;
-      f "6" debugData "debug-data" ;
-      f "7" architecture "architecture" ;
-      f "8" globalPtr "global-ptr" ;
-      f "9" tlsTable "TLS-table" ;
-      f "a" loadConfigTable "load-config-table" ;
-      f "b" boundImport "bound-import" ;
-      f "c" iat "IAT" ;
-      f "d" delayImportDescriptor "delay-import-descriptor" ;
-      f "e" clrRuntimeHeader "clr-runtime-header" ;
-      f "f" reserved "reserved" ;
+      f "0" exportTable "export-table";
+      f "1" importTable "import-table";
+      f "2" resourceTable "resource-table";
+      f "3" exceptionTable "exception-table";
+      f "4" certificateTable "certificate-table";
+      f "5" baseRelocationTable "base-relocation-table";
+      f "6" debugData "debug-data";
+      f "7" architecture "architecture";
+      f "8" globalPtr "global-ptr";
+      f "9" tlsTable "TLS-table";
+      f "a" loadConfigTable "load-config-table";
+      f "b" boundImport "bound-import";
+      f "c" iat "IAT";
+      f "d" delayImportDescriptor "delay-import-descriptor";
+      f "e" clrRuntimeHeader "clr-runtime-header";
+      f "f" reserved "reserved";
     end   
 
   method read_xml (node:xml_element_int) =
@@ -803,51 +824,58 @@ object (self)
     let get t = 
       try
 	let entry = List.find (fun n -> (n#getAttribute "tag") = t) entries in
-	let getx t = string_to_doubleword (entry#getAttribute t) in
+	let getx t = TR.tget_ok (string_to_doubleword (entry#getAttribute t)) in
 	(getx "va", getx "size")
       with
-	Not_found -> (wordzero, wordzero) in
+      | Not_found -> (wordzero, wordzero) in
     begin
-      exportTable <- get "export-table" ;
-      importTable <- get "import-table" ;
-      resourceTable <- get "resource-table" ;
-      exceptionTable <- get "exception-table" ;
-      certificateTable <- get "certificate-table" ;
-      baseRelocationTable <- get "base-relocation-table" ;
-      debugData <- get "debug-data" ;
-      architecture <- get "architecture" ;
-      globalPtr <- get "global-ptr" ;
-      tlsTable <- get "TLS-table" ;
-      loadConfigTable <- get "load-config-table" ;
-      boundImport <- get "bound-import" ;
-      iat <- get "IAT" ;
-      delayImportDescriptor <-get "delay-import-descriptor" ;
-      clrRuntimeHeader <- get "clr-runtime-header" ;
+      exportTable <- get "export-table";
+      importTable <- get "import-table";
+      resourceTable <- get "resource-table";
+      exceptionTable <- get "exception-table";
+      certificateTable <- get "certificate-table";
+      baseRelocationTable <- get "base-relocation-table";
+      debugData <- get "debug-data";
+      architecture <- get "architecture";
+      globalPtr <- get "global-ptr";
+      tlsTable <- get "TLS-table";
+      loadConfigTable <- get "load-config-table";
+      boundImport <- get "bound-import";
+      iat <- get "IAT";
+      delayImportDescriptor <-get "delay-import-descriptor";
+      clrRuntimeHeader <- get "clr-runtime-header";
       reserved <- get "reserved"
     end
 
   method toPretty =
-    let f e (a,s) t = LBLOCK [
-       STR "Entry " ; STR e ; STR "  " ; STR a#to_fixed_length_hex_string ;
-                              STR "  " ; STR s#to_fixed_length_hex_string ; 
-                              STR "  " ; STR t ; NL ] in
+    let f e (a,s) t =
+      LBLOCK [
+          STR "Entry ";
+          STR e;
+          STR "  ";
+          STR a#to_fixed_length_hex_string;
+          STR "  ";
+          STR s#to_fixed_length_hex_string;
+          STR "  ";
+          STR t;
+          NL] in
     LBLOCK [
-      f "0" exportTable "Export Table" ;
-      f "1" importTable "Import Table" ;
-      f "2" resourceTable "Resource Table" ;
-      f "3" exceptionTable "ExceptionTable" ;
-      f "4" certificateTable "CertificateTable" ;
-      f "5" baseRelocationTable "Base Relocation Table" ;
-      f "6" debugData "Debug Data" ;
-      f "7" architecture "Architecture" ;
-      f "8" globalPtr "Global Ptr" ;
-      f "9" tlsTable "TLS Table" ;
-      f "a" loadConfigTable "Load Config Table" ;
-      f "b" boundImport "Bound Import" ;
-      f "c" iat "IAT" ;
-      f "d" delayImportDescriptor "Delay Import Descriptor" ;
-      f "e" clrRuntimeHeader "CLR Runtime Header" ;
-      f "f" reserved "Reserved, must be zero" ;
+      f "0" exportTable "Export Table";
+      f "1" importTable "Import Table";
+      f "2" resourceTable "Resource Table";
+      f "3" exceptionTable "ExceptionTable";
+      f "4" certificateTable "CertificateTable";
+      f "5" baseRelocationTable "Base Relocation Table";
+      f "6" debugData "Debug Data";
+      f "7" architecture "Architecture";
+      f "8" globalPtr "Global Ptr";
+      f "9" tlsTable "TLS Table";
+      f "a" loadConfigTable "Load Config Table";
+      f "b" boundImport "Bound Import";
+      f "c" iat "IAT";
+      f "d" delayImportDescriptor "Delay Import Descriptor";
+      f "e" clrRuntimeHeader "CLR Runtime Header";
+      f "f" reserved "Reserved, must be zero";
     ]
 end
 
@@ -861,9 +889,9 @@ object (self)
 
   method reset = 
     begin
-      coff_file_header#reset ;
-      optional_header#reset ;
-      data_directory#reset ;
+      coff_file_header#reset;
+      optional_header#reset;
+      data_directory#reset;
       H.clear section_headers
     end
 
@@ -939,12 +967,15 @@ object (self)
       pe_sections#add_section sectionHeader exeString
     with
     | BCH_failure p ->
-       raise (BCH_failure (LBLOCK [ STR "load-section: rawsize: " ;
-                                    sectionHeader#get_size_of_raw_data#toPretty ;
-                                    STR "; offset: " ;
-                                    sectionHeader#get_pointer_to_raw_data#toPretty ;
-                                    STR ": " ; p ]))
-       
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "load-section: rawsize: ";
+                 sectionHeader#get_size_of_raw_data#toPretty;
+                 STR "; offset: ";
+                 sectionHeader#get_pointer_to_raw_data#toPretty;
+                 STR ": ";
+                 p]))
 
   method private read_sections =
     List.iter (fun h -> 
@@ -962,20 +993,29 @@ object (self)
         pe_symboltable#read fileOffset nSymbols exeString
       with
       | BCH_failure p ->
-         ch_error_log#add "read symbol table"
-                          (LBLOCK [ STR "read-symboltable: fileOffset: " ;
-                                    fileOffset#toPretty ; STR  ": " ; p ])
+         ch_error_log#add
+           "read symbol table"
+           (LBLOCK [
+                STR "read-symboltable: fileOffset: ";
+                fileOffset#toPretty;
+                STR  ": ";
+                p])
 
   method coff_file_header_to_pretty = coff_file_header#toPretty
+
   method optional_header_to_pretty = optional_header#toPretty
+
   method data_directory_to_pretty = data_directory#toPretty
+
   method section_headers_to_pretty =
     let countSectionHeaders = H.length section_headers in
     H.fold
-      (fun k v a -> LBLOCK [ a ; NL ; NL ; STR v#get_name ; NL ; INDENT (5, v#toPretty) ])
-      section_headers (LBLOCK [ INT countSectionHeaders ; STR " sections: " ])
+      (fun k v a ->
+        LBLOCK [a; NL; NL; STR v#get_name; NL; INDENT (5, v#toPretty)])
+      section_headers (LBLOCK [INT countSectionHeaders; STR " sections: "])
       
   method resource_directory_to_pretty = resource_directory_table#toPretty
+
   method table_layout_to_pretty = assembly_table_layout#toPretty
 
   method private write_xml_section_headers (node:xml_element_int) = 
@@ -984,7 +1024,10 @@ object (self)
     begin
       H.iter (fun k v ->
 	let sNode = xmlElement "section-header" in 
-	begin v#write_xml sNode ; append [ sNode ] end) section_headers ;
+	begin
+          v#write_xml sNode;
+          append [sNode]
+        end) section_headers;
       seti "number" (H.length section_headers)
     end
 
@@ -1000,13 +1043,17 @@ object (self)
       node#appendChildren
         (List.map (fun e ->
 	     let eNode = xmlElement "directory-entry" in
-             begin e#write_xml eNode ; eNode end) entries)
+             begin
+               e#write_xml eNode;
+               eNode
+             end) entries)
     else
       ()
 
   method private write_xml_load_configuration_directory (node:xml_element_int) = 
     if pe_sections#has_load_configuration_directory then
-      let d = pe_sections#get_load_configuration_directory in d#write_xml node
+      let d = pe_sections#get_load_configuration_directory in
+      d#write_xml node
     else
       ()
 
@@ -1018,7 +1065,8 @@ object (self)
       h#is_executable || (h#includes_VA entrypointVA)) self#get_section_headers in
     let sortedHeaders = List.sort (fun h1 h2 -> h2#get_RVA#compare h1#get_RVA) execHeaders in
     let highest = List.hd sortedHeaders in
-    (highest#get_RVA#subtract baseOfCodeRVA)#add highest#get_size
+    let diff = TR.tget_ok (highest#get_RVA#subtract baseOfCodeRVA) in
+    diff#add highest#get_size
 
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
@@ -1033,18 +1081,27 @@ object (self)
     let tlNode = xmlElement "table-layout" in
     let sNode = xmlElement "symbol-table" in
     begin
-      coff_file_header#write_xml cfhNode ;
-      optional_header#write_xml ohNode ;
-      data_directory#write_xml ddNode ;
-      self#write_xml_section_headers shNode ;
-      self#write_xml_export_directory_table etNode ;
-      self#write_xml_import_directory_table idNode ;
-      self#write_xml_load_configuration_directory lcdNode ;
-      resource_directory_table#write_xml rtNode ;
-      assembly_table_layout#write_xml tlNode ;
-      pe_symboltable#write_xml sNode ;
-      append [ cfhNode ; ohNode ; ddNode ; shNode ; etNode ; idNode ; 
-	       lcdNode ; rtNode ; tlNode ; sNode ] ;
+      coff_file_header#write_xml cfhNode;
+      optional_header#write_xml ohNode;
+      data_directory#write_xml ddNode;
+      self#write_xml_section_headers shNode;
+      self#write_xml_export_directory_table etNode;
+      self#write_xml_import_directory_table idNode;
+      self#write_xml_load_configuration_directory lcdNode;
+      resource_directory_table#write_xml rtNode;
+      assembly_table_layout#write_xml tlNode;
+      pe_symboltable#write_xml sNode;
+      append [
+          cfhNode;
+          ohNode;
+          ddNode;
+          shNode;
+          etNode;
+          idNode;
+	  lcdNode;
+          rtNode;
+          tlNode;
+          sNode ];
       node#setAttribute "code-size" self#get_code_size#to_hex_string
     end
 
@@ -1053,7 +1110,7 @@ object (self)
     List.iter (fun hNode -> 
       let header = make_pe_section_header () in
       begin
-	header#read_xml hNode ;
+	header#read_xml hNode;
 	H.add section_headers header#index header
       end) hNodes
 
@@ -1063,54 +1120,59 @@ object (self)
       if h#get_size_of_raw_data#equal wordzero then 
 	pe_sections#add_section h ""
       else 
-	let hname = h#get_characteristics_digest ^ "_" ^ h#get_RVA#to_hex_string in
+	let hname =
+          h#get_characteristics_digest ^ "_" ^ h#get_RVA#to_hex_string in
 	match load_section_file hname with
 	  Some node ->
 	    let exeString = read_xml_raw_data (node#getTaggedChild "hex-data") in
 	    pe_sections#add_section h exeString
-	| _ -> pr_debug [ STR "Section not found: " ; STR hname ; NL ]) headers
+	| _ ->
+           pr_debug [STR "Section not found: "; STR hname; NL]) headers
 
   method private read_xml_import_directory_table (node:xml_element_int) = ()
 
   method read_xml node =
     let getc = node#getTaggedChild in
     begin
-      coff_file_header#read_xml (getc "coff-file-header") ;
-      optional_header#read_xml (getc "optional-header") ;
-      data_directory#read_xml (getc "data-directory") ;
-      self#read_xml_section_headers (getc "section-headers") ;
-      system_info#set_image_base optional_header#get_image_base ;
-      system_info#set_base_of_code_rva optional_header#get_base_of_code ;
+      coff_file_header#read_xml (getc "coff-file-header");
+      optional_header#read_xml (getc "optional-header");
+      data_directory#read_xml (getc "data-directory");
+      self#read_xml_section_headers (getc "section-headers");
+      system_info#set_image_base optional_header#get_image_base;
+      system_info#set_base_of_code_rva optional_header#get_base_of_code;
       system_info#set_address_of_entry_point 
-	(optional_header#get_address_of_entry_point#add optional_header#get_image_base) ;
-      system_info#set_code_size (string_to_doubleword (node#getAttribute "code-size")) ;
-      self#read_xml_sections ;
+	(optional_header#get_address_of_entry_point#add optional_header#get_image_base);
+      system_info#set_code_size
+        (TR.tget_ok (string_to_doubleword (node#getAttribute "code-size")));
+      self#read_xml_sections;
       let (impAddr, impSize) = data_directory#get_import_table in
-      pe_sections#read_import_directory_table impAddr impSize ;
+      pe_sections#read_import_directory_table impAddr impSize;
       let (expAddr, expSize) = data_directory#get_export_table in
-      pe_sections#read_export_directory_table expAddr expSize ;
+      pe_sections#read_export_directory_table expAddr expSize;
       let (loadCAddr, loadCSize) = data_directory#get_load_config_table in
-      pe_sections#read_load_configuration_structure loadCAddr loadCSize ;
+      pe_sections#read_load_configuration_structure loadCAddr loadCSize;
       let (resrcAddr, resrcSize) = data_directory#get_resource_table in
-      pe_sections#read_resource_directory_table resrcAddr resrcSize ;
-      pe_symboltable#set_image_base optional_header#get_image_base ;
-      pe_symboltable#set_base_of_code optional_header#get_base_of_code ;
+      pe_sections#read_resource_directory_table resrcAddr resrcSize;
+      pe_symboltable#set_image_base optional_header#get_image_base;
+      pe_symboltable#set_base_of_code optional_header#get_base_of_code;
       pe_symboltable#read_xml (getc "symbol-table")
     end
 
   method toPretty = 
     LBLOCK [
-    STR "COFF File Header" ; NL ; coff_file_header#toPretty ; NL ;
-    STR "Optional Header" ; NL ; optional_header#toPretty ; NL ;
-    STR "Data Directory" ; NL ; data_directory#toPretty ; NL ; 
-    STR "Section Headers" ; NL ; self#section_headers_to_pretty ; NL ; NL ;
-    STR "Export Table" ; NL ; NL ; pe_sections#export_directory_table_to_pretty ; NL ; NL ; NL ;
-    STR "Import Tables" ; NL ; NL ; pe_sections#import_directory_table_to_pretty ; NL ; NL ;
-    STR "Load Configuration Directory" ; NL ; NL ; 
-    pe_sections#load_configuration_directory_to_pretty ; NL ; NL ;
-    STR "Resource Table" ; NL ; NL ; resource_directory_table#toPretty ; NL ; NL ;
-    STR "Table Layout " ; NL ; INDENT (5, assembly_table_layout#toPretty ) ; NL ; NL ;  
-  ]
+        STR "COFF File Header"; NL; coff_file_header#toPretty; NL;
+        STR "Optional Header"; NL; optional_header#toPretty; NL;
+        STR "Data Directory"; NL; data_directory#toPretty; NL;
+        STR "Section Headers"; NL; self#section_headers_to_pretty; NL; NL;
+        STR "Export Table"; NL; NL;
+        pe_sections#export_directory_table_to_pretty; NL; NL; NL;
+        STR "Import Tables"; NL; NL;
+        pe_sections#import_directory_table_to_pretty; NL; NL;
+        STR "Load Configuration Directory"; NL; NL;
+        pe_sections#load_configuration_directory_to_pretty; NL; NL;
+        STR "Resource Table"; NL; NL; resource_directory_table#toPretty; NL; NL;
+        STR "Table Layout "; NL; INDENT (5, assembly_table_layout#toPretty ); NL; NL;
+      ]
 end
 
 
@@ -1122,17 +1184,23 @@ let save_pe_header () =
   let root = get_bch_root "pe-header" in
   let hNode = xmlElement "pe-header" in
   begin
-    doc#setNode root ;
-    pe_header#write_xml hNode ;
-    root#appendChildren [ hNode ] ;
+    doc#setNode root;
+    pe_header#write_xml hNode;
+    root#appendChildren [ hNode ];
     file_output#saveFile filename doc#toPretty
   end
 
 let save_pe_section (s:pe_section_int) =
   let header = s#get_header in
   let sname = header#get_characteristics_digest ^ "_" ^ header#get_RVA#to_hex_string in
-  let _ = pr_debug [ STR "Saving section " ; STR sname ; 
-		     STR " (size: " ; INT (String.length s#get_exe_string) ; STR ")" ; NL ] in
+  let _ =
+    pr_debug [
+        STR "Saving section ";
+        STR sname;
+	STR " (size: ";
+        INT (String.length s#get_exe_string);
+        STR ")";
+        NL] in
   let filename = get_section_filename sname in
   let doc = xmlDocument () in
   let root = get_bch_root "raw-section" in
@@ -1152,14 +1220,19 @@ let save_pe_files () =
     List.iter save_pe_section pe_sections#get_sections
   end
 
+
 let load_pe_files () =
   match load_pe_header_file () with
   | Some node -> pe_header#read_xml node
-  | _ -> raise (BCH_failure
-                  (LBLOCK [ STR "Unable to load pe file for " ; 
-			    STR system_info#get_filename ;
-                            STR ". Make sure xml representation of the executable " ;
-                            STR "has been created." ]))
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "Unable to load pe file for ";
+	       STR system_info#get_filename;
+               STR ". Make sure xml representation of the executable ";
+               STR "has been created."]))
+
 
 let read_pe_file (filename:string) (optmaxsize:int option) =
   let maxStringSize = 100000000 in
@@ -1168,21 +1241,35 @@ let read_pe_file (filename:string) (optmaxsize:int option) =
   let exeString = IO.nread ch maxStringSize in
   let filesize = Bytes.length exeString in
   let default () = 
-    let hexsize = int_to_doubleword filesize in
+    let hexsize = TR.tget_ok (int_to_doubleword filesize) in
     begin
-      system_info#set_file_string (Bytes.to_string exeString) ;
-      pe_header#read ;
-      (true, LBLOCK [ STR "File: " ; STR filename ; NL ;
-		      STR "Size: " ; INT filesize ; STR " (" ; hexsize#toPretty ;
-		      STR ") bytes" ; NL ])
+      system_info#set_file_string (Bytes.to_string exeString);
+      pe_header#read;
+      (true,
+       LBLOCK [
+           STR "File: ";
+           STR filename;
+           NL;
+	   STR "Size: ";
+           INT filesize;
+           STR " (";
+           hexsize#toPretty;
+	   STR ") bytes" ; NL])
     end in
   match optmaxsize with
   | Some maxsize ->
     if filesize > maxsize then
-      (false, LBLOCK [ STR "Filesize of " ; STR filename ; STR " is " ; INT filesize ; 
-		       STR ", which exceeds upper file size limit of " ;
-		       INT maxsize ; NL ])
-    else default ()
+      (false,
+       LBLOCK [
+           STR "Filesize of ";
+           STR filename;
+           STR " is ";
+           INT filesize;
+	   STR ", which exceeds upper file size limit of ";
+	   INT maxsize;
+           NL])
+    else
+      default ()
   | _ -> default ()
 
 
@@ -1199,7 +1286,7 @@ let read_hexlified_pe_file (filename:string) =
           with
             Failure _ ->
             begin
-              pr_debug [ STR "Failure in read_hex_file: " ; STR s ; NL ] ;
+              pr_debug [STR "Failure in read_hex_file: "; STR s; NL];
               raise (Failure "read_hex:int_of_string")
             end
         done
@@ -1207,13 +1294,21 @@ let read_hexlified_pe_file (filename:string) =
     with _ -> () in
   let exeString = IO.close_out outch in
   let filesize =  String.length exeString in
-  let hexsize = int_to_doubleword filesize in
+  let hexsize = TR.tget_ok (int_to_doubleword filesize) in
   begin
-    system_info#set_file_string exeString ;
-    pe_header#read ;
-    (true, LBLOCK [ STR "File: " ; STR filename ; NL ;
-                    STR "Size: " ; INT filesize ; STR " (" ; hexsize#toPretty ;
-                    STR ") bytes" ; NL ])
+    system_info#set_file_string exeString;
+    pe_header#read;
+    (true,
+     LBLOCK [
+         STR "File: ";
+         STR filename;
+         NL;
+         STR "Size: ";
+         INT filesize;
+         STR " (";
+         hexsize#toPretty;
+         STR ") bytes";
+         NL])
   end
        
 
@@ -1224,12 +1319,16 @@ let dump_pe_file filename =
   let exeString = IO.nread ch maxStringSize in
   let filesize = Bytes.length exeString in
   if filesize > 1000000 then
-    pr_debug [ STR "Refuse to dump file of " ; INT filesize ; STR " bytes. " ; 
-	       STR "Maximum size of dumping is 1,000,000 bytes" ; NL ]
+    pr_debug [
+        STR "Refuse to dump file of ";
+        INT filesize;
+        STR " bytes. ";
+	STR "Maximum size of dumping is 1,000,000 bytes";
+        NL]
   else
     let node = xmlElement "executable-dump" in
     begin
-      write_xml_raw_data node (Bytes.to_string exeString) wordzero ;
-      node#setIntAttribute "size" filesize ;
+      write_xml_raw_data node (Bytes.to_string exeString) wordzero;
+      node#setIntAttribute "size" filesize;
       save_executable_dump node
     end

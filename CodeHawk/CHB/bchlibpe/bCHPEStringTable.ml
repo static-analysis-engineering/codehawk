@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +42,8 @@ open BCHLibTypes
 open BCHLibPETypes
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 class string_table_t:string_table_int  =
 object (self)
@@ -53,22 +57,33 @@ object (self)
   method has (dw:doubleword_int) = H.mem table dw#index
 
   method get (dw:doubleword_int) =
-    if self#has dw then H.find table dw#index else
+    if self#has dw then
+      H.find table dw#index
+    else
       begin
 	ch_error_log#add "invocation error"
-	  (LBLOCK [ STR "Address " ; dw#toPretty ; STR " could not be found in string_table" ]);
+	  (LBLOCK [
+               STR "Address ";
+               dw#toPretty;
+               STR " could not be found in string_table"]);
 	raise (Invocation_error "string_table_t#get")
       end
 
   method get_strings = 
-    H.fold (fun k v a -> (index_to_doubleword k, v) :: a) table []
+    H.fold (fun k v a -> (TR.tget_ok (index_to_doubleword k), v) :: a) table []
 
   method toPretty =
-    H.fold (fun k v a -> 
-      LBLOCK [ a ; NL ; STR (index_to_doubleword k)#to_fixed_length_hex_string ; STR "  " ; STR v ])
+    H.fold (fun k v a ->
+        LBLOCK [
+            a;
+            NL;
+            STR (TR.tget_ok (index_to_doubleword k))#to_fixed_length_hex_string;
+            STR "  ";
+            STR v])
       table (STR "")
     
 end
+
 
 let string_table = new string_table_t
 let wide_string_table = new string_table_t
