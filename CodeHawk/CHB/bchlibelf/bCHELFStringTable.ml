@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
@@ -43,7 +46,9 @@ open BCHELFSection
 open BCHELFTypes
 
 module H = Hashtbl
-         
+module TR = CHTraceResult
+
+
 class elf_string_table_t (s:string) (vaddr:doubleword_int):elf_string_table_int =
 object (self)
 
@@ -92,19 +97,24 @@ object (self)
     node#appendChildren
       (List.map (fun (p,s) ->
            let snode = xmlElement "str" in
-           begin snode#setAttribute "s" s ; snode#setIntAttribute "p" p ; snode end)
-                self#get_strings)
+           begin
+             snode#setAttribute "s" s;
+             snode#setIntAttribute "p" p;
+             snode
+           end)
+         self#get_strings)
 
 end
-   
+
+
 let mk_elf_string_table = new elf_string_table_t
+
 
 let read_xml_elf_string_table (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
-  let vaddr = string_to_doubleword (node#getAttribute "vaddr") in
+  let vaddr = TR.tget_ok (string_to_doubleword (node#getAttribute "vaddr")) in
   let stringtable = new elf_string_table_t s vaddr in
   begin
-    stringtable#set_entries ;
+    stringtable#set_entries;
     stringtable
   end
-  

@@ -31,6 +31,7 @@
 open CHPretty
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
@@ -46,6 +47,16 @@ open BCHELFDictionary
 open BCHELFSection
 open BCHELFTypes
 
+module TR = CHTraceResult
+
+
+let fail_traceresult (msg: string) (r: 'a traceresult): 'a =
+  if Result.is_ok r then
+    TR.tget_ok r
+  else
+    fail_tvalue
+      (trerror_record (LBLOCK [STR "BCHELFProgramSection: "; STR msg])) r
+
 
 class elf_program_section_t
         (s:string) (vaddr:doubleword_int):elf_program_section_int =
@@ -57,15 +68,9 @@ object (self)
     try
       if super#includes_VA a then
         let offset =
-          try
-            (a#subtract vaddr)#to_int
-          with
-          | Invalid_argument s ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Error in elf_program_section#get_value: ";
-                       STR s])) in
+          fail_traceresult
+            "elf_program_section#get_value offset"
+            (a#subtract_to_int vaddr) in
         let ch =
           make_pushback_stream ~little_endian:system_info#is_little_endian s in
         begin
@@ -106,6 +111,6 @@ let mk_elf_program_section
 
 let read_xml_elf_program_section (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
-  let vaddr = string_to_doubleword (node#getAttribute "vaddr") in
+  let vaddr = TR.tget_ok (string_to_doubleword (node#getAttribute "vaddr")) in
   new elf_program_section_t s vaddr
   

@@ -49,6 +49,9 @@ open BCHELFDictionary
 open BCHELFSection
 open BCHELFTypes
 
+module TR = CHTraceResult
+
+
 class elf_relocation_table_entry_t (index:int):elf_relocation_table_entry_int =
 object (self)
 
@@ -222,7 +225,7 @@ let mk_elf_relocation_table s h vaddr =
 
 let read_xml_elf_relocation_table (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
-  let vaddr = string_to_doubleword (node#getAttribute "vaddr") in
+  let vaddr = TR.tget_ok (string_to_doubleword (node#getAttribute "vaddr")) in
   let entrysize = node#getIntAttribute "entrysize" in
   let table = new elf_relocation_table_t s entrysize vaddr in
   begin

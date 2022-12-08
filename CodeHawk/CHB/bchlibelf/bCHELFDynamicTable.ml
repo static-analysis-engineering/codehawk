@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +51,8 @@ open BCHELFTypes
 open BCHELFUtil
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 class elf_dynamic_table_entry_t (index:int):elf_dynamic_table_entry_int =
 object (self)
@@ -98,12 +102,14 @@ object (self)
   method get_d_ptr =
     let tagval = doubleword_to_dynamic_tag_value d_tag in
     match tagval with
-    | DTV_d_ptr | DTV_d_none -> numerical_to_doubleword d_un
+    | DTV_d_ptr | DTV_d_none -> TR.tget_ok (numerical_to_doubleword d_un)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Value of " ; STR self#get_tag_name ;
-                      STR " cannot be interpreted as pointer" ]))
+            (LBLOCK [
+                 STR "Value of ";
+                 STR self#get_tag_name;
+                 STR " cannot be interpreted as pointer"]))
 
   method get_d_val =
     let tagval = doubleword_to_dynamic_tag_value d_tag in
@@ -112,20 +118,24 @@ object (self)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Value of " ; STR self#get_tag_name ;
-                      STR " cannot be interpreted as value" ]))
+            (LBLOCK [
+                 STR "Value of ";
+                 STR self#get_tag_name;
+                 STR " cannot be interpreted as value"]))
 
   method to_rep_record =
     let tagval =
       match doubleword_to_dynamic_tag_value d_tag with
-      | DTV_d_ptr | DTV_d_none -> (numerical_to_doubleword d_un)#to_hex_string
+      | DTV_d_ptr | DTV_d_none ->
+         (TR.tget_ok (numerical_to_doubleword d_un))#to_hex_string
       | DTV_d_val -> d_un#toString in
-    let args = [ ] in
-    let tags = [ self#get_tag_name ;  tagval ] in
+    let args = [] in
+    let tags = [self#get_tag_name;  tagval] in
     (tags,args)
 
 end
-    
+
+
 class elf_dynamic_table_t
         (s:string)
         (vaddr:doubleword_int):elf_dynamic_table_int =
@@ -154,8 +164,9 @@ object (self)
       end
     with
     | IO.No_more_input ->
-       ch_error_log#add "no more input"
-                        (LBLOCK [ STR "Unable to read the relocation table" ])
+       ch_error_log#add
+         "no more input"
+         (LBLOCK [STR "Unable to read the relocation table"])
 
   method write_xml_entries (node:xml_element_int) =
     let table = mk_num_record_table "dynamic-table" in
@@ -166,6 +177,7 @@ object (self)
 
 end
 
+
 let mk_elf_dynamic_table s h vaddr =
   let table = new elf_dynamic_table_t s vaddr in
   begin
@@ -175,7 +187,7 @@ let mk_elf_dynamic_table s h vaddr =
 
 let read_xml_elf_dynamic_table (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
-  let vaddr = string_to_doubleword (node#getAttribute "vaddr") in
+  let vaddr = TR.tget_ok (string_to_doubleword (node#getAttribute "vaddr")) in
   let table = new elf_dynamic_table_t s vaddr in
   begin
     table#read ;

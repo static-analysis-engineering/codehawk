@@ -44,9 +44,13 @@ open BCHStrings
 (* bchlibelf *)
 open BCHELFTypes
 
+module TR = CHTraceResult
+
+
 let is_printable c = (c >= 32 && c < 127) || c = 10 || c = 9 || c = 13
   
 let is_printable_char c = is_printable (Char.code c)
+
 
 class elf_raw_section_t (s:string) (vaddr:doubleword_int):elf_raw_section_int =
 object (self)
@@ -58,7 +62,7 @@ object (self)
   method get_xsubstring (va:doubleword_int) (size:int) =
     if self#includes_VA va then
       try
-        let start = (va#subtract vaddr)#to_int in
+        let start = TR.tget_ok (va#subtract_to_int vaddr) in
         String.sub s start size
       with
       | Invalid_argument s ->
@@ -97,7 +101,7 @@ object (self)
     if self#includes_VA va then
       let offset =
         try
-          (va#subtract vaddr)#to_int
+          TR.tget_ok (va#subtract_to_int vaddr)
         with
         | Invalid_argument s ->
            raise
@@ -148,5 +152,5 @@ let mk_elf_raw_section = new elf_raw_section_t
 
 let read_xml_elf_raw_section (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
-  let vaddr = string_to_doubleword (node#getAttribute "vaddr") in
+  let vaddr = TR.tget_ok (string_to_doubleword (node#getAttribute "vaddr")) in
   new elf_raw_section_t s vaddr
