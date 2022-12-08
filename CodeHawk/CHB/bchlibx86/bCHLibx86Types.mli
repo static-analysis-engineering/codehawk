@@ -101,8 +101,8 @@ object ('a)
   method get_kind: asm_operand_kind_t
   method get_mode: operand_mode_t
   method get_cpureg: cpureg_t          (* raises Invocation_error *)
-  method get_absolute_address : doubleword_int    (* raises Invocation_error *)
-  method get_immediate_value  : immediate_int    (* raises Invocation_error *)
+  method get_absolute_address: doubleword_int    (* raises Invocation_error *)
+  method get_immediate_value: immediate_int    (* raises Invocation_error *)
   method get_function_argument: ctxt_iaddress_t * int  (* raises Invocation_error *)
   method get_esp_offset: numerical_t       (* raises Invocation_error *)
 
@@ -120,20 +120,20 @@ object ('a)
            ?size:int -> floc_int -> variable_t * cmd_t list
 
   (* predicates *)
-  method is_register         : bool
-  method is_seg_register     : bool
-  method is_memory_access    : bool
-  method is_absolute_address : bool
-  method is_immediate_value  : bool
+  method is_register: bool
+  method is_seg_register: bool
+  method is_memory_access: bool
+  method is_absolute_address: bool
+  method is_immediate_value: bool
   method is_function_argument: bool
-  method is_esp_offset       : bool
+  method is_esp_offset: bool
   method is_indirect_register: bool
 
-  method is_read             : bool
-  method is_write            : bool
+  method is_read: bool
+  method is_write: bool
 
-  method is_zero             : bool
-  method has_one_bit_set     : bool
+  method is_zero: bool
+  method has_one_bit_set: bool
 
   method is_jump_table_target: bool
 

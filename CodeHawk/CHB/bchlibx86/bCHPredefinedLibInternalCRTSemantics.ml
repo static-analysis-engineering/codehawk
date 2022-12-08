@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +52,8 @@ open BCHPredefinedUtil
 
 module H = Hashtbl
 module FFU = BCHFileFormatUtil
+module TR = CHTraceResult
+
 
 let table = H.create 3
 
@@ -508,9 +512,10 @@ object (self)
 		 (12, "0x10325476") ;
 		 (16, "0x0") ;
 		 (20, "0x0") ] in
-    List.concat (List.map (fun (offset,c) ->
+    List.concat (List.map (fun (offset, c) ->
       let lhs = get_x_deref_lhs arg offset floc in
-      let cv = num_constant_expr (string_to_doubleword c)#to_numerical in
+      let cv =
+        num_constant_expr (constant_string_to_doubleword c)#to_numerical in
       floc#get_assign_commands lhs cv) vals)
 
   method get_parametercount = 1
@@ -518,11 +523,14 @@ object (self)
   method get_call_target (a:doubleword_int) =
     mk_inlined_app_target a self#get_name
 
-  method get_description = "initializes a vector with the MD5 initialization constants"
+  method get_description =
+    "initializes a vector with the MD5 initialization constants"
 
 end
 
+
 let _ = H.add table "MD5Init" (new md5init_semantics_t)
+
 
 (* ==================================================================== __mtold12
    example: V008:0x423c84

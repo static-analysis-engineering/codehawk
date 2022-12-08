@@ -68,6 +68,8 @@ open BCHLibx86Types
 
 module H = Hashtbl
 module FFU = BCHFileFormatUtil
+module TR = CHTraceResult
+
 
 let maxIterationCount = 10
 let iterationCount = ref 0
@@ -207,28 +209,34 @@ and get_encodepointer_target (floc:floc_int) =
 and get_constant_call_targets (floc:floc_int) (c:numerical_t) = 
   let is_code_address n =
     (try
-       system_info#is_code_address (numerical_to_doubleword n)
+       system_info#is_code_address (TR.tget_ok (numerical_to_doubleword n))
      with
      | _ -> false) in
   try
-    let dw = numerical_to_doubleword c in
+    let dw = TR.tget_ok (numerical_to_doubleword c) in
     if assembly_functions#has_function_by_address dw then
       [ AppTarget dw ]
     else
       match FFU.get_imported_function_by_index dw with
-      | Some (dll,name) -> [ StubTarget (DllFunction (dll,name)) ]
+      | Some (dll,name) -> [ StubTarget (DllFunction (dll,name))]
       | None when is_code_address c ->
 	begin
 	  ignore (functions_data#add_function dw) ;
 	  chlog#add "indirect function entry point"
-	    (LBLOCK [ floc#l#toPretty ; STR ": target " ; c#toPretty ]) ;
+	    (LBLOCK [floc#l#toPretty; STR ": target "; c#toPretty]);
 	  [] 
 	end
       | _ -> 
 	begin
-	  chlog#add "indirect call not resolved" 
-	    (LBLOCK [ floc#l#toPretty ; STR ": Constant value target: " ; c#toPretty ; 
-		      STR " (" ; dw#toPretty ; STR ")" ]) ;
+	  chlog#add
+            "indirect call not resolved"
+	    (LBLOCK [
+                 floc#l#toPretty;
+                 STR ": Constant value target: ";
+                 c#toPretty;
+		 STR " (";
+                 dw#toPretty;
+                 STR ")"]);
 	  []
 	end
   with
@@ -236,7 +244,7 @@ and get_constant_call_targets (floc:floc_int) (c:numerical_t) =
      begin
        chlog#add
          "error in resolving indirect call"
-	 (LBLOCK [ floc#l#toPretty ; STR ": Constant value target: " ; c#toPretty ]) ;
+	 (LBLOCK [floc#l#toPretty; STR ": Constant value target: "; c#toPretty]);
        []
      end
 
@@ -247,17 +255,20 @@ and get_global_call_targets
 and extract_call_target 
     (cfloc:floc_int) (finfo:function_info_int) (x:xpr_t) (offsets:numerical_t list) =
   let is_code_address n =
-    (try
-       system_info#is_code_address (numerical_to_doubleword n)
-     with
-     | _ -> false) in
+    TR.tfold_default
+      (fun dw -> system_info#is_code_address dw)
+      false
+      (numerical_to_doubleword n) in
   let env = finfo#env in
   match x with
   | XVar v when env#is_return_value v ->
     let callsite = env#get_call_site v in
     let rfloc = get_floc (ctxt_string_to_location cfloc#fa callsite) in
-    let _ = pverbose [ STR "Get rv call targets with offsets " ; 
-		       pretty_print_list offsets (fun p -> p#toPretty) "[" "," "]" ; NL ] in
+    let _ =
+      pverbose [
+          STR "Get rv call targets with offsets ";
+	  pretty_print_list offsets (fun p -> p#toPretty) "[" "," "]";
+          NL] in
     get_rv_call_targets cfloc rfloc offsets
   | XVar v when env#is_global_variable v && env#has_constant_offset v ->
     let gaddr = env#get_global_variable_address v in
@@ -265,19 +276,21 @@ and extract_call_target
   | XVar v when env#is_initial_memory_value v ->
     unpack_memory_variable cfloc finfo v offsets
   | XConst (IntConst num) when is_code_address num -> 
-    [ AppTarget (numerical_to_doubleword num) ]    
+    [ AppTarget (TR.tget_ok (numerical_to_doubleword num))]
   | _ -> 
     begin
       chlog#add
         "call target extraction"
-	(LBLOCK [ finfo#a#toPretty ; STR ": " ; pr_expr x]) ;
+	(LBLOCK [finfo#a#toPretty; STR ": "; pr_expr x]);
       []
     end
+
 
 and unpack_memory_variable
 (cfloc:floc_int) (finfo:function_info_int) (v:variable_t) (offsets:numerical_t list) = []
                                                                                                                 
 and get_argument_embedded_values (finfo:function_info_int) (v:variable_t) = []
+
 
 and check_jni_interface_pointer finfo fArgs (v:variable_t) =
   let env = finfo#env in

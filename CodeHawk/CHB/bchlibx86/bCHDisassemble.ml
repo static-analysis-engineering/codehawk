@@ -92,6 +92,8 @@ open BCHPullData
 open BCHX86OpcodeRecords
 open BCHX86Opcodes
 
+module TR = CHTraceResult
+
 
 let pr_expr = xpr_formatter#pr_expr
 
@@ -102,11 +104,13 @@ module DoublewordCollections = CHCollections.Make (
     let toPretty d = d#toPretty
   end)
 
+
 let byte_to_string (b:int) =
   let l = b mod 16 in
   let h = b lsr 4 in
   Printf.sprintf "%x%x" h l
-    
+
+
 let hex_string s =
   let ch = IO.input_string s in
   let h = ref "" in
@@ -115,11 +119,13 @@ let hex_string s =
     for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
     !h
   end
-    
+
+
 let has_control_characters s =
   let found = ref false in
   let _ = String.iter (fun c -> if (Char.code c) < 33 then found  := true) s in
   !found
+
 
 let disassemble (displacement:int) (header:pe_section_header_int) =
   let sname = 
@@ -127,9 +133,13 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
     if has_control_characters name then 
       ("hex_encoded_" ^ (hex_string name)) 
     else name in
-  let _ = chlog#add "initialization"
-    (LBLOCK [ STR "Disassemble section " ; STR sname ; STR " with displacement " ; 
-	      INT displacement ]) in
+  let _ =
+    chlog#add "initialization"
+      (LBLOCK [
+           STR "Disassemble section ";
+           STR sname;
+           STR " with displacement ";
+	   INT displacement]) in
   let section = pe_sections#get_section header#index in
   let sectionVA = section#get_section_VA in
   let codeString = section#get_exe_string in
@@ -145,7 +155,9 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
     (!assembly_instructions#at_index (pos+displacement))#is_non_code_block in
   let is_not_code (pos:int) = 
     let instr = !assembly_instructions#at_index (pos+displacement) in
-    match instr#get_opcode with | NotCode None -> true | _ -> false in
+    match instr#get_opcode with
+    | NotCode None -> true
+    | _ -> false in
   let skip_data_block (pos:int) ch =
     let nonCodeBlock = 
       (!assembly_instructions#at_index (pos+displacement))#get_non_code_block in
@@ -153,8 +165,9 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
     let dataString = Bytes.make len ' ' in
     let _ = Bytes.blit (Bytes.of_string codeString) pos dataString 0 len in
     begin
-      chlog#add "skip data block" (LBLOCK [ STR "pos: " ; INT pos ;
-                                            STR "; length: " ; INT len ]) ;
+      chlog#add
+        "skip data block"
+        (LBLOCK [STR "pos: "; INT pos; STR "; length: "; INT len]);
       ch#skip_bytes len  ;
       not_code_set_string nonCodeBlock (Bytes.to_string dataString)
     end in
@@ -168,7 +181,7 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
 	  begin
 	    ch_error_log#add "disassembly" 
 	      (LBLOCK [ STR "Unexpected not-code at " ; 
-			(sectionVA#add_int prevPos)#toPretty ]) ;
+			(sectionVA#add_int prevPos)#toPretty ]);
 	    while is_not_code ch#pos do ignore ch#read_byte done
 	  end
 	else
@@ -284,6 +297,7 @@ let add_class_functions classes isCodeAddress =
         add c#get_class_functions true
       end) classes
 
+
 (* Look for code patterns of the form:
       movzx dreg, ooffset(_,ireg,_)
       jmp* joffset(_,dreg,4) 
@@ -294,42 +308,51 @@ let identify_data_blocks is_code_address header =
   let codestring = section#get_exe_string in
   let newDataBlocks = ref 0 in
   let is_code n =
-    try
-      is_code_address (numerical_to_doubleword n)
-    with
-    | BCH_failure p ->
-       let msg = LBLOCK [ STR "identify_data_blocks.is_code: " ; n#toPretty ;
-                          STR " (" ; p ; STR ")" ] in
-       begin
-         chlog#add "doubleword conversion" msg;
-         false
-       end in
+    log_tfold
+      (mk_tracelog_spec
+         ~logger:chlog
+         ~tag:"doubleword conversion" "identify_data_blocks.is_code")
+      ~ok:(fun dw -> is_code_address dw)
+      ~error:(fun _ -> false)
+      (numerical_to_doubleword n) in
   let get_instr = !assembly_instructions#at_address in
   let has_next_instr = !assembly_instructions#has_next_valid_instruction in
   let get_next_instr iaddr = 
-    get_instr (!assembly_instructions#get_next_valid_instruction_address iaddr) in
+    get_instr
+      (!assembly_instructions#get_next_valid_instruction_address iaddr) in
   let get_jumptable = !assembly_instructions#get_jumptable in
   let add_data_block instr nextInstr offset jtoffset jt =
-    let jtlength = jt#get_length - (jtoffset#subtract jt#get_start_address)#to_int in
+    let jtlength =
+      jt#get_length
+      - (TR.tget_ok (jtoffset#subtract_to_int jt#get_start_address)) in
     let jtlength = jtlength / 4 in
     let db =
-      try
+      let trdb =
         create_jumptable_offset_block
-          (numerical_to_doubleword offset) sectionVA codestring jtlength
-      with
-      | BCH_failure p ->
-         raise (BCH_failure
-                  (LBLOCK [ STR "identify_data_blocks.db: " ; p ])) in
+          (TR.tget_ok (numerical_to_doubleword offset))
+          sectionVA
+          codestring
+          jtlength in
+      fail_tvalue
+        (trerror_record
+           (STR "BCHDisassemble.identify_datablocks"))
+           trdb in
     begin
-      system_info#set_jump_target nextInstr#get_address jtoffset jt db ;
+      system_info#set_jump_target nextInstr#get_address jtoffset jt db;
       system_info#add_data_block db ;
       newDataBlocks := !newDataBlocks + 1 ;
       chlog#add "jumptable offset block"
-	(LBLOCK [ db#get_start_address#toPretty ; STR " - " ; 
-		  db#get_end_address#toPretty ; STR " (" ;
-		  instr#toPretty ; STR ", " ; nextInstr#toPretty ; STR ")" ;
-		  STR " jtlength = " ; INT jtlength ])
-    end in    
+        (LBLOCK [
+             db#get_start_address#toPretty;
+             STR " - ";
+	     db#get_end_address#toPretty;
+             STR " (";
+	     instr#toPretty;
+             STR ", ";
+             nextInstr#toPretty ; STR ")";
+	     STR " jtlength = ";
+             INT jtlength])
+    end in
   !assembly_instructions#itera (fun iaddr instr ->
     match instr#get_opcode with
     | Movzx (_,dst,src) ->
@@ -337,7 +360,8 @@ let identify_data_blocks is_code_address header =
 	match (dst#get_kind,src#get_kind) with
 	| (Reg dreg, IndReg (_,offset))
 	| (Reg dreg, ScaledIndReg (_,_,_,offset)) when is_code offset ->
-	   if system_info#has_data_block (numerical_to_doubleword offset) then
+	   if system_info#has_data_block
+                (TR.tget_ok (numerical_to_doubleword offset)) then
              ()
            else
 	     if has_next_instr iaddr then
@@ -349,13 +373,15 @@ let identify_data_blocks is_code_address header =
 		      match op#get_kind with
 		      | ScaledIndReg (_,Some ireg,_,jtoffset)
                            when is_code jtoffset && ireg = dreg ->
-		         let jtoffset = numerical_to_doubleword jtoffset in
+		         let jtoffset = TR.tget_ok (numerical_to_doubleword jtoffset) in
 		         (try
 			    begin
 			      match get_jumptable jtoffset with
-			      | Some jt -> add_data_block instr nextInstr offset jtoffset jt
+			      | Some jt ->
+                                 add_data_block instr nextInstr offset jtoffset jt
 			      | _ ->
-			         match create_jumptable jtoffset sectionVA is_code_address codestring with
+			         match create_jumptable
+                                         jtoffset sectionVA is_code_address codestring with
 			         | Some jt ->
 			            begin
 				      system_info#add_jumptable jt ;
@@ -391,12 +417,16 @@ let identify_misaligned_functions header =
   let is_valid_instr a = 
     is_code a && (!assembly_instructions#at_address a)#is_valid_instruction in
   let add_datablock start endaddr =
-    let db = make_data_block start endaddr "zeroes" in
+    let db = TR.tget_ok (make_data_block start endaddr "zeroes") in
     begin
-      newDataBlocks := !newDataBlocks + 1 ;
-      chlog#add "align function entry point" 
-	(LBLOCK [ endaddr#toPretty ; STR ": " ; 
-		  INT (endaddr#subtract start)#to_int ; STR " bytes" ]) ;
+      newDataBlocks := !newDataBlocks + 1;
+      chlog#add
+        "align function entry point"
+	(LBLOCK [
+             endaddr#toPretty;
+             STR ": ";
+	     INT (TR.tget_ok (endaddr#subtract_to_int start));
+             STR " bytes"]);
       system_info#add_data_block db
     end in
   let feps = functions_data#get_function_entry_points in
@@ -404,21 +434,23 @@ let identify_misaligned_functions header =
     if is_valid_instr fe then () else
       try
 	if sectionVA#le fe then
-	  let feindex = (fe#subtract sectionVA)#to_int in
+	  let feindex = TR.tget_ok (fe#subtract_to_int sectionVA) in
 	  if feindex < codelen then
 	    let index = ref (feindex - 1) in
 	    begin
-	      while !index > 0 && Char.code (Bytes.get (Bytes.of_string codestring) !index) = 0 do 
+	      while !index > 0
+                    && Char.code (Bytes.get (Bytes.of_string codestring) !index) = 0 do
 		index := !index - 1
-	      done ;
-	      index := !index + 1 ;
+	      done;
+	      index := !index + 1;
 	      let dblen = feindex - !index in
 	      if dblen > 0 then
-		add_datablock (fe#subtract_int dblen) fe
+		add_datablock (TR.tget_ok (fe#subtract_int dblen)) fe
 	    end
       with
 	Invalid_argument s ->
-	  pr_debug [ STR s ; STR ": " ; fe#toPretty ; NL ]) feps
+	  pr_debug [STR s; STR ": "; fe#toPretty; NL]) feps
+
 
 let disassemble_sections (headers:pe_section_header_int list) =
   let imageBase = system_info#get_image_base in
@@ -442,7 +474,8 @@ let disassemble_sections (headers:pe_section_header_int list) =
   let _ = List.iter 
     (fun header ->
       let section = pe_sections#get_section header#index in
-      let displacement = ((section#get_section_VA)#subtract baseOfCode)#to_int in
+      let displacement =
+        TR.tget_ok ((section#get_section_VA)#subtract_to_int baseOfCode) in
       let endSection = displacement + header#get_size#to_int in
       let newDataBlocks = ref true in
       let datablockCount = ref (List.length system_info#get_data_blocks) in
@@ -453,9 +486,12 @@ let disassemble_sections (headers:pe_section_header_int list) =
 	begin
 	  itcount := !itcount + 1 ;
 	  initialize_assembly_instructions 
-	    displacement endSection codeSize#to_int baseOfCode jumpTables dataBlocks ;
-	  disassemble displacement header ;
-	  identify_data_blocks isCodeAddress header ;
+	    displacement
+            endSection
+            codeSize#to_int baseOfCode jumpTables
+            dataBlocks;
+	  disassemble displacement header;
+	  identify_data_blocks isCodeAddress header;
 	  (* identify_misaligned_functions header ; *)
 	  (let dbCount = List.length system_info#get_data_blocks in
 	  if dbCount > !datablockCount then
@@ -466,11 +502,12 @@ let disassemble_sections (headers:pe_section_header_int list) =
       done) headers in
   let _ = List.iter
             (fun (vastart,s) ->
-              let displacement = (vastart#subtract baseOfCode)#to_int in
+              let displacement = TR.tget_ok (vastart#subtract_to_int baseOfCode) in
               disassemble_string displacement vastart s)
             system_info#get_initialized_memory_strings in
               
   codeSize#to_int
+
 
 let get_dll_target (instr:assembly_instruction_int) =
 (*
@@ -508,7 +545,8 @@ let get_dll_target (instr:assembly_instruction_int) =
   | DirectCall op when op#is_absolute_address -> check_case_I op#get_absolute_address
   | IndirectCall op when op#is_absolute_address -> check_case_II op#get_absolute_address
   | _ -> None
-    
+
+
 let is_dll_target (instr:assembly_instruction_int) = 
   match get_dll_target instr with Some _ -> true | _ -> false
 		
@@ -524,33 +562,45 @@ let get_indirect_jump_targets (op:operand_int) =
   if op#is_jump_table_target then
     let (jumpBase,reg) = op#get_jump_table_target in
     try
-      let jumpBase = numerical_to_doubleword jumpBase in
+      let jumpBase = TR.tget_ok (numerical_to_doubleword jumpBase) in
       match system_info#is_in_jumptable jumpBase with
       | Some jt -> Some (jumpBase,jt,reg)
       | _ ->
-	chlog#add "jump table" 
-	  (LBLOCK [ STR "not found for offset " ; jumpBase#toPretty ]) ;
+	 chlog#add
+           "jump table"
+	   (LBLOCK [STR "not found for offset "; jumpBase#toPretty]);
 	None
     with
     | BCH_failure p ->
-       raise (BCH_failure
-                (LBLOCK [ STR "get_indirect_jump_targets: " ; op#toPretty ;
-                          STR " (" ; p ; STR ")" ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "get_indirect_jump_targets: ";
+                 op#toPretty;
+                 STR " (";
+                 p;
+                 STR ")"]))
     | Invalid_argument s ->
       begin
-	ch_error_log#add "invalid argument"
-	  (LBLOCK [ STR "get_indirect_jump_targets: " ; STR s ; STR ": " ; 
-		    op#toPretty ]) ;
+	ch_error_log#add
+          "invalid argument"
+	  (LBLOCK [
+               STR "get_indirect_jump_targets: ";
+               STR s;
+               STR ": ";
+	       op#toPretty]);
 	None
       end
   else
     None
+
 
 (* Checks for non-returning functions *)
 
 let is_nr_dllfname (dll:string) (name:string) =
   function_summary_library#has_dll_function dll name &&
     (function_summary_library#get_dll_function dll name)#is_nonreturning
+
 
 let is_nr_declared (faddr:doubleword_int) =
   ((functions_data#is_function_entry_point faddr)
@@ -560,6 +610,7 @@ let is_nr_declared (faddr:doubleword_int) =
 	  match function_summary_library#search_for_library_function fname with
 	  | Some dll ->	is_nr_dllfname dll fname
 	  | _ -> false))
+
 
 (* Check for non-returning function before functions are created *)
 let is_nr_call_instruction (instr:assembly_instruction_int) =
@@ -571,6 +622,7 @@ let is_nr_call_instruction (instr:assembly_instruction_int) =
       is_nr_declared op#get_absolute_address
     | _ -> false
 
+
 (* Check for non-returning function when containing function is known *)
 let is_nr_call (floc:floc_int) (instr:assembly_instruction_int) =
   floc#has_call_target && floc#get_call_target#is_nonreturning
@@ -579,7 +631,8 @@ let is_nr_call (floc:floc_int) (instr:assembly_instruction_int) =
       | DirectCall op when op#is_absolute_address ->
          is_nr_declared op#get_absolute_address
       | _ -> false)
-      
+
+
 let set_block_boundaries () =
   try
     let jumpTables = system_info#get_jumptables in
@@ -765,7 +818,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
       | XConst (IntConst c) ->
          begin
 	   try
-	     Some (numerical_to_doubleword c)
+	     Some (TR.tget_ok (numerical_to_doubleword c))
 	   with
 	     _ -> None 
          end

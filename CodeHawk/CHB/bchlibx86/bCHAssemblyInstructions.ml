@@ -50,14 +50,19 @@ open BCHLibx86Types
 open BCHX86OpcodeRecords
 open BCHX86Opcodes
 
+module TR = CHTraceResult
+
 
 let numArrays = 1000
 let arrayLength = 100000
 
-let instructions = ref (Array.make 1 (make_assembly_instruction wordzero OpInvalid ""))
+let instructions =
+  ref (Array.make 1 (make_assembly_instruction wordzero OpInvalid ""))
 
 let instructions = 
-  Array.make numArrays (Array.make 1 (make_assembly_instruction wordzero OpInvalid ""))
+  Array.make numArrays
+    (Array.make 1 (make_assembly_instruction wordzero OpInvalid ""))
+
 
 let initialize_instructions len =
   let remaining = ref len in
@@ -101,10 +106,12 @@ let fold_instructions (f:'a -> assembly_instruction_int -> 'a) (init:'a) =
 let iter_instructions (f: assembly_instruction_int -> unit) =
   Array.iter (fun arr ->	Array.iter f arr) instructions
 
+
 let iteri_instructions (f: int -> assembly_instruction_int -> unit) =
   Array.iteri (fun i arr -> 
     let k = i * arrayLength in
     Array.iteri (fun j instr -> f (k+j) instr) arr) instructions
+
 
 class assembly_instructions_t
         (len:int) (code_base:doubleword_int):assembly_instructions_int =
@@ -119,9 +126,12 @@ object (self)
       set_instruction index instruction
     with
       Invalid_argument _ ->
-	raise (BCH_failure 
-		 (LBLOCK [ STR "Instruction index out of range: " ; INT index ;
-			   STR " (length is " ; INT length ; STR ")"]))
+      raise
+        (BCH_failure
+	   (LBLOCK [
+                STR "Instruction index out of range: ";
+                INT index;
+		STR " (length is " ; INT length ; STR ")"]))
 
   method set_not_code (data_blocks:data_block_int list) = 
     List.iter self#set_not_code_block data_blocks
@@ -133,25 +143,33 @@ object (self)
     let startAddress = data_block#get_start_address in
     let endAddress = data_block#get_end_address in
     if startAddress#lt codeBase then
-      chlog#add "not code" 
+      chlog#add "not code"
 	(LBLOCK [ STR "Ignoring data block " ; STR data_block#toString ; 
 		  STR "; start address is less than start of code" ]) 
     else if codeEnd#le endAddress then
-      chlog#add "not code" 
+      chlog#add "not code"
 	(LBLOCK [ STR "Ignoring data block " ; STR data_block#toString ;
 		  STR "; end address is beyond end of code section "])
     else
-      let _ = chlog#add "not code" 
-	(LBLOCK [ STR "start: " ; startAddress#toPretty ; STR "; end: " ;
-		  endAddress#toPretty ]) in
-      let startIndex = (startAddress#subtract codeBase)#to_int in
+      let _ =
+        chlog#add
+          "not code"
+	  (LBLOCK [
+               STR "start: ";
+               startAddress#toPretty;
+               STR "; end: ";
+	       endAddress#toPretty]) in
+      let startIndex =
+        TR.tget_ok (startAddress#subtract_to_int codeBase) in
       let startInstr = make_assembly_instruction startAddress 
 	(NotCode (Some (DataBlock data_block))) "" in
-      let endIndex = (endAddress#subtract codeBase)#to_int in
+      let endIndex =
+        TR.tget_ok (endAddress#subtract_to_int codeBase) in
       begin
-	set_instruction startIndex startInstr ;
+	set_instruction startIndex startInstr;
 	for i = startIndex + 1 to endIndex - 1 do
-	  set_instruction i (make_assembly_instruction (codeBase#add_int i) (NotCode None) "")
+	  set_instruction
+            i (make_assembly_instruction (codeBase#add_int i) (NotCode None) "")
 	done
       end
 
@@ -159,17 +177,24 @@ object (self)
     let startAddress = jumptable#get_start_address in
     let endAddress = jumptable#get_end_address in
     if codeBase#le startAddress && endAddress#le codeEnd then
-      let _ = chlog#add "not code" 
-	(LBLOCK [ STR "start: " ; startAddress#toPretty ; STR "; end: " ; 
-		  endAddress#toPretty ; STR "; jump table" ]) in
-      let startIndex = (startAddress#subtract codeBase)#to_int in
+      let _ =
+        chlog#add
+          "not code"
+	  (LBLOCK [
+               STR "start: ";
+               startAddress#toPretty;
+               STR "; end: ";
+	       endAddress#toPretty;
+               STR "; jump table"]) in
+      let startIndex = TR.tget_ok (startAddress#subtract_to_int codeBase) in
       let startInstr = make_assembly_instruction startAddress 
 	(NotCode (Some (JumpTable jumptable))) "" in
-      let endIndex = (endAddress#subtract codeBase)#to_int in
+      let endIndex = TR.tget_ok (endAddress#subtract_to_int codeBase) in
       begin
 	set_instruction startIndex startInstr ;
 	for i = startIndex + 1 to endIndex - 1 do
-	  set_instruction i (make_assembly_instruction (codeBase#add_int i) (NotCode None) "")
+	  set_instruction
+            i (make_assembly_instruction (codeBase#add_int i) (NotCode None) "")
 	done
       end
 
@@ -182,23 +207,36 @@ object (self)
     try
       let instr = get_instruction index in
       if instr#get_address#equal wordzero then
-	let newInstr = make_assembly_instruction (codeBase#add_int index) OpInvalid "" in
-	begin set_instruction index newInstr ; newInstr end
+	let newInstr =
+          make_assembly_instruction (codeBase#add_int index) OpInvalid "" in
+	begin
+          set_instruction index newInstr;
+          newInstr
+        end
       else
 	instr
     with
-      Invalid_argument _ ->
-	raise (BCH_failure
-		 (LBLOCK [ STR "Instruction index out of range: " ; INT index ;
-			   STR " (length is " ; INT length ; STR ")"]))
+    | Invalid_argument _ ->
+       raise
+         (BCH_failure
+	    (LBLOCK [
+                 STR "Instruction index out of range: ";
+                 INT index;
+		 STR " (length is ";
+                 INT length;
+                 STR ")"]))
 
   method at_address (va:doubleword_int) =
     try
-      let index = (va#subtract codeBase)#to_int in self#at_index index
+      let index = TR.tget_ok (va#subtract_to_int codeBase) in
+      self#at_index index
     with
     | Invalid_argument s ->
-       raise (BCH_failure (LBLOCK [ STR "Error in assembly-instructions:at-address: " ;
-                                    va#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in assembly-instructions:at-address: ";
+                 va#toPretty]))
 
   method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
     let low = if low#lt codeBase then codeBase else low in
@@ -208,24 +246,26 @@ object (self)
       else
         high in
     let high = if high#lt low then low else high in
-    let low = (low#subtract codeBase)#to_int in
-    let high = (high#subtract codeBase)#to_int in
+    let low = TR.tget_ok (low#subtract_to_int codeBase) in
+    let high = TR.tget_ok (high#subtract_to_int codeBase) in
     let addresses = ref [] in
     begin
       for i = low to high do
 	if (get_instruction i)#is_valid_instruction then
 	  addresses := (codeBase#add_int i) :: !addresses
-      done ;
+      done;
       !addresses
     end
 
   method get_next_valid_instruction_address (va:doubleword_int) =
-    let index = (va#subtract codeBase)#to_int in
+    let index = TR.tget_ok (va#subtract_to_int codeBase) in
     let rec loop i =
       if i >= len then
-	raise (BCH_failure
-		 (LBLOCK [ STR "There is no valid instruction after " ;
-                           va#toPretty]))
+	raise
+          (BCH_failure
+	     (LBLOCK [
+                  STR "There is no valid instruction after ";
+                  va#toPretty]))
       else
 	match (self#at_index i)#get_opcode with 
 	| OpInvalid -> loop (i+1) 
@@ -233,7 +273,7 @@ object (self)
     codeBase#add_int (loop (index+1))
 
   method get_jumptable (addr:doubleword_int) =
-    let index = (addr#subtract codeBase)#to_int in
+    let index = TR.tget_ok (addr#subtract_to_int codeBase) in
     let rec loop i =
       if i < 0 || i >= len then
 	None
@@ -249,10 +289,15 @@ object (self)
 
   method get_num_unknown_instructions =
     let num = ref 0 in
-    let _ = iter_instructions
-      (fun opc -> if opc#is_unknown then
-	  if List.mem opc#get_instruction_bytes [ "ffff" ] then () else num := !num + 1
-	else ()) in
+    let _ =
+      iter_instructions
+        (fun opc ->
+          if opc#is_unknown then
+	    if List.mem opc#get_instruction_bytes ["ffff"] then
+              ()
+            else
+              num := !num + 1
+	  else ()) in
     !num
 
   method private get_nop_count =
@@ -262,9 +307,11 @@ object (self)
 
   method get_data_blocks =
     let blocks = ref [] in
-    let _ = self#iteri (fun _ instr -> match instr#get_opcode with 
-	NotCode (Some (DataBlock b)) -> blocks := b :: !blocks
-      | _ -> ()) in
+    let _ =
+      self#iteri (fun _ instr ->
+          match instr#get_opcode with
+	  | NotCode (Some (DataBlock b)) -> blocks := b :: !blocks
+          | _ -> ()) in
     !blocks
 
   method get_opcode_stats =
@@ -277,8 +324,8 @@ object (self)
     begin
       iter_instructions (fun instr ->
 	match instr#get_opcode with
-	  OpInvalid | BreakPoint | NotCode _ ->  ()
-	| opc -> add (get_opcode_long_name opc)) ;
+	| OpInvalid | BreakPoint | NotCode _ ->  ()
+	| opc -> add (get_opcode_long_name opc));
       Hashtbl.fold (fun k v a -> (k,v)::a) stats []
     end
 
@@ -297,7 +344,8 @@ object (self)
       Hashtbl.fold (fun k v a -> (k,v)::a) stats []
     end
 
-  method iteri (f:int -> assembly_instruction_int -> unit) = iteri_instructions f
+  method iteri (f:int -> assembly_instruction_int -> unit) =
+    iteri_instructions f
 
   method itera (f:doubleword_int -> assembly_instruction_int -> unit) =
     self#iteri (fun i instr -> f (codeBase#add_int i) instr) 
@@ -306,18 +354,22 @@ object (self)
     codeBase#le va && va#lt codeEnd && (self#at_address va)#is_valid_instruction
 
   method has_next_valid_instruction (va:doubleword_int) =
-    let index = (va#subtract codeBase)#to_int in
+    let index = TR.tget_ok (va#subtract_to_int codeBase) in
     let rec loop i =
-	if i >= len || (self#at_index i)#is_not_code then false else 
-	  match (self#at_index i)#get_opcode with 
-	  | OpInvalid -> loop (i+1) | _ -> true in
+      if i >= len || (self#at_index i)#is_not_code then
+        false
+      else
+	match (self#at_index i)#get_opcode with
+	| OpInvalid -> loop (i+1)
+        | _ -> true in
     loop (index+1)
 
   method toString ?(filter = fun _ -> true) () = 
     let stringList = ref [] in
     let firstNew = ref true in
     let add_function_names va =
-      if functions_data#is_function_entry_point va && functions_data#has_function_name va then
+      if functions_data#is_function_entry_point va
+         && functions_data#has_function_name va then
 	let names = (functions_data#get_function va)#get_names in
 	let fLine = match names with
 	  | [] -> ""

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,23 +41,27 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 
+module TR = CHTraceResult
+
+
 class cfg_loops_t (cfg:cfg_int) =
 object
 
   val table = 
     let htable = Hashtbl.create 7 in
-    let get_index (s:symbol_t) = (symbol_to_doubleword s)#index in
+    let get_index (s:symbol_t) = (TR.tget_ok (symbol_to_doubleword s))#index in
     let rec get_wto_head wto =
       match wto with
-	[] -> 
-	  begin
-	    ch_error_log#add "invalid argument" (STR "Encountered empty wto in record_loops") ;
-	    raise (Invalid_argument "record_loops")
-	  end
+      | [] -> 
+	 begin
+	   ch_error_log#add
+             "invalid argument" (STR "Encountered empty wto in record_loops");
+	   raise (Invalid_argument "record_loops")
+	 end
       | hd::_ -> get_wto_component_head hd 
     and get_wto_component_head wtoComponent =
       match wtoComponent with
-	VERTEX s -> index_to_doubleword (get_index s)
+	VERTEX s -> TR.tget_ok (index_to_doubleword (get_index s))
       | SCC scc -> get_wto_head scc in
     let rec record_wto wto levels =
       List.iter (fun wtoComponent -> record_wto_component wtoComponent levels) wto
@@ -65,7 +71,10 @@ object
       | SCC scc -> record_wto scc ((get_wto_head scc) :: levels) in 
     let engine = new wto_engine_t (new fwd_graph_t cfg) in 
     let sccs = engine#computeWTO in
-    let _ = match sccs with [] -> () | _ ->	record_wto sccs [] in
+    let _ =
+      match sccs with
+      | [] -> ()
+      | _ -> record_wto sccs [] in
     htable
       
   method get_loop_levels (ba:doubleword_int) = 
@@ -73,13 +82,19 @@ object
       
   method toPretty =
     let pp = ref [] in
-    let _ = Hashtbl.iter (fun k l ->
-      let p = LBLOCK [ (index_to_doubleword k)#toPretty ; STR ": " ; 
-		       pretty_print_list l (fun b -> b#toPretty) "[" ", " "]" ; NL ] in
-      pp := p :: !pp) table in
+    let _ =
+      Hashtbl.iter (fun k l ->
+          let p =
+            LBLOCK [
+                (TR.tget_ok (index_to_doubleword k))#toPretty;
+                STR ": "; 
+		pretty_print_list l (fun b -> b#toPretty) "[" ", " "]";
+                NL] in
+          pp := p :: !pp) table in
     LBLOCK (List.rev !pp)
       
 end
-  
+
+
 let make_cfg_loops (cfg:cfg_int) = new cfg_loops_t cfg
   
