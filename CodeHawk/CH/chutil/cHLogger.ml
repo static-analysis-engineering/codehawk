@@ -87,6 +87,13 @@ class type logger_int =
   end
 
 
+type tracelogspec_t = {
+    tlogger: logger_int;
+    ttag: string;
+    tmsg: string
+  }
+
+
 class logger_t:logger_int =
 object (self)
 
@@ -171,84 +178,68 @@ let ch_error_log = new logger_t
 let ch_diagnostics_log = new logger_t
 
 
-let log_traceresult_value
-      (logger: logger_int) (tag: string) (r: 'a traceresult) ~(default: 'a) =
+let mk_tracelog_spec
+      ?(logger=ch_error_log)
+      ?(tag="error value")
+      (msg: string): tracelogspec_t =
+  {
+    tlogger = logger;
+    ttag = tag;
+    tmsg = msg
+  }
+
+
+let log_tracelog_error (logspec: tracelogspec_t) (e: string list) =
+  let msg = String.concat "; " e in
+  let msg =
+    if logspec.tmsg = "" then
+      msg
+    else
+      logspec.tmsg ^ "; " ^ msg in
+  logspec.tlogger#add logspec.ttag (STR msg)
+
+
+let log_tvalue
+      (logspec: tracelogspec_t)  (r: 'a traceresult) ~(default: 'a) =
   match r with
   | Ok v -> v
-  | Error lst ->
-     let msg = String.concat "; " lst in
+  | Error e ->
      begin
-       logger#add tag (STR msg);
+       log_tracelog_error logspec e;
        default
      end
 
 
-let log_traceresult
-      (logger: logger_int) (tag: string) (f:('a -> unit)) (r: 'a traceresult) =
+let log_titer
+      (logspec: tracelogspec_t) (f:('a -> unit)) (r: 'a traceresult) =
   match r with
   | Ok v -> f v
-  | Error lst ->
-     let msg = String.concat "; " lst in
-     logger#add tag (STR msg)
+  | Error e -> log_tracelog_error logspec e
 
 
-let log_traceresult_list
-      (logger: logger_int)
-      (tag: string)
-      (f: ('a -> 'b list))
+let log_tfold
+      (logspec: tracelogspec_t)
+      ~(ok:('a -> 'c))
+      ~(error:(string list -> 'c))
       (r: 'a traceresult) =
   match r with
-  | Ok v -> f v
-  | Error lst ->
-     let msg = String.concat "; " lst in
+  | Ok v -> ok v
+  | Error e ->
      begin
-       logger#add tag (STR msg);
-       []
+       log_tracelog_error logspec e;
+       error e
      end
 
 
-let log_traceresult_string
-      (logger: logger_int)
-      (tag: string)
-      (f: ('a -> string))
+let log_tfold_default
+      (logspec: tracelogspec_t)
+      (ok:('a -> 'c))
+      (d: 'c)
       (r: 'a traceresult) =
   match r with
-  | Ok v -> f v
-  | Error lst ->
-     let msg = String.concat "; " lst in
+  | Ok v -> ok v
+  | Error e ->
      begin
-       logger#add tag (STR msg);
-       ""
+       log_tracelog_error logspec e;
+       d
      end
-
-
-let log_traceresult2
-      (logger: logger_int)
-      (tag: string)
-      (f: ('a -> 'b -> unit))
-      (r1: 'a traceresult)
-      (r2: 'b traceresult) =
-  let do_log (l: string list) = logger#add tag (STR (String.concat "; " l)) in
-  match (r1, r2) with
-  | (Ok v1, Ok v2) -> f v1 v2
-  | (Ok v1, Error e2) -> do_log e2
-  | (Error e1, Ok v2) -> do_log e1
-  | (Error e1, Error e2) -> do_log (e1 @ e2)
-
-
-let log_traceresult2_list
-      (logger: logger_int)
-      (tag: string)
-      (f: ('a -> 'b -> 'c list))
-      (r1: 'a traceresult)
-      (r2: 'b traceresult): 'c list =
-  let do_log (l: string list) =
-    begin
-      logger#add tag (STR (String.concat "; " l));
-      []
-    end in
-  match (r1, r2) with
-  | (Ok v1, Ok v2) -> f v1 v2
-  | (Ok v1, Error e2) -> do_log e2
-  | (Error e1, Ok v2) -> do_log e1
-  | (Error e1, Error e2) -> do_log (e1 @ e2)

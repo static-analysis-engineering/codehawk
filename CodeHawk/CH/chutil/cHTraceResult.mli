@@ -33,7 +33,17 @@
 type 'a traceresult = ('a, string list) result
 
 
-(** tvalue r ~default] is [v] if r is [Ok v] and [default] otherwise.*)
+(** [tget_ok r] is [v] if [r] is [Ok v] and
+    @raise [Invalid_argument] otherwise.*)
+val tget_ok: 'a traceresult -> 'a
+
+
+(** [tget_error r] is [e] if [r] is [Error e] and
+    @raise [Invalid_argument] otherwise.*)
+val tget_error: 'a traceresult -> string list
+
+
+(** [tvalue r ~default] is [v] if r is [Ok v] and [default] otherwise.*)
 val tvalue: 'a traceresult -> default:'a -> 'a
 
 
@@ -41,6 +51,20 @@ val tvalue: 'a traceresult -> default:'a -> 'a
     [tmap msg f r] is [Ok (f v)] if [r] is [Ok v] and [Error (msg::e)] if
     [r] is [Error e].*)
 val tmap: ?msg:string -> ('a -> 'c) -> ('a traceresult) -> 'c traceresult
+
+
+(** [tfold ~ok ~error r] is [ok v] if [r] is [Ok v] and [error e] if [r] is
+    [Error e].*)
+val tfold: ok:('a -> 'c) -> error:(string list -> 'c) -> 'a traceresult -> 'c
+
+
+(** [tfold_default f d r] is [f v] if [r] is [Ok v] and [d] if [r] is
+    [Error _].*)
+val tfold_default: ('a -> 'c ) -> 'c -> 'a traceresult -> 'c
+
+
+(** [tprop r] is [v] if [r] is [Ok v] and [Error (msg :: e)] if r is [Error e].*)
+val tprop: 'a traceresult -> string -> 'a traceresult
 
 
 (** [tbind f r] is [f v] if [r] is [Ok v] and [r] if [r] is [Error _]; 

@@ -51,6 +51,11 @@ class type logger_int =
     method toPretty: pretty_t
   end
 
+type tracelogspec_t = {
+    tlogger: logger_int;
+    ttag: string;
+    tmsg: string
+  }
 
 (** Create a new logger object.*)
 val mk_logger: unit -> logger_int
@@ -74,53 +79,36 @@ val ch_info_log: logger_int
 val ch_diagnostics_log: logger_int
 
 
-(** [log_traceresult_value logger tag ~default] is [v] if [r] is [Ok v] and
-    [default] otherwise. If [r] is [Error e] the concatenation of
-    messages in [e] is entered in [logger] under [tag].*)
-val log_traceresult_value:
-  logger_int -> string -> 'a traceresult -> default:'a -> 'a
-(** [log_traceresult logger tag f r] is [f v] if [r] is [Ok v] and
-    enters the concatenation of messages in [e] in [logger]
-    under [tag] if [r] is [Error e].*)
-val log_traceresult:
-  logger_int -> string -> ('a -> unit) -> 'a traceresult -> unit
+val mk_tracelog_spec:
+  ?logger:logger_int -> ?tag:string -> string -> tracelogspec_t
 
 
-(** [log_traceresult_list logger tag f r] is [f v] if [r] is [Ok v]
-    and enters the concatenation of messages in [e] in [logger] under
-    [tag] and returns [[]] if [r] is [Error e].*)
-val log_traceresult_list:
-  logger_int -> string -> ('a -> 'b list) -> 'a traceresult -> 'b list
+(** [log_tvalue tls ~default] is [v] if [r] is [Ok v] and
+    [default] otherwise. If [r] is [Error e], [e] is logged
+    according to [tls].*)
+val log_tvalue:
+  tracelogspec_t -> 'a traceresult -> default:'a -> 'a
 
 
-(** [log_traceresult_string logger tag f r] is [f v] if [r] is [Ok v]
-    and enters the concatenation of messages in [e] in [logger] under
-    [tag] and returns [""] if [r] is [Error e].*)
-val log_traceresult_string:
-  logger_int -> string -> ('a -> string) -> 'a traceresult -> string
+(** [log_titer tls f r] is [f v] if [r] is [Ok v] and
+    logs [e] if [r] is [Error e] according to [tls].*)
+val log_titer:
+  tracelogspec_t -> ('a -> unit) -> 'a traceresult -> unit
 
 
-(** [log_traceresult logger tag f r1 r2] is [f v1 v2] if [r1] and
-    [r2] are [Ok v1] and [Ok v2], respectively. If [r1] or [r2] is
-    [Error e] messages in [e] are concatenated and entered in [logger]
-    under [tag].*)
-val log_traceresult2:
-  logger_int
-  -> string
-  -> ('a -> 'b -> unit)
+(** [log_tfold tls ~ok ~error r] is [ok v] if [r] is [Ok v] and
+    [error e] if [r] is [Error e]. In addition, if [r] is [Error e],
+    [e] is logged according to [tls].*)
+val log_tfold:
+  tracelogspec_t
+  -> ok:('a -> 'c)
+  -> error:(string list -> 'c)
   -> 'a traceresult
-  -> 'b traceresult
-  -> unit
+  -> 'c
 
 
-(** [log_traceresult2_list logger tag f r1 r2] is [f v1 v2] if [r1] and
-    [r2] are [Ok v1] and [Ok v2], respectively. If [r1] or [r2] is
-    [Error e] messages in [e] are concatenated and entered in [logger]
-    under [tag], and [[]] is returned.*)
-val log_traceresult2_list:
-  logger_int
-  -> string
-  -> ('a -> 'b -> 'c list)
-  -> 'a traceresult
-  -> 'b traceresult
-  -> 'c list
+(** [log_tfold_default tls f d r] is [f v] if [r] is [Ok v] and
+    [d] if [r] is [Error _]. In addition, if [r] is [Error e],
+    [e] is logged according [tls].*)
+val log_tfold_default:
+  tracelogspec_t -> ('a -> 'c) -> 'c -> 'a traceresult -> 'c
