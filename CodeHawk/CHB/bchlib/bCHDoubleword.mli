@@ -34,6 +34,9 @@ open CHPretty
 open CHNumerical
 open CHLanguage
 
+(* chutil *)
+open CHTraceResult
+
 (* bchlib *)
 open BCHLibTypes
 
@@ -45,8 +48,6 @@ val e32: int
 val nume32: numerical_t
 
 val dw_index_to_pretty: dw_index_t -> pretty_t
-val dw_index_to_string: dw_index_t -> string
-val string_to_dw_index: string -> dw_index_t
 
 val dw_index_to_int:
   dw_index_t -> int  (* only works on 64 bit architecture *)
@@ -71,59 +72,52 @@ val wordmax: doubleword_int
 
 
 (** converts an integer to doubleword.*)
-val index_to_doubleword:dw_index_t -> doubleword_int
+val index_to_doubleword:dw_index_t -> doubleword_result
 
 
 (** [make_doubleword low high] constructs a doubleword by concatenating the
-    bits from [high] and [low], that is, the value is [high << 16 + low]
-
-    Causes an assertion failure if low or high are less than zero or greater
-    than [2^16]
- *)
+    bits from [high] and [low], that is, the value is [high << 16 + low].
+    If either [low] or [high] is outside the range [0; 2^16-1], [Error] is
+    returned.*)
 val make_doubleword:
-  int -> int -> doubleword_int
+  int -> int -> doubleword_result
 
 
 (** [int_to_doubleword i] converts [i] to a doubleword.
 
     [i] must be greater than -2^31 and less than 2^32. If [i] is negative
     the doubleword is the 2's complement of the value (that is, 2^32 is
-    added to the value).
-
-    Causes an assertion failure if [i] is less than [-2^31] or if [i] is greater
-    than or equal to [2^32].
- *)
-val int_to_doubleword:
-  int -> doubleword_int
+    added to the value). If [i] is outside the range [-(2^31-1); 2^32-1].
+    [Error] is returned. *)
+val int_to_doubleword: int -> doubleword_result
 
 
 (** [big_int_to_doubleword bi] converts [bi] to a doubleword.
 
     [bi] must be representable by a 64-bit ocaml integer and must satisfy the
-    requirements for a doubleword.
-
-    Causes an assertion failure if [bi] is less than [-2^31] or if [bi] is
-    greater than or equal to [2^32].
- *)
-val big_int_to_doubleword:
-  big_int -> doubleword_int
+    requirements for a doubleword, otherwise [Error] is returned.*)
+val big_int_to_doubleword: big_int -> doubleword_result
 
 
-val string_to_doubleword:
-  string -> doubleword_int
+(** [string_to_doubleword s] converts [s] to a doubleword. Returns
+    [Error] if [s] is not a valid representation of a number or if
+    the number represented is out of range for a doubleword.*)
+val string_to_doubleword: string -> doubleword_result
+
+
+(** [constant_string_to_doubleword s] does the same as
+    [string_to_doubleword s] except that it assumes the string
+    is a valid doubleword string.*)
+val constant_string_to_doubleword: string -> doubleword_int
 
 
 (**[numerical_to_doubleword num] converts num to a doubleword.
 
    [num] must be less than [2^32] and greater than or equal [-2^31].
    Negative numbers are represented by their two's complement 
-   representation.
-
-   Causes an assertion failure if [num] is less than [-2^31] or if [num]
-   is greater than or equal to [2^32].
- *)
-val numerical_to_doubleword:
-  numerical_t -> doubleword_int
+   representation. If [num] is outside this range, [Error] is
+   returned.*)
+val numerical_to_doubleword: numerical_t -> doubleword_result
 
 
 (** [numerical_to_hex_string num] converts num to a hexadecimal string
@@ -131,29 +125,23 @@ val numerical_to_doubleword:
 
     [num] must be less than [2^32] and greater than or equal [-2^31].
     Negative numbers are represented by their two's complement 
-    representation.
-
-    Causes an assertion failure if [num] is less than [-2^31] or if [num]
-    is greater than or equal to [2^32].
- *)
-val numerical_to_hex_string:
-  numerical_t -> string
+    representation. If [num] is out-of-range [Error] is returned.*)
+val numerical_to_hex_string: numerical_t -> string traceresult
 
 
 (** [numerical_to_signed_hex_string num] converts [num] to a hexadecimal
     string. If [num] is negative it returns [-hex(-num)] otherwise it
-    returns [hex(num)].
-
-    Causes an assertion failure if [num] is less than [-2^31] or if [num]
-    is greater than or equal to [2^32].
- *)
-val numerical_to_signed_hex_string:
-  numerical_t -> string
+    returns [hex(num)]. If [num] is out-of-range, [Error] is returned.*)
+val numerical_to_signed_hex_string: numerical_t -> string traceresult
 
 
-val symbol_to_doubleword: symbol_t -> doubleword_int
+val symbol_to_doubleword: symbol_t -> doubleword_result
 
 val doubleword_to_symbol:
   string -> ?atts:string list -> doubleword_int -> symbol_t
 
-val align_doubleword: doubleword_int -> int -> doubleword_int
+
+(** [align_doubleword dw a] returns the smallest doubleword that is
+    a multiple of [a] and greater than or equal to [dw]. If [a] is
+    less than or equal to zero [Error] is returned.*)
+val align_doubleword: doubleword_int -> int -> doubleword_result
