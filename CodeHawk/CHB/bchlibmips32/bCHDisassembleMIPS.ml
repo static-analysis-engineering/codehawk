@@ -75,6 +75,8 @@ open BCHMIPSOperand
 open BCHMIPSTypes
 open BCHMIPSDisassemblyUtils
 
+module TR = CHTraceResult
+
 
 (* --------------------------------------------------------------------------
  * Constants used:
@@ -112,19 +114,19 @@ object (self)
        end
     | _ when (not statusvalid) ->
        let addr = instr#get_address in
-       let badinstrcount = (addr#subtract refaddress)#to_int /  4  in
+       let badinstrcount = (TR.tget_ok (addr#subtract_to_int refaddress)) /  4 in
        let _ =
          if badinstrcount > datablock_threshold then self#add_data_block addr in
        statusvalid <- true
     | _ -> ()
 
   method private add_data_block addr =
-    let db = make_data_block refaddress addr "" in
+    let db = TR.tget_ok (make_data_block refaddress addr "") in
     begin
       chlog#add
         "datablock"
-        (LBLOCK [ refaddress#toPretty ; STR " - " ; addr#toPretty ]) ; 
-      system_info#add_data_block db ;
+        (LBLOCK [refaddress#toPretty; STR " - "; addr#toPretty]); 
+      system_info#add_data_block db;
       datablocks <- db :: datablocks
     end
     
@@ -190,7 +192,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
 
 let disassemble_mips_sections () =
   let xSections = elf_header#get_executable_sections in
-  let (startOfCode,endOfCode) =
+  let (startOfCode, endOfCode) =
     if (List.length xSections) = 0 then
       raise (BCH_failure (STR "Executable does not have section headers"))
     else
@@ -216,8 +218,8 @@ let disassemble_mips_sections () =
                  "[" " ; " "]" ]) in
       let startOfCode = lowest#get_addr in
       let endOfCode = highest#get_addr#add highest#get_size in
-      (startOfCode,endOfCode) in
-  let sizeOfCode = endOfCode#subtract startOfCode in
+      (startOfCode, endOfCode) in
+  let sizeOfCode = TR.tget_ok (endOfCode#subtract startOfCode) in
   (* only 4-byte aligned *)
   let _ = initialize_mips_instructions (sizeOfCode#to_int / 4) in
   let _ =
@@ -232,7 +234,8 @@ let disassemble_mips_sections () =
   let _ =
     List.iter
       (fun (h,x) ->
-        let displacement = (h#get_addr#subtract startOfCode)#to_int in
+        let displacement =
+          TR.tget_ok (h#get_addr#subtract_to_int startOfCode) in
         disassemble h#get_addr displacement x) xSections in
   sizeOfCode
 
@@ -325,9 +328,10 @@ let set_library_stub_name faddr =
       byte_string_to_printed_string (elf_header#get_xsubstring faddr 16) in
     let regex =  Str.regexp "3c0f00438df9f\\(...\\)0320000825f8f\\(...\\)" in
     if Str.string_match regex bytestring 0 then
-      let offset = "0x" ^ Str.matched_group 1 bytestring in
+      let offset =
+        constant_string_to_doubleword ("0x" ^ Str.matched_group 1 bytestring) in
       let addr =
-        (string_to_doubleword "0x42f000")#add (string_to_doubleword offset) in
+        (constant_string_to_doubleword "0x42f000")#add offset in
       if functions_data#has_function_name addr then
         let fndata = functions_data#add_function faddr in
         begin
@@ -342,9 +346,10 @@ let set_library_stub_name faddr =
     else
       let regex =  Str.regexp "3c0f00438df9\\(....\\)0320000825f8\\(....\\)" in
       if Str.string_match regex bytestring 0 then
-        let offset = "0x" ^ Str.matched_group 1 bytestring in
+        let offset =
+          constant_string_to_doubleword ("0x" ^ Str.matched_group 1 bytestring) in
         let addr =
-          (string_to_doubleword "0x430000")#add (string_to_doubleword offset) in
+          (constant_string_to_doubleword "0x430000")#add offset in
         if functions_data#has_function_name addr then
           let fndata = functions_data#add_function faddr in
           begin
@@ -359,9 +364,10 @@ let set_library_stub_name faddr =
       else
         let regex = Str.regexp "3c0f004b8df9\\(....\\)25f8\\(....\\)03200008" in
         if Str.string_match regex bytestring 0 then
-          let offset = "0x" ^ Str.matched_group 1 bytestring in
+          let offset =
+            constant_string_to_doubleword ("0x" ^ Str.matched_group 1 bytestring) in
           let addr =
-            (string_to_doubleword "0x4a0000")#add (string_to_doubleword offset) in
+            (constant_string_to_doubleword "0x4a0000")#add offset in
           if functions_data#has_function_name addr then
             let fndata = functions_data#add_function faddr in
             begin
@@ -836,7 +842,7 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
   let logerror msg = ch_error_log#add "set call address" msg in
   match opExpr with
   | XConst (IntConst c) ->
-     let dw = numerical_to_doubleword c in
+     let dw = TR.tget_ok (numerical_to_doubleword c) in
      if functions_data#has_function_name dw then
        let fndata = functions_data#get_function dw in
        let name = fndata#get_function_name in
@@ -915,7 +921,7 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
      let gaddr = env#get_global_variable_address v in
      if elf_header#is_program_address gaddr then
        let dw = elf_header#get_program_value gaddr in
-       let dwfun = dw#add (numerical_to_doubleword n) in
+       let dwfun = dw#add (TR.tget_ok (numerical_to_doubleword n)) in
        let _ = chlog#add "resolve gv-expr" (x2p opExpr) in
        if functions_data#has_function_name dwfun then
          let name = (functions_data#get_function dwfun)#get_function_name in

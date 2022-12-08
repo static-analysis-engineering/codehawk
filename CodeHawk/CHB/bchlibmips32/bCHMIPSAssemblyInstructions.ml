@@ -50,6 +50,8 @@ open BCHMIPSAssemblyInstruction
 open BCHMIPSTypes
 open BCHMIPSOpcodeRecords
 
+module TR = CHTraceResult
+
 (* --------------------------------------------------------------------------------
  * Note:
  * It is assumed that all instructions are at 4-byte boundaries. Address indices
@@ -61,13 +63,16 @@ open BCHMIPSOpcodeRecords
 let numArrays = 1000
 let arrayLength = 100000
 
+
 let mips_instructions =
   ref (Array.make 1 (make_mips_assembly_instruction wordzero OpInvalid ""))
+
 
 let mips_instructions = 
   Array.make
     numArrays
     (Array.make 1 (make_mips_assembly_instruction wordzero OpInvalid ""))
+
 
 let initialize_mips_instructions len =
   let _ =
@@ -88,7 +93,9 @@ let initialize_mips_instructions len =
                (LBLOCK [STR "Not sufficient array space to store all instruction bytes"]));
   end
 
+
 let get_indices (index:int) = (index/arrayLength, index mod arrayLength)
+
 
 let set_instruction (index:int) (instruction:mips_assembly_instruction_int) =
   try
@@ -98,10 +105,12 @@ let set_instruction (index:int) (instruction:mips_assembly_instruction_int) =
   | Invalid_argument s ->
      raise (Invalid_argument ("set_instruction: " ^ s))
 
+
 let initialize_instruction_segment (endindex:int) =
   for index = 0 to (endindex - 1) do
     set_instruction index (make_mips_assembly_instruction wordzero OpInvalid "")
   done
+
 
 let get_instruction (index:int) =
   let (i,j) = get_indices index in
@@ -119,17 +128,21 @@ let get_instruction (index:int) =
             ^ (string_of_int j)
             ^ ")"))
 
+
 let fold_instructions (f:'a -> mips_assembly_instruction_int -> 'a) (init:'a) =
   Array.fold_left (fun a arr ->
     Array.fold_left (fun a1 opc -> f a1 opc) a arr) init mips_instructions
 
+
 let iter_instructions (f: mips_assembly_instruction_int -> unit) =
   Array.iter (fun arr -> Array.iter f arr) mips_instructions
+
 
 let iteri_instructions (f: int -> mips_assembly_instruction_int -> unit) =
   Array.iteri (fun i arr -> 
     let k = i * arrayLength in
     Array.iteri (fun j instr -> f (k+j) instr) arr) mips_instructions
+
 
 class mips_assembly_instructions_t
         (len:int) (code_base:doubleword_int):mips_assembly_instructions_int =
@@ -146,11 +159,15 @@ object (self)
     try
       set_instruction index instruction
     with
-      Invalid_argument _ ->
-	raise (BCH_failure 
-		 (LBLOCK [ STR "set: Instruction index out of range: " ;
-                           INT index ;
-			   STR " (length is " ; INT length ; STR ")"]))
+    | Invalid_argument _ ->
+      raise
+        (BCH_failure
+	   (LBLOCK [
+                STR "set: Instruction index out of range: ";
+                INT index;
+		STR " (length is ";
+                INT length;
+                STR ")"]))
 
   method set_not_code (datablocks:data_block_int list) =
     List.iter self#set_not_code_block datablocks
@@ -158,10 +175,11 @@ object (self)
   method private set_not_code_block (db:data_block_int) =
     let startaddr = db#get_start_address in
     let endaddr = db#get_end_address in
-    let startindex = (startaddr#subtract codeBase)#to_int / 4 in
+    let startindex = (TR.tget_ok (startaddr#subtract_to_int codeBase)) / 4 in
     let startinstr =
-      make_mips_assembly_instruction startaddr (NotCode (Some (DataBlock db))) "" in
-    let endindex = (endaddr#subtract codeBase)#to_int / 4 in
+      make_mips_assembly_instruction
+        startaddr (NotCode (Some (DataBlock db))) "" in
+    let endindex = (TR.tget_ok (endaddr#subtract_to_int codeBase)) / 4 in
     begin
       self#set startindex startinstr ;
       for i = startindex + 1  to endindex - 1 do
@@ -177,42 +195,49 @@ object (self)
       let instr = get_instruction index in
       if instr#get_address#equal wordzero then
 	let newInstr =
-          make_mips_assembly_instruction (codeBase#add_int index) NoOperation "" in
+          make_mips_assembly_instruction
+            (codeBase#add_int index) NoOperation "" in
 	begin set_instruction index newInstr ; newInstr end
       else
 	instr
     with
     | Invalid_argument s ->
        raise (BCH_failure
-		(LBLOCK [ STR "at_index: Instruction index out of range: ";
-                          INT index ;
-                          STR ": ";
-                          STR s;
-			  STR " (length is ";
-                          INT length ; STR ")"]))
+		(LBLOCK [
+                     STR "at_index: Instruction index out of range: ";
+                     INT index;
+                     STR ": ";
+                     STR s;
+		     STR " (length is ";
+                     INT length ; STR ")"]))
 
   (* assume all instructions are aligned on 4-byte boundaries *)
   method at_address (va:doubleword_int) =
     try
-      let index = ((va#subtract codeBase)#to_int / 4) in
+      let index = (TR.tget_ok (va#subtract_to_int codeBase)) / 4 in
       self#at_index index
     with
     | BCH_failure p ->
-       raise (BCH_failure
-                (LBLOCK [STR "Error in assembly-instructions:at-address: ";
-                         va#toPretty;
-                         STR " with codeBase: ";
-                         codeBase#toPretty;
-                         STR ": ";
-                         p ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in assembly-instructions:at-address: ";
+                 va#toPretty;
+                 STR " with codeBase: ";
+                 codeBase#toPretty;
+                 STR ": ";
+                 p ]))
 
   method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
     let low = if low#lt codeBase then codeBase else low in
     let high = 
-      if (codeBase#add_int length)#lt high then codeBase#add_int (length-1) else high in
+      if (codeBase#add_int length)#lt high then
+        codeBase#add_int (length-1)
+      else
+        high in
     let high = if high#lt low then low else high in
-    let low = (low#subtract codeBase)#to_int / 4 in
-    let high = (high#subtract codeBase)#to_int / 4 in
+    let low = (TR.tget_ok (low#subtract_to_int codeBase)) / 4 in
+    let high = (TR.tget_ok (high#subtract_to_int codeBase)) / 4 in
     let addresses = ref [] in
     begin
       for i = low to high do
@@ -259,7 +284,8 @@ object (self)
     let stringList = ref [] in
     let firstNew = ref true in
     let add_function_names va =
-      if functions_data#is_function_entry_point va && functions_data#has_function_name va then
+      if functions_data#is_function_entry_point va
+         && functions_data#has_function_name va then
 	let names = (functions_data#get_function va)#get_names in
 	let fLine = match names with
 	  | [] -> ""
@@ -323,7 +349,9 @@ object (self)
     
 end
 
+
 let mips_assembly_instructions = ref (new mips_assembly_instructions_t 1 wordzero)
+
 
 let initialize_mips_assembly_instructions 
       (length:int)    (* in bytes *)
@@ -332,9 +360,14 @@ let initialize_mips_assembly_instructions
   begin
     chlog#add
       "disassembly"
-      (LBLOCK [ STR "Initialize " ; INT instrcount ; STR " instructions: " ;
-                codebase#toPretty ; STR " - " ; (codebase#add_int length)#toPretty ]) ;
-    initialize_instruction_segment instrcount ;
-    mips_assembly_instructions := new mips_assembly_instructions_t length codebase ;
+      (LBLOCK [
+           STR "Initialize ";
+           INT instrcount;
+           STR " instructions: ";
+           codebase#toPretty;
+           STR " - ";
+           (codebase#add_int length)#toPretty]);
+    initialize_instruction_segment instrcount;
+    mips_assembly_instructions :=
+      new mips_assembly_instructions_t length codebase
   end
- 

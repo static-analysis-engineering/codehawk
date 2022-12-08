@@ -50,6 +50,9 @@ open BCHELFHeader
 open BCHMIPSOpcodeRecords
 open BCHMIPSTypes
 
+module TR = CHTraceResult
+
+
 let stri = string_of_int
 
 (* commonly used constant values *)
@@ -337,6 +340,7 @@ let is_return_instruction opcode =
      (match op#get_register with MRra -> true |  _ -> false)
   | _ -> false
 
+
 let get_direct_jump_target_address (opcode: mips_opcode_t) =
   match opcode with
   | BranchLTZero (_,op)
@@ -358,8 +362,12 @@ let get_direct_jump_target_address (opcode: mips_opcode_t) =
     | Branch op
     | Jump op when op#is_absolute_address -> op#get_absolute_address
   | _ ->
-     raise (BCH_failure (LBLOCK [ STR (mips_opcode_to_string opcode) ;
-                                  STR " is not a direct jump" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR (mips_opcode_to_string opcode);
+               STR " is not a direct jump"]))
+
 
 let is_direct_call_instruction (opcode: mips_opcode_t) =
   match opcode with
@@ -389,18 +397,19 @@ let get_string_reference (floc:floc_int) (xpr:xpr_t) =
   try
     match xpr with
     | XConst (IntConst num) ->
-      let address = numerical_to_doubleword num in
+      let address = TR.tget_ok (numerical_to_doubleword num) in
       begin
 	match elf_header#get_string_at_address address with
 	| Some str ->
 	  begin
 	    string_table#add_xref address str floc#fa floc#cia ;
-            chlog#add "add string" (LBLOCK [ floc#l#toPretty ; STR "; " ; STR str ]) ;
+            chlog#add
+              "add string" (LBLOCK [floc#l#toPretty; STR "; "; STR str]);
 	    Some str
 	  end
 	| _ -> None
       end
-    | XOp (XPlus, [ XVar v ; XConst (IntConst num) ]) ->
+    | XOp (XPlus, [XVar v; XConst (IntConst num)]) ->
       if floc#env#has_initialized_string_value v num#toInt then
 	Some (floc#env#get_initialized_string_value v num#toInt)
       else

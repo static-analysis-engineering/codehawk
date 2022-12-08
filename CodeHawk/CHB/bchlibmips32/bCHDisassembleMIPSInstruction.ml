@@ -6,6 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,8 +51,15 @@ open BCHMIPSOpcodeRecords
 open BCHMIPSOperand
 open BCHMIPSTypes
 
+module TR = CHTraceResult
+
+
 let parse_branch
-      (ch:pushback_stream_int) (base:doubleword_int) (rrs:int) (rrt:int) (immval:int) =
+      (ch:pushback_stream_int)
+      (base:doubleword_int)
+      (rrs:int)
+      (rrt:int)
+      (immval:int) =
   let tgtop = mk_mips_target_op ch base immval in
   let rs = select_mips_reg rrs in
   let r_op = mips_register_op in
@@ -144,6 +152,7 @@ let parse_I_opcode
        OpInvalid
      end
 
+
 let parse_J_opcode (ch:pushback_stream_int) (base:doubleword_int) (opc:int) (immval:int) =
   match opc with
   | 2 -> Jump (mk_mips_absolute_target_op ~delay:4 ch base immval)
@@ -153,6 +162,7 @@ let parse_J_opcode (ch:pushback_stream_int) (base:doubleword_int) (opc:int) (imm
     pverbose [ STR "     J-opcode: " ; INT opc ; NL ] ;
     OpInvalid
   end
+
 
 let parse_R_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int) =
   let rs = select_mips_reg rrs in
@@ -202,6 +212,7 @@ let parse_R_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int)
        OpInvalid
      end
 
+
 let parse_R2_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int) =
   let rs = select_mips_reg rrs in
   let rt = select_mips_reg rrt in
@@ -219,6 +230,7 @@ let parse_R2_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int
        pverbose [ STR "    R2-opcode: " ; INT fnct ; NL ] ;
        OpInvalid
      end
+
 
 let parse_R3_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int) =
   let rd = select_mips_reg rrd in
@@ -245,6 +257,7 @@ let parse_R3_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int
        OpInvalid
      end
 
+
 let parse_FPMC_opcode (opc:int) (rrs:int) (cc:int) (tf:int) (rrd:int) (ffd:int) (funct:int) =
   let rs = select_mips_reg rrs in
   let rd = select_mips_reg rrd in
@@ -264,6 +277,7 @@ let parse_FPMC_opcode (opc:int) (rrs:int) (cc:int) (tf:int) (rrd:int) (ffd:int) 
        pverbose [ STR "    FPCM-opcode: " ; INT funct ; NL ] ;
        OpInvalid
      end
+
 
 let parse_FPRI_opcode (opc:int) (sub:int) (rrt:int) (fs:int) (imm:int) =
   let rt = select_mips_reg rrt in
@@ -333,6 +347,7 @@ let parse_FPRI_opcode (opc:int) (sub:int) (rrt:int) (fs:int) (imm:int) =
        OpInvalid
      end
 
+
 let parse_FPR_opcode (opc:int) (fmt:int) (ft:int) (fs:int) (fd:int) (funct:int) =
   let fmt = code_to_mips_fp_format fmt in
   let f_op = mips_fp_register_op in
@@ -365,6 +380,7 @@ let parse_FPR_opcode (opc:int) (fmt:int) (ft:int) (fs:int) (fd:int) (funct:int) 
        OpInvalid
      end
 
+
 let parse_FPICC_opcode
       (ch:pushback_stream_int)
       (base:doubleword_int)
@@ -382,9 +398,10 @@ let parse_FPICC_opcode
   | (1,1) -> BranchFPTrueLikely (cc,offset)
   | _ ->
      begin
-       pverbose [ STR "     FPICC-opcode: " ; INT nd ; STR ", " ; INT tf ; NL ] ;
+       pverbose [STR "     FPICC-opcode: "; INT nd; STR ", "; INT tf; NL];
        OpInvalid
      end
+
 
 let parse_FPCompare_opcode
       (fmt:int)
@@ -396,13 +413,14 @@ let parse_FPCompare_opcode
   let f_op f = mips_fp_register_op f RD in
   let exc = cond lsr 3 in
   let predicate = cond mod 8 in
-  FPCompare (fmt,cc,predicate,exc,f_op fs,f_op ft)
+  FPCompare (fmt, cc, predicate, exc, f_op fs, f_op ft)
+
 
 let parse_opcode
       (ch:pushback_stream_int)
       (base:doubleword_int)
       (instrbytes:doubleword_int): mips_opcode_t =
-  let p = numerical_to_doubleword (mkNumerical ch#pos) in
+  let p = TR.tget_ok (numerical_to_doubleword (mkNumerical ch#pos)) in
   let addr = (base#add p)#add_int (-4) in
   let instr = decompose_instr instrbytes in
   let opcode =
@@ -422,12 +440,15 @@ let parse_opcode
     | FPCompareType (opc,fmt,ft,fs,cc,cond) -> parse_FPCompare_opcode fmt ft fs cc cond
     | FormatUnknown(opc,otherbits) -> OpInvalid in
   let _ = match opcode with
-    | OpInvalid -> pverbose [ addr#toPretty ; STR "  " ;
-                              STR (instrbytes#to_fixed_length_hex_string) ;
-                              STR " not recognized" ; NL ]
+    | OpInvalid ->
+       pverbose [
+           addr#toPretty;
+           STR "  ";
+           STR (instrbytes#to_fixed_length_hex_string);
+           STR " not recognized";
+           NL]
     | _ -> () in
   opcode
-
 
 
 let disassemble_mips_instruction
@@ -438,10 +459,13 @@ let disassemble_mips_instruction
   | IO.No_more_input ->
     let address = base#add_int ch#pos in
     begin
-      ch_error_log#add "no more input"
-	(LBLOCK [ STR "No more input at position " ; address#toPretty ; STR " (" ;
-		  INT ch#pos ; STR ")" ]) ;
+      ch_error_log#add
+        "no more input"
+	(LBLOCK [
+             STR "No more input at position ";
+             address#toPretty;
+             STR " (";
+	     INT ch#pos;
+             STR ")"]);
       raise IO.No_more_input
     end
-	
-     
