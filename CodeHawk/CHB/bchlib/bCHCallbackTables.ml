@@ -289,7 +289,7 @@ object (self)
 end
 
 
-class call_back_tables_t =
+class call_back_tables_t: call_back_tables_int =
 object (self)
 
   val tables = H.create 3
@@ -313,7 +313,11 @@ object (self)
             end) fpointervalues) tables
 
   method private add_to_functions_data (addr: string) (fty: btype_t) =
-    let dw = string_to_doubleword addr in
+    let dw =
+      fail_tvalue
+        (trerror_record
+           (STR ("call_back_tables#add_to_functions_data:" ^ addr)))
+        (string_to_doubleword addr) in
     let functiondata =
       if functions_data#is_function_entry_point dw then
         functions_data#get_function dw
@@ -322,7 +326,11 @@ object (self)
     functiondata#set_function_type fty
 
   method private add_function_prototype (addr: string) (fty: btype_t) =
-    let dw = string_to_doubleword addr in
+    let dw =
+      fail_tvalue
+        (trerror_record
+           (STR ("call_back_tables#add_function_prototype:" ^ addr)))
+        (string_to_doubleword addr) in
     let functiondata = functions_data#get_function dw in
     let fname =
       if functiondata#has_name then

@@ -44,6 +44,7 @@ open BCHByteUtilities
 
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let extract_offset_range s =
@@ -89,21 +90,10 @@ object (self:'a)
   method set_data_table (items: (string * string) list) =
     List.iter (fun (a, s) -> H.add data_table a s) items
 
-  method get_length = 
-    try
-      (end_address#subtract start_address)#to_int
-    with
-    | Invalid_argument s ->
-       raise
-         (BCH_failure
-	    (LBLOCK [
-                 STR "Something wrong with the start and end address of ";
-		 STR "data block (";
-                 start_address#toPretty;
-                 STR ",";
-		 end_address#toPretty;
-                 STR ": ";
-                 STR s]))
+  method get_length =
+    fail_tvalue
+      (trerror_record (STR "data_block:get_length"))
+      (end_address#subtract_to_int start_address)
 
   method get_data_string =
     match data_string with
@@ -201,13 +191,9 @@ object (self:'a)
       rawdata_to_string data start_address
     else
       let offset =
-        try
-          (alignedAddress#subtract start_address)#to_int
-        with
-        | Invalid_argument s ->
-           raise
-             (BCH_failure
-                (LBLOCK [STR "Error in rawdata_to_string: "; STR s])) in
+        fail_tvalue
+          (trerror_record (STR "datablock#rawdata_to_string"))
+          (alignedAddress#subtract_to_int start_address) in
       let suffix = String.sub data offset (len - offset) in
       let prefix = String.sub data 0 offset in
       (rawdata_to_string prefix start_address) ^ "\n" ^ 
@@ -218,13 +204,9 @@ object (self:'a)
     let data = self#get_data_string in
     let alignedAddr = get_1kaligned_address start_address in
     let offset =
-      try
-        (alignedAddr#subtract start_address)#to_int
-      with
-      | Invalid_argument s ->
-         raise
-           (BCH_failure
-              (LBLOCK [STR "Error in largerawdata_to_string: "; STR s])) in
+      fail_tvalue
+        (trerror_record (STR "datablock#largerawdata_to_string"))
+        (alignedAddr#subtract_to_int start_address) in
     let data1 = String.sub data 0 offset in
     let datar = String.sub data offset (len - offset) in
     let addrr = start_address#add_int offset in
@@ -286,98 +268,95 @@ let make_data_block
     ?(is_offset_table=false)
     (start_address:doubleword_int) 
     (end_address:doubleword_int) 
-    (name:string) =
+    (name:string): data_block_int TR.traceresult =
   let name = if name = "" then "data" else name in
-  let _ =
-    if start_address#equal end_address then
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "Data block with zero length at ";
-		start_address#toPretty])) in
-    new data_block_t start_address end_address name
+  if start_address#equal end_address then
+    Error [
+        "make_data_block:zero-length data block:"
+        ^ start_address#to_hex_string]
+  else
+    Ok (new data_block_t start_address end_address name)
 
 
-
-let read_xml_data_block (node:xml_element_int) =
+let read_xml_data_block (node:xml_element_int): data_block_int TR.traceresult =
   let get = node#getAttribute in
   let geta t = string_to_doubleword (node#getAttribute t) in
   let has = node#hasNamedAttribute in
   let startAddress = geta "start" in
   let endAddress = geta "end" in
   let name = if has "name" then get "name" else "data" in
-  let _ =
-    if endAddress#le startAddress then
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "Error in data block definition: ";
-		startAddress#toPretty;
-                STR " -- ";
-		endAddress#toPretty])) in
-  make_data_block startAddress endAddress name
+  TR.tbind
+    ~msg:("BCHDataBlock.read_xml_data_block: " ^ (get "start"))
+    (fun saddr ->
+      TR.tbind
+        ~msg:("BCHDataBlock.read_xml_data_block: " ^ (get "end"))
+        (fun eaddr -> make_data_block saddr eaddr name)
+        endAddress)
+    startAddress
 
 
 let create_jumptable_offset_block  
       (base:doubleword_int)
       (section_base:doubleword_int)
       (section:string)
-      (jtlen:int) =
-  let pos =
-    try
-      (base#subtract section_base)#to_int
-    with
-    | Invalid_argument s ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Error in create_jumptable_offset_block: "; STR s])) in
-  let ch = make_pushback_stream section in
-  let len = String.length section in
-  let _ = ch#skip_bytes pos in
-  let b = ref ch#read_byte in
-  let _ =
-    while (!b < jtlen || !b = 204) && ch#pos < len do
-      b := ch#read_byte
-    done in
-  let endw = section_base#add_int (ch#pos - 1) in
-  make_data_block ~is_offset_table:true base endw "jumptable offsets"
+      (jtlen:int): data_block_int TR.traceresult =
+  TR.tbind
+    ~msg:("create_jumptable_offset_block:invalid base address: "
+          ^ base#to_hex_string)
+    (fun pos ->
+      let ch = make_pushback_stream section in
+      let len = String.length section in
+      let _ = ch#skip_bytes pos in
+      let b = ref ch#read_byte in
+      let _ =
+        while (!b < jtlen || !b = 204) && ch#pos < len do
+          b := ch#read_byte
+        done in
+      let endw = section_base#add_int (ch#pos - 1) in
+      make_data_block ~is_offset_table:true base endw "jumptable offsets")
+    (base#subtract_to_int section_base)
 
 
-let find_seh4_struct ch len start_addr =
+let find_seh4_struct
+      (ch: pushback_stream_int)
+      (len: int)
+      (start_addr: doubleword_int):data_block_int TR.traceresult =
   let _ = ch#skip_bytes 8 in  (* EHCookieOffset ; EHCookeXOROffset *) 
   let screc = ref ch#read_doubleword in
-  let min2 = string_to_doubleword "0xfffffffe" in
+  let min2 = TR.tget_ok (string_to_doubleword "0xfffffffe") in
   let sehlen = ref 16 in
   begin
     while !screc#equal min2 || !screc#equal wordzero && ch#pos < len - 12 do
       begin
-	ch#skip_bytes 8 ;
-	screc := ch#read_doubleword ;
+	ch#skip_bytes 8;
+	screc := ch#read_doubleword;
 	sehlen := !sehlen + 12 
       end
-    done ;
+    done;
     make_data_block start_addr (start_addr#add_int !sehlen) "seh4_scopetable"
   end
 
 
 let find_seh4_structures_in_section (base:doubleword_int) (section:string) =
   let len = String.length section in
-  let min2 = string_to_doubleword "0xfffffffe" in
+  let min2 = TR.tget_ok (string_to_doubleword "0xfffffffe") in
   let structs = ref [] in
   begin
     for i = 0 to 3 do
       let ch = make_pushback_stream section in
       begin
-	ch#skip_bytes i ;
+	ch#skip_bytes i;
 	while ch#pos < len - 4 do
 	  let dw = ch#read_doubleword in
 	  if dw#equal min2 then               (* GSCookieOffset *)
 	    let dw = ch#read_doubleword in     
 	    if dw#equal wordzero then                  (* GSCookieXOROffset *)
 	      let startAddr = base#add_int (ch#pos - 8) in
-	      let sehstruct = find_seh4_struct ch len startAddr in
-	      if sehstruct#get_length > 16 then structs := sehstruct :: !structs
+	      TR.titer
+                (fun db ->
+                  if db#get_length > 16 then
+                    structs := db :: !structs)
+              (find_seh4_struct ch len startAddr)
 	done 
       end 
     done;
@@ -388,6 +367,7 @@ let find_seh4_structures_in_section (base:doubleword_int) (section:string) =
 let find_seh4_structures 
     (read_only_section_strings:(doubleword_int * string) list) =
   List.concat
-    (List.map (fun (base,s) -> find_seh4_structures_in_section base s)
-              read_only_section_strings)
+    (List.map (fun (base,s) ->
+         find_seh4_structures_in_section base s)
+       read_only_section_strings)
 

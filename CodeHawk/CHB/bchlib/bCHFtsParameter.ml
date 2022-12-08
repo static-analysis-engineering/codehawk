@@ -100,6 +100,7 @@ let parameter_location_compare l1 l2 =
   | (_, GlobalParameter _) -> 1
   | (UnknownParameterLocation, UnknownParameterLocation) -> 0 
 
+
 let fts_parameter_compare (p1: fts_parameter_t) (p2: fts_parameter_t) =
   parameter_location_compare p1.apar_location p2.apar_location
 
@@ -124,23 +125,31 @@ let read_xml_formatstring_type (s:string) =
        (BCH_failure
           (LBLOCK [STR "Formatstring type "; STR s; STR " not recognized"]))
 
+
 let read_xml_roles (node:xml_element_int) =
   List.map (fun n -> 
       let get = n#getAttribute in
       (get "rt", get "rn")) (node#getTaggedChildren "role")
 
+
 let read_xml_parameter_location (node:xml_element_int):parameter_location_t =
   let get = node#getAttribute in
   let geti = node#getIntAttribute in
+  let getx s =
+    fail_tvalue
+      (trerror_record
+         (STR ("BCHFtsParameter.read_xml_parameter_location:" ^ s)))
+      (string_to_doubleword s) in
   match get "loc" with
   | "stack" -> StackParameter (geti "nr") 
   | "register" -> RegisterParameter (register_from_string (get "reg"))
-  | "global" -> GlobalParameter (string_to_doubleword (get "dw"))
+  | "global" -> GlobalParameter (getx (get "dw"))
   | "unknown" -> UnknownParameterLocation
   | s ->
      raise_xml_error
        node
        (LBLOCK [STR "Parameter location not recognized: "; STR s])
+
 
 (* Api parameters are numbered with two attributes:
    - nr : stack position (times 4, starting at 1)

@@ -46,8 +46,11 @@ open BCHLibTypes
 open BCHVariableType
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 let bd = BCHDictionary.bdictionary
+
 
 class function_data_t (fa:doubleword_int) =
 object (self)
@@ -227,7 +230,7 @@ object (self)
       if (H.length nametable) = 0 then
         self#initialize_nametable in
     if H.mem nametable name then
-      Some (index_to_doubleword (H.find nametable name))
+      Some (TR.tget_ok (index_to_doubleword (H.find nametable name)))
     else
       None
 
@@ -236,7 +239,7 @@ object (self)
 
   method private retrieve_addresses (f:function_data_int -> bool) =
     H.fold (fun ix v a ->
-        if f v then (index_to_doubleword ix)::a else a) table []
+        if f v then (TR.tget_ok (index_to_doubleword ix))::a else a) table []
 
   method private count (f:function_data_int -> bool) =
     H.fold (fun _ v a -> if f v then a+1 else a) table 0
@@ -264,8 +267,8 @@ object (self)
     let recordtable = mk_num_record_table "function-entries" in
     begin
       recordtable#read_xml node ;
-      List.iter (fun (ix,(tags,args)) ->
-          let fa = index_to_doubleword ix in
+      List.iter (fun (ix, (tags, args)) ->
+          let fa = TR.tget_ok (index_to_doubleword ix) in
           let fe = self#add_function fa in
           let a = a "function-data" args in
           let setnames l = List.iter (fun i -> fe#add_name (bd#get_string i)) l in

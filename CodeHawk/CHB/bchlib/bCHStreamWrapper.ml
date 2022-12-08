@@ -45,6 +45,8 @@ open BCHLibTypes
 open BCHImmediate
 
 module B = Big_int_Z
+module TR = CHTraceResult
+
 
 let bii = B.big_int_of_int
 let bii32 = B.big_int_of_int32
@@ -88,11 +90,11 @@ object
   method read_real_i32 = IO.read_real_i32 input
   method read_i64 = IO.read_i64 input
   method read_double = IO.read_double input
-    
+
   method read_doubleword =
     let l = IO.read_ui16 input in
     let h = IO.read_ui16 input in
-    make_doubleword l h
+    TR.tget_ok (make_doubleword l h)
 end
 
 
@@ -110,7 +112,7 @@ object
   method read_doubleword =
     let l = IO.BigEndian.read_ui16 input in
     let h = IO.BigEndian.read_ui16 input in
-    make_doubleword h l
+    TR.tget_ok (make_doubleword h l)
 end
 
 let make_little_endian_stream_wrapper input =
@@ -197,12 +199,14 @@ object (self)
 
   method read_num_unsigned_byte = mkNumerical_big (bii self#read_byte)
 
-  method read_imm_signed_byte = make_immediate true 1 (bii self#read_signed_byte)
+  method read_imm_signed_byte =
+    TR.tget_ok (make_immediate true 1 (bii self#read_signed_byte))
 
-  method read_imm_signed_word = make_immediate true 2 (bii self#read_i16)
+  method read_imm_signed_word =
+    TR.tget_ok (make_immediate true 2 (bii self#read_i16))
 
   method read_imm_signed_doubleword =
-    make_immediate true 4 (bii32 self#read_real_i32)
+    TR.tget_ok (make_immediate true 4 (bii32 self#read_real_i32))
 
   method read_imm_signed n = 
     match n with
@@ -211,22 +215,25 @@ object (self)
     | 4 -> self#read_imm_signed_doubleword
     | _ -> raise (Invalid_argument ("read_immediate_signed: " ^ (string_of_int n)))
 
-  method read_imm_unsigned_byte = make_immediate false 1 (bii self#read_byte)
+  method read_imm_unsigned_byte =
+    TR.tget_ok (make_immediate false 1 (bii self#read_byte))
 
-  method read_imm_unsigned_word = make_immediate false 2 (bii self#read_ui16)
+  method read_imm_unsigned_word =
+    TR.tget_ok (make_immediate false 2 (bii self#read_ui16))
 
   method read_imm_unsigned_doubleword = 
     let l = self#read_ui16 in
     let h = self#read_ui16 in
     let v = B.add_big_int (B.mult_big_int (bii h) e16) (bii l) in
-    make_immediate false 4 v
+    TR.tget_ok (make_immediate false 4 v)
 
   method read_imm_unsigned n =
     match n with
     | 1 -> self#read_imm_unsigned_byte
     | 2 -> self#read_imm_unsigned_word
     | 4 -> self#read_imm_unsigned_doubleword
-    | _ -> raise (Invalid_argument ("read_immediate_unsigned: " ^ (string_of_int n)))
+    | _ ->
+       raise (Invalid_argument ("read_immediate_unsigned: " ^ (string_of_int n)))
 
   method read_null_terminated_string =
     let maxLen = 1000 in

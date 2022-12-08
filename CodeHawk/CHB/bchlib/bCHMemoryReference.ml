@@ -53,6 +53,7 @@ open BCHXmlUtil
 
 module H = Hashtbl
 
+
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
     LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
@@ -61,7 +62,8 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
     ch_error_log#add "xml parse error" error_msg ;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
-  
+
+
 let memory_base_to_pretty b  =
   match b with
   | BLocalStackFrame -> STR "stack"
@@ -70,7 +72,8 @@ let memory_base_to_pretty b  =
   | BGlobal -> STR "global"
   | BaseVar v -> LBLOCK [ STR "var-" ; STR v#getName#getBaseName ]
   | BaseUnknown s -> LBLOCK [ STR "unknown-" ; STR s ]
-                             
+
+
 let rec memory_offset_to_string offset =
   match offset with
   | NoOffset -> ""
@@ -80,6 +83,7 @@ let rec memory_offset_to_string offset =
     "[" ^ v#getName#getBaseName ^ ":" ^ (string_of_int size) ^ "]" ^ 
       (memory_offset_to_string subOffset)
   | UnknownOffset -> "?offset?"
+
 
 let rec is_unknown_offset offset =
   match offset with
@@ -125,21 +129,27 @@ let stack_offset_to_name offset =
      "var.0000"
   | _ -> "var.[" ^ (memory_offset_to_string offset) ^ "]"
 
-let global_offset_to_name offset =
+
+let global_offset_to_name (offset: memory_offset_t) =
   try
     match offset with
-    | ConstantOffset (n,s) when n#gt numerical_zero ->
-       "gv_" ^ (numerical_to_doubleword n)#to_hex_string
-       ^ (memory_offset_to_string s)
+    | ConstantOffset (n, s) when n#gt numerical_zero ->
+       log_tfold_default
+         (mk_tracelog_spec "global_offset_to_name")
+         (fun dw ->
+           "gv_" ^ dw#to_hex_string ^ (memory_offset_to_string s))
+         ("gv_illegal_address")
+         (numerical_to_doubleword n)
     | _ -> "gv_" ^ (memory_offset_to_string offset)
   with
   | BCH_failure p ->
      raise (BCH_failure
               (LBLOCK [ STR "global_offset_to_name: " ; p ]))
 
+
 let realigned_stack_offset_to_name offset =
   match offset with
-  | ConstantOffset (n,NoOffset) when n#gt numerical_zero ->
+  | ConstantOffset (n, NoOffset) when n#gt numerical_zero ->
      begin
        ch_error_log#add "realigned-stack location above zero" n#toPretty ;
        "vrrp." ^ (constant_offset_to_suffix_string n)

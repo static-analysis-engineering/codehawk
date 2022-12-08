@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs
+   Copyright (c) 2021-2022 Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ open BCHPreFileIO
 open BCHSystemInfo
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 module DoublewordCollections = CHCollections.Make (
@@ -262,7 +263,8 @@ object (self)
       fres.fres_stable && 
 	List.for_all (fun c -> (c = faddr) || 
 	    ((self#is_stable c []) && 
-	       (let cfinfo = get_function_info (string_to_doubleword c) in
+	       (let cfinfo =
+                  get_function_info (TR.tget_ok (string_to_doubleword c)) in
 		(not cfinfo#sideeffects_changed) && 
 		  (not cfinfo#call_targets_were_set)))) callees
     else

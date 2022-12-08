@@ -118,13 +118,17 @@ let read_xml_cstructconstant (node:xml_element_int):c_struct_constant_t =
     let fieldvalues = List.map (fun n ->
       let get = n#getAttribute in
       let geti = n#getIntAttribute in
-      let geta () = string_to_doubleword (get "a") in
+      let geta () =
+        fail_tvalue
+          (trerror_record
+             (STR ("BCHCStructConstant.read_xml_cstructconstant:" ^ (get "a"))))
+          (string_to_doubleword (get "a")) in
       let has = n#hasNamedAttribute in
       let offset = n#getIntAttribute "offset" in
       let sc = match n#getAttribute "tag" with
 	| "dll" ->
-           FieldCallTarget(StubTarget(DllFunction (get "dll", get "name")))
-	| "app" -> FieldCallTarget(AppTarget(geta ()))
+           FieldCallTarget(StubTarget (DllFunction (get "dll", get "name")))
+	| "app" -> FieldCallTarget (AppTarget (geta ()))
 	| "struct" -> 
 	  if has "name" then 
 	    let name = get "name" in

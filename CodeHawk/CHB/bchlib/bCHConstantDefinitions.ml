@@ -54,6 +54,8 @@ open BCHTypeDefinitions
 open BCHVariableType
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 let value_table = H.create 3
 let flag_table = H.create 3
@@ -199,33 +201,29 @@ let get_symbolic_flags (ty:btype_t) (v:doubleword_int) =
 
 
 let get_xpr_symbolic_name ?(typespec=None) (xpr: xpr_t) =
-  let (ty,flags) =
+  let (ty, flags) =
     match typespec with Some (n,f) -> (Some n,f) | _ -> (None,false) in
   match xpr with
   | XConst (IntConst num) ->
-     (try
-        let v = numerical_to_doubleword num in
-        if has_symbolic_name ~ty v then 
-	  Some (get_symbolic_name ~ty v) 
-        else if flags then
-	  let name = Option.get ty in
-	  if has_symbolic_flags name then
-	    let flagNames = get_symbolic_flags name v in
-	    match flagNames with
-	    | [] -> Some "none"
-	    | _ -> Some (String.concat "," flagNames)
-	  else
-	    None
-        else None
-      with
-      | BCH_failure p  ->
-         let msg = LBLOCK [ STR "get_xpr_symbolic_name: " ; x2p xpr ;
-                            STR " (" ; p ; STR ")" ] in
-         begin
-           ch_error_log#add "doubleword conversion" msg ;
-           None
-         end)
-  | _ -> None
+     TR.tfold_default
+       (fun v ->
+         if has_symbolic_name ~ty v then
+           Some (get_symbolic_name ~ty v)
+         else if flags then
+           let name = Option.get ty in
+           if has_symbolic_flags name then
+	     let flagNames = get_symbolic_flags name v in
+	     match flagNames with
+	     | [] -> Some "none"
+	     | _ -> Some (String.concat "," flagNames)
+           else
+	     None
+         else
+           None)
+       None
+       (numerical_to_doubleword num)
+  | _ ->
+     None
 
 
 let read_xml_description (node: xml_element_int) =
@@ -264,7 +262,12 @@ let add_constant (c:constant_definition_t) =
 
 let read_xml_symbolic_constant (node: xml_element_int) (t: btype_t) =
   let get = node#getAttribute in
-  let getx t = string_to_doubleword (get t) in
+  let getx t =
+    let tx = get t in
+    fail_tvalue
+      (trerror_record
+         (STR ("BCHConstantDefinitions.read_xml_symbolic_constant:" ^ tx)))
+    (string_to_doubleword tx) in
   let c = {
     xconst_name = get "name";
     xconst_value = getx "value";
@@ -297,7 +300,12 @@ let add_flag (ty:btype_t) (f:flag_definition_t) =
 let read_xml_symbolic_flag (node: xml_element_int) (t: btype_t) =
   let get = node#getAttribute in
   let geti = node#getIntAttribute in
-  let getx tag = string_to_doubleword (get tag) in
+  let getx tag =
+    let tx = get tag in
+    fail_tvalue
+      (trerror_record
+         (STR ("BCHConstantDefinitions.read_xml_symbolic_flag:" ^ tx)))
+      (string_to_doubleword tx) in
   let has = node#hasNamedAttribute in
   let position =
     if has "value" then
@@ -371,7 +379,12 @@ let add_address (a:constant_definition_t) =
 let read_xml_symbolic_addresses (node: xml_element_int) =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
-  let getx t = string_to_doubleword (get t) in
+  let getx t =
+    let tx = get t in
+    fail_tvalue
+      (trerror_record
+         (STR ("BCHConstantDefinitions.read_xml_symbolic_addresses:" ^ tx)))
+      (string_to_doubleword tx) in
   let has = node#hasNamedAttribute in
   let hasc = node#hasOneTaggedChild in
   let symtype =
@@ -412,9 +425,13 @@ let win32_constants = [
 
 let _ =
   List.iter (fun (name, v, desc) ->
+      let cv =
+        fail_tvalue
+          (trerror_record (STR ("BCHConstantDefinitions:" ^ v)))
+          (string_to_doubleword v) in
       let c = {
           xconst_name = name;
-	  xconst_value = string_to_doubleword v;
+	  xconst_value = cv;
 	  xconst_desc = desc;
 	  xconst_type = t_named "win32";
 	  xconst_is_addr = false} in

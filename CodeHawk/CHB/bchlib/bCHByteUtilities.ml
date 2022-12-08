@@ -39,6 +39,8 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 
+module TR = CHTraceResult
+
 
 module DoublewordCollections = CHCollections.Make
   (struct
@@ -67,7 +69,7 @@ let get_aligned_address (a:doubleword_int) =
     a
   else
     let n = ((n#div n16)#mult n16)#add n16 in
-    numerical_to_doubleword n
+    TR.tget_ok (numerical_to_doubleword n)
 
 
 let get_1kaligned_address (a:doubleword_int) =
@@ -77,7 +79,7 @@ let get_1kaligned_address (a:doubleword_int) =
     a
   else
     let n = ((n#div n1024)#mult n1024)#add n1024 in
-    numerical_to_doubleword n
+    TR.tget_ok (numerical_to_doubleword n)
 
 
 (* return the byte_string to a string containing 16 bytes in hexadecimal form
@@ -402,20 +404,10 @@ let decode_string_aux (s:string) (va:doubleword_int)
     (enc:(string * doubleword_int * doubleword_int * doubleword_int * int)) = 
   let (_, start, size, key, width) = enc in
   let offset =
-    try
-      (start#subtract va)#to_int + width
-    with
-    | Invalid_argument s ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Error in decode_string_aux at address with ";
-                 STR "start: ";
-                 start#toPretty;
-                 STR "; va: ";
-                 va#toPretty;
-                 STR ": ";
-                 STR s])) in
+    fail_tfold
+      (trerror_record (STR "decode_string_aux"))
+      (fun i -> i + width)
+      (start#subtract_to_int va) in
   let prefix = String.sub s 0 offset in
   let encstring = String.sub s offset size#to_int in
   let suffix =
@@ -427,7 +419,7 @@ let decode_string_aux (s:string) (va:doubleword_int)
       let read_doubleword ch =
 	let l = IO.read_ui16 ch in
 	let h = IO.read_ui16 ch in
-	make_doubleword l h in
+	TR.tget_ok (make_doubleword l h) in
       let result = ref prefix in
       begin
 	for i = 0 to ((size#to_int / 4) - 2) do

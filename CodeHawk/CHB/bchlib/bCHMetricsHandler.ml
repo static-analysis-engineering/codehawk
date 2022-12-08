@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs
+   Copyright (c) 2021-2022 Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,8 @@ open BCHDoubleword
 open BCHFunctionData
 open BCHLibTypes
 open BCHUtilities
+
+module TR = CHTraceResult
 
 
 class ['a] metrics_handler_t (name:string):['a] metrics_handler_int =
@@ -991,17 +993,20 @@ object
     let append = node#appendChildren in
     let rrNode = xmlElement "runs" in
     let mNode = xmlElement "fmetrics" in
-    let faddr = string_to_doubleword d.fres_addr in
+    let faddr = TR.tget_ok (string_to_doubleword d.fres_addr) in
     begin
       rrNode#appendChildren
         (List.map (fun r ->
              let rNode = xmlElement "run" in
-             begin function_run_handler#write_xml rNode r ; rNode end) d.fres_runs) ;
-      result_metrics_handler#write_xml mNode d.fres_results ;
-      append [ rrNode ; mNode ] ;
-      set "a" d.fres_addr ;
-      setf "time" d.fres_time ;
-      (if d.fres_stable then set "stable" "yes") ;
+             begin
+               function_run_handler#write_xml rNode r;
+               rNode
+             end) d.fres_runs);
+      result_metrics_handler#write_xml mNode d.fres_results;
+      append [rrNode; mNode];
+      set "a" d.fres_addr;
+      setf "time" d.fres_time;
+      (if d.fres_stable then set "stable" "yes");
       (if functions_data#has_function_name faddr then
          let name = (functions_data#get_function faddr)#get_function_name in
          let name = if has_control_characters name then
@@ -1239,7 +1244,8 @@ object
   method read_xml (node:xml_element_int):ida_data_t =
     { ida_function_entry_points = 
         List.map
-          (fun fNode -> string_to_doubleword (fNode#getAttribute "a"))
+          (fun fNode ->
+            TR.tget_ok (string_to_doubleword (fNode#getAttribute "a")))
 	  (node#getTaggedChildren "fe")
     }
 end

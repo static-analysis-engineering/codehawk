@@ -46,9 +46,19 @@ val track_function:
   -> doubleword_int                     (* function address *)
   -> pretty_t -> unit
 
-val get_date_and_time: unit -> string           (* raises Invalid_argument *)
 
+(** Return the current time represented as [day year-month-mday at hr:min].
+
+    @raise Invalid_argument if the time cannot be obtained or is invalid.
+*)
+val get_date_and_time: unit -> string
+
+
+(** Convert a Unix [tm] type into a string [weekday month mday hr:min:sec year].
+
+    @raise Invalid_argument if the [tm] structure is invalid.*)
 val make_date_and_time_string: Unix.tm -> string (* raises Invalid_argument *)
+
 
 val today:string
 

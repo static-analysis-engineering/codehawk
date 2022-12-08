@@ -98,16 +98,15 @@ object (self)
   method get_addralign = self#get_field "addralign"
   method get_entsize = self#get_field "entsize"
 
-  method read_xml (node:xml_element_int) =
+  method read_xml (node: xml_element_int) =
     begin
       List.iter (fun n -> 
           let get = n#getAttribute in
           let geta tag =
-            try
-              string_to_doubleword (get tag)
-            with
-            | BCH_failure p ->
-               raise_xml_error node (LBLOCK [STR "section header info: "; p]) in
+            fail_tvalue
+              (trerror_record
+                 (LBLOCK [STR "section header info: "; STR (get tag)]))
+                 (string_to_doubleword (get tag)) in
           let fldname = get "name" in
           if List.mem fldname valid_fields then
             let fldvalue = geta "value" in
@@ -132,7 +131,7 @@ object (self)
     let fields =
       List.map
         (fun (k,v) -> LBLOCK [STR k; STR ": "; v#toPretty; NL])
-        (H.fold (fun k v a -> (k,v)::a) fields []) in
+        (H.fold (fun k v a -> (k, v)::a) fields []) in
     LBLOCK [STR "Section header "; STR sectionname; NL; LBLOCK fields]
 end
 
