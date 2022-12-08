@@ -82,6 +82,7 @@ open BCHELFSymbolTable
 open BCHELFPrettyStrings
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 type object_file_type = 
@@ -115,6 +116,7 @@ type elf_relocation_type_i386 =
   | R_386_GOTOFF 
   | R_386_GOTPC
 
+
 let make_elf_section (sh:elf_section_header_int) (s:string) =
   let t = sh#get_section_type in
   let vaddr = sh#get_addr in
@@ -128,6 +130,7 @@ let make_elf_section (sh:elf_section_header_int) (s:string) =
   | SHT_ProgBits -> ElfProgramSection (mk_elf_program_section s sh vaddr)
   | _ -> ElfOtherSection (new elf_raw_section_t s vaddr)
 
+
 let read_xml_elf_section (sh:elf_section_header_int) (node:xml_element_int) =
   let t = sh#get_section_type in
   match t with
@@ -139,11 +142,13 @@ let read_xml_elf_section (sh:elf_section_header_int) (node:xml_element_int) =
   | SHT_ProgBits  -> ElfProgramSection (read_xml_elf_program_section node)
   | _ -> ElfOtherSection (read_xml_elf_raw_section node)
 
+
 let read_xml_elf_segment (ph:elf_program_header_int) (node:xml_element_int) =
   let t =  ph#get_program_header_type in
   match t with
   | PT_Dynamic -> ElfDynamicSegment (read_xml_elf_dynamic_segment node)
   | _ -> ElfOtherSegment (read_xml_elf_raw_segment node)
+
 
 let make_elf_segment (ph:elf_program_header_int) (s:string) =
   let t = ph#get_program_header_type in
@@ -172,7 +177,7 @@ object
 
 
   method read =
-    let input = system_info#get_file_input (int_to_doubleword 16) in
+    let input = system_info#get_file_input (TR.tget_ok (int_to_doubleword 16)) in
     begin
       (* 16, 2  --------------------------------------------------------------
 	 Specifies the object file type.
@@ -330,7 +335,11 @@ object
     let get = node#getAttribute in
     let geti = node#getIntAttribute in
     let has = node#hasNamedAttribute in
-    let getx t = if has t then string_to_doubleword (get t) else wordzero in
+    let getx t =
+      if has t then
+        TR.tget_ok (string_to_doubleword (get t))
+      else
+        wordzero in
     begin
       e_type <- geti "e_type" ;
       e_machine <- geti "e_machine" ;
@@ -369,6 +378,7 @@ object
       STR "Section Header String Table index : "; INT e_shstrndx; NL;
     ]
 end
+
 
 class elf_header_t:elf_header_int =
 object(self)
@@ -462,7 +472,6 @@ object(self)
                 (BCH_failure
                    (STR "Internal error in get_relocation")))
       None relocationsections
-
 
   method set_code_extent =
     let lb = ref wordmax in
@@ -579,7 +588,7 @@ object(self)
             let varinfo = bcfiles#get_varinfo vname in
             let extractor = get_struct_extractor varinfo.bvtype in
             let callbacktable = callbacktables#new_table addr varinfo.bvtype in
-            let va = string_to_doubleword addr in
+            let va = TR.tget_ok (string_to_doubleword addr) in
             self#extract_call_back_table callbacktable va extractor
           else
             chlog#add
@@ -597,7 +606,7 @@ object(self)
             let varinfo = bcfiles#get_varinfo vname in
             let extractor = get_struct_offset_extractor varinfo.bvtype in
             let structtable = structtables#new_table addr varinfo.bvtype in
-            let va = string_to_doubleword addr in
+            let va = TR.tget_ok (string_to_doubleword addr) in
             self#extract_struct_table structtable va size extractor
           else
             chlog#add
@@ -667,16 +676,16 @@ object(self)
   method has_xsubstring (a:doubleword_int) (size:int) =
     match self#get_containing_section a with
     | Some s ->
-       (try
-         (a#subtract s#get_vaddr)#to_int + size < s#get_size
-        with
-        | Invalid_argument s ->
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "ELFHeader:has_xsubstring: interal error: ";
-                     STR s])))
-    | _ -> false
+       let diff = a#subtract_to_int s#get_vaddr in
+       if Result.is_ok diff then
+         (TR.tget_ok diff) + size < s#get_size
+       else
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "ELFHeader:has_xsubstring: interal error: ";
+                   STR "subtraction"]))
+  | _ -> false
 
   (* return a substring of the section starting at virtual address a
      of size bytes *)

@@ -35,17 +35,16 @@ open CHUtils
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 open BCHSystemInfo
 
-(* bchlibx86 *)
-open BCHBasicTypes
-open BCHDoubleword
-
 (* bchlibelf *)
 open BCHELFTypes
 open BCHELFUtil
+
+module TR = CHTraceResult
 
 
 class elf_section_header_t:elf_section_header_int =
@@ -90,7 +89,9 @@ object (self)
     end
 
   method read (offset:doubleword_int) (size:int) =
-    let input = system_info#get_file_input ~hexSize:(int_to_doubleword size) offset in
+    let input =
+      system_info#get_file_input
+        ~hexSize:(TR.tget_ok (int_to_doubleword size)) offset in
     begin
       (* 0, 4, sh_name -------------------------------------------------------
 	 Specifies the name of the section. Its value is an index into the 
@@ -390,34 +391,38 @@ object (self)
     let set = node#setAttribute in
     let setx t x = if x#equal wordzero then () else set t x#to_hex_string in
     begin
-      set "name" name ;
-      setx "sh_type" sh_type ;
-      setx "sh_name" sh_name ;
-      setx "sh_flags" sh_flags ;
-      setx "sh_addr" sh_addr ;
-      setx "sh_offset" sh_offset ;
-      setx "sh_size" sh_size ;
-      setx "sh_info" sh_info ;
-      setx "sh_link" sh_link ;
-      setx "sh_addralign" sh_addralign ;
+      set "name" name;
+      setx "sh_type" sh_type;
+      setx "sh_name" sh_name;
+      setx "sh_flags" sh_flags;
+      setx "sh_addr" sh_addr;
+      setx "sh_offset" sh_offset;
+      setx "sh_size" sh_size;
+      setx "sh_info" sh_info;
+      setx "sh_link" sh_link;
+      setx "sh_addralign" sh_addralign;
       setx "sh_entsize" sh_entsize 
     end
 
   method read_xml (node:xml_element_int) =
     let get = node#getAttribute in
     let has = node#hasNamedAttribute in
-    let getx t = if has t then string_to_doubleword (get t) else wordzero in
+    let getx t =
+      if has t then
+        TR.tget_ok (string_to_doubleword (get t))
+      else
+        wordzero in
     begin
-      name <- get "name" ;
-      sh_type <- getx "sh_type" ;
-      sh_name <- getx "sh_name" ;
-      sh_flags <- getx "sh_flags" ;
-      sh_addr <- getx "sh_addr" ;
-      sh_offset <- getx "sh_offset" ;
+      name <- get "name";
+      sh_type <- getx "sh_type";
+      sh_name <- getx "sh_name";
+      sh_flags <- getx "sh_flags";
+      sh_addr <- getx "sh_addr";
+      sh_offset <- getx "sh_offset";
       sh_size <- getx "sh_size";
-      sh_info <- getx "sh_info" ;
-      sh_link <- getx "sh_link" ;
-      sh_addralign <- getx "sh_addralign" ;
+      sh_info <- getx "sh_info";
+      sh_link <- getx "sh_link";
+      sh_addralign <- getx "sh_addralign";
       sh_entsize <- getx "sh_entsize"
     end
 
@@ -445,22 +450,21 @@ object (self)
       (STR "Characteristics") bitsSet
 
   method toPretty = LBLOCK [
-    STR "Name             : " ; STR name ;
-    STR " (" ; STR sh_name#to_fixed_length_hex_string ; STR ")" ;  NL ;
-    STR "Type             : " ; 
-    STR (doubleword_to_elf_section_header_string sh_type) ; NL ;
-    STR "Flags            : " ; STR sh_flags#to_fixed_length_hex_string ; NL ;
-    self#characteristics_to_pretty ; NL ;
-    STR "Address          : " ; STR sh_addr#to_fixed_length_hex_string ; NL ;
-    STR "Offset           : " ; STR sh_offset#to_fixed_length_hex_string; NL ;
-    STR "Size             : " ; STR sh_size#to_fixed_length_hex_string ; 
-                                STR " (" ; INT sh_size#to_int ; STR ")" ; NL ;
-    STR "Link             : " ; STR sh_link#to_fixed_length_hex_string ; NL ;
-    STR "Info             : " ; STR sh_info#to_fixed_length_hex_string ; NL ;
-    STR "Address alignment: " ; STR sh_addralign#to_fixed_length_hex_string ; NL ;
-    STR "Entry size       : " ; STR sh_entsize#to_fixed_length_hex_string ;
-                                STR " (" ; INT sh_entsize#to_int ; STR ")" ; NL ]
-	 
+    STR "Name             : "; STR name;
+    STR " ("; STR sh_name#to_fixed_length_hex_string; STR ")";  NL;
+    STR "Type             : ";
+    STR (doubleword_to_elf_section_header_string sh_type); NL;
+    STR "Flags            : "; STR sh_flags#to_fixed_length_hex_string; NL;
+    self#characteristics_to_pretty; NL;
+    STR "Address          : "; STR sh_addr#to_fixed_length_hex_string; NL;
+    STR "Offset           : "; STR sh_offset#to_fixed_length_hex_string; NL;
+    STR "Size             : "; STR sh_size#to_fixed_length_hex_string;
+                                STR " ("; INT sh_size#to_int; STR ")"; NL;
+    STR "Link             : "; STR sh_link#to_fixed_length_hex_string; NL;
+    STR "Info             : "; STR sh_info#to_fixed_length_hex_string; NL;
+    STR "Address alignment: "; STR sh_addralign#to_fixed_length_hex_string; NL;
+    STR "Entry size       : "; STR sh_entsize#to_fixed_length_hex_string;
+                                STR " ("; INT sh_entsize#to_int; STR ")"; NL ]
 end
 
 

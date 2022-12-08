@@ -33,6 +33,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHNumRecordTable
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
@@ -53,6 +54,8 @@ open BCHELFSection
 open BCHELFTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 class elf_symbol_table_entry_t (index:int):elf_symbol_table_entry_int =
 object (self)
@@ -147,23 +150,26 @@ object (self)
     let seti = node#setIntAttribute in
     let setx t x = set t x#to_hex_string in
     begin
-      setx "name" st_name ;
-      setx "value" st_value ;
-      setx "size" st_size ;
-      seti "info" st_info ;
-      seti "other" st_other ;
-      seti "shndx" st_shndx ;
-      seti "ix" index ;
+      setx "name" st_name;
+      setx "value" st_value;
+      setx "size" st_size;
+      seti "info" st_info;
+      seti "other" st_other;
+      seti "shndx" st_shndx;
+      seti "ix" index;
     end
 
   method to_rep_record =
     let nameix = elfdictionary#index_string name in
-    let tags = [ st_name#to_hex_string ; st_value#to_hex_string ;
-                 st_size#to_hex_string ] in
-    let args = [ nameix ; st_info ; st_other ; st_shndx ] in
+    let tags = [
+        st_name#to_hex_string;
+        st_value#to_hex_string;
+        st_size#to_hex_string] in
+    let args = [nameix; st_info; st_other; st_shndx] in
     (tags,args)
 
 end
+
 
 class elf_symbol_table_t
         (s:string)
@@ -186,7 +192,7 @@ object (self)
           let entry = new elf_symbol_table_entry_t !c in
           begin
             entry#read ch;
-            H.add entries !c entry ;            
+            H.add entries !c entry;
             c := !c + 1 
           end
         done;
@@ -202,7 +208,7 @@ object (self)
 
   method set_function_entry_points =
     let align (a: int) (size: int): int = (a / size) * size in
-    let align_dw dw = int_to_doubleword (align dw#to_int 2) in
+    let align_dw dw = TR.tget_ok (int_to_doubleword (align dw#to_int 2)) in
     H.iter (fun _ e ->
         if e#is_function && e#has_address_value then
           let addr =
@@ -215,7 +221,7 @@ object (self)
 
   method set_function_names =
     let align (a: int) (size: int): int = (a / size) * size in
-    let align_dw dw = int_to_doubleword (align dw#to_int 2) in
+    let align_dw dw = TR.tget_ok (int_to_doubleword (align dw#to_int 2)) in
     H.iter (fun _ e ->
         if e#is_function && e#has_address_value && e#has_name then
           let addr =
@@ -243,15 +249,20 @@ object (self)
     let make_db addr =
       match !indata with
       | Some addr_d ->
-         let db = make_data_block addr_d addr "symbol-table" in
-         begin
-           (if collect_diagnostics () then
-              ch_diagnostics_log#add
-                "data block from symbol table"
-                (LBLOCK [addr_d#toPretty; STR " - "; addr#toPretty]));
-           system_info#add_data_block db;
-           indata := None
-         end
+         log_titer
+           (mk_tracelog_spec
+              ~tag:"disassembly"
+              "elf_symbol_table#set_mapping_symbols make_db")
+           (fun db ->
+             begin
+               (if collect_diagnostics () then
+                  ch_diagnostics_log#add
+                    "data block from symbol table"
+                    (LBLOCK [addr_d#toPretty; STR " - "; addr#toPretty]));
+               system_info#add_data_block db;
+               indata := None
+             end)
+           (make_data_block addr_d addr "symbol-table")
       | _ -> () in
     List.iter
       (fun (addrix, name) ->
@@ -259,10 +270,10 @@ object (self)
         | "$d" | "$d.1" ->
            (match !indata with
             | Some _ -> ()
-            | None -> indata := Some (index_to_doubleword addrix))
+            | None -> indata := Some (TR.tget_ok (index_to_doubleword addrix)))
         | "$t" when system_settings#has_thumb ->
            begin
-             let addr = index_to_doubleword addrix in
+             let addr = TR.tget_ok (index_to_doubleword addrix) in
              (if !inarm then
                 begin
                   system_settings#set_thumb;
@@ -274,7 +285,7 @@ object (self)
         (* $a.0,1,2 llvm-generated code? *)
         | "$a" | "$a.0" | "$a.1" | "$a.2" when system_settings#has_thumb ->
            begin
-             let addr = index_to_doubleword addrix in
+             let addr = TR.tget_ok (index_to_doubleword addrix) in
              (if not (!inarm) then
                 begin
                   system_info#set_arm_thumb_switch addr#to_hex_string "A";
@@ -295,26 +306,28 @@ object (self)
   method write_xml_symbols (node:xml_element_int) =
     let table = mk_num_record_table "symbol-table" in
     begin
-      H.iter (fun _ e -> table#add e#id e#to_rep_record) entries ;
+      H.iter (fun _ e -> table#add e#id e#to_rep_record) entries;
       table#write_xml node
     end
 
 end
 
+
 let mk_elf_symbol_table s h vaddr =
   let entrysize = h#get_entry_size#to_int in
   let table = new elf_symbol_table_t s entrysize vaddr in
   begin
-    table#read ;
+    table#read;
     table
   end
 
+
 let read_xml_elf_symbol_table (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
-  let vaddr = string_to_doubleword (node#getAttribute "vaddr") in
+  let vaddr = TR.tget_ok (string_to_doubleword (node#getAttribute "vaddr")) in
   let entrysize = node#getIntAttribute "entrysize" in
   let table = new elf_symbol_table_t s entrysize vaddr in
   begin
-    table#read ;
+    table#read;
     table
   end

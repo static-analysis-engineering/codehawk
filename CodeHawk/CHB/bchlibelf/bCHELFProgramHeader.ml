@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +47,8 @@ open BCHDoubleword
 open BCHELFTypes
 open BCHELFUtil
 
+module TR = CHTraceResult
+
 
 class elf_program_header_t:elf_program_header_int =
 object (self)
@@ -59,7 +63,9 @@ object (self)
   val mutable p_align = wordzero
 
   method read (offset:doubleword_int) (size:int) =
-    let input = system_info#get_file_input ~hexSize:(int_to_doubleword size) offset in
+    let input =
+      system_info#get_file_input
+        ~hexSize:(TR.tget_ok (int_to_doubleword size)) offset in
     begin
       (* 0, 4, p_type --------------------------------------------------------
 	 Tells what kind of segment this array element describes or how to
@@ -184,45 +190,49 @@ object (self)
     let set = node#setAttribute in
     let setx t x = if x#equal wordzero then () else set t x#to_hex_string in
     begin
-      setx "p_type" p_type ;
-      setx "p_offset" p_offset ;
-      setx "p_vaddr" p_vaddr ;
-      setx "p_paddr" p_paddr ;
-      setx "p_filesz" p_filesz ;
-      setx "p_memsz" p_memsz ;
-      setx "p_flags" p_flags ;
+      setx "p_type" p_type;
+      setx "p_offset" p_offset;
+      setx "p_vaddr" p_vaddr;
+      setx "p_paddr" p_paddr;
+      setx "p_filesz" p_filesz;
+      setx "p_memsz" p_memsz;
+      setx "p_flags" p_flags;
       setx "p_align" p_align 
     end
 
   method read_xml (node:xml_element_int) =
     let get = node#getAttribute in
     let has = node#hasNamedAttribute in
-    let getx t = if has t then string_to_doubleword (get t) else wordzero in
+    let getx t =
+      if has t then
+        TR.tget_ok (string_to_doubleword (get t))
+      else
+        wordzero in
     begin
-      p_type <- getx "p_type" ;
-      p_offset <- getx "p_offset" ;
-      p_vaddr <- getx "p_vaddr" ;
-      p_paddr <- getx "p_paddr" ;
-      p_filesz <- getx "p_filesz" ;
-      p_memsz <- getx "p_memsz" ;
-      p_flags <- getx "p_flags" ;
+      p_type <- getx "p_type";
+      p_offset <- getx "p_offset";
+      p_vaddr <- getx "p_vaddr";
+      p_paddr <- getx "p_paddr";
+      p_filesz <- getx "p_filesz";
+      p_memsz <- getx "p_memsz";
+      p_flags <- getx "p_flags";
       p_align <- getx "p_align"
     end
 
   method toPretty = LBLOCK [
-    STR "Type               : " ; STR (elf_program_header_type_to_string 
-                                    self#get_program_header_type) ; NL ;
-    STR "Offset             : " ; p_offset#toPretty ; NL ;
-    STR "Virtual address    : " ; p_vaddr#toPretty ; NL ;
-    STR "Physical address   : " ; p_paddr#toPretty ; NL ;
-    STR "File size          : " ; p_filesz#toPretty ; STR " (" ;
-                                  INT p_filesz#to_int ; STR ")" ; NL ;
-    STR "Memory size        : " ; p_memsz#toPretty ; STR " (" ;
-                                  INT p_memsz#to_int ; STR ")" ; NL ;
-    STR "Flags              : " ; p_flags#toPretty ; NL ;
-    STR "Alignment          : " ; p_align#toPretty ; NL ]
-
+    STR "Type               : "; STR (elf_program_header_type_to_string
+                                    self#get_program_header_type); NL;
+    STR "Offset             : "; p_offset#toPretty; NL;
+    STR "Virtual address    : "; p_vaddr#toPretty; NL;
+    STR "Physical address   : "; p_paddr#toPretty; NL;
+    STR "File size          : "; p_filesz#toPretty; STR " (";
+                                  INT p_filesz#to_int; STR ")"; NL;
+    STR "Memory size        : "; p_memsz#toPretty; STR " (";
+                                  INT p_memsz#to_int; STR ")"; NL;
+    STR "Flags              : "; p_flags#toPretty; NL;
+    STR "Alignment          : "; p_align#toPretty; NL ]
 
 end
+
 
 let mk_elf_program_header () = new elf_program_header_t

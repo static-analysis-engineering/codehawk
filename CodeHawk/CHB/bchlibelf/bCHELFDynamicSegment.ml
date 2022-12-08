@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,17 +51,24 @@ open BCHELFTypes
 open BCHELFUtil
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 let raise_dynamic_entry_error
       (tagname:string) (d_un:numerical_t) (msg:pretty_t) =
-  let msg = LBLOCK [ STR "Dynamic entry error. d_tag: " ;
-                     STR tagname ;
-                     STR "; d_un: " ; d_un#toPretty ;
-                     STR "; " ; msg ] in
+  let msg =
+    LBLOCK [
+        STR "Dynamic entry error. d_tag: ";
+        STR tagname;
+        STR "; d_un: ";
+        d_un#toPretty;
+        STR "; ";
+        msg] in
   begin
-    ch_error_log#add "dynamic entry"  msg ;
+    ch_error_log#add "dynamic entry"  msg;
     raise (BCH_failure msg)
   end
+
 
 class elf_dynamic_segment_entry_t (index:int):elf_dynamic_segment_entry_int =
 object (self)
@@ -77,7 +84,7 @@ object (self)
         (* 0,4, Tag ---------------------------------------------------------
            Dynamic Array Tag
            ------------------------------------------------------------------ *)
-        d_tag <- ch#read_doubleword ;
+        d_tag <- ch#read_doubleword;
 
         (* 4, 4, Value/Address -------------------------------------------------
            d_val These Elf32_Word objects represent integer values with various 
@@ -96,7 +103,7 @@ object (self)
     with
     | IO.No_more_input ->
        begin
-         ch_error_log#add "no more input" (STR "elf_symbol_table_entry_t#read") ;
+         ch_error_log#add "no more input" (STR "elf_symbol_table_entry_t#read");
          raise IO.No_more_input
        end
 
@@ -111,12 +118,14 @@ object (self)
   method get_d_ptr =
     let tagval = doubleword_to_dynamic_tag_value d_tag in
     match tagval with
-    | DTV_d_ptr | DTV_d_none -> numerical_to_doubleword d_un
+    | DTV_d_ptr | DTV_d_none -> TR.tget_ok (numerical_to_doubleword d_un)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Value of " ; STR self#get_tag_name ;
-                      STR " cannot be interpreted as pointer" ]))
+            (LBLOCK [
+                 STR "Value of ";
+                 STR self#get_tag_name;
+                 STR " cannot be interpreted as pointer"]))
 
   method get_d_val =
     let tagval = doubleword_to_dynamic_tag_value d_tag in
@@ -125,8 +134,10 @@ object (self)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Value of " ; STR self#get_tag_name ;
-                      STR " cannot be interpreted as value" ]))
+            (LBLOCK [
+                 STR "Value of ";
+                 STR self#get_tag_name;
+                 STR " cannot be interpreted as value"]))
 
   method is_null =
     match self#get_tag with DT_Null -> true | _ -> false
@@ -314,21 +325,24 @@ object (self)
   method to_rep_record =
     let tagval =
       match doubleword_to_dynamic_tag_value d_tag with
-      | DTV_d_ptr | DTV_d_none -> (numerical_to_doubleword d_un)#to_hex_string
+      | DTV_d_ptr | DTV_d_none ->
+         (TR.tget_ok (numerical_to_doubleword d_un))#to_hex_string
       | DTV_d_val -> d_un#toString in
-    let args = [ ] in
-    let tags = [ self#get_tag_name ;  tagval ] in
+    let args = [] in
+    let tags = [self#get_tag_name;  tagval] in
     (tags,args)
 
   method toPretty =
     let tagval =
       match doubleword_to_dynamic_tag_value d_tag with
-      | DTV_d_ptr | DTV_d_none -> (numerical_to_doubleword d_un)#to_hex_string
+      | DTV_d_ptr | DTV_d_none ->
+         (TR.tget_ok (numerical_to_doubleword d_un))#to_hex_string
       | DTV_d_val -> d_un#toString in
-    LBLOCK [ STR self#get_tag_name ; STR ": " ; STR tagval ]
+    LBLOCK [STR self#get_tag_name; STR ": "; STR tagval]
 
 end
-    
+
+
 class elf_dynamic_segment_t
         (s:string)
         (vaddr:doubleword_int):elf_dynamic_segment_int =
@@ -573,6 +587,7 @@ object (self)
 
 end
 
+
 let mk_elf_dynamic_segment s h vaddr =
   let table = new elf_dynamic_segment_t s vaddr in
   begin
@@ -580,9 +595,10 @@ let mk_elf_dynamic_segment s h vaddr =
     table
   end
 
+
 let read_xml_elf_dynamic_segment (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
-  let vaddr = string_to_doubleword (node#getAttribute "vaddr") in
+  let vaddr = TR.tget_ok (string_to_doubleword (node#getAttribute "vaddr")) in
   let table = new elf_dynamic_segment_t s vaddr in
   begin
     table#read ;

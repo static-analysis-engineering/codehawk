@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +45,8 @@ open BCHSystemInfo
 open BCHELFTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 let makeOffsetString
       ?(hexSize=wordzero) (hexOffset:doubleword_int) (file_as_string: string) () =
@@ -51,14 +55,23 @@ let makeOffsetString
   if size > 0 then
     let len = String.length file_as_string in
     if offset > len then
-      let hexLen = int_to_doubleword len in
+      let hexLen = TR.tget_ok (int_to_doubleword len) in
       begin
-	ch_error_log#add "invalid argument"
-	  (LBLOCK [ STR "Unable to return input at offset " ; hexOffset#toPretty ;
-		    STR " -- file size = " ; hexLen#toPretty ]);
-	pr_debug [LBLOCK [ STR "Unable to return input at offset " ; hexOffset#toPretty ;
-			   STR " -- file size = " ; hexLen#toPretty ]];
-	raise (Invalid_argument "assembly_xreference_t#get_exe_string_at_offset")
+	ch_error_log#add
+          "invalid argument"
+	  (LBLOCK [
+               STR "Unable to return input at offset ";
+               hexOffset#toPretty;
+	       STR " -- file size = ";
+               hexLen#toPretty]);
+	pr_debug [
+            LBLOCK [
+                STR "Unable to return input at offset ";
+                hexOffset#toPretty;
+		STR " -- file size = ";
+                hexLen#toPretty]];
+	raise
+          (Invalid_argument "assembly_xreference_t#get_exe_string_at_offset")
       end
     else
       if offset + size > len then
@@ -66,9 +79,15 @@ let makeOffsetString
 	begin
 	  ch_error_log#add
             "continue operation with error"
-	    (LBLOCK [ STR "Unable to return the requested size " ;
-                      STR " (" ; INT size ; STR " ); " ;
-		      STR "only returning " ; INT sizeAvailable ; STR ")" ; NL ] ) ;
+	    (LBLOCK [
+                 STR "Unable to return the requested size ";
+                 STR " (";
+                 INT size;
+                 STR " ); ";
+		 STR "only returning ";
+                 INT sizeAvailable;
+                 STR ")";
+                 NL]);
 	  string_suffix file_as_string offset 
 	end
       else
@@ -76,9 +95,11 @@ let makeOffsetString
   else
     string_suffix file_as_string offset
 
+
 let makeOffsetInput
       ?(hexSize=wordzero) (hexOffset:doubleword_int) (file_as_string: string) () =
   IO.input_string (makeOffsetString ~hexSize:hexSize hexOffset file_as_string ())
+
 
 let memoize fn = 
   let cache = Hashtbl.create 10 in
@@ -123,11 +144,13 @@ let decodeUnsignedLEB128 input =
   let ongoing = ref true in
   while !ongoing do
     let byte = IO.read_byte input in
-    result := !result lor ((byte land 0x7f) lsl !shift); (* 7f has all bits set except the highest *)
+    result :=
+      !result lor ((byte land 0x7f) lsl !shift); (* 7f has all bits set except the highest *)
     shift := !shift + 7;
     ongoing := (byte land 0x80) = 0x80; (* 0x80 has only the highest bit set *)
   done;
   !result
+
 
 let decodeSignedLEB128 input =
   let result = ref 0 in
@@ -141,12 +164,15 @@ let decodeSignedLEB128 input =
     shift := !shift + 7;
     ongoing := (!byte land 0x80) = 0x80;
   done;
-  if ((!shift < size) && ((!byte land 0x40) = 0x40)) (* sign bit of byte is 2nd high order bit (0x40) *)
+  (* sign bit of byte is 2nd high order bit (0x40) *)
+  if ((!shift < size) && ((!byte land 0x40) = 0x40))
   then !result lor -(1 lsl !shift)
   else !result
 
+
 let section_header_tag_table = H.create 31
 let mips_section_header_tag_table = H.create 3
+
 
 let _ =
   List.iter (fun (dw,tag,tagstr) ->
@@ -179,6 +205,7 @@ let _ =
             [ ("0x70000006", SHT_MIPS_RegInfo, "SHT_MIPS_REGINFO")
             ]
 
+
 let doubleword_to_elf_section_header_tag_record (v:doubleword_int) =
   let tag = v#to_hex_string in
   let default sht shtstr =
@@ -189,19 +216,20 @@ let doubleword_to_elf_section_header_tag_record (v:doubleword_int) =
     if H.mem mips_section_header_tag_table tag then
       H.find mips_section_header_tag_table tag
     else
-      if (string_to_doubleword "0x60000000")#le v
-         && v#lt (string_to_doubleword "0x70000000") then
+      if (constant_string_to_doubleword "0x60000000")#le v
+         && v#lt (constant_string_to_doubleword "0x70000000") then
         default (SHT_OSSection v) "SHT_OS"
-      else if (string_to_doubleword "0x70000000")#le v
-              && v#lt (string_to_doubleword "0x80000000") then
+      else if (constant_string_to_doubleword "0x70000000")#le v
+              && v#lt (constant_string_to_doubleword "0x80000000") then
         default (SHT_ProcSection v) "SHT_PROC"
-      else if (string_to_doubleword "0x80000000")#le v
-              && v#le (string_to_doubleword "0xffffffff") then
+      else if (constant_string_to_doubleword "0x80000000")#le v
+              && v#le (constant_string_to_doubleword "0xffffffff") then
         default (SHT_UserSection v) "SHT_USER"
       else
         default (SHT_UnknownType v) "SHT_MIPS_UNKNOWN"
   else
     default (SHT_UnknownType v) "SHT_UNKNOWN"
+
 
 let doubleword_to_elf_section_header_type (v:doubleword_int) =
   let (shtag,_) = doubleword_to_elf_section_header_tag_record v in shtag
@@ -261,6 +289,7 @@ let _ =
     ; ("0x70000016", DT_MIPS_Rld_Map, DTV_d_ptr, "DT_MIPS_RLD_MAP")
     ]
 
+
 let doubleword_to_dynamic_tag_record (tag:doubleword_int) =
   let s_tag = tag#to_hex_string in  
   let default = (DT_Unknown s_tag, DTV_d_none, "DT_Unknown:" ^ s_tag) in
@@ -280,11 +309,14 @@ let doubleword_to_dynamic_tag_record (tag:doubleword_int) =
       default
     end
 
+
 let doubleword_to_dynamic_tag (tag:doubleword_int) =
   let (dtag,_,_) = doubleword_to_dynamic_tag_record tag in dtag
 
+
 let doubleword_to_dynamic_tag_name (tag:doubleword_int) =
   let (_,_,s_tag) = doubleword_to_dynamic_tag_record tag in s_tag
+
 
 let doubleword_to_dynamic_tag_value (tag:doubleword_int) =
   let (_,dval,_) = doubleword_to_dynamic_tag_record tag in dval
@@ -355,6 +387,7 @@ let _ =
      ("0x36", R_ARM_THM_PC12, "R_ARM_THM_PC12", "S", "T32")
     ]
 
+
 let doubleword_to_arm_relocation_tag_record (tag: doubleword_int) =
   let s_tag = tag#to_hex_string in
   let default = (R_ARM_Unknown s_tag, "R_ARM_Unknown:" ^ s_tag, "?", "?") in
@@ -366,8 +399,10 @@ let doubleword_to_arm_relocation_tag_record (tag: doubleword_int) =
       default
     end
 
+
 let doubleword_to_arm_relocation_tag (tag: doubleword_int) =
   let (dtag, _, _, _) = doubleword_to_arm_relocation_tag_record tag in dtag
+
 
 let doubleword_to_arm_relocation_tag_name (tag: doubleword_int) =
   let (_, s, _, _) = doubleword_to_arm_relocation_tag_record tag in s
@@ -384,13 +419,14 @@ let doubleword_to_elf_program_header_type v =
   | "0x7" -> PT_ThreadLocalStorage
   | "0x70000000" -> PT_RegInfo
   | _ ->
-    if (string_to_doubleword "0x70000000")#le v then
+    if (constant_string_to_doubleword "0x70000000")#le v then
       PT_ProcSpecific v
-    else if (string_to_doubleword "0x6000000")#le v then
+    else if (constant_string_to_doubleword "0x6000000")#le v then
       PT_OSSpecific v
     else
-      raise (BCH_failure 
-	       (LBLOCK [ STR "invalid program header type: " ; v#toPretty]))
+      raise
+        (BCH_failure
+	   (LBLOCK [STR "invalid program header type: "; v#toPretty]))
 
 
 let elf_program_header_type_to_string = function
@@ -405,10 +441,12 @@ let elf_program_header_type_to_string = function
   | PT_OSSpecific v -> "PT_OS_" ^ v#to_hex_string
   | PT_ProcSpecific v -> "PT_PROC_" ^ v#to_hex_string
 
+
 let elf_segment_to_raw_segment (s:elf_segment_t):elf_raw_segment_int =
   match s with
   | ElfDynamicSegment t ->  (t :> elf_raw_segment_int)
   | ElfOtherSegment t -> (t :> elf_raw_segment_int)
+
 
 let elf_section_to_raw_section (s:elf_section_t):elf_raw_section_int =
   match s with
@@ -420,12 +458,14 @@ let elf_section_to_raw_section (s:elf_section_t):elf_raw_section_int =
   | ElfProgramSection s -> (s :> elf_raw_section_int)
   | ElfOtherSection s -> s
 
+
 let elf_section_to_string_table (s:elf_section_t):elf_string_table_int =
   match s with
   | ElfStringTable t -> t
   | _ ->
      raise (BCH_failure
            (LBLOCK [ STR "section is not a string table" ]))
+
 
 let elf_section_to_symbol_table (s:elf_section_t):elf_symbol_table_int =
   match s with
@@ -435,6 +475,7 @@ let elf_section_to_symbol_table (s:elf_section_t):elf_symbol_table_int =
      raise (BCH_failure
            (LBLOCK [ STR "section is not a symbol table" ]))
 
+
 let elf_section_to_relocation_table (s:elf_section_t):elf_relocation_table_int =
   match s with
   | ElfRelocationTable t -> t
@@ -442,12 +483,14 @@ let elf_section_to_relocation_table (s:elf_section_t):elf_relocation_table_int =
      raise (BCH_failure
            (LBLOCK [ STR "section is not a relocation table" ]))
 
+
 let elf_section_to_dynamic_table (s:elf_section_t):elf_dynamic_table_int =
   match s with
   | ElfDynamicTable t -> t
   | _ ->
      raise (BCH_failure
            (LBLOCK [ STR "section is not a dynamic table" ]))
+
 
 let elf_segment_to_dynamic_segment (s:elf_segment_t):elf_dynamic_segment_int =
   match s with

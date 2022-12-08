@@ -47,9 +47,10 @@ open BCHELFSectionHeader
 open BCHELFTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
-let s2d = string_to_doubleword
+let s2d s = TR.tget_ok (string_to_doubleword s)
 
 
 let has_user_data (sectionname:string) =
@@ -136,21 +137,18 @@ object (self)
 
   method get_dynamic_segment = dynamicsegment
 
-  method private get_offset_1 (vaddr:doubleword_int) =
-    try
-      vaddr#subtract base1
-    with
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Error in computing section header offset-1: ";
-                 STR "base1: ";
-                 base1#toPretty;
-                 STR "; addr: ";
-                 vaddr#toPretty ]))
+  method private get_offset_1 (vaddr:doubleword_int): doubleword_int =
+    fail_tvalue
+      (trerror_record
+         (LBLOCK [
+              STR "BCHELFSectionHeaderCreator#get_offset_1: ";
+              STR "vaddr: ";
+              vaddr#toPretty;
+              STR "; base1: ";
+              base1#toPretty]))
+      (vaddr#subtract base1)
 
-  method private get_offset_2 (vaddr:doubleword_int) =
+  method private get_offset_2 (vaddr:doubleword_int): doubleword_int =
     match loadsegments with
     | [] -> raise (BCH_failure (LBLOCK [ STR "No load segments found" ]))
     | [ (_,_,_) ] ->
@@ -158,18 +156,17 @@ object (self)
     | (_,_,_)::(_,ph,_)::_  ->
        let base2 = ph#get_vaddr in
        let offset2 = ph#get_offset in
-       try
-         (vaddr#subtract base2)#add offset2
-       with
-       | _ ->
-          raise
-            (BCH_failure
-               (LBLOCK [
-                    STR "Error in computing section header offset-2: ";
-                    STR "base2: ";
-                    base2#toPretty;
-                    STR "; addr: ";
-                    vaddr#toPretty ]))
+       let basediff =
+         fail_tvalue
+           (trerror_record
+              (LBLOCK [
+                   STR "BCHELFSectionHeaderCreator#get_offset_2: ";
+                   STR "vaddr: ";
+                   vaddr#toPretty;
+                   STR "; base2: ";
+                   base2#toPretty]))
+           (vaddr#subtract base2) in
+       basediff#add offset2
 
   method private has_interp_program_header =
     List.exists
@@ -226,7 +223,7 @@ object (self)
          (fun sh1 sh2 -> sh1#get_addr#compare sh2#get_addr) section_headers)
 
   method private set_links =
-    let i2d = int_to_doubleword in
+    let i2d i = TR.tget_ok (int_to_doubleword i) in
     let dynstr_index = ref wordzero in
     let dynsym_index = ref wordzero in
     let headers = self#get_section_headers in
@@ -250,40 +247,40 @@ object (self)
 
   method create_section_headers =
     begin
-      self#create_null_header ;
-      (if self#has_interp_program_header then self#create_interp_header) ;
-      self#create_reginfo_header ;
-      self#create_dynamic_header ;
+      self#create_null_header;
+      (if self#has_interp_program_header then self#create_interp_header);
+      self#create_reginfo_header;
+      self#create_dynamic_header;
       (if dynamicsegment#has_hash_address
           && not (dynamicsegment#get_hash_address#to_hex_string = "0x0") then
-         self#create_hash_header) ;
-      self#create_dynsym_header ;
-      self#create_dynstr_header ;
-      self#create_gnu_version_header ;
-      self#create_gnu_version_r_header ;
-      self#create_relocation_header ;
-      self#create_plt_relocation_header ;
-      (if dynamicsegment#has_init_address then self#create_init_header) ;
-      self#create_text_header ;
-      self#create_fini_header ;
-      self#create_rodata_header ;
-      self#create_eh_frame_header ;
-      self#create_ctors_header ;
-      self#create_dtors_header ;
-      self#create_jcr_header ;
-      self#create_data_rel_ro_header ;
-      self#create_data_header ;
-      self#create_rld_map_header ;
-      self#create_fdata_header ;
-      self#create_got_header ;
-      self#set_links ;
+         self#create_hash_header);
+      self#create_dynsym_header;
+      self#create_dynstr_header;
+      self#create_gnu_version_header;
+      self#create_gnu_version_r_header;
+      self#create_relocation_header;
+      self#create_plt_relocation_header;
+      (if dynamicsegment#has_init_address then self#create_init_header);
+      self#create_text_header;
+      self#create_fini_header;
+      self#create_rodata_header;
+      self#create_eh_frame_header;
+      self#create_ctors_header;
+      self#create_dtors_header;
+      self#create_jcr_header;
+      self#create_data_rel_ro_header;
+      self#create_data_header;
+      self#create_rld_map_header;
+      self#create_fdata_header;
+      self#create_got_header;
+      self#set_links;
     end
 
   (* fixed *)
   method private create_null_header =
     let sh = mk_elf_section_header () in
     begin
-      sh#set_fields ~sectionname:"" () ;
+      sh#set_fields ~sectionname:"" ();
       section_headers <- sh :: section_headers
     end
 
@@ -350,7 +347,7 @@ object (self)
     let addralign = ph#get_align in
     begin
       sh#set_fields
-        ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~sectionname () ;
+        ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~sectionname ();
       section_headers <- sh :: section_headers
     end
 
@@ -372,18 +369,18 @@ object (self)
       let flags = s2d "0x2" in
       let addr =  vaddr in
       let offset = self#get_offset_1 vaddr in
-      let size = try
-          symtabaddr#subtract vaddr
-        with
-        | _ ->
-           assumption_violation  (STR "DT_SYMTAB < DT_HASH") in
-      let entsize = s2d "0x4" in
-      let addralign = s2d "0x4" in
-      begin
-        sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~sectionname ();
-        section_headers <- sh :: section_headers
-      end
+      let trsize = symtabaddr#subtract vaddr in
+      if Result.is_error trsize then
+        assumption_violation  (STR "DT_SYMTAB < DT_HASH")
+      else
+        let size = TR.tget_ok trsize in
+        let entsize = s2d "0x4" in
+        let addralign = s2d "0x4" in
+        begin
+          sh#set_fields
+            ~stype ~flags ~addr ~offset ~size ~entsize ~addralign ~sectionname ();
+          section_headers <- sh :: section_headers
+        end
     else
       assumption_violation
         (STR "DT_HASH or DT_SYMTAB not present, or DT_HASH is zero")
@@ -404,12 +401,12 @@ object (self)
       let size =
         if dynamicsegment#has_symtabno then
           let symtabno = dynamicsegment#get_symtabno in
-          numerical_to_doubleword (syment#mult symtabno)
+          TR.tget_ok (numerical_to_doubleword (syment#mult symtabno))
         else if system_info#is_arm
                 && dynamicsegment#has_strtab_address
                 && vaddr#lt dynamicsegment#get_strtab_address then
           let strtab_vaddr = dynamicsegment#get_strtab_address in
-          strtab_vaddr#subtract vaddr
+          TR.tget_ok (strtab_vaddr#subtract vaddr)
         else if ud_has_size sectionname then
           ud_get_size sectionname
         else
@@ -426,7 +423,7 @@ object (self)
       let flags = s2d "0x2" in
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
-      let entsize = numerical_to_doubleword syment in
+      let entsize = TR.tget_ok (numerical_to_doubleword syment) in
       let addralign = s2d "0x4" in
       let info = s2d "0x1" in
       begin
@@ -467,7 +464,8 @@ object (self)
       let flags = s2d "0x2" in
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
-      let size = numerical_to_doubleword dynamicsegment#get_string_table_size in
+      let size =
+        TR.tget_ok (numerical_to_doubleword dynamicsegment#get_string_table_size) in
       let addralign = s2d "0x1" in
       begin
         sh#set_fields
@@ -504,8 +502,9 @@ object (self)
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
       let size =
-        numerical_to_doubleword
-          ((symtabno#add numerical_one)#mult (mkNumerical 2)) in
+        TR.tget_ok
+          (numerical_to_doubleword
+             ((symtabno#add numerical_one)#mult (mkNumerical 2))) in
       let addralign = s2d "0x2" in
       let info = s2d "0x1" in
       let entsize = s2d "0x2" in
@@ -519,7 +518,7 @@ object (self)
           ~addralign
           ~entsize
           ~info
-          ~sectionname () ;
+          ~sectionname ();
         section_headers <- sh :: section_headers
       end
 
@@ -542,12 +541,13 @@ object (self)
       let flags = s2d "0x2" in
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
-      let size = numerical_to_doubleword (neednum#mult (mkNumerical 32)) in
+      let size =
+        TR.tget_ok (numerical_to_doubleword (neednum#mult (mkNumerical 32))) in
       let addralign = s2d "0x4" in
       let info = s2d "0x1" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~info ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~info ~sectionname ();
         section_headers <- sh :: section_headers
       end
 
@@ -566,16 +566,18 @@ object (self)
       let flags = s2d "0x0" in (* TBD *)
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
-      let size = numerical_to_doubleword (dynamicsegment#get_reltab_size) in
-      let entsize = numerical_to_doubleword (dynamicsegment#get_reltab_ent) in
+      let size =
+        TR.tget_ok (numerical_to_doubleword (dynamicsegment#get_reltab_size)) in
+      let entsize =
+        TR.tget_ok (numerical_to_doubleword (dynamicsegment#get_reltab_ent)) in
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~entsize ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~entsize ~sectionname ();
         section_headers <- sh :: section_headers
       end
     else
-      pr_debug [ STR "No relocation table found" ; NL ]
+      pr_debug [STR "No relocation table found"; NL]
 
   (* inputs: from dynamic table, type PT_Load (1)
    * - addr: DT_JMPREL
@@ -591,7 +593,8 @@ object (self)
       let flags = s2d "0x0" in (* TBD *)
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
-      let size = numerical_to_doubleword (dynamicsegment#get_jmprel_size) in
+      let size =
+        TR.tget_ok (numerical_to_doubleword (dynamicsegment#get_jmprel_size)) in
       let entsize = s2d "0x8" in
       let addralign = s2d "0x4" in
       begin
@@ -600,7 +603,7 @@ object (self)
         section_headers <- sh :: section_headers
       end
     else
-      pr_debug [ STR "No plt relocation table found" ; NL ]
+      pr_debug [STR "No plt relocation table found"; NL]
       
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_INIT
@@ -623,25 +626,23 @@ object (self)
         else
           let entrypoint = fileheader#get_program_entry_point in
           if vaddr#lt entrypoint then
-            fileheader#get_program_entry_point#subtract vaddr
+            TR.tget_ok (fileheader#get_program_entry_point#subtract vaddr)
           else
             if ud_has_address ".rodata" then
               let rodata_addr = ud_get_address ".rodata" in
-              rodata_addr#subtract vaddr
+              TR.tget_ok (rodata_addr#subtract vaddr)
           else
-            let (_,ph,_) = List.hd loadsegments in
+            let (_, ph, _) = List.hd loadsegments in
             let phend = ph#get_vaddr#add ph#get_file_size in
-            try
-              phend#subtract vaddr
-            with _ ->
-              raise
-                (BCH_failure
-                   (LBLOCK [
-                        STR "Create_init_header: subtracting vaddr: ";
-                        vaddr#toPretty;
-                        STR " from " ;
-                        STR "address + file size: ";
-                        phend#toPretty])) in
+            fail_tvalue
+              (trerror_record
+                 (LBLOCK [
+                      STR "BCHELFSectionHeaderCreator.create_init_header: ";
+                      STR "vaddr: ";
+                      vaddr#toPretty;
+                      STR "; phend: ";
+                      phend#toPretty]))
+              (phend#subtract vaddr) in
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
@@ -672,16 +673,18 @@ object (self)
         if dynamicsegment#has_fini_address
            && not (dynamicsegment#get_fini_address#to_hex_string = "0x0") then
           let finiaddr = dynamicsegment#get_fini_address in
-          try
-            finiaddr#subtract vaddr
-          with
-          | _ -> assumption_violation (STR "DT_FINI < program entry point")
+          let finidiff = finiaddr#subtract vaddr in
+          if Result.is_error finidiff then
+            assumption_violation (STR "DT_FINI < program entry point")
+          else
+            TR.tget_ok finidiff
         else if dynamicsegment#has_init_address then
           let initaddress = dynamicsegment#get_init_address in
-          try
-            initaddress#subtract vaddr
-          with
-          | _ -> assumption_violation (STR "DT_INIT < program entry point")
+          let initdiff = initaddress#subtract vaddr in
+          if Result.is_error initdiff then
+            assumption_violation (STR "DT_INIT < program entry point")
+          else
+            TR.tget_ok initdiff
         else
           assumption_violation
             (LBLOCK [
@@ -744,13 +747,16 @@ object (self)
           let (_,ph,_) = List.hd loadsegments in
           let phend = ph#get_vaddr#add ph#get_file_size in
           let vaddr = finiaddr#add finisize in
-          let size =
-            try
-              (phend#subtract finiaddr)#subtract finisize
-            with
-            | _ ->
-               assumption_violation (STR "PT_Load(end) < finiaddr")  in
-          (vaddr, size)
+          let phenddiff = phend#subtract finiaddr in
+          if Result.is_error phenddiff then
+            assumption_violation (STR "PT_Load(end) < finiaddr")
+          else
+            let trsize = (TR.tget_ok phenddiff)#subtract finisize in
+            if Result.is_error trsize then
+              assumption_violation (STR "PT_Load(end) < finiaddr")
+            else
+              let size = TR.tget_ok trsize in
+              (vaddr, size)
         else
           begin
             assumption_violation
@@ -778,7 +784,7 @@ object (self)
   method private create_eh_frame_header =
     let sectionname = ".eh_frame" in    
     let (_,ph,_) = List.hd loadsegments in
-    let vaddr = (ph#get_vaddr#add ph#get_file_size)#subtract_int 4 in
+    let vaddr = TR.tget_ok ((ph#get_vaddr#add ph#get_file_size)#subtract_int 4) in
     let sh = mk_elf_section_header () in
     let stype = s2d "0x1" in
     let flags = s2d "0x2" in
@@ -907,17 +913,17 @@ object (self)
       let flags = s2d "0x2" in
       let addr = vaddr in
       let offset = self#get_offset_2 vaddr in
-      let size = try
-          rldmapaddr#subtract vaddr
-        with
-        | _ ->
-           assumption_violation  (STR "DT_MIPS_RLD_MAP < data header address") in
-      let addralign = s2d "0x4" in
-      begin
-        sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
-        section_headers <- sh :: section_headers
-      end
+      let trsize = rldmapaddr#subtract vaddr in
+      if Result.is_error trsize then
+        assumption_violation  (STR "DT_MIPS_RLD_MAP < data header address")
+      else
+        let size = TR.tget_ok trsize in
+        let addralign = s2d "0x4" in
+        begin
+          sh#set_fields
+            ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
+          section_headers <- sh :: section_headers
+        end
       
   (* inputs: dynamic table, program header, PT_Load (2)
    * - addr: DT_MIPS_RLD_MAP
@@ -981,18 +987,18 @@ object (self)
       let flags = s2d "0x2" in
       let addr = vaddr in
       let offset = self#get_offset_2 vaddr in
-      let size =
-        try
-          (ph#get_vaddr#add ph#get_file_size)#subtract vaddr
-        with _ ->
-          assumption_violation (STR "filesize < vaddr" ) in
-      let addralign = s2d "0x4" in
-      let size = align_doubleword size addralign#to_int in
-    begin
-      sh#set_fields
-        ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
-      section_headers <- sh :: section_headers
-    end
+      let trsize = (ph#get_vaddr#add ph#get_file_size)#subtract vaddr in
+      if Result.is_error trsize then
+        assumption_violation (STR "filesize < vaddr" )
+      else
+        let size = TR.tget_ok trsize in
+        let addralign = s2d "0x4" in
+        let size = TR.tget_ok (align_doubleword size addralign#to_int) in
+        begin
+          sh#set_fields
+            ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
+          section_headers <- sh :: section_headers
+        end
 
   method toPretty =
     let headers =
@@ -1013,9 +1019,9 @@ object (self)
                let endaddr = prevaddr#add prevsize in
                let (gap,neg) =
                  if endaddr#le h#get_addr then
-                   (h#get_addr#subtract endaddr,false)
+                   (TR.tget_ok (h#get_addr#subtract endaddr), false)
                  else
-                   (endaddr#subtract h#get_addr,true) in
+                   (TR.tget_ok (endaddr#subtract h#get_addr), true) in
                (h#get_addr, h#get_size, gap, neg) :: a) [] headers) in
     LBLOCK [
         LBLOCK
@@ -1059,9 +1065,10 @@ let create_section_headers
       headers
     end
   with BCH_failure p ->
-    raise (BCH_failure
-             (LBLOCK [
-                  STR "Error in creating section headers: ";
-                  p;
-                  NL;
-                  creator#get_dynamic_segment#toPretty]))
+    raise
+      (BCH_failure
+         (LBLOCK [
+              STR "Error in creating section headers: ";
+              p;
+              NL;
+              creator#get_dynamic_segment#toPretty]))
