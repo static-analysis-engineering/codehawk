@@ -63,6 +63,25 @@ open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl
+module TR = CHTraceResult
+
+
+let geta_fail
+      (name: string) (node: xml_element_int) (tag: string): doubleword_int =
+  let dw = string_to_doubleword (node#getAttribute tag) in
+  if Result.is_ok dw then
+    TR.tget_ok dw
+  else
+    fail_tvalue
+      (trerror_record
+         (LBLOCK [
+              STR "geta:system_info#";
+              STR name;
+              STR " with tag:";
+              STR tag;
+              STR " and value:";
+              STR (node#getAttribute tag)]))
+      dw
 
 
 let pr_expr x =	if is_random x then STR "??" else xpr_formatter#pr_expr x
@@ -460,8 +479,7 @@ object (self)
 
   method read_xml (node:xml_element_int) =
    List.iter (fun n ->
-      let get = n#getAttribute in
-      let a = string_to_doubleword (get "a") in
+      let a = geta_fail "global_system_state#read_xml" n "a" in
       let gv = new global_variable_t a in
       begin
 	gv#read_xml n ;

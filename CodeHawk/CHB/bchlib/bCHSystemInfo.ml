@@ -92,6 +92,8 @@ open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 module DoublewordCollections = CHCollections.Make (
   struct
@@ -109,6 +111,25 @@ module DataBlockCollections = CHCollections.Make (
  
 let file_as_string = ref ""
 let id = BCHInterfaceDictionary.interface_dictionary
+
+
+let geta_fail
+      (name: string) (node: xml_element_int) (tag: string): doubleword_int =
+  let dw = string_to_doubleword (node#getAttribute tag) in
+  if Result.is_ok dw then
+    TR.tget_ok dw
+  else
+    fail_tvalue
+      (trerror_record
+         (LBLOCK [
+              STR "geta:system_info#";
+              STR name;
+              STR " with tag:";
+              STR tag;
+              STR " and value:";
+              STR (node#getAttribute tag)]))
+      dw
+
 
 class system_info_t:system_info_int  =
 object (self)
@@ -232,7 +253,7 @@ object (self)
        begin
          chlog#add "initialization" (STR "ida function entry points");
          List.iter (fun fnode ->
-             let fa = string_to_doubleword (fnode#getAttribute "a") in
+             let fa = TR.tget_ok (string_to_doubleword (fnode#getAttribute "a")) in
              if functions_data#is_function_entry_point fa then () else
                let fd = functions_data#add_function fa in
                fd#set_ida_provided) (node#getTaggedChildren "fe")
@@ -240,7 +261,9 @@ object (self)
     | _ -> ()
 
   method get_initialized_memory_strings =
-    H.fold (fun k v a -> (string_to_doubleword k, v) :: a) initialized_memory []
+    H.fold
+      (fun k v a ->
+        (TR.tget_ok (string_to_doubleword k), v) :: a) initialized_memory []
 (*
   method import_ida_function_entry_points =
     match load_ida_dbfe_file () with
@@ -374,11 +397,11 @@ object (self)
                 iaddr#toPretty]))
 
   method has_indirect_jump_targets (faddr:doubleword_int) (iaddr:doubleword_int) =
-    H.mem indirect_jump_targets (faddr#index,iaddr#index)
+    H.mem indirect_jump_targets (faddr#index, iaddr#index)
 
   method get_indirect_jump_targets (faddr:doubleword_int) (iaddr:doubleword_int) =
     if self#has_indirect_jump_targets faddr iaddr then
-      H.find indirect_jump_targets (faddr#index,iaddr#index)
+      H.find indirect_jump_targets (faddr#index, iaddr#index)
     else
       raise
         (BCH_failure
@@ -412,7 +435,7 @@ object (self)
 
   method get_jump_table_target (faddr:doubleword_int) (iaddr:doubleword_int) =
     if self#has_jump_table_target faddr iaddr then
-      let (jta, lb, ub) = H.find jumptabletargets (faddr#index,iaddr#index) in
+      let (jta, lb, ub) = H.find jumptabletargets (faddr#index, iaddr#index) in
       let jt =
         let lboffset = 4 * lb in
         (try
@@ -425,25 +448,23 @@ object (self)
                  (LBLOCK [STR "internal error in get_jump_table_target"]))) in
       let jtstart = jt#get_start_address in
       let (lbnew, ubnew) =
-        try
-          if jtstart#lt jta then
-            let diff = (jta#subtract jtstart)#to_int / 4 in
-            (lb + diff, ub + diff)
-          else
-            let diff = (jtstart#subtract jta)#to_int / 4 in
-            (lb - diff, ub - diff)
-        with
-        | Invalid_argument s ->
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "Error in system_info#get_jump_table_target. ";
-                     STR "jtstart: ";
-                     jtstart#toPretty;
-                     STR "; jta: ";
-                     jta#toPretty;
-                     STR ": ";
-                     STR s])) in
+        if jtstart#lt jta then
+          fail_tfold
+            (trerror_record
+               (LBLOCK [STR "sytem_info#get_jump_table_target:"; iaddr#toPretty]))
+            (fun i ->
+              let diff = i / 4 in
+              (lb + diff, ub + diff))
+            (jta#subtract_to_int jtstart)
+        else
+          fail_tfold
+            (trerror_record
+               (LBLOCK [STR "system_info#get_jump_table_target:"; iaddr#toPretty]))
+            (fun i ->
+              let diff = i / 4 in
+              (lb - diff, ub - diff))
+            (jtstart#subtract_to_int jta) in
+
       let _ =
         if collect_diagnostics () then
           ch_diagnostics_log#add
@@ -468,11 +489,11 @@ object (self)
                 iaddr#toPretty]))
  
   method private add_jump_table_target
-                   (faddr:doubleword_int)
-                   (iaddr:doubleword_int)
-                   (jta:doubleword_int)
-                   (lb:int)     (* lower bound index *)
-                   (ub:int) =   (* upper bound index *)
+                   (faddr: doubleword_int)
+                   (iaddr: doubleword_int)
+                   (jta: doubleword_int)
+                   (lb: int)     (* lower bound index *)
+                   (ub: int) =   (* upper bound index *)
     let _ =
       if collect_diagnostics () then
         ch_diagnostics_log#add
@@ -484,7 +505,7 @@ object (self)
                iaddr#toPretty;
                STR "): ";
                jta#toPretty]) in
-    H.add jumptabletargets (faddr#index,iaddr#index) (jta,lb,ub)
+    H.add jumptabletargets (faddr#index,iaddr#index) (jta, lb, ub)
    
   method get_lib_functions_loaded =
     H.fold (fun k v a -> (k,v) :: a) lib_functions_loaded []
@@ -848,38 +869,35 @@ object (self)
   method private read_xml_indirect_jumps (node:xml_element_int) =
     let getc = node#getTaggedChildren in
     List.iter (fun n ->
-        let get = n#getAttribute in
-        let geta tag = string_to_doubleword (get tag) in
+        let geta tag = geta_fail "read_xml_indirect_jumps" n tag in
         let getc = n#getTaggedChildren in
         let fa = geta "fa" in
         let ia = geta "ia" in
         let tgts =
           List.map (fun nn ->
-              string_to_doubleword (nn#getAttribute "a"))
+              geta_fail "read_xml_indirect_jumps" nn "a")
             (getc "tgt") in
-        H.add indirect_jump_targets (fa#index,ia#index) tgts) (getc "jumpinstr")
+        H.add indirect_jump_targets (fa#index, ia#index) tgts) (getc "jumpinstr")
 
   method private read_xml_cfnops (node:xml_element_int) =
     List.iter (fun n ->
       let get = n#getAttribute in
-      let geta n tag = string_to_doubleword (get tag) in
+      let geta n tag = geta_fail "read_xml_cfnops" n tag in
       let has = n#hasNamedAttribute in
       let startaddr = geta n "start" in
       let endaddr = geta n "end" in
       let desc = get "desc" in
       if endaddr#le startaddr then
-	raise (BCH_failure
-		 (LBLOCK [ STR "Invalid range for cfnop start address " ; 
-			   startaddr#toPretty ]))
+	raise
+          (BCH_failure
+	     (LBLOCK [
+                  STR "Invalid range for cfnop start address ";
+		  startaddr#toPretty]))
       else
 	let len =
-          try
-            (endaddr#subtract startaddr)#to_int
-          with
-          | Invalid_argument s ->
-             raise
-               (BCH_failure
-                  (LBLOCK [STR "Error in read_xml_cfnops: "; STR s])) in
+          fail_tvalue
+            (trerror_record (STR "system_info:read_xml_cfnops"))
+            (endaddr#subtract_to_int startaddr) in
 	if has "jmp" then
 	  let jmpaddr = geta n "jmp" in
 	  H.add cfjmps startaddr#index (jmpaddr,len,desc)
@@ -894,7 +912,7 @@ object (self)
                    STR "; ";
                    STR desc;
                    STR ")"]) in
-	  H.add cfnops startaddr#index (len,desc) ) (node#getTaggedChildren "nop")
+	  H.add cfnops startaddr#index (len,desc)) (node#getTaggedChildren "nop")
 
   method is_cfnop (a:doubleword_int) = H.mem cfnops a#index
 
@@ -909,15 +927,29 @@ object (self)
       raise (BCH_failure (LBLOCK [ STR "No cfjmp found at " ; a#toPretty ]))
 
   method private read_xml_jumptables (node:xml_element_int) =
-    jumptables <- List.map read_xml_jumptable (node#getTaggedChildren "jt")
+    let tls = mk_tracelog_spec "system_info#read_xml_jumptables" in
+    jumptables <-
+      List.fold_left (fun acc jtc ->
+          log_tfold
+            tls
+            ~ok:(fun jt -> jt::acc)
+            ~error:(fun _ -> acc)
+            (read_xml_jumptable jtc)) [] (node#getTaggedChildren "jt")
 
   method private read_xml_data_blocks (node:xml_element_int) =
-    let dbs = List.map read_xml_data_block (node#getTaggedChildren "db") in
+    let tls = mk_tracelog_spec "system_info#read_xml_data_blocks" in
+    let dbs =
+      List.fold_left (fun acc dbc ->
+          log_tfold
+            tls
+            ~ok:(fun db -> db::acc)
+            ~error:(fun _ -> acc)
+            (read_xml_data_block dbc)) [] (node#getTaggedChildren "db") in
     data_blocks#addList dbs
 
   method private read_xml_user_function_entry_points (node:xml_element_int) =
     List.iter (fun n ->
-        let fa = string_to_doubleword (n#getAttribute "a") in
+        let fa = geta_fail "read_xml_user_function_entry_points" n "a" in
         if functions_data#is_function_entry_point fa then () else
           ignore (functions_data#add_function fa))
       (node#getTaggedChildren "fe")
@@ -925,7 +957,7 @@ object (self)
   method private read_xml_call_target(node: xml_element_int): call_target_t =
     let get = node#getAttribute in
     let geti = node#getIntAttribute in
-    let geta tag = string_to_doubleword (get tag) in
+    let geta tag = geta_fail "read_xml_call_target" node tag in
     match get "ctag" with
     | "dll" ->
        let dll = get "dll" in
@@ -945,8 +977,7 @@ object (self)
                  STR " not recognized"]))
 
   method private read_xml_call_target_callsite (node: xml_element_int) =
-    let get = node#getAttribute in
-    let geta tag = string_to_doubleword (get tag) in
+    let geta tag = geta_fail "read_xml_call_target_callsite" node tag in
     let faddr = geta "fa" in
     let iaddr = geta "ia" in
     let tgts = List.map self#read_xml_call_target (node#getTaggedChildren "tgt") in
@@ -1005,10 +1036,9 @@ object (self)
 
   method private read_xml_jump_table_targets (node:xml_element_int) =
     List.iter (fun n ->
-        let get = n#getAttribute in
         let geti = n#getIntAttribute in
-        let geta n tag = string_to_doubleword (get tag) in
-        let faddr = geta n  "fa" in
+        let geta n tag = geta_fail "read_xml_jump_table_targets" n tag in
+        let faddr = geta n "fa" in
         let iaddr = geta n "ia" in
         let jta = geta n "jt" in
         let lb = geti "lb" in
@@ -1016,7 +1046,7 @@ object (self)
         self#add_jump_table_target faddr iaddr jta lb ub)
       (node#getTaggedChildren "tgt")
 
-  method private read_xml_successors (node:xml_element_int) =
+  method private read_xml_successors (node: xml_element_int) =
     (* Expected format:
        <successors>
           <instr ia="0xaaaaa"
@@ -1026,7 +1056,14 @@ object (self)
         let get = n#getAttribute in
         let ia = get "ia" in
         let ss = get "ss" in
-        let addrs = List.map string_to_doubleword (nsplit ',' ss) in
+        let addrs =
+          List.map
+            (fun s ->
+              fail_tvalue
+                (trerror_record
+                   (LBLOCK [STR "read_xml_successors: "; STR s]))
+                (string_to_doubleword s))
+            (nsplit ',' ss) in
         let _ =
           chlog#add
             "add successors"
@@ -1038,8 +1075,8 @@ object (self)
     List.iter (fun n ->
       let get = n#getAttribute in
       let geti = n#getIntAttribute in
-      let getx tag = string_to_doubleword (get tag) in
-      let encoding_to_pretty (ty,va,size,key,width) =
+      let getx tag = geta_fail "read_xml_encodings" n tag in
+      let encoding_to_pretty (ty, va, size, key, width) =
 	LBLOCK [
             STR "(";
             STR ty;
@@ -1080,18 +1117,18 @@ object (self)
 
   method private read_xml_excluded_jumptables (node:xml_element_int) =
     List.iter (fun n ->
-      let get = n#getAttribute in
-      let getx tag = string_to_doubleword (get tag) in
+      let getx tag = geta_fail "read_xml_excluded_jumptables" n tag in
       let jtaddr = getx "a" in
       begin
 	chlog#add "exclude jumptable" jtaddr#toPretty;
 	excluded_jumptables#add jtaddr
       end) (node#getTaggedChildren "jt")
 
-  method private read_xml_invalidated_jumptable_startaddresses (node:xml_element_int) =
+  method private read_xml_invalidated_jumptable_startaddresses
+                   (node:xml_element_int) =
     List.iter (fun n ->
-      let get = n#getAttribute in
-      let getx tag = string_to_doubleword (get tag) in
+      let getx tag =
+        geta_fail "read_xml_invalidated_jumptable_startaddresses" n tag in
       let jtaddr = getx "a" in
       begin
 	chlog#add "invalidate jumptable startaddress" jtaddr#toPretty;
@@ -1122,8 +1159,7 @@ object (self)
 
   method private read_xml_virtual_function_tables (node:xml_element_int) =
     List.iter (fun n ->
-      let get = n#getAttribute in
-      let getx tag = string_to_doubleword (get tag) in
+      let getx tag = geta_fail "read_xml_virtual_function_tables" n tag in
       let jtaddr = getx "a" in
       if self#has_jumptable jtaddr then
 	begin
@@ -1220,7 +1256,7 @@ object (self)
 
   method private read_xml_userdeclared_codesections (node:xml_element_int) =
     List.iter (fun n ->
-      let getx tag = string_to_doubleword (n#getAttribute tag) in
+      let getx tag = geta_fail "read_xml_userdeclared_codesections" n tag in
       let va = getx "va" in
       let size = getx "size" in
       begin
@@ -1230,8 +1266,7 @@ object (self)
 
   method private read_xml_esp_adjustments (node:xml_element_int) =
     List.iter (fun n ->
-      let get = n#getAttribute in
-      let geta n tag = string_to_doubleword (get tag) in
+      let geta n tag = geta_fail "read_xml_esp_adjustments" n tag in
       let faddr = geta n "fa" in
       let iaddr = geta n "ia" in
       let adj = n#getIntAttribute "adj" in
@@ -1239,24 +1274,21 @@ object (self)
 
   method private read_xml_esp_adjustments_i (node:xml_element_int) =
     List.iter (fun n ->
-      let get = n#getAttribute in
-      let geta n tag = string_to_doubleword (get tag) in
+      let geta n tag = geta_fail "read_xml_esp_adjustments_i" n tag in
       let iaddr = geta n "ia" in
       let adj = n#getIntAttribute "adj" in
       self#add_esp_adjustment_i iaddr adj) (node#getTaggedChildren "esp-adj")
 
   method private read_xml_inlined_functions (node:xml_element_int) =
     List.iter (fun n ->
-        let get = n#getAttribute in
-        let geta n tag = string_to_doubleword (get tag) in
+        let geta n tag = geta_fail "read_xml_inlined_functions" n tag in
         let faddr = geta n "fa" in
         let _ = chlog#add "add inlined function" faddr#toPretty in
         self#add_inlined_function faddr) (node#getTaggedChildren "inline")
 
   method private read_xml_inlined_blocks (node:xml_element_int) =
     List.iter (fun n  ->
-        let get = n#getAttribute in
-        let geta n tag = string_to_doubleword (get tag) in
+        let geta n tag = geta_fail "read_xml_inlined_blocks" n tag in
         let faddr = geta n "fa" in
         let baddr = geta n "ba" in
         let _ =
@@ -1267,15 +1299,15 @@ object (self)
 
   method private read_xml_readonly_ranges (node:xml_element_int) =
     List.iter (fun n ->
-      let geta tag = string_to_doubleword (n#getAttribute tag) in
-      let s = geta "start" in
-      let e = geta "end" in
-      begin
-	readonly_ranges <- (s,e) :: readonly_ranges ;
-        chlog#add
-          "readonly range"
-          (LBLOCK [s#toPretty; STR " - "; e#toPretty])
-      end) 
+        let geta n tag = geta_fail "read_xml_readonly_ranges" n tag in
+        let s = geta n "start" in
+        let e = geta n "end" in
+        begin
+	  readonly_ranges <- (s, e) :: readonly_ranges;
+          chlog#add
+            "readonly range"
+            (LBLOCK [s#toPretty; STR " - "; e#toPretty])
+        end)
       (node#getTaggedChildren "ror")
 
   (* reads type definitions from the bchsummaries jar. *)
@@ -1384,14 +1416,20 @@ object (self)
   method private read_xml_user_function_names (node:xml_element_int) =
     let get n = n#getAttribute in
     let getcc = node#getTaggedChildren in
-    let geta n = string_to_doubleword (get n "a") in
+    let geta n = geta_fail "read_xml_user_function_names" n "a" in
     List.iter (fun n -> 
       let fa = geta n in
       let name = get n "n" in
       (functions_data#add_function fa)#add_name name) (getcc "fn")
 
   method private read_xml_user_nonreturning_functions (node:xml_element_int) =
-    let geta n = string_to_doubleword (n#getAttribute "a") in
+    let geta n =
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [
+                STR "read_xml_user_nonreturning_functions: ";
+                STR (n#getAttribute "a")]))
+        (string_to_doubleword (n#getAttribute "a")) in
     let getcc = node#getTaggedChildren in
     List.iter (fun n ->
         let fd = functions_data#add_function (geta n) in
@@ -1400,7 +1438,7 @@ object (self)
         fd#set_non_returning) (getcc "nr")
 
   method private read_xml_nonreturning_calls (node:xml_element_int) =
-    let geta n tag = string_to_doubleword (n#getAttribute tag) in
+    let geta n tag = geta_fail "read_xml_nonreturning_functions" n tag in
     let getcc = node#getTaggedChildren in
     List.iter (fun n -> 
       let fa = geta n "fa" in
@@ -1456,7 +1494,7 @@ object (self)
       (node#getTaggedChildren "dll")
 
   method private read_xml_thread_start_functions (node:xml_element_int) =
-    let geta n tag = string_to_doubleword (n#getAttribute tag) in
+    let geta n tag = geta_fail "read_xml_thread_start_functions" n tag in
     let get n tag = n#getAttribute tag in
     List.iter (fun saNode ->
       let sa = geta saNode "start-address" in
@@ -1470,10 +1508,10 @@ object (self)
 
   method private read_xml_goto_returns (node:xml_element_int) =
     List.iter (fun gNode ->
-      let geta tag = string_to_doubleword (gNode#getAttribute tag) in
-      let iaddr = geta "ia" in
-      let tgt = geta "tgt" in
-      self#add_goto_return iaddr tgt) (node#getTaggedChildren "goto")
+        let geta tag = geta_fail "read_xml_goto_returns" gNode tag in
+        let iaddr = geta "ia" in
+        let tgt = geta "tgt" in
+        self#add_goto_return iaddr tgt) (node#getTaggedChildren "goto")
           
   method private read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
@@ -1800,7 +1838,12 @@ object (self)
     let len = String.length !file_as_string in    
     if size > 0 then
       if offset > len then
-	let hexLen = int_to_doubleword len in
+	let hexLen =
+          fail_tvalue
+            (trerror_record
+               (LBLOCK [
+                    STR "system_info:get_file_string:hexLen: "; INT len]))
+          (int_to_doubleword len) in
 	begin
 	  ch_error_log#add
             "invalid argument"
@@ -1930,7 +1973,8 @@ object (self)
 
   method private write_xml_thread_start_functions (node:xml_element_int) =
     let set n tag s = n#setAttribute tag s in
-    let seta n tag i = n#setAttribute tag (index_to_doubleword i)#to_hex_string in
+    let dw i = TR.tget_ok (index_to_doubleword i) in
+    let seta n tag i = n#setAttribute tag (dw i)#to_hex_string in
     let fns = ref []  in
     let _ = H.iter (fun k v -> fns := (k,v) :: !fns) thread_start_functions in
     node#appendChildren (List.map (fun (sa,entry) ->

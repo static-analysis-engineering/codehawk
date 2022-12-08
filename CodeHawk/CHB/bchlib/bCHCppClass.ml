@@ -48,6 +48,7 @@ open BCHTypeDefinitions
 open BCHVariableType
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let get_vtable_summaries (t:cppvf_table_t) =
@@ -120,7 +121,7 @@ object (self)
 
   method get_instance_functions =
     H.fold (fun dwindex fintf acc ->
-        let fa = index_to_doubleword dwindex in
+        let fa = TR.tget_ok (index_to_doubleword dwindex) in
         if self#is_class_function fa then
           acc
         else (fa, fintf.fintf_name) :: acc)
@@ -256,8 +257,8 @@ let read_xml_vtable (node:xml_element_int) (cname:string) =
 let read_xml_vfpointer (node:xml_element_int) (cname:string) =
   let geti = node#getIntAttribute in
   let geta n = string_to_doubleword (node#getAttribute "a") in
-  { cppvf_offset = geti "offset" ;
-    cppvf_address = geta node ;
+  { cppvf_offset = geti "offset";
+    cppvf_address = TR.tget_ok (geta node);
     cppvf_table = read_xml_vtable node cname}
 
 
@@ -277,7 +278,7 @@ let read_xml_static_functions (node:xml_element_int) (cname:string) =
   List.map (fun n ->
     let get n = n#getAttribute in
     let getc = n#getTaggedChild  in
-    let geta n = string_to_doubleword (get n "a") in
+    let geta n = TR.tget_ok (string_to_doubleword (get n "a")) in
     let fintf = read_xml_function_interface (getc "api") in
     let fintf = { fintf with fintf_name = cname ^ "::" ^ fintf.fintf_name } in
     (geta n, fintf)) (node#getTaggedChildren "sf")
@@ -287,7 +288,7 @@ let read_xml_constructors (node:xml_element_int) (cname:string) =
   List.map (fun n ->
     let get n = n#getAttribute in
     let getc = n#getTaggedChild in
-    let geta n = string_to_doubleword (get n "a") in
+    let geta n = TR.tget_ok (string_to_doubleword (get n "a")) in
     let fintf = read_xml_function_interface (getc "api") in
     let fintf = { fintf with fintf_name = cname ^ "::" ^ fintf.fintf_name } in
     (geta n, fintf)) (node#getTaggedChildren "cf")
@@ -297,7 +298,7 @@ let read_xml_non_virtual_functions (node:xml_element_int) (cname:string) =
   List.map (fun n ->
     let get n = n#getAttribute in
     let getc = n#getTaggedChild in
-    let geta n = string_to_doubleword (get n "a") in
+    let geta n = TR.tget_ok (string_to_doubleword (get n "a")) in
     let fintf = read_xml_function_interface (getc "api") in
     let fintf = { fintf with fintf_name = cname ^ "::" ^ fintf.fintf_name } in
     (geta n, fintf)) (node#getTaggedChildren "nvf")

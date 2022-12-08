@@ -33,6 +33,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHUtil
 open CHXmlDocument
 
@@ -42,17 +43,18 @@ open BCHDoubleword
 open BCHLibTypes
 open BCHStreamWrapper
 
+module TR = CHTraceResult
+
 
 class jumptable_t
-        ?(end_address: doubleword_int option=None)
+        ~(end_address: doubleword_int)
         ~(start_address: doubleword_int)
-        ~(targets      : doubleword_int list):jumptable_int =
+        ~(targets: doubleword_int list)
+        ~(length: int): jumptable_int =
 object (self)
 
-  val end_address =
-    match end_address with
-    | Some e -> e
-    | _ -> start_address#add_int ((List.length targets) * 4)
+  val end_address = end_address
+
   val mutable startaddress_valid = true 
 
   method invalidate_startaddress = startaddress_valid <- false
@@ -68,92 +70,73 @@ object (self)
         (fun acc t ->
           if List.mem t#to_hex_string acc then acc else t#to_hex_string :: acc)
         [] tgts in
-    List.map string_to_doubleword tgts
+    List.map (fun s -> TR.tget_ok (string_to_doubleword s)) tgts
 
   method get_targets (base:doubleword_int) (lb:int) (ub:int) =
     List.map snd (self#get_indexed_targets base lb ub)
 
-  method get_length =
-    try
-      (end_address#subtract start_address)#to_int
-    with
-    | Invalid_argument s ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Error in jumptable#get_length: "; STR s]))
+  method get_length = length
 
-  method get_indexed_targets (base:doubleword_int) (tableLb:int) (tableUb:int)  =
+  method get_indexed_targets (base:doubleword_int) (tableLb:int) (tableUb:int) =
     let baseOffset =             (* userIndex - tableIndex *)
       if base#lt start_address then
-        try
-	  (start_address#subtract base)#to_int / 4
-        with
-        | Invalid_argument s ->
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "Error in jumptable#get_indexed_targets ";
-                     STR "(base < start_address): ";
-                     STR s]))
+        TR.tprop
+	  (start_address#subtract_to_int base)
+          "jumptable:get_indexed_targets:base is less than start_address"
       else
-        try
-	  (base#subtract start_address)#to_int * (-1) / 4
-        with
-        | Invalid_argument s ->
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "Error in get_in jumptable#get_indexed_targets ";
-                     STR "(base >= start_address): ";
-                     STR s])) in
+          TR.tmap
+            ~msg:("jumptable:get_indexed_targets:"
+                  ^ "base is larger than or equal to start_address")
+            (fun diff -> diff * (-1))
+	    (base#subtract_to_int start_address) in
 
-    if tableLb >= 0 && tableUb < List.length targets then
-      let result = ref [] in
-      begin
-	for i = tableLb to tableUb do
-	  result := (i + baseOffset, List.nth targets i) :: !result
-	done;
-	List.rev !result
-      end
-    else
-      begin
-	ch_error_log#add
-          "jump table range"
-	  (LBLOCK [
-               STR "table-lowerbound: ";
-               INT tableLb;
-               STR "; table-upperbound: ";
-	       INT tableUb;
-               STR "; table-length: ";
-               INT (List.length targets)]);
-	[]
-      end
+    TR.tfold
+      ~ok:(fun baseOffset ->
+        let baseOffset = baseOffset / 4 in
+        if tableLb >= 0 && tableUb < List.length targets then
+          let result = ref [] in
+          begin
+	    for i = tableLb to tableUb do
+	      result := (i + baseOffset, List.nth targets i) :: !result
+	    done;
+	    List.rev !result
+          end
+        else
+          begin
+	    ch_error_log#add
+              "jump table range"
+	      (LBLOCK [
+                   STR "table-lowerbound: ";
+                   INT tableLb;
+                   STR "; table-upperbound: ";
+	           INT tableUb;
+                   STR "; table-length: ";
+                   INT (List.length targets)]);
+	    []
+          end)
+      ~error:(fun msgs ->
+        begin
+          ch_error_log#add
+            "jumptable:base-offset"
+            (STR (String.concat "; " msgs));
+          []
+        end)
+      baseOffset
     
-  method includes_address (addr:doubleword_int) =
-    try
-      start_address#le (addr#add_int 4)
-      && addr#le end_address
-      && ((addr#lt start_address
-           && (start_address#subtract addr)#to_int mod 4 = 0)
-          ||
-            (start_address#le addr
-             && (addr#subtract start_address)#to_int mod 4 = 0))
-    with
-    | Invalid_argument s ->
-       begin
-         ch_error_log#add
-           "jumptable#includes_address"
-           (LBLOCK [
-                STR "startaddress: ";
-                start_address#toPretty;
-                STR "; endaddress: ";
-                end_address#toPretty;
-                STR "; addr: ";
-                addr#toPretty;
-                STR ": ";
-                STR s]);
-         false
-       end
+  method includes_address (addr: doubleword_int) =
+    if start_address#le (addr#add_int 4) && addr#le end_address then
+      if addr#lt start_address then
+        TR.tfold
+          ~ok:(fun t -> t mod 4 = 0)
+          ~error:(fun _ -> false)
+          (start_address#subtract_to_int addr)
+      else
+        TR.tfold
+          ~ok:(fun t -> t mod 4 = 0)
+          ~error:(fun _ -> false)
+          (addr#subtract_to_int start_address)
+    else
+      false
 
   method toPretty
            ~(is_function_entry_point:(doubleword_int -> bool))
@@ -209,8 +192,16 @@ end
 let make_jumptable
       ?(end_address: doubleword_int option=None)
       ~(start_address:doubleword_int)
-      ~(targets:doubleword_int list) =
-  new jumptable_t ~end_address ~start_address ~targets
+      ~(targets:doubleword_int list): jumptable_int TR.traceresult =
+  let end_address =
+    match end_address with
+    | Some e -> e
+    | _ -> start_address#add_int ((List.length targets) * 4) in
+  TR.tmap
+    ~msg:"make_jumptable"
+    (fun length ->
+      new jumptable_t ~end_address ~start_address ~targets ~length)
+    (end_address#subtract_to_int start_address)
 
 
 let split_jumptable
@@ -218,12 +209,15 @@ let split_jumptable
       ~(sizes:int list):jumptable_int list =
   let startaddr = jumptable#get_start_address in
   let alltargets = jumptable#get_all_targets in
-  let (_,jtables) =
-    List.fold_left (fun (offset,jts) size ->
-        let addr = startaddr#add_int (offset *  4) in
+  let (_, jtables) =
+    List.fold_left (fun (offset, jts) size ->
+        let start_address = startaddr#add_int (offset *  4) in
         let targets = list_sub alltargets offset size in
-        let newtable = new jumptable_t addr targets in
-        (offset + size, newtable::jts)) (0,[]) sizes in
+        let newtable = make_jumptable ~end_address:None ~start_address ~targets in
+        TR.tfold
+          ~ok:(fun jt -> (offset + size, jt::jts))
+          ~error:(fun _ -> (offset + size, jts))
+          newtable) (0,[]) sizes in
   jtables
 
 
@@ -231,15 +225,22 @@ let read_xml_jumptable (node:xml_element_int) =
   let get = node#getAttribute in
   let has = node#hasNamedAttribute in
   let geta n t = string_to_doubleword (n#getAttribute t) in
-  let isinvalid = has "startaddress-valid" && (get "startaddress-valid") = "no" in
+  let isinvalid =
+    has "startaddress-valid" && (get "startaddress-valid") = "no" in
   let getcc = node#getTaggedChildren in
   let startAddress = geta node "start" in
-  let targets = List.map (fun n -> geta n "a") (getcc "tgt") in
-  let table = make_jumptable startAddress targets in
-  begin
-    (if isinvalid then table#invalidate_startaddress) ;
+  let targets = List.map (fun n -> TR.tget_ok (geta n "a")) (getcc "tgt") in
+  let table =
+    TR.tbind
+      ~msg:("BCHJumpTable.read_xml_jumptable")
+      (fun saddr -> make_jumptable saddr targets)
+      startAddress in
+  TR.tbind (fun jt ->
+      begin
+        (if isinvalid then jt#invalidate_startaddress);
+        Ok jt
+      end)
     table
-  end
 
 
 (* we consider a range of doublewords a jump table if it consists of at least three
@@ -247,31 +248,27 @@ let read_xml_jumptable (node:xml_element_int) =
  *)
 let find_jumptable is_code_address ch len start_address target1 =
   let rec extract_jumptable start targets =
-    let maxDiff = int_to_doubleword 10000 in
+    let maxDiff = TR.tget_ok (int_to_doubleword 10000) in
     let t1 = List.nth targets 0 in
     let t2 = List.nth targets 1 in
-    let diff =
-      try
-        if t1#le t2 then t2#subtract t1 else t1#subtract t2
-      with
-      | Invalid_argument s ->
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "Error in find_jumptable. ";
-                   STR "target 1: ";
-                   t1#toPretty;
-                   STR "; target 2: ";
-                   t2#toPretty;
-                   STR ": ";
-                   STR s])) in
-    if maxDiff#lt diff then
-      if (List.length targets) > 2 then
-	extract_jumptable (start#add_int 4) (List.tl targets)
-      else
-	None
-    else
-      Some (make_jumptable start targets) in
+    let trdiff = if t1#le t2 then t2#subtract t1 else t1#subtract t2 in
+    log_tfold_default
+      (mk_tracelog_spec ~tag:"find_jumptable" start_address#to_hex_string)
+      (fun diff ->
+        if maxDiff#lt diff then
+          if (List.length targets) > 2 then
+	    extract_jumptable (start#add_int 4) (List.tl targets)
+          else
+	    None
+        else
+          log_tfold_default
+            (mk_tracelog_spec ~tag:"find_jumptable" start_address#to_hex_string)
+            (fun jt -> Some jt)
+            None
+            (make_jumptable ~end_address:None ~start_address:start ~targets))
+      None
+      trdiff in
+
   if ch#pos < len-4 then
     let target2 = ch#read_doubleword in
     if is_code_address target2 then
@@ -348,7 +345,11 @@ let find2_jumptable is_code_address ch len start_address target1 =
             else
               target := wordzero
 	  done;
-	  Some (make_jumptable start_address (List.rev !targets))
+          log_tfold_default
+            (mk_tracelog_spec ~tag:"find2_jumptable" start_address#to_hex_string)
+            (fun jt -> Some jt)
+            None
+	    (make_jumptable start_address (List.rev !targets))
 	end
       else None
     else None
@@ -360,38 +361,17 @@ let create_jumptable
     ~(section_base:doubleword_int)
     ~(is_code_address:doubleword_int -> bool)
     ~(section_string:string) =
-  try
-    let len = String.length section_string in
-    let pos =
-      try
-        (base#subtract section_base)#to_int
-      with
-      | Invalid_argument s ->
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "Error in create_jumptable. ";
-                   STR "base: ";
-                   base#toPretty;
-                   STR "; section_base: ";
-                   section_base#toPretty;
-                   STR ": ";
-                   STR s])) in
-    let ch = make_pushback_stream section_string in
-    let _ = ch#skip_bytes pos in
-    let dw = ch#read_doubleword in
-    if is_code_address dw then
-      find2_jumptable is_code_address ch len base dw
-    else
-      None
-  with
-  | Invalid_argument s ->
-    begin
-      ch_error_log#add "create jumptable" (LBLOCK [STR "Error: "; STR s]);
-      None
-    end
-  | _ ->
-    begin
-      ch_error_log#add "create jumptable" (LBLOCK [STR "Unknown error"]);
-      None
-    end
+  let len = String.length section_string in
+  let trpos = base#subtract_to_int section_base in
+  log_tfold_default
+    (mk_tracelog_spec ~tag:"create_jumptable" base#to_hex_string)
+    (fun pos ->
+      let ch = make_pushback_stream section_string in
+      let _ = ch#skip_bytes pos in
+      let dw = ch#read_doubleword in
+      if is_code_address dw then
+        find2_jumptable is_code_address ch len base dw
+      else
+        None)
+    None
+    trpos

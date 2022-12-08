@@ -42,6 +42,7 @@ open BCHLibTypes
 open BCHXmlUtil
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let nsplit (separator:char) (s:string):string list =
@@ -132,29 +133,34 @@ let add_function_ctxt_iaddress
     H.add f_entry s (basef,c)
 
 
-let get_context (faddr:doubleword_int) (s:string) =
+let get_context (faddr: doubleword_int) (s: string) =
   if s = "" then
-    (faddr,[])
+    (faddr, [])
   else
     let faddr = faddr#to_hex_string in
     if H.mem contexts faddr then
       let f_entry = H.find contexts faddr in
       if H.mem f_entry s then
-        let (f,c) = H.find f_entry s in
-        (string_to_doubleword f, c)
+        let (f, c) = H.find f_entry s in
+        (TR.tget_ok (string_to_doubleword f), c)
       else
-        raise (BCH_failure
-                 (LBLOCK [ STR "Contexts for " ; STR faddr ;
-                           STR " do not include: " ; STR s ]))
+        raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "Contexts for ";
+                  STR faddr;
+                  STR " do not include: ";
+                  STR s]))
     else
-      raise (BCH_failure
-               (LBLOCK [ STR "No contexts found for " ; STR faddr ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "No contexts found for "; STR faddr]))
 
       
 let decompose_ctxt_string
       (faddr:doubleword_int)    (* outer function address *)
       (s:ctxt_iaddress_t) =
-  let s2dw = string_to_doubleword in
+  let s2dw = (fun s -> TR.tget_ok (string_to_doubleword s)) in
   let components = nsplit '_' s in
   let iaddr = s2dw (List.hd (List.rev components)) in
   let ctxtcomponents = List.rev (List.tl (List.rev components)) in
@@ -271,8 +277,8 @@ let make_function_context_location
 
 
 let ctxt_string_to_location (faddr:doubleword_int) (s:ctxt_iaddress_t) =
-  let (ctxt,basef,iaddr) = decompose_ctxt_string faddr s in
-  make_location ~ctxt { loc_faddr = basef ; loc_iaddr = iaddr }
+  let (ctxt, basef, iaddr) = decompose_ctxt_string faddr s in
+  make_location ~ctxt {loc_faddr = basef; loc_iaddr = iaddr}
 
 
 let add_ctxt_to_ctxt_string

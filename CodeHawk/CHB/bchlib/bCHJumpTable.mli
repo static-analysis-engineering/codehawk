@@ -26,6 +26,7 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
@@ -35,14 +36,14 @@ val make_jumptable:
   ?end_address: doubleword_int option
   -> start_address:doubleword_int
   -> targets:doubleword_int list
-  -> jumptable_int
+  -> jumptable_int traceresult
   
 val split_jumptable:
   jumptable:jumptable_int
   -> sizes:(int list)
   -> jumptable_int list
   
-val read_xml_jumptable: xml_element_int -> jumptable_int
+val read_xml_jumptable: xml_element_int -> jumptable_int traceresult
   
 val find_jumptables   :
   is_code_address:(doubleword_int -> bool)

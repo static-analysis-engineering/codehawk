@@ -62,6 +62,7 @@ open BCHVariable
 open BCHXmlUtil
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
@@ -134,10 +135,10 @@ let non_relational_value_to_pretty v =
       if num#lt (mkNumerical 10000) then 
         STR num#toString
       else
-        try
-          STR (numerical_to_hex_string num)
-        with
-        | _ -> num#toPretty in
+        TR.tfold_default
+          (fun s -> STR s)
+          num#toPretty
+          (numerical_to_hex_string num) in
     match v with
     | FSymbolicExpr v -> LBLOCK [STR "("; pr_expr v; STR ")"]
     | FIntervalValue (Some lb, Some ub) when lb#equal ub -> num_to_pretty lb
@@ -1021,10 +1022,10 @@ object (self)
     let isprintable num = num#geq (mkNumerical 32) && (mkNumerical 127)#geq num in
     let p_num n =
       if n#gt hex_cutoff then
-        try
-	  STR (numerical_to_hex_string n)
-        with
-        | BCH_failure p -> n#toPretty        
+        TR.tfold_default
+          (fun s -> STR s)
+          n#toPretty
+	  (numerical_to_hex_string n)
       else if isprintable n then
 	LBLOCK [
             n#toPretty;

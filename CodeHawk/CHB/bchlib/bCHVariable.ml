@@ -59,6 +59,7 @@ open BCHVariableNames
 open BCHXmlUtil
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
@@ -240,20 +241,29 @@ object (self:'a)
 
   method get_global_sideeffect_target_address =
     match denotation with
-    | AuxiliaryVariable (SideEffectValue (_,arg,true)) -> string_to_doubleword arg
-    | _ -> raise (BCH_failure (LBLOCK [ STR "Variable is not a global side effect: " ;
-					self#toPretty ]))
+    | AuxiliaryVariable (SideEffectValue (_, arg, true)) ->
+       TR.tget_ok (string_to_doubleword arg)
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Variable is not a global side effect: ";
+		 self#toPretty]))
 	
   method get_pointed_to_function_name =
     match denotation with
     | AuxiliaryVariable (FunctionPointer (name,_,_)) -> name
     | _ ->
       begin
-	ch_error_log#add "assembly variable access" 
-	  (LBLOCK [ STR "assembly_variable#get_pointed_to_function_name: " ; 
-		    self#toPretty ]) ;
-	raise (BCH_failure (LBLOCK [ STR "get pointed to function name on " ; 
-				     self#toPretty ]))
+	ch_error_log#add
+          "assembly variable access"
+	  (LBLOCK [
+               STR "assembly_variable#get_pointed_to_function_name: ";
+	       self#toPretty]);
+	raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "get pointed to function name on "; self#toPretty]))
       end
 
   method is_frozen_test_value =
@@ -661,12 +671,7 @@ object (self)
       let offset = self#get_memvar_offset v in
       if is_constant_offset offset then
         let noffset = get_total_constant_offset offset in
-        try
-          numerical_to_doubleword noffset
-        with
-        | BCH_failure p ->
-           raise_memref_type_error
-             memref (LBLOCK [STR "Global reference: "; p])
+        TR.tget_ok (numerical_to_doubleword noffset)
       else
         raise_memref_type_error memref (STR "Global reference")
     else

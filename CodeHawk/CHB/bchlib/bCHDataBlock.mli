@@ -28,6 +28,7 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
@@ -38,11 +39,11 @@ val make_data_block:
   -> doubleword_int
   -> doubleword_int
   -> string
-  -> data_block_int
+  -> data_block_int traceresult
   
 val create_jumptable_offset_block: 
-  doubleword_int -> doubleword_int -> string -> int -> data_block_int
+  doubleword_int -> doubleword_int -> string -> int -> data_block_int traceresult
 
-val read_xml_data_block: xml_element_int -> data_block_int
+val read_xml_data_block: xml_element_int -> data_block_int traceresult
 
 val find_seh4_structures: (doubleword_int * string) list -> data_block_int list

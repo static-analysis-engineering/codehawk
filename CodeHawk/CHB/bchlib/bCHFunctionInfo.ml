@@ -86,6 +86,7 @@ open BCHXprUtil
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
+module TR = CHTraceResult
 
 
 module NumericalCollections = CHCollections.Make
@@ -2558,14 +2559,16 @@ let get_jni_calls () =
               add finfo#get_address iaddr ctinfo#get_jni_index)
                   finfo#get_callees_located) (get_function_infos ()) in
   let _ =
-    H.iter (fun k v -> result := (index_to_doubleword k,v) :: !result) table in
+    H.iter
+      (fun k v ->
+        result := (TR.tget_ok (index_to_doubleword k), v) :: !result) table in
   !result
 
 
 let get_vars_metrics (env:function_environment_int) = {
-    mvars_count = env#get_var_count ;
-    mvars_global = env#get_globalvar_count ;
-    mvars_args = env#get_argvar_count ;
-    mvars_return = env#get_returnvar_count ;
+    mvars_count = env#get_var_count;
+    mvars_global = env#get_globalvar_count;
+    mvars_args = env#get_argvar_count;
+    mvars_return = env#get_returnvar_count;
     mvars_sideeff = env#get_sideeffvar_count
 }

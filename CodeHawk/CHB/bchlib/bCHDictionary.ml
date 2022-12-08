@@ -44,6 +44,7 @@ open BCHLibTypes
 open BCHSumTypeSerializer
 open BCHUtilities
 
+
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
     LBLOCK [
@@ -116,7 +117,9 @@ object (self)
   method get_address (index:int) =
     let (tags,_) = address_table#retrieve index in
     let t  = t "address" tags in
-    string_to_doubleword (t 0)
+    fail_tvalue
+      (trerror_record (STR "BCHDictionary.get_address"))
+      (string_to_doubleword (t 0))
 
   method get_address_string (index:int) =
     let (tags,_) = address_table#retrieve index in

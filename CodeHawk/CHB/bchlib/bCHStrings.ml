@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,9 +40,12 @@ open BCHLibTypes
 open BCHLocation
 
 module H = Hashtbl
+module TR = CHTraceResult
+
    
 let bd = BCHDictionary.bdictionary
-       
+
+
 class string_table_t:string_table_int =
 object (self)
   
@@ -90,18 +93,20 @@ object (self)
                (LBLOCK [ STR "String not found for address " ; a#toPretty ]))
 
   method get_strings =
-    H.fold (fun i s a -> (index_to_doubleword i,s) :: a) stringtable []
+    H.fold (fun i s a ->
+        (TR.tget_ok (index_to_doubleword i), s) :: a) stringtable []
 
   method private get_string_xrefs
                    (a:doubleword_int):(doubleword_int * ctxt_iaddress_t) list =
     if H.mem reftable a#index then
       List.fold_left
         (fun acc (faddr,cis) ->
-          (List.map (fun ci -> (faddr,ci)) cis) @ acc)
+          (List.map (fun ci -> (faddr, ci)) cis) @ acc)
         []
         (H.fold
            (fun faddr cis acc ->
-             (index_to_doubleword faddr,cis)::acc) (H.find reftable a#index) [])
+             (TR.tget_ok (index_to_doubleword faddr), cis)::acc)
+           (H.find reftable a#index) [])
     else
       []
 	
@@ -109,12 +114,12 @@ object (self)
 
   method read_xml (node:xml_element_int) =
     List.iter (fun n ->
-        let a = string_to_doubleword (n#getAttribute "a") in
+        let a = TR.tget_ok (string_to_doubleword (n#getAttribute "a")) in
         let str = bd#read_xml_string n in
         begin
           self#add_string a str ;
           List.iter (fun x ->
-              let f = string_to_doubleword (x#getAttribute "f") in
+              let f = TR.tget_ok (string_to_doubleword (x#getAttribute "f")) in
               let ci = x#getAttribute "ci"  in
               self#add_xref a str f ci) (n#getTaggedChildren "xref")
         end) (node#getTaggedChildren "string-xref")
