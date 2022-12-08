@@ -34,6 +34,7 @@ open CHLanguage
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 
 (* bchlib *)
 open BCHBasicTypes
@@ -41,6 +42,7 @@ open BCHLibTypes
 open BCHUtilities
 
 module B = Big_int_Z
+module TR = CHTraceResult
 
 (* commonly used constant values *)
 let e7   = 128
@@ -105,6 +107,8 @@ object (self:'a)
 
   val unsigned_value:int = n
 
+  method value = unsigned_value
+
   method index = unsigned_value
 
   (* --------------------------------------------------------~---- comparison -- *)
@@ -144,75 +148,75 @@ object (self:'a)
     let bytes = get_bytes unsigned_value 4 in
     let pc i = if i=0 then "" else Printf.sprintf "%c" (Char.chr i) in
     match bytes with
-	[ b4 ; b3 ; b2 ; b1 ] -> (pc b1) ^ (pc b2) ^ (pc b3) ^ (pc b4)
-      | _ ->
-	begin
-	  ch_error_log#add
-            "internal error"
-	    (LBLOCK [
-                 STR "doubleword_t#to_string_fragment: ";
-		 pretty_print_list bytes (fun b -> INT b) "[" "; " "]"]);
-	  raise (Internal_error "doubleword_t#to_string_fragment")
-	end
+    |[b4; b3; b2; b1] -> (pc b1) ^ (pc b2) ^ (pc b3) ^ (pc b4)
+    | _ ->
+       begin
+	 ch_error_log#add
+           "internal error"
+	   (LBLOCK [
+                STR "doubleword_t#to_string_fragment: ";
+		pretty_print_list bytes (fun b -> INT b) "[" "; " "]"]);
+	 raise (Internal_error "doubleword_t#to_string_fragment")
+       end
 
   method to_string:string =
     let bytes = get_bytes unsigned_value 4 in
     let pc i = Printf.sprintf "%c" (Char.chr i) in
     match bytes with
-	[ b1 ; b2 ; b3 ; b4 ] -> (pc b1) ^ (pc b2) ^ (pc b3) ^ (pc b4)
-      | _ ->
-	begin
-	  ch_error_log#add
-            "internal error"
-	    (LBLOCK [
-                 STR "doubleword_t#to_string_fragment: ";
-		 pretty_print_list bytes (fun b -> INT b) "[" "; " "]"]);
-	  raise (Internal_error "doubleword_t#to_string_fragment")
-	end
+    | [b1; b2; b3; b4 ] -> (pc b1) ^ (pc b2) ^ (pc b3) ^ (pc b4)
+    | _ ->
+       begin
+	 ch_error_log#add
+           "internal error"
+	   (LBLOCK [
+                STR "doubleword_t#to_string_fragment: ";
+		pretty_print_list bytes (fun b -> INT b) "[" "; " "]"]);
+	 raise (Internal_error "doubleword_t#to_string_fragment")
+       end
 
   method to_fixed_length_hex_string:string =
     let nibbles = get_nibbles unsigned_value 8 in
     match nibbles with
-	[n8; n7; n6; n5; n4; n3; n2; n1] ->
-	  Printf.sprintf "%x%x%x%x%x%x%x%x" n8 n7 n6 n5 n4 n3 n2 n1
-      | _ -> 
-	begin
-	  ch_error_log#add
-            "internal error"
-	    (LBLOCK [
-                 STR "doubleword_t#fixed_length_hex_string inconsistent value: ";
-		 pretty_print_list nibbles (fun n -> INT n) "[" "; " "]"]);
-	  raise (Internal_error "doubleword_t#to_fixed_length_hex_string")
-	end
+    | [n8; n7; n6; n5; n4; n3; n2; n1] ->
+       Printf.sprintf "%x%x%x%x%x%x%x%x" n8 n7 n6 n5 n4 n3 n2 n1
+    | _ ->
+       begin
+	 ch_error_log#add
+           "internal error"
+	   (LBLOCK [
+                STR "doubleword_t#fixed_length_hex_string inconsistent value: ";
+		pretty_print_list nibbles (fun n -> INT n) "[" "; " "]"]);
+	 raise (Internal_error "doubleword_t#to_fixed_length_hex_string")
+       end
 
   method to_hex_string:string =
     let nibbles = get_nibbles unsigned_value 8 in
     match nibbles with
-	[ n8 ; n7 ; n6 ; n5 ; n4 ; n3 ; n2 ; n1 ] ->
-	  begin
-	    match n8 with
-	      | 0 -> begin match n7 with
-		  | 0 -> begin match n6 with
-		      | 0 -> begin match n5 with
-			  | 0 -> begin match n4 with
-			      | 0 -> begin match n3 with
-				  | 0 -> begin match n2 with
-				      | 0 -> Printf.sprintf "0x%x" n1
-				      | _ -> Printf.sprintf "0x%x%x" n2 n1 end
-				  | _ -> Printf.sprintf "0x%x%x%x" n3 n2 n1 end
-			      | _ -> Printf.sprintf "0x%x%x%x%x" n4 n3 n2 n1 end
-			  | _ -> Printf.sprintf "0x%x%x%x%x%x" n5 n4 n3 n2 n1 end
-		      | _ -> Printf.sprintf "0x%x%x%x%x%x%x" n6 n5 n4 n3 n2 n1 end
-		  | _ -> Printf.sprintf "0x%x%x%x%x%x%x%x" n7 n6 n5 n4 n3 n2 n1 end
-	      | _ -> Printf.sprintf "0x%x%x%x%x%x%x%x%x" n8 n7 n6 n5 n4 n3 n2 n1 end
-      | _ -> 
-	begin
-	  ch_error_log#add
-            "invalid argument"
-	    (LBLOCK [
-                 pretty_print_list nibbles (fun i -> INT i) "[" "; " "]"; NL]);
-	  raise (Internal_error "doubleword_t#to_hex_string")
-	end
+    | [n8; n7; n6; n5; n4; n3; n2; n1] ->
+       begin
+	 match n8 with
+	 | 0 -> begin match n7 with
+		| 0 -> begin match n6 with
+		       | 0 -> begin match n5 with
+			      | 0 -> begin match n4 with
+			             | 0 -> begin match n3 with
+				            | 0 -> begin match n2 with
+				                   | 0 -> Printf.sprintf "0x%x" n1
+				                   | _ -> Printf.sprintf "0x%x%x" n2 n1 end
+				            | _ -> Printf.sprintf "0x%x%x%x" n3 n2 n1 end
+			             | _ -> Printf.sprintf "0x%x%x%x%x" n4 n3 n2 n1 end
+			      | _ -> Printf.sprintf "0x%x%x%x%x%x" n5 n4 n3 n2 n1 end
+		       | _ -> Printf.sprintf "0x%x%x%x%x%x%x" n6 n5 n4 n3 n2 n1 end
+		| _ -> Printf.sprintf "0x%x%x%x%x%x%x%x" n7 n6 n5 n4 n3 n2 n1 end
+	 | _ -> Printf.sprintf "0x%x%x%x%x%x%x%x%x" n8 n7 n6 n5 n4 n3 n2 n1 end
+    | _ ->
+       begin
+	 ch_error_log#add
+           "invalid argument"
+	   (LBLOCK [
+                pretty_print_list nibbles (fun i -> INT i) "[" "; " "]"; NL]);
+	 raise (Internal_error "doubleword_t#to_hex_string")
+       end
 
 
   method to_signed_hex_string:string =
@@ -236,70 +240,54 @@ object (self:'a)
     else
       {< >}
 
-  method subtract (other:'a):'a =
-    if other#index <= self#index then
-      {< unsigned_value = self#index - other#index >}
+  method subtract (other: 'a): 'a traceresult =
+    if other#value <= self#value then
+      Ok {< unsigned_value = self#value - other#value >}
     else
-      begin
-	ch_error_log#add
-          "invalid argument"
-	  (LBLOCK [
-               STR "Unable to subtract doubleword -- difference is negative: ";
-	       INT self#index;
-               STR " - ";
-               INT other#index;
-	       STR " (";
-               self#toPretty;
-               STR " - ";
-               other#toPretty;
-               STR ")"]);
-	raise (Invalid_argument "doubleword_t#subtract")
-      end
+      Error [
+          "dw#subtract_int: "
+          ^ (self#to_hex_string)
+          ^ ", "
+          ^ other#to_hex_string]
 
-  method subtract_int (i:int):'a =
+  method subtract_int (i: int): 'a traceresult =
     if i<= unsigned_value then
-      {< unsigned_value = unsigned_value - i >}
+      Ok {< unsigned_value = unsigned_value - i >}
     else
-      begin
-	ch_error_log#add
-          "invalid argument"
-	  (LBLOCK [
-               STR "Unable to subtract int -- difference is negative: ";
-	       INT unsigned_value;
-               STR " - ";
-               INT i;
-	       STR " (";
-               self#toPretty;
-               STR " - ";
-               INT i;
-               STR ")"]);
-	raise (Invalid_argument "doubleword_t#subtract_int")
-      end
+      Error [
+          "dw#subtract_int: "
+          ^ (self#to_hex_string)
+          ^ ", "
+          ^ (string_of_int i)]
 
+  method subtract_to_int (other: 'a): int traceresult =
+    if other#value <= self#value then
+      Ok (self#value - other#value)
+    else
+      Error [
+          "dw#subtract_to_int: "
+          ^ (self#to_hex_string)
+          ^ ", "
+          ^ (other#to_hex_string)]
 
-  method add (other:'a) =
+  method add (other: 'a) =
     let sum = self#index + other#index in
     {< unsigned_value = sum mod e32 >}
 
-  method add_int (i:int):'a =
+  method add_int (i: int):'a =
     let sum = unsigned_value + i in
     {< unsigned_value = sum mod e32 >}
 
-  method multiply_int (i:int):'a =
+  method multiply_int (i: int):'a traceresult =
     let product = i * unsigned_value in
     if product <= ffff_ffff then
-      {< unsigned_value = product >}
+      Ok {< unsigned_value = product >}
     else
-      begin
-	ch_error_log#add
-          "invalid argument"
-	  (LBLOCK [
-               STR "Unable to multiply int -- product exceeds 32 bits: ";
-	       INT unsigned_value;
-               STR " * ";
-               INT i]);
-	raise (Invalid_argument "doubleword_t#multiply_int")
-      end
+      Error [
+          "dw#multiply_int: "
+          ^ (self#to_hex_string)
+          ^ ", "
+          ^ (string_of_int i)]
 
   method xor (other:'a) =
     {< unsigned_value = (self#to_int lxor other#to_int) mod e32 >}
@@ -319,7 +307,7 @@ object (self:'a)
     aux 0 unsigned_value []
 
   (* return the value of the given bit (zero-based) *)
-  method get_bitval (pos:int) =
+  method get_bitval (pos: int) =
     if pos < 0 || pos > 31 then
       raise
         (BCH_failure
@@ -404,131 +392,64 @@ let wordnegone = wordmax
 let wordnegtwo = new doubleword_t (e32 - 2)
 
 
-let create_doubleword (n: int): doubleword_int =
+let create_doubleword (n: int): doubleword_result =
   if n >= 0 && n < e32 then
-    new doubleword_t n
+    Ok (new doubleword_t n)
   else if abs n <= e31 then
-    new doubleword_t (n + e32)
+    Ok (new doubleword_t (n + e32))
   else
-    raise
-      (BCH_failure
-         (LBLOCK [
-              STR "create_doubleword: ";
-              INT n;
-              STR " cannot be represented as a 32 bit value"]))
+    Error ["create_doubleword:out-of-range:" ^ (string_of_int n)]
 
 
-let assert_make_doubleword (low: int) (high: int) =
-  assert (
-      let cond1 = (0 <= low && low < e16) in
-      let cond2 = (0 <= high && high < e16) in
-      let cond = cond1 && cond2 in
-      begin
-        (if not cond then
-           pr_debug [STR "make_doubleword: "; INT low; STR ", "; INT high; NL]);
-        cond
-      end)
+let make_doubleword (l: int) (h: int): doubleword_result =
+  if l < 0 || l >= e16 then
+    Error ["make_doubleword:low-out-of-range:" ^ (string_of_int l)]
+  else if h < 0 || h > e16 then
+    Error ["make_doubleword:high-out-of-range:" ^ (string_of_int h)]
+  else
+    Ok (new doubleword_t ((h * e16) + l))
 
 
-let make_doubleword (l: int) (h: dw_index_t) =
-  let _ = assert_make_doubleword l h in
-  create_doubleword ((h * e16) + l)
-
-
-let assert_index_to_doubleword ?(msg="index_to_doubleword") (n: int) =
-  assert (
-      let cond = (abs n < e31) || (n >= 0 && n < e32) in
-      begin
-        (if not cond then pr_debug [STR msg; STR ": "; INT n; NL]);
-        cond
-      end)
-
-
-let index_to_doubleword (index: dw_index_t) =
-  let _ = assert_index_to_doubleword index in
+let index_to_doubleword (index: dw_index_t): doubleword_result =
   create_doubleword index
 
 
-let assert_int_to_doubleword (n: int) =
-  assert (
-      let cond = ((n >= 0) || (abs n < e31)) && (n < e32) in
-      begin
-        (if not cond then
-           pr_debug [STR "int_to_doublewoord: "; INT n; NL]);
-        cond
-      end)
+let int_to_doubleword (i: int): doubleword_result = create_doubleword i
 
 
-let int_to_doubleword (i: int): doubleword_int = create_doubleword i
-
-
-let assert_align_doubleword (n: int) =
-  assert (
-      let cond = n > 0 in
-      begin
-        (if not cond then
-           pr_debug [STR "align_doubleword: "; INT n; NL]);
-        cond
-      end)
-
-
-let align_doubleword (dw: doubleword_int) (alignment: int) =
-  let _ = assert_align_doubleword alignment in
-  let rem = dw#to_int mod alignment in
-  if rem = 0 then
-    dw
+let align_doubleword (dw: doubleword_int) (alignment: int): doubleword_result =
+  if alignment <= 0 then
+    Error ["align_doubleword with alignment:" ^ (string_of_int alignment)]
   else
-    int_to_doubleword (((dw#to_int / alignment) + 1) * 4)
+    let rem = dw#to_int mod alignment in
+    if rem = 0 then
+      Ok dw
+    else
+      int_to_doubleword (((dw#to_int / alignment) + 1) * 4)
 
 
-let assert_big_int_to_doubleword
-      ?(msg="big_int_to_doubleword") (bi: B.big_int) =
-  assert (
-      let cond =
-        (B.le_big_int bi bige32)
-        && ((B.ge_big_int bi B.zero_big_int)
-            || (B.le_big_int (B.abs_big_int bi) bige31)) in
-      begin
-        (if not cond then
-           pr_debug [
-               STR msg;
-               STR ": ";
-               STR (B.string_of_big_int bi);
-               NL]);
-        cond
-      end)
+let big_int_to_doubleword (bi: B.big_int): doubleword_result =
+  let intb =
+    try
+      Ok (B.int_of_big_int bi)
+    with
+    | _ ->
+       Error [
+           "big_int_to_doubleword:error in conversion to int:"
+           ^ (B.string_of_big_int bi)] in
+  TR.tbind create_doubleword intb
 
 
-let big_int_to_doubleword bi =
-  let _ = assert_big_int_to_doubleword bi in
-  create_doubleword (B.int_of_big_int bi)
-
-
-let assert_numerical_to_doubleword
-      ?(msg="numerical_to_doubleword") (num: numerical_t) =
-  assert (
-      let cond = (num#lt nume32 && num#abs#leq nume31) in
-      begin
-        (if not cond then
-           pr_debug [STR msg; STR ": "; num#toPretty; NL]);
-        cond
-      end)
-
-
-let numerical_to_doubleword (num:numerical_t) =
-  let _ = assert_numerical_to_doubleword num in
-  big_int_to_doubleword num#getNum
-
-
-let dw_index_to_string (index:dw_index_t) =
-  let _ = assert_index_to_doubleword ~msg:"dw_index_to_string" index in
-  (index_to_doubleword index)#to_numerical#toString
-
-
-let string_to_dw_index (s:string) =
-  let num = mkNumericalFromString s in
-  let _ = assert_numerical_to_doubleword ~msg:"string_to_dw_index" num in
-  (numerical_to_doubleword num)#index
+let numerical_to_doubleword (num:numerical_t): doubleword_result =
+  let intnum =
+    try
+      Ok num#toInt
+    with
+    | _ ->
+       Error [
+           "numerical_to_doubleword:error in conversion to int:"
+           ^ num#toString] in
+  TR.tbind create_doubleword intnum
 
 
 let dw_index_to_int (index:dw_index_t) = index
@@ -537,75 +458,44 @@ let dw_index_to_int (index:dw_index_t) = index
 let int_to_dw_index (index:int) = index
 
 
-let assert_string_to_doubleword (s: string) =
-  assert (
-      try
-        let i64 = Int64.of_string s in
-        let bi = B.big_int_of_int64 i64 in
-        let cond =
-          (B.le_big_int bi bige32)
-          && ((B.ge_big_int bi B.zero_big_int)
-              || (B.le_big_int (B.abs_big_int bi) bige31)) in
-        begin
-          (if not cond then
-             pr_debug [
-                 STR "string_to_doubleword: string: ";
-                 STR s;
-                 STR " is converted to int64: ";
-                 STR (Int64.to_string i64);
-                 STR " which is converted to big int: ";
-                 STR (B.string_of_big_int bi);
-                 NL]);
-          cond
-        end
-      with
-      | Failure _ ->
-         begin
-           pr_debug [
-               STR "Failure in Int64.of_string s in string_to_doubleword: ";
-               STR s;
-               NL];
-           false
-         end)
+let string_to_doubleword (s: string): doubleword_result =
+  let i64 =
+    try
+      Ok (Int64.of_string s)
+    with
+    | _ ->
+       Error ["string_to_doubleword:error in conversion to Int64:" ^ s] in
+  let bi = TR.tmap B.big_int_of_int64 i64 in
+  TR.tbind big_int_to_doubleword bi
 
 
-let string_to_doubleword (s: string) =
-  let _ = assert_string_to_doubleword s in
-  let i64 = Int64.of_string s in
-  let bi = B.big_int_of_int64 i64 in
-  big_int_to_doubleword bi
+let constant_string_to_doubleword (s: string): doubleword_int =
+  TR.tget_ok (string_to_doubleword s)
 
 
-let numerical_to_hex_string num =
-  let _ =
-    assert_big_int_to_doubleword ~msg:"numerical_to_hex_string" num#getNum in
-  (big_int_to_doubleword num#getNum)#to_hex_string
+let numerical_to_hex_string (num: numerical_t): string TR.traceresult =
+  TR.tmap
+    ~msg:"numerical_to_hex_string"
+    (fun dw -> dw#to_hex_string)
+    (numerical_to_doubleword num)
 
 
-let numerical_to_signed_hex_string num =
-  let _ =
-    assert_big_int_to_doubleword
-      ~msg:"numerical_to_signed_hex_string" num#getNum in
+let numerical_to_signed_hex_string (num: numerical_t): string TR.traceresult =
   let big_val = num#getNum in
   let abs_val = B.abs_big_int big_val in
-  let dw = big_int_to_doubleword abs_val in
-  if B.lt_big_int big_val B.zero_big_int then
-    "-" ^ dw#to_hex_string
-  else
-    dw#to_hex_string
+  TR.tmap
+    ~msg:"numerical_to_signed_hex_string"
+    (fun dw ->
+      if B.lt_big_int big_val B.zero_big_int then
+        "-" ^ dw#to_hex_string
+      else
+        dw#to_hex_string)
+    (big_int_to_doubleword abs_val)
 
 
-let symbol_to_doubleword (symbol:symbol_t) =
+let symbol_to_doubleword (symbol:symbol_t): doubleword_result =
   match symbol#getAttributes with
-  | s :: _ ->
-     (try
-        string_to_doubleword s
-      with
-      | BCH_failure p ->
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "symbol_to_doubleword: "; STR s; STR " ("; p; STR ")"])))
+  | s :: _ -> string_to_doubleword s
   | _ ->
      raise
        (BCH_failure
@@ -614,7 +504,7 @@ let symbol_to_doubleword (symbol:symbol_t) =
                symbol#toPretty]))
 
 
-let doubleword_to_symbol (name:string) ?(atts=[]) (dw:doubleword_int) =
+let doubleword_to_symbol (name:string) ?(atts=[]) (dw: doubleword_int) =
   try
     new symbol_t ~atts:(dw#to_hex_string::atts) name
   with
