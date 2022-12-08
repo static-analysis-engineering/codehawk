@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,11 +42,14 @@ open BCHLibPETypes
 (* bchlibx86 *)
 open BCHLibx86Types
 
+
 val is_dll_jump_target: doubleword_int -> bool
 
-val disassemble_pe         : unit -> bool * pretty_t
-val record_call_targets: unit -> unit  
-val construct_functions_pe : unit -> bool * pretty_t
+val disassemble_pe: unit -> bool * pretty_t
+
+val record_call_targets: unit -> unit
+
+val construct_functions_pe: unit -> bool * pretty_t
 
 val trace_function: doubleword_int -> assembly_function_int
 

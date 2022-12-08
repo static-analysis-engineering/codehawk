@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -77,8 +77,11 @@ open BCHX86OpcodeRecords
    
 module B = Big_int_Z
 module FFU = BCHFileFormatUtil
+module TR = CHTraceResult
+
 
 let sym_printer = (fun s -> STR s#getBaseName)
+
 
 class assembly_instruction_annotation_t 
   (annotation_type:assembly_instruction_annotation_type_t) (annotation:pretty_t) =
@@ -111,15 +114,22 @@ let check_range ?low ?high (msg:pretty_t) value =
     !returnValue
   end
 
-let no_annotation = new assembly_instruction_annotation_t NoAnnotation (STR "")
+
+let no_annotation =
+  new assembly_instruction_annotation_t NoAnnotation (STR "")
+
+
 let make_annotation (annotationType:assembly_instruction_annotation_type_t)
     (annotation:pretty_t) =
   new assembly_instruction_annotation_t annotationType annotation
 
+
 let get_lhs (op:operand_int) floc = op#to_variable floc 
 
+
 let get_rhs (op:operand_int) floc = op#to_expr floc
-	     
+
+
 let create_annotation_aux (floc:floc_int) =
   (* let invio = floc#f#finv in *)
   let env:function_environment_int = floc#f#env in 
@@ -133,13 +143,14 @@ let create_annotation_aux (floc:floc_int) =
     | _ -> 
       if is_unsigned partype then
 	match get_const x with
-	| Some num -> (numerical_to_doubleword num)#toPretty
+	| Some num -> (TR.tget_ok (numerical_to_doubleword num))#toPretty
 	| _ ->  xpr_formatter#pr_expr x 
       else
 	xpr_formatter#pr_expr x in
   let pr_argument_expr ?(typespec=None) (p: fts_parameter_t) (xpr: xpr_t) =
     let is_code_address n = 
-      try system_info#is_code_address (numerical_to_doubleword n) with
+      try system_info#is_code_address
+            (TR.tget_ok (numerical_to_doubleword n)) with
 	Invalid_argument _ -> false in
     match get_string_reference floc xpr with 
     | Some s ->  STR ("\"" ^ s ^ "\"") 
@@ -148,9 +159,9 @@ let create_annotation_aux (floc:floc_int) =
       | XVar v when env#is_bridge_value v -> STR "?" 
       | XVar v -> variable_to_pretty v
       | XConst (IntConst n) when is_code_address n ->
-	LBLOCK [ STR "fp:" ; (numerical_to_doubleword n)#toPretty ] 
+	LBLOCK [STR "fp:"; (TR.tget_ok (numerical_to_doubleword n))#toPretty]
       | XConst (IntConst n) when FFU.is_image_address n ->
-	LBLOCK [ STR "ds:" ; (numerical_to_doubleword n)#toPretty ]
+	LBLOCK [STR "ds:"; (TR.tget_ok (numerical_to_doubleword n))#toPretty]
       | _ -> 
 	if floc#is_address xpr then
 	  let (memref,memoffset) = floc#decompose_address xpr in
@@ -366,15 +377,28 @@ let create_annotation_aux (floc:floc_int) =
   | RepEScas (width,src) ->
     let rhs = rewrite_expr (get_rhs src floc) in
     let ecx = rewrite_expr (get_rhs (ecx_r RD) floc) in
-    let pp = LBLOCK [ STR "(Edi): " ; rhs_to_pretty rhs ;
-		      STR "Ecx: " ; rhs_to_pretty ecx ; STR " (width: " ; INT width ; STR ")" ] in
+    let pp =
+      LBLOCK [
+          STR "(Edi): ";
+          rhs_to_pretty rhs;
+	  STR "Ecx: ";
+          rhs_to_pretty ecx;
+          STR " (width: ";
+          INT width;
+          STR ")"] in
     make_annotation RepInstruction pp
       
   | RepIns (width,dst) ->
     let lhs = get_lhs dst floc in
     let ecx = rewrite_expr (get_rhs (ecx_r RD) floc) in
-    let pp =  LBLOCK [ STR "(Edi): " ; lhs_to_pretty dst lhs ;
-		       STR "Ecx: " ; rhs_to_pretty ecx ; STR " (width: " ; INT width ; STR ")" ] in
+    let pp =
+      LBLOCK [
+          STR "(Edi): ";
+          lhs_to_pretty dst lhs;
+	  STR "Ecx: ";
+          rhs_to_pretty ecx;
+          STR " (width: ";
+          INT width; STR ")"] in
     make_annotation RepInstruction pp
       
   | RepLods (width,src) ->
@@ -809,8 +833,9 @@ let create_annotation_aux (floc:floc_int) =
     let pp = 
       match opx with
       | XConst (IntConst num) -> 
-	let addr = try numerical_to_hex_string num with _ -> num#toString in
-	LBLOCK [ STR "fp:" ; STR addr ; STR "( ?? )" ]
+	 let addr =
+           TR.tvalue (numerical_to_hex_string num) ~default:num#toString in
+	LBLOCK [STR "fp:"; STR addr; STR "( ?? )"]
       | XVar v when (not v#isTmp) ->
 	let pr_arg = pr_argument_expr ~typespec:None in
 	let ppargs =

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +62,8 @@ open BCHDisassemblyUtils
 open BCHLibx86Types
 open BCHOperand
 open BCHX86Opcodes
+
+module TR = CHTraceResult
 
 
 let rec px660f 
@@ -1496,7 +1500,7 @@ and parse_opcode
 	      
   | 0xa3 -> 
     let a = if addrsize_override then
-	numerical_to_doubleword(ch#read_num_signed_word)
+	TR.tget_ok (numerical_to_doubleword (ch#read_num_signed_word))
       else 
 	ch#read_doubleword in 
     let op = match seg_override with
@@ -1647,7 +1651,8 @@ and parse_opcode
     begin
       match i with
       | 0x0a -> AAM (ax_r RW)
-      | _ -> AAM (immediate_op (immediate_from_int i) 1)
+      | _ ->
+         AAM (immediate_op (TR.tget_ok (signed_immediate_from_int i)) 1)
     end
 
   (* D5 0A --- AAD          --- ASCII Adjust AX before division
@@ -1657,7 +1662,8 @@ and parse_opcode
     begin
       match i with
       | 0x0a -> AAD (ax_r RW)
-      | _ -> AAD (immediate_op (immediate_from_int i) 1)
+      | _ ->
+         AAD (immediate_op (TR.tget_ok (signed_immediate_from_int i)) 1)
     end
 
   (* D6 --- SETALC --- Set Al on Carry (undocumented)                  *)
@@ -1827,8 +1833,10 @@ and parse_opcode
 
   | _ -> Unknown
 
+
 let count = ref 0
 let rep = ref 0 
+
 
 (* base is used to compute an absolute target address for a relative jump or call:
    absolute address = base + position, so base should be the base of the code section

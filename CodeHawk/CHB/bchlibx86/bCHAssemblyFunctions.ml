@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +56,7 @@ open BCHX86OpcodeRecords
 
 module H = Hashtbl
 module FFU = BCHFileFormatUtil
+module TR = CHTraceResult
 
 
 module IntSet = Set.Make
@@ -78,7 +79,8 @@ let create_ordering
     let _ = List.iter (fun (_,callee) -> add callee#index) cs in
     let _ = H.iter (fun k v -> 
       if v > (snd !maxCount) && List.mem k fnIndices then maxCount := (k,v)) counts in
-    (index_to_doubleword (fst !maxCount),snd !maxCount) in
+    (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
+
   let rec aux fns cs result stats cycle =
     match fns with 
       [] -> (result,stats,cycle)
@@ -310,11 +312,13 @@ object (self)
 	    Some index 
 	  else None) functions None in
     match result with
-	Some index -> index_to_doubleword index
-      | _ ->
-	raise (BCH_failure 
-		 (LBLOCK [ STR "No function found that contains address " ; 
-			   va#toPretty ]))
+    | Some index -> TR.tget_ok (index_to_doubleword index)
+    | _ ->
+       raise
+         (BCH_failure
+	    (LBLOCK [
+                 STR "No function found that contains address ";
+		 va#toPretty]))
 
   method get_opcode_stats =
     let stats = H.create 53 in

@@ -59,8 +59,11 @@ open BCHXmlUtil
 open BCHLibx86Types
 
 module FFU = BCHFileFormatUtil
+module TR = CHTraceResult
+
 
 let pr_expr = xpr_formatter#pr_expr
+
 
 let operand_kind_to_indicator_string (k:asm_operand_kind_t) =
   match k with
@@ -71,7 +74,8 @@ let operand_kind_to_indicator_string (k:asm_operand_kind_t) =
   | Imm _ -> "imm"
   | Absolute _ | SegAbsolute _ -> "abs"
   | DummyOp -> "none"
-    
+
+
 let asm_operand_kind_is_equal a1 a2 =
   match (a1,a2) with
   | (Flag f1, Flag f2) -> f1 = f2
@@ -92,11 +96,12 @@ let asm_operand_kind_is_equal a1 a2 =
   | (SegAbsolute (s1,d1), SegAbsolute (s2,d2)) -> s1 = s2 && d1#equal d2
   | (DummyOp,DummyOp) -> true
   | _ -> false
-    
+
+
 let offset_to_string (offset:numerical_t) =
   if offset#is_zero then"" else
     try
-      let dw = numerical_to_doubleword offset in
+      let dw = TR.tget_ok (numerical_to_doubleword offset) in
       if system_info#is_code_address dw then
 	if functions_data#is_function_entry_point dw then
 	  if functions_data#has_function_name dw then
@@ -106,37 +111,40 @@ let offset_to_string (offset:numerical_t) =
 	else
 	  match system_info#is_in_data_block dw with
 	  | Some db ->
-	    let dboffset = dw#subtract db#get_start_address in
+	    let dboffset = TR.tget_ok (dw#subtract db#get_start_address) in
 	    "db:" ^ db#get_start_address#to_hex_string
             ^ "[" ^ dboffset#to_hex_string ^ "]"
 	  | _ ->
              match system_info#is_in_jumptable dw with
 	     | Some jt ->
 	        if jt#get_start_address#le dw then
-		  let jtoffset = dw#subtract jt#get_start_address in
+		  let jtoffset = TR.tget_ok (dw#subtract jt#get_start_address) in
 		  "jt:" ^ jt#get_start_address#to_hex_string
                   ^ "[" ^ jtoffset#to_hex_string ^ "]"
 	        else
-		  let jtoffset = jt#get_start_address#subtract dw in
+		  let jtoffset = TR.tget_ok (jt#get_start_address#subtract dw) in
 		  "jt:" ^ jt#get_start_address#to_hex_string
                   ^ "[-" ^ jtoffset#to_hex_string ^ "]"
 	     | _ -> "ca:" ^ dw#to_hex_string
       else
-	numerical_to_signed_hex_string offset
+	TR.tget_ok (numerical_to_signed_hex_string offset)
     with
     | BCH_failure p ->
-       let msg = LBLOCK [ STR "offset_to_string: " ; offset#toPretty ;
-                          STR " (" ; p ; STR ")" ] in
+       let msg =
+         LBLOCK [
+             STR "offset_to_string: "; offset#toPretty; STR " ("; p; STR ")"] in
        begin
          ch_error_log#add "illegal offset"  msg;
          "illegal offset(" ^ offset#toString ^ ")"
        end
     | Invalid_argument s ->
        begin
-	 ch_error_log#add "illegal offset" (LBLOCK [ offset#toPretty ; STR ": " ; STR s ]) ;
+	 ch_error_log#add
+           "illegal offset" (LBLOCK [offset#toPretty; STR ": "; STR s]);
 	 "illegal offset(" ^ offset#toString ^ ")"
        end
-	  
+
+
 let asm_operand_kind_to_string = function
   | Flag f -> eflag_to_string f
   | Reg reg -> cpureg_to_string reg
@@ -164,7 +172,8 @@ let asm_operand_kind_to_string = function
   | SegAbsolute (seg, dw) -> 
      Printf.sprintf "%s:%s" (segment_to_string seg) dw#to_hex_string
   | DummyOp -> ""
-             
+
+
 let asm_operand_kind_to_tag kind =
   match kind with
   | Flag _ -> "flag"
@@ -183,6 +192,7 @@ let asm_operand_kind_to_tag kind =
   | Absolute _ -> "absolute"
   | SegAbsolute _ -> "segabsolute"
   | DummyOp -> "none"
+
 
 (* Syntactic representation of the operand data *)
 let write_xml_asm_operand_kind (node:xml_element_int) kind =
@@ -236,7 +246,9 @@ let write_xml_asm_operand_kind (node:xml_element_int) kind =
     end
   | _ -> ()
 
-let operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW" | AD -> "AD"
+
+let operand_mode_to_string =
+  function RD -> "RD" | WR -> "WR" | RW -> "RW" | AD -> "AD"
 
 
 class operand_t
@@ -266,8 +278,11 @@ object (self:'a)
        | Some (callAddress, seqNr) ->
 	  chlog#add
             "resetting arguments"
-	    (LBLOCK [ STR "Resetting argument " ; INT seqNr ; STR " for function at " ;
-		      STR callAddress ])
+	    (LBLOCK [
+                 STR "Resetting argument ";
+                 INT seqNr;
+                 STR " for function at ";
+		 STR callAddress])
        | _ -> ()) ;
       function_argument <- None
     end
@@ -279,10 +294,11 @@ object (self:'a)
     match function_argument with
     | Some arg -> arg
     | _ ->
-       let msg = LBLOCK [ STR "Operand " ; self#toPretty ;
-                          STR " is not a function argument" ] in
+       let msg =
+         LBLOCK [
+             STR "Operand "; self#toPretty; STR " is not a function argument"] in
        begin
-         ch_error_log#add "invocation error" msg ;
+         ch_error_log#add "invocation error" msg;
          raise (BCH_failure msg)
        end
       
@@ -291,29 +307,32 @@ object (self:'a)
     begin
       ch_error_log#add
         "invocation error" 
-	(LBLOCK [ STR "operand#get_absolute_address: " ; self#toPretty ]) ;
+	(LBLOCK [STR "operand#get_absolute_address: "; self#toPretty ]);
       raise (Invocation_error "operand#get_absolute_address")
     end
       
   method get_cpureg = match kind with
     | Reg r -> r
     | _ ->
-       let msg = LBLOCK [ STR "Not an x86 cpu register: " ; self#toPretty ] in
+       let msg = LBLOCK [STR "Not an x86 cpu register: "; self#toPretty] in
        begin
-         ch_error_log#add "operand mismatch" msg ;
+         ch_error_log#add "operand mismatch" msg;
          raise (BCH_failure msg)
        end
       
-  method get_immediate_value = match kind with Imm imm -> imm | _ ->
-    begin 
-      ch_error_log#add "invocation error"
-	(LBLOCK [ STR "operand#get_immediate: " ; self#toPretty ]) ;
-      raise (Invocation_error "operand#get_immediate")
-    end
+  method get_immediate_value =
+    match kind with
+    | Imm imm -> imm
+    | _ ->
+       begin
+         ch_error_log#add "invocation error"
+	   (LBLOCK [STR "operand#get_immediate: "; self#toPretty]);
+         raise (Invocation_error "operand#get_immediate")
+       end
       
   method get_esp_offset =
     match kind with
-      IndReg (Esp, offset)
+    | IndReg (Esp, offset)
     | ScaledIndReg (None, Some Esp, 1, offset)
     | ScaledIndReg (Some Esp, None, 1, offset) -> offset
     | _ ->
@@ -542,35 +561,60 @@ object (self:'a)
 
   method is_zero = 
     match kind with 
-    | Imm imm -> begin match imm#to_int with Some i -> i = 0 | _ -> false end
+    | Imm imm ->
+       (match imm#to_int with
+        | Some i -> i = 0
+        | _ -> false)
     | _ -> false
       
   method has_one_bit_set = 
     match kind with
-    | Imm imm -> (List.length imm#to_doubleword#get_bits_set) = 1
+    | Imm imm ->
+       (match imm#to_doubleword with
+        | Some dw -> (List.length dw#get_bits_set) = 1
+        | _ -> false)
     | _ -> false
 
   method is_jump_table_target =
-    match kind with  ScaledIndReg (None, Some _, 4, _) -> true | _ -> false
+    match kind with
+    | ScaledIndReg (None, Some _, 4, _) -> true
+    | _ -> false
 
   method to_byte_operand = 
     try
-      match kind with Reg r -> {< kind = Reg (byte_reg_of_reg r) >} | _ -> {< >}
+      match kind with
+      | Reg r -> {< kind = Reg (byte_reg_of_reg r) >}
+      | _ -> {< >}
     with
       Invalid_argument _ ->
 	begin
 	  ch_error_log#add
             "operand"
-	    (LBLOCK [ self#toPretty ;
-                      STR ": #to_byte_operand is not a valid operation"]) ;
+	    (LBLOCK [
+                 self#toPretty ;
+                 STR ": #to_byte_operand is not a valid operation"]);
 	  {< >}
 	end
 
   method to_word_operand =
-    match kind with Reg r -> {< kind = Reg (word_reg_of_reg r) >} | _ -> {< >}
+    match kind with
+    | Reg r -> {< kind = Reg (word_reg_of_reg r) >}
+    | _ -> {< >}
 
-  method sign_extend (size:int) =
-    match kind with Imm imm -> {< kind = Imm (imm#sign_extend size) >} | _ -> {< >}
+  method sign_extend (size: int) =
+    match kind with
+    | Imm imm ->
+       let ximm = imm#sign_extend size in
+       if Result.is_ok ximm then
+         {< kind = Imm (TR.tget_ok ximm) >}
+       else
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Sign extension of immediate to size: ";
+                   INT size;
+                   STR " not supported"]))
+    | _ -> {< >}
 
   method toString =
     match kind with
@@ -578,17 +622,17 @@ object (self:'a)
       begin
 	match system_info#is_in_data_block addr with
 	| Some db ->
-	  let dboffset = addr#subtract db#get_start_address in
+	  let dboffset = TR.tget_ok (addr#subtract db#get_start_address) in
 	  "dbv:" ^ db#get_start_address#to_hex_string ^ "["
           ^ dboffset#to_hex_string ^ "]"
 	| _ -> match system_info#is_in_jumptable addr with
 	  | Some jt ->
 	    if jt#get_start_address#le addr then
-	      let jtoffset = addr#subtract jt#get_start_address in
+	      let jtoffset = TR.tget_ok (addr#subtract jt#get_start_address) in
 	      "jtv:" ^ jt#get_start_address#to_hex_string
               ^ "[" ^ jtoffset#to_hex_string ^ "]"
 	    else
-	      let jtoffset = jt#get_start_address#subtract addr in
+	      let jtoffset = TR.tget_ok (jt#get_start_address#subtract addr) in
 	      "jtv:" ^ jt#get_start_address#to_hex_string
               ^ "[-" ^ jtoffset#to_hex_string ^ "]"
 	  | _ -> "cav:" ^ addr#to_hex_string
@@ -601,43 +645,58 @@ object (self:'a)
 
 end
 
+
 let dummy_operand = new operand_t DummyOp 0 RD
+
 
 let flag_op (flag:eflag_t) (mode:operand_mode_t) =
   new operand_t (Flag flag) 1 mode
 
+
 let register_op (reg:cpureg_t) (size:int) (mode:operand_mode_t) = 
   new operand_t (Reg reg) size mode
-    
+
+
 let double_register_op (reg1:cpureg_t) (reg2:cpureg_t) (size:int) (mode:operand_mode_t) =
   new operand_t (DoubleReg (reg1,reg2)) size mode
 
+
 let fpu_register_op (i:int) mode = new operand_t (FpuReg i) 8 mode
-                                 
+
+
 let mm_register_op  (i:int) mode = new operand_t (MmReg i)  8 mode
-                                 
+
+
 let xmm_register_op (i:int) mode = new operand_t (XmmReg i) 16 mode
-                                 
+
+
 let seg_register_op (reg:segment_t) mode = new operand_t (SegReg reg) 2 mode
-                                         
+
+
 let control_register_op (i:int) mode = new operand_t (ControlReg i) 4 mode
-                                     
+
+
 let debug_register_op (i:int) mode = new operand_t (DebugReg i) 4 mode
+
 
 let indirect_register_op
       (reg:cpureg_t) (offset:numerical_t) (size:int) (mode:operand_mode_t) =
   new operand_t (IndReg (reg,offset)) size mode
 
+
 let scaled_register_op (base:cpureg_t option) (index_reg:cpureg_t option)
     (scale:int) (offset:numerical_t) (size:int) (mode:operand_mode_t) =
   new operand_t (ScaledIndReg (base,index_reg,scale,offset)) size mode
+
 
 let seg_indirect_register_op
       (seg:segment_t) (reg:cpureg_t) (offset:numerical_t) (size:int) =
   new operand_t (SegIndReg (seg,reg,offset)) size
 
+
 let absolute_op (address:doubleword_int) (size:int) (mode:operand_mode_t) =
   new operand_t (Absolute address) size mode
+
 
 let ds_esi ?(seg=DataSegment) ?(size=4) mode =
   if user_provided_directions#are_DS_and_ES_the_same_segment then
@@ -645,25 +704,36 @@ let ds_esi ?(seg=DataSegment) ?(size=4) mode =
   else
     seg_indirect_register_op seg Esi numerical_zero 4 mode
 
+
 let es_edi ?(seg=ExtraSegment) ?(size=4) mode =
   if user_provided_directions#are_DS_and_ES_the_same_segment then
     indirect_register_op Edi numerical_zero size mode
   else
     seg_indirect_register_op seg Edi numerical_zero 4 mode
 
+
 let edx_eax_r mode = double_register_op Edx Eax 8 mode
+
+
 let dx_ax_r mode = double_register_op Dx Ax 4 mode
+
 
 let esp_deref ?(with_offset=0) (mode:operand_mode_t) = 
   indirect_register_op Esp (mkNumerical with_offset) 4 mode
 
-let ebp_deref (mode:operand_mode_t) = indirect_register_op Ebp numerical_zero 4 mode
 
-let immediate_op (imm:immediate_int) (size:int) = new operand_t (Imm imm) size RD
+let ebp_deref (mode:operand_mode_t) =
+  indirect_register_op Ebp numerical_zero 4 mode
+
+
+let immediate_op (imm:immediate_int) (size:int) =
+  new operand_t (Imm imm) size RD
+
 
 let seg_absolute_op
       (seg:segment_t) (address:doubleword_int) (size:int) (mode:operand_mode_t) =
   new operand_t (SegAbsolute (seg,address)) size mode
+
 
 (* Flag operands *)
 let oflag_op mode = flag_op OFlag mode
@@ -673,6 +743,7 @@ let sflag_op mode = flag_op SFlag mode
 let pflag_op mode = flag_op PFlag mode
 let dflag_op mode = flag_op DFlag mode
 let iflag_op mode = flag_op IFlag mode
+
 
 (* Register operands *)
 let eax_r mode = register_op Eax 4 mode
@@ -700,6 +771,7 @@ let dh_r mode  = register_op Dh 1 mode
 let bl_r mode  = register_op Bl 1 mode
 let bh_r mode  = register_op Bh 1 mode
 
+
 let cpureg_r ?(opsize_override=false) (i:int) (mode:operand_mode_t) =
   let reg = match i with
     | 0 -> Eax
@@ -717,7 +789,6 @@ let cpureg_r ?(opsize_override=false) (i:int) (mode:operand_mode_t) =
   let size = if opsize_override then 2 else 4 in
   register_op reg size mode
 
-  
 
 let imm0_operand = immediate_op imm0 1 
 let imm1_operand = immediate_op imm1 1 
@@ -746,6 +817,7 @@ let read_immediate_unsigned_doubleword_operand ch =
 let read_immediate_unsigned_operand size ch =
   immediate_op (ch#read_imm_unsigned size) size
 
+
 (* read a relative 1-byte jump-target and convert to an
    absolute address using the current position in the code  *)
 let read_target8_operand (base:doubleword_int) (ch:pushback_stream_int) =
@@ -753,12 +825,13 @@ let read_target8_operand (base:doubleword_int) (ch:pushback_stream_int) =
     let a = ch#read_num_signed_byte in
     let p = mkNumerical ch#pos in
     let offset = p#add a in
-    let offsetdw = numerical_to_doubleword offset in
+    let offsetdw = TR.tget_ok (numerical_to_doubleword offset) in
     absolute_op (base#add offsetdw) 4 RD
   with
   | BCH_failure p ->
-     raise (BCH_failure (LBLOCK [ STR "read_target8_operand: " ; p ]))
-	
+     raise (BCH_failure (LBLOCK [STR "read_target8_operand: "; p]))
+
+
 (* read a relative 4-byte jump-target and convert to an
    absolute address using the current position in the code *)
 let read_target32_operand (base:doubleword_int) (ch:pushback_stream_int) = 
@@ -766,9 +839,8 @@ let read_target32_operand (base:doubleword_int) (ch:pushback_stream_int) =
     let a = ch#read_num_signed_doubleword in
     let p = mkNumerical ch#pos in
     let offset = a#add p in
-    let offsetdw = numerical_to_doubleword offset in
+    let offsetdw = TR.tget_ok (numerical_to_doubleword offset) in
     absolute_op (base#add offsetdw) 4 RD
   with
   | BCH_failure p ->
-     raise (BCH_failure (LBLOCK [ STR "read_target32_operand: " ; p ]))
-	
+     raise (BCH_failure (LBLOCK [STR "read_target32_operand: "; p]))

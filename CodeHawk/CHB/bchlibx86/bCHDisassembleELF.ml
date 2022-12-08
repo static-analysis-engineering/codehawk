@@ -71,9 +71,7 @@ open BCHOperand
 open BCHPredefinedCallSemantics
 open BCHX86OpcodeRecords
 
-
-let pr_expr = xpr_formatter#pr_expr
-let x2p = xpr_formatter#pr_expr
+module TR = CHTraceResult
 
 module DoublewordCollections = CHCollections.Make (
   struct
@@ -81,6 +79,11 @@ module DoublewordCollections = CHCollections.Make (
     let compare d1 d2 = d1#compare d2
     let toPretty d = d#toPretty
   end)
+
+
+let pr_expr = xpr_formatter#pr_expr
+let x2p = xpr_formatter#pr_expr
+
 
 let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let add_instruction position opcode bytes =
@@ -116,32 +119,42 @@ let disassemble_elf_sections () =
   let (highest,_) = List.hd (List.rev headers) in
   let startOfCode = lowest#get_addr in
   let endOfCode = highest#get_addr#add highest#get_size in
-  let sizeOfCode = endOfCode#subtract startOfCode in
+  let sizeOfCode = TR.tget_ok (endOfCode#subtract startOfCode) in
   let _ = initialize_instructions sizeOfCode#to_int in
-  let _ = chlog#add "initialization" 
-    (LBLOCK [ STR "Create space for " ; sizeOfCode#toPretty ; STR " (" ;
-	      INT sizeOfCode#to_int ; STR ")" ; STR "instructions" ]) in
+  let _ =
+    chlog#add
+      "initialization"
+      (LBLOCK [
+           STR "Create space for ";
+           sizeOfCode#toPretty;
+           STR " (";
+	   INT sizeOfCode#to_int;
+           STR ")";
+           STR "instructions"]) in
   let _ =
     initialize_assembly_instructions
       0 sizeOfCode#to_int sizeOfCode#to_int startOfCode [] [] in
   let _ =
     List.iter
       (fun (h,x) ->
-        let displacement = (h#get_addr#subtract startOfCode)#to_int in
+        let displacement =
+          TR.tget_ok (h#get_addr#subtract_to_int startOfCode) in
         disassemble h#get_addr displacement x) xSections in
   sizeOfCode
+
 
 let get_indirect_jump_targets (op:operand_int) =
   if op#is_jump_table_target then
     let (jumpbase,reg) = op#get_jump_table_target in
     try
-      let jumpbase = numerical_to_doubleword jumpbase in
+      let jumpbase = TR.tget_ok (numerical_to_doubleword jumpbase) in
       match system_info#is_in_jumptable jumpbase with
-      | Some jt -> Some (jumpbase,jt,reg)
+      | Some jt -> Some (jumpbase, jt, reg)
       | _ -> 
          begin
-	   chlog#add "jump table" 
-	             (LBLOCK [ STR "not found for offset " ; jumpbase#toPretty ]) ;
+	   chlog#add
+             "jump table"
+	     (LBLOCK [STR "not found for offset "; jumpbase#toPretty]);
 	   match elf_header#get_containing_section jumpbase with
            | Some s ->
               begin
@@ -153,33 +166,41 @@ let get_indirect_jump_targets (op:operand_int) =
                         ~section_string:s#get_xstring  with
                 | Some jt ->
                   begin
-                    chlog#add "add jumptable"
-                              (LBLOCK [ jt#get_start_address#toPretty ;
-                                        STR "; length: " ; INT jt#get_length ]) ;
+                    chlog#add
+                      "add jumptable"
+                      (LBLOCK [
+                           jt#get_start_address#toPretty;
+                           STR "; length: ";
+                           INT jt#get_length]);
                     Some (jumpbase,jt,reg)
                   end
                 | _ ->
                    begin
-                     chlog#add "add jumptable" (STR  "not created") ;
+                     chlog#add "add jumptable" (STR  "not created");
                      None
                    end
               end
            | _ ->
               begin
-                chlog#add "jumpbase section" (STR "not found") ;
+                chlog#add "jumpbase section" (STR "not found");
                 None
               end
          end
     with
     | Invalid_argument s ->
       begin
-	ch_error_log#add "invalid argument"
-	  (LBLOCK [ STR "get_indirect_jump_targets: " ; STR s ; STR ": " ; 
-		    op#toPretty ]) ;
+	ch_error_log#add
+          "invalid argument"
+	  (LBLOCK [
+               STR "get_indirect_jump_targets: ";
+               STR s;
+               STR ": ";
+	       op#toPretty]);
 	None
       end
   else
     None
+
 
 let get_so_target (instr:assembly_instruction_int) =
   (*
@@ -209,6 +230,7 @@ let get_so_target (instr:assembly_instruction_int) =
   | DirectCall op when op#is_absolute_address -> check_case_I op#get_absolute_address
   | _ -> None
 
+
 let is_so_target (instr:assembly_instruction_int) =
   match get_so_target instr with Some _ -> true | _ -> false
 
@@ -228,7 +250,8 @@ let get_pic_so_target (refebx:numerical_t) (instr:assembly_instruction_int) =
       | IndirectJmp jmptgt ->
          if jmptgt#is_indirect_register && (jmptgt#get_indirect_register = Ebx) then
            let symboloffset = refebx#add jmptgt#get_indirect_register_offset in
-           elf_header#get_relocation (numerical_to_doubleword symboloffset)
+           elf_header#get_relocation
+             (TR.tget_ok (numerical_to_doubleword symboloffset))
          else
            None
       | _ -> None
@@ -400,7 +423,7 @@ let get_return_successors (floc:floc_int) =
 	  floc#inv#rewrite_expr (XVar stackRhs) floc#env#get_variable_comparator in
 	match dst with
 	| XConst (IntConst n) ->
-	  let addr = numerical_to_doubleword n in
+	  let addr = TR.tget_ok (numerical_to_doubleword n) in
 	  if system_info#is_code_address addr then
 	    begin
 	      system_info#add_goto_return floc#ia addr;

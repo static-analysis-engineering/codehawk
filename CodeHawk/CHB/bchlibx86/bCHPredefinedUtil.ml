@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -67,28 +67,38 @@ open BCHOperand
 
 module H = Hashtbl
 module FFU = BCHFileFormatUtil
+module TR = CHTraceResult
    
 
-let todw s = string_to_doubleword (littleendian_hexstring_todwstring s)
+let todw s =
+  TR.tget_ok (string_to_doubleword (littleendian_hexstring_todwstring s))
 
-let tow s = string_to_doubleword (littleendian_hexstring_towstring s)
+
+let tow s =
+  TR.tget_ok (string_to_doubleword (littleendian_hexstring_towstring s))
+
 
 let todwoff s = ((todw s)#to_signed_numerical)#toInt 
 
+
 let tooff s = 
-  let offset = string_to_doubleword ("0x" ^ s) in
+  let offset = TR.tget_ok (string_to_doubleword ("0x" ^ s)) in
   let offset = offset#to_int in
   if offset > 127 then offset - 256 else offset
 
-let toimm2 s =  (string_to_doubleword ("0x" ^ s))#to_int
+
+let toimm2 s = (TR.tget_ok (string_to_doubleword ("0x" ^ s)))#to_int
+
 
 let mk_loc faddr iaddr = make_location (mk_base_location faddr iaddr)
 
+
 let is_code_address (n:numerical_t) =
   try
-    system_info#is_code_address (numerical_to_doubleword n)
+    system_info#is_code_address (TR.tget_ok (numerical_to_doubleword n))
   with
   | _ -> false
+
 
 let intvalue_to_string (n:int) =
   try
@@ -96,12 +106,14 @@ let intvalue_to_string (n:int) =
       "neg1"
     else if n = wordnegtwo#to_int then
       "neg2"
-    else if system_info#get_image_base#lt (int_to_doubleword n) then
-      (int_to_doubleword n)#to_hex_string
     else
+      if system_info#get_image_base#lt (TR.tget_ok (int_to_doubleword n)) then
+        (TR.tget_ok (int_to_doubleword n))#to_hex_string
+      else
 	string_of_int n
   with
   | _ -> string_of_int n
+
 
 let regindexstring_to_reg (s:string) =
   match s with
@@ -131,66 +143,74 @@ let xpr_to_pretty (floc:floc_int) (x:xpr_t) =
   try
     (match x with 
     | XVar v when floc#env#is_bridge_value v -> STR "?"
-    | XConst (IntConst n) when FFU.is_image_address n -> (numerical_to_doubleword n)#toPretty
+    | XConst (IntConst n) when FFU.is_image_address n ->
+       (TR.tget_ok (numerical_to_doubleword n))#toPretty
     | XVar v when v#isTemporary -> STR "?"
     | XConst XRandom -> STR "?"
     | _ -> default ())
   with
   | _ -> default ()
 
+
 let xpr_to_hexpretty (floc:floc_int) (x:xpr_t) =
   try
     match x with
-    | XConst (IntConst num) -> (numerical_to_doubleword num)#toPretty
+    | XConst (IntConst num) ->
+       (TR.tget_ok (numerical_to_doubleword num))#toPretty
     | _ -> xpr_to_pretty floc x
   with
   | _ -> xpr_to_pretty floc x
+
 
 let xpr_to_fppretty (floc:floc_int) (x:xpr_t) = 
   try
     (match x with
      | XConst (IntConst num) ->
-        LBLOCK [ STR "fp:" ; (numerical_to_doubleword num)#toPretty ]
+        LBLOCK [STR "fp:"; (TR.tget_ok (numerical_to_doubleword num))#toPretty]
      | _ -> xpr_to_pretty floc x)
   with
   | _ -> xpr_to_pretty floc x
-       
+
+
 let xpr_to_dspretty (floc:floc_int) (x:xpr_t) =
   try
     (match  x with
      | XConst (IntConst num) ->
-        LBLOCK [ STR "ds:" ; (numerical_to_doubleword num)#toPretty ]
+        LBLOCK [STR "ds:"; (TR.tget_ok (numerical_to_doubleword num))#toPretty]
      | _ -> xpr_to_pretty floc x)
   with
   | _ -> xpr_to_pretty floc x
-       
+
+
 let xpr_to_strpretty (floc:floc_int) (x:xpr_t) =
   let default () = xpr_to_pretty floc x in
   try
     (match get_string_reference floc x with
      | Some str -> STR ("\"" ^ str ^ "\"")
-     | _ -> match x with
-            | XConst (IntConst n) when FFU.is_image_address n ->
-	LBLOCK [ STR "ds:" ; (numerical_to_doubleword n)#toPretty ]
-            | _ ->
-	       if floc#is_address x then
-	         let (memref,memoffset) = floc#decompose_address x in
-	         if is_constant_offset memoffset then
-                   let offset = get_total_constant_offset memoffset in
-	           LBLOCK [
-                       STR "&";
-		       xpr_to_pretty
-                         floc
-                         (XVar (floc#env#mk_memory_variable memref offset ))]
-	         else if memref#is_unknown_reference then
-	           default ()
-	         else
-	           memref#toPretty
-	       else
-	         default ())
+     | _ ->
+        match x with
+        | XConst (IntConst n) when FFU.is_image_address n ->
+	   LBLOCK [STR "ds:"; (TR.tget_ok (numerical_to_doubleword n))#toPretty]
+        | _ ->
+	   if floc#is_address x then
+	     let (memref,memoffset) = floc#decompose_address x in
+	     if is_constant_offset memoffset then
+               let offset = get_total_constant_offset memoffset in
+	       LBLOCK [
+                   STR "&";
+		   xpr_to_pretty
+                     floc
+                     (XVar (floc#env#mk_memory_variable memref offset ))]
+	     else if memref#is_unknown_reference then
+	       default ()
+	     else
+	       memref#toPretty
+	   else
+	     default ())
   with
   | _ -> default ()
-       
+
+
 let pr_argument_expr
       ?(typespec=None) (p: fts_parameter_t) (xpr: xpr_t) (floc: floc_int) =
   match get_string_reference floc xpr with
@@ -200,7 +220,8 @@ let pr_argument_expr
      match get_xpr_symbolic_name ~typespec x with
      | Some name -> STR name
      | _ -> xpr_to_pretty floc x
-          
+
+
 let patternrhs_to_string (rhs:patternrhs_t) =
   match rhs with
   | PConstantValue n -> intvalue_to_string n#toInt
@@ -208,7 +229,8 @@ let patternrhs_to_string (rhs:patternrhs_t) =
   | PArgument i -> "arg" ^ (string_of_int i)
   | PGlobalVar dw -> "gv_" ^ (dw#to_hex_string)
   | PUnknown -> "?"
-              
+
+
 let get_arg args (n:int) (floc:floc_int) =
   let cmpv = floc#env#get_variable_comparator in 
   try
@@ -222,19 +244,23 @@ let get_arg args (n:int) (floc:floc_int) =
       random_constant_expr
     end
 
+
 let get_reg_value (reg:cpureg_t) (floc:floc_int) =
   let cmpv = floc#env#get_variable_comparator in
   floc#inv#rewrite_expr ((register_op reg 4 RD)#to_expr floc) cmpv
+
 
 let get_gv_value (gv:doubleword_int) (floc:floc_int) =
   let cmpv = floc#env#get_variable_comparator in
   let v = floc#env#mk_global_variable gv#to_numerical in
   floc#inv#rewrite_expr (XVar v) cmpv
 
+
 let get_reg_derefvalue (reg:cpureg_t) (offset:int) (floc:floc_int) =
   let cmpv = floc#env#get_variable_comparator in
   let deref = (indirect_register_op reg (mkNumerical offset) 4 RD)#to_expr floc in
   floc#inv#rewrite_expr deref cmpv
+
 
 let get_x_derefvalue (x:xpr_t) (offset:int) (floc:floc_int) =
   let cmpv = floc#env#get_variable_comparator in
@@ -246,6 +272,7 @@ let get_x_derefvalue (x:xpr_t) (offset:int) (floc:floc_int) =
   else
     XVar (floc#env#mk_unknown_memory_variable "x-deref")
 
+
 let get_patternrhs_value ?(args=[]) (rhs:patternrhs_t) (floc:floc_int) =
   match rhs with
   | PConstantValue n -> num_constant_expr n
@@ -253,7 +280,8 @@ let get_patternrhs_value ?(args=[]) (rhs:patternrhs_t) (floc:floc_int) =
   | PArgument n -> get_arg args n floc
   | PGlobalVar dw -> get_gv_value dw floc
   | PUnknown -> random_constant_expr
-  
+
+
 (* Semantics of inlined functions are defined relative to the stack pointer
    pointing at the first argument, rather than the return address, so offsets
    are adjusted by -4
@@ -262,11 +290,14 @@ let get_var_lhs (varoffset:int) (floc:floc_int) =
   let offset = -(varoffset + 4) in               
   (esp_deref ~with_offset:offset WR)#to_lhs floc
 
+
 let get_reg_lhs (r:cpureg_t) (floc:floc_int) =
   (register_op r 4 WR)#to_lhs floc
 
+
 let get_reg_deref_lhs (r:cpureg_t) ?(size=4) (offset:int) (floc:floc_int) =
   (indirect_register_op r (mkNumerical offset) size WR)#to_lhs floc
+
 
 let get_x_deref_lhs (x:xpr_t) (offset:int) (floc:floc_int) =
   let cmpv = floc#env#get_variable_comparator in
@@ -277,31 +308,40 @@ let get_x_deref_lhs (x:xpr_t) (offset:int) (floc:floc_int) =
   else
     floc#env#mk_unknown_memory_variable "x-deref-lhs"
 
+
 let get_nested_deref_lhs (r:cpureg_t) (offsets:int list) (floc:floc_int) =
   match offsets with
-  | [] -> raise (BCH_failure 
-		   (LBLOCK [ STR "Offsets missing in get_nested_deref_lhs: " ;
-			     floc#l#toPretty ]))
+  | [] ->
+     raise
+       (BCH_failure 
+	  (LBLOCK [
+               STR "Offsets missing in get_nested_deref_lhs: ";
+	       floc#l#toPretty ]))
   | [ off ] -> let (lhs,_) = get_reg_deref_lhs r off floc in lhs
   | off::tl ->
     let x = get_reg_derefvalue r off floc in
     let rec aux x l =
       match l with
-      | [] -> raise (BCH_failure
-		       (LBLOCK [ STR "Error in get_nested_deref_lhs"]))
+      | [] ->
+         raise
+           (BCH_failure (LBLOCK [STR "Error in get_nested_deref_lhs"]))
       | [n] -> get_x_deref_lhs x n floc
       | n::ltl -> aux (get_x_derefvalue x n floc) ltl in
     aux x tl
+
 
 let get_allocavar_lhs (varoffset:int) (allocaoffset:int) (floc:floc_int) =
   let offset = -(varoffset + allocaoffset + 4) in
   (esp_deref ~with_offset:offset WR)#to_lhs floc
 
+
 let get_arg_lhs (argoffset:int) (floc:floc_int) =
   (esp_deref ~with_offset:(argoffset-4) WR)#to_lhs floc
 
+
 let get_returnaddress_lhs (floc:floc_int) =
   (esp_deref ~with_offset:(-4) WR)#to_lhs floc
+
 
 let get_return_value (name:string) (floc:floc_int) =
   let rv = floc#env#mk_return_value floc#cia in
@@ -309,29 +349,36 @@ let get_return_value (name:string) (floc:floc_int) =
   let _ = floc#env#set_variable_name rv name in
   rv
 
+
 let set_functionpointer (name:string) (floc:floc_int) (xpr:xpr_t) =
   let x = floc#inv#rewrite_expr xpr (floc#env#get_variable_comparator) in
   match x with
   | XConst (IntConst num) ->
      (try
-	let dw = numerical_to_doubleword num in
+	let dw = TR.tget_ok (numerical_to_doubleword num) in
 	if system_info#is_code_address dw then
 	  begin
 	    ignore (functions_data#add_function dw) ;
 	    chlog#add
               "predefined semantics declared function entry point"
-	      (LBLOCK [ floc#l#toPretty ; STR ": " ; dw#toPretty ;
-                        STR " set by " ; STR name ])
+	      (LBLOCK [
+                   floc#l#toPretty;
+                   STR ": ";
+                   dw#toPretty;
+                   STR " set by ";
+                   STR name])
 	   end
       with
       | _ -> ())
   | _ -> ()
-       
+
+
 let set_delphi_exception_handler_table (floc:floc_int) (x:xpr_t) =
   match x with
   | XConst (IntConst num) ->
      (try
-        let tptr = (numerical_to_doubleword num)#add_int 4 in
+        let oknum = TR.tget_ok (numerical_to_doubleword num) in
+        let tptr = oknum#add_int 4 in
         begin
           match FFU.get_read_only_initialized_doubleword tptr with
           | Some jtaddr when system_info#has_jumptable jtaddr ->
@@ -339,12 +386,12 @@ let set_delphi_exception_handler_table (floc:floc_int) (x:xpr_t) =
 	       system_info#set_virtual_function_table jtaddr ;
 	       chlog#add
                  "exception handler table"
-	         (LBLOCK [ floc#l#toPretty ; STR ": " ; xpr_to_pretty floc x ])
+	         (LBLOCK [floc#l#toPretty; STR ": "; xpr_to_pretty floc x])
 	     end
           | _ ->
 	     chlog#add
                "exception handler table not found"
-	       (LBLOCK [ floc#l#toPretty ; STR ": " ; xpr_to_pretty floc x ])
+	       (LBLOCK [floc#l#toPretty; STR ": "; xpr_to_pretty floc x])
         end
       with
       | _ -> ())
@@ -360,6 +407,7 @@ let get_adjustment_commands (adj:int) (floc:floc_int) =
     esplhscmds @ cmds
   else
     []
+
 
 let get_wrapped_call_commands (hfloc:floc_int) (tgtfloc:floc_int) =
   let ctinfo = tgtfloc#get_call_target in
@@ -386,6 +434,7 @@ let get_wrapped_call_commands (hfloc:floc_int) (tgtfloc:floc_int) =
   let bridgevars = hfloc#env#get_bridge_values_at hfloc#cia in
   [ opcmd ; acmd ; returnAssign ; ABSTRACT_VARS bridgevars ]
 
+
 let is_named_app_call (faddr:doubleword_int) (offset:int) (fname:string) =
   let floc = get_floc (mk_loc faddr (faddr#add_int offset)) in
   floc#has_call_target
@@ -393,6 +442,7 @@ let is_named_app_call (faddr:doubleword_int) (offset:int) (fname:string) =
   && (let tgtaddr = floc#get_call_target#get_app_address in
       functions_data#has_function_name tgtaddr
       && (functions_data#get_function tgtaddr)#get_function_name = fname)
+
 
 let is_named_dll_call (faddr:doubleword_int) (offset:int) (fname:string) =
   (* let loc =
@@ -402,11 +452,13 @@ let is_named_dll_call (faddr:doubleword_int) (offset:int) (fname:string) =
   && floc#get_call_target#is_dll_call
   && floc#get_call_target#get_name = fname
 
+
 let is_named_inlined_call (faddr:doubleword_int) (offset:int) (fname:string) =
   let floc = get_floc (mk_loc faddr (faddr#add_int offset)) in
   floc#has_call_target
   && floc#get_call_target#is_inlined_call
   && floc#get_call_target#get_name = fname
+
 
 let is_named_lib_call (faddr:doubleword_int) (offset:int) (fname:string) =
   let floc = get_floc (mk_loc faddr (faddr#add_int offset)) in
@@ -421,8 +473,10 @@ let sometemplate ?(msg=STR "") (sem:predefined_callsemantics_int) =
     Some sem
   end
 
+
 let get_fnhashes (name:string) (f:string -> int -> predefined_callsemantics_int) =
   List.map (fun (hash,instrs) -> f hash instrs) (get_function_hashes name)
+
 
 let get_return_assign summary floc = 
   let fintf = summary#get_function_interface in
@@ -435,6 +489,7 @@ let get_return_assign summary floc =
     let cmds = floc#get_assign_commands lhs (XVar rv) in
     List.concat [lhscmds; cmds]
 
+
 let get_esp_adjustment_assign (summary: function_summary_int) (floc: floc_int) =
   let fintf = summary#get_function_interface in
   let fts = fintf.fintf_type_signature in
@@ -443,8 +498,10 @@ let get_esp_adjustment_assign (summary: function_summary_int) (floc: floc_int) =
   | Some _ -> []
   | _ -> [ floc#get_abstract_cpu_registers_command [Esp]]
 
+
 let get_side_effects summary floc = 
   floc#get_sideeffect_assigns summary#get_function_semantics
+
 
 class virtual predefined_callsemantics_base_t (md5hash:string) (instrs:int) =
 object (self)
@@ -474,7 +531,8 @@ object (self)
   method toPretty = STR self#get_name
 
 end
-  
+
+
 class dllfun_semantics_t
         (dll:string)
         (summary:function_summary_int)
@@ -485,7 +543,8 @@ object (self)
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name =
-    let name = summary#get_function_interface.fintf_name in "__" ^ name ^ "__"
+    let name = summary#get_function_interface.fintf_name in
+    "__" ^ name ^ "__"
 
   method get_annotation (floc:floc_int) =
     (* let api = summary#get_function_api in *)
@@ -515,9 +574,11 @@ object (self)
 
 end
 
+
 let mk_dllfun_semantics (dll:string) (fname:string) =
   let summary = function_summary_library#get_dll_function dll fname in
   new dllfun_semantics_t dll summary
+
 
 let add_dllfun table (dll:string) (fname:string) =
   if function_summary_library#has_dll_function dll fname then
@@ -530,6 +591,7 @@ let add_dllfun table (dll:string) (fname:string) =
     chlog#add "statically linked dll function not registered"
       (LBLOCK [ STR dll ; STR ":" ; STR fname ])
 
+
 class libfun_semantics_t
         (pkgs:string list)
         (fname:string)
@@ -541,7 +603,8 @@ object (self)
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = 
-    let pkgs = String.concat "::" pkgs in "__" ^ pkgs ^ "::" ^ fname ^ "__"
+    let pkgs = String.concat "::" pkgs in
+    "__" ^ pkgs ^ "::" ^ fname ^ "__"
 
   method get_annotation (floc:floc_int) =
     let pr_arg p xpr =
@@ -569,9 +632,11 @@ object (self)
 
 end
 
+
 let mk_libfun_semantics (pkgs:string list) (fname:string) =
   let summary = function_summary_library#get_lib_function pkgs fname in
   new libfun_semantics_t pkgs fname summary
+
 
 let add_libfun table (pkgs:string list) (fname:string) =
   if function_summary_library#has_lib_function pkgs fname then

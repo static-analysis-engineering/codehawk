@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,6 +57,7 @@ open BCHOperand
 open BCHX86OpcodeRecords
 
 module FFU = BCHFileFormatUtil
+module TR = CHTraceResult
 
 exception InconsistentInstruction of string
 
@@ -73,32 +76,49 @@ let pushback s current_pos n =
 *)
 		    
 let is_call_instruction instr =
-  match instr with DirectCall _ | IndirectCall _ -> true | _ -> false
+  match instr with
+  | DirectCall _ | IndirectCall _ -> true
+  | _ -> false
+
 
 let fall_through instr =
   match instr with
   | DirectJmp _ | IndirectJmp _ | Ret _ | BndRet _ | RepzRet -> false
   | _ -> true
 
+
 let is_conditional_jump_instruction instr =
-  match instr with | Jecxz _ | Jcc _ | DirectLoop _ -> true | _ -> false
+  match instr with
+  | Jecxz _ | Jcc _ | DirectLoop _ -> true
+  | _ -> false
+
 
 let is_unconditional_jump_instruction instr =
-  match instr with  DirectJmp _ | IndirectJmp _ -> true  | _ -> false
+  match instr with
+  | DirectJmp _ | IndirectJmp _ -> true
+  | _ -> false
+
 
 let is_direct_jump_instruction instr =
   is_conditional_jump_instruction instr
   || (match instr with DirectJmp _ -> true | _ -> false)
 
+
 let is_jump_instruction instr = 
-  is_conditional_jump_instruction instr || is_unconditional_jump_instruction instr
+  is_conditional_jump_instruction instr
+  || is_unconditional_jump_instruction instr
+
 
 let get_jump_operand opcode =
   match get_operands opcode with
     [ op ] -> op
-  | _ -> raise (BCH_failure
-		  (LBLOCK [ STR "Instruction is not a jump instruction: " ; 
-			    STR (opcode_to_string opcode) ]))
+  | _ ->
+     raise
+       (BCH_failure
+	  (LBLOCK [
+               STR "Instruction is not a jump instruction: ";
+	       STR (opcode_to_string opcode)]))
+
 
 let get_push_imm32_values code =
   Array.fold_right
@@ -107,7 +127,9 @@ let get_push_imm32_values code =
 	Push (_,op) -> op :: a
       | _ -> a) code []
 
+
 let allflags = [ OFlag ; CFlag ; ZFlag ; SFlag ; PFlag ]
+
 
 let flags_used_by_condition (cc:condition_code_t) =
   match cc with
@@ -120,6 +142,7 @@ let flags_used_by_condition (cc:condition_code_t) =
   | CcLess        | CcGreaterEqual -> [ SFlag ; OFlag ]
   | CcLessEqual   | CcGreater      -> [ ZFlag ; SFlag ; OFlag ]
 
+
 let select_byte_reg = function
   | 0 -> Al
   | 1 -> Cl
@@ -130,6 +153,7 @@ let select_byte_reg = function
   | 6 -> Dh
   | 7 -> Bh
   | _ -> raise (InconsistentInstruction ("Error in select_byte_reg: reg > 7"))
+
 
 let select_word_reg = function
   | 0 -> Ax
@@ -142,6 +166,7 @@ let select_word_reg = function
   | 7 -> Di
   | _ -> raise (InconsistentInstruction ("Error in select_word_reg: reg > 7"))
 
+
 let select_reg = function
   | 0 -> Eax
   | 1 -> Ecx
@@ -153,8 +178,10 @@ let select_reg = function
   | 7 -> Edi 
   | _ -> raise (InconsistentInstruction ( "Error in select_reg: reg > 7"))
 
+
 let select_word_or_dword_reg (opsize_override:bool) (index:int) =
 	if opsize_override then select_word_reg index else select_reg index
+
 
 let select_seg_reg seg =
   match seg with
@@ -166,6 +193,7 @@ let select_seg_reg seg =
   | 5 -> GSegment
   | _ -> raise (InconsistentInstruction (
     "Error in select_seg_reg: seg_reg > 5.  Value: " ^ (string_of_int seg)))
+
 
 (* Layout of the SIB byte (Figure 2-1, Table 2-3): 7-6: scale, 5-3: index, 2-0: base *)
 let decompose_sib sib =
@@ -183,6 +211,7 @@ let decompose_sib sib =
   | _ -> failwith "Error in decompose_sib: scale factor > 3" in
   (scale,ind_reg,base_reg)
 
+
 (* Layout: 7:R; 6-3: vvvv (complement); 2-0: Lpp *)
 let decompose_avx_lpp avx =
   let r = avx lsr 7 in
@@ -192,12 +221,14 @@ let decompose_avx_lpp avx =
 		     STR "; lpp: " ; INT lpp ; NL ] in *)
   (r,vv,lpp)
 
+
 (* Layout: 7-5: RXB; 4-0: m-mmmmm *)
 let decompose_avx_rxb avx =
   let rxb = avx lsr 5 in
   let mmm = avx mod 32 in
   (* let _ = pr_debug [ STR "rxb: " ; INT rxb ; STR "; m-mmmm: " ; INT mmm ; NL ] in *)
   (rxb,mmm)
+
 
 (* Layout of the ModRM byte (Figure 2-1): 7-6: Mod, 5-3: Reg, 2-0: RM *)
 let decompose_modrm modrm =
@@ -214,6 +245,7 @@ let get_scaled_address ch size mode:operand_int =
     Ebp -> (None,ch#read_num_signed_doubleword) | _ -> (Some br,numerical_zero) in
   scaled_register_op br ir sf ofs size mode
 
+
 (* Table 2-3, NOTES 1 (MOD: 01): effective address = [ scaled index ] + disp8 *)
 let get_scaled_disp8_address ch size mode:operand_int =
   let sib = ch#read_byte in
@@ -222,12 +254,14 @@ let get_scaled_disp8_address ch size mode:operand_int =
   let br = Some br in
   scaled_register_op br ir sf ofs size mode
 
+
 let get_scaled_disp16_address ch size mode:operand_int =
   let sib = ch#read_byte in
   let ofs = ch#read_num_signed_word in
   let (sf,ir,br) = decompose_sib sib in
   let br = Some br in
   scaled_register_op br ir sf ofs size mode
+
 
 (* Table 2-3, NOTES 1 (MOD: 10): effective address = [ scaled index ] + disp32 *)
 let get_scaled_disp32_address ch size mode:operand_int =
@@ -236,6 +270,7 @@ let get_scaled_disp32_address ch size mode:operand_int =
   let (sf,ir,br) = decompose_sib sib in
   let br = Some br in
   scaled_register_op br ir sf ofs size mode
+
 
 (* Table 2-2: 32-bit addressing forms with the ModR/M byte *)
 let get_rm_sized_operand  ?(addrsize_override=false) ?(seg_override=None)
@@ -250,7 +285,8 @@ let get_rm_sized_operand  ?(addrsize_override=false) ?(seg_override=None)
       | 2 -> 
 	begin
 	  match seg_override with
-	  | Some FSegment -> seg_indirect_register_op FSegment Edx numerical_zero 4 mode
+	  | Some FSegment ->
+             seg_indirect_register_op FSegment Edx numerical_zero 4 mode
 	  | _ -> indirect_register_op Edx bz size mode
 	end
       | 3 -> indirect_register_op Ebx bz size mode
@@ -259,16 +295,22 @@ let get_rm_sized_operand  ?(addrsize_override=false) ?(seg_override=None)
       | 6 -> 
 	begin
 	  match (seg_override,addrsize_override) with
-	  | (Some FSegment,true) ->    (* special case of addressing used in delphi 5 *)
-	    let offset = ch#read_num_signed_word in
-	    seg_absolute_op FSegment (numerical_to_doubleword offset) 4 mode
+	  | (Some FSegment,true) ->
+             (* special case of addressing used in delphi 5 *)
+	     let offset = ch#read_num_signed_word in
+	     seg_absolute_op
+               FSegment (TR.tget_ok (numerical_to_doubleword offset)) 4 mode
 	  | _ -> indirect_register_op Esi bz size mode
 	end
       | 7 -> indirect_register_op Edi bz size mode
       | _ -> 
 	begin
-	  ch_error_log#add "disassembly" 
-	    (LBLOCK [ STR "Error in get_rm_sized_operand: md=0, rm > 7 (" ; INT rm ; STR ")" ]) ;
+	  ch_error_log#add
+            "disassembly" 
+	    (LBLOCK [
+                 STR "Error in get_rm_sized_operand: md=0, rm > 7 (";
+                 INT rm;
+                 STR ")"]);
 	  raise (Invalid_input ("get_rm_sized_operand" ))
 	end  
     end
@@ -343,29 +385,38 @@ let get_rm_sized_operand  ?(addrsize_override=false) ?(seg_override=None)
 
 
 let get_rm_byte_operand ?(addrsize_override=false) md rm ch mode:operand_int = 
-  get_rm_sized_operand ~addrsize_override ~size:1 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch mode
+  get_rm_sized_operand
+    ~addrsize_override ~size:1 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch mode
+
 
 let get_rm_word_operand md rm ch mode:operand_int = 
   get_rm_sized_operand ~size:2 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch mode
 
-let get_rm_operand md rm ?(seg_override=None) ?(size=4) ?(floating_point=false) ch mode:operand_int = 
-  let op = get_rm_sized_operand ~size ~fp:floating_point ~mm:false ~xmm:false ~md ~rm ~ch mode in
+
+let get_rm_operand
+      md rm ?(seg_override=None) ?(size=4) ?(floating_point=false) ch mode:operand_int =
+  let op =
+    get_rm_sized_operand
+      ~size ~fp:floating_point ~mm:false ~xmm:false ~md ~rm ~ch mode in
   if op#is_absolute_address then
     match seg_override with
-      Some seg -> seg_absolute_op seg op#get_absolute_address 4 mode
+    | Some seg -> seg_absolute_op seg op#get_absolute_address 4 mode
     | _ -> op
   else
     op
 
-let get_rm_def_operand opsize_override ?(seg_override=None) md rm ch (mode:operand_mode_t):operand_int  =
+
+let get_rm_def_operand
+      opsize_override ?(seg_override=None) md rm ch (mode:operand_mode_t):operand_int  =
   let size = if opsize_override then 2 else 4 in
   let op = get_rm_sized_operand ~size ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch mode in
   if op#is_absolute_address then
     match seg_override with
-      Some seg -> seg_absolute_op seg op#get_absolute_address size mode
+    | Some seg -> seg_absolute_op seg op#get_absolute_address size mode
     | _ -> op
   else
     op
+
 
 (* returns the two operands encoded in the modrm byte (Figure 2-1):
    1: modrm operand  (ModR/M)
@@ -375,8 +426,11 @@ let get_modrm_operands ?(seg_override=None)
   let modrm = ch#read_byte in
   let (md,reg,rm) = decompose_modrm modrm in
   let op2 = register_op (select_reg reg) 4 m2 in
-  let op1 = get_rm_sized_operand ~addrsize_override ~seg_override ~size:4 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch m1 in
+  let op1 =
+    get_rm_sized_operand
+      ~addrsize_override ~seg_override ~size:4 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch m1 in
   (op1,op2)
+
 
 let get_modrm_byte_operands ch m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
@@ -385,12 +439,14 @@ let get_modrm_byte_operands ch m1 m2:(operand_int * operand_int) =
   let op1 = get_rm_sized_operand ~size:1 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch m1 in
   (op1,op2)
 
+
 let get_modrm_word_operands ch m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
   let (md,reg,rm) = decompose_modrm modrm in
   let op2 = register_op (select_word_reg reg) 2 m2 in
   let op1 = get_rm_sized_operand ~size:2 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch m1 in
   (op1,op2)
+
 
 let get_modrm_quadword_operands ch m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
@@ -399,12 +455,14 @@ let get_modrm_quadword_operands ch m1 m2:(operand_int * operand_int) =
   let op1 = get_rm_sized_operand ~size:8 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch m1 in
   (op1,op2)
 
+
 let get_modrm_double_quadword_operands ch m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
   let (md,reg,rm) = decompose_modrm modrm in
   let op2 = xmm_register_op reg m2 in
   let op1 = get_rm_sized_operand ~size:16 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch m1 in
   (op1,op2)
+
 
 let get_modrm_mm_operands ch size m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
@@ -413,12 +471,14 @@ let get_modrm_mm_operands ch size m1 m2:(operand_int * operand_int) =
   let op1 = get_rm_sized_operand ~size ~fp:false ~mm:true ~xmm:false ~md ~rm ~ch m1 in
   (op1,op2)
 
+
 let get_modrm_xmm_operands ch size m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
   let (md,reg,rm) = decompose_modrm modrm in
   let op2 = xmm_register_op reg m2 in
   let op1 = get_rm_sized_operand ~size ~fp:false ~mm:false ~xmm:true ~md ~rm ~ch m1 in
   (op1,op2)
+
 
 (* modrm: xmm or m:size, reg: mm *)
 (* return (mm,reg) *)
@@ -429,6 +489,7 @@ let get_modrm_xmm_mm_operands ch size m1 m2:(operand_int * operand_int) =
   let op1  = get_rm_sized_operand ~size ~fp:false ~mm:false ~xmm:true ~md ~rm ~ch m1 in
   (op1,op2)
 
+
 (* modrm: xmm or m:size, reg: reg *)
 let get_modrm_xmm_reg_operands ch size m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
@@ -436,6 +497,7 @@ let get_modrm_xmm_reg_operands ch size m1 m2:(operand_int * operand_int) =
   let op2 = register_op (select_reg reg) 4 m2 in
   let op1 = get_rm_sized_operand ~size ~fp:false ~mm:false ~xmm:true ~md ~rm ~ch m1 in
   (op1,op2)
+
 
 let get_modrm_sized_operands ch size1 m1 size2 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
@@ -455,6 +517,7 @@ let get_modrm_sized_operands ch size1 m1 size2 m2:(operand_int * operand_int) =
   let op1 = get_rm_sized_operand ~size:size1 ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch m1 in
   (op1,op2)
 
+
 let get_modrm_def_operands opsize_override ?(seg_override=None) ?(addrsize_override=false) 
     ch m1 m2:(operand_int * operand_int) =
   let size = if opsize_override then 2 else 4 in
@@ -468,14 +531,18 @@ let get_modrm_def_operands opsize_override ?(seg_override=None) ?(addrsize_overr
 	Some seg -> seg_absolute_op seg op1#get_absolute_address size m1 
       | _ -> op1 else op1 in
   (op1, op2)
-		
-let get_modrm_seg_operands ?(opsize_override=false) ch m1 m2:(operand_int * operand_int) =
+
+
+let get_modrm_seg_operands
+      ?(opsize_override=false) ch m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
   let (md,reg,rm) = decompose_modrm modrm in
   let size = if opsize_override then 2 else 4 in
   let op2 = seg_register_op (select_seg_reg reg) m2  in
-  let op1 = get_rm_sized_operand ~size ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch m1 in
+  let op1 =
+    get_rm_sized_operand ~size ~fp:false ~mm:false ~xmm:false ~md ~rm ~ch m1 in
   (op1,op2)
+
 
 (* the reg field within the ModR/M byte specifies which of the control registers 
    is loaded or read. The 2 bits in the mod field are ignored. The r/m field specifies
@@ -487,6 +554,7 @@ let get_modrm_cr_operands ch m1 m2:(operand_int * operand_int) =
   let op1 = control_register_op reg m1 in
   let op2 = register_op (select_reg rm) 4 m2 in
   (op1,op2)
+
 
 let get_modrm_dr_operands ch m1 m2:(operand_int * operand_int) =
   let modrm = ch#read_byte in
@@ -500,13 +568,15 @@ let get_string_reference (floc:floc_int) (xpr:xpr_t) =
   try
     match xpr with
     | XConst (IntConst num) ->
-      let address = numerical_to_doubleword num in
+      let address = TR.tget_ok (numerical_to_doubleword num) in
       begin
 	match FFU.get_string_reference address with
 	| Some str ->
 	  begin
-	    string_table#add_xref address str floc#fa floc#cia ;
-            chlog#add "add string" (LBLOCK [ floc#l#toPretty ; STR "; " ; STR str ]) ;
+	    string_table#add_xref address str floc#fa floc#cia;
+            chlog#add
+              "add string"
+              (LBLOCK [floc#l#toPretty; STR "; "; STR str]);
 	    Some str
 	  end
 	| _ -> None
