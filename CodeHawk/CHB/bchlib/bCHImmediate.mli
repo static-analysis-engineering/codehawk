@@ -5,7 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,23 @@ open Big_int_Z
 (* bchlib *)
 open BCHLibTypes
 
-val make_immediate: bool -> int -> big_int -> immediate_int  (* signed *)
 
-val immediate_from_int: int -> immediate_int    (* signed *)
-val imm1 : immediate_int
+(** [make_immediate signed size v] returns an immediate value of [size]
+    bytes and value [v]. If the value [v] is outside the range that can be
+    represented by the bytes with the given signedness, [Error] is returned.*)
+val make_immediate: bool -> int -> big_int -> immediate_result
+
+
+(** [signed_immedidate_from_int size v] returns an immediate value of [size]
+    bytes and value [v]. If the value [v] is outside the range that can be
+    represented by a signed integer with width [size] bytes, {Error] is
+    returned.*)
+val signed_immediate_from_int: ?size:int -> int -> immediate_result
+
+
+(** [imm0] is a signed immediate with size 4 bytes and value 0.*)
 val imm0 : immediate_int
 
+
+(** [imm1] is a signed immediate with size 4 bytes and value 1.*)
+val imm1 : immediate_int

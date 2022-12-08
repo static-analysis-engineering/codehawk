@@ -425,34 +425,117 @@ object ('a)
   (* identification *)
   method index: dw_index_t
 
+  (** Returns the unsigned value represented by this doubleword. *)
+  method value: int
+
   (* comparison *)
+
+  (** [dw#equal other] returns true if [other#value] is equal to [dw#value].*)
   method equal: 'a -> bool
+
+  (** [dw#compare other] returns 0 if [dw#value] is equal to [other#value],
+      [-1] if [dw#value] is less than [other#value] and [1] otherwise.*)
   method compare: 'a -> int
+
+  (** [dw#lt other] returns true if [dw#value] is less than [other#value].*)
   method lt: 'a -> bool
+
+  (** [dw#le other] returns true if [dw#value] is less than or equal to
+      [other#value].*)
   method le: 'a -> bool
 
   (* conversion *)
+
+  (** Returns [dw#value].*)
   method to_int: int
+
+  (** Returns [dw#value] represented as a big_int.*)
   method to_big_int: big_int
+
+  (** Returns [dw#value] represented as a numerical_t.*)
   method to_numerical: numerical_t
+
+  (** Returns [dw#value] as a numerical_t if [dw#value] is less than [2^31],
+      [dw#value - 2^31] as a numerical_t otherwise.*)
   method to_signed_numerical: numerical_t
 
-  method to_time_date_string: string     (* raises Invalid_argument *)
+  (** Returns a date-time string by converting [dw#value] to a Unix.tm structure.
+
+      @raise Invalid_argument if the intermediate Unix.tm structure is invalid.*)
+  method to_time_date_string: string
+
+  (** Returns a string representing a list of four characters if all four
+      bytes represent printable characters. Otherwise returns [None].
+
+      Example: [dw(0x64636261)#to_char_string] returns "['a' 'b' 'c' 'd']".
+   *)
   method to_char_string: string option
-  method to_string: string     (* convert bytes to characters in a string *)
-  method to_string_fragment: string     (* idem, but in reverse *)
+
+  (** Returns a string representing four characters in order.
+
+      Example: [dw(0x61626364)#to_string] returns "abcd".*)
+  method to_string: string
+
+  (** Returns a string representing four characters in reverse order.
+
+      Example: [dw(0x61626364)#to_string_fragment] returns "dcba".*)
+  method to_string_fragment: string
+
+  (** Returns an eight-character string representing the eight nibbles
+      (most significant first).
+
+      Example: [dw(0)#to_fixed_length_hex_string] returns "00000000";
+      [dw(255)#to_fixed_length_hex_string] returns "000000ff".*)
   method to_fixed_length_hex_string: string
+
+  (** Returns a standard hexadecimal notation of [dw#value] (without
+      leading zeroes).
+
+      Example: [dw(0)#to_hex_string] returns "0x0"; dw(255)#to_hex_string]
+      returns "0xff".*)
   method to_hex_string: string
+
+  (** Returns a standard hexadecial string representation of [dw#value]
+      if [dw#value] is less than [2^31], and otherwise returns
+      [-hex(dw#value - 2^32)].
+
+      Example: [dw(0xffffffff)#to_signed_hex_string] returns "-0x1".*)
   method to_signed_hex_string: string
 
-  (* operations *)
+  (** operations *)
+
+  (** Returns [dw] if [dw#value] is less than [2^31], otherwise returns
+      dw(dw#value - 2^31).*)
   method unset_highest_bit: 'a
-  method subtract: 'a  -> 'a          (* raises Invalid_argument *)
-  method subtract_int: int -> 'a      (* raises Invalid_argument *)
-  method add: 'a  -> 'a               (* raises Invalid_argument *)
-  method add_int: int -> 'a           (* raises Invalid_argument *)
-  method multiply_int: int -> 'a      (* raises Invalid_argument *)
-  method xor: 'a -> 'a                (* exclusive or *)
+
+  (** [dw#subtract other] returns [dw(dw#value - other#value)] if
+      [dw#value] is greater than or equal to other#value, otherwise
+      returns Error.*)
+  method subtract: 'a  -> 'a traceresult
+
+  (** [dw#subtract i] returns dw(dw#value - i)] if [dw#value] is greater
+      than or equal to [i], otherwise returns Error.*)
+  method subtract_int: int -> 'a traceresult
+
+  (** [dw#subtract_to_int other] returns [dw#value - other#value] if
+      [other#value] is less than or equal to [self#value], [Error]
+      otherwise.*)
+  method subtract_to_int: 'a -> int traceresult
+
+  (** [dw#add other] returns [dw#value + other#value] if the sum is less
+      than [2^32], otherwise returns [dw#value + other#value mod 2^32].*)
+  method add: 'a  -> 'a
+
+  (** [dw#add i] returns [dw#value + i] if the sum is less than [2^32],
+      otherwise returns [(dw#value + i) mod 2^32].*)
+  method add_int: int -> 'a
+
+  (** [dw#multiply_int i] returns [dw#value * i] if the product is less than
+      [2^32], otherwise returns Error.*)
+  method multiply_int: int -> 'a  traceresult
+
+  (** [dw#xor other] returns the bitwise xor of [dw#value] and [other#value].*)
+  method xor: 'a -> 'a
 
   (* accessors *)
   method get_low: int          (* integer value of low-order 16 bits *)
@@ -472,6 +555,9 @@ object ('a)
   method toPretty: pretty_t
 end
 
+
+type doubleword_result = doubleword_int traceresult
+
 (* ============================================================ Immediate === *)
 
 class type immediate_int =
@@ -481,18 +567,35 @@ object ('a)
   method equal:'a -> bool
 
   (* predicates *)
+
+  (** Return true if the size-in-bytes is equal to four.*)
   method is_doubleword: bool
+
+  (** Return true if the size-in-bytes is equal to eight.*)
   method is_quadword: bool
 
   (* converters *)
   method to_big_int: big_int
   method to_numerical: numerical_t
+
+  (** Convert into a native integer. If conversion to a native integer fails,
+      return None.*)
   method to_int: int option
-  method to_doubleword: doubleword_int
+
+  (** Convert into a doubleword if the size in bytes is less than or equal to
+      four. Otherwise return None. The value of the immediate is sign-extended
+      if signed and its size is less than two bytes; negative values are
+      represented in two's complement.*)
+  method to_doubleword: doubleword_int option
 
   (* transformers *)
   method to_unsigned: 'a
-  method sign_extend: int -> 'a
+
+  (** [imm#sign_extend n] returns the signed extension of imm to length [n]
+      in bytes if [n] is larger than or equal to the size-in-bytes of [imm]
+      and if [n] is a supported size (1, 2, 4, 8). Otherwise [Error] is
+      returned.*)
+  method sign_extend: int -> 'a traceresult
 
   (* printing *)
   method to_string: string
@@ -500,6 +603,9 @@ object ('a)
 
   method toPretty: pretty_t
 end
+
+
+type immediate_result = immediate_int traceresult
 
 (* ====================================================== Pushback stream === *)
 
