@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,7 @@ open BCHMIPSOpcodeRecords
 open BCHMIPSTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 module IntSet = Set.Make
@@ -60,6 +61,7 @@ module IntSet = Set.Make
       type t = int
       let compare = Stdlib.compare
     end)
+
 
 let create_ordering 
     (functions:doubleword_int list) 
@@ -72,25 +74,29 @@ let create_ordering
 	H.add counts dw 1 in
     let maxCount = ref ((fst (List.hd cs))#index,-1) in
     let _ = List.iter (fun (_,callee) -> add callee#index) cs in
-    let _ = H.iter (fun k v -> 
-      if v > (snd !maxCount) && List.mem k fnIndices then maxCount := (k,v)) counts in
-    (index_to_doubleword (fst !maxCount),snd !maxCount) in
+    let _ =
+      H.iter (fun k v ->
+          if v > (snd !maxCount) && List.mem k fnIndices then
+            maxCount := (k,v)) counts in
+    (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
+
   let rec aux fns cs result stats cycle =
     match fns with 
       [] -> (result,stats,cycle)
     | _ ->
-      let (leaves,nonleaves) = 
+      let (leaves, nonleaves) =
 	List.fold_left (fun (l,n) (f:doubleword_int) ->
-	  if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) -> 
+	  if (List.exists (fun ((caller, _):(doubleword_int * doubleword_int)) ->
 	    caller#equal f) cs) then 
 	    (l,f::n) 
 	  else 
 	    (f::l,n)) ([],[]) fns in
       try
 	match leaves with
-	  [] ->  (* there is a cycle; find the node with the largest number of incoming 
-		    edges and remove one of the	outgoing edges from that node
-		    pass list of functions to avoid pivoting on a non-existing function *)
+	  [] ->
+           (* there is a cycle; find the node with the largest number of incoming
+	      edges and remove one of the outgoing edges from that node
+	      pass list of functions to avoid pivoting on a non-existing function *)
 	    let fnIndices = List.map (fun dw -> dw#index) fns in
 	    let (pivotNode,incoming) = get_pivot_node cs fnIndices in  
 	    let edge = 
@@ -347,12 +353,16 @@ object (self)
 
 end
 
+
 let mips_assembly_functions = new mips_assembly_functions_t
+
 
 let get_mips_assembly_function (faddr:doubleword_int) =
   mips_assembly_functions#get_function_by_address faddr
-    
+
+
 let get_export_metrics () = exports_metrics_handler#init_value
+
 
 let get_mips_disassembly_metrics () = 
   let (coverage,overlap,alloverlap) = mips_assembly_functions#get_function_coverage in
@@ -360,15 +370,15 @@ let get_mips_disassembly_metrics () =
   let imported_imports = [] in 
   let loaded_imports = [] in
   let imports = imported_imports @ loaded_imports in
-  { dm_unknown_instrs = !mips_assembly_instructions#get_num_unknown_instructions ;
-    dm_instrs = instrs ;
-    dm_functions = mips_assembly_functions#get_num_functions ;
-    dm_coverage = coverage ;
-    dm_pcoverage = 100.0 *. (float_of_int coverage) /. (float_of_int instrs) ;
-    dm_overlap = overlap ;
-    dm_alloverlap = alloverlap ;
-    dm_jumptables = List.length system_info#get_jumptables ;
-    dm_datablocks = List.length system_info#get_data_blocks ;
-    dm_imports = imports ;
+  { dm_unknown_instrs = !mips_assembly_instructions#get_num_unknown_instructions;
+    dm_instrs = instrs;
+    dm_functions = mips_assembly_functions#get_num_functions;
+    dm_coverage = coverage;
+    dm_pcoverage = 100.0 *. (float_of_int coverage) /. (float_of_int instrs);
+    dm_overlap = overlap;
+    dm_alloverlap = alloverlap;
+    dm_jumptables = List.length system_info#get_jumptables;
+    dm_datablocks = List.length system_info#get_data_blocks;
+    dm_imports = imports;
     dm_exports = get_export_metrics ()
   }
