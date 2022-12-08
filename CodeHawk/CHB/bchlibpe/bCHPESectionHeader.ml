@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +52,10 @@ open BCHXmlUtil
 
 (* bchlibpe *)
 open BCHLibPETypes
+
+
+module TR = CHTraceResult
+
 
 let section_index = ref 0
 
@@ -162,11 +168,13 @@ object (self)
   method get_size_of_raw_data = sizeOfRawData
   method get_pointer_to_raw_data = pointerToRawData
 
-  method get_size = if sizeOfRawData#lt virtualSize then virtualSize else sizeOfRawData
+  method get_size =
+    if sizeOfRawData#lt virtualSize then virtualSize else sizeOfRawData
 
   method is_read_only =
-    (self#is_initialized || self#is_executable) && self#is_readable &&
-      (not self#is_writable)
+    (self#is_initialized || self#is_executable)
+    && self#is_readable
+    && (not self#is_writable)
 
   method is_writable = characteristics#is_nth_bit_set 31
 
@@ -181,11 +189,10 @@ object (self)
     (virtualAddress#le rva) && (rva#lt (virtualAddress#add virtualSize))
 
   method includes_VA (va:doubleword_int):bool =
-    try
-      let rva = va#subtract system_info#get_image_base in
-      self#includes_RVA rva
-    with
-      _ -> false
+    TR.tfold_default
+      (fun rva -> self#includes_RVA rva)
+      false
+      (va#subtract system_info#get_image_base)
 
   method private characteristic_to_string n =
     match n with
@@ -223,12 +230,14 @@ object (self)
     | _ -> ""
 
   method get_characteristics_digest =
-    String.concat "" (List.map self#characteristic_to_char characteristics#get_bits_set)
+    String.concat
+      ""
+      (List.map self#characteristic_to_char characteristics#get_bits_set)
 
   method private characteristics_to_pretty =
     let descr = self#characteristic_to_string in
     let bitsSet = characteristics#get_bits_set in
-    List.fold_left (fun a i -> LBLOCK [ a ; NL ; STR (descr i)]) (STR "") bitsSet
+    List.fold_left (fun a i -> LBLOCK [a; NL; STR (descr i)]) (STR "") bitsSet
 
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
@@ -240,17 +249,19 @@ object (self)
     begin
       cNode#appendChildren (List.map (fun i ->
 	let ccNode = xmlElement "charx" in
-	begin ccNode#setAttribute "name" (self#characteristic_to_string i) ; ccNode end)
-			      characteristics#get_bits_set) ;
-      append [ cNode ] ;
-      sethex "name" name ;
-      setx "virtual-size" virtualSize ;
-      setx "virtual-address" virtualAddress ;
-      setx "size-of-raw-data" sizeOfRawData ;
-      setx "pointer-to-raw-data" pointerToRawData ;
-      setx "pointer-to-relocations" pointerToRelocations ;
-      seti "number-of-relocations" numberOfRelocations ;
-      seti "number-of-line-numbers" numberOfLineNumbers ;
+	begin
+          ccNode#setAttribute "name" (self#characteristic_to_string i);
+          ccNode
+        end) characteristics#get_bits_set);
+      append [cNode];
+      sethex "name" name;
+      setx "virtual-size" virtualSize;
+      setx "virtual-address" virtualAddress;
+      setx "size-of-raw-data" sizeOfRawData;
+      setx "pointer-to-raw-data" pointerToRawData;
+      setx "pointer-to-relocations" pointerToRelocations;
+      seti "number-of-relocations" numberOfRelocations;
+      seti "number-of-line-numbers" numberOfLineNumbers;
       setx "characteristics" characteristics ;
     end
 
@@ -258,16 +269,20 @@ object (self)
     let get = node#getAttribute in
     let has = node#hasNamedAttribute in
     let geti t = if has t then node#getIntAttribute t else 0 in
-    let getx t = if has t then string_to_doubleword (get t) else wordzero in
+    let getx t =
+      if has t then
+        TR.tget_ok (string_to_doubleword (get t))
+      else
+        wordzero in
     begin
-      name <- get "name" ;
-      virtualSize <- getx "virtual-size" ;
-      virtualAddress <- getx "virtual-address" ;
-      sizeOfRawData <- getx "size-of-raw-data" ;
-      pointerToRawData <- getx "pointer-to-raw-data" ;
-      pointerToRelocations <- getx "pointer-to-relocations" ;
-      numberOfRelocations <- geti "number-of-relocations" ;
-      numberOfLineNumbers <- geti "number-of-line-numbers" ;
+      name <- get "name";
+      virtualSize <- getx "virtual-size";
+      virtualAddress <- getx "virtual-address";
+      sizeOfRawData <- getx "size-of-raw-data";
+      pointerToRawData <- getx "pointer-to-raw-data";
+      pointerToRelocations <- getx "pointer-to-relocations";
+      numberOfRelocations <- geti "number-of-relocations";
+      numberOfLineNumbers <- geti "number-of-line-numbers";
       characteristics <- getx "characteristics"
     end
 
@@ -291,6 +306,7 @@ object (self)
   ]
 
 end
+
 
 let make_pe_section_header () = new pe_section_header_t
 

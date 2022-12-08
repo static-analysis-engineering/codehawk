@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +33,16 @@ open CHPretty
 (* bchlibpe *)
 open BCHLibPETypes
 
-val pe_header    : pe_header_int
+
+val pe_header: pe_header_int
+
 val save_pe_files: unit -> unit
+
 val load_pe_files: unit -> unit
+
 val read_pe_file : string -> int option -> bool * pretty_t
+
 val read_hexlified_pe_file: string -> (bool * pretty_t)
+
 val dump_pe_file : string -> unit
 

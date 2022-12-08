@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,20 +52,24 @@ open BCHUserProvidedDirections
 open BCHUtilities
 
 (* bchlibpe *)
-open BCHLibPETypes 
+open BCHLibPETypes
+
+
+module TR = CHTraceResult
+
 
 class type hint_name_table_entry_int =
 object
   (* actions *)
-  method read              : pushback_stream_int -> unit
+  method read: pushback_stream_int -> unit
   method read_bound_address: pushback_stream_int -> unit
 
   (* setters *)
-  method set_hint          : int -> string -> unit
+  method set_hint: int -> string -> unit
 
   (* accessors *)
-  method get_bound_address : doubleword_int
-  method get_name          : string
+  method get_bound_address: doubleword_int
+  method get_name: string
 
   (* xml *)
   method write_xml: xml_element_int -> unit
@@ -71,6 +77,7 @@ object
   (* printing *)
   method toPretty : pretty_t
 end
+
 
 class hint_name_table_entry_t rva:hint_name_table_entry_int =
 object (self)
@@ -97,7 +104,9 @@ object (self)
       name <- ch#read_null_terminated_string ;
     end
 
-  method read_bound_address (ch:pushback_stream_int) = bound_address <- ch#read_doubleword
+  method read_bound_address (ch:pushback_stream_int) =
+    bound_address <- ch#read_doubleword
+
   method get_bound_address = bound_address
 
   method set_hint i fname = begin hint <- i ; name <- fname end
@@ -108,20 +117,30 @@ object (self)
     let set = node#setAttribute in
     let seti t i = if i = 0 then () else node#setIntAttribute t i in
     let setx t x = if x#equal wordzero then () else set t x#to_hex_string in
-    let entryname = if has_control_characters name then "__xx__"  ^ (hex_string name) else name in
+    let entryname =
+      if has_control_characters name then
+        "__xx__"  ^ (hex_string name)
+      else
+        name in
     begin
-      setx "rva" rva ;
-      seti "hint" hint ;
-      set "name" entryname ;
+      setx "rva" rva;
+      seti "hint" hint;
+      set "name" entryname;
       setx "bound-address" bound_address
     end
 
   method toPretty =
-    LBLOCK [ STR rva#to_fixed_length_hex_string ; STR "  " ; 
-             STR (Printf.sprintf "%4d" hint) ; STR "   " ; 
-	     fixed_length_pretty (STR name) 30 ; STR "  "  ; 
-	     (if bound_address#equal wordzero then STR "" else 
-		 STR bound_address#to_hex_string) ]
+    LBLOCK [
+        STR rva#to_fixed_length_hex_string;
+        STR "  ";
+        STR (Printf.sprintf "%4d" hint);
+        STR "   ";
+	fixed_length_pretty (STR name) 30;
+        STR "  ";
+	(if bound_address#equal wordzero then
+           STR ""
+         else
+	   STR bound_address#to_hex_string)]
 
 end
 
@@ -132,6 +151,7 @@ module DoublewordCollections = CHCollections.Make
     let compare dw1 dw2 = dw1#compare dw2
     let toPretty dw = STR dw#to_fixed_length_hex_string
    end)
+
 
 class import_directory_entry_t baseAddress:import_directory_entry_int =
 object (self)
@@ -160,13 +180,16 @@ object (self)
 
   method get_import_lookup_table_size = 
     try
-      int_to_doubleword ( (importLookupTable#size + 1) * 4)
+      TR.tget_ok (int_to_doubleword ((importLookupTable#size + 1) * 4))
     with
 	Invalid_argument _ ->
 	  begin
-	    ch_error_log#add "invalid argument"
+	    ch_error_log#add
+              "invalid argument"
 	      (STR "import_directory_entry_t#get_import_lookup_table_size") ;
-	    raise (Invalid_argument "import_directory_entry_t#get_import_lookup_table_size")
+	    raise
+              (Invalid_argument
+                 "import_directory_entry_t#get_import_lookup_table_size")
 	  end
 
   method get_functions = 
@@ -270,25 +293,25 @@ object (self)
 
   method read_name ch =
     try
-      let skips = (nameRVA#subtract baseAddress)#to_int in
+      let skips = TR.tget_ok (nameRVA#subtract_to_int baseAddress) in
       begin
 	ch#skip_bytes skips ;
-	name <- ch#read_null_terminated_string ;
+	name <- ch#read_null_terminated_string;
       end
     with
     | IO.No_more_input ->
       begin
-	ch_error_log#add "no more input" (STR "import_directory_entry_t#read_name") ;
+	ch_error_log#add "no more input" (STR "import_directory_entry_t#read_name");
 	raise IO.No_more_input
       end
     | Invalid_input _ ->
       begin
-	ch_error_log#add "invalid input" (STR "import_directory_entry_t#read_name") ;
+	ch_error_log#add "invalid input" (STR "import_directory_entry_t#read_name");
 	raise (Invalid_input "import_directory_entry_t#read_name")
       end
     | Invalid_argument s ->
       begin
-	ch_error_log#add "invalid argument" (STR "import_directory_entry_t#read_name") ;
+	ch_error_log#add "invalid argument" (STR "import_directory_entry_t#read_name");
 	raise (Invalid_argument ("import_directory_entry_t#read_name " ^ s))
       end
 	
@@ -296,16 +319,17 @@ object (self)
     try
       let skips_ilt = 
 	if importLookupTableRVA#equal wordzero then
-	  (importAddressTableRVA#subtract baseAddress)#to_int
+	  TR.tget_ok (importAddressTableRVA#subtract_to_int baseAddress)
 	else
-	  (importLookupTableRVA#subtract baseAddress)#to_int in
-      let skips_iat = (importAddressTableRVA#subtract baseAddress)#to_int in
+	  TR.tget_ok (importLookupTableRVA#subtract_to_int baseAddress) in
+      let skips_iat =
+        TR.tget_ok (importAddressTableRVA#subtract_to_int baseAddress) in
       let _ = ch_ilt#skip_bytes skips_ilt in
       let _ = ch_iat#skip_bytes skips_iat in
       let ch_iat = if self#has_bound_addresses then Some ch_iat else None in 
       begin
 	self#read_table_entry ch_ilt ch_iat ;
-	user_provided_directions#load_dll_ordinal_mappings self#get_name ;
+	user_provided_directions#load_dll_ordinal_mappings self#get_name;
 	List.iter 
           (fun (a,e) -> 
 	    if a#is_highest_bit_set then
@@ -313,30 +337,42 @@ object (self)
 		let hint = a#get_low in
 		let name = user_provided_directions#get_dll_ordinal_mapping 
 		  self#get_name hint in
-		let _ = if name = "" then
-		    chlog#add "dll ordinal" (LBLOCK [ STR "No name found for " ; INT hint ; 
-						      STR " in dll " ; STR self#get_name ]) in
+		let _ =
+                  if name = "" then
+		    chlog#add
+                      "dll ordinal"
+                      (LBLOCK [
+                           STR "No name found for ";
+                           INT hint;
+			   STR " in dll ";
+                           STR self#get_name]) in
 		e#set_hint hint name
 	      end
 	    else
-	      let rva = (a#subtract baseAddress)#to_int in
+	      let rva = TR.tget_ok (a#subtract_to_int baseAddress) in
 	      let skips = rva - ch_ilt#pos in
 	      if skips >= 0 then
 		begin
-		  ch_ilt#skip_bytes skips ;
-		  e#read ch_ilt ;
+		  ch_ilt#skip_bytes skips;
+		  e#read ch_ilt;
 		end
 	      else if skips = (-1) then
-		(* this case happens if the null-terminating byte of the previous function
-		   name is reused as the first byte of the hint word *)
+		(* this case happens if the null-terminating byte of the
+                   previous function name is reused as the first byte of
+                   the hint word *)
 		begin
-		  ch_ilt#pushback 1 ;
+		  ch_ilt#pushback 1;
 		  e#read ch_ilt
 		end
 	      else
-		pr_debug [ STR "Skip entry for " ; a#toPretty ; STR "; skips = " ; INT skips ; NL ]
-	  ) (List.sort (fun (a1,_) (a2,_) -> a1#compare a2) 
-		       importLookupTable#listOfPairs);
+		pr_debug [
+                    STR "Skip entry for ";
+                    a#toPretty;
+                    STR "; skips = ";
+                    INT skips;
+                    NL]
+	  ) (List.sort (fun (a1, _) (a2, _) ->
+                 a1#compare a2) importLookupTable#listOfPairs);
       end
     with
     | IO.No_more_input->

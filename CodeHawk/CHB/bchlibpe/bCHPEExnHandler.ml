@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -59,6 +61,8 @@ open BCHPESections
 open BCHLibPETypes
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 class exn_unwind_map_entry_t:exn_unwind_map_entry_int =
 object (self)
@@ -90,6 +94,7 @@ object (self)
     ]
 
 end
+
 
 class exn_function_info_t:exn_function_info_int =
 object (self)
@@ -230,18 +235,22 @@ object (self)
     end
 end
 
+
 let exnhandlers = H.create 5
+
 
 let write_xml_exnhandlers (node:xml_element_int) =
   let handlers = ref [] in
-  let _ = H.iter (fun k v -> handlers := (index_to_doubleword k, v) :: !handlers)
+  let _ =
+    H.iter (fun k v ->
+        handlers := (TR.tget_ok (index_to_doubleword k), v) :: !handlers)
     exnhandlers in
   let handlers = List.sort (fun (a1,_) (a2,_) -> a1#compare a2) !handlers in
   node#appendChildren (List.map (fun (a,v) ->
     let hnode = xmlElement "exnhandler" in
     begin
-      v#write_xml hnode ;
-      hnode#setAttribute "faddr" a#to_hex_string ;
+      v#write_xml hnode;
+      hnode#setAttribute "faddr" a#to_hex_string;
       hnode
     end) handlers)
     
@@ -253,7 +262,7 @@ let get_unwindmaps (n:int) (addr:doubleword_int) =
   | Some section ->
     let s = section#get_exe_string in
     let va = section#get_section_VA in
-    let voffset = (addr#subtract va)#to_int in
+    let voffset = TR.tget_ok (addr#subtract_to_int va) in
     let sectionlen = String.length s in
     List.map (fun i ->
         let offset = voffset + (i * 8) in
@@ -263,11 +272,14 @@ let get_unwindmaps (n:int) (addr:doubleword_int) =
           let _ = unwindmap#read xstr in
           unwindmap
         else
-          raise (BCH_failure
-                   (LBLOCK [ STR "get-unwindmaps: String.suffix. length: " ;
-                             INT sectionlen ; STR "; offset: ";
-                             INT offset ]))) (List.rev (range n))
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "get-unwindmaps: String.suffix. length: ";
+                    INT sectionlen ; STR "; offset: ";
+                    INT offset ]))) (List.rev (range n))
   | _ -> []
+
 
 let add_exnhandler 
     ?(voff1=None)
@@ -287,12 +299,19 @@ let add_exnhandler
                            STR ": security check cookie" ]) in
        (functions_data#add_function a)#add_name "__security_check_cookie__"
     | _ -> () in
-  let _ = (functions_data#add_function fhaddr)#add_name "__InternalCxxFrameHandler__" in
+  let _ =
+    (functions_data#add_function fhaddr)#add_name "__InternalCxxFrameHandler__" in
   let _ = (functions_data#add_function faddr)#add_name name in
-  let _ = chlog#add
-            "add function:matched exn handler" 
-            (LBLOCK [ faddr#toPretty ; STR ": " ; STR name ; STR "; " ;
-                      fhaddr#toPretty ; STR ": __InternalCxxFrameHandler__" ]) in
+  let _ =
+    chlog#add
+      "add function:matched exn handler"
+      (LBLOCK [
+           faddr#toPretty;
+           STR ": ";
+           STR name;
+           STR "; ";
+           fhaddr#toPretty;
+           STR ": __InternalCxxFrameHandler__"]) in
   let xfinfo = new exn_function_info_t in
   let pesection = pe_sections#get_containing_section exnfinfo in
   match pesection with
@@ -300,39 +319,59 @@ let add_exnhandler
      let s = section#get_exe_string in
      let sectionlen = String.length s in
      let va = section#get_section_VA in
-     let offset = (exnfinfo#subtract va)#to_int in
+     let offset = TR.tget_ok (exnfinfo#subtract_to_int va) in
      if sectionlen > offset then
        let exnfinfo_str = string_suffix s offset in
        let _ = xfinfo#read exnfinfo_str in
-       let unwindmaps = get_unwindmaps xfinfo#get_maxstate xfinfo#get_unwindmap in
-       let _ = List.iteri (fun i m ->
-                   let name = ("__SEHUnwind_" ^ faddr#to_hex_string
-                               ^ "_" ^ (string_of_int i) ^ "__") in
-                   let _ = chlog#add
-                             "add function:SEHUnwind"
-                             (LBLOCK [ faddr#toPretty ; STR ": " ; m#get_action#toPretty ;
-                                       STR "; " ;  STR name ]) in
-	           (functions_data#add_function m#get_action)#add_name name) unwindmaps in
-       let exnhandler = new exn_handler_t voff1 voff2 voff3 voff4 xfinfo unwindmaps in
+       let unwindmaps =
+         get_unwindmaps xfinfo#get_maxstate xfinfo#get_unwindmap in
+       let _ =
+         List.iteri (fun i m ->
+             let name =
+               ("__SEHUnwind_"
+                ^ faddr#to_hex_string
+                ^ "_"
+                ^ (string_of_int i)
+                ^ "__") in
+             let _ =
+               chlog#add
+                 "add function:SEHUnwind"
+                 (LBLOCK [
+                      faddr#toPretty;
+                      STR ": ";
+                      m#get_action#toPretty;
+                      STR "; ";
+                      STR name]) in
+	     (functions_data#add_function
+                m#get_action)#add_name name) unwindmaps in
+       let exnhandler =
+         new exn_handler_t voff1 voff2 voff3 voff4 xfinfo unwindmaps in
        begin
-         H.add exnhandlers faddr#index exnhandler ;
+         H.add exnhandlers faddr#index exnhandler;
          true
        end
      else
-       raise (BCH_failure
-                (LBLOCK [ STR "add-exnhandler: String.suffix. Section length: " ;
-                          INT sectionlen ; STR "; offset: " ; INT offset ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "add-exnhandler: String.suffix. Section length: ";
+                 INT sectionlen;
+                 STR "; offset: ";
+                 INT offset]))
   | _ ->
     begin
-      pr_debug [ STR "No section found for " ; exnfinfo#toPretty ; NL ] ;
+      pr_debug [STR "No section found for "; exnfinfo#toPretty; NL];
       false
     end
-  
+
+
 let add_seh_exnhandler (exnfinfo:doubleword_int) (faddr:doubleword_int) =
   let name = "__SEH_" ^ exnfinfo#to_hex_string ^ "__" in
   let _ = (functions_data#add_function faddr)#add_name name in
-  let _ = chlog#add "matched exn handler"
-    (LBLOCK [ faddr#toPretty ; STR ": " ; STR name ]) in
+  let _ =
+    chlog#add
+      "matched exn handler"
+      (LBLOCK [faddr#toPretty; STR ": "; STR name]) in
   let xfinfo = new exn_function_info_t in
   let pesection = pe_sections#get_containing_section exnfinfo in
   match pesection with
@@ -340,43 +379,62 @@ let add_seh_exnhandler (exnfinfo:doubleword_int) (faddr:doubleword_int) =
      let s = section#get_exe_string in
      let sectionlen = String.length s in
      let va = section#get_section_VA in
-     let offset = (exnfinfo#subtract va)#to_int in
+     let offset = TR.tget_ok (exnfinfo#subtract_to_int va) in
      if sectionlen > offset then
        let exnfinfo_str = string_suffix s offset in
        let _ = xfinfo#read exnfinfo_str in
        let unwindmaps = get_unwindmaps xfinfo#get_maxstate xfinfo#get_unwindmap in
-       let _ = List.iteri (fun i m ->
-                   let name = "__SEHUnwind_" ^ faddr#to_hex_string ^ "_" ^ (string_of_int i) ^ "__" in
-                   let _ = chlog#add
-                             "add function:SEHUnwind"
-                             (LBLOCK [ faddr#toPretty ; STR ": " ; m#get_action#toPretty ;
-                                       STR "; " ;  STR name ]) in
-	           (functions_data#add_function m#get_action)#add_name name) unwindmaps in
+       let _ =
+         List.iteri (fun i m ->
+             let name =
+               ("__SEHUnwind_"
+                ^ faddr#to_hex_string
+                ^ "_"
+                ^ (string_of_int i)
+                ^ "__") in
+             let _ =
+               chlog#add
+                 "add function:SEHUnwind"
+                 (LBLOCK [
+                      faddr#toPretty;
+                      STR ": ";
+                      m#get_action#toPretty;
+                      STR "; ";
+                      STR name]) in
+	     (functions_data#add_function m#get_action)#add_name name) unwindmaps in
        let exnhandler = new exn_handler_t None None None None xfinfo unwindmaps in
        begin
          H.add exnhandlers faddr#index exnhandler ;
          true
        end
      else
-       raise (BCH_failure
-                (LBLOCK [ STR "add-seh-exnhandler: String.suffix. Section length: " ;
-                          INT sectionlen ; STR "; offset: " ; INT offset ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "add-seh-exnhandler: String.suffix. Section length: ";
+                 INT sectionlen;
+                 STR "; offset: ";
+                 INT offset ]))
   | _ ->
     begin
-      pr_debug [ STR "No section found for " ; exnfinfo#toPretty ; NL ] ;
+      pr_debug [STR "No section found for "; exnfinfo#toPretty; NL];
       false
     end
 
+
 let todw s = 
-  string_to_doubleword (littleendian_hexstring_todwstring s)
+  TR.tget_ok (string_to_doubleword (littleendian_hexstring_todwstring s))
+
 
 let todwoff s = 
   ((todw s)#to_signed_numerical)#toInt  (* signed doubleword offset *) 
-  
+
+
 let tooff s =
-  let offset = string_to_doubleword ("0x" ^ s) in
+  let offset = TR.tget_ok (string_to_doubleword ("0x" ^ s)) in
   let offset = offset#to_int in
   if offset > 127 then offset - 256 else offset  (* signed byte offset *)
+
 
 let exnpatterns = [
 
