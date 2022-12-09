@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,7 @@ open BCHTranslateToCHIF
 open BCHX86Opcodes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let get_fname (faddr:doubleword_int) =
@@ -81,12 +82,15 @@ let get_fname (faddr:doubleword_int) =
   else
     faddr#to_hex_string 
 
+
 let get_xarg_indices (finfo:function_info_int) (x:xpr_t) = []
-                                                         
+
+
 let var_is_referenced (finfo:function_info_int) (x:xpr_t) (v:variable_t) =
   let vars = variables_in_expr x in
   let rec aux (xv:variable_t) = false in
   List.exists aux vars
+
 
 let se_address_is_referenced 
     (finfo:function_info_int) (floc:floc_int) (x:xpr_t) (v:variable_t) =
@@ -101,6 +105,7 @@ let se_address_is_referenced
       false
   else 
     false
+
 
 let get_callers (faddr:doubleword_int) =
   let callers = ref [] in
@@ -121,11 +126,13 @@ let get_callers (faddr:doubleword_int) =
                 ())) in
   !callers
 
+
 let get_callees (faddr:doubleword_int) =
   let callees = ref [] in
   let f = assembly_functions#get_function faddr#index in
   let _ = f#iter_calls (fun _ floc -> callees := floc :: !callees) in
   !callees
+
 
 let get_app_callees (faddr:doubleword_int):doubleword_int list =
   List.fold_left (fun acc floc ->
@@ -134,18 +141,25 @@ let get_app_callees (faddr:doubleword_int):doubleword_int list =
     else
       acc) [] (get_callees faddr)
 
+
 let record_fpcallback_arguments (f:assembly_function_int) =
   let is_code_address n = 
-    try system_info#is_code_address (numerical_to_doubleword n) with
-      Invalid_argument _ -> false in
+    try
+      system_info#is_code_address
+        (TR.tget_ok (numerical_to_doubleword n))
+    with
+    | Invalid_argument _ -> false in
   f#iter_calls (fun _ floc ->
     if floc#has_call_target && floc#get_call_target#is_signature_valid then
       List.iter (fun (p,x) ->
 	if is_function_type p.apar_type then
 	  match x with
 	  | XConst (IntConst n) when is_code_address n ->
-	    ignore (functions_data#add_function (numerical_to_doubleword n))
+	     ignore
+               (functions_data#add_function
+                  (TR.tget_ok (numerical_to_doubleword n)))
 	  | _ -> ()) floc#get_call_args)
+
 
 let rec trace_fwd faddr op =
   let fname =
@@ -175,6 +189,7 @@ let rec trace_fwd faddr op =
       else
         ()) callees
 
+
 let rec trace_bwd floc op =
   let fname = get_fname floc#l#f in
   let finfo = floc#f in
@@ -194,6 +209,7 @@ let rec trace_bwd floc op =
       List.iter (fun c -> List.iter (fun arg -> trace_bwd c arg) argIndices) callers
   else default ()
 
+
 let get_lib_calls (libfun:string) =
   let flocs = ref [] in
   try
@@ -208,16 +224,13 @@ let get_lib_calls (libfun:string) =
 	else if floc#has_call_target
                 && floc#get_call_target#is_app_call
                 && floc#get_call_target#get_name = libfun then
-          (*
-	    (functions_data#has_function_name floc#get_application_target) &&
-	    ((functions_data#get_function floc#get_application_target)#get_function_name = libfun) then *)
 	  flocs := floc :: !flocs
 	else ())) in
     !flocs
   with
     BCH_failure p -> 
       begin
-	pr_debug [ STR "Error in get_lib_calls: " ; p ; NL ] ;
+	pr_debug [STR "Error in get_lib_calls: "; p; NL];
 	!flocs
       end
 
@@ -231,11 +244,12 @@ let get_jni_calls () =
 	())) in
   !flocs
 
+
 let get_unresolved_calls () =
   let flocs = H.create 5 in
   let sym_printer = (fun s -> STR s#getBaseName) in
   let get_name faddr = 
-    let faddr = string_to_doubleword faddr in
+    let faddr = TR.tget_ok (string_to_doubleword faddr) in
     if functions_data#has_function_name faddr then
       (functions_data#get_function faddr)#get_function_name
     else
@@ -246,15 +260,19 @@ let get_unresolved_calls () =
   let _ = H.iter (fun k v -> fns := (k,v) :: !fns) flocs in
   let fns = List.sort (fun (f1,_) (f2,_) -> Stdlib.compare f2 f1) !fns in
   let pp = ref [] in
-  let _ = List.iter (fun (faddr, calls) ->
-    let env = (get_function_info (string_to_doubleword faddr))#env in
-    let xpr_formatter = make_xpr_formatter sym_printer env#variable_name_to_pretty in
-    let ppp = ref [] in
-    let calls = List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i2 i1) calls in
-    let _ = List.iter (fun (iaddr,x) ->
-      let p = LBLOCK [ STR iaddr ; STR "   " ; xpr_formatter#pr_expr x ; NL ] in
-      ppp := p :: !ppp) calls in
-    let p = LBLOCK [ STR (get_name faddr) ; NL ; INDENT (3, LBLOCK !ppp) ; NL ] in
-    pp := p :: !pp) fns in
+  let _ =
+    List.iter (fun (faddr, calls) ->
+        let env =
+          (get_function_info (TR.tget_ok (string_to_doubleword faddr)))#env in
+        let xpr_formatter =
+          make_xpr_formatter sym_printer env#variable_name_to_pretty in
+        let ppp = ref [] in
+        let calls = List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i2 i1) calls in
+        let _ =
+          List.iter (fun (iaddr,x) ->
+              let p = LBLOCK [STR iaddr; STR "   "; xpr_formatter#pr_expr x; NL] in
+              ppp := p :: !ppp) calls in
+        let p = LBLOCK [STR (get_name faddr); NL; INDENT (3, LBLOCK !ppp); NL] in
+        pp := p :: !pp) fns in
   LBLOCK !pp
 

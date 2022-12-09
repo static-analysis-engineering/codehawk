@@ -82,6 +82,9 @@ open BCHFileIO
 open BCHReachingDefs
 open BCHTrace
 
+module TR = CHTraceResult
+
+
 let analyze_all = ref false
 let maxrelationalvarcomplexity = ref 150000.0
 let maxrelationalloopcomplexity = ref 2000
@@ -146,7 +149,8 @@ let analyze_x86_function faddr f =
     end
   else
     pr_debug [ STR "Translation failed" ; NL ]
- 
+
+
 let analyze starttime =
   let count = ref 0 in
   let failedfunctions = ref [] in
@@ -216,6 +220,7 @@ let analyze starttime =
     end
   end
 
+
 let analyze_mips_function faddr f count =
   let fstarttime = Unix.gettimeofday () in
   let finfo = load_function_info faddr in
@@ -284,21 +289,22 @@ let analyze_mips_function faddr f count =
     end
   else
     pr_debug [ STR "Translation failed" ; NL ]
-  
+
+
 let analyze_mips starttime =
   let count = ref 0 in
   let failedfunctions = ref [] in
   let functionfailure failuretype faddr p =
     begin
       ch_error_log#add "function failure"
-	(LBLOCK [ STR failuretype ; STR ". " ; faddr#toPretty ; STR ": " ; p ]) ;
+	(LBLOCK [STR failuretype; STR ". "; faddr#toPretty; STR ": "; p]);
       failedfunctions := faddr :: !failedfunctions
     end in
   begin
     (if (List.length !fns_included) > 0 then
        List.iter
          (fun faddr ->
-           let faddr = string_to_doubleword faddr in
+           let faddr = TR.tget_ok (string_to_doubleword faddr) in
            let f = mips_assembly_functions#get_function_by_address faddr in
            let _ = count := !count + 1 in
            analyze_mips_function faddr f !count) !fns_included
@@ -384,7 +390,7 @@ let analyze_arm starttime =
     (if (List.length !fns_included) > 0 then
        List.iter
          (fun faddr ->
-           let faddr = string_to_doubleword faddr in
+           let faddr = TR.tget_ok (string_to_doubleword faddr) in
            let f =  arm_assembly_functions#get_function_by_address faddr in
            let _ = count := !count + 1 in
            analyze_arm_function faddr f !count) !fns_included
