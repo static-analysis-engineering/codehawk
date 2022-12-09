@@ -94,6 +94,8 @@ open BCHSystemDisplay
 open BCHGuiUtil
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 (*
 module BTypeCollections = CHCollections.Make
@@ -351,7 +353,7 @@ let variable_value_label
   let isprintable num = num#geq (mkNumerical 32) && (mkNumerical 127)#geq num in
   let pp_constant num = 
     if num#gt image_base#to_numerical then 
-      STR (numerical_to_hex_string num) 
+      STR (TR.tget_ok (numerical_to_hex_string num))
     else if isprintable num then
       STR (String.make 1 (Char.chr num#toInt))
     else
@@ -1254,7 +1256,7 @@ let show_callers_dialog
     (findex:dw_index_t) 
     (add_callers_to_list:(doubleword_int list -> unit))
     (parent:GWindow.window) =
-  let faddr = index_to_doubleword findex in
+  let faddr = TR.tget_ok (index_to_doubleword findex) in
   let fname = get_function_name faddr in
   let callers = get_callers faddr in
   let count = List.length callers in
@@ -1327,7 +1329,7 @@ let show_callees_dialog
     (add_callees_to_list:(doubleword_int list -> unit))
     (parent:GWindow.window) =
   try
-    let faddr = index_to_doubleword findex in
+    let faddr = TR.tget_ok (index_to_doubleword findex) in
     let fname = get_function_name faddr in
     let title = "Calls made by " ^ fname in
     let dialog = GWindow.dialog 
@@ -1428,7 +1430,7 @@ let get_type_invs_pretty fname finfo = (STR "not supported")
 	   STR "Type invariants per location: " ; NL ; LBLOCK (List.rev !ppl) ; NL ]  *)
 
 let show_types_dialog (findex:dw_index_t) (parent:GWindow.window) =
-  let faddr = index_to_doubleword findex in
+  let faddr = TR.tget_ok (index_to_doubleword findex) in
   let finfo = get_function_info faddr in
   let fname = get_function_name faddr in
   let ppInvs = get_type_invs_pretty fname finfo in
@@ -1724,7 +1726,7 @@ let show_gvars_dialog (index:dw_index_t) (parent:GWindow.window) =  ()
  *)
                                                                   
 let show_chif_dialog (function_index:dw_index_t) (parent:GWindow.window) =
-  let function_address = index_to_doubleword function_index in
+  let function_address = TR.tget_ok (index_to_doubleword function_index) in
   let functionName = get_function_name function_address in
   let title = "CHIF for " ^ functionName in
   let dialog =

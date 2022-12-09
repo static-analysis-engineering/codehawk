@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -70,6 +70,8 @@ open BCHDllFunctionsDisplay
 open BCHCanvasUtil
 open BCHStateDialogs
 open BCHStackFrame
+
+module TR = CHTraceResult
 
 
 let string_printer = CHPrettyUtil.string_printer
@@ -190,20 +192,40 @@ object (self)
 	self#show_function h
       end
 
-  method get_display = match display_data with Some (display,_,_) -> display | _->
-    raise (BCH_failure (STR "get_display: functions_display has not been initialized"))
+  method get_display =
+    match display_data with
+    | Some (display,_,_) -> display
+    | _->
+       raise
+         (BCH_failure
+            (STR "get_display: functions_display has not been initialized"))
 
-  method private get_view = match display_data with Some (_,_,view) -> view | _ ->
-    raise (BCH_failure (STR "get_view: functions_display has not been initialized"))
+  method private get_view =
+    match display_data with
+    | Some (_,_,view) -> view
+    | _ ->
+       raise
+         (BCH_failure
+            (STR "get_view: functions_display has not been initialized"))
 
-  method private get_parent = match opt_parent with Some parent -> parent | _ ->
-    raise (BCH_failure (STR "get_parent: functions_display has not been initialized"))
+  method private get_parent =
+    match opt_parent with
+    | Some parent -> parent
+    | _ ->
+       raise
+         (BCH_failure
+            (STR "get_parent: functions_display has not been initialized"))
 
-  method private get_model = match display_data with Some (_,model,_) -> model | _ ->
-    raise (BCH_failure (STR "get_model: functions_display has not been initialized"))
+  method private get_model =
+    match display_data with
+    | Some (_,model,_) -> model
+    | _ ->
+       raise
+         (BCH_failure
+            (STR "get_model: functions_display has not been initialized"))
 
   method private check_current_function =
-    if (index_to_doubleword current_function)#equal wordzero  then 
+    if (TR.tget_ok (index_to_doubleword current_function))#equal wordzero  then
       begin
 	write_message "No function selected. Please select a function" ;
 	false
@@ -224,77 +246,96 @@ object (self)
   method private createCfg () = 
     if self#check_current_function then
       begin
-	write_message ("Creating control flow graph for " ^ self#get_current_function_name ^ " .......") ;
+	write_message
+          ("Creating control flow graph for "
+           ^ self#get_current_function_name
+           ^ " .......") ;
 	canvas#control_flow_graph_to_dot current_function ;
-	write_message ("Created control flow graph for " ^ self#get_current_function_name)
+	write_message
+          ("Created control flow graph for " ^ self#get_current_function_name)
       end
 
   method private createAnnotatedCfg () =
     if self#check_current_function then 
       begin
-	write_message ("Creating decorated control flow graph for " ^ 
-			  self#get_current_function_name ^ " .......") ;
-	canvas#annotated_control_flow_graph_to_dot current_function ;
-	write_message ("Created decorated control flow graph for " ^  
-			  self#get_current_function_name) ;
-    end
+	write_message
+          ("Creating decorated control flow graph for "
+           ^ self#get_current_function_name
+           ^ " .......");
+	canvas#annotated_control_flow_graph_to_dot current_function;
+	write_message
+          ("Created decorated control flow graph for "
+           ^ self#get_current_function_name)
+      end
 
   method private create_sub_call_graph () = 
     if self#check_current_function then
       begin
-	write_message ("Creating descendant call graph for " ^ 
-			  self#get_current_function_name ^ " .......") ;
-	canvas#sub_call_graph_to_dot current_function ;
-	write_message ("Created descendant call graph for " ^ 
-			  self#get_current_function_name)      
+	write_message
+          ("Creating descendant call graph for "
+           ^ self#get_current_function_name
+           ^ " .......");
+	canvas#sub_call_graph_to_dot current_function;
+	write_message
+          ("Created descendant call graph for "
+           ^ self#get_current_function_name)
       end
 
   method private create_rv_sub_call_graph () =
     if self#check_current_function then
       try
 	begin
-	  write_message ("Creating ascendant call graph for " ^
-			    self#get_current_function_name ^ " .......") ;
-	  canvas#sub_rv_call_graph_to_dot current_function ;
-	  write_message ("Created ascendant call graph for " ^ 
-			    self#get_current_function_name)
+	  write_message
+            ("Creating ascendant call graph for "
+             ^ self#get_current_function_name
+             ^ " .......");
+	  canvas#sub_rv_call_graph_to_dot current_function;
+	  write_message
+            ("Created ascendant call graph for "
+             ^ self#get_current_function_name)
 	end
-      with CHCommon.CHFailure p ->
-	pr_debug [ STR "Unable to show reverse call graph: "  ; p ; NL ]
+      with
+      | CHCommon.CHFailure p ->
+	pr_debug [STR "Unable to show reverse call graph: "; p; NL]
 	
   method private show_chif () = 
-    if self#check_current_function then show_chif_dialog current_function self#get_parent
+    if self#check_current_function then
+      show_chif_dialog current_function self#get_parent
 
   method private load_more_functions (faddrs:doubleword_int list) =
-    let loads = List.fold_left (fun acc faddr ->
-      if add_function_listed faddr#to_hex_string then faddr :: acc else acc) [] faddrs in
+    let loads =
+      List.fold_left (fun acc faddr ->
+          if add_function_listed faddr#to_hex_string then
+            faddr :: acc else acc) [] faddrs in
     match loads with
     | [] -> ()
     | _ ->
       begin
 	List.iter (fun faddr ->
 	  begin
-	    translate_assembly_function_by_address faddr ;
+	    translate_assembly_function_by_address faddr;
 	    record_cfg_info faddr
-	  end) loads ;
+	  end) loads;
 	self#set_model
 	  (List.map (fun a -> 
-	    assembly_functions#get_function_by_address (string_to_doubleword a))
+	       assembly_functions#get_function_by_address
+                 (TR.tget_ok (string_to_doubleword a)))
 	     (get_functions_listed ())) 
       end
 
-
   method private show_callers () = 
     if self#check_current_function then 
-      show_callers_dialog current_function self#load_more_functions self#get_parent
+      show_callers_dialog
+        current_function self#load_more_functions self#get_parent
 
   method private show_callees () = 
     try
       if self#check_current_function then 
-	show_callees_dialog current_function self#load_more_functions self#get_parent
+	show_callees_dialog
+          current_function self#load_more_functions self#get_parent
     with
       BCH_failure p ->
-	pr_debug [ STR "Failure in show_callees call: " ; p ; NL ]
+	pr_debug [STR "Failure in show_callees call: "; p; NL]
 
   method private show_dll_calls () =
     try
@@ -302,7 +343,7 @@ object (self)
 	show_dll_calls_dialog current_function self#get_parent
     with
       BCH_failure p ->
-	pr_debug [ STR "Failure in show_dll_calls: " ; p ; NL ]
+	pr_debug [STR "Failure in show_dll_calls: "; p; NL]
 
   method private show_types () =
     try
@@ -310,10 +351,11 @@ object (self)
 	show_types_dialog current_function self#get_parent
     with
       BCH_failure p ->
-	pr_debug [ STR "Failure in show types: " ; p ; NL ]
+	pr_debug [STR "Failure in show types: "; p; NL]
 
   method private show_gvars () =
-    if self#check_current_function then show_gvars_dialog current_function self#get_parent
+    if self#check_current_function then
+      show_gvars_dialog current_function self#get_parent
 	
   method private generate_valuesets () = ()
 

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -85,11 +87,12 @@ object
            -> (string * CHCanvasBase.canvas_node_item_int list)
 end
 
-(*  let make_va_node_name (va:doubleword_int) = "n" ^ (dw_index_to_string va#index)  *)
+
 let make_va_node_name (va:ctxt_iaddress_t) =  "n" ^ va
-                                          
+
+
 let get_address (nodeName:string) =  string_suffix nodeName 1
-(* index_to_doubleword (string_to_dw_index (string_suffix nodeName 1)) *)
+
 
 let get_floca faddr iaddr =
   let loc = ctxt_string_to_location faddr iaddr in

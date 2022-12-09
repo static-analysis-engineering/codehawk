@@ -71,6 +71,9 @@ open BCHVariableNames
 open BCHCanvasUtil
 open BCHGuiUtil
 
+module TR = CHTraceResult
+
+
 let pp_str p = string_printer#print p
 
 let get_floca faddr iaddr =
@@ -153,8 +156,14 @@ object (self)
   method toPretty = 
     let image_base = system_info#get_image_base#to_numerical in
     let pp_constant c = 
-      if c#gt image_base then STR (numerical_to_hex_string c) else c#toPretty in
-    let pp_interval i = match i#singleton with Some c -> pp_constant c | _ -> i#toPretty in
+      if c#gt image_base then
+        STR (TR.tget_ok (numerical_to_hex_string c))
+      else
+        c#toPretty in
+    let pp_interval i =
+      match i#singleton with
+      | Some c -> pp_constant c
+      | _ -> i#toPretty in
     LBLOCK [
       (match range with None -> STR "" | Some i -> LBLOCK [ pp_interval i ; STR "; " ]) ;
       (match vars#toList with
