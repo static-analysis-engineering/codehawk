@@ -102,8 +102,9 @@ let disassemble_instruction (iaddr: doubleword_int) (ch: pushback_stream_int) =
     | _ -> OpInvalid in
   let instrlen = ch#pos - instrpos in
   let instrbytes =
-    fail_traceresult
-      (STR "ThumbITSequence:disassemble_instruciton")
+    fail_tvalue
+      (trerror_record
+         (STR "ThumbITSequence:disassemble_instruciton"))
       (ch#sub instrpos instrlen) in
   let instr = make_arm_assembly_instruction iaddr false opcode instrbytes in
   begin

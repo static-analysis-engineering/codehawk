@@ -59,6 +59,8 @@ open BCHARMOperand
 open BCHARMPseudocode
 open BCHARMTypes
 
+module TR = CHTraceResult
+
 
 (* commonly used constant values *)
 let e7   = 128
@@ -120,11 +122,12 @@ let get_it_condition_list (firstcond:int) (mask:int) =
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [STR "Unexpected values in get_it_condition_list: ";
-                     STR "mask: ";
-                     INT mask;
-                     STR "; fc0: ";
-                     INT fc0])) in
+            (LBLOCK [
+                 STR "Unexpected values in get_it_condition_list: ";
+                 STR "mask: ";
+                 INT mask;
+                 STR "; fc0: ";
+                 INT fc0])) in
   thencc::xyz
 
 
@@ -132,7 +135,7 @@ let get_string_reference (floc:floc_int) (xpr:xpr_t) =
   try
     match xpr with
     | XConst (IntConst num) ->
-      let address = numerical_to_doubleword num in
+      let address = TR.tget_ok (numerical_to_doubleword num) in
       begin
 	match elf_header#get_string_at_address address with
 	| Some str ->

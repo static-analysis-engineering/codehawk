@@ -58,24 +58,29 @@ module DoublewordCollections = CHCollections.Make (
 
 let get_successors
       (faddr: doubleword_int) (iaddr: doubleword_int):ctxt_iaddress_t list =
-  log_traceresult_list
-    ch_error_log
-    ("get_successors:" ^ iaddr#to_hex_string)
+  log_tfold_default
+    (mk_tracelog_spec
+       ~tag:"get_successors"
+       ("faddr:" ^ faddr#to_hex_string ^ ", " ^ "iaddr:" ^ iaddr#to_hex_string))
     (fun instr ->
       let get_next_iaddr = get_next_valid_instruction_address in
       let opcode = instr#get_opcode in
       let next () =
-        log_traceresult_list
-          ch_diagnostics_log
-          "construction functions:get_successors"
+        log_tfold_default
+          (mk_tracelog_spec
+             ~tag:"get_successors:next"
+             ("faddr:" ^ faddr#to_hex_string ^ ", " ^ "iaddr:" ^ iaddr#to_hex_string))
           (fun a -> [a])
+          []
           (get_next_valid_instruction_address iaddr) in
 
       let next_from (va: doubleword_int) =
-        log_traceresult_list
-          ch_diagnostics_log
-          "construction functions:get_successors"
+        log_tfold_default
+          (mk_tracelog_spec
+             ~tag:"get_successors:next_from"
+             ("faddr:" ^ faddr#to_hex_string ^ ", " ^ "iaddr:" ^ iaddr#to_hex_string))
           (fun a -> [a])
+          []
           (get_next_valid_instruction_address va) in
       
       let get_iftxf iaddr =   (* if then x follow *)
@@ -202,7 +207,8 @@ let get_successors
                            STR " is not a valid code address"]));
                  false
                end) succ))
-  (get_arm_assembly_instruction iaddr)
+    []
+    (get_arm_assembly_instruction iaddr)
 
 
 let construct_arm_assembly_block
@@ -262,8 +268,9 @@ let construct_arm_assembly_block
         (ctxt_iaddress_t * arm_assembly_block_int list) =
     let inlinedfn = get_inlined_function instr in
     let returnsite =
-      fail_traceresult
-        (LBLOCK [STR "construct_arm_assembly_block: "; va#toPretty])
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "construct_arm_assembly_block: "; va#toPretty]))
         (get_next_instr_address va) in
     let _ = set_block_entry returnsite in
     let functioncontext =
@@ -287,13 +294,16 @@ let construct_arm_assembly_block
 
   let rec find_last_instruction (va: doubleword_int) (prev: doubleword_int) =
     let instr =
-      fail_traceresult
-        (LBLOCK [STR "find_last_instruction: "; va#toPretty]) (get_instr va) in
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "find_last_instruction: "; va#toPretty]))
+        (get_instr va) in
 
     (* continue tracing the block *)
     let nextva () =
-      fail_traceresult
-        (LBLOCK [STR "find_last_instruction: "; va#toPretty])
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "find_last_instruction: "; va#toPretty]))
         (get_next_instr_address va) in
     
     let floc = get_floc_by_address faddr va in
@@ -345,8 +355,10 @@ let construct_arm_assembly_block
       (None, va, []) in
 
   let binstr =
-    fail_traceresult
-      (LBLOCK [STR "get_successors: "; baddr#toPretty]) (get_instr baddr) in
+    fail_tvalue
+      (trerror_record
+         (LBLOCK [STR "get_successors: "; baddr#toPretty]))
+      (get_instr baddr) in
   let (succ, lastaddr, inlinedblocks) =
     if system_info#is_nonreturning_call faddr baddr then
       (* user-declared non-returning call, no successors *)
@@ -368,8 +380,9 @@ let construct_arm_assembly_block
     else if has_next_instr baddr then
       (* construct the block *)
       let nextva =
-        fail_traceresult
-          (LBLOCK [STR "get_successors: "; baddr#toPretty])
+        fail_tvalue
+          (trerror_record
+             (LBLOCK [STR "get_successors: "; baddr#toPretty]))
           (get_next_instr_address baddr) in
       find_last_instruction nextva baddr
 

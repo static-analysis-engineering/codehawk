@@ -49,6 +49,8 @@ open BCHSystemSettings
 (* bchlibarm32 *)
 open BCHARMTypes
 
+module TR = CHTraceResult
+
 exception ARM_undefined of string
 exception ARM_unpredictable of string
 
@@ -85,6 +87,7 @@ let get_opcode_cc (c:int) =
        (BCH_failure
           (LBLOCK [ STR "Unexpected value for condition code: "; INT c ]))
 
+
 let get_dmb_option (option:int) =
   match option with
   | 15 -> FullSystemRW
@@ -99,6 +102,7 @@ let get_dmb_option (option:int) =
      raise
        (BCH_failure
           (LBLOCK [STR "Unexpected value for dmb option: "; INT option]))
+
 
 let get_arm_reg (r:int) =
   match r with
@@ -122,6 +126,7 @@ let get_arm_reg (r:int) =
      raise
        (BCH_failure
           (LBLOCK [ STR "Unexpected value for arm register: "; INT r ]))
+
 
 let get_reglist_from_int (width:int) (reglist:int) =
   let rec collect n l =
@@ -151,7 +156,7 @@ let align (a: int) (size: int): int = (a / size) * size
 
 
 let align_dw (dw: doubleword_int) (size: int): doubleword_int =
-  int_to_doubleword (align dw#to_int size)
+  TR.tget_ok (int_to_doubleword (align dw#to_int size))
 
 
 (* Application Program Status Register (APSR) (pg A2-49)

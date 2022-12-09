@@ -47,6 +47,7 @@ open BCHARMPseudocode
 open BCHARMTypes
 
 module B = Big_int_Z
+module TR = CHTraceResult
 
 (*
    16-bit
@@ -2442,7 +2443,7 @@ let parse_t32_30_0
   let imm8 = b 7 0 in
   let imm12 = (i lsl 11) + (imm3 lsl 8) + imm8 in
   let (imm32, _) = thumb_expand_imm_c imm12 0 in
-  let imm32 = make_immediate false 4 (B.big_int_of_int imm32) in
+  let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
   let const = arm_immediate_op imm32 in
                             
   match (b 25 21) with
@@ -2510,7 +2511,7 @@ let parse_t32_30_0
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let imm = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let imm = thumb_expand_imm imm 0 in
-     let imm = make_immediate false 4 (B.big_int_of_int imm) in
+     let imm = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm)) in
      let imm = arm_immediate_op imm in
      (* CMP<c>.W <Rn>, #<const> *)
      Compare (cc, rn RD, imm, true)
@@ -2521,7 +2522,7 @@ let parse_t32_30_0
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let imm = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let imm = thumb_expand_imm imm 0 in
-     let imm = make_immediate false 4 (B.big_int_of_int imm) in
+     let imm = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm)) in
      let imm = arm_immediate_op imm in
      (* SUB{S}<c>.W <Rd>, <Rn>, #<const> *)
      Subtract (setflags, cc, rd WR, rn RD, imm, true, false)
@@ -2532,7 +2533,7 @@ let parse_t32_30_0
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let imm = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let imm = thumb_expand_imm imm 0 in
-     let imm = make_immediate false 4 (B.big_int_of_int imm) in
+     let imm = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm)) in
      let imm = arm_immediate_op imm in
      (* RSB{S}<c>.W <Rd>, <Rn>, #<const> *)
      ReverseSubtract (setflags, cc, rd WR, rn RD, imm, true)
@@ -2541,7 +2542,7 @@ let parse_t32_30_0
   | 16 when not setflags ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let imm32 = (i lsl 11) + (imm3 lsl 8) + imm8 in
-     let imm32 = make_immediate false 4 (B.big_int_of_int imm32) in
+     let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
      let imm12 = arm_immediate_op imm32 in
      (* ADDW<c> <Rd>, <Rn>, #<imm12> *)
      Add (false, cc, rd WR, rn RD, imm12, false)
@@ -2550,7 +2551,7 @@ let parse_t32_30_0
   | 18 when not setflags ->
      let imm4 = b 19 16 in
      let imm16 = (imm4 lsl 12) + (i lsl 11) + (imm3 lsl 8) + imm8 in
-     let imm16 = make_immediate false 4 (B.big_int_of_int imm16) in
+     let imm16 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm16)) in
      let imm16 = arm_immediate_op imm16 in
      Move (false, cc, rd WR, imm16, false, true)
 
@@ -2558,7 +2559,7 @@ let parse_t32_30_0
   | 21 when (not setflags) && (b 19 16) = 13  ->
      let imm32 = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let sp = arm_register_op (get_arm_reg 13) in
-     let imm32 = make_immediate false 4 (B.big_int_of_int imm32) in
+     let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
      let imm12 = arm_immediate_op imm32 in
      (* SUBW<c> <Rd>, SP #<imm12> *)
      Subtract (false, cc, rd WR, sp RD, imm12, false, true)
@@ -2567,7 +2568,7 @@ let parse_t32_30_0
   | 21 when (not setflags) ->
      let imm32 = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
-     let imm32 = make_immediate false 4 (B.big_int_of_int imm32) in
+     let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
      let imm12 = arm_immediate_op imm32 in
      (* SUBW<c> <Rd>, <Rn>, #<imm12> *)
      Subtract (false, cc, rd WR, rn RD, imm12, false, true)
@@ -2576,7 +2577,7 @@ let parse_t32_30_0
   | 22 when not setflags ->
      let imm4 = b 19 16 in
      let imm16 = (imm4 lsl 12) + (i lsl 11) + (imm3 lsl 8) + imm8 in
-     let imm16 = make_immediate false 4 (B.big_int_of_int imm16) in
+     let imm16 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm16)) in
      let imm16 = arm_immediate_op imm16 in
      (* MOVT<c> <Rd>, #<imm16> *)
      MoveTop (cc, rd WR, imm16)
@@ -2714,7 +2715,7 @@ let parse_t32_branch
      let imm32 = sign_extend 32 25 imm32 in
      let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
      let tgt = ((iaddr#to_int + 4) / 4) * 4 in
-     let tgt = int_to_doubleword (tgt + imm32) in
+     let tgt = TR.tget_ok (int_to_doubleword (tgt + imm32)) in
      (try
         let tgtop = arm_absolute_op tgt RD in
         (* BLX<c> <label> *)
@@ -2739,7 +2740,7 @@ let parse_t32_branch
      let imm32 = sign_extend 32 25 imm32 in
      let imm32 = if imm32 >= e31 then imm32 - e32 else imm32 in
      let tgt = iaddr#to_int + 4 in
-     let tgt = int_to_doubleword (tgt + imm32) in
+     let tgt = TR.tget_ok (int_to_doubleword (tgt + imm32)) in
      (try
         let tgtop = arm_absolute_op tgt RD in
         (* BL<c> <label> *)
@@ -2884,7 +2885,7 @@ let parse_thumb32_31_0
      let isindex = (b 10 10) = 1 in
      let isadd = (b 9 9) = 1 in
      let iswback = (b 8 8) = 1 in
-     let imm = arm_immediate_op (immediate_from_int (b 7 0)) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 7 0))) in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
      (* LDRH<c>.W <Rt>, [<Rn>{, #+/-<imm8>}]    Offset: (index,wback) = (T,F)
       * LDRH<c>.W <Rt>, [<Rn>, #+/-<imm8>]!     Pre-x : (index,wback) = (T,T)
@@ -3032,7 +3033,7 @@ let parse_thumb32_31_0
      let isindex = (b 10 10) = 1 in
      let isadd = (b 9 9) = 1 in
      let iswback = (b 8 8) = 1 in
-     let imm = arm_immediate_op (immediate_from_int (b 7 0)) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 7 0))) in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
      (* LDRSB<c> <Rt>, [<Rn>, #-<imm8>]
         LDRSB<c> <Rt>, [<Rn>], #+/-<imm8>
@@ -3101,7 +3102,7 @@ let parse_thumb32_31_0
      let isindex = (b 10 10) = 1 in
      let isadd = (b 9 9) = 1 in
      let iswback = (b 8 8) = 1 in
-     let imm = arm_immediate_op (immediate_from_int (b 7 0)) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 7 0))) in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
      (* LDRSH<c> <Rt>, [<Rn>, #-<imm8>]
         LDRSH<c> <Rt>, [<Rn>], #+/-<imm8>
@@ -3111,7 +3112,7 @@ let parse_thumb32_31_0
   (* < 31>00< 25><rn><rt><--imm12--->   LDRSB (immediate) - T1 *)
   | 25 ->
      let imm12 = b 11 0 in
-     let imm = arm_immediate_op (immediate_from_int imm12) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm12)) in
      let offset = ARMImmOffset imm12 in
      let mem =
        mk_arm_offset_address_op
@@ -3122,7 +3123,7 @@ let parse_thumb32_31_0
   (* < 31>00< 27><rn><rt><--imm12--->   LDRSH (immediate) - T1 *)
   | 27 ->
      let imm12 = b 11 0 in
-     let imm = arm_immediate_op (immediate_from_int imm12) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm12)) in
      let offset = ARMImmOffset imm12 in
      let mem =
        mk_arm_offset_address_op
@@ -4197,14 +4198,14 @@ let parse_t16_00
     | 3 -> arm_register_op (get_arm_reg (b 2 0)) m
     | _ -> raise (BCH_failure (LBLOCK [STR "reg: "; INT i])) in
   let imm3 () =
-    let i = make_immediate false 4 (B.big_int_of_int (b 8 6)) in
+    let i = TR.tget_ok (make_immediate false 4 (B.big_int_of_int (b 8 6))) in
     arm_immediate_op i in
   let imm5 ty =
     let (_, shift_n) = decode_imm_shift ty (b 10 6) in
-    let i = make_immediate false 4 (B.big_int_of_int shift_n) in
+    let i = TR.tget_ok (make_immediate false 4 (B.big_int_of_int shift_n)) in
     arm_immediate_op i in       
   let imm8 () =
-    let i = make_immediate false 4 (B.big_int_of_int (b 7 0)) in
+    let i = TR.tget_ok (make_immediate false 4 (B.big_int_of_int (b 7 0))) in
     arm_immediate_op i in
   
   match (b 13 11) with
@@ -4547,7 +4548,8 @@ let parse_t16_load_store_imm
   let rn = regop rnreg in    
   let rtreg = reg (b 2 0) in
   let rt = regop rtreg in
-  let imm = arm_immediate_op (immediate_from_int (2 * (b 10 6))) in
+  let imm =
+    arm_immediate_op (TR.tget_ok (signed_immediate_from_int (2 * (b 10 6)))) in
   let offset (m:int) = ARMImmOffset (m * (b 10 6)) in
   let mem (mult: int) m =
     mk_arm_offset_address_op
@@ -4599,9 +4601,9 @@ let parse_t16_load_store_imm_relative
   let spreg = reg 13 in
   let sp = regop (reg 13) in
   let offset m = ARMImmOffset (m * (b 7 0)) in
-  let imm = make_immediate false 4 (B.big_int_of_int (4 * (b 7 0))) in
+  let imm = TR.tget_ok (make_immediate false 4 (B.big_int_of_int (4 * (b 7 0)))) in
   let immop = arm_immediate_op imm in
-  let imm7 = make_immediate false 4 (B.big_int_of_int (4 * (b 6 0))) in
+  let imm7 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int (4 * (b 6 0)))) in
   let imm7op = arm_immediate_op imm7 in
   let mem (mult: int) m =
     mk_arm_offset_address_op
@@ -4840,13 +4842,15 @@ let parse_t16_conditional
   match (b 11 8) with
   (* 11011110<-imm8->  UDF - T1 *)
   | 14 ->
-     let imm8 = arm_immediate_op (immediate_from_int (b 7 0)) in
+     let imm8 =
+       arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 7 0))) in
      (* UDF<c> #<imm8> *)
      PermanentlyUndefined (cc, imm8)
      
   (* 11011111<-imm8->  SVC - T1 *)
   | 15 ->
-     let imm8 = arm_immediate_op (immediate_from_int (b 7 0)) in
+     let imm8 =
+       arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 7 0))) in
      (* SVC<c> #<imm8> *)
      SupervisorCall (cc, imm8)
 
@@ -4938,10 +4942,10 @@ let parse_thumb_opcode
   | 29 | 30 | 31 ->
      let sndhalfword = ch#read_ui16 in
      let instr32 = (instrbytes lsl 16) + sndhalfword in
-     let instr32 = int_to_doubleword instr32 in
+     let instr32 = TR.tget_ok (int_to_doubleword instr32) in
      parse_thumb32_opcode ~in_it ~cc ch iaddr instr32
   | _ ->
-     let instr16 = int_to_doubleword instrbytes in
+     let instr16 = TR.tget_ok (int_to_doubleword instrbytes) in
      parse_thumb16_opcode ~in_it ~cc ch iaddr instr16
 
 

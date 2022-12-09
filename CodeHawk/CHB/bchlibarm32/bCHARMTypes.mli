@@ -1192,6 +1192,11 @@ class type arm_jumptable_int =
     method target_addrs: doubleword_int list
     method default_target: doubleword_int
     method indexed_targets: (doubleword_int * int list) list
+    method start_address: doubleword_int
+    method end_address: doubleword_int option
+
+    (* conversion *)
+    method to_jumptable: jumptable_int
 
     (* translation *)
     method toCHIF: doubleword_int -> cmd_t list

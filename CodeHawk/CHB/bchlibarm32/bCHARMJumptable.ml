@@ -57,11 +57,22 @@ class arm_jumptable_t
         ~(targets: (doubleword_int * int list) list):arm_jumptable_int =
 object (self)
 
+  method start_address = start_address
+
+  method end_address = end_address
+
   method target_addrs = List.map fst targets
 
   method indexed_targets = targets
 
   method default_target = default_target
+
+  method to_jumptable =
+    TR.tget_ok
+      (make_jumptable
+         ~end_address:self#end_address
+         ~start_address
+         ~targets:(self#default_target :: self#target_addrs))
 
   method toCHIF (faddr: doubleword_int) = []
 
@@ -99,7 +110,7 @@ let make_arm_jumptable
         H.replace tgts index (v::entry)) targets in
   let indexedtargets =
     H.fold (fun k v acc ->
-        (int_to_doubleword k, (List.sort Stdlib.compare v))::acc)
+        (TR.tget_ok (int_to_doubleword k), (List.sort Stdlib.compare v))::acc)
       tgts [] in
   let indexedtargets =
     List.sort (fun (a1, _) (a2, _) ->
@@ -354,7 +365,7 @@ let create_arm_ldr_jumptable
          let defaulttgt = tgtop#get_absolute_address in
          let size = imm#to_numerical#toInt in
          let jtaddr = addrop#get_absolute_address in
-         let skips = (jtaddr#subtract iaddr)#to_int - 4 in
+         let skips = (TR.tget_ok (jtaddr#subtract_to_int iaddr)) - 4 in
          let _ = if skips > 0 then ch#skip_bytes skips in
          let targets = ref [] in
          let _ =
@@ -528,7 +539,7 @@ let create_arm_bx_jumptable
           raise
             (BCH_failure
                (LBLOCK [STR "Internal error in create_bx_jumptable:jtaddr"])) in
-     let skips = (jtaddr#subtract addr)#to_int - 2 in
+     let skips = (TR.tget_ok (jtaddr#subtract_to_int addr)) - 2 in
      let _ = if skips > 0 then ch#skip_bytes skips in
      let targets = ref [] in
      let _ =

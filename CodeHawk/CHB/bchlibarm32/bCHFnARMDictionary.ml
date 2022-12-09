@@ -75,6 +75,8 @@ open BCHARMTypes
 
 module B = Big_int_Z
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 let x2p = xpr_formatter#pr_expr
 
@@ -527,9 +529,11 @@ object (self)
          let tcond = rewrite_test_expr csetter txpr in
          let fcond = rewrite_test_expr csetter fxpr in
          let instr =
-           fail_traceresult
-             (LBLOCK [STR "Internal error in FnARMDictionary:Branch"])
-             (get_arm_assembly_instruction (string_to_doubleword csetter)) in
+           fail_tvalue
+             (trerror_record
+                (LBLOCK [STR "Internal error in FnARMDictionary:Branch"]))
+             (get_arm_assembly_instruction
+                (TR.tget_ok (string_to_doubleword csetter))) in
          let bytestr = instr#get_bytes_ashexstring in
          let rdefs = get_all_rdefs tcond in
          let (tagstring, args) =
@@ -716,8 +720,9 @@ object (self)
            let testloc = ctxt_string_to_location faddr testiaddr in
            let testaddr = testloc#i in
            let testinstr =
-             fail_traceresult
-               (LBLOCK [STR "FnDictionary:IfThen: "; floc#ia#toPretty])
+             fail_tvalue
+               (trerror_record
+                  (LBLOCK [STR "FnDictionary:IfThen: "; floc#ia#toPretty]))
                (get_arm_assembly_instruction testaddr) in
            let agg = get_aggregate floc#ia in
            (match agg#it_sequence#kind with
@@ -759,8 +764,9 @@ object (self)
          let tcond = rewrite_test_expr csetter txpr in
          let fcond = rewrite_test_expr csetter fxpr in
          let instr =
-           fail_traceresult
-             (LBLOCK [STR "Internal error in FnARMDictionary:IfThen"])
+           fail_tvalue
+             (trerror_record
+                (LBLOCK [STR "Internal error in FnARMDictionary:IfThen"]))
              (get_arm_assembly_instruction testloc#i) in
          let bytestr = instr#get_bytes_ashexstring in
          let rdefs = get_all_rdefs tcond in

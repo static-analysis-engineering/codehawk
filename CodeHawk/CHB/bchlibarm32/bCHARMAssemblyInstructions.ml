@@ -173,7 +173,7 @@ object (self)
      the virtual address is out-of-range, return None. *)
   method private indexresult (va: doubleword_int): int TR.traceresult =
     if codeBase#le va && va#lt codeEnd then
-      Ok (va#subtract codeBase)#to_int
+      va#subtract_to_int codeBase
     else
       Error ["index:"^ va#to_hex_string]
 
@@ -195,10 +195,10 @@ object (self)
 
   method set_instruction
            (va: doubleword_int) (instr:arm_assembly_instruction_int) =
-    log_traceresult
-      ch_error_log
-      "set instruction"
-      (fun index -> set_instruction index instr)
+    log_tfold
+      (mk_tracelog_spec ~tag:"disassembly" ("set instruction:" ^ va#to_hex_string))
+      ~ok:(fun index -> set_instruction index instr)
+      ~error:(fun _ -> ())
       (self#indexresult va)
 
   method get_instruction (va:doubleword_int): arm_assembly_instruction_result =
@@ -209,23 +209,30 @@ object (self)
 
   method set_aggregate
            (va: doubleword_int) (agg: arm_instruction_aggregate_int) =
-    log_traceresult
-      ch_error_log
-      "set aggregate"
-      (fun index ->
-        begin
-          H.add aggregates index agg;
-          agg#anchor#set_aggregate_anchor;
-          agg#entry#set_aggregate_entry;
-          agg#exitinstr#set_aggregate_exit;
-          List.iter (fun instr -> instr#set_in_aggregate va) agg#instrs
-        end)
-      (self#indexresult va)
+    begin
+      log_tfold
+        (mk_tracelog_spec ~tag:"disassembly" ("set aggregate:" ^ va#to_hex_string))
+        ~ok:(fun index ->
+          begin
+            H.add aggregates index agg;
+            agg#anchor#set_aggregate_anchor;
+            agg#entry#set_aggregate_entry;
+            agg#exitinstr#set_aggregate_exit;
+            List.iter (fun instr -> instr#set_in_aggregate va) agg#instrs
+          end)
+        ~error:(fun _ -> ())
+        (self#indexresult va);
+      (match agg#kind with
+       | ARMJumptable jt -> self#set_jumptable jt#to_jumptable
+       | _ -> ())
+    end
 
   method get_aggregate (va: doubleword_int): arm_instruction_aggregate_int =
     let index =
-      fail_traceresult
-        (LBLOCK [STR "get_aggregate:" ; va#toPretty]) (self#indexresult va) in
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "get_aggregate:" ; va#toPretty]))
+        (self#indexresult va) in
     if H.mem aggregates index then
       H.find aggregates index
     else
@@ -240,57 +247,71 @@ object (self)
   method private set_not_code_block (db: data_block_int) =
     let startaddr = db#get_start_address in
     let endaddr = db#get_end_address in
-    log_traceresult2
-      ch_error_log
-      "set-not-code-block"
-      (fun startindex endindex ->
-        let startinstr =
-          make_arm_assembly_instruction
-            startaddr true (NotCode (Some (DataBlock db))) "" in
-        begin
-          set_instruction startindex startinstr;
-          for i = startindex + 1 to endindex - 1 do
-            set_instruction
-              i
-              (make_arm_assembly_instruction
-                 (codeBase#add_int i) true (NotCode None) "")
-          done;
-          (if collect_diagnostics () then
-             ch_diagnostics_log#add
-               "not code (data block)"
-               (LBLOCK [startaddr#toPretty; STR " - "; endaddr#toPretty]))
-        end)
+    log_tfold
+      (mk_tracelog_spec
+         ~tag:"disassembly"
+         ("set_not_code_block:startaddr:" ^ startaddr#to_hex_string))
+      ~ok:(fun startindex ->
+        log_tfold
+          (mk_tracelog_spec
+             ~tag:"disassembly"
+             ("set_not_code_block:endaddr:" ^ endaddr#to_hex_string))
+          ~ok: (fun endindex ->
+            let startinstr =
+              make_arm_assembly_instruction
+                startaddr true (NotCode (Some (DataBlock db))) "" in
+            begin
+              set_instruction startindex startinstr;
+              for i = startindex + 1 to endindex - 1 do
+                set_instruction
+                  i
+                  (make_arm_assembly_instruction
+                     (codeBase#add_int i) true (NotCode None) "")
+              done;
+              (if collect_diagnostics () then
+                 ch_diagnostics_log#add
+                   "not code (data block)"
+                   (LBLOCK [startaddr#toPretty; STR " - "; endaddr#toPretty]))
+            end)
+          ~error:(fun _ -> ())
+          (self#indexresult endaddr))
+      ~error:(fun _ -> ())
       (self#indexresult startaddr)
-      (self#indexresult endaddr)
 
-  method private set_jumptables (jumptables: jumptable_int list) =
-    List.iter self#set_jumptable jumptables
+  (* method private set_jumptables (jumptables: jumptable_int list) =
+    List.iter self#set_jumptable jumptables *)
 
   method private set_jumptable (jumptable: jumptable_int) =
     let saddr = jumptable#get_start_address in
     let eaddr = jumptable#get_end_address in
-    log_traceresult2
-      ch_error_log
-      "set-jumptable"
-      (fun startindex endindex ->
-        let startinstr =
-          make_arm_assembly_instruction
-            saddr true (NotCode (Some (JumpTable jumptable))) "" in
-        begin
-          set_instruction startindex startinstr;
-          for i = startindex + 1 to endindex - 1 do
-            set_instruction
-              i
-              (make_arm_assembly_instruction
-                 (codeBase#add_int i) true (NotCode None) "")
-          done;
-          (if collect_diagnostics () then
-             ch_diagnostics_log#add
-               "not code (jump table)"
-               (LBLOCK [saddr#toPretty; STR " - "; eaddr#toPretty]))
-        end)
+    log_titer
+      (mk_tracelog_spec
+         ~tag:"disassembly"
+         ("set_jumptable:" ^ saddr#to_hex_string))
+      (fun startindex ->
+        log_titer
+          (mk_tracelog_spec
+             ~tag:"disassembly"
+             ("set_jumptable:" ^ eaddr#to_hex_string))
+          (fun endindex ->
+            let startinstr =
+              make_arm_assembly_instruction
+                saddr true (NotCode (Some (JumpTable jumptable))) "" in
+            begin
+              set_instruction startindex startinstr;
+              for i = startindex + 1 to endindex - 1 do
+                set_instruction
+                  i
+                  (make_arm_assembly_instruction
+                     (codeBase#add_int i) true (NotCode None) "")
+              done;
+              (if collect_diagnostics () then
+                 ch_diagnostics_log#add
+                   "not code (jump table)"
+                   (LBLOCK [saddr#toPretty; STR " - "; eaddr#toPretty]))
+            end)
+          (self#indexresult eaddr))
       (self#indexresult saddr)
-      (self#indexresult eaddr)
 
   method get_next_valid_instruction_address
            (va: doubleword_int): doubleword_int TR.traceresult =
@@ -347,36 +368,42 @@ object (self)
       else
         high in
     let high = if high#lt low then low else high in
-    log_traceresult2_list
-      ch_error_log
-      "get_code_addresses_rev:internal error"
-      (fun lowindex highindex ->
-        let addresses = ref [] in
-        begin
-          for i = lowindex to highindex do
-            (match TR.to_option (get_instruction i) with
-             | Some instr ->
-                if instr#is_valid_instruction then
-                  addresses := (codeBase#add_int i) :: !addresses
-             | _ -> ())
-          done;
-          !addresses
-        end)
-      (self#indexresult low)
-      (self#indexresult high)
+    let addresses = ref [] in
+    let _ =
+      log_titer
+        (mk_tracelog_spec
+           ~tag:"disassembly"
+           ("get_code_addresses_rev:low:" ^ low#to_hex_string))
+        (fun lowindex ->
+          log_titer
+            (mk_tracelog_spec
+               ~tag:"disassembly"
+               ("get_code_addresses_rev:high:" ^ high#to_hex_string))
+            (fun highindex ->
+              begin
+                for i = lowindex to highindex do
+                  (match TR.to_option (get_instruction i) with
+                   | Some instr ->
+                      if instr#is_valid_instruction then
+                        addresses := (codeBase#add_int i) :: !addresses
+                   | _ -> ())
+                done;
+              end)
+            (self#indexresult high))
+        (self#indexresult low) in
+    !addresses
 
   method get_num_instructions =
     (List.length (self#get_code_addresses_rev ()))
 
   method get_num_unknown_instructions =
-    TR.tfold_list
-      ~ok:(fun acc instr ->
-        match instr#get_opcode with
-        | NotRecognized _ -> acc + 1
-        | _ -> acc)
-      0
-      (List.map (fun a ->
-           self#get_instruction a) (self#get_code_addresses_rev ()))
+    let n = ref 0 in
+    let _ =
+      self#iteri (fun _ instr ->
+          match instr#get_opcode with
+          | NotRecognized _ -> n := !n + 1
+          | _ -> ()) in
+    !n
       
   method iteri (f:int -> arm_assembly_instruction_int -> unit) =
     iteri_instructions
@@ -608,7 +635,8 @@ let set_data_references (lst: doubleword_int list) =
             | Ok instr when instr#is_not_code ->
                get tl [hd] blocks
             | _ ->
-               let db = make_data_block firstaddr (lastaddr#add_int 4) "" in
+               let db =
+                 TR.tget_ok (make_data_block firstaddr (lastaddr#add_int 4) "") in
                let datalen = (List.length w) * 4 in
                let datastring = elf_header#get_xsubstring firstaddr datalen in
                let _ = db#set_data_string datastring in

@@ -51,6 +51,8 @@ open BCHARMPseudocode
 open BCHARMTypes
 
 module B = Big_int_Z
+module TR = CHTraceResult
+
 
 (* commonly used constant values *)
 let e7   = 128
@@ -302,7 +304,7 @@ let parse_data_proc_reg_load_stores (instr: doubleword_int) (cond: int) =
      let rnreg = get_arm_reg rx in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let imm32 = get_imm32 rz rv in
-     let imm = arm_immediate_op (immediate_from_int imm32) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm32)) in
      let offset = ARMImmOffset imm32 in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback WR in
      (* STRH<c> <Rt>, [<Rn>{, #+/-<imm8>}]      Offset: (index,wback) = (T,F)
@@ -318,7 +320,7 @@ let parse_data_proc_reg_load_stores (instr: doubleword_int) (cond: int) =
      let rnreg = get_arm_reg rx in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let imm32 = get_imm32 rz rv in
-     let imm = arm_immediate_op (immediate_from_int imm32) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm32)) in
      let offset = ARMImmOffset imm32 in
      let offset2 = ARMImmOffset (imm32 + 4) in
      let mem =
@@ -337,7 +339,7 @@ let parse_data_proc_reg_load_stores (instr: doubleword_int) (cond: int) =
      let rnreg = get_arm_reg rx in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let imm32 = get_imm32 rz rv in
-     let imm = arm_immediate_op (immediate_from_int imm32) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm32)) in
      let offset = ARMImmOffset imm32 in
      let offset2 = ARMImmOffset (imm32 + 4) in
      let mem =
@@ -356,7 +358,7 @@ let parse_data_proc_reg_load_stores (instr: doubleword_int) (cond: int) =
      let rnreg = get_arm_reg rx in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let imm32 = get_imm32 rz rv in
-     let imm = arm_immediate_op (immediate_from_int imm32) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm32)) in
      let offset = ARMImmOffset imm32 in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
      (* LDRH<c> <Rt>, [<Rn>{, #+/-<imm>}]       Offset: (index,wback) = (T,F)
@@ -370,7 +372,7 @@ let parse_data_proc_reg_load_stores (instr: doubleword_int) (cond: int) =
      let rnreg = get_arm_reg rx in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let imm32 = get_imm32 rz rv in
-     let imm = arm_immediate_op (immediate_from_int imm32) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm32)) in
      let offset = ARMImmOffset imm32 in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
      (* LDRSB<c> <Rt>, [<Rn>{, #+/-<imm8>}]
@@ -384,7 +386,7 @@ let parse_data_proc_reg_load_stores (instr: doubleword_int) (cond: int) =
      let rnreg = get_arm_reg rx in
      let rn = arm_register_op rnreg (if iswback then RW else RD) in
      let imm32 = get_imm32 rz rv in
-     let imm = arm_immediate_op (immediate_from_int imm32) in
+     let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm32)) in
      let offset = ARMImmOffset imm32 in
      let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
      (* LDRSH<c> <Rt>, [<Rn>{, #+/-<imm8>}]
@@ -760,7 +762,7 @@ let parse_data_proc_imm_type
   let c = get_opcode_cc cond in
   let mk_imm (rotate: int) (imm: int) =
     let imm32 = arm_expand_imm rotate imm in
-    let imm32 = make_immediate false 4 (B.big_int_of_int imm32) in
+    let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
     arm_immediate_op imm32 in
   let mk_imm16 (imm4: int) (rotate: int) (imm: int) =
     (imm4 lsl 12) + (rotate lsl 8) + imm in
@@ -864,7 +866,7 @@ let parse_data_proc_imm_type
   | 8 when not setflags ->
      let rd = r15 WR in
      let immval = ((b 19 16) lsl 12) + ((b 11 8) lsl 8) + (b 7 0) in
-     let imm32 = make_immediate false 4 (B.big_int_of_int immval) in
+     let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int immval)) in
      let imm = arm_immediate_op imm32 in
      (* MOVW<c> <Rd>, #<imm16> *)
      Move (false, c, rd, imm, false, true)
@@ -892,7 +894,7 @@ let parse_data_proc_imm_type
   | 10 when not setflags ->
      let rd = r15 WR in
      let imm16 = mk_imm16 (b 19 16) (b 11 8) (b 7 0) in
-     let imm16 = make_immediate false 2 (B.big_int_of_int imm16) in
+     let imm16 = TR.tget_ok (make_immediate false 2 (B.big_int_of_int imm16)) in
      let imm = arm_immediate_op imm16 in
      (* MOVT<c> <Rd>, #<imm16> *)
      MoveTop (c, rd, imm)
@@ -2191,7 +2193,7 @@ let parse_misc_7_type
 
   (* <cc><7>1<--------imm24---------> *)    (* SVC - A1 *)
   | ((2 | 3), _, _, _) ->
-     let imm32 = arm_immediate_op (immediate_from_int (b 23 0)) in
+     let imm32 = arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 23 0))) in
      SupervisorCall (c, imm32)
 
   | (k, l, m, n) ->
