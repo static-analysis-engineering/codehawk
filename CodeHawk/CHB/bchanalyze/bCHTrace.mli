@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,10 +40,14 @@ open BCHLibTypes
 open BCHLibx86Types
 
 val get_callers: doubleword_int -> floc_int list
+
 val get_callees: doubleword_int -> floc_int list
+
 val get_app_callees: doubleword_int -> doubleword_int list
+
 val record_fpcallback_arguments: assembly_function_int -> unit
 
 val var_is_referenced: function_info_int -> xpr_t -> variable_t -> bool
+
 val se_address_is_referenced:
   function_info_int -> floc_int -> xpr_t -> variable_t -> bool
