@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -66,6 +66,8 @@ open BCHAssemblyInstructionAnnotations
 open BCHTrace
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 let string_printer = CHPrettyUtil.string_printer
 
@@ -79,12 +81,12 @@ let sanitize (s:string) =
     result
   end
 
-let make_va_node_name (va:doubleword_int) = "n" ^ (dw_index_to_string va#index)
+let make_va_node_name (va:doubleword_int) = "n" ^ (string_of_int va#value)
                                           
-let make_index_node_name (index:dw_index_t) = "n" ^ (dw_index_to_string index)
+let make_index_node_name (index:dw_index_t) = "n" ^ (string_of_int index)
                                             
 let get_address (nodeName:string) = 
-  index_to_doubleword (string_to_dw_index (string_suffix nodeName 1))
+  TR.tget_ok (index_to_doubleword (int_of_string (string_suffix nodeName 1)))
   
 let get_fname faddr =
   if functions_data#has_function_name faddr then
@@ -298,7 +300,7 @@ object (self)
   method sub_call_graph_to_dot 
     (function_index:dw_index_t) (canvas_window:canvas_window_int) =
     let nodeName = make_index_node_name function_index in
-    let functionAddress = index_to_doubleword function_index in
+    let functionAddress = TR.tget_ok (index_to_doubleword function_index) in
     let graphName = if functions_data#has_function_name functionAddress then
 	(functions_data#get_function functionAddress)#get_function_name
       else
@@ -315,7 +317,7 @@ object (self)
   method sub_rv_call_graph_to_dot 
     (function_index:dw_index_t) (canvas_window:canvas_window_int) =
     let nodeName = make_index_node_name function_index in
-    let functionAddress = index_to_doubleword function_index in
+    let functionAddress = TR.tget_ok (index_to_doubleword function_index) in
     let graphName = if functions_data#has_function_name functionAddress then
 	(functions_data#get_function functionAddress)#get_function_name
       else
@@ -340,7 +342,7 @@ object (self)
 
   method trace_graph_to_dot
            (findex:dw_index_t) (op:int) (canvas_window:canvas_window_int) =
-    let faddr = index_to_doubleword findex in
+    let faddr = TR.tget_ok (index_to_doubleword findex) in
     let graph = mk_dot_graph "trace-graph" in
     let (_,dllNodes,jniNodes) = trace_forward_arg graph faddr op in
     let (nodes,_) = canvas_window#show_graph graph "trace-graph" in
@@ -349,7 +351,7 @@ object (self)
 
   method trace_rv_to_dot 
     (findex:dw_index_t) (v:variable_t) (canvas_window:canvas_window_int) =
-    let faddr = index_to_doubleword findex in
+    let faddr = TR.tget_ok (index_to_doubleword findex) in
     let graph = mk_dot_graph "rv-graph" in
     let _ = trace_fwd_returnval graph faddr v in
     let _ = canvas_window#show_graph graph "rv-graph" in
@@ -360,7 +362,7 @@ object (self)
            (floc:floc_int)
            (v:variable_t)
            (canvas_window:canvas_window_int) =
-    let faddr = index_to_doubleword findex in
+    let faddr = TR.tget_ok (index_to_doubleword findex) in
     let graph = mk_dot_graph "rv-graph" in
     let _ = trace_fwd_sideeffect graph faddr floc v in
     let _ = canvas_window#show_graph graph "rv-graph" in

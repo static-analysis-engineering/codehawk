@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +85,7 @@ let get_graph_nodes (graphName:string) =
 let get_address_from_ctxt_iaddr (nodeName:string) = nodeName
                                                   
 let get_address (nodeName:string) =
-  index_to_doubleword (string_to_dw_index (string_suffix nodeName 1))
+  index_to_doubleword (int_of_string (string_suffix nodeName 1))
 
 let color_nodes (graphName:string) f  =
   let nodes = get_graph_nodes graphName in

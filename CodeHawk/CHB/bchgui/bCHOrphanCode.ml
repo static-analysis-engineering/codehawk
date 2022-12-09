@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +47,9 @@ open BCHLibx86Types
 (* bchgui *)
 open BCHGuiUtil
 
+module TR = CHTraceResult
+
+
 class type orphan_code_int =
 object
   method reset: unit
@@ -53,13 +58,13 @@ object
 end
 
 let make_block_node_name (block:assembly_block_int) =
-  "n" ^ (dw_index_to_string block#get_first_address#index)
+  "n" ^ (string_of_int block#get_first_address#value)
   
 let make_va_node_name (va:doubleword_int) =
-  "n" ^ (dw_index_to_string va#index)
+  "n" ^ (string_of_int va#index)
   
 let get_address (nodeName:string) =
-  index_to_doubleword (string_to_dw_index (string_suffix nodeName 1))
+  TR.tget_ok (index_to_doubleword (int_of_string (string_suffix nodeName 1)))
 
 let pp_str = string_printer#print 
 

@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -93,6 +93,8 @@ open BCHSystemDisplay
 open BCHStateDialogs
 
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 (*
 module BTypeCollections = CHCollections.Make
@@ -890,8 +892,11 @@ let view_unprocessed_instructions () = ()
 let view_strings () =
   let strings = BCHStrings.string_table#get_strings in
   let strings = List.sort (fun (dw1,_) (dw2,_) -> dw1#compare dw2) strings in
-  let pp = LBLOCK 
-    (List.map (fun (address,s) -> LBLOCK [ STR address#to_hex_string ; STR "  " ; STR s ; NL ]) strings) in
+  let pp =
+    LBLOCK 
+      (List.map
+         (fun (address,s) ->
+           LBLOCK [STR address#to_hex_string; STR "  "; STR s; NL]) strings) in
   begin
     write_message "Collecing strings ......." ;
     write_to_system_display_pp "Strings" pp ;
@@ -934,15 +939,18 @@ let load_function_entry () =
       record_cfg_info faddr ;
       functions_display#set_model 
 	(List.map (fun a -> 
-	  assembly_functions#get_function_by_address (string_to_doubleword a))
-	   (get_functions_listed ())) ;
+	     assembly_functions#get_function_by_address
+               (TR.tget_ok (string_to_doubleword a)))
+	   (get_functions_listed ()));
       write_message_pp 
-	(LBLOCK [ STR "Added function entry point: " ; STR faddr#to_hex_string ])
+	(LBLOCK [STR "Added function entry point: "; STR faddr#to_hex_string])
     end
   else
     write_message_pp 
-      (LBLOCK [ STR "Function entry point " ; STR faddr#to_hex_string ; 
-		STR " is already included in the list of functions " ])
+      (LBLOCK [
+           STR "Function entry point ";
+           STR faddr#to_hex_string;
+	   STR " is already included in the list of functions "])
 
 let prepare_fn (faddr:doubleword_int) =
   try
@@ -954,9 +962,10 @@ let prepare_fn (faddr:doubleword_int) =
   | BCH_failure p ->
     begin
       write_message_pp 
-	(LBLOCK [ STR "Error in translation of " ; faddr#toPretty ; STR ": " ; p ]) ;
+	(LBLOCK [
+             STR "Error in translation of "; faddr#toPretty; STR ": "; p]);
       ch_error_log#add "translation error"
-	(LBLOCK [ faddr#toPretty ; STR ": " ; p ])
+	(LBLOCK [faddr#toPretty; STR ": "; p])
     end
   | Internal_error s | Invocation_error s ->
     begin
@@ -967,26 +976,29 @@ let add_fn a =
   let s = a#to_hex_string in
   if has_function_listed s then
     begin
-      write_message_pp (LBLOCK [ STR "Function " ; STR s ; STR " is already listed " ]) ;
+      write_message_pp
+        (LBLOCK [STR "Function "; STR s; STR " is already listed "]);
     end
   else
     try
-      let faddr = string_to_doubleword s in
+      let faddr = TR.tget_ok (string_to_doubleword s) in
       let _ = add_function_listed s in
       begin
 	translate_assembly_function_by_address faddr;
 	record_cfg_info faddr ;
 	functions_display#set_model 
 	  (List.map (fun a -> 
-	    assembly_functions#get_function_by_address (string_to_doubleword a))
-	     (get_functions_listed ())) ;
-	write_message_pp (LBLOCK [ STR "Added function: " ; STR s ]) ;
+	       assembly_functions#get_function_by_address
+                 (TR.tget_ok (string_to_doubleword a)))
+	     (get_functions_listed ()));
+	write_message_pp (LBLOCK [STR "Added function: "; STR s]);
       end
     with
       BCH_failure p -> 
 	begin
-	  write_message_pp (LBLOCK [ STR "Error in loading function " ; STR s ; STR ": " ;
-				     p ]) ;
+	  write_message_pp
+            (LBLOCK [
+                 STR "Error in loading function "; STR s; STR ": "; p]);
 	end
 
 let add_fns (l:doubleword_int list) =
@@ -1002,40 +1014,46 @@ let add_fns (l:doubleword_int list) =
 	set_progress_bar !completed len ;
       end ) l in
     begin
-      functions_display#set_model (List.map (fun a ->
-	get_assembly_function (string_to_doubleword  a)) (get_functions_listed ())) ;
-      write_message_pp (LBLOCK [ STR "Added " ; INT len ; STR " functions" ]) ;
+      functions_display#set_model
+        (List.map (fun a ->
+	     get_assembly_function
+               (TR.tget_ok (string_to_doubleword  a)))
+           (get_functions_listed ()));
+      write_message_pp (LBLOCK [STR "Added "; INT len; STR " functions"]);
       reset_progress_bar () 
     end
   else
-    write_message_pp (LBLOCK [ STR "No new functions to be added" ])
+    write_message_pp (LBLOCK [STR "No new functions to be added"])
 
 let load_function_by_address () = 
   let add_fn s = 
     if has_function_listed s then
       begin
-	write_message_pp (LBLOCK [ STR "Function " ; STR s ; STR " is already listed " ]) ;
+	write_message_pp
+          (LBLOCK [STR "Function "; STR s; STR " is already listed "]);
 	None
       end
     else
       try
-	let faddr = string_to_doubleword s in
+	let faddr = TR.tget_ok (string_to_doubleword s) in
 	let _ = add_function_listed s in
 	begin
-	  translate_assembly_function_by_address faddr ;
+	  translate_assembly_function_by_address faddr;
 	  record_cfg_info faddr ;
 	  functions_display#set_model 
 	    (List.map (fun a -> 
-	      assembly_functions#get_function_by_address (string_to_doubleword a))
-	       (get_functions_listed ())) ;
-	  write_message_pp (LBLOCK [ STR "Added function: " ; STR s ]) ;
+	         assembly_functions#get_function_by_address
+                   (TR.tget_ok (string_to_doubleword a)))
+	       (get_functions_listed ()));
+	  write_message_pp (LBLOCK [STR "Added function: "; STR s]);
 	  None
 	end
       with
 	BCH_failure p -> 
 	  begin
-	    write_message_pp (LBLOCK [ STR "Error in loading function " ; STR s ; STR ": " ;
-				       p ]) ;
+	    write_message_pp
+              (LBLOCK [
+                   STR "Error in loading function "; STR s; STR ": "; p]);
 	    None
 	  end in
   let _ = data1_entry_dialog ~height:100 ~width:300
@@ -1094,28 +1112,36 @@ let load_all_functions () =
   let load_functions () = 
     let completed = ref 0 in
     begin
-      set_functions_listed (List.map (fun f -> f#get_address#to_hex_string) fns) ;
-      write_message_pp (LBLOCK [ STR "Initializing function list with " ;
-				 INT count ; STR " functions ....... " ]) ;
-      functions_display#set_model fns ;
-      write_message_pp (LBLOCK [ STR "Translating " ; INT count ; 
-				 STR " functions ......." ]) ;
+      set_functions_listed (List.map (fun f -> f#get_address#to_hex_string) fns);
+      write_message_pp
+        (LBLOCK [
+             STR "Initializing function list with ";
+	     INT count;
+             STR " functions ....... " ]);
+      functions_display#set_model fns;
+      write_message_pp
+        (LBLOCK [
+             STR "Translating ";
+             INT count;
+	     STR " functions ......." ]);
       List.iter (fun faddr ->
 	begin
 	  prepare_fn faddr ;
-	  completed := !completed + 1 ;
+	  completed := !completed + 1;
 	  set_progress_bar !completed count
 	end)  (List.map (fun f -> f#get_address) fns);
-      write_message_pp (LBLOCK [ STR "Loaded and translated " ; INT count ; 
-				 STR " functions" ]);
+      write_message_pp
+        (LBLOCK [
+             STR "Loaded and translated "; INT count; STR " functions"]);
       reset_progress_bar ()
     end in
   if count > 500 then
     let _ = confirmation_dialog
       ~title:"Confirm loading all functions"
-      ~label:("There are " ^ (string_of_int count) ^ 
-		 " functions.\nLoading them all may take some time. " ^
-		 " \nDo you want to proceed? ")
+      ~label:("There are "
+              ^ (string_of_int count)
+              ^ " functions.\nLoading them all may take some time. "
+              ^ " \nDo you want to proceed? ")
       ~yes_action:load_functions 
       ~no_action:(fun () -> ())
       ~parent:window in
@@ -1145,17 +1171,25 @@ let clear_functions () =
 
 let annotate_function_address () =
   let action = fun address_string function_name ->
-    let optAddress = try Some (string_to_doubleword address_string)
-	with _ -> None in
+    let optAddress =
+      try
+        Some (TR.tget_ok (string_to_doubleword address_string))
+      with
+      | _ -> None in
     match optAddress with
       None -> Some "Address is not a valid hexadecimal number"
     | Some address ->
       if assembly_functions#has_function_by_address address then
 	begin
-	  write_message ("Address " ^ address_string ^ " has been associated with name " ^ function_name) ;
+	  write_message
+            ("Address "
+             ^ address_string
+             ^ " has been associated with name "
+             ^ function_name);
 	  None
 	end 
-      else Some "Address is not the address of an existing function" in
+      else
+        Some "Address is not the address of an existing function" in
   data_entry_dialog ~title:"Associate addres with function name"
     ~label_1: "Address (in hexadecimal):"
     ~label_2: "Function name:"
