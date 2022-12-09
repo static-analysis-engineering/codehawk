@@ -82,6 +82,7 @@ open BCHDisassembleARM
 
 module B = Big_int_Z
 module LF = CHOnlineCodeSet.LanguageFactory
+module TR = CHTraceResult
 
 let valueset_domain = "valuesets"
 let x2p = xpr_formatter#pr_expr
@@ -163,8 +164,9 @@ let make_instr_local_tests
         let testtestloc = ctxt_string_to_location faddr testtestiaddr in
         let testtestaddr = testtestloc#i in
         let testtestinstr =
-          fail_traceresult
-            (LBLOCK [STR "Internal error in make_instr_local_tests"])
+          fail_tvalue
+            (trerror_record
+               (LBLOCK [STR "Internal error in make_instr_local_tests"]))
             (get_arm_assembly_instruction testtestaddr) in
         let _ =
           if collect_diagnostics () then
@@ -275,8 +277,9 @@ let make_tests
         let testtestloc = ctxt_string_to_location faddr testtestiaddr in
         let testtestaddr = testtestloc#i in
         let testtestinstr =
-          fail_traceresult
-            (LBLOCK [STR "Internal error in make_instr_local_tests"])
+          fail_tvalue
+            (trerror_record
+               (LBLOCK [STR "Internal error in make_instr_local_tests"]))
             (get_arm_assembly_instruction testtestaddr) in
         let _ =
           if collect_diagnostics () then
@@ -541,9 +544,10 @@ let translate_arm_instruction
       let testloc = ctxt_string_to_location faddr testiaddr in
       let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
       let testinstr =
-          fail_traceresult
-            (LBLOCK [STR "Internal error in make_instr_local_tests"])
-            (get_arm_assembly_instruction testaddr) in
+        fail_tvalue
+          (trerror_record
+             (LBLOCK [STR "Internal error in make_instr_local_tests"]))
+          (get_arm_assembly_instruction testaddr) in
 
       let (frozenvars, tests) =
         make_instr_local_tests ~condloc:loc ~testloc ~condinstr:instr ~testinstr in
@@ -597,9 +601,10 @@ let translate_arm_instruction
        let testloc = ctxt_string_to_location faddr testiaddr in
        let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
        let testinstr =
-          fail_traceresult
-            (LBLOCK [STR "Internal error in make_instr_local_tests"])
-            (get_arm_assembly_instruction testaddr) in
+         fail_tvalue
+           (trerror_record
+              (LBLOCK [STR "Internal error in make_instr_local_tests"]))
+           (get_arm_assembly_instruction testaddr) in
        let (nodes, edges) =
          make_condition
            ~condinstr:instr
@@ -1129,8 +1134,9 @@ let translate_arm_instruction
        let testloc = ctxt_string_to_location faddr testiaddr in
        let testaddr = testloc#i in
        let testinstr =
-         fail_traceresult
-           (LBLOCK [STR "Translate IfThenin: "; STR ctxtiaddr])
+         fail_tvalue
+           (trerror_record
+              (LBLOCK [STR "Translate IfThenin: "; STR ctxtiaddr]))
            (get_arm_assembly_instruction testaddr) in
        let itagg = get_aggregate loc#i in
        let its = itagg#it_sequence in
@@ -1198,9 +1204,10 @@ let translate_arm_instruction
        let testloc = ctxt_string_to_location faddr testiaddr in
        let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
        let testinstr =
-          fail_traceresult
-            (LBLOCK [STR "Internal error in make_instr_local_tests"])
-            (get_arm_assembly_instruction testaddr) in
+         fail_tvalue
+           (trerror_record
+              (LBLOCK [STR "Internal error in make_instr_local_tests"]))
+           (get_arm_assembly_instruction testaddr) in
        let _ =
          if collect_diagnostics () then
            ch_diagnostics_log#add
@@ -2892,7 +2899,8 @@ object (self)
                    (c: (string * int option * int option * int option)) =
     let (name, optoffset, optlb, optub) = c in
     if (String.length name) > 1 && (String.sub name 0 2) = "0x" then
-      let gv = finfo#env#mk_global_variable (string_to_doubleword name)#to_numerical in
+      let namedw = TR.tget_ok (string_to_doubleword name) in
+      let gv = finfo#env#mk_global_variable namedw#to_numerical in
       (* let gv_in = finfo#env#mk_initial_memory_value gv in *)
       self#create_arg_scalar_asserts finfo gv optlb optub
     else

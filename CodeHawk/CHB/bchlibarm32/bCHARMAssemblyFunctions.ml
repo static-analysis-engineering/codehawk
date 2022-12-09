@@ -46,6 +46,7 @@ open BCHLibTypes
 open BCHLocation
 open BCHMetricsHandler
 open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibarm32 *)
 open BCHARMAssemblyFunction
@@ -54,6 +55,7 @@ open BCHARMOpcodeRecords
 open BCHARMTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 module IntSet = Set.Make
@@ -61,6 +63,7 @@ module IntSet = Set.Make
       type t = int
       let compare = Stdlib.compare
     end)
+
 
 let create_ordering 
     (functions:doubleword_int list) 
@@ -72,21 +75,24 @@ let create_ordering
       else
 	H.add counts dw 1 in
     let maxCount = ref ((fst (List.hd cs))#index,-1) in
-    let _ = List.iter (fun (_,callee) -> add callee#index) cs in
-    let _ = H.iter (fun k v -> 
-      if v > (snd !maxCount) && List.mem k fnIndices then maxCount := (k,v)) counts in
-    (index_to_doubleword (fst !maxCount),snd !maxCount) in
+    let _ = List.iter (fun (_, callee) -> add callee#index) cs in
+    let _ =
+      H.iter (fun k v ->
+          if v > (snd !maxCount)
+             && List.mem k fnIndices then maxCount := (k, v)) counts in
+    (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
+
   let rec aux fns cs result stats cycle =
     match fns with 
-      [] -> (result,stats,cycle)
+    | [] -> (result,stats,cycle)
     | _ ->
       let (leaves,nonleaves) = 
 	List.fold_left (fun (l,n) (f:doubleword_int) ->
 	  if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) -> 
 	    caller#equal f) cs) then 
-	    (l,f::n) 
+	    (l, f::n)
 	  else 
-	    (f::l,n)) ([],[]) fns in
+	    (f::l, n)) ([], []) fns in
       try
 	match leaves with
 	  [] ->
@@ -97,12 +103,12 @@ let create_ordering
 	    let (pivotNode,incoming) = get_pivot_node cs fnIndices in  
 	    let edge = 
 	      try
-		List.find (fun (c,_) -> c#equal pivotNode) cs
+		List.find (fun (c, _) -> c#equal pivotNode) cs
 	      with
 		Not_found ->
 		  begin
 		    ch_error_log#add "pivot node not found"
-		      (LBLOCK [ pivotNode#toPretty ]) ;
+		      (LBLOCK [ pivotNode#toPretty ]);
 		    raise Not_found
 		  end in
 	    let newCalls = List.filter 
@@ -140,10 +146,12 @@ let create_ordering
   in
   aux functions calls [] [] false
 
+
 class arm_assembly_functions_t:arm_assembly_functions_int =
 object (self)
 
   val functions = H.create 53
+
   val mutable callgraphorder = None
 
   method reset = H.clear functions
@@ -204,7 +212,6 @@ object (self)
       let _ = callgraphorder <- Some orderedList in
       orderedList
 
-      
   method bottom_up_itera (f:doubleword_int -> arm_assembly_function_int -> unit) =
     let orderedList = self#get_bottomup_function_list in
     let orderedFunctions = List.map self#get_function_by_address orderedList in
@@ -340,7 +347,7 @@ object (self)
                    ()
             else
               if !inBlock then
-                let db = make_data_block !dbstart va "inferred" in
+                let db = TR.tget_ok (make_data_block !dbstart va "inferred") in
                 begin
                   system_info#add_data_block db;
                   inBlock := false;
@@ -396,19 +403,29 @@ object (self)
 
 end
 
+
 let arm_assembly_functions = new arm_assembly_functions_t
+
 
 let get_arm_assembly_function (faddr:doubleword_int) =
   arm_assembly_functions#get_function_by_address faddr
 
+
 let get_export_metrics () = exports_metrics_handler#init_value
 
+
 let get_arm_disassembly_metrics () =
+  let _ = pverbose [STR "Compute coverage: "; NL] in
   let (coverage,overlap,alloverlap) = arm_assembly_functions#get_function_coverage in
+  let _ = pverbose [STR "Get number of instructions: "; NL] in
   let instrs = !arm_assembly_instructions#get_num_instructions in
+  let _ = pverbose [STR "Get imports"; NL] in
   let imported_imports = [] in
   let loaded_imports = [] in
   let imports = imported_imports @ loaded_imports in
+  let _ = pverbose [STR "Get unknown instructions: "; NL] in
+  let numunknown = !arm_assembly_instructions#get_num_unknown_instructions in
+  let _ = pverbose [STR "Found "; INT numunknown; STR " instructions"; NL] in
   { dm_unknown_instrs = !arm_assembly_instructions#get_num_unknown_instructions;
     dm_instrs = instrs;
     dm_functions = arm_assembly_functions#get_num_functions;

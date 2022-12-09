@@ -80,7 +80,7 @@ let disassemble_arm_stream (va: doubleword_int) (codestring: string) =
       let curpos = ch#pos in
       let instrlen = curpos - prevpos in
       let instrstring = String.sub codestring prevpos instrlen in
-      add_instruction prevpos opcode instrstring
+      ignore (add_instruction prevpos opcode instrstring)
     done
   with
   | BCH_failure p ->
@@ -112,7 +112,7 @@ let disassemble_thumb_stream (va: doubleword_int) (codestring: string) =
       let curpos = ch#pos in
       let instrlen = curpos - prevpos in
       let instrstring = String.sub codestring prevpos instrlen in
-      add_instruction prevpos opcode instrstring
+      ignore (add_instruction prevpos opcode instrstring)
     done
   with
   | BCH_failure p ->
@@ -125,8 +125,9 @@ let disassemble_thumb_stream (va: doubleword_int) (codestring: string) =
 let set_block_boundaries () =
   let set_block_entry a =
     let instr =
-      fail_traceresult
-        (LBLOCK [STR "set_block_boundaries:set_block_entry: "; a#toPretty])
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "set_block_boundaries:set_block_entry: "; a#toPretty]))
         (get_arm_assembly_instruction a) in
     instr#set_block_entry in
   begin
@@ -149,8 +150,9 @@ let set_block_boundaries () =
           | _ -> false in
         if is_block_ending && has_next_valid_instruction va then
           let nextva =
-            fail_traceresult
-              (LBLOCK [STR "Internal error in set_block_boundaries"])
+            fail_tvalue
+              (trerror_record
+                 (LBLOCK [STR "Internal error in set_block_boundaries"]))
               (get_next_valid_instruction_address va) in
           set_block_entry nextva
         else

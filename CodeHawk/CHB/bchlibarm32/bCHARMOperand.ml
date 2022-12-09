@@ -62,6 +62,8 @@ open BCHARMPseudocode
 open BCHARMSumTypeSerializer
 open BCHARMTypes
 
+module TR = CHTraceResult
+
 
 let x2p = xpr_formatter#pr_expr
 
@@ -227,7 +229,9 @@ object (self:'a)
   method get_pc_relative_address (va: doubleword_int) (pcoffset: int) =
     match kind with
     | ARMOffsetAddress (ARPC, align, ARMImmOffset off, isadd, _, _) ->
-       let va = int_to_doubleword (((va#to_int + pcoffset) / align) * align) in
+       let va =
+         TR.tget_ok
+           (int_to_doubleword (((va#to_int + pcoffset) / align) * align)) in
        if isadd then
          va#add_int off
        else
@@ -235,8 +239,8 @@ object (self:'a)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Operand is not a pc-relative address: ";
-                      self#toPretty ]))
+            (LBLOCK [
+                 STR "Operand is not a pc-relative address: "; self#toPretty ]))
 
   method to_numerical =
     match kind with
@@ -768,6 +772,7 @@ let mk_arm_simd_address_op
       (mode: arm_operand_mode_t) =
   new arm_operand_t (ARMSIMDAddress (base, alignment, wback)) mode
 
+
 let mk_arm_imm_shifted_register_op
       (r:arm_reg_t)
       (ty:int)    (* 0 - 3 *)
@@ -777,6 +782,7 @@ let mk_arm_imm_shifted_register_op
   let regshift = ARMImmSRT (shifttype,shiftamount) in
   new arm_operand_t (ARMShiftedReg (r,regshift)) mode
 
+
 let mk_arm_reg_shifted_register_op
       (r:arm_reg_t)         (* register to be shifted *)
       (ty:int)              (* 0 - 3 *)
@@ -785,6 +791,7 @@ let mk_arm_reg_shifted_register_op
   let shift = decode_reg_shift ty in
   let regshift = ARMRegSRT (shift,rs) in
   new arm_operand_t (ARMShiftedReg (r,regshift)) mode
+
 
 let mk_arm_rotated_register_op
       (r:arm_reg_t)
@@ -796,12 +803,14 @@ let mk_arm_rotated_register_op
     let regshift = ARMImmSRT (SRType_ROR, rotation) in
     new arm_operand_t (ARMShiftedReg (r,regshift)) mode
 
+
 let mk_arm_reg_bit_sequence_op
       (r:arm_reg_t)
       (lsb:int)
       (widthm1:int)
       (mode:arm_operand_mode_t) =
   new arm_operand_t (ARMRegBitSequence (r,lsb,widthm1)) mode
+
 
 let mk_arm_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
     let immval =
@@ -819,20 +828,25 @@ let mk_arm_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
                 (LBLOCK [
                      STR "Unexpected size in arm-immediate-op: " ;
                      INT size])) in
-    let op = ARMImmediate (make_immediate signed size immval#getNum) in
+    let op =
+      ARMImmediate (TR.tget_ok (make_immediate signed size immval#getNum)) in
     new arm_operand_t op RD
+
 
 let arm_immediate_op (imm:immediate_int) =
   new arm_operand_t (ARMImmediate imm) RD
 
+
 let arm_fp_constant_op (c: float) =
   new arm_operand_t (ARMFPConstant c) RD
+
 
 let arm_absolute_op (addr:doubleword_int) (mode:arm_operand_mode_t) =
   if system_info#is_code_address addr then
     new arm_operand_t (ARMAbsolute addr) mode
   else
     raise (Invalid_argument ("Invalid absolute address: " ^ addr#to_hex_string))
+
 
 let arm_literal_op
       ?(align=4) ?(is_add=true) (pcaddr: doubleword_int) (imm: int) =
@@ -844,6 +858,7 @@ let arm_literal_op
       pcaddr#add_int (-imm) in
   new arm_operand_t (ARMLiteralAddress addr) RD
 
+
 let mk_arm_absolute_target_op
       (base:doubleword_int)
       (imm:int)
@@ -854,6 +869,7 @@ let mk_arm_absolute_target_op
   else
     raise (Invalid_argument ("Invalid target address: " ^ tgtaddr#to_hex_string))
 
+
 let mk_arm_offset_address_op
       ?(align=1)
       (reg:arm_reg_t)
@@ -863,6 +879,7 @@ let mk_arm_offset_address_op
       ~(isindex:bool) =
   new arm_operand_t
     (ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex))
+
 
 let mk_arm_mem_multiple_op
       ?(align=0) ?(size=4) (reg:arm_reg_t) (n:int) =

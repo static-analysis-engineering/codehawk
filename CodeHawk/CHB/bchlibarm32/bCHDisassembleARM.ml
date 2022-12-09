@@ -123,16 +123,19 @@ let disassemble_arm_section
 
   let skip_data_block (pos: int) ch =
     let iaddr = sectionbase#add_int pos in
-    log_traceresult
-      ch_error_log
-      "skip_data_block"
+    log_titer
+      (mk_tracelog_spec
+         ~tag:"disassembly" ("skip_data_block:" ^ iaddr#to_hex_string))
       (fun instr ->
         let nonCodeBlock = instr#get_non_code_block in
         let dblen = not_code_length nonCodeBlock in
         if pos + dblen <= sectionsize then
           let blockbytes =
-            log_traceresult_value
-              ch_error_log "skip data block"(ch#sub pos dblen) ~default:"" in
+            log_tvalue
+              (mk_tracelog_spec
+                 ~tag:"disassembly" ("skip_data_block:" ^ iaddr#to_hex_string))
+              (ch#sub pos dblen)
+              ~default:"" in
           begin
             (if collect_diagnostics () then
                ch_diagnostics_log#add
@@ -198,8 +201,9 @@ let disassemble_arm_section
               let currentPos = ch#pos in
               let instrlen = currentPos - prevPos in
               let instrbytes =
-                fail_traceresult
-                  (STR "disassemble_section")
+                fail_tvalue
+                  (trerror_record
+                     (LBLOCK [STR "disassemble_section: "; iaddr#toPretty]))
                   (ch#sub prevPos instrlen) in
               let instr = add_instruction iaddr opcode instrbytes in
               let optagg = identify_arm_aggregate ch instr in
@@ -225,8 +229,9 @@ let disassemble_arm_section
               let currentPos = ch#pos in
               let instrLen = currentPos - prevPos in
               let instrBytes =
-                fail_traceresult
-                  (STR "disassemble_section")
+                fail_tvalue
+                  (trerror_record
+                     (LBLOCK [STR "disassemble_section: "; iaddr#toPretty]))
                   (ch#sub prevPos instrLen) in
               let _ = add_instruction iaddr opcode instrBytes in
               ()
@@ -286,20 +291,14 @@ let disassemble_arm_sections () =
       let endOfCode = highest#get_addr#add highest#get_size in
       (startOfCode, endOfCode) in
   let sizeOfCode =
-    try
-      endOfCode#subtract startOfCode
-    with
-    | Invalid_argument s ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Error in disassemble_arm_sections: sizeOfCode ";
-                 STR "endOfCode: ";
-                 endOfCode#toPretty;
-                 STR "; startOfCode: ";
-                 startOfCode#toPretty;
-                 STR ": ";
-                 STR s])) in
+    fail_tvalue
+      (trerror_record
+         (LBLOCK [
+              STR "disassemble_arm_sections:sizeOfCode: ";
+              startOfCode#toPretty;
+              STR ", ";
+              endOfCode#toPretty]))
+      (endOfCode#subtract startOfCode) in
   let datablocks = system_info#get_data_blocks in
   let _ = initialize_arm_instructions sizeOfCode#to_int in 
   let _ =
@@ -499,16 +498,18 @@ let collect_function_entry_points () =
 let set_block_boundaries () =
   let _ = pverbose [STR "Set block boundaries"; NL] in
   let set_inlined_call (a: doubleword_int) =
-    log_traceresult
-      ch_error_log
-      "set_inlined_call"
+    log_titer
+      (mk_tracelog_spec
+         ~tag:"set_block_boundaries"
+         ("set_inlined_call:" ^ a#to_hex_string))
       (fun instr -> instr#set_inlined_call)
       (get_arm_assembly_instruction a) in
   let set_block_entry a =
     let instr =
-      fail_traceresult
-      (LBLOCK [STR "set_block_boundaries:set_block_entry: "; a#toPretty])
-      (get_arm_assembly_instruction a) in
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "set_block_boundaries:set_block_entry: "; a#toPretty]))
+        (get_arm_assembly_instruction a) in
     instr#set_block_entry in
   let get_iftxf iaddr =   (* if then x follow *)
     let get_next_iaddr = get_next_valid_instruction_address in
@@ -591,23 +592,29 @@ let set_block_boundaries () =
            | IfThen (c, xyz) when xyz = "T" ->
               (match get_iftxf va with
                | Some (va1, va2, va3) ->
-                  log_traceresult2
-                    ch_error_log
-                    ("set_block_boundaries:IfThen")
-                    (fun instr1 instr2 ->
-                      begin
-                        (if collect_diagnostics () then
-                           ch_diagnostics_log#add
-                             "ITT block"
-                             (LBLOCK [va1#toPretty; STR ", "; va3#toPretty]));
-                        set_block_entry va1;
-                        set_block_entry va3;
-                        instr#set_block_condition;
-                        instr1#set_condition_covered_by va;
-                        instr2#set_condition_covered_by va
-                      end)
+                  log_titer
+                    (mk_tracelog_spec
+                       ~tag:"set_block_boundaries"
+                       ("IfThen:" ^ va1#to_hex_string))
+                    (fun instr1 ->
+                      log_titer
+                        (mk_tracelog_spec
+                           ~tag:"set_block_boundaries"
+                           ("IfThen:" ^ va2#to_hex_string))
+                        (fun instr2 ->
+                          begin
+                            (if collect_diagnostics () then
+                               ch_diagnostics_log#add
+                                 "ITT block"
+                                 (LBLOCK [va1#toPretty; STR ", "; va3#toPretty]));
+                            set_block_entry va1;
+                            set_block_entry va3;
+                            instr#set_block_condition;
+                            instr1#set_condition_covered_by va;
+                            instr2#set_condition_covered_by va
+                          end)
+                        (get_arm_assembly_instruction va2))
                     (get_arm_assembly_instruction va1)
-                    (get_arm_assembly_instruction va2)
                | _ ->
                   ch_error_log#add
                     "set_block_boundaries:IfThen"
@@ -668,8 +675,9 @@ let set_block_boundaries () =
           | _ -> false in
         if is_block_ending && has_next_valid_instruction va then
           let nextva =
-            fail_traceresult
-              (LBLOCK [STR "Internal error in set_block_boundaries"])
+            fail_tvalue
+              (trerror_record
+                 (LBLOCK [STR "Internal error in set_block_boundaries"]))
               (get_next_valid_instruction_address va) in
           set_block_entry nextva
         else
@@ -767,9 +775,10 @@ let associate_condition_code_users () =
     let rec set l =
       match l with
       | [] ->
-         log_traceresult
-           ch_error_log
-           "associate_condition_code_users"
+         log_titer
+           (mk_tracelog_spec
+              ~tag:"associate_condition_code_users"
+              ("set:" ^ loc#i#to_hex_string))
            (fun instr ->
 	     disassembly_log#add
                "cc user without setter"
@@ -792,7 +801,7 @@ let associate_condition_code_users () =
 	    (fun iaddr instr ->
 	      match get_arm_flags_used instr#get_opcode with
 	      | [] -> ()
-	      | flags -> set_condition flags faddr iaddr block) ) )
+	      | flags -> set_condition flags faddr iaddr block)))
 
 
 let construct_functions_arm () =
@@ -800,7 +809,12 @@ let construct_functions_arm () =
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
   let dataAddrs = collect_data_references () in
-  let addrs = List.map (fun (a,_) -> string_to_doubleword a) dataAddrs in
+  let addrs =
+    List.fold_left (fun acc (a, _) ->
+        TR.tfold_default
+          (fun a -> a::acc)
+          acc
+          (string_to_doubleword a)) [] dataAddrs in
   let _ = set_data_references addrs in
   let _ = set_block_boundaries () in
   let fnentrypoints = functions_data#get_function_entry_points in
@@ -852,5 +866,5 @@ let construct_functions_arm () =
         end) arm_assembly_functions#add_functions_by_preamble;
     record_call_targets_arm ();
     associate_condition_code_users ();
-    (* aggregate_ite () *)
+    pverbose [STR "Construction functions: Done"; NL]
   end
