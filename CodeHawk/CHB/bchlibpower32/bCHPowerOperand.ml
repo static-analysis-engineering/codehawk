@@ -60,6 +60,8 @@ open BCHELFHeader
 (* bchlibpower32 *)
 open BCHPowerTypes
 
+module TR = CHTraceResult
+
 
 (* commonly used constant values *)
 let e7   = 128
@@ -205,7 +207,7 @@ let power_immediate_op ~(signed: bool) ~(size: int) ~(imm: numerical_t) =
          raise
            (BCH_failure
               (LBLOCK [
-                   STR "Unexpected size in arm-immediate-op: " ; INT size])) in
-    let op = PowerImmediate (make_immediate signed size immval#getNum) in
-    new power_operand_t op RD
-        
+                   STR "Unexpected size in arm-immediate-op: "; INT size])) in
+  let op =
+    PowerImmediate (TR.tget_ok (make_immediate signed size immval#getNum)) in
+  new power_operand_t op RD

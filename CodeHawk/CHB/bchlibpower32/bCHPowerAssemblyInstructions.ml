@@ -47,6 +47,8 @@ open BCHSystemInfo
 open BCHPowerAssemblyInstruction
 open BCHPowerTypes
 
+module TR = CHTraceResult
+
 
 (* --------------------------------------------------------------------------------
  * Note:
@@ -175,11 +177,11 @@ object (self)
   method private set_not_code_block (db: data_block_int) =
     let startaddr = db#get_start_address in
     let endaddr = db#get_end_address in
-    let startindex = (startaddr#subtract codeBase)#to_int / 4 in
+    let startindex = (TR.tget_ok (startaddr#subtract_to_int codeBase)) / 4 in
     let startinstr =
       make_power_assembly_instruction
         startaddr false (NotCode (Some (DataBlock db))) "" in
-    let endindex = (endaddr#subtract codeBase)#to_int / 4 in
+    let endindex = (TR.tget_ok (endaddr#subtract_to_int codeBase)) / 4 in
     begin
       self#set startindex startinstr ;
       for i = startindex + 1  to endindex - 1 do
@@ -218,7 +220,7 @@ object (self)
   (* assume all instructions are aligned on 4-byte boundaries *)
   method at_address (va: doubleword_int) =
     try
-      let index = ((va#subtract codeBase)#to_int / 4) in
+      let index = (TR.tget_ok (va#subtract_to_int codeBase)) / 4 in
       self#at_index index
     with
     | BCH_failure p ->

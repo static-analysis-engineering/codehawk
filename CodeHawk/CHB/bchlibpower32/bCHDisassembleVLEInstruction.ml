@@ -44,6 +44,8 @@ open BCHPowerOperand
 open BCHPowerPseudocode
 open BCHPowerTypes
 
+module TR = CHTraceResult
+
 
 let stri = string_of_int
 
@@ -418,7 +420,7 @@ let parse_e_D8_form
                   STR ": ";
                   INT d8]))
       else
-        power_absolute_op (int_to_doubleword d8) mode
+        power_absolute_op (TR.tget_ok (int_to_doubleword d8)) mode
     else
       power_indirect_register_op
         ~index:ra_index
@@ -613,10 +615,10 @@ let parse_vle_opcode
   if prefix = 1 || prefix = 3 || prefix = 5 || prefix = 7 then
     let sndhalfword = ch#read_ui16 in
     let instr32 = (instrbytes lsl 16) + sndhalfword in
-    let instr32 = int_to_doubleword instr32 in
+    let instr32 = TR.tget_ok (int_to_doubleword instr32) in
     parse_e_instruction ch base iaddr instr32 prefix
   else
-    let instr16 = int_to_doubleword instrbytes in
+    let instr16 = TR.tget_ok (int_to_doubleword instrbytes) in
     parse_se_instruction ch base iaddr instr16
   
 

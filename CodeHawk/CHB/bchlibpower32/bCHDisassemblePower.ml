@@ -68,6 +68,7 @@ open BCHPowerAssemblyInstructions
 open BCHPowerOpcodeRecords
 open BCHPowerTypes
 
+module TR = CHTraceResult
 
 
 let disassemble
@@ -229,7 +230,7 @@ let disassemble_power_sections () =
       let startOfCode = lowest#get_addr in
       let endOfCode = highest#get_addr#add highest#get_size in
       (startOfCode, endOfCode) in
-  let sizeOfCode = endOfCode#subtract startOfCode in
+  let sizeOfCode = TR.tget_ok (endOfCode#subtract startOfCode) in
   (* can be 2 (VLE) or 4-byte aligned *)
   let _ = initialize_power_instructions sizeOfCode#to_int in
   let _ =
@@ -245,19 +246,14 @@ let disassemble_power_sections () =
     List.iter
       (fun (h, x) ->
         let displacement =
-          try
-            (h#get_addr#subtract startOfCode)#to_int
-          with
-          | Invalid_argument s ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Error in disassemble_power_secitons: displacement ";
-                       STR "header address: ";
-                       h#get_addr#toPretty;
-                       STR "; startOfCode: ";
-                       startOfCode#toPretty;
-                       STR ": ";
-                       STR s])) in
+          fail_tvalue
+            (trerror_record
+               (LBLOCK [
+                    STR "Error in disassemble_power_secitons: displacement ";
+                    STR "header address: ";
+                    h#get_addr#toPretty;
+                    STR "; startOfCode: ";
+                    startOfCode#toPretty]))
+            (h#get_addr#subtract_to_int startOfCode) in
         disassemble h#get_addr h#is_power_vle displacement x) xSections in
   sizeOfCode
