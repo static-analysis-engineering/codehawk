@@ -119,7 +119,7 @@ let construct_functions () =
 
 let save_library_function_reference (dir:string) (dll:string) (fname:string) (fnames:string list) =
   let _ = pr_debug [ STR "Save reference to " ; STR fname ; STR " in " ; STR dll ; NL ] in
-  if function_summary_library#has_library_function dll fname then
+  if function_summary_library#has_dll_function dll fname then
     begin
       List.iter (fun fsname ->
 	let node = xmlElement "libfun" in
@@ -131,7 +131,7 @@ let save_library_function_reference (dir:string) (dll:string) (fname:string) (fn
 	  node#setAttribute "name" fsname ;
 	  rNode#setAttribute "name" fname ;
 	  rNode#setAttribute "lib" dll ;
-	  save_export_function_summary_file dir fsname  node
+	  save_export_function_summary_file fsname  node
 	end) fnames ;
       List.length fnames
     end
@@ -150,7 +150,7 @@ let save_function_exports (dir:string) =
     List.iter (fun a ->
       try
 	let finfo = load_function_info a in
-	let fnames = system_info#get_exported_function_names a in
+	let fnames = (* system_info#get_exported_function_names a*) [] in
 	let _ = pverbose [ STR a#to_hex_string ; STR "  " ; INT (List.length fnames ) ; 
 			   STR " names" ; NL ] in
 	let fnames = List.filter (fun name -> not (is_java_native_method name)) fnames in
@@ -176,9 +176,9 @@ let save_function_exports (dir:string) =
 		let _ = pverbose [ STR "  " ; pri !sum_count ; STR "  " ; STR fname ; NL ] in
 		begin
 		  sum_count := !sum_count + 1 ;
-		  (finfo#get_summary)#write_xml ~altname:(Some fname) node ;
+		  (finfo#get_summary)#write_xml node;
 		  node#setAttribute "lib" exename ; 
-		  save_export_function_summary_file dir fname  node
+		  save_export_function_summary_file fname  node
 		end) fnames
       with _ ->
 	pr_debug [ STR "Failure exporting functions for " ; a#toPretty ; NL ]
@@ -207,7 +207,7 @@ let save_data_exports (dir:string) =
 	      LBLOCK [ STR "(" ; INT i ; STR ", " ; STR a ; STR ")" ; NL ]) "" "" "" ] in
 	  begin
 	    exportVal#write_xml node ;
-	    save_export_data_value_file dir name node ;
+	    save_export_data_value_file name node ;
 	  end)
       exportedDataItems
   end
@@ -222,9 +222,10 @@ let has_export_functions () =
   let exportedFunctions = pe_sections#get_exported_functions in
   List.fold_left (fun acc a ->
     if acc then acc else
-       let fnames = system_info#get_exported_function_names a in
-       let fnames = List.filter (fun name -> not (is_java_native_method name)) fnames in
-       match fnames with [] -> acc | _ -> true) false exportedFunctions
+      let fnames = (* system_info#get_exported_function_names a *) [] in
+      let fnames =
+        List.filter (fun name -> not (is_java_native_method name)) fnames in
+      match fnames with [] -> acc | _ -> true) false exportedFunctions
 
 let has_exported_data_values () =
   match pe_sections#get_exported_data_values with [] -> false | _ -> true
@@ -235,7 +236,7 @@ let save_ordinal_table (dir:string) =
     let exports = pe_sections#get_export_directory_table in
       begin 
 	exports#write_xml_ordinal_table node ;
-	save_export_ordinal_table dir node
+	save_export_ordinal_table node
       end
   else
     pr_debug [ STR "No export directory found" ; NL ]
@@ -248,9 +249,11 @@ let main () =
       system_info#initialize ;
       load_pe_files () ;
       if has_export_functions () || has_exported_data_values () then
-	let exportDir = if !export_dir = "" then
+	let exportDir =
+          (* if !export_dir = "" then
 	    system_settings#get_export_directory 
-	  else !export_dir in
+	  else  *)
+          !export_dir in
 	begin
 	  disassemble () ;
 	  construct_functions () ;
@@ -282,5 +285,3 @@ let main () =
     end
     
 let _ = Printexc.print main ()
-  
-    

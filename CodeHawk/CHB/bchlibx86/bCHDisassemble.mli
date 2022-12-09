@@ -47,7 +47,13 @@ val is_dll_jump_target: doubleword_int -> bool
 
 val disassemble_pe: unit -> bool * pretty_t
 
+val disassemble_sections: pe_section_header_int list -> int
+
+val construct_functions: unit -> unit
+
 val record_call_targets: unit -> unit
+
+val decorate_functions: unit -> unit
 
 val construct_functions_pe: unit -> bool * pretty_t
 

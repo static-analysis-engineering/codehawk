@@ -95,6 +95,7 @@ open BCHAnalyzeApp
 open BCHFileIO
 open BCHSaveExports
 
+module TR = CHTraceResult
 
 (* -------------------------------------------------------------------------
  * Command-line switches:
@@ -116,7 +117,7 @@ let analysisrepeats = ref 1
 
 let stream_start_address = ref wordzero
 let set_stream_start_address s =
-  stream_start_address := string_to_doubleword s
+  stream_start_address := TR.tget_ok (string_to_doubleword s)
 
 let show_chif = ref None
 let set_chif s = show_chif := Some s
@@ -488,7 +489,7 @@ let main () =
       let _ = disassemble_arm_sections () in
       let _ = disassembly_summary#record_disassembly_time
                 ((Unix.gettimeofday ()) -. !t) in
-      let _ = construct_functions_arm() in
+      let _ = construct_functions_arm () in
       let _ = if !set_datablocks then
                 arm_assembly_functions#set_datablocks in
       let _ = disassembly_summary#record_construct_functions_time
