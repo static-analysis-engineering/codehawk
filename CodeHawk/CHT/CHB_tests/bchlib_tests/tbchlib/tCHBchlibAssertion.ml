@@ -28,7 +28,15 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHTraceResult
+
+(* bchlib *)
+open BCHLibTypes
+
 module A = TCHAssertion
+
+module TR = CHTraceResult
 
 
 let e7 = 128
@@ -43,6 +51,18 @@ let equal_doubleword =
   A.make_equal (fun dw1 dw2 -> dw1#equal dw2) (fun dw -> dw#to_hex_string)
 
 
+let equal_doubleword_result
+      ?(msg="") (dw: doubleword_int) (dwr: doubleword_result) =
+  if Result.is_error dwr then
+    A.fail (dw#to_hex_string) (String.concat "; " (TR.tget_error dwr)) "error"
+  else
+    A.make_equal
+      (fun dw1 dw2 -> dw1#equal dw2)
+      (fun dw -> dw#to_hex_string)
+      dw
+      (TR.tget_ok dwr)
+
+
 let equal_location =
   A.make_equal (fun l1 l2 -> (l1#compare l2) = 0) (fun l -> l#ci)
 
@@ -50,3 +70,20 @@ let equal_location =
 let equal_int_hexstring ?(msg="") (i: int) (s: string) =
   if not ((Printf.sprintf "%x" i) = s) then
     A.fail (string_of_int i) s msg
+
+
+let equal_string_imm_result_hexstring
+      ?(msg="") (expected: string) (immr: immediate_result) =
+  if Result.is_error immr then
+    A.fail ("expected:" ^ expected) (String.concat "; " (TR.tget_error immr)) msg
+  else
+    A.equal_string expected (TR.tget_ok immr)#to_hex_string
+
+
+let returns_error ?(msg="") (prn: 'a -> string) (f: unit -> 'a traceresult) =
+  let r = f () in
+  if not (Result.is_error r) then
+    let v = Result.get_ok r in
+    A.fail "Error result" ("Ok result:" ^ (prn v)) msg
+  else
+    ()

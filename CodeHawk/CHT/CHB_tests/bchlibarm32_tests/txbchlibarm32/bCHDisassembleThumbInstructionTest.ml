@@ -59,9 +59,11 @@ module U = BCHByteUtilities
 module R = BCHARMOpcodeRecords
 module TF = BCHDisassembleThumbInstruction
 
+module TR = CHTraceResult
+
 
 let testname = "bCHDisassembleThumbInstructionTest"
-let lastupdated = "2022-12-02"
+let lastupdated = "2022-12-09"
 
 
 let two_byte_instr_opcode_failures = [
@@ -73,13 +75,16 @@ let four_byte_instr_opcode_failures = [
   ]    
 
 
+let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
+
+
 let make_stream ?(len=0) (s: string) =
   let bytestring = U.write_hex_bytes_to_bytestring s in
   let s = (String.make len ' ') ^ bytestring in
   SW.make_pushback_stream ~little_endian:true s
 
 
-let base = D.string_to_doubleword "0x400000"
+let base = make_dw "0x400000"
 
 
 (* 2-byte thumb opcodes, not pc-relative *)
@@ -166,7 +171,7 @@ let thumb_2_pc_relative () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
-            let iaddr = D.string_to_doubleword iaddr in
+            let iaddr = make_dw iaddr in
             let opcode = TF.disassemble_thumb_instruction ch iaddr instrbytes in
             let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
@@ -256,7 +261,7 @@ let thumb_4_pc_relative () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
-            let iaddr = D.string_to_doubleword iaddr in
+            let iaddr = make_dw iaddr in
             let opcode = TF.disassemble_thumb_instruction ch iaddr instrbytes in
             let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;

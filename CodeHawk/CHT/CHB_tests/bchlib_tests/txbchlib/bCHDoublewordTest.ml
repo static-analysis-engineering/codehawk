@@ -46,16 +46,27 @@ module BG = TCHBchlibGenerator
 module BS = TCHBchlibSpecification
 
 module D = BCHDoubleword
+module TR = CHTraceResult
 
 
 let testname = "bCHDoublewordTest"
-let lastupdated = "2022-11-28"
+let lastupdated = "2022-12-09"
+
+
+let constant_string_to_doubleword (s: string) =
+  TR.tget_ok (D.string_to_doubleword s)
+
+
+let constant_numerical_to_doubleword (num: numerical_t) =
+  TR.tget_ok (D.numerical_to_doubleword num)
+
 
 let equal_dw = BA.equal_doubleword
+let equal_dwr = BA.equal_doubleword_result
 
 
-let wordmaxm1 = D.string_to_doubleword "0xfffffffe"
-let word1000 = D.string_to_doubleword "0x0000100"
+let wordmaxm1 = constant_string_to_doubleword "0xfffffffe"
+let word1000 = constant_string_to_doubleword "0x0000100"
 
 let numzero = mkNumerical 0
 let numnegone = mkNumerical (-1)
@@ -69,27 +80,32 @@ let doubleword_basic () =
     TS.add_simple_test
       ~title:"zero"
       (fun () ->
-        A.equal_string "0x0" (D.string_to_doubleword "0x0")#to_hex_string);
+        A.equal_string
+          "0x0" (constant_string_to_doubleword "0x0")#to_hex_string);
 
     TS.add_simple_test
       ~title:"num-zero"
       (fun () ->
-        A.equal_string "0x0" (D.numerical_to_doubleword numzero)#to_hex_string);
+        A.equal_string
+          "0x0" (constant_numerical_to_doubleword numzero)#to_hex_string);
 
     TS.add_simple_test
       ~title:"num-neg-one"
       (fun () ->
         A.equal_string
-          "0xffffffff" (D.numerical_to_doubleword numnegone)#to_hex_string);
+          "0xffffffff"
+          (constant_numerical_to_doubleword numnegone)#to_hex_string);
 
     TS.add_simple_test
       ~title:"neg-one-signed"
       (fun () ->
-        A.equal_string "-0x1" (D.numerical_to_signed_hex_string numnegone));
+        A.equal_string
+          "-0x1" (TR.tget_ok (D.numerical_to_signed_hex_string numnegone)));
 
     TS.add_random_test
       ~title:"random"
-      (G.make_int 0 BA.e32) (fun i -> (D.int_to_doubleword i)#to_hex_string)
+      (G.make_int 0 BA.e32)
+      (fun i -> (TR.tget_ok (D.int_to_doubleword i))#to_hex_string)
       [S.always => BS.is_int_doublewordstring];
 
     TS.add_simple_test
@@ -109,7 +125,7 @@ let doubleword_basic () =
     TS.add_simple_test
       ~title:"wrap-zero"
       (fun () ->
-        let dw31 = D.int_to_doubleword BA.e31 in
+        let dw31 = TR.tget_ok (D.int_to_doubleword BA.e31) in
         equal_dw ~msg:"addition wraps around" D.wordzero (dw31#add dw31));
 
     TS.add_random_test
@@ -121,15 +137,15 @@ let doubleword_basic () =
 
     TS.add_simple_test
       ~title:"subtract-zero"
-      (fun () -> equal_dw D.wordzero (D.wordzero#subtract D.wordzero));
+      (fun () -> equal_dwr D.wordzero (D.wordzero#subtract D.wordzero));
 
     TS.add_simple_test
       ~title:"subtract-max-zero"
-      (fun () -> equal_dw D.wordmax (D.wordmax#subtract D.wordzero));
+      (fun () -> equal_dwr D.wordmax (D.wordmax#subtract D.wordzero));
 
     TS.add_simple_test
       ~title:"subtract-max-max"
-      (fun () -> equal_dw D.wordzero (D.wordmax#subtract D.wordmax));
+      (fun () -> equal_dwr D.wordzero (D.wordmax#subtract D.wordmax));
 
     TS.add_simple_test
       ~title:"xor-max"
@@ -139,25 +155,77 @@ let doubleword_basic () =
       ~title:"xor-zero-max"
       (fun () -> equal_dw D.wordmax (D.wordzero#xor D.wordmax));
 
+    TS.add_simple_test
+      ~title:"char-string"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0x64636261" in
+        A.equal_string
+          ~msg:"" "['a' 'b' 'c' 'd']" (Option.get dw#to_char_string));
+
+    TS.add_simple_test
+      ~title:"to_string"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0x61626364" in
+        A.equal_string ~msg:"" "abcd" dw#to_string);
+
+    TS.add_simple_test
+      ~title:"to_string_fragment"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0x61626364" in
+        A.equal_string ~msg:"" "dcba" dw#to_string_fragment);
+
+    TS.add_simple_test
+      ~title:"fixed_length_hex_string-0"
+      (fun () ->
+        A.equal_string "00000000" D.wordzero#to_fixed_length_hex_string);
+
+    TS.add_simple_test
+      ~title:"fixed_length_hex_string-ff"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0xff" in
+        A.equal_string "000000ff" dw#to_fixed_length_hex_string);
+
+    TS.add_simple_test
+      ~title:"signed-hex-string-f"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0xffffffff" in
+        A.equal_string "-0x1" dw#to_signed_hex_string);
+
+    TS.add_simple_test
+      ~title:"unset-highest-bit-i"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0xfffffff" in
+        A.equal_string "0xfffffff" dw#unset_highest_bit#to_hex_string);
+
+    TS.add_simple_test
+      ~title:"unset-highest-bit-u"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0x8abcdef1" in
+        A.equal_string "0xabcdef1" dw#unset_highest_bit#to_hex_string);
+
     TS.launch_tests ()
   end
 
 
-let doubleword_assertions () =
+let doubleword_errors () =
   begin
     TS.new_testsuite (testname ^ "_assertions") lastupdated;
 
     TS.add_simple_test
       ~title:"hex-too-large"
       (fun () ->
-        A.assertionfailure ~msg:"hex string is too large"
-          (fun () -> ignore (D.string_to_doubleword "0xfffffffff")));
+        BA.returns_error
+          ~msg:"hex string is too large"
+          (fun dw -> dw#to_hex_string)
+          (fun () -> D.string_to_doubleword "0xfffffffff"));
 
     TS.add_simple_test
       ~title:"subtract-no-wrap"
       (fun () ->
-        A.raises ~msg:"subtraction does not wrap around"
-          (fun () -> ignore (D.wordzero#subtract D.wordmax)));
+        BA.returns_error
+          ~msg:"subtraction does not wrap around"
+          (fun dw -> dw#to_hex_string)
+          (fun () -> D.wordzero#subtract D.wordmax));
 
     TS.launch_tests ()
   end
@@ -167,6 +235,6 @@ let () =
   begin
     TS.new_testfile testname lastupdated;
     doubleword_basic ();
-    doubleword_assertions ();
+    doubleword_errors ();
     TS.exit_file ()
   end

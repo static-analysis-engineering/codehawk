@@ -67,9 +67,13 @@ open BCHARMTypes
 
 
 let testname = "bCHARMJumptableTest"
-let lastupdated = "2022-12-01"
+let lastupdated = "2022-12-09"
 
-let codemax = D.string_to_doubleword "0x400000"
+
+let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
+
+
+let codemax = make_dw "0x400000"
 
 
 let make_stream ?(len=0) (s: string) =
@@ -85,13 +89,13 @@ let add_instruction
       (bytes: string) =
   let instr = make_arm_assembly_instruction iaddr false opcode bytes in
   begin
-    pr_debug [iaddr#toPretty; STR "  "; STR (ARMU.string_of_opcode opcode); NL];
+    (* pr_debug [iaddr#toPretty; STR "  "; STR (ARMU.string_of_opcode opcode); NL]; *)
     ARMIS.set_arm_assembly_instruction instr;
     instr
   end
 
 let jt_setup hexbase bytes: arm_jumptable_int TR.traceresult =
-  let base = D.string_to_doubleword hexbase in
+  let base = make_dw hexbase in
   let bytestring = U.write_hex_bytes_to_bytestring bytes in
   let ch = make_stream bytes in
   let aggregate = ref None in
