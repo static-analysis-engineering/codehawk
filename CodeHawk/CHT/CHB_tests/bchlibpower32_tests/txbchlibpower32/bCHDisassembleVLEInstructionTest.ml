@@ -59,9 +59,14 @@ module U = BCHByteUtilities
 module R = BCHPowerOpcodeRecords
 module TF = BCHDisassembleVLEInstruction
 
+module TR = CHTraceResult
+
 
 let testname = "bCHDisassembleVLEInstructionTest"
-let lastupdated = "2022-11-28"
+let lastupdated = "2022-12-09"
+
+
+let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
 
 
 let make_stream ?(len=0) (s: string) =
@@ -70,7 +75,7 @@ let make_stream ?(len=0) (s: string) =
   SW.make_pushback_stream ~little_endian:false s
 
 
-let base = D.string_to_doubleword "0x400000"
+let base = make_dw "0x400000"
 
 
 (* 2-byte VLE16 opcodes, not pc-relative *)

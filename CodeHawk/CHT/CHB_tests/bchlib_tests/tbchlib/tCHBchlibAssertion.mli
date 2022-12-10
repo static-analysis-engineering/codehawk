@@ -28,6 +28,9 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHTraceResult
+
 (* bchlib *)
 open BCHLibTypes
 
@@ -43,7 +46,19 @@ val e32: int
 val equal_doubleword: ?msg:string -> doubleword_int -> doubleword_int -> unit
 
 
+val equal_doubleword_result:
+  ?msg:string -> doubleword_int -> doubleword_result -> unit
+
+
 val equal_location: ?msg:string -> location_int -> location_int -> unit
 
 
 val equal_int_hexstring: ?msg:string -> int -> string -> unit
+
+
+val equal_string_imm_result_hexstring:
+  ?msg:string -> string -> immediate_result -> unit
+
+
+val returns_error:
+  ?msg:string -> ('a -> string) -> (unit -> 'a traceresult) -> unit

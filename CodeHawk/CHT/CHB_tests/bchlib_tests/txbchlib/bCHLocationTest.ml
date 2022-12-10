@@ -51,12 +51,15 @@ module B = BCHBasicTypes
 module D = BCHDoubleword
 module L = BCHLocation
 
+module TR = CHTraceResult
+
 
 let testname = "bCHLocationTest"
-let lastupdated = "2022-11-28"
+let lastupdated = "2022-12-09"
 
 
-let make_dw = D.string_to_doubleword
+let make_dw (s: string) =
+  TR.tget_ok (D.string_to_doubleword s)
 
 
 let c = String.concat "_"
@@ -103,29 +106,35 @@ let loc_basic () =
     TS.new_testsuite (testname ^ "_basic") lastupdated;
 
     TS.add_simple_test
+      ~title:"baseloc"
       (fun () -> A.equal_string baseloc#ci (c [iaddr11]));
 
     TS.add_simple_test
+      ~title:"i-location"
       (fun () ->
         let iloc = L.make_i_location baseloc (make_dw iaddr12) in
         A.equal_string iloc#ci (c [iaddr12]));
 
     TS.add_simple_test
+      ~title:"function-context"
       (fun () -> A.equal_string cloc#ci (fc [iaddr21; iaddr11]));
 
     TS.add_simple_test
+      ~title:"ctxt-string-to-loc"
       (fun () ->
         let s = cloc#ci in
         let loc = L.ctxt_string_to_location (make_dw faddr2) s in
         A.equal_string loc#ci s);
 
     TS.add_simple_test
+      ~title:"ctxt-string-to-loc-eq"
       (fun () ->
         let s = cloc#ci in
         let loc = L.ctxt_string_to_location (make_dw faddr2) s in
         BA.equal_location cloc loc);
 
     TS.add_simple_test
+      ~title:"inlined-ctxt"
       (fun () ->
         let s = cloc#ci in
         let s2 =

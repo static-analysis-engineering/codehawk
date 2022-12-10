@@ -31,19 +31,23 @@
 module A = TCHAssertion
 module TS = TCHTestSuite
 
+module BA = TCHBchlibAssertion
+
 module I = BCHImmediate
 
-
-let signed_imm (width: int) (value: int) =
-  I.make_immediate true width (Big_int_Z.big_int_of_int value)
-
-
-let unsigned_imm (width: int) (value: int) =
-  I.make_immediate false width (Big_int_Z.big_int_of_int value)
+module TR = CHTraceResult
 
 
 let testname = "bCHImmediateTest"
-let lastupdated = "2022-11-28"
+let lastupdated = "2022-12-09"
+
+
+let signed_imm (width: int) (value: int) =
+  TR.tget_ok (I.make_immediate true width (Big_int_Z.big_int_of_int value))
+
+
+let unsigned_imm (width: int) (value: int) =
+  TR.tget_ok (I.make_immediate false width (Big_int_Z.big_int_of_int value))
 
 
 let imm_basic () =
@@ -51,32 +55,42 @@ let imm_basic () =
     TS.new_testsuite (testname ^ "_basic") lastupdated;
 
     TS.add_simple_test
-      (fun () -> A.equal_string "0x1" (I.imm1#sign_extend 4)#to_hex_string);
-
-    TS.add_simple_test
+      ~title:"sign-extend-pos"
       (fun () ->
-        A.equal_string "-0x1" ((signed_imm 1 (-1))#sign_extend 4)#to_hex_string);
+        BA.equal_string_imm_result_hexstring "0x1" (I.imm1#sign_extend 4));
 
     TS.add_simple_test
+      ~title:"sign-extend-neg"
+      (fun () ->
+        BA.equal_string_imm_result_hexstring
+          "-0x1" ((signed_imm 1 (-1))#sign_extend 4));
+
+    TS.add_simple_test
+      ~title:"to-unsigned-pos"
       (fun () -> A.equal_string "0x1" I.imm1#to_unsigned#to_hex_string);
 
     TS.add_simple_test
+      ~title:"to-unsigned-b"
       (fun () ->
         A.equal_string "0xff" (signed_imm 1 (-1))#to_unsigned#to_hex_string);
 
     TS.add_simple_test
+      ~title:"to-unsigned-w"
       (fun () ->
         A.equal_string "0xffff" (signed_imm 2 (-1))#to_unsigned#to_hex_string);
 
     TS.add_simple_test
+      ~title:"to-unsigned-dw"
       (fun () ->
-        A.equal_string "0xffffffff" (signed_imm 4 (-1))#to_unsigned#to_hex_string);
+        A.equal_string
+          "0xffffffff" (signed_imm 4 (-1))#to_unsigned#to_hex_string);
 
     TS.add_simple_test
+      ~title:"sign-extend-to-unsigned"
       (fun () ->
         A.equal_string
           "0xffffffff"
-          ((signed_imm 1 (-1))#sign_extend 4)#to_unsigned#to_hex_string);
+          (TR.tget_ok ((signed_imm 1 (-1))#sign_extend 4))#to_unsigned#to_hex_string);
 
     TS.launch_tests ();
   end

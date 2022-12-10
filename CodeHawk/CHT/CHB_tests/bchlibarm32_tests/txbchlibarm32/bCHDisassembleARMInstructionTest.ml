@@ -59,9 +59,14 @@ module U = BCHByteUtilities
 module R = BCHARMOpcodeRecords
 module TF = BCHDisassembleARMInstruction
 
+module TR = CHTraceResult
+
 
 let testname = "bCHDisassembleARMInstructionTest"
-let lastupdated = "2022-12-02"
+let lastupdated = "2022-12-09"
+
+
+let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
 
 
 let make_stream ?(len=0) (s: string) =
@@ -70,7 +75,7 @@ let make_stream ?(len=0) (s: string) =
   SW.make_pushback_stream ~little_endian:true s
 
 
-let base = D.string_to_doubleword "0x400000"
+let base = make_dw "0x400000"
 
 
 let arm_basic_failures = [
@@ -167,7 +172,7 @@ let arm_pc_relative () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_doubleword in
-            let iaddr = D.string_to_doubleword iaddr in
+            let iaddr = make_dw iaddr in
             let opcode = TF.disassemble_arm_instruction ch iaddr instrbytes in
             let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;

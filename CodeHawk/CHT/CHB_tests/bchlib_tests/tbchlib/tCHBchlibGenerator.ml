@@ -34,6 +34,8 @@ open BCHDoubleword
 module G = TCHGenerator
 module BA = TCHBchlibAssertion
 
+module TR = CHTraceResult
+
 
 let msb_classifier =
   (fun dw -> if dw#to_int > BA.e31 then "msbset" else "msbnotset")
@@ -51,7 +53,7 @@ let doubleword =
     let l = G.make_int 1 9 in
     let (gen_hex, _) = G.number_hex l in
     let s = "0x" ^ (gen_hex r) in
-    string_to_doubleword s),
+    TR.tget_ok (string_to_doubleword s)),
    (fun dw -> dw#to_hex_string))
 
 
