@@ -48,6 +48,11 @@ module H = Hashtbl
 module TR = CHTraceResult
 
 
+(* Unsafe call to string to doubleword; may raise Invalid_argument. *)
+let constant_string_to_doubleword (s: string) =
+  TR.tget_ok (string_to_doubleword s)
+
+
 let makeOffsetString
       ?(hexSize=wordzero) (hexOffset:doubleword_int) (file_as_string: string) () =
   let offset = hexOffset#to_int in

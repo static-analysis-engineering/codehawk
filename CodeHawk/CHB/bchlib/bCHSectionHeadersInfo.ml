@@ -62,8 +62,11 @@ class section_header_info_t (sectionname:string):section_header_info_int =
 object (self)
 
   val fields = H.create 3
+  val mutable status = "mod"
 
   method get_name = sectionname
+
+  method is_new = (status = "new")
 
   method has_addr = H.mem fields "addr"
   method has_size = H.mem fields "size"
@@ -111,6 +114,8 @@ object (self)
           if List.mem fldname valid_fields then
             let fldvalue = geta "value" in
             H.add fields fldname fldvalue
+          else if fldname = "status" then
+            status <- get "value"
           else
             let msg =
               LBLOCK [
@@ -145,6 +150,9 @@ object (self)
 
   method has_section_header_infos = (H.length sectionheaders) > 0
 
+  method has_new_section_header_infos =
+    H.fold (fun _ v a -> a || v#is_new) sectionheaders false
+
   method get_section_header_info (name: string) =
     if self#has_section_header_info name then
       H.find sectionheaders name
@@ -158,11 +166,14 @@ object (self)
 
   method get_section_header_names = H.fold (fun k _ a -> k::a) sectionheaders []
 
+  method get_new_section_header_names =
+    H.fold (fun k v a -> if v#is_new then k::a else a) sectionheaders []
+
   method private read_xml_section_header_info (node: xml_element_int) =
     let name = node#getAttribute "name" in
     let shinfo = new section_header_info_t name in
     begin
-      shinfo#read_xml node ;
+      shinfo#read_xml node;
       H.add sectionheaders name shinfo
     end
 
