@@ -3268,6 +3268,7 @@ class type section_header_info_int =
     method get_entsize: doubleword_int
 
     (* predicates *)
+    method is_new: bool
     method has_addr: bool
     method has_offset: bool
     method has_size: bool
@@ -3288,11 +3289,13 @@ class type section_header_infos_int  =
   object
     (* accessors *)
     method get_section_header_names: string list
+    method get_new_section_header_names: string list
     method get_section_header_info: string -> section_header_info_int
 
     (* predicates *)
     method has_section_header_info: string -> bool   (* section name *)
     method has_section_header_infos: bool
+    method has_new_section_header_infos: bool
 
     (* i/o *)
     method read_xml: xml_element_int -> unit

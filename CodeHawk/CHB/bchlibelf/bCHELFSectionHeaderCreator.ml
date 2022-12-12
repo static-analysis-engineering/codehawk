@@ -735,7 +735,7 @@ object (self)
     let sectionname = ".rodata" in
     let (vaddr,size) =
       if ud_has_size sectionname && ud_has_address sectionname then
-        (ud_get_size sectionname, ud_get_address sectionname)
+        (ud_get_address sectionname, ud_get_size sectionname)
       else
         if dynamicsegment#has_fini_address then
           let finiaddr = dynamicsegment#get_fini_address in

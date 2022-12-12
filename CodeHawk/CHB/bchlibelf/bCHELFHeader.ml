@@ -412,13 +412,11 @@ object(self)
       (if elf_file_header#get_section_header_table_entry_num = 0 then
          self#create_section_headers
        else
-         begin
-           self#read_section_headers;
+         self#read_section_headers);
 
-           (* check if the user defined some additional section headers *)
-           (if section_header_infos#has_section_header_infos then
-              self#add_user_defined_section_headers)
-         end);
+      (* check if the user defined some additional section headers *)
+      (if section_header_infos#has_new_section_header_infos then
+         self#add_new_user_defined_section_headers);
 
       pr_debug [
         STR "Number of sections: "; INT (H.length section_header_table); NL];
@@ -962,8 +960,9 @@ object(self)
       end
     done
 
-  method private add_user_defined_section_headers =
-    let shnum = elf_file_header#get_section_header_table_entry_num in
+  method private add_new_user_defined_section_headers =
+    (*  let shnum = elf_file_header#get_section_header_table_entry_num in *)
+    let shnum = H.length section_header_table in
     try
       List.iteri
         (fun i name ->
@@ -985,7 +984,7 @@ object(self)
               ~sectionname:name ();
             chlog#add "user-defined section" (LBLOCK [sh#toPretty]);
             H.add section_header_table (shnum + i) sh
-          end) section_header_infos#get_section_header_names
+          end) section_header_infos#get_new_section_header_names
     with
     | BCH_failure p ->
        raise
