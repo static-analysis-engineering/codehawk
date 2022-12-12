@@ -105,12 +105,6 @@ val big_int_to_doubleword: big_int -> doubleword_result
 val string_to_doubleword: string -> doubleword_result
 
 
-(** [constant_string_to_doubleword s] does the same as
-    [string_to_doubleword s] except that it assumes the string
-    is a valid doubleword string.*)
-val constant_string_to_doubleword: string -> doubleword_int
-
-
 (**[numerical_to_doubleword num] converts num to a doubleword.
 
    [num] must be less than [2^32] and greater than or equal [-2^31].
