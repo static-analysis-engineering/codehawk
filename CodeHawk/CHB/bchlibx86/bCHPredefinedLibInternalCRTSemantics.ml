@@ -55,6 +55,11 @@ module FFU = BCHFileFormatUtil
 module TR = CHTraceResult
 
 
+(* Unsafe call to string_to_doubleword; may raise Invalid_argument. *)
+let constant_string_to_doubleword (s: string) =
+  TR.tget_ok (string_to_doubleword s)
+
+
 let table = H.create 3
 
 (* ======================================================== __addlocaleref

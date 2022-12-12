@@ -469,10 +469,6 @@ let string_to_doubleword (s: string): doubleword_result =
   TR.tbind big_int_to_doubleword bi
 
 
-let constant_string_to_doubleword (s: string): doubleword_int =
-  TR.tget_ok (string_to_doubleword s)
-
-
 let numerical_to_hex_string (num: numerical_t): string TR.traceresult =
   TR.tmap
     ~msg:"numerical_to_hex_string"
