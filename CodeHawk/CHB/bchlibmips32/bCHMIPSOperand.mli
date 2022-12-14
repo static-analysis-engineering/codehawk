@@ -45,6 +45,9 @@ open BCHLibTypes
 open BCHMIPSTypes
 
 
+(** The implementation of the assembly instruction operand type.*)
+
+
 val mips_operand_mode_to_string: mips_operand_mode_t -> string
   
 val mips_hi_op: mips_operand_mode_t -> mips_operand_int
@@ -65,18 +68,27 @@ val mips_immediate_op:
   -> int (* size in bytes *)
   -> numerical_t   (* value *)
   -> mips_operand_int
-  
+
+
 val mips_absolute_op: doubleword_int -> mips_operand_mode_t -> mips_operand_int
 
+
+(** [mk_mips_target_op ~delay iaddr imm] returns an absolute-address operand 
+    with address value [iaddr + ((4 * imm) + delay)].*)
 val mk_mips_target_op:
-  pushback_stream_int
+  ?delay:int
   -> doubleword_int
   -> int
   -> mips_operand_int
-  
+
+
+(** [mk_mips_absolute_target_op ?delay iaddr imm] returns an absolute-address
+    operand with address value [4 * imm] added to [iaddr mod 2^28] where 
+    [iaddr] is the instruction address. A [delay] value may be added if the
+    base instruction address must be the delay slot. The resulting address
+    value is in the same [256 MB] region as the instruction.*)
 val mk_mips_absolute_target_op:
   ?delay:int
-  -> pushback_stream_int
   -> doubleword_int
   -> int
   -> mips_operand_int

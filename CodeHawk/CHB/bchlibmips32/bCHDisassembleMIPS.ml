@@ -159,24 +159,30 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let _ =
     chlog#add
       "disassembly"
-      (LBLOCK [ STR "base: " ; base#toPretty ;
-                STR "; displacement: " ; INT displacement ;
-                STR "; size: " ; INT size  ]) in
+      (LBLOCK [
+           STR "base: ";
+           base#toPretty;
+           STR "; displacement: ";
+           INT displacement;
+           STR "; size: ";
+           INT size]) in
   try
     begin
       while ch#pos < size do
         let prevPos = ch#pos in
+        let instraddr = base#add_int prevPos in
         let instrbytes = ch#read_doubleword in
         let opcode =
           try
-            disassemble_mips_instruction ch base instrbytes
+            disassemble_mips_instruction instraddr instrbytes
           with
-          | _ -> OpInvalid in
+          | _ -> NotRecognized ("exception", instrbytes) in
         let currentPos = ch#pos in
         let instrLen = currentPos - prevPos in
-        let instrBytes = Bytes.make instrLen ' ' in
-        let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0  instrLen in
-        let _ = add_instruction prevPos opcode (Bytes.to_string  instrBytes) in
+        (* let instrBytes = Bytes.make instrLen ' ' in
+        let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0  instrLen in *)
+        let instrBytes = ch#sub prevPos instrLen in
+        let _ = add_instruction prevPos opcode instrBytes in
       ()
       done ;
       !mips_assembly_instructions#set_not_code opcode_monitor#get_data_blocks
@@ -184,12 +190,12 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   with
   | BCH_failure p ->
      begin
-       pr_debug [ STR "Error in disassembly: " ; p ] ;
+       pr_debug [STR "Error in disassembly: "; p];
        raise (BCH_failure p)
      end
   | IO.No_more_input ->
      begin
-       pr_debug [ STR "Error in disassembly: No more input" ; NL ];
+       pr_debug [STR "Error in disassembly: No more input"; NL];
        raise IO.No_more_input
      end
   

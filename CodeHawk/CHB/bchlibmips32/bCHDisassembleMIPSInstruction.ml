@@ -53,14 +53,30 @@ open BCHMIPSTypes
 
 module TR = CHTraceResult
 
+(* Notes from MIPS Architecture For Programmers Volume II, Rev. 5.04
+
+   PC (page 18)
+   The Program Counter value. During the instruction time of an instruction this
+   is the address of the instruction word. The address of the instruction that
+   occurs during the next instruction instruction time is determined by assigning
+   a value to PC during an instruction time. If no value is assigned to PC during
+   an instruction time by any pseudocode statement, it is automatically
+   incremented by 4 before the next instruction time. A taken branch assigns the
+   target address to the PC during the instruction time of the instruction in 
+   branch delay slot.
+ *)
+
+
+let stri = string_of_int
+
 
 let parse_branch
-      (ch:pushback_stream_int)
-      (base:doubleword_int)
-      (rrs:int)
-      (rrt:int)
-      (immval:int) =
-  let tgtop = mk_mips_target_op ch base immval in
+      (instr: doubleword_int)
+      (iaddr: doubleword_int)
+      (rrs: int)
+      (rrt: int)
+      (immval: int) =
+  let tgtop = mk_mips_target_op ~delay:4 iaddr immval in
   let rs = select_mips_reg rrs in
   let r_op = mips_register_op in
   let imm = mkNumerical immval in
@@ -73,16 +89,12 @@ let parse_branch
   | 16 -> BranchLTZeroLink (r_op rs RD, tgtop)
   | 17 when rrs = 0 -> BranchLink tgtop
   | 17 -> BranchGEZeroLink (r_op rs RD, tgtop)
-  | _ ->
-     begin
-       pverbose [ STR "branch with rt: " ; INT rrt ; NL ] ;
-       OpInvalid
-     end
+  | _ -> NotRecognized ("parse_branch:" ^ (stri rrt), instr)
 
 
 let parse_I_opcode
-      (ch:pushback_stream_int)
-      (base:doubleword_int)
+      (instr: doubleword_int)
+      (iaddr: doubleword_int)
       (opc:int)
       (rrs:int)
       (rrt:int)
@@ -94,9 +106,9 @@ let parse_I_opcode
   let f_op = mips_fp_register_op in
   let i_op = mips_indirect_register_op in
   let imm_op = mips_immediate_op in
-  let tgt_op () = mk_mips_target_op ch base immval in
+  let tgt_op () = mk_mips_target_op ~delay:4 iaddr immval in
   match opc with
-  | 1 -> parse_branch ch base rrs rrt immval
+  | 1 -> parse_branch instr iaddr rrs rrt immval
   | 4 when rrs = 0 && rrt = 0 && immval = (-1) -> Halt
   | 4 when rrs = 0 && rrt = 0 -> Branch (tgt_op ())
   | 4 -> BranchEqual (r_op rs RD,r_op rt RD,tgt_op ())
@@ -108,63 +120,65 @@ let parse_I_opcode
   | 9 -> AddImmediateUnsigned (r_op rt WR,r_op rs RD,imm_op true 2 imm)
   | 10 -> SetLTImmediate (r_op rt WR,r_op rs RD,imm_op true 2 imm)
   | 11 -> SetLTImmediateUnsigned (r_op rt WR,r_op rs RD,imm_op true 2 imm)
-  | 12 -> AndImmediate (r_op rt WR,r_op rs RD,imm_op false 2 imm)
+  | 12 -> AndImmediate (r_op rt WR, r_op rs RD, imm_op false 2 imm)
   | 13 -> OrImmediate (r_op rt WR,r_op rs RD,imm_op false 2 imm)
   | 14 -> XorImmediate (r_op rt WR,r_op rs RD,imm_op false 2 imm)
-  | 15 when rrs = 0 -> LoadUpperImmediate (r_op rt WR,imm_op false 2 imm)
-  | 15 -> AddUpperImmediate (r_op rt WR,r_op rs RD, imm_op true 2 imm)
-  | 20 -> BranchEqualLikely (r_op rs RD,r_op rt RD,tgt_op ())
+  | 15 when rrs = 0 -> LoadUpperImmediate (r_op rt WR, imm_op false 2 imm)
+  | 15 -> AddUpperImmediate (r_op rt WR, r_op rs RD, imm_op true 2 imm)
+  | 20 -> BranchEqualLikely (r_op rs RD, r_op rt RD, tgt_op ())
   | 18 ->
      (match rrs with
       | 0 -> MoveWordFromCoprocessor2 (r_op rt WR, immval lsr 3, immval mod 8)
-      | 3 -> MoveWordFromHighHalfCoprocessor2 (r_op rt WR, immval lsr 3, immval mod 8)
+      | 3 ->
+         MoveWordFromHighHalfCoprocessor2 (r_op rt WR, immval lsr 3, immval mod 8)
       | 4 -> MoveWordToCoprocessor2 (r_op rt RD, immval lsr 3, immval mod 8)
       | _ ->
-         begin
-           pverbose [ STR "    I-opcode 18: " ; INT rrs ; NL ];
-           OpInvalid
-         end)
+         NotRecognized ("parse_I_opcode[opc:18,rrs:" ^ (stri rrs) ^ "]", instr))
+
   | 21 -> BranchNotEqualLikely (r_op rs RD,r_op rt RD,tgt_op ())
   | 22 -> BranchLEZeroLikely (r_op rs RD,tgt_op ())
   | 23 -> BranchGTZeroLikely (r_op rs RD,tgt_op ())
-  | 32 -> LoadByte (r_op rt WR,i_op rs imm RD)
-  | 33 -> LoadHalfWord (r_op rt WR,i_op rs imm RD)
-  | 34 -> LoadWordLeft (r_op rt WR,i_op rs imm RD)
+  | 32 -> LoadByte (r_op rt WR, i_op rs imm RD)
+  | 33 -> LoadHalfWord (r_op rt WR, i_op rs imm RD)
+  | 34 -> LoadWordLeft (r_op rt WR, i_op rs imm RD)
   | 35 -> LoadWord (r_op rt WR,i_op rs imm RD)
-  | 36 -> LoadByteUnsigned (r_op rt WR,i_op rs imm RD)
-  | 37 -> LoadHalfWordUnsigned (r_op rt WR,i_op rs imm RD)
-  | 38 -> LoadWordRight (r_op rt WR,i_op rs imm RD)
-  | 40 -> StoreByte (i_op rs imm WR,r_op rt RD)
-  | 41 -> StoreHalfWord (i_op rs imm WR,r_op rt RD)
-  | 42 -> StoreWordLeft (i_op rs imm WR,r_op rt RD)
-  | 43 -> StoreWord (i_op rs imm WR,r_op rt RD)
+  | 36 -> LoadByteUnsigned (r_op rt WR, i_op rs imm RD)
+  | 37 -> LoadHalfWordUnsigned (r_op rt WR, i_op rs imm RD)
+  | 38 -> LoadWordRight (r_op rt WR, i_op rs imm RD)
+  | 40 -> StoreByte (i_op rs imm WR, r_op rt RD)
+  | 41 -> StoreHalfWord (i_op rs imm WR, r_op rt RD)
+  | 42 -> StoreWordLeft (i_op rs imm WR, r_op rt RD)
+  | 43 -> StoreWord (i_op rs imm WR, r_op rt RD)
   | 46 -> StoreWordRight (i_op rs imm WR, r_op rt RD)
   | 48 -> LoadLinkedWord (r_op rt WR, i_op rs imm RD)
-  | 49 -> LoadWordFP (f_op rrt WR,i_op rs imm RD)
+  | 49 -> LoadWordFP (f_op rrt WR, i_op rs imm RD)
   | 51 -> Prefetch (i_op rs imm RD, rrt)
-  | 53 -> LoadDoublewordToFP (f_op rrt WR,i_op rs imm RD)
+  | 53 -> LoadDoublewordToFP (f_op rrt WR, i_op rs imm RD)
   | 56 -> StoreConditionalWord (i_op rs imm WR, r_op rt RD)
   | 57 -> StoreWordFromFP (i_op rs imm RD, f_op rrt RD)
   | 61 -> StoreDoublewordFromFP (i_op rs imm RD, f_op rrt RD)
-  | _ ->
-     begin
-       pverbose [ STR "     I-opcode: " ; INT opc ; NL ] ;
-       OpInvalid
-     end
+  | _ -> NotRecognized ("parse_I_opcode:" ^ (stri opc), instr)
 
 
-let parse_J_opcode (ch:pushback_stream_int) (base:doubleword_int) (opc:int) (immval:int) =
+let parse_J_opcode
+      (instr: doubleword_int)
+      (iaddr: doubleword_int)
+      (opc: int)
+      (immval: int) =
   match opc with
-  | 2 -> Jump (mk_mips_absolute_target_op ~delay:4 ch base immval)
-  | 3 -> JumpLink (mk_mips_absolute_target_op ~delay:4 ch base immval)
-  | _ ->
-  begin
-    pverbose [ STR "     J-opcode: " ; INT opc ; NL ] ;
-    OpInvalid
-  end
+  | 2 -> Jump (mk_mips_absolute_target_op ~delay:4 iaddr immval)
+  | 3 -> JumpLink (mk_mips_absolute_target_op ~delay:4 iaddr immval)
+  | _ -> NotRecognized ("parse_J_opcode:" ^ (stri opc), instr)
 
 
-let parse_R_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int) =
+let parse_R_opcode
+      (instr: doubleword_int)
+      (opc: int)
+      (rrs: int)
+      (rrt: int)
+      (rrd: int)
+      (samt: int)
+      (fnct: int) =
   let rs = select_mips_reg rrs in
   let rt = select_mips_reg rrt in
   let rd = select_mips_reg rrd in
@@ -172,12 +186,12 @@ let parse_R_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int)
   let imm_op i = mips_immediate_op false 1 (mkNumerical i) in
   match fnct with
   | 0 when rrs = 0 && rrt = 0 && rrd = 0 && samt = 0 -> NoOperation
-  | 0 -> ShiftLeftLogical (r_op rd WR,r_op rt RD,imm_op samt)
-  | 2 -> ShiftRightLogical (r_op rd WR,r_op rt RD,imm_op samt)
-  | 3 -> ShiftRightArithmetic (r_op rd WR,r_op rt RD,imm_op samt)
-  | 4 -> ShiftLeftLogicalVariable (r_op rd WR,r_op rt RD,r_op rs RD)
-  | 6 -> ShiftRightLogicalVariable (r_op rd WR,r_op rt RD,r_op rs RD)
-  | 7 -> ShiftRightArithmeticVariable (r_op rd WR,r_op rt RD,r_op rs RD)
+  | 0 -> ShiftLeftLogical (r_op rd WR, r_op rt RD, imm_op samt)
+  | 2 -> ShiftRightLogical (r_op rd WR, r_op rt RD, imm_op samt)
+  | 3 -> ShiftRightArithmetic (r_op rd WR, r_op rt RD, imm_op samt)
+  | 4 -> ShiftLeftLogicalVariable (r_op rd WR, r_op rt RD, r_op rs RD)
+  | 6 -> ShiftRightLogicalVariable (r_op rd WR, r_op rt RD, r_op rs RD)
+  | 7 -> ShiftRightArithmeticVariable (r_op rd WR, r_op rt RD, r_op rs RD)
   | 8 -> JumpRegister (r_op rs RD)
   | 9 -> JumpLinkRegister (r_op rd WR,r_op rs RD)
   | 10 -> MoveConditionalZero (r_op rd WR, r_op rs RD, r_op rt RD)
@@ -187,52 +201,63 @@ let parse_R_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int)
   | 17 -> MoveToHi (mips_hi_op WR, r_op rs RD)
   | 18 -> MoveFromLo (r_op rd WR,mips_lo_op RD)
   | 19 -> MoveToLo (r_op rs RD,mips_lo_op RD)
-  | 24 -> MultiplyWord (mips_hi_op WR,mips_lo_op WR,r_op rs RD, r_op rt RD)
-  | 25 -> MultiplyUnsignedWord (mips_hi_op WR,mips_lo_op WR,r_op rs RD, r_op rt RD)
-  | 26 -> DivideWord (mips_hi_op WR,mips_lo_op WR,r_op rs RD,r_op rt RD)
-  | 27 -> DivideUnsignedWord (mips_hi_op WR,mips_lo_op WR, r_op rs RD, r_op rt RD)
-  | 32 -> Add (r_op rd WR,r_op rs RD,r_op rt RD)
+  | 24 -> MultiplyWord (mips_hi_op WR, mips_lo_op WR, r_op rs RD, r_op rt RD)
+  | 25 ->
+     MultiplyUnsignedWord (mips_hi_op WR, mips_lo_op WR, r_op rs RD, r_op rt RD)
+  | 26 ->
+     DivideWord (mips_hi_op WR, mips_lo_op WR, r_op rs RD, r_op rt RD)
+  | 27 ->
+     DivideUnsignedWord (mips_hi_op WR, mips_lo_op WR, r_op rs RD, r_op rt RD)
+  | 32 -> Add (r_op rd WR, r_op rs RD, r_op rt RD)
   | 33 when rrd = 0 -> NoOperation                             (* pseudo *)
   | 33 when rrs = 0 -> Move (r_op rd WR, r_op rt RD)           (* pseudo *)
   | 33 when rrt = 0 -> Move (r_op rd WR, r_op rs RD)           (* pseudo *)
-  | 33 -> AddUnsigned (r_op rd WR,r_op rs RD,r_op rt RD)
-  | 34 -> Subtract (r_op rd WR,r_op rs RD,r_op rt RD)
-  | 35 -> SubtractUnsigned (r_op rd WR,r_op rs RD,r_op rt RD)
-  | 36 -> And (r_op rd WR,r_op rs RD,r_op rt RD)
+  | 33 -> AddUnsigned (r_op rd WR, r_op rs RD, r_op rt RD)
+  | 34 -> Subtract (r_op rd WR, r_op rs RD, r_op rt RD)
+  | 35 -> SubtractUnsigned (r_op rd WR, r_op rs RD, r_op rt RD)
+  | 36 -> And (r_op rd WR, r_op rs RD, r_op rt RD)
   | 37 when rrs = 1 && rrt = 0 && rrd  = 1 &&  samt = 0 -> NoOperation
-  | 37 -> Or (r_op rd WR,r_op rs RD,r_op rt RD)
-  | 38 -> Xor (r_op rd WR,r_op rs RD,r_op rt RD)
-  | 39 -> Nor (r_op rd WR,r_op rs RD,r_op rt RD)
-  | 42 -> SetLT (r_op rd WR,r_op rs RD,r_op rt RD)
+  | 37 -> Or (r_op rd WR, r_op rs RD, r_op rt RD)
+  | 38 -> Xor (r_op rd WR, r_op rs RD, r_op rt RD)
+  | 39 -> Nor (r_op rd WR, r_op rs RD, r_op rt RD)
+  | 42 -> SetLT (r_op rd WR, r_op rs RD, r_op rt RD)
   | 43 -> SetLTUnsigned (r_op rd WR,r_op rs RD,r_op rt RD)
-  | 52 -> TrapIfEqual ((rrd lsl 5) + samt,r_op rs RD,r_op rt RD)
-  | _ ->
-     begin
-       pverbose [ STR "     R-opcode: " ; INT fnct ; NL ] ;
-       OpInvalid
-     end
+  | 52 -> TrapIfEqual ((rrd lsl 5) + samt, r_op rs RD, r_op rt RD)
+  | _ -> NotRecognized ("parse_R_opcode:" ^ (stri fnct), instr)
 
 
-let parse_R2_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int) =
+let parse_R2_opcode
+      (instr: doubleword_int)
+      (opc: int)
+      (rrs: int)
+      (rrt: int)
+      (rrd: int)
+      (samt: int)
+      (fnct: int) =
   let rs = select_mips_reg rrs in
   let rt = select_mips_reg rrt in
   let rd = select_mips_reg rrd in
   let r_op = mips_register_op in
   match fnct with
-  | 0 -> MultiplyAddWord
-           (mips_hi_op RW, mips_lo_op RW, r_op rs RD, r_op rt RD)
-  | 1 -> MultiplyAddUnsignedWord
-           (mips_hi_op RW, mips_lo_op RW, r_op rs RD, r_op rt RD)
+  | 0 ->
+     MultiplyAddWord
+       (mips_hi_op RW, mips_lo_op RW, r_op rs RD, r_op rt RD)
+  | 1 ->
+     MultiplyAddUnsignedWord
+       (mips_hi_op RW, mips_lo_op RW, r_op rs RD, r_op rt RD)
   | 2 -> MultiplyWordToGPR (r_op rd WR, r_op rs RD, r_op rt RD)
   | 32 -> CountLeadingZeros (r_op rd WR, r_op rs RD)
-  | _ ->
-     begin
-       pverbose [ STR "    R2-opcode: " ; INT fnct ; NL ] ;
-       OpInvalid
-     end
+  | _ -> NotRecognized ("parse_R2_opcode:" ^ (stri fnct), instr)
 
 
-let parse_R3_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int) =
+let parse_R3_opcode
+      (instr: doubleword_int)
+      (opc: int)
+      (rrs: int)
+      (rrt: int)
+      (rrd: int)
+      (samt: int)
+      (fnct: int) =
   let rd = select_mips_reg rrd in
   let rt = select_mips_reg rrt in
   let rs = select_mips_reg rrs in
@@ -245,20 +270,20 @@ let parse_R3_opcode (opc:int) (rrs:int) (rrt:int) (rrd:int) (samt:int) (fnct:int
       | 2 -> WordSwapBytesHalfwords (r_op rd WR, r_op rt RD)
       | 16 -> SignExtendByte (r_op rd WR, r_op rt RD)
       | 24 -> SignExtendHalfword (r_op rd WR, r_op rt RD)
-      | _ ->
-         begin
-           pverbose [ STR "    R3-opcode BSHFL: " ; INT samt ; NL ];
-           OpInvalid
-         end)
+      | _ -> NotRecognized ("parse_R3_opcode:32:" ^ (stri samt), instr))
   | 59 -> ReadHardwareRegister (r_op rt WR, rrd)
-  | _ ->
-     begin
-       pverbose [ STR "    R3-opcode fnct: " ; INT fnct ; NL ];
-       OpInvalid
-     end
+  | _ -> NotRecognized ("parse_R3_opcode:" ^ (stri fnct), instr)
 
 
-let parse_FPMC_opcode (opc:int) (rrs:int) (cc:int) (tf:int) (rrd:int) (ffd:int) (funct:int) =
+let parse_FPMC_opcode
+      (instr: doubleword_int)
+      (opc: int)
+      (rrs: int)
+      (cc: int)
+      (tf: int)
+      (rrd: int)
+      (ffd: int)
+      (funct: int) =
   let rs = select_mips_reg rrs in
   let rd = select_mips_reg rrd in
   let r_op = mips_register_op in
@@ -267,19 +292,17 @@ let parse_FPMC_opcode (opc:int) (rrs:int) (cc:int) (tf:int) (rrd:int) (ffd:int) 
      (match tf with
       | 0 -> MovF (cc, r_op rd WR, r_op rs RD)
       | 1 -> MovT (cc, r_op rd WR, r_op rs RD)
-      | _ ->
-         begin
-           pverbose [ STR "     FPCM-opcode: " ; INT tf ; NL ] ;
-           OpInvalid
-         end)
-  | _ ->
-     begin
-       pverbose [ STR "    FPCM-opcode: " ; INT funct ; NL ] ;
-       OpInvalid
-     end
+      | _ -> NotRecognized ("parse_FPCM_opcode:1:" ^ (stri tf), instr))
+  | _ -> NotRecognized ("parse_FPCM_opcode:" ^ (stri funct), instr)
 
 
-let parse_FPRI_opcode (opc:int) (sub:int) (rrt:int) (fs:int) (imm:int) =
+let parse_FPRI_opcode
+      (instr: doubleword_int)
+      (opc: int)
+      (sub: int)
+      (rrt: int)
+      (fs: int)
+      (imm: int) =
   let rt = select_mips_reg rrt in
   let rd = select_mips_reg fs in
   let r_op = mips_register_op in
@@ -290,65 +313,50 @@ let parse_FPRI_opcode (opc:int) (sub:int) (rrt:int) (fs:int) (imm:int) =
       | 0 -> MoveWordFromFP (r_op rt WR, f_op fs RD)
       | _ when imm < 8 ->
          MoveFromCoprocessor0 (r_op rt WR, r_op rd RD, imm)
-      | _ ->
-         begin
-           pverbose [ STR "  FPRIType-opcode 0: " ; INT imm ; NL ];
-           OpInvalid
-         end)
+      | _ -> NotRecognized ("parse_FPRI_opcode:0:" ^ (stri imm), instr))
+
   | 2 ->
      (match imm with
       | 0 -> ControlWordFromFP (r_op rt WR, f_op fs RD)
       | _ when imm < 8 ->
          MoveFromHighCoprocessor0 (r_op rt WR, r_op rd RD, imm)
-      | _ ->
-         begin
-           pverbose [ STR "  FPRIType-opcode 2: " ; INT imm ; NL ];
-           OpInvalid
-         end)
+      | _ -> NotRecognized ("parse_FPRI_opcode:2:" ^ (stri imm), instr))
+
   | 3 ->
      (match imm with
       | 0 -> MoveWordFromHighHalfFP (r_op rt WR, f_op fs RD)
-      | _ ->
-         begin
-           pverbose [ STR "   FPRIType-opcode 3: " ; INT imm ; NL ];
-           OpInvalid
-         end)
+      | _ -> NotRecognized ("parse_FPRI_opcode:3:" ^ (stri imm), instr))
+
   | 4 ->
      (match imm with
       | 0 -> MoveWordToFP (r_op rt RD, f_op fs WR)
       | _ when imm < 8 ->
          MoveToCoprocessor0 (r_op rt RD, r_op rd RD, imm)
-      | _ ->
-         begin
-           pverbose [ STR "   FPRType-opcode 4: " ; INT imm ; NL ];
-           OpInvalid
-         end)
+      | _ -> NotRecognized ("parse_FPRI_opcode:4:" ^ (stri imm), instr))
+
   | 6 ->
      (match imm with
       | 0 -> ControlWordToFP (r_op rt RD, f_op fs WR)
       | _ when imm < 8 ->
          MoveToHighCoprocessor0 (r_op rt RD, r_op rd RD, imm)
-      | _ ->
-         begin
-           pverbose [ STR "   FPRIType-opcode 6: " ; INT imm ; NL ];
-           OpInvalid
-         end)
+      | _ -> NotRecognized ("parse_FPRI_opcode:6:" ^ (stri imm), instr))
+
   | 7 ->
      (match imm with
       | 0 -> MoveWordToHighHalfFP (r_op rt RD, f_op fs WR )
-      | _ ->
-         begin
-           pverbose [ STR "   FPRIType-opcode 7: " ; INT imm ; NL ];
-           OpInvalid
-         end)
-  | _ ->
-     begin
-       pverbose [ STR "   FPRIType-opcode: " ; INT sub ; NL ] ;
-       OpInvalid
-     end
+      | _ -> NotRecognized ("parse_FPRI_opcode:7:" ^ (stri imm), instr))
+
+  | _ -> NotRecognized ("parse_FPRI_opcode:" ^ (stri sub), instr)
 
 
-let parse_FPR_opcode (opc:int) (fmt:int) (ft:int) (fs:int) (fd:int) (funct:int) =
+let parse_FPR_opcode
+      (instr: doubleword_int)
+      (opc: int)
+      (fmt: int)
+      (ft: int)
+      (fs: int)
+      (fd: int)
+      (funct: int) =
   let fmt = code_to_mips_fp_format fmt in
   let f_op = mips_fp_register_op in
   match funct with
@@ -374,41 +382,35 @@ let parse_FPR_opcode (opc:int) (fmt:int) (ft:int) (fs:int) (fd:int) (funct:int) 
   | 36 -> FPCVTWfmt (fmt,f_op fd WR, f_op fs RD)
   | 37 -> FPCVTLfmt (fmt,f_op fd WR, f_op fs RD)
   | 40 -> FPCVTSPfmt (fmt,f_op fd WR, f_op fs RD)
-  | _ ->
-     begin
-       pverbose [ STR "     FPRType-opcode: " ; INT funct  ; NL ] ;
-       OpInvalid
-     end
+  | _ -> NotRecognized ("parse_FPR_opcode:" ^ (stri funct), instr)
 
 
 let parse_FPICC_opcode
-      (ch:pushback_stream_int)
-      (base:doubleword_int)
-      (opc:int)
-      (sub:int)
-      (cc:int)
-      (nd:int)
-      (tf:int)
-      (offset:int) =
-  let offset = mk_mips_target_op ch base offset in
-  match (nd,tf) with
+      (instr: doubleword_int)
+      (iaddr: doubleword_int)
+      (opc: int)
+      (sub: int)
+      (cc: int)
+      (nd: int)
+      (tf: int)
+      (offset: int) =
+  let offset = mk_mips_target_op iaddr offset in
+  match (nd, tf) with
   | (0,0) -> BranchFPFalse (cc,offset)
   | (0,1) -> BranchFPTrue (cc,offset)
   | (1,0) -> BranchFPFalseLikely (cc,offset)
   | (1,1) -> BranchFPTrueLikely (cc,offset)
   | _ ->
-     begin
-       pverbose [STR "     FPICC-opcode: "; INT nd; STR ", "; INT tf; NL];
-       OpInvalid
-     end
+     NotRecognized
+       ("parse_FPICC_opcode:(" ^ (stri nd) ^ "," ^ (stri tf) ^ ")", instr)
 
 
 let parse_FPCompare_opcode
-      (fmt:int)
-      (ft:int)
-      (fs:int)
-      (cc:int)
-      (cond:int) =
+      (fmt: int)
+      (ft: int)
+      (fs: int)
+      (cc: int)
+      (cond: int) =
   let fmt = code_to_mips_fp_format fmt in
   let f_op f = mips_fp_register_op f RD in
   let exc = cond lsr 3 in
@@ -417,55 +419,52 @@ let parse_FPCompare_opcode
 
 
 let parse_opcode
-      (ch:pushback_stream_int)
-      (base:doubleword_int)
-      (instrbytes:doubleword_int): mips_opcode_t =
-  let p = TR.tget_ok (numerical_to_doubleword (mkNumerical ch#pos)) in
-  let addr = (base#add p)#add_int (-4) in
+      (iaddr: doubleword_int)
+      (instrbytes: doubleword_int): mips_opcode_t =
+  (* let p = TR.tget_ok (numerical_to_doubleword (mkNumerical ch#pos)) in
+  let addr = (base#add p)#add_int (-4) in *)
   let instr = decompose_instr instrbytes in
   let opcode =
     match instr with
     | SyscallType code -> Syscall code
-    | RBreakType (_,code,_) -> Break code
-    | RSyncType (_,_,stype,_) -> Sync stype
-    | IType (opc,rs,rt,imm) -> parse_I_opcode ch base opc rs rt imm
-    | JType (opc,tgt) -> parse_J_opcode ch base opc tgt
-    | RType (opc,rs,rt,rd,sa,fn) -> parse_R_opcode opc rs rt rd sa fn
-    | R2Type (opc,rs,rt,rd,sa,fn) -> parse_R2_opcode opc rs rt rd sa fn
-    | R3Type (opc,rs,rt,rd,sa,fn) -> parse_R3_opcode opc rs rt rd sa fn
-    | FPMCType (opc,rs,cc,nd,tf,rd,fd,funct) -> parse_FPMC_opcode opc rs cc tf rd fd funct
-    | FPRIType (opc,sub,rt,fs,imm) -> parse_FPRI_opcode opc sub rt fs imm
-    | FPRType (opc,fmt,ft,fs,fd,funct) -> parse_FPR_opcode opc fmt ft fs fd funct
-    | FPICCType (opc,sub,cc,nd,tf,offset) -> parse_FPICC_opcode ch base opc sub cc nd tf offset
-    | FPCompareType (opc,fmt,ft,fs,cc,cond) -> parse_FPCompare_opcode fmt ft fs cc cond
-    | FormatUnknown(opc,otherbits) -> OpInvalid in
-  let _ = match opcode with
-    | OpInvalid ->
-       pverbose [
-           addr#toPretty;
-           STR "  ";
-           STR (instrbytes#to_fixed_length_hex_string);
-           STR " not recognized";
-           NL]
-    | _ -> () in
+    | RBreakType (_, code, _) -> Break code
+    | RSyncType (_, _, stype, _) -> Sync stype
+    | IType (opc, rs, rt, imm) ->
+       parse_I_opcode instrbytes iaddr opc rs rt imm
+    | JType (opc, tgt) ->
+       parse_J_opcode instrbytes iaddr opc tgt
+    | RType (opc, rs, rt, rd, sa, fn) ->
+       parse_R_opcode instrbytes opc rs rt rd sa fn
+    | R2Type (opc, rs, rt, rd, sa, fn) ->
+       parse_R2_opcode instrbytes opc rs rt rd sa fn
+    | R3Type (opc, rs, rt, rd, sa, fn) ->
+       parse_R3_opcode instrbytes opc rs rt rd sa fn
+    | FPMCType (opc, rs, cc, nd, tf, rd, fd, funct) ->
+       parse_FPMC_opcode instrbytes opc rs cc tf rd fd funct
+    | FPRIType (opc, sub, rt, fs, imm) ->
+       parse_FPRI_opcode instrbytes opc sub rt fs imm
+    | FPRType (opc, fmt, ft, fs, fd, funct) ->
+       parse_FPR_opcode instrbytes opc fmt ft fs fd funct
+    | FPICCType (opc, sub, cc, nd, tf, offset) ->
+       parse_FPICC_opcode instrbytes iaddr opc sub cc nd tf offset
+    | FPCompareType (opc, fmt, ft, fs, cc, cond) ->
+       parse_FPCompare_opcode fmt ft fs cc cond
+    | FormatUnknown(opc, otherbits) ->
+       NotRecognized ("parse_opcode:format_unknown", instrbytes) in
   opcode
 
 
 let disassemble_mips_instruction
-      (ch:pushback_stream_int) (base:doubleword_int) (instrbytes:doubleword_int) =
+      (iaddr: doubleword_int)
+      (instrbytes: doubleword_int) =
   try
-    parse_opcode ch base instrbytes
+    parse_opcode iaddr instrbytes
   with
   | IO.No_more_input ->
-    let address = base#add_int ch#pos in
     begin
       ch_error_log#add
         "no more input"
 	(LBLOCK [
-             STR "No more input at position ";
-             address#toPretty;
-             STR " (";
-	     INT ch#pos;
-             STR ")"]);
+             STR "No more input at instruction address: "; iaddr#toPretty]);
       raise IO.No_more_input
     end
