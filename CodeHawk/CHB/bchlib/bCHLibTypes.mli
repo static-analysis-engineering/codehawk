@@ -673,7 +673,7 @@ object
 
   (* accessors *)
   method pos: int
-  method sub: int -> int -> string traceresult
+  method sub: int -> int -> string
 end
 
 

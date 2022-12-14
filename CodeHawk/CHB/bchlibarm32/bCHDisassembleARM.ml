@@ -131,11 +131,16 @@ let disassemble_arm_section
         let dblen = not_code_length nonCodeBlock in
         if pos + dblen <= sectionsize then
           let blockbytes =
-            log_tvalue
-              (mk_tracelog_spec
-                 ~tag:"disassembly" ("skip_data_block:" ^ iaddr#to_hex_string))
-              (ch#sub pos dblen)
-              ~default:"" in
+            try
+              ch#sub pos dblen
+            with
+            | BCH_failure p ->
+               begin
+                 ch_error_log#add
+                   "disassembly:skip data_block"
+                   (LBLOCK [STR "pos: "; INT pos; STR "; dblen: "; INT dblen]);
+                 ""
+               end in
           begin
             (if collect_diagnostics () then
                ch_diagnostics_log#add
@@ -200,11 +205,7 @@ let disassemble_arm_section
                 | _ -> OpInvalid in
               let currentPos = ch#pos in
               let instrlen = currentPos - prevPos in
-              let instrbytes =
-                fail_tvalue
-                  (trerror_record
-                     (LBLOCK [STR "disassemble_section: "; iaddr#toPretty]))
-                  (ch#sub prevPos instrlen) in
+              let instrbytes = ch#sub prevPos instrlen in
               let instr = add_instruction iaddr opcode instrbytes in
               let optagg = identify_arm_aggregate ch instr in
               match optagg with
@@ -227,12 +228,8 @@ let disassemble_arm_section
                      end
                   | _ -> OpInvalid in
               let currentPos = ch#pos in
-              let instrLen = currentPos - prevPos in
-              let instrBytes =
-                fail_tvalue
-                  (trerror_record
-                     (LBLOCK [STR "disassemble_section: "; iaddr#toPretty]))
-                  (ch#sub prevPos instrLen) in
+              let instrlen = currentPos - prevPos in
+              let instrBytes = ch#sub prevPos instrlen in
               let _ = add_instruction iaddr opcode instrBytes in
               ()
         with
