@@ -140,9 +140,16 @@ object (self)
 
   method sub (pos: int) (len: int) =
     try
-      Ok (String.sub s pos len)
+      String.sub s pos len
     with
-    | Invalid_argument m -> Error [m]
+    | Invalid_argument m ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in stream_wrapper#sub. pos: ";
+                 INT pos;
+                 STR "; len: ";
+                 INT len]))
 
   method skip_bytes n = 
     try
