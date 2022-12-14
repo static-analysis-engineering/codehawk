@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,9 @@ open BCHMIPSOperand
 open BCHMIPSOpcodeRecords
 open BCHMIPSSumTypeSerializer
 
+
 let bd = BCHDictionary.bdictionary
+
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
@@ -58,6 +60,7 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
     ch_error_log#add "serialization tag" msg ;
     raise (BCH_failure msg)
   end
+
 
 class mips_dictionary_t:mips_dictionary_int =
 object (self)
@@ -72,9 +75,9 @@ object (self)
 
   initializer
     tables <- [
-      mips_opkind_table ;
-      mips_operand_table ;
-      mips_opcode_table ;
+      mips_opkind_table;
+      mips_operand_table;
+      mips_opcode_table;
       mips_instr_format_table 
     ]
 
@@ -289,6 +292,8 @@ object (self)
       | MoveWordToCoprocessor2 (op, i1, i2) -> (tags, [ oi op; i1; i2 ])
       | MoveWordFromHighHalfCoprocessor2 (op, i1, i2) -> (tags, [ oi op; i1; i2 ])
       | Prefetch (op,hint) -> (tags, [ hint; oi op ])
+      | NotRecognized (name, dw) -> (tags @ [name; dw#to_hex_string], [])
+      | OpcodeUnpredictable s -> (tags, [bd#index_string s])
     in
     mips_opcode_table#add key
 
@@ -320,5 +325,6 @@ object (self)
     end
 
 end
+
 
 let mips_dictionary = new mips_dictionary_t

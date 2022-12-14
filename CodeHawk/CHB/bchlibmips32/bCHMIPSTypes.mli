@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -247,15 +247,47 @@ type mips_opcode_t =
   | MoveToHi of mips_operand_int * mips_operand_int (* src, HI *)
   | MoveFromLo of mips_operand_int * mips_operand_int (* dest, LO *)
   | MoveToLo of mips_operand_int * mips_operand_int (* src, LO *)
-  | MoveConditionalNotZero of mips_operand_int * mips_operand_int * mips_operand_int (* dst, src, test *)
-  | MoveConditionalZero of mips_operand_int * mips_operand_int * mips_operand_int (* dst, src, test *)
-  | MultiplyWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
-  | MultiplyUnsignedWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
-  | MultiplyAddUnsignedWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
-  | DivideWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
-  | DivideUnsignedWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
-  | Add of mips_operand_int * mips_operand_int * mips_operand_int (* dest,src1,src2 *)
-  | AddUnsigned of mips_operand_int * mips_operand_int * mips_operand_int (* dest,src1,src2 *)
+  | MoveConditionalNotZero of
+      mips_operand_int   (* destination *)
+      * mips_operand_int (* source *)
+      * mips_operand_int (* test *)
+  | MoveConditionalZero of
+      mips_operand_int   (* destination *)
+      * mips_operand_int (* source *)
+      * mips_operand_int (* test *)
+  | MultiplyWord of
+      mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+  | MultiplyUnsignedWord of
+      mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+  | MultiplyAddUnsignedWord of
+      mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+  | DivideWord of
+      mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+  | DivideUnsignedWord of
+      mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+      * mips_operand_int
+  | Add of
+      mips_operand_int   (* destination *)
+      * mips_operand_int (* source 1 *)
+      * mips_operand_int (* source 2 *)
+  | AddUnsigned of
+      mips_operand_int   (* destination *)
+      * mips_operand_int (* source 1 *)
+      * mips_operand_int (* source 2 *)
   | Subtract of mips_operand_int * mips_operand_int * mips_operand_int
   | SubtractUnsigned of mips_operand_int * mips_operand_int * mips_operand_int
   | And of mips_operand_int * mips_operand_int * mips_operand_int
@@ -334,7 +366,9 @@ type mips_opcode_t =
   | Halt
   
   (* Misc *)
-  | NotCode of not_code_t option  
+  | NotCode of not_code_t option
+  | NotRecognized of string * doubleword_int
+  | OpcodeUnpredictable of string
   | OpInvalid
   
 

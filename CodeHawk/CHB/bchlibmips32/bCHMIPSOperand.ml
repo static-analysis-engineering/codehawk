@@ -64,9 +64,11 @@ open BCHMIPSTypes
 
 module TR = CHTraceResult
 
+
 let e8 = 256
 let e16 = e8 * e8
 let e32 = e16 * e16
+
 
 let mips_operand_mode_to_string =
   function RD -> "RD" | WR -> "WR" | RW -> "RW"
@@ -199,7 +201,8 @@ let mips_fp_register_op (i:int) (mode:mips_operand_mode_t) =
   new mips_operand_t (MIPSFPReg i) mode
 
 
-let mips_indirect_register_op (r:mips_reg_t) (offset:numerical_t) (mode:mips_operand_mode_t) =
+let mips_indirect_register_op
+      (r:mips_reg_t) (offset:numerical_t) (mode:mips_operand_mode_t) =
   new mips_operand_t (MIPSIndReg (r,offset))  mode
 
 
@@ -228,15 +231,13 @@ let mips_absolute_op (addr:doubleword_int) (mode:mips_operand_mode_t) =
   new mips_operand_t (MIPSAbsolute addr) mode
 
 
-let mk_mips_target_op (ch:pushback_stream_int) (base:doubleword_int) (imm:int) =
-  let offset = ch#pos + (4 * imm) in
-  mips_absolute_op (base#add_int offset) RD
+let mk_mips_target_op ?(delay=0) (iaddr: doubleword_int) (imm:int) =
+  mips_absolute_op (iaddr#add_int ((4 * imm) + delay)) RD
 
 
 let mk_mips_absolute_target_op
-      ?(delay=0) (ch:pushback_stream_int) (base:doubleword_int) (imm:int) =
-  let addr = base#add_int (ch#pos + delay) in
-  let addrhigh = (addr#get_high lsr 12) lsl 28 in    (* only works on 64-bit implementation *)
-  let tgt = imm lsl 2 in
-  let tgtaddr = addrhigh + tgt in
+      ?(delay=0) (iaddr: doubleword_int) (imm:int) =
+  let addr = iaddr#add_int delay in
+  let addrhigh = (addr#get_high lsr 12) lsl 28 in
+  let tgtaddr = addrhigh + (imm lsl 2) in
   mips_absolute_op (TR.tget_ok (int_to_doubleword tgtaddr)) RD

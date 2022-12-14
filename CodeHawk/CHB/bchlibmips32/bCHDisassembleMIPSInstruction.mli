@@ -34,6 +34,13 @@ open BCHLibTypes
 open BCHMIPSTypes
 
 
-val disassemble_mips_instruction:
-  pushback_stream_int -> doubleword_int -> doubleword_int -> mips_opcode_t
+(** Disassembles a doubleword into a MIPS assembly instruction.*)
 
+
+(** [disassemble_mips_instruction iaddr bytes] disassembles [bytes], 
+    read in as a doubleword according to endianness, where [iaddr] is the 
+    virtual address of the instruction.*)
+val disassemble_mips_instruction:
+  doubleword_int
+  -> doubleword_int
+  -> mips_opcode_t
