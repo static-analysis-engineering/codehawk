@@ -174,6 +174,67 @@ let mips_special_reg_from_string (name:string) =
   get_sumtype_from_table
     "mips_special_regs_from_string_table" mips_special_regs_from_string_table name
 
+
+let mips_register2indices = H.create 32
+let mips_index2registers = H.create 32
+
+let _ =
+  List.iter (fun (i, r) ->
+      begin
+        H.add mips_register2indices r i;
+        H.add mips_index2registers i r
+      end)
+    [(0, MRzero);
+     (1, MRat);
+     (2, MRv0);
+     (3, MRv1);
+     (4, MRa0);
+     (5, MRa1);
+     (6, MRa2);
+     (7, MRa3);
+     (8, MRt0);
+     (9, MRt1);
+     (10, MRt2);
+     (11, MRt3);
+     (12, MRt4);
+     (13, MRt5);
+     (14, MRt6);
+     (15, MRt7);
+     (16, MRs0);
+     (17, MRs1);
+     (18, MRs2);
+     (19, MRs3);
+     (20, MRs4);
+     (21, MRs5);
+     (22, MRs6);
+     (23, MRs7);
+     (24, MRt8);
+     (25, MRt9);
+     (26, MRk0);
+     (27, MRk1);
+     (28, MRgp);
+     (29, MRsp);
+     (30, MRfp);
+     (31, MRra);
+    ]
+
+let mipsreg_to_index (r: mips_reg_t): int =
+  if H.mem mips_register2indices r then
+    H.find mips_register2indices r
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [STR "mipsreg_to_index: register not found"]))
+
+
+let index_to_mipsreg (i: int): mips_reg_t =
+  if H.mem mips_index2registers i then
+    H.find mips_index2registers i
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [STR "index_to_mipsreg: illegal index: "; INT i]))
+
 let _ =
   List.iter (fun (r,s) ->
       add_to_sumtype_tables armregs_to_string_table armregs_from_string_table r s)

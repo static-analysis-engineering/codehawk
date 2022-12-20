@@ -30,6 +30,7 @@ MLIS := \
 	bCHMIPSOpcodeRecords \
 	bCHMIPSDictionary \
 	bCHMIPSDisassemblyUtils \
+	bCHAssembleMIPSInstruction \
 	bCHMIPSAssemblyInstruction \
 	bCHMIPSAssemblyInstructions \
 	bCHMIPSAssemblyBlock \
@@ -53,6 +54,7 @@ SOURCES := \
 	bCHMIPSOpcodeRecords \
 	bCHMIPSDictionary \
 	bCHMIPSDisassemblyUtils \
+	bCHAssembleMIPSInstruction \
 	bCHMIPSAssemblyInstruction \
 	bCHMIPSAssemblyInstructions \
 	bCHMIPSAssemblyBlock \

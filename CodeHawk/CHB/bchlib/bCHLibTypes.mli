@@ -482,11 +482,18 @@ object ('a)
   method to_string_fragment: string
 
   (** Returns an eight-character string representing the eight nibbles
-      (most significant first).
+      (as bytes) (most significant byte first, big endian).
 
       Example: [dw(0)#to_fixed_length_hex_string] returns "00000000";
       [dw(255)#to_fixed_length_hex_string] returns "000000ff".*)
   method to_fixed_length_hex_string: string
+
+  (** Returns an eight-character string representing the eight nibbles
+      (as bytes) (least significant byte first, little endian).
+
+      Example: [dw(0)#to_fixed_length_hex_string_le] returns "00000000";
+      [dw(255)#to_fixed_length_hex_string_le] returns "ff000000".*)
+  method to_fixed_length_hex_string_le: string
 
   (** Returns a standard hexadecimal notation of [dw#value] (without
       leading zeroes).

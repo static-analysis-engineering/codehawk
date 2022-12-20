@@ -39,6 +39,7 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHCPURegisters
 open BCHDoubleword
 open BCHLibTypes
 open BCHStrings
@@ -55,11 +56,13 @@ module TR = CHTraceResult
 
 let stri = string_of_int
 
+
 (* commonly used constant values *)
 let e7   = 128
 let e8   = 256
 let e15  = e7 * e8
 let e16  = e8 * e8
+
 
 let select_mips_reg = function
   | 0 -> MRzero
@@ -96,6 +99,7 @@ let select_mips_reg = function
   | 31 -> MRra
   | _ -> raise (BCH_failure (STR "Error in select_mips_reg: reg > 31"))
 
+
 let code_to_mips_fp_format c =
   match c with
   | 16 -> FPSingle
@@ -106,6 +110,7 @@ let code_to_mips_fp_format c =
   | _ ->
      raise (BCH_failure
               (LBLOCK [ STR "Invalid code for mips-fp-format: " ; INT c ]))
+
 
 let decompose_instr (dw:doubleword_int):mips_instr_format_t =
   let dwlow = dw#get_low in
@@ -228,7 +233,8 @@ let decompose_instr (dw:doubleword_int):mips_instr_format_t =
      let upper = dwhigh mod 1024 in
      let otherbits = dwlow + (upper lsl 16) in
      FormatUnknown (opcode,otherbits)
-     
+
+
 let instr_format_to_string (fmt:mips_instr_format_t) =
   let rec faux flds s =
     match flds with
@@ -265,7 +271,8 @@ let instr_format_to_string (fmt:mips_instr_format_t) =
      "FPICC" ^ (f [ opcode ; sub ; cc ; nd ; tf ; offset ])
   | FormatUnknown (opcode,otherbits) ->
      "FormatUnknown" ^ (f [opcode; otherbits ])
-       
+
+
 let is_conditional_jump_instruction opcode =
   match opcode with
   | BranchLTZero _
@@ -281,6 +288,7 @@ let is_conditional_jump_instruction opcode =
     | BranchNotEqual _
     | BranchNotEqualLikely _-> true
   | _ -> false
+
 
 let get_conditional_jump_expr floc opcode:xpr_t =
   let mkxpr op = op#to_expr floc in
@@ -303,6 +311,7 @@ let get_conditional_jump_expr floc opcode:xpr_t =
               (LBLOCK [ STR "Opcode " ; STR (mips_opcode_to_string opcode) ;
                         STR " is not a conditional jump instruction" ]))
 
+
 let is_fp_conditional_jump_instruction opcode =
   match opcode with
   | BranchFPFalse _
@@ -310,6 +319,7 @@ let is_fp_conditional_jump_instruction opcode =
     | BranchFPFalseLikely _
     | BranchFPTrueLikely _ -> true
   | _ -> false
+
 
 let is_direct_jump_instruction opcode =
   is_conditional_jump_instruction opcode
