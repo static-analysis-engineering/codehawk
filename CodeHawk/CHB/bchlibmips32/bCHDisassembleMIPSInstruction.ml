@@ -63,7 +63,7 @@ module TR = CHTraceResult
    an instruction time by any pseudocode statement, it is automatically
    incremented by 4 before the next instruction time. A taken branch assigns the
    target address to the PC during the instruction time of the instruction in 
-   branch delay slot.
+   the branch delay slot.
  *)
 
 

@@ -189,6 +189,21 @@ object (self:'a)
 	 raise (Internal_error "doubleword_t#to_fixed_length_hex_string")
        end
 
+  method to_fixed_length_hex_string_le:string =
+    let nibbles = get_nibbles unsigned_value 8 in
+    match nibbles with
+    | [n8; n7; n6; n5; n4; n3; n2; n1] ->
+       Printf.sprintf "%x%x%x%x%x%x%x%x" n2 n1 n4 n3 n6 n5 n8 n7
+    | _ ->
+       begin
+         ch_error_log#add
+           "internal error"
+           (LBLOCK [
+                STR "doubleword_t#fixed_length_hex_string_le inconsistent value: ";
+                pretty_print_list nibbles (fun n -> INT n) "[" "; " "]"]);
+         raise (Internal_error "doubleword_t#to_fixed_length_hex_string_le")
+       end
+
   method to_hex_string:string =
     let nibbles = get_nibbles unsigned_value 8 in
     match nibbles with

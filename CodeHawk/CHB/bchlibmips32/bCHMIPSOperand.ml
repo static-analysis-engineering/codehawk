@@ -156,6 +156,42 @@ object (self:'a)
             (LBLOCK [
                  STR "Operand is not a mips register: "; self#toPretty]))
 
+  method get_register_index =
+    match kind with
+    | MIPSReg r -> mipsreg_to_index r
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not a mips register: "; self#toPretty]))
+
+  method get_indirect_register =
+    match kind with
+    | MIPSIndReg (r, _) -> r
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not an indirect register: "; self#toPretty]))
+
+  method get_indirect_register_index =
+    match kind with
+    | MIPSIndReg (r, _) -> mipsreg_to_index r
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not an indirect register: "; self#toPretty]))
+
+  method get_indirect_offset =
+    match kind with
+    | MIPSIndReg (_, off) -> off
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not an indirect register: "; self#toPretty]))
+
   method is_read  = match mode with RW | RD -> true | _ -> false
   method is_write = match mode with RW | WR -> true | _ -> false
 

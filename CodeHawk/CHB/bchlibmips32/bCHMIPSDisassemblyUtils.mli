@@ -36,8 +36,20 @@ open BCHLibTypes
 (* bchlibmips32 *)
 open BCHMIPSTypes
 
+(** [select_mips_reg i] returns the MIPS register with sequence number [i]
+    (e.g., [$a0] for [4], [$s0] for [16], etc.)
+
+    @raise [BCH_failure] if [i] is outside the range [0 - 31]
+*)
 val select_mips_reg: int -> mips_reg_t
+
+
+(** [decompose_instr dw] returns the decomposition of [dw] into one of the
+    instruction types, e.g., J-type, R-type, etc, with the fields broken
+    down accordingly.*)
 val decompose_instr: doubleword_int -> mips_instr_format_t
+
+
 val instr_format_to_string: mips_instr_format_t -> string
 
 val code_to_mips_fp_format: int -> mips_fp_format_t

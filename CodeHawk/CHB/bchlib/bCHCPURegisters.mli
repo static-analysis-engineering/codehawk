@@ -53,6 +53,14 @@ val mips_regular_registers: mips_reg_t list
 val mips_temporaries: mips_reg_t list
 val get_mipsreg_argument: int -> mips_reg_t
 
+(** [mipsreg_to_index r] returns the numerical value of mips register [r] 
+    as it appears in assembly instructions.*)
+val mipsreg_to_index: mips_reg_t -> int
+
+(** [index_to_mipsreg i] returns the mips register that corresponds to the
+    numerical value [i] (e.g., [index_to_mipsreg 4] returns [MRa0]).*)
+val index_to_mipsreg: int -> mips_reg_t
+
 val mips_special_reg_to_string: mips_special_reg_t -> string
 val mips_special_reg_from_string: string -> mips_special_reg_t
 

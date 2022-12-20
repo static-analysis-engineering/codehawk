@@ -149,6 +149,10 @@ class type mips_operand_int =
     method get_kind: mips_operand_kind_t
     method get_mode: mips_operand_mode_t
     method get_register: mips_reg_t
+    method get_register_index: int
+    method get_indirect_register: mips_reg_t
+    method get_indirect_register_index: int
+    method get_indirect_offset: numerical_t
     method get_absolute_address: doubleword_int
 
     (* converters *)
@@ -217,8 +221,12 @@ type mips_opcode_t =
   | LoadWordRight of mips_operand_int * mips_operand_int (* dest, src *)
   | StoreByte of mips_operand_int * mips_operand_int (* dest, src *)
   | StoreHalfWord of mips_operand_int * mips_operand_int (* dest, src *)
-  | StoreWordLeft of mips_operand_int * mips_operand_int (* dest, src *)
-  | StoreWord of mips_operand_int * mips_operand_int (* dest, src *)
+  | StoreWordLeft of
+      mips_operand_int   (* destination memory location *)
+      * mips_operand_int (* source register *)
+  | StoreWord of
+      mips_operand_int   (* destination memory location *)
+      * mips_operand_int (* source register *)
   | StoreConditionalWord of mips_operand_int * mips_operand_int (* dest, src *)
   | StoreWordRight of mips_operand_int * mips_operand_int (* dest, src *)
   | LoadWordFP of mips_operand_int * mips_operand_int (* dest, src *)
