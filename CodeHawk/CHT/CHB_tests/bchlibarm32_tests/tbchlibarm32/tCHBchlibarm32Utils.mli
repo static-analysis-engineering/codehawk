@@ -26,8 +26,14 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* bchlib *)
+open BCHLibTypes
+
 (* bchlibarm32 *)
 open BCHARMTypes
 
 
 val string_of_opcode: arm_opcode_t -> string
+
+
+val arm_function_setup: doubleword_int -> string -> arm_assembly_function_int

@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleARMInstructionTest"
-let lastupdated = "2022-12-09"
+let lastupdated = "2022-12-24"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -90,6 +90,7 @@ let arm_basic () =
       ("ADDEQ",  "ff108102", "ADDEQ          R1, R1, #0xff");
       ("AND",    "1f0001e2", "AND            R0, R1, #0x1f");
       ("ASR",    "c10fa0e1", "ASR            R0, R1, #0x1f");
+      ("BIC",    "0320c2e3", "BIC            R2, R2, #0x3");
       ("BX",     "1eff2fe1", "BX             LR");
       ("BXNE",   "1eff2f11", "BXNE           LR");
       ("CLZ",    "111f6fe1", "CLZ            R1, R1");
@@ -102,6 +103,7 @@ let arm_basic () =
       ("LDRBNE", "1000d515", "LDRBNE         R0, [R5, #16]");
       ("LDRD",   "d840c4e1", "LDRD           R4, R5, [R4, #8]");
       ("LSL",    "1200a0e1", "LSL            R0, R2, R0");
+      ("LSR",    "a662a0e1", "LSR            R6, R6, #0x5");
       ("MOV",    "0140a0e1", "MOV            R4, R1");
       ("MOVCC",  "0010a033", "MOVCC          R1, #0x0");
       ("MOVT",   "050040e3", "MOVT           R0, #0x5");      
@@ -119,16 +121,20 @@ let arm_basic () =
       ("RSB",    "866366e0", "RSB            R6, R6, R6,LSL #7");
       ("SBCS",   "0510d1e0", "SBCS           R1, R1, R5,LSL #0");
       ("SMMLA",  "100256e7", "SMMLA          R6, R0, R2, R0");
+      ("SMULL",  "9310c7e0", "SMULL          R1, R7, R3, R0");
       ("STM",    "1a0080e8", "STM            R0, {R1,R3,R4}");
       ("STMIB",  "21078de9", "STMIB          SP, {R0,R5,R8,R9,R10}");
       ("STR",    "38008de5", "STR            R0, [SP, #56]");
+      ("STRwb",  "08402de5", "STR            R4, [SP, -#8]!");
       ("STRCC",  "00118337", "STRCC          R1, [R3, R0,LSL #2]");
       ("STRB",   "0b00c4e5", "STRB           R0, [R4, #11]");
       ("STRBEQ", "0300c405", "STRBEQ         R0, [R4, #3]");
       ("STRD",   "f800c5e1", "STRD           R0, R1, [R5, #8]");
+      ("STRDwb", "fc406de1", "STRD           R4, R5, [SP, -#12]!");
       ("STRH",   "b007cde1", "STRH           R0, [SP, #112]");
       ("SUB",    "45df4de2", "SUB            SP, SP, #0x114");
       ("SUBS",   "062052e0", "SUBS           R2, R2, R6,LSL #0");
+      ("TST",    "020c12e3", "TST            R2, #0x200");
       ("UBFX",   "50ede2e7", "UBFX           LR, R0, #26, #3");
       ("UXTB",   "7600efe6", "UXTB           R0, R6")
     ] in
@@ -152,10 +158,12 @@ let arm_basic () =
 let arm_pc_relative () =
   let tests = [
       ("B",    "0x116f8", "060000ea", "B              0x11718");
+      ("BCS",  "0x118d4", "9d00002a", "BCS            0x11b50");
       ("BEQ",  "0x10764", "f5ffff0a", "BEQ            0x10740");
       ("BGT",  "0x10434", "060000ca", "BGT            0x10454");
       ("BHI",  "0x10e14", "0400008a", "BHI            0x10e2c");
       ("BLE",  "0x10694", "480100da", "BLE            0x10bbc");
+      ("BLS",  "0x11e24", "3400009a", "BLS            0x11efc");
       ("BLX",  "0x10444", "661600fa", "BLX            0x15de4");
       ("BNE",  "0x1064c", "fbffff1a", "BNE            0x10640");
     ] in

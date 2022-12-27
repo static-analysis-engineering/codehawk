@@ -5,8 +5,6 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
    Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -31,45 +29,42 @@
 (* chlib *)
 open CHLanguage
 
-(* chutil *)
-open CHTraceResult
-
 (* bchlib *)
 open BCHLibTypes
 
 
-val e7: int
-val e8: int
-val e15: int
-val e16: int
-val e31: int
-val e32: int
-
-
-val equal_doubleword: ?msg:string -> doubleword_int -> doubleword_int -> unit
-
-
-val equal_doubleword_result:
-  ?msg:string -> doubleword_int -> doubleword_result -> unit
-
-
-val equal_location: ?msg:string -> location_int -> location_int -> unit
-
-
-val equal_int_hexstring: ?msg:string -> int -> string -> unit
-
-
-val equal_string_imm_result_hexstring:
-  ?msg:string -> string -> immediate_result -> unit
-
-
-val equal_assignments:
-  ?msg:string
-  -> function_info_int
-  -> expected:(string * string) list
-  -> received:(variable_t * numerical_exp_t) list
-  -> unit
-
-
-val returns_error:
-  ?msg:string -> ('a -> string) -> (unit -> 'a traceresult) -> unit
+let extract_chif_cfg_assignments
+      ?(start=0) ?(len=0) (proc: procedure_int): (variable_t * numerical_exp_t) list =
+  match proc#getBody#getCmdAt 0 with
+  | CFG (_, cfg) ->
+     let states = cfg#getStates in
+     let state = List.hd (List.tl states) in
+     let state = cfg#getState state in
+     let cmd = state#getCode#getCmdAt 0 in
+     (match cmd with
+      | TRANSACTION (_, trcode, _) ->
+         let trlen = trcode#length in
+         if start < 0 || start > trlen then
+           []
+         else
+           let len =
+             if len <= 0 then
+               (trlen - start) + len
+             else
+               len in
+           if start + len > trlen then
+             []
+           else
+             let assigns = ref [] in
+             let len = if len = 0 then trlen else len in
+             begin
+               for i = start to (start + len) - 1 do
+                 let trcmd = trcode#getCmdAt i in
+                 (match trcmd with
+                  | ASSIGN_NUM (v, e) -> assigns := (v, e) :: !assigns
+                  | _ -> ())
+               done;
+               List.rev !assigns
+             end
+      | _ -> [])
+  | _ -> []
