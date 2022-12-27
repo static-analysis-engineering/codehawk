@@ -5,8 +5,6 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
    Copyright (c) 2022      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,49 +25,3 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-
-(* chlib *)
-open CHLanguage
-
-(* chutil *)
-open CHTraceResult
-
-(* bchlib *)
-open BCHLibTypes
-
-
-val e7: int
-val e8: int
-val e15: int
-val e16: int
-val e31: int
-val e32: int
-
-
-val equal_doubleword: ?msg:string -> doubleword_int -> doubleword_int -> unit
-
-
-val equal_doubleword_result:
-  ?msg:string -> doubleword_int -> doubleword_result -> unit
-
-
-val equal_location: ?msg:string -> location_int -> location_int -> unit
-
-
-val equal_int_hexstring: ?msg:string -> int -> string -> unit
-
-
-val equal_string_imm_result_hexstring:
-  ?msg:string -> string -> immediate_result -> unit
-
-
-val equal_assignments:
-  ?msg:string
-  -> function_info_int
-  -> expected:(string * string) list
-  -> received:(variable_t * numerical_exp_t) list
-  -> unit
-
-
-val returns_error:
-  ?msg:string -> ('a -> string) -> (unit -> 'a traceresult) -> unit

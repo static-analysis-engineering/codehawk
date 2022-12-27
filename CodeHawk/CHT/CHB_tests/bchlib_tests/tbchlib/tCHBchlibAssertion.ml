@@ -28,6 +28,10 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHLanguage
+open CHPretty
+
 (* chutil *)
 open CHTraceResult
 
@@ -45,6 +49,9 @@ let e15 = e7 * e8
 let e16 = e8 * e8
 let e31 = e15 * e16
 let e32 = e16 * e16
+
+let string_printer = CHPrettyUtil.string_printer
+let p2s = string_printer#print
 
 
 let equal_doubleword =
@@ -78,6 +85,27 @@ let equal_string_imm_result_hexstring
     A.fail ("expected:" ^ expected) (String.concat "; " (TR.tget_error immr)) msg
   else
     A.equal_string expected (TR.tget_ok immr)#to_hex_string
+
+
+let equal_assignments
+      ?(msg="")
+      (finfo: function_info_int)
+      ~(expected: (string * string) list)
+      ~(received: (variable_t * numerical_exp_t) list) =
+  let varmgr = finfo#env#varmgr in
+  let srecvd =
+    List.map (fun (v, e) ->
+        let asmvar = varmgr#get_variable v in
+        let pexp =
+          match e with
+          | NUM_VAR nv -> (varmgr#get_variable nv)#toPretty
+          | _ -> numerical_exp_to_pretty e in
+        (p2s asmvar#toPretty, p2s pexp)) received in
+  A.make_equal_list
+    (fun (xv, xe) (rv, re) -> (xv = rv) && (xe = re))
+    (fun (v, e) -> "(" ^ v ^ ", " ^ e ^ ")")
+    ~msg
+    expected srecvd
 
 
 let returns_error ?(msg="") (prn: 'a -> string) (f: unit -> 'a traceresult) =

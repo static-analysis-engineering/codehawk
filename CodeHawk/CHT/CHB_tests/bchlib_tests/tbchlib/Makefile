@@ -30,6 +30,7 @@ MLIS := \
 	tCHBchlibAssertion \
 	tCHBchlibGenerator \
 	tCHBchlibSpecification \
+	tCHBchlibUtils \
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
@@ -37,6 +38,7 @@ SOURCES := \
 	tCHBchlibAssertion \
 	tCHBchlibGenerator \
 	tCHBchlibSpecification \
+	tCHBchlibUtils \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 

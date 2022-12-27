@@ -12,8 +12,12 @@ CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
 BCHCIL = $(CODEHAWK)/CHB/bchcil
 BCHLIB = $(CODEHAWK)/CHB/bchlib
+PELIB = $(CODEHAWK)/CHB/bchlibpe
 ELFLIB = $(CODEHAWK)/CHB/bchlibelf
+X86LIB = $(CODEHAWK)/CHB/bchlibx86
 ARMLIB = $(CODEHAWK)/CHB/bchlibarm32
+MIPSLIB = $(CODEHAWK)/CHB/bchlibmips32
+ANALYZE = $(CODEHAWK)/CHB/bchanalyze
 TESTLIB = $(CHT)/tchlib
 BCHLIBTESTLIB = $(CHT)/CHB_tests/bchlib_tests/tbchlib
 BCHARMTESTLIB = $(CHT)/CHB_tests/bchlibarm32_tests/tbchlibarm32
@@ -28,8 +32,12 @@ CAMLC := ocamlopt  -I str -I cmi -I cmx \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
 	-I $(BCHLIB)/cmi \
+	-I $(PELIB)/cmi \
 	-I $(ELFLIB)/cmi \
+	-I $(X86LIB)/cmi \
+	-I $(MIPSLIB)/cmi \
 	-I $(ARMLIB)/cmi \
+	-I $(ANALYZE)/cmi \
 	-I $(TESTLIB)/cmi \
 	-I $(BCHLIBTESTLIB)/cmi \
 	-I $(BCHARMTESTLIB)/cmi \
@@ -48,8 +56,12 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(CIL)/cil.cmxa \
 	$(BCHCIL)/bchcil.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
+	$(PELIB)/bchlibpe.cmxa \
 	$(ELFLIB)/bchlibelf.cmxa \
+	$(X86LIB)/bchlibx86.cmxa \
 	$(ARMLIB)/bchlibarm32.cmxa \
+	$(MIPSLIB)/bchlibmips32.cmxa \
+	$(ANALYZE)/bchanalyze.cmxa \
 	$(TESTLIB)/tchlib.cmxa \
 	$(BCHLIBTESTLIB)/tbchlib.cmxa \
 	$(BCHARMTESTLIB)/tbchlibarm32.cmxa \
@@ -65,7 +77,8 @@ OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 all: make_dirs \
 	bCHDisassembleARMInstructionTest \
 	bCHDisassembleThumbInstructionTest \
-	bCHARMJumptableTest
+	bCHARMJumptableTest \
+	bCHTranslateARMToCHIFTest \
 
 doc: 
 
@@ -82,10 +95,14 @@ bCHDisassembleThumbInstructionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHU
 bCHARMJumptableTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHARMJumptableTest.cmi cmx/bCHARMJumptableTest.cmx
 	$(CAMLLINK) -o bCHARMJumptableTest $(OBJECTS) cmx/bCHARMJumptableTest.cmx
 
-run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHARMJumptableTest
+bCHTranslateARMToCHIFTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHTranslateARMToCHIFTest.cmi cmx/bCHTranslateARMToCHIFTest.cmx
+	$(CAMLLINK) -o bCHTranslateARMToCHIFTest $(OBJECTS) cmx/bCHTranslateARMToCHIFTest.cmx
+
+run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHARMJumptableTest bCHTranslateARMToCHIFTest
 	./bCHDisassembleARMInstructionTest
 	./bCHDisassembleThumbInstructionTest
 	./bCHARMJumptableTest
+	./bCHTranslateARMToCHIFTest
 
 cmi/%.cmi: %.mli
 	$(CAMLC) -o $@ -c -opaque $<
@@ -110,4 +127,5 @@ clean:
 	rm -f bCHDisassembleThumbInstructionTest
 	rm -f bCHDisassembleARMInstructionTest
 	rm -f bCHARMJumptableTest
+	rm -f bCHTranslateARMToCHIFTest
 	rm -rf doc

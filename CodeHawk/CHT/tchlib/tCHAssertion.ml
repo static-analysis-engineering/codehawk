@@ -31,6 +31,9 @@
 (* tchlib *)
 open TCHTestApi
 
+(* chlib *)
+open CHPretty
+
 module U = TCHUtils
 
 exception Failed of failure_t
@@ -70,8 +73,8 @@ let make_equal_list
       (eq: 'a -> 'a -> bool)
       (prn: 'a -> string)
       ?(msg="")
-      (x: 'a list)
-      (y: 'a list) =
+      (xx: 'a list)
+      (yy: 'a list) =
   let rec iter i x y =
     match (x, y) with
     | (hd_x :: tl_x, hd_y :: tl_y) ->
@@ -82,10 +85,12 @@ let make_equal_list
          fail (prn hd_x) (prn hd_y) fm
     | (_ :: _, [])
       | ([], _ :: _) ->
-       let fm = Printf.sprintf "%s (lists of different sizes)" msg in
+       let lenx = List.length xx in
+       let leny = List.length yy in
+       let fm = Printf.sprintf "%s (lists of different sizes: %d vs %d)" msg lenx leny in
        fail_msg fm
     | ([], []) -> () in
-  iter 0 x y
+  iter 0 xx yy
 
 
 let equal_string = make_equal (=) U.string_of_string
