@@ -363,7 +363,10 @@ object (self:'a)
        begin
 	 ch_error_log#add
            "invocation error" 
-	   (LBLOCK [ STR "Operand " ; self#toPretty ; STR " does not have an address" ]) ;
+	   (LBLOCK [
+                STR "Operand ";
+                self#toPretty;
+                STR " does not have an address"]);
 	 raise (Invocation_error "operand#to_address")
        end
     | ScaledIndReg (Some cpureg, None, _, offset)

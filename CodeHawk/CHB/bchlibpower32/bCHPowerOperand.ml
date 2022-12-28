@@ -70,6 +70,7 @@ let e15  = e7 * e8
 let e16  = e8 * e8
 let e31 = e16 * e15
 let e32 = e16 * e16
+let e63 = e32 * e31
 let e64 = e32 * e32
 
 
@@ -160,7 +161,7 @@ object (self)
     match kind with
     | PowerGPReg index -> "r" ^ (string_of_int index)
     | PowerSpecialReg reg -> (power_special_reg_to_string reg)
-    | PowerImmediate imm -> imm#to_string
+    | PowerImmediate imm -> imm#to_hex_string
     | PowerAbsolute dw -> dw#to_hex_string
     | PowerIndReg (index, offset) ->
        offset#toString ^ "(r" ^ (string_of_int index) ^ ")"
@@ -195,19 +196,31 @@ let power_absolute_op (addr: doubleword_int) (mode: power_operand_mode_t) =
 
 let power_immediate_op ~(signed: bool) ~(size: int) ~(imm: numerical_t) =
   let immval =
-    if signed || imm#geq numerical_zero then
-      imm
-    else
+    if signed then
       match size with
-      | 1 -> imm#add (mkNumerical e8)
-      | 2 -> imm#add (mkNumerical e16)
-      | 4 -> imm#add (mkNumerical e32)
-      | 8 -> imm#add (mkNumerical e64)
+      | 1 -> if imm#geq (mkNumerical e7) then imm#sub (mkNumerical e8) else imm
+      | 2 -> if imm#geq (mkNumerical e15) then imm#sub (mkNumerical e16) else imm
+      | 4 -> if imm#geq (mkNumerical e31) then imm#sub (mkNumerical e32) else imm
+      | 8 -> if imm#geq (mkNumerical e63) then imm#sub (mkNumerical e64) else imm
       | _ ->
          raise
            (BCH_failure
               (LBLOCK [
-                   STR "Unexpected size in arm-immediate-op: "; INT size])) in
+                   STR "Unexpected size in power-immediate-op: "; INT size]))
+    else
+      if signed || imm#geq numerical_zero then
+        imm
+      else
+        match size with
+        | 1 -> imm#add (mkNumerical e8)
+        | 2 -> imm#add (mkNumerical e16)
+        | 4 -> imm#add (mkNumerical e32)
+        | 8 -> imm#add (mkNumerical e64)
+        | _ ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Unexpected size in power-immediate-op: "; INT size])) in
   let op =
     PowerImmediate (TR.tget_ok (make_immediate signed size immval#getNum)) in
   new power_operand_t op RD

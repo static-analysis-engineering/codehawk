@@ -203,6 +203,11 @@ type power_opcode_t =
       * power_operand_int  (* destination register *)
       * power_operand_int  (* source operand *)
       * power_operand_int  (* immediate *)
+  | AddImmediate16 of
+      power_instruction_type_t
+      * power_operand_int  (* destination register *)
+      * power_operand_int  (* source register *)
+      * power_operand_int  (* 16-bit immediate *)
   | And of
       power_instruction_type_t
       * power_operand_int  (* rx: dst/src register *)
@@ -259,7 +264,7 @@ type power_opcode_t =
       * power_operand_int  (* effective address *)
   | LoadImmediate of
       power_instruction_type_t
-      * bool (* shifted *)
+      * bool               (* shifted *)
       * power_operand_int  (* destination register *)
       * power_operand_int  (* source operand *)
   | LoadMultipleVolatileGPRWord of
@@ -302,6 +307,10 @@ type power_opcode_t =
       power_instruction_type_t
       * power_operand_int  (* destination register *)
       * power_operand_int  (* link register *)
+  | MoveRegister of
+      power_instruction_type_t
+      * power_operand_int  (* destination register *)
+      * power_operand_int  (* source register *)
   | MoveToCountRegister of
       power_instruction_type_t
       * power_operand_int  (* count register *)
@@ -310,9 +319,13 @@ type power_opcode_t =
       power_instruction_type_t
       * power_operand_int  (* link register *)
       * power_operand_int  (* soure register *)
-  | MoveRegister of
+  | MoveToMachineStateRegister of
       power_instruction_type_t
-      * power_operand_int  (* destination register *)
+      * power_operand_int  (* msr register *)
+      * power_operand_int  (* source register *)
+  | MoveToSpecialPurposeRegister of
+      power_instruction_type_t
+      * power_operand_int  (* SPRN (special-purpose register) *)
       * power_operand_int  (* source register *)
   | NotRegister of
       power_instruction_type_t
@@ -321,6 +334,11 @@ type power_opcode_t =
       power_instruction_type_t
       * power_operand_int  (* src/dst register *)
       * power_operand_int  (* dst register *)
+  | Or2Immediate of
+      power_instruction_type_t
+      * bool               (* shifted *)
+      * power_operand_int  (* src/dst register *)
+      * power_operand_int  (* immediate *)
   | ReturnFromInterrupt of
       power_instruction_type_t
       * power_operand_int  (* machine status register (MSR) *)
@@ -334,6 +352,10 @@ type power_opcode_t =
       * power_operand_int  (* destination register *)
       * power_operand_int  (* source register *)
       * power_operand_int  (* imm: shift amount *)
+  | StoreByte of
+      power_instruction_type_t
+      * power_operand_int  (* rs: source register *)
+      * power_operand_int  (* ra: effective address *)
   | StoreByteUpdate of
       power_instruction_type_t
       * power_operand_int  (* rs: source register *)
