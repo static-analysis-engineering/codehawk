@@ -58,7 +58,7 @@ module TR = CHTraceResult
  * -------------------------------------------------------------------------------- *)
 
 
-let numArrays = 1000
+let numArrays = 10000
 let arrayLength = 100000
 
 

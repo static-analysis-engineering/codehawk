@@ -75,6 +75,16 @@ let get_record (opc: power_opcode_t) =
        operands = [dst; src; imm];
        ida_asm = (fun f -> f#ops mnemonic [dst; src; imm])
      }
+  | AddImmediate16 (pit, dst, src, imm) ->
+     let mnemonic =
+       match pit with
+       | VLE32 -> "e_add16i"
+       | _ -> "xxxx_add16i" in
+     {
+       mnemonic = mnemonic;
+       operands = [dst; src; imm];
+       ida_asm = (fun f -> f#ops mnemonic [dst; src; imm])
+     }
   | And (pit, rx, ry) ->
      let mnemonic =
        match pit with
@@ -340,6 +350,7 @@ let get_record (opc: power_opcode_t) =
      let mnemonic =
        match pit with
        | VLE16 -> "se_mtctr"
+       | VLE32 -> "mtctr"
        | _ -> "xxxx_mtctr" in
      {
        mnemonic = mnemonic;
@@ -350,11 +361,32 @@ let get_record (opc: power_opcode_t) =
      let mnemonic =
        match pit with
        | VLE16 -> "se_mtlr"
+       | VLE32 -> "mtlr"
        | _ -> "xxxx_mtlr" in
      {
        mnemonic = mnemonic;
        operands = [lr; src];
        ida_asm = (fun f -> f#ops mnemonic [src])
+     }
+  | MoveToMachineStateRegister (pit, msr, src) ->
+     let mnemonic =
+       match pit with
+       | VLE32 -> "mtmsr"
+       | _ -> "xxxx_mtmsr" in
+     {
+       mnemonic = mnemonic;
+       operands = [msr; src];
+       ida_asm = (fun f -> f#ops mnemonic [src])
+     }
+  | MoveToSpecialPurposeRegister (pit, sprn, src) ->
+     let mnemonic =
+       match pit with
+       | VLE32 -> "mtspr"
+       | _ -> "xxxx_mtspr" in
+     {
+       mnemonic = mnemonic;
+       operands = [sprn; src];
+       ida_asm = (fun f -> f#ops mnemonic [sprn; src])
      }
   | NotRegister (pit, reg) ->
      let mnemonic =
@@ -375,6 +407,17 @@ let get_record (opc: power_opcode_t) =
        mnemonic = mnemonic;
        operands = [rx; ry];
        ida_asm = (fun f -> f#ops mnemonic [rx; ry])
+     }
+  | Or2Immediate (pit, shifted, rd, ui) ->
+     let mnemonic =
+       match (pit, shifted) with
+       | (VLE32, false) -> "e_or2i"
+       | (VLE32, true) -> "e_or2is"
+       | _ -> "xxxx_or2i" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; ui];
+       ida_asm = (fun f -> f#ops mnemonic [rd; ui])
      }
   | ReturnFromInterrupt (pit, msr) ->
      let mnemonic =
@@ -407,6 +450,16 @@ let get_record (opc: power_opcode_t) =
        mnemonic = mnemonic;
        operands = [src; dst; imm];
        ida_asm = (fun f -> f#ops mnemonic [dst; src; imm])
+     }
+  | StoreByte (pit, rs, ea) ->
+     let mnemonic =
+       match pit with
+       | VLE32 -> "e_stb"
+       | _ -> "xxxx_stb" in
+     {
+       mnemonic = mnemonic;
+       operands = [rs; ea];
+       ida_asm = (fun f -> f#ops mnemonic [rs; ea])
      }
   | StoreByteUpdate (pit, rs, ra, ea) ->
      let mnemonic =
@@ -472,6 +525,7 @@ let get_record (opc: power_opcode_t) =
      let mnemonic =
        match pit with
        | VLE16 -> "se_stw"
+       | VLE32-> "e_stw"
        | _ -> "xxxx_stw" in
      {
        mnemonic = mnemonic;

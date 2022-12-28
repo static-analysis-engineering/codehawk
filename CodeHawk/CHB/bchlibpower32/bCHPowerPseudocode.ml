@@ -50,3 +50,34 @@ let rindex (v: int): int = if v < 8 then v else v + 16
 let arindex (v: int): int = v + 8
 
 let d8_sign_extend (d8: int) = if d8 >= 128 then d8 - 256 else d8
+
+
+(* SCI8(F, SCL, UI8) format  (VLEPEM, page 3-5)
+   if SCL = 0 then imm_value <- (24)F || UI8 else
+   if SCL = 1 then imm_value <- (16)F || UI8 || (8)F else
+   if SCL = 2 then imm_value <- (8)F || UI8 || (16)F
+   else imm_value <- UI8 || (24)F
+
+   From: VLEPEM, page 3-5
+ *)
+let sci8 (f: int) (scl: int) (ui8: int) =
+  if f = 0 then
+    match scl with
+    | 0 -> ui8
+    | 1 -> ui8 lsl 8
+    | 2 -> ui8 lsl 16
+    | 3 -> ui8 lsl 24
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Unexpected value for SCL in SCI8: "; INT scl]))
+  else
+    match scl with
+    | 0 -> (16777215 lsl 8) + ui8
+    | 1 -> (65535 lsl 16) + (ui8 lsl 8) + 255
+    | 2 -> (255 lsl 24) + (ui8 lsl 16) + 65535
+    | 3 -> (ui8 lsl 24) + 16777215
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Unexpected value SCL in SCI8: "; INT scl]))

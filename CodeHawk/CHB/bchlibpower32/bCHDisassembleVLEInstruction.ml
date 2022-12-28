@@ -535,18 +535,67 @@ let parse_e_SCI8_form
   let opc = b 16 20 in
 
   match opc with
+
+  | 16 ->
+     let rd = power_gp_register_op ~index:(b 6 10) in
+     let ra = power_gp_register_op ~index:(b 11 15) in
+     let f = b 21 21 in
+     let scl = b 22 23 in
+     let ui8 = b 24 31 in
+     let imm = sci8 f scl ui8 in
+     let rc = b 20 20 in
+     let immop =
+       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+     (* e_addi rD,rA,SCI8 *)
+     (* e_addi. rD,rA,SCI8 *)
+     AddImmediate (VLE32, false, rc = 1, rd ~mode:WR, ra ~mode:RD, immop)
+
   | _ ->
      NotRecognized ("18-SCI8:" ^ (string_of_int opc), instr)
 
 
+(** D Form (not documented)
+    0..5: OPCD  (primary opcode)
+    6..10: RS (source register)
+    11..15: RA (address register)
+    16..31: D (offset, signed)
+ *)
 let parse_e_D_form
       (ch: pushback_stream_int)
       (base: doubleword_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int)
       (prefix: int) =
+  let b = instr#get_reverse_segval 32 in
+  match (prefix, b 4 5) with
 
-  NotRecognized ("D:" ^ (string_of_int prefix), instr)
+  (* < 1>11<rd><ra><------si------>   e_add16i *)
+  | (1, 3) ->
+     let rd = power_gp_register_op ~index:(b 6 10) in
+     let ra = power_gp_register_op ~index:(b 11 15) in
+     let imm = b 16 31 in
+     let immop =
+       power_immediate_op ~signed:true ~size:2 ~imm:(mkNumerical imm) in
+     (* e_add16i rD,rA,SI *)
+     AddImmediate16 (VLE32, rd ~mode:WR, ra ~mode:RD, immop)
+
+  (* < 3>01<rs><ra><------D------->    e_stb *)
+  | (3, 1) ->
+     let rs = power_gp_register_op ~index:(b 6 10) in
+     let offset = mkNumerical (b 16 31) in
+     let memop = power_indirect_register_op ~index:(b 11 15) ~offset in
+     (* e_stb rS,D(rA) *)
+     StoreByte (VLE32, rs ~mode:RD, memop ~mode:WR)
+
+  (* < 5>01<rs><ra><------D------->    e_stw *)
+  | (5, 1) ->
+     let rs = power_gp_register_op ~index:(rindex (b 6 10)) in
+     let offset = mkNumerical (b 16 31) in
+     let memop = power_indirect_register_op ~index:(rindex (b 11 15)) ~offset in
+     StoreWord (VLE32, rs ~mode:RD, memop ~mode:WR)
+
+  | (p, x) ->
+     NotRecognized ("D:" ^ (string_of_int prefix) ^ "_" ^ (string_of_int x), instr)
 
 
 let parse_e_misc_form
@@ -558,15 +607,67 @@ let parse_e_misc_form
   let sndbyte = b 4 7 in
   let byten1 = b 28 31 in
   let byten2 = b 24 27 in
+  match (b 4 5, b 16 16) with
 
-  NotRecognized (
-      "7-misc:"
-      ^ (string_of_int sndbyte)
-      ^ "_"
-      ^ (string_of_int byten2)
-      ^ "_"
-      ^ (string_of_int byten1),
-      instr)
+  (* < 7>00<rd><li2>0<li><---li---->   e_li (LI20) *)
+  | (0, 0) ->
+     let imm = ((b 17 20) lsl 16) + ((b 11 15) lsl 11) + (b 21 31) in
+     let rx = power_gp_register_op ~index:(b 6 10) in
+     let immop =
+       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+     LoadImmediate (VLE32, false, rx ~mode:WR, immop)
+
+  (* < 7>00<rd><ui1>1< 8><---ui---->   e_or2i *)
+  | (0, 1) when (b 17 20) = 8 ->
+     let imm = ((b 11 15) lsl 11) + (b 21 31) in
+     let rx = power_gp_register_op ~index:(b 6 10) in
+     let immop =
+       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
+     (* e_or2i rD,UI *)
+     Or2Immediate (VLE32, false, rx ~mode:RW, immop)
+
+  (* < 7>00<rd><ui1>1<12><---ui---->   e_lis (LI20) *)
+  | (0, 1) when (b 17 20) = 12 ->
+     let imm = ((b 11 15) lsl 11) + (b 21 31) in
+     let rx = power_gp_register_op ~index:(b 6 10) in
+     let immop =
+       power_immediate_op ~signed:true ~size:2 ~imm:(mkNumerical imm) in
+     LoadImmediate (VLE32, true, rx ~mode:WR, immop)
+
+  (* < 7>11<rs><........>0010010010/  mtmsr (BookE) *)
+  | (3, _) when (b 21 30) = 146 ->
+     let rx = power_gp_register_op ~index:(b 6 10) in
+     let msr = power_special_register_op ~reg:PowerMSR in
+     (* mtmsr RS *)
+     MoveToMachineStateRegister (VLE32, msr ~mode:WR, rx ~mode:RD)
+
+  (* < 7>11<rs><spr><spr>0111010011/   mtspr (BookE) *)
+  | (3, _) when (b 21 30) = 467 ->
+     let sprn = ((b 16 20) lsl 5) + (b 11 15) in
+     let rx = power_gp_register_op ~index:(b 6 10) in
+     if sprn = 8 then
+       let lr = power_special_register_op ~reg:PowerLR in
+       (* mtlr RS *)
+       MoveToLinkRegister (VLE32, lr ~mode:WR, rx ~mode:RD)
+     else if sprn = 9 then
+       let ctr = power_special_register_op ~reg:PowerCTR in
+       (* mtctr RS *)
+       MoveToCountRegister (VLE32, ctr ~mode:WR, rx ~mode:RD)
+     else
+       let immop =
+         power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sprn) in
+       (* mtspr SPRN, RS *)
+       MoveToSpecialPurposeRegister(VLE32, immop, rx ~mode:WR)
+
+  | _ ->
+     NotRecognized (
+         "7-misc:"
+         ^ (string_of_int sndbyte)
+         ^ "_"
+         ^ (string_of_int byten2)
+         ^ "_"
+         ^ (string_of_int byten1),
+         instr)
 
 
 let parse_e_instruction
