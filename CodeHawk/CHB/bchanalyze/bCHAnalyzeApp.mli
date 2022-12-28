@@ -36,6 +36,10 @@ open BCHLibx86Types
 (* bchlibmips32 *)
 open BCHMIPSTypes
 
+(* bchlibarm32 *)
+open BCHARMTypes
+
+
 val add_no_lineq: string -> unit
 val exclude_function: string -> unit
 val include_function: string -> unit
@@ -49,5 +53,8 @@ val analyze_mips_function:
   doubleword_int -> mips_assembly_function_int -> int -> unit
 
 val analyze_mips: float -> unit
+
+val analyze_arm_function:
+  doubleword_int -> arm_assembly_function_int -> int -> unit
 
 val analyze_arm: float -> unit

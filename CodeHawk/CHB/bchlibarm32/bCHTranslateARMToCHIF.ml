@@ -2376,7 +2376,16 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     let cmds = defcmds @ cmds in
+     let updatecmds =
+       if mem#is_offset_address_writeback then
+         let addr = mem#to_updated_offset_address floc in
+         let (baselhs, baselhscmds) = rn#to_lhs floc in
+         let ucmds = floc#get_assign_commands baselhs addr in
+         let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
+         baselhscmds @ defupdatecmds @ucmds
+       else
+         [] in
+     let cmds = defcmds @ cmds @ updatecmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
@@ -2394,12 +2403,34 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     let cmds = memcmds @ defcmds @ cmds in
+     let updatecmds =
+       if mem#is_offset_address_writeback then
+         let addr = mem#to_updated_offset_address floc in
+         let (baselhs, baselhscmds) = rn#to_lhs floc in
+         let ucmds = floc#get_assign_commands baselhs addr in
+         let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
+         baselhscmds @ defupdatecmds @ucmds
+       else
+         [] in
+     let cmds = memcmds @ defcmds @ cmds @ updatecmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | StoreRegisterDual (c, rt, rt2, _, _, mem, mem2) ->
+  (* --------------------------------------------------------- StoreRegisterDual
+   * Calculates an address from a base register value and immediate or register
+   * offset, and stores two words from two registers to memory. It can use
+   * offset, post-indexed, ore pre-indexed addressing.
+   *
+   * offset_addr =
+   *   (if immediate): if add then (R[n] + imm32) else (R[n] - imm32);
+   *   (if register):  if add then (R[n] + R[m]) else (R[n] - R[m]);
+   * address = if index then offset_addr else R[n];
+   * MemA[address, 4] = R[t];
+   * MemA[address+4, 4] = R[t2];
+   * if wback then R[n] = offset_addr;
+   * ------------------------------------------------------------------------- *)
+  | StoreRegisterDual (c, rt, rt2,rn, _, mem, mem2) ->
      let floc = get_floc loc in
      let (vmem, memcmds) = mem#to_lhs floc in
      let (vmem2, mem2cmds) = mem2#to_lhs floc in
@@ -2408,7 +2439,16 @@ let translate_arm_instruction
      let cmds1 = floc#get_assign_commands vmem xrt in
      let cmds2 = floc#get_assign_commands vmem2 xrt2 in
      let defcmds = floc#get_vardef_commands ~defs:[vmem; vmem2] ctxtiaddr in
-     let cmds = memcmds @ mem2cmds @ defcmds @ cmds1 @ cmds2 in
+     let updatecmds =
+       if mem#is_offset_address_writeback then
+         let addr = mem#to_updated_offset_address floc in
+         let (baselhs, baselhscmds) = rn#to_lhs floc in
+         let ucmds = floc#get_assign_commands baselhs addr in
+         let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
+         baselhscmds @ defupdatecmds @ ucmds
+       else
+         [] in
+     let cmds = memcmds @ mem2cmds @ defcmds @ cmds1 @ cmds2 @ updatecmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)

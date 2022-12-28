@@ -154,10 +154,11 @@ object (self)
         simplify_xpr xpr
       with IO.No_more_input ->
             begin
-              pr_debug [STR "Error in rewriting expression: ";
-                        x2p x;
-                        STR ": No more input";
-                        NL];
+              pr_debug [
+                  STR "Error in rewriting expression: ";
+                  x2p x;
+                  STR ": No more input";
+                  NL];
               raise IO.No_more_input
             end in
     let rewrite_test_expr (csetter: ctxt_iaddress_t) (x: xpr_t) =
@@ -933,24 +934,43 @@ object (self)
              (tags, args) in
          (tags, args)
 
-      | LoadRegisterDual (_, rt, rt2, _, _, mem, mem2) ->
+      | LoadRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
          let vrt = rt#to_variable floc in
          let vrt2 = rt2#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
          let vmem = mem#to_variable floc in
          let vmem2 = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
          let xmem2 = mem2#to_expr floc in
          let xrmem2 = rewrite_expr xmem2 in
-         (["a:vvvvxxxx"],
-          [xd#index_variable vrt;
-           xd#index_variable vrt2;
-           xd#index_variable vmem;
-           xd#index_variable vmem2;
-           xd#index_xpr xmem;
-           xd#index_xpr xrmem;
-           xd#index_xpr xmem2;
-           xd#index_xpr xrmem2])
+         let xaddr1 = mem#to_address floc in
+         let xaddr2 = mem#to_address floc in
+         let rdefs = [
+             get_rdef xrn;
+             get_rdef xrm;
+             get_rdef_memvar vmem;
+             get_rdef_memvar vmem2] in
+         let uses = [get_def_use vrt; get_def_use vrt2] in
+         let useshigh = [get_def_use_high vrt; get_def_use_high vrt2] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrt; vrt2; vmem; vmem2]
+             ~xprs:[xrn; xrm; xmem; xrmem; xmem2; xrmem2; xaddr1; xaddr2]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn = rn#to_variable floc in
+             let xaddr = mem#to_updated_offset_address floc in
+             add_base_update tags args vrn xaddr
+           else
+             (tags, args) in
+         (tags, args)
 
       | LoadRegisterExclusive (_, rt, rn, _, mem) ->
          let vrt = rt#to_variable floc in
@@ -1477,31 +1497,57 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | StoreRegisterDual (_, rt, rt2, _, _, mem, mem2) ->
+      | StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
          let vmem = mem#to_variable floc in
          let vmem2 = mem2#to_variable floc in
+         let xaddr1 = mem#to_address floc in
+         let xaddr2 = mem2#to_address floc in
          let xrt = rt#to_expr floc in
          let xxrt = rewrite_expr xrt in
          let xrt2 = rt2#to_expr floc in
          let xxrt2 = rewrite_expr xrt2 in
-         (["a:vvxxxx"],
-          [xd#index_variable vmem;
-           xd#index_variable vmem2;
-           xd#index_xpr xrt;
-           xd#index_xpr xxrt;
-           xd#index_xpr xrt2;
-           xd#index_xpr xxrt2])
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let rdefs = [
+             get_rdef xrn;
+             get_rdef xrm;
+             get_rdef xrt;
+             get_rdef xxrt;
+             get_rdef xrt2;
+             get_rdef xxrt2] in
+         let uses = [get_def_use vmem; get_def_use vmem2] in
+         let useshigh = [get_def_use vmem; get_def_use vmem2] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vmem; vmem2]
+             ~xprs:[xrn; xrm; xrt; xxrt; xrt2; xxrt2; xaddr1; xaddr2]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | StoreRegisterExclusive (_, rd, rt, rn, mem) ->
+      | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
          let vmem = mem#to_variable floc in
+         let xaddr = mem#to_address floc in
          let vrd = rd#to_variable floc in
          let xrt = rt#to_expr floc in
+         let xrn = rn#to_expr floc in
          let xxrt = rewrite_expr xrt in
-         (["a:vvxx"],
-          [xd#index_variable vmem;
-           xd#index_variable vrd;
-           xd#index_xpr xrt;
-           xd#index_xpr xxrt])
+         let rdefs = [get_rdef xrn; get_rdef xrt; get_rdef xxrt] in
+         let uses = [get_def_use vmem; get_def_use vrd] in
+         let useshigh = [get_def_use vmem; get_def_use vrd] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vmem; vrd]
+             ~xprs:[xrn; xrt; xxrt; xaddr]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | StoreRegisterHalfword (c, rt, rn, rm, mem, _) ->
          let vmem = mem#to_variable floc in

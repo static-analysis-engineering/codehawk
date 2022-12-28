@@ -27,12 +27,25 @@
 
 (* chlib *)
 open CHLanguage
+open CHOnlineCodeSet
 
 (* bchlib *)
 open BCHLibTypes
 
 (* bchlibarm32 *)
 open BCHARMTypes
+
+
+val translate_arm_instruction:
+  funloc:location_int
+  -> codepc:arm_code_pc_int
+  -> blocklabel:symbol_t
+  -> exitlabel:symbol_t
+  -> cmds:cmd_t list
+  -> ((symbol_t
+       * (code_t, 'a) command_t list) list
+      * (symbol_t * symbol_t) list
+      * cmd_t list)
 
 
 val translate_arm_assembly_function: arm_assembly_function_int -> unit

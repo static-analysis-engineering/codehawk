@@ -276,7 +276,7 @@ object (self:'a)
     | AuxiliaryVariable (FrozenTestValue (_,taddr,jaddr)) -> taddr < a && a <= jaddr
     | _ -> raise (BCH_failure (LBLOCK [ STR "Variable is not a frozen test value" ]))
 
-  method get_frozen_variable =            (* the variable associated with the frozen value *)
+  method get_frozen_variable = (* the variable associated with the frozen value *)
     match denotation with
     | AuxiliaryVariable (FrozenTestValue (fv,taddr,jaddr)) -> (fv,taddr,jaddr)
     | _ -> 
@@ -381,10 +381,16 @@ object (self:'a)
     | AuxiliaryVariable (InitialRegisterValue (ARMRegister r,0)) -> ARMRegister r
     | _ ->
       begin
-	ch_error_log#add "assembly variable access" 
-	  (LBLOCK [ STR "get_register_parameter_register with " ; self#toPretty ]) ;
-	raise (BCH_failure (LBLOCK [ STR "variable is not a parameter register: " ;
-				     self#toPretty ]))
+	ch_error_log#add
+          "assembly variable access"
+	  (LBLOCK [
+               STR "get_register_parameter_register with ";
+               self#toPretty]);
+	raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "variable is not a parameter register: ";
+		  self#toPretty]))
       end
 
   method get_initial_memory_value_variable =
@@ -392,10 +398,15 @@ object (self:'a)
     | AuxiliaryVariable (InitialMemoryValue v) -> v
     | _ ->
       begin
-	ch_error_log#add "assembly variable access"
-	  (LBLOCK [ STR "get_initial_memory_value_variable with " ; self#toPretty ]) ;
-	raise (BCH_failure 
-		 (LBLOCK [ STR "variable is not an initial memory value: " ; self#toPretty ]))
+	ch_error_log#add
+          "assembly variable access"
+	  (LBLOCK [
+               STR "get_initial_memory_value_variable with "; self#toPretty]);
+	raise
+          (BCH_failure
+	     (LBLOCK [
+                  STR "variable is not an initial memory value: ";
+                  self#toPretty]))
       end
 
   method is_memory_variable = 
