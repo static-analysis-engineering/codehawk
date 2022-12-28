@@ -322,7 +322,11 @@ let parse_data_proc_reg_load_stores (instr: doubleword_int) (cond: int) =
      let imm32 = get_imm32 rz rv in
      let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm32)) in
      let offset = ARMImmOffset imm32 in
-     let offset2 = ARMImmOffset (imm32 + 4) in
+     let offset2 =
+       if isadd then
+         ARMImmOffset (imm32 + 4)
+       else
+         ARMImmOffset (imm32 - 4) in
      let mem =
        mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback RD in
      let mem2 =
@@ -341,7 +345,11 @@ let parse_data_proc_reg_load_stores (instr: doubleword_int) (cond: int) =
      let imm32 = get_imm32 rz rv in
      let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int imm32)) in
      let offset = ARMImmOffset imm32 in
-     let offset2 = ARMImmOffset (imm32 + 4) in
+     let offset2 =
+       if isadd then
+         ARMImmOffset (imm32 + 4)
+       else
+         ARMImmOffset (imm32 - 4) in
      let mem =
        mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback WR in
      let mem2 =
@@ -932,7 +940,7 @@ let parse_data_proc_imm_type
   | 14 when not (setflags && (ry = 15)) ->
      let rn = r19 RD in
      let rd = r15 WR in
-     let imm = mk_imm (b 11 8) (b 11 7) in
+     let imm = mk_imm (b 11 8) (b 7 0) in
      (* BIC{S}<c> <Rd>, <Rn>, #<const> *)
      BitwiseBitClear (setflags, c, rd, rn, imm, false)
 
