@@ -65,6 +65,17 @@ module IntSet = Set.Make
     end)
 
 
+let preamble_exclusions = H.create 3
+let _ =
+  List.iter (fun (b, t) -> H.add preamble_exclusions b t)
+    [("000050e3", "CMP          R0, #0x0");
+     ("000051e3", "CMP          R1, #0x0");
+     ("0030d0e5", "LDRB         R3, [R0, #0]");
+     ("0010a0e3", "MOV          R1, #0x0");
+     ("0110a0e3", "MOV          R1, #0x1");
+    ]
+
+
 let create_ordering 
     (functions:doubleword_int list) 
     (calls:(doubleword_int * doubleword_int) list)  =
@@ -291,24 +302,75 @@ object (self)
 
   method add_functions_by_preamble =
     let instrtable = self#get_live_instructions in
+    let preambles = H.create 3 in
+    let preamble_instrs = H.create 3 in
+    let _ =   (* collect preambles of regular functions *)
+      self#itera (fun faddr f ->
+          let instr = f#get_instruction faddr in
+          let instrs = instr#get_instruction_bytes in
+          let entry =
+            if H.mem preambles instrs then
+              H.find preambles instrs
+            else
+              begin
+                H.add preambles instrs 0;
+                H.add preamble_instrs instrs instr;
+                0
+              end in
+          H.replace preambles instrs (entry + 1)) in
+    let _ =    (* log the results *)
+      H.iter (fun k v ->
+          chlog#add
+            "function preambles"
+            (LBLOCK [
+                 (H.find preamble_instrs k)#toPretty;
+                 STR " (";
+                 STR (byte_string_to_printed_string k);
+                 STR "): ";
+                 INT v])) preambles in
+    let maxentry = ref 0  in
+    let maxpreamble = ref "" in
+    let _ =    (* find the most common preamble *)
+      H.iter (fun k v ->
+          if v > !maxentry then
+            begin
+              maxentry := v;
+              maxpreamble := k
+            end) preambles in
+    let commonpreambles =
+      let preamble_cutoff = system_info#get_preamble_cutoff in
+      H.fold (fun k v a ->
+          if v >= preamble_cutoff then k :: a else a) preambles [] in
+    let is_common_preamble bytes =
+      List.fold_left (fun a p -> a || p = bytes) false commonpreambles in
     let fnsAdded = ref [] in
     let _ =
       !arm_assembly_instructions#itera
         (fun a instr ->
           if H.mem functions a#index then
             ()
-          else
-            if H.mem instrtable instr#get_address#index then
+          else if H.mem instrtable instr#get_address#index then
             ()
-            else
-              match instr#get_opcode with
-              | Push (_, _, rlist,_) when List.mem ARLR rlist#get_register_list ->
-                 let fndata = functions_data#add_function a in
-                 begin
-                   fnsAdded := a :: !fnsAdded;
-                   fndata#set_by_preamble
-                 end
-              | _ -> ()) in
+          else if H.mem
+                    preamble_exclusions
+                    (byte_string_to_printed_string instr#get_instruction_bytes) then
+            ()
+          else if ((is_common_preamble instr#get_instruction_bytes)
+                   || (match instr#get_opcode with
+                       | Push (_, _, rlist,_)
+                            when List.mem ARLR rlist#get_register_list -> true | _ -> false)) then
+            let fndata = functions_data#add_function a in
+            begin
+              fnsAdded := a :: !fnsAdded;
+              fndata#set_by_preamble;
+              chlog#add
+                "function added by preamble"
+                (LBLOCK [
+                     STR (byte_string_to_printed_string instr#get_instruction_bytes);
+                     STR ": ";
+                     a#toPretty])
+            end
+          else ()) in
     let _ =
       chlog#add
         "initialization"
