@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -76,6 +76,9 @@ let fcontext_compare (c1:fcontext_t) (c2:fcontext_t) =
 
 let context_compare (c1:context_t) (c2:context_t) =
   match (c1,c2) with
+  | (ConditionContext c1, ConditionContext c2) -> Stdlib.compare c1 c2
+  | (ConditionContext c, _) -> 1
+  | (_, ConditionContext c) -> -1
   | (BlockContext b1, BlockContext b2) -> b1#compare b2
   | (BlockContext _, _) -> 1
   |  (_, BlockContext _) -> -1
@@ -188,16 +191,16 @@ object (self:'a)
 
   method compare (other:'a) =
     match (self#ctxt,other#ctxt) with
-    | ([],[]) ->
+    | ([], []) ->
        let l0 = self#f#compare other#f in
        if l0 = 0 then self#i#compare other#i else l0
-    | ([],(FunctionContext h)::_) ->
+    | ([], (FunctionContext h)::_) ->
        let l0 = self#f#compare other#f in
        if l0 = 0 then self#i#compare h.ctxt_callsite else l0
-    | ((FunctionContext h)::_,[]) ->
+    | ((FunctionContext h)::_, []) ->
        let l0 = self#f#compare other#f in
        if l0 = 0 then h.ctxt_callsite#compare other#i else l0
-    | (ctx1,ctx2) ->
+    | (ctx1, ctx2) ->
        let l0 = context_list_compare ctx1 ctx2 in
        if l0 = 0 then self#i#compare other#i else l0       
 
@@ -221,9 +224,11 @@ object (self:'a)
                     | FunctionContext h ->
                        "F:" ^ h.ctxt_callsite#to_hex_string
                     | BlockContext js ->
-                       "B:" ^ js#to_hex_string) ctxt) in
+                       "B:" ^ js#to_hex_string
+                    | ConditionContext true -> "T_"
+                    | ConditionContext false -> "F_") ctxt) in
        begin
-         add_function_ctxt_iaddress self#f ctxtstr self#base_f ctxt ;
+         add_function_ctxt_iaddress self#f ctxtstr self#base_f ctxt;
          ctxtstr ^ "_" ^ self#i#to_hex_string
        end
 
@@ -232,7 +237,8 @@ object (self:'a)
       match c with
       | [] -> loc.loc_faddr
       | (FunctionContext h)::_ -> h.ctxt_faddr   (* first ctxt element is the outer context *)
-      | (BlockContext _)::tc -> aux tc in
+      | (BlockContext _)::tc -> aux tc
+      | (ConditionContext _)::tc -> aux tc in
     aux ctxt
 
   method base_loc = loc

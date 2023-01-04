@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -911,6 +911,7 @@ type fcontext_t = {
 type context_t =
   | FunctionContext of fcontext_t
   | BlockContext of doubleword_int
+  | ConditionContext of bool  (* conditional instrs turned into blocks *)
 
 
 (* ctxt_iaddress_t spec:
@@ -918,17 +919,21 @@ type context_t =
    i  ( [], { faddr,iaddr } ) = iaddr
    i  ( [ F{ fa,cs,rs } ], { faddr,iaddr }) = iaddr
    i  ( [ B{ js } ], { faddr,iaddr }) = iaddr
+   i  ( [ C{c}], {faddr, iaddr}) = iaddr
 
    f  ( [], { faddr,iaddr } ) = faddr
    f  ( [ F{ fa,cs,rs }, _ ],  { faddr,iaddr } ) = fa
    f  ( [ B{ js } ], { faddr,iaddr } ) = faddr
    f  ( B{ js }::ctxt , { faddr,iaddr } ) = f (ctxt, {faddr,iaddr})
+   f  ( C{c}::ctxt, {faddr, iaddr}) = f(ctxt, {faddr, iaddr})
 
    ci ( [], { faddr,iaddr } ) = iaddr
    ci ( [ F{ fa,cs,rs } ], { faddr,iaddr } ) = F:cs_iaddr
    ci ( [ F{ fa1,cs1,rs1 },F{ fa2,cs2,rs2 } ], { faddr,iaddr } ) = F:cs1_F:cs2_iaddr
    ci ( [ B{ js } ], { faddr,iaddr }) = B:js_iaddr
    ci ( [ B{ js1 }, B{ js2 } ], { faddr,iaddr }) = B:js1_B:js2_iaddr
+   ci ( [ C{true}], {faddr, iaddr}) = T_iaddr
+   ci ( [ C{false}], {faddr, iaddr}) = F_iaddr
  *)
 type ctxt_iaddress_t = string
 
