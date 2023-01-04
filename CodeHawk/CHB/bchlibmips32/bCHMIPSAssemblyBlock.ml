@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +45,7 @@ open BCHLocation
 (* bchlibmips32 *)
 open BCHMIPSAssemblyInstructions
 open BCHMIPSTypes
+
 
 class mips_assembly_block_t
         ?(ctxt=[])
@@ -97,20 +100,35 @@ object (self)
     !s
 
   method itera
-           ?(low=firstaddr) ?(high=lastaddr) ?(reverse=false)
+           ?(low=firstaddr)
+           ?(high=lastaddr)
+           ?(reverse=false)
            (f:ctxt_iaddress_t -> mips_assembly_instruction_int -> unit) =
-    let instrs = if reverse then  self#get_instructions_rev else self#get_instructions in
-    let instrs = if low#equal firstaddr then instrs else
-                   List.filter (fun instr -> low#le instr#get_address) instrs in
-    let instrs = if high#equal lastaddr then  instrs else
-                   List.filter (fun instr -> instr#get_address#le high) instrs in
-    List.iter (fun instr -> f (make_i_location loc instr#get_address)#ci instr) instrs
+    let instrs =
+      if reverse then  self#get_instructions_rev else self#get_instructions in
+    let instrs =
+      if low#equal firstaddr then
+        instrs
+      else
+        List.filter (fun instr -> low#le instr#get_address) instrs in
+    let instrs =
+      if high#equal lastaddr then
+        instrs
+      else
+        List.filter (fun instr -> instr#get_address#le high) instrs in
+    List.iter (fun instr ->
+        f (make_i_location loc instr#get_address)#ci instr) instrs
 
   method private get_addresses =
-    let l = ref [] in begin self#itera (fun a _ -> l := a :: !l) ; List.rev !l end
+    let l = ref [] in
+    begin
+      self#itera (fun a _ -> l := a :: !l);
+      List.rev !l
+    end
 
   method includes_instruction_address (va:doubleword_int) =
-    List.exists (fun instr -> va#equal instr#get_address) self#get_instructions_rev
+    List.exists (fun instr ->
+        va#equal instr#get_address) self#get_instructions_rev
 
   method is_returning =
     match successors with
@@ -130,13 +148,15 @@ object (self)
     let _ =
       self#itera
         (fun ctxtiaddr instr ->
-          pp := (LBLOCK [ STR ctxtiaddr ; STR "  " ; instr#toPretty ; NL ]) :: !pp) in
+          pp := (LBLOCK [STR ctxtiaddr; STR "  " ; instr#toPretty; NL]) :: !pp) in
     LBLOCK (List.rev !pp)
 
 end
 
+
 let make_mips_assembly_block = new mips_assembly_block_t
-                
+
+
 (* create an assembly block for an inlined function *)
 let make_ctxt_mips_assembly_block
       (newctxt:context_t)            (* new context to be prepended *)
@@ -152,7 +172,8 @@ let make_ctxt_mips_assembly_block
     b#get_first_address
     b#get_last_address
     (succ @ newsucc)
-  
+
+
 let make_block_ctxt_mips_assembly_block
       (newctxt:context_t)
       (b:mips_assembly_block_int) =
@@ -162,7 +183,8 @@ let make_block_ctxt_mips_assembly_block
     b#get_first_address
     b#get_last_address
     b#get_successors
-  
+
+
 let update_mips_assembly_block_successors
       (b:mips_assembly_block_int)
       (s_old:ctxt_iaddress_t)
