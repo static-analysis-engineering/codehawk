@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -84,23 +84,30 @@ object (self)
       H.find blocktable bctxt
     else
       begin
-	ch_error_log#add "invocation error" 
-	                 (LBLOCK [ STR "mips_assembly_function#get_block: " ;
-                                   STR bctxt ]) ;
-	raise (BCH_failure
-                 (LBLOCK [ STR "No assembly block found at " ; STR bctxt ;
-                           STR " in function " ; faddr#toPretty ]))
+	ch_error_log#add
+          "invocation error"
+	  (LBLOCK [
+               STR "mips_assembly_function#get_block: "; STR bctxt ]);
+	raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "No assembly block found at ";
+                  STR bctxt;
+                  STR " in function ";
+                  faddr#toPretty]))
       end
 
   method get_instruction (iaddr:doubleword_int) =
     try
-      let block = List.find (fun b -> b#includes_instruction_address iaddr) blocks in
+      let block =
+        List.find (fun b -> b#includes_instruction_address iaddr) blocks in
       block#get_instruction iaddr
     with
     | Not_found ->
-       let msg = LBLOCK [ STR "assembly_function#get_instruction: " ; iaddr#toPretty ]  in
+       let msg =
+         LBLOCK [STR "assembly_function#get_instruction: "; iaddr#toPretty]  in
        begin
-         ch_error_log#add "invocation error" msg ;
+         ch_error_log#add "invocation error" msg;
          raise (BCH_failure msg)
        end
 
@@ -146,9 +153,10 @@ object (self)
     List.exists (fun b -> b#includes_instruction_address va) blocks
 
   method toPretty =
-    LBLOCK (List.map (fun block -> LBLOCK [ block#toPretty ; NL ]) blocks)
+    LBLOCK (List.map (fun block -> LBLOCK [block#toPretty; NL]) blocks)
 
 end
+
 
 let make_mips_assembly_function
       (va:doubleword_int)
@@ -159,6 +167,7 @@ let make_mips_assembly_function
         Stdlib.compare b1#get_context_string b2#get_context_string)
       blocks in
   new mips_assembly_function_t va blocks successors
+
 
 let inline_blocks
       (baddrs:doubleword_int list)
@@ -172,7 +181,7 @@ let inline_blocks
     else
       let block = f#get_block baddr in
       begin
-        H.add newblocks baddr block ;
+        H.add newblocks baddr block;
         List.iter
           (fun s ->
             if is_to_be_inlined s then
@@ -183,32 +192,34 @@ let inline_blocks
                 if H.mem newblocks newctxtstr then
                   ()
                 else
-                  let newblock = make_block_ctxt_mips_assembly_block ctxt succblock in
+                  let newblock =
+                    make_block_ctxt_mips_assembly_block ctxt succblock in
                   begin
                     chlog#add
                       "mips assembly block: add context"
-                      (LBLOCK [ faddr#toPretty ; STR ": " ; STR newctxtstr ]) ;
+                      (LBLOCK [faddr#toPretty; STR ": "; STR newctxtstr]);
                     H.add newblocks newctxtstr newblock
                   end in
-              let thisnewblock = update_mips_assembly_block_successors block s newctxtstr in
+              let thisnewblock =
+                update_mips_assembly_block_successors block s newctxtstr in
               begin
-                H.replace newblocks baddr thisnewblock ;
+                H.replace newblocks baddr thisnewblock;
                 chlog#add
                   "mips assembly block: replace successor"
-                  (LBLOCK [ faddr#toPretty ; STR ": " ; STR baddr ])
-              end) block#get_successors ;
+                  (LBLOCK [faddr#toPretty; STR ": "; STR baddr])
+              end) block#get_successors;
         List.iter process_block block#get_successors
       end in
   let _ = process_block faddr#to_hex_string in
   let blocks = H.fold (fun _ v a -> v::a) newblocks [] in
   let succ =
     H.fold (fun k v a ->
-        (List.map (fun s -> (k,s)) v#get_successors) @ a) newblocks [] in
-  (blocks,succ)
+        (List.map (fun s -> (k, s)) v#get_successors) @ a) newblocks [] in
+  (blocks, succ)
 
 
 let inline_blocks_mips_assembly_function
       (baddrs:doubleword_int list)
       (f:mips_assembly_function_int) =
-  let (blocks,successors) = inline_blocks baddrs f in
+  let (blocks, successors) = inline_blocks baddrs f in
   new mips_assembly_function_t f#get_address blocks successors
