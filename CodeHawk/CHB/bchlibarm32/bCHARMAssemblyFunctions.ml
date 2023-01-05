@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,15 @@ let _ =
      ("0030d0e5", "LDRB         R3, [R0, #0]");
      ("0010a0e3", "MOV          R1, #0x0");
      ("0110a0e3", "MOV          R1, #0x1");
+     ("54110fe3", "MOVW         R1, #0xf154");
+     ("24120fe3", "MOVW         R1, #0xf224");
+     ("d01b08e3", "MOVW         R1, #0x8bd0");
+     ("401b08e3", "MOVW         R1, #0x8b40");
+     ("6c160be3", "MOVW         R1, #0xb66c");
+     ("a81804e3", "MOVW         R1, #0x48a8");
+     ("741b0fe3", "MOVW         R1, #0xfb74");
+     ("681305e3", "MOVW         R1, #0x5368");
+     ("f41b04e3", "MOVW         R1, #0x4bf4");
     ]
 
 

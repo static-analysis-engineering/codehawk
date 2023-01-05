@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,9 @@ open BCHLibTypes
 open BCHARMTypes
 
 
+(** [make_arm_assembly_function faddr blocks succ] returns a new assembly function
+    with function address [faddr], basic blocks [blocks], and successor relation
+    on basic block start addresses [succ].*)
 val make_arm_assembly_function:
   doubleword_int  (* function address *)
   -> arm_assembly_block_int list   (* basic blocks *)

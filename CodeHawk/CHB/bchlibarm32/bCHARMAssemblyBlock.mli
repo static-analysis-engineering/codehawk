@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ open BCHLibTypes
 open BCHARMTypes
 
 
-(** [make_arm_assembly_block ctxt faddr baddr laddr succ] returns a new basic
+(** [make_arm_assembly_block ~ctxt faddr baddr laddr succ] returns a new basic
     block with context [ctxt], function address [faddr], first address [baddr],
     last address [laddr], and successors [succ].*)
 val make_arm_assembly_block:
@@ -57,4 +57,14 @@ val make_ctxt_arm_assembly_block:
   context_t               (* new context to be prepended *)
   -> arm_assembly_block_int
   -> ctxt_iaddress_t list (* new successor blocks *)
+  -> arm_assembly_block_int
+
+
+(** [update_arm_assembly_block_successors block s_old s_new] returns a new
+    assembly basic block that is identical to [block] except that successor
+    [s_old] is replaced by (possibly multiple) successors [s_new].*)
+val update_arm_assembly_block_successors:
+  arm_assembly_block_int
+  -> ctxt_iaddress_t
+  -> ctxt_iaddress_t list
   -> arm_assembly_block_int

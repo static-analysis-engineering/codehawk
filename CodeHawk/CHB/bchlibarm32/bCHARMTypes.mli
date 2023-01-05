@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1376,6 +1376,7 @@ class type arm_assembly_block_int =
 
     (* predicates *)
     method includes_instruction_address: doubleword_int -> bool
+    method has_conditional_return_instr: bool
     method is_returning: bool
 
     (* iterators *)
@@ -1399,6 +1400,7 @@ class type arm_assembly_function_int =
     (* accessors *)
     method get_address: doubleword_int
     method get_blocks: arm_assembly_block_int list
+    method get_cfg_edges: (ctxt_iaddress_t * ctxt_iaddress_t) list
     method get_block: ctxt_iaddress_t -> arm_assembly_block_int
     method get_instruction: doubleword_int -> arm_assembly_instruction_int
     method get_bytes_as_hexstring: string
@@ -1419,6 +1421,7 @@ class type arm_assembly_function_int =
 
     (* predicates *)
     method includes_instruction_address: doubleword_int -> bool
+    method has_conditional_return: bool
 
     (* i/o *)
     method toPretty: pretty_t
