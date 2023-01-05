@@ -553,11 +553,26 @@ let translate_arm_instruction
         make_instr_local_tests ~condloc:loc ~testloc ~condinstr:instr ~testinstr in
       match tests with
       | Some (thentest, elsetest) ->
-         default [BRANCH [LF.mkCode (thentest @ cmds); LF.mkCode elsetest]]
+         if has_false_condition_context ctxtiaddr then
+           default elsetest
+         else if has_true_condition_context ctxtiaddr then
+           default (thentest @ cmds)
+         else
+           default [BRANCH [LF.mkCode (thentest @ cmds); LF.mkCode elsetest]]
       | _ ->
-         default [BRANCH [LF.mkCode cmds; LF.mkCode [SKIP]]]
+         if has_false_condition_context ctxtiaddr then
+           default []
+         else if has_true_condition_context ctxtiaddr then
+           default cmds
+         else
+           default [BRANCH [LF.mkCode cmds; LF.mkCode [SKIP]]]
     else
-      default [BRANCH [LF.mkCode cmds; LF.mkCode [SKIP]]] in
+      if has_false_condition_context ctxtiaddr then
+        default []
+      else if has_true_condition_context ctxtiaddr then
+        default cmds
+      else
+        default [BRANCH [LF.mkCode cmds; LF.mkCode [SKIP]]] in
   let get_register_vars (ops: arm_operand_int list) =
     List.fold_left (fun acc op ->
         if op#is_register || op#is_extension_register then

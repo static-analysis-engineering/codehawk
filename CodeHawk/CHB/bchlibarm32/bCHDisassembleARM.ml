@@ -617,6 +617,12 @@ let set_block_boundaries () =
                     "set_block_boundaries:IfThen"
                     (LBLOCK [STR "Instructions not found at "; va#toPretty]))
 
+           (* make a conditional return a separate block, so that it can be
+              contextualized with a ConditionContext *)
+           | Pop (_, _, rl, _)
+                when rl#includes_pc && is_opcode_conditional instr#get_opcode ->
+              set_block_entry va
+
            | BranchLink _ | BranchLinkExchange _
                 when is_nr_call_instruction instr ->
               set_block_entry (va#add_int 4)

@@ -168,11 +168,21 @@ let decompose_ctxt_string
   let iaddr = s2dw (List.hd (List.rev components)) in
   let ctxtcomponents = List.rev (List.tl (List.rev components)) in
   match ctxtcomponents with
-  | [] -> ([],faddr,iaddr)
+  | [] -> ([], faddr, iaddr)
   | _ ->
      let ctxtstr = String.concat "_" ctxtcomponents in
      let (basef,ctxt) = get_context faddr ctxtstr in
-     (ctxt,basef,iaddr)
+     (ctxt, basef, iaddr)
+
+
+let has_false_condition_context (ctxt_iaddr: ctxt_iaddress_t): bool =
+  let components = nsplit '_' ctxt_iaddr in
+  (List.hd components) = "F@"
+
+
+let has_true_condition_context (ctxt_iaddr: ctxt_iaddress_t): bool =
+  let components = nsplit '_' ctxt_iaddr in
+  (List.hd components) = "T@"
 
 
 let is_iaddress (s:ctxt_iaddress_t) =
@@ -225,8 +235,8 @@ object (self:'a)
                        "F:" ^ h.ctxt_callsite#to_hex_string
                     | BlockContext js ->
                        "B:" ^ js#to_hex_string
-                    | ConditionContext true -> "T_"
-                    | ConditionContext false -> "F_") ctxt) in
+                    | ConditionContext true -> "T@"
+                    | ConditionContext false -> "F@") ctxt) in
        begin
          add_function_ctxt_iaddress self#f ctxtstr self#base_f ctxt;
          ctxtstr ^ "_" ^ self#i#to_hex_string

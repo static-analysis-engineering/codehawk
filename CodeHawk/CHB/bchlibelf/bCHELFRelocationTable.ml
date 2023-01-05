@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -169,8 +169,9 @@ object (self)
       end
     with
     | IO.No_more_input ->
-       ch_error_log#add "no more input"
-                        (LBLOCK [ STR "Unable to read the relocation table" ])
+       ch_error_log#add
+         "no more input"
+         (LBLOCK [STR "Unable to read the relocation table"])
 
   method set_symbols (t:elf_symbol_table_int) =
     List.iter (fun e -> e#set_symbol (t#get_symbol e#get_symbol_index)) entries
@@ -186,7 +187,7 @@ object (self)
     | Not_found ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Error in get_offset_symbol: " ; dw#toPretty ]))
+            (LBLOCK [STR "Error in get_offset_symbol: "; dw#toPretty]))
 
   method set_function_entry_points =
     List.iter (fun e ->
@@ -215,13 +216,15 @@ object (self)
 
 end
 
+
 let mk_elf_relocation_table s h vaddr =
   let entrysize = h#get_entry_size#to_int in
   let table = new elf_relocation_table_t s entrysize vaddr in
   begin
-    table#read ;
+    table#read;
     table
   end
+
 
 let read_xml_elf_relocation_table (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
@@ -229,6 +232,6 @@ let read_xml_elf_relocation_table (node:xml_element_int) =
   let entrysize = node#getIntAttribute "entrysize" in
   let table = new elf_relocation_table_t s entrysize vaddr in
   begin
-    table#read ;
+    table#read;
     table
   end

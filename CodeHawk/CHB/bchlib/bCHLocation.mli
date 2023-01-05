@@ -159,6 +159,7 @@ val ctxt_string_to_location:
   -> ctxt_iaddress_t  (* string that represents the base location and context *)
   -> location_int
 
+
 val add_ctxt_to_ctxt_string:
   doubleword_int      (* outer function address *)
   -> ctxt_iaddress_t  (* string that represents the context, outer context first *)
@@ -180,6 +181,18 @@ val is_iaddress: ctxt_iaddress_t -> bool
 (** [is_same_address iaddr ctxt_iaddr] returns true if ctxt_iaddr is a bare
     instruction address that is the same as [iaddr] *)
 val is_same_iaddress: doubleword_int -> ctxt_iaddress_t -> bool
+
+
+(** [has_false_condition_context ctxt_iaddr] returns true if ctxt_iaddr is
+    wrapped in a condition context that is false (i.e., the instruction's
+    semantics is NOP and the guarding condition is false).*)
+val has_false_condition_context: ctxt_iaddress_t -> bool
+
+
+(** [has_true_condition_context ctxt_iaddr] returns true if ctxt_iaddr is
+    wrapped in a condition context that is true (i.e., the instruction's
+    semantics is its own semantics and the guarding condition is true).*)
+val has_true_condition_context: ctxt_iaddress_t -> bool
 
 
 val symbol_to_ctxt_string: symbol_t -> ctxt_iaddress_t

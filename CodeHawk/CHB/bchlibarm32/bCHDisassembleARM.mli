@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,5 +38,11 @@ open BCHARMTypes
 val disassemble_arm_section: doubleword_int -> string -> unit
 
 val disassemble_arm_sections: unit -> doubleword_int
+
+
+(** Set block markers in the assembly instructions. Only used externally
+    in the unit tests. *)
+val set_block_boundaries: unit -> unit
+
 
 val construct_functions_arm: unit -> unit

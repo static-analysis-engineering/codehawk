@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@ open BCHLocation
 
 (* bchlibarm32 *)
 open BCHARMAssemblyInstructions
+open BCHARMOpcodeRecords
 open BCHARMTypes
 
 
@@ -131,6 +132,14 @@ object (self)
     List.exists
       (fun instr -> va#equal instr#get_address) (self#get_instructions_rev ())
 
+  method has_conditional_return_instr =
+    List.exists
+      (fun instr ->
+        match instr#get_opcode with
+        | Pop (_, _, rl, _) ->
+           rl#includes_pc && is_opcode_conditional instr#get_opcode
+        | _ -> false) (self#get_instructions_rev ())
+
   method is_returning =
     match successors with
     | [] -> true
@@ -160,6 +169,21 @@ let make_ctxt_arm_assembly_block
     :arm_assembly_block_int =
   make_arm_assembly_block
     ~ctxt:(newctxt :: b#get_context)
+    b#get_faddr
+    b#get_first_address
+    b#get_last_address
+    newsucc
+
+
+let update_arm_assembly_block_successors
+      (b: arm_assembly_block_int)
+      (s_old: ctxt_iaddress_t)
+      (s_new: ctxt_iaddress_t list): arm_assembly_block_int =
+  let newsucc =
+    List.fold_left (fun acc s ->
+        if s = s_old then acc @ s_new else acc @ [s]) [] b#get_successors in
+  make_arm_assembly_block
+    ~ctxt:b#get_context
     b#get_faddr
     b#get_first_address
     b#get_last_address

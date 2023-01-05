@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ open BCHSystemInfo
 open BCHUtilities
 
 (* bchlibarm32 *)
+open BCHARMAssemblyBlock
 open BCHARMOpcodeRecords
 open BCHARMTypes
 
@@ -75,6 +76,8 @@ object (self)
   method get_address = faddr
 
   method get_blocks = blocks
+
+  method get_cfg_edges = List.sort Stdlib.compare successors
 
   method get_block (bctxt:ctxt_iaddress_t) =
     if H.mem blocktable bctxt then
@@ -138,10 +141,74 @@ object (self)
   method includes_instruction_address (va:doubleword_int) =
     List.exists (fun b -> b#includes_instruction_address va) blocks
 
+  method has_conditional_return =
+    List.exists (fun b -> b#has_conditional_return_instr) blocks
+
   method toPretty =
-    LBLOCK (List.map (fun b -> LBLOCK [ b#toPretty ; NL ]) blocks)
+    LBLOCK
+      (List.map (fun b ->
+           LBLOCK [
+               b#toPretty;
+               NL;
+               STR " -> ";
+               pretty_print_list b#get_successors (fun s -> STR s) "" ", " "";
+               NL;
+               NL]) blocks)
 
 end
+
+
+(* Duplicates basic blocks that contain a conditional return instruction
+   (e.g., POPEQ or POPNE with PC included in the register list). Each such
+   basic block should have only one instruction. Two versions are created:
+   one with a true conditional context and one with a false conditional
+   context. The one with true conditional context has no successor, the one
+   with the false conditional context has the original successor. The
+   semantics of the latter is equal to that of NOP. *)
+let inline_blocks (fn: arm_assembly_function_int) =
+  let blockreplacements = H.create (2 * fn#get_block_count) in
+  let newblocks = H.create (2 * fn#get_block_count) in
+  let faddr = fn#get_address in
+  let update_successors (b: arm_assembly_block_int): arm_assembly_block_int =
+    let newsucc =
+      List.fold_left (fun acc s ->
+          if H.mem blockreplacements s then
+            let (tb, fb) = H.find blockreplacements s in
+            acc @ [tb#get_context_string; fb#get_context_string]
+          else
+            acc @ [s]) [] b#get_successors in
+    make_arm_assembly_block
+      ~ctxt:b#get_context faddr b#get_first_address b#get_last_address newsucc in
+  let _ =
+    begin
+      fn#iter (fun b ->
+          if b#has_conditional_return_instr then
+            let b1 =
+              make_ctxt_arm_assembly_block
+                (ConditionContext true) b [] in
+            let b2 =
+              make_ctxt_arm_assembly_block
+                (ConditionContext false) b b#get_successors in
+            H.add blockreplacements b#get_context_string (b1, b2));
+      fn#iter (fun b ->
+          if H.mem blockreplacements b#get_context_string then
+            let (tblock, fblock) = H.find blockreplacements b#get_context_string in
+            begin
+              H.add newblocks tblock#get_context_string tblock;
+              H.add newblocks fblock#get_context_string (update_successors fblock)
+            end
+          else
+            H.add newblocks b#get_context_string (update_successors b))
+    end in
+  let blocks = H.fold (fun _ v a -> v::a) newblocks [] in
+  let blocks =
+    List.sort (fun b1 b2 ->
+        Stdlib.compare b1#get_context_string b2#get_context_string) blocks in
+  let succ =
+    H.fold (fun k v a ->
+        (List.map (fun s -> (k, s)) v#get_successors) @ a) newblocks [] in
+  (blocks, succ)
+
 
 let make_arm_assembly_function
       (va:doubleword_int)
@@ -150,4 +217,9 @@ let make_arm_assembly_function
   let blocks =
     List.sort (fun b1 b2 ->
         Stdlib.compare b1#get_context_string b2#get_context_string) blocks in
-  new arm_assembly_function_t va blocks successors
+  let fn = new arm_assembly_function_t va blocks successors in
+  if fn#has_conditional_return then
+    let (newblocks, newsucc) = inline_blocks fn in
+    new arm_assembly_function_t va newblocks newsucc
+  else
+    fn
