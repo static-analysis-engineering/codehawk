@@ -31,6 +31,8 @@ open BCHLibTypes
 
 (* bchlibarm32 *)
 open BCHARMTypes
+open BCHDisassembleARM
+open BCHConstructARMFunction
 
 
 (* bchlib *)
@@ -77,8 +79,8 @@ let arm_function_setup
       let instr = ARMI.make_arm_assembly_instruction iaddr false opcode instrbytes in
       ARMIS.set_arm_assembly_instruction instr
     done;
-    let block = ARMB.make_arm_assembly_block faddr faddr faddr [] in
-    let fn = ARMF.make_arm_assembly_function faddr [block] [] in
+    let _ = set_block_boundaries () in
+    let fn = construct_arm_assembly_function faddr in
     ARMFS.arm_assembly_functions#add_function fn;
     fn
   end

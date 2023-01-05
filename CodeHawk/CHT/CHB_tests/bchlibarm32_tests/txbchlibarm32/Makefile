@@ -78,6 +78,7 @@ all: make_dirs \
 	bCHDisassembleARMInstructionTest \
 	bCHDisassembleThumbInstructionTest \
 	bCHARMJumptableTest \
+	bCHARMAssemblyFunctionTest \
 	bCHTranslateARMToCHIFTest \
 
 doc: 
@@ -98,10 +99,14 @@ bCHARMJumptableTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cm
 bCHTranslateARMToCHIFTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHTranslateARMToCHIFTest.cmi cmx/bCHTranslateARMToCHIFTest.cmx
 	$(CAMLLINK) -o bCHTranslateARMToCHIFTest $(OBJECTS) cmx/bCHTranslateARMToCHIFTest.cmx
 
+bCHARMAssemblyFunctionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHARMAssemblyFunctionTest.cmi cmx/bCHARMAssemblyFunctionTest.cmx
+	$(CAMLLINK) -o bCHARMAssemblyFunctionTest $(OBJECTS) cmx/bCHARMAssemblyFunctionTest.cmx
+
 run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHARMJumptableTest bCHTranslateARMToCHIFTest
 	./bCHDisassembleARMInstructionTest
 	./bCHDisassembleThumbInstructionTest
 	./bCHARMJumptableTest
+	./bCHARMAssemblyFunctionTest
 	./bCHTranslateARMToCHIFTest
 
 cmi/%.cmi: %.mli
@@ -128,4 +133,5 @@ clean:
 	rm -f bCHDisassembleARMInstructionTest
 	rm -f bCHARMJumptableTest
 	rm -f bCHTranslateARMToCHIFTest
+	rm -f bCHARMAssemblyFunctionTest
 	rm -rf doc

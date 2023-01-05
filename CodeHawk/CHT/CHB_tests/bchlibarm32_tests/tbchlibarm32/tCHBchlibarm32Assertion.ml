@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,3 +52,16 @@ let equal_jumptable_targets
       ~msg
       expected
       (List.map (fun (dw, ixs) -> (dw#to_hex_string, ixs)) received#indexed_targets)
+
+
+let equal_cfg_edges
+      ?(msg="")
+      ~(expected: (string * string) list)
+      ~(received: (string * string) list) =
+  A.make_equal_list
+    (fun (src1, tgt1) (src2, tgt2) ->
+      (src1 = src2) && (tgt1 = tgt2))
+    (fun (src, tgt) -> ("(" ^ src ^ ", " ^ tgt ^ ")"))
+    ~msg
+    expected
+    received

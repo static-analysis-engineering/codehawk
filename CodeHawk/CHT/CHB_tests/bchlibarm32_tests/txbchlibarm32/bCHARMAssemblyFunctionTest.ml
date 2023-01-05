@@ -76,8 +76,8 @@ open BCHARMCHIFSystem
 open BCHFunctionInfo
 
 
-let testname = "bCHTranslateARMToCHIFTest"
-let lastupdated = "2022-12-23"
+let testname = "bCHARMAssemblyFunction"
+let lastupdated = "2023-01-03"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -92,54 +92,30 @@ let make_stream ?(len=0) (s: string) =
   SW.make_pushback_stream ~little_endian:true s
 
 
-let translate_store () =
+let conditional_return () =
   let tests = [
-      ("PUSHLR", "0x1b960", "04e02de500",
-       [("var.0004", "LR_in"); ("SP", "sv__(SP_in - 4)__sv")]);
-      ("PUSHR0_3", "0x19470", "0f002de900",
-       [("var.0016", "R0_in");
-        ("var.0012", "R1_in");
-        ("var.0008", "R2_in");
-        ("var.0004", "R3_in");
-        ("SP", "sv__(SP_in - 16)__sv")]);
-      ("STM", "0x3f7b8", "10128de800",
-       [("var.0000", "R4_in"); ("arg.0004", "R9_in"); ("arg.0008", "R12_in")]);
-      ("STMIB", "0x3ba4c", "10408de900",
-       [("arg.0004", "R4_in"); ("arg.0008", "LR_in")]);
-      ("STR", "0x1b4bc", "08608de500", [("arg.0008", "R6_in")]);
-      ("STRBwb", "0x10208", "015062e500",
-       [("R2_in[-1]", "sv__( lsb R5_in)__sv"); ("R2", "sv__(R2_in - 1)__sv")]);
-      ("STRwb", "0x10568", "08402de500",
-       [("var.0008", "R4_in"); ("SP", "sv__(SP_in - 8)__sv")]);
-      ("STRDwb1", "0x1b4bc", "f0416de100",
-       [("var.0016", "R4_in");
-        ("var.0012", "R5_in");
-        ("SP", "sv__(SP_in - 16)__sv")]);
-      ("STRDwb2", "0x10ab8", "fc406de100",
-       [("var.0012", "R4_in");
-        ("var.0008", "R5_in");
-        ("SP", "sv__(SP_in - 12)__sv")]);
-      ("STRH", "0x1b4bc", "b031cde100", [("arg.0016", "R3_in")])      
+      ("POPEQ", "0x15d5c",
+       "70402de9000050e37080bd087040bde800",
+       [("0x15d5c", "F@_0x15d64");
+        ("0x15d5c", "T@_0x15d64");
+        ("F@_0x15d64", "0x15d68")])
     ] in
   begin
-    TS.new_testsuite (testname ^ "_test_instr") lastupdated;
+    TS.new_testsuite (testname ^ "_conditional_return") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
     ARMIS.initialize_arm_instructions 1000;
-    List.iter (fun (title, sfaddr, bytes, expectedcmds) ->
+    List.iter (fun (title, sfaddr, bytes, expectedresult) ->
 
         TS.add_simple_test
           ~title
           (fun () ->
             let faddr = make_dw sfaddr in
             let fn = ARMU.arm_function_setup faddr bytes in
-            let _ = analyze_arm_function faddr fn 0 in
-            let _ = TF.translate_arm_assembly_function fn in
-            let proc = arm_chif_system#get_arm_procedure faddr in
-            (* remove the PC assignment at the end of the transaction *)
-            let assigns = BU.extract_chif_cfg_assignments ~len:(-1) proc in
-            let finfo = get_function_info faddr in
-            BA.equal_assignments finfo ~expected:expectedcmds ~received:assigns)
+            begin
+              pr_debug [fn#toPretty; NL];
+              ARMA.equal_cfg_edges fn#get_cfg_edges expectedresult
+            end)
       ) tests;
 
     TS.launch_tests ()
@@ -149,7 +125,6 @@ let translate_store () =
 let () =
   begin
     TS.new_testfile testname lastupdated;
-    translate_store ();
+    conditional_return ();
     TS.exit_file ()
   end
-        
