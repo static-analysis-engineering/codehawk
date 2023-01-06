@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -887,6 +887,7 @@ object (self)
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let xrmem = rewrite_expr xmem in
+         let _ = ignore (get_string_reference floc xrmem) in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]

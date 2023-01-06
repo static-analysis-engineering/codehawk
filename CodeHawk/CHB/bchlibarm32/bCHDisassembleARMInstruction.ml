@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -955,7 +955,8 @@ let parse_data_proc_imm_type
      NotRecognized ("data_proc_imm_type:" ^ (stri opc), instr)
 
 
-let parse_load_store_imm_type (instr: doubleword_int) (cond: int) =
+let parse_load_store_imm_type
+      (iaddr: doubleword_int) (instr: doubleword_int) (cond: int) =
   let b = instr#get_segval in
   let bv = instr#get_bitval in
   let c = get_opcode_cc cond in
@@ -994,6 +995,12 @@ let parse_load_store_imm_type (instr: doubleword_int) (cond: int) =
      let rl = arm_register_list_op [(get_arm_reg (b 15 12))] WR in
      (* POP<c> <registers> *)
      Pop (c, rn, rl, false)
+
+  (* <cc><2>pu011<15><rt><--imm12---> *)   (* LDR (literal) - A1 *)
+  | (0, 1, (15, _, _, _, _)) ->
+     let addrop = arm_literal_op ~is_add:isadd (iaddr#add_int 8) imm12 in
+     (* LDR<c> <Rt>, <label> *)
+     LoadRegister (c, rt WR, rn, imm, addrop, false)
 
   (* <cc><2>pu0w1<rn><rt><--imm12---> *)   (* LDR (immediate) - A1 *)
   | (0, 1, _) ->
@@ -4318,7 +4325,7 @@ let parse_opcode
        parse_data_proc_reg_load_stores instrbytes cond
     | 0 -> parse_data_proc_reg_type instrbytes cond
     | 1 -> parse_data_proc_imm_type ch iaddr instrbytes cond
-    | 2 -> parse_load_store_imm_type instrbytes cond
+    | 2 -> parse_load_store_imm_type iaddr instrbytes cond
     | 3 when (instrbytes#get_bitval 4) = 1 ->
        parse_media_type instrbytes cond
     | 3 -> parse_load_store_reg_type instrbytes cond

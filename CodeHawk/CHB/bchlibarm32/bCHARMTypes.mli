@@ -170,7 +170,9 @@ class type arm_operand_int =
     method is_special_register: bool
     method is_register_list: bool
     method is_absolute_address: bool
+    method is_literal_address: bool
     method is_pc_relative_address: bool
+    method is_offset_address: bool
     method is_offset_address_writeback: bool
 
     method includes_pc: bool

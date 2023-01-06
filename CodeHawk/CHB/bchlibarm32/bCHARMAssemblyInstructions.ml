@@ -460,7 +460,7 @@ object (self)
               ^ (String.concat
                    "\n"
                    (List.map
-                      (fun (a,v) ->
+                      (fun (a, v) ->
                         let addr = a#to_hex_string in
                         match elf_header#get_string_at_address v with
                         | Some s ->
@@ -621,7 +621,23 @@ let set_data_references (lst: doubleword_int list) =
             (w: doubleword_int list)
             (blocks: data_block_int list) =
     match l with
-    | [] -> blocks
+    | [] ->
+       (match w with
+        | [] -> blocks
+        | _ ->
+           let lastaddr = List.hd w in
+           let w = List.rev w in
+           let firstaddr = List.hd w in
+           (match !arm_assembly_instructions#get_instruction firstaddr with
+            | Ok instr when instr#is_not_code -> blocks
+            | _ ->
+               let db =
+                 TR.tget_ok (make_data_block firstaddr (lastaddr#add_int 4) "") in
+               let datalen = (List.length w) * 4 in
+               let datastring = elf_header#get_xsubstring firstaddr datalen in
+               let _ = db#set_data_string datastring in
+               db::blocks))
+
     | hd::tl ->
        (match w with
         | [] -> get tl [hd] blocks
@@ -633,7 +649,7 @@ let set_data_references (lst: doubleword_int list) =
            let firstaddr = List.hd w in
            (match !arm_assembly_instructions#get_instruction firstaddr with
             | Ok instr when instr#is_not_code ->
-               get tl [hd] blocks
+                 get tl [hd] blocks
             | _ ->
                let db =
                  TR.tget_ok (make_data_block firstaddr (lastaddr#add_int 4) "") in
