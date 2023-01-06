@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -361,8 +361,9 @@ object (self:'a)
              | _ ->
                 raise
                   (BCH_failure
-                     (LBLOCK [STR "to_variable: offset not implemented: ";
-                              self#toPretty])) in
+                     (LBLOCK [
+                          STR "to_variable: offset not implemented: ";
+                          self#toPretty])) in
            floc#get_memory_variable_1 ~align rvar memoff
         | ARMShiftedIndexOffset _ ->
            let rvar = env#mk_arm_register_variable r in
@@ -590,6 +591,9 @@ object (self:'a)
   method is_absolute_address =
     match kind with ARMAbsolute _ -> true | _ -> false
 
+  method is_literal_address =
+    match kind with ARMLiteralAddress _ -> true | _ -> false
+
   method is_pc_relative_address =
     match kind with
     | ARMOffsetAddress (ARPC, _, ARMImmOffset _, _, _, _) -> true
@@ -599,6 +603,9 @@ object (self:'a)
     match kind with
     | ARMRegList rl -> List.mem ARPC rl
     | _ -> false
+
+  method is_offset_address =
+    match kind with ARMOffsetAddress _ -> true | _ -> false
 
   method is_offset_address_writeback =
     match kind with

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -446,6 +446,14 @@ let collect_data_references () =
            else
              ch_error_log#add
                "LDR from non-code-address"
+               (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
+        | LoadRegister (_, _, _, _, mem, _) when mem#is_literal_address ->
+           let a = mem#get_literal_address in
+           if elf_header#is_program_address a then
+             add a instr
+           else
+             ch_error_log#add
+               "LDR (literal) from non-code-address"
                (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
         | VLoadRegister (_, vd, _, mem) when mem#is_pc_relative_address ->
            let pcoffset = if instr#is_arm32 then 8 else 4 in
