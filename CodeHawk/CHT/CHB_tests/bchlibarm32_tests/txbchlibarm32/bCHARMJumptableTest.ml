@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,7 @@ module U = BCHByteUtilities
 module ARMIS = BCHARMAssemblyInstructions
 module R = BCHARMOpcodeRecords
 module DT = BCHDisassembleThumbInstruction
+module DA = BCHDisassembleARMInstruction
 module TF = BCHARMInstructionAggregate
 
 open BCHARMAssemblyInstruction
@@ -65,7 +66,7 @@ open BCHARMTypes
 
 
 let testname = "bCHARMJumptableTest"
-let lastupdated = "2022-12-09"
+let lastupdated = "2023-01-06"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -92,7 +93,7 @@ let add_instruction
     instr
   end
 
-let jt_setup hexbase bytes: arm_jumptable_int TR.traceresult =
+let jt_setup_thumb hexbase bytes: arm_jumptable_int TR.traceresult =
   let base = make_dw hexbase in
   let bytestring = U.write_hex_bytes_to_bytestring bytes in
   let ch = make_stream bytes in
@@ -105,6 +106,38 @@ let jt_setup hexbase bytes: arm_jumptable_int TR.traceresult =
       let iaddr = base#add_int ch#pos in
       let instrbytes = ch#read_ui16 in
       let opcode = DT.disassemble_thumb_instruction ch iaddr instrbytes in
+      let currentpos = ch#pos in
+      let instrlen = currentpos - prevpos in
+      let instrbytes = String.sub bytestring prevpos instrlen in
+      let instr = add_instruction prevpos iaddr opcode instrbytes in
+      let optagg = TF.identify_arm_aggregate ch instr in
+      match optagg with
+      | Some agg -> aggregate := Some agg
+      | _ -> ()
+    done;
+    match !aggregate with
+    | Some agg ->
+       (match agg#kind with
+          | ARMJumptable jt -> Ok jt
+          | _ -> Error ["other aggregate found"])
+    | _ ->
+       Error ["no aggregate found:" ^ (string_of_int ch#pos)]
+  end
+
+
+let jt_setup_arm hexbase bytes: arm_jumptable_int TR.traceresult =
+  let base = make_dw hexbase in
+  let bytestring = U.write_hex_bytes_to_bytestring bytes in
+  let ch = make_stream bytes in
+  let aggregate = ref None in
+  let size = String.length bytestring in
+  begin
+    ARMIS.initialize_arm_assembly_instructions (String.length bytes) base [];
+    while ch#pos + 4 <= size do
+      let prevpos = ch#pos in
+      let iaddr = base#add_int ch#pos in
+      let instrbytes = ch#read_doubleword in
+      let opcode = DA.disassemble_arm_instruction ch iaddr instrbytes in
       let currentpos = ch#pos in
       let instrlen = currentpos - prevpos in
       let instrbytes = String.sub bytestring prevpos instrlen in
@@ -162,7 +195,7 @@ let tb_table_branch () =
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
     ARMIS.initialize_arm_instructions 1000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
-        let jtresult = jt_setup hexbase bytes in
+        let jtresult = jt_setup_thumb hexbase bytes in
         
         TS.add_simple_test
           ~title:(title ^ "-targets")
@@ -200,8 +233,47 @@ let ldr_table_branch () =
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
     ARMIS.initialize_arm_instructions 1000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
-        let jtresult = jt_setup hexbase bytes in
+        let jtresult = jt_setup_thumb hexbase bytes in
         
+        TS.add_simple_test
+          ~title:(title ^ "-targets")
+          (fun () ->
+            match jtresult with
+            | Ok jt ->
+               ARMA.equal_jumptable_targets
+                 ~msg:"" ~expected:expectedtargets ~received:jt
+            | Error e ->
+               A.fail_msg (String.concat "; " e));
+
+        TS.add_simple_test
+          ~title:(title ^ "-default")
+          (fun () ->
+            match jtresult with
+            | Ok jt ->
+               A.equal_string expecteddefault jt#default_target#to_hex_string
+            | Error e ->
+               A.fail_msg (String.concat "; " e))
+      ) tests;
+
+    TS.launch_tests ()
+  end
+
+
+let ldrls_jumptable () =
+  let tests = [
+      ("ldrls", "0x191ac", "0x190e0",
+       "050053e303f19f97c9ffffea1092010008920100e090010000920100f8910100f091010000",
+       [("0x190e0", [2]); ("0x191f0", [5]); ("0x191f8", [4]);
+        ("0x19200", [3]); ("0x19208", [1]); ("0x19210", [0])])
+    ] in
+  begin
+    TS.new_testsuite (testname ^ "_ldrls_jumptable") lastupdated;
+
+    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    ARMIS.initialize_arm_instructions 1000;
+    List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
+        let jtresult = jt_setup_arm hexbase bytes in
+
         TS.add_simple_test
           ~title:(title ^ "-targets")
           (fun () ->
@@ -252,7 +324,7 @@ let bx_table_branch () =
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
     ARMIS.initialize_arm_instructions 1000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
-        let jtresult = jt_setup hexbase bytes in
+        let jtresult = jt_setup_thumb hexbase bytes in
         
         TS.add_simple_test
           ~title:(title ^ "-targets")
@@ -283,6 +355,7 @@ let () =
     TS.new_testfile testname lastupdated;
     tb_table_branch ();
     ldr_table_branch ();
+    ldrls_jumptable ();
     bx_table_branch ();
     TS.exit_file ()
   end
