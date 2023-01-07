@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -396,7 +396,84 @@ let create_arm_ldr_jumptable
       | _ -> None)
 
 
-(* format of BX-based jumptable (in Thumb2):
+(* LDRLS pattern in ARM
+
+    CMP    indexreg, maxcase
+    LDRLS  PC, [PC, indexreg, LSL #2]
+    B      default case
+
+    Example:
+    CMP          R3, #0x5
+    LDRLS        PC, [PC, R3,LSL #2]
+    B            0x190e0
+ *)
+let is_ldrls_jumptable
+      (ldrinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int              (* CMP instr *)
+       * arm_assembly_instruction_int) option =  (* B instr *)
+  match ldrinstr#get_opcode with
+  | LoadRegister (ACCNotUnsignedHigher, dst, baseregop, indexregop, _, false)
+       when dst#get_register = ARPC && indexregop#is_register ->
+     let indexreg = indexregop#get_register in
+     let cmptestf = cmp_reg_imm_test indexreg in
+     let addr = ldrinstr#get_address in
+     let optcmpinstr = find_instr cmptestf [(-4)] addr in
+     (match optcmpinstr with
+      | Some cmpinstr ->
+         let branchtestf instr =
+           match instr#get_opcode with
+           | Branch (ACCAlways, _, false) -> true | _ -> false in
+         let optbranchinstr = find_instr branchtestf [(4)] addr in
+         (match optbranchinstr with
+          | Some branchinstr ->
+             Some (cmpinstr, branchinstr)
+          | _ -> None)
+      | _ -> None)
+  | _ -> None
+
+
+let create_arm_ldrls_jumptable
+      (ch: pushback_stream_int)
+      (ldrinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int list * arm_jumptable_int) option =
+  match is_ldrls_jumptable ldrinstr with
+  | None -> None
+  | Some (cmpinstr, branchinstr) ->
+     (match (cmpinstr#get_opcode, branchinstr#get_opcode) with
+      | (Compare (_, _, imm, _), Branch (_, tgtop, _))
+           when tgtop#is_absolute_address ->
+         let iaddr = ldrinstr#get_address in
+         let defaulttgt = tgtop#get_absolute_address in
+         let size = imm#to_numerical#toInt in
+         let jtaddr = iaddr#add_int 8 in
+         let targets = ref [] in
+         let _ =
+           for i = 0 to size do
+             let tgt = ch#read_doubleword in
+             targets := (tgt, i) :: !targets
+           done in
+         let jt:arm_jumptable_int =
+           make_arm_jumptable
+             ~end_address:(Some (jtaddr#add_int ((List.length !targets) * 4)))
+             ~start_address:jtaddr
+             ~default_target:defaulttgt
+             ~targets:(List.rev !targets) in
+         let instrs = [cmpinstr; ldrinstr; branchinstr] in
+         begin
+           (if collect_diagnostics () then
+              ch_diagnostics_log#add
+                "ldrls-jumptable"
+                (LBLOCK [
+                     STR "base: ";
+                     jtaddr#toPretty;
+                     STR ": targets: ";
+                     INT (List.length !targets)]));
+           Some (instrs, jt)
+         end
+      | _ -> None)
+
+
+(* format of BX-based jumptable (in Thumb-22):
    
    Type 1
    [2 bytes] CMP indexreg, maxcase
