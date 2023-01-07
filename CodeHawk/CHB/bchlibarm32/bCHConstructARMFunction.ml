@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -134,6 +134,12 @@ let get_successors
                   && dst#get_register = ARPC
                   && src#is_register
                   && src#get_register = ARLR -> []
+
+        (* LDRLS jumptable (ARM) *)
+        | Branch _ when instr#is_aggregate_anchor
+                        && (get_aggregate iaddr)#is_jumptable ->
+           let jt = (get_aggregate iaddr)#jumptable in
+           jt#default_target :: jt#target_addrs
                                               
         (* Unconditional direct jump *)
         | Branch (ACCAlways, op, _)

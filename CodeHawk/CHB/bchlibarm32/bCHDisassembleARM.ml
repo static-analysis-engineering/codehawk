@@ -229,9 +229,12 @@ let disassemble_arm_section
                   | _ -> OpInvalid in
               let currentPos = ch#pos in
               let instrlen = currentPos - prevPos in
-              let instrBytes = ch#sub prevPos instrlen in
-              let _ = add_instruction iaddr opcode instrBytes in
-              ()
+              let instrbytes = ch#sub prevPos instrlen in
+              let instr = add_instruction iaddr opcode instrbytes in
+              let optagg = identify_arm_aggregate ch instr in
+              match optagg with
+              | Some agg -> set_aggregate agg#anchor#get_address agg
+              | _ -> ()
         with
         | BCH_failure p ->
            begin
@@ -669,7 +672,9 @@ let set_block_boundaries () =
           | Branch _ | BranchExchange _ -> true
           | CompareBranchZero _ | CompareBranchNonzero _ -> true
           | LoadRegister (_, dst, _, _, _, _)
-               when dst#is_register && dst#get_register = ARPC -> true
+               when dst#is_register
+                    && dst#get_register = ARPC
+                    && Option.is_none instr#is_in_aggregate -> true
           | LoadMultipleDecrementBefore (_, _, _, rl, _)
             | LoadMultipleDecrementAfter (_, _, _, rl, _)
             | LoadMultipleIncrementBefore (_, _, _, rl, _)

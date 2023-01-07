@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,17 +37,26 @@ open BCHARMTypes
 
 (** [create_arm_table_branch ch instr] creates a jump table targeted by a TBB or TBH 
     instruction [instr] by processing the associated jump table bytes/halfwords
-    from stream [ch].*)
+    from stream [ch] (Thumb-2 pattern).*)
 val create_arm_table_branch:
   pushback_stream_int
   -> arm_assembly_instruction_int
   -> (arm_assembly_instruction_int list * arm_jumptable_int) option
 
 
-(** [create_ldr_jumptable ch instr] creates a jump table targeted by an LDR 
+(** [create_arm_ldr_jumptable ch instr] creates a jump table targeted by an LDR 
     instruction [instr] by processing the associated list of addresses from
-    stream [ch].*)
+    stream [ch] (Thumb-2 pattern).*)
 val create_arm_ldr_jumptable:
+  pushback_stream_int
+  -> arm_assembly_instruction_int
+  -> (arm_assembly_instruction_int list * arm_jumptable_int) option
+
+
+(** [create_arm_ldrls_jumptable ch instr] creates a jump table targeted by an
+    LDRLS instruction [instr] by processing the associated list of addresses
+    from stream [ch] (ARM pattern).*)
+val create_arm_ldrls_jumptable:
   pushback_stream_int
   -> arm_assembly_instruction_int
   -> (arm_assembly_instruction_int list * arm_jumptable_int) option

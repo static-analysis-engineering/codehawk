@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022 Aarno Labs, LLC
+   Copyright (c) 2022-2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +36,11 @@ open BCHBasicTypes
 open BCHLibTypes
 
 (* bchlibarm32 *)
+open BCHARMAssemblyInstruction
+open BCHARMAssemblyInstructions
 open BCHARMJumptable
 open BCHARMTypes
+open BCHDisassembleARMInstruction
 open BCHThumbITSequence
 
 
@@ -123,6 +126,18 @@ let make_it_sequence_aggregate
   make_arm_instruction_aggregate ~kind ~instrs ~entry ~exitinstr ~anchor
 
 
+let disassemble_arm_instructions
+      (ch: pushback_stream_int) (iaddr: doubleword_int) (n: int) =
+  for i = 1 to n do
+    let instrbytes = ch#read_doubleword in
+    let opcode = disassemble_arm_instruction ch iaddr instrbytes in
+    let pos = ch#pos in
+    let instrbytes = ch#sub (pos - 4) 4 in
+    let instr = make_arm_assembly_instruction iaddr true opcode instrbytes in
+    set_arm_assembly_instruction instr
+  done
+
+
 let identify_jumptable
       (ch: pushback_stream_int)
       (instr: arm_assembly_instruction_int):
@@ -132,7 +147,14 @@ let identify_jumptable
      create_arm_table_branch ch instr
   | LoadRegister (ACCAlways, dst, _, _, _, true)
        when dst#is_register && dst#get_register = ARPC ->
-     create_arm_ldr_jumptable ch instr
+       create_arm_ldr_jumptable ch instr
+  | LoadRegister (ACCNotUnsignedHigher, dst, _, _, _, false)
+       when dst#is_register && dst#get_register = ARPC ->
+     let iaddr = instr#get_address in
+     begin
+       disassemble_arm_instructions ch (iaddr#add_int 4) 1;
+       create_arm_ldrls_jumptable ch instr
+     end
   | BranchExchange (ACCAlways, regop) when regop#is_register ->
      create_arm_bx_jumptable ch instr
   | _ -> None
