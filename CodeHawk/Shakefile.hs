@@ -318,8 +318,13 @@ runBuild flags = do
                  ("bCHDoublewordTest", "bCHDoublewordTest.ml"),
                  ("bCHLocationTest", "bCHLocationTest.ml"),
                  ("bCHImmediateTest", "bCHImmediateTest.ml"),
+                 ("bCHARMAssemblyFunctionTest", "bCHARMAssemblyFunctionTest.ml"),
+                 ("bCHARMJumptableTest", "bCHARMJumptableTest.ml"),
+                 ("bCHDisassembleARMInstructionTest", "bCHDisassembleARMInstructionTest.ml"),
                  ("bCHDisassembleThumbInstructionTest", "bCHDisassembleThumbInstructionTest.ml"),
-                 ("bCHDisassembleARMInstructionTest", "bCHDisassembleARMInstructionTest.ml")]
+                 ("bCHTranslateARMToCHIFTest", "bCHTranslateARMToCHIFTest.ml"),
+                 ("bCHDisassembleVLEInstructionTest", "bCHDisassembleVLEInstructionTest.ml")
+                ]
 
     forM_ (exes ++ tests) (\pair -> do
         let (name, main_file) = pair
