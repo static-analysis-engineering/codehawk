@@ -46,6 +46,8 @@ open BCHLocation
 open BCHMIPSAssemblyInstructions
 open BCHMIPSTypes
 
+module TR = CHTraceResult
+
 
 class mips_assembly_block_t
         ?(ctxt=[])
@@ -67,6 +69,7 @@ object (self)
   method get_context_string = loc#ci
 
   method get_first_address = firstaddr
+
   method get_last_address = lastaddr
 
   method get_instructions_rev =
@@ -76,8 +79,14 @@ object (self)
          !mips_assembly_instructions#get_code_addresses_rev
           ~low:firstaddr ~high:lastaddr () in
        let instrsrev =
-         List.map !mips_assembly_instructions#at_address addrsrev in
-       begin revinstrs <- instrsrev ; instrsrev end
+         TR.tfold_list
+           ~ok:(fun acc v -> v::acc)
+           []
+           (List.map (fun a -> get_mips_assembly_instruction a) addrsrev) in
+       begin
+         revinstrs <- instrsrev;
+         instrsrev
+       end
     | _ -> revinstrs
 
   method get_instruction_count = List.length self#get_instructions_rev

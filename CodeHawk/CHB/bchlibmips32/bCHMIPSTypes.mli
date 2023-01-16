@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -426,28 +427,57 @@ object
 
 end
 
+
+type mips_assembly_instruction_result = mips_assembly_instruction_int traceresult
+
 (* ==================================================== Assembly instructions === *)
 
 class type mips_assembly_instructions_int =
 object
 
   (* setters *)
-  method set: int -> mips_assembly_instruction_int -> unit
+
+  method set_instruction:
+           doubleword_int -> mips_assembly_instruction_int -> unit
+
+  (* method set: int -> mips_assembly_instruction_int -> unit *)
+
+  (** [set_not_code lst] marks the addresses contained within the data blocks
+      in [lst] as [NotCode]. Data blocks whose start or end address lie outside
+      the declared code space are ingnored. *)
   method set_not_code: data_block_int list -> unit
 
   (* accessors *)
+
+  (** Return the length of code space (in words).*)
   method length: int
-  method at_index: int -> mips_assembly_instruction_int
-  method at_address: doubleword_int -> mips_assembly_instruction_int
+
+  (** [get_instruction va] returns the instruction located at virtual address
+      [va]. If no instruction has been entered yet, a new instruction, with
+      opcode [NoOperation] is assigned and returned. If [va] is out-of-range
+      an Error result is returned.*)
+  method get_instruction: doubleword_int -> mips_assembly_instruction_result
+
+  (** [get_code_addresses_rev low high] returns the list of virtual addresses
+      bounded by [low] and [high] that hold valid instructions, in reverse
+      order. [low] defaults to [codeBase], [high] defaults to [oxffffffff].*)
   method get_code_addresses_rev:
            ?low:doubleword_int
            -> ?high:doubleword_int
            -> unit
            -> doubleword_int list
+
+  (** Return the number of valid instructions in the code space.*)
   method get_num_instructions: int
+
+  (** Return the number of valid instructions in the code space with unknown
+      opcode.*)
   method get_num_unknown_instructions: int
 
   (* predicates *)
+
+  (** [is_code_address va] returns true if [va] is a virtual address within
+      the code space and if the address holds a valid assembly instruction.*)
   method is_code_address: doubleword_int -> bool
 
   (* iterators *)
@@ -470,17 +500,51 @@ class type mips_assembly_block_int =
   object
 
     (* accessors *)
+
+    (** Return the address of the function to which this block belongs. If this
+        block is part of an inlined function, the address of the original
+        function is returned (the inner function), not the address of the 
+        function in which the block is inlined.*)
     method get_faddr: doubleword_int
+
+    (** Return the address of the first instruction in this block.*)
     method get_first_address: doubleword_int
+
+    (** Return the location of this block (with full context, if inlined).*)
     method get_location: location_int
+
+    (** Return the context of this block (empty if not inlined).*)
     method get_context: context_t list
+
+    (** Return the context of this block as a string (the first address, if
+        not inlined).*)
     method get_context_string: ctxt_iaddress_t
+
+    (** Return the address of the last instruction in this block.*)
     method get_last_address: doubleword_int
+
+    (** Return the list of instructions contained in this basic block.*)
     method get_instructions: mips_assembly_instruction_int list
+
+    (** Return the list of instructions contained in this basic block, in
+        reverse order. *)
     method get_instructions_rev: mips_assembly_instruction_int list
+
+    (** Return the successor of this block, inlcuding blocks of the inlining
+        function if this block is part of an inlined function.*)
     method get_successors: ctxt_iaddress_t list
+
+    (** [get_instruction va] returns the instruction at virtual address [va].
+
+        Raises an exception if [va] is not within this block, or if [va] does
+        not have a valid instruction.*)
     method get_instruction: doubleword_int -> mips_assembly_instruction_int
+
+    (** Return the bytes that make up the instructions of this block as a string
+        of hexadecimal characters.*)
     method get_bytes_as_hexstring: string
+
+    (** Return number of instructions in this basic block.*)
     method get_instruction_count: int
          
     (* predicates *)
