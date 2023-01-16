@@ -77,6 +77,7 @@ open BCHMIPSDisassemblyUtils
 
 module TR = CHTraceResult
 
+
 (* Unsafe call to string_to_doubleword; may raise Invalid_argument *)
 let constant_string_to_doubleword (s: string) =
   TR.tget_ok (string_to_doubleword s)
@@ -147,11 +148,10 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
   let size = String.length x in  
   let opcode_monitor = new opcode_monitor_t base size in
   let add_instruction position opcode bytes =
-    let index = (position + displacement) / 4 in  (* assume 4-byte aligned *)
     let addr = base#add_int position in
     let instr = make_mips_assembly_instruction addr opcode bytes in
     begin
-      !mips_assembly_instructions#set index instr ;
+      set_mips_assembly_instruction instr;
       opcode_monitor#check_instruction instr
     end in
   let ch =
@@ -179,8 +179,6 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
           | _ -> NotRecognized ("exception", instrbytes) in
         let currentPos = ch#pos in
         let instrLen = currentPos - prevPos in
-        (* let instrBytes = Bytes.make instrLen ' ' in
-        let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0  instrLen in *)
         let instrBytes = ch#sub prevPos instrLen in
         let _ = add_instruction prevPos opcode instrBytes in
       ()
@@ -243,10 +241,21 @@ let disassemble_mips_sections () =
   let _ = initialize_mips_assembly_instructions sizeOfCode#to_int startOfCode in
   let _ =
     List.iter
-      (fun (h,x) ->
+      (fun (h, x) ->
+        let _ =
+          pverbose [
+              STR "disassemble section:"; NL; h#toPretty; NL; NL] in
         let displacement =
           TR.tget_ok (h#get_addr#subtract_to_int startOfCode) in
+        let _ =
+          pverbose [
+              STR "disassemble section at displacement: ";
+              INT displacement;
+              NL] in
         disassemble h#get_addr displacement x) xSections in
+  let _ =
+    pverbose [
+        STR "Disassembled "; INT (List.length xSections); STR " sections"; NL] in
   sizeOfCode
 
 
@@ -444,10 +453,22 @@ let collect_function_entry_points () =
 
 
 let set_block_boundaries () =
-  let set_block_entry a =
-    (!mips_assembly_instructions#at_address a)#set_block_entry in
-  let set_delay_slot a =
-    (!mips_assembly_instructions#at_address a)#set_delay_slot in
+  let set_block_entry (va: doubleword_int) =
+    let instr =
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "set_block_boundaries:set_block_entry: "; va#toPretty]))
+        (get_mips_assembly_instruction va) in
+    instr#set_block_entry in
+
+  let set_delay_slot (va: doubleword_int) =
+    let instr =
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "set_block_boundaries:set_delay_slot: "; va#toPretty]))
+        (get_mips_assembly_instruction va) in
+    instr#set_delay_slot in
+
   let feps = functions_data#get_function_entry_points in
   begin
     (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ record function entry points *)
@@ -520,66 +541,52 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int)  =
   if system_info#is_nonreturning_call faddr iaddr then
     []
   else
-    try
-      let instr = !mips_assembly_instructions#at_address iaddr in
-      let opcode = instr#get_opcode in
-      let next () = [iaddr#add_int 4] in
-      let delaynext () = [iaddr#add_int 8] in
-      let successors =
-        if is_conditional_jump_instruction opcode then
-          (delaynext ()) @ [get_direct_jump_target_address opcode]
-        else if is_direct_jump_instruction opcode then
-          [get_direct_jump_target_address opcode]
-        else
-          next () in
-      List.map
-        (fun va -> (make_location {loc_faddr = faddr; loc_iaddr = va})#ci)
-        successors
-    with
-    | BCH_failure p ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Error in get_successors: ";  p]))
-    
+    log_tfold_default
+      (mk_tracelog_spec
+         ~tag:"get_successors"
+         ("faddr:" ^ faddr#to_hex_string ^ ", iaddr:" ^ iaddr#to_hex_string))
+      (fun instr ->
+        let opcode = instr#get_opcode in
+        let next () = [iaddr#add_int 4] in
+        let delaynext () = [iaddr#add_int 8] in
+        let successors =
+          if is_conditional_jump_instruction opcode then
+            (delaynext ()) @ [get_direct_jump_target_address opcode]
+          else if is_direct_jump_instruction opcode then
+            [get_direct_jump_target_address opcode]
+          else
+            next () in
+        List.map
+          (fun va -> (make_location {loc_faddr = faddr; loc_iaddr = va})#ci)
+          successors)
+      []
+      (get_mips_assembly_instruction iaddr)
+
 
 let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
 
-  let set_block_entry a =
-    try
-      (!mips_assembly_instructions#at_address a)#set_block_entry
-    with
-    | BCH_failure p ->
-       let msg =
-         LBLOCK [
-             STR "Error in trace_block: set_block_entry: ";
-             STR "(";
-             faddr#toPretty;
-             STR ",";
-             baddr#toPretty;
-             STR "): ";
-             p] in
-       raise (BCH_failure msg) in
+  let set_block_entry (va: doubleword_int) =
+    TR.titer (fun instr ->
+        instr#set_block_entry) (get_mips_assembly_instruction va) in
 
-  let get_instr iaddr =
-    try
-      !mips_assembly_instructions#at_address iaddr
-    with
-    | BCH_failure p ->
-       let msg =
-         LBLOCK [
-             STR "Error: trace block: get_instr: ";
-             iaddr#toPretty;
-             STR  ": ";
-             p] in
-       raise (BCH_failure msg) in
+  let get_instr iaddr = get_mips_assembly_instruction iaddr in
+
   let get_next_instr_addr a = a#add_int 4 in
 
   let mk_ci_succ l =
     List.map
       (fun va -> (make_location {loc_faddr = faddr ; loc_iaddr = va})#ci) l in
 
-  let rec find_last_instr (va:doubleword_int) (prev:doubleword_int) =
-    let instr = get_instr va in
+  let rec find_last_instr (va: doubleword_int) (prev: doubleword_int) =
+    let instr =
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "find_last_instr: "; va#toPretty]))
+        (get_instr va) in
+
+    (* continue tracing thee block *)
+    let nextva () = get_next_instr_addr va in
+
     if va#equal wordzero
        || not (!mips_assembly_instructions#is_code_address va) then
       (Some [],prev,[])
@@ -650,10 +657,16 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
               | l -> List.map (fun s -> add_ctxt_to_ctxt_string faddr s ctxt) l in
             make_ctxt_mips_assembly_block ctxt b succ) fn#get_blocks in
       (Some [ callsucc ],va,inlinedblocks)
-    else find_last_instr (get_next_instr_addr va) va in
+    else
+      find_last_instr (nextva ()) va in
 
-  let (succ,lastaddr,inlinedblocks) =
-    let opcode = (get_instr baddr)#get_opcode in
+  let (succ, lastaddr, inlinedblocks) =
+    let instr =
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "find_last_instr: "; baddr#toPretty]))
+        (get_instr baddr) in
+    let opcode = instr#get_opcode in
     if is_return_instruction opcode then
       (Some [],baddr#add_int 4,[])
     else if system_info#is_nonreturning_call faddr baddr then
@@ -677,14 +690,16 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
 
   let successors =
     match succ with Some s ->  s | _ -> get_successors faddr lastaddr in
-  (inlinedblocks,make_mips_assembly_block faddr baddr lastaddr successors)
+  (inlinedblocks, make_mips_assembly_block faddr baddr lastaddr successors)
 
 
 let trace_function (faddr:doubleword_int) =
   let workSet = new DoublewordCollections.set_t in
   let doneSet = new DoublewordCollections.set_t in
-  let set_block_entry a =
-    (!mips_assembly_instructions#at_address a)#set_block_entry in
+  let set_block_entry (baddr: doubleword_int) =
+    TR.titer
+      (fun instr -> instr#set_block_entry)
+      (get_mips_assembly_instruction baddr) in
   let get_iaddr s = (ctxt_string_to_location faddr s)#i in  
   let add_to_workset l =
     List.iter (fun a -> if doneSet#has a then () else workSet#add a) l in
