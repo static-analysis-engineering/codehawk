@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHIndexTable
+open CHLogger
 open CHNumRecordTable
 open CHXmlDocument
 
@@ -230,7 +231,11 @@ object (self)
       if (H.length nametable) = 0 then
         self#initialize_nametable in
     if H.mem nametable name then
-      Some (TR.tget_ok (index_to_doubleword (H.find nametable name)))
+      log_tfold_default
+        (mk_tracelog_spec ~tag:"has_function_by_name" name)
+        (fun dw -> Some dw)
+        None
+        (index_to_doubleword (H.find nametable name))
     else
       None
 
@@ -239,7 +244,13 @@ object (self)
 
   method private retrieve_addresses (f:function_data_int -> bool) =
     H.fold (fun ix v a ->
-        if f v then (TR.tget_ok (index_to_doubleword ix))::a else a) table []
+        if f v then
+          TR.tfold_default
+            (fun r -> r::a)
+            a
+            (index_to_doubleword ix)
+        else
+          a) table []
 
   method private count (f:function_data_int -> bool) =
     H.fold (fun _ v a -> if f v then a+1 else a) table 0

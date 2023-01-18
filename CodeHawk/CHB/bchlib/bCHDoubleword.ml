@@ -426,10 +426,11 @@ let make_doubleword (l: int) (h: int): doubleword_result =
 
 
 let index_to_doubleword (index: dw_index_t): doubleword_result =
-  create_doubleword index
+  TR.tprop (create_doubleword index) "index_to_doubleword"
 
 
-let int_to_doubleword (i: int): doubleword_result = create_doubleword i
+let int_to_doubleword (i: int): doubleword_result =
+  TR.tprop (create_doubleword i) "int_to_doubleword"
 
 
 let align_doubleword (dw: doubleword_int) (alignment: int): doubleword_result =
@@ -440,7 +441,9 @@ let align_doubleword (dw: doubleword_int) (alignment: int): doubleword_result =
     if rem = 0 then
       Ok dw
     else
-      int_to_doubleword (((dw#to_int / alignment) + 1) * 4)
+      TR.tprop
+        (int_to_doubleword (((dw#to_int / alignment) + 1) * 4))
+        "align_doubleword"
 
 
 let big_int_to_doubleword (bi: B.big_int): doubleword_result =
@@ -452,7 +455,9 @@ let big_int_to_doubleword (bi: B.big_int): doubleword_result =
        Error [
            "big_int_to_doubleword:error in conversion to int:"
            ^ (B.string_of_big_int bi)] in
-  TR.tbind create_doubleword intb
+  TR.tprop
+    (TR.tbind ~msg:"big_int_to_doubleword" create_doubleword intb)
+    "big_int_to_doubleword"
 
 
 let numerical_to_doubleword (num:numerical_t): doubleword_result =
@@ -464,7 +469,9 @@ let numerical_to_doubleword (num:numerical_t): doubleword_result =
        Error [
            "numerical_to_doubleword:error in conversion to int:"
            ^ num#toString] in
-  TR.tbind create_doubleword intnum
+  TR.tprop
+    (TR.tbind ~msg:"numerical_to_doubleword" create_doubleword intnum)
+    "numerical_to_doubleword"
 
 
 let dw_index_to_int (index:dw_index_t) = index
@@ -481,7 +488,7 @@ let string_to_doubleword (s: string): doubleword_result =
     | _ ->
        Error ["string_to_doubleword:error in conversion to Int64:" ^ s] in
   let bi = TR.tmap B.big_int_of_int64 i64 in
-  TR.tbind big_int_to_doubleword bi
+  TR.tbind ~msg:"string_to_doubleword" big_int_to_doubleword bi
 
 
 let numerical_to_hex_string (num: numerical_t): string TR.traceresult =

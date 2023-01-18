@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -100,7 +100,7 @@ let _ =
   List.iter (fun (f, s) ->
       add_to_sumtype_tables
         arm_cc_flags_to_string_table arm_cc_flags_from_string_table f s)
-    [(APSR_Z, "Z"); (APSR_N, "N"); (APSR_C, "C"); (APSR_V, "V")]
+    [(APSR_Z, "Z"); (APSR_N, "N"); (APSR_C, "C"); (APSR_V, "V"); (APSR_Q, "Q")]
 
 
 let eflag_to_string (e: eflag_t) =
