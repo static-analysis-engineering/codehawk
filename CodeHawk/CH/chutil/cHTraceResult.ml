@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022 Aarno Labs LLC
+   Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,10 @@ type 'a traceresult = ('a, string list) result
 let tvalue (r: 'a traceresult) ~(default: 'a) = Result.value r ~default
 
 
-let tget_ok (r: 'a traceresult) = Result.get_ok r
+let tget_ok (r: 'a traceresult) =
+  match r with
+  | Ok v -> v
+  | Error e -> raise (Invalid_argument (String.concat "; " e))
 
 
 let tget_error (r: 'a traceresult) = Result.get_error r
