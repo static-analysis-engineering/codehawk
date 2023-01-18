@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleARMInstructionTest"
-let lastupdated = "2022-12-24"
+let lastupdated = "2023-01-17"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -117,12 +117,29 @@ let arm_basic () =
       ("POPLT",  "108cbdb8", "POPLT          {R4,R10,R11,PC}");
       ("POPNE",  "108cbd18", "POPNE          {R4,R10,R11,PC}");
       ("PUSH",   "f04f2de9", "PUSH           {R4,R5,R6,R7,R8,R9,R10,R11,LR}");
+      ("QADD",   "558006e1", "QADD           R8, R5, R6");
+      ("QDADD",  "566048e1", "QDADD          R6, R6, R8");
+      ("QDSUB",  "513063e1", "QDSUB          R3, R1, R3");
+      ("QSUB",   "555026e1", "QSUB           R5, R5, R6");
       ("REV",    "321fbfe6", "REV            R1, R2");
       ("RSB",    "866366e0", "RSB            R6, R6, R6,LSL #7");
       ("SBCS",   "0510d1e0", "SBCS           R1, R1, R5,LSL #0");
+      ("SMLABB", "840800e1", "SMLABB         R0, R4, R8, R0");
+      ("SMLABT", "c50800e1", "SMLABT         R0, R5, R8, R0");
+      ("SMLATB", "ac3700e1", "SMLATB         R0, R12, R7, R3");
+      ("SMLATT", "e42703e1", "SMLATT         R3, R4, R7, R2");
+      ("SMLAWB", "834e28e1", "SMLAWB         R8, R3, LR, R4");
+      ("SMLAWT", "c03529e1", "SMLAWT         R9, R0, R5, R3");
       ("SMMLA",  "100256e7", "SMMLA          R6, R0, R2, R0");
+      ("SMULBB", "840c63e1", "SMULBB         R3, R4, R12");
+      ("SMULBT", "c80a65e1", "SMULBT         R5, R8, R10");
+      ("SMULTB", "a30162e1", "SMULTB         R2, R3, R1");
+      ("SMULTT", "e80a62e1", "SMULTT         R2, R8, R10");
       ("SMULL",  "9310c7e0", "SMULL          R1, R7, R3, R0");
+      ("SMULWB", "a90523e1", "SMULWB         R3, R9, R5");
+      ("SMULWT", "e00c23e1", "SMULWT         R3, R0, R12");
       ("STM",    "1a0080e8", "STM            R0, {R1,R3,R4}");
+      ("STMDA",  "030003e8", "STMDA          R3, {R0,R1}");
       ("STMIB",  "21078de9", "STMIB          SP, {R0,R5,R8,R9,R10}");
       ("STR",    "38008de5", "STR            R0, [SP, #56]");
       ("STRwb",  "08402de5", "STR            R4, [SP, -#8]!");
@@ -136,6 +153,7 @@ let arm_basic () =
       ("SUBS",   "062052e0", "SUBS           R2, R2, R6,LSL #0");
       ("TST",    "020c12e3", "TST            R2, #0x200");
       ("UBFX",   "50ede2e7", "UBFX           LR, R0, #26, #3");
+      ("UMLAL",  "9324a5e0", "UMLAL          R2, R5, R3, R4");
       ("UXTB",   "7600efe6", "UXTB           R0, R6")
     ] in
   begin
