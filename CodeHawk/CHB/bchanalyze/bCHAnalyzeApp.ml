@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -390,7 +390,11 @@ let analyze_arm starttime =
     (if (List.length !fns_included) > 0 then
        List.iter
          (fun faddr ->
-           let faddr = TR.tget_ok (string_to_doubleword faddr) in
+           let faddr =
+             fail_tvalue
+               (trerror_record
+                  (LBLOCK [STR "analyze_arm:faddr: "; STR faddr]))
+               (string_to_doubleword faddr) in
            let f =  arm_assembly_functions#get_function_by_address faddr in
            let _ = count := !count + 1 in
            analyze_arm_function faddr f !count) !fns_included
