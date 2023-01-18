@@ -755,12 +755,18 @@ let main () =
        pr_debug [ STR "Error: No more input" ; NL ] ;
        exit 1
      end
-  | Invalid_argument s
-  | Internal_error s
+  | Invalid_argument s ->
+     save_log_files "failure";
+     pr_debug [STR "Error: Invalid_argument: "; STR s; NL];
+     exit 1
+  | Internal_error s ->
+     save_log_files "failure";
+     pr_debug [STR "Error: Internal_error: "; STR s; NL];
+     exit 1
   | Invocation_error s ->
     begin
-      save_log_files "failure" ;
-      pr_debug [ STR "Error: " ; STR s ; NL ] ;
+      save_log_files "failure";
+      pr_debug [STR "Error: Invocation_error: " ; STR s; NL];
       exit 1
     end
 
