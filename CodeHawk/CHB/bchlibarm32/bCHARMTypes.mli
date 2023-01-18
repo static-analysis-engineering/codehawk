@@ -565,6 +565,26 @@ type arm_opcode_t =
       * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
+  | SaturatingAdd of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: first operand *)
+      * arm_operand_int  (* rn: second operand *)
+  | SaturatingDoubleAdd of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: first operand *)
+      * arm_operand_int  (* rn: second operand *)
+  | SaturatingDoubleSubtract of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: first operand *)
+      * arm_operand_int  (* rn: second operand *)
+  | SaturatingSubtract of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rm: first operand *)
+      * arm_operand_int  (* rn: second operand *)
   | SelectBytes of
       arm_opcode_cc_t    (*condition *)
       * arm_operand_int  (* rd: destination *)
@@ -625,13 +645,63 @@ type arm_opcode_t =
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm: source 2 *)
       * arm_operand_int  (* ra: accumulated value *)
+  | SignedMultiplyAccumulateBT of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* ra: accumulated value *)
+  | SignedMultiplyAccumulateTB of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* ra: accumulated value *)
+  | SignedMultiplyAccumulateTT of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* ra: accumulated value *)
   | SignedMultiplyAccumulateLong of
       bool  (* flags are set *)
-      * arm_opcode_cc_t    (* condition *)
+      * arm_opcode_cc_t  (* condition *)
       * arm_operand_int  (* rdlo *)
       * arm_operand_int  (* rdhi *)
       * arm_operand_int  (* rn *)
       * arm_operand_int  (* rm *)
+  | SignedMultiplyAccumulateWordB of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* ra: accumulated value *)
+  | SignedMultiplyAccumulateWordT of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+      * arm_operand_int  (* ra: accumulated value *)
+  | SignedMultiplyHalfwordsBB of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+  | SignedMultiplyHalfwordsBT of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+  | SignedMultiplyHalfwordsTB of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
+  | SignedMultiplyHalfwordsTT of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: source 1 *)
+      * arm_operand_int  (* rm: source 2 *)
   | SignedMultiplyLong of
       bool   (* flags are set *)
       * arm_opcode_cc_t (* condition *)
@@ -639,6 +709,16 @@ type arm_opcode_t =
       * arm_operand_int (* rdhi: destination 2 *)
       * arm_operand_int (* rn: source 1 *)
       * arm_operand_int (* rm: source 2 *)
+  | SignedMultiplyWordB of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* rn: source 1 *)
+      * arm_operand_int (* rm: source 2 (bottom half only) *)
+  | SignedMultiplyWordT of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* rn: source 1 *)
+      * arm_operand_int (* rm: source 2 (top half only) *)
   | SingleBitFieldExtract of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -651,6 +731,12 @@ type arm_opcode_t =
       * int              (* CRd: coprocessor source register *)
       * arm_operand_int  (* destination location *)
       * int option       (* option *)
+  | StoreMultipleDecrementAfter of
+      bool    (* writeback *)
+      * arm_opcode_cc_t (* condition *)
+      * arm_operand_int (* rn: base *)
+      * arm_operand_int (* rl: register list *)
+      * arm_operand_int (* mem: multiple memory locations *)
   | StoreMultipleDecrementBefore of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)

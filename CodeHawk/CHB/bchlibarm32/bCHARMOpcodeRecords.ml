@@ -588,6 +588,34 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "RRX" c [rd; rm])
     }
+  | SaturatingAdd (c, rd, rm, rn) -> {
+      mnemonic = "QADD";
+      operands = [rd; rm; rn];
+      flags_set = [APSR_Q];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "QADD" c [rd; rm; rn])
+    }
+  | SaturatingDoubleAdd (c, rd, rm, rn) -> {
+      mnemonic = "QDADD";
+      operands = [rd; rm; rn];
+      flags_set = [APSR_Q];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "QDADD" c [rd; rm; rn])
+    }
+  | SaturatingDoubleSubtract(c, rd, rm, rn) -> {
+      mnemonic = "QDSUB";
+      operands = [rd; rm; rn];
+      flags_set = [APSR_Q];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "QDSUB" c [rd; rm; rn])
+    }
+  | SaturatingSubtract (c, rd, rm, rn) -> {
+      mnemonic = "QSUB";
+      operands = [rd; rm; rn];
+      flags_set = [APSR_Q];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "QSUB" c [rd; rm; rn])
+    }
   | SelectBytes (c, rd, rn, rm) -> {
       mnemonic = "SEL";
       operands = [rd; rn; rm];
@@ -660,13 +688,6 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#opscc mnemonic c [rd; rm; rn; ra])
      }
-  | SignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) -> {
-      mnemonic = "SMLAL";
-      operands = [rdlo; rdhi; rn; rm];
-      flags_set = if s then [APSR_N; APSR_Z] else [];
-      ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SMLAL" ~writeback:s c [rdlo; rdhi; rn; rm])
-    }
   | SignedMultiplyAccumulateBB (c, rd, rn, rm, ra) -> {
       mnemonic = "SMLABB";
       operands = [rd; rn; rm; ra];
@@ -674,12 +695,96 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMLABB" c [rd; rn; rm; ra])
     }
+  | SignedMultiplyAccumulateBT (c, rd, rn, rm, ra) -> {
+      mnemonic = "SMLABT";
+      operands = [rd; rn; rm; ra];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMLABT" c [rd; rn; rm; ra])
+    }
+  | SignedMultiplyAccumulateTB (c, rd, rn, rm, ra) -> {
+      mnemonic = "SMLATB";
+      operands = [rd; rn; rm; ra];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMLATB" c [rd; rn; rm; ra])
+    }
+  | SignedMultiplyAccumulateTT (c, rd, rn, rm, ra) -> {
+      mnemonic = "SMLATT";
+      operands = [rd; rn; rm; ra];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMLATT" c [rd; rn; rm; ra])
+    }
+  | SignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) -> {
+      mnemonic = "SMLAL";
+      operands = [rdlo; rdhi; rn; rm];
+      flags_set = if s then [APSR_N; APSR_Z] else [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMLAL" ~writeback:s c [rdlo; rdhi; rn; rm])
+    }
+  | SignedMultiplyAccumulateWordB (c, rd, rn, rm, ra) -> {
+      mnemonic = "SMLAWB";
+      operands = [rd; rn; rm; ra];
+      flags_set = [APSR_Q];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMLAWB" c [rd; rn; rm; ra])
+    }
+  | SignedMultiplyAccumulateWordT (c, rd, rn, rm, ra) -> {
+      mnemonic = "SMLAWT";
+      operands = [rd; rn; rm; ra];
+      flags_set = [APSR_Q];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMLAWT" c [rd; rn; rm; ra])
+    }
+  | SignedMultiplyHalfwordsBB (c, rd, rn, rm) -> {
+      mnemonic = "SMULBB";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMULBB" c [rd; rn; rm])
+    }
+  | SignedMultiplyHalfwordsBT (c, rd, rn, rm) -> {
+      mnemonic = "SMULBT";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMULBT" c [rd; rn; rm])
+    }
+  | SignedMultiplyHalfwordsTB (c, rd, rn, rm) -> {
+      mnemonic = "SMULTB";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMULTB" c [rd; rn; rm])
+    }
+  | SignedMultiplyHalfwordsTT (c, rd, rn, rm) -> {
+      mnemonic = "SMULTT";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMULTT" c [rd; rn; rm])
+    }
   | SignedMultiplyLong (s, c, rdlo, rdhi, rn, rm) -> {
       mnemonic = "SMULL";
       operands = [rdlo; rdhi; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z] else [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULL" c [rdlo; rdhi; rn; rm])
+    }
+  | SignedMultiplyWordB (c, rd, rn, rm) -> {
+      mnemonic = "SMULWB";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMULWB" c [rd; rn; rm])
+    }
+  | SignedMultiplyWordT (c, rd, rn, rm) -> {
+      mnemonic = "SMULWT";
+      operands = [rd; rn; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "SMULWT" c [rd; rn; rm])
     }
   | SingleBitFieldExtract (c, rd, rn) -> {
       mnemonic = "SBFX";
@@ -704,6 +809,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~preops mnemonic c [dst])
      }
+  | StoreMultipleDecrementAfter (wb, c, rn, rl, mem) -> {
+      mnemonic = "STMDA";
+      operands = [rn; rl];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "STMDA" c [rn; rl])
+    }
   | StoreMultipleDecrementBefore (wb, c, rn, rl, mem, tw) -> {
       mnemonic = "STMDB";
       operands = [rn; rl];

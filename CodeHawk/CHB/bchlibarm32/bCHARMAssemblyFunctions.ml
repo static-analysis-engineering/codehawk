@@ -70,6 +70,7 @@ let _ =
   List.iter (fun (b, t) -> H.add preamble_exclusions b t)
     [("000050e3", "CMP          R0, #0x0");
      ("000051e3", "CMP          R1, #0x0");
+     ("000052e3", "CMP          R2, #0x0");
      ("0030d0e5", "LDRB         R3, [R0, #0]");
      ("0010a0e3", "MOV          R1, #0x0");
      ("0110a0e3", "MOV          R1, #0x1");
@@ -364,10 +365,14 @@ object (self)
                     preamble_exclusions
                     (byte_string_to_printed_string instr#get_instruction_bytes) then
             ()
+          else if (match instr#get_opcode with
+                   | LoadRegister _ | Move _ -> true | _ -> false) then
+            ()
           else if ((is_common_preamble instr#get_instruction_bytes)
                    || (match instr#get_opcode with
                        | Push (_, _, rlist,_)
-                            when List.mem ARLR rlist#get_register_list -> true | _ -> false)) then
+                            when List.mem ARLR rlist#get_register_list -> true
+                       | _ -> false)) then
             let fndata = functions_data#add_function a in
             begin
               fnsAdded := a :: !fnsAdded;

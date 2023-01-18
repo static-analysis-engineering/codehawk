@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -285,6 +285,10 @@ object (self)
       | RotateRight (s, c, rd, rn, rm) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm])
       | RotateRightExtend (s,c,rd,rm) -> (ctags c, [setb s; oi rd; oi rm])
+      | SaturatingAdd (c, rd, rm, rn) -> (ctags c, [oi rd; oi rm; oi rn])
+      | SaturatingDoubleAdd (c, rd, rm, rn) -> (ctags c, [oi rd; oi rm; oi rn])
+      | SaturatingDoubleSubtract (c, rd, rm, rn) -> (ctags c, [oi rd; oi rm; oi rn])
+      | SaturatingSubtract (c, rd, rm, rn) -> (ctags c, [oi rd; oi rm; oi rn])
       | SelectBytes(c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | SHA1FixedRotate (c, dt, vd, vm) -> (ctags c, [di dt; oi vd; oi vm])
       | SHA1HashUpdateChoose (c, dt, vd, vn, vm) ->
@@ -300,18 +304,33 @@ object (self)
          (ctags c, [oi rd; oi rm; oi rn; roundf])
       | SignedMostSignificantWordMultiplyAccumulate (c, rd, rm, rn, ra, roundf) ->
          (ctags c, [oi rd; oi rm; oi rn; oi ra; roundf])
-      | SignedMultiplyAccumulateBB (c, rd, rn, rm, ra) ->
+      | SignedMultiplyAccumulateBB (c, rd, rn, rm, ra)
+        | SignedMultiplyAccumulateBT (c, rd, rn, rm, ra)
+        | SignedMultiplyAccumulateTB (c, rd, rn, rm, ra)
+        | SignedMultiplyAccumulateTT (c, rd, rn, rm, ra) ->
          (ctags c, [oi rd; oi rn; oi rm; oi ra])
       | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm)
         | SignedMultiplyAccumulateLong (s,c,rdlo,rdhi,rn,rm) ->
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
+      | SignedMultiplyAccumulateWordB (c, rd, rn, rm, ra)
+        | SignedMultiplyAccumulateWordT (c, rd, rn, rm, ra) ->
+         (ctags c, [oi rd; oi rn; oi rm; oi ra])
+      | SignedMultiplyHalfwordsBB (c, rd, rn, rm)
+        | SignedMultiplyHalfwordsBT (c, rd, rn, rm)
+        | SignedMultiplyHalfwordsTB (c, rd, rn, rm)
+        | SignedMultiplyHalfwordsTT (c, rd, rn, rm) ->
+         (ctags c, [oi rd; oi rn; oi rm])
+      | SignedMultiplyWordB (c, rd, rn, rm)
+        | SignedMultiplyWordT (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | SingleBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
       | StoreCoprocessor (islong, ista2, c, coproc, crd, mem, opt) ->
          (ctags c, [setb islong; setb ista2; coproc; crd; oi mem; setopt opt])
-      | StoreMultipleDecrementBefore (wb,c,rn,rl,mem,tw)
-        | StoreMultipleIncrementAfter (wb,c,rn,rl,mem,tw)
-        | StoreMultipleIncrementBefore (wb,c,rn,rl,mem,tw) ->
-         (ctags c, [ setb wb; oi rn; oi rl; oi mem; setb tw ])
+      | StoreMultipleDecrementAfter (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
+      | StoreMultipleDecrementBefore (wb, c, rn, rl, mem, tw)
+        | StoreMultipleIncrementAfter (wb, c, rn, rl, mem, tw)
+        | StoreMultipleIncrementBefore (wb, c, rn, rl, mem, tw) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem; setb tw])
       | StoreRegister (c, rt, rn, rm, mem, tw) ->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
       | StoreRegisterByte (c, rt, rn, rm, mem, tw) ->

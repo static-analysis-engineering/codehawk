@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -836,3 +836,30 @@ let adv_simd_mod_dt (op: int) (cmode: int) (opcs: string) =
                ^ (string_of_int cmode)
                ^ ", op = "
                ^ (string_of_int op))))
+
+
+(* Signed Saturation Operations
+ * ===========================================================================
+ * Some instructions perform saturating arithmetic, that is, if the result of
+ * the arithmetic overflows the destination signed or unsigned N-bit integer
+ * range, the result produced is the largest or smallest value in that range,
+ * rather than wrapping around module 2^N.
+ *
+ * (bits(N), boolean) SignedSatQ(integer i, integer N)
+ *    if i > 2^(N-1) - 1 then
+ *       result = 2^(N-1) - 1;  saturated = TRUE;
+ *    elsif i < -(2^(N-1)) then
+ *       result = -(2^(N-1));  saturated = TRUE;
+ *    else
+ *        result = i;  saturated = FALSE;
+ *    return (result<N-1:0>, saturated);
+ *
+ * (bits(N), boolean) UnsignedSatQ(integer i, integer N)
+ *    if i > 2^N - 1 then
+ *       result = 2^N - 1;  saturated = TRUE;
+ *    elsif i < 0 then
+ *       result = 0;  saturated = TRUE;
+ *    else
+ *       result = i;  saturated = FALSE;
+ *    return (result<N-1:0>, saturated);
+ *)

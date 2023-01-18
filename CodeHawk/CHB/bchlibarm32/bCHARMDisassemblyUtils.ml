@@ -135,26 +135,32 @@ let get_string_reference (floc:floc_int) (xpr:xpr_t) =
   try
     match xpr with
     | XConst (IntConst num) ->
-      let address = TR.tget_ok (numerical_to_doubleword num) in
-      begin
-	match elf_header#get_string_at_address address with
-	| Some str ->
-	  begin
-	    string_table#add_xref address str floc#fa floc#cia;
-            (if collect_diagnostics () then
-               ch_diagnostics_log#add
-                 "add string" (LBLOCK [floc#l#toPretty; STR "; "; STR str]));
-	    Some str
-	  end
-	| _ ->
+       log_tfold_default
+         (mk_tracelog_spec
+            ~tag:"get_string_reference"
+            (floc#cia ^": constant: " ^ num#toString))
+         (fun address ->
            begin
-             (if collect_diagnostics () then
-                ch_diagnostics_log#add
-                  "no string found"
-                  (LBLOCK [floc#l#toPretty; STR ": "; address#toPretty]));
-             None
-           end
-      end
+	     match elf_header#get_string_at_address address with
+	     | Some str ->
+	        begin
+	          string_table#add_xref address str floc#fa floc#cia;
+                  (if collect_diagnostics () then
+                     ch_diagnostics_log#add
+                       "add string" (LBLOCK [floc#l#toPretty; STR "; "; STR str]));
+	          Some str
+	        end
+	     | _ ->
+                begin
+                  (if collect_diagnostics () then
+                     ch_diagnostics_log#add
+                       "no string found"
+                       (LBLOCK [floc#l#toPretty; STR ": "; address#toPretty]));
+                  None
+                end
+           end)
+         None
+         (numerical_to_doubleword num)
     | XOp (XPlus, [XVar v; XConst (IntConst num)]) ->
       if floc#env#has_initialized_string_value v num#toInt then
 	Some (floc#env#get_initialized_string_value v num#toInt)

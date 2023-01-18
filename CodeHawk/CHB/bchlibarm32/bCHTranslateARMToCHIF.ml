@@ -2954,7 +2954,11 @@ object (self)
                    (c: (string * int option * int option * int option)) =
     let (name, optoffset, optlb, optub) = c in
     if (String.length name) > 1 && (String.sub name 0 2) = "0x" then
-      let namedw = TR.tget_ok (string_to_doubleword name) in
+      let namedw =
+        fail_tvalue
+          (trerror_record
+             (LBLOCK [STR "create_arg_asserts: "; STR name]))
+          (string_to_doubleword name) in
       let gv = finfo#env#mk_global_variable namedw#to_numerical in
       (* let gv_in = finfo#env#mk_initial_memory_value gv in *)
       self#create_arg_scalar_asserts finfo gv optlb optub

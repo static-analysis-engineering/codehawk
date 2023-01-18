@@ -835,9 +835,12 @@ let mk_arm_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
                 (LBLOCK [
                      STR "Unexpected size in arm-immediate-op: " ;
                      INT size])) in
-    let op =
-      ARMImmediate (TR.tget_ok (make_immediate signed size immval#getNum)) in
-    new arm_operand_t op RD
+    (*    let op =*)
+      TR.tmap
+        (fun imm ->
+          new arm_operand_t (ARMImmediate imm) RD)
+        (make_immediate signed size immval#getNum)
+(* new arm_operand_t op RD *)
 
 
 let arm_immediate_op (imm:immediate_int) =
