@@ -359,34 +359,40 @@ object (self)
       let arg = if is_formatstring_parameter lastpar then Some lastx else None in
       match arg with
       | Some (XConst (IntConst n)) ->
-         let addr = TR.tget_ok (numerical_to_doubleword n) in
-         if string_table#has_string addr then
-           let fmtstring = string_table#get_string addr in
-           let _ = pverbose [STR "Parse formatstring:"; STR fmtstring; NL] in
-           let fmtspec = parse_formatstring fmtstring false in
-           if fmtspec#has_arguments then
-             let args = fmtspec#get_arguments in
-             let pars =
-               List.mapi
-                 (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
-             let fts = fintf.fintf_type_signature in
-             let newpars = fts.fts_parameters @ pars in
-             let newfts = {fts with fts_parameters = newpars} in
-             begin
-               chlog#add
-                 "format args"
-                 (LBLOCK [
-                      self#l#toPretty;
-                      STR "; ";
-                      STR fintf.fintf_name;
-                      STR ": ";
-                      INT (List.length args)]);
-               Some {fintf with fintf_type_signature = newfts}
-             end
-           else
-             None
-         else
+         log_tfold_default
+           (mk_tracelog_spec
+              ~tag:"update_arm_varargs"
+              (self#cia ^ ": constant: " ^ n#toString))
+           (fun addr ->
+             if string_table#has_string addr then
+               let fmtstring = string_table#get_string addr in
+               let _ = pverbose [STR "Parse formatstring:"; STR fmtstring; NL] in
+               let fmtspec = parse_formatstring fmtstring false in
+               if fmtspec#has_arguments then
+                 let args = fmtspec#get_arguments in
+                 let pars =
+                   List.mapi
+                     (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
+                 let fts = fintf.fintf_type_signature in
+                 let newpars = fts.fts_parameters @ pars in
+                 let newfts = {fts with fts_parameters = newpars} in
+                 begin
+                   chlog#add
+                     "format args"
+                     (LBLOCK [
+                          self#l#toPretty;
+                          STR "; ";
+                          STR fintf.fintf_name;
+                          STR ": ";
+                          INT (List.length args)]);
+                   Some {fintf with fintf_type_signature = newfts}
+                 end
+               else
+                 None
+             else
+               None)
            None
+           (numerical_to_doubleword n)
       | _ -> None
 
   method private update_mips_varargs (fintf: function_interface_t) =
@@ -396,45 +402,43 @@ object (self)
       None
     else
       let (lastpar,lastx) = List.nth args (argcount - 1) in
-      (*
-    let arg =
-      List.fold_left
-        (fun acc (p,x) ->
-          match acc with   
-          | Some _ -> acc 
-          | _ -> if is_formatstring_parameter p then Some x else None) None args in
-       *)
       let arg = if is_formatstring_parameter lastpar then Some lastx else None in
       match arg with
       | Some (XConst (IntConst n)) ->
-         let addr = TR.tget_ok (numerical_to_doubleword n) in
-         if string_table#has_string addr then
-           let fmtstring = string_table#get_string addr in
-           let _ = pverbose [ STR "Parse formatstring: " ; STR fmtstring ; NL ] in
-           let fmtspec = parse_formatstring fmtstring false in
-           if fmtspec#has_arguments then
-             let args = fmtspec#get_arguments in
-             let pars =
-               List.mapi
-                 (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
-             let fts = fintf.fintf_type_signature in
-             let newpars = fts.fts_parameters @ pars in
-             let newfts = { fts with fts_parameters = newpars } in
-             begin
-               chlog#add
-                 "format args"
-                 (LBLOCK [
-                      self#l#toPretty;
-                      STR ": ";
-                      STR fintf.fintf_name;
-                      STR ": ";
-                      INT (List.length args)]);
-               Some { fintf with fintf_type_signature = newfts }
-             end
-           else
-             None
-         else
+         log_tfold_default
+           (mk_tracelog_spec
+              ~tag:"update_mips_varargs"
+              (self#cia ^ ": constant: " ^ n#toString))
+           (fun addr ->
+             if string_table#has_string addr then
+               let fmtstring = string_table#get_string addr in
+               let _ = pverbose [ STR "Parse formatstring: " ; STR fmtstring ; NL ] in
+               let fmtspec = parse_formatstring fmtstring false in
+               if fmtspec#has_arguments then
+                 let args = fmtspec#get_arguments in
+                 let pars =
+                   List.mapi
+                     (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
+                 let fts = fintf.fintf_type_signature in
+                 let newpars = fts.fts_parameters @ pars in
+                 let newfts = { fts with fts_parameters = newpars } in
+                 begin
+                   chlog#add
+                     "format args"
+                     (LBLOCK [
+                          self#l#toPretty;
+                          STR ": ";
+                          STR fintf.fintf_name;
+                          STR ": ";
+                          INT (List.length args)]);
+                   Some { fintf with fintf_type_signature = newfts }
+                 end
+               else
+                 None
+             else
+               None)
            None
+           (numerical_to_doubleword n)
       | _ -> None
 
   method private update_varargs (fintf: function_interface_t) =
@@ -658,18 +662,17 @@ object (self)
           (LBLOCK [STR "get_memory_variable_1: address: "; x2p address]) in
       match address with
       | XConst (IntConst n) ->
-         (try
-            let base = TR.tget_ok (numerical_to_doubleword n) in
-            if system_info#get_image_base#le base then
-              self#env#mk_global_variable n
-            else
-              default ()
-          with
-          | BCH_failure p ->
-             raise (BCH_failure
-                      (LBLOCK [ STR "get_memory_variable_1.get_var_from_address: " ;
-                                STR "; " ; self#l#toPretty ;
-                                n#toPretty ; STR " (" ; p ; STR ")" ])))
+         log_tfold_default
+           (mk_tracelog_spec
+              ~tag:"get_memory_variable_1"
+              (self#cia ^ ": constant: " ^ n#toString))
+           (fun base ->
+             if system_info#get_image_base#le base then
+               self#env#mk_global_variable n
+             else
+               default ())
+           (default ())
+           (numerical_to_doubleword n)
       | _ ->
          let (memref,memoffset) = self#decompose_address  address in
          if is_constant_offset memoffset then
@@ -791,43 +794,30 @@ object (self)
     match offsetXpr with
     | XConst (IntConst n) when n#geq nume32 ->
        let n = n#modulo nume32 in
-       (try
-          let base = TR.tget_ok (numerical_to_doubleword n) in
-          if system_info#get_image_base#le base then
-            self#env#mk_global_variable n
-          else
-            default ()
-        with
-        | BCH_failure p ->
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "get_memory_variable_4: ";
-                     n#toPretty;
-                     STR "; ";
-                     self#l#toPretty;
-                     STR " (";
-                     p;
-                     STR ")"])))
+       log_tfold_default
+         (mk_tracelog_spec
+            ~tag:"get_memory_variable_4"
+            (self#cia ^ ": constant: " ^ n#toString))
+         (fun base ->
+           if system_info#get_image_base#le base then
+             self#env#mk_global_variable n
+           else
+             default ())
+         (default ())
+         (numerical_to_doubleword n)
+
     | XConst (IntConst n) ->
-       (try
-          let base = TR.tget_ok (numerical_to_doubleword n) in
-          if system_info#get_image_base#le base then
-            self#env#mk_global_variable n
-          else
-            default ()
-        with
-        | BCH_failure p ->
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "get_memory_variable_4: ";
-                     n#toPretty;
-                     STR "; ";
-                     self#l#toPretty;
-                     STR " (";
-                     p;
-                     STR ")"])))
+       log_tfold_default
+         (mk_tracelog_spec
+            ~tag:"get_memory_variable_4"
+            (self#cia ^ ": constant: " ^ n#toString))
+         (fun base ->
+           if system_info#get_image_base#le base then
+             self#env#mk_global_variable n
+           else
+             default ())
+         (default ())
+         (numerical_to_doubleword n)
     | _ ->
        begin
          track_function
@@ -1209,24 +1199,17 @@ object (self)
          numerical_zero in
      match xpr with
      | XConst (IntConst n) when n#gt numerical_zero ->
-        (try
-           let base = TR.tget_ok (numerical_to_doubleword n) in
-           if system_info#get_image_base#le base then
-	     self#env#mk_global_variable n
-           else
-             default ()
-         with
-         | BCH_failure p ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "get_lhs_from_address: ";
-                      n#toPretty;
-                      STR "; ";
-                      self#l#toPretty;
-                      STR " (";
-                      p;
-                      STR ")"])))
+        log_tfold_default
+          (mk_tracelog_spec
+             ~tag:"get_lhs_from_address"
+             (self#cia ^ ": constant: " ^ n#toString))
+          (fun base ->
+            if system_info#get_image_base#le base then
+	      self#env#mk_global_variable n
+            else
+              default ())
+          (default ())
+          (numerical_to_doubleword n)
      | _ ->
         default ()
 	 
@@ -1307,37 +1290,30 @@ object (self)
             
    method private record_block_write 
                     (memref:memory_reference_int) (size:xpr_t) (ty:btype_t) =
-     try
-       match self#get_address_bterm memref ty with
-       | Some dest ->
-          begin
-	    match dest with
-	    (* null dereference is taken care of elsewhere,
-               so it can be ignored here *)
-	    | NumConstant x when x#equal numerical_zero ->
-	       ()    
-	      
-	    (* recording side effects on global variables has been disabled *)
-	    | NumConstant n
-                 when system_settings#is_sideeffects_on_global_enabled
-                    (TR.tget_ok (numerical_to_hex_string n)) ->
-	       let sizeTerm = self#get_xpr_bterm size in
-	       self#f#record_sideeffect self#cia (BlockWrite (ty, dest, sizeTerm))
-            | _ -> ()
-          end
-       | _ -> self#f#record_sideeffect self#cia UnknownSideeffect
-     with BCH_failure p ->
-       let msg =
-         LBLOCK [
-             STR "record-block-write: ";
-             self#l#toPretty;
-             memref#toPretty;
-             STR ": ";
-             p] in
-       begin
-         ch_error_log#add "record-block-write" msg;
-         raise (BCH_failure msg)
-       end
+     match self#get_address_bterm memref ty with
+     | Some dest ->
+        begin
+	  match dest with
+	  (* null dereference is taken care of elsewhere,
+             so it can be ignored here *)
+	  | NumConstant x when x#equal numerical_zero ->
+	     ()
+	  (* recording side effects on global variables has been disabled *)
+	  | NumConstant n ->
+             log_titer
+               (mk_tracelog_spec
+                  ~tag:"record_block_write"
+                  (self#cia ^ ": constant: " ^ n#toString))
+               (fun s ->
+                 if system_settings#is_sideeffects_on_global_enabled s then
+	           let sizeTerm = self#get_xpr_bterm size in
+	           self#f#record_sideeffect self#cia (BlockWrite (ty, dest, sizeTerm))
+                 else
+                   ())
+               (numerical_to_hex_string n)
+          | _ -> ()
+        end
+     | _ -> self#f#record_sideeffect self#cia UnknownSideeffect
 
    method private get_assignment_type (lhs:variable_t) (rhs:xpr_t) =
      match rhs with
@@ -1522,54 +1498,34 @@ object (self)
    method private evaluate_fts_address_argument (p: fts_parameter_t) = None
 
    method evaluate_summary_address_term (t:bterm_t) =
-     try
-       match t with
-       | ArgValue p -> self#evaluate_fts_address_argument p
-       | NumConstant num ->
-          (try
-             let base = TR.tget_ok (numerical_to_doubleword num) in
-             if system_info#get_image_base#le base then
-	       Some (self#env#mk_global_variable num)
-             else
-               None
-           with
-           | BCH_failure p ->
-              raise
-                (BCH_failure
-                   (LBLOCK [
-                        STR "evaluate_summary_address_term: ";
-                        num#toPretty;
-                        STR "; ";
-                        self#l#toPretty;
-                        STR " (";
-                        p;
-                        STR ")"])))
-       | ArgAddressedValue (subT,NumConstant offset) ->
-	 let optBase = self#evaluate_summary_address_term subT in
-	 begin
-	   match optBase with
-	     Some baseVar ->
-	       let memref = self#env#mk_base_variable_reference baseVar in
-	       Some (self#env#mk_memory_variable memref offset)
-	   | _ -> None
-	 end
-       | _ -> None
-     with
-       Invalid_argument s ->
-	 begin
-	   ch_error_log#add
-             "invalid argument"
-	     (LBLOCK [
-                  STR "evaluate_summary_address_term: ";
-                  self#l#toPretty;
-                  STR ": ";
-		  bterm_to_pretty t]) ;
-	   None
-	 end
+     match t with
+     | ArgValue p -> self#evaluate_fts_address_argument p
+     | NumConstant num ->
+        log_tfold_default
+          (mk_tracelog_spec
+             ~tag:"evaluate_summary_address_term"
+             (self#cia ^ ": constant: " ^ num#toString))
+          (fun base ->
+            if system_info#get_image_base#le base then
+	      Some (self#env#mk_global_variable num)
+            else
+              None)
+          None
+          (numerical_to_doubleword num)
+     | ArgAddressedValue (subT,NumConstant offset) ->
+	let optBase = self#evaluate_summary_address_term subT in
+	begin
+	  match optBase with
+	    Some baseVar ->
+	     let memref = self#env#mk_base_variable_reference baseVar in
+	     Some (self#env#mk_memory_variable memref offset)
+	  | _ -> None
+	end
+     | _ -> None
        
    method get_abstract_commands 
      (lhs:variable_t) ?(size=random_constant_expr) ?(vtype=t_unknown) () = 
-     [ ABSTRACT_VARS [ lhs ] ]
+     [ABSTRACT_VARS [lhs]]
 
    method get_abstract_cpu_registers_command (regs:cpureg_t list) =
      let regs =
@@ -1589,7 +1545,7 @@ object (self)
             ?(vtype=t_unknown)
             (opname:symbol_t)
             (args:op_arg_t list) =
-     [ ABSTRACT_VARS [ lhs ] ]
+     [ABSTRACT_VARS [lhs]]
      
    method private assert_post
                     (name:string)
@@ -1599,62 +1555,39 @@ object (self)
      let get_zero () = self#env#request_num_constant numerical_zero in
      let reqN () = self#env#mk_num_temp in
      let reqC = self#env#request_num_constant in
+
      let get_function_pointer_commands (fnameTerm:bterm_t) =
-       try
-	 let nameAddr = self#evaluate_summary_term fnameTerm returnvar in
-	 let fname = match nameAddr with
-	   | XConst (IntConst n) ->
-              (try
-                 string_retriever (TR.tget_ok (numerical_to_doubleword n))
-               with
-               | BCH_failure p ->
-                  let msg =
-                    LBLOCK [
-                        STR "assert_post: ";
-                        STR  name;
-                        STR " with ";
-                        n#toPretty;
-                        STR " (";
-                        p;
-                        STR ")"] in
-                  begin
-                    ch_error_log#add "doubleword conversion" msg ;
-                    None
-                  end)
-	   | _ -> 
-	     begin
-	       chlog#add "function-pointer: no address" (self#l#toPretty);
-	       None 
-	     end in
-	 match fname with
-	   Some fname ->
-	     let fpVar = self#env#mk_function_pointer_value fname name self#cia in
-	     let msg = self#env#variable_name_to_pretty fpVar in
-	     begin
-	       translation_log#add
-                 "function-pointer variable"
-                 (LBLOCK [self#l#toPretty; STR ":  "; msg]);
-	       [ASSERT (EQ (fpVar, returnvar))]
-	     end
+       let nameAddr = self#evaluate_summary_term fnameTerm returnvar in
+       let fname = match nameAddr with
+	 | XConst (IntConst n) ->
+            log_tfold_default
+              (mk_tracelog_spec
+                 ~tag:"assert_post"
+                 (self#cia ^ ": constant: " ^ n#toString))
+              (fun dw -> string_retriever dw)
+              None
+              (numerical_to_doubleword n)
 	 | _ -> 
-	   begin
-	     chlog#add "function-pointer: no name" (self#l#toPretty);
-	     [] 
-	   end 
-       with
-	 Invalid_argument s ->
-	   begin
-	     ch_error_log#add
-               "invalid argument"
-	       (LBLOCK [
-                    STR "assert post: ";
-                    self#l#toPretty;
-                    STR ": ";
-                    STR s;
-		    STR " ";
-                    STR name]);
-	     []
-	   end in
+	    begin
+	      chlog#add "function-pointer: no address" (self#l#toPretty);
+	      None
+	    end in
+       match fname with
+	 Some fname ->
+	  let fpVar = self#env#mk_function_pointer_value fname name self#cia in
+	  let msg = self#env#variable_name_to_pretty fpVar in
+	  begin
+	    translation_log#add
+              "function-pointer variable"
+              (LBLOCK [self#l#toPretty; STR ":  "; msg]);
+	    [ASSERT (EQ (fpVar, returnvar))]
+	  end
+       | _ ->
+	  begin
+	    chlog#add "function-pointer: no name" (self#l#toPretty);
+	    []
+	  end in
+
      let get_null_var (term:bterm_t) =
        let termXpr = self#evaluate_summary_term term returnvar in
        xpr_to_numvar reqN reqC termXpr in
@@ -1670,7 +1603,7 @@ object (self)
        let xop = relational_op_to_xop op in
        let xpr = XOp (xop, [ xpr1 ; xpr2 ]) in
        let (cmds,bxpr) = xpr_to_boolexpr reqN reqC xpr in
-       cmds @ [ ASSERT bxpr ] in
+       cmds @ [ASSERT bxpr] in
      match post with
      | PostNewMemoryRegion (ReturnValue, sizeParameter) ->
         [] (* get_new_memory_commands sizeParameter *)
@@ -1723,32 +1656,27 @@ object (self)
        begin
 	 match self#evaluate_summary_term t self#env#mk_num_temp with
 	 | XConst (IntConst n) ->
-	   begin
-	     try
-	       let a = TR.tget_ok (numerical_to_doubleword n) in
-	       if system_info#is_code_address a then
-		 begin
-		   ignore (functions_data#add_function a) ;
-		   chlog#add
-                     "function entry point from precondition"
-		     (LBLOCK [self#l#toPretty; STR ": "; a#toPretty])
-		 end
-	       else
-		 chlog#add
-                   "function pointer precondition error"
-		   (LBLOCK [
-                        self#l#toPretty;
-                        STR ": ";
-                        a#toPretty;
-                        STR " is not a code address"])
-	     with
-	     | BCH_failure p ->
-	        chlog#add
-                  "function pointer precondition error"
-		  (LBLOCK [
-                       self#l#toPretty;
-                       STR ": argument cannot be converted to address"])
-	   end
+            log_titer
+              (mk_tracelog_spec
+                 ~tag:"record_precondition_effect"
+                 (self#cia ^ ": constant: " ^ n#toString))
+              (fun a ->
+	        if system_info#is_code_address a then
+		  begin
+		    ignore (functions_data#add_function a) ;
+		    chlog#add
+                      "function entry point from precondition"
+		      (LBLOCK [self#l#toPretty; STR ": "; a#toPretty])
+		  end
+	        else
+		  chlog#add
+                    "function pointer precondition error"
+		    (LBLOCK [
+                         self#l#toPretty;
+                         STR ": ";
+                         a#toPretty;
+                         STR " is not a code address"]))
+              (numerical_to_doubleword n)
 	 | x -> 
 	    chlog#add
               "function pointer precondition"
@@ -1758,8 +1686,7 @@ object (self)
 		   xpr_formatter#pr_expr x])
        end
      | _ -> ()
-	 
-       
+
    method private get_sideeffect_assign (side_effect:sideeffect_t) =
      let msg =
        LBLOCK [
@@ -1785,32 +1712,28 @@ object (self)
 	     | _ ->
 	       self#evaluate_summary_term size (self#env#mk_num_temp) in
 	   let sizeExpr = simplify_xpr sizeExpr in
-	   let _ = if is_zero sizeExpr then
-	       ch_error_log#add "zero size" 
-		 (LBLOCK [ self#l#toPretty ; STR " " ; 
-			   sideeffect_to_pretty side_effect ] ) in
+	   let _ =
+             if is_zero sizeExpr then
+	       ch_error_log#add
+                 "zero size"
+		 (LBLOCK [
+                      self#l#toPretty;
+                      STR " ";
+		      sideeffect_to_pretty side_effect]) in
 	   let rhs = 
  	     match dest with
  	     | NumConstant n ->
-                (try
-                   let dw = TR.tget_ok (numerical_to_doubleword n) in
-	           let argDescr = dw#to_hex_string in
-	           self#env#mk_side_effect_value self#cia ~global:true argDescr
-                 with
-                 | BCH_failure p ->
-                    let msg =
-                      LBLOCK [
-                          STR "get_sideeffect_assign: ";
-                          sideeffect_to_pretty side_effect;
-                          STR " (";
-                          p;
-                          STR ")"] in
-                    begin
-                      ch_error_log#add "doubleword conversion" msg ;
-                      self#env#mk_side_effect_value self#cia (bterm_to_string dest)
-                    end)
+                log_tfold_default
+                  (mk_tracelog_spec
+                     ~tag:"get_sideeffect_assign:BlockWrite"
+                     (self#cia ^ ": constant: " ^ n#toString))
+                  (fun dw ->
+	            let argDescr = dw#to_hex_string in
+	            self#env#mk_side_effect_value self#cia ~global:true argDescr)
+                  (self#env#mk_side_effect_value self#cia (bterm_to_string dest))
+                  (numerical_to_doubleword n)
 	     | _ ->
-	       self#env#mk_side_effect_value self#cia (bterm_to_string dest) in
+	        self#env#mk_side_effect_value self#cia (bterm_to_string dest) in
 	   let seAssign =
 	     self#get_assign_commands memVar ~size:sizeExpr ~vtype:ty (XVar rhs) in
 	   let fldAssigns = [] in
@@ -1825,14 +1748,14 @@ object (self)
        let _ = 
 	 match self#evaluate_summary_term sa self#env#mk_num_temp with
 	 | XConst (IntConst n) ->
-	   begin
-	     try
-	       let a = TR.tget_ok (numerical_to_doubleword n) in
-	       if system_info#is_code_address a then
-		 system_info#set_thread_start_address self#fa self#cia a [] 
-	     with
-	     | _ -> ()
-	   end
+            log_titer
+              (mk_tracelog_spec
+                 ~tag:"get_sideeffect_assign:StartsThread"
+                 (self#cia ^ ": constant: " ^ n#toString))
+              (fun a ->
+	        if system_info#is_code_address a then
+		  system_info#set_thread_start_address self#fa self#cia a [])
+              (numerical_to_doubleword n)
 	 | _ -> () in
        []
      | AllocatesStackMemory size ->

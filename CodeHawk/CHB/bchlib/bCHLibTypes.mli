@@ -332,7 +332,22 @@ type mips_special_reg_t =
 
 (* ======================================================= arm types === *)
 
-type arm_cc_flag_t = APSR_Z | APSR_N | APSR_C | APSR_V
+type arm_cc_flag_t =
+  | APSR_Z    (* zero condition flag. Set to 1 if the result of the instruction
+                 is zero, and to 0 otherwise.*)
+  | APSR_N    (* negative condition flag. Set to bit[31] of the result of the
+                 instruction. If the result is regarded as a twos' complement
+                 signed integer, then the processor sets N to 1 if the result is
+                 negative, and sets N to 0 if it is positive or zero.*)
+  | APSR_C    (* carry condition flag. Set to 1 if the instruction results in a
+                 carry condition, for example an unsigned overflow on an
+                 addition.*)
+  | APSR_V    (* overflow condition flag. Set to 1 if the instruction results in
+                 an overflow condition, for example a signed overflow on an
+                 addition.*)
+  | APSR_Q    (* overflow or saturation flag. Set to 1 to indicate overflow or
+                 saturation occurred in some instructions, normally related to
+                 DSP.*)
 
 type arm_reg_t =
   | AR0

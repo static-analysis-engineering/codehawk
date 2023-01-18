@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyrigth (c) 2021-2022 Aarno Labs LLC
+   Copyrigth (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -109,7 +109,7 @@ let mips_reg_mfts: mips_reg_t mfts_int =
 let arm_cc_flag_mfts: arm_cc_flag_t mfts_int =
   mk_mfts
     "arm_cc_flag_t"
-    [(APSR_Z, "Z"); (APSR_N, "N"); (APSR_C, "C"); (APSR_V, "V")]
+    [(APSR_Z, "Z"); (APSR_N, "N"); (APSR_C, "C"); (APSR_V, "V"); (APSR_Q, "Q")]
 
 
 let arm_reg_mfts: arm_reg_t mfts_int =
