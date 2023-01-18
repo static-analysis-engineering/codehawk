@@ -534,7 +534,10 @@ object (self)
              (trerror_record
                 (LBLOCK [STR "Internal error in FnARMDictionary:Branch"]))
              (get_arm_assembly_instruction
-                (TR.tget_ok (string_to_doubleword csetter))) in
+                (fail_tvalue
+                   (trerror_record
+                      (LBLOCK [STR "FnARMDictionary:Branch: "; STR csetter]))
+                   (string_to_doubleword csetter))) in
          let bytestr = instr#get_bytes_ashexstring in
          let rdefs = get_all_rdefs tcond in
          let (tagstring, args) =

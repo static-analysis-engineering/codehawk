@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs, LLC
+   Copyright (c) 2021-2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ open CHNumerical
 open CHLanguage
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -157,7 +158,7 @@ val mk_arm_immediate_op:
   bool (* signed *)
   -> int (* size in bytes *)
   -> numerical_t (* value *)
-  -> arm_operand_int
+  -> arm_operand_int traceresult
 
 val mk_arm_absolute_target_op:
   doubleword_int
