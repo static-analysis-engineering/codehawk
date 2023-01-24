@@ -133,18 +133,20 @@ object (self)
       (fun instr -> va#equal instr#get_address) (self#get_instructions_rev ())
 
   method has_conditional_return_instr =
-    List.exists
-      (fun instr ->
-        match instr#get_opcode with
-        | Pop (_, _, rl, _) ->
-           rl#includes_pc && is_opcode_conditional instr#get_opcode
-        | _ -> false) (self#get_instructions_rev ())
+    match self#get_context with
+    | [] ->
+       List.exists
+         (fun instr ->
+           match instr#get_opcode with
+           | Pop (_, _, rl, _) ->
+              rl#includes_pc && is_opcode_conditional instr#get_opcode
+           | _ -> false) (self#get_instructions_rev ())
+    | _ -> false
 
   method is_returning =
     match successors with
     | [] -> true
     | _ -> false
-
 
   method toString =
     let instructionstrings = ref [] in

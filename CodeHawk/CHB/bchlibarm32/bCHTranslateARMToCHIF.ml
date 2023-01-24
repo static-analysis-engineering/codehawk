@@ -2808,7 +2808,7 @@ let translate_arm_instruction
 
   | VectorTranspose _ -> default []
 
-  | NotRecognized _ -> default [ASSERT FALSE]
+  (* | NotRecognized _ -> default [ASSERT FALSE] *)
 
   | instr ->
      let _ =

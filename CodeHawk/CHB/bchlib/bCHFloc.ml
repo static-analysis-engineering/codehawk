@@ -1355,9 +1355,9 @@ object (self)
      ?(size=random_constant_expr) 
      ?(vtype=t_unknown)
      (rhs_expr:xpr_t) =
-     if self#inv#is_unreachable then
+     (* if self#inv#is_unreachable then
        [ASSERT FALSE]
-     else
+     else *)
        let is_external v = self#env#is_function_initial_value v in
        let is_composite_symbolic_value x =
          let rec is_symbolic_expr x =
