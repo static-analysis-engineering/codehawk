@@ -1208,7 +1208,8 @@ object (self)
       | Pop (c, sp, rl, _) ->
          let splhs = sp#to_variable floc in
          let sprhs = sp#to_expr floc in
-         let spresult = XOp (XPlus, [sprhs; int_constant_expr 4]) in
+         let regcount = rl#get_register_count in
+         let spresult = XOp (XPlus, [sprhs; int_constant_expr (regcount * 4)]) in
          let rspresult = rewrite_expr spresult in
          let lhsvars =
            List.map (fun (op: arm_operand_int) ->
@@ -1219,6 +1220,12 @@ object (self)
              (List.init rl#get_register_count (fun i -> 4 * i)) in
          let rhsexprs =
            List.map (fun (x: arm_operand_int) -> x#to_expr floc) rhsops in
+         let xaddrs =
+           List.init
+             rl#get_register_count
+             (fun i ->
+               let xaddr = XOp (XPlus, [sprhs; int_constant_expr (i * 4)]) in
+               rewrite_expr xaddr) in
          let rrhsexprs = List.map rewrite_expr rhsexprs in
          let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
          let uses = List.map get_def_use (splhs :: lhsvars) in
@@ -1226,7 +1233,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:(splhs :: lhsvars)
-             ~xprs:(sprhs :: spresult :: rspresult :: rrhsexprs)
+             ~xprs:((sprhs :: spresult :: rspresult :: rrhsexprs) @ xaddrs)
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
@@ -1256,12 +1263,18 @@ object (self)
          let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
          let uses = List.map get_def_use (splhs :: lhsvars) in
          let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
-         let spresult = XOp (XMinus, [sprhs; int_constant_expr 4]) in
+         let spresult = XOp (XMinus, [sprhs; int_constant_expr (regcount * 4)]) in
          let rspresult = rewrite_expr spresult in
+         let xaddrs =
+           List.init
+             rl#get_register_count
+             (fun i ->
+               let xaddr = XOp (XPlus, [rspresult; int_constant_expr (i * 4)]) in
+               rewrite_expr xaddr) in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:(splhs :: lhsvars)
-             ~xprs:(sprhs :: spresult :: rspresult :: rrhsexprs)
+             ~xprs:((sprhs :: spresult :: rspresult :: rrhsexprs) @ xaddrs)
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh

@@ -169,9 +169,11 @@ let decompose_ctxt_string
   let ctxtcomponents = List.rev (List.tl (List.rev components)) in
   match ctxtcomponents with
   | [] -> ([], faddr, iaddr)
+  | ["T@"] -> ([ConditionContext true], faddr, iaddr)
+  | ["F@"] -> ([ConditionContext false], faddr, iaddr)
   | _ ->
      let ctxtstr = String.concat "_" ctxtcomponents in
-     let (basef,ctxt) = get_context faddr ctxtstr in
+     let (basef, ctxt) = get_context faddr ctxtstr in
      (ctxt, basef, iaddr)
 
 

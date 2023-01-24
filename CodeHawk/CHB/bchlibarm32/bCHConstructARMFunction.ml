@@ -25,6 +25,10 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHNumerical
+open CHPretty
+
 (* chutil *)
 open CHLogger
 
@@ -190,6 +194,31 @@ let get_successors
         (* may or may not be a return *)
         | LoadRegister (_, dst, _, _, _, _)
              when dst#is_register && dst#get_register = ARPC -> []
+
+        | Branch (ACCAlways, op, _)
+          | BranchExchange (ACCAlways, op) when op#is_register ->
+           let floc = get_floc_by_address faddr instr#get_address in
+           let opxpr = op#to_expr floc in
+           let opxpr = floc#inv#rewrite_expr opxpr floc#env#get_variable_comparator in
+           (match opxpr with
+            | XConst (IntConst n) ->
+               let tgt =
+                 if (n#modulo (mkNumerical 2))#equal numerical_one then
+                   n#sub numerical_one
+                 else
+                   n in
+               log_tfold_default
+                 (mk_tracelog_spec
+                    ~tag:"construct-function"
+                    (floc#cia ^ ": constant: " ^ n#toString))
+                 (fun addr ->
+                   if !arm_assembly_instructions#is_code_address addr then
+                     [addr]
+                   else
+                     [])
+                 []
+                 (numerical_to_doubleword tgt)
+            | _ -> [])
                                                                         
         (* no information available, give up *)
         | Branch _ | BranchExchange _ -> []

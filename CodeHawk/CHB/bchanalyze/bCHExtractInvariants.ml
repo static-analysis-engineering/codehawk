@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -265,7 +265,7 @@ let extract_testvar_equalities finfo iaddr domain =
   let vars = domain#observer#getObservedVariables in
   let fvals = List.filter env#is_frozen_test_value vars in
   List.fold_left (fun acc fval ->
-    let (fvar,taddr,jaddr) = env#get_frozen_variable fval in
+    let (fvar, taddr, jaddr) = env#get_frozen_variable fval in
     if iaddr = jaddr then
       let varsout = List.filter (fun v -> not ((fvar#equal v) || (fval#equal v))) vars in
       let domain = domain#projectOut varsout in
@@ -273,11 +273,34 @@ let extract_testvar_equalities finfo iaddr domain =
       match numConstrs with 
       | [] -> acc 
       | _ -> 
-	 begin
-	   finfo#finv#add_test_value_fact iaddr fvar fval taddr jaddr ;
-	   fval :: acc
-	end
-    else acc) [] fvals
+         let _ =
+           track_location
+             iaddr
+             (LBLOCK [
+                  STR "extract_testvar_equalities: ";
+                  STR "fval: ";
+                  fval#toPretty;
+                  STR "; fvar: ";
+                  fvar#toPretty;
+                  pretty_print_list
+                    numConstrs
+                    (fun c -> c#toPretty)
+                    " [" "; " "]";
+             ]) in
+         if List.exists (fun nc ->
+                let factors = nc#getFactors in
+                let variables = List.map (fun f -> f#getVariable) factors in
+                List.exists (fun v -> fvar#equal v) variables
+                   && List.exists (fun v -> fval#equal v) variables) numConstrs then
+           begin
+	     finfo#finv#add_test_value_fact iaddr fvar fval taddr jaddr;
+	     fval :: acc
+           end
+         else
+           acc
+    else
+      acc) [] fvals
+
 
 let extract_initvar_equalities finfo iaddr domain flocinv =
   let get_var_constraints constraint_sets v1 v2 domvars =
@@ -381,7 +404,7 @@ let extract_linear_equalities
                  NL;
                  STR "initVars: ";
                  pretty_print_list initVars (fun v -> v#toPretty) "[" "," "]"]) in
-	let domain = domain#projectOut (knownVars @ initVars @ testVals) in
+	let domain = domain#projectOut (knownVars @ initVars) in
 	let extVars =
           extract_external_value_equalities finfo k domain flocinv starttime in
 	let domain = domain#projectOut extVars in
