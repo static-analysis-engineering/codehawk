@@ -83,8 +83,11 @@ object (self)
   val mutable abstract_stackvars_disabled = false
   val mutable apps_dir = None
   val mutable app_name = None
+  val mutable exclude_debug = false
 
   method set_verbose = verbose <- true
+
+  method exclude_debug = exclude_debug <- true
 
   method set_thumb =
     begin
@@ -197,6 +200,8 @@ object (self)
   method get_jsignature_paths = jsignature_paths
 
   method is_verbose = verbose
+
+  method is_debug_excluded = exclude_debug
 
   method is_abstract_stackvars_disabled = abstract_stackvars_disabled
 

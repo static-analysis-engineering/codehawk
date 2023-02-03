@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +51,8 @@ let e9   = 512
 let e10  = 1024
 let e15  = e7 * e8
 let e16  = e8 * e8
+let e24  = e16 * e8
+let e25  = e24 * 2
 let e31  = e15 * e16
 let e32  = e16 * e16
 let ffff = e16 - 1

@@ -42,6 +42,8 @@ open BCHLibTypes
 
 val e15: int
 val e16: int
+val e24: int
+val e25: int
 val e31: int
 val e32: int
 

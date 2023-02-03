@@ -1010,6 +1010,7 @@ object
   method set_apps_dir: string -> unit
   method set_app_summary_jars: string -> unit   (* application name *)
   method set_export_dir: string -> unit
+  method exclude_debug: unit
 
   (* accessors *)
   method get_summary_paths: (string * Zip.in_file) list
@@ -1019,6 +1020,7 @@ object
 
   (* predicates *)
   method is_verbose: bool
+  method is_debug_excluded: bool
   method is_sideeffects_on_global_enabled: string -> bool
   method is_abstract_stackvars_disabled: bool
   method is_set_vftables_enabled: bool

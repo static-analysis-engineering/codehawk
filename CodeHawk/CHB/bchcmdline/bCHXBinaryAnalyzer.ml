@@ -144,6 +144,8 @@ let speclist =
      "extract executable content from executable and save in xml format");
     ("-xsize", Arg.Int system_info#set_xfilesize,
      "size of the executable in bytes");
+    ("-exclude_debug", Arg.Unit (fun () -> system_settings#exclude_debug),
+     "do not extract the debug sections");
     ("-dump", Arg.Unit (fun () -> cmd := "dump"),
      "dump entire executable to xml (max size 1MB)");
     ("-disassemble", Arg.Unit (fun () -> cmd := "disassemble"),
