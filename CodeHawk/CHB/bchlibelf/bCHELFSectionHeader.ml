@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -279,7 +279,7 @@ object (self)
 
       (* 20, 4, sh_size ------------------------------------------------------
 	 Section's size in bytes. Unless the section type is SHT_NOBITS, the
-	 section occupies sh_size bytes in the file. A section of tyepe SHT_NOBITS
+	 section occupies sh_size bytes in the file. A section of type SHT_NOBITS
 	 may have a non-zero size, but it occupies no space in the file.
 	 --------------------------------------------------------------------- *)
       sh_size <- input#read_doubleword ;
@@ -401,7 +401,7 @@ object (self)
       setx "sh_info" sh_info;
       setx "sh_link" sh_link;
       setx "sh_addralign" sh_addralign;
-      setx "sh_entsize" sh_entsize 
+      setx "sh_entsize" sh_entsize
     end
 
   method read_xml (node:xml_element_int) =
