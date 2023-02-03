@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022 Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -103,7 +103,7 @@ let disassemble
             let instrbytes = ch#read_ui16 in
             let opcode =
               try
-                disassemble_vle_instruction ch base instrbytes
+                disassemble_vle_instruction ch iaddr instrbytes
               with
               | _ -> OpInvalid in
             let currentPos = ch#pos in
