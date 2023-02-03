@@ -1225,9 +1225,9 @@ let save_elf_section
     let stNode = xmlElement "string-table" in
     let stringtable = elf_section_to_string_table s in
     begin
-      stringtable#write_xml_strings stNode ;
-      dNode#appendChildren [ stNode ] ;
-      sNode#appendChildren [ dNode ]
+      stringtable#write_xml_strings stNode;
+      dNode#appendChildren [stNode];
+      sNode#appendChildren [dNode]
     end in
   let add_symbol_table () =
     let dNode = xmlElement "data" in
@@ -1235,9 +1235,9 @@ let save_elf_section
     let symboltable = elf_section_to_symbol_table s in
     begin
       sNode#setIntAttribute "entrysize" header#get_entry_size#to_int;
-      symboltable#write_xml_symbols syNode ;
-      dNode#appendChildren [ syNode ] ;
-      sNode#appendChildren [ dNode ]
+      symboltable#write_xml_symbols syNode;
+      dNode#appendChildren [syNode];
+      sNode#appendChildren [dNode]
     end in
   let add_relocation_table () =
     let dNode = xmlElement "data"  in
@@ -1245,9 +1245,9 @@ let save_elf_section
     let relocationtable = elf_section_to_relocation_table s in
     begin
       sNode#setIntAttribute "entrysize" header#get_entry_size#to_int;
-      relocationtable#write_xml_entries rNode ;
-      dNode#appendChildren [ rNode ] ;
-      sNode#appendChildren [ dNode ]
+      relocationtable#write_xml_entries rNode;
+      dNode#appendChildren [rNode];
+      sNode#appendChildren [dNode]
     end in
   let add_dynamic_table () =
     let dNode = xmlElement "data" in
@@ -1255,34 +1255,36 @@ let save_elf_section
     let dynamictable = elf_section_to_dynamic_table s in
     begin
       sNode#setIntAttribute "entrysize" header#get_entry_size#to_int;
-      dynamictable#write_xml_entries rNode ;
-      dNode#appendChildren [ rNode ] ;
-      sNode#appendChildren [ dNode ]
+      dynamictable#write_xml_entries rNode;
+      dNode#appendChildren [rNode];
+      sNode#appendChildren [dNode]
     end in
   begin
     (let sname = header#get_section_name in
+     (*
      if (String.length sname) > 6
         && (String.sub header#get_section_name 0 6) = ".debug" then
        let hexdata = xmlElement "hex-data" in
        begin
-         sNode#appendChildren [ hexdata ];
+         sNode#appendChildren [hexdata];
          sNode#setAttribute "vaddr" header#get_addr#to_hex_string;
          sNode#setIntAttribute "size" 0
        end
      else
-       rawsection#write_xml sNode) ;
-    header#write_xml hNode ;
-    sNode#setIntAttribute "index" index ;
-    sNode#appendChildren [ hNode ] ;
+      *)
+       rawsection#write_xml sNode);
+    header#write_xml hNode;
+    sNode#setIntAttribute "index" index;
+    sNode#appendChildren [hNode];
     (match header#get_section_type with
      | SHT_StrTab -> add_string_table ()
      | SHT_SymTab -> add_symbol_table ()
      | SHT_DynSym -> add_symbol_table ()
      | SHT_Rel -> add_relocation_table ()
      | SHT_Dynamic -> add_dynamic_table ()
-     | _ -> ()) ;
-    doc#setNode root ;
-    root#appendChildren [ sNode ] ;
+     | _ -> ());
+    doc#setNode root;
+    root#appendChildren [sNode];
     file_output#saveFile filename doc#toPretty
   end
 
