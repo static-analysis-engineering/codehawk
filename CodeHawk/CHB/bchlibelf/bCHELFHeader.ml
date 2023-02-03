@@ -62,6 +62,7 @@ open BCHSectionHeadersInfo
 open BCHStreamWrapper
 open BCHStructTables
 open BCHSystemInfo
+open BCHSystemSettings
 open BCHVariableType
 
 (* bchlibelf *)
@@ -1260,18 +1261,19 @@ let save_elf_section
       sNode#appendChildren [dNode]
     end in
   begin
-    (let sname = header#get_section_name in
-     (*
-     if (String.length sname) > 6
-        && (String.sub header#get_section_name 0 6) = ".debug" then
-       let hexdata = xmlElement "hex-data" in
-       begin
-         sNode#appendChildren [hexdata];
-         sNode#setAttribute "vaddr" header#get_addr#to_hex_string;
-         sNode#setIntAttribute "size" 0
-       end
+    (if system_settings#is_debug_excluded then
+       let sname = header#get_section_name in
+       if (String.length sname) > 6
+          && (String.sub header#get_section_name 0 6) = ".debug" then
+         let hexdata = xmlElement "hex-data" in
+         begin
+           sNode#appendChildren [hexdata];
+           sNode#setAttribute "vaddr" header#get_addr#to_hex_string;
+           sNode#setIntAttribute "size" 0
+         end
+       else
+         rawsection#write_xml sNode
      else
-      *)
        rawsection#write_xml sNode);
     header#write_xml hNode;
     sNode#setIntAttribute "index" index;

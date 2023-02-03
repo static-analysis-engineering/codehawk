@@ -94,7 +94,7 @@ end
 
 
 let version = new version_info_t 
-  ~version:"0.6.0_20230117"
-  ~date:"2023-01-17"
+  ~version:"0.6.0_20230203"
+  ~date:"2023-02-03"
   ~licensee: None
   ~maxfilesize: None
