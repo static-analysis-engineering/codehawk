@@ -160,10 +160,16 @@ object (self)
 
   (* assume all instructions are aligned on 4-byte boundaries. *)
   method private indexresult (va: doubleword_int): int TR.traceresult =
-    if codeBase#le va && va#lt codeEnd then
+    if codeBase#le va && va#le codeEnd then
       TR.tmap (fun i -> i / 4) (va#subtract_to_int codeBase)
     else
-      Error ["index:" ^ va#to_hex_string]
+      Error [
+          "index:"
+          ^ va#to_hex_string
+          ^ "; codeBase: "
+          ^ codeBase#to_hex_string
+          ^ "; codeEnd: "
+          ^ codeEnd#to_hex_string]
 
   method private at_index (index: int): mips_assembly_instruction_result =
     TR.tmap
@@ -249,7 +255,7 @@ object (self)
     begin
       for i = low to high do
 	addresses := (codeBase#add_int (i*4)) :: !addresses
-      done ;
+      done;
       !addresses
     end
 
