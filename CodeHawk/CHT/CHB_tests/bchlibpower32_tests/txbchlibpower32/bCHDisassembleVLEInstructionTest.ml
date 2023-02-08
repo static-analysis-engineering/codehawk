@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleVLEInstructionTest"
-let lastupdated = "2023-02-02"
+let lastupdated = "2023-02-07"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
