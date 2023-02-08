@@ -197,6 +197,7 @@ type power_operand_kind_t =
   | PowerGPReg of int
   | PowerSpecialReg of power_special_reg_t
   | PowerRegisterField of power_register_field_t
+  | PowerConditionRegisterBit of int
   | PowerImmediate of immediate_int
   | PowerAbsolute of doubleword_int
   | PowerIndReg of int * numerical_t  (* GPR base reg index, offset *)
@@ -210,6 +211,9 @@ type power_operand_kind_t =
     NT: not touched
  *)
 type power_operand_mode_t = RD | WR | RW | NT
+
+
+type power_branch_prediction_t = BPNone | BPPlus of int | BPMinus of int
 
 
 class type power_operand_int =
@@ -397,11 +401,29 @@ type power_opcode_t =
       power_instruction_type_t
       * power_operand_int  (* tgt: target address *)
 
+  (* EREF:6-37 *)
   | BranchConditional of
       power_instruction_type_t
-      * int                (* B032, 2 bits *)
-      * int                (* BI32, 4 bits *)
-      * power_operand_int  (* destination address *)
+      * bool               (* aa: absolute address *)
+      * int                (* bo: branch operations (5 bits) *)
+      * int                (* bi: bit in condition register (5 bits)  *)
+      * power_operand_int  (* bd: branch destination *)
+
+  (* EREF:6-41 *)
+  | BranchConditionalLinkRegister of
+      power_instruction_type_t
+      * int                (* bo: bracnch operations (5 bits) *)
+      * int                (* bi: bit in condition register (5 bits) *)
+      * int                (* bh: branch usage hint (2 bits) *)
+      * power_operand_int  (* lr: link register (LR) *)
+
+  (* EREF:6-41 *)
+  | BranchConditionalLinkRegisterLink of
+      power_instruction_type_t
+      * int                (* bo: branch operations (5 bits) *)
+      * int                (* bi: bit in condition register (5 bits) *)
+      * int                (* bh: branch usage hint (2 bits *)
+      * power_operand_int  (* lr: link register (LR) *)
 
   | BranchCountRegister of
       power_instruction_type_t
@@ -410,36 +432,6 @@ type power_opcode_t =
   | BranchCountRegisterLink of
       power_instruction_type_t
       * power_operand_int  (* count_register (CTR) *)
-
-  (* EREF:6-37, VLEPEM:3-13 *)
-  | BranchEqual of
-      power_instruction_type_t
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination address *)
-
-  (* EREF:6-37, VLEPEM:3-13 *)
-  | BranchGreaterEqual of
-      power_instruction_type_t
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination address *)
-
-  (* EREF:6-37, VLEPEM:3-13 *)
-  | BranchGreaterThan of
-      power_instruction_type_t
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination address *)
-
-  (* EREF:6-37, VLEPEM:3-13 *)
-  | BranchLessEqual of
-      power_instruction_type_t
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination address *)
-
-  (* EREF:6-37, VLEPEM:3-13 *)
-  | BranchLessThan of
-      power_instruction_type_t
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination address *)
 
   (* EREF:6-36, VLEPEM:3-12 *)
   | BranchLink of
@@ -457,16 +449,161 @@ type power_opcode_t =
       power_instruction_type_t
       * power_operand_int  (* link register (LR) *)
 
-  (* EREF:6-37, VLEPEM:3-13 *)
-  | BranchNotEqual of
+  (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
+  | CBranchDecrementNotZero of
       power_instruction_type_t
+      * bool               (* aa: absolute address *)
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * power_branch_prediction_t  (* bp: branch prediction *)
+      * power_operand_int  (* bd: branch destination *)
+      * power_operand_int  (* ctr: count register *)
+
+  (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
+  | CBranchDecrementZero of
+      power_instruction_type_t
+      * bool               (* aa: absolute address *)
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * power_branch_prediction_t  (* bp: branch prediction *)
+      * power_operand_int  (* bd: branch destination *)
+      * power_operand_int  (* ctr: count register *)
+
+  (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
+  | CBranchEqual of
+      power_instruction_type_t
+      * bool               (* aa: absolute address *)
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * power_branch_prediction_t  (* bp: branch prediction *)
       * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination address *)
+      * power_operand_int  (* bd: branch destination *)
+
+  (* EREF:6-41, EREF:B-3 (simplified) *)
+  | CBranchEqualLinkRegister of
+      power_instruction_type_t
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * int                (* bh: branch usage hint *)
+      * power_branch_prediction_t (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* lr: link register *)
+
+  (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
+  | CBranchGreaterEqual of
+      power_instruction_type_t
+      * bool               (* aa: absolute address *)
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * power_branch_prediction_t (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* bd: branch destination *)
+
+  (* EREF:6-41, EREF:B-3 (simplified) *)
+  | CBranchGreaterEqualLinkRegister of
+      power_instruction_type_t
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * int                (* bh: branch usage hint *)
+      * power_branch_prediction_t (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* lr: link register *)
+
+  (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
+  | CBranchGreaterThan of
+      power_instruction_type_t
+      * bool               (* aa: absolute address *)
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * power_branch_prediction_t (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* bd: branch destination *)
+
+  (* EREF:6-41, EREF:B-3 (simplified) *)
+  | CBranchGreaterThanLinkRegister of
+      power_instruction_type_t
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * int                (* bh: branch usage hint *)
+      * power_branch_prediction_t (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* lr: link register *)
+
+  (* EREF:6-37, EREF:B-4 (simplified mnemonics, VLEPEM:3-13) *)
+  | CBranchLessEqual of
+      power_instruction_type_t
+      * bool               (* aa: absolute address *)
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * power_branch_prediction_t  (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* bd: branch destination *)
+
+  (* EREF:6-41, EREF:B-3 (simplified) *)
+  | CBranchLessEqualLinkRegister of
+      power_instruction_type_t
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * int                (* bh: branch usage hint *)
+      * power_branch_prediction_t (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* lr: link register *)
+
+  (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
+  | CBranchLessThan of
+      power_instruction_type_t
+      * bool               (* aa: absolute address *)
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * power_branch_prediction_t  (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* bd: branch destination *)
+
+  (* EREF:6-41, EREF:B-3 (simplified) *)
+  | CBranchLessThanLinkRegister of
+      power_instruction_type_t
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * int                (* bh: branch usage hint *)
+      * power_branch_prediction_t (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* lr: link register *)
+
+  (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
+  | CBranchNotEqual of
+      power_instruction_type_t
+      * bool               (* aa: absolute address *)
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * power_branch_prediction_t  (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* bd: branch destination *)
+
+  (* EREF:6-41, EREF:B-3 (simplified) *)
+  | CBranchNotEqualLinkRegister of
+      power_instruction_type_t
+      * int                (* bo: branch operations *)
+      * int                (* bi: bit in condition register *)
+      * int                (* bh: branch usage hint *)
+      * power_branch_prediction_t (* bp: branch prediction *)
+      * power_operand_int  (* cr: condition register field *)
+      * power_operand_int  (* lr: link register *)
+
+  (* EREF:B-3 (simplified *)
+  | ClearLeftShiftLeftWordImmediate of
+      power_instruction_type_t
+      * bool               (* rc: record condition *)
+      * power_operand_int  (* ra: destination register *)
+      * power_operand_int  (* rs: source register *)
+      * power_operand_int  (* mb: mask begin *)
+      * power_operand_int  (* sh: shift *)
+      * power_operand_int  (* cr: condition register field (CR0) *)
 
   (* Simplified mnemonic, EREF:B-3, VLEPIM:Table A-23
      Full instruction: RotateLeftWordImmediateAndMask *)
   | ClearLeftWordImmediate of
       power_instruction_type_t
+      * bool               (* rc: record condition *)
       * power_operand_int  (* rA: destination register *)
       * power_operand_int  (* rS: source register *)
       * power_operand_int  (* mb: mask begin *)
@@ -475,9 +612,11 @@ type power_opcode_t =
      Full instruction: RotateLeftWordImmediateAndMask *)
   | ClearRightWordImmediate of
       power_instruction_type_t
+      * bool               (* rc: record condition *)
       * power_operand_int  (* ra: destination register *)
       * power_operand_int  (* rs: source register *)
       * power_operand_int  (* me: mask end *)
+      * power_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-46, VLEPEM:3-21 *)
   | CompareImmediate of
@@ -562,6 +701,14 @@ type power_opcode_t =
       * power_operand_int  (* so: summary overflow (XER-SO) *)
       * power_operand_int  (* ov: overflow (XER-OV) *)
 
+  (* EREF:6-197
+     This instruction shares the same opcode with MemoryBarrier (mbar); it is
+     to be preferred in server environments.
+   *)
+  | EnforceInOrderExecutionIO of
+      power_instruction_type_t
+      * power_operand_int  (* mo: memory ordering *)
+
   (* EREF:6-104, VLEPEM:3-35 *)
   | ExtendSignByte of
       power_instruction_type_t
@@ -592,10 +739,12 @@ type power_opcode_t =
      Full mnemonic: RotateLeftWordImmediateMaskInsert *)
   | ExtractRightJustifyWordImmediate of
       power_instruction_type_t
+      * bool               (* rc: record condition *)
       * power_operand_int  (* ra: destination register *)
       * power_operand_int  (* rs: source register *)
       * power_operand_int  (* n: shift *)
       * power_operand_int  (* b: begin *)
+      * power_operand_int  (* cr: condition register field (CR0) *)
 
   (* Simplified mnemonic: EREF:B-3, VLEPIM:Table A-23
      Full mnemonic: RotateLeftWordImmediateMaskInsert *)
@@ -611,6 +760,14 @@ type power_opcode_t =
   (* EREF:6-141, VLEPEM:3-38 *)
   | InstructionSynchronize of
       power_instruction_type_t
+
+  (* EREF:6-140 *)
+  | IntegerSelect of
+      power_instruction_type_t
+      * power_operand_int  (* rd: destination register *)
+      * power_operand_int  (* ra: source 1 register *)
+      * power_operand_int  (* rb: source 2 register *)
+      * power_operand_int  (* crb: condition register bit *)
 
   (* EREF:6-140, EREF:B-26 *)
   | IntegerSelectEqual of
@@ -717,19 +874,10 @@ type power_opcode_t =
       * power_operand_int  (* rb: index register *)
       * power_operand_int  (* mem: memory operand *)
 
-  | LoopBranchConditionalNotZero of
-      power_instruction_type_t
-      * int                (* BO32, 2 bits *)
-      * power_operand_int  (* CTR *)
-      * power_operand_int  (* destination address *)
-
-  | LoopBranchConditionalZero of
-      power_instruction_type_t
-      * int                (* BO32, 2 bits *)
-      * power_operand_int  (* CTR *)
-      * power_operand_int  (* destination address *)
-
-  (* EREF:6-197 *)
+  (* EREF:6-197
+     This instruction shares the same opcode with EnforceInOrderExecutionIO
+     (eieio); mbar is preferred in embedded systems.
+   *)
   | MemoryBarrier of
       power_instruction_type_t
       * power_operand_int  (* mo: memory ordering *)
@@ -782,9 +930,10 @@ type power_opcode_t =
       * power_operand_int  (* rd: destination register *)
       * power_operand_int  (* sprn: special purpose register index *)
 
-  (* EREF:B-25 (simplified), VLEPEM:3-49 *)
+  (* EREF:6-241, EREF:B-25 (simplified), VLEPEM:3-49 *)
   | MoveRegister of
       power_instruction_type_t
+      * bool               (* rc: record condition *)
       * power_operand_int  (* rd: destination register *)
       * power_operand_int  (* rs: source register *)
 
@@ -810,6 +959,12 @@ type power_opcode_t =
   | MoveToCountRegister of
       power_instruction_type_t
       * power_operand_int  (* ctr: count register *)
+      * power_operand_int  (* rs: source register *)
+
+  (*EREF:B-23 (simplified) *)
+  | MoveToExceptionRegister of
+      power_instruction_type_t
+      * power_operand_int  (* xer: integer exception register *)
       * power_operand_int  (* rs: source register *)
 
   (* EREF:B-25 (simplified), VLEPEM:3-52 *)
@@ -911,7 +1066,7 @@ type power_opcode_t =
       * power_operand_int  (* mcsr0: machine check save/restore register 0 *)
       * power_operand_int  (* mcsr1: machine check save/restore register 1 *)
 
-  (* VLEPEM:3-60 *)
+  (* EREF:B-3 (simplified), VLEPEM:3-60 *)
   | RotateLeftWord of
       power_instruction_type_t
       * bool               (* rc: record condition *)
@@ -1167,6 +1322,7 @@ type power_opcode_t =
   | XorImmediate of
       power_instruction_type_t
       * bool               (* record condition *)
+      * bool               (* shifted *)
       * power_operand_int  (* ra: destination register *)
       * power_operand_int  (* rs: source register *)
       * power_operand_int  (* uimm: unsigned immediate *)
