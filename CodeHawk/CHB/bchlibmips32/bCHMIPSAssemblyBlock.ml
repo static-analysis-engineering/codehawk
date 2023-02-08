@@ -91,7 +91,7 @@ object (self)
 
   method get_instruction_count = List.length self#get_instructions_rev
 
-  method get_instructions = List.rev self#get_instructions_rev
+  method get_instructions = self#get_instructions_rev
 
   method get_successors = successors
 
@@ -157,7 +157,7 @@ object (self)
     let _ =
       self#itera
         (fun ctxtiaddr instr ->
-          pp := (LBLOCK [STR ctxtiaddr; STR "  " ; instr#toPretty; NL]) :: !pp) in
+          pp := (LBLOCK [STR ctxtiaddr; STR "  "; instr#toPretty; NL]) :: !pp) in
     LBLOCK (List.rev !pp)
 
 end

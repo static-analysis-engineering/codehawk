@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -59,16 +61,20 @@ object (self)
   method get_next_instruction =
     match instruction_list with
     | [] -> 
-       let msg = LBLOCK [ block#get_first_address#toPretty ; STR ": " ; 
-			  STR "mips_code_pc#get_next_instruction" ] in
+       let msg =
+         LBLOCK [
+             block#get_first_address#toPretty;
+             STR ": ";
+	     STR "mips_code_pc#get_next_instruction"] in
        begin
-	 ch_error_log#add "cfg error" msg ;
+	 ch_error_log#add "cfg error" msg;
 	 raise (BCH_failure msg)
        end
     (* all conditional jump instructions have a delay slot *)
-    | [ h1 ; h2 ] when is_conditional_jump_instruction h1#get_opcode ->
-       let jumpproxy = make_mips_assembly_instruction
-                         (h2#get_address#add_int 1) NoOperation "" in
+    | [h1; h2] when is_conditional_jump_instruction h1#get_opcode ->
+       let jumpproxy =
+         make_mips_assembly_instruction
+           (h2#get_address#add_int 1) NoOperation "" in
        let jumploc = make_i_location ctxtloc (h2#get_address#add_int 1) in
        let testloc = make_i_location ctxtloc h1#get_address in
        let testfloc = get_floc testloc in
@@ -100,10 +106,13 @@ object (self)
     match conditional_successor_info with
     | Some i -> i
     | _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "No conditional jump info found for block at address: " ;
-                          block#get_first_address#toPretty ; STR " in function " ;
-                          block#get_faddr#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "No conditional jump info found for block at address: ";
+                 block#get_first_address#toPretty;
+                 STR " in function ";
+                 block#get_faddr#toPretty]))
 
   method private handle_delay_slot instr1 instr2 tl_instrs =
     let ctxtiaddr = (make_i_location ctxtloc instr2#get_address)#ci in
@@ -120,18 +129,21 @@ object (self)
     match sharedoperands with
     | [] ->
        begin
-         instruction_list <- instr1 :: tl_instrs ;
+         instruction_list <- instr1 :: tl_instrs;
          (ctxtiaddr,instr2)
        end
     | l ->
        begin
          chlog#add
            "delay slot"
-           (LBLOCK [ instr1#get_address#toPretty ; STR "  " ;
-                     fixed_length_pretty (STR (mips_opcode_to_string instr1#get_opcode)) 32 ;
-                     STR "; " ; STR (mips_opcode_to_string instr2#get_opcode) ]) ;
-         indelayslot <- true ;
-         instruction_list <- instr1::tl_instrs ;
+           (LBLOCK [
+                instr1#get_address#toPretty;
+                STR "  ";
+                fixed_length_pretty (STR (mips_opcode_to_string instr1#get_opcode)) 32;
+                STR "; ";
+                STR (mips_opcode_to_string instr2#get_opcode) ]);
+         indelayslot <- true;
+         instruction_list <- instr1::tl_instrs;
          (ctxtiaddr,instr2)
        end
         
@@ -140,31 +152,41 @@ object (self)
 
   method get_block_successor =
     match block#get_successors with
-    | [ successor ] -> successor
+    | [successor] -> successor
     | []  ->
-      let msg = LBLOCK [ block#get_first_address#toPretty ; STR ": " ; 
-			 STR "get_block_successor has no successors" ] in
+       let msg =
+         LBLOCK [
+             block#get_first_address#toPretty;
+             STR ": ";
+	     STR "get_block_successor has no successors"] in
       begin
-	ch_error_log#add "cfg error" msg ;
+	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
       end
     | _ ->
-      let msg = LBLOCK [ block#get_first_address#toPretty ; STR ": " ;
-			 STR "block_successor has more than one successor" ] in
+       let msg =
+         LBLOCK [
+             block#get_first_address#toPretty;
+             STR ": ";
+	     STR "block_successor has more than one successor"] in
       begin
-	ch_error_log#add "cfg error" msg ;
+	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
       end
 
   method get_false_branch_successor =
     match block#get_successors with
-    | [ false_branch ; _ ] -> false_branch
+    | [false_branch; _] -> false_branch
     | _ ->
       let msg = 
-	LBLOCK [ block#get_first_address#toPretty ; NL ; block#toPretty ; NL ;
-		 INDENT (3, STR "get_false_branch_successor does not have two successors") ] in
+	LBLOCK [
+            block#get_first_address#toPretty;
+            NL;
+            block#toPretty;
+            NL;
+	    INDENT (3, STR "get_false_branch_successor does not have two successors")] in
       begin
-	ch_error_log#add "cfg error" msg ;
+	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
       end
 
@@ -173,10 +195,14 @@ object (self)
     | [ _ ; true_branch ] -> true_branch
     | _ ->
       let msg = 
-	LBLOCK [ block#get_first_address#toPretty ; NL ; block#toPretty ; NL ;
-		 INDENT (3, STR "get_true_branch_successor does not have two successors") ] in
+	LBLOCK [
+            block#get_first_address#toPretty;
+            NL;
+            block#toPretty;
+            NL;
+	    INDENT (3, STR "get_true_branch_successor does not have two successors")] in
       begin
-	ch_error_log#add "cfg error" msg ;
+	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
       end
 

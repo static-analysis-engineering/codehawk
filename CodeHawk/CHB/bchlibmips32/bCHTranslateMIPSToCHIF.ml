@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1019,8 +1019,7 @@ let translate_mips_instruction
      let _ =
        chlog#add
          "opcode not translated"
-         (LBLOCK [ faddr#toPretty ; STR ": " ;
-                   STR (mips_opcode_to_string opc)]) in
+         (LBLOCK [faddr#toPretty; STR ": "; STR (mips_opcode_to_string opc)]) in
      default []
 
 
@@ -1029,11 +1028,11 @@ object (self)
 
   val finfo = get_function_info f#get_address
   val funloc =
-    make_location { loc_faddr = f#get_address ; loc_iaddr = f#get_address }
+    make_location {loc_faddr = f#get_address; loc_iaddr = f#get_address}
   val exitlabel =
     make_code_label
       ~modifier:"exit"
-      (make_location { loc_faddr = f#get_address ; loc_iaddr = f#get_address })#ci
+      (make_location {loc_faddr = f#get_address; loc_iaddr = f#get_address})#ci
   val codegraph = make_code_graph ()
   val specialization =
     let faddr = f#get_address#to_hex_string in
@@ -1061,10 +1060,9 @@ object (self)
           translate_mips_instruction ~funloc ~codepc ~blocklabel ~exitlabel ~cmds
         with
         | BCH_failure p ->
-           let msg = LBLOCK [ funloc#toPretty ; STR ", " ;
-                              blocklabel#toPretty ; p ] in
+           let msg = LBLOCK [funloc#toPretty; STR ", "; blocklabel#toPretty; p] in
            begin
-             ch_error_log#add "translate mips block" msg ;
+             ch_error_log#add "translate mips block" msg;
              raise (BCH_failure msg)
            end in
       match nodes with
@@ -1077,8 +1075,14 @@ object (self)
            let transaction = package_transaction finfo blocklabel newcmds in
            let (nodes,edges) =
              make_condition
-               ~testloc ~jumploc ~theniaddr ~elseiaddr ~blocklabel ~testexpr ~restriction in
-           ((blocklabel, [ transaction ])::nodes, edges)
+               ~testloc
+               ~jumploc
+               ~theniaddr
+               ~elseiaddr
+               ~blocklabel
+               ~testexpr
+               ~restriction in
+           ((blocklabel, [transaction ]) :: nodes, edges)
          else
            let transaction = package_transaction finfo blocklabel newcmds in
            let nodes = [ (blocklabel, [ transaction ]) ] in
@@ -1092,7 +1096,7 @@ object (self)
     let _ = finfo#env#start_transaction in
     let (nodes,edges) = aux [] in
     begin
-      List.iter (fun (label,node) -> codegraph#add_node label node) nodes ;
+      List.iter (fun (label,node) -> codegraph#add_node label node) nodes;
       List.iter (fun (src,tgt) -> codegraph#add_edge src tgt) edges
     end
 
@@ -1111,7 +1115,7 @@ object (self)
       let reqN () = env#mk_num_temp in
       let reqC = env#request_num_constant in
       let (rhsCmds,rhs) = xpr_to_numexpr reqN reqC (num_constant_expr f#get_address#to_numerical)  in
-      rhsCmds @ [ ASSIGN_NUM (t9Var, rhs) ] in
+      rhsCmds @ [ASSIGN_NUM (t9Var, rhs)] in
     let rAsserts = List.map freeze_initial_register_value mips_regular_registers in
     let externalMemVars = env#get_external_memory_variables in
     let externalMemVars = List.filter env#has_constant_offset externalMemVars in
@@ -1120,19 +1124,26 @@ object (self)
     let _ = finfo#add_base_pointer sp0 in
     let unknown_scalar = env#mk_special_variable "unknown_scalar" in
     let initializeScalar =
-      DOMAIN_OPERATION ( [ valueset_domain ], 
-			 { op_name = new symbol_t "set_unknown_scalar" ;
-			   op_args = [ ("unknown_scalar", unknown_scalar, WRITE) ] } ) in
+      DOMAIN_OPERATION
+        ([valueset_domain],
+	 {op_name = new symbol_t "set_unknown_scalar";
+	  op_args = [("unknown_scalar", unknown_scalar, WRITE)]}) in
     let initializeBasePointerOperations:cmd_t list =
       List.map (fun base ->
-	DOMAIN_OPERATION ( [ valueset_domain ], 
-			   { op_name = new symbol_t "initialize" ;
-			     op_args = [ (base#getName#getBaseName, base, READ) ] } ))
+	  DOMAIN_OPERATION
+            ([valueset_domain],
+	     {op_name = new symbol_t "initialize";
+	      op_args = [(base#getName#getBaseName, base, READ)]}))
 	finfo#get_base_pointers in
     let constantAssigns = env#end_transaction in
-    let cmds = constantAssigns @ t9Assign @ rAsserts @ mAsserts @ [ initializeScalar ] @ 
-      initializeBasePointerOperations  in
-    TRANSACTION ( new symbol_t "entry", LF.mkCode cmds, None)                       
+    let cmds =
+      constantAssigns
+      @ t9Assign
+      @ rAsserts
+      @ mAsserts
+      @ [initializeScalar]
+      @ initializeBasePointerOperations  in
+    TRANSACTION (new symbol_t "entry", LF.mkCode cmds, None)
 
   method translate =
     let faddr = f#get_address in
@@ -1143,13 +1154,13 @@ object (self)
     let _ = f#iter self#translate_block in
     let entrycmd = self#get_entry_cmd in
     let scope = finfo#env#get_scope in
-    let _ = codegraph#add_node entryLabel [ entrycmd ] in
-    let _ = codegraph#add_node exitlabel [ SKIP ] in
+    let _ = codegraph#add_node entryLabel [entrycmd] in
+    let _ = codegraph#add_node exitlabel [SKIP] in
     let _ = codegraph#add_edge entryLabel firstInstrLabel in
     let cfg = codegraph#to_cfg entryLabel exitLabel in
-    let body = LF.mkCode [ CFG (procname,cfg) ] in
+    let body = LF.mkCode [ CFG (procname,cfg)] in
     let proc = LF.mkProcedure  procname [] [] scope body in
-    (* let _ = pverbose [ proc#toPretty ; NL ] in *)
+    (* let _ = pverbose [proc#toPretty; NL] in *)
     mips_chif_system#add_mips_procedure proc
 
 end
