@@ -58,7 +58,9 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs bCHDisassembleVLEInstructionTest
+all: make_dirs \
+	bCHDisassemblePowerInstructionTest \
+	bCHDisassembleVLEInstructionTest \
 
 doc: 
 
@@ -66,10 +68,14 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
+bCHDisassemblePowerInstructionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHDisassemblePowerInstructionTest.cmi cmx/bCHDisassemblePowerInstructionTest.cmx
+	$(CAMLLINK) -o bCHDisassemblePowerInstructionTest $(OBJECTS) cmx/bCHDisassemblePowerInstructionTest.cmx
+
 bCHDisassembleVLEInstructionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHDisassembleVLEInstructionTest.cmi cmx/bCHDisassembleVLEInstructionTest.cmx
 	$(CAMLLINK) -o bCHDisassembleVLEInstructionTest $(OBJECTS) cmx/bCHDisassembleVLEInstructionTest.cmx
 
-run: bCHDisassembleVLEInstructionTest
+run: bCHDisassemblePowerInstructionTest bCHDisassembleVLEInstructionTest
+	./bCHDisassemblePowerInstructionTest
 	./bCHDisassembleVLEInstructionTest
 
 
