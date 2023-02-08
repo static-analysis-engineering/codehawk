@@ -199,6 +199,17 @@ object (self)
     | PowerGPReg index -> "r" ^ (string_of_int index)
     | PowerSpecialReg reg -> (power_special_reg_to_string reg)
     | PowerRegisterField f -> (power_register_field_to_string f)
+    | PowerConditionRegisterBit i ->
+       let c = function
+         | 0 -> "lt"
+         | 1 -> "gt"
+         | 2 -> "eq"
+         | _ -> "so" in
+       let (crf, b) = (i / 4, i mod 4) in
+       if crf = 0 then
+         c b
+       else
+         "4*cr" ^ (string_of_int crf) ^ "+" ^ (c b)
     | PowerImmediate imm -> imm#to_hex_string
     | PowerAbsolute dw -> dw#to_hex_string
     | PowerIndReg (index, offset) ->
@@ -226,13 +237,13 @@ let power_register_field_op
 
 
 let power_indirect_register_op
-      ~(index: int) ~(offset: numerical_t) ~(mode: power_operand_mode_t) =
-  new power_operand_t (PowerIndReg (index, offset)) mode
+      ~(basegpr: int) ~(offset: numerical_t) ~(mode: power_operand_mode_t) =
+  new power_operand_t (PowerIndReg (basegpr, offset)) mode
 
 
 let power_indexed_indirect_register_op
-      ~(base: int) ~(index: int) ~(mode: power_operand_mode_t) =
-  new power_operand_t (PowerIndexedIndReg (base, index)) mode
+      ~(basegpr: int) ~(offsetgpr: int) ~(mode: power_operand_mode_t) =
+  new power_operand_t (PowerIndexedIndReg (basegpr, offsetgpr)) mode
 
 
 let power_absolute_op (addr: doubleword_int) (mode: power_operand_mode_t) =
@@ -258,7 +269,7 @@ let power_immediate_op ~(signed: bool) ~(size: int) ~(imm: numerical_t) =
               (LBLOCK [
                    STR "Unexpected size in power-immediate-op: "; INT size]))
     else
-      if signed || imm#geq numerical_zero then
+      if imm#geq numerical_zero then
         imm
       else
         match size with
@@ -274,6 +285,17 @@ let power_immediate_op ~(signed: bool) ~(size: int) ~(imm: numerical_t) =
   let op =
     PowerImmediate (TR.tget_ok (make_immediate signed size immval#getNum)) in
   new power_operand_t op RD
+
+
+let power_gp_register_op_convert (index: int) =
+  if index = 0 then
+    power_immediate_op ~signed:false ~size:4 ~imm:numerical_zero
+  else
+    power_gp_register_op ~index ~mode:RD
+
+
+let crbit_op (index: int) ~(mode: power_operand_mode_t) =
+  new power_operand_t (PowerConditionRegisterBit index) mode
 
 
 let crf_op (index: int) =

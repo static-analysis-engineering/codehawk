@@ -48,11 +48,11 @@ open BCHPowerTypes
 class type ['a] opcode_formatter_int =
   object
     method ops: string -> power_operand_int list -> 'a
+    method int_ops: string -> int list -> 'a
     method no_ops: string -> 'a
-    method ops_bc: string -> power_operand_int -> power_operand_int -> 'a
+    method ops_bc: string -> power_operand_int -> power_operand_int list -> 'a
     method conditional_branch:
              power_instruction_type_t -> int -> int -> power_operand_int -> 'a
-    method ops_crbit: string -> power_operand_int list -> 'a
     method enable: string -> bool -> 'a
   end
 
@@ -70,6 +70,21 @@ let mnemonic_oe_rc (s: string) (oe: bool) (rc: bool): string =
   | (false, true) -> s ^ "."
   | (true, false) -> s ^ "o"
   | (true, true) -> s ^ "o."
+
+
+let mnemonic_bp (s: string) (bp: power_branch_prediction_t) =
+  match bp with
+  | BPNone -> s
+  | BPPlus _ -> s ^ "+"
+  | BPMinus _ -> s ^ "-"
+
+
+let mnemonic_bpp (s: string) (bph: bool) (bpt: bool): string =
+  match (bph, bpt) with
+  | (false, false) -> s
+  | (false, true) -> s ^ "+"
+  | (true, false) -> s ^ "-"
+  | (true, true) -> s ^ "+"
 
 
 let get_record (opc: power_opcode_t) =
@@ -195,7 +210,7 @@ let get_record (opc: power_opcode_t) =
 
   | AndImmediate (pit, shifted, op2, rc, ra, rs, uimm, cr) ->
      let mnemonic = match pit with
-       | PWR -> "andi."
+       | PWR -> if shifted then "andis." else "andi."
        | VLE16 -> "se_andi"
        | VLE32 when op2 && rc -> if shifted then "e_and2is." else "e_and2i."
        | VLE32 when op2 -> if shifted then "e_and2is" else "e_and2i"
@@ -271,19 +286,40 @@ let get_record (opc: power_opcode_t) =
        ida_asm = (fun f -> f#ops mnemonic [tgt])
      }
 
-  | BranchConditional (pit, bo, bi, dst) ->
+  | BranchConditional (pit, aa, bo, bi, bd) ->
      let mnemonic = match pit with
+       | PWR -> "bc"
        | VLE32 -> "e_bc"
-       | VLE16 -> "se_bc"
-       | PWR -> "bc" in
+       | VLE16 -> "se_bc" in
      {
        mnemonic = mnemonic;
-       operands = [dst];
-       ida_asm = (fun f -> f#conditional_branch pit bo bi dst)
+       operands = [bd];
+       ida_asm = (fun f -> f#conditional_branch pit bo bi bd)
+     }
+
+  | BranchConditionalLinkRegister (pit, bo, bi, bh, lr) ->
+     let mnemonic = match pit with
+       | PWR -> "bclr"
+       | _ -> "xxxx_bclr" in
+     {
+       mnemonic = mnemonic;
+       operands = [lr];
+       ida_asm = (fun f -> f#int_ops mnemonic [bo; bi; bh])
+     }
+
+  | BranchConditionalLinkRegisterLink (pit, bo, bi, bh, lr) ->
+     let mnemonic = match pit with
+       | PWR -> "bclrl"
+       | _ -> "xxxx_bclrl" in
+     {
+       mnemonic = mnemonic;
+       operands = [lr];
+       ida_asm = (fun f -> f#int_ops mnemonic [bo; bi; bh])
      }
 
   | BranchCountRegister (pit, tgt) ->
      let mnemonic = match pit with
+       | PWR -> "bctr"
        | VLE16 -> "se_bctr"
        | _ -> "xxxx_bctr" in
      {
@@ -302,61 +338,6 @@ let get_record (opc: power_opcode_t) =
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
-  | BranchEqual (pit, cr, bd) ->
-     let mnemonic = match pit with
-       | PWR -> "beq"
-       | VLE16 -> "se_beq"
-       | VLE32 -> "e_beq" in
-     {
-       mnemonic = mnemonic;
-       operands = [bd; cr];
-       ida_asm = (fun f -> f#ops_bc mnemonic cr bd)
-     }
-
-  | BranchGreaterEqual (pit, cr, bd) ->
-     let mnemonic = match pit with
-       | PWR -> "bge"
-       | VLE16 -> "se_bge"
-       | VLE32 -> "e_bge" in
-     {
-       mnemonic = mnemonic;
-       operands = [bd; cr];
-       ida_asm = (fun f -> f#ops_bc mnemonic cr bd)
-     }
-
-  | BranchGreaterThan (pit, cr, bd) ->
-     let mnemonic = match pit with
-       | PWR -> "bgt"
-       | VLE16 -> "se_bgt"
-       | VLE32 -> "e_bgt" in
-     {
-       mnemonic = mnemonic;
-       operands = [bd; cr];
-       ida_asm = (fun f -> f#ops_bc mnemonic cr bd)
-     }
-
-  | BranchLessEqual (pit, cr, bd) ->
-     let mnemonic = match pit with
-       | PWR -> "ble"
-       | VLE16 -> "se_ble"
-       | VLE32 -> "e_ble" in
-     {
-       mnemonic = mnemonic;
-       operands = [bd; cr];
-       ida_asm = (fun f -> f#ops_bc mnemonic cr bd)
-     }
-
-  | BranchLessThan (pit, cr, bd) ->
-     let mnemonic = match pit with
-       | PWR -> "blt"
-       | VLE16 -> "se_blt"
-       | VLE32 -> "e_blt" in
-     {
-       mnemonic = mnemonic;
-       operands = [bd; cr];
-       ida_asm = (fun f -> f#ops_bc mnemonic cr bd)
-     }
-
   | BranchLink (pit, tgt, lr) ->
      let mnemonic = match pit with
        | PWR -> "bl"
@@ -371,6 +352,7 @@ let get_record (opc: power_opcode_t) =
   | BranchLinkRegister (pit, tgt) ->
      let mnemonic = match pit with
        | VLE16 -> "se_blr"
+       | PWR -> "blr"
        | _ -> "xxxx_blr" in
      {
        mnemonic = mnemonic;
@@ -388,20 +370,174 @@ let get_record (opc: power_opcode_t) =
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
-  | BranchNotEqual (pit, cr, bd) ->
+  | CBranchDecrementNotZero (pit, aa, bo, bi, bp, bd, ctr) ->
      let mnemonic = match pit with
-       | PWR -> "bne"
+       | PWR -> "bdnz"
+       | VLE16 -> "se_bdnz"
+       | VLE32 -> "e_bdnz" in
+     {
+       mnemonic = mnemonic;
+       operands = [bd];
+       ida_asm = (fun f -> f#ops mnemonic [bd])
+     }
+
+  | CBranchDecrementZero (pit, aa, bo, bi, bp, bd, ctr) ->
+     let mnemonic = match pit with
+       | PWR -> "bdz"
+       | VLE16 -> "se_bdz"
+       | VLE32 -> "e_bdz" in
+     {
+       mnemonic = mnemonic;
+       operands = [bd];
+       ida_asm = (fun f -> f#ops mnemonic [bd])
+     }
+
+  | CBranchEqual (pit, aa, bo, bi, bp, cr, bd) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "beq" bp
+       | VLE16 -> "se_beq"
+       | VLE32 -> "e_beq" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; bd];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
+     }
+
+  | CBranchEqualLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "beqlr" bp
+       | VLE16 -> "se_beqlr"
+       | VLE32 -> "e_beqlr" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; lr];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [])
+     }
+
+  | CBranchGreaterEqual (pit, aa, bo, bi, bp, cr, bd) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "bge" bp
+       | VLE16 -> "se_bge"
+       | VLE32 -> "e_bge" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; bd];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
+     }
+
+  | CBranchGreaterEqualLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "bgelr" bp
+       | VLE16 -> "se_bgelr"
+       | VLE32 -> "e_bgelr" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; lr];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [])
+     }
+
+  | CBranchGreaterThan (pit, aa, bo, bi, bp, cr, bd) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "bgt" bp
+       | VLE16 -> "se_bgt"
+       | VLE32 -> "e_bgt" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; bd];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
+     }
+
+  | CBranchGreaterThanLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "bgtlr" bp
+       | VLE16 -> "se_bgtlr"
+       | VLE32 -> "e_bgtlr" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; lr];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [])
+     }
+
+  | CBranchLessEqual (pit, aa, bo, bi, bp, cr, bd) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "ble" bp
+       | VLE16 -> "se_ble"
+       | VLE32 -> "e_ble" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; bd];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
+     }
+
+  | CBranchLessEqualLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "blelr" bp
+       | VLE16 -> "se_blelr"
+       | VLE32 -> "e_blelr" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; lr];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [])
+     }
+
+  | CBranchLessThan (pit, aa, bo, bi, bp, cr, bd) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "blt" bp
+       | VLE16 -> "se_blt"
+       | VLE32 -> "e_blt" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; bd];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
+     }
+
+  | CBranchLessThanLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "bltlr" bp
+       | VLE16 -> "se_bltlr"
+       | VLE32 -> "e_bltlr" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; lr];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [])
+     }
+
+  | CBranchNotEqual (pit, aa, bo, bi, bp, cr, bd) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "bne" bp
        | VLE16 -> "se_bne"
        | VLE32 -> "e_bne" in
      {
        mnemonic = mnemonic;
-       operands = [bd; cr];
-       ida_asm = (fun f -> f#ops_bc mnemonic cr bd)
+       operands = [cr; bd];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
+     }
+
+  | CBranchNotEqualLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+     let mnemonic = match pit with
+       | PWR -> mnemonic_bp "bnelr" bp
+       | VLE16 -> "se_bnelr"
+       | VLE32 -> "e_bnelr" in
+     {
+       mnemonic = mnemonic;
+       operands = [cr; lr];
+       ida_asm = (fun f -> f#ops_bc mnemonic cr [])
+     }
+
+  | ClearLeftShiftLeftWordImmediate (pit, rc, ra, rs, mb, sh, cr) ->
+     let mnemonic = match pit with
+       | PWR -> if rc then "clrlslwi." else "clrlslwi"
+       | _ -> "xxxx_clrlslwi" in
+     {
+       mnemonic = mnemonic;
+       operands = [ra; rs; mb; sh];
+       ida_asm = (fun f -> f#ops mnemonic [ra; rs; mb; sh])
      }
 
   (* Simplified mnemonic, VLEPIM, Table A-23 *)
-  | ClearLeftWordImmediate (pit, ra, rs, mb) ->
+  | ClearLeftWordImmediate (pit, rc, ra, rs, mb) ->
      let mnemonic = match pit with
+       | PWR -> if rc then "clrlwi." else "clrlwi"
        | VLE32 -> "e_clrlwi"
        | _ -> "xxxx_clrlwi" in
      {
@@ -411,9 +547,9 @@ let get_record (opc: power_opcode_t) =
      }
 
   (* Simplified mnemonic, VLEPIM, Table A-23 *)
-  | ClearRightWordImmediate (pit, ra, rs, me) ->
-     let mnemonic =
-       match pit with
+  | ClearRightWordImmediate (pit, rc, ra, rs, me, cr) ->
+     let mnemonic = match pit with
+       | PWR -> if rc then "clrrwi." else "clrrwi"
        | VLE32 -> "e_clrrwi"
        | _ -> "xxxx_clrrwi" in
      {
@@ -424,7 +560,7 @@ let get_record (opc: power_opcode_t) =
 
   | CompareImmediate (pit, op16, cr, ra, simm) ->
      let mnemonic = match pit with
-       | PWR -> "cmpi"
+       | PWR -> "cmpwi"
        | VLE16 -> "se_cmpi"
        | VLE32 -> if op16 then "e_cmp16i" else "e_cmpi" in
      {
@@ -439,7 +575,7 @@ let get_record (opc: power_opcode_t) =
 
   | CompareLogical (pit, cr, ra, rb) ->
      let mnemonic = match pit with
-       | PWR -> "cmpl"
+       | PWR -> "cmplw"   (* in 32 bit, cmplw is the default version *)
        | VLE16 -> "se_cmpl"
        | VLE32 -> "cmplw" in
      {
@@ -453,7 +589,7 @@ let get_record (opc: power_opcode_t) =
 
   | CompareLogicalImmediate (pit, op16, cr, ra, uimm) ->
      let mnemonic = match pit with
-       | PWR -> "cmpli"
+       | PWR -> "cmplwi"
        | VLE16 -> "se_cmpli"
        | VLE32 -> if op16 then "e_cmpl16i" else "e_cmpli" in
      {
@@ -503,7 +639,7 @@ let get_record (opc: power_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [crd; cra];
-       ida_asm = (fun f -> f#ops_crbit mnemonic [crd; cra])
+       ida_asm = (fun f -> f#ops mnemonic [crd; cra])
      }
 
   | ConditionRegisterOr (pit, crd, cra, crb) ->
@@ -514,7 +650,7 @@ let get_record (opc: power_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [crd; cra; crb];
-       ida_asm = (fun f -> f#ops_crbit mnemonic [crd; cra; crb])
+       ida_asm = (fun f -> f#ops mnemonic [crd; cra; crb])
      }
 
   | CountLeadingZerosWord (pit, rc, ra, rs, cr0) ->
@@ -561,6 +697,16 @@ let get_record (opc: power_opcode_t) =
          | _ -> f#ops mnemonic [ra; rs])
      }
 
+  | EnforceInOrderExecutionIO (pit, mo) ->
+     let mnemonic = match pit with
+       | PWR -> "eieio"
+       | _ -> "xxxx_eieio" in
+     {
+       mnemonic = mnemonic;
+       operands = [mo];
+       ida_asm = (fun f -> f#ops mnemonic [mo]);
+     }
+
   | ExtendSignHalfword (pit, rc, ra, rs, cr) ->
      let mnemonic = match pit with
        | PWR -> "extsh"
@@ -595,8 +741,9 @@ let get_record (opc: power_opcode_t) =
        ida_asm = (fun f -> f#ops mnemonic [dst])
      }
 
-  | ExtractRightJustifyWordImmediate (pit, ra, rs, n, b) ->
+  | ExtractRightJustifyWordImmediate (pit, rc, ra, rs, n, b, cr) ->
      let mnemonic = match pit with
+       | PWR -> if rc then "extrwi." else "extrwi"
        | VLE32 -> "e_extrwi"
        | _ -> "xxxx_extrwi" in
      {
@@ -607,6 +754,7 @@ let get_record (opc: power_opcode_t) =
 
   | InsertRightWordImmediate (pit, rc, ra, rs, sh, mb, cr) ->
      let mnemonic = match pit with
+       | PWR -> if rc then "insrwi." else "insrwi"
        | VLE32 -> "e_insrwi"
        | _ -> "xxxx_insrwi" in
      {
@@ -624,6 +772,16 @@ let get_record (opc: power_opcode_t) =
        mnemonic = mnemonic;
        operands = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
+     }
+
+  | IntegerSelect (pit, rd, ra, rb, crb) ->
+     let mnemonic = match pit with
+       | PWR -> "isel"
+       | _ -> "xxxx_isel" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; ra; rb; crb];
+       ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb; crb])
      }
 
   | IntegerSelectEqual (pit, rd, ra, rb, cr) ->
@@ -658,9 +816,9 @@ let get_record (opc: power_opcode_t) =
 
   | LoadByteZero (pit, update, rd, ra, mem) ->
      let mnemonic = match pit with
+       | PWR -> if update then "lbzu" else "lbz"
        | VLE16 -> "se_lbz"
-       | VLE32 -> if update then "e_lbzu" else "e_lbz"
-       | _ -> "xxxx_lbz" in
+       | VLE32 -> if update then "e_lbzu" else "e_lbz" in
      {
        mnemonic = mnemonic;
        operands = [rd; ra; mem];
@@ -679,7 +837,7 @@ let get_record (opc: power_opcode_t) =
 
   | LoadHalfwordZero (pit, update, rd, ra, mem) ->
      let mnemonic = match pit with
-       | PWR -> "lhz"
+       | PWR -> if update then "lhzu" else "lhz"
        | VLE16 -> "se_lhz"
        | VLE32 -> if update then "e_lhzu" else "e_lhz" in
      let mnemonic = if update then mnemonic ^ "u" else mnemonic in
@@ -732,8 +890,8 @@ let get_record (opc: power_opcode_t) =
      }
 
   | LoadMultipleWord (pit, rd, ra, mem) ->
-     let mnemonic =
-       match pit with
+     let mnemonic = match pit with
+       | PWR -> "lmw"
        | VLE32 -> "e_lmw"
        | _ -> "xxxx_lmw" in
      {
@@ -763,29 +921,6 @@ let get_record (opc: power_opcode_t) =
        mnemonic = mnemonic;
        operands = [rd; ra; rb; mem];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
-     }
-
-  | LoopBranchConditionalNotZero (pit, bo, ctr, dst) ->
-     let mnemonic =
-       match pit with
-       | VLE32 -> "e_bdnz"
-       | VLE16 -> "se_bdnz"
-       | PWR -> "bdnz" in
-     {
-       mnemonic = mnemonic;
-       operands = [ctr; dst];
-       ida_asm = (fun f -> f#ops mnemonic [dst])
-     }
-  | LoopBranchConditionalZero (pit, bo, ctr, dst) ->
-     let mnemonic =
-       match pit with
-       | VLE32 -> "e_bdz"
-       | VLE16 -> "se_bdz"
-       | PWR -> "bdz" in
-     {
-       mnemonic = mnemonic;
-       operands = [ctr; dst];
-       ida_asm = (fun f -> f#ops mnemonic [dst])
      }
 
   | MemoryBarrier (pit, mo) ->
@@ -823,8 +958,7 @@ let get_record (opc: power_opcode_t) =
      }
 
   | MoveFromConditionRegister (pit, rd, cr) ->
-     let mnemonic =
-       match pit with
+     let mnemonic = match pit with
        | PWR -> "mfcr"
        | _ -> "xxxx_mfcr" in
      {
@@ -834,8 +968,8 @@ let get_record (opc: power_opcode_t) =
      }
 
   | MoveFromCountRegister (pit, rx, ctr) ->
-     let mnemonic =
-       match pit with
+     let mnemonic = match pit with
+       | PWR -> "mfctr"
        | VLE16 -> "se_mfctr"
        | _ -> "xxxx_mfctr" in
      {
@@ -845,8 +979,7 @@ let get_record (opc: power_opcode_t) =
      }
 
   | MoveFromExceptionRegister (pit, rd, xer) ->
-     let mnemonic =
-       match pit with
+     let mnemonic = match pit with
        | PWR -> "mfxer"
        | _ -> "xxxx_mfxer" in
      {
@@ -856,8 +989,7 @@ let get_record (opc: power_opcode_t) =
      }
 
   | MoveFromLinkRegister (pit, rd, lr) ->
-     let mnemonic =
-       match pit with
+     let mnemonic = match pit with
        | PWR -> "mflr"
        | VLE16 -> "se_mflr"
        | _ -> "xxxx_mflr" in
@@ -868,8 +1000,7 @@ let get_record (opc: power_opcode_t) =
      }
 
   | MoveFromMachineStateRegister (pit, rd, msr) ->
-     let mnemonic =
-       match pit with
+     let mnemonic = match pit with
        | PWR -> "mfmsr"
        | _ -> "xxxx_mfmsr" in
      {
@@ -879,8 +1010,7 @@ let get_record (opc: power_opcode_t) =
      }
 
   | MoveFromSpecialPurposeRegister (pit, rd, sprn) ->
-     let mnemonic =
-       match pit with
+     let mnemonic = match pit with
        | PWR -> "mfspr"
        | _ -> "xxxx_mfspr" in
      {
@@ -889,21 +1019,19 @@ let get_record (opc: power_opcode_t) =
        ida_asm = (fun f -> f#ops mnemonic [rd; sprn])
      }
 
-  | MoveRegister (pit, dst, src) ->
-     let mnemonic =
-       match pit with
-       | PWR -> "mr"
+  | MoveRegister (pit, rc, ra, rs) ->
+     let mnemonic = match pit with
+       | PWR -> if rc then "mr." else "mr"
        | VLE16 -> "se_mr"
        | _ -> "xxxx_mr" in
      {
        mnemonic = mnemonic;
-       operands = [src; dst];
-       ida_asm = (fun f -> f#ops mnemonic [dst; src])
+       operands = [ra; rs];
+       ida_asm = (fun f -> f#ops mnemonic [ra; rs])
      }
 
   | MoveToAlternateRegister (pit, arx, ry) ->
-     let mnemonic =
-       match pit with
+     let mnemonic = match pit with
        | VLE16 -> "se_mtar"
        | _ -> "xxxx_mtar" in
      {
@@ -946,9 +1074,18 @@ let get_record (opc: power_opcode_t) =
        ida_asm = (fun f -> f#ops mnemonic [rs])
      }
 
+  | MoveToExceptionRegister (pit, xer, rs) ->
+     let mnemonic = match pit with
+       | PWR -> "mtxer"
+       | _ -> "xxxx_mtxer" in
+     {
+       mnemonic = mnemonic;
+       operands = [xer; rs];
+       ida_asm = (fun f -> f#ops mnemonic [rs])
+     }
+
   | MoveToLinkRegister (pit, lr, rs) ->
-     let mnemonic =
-       match pit with
+     let mnemonic = match pit with
        | PWR -> "mtlr"
        | VLE16 -> "se_mtlr"
        | _ -> "xxxx_mtlr" in
@@ -1047,7 +1184,7 @@ let get_record (opc: power_opcode_t) =
 
   | OrImmediate (pit, rc, shifted, op2, ra, rs, uimm, cr) ->
      let mnemonic = match pit with
-       | PWR -> "ori"
+       | PWR -> if shifted then "oris" else "ori"
        | VLE32 ->
           (match (rc, shifted, op2) with
            | (false, false, false) -> "e_ori"
@@ -1103,6 +1240,7 @@ let get_record (opc: power_opcode_t) =
 
   | RotateLeftWord (pit, rc, ra, rs, rb, cr) ->
      let mnemonic = match pit with
+       | PWR -> if rc then "rotlw." else "rotlw"
        | VLE32 -> if rc then "e_rlw." else "e_rlw"
        | _ -> "xxxx_rlw" in
      {
@@ -1139,9 +1277,9 @@ let get_record (opc: power_opcode_t) =
 
   | ShiftLeftWordImmediate (pit, rc, ra, rs, sh, cr) ->
      let mnemonic = match pit with
+       | PWR -> "slwi"
        | VLE16 -> "se_slwi"
-       | VLE32 -> if rc then "e_slwi." else "e_slwi"
-       | _ -> "xxxx_slwi" in
+       | VLE32 -> if rc then "e_slwi." else "e_slwi" in
      {
        mnemonic = mnemonic;
        operands = [ra; rs; sh; cr];
@@ -1203,9 +1341,9 @@ let get_record (opc: power_opcode_t) =
 
   | StoreByte (pit, update, rs, ra, mem) ->
      let mnemonic = match pit with
+       | PWR -> if update then "stbu" else "stb"
        | VLE16 -> "se_stb"
-       | VLE32 -> if update then "e_stbu" else "e_stb"
-       | _ -> "xxxx_stb" in
+       | VLE32 -> if update then "e_stbu" else "e_stb" in
      {
        mnemonic = mnemonic;
        operands = [rs; ra; mem];
@@ -1224,9 +1362,9 @@ let get_record (opc: power_opcode_t) =
 
   | StoreHalfword (pit, update, rs, ra, mem) ->
      let mnemonic = match pit with
+       | PWR -> if update then "sthu" else "sth"
        | VLE16 -> "se_sth"
-       | VLE32 -> if update then "e_sthu" else "e_sth"
-       | _ -> "xxxx_sth" in
+       | VLE32 -> if update then "e_sthu" else "e_sth" in
      {
        mnemonic = mnemonic;
        operands = [rs; ra; mem];
@@ -1245,6 +1383,7 @@ let get_record (opc: power_opcode_t) =
 
   | StoreMultipleWord (pit, rs, ra, ea) ->
      let mnemonic = match pit with
+       | PWR -> "stmw"
        | VLE32 -> "e_stmw"
        | _ -> "xxxx_stmw" in
      {
@@ -1285,9 +1424,9 @@ let get_record (opc: power_opcode_t) =
 
   | StoreWord (pit, update, rs, ra, mem) ->
      let mnemonic = match pit with
+       | PWR -> if update then "stwu" else "stw"
        | VLE16 -> "se_stw"
-       | VLE32-> if update then "e_stwu" else "e_stw"
-       | _ -> "xxxx_stw" in
+       | VLE32-> if update then "e_stwu" else "e_stw" in
      {
        mnemonic = mnemonic;
        operands = [rs; ra; mem];
@@ -1415,9 +1554,9 @@ let get_record (opc: power_opcode_t) =
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; rb])
      }
 
-  | XorImmediate (pit, rc, ra, rs, uimm, cr) ->
+  | XorImmediate (pit, rc, shifted, ra, rs, uimm, cr) ->
      let mnemonic = match pit with
-       | PWR -> "xori"
+       | PWR -> if shifted then "xoris" else "xori"
        | VLE32 -> if rc then "e_xori." else "e_xori"
        | _ -> "xxxx_xori" in
      {
@@ -1473,31 +1612,26 @@ object (self)
             (false, a ^ ", " ^ op#toString)) (true, s) operands in
     result
 
+  method int_ops (s: string) (ops: int list): 'a =
+    let s = (fixed_length_string s width) in
+    let (_, result) =
+      List.fold_left
+        (fun (isfirst, a) op ->
+          if isfirst then
+            (false, s ^ " " ^ (string_of_int op))
+          else
+            (false, a ^ "," ^ (string_of_int op))) (true, s) ops in
+    result
+
   method no_ops (s: string) = s
 
-  method ops_bc (s: string) (cr: power_operand_int) (bd: power_operand_int) =
+  method ops_bc (s: string) (cr: power_operand_int) (ops: power_operand_int list) =
     if cr#is_default_cr then
-      self#ops s [bd]
+      match ops with
+      | [] -> self#no_ops s
+      | _ -> self#ops s ops
     else
-      self#ops s [cr; bd]
-
-  method ops_crbit (s: string) (operands: power_operand_int list) =
-    let c bi =
-      match bi with
-      | 0 -> "lt"
-      | 1 -> "gt"
-      | 2 -> "eq"
-      | _ -> "so" in
-    let crbit (op: power_operand_int) =
-      let bit = op#to_numerical#toInt in
-      let (crf, b) = (bit / 4, bit mod 4) in
-      if crf = 0 then
-        (c b)
-      else
-        "4*cr" ^ (string_of_int crf) ^ "+" ^ (c b) in
-    (fixed_length_string s width)
-    ^ " "
-    ^ (String.concat ", " (List.map crbit operands))
+      self#ops s (cr::ops)
 
   method enable (s: string) (b: bool) =
     let s = (fixed_length_string s width) in

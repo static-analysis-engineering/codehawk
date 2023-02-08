@@ -30,6 +30,7 @@ MLIS := \
 	bCHPowerOpcodeRecords \
 	bCHPowerAssemblyInstruction \
 	bCHPowerAssemblyInstructions \
+	bCHDisassemblePowerInstruction \
 	bCHDisassembleVLEInstruction \
 	bCHDisassemblePower \
 
@@ -42,6 +43,7 @@ SOURCES := \
 	bCHPowerOpcodeRecords \
 	bCHPowerAssemblyInstruction \
 	bCHPowerAssemblyInstructions \
+	bCHDisassemblePowerInstruction \
 	bCHDisassembleVLEInstruction \
 	bCHDisassemblePower \
 

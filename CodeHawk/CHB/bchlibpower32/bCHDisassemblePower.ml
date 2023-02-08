@@ -62,6 +62,7 @@ open BCHELFHeader
 open BCHELFTypes
 
 (* bchlibpower32 *)
+open BCHDisassemblePowerInstruction
 open BCHDisassembleVLEInstruction
 open BCHPowerAssemblyInstruction
 open BCHPowerAssemblyInstructions
@@ -138,8 +139,7 @@ let disassemble
             let instrbytes = ch#read_doubleword in
             let opcode =
               try
-                NotRecognized ("powerpc", instrbytes)
-                (* disassemble_power_instruction ch base instrbytes *)
+                disassemble_power_instruction ch iaddr instrbytes
               with
               | BCH_failure p ->
                  begin
