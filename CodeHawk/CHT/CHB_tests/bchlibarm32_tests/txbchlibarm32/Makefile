@@ -102,6 +102,7 @@ bCHTranslateARMToCHIFTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chut
 bCHARMAssemblyFunctionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHARMAssemblyFunctionTest.cmi cmx/bCHARMAssemblyFunctionTest.cmx
 	$(CAMLLINK) -o bCHARMAssemblyFunctionTest $(OBJECTS) cmx/bCHARMAssemblyFunctionTest.cmx
 
+
 run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHARMJumptableTest bCHTranslateARMToCHIFTest
 	./bCHDisassembleARMInstructionTest
 	./bCHDisassembleThumbInstructionTest

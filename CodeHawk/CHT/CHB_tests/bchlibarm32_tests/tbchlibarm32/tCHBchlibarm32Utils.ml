@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ module ARMI = BCHARMAssemblyInstruction
 module ARMIS = BCHARMAssemblyInstructions
 module R = BCHARMOpcodeRecords
 module DT = BCHDisassembleARMInstruction
+module DTT = BCHDisassembleThumbInstruction
 
 
 let string_of_opcode (opcode: arm_opcode_t) = R.arm_opcode_to_string opcode
@@ -74,6 +75,32 @@ let arm_function_setup
       let instrbytes = ch#read_doubleword in
       let opcode = DT.disassemble_arm_instruction ch iaddr instrbytes in
       let currentpos = ch#pos in
+      let instrlen = currentpos - prevpos in
+      let instrbytes = String.sub bytestring prevpos instrlen in
+      let instr = ARMI.make_arm_assembly_instruction iaddr false opcode instrbytes in
+      ARMIS.set_arm_assembly_instruction instr
+    done;
+    let _ = set_block_boundaries () in
+    let fn = construct_arm_assembly_function faddr in
+    ARMFS.arm_assembly_functions#add_function fn;
+    fn
+  end
+
+
+let thumb_function_setup
+      (faddr: doubleword_int) (bytes: string): arm_assembly_function_int =
+  let bytestring = U.write_hex_bytes_to_bytestring bytes in
+  let ch = make_stream bytes in
+  let size = String.length bytestring in
+  begin
+    ignore (F.functions_data#add_function faddr);
+    ARMIS.initialize_arm_assembly_instructions (String.length bytes) faddr [];
+    while ch#pos + 2 < size do
+      let prevpos = ch#pos in
+      let iaddr = faddr#add_int ch#pos in
+      let instrbytes = ch#read_ui16 in
+      let opcode = DTT.disassemble_thumb_instruction ch iaddr instrbytes in
+      let currentpos= ch#pos in
       let instrlen = currentpos - prevpos in
       let instrbytes = String.sub bytestring prevpos instrlen in
       let instr = ARMI.make_arm_assembly_instruction iaddr false opcode instrbytes in
