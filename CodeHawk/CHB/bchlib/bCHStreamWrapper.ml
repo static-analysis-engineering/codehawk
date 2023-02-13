@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -241,6 +241,45 @@ object (self)
     | 4 -> self#read_imm_unsigned_doubleword
     | _ ->
        raise (Invalid_argument ("read_immediate_unsigned: " ^ (string_of_int n)))
+
+  method read_dwarf_leb128 =
+    let b = ref self#read_byte in
+    if !b = 0 then
+      0
+    else if !b < 128 then
+      !b
+    else
+      let result = ref 0 in
+      let shift = ref 0 in
+      begin
+        while !b > 127 do
+          result := !result + (Int.shift_left (!b - 128) !shift);
+          b := self#read_byte;
+          shift := !shift + 7;
+        done;
+        !result + (Int.shift_left !b !shift)
+      end
+
+  method read_dwarf_sleb128 (size: int) =
+    let b = ref self#read_byte in
+    if !b = 0 then
+      0
+    else if !b < 64 then
+      !b
+    else if !b < 128 then
+      !b - 128
+    else
+      let result = ref 0 in
+      let shift = ref 0 in
+      while !b > 127 do
+        result := !result + (Int.shift_left (!b - 128) !shift);
+        b := self#read_byte;
+        shift := !shift + 7
+      done;
+      if (!shift < size) && ((Int.logand !b 0x40) != 0) then
+        (!result + (Int.shift_left !b !shift)) - (Int.shift_left 1 (!shift + 7))
+      else
+        !result + (Int.shift_left !b !shift)
 
   method read_null_terminated_string =
     let maxLen = 1000 in

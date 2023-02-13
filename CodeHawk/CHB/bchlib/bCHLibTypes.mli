@@ -688,6 +688,14 @@ object
   method read_imm_unsigned_doubleword: immediate_int
   method read_imm_unsigned: int -> immediate_int
 
+  (** Return the decoded value of the unsigned DWARF Little Endian Base 128
+      (LEB128) variable length data encoded value *)
+  method read_dwarf_leb128: int
+
+  (** Return the decoded value of the signed DWARF Little Endian Base 128
+      (LEB128) variable length data encoded value *)
+  method read_dwarf_sleb128: int -> int
+
   method read_null_terminated_string: string
   method read_sized_unicode_string: string
 
