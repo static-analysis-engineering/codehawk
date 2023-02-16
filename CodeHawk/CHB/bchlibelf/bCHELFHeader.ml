@@ -67,6 +67,8 @@ open BCHVariableType
 
 (* bchlibelf *)
 open BCHELFTypes
+open BCHELFDebugAbbrevSection
+open BCHELFDebugInfoSection
 open BCHELFDictionary
 open BCHELFDynamicSegment
 open BCHELFDynamicTable
@@ -128,7 +130,12 @@ let make_elf_section (sh:elf_section_header_int) (s:string) =
   | SHT_Rel -> ElfRelocationTable (mk_elf_relocation_table s sh vaddr)
   (* | SHT_Rela | SHT_Rel -> ElfSymbolTable (new elf_relocation_table_t s vaddr) *)
   | SHT_Dynamic -> ElfDynamicTable (mk_elf_dynamic_table s sh vaddr)
-  | SHT_ProgBits -> ElfProgramSection (mk_elf_program_section s sh vaddr)
+  | SHT_ProgBits ->
+     (match sh#get_section_name with
+      | ".debug_info" -> ElfDebugInfoSection (mk_elf_debug_info_section s sh)
+      | ".debug_abbrev" -> ElfDebugAbbrevSection (mk_elf_debug_abbrev_section s sh)
+      | _ ->
+         ElfProgramSection (mk_elf_program_section s sh vaddr))
   | _ -> ElfOtherSection (new elf_raw_section_t s vaddr)
 
 
@@ -646,6 +653,14 @@ object(self)
     H.fold (fun _ v r ->
         r || v#get_section_name = ".dynsym") section_header_table false
 
+  method has_debug_info =
+    H.fold (fun _ v r ->
+        r || v#get_section_name = ".debug_info") section_header_table false
+
+  method has_debug_abbrev =
+    H.fold (fun _  v r ->
+        r || v#get_section_name = ".debug_abbrev") section_header_table false
+
   method get_string_at_address (a:doubleword_int) =
     try
       H.fold (fun k v result ->
@@ -749,12 +764,13 @@ object(self)
 
   method private get_string_table =
     let result = ref [] in
-    let _ = H.iter (fun k v ->
-                if v#get_section_name = ".strtab" then result :=  k :: !result)
-                   section_header_table in
+    let _ =
+      H.iter (fun k v ->
+          if v#get_section_name = ".strtab" then result :=  k :: !result)
+        section_header_table in
     match !result with
-    | [] -> raise (BCH_failure (LBLOCK [ STR "No string table found" ]))
-    | [ index ] ->
+    | [] -> raise (BCH_failure (LBLOCK [STR "No string table found"]))
+    | [index] ->
        begin
          match self#get_section index with
          | ElfStringTable t -> t
@@ -772,12 +788,13 @@ object(self)
 
   method private get_symbol_table =
     let result = ref [] in
-    let _ = H.iter (fun k v ->
-                if v#get_section_name = ".symtab" then result := (k,v) :: !result)
-                   section_header_table in
+    let _ =
+      H.iter (fun k v ->
+          if v#get_section_name = ".symtab" then result := (k,v) :: !result)
+        section_header_table in
     match !result with
-    | [] -> raise (BCH_failure (LBLOCK [ STR "No symbol table found" ]))
-    | [ (index,h) ] ->
+    | [] -> raise (BCH_failure (LBLOCK [STR "No symbol table found"]))
+    | [(index,h)] ->
        begin
          match self#get_section index with
          | ElfSymbolTable t -> (h,t)
@@ -787,19 +804,21 @@ object(self)
                  (STR "Unexpected section type: symbol table expected"))
        end
     | l ->
-       raise (BCH_failure
-                (LBLOCK [
-                     STR "found multiple symbol  tables: ";
-                     pretty_print_list l (fun (i,_) -> INT i) "" "," ""]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "found multiple symbol  tables: ";
+                 pretty_print_list l (fun (i,_) -> INT i) "" "," ""]))
       
   method private get_dynamic_symbol_table =
     let result = ref [] in
-    let _ = H.iter (fun k v ->
-                if v#get_section_name = ".dynsym" then result := (k,v) :: !result)
-                   section_header_table in
+    let _ =
+      H.iter (fun k v ->
+          if v#get_section_name = ".dynsym" then result := (k,v) :: !result)
+        section_header_table in
     match !result with
-    | [] -> raise (BCH_failure (LBLOCK [ STR "No symbol table found" ]))
-    | [ (index,h) ] ->
+    | [] -> raise (BCH_failure (LBLOCK [STR "No symbol table found"]))
+    | [(index,h)] ->
        begin
          match self#get_section index with
          | ElfDynamicSymbolTable t -> (h,t)
@@ -808,12 +827,12 @@ object(self)
               (BCH_failure
                  (STR "Unexpected section type: symbol table expected"))
        end
-    | l -> raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "found multiple symbol  tables: ";
-                     pretty_print_list l (fun (i,_) -> INT i) "" "," ""]))
-    
+    | l ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "found multiple symbol  tables: ";
+                 pretty_print_list l (fun (i,_) -> INT i) "" "," ""]))
 
   (* Each symbol table has an associated string table, referred to by the sh_link
      item in the symbol table section header *)

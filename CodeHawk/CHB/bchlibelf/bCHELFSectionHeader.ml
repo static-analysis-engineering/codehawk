@@ -387,6 +387,10 @@ object (self)
   method is_power_vle =
     List.mem 28 sh_flags#get_bits_set
 
+  method is_debug_info = self#get_section_name = ".debug_info"
+
+  method is_debug_abbrev = self#get_section_name = ".debug_abbrev"
+
   method write_xml (node:xml_element_int) =
     let set = node#setAttribute in
     let setx t x = if x#equal wordzero then () else set t x#to_hex_string in
