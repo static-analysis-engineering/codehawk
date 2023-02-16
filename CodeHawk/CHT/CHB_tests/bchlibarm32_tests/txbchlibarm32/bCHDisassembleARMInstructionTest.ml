@@ -205,11 +205,37 @@ let arm_pc_relative () =
   end
 
 
+(* ARM-V8 crypto extension instructions *)
+let armv8_crypto () =
+  let tests = [
+      ("AESD.8-A1",     "4043b0f3", "AESD.8         Q2, Q0");
+      ("AESE.8-A1",     "0043b0f3", "AESE.8         Q2, Q0");
+      ("AESIMC.8-A1",   "c443b0f3", "AESIMC.8       Q2, Q2");
+      ("AESMC.8-A1",    "8443b0f3", "AESMC.8        Q2, Q2");
+    ] in
+  begin
+    TS.new_testsuite (testname ^ "_arm_basic") lastupdated;
+
+    List.iter (fun (title, bytes, result) ->
+        TS.add_simple_test
+          ~title
+          (fun () ->
+            let ch = make_stream bytes in
+            let instrbytes = ch#read_doubleword in
+            let opcode = TF.disassemble_arm_instruction ch base instrbytes in
+            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            A.equal_string result opcodetxt)) tests;
+
+    TS.launch_tests ()
+  end
+
+
 let () =
   begin
     TS.new_testfile testname lastupdated;
     arm_basic ();
     arm_pc_relative ();
+    armv8_crypto ();
     TS.exit_file ()
   end
                 
