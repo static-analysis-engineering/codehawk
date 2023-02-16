@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -191,8 +191,8 @@ let cc_expr
     | (Compare (ACCAlways, x, y, _), ACCSignedLE) -> XOp (XLe, [v x; v y])
     | (Compare (ACCAlways, x, y, _), ACCSignedGT) -> XOp (XGt, [v x; v y])
 
-    | (VCompare (_, ACCAlways, _, x, y), ACCSignedGT) ->
-       XOp (XGt, [v x; v y])
+    | (VCompare (_, ACCAlways, _, x, y), ACCSignedGT) -> XOp (XGt, [v x; v y])
+    | (VCompare (_, ACCAlways, _, x, y), ACCSignedLE) -> XOp (XLe, [v x; v y])
 
     | (Add (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
        XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr])
