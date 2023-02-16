@@ -73,5 +73,4 @@ clean:
 	rm -f *.ml~
 	rm -f *.mli~
 	rm -f Makefile~ 
-	rm -f tbchlib.cmxa
 	rm -rf doc
