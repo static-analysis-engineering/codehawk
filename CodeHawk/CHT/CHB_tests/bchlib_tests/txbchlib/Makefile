@@ -52,7 +52,7 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs bCHDoublewordTest bCHImmediateTest bCHLocationTest
+all: make_dirs bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest
 
 doc: 
 
@@ -69,10 +69,14 @@ bCHImmediateTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $
 bCHLocationTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHLocationTest.cmi cmx/bCHLocationTest.cmx
 	$(CAMLLINK) -o bCHLocationTest $(OBJECTS) cmx/bCHLocationTest.cmx
 
-run: bCHDoublewordTest bCHImmediateTest bCHLocationTest
+bCHStreamWrapperTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHStreamWrapperTest.cmi cmx/bCHStreamWrapperTest.cmx
+	$(CAMLLINK) -o bCHStreamWrapperTest $(OBJECTS) cmx/bCHStreamWrapperTest.cmx
+
+run: bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest
 	./bCHDoublewordTest
 	./bCHImmediateTest
 	./bCHLocationTest
+	./bCHStreamWrapperTest
 
 cmi/%.cmi: %.mli
 	$(CAMLC) -o $@ -c -opaque $<
