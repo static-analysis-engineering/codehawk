@@ -35,10 +35,14 @@ MLIS := \
 	bCHELFTypes \
 	bCHELFPrettyStrings \
 	bCHELFUtil \
+	bCHDwarfUtils \
 	bCHELFDictionary \
 	bCHELFSection \
 	bCHELFSegment \
 	bCHELFProgramSection \
+	bCHELFDebugARangesSection \
+	bCHELFDebugInfoSection \
+	bCHELFDebugAbbrevSection \
 	bCHELFStringTable \
 	bCHELFSymbolTable \
 	bCHELFDynamicTable \
@@ -48,16 +52,21 @@ MLIS := \
 	bCHELFSectionHeader \
 	bCHELFSectionHeaderCreator \
 	bCHELFHeader \
+	bCHDwarf \
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
 	bCHELFPrettyStrings \
 	bCHELFUtil \
+	bCHDwarfUtils \
 	bCHELFDictionary \
 	bCHELFSection \
 	bCHELFSegment \
 	bCHELFProgramSection \
+	bCHELFDebugARangesSection \
+	bCHELFDebugInfoSection \
+	bCHELFDebugAbbrevSection \
 	bCHELFStringTable \
 	bCHELFSymbolTable \
 	bCHELFRelocationTable \
@@ -67,6 +76,7 @@ SOURCES := \
 	bCHELFSectionHeader \
 	bCHELFSectionHeaderCreator \
 	bCHELFHeader \
+	bCHDwarf \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 

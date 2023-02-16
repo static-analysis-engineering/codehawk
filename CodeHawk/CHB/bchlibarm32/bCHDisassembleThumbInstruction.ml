@@ -1176,7 +1176,7 @@ let parse_thumb32_29_12
   (* < 29><12>00o<vn><rt>1010N001< 0>  VMOV - T1-from *)
   | (0, 0, 0, 1) when (bv 22) = 0 && (bv 5) = 0 && (b 3 0) = 0 ->
      let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let n = postfix_bit (bv 5) (b 19 16) in
+     let n = postfix_bit (bv 7) (b 19 16) in
      let vn = arm_extension_register_op XSingle n in
      (* VMOV<c> <Sn>, <Rt> *)
      VectorMove (cc, VfpNone, [vn WR; rt RD])
@@ -1185,7 +1185,7 @@ let parse_thumb32_29_12
   (* < 29><12>00o<vn><rt>1010N001< 0>  VMOV - T1-to *)
   | (1, 0, 0, 1) when (bv 22) = 0 && (bv 5) = 0 && (b 3 0) = 0 ->
      let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let n = postfix_bit (bv 5) (b 19 16) in
+     let n = postfix_bit (bv 7) (b 19 16) in
      let vn = arm_extension_register_op XSingle n in
      (* VMOV<c> <Rt>, <Sn> *)
      VectorMove (cc, VfpNone, [vn WR; rt RD])

@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,7 @@ object (self)
 
   method get_string (index:int) =
     if index < 0 || index >= String.length s then
-      raise (BCH_failure (LBLOCK [ STR "String index out of bounds: " ; INT index ]))
+      raise (BCH_failure (LBLOCK [STR "String index out of bounds: "; INT index]))
     else if index = 0 then
       ""
     else
