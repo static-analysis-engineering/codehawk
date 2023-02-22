@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022-2023  Aarno Labs LLC
+   Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,27 +26,34 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHLanguage
-
-
-(* xprlib *)
-open XprTypes
-
 (* bchlib *)
 open BCHLibTypes
 
-(* bchlibarm32 *)
-open BCHARMTypes
+(* bchlibelf *)
+open BCHELFTypes
 
 
-val string_of_opcode: arm_opcode_t -> string
+val equal_abbrev_entry:
+  ?msg:string
+  -> expected:(int * string * bool * (string * string) list)
+  -> received:debug_abbrev_table_entry_t
+  -> unit
 
 
-val arm_function_setup: doubleword_int -> string -> arm_assembly_function_int
+val equal_compilation_unit_header:
+  ?msg:string
+  -> expected:(string * int * string * int)
+  -> received: debug_compilation_unit_header_t
+  -> unit
 
 
-val thumb_function_setup: doubleword_int -> string -> arm_assembly_function_int
-
-
-val get_instrxdata_xprs: doubleword_int -> doubleword_int -> xpr_t list
+val equal_compilation_unit:
+  ?msg:string
+  -> expected:
+       (string
+        * string
+        * int
+        * dwarf_tag_type_t
+        * (dwarf_attr_type_t * string) list)
+  -> received: debug_compilation_unit_t
+  -> unit

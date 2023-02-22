@@ -29,6 +29,9 @@
 (* bchlib *)
 open BCHLibTypes
 
+(* xprlib *)
+open XprTypes
+
 (* bchlibarm32 *)
 open BCHARMTypes
 
@@ -44,4 +47,18 @@ val equal_cfg_edges:
   ?msg:string
   -> expected:(string * string) list
   -> received:(string * string) list
+  -> unit
+
+
+val equal_chif_conditionxprs:
+  ?msg:string
+  -> expected:string
+  -> received:xpr_t list
+  -> unit
+
+
+val equal_instrxdata_conditionxprs:
+  ?msg: string
+  -> expected:string
+  -> received:xpr_t list
   -> unit

@@ -45,8 +45,15 @@ module ARMU = TCHBchlibarm32Utils
 (* chlib *)
 open CHPretty
 open CHLanguage
+open CHLogger
+open BCHUtilities
+open BCHFnARMDictionary
+open BCHFloc
+open BCHARMAssemblyInstructions
+open XprToPretty
 
 (* chutil *)
+open CHPrettyUtil
 module TR = CHTraceResult
 
 (* bchlib *)
@@ -62,6 +69,7 @@ module R = BCHARMOpcodeRecords
 module DT = BCHDisassembleARMInstruction
 module TF = BCHTranslateARMToCHIF
 
+open BCHSystemSettings
 open BCHFunctionData
 open BCHBasicTypes
 open BCHARMAssemblyBlock
@@ -74,11 +82,14 @@ open BCHARMCodePC
 open BCHAnalyzeApp
 open BCHARMCHIFSystem
 open BCHFunctionInfo
+open BCHARMTestSupport
 
 
 let testname = "bCHTranslateARMToCHIFTest"
-let lastupdated = "2022-12-23"
+let lastupdated = "2023-02-17"
 
+let x2p = xpr_formatter#pr_expr
+let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
 
@@ -122,7 +133,7 @@ let translate_store () =
       ("STRH", "0x1b4bc", "b031cde100", [("arg.0016", "R3_in")])      
     ] in
   begin
-    TS.new_testsuite (testname ^ "_test_instr") lastupdated;
+    TS.new_testsuite (testname ^ "_translate_store") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
     ARMIS.initialize_arm_instructions 1000;
@@ -146,10 +157,86 @@ let translate_store () =
   end
 
 
+let thumb_chif_conditionxprs () =
+  let tests = [
+      ("reg-overwritten",
+       "0x4f04",
+       "0x4f12",
+       "44f6251393f87094b9f1910ff94602d8a9f6e1594847a9f6e769484700",
+       3,
+       "(( lsb gvb_0x4d94_in) <= 145)")
+    ] in
+  begin
+    TS.new_testsuite (testname ^ "_thumb_chif_conditionxprs") lastupdated;
+
+    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    ARMIS.initialize_arm_instructions 1000;
+    List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
+
+        TS.add_simple_test
+          ~title
+          (fun () ->
+            let _ = system_settings#set_thumb in
+            let _ = SI.system_info#set_arm_thumb_switch cfaddr "T" in
+            let faddr = make_dw cfaddr in
+            let fn = ARMU.thumb_function_setup faddr bytes in
+            let _ =
+              for i = 1 to iterations do
+                analyze_arm_function faddr fn 0
+              done in
+            let _ = testsupport#request_chif_conditionxprs in
+            let _ = TF.translate_arm_assembly_function fn in
+            let (_, _, txprs) =
+              TR.tget_ok (testsupport#retrieve_chif_conditionxprs ccaddr) in
+            ARMA.equal_chif_conditionxprs expectedcond txprs)
+      ) tests;
+
+    TS.launch_tests ()
+  end
+
+
+let thumb_instrxdata_conditionxprs () =
+  let tests = [
+      ("reg-overwritten",
+       "0x4f04",
+       "0x4f12",
+       "44f6251393f87094b9f1910ff94602d8a9f6e1594847a9f6e769484700",
+       3,
+       "(( lsb gvb_0x4d94_in) <= 145)")
+    ] in
+  begin
+    TS.new_testsuite (testname ^ "_thumb_instrxdata_conditionxprs") lastupdated;
+
+    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    ARMIS.initialize_arm_instructions 1000;
+    List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
+
+        TS.add_simple_test
+          ~title
+          (fun () ->
+            let _ = system_settings#set_thumb in
+            let _ = SI.system_info#set_arm_thumb_switch cfaddr "T" in
+            let faddr = make_dw cfaddr in
+            let iccaddr = make_dw ccaddr in
+            let fn = ARMU.thumb_function_setup faddr bytes in
+            let _ =
+              for i = 1 to iterations do
+                analyze_arm_function faddr fn 0
+              done in
+            let xprs = ARMU.get_instrxdata_xprs faddr iccaddr in
+            ARMA.equal_instrxdata_conditionxprs expectedcond xprs)
+      ) tests;
+
+    TS.launch_tests ()
+  end
+
+
 let () =
   begin
     TS.new_testfile testname lastupdated;
-    translate_store ();
+    (* translate_store (); *)
+    thumb_chif_conditionxprs ();
+    thumb_instrxdata_conditionxprs ();
     TS.exit_file ()
   end
         
