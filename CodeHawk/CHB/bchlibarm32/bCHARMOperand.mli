@@ -168,6 +168,7 @@ val mk_arm_absolute_target_op:
 
 val mk_arm_offset_address_op:
   ?align:int    (* alignment of value in arm_reg *)
+  -> ?size:int     (* size in bytes of the addressed object *)
   -> arm_reg_t
   -> arm_memory_offset_t   (* nonnegative offset *)
   -> isadd:bool

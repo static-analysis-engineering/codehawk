@@ -45,4 +45,10 @@ val disassemble_arm_sections: unit -> doubleword_int
 val set_block_boundaries: unit -> unit
 
 
+(** Associate condition codes in test instructions to condition code
+    used by conditional instructions. Only used externally in the unit
+    tests *)
+val associate_condition_code_users: unit -> unit
+
+
 val construct_functions_arm: unit -> unit

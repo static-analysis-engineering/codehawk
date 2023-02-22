@@ -159,10 +159,10 @@ object (self)
       | ARMLiteralAddress addr -> (tags, [bd#index_address addr])
       | ARMMemMultiple (r, align, n, size) ->
          (tags @ [ arm_reg_mfts#ts r ],[align; n; size])
-      | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
+      | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, size) ->
          let ioffset = self#index_arm_memory_offset offset in
          (tags @ [arm_reg_mfts#ts r],
-          [align; ioffset; setb isadd; setb iswback; setb isindex])
+          [align; ioffset; setb isadd; setb iswback; setb isindex; size])
       | ARMSIMDAddress (r, align, wb) ->
          (tags @ [arm_reg_mfts#ts r], [align; self#index_arm_simd_writeback wb])
       | ARMFPConstant x -> (tags @ [string_of_float x], [])

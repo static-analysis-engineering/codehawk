@@ -77,8 +77,10 @@ open BCHARMCodePC
 open BCHARMConditionalExpr
 open BCHARMOpcodeRecords
 open BCHARMOperand
+open BCHARMTestSupport
 open BCHARMTypes
 open BCHDisassembleARM
+
 
 module B = Big_int_Z
 module LF = CHOnlineCodeSet.LanguageFactory
@@ -105,6 +107,7 @@ let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
   let atts = match src with
     | Some s -> s#to_fixed_length_hex_string :: atts | _ -> atts in
   ctxt_string_to_symbol name ~atts address
+
 
 let get_invariant_label ?(bwd=false) (loc:location_int) =
   if bwd then
@@ -257,7 +260,8 @@ let make_instr_local_tests
       let elsecode = make_test_code (simplify_xpr (XOp (XLNot, [bxpr]))) in
       (frozenVars, Some (thencode, elsecode))
   | _ -> (frozenVars, None)
-  
+
+
 let make_tests
     ~(condinstr:arm_assembly_instruction_int)
     ~(testinstr:arm_assembly_instruction_int)
@@ -323,7 +327,9 @@ let make_tests
 	let extxprs = condfloc#inv#get_external_exprs var in
 	let extxprs =
           List.map (fun e -> substitute_expr (fun v -> e) expr) extxprs in
-	expr :: extxprs
+        match extxprs with
+        | [] -> [expr]
+        | _ -> extxprs
       else if varssize = 2 then
 	let varlist = vars in
 	let var1 = List.nth varlist 0 in
@@ -342,6 +348,9 @@ let make_tests
 	expr :: xprs
       else
 	[expr] in
+    let _ =
+      if testsupport#requested_chif_conditionxprs then
+        testsupport#submit_chif_conditionxprs condinstr testinstr xprs in
     List.concat (List.map convert_to_chif xprs) in
   let make_asserts exprs =
     let _ = env#start_transaction in
@@ -374,6 +383,7 @@ let make_tests
       let elsecode = make_test_code (simplify_xpr (XOp (XLNot, [bxpr]))) in
       (frozenVars, Some (thencode, elsecode))
   | _ -> (frozenVars, None)
+
 
 let make_local_tests
       (condinstr: arm_assembly_instruction_int) (condloc: location_int) =
@@ -1513,6 +1523,7 @@ let translate_arm_instruction
    * -------------------------------------------------------------------------*)
   | LoadRegisterByte (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
+     (* let rhs = mem#to_expr floc in *)
      let rhs = XOp (XXlsb, [mem#to_expr floc]) in
      let rhs = floc#inv#rewrite_expr rhs floc#env#get_variable_comparator in
      let (lhs, lhscmds) = rt#to_lhs floc in
@@ -2689,6 +2700,7 @@ let translate_arm_instruction
        floc#get_vardef_commands
          ~use:usevars
          ~usehigh:usehigh
+         ~flagdefs:flagdefs
          ctxtiaddr in
      default defcmds
 

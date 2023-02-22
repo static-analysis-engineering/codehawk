@@ -42,6 +42,7 @@ open CHXmlDocument
 open Xprt
 open XprToPretty
 open XprTypes
+open XprUtil
 open Xsimplify
 
 (* bchlib *)
@@ -71,6 +72,7 @@ open BCHARMLoopStructure
 open BCHARMOperand
 open BCHARMOpcodeRecords
 open BCHARMPseudocode
+open BCHARMTestSupport
 open BCHARMTypes
 
 module B = Big_int_Z
@@ -151,7 +153,27 @@ object (self)
           | _ -> x in *)
         let xpr =
           floc#inv#rewrite_expr x floc#env#get_variable_comparator in
-        simplify_xpr xpr
+        let xpr = simplify_xpr xpr in
+        let xpr =
+          let vars = variables_in_expr xpr in
+          let varssize = List.length vars in
+          if varssize = 1 then
+            let xvar = List.hd vars in
+            if floc#env#is_frozen_test_value xvar then
+              let (testvar, testiaddr, _) = floc#env#get_frozen_variable xvar in
+              let testloc = ctxt_string_to_location floc#fa testiaddr in
+              let testfloc = get_floc testloc in
+              let extxprs = testfloc#inv#get_external_exprs testvar in
+              let extxprs =
+                List.map (fun e -> substitute_expr (fun v -> e) xpr) extxprs in
+              (match extxprs with
+               | [] -> xpr
+               | _ -> List.hd extxprs)
+            else
+              xpr
+          else
+            xpr in
+        xpr
       with IO.No_more_input ->
             begin
               pr_debug [
@@ -166,6 +188,25 @@ object (self)
       let testfloc = get_floc testloc in
       let xpr =
         testfloc#inv#rewrite_expr x testfloc#env#get_variable_comparator in
+      let xpr =
+        let vars = variables_in_expr xpr in
+        let varssize = List.length vars in
+        if varssize = 1 then
+          let xvar = List.hd vars in
+          if floc#env#is_frozen_test_value xvar then
+            let (testvar, testiaddr, _) = floc#env#get_frozen_variable xvar in
+            let testloc = ctxt_string_to_location floc#fa testiaddr in
+            let testfloc = get_floc testloc in
+            let extxprs = testfloc#inv#get_external_exprs testvar in
+            let extxprs =
+              List.map (fun e -> substitute_expr (fun v -> e) xpr) extxprs in
+            (match extxprs with
+             | [] -> xpr
+             | _ -> List.hd extxprs)
+          else
+            xpr
+        else
+          xpr in
       simplify_xpr xpr in
     let add_instr_condition
           (tags: string list)
@@ -240,8 +281,9 @@ object (self)
           (x: xpr_t): (string list) * (int list) =
       let _ =
         if (List.length tags) = 0 then
-          raise (BCH_failure
-                   (LBLOCK [STR "Empty tag list in add_base_update"])) in
+          raise
+            (BCH_failure
+               (LBLOCK [STR "Empty tag list in add_base_update"])) in
       let xtag = (List.hd tags) ^ "vx" in
       let tags = xtag :: ((List.tl tags) @ ["bu"]) in
       let args = args @ [xd#index_variable v; xd#index_xpr x] in
@@ -254,6 +296,9 @@ object (self)
           ?(uses: int list = [])
           ?(useshigh: int list = [])
           () =
+      let _ =
+        if testsupport#requested_instrx_data then
+          testsupport#submit_instrx_data instr#get_address vars xprs in
       let varcount = List.length vars in
       let xprcount = List.length xprs in
       let rdefcount = List.length rdefs in
@@ -1935,4 +1980,3 @@ end
 
 
 let mk_arm_opcode_dictionary = new arm_opcode_dictionary_t
-

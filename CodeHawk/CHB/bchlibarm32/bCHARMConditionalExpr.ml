@@ -129,6 +129,8 @@ let freeze_variables
         fun v -> 
         if v#isTmp then
           varsKnown := false
+        else if env#is_function_initial_value v then
+          ()
         else if env#is_local_variable v then
           let _ =
             track_location
@@ -146,14 +148,15 @@ let freeze_variables
                      STR " test_var_is_equal"]) in
             ()
           else
-            let fv =
-              env#mk_frozen_test_value
-                v testloc#ci condloc#ci in frozenVars#set v fv
+            let fv = env#mk_frozen_test_value v testloc#ci condloc#ci in
+            frozenVars#set v fv
         else if env#is_unknown_memory_variable v then
           varsKnown := false) vars in
   let subst v =
     if frozenVars#has v then
-      XVar (Option.get (frozenVars#get v))
+      match condfloc#inv#get_external_exprs v with
+      | x::_ -> x
+      | _ -> XVar (Option.get (frozenVars#get v))
     else
       XVar v in
   if !varsKnown then

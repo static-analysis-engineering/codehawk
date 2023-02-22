@@ -190,7 +190,13 @@ let disassemble_arm_section
                    "arm-thumb switch"
                    (LBLOCK [iaddr#toPretty; STR ": thumb"])
                end
-            | _ -> () in
+            | _ ->
+               begin
+                 chlog#add
+                   "arm-thumb switch"
+                   (LBLOCK [iaddr#toPretty; STR ": not found"]);
+                 ()
+               end in
         try
           if is_data_block iaddr then
             skip_data_block prevPos ch
