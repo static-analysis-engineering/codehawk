@@ -69,7 +69,7 @@ let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 
-let tracked_locations = []
+let tracked_locations = ["0x4f0c"]
 
 let track_location loc p =
   if List.mem loc tracked_locations then
@@ -688,7 +688,6 @@ object (self)
              STR "; result: "; x2p result]) in
     result
 
-
   method get_constant (v:variable_t) =
     let rec aux l =
       match l with
@@ -755,7 +754,7 @@ object (self)
       let result =
         List.fold_left (fun acc f ->
             match f with
-            | NonRelationalFact (w,FSymbolicExpr x) when w#equal v ->
+            | NonRelationalFact (w, FSymbolicExpr x) when w#equal v ->
                x :: acc | _ -> acc) [] (self#get_var_facts v) in
       let _ =
         track_location

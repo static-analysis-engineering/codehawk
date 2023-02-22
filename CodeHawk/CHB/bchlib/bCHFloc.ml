@@ -617,12 +617,17 @@ object (self)
 	
   method get_memory_variable_1
            ?(align=1)    (* alignment of var value *)
+           ?(size=4)
            (var:variable_t)
            (offset:numerical_t) =
-    let _ = track_function
-              ~iaddr:self#cia self#fa
-              (LBLOCK [ STR "get_memory_variable_1: " ;  var#toPretty ; STR  " @ " ;
-                        offset#toPretty]) in
+    let _ =
+      track_function
+        ~iaddr:self#cia self#fa
+        (LBLOCK [
+             STR "get_memory_variable_1: ";
+             var#toPretty;
+             STR  " @ ";
+             offset#toPretty]) in
     let default () =
       self#env#mk_memory_variable
         (self#env#mk_unknown_memory_reference "memref-1") offset in
@@ -632,15 +637,16 @@ object (self)
 	let (base,offsetConstant) = inv#get_base_offset_constant var in
 	let memoffset = offsetConstant#add offset in
         let memref = self#env#mk_base_sym_reference base in
-        let _ = track_function
-                  ~iaddr:self#cia self#fa
-                  (LBLOCK [
-                       STR "base-offset: ";
-                       STR "memref: ";
-                       memref#toPretty;
-                       STR "; memoffset: ";
-                       memoffset#toPretty]) in
-        self#env#mk_memory_variable memref memoffset
+        let _ =
+          track_function
+            ~iaddr:self#cia self#fa
+            (LBLOCK [
+                 STR "base-offset: ";
+                 STR "memref: ";
+                 memref#toPretty;
+                 STR "; memoffset: ";
+                 memoffset#toPretty]) in
+        self#env#mk_memory_variable ~size memref memoffset
       else
         default () in
     let get_var_from_address () =
@@ -668,7 +674,7 @@ object (self)
               (self#cia ^ ": constant: " ^ n#toString))
            (fun base ->
              if system_info#get_image_base#le base then
-               self#env#mk_global_variable n
+               self#env#mk_global_variable ~size n
              else
                default ())
            (default ())
@@ -708,7 +714,7 @@ object (self)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method get_memory_variable_2
-           (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
+           ?(size=4) (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
     let _ = track_function
               ~iaddr:self#cia self#fa
               (LBLOCK [
@@ -719,12 +725,12 @@ object (self)
                    var2#toPretty;
                    STR "; offset: ";
                    offset#toPretty]) in
-    let addr = XOp (XPlus, [ XVar var1 ; XVar var2 ]) in
-    let addr = XOp (XPlus, [ addr ; num_constant_expr offset ]) in
+    let addr = XOp (XPlus, [XVar var1; XVar var2]) in
+    let addr = XOp (XPlus, [addr; num_constant_expr offset]) in
     let address = self#inv#rewrite_expr addr (self#env#get_variable_comparator) in
-    let (memref,memoffset) = self#decompose_address address in
+    let (memref, memoffset) = self#decompose_address address in
     if is_constant_offset memoffset then
-      self#env#mk_memory_variable memref (get_total_constant_offset memoffset)
+      self#env#mk_memory_variable ~size memref (get_total_constant_offset memoffset)
     else
       self#env#mk_memory_variable
         (self#env#mk_unknown_memory_reference "memref-2") numerical_zero
@@ -733,8 +739,12 @@ object (self)
    * resolve and save ScaledReg (cpureg1, cpureg2, s, offset)  (memrefs3)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-  method get_memory_variable_3 (base:variable_t) (index:variable_t) (scale:int) 
-    (offset:numerical_t) =
+  method get_memory_variable_3
+           ?(size=4)
+           (base:variable_t)
+           (index:variable_t)
+           (scale:int) 
+           (offset:numerical_t) =
     let default () =
       self#env#mk_memory_variable
         (self#env#mk_unknown_memory_reference "memref-1") offset in
@@ -753,7 +763,7 @@ object (self)
     let address = self#inv#rewrite_expr addr comparator in
     let (memref, memoffset) = self#decompose_address address in
     if is_constant_offset memoffset then
-      self#env#mk_memory_variable memref (get_total_constant_offset memoffset)
+      self#env#mk_memory_variable ~size memref (get_total_constant_offset memoffset)
     else
       match memoffset with
       | IndexOffset _ ->

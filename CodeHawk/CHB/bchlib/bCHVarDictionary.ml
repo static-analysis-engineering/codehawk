@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -155,7 +155,7 @@ object (self)
   method index_assembly_variable_denotation (v:assembly_variable_denotation_t) =
     let tags = [ assembly_variable_denotation_mcts#ts v ] in
     let key = match v with
-      | MemoryVariable (i,o) -> (tags, [i; self#index_memory_offset o])
+      | MemoryVariable (i, s, o) -> (tags, [i; s; self#index_memory_offset o])
       | RegisterVariable r -> (tags, [bd#index_register r])
       | CPUFlagVariable f -> (tags,[bd#index_flag f])
       | AuxiliaryVariable a -> (tags, [self#index_constant_value_variable a]) in
@@ -167,7 +167,7 @@ object (self)
     let t = t name tags in
     let a = a name args in
     match (t 0) with
-    | "m" -> MemoryVariable (a 0, self#get_memory_offset (a 1))
+    | "m" -> MemoryVariable (a 0, a 1, self#get_memory_offset (a 2))
     | "r" -> RegisterVariable (bd#get_register (a 0))
     | "f" -> CPUFlagVariable (bd#get_flag (a 0))
     | "a" -> AuxiliaryVariable (self#get_constant_value_variable (a 0))

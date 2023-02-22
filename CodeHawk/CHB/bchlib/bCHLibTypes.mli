@@ -1531,6 +1531,7 @@ class type invdictionary_int =
   object
 
     method xd: xprdictionary_int
+
     method index_non_relational_value: non_relational_value_t -> int
     method index_invariant_fact: invariant_fact_t -> int
 
@@ -2119,7 +2120,8 @@ end
 *)
 
 type assembly_variable_denotation_t =
-  | MemoryVariable of int * memory_offset_t    (* memory reference index *)
+  (* size (bytes) memory reference index *)
+  | MemoryVariable of int * int * memory_offset_t 
   | RegisterVariable of register_t
   | CPUFlagVariable of flag_t
   | AuxiliaryVariable of constant_value_variable_t
@@ -2258,10 +2260,13 @@ object
 
   (* constructors *)
   method make_memory_variable:
-           memory_reference_int -> memory_offset_t -> assembly_variable_int
+           ?size: int ->
+           memory_reference_int ->
+           memory_offset_t ->
+           assembly_variable_int
   method make_register_variable: register_t -> assembly_variable_int
   method make_flag_variable: flag_t -> assembly_variable_int
-  method make_global_variable: numerical_t -> assembly_variable_int
+  method make_global_variable: ?size:int -> numerical_t -> assembly_variable_int
   method make_frozen_test_value: 
     variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t-> assembly_variable_int
   method make_bridge_value: ctxt_iaddress_t -> int -> assembly_variable_int
@@ -2669,7 +2674,7 @@ class type function_environment_int =
     method mk_arm_extension_register_element_variable:
              arm_extension_register_element_t -> variable_t
 
-    method mk_global_variable: numerical_t -> variable_t
+    method mk_global_variable: ?size:int -> numerical_t -> variable_t
 
     method mk_initial_register_value: ?level:int -> register_t -> variable_t
     method mk_initial_memory_value  : variable_t -> variable_t
@@ -2678,9 +2683,13 @@ class type function_environment_int =
     method mk_bridge_value: ctxt_iaddress_t -> int -> variable_t
 
     method mk_memory_variable:
-             ?save_name:bool -> memory_reference_int -> numerical_t -> variable_t
+             ?save_name:bool
+             -> ?size:int
+             -> memory_reference_int
+             -> numerical_t
+             -> variable_t
     method mk_index_offset_memory_variable:
-             memory_reference_int -> memory_offset_t -> variable_t
+             ?size:int -> memory_reference_int -> memory_offset_t -> variable_t
     method mk_unknown_memory_variable: string -> variable_t
     method mk_frozen_test_value:
              variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t -> variable_t
@@ -3137,17 +3146,17 @@ object
   (* returns the memory reference corresponding to the address in
      variable plus offset *)
   method get_memory_variable_1:
-           ?align:int -> variable_t -> numerical_t -> variable_t
+           ?align:int -> ?size:int -> variable_t -> numerical_t -> variable_t
 
   (* returns the memory reference corresponding to a base and index
      variable plus offset *)
   method get_memory_variable_2:
-           variable_t -> variable_t -> numerical_t -> variable_t
+           ?size:int -> variable_t -> variable_t -> numerical_t -> variable_t
 
   (* returns the memory reference corresponding to a base and scaled index
      variable plus offset *)
   method get_memory_variable_3:
-           variable_t -> variable_t -> int -> numerical_t -> variable_t
+           ?size:int -> variable_t -> variable_t -> int -> numerical_t -> variable_t
 
   (* returns the memory reference corresponding to a global base and scaled
      index variable *)

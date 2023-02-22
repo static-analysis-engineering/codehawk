@@ -120,7 +120,7 @@ let read_xml_par_sideeffects (node:xml_element_int):sideeffect_t list =
   let par = read_xml_fts_parameter node in
   let t = ArgValue par in
   let ty () = 
-    let t = match resolve_type par.apar_type with 
+    let t = match BCHTypeDefinitions.resolve_type par.apar_type with 
       | TFun _ -> par.apar_type
       | TPtr (t,_) -> t 
       | THandle (s,_) -> TNamed (s,[])

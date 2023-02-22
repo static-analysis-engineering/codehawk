@@ -314,6 +314,8 @@ let register_from_string (name: string) =
     ARMRegister (armreg_from_string name)
   else if H.mem mipsregs_from_string_table name then
     MIPSRegister (mipsreg_from_string name)
+  else if name = "S0" then
+    ARMExtensionRegister ({armxr_type=XSingle; armxr_index=0})
   else
     raise
       (BCH_failure
