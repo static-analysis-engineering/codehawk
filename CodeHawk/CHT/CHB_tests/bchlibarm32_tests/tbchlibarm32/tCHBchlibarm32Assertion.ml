@@ -26,6 +26,13 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHPrettyUtil
+
+(* xprlib *)
+open XprToPretty
+open XprTypes
+
 (* bchlib *)
 open BCHLibTypes
 
@@ -33,6 +40,9 @@ open BCHLibTypes
 open BCHARMTypes
 
 module A = TCHAssertion
+
+let x2p = xpr_formatter#pr_expr
+let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
 
    
 let equal_jumptable_targets
@@ -65,3 +75,30 @@ let equal_cfg_edges
     ~msg
     expected
     received
+
+
+let equal_chif_conditionxprs
+      ?(msg="")
+      ~(expected: string)
+      ~(received: xpr_t list) =
+  match received with
+  | [] -> A.fail expected "empty list" msg
+  | [x] -> A.equal_string ~msg expected (x2s x)
+  | _ ->
+     let xs = List.map x2s received in
+     if List.mem expected xs then
+       ()
+     else
+       A.fail expected (String.concat "," xs) msg
+
+
+let equal_instrxdata_conditionxprs
+      ?(msg="")
+      ~(expected: string)
+      ~(received: xpr_t list) =
+  match received with
+  | [] -> A.fail expected "empty list" msg
+  | [_; _; _; fcond; _] ->
+     A.equal_string ~msg expected (x2s fcond)
+  | _ ->
+     A.fail expected (String.concat ", " (List.map x2s received)) msg
