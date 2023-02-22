@@ -123,6 +123,7 @@ type arm_operand_kind_t =
       * bool                     (* isadd *)
       * bool                     (* iswback *)
       * bool                     (* isindex *)
+      * int                      (* size, in bytes, of value addressed *)
   | ARMSIMDAddress of
       arm_reg_t                  (* base register *)
       * int                      (* alignment *)
@@ -1605,6 +1606,10 @@ class type arm_opcode_dictionary_int =
   object
 
     method index_sp_offset: int * interval_t -> int
+
+    (** [index_instr instr floc] indexes the variable locations and
+        invariant expressions associated with the arguments of [instr],
+        made accessible via the function location [floc].*)
     method index_instr:
              arm_assembly_instruction_int
              -> floc_int
@@ -1636,4 +1641,35 @@ class type arm_analysis_results_int =
     method record_results: ?save:bool -> arm_assembly_function_int -> unit
     method write_xml: xml_element_int -> unit
     method save: unit
+  end
+
+
+class type testsupport_int =
+  object
+    (* requests *)
+    method request_instrx_data: unit
+    method request_chif_conditionxprs: unit
+
+    (* predicates *)
+    method requested_instrx_data: bool
+    method requested_chif_conditionxprs: bool
+
+    (* data submissions *)
+    method submit_instrx_data:
+             doubleword_int -> variable_t list -> xpr_t list -> unit
+    method submit_chif_conditionxprs:
+             arm_assembly_instruction_int
+             -> arm_assembly_instruction_int
+             -> xpr_t list
+             -> unit
+
+    (* data retrievals *)
+    method retrieve_instrx_data:
+             string -> (variable_t list * xpr_t list) traceresult
+    method retrieve_chif_conditionxprs:
+             string
+             -> (arm_assembly_instruction_int
+                 * arm_assembly_instruction_int
+                 * xpr_t list) traceresult
+
   end
