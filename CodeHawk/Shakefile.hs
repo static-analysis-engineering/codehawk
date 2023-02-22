@@ -178,6 +178,8 @@ runBuild flags = do
                             "CHT/CH_tests/xprlib_tests/txxprlib",
                             "CHT/CHB_tests/bchlib_tests/tbchlib",
                             "CHT/CHB_tests/bchlib_tests/txbchlib",
+                            "CHT/CHB_tests/bchlibelf_tests/tbchlibelf",
+                            "CHT/CHB_tests/bchlibelf_tests/txbchlibelf",
                             "CHT/CHB_tests/bchlibarm32_tests/tbchlibarm32",
                             "CHT/CHB_tests/bchlibarm32_tests/txbchlibarm32",
                             "CHT/CHB_tests/bchlibpower32_tests/txbchlibpower32"
@@ -318,11 +320,13 @@ runBuild flags = do
                  ("bCHDoublewordTest", "bCHDoublewordTest.ml"),
                  ("bCHLocationTest", "bCHLocationTest.ml"),
                  ("bCHImmediateTest", "bCHImmediateTest.ml"),
+                 ("bCHELFDebugAbbrevSectionTest", "bCHELFDebugAbbrevSectionTest.ml"),
                  ("bCHARMAssemblyFunctionTest", "bCHARMAssemblyFunctionTest.ml"),
                  ("bCHARMJumptableTest", "bCHARMJumptableTest.ml"),
                  ("bCHDisassembleARMInstructionTest", "bCHDisassembleARMInstructionTest.ml"),
                  ("bCHDisassembleThumbInstructionTest", "bCHDisassembleThumbInstructionTest.ml"),
                  ("bCHTranslateARMToCHIFTest", "bCHTranslateARMToCHIFTest.ml"),
+                 ("bCHDisassemblePowerInstructionTest", "bCHDisassemblePowerInstructionTest.ml"),
                  ("bCHDisassembleVLEInstructionTest", "bCHDisassembleVLEInstructionTest.ml")
                 ]
 

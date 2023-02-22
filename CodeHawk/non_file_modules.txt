@@ -44,6 +44,7 @@ GToolbox
 GTree
 GWindow
 Hashtbl
+Int
 Int32
 Int64
 IntCollections
