@@ -2841,9 +2841,9 @@ let parse_thumb32_31_0
   let rt = arm_register_op (get_arm_reg (b 15 12)) in
   let rm = arm_register_op (get_arm_reg (b 3 0)) in
   let offset = ARMImmOffset (b 11 0) in
-  let mem =
+  let mem ?(size=4) mode =
     mk_arm_offset_address_op
-      ~align:4 rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+      ~size ~align:4 rnreg offset ~isadd:true ~isindex:true ~iswback:false mode in
   match (b 24 20) with
   (* < 31>00<  0><rn><rt>000000i2<rm>   STRB (register) - T2 *)
   | 0 when (b 11 6) = 0 ->
@@ -2884,7 +2884,7 @@ let parse_thumb32_31_0
      let offset = arm_shifted_index_offset (get_arm_reg (b 3 0)) reg_srt in
      let mem =
        mk_arm_offset_address_op
-         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+         ~size:1 rnreg offset ~isadd:true ~isindex:true ~iswback:false in
      (* LDRB<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
      LoadRegisterByte (cc, rt WR, rn RD, rm RD, mem RD, true)
 
@@ -2895,7 +2895,7 @@ let parse_thumb32_31_0
      let isindex = (b 10 10) = 1 in
      let isadd = (b 9 9) = 1 in
      let iswback = (b 8 8) = 1 in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
+     let mem = mk_arm_offset_address_op ~size:1 rnreg offset ~isadd ~isindex ~iswback in
      (* LDRB<c>.W <Rt>, [<Rn>{, #+/-<imm8>}]     Offset: (index,wback) = (T,F)
       * LDRB<c>.W <Rt>, [<Rn>, #+/-<imm8>]!      Pre-x : (index,wback) = (T,T)
       * LDRB<c>.W <Rt>, [<Rn>], #+/-<imm8>       Post-x: (index,wback) = (F,T)  *)
@@ -3036,7 +3036,7 @@ let parse_thumb32_31_0
   | 9 ->
      (* LDRB<c>.W <Rt>, [<Rn>, #<imm12>] *)
      let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical (b 11 0))) in
-     LoadRegisterByte (cc, rt WR, rn RD, immop, mem RD, true)
+     LoadRegisterByte (cc, rt WR, rn RD, immop, mem ~size:1 RD, true)
 
   (* < 31>00< 10><rn><rt><--imm12--->   STRH (immediate) - T2 *)
   | 10 ->
@@ -4550,9 +4550,9 @@ let parse_t16_load_store_reg
   let rt = regop rtreg in
   let reg_srt = ARMImmSRT (SRType_LSL, 0) in
   let offset = arm_shifted_index_offset rmreg reg_srt in
-  let mem m =
+  let mem ?(size=4) m =
     mk_arm_offset_address_op
-      rnreg offset ~isadd:true ~isindex:true ~iswback:false m in
+      ~size rnreg offset ~isadd:true ~isindex:true ~iswback:false m in
                
   match (b 11 9) with
 
@@ -4584,12 +4584,12 @@ let parse_t16_load_store_reg
   (* 0101101<r><r><r>  LDRH (register) - T1 *)
   | 5 ->
   (* LDRH<c> <Rt>, [<Rn>, <Rm>] *)
-     LoadRegisterHalfword (cc, rt WR, rn RD, rm RD, mem RD, false)
+     LoadRegisterHalfword (cc, rt WR, rn RD, rm RD, mem ~size:2 RD, false)
 
   (* 0101110<r><r><r>  LDRB (register) - T1 *)
   | 6 ->
      (* LDRB<c> <Rt>, [<Rn>, <Rm>] *)
-     LoadRegisterByte (cc, rt WR, rn RD, rm RD, mem RD, false)
+     LoadRegisterByte (cc, rt WR, rn RD, rm RD, mem ~size:1 RD, false)
 
   (* 0101111<r><r><r>  LDRSH (register) - T1 *)
   | 7 ->

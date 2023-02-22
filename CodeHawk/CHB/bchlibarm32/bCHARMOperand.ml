@@ -228,7 +228,7 @@ object (self:'a)
 
   method get_pc_relative_address (va: doubleword_int) (pcoffset: int) =
     match kind with
-    | ARMOffsetAddress (ARPC, align, ARMImmOffset off, isadd, _, _) ->
+    | ARMOffsetAddress (ARPC, align, ARMImmOffset off, isadd, _, _, _) ->
        let va =
          TR.tget_ok
            (int_to_doubleword (((va#to_int + pcoffset) / align) * align)) in
@@ -252,7 +252,7 @@ object (self:'a)
 
   method to_address (floc: floc_int): xpr_t =
     match kind with
-    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
+    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, _) ->
        let env = floc#f#env in
        let memoff =
          if isindex then
@@ -313,7 +313,7 @@ object (self:'a)
 
   method to_updated_offset_address (floc: floc_int): xpr_t =
     match kind with
-    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
+    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, _) ->
        let env = floc#f#env in
        if isindex then
          self#to_address floc
@@ -350,7 +350,7 @@ object (self:'a)
        end
     | ARMLiteralAddress dw ->
        floc#env#mk_global_variable dw#to_numerical
-    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex) ->
+    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, size) ->
        (match offset with
         | ARMImmOffset _ ->
            let rvar = env#mk_arm_register_variable r in
@@ -364,7 +364,7 @@ object (self:'a)
                      (LBLOCK [
                           STR "to_variable: offset not implemented: ";
                           self#toPretty])) in
-           floc#get_memory_variable_1 ~align rvar memoff
+           floc#get_memory_variable_1 ~size ~align rvar memoff
         | ARMShiftedIndexOffset _ ->
            let rvar = env#mk_arm_register_variable r in
            (match (offset, isadd) with
@@ -387,7 +387,7 @@ object (self:'a)
                      let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
                      (match xoffset with
                       | XConst (IntConst n) ->
-                         floc#env#mk_global_variable n
+                         floc#env#mk_global_variable ~size n
                       | _ ->
                          let _ =
                            if collect_diagnostics () then
@@ -401,7 +401,7 @@ object (self:'a)
                                     x2p ivax]) in
                          env#mk_unknown_memory_variable "operand")
                    else
-                     floc#get_memory_variable_3 rvar ivar scale (mkNumerical i)
+                     floc#get_memory_variable_3 ~size rvar ivar scale (mkNumerical i)
                 | _ ->
                    let _ =
                      if collect_diagnostics () then
@@ -596,7 +596,7 @@ object (self:'a)
 
   method is_pc_relative_address =
     match kind with
-    | ARMOffsetAddress (ARPC, _, ARMImmOffset _, _, _, _) -> true
+    | ARMOffsetAddress (ARPC, _, ARMImmOffset _, _, _, _, _) -> true
     | _ -> false
 
   method includes_pc =
@@ -609,7 +609,7 @@ object (self:'a)
 
   method is_offset_address_writeback =
     match kind with
-    | ARMOffsetAddress (_, _, _, _, true, _) -> true
+    | ARMOffsetAddress (_, _, _, _, true, _, _) -> true
     | _ -> false
 
   method toString =
@@ -640,7 +640,7 @@ object (self:'a)
       | ARMMemMultiple (r, align, n, size) ->
          let alignment = if align = 0 then "" else ":" ^ (string_of_int align) in
          (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">" ^ alignment
-      | ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex) ->
+      | ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex, size) ->
          let poffset = arm_memory_offset_to_string offset in
          let poffset = if isadd then poffset else "-" ^ poffset in
          (match (iswback, isindex) with
@@ -882,13 +882,15 @@ let mk_arm_absolute_target_op
 
 let mk_arm_offset_address_op
       ?(align=1)
+      ?(size=4)
       (reg:arm_reg_t)
       (offset:arm_memory_offset_t)
       ~(isadd:bool)
       ~(iswback:bool)
       ~(isindex:bool) =
+  let _ = chlog#add "mk_arm_offset_address_op" (LBLOCK [STR "size: "; INT size]) in
   new arm_operand_t
-    (ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex))
+    (ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex, size))
 
 
 let mk_arm_mem_multiple_op
