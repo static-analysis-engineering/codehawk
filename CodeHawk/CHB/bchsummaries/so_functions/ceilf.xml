@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2023-02-16 17:10:52"/>
+  <libfun lib="so_functions" name="ceilf">
+    <documentation>
+      <desc>ceiling value function</desc>
+      <apidoc>
+        <pt>
+          <ll>float ceilf(</ll>
+	  <ld>float x</ld>
+          <ll>)</ll>
+        </pt>
+	<par name="x">value to be converted</par>
+        <return>the converted value</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="ceilf">
+      <par loc="register" reg="S0" name="x" nr="1">
+        <type><float/></type>
+      </par>
+      <returntype><float/></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+</codehawk-binary-analyzer>
