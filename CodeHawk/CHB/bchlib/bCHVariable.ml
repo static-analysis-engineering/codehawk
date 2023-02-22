@@ -97,7 +97,8 @@ let raise_memref_type_error (r:memory_reference_int) (msg:pretty_t) =
 
 let rec denotation_to_pretty (v:assembly_variable_denotation_t) =
   match v with
-  | MemoryVariable (memref,offset) -> LBLOCK [STR "Mem "; INT memref]
+  | MemoryVariable (memref, size, offset) ->
+     LBLOCK [STR "Mem "; INT memref; STR "(size:"; INT size; STR ")"]
   | RegisterVariable r -> LBLOCK [STR "Reg "; STR (register_to_string r)]
   | CPUFlagVariable f -> LBLOCK [STR "Flag "; STR (flag_to_string f)]
   | AuxiliaryVariable v -> LBLOCK [STR "Aux "; aux_var_to_pretty v]
@@ -160,12 +161,12 @@ object (self:'a)
 
   method get_name  = 
     let rec aux den = match den with
-      | MemoryVariable (i,offset) ->
+      | MemoryVariable (i, size, offset) ->
          let basename = (memrefmgr#get_memory_reference i)#get_name in
          (match basename with
           | "var" -> stack_offset_to_name offset
           | "varr" -> realigned_stack_offset_to_name offset
-          | "gv" -> global_offset_to_name offset
+          | "gv" -> global_offset_to_name size offset
           | _ -> basename ^ (memory_offset_to_string offset))
       | RegisterVariable reg -> register_to_string reg
       | CPUFlagVariable flag -> flag_to_string flag
@@ -530,12 +531,12 @@ object (self)
     else
       raise
         (BCH_failure
-           (LBLOCK [STR "No variable found with index "; INT index ]))
+           (LBLOCK [STR "No variable found with index "; INT index]))
 
   method get_memvar_reference (v:variable_t) =
     let av = self#get_variable v in
     match av#get_denotation with
-    | MemoryVariable (i,_) -> memrefmgr#get_memory_reference i
+    | MemoryVariable (i, _, _) -> memrefmgr#get_memory_reference i
     | _ ->
        raise_var_type_error av (STR "Memory Variable")
 
@@ -543,10 +544,10 @@ object (self)
     if self#has_var v then
       let av = self#get_variable v in
       match av#get_denotation with
-      | MemoryVariable (_,o) -> o
+      | MemoryVariable (_, s, o) -> o
       | _ -> raise_var_type_error av (STR "Memory Variable")
     else
-      raise (BCH_failure (LBLOCK [STR "Temporary variable: "; v#toPretty ]))
+      raise (BCH_failure (LBLOCK [STR "Temporary variable: "; v#toPretty]))
 
   method get_memval_offset (v:variable_t) =
     if self#has_var v then
@@ -559,12 +560,12 @@ object (self)
              (LBLOCK [
                   STR "Not an initial memory variable: "; v#toPretty]))
     else
-      raise (BCH_failure (LBLOCK [ STR "Temporary variable: "; v#toPretty]))
+      raise (BCH_failure (LBLOCK [STR "Temporary variable: "; v#toPretty]))
 
   method private get_memaddress_reference (v:variable_t) =
     let av = self#get_variable v in
     match av#get_denotation with
-    | AuxiliaryVariable (MemoryAddress (i,_)) ->
+    | AuxiliaryVariable (MemoryAddress (i, _)) ->
        memrefmgr#get_memory_reference i
     | _ ->
        raise_var_type_error av (STR "Memory Address")
@@ -582,8 +583,10 @@ object (self)
   method private has_index (index:int) = H.mem vartable index
 
   method make_memory_variable
-           (memref:memory_reference_int) (offset:memory_offset_t) =
-    self#mk_variable (MemoryVariable (memref#index,offset))
+           ?(size=4)
+           (memref:memory_reference_int)
+           (offset:memory_offset_t) =
+    self#mk_variable (MemoryVariable (memref#index, size, offset))
 
   method make_memref_from_basevar (v:variable_t) =
     if self#has_var v then
@@ -626,10 +629,10 @@ object (self)
   method make_flag_variable (flag: flag_t) =
     self#mk_variable (CPUFlagVariable flag)
 
-  method make_global_variable (n:numerical_t) =
+  method make_global_variable ?(size=4) (n:numerical_t) =
     let offset = ConstantOffset (n, NoOffset) in
     let memref = memrefmgr#mk_global_reference in
-    self#make_memory_variable memref offset
+    self#make_memory_variable ~size memref offset
 
   method make_frozen_test_value 
            (var:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
@@ -755,11 +758,11 @@ object (self)
 	    | (_, AuxiliaryVariable (FunctionPointer _)) -> 1
 	    | (AuxiliaryVariable (FieldValue _), _) -> -1
 	    | (_, AuxiliaryVariable (FieldValue _)) -> 1
-	    | (MemoryVariable _,_) 
+	    | (MemoryVariable _, _) 
 		 when (let memref = self#get_memvar_reference v1 in
                        match memref#get_base with
                        | BGlobal -> true | _ -> false) -> -1
-	    | (_,MemoryVariable (i1,_)) 
+	    | (_, MemoryVariable (i1, _, _)) 
 		 when (let memref = self#get_memvar_reference v2 in
                        match memref#get_base with
                        |BGlobal -> true | _ -> false) -> 1
@@ -885,7 +888,7 @@ object (self)
   method is_unknown_offset_memory_variable (v:variable_t) =
     (self#has_var v)
       && (match (self#get_variable v)#get_denotation with
-          | MemoryVariable (_,o) -> is_unknown_offset o
+          | MemoryVariable (_, s, o) -> is_unknown_offset o
           | _ -> false)
 
   method is_unknown_memory_variable (v:variable_t) =

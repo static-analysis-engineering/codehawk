@@ -167,14 +167,14 @@ let read_xml_par_preconditions (node:xml_element_int):precondition_t list =
   let pNodes = if hasc "pre" then (getc "pre")#getChildren else [] in
   let par = read_xml_fts_parameter node in
   let t = ArgValue par in
-  let ty () = match resolve_type par.apar_type with 
+  let ty () = match BCHTypeDefinitions.resolve_type par.apar_type with 
     | TFun _ -> par.apar_type
     | TPtr (t,_) -> t 
     | THandle (s,_) -> TNamed (s,[])
     | _ ->
       raise_xml_error node 
 	(LBLOCK [
-             STR "Expected pointer type for ";
+             STR "Pre: Expected pointer type for ";
              STR par.apar_name;
 	     STR ", but found ";
              btype_to_pretty par.apar_type]) in

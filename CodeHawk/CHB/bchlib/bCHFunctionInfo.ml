@@ -770,6 +770,7 @@ object (self)
 
   method mk_memory_variable
            ?(save_name=true)
+           ?(size=4)
            (memref:memory_reference_int)
            (offset:numerical_t) =
     if memref#is_unknown_reference then
@@ -780,7 +781,7 @@ object (self)
 	   Some (variable_names#get v#getName#getSeqNumber)
         | _ -> None in
       let offset = ConstantOffset (offset,NoOffset) in
-      let avar = varmgr#make_memory_variable memref offset in
+      let avar = varmgr#make_memory_variable ~size memref offset in
       let v = self#mk_variable avar in
       let _ = match optName with
 	  Some name -> 
@@ -792,15 +793,17 @@ object (self)
       v
 
   method mk_index_offset_memory_variable
-           (memref: memory_reference_int) (offset: memory_offset_t) =
+           ?(size=4)
+           (memref: memory_reference_int)
+           (offset: memory_offset_t) =
     if memref#is_unknown_reference then
       self#mk_num_temp
     else
-      let avar = varmgr#make_memory_variable memref offset in
+      let avar = varmgr#make_memory_variable memref ~size offset in
       self#mk_variable avar
 
-  method mk_global_variable (offset:numerical_t) =
-    self#mk_variable (varmgr#make_global_variable offset)
+  method mk_global_variable ?(size=4) (offset:numerical_t) =
+    self#mk_variable (varmgr#make_global_variable ~size offset)
     
   method mk_register_variable (register:register_t) =
     self#mk_variable (varmgr#make_register_variable register)

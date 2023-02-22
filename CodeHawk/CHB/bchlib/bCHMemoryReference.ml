@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -130,21 +130,28 @@ let stack_offset_to_name offset =
   | _ -> "var.[" ^ (memory_offset_to_string offset) ^ "]"
 
 
-let global_offset_to_name (offset: memory_offset_t) =
+let global_offset_to_name (size: int) (offset: memory_offset_t) =
+  let prefix =
+    match size with
+    | 1 -> "gvb_"
+    | 2 -> "gvh_"
+    | _ -> "gv_" in
   try
     match offset with
     | ConstantOffset (n, s) when n#gt numerical_zero ->
        log_tfold_default
          (mk_tracelog_spec "global_offset_to_name")
          (fun dw ->
-           "gv_" ^ dw#to_hex_string ^ (memory_offset_to_string s))
+           let _ = chlog#add "create global" (LBLOCK [STR prefix; STR dw#to_hex_string]) in
+           prefix ^ dw#to_hex_string ^ (memory_offset_to_string s))
          ("gv_illegal_address")
          (numerical_to_doubleword n)
-    | _ -> "gv_" ^ (memory_offset_to_string offset)
+    | _ -> prefix ^ (memory_offset_to_string offset)
   with
   | BCH_failure p ->
-     raise (BCH_failure
-              (LBLOCK [ STR "global_offset_to_name: " ; p ]))
+     raise
+       (BCH_failure
+          (LBLOCK [STR "global_offset_to_name: "; p]))
 
 
 let realigned_stack_offset_to_name offset =
