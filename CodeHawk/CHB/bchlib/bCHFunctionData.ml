@@ -164,6 +164,7 @@ object (self)
     let tags = if self#has_class_info then "c" :: tags else tags in
     let tags = if library_stub then "l" :: tags else tags in
     let tags = if by_preamble then "pre" :: tags else tags in
+    let tags = if self#is_inlined then "inlined" :: tags else tags in
     let args =
       match classinfo with
       | Some (cname,isstatic) ->
@@ -211,6 +212,9 @@ object (self)
   method get_function_entry_points =
     let inlinedfns = self#retrieve_addresses (fun f -> f#is_inlined) in
     let otherfns = self#retrieve_addresses (fun f -> not f#is_inlined) in
+    (* List inlined functions before other functions, so they are guaranteed
+       to have been constructed before the functions that inline them are
+       being constructed.*)
     inlinedfns @ otherfns
 
   method get_library_stubs =
@@ -291,6 +295,7 @@ object (self)
             (if List.mem "u" tags then fe#set_user_provided);
             (if List.mem "v" tags then fe#set_virtual);
             (if List.mem "l" tags then fe#set_library_stub);
+            (if List.mem "inlined" tags then fe#set_inlined);
             (if List.mem "c" tags then
                let classname = bd#get_string (a 0) in
                let isstatic = (a 1) = 1 in

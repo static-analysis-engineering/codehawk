@@ -211,6 +211,7 @@ object (self)
   val mutable user_classes = 0
   val mutable encodings = []
   val mutable inlined_functions = []
+  val mutable trampolines = []
 
   val data_export_specs = H.create 3
 
@@ -350,6 +351,15 @@ object (self)
       chlog#add "add inlined function" (faddr#toPretty)
     end
 
+  method private add_trampoline
+                   (startaddr: doubleword_int) (endaddr: doubleword_int) =
+    begin
+      trampolines <- (startaddr, endaddr) :: trampolines;
+      chlog#add
+        "add trampoline"
+        (LBLOCK [startaddr#toPretty; STR ", "; endaddr#toPretty])
+    end
+
   method private add_inlined_block (faddr:doubleword_int) (baddr:doubleword_int) =
     let fd = functions_data#add_function faddr in
     begin
@@ -365,6 +375,10 @@ object (self)
 
   method is_inlined_function (a:doubleword_int) =
     List.exists (fun i -> a#equal i) inlined_functions
+
+  method is_in_trampoline (a: doubleword_int) =
+    List.fold_left (fun acc (startaddr, endaddr) ->
+        acc || (startaddr#le a && a#lt endaddr)) false trampolines
 
   method get_esp_adjustment (faddr:doubleword_int) (iaddr:doubleword_int) =
     if H.mem esp_adjustments_i iaddr#index then
@@ -791,6 +805,10 @@ object (self)
       (if hasc "inlined-blocks" then
          let inode = getc "inlined-blocks" in
          self#read_xml_inlined_blocks inode);
+
+      (if hasc "trampolines" then
+         let tnode = getc "trampolines" in
+         self#read_xml_trampolines tnode);
 
       (if hasc "specializations" then
          specializations#read_xml (getc "specializations"));
@@ -1286,6 +1304,17 @@ object (self)
         let _ = chlog#add "add inlined function" faddr#toPretty in
         self#add_inlined_function faddr) (node#getTaggedChildren "inline")
 
+  method private read_xml_trampolines (node: xml_element_int) =
+    List.iter (fun n ->
+        let geta n tag = geta_fail "read_xml_trampolines" n tag in
+        let startaddr = geta n "start" in
+        let endaddr = geta n "end" in
+        let _ =
+          chlog#add
+            "add trampoline"
+            (LBLOCK [startaddr#toPretty; STR ", "; endaddr#toPretty]) in
+        self#add_trampoline startaddr endaddr) (node#getTaggedChildren "trampoline")
+
   method private read_xml_inlined_blocks (node:xml_element_int) =
     List.iter (fun n  ->
         let geta n tag = geta_fail "read_xml_inlined_blocks" n tag in
@@ -1706,7 +1735,13 @@ object (self)
                STR "system-info: collected ";
                INT (List.length feps);
 	       STR " function entry points"]);
-	List.iter (fun fe -> ignore (functions_data#add_function fe)) feps
+	List.iter
+          (fun fe ->
+            let fd = functions_data#add_function fe in
+            if self#is_in_trampoline fe then
+              fd#set_inlined
+            else
+              ()) feps
       end
 
   method is_nonreturning_call (fa:doubleword_int) (ia:doubleword_int) =

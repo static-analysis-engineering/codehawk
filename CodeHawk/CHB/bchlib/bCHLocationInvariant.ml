@@ -69,7 +69,7 @@ let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 
-let tracked_locations = ["0x4f0c"]
+let tracked_locations = []
 
 let track_location loc p =
   if List.mem loc tracked_locations then
