@@ -181,6 +181,13 @@ let get_successors
         | IfThen _ when instr#is_aggregate_anchor ->
            let exitinstr = (get_aggregate iaddr)#exitinstr in
            next_from exitinstr#get_address
+
+        | IfThen (_, xyz) ->
+           let _ =
+             chlog#add
+               "function construction:IfThen"
+               (LBLOCK [STR "Not handled: "; STR xyz; STR " at "; iaddr#toPretty]) in
+           next ()
           
         | TableBranchByte _
           | TableBranchHalfword _

@@ -191,12 +191,7 @@ let disassemble_arm_section
                    (LBLOCK [iaddr#toPretty; STR ": thumb"])
                end
             | _ ->
-               begin
-                 chlog#add
-                   "arm-thumb switch"
-                   (LBLOCK [iaddr#toPretty; STR ": not found"]);
-                 ()
-               end in
+               () in
         try
           if is_data_block iaddr then
             skip_data_block prevPos ch
@@ -688,7 +683,8 @@ let set_block_boundaries () =
              true
           | BranchLink (_, op) | BranchLinkExchange (_, op)
                when op#is_absolute_address
-                    && system_info#is_inlined_function op#get_absolute_address ->
+                    && (system_info#is_inlined_function op#get_absolute_address
+                        || system_info#is_in_trampoline op#get_absolute_address) ->
              begin
                chlog#add "add inlined call" va#toPretty;
                set_inlined_call va;
