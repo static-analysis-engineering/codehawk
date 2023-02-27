@@ -3492,6 +3492,7 @@ object
   method is_cfnop: doubleword_int -> bool
   method is_cfjmp: doubleword_int -> bool
   method is_inlined_function: doubleword_int -> bool
+  method is_in_trampoline: doubleword_int -> bool
 
   (* xml *)
   method read_xml_constant_file    : string -> unit
