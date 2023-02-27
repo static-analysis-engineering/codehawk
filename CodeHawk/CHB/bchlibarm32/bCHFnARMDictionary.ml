@@ -625,8 +625,10 @@ object (self)
              (arm_extension_register_op XSingle 0 WR)#to_variable floc
            else
              (arm_register_op (get_arm_reg 0) WR)#to_variable floc in
+         let returnval = floc#env#mk_return_value floc#cia in
          let (tagstring, args) =
            mk_instrx_data
+             ~vars:[returnval]
              ~xprs:args
              ~rdefs:(rdefs @ regrdefs)
              ~uses:[get_def_use vrd]
