@@ -888,7 +888,6 @@ let mk_arm_offset_address_op
       ~(isadd:bool)
       ~(iswback:bool)
       ~(isindex:bool) =
-  let _ = chlog#add "mk_arm_offset_address_op" (LBLOCK [STR "size: "; INT size]) in
   new arm_operand_t
     (ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex, size))
 

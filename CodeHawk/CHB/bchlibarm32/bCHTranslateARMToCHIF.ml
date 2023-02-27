@@ -972,6 +972,9 @@ let translate_arm_instruction
    * BranchWritePC(targetAddress);
    * ------------------------------------------------------------------------ *)
   | BranchLink (c, tgt) when tgt#is_absolute_address ->
+     if instr#is_inlined_call then
+       default []
+     else
      let floc = get_floc loc in
      let vr0 = floc#f#env#mk_arm_register_variable AR0 in
      let vr1 = floc#f#env#mk_arm_register_variable AR1 in
