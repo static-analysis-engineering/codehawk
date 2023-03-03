@@ -1478,7 +1478,7 @@ object (self)
      let usehighops = mk_ops ["defusehigh"] usehigh_op_name usehigh in
      let flagdefops = mk_ops ["flagreachingdefs"] flagdef_op_name flagdefs in
      useops @ usehighops @ defops @ clobberops @ flagdefops
-	 
+
    method private evaluate_fts_argument (p: fts_parameter_t) =
      match p.apar_location with
      | StackParameter index ->

@@ -45,6 +45,7 @@ module H = Hashtbl
 
 type testdatatype_t =
   | Tst_instrx_data of variable_t list * xpr_t list
+  | Tst_instrx_tags of string list
   | Tst_chif_conditionxprs of
       arm_assembly_instruction_int * arm_assembly_instruction_int * xpr_t list
 
@@ -56,10 +57,14 @@ object (self)
 
   method request_instrx_data = H.add testdata "instrx_data" (H.create 3)
 
+  method request_instrx_tags = H.add testdata "instrx_tags" (H.create 3)
+
   method request_chif_conditionxprs =
     H.add testdata "chif_conditionxprs" (H.create 3)
 
   method requested_instrx_data = H.mem testdata "instrx_data"
+
+  method requested_instrx_tags = H.mem testdata "instrx_tags"
 
   method requested_chif_conditionxprs = H.mem testdata "chif_conditionxprs"
 
@@ -73,6 +78,15 @@ object (self)
         iaddr#to_hex_string
         (Tst_instrx_data (vars, xprs))
 
+  method submit_instrx_tags
+           (iaddr: doubleword_int)
+           (tags: string list) =
+    if H.mem testdata "instrx_tags" then
+      H.add
+        (H.find testdata "instrx_tags")
+        iaddr#to_hex_string
+        (Tst_instrx_tags tags)
+
   method retrieve_instrx_data (iaddr: string) =
     if H.mem testdata "instrx_data" then
       if H.mem (H.find testdata "instrx_data") iaddr then
@@ -82,7 +96,18 @@ object (self)
       else
         Error ["no data submitted for instrx_data for iaddr: " ^ iaddr]
     else
-        Error ["no request made for instrx_data "]
+      Error ["no request made for instrx_data "]
+
+  method retrieve_instrx_tags (iaddr: string) =
+    if H.mem testdata "instrx_tags" then
+      if H.mem (H.find testdata "instrx_tags") iaddr then
+        match (H.find (H.find testdata "instrx_tags") iaddr) with
+        | Tst_instrx_tags sl -> Ok sl
+        | _ -> Error ["retrieve_instrx_tags: internal error"]
+      else
+        Error ["no data submitted for instrx_tags for iaddr: " ^ iaddr]
+    else
+      Error ["no request made for instrx_tags"]
 
   method submit_chif_conditionxprs
            (consumer: arm_assembly_instruction_int)

@@ -3381,6 +3381,7 @@ object
     doubleword_int -> ctxt_iaddress_t -> doubleword_int -> bterm_t list -> unit
   (* creation faddr, iaddr, function start addr, arguments *)
 
+  method add_inlined_function: doubleword_int -> unit
   method add_exported_item_name: doubleword_int -> string -> unit
   method add_locked_instruction: doubleword_int -> unit
   method add_bound_library_function: doubleword_int -> (string * string) -> unit

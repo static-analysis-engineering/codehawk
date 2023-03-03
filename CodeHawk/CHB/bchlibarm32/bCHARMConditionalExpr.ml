@@ -154,7 +154,7 @@ let freeze_variables
           varsKnown := false) vars in
   let subst v =
     if frozenVars#has v then
-      match condfloc#inv#get_external_exprs v with
+      match testfloc#inv#get_external_exprs v with
       | x::_ -> x
       | _ -> XVar (Option.get (frozenVars#get v))
     else

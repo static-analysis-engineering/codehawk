@@ -182,7 +182,11 @@ object (self)
   val table = H.create 5
   val nametable = H.create 5
 
-  method reset = H.clear table
+  method reset =
+    begin
+      H.clear table;
+      H.clear nametable
+    end
 
   method add_function (fa:doubleword_int) =
     let ix = fa#index in

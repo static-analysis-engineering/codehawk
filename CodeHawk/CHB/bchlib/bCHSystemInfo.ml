@@ -343,7 +343,7 @@ object (self)
   method private add_esp_adjustment_i (iaddr:doubleword_int) (adj:int) =
     H.add esp_adjustments_i iaddr#index adj
 
-  method private add_inlined_function (faddr:doubleword_int) =
+  method add_inlined_function (faddr:doubleword_int) =
     let fd = functions_data#add_function faddr in
     begin
       fd#set_inlined;

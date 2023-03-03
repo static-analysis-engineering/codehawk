@@ -64,9 +64,6 @@ object (self)
   val mutable aggregate_entry = false
   val mutable aggregate_exit = false
   val mutable aggregate_anchor = false
-  (* val mutable aggregate_dst = None
-  val mutable aggregate = []
-  val mutable subsumedby = None  (* refers to IT instruction *)  *)
   val mutable blockcondition = false
   val mutable conditioncoveredby = None  (* refers to IT instruction *)
 
@@ -96,41 +93,6 @@ object (self)
   method is_aggregate_anchor = aggregate_anchor
 
   method is_in_aggregate = in_aggregate
-
-  (* applies to IfThen instruction:
-     aggregates the dependents into one assignment
-  method set_aggregate (dstop: arm_operand_int) (dependents: doubleword_int list) =
-    begin
-      aggregate <- dependents;
-      aggregate_dst <- Some dstop
-    end
-
-  method get_dependents = aggregate
-
-  method is_aggregate =
-    match aggregate with
-    | [] -> false
-    | _ -> true
-
-  method get_aggregate_dst =
-    match aggregate_dst with
-    | Some op -> op
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Internal error in get_aggregate_dst"]))
-
-  (* applies to dependents of aggregate instructions *)
-  method set_subsumed_by (iaddr: doubleword_int) = subsumedby <- Some iaddr
-
-  method is_subsumed = match subsumedby with Some _ -> true | _ -> false
-
-  method subsumed_by =
-    match subsumedby with
-    | Some iaddr -> iaddr
-    | _ ->
-       raise
-         (BCH_failure (LBLOCK [STR "Instruction is not subsumed"]))   *)
 
   method set_block_condition = blockcondition <- true
 
@@ -201,8 +163,6 @@ object (self)
     begin
       (if self#is_function_entry_point then stat := !stat ^ "F");
       (if self#is_block_entry then stat := !stat ^ "B");
-      (* (if self#is_aggregate then stat := !stat ^ "A");
-      (if self#is_subsumed then stat := !stat ^ "S"); *)
       (if !stat = "" then () else set "stat" !stat);
       set "ia" self#get_address#to_hex_string;
       arm_dictionary#write_xml_arm_opcode node opc;
@@ -211,6 +171,7 @@ object (self)
     end
 
 end
+
 
 let make_arm_assembly_instruction
       (va: doubleword_int)

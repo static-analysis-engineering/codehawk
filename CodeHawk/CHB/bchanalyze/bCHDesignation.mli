@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023 Aarno Labs, LLC
+   Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,36 +26,15 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHPretty
+open CHAtlas
+open CHLanguage
 
 (* bchlib *)
 open BCHLibTypes
 
-(* bchlibarm32 *)
-open BCHARMTypes
 
+val analyze_procedure_with_designations: procedure_int -> system_int -> unit
 
-val disassemble_arm_section: doubleword_int -> string -> unit
+val extract_designations:
+  function_info_int -> (string, (string, atlas_t) Hashtbl.t) Hashtbl.t -> unit
 
-val disassemble_arm_sections: unit -> doubleword_int
-
-
-(** Set block markers in the assembly instructions. Only used externally
-    in the unit tests. *)
-val set_block_boundaries: unit -> unit
-
-
-(** Record the call targets based on call instructions. Only used externally
-    in the unit tests. *)
-val record_call_targets_arm: unit -> unit
-
-val collect_function_entry_points: unit -> doubleword_int list
-
-
-(** Associate condition codes in test instructions to condition code
-    used by conditional instructions. Only used externally in the unit
-    tests *)
-val associate_condition_code_users: unit -> unit
-
-
-val construct_functions_arm: unit -> unit
