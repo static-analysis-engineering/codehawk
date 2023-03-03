@@ -77,9 +77,11 @@ OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 all: make_dirs \
 	bCHDisassembleARMInstructionTest \
 	bCHDisassembleThumbInstructionTest \
+	bCHThumbITSequenceTest \
 	bCHARMJumptableTest \
 	bCHARMAssemblyFunctionTest \
 	bCHTranslateARMToCHIFTest \
+	bCHFnARMDictionaryTest \
 
 doc: 
 
@@ -93,6 +95,9 @@ bCHDisassembleARMInstructionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTI
 bCHDisassembleThumbInstructionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHDisassembleThumbInstructionTest.cmi cmx/bCHDisassembleThumbInstructionTest.cmx
 	$(CAMLLINK) -o bCHDisassembleThumbInstructionTest $(OBJECTS) cmx/bCHDisassembleThumbInstructionTest.cmx
 
+bCHThumbITSequenceTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHThumbITSequenceTest.cmi cmx/bCHThumbITSequenceTest.cmx
+	$(CAMLLINK) -o bCHThumbITSequenceTest $(OBJECTS) cmx/bCHThumbITSequenceTest.cmx
+
 bCHARMJumptableTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHARMJumptableTest.cmi cmx/bCHARMJumptableTest.cmx
 	$(CAMLLINK) -o bCHARMJumptableTest $(OBJECTS) cmx/bCHARMJumptableTest.cmx
 
@@ -102,13 +107,18 @@ bCHTranslateARMToCHIFTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chut
 bCHARMAssemblyFunctionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHARMAssemblyFunctionTest.cmi cmx/bCHARMAssemblyFunctionTest.cmx
 	$(CAMLLINK) -o bCHARMAssemblyFunctionTest $(OBJECTS) cmx/bCHARMAssemblyFunctionTest.cmx
 
+bCHFnARMDictionaryTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHFnARMDictionaryTest.cmi cmx/bCHFnARMDictionaryTest.cmx
+	$(CAMLLINK) -o bCHFnARMDictionaryTest $(OBJECTS) cmx/bCHFnARMDictionaryTest.cmx
 
-run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHARMJumptableTest bCHTranslateARMToCHIFTest
+
+run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHThumbITSequenceTest bCHARMJumptableTest bCHARMAssemblyFunctionTest bCHTranslateARMToCHIFTest bCHFnARMDictionaryTest
 	./bCHDisassembleARMInstructionTest
 	./bCHDisassembleThumbInstructionTest
+	./bCHThumbITSequenceTest
 	./bCHARMJumptableTest
 	./bCHARMAssemblyFunctionTest
 	./bCHTranslateARMToCHIFTest
+	./bCHFnARMDictionaryTest
 
 cmi/%.cmi: %.mli
 	$(CAMLC) -o $@ -c -opaque $<
@@ -132,7 +142,9 @@ clean:
 	rm -f Makefile~
 	rm -f bCHDisassembleThumbInstructionTest
 	rm -f bCHDisassembleARMInstructionTest
+	rm -f bCHThumbITSequenceTest
 	rm -f bCHARMJumptableTest
 	rm -f bCHTranslateARMToCHIFTest
 	rm -f bCHARMAssemblyFunctionTest
+	rm -f bCHFnARMDictionaryTest
 	rm -rf doc

@@ -86,7 +86,7 @@ open BCHARMTestSupport
 
 
 let testname = "bCHTranslateARMToCHIFTest"
-let lastupdated = "2023-02-17"
+let lastupdated = "2023-03-01"
 
 let x2p = xpr_formatter#pr_expr
 let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
@@ -157,6 +157,21 @@ let translate_store () =
   end
 
 
+(*
+  reg-overwritten:
+     0x4f04  MOVW         R3, #0x4925
+     0x4f08  LDRB.W       R9, [R3, #1136]
+     0x4f0c  CMP.W        R9, #0x91
+     0x4f10  MOV          R9, PC
+     0x4f12  BHI          0x4f1a
+         -> 0x4f14, 0x4f1a
+
+     0x4f14  SUBW         R9, R9, #0xde1
+     0x4f18  BX           R9
+
+     0x4f1a  SUBW         R9, R9, #0xee7
+     0x4f1e  BX           R9
+ *)
 let thumb_chif_conditionxprs () =
   let tests = [
       ("reg-overwritten",
@@ -176,6 +191,8 @@ let thumb_chif_conditionxprs () =
         TS.add_simple_test
           ~title
           (fun () ->
+            let _ = functions_data#reset in
+            let _ = arm_assembly_functions#reset in
             let _ = system_settings#set_thumb in
             let _ = SI.system_info#set_arm_thumb_switch cfaddr "T" in
             let faddr = make_dw cfaddr in
@@ -195,6 +212,21 @@ let thumb_chif_conditionxprs () =
   end
 
 
+(*
+  reg-overwritten:
+     0x4f04  MOVW         R3, #0x4925
+     0x4f08  LDRB.W       R9, [R3, #1136]
+     0x4f0c  CMP.W        R9, #0x91
+     0x4f10  MOV          R9, PC
+     0x4f12  BHI          0x4f1a
+         -> 0x4f14, 0x4f1a
+
+     0x4f14  SUBW         R9, R9, #0xde1
+     0x4f18  BX           R9
+
+     0x4f1a  SUBW         R9, R9, #0xee7
+     0x4f1e  BX           R9
+ *)
 let thumb_instrxdata_conditionxprs () =
   let tests = [
       ("reg-overwritten",
@@ -214,6 +246,8 @@ let thumb_instrxdata_conditionxprs () =
         TS.add_simple_test
           ~title
           (fun () ->
+            let _ = functions_data#reset in
+            let _ = arm_assembly_functions#reset in
             let _ = system_settings#set_thumb in
             let _ = SI.system_info#set_arm_thumb_switch cfaddr "T" in
             let faddr = make_dw cfaddr in
@@ -224,7 +258,7 @@ let thumb_instrxdata_conditionxprs () =
                 analyze_arm_function faddr fn 0
               done in
             let xprs = ARMU.get_instrxdata_xprs faddr iccaddr in
-            ARMA.equal_instrxdata_conditionxprs expectedcond xprs)
+            ARMA.equal_instrxdata_conditionxprs expectedcond xprs 3)
       ) tests;
 
     TS.launch_tests ()
@@ -234,7 +268,7 @@ let thumb_instrxdata_conditionxprs () =
 let () =
   begin
     TS.new_testfile testname lastupdated;
-    (* translate_store (); *)
+    translate_store ();
     thumb_chif_conditionxprs ();
     thumb_instrxdata_conditionxprs ();
     TS.exit_file ()

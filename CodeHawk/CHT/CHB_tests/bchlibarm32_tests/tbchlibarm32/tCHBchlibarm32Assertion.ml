@@ -95,10 +95,42 @@ let equal_chif_conditionxprs
 let equal_instrxdata_conditionxprs
       ?(msg="")
       ~(expected: string)
-      ~(received: xpr_t list) =
+      ~(received: xpr_t list)
+      ~(index: int) =
   match received with
   | [] -> A.fail expected "empty list" msg
+  | _ when (List.length received) > index ->
+     A.equal_string ~msg expected (x2s (List.nth received index))
+  | _ ->
+     let receivedlen = string_of_int (List.length received) in
+     let xprs = String.concat ", " (List.map x2s received) in
+     A.fail
+       expected
+       ("Index: "
+        ^ (string_of_int index)
+        ^ " out of range; received only "
+        ^ receivedlen
+        ^ " expressions: ["
+        ^ xprs
+        ^ "]")
+       msg
   | [_; _; _; fcond; _] ->
      A.equal_string ~msg expected (x2s fcond)
   | _ ->
      A.fail expected (String.concat ", " (List.map x2s received)) msg
+
+
+let equal_instrxdata_tags
+      ?(msg="")
+      ~(expected: string)
+      ~(received: string list)
+      ~(indices: int list) =
+  match received with
+  | [] -> A.fail expected "empty list" msg
+  | _  ->
+     let rlen = List.length received in
+     if List.for_all (fun i -> i < rlen) indices then
+       let rlist =
+         List.fold_left (fun acc i -> (List.nth received i) :: acc) [] indices in
+     let receivedstr = String.concat "," (List.rev rlist) in
+     A.equal_string ~msg expected receivedstr
