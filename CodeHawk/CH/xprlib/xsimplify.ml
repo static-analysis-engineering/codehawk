@@ -848,7 +848,7 @@ and reduce_eq m e1 e2 =
         (true, XOp (XNe, [x; y]))
      |  _ -> default
 
-and reduce_ne m e1 e2 = 
+and reduce_ne m e1 e2 =
   let default = (m, XOp (XNe, [e1 ; e2])) in
   let ne n = num_constant_expr n in
   let be b = XConst (BoolConst b) in
@@ -863,7 +863,7 @@ and reduce_ne m e1 e2 =
      rs XNe [x ; ne (a#sub b)]                                 (* ~> x /= a-b *)
 
   | _ ->
-     match (e1,get_struct e2) with                         
+     match (e1, get_struct e2) with
      | (XOp (XLt, _), SConst a)
        | (XOp (XEq, _), SConst a)
        | (XOp (XNe, _), SConst a)
@@ -871,6 +871,9 @@ and reduce_ne m e1 e2 =
        | (XOp (XLe, _), SConst a)
        | (XOp (XGe, _), SConst a) when zero_num a ->           (* (x1 op x2) <> 0 *)
         (true, e1)                                                (* -> (x1 op x2) *)
+
+     (* (a - b) != 0  ===>  a != b *)
+     | (XOp (XMinus, [x; y]), SConst a) when zero_num a -> (true, XOp (XNe, [x; y]))
 
      | _ -> default
 
