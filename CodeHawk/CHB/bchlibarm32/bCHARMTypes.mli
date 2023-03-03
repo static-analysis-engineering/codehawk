@@ -1648,15 +1648,18 @@ class type testsupport_int =
   object
     (* requests *)
     method request_instrx_data: unit
+    method request_instrx_tags: unit
     method request_chif_conditionxprs: unit
 
     (* predicates *)
     method requested_instrx_data: bool
+    method requested_instrx_tags: bool
     method requested_chif_conditionxprs: bool
 
     (* data submissions *)
     method submit_instrx_data:
              doubleword_int -> variable_t list -> xpr_t list -> unit
+    method submit_instrx_tags: doubleword_int -> string list -> unit
     method submit_chif_conditionxprs:
              arm_assembly_instruction_int
              -> arm_assembly_instruction_int
@@ -1666,6 +1669,7 @@ class type testsupport_int =
     (* data retrievals *)
     method retrieve_instrx_data:
              string -> (variable_t list * xpr_t list) traceresult
+    method retrieve_instrx_tags: string -> (string list) traceresult
     method retrieve_chif_conditionxprs:
              string
              -> (arm_assembly_instruction_int

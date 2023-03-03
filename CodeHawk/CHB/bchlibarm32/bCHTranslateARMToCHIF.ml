@@ -1190,28 +1190,8 @@ let translate_arm_instruction
                     ~usehigh:usehigh
                     ~flagdefs:flagdefs
                     ctxtiaddr in
-                let _ =
-                  if collect_diagnostics () then
-                    begin
-                      ch_diagnostics_log#add
-                        "assign ite predicate"
-                        (LBLOCK [
-                             testaddr#toPretty;
-                             STR ": ";
-                             lhs#toPretty;
-                             STR " := ";
-                             x2p p]);
-                      ch_diagnostics_log#add
-                        "ite assign cmds"
-                        (LBLOCK (List.map (command_to_pretty 0) cmds))
-                    end in
                 lhscmds @ defcmds @ cmds
              | _ ->
-                let _ =
-                  if collect_diagnostics () then
-                    ch_diagnostics_log#add
-                      "no ite predicate"
-                      (LBLOCK [testaddr#toPretty; STR ": " ; testinstr#toPretty]) in
                 [] in
            default cmds)
      else
@@ -1726,20 +1706,7 @@ let translate_arm_instruction
          ch_diagnostics_log#add
            "instr part of aggregate"
            (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
-     let floc = get_floc loc in
-     let vrd = rd#to_variable floc in
-     let xrm = rm#to_expr floc in
-     let xxrm = floc#inv#rewrite_expr xrm floc#env#get_variable_comparator in
-     let usevars = get_register_vars [rm] in
-     let usehigh = get_use_high_vars [xxrm] in
-     let defcmds =
-       floc#get_vardef_commands
-         ~defs:[vrd]
-         ~use:usevars
-         ~usehigh:usehigh
-         ~flagdefs:flagdefs
-         ctxtiaddr in
-     default defcmds
+     default []
 
   | Move (setflags, c, rd, rm, _, _) ->
      let floc = get_floc loc in

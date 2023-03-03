@@ -40,6 +40,7 @@ MLIS := \
 	bCHReachingDefs \
 	bCHDefUse \
 	bCHDefUseHigh \
+	bCHDesignation \
 	bCHFileIO \
 	bCHTrace \
 	bCHAnalyzeApp \
@@ -55,6 +56,7 @@ SOURCES := \
 	bCHReachingDefs \
 	bCHDefUse \
 	bCHDefUseHigh \
+	bCHDesignation \
 	bCHFileIO \
 	bCHTrace \
 	bCHAnalyzeApp \

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,9 @@ open BCHARMTypes
 open BCHDisassembleThumbInstruction
 
 
+module TR = CHTraceResult
+
+
 class thumb_it_sequence_t
         (kind: thumb_it_sequence_kind_t)
         (instrs: arm_assembly_instruction_int list)
@@ -71,6 +74,25 @@ let make_thumb_it_sequence
   new thumb_it_sequence_t kind instrs anchor
 
 
+let find_instr
+      (testf: arm_assembly_instruction_int -> bool)
+      (offsets: int list)
+      (addr: doubleword_int): arm_assembly_instruction_int option =
+  List.fold_left
+    (fun acc offset ->
+      match acc with
+      | Some _ -> acc
+      | _ ->
+         let caddr = addr#add_int offset in
+         (match TR.to_option (get_arm_assembly_instruction caddr) with
+          | Some cinstr ->
+             if testf cinstr then
+               Some cinstr
+             else
+               None
+          | _ -> None)) None offsets
+
+
 (*
    ITE  c                                   ITE  c
    MOV  Rx, #0x0   ->  Rx := !c     or      MOV  Rx, #0x1   ->  Rx := c
@@ -89,6 +111,31 @@ let is_ite_predicate_assignment
         && thenop#to_numerical#equal numerical_one
         && elseop#to_numerical#equal numerical_zero) ->
      Some tr
+  | _ -> None
+
+
+(*
+   Return Rx if this pattern is present:
+
+   SUBS Rx, Ry, Rz
+   IT NE
+   MOVNE Rx, #0x1    -> Rx := Ry != Ry
+
+   Note: Rx may equal Ry or Rz
+ *)
+let is_it_predicate_assignment (opcthen: arm_opcode_t) (itaddr: doubleword_int) =
+  match opcthen with
+  | Move (_, _, tr, thenop, _, _)
+       when (thenop#to_numerical#equal numerical_one && tr#is_register) ->
+     let testf =
+       (fun instr ->
+         match instr#get_opcode with
+         | Subtract (true, ACCAlways, rd, _, _, _, _) ->
+            rd#is_register && rd#get_register = tr#get_register
+         | _ -> false) in
+     (match (find_instr testf [(-2)] itaddr) with
+      | Some _ -> Some tr
+      | _ -> None)
   | _ -> None
 
 
@@ -124,5 +171,14 @@ let create_thumb_it_sequence
          Some
            (make_thumb_it_sequence
               (ITPredicateAssignment op) [itinstr; instr1; instr2] itiaddr0)
+      | _ -> None)
+  | IfThen (c, xyz) when xyz = "" ->
+     let itiaddr1 = itiaddr0#add_int 2 in
+     let (instr1, _) = disassemble_instruction itiaddr1 ch in
+     (match is_it_predicate_assignment instr1#get_opcode itiaddr0 with
+      | Some op ->
+         Some
+           (make_thumb_it_sequence
+              (ITPredicateAssignment op) [itinstr; instr1] itiaddr0)
       | _ -> None)
   | _ -> None

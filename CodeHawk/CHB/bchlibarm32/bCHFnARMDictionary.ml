@@ -789,10 +789,11 @@ object (self)
                   | Some p ->
                      let lhs = dstop#to_variable floc in
                      let rdefs = get_all_rdefs p in
+                     let xp = rewrite_expr p in
                      let (tagstring, args) =
                        mk_instrx_data
                          ~vars:[lhs]
-                         ~xprs:[p]
+                         ~xprs:[p; xp]
                          ~rdefs:rdefs
                          ~uses:[get_def_use lhs]
                          ~useshigh:[get_def_use_high lhs]
@@ -801,7 +802,8 @@ object (self)
                   | _ ->
                      ([], [])) in
                let dependents =
-                 List.map (fun d -> d#get_address#to_hex_string) agg#instrs in
+                 List.map (fun d ->
+                     (make_i_location floc#l d#get_address)#ci) agg#instrs in
                let tags = tags @ ["subsumes"] @ dependents in
                (tags, args))
          else
@@ -1139,6 +1141,13 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | Move(_, c, rd, rm, _, _) when (Option.is_some instr#is_in_aggregate) ->
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
+
       | Move(_, c, rd, rm, _, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
@@ -1153,10 +1162,6 @@ object (self)
              ~useshigh:[get_def_use_high vrd]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
-         let (tags, args) =
-           match instr#is_in_aggregate with
-           | Some va -> (tags @ ["subsumed"; va#to_hex_string], args)
-           | _ -> (tags, args) in
          (tags, args)
 
       | MoveRegisterCoprocessor (_, _, _, dst, _, _, _) ->
@@ -1935,6 +1940,9 @@ object (self)
          (tags, args)
 
       | _ -> ([], []) in
+    let _ =
+      if testsupport#requested_instrx_tags then
+        testsupport#submit_instrx_tags instr#get_address (fst key) in
     instrx_table#add key
 
   method write_xml_sp_offset

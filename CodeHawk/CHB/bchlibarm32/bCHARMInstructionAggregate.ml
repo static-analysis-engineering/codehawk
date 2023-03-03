@@ -164,7 +164,7 @@ let identify_it_sequence
       (ch: pushback_stream_int)
       (instr: arm_assembly_instruction_int): thumb_it_sequence_int option =
     match instr#get_opcode with
-    | IfThen (c, xyz) when xyz = "E" ->
+    | IfThen (c, xyz) when (xyz = "E" || xyz = "") ->
        create_thumb_it_sequence ch instr
     | _ -> None  
   
