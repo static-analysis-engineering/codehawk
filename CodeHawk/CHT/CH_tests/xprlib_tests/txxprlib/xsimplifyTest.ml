@@ -42,7 +42,7 @@ let simplify = S.simplify_xpr
 
 
 let testname = "xsimplifyTest"
-let lastupdated = "2022-11-28"
+let lastupdated = "2023-03-02"
 
 
 let basic () =
@@ -152,6 +152,16 @@ let basic () =
         let x1 = XOp (XLt, [v1; v2]) in
         let xpr = XOp (XNe, [x1; XG.xzero]) in
         XA.equal_xpr x1 (simplify xpr));
+
+    (* (v1 - v2) != 0 simplifies to v1 != v2) *)
+    TS.add_simple_test
+      (fun () ->
+        let v1 = XVar (XG.mk_var "v1") in
+        let v2 = XVar (XG.mk_var "v2") in
+        let x1 = XOp (XMinus, [v1; v2]) in
+        let xpr = XOp (XNe, [x1; XG.xzero]) in
+        let expected = XOp (XNe, [v1; v2]) in
+        XA.equal_xpr expected (simplify xpr));
 
     TS.launch_tests ()
   end

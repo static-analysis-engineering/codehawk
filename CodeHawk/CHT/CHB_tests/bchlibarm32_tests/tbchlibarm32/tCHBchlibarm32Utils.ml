@@ -28,6 +28,7 @@
 
 (* chlib *)
 open CHLanguage
+open CHPretty
 
 (* bchlib *)
 open BCHByteUtilities
@@ -36,6 +37,7 @@ open BCHFloc
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHLibTypes
+open BCHLocation
 open BCHStreamWrapper
 open BCHSystemInfo
 
@@ -46,6 +48,7 @@ open BCHARMAssemblyFunctions
 open BCHARMAssemblyInstructions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
+open BCHARMInstructionAggregate
 open BCHARMOpcodeRecords
 open BCHARMTestSupport
 open BCHARMTypes
@@ -112,23 +115,47 @@ let thumb_function_setup
       let instrlen = currentpos - prevpos in
       let instrbytes = String.sub bytestring prevpos instrlen in
       let instr = make_arm_assembly_instruction iaddr false opcode instrbytes in
-      set_arm_assembly_instruction instr
+      let _ = set_arm_assembly_instruction instr in
+      let optagg = identify_arm_aggregate ch instr in
+      match optagg with
+      | Some agg -> set_aggregate iaddr agg
+      | _ -> ()
     done;
     let _ = set_block_boundaries () in
-    let fn = construct_arm_assembly_function faddr in
-    arm_assembly_functions#add_function fn;
-    associate_condition_code_users ();
-    fn
+    let _ = construct_functions_arm () in
+    get_arm_assembly_function faddr
   end
 
 
 let get_instrxdata_xprs (faddr: doubleword_int) (iaddr: doubleword_int) =
   let _ = testsupport#request_instrx_data in
   let finfo = get_function_info faddr in
-  let floc = get_floc_by_address faddr iaddr in
-  let instr = TR.tget_ok (get_arm_assembly_instruction iaddr) in
+  let fn = get_arm_assembly_function faddr in
   let id = mk_arm_opcode_dictionary faddr finfo#env#varmgr#vard in
-  let _ = id#index_instr instr floc in
+  let _ =
+    fn#itera
+      (fun baddr block ->
+        block#itera
+          (fun ctxtiaddr instr ->
+            let loc = ctxt_string_to_location faddr ctxtiaddr in
+            let floc = get_floc loc in
+            ignore (id#index_instr instr floc))) in
   let (_, xprs) =
     TR.tget_ok (testsupport#retrieve_instrx_data iaddr#to_hex_string) in
   xprs
+
+
+let get_instrxdata_tags (faddr: doubleword_int) (iaddr: doubleword_int) =
+  let _ = testsupport#request_instrx_tags in
+  let finfo = get_function_info faddr in
+  let fn = get_arm_assembly_function faddr in
+  let id = mk_arm_opcode_dictionary faddr finfo#env#varmgr#vard in
+  let _ =
+    fn#itera
+      (fun baddr block ->
+        block#itera
+          (fun ctxtiaddr instr ->
+            let loc = ctxt_string_to_location faddr ctxtiaddr in
+            let floc = get_floc loc in
+            ignore (id#index_instr instr floc))) in
+  TR.tget_ok (testsupport#retrieve_instrx_tags iaddr#to_hex_string)
