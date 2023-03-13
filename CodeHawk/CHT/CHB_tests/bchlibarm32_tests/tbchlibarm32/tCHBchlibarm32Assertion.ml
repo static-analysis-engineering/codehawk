@@ -114,10 +114,6 @@ let equal_instrxdata_conditionxprs
         ^ xprs
         ^ "]")
        msg
-  | [_; _; _; fcond; _] ->
-     A.equal_string ~msg expected (x2s fcond)
-  | _ ->
-     A.fail expected (String.concat ", " (List.map x2s received)) msg
 
 
 let equal_instrxdata_tags
@@ -134,3 +130,23 @@ let equal_instrxdata_tags
          List.fold_left (fun acc i -> (List.nth received i) :: acc) [] indices in
      let receivedstr = String.concat "," (List.rev rlist) in
      A.equal_string ~msg expected receivedstr
+
+
+let equal_dictionary_key
+      ?(msg="")
+      ~(expected: (string list * int))
+      ~(received: (string list * int list)) =
+  let keystr (sl, l) =
+    "([" ^ (String.concat "; " sl) ^ "], " ^ (string_of_int l) ^ ")" in
+  let rkeystr (sl, il) = keystr (sl, List.length il) in
+  match (expected, received) with
+  | ((esl, cnt), (rsl, args)) ->
+     if not ((List.length args) = cnt) then
+       A.fail (keystr expected) (rkeystr received) msg
+     else
+       A.make_equal_list
+         (fun s1 s2 -> (s1 = s2))
+         (fun s -> s)
+         ~msg
+         esl
+         rsl

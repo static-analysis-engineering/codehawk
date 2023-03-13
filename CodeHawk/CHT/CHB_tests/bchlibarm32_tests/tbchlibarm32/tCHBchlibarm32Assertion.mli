@@ -71,3 +71,10 @@ val equal_instrxdata_tags:
   -> received:string list
   -> indices:int list
   -> unit
+
+
+val equal_dictionary_key:
+  ?msg: string
+  -> expected:(string list * int)
+  -> received:(string list * int list)
+  -> unit
