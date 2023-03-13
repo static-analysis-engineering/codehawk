@@ -283,7 +283,7 @@ let power_immediate_op ~(signed: bool) ~(size: int) ~(imm: numerical_t) =
                 (LBLOCK [
                      STR "Unexpected size in power-immediate-op: "; INT size])) in
   let op =
-    PowerImmediate (TR.tget_ok (make_immediate signed size immval#getNum)) in
+    PowerImmediate (TR.tget_ok (make_immediate signed size immval)) in
   new power_operand_t op RD
 
 
