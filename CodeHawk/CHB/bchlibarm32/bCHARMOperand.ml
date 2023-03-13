@@ -67,15 +67,6 @@ module TR = CHTraceResult
 
 let x2p = xpr_formatter#pr_expr
 
-(* commonly used constant values *)
-let e7   = 128
-let e8   = 256
-let e15  = e7 * e8
-let e16  = e8 * e8
-let e31 = e16 * e15
-let e32 = e16 * e16
-let e64 = e32 * e32
-
 
 let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
 
@@ -91,11 +82,16 @@ let shift_rotate_type_to_string (srt:shift_rotate_type_t) =
   | SRType_RRX -> "RRX"
 
 
+(* Use the same print convention as IDA Pro, e.g., LSR#24:
+   - no spance between shift type and shift amount
+   - decimal representation of shift amount
+ *)
 let register_shift_to_string (rs:register_shift_rotate_t) =
   match rs with
   | ARMImmSRT (SRType_ROR, 0) -> ""
+  | ARMImmSRT (SRType_LSL, 0) -> ""
   | ARMImmSRT (srt, imm) ->
-     (shift_rotate_type_to_string srt) ^ " #" ^ (string_of_int imm)
+     (shift_rotate_type_to_string srt) ^ "#" ^ (string_of_int imm)
   | ARMRegSRT (srt,reg) ->
      (shift_rotate_type_to_string srt) ^ " " ^ (armreg_to_string reg)
 
@@ -114,13 +110,20 @@ let vfp_datatype_to_string (t: vfp_datatype_t) =
 
 let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
   let p_off off =
-    if off = 0 then "" else " (+ " ^ (string_of_int off) ^ ")" in
+    if off = 0 then
+      ""
+    else if off > 9 then
+      Printf.sprintf "#%#x" off
+    else if off < -9 then
+      Printf.sprintf "#%-#x" off
+    else
+      "#" ^ (string_of_int off) in
   match offset with
-  | ARMImmOffset off -> "#" ^ (string_of_int off)
-  | ARMIndexOffset (r, off) -> (armreg_to_string r) ^ (p_off off)
+  | ARMImmOffset off -> p_off off
+  | ARMIndexOffset (r, off) -> (armreg_to_string r)
   | ARMShiftedIndexOffset (r, rs, off) ->
      match rs with
-     | ARMImmSRT (SRType_LSL, 0) -> (armreg_to_string r) ^ (p_off off)
+     | ARMImmSRT (SRType_LSL, 0) -> (armreg_to_string r)
      | _ ->
         (armreg_to_string r)
         ^ ","
@@ -463,7 +466,7 @@ object (self:'a)
     match kind with
     | ARMImmediate imm ->
        let imm = if unsigned then imm#to_unsigned else imm in
-       big_int_constant_expr imm#to_big_int
+       num_constant_expr imm#to_numerical
     | ARMFPConstant _ -> XConst XRandom
     | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
     | ARMSpecialReg r ->
@@ -633,7 +636,7 @@ object (self:'a)
       | ARMRegBitSequence (r,lsb,widthm1) ->
          (armreg_to_string r) ^ ", #" ^ (string_of_int lsb)
          ^ ", #" ^ (string_of_int (widthm1+1))
-      | ARMImmediate imm -> "#" ^ imm#to_hex_string
+      | ARMImmediate imm -> "#" ^ imm#to_string
       | ARMFPConstant x -> "#" ^ (Printf.sprintf "%.1f" x)
       | ARMAbsolute addr -> addr#to_hex_string
       | ARMLiteralAddress addr -> addr#to_hex_string
@@ -643,11 +646,12 @@ object (self:'a)
       | ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex, size) ->
          let poffset = arm_memory_offset_to_string offset in
          let poffset = if isadd then poffset else "-" ^ poffset in
+         let pre_offset = if poffset = "" then "" else "," ^ poffset in
          (match (iswback, isindex) with
-          | (false, false) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
-          | (false, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]"
-          | (true, true) -> "[" ^ (armreg_to_string reg) ^ ", " ^ poffset ^ "]!"
-          | (true, false) -> "[" ^ (armreg_to_string reg) ^ "], " ^ poffset)
+          | (false, false) -> "[" ^ (armreg_to_string reg) ^ pre_offset ^ "]"
+          | (false, true) -> "[" ^ (armreg_to_string reg) ^ pre_offset ^ "]"
+          | (true, true) -> "[" ^ (armreg_to_string reg) ^ pre_offset ^ "]!"
+          | (true, false) -> "[" ^ (armreg_to_string reg) ^ "]," ^ poffset)
       | ARMSIMDAddress (base, align, wback) ->
          let palign = if align = 1 then "" else ":" ^ (string_of_int align) in
          let pbase = armreg_to_string base in
@@ -658,7 +662,7 @@ object (self:'a)
              "[" ^ pbase ^ palign ^ "], " ^ (armreg_to_string r))
       | ARMSIMDList rl ->
          "{"
-         ^ (String.concat ", " (List.map arm_simd_list_element_to_string rl))
+         ^ (String.concat "," (List.map arm_simd_list_element_to_string rl))
          ^ "}"
     with
     | BCH_failure p ->
@@ -825,10 +829,10 @@ let mk_arm_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
         imm
       else
         match size with
-        | 1 -> imm#add (mkNumerical e8)
-        | 2 -> imm#add (mkNumerical e16)
-        | 4 -> imm#add (mkNumerical e32)
-        | 8 -> imm#add (mkNumerical e64)
+        | 1 -> imm#add numerical_e8
+        | 2 -> imm#add numerical_e16
+        | 4 -> imm#add numerical_e32
+        | 8 -> imm#add numerical_e64
         | _ ->
            raise
              (BCH_failure
@@ -839,7 +843,7 @@ let mk_arm_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
       TR.tmap
         (fun imm ->
           new arm_operand_t (ARMImmediate imm) RD)
-        (make_immediate signed size immval#getNum)
+        (make_immediate signed size immval)
 (* new arm_operand_t op RD *)
 
 
