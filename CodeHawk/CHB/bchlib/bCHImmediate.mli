@@ -26,7 +26,8 @@
    SOFTWARE.
    ============================================================================= *)
 
-open Big_int_Z
+(* chlib *)
+open CHNumerical
 
 (* bchlib *)
 open BCHLibTypes
@@ -35,7 +36,7 @@ open BCHLibTypes
 (** [make_immediate signed size v] returns an immediate value of [size]
     bytes and value [v]. If the value [v] is outside the range that can be
     represented by the bytes with the given signedness, [Error] is returned.*)
-val make_immediate: bool -> int -> big_int -> immediate_result
+val make_immediate: bool -> int -> numerical_t -> immediate_result
 
 
 (** [signed_immedidate_from_int size v] returns an immediate value of [size]

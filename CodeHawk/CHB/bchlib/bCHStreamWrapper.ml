@@ -44,15 +44,12 @@ open BCHDoubleword
 open BCHLibTypes
 open BCHImmediate
 
-module B = Big_int_Z
+
 module TR = CHTraceResult
 
 
-let bii = B.big_int_of_int
-let bii32 = B.big_int_of_int32
-
-let exp2 p  = B.power_int_positive_int 2 p
-let e16 = exp2 16
+let bii = mkNumerical
+let bii32 = mkNumericalFromInt32
 
 
 class virtual stream_wrapper_t (input: IO.input):stream_wrapper_int =  
@@ -198,13 +195,13 @@ object (self)
 
   method read_doubleword = begin pos <- pos + 4 ; ch#read_doubleword end
 
-  method read_num_signed_doubleword = mkNumerical_big (bii32 self#read_real_i32)
+  method read_num_signed_doubleword = bii32 self#read_real_i32
 
-  method read_num_signed_word = mkNumerical_big (bii self#read_i16)
+  method read_num_signed_word = bii self#read_i16
 
-  method read_num_signed_byte = mkNumerical_big (bii self#read_signed_byte)
+  method read_num_signed_byte = bii self#read_signed_byte
 
-  method read_num_unsigned_byte = mkNumerical_big (bii self#read_byte)
+  method read_num_unsigned_byte = bii self#read_byte
 
   method read_imm_signed_byte =
     TR.tget_ok (make_immediate true 1 (bii self#read_signed_byte))
@@ -231,7 +228,7 @@ object (self)
   method read_imm_unsigned_doubleword = 
     let l = self#read_ui16 in
     let h = self#read_ui16 in
-    let v = B.add_big_int (B.mult_big_int (bii h) e16) (bii l) in
+    let v = ((bii h)#mult numerical_e16)#add (bii l) in
     TR.tget_ok (make_immediate false 4 v)
 
   method read_imm_unsigned n =

@@ -597,7 +597,6 @@ object ('a)
   method is_quadword: bool
 
   (* converters *)
-  method to_big_int: big_int
   method to_numerical: numerical_t
 
   (** Convert into a native integer. If conversion to a native integer fails,
@@ -619,10 +618,24 @@ object ('a)
       returned.*)
   method sign_extend: int -> 'a traceresult
 
+  (* operations *)
+  method shift_left: int -> 'a
+
+  method arithmetic_shift_right: int -> 'a
+
   (* printing *)
-  method to_string: string
+
+  (** Return the value represented as a decimal string. *)
+  method to_dec_string: string
+
+  (** Return the value represented as a hexadecimal string. *)
   method to_hex_string: string
 
+  (** Return the value as a decimal string if its absolute value is less than 10
+      else as a hexadecimal string.*)
+  method to_string: string
+
+  (** Return the value as represented by to_string as a pretty_t object.*)
   method toPretty: pretty_t
 end
 
