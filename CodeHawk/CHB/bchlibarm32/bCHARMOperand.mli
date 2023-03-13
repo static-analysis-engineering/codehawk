@@ -44,6 +44,8 @@ open BCHLibTypes
 open BCHARMTypes
 
 
+val dmb_option_to_string: dmb_option_t -> string
+
 val vfp_datatype_to_string: vfp_datatype_t -> string
 
 val arm_operand_mode_to_string: arm_operand_mode_t -> string
