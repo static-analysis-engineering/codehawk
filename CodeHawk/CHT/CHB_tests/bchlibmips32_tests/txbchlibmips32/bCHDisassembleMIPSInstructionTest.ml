@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleMIPSInstructionTest"
-let lastupdated = "2022-12-13"
+let lastupdated = "2023-03-10"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -116,28 +116,28 @@ let make_stream ?(len=0) (s: string) =
 
 let mips_I_opcode_be () =
   let tests = [
-      ("addi",  "0x494db8", "23bdff8c", "addi     $sp, $sp, -116");
-      ("addiu", "0x494d84", "27bdffe8", "addiu    $sp, $sp, -24");
-      ("andi",  "0x405dbc", "304200ff", "andi     $v0, $v0, 255");
+      ("addi",  "0x494db8", "23bdff8c", "addi     $sp, $sp, -0x74");
+      ("addiu", "0x494d84", "27bdffe8", "addiu    $sp, $sp, -0x18");
+      ("andi",  "0x405dbc", "304200ff", "andi     $v0, $v0, 0xff");
       ("lb",    "0x405db0", "8083ffff", "lb       $v1, -0x1($a0)");
       ("lbu",   "0x405538", "92840004", "lbu      $a0, 0x4($s4)");
       ("lh",    "0x406d00", "84430000", "lh       $v1, ($v0)");
       ("lhu",   "0x406bfc", "94430000", "lhu      $v1, ($v0)");
-      ("li",    "0x405da8", "2406002e", "li       $a2, 46");
-      ("lui",   "0x40525c", "3c03004a", "lui      $v1, 74");
+      ("li",    "0x405da8", "2406002e", "li       $a2, 0x2e");
+      ("lui",   "0x40525c", "3c03004a", "lui      $v1, 0x4a");
       ("lw",    "0x41b778", "8fbc0018", "lw       $gp, 0x18($sp)");
       ("lwl",   "0x41b78c", "88440000", "lwl      $a0, ($v0)");
       ("lwr",   "0x41b79c", "98440003", "lwr      $a0, 0x3($v0)");
-      ("ori",   "0x40a0d0", "34460080", "ori      $a2, $v0, 128");
+      ("ori",   "0x40a0d0", "34460080", "ori      $a2, $v0, 0x80");
       ("sb",    "0x40554c", "a0440004", "sb       $a0, 0x4($v0)");
       ("sh",    "0x408bf4", "a7a00024", "sh       $zero, 0x24($sp)");
       ("slti",  "0x410af4", "28a20004", "slti     $v0, $a1, 4");
-      ("sltiu", "0x405dc4", "2c42000a", "sltiu    $v0, $v0, 10");
+      ("sltiu", "0x405dc4", "2c42000a", "sltiu    $v0, $v0, 0xa");
       ("subu",  "0x40526c", "00431023", "subu     $v0, $v0, $v1");
       ("sw",    "0x40555c", "ae220000", "sw       $v0, ($s1)");
       ("swl",   "0x405540", "a8430000", "swl      $v1, ($v0)");
       ("swr",   "0x405548", "b8430003", "swr      $v1, 0x3($v0)");
-      ("xori",  "0x408850", "3882000a", "xori     $v0, $a0, 10")
+      ("xori",  "0x408850", "3882000a", "xori     $v0, $a0, 0xa")
     ] in
   begin
     TS.new_testsuite (testname ^ "_mips_I_opcode_be") lastupdated;
@@ -236,7 +236,7 @@ let mips_R_opcode_be () =
       ("sltu",    "0x4052a0", "0050102b", "sltu     $v0, $v0, $s0");
       ("sra",     "0x405270", "00021083", "sra      $v0, $v0, 2");
       ("srav",    "0x411acc", "00ea4007", "srav     $t0, $t2, $a3");
-      ("srl",     "0x40b290", "00032e02", "srl      $a1, $v1, 24");
+      ("srl",     "0x40b290", "00032e02", "srl      $a1, $v1, 0x18");
       ("srlv",    "0x46d804", "00851806", "srlv     $v1, $a1, $a0");
       ("teq",     "0x415748", "006001f4", "teq      $v1, $zero");
       ("xor",     "0x40b29c", "00451026", "xor      $v0, $v0, $a1");
@@ -305,18 +305,18 @@ let mips_R3_opcode_be () =
 
 let mips_test_code_be () =
   let tests = [
-      ("li-32",    "0x494da4", "24060020", "li       $a2, 32");
-      ("li-256",   "0x494da4", "24060100", "li       $a2, 256");
+      ("li-32",    "0x494da4", "24060020", "li       $a2, 0x20");
+      ("li-256",   "0x494da4", "24060100", "li       $a2, 0x100");
       ("jal-patch","0x414248", "0c125361", "jal      0x494d84");
       ("move-a0",  "0x41424c", "02802021", "move     $a0, $s4");
-      ("sp-dec-20","0x45fe78", "27bdffec", "addiu    $sp, $sp, -20");
+      ("sp-dec-20","0x45fe78", "27bdffec", "addiu    $sp, $sp, -0x14");
       ("sw-ra",    "0x40516c", "afbf0010", "sw       $ra, 0x10($sp)");
       ("lw-t9",    "0x494d98", "8f9983e0", "lw       $t9, -0x7c20($gp)");
       ("jalr-t9",  "0x40518c", "0320f809", "jalr     $ra, $t9");
       ("nop",      "0x405178", "00000000", "<nop>");      
       ("lw-ra",    "0x4052d4", "8fbf0010", "lw       $ra, 0x10($sp)");
       ("jr-ra",    "0x4051c0", "03e00008", "jr       $ra");      
-      ("sp-inc-4", "0x45ff34", "27bd0014", "addiu    $sp, $sp, 20");
+      ("sp-inc-4", "0x45ff34", "27bd0014", "addiu    $sp, $sp, 0x14");
       ("move-a3",  "0x494db4", "00063821", "move     $a3, $a2");
       ("move-a2",  "0x494db8", "00053021", "move     $a2, $a1");
       ("move-a1",  "0x494bdc", "00192821", "move     $a1, $t9");
