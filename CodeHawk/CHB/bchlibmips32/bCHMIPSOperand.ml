@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -65,11 +65,6 @@ open BCHMIPSTypes
 module TR = CHTraceResult
 
 
-let e8 = 256
-let e16 = e8 * e8
-let e32 = e16 * e16
-
-
 let mips_operand_mode_to_string =
   function RD -> "RD" | WR -> "WR" | RW -> "RW"
 
@@ -85,38 +80,42 @@ object (self:'a)
     match kind with
     | MIPSAbsolute dw -> dw
     | _ ->
-       raise (BCH_failure (LBLOCK [self#toPretty; STR " is not an absolute address"]))
+       raise
+         (BCH_failure (LBLOCK [self#toPretty; STR " is not an absolute address"]))
 
   method to_numerical =
     match kind with
     | MIPSImmediate imm -> imm#to_numerical
     | _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Operand is not an immediate value: " ;
-                          self#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not an immediate value: "; self#toPretty]))
 
   method to_address (floc:floc_int):xpr_t =
     let env = floc#f#env in
     match kind with
     | MIPSImmediate _ ->
-       raise (BCH_failure
-                (LBLOCK  [ STR "Cannot take address of immediate operand: " ;
-                           self#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK  [
+                 STR "Cannot take address of immediate operand: "; self#toPretty]))
     | MIPSReg _ | MIPSSpecialReg _ | MIPSFPReg _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Cannot take address of register: " ;
-                          self#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Cannot take address of register: "; self#toPretty]))
     | MIPSIndReg (r,offset) ->
        let v = env#mk_mips_register_variable r in
-       XOp (XPlus, [ XVar v ; num_constant_expr offset ])
+       XOp (XPlus, [XVar v; num_constant_expr offset])
     | MIPSAbsolute a -> num_constant_expr a#to_numerical
 
   method to_variable (floc:floc_int):variable_t =
     let env = floc#f#env in
     match kind with
     | MIPSReg MRzero ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Zero is ignored as destination operand" ]))
+       raise
+         (BCH_failure (LBLOCK [STR "Zero is ignored as destination operand"]))
     | MIPSReg r -> env#mk_mips_register_variable r
     | MIPSSpecialReg r -> env#mk_mips_special_register_variable r
     | MIPSFPReg index -> env#mk_mips_fp_register_variable index
@@ -127,12 +126,13 @@ object (self:'a)
     | MIPSImmediate imm ->
        raise
          (BCH_failure
-            (LBLOCK [STR "Immediate cannot be converted to a variable: ";
-                      imm#toPretty]))
+            (LBLOCK [
+                 STR "Immediate cannot be converted to a variable: ";
+                 imm#toPretty]))
 
   method to_expr (floc:floc_int):xpr_t =
     match kind with
-    | MIPSImmediate imm -> big_int_constant_expr imm#to_big_int
+    | MIPSImmediate imm -> num_constant_expr imm#to_numerical
     | MIPSReg MRzero -> zero_constant_expr
     | MIPSAbsolute a when elf_header#is_program_address a ->
        num_constant_expr (elf_header#get_program_value a)#to_numerical
@@ -141,8 +141,9 @@ object (self:'a)
   method to_lhs (floc:floc_int) =
     match kind with
     | MIPSImmediate imm ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Immediate cannot be a lhs: " ; imm#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Immediate cannot be a lhs: "; imm#toPretty]))
     | _ -> (self#to_variable floc, [])
 
   method is_register = match kind with MIPSReg r -> true | _ -> false
@@ -248,9 +249,9 @@ let mips_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
       imm
     else
       match size with
-      | 1 -> imm#add (mkNumerical e8)
-      | 2 -> imm#add (mkNumerical e16)
-      | 4 -> imm#add (mkNumerical e32)
+      | 1 -> imm#add numerical_e8
+      | 2 -> imm#add numerical_e16
+      | 4 -> imm#add numerical_e32
       | _ ->
          raise
            (BCH_failure
@@ -259,7 +260,7 @@ let mips_immediate_op (signed:bool) (size:int) (imm:numerical_t) =
                    INT size])) in
   let op =
     MIPSImmediate
-      (TR.tget_ok (make_immediate signed size immval#getNum)) in
+      (TR.tget_ok (make_immediate signed size immval)) in
   new mips_operand_t op RD
 
 
