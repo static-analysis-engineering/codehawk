@@ -75,6 +75,7 @@ SOURCES := \
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
 all: make_dirs \
+	bCHARMDictionaryTest \
 	bCHDisassembleARMInstructionTest \
 	bCHDisassembleThumbInstructionTest \
 	bCHThumbITSequenceTest \
@@ -88,6 +89,9 @@ doc:
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
+
+bCHARMDictionaryTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHARMDictionaryTest.cmi cmx/bCHARMDictionaryTest.cmx
+	$(CAMLLINK) -o bCHARMDictionaryTest $(OBJECTS) cmx/bCHARMDictionaryTest.cmx
 
 bCHDisassembleARMInstructionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHDisassembleARMInstructionTest.cmi cmx/bCHDisassembleARMInstructionTest.cmx
 	$(CAMLLINK) -o bCHDisassembleARMInstructionTest $(OBJECTS) cmx/bCHDisassembleARMInstructionTest.cmx
