@@ -181,12 +181,13 @@ object (self)
     let oi = self#index_arm_operand in
     let di = self#index_vfp_datatype in
     let ci = arm_opcode_cc_mfts#ts in
-    let tags = [ get_arm_opcode_name opc ] in
+    let tags = [get_arm_opcode_name opc] in
     let ctags c = tags @ [ ci c ] in
     let key = match opc with
-      | Add (s, c, rd, rn, imm, tw)
-        | AddCarry (s, c, rd, rn, imm, tw) ->
-         (ctags c, [setb s ; oi rd; oi rn; oi imm; setb tw])
+      | Add (s, c, rd, rn, imm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
+      | AddCarry (s, c, rd, rn, imm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
       | Adr (c, rd, addr) ->
          (ctags c, [oi rd; oi addr])
       | AESInverseMixColumns (c, dt, vd, vm) ->
@@ -203,34 +204,31 @@ object (self)
          (ctags c, [oi rd; lsb; width; msb])
       | BitFieldInsert (c, rd, rn, lsb, width, msb) ->
          (ctags c, [oi rd; oi rn; lsb; width; msb])
-      | BitwiseAnd (s, c, rd, rn, imm, tw) ->
-         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
-      | BitwiseNot (s ,c,rd, imm, tw) ->
-         (ctags c, [setb s; oi rd; oi imm; setb tw])
-      | BitwiseOrNot (setflags,cond,rd,rn,imm) ->
-         (tags @ [ ci cond ], [ setb setflags ; oi rd; oi rn; oi imm])
-      | BitwiseBitClear (s,c,rd,rn,imm,tw) ->
-         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
-      | BitwiseExclusiveOr (s,c,rd,rn,imm,tw) ->
-         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
-      | BitwiseOr (s,c,rd,rn,imm,tw) ->
-         (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
+      | BitwiseAnd (s, c, rd, rn, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
+      | BitwiseNot (s ,c, rd, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rm; setb tw])
+      | BitwiseOrNot (s, c, rd, rn, rm) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm])
+      | BitwiseBitClear (s, c, rd, rn, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
+      | BitwiseExclusiveOr (s, c, rd, rn, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
+      | BitwiseOr (s, c, rd, rn, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
       | Branch (c, addr, tw) -> (ctags c, [oi addr; setb tw])
-      | BranchExchange (cond,addr)
-        | BranchLink (cond,addr)
-        | BranchLinkExchange (cond,addr) ->
-         (tags @ [ ci cond ], [ oi addr ])
+      | BranchExchange (c, rm) -> (ctags c, [oi rm])
+      | BranchLink (c, addr) -> (ctags c, [oi addr])
+      | BranchLinkExchange (c, addr) -> (ctags c, [oi addr])
       | ByteReverseWord (c, rd, rm, tw) -> (ctags c,[ oi rd; oi rm; setb tw])
       | ByteReversePackedHalfword (c, rd, rm, tw) ->
          (ctags c, [oi rd; oi rm; setb tw])
-      | Compare (c,op1,op2,tw) ->
-         (ctags c, [oi op1; oi op2; setb tw])
-      | CompareNegative (cond,op1,op2)
-        | CountLeadingZeros (cond,op1,op2) ->
-         (tags @ [ ci cond ], [ oi op1; oi op2 ])
-      | CompareBranchNonzero (op1, op2)
-        | CompareBranchZero (op1, op2) -> (tags, [oi op1; oi op2])
-      | DataMemoryBarrier (c,op) -> (ctags c,[oi op])
+      | Compare (c, rn, rm, tw) -> (ctags c, [oi rn; oi rm; setb tw])
+      | CompareNegative (c, rn, rm) -> (ctags c, [oi rn; oi rm])
+      | CountLeadingZeros (c, rd, rm) -> (ctags c, [oi rd; oi rm])
+      | CompareBranchNonzero (rn, tgt) -> (tags, [oi rn; oi tgt])
+      | CompareBranchZero (rn, tgt) -> (tags, [oi rn; oi tgt])
+      | DataMemoryBarrier (c, op) -> (ctags c, [oi op])
       | IfThen (c, xyz) -> ((ctags c) @ [xyz], [])
       | FLoadMultipleIncrementAfter (wb, c, rn, rl, mem) ->
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
@@ -238,11 +236,14 @@ object (self)
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | LoadCoprocessor (islong, ista2, c, coproc, crd, mem, opt) ->
          (ctags c, [setb islong; setb ista2; coproc; crd; oi mem; setopt opt])
-      | LoadMultipleDecrementBefore (wb,c,rn,rl,mem)
-        | LoadMultipleDecrementAfter (wb,c,rn,rl,mem)
-        | LoadMultipleIncrementAfter (wb,c,rn,rl,mem)
-        | LoadMultipleIncrementBefore (wb,c,rn,rl,mem) ->
-         (ctags c, [ setb wb; oi rn; oi rl; oi mem ])
+      | LoadMultipleDecrementAfter (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
+      | LoadMultipleDecrementBefore (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
+      | LoadMultipleIncrementAfter (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
+      | LoadMultipleIncrementBefore (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | LoadRegister (c, rt, rn, rm, mem, tw) ->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
       | LoadRegisterByte (c, rt, rn, rm, mem, tw) ->
@@ -267,24 +268,26 @@ object (self)
          (ctags c, [coproc; opc1; oi rt; crn; crm; opc2])
       | MoveToCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
          (ctags c, [coproc; opc1; oi rt; crn; crm; opc2])
-      | MoveTop (c,rd,imm) -> (ctags c,[ oi rd; oi imm ])
+      | MoveTop (c,rd,imm) -> (ctags c, [oi rd; oi imm])
       | MoveTwoRegisterCoprocessor (c, coproc, opc, rt, rt2, crm) ->
          (ctags c, [coproc; opc; oi rt; oi rt2; crm])
-      | Multiply (setflags,cond,rd,rn,rm) ->
-         (tags @ [ ci cond ], [setb setflags; oi rd; oi rn; oi rm])
-      | MultiplyAccumulate (setflags,cond,rd,rn,rm,ra) ->
-         (tags @ [ ci cond ], [setb setflags; oi rd; oi rn; oi rm; oi ra ])
+      | Multiply (setflags, c, rd, rn, rm) ->
+         (ctags c, [setb setflags; oi rd; oi rn; oi rm])
+      | MultiplyAccumulate (setflags, c, rd, rn, rm, ra) ->
+         (ctags c, [setb setflags; oi rd; oi rn; oi rm; oi ra])
       | MultiplySubtract (c, rd, rn, rm, ra) ->
          (ctags c, [oi rd; oi rn; oi rm; oi ra])
       | Pop (c, sp, rl, tw) -> (ctags c, [oi sp; oi rl; setb tw])
       | PreloadData (w, c, base, mem) -> (ctags c, [setb w; oi base; oi mem])
       | Push (c, sp, rl, tw) ->  (ctags c, [oi sp; oi rl; setb tw])
-      | ReverseBits (c, dst, src) -> (ctags c, [oi dst; oi src])
-      | ReverseSubtract (s, c, dst, src, imm, tw) ->
-         (ctags c, [setb s; oi dst; oi src; oi imm; setb tw])
-      | RotateRight (s, c, rd, rn, rm) ->
+      | ReverseBits (c, rd, rm) -> (ctags c, [oi rd; oi rm])
+      | ReverseSubtract (s, c, rd, rn, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
+      | ReverseSubtractCarry (s, c, rd, rn, rm) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm])
-      | RotateRightExtend (s,c,rd,rm) -> (ctags c, [setb s; oi rd; oi rm])
+      | RotateRight (s, c, rd, rn, rm, tw) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
+      | RotateRightExtend (s, c, rd, rm) -> (ctags c, [setb s; oi rd; oi rm])
       | SaturatingAdd (c, rd, rm, rn) -> (ctags c, [oi rd; oi rm; oi rn])
       | SaturatingDoubleAdd (c, rd, rm, rn) -> (ctags c, [oi rd; oi rm; oi rn])
       | SaturatingDoubleSubtract (c, rd, rm, rn) -> (ctags c, [oi rd; oi rm; oi rn])
@@ -297,65 +300,71 @@ object (self)
          (ctags c, [di dt; oi vd; oi vn; oi vm])
       | SignedBitFieldExtract (c, rd, rn) -> (ctags c, [oi rd; oi rn])
       | SignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
-      | SignedExtendByte (c, rd, rm, tw) -> (ctags c, [oi rd; oi rm; setb tw ])
+      | SignedExtendByte (c, rd, rm, tw) -> (ctags c, [oi rd; oi rm; setb tw])
       | SignedExtendHalfword (c, rd, rm, tw) ->
          (ctags c, [oi rd; oi rm; setb tw])
       | SignedMostSignificantWordMultiply (c, rd, rm, rn, roundf) ->
          (ctags c, [oi rd; oi rm; oi rn; roundf])
       | SignedMostSignificantWordMultiplyAccumulate (c, rd, rm, rn, ra, roundf) ->
          (ctags c, [oi rd; oi rm; oi rn; oi ra; roundf])
-      | SignedMultiplyAccumulateBB (c, rd, rn, rm, ra)
-        | SignedMultiplyAccumulateBT (c, rd, rn, rm, ra)
-        | SignedMultiplyAccumulateTB (c, rd, rn, rm, ra)
-        | SignedMultiplyAccumulateTT (c, rd, rn, rm, ra) ->
+      | SignedMultiplyAccumulateBB (c, rd, rn, rm, ra) ->
          (ctags c, [oi rd; oi rn; oi rm; oi ra])
-      | SignedMultiplyLong (s,c,rdlo,rdhi,rn,rm)
-        | SignedMultiplyAccumulateLong (s,c,rdlo,rdhi,rn,rm) ->
+      | SignedMultiplyAccumulateBT (c, rd, rn, rm, ra) ->
+         (ctags c, [oi rd; oi rn; oi rm; oi ra])
+      | SignedMultiplyAccumulateTB (c, rd, rn, rm, ra) ->
+         (ctags c, [oi rd; oi rn; oi rm; oi ra])
+      | SignedMultiplyAccumulateTT (c, rd, rn, rm, ra) ->
+         (ctags c, [oi rd; oi rn; oi rm; oi ra])
+      | SignedMultiplyAccumulateLong (s, c, rdlo, rdhi, rn, rm) ->
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
-      | SignedMultiplyAccumulateWordB (c, rd, rn, rm, ra)
-        | SignedMultiplyAccumulateWordT (c, rd, rn, rm, ra) ->
+      | SignedMultiplyAccumulateWordB (c, rd, rn, rm, ra) ->
          (ctags c, [oi rd; oi rn; oi rm; oi ra])
-      | SignedMultiplyHalfwordsBB (c, rd, rn, rm)
-        | SignedMultiplyHalfwordsBT (c, rd, rn, rm)
-        | SignedMultiplyHalfwordsTB (c, rd, rn, rm)
-        | SignedMultiplyHalfwordsTT (c, rd, rn, rm) ->
+      | SignedMultiplyAccumulateWordT (c, rd, rn, rm, ra) ->
+         (ctags c, [oi rd; oi rn; oi rm; oi ra])
+      | SignedMultiplyHalfwordsBB (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
-      | SignedMultiplyWordB (c, rd, rn, rm)
-        | SignedMultiplyWordT (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
-      | SingleBitFieldExtract (c,rd,rn) -> (ctags c, [ oi rd; oi rn ])
+      | SignedMultiplyHalfwordsBT (c, rd, rn, rm) ->
+         (ctags c, [oi rd; oi rn; oi rm])
+      | SignedMultiplyHalfwordsTB (c, rd, rn, rm) ->
+         (ctags c, [oi rd; oi rn; oi rm])
+      | SignedMultiplyHalfwordsTT (c, rd, rn, rm) ->
+         (ctags c, [oi rd; oi rn; oi rm])
+      | SignedMultiplyLong (s, c, rdlo, rdhi, rn, rm) ->
+         (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
+      | SignedMultiplyWordB (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
+      | SignedMultiplyWordT (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | StoreCoprocessor (islong, ista2, c, coproc, crd, mem, opt) ->
          (ctags c, [setb islong; setb ista2; coproc; crd; oi mem; setopt opt])
       | StoreMultipleDecrementAfter (wb, c, rn, rl, mem) ->
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
-      | StoreMultipleDecrementBefore (wb, c, rn, rl, mem, tw)
-        | StoreMultipleIncrementAfter (wb, c, rn, rl, mem, tw)
-        | StoreMultipleIncrementBefore (wb, c, rn, rl, mem, tw) ->
+      | StoreMultipleDecrementBefore (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
+      | StoreMultipleIncrementAfter (wb, c, rn, rl, mem, tw) ->
          (ctags c, [setb wb; oi rn; oi rl; oi mem; setb tw])
+      | StoreMultipleIncrementBefore (wb, c, rn, rl, mem) ->
+         (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | StoreRegister (c, rt, rn, rm, mem, tw) ->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
       | StoreRegisterByte (c, rt, rn, rm, mem, tw) ->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
-      | StoreRegisterHalfword (c, rt, rn, rm, mem, tw) ->
-         (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw ])
       | StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
          (ctags c, [oi rt; oi rt2; oi rn; oi rm; oi mem; oi mem2])
       | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
          (ctags c, [oi rd; oi rt; oi rn; oi mem])
-      | Subtract (s, c, dst, src, imm, tw, w) ->
-         (ctags c, [setb s; oi dst; oi src; oi imm; setb tw; setb w])
+      | StoreRegisterHalfword (c, rt, rn, rm, mem, tw) ->
+         (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw ])
+      | Subtract (s, c, rd, rn, rm, tw, w) ->
+         (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw; setb w])
       | SubtractCarry (s, c, rd, rn, rm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
-      | ReverseSubtractCarry (setflags,cond,dst,src,imm) ->
-         (tags @ [ ci cond ], [ setb setflags; oi dst; oi src; oi imm ])
       | Swap (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
       | SwapByte (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
       | TableBranchByte (c, rn, rm, mem) -> (ctags c, [oi rn; oi rm; oi mem])
       | TableBranchHalfword (c, rn, rm, mem) -> (ctags c, [oi rn; oi rm; oi mem])
-      | Test (cond,src1,src2)
-        | TestEquivalence (cond,src1,src2) ->
-         (tags @ [ ci cond ], [oi src1; oi src2 ])
+      | Test (c, rn, rm, tw) -> (ctags c, [oi rn; oi rm; setb tw])
+      | TestEquivalence (c, rn, rm) -> (ctags c, [oi rn; oi rm])
       | UnsignedAdd8 (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
-      | UnsignedBitFieldExtract (c,rd,rn) -> (ctags c, [oi rd; oi rn ])
+      | UnsignedBitFieldExtract (c, rd, rn) -> (ctags c, [oi rd; oi rn ])
       | UnsignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | UnsignedExtendAddByte (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
@@ -370,29 +379,28 @@ object (self)
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | UnsignedSaturatingSubtract8 (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
-      | VectorAbsolute (c, dt, dst, src) ->
-         (ctags c, [di dt; oi dst; oi src])
-      | VectorAdd (c, dt, dst, src1, src2) ->
-         (ctags c, [di dt; oi dst; oi src1; oi src2])
-      | VectorAddLong (c, dt, dst, src1, src2) ->
-         (ctags c, [di dt; oi dst; oi src1; oi src2])
-      | VectorAddWide (c, dt, dst, src1, src2) ->
-         (ctags c, [di dt; oi dst; oi src1; oi src2])
-      | VectorBitwiseAnd (c, dst, src1, src2) ->
-         (ctags c, [oi dst; oi src1; oi src2])
+      | VectorAbsolute (c, dt, vd, vm) ->
+         (ctags c, [di dt; oi vd; oi vm])
+      | VectorAdd (c, dt, vd, vn, vm) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
+      | VectorAddLong (c, dt, qd, dn, dm) ->
+         (ctags c, [di dt; oi qd; oi dn; oi dm])
+      | VectorAddWide (c, dt, qd, qn, dm) ->
+         (ctags c, [di dt; oi qd; oi qn; oi dm])
+      | VectorBitwiseAnd (c, qd, qn, qm) ->
+         (ctags c, [oi qd; oi qn; oi qm])
       | VectorBitwiseBitClear (c, dt, vd, vm, vn) ->
          (ctags c, [di dt; oi vd; oi vn; oi vm])
-      | VectorBitwiseExclusiveOr (c, dst, src1, src2) ->
-         (ctags c, [oi dst; oi src1; oi src2])
-      | VectorBitwiseNot (c, dt, dst, src) ->
-         (ctags c, [di dt; oi dst; oi src])
-      | VectorBitwiseOr (c, dt, dst, src1, src2) ->
-         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorBitwiseExclusiveOr (c, qd, qn, qm) ->
+         (ctags c, [oi qd; oi qn; oi qm])
+      | VectorBitwiseNot (c, dt, qd, qm) ->
+         (ctags c, [di dt; oi qd; oi qm])
+      | VectorBitwiseOr (c, dt, qd, qn, qm) ->
+         (ctags c, [di dt; oi qd; oi qn; oi qm])
       | VCompare (nan, c, dt, op1, op2) ->
-         (ctags c, [if nan then 1 else 0; di dt; oi op1; oi op2])
+         (ctags c, [setb nan; di dt; oi op1; oi op2])
       | VectorConvert (round, c, dstdt, srcdt, dst, src) ->
-         ((ctags c),
-          [if round then 1 else 0; di dstdt; di srcdt; oi dst; oi src])
+         ((ctags c), [setb round; di dstdt; di srcdt; oi dst; oi src])
       | VDivide (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorDuplicate (c, dt, regs, elements, dst, src) ->
@@ -466,8 +474,11 @@ object (self)
       | NotRecognized (name, dw) -> (tags @ [name; dw#to_hex_string], [])
       | OpcodeUndefined s -> (tags, [bd#index_string s])
       | OpcodeUnpredictable s -> (tags, [bd#index_string s])
-      | SupervisorCall (cond,op) -> (tags @ [ ci cond ], [ oi  op ]) in
+      | SupervisorCall (c, op) -> (ctags c, [oi op]) in
     arm_opcode_table#add key
+
+  method retrieve_arm_opcode_key (index: int) =
+    arm_opcode_table#retrieve index
 
   method index_arm_bytestring (s:string):int = arm_bytestring_table#add s
 
