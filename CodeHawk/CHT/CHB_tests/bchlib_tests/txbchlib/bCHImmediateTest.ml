@@ -7,7 +7,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,10 +28,15 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHNumerical
+
 module A = TCHAssertion
+module G = TCHGenerator
 module TS = TCHTestSuite
 
 module BA = TCHBchlibAssertion
+module BG = TCHBchlibGenerator
 
 module I = BCHImmediate
 
@@ -39,20 +44,53 @@ module TR = CHTraceResult
 
 
 let testname = "bCHImmediateTest"
-let lastupdated = "2022-12-09"
+let lastupdated = "2023-03-11"
 
 
 let signed_imm (width: int) (value: int) =
-  TR.tget_ok (I.make_immediate true width (Big_int_Z.big_int_of_int value))
+  TR.tget_ok (I.make_immediate true width (mkNumerical value))
 
 
 let unsigned_imm (width: int) (value: int) =
-  TR.tget_ok (I.make_immediate false width (Big_int_Z.big_int_of_int value))
+  TR.tget_ok (I.make_immediate false width (mkNumerical value))
+
+
+let signed_imm_result (width: int) (value: int) =
+  I.make_immediate true width (mkNumerical value)
+
+
+let unsigned_imm_result (width: int) (value: int) =
+  I.make_immediate false width (mkNumerical value)
 
 
 let imm_basic () =
   begin
     TS.new_testsuite (testname ^ "_basic") lastupdated;
+
+    TS.add_simple_test
+      ~title:"zero"
+      (fun () ->
+        BA.equal_string_imm_result_string "0" (unsigned_imm_result 4 0));
+
+    TS.add_simple_test
+      ~title:"small-value"
+      (fun () ->
+        BA.equal_string_imm_result_string "4" (unsigned_imm_result 4 4));
+
+    TS.add_simple_test
+      ~title:"medium-value"
+      (fun () ->
+        BA.equal_string_imm_result_string "0xc" (unsigned_imm_result 4 12));
+
+    TS.add_simple_test
+      ~title:"small-neg-value"
+      (fun () ->
+        BA.equal_string_imm_result_string "-4" (signed_imm_result 4 (-4)));
+
+    TS.add_simple_test
+      ~title:"medium-neg-value"
+      (fun () ->
+        BA.equal_string_imm_result_string "-0xc" (signed_imm_result 4 (-12)));
 
     TS.add_simple_test
       ~title:"sign-extend-pos"
@@ -90,7 +128,8 @@ let imm_basic () =
       (fun () ->
         A.equal_string
           "0xffffffff"
-          (TR.tget_ok ((signed_imm 1 (-1))#sign_extend 4))#to_unsigned#to_hex_string);
+          (TR.tget_ok
+             ((signed_imm 1 (-1))#sign_extend 4))#to_unsigned#to_hex_string);
 
     TS.launch_tests ();
   end

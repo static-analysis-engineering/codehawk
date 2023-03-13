@@ -43,12 +43,14 @@ module A = TCHAssertion
 module TR = CHTraceResult
 
 
+
 let e7 = 128
 let e8 = 256
 let e15 = e7 * e8
 let e16 = e8 * e8
 let e31 = e15 * e16
 let e32 = e16 * e16
+
 
 let string_printer = CHPrettyUtil.string_printer
 let p2s = string_printer#print
@@ -85,6 +87,14 @@ let equal_string_imm_result_hexstring
     A.fail ("expected:" ^ expected) (String.concat "; " (TR.tget_error immr)) msg
   else
     A.equal_string expected (TR.tget_ok immr)#to_hex_string
+
+
+let equal_string_imm_result_string
+      ?(msg="") (expected: string) (immr: immediate_result) =
+  if Result.is_error immr then
+    A.fail ("expected:" ^ expected) (String.concat "; " (TR.tget_error immr)) msg
+  else
+    A.equal_string expected (TR.tget_ok immr)#to_string
 
 
 let equal_assignments
