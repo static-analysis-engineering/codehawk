@@ -7,7 +7,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,13 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHNumerical
+
 (* bchlib *)
 open BCHDoubleword
+open BCHImmediate
+
 
 module G = TCHGenerator
 module BA = TCHBchlibAssertion
@@ -62,3 +67,10 @@ let doubleword_pair =
     let (gen_d, _) = doubleword in
     (gen_d r, gen_d r)),
    (fun (dw1, dw2) -> (dw1#to_hex_string ^ "," ^ dw2#to_hex_string)))
+
+
+let immediate_value ?(min=0) ?(max=BA.e32) (signed: bool) (size_in_bytes: int) =
+  ((fun r ->
+    let num = mkNumerical ((fst (G.make_int min max)) r) in
+    make_immediate signed size_in_bytes num),
+   (fun imm -> (TR.tget_ok imm)#to_string))

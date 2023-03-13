@@ -7,7 +7,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,18 @@ val msb_classifier: doubleword_int classifier_t
 
 val msb_pair_classifier: (doubleword_int * doubleword_int) classifier_t
 
+
+(** Generator for [doubleword_int] values *)
 val doubleword: doubleword_int generator_t
 
+
+(** Generator for [doubleword_int] pairs *)
 val doubleword_pair: (doubleword_int * doubleword_int) generator_t
+
+
+(** [immediate_value min max signed size_in_bytes] returns a generator
+    for immediate value results with value between [min] (inclusive) and
+    [max] (exclusive). Default for [min] is zero; default for [max] is
+    max_int (32 bits).*)
+val immediate_value:
+  ?min:int -> ?max:int -> bool -> int -> immediate_result generator_t
