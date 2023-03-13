@@ -2021,7 +2021,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | RotateRight (_, c, rd, rn, rm) ->
+  | RotateRight (_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_variable floc in
      let xrn = rn#to_expr floc in
@@ -2264,7 +2264,7 @@ let translate_arm_instruction
    * if wback then
    *   R[n] = R[n] + 4 * BitCount(registers);
    * ------------------------------------------------------------------------ *)
-  | StoreMultipleIncrementBefore (wback, c, base, rl, _, _) ->
+  | StoreMultipleIncrementBefore (wback, c, base, rl, _) ->
      let floc = get_floc loc in
      let basereg = base#get_register in
      let regcount = rl#get_register_count in
@@ -2311,7 +2311,7 @@ let translate_arm_instruction
    *   MemA[address, 4] = PCStoreValue();
    * if wback then R[n] = R[n] - 4 * BitCount(registers);
    * ------------------------------------------------------------------------ *)
-  | StoreMultipleDecrementBefore (wback, c, base, rl, _, _) ->
+  | StoreMultipleDecrementBefore (wback, c, base, rl, _) ->
      let floc = get_floc loc in
      let basereg = base#get_register in
      let regcount = rl#get_register_count in

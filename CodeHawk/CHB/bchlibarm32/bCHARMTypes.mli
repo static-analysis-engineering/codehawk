@@ -112,7 +112,7 @@ type arm_operand_kind_t =
   | ARMAbsolute of doubleword_int
   | ARMLiteralAddress of doubleword_int
   | ARMMemMultiple of
-      arm_reg_t
+      arm_reg_t  (* register that holds the memory address *)
       * int   (* alignment, default is 0 *)
       * int   (* number of memory locations *)
       * int   (* size of memory location (4 or 8 bytes) *)
@@ -561,6 +561,7 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
+      * bool             (* T.W. *)
   | RotateRightExtend of
       bool   (* flags are set *)
       * arm_opcode_cc_t  (* condition *)
@@ -720,10 +721,6 @@ type arm_opcode_t =
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* rn: source 1 *)
       * arm_operand_int (* rm: source 2 (top half only) *)
-  | SingleBitFieldExtract of
-      arm_opcode_cc_t    (* condition *)
-      * arm_operand_int  (* rd: destination *)
-      * arm_operand_int  (* rn: source *)
   | StoreCoprocessor of
       bool               (* long *)
       * bool             (* ta2 *)
@@ -744,7 +741,6 @@ type arm_opcode_t =
       * arm_operand_int (* rn: base *)
       * arm_operand_int (* rl: register list *)
       * arm_operand_int (* mem: multiple memory locations *)
-      * bool            (* T.W. *)
   | StoreMultipleIncrementAfter of
       bool    (* writeback *)
       * arm_opcode_cc_t (* condition *)
@@ -758,7 +754,6 @@ type arm_opcode_t =
       * arm_operand_int (* rn: base *)
       * arm_operand_int (* rl: register list *)
       * arm_operand_int (* mem: multiple memory locations *)
-      * bool            (* T.W. *)
   | StoreRegister of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: source *)
@@ -833,6 +828,7 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
       * arm_operand_int  (* rm/imm: source 2 *)
+      * bool             (* T.W. *)
   | TestEquivalence of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
@@ -1197,7 +1193,8 @@ class type arm_dictionary_int =
     method index_arm_operand: arm_operand_int -> int
     method index_arm_opcode: arm_opcode_t -> int
     method index_arm_bytestring: string -> int
-    (* method index_arm_instr_class: arm_instr_class_t -> int *)
+
+    method retrieve_arm_opcode_key: int -> (string list * int list)
 
     method write_xml_arm_bytestring:
              ?tag:string -> xml_element_int -> string -> unit

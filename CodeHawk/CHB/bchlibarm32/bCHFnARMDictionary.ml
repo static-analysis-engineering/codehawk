@@ -1440,7 +1440,7 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
-      | StoreMultipleDecrementBefore (wback, c, base, rl, _, _) ->
+      | StoreMultipleDecrementBefore (wback, c, base, rl, _) ->
          let basereg = base#get_register in
          let regcount = rl#get_register_count in
          let baselhs = base#to_variable floc in
@@ -1503,7 +1503,7 @@ object (self)
           @ (List.map xd#index_xpr rrhss)
           @ [xd#index_xpr (base#to_expr floc)])
 
-      | StoreMultipleIncrementBefore (_, _, base, rl, _, _) ->
+      | StoreMultipleIncrementBefore (_, _, base, rl, _) ->
          let basereg = base#get_register in
          let regcount = rl#get_register_count in
          let rhss = rl#to_multiple_expr floc in
@@ -1685,7 +1685,7 @@ object (self)
          let xrm = rm#to_expr floc in
          (["a:x"], [xd#index_xpr xrm])
 
-      | Test (_, rn, rm) ->
+      | Test (_, rn, rm, _) ->
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          (["a:xx"], [xd#index_xpr xrn; xd#index_xpr xrm])
