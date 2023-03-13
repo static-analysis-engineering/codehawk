@@ -50,17 +50,9 @@ open BCHARMOperand
 open BCHARMPseudocode
 open BCHARMTypes
 
-module B = Big_int_Z
+
 module TR = CHTraceResult
 
-
-(* commonly used constant values *)
-let e7   = 128
-let e8   = 256
-let e15  = e7 * e8
-let e16  = e8 * e8
-let e31 = e16 * e15
-let e32 = e16 * e16
 
 let stri = string_of_int
 
@@ -645,14 +637,14 @@ let parse_data_proc_reg_type
      let rn = r19 RD in
      let rm = mk_imm_shift_reg rt (b 6 5) (b 11 7) RD in
      (* TST<c> <Rn>, <Rm>{, <shift>} *)
-     Test (c, rn, rm)
+     Test (c, rn, rm, false)
 
   (* <cc><0>< 8>1<rn>< 0><rs>0ty1<rm> *) (* TST (register-shifted register) - A1 *)
   | 8 when setflags && (ry = 0) && (b 7 7) = 0 && (b4 = 1) ->
      let rn = r19 RD in
      let rm = mk_reg_shift_reg rt (b 6 5) rz RD in
      (* TST<c> <Rn>, <Rm>, <type> <Rs> *)
-     Test (c, rn, rm)
+     Test (c, rn, rm, false)
 
   (* <cc><0>< 9>0<15><15><15>0001<rm> *)   (* BX - A1 *)
   | 9 when (not setflags) && (rx = 15) && (ry = 15) && (rz = 15) && (b 7 4) = 1 ->
@@ -685,7 +677,7 @@ let parse_data_proc_reg_type
      let rd = r19 WR in
      let rm = r11 RD in
      let rn = r3 RD in
-     (* SMULWB<c>, <Rd>, <Rn>, <Rm> *)
+     (* SMULWT<c>, <Rd>, <Rn>, <Rm> *)
      SignedMultiplyWordT (c, rd, rn, rm)
 
   (* <cc><0>< 9>0<rd><ra><rm>1000<rn> *)   (* SMLAWB - A1 *)
@@ -907,7 +899,7 @@ let parse_data_proc_reg_type
             (LBLOCK [STR "ROR(A1): "; iaddr#toPretty]))
          (mk_arm_immediate_op false 4 (mkNumerical imm)) in
      (* ROR{S}<c> <Rd>, <Rm>, #<imm> *)
-     RotateRight (setflags, c, rd, rm, imm)
+     RotateRight (setflags, c, rd, rm, imm, false)
 
   (* <cc><0><13>s< 0><rd><rm>0111<rn> *)   (* ROR (register) - A1 *)
   | 13 when (rx = 0) && (b 7 4) = 7 ->
@@ -915,7 +907,7 @@ let parse_data_proc_reg_type
      let rm = r11 RD in
      let rn = r3 RD in
      (* ROR{S}<c> <Rd>, <Rn>, <Rm> *)
-     RotateRight (setflags, c, rd, rn, rm)
+     RotateRight (setflags, c, rd, rn, rm, false)
 
   (* <cc><0><14>s<rn><rd><imm>ty0<rm> *)   (* BIC (register) - A1 *)
   | 14 when (b4 = 0) ->
@@ -961,7 +953,7 @@ let parse_data_proc_imm_type
   let c = get_opcode_cc cond in
   let mk_imm (rotate: int) (imm: int) =
     let imm32 = arm_expand_imm rotate imm in
-    let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
+    let imm32 = TR.tget_ok (make_immediate false 4 (mkNumerical imm32)) in
     arm_immediate_op imm32 in
   let mk_imm16 (imm4: int) (rotate: int) (imm: int) =
     (imm4 lsl 12) + (rotate lsl 8) + imm in
@@ -1065,7 +1057,7 @@ let parse_data_proc_imm_type
   | 8 when not setflags ->
      let rd = r15 WR in
      let immval = ((b 19 16) lsl 12) + ((b 11 8) lsl 8) + (b 7 0) in
-     let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int immval)) in
+     let imm32 = TR.tget_ok (make_immediate false 4 (mkNumerical immval)) in
      let imm = arm_immediate_op imm32 in
      (* MOVW<c> <Rd>, #<imm16> *)
      Move (false, c, rd, imm, false, true)
@@ -1075,7 +1067,7 @@ let parse_data_proc_imm_type
      let rn = r19 RD in
      let imm = mk_imm (b 11 8) (b 7 0) in
      (* TST<c> <Rn>, #<const> *)
-     Test (c, rn, imm)
+     Test (c, rn, imm, false)
 
   (* <cc><1>< 9>0< 0><15><--imm12:0-> *)   (* NOP - A1 *)
   | 9 when not setflags && (rx = 0) && (ry = 15) && (b 11 0) = 0 ->
@@ -1093,7 +1085,7 @@ let parse_data_proc_imm_type
   | 10 when not setflags ->
      let rd = r15 WR in
      let imm16 = mk_imm16 (b 19 16) (b 11 8) (b 7 0) in
-     let imm16 = TR.tget_ok (make_immediate false 2 (B.big_int_of_int imm16)) in
+     let imm16 = TR.tget_ok (make_immediate false 2 (mkNumerical imm16)) in
      let imm = arm_immediate_op imm16 in
      (* MOVT<c> <Rd>, #<imm16> *)
      MoveTop (c, rd, imm)
@@ -1399,7 +1391,7 @@ let parse_media_type (instrbytes: doubleword_int) (cond: int) =
      let widthm1 = b 20 16 in
      let rn = mk_arm_reg_bit_sequence_op (get_arm_reg rz) lsb widthm1 RD in
      (* SBFX<c> <Rd>, <Rn>, #<lsb>, #<width> *)
-     SingleBitFieldExtract (c, rd, rn)
+     SignedBitFieldExtract (c, rd, rn)
 
   (* <cc><3><14><msb><rd><lsb>001<15> *)   (* BFC - A1 *)
   | 28 | 29 when (b 6 5) = 0 && rz = 15 ->
@@ -1492,7 +1484,7 @@ let parse_block_data_type (instr: doubleword_int) (cond: int) =
      let rlop = arm_register_list_op rl RD in
      let mmem = mk_arm_mem_multiple_op rnreg (List.length rl) WR in
      (* STMDB<c> <Rn>{!}, <registers> *)
-     StoreMultipleDecrementBefore (iswback, c, rn, rlop, mmem, false)
+     StoreMultipleDecrementBefore (iswback, c, rn, rlop, mmem)
 
   (* <cc><4>100W1<rn><register-list-> *)    (* LDMDB/LDMEA - A1 *)
   | (1, 0, 1, _) ->
@@ -1506,7 +1498,7 @@ let parse_block_data_type (instr: doubleword_int) (cond: int) =
      let rlop = arm_register_list_op rl RD in
      let mmem = mk_arm_mem_multiple_op rnreg (List.length rl) WR in
      (* STMIB<c> <Rn>{!}, <registers> *)
-     StoreMultipleIncrementBefore (iswback, c, rn, rlop, mmem, false)
+     StoreMultipleIncrementBefore (iswback, c, rn, rlop, mmem)
 
   (* <cc><4>110W1<rn><register-list-> *)    (*LDMIB/LDMED - A1 *)
   | (1, 1, 1, _) ->
@@ -1980,7 +1972,7 @@ let parse_misc_7_type
      VectorMultiplySubtract (c, dt, vd WR, vn RD, vm RD)
 
   (* <cc><7>00oo0<vd><rt>1011Doo1< 0> *) (* VMOV (ARM core to scalar) - A1 *)
-  | (0, (0 | 1), _, 1) when (bv 20) = 0 && (b 11 8) = 11 && (b 3 0) = 0 ->
+  | (0, (0 | 2), _, 1) when (bv 20) = 0 && (b 11 8) = 11 && (b 3 0) = 0 ->
      let opc1 = b 22 21 in
      let opc2 = b 6 5 in
      let (esize, index) =
@@ -2267,7 +2259,7 @@ let parse_misc_7_type
        if dp then (VfpFloat 64, XDouble) else (VfpFloat 32, XSingle) in
      let vd = arm_extension_register_op xtype vdreg in
      let vm = arm_extension_register_op xtype vmreg in
-     (* VABS<c>. F64 <Dd>, <Dm> *)
+     (* VABS<c>.F64 <Dd>, <Dm> *)
      (* VABS<c>.F32 <Sd>, <Sm> *)
      VectorAbsolute (c, dt, vd WR, vm RD)
 
@@ -2486,7 +2478,7 @@ let parse_vector_structured_store
          (* <15><  8>D00<rn><vd>< 3>szal<rm> *)  (* 4 registers *)
          | 3 -> arm_simd_reg_list_op XDouble [vd; vd + 1; vd + 2; vd + 3]
          | _ ->
-            raise (BCH_failure (STR "VectorStoreOne: not reachable")) in
+            raise (BCH_failure (STR "VectorStoreTwo: not reachable")) in
        VectorStoreTwo (wb, cc, VfpSize esize, rlist RD, rnop, mem WR, rmop)
 
     | _ ->
@@ -2771,7 +2763,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
 
   (* <15><  5>D000<i><vd><cm>0001<i4) *) (* VORR (immediate) - A1-0 (Q=0) *)
   | (5, 0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 0, 1)
-       when (bv 7) = 0 && (bv 5) = 0 ->
+       when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 0 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
      let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
@@ -2789,7 +2781,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
 
   (* <15><  5>D000<i><vd><cm>0101<i4) *) (* VORR (immediate) - A1-0 (Q=1) *)
   | (5, 0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 1, 1)
-       when (bv 7) = 0 && (bv 5) = 0 ->
+       when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 0 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
      let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
@@ -2806,7 +2798,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorBitwiseOr (cc, dt, vd WR, vd RD, immop)
 
   (* <15><  5>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - A1-0-0 (Q=0) *)
-  | (5, 0, cm, 0, 1) when (bv 7) = 0 && (bv 5) = 0 ->
+  | (5, 0, cm, 0, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 0 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
      let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
@@ -2816,7 +2808,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorMove (cc, dt, [vd WR; immop])
 
   (* <15><  5>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - A1-0-0 (Q=1) *)
-  | (5, 0, cm, 1, 1) when (bv 7) = 0 && (bv 5) = 0 ->
+  | (5, 0, cm, 1, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 0 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
      let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in

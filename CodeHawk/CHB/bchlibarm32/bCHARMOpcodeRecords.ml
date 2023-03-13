@@ -64,6 +64,7 @@ let get_cond_mnemonic_extension (c:arm_opcode_cc_t) =
   | ACCAlways -> ""
   | ACCUnconditional -> ""
 
+
 let get_cond_flags_used (c: arm_opcode_cc_t): arm_cc_flag_t list =
   match c with
   | ACCEqual -> [APSR_Z]
@@ -328,11 +329,11 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ida_asm = (fun f -> f#ops mnemonic [])
      }
   | FLoadMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
-      mnemonic = "FLDMX";
+      mnemonic = "FLDMIAX";
       operands = [rn; rl];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "FLDMX" c [rn; rl])
+      ida_asm = (fun f -> f#opscc "FLDMIAX" c [rn; rl])
     }
   | FStoreMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
       mnemonic = "FSTMIAX";
@@ -574,12 +575,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "RSC" c [rd; rn; rm])
     }
-  | RotateRight (s, c, rd, rn, rm) -> {
+  | RotateRight (s, c, rd, rn, rm, tw) -> {
       mnemonic = "ROR";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "ROR" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "ROR" c [rd; rn; rm])
     }
   | RotateRightExtend (s, c, rd, rm) -> {
       mnemonic = "RRX";
@@ -786,13 +787,6 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULWT" c [rd; rn; rm])
     }
-  | SingleBitFieldExtract (c, rd, rn) -> {
-      mnemonic = "SBFX";
-      operands = [rd; rn];
-      flags_set = [];
-      ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SBFX" c [rd;rn])
-    }
   | StoreCoprocessor (islong, ista2, c, coproc, crd, dst, option) ->
      let mnemonic =
        match (islong, ista2) with
@@ -816,12 +810,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STMDA" c [rn; rl])
     }
-  | StoreMultipleDecrementBefore (wb, c, rn, rl, mem, tw) -> {
+  | StoreMultipleDecrementBefore (wb, c, rn, rl, mem) -> {
       mnemonic = "STMDB";
       operands = [rn; rl];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "STMDB" c [rn; rl])
+      ida_asm = (fun f -> f#opscc "STMDB" c [rn; rl])
     }
   | StoreMultipleIncrementAfter (wb, c, rn, rl, mem, tw) -> {
       mnemonic = "STM";
@@ -830,12 +824,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STM" c [rn; rl])
     }
-  | StoreMultipleIncrementBefore (wb, c, rn, rl, mem, tw) -> {
+  | StoreMultipleIncrementBefore (wb, c, rn, rl, mem) -> {
       mnemonic = "STMIB";
       operands = [rn; rl];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "STMIB" c [rn; rl])
+      ida_asm = (fun f -> f#opscc "STMIB" c [rn; rl])
     }
   | StoreRegister (c, rt, rn, rm, mem, tw) -> {
       mnemonic = "STR";
@@ -923,12 +917,12 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "TBH" c [mem])
     }
-  | Test (c,rn,rm) -> {
+  | Test (c, rn, rm, tw) -> {
       mnemonic = "TST";
       operands = [rn; rm];
       flags_set = [APSR_N; APSR_Z; APSR_C];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "TST" c [rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "TST" c [rn; rm])
     }
   | TestEquivalence (c, rn, rm) -> {
       mnemonic = "TEQ";
@@ -1047,7 +1041,10 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [vd; vn; vm];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~dt "VBIC" c [vd; vn; vm])
+      ida_asm =
+        match dt with
+        | VfpNone -> (fun f -> f#opscc "VBIC" c [vd; vn; vm])
+        | _ -> (fun f -> f#opscc ~dt "VBIC" c [vd; vm])
     }
   | VectorBitwiseExclusiveOr (c, dst, src1, src2) -> {
       mnemonic = "VEOR";

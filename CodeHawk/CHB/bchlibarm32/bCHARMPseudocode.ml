@@ -125,7 +125,7 @@ let get_arm_reg (r:int) =
   | _ ->
      raise
        (BCH_failure
-          (LBLOCK [ STR "Unexpected value for arm register: "; INT r ]))
+          (LBLOCK [STR "Unexpected value for arm register: "; INT r]))
 
 
 let get_reglist_from_int (width:int) (reglist:int) =
@@ -316,8 +316,9 @@ let do_ASR_C (width:int) (x:int) (shift:int) =
   else
     raise
       (BCH_failure
-         (LBLOCK [ STR "Unexpected value for shift in do_ASR_C: ";
-                   INT shift ]))
+         (LBLOCK [
+              STR "Unexpected value for shift in do_ASR_C: ";
+              INT shift]))
 
 (* // ASR()
  * --------
@@ -340,8 +341,9 @@ let do_ASR (width:int) (x:int) (shift:int) =
   else
     raise
       (BCH_failure
-         (LBLOCK [ STR "Unexpected value for shift in do_ASR: " ;
-                   INT shift ]))
+         (LBLOCK [
+              STR "Unexpected value for shift in do_ASR: ";
+              INT shift]))
 
 (* // ROR_C
  * --------
@@ -362,8 +364,10 @@ let do_ROR_C (width:int) (x:int) (shift:int) =
   else
     raise
       (BCH_failure
-         (LBLOCK [ STR "Unexpected value for shift in ROR_C: ";
-                   INT shift ]))
+         (LBLOCK [
+              STR "Unexpected value for shift in ROR_C: ";
+              INT shift]))
+
 
 (* // ROR()
  * // -----
@@ -381,7 +385,8 @@ let do_ROR (width:int) (x:int) (shift:int) =
   else
     let (result,_) = do_ROR_C width x shift in
     result
- 
+
+
 (* // RRX_C()
  * ----------
  * (bits(N), bit) RRX_C(bits(N) x, bit_carry_in)
@@ -398,6 +403,7 @@ let do_RRX_C (width:int) (x:int) (carry_in:int) =
       (x lsr 1) + (pow2 (width-1)) in
   let carry_out = x mod 2 in
   (result, carry_out)
+
 
 (* // RRX()
  * --------
@@ -448,8 +454,9 @@ let decode_imm_shift (typebits:int) (immbits:int) =
   | _ ->
      raise
        (BCH_failure
-          (LBLOCK [ STR "Unexpected value for typebits in decode_imm_shift: ";
-                    INT typebits ]))
+          (LBLOCK [
+               STR "Unexpected value for typebits in decode_imm_shift: ";
+               INT typebits]))
 
 (* DecodeRegShift()
  * ================
@@ -471,8 +478,10 @@ let decode_reg_shift (typebits:int) =
   | _ ->
      raise
        (BCH_failure
-          (LBLOCK [ STR "Unexpected value for typebits in decode_reg_shift: ";
-                    INT typebits ]))
+          (LBLOCK [
+               STR "Unexpected value for typebits in decode_reg_shift: ";
+               INT typebits]))
+
 
 (* Shift()
  * -------
@@ -502,8 +511,9 @@ let do_shift_c (width:int) (x:int) (srt:shift_rotate_type_t) (amount:int) (carry
   if (srt = SRType_RRX && amount != 1) then
     raise
       (BCH_failure
-         (LBLOCK [ STR "Unexpected values for srt and amount in do_shift_c: ";
-                   INT amount ]))
+         (LBLOCK [
+              STR "Unexpected values for srt and amount in do_shift_c: ";
+              INT amount]))
   else
     if amount = 0 then
       (x,carry_in)
@@ -518,7 +528,8 @@ let do_shift_c (width:int) (x:int) (srt:shift_rotate_type_t) (amount:int) (carry
 let do_shift (width:int) (x:int) (srt:shift_rotate_type_t) (amount:int) (carry_in:int) =
   let (result,_) = do_shift_c width x srt amount carry_in in
   result
-       
+
+
 (* Operation of modified immediate constants (pg A5-199)
  * =====================================================
  * bits(32) ARMExpandImm(bits(12 imm12)
@@ -540,8 +551,6 @@ let arm_expand_imm (rotate4:int) (imm8:int) =
   let (imm32,_) = arm_expand_imm_c rotate4 imm8 0 in
   imm32
 
-
-    
 
 (* ThumbExpandImm (pg A6-230)
  * ==========================
@@ -572,7 +581,6 @@ let arm_expand_imm (rotate4:int) (imm8:int) =
  *
  *   return (imm32, carry_out);
  *)
-  
 let thumb_expand_imm_c (imm12: int) (carry: int): int * int =
   let c1 = imm12 lsr 10 in
   let c2 = (imm12 lsr 8) mod 4 in
@@ -621,11 +629,6 @@ let replicate (x: string) (n: int): string =
 
 let replicate_int (x: int) (xlen) (cnt: int): string =
   replicate (to_bit_string x xlen) cnt
-
-
-let bit_string_to_numerical (s: string): numerical_t =
-  let i64 = Int64.of_string ("0b" ^ s) in
-  mkNumericalFromInt64 i64
 
 
 let zeros (n: int): string = string_repeat "0" n
@@ -742,7 +745,7 @@ let vfp_expand_imm (imm8: int) (n: int): numerical_t =
  *   return imm64;
  *)
 let adv_simd_expand_imm (op: int) (cmode: int) (imm8: int) =
-  let mk_imm64 (s: string) (n: int) = bit_string_to_numerical (replicate s n) in
+  let mk_imm64 (s: string) (n: int) = mkNumericalFromBitString (replicate s n) in
   let xbit n = (imm8 lsr n) mod 2 in
   let imm8s = to_bit_string imm8 8 in
   let cmode0 = cmode mod 2 in

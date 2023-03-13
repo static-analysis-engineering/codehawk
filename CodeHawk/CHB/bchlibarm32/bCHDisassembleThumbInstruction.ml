@@ -46,7 +46,6 @@ open BCHARMOperand
 open BCHARMPseudocode
 open BCHARMTypes
 
-module B = Big_int_Z
 module TR = CHTraceResult
 
 (*
@@ -407,13 +406,6 @@ module TR = CHTraceResult
 
  *)
 
-(* commonly used constant values *)
-let e7   = 128
-let e8   = 256
-let e15  = e7 * e8
-let e16  = e8 * e8
-let e31 = e16 * e15
-let e32 = e16 * e16
 
 let stri = string_of_int
 
@@ -530,7 +522,7 @@ let parse_thumb32_29_0
      let imm = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
      let offset = ARMImmOffset imm8 in
      let offset2 = ARMImmOffset (imm8 + 4) in
-     let (isadd, isindex, iswback) =
+     let (isindex, isadd, iswback) =
        match selector with
        | 7 -> (false, false, true)
        | 13 -> (false, true, false)
@@ -630,7 +622,7 @@ let parse_thumb32_29_0
      let wback = (b 21 21) = 1 in
      let rn = if wback then rn RW else rn RD in
      (* STM<c>.W <Rn>{!}, <registers> *)
-     StoreMultipleDecrementBefore (wback, cc, rn, rl RD , mem WR, true)
+     StoreMultipleDecrementBefore (wback, cc, rn, rl RD , mem WR)
 
   | s ->
      NotRecognized (
@@ -999,7 +991,7 @@ let parse_thumb32_29_2
        (* VLDM<c> <Rn>!, <list> *)
        VectorLoadMultipleIncrementAfter (true, cc, rn RW, rl WR, mem RD)
 
-    (* < 29>10PUDW1<rn><vd><5>1<-imm8->    VLDM - T1 *)
+    (* < 29>10PUDW1<rn><vd><5>1<-imm8->    FLDMIAX *)
     | (1, 1, 1) ->
        let d = prefix_bit (bv 22) (b 15 12) in
        let rnreg = get_arm_reg (b 19 16) in
@@ -1007,10 +999,10 @@ let parse_thumb32_29_2
        let regs = (b 7 0) / 2 in
        let rl = arm_extension_register_list_op XDouble d regs in
        let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
-       (* FLDMX<c> <Rn>, <list> *)
+       (* FLDMIAX<c> <Rn>, <list> *)
        FLoadMultipleIncrementAfter (false, cc, rn RD, rl WR, mem RD)
 
-    (* < 29>10PUDW1<rn><vd><5>1<-imm8->    VLDM - T1-wb *)
+    (* < 29>10PUDW1<rn><vd><5>1<-imm8->    FLDMIAX (wb) *)
     | (1, 3, 1) ->
        let d = prefix_bit (bv 22) (b 15 12) in
        let rnreg = get_arm_reg (b 19 16) in
@@ -1018,7 +1010,7 @@ let parse_thumb32_29_2
        let regs = (b 7 0) / 2 in
        let rl = arm_extension_register_list_op XDouble d regs in
        let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
-       (* FLDMX<c> <Rn>!, <list> *)
+       (* FLDMIAX<c> <Rn>!, <list> *)
        FLoadMultipleIncrementAfter (true, cc, rn RW, rl WR, mem RD)
 
     (* < 29>101UD00<rn><vd>1010<-imm8->   VSTR-sub - T2) *)
@@ -1941,11 +1933,13 @@ let parse_thumb32_29_15
        when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
-     let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
-     let dt =
+     let immval = adv_simd_expand_imm 1 cm imm8 in
+     let (dt, immop) =
        match cm with
-       | 1 | 3 | 5 | 7 -> VfpInt 32
-       | 9 | 11 -> VfpInt 16
+       | 1 | 3 | 5 | 7 ->
+          (VfpInt 32, TR.tget_ok (mk_arm_immediate_op false 4 (immval#shift_right 32)))
+       | 9 | 11 ->
+          VfpInt 16, TR.tget_ok (mk_arm_immediate_op false 4 (immval#shift_right 48))
        | _ ->
           raise
             (BCH_failure
@@ -1959,11 +1953,13 @@ let parse_thumb32_29_15
        when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
-     let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
-     let dt =
+     let immval = adv_simd_expand_imm 1 cm imm8 in
+     let (dt, immop) =
        match cm with
-       | 1 | 3 | 5 | 7 -> VfpInt 32
-       | 9 | 11 -> VfpInt 16
+       | 1 | 3 | 5 | 7 ->
+          (VfpInt 32, TR.tget_ok (mk_arm_immediate_op false 4 (immval#shift_right 32)))
+       | 9 | 11 ->
+          VfpInt 16, TR.tget_ok (mk_arm_immediate_op false 4 (immval#shift_right 48))
        | _ ->
           raise
             (BCH_failure
@@ -1973,7 +1969,7 @@ let parse_thumb32_29_15
      VectorBitwiseBitClear (cc, dt, vd WR, vd RD, immop)
 
   (* < 29><15>D000<i><vd><cm>0011<i4> *)  (* VMVN (immediate) - T1-0 (Q=0) *)
-  | (0, cm, 0, 1) when (bv 7) = 0 && (bv 5) = 1->
+  | (0, cm, 0, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1->
      let _ =
        if cm = 15 then
          raise (ARM_undefined ("VMVN immediate with cmode=15")) in
@@ -1986,7 +1982,7 @@ let parse_thumb32_29_15
      VectorBitwiseNot (cc, dt, vd WR, immop)
 
   (* < 29><15>D000<i><vd><cm>0111<i4> *)  (* VMVN (immediate) - T1-0 (Q=1) *)
-  | (0, cm, 1, 1) when (bv 7) = 0 && (bv 5) = 1 ->
+  | (0, cm, 1, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
      let _ =
        if cm = 15 then
          raise (ARM_undefined ("VMVN immediate with cmode=15")) in
@@ -2295,14 +2291,14 @@ let parse_thumb32_29_15
        | (0, (2 | 3)) -> (16, imm6 - 16)
        | (0, (4 | 5 | 6 | 7)) -> (32, imm6 - 32)
        | (1, _) -> (64, imm6)
-       | _ ->
+       | (p, q) ->
           raise
-            (BCH_failure
-               (LBLOCK [
-                    STR "VSHL: ";
-                    INT (bv 7);
-                    STR ", ";
-                    INT (b 21 19)])) in
+            (ARM_undefined
+               ("VSHL(T1): (L, imm6-prefix) = ("
+                ^ (string_of_int p)
+                ^ ", "
+                ^ (string_of_int q)
+                ^ ")")) in
      let dt = VfpInt esize in
      let imm =
        fail_tvalue
@@ -2321,18 +2317,12 @@ let parse_thumb32_29_15
      let vm = arm_extension_register_op XQuad (m / 2) in
      let (esize, sam) =
        match (b 21 19) with
-       | 0 -> (8, 16 - imm6)
-       | 1 -> (16, 32 - imm6)
-       | 2 | 3 -> (32, 64 - imm6)
-       | _ ->
-          raise
-            (BCH_failure
-               (LBLOCK [
-                    STR "cond15:VSHR: ";
-                    INT (bv 7);
-                    STR ", ";
-                    INT (b 21 19)])) in
-     let dt = VfpInt esize in
+       | 1 -> (8, 16 - imm6)
+       | 2 | 3 -> (16, 32 - imm6)
+       | 4 | 5 | 6 | 7 -> (32, 64 - imm6)
+       | p ->
+          raise (ARM_undefined ("VSHRN: imm6-prefix: " ^ (string_of_int p))) in
+     let dt = VfpInt (2 * esize) in
      let imm =
        fail_tvalue
          (trerror_record
@@ -2499,7 +2489,7 @@ let parse_t32_30_0
   let imm8 = b 7 0 in
   let imm12 = (i lsl 11) + (imm3 lsl 8) + imm8 in
   let (imm32, _) = thumb_expand_imm_c imm12 0 in
-  let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
+  let imm32 = TR.tget_ok (make_immediate false 4 (mkNumerical imm32)) in
   let const = arm_immediate_op imm32 in
                             
   match (b 25 21) with
@@ -2567,7 +2557,7 @@ let parse_t32_30_0
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let imm = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let imm = thumb_expand_imm imm 0 in
-     let imm = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm)) in
+     let imm = TR.tget_ok (make_immediate false 4 (mkNumerical imm)) in
      let imm = arm_immediate_op imm in
      (* CMP<c>.W <Rn>, #<const> *)
      Compare (cc, rn RD, imm, true)
@@ -2578,7 +2568,7 @@ let parse_t32_30_0
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let imm = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let imm = thumb_expand_imm imm 0 in
-     let imm = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm)) in
+     let imm = TR.tget_ok (make_immediate false 4 (mkNumerical imm)) in
      let imm = arm_immediate_op imm in
      (* SUB{S}<c>.W <Rd>, <Rn>, #<const> *)
      Subtract (setflags, cc, rd WR, rn RD, imm, true, false)
@@ -2589,7 +2579,7 @@ let parse_t32_30_0
      let rd = arm_register_op (get_arm_reg (b 11 8)) in
      let imm = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let imm = thumb_expand_imm imm 0 in
-     let imm = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm)) in
+     let imm = TR.tget_ok (make_immediate false 4 (mkNumerical imm)) in
      let imm = arm_immediate_op imm in
      (* RSB{S}<c>.W <Rd>, <Rn>, #<const> *)
      ReverseSubtract (setflags, cc, rd WR, rn RD, imm, true)
@@ -2598,7 +2588,7 @@ let parse_t32_30_0
   | 16 when not setflags ->
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
      let imm32 = (i lsl 11) + (imm3 lsl 8) + imm8 in
-     let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
+     let imm32 = TR.tget_ok (make_immediate false 4 (mkNumerical imm32)) in
      let imm12 = arm_immediate_op imm32 in
      (* ADDW<c> <Rd>, <Rn>, #<imm12> *)
      Add (false, cc, rd WR, rn RD, imm12, false)
@@ -2607,7 +2597,7 @@ let parse_t32_30_0
   | 18 when not setflags ->
      let imm4 = b 19 16 in
      let imm16 = (imm4 lsl 12) + (i lsl 11) + (imm3 lsl 8) + imm8 in
-     let imm16 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm16)) in
+     let imm16 = TR.tget_ok (make_immediate false 4 (mkNumerical imm16)) in
      let imm16 = arm_immediate_op imm16 in
      Move (false, cc, rd WR, imm16, false, true)
 
@@ -2615,7 +2605,7 @@ let parse_t32_30_0
   | 21 when (not setflags) && (b 19 16) = 13  ->
      let imm32 = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let sp = arm_register_op (get_arm_reg 13) in
-     let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
+     let imm32 = TR.tget_ok (make_immediate false 4 (mkNumerical imm32)) in
      let imm12 = arm_immediate_op imm32 in
      (* SUBW<c> <Rd>, SP #<imm12> *)
      Subtract (false, cc, rd WR, sp RD, imm12, false, true)
@@ -2624,7 +2614,7 @@ let parse_t32_30_0
   | 21 when (not setflags) ->
      let imm32 = (i lsl 11) + (imm3 lsl 8) + imm8 in
      let rn = arm_register_op (get_arm_reg (b 19 16)) in
-     let imm32 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm32)) in
+     let imm32 = TR.tget_ok (make_immediate false 4 (mkNumerical imm32)) in
      let imm12 = arm_immediate_op imm32 in
      (* SUBW<c> <Rd>, <Rn>, #<imm12> *)
      Subtract (false, cc, rd WR, rn RD, imm12, false, true)
@@ -2633,7 +2623,7 @@ let parse_t32_30_0
   | 22 when not setflags ->
      let imm4 = b 19 16 in
      let imm16 = (imm4 lsl 12) + (i lsl 11) + (imm3 lsl 8) + imm8 in
-     let imm16 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int imm16)) in
+     let imm16 = TR.tget_ok (make_immediate false 4 (mkNumerical imm16)) in
      let imm16 = arm_immediate_op imm16 in
      (* MOVT<c> <Rd>, #<imm16> *)
      MoveTop (cc, rd WR, imm16)
@@ -3481,7 +3471,7 @@ let parse_thumb32_31_15
        | _ ->
           raise
             (BCH_failure
-               (LBLOCK [STR "ARM:VBIC-immediate: not reachable"])) in
+               (LBLOCK [STR "ARM:VORR-immediate: not reachable"])) in
      let vd = arm_extension_register_op XDouble d in
      (* VORR<c>.<dt> <Dd>, #<imm> *)
      VectorBitwiseOr (cc, dt, vd WR, vd RD, immop)
@@ -3492,6 +3482,7 @@ let parse_thumb32_31_15
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((bv 24) lsl 7) + ((b 18 16) lsl 4) + (b 3 0) in
      let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
+
      let dt =
        match cm with
        | 1 | 3 | 5 | 7 -> VfpInt 32
@@ -3499,7 +3490,7 @@ let parse_thumb32_31_15
        | _ ->
           raise
             (BCH_failure
-               (LBLOCK [STR "ARM:VBIC-immediate: not reachable"])) in
+               (LBLOCK [STR "ARM:VORR-immediate: not reachable"])) in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VORR<c>.<dt> <Dd>, #<imm> *)
      VectorBitwiseOr (cc, dt, vd WR, vd RD, immop)
@@ -3548,12 +3539,14 @@ let parse_thumb32_31_15
   | (0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 0, 1)
        when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
      let d = prefix_bit (bv 22) (b 15 12) in
-     let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
-     let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
-     let dt =
+     let imm8 = ((bv 24) lsl 7) + ((b 18 16) lsl 4) + (b 3 0) in
+     let immval = adv_simd_expand_imm 1 cm imm8 in
+     let (dt, immop) =
        match cm with
-       | 1 | 3 | 5 | 7 -> VfpInt 32
-       | 9 | 11 -> VfpInt 16
+       | 1 | 3 | 5 | 7 ->
+          (VfpInt 32, TR.tget_ok (mk_arm_immediate_op false 4 (immval#shift_right 32)))
+       | 9 | 11 ->
+          VfpInt 16, TR.tget_ok (mk_arm_immediate_op false 4 (immval#shift_right 48))
        | _ ->
           raise
             (BCH_failure
@@ -3567,11 +3560,13 @@ let parse_thumb32_31_15
        when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let imm8 = ((b 18 16) lsl 4) + (b 3 0) in
-     let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
-     let dt =
+     let immval = adv_simd_expand_imm 1 cm imm8 in
+     let (dt, immop) =
        match cm with
-       | 1 | 3 | 5 | 7 -> VfpInt 32
-       | 9 | 11 -> VfpInt 16
+       | 1 | 3 | 5 | 7 ->
+          (VfpInt 32, TR.tget_ok (mk_arm_immediate_op false 4 (immval#shift_right 32)))
+       | 9 | 11 ->
+          VfpInt 16, TR.tget_ok (mk_arm_immediate_op false 4 (immval#shift_right 48))
        | _ ->
           raise
             (BCH_failure
@@ -3854,9 +3849,15 @@ let parse_thumb32_31_15
   | (3, 2, 0, 0) when (b 17 16) = 2 && (bv 7) = 0 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
+     let sz = b 19 18 in
      let vd = arm_extension_register_op XDouble d in
      let vm = arm_extension_register_op XQuad (m / 2) in
-     let dt = VfpSize (8 lsl (b 19 18)) in
+     let dt =
+       match sz with
+       | 0 -> VfpInt 16
+       | 1 -> VfpInt 32
+       | 2 -> VfpInt 64
+       | _ -> raise (ARM_undefined ("VMOVN: sz > 2")) in
      (* VMOVN.<size> <Dd>, <Qm> *)
      VectorMoveNarrow (cc, dt, vd WR, vm RD)
 
@@ -4278,14 +4279,14 @@ let parse_t16_00
     | 3 -> arm_register_op (get_arm_reg (b 2 0)) m
     | _ -> raise (BCH_failure (LBLOCK [STR "reg: "; INT i])) in
   let imm3 () =
-    let i = TR.tget_ok (make_immediate false 4 (B.big_int_of_int (b 8 6))) in
+    let i = TR.tget_ok (make_immediate false 4 (mkNumerical (b 8 6))) in
     arm_immediate_op i in
   let imm5 ty =
     let (_, shift_n) = decode_imm_shift ty (b 10 6) in
-    let i = TR.tget_ok (make_immediate false 4 (B.big_int_of_int shift_n)) in
+    let i = TR.tget_ok (make_immediate false 4 (mkNumerical shift_n)) in
     arm_immediate_op i in       
   let imm8 () =
-    let i = TR.tget_ok (make_immediate false 4 (B.big_int_of_int (b 7 0))) in
+    let i = TR.tget_ok (make_immediate false 4 (mkNumerical (b 7 0))) in
     arm_immediate_op i in
   
   match (b 13 11) with
@@ -4423,12 +4424,12 @@ let parse_t16_01
   | 7 ->
      (* RORS <Rdn>, <Rm> (outside IT block) *)
      (* ROR<c> <Rdn>, <Rm> (inside IT block) *)
-     RotateRight (not in_it, cc, r 1 WR, r 1 RD, r 0 RD)
+     RotateRight (not in_it, cc, r 1 WR, r 1 RD, r 0 RD, false)
 
   (* 0100001000<r><r>  TST (register) - T1 *)
   | 8 ->
      (* TST<c> <Rn>, <Rm> *)
-     Test (cc, r 1 RD, r 0 RD)
+     Test (cc, r 1 RD, r 0 RD, false)
 
   (* 0100001001<r><r>  RSB (immediate) - T1 *)
   | 9 ->
@@ -4681,9 +4682,9 @@ let parse_t16_load_store_imm_relative
   let spreg = reg 13 in
   let sp = regop (reg 13) in
   let offset m = ARMImmOffset (m * (b 7 0)) in
-  let imm = TR.tget_ok (make_immediate false 4 (B.big_int_of_int (4 * (b 7 0)))) in
+  let imm = TR.tget_ok (make_immediate false 4 (mkNumerical (4 * (b 7 0)))) in
   let immop = arm_immediate_op imm in
-  let imm7 = TR.tget_ok (make_immediate false 4 (B.big_int_of_int (4 * (b 6 0)))) in
+  let imm7 = TR.tget_ok (make_immediate false 4 (mkNumerical (4 * (b 6 0)))) in
   let imm7op = arm_immediate_op imm7 in
   let mem (mult: int) m =
     mk_arm_offset_address_op
