@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -397,7 +397,7 @@ object (self:'a)
       
   method to_value (floc:floc_int):xpr_t =
     match kind with
-      Imm imm -> big_int_constant_expr imm#to_big_int
+      Imm imm -> num_constant_expr imm#to_numerical
     | Reg register -> 
       let var = floc#f#env#mk_cpu_register_variable register in
       if floc#is_constant var then
@@ -407,7 +407,7 @@ object (self:'a)
     | Absolute address when FFU.is_read_only_address address ->
       begin
 	match FFU.get_read_only_initialized_doubleword address with
-	  Some value -> big_int_constant_expr value#to_big_int
+	  Some value -> num_constant_expr value#to_numerical
 	| _ ->
 	  random_constant_expr
       end
@@ -480,11 +480,11 @@ object (self:'a)
     match kind with
     | Imm imm -> 
        let imm = if unsigned then imm#to_unsigned else imm in
-       big_int_constant_expr imm#to_big_int
+       num_constant_expr imm#to_numerical
     | Absolute address when FFU.is_read_only_address address ->
        begin
 	 match FFU.get_read_only_initialized_doubleword address with
-	 | Some value -> big_int_constant_expr value#to_big_int 
+	 | Some value -> num_constant_expr value#to_numerical
 	 | _ -> XVar (self#to_variable floc) 
        end
     | _ -> XVar (self#to_variable floc)
