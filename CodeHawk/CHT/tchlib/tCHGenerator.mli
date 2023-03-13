@@ -78,6 +78,10 @@ val neg_int: int generator_t
 val make_int: int -> int -> int generator_t
 
 
+(** Generator for [int] values selected from a given set. *)
+val select_int: int list -> int generator_t
+
+
 (** Generator for [char] values. *)
 val char: char generator_t
 
@@ -97,6 +101,9 @@ val digit_hex: char generator_t
 (** Generator for [char] values representing letters. *)
 val letter: char generator_t
 
+
+(** Generator for [char] values that selects from a given list of characters. *)
+val select_letter: char list -> char generator_t
 
 (** Generator for [char] values representing alphanumeric characters
     ({i i.e.} letters, decimal digits, as well as underscores). *)

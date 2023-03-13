@@ -151,6 +151,21 @@ let alphanum =
       Char.chr ((x - 37) + (Char.code 'A'))), Char.escaped)
 
 
+let create_select (l: 'a list) (prn: 'a -> string): 'a generator_t =
+  let n = List.length l in
+  ((fun r ->
+    let i = Random.State.int r n in
+    (List.nth l i)), prn)
+
+
+let select_int (l: int list): int generator_t =
+  create_select l string_of_int
+
+
+let select_letter (l: char list): char generator_t =
+  create_select l Char.escaped
+
+
 let string (gen_l: int generator_t) (gen_c: char generator_t) =
   ((fun r ->
     let len = (fst gen_l) r in
