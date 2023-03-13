@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-open Big_int_Z
-
 (* chlib *)
 open CHCommon
 open CHNumerical   
@@ -42,9 +40,12 @@ open XprTypes
 open Xprt
 open XprToPretty
 
+
 exception XSimplificationProblem of CHPretty.pretty_t
 
+
 let xpr_to_pretty e = xpr_printer#pr_expr e
+
 
 type e_struct_t =
   | SConst of numerical_t
@@ -88,8 +89,11 @@ let get_struct expr =
 
 
 let divides x y = 
-  if x#equal numerical_zero then false
-  else (mkNumerical_big (mod_big_int y#getNum x#getNum))#equal numerical_zero
+  if x#equal numerical_zero then
+    false
+  else
+    (y#modulo x)#equal numerical_zero
+
 
 let pos_num x = x#gt numerical_zero
 let neg_num x = x#lt numerical_zero
@@ -506,11 +510,11 @@ and reduce_mod m e1 e2 =
   else
     match (get_struct e1, get_struct e2) with
     | (SConst a, SConst b) ->                             (* a%b *)
-       let result = mkNumerical_big (mod_big_int a#getNum b#getNum) in
+       let result = a#modulo b in
        (true, ne result)
     | (_, SConst b) when b#geq numerical_zero ->
        let ub = b#sub numerical_one in
-       (true, XOp (XNumRange, [ zero_constant_expr ; num_constant_expr ub ]))
+       (true, XOp (XNumRange, [zero_constant_expr; num_constant_expr ub]))
     | _ -> default
 
 
