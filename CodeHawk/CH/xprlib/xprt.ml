@@ -61,9 +61,6 @@ let int_constant i = IntConst (mkNumerical i)
 let int_constant_expr i = XConst (int_constant i)
 let num_constant_expr n = XConst (IntConst n)
 
-let big_int_constant i = IntConst (mkNumerical_big i)
-let big_int_constant_expr i = XConst (big_int_constant i)
-
 let random_constant_expr = XConst XRandom
 let unknown_int_constant_expr = XConst XUnknownInt
 

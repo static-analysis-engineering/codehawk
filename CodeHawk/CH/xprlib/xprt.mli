@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-open Big_int_Z
-
 (* chlib *)
 open CHLanguage
 open CHNumerical
@@ -39,7 +37,6 @@ open XprTypes
 
 val int_constant_expr: int -> xpr_t
 val num_constant_expr: numerical_t -> xpr_t
-val big_int_constant_expr: big_int -> xpr_t
 val sym_constant_expr: symbol_t -> xpr_t
 val random_constant_expr: xpr_t
 val unknown_int_constant_expr: xpr_t
