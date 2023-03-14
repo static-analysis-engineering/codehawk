@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleThumbInstructionTest"
-let lastupdated = "2023-03-12"
+let lastupdated = "2023-03-14"
 
 
 let two_byte_instr_opcode_failures = [
@@ -204,7 +204,7 @@ let thumb_4_basic () =
       ("MLS-T1",      "0efb1202", "MLS            R2, LR, R2, R0");
       ("MOVT-T1",     "c8f20214", "MOVT           R4, #0x8102");
       ("MOVW-I-T3",   "40f20944", "MOVW           R4, #0x409");
-      ("MRC-T1",      "1dee705f", "MRC           p15, 0,  R5, c13, c0, 3");
+      ("MRC-T1",      "1dee705f", "MRC            p15, 0, R5, c13, c0, 3");
       ("MVN-T1",      "6ff06300", "MVN            R0, #0x63");
       ("NOP-T2",      "aff30080", "NOP           ");
       ("ORR-I-T1",    "46f00046", "ORR            R6, R6, #0x80000000");
