@@ -350,7 +350,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        | (true, false) -> "LDCL"
        | (true, true) -> "LDC2L" in
      let preops =
-       "p" ^ (string_of_int coproc) ^ ", " ^ "c" ^ (string_of_int crd) in
+       "p" ^ (string_of_int coproc) ^ ", " ^ "c" ^ (string_of_int crd) ^ "," in
      {
        mnemonic = mnemonic;
        operands = [src];
@@ -460,7 +460,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
     }
   | MoveRegisterCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
      let preops =
-       "p" ^ (string_of_int coproc) ^ ", " ^ (string_of_int opc1) ^ ", " in
+       "p" ^ (string_of_int coproc) ^ ", " ^ (string_of_int opc1) ^ "," in
      let postops =
        ", c"
        ^ (string_of_int crn)
@@ -477,7 +477,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
      }
   | MoveToCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
      let preops =
-       "p" ^ (string_of_int coproc) ^ ", " ^ (string_of_int opc1) ^ ", " in
+       "p" ^ (string_of_int coproc) ^ ", " ^ (string_of_int opc1) ^ "," in
      let postops =
        ", c"
        ^ (string_of_int crn)
@@ -501,7 +501,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
     }
   | MoveTwoRegisterCoprocessor (c, coproc, opc, rt, rt2, crm) ->
      let preops =
-       "p" ^ (string_of_int coproc) ^ ", " ^ (string_of_int opc) ^ ", " in
+       "p" ^ (string_of_int coproc) ^ ", " ^ (string_of_int opc) ^ "," in
      let postops = ", c" ^ (string_of_int crm) in
      {
        mnemonic = "MRRC";
@@ -573,7 +573,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "RSC" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~writeback:s "RSC" c [rd; rn; rm])
     }
   | RotateRight (s, c, rd, rn, rm, tw) -> {
       mnemonic = "ROR";
@@ -795,7 +795,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        | (true, false) -> "STCL"
        | (true, true) -> "STC2L" in
      let preops =
-       "p" ^ (string_of_int coproc) ^ ", " ^ "c" ^ (string_of_int crd) in
+       "p" ^ (string_of_int coproc) ^ ", " ^ "c" ^ (string_of_int crd) ^ "," in
      {
        mnemonic = mnemonic;
        operands = [dst];
@@ -1411,14 +1411,18 @@ object (self)
            ?(preops: string="")
            ?(postops: string="")
            (s:string) (operands:arm_operand_int list) =
-    let s = (fixed_length_string s width) ^ preops in
+    let s =
+      if preops = "" then
+        (fixed_length_string s width)
+      else
+        (fixed_length_string s width) ^ " " ^ preops in
     let (_,result) =
       List.fold_left
-        (fun (isfirst,a) op ->
+        (fun (isfirst, a) op ->
           if isfirst then
-            (false,s ^ " " ^ op#toString)
+            (false, s ^ " " ^ op#toString)
           else
-            (false,a ^ ", " ^ op#toString)) (true,s) operands in
+            (false, a ^ ", " ^ op#toString)) (true,s) operands in
     result ^ postops
 
   method opscc
