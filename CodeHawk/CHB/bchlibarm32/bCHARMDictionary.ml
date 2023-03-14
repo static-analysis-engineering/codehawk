@@ -255,9 +255,9 @@ object (self)
       | LoadRegisterHalfword (c, rt, rn, rm, mem, tw)->
          (ctags c, [oi rt; oi rn; oi rm; oi mem; setb tw])
       | LoadRegisterSignedByte (c,rt,rn,rm,mem,tw) ->
-         (ctags c,[ oi rt; oi rn; oi rm; oi mem; setb tw])
+         (ctags c,[oi rt; oi rn; oi rm; oi mem; setb tw])
       | LoadRegisterSignedHalfword (c, rt, rn, rm, mem, tw) ->
-         (ctags c,[ oi rt; oi rn; oi rm; oi mem; setb tw])
+         (ctags c,[oi rt; oi rn; oi rm; oi mem; setb tw])
       | LogicalShiftLeft (s, c, rd, rn, rm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
       | LogicalShiftRight (s,c,rd,rn,rm,tw) ->
@@ -389,7 +389,7 @@ object (self)
          (ctags c, [di dt; oi qd; oi qn; oi dm])
       | VectorBitwiseAnd (c, qd, qn, qm) ->
          (ctags c, [oi qd; oi qn; oi qm])
-      | VectorBitwiseBitClear (c, dt, vd, vm, vn) ->
+      | VectorBitwiseBitClear (c, dt, vd, vn, vm) ->
          (ctags c, [di dt; oi vd; oi vn; oi vm])
       | VectorBitwiseExclusiveOr (c, qd, qn, qm) ->
          (ctags c, [oi qd; oi qn; oi qm])
