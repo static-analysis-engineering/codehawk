@@ -277,7 +277,7 @@ object (self)
              (if !inarm then
                 begin
                   system_settings#set_thumb;
-                  system_info#set_arm_thumb_switch addr#to_hex_string "T";
+                  system_info#set_arm_thumb_switch addr "T";
                   inarm := false
                 end);
              make_db addr
@@ -288,7 +288,7 @@ object (self)
              let addr = TR.tget_ok (index_to_doubleword addrix) in
              (if not (!inarm) then
                 begin
-                  system_info#set_arm_thumb_switch addr#to_hex_string "A";
+                  system_info#set_arm_thumb_switch addr "A";
                   inarm := true
                 end);
              make_db addr

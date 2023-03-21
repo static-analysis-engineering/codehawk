@@ -398,6 +398,10 @@ object(self)
   val section_table = H.create 3
   val segment_table = H.create 3
 
+  val mutable code_lb = wordzero
+  val mutable code_ub = wordmax
+
+
   method get_program_entry_point = elf_file_header#get_program_entry_point
 
   method read =
@@ -491,7 +495,9 @@ object(self)
             (if lba#lt !lb then lb := lba) ;
             (if !ub#lt uba then ub := uba)
           end) xsections ;
-      system_info#set_elf_is_code_address !lb !ub
+      system_info#set_elf_is_code_address !lb !ub;
+      code_lb <- !lb;
+      code_ub <- !ub
     end
 
   method initialize_jump_tables =
@@ -706,19 +712,45 @@ object(self)
   method get_xsubstring (a:doubleword_int) (size:int) =
     match self#get_containing_section a with
     | Some s ->
-       if s#get_size >= size then
+       if (a#add_int size)#le (s#get_vaddr#add_int s#get_size) then
          s#get_xsubstring a size
        else
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "Error in xsubstring request: ";
-                   STR "Size of section ";
-                   s#get_vaddr#toPretty;
-                   STR ": ";
-                   INT s#get_size;
-                   STR " does not cover request of ";
-                   INT size]))
+         let nexta = s#get_vaddr#add_int s#get_size in
+         (match self#get_containing_section nexta with
+          | Some sn ->
+             let prefixsize = TR.tget_ok (nexta#subtract_to_int a) in
+             let newsize = size - prefixsize in
+             if sn#get_size >= newsize then
+               let s1 = s#get_xsubstring a prefixsize in
+               let s2 = sn#get_xsubstring sn#get_vaddr newsize in
+               s1 ^ s2
+             else
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Error in xsubstring request: ";
+                         STR "Size of section ";
+                         s#get_vaddr#toPretty;
+                         STR ": ";
+                         INT s#get_size;
+                         STR " does not cover request of ";
+                         INT size;
+                         STR " starting at ";
+                         a#toPretty]))
+          | _ ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Error in xsubstring request: ";
+                       STR "Size of section ";
+                       s#get_vaddr#toPretty;
+                       STR ": ";
+                       INT s#get_size;
+                       STR " does not cover request of ";
+                       INT size;
+                       STR " starting at ";
+                       a#toPretty;
+                       STR " and next section is not contiguous"])))
     | _ ->
        raise
          (BCH_failure
@@ -752,14 +784,42 @@ object(self)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Address " ; a#toPretty ;
-                      STR " is not included in a program section" ]))
+            (LBLOCK [
+                 STR "Address ";
+                 a#toPretty;
+                 STR " is not included in a program section"]))
 
   method is_program_address (a:doubleword_int) =
     H.fold (fun k v result ->
         result
         || match self#get_section k with
            | ElfProgramSection s -> s#includes_VA a
+           | _ -> false) section_header_table false
+
+  method get_global_offset_table_value (a: doubleword_int) =
+    let section =
+      H.fold (fun k v result ->
+          match result with
+          | Some _ -> result
+          | _ ->
+             match self#get_section k with
+             | ElfProgramSection s when s#is_got && s#includes_VA a -> Some s
+             | _ -> None) section_header_table None in
+    match section with
+    | Some s -> s#get_value a
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Address ";
+                 a#toPretty;
+                 STR " is not included in the global offset table"]))
+
+  method is_global_offset_table_address (a: doubleword_int) =
+    H.fold (fun k v result ->
+        result
+        || match self#get_section k with
+           | ElfProgramSection s -> s#is_got && s#includes_VA a
            | _ -> false) section_header_table false
 
   method private get_string_table =
@@ -1345,7 +1405,7 @@ let save_elf_program_segments () =
   List.iter (fun (index,header,segment) ->
       save_elf_program_segment
         header index segment) elf_header#get_program_segments
-  
+
 
 let save_elf_files () =
   begin
@@ -1368,7 +1428,7 @@ let load_elf_files () =
           elf_header#set_code_extent;
           elf_header#initialize_jump_tables;
           elf_header#initialize_call_back_tables;
-          elf_header#initialize_struct_tables
+          elf_header#initialize_struct_tables;
         end
       with
       | CHXmlReader.XmlParseError(line,col,p) ->
