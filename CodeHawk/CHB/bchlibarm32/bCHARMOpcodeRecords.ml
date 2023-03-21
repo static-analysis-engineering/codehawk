@@ -645,6 +645,55 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA1M" c [vd; vn; vm])
     }
+  | SHA1HashUpdateParity (c, dt, vd, vn, vm) -> {
+      mnemonic = "SHA1P";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA1P" c [vd; vn; vm])
+    }
+  | SHA1ScheduleUpdate0 (c, dt, vd, vn, vm) -> {
+      mnemonic = "SHA1SU0";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA1SU0" c [vd; vn; vm])
+    }
+  | SHA1ScheduleUpdate1 (c, dt, vd, vm) -> {
+      mnemonic = "SHA1SU1";
+      operands = [vd; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA1SU1" c [vd; vm])
+    }
+  | SHA256HashUpdatePart1 (c, dt, vd, vn, vm) -> {
+      mnemonic = "SHA256H";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA256H" c [vd; vn; vm])
+    }
+  | SHA256HashUpdatePart2 (c, dt, vd, vn, vm) -> {
+      mnemonic = "SHA256H2";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA256H2" c [vd; vn; vm])
+    }
+  | SHA256ScheduleUpdate0 (c, dt, vd, vm) -> {
+      mnemonic = "SHA256SU0";
+      operands = [vd; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA256SU0" c [vd; vm])
+    }
+  | SHA256ScheduleUpdate1 (c, dt, vd, vn, vm) -> {
+      mnemonic = "SHA256SU1";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "SHA256SU1" c [vd; vn; vm])
+    }
   | SignedDivide (c, rd, rn, rm) -> {
       mnemonic = "SDIV";
       operands = [rd; rn; rm];
@@ -1067,6 +1116,20 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VORR" c [dst; src1; src2])
     }
+  | VectorBitwiseOrNot (c, dt, vd, vn, vm) -> {
+      mnemonic = "VORN";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VORN" c [vd; vn; vm])
+    }
+  | VectorBitwiseSelect (c, dt, vd, vn, vm) -> {
+      mnemonic = "VBSL";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VBSL" c [vd; vn; vm])
+    }
   | VCompare (nan, c, dt, op1, op2) ->
      let mnemonic =
        "VCMP" ^ (if nan then "E" else "") in
@@ -1079,14 +1142,21 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~dt mnemonic c [op1; op2])
      }
-  | VectorConvert (round, c, dstdt, srcdt, dst, src) ->
+  | VectorConvert (round, fixed, c, dstdt, srcdt, dst, src, fbits) ->
      let mnemonic =
        "VCVT" ^ (if round then "R" else "") in
      { mnemonic = mnemonic;
-       operands = [dst; src];
+       operands = if fixed then [dst; src; fbits] else [dst; src];
        flags_set = [];
        ccode = Some c;
-       ida_asm = (fun f -> f#opscc ~dt:dstdt ~dt2:srcdt mnemonic c [dst; src])
+       ida_asm =
+         (fun f ->
+           f#opscc
+             ~dt:dstdt
+             ~dt2:srcdt
+             mnemonic
+             c
+             (if fixed then [dst; src; fbits] else [dst; src]))
      }
   | VDivide (c, dt, dst, src1, src2) -> {
       mnemonic = "VDIV";
@@ -1109,6 +1179,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VEXT" c [dst; src1; src2; imm])
+    }
+  | VectorLoadFour (wb, c, dt, rl, rn, mem, rm) -> {
+      mnemonic = "VLD4";
+      operands = [rl; rn; mem; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VLD4" c [rl; mem])
     }
   | VectorLoadMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
       mnemonic = "VLDM";
@@ -1249,6 +1326,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VREV32" c [dst; src])
     }
+  | VectorRoundingHalvingAdd (c, dt, vd, vn, vm) -> {
+      mnemonic = "VRHADD";
+      operands = [vd; vn; vm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VRHADD" c [vd; vn; vm])
+    }
   | VectorRoundingShiftRightAccumulate (c, dt, dst, src, imm) -> {
       mnemonic = "VRSRA";
       operands = [dst; src; imm];
@@ -1318,6 +1402,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VSTM" c [rn; rl])
+    }
+  | VectorStoreFour (wb, c, dt, rl, rn, mem, rm) -> {
+      mnemonic = "VST4";
+      operands = [rl; rn; mem; rm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VST4" c [rl; mem])
     }
   | VectorStoreOne (wb, c, dt, rl, rn, mem, rm) -> {
       mnemonic = "VST1";
