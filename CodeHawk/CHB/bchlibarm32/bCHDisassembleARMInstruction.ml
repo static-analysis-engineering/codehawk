@@ -1883,6 +1883,24 @@ let parse_misc_6_type (instr: doubleword_int) (cond: int) =
      (* VLDR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
      VLoadRegister (c, vd WR, rn RD, mem RD)
 
+  (* <cc><6>PUDW1<rn><cr><cp><-imm8-> *)  (* LDC{L} - A1 *)
+  | (_, _, _) when s1 > 0 && (bv 20) = 1 && (b 11 9) != 5 ->
+     let islong = (bv 22) = 1 in
+     let coproc = b 11 8 in
+     let rnreg = get_arm_reg (b 19 16) in
+     let isindex = (bv 24) = 1 in
+     let isadd = (bv 23) = 1 in
+     let iswback = (bv 21) = 1 in
+     let crd = b 15 12 in
+     let imm32 = 4 * (b 7 0) in
+     let offset = ARMImmOffset imm32 in
+     let mem =
+       mk_arm_offset_address_op
+         ~align:4 rnreg offset ~isadd ~isindex ~iswback in
+     (* LDC{L}<c> <coproc>, <CRd>, [<Rn>, #+/-<imm>]{!} *)
+     (* LDC{L}<c> <coproc>, <CRd>, [<Rn>], #+/-<imm> *)
+     LoadCoprocessor (islong, false, c, coproc, crd, mem RD, None)
+
   | _ ->
      NotRecognized
        ("arm:misc_6:"
@@ -1903,6 +1921,7 @@ let parse_misc_7_type
   let b21_20 = b 21 20 in
   let bv6 = bv 6 in
   let bv4 = bv 4 in
+  let imm0_op = arm_immediate_op imm0 in
 
   match (b24_23, b21_20, bv6, bv4) with
 
@@ -2104,7 +2123,7 @@ let parse_misc_7_type
      (* VMOV<c>.<dt> <Rt>, <Dn[x]> *)
      VectorMove (c, dt, [rt WR; elt RD])
 
-  (* <cc><7>01D00<vn><vd>101sN0M0<vm> *)    (* VDIV - A1 *)
+  (* <cc><14>1D00<vn><vd>101sN0M0<vm> *)    (* VDIV - A1 *)
   | (1, 0, 0, 0) when (b 11 9) = 5 ->
      let d = bv 22 in
      let sz = bv 8 in
@@ -2127,7 +2146,7 @@ let parse_misc_7_type
      (* VDIV<c>.F64 <Dd>, <Dn>, <Dm> *)
      VDivide (c, dt, vd WR, vn RD, vm RD)
 
-  (* <cc><7>01BQ0<vd><rt>1011D0E1< 0> *) (* VDUP (ARM core register) - A1 *)
+  (* <cc><14>1BQ0<vd><rt>1011D0E1< 0> *) (* VDUP (ARM core register) - A1 *)
   | (1, (0 | 2), 0, 1) when (b 11 8) = 11 && (b 3 0) = 0 ->
      let q = bv 21 in
      let vd = prefix_bit (bv 7) (b 19 16) in
@@ -2154,7 +2173,19 @@ let parse_misc_7_type
        (* VDUP<c>.<size> <Dd>, <Rt> *)
        VectorDuplicate (c, VfpSize esize, 1, elements, d WR, rt RD)
 
-  (* <cc><7>01D11<4H><vd>101s0000<4L> *)    (* VMOV (immediate) - A2 *)
+  (* <cc><14><14>< 1><rt><10>< 1>< 0> *) (* VMSR - A1 *)
+  | (1, 2, 0, 1) when
+         (bv 22) = 1
+         && (b 19 16) = 1
+         && (b 11 8) = 10
+         && (b 7 4) = 1
+         && (b 3 0) = 0 ->
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let dst = arm_special_register_op FPSCR in
+     (* VMSR<c> FPSCR, <Rt> *)
+     VMoveToSystemRegister (c, dst WR, rt RD)
+
+  (* <cc><14>1D11<4H><vd>101s< 0><4L> *)    (* VMOV (immediate) - A2 *)
   | (1, 3, 0, 0) when (b 11 9) = 5 && (b 7 4) = 0 ->
      let d = bv 22 in
      let sz = bv 8 in
@@ -2299,7 +2330,7 @@ let parse_misc_7_type
          let sd = arm_extension_register_op XSingle sd in
          let sm = arm_extension_register_op XSingle sm in
          (* VCVT<c>.F32.<Tm> <Sd>, <Sm> *)
-         VectorConvert (false, c, dt1, dt2, sd WR, sm RD)
+         VectorConvert (false, false, c, dt1, dt2, sd WR, sm RD, imm0_op)
       | (0, 1) ->
          let dt1 = VfpFloat 64 in
          let dt2 = if op = 0 then VfpUnsignedInt 32 else VfpSignedInt 32 in
@@ -2308,7 +2339,7 @@ let parse_misc_7_type
          let dd = arm_extension_register_op XDouble dd in
          let sm = arm_extension_register_op XSingle sm in
          (* VCVT<c>.F64.<Tm> <Dd>, <Sm> *)
-         VectorConvert (false, c, dt1, dt2, dd WR, sm RD)
+         VectorConvert (false, false, c, dt1, dt2, dd WR, sm RD, imm0_op)
       | (4, 0) ->
          let dt1 = VfpUnsignedInt 32 in
          let dt2 = VfpFloat 32 in
@@ -2317,7 +2348,7 @@ let parse_misc_7_type
          let sd = arm_extension_register_op XSingle sd in
          let sm = arm_extension_register_op XSingle sm in
          (* VCVT{R}<c>.U32.F32 <Sd>, <Sm> *)
-         VectorConvert (false, c, dt1, dt2, sd WR, sm RD)
+         VectorConvert (false, false, c, dt1, dt2, sd WR, sm RD, imm0_op)
       | (4, 1) ->
          let dt1 = VfpUnsignedInt 32 in
          let dt2 = VfpFloat 64 in
@@ -2326,7 +2357,7 @@ let parse_misc_7_type
          let sd = arm_extension_register_op XSingle sd in
          let dm = arm_extension_register_op XDouble dm in
          (* VCVT{R}<c>.U32.F64 <Sd>, <Dm> *)
-         VectorConvert (false, c, dt1, dt2, sd WR, dm RD)
+         VectorConvert (false, false, c, dt1, dt2, sd WR, dm RD, imm0_op)
       | (5, 0) ->
          let dt1 = VfpSignedInt 32 in
          let dt2 = VfpFloat 32 in
@@ -2335,7 +2366,7 @@ let parse_misc_7_type
          let sd = arm_extension_register_op XSingle sd in
          let sm = arm_extension_register_op XSingle sm in
          (* VCVT{R}<c>.S32.F32 <Sd>, <Sm> *)
-         VectorConvert (false, c, dt1, dt2, sd WR, sm RD)
+         VectorConvert (false, false, c, dt1, dt2, sd WR, sm RD, imm0_op)
       | (5, 1) ->
          let dt1 = VfpSignedInt 32 in
          let dt2 = VfpFloat 64 in
@@ -2344,7 +2375,7 @@ let parse_misc_7_type
          let sd = arm_extension_register_op XSingle sd in
          let dm = arm_extension_register_op XDouble dm in
          (* VCVT{R}<c>.S32.F64 <Sd>, <Dm> *)
-         VectorConvert (false, c, dt1, dt2, sd WR, dm RD)
+         VectorConvert (false, false, c, dt1, dt2, sd WR, dm RD, imm0_op)
       | (x, y) ->
          raise
            (BCH_failure
@@ -2389,12 +2420,12 @@ let parse_misc_7_type
        let sd = arm_extension_register_op XSingle d in
        let dm = arm_extension_register_op XDouble m in
        (* VCVT<c>.F32.F64 <Sd>, <Dm> *)
-       VectorConvert (false, c, dt1, dt2, sd WR, dm RD)
+       VectorConvert (false, false, c, dt1, dt2, sd WR, dm RD, imm0_op)
      else
        let dd = arm_extension_register_op XDouble d in
        let sm = arm_extension_register_op XSingle m in
        (* VCVT<c>.F64.F32 <Dd>, <Sm> *)
-       VectorConvert (false, c, dt1, dt2, dd WR, sm RD)
+       VectorConvert (false, false, c, dt1, dt2, dd WR, sm RD, imm0_op)
 
   (* <cc><7>1<--------imm24---------> *)    (* SVC - A1 *)
   | ((2 | 3), _, _, _) ->
@@ -2508,7 +2539,30 @@ let parse_vector_structured_load (instr: doubleword_int) (iaddr: doubleword_int)
     let sz = b 7 6 in
     let align = b 5 4 in
     match ty with
-    | 2 | 6 | 7 | 10 ->
+    | 0 | 1 ->
+       let alignment = if align = 0 then 1 else 4 lsl align in
+       let ebytes = 1 lsl sz in
+       let esize = 8 * ebytes in
+       let (wb, wback) =
+         match rmreg with
+         | 15 -> (false, SIMDNoWriteback)
+         | 13 -> (true, SIMDBytesTransferred 8)
+         | _ -> (true, SIMDAddressOffsetRegister rm) in
+       let mem = mk_arm_simd_address_op (get_arm_reg rnreg) alignment wback in
+       let rnop = if wb then rn WR else rn RD in
+       let rlist =
+         match ty with
+         (* <15>01000D10<rn><vd>0000szal<rm> *) (* inc = 1 *)
+         | 0 -> arm_simd_reg_list_op XDouble [vd; vd + 1; vd + 2; vd + 3]
+         (* <15>01000D10<rn><vd>0001szal<rm> *) (* inc = 2 *)
+         | 1 -> arm_simd_reg_list_op XDouble [vd; vd + 2; vd + 4; vd + 6]
+         | _ ->
+            raise (BCH_failure (STR "VectorLoadFour: not reachable")) in
+       (* VLD4<c>.<size> <list>, [<Rn>{:<align>}]{!} *)
+       (* VLD4<c>.<size> <list>, [<Rn>{:<align>}], <Rm> *)
+       VectorLoadFour (wb, cc, VfpSize esize, rlist WR, rnop, mem RD, rmop)
+
+     | 2 | 6 | 7 | 10 ->
        let alignment = if align = 0 then 1 else 4 lsl align in
        let ebytes = 1 lsl sz in
        let esize = 8 * ebytes in
@@ -2558,7 +2612,7 @@ let parse_vector_structured_load (instr: doubleword_int) (iaddr: doubleword_int)
       if t = 0 then
         arm_simd_reg_rep_elt_list_op XDouble [vd] esize elements
       else
-        arm_simd_reg_rep_elt_list_op XDouble [vd + 1] esize elements in
+        arm_simd_reg_rep_elt_list_op XDouble [vd; vd + 1] esize elements in
     (* VLD1<c>.<size> <list>, [<Rn>{:align>}]{!} *)
     (* VLD1<c>.<size> <list>, [<Rn>{:align>}], <Rm> *)
     VectorLoadOne (wb, cc, VfpSize esize, rlist WR, rnop, mem RD, rmop)
@@ -4641,4 +4695,13 @@ let disassemble_arm_instruction
               INT ch#pos;
               STR ")"]) ;
        raise IO.No_more_input
+     end
+  | Invalid_argument s ->
+     begin
+       ch_error_log#add
+         "ARM instruction:Invalid_argument"
+         (LBLOCK [iaddr#toPretty; STR ": "; STR s]);
+       raise
+         (BCH_failure
+            (LBLOCK [iaddr#toPretty; STR ": Invalid_argument: "; STR s]))
      end

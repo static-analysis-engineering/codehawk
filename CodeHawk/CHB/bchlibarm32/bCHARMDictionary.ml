@@ -298,6 +298,20 @@ object (self)
          (ctags c, [di dt; oi vd; oi vn; oi vm])
       | SHA1HashUpdateMajority (c, dt, vd, vn, vm) ->
          (ctags c, [di dt; oi vd; oi vn; oi vm])
+      | SHA1HashUpdateParity (c, dt, vd, vn, vm) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
+      | SHA1ScheduleUpdate0 (c, dt, vd, vn, vm) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
+      | SHA1ScheduleUpdate1 (c, dt, vd, vm) ->
+         (ctags c, [di dt; oi vd; oi vm])
+      | SHA256HashUpdatePart1 (c, dt, vd, vn, vm) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
+      | SHA256HashUpdatePart2 (c, dt, vd, vn, vm) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
+      | SHA256ScheduleUpdate0 (c, dt, vd, vm) ->
+         (ctags c, [di dt; oi vd; oi vm])
+      | SHA256ScheduleUpdate1 (c, dt, vd, vn, vm) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
       | SignedBitFieldExtract (c, rd, rn) -> (ctags c, [oi rd; oi rn])
       | SignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | SignedExtendByte (c, rd, rm, tw) -> (ctags c, [oi rd; oi rm; setb tw])
@@ -397,10 +411,15 @@ object (self)
          (ctags c, [di dt; oi qd; oi qm])
       | VectorBitwiseOr (c, dt, qd, qn, qm) ->
          (ctags c, [di dt; oi qd; oi qn; oi qm])
+      | VectorBitwiseOrNot (c, dt, qd, qn, qm) ->
+         (ctags c, [di dt; oi qd; oi qn; oi qm])
+      | VectorBitwiseSelect (c, dt, qd, qn, qm) ->
+         (ctags c, [di dt; oi qd; oi qn; oi qm])
       | VCompare (nan, c, dt, op1, op2) ->
          (ctags c, [setb nan; di dt; oi op1; oi op2])
-      | VectorConvert (round, c, dstdt, srcdt, dst, src) ->
-         ((ctags c), [setb round; di dstdt; di srcdt; oi dst; oi src])
+      | VectorConvert (round, fixed, c, dstdt, srcdt, dst, src, fbits) ->
+         ((ctags c),
+          [setb round; setb fixed; di dstdt; di srcdt; oi dst; oi src; oi fbits])
       | VDivide (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorDuplicate (c, dt, regs, elements, dst, src) ->
@@ -409,6 +428,8 @@ object (self)
          (ctags c, [di dt; oi dst; oi src1; oi src2; oi imm])
       | VectorLoadMultipleIncrementAfter (wb, c, rn, rl, mem) ->
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
+      | VectorLoadFour (wb, c, sz, rl, rn, mem, rm) ->
+         (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
       | VectorLoadOne (wb, c, sz, rl, rn, mem, rm) ->
          (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
       | VLoadRegister (c, dst, base, mem) ->
@@ -437,6 +458,8 @@ object (self)
          (ctags c, [di dt; oi dst; oi src])
       | VectorReverseWords (c, dt, dst, src) ->
          (ctags c, [di dt; oi dst; oi src])
+      | VectorRoundingHalvingAdd (c, dt, vd, vn, vm) ->
+         (ctags c, [di dt; oi vd; oi vn; oi vm])
       | VectorRoundingShiftRightAccumulate (c, dt, dst, src, imm) ->
          (ctags c, [di dt; oi dst; oi src; oi imm])
       | VectorShiftLeft (c, dt, dst, src, src2) ->
@@ -460,6 +483,8 @@ object (self)
       | VectorStoreOne (wb, c, sz, rl, rn, mem, rm) ->
          (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
       | VectorStoreTwo (wb, c, sz, rl, rn, mem, rm) ->
+         (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
+      | VectorStoreFour (wb, c, sz, rl, rn, mem, rm) ->
          (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
       | VectorSubtract (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])

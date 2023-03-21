@@ -609,6 +609,46 @@ type arm_opcode_t =
       * arm_operand_int  (* vd: destination *)
       * arm_operand_int  (* vn: source 1 *)
       * arm_operand_int  (* vm: source 2 *)
+  | SHA1HashUpdateParity of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vn: source 1 *)
+      * arm_operand_int  (* vm: source 2 *)
+  | SHA1ScheduleUpdate0 of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vn: source 1 *)
+      * arm_operand_int  (* vm: source 2 *)
+  | SHA1ScheduleUpdate1 of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vn: source 1 *)
+  | SHA256HashUpdatePart1 of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vn: source 1 *)
+      * arm_operand_int  (* vm: source 2 *)
+  | SHA256HashUpdatePart2 of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vn: source 1 *)
+      * arm_operand_int  (* vm: source 2 *)
+  | SHA256ScheduleUpdate0 of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vm: source *)
+  | SHA256ScheduleUpdate1 of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* vd: destination *)
+      * arm_operand_int  (* vn: source 1 *)
+      * arm_operand_int  (* vm: source 2 *)
   | SignedBitFieldExtract of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -936,6 +976,18 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
+  | VectorBitwiseOrNot of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorBitwiseSelect of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
   | VCompare of
       bool   (* if true NaN operand causes invalid operation *)
       * arm_opcode_cc_t (* condition *)
@@ -944,11 +996,13 @@ type arm_opcode_t =
       * arm_operand_int (* operand 2 *)
   | VectorConvert of
       bool   (* rounding specified *)
+      * bool            (* involves fixed-point *)
       * arm_opcode_cc_t (* condition *)
       * vfp_datatype_t  (* destination data type *)
       * vfp_datatype_t  (* source data type *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+      * arm_operand_int (* number of fraction bits (fixed-point only) *)
   | VDivide of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
@@ -976,6 +1030,14 @@ type arm_opcode_t =
       * arm_operand_int  (* rl: register list *)
       * arm_operand_int  (* mem: multiple memory locations *)
   | VectorLoadOne of
+      bool    (* writeback *)
+      * arm_opcode_cc_t  (* condition *)
+      * vfp_datatype_t   (* size *)
+      * arm_operand_int  (* rl: register list *)
+      * arm_operand_int  (* rn: base register *)
+      * arm_operand_int  (* mem: multiple memory locations *)
+      * arm_operand_int  (* rm: address offset applied after the access *)
+  | VectorLoadFour of
       bool    (* writeback *)
       * arm_opcode_cc_t  (* condition *)
       * vfp_datatype_t   (* size *)
@@ -1070,6 +1132,12 @@ type arm_opcode_t =
       * vfp_datatype_t  (* data type *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+  | VectorRoundingHalvingAdd of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
   | VectorRoundingShiftRightAccumulate of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* data type *)
@@ -1138,6 +1206,14 @@ type arm_opcode_t =
       * arm_operand_int  (* mem: multiple memory locations *)
       * arm_operand_int  (* rm: address offset applied after the access *)
   | VectorStoreTwo of
+      bool    (* writeback *)
+      * arm_opcode_cc_t  (* condition *)
+      * vfp_datatype_t   (* size *)
+      * arm_operand_int  (* rl: register list *)
+      * arm_operand_int  (* rn: base register *)
+      * arm_operand_int  (* mem: multiple memory locations *)
+      * arm_operand_int  (* rm: address offset applied after the access *)
+  | VectorStoreFour of
       bool    (* writeback *)
       * arm_opcode_cc_t  (* condition *)
       * vfp_datatype_t   (* size *)
@@ -1399,7 +1475,10 @@ class type arm_assembly_instructions_int =
     (* i/o *)
     method write_xml: xml_element_int -> unit
     method toString:
-             ?filter:(arm_assembly_instruction_int -> bool) -> unit -> string
+             ?datarefs:((string * arm_assembly_instruction_int list) list)
+             -> ?filter:(arm_assembly_instruction_int -> bool)
+             -> unit
+             -> string
 
   end
 
@@ -1493,6 +1572,7 @@ class type arm_assembly_function_int =
     method get_function_md5: string
     method get_instruction_count: int
     method get_block_count: int
+    method get_not_valid_instr_count: int
 
     (* iterators *)
     method iter: (arm_assembly_block_int -> unit) -> unit
@@ -1524,8 +1604,11 @@ class type arm_assembly_functions_int =
     (* setters *)
     method add_function: arm_assembly_function_int -> unit
     method add_functions_by_preamble: doubleword_int list
+    method remove_function: doubleword_int -> unit
 
     method set_datablocks: unit
+    method identify_datablocks: unit
+    method identify_dataref_datablocks: unit
 
     (* accessors *)
     method get_callgraph: callgraph_int
@@ -1537,6 +1620,12 @@ class type arm_assembly_functions_int =
              * int   (* overlap *)
              * int   (* multiplicity *)
     method get_num_functions: int
+
+    (** Returns a map of virtual addresses in a code section to lists of 
+        instructions that load the contents of the corresponding memory
+        locations.*)
+    method get_data_references:
+             (string * arm_assembly_instruction_int list) list
 
     (* iterators *)
     method iter: (arm_assembly_function_int -> unit) -> unit
