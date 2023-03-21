@@ -113,14 +113,30 @@ object (self:'a)
 
   method index = unsigned_value
 
-  (* --------------------------------------------------------~---- comparison -- *)
+  (* ---------------------------------------------------------- comparison -- *)
 
   method equal (other:'a) = other#index = self#index
   method compare (other:'a) = Stdlib.compare self#index other#index
   method lt (other:'a) = self#index < other#index
   method le (other:'a) = self#index <= other#index
 
-  (* -----------------------------------------------------~---~--- conversion -- *)
+  (* ----------------------------------------------------------- alignment -- *)
+
+  method to_aligned ?(up=false) (n: int):('a * int) =
+    if n <= 0 then
+      raise (Invalid_argument "Doubleword: alignment with non-positive n")
+    else if n = 1 then
+      ({<>}, 0)
+    else if (unsigned_value mod n) = 0 then
+      ({<>}, 0)
+    else if up then
+      let newval = n * ((unsigned_value / n) + 1) in
+      ({< unsigned_value = newval >}, newval - unsigned_value)
+    else
+      let newval = n * (unsigned_value / n) in
+      ({< unsigned_value = newval >}, unsigned_value - newval)
+
+  (* --------------------------------------------------~---~--- conversion -- *)
     
   method to_int = unsigned_value
   method to_big_int = B.big_int_of_int unsigned_value
