@@ -48,6 +48,9 @@ open BCHMetricsHandler
 open BCHSystemInfo
 open BCHSystemSettings
 
+(* bchlibelf *)
+open BCHELFHeader
+
 (* bchlibarm32 *)
 open BCHARMAssemblyFunction
 open BCHARMAssemblyInstructions
@@ -68,7 +71,10 @@ module IntSet = Set.Make
 let preamble_exclusions = H.create 3
 let _ =
   List.iter (fun (b, t) -> H.add preamble_exclusions b t)
-    [("000050e3", "CMP          R0, #0x0");
+    [("0028",     "CMP          R0, #0");
+     ("0029",     "CMP          R1, #0");
+     ("002a",     "CMP          R2, #0");
+     ("000050e3", "CMP          R0, #0x0");
      ("000051e3", "CMP          R1, #0x0");
      ("000052e3", "CMP          R2, #0x0");
      ("0030d0e5", "LDRB         R3, [R0, #0]");
@@ -178,7 +184,10 @@ object (self)
   method reset = H.clear functions
 
   method add_function (f:arm_assembly_function_int) =
-    H.add functions f#get_address#index f
+    H.replace functions f#get_address#index f
+
+  method remove_function (faddr: doubleword_int) =
+    H.remove functions faddr#index
 
   method get_functions = H.fold (fun _ v a -> v :: a) functions []
 
@@ -348,7 +357,13 @@ object (self)
               maxpreamble := k
             end) preambles in
     let commonpreambles =
-      let preamble_cutoff = system_info#get_preamble_cutoff in
+      let preamble_cutoff_factor = system_info#get_preamble_cutoff in
+      let preamble_cutoff_factor =
+        if preamble_cutoff_factor > 0 then
+          preamble_cutoff_factor
+        else
+          10 in
+      let preamble_cutoff = self#get_num_functions / preamble_cutoff_factor in
       H.fold (fun k v a ->
           if v >= preamble_cutoff then k :: a else a) preambles [] in
     let is_common_preamble bytes =
@@ -394,10 +409,306 @@ object (self)
              STR " functions by preamble"]) in
     !fnsAdded
 
+  method private get_function_stats =
+    let table = H.create self#get_num_functions in
+    let _ =
+      self#itera (fun faddr fn ->
+          H.add
+            table
+            faddr#to_hex_string
+            (fn#get_block_count,
+             fn#get_instruction_count,
+             fn#get_not_valid_instr_count)) in
+    String.concat
+      "\n"
+      (List.map (fun (faddr, (blocks, instrs, notvalid)) ->
+           (fixed_length_string faddr 12)
+           ^ "  "
+           ^ (fixed_length_string ~alignment:StrRight (string_of_int blocks) 8)
+           ^ "  "
+           ^ (fixed_length_string ~alignment:StrRight (string_of_int instrs) 8)
+           ^ "  "
+           ^ (if notvalid = 0 then
+                ""
+              else
+                fixed_length_string ~alignment:StrRight (string_of_int notvalid) 8))
+         (List.sort
+            (fun (_, (b, i, _)) (_, (b2, i2, _)) -> Stdlib.compare (b, i) (b2, i2))
+            (H.fold (fun k v a -> (k, v)::a) table [])))
+
   method dark_matter_to_string =
     let table = self#get_live_instructions in
     let filter = (fun i -> not (H.mem table i#get_address#index)) in
-    !arm_assembly_instructions#toString ~filter ()
+    let dark = !arm_assembly_instructions#toString ~filter () in
+    let functionstats = self#get_function_stats in
+    dark ^ "\n\n" ^ functionstats
+
+  method private collect_data_references =
+    let livetable = self#get_live_instructions in
+    let filter = (fun i -> H.mem livetable i#get_address#index) in
+    let table = H.create 11 in
+    let add (a: doubleword_int) (instr: arm_assembly_instruction_int) =
+      let ixa = a#index in
+      let entry =
+        if H.mem table ixa then
+          H.find table ixa
+        else
+          [] in
+      H.replace table ixa (instr::entry) in
+    begin
+      !arm_assembly_instructions#itera
+        (fun va instr ->
+          if filter instr then
+            match instr#get_opcode with
+            | LoadRegister (_, _, _, _, mem, _) when mem#is_pc_relative_address ->
+               let pcoffset = if instr#is_arm32 then 8 else 4 in
+               let a = mem#get_pc_relative_address va pcoffset in
+               if elf_header#is_program_address a then
+                 add a instr
+               else
+                 ch_error_log#add
+                   "LDR from non-code-address"
+                   (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
+            | LoadRegister (_, _, _, _, mem, _) when mem#is_literal_address ->
+               let a = mem#get_literal_address in
+               if elf_header#is_program_address a then
+                 add a instr
+               else
+                 ch_error_log#add
+                   "LDR (literal) from non-code-address"
+                   (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
+            | VLoadRegister (_, vd, _, mem) when mem#is_pc_relative_address ->
+               let pcoffset = if instr#is_arm32 then 8 else 4 in
+               let a = mem#get_pc_relative_address va pcoffset in
+               if elf_header#is_program_address a then
+                 begin
+                   add a instr;
+                   if (vd#get_size = 8) then add (a#add_int 4) instr;
+                 end
+               else
+                 ch_error_log#add
+                   "VLDR from non-code-address"
+                   (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
+            | _ -> ());
+      table
+    end
+
+  method get_data_references =
+    let datarefs = self#collect_data_references in
+    H.fold (fun k v a ->
+        let dw = TR.tget_ok (index_to_doubleword k) in
+        (dw#to_hex_string, v) :: a) datarefs []
+
+  method identify_dataref_datablocks =
+    let datareftable = self#collect_data_references in
+    let table = self#get_live_instructions in
+    let filter = (fun i ->
+        let index = i#get_address#index in
+        (index mod 4) = 0
+        && (not (H.mem table index))
+        && (H.mem datareftable index)) in
+    let dbstart = ref wordzero in
+    let inBlock = ref false in
+    let count = ref 0 in
+    let fnremoved = ref 0 in
+    begin
+      !arm_assembly_instructions#itera
+        (fun va instr ->
+          match instr#get_opcode with
+          | OpInvalid -> ()
+          | NotCode _ -> ()
+          | _ ->
+             try
+               if filter instr then
+                 begin
+                   (if not !inBlock then
+                      begin
+                        dbstart := va;
+                        inBlock := true
+                      end);
+                   (match instr#get_opcode with
+                    | BranchLink (_, op)
+                      | BranchLinkExchange (_, op) when op#is_absolute_address ->
+                       let tgtaddr = op#get_absolute_address in
+                       if functions_data#is_function_entry_point tgtaddr  then
+                         let fndata = functions_data#get_function tgtaddr in
+                         let remaining = fndata#remove_callsite in
+                         if remaining = 0 then
+                           begin
+                             functions_data#remove_function tgtaddr;
+                             self#remove_function tgtaddr;
+                             fnremoved := !fnremoved + 1;
+                             chlog#add
+                               "remove function"
+                               (LBLOCK [
+                                    STR "call: ";
+                                    va#toPretty;
+                                    STR ": ";
+                                    tgtaddr#toPretty])
+                           end
+                    | _ -> ())
+                 end
+               else if (instr#get_address#index mod 4) > 0 then
+                 ()
+               else if !inBlock then
+                 let db =
+                   TR.tget_ok
+                     (make_data_block !dbstart va "inferred-dataref blocks") in
+                 let dblen = TR.tget_ok (va#subtract_to_int !dbstart) in
+                 let datastring =
+                   try
+                     elf_header#get_xsubstring !dbstart dblen
+                   with
+                   | BCH_failure p ->
+                      begin
+                        ch_error_log#add
+                          "datablock: get_xsubstring"
+                          (LBLOCK [
+                               STR "Datablock: ";
+                               !dbstart#toPretty;
+                               STR " - ";
+                               va#toPretty;
+                               STR ": ";
+                               p]);
+                        raise (BCH_failure p)
+                      end in
+                 let _ = db#set_data_string datastring in
+                 begin
+                   system_info#add_data_block db;
+                   inBlock := false;
+                   count := !count + 1;
+                   !arm_assembly_instructions#set_not_code [db]
+                 end
+               else
+                 ()
+             with
+             | BCH_failure p ->
+                raise
+                  (BCH_failure
+                     (LBLOCK [
+                          STR "Error in identifying dataref datablocks: ";
+                          p])));
+      chlog#add
+        "identify data-blocks"
+        (LBLOCK [STR "Identified "; INT !count; STR " data-blocks"]);
+    end
+
+  method identify_datablocks =
+    let inprogress = ref true in
+    while !inprogress do
+      if self#identify_datablocks_aux = 0 then
+        inprogress := false
+    done
+
+  method private identify_datablocks_aux =
+    let table = self#get_live_instructions in
+    let datareftable = self#collect_data_references in
+    let filter = (fun i -> not (H.mem table i#get_address#index)) in
+    let dbstart = ref wordzero in
+    let inBlock = ref false in
+    let notcode = ref false in
+    let count = ref 0 in
+    let fnremoved = ref 0 in
+    begin
+      !arm_assembly_instructions#itera
+        (fun va instr ->
+          try
+            if filter instr then
+              match instr#get_opcode with
+              | OpInvalid -> ()
+              | NotCode _ -> ()
+              | _ ->
+                 begin
+                   if not !inBlock then
+                     begin
+                       dbstart := va;
+                       inBlock := true;
+                     end;
+                   (if H.mem datareftable instr#get_address#index then
+                      notcode := true);
+                   (match instr#get_opcode with
+                    | NotRecognized (itxt, idw) ->
+                       begin
+                         notcode := true;
+                         chlog#add
+                           "block out not-recognized"
+                           (LBLOCK [
+                                va#toPretty;
+                                STR ": ";
+                                STR itxt;
+                                STR " (";
+                                idw#toPretty;
+                                STR ")"])
+                       end
+                    | BranchLink (_, op)
+                      | BranchLinkExchange (_, op) when op#is_absolute_address ->
+                       let tgtaddr = op#get_absolute_address in
+                       if functions_data#is_function_entry_point tgtaddr && !notcode then
+                         let fndata = functions_data#get_function tgtaddr in
+                         let remaining = fndata#remove_callsite in
+                         if remaining = 0 then
+                           begin
+                             functions_data#remove_function tgtaddr;
+                             self#remove_function tgtaddr;
+                             fnremoved := !fnremoved + 1;
+                             chlog#add
+                               "remove function"
+                               (LBLOCK [
+                                    STR "call: ";
+                                    va#toPretty;
+                                    STR ": ";
+                                    tgtaddr#toPretty])
+                           end
+                    | _ -> ())
+                 end
+            else
+              if !inBlock then
+                if !notcode then
+                  let db = TR.tget_ok (make_data_block !dbstart va "inferred") in
+                  let dblen = TR.tget_ok (va#subtract_to_int !dbstart) in
+                  let datastring =
+                    try
+                      elf_header#get_xsubstring !dbstart dblen
+                    with
+                    | BCH_failure p ->
+                       begin
+                         ch_error_log#add
+                           "datablock: get_xsubstring"
+                           (LBLOCK [
+                                STR "Datablock: ";
+                                !dbstart#toPretty;
+                                STR " - ";
+                                va#toPretty;
+                                STR ": ";
+                                p]);
+                         raise (BCH_failure p)
+                       end in
+                  let _ = db#set_data_string datastring in
+                  begin
+                    system_info#add_data_block db;
+                    inBlock := false;
+                    notcode := false;
+                    count := !count + 1;
+                    !arm_assembly_instructions#set_not_code [db]
+                  end
+                else
+                  inBlock := false
+              else
+                ()
+          with
+          | BCH_failure p ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Error in identifying data blocks: ";
+                       va#toPretty;
+                       STR ": ";
+                       p])));
+      chlog#add
+        "identify data-blocks"
+        (LBLOCK [STR "Identified "; INT !count; STR " data-blocks"]);
+      !fnremoved
+    end
 
   method set_datablocks =
     let table = self#get_live_instructions in
@@ -515,3 +826,5 @@ let get_arm_disassembly_metrics () =
     dm_exports = get_export_metrics()
   }
                            
+
+let get_arm_data_references () = arm_assembly_functions#get_data_references

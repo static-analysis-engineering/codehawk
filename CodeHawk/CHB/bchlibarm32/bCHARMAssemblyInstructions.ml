@@ -55,6 +55,8 @@ open BCHELFHeader
 open BCHARMAssemblyInstruction
 open BCHARMTypes
 open BCHARMOpcodeRecords
+open BCHDisassembleARMInstruction
+open BCHDisassembleThumbInstruction
 
 
 module H = Hashtbl
@@ -430,9 +432,11 @@ object (self)
             (!bnode)#appendChildren [inode]
           end)
 
-  method toString ?(filter = fun _ -> true) () =
+  method toString ?(datarefs = []) ?(filter = fun _ -> true) () =
     let lines = ref [] in
     let firstNew = ref true in
+    let datareftable = H.create (List.length datarefs) in
+    let _ = List.iter (fun (a, refs) -> H.add datareftable a refs) datarefs in
     let not_code_to_string nc =
       match nc with
       | JumpTable jt ->
@@ -445,11 +449,49 @@ object (self)
          let s = db#get_data_string in
          let ch = make_pushback_stream s in
          let len = String.length s in
-         let addr = ref db#get_start_address in
+         let (alignedaddr, prefix) = db#get_start_address#to_aligned ~up:true 4 in
+         let addr = ref alignedaddr in
          let contents = ref [] in
+         let make_stream (v: doubleword_int) =
+           let bytestring = write_hex_bytes_to_bytestring v#to_fixed_length_hex_string_le in
+           make_pushback_stream ~little_endian:true bytestring in
+         let opcode_string (addr: doubleword_int) (v: doubleword_int) =
+           try
+             let cha = make_stream v in
+             if system_info#is_thumb addr then
+               let instrbytes = cha#read_ui16 in
+               let opcode = disassemble_thumb_instruction cha addr instrbytes in
+               let opcodetxt =
+                 match opcode with
+                 | NotRecognized _ -> "not-recognized"
+                 | _ -> arm_opcode_to_string opcode in
+               let xtra =
+                 if cha#pos = 2 then
+                   " ++ "
+                 else
+                   "" in
+               "T:" ^ opcodetxt ^ xtra
+             else
+               let instrbytes = cha#read_doubleword in
+               let opcode = disassemble_arm_instruction cha addr instrbytes in
+               let opcodetxt =
+                 match opcode with
+                 | NotRecognized _ -> "not-recognized"
+                 | _ -> arm_opcode_to_string opcode in
+              "A:" ^ opcodetxt
+           with
+             _ -> " --error--" in
+
+         let pprefix =
+           if prefix > 0 then
+             "  " ^ (fixed_length_string !addr#to_hex_string 10) ^ "  align\n"
+           else
+             "" in
+         let _ =
+           if prefix > 0 && (String.length s) >= prefix then ch#skip_bytes prefix in
          try
            begin
-             for i = 0 to ((len/4) - 1) do
+             for i = 0 to (((len - prefix)/4) - 1) do
                begin
                  contents := (!addr, ch#read_doubleword) :: !contents;
                  addr := !addr#add_int 4
@@ -457,17 +499,37 @@ object (self)
              done;
              ("\n" ^ (string_repeat "~" 80) ^ "\nData block (size: "
               ^ (string_of_int len) ^ " bytes)\n\n"
+              ^ pprefix
               ^ (String.concat
                    "\n"
                    (List.map
                       (fun (a, v) ->
                         let addr = a#to_hex_string in
-                        match elf_header#get_string_at_address v with
-                        | Some s ->
-                           "  " ^ addr ^ "  " ^ v#to_hex_string
-                           ^ ": \"" ^ s ^ "\""
-                        | _ ->
-                           "  " ^ addr ^ "  " ^ v#to_hex_string)
+                        if H.mem datareftable addr then
+                          let datarefs = H.find datareftable addr in
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  "
+                          ^ (fixed_length_string v#to_hex_string 12)
+                          ^ (String.concat
+                               ", " (List.map (fun instr -> instr#toString) datarefs))
+                        else
+                          match elf_header#get_string_at_address v with
+                          | Some s ->
+                             "  "
+                             ^ (fixed_length_string addr 10)
+                             ^ "  "
+                             ^ (fixed_length_string v#to_hex_string 12)
+                             ^ ": \""
+                             ^ s
+                             ^ "\""
+                          | _ ->
+                             "  "
+                             ^ (fixed_length_string addr 10)
+                             ^ "  "
+                             ^ (fixed_length_string v#to_hex_string 14)
+                             ^ "  "
+                             ^ (opcode_string a v))
                       (List.rev !contents)))
               ^ "\n" ^ (string_repeat "=" 80) ^ "\n")
            end
@@ -475,7 +537,16 @@ object (self)
          | _ ->
             raise
               (BCH_failure
-                 (LBLOCK [STR "Error in data block of length "; INT len])) in
+                 (LBLOCK [
+                      STR "Error in printing data block. ";
+                      STR "Address: ";
+                      db#get_start_address#toPretty;
+                      STR "; Aligned address: ";
+                      alignedaddr#toPretty;
+                      STR "; Prefix: ";
+                      INT prefix;
+                      STR "; Length: ";
+                      INT len])) in
     let add_function_names va =
       if functions_data#is_function_entry_point va then
         if functions_data#has_function_name va then

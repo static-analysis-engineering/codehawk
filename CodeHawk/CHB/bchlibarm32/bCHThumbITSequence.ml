@@ -126,7 +126,9 @@ let is_ite_predicate_assignment
 let is_it_predicate_assignment (opcthen: arm_opcode_t) (itaddr: doubleword_int) =
   match opcthen with
   | Move (_, _, tr, thenop, _, _)
-       when (thenop#to_numerical#equal numerical_one && tr#is_register) ->
+       when (tr#is_register
+             && thenop#is_immediate
+             && thenop#to_numerical#equal numerical_one) ->
      let testf =
        (fun instr ->
          match instr#get_opcode with

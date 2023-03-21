@@ -689,7 +689,15 @@ let translate_arm_instruction
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
      let usehigh = get_use_high_vars [xrn; xrm] in
-     let cmds = floc#get_assign_commands vrd (XOp (XPlus, [xrn; xrm])) in
+     let result = XOp (XPlus, [xrn; xrm]) in
+     let result =
+       match result with
+       | XConst (IntConst n) when n#geq numerical_e32 ->
+          (* Assume unsigned roll-over *)
+          XConst (IntConst (n#sub numerical_e32))
+       | _ ->
+          result in
+     let cmds = floc#get_assign_commands vrd result in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrd]
@@ -2656,9 +2664,11 @@ let translate_arm_instruction
 
   | VectorBitwiseBitClear _ -> default []
 
+  | VectorBitwiseNot _ -> default []
+
   | VectorBitwiseOr _ -> default []
 
-  | VectorBitwiseNot _ -> default []
+  | VectorBitwiseOrNot _ -> default []
 
   | VCompare (_, _, _, src1, src2) ->
      let floc = get_floc loc in
@@ -2674,7 +2684,7 @@ let translate_arm_instruction
          ctxtiaddr in
      default defcmds
 
-  | VectorConvert (_, _, _, _, dst, src) ->
+  | VectorConvert (_, _, _, _, _, dst, src, _) ->
      let floc = get_floc loc in
      let vdst = dst#to_variable floc in
      let xsrc = src#to_expr floc in

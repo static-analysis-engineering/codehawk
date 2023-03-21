@@ -36,14 +36,14 @@ MLIS := \
 	bCHARMConditionalExpr \
 	bCHARMDisassemblyUtils \
 	bCHARMAssemblyInstruction \
+	bCHDisassembleARMInstruction \
+	bCHDisassembleThumbInstruction \
 	bCHARMAssemblyInstructions \
 	bCHARMAssemblyBlock \
 	bCHARMAssemblyFunction \
 	bCHARMAssemblyFunctions \
 	bCHARMCodePC \
 	bCHARMCHIFSystem \
-	bCHDisassembleARMInstruction \
-	bCHDisassembleThumbInstruction \
 	bCHThumbITSequence \
 	bCHARMJumptable \
 	bCHARMInstructionAggregate \
@@ -68,14 +68,14 @@ SOURCES := \
 	bCHARMConditionalExpr \
 	bCHARMDisassemblyUtils \
 	bCHARMAssemblyInstruction \
+	bCHDisassembleARMInstruction \
+	bCHDisassembleThumbInstruction \
 	bCHARMAssemblyInstructions \
 	bCHARMAssemblyBlock \
 	bCHARMAssemblyFunction \
 	bCHARMAssemblyFunctions \
 	bCHARMCodePC \
 	bCHARMCHIFSystem \
-	bCHDisassembleARMInstruction \
-	bCHDisassembleThumbInstruction \
 	bCHThumbITSequence \
 	bCHARMJumptable \
 	bCHARMInstructionAggregate \
