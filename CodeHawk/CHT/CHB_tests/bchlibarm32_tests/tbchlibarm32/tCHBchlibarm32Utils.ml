@@ -92,7 +92,7 @@ let arm_function_setup
       set_arm_assembly_instruction instr
     done;
     let _ = set_block_boundaries () in
-    let fn = construct_arm_assembly_function faddr in
+    let (_, fn) = construct_arm_assembly_function faddr in
     arm_assembly_functions#add_function fn;
     fn
   end

@@ -53,6 +53,10 @@ val equal_doubleword_result:
   ?msg:string -> doubleword_int -> doubleword_result -> unit
 
 
+val equal_doubleword_alignment:
+  ?msg:string -> (string * int) -> (doubleword_int * int) -> unit
+
+
 val equal_location: ?msg:string -> location_int -> location_int -> unit
 
 
