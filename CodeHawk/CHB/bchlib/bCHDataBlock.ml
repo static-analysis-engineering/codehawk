@@ -72,12 +72,27 @@ object (self:'a)
   val mutable data_string = None
   val mutable data_table = H.create 3
   val mutable name = bname
+  val mutable end_address = end_address
 
   method compare (other:'a) =
     let l0 = start_address#compare other#get_start_address in
     if l0 = 0 then end_address#compare other#get_end_address else l0
 
   method set_data_string s = data_string <- Some s
+
+  method truncate (a: doubleword_int) =
+    let newlength =
+      fail_tvalue
+        (trerror_record (STR "data_block#truncate:new_length"))
+        (a#subtract_to_int start_address) in
+    begin
+      (match data_string with
+       | Some s
+            when self#get_length > newlength && (String.length s > newlength) ->
+          data_string <- Some (String.sub s 0 newlength)
+       | _ -> ());
+      end_address <- a
+    end
     
   method get_start_address = start_address
     
@@ -111,9 +126,12 @@ object (self:'a)
       | Some s -> Some (extract_offset_range s)
       | _ -> None
     else
-      raise (BCH_failure
-	       (LBLOCK [ STR "Block at " ; start_address#toPretty ; 
-			 STR " is not an offset table block "]))
+      raise
+        (BCH_failure
+	   (LBLOCK [
+                STR "Block at ";
+                start_address#toPretty;
+		STR " is not an offset table block "]))
       
   method has_name = not (name = "data")
 
