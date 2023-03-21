@@ -100,6 +100,9 @@ let get_successors
       
       let succ =
         match opcode with
+        (* error situation *)
+        | PermanentlyUndefined _ -> []
+
         (* unconditional return instruction *)
         | Pop (ACCAlways, _, rl, _) when rl#includes_pc -> []
                                                          
@@ -256,7 +259,9 @@ let get_successors
 let construct_arm_assembly_block
       (faddr: doubleword_int)
       (baddr: doubleword_int):
-      (arm_assembly_block_int list * arm_assembly_block_int) =
+      (arm_assembly_block_int list * arm_assembly_block_int * doubleword_int list) =
+
+  let newfnentries = new DoublewordCollections.set_t in
 
   let set_block_entry (a: doubleword_int) =
     TR.titer (fun instr ->
@@ -276,9 +281,22 @@ let construct_arm_assembly_block
   let is_tail_call (instr: arm_assembly_instruction_int) =
     match instr#get_opcode with
     | Branch (ACCAlways, tgt, _)
-      | BranchExchange (ACCAlways, tgt) ->
-       tgt#is_absolute_address
-       && functions_data#is_function_entry_point tgt#get_absolute_address
+      | BranchExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
+       let tgtaddr = tgt#get_absolute_address in
+       if functions_data#is_function_entry_point tgtaddr then
+         true
+       else if tgtaddr#lt faddr then
+         let _ = functions_data#add_function faddr in
+         let _ =
+           chlog#add
+             "tail-call function entry point"
+             (LBLOCK [faddr#toPretty; STR " call to: "; tgtaddr#toPretty]) in
+         begin
+           newfnentries#add tgtaddr;
+           true
+         end
+       else
+         false
     | _ -> false in
 
   let is_non_returning_call_instr (instr: arm_assembly_instruction_int) =
@@ -410,6 +428,10 @@ let construct_arm_assembly_block
       (* end of function, no successors *)
       (Some [], baddr, [])
 
+    else if is_tail_call binstr then
+      (* the end of the function, no successors *)
+      (Some [], baddr, [])
+
     else if is_permanently_undefined binstr then
       (* dead end, no successors *)
       (Some [], baddr, [])
@@ -442,11 +464,12 @@ let construct_arm_assembly_block
           List.map
             (fun loc -> loc#ci)
             (List.map (make_location_by_address faddr) l) in
-  (inlinedblocks, make_arm_assembly_block faddr baddr lastaddr succ)
+  (inlinedblocks, make_arm_assembly_block faddr baddr lastaddr succ, newfnentries#toList)
 
                              
 let construct_arm_assembly_function
-      (faddr: doubleword_int):arm_assembly_function_int =
+      (faddr: doubleword_int):(doubleword_int list * arm_assembly_function_int) =
+  let newfnentries = new DoublewordCollections.set_t in
   let workset = new DoublewordCollections.set_t in
   let doneset = new DoublewordCollections.set_t in
   let get_iaddr s = (ctxt_string_to_location faddr s)#i in
@@ -458,7 +481,8 @@ let construct_arm_assembly_function
       (get_arm_assembly_instruction baddr) in
   let blocks = ref [] in
   let rec add_block (baddr: doubleword_int) =
-    let (inlinedblocks, block) = construct_arm_assembly_block faddr baddr in
+    let (inlinedblocks, block, newfes) =
+      construct_arm_assembly_block faddr baddr in
     let blocksucc =
       match inlinedblocks with
       | [] -> block#get_successors
@@ -471,6 +495,7 @@ let construct_arm_assembly_function
           | _ -> acc) [] inlinedblocks in
     begin
       set_block_entry baddr;
+      newfnentries#addList newfes;
       workset#remove baddr;
       doneset#add baddr;
       blocks := (block :: inlinedblocks) @ !blocks;
@@ -487,4 +512,4 @@ let construct_arm_assembly_function
       (fun acc (b: arm_assembly_block_int) ->
         let src = b#get_context_string in
         (List.map (fun tgt -> (src, tgt)) b#get_successors) @ acc) [] blocklist in
-  make_arm_assembly_function faddr blocklist succ
+  (newfnentries#toList, make_arm_assembly_function faddr blocklist succ)

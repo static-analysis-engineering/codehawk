@@ -47,3 +47,9 @@ val get_arm_assembly_function: doubleword_int -> arm_assembly_function_int
 
 (** Return metrics on all functions. *)
 val get_arm_disassembly_metrics: unit -> disassembly_metrics_t
+
+
+(** Return a map from virtual addresses in the code section to lists of instructions
+    that load the contents of the corresponding memory locations.*)
+val get_arm_data_references:
+  unit -> (string * arm_assembly_instruction_int list) list

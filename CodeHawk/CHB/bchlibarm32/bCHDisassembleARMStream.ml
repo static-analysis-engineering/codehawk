@@ -168,7 +168,7 @@ let disassemble_stream (va: doubleword_int) (codestring: string) =
       disassemble_arm_stream va codestring in
   let _ = set_block_boundaries () in
   let _ = system_info#initialize_function_entry_points (fun _ -> [va]) in
-  let fn = construct_arm_assembly_function va in
+  let (_, fn) = construct_arm_assembly_function va in
   begin
     arm_assembly_functions#add_function fn;
     pr_debug [STR ((!arm_assembly_instructions)#toString ())]

@@ -167,15 +167,20 @@ let disassemble_arm_section
            STR "; size: ";
            INT sectionsize]) in
   try
-    let _ = pverbose [STR "disassemble thumb instructions"; NL] in
+    let _ =
+      pverbose [
+          STR "disassemble thumb instructions: ";
+          sectionbase#toPretty;
+          STR "; size: ";
+          INT sectionsize;
+          NL] in
     begin
       while ch#pos + 2 < sectionsize do   (* <= causes problems at section end *)
         let prevPos = ch#pos in
         let iaddr = sectionbase#add_int ch#pos in
         let _ =
-          let iaddrh = iaddr#to_hex_string in
           if system_settings#has_thumb then
-            match system_info#get_arm_thumb_switch iaddrh with
+            match system_info#get_arm_thumb_switch iaddr with
             | Some "A" ->
                begin
                  mode := "arm";
@@ -253,7 +258,7 @@ let disassemble_arm_section
   with
   | BCH_failure p ->
      begin
-       pr_debug [STR "Error in disassembly: "; p];
+       pr_debug [STR "Error in disassembly: "; p; NL];
        raise (BCH_failure p)
      end
   | IO.No_more_input ->
@@ -265,12 +270,13 @@ let disassemble_arm_section
 
 let disassemble_arm_sections () =
   let xSections = elf_header#get_executable_sections in
-  let (startOfCode,endOfCode) =
+  let (startOfCode, endOfCode, sectionaddrs) =
     if (List.length xSections) = 0 then
       raise (BCH_failure (STR "Executable does not have section headers"))
     else
       let headers =
-        List.sort (fun (h1,_) (h2,_) -> h1#get_addr#compare h2#get_addr) xSections in
+        List.sort (fun (h1,_) (h2,_) ->
+            h1#get_addr#compare h2#get_addr) xSections in
       let (lowest,_) = List.hd headers in
       let (highest,_) = List.hd (List.rev headers) in
       let _ =
@@ -290,7 +296,8 @@ let disassemble_arm_sections () =
                  "[" " ; " "]" ]) in
       let startOfCode = lowest#get_addr in
       let endOfCode = highest#get_addr#add highest#get_size in
-      (startOfCode, endOfCode) in
+      let sectionaddrs = List.map (fun (h, _) -> h#get_addr) headers in
+      (startOfCode, endOfCode, sectionaddrs) in
   let sizeOfCode =
     fail_tvalue
       (trerror_record
@@ -301,6 +308,23 @@ let disassemble_arm_sections () =
               endOfCode#toPretty]))
       (endOfCode#subtract startOfCode) in
   let datablocks = system_info#get_data_blocks in
+  let _ =
+    (* make sure that no datablock extends beyond a section boundary *)
+    List.iter (fun db ->
+        let dbstart = db#get_start_address in
+        let dbend = db#get_end_address in
+        List.iter (fun sa ->
+            if dbstart#lt sa && sa#le dbend then
+              let _ =
+                chlog#add
+                  "truncate datablock"
+                  (LBLOCK [
+                       dbstart#toPretty;
+                       STR ": original end: ";
+                       dbend#toPretty;
+                       STR "; new end: ";
+                       sa#toPretty]) in
+              db#truncate sa) sectionaddrs) datablocks in
   let _ = initialize_arm_instructions sizeOfCode#to_int in 
   let _ =
     pverbose [
@@ -412,70 +436,6 @@ let get_so_target (tgtaddr:doubleword_int) (instr:arm_assembly_instruction_int) 
     None
 
 
-(* The Load Literal instruction loads a value from a location specified
-   relative to the PC. It is common for these locations to be interspersed
-   between the functions, that is, in the text section. This function marks
-   these locations as addresses, so they are not disassembled.
- *)
-let collect_data_references () =
-  let _ = pverbose [STR "Collect data references"; NL] in
-  let table = H.create 11 in
-  let add (a:doubleword_int) (instr: arm_assembly_instruction_int) =
-    let hxa = a#to_hex_string in
-    let _ =
-      if collect_diagnostics () then
-        ch_diagnostics_log#add
-          "load literals"
-          (LBLOCK [
-               instr#get_address#toPretty;
-               STR "  ";
-               instr#toPretty;
-               STR ": ";
-               a#toPretty]) in
-    let entry =
-      if H.mem table hxa then
-        H.find table hxa
-      else
-        [] in
-    H.replace table hxa (instr::entry) in
-  begin
-    !arm_assembly_instructions#itera
-      (fun va instr ->
-        match instr#get_opcode with
-        | LoadRegister (_, _, _, _, mem, _) when mem#is_pc_relative_address ->
-           let pcoffset = if instr#is_arm32 then 8 else 4 in
-           let a = mem#get_pc_relative_address va pcoffset in
-           if elf_header#is_program_address a then
-             add a instr
-           else
-             ch_error_log#add
-               "LDR from non-code-address"
-               (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
-        | LoadRegister (_, _, _, _, mem, _) when mem#is_literal_address ->
-           let a = mem#get_literal_address in
-           if elf_header#is_program_address a then
-             add a instr
-           else
-             ch_error_log#add
-               "LDR (literal) from non-code-address"
-               (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
-        | VLoadRegister (_, vd, _, mem) when mem#is_pc_relative_address ->
-           let pcoffset = if instr#is_arm32 then 8 else 4 in
-           let a = mem#get_pc_relative_address va pcoffset in
-           if elf_header#is_program_address a then
-             begin
-               add a instr;
-               if (vd#get_size = 8) then add (a#add_int 4) instr;
-             end
-           else
-             ch_error_log#add
-               "VLDR from non-code-address"
-               (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
-        | _ -> ());
-    H.fold (fun k v a -> (k,v)::a) table []
-  end
-
-
 (* can be used before functions have been constructed *)
 let is_nr_call_instruction (instr:arm_assembly_instruction_int) =
   match instr#get_opcode with
@@ -485,6 +445,7 @@ let is_nr_call_instruction (instr:arm_assembly_instruction_int) =
      ((functions_data#is_function_entry_point tgtaddr)
       && (functions_data#get_function tgtaddr)#is_non_returning)
   | _ -> false
+
 
 let collect_function_entry_points () =
   let _ = pverbose [STR "Collect function entry points"; NL] in
@@ -502,6 +463,20 @@ let collect_function_entry_points () =
         | _ -> ()) ;
     addresses#toList
   end
+
+
+let collect_call_targets () =
+  let _ = pverbose [STR "Collect call targets"; NL] in
+  !arm_assembly_instructions#itera
+    (fun va instr ->
+      match instr#get_opcode with
+      | BranchLink (_, op)
+        | BranchLinkExchange (_, op) when op#is_absolute_address ->
+         let tgtaddr = op#get_absolute_address in
+         if functions_data#is_function_entry_point tgtaddr then
+           let fndata = functions_data#get_function tgtaddr in
+           fndata#add_callsite
+      | _ -> ())
 
 
 let set_block_boundaries () =
@@ -535,6 +510,7 @@ let set_block_boundaries () =
   let feps = functions_data#get_function_entry_points in
   let datablocks = system_info#get_data_blocks in
   begin
+    pverbose [STR "   record function entry points"; NL];
     (* -------------------------------- record function entry points -- *)
     List.iter
       (fun fe ->
@@ -548,6 +524,7 @@ let set_block_boundaries () =
                   STR "function entry point incorrect: ";
                   fe#toPretty])) feps;
 
+    pverbose [STR "   record end of data blocks"; NL];
     (* -------------------------------- record end of data blocks -- *)
     List.iter
       (fun db ->
@@ -561,6 +538,7 @@ let set_block_boundaries () =
                   STR "data block end address incorrect: ";
                   db#get_end_address#toPretty])) datablocks;
 
+    pverbose [STR "   record jumptables"; NL];
     (* --------------------------------------- record jumptables -- *)
     List.iter
       (fun jt ->
@@ -577,6 +555,7 @@ let set_block_boundaries () =
                     ~get_opt_function_name:(fun _ -> None)]))
       system_info#get_jumptables;
 
+    pverbose [STR "   record targets of unconditional jumps"; NL];
     (* ------------------- record targets of unconditional jumps -- *)
     !arm_assembly_instructions#itera
       (fun va instr ->
@@ -650,6 +629,7 @@ let set_block_boundaries () =
                   STR ": ";
                   p]));
 
+    pverbose [STR "   incorporate jump successors"; NL];
     (* -------------------------- incorporate jump successors -- *)
     !arm_assembly_instructions#itera
       (fun va _ ->
@@ -661,6 +641,7 @@ let set_block_boundaries () =
              set_block_entry (va#add_int 4)
            end);
 
+    pverbose [STR "   add block entries due to previous block-ending"; NL];
     (* --------------- add block entries due to previous block-ending -- *)
     !arm_assembly_instructions#itera
       (fun va instr ->
@@ -690,6 +671,7 @@ let set_block_boundaries () =
                set_inlined_call va;
                true
              end
+          | PermanentlyUndefined _ -> true
           | _ -> false in
         if is_block_ending && has_next_valid_instruction va then
           let nextva =
@@ -699,15 +681,44 @@ let set_block_boundaries () =
               (get_next_valid_instruction_address va) in
           set_block_entry nextva
         else
-          ())
+          ());
+
+    pverbose [STR "   set_block_entries: Done"; NL]
   end
 
 
-let construct_assembly_function (count:int) (faddr:doubleword_int) =
+let check_function_validity (fn: arm_assembly_function_int): bool =
+  let result = ref true in
+  begin
+    fn#iteri (fun _ _ instr ->
+        if !result then
+          match instr#get_opcode with
+          | NotRecognized _ -> result := false
+          | _ -> ());
+    !result
+  end
+
+
+(* Returns a list of newly discovered function entry points *)
+let construct_assembly_function
+      ?(check=false) (count:int) (faddr:doubleword_int): doubleword_int list =
       try
-        if !arm_assembly_instructions#is_code_address faddr then
-          let fn = construct_arm_assembly_function faddr in
-          arm_assembly_functions#add_function fn
+        let newfns =
+          if !arm_assembly_instructions#is_code_address faddr then
+            let (newfns, fn) = construct_arm_assembly_function faddr in
+            if (check && check_function_validity fn) || not check then
+              begin
+                arm_assembly_functions#add_function fn;
+                newfns
+              end
+            else
+              begin
+                chlog#add "abandon function" fn#get_address#toPretty;
+                []
+              end
+          else
+            [] in
+        newfns
       with
       | BCH_failure p ->
          begin
@@ -823,66 +834,71 @@ let associate_condition_code_users () =
 
 
 let construct_functions_arm () =
-  let _ = pverbose [STR "Construction functions"; NL] in
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
-  let dataAddrs = collect_data_references () in
-  let addrs =
-    List.fold_left (fun acc (a, _) ->
-        TR.tfold_default
-          (fun a -> a::acc)
-          acc
-          (string_to_doubleword a)) [] dataAddrs in
-  let _ = set_data_references addrs in
+  let _ = collect_call_targets () in
   let _ = set_block_boundaries () in
   let fnentrypoints = functions_data#get_function_entry_points in
+  let newfns = ref fnentrypoints in
   let count = ref 0 in
+  let addedfns = new DoublewordCollections.set_t in
   begin
-    List.iter
-      (fun faddr ->
-        let default () =
-          try
-            begin
-              count := !count + 1;
-              construct_assembly_function !count faddr
-            end
-          with
-          | BCH_failure p ->
-             ch_error_log#add
-               "construct functions"
-               (LBLOCK [STR "Function "; faddr#toPretty; STR ": "; p]) in
-        if functions_data#is_function_entry_point faddr then
-          let fndata = functions_data#get_function faddr in
-          if fndata#is_library_stub then
-            ()
-          else if fndata#has_name then
-            if is_library_stub faddr then
-              begin
-                fndata#set_library_stub;
-                chlog#add
-                  "ELF library stub"
-                  (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
-              end
+    while (List.length !newfns) > 0 do
+      begin
+        List.iter
+          (fun faddr ->
+            let default () =
+              try
+                let _ = count := !count + 1 in
+                let newfns = construct_assembly_function !count faddr in
+                addedfns#addList newfns
+              with
+              | BCH_failure p ->
+                 ch_error_log#add
+                   "construct functions"
+                   (LBLOCK [STR "Function "; faddr#toPretty; STR ": "; p]) in
+            if functions_data#is_function_entry_point faddr then
+              let fndata = functions_data#get_function faddr in
+              if fndata#is_library_stub then
+                ()
+              else if fndata#has_name then
+                if is_library_stub faddr then
+                  begin
+                    fndata#set_library_stub;
+                    chlog#add
+                      "ELF library stub"
+                      (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
+                  end
+                else
+                  default ()
+              else if is_library_stub faddr then
+                begin
+                  fndata#set_library_stub;
+                  set_library_stub_name faddr
+                end
+              else
+                default ()
             else
-              default ()
-          else if is_library_stub faddr then
-            begin
-              fndata#set_library_stub;
-              set_library_stub_name faddr
-            end
-          else
-            default ()
-        else
-          ch_error_log#add
-            "no function found"
-            (LBLOCK [STR "construct functions: "; faddr#toPretty])
-      ) fnentrypoints ;
+              ch_error_log#add
+                "no function found"
+                (LBLOCK [STR "construct functions: "; faddr#toPretty])
+          ) !newfns;
+        newfns := addedfns#toList;
+        addedfns#removeList addedfns#toList
+      end
+    done;
+
+    arm_assembly_functions#identify_dataref_datablocks;
+
     List.iter (fun faddr ->
         begin
           count := !count + 1;
-          construct_assembly_function !count faddr
+          ignore (construct_assembly_function ~check:true !count faddr)
         end) arm_assembly_functions#add_functions_by_preamble;
+
     record_call_targets_arm ();
     associate_condition_code_users ();
-    pverbose [STR "Construction functions: Done"; NL]
+    pverbose [STR "Construct functions: Done"; NL];
+
+    arm_assembly_functions#identify_datablocks;
   end

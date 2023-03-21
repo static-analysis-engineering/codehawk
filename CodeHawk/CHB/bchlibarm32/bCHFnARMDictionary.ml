@@ -135,7 +135,7 @@ object (self)
            (instr:arm_assembly_instruction_int)
            (floc:floc_int) =
     let varinv = floc#varinv in
-    let rewrite_expr x: xpr_t =
+    let rewrite_expr ?(restrict:int option) (x: xpr_t): xpr_t =
       try
         (*
         let rec expand x =
@@ -173,7 +173,14 @@ object (self)
               xpr
           else
             xpr in
-        xpr
+        match (restrict, xpr) with
+        | (Some 4, XConst (IntConst n)) ->
+           if n#geq numerical_e32 then
+             XConst (IntConst (n#sub numerical_e32))
+           else
+             xpr
+        | _ ->
+           xpr
       with IO.No_more_input ->
             begin
               pr_debug [
@@ -343,7 +350,7 @@ object (self)
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let result = XOp (XPlus, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
+         let rresult = rewrite_expr ?restrict:(Some 4) result in
          let _ = ignore (get_string_reference floc rresult) in
          let rdefs = [get_rdef xrn; get_rdef xrm] in
          let uses = get_def_use vrd in
@@ -1829,7 +1836,7 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | VectorConvert (_, c, _, _, dst, src) ->
+      | VectorConvert (_, _, c, _, _, dst, src, _) ->
          let vdst = dst#to_variable floc in
          let xsrc = src#to_expr floc in
          let rxsrc = rewrite_expr xsrc in

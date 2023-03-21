@@ -32,6 +32,8 @@ open BCHLibTypes
 open BCHARMTypes
 
 
-(** Create and return an assembly function from assembly instructions starting at
-    the given address.*)
-val construct_arm_assembly_function: doubleword_int -> arm_assembly_function_int 
+(** [construct_arm_assembly_function faddr] constructs assembly function [fn] at
+    address [faddr] and returns a list of new function entry points (discovered
+    during the construction) and [fn].*)
+val construct_arm_assembly_function:
+  doubleword_int -> (doubleword_int list * arm_assembly_function_int)

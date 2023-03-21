@@ -118,6 +118,18 @@ object (self)
 
   method get_block_count = List.length blocks
 
+  method get_not_valid_instr_count =
+    let c = ref 0 in
+    let _ =
+      self#iteri (fun _ _ instr ->
+          match instr#get_opcode with
+          | NotRecognized _
+            | PermanentlyUndefined _
+            | OpcodeUndefined _
+            | OpcodeUnpredictable _ -> c := !c + 1
+          | _ -> ()) in
+    !c
+
   method get_function_md5 =
     byte_string_to_printed_string (Digest.string self#get_bytes_as_hexstring)
 
