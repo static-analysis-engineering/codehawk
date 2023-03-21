@@ -68,6 +68,7 @@ object (self)
   val mutable library_stub = false
   val mutable inlined_blocks = []
   val mutable functiontype = t_unknown
+  val mutable callsites = 0
 
   method set_function_type (ty: btype_t) = functiontype <- ty
 
@@ -86,6 +87,19 @@ object (self)
   method set_virtual = virtual_function <- true
 
   method set_library_stub = library_stub <- true
+
+  method add_callsite = callsites <- callsites + 1
+
+  method remove_callsite =
+    if callsites > 0 then
+      begin
+        callsites <- callsites -1;
+        callsites
+      end
+    else
+      0
+
+  method has_callsites = callsites > 0
 
   method add_name (s:string) =
     if List.mem s names then () else names <- s::names
@@ -198,6 +212,9 @@ object (self)
         H.add table ix fe ;
         fe
       end
+
+  method remove_function (fa: doubleword_int) =
+    H.remove table fa#index
 
   method get_function (fa: doubleword_int) =
     if self#is_function_entry_point fa then

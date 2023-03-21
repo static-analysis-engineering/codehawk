@@ -235,18 +235,41 @@ object (self)
     else
       []
 
-  method set_arm_thumb_switch (addr: string) (arch: string) =
+  method set_arm_thumb_switch (addr: doubleword_int) (arch: string) =
     begin
       chlog#add
-        "arm-thumb switch" (LBLOCK [STR addr; STR ": "; STR arch]);
-      H.add arm_thumb_switches addr arch
+        "arm-thumb switch" (LBLOCK [addr#toPretty; STR ": "; STR arch]);
+      H.add arm_thumb_switches addr#index arch
     end
 
-  method get_arm_thumb_switch (a:string): string option =
-    if H.mem arm_thumb_switches a then
-      Some (H.find arm_thumb_switches a)
+  method get_arm_thumb_switch (a: doubleword_int): string option =
+    if H.mem arm_thumb_switches a#index then
+      Some (H.find arm_thumb_switches a#index)
     else
       None
+
+  method is_thumb (addr: doubleword_int) =
+    if system_settings#has_thumb then
+      let index = addr#index in
+      let switches =
+        List.sort
+          (fun (k1, _) (k2, _) -> Stdlib.compare k1 k2)
+          (H.fold (fun k v a -> (k, v) :: a) arm_thumb_switches []) in
+      let result =
+        List.fold_left (fun (prev, aarch) (adr, arch) ->
+            match aarch with
+            | Some _ -> (prev, aarch)
+            | _ ->
+               if adr > index then
+                 (prev, Some prev)
+               else
+                 (arch, None)) ("A", None) switches in
+      match result with
+      | (_, Some "A") -> false
+      | (_, Some "T") -> true
+      | _ -> false
+    else
+      false
 
   method import_ida_function_entry_points =
     match load_ida_dbfe_file () with
@@ -1122,7 +1145,8 @@ object (self)
           let get = n#getAttribute in
           let iaddr = get "ia" in
           let tgtarch = get "tgt" in
-          H.add arm_thumb_switches iaddr tgtarch)
+          let iaddr = TR.tget_ok (string_to_doubleword iaddr) in
+          H.add arm_thumb_switches iaddr#index tgtarch)
         (node#getTaggedChildren "switch");
       chlog#add
         "arm-thumb userdata"
