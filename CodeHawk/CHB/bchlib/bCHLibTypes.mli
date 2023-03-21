@@ -434,7 +434,7 @@ type dw_index_t = int
 
 
 (** representation of a 32-bit unsigned value (created from and indexed by a
-    64-bit ocaml integer, assumed to be the default width).*)
+    64-bit ocaml integer, assumed to be the default width). Immutable. *)
 class type doubleword_int =
 object ('a)
   (* identification *)
@@ -458,6 +458,19 @@ object ('a)
   (** [dw#le other] returns true if [dw#value] is less than or equal to
       [other#value].*)
   method le: 'a -> bool
+
+  (* alignment *)
+
+  (** [dw#to_aligned true n] returns a pair (dw', d), where dw' is the doubleword
+      with value the nearest value greater than or equal to the value of dw
+      that is a multiple of [n], and [d] the difference [dw' - dw].
+
+      [dw#to_aligned false n] (default) returns a pair (dw', d) where dw' is the
+      doubleword with value the nearest value less than or equal to the value of
+      [dw] that is a multiple of [n], and [d] the difference [dw - dw'].
+
+      @raises Invalid_argument if [n <= 0]. *)
+  method to_aligned: ?up:bool -> int -> ('a * int)
 
   (* conversion *)
 
@@ -722,6 +735,11 @@ end
 
 (* =========================================================== Data block === *)
 
+(** Represents a fragment of a code section that holds data rather than code.
+
+    The object is mutable; only the start address is fixed; the end address
+    can be changed (with the [truncate] method), as well as the name and data
+    string.*)
 class type data_block_int =
 object ('a)
   method compare: 'a -> int
@@ -730,6 +748,13 @@ object ('a)
   method set_data_string: string -> unit
   method set_name: string -> unit
   method set_data_table: (string * string) list -> unit
+
+  (** [truncate eaddr] truncates this data block such that it has end-address
+      [eaddr].
+
+      Primarily used to ensure that a data block does not cross a section
+      boundary.*)
+  method truncate: doubleword_int -> unit
 
   (* accessors *)
   method get_start_address: doubleword_int
@@ -1089,6 +1114,13 @@ class type function_data_int =
     method set_class_info: classname:string -> isstatic:bool -> unit
     method add_inlined_block: doubleword_int -> unit
 
+    (** Increments the number of call sites associated with this function. *)
+    method add_callsite: unit
+
+    (** Decrements the number of call sites associated with this function;
+        returns the number of remaining call sites.*)
+    method remove_callsite: int
+
     (* accessors *)
     method get_names: string list  (* raw names *)
     method get_function_name: string  (* demangled or combination of all names *)
@@ -1099,6 +1131,7 @@ class type function_data_int =
     method has_function_type: bool
     method has_name: bool
     method has_class_info: bool
+    method has_callsites: bool
     method is_non_returning: bool
     method is_incomplete: bool
     method is_ida_provided: bool
@@ -1120,6 +1153,7 @@ class type functions_data_int =
 
     method reset: unit
     method add_function: doubleword_int -> function_data_int
+    method remove_function: doubleword_int -> unit
 
     (* accessors *)
     method get_functions: function_data_int list
@@ -3414,7 +3448,10 @@ object
   method add_goto_return: doubleword_int -> doubleword_int -> unit
   method set_virtual_function_table: doubleword_int -> unit
 
-  method set_arm_thumb_switch: string -> string -> unit
+  (** [set_arm_thumb_switch addr arch] records a switch from arm to thumb at
+      address [addr] if [arch] is ['T'] and a switch from thumb to arm if [arch]
+      is ['A'].*)
+  method set_arm_thumb_switch: doubleword_int -> string -> unit
 
   method import_ida_function_entry_points: unit
 
@@ -3460,7 +3497,12 @@ object
   method get_cfnop: doubleword_int -> int * string
   method get_cfjmp: doubleword_int -> doubleword_int * int * string
   method get_successors: doubleword_int -> doubleword_int list
-  method get_arm_thumb_switch: string -> string option
+
+  (** [get_arm_thumb_switch addr] returns ['A'] if the architecture switches
+      from thumb to arm at address [addr], returns ['T'] if the architecture switches
+      from arm to thumb at address [addr], or None otherwise.*)
+  method get_arm_thumb_switch: doubleword_int -> string option
+
   method get_argument_constraints:
            (* name, offset, lower bound, upper bound *)
            string -> (string * int option * int option * int option) list
@@ -3507,6 +3549,11 @@ object
   method is_cfjmp: doubleword_int -> bool
   method is_inlined_function: doubleword_int -> bool
   method is_in_trampoline: doubleword_int -> bool
+
+  (** [is_thumb addr] returns true if the architecture includes (arm) thumb
+      instructions and the virtual address [addr] is in a code section that
+      is thumb. Otherwise returns false.*)
+  method is_thumb: doubleword_int -> bool
 
   (* xml *)
   method read_xml_constant_file    : string -> unit
