@@ -967,6 +967,81 @@ let arm_opcode_tests () =
         index_check_opc_c opc c "SHA1M" 4);
 
     TS.add_simple_test
+      ~title:"SHA1HashUpdateParity"
+      (fun () ->
+        let dt = VfpSize 32 in
+        let vd = armxquadreg_op WR in
+        let vn = armxquadreg_op RD in
+        let vm = armxquadreg_op RD in
+        let c = cc () in
+        let opc = SHA1HashUpdateParity (c, dt, vd, vn, vm) in
+        index_check_opc_c opc c "SHA1P" 4);
+
+    TS.add_simple_test
+      ~title:"SHA1ScheduleUpdate0"
+      (fun () ->
+        let dt = VfpSize 32 in
+        let vd = armxquadreg_op WR in
+        let vn = armxquadreg_op RD in
+        let vm = armxquadreg_op RD in
+        let c = cc () in
+        let opc = SHA1ScheduleUpdate0 (c, dt, vd, vn, vm) in
+        index_check_opc_c opc c "SHA1SU0" 4);
+
+    TS.add_simple_test
+      ~title:"SHA1ScheduleUpdate1"
+      (fun () ->
+        let dt = VfpSize 32 in
+        let vd = armxquadreg_op WR in
+        let vm = armxquadreg_op RD in
+        let c = cc () in
+        let opc = SHA1ScheduleUpdate1 (c, dt, vd, vm) in
+        index_check_opc_c opc c "SHA1SU1" 3);
+
+    TS.add_simple_test
+      ~title:"SHA256HashUpdatePart1"
+      (fun () ->
+        let dt = VfpSize 32 in
+        let vd = armxquadreg_op WR in
+        let vn = armxquadreg_op RD in
+        let vm = armxquadreg_op RD in
+        let c = cc () in
+        let opc = SHA256HashUpdatePart1 (c, dt, vd, vn, vm) in
+        index_check_opc_c opc c "SHA256H" 4);
+
+    TS.add_simple_test
+      ~title:"SHA256HashUpdatePart2"
+      (fun () ->
+        let dt = VfpSize 32 in
+        let vd = armxquadreg_op WR in
+        let vn = armxquadreg_op RD in
+        let vm = armxquadreg_op RD in
+        let c = cc () in
+        let opc = SHA256HashUpdatePart2 (c, dt, vd, vn, vm) in
+        index_check_opc_c opc c "SHA256H2" 4);
+
+    TS.add_simple_test
+      ~title:"SHA256ScheduleUpdate0"
+      (fun () ->
+        let dt = VfpSize 32 in
+        let vd = armxquadreg_op WR in
+        let vm = armxquadreg_op RD in
+        let c = cc () in
+        let opc = SHA256ScheduleUpdate0 (c, dt, vd, vm) in
+        index_check_opc_c opc c "SHA256SU0" 3);
+
+    TS.add_simple_test
+      ~title:"SHA256ScheduleUpdate1"
+      (fun () ->
+        let dt = VfpSize 32 in
+        let vd = armxquadreg_op WR in
+        let vn = armxquadreg_op RD in
+        let vm = armxquadreg_op RD in
+        let c = cc () in
+        let opc = SHA256ScheduleUpdate1 (c, dt, vd, vn, vm) in
+        index_check_opc_c opc c "SHA256SU1" 4);
+
+    TS.add_simple_test
       ~title:"SignedBitFieldExtract"
       (fun () ->
         let rd = armreg_op WR in
@@ -1631,6 +1706,28 @@ let arm_opcode_tests () =
         index_check_opc_c opc c "VORR" 4);
 
     TS.add_simple_test
+      ~title:"VectorBitwiseOrNot (Quad, register)"
+      (fun () ->
+        let qd = armxquadreg_op WR in
+        let qn = armxquadreg_op RD in
+        let qm = armxquadreg_op RD in
+        let c = cc () in
+        let dt = VfpNone in
+        let opc = VectorBitwiseOrNot (c, dt, qd, qn, qm) in
+        index_check_opc_c opc c "VORN" 4);
+
+    TS.add_simple_test
+      ~title:"VectorBitwiseSelect (Double)"
+      (fun () ->
+        let dd = armxdoublereg_op WR in
+        let dn = armxdoublereg_op RD in
+        let dm = armxdoublereg_op RD in
+        let c = cc () in
+        let dt = VfpNone in
+        let opc = VectorBitwiseSelect (c, dt, dd, dn, dm) in
+        index_check_opc_c opc c "VBSL" 4);
+
+    TS.add_simple_test
       ~title:"VCompare (register)"
       (fun () ->
         let nan = boolvalue () in
@@ -1651,8 +1748,9 @@ let arm_opcode_tests () =
         let dt1 = VfpSignedInt 32 in
         let dt2 = VfpFloat 32 in
         let c = cc () in
-        let opc = VectorConvert (false, c, dt1, dt2, qd, qm) in
-        index_check_opc_c opc c "VCVT" 5);
+        let imm0_op = arm_immediate_op imm0 in
+        let opc = VectorConvert (false, false, c, dt1, dt2, qd, qm, imm0_op) in
+        index_check_opc_c opc c "VCVT" 7);
 
     TS.add_simple_test
       ~title:"VDivide (double-precision)"
@@ -1905,6 +2003,19 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = VectorReverseWords (c, dt, vd, vm) in
         index_check_opc_c opc c "VREV32" 3);
+
+    TS.add_simple_test
+      ~title:"VectorRoundingHalvingAdd"
+    (fun () ->
+      let vd = armxdoublereg_op WR in
+      let vn = armxdoublereg_op RD in
+      let vm = armxdoublereg_op RD in
+      let size = 8 lsl (intvalue 3) in
+      let unsigned = boolvalue () in
+      let dt = if unsigned then VfpUnsignedInt size else VfpSignedInt size in
+      let c = cc () in
+      let opc = VectorRoundingHalvingAdd (c, dt, vd, vn, vm) in
+      index_check_opc_c opc c "VRHADD" 4);
 
     TS.add_simple_test
       ~title:"VectorRoundingShiftRightAccumulate"

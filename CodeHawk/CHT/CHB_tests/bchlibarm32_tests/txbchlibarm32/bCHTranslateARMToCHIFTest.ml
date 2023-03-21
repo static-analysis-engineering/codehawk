@@ -86,7 +86,7 @@ open BCHARMTestSupport
 
 
 let testname = "bCHTranslateARMToCHIFTest"
-let lastupdated = "2023-03-01"
+let lastupdated = "2023-03-20"
 
 let x2p = xpr_formatter#pr_expr
 let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
@@ -194,8 +194,8 @@ let thumb_chif_conditionxprs () =
             let _ = functions_data#reset in
             let _ = arm_assembly_functions#reset in
             let _ = system_settings#set_thumb in
-            let _ = SI.system_info#set_arm_thumb_switch cfaddr "T" in
             let faddr = make_dw cfaddr in
+            let _ = SI.system_info#set_arm_thumb_switch faddr "T" in
             let fn = ARMU.thumb_function_setup faddr bytes in
             let _ =
               for i = 1 to iterations do
@@ -249,8 +249,8 @@ let thumb_instrxdata_conditionxprs () =
             let _ = functions_data#reset in
             let _ = arm_assembly_functions#reset in
             let _ = system_settings#set_thumb in
-            let _ = SI.system_info#set_arm_thumb_switch cfaddr "T" in
             let faddr = make_dw cfaddr in
+            let _ = SI.system_info#set_arm_thumb_switch faddr "T" in
             let iccaddr = make_dw ccaddr in
             let fn = ARMU.thumb_function_setup faddr bytes in
             let _ =
