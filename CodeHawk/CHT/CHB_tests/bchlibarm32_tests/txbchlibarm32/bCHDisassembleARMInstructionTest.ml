@@ -97,6 +97,7 @@ let arm_basic () =
       ("CMN",    "010070e3", "CMN            R0, #1");
       ("CMP",    "010050e3", "CMP            R0, #1");
       ("CMPNE",  "00005111", "CMPNE          R1, R0");
+      ("LDCL",   "02a1f0ec", "LDCL           p1, c10, [R0],#8");
       ("LDM",    "1c5091e8", "LDM            R1, {R2,R3,R4,R12,LR}");
       ("LDR",    "001094e5", "LDR            R1, [R4]");
       ("LDRB",   "1000d5e5", "LDRB           R0, [R5,#0x10]");
@@ -216,6 +217,7 @@ let arm_vector () =
       ("VMOV.I8",                     "584ec0f2", "VMOV.I8        Q10, #8");
       ("VMOV.32-core-to-scalar",      "90cb25ee", "VMOV.32        D21[1], R12");
       ("VMOV-R-A1",                   "502120f2", "VMOV           Q1, Q0");
+      ("VMSR",                        "101ae1ee", "VMSR           FPSCR, R1");
       ("VMULL.P64",                   "a94ea9f2", "VMULL.P64      Q2, D25, D25");
       ("VPOP",                        "108bbdec", "VPOP           {D8,D9,D10,D11,D12,D13,D14,D15}");
       ("VPUSH",                       "108b2bed", "VPUSH          {D8,D9,D10,D11,D12,D13,D14,D15}");
