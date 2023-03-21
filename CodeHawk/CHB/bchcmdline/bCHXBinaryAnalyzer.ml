@@ -113,7 +113,6 @@ let set_datablocks = ref false   (* only supported for arm *)
 
 let architecture = ref "x86"
 let fileformat = ref "pe"
-let analysisrepeats = ref 1
 
 let stream_start_address = ref wordzero
 let set_stream_start_address s =
@@ -161,9 +160,7 @@ let speclist =
     ("-fn_no_lineq", Arg.String (fun s -> add_no_lineq s),
      "do not apply linear equality analysis to the function with the given address");
     ("-preamble_cutoff", Arg.Int system_info#set_preamble_cutoff,
-     "minimum number of preamble instructions observed to add as function entry point");
-    ("-analysisrepeats", Arg.Int (fun i -> analysisrepeats := i),
-     "repeat the analysis the given number of times in one cycle");
+     "preamble cutoff factor for generating function entry points");
     ("-save_cfgs", Arg.Unit (fun () -> savecfgs := true),
      "save basic blocks and loops (applicable to .exe file)") ;
     ("-summaries", Arg.String system_settings#set_summary_jar,
@@ -502,22 +499,34 @@ let main () =
       begin
         if !save_asm then
           begin
+            let datarefs = get_arm_data_references () in
+            pverbose [STR "Saving asm file ..."; NL];
             file_output#saveFile
               (get_asm_listing_filename ())
-              (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ()));
+              (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString
+                      ~datarefs ()));
+            pverbose [STR "Saving orphan file ..."; NL];
 	    file_output#saveFile
               (get_orphan_code_listing_filename ())
 	      (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
+            pverbose [STR "Saving duplicates file ..."; NL];
             file_output#saveFile
               (get_duplicate_coverage_filename ())
               (STR (BCHARMAssemblyFunctions.arm_assembly_functions#duplicates_to_string));
-            save_arm_assembly_instructions ();
+            (* pverbose [STR "Saving arm-assembly-instructions ..."; NL];
+            save_arm_assembly_instructions (); *)
+            pverbose [STR "Saving system info ..."; NL];
             save_system_info ();
+            pverbose [STR "Saving arm-dictionary ..."; NL];
             save_arm_dictionary ();
+            pverbose [STR "Saving interface-dictionary ..."; NL];
             save_interface_dictionary ();
+            pverbose [STR "Saving bcdictionary ..."; NL];
             save_bcdictionary ();
+            pverbose [STR "Saving bdictionary ..."; NL];
             save_bdictionary ()
           end;
+        pverbose [STR "Saving log files ..."; NL];
         save_log_files "disassemble"
       end
                 
@@ -669,13 +678,14 @@ let main () =
           (fun f -> parse_cil_file ~removeUnused:false f) system_info#ifiles in
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
+      let analysisstart = Unix.gettimeofday () in
       let _ = disassemble_arm_sections () in
       let _ = construct_functions_arm () in
-      let _ =
-        for i = 0 to (!analysisrepeats - 1) do
+      let _ = analyze_arm analysisstart in
+      (*        for i = 0 to (!analysisrepeats - 1) do
           let analysisstart = Unix.gettimeofday () in
           analyze_arm analysisstart
-        done in
+        done in *)
       let _ = file_metrics#set_disassembly_results
                 (get_arm_disassembly_metrics ()) in
       begin
@@ -684,7 +694,7 @@ let main () =
         save_file_results ();
         save_global_state ();
         arm_analysis_results#save;
-        save_arm_assembly_instructions ();
+        (* save_arm_assembly_instructions (); *)
         save_arm_dictionary ();
         save_bc_files ();
         save_interface_dictionary ();
