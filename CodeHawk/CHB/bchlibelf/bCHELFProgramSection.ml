@@ -31,6 +31,7 @@
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHTraceResult
 open CHXmlDocument
 
@@ -38,6 +39,7 @@ open CHXmlDocument
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHDoubleword
+open BCHFunctionData
 open BCHLibTypes
 open BCHStreamWrapper
 open BCHSystemInfo
@@ -47,6 +49,7 @@ open BCHELFDictionary
 open BCHELFSection
 open BCHELFTypes
 
+module H = Hashtbl
 module TR = CHTraceResult
 
 
@@ -59,10 +62,64 @@ let fail_traceresult (msg: string) (r: 'a traceresult): 'a =
 
 
 class elf_program_section_t
-        (s:string) (vaddr:doubleword_int):elf_program_section_int =
+        ?(is_got=false)
+        (s:string)
+        (vaddr:doubleword_int):elf_program_section_int =
 object (self)
 
   inherit elf_raw_section_t s vaddr as super
+
+  val got_table = H.create 3
+
+  method is_got = is_got
+
+  method read_got =
+    if self#is_got then
+      try
+        let ch =
+          make_pushback_stream ~little_endian:system_info#is_little_endian s in
+        let n = (String.length s) / 4 in
+        let c = ref 0 in
+        let addr = ref vaddr in
+        begin
+          while !c < n do
+            let entry = ch#read_doubleword in
+            begin
+              H.add got_table !addr#to_hex_string entry;
+              c := !c + 1;
+              addr := !addr#add_int 4
+            end
+          done;
+          chlog#add
+            "global offset table"
+            (LBLOCK [STR "Number of entries: "; INT !c])
+        end
+      with
+      | IO.No_more_input ->
+         ch_error_log#add
+           "no more input"
+           (LBLOCK [STR "Unable to read the global offset table"])
+
+  method get_got_value (a: doubleword_int) =
+    if self#is_got then
+      if H.mem got_table a#to_hex_string then
+        H.find got_table a#to_hex_string
+      else
+        raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "Global offset table: no entry found for "; a#toPretty]))
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Program section is not a global offset table"]))
+
+  method get_got_values =
+    if self#is_got then
+      H.fold (fun k v a -> (k, v)::a) got_table []
+    else
+      []
 
   method get_value (a:doubleword_int) =
     try
@@ -106,11 +163,18 @@ end
 
 let mk_elf_program_section
       (s:string) (h:elf_section_header_int) (vaddr:doubleword_int) =
-  new elf_program_section_t s vaddr
+  let is_got = h#get_section_name = ".got" in
+  let psection = new elf_program_section_t ~is_got s vaddr in
+  let _ = if is_got then psection#read_got in
+  psection
 
 
 let read_xml_elf_program_section (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
   let vaddr = TR.tget_ok (string_to_doubleword (node#getAttribute "vaddr")) in
-  new elf_program_section_t s vaddr
+  let header = node#getTaggedChild "section-header" in
+  let is_got = (header#getAttribute "name") = ".got" in
+  let psection = new elf_program_section_t ~is_got s vaddr in
+  let _ = if is_got then psection#read_got in
+  psection
   

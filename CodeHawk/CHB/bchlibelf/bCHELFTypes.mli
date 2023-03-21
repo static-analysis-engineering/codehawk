@@ -49,7 +49,7 @@ open BCHLibTypes
 
 type elf_section_header_type_t = 
   | SHT_NullSection 
-  | SHT_ProgBits 
+  | SHT_ProgBits
   | SHT_SymTab 
   | SHT_StrTab 
   | SHT_Rela 
@@ -440,6 +440,7 @@ class type elf_symbol_table_entry_int =
     method write_xml: xml_element_int -> unit
   end
 
+
 class type elf_symbol_table_int =
   object
     method read: unit
@@ -459,6 +460,7 @@ class type elf_symbol_table_int =
     method toPretty: pretty_t
   end
 
+
 class type elf_relocation_table_entry_int =
   object
     method id: int
@@ -475,6 +477,7 @@ class type elf_relocation_table_entry_int =
     method is_function: bool
     method to_rep_record: string list * int list
   end
+
 
 class type elf_relocation_table_int =
   object
@@ -494,6 +497,7 @@ class type elf_relocation_table_int =
     method toPretty: pretty_t
   end
 
+
 class type elf_dynamic_table_entry_int =
   object
     method id: int
@@ -506,6 +510,7 @@ class type elf_dynamic_table_entry_int =
     method get_d_un: numerical_t
     method to_rep_record: string list * int list
   end
+
 
 class type elf_dynamic_table_int =
   object
@@ -520,6 +525,7 @@ class type elf_dynamic_table_int =
     method write_xml_entries: xml_element_int -> unit
     method toPretty: pretty_t
   end
+
 
 class type elf_dynamic_segment_entry_int =
   object
@@ -637,13 +643,17 @@ class type elf_dynamic_segment_int =
 
 class type elf_program_section_int =
   object
+    method read_got: unit
     method get_size: int
     method get_xstring: string
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
     method get_value: doubleword_int -> doubleword_int
     method get_string_reference: doubleword_int -> string option
+    method get_got_value: doubleword_int -> doubleword_int
+    method get_got_values: (string * doubleword_int) list
     method includes_VA: doubleword_int -> bool
+    method is_got: bool
     method write_xml: xml_element_int -> unit
     method toPretty: pretty_t
   end
@@ -854,15 +864,15 @@ object
   method set_link: doubleword_int -> unit
 
   (* accessors *)
-  method get_name      : doubleword_int
-  method get_type      : doubleword_int
-  method get_flags     : doubleword_int
-  method get_addr      : doubleword_int
-  method get_offset    : doubleword_int
-  method get_size      : doubleword_int
-  method get_link      : doubleword_int
-  method get_info      : doubleword_int
-  method get_addralign : doubleword_int
+  method get_name: doubleword_int
+  method get_type: doubleword_int
+  method get_flags: doubleword_int
+  method get_addr: doubleword_int
+  method get_offset: doubleword_int
+  method get_size: doubleword_int
+  method get_link: doubleword_int
+  method get_info: doubleword_int
+  method get_addralign: doubleword_int
   method get_entry_size: doubleword_int
 
   method get_section_name: string
@@ -881,7 +891,7 @@ object
 
   (* xml *)
   method write_xml: xml_element_int -> unit
-  method read_xml : xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
 
   (* printing *)
   method toPretty: pretty_t
@@ -908,10 +918,12 @@ object
   method get_relocation: doubleword_int -> string option
   method get_containing_section: doubleword_int -> elf_raw_section_int option
   method get_program_value: doubleword_int -> doubleword_int
+  method get_global_offset_table_value: doubleword_int -> doubleword_int
 
   (* predicates *)
   method has_sections: bool
   method is_program_address: doubleword_int -> bool
+  method is_global_offset_table_address: doubleword_int -> bool
   method has_xsubstring: doubleword_int -> int -> bool
   method has_debug_info: bool
   method has_debug_abbrev: bool
