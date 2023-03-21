@@ -50,7 +50,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDoublewordTest"
-let lastupdated = "2022-12-09"
+let lastupdated = "2023-03-18"
 
 
 let constant_string_to_doubleword (s: string) =
@@ -190,6 +190,27 @@ let doubleword_basic () =
       (fun () ->
         let dw = constant_string_to_doubleword "0xffffffff" in
         A.equal_string "-0x1" dw#to_signed_hex_string);
+
+    TS.add_simple_test
+      ~title:"to_aligned_0"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0x4040" in
+        let recvd = dw#to_aligned 4 in
+        BA.equal_doubleword_alignment ("0x4040", 0) recvd);
+
+    TS.add_simple_test
+      ~title:"to_aligned_2"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0x4042" in
+        let recvd = dw#to_aligned 4 in
+        BA.equal_doubleword_alignment ("0x4040", 2) recvd);
+
+    TS.add_simple_test
+      ~title:"to_aligned_up_2"
+      (fun () ->
+        let dw = constant_string_to_doubleword "0x4042" in
+        let recvd = dw#to_aligned ~up:true 4 in
+        BA.equal_doubleword_alignment ("0x4044", 2) recvd);
 
     TS.add_simple_test
       ~title:"unset-highest-bit-i"

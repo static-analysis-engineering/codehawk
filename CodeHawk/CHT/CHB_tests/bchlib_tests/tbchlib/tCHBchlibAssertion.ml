@@ -72,6 +72,17 @@ let equal_doubleword_result
       (TR.tget_ok dwr)
 
 
+let equal_doubleword_alignment
+      ?(msg="") (expected: (string * int)) (received: (doubleword_int * int)) =
+  let (recvdw, revdr) = received in
+  let rd = recvdw#to_hex_string in
+  A.make_equal
+    (fun (xs, xi) (rd, ri) -> (xs = rd) && (xi = ri))
+    (fun (s, i) -> "(" ^ s ^ ", " ^ (string_of_int i) ^ ")")
+    expected
+    (rd, revdr)
+
+
 let equal_location =
   A.make_equal (fun l1 l2 -> (l1#compare l2) = 0) (fun l -> l#ci)
 
