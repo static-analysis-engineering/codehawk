@@ -72,7 +72,7 @@ object (self)
       (make_jumptable
          ~end_address:self#end_address
          ~start_address
-         ~targets:(self#default_target :: self#target_addrs))
+         ~targets:(self#default_target :: self#target_addrs) ())
 
   method toCHIF (faddr: doubleword_int) = []
 

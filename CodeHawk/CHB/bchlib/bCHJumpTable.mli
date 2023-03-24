@@ -38,6 +38,7 @@ val make_jumptable:
   ?end_address: doubleword_int option
   -> start_address:doubleword_int
   -> targets:doubleword_int list
+  -> unit
   -> jumptable_int traceresult
   
 val split_jumptable:

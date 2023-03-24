@@ -192,7 +192,8 @@ end
 let make_jumptable
       ?(end_address: doubleword_int option=None)
       ~(start_address:doubleword_int)
-      ~(targets:doubleword_int list): jumptable_int TR.traceresult =
+      ~(targets:doubleword_int list)
+      (): jumptable_int TR.traceresult =
   let end_address =
     match end_address with
     | Some e -> e
@@ -213,7 +214,7 @@ let split_jumptable
     List.fold_left (fun (offset, jts) size ->
         let start_address = startaddr#add_int (offset *  4) in
         let targets = list_sub alltargets offset size in
-        let newtable = make_jumptable ~end_address:None ~start_address ~targets in
+        let newtable = make_jumptable ~end_address:None ~start_address ~targets () in
         TR.tfold
           ~ok:(fun jt -> (offset + size, jt::jts))
           ~error:(fun _ -> (offset + size, jts))
@@ -233,7 +234,7 @@ let read_xml_jumptable (node:xml_element_int) =
   let table =
     TR.tbind
       ~msg:("BCHJumpTable.read_xml_jumptable")
-      (fun saddr -> make_jumptable saddr targets)
+      (fun saddr -> make_jumptable saddr targets ())
       startAddress in
   TR.tbind (fun jt ->
       begin
@@ -265,7 +266,7 @@ let find_jumptable is_code_address ch len start_address target1 =
             (mk_tracelog_spec ~tag:"find_jumptable" start_address#to_hex_string)
             (fun jt -> Some jt)
             None
-            (make_jumptable ~end_address:None ~start_address:start ~targets))
+            (make_jumptable ~end_address:None ~start_address:start ~targets ()))
       None
       trdiff in
 
@@ -349,7 +350,7 @@ let find2_jumptable is_code_address ch len start_address target1 =
             (mk_tracelog_spec ~tag:"find2_jumptable" start_address#to_hex_string)
             (fun jt -> Some jt)
             None
-	    (make_jumptable start_address (List.rev !targets))
+	    (make_jumptable start_address (List.rev !targets) ())
 	end
       else None
     else None
