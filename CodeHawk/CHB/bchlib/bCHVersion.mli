@@ -13,6 +13,7 @@ class version_info_t :
   -> ?licensee:string option
   -> version:string
   -> date:string
+  -> unit
   -> object
     method get_date: string
     method get_licensee: string option

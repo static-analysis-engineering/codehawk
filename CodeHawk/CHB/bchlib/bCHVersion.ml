@@ -47,7 +47,8 @@ class version_info_t
   ?(maxfilesize=None)
   ?(licensee=None)
   ~(version:string)
-  ~(date:string) =
+  ~(date:string)
+  () =
 object (self)
 
   method get_version = version
@@ -98,3 +99,4 @@ let version = new version_info_t
   ~date:"2023-03-25"
   ~licensee: None
   ~maxfilesize: None
+  ()
