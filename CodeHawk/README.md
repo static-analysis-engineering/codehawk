@@ -24,8 +24,8 @@ sudo apt update -y
 sudo apt install opam
 git clone https://github.com/static-analysis-engineering/codehawk.git
 opam init --bare --no-setup --disable-sandboxing
-opam switch create codehawk-4.09.0 4.09.0 --no-switch
-eval $(opam env --switch=codehawk-4.09.0 --set-switch)
+opam switch create codehawk-4.11.2 4.11.2 --no-switch
+eval $(opam env --switch=codehawk-4.11.2 --set-switch)
 opam install ocamlfind zarith camlzip extlib goblint-cil
 cd codehawk/CodeHawk
 ```
@@ -52,8 +52,8 @@ sudo apt update -y
 sudo apt install opam
 git clone https://github.com/static-analysis-engineering/codehawk.git
 opam init --bare --no-setup --disable-sandboxing
-opam switch create codehawk-4.09.0 4.09.0 --no-switch
-eval $(opam env --switch=codehawk-4.09.0 --set-switch)
+opam switch create codehawk-4.11.2 4.11.2 --no-switch
+eval $(opam env --switch=codehawk-4.11.2 --set-switch)
 opam install ocamlfind zarith camlzip extlib lablgtk lablgtk-extras goblint-cil
 cd codehawk/CodeHawk
 ./full_make.sh
@@ -166,8 +166,8 @@ Before the final "shake" command in one of the above instructions:
 
 ```
 opam init --bare --no-setup --disable-sandboxing
-opam switch create codehawk-4.09.0 4.09.0 --no-switch
-eval $(opam env --switch=codehawk-4.09.0 --set-switch)
+opam switch create codehawk-4.11.2 4.11.2 --no-switch
+eval $(opam env --switch=codehawk-4.11.2 --set-switch)
 opam install ocamlfind zarith camlzip extlib lablgtk lablgtk-extras
 /path/to/shake
 ```

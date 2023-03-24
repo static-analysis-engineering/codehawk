@@ -21,7 +21,7 @@ jobs:
         rm CodeHawk-C/chc/bin/linux/parseFile
     - uses: avsm/setup-ocaml@v1
       with:
-        ocaml-version: 4.09.0
+        ocaml-version: 4.11.2
     - name: Install dependencies
       run: |
         opam install extlib camlzip zarith ocamlbuild goblint-cil=1.8.2
