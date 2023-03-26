@@ -67,6 +67,7 @@ open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
+open BCHARMCallSitesRecords
 open BCHARMInstructionAggregate
 open BCHARMJumptable
 open BCHARMPseudocode
@@ -169,7 +170,7 @@ let disassemble_arm_section
   try
     let _ =
       pverbose [
-          STR "disassemble thumb instructions: ";
+          STR "disassemble arm/thumb instructions: ";
           sectionbase#toPretty;
           STR "; size: ";
           INT sectionsize;
@@ -199,7 +200,10 @@ let disassemble_arm_section
                () in
         try
           if is_data_block iaddr then
-            skip_data_block prevPos ch
+            begin
+              (* pverbose [STR "Skip data block at "; iaddr#toPretty; NL]; *)
+              skip_data_block prevPos ch
+            end
           else
             if system_settings#has_thumb && !mode = "thumb" then
               (* Thumb mode *)
@@ -253,7 +257,13 @@ let disassemble_arm_section
                     STR !mode]);
              raise (BCH_failure p)
            end
-      done
+      done;
+      pverbose [
+          STR "  ...  finished disassembly of ";
+          sectionbase#toPretty;
+          STR "; size: ";
+          INT sectionsize;
+          NL]
     end
   with
   | BCH_failure p ->
@@ -270,7 +280,7 @@ let disassemble_arm_section
 
 let disassemble_arm_sections () =
   let xSections = elf_header#get_executable_sections in
-  let (startOfCode, endOfCode, sectionaddrs) =
+  let (startOfCode, endOfCode, sectionaddrs, headers) =
     if (List.length xSections) = 0 then
       raise (BCH_failure (STR "Executable does not have section headers"))
     else
@@ -297,7 +307,14 @@ let disassemble_arm_sections () =
       let startOfCode = lowest#get_addr in
       let endOfCode = highest#get_addr#add highest#get_size in
       let sectionaddrs = List.map (fun (h, _) -> h#get_addr) headers in
-      (startOfCode, endOfCode, sectionaddrs) in
+      (startOfCode, endOfCode, sectionaddrs, headers) in
+  let programentrypoint = elf_header#get_program_entry_point in
+  let _ =
+    let (dw, r) = programentrypoint#to_aligned 4 in
+    begin
+      (if r = 1 then system_info#set_arm_thumb_switch dw "T");
+      ignore (functions_data#add_function dw)
+    end in
   let sizeOfCode =
     fail_tvalue
       (trerror_record
@@ -313,9 +330,20 @@ let disassemble_arm_sections () =
     List.iter (fun db ->
         let dbstart = db#get_start_address in
         let dbend = db#get_end_address in
-        List.iter (fun sa ->
-            if dbstart#lt sa && sa#le dbend then
-              let _ =
+        List.iter (fun (h, _) ->
+            let sa = h#get_addr in
+            if dbstart#lt sa && sa#lt dbend then
+              begin
+                pverbose [
+                    STR "Truncate data block at ";
+                    dbstart#toPretty;
+                    STR "; reduce end address from ";
+                    dbend#toPretty;
+                    STR " to ";
+                    sa#toPretty;
+                    STR " for section ";
+                    STR h#get_section_name;
+                    NL];
                 chlog#add
                   "truncate datablock"
                   (LBLOCK [
@@ -323,9 +351,10 @@ let disassemble_arm_sections () =
                        STR ": original end: ";
                        dbend#toPretty;
                        STR "; new end: ";
-                       sa#toPretty]) in
-              db#truncate sa) sectionaddrs) datablocks in
-  let _ = initialize_arm_instructions sizeOfCode#to_int in 
+                       sa#toPretty]);
+                db#truncate sa
+              end) headers) datablocks in
+  let _ = initialize_arm_instructions sizeOfCode#to_int in
   let _ =
     pverbose [
         STR "Create space for ";
@@ -838,6 +867,13 @@ let construct_functions_arm () =
     system_info#initialize_function_entry_points collect_function_entry_points in
   let _ = collect_call_targets () in
   let _ = set_block_boundaries () in
+  let _ = !arm_assembly_instructions#collect_callsites in
+  let _ =
+    let nonrfns = arm_callsites_records#get_non_returning_functions in
+    List.iter (fun faddr ->
+        if functions_data#is_function_entry_point faddr then
+          let fndata = functions_data#get_function faddr in
+          fndata#set_non_returning) nonrfns in
   let fnentrypoints = functions_data#get_function_entry_points in
   let newfns = ref fnentrypoints in
   let count = ref 0 in
@@ -895,6 +931,8 @@ let construct_functions_arm () =
           count := !count + 1;
           ignore (construct_assembly_function ~check:true !count faddr)
         end) arm_assembly_functions#add_functions_by_preamble;
+
+    arm_assembly_functions#identify_dataref_datablocks;
 
     record_call_targets_arm ();
     associate_condition_code_users ();

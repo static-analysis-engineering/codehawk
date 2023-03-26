@@ -231,7 +231,8 @@ object (self)
                 (c#get_app_address)::acc
               else
                 acc) [] finfo#get_callees in
-	calls := (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
+	calls :=
+          (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
       let addresses = List.map (fun f -> f#get_address) self#get_functions in
       let (orderedList,stats,cycle) = create_ordering addresses !calls in
       let _ =
@@ -281,12 +282,19 @@ object (self)
     let _ =
       List.iter (fun f ->
           f#iteri (fun faddr a _ -> add faddr a)) self#get_functions in
-    let _ = List.iter add_library_stub functions_data#get_library_stubs in
+    let _ =
+      List.iter add_library_stub functions_data#get_library_stubs in
     let overlap = ref 0 in
     let multiple = ref 0 in
     let _ = 
-      H.iter (fun _ v -> if v = 1 then () else 
-	  begin overlap := !overlap + 1 ; multiple := !multiple + (v-1) end) table in
+      H.iter (fun _ v ->
+          if v = 1 then
+            ()
+          else 
+	    begin
+              overlap := !overlap + 1;
+              multiple := !multiple + (v-1)
+            end) table in
     (H.length table, !overlap, !multiple)
 
   method private get_live_instructions =
@@ -297,12 +305,25 @@ object (self)
         H.replace table a#index ((H.find table a#index) + 1)
       else
         H.add table a#index 1 in
-    let _ =
+    let add_library_stub_instr (iaddr: doubleword_int) =
+      if H.mem table iaddr#index then
+        ()
+      else
+        H.add table iaddr#index 1 in
+    let add_library_stub (faddr: doubleword_int) =
+      begin
+        add_library_stub_instr faddr;
+        add_library_stub_instr (faddr#add_int 4);
+        add_library_stub_instr (faddr#add_int 8)
+      end in
+    begin
       List.iter (fun f ->
           f#iteri
             (fun faddr a _ -> add faddr a))
-        self#get_functions in
-    table
+        self#get_functions;
+      List.iter add_library_stub functions_data#get_library_stubs;
+      table
+    end
 
   method private get_duplicate_instructions =
     let table = H.create 37 in
