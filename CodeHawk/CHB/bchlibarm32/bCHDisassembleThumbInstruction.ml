@@ -3456,7 +3456,7 @@ let parse_thumb32_31_0
     VectorStoreOne (wb, cc, VfpSize esize, rlist WR, rnop, mem RD, rmop)
 
   (* < 31><1>1D00<rn><vd>sz11<ia><rm>   VST4 (single 4-elt from one lane *)
-  | 24 | 28 when (b 9 8) = 3 ->
+  | 24 | 28 when (b 9 8) = 3 && (b 11 10) < 3->
      let sz = b 11 10 in
      let index_align = b 7 4 in
      let ia_0 = bv 4 in
@@ -3493,11 +3493,10 @@ let parse_thumb32_31_0
          XDouble [vd; vd + inc; vd + (2 * inc); vd + (3 * inc)] index esize in
      VectorStoreFour (wb, cc, VfpSize esize, rlist WR, rnop, mem RD, rmop)
 
-  (* < 31><1>1D10<rn><vd><11><ia><rm> VLD4 single 4-elt to one lane *)
-  | 26 | 30 when (b 11 8) = 11 ->
+  (* < 31><1>1D10<rn><vd>sz11<ia><rm> VLD4 single 4-elt to one lane *)
+  | 26 | 30 when (b 9 8) = 3 && (b 11 10) < 3 ->
+     let sz = (b 9 8) in
      let index_align = b 7 4 in
-     let ia_2 = bv 6 in
-     let ia_10 = b 5 4 in
      let rnreg = b 19 16 in
      let rn = arm_register_op (get_arm_reg rnreg) in
      let rmreg = b 3 0 in
@@ -3506,9 +3505,22 @@ let parse_thumb32_31_0
      let d = bv 22 in
      let vd = prefix_bit d (b 15 12) in
      let (ebytes, esize, index, inc, alignment) =
-       (4, 32, index_align lsr 3,
-        (if ia_2 = 0 then 1 else 2),
-        if ia_10 = 0 then 1 else 4 lsl ia_10) in
+       match sz with
+       | 0 -> (1, 8, index_align lsr 1, 1, if (bv 4) = 0 then 1 else 4)
+       | 1 ->
+          (2,
+           16,
+           index_align lsr 2,
+           (if (bv 5) = 1 then 1 else 2),
+           (if (bv 4) = 1 then 1 else 8))
+       | 2 ->
+          (4,
+           32,
+           index_align lsr 3,
+           (if (bv 6) = 0 then 1 else 2),
+           (if (b 5 4) = 0 then 1 else 4 lsl (b 5 4)))
+       | _ ->
+          raise (BCH_failure (STR "VectorLoadFour: not reachable")) in
      let (wb, wback) =
        match rmreg with
        | 15 -> (false, SIMDNoWriteback)

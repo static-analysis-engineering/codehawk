@@ -607,6 +607,11 @@ object (self:'a)
     | ARMRegList rl -> List.mem ARPC rl
     | _ -> false
 
+  method includes_lr =
+    match kind with
+    | ARMRegList rl -> List.mem ARLR rl
+    | _ -> false
+
   method is_offset_address =
     match kind with ARMOffsetAddress _ -> true | _ -> false
 

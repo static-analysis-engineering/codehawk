@@ -83,6 +83,7 @@ open BCHMIPSAssemblyInstructions
 (* bchlibarm32 *)
 open BCHARMAnalysisResults
 open BCHARMAssemblyFunctions
+open BCHARMCallSitesRecords
 open BCHDisassembleARM
 open BCHDisassembleARMStream
 
@@ -503,8 +504,11 @@ let main () =
             pverbose [STR "Saving asm file ..."; NL];
             file_output#saveFile
               (get_asm_listing_filename ())
-              (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString
-                      ~datarefs ()));
+              (let instrs = !BCHARMAssemblyInstructions.arm_assembly_instructions in
+               (LBLOCK [
+                    STR (instrs#toString ~datarefs ());
+                    arm_callsites_records#toPretty;
+                    arm_callsites_records#summary_to_pretty]));
             pverbose [STR "Saving orphan file ..."; NL];
 	    file_output#saveFile
               (get_orphan_code_listing_filename ())

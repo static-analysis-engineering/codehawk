@@ -53,6 +53,7 @@ open BCHELFHeader
 
 (* bchlibarm32 *)
 open BCHARMAssemblyInstruction
+open BCHARMCallSitesRecords
 open BCHARMTypes
 open BCHARMOpcodeRecords
 open BCHDisassembleARMInstruction
@@ -341,6 +342,32 @@ object (self)
                 ^ va#to_hex_string]))
       (self#indexresult va)
 
+  method get_prev_valid_instruction_address
+           (va: doubleword_int): doubleword_int TR.traceresult =
+    TR.tbind
+      ~msg:("get_previous_valid_instruction_address:" ^ va#to_hex_string)
+      (fun index ->
+        let optprevindex =
+          let rec loop i =
+            if i < 0 then
+              None
+            else
+              match TR.to_option (self#at_index i) with
+              | Some instr when instr#is_not_code -> None
+              | Some instr ->
+                 (match instr#get_opcode with
+                  | OpInvalid -> loop (i - 1)
+                  | _ -> Some i)
+              | _ -> None in
+          loop (index - 1) in
+        (match optprevindex with
+         | Some previndex -> Ok (codeBase#add_int previndex)
+         | _ ->
+            Error [
+                "get_prev_valid_instruction_address:not found:"
+                ^ va#to_hex_string]))
+      (self#indexresult va)
+
   method has_next_valid_instruction (va: doubleword_int): bool =
     TR.to_bool
       (fun index ->
@@ -358,9 +385,69 @@ object (self)
         loop (index + 1))
       (self#indexresult va)
 
+  method has_prev_valid_instruction (va: doubleword_int): bool =
+    TR.to_bool
+      (fun index ->
+        let rec loop i =
+          if i < 0 then
+            false
+          else
+            (match TR.to_option (self#at_index i) with
+             | Some instr when instr#is_not_code -> false
+             | Some instr ->
+                (match instr#get_opcode with
+                 | OpInvalid -> loop (i - 1)
+                 | _ -> true)
+             | _ -> false) in
+        loop (index - 1))
+      (self#indexresult va)
+
   method is_code_address (va:doubleword_int) =
     TR.to_bool
       (fun instr -> instr#is_valid_instruction) (self#get_instruction va)
+
+  method collect_callsites =
+    self#itera (fun va instr ->
+        match instr#get_opcode with
+        | BranchLink (_, op)
+          | BranchLinkExchange (_, op) when op#is_absolute_address ->
+           let tgt = op#get_absolute_address in
+           let preinstrs: arm_assembly_instruction_int list ref = ref [] in
+           let postinstrs: arm_assembly_instruction_int list ref = ref [] in
+           let thisinstr: arm_assembly_instruction_int ref = ref instr in
+           let thisva: doubleword_int ref = ref va in
+           let postinstr: arm_assembly_instruction_int option ref = ref None in
+           begin
+             while (not !thisinstr#is_block_entry)
+                   && (self#has_prev_valid_instruction !thisva) do
+               thisva :=
+                 (TR.tget_ok (self#get_prev_valid_instruction_address !thisva));
+               thisinstr := (TR.tget_ok (self#get_instruction !thisva));
+               preinstrs := (!thisinstr :: !preinstrs)
+             done;
+             (if self#has_next_valid_instruction va then
+                begin
+                  thisva := TR.tget_ok (self#get_next_valid_instruction_address va);
+                  thisinstr := (TR.tget_ok (self#get_instruction !thisva));
+                  while (not !thisinstr#is_block_entry)
+                        && (self#has_next_valid_instruction !thisva) do
+                    postinstrs := (!thisinstr :: !postinstrs);
+                    thisva :=
+                      (TR.tget_ok (self#get_next_valid_instruction_address !thisva));
+                    thisinstr := (TR.tget_ok (self#get_instruction !thisva))
+                  done;
+                  if !thisinstr#is_block_entry then
+                    postinstr := Some !thisinstr
+                end
+              else
+                ());
+             match !postinstr with
+             | Some instr ->
+                arm_callsites_records#add_callsite
+                  tgt va !preinstrs (List.rev !postinstrs) instr
+             | _ -> ()
+           end
+        | _ -> ())
 
   method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
     let low = if low#lt codeBase then codeBase else low in
