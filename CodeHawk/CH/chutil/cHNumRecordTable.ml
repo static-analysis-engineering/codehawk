@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,7 @@ class type num_record_table_int =
     method read_xml: xml_element_int -> unit
   end
 
+
 class num_record_table_t (name:string):num_record_table_int =
 object (self)
 
@@ -61,9 +62,13 @@ object (self)
 
   method add (id:int) (data:string list * int list) =
     if H.mem table id then
-      raise (CHFailure
-               (LBLOCK [ STR "Attempt to add multiple values for id " ; INT id ;
-                         STR " to record table " ; STR name ]))
+      raise
+        (CHFailure
+           (LBLOCK [
+                STR "Attempt to add multiple values for id ";
+                INT id;
+                STR " to record table ";
+                STR name]))
     else
       H.add table id data
     
@@ -71,9 +76,13 @@ object (self)
     if H.mem table id then
       H.find table id
     else
-      raise (CHFailure
-               (LBLOCK [ STR "Item with id " ; INT id ; STR " not found in table " ;
-                         STR name ]))
+      raise
+        (CHFailure
+           (LBLOCK [
+                STR "Item with id ";
+                INT id;
+                STR " not found in table ";
+                STR name]))
     
   method size = H.length table
 
@@ -88,12 +97,12 @@ object (self)
            let knode = xmlElement "n" in
            let set = knode#setAttribute in
            begin
-             knode#setIntAttribute "id" k ;
+             knode#setIntAttribute "id" k;
              (match tags with
-              | [] -> () | _ -> set "t" (String.concat "," tags)) ;
+              | [] -> () | _ -> set "t" (String.concat "," tags));
              (match args with
               | [] -> ()
-              | _ -> set "a" (String.concat  "," (List.map string_of_int args))) ;
+              | _ -> set "a" (String.concat  "," (List.map string_of_int args)));
              knode
            end) items)
 
@@ -111,11 +120,16 @@ object (self)
               []
           with
           | Failure _ ->
-             raise (CHFailure
-                      (LBLOCK [ STR "int_of_string on " ; STR (get "a") ;
-                                STR " in table " ; STR name ]))  in
+             raise
+               (CHFailure
+                  (LBLOCK [
+                       STR "int_of_string on ";
+                       STR (get "a");
+                       STR " in table ";
+                       STR name]))  in
         self#add id (tags, args)) (node#getTaggedChildren "n")
     
 end
+
 
 let mk_num_record_table = new num_record_table_t
