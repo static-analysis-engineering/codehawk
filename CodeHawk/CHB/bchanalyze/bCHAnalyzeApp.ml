@@ -343,8 +343,15 @@ let analyze_mips starttime =
 let analyze_arm_function faddr f count =
   let fstarttime = Unix.gettimeofday () in
   let finfo = load_function_info faddr in
-  let _ = pverbose [ STR "Analyze "; faddr#toPretty; STR " (started: ";
-                       STR (time_to_string fstarttime); STR ")"; NL ] in
+  let _ =
+    pverbose [
+        STR "Analyze ";
+        faddr#toPretty;
+        STR " (started: ";
+        STR (time_to_string fstarttime);
+        STR ")";
+        NL] in
+  let islarge = List.length f#get_blocks > 200 in
   let _ = translate_arm_assembly_function f in
   if arm_chif_system#has_arm_procedure faddr then
     let _ = record_arm_loop_levels faddr in
@@ -352,17 +359,33 @@ let analyze_arm_function faddr f count =
     begin
       bb_invariants#reset;
       analyze_procedure_with_intervals proc arm_chif_system#get_arm_system;
-      (if List.mem faddr#to_hex_string !no_lineq then
-         chlog#add "skip linear equalities" (faddr#toPretty)
+      (if (List.mem faddr#to_hex_string !no_lineq) || islarge then
+         begin
+           chlog#add "skip linear equalities" (faddr#toPretty);
+           pverbose [
+               STR " ** Skip linear equalities ("; faddr#toPretty; STR ")"; NL]
+         end
        else
          analyze_procedure_with_linear_equalities
            proc arm_chif_system#get_arm_system);
       analyze_procedure_with_valuesets proc arm_chif_system#get_arm_system;
+      (if islarge then pverbose [STR "  completed value sets"; NL]);
       analyze_procedure_with_designations proc arm_chif_system#get_arm_system;
+      (if islarge then pverbose [STR "  completed procedure with designations"; NL]);
       analyze_procedure_with_reaching_defs proc arm_chif_system#get_arm_system;
+      (if islarge then pverbose [STR "  completed reaching defs"; NL]);      
       analyze_procedure_with_flag_reaching_defs proc arm_chif_system#get_arm_system;
-      analyze_procedure_with_def_use proc arm_chif_system#get_arm_system;
-      analyze_procedure_with_def_use_high proc arm_chif_system#get_arm_system;
+      (if islarge then pverbose [STR "  completed flag reaching defs"; NL]);
+      (if islarge then
+         chlog#add "skip def-use" (faddr#toPretty)
+       else
+         analyze_procedure_with_def_use proc arm_chif_system#get_arm_system);
+      (if islarge then pverbose [STR "  completed def-use"; NL]);      
+      (if islarge then
+         chlog#add "skip def-use-high" (faddr#toPretty)
+       else
+         analyze_procedure_with_def_use_high proc arm_chif_system#get_arm_system);
+      (if islarge then pverbose [STR "  completed def-use-high"; NL]);      
       extract_ranges finfo bb_invariants#get_invariants;
       extract_linear_equalities finfo bb_invariants#get_invariants;
       extract_valuesets finfo bb_invariants#get_invariants;
