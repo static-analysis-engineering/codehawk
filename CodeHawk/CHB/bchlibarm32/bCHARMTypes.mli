@@ -177,6 +177,7 @@ class type arm_operand_int =
     method is_offset_address_writeback: bool
 
     method includes_pc: bool
+    method includes_lr: bool
 
     (* i/o *)
     method toString: string
@@ -1398,6 +1399,80 @@ class type arm_instruction_aggregate_int =
   end
 
 
+(** Represents the number of callsites that, resp., support, contradict,
+    and are neutral about on the predicate. *)
+type callsite_result_t = int * int * int
+
+
+class type arm_callsite_record_int =
+  object
+    (* accessors *)
+    method callsite: doubleword_int
+    method pre_instrs: arm_assembly_instruction_int list
+    method post_instrs: arm_assembly_instruction_int list
+    method postblock_instr: arm_assembly_instruction_int
+
+    (* predicates *)
+    method has_returnvalue_compare: bool
+    method has_returnvalue_move: bool
+    method has_returnvalue_compute: bool
+    method has_returnvalue_clobber: bool
+    method has_fnentry_successor: bool
+    method has_nop_successor: bool
+
+    method toPretty: pretty_t
+  end
+
+
+class type arm_callsites_record_int =
+  object
+    (* setters *)
+    method add_callsite:
+             doubleword_int
+             -> arm_assembly_instruction_int list
+             -> arm_assembly_instruction_int list
+             -> arm_assembly_instruction_int
+             -> unit
+
+    (* accessors *)
+    method target_address: doubleword_int
+    method callsites: arm_callsite_record_int list
+
+    (* predicates *)
+    method is_returning: callsite_result_t
+    method is_returnvalue_used: callsite_result_t
+    method is_non_returning: callsite_result_t
+    method is_returnvalue_clobbered: callsite_result_t
+
+    method toPretty: pretty_t
+  end
+
+
+class type arm_callsites_records_int =
+  object
+    (* setters *)
+    method add_callsite:
+             doubleword_int
+             -> doubleword_int
+             -> arm_assembly_instruction_int list
+             -> arm_assembly_instruction_int list
+             -> arm_assembly_instruction_int
+             -> unit
+
+    (* accessors *)
+    method get_non_returning_functions: doubleword_int list
+
+    (* predicates *)
+    method is_returning: doubleword_int -> callsite_result_t
+    method is_returnvalue_used: doubleword_int -> callsite_result_t
+    method is_non_returning: doubleword_int -> callsite_result_t
+    method is_returnvalue_clobbered: doubleword_int -> callsite_result_t
+
+    method summary_to_pretty: pretty_t
+    method toPretty: pretty_t
+  end         
+
+
 class type arm_assembly_instructions_int =
   object
 
@@ -1418,6 +1493,8 @@ class type arm_assembly_instructions_int =
         jumptable addresses or offsets are located within the code space, these
         locations are marked as [NotCode].*)
     method set_aggregate: doubleword_int -> arm_instruction_aggregate_int -> unit
+
+    method collect_callsites: unit
 
     (* accessors *)
 
@@ -1441,9 +1518,12 @@ class type arm_assembly_instructions_int =
 
     (** [get_next_valid_instruction_address va] returns the least virtual
         address strictly larger than [va] with a valid assembly instruction.
-        If no such address exists, or if [va] is out-of-range, None is
+        If no such address exists, or if [va] is out-of-range, Error is
         returned.*)
     method get_next_valid_instruction_address:
+             doubleword_int -> doubleword_int traceresult
+
+    method get_prev_valid_instruction_address:
              doubleword_int -> doubleword_int traceresult
 
     method get_aggregate: doubleword_int -> arm_instruction_aggregate_int
@@ -1471,6 +1551,8 @@ class type arm_assembly_instructions_int =
         that is strictly larger than [va].*)
     method has_next_valid_instruction: doubleword_int -> bool
     method has_aggregate: doubleword_int -> bool
+
+    method has_prev_valid_instruction: doubleword_int -> bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit

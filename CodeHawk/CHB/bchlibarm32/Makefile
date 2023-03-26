@@ -38,6 +38,7 @@ MLIS := \
 	bCHARMAssemblyInstruction \
 	bCHDisassembleARMInstruction \
 	bCHDisassembleThumbInstruction \
+	bCHARMCallSitesRecords \
 	bCHARMAssemblyInstructions \
 	bCHARMAssemblyBlock \
 	bCHARMAssemblyFunction \
@@ -70,6 +71,7 @@ SOURCES := \
 	bCHARMAssemblyInstruction \
 	bCHDisassembleARMInstruction \
 	bCHDisassembleThumbInstruction \
+	bCHARMCallSitesRecords \
 	bCHARMAssemblyInstructions \
 	bCHARMAssemblyBlock \
 	bCHARMAssemblyFunction \
