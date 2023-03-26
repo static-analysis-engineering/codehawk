@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2021-2022 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -65,26 +67,35 @@ object (self)
   method write_xml (node:xml_element_int) =
     let snode = xmlElement string_table#get_name in
     begin
-      string_table#write_xml snode ;
-      node#appendChildren [ snode ] ;
+      string_table#write_xml snode;
+      node#appendChildren [snode];
       node#appendChildren
         (List.map
-           (fun t -> let tnode = xmlElement t#get_name in
-                     begin t#write_xml tnode ; tnode end) tables)
+           (fun t ->
+             let tnode = xmlElement t#get_name in
+             begin
+               t#write_xml tnode;
+               tnode
+             end) tables)
     end    
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
     begin
-      string_table#read_xml (getc string_table#get_name) ;
+      string_table#read_xml (getc string_table#get_name);
       List.iter (fun t -> t#read_xml (getc t#get_name)) tables
     end
 
   method toPretty =
-    LBLOCK [ STR "string-table: " ; INT string_table#size ; NL ;
-             (LBLOCK (List.map (fun t ->
-                          LBLOCK [ STR t#get_name ; STR ": " ; INT t#size ; NL ]) tables)) ]
+    LBLOCK [
+        STR "string-table: ";
+        INT string_table#size;
+        NL;
+        (LBLOCK
+           (List.map (fun t ->
+                LBLOCK [STR t#get_name; STR ": "; INT t#size; NL]) tables))]
 
 end
+
 
 let elfdictionary = new elf_dictionary_t

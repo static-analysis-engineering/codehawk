@@ -1746,10 +1746,13 @@ object (self)
       
   method initialize_function_entry_points
            (collect_targets:unit -> doubleword_int list) =
-    if has_file then 
-      chlog#add
-        "initialization"
-	(STR "system-info: initialization of function entry points from file")
+    if has_file then
+      begin
+        pverbose [STR "Initialize functions from file"; NL];
+        chlog#add
+          "initialization"
+	  (STR "system-info: initialization of function entry points from file")
+      end
     else
       let feps = collect_targets () in
       begin

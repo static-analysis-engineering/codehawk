@@ -71,7 +71,7 @@ object (self)
            executable file or a shared object, the value is the virtual address of 
            the storage unit affected by the relocation.
            ---------------------------------------------------------------------- *)
-        r_offset <- ch#read_doubleword ;
+        r_offset <- ch#read_doubleword;
 
         (* 4, 4, Info -----------------------------------------------------------
            This member gives both the symbol table index with respect to which the 
@@ -93,7 +93,7 @@ object (self)
     with
     | IO.No_more_input ->
        begin
-         ch_error_log#add "no more input" (STR "elf_symbol_table_entry_t#read") ;
+         ch_error_log#add "no more input" (STR "elf_symbol_table_entry_t#read");
          raise IO.No_more_input
        end
 
@@ -118,8 +118,12 @@ object (self)
     match symbol with
     | Some s -> s
     | _ ->
-       raise (BCH_failure (LBLOCK [ STR "Relocation entry " ; INT index ;
-                                    STR " does not have a symbol" ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Relocation entry ";
+                 INT index;
+                 STR " does not have a symbol"]))
 
   method is_function =
     self#has_symbol && self#get_symbol#is_function
@@ -174,7 +178,8 @@ object (self)
          (LBLOCK [STR "Unable to read the relocation table"])
 
   method set_symbols (t:elf_symbol_table_int) =
-    List.iter (fun e -> e#set_symbol (t#get_symbol e#get_symbol_index)) entries
+    List.iter (fun e ->
+        e#set_symbol (t#get_symbol e#get_symbol_index)) entries
 
   method has_offset (dw:doubleword_int) =
     List.fold_left (fun result e -> result || e#has_offset dw) false entries
