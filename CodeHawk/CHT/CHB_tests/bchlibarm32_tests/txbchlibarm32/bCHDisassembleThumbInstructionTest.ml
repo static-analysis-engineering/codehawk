@@ -100,6 +100,7 @@ let thumb_2_basic () =
       ("CMP-I-T1",   "102b", "CMP            R3, #0x10");
       ("CMP-R-T1",   "9a42", "CMP            R2, R3");
       ("LDR-I-T2",   "0099", "LDR            R1, [SP]");
+      ("LDR-I-T2-o", "2d99", "LDR            R1, [SP,#0xb4]");
       ("LDRB-I-T1",  "9b78", "LDRB           R3, [R3,#2]");
       ("LDRH-I-T1",  "1988", "LDRH           R1, [R3]");
       ("LSLS-I-T1",  "c507", "LSLS           R5, R0, #0x1f");
@@ -224,6 +225,7 @@ let thumb_4_basic () =
       ("STR.W-R-T2",  "4cf82630", "STR.W          R3, [R12,R6,LSL#2]");
       ("STRB.W-T3",   "83f81044", "STRB.W         R4, [R3,#0x410]");
       ("STRD-T1",     "cde90023", "STRD           R2, R3, [SP]");
+      ("STRD-T1-8",   "cde90278", "STRD           R7, R8, [SP,#8]");
       ("STREX-T1",    "44e80031", "STREX          R1, R3, [R4]");
       ("STRH.W-T2",   "a4f84430", "STRH.W         R3, [R4,#0x44]");
       ("SUB.W-T3",    "a6f17f01", "SUB.W          R1, R6, #0x7f");

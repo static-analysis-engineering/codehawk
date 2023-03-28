@@ -99,6 +99,7 @@ let arm_opcode_tests () =
     let int15 = G.make_int 0 15 in
     let boolvalue () = (fst G.bool) prngstate in
     let intvalue ?(min=0) v = (fst (G.make_int min v)) prngstate in
+    let select_int l = (fst (G.select_int l)) prngstate in
 
     (* arm_operand_int generators *)
     let armreg_op mode = (fst (ARMG.arm_reg_op int15 mode)) prngstate in
@@ -483,13 +484,14 @@ let arm_opcode_tests () =
       ~title:"FStoreMultipleIncrementAfter"
       (fun () ->
         let wback = boolvalue () in
-        let rnreg = armreg () in
-        let rn = arm_register_op rnreg WR in
+        let rn = intvalue 13 in
+        let rnreg = get_arm_reg rn in
+        let rnop = arm_register_op rnreg WR in
         let xrl = armxdoublereglist_op RD in
         let rlen = List.length xrl#get_extension_register_op_list in
         let mem = mk_arm_mem_multiple_op ~size:8 rnreg rlen WR in
         let c = cc () in
-        let opc = FStoreMultipleIncrementAfter (wback, c, rn, xrl, mem) in
+        let opc = FStoreMultipleIncrementAfter (wback, c, rnop, xrl, mem) in
         index_check_opc_c opc c "FSTMIAX" 4);
 
     TS.add_simple_test
@@ -1302,14 +1304,15 @@ let arm_opcode_tests () =
       ~title:"StoreMultipleIncrementAfter"
       (fun () ->
         let tw = boolvalue () in
-        let wback = boolvalue () in
+        let wback = false in
         let c = cc () in
-        let rnreg = armreg () in
-        let rn = arm_register_op rnreg (if wback then RW else RD) in
+        let rn = intvalue 13 in
+        let rnreg = get_arm_reg rn in
+        let rnop = arm_register_op rnreg (if wback then RW else RD) in
         let rl = armreglist_op RD in
         let rlen = List.length rl#get_register_op_list in
         let mem = mk_arm_mem_multiple_op rnreg rlen WR in
-        let opc = StoreMultipleIncrementAfter (wback, c, rn, rl, mem, tw) in
+        let opc = StoreMultipleIncrementAfter (wback, c, rnop, rl, mem, tw) in
         index_check_opc_c opc c "STM" 5);
     
     TS.add_simple_test
@@ -1706,6 +1709,23 @@ let arm_opcode_tests () =
         index_check_opc_c opc c "VORR" 4);
 
     TS.add_simple_test
+      ~title:"VectorBitwiseOr (Double, immediate)"
+      (fun () ->
+        let d = prefix_bit (intvalue 2) (intvalue 16) in
+        let vd = arm_extension_register_op XDouble d WR in
+        let vm = arm_extension_register_op XDouble d RD in
+        let imm8 = ((intvalue 8) lsl 4) + (intvalue 16) in
+        let immop = TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical imm8)) in
+        let cm = select_int [1; 3; 5; 7; 9; 11] in
+        let dt =
+          match cm with
+          | 1 | 3 | 5 | 7 -> VfpInt 32
+          | _ -> VfpInt 16 in
+        let c = cc () in
+        let opc = VectorBitwiseOr (c, dt, vd, vm, immop) in
+        index_check_opc_c opc c "VORR" 4);
+
+    TS.add_simple_test
       ~title:"VectorBitwiseOrNot (Quad, register)"
       (fun () ->
         let qd = armxquadreg_op WR in
@@ -1820,6 +1840,35 @@ let arm_opcode_tests () =
         let rm = armreg_op RD in
         let opc = VectorLoadOne (wb, c, VfpSize esize, rlist, rn, mem, rm) in
         index_check_opc_c opc c "VLD1" 6);
+
+    TS.add_simple_test
+      ~title:"VectorLoadFour (single 4-elt to one lane)"
+      (fun () ->
+        let c = ACCUnconditional in
+        let rmreg = intvalue 16 in
+        let rm = get_arm_reg rmreg in
+        let rmop = arm_register_op rm RD in
+        let rn = armreg () in
+        let d = intvalue 2 in
+        let vd = prefix_bit d (intvalue 16) in
+        let sz = intvalue 3 in
+        let (ebytes, esize, index, inc, alignment) =
+          match sz with
+          | 0 -> (1, 8, intvalue 8, 1, select_int [1; 4])
+          | 1 -> (2, 16, intvalue 4, select_int [1; 2], select_int [1; 8])
+          | _ -> (4, 32, intvalue 2, select_int [1; 2], select_int [1; 4; 8; 16]) in
+        let (wb, wback) =
+          match rmreg with
+          | 15 -> (false, SIMDNoWriteback)
+          | 13 -> (true, SIMDBytesTransferred ebytes)
+          | _ -> (true, SIMDAddressOffsetRegister rm) in
+        let rnop = arm_register_op rn (if wb then WR else RD) in
+        let mem = mk_arm_simd_address_op rn alignment wback in
+        let rlist =
+          arm_simd_reg_elt_list_op
+            XDouble [vd; vd + inc; vd + (2 * inc); vd + (3 * inc)] index esize in
+        let opc = VectorLoadFour (wb, c, VfpSize esize, rlist RD, rnop, mem WR, rmop) in
+        index_check_opc_c opc c "VLD4" 6);
 
     TS.add_simple_test
       ~title:"VLoadRegister (A2-add)"
@@ -2190,6 +2239,35 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = VectorStoreTwo (wb, c, VfpSize esize, rl, rn, mem, rm) in
         index_check_opc_c opc c "VST2" 6);
+
+    TS.add_simple_test
+      ~title:"VectorStoreFour (single 4-elt from one lane)"
+      (fun () ->
+        let c = ACCUnconditional in
+        let rmreg = intvalue 16 in
+        let rm = get_arm_reg rmreg in
+        let rmop = arm_register_op rm RD in
+        let rn = armreg () in
+        let d = intvalue 2 in
+        let vd = prefix_bit d (intvalue 15) in
+        let sz = intvalue 3 in
+        let (ebytes, esize, index, inc, alignment) =
+          match sz with
+          | 0 -> (1, 8, intvalue 8, 1, select_int [1; 4])
+          | 1 -> (2, 16, intvalue 4, select_int [1; 2], select_int [1; 8])
+          | _ -> (4, 32, intvalue 2, select_int [1; 2], select_int [1; 4; 8; 16]) in
+        let (wb, wback) =
+          match rmreg with
+          | 15 -> (false, SIMDNoWriteback)
+          | 13 -> (true, SIMDBytesTransferred ebytes)
+          | _ -> (true, SIMDAddressOffsetRegister rm) in
+        let rnop = arm_register_op rn (if wb then WR else RD) in
+        let mem = mk_arm_simd_address_op rn alignment wback in
+        let rlist =
+          arm_simd_reg_elt_list_op
+            XDouble [vd; vd + inc; vd + (2 * inc); vd + (3 * inc)] index esize in
+        let opc = VectorStoreFour (wb, c, VfpSize esize, rlist WR, rnop, mem RD, rmop) in
+        index_check_opc_c opc c "VST4" 6);
 
     TS.add_simple_test
       ~title:"VectorSubtract (floating point)"
