@@ -108,15 +108,9 @@ let show_function (faddr: doubleword_int) (fn: arm_assembly_function_int) =
     pr_debug [proc#toPretty; NL];
     pr_debug [fn#toPretty; NL]
   end  
-                   
 
-(* ite-ne:
-   0xd00  002b      CMP     R3, #0x0
-   0xd02  14bf      ITE NE             R3 := (R3_in != 0)
-   0xd04  0123      MOVNE   R3, #0x1
-   0xd06  0023      MOVEQ   R3  #0x0
-   ---------------------------------
 
+(*
    sub-it-ne:
    0xdd2c  401a    SUBS   R0, R0, R1
    0xdd2e  18bf    IT NE              R0 := (R0_in - R1_in) != 0
@@ -125,8 +119,8 @@ let show_function (faddr: doubleword_int) (fn: arm_assembly_function_int) =
  *)
 let thumb_it_predicates () =
   let tests = [
-      ("ite-ne", "0xd00", "0xd02", "002b14bf0123002300", "(R3_in != 0)");
-      ("sub-it-ne", "0xdd2c", "0xdd2e", "401a18bf0120704700", "(R0_in != R1_in)")
+      ("sub-it-ne", "0xdd2c", "0xdd2e", "401a18bf0120704700", "(R0_in != R1_in)");
+      ("sub-it-ne-2", "0x201be", "0x201c0", "f41a18bf012400", "(R6_in != R3_in)");
     ] in
   begin
     TS.new_testsuite (testname ^ "_thumb_it_predicates") lastupdated;
@@ -144,18 +138,64 @@ let thumb_it_predicates () =
             let faddr = make_dw cfaddr in
             let _ = SI.system_info#set_arm_thumb_switch faddr "T" in
             let iccaddr = make_dw ccaddr in
-            let fn =
-              try
-                ARMU.thumb_function_setup faddr bytes
-              with
-              | BCH_failure p ->
-                 begin
-                   pr_debug [STR "Failure: "; p; NL];
-                   raise (BCH_failure p)
-                 end in
+            let fn = ARMU.thumb_function_setup faddr bytes in
             let _ =
               for i = 1 to 4 do
-                analyze_arm_function faddr fn 0;
+                analyze_arm_function faddr fn 0
+              done in
+            (* let _ = show_function faddr fn in *)
+            let xprs = ARMU.get_instrxdata_xprs faddr iccaddr in
+            ARMA.equal_instrxdata_conditionxprs expectedcond xprs 1)
+      ) tests;
+
+    TS.launch_tests ()
+  end
+
+
+(* ite-cmp-cc-r (C4):
+   0x11a82  85 42   CMP     R5, R0
+   0x11a84  34 bf   ITE CC            R5 := (R5_in >= R0_in)
+   0x11a86  00 25   MOVCC  R5, #0
+   0x11a88  01 25   MOVCS  R5, #1
+   ---------------------------------
+
+   ite-cmp-ne:
+   0xd00  002b      CMP     R3, #0x0
+   0xd02  14bf      ITE NE             R3 := (R3_in != 0)
+   0xd04  0123      MOVNE   R3, #0x1
+   0xd06  0023      MOVEQ   R3  #0x0
+   ---------------------------------
+ *)
+let thumb_ite_predicates () =
+  let tests = [
+      ("ite-cmp-cc-r", "0x11a82", "0x11a84", "854234bf0025012500", "(R5_in >= R0_in)");
+      ("ite-cmp-cs-r", "0x11aa0", "0x11aa2", "85422cbf0025012500", "(R5_in < R0_in)");
+      ("ite-cmp-ne", "0xd00", "0xd02", "002b14bf0123002300", "(R3_in != 0)");
+      ("ite-cmp-hi", "0x1eb1c", "0x1eb1e", "a3428cbf0120002000", "(R3_in > R4_in)");
+      ("ite-cmp-hi-r", "0x11abc", "0x11abe", "85428cbf0025012500", "(R5_in <= R0_in)");
+      ("ite-cmp-ls", "0x21ee0", "0x21ee2", "032b94bf0123002300", "(R3_in <= 3)");
+      ("ite-cmp-ls-r", "0x11a96", "0x11a98", "854294bf00250125", "(R5_in > R0_in)")
+    ] in
+  begin
+    TS.new_testsuite (testname ^ "_thumb_ite_predicates") lastupdated;
+
+    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    ARMIS.initialize_arm_instructions 100;
+    List.iter (fun (title, cfaddr, ccaddr, bytes, expectedcond) ->
+
+        TS.add_simple_test
+          ~title
+          (fun () ->
+            let _ = functions_data#reset in
+            let _ = arm_assembly_functions#reset in
+            let _ = system_settings#set_thumb in
+            let faddr = make_dw cfaddr in
+            let _ = SI.system_info#set_arm_thumb_switch faddr "T" in
+            let iccaddr = make_dw ccaddr in
+            let fn = ARMU.thumb_function_setup faddr bytes in
+            let _ =
+              for i = 1 to 4 do
+                analyze_arm_function faddr fn 0
               done in
             (* let _ = show_function faddr fn in *)
             let xprs = ARMU.get_instrxdata_xprs faddr iccaddr in
@@ -170,5 +210,6 @@ let () =
   begin
     TS.new_testfile testname lastupdated;
     thumb_it_predicates ();
+    thumb_ite_predicates ();
     TS.exit_file ()
   end
