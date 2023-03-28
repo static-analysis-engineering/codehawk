@@ -166,7 +166,7 @@ let align_dw (dw: doubleword_int) (size: int): doubleword_int =
  *          integer, then the processor sets N to 1 if the result is negative, 
  *          and sets N to 0 if it is positive or zero.
  *  30, Z : Zero condition flag. Set to 1 if the result of the instruction is
- *          zero, and to 0 otherwise. A result of zero often indicates and 
+ *          zero, and to 0 otherwise. A result of zero often indicates an
  *          equal result from a comparison.
  *  29, C : Carry condition flag. Set to 1 if the instruction results in a
  *          carry condition, for example an unsigned overflow on an addition.
@@ -175,6 +175,32 @@ let align_dw (dw: doubleword_int) (size: int): doubleword_int =
  *  27, Q : Set to 1 to indicate overflow or saturation occurred in some
  *          instructions, normally related to digital signal processing (DSP).
  *)
+
+
+(* Pseudocode details of addition and subtraction
+ * ==============================================
+ * (bits(N), bit, bit) AddWithCarry(bits(N) x, bits(N) y, bit carry_in)
+ *   unsigned_sum = UInt(x) + UInt(y) + UInt(carry_in)
+ *   signed_sum = SInt(x) + SInt(y) + UInt(carry_in)
+ *   result = unsigned_sum<N-1:0>;  // same value as signed_sum<N-1:0>
+ *   carry_out = if UInt(result) == unsigned_sum then '0' else '1'
+ *   overflow = if SInt(result) == signed_sum then '0' else '1'
+ *   return (result, carry_out, overflow)
+ *
+ * Property of
+ *   (result, carry out, overflow) = AddWithCarry(x, NOT(y), carry_in):
+ *
+ *   if carry_in == '1' then result == x - y with
+ *     -- overflow == '1' if signed overflow occurred during the subtraction
+ *     -- carry_out == '1' if unsigned borrow did not occur during the
+ *         subtraction, that is, if x >= y
+ *
+ *   if carry_in == '0' then result == x - y - 1 with
+ *     -- overflow == '1' if signed overflow occurred during the subtraction
+ *     -- carry_out == '1' if unsigned borrow did not occur during the
+ *         subtraction, that is, if x > y
+ *)
+
 
 (* Sign-extension of bitstrings  (pg D16-2639)
  * ===========================================

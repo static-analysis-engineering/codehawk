@@ -47,6 +47,13 @@ open BCHDisassembleThumbInstruction
 module TR = CHTraceResult
 
 
+let thumb_it_sequence_kind_to_string (it: thumb_it_sequence_kind_t) =
+  match it with
+  | ITPredicateAssignment (inverse, op) ->
+     let inv = if inverse then " (inverse)" else "" in
+     "predicate assignment to " ^ op#toString ^ inv
+
+
 class thumb_it_sequence_t
         (kind: thumb_it_sequence_kind_t)
         (instrs: arm_assembly_instruction_int list)
@@ -63,7 +70,12 @@ object (self)
 
   method write_xml (node: xml_element_int) = ()
 
-  method toPretty = STR "thumb-it-sequence"
+  method toString =
+    thumb_it_sequence_kind_to_string self#kind
+    ^ " at "
+    ^ self#anchor#to_hex_string
+
+  method toPretty = STR self#toString
 end
 
 
@@ -107,10 +119,15 @@ let is_ite_predicate_assignment
         && er#is_register
         && tr#get_register = er#get_register
         && thenop#is_immediate
-        && elseop#is_immediate
-        && thenop#to_numerical#equal numerical_one
-        && elseop#to_numerical#equal numerical_zero) ->
-     Some tr
+        && elseop#is_immediate) ->
+     if (thenop#to_numerical#equal numerical_one)
+        && (elseop#to_numerical#equal numerical_zero) then
+       Some (false, tr)
+     else if (thenop#to_numerical#equal numerical_zero)
+             && (elseop#to_numerical#equal numerical_one) then
+       Some (true, tr)
+     else
+       None
   | _ -> None
 
 
@@ -169,10 +186,10 @@ let create_thumb_it_sequence
      let itiaddr2 = itiaddr1#add_int instrlen1 in
      let (instr2, instrlen2) = disassemble_instruction itiaddr2 ch in
      (match is_ite_predicate_assignment instr1#get_opcode instr2#get_opcode with
-      | Some op ->
+      | Some (inv, op) ->
          Some
            (make_thumb_it_sequence
-              (ITPredicateAssignment op) [itinstr; instr1; instr2] itiaddr0)
+              (ITPredicateAssignment (inv, op)) [itinstr; instr1; instr2] itiaddr0)
       | _ -> None)
   | IfThen (c, xyz) when xyz = "" ->
      let itiaddr1 = itiaddr0#add_int 2 in
@@ -181,6 +198,6 @@ let create_thumb_it_sequence
       | Some op ->
          Some
            (make_thumb_it_sequence
-              (ITPredicateAssignment op) [itinstr; instr1] itiaddr0)
+              (ITPredicateAssignment (false, op)) [itinstr; instr1] itiaddr0)
       | _ -> None)
   | _ -> None

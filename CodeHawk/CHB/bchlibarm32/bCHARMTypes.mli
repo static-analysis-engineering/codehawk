@@ -1330,7 +1330,10 @@ type arm_assembly_instruction_result = arm_assembly_instruction_int traceresult
 
 
 type thumb_it_sequence_kind_t =
-  | ITPredicateAssignment of arm_operand_int
+  (** in [inverse, dstop], [inverse] indicates whether the predicate itself
+      or its inverse is to be assigned; [dstop] is the destination operand
+      for the predicate assignment.*)
+  | ITPredicateAssignment of bool * arm_operand_int
 
 
 class type thumb_it_sequence_int =
@@ -1345,6 +1348,7 @@ class type thumb_it_sequence_int =
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
+    method toString: string
     method toPretty: pretty_t
   end
 
