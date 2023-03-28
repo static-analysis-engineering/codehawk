@@ -784,7 +784,7 @@ object (self)
                (get_arm_assembly_instruction testaddr) in
            let agg = get_aggregate floc#ia in
            (match agg#it_sequence#kind with
-            | ITPredicateAssignment dstop ->
+            | ITPredicateAssignment (inverse, dstop) ->
                let (_, optpredicate) =
                  arm_conditional_expr
                    ~condopc:instr#get_opcode
@@ -794,6 +794,7 @@ object (self)
                let (tags, args) =
                  (match optpredicate with
                   | Some p ->
+                     let p = if inverse then XOp (XLNot, [p]) else p in
                      let lhs = dstop#to_variable floc in
                      let rdefs = get_all_rdefs p in
                      let xp = rewrite_expr p in

@@ -1177,7 +1177,7 @@ let translate_arm_instruction
        let itagg = get_aggregate loc#i in
        let its = itagg#it_sequence in
        (match its#kind with
-        | ITPredicateAssignment dstop ->
+        | ITPredicateAssignment (inverse, dstop) ->
            let (frozenvars, optpredicate) =
              make_conditional_predicate
                ~condinstr:instr
@@ -1187,6 +1187,7 @@ let translate_arm_instruction
            let cmds =
              match optpredicate with
              | Some p ->
+                let p = if inverse then XOp (XLNot, [p]) else p in
                 let (lhs, lhscmds) = dstop#to_lhs floc in
                 let cmds = floc#get_assign_commands lhs p in
                 let usevars = vars_in_expr_list [p] in

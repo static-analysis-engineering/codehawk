@@ -3495,7 +3495,7 @@ let parse_thumb32_31_0
 
   (* < 31><1>1D10<rn><vd>sz11<ia><rm> VLD4 single 4-elt to one lane *)
   | 26 | 30 when (b 9 8) = 3 && (b 11 10) < 3 ->
-     let sz = (b 9 8) in
+     let sz = (b 11 10) in
      let index_align = b 7 4 in
      let rnreg = b 19 16 in
      let rn = arm_register_op (get_arm_reg rnreg) in

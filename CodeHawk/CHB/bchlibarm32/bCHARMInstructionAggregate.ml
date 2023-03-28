@@ -29,6 +29,7 @@
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
@@ -42,6 +43,17 @@ open BCHARMJumptable
 open BCHARMTypes
 open BCHDisassembleARMInstruction
 open BCHThumbITSequence
+
+
+let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
+  match k with
+  | ARMJumptable jt ->
+     "Jumptable at "
+     ^ jt#start_address#to_hex_string
+     ^ " with "
+     ^ (string_of_int (List.length jt#target_addrs))
+     ^ " target addresses"
+  | ThumbITSequence it -> it#toString
 
 
 class arm_instruction_aggregate_t
@@ -89,7 +101,12 @@ object (self)
 
   method toCHIF (faddr: doubleword_int) = []
 
-  method toPretty = STR "arm-aggregate"
+  method toPretty =
+    LBLOCK [
+        STR "Aggregate of ";
+        INT (List.length self#instrs);
+        STR " instructions: ";
+        STR (arm_aggregate_kind_to_string self#kind)]
 
 end
 
@@ -101,7 +118,12 @@ let make_arm_instruction_aggregate
       ~(exitinstr: arm_assembly_instruction_int)
       ~(anchor: arm_assembly_instruction_int ):
       arm_instruction_aggregate_int =
-  new arm_instruction_aggregate_t ~kind ~instrs ~entry ~exitinstr ~anchor
+  let agg =
+    new arm_instruction_aggregate_t ~kind ~instrs ~entry ~exitinstr ~anchor in
+  begin
+    chlog#add "aggregate instruction" agg#toPretty;
+    agg
+  end
 
 
 let make_arm_jumptable_aggregate

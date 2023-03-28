@@ -180,8 +180,8 @@ let cc_expr
     | (Compare (ACCAlways, x, y, _), ACCEqual) -> XOp (XEq, [v x; v y])
     | (Compare (ACCAlways, x, y, _), ACCNotEqual) -> XOp (XNe, [v x; v y])
 
-    | (Compare (_, x, y, _), ACCCarrySet) -> XOp (XGe, [v x; v y])
-    | (Compare (_, x, y, _), ACCCarryClear) -> XOp (XLt, [v x; v y])
+    | (Compare (_, x, y, _), ACCCarrySet) -> XOp (XGe, [vu x; vu y])
+    | (Compare (_, x, y, _), ACCCarryClear) -> XOp (XLt, [vu x; vu y])
 
     | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
        XOp (XGt, [vu x; vu y])
