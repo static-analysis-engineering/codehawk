@@ -48,7 +48,8 @@ let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
 let equal_jumptable_targets
       ?(msg="")
       ~(expected: (string * int list) list)
-      ~(received: arm_jumptable_int) =
+      ~(received: arm_jumptable_int)
+      () =
     A.make_equal_list
       (fun (tgt1, ixs1) (tgt2, ixs2) ->
              (tgt1 = tgt2)
@@ -67,7 +68,8 @@ let equal_jumptable_targets
 let equal_cfg_edges
       ?(msg="")
       ~(expected: (string * string) list)
-      ~(received: (string * string) list) =
+      ~(received: (string * string) list)
+      () =
   A.make_equal_list
     (fun (src1, tgt1) (src2, tgt2) ->
       (src1 = src2) && (tgt1 = tgt2))
@@ -80,7 +82,8 @@ let equal_cfg_edges
 let equal_chif_conditionxprs
       ?(msg="")
       ~(expected: string)
-      ~(received: xpr_t list) =
+      ~(received: xpr_t list)
+      () =
   match received with
   | [] -> A.fail expected "empty list" msg
   | [x] -> A.equal_string ~msg expected (x2s x)
@@ -96,7 +99,8 @@ let equal_instrxdata_conditionxprs
       ?(msg="")
       ~(expected: string)
       ~(received: xpr_t list)
-      ~(index: int) =
+      ~(index: int)
+      () =
   match received with
   | [] -> A.fail expected "empty list" msg
   | _ when (List.length received) > index ->
@@ -120,7 +124,8 @@ let equal_instrxdata_tags
       ?(msg="")
       ~(expected: string)
       ~(received: string list)
-      ~(indices: int list) =
+      ~(indices: int list)
+      () =
   match received with
   | [] -> A.fail expected "empty list" msg
   | _  ->
@@ -135,7 +140,8 @@ let equal_instrxdata_tags
 let equal_dictionary_key
       ?(msg="")
       ~(expected: (string list * int))
-      ~(received: (string list * int list)) =
+      ~(received: (string list * int list))
+      () =
   let keystr (sl, l) =
     "([" ^ (String.concat "; " sl) ^ "], " ^ (string_of_int l) ^ ")" in
   let rkeystr (sl, il) = keystr (sl, List.length il) in
