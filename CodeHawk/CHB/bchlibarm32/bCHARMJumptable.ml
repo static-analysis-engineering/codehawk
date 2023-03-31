@@ -54,7 +54,8 @@ class arm_jumptable_t
         ?(end_address: doubleword_int option=None)
         ~(start_address: doubleword_int)
         ~(default_target: doubleword_int)
-        ~(targets: (doubleword_int * int list) list):arm_jumptable_int =
+        ~(targets: (doubleword_int * int list) list)
+        ():arm_jumptable_int =
 object (self)
 
   method start_address = start_address
@@ -97,7 +98,8 @@ let make_arm_jumptable
       ?(end_address: doubleword_int option=None)
       ~(start_address: doubleword_int)
       ~(default_target: doubleword_int)
-      ~(targets: (doubleword_int * int) list) =
+      ~(targets: (doubleword_int * int) list)
+      () =
   let tgts = H.create 5 in
   let _ =
     List.iter (fun (tgt, v) ->
@@ -120,6 +122,7 @@ let make_arm_jumptable
     ~start_address:start_address
     ~default_target:default_target
     ~targets:indexedtargets
+    ()
 
 
 let find_instr
@@ -291,7 +294,8 @@ let create_arm_table_branch
             ~end_address:(Some end_address)
             ~start_address:jtaddr
             ~default_target:defaulttgt
-            ~targets:(List.rev !targets) in
+            ~targets:(List.rev !targets)
+            () in
         let instrs = [cmpinstr; bhiinstr; tbinstr] in
         begin
           (* system_info#add_jumptable jt;
@@ -378,7 +382,8 @@ let create_arm_ldr_jumptable
              ~end_address:(Some (jtaddr#add_int (4 * (List.length !targets))))
              ~start_address:jtaddr
              ~default_target:defaulttgt
-             ~targets:(List.rev !targets) in
+             ~targets:(List.rev !targets)
+             () in
          let instrs = [cmpinstr; bhiinstr; adrinstr; ldrinstr] in
          begin
            (* system_info#add_jumptable jt;
@@ -457,7 +462,8 @@ let create_arm_ldrls_jumptable
              ~end_address:(Some (jtaddr#add_int ((List.length !targets) * 4)))
              ~start_address:jtaddr
              ~default_target:defaulttgt
-             ~targets:(List.rev !targets) in
+             ~targets:(List.rev !targets)
+             () in
          let instrs = [cmpinstr; ldrinstr; branchinstr] in
          begin
            (if collect_diagnostics () then
@@ -641,7 +647,8 @@ let create_arm_bx_jumptable
          ~end_address:(Some (jtaddr#add_int (4 * (List.length !targets))))
          ~start_address:jtaddr
          ~default_target:defaulttgt
-         ~targets:(List.rev !targets) in
+         ~targets:(List.rev !targets)
+         () in
      let instrs = [
          cmpinstr; bhiinstr; adrinstr; ldrinstr; addinstr; bxinstr] in
      begin
