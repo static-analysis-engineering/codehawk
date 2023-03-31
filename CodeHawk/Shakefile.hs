@@ -327,7 +327,8 @@ runBuild flags = do
                  ("bCHDisassembleThumbInstructionTest", "bCHDisassembleThumbInstructionTest.ml"),
                  ("bCHTranslateARMToCHIFTest", "bCHTranslateARMToCHIFTest.ml"),
                  ("bCHDisassemblePowerInstructionTest", "bCHDisassemblePowerInstructionTest.ml"),
-                 ("bCHDisassembleVLEInstructionTest", "bCHDisassembleVLEInstructionTest.ml")
+                 ("bCHDisassembleVLEInstructionTest", "bCHDisassembleVLEInstructionTest.ml"),
+                 ("bCHDwarfTest", "bCHDwarfTest.ml")
                 ]
 
     forM_ (exes ++ tests) (\pair -> do
