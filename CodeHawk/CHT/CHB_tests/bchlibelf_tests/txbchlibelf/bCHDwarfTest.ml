@@ -85,7 +85,7 @@ let decode_decompilation_unit_header_test () =
             let bytestring = U.write_hex_bytes_to_bytestring bytes in
             let ch = make_pushback_stream ~little_endian:false bytestring in
             let cuheader = decode_compilation_unit_header ch in
-            EA.equal_compilation_unit_header result cuheader)) tests;
+            EA.equal_compilation_unit_header result cuheader ())) tests;
 
     TS.launch_tests ()
   end
@@ -194,7 +194,7 @@ let decode_compilation_unit_test () =
             let chi = make_pushback_stream ~little_endian:false istring in
             let base = TR.tget_ok (string_to_doubleword base) in            
             let cu = decode_compilation_unit chi base fabbrev in
-            EA.equal_compilation_unit result cu)) tests;
+            EA.equal_compilation_unit result cu ())) tests;
 
     TS.launch_tests ()
   end

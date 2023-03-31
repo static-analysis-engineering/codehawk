@@ -38,12 +38,14 @@ val equal_abbrev_entry:
   -> expected:(int * string * bool * (string * string) list)
   -> received:debug_abbrev_table_entry_t
   -> unit
+  -> unit
 
 
 val equal_compilation_unit_header:
   ?msg:string
   -> expected:(string * int * string * int)
   -> received: debug_compilation_unit_header_t
+  -> unit
   -> unit
 
 
@@ -56,4 +58,5 @@ val equal_compilation_unit:
         * dwarf_tag_type_t
         * (dwarf_attr_type_t * string) list)
   -> received: debug_compilation_unit_t
+  -> unit
   -> unit

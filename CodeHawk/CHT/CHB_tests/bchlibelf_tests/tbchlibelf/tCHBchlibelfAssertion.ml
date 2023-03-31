@@ -39,7 +39,8 @@ module A = TCHAssertion
 let equal_abbrev_entry
       ?(msg="")
       ~(expected: (int * string * bool * (string * string) list))
-      ~(received: debug_abbrev_table_entry_t) =
+      ~(received: debug_abbrev_table_entry_t)
+      () =
   let (x_index, x_tag, x_hasc, x_attrspecs) = expected in
   if not (x_index = received.dabb_index) then
     let s_expect = "abbrev: " ^ (string_of_int x_index) in
@@ -67,7 +68,8 @@ let equal_abbrev_entry
 let equal_compilation_unit_header
       ?(msg="")
       ~(expected: (string * int * string * int))
-      ~(received: debug_compilation_unit_header_t) =
+      ~(received: debug_compilation_unit_header_t)
+      () =
   let (clen, cversion, coffset, csize) = expected in
   if not (received.dwcu_length#to_hex_string = clen) then
     A.fail clen received.dwcu_length#to_hex_string msg
@@ -95,7 +97,8 @@ let equal_compilation_unit
            * int
            * dwarf_tag_type_t
            * (dwarf_attr_type_t * string) list))
-      ~(received: debug_compilation_unit_t) =
+      ~(received: debug_compilation_unit_t)
+      () =
   let (xlen, xoffset, xnr, xtag, attrs) = expected in
   let hdr = received.cu_header in
   let cu = received.cu_unit in
