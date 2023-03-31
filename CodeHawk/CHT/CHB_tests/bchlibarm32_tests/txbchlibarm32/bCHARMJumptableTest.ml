@@ -203,7 +203,7 @@ let tb_table_branch () =
             match jtresult with
             | Ok jt ->
                ARMA.equal_jumptable_targets
-                 ~msg:"" ~expected:expectedtargets ~received:jt
+                 ~msg:"" ~expected:expectedtargets ~received:jt ()
             | Error e ->
                A.fail_msg (String.concat "; " e));
 
@@ -241,7 +241,7 @@ let ldr_table_branch () =
             match jtresult with
             | Ok jt ->
                ARMA.equal_jumptable_targets
-                 ~msg:"" ~expected:expectedtargets ~received:jt
+                 ~msg:"" ~expected:expectedtargets ~received:jt ()
             | Error e ->
                A.fail_msg (String.concat "; " e));
 
@@ -280,7 +280,7 @@ let ldrls_jumptable () =
             match jtresult with
             | Ok jt ->
                ARMA.equal_jumptable_targets
-                 ~msg:"" ~expected:expectedtargets ~received:jt
+                 ~msg:"" ~expected:expectedtargets ~received:jt ()
             | Error e ->
                A.fail_msg (String.concat "; " e));
 
@@ -332,7 +332,7 @@ let bx_table_branch () =
             match jtresult with
             | Ok jt ->
                ARMA.equal_jumptable_targets
-                 ~msg:"" ~expected:expectedtargets ~received:jt
+                 ~msg:"" ~expected:expectedtargets ~received:jt ()
             | Error e ->
                A.fail_msg (String.concat "; " e));
 

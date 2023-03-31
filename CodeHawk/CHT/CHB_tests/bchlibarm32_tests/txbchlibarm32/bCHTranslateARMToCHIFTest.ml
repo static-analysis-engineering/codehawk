@@ -205,7 +205,7 @@ let thumb_chif_conditionxprs () =
             let _ = TF.translate_arm_assembly_function fn in
             let (_, _, txprs) =
               TR.tget_ok (testsupport#retrieve_chif_conditionxprs ccaddr) in
-            ARMA.equal_chif_conditionxprs expectedcond txprs)
+            ARMA.equal_chif_conditionxprs expectedcond txprs ())
       ) tests;
 
     TS.launch_tests ()
@@ -258,7 +258,7 @@ let thumb_instrxdata_conditionxprs () =
                 analyze_arm_function faddr fn 0
               done in
             let xprs = ARMU.get_instrxdata_xprs faddr iccaddr in
-            ARMA.equal_instrxdata_conditionxprs expectedcond xprs 3)
+            ARMA.equal_instrxdata_conditionxprs expectedcond xprs 3 ())
       ) tests;
 
     TS.launch_tests ()

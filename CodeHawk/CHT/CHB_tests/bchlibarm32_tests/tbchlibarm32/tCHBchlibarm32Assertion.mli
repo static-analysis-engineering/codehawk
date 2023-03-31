@@ -41,6 +41,7 @@ val equal_jumptable_targets:
   -> expected:(string * int list) list
   -> received:arm_jumptable_int
   -> unit
+  -> unit
 
 
 val equal_cfg_edges:
@@ -48,12 +49,14 @@ val equal_cfg_edges:
   -> expected:(string * string) list
   -> received:(string * string) list
   -> unit
+  -> unit
 
 
 val equal_chif_conditionxprs:
   ?msg:string
   -> expected:string
   -> received:xpr_t list
+  -> unit
   -> unit
 
 
@@ -63,6 +66,7 @@ val equal_instrxdata_conditionxprs:
   -> received:xpr_t list
   -> index:int
   -> unit
+  -> unit
 
 
 val equal_instrxdata_tags:
@@ -71,10 +75,12 @@ val equal_instrxdata_tags:
   -> received:string list
   -> indices:int list
   -> unit
+  -> unit
 
 
 val equal_dictionary_key:
   ?msg: string
   -> expected:(string list * int)
   -> received:(string list * int list)
+  -> unit
   -> unit
