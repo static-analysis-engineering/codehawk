@@ -66,7 +66,9 @@ open BCHSystemSettings
 open BCHVariableType
 
 (* bchlibelf *)
+open BCHDwarfQueryService
 open BCHELFTypes
+open BCHELFDebugARangesSection
 open BCHELFDebugAbbrevSection
 open BCHELFDebugInfoSection
 open BCHELFDictionary
@@ -132,8 +134,12 @@ let make_elf_section (sh:elf_section_header_int) (s:string) =
   | SHT_Dynamic -> ElfDynamicTable (mk_elf_dynamic_table s sh vaddr)
   | SHT_ProgBits ->
      (match sh#get_section_name with
-      | ".debug_info" -> ElfDebugInfoSection (mk_elf_debug_info_section s sh)
-      | ".debug_abbrev" -> ElfDebugAbbrevSection (mk_elf_debug_abbrev_section s sh)
+        ".debug_aranges" ->
+         ElfDebugARangesSection (mk_elf_debug_aranges_section s sh)
+      | ".debug_info" ->
+         ElfDebugInfoSection (mk_elf_debug_info_section s sh)
+      | ".debug_abbrev" ->
+         ElfDebugAbbrevSection (mk_elf_debug_abbrev_section s sh)
       | _ ->
          ElfProgramSection (mk_elf_program_section s sh vaddr))
   | _ -> ElfOtherSection (new elf_raw_section_t s vaddr)
@@ -147,7 +153,16 @@ let read_xml_elf_section (sh:elf_section_header_int) (node:xml_element_int) =
   | SHT_DynSym -> ElfDynamicSymbolTable (read_xml_elf_symbol_table node)
   | SHT_Rel -> ElfRelocationTable (read_xml_elf_relocation_table node)
   | SHT_Dynamic -> ElfDynamicTable (read_xml_elf_dynamic_table node)
-  | SHT_ProgBits  -> ElfProgramSection (read_xml_elf_program_section node)
+  | SHT_ProgBits  ->
+     (match sh#get_section_name with
+        ".debug_aranges" ->
+         ElfDebugARangesSection (read_xml_elf_debug_aranges_section node)
+      | ".debug_info" ->
+         ElfDebugInfoSection (read_xml_elf_debug_info_section node)
+      | ".debug_abbrev" ->
+         ElfDebugAbbrevSection (read_xml_elf_debug_abbrev_section node)
+      | _ ->
+         ElfProgramSection (read_xml_elf_program_section node))
   | _ -> ElfOtherSection (read_xml_elf_raw_section node)
 
 
@@ -953,8 +968,12 @@ object(self)
              match self#get_section index with
              | ElfRelocationTable t -> t
              | _ ->
-                 raise (BCH_failure (LBLOCK [ STR "Section with index: " ; INT index ;
-                                              STR " is not a relocation table" ])) in
+                raise
+                  (BCH_failure
+                     (LBLOCK [
+                          STR "Section with index: ";
+                          INT index;
+                          STR " is not a relocation table"])) in
            if h#get_link#equal wordzero then
              ()
            else
@@ -964,7 +983,21 @@ object(self)
                reltable#set_function_entry_points
              end
         | _ -> ()) section_header_table
-      
+
+  method private initialize_dwarf_query_service =
+    let result = ref [] in
+    let _ =
+      H.iter (fun index h ->
+          match h#get_section_name with
+          | ".debug_info"
+            | ".debug_aranges"
+            | ".debug_loc"
+            | ".debug_abbrev" ->
+             let section = self#get_section index in
+             result := (index, h#get_section_name, section) :: !result
+          | _ -> ())
+        section_header_table in
+    dwarf_query_service#initialize !result
 
   method private get_section (index:int):elf_section_t =
     let _ = self#add_section index in (H.find section_table index)
@@ -1212,8 +1245,8 @@ object(self)
       (if (has "endian") && ((get "endian") = "big") then
          system_info#set_big_endian) ;
       elf_file_header#read_xml hNode ;
-      self#read_xml_program_headers pNode ;
-      self#read_xml_section_headers sNode ;
+      self#read_xml_program_headers pNode;
+      self#read_xml_section_headers sNode;
       (if (H.length section_header_table > 0) then
          self#read_xml_sections
        else
@@ -1223,13 +1256,14 @@ object(self)
                match ph#get_program_header_type with
                | PT_Dynamic ->
                   (match self#get_segment index with
-                  | ElfDynamicSegment t -> pr_debug [ t#toPretty ]
+                  | ElfDynamicSegment t -> pr_debug [t#toPretty]
                   | _ -> ())
                | _ -> ()) program_header_table
          end);
-      self#set_symbol_names ;
-      self#set_dynamic_symbol_names ;
-      self#set_relocation_symbols 
+      self#set_symbol_names;
+      self#set_dynamic_symbol_names;
+      self#set_relocation_symbols;
+      self#initialize_dwarf_query_service
     end
       
   method toPretty = 
@@ -1416,6 +1450,20 @@ let save_elf_files () =
      else
        save_elf_program_segments ());
     save_elf_dictionary ()
+  end
+
+
+let print_debug_files () =
+  begin
+    pr_debug [STR "Print Debug Files"; NL];
+    if elf_header#has_sections then
+      List.iter (fun (index, header, s) ->
+          match s with
+          | ElfDebugARangesSection a ->
+             pr_debug [a#toPretty; NL; NL]
+          | _ -> ()) elf_header#get_sections
+    else
+      ()
   end
 
 

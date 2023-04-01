@@ -25,6 +25,9 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* bchlib *)
+open BCHLibTypes
+
 (* bchlibelf *)
 open BCHELFTypes
 
@@ -50,3 +53,10 @@ val string_to_dwarf_form_type: string -> dwarf_form_type_t
 val dwarf_attr_value_to_string: dwarf_attr_value_t -> string
 
 val abbrev_entry_to_string: debug_abbrev_table_entry_t -> string
+
+val read_dwarf_expression: pushback_stream_int -> int -> dwarf_expr_t
+
+val single_location_description_to_string:
+  single_location_description_t -> string
+
+val debug_compilation_unit_size: debug_compilation_unit_t -> int

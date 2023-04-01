@@ -787,6 +787,12 @@ let record_call_targets_arm () =
                         ctxtiaddr (mk_app_target op#get_absolute_address)
                  end
                else
+                 let iaddr = instr#get_address in
+                 if system_info#has_call_target faddr iaddr then
+                 let calltgt = system_info#get_call_target faddr iaddr in
+                 let ctinfo = mk_call_target_info calltgt in
+                 finfo#set_call_target ctxtiaddr ctinfo
+               else
                  ()
             | Branch (_, tgt, _) when
                    tgt#is_absolute_address

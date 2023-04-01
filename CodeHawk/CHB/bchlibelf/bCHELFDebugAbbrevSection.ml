@@ -46,6 +46,7 @@ open BCHELFDictionary
 open BCHELFSection
 open BCHELFTypes
 
+module H = Hashtbl
 module TR = CHTraceResult
 
 
@@ -84,7 +85,8 @@ object (self)
           if attr = 0 && form = 0 then
             morespecs := false
           else
-            specs := (int_to_dwarf_attr_type attr, int_to_dwarf_form_type form)::!specs
+            specs :=
+              (int_to_dwarf_attr_type attr, int_to_dwarf_form_type form)::!specs
         done;
         List.rev !specs
       end in
@@ -94,6 +96,22 @@ object (self)
       dabb_has_children = hasc;
       dabb_attr_specs = attrspecs
     }
+
+  method private length = String.length s
+
+  method get_abbrev_table (offset: int): debug_abbrev_table_entry_t list =
+    let table = H.create 3 in
+    let _ = self#initstream offset in
+    let entry = ref self#get_abbrev_entry in
+    begin
+      while (not (H.mem table !entry.dabb_index)) && ch#pos < self#length do
+        begin
+          H.add table !entry.dabb_index !entry;
+          entry := self#get_abbrev_entry
+        end
+      done;
+      H.fold (fun _ v a -> v::a) table []
+    end
 
 end
 
