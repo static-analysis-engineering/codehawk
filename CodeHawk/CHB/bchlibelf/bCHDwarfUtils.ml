@@ -25,13 +25,19 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHNumerical
+
 (* bchlib *)
 open BCHBasicTypes
+open BCHDoubleword
+open BCHLibTypes
 
 (* bchlibelf *)
 open BCHELFTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let dw_tag_values = H.create 31  (* int -> dwarf_tag_type *)
@@ -200,7 +206,9 @@ let _ =
      (0x5f, DW_AT_digit_count, "DW_AT_digit_count");
      (0x60, DW_AT_picture_string, "DW_AT_picture_string");
      (0x61, DW_AT_mutable, "DW_AT_mutable");
+     (0x6e, DW_AT_linkage_name, "DW_AT_linkage_name");
      (0x2111, DW_AT_GNU_call_site_value, "DW_AT_GNU_call_site_value");
+     (0x2115, DW_AT_GNU_tail_call, "DW_AT_GNU_tail_call");
      (0x2116, DW_AT_GNU_all_tail_call_sites, "DW_AT_GNU_all_tail_call_sites");
      (0x2117, DW_AT_GNU_all_call_sites, "DW_AT_GNU_all_call_sites");
      (0x2119, DW_AT_GNU_macros, "DW_AT_GNU_macros")
@@ -331,6 +339,143 @@ let dwarf_attr_block_to_string (len: int) (values: int list) =
   ^ "]"
 
 
+let abbrev_entry_to_string (e: debug_abbrev_table_entry_t) =
+  (string_of_int e.dabb_index) ^ ":" ^ (dwarf_tag_type_to_string (e.dabb_tag))
+
+
+let debug_loc_description_to_string (l: debug_loc_description_t) =
+  match l with
+  | SingleLocation _ -> "single-location"
+  | LocationList _ -> "location-list"
+
+
+let rec read_dwarf_expression (ch: pushback_stream_int) (size: int) =
+  let result = ref [] in
+  let pos_in = ch#pos in
+  begin
+    while ch#pos < pos_in + size do
+      let op = ch#read_byte in
+      begin
+        let opc =
+          if op >= 0x30 && op <= 0x4f then
+            DW_OP_lit (op - 0x30)
+          else if op >= 0x50 && op <= 0x6f then
+            DW_OP_reg (op - 0x50)
+          else if op >= 0x70 && op <= 0x8f then
+            let offset = ch#read_dwarf_sleb128 32 in
+            let offset = SLEB128Constant (mkNumerical offset) in
+            DW_OP_breg (op - 0x70, offset)
+          else if op = 0xf3 then
+            let opsize = ch#read_dwarf_leb128 in
+            let subexpr = read_dwarf_expression ch opsize in
+            DW_OP_GNU_entry_value (opsize, subexpr)
+          else
+            match op with
+            | 0x02 -> DW_OP_deref
+            | 0x03 ->
+               let addr = ch#read_doubleword in
+               DW_OP_addr (ConstantAddress addr)
+            | 0x08 ->
+               let c = ch#read_byte in
+               DW_OP_const1u (OneByteUnsignedValue c)
+            | 0x0a ->
+               let c = ch#read_ui16 in
+               DW_OP_const2u (TwoByteUnsignedValue c)
+            | 0x0c ->
+               let c = ch#read_doubleword in
+               DW_OP_const4u (FourByteUnsignedValue c#index)
+            | 0x12 -> DW_OP_dup
+            | 0x13 -> DW_OP_drop
+            | 0x14 -> DW_OP_over
+            | 0x16 -> DW_OP_swap
+            | 0x1c -> DW_OP_minus
+            | 0x22 -> DW_OP_plus
+            | 0x23 ->
+               let c = ch#read_dwarf_leb128 in
+               DW_OP_plus_uconst (ULEB128Constant (mkNumerical c))
+            | 0x24 -> DW_OP_shl
+            | 0x28 ->
+               let c = ch#read_i16 in
+               DW_OP_bra (TwoByteSignedValue c)
+            | 0x2d -> DW_OP_lt
+            | 0x91 ->
+               let c = ch#read_dwarf_sleb128 32 in
+               DW_OP_fbreg (SLEB128Constant (mkNumerical c))
+            | 0x9c -> DW_OP_call_frame_cfa
+            | 0x9f -> DW_OP_stack_value
+            | _ -> DW_OP_unknown op in
+        result := opc :: !result
+      end
+    done;
+    List.rev !result
+  end
+
+
+let dwarf_operand_to_string (op: dwarf_operand_t) =
+  let stri = string_of_int in
+  match op with
+  | ConstantAddress dw -> dw#to_hex_string
+  | OneByteUnsignedValue i -> stri i
+  | OneByteSignedValue i -> stri i
+  | TwoByteUnsignedValue i -> stri i
+  | TwoByteSignedValue i -> stri i
+  | FourByteUnsignedValue i ->
+     (TR.tget_ok (int_to_doubleword i))#to_hex_string
+  | EightByteUnsignedValue n -> n#toString
+  | ULEB128Constant n -> n#toString
+  | SLEB128Constant n -> n#toString
+
+
+let rec dwarf_operation_to_string (opc: dwarf_operation_t) =
+  let op2s = dwarf_operand_to_string in
+  match opc with
+  | DW_OP_addr op -> "DW_OP_addr: " ^ (op2s op)
+  | DW_OP_bra op -> "DW_OP_bra: " ^ (op2s op)
+  | DW_OP_breg (i, offset) ->
+     "DW_OP_breg" ^ (string_of_int i) ^ ": " ^ (op2s offset)
+  | DW_OP_call_frame_cfa -> "DW_OP_call_frame_cfa"
+  | DW_OP_const1u op -> "DW_OP_const1u: " ^ (op2s op)
+  | DW_OP_const2u op -> "DW_OP_const2u: " ^ (op2s op)
+  | DW_OP_deref -> "DW_OP_deref"
+  | DW_OP_drop -> "DW_OP_drop"
+  | DW_OP_dup -> "DW_OP_dup"
+  | DW_OP_fbreg op -> "DW_OP_fbreg: " ^ (op2s op)
+  | DW_OP_lit i -> "DW_OP_lit" ^ (string_of_int i)
+  | DW_OP_lt -> "DW_OP_lt"
+  | DW_OP_minus -> "DW_OP_minus"
+  | DW_OP_over -> "DW_OP_over"
+  | DW_OP_plus -> "DW_OP_plus"
+  | DW_OP_plus_uconst op -> "DW_OP_plus_uconst: " ^ (op2s op)
+  | DW_OP_reg i -> "DW_OP_reg" ^ (string_of_int i)
+  | DW_OP_shl -> "DW_OP_shl"
+  | DW_OP_stack_value -> "DW_OP_stack_value"
+  | DW_OP_swap -> "DW_OP_swap"
+  (* extensions *)
+  | DW_OP_GNU_entry_value (_, x) ->
+     "DW_OP_GNU_entry_value: (" ^ (dwarf_expr_to_string x) ^ ")"
+  | _ -> "unknown dwarf operation"
+
+
+and dwarf_expr_to_string (x: dwarf_expr_t) =
+  String.concat
+    "; "
+    (List.map (fun dwop -> "(" ^ (dwarf_operation_to_string dwop) ^ ")") x)
+
+
+let simple_location_description_to_string (d: simple_location_description_t) =
+  match d with
+  | MemoryLocationDescription x -> "(M " ^ (dwarf_expr_to_string x) ^ ")"
+  | RegisterLocationDescription x -> "(R " ^ (dwarf_expr_to_string x) ^ ")"
+  | OtherLocationDescription x -> "(O " ^ (dwarf_expr_to_string x) ^ ")"
+  | _ -> "other simple location"
+
+
+let single_location_description_to_string (d: single_location_description_t) =
+  match d with
+  | SimpleLocation sld -> simple_location_description_to_string sld
+  | CompositeLocation (sld, op) -> "composite"
+
+
 let dwarf_attr_value_to_string (av: dwarf_attr_value_t) =
   match av with
   | DW_ATV_FORM_addr a -> a
@@ -345,8 +490,9 @@ let dwarf_attr_value_to_string (av: dwarf_attr_value_t) =
   | DW_ATV_FORM_block1 (len, values) -> dwarf_attr_block_to_string len values
   | DW_ATV_FORM_data1 i -> string_of_int i
   | DW_ATV_FORM_flag i -> string_of_int i
+  | DW_ATV_FORM_flag_present i -> string_of_int i
   | DW_ATV_FORM_sdata i -> string_of_int i
-  | DW_ATV_FORM_strp (offset, s) -> (string_of_int offset) ^ ":"  ^ s
+  | DW_ATV_FORM_strp (offset, s) -> offset#to_hex_string ^ ":"  ^ s
   | DW_ATV_FORM_udata i -> string_of_int i
   | DW_ATV_FORM_ref_addr i -> string_of_int i
   | DW_ATV_FORM_ref1 r -> string_of_int r
@@ -354,8 +500,17 @@ let dwarf_attr_value_to_string (av: dwarf_attr_value_t) =
   | DW_ATV_FORM_ref4 dw -> "<" ^ dw#to_hex_string ^ ">"
   | DW_ATV_FORM_ref8 r -> string_of_int r
   | DW_ATV_FORM_ref_udata r -> string_of_int r
+  | DW_ATV_FORM_exprloc (size, exprloc) ->
+     (dwarf_expr_to_string exprloc) ^ " (size: " ^ (string_of_int size) ^")"
+  | DW_ATV_FORM_sec_offset dw -> dw#to_hex_string
   | DW_ATV_FORM_unknown s -> "unknown:" ^ s
 
 
-let abbrev_entry_to_string (e: debug_abbrev_table_entry_t) =
-  (string_of_int e.dabb_index) ^ ":" ^ (dwarf_tag_type_to_string (e.dabb_tag))
+let debug_compilation_unit_size (cu: debug_compilation_unit_t) =
+  let rec debug_info_entry_size (e: debug_info_entry_t): int =
+    if (List.length e.ie_children) = 0 then
+      1
+    else
+      List.fold_left (fun ac c ->
+          ac + (debug_info_entry_size c)) 0 e.ie_children in
+  debug_info_entry_size cu.cu_unit

@@ -80,4 +80,3 @@ let mk_elf_debug_aranges_section (s:string) (h:elf_section_header_int) =
 let read_xml_elf_debug_aranges_section (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
   new elf_debug_aranges_section_t s
-  

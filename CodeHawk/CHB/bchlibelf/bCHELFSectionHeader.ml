@@ -391,6 +391,10 @@ object (self)
 
   method is_debug_abbrev = self#get_section_name = ".debug_abbrev"
 
+  method is_debug_aranges = self#get_section_name = ".debug_aranges"
+
+  method is_debug_loc = self#get_section_name = ".debug_loc"
+
   method write_xml (node:xml_element_int) =
     let set = node#setAttribute in
     let setx t x = if x#equal wordzero then () else set t x#to_hex_string in

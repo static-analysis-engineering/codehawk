@@ -336,7 +336,9 @@ type dwarf_attr_type_t =
   | DW_AT_digit_count              (* 0x5f: constant *)
   | DW_AT_picture_string           (* 0x60: string *)
   | DW_AT_mutable                  (* 0x61: flag *)
+  | DW_AT_linkage_name             (* 0x6e: string *)
   | DW_AT_GNU_call_site_value      (* 0x2111: vendor extension, exprloc *)
+  | DW_AT_GNU_tail_call            (* 0x2115: vendor extension, flag_present *)
   | DW_AT_GNU_all_tail_call_sites  (* 0x2116: vendor extension, flag *)
   | DW_AT_GNU_all_call_sites       (* 0x2117: vendor extension, flag *)
   | DW_AT_GNU_macros               (* 0x2119: vendor extension *)
@@ -370,6 +372,47 @@ type dwarf_form_type_t =
   | DW_FORM_flag_present           (* 0x19: flag *)
   | DW_FORM_ref_sig8               (* 0x20: reference *)
   | DW_FORM_unknown of string
+
+
+type dwarf_operand_t =
+  | ConstantAddress of doubleword_int
+  | OneByteUnsignedValue of int
+  | OneByteSignedValue of int
+  | TwoByteUnsignedValue of int
+  | TwoByteSignedValue of int
+  | FourByteUnsignedValue of int
+  | EightByteUnsignedValue of numerical_t
+  | ULEB128Constant of numerical_t
+  | SLEB128Constant of numerical_t
+
+
+and dwarf_operation_t =
+  | DW_OP_addr of dwarf_operand_t    (* 0x03: constant address *)
+  | DW_OP_deref                      (* 0x06 *)
+  | DW_OP_const1u of dwarf_operand_t (* 0x08: 1-byte constant *)
+  | DW_OP_const2u of dwarf_operand_t (* 0x0a: 2-byte constant *)
+  | DW_OP_const4u of dwarf_operand_t (* 0x0c: 4-byte constant *)
+  | DW_OP_dup                        (* 0x12 *)
+  | DW_OP_drop                       (* 0x13 *)
+  | DW_OP_over                       (* 0x14 *)
+  | DW_OP_swap                       (* 0x16 *)
+  | DW_OP_minus                      (* 0x1c *)
+  | DW_OP_plus                       (* 0x22 *)
+  | DW_OP_plus_uconst of dwarf_operand_t  (* 0x23: ULEB128 addend *)
+  | DW_OP_shl                        (* 0x24 *)
+  | DW_OP_bra of dwarf_operand_t     (* 0x28 *)
+  | DW_OP_lt                         (* 0x2d *)
+  | DW_OP_lit of int                 (* 0x30 - 0x4f *)
+  | DW_OP_reg of int                 (* 0x50 - 0x6f *)
+  | DW_OP_breg of int * dwarf_operand_t  (* 0x70 - 0x8f: sleb128 offset *)
+  | DW_OP_fbreg of dwarf_operand_t   (* 0x91: SLEB128 offset *)
+  | DW_OP_call_frame_cfa             (* 0x9c *)
+  | DW_OP_stack_value                (* 0x9f *)
+  | DW_OP_GNU_entry_value of int * dwarf_expr_t  (* 0xf3 *)
+  | DW_OP_unknown of int             (* not recognized *)
+
+
+and dwarf_expr_t = dwarf_operation_t list
 
 
 class type elf_dictionary_int =
@@ -660,10 +703,10 @@ class type elf_program_section_int =
 
 
 type debug_info_entry_t = {
-    die_abbrev: int;
-    die_tag: dwarf_tag_type_t;
-    die_values: (dwarf_attr_type_t * dwarf_attr_value_t) list;
-    die_children: debug_info_entry_t list
+    ie_abbrev: int;
+    ie_tag: dwarf_tag_type_t;
+    ie_values: (dwarf_attr_type_t * dwarf_attr_value_t) list;
+    ie_children: debug_info_entry_t list
   }
 
 
@@ -679,8 +722,9 @@ and dwarf_attr_value_t =
   | DW_ATV_FORM_block1 of int * int list
   | DW_ATV_FORM_data1 of int
   | DW_ATV_FORM_flag of int
+  | DW_ATV_FORM_flag_present of int
   | DW_ATV_FORM_sdata of int
-  | DW_ATV_FORM_strp of int * string
+  | DW_ATV_FORM_strp of doubleword_int * string (* 4-byte offset *)
   | DW_ATV_FORM_udata of int
   | DW_ATV_FORM_ref_addr of int
   | DW_ATV_FORM_ref1 of int
@@ -688,13 +732,16 @@ and dwarf_attr_value_t =
   | DW_ATV_FORM_ref4 of doubleword_int
   | DW_ATV_FORM_ref8 of int
   | DW_ATV_FORM_ref_udata of int
+  | DW_ATV_FORM_exprloc of int * dwarf_expr_t
+  | DW_ATV_FORM_sec_offset of doubleword_int
   | DW_ATV_FORM_unknown of string
 
 
 type debug_compilation_unit_header_t = {
     dwcu_length: doubleword_int;
-    dwcu_version: int;
     dwcu_offset: doubleword_int;
+    dwcu_version: int;
+    dwcu_abbrev_offset: doubleword_int;
     dwcu_address_size: int
   }
 
@@ -707,6 +754,9 @@ type debug_compilation_unit_t = {
 
 class type elf_debug_info_section_int =
   object
+    method compilation_unit_stream: doubleword_int -> pushback_stream_int
+    method compilation_unit_headers:
+             doubleword_int list -> debug_compilation_unit_header_t list
     method get_size: int
     method get_xstring: string
     method get_xsubstring: doubleword_int -> int -> string
@@ -735,6 +785,53 @@ class type elf_debug_abbrev_section_int =
     method get_vaddr: doubleword_int
     method get_string_reference: doubleword_int -> string option
     method get_abbrev_entry: debug_abbrev_table_entry_t
+    method get_abbrev_table: int -> debug_abbrev_table_entry_t list
+    method includes_VA: doubleword_int -> bool
+    method write_xml: xml_element_int -> unit
+    method toPretty : pretty_t
+  end
+
+
+type simple_location_description_t =
+  | MemoryLocationDescription of dwarf_expr_t
+  | RegisterLocationDescription of dwarf_expr_t
+  | ImplicitLocationDescription of dwarf_expr_t
+  | EmptyLocationDescription
+  | OtherLocationDescription of dwarf_expr_t
+
+  
+type single_location_description_t =
+  | SimpleLocation of simple_location_description_t
+  | CompositeLocation of simple_location_description_t * dwarf_operation_t
+
+
+type location_list_entry_t = {
+    lle_start_address: doubleword_int;
+    lle_end_address: doubleword_int;
+    lle_location: single_location_description_t
+  }
+
+
+type debug_location_list_entry_t =
+  | LocationListEntry of location_list_entry_t
+  | BaseAddressSelectionEntry of doubleword_int
+  | EndOfListEntry
+
+
+type debug_loc_description_t =
+  | SingleLocation of single_location_description_t
+  | LocationList of debug_location_list_entry_t list
+
+
+class type elf_debug_loc_section_int =
+  object
+    method initstream: int -> unit
+    method get_size: int
+    method get_xstring: string
+    method get_xsubstring: doubleword_int -> int -> string
+    method get_vaddr: doubleword_int
+    method get_string_reference: doubleword_int -> string option
+    method get_location_list: debug_location_list_entry_t list
     method includes_VA: doubleword_int -> bool
     method write_xml: xml_element_int -> unit
     method toPretty : pretty_t
@@ -751,14 +848,16 @@ type debug_aranges_table_entry_t = {
 
 class type elf_debug_aranges_section_int =
   object
+    method read: unit
     method get_size: int
     method get_xstring: string
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
     method get_string_reference: doubleword_int -> string option
+    method debug_info_compilation_unit_offsets: doubleword_int list
     method includes_VA: doubleword_int -> bool
     method write_xml: xml_element_int -> unit
-    method toPretty : pretty_t
+    method toPretty: pretty_t
   end
 
 
@@ -769,6 +868,7 @@ type elf_section_t =
 | ElfRelocationTable of elf_relocation_table_int
 | ElfDynamicTable of elf_dynamic_table_int
 | ElfProgramSection of elf_program_section_int
+| ElfDebugARangesSection of elf_debug_aranges_section_int
 | ElfDebugInfoSection of elf_debug_info_section_int
 | ElfDebugAbbrevSection of elf_debug_abbrev_section_int
 | ElfOtherSection of elf_raw_section_int
@@ -779,25 +879,67 @@ type elf_segment_t  =
   | ElfOtherSegment of elf_raw_segment_int
 
 
+class type debug_abbrev_table_int =
+  object
+
+    method offset: doubleword_int
+
+    method abbrev_entry: int -> debug_abbrev_table_entry_t
+
+    method entry_count: int
+
+  end
+
+
+(** Provides the main access point for data provided in the .debug
+    sections of an executable (if present). *)
+class type dwarf_query_service_int =
+  object
+
+    (** Initializes the service with references to the debug sections, if
+        present. *)
+    method initialize: (int * string * elf_section_t) list -> unit
+
+    (* ----------------------------------------------------------- accessors *)
+
+    (** Returns a sorted list of offsets in .debug_info at which compilation
+        units start. If there is no debug, or no aranges section is present,
+        the empty list is returned. *)
+    method compilation_unit_offsets: doubleword_int list
+
+    (** [abbrev_table offset] returns the table of abbrev entries that start
+        at offset [offset] in .debug_abbrev. *)
+    method abbrev_table: doubleword_int -> debug_abbrev_table_int
+
+    method compilation_unit: doubleword_int -> debug_compilation_unit_t
+
+    (* ----------------------------------------------------------- predicates *)
+
+    (** Returns true if the executable was compiled with debug.*)
+    method has_debug: bool
+
+  end
+
+
 class type elf_file_header_int =
 object
   method read: unit
 
   (* accessors *)
-  method get_type       : int
-  method get_machine    : int
+  method get_type: int
+  method get_machine: int
   method get_header_size: int
-  method get_version    : doubleword_int
-  method get_flags      : doubleword_int
+  method get_version: doubleword_int
+  method get_flags: doubleword_int
 
-  method get_program_entry_point        : doubleword_int
+  method get_program_entry_point: doubleword_int
   method get_program_header_table_offset: doubleword_int
   method get_section_header_table_offset: doubleword_int
 
-  method get_program_header_table_entry_size  : int
-  method get_program_header_table_entry_num   : int
-  method get_section_header_table_entry_size  : int
-  method get_section_header_table_entry_num   : int
+  method get_program_header_table_entry_size: int
+  method get_program_header_table_entry_num: int
+  method get_section_header_table_entry_size: int
+  method get_section_header_table_entry_num: int
 
   method get_section_header_string_table_index: int
 
@@ -888,6 +1030,8 @@ object
 
   method is_debug_info: bool
   method is_debug_abbrev: bool
+  method is_debug_aranges: bool
+  method is_debug_loc: bool
 
   (* xml *)
   method write_xml: xml_element_int -> unit

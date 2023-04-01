@@ -33,19 +33,28 @@ open BCHELFTypes
 
 
 val decode_debug_attribute_value:
-  pushback_stream_int
+  ?get_string:(doubleword_int -> string)
+  -> pushback_stream_int
   -> doubleword_int
   -> (dwarf_attr_type_t * dwarf_form_type_t)
   -> (dwarf_attr_type_t * dwarf_attr_value_t)
 
 
+val decode_variable_die:
+  ?get_string:(doubleword_int -> string)
+  ->  pushback_stream_int
+  -> doubleword_int
+  -> (int -> debug_abbrev_table_entry_t)
+  -> (debug_info_entry_t)
+
+(*
 val decode_compilation_unit_header:
   pushback_stream_int
   -> debug_compilation_unit_header_t
-
+ *)
 
 val decode_compilation_unit:
-  pushback_stream_int
-  -> doubleword_int
+  debug_compilation_unit_header_t
+  -> pushback_stream_int
   -> (int -> debug_abbrev_table_entry_t)
   -> debug_compilation_unit_t

@@ -66,3 +66,4 @@ val save_elf_files: unit -> unit
 val load_elf_files: unit -> unit
 
 val read_elf_file: string -> int -> bool * pretty_t
+val print_debug_files: unit -> unit
