@@ -20,10 +20,12 @@ _build/
 
 # Emacs backup files
 *.xml~
+*.md~
 *.ml~
 *.mli~
 *.sh~
 *.yaml~
+.gitignore~
 
 # binary analyzer executables
 CodeHawk/CHB/bchcmdline/chx86_analyze
