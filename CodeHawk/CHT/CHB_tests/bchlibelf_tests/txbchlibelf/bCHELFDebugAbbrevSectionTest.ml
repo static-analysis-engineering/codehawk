@@ -157,6 +157,22 @@ let get_abbrev_entry_test () =
       ("tag_unspecified_parameters",
        "2018000000",
        (32, "DW_TAG_unspecified_parameters", false, []));
+      ("tag_variable_34",
+       "223400030e3a0b3b0b491302180000",
+       (34, "DW_TAG_variable", false,
+        [("DW_AT_name", "DW_FORM_strp");
+         ("DW_AT_decl_file", "DW_FORM_data1");
+         ("DW_AT_decl_line", "DW_FORM_data1");
+         ("DW_AT_type", "DW_FORM_ref4");
+         ("DW_AT_location", "DW_FORM_exprloc")]));
+      ("tag_variable_35",
+       "23340003083a0b3b0b491302170000",
+       (35, "DW_TAG_variable", false,
+        [("DW_AT_name", "DW_FORM_string");
+         ("DW_AT_decl_file", "DW_FORM_data1");
+         ("DW_AT_decl_line", "DW_FORM_data1");
+         ("DW_AT_type", "DW_FORM_ref4");
+         ("DW_AT_location", "DW_FORM_sec_offset")]));
       ("tag_variable_ext",
        "193400030e3a0b3b0b49133f193c190000",
        (25, "DW_TAG_variable", false,

@@ -41,6 +41,20 @@ val equal_abbrev_entry:
   -> unit
 
 
+val equal_variable_debuginfo_entry:
+  ?msg:string
+  -> expected:(dwarf_attr_type_t * string) list
+  -> received: debug_info_entry_t
+  -> unit
+
+
+val equal_debug_location_list:
+  ?msg:string
+  -> expected:(string * string * string) list
+  -> received:debug_location_list_entry_t list
+  -> unit
+
+
 val equal_compilation_unit_header:
   ?msg:string
   -> expected:(string * int * string * int)

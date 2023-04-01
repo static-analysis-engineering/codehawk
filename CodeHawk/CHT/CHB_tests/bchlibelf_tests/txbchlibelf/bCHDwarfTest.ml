@@ -66,7 +66,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDwarf"
-let lastupdated = "2023-02-14"
+let lastupdated = "2023-03-30"
 
 
 let decode_decompilation_unit_header_test () =
@@ -151,6 +151,52 @@ let decode_debug_ref_attribute_value_test () =
   end
 
 
+let decode_variable_die_test () =
+  let get_string =
+    (fun (dw: doubleword_int) ->
+      match dw#to_hex_string with
+      | "0xac9" -> "arg_options"
+      | _ -> "?") in
+  let tests = [
+      ("var-addr", "223400030e3a0b3b0b491302180000", "0x0",
+       "22c90a00000137fd0b00000503bc130a000000",
+       [(DW_AT_name, "0xac9:arg_options");
+        (DW_AT_decl_file, "1");
+        (DW_AT_decl_line, "55");
+        (DW_AT_type, "<0xbfd>");
+        (DW_AT_location, "(DW_OP_addr: 0xa13bc) (size: 5)")]);
+      ("var-loc-list", "23340003083a0b3b0b491302170000", "0x0",
+       "236f707400013e5a000000bb000000",
+       [(DW_AT_name, "opt");
+        (DW_AT_decl_file, "1");
+        (DW_AT_decl_line, "62");
+        (DW_AT_type, "<0x5a>");
+        (DW_AT_location, "0xbb")])
+         
+    ] in
+  begin
+    TS.new_testsuite
+      (testname ^ "_decode_variable_die_test") lastupdated;
+
+    List.iter (fun (title, abbrev, base, debuginfo, result) ->
+        TS.add_simple_test
+          ~title
+          (fun () ->
+            let astring = U.write_hex_bytes_to_bytestring abbrev in
+            let istring = U.write_hex_bytes_to_bytestring debuginfo in
+            let sh = mk_elf_section_header () in
+            let section = mk_elf_debug_abbrev_section astring sh in
+            let abbreventry = section#get_abbrev_entry in
+            let fabbrev = fun (i: int) -> abbreventry in
+            let chi = make_pushback_stream ~little_endian:true istring in
+            let base = TR.tget_ok (string_to_doubleword base) in
+            let var = decode_variable_die ~get_string chi base fabbrev in
+            EA.equal_variable_debuginfo_entry result var)) tests;
+
+    TS.launch_tests ()
+  end
+
+
 let decode_compilation_unit_test () =
   let tests = [
       ("cu-1",
@@ -207,6 +253,7 @@ let () =
     decode_decompilation_unit_header_test ();
     decode_debug_attribute_value_test ();
     decode_debug_ref_attribute_value_test ();
+    decode_variable_die_test ();
     decode_compilation_unit_test ();
     TS.exit_file ()
   end
