@@ -65,6 +65,39 @@ let equal_abbrev_entry
               dwarf_form_type_to_string form)) received.dabb_attr_specs)
 
 
+let equal_variable_debuginfo_entry
+      ?(msg="")
+      ~(expected: (dwarf_attr_type_t * string) list)
+      ~(received: debug_info_entry_t) =
+  let recvvalues = received.ie_values in
+  A.make_equal_list
+    (fun (xat, xv) (rat, rv) -> (xat = rat) && (xv = rv))
+    (fun (att, v) -> ((dwarf_attr_type_to_string att) ^ ": " ^ v))
+    ~msg
+    expected
+    (List.map (fun (att, v) -> (att, dwarf_attr_value_to_string v)) recvvalues)
+
+
+let equal_debug_location_list
+      ?(msg="")
+      ~(expected: (string * string * string) list)
+      ~(received: debug_location_list_entry_t list) =
+  A.make_equal_list
+    (fun (xsa, xea, xx) (rsa, rea, rx) ->
+      (xsa = rsa) && (xea = rea) && (xx = rx))
+    (fun (sa, ea, x) -> sa ^ " " ^ ea ^ " " ^ x)
+    ~msg
+    expected
+    (List.map (fun dle ->
+         match dle with
+         | LocationListEntry l ->
+            (l.lle_start_address#to_hex_string,
+             l.lle_end_address#to_hex_string,
+             single_location_description_to_string l.lle_location)
+         | BaseAddressSelectionEntry dw -> (dw#to_hex_string, "", "")
+         | EndOfListEntry -> ("", "", "")) received)
+
+
 let equal_compilation_unit_header
       ?(msg="")
       ~(expected: (string * int * string * int))
@@ -106,12 +139,12 @@ let equal_compilation_unit
     A.fail xlen hdr.dwcu_length#to_hex_string msg
   else if not (xoffset = hdr.dwcu_offset#to_hex_string) then
     A.fail xoffset hdr.dwcu_offset#to_hex_string msg
-  else if not (xnr = cu.die_abbrev) then
-    A.fail (string_of_int xnr) (string_of_int cu.die_abbrev) msg
-  else if not (xtag = cu.die_tag) then
+  else if not (xnr = cu.ie_abbrev) then
+    A.fail (string_of_int xnr) (string_of_int cu.ie_abbrev) msg
+  else if not (xtag = cu.ie_tag) then
     A.fail
       (dwarf_tag_type_to_string xtag)
-      (dwarf_tag_type_to_string cu.die_tag)
+      (dwarf_tag_type_to_string cu.ie_tag)
       msg
   else
     A.make_equal_list
@@ -123,4 +156,4 @@ let equal_compilation_unit
            (dwarf_attr_type_to_string attr, attrv)) attrs)
       (List.map (fun (attr, attrv) ->
            (dwarf_attr_type_to_string attr,
-            dwarf_attr_value_to_string attrv)) cu.die_values)
+            dwarf_attr_value_to_string attrv)) cu.ie_values)

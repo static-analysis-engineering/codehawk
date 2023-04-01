@@ -63,7 +63,8 @@ SOURCES := \
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
 all: make_dirs \
-	bCHELFDebugAbbrevSectionTest
+	bCHELFDebugAbbrevSectionTest \
+	bCHELFDebugLocSectionTest \
 
 doc: 
 
@@ -74,11 +75,15 @@ make_dirs:
 bCHELFDebugAbbrevSectionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHELFTESTLIB)/tbchlibelf.cmxa cmi/bCHELFDebugAbbrevSectionTest.cmi cmx/bCHELFDebugAbbrevSectionTest.cmx
 	$(CAMLLINK) -o bCHELFDebugAbbrevSectionTest $(OBJECTS) cmx/bCHELFDebugAbbrevSectionTest.cmx
 
+bCHELFDebugLocSectionTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHELFTESTLIB)/tbchlibelf.cmxa cmi/bCHELFDebugLocSectionTest.cmi cmx/bCHELFDebugLocSectionTest.cmx
+	$(CAMLLINK) -o bCHELFDebugLocSectionTest $(OBJECTS) cmx/bCHELFDebugLocSectionTest.cmx
+
 bCHDwarfTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHELFTESTLIB)/tbchlibelf.cmxa cmi/bCHDwarfTest.cmi cmx/bCHDwarfTest.cmx
 	$(CAMLLINK) -o bCHDwarfTest $(OBJECTS) cmx/bCHDwarfTest.cmx
 
 run: bCHELFDebugAbbrevSectionTest bCHDwarfTest
 	./bCHELFDebugAbbrevSectionTest
+	./bCHELFDebugLocSectionTest
 	./bCHDwarfTest
 
 cmi/%.cmi: %.mli
@@ -102,5 +107,6 @@ clean:
 	rm -f *.mli~
 	rm -f Makefile~
 	rm -f bCHELFDebugAbbrevSectionTest
+	rm -f bCHELFDebugLocSectionTest
 	rm -f bCHDwarfTest
 	rm -rf doc
