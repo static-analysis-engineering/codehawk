@@ -92,12 +92,12 @@ let i64_to_hex_string (i64:int64) =
   to_hex_string (mkNumericalFromInt64 i64)
 
 let rec is_zero e = match e with
-  | Const (CInt64 (i64,_,_)) -> (Int64.compare i64 Int64.zero) = 0
+  | Const (CInt (i64,_,_)) -> (Int64.compare i64 Int64.zero) = 0
   | CastE (_, e) -> is_zero e
   | _ -> false
 
 let rec is_one e = match e with
-  | Const (CInt64 (i64,_,_)) -> (Int64.compare i64 Int64.one) = 0
+  | Const (CInt (i64,_,_)) -> (Int64.compare i64 Int64.one) = 0
   | CastE (_, e) -> is_one e
   | _ -> false
     
@@ -114,9 +114,9 @@ let rec is_constant_wide_string e = match e with
 let rec get_num_value env e =
   match e with
   | CastE (_,x) -> get_num_value env x 
-  | Const (CInt64 (i64,_,_)) -> Some (mkNumericalFromInt64 i64)
+  | Const (CInt (i64,_,_)) -> Some (mkNumericalFromInt64 i64)
   | Const (CChr c) -> Some (mkNumerical (Char.code c))
-  | SizeOf (TArray (TInt (IChar,[]),Some (Const (CInt64 (i64,_,_))),[])) -> 
+  | SizeOf (TArray (TInt (IChar,[]),Some (Const (CInt (i64,_,_))),[])) -> 
      Some (mkNumericalFromInt64 i64)
   | SizeOf t ->
      (match size_of_type env t with
@@ -152,9 +152,9 @@ let rec get_scalar_value ?(positive=false) env e =
     else
       num#toString in
   match e with
-  | Const (CInt64 (i64,_,_)) when positive ->
+  | Const (CInt (i64,_,_)) when positive ->
      if int64_positive i64 then Some (i64_to_string i64) else None
-  | Const (CInt64 (i64,_,_)) -> Some (i64_to_string i64)
+  | Const (CInt (i64,_,_)) -> Some (i64_to_string i64)
   | CastE (_, x) -> get_scalar_value ~positive env x
   | BinOp (PlusA, e1, e2, _) ->
      begin
@@ -180,7 +180,7 @@ let rec get_scalar_value ?(positive=false) env e =
        | Some s -> Some ("(-" ^ s ^ ")")
        | _ -> None
      end
-  | Lval (Mem (CastE (ty,Const (CInt64 (i64,_,_)))),NoOffset) ->
+  | Lval (Mem (CastE (ty,Const (CInt (i64,_,_)))),NoOffset) ->
      Some ("*(("  ^ (p2s (typ_to_pretty ty)) ^ ") " ^ (i64_to_string i64) ^ ")")
   | Lval _ -> Some (e2s e)
   | _ -> None
@@ -217,9 +217,9 @@ let rec get_num_range ?(apply_cast=true) env e =
             | _ -> get_num_range env x
           end
        | CastE (_,x) -> get_num_range env x
-       | Const (CInt64 (i64,_,_)) -> let v = mkNumericalFromInt64 i64 in (Some v, Some v)
+       | Const (CInt (i64,_,_)) -> let v = mkNumericalFromInt64 i64 in (Some v, Some v)
        | Const (CChr c) -> let v = mkNumerical (Char.code c) in (Some v, Some v)
-       | SizeOf (TArray (TInt (IChar,[]),Some (Const (CInt64 (i64,_,_))),[])) -> 
+       | SizeOf (TArray (TInt (IChar,[]),Some (Const (CInt (i64,_,_))),[])) -> 
           (Some numerical_zero,Some (mkNumericalFromInt64 i64))
        | SizeOfE e -> get_num_range env (SizeOf (type_of_exp env e))
        | BinOp (binop,e1,e2,TInt (k,_)) ->
@@ -388,19 +388,19 @@ let is_string_literal e =
   match get_string_literal e with Some _ -> true | _ -> false
     
 let get_positive e = match e with
-  | Const (CInt64 (i64,_,_)) when int64_positive i64 -> 
+  | Const (CInt (i64,_,_)) when int64_positive i64 -> 
     Some (" value is " ^ (Int64.to_string i64))
   | SizeOf _ | SizeOfE _ -> Some "size of type"
   | _ -> None
     
 let rec is_non_negative env e = match e with
-  | Const (CInt64 (i64,_,_)) -> int64_non_negative i64
+  | Const (CInt (i64,_,_)) -> int64_non_negative i64
   | SizeOf _ | SizeOfE _ -> true
   | CastE (ty,e) when is_integral_type ty -> is_non_negative env e
   | _ -> false
 
 let is_positive e = match e with
-  | Const (CInt64 (i64,_,_)) -> int64_positive i64
+  | Const (CInt (i64,_,_)) -> int64_positive i64
   | SizeOf _ | SizeOfE _ -> true
   | _ -> false
 
@@ -454,7 +454,7 @@ let rec has_embedded_null_dereference e =
 
     
 let get_non_positive e = match e with
-  | Const (CInt64 (i64,_,_)) when int64_non_positive i64 -> 
+  | Const (CInt (i64,_,_)) when int64_non_positive i64 -> 
     Some (" value is " ^ (Int64.to_string i64))
   | _ -> None
     
@@ -462,7 +462,7 @@ let rec exp_fits_kind e k =
   let lb = get_safe_lowerbound k in
   let ub = get_safe_upperbound k in
   match e with
-  | Const (CInt64 (i64,_,_)) -> let i = mkNumericalFromInt64 i64 in i#geq lb && i#leq ub
+  | Const (CInt (i64,_,_)) -> let i = mkNumericalFromInt64 i64 in i#geq lb && i#leq ub
   | BinOp (BAnd,_,c,_) -> exp_fits_kind c k
   | _ -> false
     
@@ -470,7 +470,7 @@ let rec exp_size_kind e k =
   let lb = get_safe_lowerbound k in
   let ub = get_safe_upperbound k in
   match e with
-  | Const (CInt64 (i64,_,_)) when exp_fits_kind e k ->
+  | Const (CInt (i64,_,_)) when exp_fits_kind e k ->
     (Int64.to_string i64 ^ " in range [" ^ lb#toString ^ "; " ^ ub#toString ^ "]")
   | BinOp (BAnd,_,c,_) when exp_fits_kind e k ->
     " and expr with constant " ^ (exp_size_kind c k)
@@ -480,7 +480,7 @@ let rec exp_size_kind e k =
     
 let rec get_not_zero_evidence (env:cfundeclarations_int) (x:exp) =
   match x with
-  | Const (CInt64 (i64,_,_)) when (not ((Int64.compare i64 Int64.zero) = 0)) ->
+  | Const (CInt (i64,_,_)) when (not ((Int64.compare i64 Int64.zero) = 0)) ->
      Some ("value is " ^ (Int64.to_string i64))
   | Const  (CReal (f,_,_)) when f > 0.0  || f < 0.0 ->
      Some ("value is " ^ (string_of_float f))
@@ -500,7 +500,7 @@ let rec get_not_zero_evidence (env:cfundeclarations_int) (x:exp) =
 
 let rec is_global_address (e:exp) =
   match e with
-  | CastE (TPtr _, Const (CInt64 (i64,_,_))) when (Int64.compare i64 Int64.zero) = 1 -> true
+  | CastE (TPtr _, Const (CInt (i64,_,_))) when (Int64.compare i64 Int64.zero) = 1 -> true
   | BinOp (PlusPI,e1,_,_) -> is_global_address e1
   | _ -> false
     
@@ -522,7 +522,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
       (match e with
        | CastE (_,ee) -> is_program_name ee
        | Lval (Mem (BinOp ((PlusPI | IndexPI),
-                           Lval (Var (_,vid),NoOffset),Const (CInt64 (i64,_,_)),_)),NoOffset) ->
+                           Lval (Var (_,vid),NoOffset),Const (CInt (i64,_,_)),_)),NoOffset) ->
           is_argv vid && (get_varinfo vid).vparam = 2 && (Int64.to_int i64) = 0
        | _ -> false) in
   
@@ -588,12 +588,12 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
       | Some s -> make ("absolute address in memory: " ^ s)
       | _ -> ())
 
-  | PNotNull (CastE (_,Const (CInt64 (i64,_,_)))) ->
+  | PNotNull (CastE (_,Const (CInt (i64,_,_)))) ->
      let _ = chlog#add "absolute address pointer"
                        (LBLOCK [ STR "Not null: " ; STR (i64_to_hex_string i64) ]) in
      make ("absolute address in memory: " ^ (i64_to_hex_string i64))
 
-  | PNotNull (CastE(_,CastE (_,Const (CInt64 (i64,_,_))))) ->
+  | PNotNull (CastE(_,CastE (_,Const (CInt (i64,_,_))))) ->
      let _ = chlog#add "absolute address pointer"
                        (LBLOCK [ STR "Not null: " ; STR (i64_to_hex_string i64) ]) in
      make ("absolute address in memory: " ^ (i64_to_hex_string i64))
@@ -717,8 +717,8 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
       | Some s -> make ("absolute address in memory: " ^ s)
       | _ -> ())
 
-  |  PInScope (CastE (_, Const (CInt64 (i64,_,_))))
-     | PInScope (CastE (_, (CastE (_, Const (CInt64 (i64,_,_)))))) when int64_non_negative i64 ->
+  |  PInScope (CastE (_, Const (CInt (i64,_,_))))
+     | PInScope (CastE (_, (CastE (_, Const (CInt (i64,_,_)))))) when int64_non_negative i64 ->
       make ("memory mapped i/o at address " ^ (i64_to_hex_string i64))
 
   | PInScope (Lval (Var ((("stdin" | "stdout" | "stderr") as vname),_),NoOffset))
@@ -728,7 +728,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
   | PInScope (Lval (Var (vname,vid),_)) when vid > 0 && (get_varinfo vid).vglob ->
      make ("variable " ^ vname ^ " is global")
 
-  | PInScope (AddrOf (Mem (CastE (TPtr _, (Const (CInt64 (i64,_,_))))),_)) when int64_non_negative i64 ->
+  | PInScope (AddrOf (Mem (CastE (TPtr _, (Const (CInt (i64,_,_))))),_)) when int64_non_negative i64 ->
      make ("memory mapped i/o at address " ^  (i64_to_hex_string i64))
 
   | PInScope (AddrOf (Var (vname,vid),_))
@@ -769,7 +769,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
      make_violation ("argument type: " ^  (p2s (typ_to_pretty tfrom))
                      ^ " must be a pointer type: " ^ (p2s (typ_to_pretty tto)))
 
-  | PCast (tfrom,tto,Lval (Mem (CastE (_,Const (CInt64 (i64,_,_)))),NoOffset))
+  | PCast (tfrom,tto,Lval (Mem (CastE (_,Const (CInt (i64,_,_)))),NoOffset))
        when (is_volatile_type tfrom && is_volatile_type tto) ->
      let _ = chlog#add "absolute address memory region"
                        (LBLOCK [ STR "cast from " ; typ_to_pretty tfrom ; STR " to " ;
@@ -783,10 +783,10 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
   | PCast (TInt (IInt,_), TPtr _, e) when is_zero e ->
      make "null-pointer cast"
 
-  | PCast (TInt (ik,_), TPtr _, (Const (CInt64 (i64,_,_)))) when int64_non_negative i64 ->
+  | PCast (TInt (ik,_), TPtr _, (Const (CInt (i64,_,_)))) when int64_non_negative i64 ->
      make ("casting memory address to pointer: " ^ (i64_to_hex_string i64))
 
-  | PCast (TInt (ik,_), TPtr _, (CastE(_,Const (CInt64 (i64,_,_))))) when int64_non_negative i64 ->
+  | PCast (TInt (ik,_), TPtr _, (CastE(_,Const (CInt (i64,_,_))))) when int64_non_negative i64 ->
      make ("casting memory address to pointer: " ^ (i64_to_hex_string i64))
 
   | PCast (TInt (IInt,_), TInt (IBool,_), BinOp (b,_,_,_))
@@ -922,8 +922,8 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
     | PUnsignedToUnsignedCast (_,_,e) when has_embedded_null_dereference e ->
      make ("embedded null dereference: null dereference is checked separately")
 
-  | PSignedToUnsignedCastLB (_,ik2, UnOp (BNot, Const (CInt64 (i64,_,_)),_))
-    | PSignedToUnsignedCastUB (_,ik2, UnOp (BNot, Const (CInt64 (i64,_,_)),_))
+  | PSignedToUnsignedCastLB (_,ik2, UnOp (BNot, Const (CInt (i64,_,_)),_))
+    | PSignedToUnsignedCastUB (_,ik2, UnOp (BNot, Const (CInt (i64,_,_)),_))
        when int_fits_kind (mkNumericalFromInt64 i64) ik2 ->
      make ("bit complement of " ^ (i64_to_hex_string i64) ^ " fits into " ^
              (int_type_to_string ik2))
@@ -994,8 +994,8 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
       when has_embedded_null_dereference x1 || has_embedded_null_dereference x2 ->
      make "embedded null dereference; null dereference is checked separately"
       
-  | PIntOverflow (PlusA,Const (CInt64 (i64,_,_)),Const (CInt64 (j64,_,_)),k)
-    | PUIntOverflow (PlusA,Const (CInt64 (i64,_,_)),Const (CInt64 (j64,_,_)),k) ->
+  | PIntOverflow (PlusA,Const (CInt (i64,_,_)),Const (CInt (j64,_,_)),k)
+    | PUIntOverflow (PlusA,Const (CInt (i64,_,_)),Const (CInt (j64,_,_)),k) ->
      let upperbound = get_safe_upperbound k in
      let sum = (mkNumericalFromInt64 i64)#add (mkNumericalFromInt64 j64) in
      if sum#leq upperbound then
@@ -1010,8 +1010,8 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
 		     upperbound#toPretty ]) 
        end
 
-  | PIntOverflow (MinusA,Const (CInt64 (i64,_,_)),Const (CInt64 (j64,_,_)),k)
-    | PUIntOverflow (MinusA,Const (CInt64 (i64,_,_)),Const (CInt64 (j64,_,_)),k) ->     
+  | PIntOverflow (MinusA,Const (CInt (i64,_,_)),Const (CInt (j64,_,_)),k)
+    | PUIntOverflow (MinusA,Const (CInt (i64,_,_)),Const (CInt (j64,_,_)),k) ->     
      let upperbound = get_safe_upperbound k in
      let difference = (mkNumericalFromInt64 i64)#sub (mkNumericalFromInt64 j64) in
      if difference#leq upperbound then
@@ -1025,8 +1025,8 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
 		     STR ", safe upperbound: " ;	upperbound#toPretty ]) 
        end
 	
-  | PIntOverflow (Mult,Const (CInt64 (i64,_,_)),Const (CInt64 (j64,_,_)),k)
-    | PUIntOverflow (Mult,Const (CInt64 (i64,_,_)),Const (CInt64 (j64,_,_)),k) ->     
+  | PIntOverflow (Mult,Const (CInt (i64,_,_)),Const (CInt (j64,_,_)),k)
+    | PUIntOverflow (Mult,Const (CInt (i64,_,_)),Const (CInt (j64,_,_)),k) ->     
      let upperbound = get_safe_upperbound k in
      let product = (mkNumericalFromInt64 i64)#mult (mkNumericalFromInt64 j64) in
      if product#leq upperbound then
@@ -1135,7 +1135,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
     end
       
   (* --------------------------------------------------- checking for integer underflow *)
-  | PIntUnderflow (PlusA,Const (CInt64 (i64,_,_)),Const (CInt64 (j64,_,_)),k) ->
+  | PIntUnderflow (PlusA,Const (CInt (i64,_,_)),Const (CInt (j64,_,_)),k) ->
     let lowerbound = get_safe_lowerbound k in
     let sum = (mkNumericalFromInt64 i64)#add (mkNumericalFromInt64 j64) in
     if sum#geq lowerbound then
@@ -1150,7 +1150,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
 		    lowerbound#toPretty ])
       end
 	
-  | PIntUnderflow (MinusA,Const (CInt64 (i64,_,_)),Const (CInt64 (j64,_,_)),k) ->
+  | PIntUnderflow (MinusA,Const (CInt (i64,_,_)),Const (CInt (j64,_,_)),k) ->
     let lowerbound = get_safe_lowerbound k in
     let difference = (mkNumericalFromInt64 i64)#sub (mkNumericalFromInt64 j64) in
     if difference#geq lowerbound then
@@ -1165,7 +1165,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
 		    lowerbound#toPretty ]) 
       end
 	
-  | PIntUnderflow (Mult,Const (CInt64 (i64,_,_)),Const (CInt64 (j64,_,_)),k) ->
+  | PIntUnderflow (Mult,Const (CInt (i64,_,_)),Const (CInt (j64,_,_)),k) ->
     let lowerbound = get_safe_lowerbound k in
     let product = (mkNumericalFromInt64 i64)#mult (mkNumericalFromInt64 j64) in
     if product#geq lowerbound then
@@ -1418,19 +1418,19 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
     | PLowerBound (_,CastE (_,Lval (Var ((("stdin"|"stdout"|"stderr") as vname),_),NoOffset))) ->
      make ("library variable " ^ vname ^ " satisfies lower bound")
 
-  | PLowerBound (_,CastE(_,Const (CInt64 (i64,_,_)))) ->
+  | PLowerBound (_,CastE(_,Const (CInt (i64,_,_)))) ->
      let addr = i64_to_hex_string i64 in
      let _ = chlog#add "absolute address pointer"
                        (LBLOCK [ STR "Lower bound of " ; STR addr ]) in
      make ("absolute address in memory: " ^ addr)
 
-  | PLowerBound (_,CastE(_,CastE(_,Const (CInt64 (i64,_,_))))) ->
+  | PLowerBound (_,CastE(_,CastE(_,Const (CInt (i64,_,_))))) ->
      let addr = i64_to_hex_string i64 in
      let _ = chlog#add "absolute address pointer"
                        (LBLOCK [ STR "Lower bound of " ; STR addr ]) in
      make ("absolute address in memory: " ^ addr)
 
-  | PLowerBound (_, (AddrOf (Mem (CastE (TPtr _, (Const (CInt64 (i64,_,_))))),_)) )
+  | PLowerBound (_, (AddrOf (Mem (CastE (TPtr _, (Const (CInt (i64,_,_))))),_)) )
        when int64_non_negative i64 ->
      make ("memory mapped i/o at address " ^  (i64_to_hex_string i64))
 
@@ -1473,19 +1473,19 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
       | Some s -> make ("absolute address in memory: " ^ s)
       | _ -> ())
 
-  | PUpperBound (_,CastE(_,Const (CInt64 (i64,_,_)))) ->
+  | PUpperBound (_,CastE(_,Const (CInt (i64,_,_)))) ->
      let addr = i64_to_hex_string i64 in
      let _ = chlog#add "absolute address pointer"
                        (LBLOCK [ STR "Upper bound of " ; STR addr ]) in
      make ("absolute address in memory: " ^ addr)
 
-  | PUpperBound (_,CastE(_,CastE(_,Const (CInt64 (i64,_,_))))) ->
+  | PUpperBound (_,CastE(_,CastE(_,Const (CInt (i64,_,_))))) ->
      let addr = i64_to_hex_string i64 in
      let _ = chlog#add "absolute address pointer"
                        (LBLOCK [ STR "Upper bound of " ; STR addr ]) in
      make ("absolute address in memory: " ^ addr)
 
-  | PUpperBound (_, (AddrOf (Mem (CastE (TPtr _, (Const (CInt64 (i64,_,_))))),_)))
+  | PUpperBound (_, (AddrOf (Mem (CastE (TPtr _, (Const (CInt (i64,_,_))))),_)))
        when int64_non_negative i64 ->
      make ("memory mapped i/o at address " ^  (i64_to_hex_string i64))
 
@@ -1532,7 +1532,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
   | PIndexLowerBound e when is_unsigned_integral_type (type_of_exp env e) ->
     make ("unsigned value is always non-negative")
 
-  | PIndexLowerBound (BinOp (BAnd,_,Const (CInt64 (j64,_,_)),_)) ->
+  | PIndexLowerBound (BinOp (BAnd,_,Const (CInt (j64,_,_)),_)) ->
      let mask = mkNumericalFromInt64 j64 in
      if mask#geq numerical_zero then
        make ("index value is masked with a non-negative number: " ^ mask#toString)
@@ -1549,7 +1549,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
       | _ -> ()
     end
 
-  | PIndexUpperBound (BinOp (BAnd,_,Const (CInt64 (i64,_,_)),_), Const (CInt64 (j64,_,_))) ->
+  | PIndexUpperBound (BinOp (BAnd,_,Const (CInt (i64,_,_)),_), Const (CInt (j64,_,_))) ->
      let mask = mkNumericalFromInt64 i64 in
      let ub = mkNumericalFromInt64 j64 in
      if mask#lt ub then
@@ -1558,7 +1558,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
      else
   (* add diagnostic *) ()
 
-  | PIndexUpperBound (e, Const (CInt64 (j64,_,_))) ->
+  | PIndexUpperBound (e, Const (CInt (j64,_,_))) ->
     let ub = mkNumericalFromInt64 j64 in
     begin 
       match get_num_value env e with 
@@ -1586,12 +1586,12 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
       | Some s -> make ("reading global location: " ^ s)
       | _ -> ())
 
-  | PInitialized (Mem (CastE (_, Const (CInt64 (i64,_,_)))),Field ((fname,_),NoOffset)) ->
+  | PInitialized (Mem (CastE (_, Const (CInt (i64,_,_)))),Field ((fname,_),NoOffset)) ->
      let _ = chlog#add "reading global memory"
                        (LBLOCK [ STR "memory region: " ; STR (i64_to_hex_string i64) ]) in
      make ("field " ^ fname ^ " in global address struct: " ^ (i64_to_hex_string i64))
 
-  | PInitialized (Mem (CastE (_, Const (CInt64 (i64,_,_)))),offset) ->
+  | PInitialized (Mem (CastE (_, Const (CInt (i64,_,_)))),offset) ->
      let _ = chlog#add "reading global memory"
                        (LBLOCK [ STR "memory region: " ; STR (i64_to_hex_string i64) ]) in
      begin
@@ -1603,7 +1603,7 @@ let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obli
                 ^ (p2s (offset_to_pretty offset)))
      end
 
-  | PInitialized  (Mem (CastE (_, BinOp (_,Const (CInt64 (i64,_,_)),e,_))), offset) ->
+  | PInitialized  (Mem (CastE (_, BinOp (_,Const (CInt (i64,_,_)),e,_))), offset) ->
      let _ = chlog#add "reading global memory"
                        (LBLOCK [ STR "memory region: " ; STR (i64_to_hex_string i64) ;
                                  STR " with offset " ; exp_to_pretty e ]) in

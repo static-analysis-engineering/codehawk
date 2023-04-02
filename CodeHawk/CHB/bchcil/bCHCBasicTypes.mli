@@ -239,7 +239,7 @@ and bexp_t =
     * btype_t  (* constant, predefined function application *)
 
 and bconstant_t =
-| CInt64 of int64 * ikind_t * string option
+| CInt of int64 * ikind_t * string option
 | CStr of string
 | CWStr of int64 list
 | CChr of char

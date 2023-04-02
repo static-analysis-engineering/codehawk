@@ -109,8 +109,8 @@ let float_type_to_string (k:fkind) =
     
 let cil_constant_to_string (c:constant) =
   match c with
-  | CInt64 (_,_,Some t) -> t
-  | CInt64 (i64,_,_) -> Int64.to_string i64
+  | CInt (_,_,Some t) -> t
+  | CInt (i64,_,_) -> Int64.to_string i64
   | CStr s ->
      let (_,_,len) = mk_constantstring s in
      (string_of_int len) ^ "-char-string-literal"
@@ -188,7 +188,7 @@ and exp_to_pretty (x:exp) =
   let pl = lval_to_pretty in
   let peo = opt_exp_to_pretty in
   match x with
-  | CastE (_, CastE (TPtr (TVoid _,_),Const (CInt64 (i64,_,_))))
+  | CastE (_, CastE (TPtr (TVoid _,_),Const (CInt (i64,_,_))))
        when (mkNumericalFromInt64 i64)#equal numerical_zero -> STR "NULL"
   | Const c -> STR (constant_to_string c)
   | Lval l -> pl l

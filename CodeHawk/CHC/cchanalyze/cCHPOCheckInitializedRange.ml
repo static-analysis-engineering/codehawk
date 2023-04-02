@@ -134,7 +134,7 @@ object (self)
     let vinfovalues = poq#get_vinfo_offset_values vinfo in
     List.fold_left  (fun (deps,acc) (inv,offset) ->
         match offset with
-        | Index (Const (CInt64 (i64,_,_)),NoOffset) ->
+        | Index (Const (CInt (i64,_,_)),NoOffset) ->
            begin
              match inv#expr with
              | Some x ->
@@ -198,7 +198,7 @@ object (self)
          let (vinfo,offset) = poq#env#get_local_variable stackvar in
          begin
            match (vinfo.vtype, offset) with
-           | (TArray (_,Some (Const (CInt64 (len64,_,_))),_),NoOffset) ->
+           | (TArray (_,Some (Const (CInt (len64,_,_))),_),NoOffset) ->
               let arraylen = mkNumericalFromInt64 len64 in
               begin
                 match self#get_initialization_length vinfo with

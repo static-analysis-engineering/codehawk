@@ -77,7 +77,7 @@ object (self)
        let _ = poq#set_diagnostic_arg 1 ("address of stack variable: " ^ vinfo.vname) in
        begin
          match (vinfo.vtype, offset) with
-         | (TArray (_,Some (Const  (CInt64 (len64,_,_))),_), NoOffset) ->
+         | (TArray (_,Some (Const  (CInt (len64,_,_))),_), NoOffset) ->
             let vinfovalues = poq#get_vinfo_offset_values vinfo in
             let _ = poq#set_vinfo_diagnostic_invariants vinfo in
             List.fold_left (fun acc (inv,offset) ->
@@ -85,7 +85,7 @@ object (self)
                 | Some _ -> acc
                 | _ ->
                    match offset with
-                   | Index (Const (CInt64 (i64,_,_)),NoOffset) ->
+                   | Index (Const (CInt (i64,_,_)),NoOffset) ->
                       let arraylen = mkNumericalFromInt64 len64 in
                       let indexval = mkNumericalFromInt64 i64 in
                       if indexval#lt arraylen then

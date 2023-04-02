@@ -28,7 +28,7 @@
    ============================================================================= *)
 
 (* cil *)
-open Cil
+open GoblintCil
 
 (* chutil *)
 open CHXmlDocument
@@ -122,18 +122,18 @@ and write_xml_label (node: xml_element_int) (label: label) =
       set "lname" lname;
       setb "programlabel" programLabel
     end
-  | Case (x,loc) ->
+  | Case (x,loc,_todo_col) ->
     begin
       cd#write_xml_exp node x;
       decls#write_xml_location node loc 
     end
-  | CaseRange (xlo, xhi, loc) ->
+  | CaseRange (xlo, xhi, loc, _todo_col) ->
     begin
       cd#write_xml_exp ~tag:"iexplo" node xlo;
       cd#write_xml_exp ~tag:"iexphi" node xhi;
       decls#write_xml_location node loc 
     end
-  | Default loc -> decls#write_xml_location node loc
+  | Default (loc, _todo_col) -> decls#write_xml_location node loc
 
 
 and write_xml_label_list (node: xml_element_int) (l: label list) =
@@ -152,13 +152,13 @@ and write_xml_instruction
   let append = node#appendChildren in
   let _ = set "itag" (instr_mcts#ts instr) in
   match instr with
-  | Set (lval, x, loc) ->
+  | Set (lval, x, loc, _todo_col) ->
     begin
       cd#write_xml_lval node lval;
       cd#write_xml_exp node x;
       decls#write_xml_location node loc
     end
-  | Call (optLval, fx, args, loc) ->
+  | Call (optLval, fx, args, loc, _todo_col) ->
     let argsNode = xmlElement "args" in
     begin
       cd#write_xml_exp node fx;
@@ -234,7 +234,7 @@ and write_xml_stmtkind
       decls#write_xml_location node loc 
     end
   | Break loc | Continue loc -> decls#write_xml_location node loc
-  | If (x, ifblock, elseblock,loc) ->
+  | If (x, ifblock, elseblock,loc,_todo_col) ->
     let ifNode = xmlElement "thenblock" in
     let elseNode = xmlElement "elseblock" in
     begin
@@ -244,7 +244,7 @@ and write_xml_stmtkind
       decls#write_xml_location node loc;
       append [ifNode; elseNode]
     end
-  | Switch (x, block, stmtlist, loc) ->
+  | Switch (x, block, stmtlist, loc, _todo_col) ->
     let bNode = xmlElement "block" in
     let sNode = xmlElement "stmts" in
     begin
@@ -254,7 +254,7 @@ and write_xml_stmtkind
       decls#write_xml_location node loc;
       append [bNode; sNode]
     end
-  | Loop (body, loc, optContinueStmt, optBreakStmt) ->
+  | Loop (body, loc, _todo_col, optContinueStmt, optBreakStmt) ->
     let bNode = xmlElement "block" in
     begin
       write_xml_function_block fdecls bNode body;
@@ -273,7 +273,6 @@ and write_xml_stmtkind
       write_xml_function_block fdecls bNode b;
       append [bNode]
     end
-  | TryFinally _ | TryExcept _ -> ()     (* currently not supported; only used in MSVC *)
 
 
 and write_xml_statement

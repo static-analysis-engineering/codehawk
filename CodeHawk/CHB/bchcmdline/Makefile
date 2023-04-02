@@ -52,7 +52,7 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
-	$(CIL)/cil.cmxa \
+	$(CIL)/goblintCil.cmxa \
 	$(BCHCIL)/bchcil.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
 	$(PELIB)/bchlibpe.cmxa \
@@ -79,7 +79,7 @@ make_dirs:
 
 defs: make_dirs libsum appsum constsum classsum structdef
 
-xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPSLIB)/bchlibmips32.cmxa $(ARMLIB)/bchlibarm32.cmxa $(PWRLIB)/bchlibpower32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
+xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPSLIB)/bchlibmips32.cmxa $(ARMLIB)/bchlibarm32.cmxa $(PWRLIB)/bchlibpower32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
 	$(CAMLLINK) -o chx86_analyze cmx/bCHXBinaryAnalyzer.cmx
 
 inspect: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa cmi/bCHXInspectSummaries.cmi cmx/bCHXInspectSummaries.cmx

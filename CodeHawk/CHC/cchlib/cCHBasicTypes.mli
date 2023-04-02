@@ -197,7 +197,7 @@ and exp =
 | CnApp of string * exp option list * typ         (* constant, predefined function application *)
 
 and constant =
-| CInt64 of int64 * ikind * string option
+| CInt of int64 * ikind * string option
 | CStr of string
 | CWStr of int64 list
 | CChr of char

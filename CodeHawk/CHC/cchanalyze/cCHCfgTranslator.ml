@@ -313,9 +313,9 @@ object (self)
 	  | ({skind = Break _ ; labels = []} :: _, []) ->
              (UnOp (LNot, e, TInt (IInt,[])), rest,ops)
 	  | _ ->
-             (Const (CInt64 (Int64.of_int 1,IInt,None)), stmts,ops)
+             (Const (CInt (Int64.of_int 1,IInt,None)), stmts,ops)
 	end
-      | _ -> (Const (CInt64 (Int64.of_int 1,IInt,None)), stmts,[]) in
+      | _ -> (Const (CInt (Int64.of_int 1,IInt,None)), stmts,[]) in
     let bodyStmts =
       List.map (fun s ->
           self#translate_stmt s gotos (context#add_stmt s.sid)) loopStmts in

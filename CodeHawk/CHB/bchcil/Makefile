@@ -24,7 +24,7 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(ZARITHLIB)/zarith.cmxa \
 	$(EXTLIB)/extlib.cmxa \
 	$(ZIPLIB)/zip.cmxa \
-	$(CIL)/cil.cmxa \
+	$(CIL)/goblintCil.cmxa \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
@@ -67,7 +67,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-bchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(EXTLIB)
+bchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB)
 	$(CAMLLINKL) -a -o bchcil.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli

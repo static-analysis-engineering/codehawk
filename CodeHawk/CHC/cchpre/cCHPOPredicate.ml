@@ -564,7 +564,7 @@ let check_assumption_predicates
              | (PIntUnderflow (op',x1',x2',ik'), PIntUnderflow (op,x1,x2,ik)) ->
                 (if (op' = op) && ((exp_compare x1' x1) = 0) && (ik' = ik) then
                    match (op,x2',x2) with
-                   | (MinusA,Const (CInt64 (i64',_,_)),Const (CInt64 (i64,_,_))) ->
+                   | (MinusA,Const (CInt (i64',_,_)),Const (CInt (i64,_,_))) ->
                       if Int64.compare i64' i64 < 0 then
                         Some pred
                       else
@@ -581,7 +581,7 @@ let rec offset_to_s_offset (o:offset) =
   match o with
   | NoOffset ->  ArgNoOffset
   | Field ((fname,_),t) -> ArgFieldOffset (fname,offset_to_s_offset t)
-  | Index (Const (CInt64 (i64,_,_)),t) ->
+  | Index (Const (CInt (i64,_,_)),t) ->
      ArgIndexOffset (mkNumericalFromInt64 i64,offset_to_s_offset t)
   | _ ->
      raise (CCHFailure (LBLOCK [ STR "offset cannot be converted to s_offset:" ;
@@ -590,7 +590,7 @@ let rec offset_to_s_offset (o:offset) =
 let rec exp_to_sterm (fdecls:cfundeclarations_int)  (e:exp) =
   let es = exp_to_sterm fdecls in
   match e with
-  | Const (CInt64 (i64,_,_)) ->
+  | Const (CInt (i64,_,_)) ->
      NumConstant (mkNumericalFromString (Int64.to_string i64))
   | Lval (Var (vname,vid),offset) when vid = (-1) ->
      ArgValue (ParGlobal vname, offset_to_s_offset offset)
@@ -741,7 +741,7 @@ let rec sterm_to_exp ?(returnexp=None) (fdecls:cfundeclarations_int) (t:s_term_t
      let vinfo = file_environment#get_globalvar_by_name name in
      let offset = s_offset_to_offset vinfo.vtype soff in
      Lval (Var (vinfo.vname, vinfo.vid), offset)
-  | NumConstant i -> Const (CInt64 (Int64.of_string i#toString, IInt, None))
+  | NumConstant i -> Const (CInt (Int64.of_string i#toString, IInt, None))
   | ArithmeticExpr (op,t1,t2) -> BinOp (op, te t1, te t2, TInt (IInt,[]))
   | ArgAddressedValue (t,soff) ->
      let base = te t in

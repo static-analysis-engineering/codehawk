@@ -130,7 +130,7 @@ object (self)
   method add_inequality_condition (gv:contract_global_var_t) (op:binop) (lb:int) =
     let gvar = file_environment#get_globalvar_by_name gv.cgv_name in
     let gexp = Lval (Var (gvar.vname, gvar.vid),NoOffset) in
-    let lbexp = Const (CInt64 (Int64.of_int lb,IInt, None)) in
+    let lbexp = Const (CInt (Int64.of_int lb,IInt, None)) in
     let pred = PValueConstraint (BinOp (op, gexp, lbexp,TInt (IInt,[]))) in
     let xpred = XRelationalExpr (op, ArgValue (ParGlobal gv.cgv_name,ArgNoOffset),
                                  NumConstant (mkNumerical lb)) in

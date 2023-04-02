@@ -65,16 +65,16 @@ open CCHVariable
 let x2p = xpr_formatter#pr_expr
   	
 let rec is_zero e = match e with
-  | Const (CInt64 (i64,_,_)) -> (Int64.compare i64 Int64.zero) = 0
+  | Const (CInt (i64,_,_)) -> (Int64.compare i64 Int64.zero) = 0
   | CastE (_, e) -> is_zero e
   | _ -> false
 
 let rec get_constant_value e = match e with
-  | Const (CInt64 (i64,_,_)) -> Some (Int64.to_int i64)
+  | Const (CInt (i64,_,_)) -> Some (Int64.to_int i64)
   | CastE (_, e) -> get_constant_value e
   | _ -> None
 
-let make_constant_value i = Const (CInt64 (Int64.of_int i, IInt, None))
+let make_constant_value i = Const (CInt (Int64.of_int i, IInt, None))
     
 class orakel_t 
   (env:c_environment_int) 

@@ -34,12 +34,12 @@ open CCHUtilities
 
 module B = Big_int_Z
 
-let zero = Const (CInt64 (Int64.zero, IInt, None))
+let zero = Const (CInt (Int64.zero, IInt, None))
 
 let unknown_location = { file = "unknown" ; line = (-1) ; byte = (-1) }
 let call_sink = { file = "callsink" ; line = (-1) ; byte = (-1) }
 
-let mk_int_constant i = CInt64 (Int64.of_int i, IInt, None)
+let mk_int_constant i = CInt (Int64.of_int i, IInt, None)
 
 let mk_disequality e1 e2 = BinOp (Ne, e1, e2, TInt (IChar, []))
 let mk_equality    e1 e2 = BinOp (Eq, e1, e2, TInt (IChar, []))
@@ -48,7 +48,7 @@ let mk_logical_and e1 e2 = BinOp (LAnd, e1, e2, TInt (IChar, []))
 
 let exp_is_zero (x:exp) =
   match x with
-  | Const (CInt64 (i64, _, _)) -> 
+  | Const (CInt (i64, _, _)) -> 
     B.eq_big_int (B.big_int_of_int64 i64) B.zero_big_int
   | _ -> false
 
@@ -58,11 +58,11 @@ let char_const_to_int (c: char) : constant =
     if c' < 128 
     then Int64.of_int c'
     else Int64.of_int (c' - 256) in
-  CInt64(value, IInt, None)
+  CInt(value, IInt, None)
 
 let char_const_to_big c = 
   match char_const_to_int c with
-  | CInt64 (i64, _, _) -> B.big_int_of_int64 i64
+  | CInt (i64, _, _) -> B.big_int_of_int64 i64
   | _ -> raise (CCHFailure 
 		  (LBLOCK [ STR "Unable to parse char constant " ; STR "CChr " ]))
 

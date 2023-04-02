@@ -458,7 +458,7 @@ object (self)
 
   method set_exp_diagnostic ?(lb=false) ?(ub=false) (e:exp) (s:string) =
     match e with
-    | Const (CInt64 _) -> ()
+    | Const (CInt _) -> ()
     | _ ->
        let prefix = if lb then "lb-exp" else if ub then "ub-exp" else "exp" in
        self#set_diagnostic ("[" ^ prefix ^  ":" ^ (e2s e) ^ "]: " ^ s)
@@ -466,7 +466,7 @@ object (self)
   method get_exp_value (e:exp):(int list * xpr_t option) =
     match e with
     | CastE (_, e1) -> self#get_exp_value e1
-    | Const (CInt64 (i64,_,_)) -> ([], Some (XConst (IntConst (mkNumericalFromInt64 i64))))
+    | Const (CInt (i64,_,_)) -> ([], Some (XConst (IntConst (mkNumericalFromInt64 i64))))
     | Lval (Var (vname,vid),NoOffset) when vid > 0 ->
        let vinfo = self#env#get_varinfo vid in
        let invariants =
@@ -531,7 +531,7 @@ object (self)
                  match inv#upper_bound_xpr with
                  | Some x -> (inv#index :: invs, Some x)
                  | _ -> (invs,acc)) ([], None) invariants
-       | BinOp (MinusA, e1, (Const (CInt64 (i64,_,_))),_) ->
+       | BinOp (MinusA, e1, (Const (CInt (i64,_,_))),_) ->
           begin
             match self#get_exp_upper_bound_value e1 with
             | (invs,Some x) ->
@@ -595,13 +595,13 @@ object (self)
        let vinfo = self#env#get_varinfo vid in
        begin
          match vinfo.vtype with
-         | TArray (_,Some (Const (CInt64 (_,_,_))),_) ->
+         | TArray (_,Some (Const (CInt (_,_,_))),_) ->
             List.fold_left (fun acc (inv,offset) ->
                 match acc with
                 | Some _ -> acc
                 | _ ->
                    match offset with
-                   | Index (Const (CInt64 (i64,_,_)),NoOffset) ->
+                   | Index (Const (CInt (i64,_,_)),NoOffset) ->
                       let index = mkNumericalFromInt64 i64 in
                       begin
                         match inv#expr with
@@ -713,7 +713,7 @@ object (self)
                 match offset with
                 | NoOffset ->
                    Some (vname,self#e2x len,zero_constant_expr)
-                | Index (Const (CInt64 (i64,_,_)),NoOffset) ->
+                | Index (Const (CInt (i64,_,_)),NoOffset) ->
                    let xoffset = num_constant_expr (mkNumericalFromInt64 i64) in
                    Some (vname,self#e2x len,xoffset)
                 | _ -> None
@@ -1187,7 +1187,7 @@ object (self)
       | CastE (_,ee) -> self#is_command_line_argument ee
       | Lval (Mem (BinOp
                      ((PlusPI | IndexPI),
-                      Lval (Var (_,vid),NoOffset),Const (CInt64 (i64,_,_)),_)),
+                      Lval (Var (_,vid),NoOffset),Const (CInt (i64,_,_)),_)),
               NoOffset) when vid > 0  ->
          fenv#is_formal vid && (self#env#get_varinfo vid).vparam = 2
       | _ -> false
@@ -1197,7 +1197,7 @@ object (self)
       match e with
       | CastE (_,ee) -> self#get_command_line_argument_index ee
       | Lval (Mem (BinOp ((PlusPI | IndexPI),
-                          Lval (Var (_,vid),NoOffset),Const (CInt64 (i64,_,_)),_)),NoOffset) ->
+                          Lval (Var (_,vid),NoOffset),Const (CInt (i64,_,_)),_)),NoOffset) ->
          Int64.to_int i64
       | _ ->
          raise (CCHFailure (LBLOCK [ STR "Internal error in get_command_line_argument_index" ]))
@@ -1279,7 +1279,7 @@ object (self)
              | Some _ -> acc
              | _ ->
                 match pred with
-                | PBuffer (Lval (Var  (gname,gvid),NoOffset), Const (CInt64 (i64,_,_)))
+                | PBuffer (Lval (Var  (gname,gvid),NoOffset), Const (CInt (i64,_,_)))
                      when gvid = vinfo.vid ->
                    let xsize = num_constant_expr (mkNumericalFromInt64 i64) in
                    let deps = DEnvC ([ invindex ],[ ApiAssumption pred ]) in

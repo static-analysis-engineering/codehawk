@@ -218,7 +218,7 @@ and byte_size_of_typ (t: btype_t): int =
 and byte_size_of_array (t: btype_t) (len: bexp_t) =
   let rec getlen e =
     match e with
-    | Const (CInt64 (i64, _, _)) -> Int64.to_int i64
+    | Const (CInt (i64, _, _)) -> Int64.to_int i64
     | BinOp (PlusA, e1, e2, _) -> (getlen e1) + (getlen e2)
     | BinOp (MinusA, e1, e2, _) -> (getlen e1) - (getlen e2)
     | SizeOf t -> byte_size_of_typ t

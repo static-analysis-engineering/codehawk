@@ -14,6 +14,6 @@ jobs:
         ocaml-version: 4.12.1
     - name: Install dependencies
       run: |
-        opam install extlib camlzip zarith ocamlbuild goblint-cil=1.8.2
+        opam install extlib camlzip zarith ocamlbuild goblint-cil
     - name: Compile CodeHawk
       run: eval $(opam env) && cd CodeHawk && ./full_make_no_gui.sh

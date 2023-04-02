@@ -28,7 +28,7 @@
    ============================================================================= *)
 
 (* cil *)
-open Cil
+open GoblintCil
 
 (* chlib *)
 open CHPretty
@@ -121,10 +121,10 @@ object (self)
   method index_constant (c: constant):int =
     let tags = [constant_mcts#ts c] in
     let key = match c with
-      | CInt64 (i64, ik, opts) ->
-         (tags @ [Int64.to_string i64; ikind_mfts#ts ik ], [])
-      | CStr s -> (tags, [self#index_string s])
-      | CWStr i64r -> (tags @ (List.map Int64.to_string i64r), [])
+      | CInt (i64, ik, opts) ->
+         (tags @ [Int64.to_string (GoblintCil.Cilint.int64_of_cilint i64); ikind_mfts#ts ik ], [])
+      | CStr (s, _todo_encoding) -> (tags, [self#index_string s])
+      | CWStr (i64r, _todo_encoding) -> (tags @ (List.map Int64.to_string i64r), [])
       | CChr c -> (tags, [Char.code c])
       | CReal (f, fk, opts) ->
          (tags
@@ -256,7 +256,7 @@ object (self)
       | _ -> [self#index_attributes attrs] in
     let key = match typsig with
       | TSArray (tsig, opti64, attrs) ->
-         (tags @ [self#index_opti64 opti64],
+         (tags @ [self#index_opti64 (Option.map GoblintCil.Cilint.int64_of_cilint opti64)],
           [self#index_typsig tsig] @ ia attrs)
       | TSPtr (tsig, attrs) -> (tags, (self#index_typsig tsig) :: ia attrs)
       | TSComp (b,s,attrs) -> (tags @ [s], (if b then 1 else 0) :: ia attrs)

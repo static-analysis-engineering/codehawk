@@ -51,10 +51,10 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-parse: 	$(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(EXTLIB) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa
-	$(CAMLLINK) -I $(ZARITHLIB) -o parseFile str.cmxa unix.cmxa $(ZARITHLIB)/zarith.cmxa $(CIL)/cil.cmxa $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(OBJECTS)
+parse: 	$(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa
+	$(CAMLLINK) -I $(ZARITHLIB) -o parseFile str.cmxa unix.cmxa $(ZARITHLIB)/zarith.cmxa $(CIL)/goblintCil.cmxa $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(OBJECTS)
 
-cchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/cil.cmxa $(EXTLIB) $(CHUTIL)/chutil.cmxa
+cchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB) $(CHUTIL)/chutil.cmxa
 	$(CAMLLINKLIB) -a -o cchcil.cmxa $(OBJECTS)
 
 

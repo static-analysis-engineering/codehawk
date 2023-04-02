@@ -484,7 +484,7 @@ and get_arg env (s:s_term_t) (args:exp list) =
        raise (CCHFailure (LBLOCK [ STR "Expected at least " ; INT i ;
                                    STR " arguments, but found " ;
                                    INT (List.length args) ]))
-  | NumConstant i -> ([],Const (CInt64 (Int64.of_string i#toString,IInt,None)),[])
+  | NumConstant i -> ([],Const (CInt (Int64.of_string i#toString,IInt,None)),[])
   | NamedConstant s -> ([],CnApp (s,[],TInt (IInt,[])),[])
   | ArgAddressedValue (ptr,ArgNoOffset) -> 
     let (p,a,i) = get_arg env ptr args in 
@@ -565,7 +565,7 @@ and get_input_format_proofobligations env argspec arg =
             begin
               match argspec#get_fieldwidth with
               | FieldwidthConstant i ->
-                 let len = Const (CInt64 (Int64.of_int i,IInt,None)) in
+                 let len = Const (CInt (Int64.of_int i,IInt,None)) in
                  [ get_po argtype (TInt (IUShort,[])) ; PNotNull arg ;
                    PPtrUpperBound (TInt (IUShort,[]), PlusPI,arg,len) ]
               | _ ->  (* TBD: add user bound *)
@@ -575,7 +575,7 @@ and get_input_format_proofobligations env argspec arg =
             if argspec#has_fieldwidth then
               match argspec#get_fieldwidth with
               | FieldwidthConstant i ->
-                 let len = Const (CInt64 (Int64.of_int i,IInt,None)) in
+                 let len = Const (CInt (Int64.of_int i,IInt,None)) in
                  [ get_po argtype (TInt (IChar,[])) ; PNotNull arg ;
                    PPtrUpperBound (TInt (IChar,[]), PlusPI,arg,len) ]
               | _ -> (* TBD: add user bound *)
@@ -586,7 +586,7 @@ and get_input_format_proofobligations env argspec arg =
          if  argspec#has_fieldwidth then
            match argspec#get_fieldwidth with
            | FieldwidthConstant i ->
-              let len = Const (CInt64 (Int64.of_int i,IInt,None)) in
+              let len = Const (CInt (Int64.of_int i,IInt,None)) in
               [ get_po argtype (TInt (IChar,[])) ; PNotNull arg ;
                 PPtrUpperBound (TInt (IChar,[]), PlusPI,arg,len) ]
            | _ -> (* TBD: add user bound *)
@@ -908,7 +908,7 @@ and get_precondition_po_predicates env pre args (context:program_context_int) lo
         match typesize with
         | XConst (IntConst n) ->
            let tlen =
-             BinOp (Div, len, Const (CInt64 (Int64.of_string n#toString, IUInt,None)),
+             BinOp (Div, len, Const (CInt (Int64.of_string n#toString, IUInt,None)),
                     TInt (IUInt,[])) in
            (addx i1 p1) @ (addx i2 p2) @
              (addx i1 [ PPtrUpperBound (destType,PlusPI,destArg,tlen) ;

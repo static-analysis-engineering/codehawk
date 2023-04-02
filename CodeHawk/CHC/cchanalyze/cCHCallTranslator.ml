@@ -1018,8 +1018,8 @@ object (self)
                    let arg = List.nth args (n-1) in
                    begin
                      match arg with
-                     | Const (CInt64 (i64,_,_))
-                       | CastE (_, Const (CInt64 (i64,_,_))) ->
+                     | Const (CInt (i64,_,_))
+                       | CastE (_, Const (CInt (i64,_,_))) ->
                         Some (mkNumericalFromString (Int64.to_string i64))
                      | _ -> None
                    end
@@ -1205,8 +1205,8 @@ object (self)
                    let arg = List.nth args (n-1) in
                    begin
                      match arg with
-                     | Const (CInt64 (i64,_,_))
-                       | CastE (_, Const (CInt64 (i64,_,_))) -> Some (Int64.to_int i64)
+                     | Const (CInt (i64,_,_))
+                       | CastE (_, Const (CInt (i64,_,_))) -> Some (Int64.to_int i64)
                      | _ -> None
                    end
                 | _ -> None in

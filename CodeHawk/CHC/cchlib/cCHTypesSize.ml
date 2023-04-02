@@ -191,7 +191,7 @@ and byte_size_of_comp env t comp : xpr_t =
 and byte_size_of_array env t len =
   let rec getlen e =
     match e with
-    | Const (CInt64 (i64,_,_)) -> num_constant_expr (mkNumericalFromInt64 i64)
+    | Const (CInt (i64,_,_)) -> num_constant_expr (mkNumericalFromInt64 i64)
     | BinOp (PlusA, e1, e2, _) ->
        simplify_xpr (XOp (XPlus, [ getlen e1 ; getlen e2 ]))
     | BinOp (MinusA, e1, e2, _) ->

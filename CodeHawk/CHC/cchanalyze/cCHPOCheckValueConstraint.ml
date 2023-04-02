@@ -154,7 +154,7 @@ object (self)
     
   method check_safe =
     match e with
-    | BinOp (op, Lval (Var (vname,vid),NoOffset), Const (CInt64 (i64,_,_)),_) when vid > 0 ->
+    | BinOp (op, Lval (Var (vname,vid),NoOffset), Const (CInt (i64,_,_)),_) when vid > 0 ->
        let vinfo = poq#env#get_varinfo vid in
        let _ = poq#set_vinfo_diagnostic_invariants vinfo in
        begin
@@ -166,8 +166,8 @@ object (self)
             end
          | _ -> false
        end
-    | BinOp (op1, BinOp (op2,Lval (Var (vname,vid),NoOffset),Const (CInt64 (i64_1,_,_)),_),
-             Const (CInt64 (i64_2,_,_)),_) when vid > 0 ->
+    | BinOp (op1, BinOp (op2,Lval (Var (vname,vid),NoOffset),Const (CInt (i64_1,_,_)),_),
+             Const (CInt (i64_2,_,_)),_) when vid > 0 ->
        let vinfo = poq#env#get_varinfo vid in
        let _ = poq#set_vinfo_diagnostic_invariants vinfo in       
        begin
@@ -382,7 +382,7 @@ object (self)
   
   method check_violation =
     match e with
-    | BinOp (op, Lval (Var (vname,vid),NoOffset), Const (CInt64 (i64,_,_)),_) when vid > 0 ->
+    | BinOp (op, Lval (Var (vname,vid),NoOffset), Const (CInt (i64,_,_)),_) when vid > 0 ->
        let vinfo = poq#env#get_varinfo vid in
        begin
          match self#inv_vc_violation op vinfo (mkNumericalFromInt64 i64) with
@@ -393,8 +393,8 @@ object (self)
             end
          | _ -> false
        end
-    | BinOp (op1, BinOp (op2,Lval (Var (vname,vid),NoOffset),Const (CInt64 (i64_1,_,_)),_),
-             Const (CInt64 (i64_2,_,_)),_) when vid > 0 ->
+    | BinOp (op1, BinOp (op2,Lval (Var (vname,vid),NoOffset),Const (CInt (i64_1,_,_)),_),
+             Const (CInt (i64_2,_,_)),_) when vid > 0 ->
        let vinfo = poq#env#get_varinfo vid in
        begin
          match self#inv_vcc_violation
@@ -407,8 +407,8 @@ object (self)
             end
          | _ -> false
        end
-    | BinOp (op1, BinOp (op2,Const (CInt64 (i64_1,_,_)),Lval (Var (vname,vid),NoOffset),_),
-             Const (CInt64 (i64_2,_,_)),_) when vid > 0 ->
+    | BinOp (op1, BinOp (op2,Const (CInt (i64_1,_,_)),Lval (Var (vname,vid),NoOffset),_),
+             Const (CInt (i64_2,_,_)),_) when vid > 0 ->
        let vinfo = poq#env#get_varinfo vid in
        begin
          match self#inv_cvc_violation
@@ -438,14 +438,14 @@ object (self)
   (* ----------------------- delegation ------------------------------------- *)
   method check_delegation =
     match e with
-    | BinOp (op, e1, Const (CInt64 (i64,ik,txt)),t) ->
+    | BinOp (op, e1, Const (CInt (i64,ik,txt)),t) ->
        let invs = poq#get_exp_invariants e1 in
        List.fold_left (fun acc inv ->
            acc ||
              match inv#expr with
              | Some x when poq#is_api_expression x ->
                 let a = poq#get_api_expression x in
-                let c = BinOp (op,a,Const (CInt64 (i64,ik,txt)),t) in
+                let c = BinOp (op,a,Const (CInt (i64,ik,txt)),t) in
                 let pred = PValueConstraint c in
                 let deps = DEnvC ([ inv#index ],[ ApiAssumption pred ])  in
                 let msg = "constraint " ^ (e2s e) ^ " delegated to the api" in

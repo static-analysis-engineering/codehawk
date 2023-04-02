@@ -28,7 +28,7 @@
    ============================================================================= *)
 
 (* cil *)
-open Cil
+open GoblintCil
 open Errormsg
 open Frontc
 
@@ -158,7 +158,7 @@ let get_target_name () =
   (target,absoluteTarget)
 
 
-let save_cil_xml_file target (f: Cil.file) (xfilename: string) =
+let save_cil_xml_file target (f: GoblintCil.file) (xfilename: string) =
   let doc = xmlDocument () in
   let root = get_cch_root target in
   let fileNode = xmlElement "c-file" in

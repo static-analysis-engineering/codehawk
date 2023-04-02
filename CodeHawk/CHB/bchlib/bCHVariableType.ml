@@ -331,7 +331,7 @@ let read_xml_summary_type (node: xml_element_int): btype_t =
            if nn#hasNamedAttribute "size" then
 	     Some
                (Const
-                  (CInt64 (Int64.of_string (nn#getAttribute "size"), IInt, None)))
+                  (CInt (Int64.of_string (nn#getAttribute "size"), IInt, None)))
 	  else
 	    None in
 	TArray (aux nn, size,[])

@@ -30,4 +30,4 @@
 open BCHCBasicTypes
 
 
-val cil_file_to_bcfile: Cil.file -> bcfile_t
+val cil_file_to_bcfile: GoblintCil.file -> bcfile_t

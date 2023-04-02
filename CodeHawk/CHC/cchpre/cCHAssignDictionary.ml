@@ -86,7 +86,7 @@ let mk_assignment
        | _ -> Some (GlobalAssignment (fname,vname,vid,data))
      else
        None
-  | (Var (vname,vid),Index (Const (CInt64 (i64,_,_)),NoOffset)) ->
+  | (Var (vname,vid),Index (Const (CInt (i64,_,_)),NoOffset)) ->
      let vinfo = env#get_varinfo_by_vid vid in
      if vinfo.vglob then
        let index = Int64.to_int i64 in

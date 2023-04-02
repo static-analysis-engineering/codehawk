@@ -115,7 +115,7 @@ let trace_function (faddr:doubleword_int) =
 let cFour = int_constant_expr 4
 let voidPtr = t_voidptr
 let int_type (width:int) = get_ikind_from_size width
-let get_exp (n:int) = Const (CInt64 (Int64.of_int n, IInt,None))
+let get_exp (n:int) = Const (CInt (Int64.of_int n, IInt,None))
 
 let make_code_label ?src ?modifier (address:ctxt_iaddress_t) = 
   let name = "pc_" ^ address in
