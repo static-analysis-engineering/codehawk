@@ -170,7 +170,11 @@ let inlined_thumb_it_predicates () =
             let _ = for i = 1 to 4 do analyze_arm_function faddr fn 0 done in
             (* let _ = show_function faddr fn in *)
             let tags = ARMU.get_instrxdata_tags faddr iccaddr in         
-            ARMA.equal_instrxdata_tags expectedcond tags indices)
+            ARMA.equal_instrxdata_tags
+              ~expected:expectedcond
+              ~received:tags
+              ~indices:indices
+              ())
       ) tests;
 
     TS.launch_tests ()

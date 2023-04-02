@@ -145,7 +145,11 @@ let thumb_it_predicates () =
               done in
             (* let _ = show_function faddr fn in *)
             let xprs = ARMU.get_instrxdata_xprs faddr iccaddr in
-            ARMA.equal_instrxdata_conditionxprs expectedcond xprs 1)
+            ARMA.equal_instrxdata_conditionxprs
+              ~expected:expectedcond
+              ~received:xprs
+              ~index:1
+              ())
       ) tests;
 
     TS.launch_tests ()
@@ -199,7 +203,11 @@ let thumb_ite_predicates () =
               done in
             (* let _ = show_function faddr fn in *)
             let xprs = ARMU.get_instrxdata_xprs faddr iccaddr in
-            ARMA.equal_instrxdata_conditionxprs expectedcond xprs 1)
+            ARMA.equal_instrxdata_conditionxprs
+              ~expected:expectedcond
+              ~received:xprs
+              ~index:1
+              ())
       ) tests;
 
     TS.launch_tests ()

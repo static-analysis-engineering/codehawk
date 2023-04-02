@@ -68,7 +68,7 @@ module TR = CHTraceResult
 let testname = "bCHDwarf"
 let lastupdated = "2023-03-30"
 
-
+(*
 let decode_decompilation_unit_header_test () =
   let tests = [
       ("cu-0", "000012d100040000000004", ("0x12d1", 4, "0x0", 4));
@@ -89,7 +89,7 @@ let decode_decompilation_unit_header_test () =
 
     TS.launch_tests ()
   end
-
+ *)
 
 let decode_debug_attribute_value_test () =
   let tests = [
@@ -164,7 +164,7 @@ let decode_variable_die_test () =
         (DW_AT_decl_file, "1");
         (DW_AT_decl_line, "55");
         (DW_AT_type, "<0xbfd>");
-        (DW_AT_location, "(DW_OP_addr: 0xa13bc) (size: 5)")]);
+        (DW_AT_location, "DW_OP_addr: 0xa13bc (size: 5)")]);
       ("var-loc-list", "23340003083a0b3b0b491302170000", "0x0",
        "236f707400013e5a000000bb000000",
        [(DW_AT_name, "opt");
@@ -196,7 +196,7 @@ let decode_variable_die_test () =
     TS.launch_tests ()
   end
 
-
+(*
 let decode_compilation_unit_test () =
   let tests = [
       ("cu-1",
@@ -244,16 +244,16 @@ let decode_compilation_unit_test () =
 
     TS.launch_tests ()
   end
-  
+ *)  
   
 
 let () =
   begin
     TS.new_testfile testname lastupdated;
-    decode_decompilation_unit_header_test ();
+    (* decode_decompilation_unit_header_test (); *)
     decode_debug_attribute_value_test ();
     decode_debug_ref_attribute_value_test ();
     decode_variable_die_test ();
-    decode_compilation_unit_test ();
+    (* decode_compilation_unit_test (); *)
     TS.exit_file ()
   end

@@ -168,12 +168,18 @@ let arm_opcode_tests () =
       end in
     let index_check_opc (opc: arm_opcode_t) (mnem: string) (cnt: int) =
       let (tags, args) = index_opc opc in
-      ARMA.equal_dictionary_key ([mnem], cnt) (tags, args) in
+      ARMA.equal_dictionary_key
+        ~expected:([mnem], cnt)
+        ~received:(tags, args)
+        () in
     let index_check_opc_c
           (opc: arm_opcode_t) (c: arm_opcode_cc_t) (mnem: string) (cnt: int) =
       let (tags, args) = index_opc opc in
       let ccode = arm_opcode_cc_mfts#ts c in
-      ARMA.equal_dictionary_key ([mnem; ccode], cnt) (tags, args) in
+      ARMA.equal_dictionary_key
+        ~expected:([mnem; ccode], cnt)
+        ~received:(tags, args)
+        () in
     let filename = "arm_opcodes.xml" in
 
     TS.add_simple_test
@@ -465,7 +471,10 @@ let arm_opcode_tests () =
         let ccode = arm_opcode_cc_mfts#ts c in
         let pccode = get_cond_mnemonic_extension c in
         let mnem = "IT" ^ xyz ^ " " ^ (pccode) in
-        ARMA.equal_dictionary_key ([mnem; ccode; xyz], 0) (tags, args));
+        ARMA.equal_dictionary_key
+          ~expected:([mnem; ccode; xyz], 0)
+          ~received:(tags, args)
+          ());
 
     TS.add_simple_test
       ~title:"FLoadMultipleIncrementAfter"
