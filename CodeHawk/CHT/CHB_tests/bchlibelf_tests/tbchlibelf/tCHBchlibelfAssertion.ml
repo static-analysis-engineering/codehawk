@@ -30,6 +30,7 @@
 open BCHLibTypes
 
 (* bchlibelf *)
+open BCHDwarfTypes
 open BCHDwarfUtils
 open BCHELFTypes
 
