@@ -71,6 +71,7 @@ open BCHELFTypes
 open BCHELFDebugARangesSection
 open BCHELFDebugAbbrevSection
 open BCHELFDebugInfoSection
+open BCHELFDebugStrSection
 open BCHELFDictionary
 open BCHELFDynamicSegment
 open BCHELFDynamicTable
@@ -140,6 +141,8 @@ let make_elf_section (sh:elf_section_header_int) (s:string) =
          ElfDebugInfoSection (mk_elf_debug_info_section s sh)
       | ".debug_abbrev" ->
          ElfDebugAbbrevSection (mk_elf_debug_abbrev_section s sh)
+      | ".debug_str" ->
+         ElfDebugStringSection (mk_elf_debug_str_section s vaddr)
       | _ ->
          ElfProgramSection (mk_elf_program_section s sh vaddr))
   | _ -> ElfOtherSection (new elf_raw_section_t s vaddr)
@@ -161,6 +164,8 @@ let read_xml_elf_section (sh:elf_section_header_int) (node:xml_element_int) =
          ElfDebugInfoSection (read_xml_elf_debug_info_section node)
       | ".debug_abbrev" ->
          ElfDebugAbbrevSection (read_xml_elf_debug_abbrev_section node)
+      | ".debug_str" ->
+         ElfDebugStringSection (read_xml_elf_debug_str_section node)
       | _ ->
          ElfProgramSection (read_xml_elf_program_section node))
   | _ -> ElfOtherSection (read_xml_elf_raw_section node)
@@ -992,7 +997,8 @@ object(self)
           | ".debug_info"
             | ".debug_aranges"
             | ".debug_loc"
-            | ".debug_abbrev" ->
+            | ".debug_abbrev"
+            | ".debug_str" ->
              let section = self#get_section index in
              result := (index, h#get_section_name, section) :: !result
           | _ -> ())

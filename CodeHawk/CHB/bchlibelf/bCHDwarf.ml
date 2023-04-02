@@ -33,6 +33,7 @@ open BCHDoubleword
 open BCHLibTypes
 
 (* bchlibelf *)
+open BCHDwarfTypes
 open BCHDwarfUtils
 open BCHELFTypes
 
@@ -53,7 +54,7 @@ let decode_compilation_unit_header (ch: pushback_stream_int) =
  *)
 
 let decode_debug_attribute_value
-      ?(get_string=(fun (_:doubleword_int) -> "?"))
+      ?(get_string=(fun (_:int) -> "?"))
       (ch: pushback_stream_int)
       (base: doubleword_int)
       (attrspec: (dwarf_attr_type_t * dwarf_form_type_t)):
@@ -76,14 +77,14 @@ let decode_debug_attribute_value
     | DW_FORM_string -> DW_ATV_FORM_string ch#read_null_terminated_string
     | DW_FORM_strp ->
        let offset = ch#read_doubleword in
-       let s = get_string offset in
+       let s = get_string offset#index in
        DW_ATV_FORM_strp (offset, s)
     | _ -> DW_ATV_FORM_unknown (dwarf_form_type_to_string form) in
   (attr, value)
 
 
 let decode_debug_attribute_values
-      ?(get_string=(fun (_:doubleword_int) -> "?"))
+      ?(get_string=(fun (_:int) -> "?"))
       (ch: pushback_stream_int)
       (base: doubleword_int)
       (attrspecs: (dwarf_attr_type_t * dwarf_form_type_t) list) =
@@ -91,7 +92,7 @@ let decode_debug_attribute_values
 
 
 let decode_variable_die
-      ?(get_string=(fun (_:doubleword_int) -> "?"))
+      ?(get_string=(fun (_:int) -> "?"))
       (ch: pushback_stream_int)
       (base: doubleword_int)
       (get_abbrev_entry: int -> debug_abbrev_table_entry_t) =
@@ -109,6 +110,7 @@ let decode_variable_die
 
 
 let decode_compilation_unit
+      (get_string: int -> string)
       (cuh: debug_compilation_unit_header_t)
       (ch: pushback_stream_int)
       (get_abbrev_entry: int -> debug_abbrev_table_entry_t) =
@@ -130,7 +132,7 @@ let decode_compilation_unit
                         STR " (";
                         STR (dwarf_tag_type_to_string tag);
                         STR ")"; NL] in
-      let values = decode_debug_attribute_values ch base abbrev.dabb_attr_specs in
+      let values = decode_debug_attribute_values ~get_string ch base abbrev.dabb_attr_specs in
       let _ = pr_debug [pretty_print_list values
                           (fun (t, v) -> LBLOCK [
                                              STR "  ";

@@ -29,11 +29,12 @@
 open BCHLibTypes
 
 (* bchlibelf *)
+open BCHDwarfTypes
 open BCHELFTypes
 
 
 val decode_debug_attribute_value:
-  ?get_string:(doubleword_int -> string)
+  ?get_string:(int -> string)
   -> pushback_stream_int
   -> doubleword_int
   -> (dwarf_attr_type_t * dwarf_form_type_t)
@@ -41,7 +42,7 @@ val decode_debug_attribute_value:
 
 
 val decode_variable_die:
-  ?get_string:(doubleword_int -> string)
+  ?get_string:(int -> string)
   ->  pushback_stream_int
   -> doubleword_int
   -> (int -> debug_abbrev_table_entry_t)
@@ -54,7 +55,8 @@ val decode_compilation_unit_header:
  *)
 
 val decode_compilation_unit:
-  debug_compilation_unit_header_t
+  (int -> string)
+  -> debug_compilation_unit_header_t
   -> pushback_stream_int
   -> (int -> debug_abbrev_table_entry_t)
   -> debug_compilation_unit_t

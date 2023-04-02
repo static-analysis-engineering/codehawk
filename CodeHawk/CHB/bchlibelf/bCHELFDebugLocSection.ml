@@ -47,7 +47,6 @@ open BCHELFDictionary
 open BCHELFSection
 open BCHELFTypes
 
-module H = Hashtbl
 module TR = CHTraceResult
 
 
@@ -56,14 +55,14 @@ let fail_traceresult (msg: string) (r: 'a traceresult): 'a =
     TR.tget_ok r
   else
     fail_tvalue
-      (trerror_record (LBLOCK [STR "BCHELFDebugAbbrevSection: "; STR msg])) r
+      (trerror_record (LBLOCK [STR "BCHELFDebugLocSection: "; STR msg])) r
 
 
-class elf_debug_abbrev_section_t (s:string):elf_debug_abbrev_section_int =
+class elf_debug_loc_section_t (s: string): elf_debug_loc_section_int =
 object (self)
 
   val mutable ch = make_pushback_stream ~little_endian:true s
-
+     
   inherit elf_raw_section_t s wordzero as super
 
   method initstream (offset: int) =
@@ -72,56 +71,50 @@ object (self)
       ch#skip_bytes offset
     end
 
-  method get_abbrev_entry =
-    let index = ch#read_dwarf_leb128 in
-    let tag = int_to_dwarf_tag_type ch#read_dwarf_leb128 in
-    let hasc = (ch#read_byte = 1) in
-    let attrspecs =
-      let specs = ref [] in
-      let morespecs = ref true in
-      begin
-        while !morespecs do
-          let attr = ch#read_dwarf_leb128 in
-          let form = ch#read_dwarf_leb128 in
-          if attr = 0 && form = 0 then
-            morespecs := false
-          else
-            specs :=
-              (int_to_dwarf_attr_type attr, int_to_dwarf_form_type form)::!specs
-        done;
-        List.rev !specs
-      end in
-    {
-      dabb_index = index;
-      dabb_tag = tag;
-      dabb_has_children = hasc;
-      dabb_attr_specs = attrspecs
-    }
+  method private read_single_location_description (size: int) =
+    let dwexpr = read_dwarf_expression ch size in
+    let desc = match dwexpr with
+      | [DW_OP_reg _] -> RegisterLocationDescription dwexpr
+      | _ -> OtherLocationDescription dwexpr in
+    SimpleLocation desc
 
-  method private length = String.length s
-
-  method get_abbrev_table (offset: int): debug_abbrev_table_entry_t list =
-    let table = H.create 3 in
-    let _ = self#initstream offset in
-    let entry = ref self#get_abbrev_entry in
+  method get_location_list =
+    let more_entries = ref true in
+    let loclistentries = ref [] in
+    let start_addr = ref ch#read_doubleword in
+    let end_addr = ref ch#read_doubleword in
     begin
-      while (not (H.mem table !entry.dabb_index)) && ch#pos < self#length do
-        begin
-          H.add table !entry.dabb_index !entry;
-          entry := self#get_abbrev_entry
-        end
+      while !more_entries do
+        if !start_addr#equal wordzero && !end_addr#equal wordzero then
+          more_entries := false
+        else
+          begin
+            (if !start_addr#equal wordmax then
+               loclistentries :=
+                 (BaseAddressSelectionEntry !end_addr) :: !loclistentries
+             else
+               let size = ch#read_ui16 in
+               let desc = self#read_single_location_description size in
+               let entry = {
+                   lle_start_address = !start_addr;
+                   lle_end_address = !end_addr;
+                   lle_location = desc
+                 } in
+               loclistentries := (LocationListEntry entry) :: !loclistentries);
+            start_addr := ch#read_doubleword;
+            end_addr := ch#read_doubleword
+          end
       done;
-      H.fold (fun _ v a -> v::a) table []
+      List.rev !loclistentries
     end
 
 end
 
 
-let mk_elf_debug_abbrev_section (s:string) (h:elf_section_header_int) =
-  new elf_debug_abbrev_section_t s
+let mk_elf_debug_loc_section (s: string) (h: elf_section_header_int) =
+  new elf_debug_loc_section_t s
 
 
-let read_xml_elf_debug_abbrev_section (node:xml_element_int) =
+let read_xml_elf_debug_loc_section (node: xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in
-  new elf_debug_abbrev_section_t s
-  
+  new elf_debug_loc_section_t s
