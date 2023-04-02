@@ -464,6 +464,7 @@ let elf_section_to_raw_section (s:elf_section_t):elf_raw_section_int =
   | ElfDebugARangesSection s -> (s :> elf_raw_section_int)
   | ElfDebugInfoSection s -> (s :> elf_raw_section_int)
   | ElfDebugAbbrevSection s -> (s :> elf_raw_section_int)
+  | ElfDebugStringSection s -> (s :> elf_raw_section_int)
   | ElfOtherSection s -> s
 
 

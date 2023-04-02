@@ -1,10 +1,10 @@
 (* =============================================================================
    CodeHawk Binary Analyzer 
-   Henny Sipma
+   Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,39 +25,19 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHXmlDocument
+
 (* bchlib *)
 open BCHLibTypes
 
 (* bchlibelf *)
-open BCHDwarfTypes
 open BCHELFTypes
 
 
-val int_to_dwarf_tag_type: int -> dwarf_tag_type_t
+val mk_elf_debug_loc_section:
+  string
+  -> elf_section_header_int
+  -> elf_debug_loc_section_int
 
-val int_to_dwarf_attr_type: int -> dwarf_attr_type_t
-
-val int_to_dwarf_form_type: int -> dwarf_form_type_t
-
-val dwarf_tag_type_to_string: dwarf_tag_type_t -> string
-
-val string_to_dwarf_tag_type: string -> dwarf_tag_type_t
-
-val dwarf_attr_type_to_string: dwarf_attr_type_t -> string
-
-val string_to_dwarf_attr_type: string -> dwarf_attr_type_t
-
-val dwarf_form_type_to_string: dwarf_form_type_t -> string
-
-val string_to_dwarf_form_type: string -> dwarf_form_type_t
-
-val dwarf_attr_value_to_string: dwarf_attr_value_t -> string
-
-val abbrev_entry_to_string: debug_abbrev_table_entry_t -> string
-
-val read_dwarf_expression: pushback_stream_int -> int -> dwarf_expr_t
-
-val single_location_description_to_string:
-  single_location_description_t -> string
-
-val debug_compilation_unit_size: debug_compilation_unit_t -> int
+val read_xml_elf_debug_loc_section: xml_element_int -> elf_debug_loc_section_int

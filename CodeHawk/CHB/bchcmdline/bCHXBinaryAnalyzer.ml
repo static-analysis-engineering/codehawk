@@ -498,10 +498,12 @@ let main () =
                 (get_arm_disassembly_metrics ()) in
       let _ = pr_debug [NL; NL; disassembly_summary#toPretty; NL] in
       (* let _ = print_debug_files () in *)
-      let cu = BCHDwarfQueryService.dwarf_query_service#compilation_unit
-                 (TR.tget_ok (string_to_doubleword "0xe5b")) in
-      let _ = pr_debug [STR "compilation unit size at 0xe5b: ";
-                        INT (BCHDwarfUtils.debug_compilation_unit_size cu); NL] in
+      let c_units = BCHDwarfQueryService.dwarf_query_service#compilation_units in
+      let _ = pr_debug [
+                  STR "compilation units: ";
+                  LBLOCK (List.map (fun cu ->
+                              LBLOCK [INT (BCHDwarfUtils.debug_compilation_unit_size cu); NL]) c_units);
+                  NL] in
       begin
         if !save_asm then
           begin

@@ -43,6 +43,7 @@ open BCHStreamWrapper
 open BCHSystemInfo
 
 (* bchlibelf *)
+open BCHDwarfTypes
 open BCHELFDictionary
 open BCHELFSection
 open BCHELFTypes

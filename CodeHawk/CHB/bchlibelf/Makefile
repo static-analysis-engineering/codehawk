@@ -32,6 +32,7 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 	$(PELIB)/bchlibpe.cmxa
 
 MLIS := \
+	bCHDwarfTypes \
 	bCHELFTypes \
 	bCHELFPrettyStrings \
 	bCHELFUtil \
@@ -45,6 +46,7 @@ MLIS := \
 	bCHELFDebugInfoSection \
 	bCHELFDebugAbbrevSection \
 	bCHELFDebugLocSection \
+	bCHELFDebugStrSection \
 	bCHELFStringTable \
 	bCHELFSymbolTable \
 	bCHELFDynamicTable \
@@ -71,6 +73,7 @@ SOURCES := \
 	bCHELFDebugInfoSection \
 	bCHELFDebugAbbrevSection \
 	bCHELFDebugLocSection \
+	bCHELFDebugStrSection \
 	bCHELFStringTable \
 	bCHELFSymbolTable \
 	bCHELFRelocationTable \

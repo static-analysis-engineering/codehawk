@@ -34,6 +34,7 @@ open BCHDoubleword
 open BCHLibTypes
 
 (* bchlibelf *)
+open BCHDwarfTypes
 open BCHELFTypes
 
 module H = Hashtbl
@@ -371,13 +372,16 @@ let rec read_dwarf_expression (ch: pushback_stream_int) (size: int) =
             DW_OP_GNU_entry_value (opsize, subexpr)
           else
             match op with
-            | 0x02 -> DW_OP_deref
             | 0x03 ->
                let addr = ch#read_doubleword in
                DW_OP_addr (ConstantAddress addr)
+            | 0x06 -> DW_OP_deref
             | 0x08 ->
                let c = ch#read_byte in
                DW_OP_const1u (OneByteUnsignedValue c)
+            | 0x09 ->
+               let c = ch#read_signed_byte in
+               DW_OP_const1s (OneByteSignedValue c)
             | 0x0a ->
                let c = ch#read_ui16 in
                DW_OP_const2u (TwoByteUnsignedValue c)
@@ -389,6 +393,8 @@ let rec read_dwarf_expression (ch: pushback_stream_int) (size: int) =
             | 0x14 -> DW_OP_over
             | 0x16 -> DW_OP_swap
             | 0x1c -> DW_OP_minus
+            | 0x1e -> DW_OP_mul
+            | 0x21 -> DW_OP_or
             | 0x22 -> DW_OP_plus
             | 0x23 ->
                let c = ch#read_dwarf_leb128 in
@@ -397,12 +403,29 @@ let rec read_dwarf_expression (ch: pushback_stream_int) (size: int) =
             | 0x28 ->
                let c = ch#read_i16 in
                DW_OP_bra (TwoByteSignedValue c)
+            | 0x2a -> DW_OP_ge
             | 0x2d -> DW_OP_lt
             | 0x91 ->
                let c = ch#read_dwarf_sleb128 32 in
                DW_OP_fbreg (SLEB128Constant (mkNumerical c))
+            | 0x93 ->
+               let c = ch#read_dwarf_leb128 in
+               DW_OP_piece (ULEB128Constant (mkNumerical c))
             | 0x9c -> DW_OP_call_frame_cfa
             | 0x9f -> DW_OP_stack_value
+            | 0xf2 ->
+               let c = ch#read_doubleword in
+               let offset = ch#read_dwarf_sleb128 32 in
+               DW_OP_GNU_implicit_pointer
+                 (".debug_info",
+                  FourByteUnsignedValue c#index,
+                  SLEB128Constant (mkNumerical offset))
+            | 0xf5 ->
+               let regnr = ch#read_dwarf_leb128 in
+               let offset = ch#read_dwarf_leb128 in
+               DW_OP_GNU_regval_type
+                 (ULEB128Constant (mkNumerical regnr),
+                  ULEB128Constant (mkNumerical offset))
             | _ -> DW_OP_unknown op in
         result := opc :: !result
       end
@@ -434,16 +457,22 @@ let rec dwarf_operation_to_string (opc: dwarf_operation_t) =
   | DW_OP_breg (i, offset) ->
      "DW_OP_breg" ^ (string_of_int i) ^ ": " ^ (op2s offset)
   | DW_OP_call_frame_cfa -> "DW_OP_call_frame_cfa"
+  | DW_OP_const1s op -> "DW_OP_const1s: " ^ (op2s op)
   | DW_OP_const1u op -> "DW_OP_const1u: " ^ (op2s op)
   | DW_OP_const2u op -> "DW_OP_const2u: " ^ (op2s op)
+  | DW_OP_const4u op -> "DW_OP_const4u: " ^ (op2s op)
   | DW_OP_deref -> "DW_OP_deref"
   | DW_OP_drop -> "DW_OP_drop"
   | DW_OP_dup -> "DW_OP_dup"
   | DW_OP_fbreg op -> "DW_OP_fbreg: " ^ (op2s op)
+  | DW_OP_ge -> "DW_OP_ge"
   | DW_OP_lit i -> "DW_OP_lit" ^ (string_of_int i)
   | DW_OP_lt -> "DW_OP_lt"
   | DW_OP_minus -> "DW_OP_minus"
+  | DW_OP_mul -> "DW_OP_mul"
+  | DW_OP_or -> "DW_OP_or"
   | DW_OP_over -> "DW_OP_over"
+  | DW_OP_piece op -> "DW_OP_piece: " ^ (op2s op)
   | DW_OP_plus -> "DW_OP_plus"
   | DW_OP_plus_uconst op -> "DW_OP_plus_uconst: " ^ (op2s op)
   | DW_OP_reg i -> "DW_OP_reg" ^ (string_of_int i)
@@ -451,15 +480,20 @@ let rec dwarf_operation_to_string (opc: dwarf_operation_t) =
   | DW_OP_stack_value -> "DW_OP_stack_value"
   | DW_OP_swap -> "DW_OP_swap"
   (* extensions *)
+  | DW_OP_GNU_regval_type (op1, op2) ->
+     "DW_OP_GNU_regval_type: " ^ (op2s op1) ^ " " ^ (op2s op2)
   | DW_OP_GNU_entry_value (_, x) ->
-     "DW_OP_GNU_entry_value: (" ^ (dwarf_expr_to_string x) ^ ")"
+     "DW_OP_GNU_entry_value: " ^ (dwarf_expr_to_string x)
+  | DW_OP_GNU_implicit_pointer (section, op1, op2) ->
+     "DW_OP_GNU_implicit_pointer: <" ^ (op2s op1) ^ "> " ^ (op2s op2)
+  | DW_OP_unknown x -> "unknown-dwarf-operation:" ^ (string_of_int x)
   | _ -> "unknown dwarf operation"
 
 
 and dwarf_expr_to_string (x: dwarf_expr_t) =
   String.concat
     "; "
-    (List.map (fun dwop -> "(" ^ (dwarf_operation_to_string dwop) ^ ")") x)
+    (List.map (fun dwop -> (dwarf_operation_to_string dwop)) x)
 
 
 let simple_location_description_to_string (d: simple_location_description_t) =
