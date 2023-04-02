@@ -134,7 +134,7 @@ let ximplies (env:c_environment_int) (a:xpredicate_t)  (p:xpredicate_t) =
 
 let implies_upper_bound (a:po_predicate_t) (e:exp) (ub:int) =
   match a with
-  | PValueConstraint (BinOp (Lt, ae, Const (CInt64 (j64,_,_)),_))
+  | PValueConstraint (BinOp (Lt, ae, Const (CInt (j64,_,_)),_))
        when (exp_compare e ae) = 0 ->
      (Int64.to_int j64) <= ub
   | _ -> false

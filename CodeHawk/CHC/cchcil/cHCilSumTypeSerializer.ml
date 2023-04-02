@@ -28,7 +28,7 @@
    ============================================================================= *)
 
 (* cil *)
-open Cil
+open GoblintCil
 
 (* chlib *)
 open CHCommon
@@ -244,7 +244,7 @@ object
 
   method ts (c: constant) =
     match c with
-    | CInt64 _ -> "int"
+    | CInt _ -> "int"
     | CStr _ -> "str"
     | CWStr _ -> "wstr"
     | CChr _ -> "chr"
@@ -334,8 +334,6 @@ object
     | Switch _ -> "switch"
     | Loop _ -> "loop"
     | Block _ -> "block"
-    | TryFinally _ -> "tryfinally"
-    | TryExcept _ -> "tryexcept"
 
   method tags = [
       "block";

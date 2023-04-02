@@ -170,7 +170,7 @@ object (self)
   method index_constant (c:constant):int =
     let tags = [ constant_mcts#ts c ] in
     let key = match c with
-      | CInt64 (i64,ik, opts) ->
+      | CInt (i64,ik, opts) ->
          (tags @ [Int64.to_string i64; ikind_mfts#ts ik], [])
       | CStr s -> (tags, [ self#index_string s ])
       | CWStr i64r -> (tags @ (List.map Int64.to_string i64r), [])
@@ -189,7 +189,7 @@ object (self)
     let a = a name args in
     match (t 0) with
     | "int" ->
-       CInt64 (Int64.of_string (t 1), ikind_mfts#fs (t 2),None)
+       CInt (Int64.of_string (t 1), ikind_mfts#fs (t 2),None)
     | "str" -> CStr (self#get_string (a 0))
     | "wstr" -> CWStr (List.map Int64.of_string (List.tl tags))
     | "chr" -> CChr (Char.chr (a 0))

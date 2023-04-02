@@ -174,9 +174,9 @@ let rec typ_compare
     
 and constant_compare (c1:constant) (c2:constant) =
   match (c1,c2) with
-  | (CInt64 (i1,_,_), CInt64(i2,_,_)) -> Int64.compare i1 i2
-  | (CInt64 _, _) -> -1
-  | (_, CInt64 _) -> 1
+  | (CInt (i1,_,_), CInt(i2,_,_)) -> Int64.compare i1 i2
+  | (CInt _, _) -> -1
+  | (_, CInt _) -> 1
   | (CStr s1, CStr s2) -> Stdlib.compare s1 s2
   | (CStr _, _) -> -1
   | (_, CStr _) -> 1

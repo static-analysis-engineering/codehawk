@@ -26,7 +26,7 @@
    ============================================================================= *)
 
 (* cil *)
-open Cil
+open GoblintCil
 open Errormsg
 open Frontc
 

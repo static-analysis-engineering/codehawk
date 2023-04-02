@@ -166,7 +166,7 @@ object (self)
        let vinfo2 = poq#env#get_varinfo vid2 in
        begin
          match (vinfo1.vtype,poq#get_ntp_value (StartOf (Var (vname2,vid2),NoOffset))) with
-         | (TArray (_,Some (Const (CInt64 (len64,_,_))),_),  Some  (inv,ntplen)) ->
+         | (TArray (_,Some (Const (CInt (len64,_,_))),_),  Some  (inv,ntplen)) ->
             let arraylen = num_constant_expr (mkNumericalFromInt64 len64) in
             let xconstraint = XOp (XLt, [ num_constant_expr ntplen ; arraylen ]) in
             let sconstraint = simplify_xpr xconstraint in

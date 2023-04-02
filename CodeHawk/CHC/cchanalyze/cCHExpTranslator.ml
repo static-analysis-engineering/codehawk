@@ -94,7 +94,7 @@ object (self)
   method private translate_const_expr (c:constant) (t:typ):xpr_t =
     let logmsg () = () in
     match c with
-    | CInt64 (i64,_,_) -> 
+    | CInt (i64,_,_) -> 
       num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64))
     | CChr c -> num_constant_expr (mkNumerical_big (char_const_to_big c))
     | CStr s -> XVar (env#mk_string_address s NoOffset t)
@@ -346,7 +346,7 @@ object (self)
   method private translate_lhs_const_expr (c:constant) (t:typ):xpr_t =
     let logmsg () = () in
     match c with
-    | CInt64 (i64,_,_) -> 
+    | CInt (i64,_,_) -> 
       num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64))
     | CChr c -> num_constant_expr (mkNumerical_big (char_const_to_big c))
     | CStr s -> XVar (env#mk_string_address s NoOffset t)
@@ -551,7 +551,7 @@ object (self)
   method translate_condition cfgcontext cond =
     let nullsyms = memregmgr#get_null_syms in
     let rec is_zero e = match e with
-      | Const (CInt64 (i64,_,_)) -> (Int64.compare i64 Int64.zero) = 0
+      | Const (CInt (i64,_,_)) -> (Int64.compare i64 Int64.zero) = 0
       | CastE (_, e) -> is_zero e
       | _ -> false in           
     match cond with
@@ -592,7 +592,7 @@ object (self)
   method private translate_const_expr (c:constant):xpr_t =
     let logmsg () = () in
     match c with
-    | CInt64 (i64,_,_) -> 
+    | CInt (i64,_,_) -> 
       num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64))
     | CChr c -> num_constant_expr (mkNumerical_big (char_const_to_big c))
     | _ -> begin logmsg () ;  random_constant_expr end

@@ -587,7 +587,7 @@ object (self)
     match lval with
     | (Mem  (Lval memlval), memoffset) ->
        self#check_lval_deref_delegation memlval memoffset
-    | (Mem (BinOp (_,Lval (Var (vname,vid),NoOffset),Const (CInt64 (i64,_,_)),_) as e),NoOffset) when vid > 0  ->
+    | (Mem (BinOp (_,Lval (Var (vname,vid),NoOffset),Const (CInt (i64,_,_)),_) as e),NoOffset) when vid > 0  ->
        let vinfo = poq#env#get_varinfo vid in
        begin
          poq#set_vinfo_diagnostic_invariants vinfo ;

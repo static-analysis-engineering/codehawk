@@ -148,8 +148,8 @@ let float_type_to_string (k: fkind_t) =
 
 let cil_constant_to_string (c: bconstant_t) =
   match c with
-  | CInt64 (_,_,Some t) -> t
-  | CInt64 (i64,_,_) -> Int64.to_string i64
+  | CInt (_,_,Some t) -> t
+  | CInt (i64,_,_) -> Int64.to_string i64
   | CStr s ->
      let (_,_,len) = mk_constantstring s in
      (string_of_int len) ^ "-char-string-literal"
@@ -303,7 +303,7 @@ and exp_to_pretty (x: bexp_t) =
   let pl = lval_to_pretty in
   let peo = opt_exp_to_pretty in
   match x with
-  | CastE (_, CastE (TPtr (TVoid _,_),Const (CInt64 (i64,_,_))))
+  | CastE (_, CastE (TPtr (TVoid _,_),Const (CInt (i64,_,_))))
        when (mkNumericalFromInt64 i64)#equal numerical_zero -> STR "NULL"
   | Const c -> STR (constant_to_string c)
   | Lval l -> pl l
@@ -709,10 +709,10 @@ and offset_compare (o1: boffset_t) (o2: boffset_t) =
 
 and constant_compare c1 c2 =
   match (c1,c2) with
-  | (CInt64 (i1,k1,_), CInt64 (i2,k2,_)) ->
+  | (CInt (i1,k1,_), CInt (i2,k2,_)) ->
     let l0 = Int64.compare i1 i2 in if l0 = 0 then Stdlib.compare k1 k2 else l0
-  | (CInt64 _, _) -> -1
-  | (_, CInt64 _) -> 1
+  | (CInt _, _) -> -1
+  | (_, CInt _) -> 1
   | (CStr s1, CStr s2) -> Stdlib.compare s1 s2
   | (CStr _, _) -> -1
   | (_, CStr _) -> 1

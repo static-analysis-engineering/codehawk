@@ -298,7 +298,7 @@ object
 
   method ts (c: bconstant_t) =
     match c with
-    | CInt64 _ -> "int"
+    | CInt _ -> "int"
     | CStr _ -> "str"
     | CWStr _ -> "wstr"
     | CChr _ -> "chr"

@@ -85,7 +85,7 @@ let binop_to_xop (op:binop):xop_t =
 let rec exp_to_xpr (exp:exp):xpr_t option =
   try
     match exp with
-    | Const (CInt64 (i64, _, _)) ->
+    | Const (CInt (i64, _, _)) ->
        Some (num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64)))
     | BinOp (op, e1, e2, _)  ->
        begin
@@ -113,10 +113,10 @@ let reverse_relational_operator (op:binop) =
      raise (CCHFailure (LBLOCK [ STR "unable to reverse operator " ;
                                  STR (binop_to_print_string op) ]))
 
-let zero = Const (CInt64 (Int64.of_int 0,IInt,None))
-let one  = Const (CInt64 (Int64.of_int 1,IInt,None))
+let zero = Const (CInt (Int64.of_int 0,IInt,None))
+let one  = Const (CInt (Int64.of_int 1,IInt,None))
 
-let make_constant_exp (n:numerical_t) = Const (CInt64 (Int64.of_string n#toString,IInt,None))
+let make_constant_exp (n:numerical_t) = Const (CInt (Int64.of_string n#toString,IInt,None))
 
 let void_type   = TVoid([])
 let int_type    = TInt(IInt,[])
@@ -187,7 +187,7 @@ let rec is_constant_offset offset =
 
 and is_constant_index_exp e =
   match e with
-  | Const (CInt64 _) -> true
+  | Const (CInt _) -> true
   | Const (CChr _) -> true
   | Const (CEnum _) -> true
   | SizeOf _ | SizeOfE _ -> true
@@ -203,7 +203,7 @@ let rec type_of_exp (fdecls:cfundeclarations_int) (x:exp) : typ =
   try
     let ty =
       match x with
-      | Const (CInt64 (_, ik, _)) -> TInt (ik,[])
+      | Const (CInt (_, ik, _)) -> TInt (ik,[])
       | Const (CChr _) -> int_type
       | Const (CStr _) -> string_literal_type
       | Const (CWStr _) -> TPtr (wchar_type,[])
@@ -425,7 +425,7 @@ let ikind_size_leq (ik1:ikind) (ik2:ikind) : bool =
 let const_fits_kind (c:constant) (target_ik:ikind) =
   try
     match c with
-    | CInt64 (i64,cik,_) -> 
+    | CInt (i64,cik,_) -> 
        ikind_size_leq cik target_ik ||
          (match target_ik with
           | ISChar -> ((Int64.to_int i64) < 128) && (Int64.to_int i64 >= (-128))
@@ -457,7 +457,7 @@ let exp_has_repeated_field (e:exp) =
 (* returns true if x is known to be not zero; returns false if unknown or zero *)
 let rec is_not_zero (x:exp) =
   match x with
-  | Const (CInt64 (i64,_,_)) -> not ((Int64.compare i64 Int64.zero) = 0)
+  | Const (CInt (i64,_,_)) -> not ((Int64.compare i64 Int64.zero) = 0)
   | SizeOf (TInt _) | SizeOf (TPtr _) | SizeOf (TFloat _) -> true
   | SizeOf ((TNamed _) as tt) -> is_not_zero (SizeOf (fenv#get_type_unrolled tt))
   | _ -> false
@@ -644,7 +644,7 @@ let is_volatile_type (t:typ) =
     
 let constant_value (c:constant) =
   match c with
-  | CInt64 (i64,_,_) -> num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64))
+  | CInt (i64,_,_) -> num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64))
   | _ -> random_constant_expr
     
 let rec size_of_align (fdecls:cfundeclarations_int) (t:typ) =

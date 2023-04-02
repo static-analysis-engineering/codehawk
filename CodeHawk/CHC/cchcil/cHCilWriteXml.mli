@@ -28,7 +28,7 @@
    ============================================================================= *)
 
 (* cil *)
-open Cil
+open GoblintCil
 
 (* chutil *)
 open CHXmlDocument

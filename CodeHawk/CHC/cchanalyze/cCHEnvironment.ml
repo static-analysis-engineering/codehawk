@@ -543,7 +543,7 @@ object(self)
         match o with
         | NoOffset -> ""
         | Field ((fname,_),oo) -> "." ^ fname ^ (pr_offset oo)
-        | Index (Const (CInt64 (i64,_,_)),oo) ->
+        | Index (Const (CInt (i64,_,_)),oo) ->
            "[" ^ (Int64.to_string i64) ^ "]" ^ (pr_offset oo)
         | Index (_,oo) -> "[.]" ^ (pr_offset oo) in
       match reg#get_memory_base with
