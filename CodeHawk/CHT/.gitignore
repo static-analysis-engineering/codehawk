@@ -5,6 +5,7 @@ CHB_tests/bchlib_tests/txbchlib/bCHImmediateTest
 CHB_tests/bchlib_tests/txbchlib/bCHLocationTest
 CHB_tests/bchlib_tests/txbchlib/bCHStreamWrapperTest
 CHB_tests/bchlibelf_tests/txbchlibelf/bCHELFDebugAbbrevSectionTest
+CHB_tests/bchlibelf_tests/txbchlibelf/bCHELFDebugLocSectionTest
 CHB_tests/bchlibelf_tests/txbchlibelf/bCHDwarfTest
 CHB_tests/bchlibarm32_tests/txbchlibarm32/bCHARMDictionaryTest
 CHB_tests/bchlibarm32_tests/txbchlibarm32/bCHDisassembleARMInstructionTest
