@@ -65,6 +65,7 @@ OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 all: make_dirs \
 	bCHELFDebugAbbrevSectionTest \
 	bCHELFDebugLocSectionTest \
+	bCHDwarfTest
 
 doc: 
 

@@ -41,6 +41,7 @@ open BCHStreamWrapper
 
 (* bchlibelf *)
 open BCHDwarf
+open BCHDwarfTypes
 open BCHDwarfUtils
 open BCHELFDebugAbbrevSection
 open BCHELFTypes
@@ -66,30 +67,8 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDwarf"
-let lastupdated = "2023-03-30"
+let lastupdated = "2023-04-03"
 
-(*
-let decode_decompilation_unit_header_test () =
-  let tests = [
-      ("cu-0", "000012d100040000000004", ("0x12d1", 4, "0x0", 4));
-      ("cu-1", "000036d900040000013c04", ("0x36d9", 4, "0x13c", 4))
-    ] in
-  begin
-    TS.new_testsuite
-      (testname ^ "_decode_decompilation_unit_header_test") lastupdated;
-
-    List.iter (fun (title, bytes, result) ->
-        TS.add_simple_test
-          ~title
-          (fun () ->
-            let bytestring = U.write_hex_bytes_to_bytestring bytes in
-            let ch = make_pushback_stream ~little_endian:false bytestring in
-            let cuheader = decode_compilation_unit_header ch in
-            EA.equal_compilation_unit_header result cuheader ())) tests;
-
-    TS.launch_tests ()
-  end
- *)
 
 let decode_debug_attribute_value_test () =
   let tests = [
@@ -118,7 +97,8 @@ let decode_debug_attribute_value_test () =
             let attr = string_to_dwarf_attr_type s_attr in
             let form = string_to_dwarf_form_type s_form in
             let (_, atvalue) =
-              decode_debug_attribute_value ch wordzero (attr, form) in
+              decode_debug_attribute_value
+                ~attrspec:(attr, form) ~base:wordzero ch in
             A.equal_string result (dwarf_attr_value_to_string atvalue))) tests;
 
     TS.launch_tests ()
@@ -144,7 +124,9 @@ let decode_debug_ref_attribute_value_test () =
             let attr = string_to_dwarf_attr_type s_attr in
             let form = string_to_dwarf_form_type s_form in
             let base = TR.tget_ok (string_to_doubleword base) in
-            let (_, atvalue) = decode_debug_attribute_value ch base (attr, form) in
+            let (_, atvalue) =
+              decode_debug_attribute_value
+                ~attrspec:(attr, form) ~base:base ch in
             A.equal_string result (dwarf_attr_value_to_string atvalue))) tests;
 
     TS.launch_tests ()
@@ -153,9 +135,9 @@ let decode_debug_ref_attribute_value_test () =
 
 let decode_variable_die_test () =
   let get_string =
-    (fun (dw: doubleword_int) ->
-      match dw#to_hex_string with
-      | "0xac9" -> "arg_options"
+    (fun (index: int) ->
+      match index with
+      | 2761 -> "arg_options"
       | _ -> "?") in
   let tests = [
       ("var-addr", "223400030e3a0b3b0b491302180000", "0x0",
@@ -171,7 +153,7 @@ let decode_variable_die_test () =
         (DW_AT_decl_file, "1");
         (DW_AT_decl_line, "62");
         (DW_AT_type, "<0x5a>");
-        (DW_AT_location, "0xbb")])
+        (DW_AT_location, "0xbb (loclistptr)")])
          
     ] in
   begin
@@ -190,70 +172,23 @@ let decode_variable_die_test () =
             let fabbrev = fun (i: int) -> abbreventry in
             let chi = make_pushback_stream ~little_endian:true istring in
             let base = TR.tget_ok (string_to_doubleword base) in
-            let var = decode_variable_die ~get_string chi base fabbrev in
+            let var =
+              decode_variable_die
+                ~get_abbrev_entry:fabbrev
+                ~get_string
+                ~base
+                chi in
             EA.equal_variable_debuginfo_entry result var)) tests;
 
     TS.launch_tests ()
   end
 
-(*
-let decode_compilation_unit_test () =
-  let tests = [
-      ("cu-1",
-       "01110010061101120103081b0825081305000000",
-       "0x9a6a",
-       "000000ad0002"
-       ^ "00000778040100003e1700811a000081"
-       ^ "20582e2e2f50726f6a6563745f536574"
-       ^ "74696e67732f537461727475705f436f"
-       ^ "64652f6763632f636f7265305f696e74"
-       ^ "635f73775f68616e646c6572732e5300"
-       ^ "5c5c56424f585356525c736861726564"
-       ^ "5f446f776e6c6f6164735c776f726b73"
-       ^ "706163655f73333264735f76322e315c"
-       ^ "6d706335373737635f6465765f633130"
-       ^ "5c44656275675f464c41534800303030"
-       ^ "3030303030303030008001",
-       ("0xad", "0x778", 1, DW_TAG_compile_unit,
-       [(DW_AT_stmt_list, "0x3e17");
-        (DW_AT_low_pc, "0x811a00");
-        (DW_AT_high_pc, "0x812058");
-        (DW_AT_name, "../Project_Settings/Startup_Code/gcc/core0_intc_sw_handlers.S");
-        (DW_AT_comp_dir, "\\\\VBOXSVR\\shared_Downloads\\workspace_s32ds_v2.1\\mpc5777c_dev_c10\\Debug_FLASH");
-        (DW_AT_producer, "00000000000");
-        (DW_AT_language, "32769")]))
-    ] in
-  begin
-    TS.new_testsuite
-      (testname ^ "_decode_compilation_unit_test") lastupdated;
-
-    List.iter (fun (title, abbrev, base, debuginfo, result) ->
-        TS.add_simple_test
-          ~title
-          (fun () ->
-            let astring = U.write_hex_bytes_to_bytestring abbrev in
-            let istring = U.write_hex_bytes_to_bytestring debuginfo in
-            let sh = mk_elf_section_header () in
-            let section = mk_elf_debug_abbrev_section astring sh in
-            let abbreventry = section#get_abbrev_entry in
-            let fabbrev = fun (i: int) -> abbreventry in
-            let chi = make_pushback_stream ~little_endian:false istring in
-            let base = TR.tget_ok (string_to_doubleword base) in            
-            let cu = decode_compilation_unit chi base fabbrev in
-            EA.equal_compilation_unit result cu ())) tests;
-
-    TS.launch_tests ()
-  end
- *)  
-  
 
 let () =
   begin
     TS.new_testfile testname lastupdated;
-    (* decode_decompilation_unit_header_test (); *)
     decode_debug_attribute_value_test ();
     decode_debug_ref_attribute_value_test ();
     decode_variable_die_test ();
-    (* decode_compilation_unit_test (); *)
     TS.exit_file ()
   end
