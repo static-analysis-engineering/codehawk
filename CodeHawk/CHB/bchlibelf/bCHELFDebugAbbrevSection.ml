@@ -101,16 +101,20 @@ object (self)
   method private length = String.length s
 
   method get_abbrev_table (offset: int): debug_abbrev_table_entry_t list =
+    let _ = pr_debug [STR "Get abbrev table at: ";
+                      (TR.tget_ok (int_to_doubleword offset))#toPretty; NL] in
     let table = H.create 3 in
     let _ = self#initstream offset in
     let entry = ref self#get_abbrev_entry in
     begin
-      while (not (H.mem table !entry.dabb_index)) && ch#pos < self#length do
+      while (not (H.mem table !entry.dabb_index)) && ch#pos < (self#length - 1) do
         begin
           H.add table !entry.dabb_index !entry;
           entry := self#get_abbrev_entry
         end
       done;
+      (if ch#pos >= self#length - 1 then
+        H.add table !entry.dabb_index !entry);
       H.fold (fun _ v a -> v::a) table []
     end
 

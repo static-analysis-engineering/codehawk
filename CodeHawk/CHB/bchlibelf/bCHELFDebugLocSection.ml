@@ -71,6 +71,17 @@ object (self)
       ch#skip_bytes offset
     end
 
+  method get_loclist (index: int) =
+    if index < 0 || index >= String.length s then
+      raise
+        (BCH_failure
+           (LBLOCK [STR "debug_loc: string index out of bounds: "; INT index]))
+    else
+      begin
+        self#initstream index;
+        LocationList self#get_location_list
+      end
+
   method private read_single_location_description (size: int) =
     let dwexpr = read_dwarf_expression ch size in
     let desc = match dwexpr with
