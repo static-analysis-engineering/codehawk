@@ -51,11 +51,24 @@ val dwarf_form_type_to_string: dwarf_form_type_t -> string
 
 val string_to_dwarf_form_type: string -> dwarf_form_type_t
 
+val secoffset_kind_to_string: secoffset_kind_t -> string
+
 val dwarf_attr_value_to_string: dwarf_attr_value_t -> string
 
 val abbrev_entry_to_string: debug_abbrev_table_entry_t -> string
 
-val read_dwarf_expression: pushback_stream_int -> int -> dwarf_expr_t
+
+(** [secoffset_kind at] returns the in the standard defined section offset kind
+    if the attribute form includes an offset type (loclistptr, lineptr, macptr,
+    rangelstptr) or [UnknownSecoffsetPtr] otherwise.*)
+val secoffset_kind: dwarf_attr_type_t -> secoffset_kind_t
+
+
+(** [read_dwarf_expression ch base size] reads in at most [size] bytes from [ch]
+    constructs a dwarf expression; [base] is added to relative operands.*)
+val read_dwarf_expression:
+  pushback_stream_int -> ?base:doubleword_int -> int -> dwarf_expr_t
+
 
 val single_location_description_to_string:
   single_location_description_t -> string

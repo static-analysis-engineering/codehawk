@@ -71,6 +71,7 @@ open BCHELFTypes
 open BCHELFDebugARangesSection
 open BCHELFDebugAbbrevSection
 open BCHELFDebugInfoSection
+open BCHELFDebugLocSection
 open BCHELFDebugStrSection
 open BCHELFDictionary
 open BCHELFDynamicSegment
@@ -141,6 +142,8 @@ let make_elf_section (sh:elf_section_header_int) (s:string) =
          ElfDebugInfoSection (mk_elf_debug_info_section s sh)
       | ".debug_abbrev" ->
          ElfDebugAbbrevSection (mk_elf_debug_abbrev_section s sh)
+      | ".debug_loc" ->
+         ElfDebugLocSection (mk_elf_debug_loc_section s sh)
       | ".debug_str" ->
          ElfDebugStringSection (mk_elf_debug_str_section s vaddr)
       | _ ->
@@ -164,6 +167,8 @@ let read_xml_elf_section (sh:elf_section_header_int) (node:xml_element_int) =
          ElfDebugInfoSection (read_xml_elf_debug_info_section node)
       | ".debug_abbrev" ->
          ElfDebugAbbrevSection (read_xml_elf_debug_abbrev_section node)
+      | ".debug_loc" ->
+         ElfDebugLocSection (read_xml_elf_debug_loc_section node)
       | ".debug_str" ->
          ElfDebugStringSection (read_xml_elf_debug_str_section node)
       | _ ->

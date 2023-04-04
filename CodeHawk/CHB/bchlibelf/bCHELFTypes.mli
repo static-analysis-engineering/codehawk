@@ -522,6 +522,7 @@ class type elf_debug_loc_section_int =
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
     method get_string_reference: doubleword_int -> string option
+    method get_loclist: int -> debug_loc_description_t
     method get_location_list: debug_location_list_entry_t list
     method includes_VA: doubleword_int -> bool
     method write_xml: xml_element_int -> unit
@@ -571,6 +572,7 @@ type elf_section_t =
 | ElfDebugARangesSection of elf_debug_aranges_section_int
 | ElfDebugInfoSection of elf_debug_info_section_int
 | ElfDebugAbbrevSection of elf_debug_abbrev_section_int
+| ElfDebugLocSection of elf_debug_loc_section_int
 | ElfDebugStringSection of elf_debug_str_section_int
 | ElfOtherSection of elf_raw_section_int
 
@@ -615,6 +617,10 @@ class type dwarf_query_service_int =
     method compilation_unit: doubleword_int -> debug_compilation_unit_t
 
     method compilation_units: debug_compilation_unit_t list
+
+    method compilation_unit_variables: doubleword_int -> (int * (int * int) list)
+
+    method compilation_units_variables: (int * (int * int) list)
 
     (* ----------------------------------------------------------- predicates *)
 

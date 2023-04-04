@@ -37,6 +37,14 @@ open CHNumerical
 open BCHLibTypes
 
 
+type secoffset_kind_t =
+  | LinePtr
+  | LoclistPtr
+  | MacPtr
+  | RangelistPtr
+  | UnknownSecoffsetPtr
+
+
 type dwarf_tag_type_t =
   | DW_TAG_array_type              (* 0x01 *)
   | DW_TAG_class_type              (* 0x02 *)
@@ -185,6 +193,7 @@ type dwarf_attr_type_t =
   | DW_AT_mutable                  (* 0x61: flag *)
   | DW_AT_linkage_name             (* 0x6e: string *)
   | DW_AT_GNU_call_site_value      (* 0x2111: vendor extension, exprloc *)
+  | DW_AT_GNU_call_site_target     (* 0x2113: vendor extension *)
   | DW_AT_GNU_tail_call            (* 0x2115: vendor extension, flag_present *)
   | DW_AT_GNU_all_tail_call_sites  (* 0x2116: vendor extension, flag *)
   | DW_AT_GNU_all_call_sites       (* 0x2117: vendor extension, flag *)
@@ -193,7 +202,7 @@ type dwarf_attr_type_t =
 
 
 type dwarf_form_type_t =
-  | DW_FORM_addr                   (* 0x01: address *)
+  | DW_FORM_addr                   (* 0x01: address (absolute address) *)
   | DW_FORM_block2                 (* 0x03: block *)
   | DW_FORM_block4                 (* 0x04: block *)
   | DW_FORM_data2                  (* 0x05: constant *)
@@ -207,17 +216,17 @@ type dwarf_form_type_t =
   | DW_FORM_sdata                  (* 0x0d: constant *)
   | DW_FORM_strp                   (* 0x0e: string *)
   | DW_FORM_udata                  (* 0x0f: constant *)
-  | DW_FORM_ref_addr               (* 0x10: reference *)
-  | DW_FORM_ref1                   (* 0x11: reference *)
-  | DW_FORM_ref2                   (* 0x12: reference *)
-  | DW_FORM_ref4                   (* 0x13: reference *)
-  | DW_FORM_ref8                   (* 0x14: reference *)
-  | DW_FORM_ref_udata              (* 0x15: reference *)
+  | DW_FORM_ref_addr     (* 0x10: reference (absolute address in .debug_info) *)
+  | DW_FORM_ref1                   (* 0x11: reference within compilation unit *)
+  | DW_FORM_ref2                   (* 0x12: reference within compilation unit *)
+  | DW_FORM_ref4                   (* 0x13: reference within compilation unit *)
+  | DW_FORM_ref8                   (* 0x14: reference within compilation unit *)
+  | DW_FORM_ref_udata              (* 0x15: reference within compilation unit *)
   | DW_FORM_indirect
   | DW_FORM_sec_offset  (* 0x17: lineptr, loclistptr, macptr, rangelistptr *)
   | DW_FORM_exprloc                (* 0x18: exprloc *)
   | DW_FORM_flag_present           (* 0x19: flag *)
-  | DW_FORM_ref_sig8               (* 0x20: reference *)
+  | DW_FORM_ref_sig8               (* 0x20: reference (64-bit type signature) *)
   | DW_FORM_unknown of string
 
 
@@ -244,27 +253,43 @@ and dwarf_operation_t =
   | DW_OP_drop                       (* 0x13 *)
   | DW_OP_over                       (* 0x14 *)
   | DW_OP_swap                       (* 0x16 *)
+  | DW_OP_and                        (* 0x1a *)
   | DW_OP_minus                      (* 0x1c *)
   | DW_OP_mul                        (* 0x1e *)
   | DW_OP_or                         (* 0x21 *)
   | DW_OP_plus                       (* 0x22 *)
   | DW_OP_plus_uconst of dwarf_operand_t  (* 0x23: ULEB128 addend *)
   | DW_OP_shl                        (* 0x24 *)
+  | DW_OP_shr                        (* 0x25 *)
   | DW_OP_bra of dwarf_operand_t     (* 0x28 *)
+  | DW_OP_eq                         (* 0x29 *)
   | DW_OP_ge                         (* 0x2a *)
   | DW_OP_lt                         (* 0x2d *)
+  | DW_OP_ne                         (* 0x2e *)
   | DW_OP_lit of int                 (* 0x30 - 0x4f *)
   | DW_OP_reg of int                 (* 0x50 - 0x6f *)
   | DW_OP_breg of int * dwarf_operand_t  (* 0x70 - 0x8f: sleb128 offset *)
+  | DW_OP_regx of dwarf_operand_t    (* 0x90 *)
   | DW_OP_fbreg of dwarf_operand_t   (* 0x91: SLEB128 offset *)
   | DW_OP_piece of dwarf_operand_t   (* 0x93: ULEB128 size of piece addressed *)
   | DW_OP_call_frame_cfa             (* 0x9c *)
   | DW_OP_stack_value                (* 0x9f *)
-  | DW_OP_GNU_regval_type of dwarf_operand_t * dwarf_operand_t (* 0xa5: ULEB128 register number,
-                                                                  ULEB128 constant offset *)
+
+  (* GNU extensions (some of them have been incorporated in DWARF-v5) *)
   | DW_OP_GNU_implicit_pointer of
       string * dwarf_operand_t * dwarf_operand_t (* 0xf2, offset in debug_info, sleb128 offset *)
   | DW_OP_GNU_entry_value of int * dwarf_expr_t  (* 0xf3 *)
+
+  (* 0xf5: base-address (to be added to offset), ULEB128 register number, ULEB128
+     constant offset *)
+  | DW_OP_GNU_regval_type of
+      doubleword_int * dwarf_operand_t * dwarf_operand_t
+
+  (* 0xf7: base-address (to be added to offset), ULEB128 constant offset *)
+  | DW_OP_GNU_convert of doubleword_int * dwarf_operand_t
+
+  (* x0fa: base-address (to be added to offset), 4-byte offset of DIE *)
+  | DW_OP_GNU_parameter_ref of doubleword_int * dwarf_operand_t
   | DW_OP_unknown of int             (* not recognized *)
 
 
@@ -272,10 +297,10 @@ and dwarf_expr_t = dwarf_operation_t list
        
 
 type debug_info_entry_t = {
-    ie_abbrev: int;
-    ie_tag: dwarf_tag_type_t;
-    ie_values: (dwarf_attr_type_t * dwarf_attr_value_t) list;
-    ie_children: debug_info_entry_t list
+    dwie_abbrev: int;
+    dwie_tag: dwarf_tag_type_t;
+    dwie_values: (dwarf_attr_type_t * dwarf_attr_value_t) list;
+    dwie_children: debug_info_entry_t list
   }
 
 
@@ -302,7 +327,7 @@ and dwarf_attr_value_t =
   | DW_ATV_FORM_ref8 of int
   | DW_ATV_FORM_ref_udata of int
   | DW_ATV_FORM_exprloc of int * dwarf_expr_t
-  | DW_ATV_FORM_sec_offset of doubleword_int
+  | DW_ATV_FORM_sec_offset of secoffset_kind_t * doubleword_int
   | DW_ATV_FORM_unknown of string
 
 

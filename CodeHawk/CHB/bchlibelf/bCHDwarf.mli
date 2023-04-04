@@ -35,28 +35,31 @@ open BCHELFTypes
 
 val decode_debug_attribute_value:
   ?get_string:(int -> string)
+  -> ?get_loclist:(int -> debug_loc_description_t)
+  -> attrspec:(dwarf_attr_type_t * dwarf_form_type_t)
+  -> base:doubleword_int
   -> pushback_stream_int
-  -> doubleword_int
-  -> (dwarf_attr_type_t * dwarf_form_type_t)
   -> (dwarf_attr_type_t * dwarf_attr_value_t)
 
 
 val decode_variable_die:
-  ?get_string:(int -> string)
-  ->  pushback_stream_int
-  -> doubleword_int
-  -> (int -> debug_abbrev_table_entry_t)
+  get_abbrev_entry:(int -> debug_abbrev_table_entry_t)
+  -> ?get_string:(int -> string)
+  -> ?get_loclist:(int -> debug_loc_description_t)
+  -> base:doubleword_int
+  -> pushback_stream_int
   -> (debug_info_entry_t)
 
-(*
-val decode_compilation_unit_header:
-  pushback_stream_int
-  -> debug_compilation_unit_header_t
- *)
+
+val flatten_compilation_unit:
+  debug_compilation_unit_t -> debug_info_entry_t list
+
 
 val decode_compilation_unit:
-  (int -> string)
-  -> debug_compilation_unit_header_t
+  get_abbrev_entry:(int -> debug_abbrev_table_entry_t)
+  -> get_string:(int -> string)
+  -> get_loclist:(int -> debug_loc_description_t)
+  -> base:doubleword_int
+  -> header:debug_compilation_unit_header_t
   -> pushback_stream_int
-  -> (int -> debug_abbrev_table_entry_t)
   -> debug_compilation_unit_t

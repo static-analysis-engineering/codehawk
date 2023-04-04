@@ -25,6 +25,9 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHPretty
+
 (* bchlib *)
 open BCHLibTypes
 
@@ -134,6 +137,13 @@ object (self)
     | ElfDebugStringSection s -> s
     | _ -> raise (Invalid_argument "dwarf_query_service:get_str")
 
+  method private has_lkoc = H.mem sections ".debug_loc"
+
+  method private get_debug_loc: elf_debug_loc_section_int =
+    match (H.find sections ".debug_loc") with
+    | ElfDebugLocSection s -> s
+    | _ -> raise (Invalid_argument "dwarf_query_service:get_loc")
+
   method compilation_unit_offsets =
     if self#has_aranges then
       let s = self#get_aranges in
@@ -143,19 +153,74 @@ object (self)
 
   method compilation_unit (offset: doubleword_int) =
     if H.mem compilation_unit_headers offset#index then
-      let cuh = H.find compilation_unit_headers offset#index in
-      let abbrevtable = self#abbrev_table cuh.dwcu_abbrev_offset in
+      let header = H.find compilation_unit_headers offset#index in
+      let abbrevtable = self#abbrev_table header.dwcu_abbrev_offset in
       let ch = self#get_debug_info#compilation_unit_stream offset in
       decode_compilation_unit
-        self#get_debug_str#get_string
-        cuh
+        ~get_abbrev_entry:abbrevtable#abbrev_entry
+        ~get_string:self#get_debug_str#get_string
+        ~get_loclist:self#get_debug_loc#get_loclist
+        ~base:offset
+        ~header
         ch
-        abbrevtable#abbrev_entry
     else
       raise (Invalid_argument "dwarf_query_service:compilation_unit")
 
   method compilation_units =
     List.map self#compilation_unit self#compilation_unit_offsets
+
+  method compilation_unit_variables (offset: doubleword_int) =
+    let cu = self#compilation_unit offset in
+    let exprlocs = ref 0 in
+    let loclists = H.create 3 in
+    let dwies = flatten_compilation_unit cu in
+    let _ = pr_debug [STR "Dwies: "; INT (List.length dwies); NL] in
+    let vars =
+      List.filter (fun dwie ->
+          match dwie.dwie_tag with
+          | DW_TAG_variable | DW_TAG_formal_parameter -> true
+          | _ -> false) dwies in
+    let locations =
+      List.iter (fun vdwie ->
+          let atvs = vdwie.dwie_values in
+          if List.exists (fun (attr, _) -> attr = DW_AT_location) atvs then
+            let (attr, atv) = List.find (fun (attr, atv) -> attr = DW_AT_location) atvs in
+            match atv with
+            | DW_ATV_FORM_exprloc _ -> exprlocs := !exprlocs + 1
+            | DW_ATV_FORM_sec_offset (LoclistPtr, offset) ->
+               let loclist = self#get_debug_loc#get_loclist offset#index in
+               let loclistlen =
+                 match loclist with
+                 | SingleLocation _ -> 1
+                 | LocationList l -> List.length l in
+               let loclistentry =
+                 if H.mem loclists loclistlen then
+                   H.find loclists loclistlen
+                 else
+                   0 in
+               H.replace loclists loclistlen (loclistentry + 1)
+            | _ -> ()
+          else
+            ()) vars in
+    (!exprlocs, List.sort Stdlib.compare (H.fold (fun k v a -> (k, v) :: a) loclists []))
+
+  method compilation_units_variables =
+    let exprlocs = ref 0 in
+    let loclists = H.create 3 in
+    let _ =
+      List.iter (fun offset ->
+          let (x, l) = self#compilation_unit_variables offset in
+          begin
+            exprlocs := !exprlocs + x;
+            List.iter (fun (len, count) ->
+                let entry =
+                  if H.mem loclists len then
+                    H.find loclists len
+                  else
+                    0 in
+                H.replace loclists len (entry + count)) l
+          end) self#compilation_unit_offsets in
+    (!exprlocs, List.sort Stdlib.compare (H.fold (fun k v a -> (k, v) :: a) loclists []))
 
   method abbrev_table (offset: doubleword_int) =
     let index = offset#index in
