@@ -723,6 +723,7 @@ let check_function_validity (fn: arm_assembly_function_int): bool =
         if !result then
           match instr#get_opcode with
           | NotRecognized _ -> result := false
+          | PermanentlyUndefined _ -> result := false
           | _ -> ());
     !result
   end
