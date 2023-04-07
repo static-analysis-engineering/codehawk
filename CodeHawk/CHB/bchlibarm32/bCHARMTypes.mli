@@ -169,6 +169,7 @@ class type arm_operand_int =
     method is_extension_register: bool
     method is_writeback_register: bool
     method is_special_register: bool
+    method is_APSR_condition_flags: bool
     method is_register_list: bool
     method is_absolute_address: bool
     method is_literal_address: bool
@@ -993,6 +994,7 @@ type arm_opcode_t =
       bool   (* if true NaN operand causes invalid operation *)
       * arm_opcode_cc_t (* condition *)
       * vfp_datatype_t  (* element data type *)
+      * arm_operand_int (* flagdestination: FPSCR *)
       * arm_operand_int (* operand 1 *)
       * arm_operand_int (* operand 2 *)
   | VectorConvert of

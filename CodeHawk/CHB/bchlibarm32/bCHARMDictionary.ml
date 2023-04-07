@@ -415,8 +415,8 @@ object (self)
          (ctags c, [di dt; oi qd; oi qn; oi qm])
       | VectorBitwiseSelect (c, dt, qd, qn, qm) ->
          (ctags c, [di dt; oi qd; oi qn; oi qm])
-      | VCompare (nan, c, dt, op1, op2) ->
-         (ctags c, [setb nan; di dt; oi op1; oi op2])
+      | VCompare (nan, c, dt, fdst, op1, op2) ->
+         (ctags c, [setb nan; di dt; oi fdst; oi op1; oi op2])
       | VectorConvert (round, fixed, c, dstdt, srcdt, dst, src, fbits) ->
          ((ctags c),
           [setb round; setb fixed; di dstdt; di srcdt; oi dst; oi src; oi fbits])

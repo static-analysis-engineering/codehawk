@@ -194,8 +194,8 @@ let cc_expr
     | (Compare (ACCAlways, x, y, _), ACCSignedLE) -> XOp (XLe, [v x; v y])
     | (Compare (ACCAlways, x, y, _), ACCSignedGT) -> XOp (XGt, [v x; v y])
 
-    | (VCompare (_, ACCAlways, _, x, y), ACCSignedGT) -> XOp (XGt, [v x; v y])
-    | (VCompare (_, ACCAlways, _, x, y), ACCSignedLE) -> XOp (XLe, [v x; v y])
+    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedGT) -> XOp (XGt, [v x; v y])
+    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedLE) -> XOp (XLe, [v x; v y])
 
     | (Add (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
        XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr])

@@ -1130,11 +1130,11 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VBSL" c [vd; vn; vm])
     }
-  | VCompare (nan, c, dt, op1, op2) ->
+  | VCompare (nan, c, dt, fdst, op1, op2) ->
      let mnemonic =
        "VCMP" ^ (if nan then "E" else "") in
      { mnemonic = mnemonic;
-       operands = [op1; op2];
+       operands = [fdst; op1; op2];
        (* use for now, to reflect that the results are often transferred
           via VMRS *)
        flags_set = [APSR_N; APSR_Z; APSR_C; APSR_V];

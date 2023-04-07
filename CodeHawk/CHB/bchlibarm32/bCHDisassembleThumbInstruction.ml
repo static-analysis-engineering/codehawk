@@ -1543,39 +1543,43 @@ let parse_thumb32_29_13
   | (3, 0, 1, 0) when (b 19 16) = 4 ->
      let d = postfix_bit (bv 22) (b 15 12) in
      let m = postfix_bit (bv 5) (b 3 0) in
+     let fdst = arm_special_register_op FPSCR in
      let vd = arm_extension_register_op XSingle d in
      let vm = arm_extension_register_op XSingle m in
      let dt = VfpFloat 32 in
      (* VCMP{E}<c>.F32 <Sd>, <Sm> *)
-     VCompare ((bv 7) = 1, cc, dt, vd RD, vm RD)
+     VCompare ((bv 7) = 1, cc, dt, fdst WR, vd RD, vm RD)
 
   (* < 29><13>D11< 4><vd><5>0<E1M0<vm>   VCMP{E} - T1-double *)
   | (3, 1, 1, 0) when (b 19 16) = 4 ->
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
+     let fdst = arm_special_register_op FPSCR in
      let vd = arm_extension_register_op XDouble d in
      let vm = arm_extension_register_op XDouble m in
      let dt = VfpFloat 64 in
      (* VCMP{E}<c>.F64 <Dd>, <Dm> *)
-     VCompare ((bv 7) = 1, cc, dt, vd RD, vm RD)
+     VCompare ((bv 7) = 1, cc, dt, fdst WR, vd RD, vm RD)
 
   (* < 29><13>D11< 5><vd><5>0<E100< 0>  VCMP{E} - T2-single *)
   | (3, 0, 1, 0) when (b 19 16) = 5 ->
      let d = postfix_bit (bv 22) (b 15 12) in
+     let fdst = arm_special_register_op FPSCR in
      let vd = arm_extension_register_op XSingle d in
      let zero = arm_fp_constant_op 0.0 in
      let dt = VfpFloat 32 in
      (* VCMP{E}<c>.F32 <Sd>, #0.0 *)
-     VCompare ((bv 7) = 1, cc, dt, vd RD, zero)
+     VCompare ((bv 7) = 1, cc, dt, fdst WR, vd RD, zero)
 
   (* < 29><13>D11< 5><vd><5>0<E100< 0>  VCMP{E} - T2-double *)
   | (3, 1, 1, 0) when (b 19 16) = 5 ->
      let d = prefix_bit (bv 22) (b 15 12) in
+     let fdst = arm_special_register_op FPSCR in
      let vd = arm_extension_register_op XDouble d in
      let zero = arm_fp_constant_op 0.0 in
      let dt = VfpFloat 64 in
      (* VCMP{E}<c>.F64 <Dd>, #0.0 *)
-     VCompare ((bv 7) = 1, cc, dt, vd RD, zero)
+     VCompare ((bv 7) = 1, cc, dt, fdst WR, vd RD, zero)
 
   (* The various VCVT forms *)
   | (3, (0 | 1), 1, 0) ->

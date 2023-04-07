@@ -1823,7 +1823,8 @@ object (self)
          (["a:vxx"],
           [xd#index_variable vrd; xd#index_xpr xrn; xd#index_xpr xrm])
 
-      | VCompare (_, c, _, src1, src2) ->
+      | VCompare (_, c, _, fdst, src1, src2) ->
+         let v_fpscr = fdst#to_variable floc in
          let xsrc1 = src1#to_expr floc in
          let xsrc2 = src2#to_expr floc in
          let rxsrc1 = rewrite_expr xsrc1 in
@@ -1833,6 +1834,7 @@ object (self)
            mk_instrx_data
              ~xprs:[xsrc1; xsrc2; rxsrc1; rxsrc2]
              ~rdefs:rdefs
+             ~uses:[get_def_use v_fpscr]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)

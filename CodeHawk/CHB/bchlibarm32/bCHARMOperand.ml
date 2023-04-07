@@ -341,16 +341,7 @@ object (self:'a)
     | ARMReg r | ARMWritebackReg (_, r, _) ->
        env#mk_arm_register_variable r
     | ARMExtensionReg r -> env#mk_arm_extension_register_variable r
-    | ARMSpecialReg r ->
-       begin
-         ch_error_log#add
-           "special register variable"
-           (LBLOCK [
-                STR "Semantics of special register ";
-                STR (arm_special_reg_to_string r);
-                STR " should be handled separaly"]);
-         env#mk_special_variable (arm_special_reg_to_string r)
-       end
+    | ARMSpecialReg r -> env#mk_arm_special_register_variable r
     | ARMLiteralAddress dw ->
        floc#env#mk_global_variable dw#to_numerical
     | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, size) ->
@@ -469,16 +460,7 @@ object (self:'a)
        num_constant_expr imm#to_numerical
     | ARMFPConstant _ -> XConst XRandom
     | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
-    | ARMSpecialReg r ->
-       begin
-         ch_error_log#add
-           "special register handling"
-           (LBLOCK [
-                STR "Semantics of special register ";
-                STR (arm_special_reg_to_string r);
-                STR " should be handled separately"]);
-         XConst (XRandom)
-       end
+    | ARMSpecialReg r -> XVar (self#to_variable floc)
     | ARMExtensionReg _ -> XVar (self#to_variable floc)
     | ARMExtensionRegElement _ -> XConst XRandom
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
@@ -584,6 +566,11 @@ object (self:'a)
 
   method is_special_register =
     match kind with ARMSpecialReg _ -> true | _ -> false
+
+  method is_APSR_condition_flags =
+    match kind with
+    | ARMSpecialReg APSR_nzcv -> true
+    | _ -> false
 
   method is_register_list = match kind with ARMRegList _ -> true | _ -> false
 
