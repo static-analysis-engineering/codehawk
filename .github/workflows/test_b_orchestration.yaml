@@ -15,9 +15,6 @@ jobs:
       with:
         repository: static-analysis-engineering/CodeHawk-Binary
         path: CodeHawk-Binary
-    - name: Delete prebuilt codehawk ocaml binary
-      run: |
-        rm CodeHawk-Binary/chb/bin/binaries/linux/chx86_analyze
     - uses: avsm/setup-ocaml@v1
       with:
         ocaml-version: 4.12.1
