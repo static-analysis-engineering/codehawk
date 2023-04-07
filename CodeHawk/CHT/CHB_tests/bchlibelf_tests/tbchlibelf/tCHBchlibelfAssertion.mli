@@ -47,12 +47,14 @@ val equal_variable_debuginfo_entry:
   -> expected:(dwarf_attr_type_t * string) list
   -> received: debug_info_entry_t
   -> unit
+  -> unit
 
 
 val equal_debug_location_list:
   ?msg:string
   -> expected:(string * string * string) list
   -> received:debug_location_list_entry_t list
+  -> unit
   -> unit
 
 

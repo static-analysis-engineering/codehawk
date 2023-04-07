@@ -67,7 +67,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDwarf"
-let lastupdated = "2023-04-03"
+let lastupdated = "2023-04-06"
 
 
 let decode_debug_attribute_value_test () =
@@ -153,7 +153,7 @@ let decode_variable_die_test () =
         (DW_AT_decl_file, "1");
         (DW_AT_decl_line, "62");
         (DW_AT_type, "<0x5a>");
-        (DW_AT_location, "0xbb (loclistptr)")])
+        (DW_AT_location, "0xbb (location list)")])
          
     ] in
   begin
@@ -178,7 +178,7 @@ let decode_variable_die_test () =
                 ~get_string
                 ~base
                 chi in
-            EA.equal_variable_debuginfo_entry result var)) tests;
+            EA.equal_variable_debuginfo_entry result var ())) tests;
 
     TS.launch_tests ()
   end
