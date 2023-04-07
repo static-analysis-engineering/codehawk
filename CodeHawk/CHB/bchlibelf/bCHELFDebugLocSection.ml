@@ -84,10 +84,7 @@ object (self)
 
   method private read_single_location_description (size: int) =
     let dwexpr = read_dwarf_expression ch size in
-    let desc = match dwexpr with
-      | [DW_OP_reg _] -> RegisterLocationDescription dwexpr
-      | _ -> OtherLocationDescription dwexpr in
-    SimpleLocation desc
+    SimpleLocation dwexpr
 
   method get_location_list =
     let more_entries = ref true in
@@ -102,7 +99,7 @@ object (self)
           begin
             (if !start_addr#equal wordmax then
                loclistentries :=
-                 (BaseAddressSelectionEntry !end_addr) :: !loclistentries
+                 (LocBaseAddressSelectionEntry !end_addr) :: !loclistentries
              else
                let size = ch#read_ui16 in
                let desc = self#read_single_location_description size in

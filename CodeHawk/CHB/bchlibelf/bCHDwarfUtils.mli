@@ -58,6 +58,38 @@ val dwarf_attr_value_to_string: dwarf_attr_value_t -> string
 val abbrev_entry_to_string: debug_abbrev_table_entry_t -> string
 
 
+val has_dw_attribute:
+  dwarf_attr_type_t -> (dwarf_attr_type_t * dwarf_attr_value_t) list -> bool
+
+val has_dw_name: (dwarf_attr_type_t * dwarf_attr_value_t) list -> bool
+
+val has_dw_location: (dwarf_attr_type_t * dwarf_attr_value_t) list -> bool
+
+val has_dw_low_pc: (dwarf_attr_type_t * dwarf_attr_value_t) list -> bool
+
+val has_dw_high_pc_constant: (dwarf_attr_type_t * dwarf_attr_value_t) list -> bool
+
+val has_function_extent: (dwarf_attr_type_t * dwarf_attr_value_t) list -> bool
+
+
+val get_dw_attribute_value:
+  dwarf_attr_type_t -> (dwarf_attr_type_t * dwarf_attr_value_t) list -> dwarf_attr_value_t
+
+val get_dw_name: (dwarf_attr_type_t * dwarf_attr_value_t) list -> string
+
+val get_dw_location:
+  (dwarf_attr_type_t * dwarf_attr_value_t) list -> debug_loc_description_t
+
+val get_dw_low_pc:
+  (dwarf_attr_type_t * dwarf_attr_value_t) list -> doubleword_int
+
+val get_dw_high_pc_constant:
+  (dwarf_attr_type_t * dwarf_attr_value_t) list -> doubleword_int
+
+val get_function_extent:
+  (dwarf_attr_type_t * dwarf_attr_value_t) list -> (doubleword_int * doubleword_int)
+
+
 (** [secoffset_kind at] returns the in the standard defined section offset kind
     if the attribute form includes an offset type (loclistptr, lineptr, macptr,
     rangelstptr) or [UnknownSecoffsetPtr] otherwise.*)
@@ -72,5 +104,9 @@ val read_dwarf_expression:
 
 val single_location_description_to_string:
   single_location_description_t -> string
+
+
+val debug_loc_description_to_string: debug_loc_description_t -> string
+
 
 val debug_compilation_unit_size: debug_compilation_unit_t -> int

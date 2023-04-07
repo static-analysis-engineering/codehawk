@@ -294,7 +294,95 @@ and dwarf_operation_t =
 
 
 and dwarf_expr_t = dwarf_operation_t list
-       
+
+
+type debug_abbrev_table_entry_t = {
+    dabb_index: int;
+    dabb_tag: dwarf_tag_type_t;
+    dabb_has_children: bool;
+    dabb_attr_specs: (dwarf_attr_type_t * dwarf_form_type_t) list
+  }
+
+
+(** Describes the location of an object whose lifetime is either static or
+    the same as the lexical block that owns it, and that does not move during
+    its lifetime.
+
+    A simple location describes the location of one contiguous piece (or all)
+    of an object. It may describe a location in addressable memory or a 
+    register, or the lack of a location.
+
+    A simple location can be
+    (1) a Memory Location Description, expressed by a dwarf expression, whose
+    value is the address of a piece or all of an entity in memory;
+    (2) a Register Location Description, expressed by a single dwarf operation
+    which can be either one of DW_OP_reg0, ..., DW_OP_reg31, or DW_OP_regx
+    with an unsigned LEB128 that encodes the name of the register.
+    (3) an Implicit Location Description, representing a piece or all of an
+    object that has no actual location, but whose contents are either known
+    or known to be undefined. A known constant or a computed value can be
+    represented by:
+    - DW_OP_implicit_value, which specifies an immediate value, or
+    - DW_OP_stack_value, which is the at top of the DWARF expression stack as
+    the result of a dwarf expression evaluated.
+    (4) an Empty Location Description, represented by a dwarf expression with
+    zero operations. It represents a piece or all of an object that is present
+    in the source but not in the object code.
+
+    A composite location describes the location of an object in terms of 
+    pieces, each of which may be contained in part of a register or stored in
+    a memory location unrelated to other pieces.
+
+    A composite location consists of a sequence of pieces, where each piece
+    consists of a simple location followed by a composition operator, which
+    can be:
+    - DW_OP_piece size, specifying the size in bytes of the piece, or
+    - DW_OP_bit size, offset, specifying the size in bits of the piece and
+      the offset in bits from the preceding location description.
+
+    Ref: Dwarf v4, page 26-29 *)
+type single_location_description_t =
+  | SimpleLocation of dwarf_expr_t
+  | CompositeLocation of (dwarf_expr_t * dwarf_operation_t) list
+
+
+type location_list_entry_t = {
+    lle_start_address: doubleword_int;
+    lle_end_address: doubleword_int;
+    lle_location: single_location_description_t
+  }
+
+
+type debug_location_list_entry_t =
+  | LocationListEntry of location_list_entry_t
+  | LocBaseAddressSelectionEntry of doubleword_int
+  | LocEndOfListEntry
+
+
+type debug_loc_description_t =
+  | SingleLocation of single_location_description_t
+  | LocationList of debug_location_list_entry_t list
+
+
+type debug_range_list_entry_t =
+  | RangeListEntry of doubleword_int * doubleword_int
+  | RngBaseAddressSelectionEntry of doubleword_int
+  | RngEndOfListEntry
+
+
+type debug_range_description_t =
+  | SingleAddress of doubleword_int
+  | ContiguousAddressRange of doubleword_int * doubleword_int
+  | NoncontiguousAddressRange of debug_range_list_entry_t list
+
+
+type debug_aranges_table_entry_t = {
+    dar_length: int;
+    dar_debug_info_offset: doubleword_int;
+    dar_pointer_size: int;
+    dar_tuples: (doubleword_int * doubleword_int) list
+  }
+
 
 type debug_info_entry_t = {
     dwie_abbrev: int;
@@ -305,7 +393,7 @@ type debug_info_entry_t = {
 
 
 and dwarf_attr_value_t =
-  | DW_ATV_FORM_addr of string
+  | DW_ATV_FORM_addr of doubleword_int
   | DW_ATV_FORM_block2 of int * int list
   | DW_ATV_FORM_block4 of int * int list
   | DW_ATV_FORM_data2 of int
@@ -328,6 +416,8 @@ and dwarf_attr_value_t =
   | DW_ATV_FORM_ref_udata of int
   | DW_ATV_FORM_exprloc of int * dwarf_expr_t
   | DW_ATV_FORM_sec_offset of secoffset_kind_t * doubleword_int
+  | DW_ATV_FORM_sec_offset_loclist of doubleword_int * debug_loc_description_t
+  | DW_ATV_FORM_sec_offset_rangelist of doubleword_int * debug_range_description_t
   | DW_ATV_FORM_unknown of string
 
 
@@ -345,48 +435,3 @@ type debug_compilation_unit_t = {
     cu_unit: debug_info_entry_t
   }
 
-
-type debug_abbrev_table_entry_t = {
-    dabb_index: int;
-    dabb_tag: dwarf_tag_type_t;
-    dabb_has_children: bool;
-    dabb_attr_specs: (dwarf_attr_type_t * dwarf_form_type_t) list
-  }
-                                  
-type simple_location_description_t =
-  | MemoryLocationDescription of dwarf_expr_t
-  | RegisterLocationDescription of dwarf_expr_t
-  | ImplicitLocationDescription of dwarf_expr_t
-  | EmptyLocationDescription
-  | OtherLocationDescription of dwarf_expr_t
-
-  
-type single_location_description_t =
-  | SimpleLocation of simple_location_description_t
-  | CompositeLocation of simple_location_description_t * dwarf_operation_t
-
-
-type location_list_entry_t = {
-    lle_start_address: doubleword_int;
-    lle_end_address: doubleword_int;
-    lle_location: single_location_description_t
-  }
-
-
-type debug_location_list_entry_t =
-  | LocationListEntry of location_list_entry_t
-  | BaseAddressSelectionEntry of doubleword_int
-  | EndOfListEntry
-
-
-type debug_loc_description_t =
-  | SingleLocation of single_location_description_t
-  | LocationList of debug_location_list_entry_t list
-
-
-type debug_aranges_table_entry_t = {
-    dar_length: int;
-    dar_debug_info_offset: doubleword_int;
-    dar_pointer_size: int;
-    dar_tuples: (doubleword_int * doubleword_int) list
-  }

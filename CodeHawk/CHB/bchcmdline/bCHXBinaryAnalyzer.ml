@@ -497,6 +497,8 @@ let main () =
       let _ = disassembly_summary#set_disassembly_metrics
                 (get_arm_disassembly_metrics ()) in
       let _ = pr_debug [NL; NL; disassembly_summary#toPretty; NL] in
+      let _ = pr_debug [
+                  LBLOCK (List.map (fun f -> f#toPretty) BCHDwarfQueryService.dwarf_query_service#debug_info_functions)] in
       begin
         if !save_asm then
           begin
