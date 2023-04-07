@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHARMDictionaryTest"
-let lastupdated = "2023-03-09"
+let lastupdated = "2023-04-06"
 
 let e8 = 256
 let e16 = e8 * e8
@@ -1764,8 +1764,9 @@ let arm_opcode_tests () =
         let vd = armvfp_op dp RD in
         let vm = armvfp_op dp RD in
         let dt = if dp then VfpFloat 64 else VfpFloat 32 in
+        let fdst = arm_special_register_op FPSCR WR in
         let c = cc () in
-        let opc = VCompare (nan, c, dt, vd, vm) in
+        let opc = VCompare (nan, c, dt, fdst, vd, vm) in
         let mnem = if nan then "VCMPE" else "VCMP" in
         index_check_opc_c opc c mnem 4);
 
