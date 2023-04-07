@@ -51,8 +51,8 @@ val decode_variable_die:
   -> (debug_info_entry_t)
 
 
-val flatten_compilation_unit:
-  debug_compilation_unit_t -> debug_info_entry_t list
+val flatten_debug_info_entry:
+  debug_info_entry_t -> debug_info_entry_t list
 
 
 val decode_compilation_unit:

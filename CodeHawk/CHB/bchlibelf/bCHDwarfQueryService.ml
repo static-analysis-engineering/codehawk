@@ -29,15 +29,18 @@
 open CHPretty
 
 (* bchlib *)
+open BCHDoubleword
 open BCHLibTypes
 
 (* bchlibelf *)
 open BCHDwarf
-open BCHDwarfTypes   
+open BCHDwarfTypes
+open BCHDwarfUtils
 open BCHELFTypes
 
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 class debug_abbrev_table_t
@@ -72,6 +75,53 @@ object (self)
 end
 
 
+class debug_info_function_t
+        (faddr: doubleword_int) (d: debug_info_entry_t):debug_info_function_int =
+object (self)
+
+  val variables = H.create 3
+
+  method has_name: bool =
+    has_dw_name d.dwie_values
+
+  method name: string =
+    if self#has_name then
+      get_dw_name d.dwie_values
+    else
+      "?name?"
+
+  method variables: (string * debug_loc_description_t) list =
+    let result = ref [] in
+    let dwies = flatten_debug_info_entry d in
+    let _ =
+      List.iter (fun dwie ->
+          match dwie.dwie_tag with
+          | DW_TAG_variable ->
+             let atvs = dwie.dwie_values in
+             if has_dw_name atvs && has_dw_location atvs then
+               let name = get_dw_name atvs in
+               let location = get_dw_location atvs in
+               result := (name, location) :: !result
+             else
+               ()
+          | _ -> ()) dwies in
+    List.sort (fun (name1, _) (name2, _) -> Stdlib.compare name1 name2) !result
+
+  method toPretty =
+    LBLOCK [
+        faddr#toPretty; STR ": "; STR self#name; NL;
+        LBLOCK (List.map (fun (name, loc) ->
+                    LBLOCK [
+                        STR "  ";
+                        STR name;
+                        STR ": ";
+                        STR (debug_loc_description_to_string loc);
+                        NL]) self#variables);
+        NL; NL]
+
+end
+
+
 (* -----------------------------------------------------------------------------
    DWARF sections:
    .debug_abbrev: Abbreviations used in the .debug_info section
@@ -93,6 +143,7 @@ object (self)
   val sections = H.create 5
   val abbrevtables = H.create 5
   val compilation_unit_headers = H.create 5
+  val functions = H.create 5
 
   method initialize (debugsections: (int * string * elf_section_t) list) =
     begin
@@ -169,58 +220,35 @@ object (self)
   method compilation_units =
     List.map self#compilation_unit self#compilation_unit_offsets
 
-  method compilation_unit_variables (offset: doubleword_int) =
-    let cu = self#compilation_unit offset in
-    let exprlocs = ref 0 in
-    let loclists = H.create 3 in
-    let dwies = flatten_compilation_unit cu in
-    let _ = pr_debug [STR "Dwies: "; INT (List.length dwies); NL] in
-    let vars =
-      List.filter (fun dwie ->
-          match dwie.dwie_tag with
-          | DW_TAG_variable | DW_TAG_formal_parameter -> true
-          | _ -> false) dwies in
-    let locations =
-      List.iter (fun vdwie ->
-          let atvs = vdwie.dwie_values in
-          if List.exists (fun (attr, _) -> attr = DW_AT_location) atvs then
-            let (attr, atv) = List.find (fun (attr, atv) -> attr = DW_AT_location) atvs in
-            match atv with
-            | DW_ATV_FORM_exprloc _ -> exprlocs := !exprlocs + 1
-            | DW_ATV_FORM_sec_offset (LoclistPtr, offset) ->
-               let loclist = self#get_debug_loc#get_loclist offset#index in
-               let loclistlen =
-                 match loclist with
-                 | SingleLocation _ -> 1
-                 | LocationList l -> List.length l in
-               let loclistentry =
-                 if H.mem loclists loclistlen then
-                   H.find loclists loclistlen
-                 else
-                   0 in
-               H.replace loclists loclistlen (loclistentry + 1)
-            | _ -> ()
-          else
-            ()) vars in
-    (!exprlocs, List.sort Stdlib.compare (H.fold (fun k v a -> (k, v) :: a) loclists []))
+  method private flatten_all: debug_info_entry_t list =
+    let units = self#compilation_units in
+    List.concat (List.map (fun cu -> flatten_debug_info_entry cu.cu_unit) units)
 
-  method compilation_units_variables =
-    let exprlocs = ref 0 in
-    let loclists = H.create 3 in
-    let _ =
-      List.iter (fun offset ->
-          let (x, l) = self#compilation_unit_variables offset in
-          begin
-            exprlocs := !exprlocs + x;
-            List.iter (fun (len, count) ->
-                let entry =
-                  if H.mem loclists len then
-                    H.find loclists len
-                  else
-                    0 in
-                H.replace loclists len (entry + count)) l
-          end) self#compilation_unit_offsets in
-    (!exprlocs, List.sort Stdlib.compare (H.fold (fun k v a -> (k, v) :: a) loclists []))
+  method private collect_debug_info_functions =
+    let dwies = self#flatten_all in
+    List.iter (fun dwie ->
+        match dwie.dwie_tag with
+        | DW_TAG_subprogram when has_function_extent dwie.dwie_values ->
+           let (faddr, _) = get_function_extent dwie.dwie_values in
+           H.add functions faddr#index dwie
+        | _ -> ()) dwies
+
+  method debug_info_function_addresses: doubleword_int list =
+    let _ = if (H.length functions) = 0 then self#collect_debug_info_functions in
+    H.fold (fun k _ a -> (TR.tget_ok (index_to_doubleword k)) :: a) functions []
+
+  method debug_info_function (faddr: doubleword_int) =
+    let _ = if (H.length functions) = 0 then self#collect_debug_info_functions in
+    if H.mem functions faddr#index then
+      Some (new debug_info_function_t faddr (H.find functions faddr#index))
+    else
+      None
+
+  method debug_info_functions =
+    List.fold_left (fun acc faddr ->
+        let optf = self#debug_info_function faddr in
+        match optf with Some f -> f::acc | _ -> acc)
+      [] self#debug_info_function_addresses
 
   method abbrev_table (offset: doubleword_int) =
     let index = offset#index in

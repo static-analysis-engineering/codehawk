@@ -594,6 +594,20 @@ class type debug_abbrev_table_int =
   end
 
 
+class type debug_info_function_int =
+  object
+
+    method name: string
+
+    method variables: (string * debug_loc_description_t) list
+
+    method has_name: bool
+
+    method toPretty: pretty_t
+
+  end
+
+
 (** Provides the main access point for data provided in the .debug
     sections of an executable (if present). *)
 class type dwarf_query_service_int =
@@ -618,9 +632,15 @@ class type dwarf_query_service_int =
 
     method compilation_units: debug_compilation_unit_t list
 
-    method compilation_unit_variables: doubleword_int -> (int * (int * int) list)
+    (** Returns a sorted list of virtual addresses that are associated with
+        DW_TAG_subprogram debug_info_entries with a nonempty body. *)
+    method debug_info_function_addresses: doubleword_int list
 
-    method compilation_units_variables: (int * (int * int) list)
+    (** [debug_info_function faddr] returns debug information on the function
+        at virtual address [faddr] if present, and [None] otherwise.*)
+    method debug_info_function: doubleword_int -> debug_info_function_int option
+
+    method debug_info_functions: debug_info_function_int list
 
     (* ----------------------------------------------------------- predicates *)
 

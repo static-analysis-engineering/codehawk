@@ -550,23 +550,30 @@ and dwarf_expr_to_string (x: dwarf_expr_t) =
     (List.map (fun dwop -> (dwarf_operation_to_string dwop)) x)
 
 
-let simple_location_description_to_string (d: simple_location_description_t) =
-  match d with
-  | MemoryLocationDescription x -> "(M " ^ (dwarf_expr_to_string x) ^ ")"
-  | RegisterLocationDescription x -> "(R " ^ (dwarf_expr_to_string x) ^ ")"
-  | OtherLocationDescription x -> "(O " ^ (dwarf_expr_to_string x) ^ ")"
-  | _ -> "other simple location"
-
-
 let single_location_description_to_string (d: single_location_description_t) =
   match d with
-  | SimpleLocation sld -> simple_location_description_to_string sld
-  | CompositeLocation (sld, op) -> "composite"
+  | SimpleLocation x -> dwarf_expr_to_string x
+  | CompositeLocation xl ->
+     "Composite: "
+     ^ (String.concat
+          "; "
+          (List.map (fun (x, op) ->
+               "("
+               ^ (dwarf_expr_to_string x)
+               ^ ": "
+               ^ (dwarf_operation_to_string op)
+               ^ ")") xl))
+
+
+let debug_loc_description_to_string (d: debug_loc_description_t) =
+  match d with
+  | SingleLocation s -> single_location_description_to_string s
+  | LocationList l -> "location list (" ^ (string_of_int (List.length l)) ^ ")"
 
 
 let dwarf_attr_value_to_string (av: dwarf_attr_value_t) =
   match av with
-  | DW_ATV_FORM_addr a -> a
+  | DW_ATV_FORM_addr dw -> dw#to_hex_string
   | DW_ATV_FORM_block1 (len, values) -> dwarf_attr_block_to_string len values
   | DW_ATV_FORM_block2 (len, values) -> dwarf_attr_block_to_string len values
   | DW_ATV_FORM_block4 (len, values) -> dwarf_attr_block_to_string len values
@@ -590,6 +597,10 @@ let dwarf_attr_value_to_string (av: dwarf_attr_value_t) =
   | DW_ATV_FORM_ref_udata r -> string_of_int r
   | DW_ATV_FORM_exprloc (size, exprloc) ->
      (dwarf_expr_to_string exprloc) ^ " (size: " ^ (string_of_int size) ^")"
+  | DW_ATV_FORM_sec_offset_loclist (offset, _) ->
+     offset#to_hex_string ^ " (location list)"
+  | DW_ATV_FORM_sec_offset_rangelist (offset, _) ->
+     offset#to_hex_string ^ " (range list)"
   | DW_ATV_FORM_sec_offset (kind, dw) ->
      dw#to_hex_string ^ " (" ^ (secoffset_kind_to_string kind) ^ ")"
   | DW_ATV_FORM_unknown s -> "unknown:" ^ s
@@ -603,3 +614,95 @@ let debug_compilation_unit_size (cu: debug_compilation_unit_t) =
       List.fold_left (fun ac c ->
           ac + (debug_info_entry_size c)) 0 e.dwie_children in
   debug_info_entry_size cu.cu_unit
+
+
+let has_dw_attribute
+      (attr: dwarf_attr_type_t)
+      (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  List.fold_left (fun acc (a, _) -> acc || a = attr) false atvs
+
+
+let has_dw_name (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  has_dw_attribute DW_AT_name atvs
+
+
+let has_dw_location (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  has_dw_attribute DW_AT_location atvs
+
+
+let has_dw_low_pc (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  has_dw_attribute DW_AT_low_pc atvs
+
+
+let has_dw_high_pc_constant
+      (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  has_dw_attribute DW_AT_high_pc atvs
+
+
+let has_function_extent (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  has_dw_low_pc atvs && has_dw_high_pc_constant atvs                         
+
+
+let get_dw_attribute_value
+      (attr: dwarf_attr_type_t)
+      (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  if has_dw_attribute attr atvs then
+    snd (List.find (fun (a, v) -> a = attr) atvs)
+  else
+    raise
+      (Invalid_argument
+         ("get_dw_attribute_value: attribute not found: "
+          ^ (dwarf_attr_type_to_string attr)))
+
+
+let get_dw_name (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  let atv = get_dw_attribute_value DW_AT_name atvs in
+  match atv with
+  | DW_ATV_FORM_string s -> s
+  | DW_ATV_FORM_strp (_, s) -> s
+  | _ ->
+     raise
+       (Invalid_argument
+          ("get_dw_name: Unexpected attribute value: "
+           ^ (dwarf_attr_value_to_string atv)))
+
+
+let get_dw_location (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  let atv = get_dw_attribute_value DW_AT_location atvs in
+  match atv with
+  | DW_ATV_FORM_exprloc (_, x) -> SingleLocation (SimpleLocation x)
+  | DW_ATV_FORM_sec_offset_loclist (_, loc) -> loc
+  | _ ->
+     raise
+       (Invalid_argument
+          ("get_dw_location: Unexpected attribute value: "
+           ^ (dwarf_attr_value_to_string atv)))
+
+
+let get_dw_low_pc (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  let atv = get_dw_attribute_value DW_AT_low_pc atvs in
+  match atv with
+  | DW_ATV_FORM_addr dw -> dw
+  | _ ->
+     raise
+       (Invalid_argument
+          ("get_dw_low_pc: Unexpected attribute value: "
+           ^ (dwarf_attr_value_to_string atv)))
+
+
+let get_dw_high_pc_constant
+      (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  let atv = get_dw_attribute_value DW_AT_high_pc atvs in
+  match atv with
+  | DW_ATV_FORM_data4 dw -> dw
+  | _ ->
+     raise
+       (Invalid_argument
+          ("get_dw_high_pc_constant: Unexpected attribute value: "
+           ^ (dwarf_attr_value_to_string atv)))
+
+
+let get_function_extent (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
+  let lowpc = get_dw_low_pc atvs in
+  let size = get_dw_high_pc_constant atvs in
+  (lowpc, size)

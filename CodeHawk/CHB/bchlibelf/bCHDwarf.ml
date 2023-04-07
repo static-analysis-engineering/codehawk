@@ -62,7 +62,7 @@ let decode_debug_attribute_value
   let (attr, form) = attrspec in
   let value =
     match form with
-    | DW_FORM_addr -> DW_ATV_FORM_addr ch#read_doubleword#to_hex_string
+    | DW_FORM_addr -> DW_ATV_FORM_addr ch#read_doubleword
     | DW_FORM_block1 ->
        let size = ch#read_byte in
        let bytes = List.init size (fun _ -> ch#read_byte) in
@@ -79,7 +79,12 @@ let decode_debug_attribute_value
     | DW_FORM_ref4 -> DW_ATV_FORM_ref4 (ch#read_doubleword#add base)
     | DW_FORM_sec_offset ->
        let kind = secoffset_kind attr in
-       DW_ATV_FORM_sec_offset (kind, ch#read_doubleword)
+       let offset = ch#read_doubleword in
+       (match kind with
+        | LoclistPtr ->
+           let loclist = get_loclist offset#index in
+           DW_ATV_FORM_sec_offset_loclist (offset, loclist)
+        | _ -> DW_ATV_FORM_sec_offset (kind, offset))
     | DW_FORM_string -> DW_ATV_FORM_string ch#read_null_terminated_string
     | DW_FORM_strp ->
        let offset = ch#read_doubleword in
@@ -120,7 +125,7 @@ let decode_variable_die
   }
 
 
-let flatten_compilation_unit (dcu: debug_compilation_unit_t) =
+let flatten_debug_info_entry (dwie: debug_info_entry_t) =
   let result = ref [] in
 
   let rec add_entry (e: debug_info_entry_t) =
@@ -130,7 +135,7 @@ let flatten_compilation_unit (dcu: debug_compilation_unit_t) =
     end in
 
   begin
-    add_entry dcu.cu_unit;
+    add_entry dwie;
     List.rev !result
   end
 
