@@ -2301,13 +2301,14 @@ let parse_misc_7_type
      let ebit = bv 7 in
      let dp = sz = 1 in
      let vd = b 15 12 in
+     let fdst = arm_special_register_op FPSCR in
      let vdreg = if dp then prefix_bit dbit vd else postfix_bit dbit vd in
      let (dt, xtype) =
        if dp then (VfpFloat 64, XDouble) else (VfpFloat 32, XSingle) in
      let vd = arm_extension_register_op xtype vdreg RD in
      (* VCMP{E}<c>.F64 <Dd>, #0.0 *)
      (* VCMP{E}<c>.F32 <Sd>, #0.0 *)
-     VCompare (ebit = 1, c, dt, vd, arm_fp_constant_op (0.0))
+     VCompare (ebit = 1, c, dt, vd, fdst WR, arm_fp_constant_op (0.0))
 
   (* <cc><7>01D111<o><vd>101so1M0<vm> *) (* VCVT (between fp and int) - A1 *)
   | (1, 3, 1, 0) when
@@ -2393,6 +2394,7 @@ let parse_misc_7_type
      let e = bv 7 in
      let m = bv 5 in
      let vm = b 3 0 in
+     let fdst = arm_special_register_op FPSCR in
      let (vd, vm, xtype, dt) =
        if sz = 1 then
          (prefix_bit d vd, prefix_bit m vm, XDouble, VfpFloat 64)
@@ -2402,7 +2404,7 @@ let parse_misc_7_type
      let vm = arm_extension_register_op xtype vm RD in
      (*VCMP{E}<c>.F64 <Dd>, <Dm> *)
      (*VCMP{E}<c>.F32 <Sd>, <Sm> *)
-     VCompare (e = 1, c, dt, vd, vm)
+     VCompare (e = 1, c, dt, fdst WR, vd, vm)
 
   (* <cc><7>01D11< 7><vd>101s11M0<vm> *) (* VCVT (between dp and sp) - A1 *)
   | (1, 3, 1, 0) when (b 19 16) = 7 && (b 11 9) = 5 && (bv 7) = 1 ->

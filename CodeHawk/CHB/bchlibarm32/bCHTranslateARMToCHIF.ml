@@ -606,6 +606,9 @@ let translate_arm_instruction
   let flagdefs =
     let flags_set = get_arm_flags_set instr#get_opcode in
     List.map (fun f -> finfo#env#mk_flag_variable (ARMCCFlag f)) flags_set in
+  let apsr_flagdefs =
+    let flags_set = [APSR_N; APSR_Z; APSR_C; APSR_V] in
+    List.map (fun f -> finfo#env#mk_flag_variable (ARMCCFlag f)) flags_set in
 
   match instr#get_opcode with
 
@@ -2671,14 +2674,16 @@ let translate_arm_instruction
 
   | VectorBitwiseOrNot _ -> default []
 
-  | VCompare (_, _, _, src1, src2) ->
+  | VCompare (_, _, _, fdst, src1, src2) ->
      let floc = get_floc loc in
      let xsrc1 = src1#to_expr floc in
      let xsrc2 = src2#to_expr floc in
+     let fpscr_def = fdst#to_variable floc in
      let usevars = get_register_vars [src1; src2] in
      let usehigh = get_use_high_vars [xsrc1; xsrc2] in
      let defcmds =
        floc#get_vardef_commands
+         ~defs:[fpscr_def]
          ~use:usevars
          ~usehigh:usehigh
          ~flagdefs:flagdefs
@@ -2757,11 +2762,15 @@ let translate_arm_instruction
      let vdst = dst#to_variable floc in
      let xsrc = src#to_expr floc in
      let usevars = get_register_vars [src] in
+     let usevars = (src#to_variable floc) :: usevars in
      let usehigh = get_use_high_vars [xsrc] in
      let cmds = floc#get_abstract_commands vdst () in
+     let flagdefs =
+       if dst#is_APSR_condition_flags then apsr_flagdefs else [] in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdst]
+         ~flagdefs:flagdefs
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in

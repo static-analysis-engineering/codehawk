@@ -2720,6 +2720,8 @@ class type function_environment_int =
              arm_extension_register_t -> variable_t
     method mk_arm_extension_register_element_variable:
              arm_extension_register_element_t -> variable_t
+    method mk_arm_special_register_variable:
+             arm_special_reg_t -> variable_t
 
     method mk_global_variable: ?size:int -> numerical_t -> variable_t
 

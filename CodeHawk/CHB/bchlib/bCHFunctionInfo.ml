@@ -851,6 +851,9 @@ object (self)
         (e: arm_extension_register_element_t) =
     self#mk_register_variable (ARMExtensionRegisterElement e)
 
+  method mk_arm_special_register_variable (r: arm_special_reg_t) =
+    self#mk_register_variable (ARMSpecialRegister r)
+
   method mk_bridge_value (address:ctxt_iaddress_t) (argnr:int) =
     self#mk_variable (varmgr#make_bridge_value address argnr)
       
