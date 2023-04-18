@@ -57,6 +57,8 @@ val dwarf_attr_value_to_string: dwarf_attr_value_t -> string
 
 val abbrev_entry_to_string: debug_abbrev_table_entry_t -> string
 
+val dwarf_operand_to_string: dwarf_operand_t -> string
+
 
 val has_dw_attribute:
   dwarf_attr_type_t -> (dwarf_attr_type_t * dwarf_attr_value_t) list -> bool
@@ -84,7 +86,7 @@ val get_dw_low_pc:
   (dwarf_attr_type_t * dwarf_attr_value_t) list -> doubleword_int
 
 val get_dw_high_pc_constant:
-  (dwarf_attr_type_t * dwarf_attr_value_t) list -> doubleword_int
+  (dwarf_attr_type_t * dwarf_attr_value_t) list -> bool * doubleword_int
 
 val get_function_extent:
   (dwarf_attr_type_t * dwarf_attr_value_t) list -> (doubleword_int * doubleword_int)
