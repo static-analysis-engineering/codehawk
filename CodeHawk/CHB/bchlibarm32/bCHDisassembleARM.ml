@@ -939,7 +939,13 @@ let construct_functions_arm () =
           ignore (construct_assembly_function ~check:true !count faddr)
         end) arm_assembly_functions#add_functions_by_preamble;
 
+    pverbose [
+        STR "Function construction completed. ";
+        STR "Start identification of dataref blocks"; NL];
+
     arm_assembly_functions#identify_dataref_datablocks;
+
+    pverbose [STR "Identification of dataref blocks completed"; NL];
 
     record_call_targets_arm ();
     associate_condition_code_users ();

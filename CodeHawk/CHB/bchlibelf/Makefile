@@ -37,6 +37,7 @@ MLIS := \
 	bCHELFPrettyStrings \
 	bCHELFUtil \
 	bCHDwarfUtils \
+	bCHDwarfOperationRecords \
 	bCHDwarf \
 	bCHELFDictionary \
 	bCHELFSection \
@@ -64,6 +65,7 @@ SOURCES := \
 	bCHELFPrettyStrings \
 	bCHELFUtil \
 	bCHDwarfUtils \
+	bCHDwarfOperationRecords \
 	bCHDwarf \
 	bCHELFDictionary \
 	bCHELFSection \

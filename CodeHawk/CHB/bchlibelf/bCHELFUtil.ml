@@ -184,6 +184,7 @@ let _ =
       H.add section_header_tag_table dw (tag,tagstr))
             [ ("0x0", SHT_NullSection, "SHT_NULL")
             ; ("0x1", SHT_ProgBits, "SHT_PROGBITS")
+            ; ("0x7000001e", SHT_ProgBits, "SHT_PROGBITS")
             ; ("0x2", SHT_SymTab, "SHT_SYMTAB")
             ; ("0x3", SHT_StrTab, "SHT_STRTAB")
             ; ("0x4", SHT_Rela, "SHT_RELA")

@@ -354,12 +354,6 @@ let abbrev_entry_to_string (e: debug_abbrev_table_entry_t) =
   (string_of_int e.dabb_index) ^ ":" ^ (dwarf_tag_type_to_string (e.dabb_tag))
 
 
-let debug_loc_description_to_string (l: debug_loc_description_t) =
-  match l with
-  | SingleLocation _ -> "single-location"
-  | LocationList _ -> "location-list"
-
-
 let secoffset_kind (attr: dwarf_attr_type_t): secoffset_kind_t =
   match attr with
   | DW_AT_location -> LoclistPtr
@@ -672,6 +666,22 @@ let get_dw_location (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
   match atv with
   | DW_ATV_FORM_exprloc (_, x) -> SingleLocation (SimpleLocation x)
   | DW_ATV_FORM_sec_offset_loclist (_, loc) -> loc
+  | DW_ATV_FORM_data4 _ ->
+     raise
+       (Invalid_argument ("get_dw_location: data4 from attribute: "
+                          ^ (dwarf_attr_value_to_string atv)))
+  | DW_ATV_FORM_addr _ ->
+     raise
+       (Invalid_argument ("get_dw_location: addr form attribute"))
+  | DW_ATV_FORM_block1 _ ->
+     raise
+       (Invalid_argument ("get_dw_location: block1 form attribute"))
+  | DW_ATV_FORM_block2 _ ->
+     raise
+       (Invalid_argument ("get_dw_location: block2 form attribute"))
+  | DW_ATV_FORM_block4 _ ->
+     raise
+       (Invalid_argument ("get_dw_location: block4 form attribute"))
   | _ ->
      raise
        (Invalid_argument
@@ -694,7 +704,8 @@ let get_dw_high_pc_constant
       (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
   let atv = get_dw_attribute_value DW_AT_high_pc atvs in
   match atv with
-  | DW_ATV_FORM_data4 dw -> dw
+  | DW_ATV_FORM_data4 dw -> (true, dw)
+  | DW_ATV_FORM_addr dw -> (false, dw)
   | _ ->
      raise
        (Invalid_argument
@@ -704,5 +715,8 @@ let get_dw_high_pc_constant
 
 let get_function_extent (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
   let lowpc = get_dw_low_pc atvs in
-  let size = get_dw_high_pc_constant atvs in
-  (lowpc, size)
+  let (issize, size) = get_dw_high_pc_constant atvs in
+  if issize then
+    (lowpc, lowpc#add size)
+  else
+    (lowpc, size)

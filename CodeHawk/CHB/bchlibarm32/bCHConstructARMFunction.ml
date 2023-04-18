@@ -39,6 +39,7 @@ open BCHFloc
 open BCHFunctionData
 open BCHLibTypes
 open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibarm32 *)
 open BCHARMAssemblyBlock

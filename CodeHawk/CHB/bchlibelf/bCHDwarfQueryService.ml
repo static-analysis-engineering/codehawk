@@ -28,12 +28,16 @@
 (* chlib *)
 open CHPretty
 
+(* chutil *)
+open CHPrettyUtil
+
 (* bchlib *)
 open BCHDoubleword
 open BCHLibTypes
 
 (* bchlibelf *)
 open BCHDwarf
+open BCHDwarfOperationRecords
 open BCHDwarfTypes
 open BCHDwarfUtils
 open BCHELFTypes
@@ -89,6 +93,28 @@ object (self)
       get_dw_name d.dwie_values
     else
       "?name?"
+
+  method variable_location_stats =
+    let sresult = ref [] in
+    let lresult = ref [] in
+    let add_sld (sld: single_location_description_t) =
+      match sld with
+      | SimpleLocation x -> sresult := x :: !sresult
+      | _ -> () in
+    let add_lld (sld: single_location_description_t) =
+      match sld with
+      | SimpleLocation x -> lresult := x :: !lresult
+      | _ -> () in
+    let add_entry (dle: debug_location_list_entry_t) =
+      match dle with
+      | LocationListEntry lle -> add_lld lle.lle_location
+      | _ -> () in
+    let _ =
+      List.iter (fun (_, ld) ->
+          match ld with
+          | SingleLocation sld -> add_sld sld
+          | LocationList entries -> List.iter add_entry entries) self#variables in
+    (!sresult, !lresult)
 
   method variables: (string * debug_loc_description_t) list =
     let result = ref [] in
@@ -250,6 +276,31 @@ object (self)
         match optf with Some f -> f::acc | _ -> acc)
       [] self#debug_info_function_addresses
 
+  method variable_location_stats: (int * int * int * dwarf_expr_t list * dwarf_expr_t list) =
+    let sresult = ref [] in
+    let lresult = ref [] in
+    let svars = ref 0 in
+    let lvars = ref 0 in
+    let lvarlocs = ref 0 in
+    let _ =
+      List.iter (fun f ->
+          let (sl ,ll) = f#variable_location_stats in
+          let vars = f#variables in
+          begin
+            sresult := sl @ !sresult;
+            lresult := ll @ !lresult;
+            List.iter (fun (_, d) ->
+                match d with
+                | SingleLocation _ -> svars := !svars + 1
+                | LocationList lst ->
+                   begin
+                     lvars := !lvars + 1;
+                     lvarlocs := !lvarlocs + List.length lst
+                   end
+              ) vars
+          end) self#debug_info_functions in
+    (!svars, !lvars, !lvarlocs, !sresult, !lresult)
+
   method abbrev_table (offset: doubleword_int) =
     let index = offset#index in
     if H.mem abbrevtables index then
@@ -265,6 +316,37 @@ object (self)
         end
       else
         raise (Invalid_argument "dwarf_query_service:get_abbrev")
+
+  method toPretty =
+    let (svars, lvars, lvarlocs, sstats, lstats) = self#variable_location_stats in
+    let sstats = List.concat sstats in
+    let lstats = List.concat lstats in
+    let lops = ref 0 in
+    let plist l =
+      let table = H.create 3 in
+      let _ =
+        List.iter (fun op ->
+            let _ = lops := !lops + 1 in
+            let name = get_dw_op_name op in
+            let opcnt = if H.mem table name then H.find table name else 0 in
+            H.replace table name (opcnt + 1)) l in
+      let opcounts = H.fold (fun k v a -> (k, v) :: a) table [] in
+      let opcounts =
+        List.sort (fun (k1, v1) (k2, v2) -> Stdlib.compare (v1, k1) (v2, k2)) opcounts in
+      LBLOCK
+        (List.map (fun (k, v) ->
+             LBLOCK [
+                 (fixed_length_pretty (STR k) 20);
+                 (fixed_length_pretty ~alignment:StrRight (INT v) 8);
+                 NL]) opcounts) in
+    let psstats = plist sstats in
+    let _ = lops := 0 in
+    let plstats = plist lstats in
+    LBLOCK [STR "Single location variables: "; INT svars ; NL;
+            STR "Location list variables: "; INT lvars;
+            STR " with "; INT lvarlocs; STR " locations"; NL; NL;
+            psstats; NL; NL; plstats; NL; NL;
+            STR "Total number of operations in exprs: "; INT !lops; NL]
 
 end
 

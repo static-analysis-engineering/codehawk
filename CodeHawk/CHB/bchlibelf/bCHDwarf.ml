@@ -65,15 +65,29 @@ let decode_debug_attribute_value
     | DW_FORM_addr -> DW_ATV_FORM_addr ch#read_doubleword
     | DW_FORM_block1 ->
        let size = ch#read_byte in
-       let bytes = List.init size (fun _ -> ch#read_byte) in
-       DW_ATV_FORM_block1 (size, bytes)
+       (match attr with
+        | DW_AT_location ->
+           let locexpr = read_dwarf_expression ch ~base size in
+           DW_ATV_FORM_exprloc (size, locexpr)
+        | _ ->
+           let bytes = List.init size (fun _ -> ch#read_byte) in
+           DW_ATV_FORM_block1 (size, bytes))
     | DW_FORM_data1 -> DW_ATV_FORM_data1 ch#read_byte
     | DW_FORM_data2 -> DW_ATV_FORM_data2 ch#read_ui16
-    | DW_FORM_data4 -> DW_ATV_FORM_data4 ch#read_doubleword
+    | DW_FORM_data4 ->
+       (match attr with
+        | DW_AT_location ->
+           let kind = secoffset_kind attr in
+           let offset = ch#read_doubleword in
+           let loclist = get_loclist offset#index in
+           DW_ATV_FORM_sec_offset_loclist (offset, loclist)
+        | _ ->
+           DW_ATV_FORM_data4 ch#read_doubleword)
     | DW_FORM_exprloc ->
        let size = ch#read_dwarf_leb128 in
        let locexpr = read_dwarf_expression ch ~base size in
        DW_ATV_FORM_exprloc (size, locexpr)
+    | DW_FORM_flag -> DW_ATV_FORM_flag ch#read_byte
     | DW_FORM_flag_present -> DW_ATV_FORM_flag_present 1
     | DW_FORM_sdata -> DW_ATV_FORM_sdata (ch#read_dwarf_sleb128 32)
     | DW_FORM_ref4 -> DW_ATV_FORM_ref4 (ch#read_doubleword#add base)

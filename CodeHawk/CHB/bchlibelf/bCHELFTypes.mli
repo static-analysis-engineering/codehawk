@@ -601,6 +601,8 @@ class type debug_info_function_int =
 
     method variables: (string * debug_loc_description_t) list
 
+    method variable_location_stats: (dwarf_expr_t list * dwarf_expr_t list)
+
     method has_name: bool
 
     method toPretty: pretty_t
@@ -642,10 +644,14 @@ class type dwarf_query_service_int =
 
     method debug_info_functions: debug_info_function_int list
 
+    method variable_location_stats: (int * int * int * dwarf_expr_t list * dwarf_expr_t list)
+
     (* ----------------------------------------------------------- predicates *)
 
     (** Returns true if the executable was compiled with debug.*)
     method has_debug: bool
+
+    method toPretty: pretty_t
 
   end
 
