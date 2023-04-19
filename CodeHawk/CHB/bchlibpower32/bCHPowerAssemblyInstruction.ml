@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022 Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,7 @@ open BCHSystemInfo
 
 (* bchlibpower32 *)
 open BCHPowerTypes
+open BCHPowerOpcodeRecords
 
 
 class power_assembly_instruction_t
@@ -56,13 +57,23 @@ class power_assembly_instruction_t
 object (self)
      
   val mutable block_entry = false
+  val mutable inlined_call = false
   val is_vle = is_vle
 
   method is_vle = is_vle
 
   method set_block_entry = block_entry <- true
 
+  method set_inlined_call = inlined_call <- true
+
   method is_block_entry = block_entry
+
+  method is_non_code_block =
+    match opcode with
+    | NotCode (Some _) -> true
+    | _ -> false
+
+  method is_not_code = match opcode with NotCode _ -> true | _ -> false
 
   method get_opcode = opcode
 
@@ -72,7 +83,7 @@ object (self)
 
   method get_bytes_as_hexstring = byte_string_to_printed_string instruction_bytes
 
-  method toString = "opcode"
+  method toString = power_opcode_to_string opcode
 
   method toPretty = LBLOCK [STR self#toString]
 

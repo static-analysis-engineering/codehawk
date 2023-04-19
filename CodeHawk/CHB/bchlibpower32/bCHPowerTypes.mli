@@ -47,6 +47,7 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -1358,8 +1359,9 @@ class type power_assembly_instruction_int =
 
     (* setters *)
     method set_block_entry: unit
+    method set_inlined_call: unit
 
-                              (* accessors *)
+    (* accessors *)
     method get_address: doubleword_int
     method get_opcode: power_opcode_t
     method get_instruction_bytes: string
@@ -1367,6 +1369,8 @@ class type power_assembly_instruction_int =
 
     (* predicates *)
     method is_block_entry: bool
+    method is_not_code: bool
+    method is_non_code_block: bool
     method is_vle: bool
 
     (* i/o *)
@@ -1377,21 +1381,58 @@ class type power_assembly_instruction_int =
   end
 
 
+type power_assembly_instruction_result =
+  power_assembly_instruction_int traceresult
+
+
 class type power_assembly_instructions_int =
   object
 
     (* setters *)
-    method set: int -> power_assembly_instruction_int -> unit
+    method set_instruction:
+             doubleword_int -> power_assembly_instruction_int -> unit
     method set_not_code: data_block_int list -> unit
 
     (* accessors *)
     method length: int
-    method at_index: int -> power_assembly_instruction_int
-    method at_address: doubleword_int -> power_assembly_instruction_int
+
+    (** [get_instruction va] returns the instruction located at virtual address
+        [va]. If no instruction has been entered yet, a new instruction, with
+        opcode [OpInvalid] is assigned and returned. If [va] is out-of-range
+        an Error result is returned. *)
+    method get_instruction: doubleword_int -> power_assembly_instruction_result
+
+    (* method at_address: doubleword_int -> power_assembly_instruction_int *)
+
+    (** [get_next_valid_instruction_address va] returns the least virtual
+        address strictly larger than [va] with a valid assembly instruction.
+        If no such address exists, or if [va] is out-of-range, Error is
+        returned.*)
+    method get_next_valid_instruction_address:
+             doubleword_int -> doubleword_int traceresult
+
+    method get_prev_valid_instruction_address:
+             doubleword_int -> doubleword_int traceresult
+
+    (* iterators *)
+    method iteri: (int -> power_assembly_instruction_int -> unit) -> unit
+    method itera:
+             (doubleword_int -> power_assembly_instruction_int -> unit) -> unit
 
     (* predicates *)
+
+    (** [is_code_address va] returns true if [va] is a virtual address within
+        the code space and if the address holds a valid assembly instruction
+        (i.e., it is the starting address of an assembly instruction). *)
     method is_code_address: doubleword_int -> bool
-    
+
+    (** [has_next_valid_instruction va] returns true if [va] is a virtual address
+        within the code and there exists a virtual address with a valid
+        instruction that is strictly larger than [va].*)
+    method has_next_valid_instruction: doubleword_int -> bool
+
+    method has_prev_valid_instruction: doubleword_int -> bool
+
     (* i/o *)
     method write_xml: xml_element_int -> unit
     method toString:

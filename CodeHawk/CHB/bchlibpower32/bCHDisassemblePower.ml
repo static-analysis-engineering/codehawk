@@ -72,6 +72,14 @@ open BCHPowerTypes
 module TR = CHTraceResult
 
 
+module DoublewordCollections = CHCollections.Make (
+  struct
+    type t = doubleword_int
+    let compare d1 d2 = d1#compare d2
+    let toPretty d = d#toPretty
+  end)
+
+
 let disassemble
       (base: doubleword_int)
       (is_vle: bool)
@@ -82,7 +90,10 @@ let disassemble
     let index = (position + displacement) in
     let addr = base#add_int position in
     let instr = make_power_assembly_instruction addr is_vle opcode bytes in
-    !power_assembly_instructions#set index instr in
+    begin
+      set_power_assembly_instruction instr;
+      instr
+    end in
   let ch = make_pushback_stream ~little_endian:system_info#is_little_endian x in
   let _ =
     chlog#add
@@ -257,3 +268,141 @@ let disassemble_power_sections () =
             (h#get_addr#subtract_to_int startOfCode) in
         disassemble h#get_addr h#is_power_vle displacement x) xSections in
   sizeOfCode
+
+
+let collect_function_entry_points () =
+  let _ = pverbose [STR "Collect function entry points"; NL] in
+  let addresses = new DoublewordCollections.set_t in
+  begin
+    !power_assembly_instructions#itera
+      (fun va instr ->
+        match instr#get_opcode with
+        | BranchLink (_, tgt, _) ->
+           let tgtaddr = tgt#get_absolute_address in
+           addresses#add tgtaddr
+        | _ -> ());
+    addresses#toList
+  end
+
+
+let collect_call_targets () =
+  let _ = pverbose [STR "Collect call targets"; NL] in
+  !power_assembly_instructions#itera
+    (fun va instr ->
+      match instr#get_opcode with
+      | BranchLink (_, tgt, _) ->
+         let tgtaddr = tgt#get_absolute_address in
+         if functions_data#is_function_entry_point tgtaddr then
+           let fndata = functions_data#get_function tgtaddr in
+           fndata#add_callsite
+      | _ -> ())
+
+
+let set_block_boundaries () =
+  let _ = pverbose [STR "Set block boundaries"; NL] in
+  let set_inlined_call (a: doubleword_int) =
+    log_titer
+      (mk_tracelog_spec
+         ~tag:"set_block_boundaries"
+         ("set_inlined_call:" ^ a#to_hex_string))
+      (fun instr -> instr#set_inlined_call)
+      (get_power_assembly_instruction a) in
+  let set_block_entry a =
+    let instr =
+      fail_tvalue
+        (trerror_record
+           (LBLOCK [STR "set block boundaries:set_block_entry: "; a#toPretty]))
+        (get_power_assembly_instruction a) in
+    instr#set_block_entry in
+  let feps = functions_data#get_function_entry_points in
+  begin
+    pverbose [STR "   record function entry points"; NL];
+    (* -------------------------------- record function entry points -- *)
+    List.iter
+      (fun fe ->
+        try
+          set_block_entry fe
+        with
+        | BCH_failure _ ->
+           chlog#add
+             "disassembly"
+             (LBLOCK [
+                  STR "function entry point incorrect: ";
+                  fe#toPretty])) feps;
+
+    (* ----------------------------- record targets of unconditional jumps -- *)
+    !power_assembly_instructions#itera
+      (fun va instr ->
+        try
+          (match instr#get_opcode with
+           | Branch (_, tgt)
+             | BranchConditional (_, _, _, _, tgt)
+             | CBranchDecrementNotZero (_, _, _, _, _, tgt, _)
+             | CBranchDecrementZero(_, _, _, _, _, tgt, _) ->
+              if tgt#is_absolute_address then
+                let jumpaddr = tgt#get_absolute_address in
+                set_block_entry jumpaddr
+              else
+                ()
+           | _ -> ())
+        with
+        | BCH_failure p ->
+           chlog#add
+             "disassembly"
+             (LBLOCK [
+                  STR "assembly instruction creates incorrect block entry: ";
+                  instr#toPretty;
+                  STR ": ";
+                  p]));
+
+    (* ----------------------- add block entries due to previous block-ending -- *)
+    !power_assembly_instructions#itera
+      (fun va instr ->
+        let opcode = instr#get_opcode in
+        let is_block_ending =
+          match opcode with
+          | Branch _
+            | BranchConditional _
+            | CBranchDecrementNotZero _
+            | CBranchDecrementZero _ -> true
+          | _ -> false in
+        if is_block_ending && has_next_valid_instruction va then
+          let nextva =
+            fail_tvalue
+              (trerror_record
+                 (LBLOCK [STR "Internal error in set_block_boundaries"]))
+              (get_next_valid_instruction_address va) in
+          set_block_entry nextva
+        else
+          ());
+
+    pverbose [STR "    set_block_entries: Done"; NL]
+  end
+
+
+let construct_functions_power () =
+  let _ =
+    system_info#initialize_function_entry_points collect_function_entry_points in
+  let _ = collect_call_targets () in
+  let _ = set_block_boundaries () in
+  let feps = functions_data#get_function_entry_points in
+  let count = ref 0 in
+  begin
+    List.iter (fun faddr ->
+        let default () =
+          try
+            begin
+              count := !count + 1;
+              (* construct_power_assembly_function !count faddr *)
+            end
+          with
+          | BCH_failure p ->
+             ch_error_log#add
+               "construct functions"
+               (LBLOCK [STR "function"; faddr#toPretty; STR ": "; p]) in
+        let fndata = functions_data#get_function faddr in
+        if fndata#is_library_stub then
+          ()
+        else
+          default ()) feps;
+  end
