@@ -492,7 +492,15 @@ let main () =
       let _ = load_elf_files () in
       let _ = pr_debug [STR "Disassemble sections ..."; NL] in
       let _ = disassemble_power_sections () in
-      save_log_files "disassemble"
+      let _ = construct_functions_power () in
+      let instrs = !BCHPowerAssemblyInstructions.power_assembly_instructions in
+      begin
+        pverbose [STR "Saving asm file ..."; NL];
+        file_output#saveFile
+          (get_asm_listing_filename ())
+          (LBLOCK [STR (instrs#toString ()); NL]);
+        save_log_files "disassemble"
+      end
 
     else if !cmd = "disassemble" && !architecture = "arm" && !fileformat = "elf" then
       let _ = system_info#set_elf in
