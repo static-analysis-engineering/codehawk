@@ -842,22 +842,28 @@ let parse_thumb32_29_2
     (* VMOV (between two ARM core registers and a dw extension register *)
     (* < 29><4>0100<t2><rt><11>00M1<vm> VMOV -T1-from *)
     | (0, 0, 1) when (bv 22) = 1 && (b 7 6) = 0 && (bv 4) = 1 ->
-     let m = prefix_bit (bv 5) (b 3 0) in
-     let dm = arm_extension_register_op XDouble m in
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
-     (* VMOV<c> <Dm>, <Rt>, <Rt2> *)
-     VectorMove (cc, VfpNone, [dm WR; rt RD; rt2 RD])
+       let m = prefix_bit (bv 5) (b 3 0) in
+       let dm = arm_extension_register_op XDouble m in
+       let rtreg = get_arm_reg (b 15 12) in
+       let rt2reg = get_arm_reg (b 19 16) in
+       let rt = arm_register_op rtreg in
+       let rt2 = arm_register_op rt2reg in
+       let rtd = arm_double_register_op rtreg rt2reg in
+       (* VMOV<c> <Dm>, <Rt>, <Rt2> *)
+       VectorMoveDSS (cc, VfpNone, dm WR, rt RD, rt2 RD, rtd RD)
 
     (* VMOV between two ARM core registers and a doubleword extension register *)
     (* < 29><4>0101<t2><rt><11>00M1<vm> - T1-to *)
     | (0, 1, 1) when (bv 22) = 1 && (b 7 6) = 0 && (bv 4) = 1 ->
        let m = prefix_bit (bv 5) (b 3 0) in
        let dm = arm_extension_register_op XDouble m in
-       let rt = arm_register_op (get_arm_reg (b 15 12)) in
-       let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
+       let rtreg = get_arm_reg (b 15 12) in
+       let rt2reg = get_arm_reg (b 19 16) in
+       let rt = arm_register_op rtreg in
+       let rt2 = arm_register_op rt2reg in
+       let rtd = arm_double_register_op rtreg rt2reg in
        (* VMOV<c> <Dm>, <Rt>, <Rt2> *)
-       VectorMove (cc, VfpNone, [rt WR; rt2 WR; dm RD])
+       VectorMoveDDS (cc, VfpNone, rt WR, rt2 WR, rtd WR, dm RD)
 
     (* < 29>10PUDW0<rn><vd><5>0<-imm8->    VSTM - T2 *)
     | (1, 0, 0) ->
@@ -1171,7 +1177,7 @@ let parse_thumb32_29_12
      let n = postfix_bit (bv 7) (b 19 16) in
      let vn = arm_extension_register_op XSingle n in
      (* VMOV<c> <Sn>, <Rt> *)
-     VectorMove (cc, VfpNone, [vn WR; rt RD])
+     VectorMoveDS (cc, VfpNone, vn WR, rt RD)
 
   (* VMOV (between ARM core register and single-precision register *)
   (* < 29><12>00o<vn><rt>1010N001< 0>  VMOV - T1-to *)
@@ -1180,7 +1186,7 @@ let parse_thumb32_29_12
      let n = postfix_bit (bv 7) (b 19 16) in
      let vn = arm_extension_register_op XSingle n in
      (* VMOV<c> <Rt>, <Sn> *)
-     VectorMove (cc, VfpNone, [vn WR; rt RD])
+     VectorMoveDS (cc, VfpNone, vn WR, rt RD)
 
   (* < 29><12>D00<vn><vd><5>0N0M0<vm>  VMLA (floating-point) - T2-single *)
   | (0, 0, 0, 0) ->
@@ -1230,6 +1236,54 @@ let parse_thumb32_29_12
      (* VMLS<v>.F64 <Dd>, <Dn>, <Dm> *)
      VectorMultiplySubtract (cc, dt, vd WR, vn RD, vm RD)
 
+  (* < 29><12>D01<vn><vd><5>0N0M0<vm>  VNMLS - T2-single *)
+  | (1, 0, 0, 0) ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let n = postfix_bit (bv 7) (b 19 16) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vn = arm_extension_register_op XSingle n in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VNMLS<v>.F32 <Sd>, <Sn>, <Sm> *)
+     VectorNegateMultiplySubtract (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><12>D01<vn><vd><5>1N0M0<vm>  VNMLS - T2-double *)
+  | (1, 1, 0, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VNMLS<v>.F64 <Dd>, <Dn>, <Dm> *)
+     VectorNegateMultiplySubtract (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><12>D01<vn><vd><5>0N1M0<vm>  VNMLA - T2-single *)
+  | (1, 0, 1, 0) ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let n = postfix_bit (bv 7) (b 19 16) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vn = arm_extension_register_op XSingle n in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VNMLA<v>.F32 <Sd>, <Sn>, <Sm> *)
+     VectorNegateMultiplyAccumulate (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><12>D01<vn><vd><5>1N1M0<vm>  VNMLA - T2-double *)
+  | (1, 1, 1, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VNMLA<v>.F64 <Dd>, <Dn>, <Dm> *)
+     VectorNegateMultiplyAccumulate (cc, dt, vd WR, vn RD, vm RD)
+
   (* < 29><12>D10<vn><vd><5>0N0M0<vm>  VMUL (floating point) - T2-single *)
   | (2, 0, 0, 0) ->
      let d = postfix_bit (bv 22) (b 15 12) in
@@ -1253,6 +1307,30 @@ let parse_thumb32_29_12
      let dt = VfpFloat 64 in
      (* VMUL<v>.F64 <Dd>, <Dn>, <Dm> *)
      VectorMultiply (cc, dt, vd WR, vn RD, vm RD)
+
+  (* < 29><12>D10<vn><vd><5>0N1M0<vm>  VNMUL - T2-single *)
+  | (2, 0, 1, 0) ->
+     let d = postfix_bit (bv 22) (b 15 12) in
+     let n = postfix_bit (bv 7) (b 19 16) in
+     let m = postfix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XSingle d in
+     let vn = arm_extension_register_op XSingle n in
+     let vm = arm_extension_register_op XSingle m in
+     let dt = VfpFloat 32 in
+     (* VNMUL<v>.F32 <Sd>, <Sn>, <Sm> *)
+     VectorNegateMultiply (cc, dt, vd WR, vn RD, vm RD)
+
+(* < 29><12>D10<vn><vd><5>1N0M0<vm>  VNMUL - T2-double *)
+  | (2, 1, 1 ,0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VNMUL<v>.F64 <Dd>, <Dn>, <Dm> *)
+     VectorNegateMultiply (cc, dt, vd WR, vn RD, vm RD)
 
   (* < 29><12>D11<vn><vd><10>N0M0<vm>  VADD (floating point) - T2-single *)
   | (3, 0, 0, 0) ->
@@ -1311,7 +1389,7 @@ let parse_thumb32_29_12
      let dt = VfpSize esize in
      let elt = arm_extension_register_element_op XDouble d index esize in
      (* VMOV<c>.<size> <Dd[x], <Rt> *)
-     VectorMove (cc, dt, [elt WR; rt RD])
+     VectorMoveDS (cc, dt, elt WR, rt RD)
 
   (* < 29><6>01o0<vd><rt><11>Doo1< 0>  VMOV (ARM core to scalar: 0xx1) *)
   | ((0 | 2), 1, _, 1) when (bv 22) = 0 && (bv 5) = 1 ->
@@ -1322,7 +1400,7 @@ let parse_thumb32_29_12
      let dt = VfpSize esize in
      let elt = arm_extension_register_element_op XDouble d index esize in
      (* VMOV<c>.<size> <Dd[x], <Rt> *)
-     VectorMove (cc, dt, [elt WR; rt RD])
+     VectorMoveDS (cc, dt, elt WR, rt RD)
 
   (* < 29><6>01o0<vd><rt><11>Doo1< 0>  VMOV (ARM core to scalar: 0x00) *)
   | ((0 | 2), 1,  0, 1) when (bv 22) = 0 && (bv 5) = 0 ->
@@ -1333,7 +1411,7 @@ let parse_thumb32_29_12
      let dt = VfpSize esize in
      let elt = arm_extension_register_element_op XDouble d index esize in
      (* VMOV<c>.<size> <Dd[x], <Rt> *)
-     VectorMove (cc, dt, [elt WR; rt RD])
+     VectorMoveDS (cc, dt, elt WR, rt RD)
 
   | (a, b, c, d) ->
      NotRecognized (
@@ -1462,7 +1540,7 @@ let parse_thumb32_29_13
          (mk_arm_immediate_op false 4 vfp) in
      let dt = VfpFloat 32 in
      (* VMOV<c>.F32 <Sd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; imm])
+     VectorMoveDS (cc, dt, vd WR, imm)
 
   (* < 29><13>D11<i4><vd><5>10000<i4>   VMOV (immediate) T2-double *)
   | (3, 1, 0, 0) when (bv 7) = 0 && (bv 5) = 0 ->
@@ -1477,7 +1555,7 @@ let parse_thumb32_29_13
          (mk_arm_immediate_op false 8 vfp) in
      let dt = VfpFloat 64 in
      (* VMOV<c>.F64 <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; imm])
+     VectorMoveDS (cc, dt, vd WR, imm)
 
   (* < 29><6>1D11< 0><vd><10>01M0<vm>  VMOV (register) -T2-single *)
   | (3, 0, 1, 0) when (b 19 16) = 0 && (bv 7) = 0 ->
@@ -1487,7 +1565,7 @@ let parse_thumb32_29_13
      let vm = arm_extension_register_op XSingle m in
      let dt = VfpFloat 32 in
      (* VMOV<c>.F32 <Sd>, <Sm> *)
-     VectorMove (cc, dt, [vd WR; vm RD])
+     VectorMoveDS (cc, dt, vd WR, vm RD)
 
   (* < 29><6>1D11< 0><vd<11>01M0<vm>  VMOV (register) -T2-double *)
   | (3, 1, 1, 0) when (b 19 16) = 0 && (bv 7) = 0 ->
@@ -1497,7 +1575,7 @@ let parse_thumb32_29_13
      let vm = arm_extension_register_op XDouble m in
      let dt = VfpFloat 64 in
      (* VMOV<c>.F64 <Dd>, <Dm> *)
-     VectorMove (cc, dt, [vd WR; vm RD])
+     VectorMoveDS (cc, dt, vd WR, vm RD)
 
   (* < 29><6>1D11< 0><vd><10>11M0<vm>   VABS - T2-single *)
   | (3, 0, 1, 0) when (b 19 16) = 0 && (bv 7) = 1 ->
@@ -1870,7 +1948,7 @@ let parse_thumb32_29_14
      let vm = arm_extension_register_op XDouble m in
      let dt = VfpNone in
      (* VMOV<v> <Dd>, <Dm> *)
-     VectorMove (cc, dt, [vd WR; vm RD])
+     VectorMoveDS (cc, dt, vd WR, vm RD)
 
   (* < 29><14>D10<vm><vd>< 1>M1M1<vm> *) (* VMOV (register) - T1 (Q=1) *)
   | (2, 1, 1, 1) when (b 19 16) = (b 3 0) && (bv 7) = (bv 5) ->
@@ -1885,7 +1963,7 @@ let parse_thumb32_29_14
      let vm = arm_extension_register_op XQuad (m / 2) in
      let dt = VfpNone in
      (* VMOV<v> <Dd>, <Dm> *)
-     VectorMove (cc, dt, [vd WR; vm RD])
+     VectorMoveDS (cc, dt, vd WR, vm RD)
 
   (* < 29><14>D10<vn><vd>< 1>N0M1<vm> *) (* VORR (register) - T1 (Q=0) *)
   | (2, 1, 0, 1) ->
@@ -2094,7 +2172,7 @@ let parse_thumb32_29_15
      let dt = adv_simd_mod_dt 0 cm "VMOV" in
      let vd = arm_extension_register_op XDouble d in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* < 29><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-0-0 (Q=1) *)
   | (0, cm, 1, 1) when (bv 7) = 0 && (bv 5) = 0 ->
@@ -2104,7 +2182,7 @@ let parse_thumb32_29_15
      let dt = adv_simd_mod_dt 0 cm "VMOV" in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* < 29><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-0-1 (Q=0) *)
   | (0, 14, 0, 1) when (bv 7) = 0 && (bv 5) = 1 ->
@@ -2114,7 +2192,7 @@ let parse_thumb32_29_15
      let dt = adv_simd_mod_dt 0 14 "VMOV" in
      let vd = arm_extension_register_op XDouble d in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* < 29><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-0-1 (Q=1) *)
   | (0, 14, 1, 1) when (bv 7) = 0 && (bv 5) = 1 ->
@@ -2124,7 +2202,7 @@ let parse_thumb32_29_15
      let dt = adv_simd_mod_dt 0 14 "VMOV" in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* < 29><15>D000<i><vd><cm>0011<i4> *) (* VBIC (immediate) - T1-0 (Q=0) *)
   | (0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 0, 1)
@@ -4069,7 +4147,7 @@ let parse_thumb32_31_15
      let dt = adv_simd_mod_dt 0 cm "VMOV" in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* < 31><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-1-1 (Q=0) *)
   | (0, 14, 0, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
@@ -4079,7 +4157,7 @@ let parse_thumb32_31_15
      let dt = adv_simd_mod_dt 0 14 "VMOV" in
      let vd = arm_extension_register_op XDouble d in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* < 31><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-1-1 (Q=1) *)
   | (0, 14, 1, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
@@ -4089,7 +4167,7 @@ let parse_thumb32_31_15
      let dt = adv_simd_mod_dt 0 14 "VMOV" in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* < 31><15>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - T1-1-0 (Q=0) *)
   | (0, cm, 0, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 0 ->
@@ -4099,7 +4177,7 @@ let parse_thumb32_31_15
      let dt = adv_simd_mod_dt 0 cm "VMOV" in
      let vd = arm_extension_register_op XDouble d in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* < 31><15>D000<i><vd><cm>0Q11<i4> *)  (* VBIC (immediate) - T1-1 (Q=0) *)
   | (0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 0, 1)

@@ -61,6 +61,9 @@ val arm_dmb_option_from_int_op: int -> arm_operand_int
   
 val arm_register_op: arm_reg_t -> arm_operand_mode_t -> arm_operand_int
 
+val arm_double_register_op:
+  arm_reg_t -> arm_reg_t -> arm_operand_mode_t -> arm_operand_int
+
 val arm_writeback_register_op:
   ?issingle:bool
   -> arm_reg_t
@@ -73,6 +76,9 @@ val arm_special_register_op:
 
 val arm_extension_register_op:
   arm_extension_reg_type_t -> int -> arm_operand_mode_t -> arm_operand_int
+
+val arm_double_extension_register_op:
+  arm_extension_reg_type_t -> int -> int -> arm_operand_mode_t -> arm_operand_int
 
 val arm_extension_register_element_op:
   arm_extension_reg_type_t

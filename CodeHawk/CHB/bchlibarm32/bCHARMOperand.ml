@@ -151,12 +151,23 @@ object (self:'a)
   method get_size =
     match kind with
     | ARMReg _ -> 4
+    | ARMDoubleReg _ -> 8
     | ARMWritebackReg _ -> 4
     | ARMExtensionReg r ->
        (match r.armxr_type with
         | XSingle -> 4
         | XDouble -> 8
         | XQuad -> 16)
+    | ARMDoubleExtensionReg (r1, r2) ->
+       (match (r1.armxr_type, r2.armxr_type) with
+        | (XSingle, XSingle) -> 8
+        | (XDouble, XDouble) -> 16
+        | _ ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Unexpected combination of extension registers: ";
+                     self#toPretty])))
     | _ ->
        raise
          (BCH_failure
@@ -170,7 +181,16 @@ object (self:'a)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [ STR "Operand is not a register: " ; self#toPretty ]))
+            (LBLOCK [STR "Operand is not a register: "; self#toPretty]))
+
+  method get_extension_register =
+    match kind with
+    | ARMExtensionReg r -> r
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not an extension register: "; self#toPretty]))
 
   method get_register_count =
     match kind with
@@ -340,7 +360,11 @@ object (self:'a)
     match kind with
     | ARMReg r | ARMWritebackReg (_, r, _) ->
        env#mk_arm_register_variable r
+    | ARMDoubleReg (r1, r2) ->
+       env#mk_arm_double_register_variable r1 r2
     | ARMExtensionReg r -> env#mk_arm_extension_register_variable r
+    | ARMDoubleExtensionReg (r1, r2) ->
+       env#mk_arm_double_extension_register_variable r1 r2
     | ARMSpecialReg r -> env#mk_arm_special_register_variable r
     | ARMLiteralAddress dw ->
        floc#env#mk_global_variable dw#to_numerical
@@ -460,8 +484,10 @@ object (self:'a)
        num_constant_expr imm#to_numerical
     | ARMFPConstant _ -> XConst XRandom
     | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
+    | ARMDoubleReg _ -> XVar (self#to_variable floc)
     | ARMSpecialReg r -> XVar (self#to_variable floc)
     | ARMExtensionReg _ -> XVar (self#to_variable floc)
+    | ARMDoubleExtensionReg _ -> XVar (self#to_variable floc)
     | ARMExtensionRegElement _ -> XConst XRandom
     | ARMOffsetAddress _ -> XVar (self#to_variable floc)
     | ARMAbsolute a when elf_header#is_program_address a ->
@@ -534,7 +560,9 @@ object (self:'a)
             (LBLOCK [STR "Immediate cannot be a lhs: ";
                      self#toPretty]))
     | ARMReg _ | ARMWritebackReg _ -> (self#to_variable floc, [])
+    | ARMDoubleReg _ -> (self#to_variable floc, [])
     | ARMExtensionReg _ -> (self#to_variable floc, [])
+    | ARMDoubleExtensionReg _ -> (self#to_variable floc, [])
     | ARMOffsetAddress _ -> (self#to_variable floc, [])
     | _ ->
        raise
@@ -555,6 +583,12 @@ object (self:'a)
 
   method is_register =
     match kind with ARMReg _ | ARMWritebackReg _ -> true | _ -> false
+
+  method is_double_register =
+    match kind with ARMDoubleReg _ -> true | _ -> false
+
+  method is_double_extension_register =
+    match kind with ARMDoubleExtensionReg _ -> true | _ -> false
 
   method is_extension_register =
     match kind with
@@ -612,10 +646,18 @@ object (self:'a)
       match kind with
       | ARMDMBOption o -> dmb_option_to_string o
       | ARMReg r -> armreg_to_string r
+      | ARMDoubleReg (r1, r2) ->
+         "(" ^ (armreg_to_string r1) ^ ", " ^ (armreg_to_string r2) ^ ")"
       | ARMWritebackReg (issingle, r, _) ->
          (armreg_to_string r) ^ (if issingle then "" else "!")
       | ARMSpecialReg r -> arm_special_reg_to_string r
       | ARMExtensionReg r -> arm_extension_reg_to_string r
+      | ARMDoubleExtensionReg (r1, r2) ->
+         "("
+         ^ (arm_extension_reg_to_string r1)
+         ^ ", "
+         ^ (arm_extension_reg_to_string r2)
+         ^ ")"
       | ARMExtensionRegElement e -> arm_extension_reg_element_to_string e
       | ARMRegList l ->
          "{" ^ String.concat "," (List.map armreg_to_string l) ^ "}"
@@ -666,21 +708,32 @@ object (self:'a)
 
 end
 
+
 let arm_index_offset ?(offset=0) (r: arm_reg_t) =
   ARMIndexOffset (r, offset)
+
 
 let arm_shifted_index_offset
       ?(offset=0) (r: arm_reg_t) (sr: register_shift_rotate_t) =
   ARMShiftedIndexOffset (r, sr, offset)
 
+
 let arm_dmb_option_op (op: dmb_option_t) =
   new arm_operand_t (ARMDMBOption op) RD
 
-let arm_dmb_option_from_int_op (option:int) =
+
+let arm_dmb_option_from_int_op (option: int) =
   arm_dmb_option_op (get_dmb_option option)
 
-let arm_register_op (r:arm_reg_t) (mode:arm_operand_mode_t) =
+
+let arm_register_op (r: arm_reg_t) (mode: arm_operand_mode_t) =
   new arm_operand_t (ARMReg r) mode
+
+
+let arm_double_register_op
+      (r1: arm_reg_t) (r2: arm_reg_t) (mode: arm_operand_mode_t) =
+  new arm_operand_t (ARMDoubleReg (r1, r2)) mode
+
 
 let arm_writeback_register_op
       ?(issingle = false)
@@ -693,6 +746,16 @@ let arm_extension_register_op
       (t: arm_extension_reg_type_t) (index: int) (mode: arm_operand_mode_t) =
   let reg = {armxr_type = t; armxr_index = index} in
   new arm_operand_t (ARMExtensionReg reg) mode
+
+
+let arm_double_extension_register_op
+      (t: arm_extension_reg_type_t)
+      (index1: int)
+      (index2: int)
+      (mode: arm_operand_mode_t) =
+  let reg1 = {armxr_type = t; armxr_index = index1} in
+  let reg2 = {armxr_type = t; armxr_index = index2} in
+  new arm_operand_t (ARMDoubleExtensionReg (reg1, reg2)) mode
 
 
 let arm_extension_register_element_op
@@ -709,7 +772,8 @@ let arm_extension_register_element_op
 let arm_special_register_op (r: arm_special_reg_t) (mode: arm_operand_mode_t) =
   new arm_operand_t (ARMSpecialReg r) mode
 
-let arm_register_list_op (l:arm_reg_t list) (mode:arm_operand_mode_t) =
+
+let arm_register_list_op (l: arm_reg_t list) (mode: arm_operand_mode_t) =
   new arm_operand_t (ARMRegList l) mode
 
 

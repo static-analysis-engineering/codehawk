@@ -1556,10 +1556,14 @@ let parse_misc_6_type (instr: doubleword_int) (cond: int) =
      let m = postfix_bit (bv 5) (b 3 0) in
      let sm = arm_extension_register_op XSingle m in
      let sm1 = arm_extension_register_op XSingle (m + 1) in
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
+     let smd = arm_double_extension_register_op XSingle m (m + 1) in
+     let rtreg = get_arm_reg (b 15 12) in
+     let rt2reg = get_arm_reg (b 19 16) in
+     let rt = arm_register_op rtreg in
+     let rt2 = arm_register_op rt2reg in
+     let rtd = arm_double_register_op rtreg rt2reg in
      (* VMOV<c> <Sm>, <Sm1>, <Rt>, <Rt2> *)
-     VectorMove (c, VfpNone, [sm WR; sm1 WR; rt RD; rt2 RD])
+     VectorMoveDDSS (c, VfpNone, sm WR, sm1 WR, smd WR, rt RD, rt2 RD, rtd RD)
 
   (* VMOV between two ARM core registers and two single-precision registers *)
   (* <cc><6>00101<t2><rt><10>00M1<vm> - A1-to *)
@@ -1567,30 +1571,40 @@ let parse_misc_6_type (instr: doubleword_int) (cond: int) =
      let m = postfix_bit (bv 5) (b 3 0) in
      let sm = arm_extension_register_op XSingle m in
      let sm1 = arm_extension_register_op XSingle (m + 1) in
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
+     let smd = arm_double_extension_register_op XSingle m (m + 1) in
+     let rtreg = get_arm_reg (b 15 12) in
+     let rt2reg = get_arm_reg (b 19 16) in
+     let rt = arm_register_op rtreg in
+     let rt2 = arm_register_op rt2reg in
+     let rtd = arm_double_register_op rtreg rt2reg in
      (* VMOV<c> <Rt>, <Rt2>, <Sm>, <Sm1> *)
-     VectorMove (c, VfpNone, [rt WR; rt2 WR; sm RD; sm1 RD])
+     VectorMoveDDSS (c, VfpNone, rt WR, rt2 WR, rtd WR, sm RD, sm1 RD, smd RD)
 
   (* VMOV between two ARM core registers and a doubleword extension register *)
   (* <cc><6>00101<t2><rt><11>00M1<vm> - A1-from *)
   | (0, 0, 11) when (bv 22) = 1 && (b 7 6) = 0 && (bv 4) = 1 ->
      let m = prefix_bit (bv 5) (b 3 0) in
      let dm = arm_extension_register_op XDouble m in
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
+     let rtreg = get_arm_reg (b 15 12) in
+     let rt2reg = get_arm_reg (b 19 16) in
+     let rt = arm_register_op rtreg in
+     let rt2 = arm_register_op rt2reg in
+     let rtd = arm_double_register_op rtreg rt2reg in
      (* VMOV<c> <Dm>, <Rt>, <Rt2> *)
-     VectorMove (c, VfpNone, [dm WR; rt RD; rt2 RD])
+     VectorMoveDSS (c, VfpNone, dm WR, rt RD, rt2 RD, rtd RD)
 
   (* VMOV between two ARM core registers and a doubleword extension register *)
   (* <cc><6>00101<t2><rt><11>00M1<vm> - A1-to *)
   | (0, 1, 11) when (bv 22) = 1 && (b 7 6) = 0 && (bv 4) = 1 ->
      let m = prefix_bit (bv 5) (b 3 0) in
      let dm = arm_extension_register_op XDouble m in
-     let rt = arm_register_op (get_arm_reg (b 15 12)) in
-     let rt2 = arm_register_op (get_arm_reg (b 19 16)) in
+     let rtreg = get_arm_reg (b 15 12) in
+     let rt2reg = get_arm_reg (b 19 16) in
+     let rt = arm_register_op rtreg in
+     let rt2 = arm_register_op rt2reg in
+     let rtd = arm_double_register_op rtreg rt2reg in
      (* VMOV<c> <Dm>, <Rt>, <Rt2> *)
-     VectorMove (c, VfpNone, [rt WR; rt2 WR; dm RD])
+     VectorMoveDDS (c, VfpNone, rt WR, rt2 WR, rtd WR, dm RD)
 
   (* <cc><6>01D11<13><vd><10><-imm8-> *)   (* VPOP - A2 *)
   | (1, 3, 10) when (b 19 16) = 13 ->
@@ -1961,10 +1975,10 @@ let parse_misc_7_type
      let dt = VfpNone in
      if to_arm then
        (* VMOV<c> <Rt>, <Sn> *)
-       VectorMove (c, dt, [rt WR; sn RD])
+       VectorMoveDS (c, dt, rt WR, sn RD)
      else
        (* VMOV<c> <Sn>, <Rt> *)
-       VectorMove (c, dt, [sn WR; rt RD])
+       VectorMoveDS (c, dt, sn WR, rt RD)
 
   (* <cc><7>00D00<vn><vd>101sN1M0<vm> *)  (* VMLS (floating-point) - A2 *)
   | (0, 0, 1, 0) when (b 11 9) = 5 ->
@@ -2012,7 +2026,7 @@ let parse_misc_7_type
      let dt = VfpSize esize in
      let elt = arm_extension_register_element_op XDouble d index esize in
      (* VMOV<c>.<dt> <Dd[x]>, <Rt> *)
-     VectorMove (c, dt, [elt WR; rt RD])
+     VectorMoveDS (c, dt, elt WR, rt RD)
 
   (* <cc><7>00D10<vn><vd>101sN0M0<vm> *)    (* VMUL (floating-point) - A2 *)
   | (0, 2, 0, 0) when (b 11 9) = 5 ->
@@ -2121,7 +2135,7 @@ let parse_misc_7_type
      let dt = VfpSize esize in
      let elt = arm_extension_register_element_op XDouble n index esize in
      (* VMOV<c>.<dt> <Rt>, <Dn[x]> *)
-     VectorMove (c, dt, [rt WR; elt RD])
+     VectorMoveDS (c, dt, rt WR, elt RD)
 
   (* <cc><14>1D00<vn><vd>101sN0M0<vm> *)    (* VDIV - A1 *)
   | (1, 0, 0, 0) when (b 11 9) = 5 ->
@@ -2209,7 +2223,7 @@ let parse_misc_7_type
          (LBLOCK [iaddr#toPretty; STR ": "; vfp#toPretty]) in
      let imm = TR.tget_ok (mk_arm_immediate_op false (size / 8) numerical_zero) in
      (* VMOV<c>,<dt> <D/Sd>, #<imm> *)
-     VectorMove (c, dt, [fpreg WR; imm])
+     VectorMoveDS (c, dt, fpreg WR, imm)
 
   (* <cc><7>01111< 1><rt>10100001< 0> *)    (* VMRS - A1 *)
   | (1, 3, 0, 1) when
@@ -2247,7 +2261,7 @@ let parse_misc_7_type
      let vm = arm_extension_register_op xtype vmreg in
      (* VMOV<c>.F64 <Dd>, <Dm> *)
      (* VMOV<c>.F32 <Sd>, <Sm> *)
-     VectorMove (c, dt, [vd WR; vm RD])
+     VectorMoveDS (c, dt, vd WR, vm RD)
 
   (* <cc><7>01D11< 1><vd><5>s01M0<vm> *)    (* VNEG - A2 *)
   | (1, 3, 1, 0) when (b 19 16) = 1 && (b 11 9) = 5 && (bv 7) = 0 ->
@@ -2703,7 +2717,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let vm = arm_extension_register_op XDouble m in
      let dt = VfpNone in
      (* VMOV<v> <Dd>, <Dm> *)
-     VectorMove (cc, dt, [vd WR; vm RD])
+     VectorMoveDS (cc, dt, vd WR, vm RD)
 
   (* <15><  4>D10<vm><vd>< 1>M1M1<vm> *) (* VMOV (register) - A1 (Q=1) *)
   | (4, 2, 1, 1, 1) when (b 19 16) = (b 3 0) && (bv 7) = (bv 5) ->
@@ -2718,7 +2732,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let vm = arm_extension_register_op XQuad (m / 2) in
      let dt = VfpNone in
      (* VMOV<v> <Dd>, <Dm> *)
-     VectorMove (cc, dt, [vd WR; vm RD])
+     VectorMoveDS (cc, dt, vd WR, vm RD)
 
   (* <15><  4>D10<vn><vd>< 1>N0M1<vm> *) (* VORR (register) - A1 (Q=0) *)
   | (4, 2, 1, 0, 1) ->
@@ -2861,7 +2875,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let dt = adv_simd_mod_dt 0 cm "VMOV" in
      let vd = arm_extension_register_op XDouble d in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* <15><  5>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - A1-0-0 (Q=1) *)
   | (5, 0, cm, 1, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 0 ->
@@ -2871,7 +2885,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let dt = adv_simd_mod_dt 0 cm "VMOV" in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* <15><  5>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - A1-0-1 (Q=0) *)
   | (5, 0, 14, 0, 1) when (bv 7) = 0 && (bv 5) = 1 ->
@@ -2881,7 +2895,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let dt = adv_simd_mod_dt 0 14 "VMOV" in
      let vd = arm_extension_register_op XDouble d in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* <15><  5>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - A1-0-1 (Q=1) *)
   | (5, 0, 14, 1, 1) when (bv 7) = 0 && (bv 5) = 1 ->
@@ -2891,7 +2905,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let dt = adv_simd_mod_dt 0 14 "VMOV" in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* <15><  5>D000<i><vd><cm>0011<i4> *) (* VBIC (immediate) - A1-0 (Q=0) *)
   | (5, 0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 0, 1)
@@ -3542,7 +3556,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let dt = adv_simd_mod_dt 0 cm "VMOV" in
      let vd = arm_extension_register_op XDouble d in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* <15><  7>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - A1-1-0 (Q=1) *)
   | (7, 0, cm, 1, 1) when (bv 19) = 0  && (bv 7) = 0 && (bv 5) = 0 ->
@@ -3552,7 +3566,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let dt = adv_simd_mod_dt 0 cm "VMOV" in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* <15><  7>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - A1-1-1 (Q=0) *)
   | (7, 0, 14, 0, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
@@ -3562,7 +3576,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let dt = adv_simd_mod_dt 0 14 "VMOV" in
      let vd = arm_extension_register_op XDouble d in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* <15><  7>D000<i><vd><cm>0001<i4> *) (* VMOV (immediate) - A1-1-1 (Q=1) *)
   | (7, 0, 14, 1, 1) when (bv 19) = 0 && (bv 7) = 0 && (bv 5) = 1 ->
@@ -3572,7 +3586,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let dt = adv_simd_mod_dt 0 14 "VMOV" in
      let vd = arm_extension_register_op XQuad (d / 2) in
      (* VMOV<c>.<dt> <Dd>, #<imm> *)
-     VectorMove (cc, dt, [vd WR; immop])
+     VectorMoveDS (cc, dt, vd WR, immop)
 
   (* <15><  7>D000<i><vd><cm>0011<i4> *) (* VBIC (immediate) - A1-1 (Q=0) *)
   | (7, 0, ((1 | 3 | 5 | 7 | 9 | 11) as cm), 0, 1)
