@@ -348,7 +348,7 @@ object (self:'a)
 	
   method is_initial_register_value =
     match denotation with 
-    | AuxiliaryVariable (InitialRegisterValue (_,0)) -> true | _ -> false
+    | AuxiliaryVariable (InitialRegisterValue (_, 0)) -> true | _ -> false
 
   method is_initial_mips_argument_value =
     match denotation with
@@ -363,7 +363,7 @@ object (self:'a)
 
   method is_initial_arm_argument_value =
     match denotation with
-    | AuxiliaryVariable (InitialRegisterValue (reg,0)) ->
+    | AuxiliaryVariable (InitialRegisterValue (reg, 0)) ->
        (match reg with
         | ARMRegister armreg ->
            (match armreg with
@@ -377,9 +377,11 @@ object (self:'a)
 	      
   method get_initial_register_value_register =
     match denotation with
-    | AuxiliaryVariable (InitialRegisterValue (CPURegister r,0)) -> CPURegister r
-    | AuxiliaryVariable (InitialRegisterValue (MIPSRegister r,0)) -> MIPSRegister r
-    | AuxiliaryVariable (InitialRegisterValue (ARMRegister r,0)) -> ARMRegister r
+    | AuxiliaryVariable (InitialRegisterValue (CPURegister r, 0)) -> CPURegister r
+    | AuxiliaryVariable (InitialRegisterValue (MIPSRegister r, 0)) -> MIPSRegister r
+    | AuxiliaryVariable (InitialRegisterValue (ARMRegister r, 0)) -> ARMRegister r
+    | AuxiliaryVariable (InitialRegisterValue (ARMExtensionRegister r, 0)) ->
+       ARMExtensionRegister r
     | _ ->
       begin
 	ch_error_log#add
@@ -435,6 +437,8 @@ object (self:'a)
            (match armreg with
             | AR0 | AR1 | AR2 | AR3 -> true
             | _ -> false)
+        | ARMDoubleRegister (AR0, AR1) -> true
+        | ARMDoubleRegister (AR2, AR3) -> true
         | _ -> false)
     | _ -> false
 

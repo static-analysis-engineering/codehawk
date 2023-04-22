@@ -415,8 +415,11 @@ type register_t =
 | MIPSSpecialRegister of mips_special_reg_t
 | MIPSFloatingPointRegister of int
 | ARMRegister of arm_reg_t
+| ARMDoubleRegister of arm_reg_t * arm_reg_t
 | ARMSpecialRegister of arm_special_reg_t
 | ARMExtensionRegister of arm_extension_register_t
+| ARMDoubleExtensionRegister of
+    arm_extension_register_t * arm_extension_register_t
 | ARMExtensionRegisterElement of arm_extension_register_element_t
 | ARMExtensionRegisterReplicatedElement of
     arm_extension_register_replicated_element_t
@@ -2722,6 +2725,9 @@ class type function_environment_int =
              arm_extension_register_element_t -> variable_t
     method mk_arm_special_register_variable:
              arm_special_reg_t -> variable_t
+    method mk_arm_double_register_variable: arm_reg_t -> arm_reg_t -> variable_t
+    method mk_arm_double_extension_register_variable:
+             arm_extension_register_t -> arm_extension_register_t -> variable_t
 
     method mk_global_variable: ?size:int -> numerical_t -> variable_t
 
