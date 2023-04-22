@@ -1208,12 +1208,33 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VLDR" c [dst; mem])
     }
-  | VectorMove (c, dt, ops) -> {
+  | VectorMoveDS (c, dt, dst, src) -> {
       mnemonic = "VMOV";
-      operands = ops;
+      operands = [dst; src];
       flags_set = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~dt "VMOV" c ops)
+      ida_asm = (fun f -> f#opscc ~dt "VMOV" c [dst; src])
+    }
+  | VectorMoveDDSS (c, dt, dst1, dst2, ddst, src1, src2, ssrc) -> {
+      mnemonic = "VMOV";
+      operands = [dst1; dst2; ddst; src1; src2; ssrc];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMOV" c [dst1; dst2; src1; src2])
+    }
+  | VectorMoveDSS (c, dt, dst, src1, src2, ssrc) -> {
+      mnemonic = "VMOV";
+      operands = [dst; src1; src2; ssrc];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMOV" c [dst; src1; src2])
+    }
+  | VectorMoveDDS (c, dt, dst1, dst2, ddst, src) -> {
+      mnemonic = "VMOV";
+      operands = [dst1; dst2; ddst; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VMOV" c [dst1; dst2; src])
     }
   | VectorMoveLong (c, dt, dst, src) -> {
       mnemonic = "VMOVL";
@@ -1290,6 +1311,27 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VNEG" c [dst; src])
+    }
+  | VectorNegateMultiply (c, dt, dst, src1, src2) -> {
+      mnemonic = "VNMUL";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VNMUL" c [dst; src1; src2])
+    }
+  | VectorNegateMultiplyAccumulate (c, dt, dst, src1, src2) -> {
+      mnemonic = "VNMLA";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VNMLA" c [dst; src1; src2])
+    }
+  | VectorNegateMultiplySubtract (c, dt, dst, src1, src2) -> {
+      mnemonic = "VNMLS";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VNMLS" c [dst; src1; src2])
     }
   | VectorPop (c, sp, rl, mem) -> {
       mnemonic = "VPOP";

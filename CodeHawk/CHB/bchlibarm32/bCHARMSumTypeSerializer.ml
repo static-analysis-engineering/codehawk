@@ -170,9 +170,11 @@ object
     match k with
     | ARMDMBOption _ -> "d"
     | ARMReg _ -> "r"
+    | ARMDoubleReg _ -> "dr"
     | ARMWritebackReg _ -> "wr"
     | ARMSpecialReg _ -> "sr"
     | ARMExtensionReg _ -> "xr"
+    | ARMDoubleExtensionReg _ -> "dxr"
     | ARMExtensionRegElement _ -> "xre"
     | ARMRegList _ -> "l"
     | ARMExtensionRegList _ -> "xl"
@@ -188,7 +190,7 @@ object
     | ARMSIMDList _ -> "simdl"
 
   method tags =
-    ["a"; "b"; "c"; "d"; "i"; "l"; "m"; "o"; "p"; "r"; "r"; "s";
+    ["a"; "b"; "c"; "d"; "dr"; "dxr"; "i"; "l"; "m"; "o"; "p"; "r"; "r"; "s";
      "simda"; "simdl"; "sr"; "wr"; "xr"]
 
 end

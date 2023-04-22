@@ -141,10 +141,16 @@ object (self)
     let key = match k with
       | ARMDMBOption o -> (tags @ [dmb_option_mfts#ts o], [])
       | ARMReg r -> (tags @ [arm_reg_mfts#ts r], [])
+      | ARMDoubleReg (r1, r2) ->
+         (tags @ [arm_reg_mfts#ts r1; arm_reg_mfts#ts r2], [])
       | ARMWritebackReg (issingle, r, offset) ->
          (tags @ [arm_reg_mfts#ts r], [setb issingle; setoptint offset])
       | ARMSpecialReg r -> (tags @ [arm_special_reg_mfts#ts r], [])
       | ARMExtensionReg r -> (tags, [bd#index_arm_extension_register r])
+      | ARMDoubleExtensionReg (r1, r2) ->
+         (tags,
+          [bd#index_arm_extension_register r1;
+           bd#index_arm_extension_register r2])
       | ARMExtensionRegElement e ->
          (tags, [bd#index_arm_extension_register_element e])
       | ARMRegList rl -> (tags @ (List.map arm_reg_mfts#ts rl),[])
@@ -182,7 +188,8 @@ object (self)
     let di = self#index_vfp_datatype in
     let ci = arm_opcode_cc_mfts#ts in
     let tags = [get_arm_opcode_name opc] in
-    let ctags c = tags @ [ ci c ] in
+    let ctags c = tags @ [ci c] in
+    let customtag t c = t :: [ci c] in
     let key = match opc with
       | Add (s, c, rd, rn, imm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi imm; setb tw])
@@ -434,7 +441,15 @@ object (self)
          (ctags c, [setb wb; di sz; oi rl; oi rn; oi mem; oi rm])
       | VLoadRegister (c, dst, base, mem) ->
          (ctags c, [oi dst; oi base; oi mem])
-      | VectorMove (c, dt, ops) -> (ctags c, (di dt)::(List.map oi ops))
+      | VectorMoveDS (c, dt, dst, src) ->
+         (customtag "VMOVDS" c, [di dt; oi dst; oi src])
+      | VectorMoveDDSS (c, dt, dst1, dst2, ddst, src1, src2, ssrc) ->
+         (customtag "VMOVDDSS" c,
+          [di dt; oi dst1; oi dst2; oi ddst; oi src1; oi src2; oi ssrc])
+      | VectorMoveDSS (c, dt, dst, src1, src2, ssrc) ->
+         (customtag "VMOVDSS" c, [di dt; oi dst; oi src1; oi src2; oi ssrc])
+      | VectorMoveDDS (c, dt, dst1, dst2, ddst, src) ->
+         (customtag "VMOVDDS" c, [di dt; oi dst1; oi dst2; oi ddst; oi src])
       | VectorMoveLong (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
       | VectorMoveNarrow (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
       | VMoveRegisterStatus (c, dst, src) -> (ctags c, [oi dst; oi src])
@@ -450,6 +465,12 @@ object (self)
       | VectorMultiplySubtract (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorNegate (c, dt, dst, src) -> (ctags c, [di dt; oi dst; oi src])
+      | VectorNegateMultiply (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorNegateMultiplyAccumulate (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorNegateMultiplySubtract (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorPop (c, sp, rl, mem) -> (ctags c, [oi sp; oi rl; oi mem])
       | VectorPush (c, sp, rl, mem) -> (ctags c, [oi sp; oi rl; oi mem])
       | VectorReverseDoublewords (c, dt, dst, src) ->

@@ -2664,6 +2664,24 @@ let translate_arm_instruction
      let defcmds = floc#get_vardef_commands ~defs:[vdst] ctxtiaddr in
      default (defcmds @ cmds)
 
+  | VectorAbsolute (c, _, dst, src) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc = src#to_expr floc in
+     let usevars = get_register_vars [src] in
+     let usehigh = get_use_high_vars [xsrc] in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
   | VectorAdd _ -> default []
 
   | VectorBitwiseBitClear _ -> default []
@@ -2696,7 +2714,7 @@ let translate_arm_instruction
      let xsrc = src#to_expr floc in
      let usevars = get_register_vars [src] in
      let usehigh = get_use_high_vars [xsrc] in
-     let cmds = floc#get_abstract_commands vdst () in
+     let cmds = floc#get_assign_commands vdst xsrc in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdst]
@@ -2723,12 +2741,56 @@ let translate_arm_instruction
 
   | VectorDuplicate _ -> default []
 
-  | VectorMove (_, _, [dst; src]) ->
+  | VectorMoveDS (c, _, dst, src) ->
      let floc = get_floc loc in
      let vdst = dst#to_variable floc in
      let xsrc = src#to_expr floc in
      let usevars = get_register_vars [src] in
      let usehigh = get_use_high_vars [xsrc] in
+     let cmds = floc#get_assign_commands vdst xsrc in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorMoveDDSS (c, _, dst1, dst2, ddst, src1, src2, ssrc) ->
+     let floc = get_floc loc in
+     let vdst1 = dst1#to_variable floc in
+     let vdst2 = dst2#to_variable floc in
+     let vddst = ddst#to_variable floc in
+     let xsrc1 = src1#to_expr floc in
+     let xsrc2 = src2#to_expr floc in
+     let xssrc = ssrc#to_expr floc in
+     let usevars = get_register_vars [src1; src2; ssrc] in
+     let usehigh = get_use_high_vars [xsrc1; xsrc2; xssrc] in
+     let cmds1 = floc#get_abstract_commands vdst1 () in
+     let cmds2 = floc#get_abstract_commands vdst2 () in
+     let cmds3 = floc#get_abstract_commands vddst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst1; vdst2; vddst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds1 @ cmds2 @ cmds3 in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorMoveDSS (c, _, dst, src1, src2, ssrc) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc1 = src1#to_expr floc in
+     let xsrc2 = src2#to_expr floc in
+     let xssrc = ssrc#to_expr floc in
+     let usevars = get_register_vars [src1; src2; ssrc] in
+     let usehigh = get_use_high_vars [xsrc1; xsrc2; xssrc] in
      let cmds = floc#get_abstract_commands vdst () in
      let defcmds =
        floc#get_vardef_commands
@@ -2736,7 +2798,32 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     default (defcmds @ cmds)
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorMoveDDS (c, _, dst1, dst2, ddst, src) ->
+     let floc = get_floc loc in
+     let vdst1 = dst1#to_variable floc in
+     let vdst2 = dst2#to_variable floc in
+     let vddst = ddst#to_variable floc in
+     let xsrc = src#to_expr floc in
+     let usevars = get_register_vars [src] in
+     let usehigh = get_use_high_vars [xsrc] in
+     let cmds1 = floc#get_abstract_commands vdst1 () in
+     let cmds2 = floc#get_abstract_commands vdst2 () in
+     let cmds3 = floc#get_abstract_commands vddst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst1; vdst2; vddst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds1 @ cmds2 @ cmds3 in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | VLoadRegister(c, dst, rn, mem) ->
      let floc = get_floc loc in
@@ -2745,7 +2832,7 @@ let translate_arm_instruction
      let xmem = mem#to_expr floc in
      let usevars = get_register_vars [rn] in
      let usehigh = get_use_high_vars [xrn; xmem] in
-     let cmds = floc#get_abstract_commands vdst () in
+     let cmds = floc#get_assign_commands vdst xmem in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdst]
@@ -2778,6 +2865,25 @@ let translate_arm_instruction
 
   | VectorMultiply _ -> default []
 
+  | VectorMultiplySubtract (c, _, dst, src1, src2) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc1 = src1#to_expr floc in
+     let xsrc2 = src2#to_expr floc in
+     let usevars = get_register_vars [src1; src2] in
+     let usehigh = get_use_high_vars [xsrc1; xsrc2] in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
   | VectorNegate _ -> default []
 
   | VectorReverseDoublewords _ -> default []
@@ -2806,7 +2912,24 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VectorSubtract _ -> default []
+  | VectorSubtract (c, _, dst, src1, src2) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let xsrc1 = src1#to_expr floc in
+     let xsrc2 = src2#to_expr floc in
+     let usevars = get_register_vars [src1; src2] in
+     let usehigh = get_use_high_vars [xsrc1; xsrc2] in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | VectorTranspose _ -> default []
 
@@ -2990,12 +3113,21 @@ object (self)
       let _ =
         ignore(finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
       ASSERT (EQ (regVar, initVar)) in
+    let freeze_initial_extension_register_values (reg: arm_extension_register_t) =
+      let regVar = env#mk_arm_extension_register_variable reg in
+      let initVar = env#mk_initial_register_value (ARMExtensionRegister reg) in
+      let _ =
+        ignore (finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
+      ASSERT (EQ (regVar, initVar)) in
     let freeze_external_memory_values (v:variable_t) =
       let initVar = env#mk_initial_memory_value v in
       let _ =
         ignore(finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
       ASSERT (EQ (v, initVar)) in
     let rAsserts = List.map freeze_initial_register_value arm_regular_registers in
+    let xAsserts =
+      List.map freeze_initial_extension_register_values
+      (arm_xsingle_extension_registers @ arm_xdouble_extension_registers) in
     let externalMemvars = env#get_external_memory_variables in
     let externalMemvars = List.filter env#has_constant_offset externalMemvars in
     let _ =
@@ -3045,8 +3177,9 @@ object (self)
       constantAssigns
       @ argasserts
       @ rAsserts
+      @ xAsserts
       @ mAsserts
-      @ [ initializeScalar ]
+      @ [initializeScalar]
       @ initializeBasePointerOperations
       @ initialize_reaching_defs
       @ initialize_flag_reaching_defs in

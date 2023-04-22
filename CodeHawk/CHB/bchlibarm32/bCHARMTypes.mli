@@ -96,12 +96,14 @@ type arm_simd_list_element_t =
 type arm_operand_kind_t =
   | ARMDMBOption of dmb_option_t
   | ARMReg of arm_reg_t
+  | ARMDoubleReg of arm_reg_t * arm_reg_t
   | ARMWritebackReg of
       bool  (* true if part of single memory access *)
       * arm_reg_t  (* base register *)
       * int option (* increment/decrement in bytes of base register value *)
   | ARMSpecialReg of arm_special_reg_t
   | ARMExtensionReg of arm_extension_register_t
+  | ARMDoubleExtensionReg of arm_extension_register_t * arm_extension_register_t
   | ARMExtensionRegElement of arm_extension_register_element_t
   | ARMRegList of arm_reg_t list
   | ARMExtensionRegList of arm_extension_register_t list
@@ -142,6 +144,7 @@ class type arm_operand_int =
     method get_mode: arm_operand_mode_t
     method get_size: int  (* operand size in bytes *)
     method get_register: arm_reg_t
+    method get_extension_register: arm_extension_register_t
     method get_register_count: int
     method get_register_list: arm_reg_t list
     method get_register_op_list: 'a list
@@ -166,7 +169,9 @@ class type arm_operand_int =
     method is_write: bool
     method is_immediate: bool
     method is_register: bool
+    method is_double_register: bool
     method is_extension_register: bool
+    method is_double_extension_register: bool
     method is_writeback_register: bool
     method is_special_register: bool
     method is_APSR_condition_flags: bool
@@ -1053,10 +1058,34 @@ type arm_opcode_t =
       * arm_operand_int (* floating-point destination register *)
       * arm_operand_int (* base register *)
       * arm_operand_int (* mem: memory location *)
-  | VectorMove of
+  | VectorMoveDS of     (* VectorMove: one source, one destination *)
       arm_opcode_cc_t   (* condition *)
-      * vfp_datatype_t  (* element data type *)
-      * arm_operand_int list (* destination(s) / source(s) *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source *)
+  | VectorMoveDDSS of   (* VectorMove: two sources, two destinations *)
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination 1 *)
+      * arm_operand_int (* destination 2 *)
+      * arm_operand_int (* double-destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+      * arm_operand_int (* double-source *)
+  | VectorMoveDSS of    (* VectorMove: two sources, one destination *)
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+      * arm_operand_int (* double-source *)
+  | VectorMoveDDS of    (* VectorMove: two destinations, one source *)
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination 1 *)
+      * arm_operand_int (* destination 2 *)
+      * arm_operand_int (* double-destination *)
+      * arm_operand_int (* source *)
   | VectorMoveLong of
       arm_opcode_cc_t   (* condition *)
       * vfp_datatype_t  (* size *)
@@ -1110,6 +1139,24 @@ type arm_opcode_t =
       * vfp_datatype_t  (* data type *)
       * arm_operand_int (* destination *)
       * arm_operand_int (* source *)
+  | VectorNegateMultiply of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorNegateMultiplyAccumulate of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
+  | VectorNegateMultiplySubtract of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source 1 *)
+      * arm_operand_int (* source 2 *)
   | VectorPop of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* stack pointer *)

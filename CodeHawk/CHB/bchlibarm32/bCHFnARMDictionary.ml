@@ -1823,6 +1823,22 @@ object (self)
          (["a:vxx"],
           [xd#index_variable vrd; xd#index_xpr xrn; xd#index_xpr xrm])
 
+      | VectorAbsolute (c, _, dst, src) ->
+         let vdst = dst#to_variable floc in
+         let xsrc = src#to_expr floc in
+         let rxsrc = rewrite_expr xsrc in
+         let rdefs = [get_rdef xsrc] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst]
+             ~xprs:[xsrc; rxsrc]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst]
+             ~useshigh:[get_def_use_high vdst]
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
       | VCompare (_, c, _, fdst, src1, src2) ->
          let v_fpscr = fdst#to_variable floc in
          let xsrc1 = src1#to_expr floc in
@@ -1876,19 +1892,21 @@ object (self)
          let rsrc = rewrite_expr src in
          (["a:xx"], [xd#index_xpr src; xd#index_xpr rsrc])
 
-      | VLoadRegister (c, vd, rn, mem) ->
+      | VLoadRegister (c, vd, base, mem) ->
          let vvd = vd#to_variable floc in
-         let xrn = rn#to_expr floc in
+         let xbase = base#to_expr floc in
          let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
-         let rdefs = [get_rdef xrn; get_rdef_memvar vmem] @ (get_all_rdefs xmem) in
+         let rxbase = rewrite_expr xbase in
+         let rxmem = rewrite_expr xmem in
+         let rdefs = [get_rdef_memvar vmem; get_rdef xmem] @ (get_all_rdefs rxmem) in
          let uses = [get_def_use_high vvd] in
          let useshigh = [get_def_use_high vvd] in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vvd; vmem]
-             ~xprs:[xrn; xmem; xaddr]
+             ~xprs:[xmem; rxmem; xbase; rxbase; xaddr]
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
@@ -1896,17 +1914,84 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | VectorMove (c, _, [dst; src]) ->
+      | VectorMoveDS (c, _, dst, src) ->
          let vdst = dst#to_variable floc in
          let xsrc = src#to_expr floc in
+         let rxsrc = rewrite_expr xsrc in
          let rdefs = [get_rdef xsrc] in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vdst]
-             ~xprs:[xsrc]
+             ~xprs:[xsrc; rxsrc]
              ~rdefs:rdefs
              ~uses:[get_def_use vdst]
              ~useshigh:[get_def_use_high vdst]
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | VectorMoveDDSS (c, _, dst1, dst2, ddst, src1, src2, ssrc) ->
+         let vdst1 = dst1#to_variable floc in
+         let vdst2 = dst2#to_variable floc in
+         let vddst = ddst#to_variable floc in
+         let xsrc1 = src1#to_expr floc in
+         let xsrc2 = src2#to_expr floc in
+         let xssrc = ssrc#to_expr floc in
+         let rxsrc1 = rewrite_expr xsrc1 in
+         let rxsrc2 = rewrite_expr xsrc2 in
+         let rxssrc = rewrite_expr xssrc in
+         let rdefs = [get_rdef xsrc1; get_rdef xsrc2; get_rdef xssrc] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst1; vdst2; vddst]
+             ~xprs:[xsrc1; xsrc2; xssrc; rxsrc1; rxsrc2; rxssrc]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst1; get_def_use vdst2; get_def_use vddst]
+             ~useshigh:[
+               get_def_use_high vdst1;
+               get_def_use_high vdst2;
+               get_def_use_high vddst]
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | VectorMoveDSS (c, _, dst, src1, src2, ssrc) ->
+         let vdst = dst#to_variable floc in
+         let xsrc1 = src1#to_expr floc in
+         let xsrc2 = src2#to_expr floc in
+         let xssrc = ssrc#to_expr floc in
+         let rxsrc1 = rewrite_expr xsrc1 in
+         let rxsrc2 = rewrite_expr xsrc2 in
+         let rxssrc = rewrite_expr xssrc in
+         let rdefs = [get_rdef xsrc1; get_rdef xsrc2; get_rdef xssrc] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst]
+             ~xprs:[xsrc1; xsrc2; xssrc; rxsrc1; rxsrc2; rxssrc]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst]
+             ~useshigh:[get_def_use_high vdst]
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | VectorMoveDDS (c, _, dst1, dst2, ddst, src) ->
+         let vdst1 = dst1#to_variable floc in
+         let vdst2 = dst2#to_variable floc in
+         let vddst = ddst#to_variable floc in
+         let xsrc = src#to_expr floc in
+         let rxsrc = rewrite_expr xsrc in
+         let rdefs = [get_rdef xsrc] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst1; vdst2; vddst]
+             ~xprs:[xsrc; rxsrc]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst1; get_def_use vdst2; get_def_use vddst]
+             ~useshigh:[
+               get_def_use_high vdst1;
+               get_def_use_high vdst2;
+               get_def_use_high vddst]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
@@ -1930,21 +2015,63 @@ object (self)
          let xsrc = src#to_expr floc in
          (["a:x"], [xd#index_xpr xsrc])
 
-      | VStoreRegister (c, vd, rn, mem) ->
+      | VectorMultiplySubtract (c, _, dst, src1, src2) ->
+         let vdst = dst#to_variable floc in
+         let xdst = dst#to_expr floc in
+         let rxdst = rewrite_expr xdst in
+         let xsrc1 = src1#to_expr floc in
+         let rxsrc1 = rewrite_expr xsrc1 in
+         let xsrc2 = src2#to_expr floc in
+         let rxsrc2 = rewrite_expr xsrc2 in
+         let rdefs = [get_rdef xsrc1; get_rdef xsrc2] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst]
+             ~xprs:[xsrc1; xsrc2; xdst; rxsrc1; rxsrc2; rxdst]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst]
+             ~useshigh:[get_def_use_high vdst]
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | VStoreRegister (c, src, base, mem) ->
          let vmem = mem#to_variable floc in
          let xaddr = mem#to_address floc in
-         let xvd = vd#to_expr floc in
-         let xrn = rn#to_expr floc in
-         let rdefs = [get_rdef xrn; get_rdef xvd] in
+         let xsrc = src#to_expr floc in
+         let xbase = base#to_expr floc in
+         let rxsrc = rewrite_expr xsrc in
+         let rxbase = rewrite_expr xbase in
+         let rdefs = [get_rdef xsrc; get_rdef xbase] in
          let uses = [get_def_use vmem] in
          let useshigh = [get_def_use_high vmem] in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
-             ~xprs:[xrn; xvd; xaddr]
+             ~xprs:[xsrc; rxsrc; xbase; rxbase; xaddr]
              ~rdefs:rdefs
              ~uses:uses
              ~useshigh:useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | VectorSubtract (c, _, dst, src1, src2) ->
+         let vdst = dst#to_variable floc in
+         let xdst = dst#to_expr floc in
+         let rxdst = rewrite_expr xdst in
+         let xsrc1 = src1#to_expr floc in
+         let rxsrc1 = rewrite_expr xsrc1 in
+         let xsrc2 = src2#to_expr floc in
+         let rxsrc2 = rewrite_expr xsrc2 in
+         let rdefs = [get_rdef xsrc1; get_rdef xsrc2] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vdst]
+             ~xprs:[xsrc1; xsrc2; xdst; rxsrc1; rxsrc2; rxdst]
+             ~rdefs:rdefs
+             ~uses:[get_def_use vdst]
+             ~useshigh:[get_def_use_high vdst]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
