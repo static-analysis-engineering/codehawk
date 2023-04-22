@@ -79,7 +79,8 @@ val arm_xsingle_reg_op: arm_operand_mode_t -> arm_operand_int generator_t
 
 
 val arm_dual_xsingle_reg_op:
-  arm_operand_mode_t -> (arm_operand_int * arm_operand_int) generator_t
+  arm_operand_mode_t
+  -> (arm_operand_int * arm_operand_int * arm_operand_int) generator_t
 
 
 val arm_xdouble_reg_op: arm_operand_mode_t -> arm_operand_int generator_t

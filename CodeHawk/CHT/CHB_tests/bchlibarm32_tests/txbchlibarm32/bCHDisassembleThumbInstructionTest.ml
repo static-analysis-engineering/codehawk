@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleThumbInstructionTest"
-let lastupdated = "2023-03-14"
+let lastupdated = "2023-03-22"
 
 
 let two_byte_instr_opcode_failures = [
@@ -319,17 +319,25 @@ let thumb_4_vector () =
       ("VLD4.32-multiple-2",          "61f98f41", "VLD4.32        {D20,D22,D24,D26}, [R1]");
       ("VLDM-T1",                     "90ec200b", "VLDM           R0, {D0,D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15}");
       ("VLDR-imm",                    "dded108b", "VLDR           D24, [SP,#0x40]");
+      ("VMLA.F64",                    "07ee052b", "VMLA.F64       D2, D7, D5");
       ("VMLAL.U32-by-scalar-T2",      "a7ff62a2", "VMLAL.U32      Q5, D7, D2[1]");
       ("VMOV.32-core-to-scalar",      "0aee102b", "VMOV.32        D10[0], R2");
       ("VMOV-core-to-sp-T1",          "07ee907a", "VMOV           S15, R7");
+      ("VMOV.F32-I",                  "b7ee00aa", "VMOV.F32       S20, #0x3f800000");
+      ("VMOV.F32-R",                  "f0ee418a", "VMOV.F32       S17, S2");
+      ("VMOVDDS",                     "53ec172b", "VMOV           R2, R3, D7");
+      ("VMOVDSS",                     "41ec170b", "VMOV           D7, R0, R1");
       ("VMOVN.I64",                   "faff2002", "VMOVN.I64      D16, Q8");
       ("VMRS-T1",                     "f1ee10fa", "VMRS           APSR_nzcv, FPSCR");
       ("VMSR-T1",                     "e1ee102a", "VMSR           FPSCR, R2");
+      ("VMUL.F64-T2",                 "27ee0bbb", "VMUL.F64       D11, D7, D11");
       ("VMULL.P64",                   "a0ef000e", "VMULL.P64      Q0, D0, D0");
       ("VMULL.U32-by-scalar-T2",      "a0ff60aa", "VMULL.U32      Q5, D0, D0[1]");
       ("VNEG.F64",                    "b1ee400b", "VNEG.F64       D0, D0");
+      ("VNMLS.F64",                   "12ee063b", "VNMLS.F64      D3, D2, D6");
       ("VORN-quad",                   "30ef5001", "VORN           Q0, Q0, Q0");
       ("VORR-R-D",                    "27ef3a71", "VORR           D7, D7, D26");
+      ("VPOP-T1",                     "bdec0a8b", "VPOP           {D8,D9,D10,D11,D12}");
       ("VRHADD.U16",                  "1eff2fe1", "VRHADD.U16     D14, D14, D31");
       ("VSHL.I32",                    "e2ef3ee5", "VSHL.I32       D30, D30, #2");
       ("VSHR.S8",                     "c9ef7220", "VSHR.S8        Q9, Q9, #7");
@@ -340,6 +348,7 @@ let thumb_4_vector () =
       ("VST1.32-4",                   "40f99d42", "VST1.32        {D20,D21,D22,D23}, [R0:64]!");
       ("VST1.32-one-lane",            "80f90f28", "VST1.32        {D2[0]}, [R0]");
       ("VST4.32-one-lane",            "86f90d0b", "VST4.32        {D0[0],D1[0],D2[0],D3[0]}, [R6]!");
+      ("VSUB.F64-T2",                 "3cee47cb", "VSUB.F64       D12, D12, D7");
       ("VTRN.32",                     "baff8a00", "VTRN.32        D0, D10");
       ("VZIP.16",                     "f6ff88c1", "VZIP.16        D28, D8");
     ] in

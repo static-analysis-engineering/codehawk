@@ -7,7 +7,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -164,14 +164,17 @@ let arm_xsingle_reg_op (mode: arm_operand_mode_t): arm_operand_int generator_t =
 
 
 let arm_dual_xsingle_reg_op (mode: arm_operand_mode_t):
-      (arm_operand_int * arm_operand_int) generator_t =
+      (arm_operand_int * arm_operand_int * arm_operand_int) generator_t =
   ((fun r ->
     let pbit = Random.State.int r 2 in
     let pval = Random.State.int r 15 in
     let d = postfix_bit pbit pval in
     let vd1 = arm_extension_register_op XSingle d mode in
     let vd2 = arm_extension_register_op XSingle (d+1) mode in
-    (vd1, vd2)), (fun (d1, d2) -> "(" ^ d1#toString ^ ", " ^ d2#toString ^ ")"))
+    let vdd = arm_double_extension_register_op XSingle d (d+1) mode in
+    (vd1, vd2, vdd)),
+   (fun (d1, d2, dd) ->
+     "(" ^ d1#toString ^ ", " ^ d2#toString ^ ", " ^ dd#toString ^ ")"))
 
 
 let arm_xdouble_reg_op (mode: arm_operand_mode_t): arm_operand_int generator_t =
