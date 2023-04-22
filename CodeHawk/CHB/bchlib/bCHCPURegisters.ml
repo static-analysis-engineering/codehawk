@@ -258,6 +258,14 @@ let _ =
 let arm_regular_registers = get_sumtype_table_keys armregs_to_string_table
 
 
+let arm_xsingle_extension_registers =
+  List.init 32 (fun i -> {armxr_type = XSingle; armxr_index = i})
+
+
+let arm_xdouble_extension_registers =
+  List.init 32 (fun i -> {armxr_type = XDouble; armxr_index = i})
+
+
 let armreg_to_string (r:arm_reg_t) =
   get_string_from_table "armregs_to_string_table" armregs_to_string_table r
 
@@ -323,7 +331,7 @@ let register_from_string (name: string) =
               STR "No x86, mips, or arm register found with name "; STR name]))
 
 
-let get_armreg_argument (index: int) =
+let get_armreg_argument (index: int): arm_reg_t =
   match index with
   | 0 -> AR0
   | 1 -> AR1
@@ -332,8 +340,20 @@ let get_armreg_argument (index: int) =
   | _ ->
      raise
        (BCH_failure
-          (LBLOCK [STR "Index out of range for get_armreg_argument: ";
-                   INT index]))
+          (LBLOCK [
+               STR "Index out of range for get_armreg_argument: ";
+               INT index]))
+
+
+let get_armreg_float_argument (index: int): arm_extension_register_t =
+  match index with
+  | 0 | 1 | 2 | 3 -> {armxr_type = XSingle; armxr_index = index}
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "Index out of range for get_armreg_float_argument: ";
+               INT index]))
 
 
 let arm_temporaries = [AR0; AR1; AR2; AR3]
@@ -372,6 +392,7 @@ let arm_extension_register_replicated_element_compare e1 e2 =
   else
     c1
 
+
 let register_compare r1 r2 =
   match (r1, r2) with
   | (CPURegister c1, CPURegister c2) ->
@@ -382,6 +403,12 @@ let register_compare r1 r2 =
      Stdlib.compare (armreg_to_string a1) (armreg_to_string a2)
   | (ARMRegister _, _) -> -1
   | (_, ARMRegister _) -> 1
+  | (ARMDoubleRegister (a1, b1), ARMDoubleRegister (a2, b2)) ->
+     Stdlib.compare
+       (armreg_to_string a1, armreg_to_string b1)
+       (armreg_to_string a2, armreg_to_string b2)
+  | (ARMDoubleRegister _, _) -> -1
+  | (_, ARMDoubleRegister _) -> 1
   | (ARMSpecialRegister r1, ARMSpecialRegister r2) ->
      Stdlib.compare (arm_special_reg_to_string r1) (arm_special_reg_to_string r2)
   | (ARMSpecialRegister _, _) -> -1
@@ -390,6 +417,14 @@ let register_compare r1 r2 =
      arm_extension_register_compare r1 r2
   | (ARMExtensionRegister _, _) -> -1
   | (_, ARMExtensionRegister _) -> 1
+  | (ARMDoubleExtensionRegister (a1, b1), ARMDoubleExtensionRegister (a2, b2)) ->
+     let i1 = arm_extension_register_compare a1 a2 in
+     if i1 = 0 then
+       arm_extension_register_compare b1 b2
+     else
+       i1
+  | (ARMDoubleExtensionRegister _, _) -> -1
+  | (_, ARMDoubleExtensionRegister _) -> 1
   | (ARMExtensionRegisterElement e1, ARMExtensionRegisterElement e2) ->
      arm_extension_register_element_compare e1 e2
   | (ARMExtensionRegisterElement _, _) -> -1
@@ -454,8 +489,12 @@ let register_to_string register =
   | MIPSSpecialRegister r -> mips_special_reg_to_string r
   | MIPSFloatingPointRegister i -> "$f" ^ (string_of_int i)
   | ARMRegister r -> armreg_to_string r
+  | ARMDoubleRegister (r1, r2) ->
+     (armreg_to_string r1) ^ "_" ^ (armreg_to_string r2)
   | ARMSpecialRegister r -> arm_special_reg_to_string r
   | ARMExtensionRegister r -> arm_extension_reg_to_string r
+  | ARMDoubleExtensionRegister (r1, r2) ->
+     (arm_extension_reg_to_string r1) ^ "_" ^ (arm_extension_reg_to_string r2)
   | ARMExtensionRegisterElement e -> arm_extension_reg_element_to_string e
   | ARMExtensionRegisterReplicatedElement e ->
      arm_extension_reg_rep_element_to_string e

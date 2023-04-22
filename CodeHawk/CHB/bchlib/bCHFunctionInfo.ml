@@ -844,8 +844,15 @@ object (self)
   method mk_arm_register_variable (reg:arm_reg_t) =
     self#mk_register_variable (ARMRegister reg)
 
+  method mk_arm_double_register_variable (reg1: arm_reg_t) (reg2: arm_reg_t) =
+    self#mk_register_variable (ARMDoubleRegister (reg1, reg2))
+
   method mk_arm_extension_register_variable (r: arm_extension_register_t) =
     self#mk_register_variable (ARMExtensionRegister r)
+
+  method mk_arm_double_extension_register_variable
+           (r1: arm_extension_register_t) (r2: arm_extension_register_t) =
+    self#mk_register_variable (ARMDoubleExtensionRegister (r1, r2))
 
   method mk_arm_extension_register_element_variable
         (e: arm_extension_register_element_t) =
@@ -1304,10 +1311,11 @@ object (self)
       | CPURegister r -> self#mk_cpu_register_variable r
       | MIPSRegister r -> self#mk_mips_register_variable r
       | ARMRegister r -> self#mk_arm_register_variable r
+      | ARMExtensionRegister r -> self#mk_arm_extension_register_variable r
       | _ ->
          let msg =
            LBLOCK [
-               STR "Variable is not a cpu or mips register: ";
+               STR "Variable is not a cpu/mips/arm register: ";
                v#toPretty] in
          begin
            ch_error_log#add "function environment" msg ;

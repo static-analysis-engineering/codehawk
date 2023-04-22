@@ -193,14 +193,16 @@ object
     | MIPSSpecialRegister _ -> "ps"
     | MIPSFloatingPointRegister _ -> "pfp"
     | ARMRegister _ -> "a"
+    | ARMDoubleRegister _ -> "armd"
     | ARMSpecialRegister _ -> "as"
     | ARMExtensionRegister _ -> "armx"
+    | ARMDoubleExtensionRegister _ -> "armdx"
     | ARMExtensionRegisterElement _ -> "armxe"
     | ARMExtensionRegisterReplicatedElement _ -> "armxr"
     | PowerGPRegister _ -> "pwrgpr"
 
   method tags = [
-      "a"; "armx"; "armxe"; "armxr"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
+      "a"; "armd"; "armx"; "armxe"; "armxr"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
       "m"; "s"; "x"; "p"; "pfp"; "ps"; "pwrgpr"]
 
 end

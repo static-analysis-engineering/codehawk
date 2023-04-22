@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -189,22 +189,28 @@ object (self)
   method index_register (r:register_t) =
     let tags = [register_mcts#ts r] in
     let key = match r with
-      | SegmentRegister s -> (tags @ [ segment_mfts#ts s ],[])
-      | CPURegister r -> (tags @ [ cpureg_mfts#ts r ],[])
+      | SegmentRegister s -> (tags @ [segment_mfts#ts s], [])
+      | CPURegister r -> (tags @ [cpureg_mfts#ts r], [])
       | DoubleRegister (r1,r2) ->
-         (tags @ [ cpureg_mfts#ts r1 ; cpureg_mfts#ts r2 ],[])
+         (tags @ [cpureg_mfts#ts r1; cpureg_mfts#ts r2], [])
       | FloatingPointRegister i 
         | ControlRegister i
         | DebugRegister i
         | MmxRegister i
         | XmmRegister i -> (tags,[i])
-      | MIPSRegister r ->  (tags @ [ mips_reg_mfts#ts r ],[])
+      | MIPSRegister r ->  (tags @ [mips_reg_mfts#ts r], [])
       | MIPSSpecialRegister r -> (tags @ [mips_special_reg_mfts#ts r], [])
       | MIPSFloatingPointRegister i -> (tags, [i])
       | ARMRegister r -> (tags @ [arm_reg_mfts#ts r], [])
+      | ARMDoubleRegister (r1, r2) ->
+         (tags @ [arm_reg_mfts#ts r1; arm_reg_mfts#ts r2], [])
       | ARMSpecialRegister r -> (tags @ [arm_special_reg_mfts#ts r], [])
       | ARMExtensionRegister xr ->
          (tags, [self#index_arm_extension_register xr])
+      | ARMDoubleExtensionRegister (r1, r2) ->
+         (tags,
+          [self#index_arm_extension_register r2;
+           self#index_arm_extension_register r2])
       | ARMExtensionRegisterElement xre ->
          (tags, [self#index_arm_extension_register_element xre])
       | ARMExtensionRegisterReplicatedElement xrre ->
@@ -231,6 +237,11 @@ object (self)
     | "pfp" -> MIPSFloatingPointRegister (a 0)
     | "a" -> ARMRegister (arm_reg_mfts#fs (t 1))
     | "as" -> ARMSpecialRegister (arm_special_reg_mfts#fs (t 1))
+    | "armd" -> ARMDoubleRegister (arm_reg_mfts#fs (t 1), arm_reg_mfts#fs (t 2))
+    | "armdx" ->
+       ARMDoubleExtensionRegister
+         (self#get_arm_extension_register (a 0),
+          self#get_arm_extension_register (a 1))
     | "armx" -> ARMExtensionRegister (self#get_arm_extension_register (a 0))
     | "armxe" ->
        ARMExtensionRegisterElement (self#get_arm_extension_register_element (a 0))
