@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHARMDictionaryTest"
-let lastupdated = "2023-04-06"
+let lastupdated = "2023-04-22"
 
 let e8 = 256
 let e16 = e8 * e8
@@ -1893,13 +1893,16 @@ let arm_opcode_tests () =
         index_check_opc_c opc c "VLDR" 3);
 
     TS.add_simple_test
-      ~title:"VectorMove (2 core -> 2 sp)"
+      ~title:"VectorMoveDDSS (2 core -> 2 sp)"
       (fun () ->
-        let (sm, sm1) = armdualxsinglereg_op RD in
-        let rt = armreg_op WR in
-        let rt2 = armreg_op WR in
+        let (sm, sm1, smd) = armdualxsinglereg_op RD in
+        let rtreg = armreg () in
+        let rt2reg = armreg () in
+        let rt = arm_register_op rtreg WR in
+        let rt2 = arm_register_op rt2reg WR in
+        let rtd = arm_double_register_op rtreg rt2reg WR in
         let c = cc () in
-        let opc = VectorMove (c, VfpNone, [rt; rt2; sm; sm1]) in
+        let opc = VectorMoveDDSS (c, VfpNone, rt, rt2, rtd, sm, sm1, smd) in
         index_check_opc_c opc c "VMOV" 5);
         
     TS.add_simple_test
