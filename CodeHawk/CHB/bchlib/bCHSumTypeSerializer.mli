@@ -52,6 +52,9 @@ val arm_reg_mfts: arm_reg_t mfts_int
 val arm_special_reg_mfts: arm_special_reg_t mfts_int
 val arm_extension_reg_type_mfts: arm_extension_reg_type_t mfts_int
 
+val power_spr_mfts: power_special_reg_t mfts_int
+val power_crf_mfts: power_register_field_t mfts_int
+
 val flag_mcts: flag_t mfts_int  
 val register_mcts: register_t mfts_int
 

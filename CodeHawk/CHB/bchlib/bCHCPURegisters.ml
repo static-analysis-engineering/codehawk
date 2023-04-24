@@ -90,6 +90,12 @@ let armregs_from_string_table = H.create 17
 let arm_special_regs_to_string_table = H.create 3
 let arm_special_regs_from_string_table = H.create 3
 
+let power_sprs_to_string_table = H.create 3
+let power_sprs_from_string_table = H.create 3
+
+let power_crfs_to_string_table = H.create 3
+let power_crfs_from_string_table = H.create 3
+
 
 let _ = List.iter (fun (r,s) -> 
   add_to_sumtype_tables cpuregs_to_string_table cpuregs_from_string_table r s)
@@ -125,15 +131,16 @@ let segment_from_string (name:string) =
 
 let _ =
   List.iter (fun (r,s) ->
-      add_to_sumtype_tables mipsregs_to_string_table mipsregs_from_string_table r s)
-            [ (MRzero,"$zero"); (MRat,"$at"); (MRv0,"$v0"); (MRv1,"$v1");
-              (MRa0,"$a0"); (MRa1,"$a1"); (MRa2,"$a2"); (MRa3,"$a3");
-              (MRt0,"$t0"); (MRt1,"$t1"); (MRt2,"$t2"); (MRt3,"$t3");
-              (MRt4,"$t4"); (MRt5,"$t5"); (MRt6,"$t6"); (MRt7,"$t7");
-              (MRs0,"$s0"); (MRs1,"$s1"); (MRs2,"$s2"); (MRs3,"$s3");
-              (MRs4,"$s4"); (MRs5,"$s5"); (MRs6,"$s6"); (MRs7,"$s7");
-              (MRt8,"$t8"); (MRt9,"$t9"); (MRk0,"$k0"); (MRk1,"$k1");
-              (MRgp,"$gp"); (MRsp,"$sp"); (MRfp,"$fp"); (MRra,"$ra") ]
+      add_to_sumtype_tables
+        mipsregs_to_string_table mipsregs_from_string_table r s)
+    [(MRzero,"$zero"); (MRat,"$at"); (MRv0,"$v0"); (MRv1,"$v1");
+     (MRa0,"$a0"); (MRa1,"$a1"); (MRa2,"$a2"); (MRa3,"$a3");
+     (MRt0,"$t0"); (MRt1,"$t1"); (MRt2,"$t2"); (MRt3,"$t3");
+     (MRt4,"$t4"); (MRt5,"$t5"); (MRt6,"$t6"); (MRt7,"$t7");
+     (MRs0,"$s0"); (MRs1,"$s1"); (MRs2,"$s2"); (MRs3,"$s3");
+     (MRs4,"$s4"); (MRs5,"$s5"); (MRs6,"$s6"); (MRs7,"$s7");
+     (MRt8,"$t8"); (MRt9,"$t9"); (MRk0,"$k0"); (MRk1,"$k1");
+     (MRgp,"$gp"); (MRsp,"$sp"); (MRfp,"$fp"); (MRra,"$ra")]
 
 let mips_regular_registers = get_sumtype_table_keys mipsregs_to_string_table
 
@@ -237,23 +244,24 @@ let index_to_mipsreg (i: int): mips_reg_t =
 
 let _ =
   List.iter (fun (r,s) ->
-      add_to_sumtype_tables armregs_to_string_table armregs_from_string_table r s)
-    [ (AR0,"R0");
-      (AR1,"R1");
-      (AR2,"R2");
-      (AR3,"R3");
-      (AR4,"R4");
-      (AR5,"R5");
-      (AR6,"R6");
-      (AR7,"R7");
-      (AR8,"R8");
-      (AR9,"R9");
-      (AR10,"R10");
-      (AR11,"R11");
-      (AR12,"R12");
-      (ARSP,"SP");
-      (ARLR,"LR");
-      (ARPC,"PC") ]
+      add_to_sumtype_tables
+        armregs_to_string_table armregs_from_string_table r s)
+    [(AR0,"R0");
+     (AR1,"R1");
+     (AR2,"R2");
+     (AR3,"R3");
+     (AR4,"R4");
+     (AR5,"R5");
+     (AR6,"R6");
+     (AR7,"R7");
+     (AR8,"R8");
+     (AR9,"R9");
+     (AR10,"R10");
+     (AR11,"R11");
+     (AR12,"R12");
+     (ARSP,"SP");
+     (ARLR,"LR");
+     (ARPC,"PC")]
 
 let arm_regular_registers = get_sumtype_table_keys armregs_to_string_table
 
@@ -313,6 +321,57 @@ let arm_special_reg_to_string (r: arm_special_reg_t) =
 let arm_special_reg_from_string (name:string) =
   get_sumtype_from_table
     "arm_special_regs_from_string_table" arm_special_regs_from_string_table name
+
+
+let power_gpr_to_string (index: int) = "r" ^ (string_of_int index)
+
+
+let _ =
+  List.iter (fun (r, s) ->
+      add_to_sumtype_tables
+        power_sprs_to_string_table
+        power_sprs_from_string_table r s)
+    [(PowerCR, "cr");
+     (PowerCTR, "ctr");
+     (PowerMSR, "msr");
+     (PowerLR, "lr");
+     (PowerXER, "xer");
+     (PowerSRR0, "srr0");
+     (PowerSRR1, "srr1");
+     (PowerCSRR0, "csrr0");
+     (PowerCSRR1, "csrr1");
+     (PowerDSRR0, "dsrr0");
+     (PowerDSRR1, "dsrr1");
+     (PowerMCSRR0, "mcsrr0");
+     (PowerMCSRR1, "mcsrr1")]
+
+
+let power_spr_to_string (r: power_special_reg_t) =
+  get_string_from_table
+    "power_sprs_to_string_table" power_sprs_to_string_table r
+
+
+let _ =
+  List.iter (fun (r, s) ->
+      add_to_sumtype_tables
+        power_crfs_to_string_table
+        power_crfs_from_string_table r s)
+    [(PowerCR0, "cr0");
+     (PowerCR1, "cr1");
+     (PowerCR2, "cr2");
+     (PowerCR3, "cr3");
+     (PowerCR4, "cr4");
+     (PowerCR5, "cr5");
+     (PowerCR6, "cr6");
+     (PowerCR7, "cr7");
+     (PowerXERSO, "xer-so");
+     (PowerXEROV, "xer-ov");
+     (PowerXERCA, "xer-ca")]
+
+
+let power_crf_to_string (f: power_register_field_t) =
+  get_string_from_table
+    "power_crfs_to_string_table" power_crfs_to_string_table f
 
 
 let register_from_string (name: string) =
@@ -437,12 +496,19 @@ let register_compare r1 r2 =
   | (PowerGPRegister r1, PowerGPRegister r2) -> Stdlib.compare r1 r2
   | (PowerGPRegister _, _) -> -1
   | (_, PowerGPRegister _) -> 1
+  | (PowerSPRegister r1, PowerSPRegister r2) -> Stdlib.compare r1 r2
+  | (PowerSPRegister _, _) -> -1
+  | (_, PowerSPRegister _) -> 1
+  | (PowerCRField f1, PowerCRField f2) -> Stdlib.compare f1 f2
+  | (PowerCRField _, _) -> -1
+  | (_, PowerCRField _) -> 1
   | (MIPSRegister m1, MIPSRegister m2) ->
      Stdlib.compare (mipsreg_to_string m1) (mipsreg_to_string m2)
   | (MIPSRegister _, _) -> -1
   | (_, MIPSRegister _) -> 1
   | (MIPSSpecialRegister s1,MIPSSpecialRegister s2) ->
-     Stdlib.compare (mips_special_reg_to_string s1) (mips_special_reg_to_string s2)
+     Stdlib.compare
+       (mips_special_reg_to_string s1) (mips_special_reg_to_string s2)
   | (MIPSSpecialRegister _, _) -> -1
   | (_, MIPSSpecialRegister _) -> 1
   | (MIPSFloatingPointRegister i1,MIPSFloatingPointRegister i2) ->
@@ -474,7 +540,6 @@ let register_compare r1 r2 =
         (cpureg_to_string c21, cpureg_to_string c22)
 
 
-
 let register_to_string register =
   match register with
   | CPURegister r -> cpureg_to_string r
@@ -498,7 +563,9 @@ let register_to_string register =
   | ARMExtensionRegisterElement e -> arm_extension_reg_element_to_string e
   | ARMExtensionRegisterReplicatedElement e ->
      arm_extension_reg_rep_element_to_string e
-  | PowerGPRegister r -> "GPR" ^ (string_of_int r)
+  | PowerGPRegister r -> power_gpr_to_string r
+  | PowerSPRegister r -> power_spr_to_string r
+  | PowerCRField f -> power_crf_to_string f
 
 
 let extract_cpu_reg s =
@@ -508,9 +575,13 @@ let extract_cpu_reg s =
     cpureg_from_string rsub
   with
   | _ ->
-     raise (BCH_failure
-              (LBLOCK [ STR s ; STR " cannot be converted to cpu register: " ;
-                        STR rsub ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR s;
+               STR " cannot be converted to cpu register: ";
+               STR rsub]))
+
 
 let extract_mips_reg s =
   let len = String.length s in
@@ -519,9 +590,13 @@ let extract_mips_reg s =
     mipsreg_from_string rsub
   with
   | _ ->
-     raise (BCH_failure
-              (LBLOCK [ STR s ; STR " cannot be converted to mips register: " ;
-                        STR rsub ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR s;
+               STR " cannot be converted to mips register: ";
+               STR rsub]))
+
 
 let register_from_string (s:string) =
   if starts_with s "x86(" then
@@ -533,11 +608,14 @@ let register_from_string (s:string) =
       register_from_string s
     with
     | BCH_failure p ->
-       raise (BCH_failure
-                (LBLOCK [ STR "register string conversion not supported for ";
-                          STR s;
-                          STR ": ";
-                          p]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "register string conversion not supported for ";
+                 STR s;
+                 STR ": ";
+                 p]))
+
 
 let byte_reg_of_reg r = 
   match r with
@@ -561,6 +639,7 @@ let byte_reg_of_reg r =
       raise (Invalid_argument "byte_reg_of_reg")
     end
 
+
 let word_reg_of_reg r =
   match r with
   | Eax -> Ax
@@ -578,6 +657,7 @@ let word_reg_of_reg r =
 		  STR " has no corresponding word register"]);
       raise (Invalid_argument "word_reg_of_reg")
     end
+
 
 let sized_reg_of_reg r size = 
   match size with 

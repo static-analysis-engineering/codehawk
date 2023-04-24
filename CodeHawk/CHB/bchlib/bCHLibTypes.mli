@@ -401,6 +401,37 @@ type arm_extension_register_replicated_element_t = {
 
 (* ====================================================== power types === *)
 
+type power_special_reg_t =
+  | PowerCR    (* Condition Register (contain CR0, CR1, CR2) *)
+  | PowerCTR   (* Count Register *)
+  | PowerMSR   (* Machine Status Register *)
+  | PowerLR    (* Link Register *)
+  | PowerXER   (* Integer Exception Register *)
+  | PowerSRR0  (* Save/Restore Register 0 *)
+  | PowerSRR1  (* Save/Restore Register 1 *)
+  | PowerCSRR0 (* Critical Save/Restore Register 0 *)
+  | PowerCSRR1 (* Critical Save/Restore Register 1 *)
+  | PowerDSRR0 (* Debug Save/Restore Register 0 *)
+  | PowerDSRR1 (* Debug Save/Restore Register 1 *)
+  | PowerMCSRR0 (* Machine Check Save/Restore Register 0 *)
+  | PowerMCSRR1 (* Machine Check Save/Restore Register 1 *)
+
+
+type power_register_field_t =
+  | PowerCR0   (* Condition Register, bits 32-35 *)
+  | PowerCR1   (* Condition Register, bits 36-39 *)
+  | PowerCR2   (* Condition Register, bits 40-43 *)
+  | PowerCR3   (* Condition Register, bits 44-47 *)
+  | PowerCR4   (* Condition Register, bits 48-51 *)
+  | PowerCR5   (* Condition Register, bits 52-55 *)
+  | PowerCR6   (* Condition Register, bits 56-59 *)
+  | PowerCR7   (* Condition Register, bits 60-63 *)
+  | PowerXERSO (* Integer Exception Register, summary overflow *)
+  | PowerXEROV (* Integer Exception Register, overflow *)
+  | PowerXERCA (* Integer Exception Register, carry *)
+
+
+(* ============================================= combining architectures === *)
 
 type register_t = 
 | SegmentRegister of segment_t
@@ -424,6 +455,8 @@ type register_t =
 | ARMExtensionRegisterReplicatedElement of
     arm_extension_register_replicated_element_t
 | PowerGPRegister of int
+| PowerSPRegister of power_special_reg_t
+| PowerCRField of power_register_field_t
 
 
 type flag_t =

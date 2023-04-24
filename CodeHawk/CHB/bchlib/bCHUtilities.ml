@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -274,24 +274,24 @@ let add_to_sumtype_tables
   end
     
 let get_string_from_table
-      (tablename:string) (table:('a,string) Hashtbl.t) (stype:'a) =
+      (tablename:string) (table:('a, string) Hashtbl.t) (stype:'a) =
   if Hashtbl.mem table stype then
     Hashtbl.find table stype
   else
     raise (Invalid_argument ("get_string_from_table " ^ tablename))
       
 let get_sumtype_from_table
-      (tablename:string) (table:(string,'a) Hashtbl.t) (name:string) =
+      (tablename:string) (table:(string, 'a) Hashtbl.t) (name:string) =
   if Hashtbl.mem table name then
     Hashtbl.find table name
   else
     raise
       (Invalid_argument ("get_sumtype_from_table " ^ tablename ^ ": " ^ name))
       
-let is_string_of_sumtype (table:(string,'a) Hashtbl.t) (name:string) =
+let is_string_of_sumtype (table:(string, 'a) Hashtbl.t) (name:string) =
   Hashtbl.fold (fun k _ a -> a || k = name) table false
 
-let get_sumtype_table_keys (table:('a,string) Hashtbl.t) =
+let get_sumtype_table_keys (table:('a, string) Hashtbl.t) =
   H.fold (fun k _ a -> k::a) table []
     
     

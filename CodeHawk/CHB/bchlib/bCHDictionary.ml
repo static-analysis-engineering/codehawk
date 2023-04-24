@@ -72,7 +72,8 @@ object (self)
 
   val string_table = mk_string_index_table "string-table"
   val address_table = mk_index_table "address-table"
-  val arm_extension_register_table = mk_index_table "arm-extension-register-table"
+  val arm_extension_register_table =
+    mk_index_table "arm-extension-register-table"
   val arm_extension_register_element_table =
     mk_index_table "arm-extension-register-element-table"
   val arm_extension_register_replicated_element_table =
@@ -215,7 +216,9 @@ object (self)
          (tags, [self#index_arm_extension_register_element xre])
       | ARMExtensionRegisterReplicatedElement xrre ->
          (tags, [self#index_arm_extension_register_replicated_element xrre])
-      | PowerGPRegister r -> (tags, [r]) in
+      | PowerGPRegister r -> (tags, [r])
+      | PowerSPRegister r -> (tags @ [power_spr_mfts#ts r], [])
+      | PowerCRField r -> (tags @ [power_crf_mfts#ts r], []) in
     register_table#add key
 
   method get_register (index:int) =
