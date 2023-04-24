@@ -62,8 +62,10 @@ open BCHELFHeader
 open BCHELFTypes
 
 (* bchlibpower32 *)
+open BCHConstructPowerFunction
 open BCHDisassemblePowerInstruction
 open BCHDisassembleVLEInstruction
+open BCHPowerAssemblyFunctions
 open BCHPowerAssemblyInstruction
 open BCHPowerAssemblyInstructions
 open BCHPowerOpcodeRecords
@@ -380,6 +382,35 @@ let set_block_boundaries () =
   end
 
 
+let construct_assembly_function
+      (count: int) (faddr: doubleword_int): doubleword_int list =
+  try
+    let newfns =
+      if !power_assembly_instructions#is_code_address faddr then
+        let (fl, fn) = construct_power_assembly_function faddr in
+        begin
+          power_assembly_functions#add_function fn;
+          fl
+        end
+      else
+        [] in
+    newfns
+  with
+  | BCH_failure p ->
+     begin
+       ch_error_log#add
+         "construct assembly function"
+         (LBLOCK [faddr#toPretty; STR ": "; p]);
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in constructing function ";
+                   faddr#toPretty;
+                   STR ": ";
+                   p]))
+     end
+
+
 let construct_functions_power () =
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
@@ -393,7 +424,8 @@ let construct_functions_power () =
           try
             begin
               count := !count + 1;
-              (* construct_power_assembly_function !count faddr *)
+              let newfns = construct_assembly_function !count faddr in
+              ()
             end
           with
           | BCH_failure p ->
@@ -405,4 +437,6 @@ let construct_functions_power () =
           ()
         else
           default ()) feps;
+
+    pr_debug [STR "Constructed: "; INT !count; STR " functions"; NL]
   end

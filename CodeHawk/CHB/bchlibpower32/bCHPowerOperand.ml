@@ -74,6 +74,14 @@ let e63 = e32 * e31
 let e64 = e32 * e32
 
 
+let power_operand_mode_to_string (m: power_operand_mode_t) =
+  match m with
+  | RD -> "RD"
+  | WR -> "WR"
+  | RW -> "RW"
+  | NT -> "NT"
+
+
 let power_special_reg_to_string (reg: power_special_reg_t) =
   match reg with
   | PowerCR -> "CR"

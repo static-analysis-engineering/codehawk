@@ -43,6 +43,8 @@ open BCHLibTypes
 open BCHPowerTypes
 
 
+val power_operand_mode_to_string: power_operand_mode_t -> string
+
 val power_gp_register_op:
   index:int -> mode:power_operand_mode_t -> power_operand_int
 

@@ -164,6 +164,10 @@ type power_instruction_type_t = | PWR | VLE16 | VLE32
     References:
     BookE: Book E: Enhanced PowerPC Architecture, Version 1.0, May 7 2002, NXP.
  *)
+
+
+(* defined in bchlib/bCHLibTypes:
+
 type power_special_reg_t =
   | PowerCR    (* Condition Register (contain CR0, CR1, CR2) *)
   | PowerCTR   (* Count Register *)
@@ -192,7 +196,7 @@ type power_register_field_t =
   | PowerXERSO (* Integer Exception Register, summary overflow *)
   | PowerXEROV (* Integer Exception Register, overflow *)
   | PowerXERCA (* Integer Exception Register, carry *)
-
+ *)
 
 type power_operand_kind_t =
   | PowerGPReg of int
@@ -1341,11 +1345,12 @@ type power_opcode_t =
 class type power_dictionary_int =
   object
 
-    method index_power_opkind: power_operand_kind_t -> int
-    method index_power_operand: power_operand_int -> int
-    method index_power_opcode: power_opcode_t -> int
+    method index_pwr_opkind: power_operand_kind_t -> int
+    method index_pwr_operand: power_operand_int -> int
+    method index_pwr_branch_prediction: power_branch_prediction_t -> int
+    method index_pwr_opcode: power_opcode_t -> int
 
-    method write_xml_power_opcode:
+    method write_xml_pwr_opcode:
              ?tag:string -> xml_element_int -> power_opcode_t -> unit
 
     method write_xml: xml_element_int -> unit
@@ -1371,6 +1376,7 @@ class type power_assembly_instruction_int =
     method is_block_entry: bool
     method is_not_code: bool
     method is_non_code_block: bool
+    method is_valid_instruction: bool
     method is_vle: bool
 
     (* i/o *)
@@ -1414,10 +1420,21 @@ class type power_assembly_instructions_int =
     method get_prev_valid_instruction_address:
              doubleword_int -> doubleword_int traceresult
 
+    (** [get_code_addresses_rev low high] returns the list of virtual addresses
+        bounded by [low] and [high] that hold valid instructions, in reverse
+        order. [low] defaults to [0x0], [high] defaults to [0xffffffff] *)
+    method get_code_addresses_rev:
+             ?low:doubleword_int
+             -> ?high:doubleword_int
+             -> unit
+             -> doubleword_int list
+
     (* iterators *)
     method iteri: (int -> power_assembly_instruction_int -> unit) -> unit
     method itera:
              (doubleword_int -> power_assembly_instruction_int -> unit) -> unit
+    method get_num_instructions: int
+    method get_num_unknown_instructions: int
 
     (* predicates *)
 
@@ -1446,14 +1463,35 @@ class type power_assembly_block_int =
   object
 
     (* accessors *)
-    method get_faddr: doubleword_int
-    method get_first_address: doubleword_int
-    method get_last_address: doubleword_int
+    method location: location_int
+    method context: context_t list
+    method context_string: ctxt_iaddress_t
+    method faddr: doubleword_int
+    method first_address: doubleword_int
+    method last_address: doubleword_int
+    method successors: ctxt_iaddress_t list
+
+    method get_instructions_rev:
+             ?high:doubleword_int
+             -> unit
+             -> power_assembly_instruction_int list
+    method get_instructions: power_assembly_instruction_int list
     method get_instruction: doubleword_int -> power_assembly_instruction_int
+
+    method get_bytes_as_hexstring: string
+    method get_instruction_count: int
 
     (* predicates *)
     method includes_instruction_address: doubleword_int -> bool
     method is_returning: bool
+
+    (* iterators *)
+    method itera:
+             ?low:doubleword_int
+             -> ?high:doubleword_int
+             -> ?reverse:bool
+             -> (ctxt_iaddress_t -> power_assembly_instruction_int -> unit)
+             -> unit
 
     (* printing *)
     method toString: string
@@ -1465,8 +1503,28 @@ class type power_assembly_function_int =
   object
 
     (* accessors *)
-    method get_address: doubleword_int
-    method get_blocks: power_assembly_block_int list
+    method faddr: doubleword_int
+    method blocks: power_assembly_block_int list
+    method cfg_edges: (ctxt_iaddress_t * ctxt_iaddress_t) list
+
+    method get_block: ctxt_iaddress_t -> power_assembly_block_int
+    method get_instruction: doubleword_int -> power_assembly_instruction_int
+    method get_bytes_as_hexstring: string
+    method get_function_md5: string
+    method get_instruction_count: int
+    method get_block_count: int
+    method get_not_valid_instr_count: int
+
+    (* iterators *)
+    method iter: (power_assembly_block_int -> unit) -> unit
+    method itera: (ctxt_iaddress_t -> power_assembly_block_int -> unit) -> unit
+    method iteri:
+             (doubleword_int
+              -> ctxt_iaddress_t
+              -> power_assembly_instruction_int
+              -> unit)
+             -> unit
+    method populate_callgraph: callgraph_int -> unit
 
     (* predicates *)
     method includes_instruction_address: doubleword_int -> bool
@@ -1480,15 +1538,38 @@ class type power_assembly_function_int =
 class type power_assembly_functions_int =
   object
 
+    (* reset *)
+    method reset: unit
+
     (* setters *)
     method add_function: power_assembly_function_int -> unit
+    method remove_function: doubleword_int -> unit
 
     (* accessors *)
-    method get_functions: power_assembly_function_int list
+    method get_callgraph: callgraph_int
+    method functions: power_assembly_function_int list
+    method get_function: dw_index_t -> power_assembly_function_int
     method get_function_by_address: doubleword_int -> power_assembly_function_int
+    method get_function_coverage:
+             int     (* coverage *)
+             * int   (* overlap *)
+             * int   (* multiplicity *)
+    method get_num_functions: int
+
+    (* iterators *)
+    method iter: (power_assembly_function_int -> unit) -> unit
+    method itera: (doubleword_int -> power_assembly_function_int -> unit) -> unit
+    method bottom_up_itera:
+             (doubleword_int -> power_assembly_function_int -> unit) -> unit
+    method top_down_itera:
+             (doubleword_int -> power_assembly_function_int -> unit) -> unit
 
     (* predicates *)
     method has_function_by_address: doubleword_int -> bool
     method includes_instruction_address: doubleword_int -> bool
+
+    (* printing *)
+    method dark_matter_to_string: string
+    method duplicates_to_string: string
 
   end

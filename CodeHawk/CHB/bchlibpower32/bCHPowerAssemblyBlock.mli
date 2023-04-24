@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022 Aarno Labs, LLC
+   Copyright (c) 2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,16 +25,46 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHPretty
+
 (* chutil *)
 open CHXmlDocument
 
 (* bchlib *)
 open BCHLibTypes
 
-(* bchpower32 *)
+(* bchlibpower32 *)
 open BCHPowerTypes
 
 
-val power_opcode_to_string: ?width:int -> power_opcode_t -> string
+(** [make_power_assembly_block ~ctxt faddr baddr laddr succ] returns a new basic
+    block with context [ctxt], function address [faddr], first address [baddr],
+    last address [laddr], and successors [succ].*)
+val make_power_assembly_block:
+  ?ctxt:context_t list    (* inline context, other function first *)
+  -> doubleword_int       (* function address *)
+  -> doubleword_int       (* first address of the basic block *)
+  -> doubleword_int       (* last address of the basic block *)
+  -> ctxt_iaddress_t list (* addresses of successor blocks *)
+  -> power_assembly_block_int
 
-val power_opcode_name: power_opcode_t -> string
+
+(** [make_ctxt_power_assembly_block ctxt blk succ] returns a new power basic 
+    block that is a copy of [blk] with added context [ctxt] and added successors
+    [succ]. This can be used to create an inlined block.*)
+val make_ctxt_power_assembly_block:
+  context_t               (* new context to be prepended *)
+  -> power_assembly_block_int
+  -> ctxt_iaddress_t list (* new successor blocks *)
+  -> power_assembly_block_int
+
+
+(** [update_power_assembly_block_successors block s_old s_new] returns a new
+    assembly basic block that is identical to [block] except that successor
+    [s_old] is replaced by (possibly multiple) successors [s_new].*)
+val update_power_assembly_block_successors:
+  power_assembly_block_int
+  -> ctxt_iaddress_t
+  -> ctxt_iaddress_t list
+  -> power_assembly_block_int
