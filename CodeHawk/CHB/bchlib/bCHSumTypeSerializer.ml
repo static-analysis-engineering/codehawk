@@ -131,20 +131,58 @@ let arm_reg_mfts: arm_reg_t mfts_int =
       (ARSP, "SP");
       (ARLR, "LR");
       (ARPC, "PC") ]
-                                                              
+
+
 let mips_special_reg_mfts: mips_special_reg_t mfts_int =
   mk_mfts "mips_special_reg_t" [(MMHi,"hi");  (MMLo,"lo")]
+
 
 let arm_special_reg_mfts: arm_special_reg_t mfts_int =
   mk_mfts
     "arm_special_reg_t"
     [(APSR, "APSR"); (FPSCR, "FPSCR"); (APSR_nzcv, "APSR_nzcv")]
 
+
+let power_spr_mfts: power_special_reg_t mfts_int =
+  mk_mfts
+    "power_special_reg_t"
+    [(PowerCR, "CR");
+     (PowerCTR, "CTR");
+     (PowerMSR, "MSR");
+     (PowerLR, "LR");
+     (PowerXER, "XER");
+     (PowerSRR0, "SRR0");
+     (PowerSRR1, "SRR1");
+     (PowerCSRR0, "CSRR0");
+     (PowerCSRR1, "CSRR1");
+     (PowerDSRR0, "DSRR0");
+     (PowerDSRR1, "DSRR1");
+     (PowerMCSRR0, "MCSRR0");
+     (PowerMCSRR1, "MCSRR1")]
+
+
+let power_crf_mfts: power_register_field_t mfts_int =
+  mk_mfts
+    "power_register_field_t"
+    [(PowerCR0, "CR0");
+     (PowerCR1, "CR1");
+     (PowerCR2, "CR2");
+     (PowerCR3, "CR3");
+     (PowerCR4, "CR4");
+     (PowerCR5, "CR5");
+     (PowerCR6, "CR6");
+     (PowerCR7, "CR7");
+     (PowerXERSO, "XERSO");
+     (PowerXEROV, "XEROV");
+     (PowerXERCA, "XERCA")]
+
+
 let segment_mfts: segment_t mfts_int =
   mk_mfts
     "segment_t"
     [ (StackSegment,"ss"); (CodeSegment,"cs"); (DataSegment,"ds");
       (ExtraSegment,"es"); (FSegment,"fs"); (GSegment,"gs") ]
+
 
 let arithmetic_op_mfts: arithmetic_op_t mfts_int =
   mk_mfts
@@ -200,10 +238,12 @@ object
     | ARMExtensionRegisterElement _ -> "armxe"
     | ARMExtensionRegisterReplicatedElement _ -> "armxr"
     | PowerGPRegister _ -> "pwrgpr"
+    | PowerSPRegister _ -> "pwrspr"
+    | PowerCRField _ -> "pwrcrf"
 
   method tags = [
       "a"; "armd"; "armx"; "armxe"; "armxr"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
-      "m"; "s"; "x"; "p"; "pfp"; "ps"; "pwrgpr"]
+      "m"; "s"; "x"; "p"; "pfp"; "ps"; "pwrcrf"; "pwrgpr"; "pwrspr"]
 
 end
 
