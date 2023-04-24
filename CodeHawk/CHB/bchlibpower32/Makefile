@@ -26,12 +26,18 @@ CAMLLINK := ocamlopt \
 MLIS := \
 	bCHPowerTypes \
 	bCHPowerPseudocode \
+	bCHPowerSumTypeSerializer \
 	bCHPowerOperand \
 	bCHPowerOpcodeRecords \
+	bCHPowerDictionary \
 	bCHPowerAssemblyInstruction \
 	bCHPowerAssemblyInstructions \
+	bCHPowerAssemblyBlock \
+	bCHPowerAssemblyFunction \
+	bCHPowerAssemblyFunctions \
 	bCHDisassemblePowerInstruction \
 	bCHDisassembleVLEInstruction \
+	bCHConstructPowerFunction \
 	bCHDisassemblePower \
 
 
@@ -39,12 +45,18 @@ CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
 	bCHPowerPseudocode \
+	bCHPowerSumTypeSerializer \
 	bCHPowerOperand \
 	bCHPowerOpcodeRecords \
+	bCHPowerDictionary \
 	bCHPowerAssemblyInstruction \
 	bCHPowerAssemblyInstructions \
+	bCHPowerAssemblyBlock \
+	bCHPowerAssemblyFunction \
+	bCHPowerAssemblyFunctions \
 	bCHDisassemblePowerInstruction \
 	bCHDisassembleVLEInstruction \
+	bCHConstructPowerFunction \
 	bCHDisassemblePower \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))

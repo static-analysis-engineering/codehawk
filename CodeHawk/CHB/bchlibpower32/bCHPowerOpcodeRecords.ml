@@ -1661,3 +1661,5 @@ let power_opcode_to_string ?(width=12) (opc: power_opcode_t) =
   let default () = (get_record opc).ida_asm formatter in
   default ()
                   
+
+let power_opcode_name (opc: power_opcode_t) = (get_record opc).mnemonic

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022 Aarno Labs, LLC
+   Copyright (c) 2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,16 +25,18 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chutil *)
-open CHXmlDocument
-
 (* bchlib *)
 open BCHLibTypes
 
-(* bchpower32 *)
+(* bchlibpower32 *)
 open BCHPowerTypes
 
 
-val power_opcode_to_string: ?width:int -> power_opcode_t -> string
-
-val power_opcode_name: power_opcode_t -> string
+(** [make_power_assembly_function faddr blocks succ] returns a new assembly 
+    function with function address [faddr], basic blocks [blocks], and successor 
+    relation on basic block start addresses [succ].*)
+val make_power_assembly_function:
+  doubleword_int  (* function address *)
+  -> power_assembly_block_int list   (* basic blocks *)
+  -> (ctxt_iaddress_t * ctxt_iaddress_t) list   (* block successor relation *)
+  -> power_assembly_function_int

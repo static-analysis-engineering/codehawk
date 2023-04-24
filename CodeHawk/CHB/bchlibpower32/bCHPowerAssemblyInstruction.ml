@@ -73,6 +73,12 @@ object (self)
     | NotCode (Some _) -> true
     | _ -> false
 
+  method is_valid_instruction: bool =
+    match opcode with
+    | OpInvalid -> false
+    | NotCode _ -> false
+    | _ -> true
+
   method is_not_code = match opcode with NotCode _ -> true | _ -> false
 
   method get_opcode = opcode

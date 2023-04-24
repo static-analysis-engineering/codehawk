@@ -394,6 +394,51 @@ object (self)
                  p]))
    *)
 
+  method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
+    let low = if low#lt codeBase then codeBase else low in
+    let high =
+      if (codeBase#add_int length)#lt high then
+        codeBase#add_int (length-1)
+      else
+        high in
+    let high = if high#lt low then low else high in
+    let addresses = ref [] in
+    let _ =
+      log_titer
+        (mk_tracelog_spec
+           ~tag:"disassembly"
+           ("get_code_addresses_rev:low:" ^ low#to_hex_string))
+        (fun lowindex ->
+          log_titer
+            (mk_tracelog_spec
+               ~tag:"disassembly"
+               ("get_code_addresses_rev:high:" ^ high#to_hex_string))
+            (fun highindex ->
+              begin
+                for i = lowindex to highindex do
+                  (match TR.to_option (get_instruction i) with
+                   | Some instr ->
+                      if instr#is_valid_instruction then
+                        addresses := (codeBase#add_int i) :: !addresses
+                   | _ -> ())
+                done;
+              end)
+            (self#indexresult high))
+        (self#indexresult low) in
+    !addresses
+
+  method get_num_instructions =
+    (List.length (self#get_code_addresses_rev ()))
+
+  method get_num_unknown_instructions =
+    let n = ref 0 in
+    let _ =
+      self#iteri (fun _ instr ->
+          match instr#get_opcode with
+          | NotRecognized _ -> n := !n + 1
+          | _ -> ()) in
+    !n
+
   method iteri (f: int -> power_assembly_instruction_int -> unit) =
     iteri_instructions
       (fun i instr -> if i < len then f i instr else ())

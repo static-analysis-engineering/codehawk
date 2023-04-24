@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022 Aarno Labs, LLC
+   Copyright (c) 2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,16 +25,25 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chutil *)
-open CHXmlDocument
-
 (* bchlib *)
 open BCHLibTypes
 
-(* bchpower32 *)
+(* bchlibpower32 *)
 open BCHPowerTypes
 
 
-val power_opcode_to_string: ?width:int -> power_opcode_t -> string
+(** Provides the access point to retrieve assembly functions. *)
 
-val power_opcode_name: power_opcode_t -> string
+
+(** Return the (sole instance) [arm_power_functions] object with access to all
+    assembly functions *)
+val power_assembly_functions: power_assembly_functions_int
+
+
+(** [get_power_assembly_function faddr] returns the assembly function with
+    address [faddr]. *)
+val get_power_assembly_function: doubleword_int -> power_assembly_function_int
+
+
+(** Return metrics on all functions. *)
+val get_power_disassembly_metrics: unit -> disassembly_metrics_t
