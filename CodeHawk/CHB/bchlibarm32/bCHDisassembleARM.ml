@@ -729,7 +729,8 @@ let check_function_validity (fn: arm_assembly_function_int): bool =
   end
 
 
-(* Returns a list of newly discovered function entry points *)
+(* Returns a list of newly discovered function entry points (obtained from
+   tail calls) *)
 let construct_assembly_function
       ?(check=false) (count:int) (faddr:doubleword_int): doubleword_int list =
       try
