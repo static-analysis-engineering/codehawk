@@ -217,8 +217,8 @@ object (self)
       | ARMExtensionRegisterReplicatedElement xrre ->
          (tags, [self#index_arm_extension_register_replicated_element xrre])
       | PowerGPRegister r -> (tags, [r])
-      | PowerSPRegister r -> (tags @ [power_spr_mfts#ts r], [])
-      | PowerCRField r -> (tags @ [power_crf_mfts#ts r], []) in
+      | PowerSPRegister r -> (tags @ [pwr_spr_mfts#ts r], [])
+      | PowerCRField r -> (tags @ [pwr_crf_mfts#ts r], []) in
     register_table#add key
 
   method get_register (index:int) =
