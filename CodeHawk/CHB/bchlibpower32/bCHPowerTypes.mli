@@ -609,8 +609,8 @@ type power_opcode_t =
   | ClearLeftWordImmediate of
       power_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* rA: destination register *)
-      * power_operand_int  (* rS: source register *)
+      * power_operand_int  (* ra: destination register *)
+      * power_operand_int  (* rs: source register *)
       * power_operand_int  (* mb: mask begin *)
 
   (* Simplified mnemonic, EREF:B-3, VLEPIM:Table A-23
@@ -1317,7 +1317,7 @@ type power_opcode_t =
   (* EREF:6-375 *)
   | Xor of
       power_instruction_type_t
-      * bool               (* record condition *)
+      * bool               (* rc: record condition *)
       * power_operand_int  (* ra: destination register *)
       * power_operand_int  (* rs: source 1 register *)
       * power_operand_int  (* rb: source 2 register *)
@@ -1326,8 +1326,8 @@ type power_opcode_t =
   (* EREF:6-376, VLEPEM:3-75 *)
   | XorImmediate of
       power_instruction_type_t
-      * bool               (* record condition *)
-      * bool               (* shifted *)
+      * bool               (* rc: record condition *)
+      * bool               (* s: shifted *)
       * power_operand_int  (* ra: destination register *)
       * power_operand_int  (* rs: source register *)
       * power_operand_int  (* uimm: unsigned immediate *)
@@ -1572,4 +1572,87 @@ class type power_assembly_functions_int =
     method dark_matter_to_string: string
     method duplicates_to_string: string
 
+  end
+
+
+class type power_code_pc_int =
+  object
+
+    (* accessors *)
+    method get_next_instruction: ctxt_iaddress_t * power_assembly_instruction_int
+    method block_successors: ctxt_iaddress_t list
+    method get_block_successor: ctxt_iaddress_t
+    method get_false_branch_successor: ctxt_iaddress_t
+    method get_true_branch_successor: ctxt_iaddress_t
+    method get_conditional_successor_info:
+             (location_int
+              * location_int
+              * ctxt_iaddress_t
+              * ctxt_iaddress_t
+              * xpr_t)
+
+    (* predicates *)
+    method has_more_instructions: bool
+    method has_conditional_successor: bool
+  end
+
+
+class type power_chif_system_int =
+  object
+
+    (* reset *)
+    method reset: unit
+
+    (* setters *)
+    method add_power_procedure: procedure_int -> unit
+
+    (* accessors *)
+    method get_power_system: system_int
+    method get_power_procedure_names: symbol_t list
+    method get_power_procedure: doubleword_int -> procedure_int
+
+    (* predicates *)
+    method has_power_procedure: doubleword_int -> bool
+  end
+
+
+class type power_opcode_dictionary_int =
+  object
+
+    method index_sp_offset: int * interval_t -> int
+
+    (** [index_instr instr floc] indexes the variable locations and
+        invariant expressions associated with the arguments of [instr],
+        made accessible via the function location [floc].*)
+    method index_instr:
+             power_assembly_instruction_int
+             -> floc_int
+             -> int
+
+    method get_sp_offset: int -> (int * interval_t)
+
+    method write_xml_sp_offset:
+             ?tag:string
+             -> xml_element_int
+             -> int * interval_t
+             -> unit
+    method write_xml_instr:
+             ?tag:string
+             -> xml_element_int
+             -> power_assembly_instruction_int
+             -> floc_int
+             -> unit
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+    method toPretty: pretty_t
+  end
+
+
+class type power_analysis_results_int =
+  object
+    method record_results: ?save:bool -> power_assembly_function_int -> unit
+    method write_xml: xml_element_int -> unit
+    method save: unit
   end
