@@ -89,6 +89,8 @@ open BCHDisassembleARMStream
 
 (* bchlibpower32 *)
 open BCHDisassemblePower
+open BCHPowerAnalysisResults
+open BCHPowerAssemblyFunctions
 
 (* bchanalyze *)
 open BCHAnalysisTypes
@@ -491,9 +493,12 @@ let main () =
       let _ = pr_debug [STR "Load Power file ..."; NL] in
       let _ = load_elf_files () in
       let _ = pr_debug [STR "Disassemble sections ..."; NL] in
-      let _ = disassemble_power_sections () in
-      let _ = construct_functions_power () in
-      let instrs = !BCHPowerAssemblyInstructions.power_assembly_instructions in
+      let _ = disassemble_pwr_sections () in
+      let _ = construct_functions_pwr () in
+      let _ = disassembly_summary#set_disassembly_metrics
+                (get_pwr_disassembly_metrics ()) in
+      let _ = pr_debug [NL; NL; disassembly_summary#toPretty; NL] in
+      let instrs = !BCHPowerAssemblyInstructions.pwr_assembly_instructions in
       begin
         pverbose [STR "Saving asm file ..."; NL];
         file_output#saveFile
@@ -753,6 +758,42 @@ let main () =
                (get_orphan_code_listing_filename ())
                (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)))
            end);
+        save_log_files logcmd;
+        exit 0
+      end
+
+    else if !cmd = "analyze" && !architecture = "power" && !fileformat = "elf" then
+      let _ = system_info#set_elf in
+      let _ = system_info#set_power in
+      let _ = load_bcdictionary () in
+      let _ = load_bdictionary () in
+      let _ = load_bc_files () in
+      let _ = system_info#initialize in
+      let _ = load_interface_dictionary in
+      let _ = load_pwr_dictionary () in
+      let _ = global_system_state#initialize in
+      let _ = file_metrics#load_xml in
+      let _ = load_elf_files () in
+      let index = file_metrics#get_index in
+      let logcmd = "analyze_" ^ (string_of_int index) in
+      let analysisstart = Unix.gettimeofday () in
+      let _ = disassemble_pwr_sections () in
+      let _ = construct_functions_pwr () in
+      let _ = analyze_pwr analysisstart in
+      let _ =
+        file_metrics#set_disassembly_results
+          (get_pwr_disassembly_metrics ()) in
+      begin
+        save_functions_list ();
+        save_system_info ();
+        save_file_results ();
+        save_global_state ();
+        pwr_analysis_results#save;
+        save_pwr_dictionary ();
+        save_bc_files ();
+        save_interface_dictionary ();
+        save_bcdictionary ();
+        save_bdictionary ();
         save_log_files logcmd;
         exit 0
       end

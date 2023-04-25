@@ -1,12 +1,10 @@
 (* =============================================================================
    CodeHawk Binary Analyzer 
-   Author: Henny Sipma
+   Author: Henny Sipma and Andrew McGraw
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,38 +31,26 @@ open CHXmlDocument
 (* bchlib *)
 open BCHLibTypes
 
-(* bchlibx86 *)
-open BCHLibx86Types
+(* bchlibpower32 *)
+open BCHPowerTypes
 
 
-val save_functions_list: unit -> unit
-val save_global_state: unit -> unit
-val save_system_info: unit -> unit
-val save_resultmetrics: xml_element_int -> unit
-val save_disassembly_status: unit -> unit
-val save_function_asm: assembly_function_int -> unit
-val save_x86dictionary: unit -> unit
+val get_pwr_op_metrics:
+  pwr_assembly_function_int
+  -> function_info_int
+  -> int * int * int * int
 
-val save_mips_dictionary: unit -> unit
-val save_mips_assembly_instructions: unit -> unit
+val get_pwr_stackpointer_metrics:
+  pwr_assembly_function_int
+  -> function_info_int
+  -> int * int
 
-val save_arm_dictionary: unit -> unit
-val save_arm_assembly_instructions: unit -> unit
+val get_pwr_memory_access_metrics:
+  pwr_assembly_function_int
+  -> function_info_int
+  -> memacc_metrics_t
 
-val save_pwr_dictionary: unit -> unit
-val save_pwr_assembly_instructions: unit -> unit
-
-val save_function_info: function_info_int -> unit
-val save_function_variables: function_info_int -> unit
-val save_function_type_invariants: function_info_int -> unit
-val save_function_invariants: function_info_int -> unit
-val save_function_var_invariants: function_info_int -> unit
-val save_function_summary: function_info_int -> unit
-val save_results_jni_calls: unit -> unit
-
-val load_system_info: unit -> xml_element_int option
-val load_x86dictionary: unit -> unit
-val load_mips_dictionary: unit -> unit
-val load_arm_dictionary: unit -> unit
-val load_pwr_dictionary: unit -> unit
-  
+val get_pwr_cfg_metrics:
+  pwr_assembly_function_int
+  -> function_environment_int
+  -> cfg_metrics_t
