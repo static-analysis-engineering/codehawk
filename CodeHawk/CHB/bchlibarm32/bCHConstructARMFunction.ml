@@ -467,7 +467,9 @@ let construct_arm_assembly_block
             (List.map (make_location_by_address faddr) l) in
   (inlinedblocks, make_arm_assembly_block faddr baddr lastaddr succ, newfnentries#toList)
 
-                             
+
+(* Constructs an assembly function. In the process it may discover a
+   tail-call, which is reported back as a new function entry point. *)
 let construct_arm_assembly_function
       (faddr: doubleword_int):(doubleword_int list * arm_assembly_function_int) =
   let newfnentries = new DoublewordCollections.set_t in
