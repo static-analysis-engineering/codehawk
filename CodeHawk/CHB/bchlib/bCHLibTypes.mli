@@ -2762,6 +2762,8 @@ class type function_environment_int =
     method mk_arm_double_extension_register_variable:
              arm_extension_register_t -> arm_extension_register_t -> variable_t
 
+    method mk_power_gp_register_variable: int -> variable_t
+
     method mk_global_variable: ?size:int -> numerical_t -> variable_t
 
     method mk_initial_register_value: ?level:int -> register_t -> variable_t
