@@ -99,6 +99,7 @@ object (self)
   method index_pwr_opcode (opc: power_opcode_t) =
     let setb x = if x then 1 else 0 in
     let oi = self#index_pwr_operand in
+    let pi = self#index_pwr_branch_prediction in
     let tags = [power_opcode_name opc] in
     let itags t = tags @ [pwr_itype_mfts#ts t] in
     let key = match opc with
@@ -112,7 +113,242 @@ object (self)
           [setb rc; setb oe; oi rd; oi ra; oi rb; oi cr; oi so; oi ov; oi ca])
       | AddImmediate (pit, s, op2, op16, rc, rd, ra, simm, cr) ->
          (itags pit,
-          [setb s; setb op2; setb op16; setb rc; oi rd; oi ra; oi simm; oi cr]) in
+          [setb s; setb op2; setb op16; setb rc; oi rd; oi ra; oi simm; oi cr])
+      | AddImmediateCarrying (pit, rc, rd, ra, simm, cr, ca) ->
+         (itags pit, [setb rc; oi rd; oi ra; oi simm; oi cr; oi ca])
+      | AddMinusOneExtended (pit, rc, oe, rd, ra, cr, ca, so, ov) ->
+         (itags pit,
+          [setb rc; setb oe; oi rd; oi ra; oi cr; oi ca; oi so; oi ov])
+      | AddZeroExtended (pit, rc, oe, rd, ra, cr, ca, so, ov) ->
+         (itags pit,
+          [setb rc; setb oe; oi rd; oi ra; oi cr; oi ca; oi so; oi ov])
+      | And (pit, rc, ra, rs, rb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
+      | AndComplement (pit, rc, ra, rs, rb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
+      | AndImmediate (pit, s, op2, rc, ra, rs, uimm, cr) ->
+         (itags pit, [setb s; setb op2; setb rc; oi ra; oi rs; oi uimm; oi cr])
+      | BitClearImmediate (pit, rx, ui5) -> (itags pit, [oi rx; oi ui5])
+      | BitGenerateImmediate (pit, rx, ui5) -> (itags pit, [oi rx; oi ui5])
+      | BitMaskGenerateImmediate (pit, rx, ui5) -> (itags pit, [oi rx; oi ui5])
+      | BitSetImmediate (pit, rx, ui5) -> (itags pit, [oi rx; oi ui5])
+      | BitTestImmediate (pit, rx, uimm, cr) ->
+         (itags pit, [oi rx; oi uimm; oi cr])
+      | Branch (pit, tgt) -> (itags pit, [oi tgt])
+      | BranchConditional (pit, aa, bo, bi, bd) ->
+         (itags pit, [setb aa; bo; bi; oi bd])
+      | BranchConditionalLinkRegister (pit, bo, bi, bh, lr) ->
+         (itags pit, [bo; bi; bh; oi lr])
+      | BranchConditionalLinkRegisterLink (pit, bo, bi, bh, lr) ->
+         (itags pit, [bo; bi; bh; oi lr])
+      | BranchCountRegister (pit, ctr) -> (itags pit, [oi ctr])
+      | BranchCountRegisterLink (pit, ctr) -> (itags pit, [oi ctr])
+      | BranchLink (pit, tgt, lr) -> (itags pit, [oi tgt; oi lr])
+      | BranchLinkRegister (pit, lr) -> (itags pit, [oi lr])
+      | BranchLinkRegisterLink (pit, lr) -> (itags pit, [oi lr])
+      | CBranchDecrementNotZero (pit, aa, bo, bi, bp, bd, ctr) ->
+         (itags pit, [setb aa; bo; bi; pi bp; oi bd; oi ctr])
+      | CBranchDecrementZero (pit, aa, bo, bi, bp, bd, ctr) ->
+         (itags pit, [setb aa; bo; bi; pi bp; oi bd; oi ctr])
+      | CBranchEqual (pit, aa, bo, bi, bp, cr, bd) ->
+         (itags pit, [setb aa; bo; bi; pi bp; oi cr; oi bd])
+      | CBranchEqualLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+         (itags pit, [bo; bi; bh; pi bp; oi cr; oi lr])
+      | CBranchGreaterEqual (pit, aa, bo, bi, bp, cr, bd) ->
+         (itags pit, [setb aa; bo; bi; pi bp; oi cr; oi bd])
+      | CBranchGreaterEqualLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+         (itags pit, [bo; bi; bh; pi bp; oi cr; oi lr])
+      | CBranchGreaterThan (pit, aa, bo, bi, bp, cr, bd) ->
+         (itags pit, [setb aa; bo; bi; pi bp; oi cr; oi bd])
+      | CBranchGreaterThanLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+         (itags pit, [bo; bi; bh; pi bp; oi cr; oi lr])
+      | CBranchLessEqual (pit, aa, bo, bi, bp, cr, bd) ->
+         (itags pit, [setb aa; bo; bi; pi bp; oi cr; oi bd])
+      | CBranchLessEqualLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+         (itags pit, [bo; bi; bh; pi bp; oi cr; oi lr])
+      | CBranchLessThan (pit, aa, bo, bi, bp, cr, bd) ->
+         (itags pit, [setb aa; bo; bi; pi bp; oi cr; oi bd])
+      | CBranchLessThanLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+         (itags pit, [bo; bi; bh; pi bp; oi cr; oi lr])
+      | CBranchNotEqual (pit, aa, bo, bi, bp, cr, bd) ->
+         (itags pit, [setb aa; bo; bi; pi bp; oi cr; oi bd])
+      | CBranchNotEqualLinkRegister (pit, bo, bi, bh, bp, cr, lr) ->
+         (itags pit, [bo; bi; bh; pi bp; oi cr; oi lr])
+      | ClearLeftShiftLeftWordImmediate (pit, rc, ra, rs, mb, sh, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi mb; oi sh; oi cr])
+      | ClearLeftWordImmediate (pit, rc, ra, rs, mb) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi mb])
+      | ClearRightWordImmediate (pit, rc, ra, rs, me, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi me; oi cr])
+      | CompareImmediate (pit, op16, cr, ra, simm) ->
+         (itags pit, [setb op16; oi cr; oi ra; oi simm])
+      | CompareLogical (pit, cr, ra, rb) ->
+         (itags pit, [oi cr; oi ra; oi rb])
+      | CompareLogicalImmediate (pit, op16, cr, ra, uimm) ->
+         (itags pit, [setb op16; oi cr; oi ra; oi uimm])
+      | CompareWord (pit, cr, ra, rb) ->
+         (itags pit, [oi cr; oi ra; oi rb])
+      | ComplementRegister (pit, rc, ra, rb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rb; oi cr])
+      | ConditionRegisterNot (pit, crd, cra) -> (itags pit, [oi crd; oi cra])
+      | ConditionRegisterOr (pit, crd, cra, crb) ->
+         (itags pit, [oi crd; oi cra; oi crb])
+      | CountLeadingZerosWord (pit, rc, ra, rs, cr0) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi cr0])
+      | DivideWord (pit, rc, oe, rd, ra, rb, cr, so, ov) ->
+         (itags pit,
+          [setb rc; setb oe; oi rd; oi ra; oi rb; oi cr; oi so; oi ov])
+      | DivideWordUnsigned (pit, rc, eo, rd, ra, rb, cr, so, ov) ->
+         (itags pit,
+          [setb rc; setb eo; oi rd; oi ra; oi rb; oi cr; oi so; oi ov])
+      | EnforceInOrderExecutionIO (pit, mo) -> (itags pit, [oi mo])
+      | ExtendSignByte (pit, rc, ra, rs, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi cr])
+      | ExtendSignHalfword (pit, rc, ra, rs, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi cr])
+      | ExtendZeroByte (pit, rx) -> (itags pit, [oi rx])
+      | ExtendZeroHalfword (pit, rx) -> (itags pit, [oi rx])
+      | ExtractRightJustifyWordImmediate (pit, rc, ra, rs, n, b, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi n; oi b; oi cr])
+      | InsertRightWordImmediate (pit, rc, ra, rs, sh, mb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi sh; oi mb; oi cr])
+      | InstructionSynchronize pit -> (itags pit, [])
+      | IntegerSelect (pit, rd, ra, rb, crb) ->
+         (itags pit, [oi rd; oi ra; oi rb; oi crb])
+      | IntegerSelectEqual (pit, rd, ra, rb, cr) ->
+         (itags pit, [oi rd; oi ra; oi rb; oi cr])
+      | IntegerSelectGreaterThan (pit, rd, ra, rb, cr) ->
+         (itags pit, [oi rd; oi ra; oi rb; oi cr])
+      | IntegerSelectLessThan (pit, rd, ra, rb, cr) ->
+         (itags pit, [oi rd; oi ra; oi rb; oi cr])
+      | LoadByteZero (pit, u, rd, ra, mem) ->
+         (itags pit, [setb u; oi rd; oi ra; oi mem])
+      | LoadByteZeroIndexed (pit, u, rd, ra, rb, mem) ->
+         (itags pit, [setb u; oi rd; oi ra; oi rb; oi mem])
+      | LoadHalfwordZero (pit, u, rd, ra, mem) ->
+         (itags pit, [setb u; oi rd; oi ra; oi mem])
+      | LoadImmediate (pit, sg, sh, rd, imm) ->
+         (itags pit, [setb sg; setb sh; oi rd; oi imm])
+      | LoadMultipleVolatileGPRWord (pit, ra, mem) ->
+         (itags pit, [oi ra; oi mem])
+      | LoadMultipleVolatileSPRWord (pit, ra, mem, cr, lr, ctr, xer) ->
+         (itags pit, [oi ra; oi mem; oi cr; oi lr; oi ctr; oi xer])
+      | LoadMultipleVolatileSRRWord (pit, ra, mem, srr0, srr1) ->
+         (itags pit, [oi ra; oi mem; oi srr0; oi srr1])
+      | LoadMultipleWord (pit, rd, ra, mem) ->
+         (itags pit, [oi rd; oi ra; oi mem])
+      | LoadWordZero (pit, u, rd, ra, mem) ->
+         (itags pit, [setb u; oi rd; oi ra; oi mem])
+      | LoadWordZeroIndexed (pit, u, rd, ra, rb, mem) ->
+         (itags pit, [setb u; oi rd; oi ra; oi rb; oi mem])
+      | MemoryBarrier (pit, mo) -> (itags pit, [oi mo])
+      | MoveConditionRegisterField (pit, crfd, crs) ->
+         (itags pit, [oi crfd; oi crs])
+      | MoveFromAlternateRegister (pit, rx, ary) -> (itags pit, [oi rx; oi ary])
+      | MoveFromConditionRegister (pit, rd, cr) -> (itags pit, [oi rd; oi cr])
+      | MoveFromCountRegister (pit, rx, ctr) -> (itags pit, [oi rx; oi ctr])
+      | MoveFromExceptionRegister (pit, rd, xer) -> (itags pit, [oi rd; oi xer])
+      | MoveFromLinkRegister (pit, rd, lr) -> (itags pit, [oi rd; oi lr])
+      | MoveFromMachineStateRegister (pit, rd, msr) ->
+         (itags pit, [oi rd; oi msr])
+      | MoveFromSpecialPurposeRegister (pit, rd, spr) ->
+         (itags pit, [oi rd; oi spr])
+      | MoveRegister (pit, rc, rd, rs) -> (itags pit, [setb rc; oi rd; oi rs])
+      | MoveToAlternateRegister (pit, arx, ry) -> (itags pit, [oi arx; oi ry])
+      | MoveToConditionRegister (pit, cr, rs) -> (itags pit, [oi cr; oi rs])
+      | MoveToConditionRegisterFields (pit, crm, rs) ->
+         (itags pit, [oi crm; oi rs])
+      | MoveToCountRegister (pit, ctr, rs) -> (itags pit, [oi ctr; oi rs])
+      | MoveToExceptionRegister (pit, xer, rs) -> (itags pit, [oi xer; oi rs])
+      | MoveToLinkRegister (pit, lr, rs) -> (itags pit, [oi lr; oi rs])
+      | MoveToMachineStateRegister (pit, msr, rs) -> (itags pit, [oi msr; oi rs])
+      | MoveToSpecialPurposeRegister (pit, spr, rs) ->
+         (itags pit, [oi spr; oi rs])
+      | MultiplyHighWordUnsigned (pit, rc, rd, ra, rb, cr) ->
+         (itags pit, [setb rc; oi rd; oi ra; oi rb; oi cr])
+      | MultiplyLowImmediate (pit, op2, rd, ra, simm) ->
+         (itags pit, [setb op2; oi rd; oi ra; oi simm])
+      | MultiplyLowWord (pit, rc, oe, rd, ra, rb, cr, so, ov) ->
+         (itags pit, [setb rc; setb oe; oi rd; oi ra; oi rb; oi cr; oi so; oi ov])
+      | Negate (pit, rc, oe, rd, ra, cr, so, ov) ->
+         (itags pit, [setb rc; setb oe; oi rd; oi ra; oi cr; oi so; oi ov])
+      | Or (pit, rc, ra, rs, rb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
+      | OrImmediate (pit, rc, s, op2, ra, rs, uimm, cr) ->
+         (itags pit, [setb rc; setb s; setb op2; oi ra; oi rs; oi uimm; oi cr])
+      | ReturnFromDebugInterrupt (pit, msr, dsr0, dsr1) ->
+         (itags pit, [oi msr; oi dsr0; oi dsr1])
+      | ReturnFromInterrupt (pit, msr, sr0, sr1) ->
+         (itags pit, [oi msr; oi sr0; oi sr1])
+      | ReturnFromMachineCheckInterrupt (pit, msr, mcsr0, mcsr1) ->
+         (itags pit, [oi msr; oi mcsr0; oi mcsr1])
+      | RotateLeftWord (pit, rc, ra, rs, rb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
+      | RotateLeftWordImmediateAndMask (pit, rc, ra, rs, sh, mb, me, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi sh; oi mb; oi me; oi cr])
+      | ShiftLeftWord (pit, rc, ra, rs, rb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
+      | ShiftLeftWordImmediate (pit, rc, ra, rs, sh, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi sh; oi cr])
+      | ShiftRightAlgebraicWord (pit, rc, ra, rs, rb, cr, ca) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr; oi ca])
+      | ShiftRightAlgebraicWordImmediate (pit, rc, ra, rs, sh, cr, ca) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi sh; oi cr; oi ca])
+      | ShiftRightWord (pit, rc, ra, rs, rb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
+      | ShiftRightWordImmediate (pit, rc, ra, rs, sh, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi sh; oi cr])
+      | StoreByte (pit, u, rs, ra, mem) ->
+         (itags pit, [setb u; oi rs; oi ra; oi mem])
+      | StoreByteIndexed (pit, u, rs, ra, rb, mem) ->
+         (itags pit, [setb u; oi rs; oi ra; oi rb; oi mem])
+      | StoreHalfword (pit, u, rs, ra, mem) ->
+         (itags pit, [setb u; oi rs; oi ra; oi mem])
+      | StoreHalfwordIndexed (pit, u, rs, ra, rb, mem) ->
+         (itags pit, [setb u; oi rs; oi ra; oi rb; oi mem])
+      | StoreMultipleWord (pit, rs, ra, mem) ->
+         (itags pit, [oi rs; oi ra; oi mem])
+      | StoreMultipleVolatileGPRWord (pit, ra, mem) ->
+         (itags pit, [oi ra; oi mem])
+      | StoreMultipleVolatileSPRWord (pit, ra, mem, cr, lr, ctr, xer) ->
+         (itags pit, [oi ra; oi mem; oi cr; oi lr; oi ctr; oi xer])
+      | StoreMultipleVolatileSRRWord (pit, ra, mem, srr0, srr1) ->
+         (itags pit, [oi ra; oi mem; oi srr0; oi srr1])
+      | StoreWord (pit, u, rs, ra, mem) ->
+         (itags pit, [setb u; oi rs; oi ra; oi mem])
+      | StoreWordIndexed (pit, u, rs, ra, rb, mem) ->
+         (itags pit, [setb u; oi rs; oi ra; oi rb; oi mem])
+      | Subtract (pit, rx, ry) -> (itags pit, [oi rx; oi ry])
+      | SubtractFrom (pit, rc, oe, rd, ra, rb, cr, so, ov) ->
+         (itags pit, [setb rc; setb oe; oi rd; oi ra; oi rb; oi cr; oi so; oi ov])
+      | SubtractFromCarrying (pit, rc, oe, rd, ra, rb, cr, ca, so, ov) ->
+         (itags pit,
+          [setb rc; setb oe; oi rd; oi ra; oi rb; oi cr; oi ca; oi so; oi ov])
+      | SubtractFromExtended (pit, rc, oe, rd, ra, rb, cr, ca, so, ov) ->
+         (itags pit,
+          [setb rc; setb oe; oi rd; oi ra; oi rb; oi cr; oi ca; oi so; oi ov])
+      | SubtractFromImmediateCarrying (pit, rc, rd, ra, simm, cr, ca) ->
+         (itags pit, [setb rc; oi rd; oi ra; oi simm; oi cr; oi ca])
+      | SubtractFromZeroExtended (pit, rc, oe, rd, ra, cr, so, ov, ca) ->
+         (itags pit,
+          [setb rc; setb oe; oi rd; oi ra; oi cr; oi so; oi ov; oi ca])
+      | SubtractImmediate (pit, rc, rd, ra, imm, cr) ->
+         (itags pit, [setb rc; oi rd; oi ra; oi imm; oi cr])
+      | TLBWriteEntry (pit) -> (itags pit, [])
+      | WriteMSRExternalEnableImmediate (pit, enable, msr) ->
+         (itags pit, [setb enable; oi msr])
+      | Xor (pit, rc, ra, rs, rb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
+      | XorImmediate (pit, rc, s, ra, rs, uimm, cr) ->
+         (itags pit, [setb rc; setb s; oi ra; oi rs; oi uimm; oi cr])
+      | OpInvalid -> (tags, [])
+      | NotCode _ -> (tags, [])
+      | NoOperation -> (tags, [])
+      | OpcodeIllegal i -> (tags, [i])
+      | OpcodeUnpredictable s -> (tags, [bd#index_string s])
+      | OpcodeUndefined s -> (tags, [bd#index_string s])
+      | NotRecognized (s, dw) -> (tags @ [s; dw#to_hex_string], [])
+    in
     pwr_opcode_table#add key
 
   method write_xml_pwr_opcode
