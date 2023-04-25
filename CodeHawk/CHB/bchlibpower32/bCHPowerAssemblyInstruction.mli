@@ -31,9 +31,9 @@ open BCHLibTypes
 (* bchlibpower32 *)
 open BCHPowerTypes
 
-val make_power_assembly_instruction:
+val make_pwr_assembly_instruction:
   doubleword_int
   -> bool    (* is_vle *)
-  -> power_opcode_t
+  -> pwr_opcode_t
   -> string
-  -> power_assembly_instruction_int
+  -> pwr_assembly_instruction_int

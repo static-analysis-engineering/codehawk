@@ -32,5 +32,5 @@ open BCHLibTypes
 open BCHPowerTypes
 
 
-val disassemble_power_instruction:
-  pushback_stream_int -> doubleword_int -> doubleword_int -> power_opcode_t
+val disassemble_pwr_instruction:
+  pushback_stream_int -> doubleword_int -> doubleword_int -> pwr_opcode_t

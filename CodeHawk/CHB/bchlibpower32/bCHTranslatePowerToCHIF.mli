@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023  Aarno Labs LLC
+   Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,9 +36,9 @@ open BCHLibTypes
 open BCHPowerTypes
 
 
-val translate_power_instruction:
+val translate_pwr_instruction:
   funloc:location_int
-  -> codepc:power_code_pc_int
+  -> codepc:pwr_code_pc_int
   -> blocklabel:symbol_t
   -> exitlabel:symbol_t
   -> cmds:cmd_t list
@@ -48,4 +48,4 @@ val translate_power_instruction:
       * cmd_t list)
 
 
-val translate_power_assembly_function: power_assembly_function_int -> unit
+val translate_pwr_assembly_function: pwr_assembly_function_int -> unit

@@ -44,25 +44,25 @@ open BCHPowerTypes
 module LF = CHOnlineCodeSet.LanguageFactory
 
 
-let make_power_proc_name (addr: doubleword_int) =
+let make_pwr_proc_name (addr: doubleword_int) =
   doubleword_to_symbol "proc" addr
 
 
-class power_chif_system_t: power_chif_system_int =
+class pwr_chif_system_t: pwr_chif_system_int =
 object (self)
 
-  val mutable system = LF.mkSystem (new symbol_t "power-analysis-system")
+  val mutable system = LF.mkSystem (new symbol_t "pwr-analysis-system")
 
-  method reset = system <- LF.mkSystem (new symbol_t "power-analysis-system")
+  method reset = system <- LF.mkSystem (new symbol_t "pwr-analysis-system")
 
-  method add_power_procedure (p: procedure_int) = system#addProcedure p
+  method add_pwr_procedure (p: procedure_int) = system#addProcedure p
 
-  method get_power_procedure_names = system#getProcedures
+  method get_pwr_procedure_names = system#getProcedures
 
-  method get_power_system = system
+  method get_pwr_system = system
 
-  method get_power_procedure (faddr: doubleword_int) =
-    let procname = make_power_proc_name faddr in
+  method get_pwr_procedure (faddr: doubleword_int) =
+    let procname = make_pwr_proc_name faddr in
     if system#hasProcedure procname then
       system#getProcedure procname
     else
@@ -74,10 +74,10 @@ object (self)
         raise (BCH_failure msg)
       end
 
-  method has_power_procedure (faddr: doubleword_int) =
-    system#hasProcedure (make_power_proc_name faddr)
+  method has_pwr_procedure (faddr: doubleword_int) =
+    system#hasProcedure (make_pwr_proc_name faddr)
 
 end
 
 
-let power_chif_system = new power_chif_system_t
+let pwr_chif_system = new pwr_chif_system_t

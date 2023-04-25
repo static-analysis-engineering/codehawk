@@ -761,7 +761,7 @@ object
   method is_symbol_table: bool
   method is_relocation_table: bool
   method is_program_section: bool
-  method is_power_vle: bool
+  method is_pwr_vle: bool
 
   method is_debug_info: bool
   method is_debug_abbrev: bool

@@ -57,7 +57,7 @@ open XprTypes
 open BCHLibTypes
 
 
-type power_instruction_type_t = | PWR | VLE16 | VLE32
+type pwr_instruction_type_t = | PWR | VLE16 | VLE32
 
 (** Special registers
 
@@ -168,7 +168,7 @@ type power_instruction_type_t = | PWR | VLE16 | VLE32
 
 (* defined in bchlib/bCHLibTypes:
 
-type power_special_reg_t =
+type pwr_special_reg_t =
   | PowerCR    (* Condition Register (contain CR0, CR1, CR2) *)
   | PowerCTR   (* Count Register *)
   | PowerMSR   (* Machine Status Register *)
@@ -184,7 +184,7 @@ type power_special_reg_t =
   | PowerMCSRR1 (* Machine Check Save/Restore Register 1 *)
 
 
-type power_register_field_t =
+type pwr_register_field_t =
   | PowerCR0   (* Condition Register, bits 32-35 *)
   | PowerCR1   (* Condition Register, bits 36-39 *)
   | PowerCR2   (* Condition Register, bits 40-43 *)
@@ -198,10 +198,10 @@ type power_register_field_t =
   | PowerXERCA (* Integer Exception Register, carry *)
  *)
 
-type power_operand_kind_t =
+type pwr_operand_kind_t =
   | PowerGPReg of int
-  | PowerSpecialReg of power_special_reg_t
-  | PowerRegisterField of power_register_field_t
+  | PowerSpecialReg of pwr_special_reg_t
+  | PowerRegisterField of pwr_register_field_t
   | PowerConditionRegisterBit of int
   | PowerImmediate of immediate_int
   | PowerAbsolute of doubleword_int
@@ -215,21 +215,21 @@ type power_operand_kind_t =
     RW: read-write
     NT: not touched
  *)
-type power_operand_mode_t = RD | WR | RW | NT
+type pwr_operand_mode_t = RD | WR | RW | NT
 
 
-type power_branch_prediction_t = BPNone | BPPlus of int | BPMinus of int
+type pwr_branch_prediction_t = BPNone | BPPlus of int | BPMinus of int
 
 
-class type power_operand_int =
+class type pwr_operand_int =
   object ('a)
 
     (* accessors *)
-    method get_kind: power_operand_kind_t
-    method get_mode: power_operand_mode_t
+    method get_kind: pwr_operand_kind_t
+    method get_mode: pwr_operand_mode_t
     method get_gp_register: int
-    method get_special_register: power_special_reg_t
-    method get_register_field: power_register_field_t
+    method get_special_register: pwr_special_reg_t
+    method get_register_field: pwr_register_field_t
     method get_absolute_address: doubleword_int
 
     (* converters *)
@@ -256,1082 +256,1082 @@ class type power_operand_int =
 type not_code_t = DataBlock of data_block_int
 
 
-type power_opcode_t =
+type pwr_opcode_t =
   (* EREF:6-12, VLEPEM:3-6 *)
   | Add of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register (CR0) *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
 
   (* EREF:6-17 *)
   | AddCarrying of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register (CR0) *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
-      * power_operand_int  (* ca: carry (XER-CA) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* ca: carry (XER-CA) *)
 
   (* EREF:6-18 *)
   | AddExtended of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
-      * power_operand_int  (* ca: carry (XER-CA) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* ca: carry (XER-CA) *)
 
   (* EREF:6-23, VLEPEM:3-7 *)
   | AddImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* s: shifted *)
       * bool               (* op2: 2-operand *)
       * bool               (* op16: 16-bit immediate *)
       * bool               (* rc: record condition *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source operand *)
-      * power_operand_int  (* simm: signed immediate *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source operand *)
+      * pwr_operand_int  (* simm: signed immediate *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-24, VLEPEM:3-9 *)
   | AddImmediateCarrying of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source register *)
-      * power_operand_int  (* simm: signed immediate *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* ca: carry field (XER-CA) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source register *)
+      * pwr_operand_int  (* simm: signed immediate *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ca: carry field (XER-CA) *)
 
   (* EREF:6-26 *)
   | AddMinusOneExtended of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* ca: carry (XER-CA) *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ca: carry (XER-CA) *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
 
   (* EREF:6-31 *)
   | AddZeroExtended of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow exception *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* ca: carry (XER-CA) *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ca: carry (XER-CA) *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
 
   (* EREF:6-32, VLEPEM:3-10 *)
   | And of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-33, VLEPEM:3-10 *)
   | AndComplement of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-34,35, VLEPEM:3-10 *)
   | AndImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* s: shifted *)
       * bool               (* op2: 2-operand *)
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* uimm: unsigned immediate *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* uimm: unsigned immediate *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* VLEPEM:3-14 *)
   | BitClearImmediate of
-      power_instruction_type_t
-      * power_operand_int  (* rx: dst/src register *)
-      * power_operand_int  (* ui5: immediate *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: dst/src register *)
+      * pwr_operand_int  (* ui5: immediate *)
 
   (* VLEPEM:3-16 *)
   | BitGenerateImmediate of
-      power_instruction_type_t
-      * power_operand_int  (* rx: destination register *)
-      * power_operand_int  (* ui5: immediate *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: destination register *)
+      * pwr_operand_int  (* ui5: immediate *)
 
   (* VLEPEM:3-18 *)
   | BitMaskGenerateImmediate of
-      power_instruction_type_t
-      * power_operand_int  (* rx: destination register *)
-      * power_operand_int  (* ui5: immediate *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: destination register *)
+      * pwr_operand_int  (* ui5: immediate *)
 
   (* VLEPEM:3-19 *)
   | BitSetImmediate of
-      power_instruction_type_t
-      * power_operand_int  (* rx: destination register *)
-      * power_operand_int  (* ui5: immediate *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: destination register *)
+      * pwr_operand_int  (* ui5: immediate *)
 
   (* VLEPEM:3-20 *)
   | BitTestImmediate of
-      power_instruction_type_t
-      * power_operand_int  (* rx: source register *)
-      * power_operand_int  (* uimm: unsigned immediate *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: source register *)
+      * pwr_operand_int  (* uimm: unsigned immediate *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-36, VLEPEM:3-12 *)
   | Branch of
-      power_instruction_type_t
-      * power_operand_int  (* tgt: target address *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* tgt: target address *)
 
   (* EREF:6-37 *)
   | BranchConditional of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* aa: absolute address *)
       * int                (* bo: branch operations (5 bits) *)
       * int                (* bi: bit in condition register (5 bits)  *)
-      * power_operand_int  (* bd: branch destination *)
+      * pwr_operand_int  (* bd: branch destination *)
 
   (* EREF:6-41 *)
   | BranchConditionalLinkRegister of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * int                (* bo: bracnch operations (5 bits) *)
       * int                (* bi: bit in condition register (5 bits) *)
       * int                (* bh: branch usage hint (2 bits) *)
-      * power_operand_int  (* lr: link register (LR) *)
+      * pwr_operand_int  (* lr: link register (LR) *)
 
   (* EREF:6-41 *)
   | BranchConditionalLinkRegisterLink of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * int                (* bo: branch operations (5 bits) *)
       * int                (* bi: bit in condition register (5 bits) *)
       * int                (* bh: branch usage hint (2 bits *)
-      * power_operand_int  (* lr: link register (LR) *)
+      * pwr_operand_int  (* lr: link register (LR) *)
 
   | BranchCountRegister of
-      power_instruction_type_t
-      * power_operand_int  (* count register (CTR) *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* count register (CTR) *)
 
   | BranchCountRegisterLink of
-      power_instruction_type_t
-      * power_operand_int  (* count_register (CTR) *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* count_register (CTR) *)
 
   (* EREF:6-36, VLEPEM:3-12 *)
   | BranchLink of
-      power_instruction_type_t
-      * power_operand_int  (* tgt: target address *)
-      * power_operand_int  (* lr: link register (LR) *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* tgt: target address *)
+      * pwr_operand_int  (* lr: link register (LR) *)
 
   (* EREF:B-13 (simplified), VLEPEM:3-17 *)
   | BranchLinkRegister of
-      power_instruction_type_t
-      * power_operand_int  (* link register (LR) *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* link register (LR) *)
 
   (* EREF:B-14 (simplified), VLEPEM:3-17 *)
   | BranchLinkRegisterLink of
-      power_instruction_type_t
-      * power_operand_int  (* link register (LR) *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* link register (LR) *)
 
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchDecrementNotZero of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* aa: absolute address *)
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
-      * power_branch_prediction_t  (* bp: branch prediction *)
-      * power_operand_int  (* bd: branch destination *)
-      * power_operand_int  (* ctr: count register *)
+      * pwr_branch_prediction_t  (* bp: branch prediction *)
+      * pwr_operand_int  (* bd: branch destination *)
+      * pwr_operand_int  (* ctr: count register *)
 
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchDecrementZero of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* aa: absolute address *)
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
-      * power_branch_prediction_t  (* bp: branch prediction *)
-      * power_operand_int  (* bd: branch destination *)
-      * power_operand_int  (* ctr: count register *)
+      * pwr_branch_prediction_t  (* bp: branch prediction *)
+      * pwr_operand_int  (* bd: branch destination *)
+      * pwr_operand_int  (* ctr: count register *)
 
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchEqual of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* aa: absolute address *)
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
-      * power_branch_prediction_t  (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination *)
+      * pwr_branch_prediction_t  (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* bd: branch destination *)
 
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchEqualLinkRegister of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
       * int                (* bh: branch usage hint *)
-      * power_branch_prediction_t (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* lr: link register *)
+      * pwr_branch_prediction_t (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* lr: link register *)
 
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchGreaterEqual of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* aa: absolute address *)
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
-      * power_branch_prediction_t (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination *)
+      * pwr_branch_prediction_t (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* bd: branch destination *)
 
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchGreaterEqualLinkRegister of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
       * int                (* bh: branch usage hint *)
-      * power_branch_prediction_t (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* lr: link register *)
+      * pwr_branch_prediction_t (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* lr: link register *)
 
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchGreaterThan of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* aa: absolute address *)
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
-      * power_branch_prediction_t (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination *)
+      * pwr_branch_prediction_t (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* bd: branch destination *)
 
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchGreaterThanLinkRegister of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
       * int                (* bh: branch usage hint *)
-      * power_branch_prediction_t (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* lr: link register *)
+      * pwr_branch_prediction_t (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* lr: link register *)
 
   (* EREF:6-37, EREF:B-4 (simplified mnemonics, VLEPEM:3-13) *)
   | CBranchLessEqual of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* aa: absolute address *)
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
-      * power_branch_prediction_t  (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination *)
+      * pwr_branch_prediction_t  (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* bd: branch destination *)
 
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchLessEqualLinkRegister of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
       * int                (* bh: branch usage hint *)
-      * power_branch_prediction_t (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* lr: link register *)
+      * pwr_branch_prediction_t (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* lr: link register *)
 
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchLessThan of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* aa: absolute address *)
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
-      * power_branch_prediction_t  (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination *)
+      * pwr_branch_prediction_t  (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* bd: branch destination *)
 
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchLessThanLinkRegister of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
       * int                (* bh: branch usage hint *)
-      * power_branch_prediction_t (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* lr: link register *)
+      * pwr_branch_prediction_t (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* lr: link register *)
 
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchNotEqual of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* aa: absolute address *)
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
-      * power_branch_prediction_t  (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* bd: branch destination *)
+      * pwr_branch_prediction_t  (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* bd: branch destination *)
 
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchNotEqualLinkRegister of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * int                (* bo: branch operations *)
       * int                (* bi: bit in condition register *)
       * int                (* bh: branch usage hint *)
-      * power_branch_prediction_t (* bp: branch prediction *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* lr: link register *)
+      * pwr_branch_prediction_t (* bp: branch prediction *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* lr: link register *)
 
   (* EREF:B-3 (simplified *)
   | ClearLeftShiftLeftWordImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* mb: mask begin *)
-      * power_operand_int  (* sh: shift *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* mb: mask begin *)
+      * pwr_operand_int  (* sh: shift *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* Simplified mnemonic, EREF:B-3, VLEPIM:Table A-23
      Full instruction: RotateLeftWordImmediateAndMask *)
   | ClearLeftWordImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* mb: mask begin *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* mb: mask begin *)
 
   (* Simplified mnemonic, EREF:B-3, VLEPIM:Table A-23
      Full instruction: RotateLeftWordImmediateAndMask *)
   | ClearRightWordImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* me: mask end *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* me: mask end *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-46, VLEPEM:3-21 *)
   | CompareImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* op16: 16-bit immediate, VLE32 only *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* ra: register operand *)
-      * power_operand_int  (* simm: signed immediate *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* ra: register operand *)
+      * pwr_operand_int  (* simm: signed immediate *)
 
   (* EREF:6-47, VLEPEM:3-27, VLEPIM:Table A-23 (simplified) *)
   | CompareLogical of
-      power_instruction_type_t
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* ra: src register 1 *)
-      * power_operand_int  (* rb: src register 2 *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* ra: src register 1 *)
+      * pwr_operand_int  (* rb: src register 2 *)
 
   (* EREF:6-48, VLEPEM:3-27 *)
   | CompareLogicalImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* op16: 16 bit immediate, VLE32 only *)
-      * power_operand_int  (* cr: condition register field *)
-      * power_operand_int  (* ra: register operand *)
-      * power_operand_int  (* uimm: unsigned immediate *)
+      * pwr_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* ra: register operand *)
+      * pwr_operand_int  (* uimm: unsigned immediate *)
 
   (* EREF:6-44 (simplified, L=0) *)
   | CompareWord of
-      power_instruction_type_t
-      * power_operand_int  (* cr: condition register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* cr: condition register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
 
   (* EREF:6-242. EREF:B-25 (simplified), VLEPEM:3-56 *)
   | ComplementRegister of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rb: source register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rb: source register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-55, EREF:B-21 (simplified) *)
   | ConditionRegisterNot of
-      power_instruction_type_t
-      * power_operand_int  (* crd: condition register destination bit *)
-      * power_operand_int  (* cra: condition register source bit *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* crd: condition register destination bit *)
+      * pwr_operand_int  (* cra: condition register source bit *)
 
   (* VLEPEM:3-32 *)
   | ConditionRegisterOr of
-      power_instruction_type_t
-      * power_operand_int  (* crd: condition register destination bit *)
-      * power_operand_int  (* cra: condition register source 1 bit *)
-      * power_operand_int  (* crb: condition register source 2 bit *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* crd: condition register destination bit *)
+      * pwr_operand_int  (* cra: condition register source 1 bit *)
+      * pwr_operand_int  (* crb: condition register source 2 bit *)
 
   (* EREF:6-50 *)
   | CountLeadingZerosWord of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* cr0 *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* cr0 *)
 
   (* EREF:6-88 *)
   | DivideWord of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
 
   (* EREF:6-95 *)
   | DivideWordUnsigned of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* eo: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
 
   (* EREF:6-197
      This instruction shares the same opcode with MemoryBarrier (mbar); it is
      to be preferred in server environments.
    *)
   | EnforceInOrderExecutionIO of
-      power_instruction_type_t
-      * power_operand_int  (* mo: memory ordering *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* mo: memory ordering *)
 
   (* EREF:6-104, VLEPEM:3-35 *)
   | ExtendSignByte of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-105, VLEPEM:3-35 *)
   | ExtendSignHalfword of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* VLEPEM:3-36 *)
   | ExtendZeroByte of
-      power_instruction_type_t
-      * power_operand_int  (* rx: src/dst register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: src/dst register *)
 
   (* VLEPEM:3-36 *)
   | ExtendZeroHalfword of
-      power_instruction_type_t
-      * power_operand_int  (* rx: src/dst register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: src/dst register *)
 
   (* Simplified mnemonic: EREF:B-3, VLEPIM:Table A-23
      Full mnemonic: RotateLeftWordImmediateMaskInsert *)
   | ExtractRightJustifyWordImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* n: shift *)
-      * power_operand_int  (* b: begin *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* n: shift *)
+      * pwr_operand_int  (* b: begin *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* Simplified mnemonic: EREF:B-3, VLEPIM:Table A-23
      Full mnemonic: RotateLeftWordImmediateMaskInsert *)
   | InsertRightWordImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* sh: shift *)
-      * power_operand_int  (* mb: mask begin *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* sh: shift *)
+      * pwr_operand_int  (* mb: mask begin *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-141, VLEPEM:3-38 *)
   | InstructionSynchronize of
-      power_instruction_type_t
+      pwr_instruction_type_t
 
   (* EREF:6-140 *)
   | IntegerSelect of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* crb: condition register bit *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* crb: condition register bit *)
 
   (* EREF:6-140, EREF:B-26 *)
   | IntegerSelectEqual of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-140, EREF:B-26 *)
   | IntegerSelectGreaterThan of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-140, EREF:B-26 *)
   | IntegerSelectLessThan of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-146,147, VLEPEM:3-39 *)
   | LoadByteZero of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* u: update *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-148,149, VLEPEM:3-39 *)
   | LoadByteZeroIndexed of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* u: update *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* rb: index register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* rb: index register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-178,179, VLEPEM:3-41 *)
   | LoadHalfwordZero of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* u: update *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:B-24 (simplified), VLEPEM:3-42 *)
   | LoadImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* sg: signed *)
       * bool               (* sh: shifted *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* imm: signed/unsigned immediate *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* imm: signed/unsigned immediate *)
 
   (* e200z759n3:79 *)
   | LoadMultipleVolatileGPRWord of
-      power_instruction_type_t
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* e200z759n3:81 *)
   | LoadMultipleVolatileSPRWord of
-      power_instruction_type_t
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
-      * power_operand_int  (* CR *)
-      * power_operand_int  (* LR *)
-      * power_operand_int  (* CTR *)
-      * power_operand_int  (* XER *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* CR *)
+      * pwr_operand_int  (* LR *)
+      * pwr_operand_int  (* CTR *)
+      * pwr_operand_int  (* XER *)
 
   (* e200z759n3:82 *)
   | LoadMultipleVolatileSRRWord of
-      power_instruction_type_t
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
-      * power_operand_int  (* SRR0 *)
-      * power_operand_int  (* SRR1 *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* SRR0 *)
+      * pwr_operand_int  (* SRR1 *)
 
   (* EREF:6-182, VLEPEM:3-43 *)
   | LoadMultipleWord of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register, count *)
-      * power_operand_int  (* ra: memory base register *)
-      * power_operand_int  (* mem: memory operand *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register, count *)
+      * pwr_operand_int  (* ra: memory base register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-193,194, VLEPEM:3-44 *)
   | LoadWordZero of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* u: update *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: memory base register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: memory base register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-195,196, VLEPEM:3-44 *)
   | LoadWordZeroIndexed of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* update *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* rb: index register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* rb: index register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-197
      This instruction shares the same opcode with EnforceInOrderExecutionIO
      (eieio); mbar is preferred in embedded systems.
    *)
   | MemoryBarrier of
-      power_instruction_type_t
-      * power_operand_int  (* mo: memory ordering *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* mo: memory ordering *)
 
   (* EREF:6-199, VLEPEM:3-45 *)
   | MoveConditionRegisterField of
-      power_instruction_type_t
-      * power_operand_int  (* crfd: destination condition register field *)
-      * power_operand_int  (* crs: source condition register field *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* crfd: destination condition register field *)
+      * pwr_operand_int  (* crs: source condition register field *)
 
   (* VLEPEM:3-46 *)
   | MoveFromAlternateRegister of
-      power_instruction_type_t
-      * power_operand_int  (* rx: destination register *)
-      * power_operand_int  (* ary: source register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: destination register *)
+      * pwr_operand_int  (* ary: source register *)
 
   (* EREF:6-202 *)
   | MoveFromConditionRegister of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* cr: condition register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* cr: condition register *)
 
   (* VLEPEM:3-47 *)
   | MoveFromCountRegister of
-      power_instruction_type_t
-      * power_operand_int  (* rx: destination register *)
-      * power_operand_int  (* ctr: count register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: destination register *)
+      * pwr_operand_int  (* ctr: count register *)
 
   (* VLEPIM:A-18 *)
   | MoveFromExceptionRegister of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* xer: integer exception register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* xer: integer exception register *)
 
   (* VLEPEM:3-48 *)
   | MoveFromLinkRegister of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* lr: link register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* lr: link register *)
 
   (* EREF:6-205 *)
   | MoveFromMachineStateRegister of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* msr: machine state register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* msr: machine state register *)
 
   (* EREF:6-208 *)
   | MoveFromSpecialPurposeRegister of
-      power_instruction_type_t
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* sprn: special purpose register index *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* sprn: special purpose register index *)
 
   (* EREF:6-241, EREF:B-25 (simplified), VLEPEM:3-49 *)
   | MoveRegister of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* rs: source register *)
 
   (* VLEPEM:3-50 *)
   | MoveToAlternateRegister of
-      power_instruction_type_t
-      * power_operand_int  (* arx: destination register *)
-      * power_operand_int  (* ry: source register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* arx: destination register *)
+      * pwr_operand_int  (* ry: source register *)
 
   (* EREF:B-25 (simplified) *)
   | MoveToConditionRegister of
-      power_instruction_type_t
-      * power_operand_int  (* cr: condition register *)
-      * power_operand_int  (* rs: source register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* cr: condition register *)
+      * pwr_operand_int  (* rs: source register *)
 
   (* EREF:6-215 *)
   | MoveToConditionRegisterFields of
-      power_instruction_type_t
-      * power_operand_int  (* crm: cr field mask *)
-      * power_operand_int  (* rs: source register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* crm: cr field mask *)
+      * pwr_operand_int  (* rs: source register *)
 
   (* EREF:B-23 (simplified), VLEPEM:3-51 *)
   | MoveToCountRegister of
-      power_instruction_type_t
-      * power_operand_int  (* ctr: count register *)
-      * power_operand_int  (* rs: source register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* ctr: count register *)
+      * pwr_operand_int  (* rs: source register *)
 
   (*EREF:B-23 (simplified) *)
   | MoveToExceptionRegister of
-      power_instruction_type_t
-      * power_operand_int  (* xer: integer exception register *)
-      * power_operand_int  (* rs: source register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* xer: integer exception register *)
+      * pwr_operand_int  (* rs: source register *)
 
   (* EREF:B-25 (simplified), VLEPEM:3-52 *)
   | MoveToLinkRegister of
-      power_instruction_type_t
-      * power_operand_int  (* lr: link register *)
-      * power_operand_int  (* rs: soure register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* lr: link register *)
+      * pwr_operand_int  (* rs: soure register *)
 
   (* EREF:6-221 *)
   | MoveToMachineStateRegister of
-      power_instruction_type_t
-      * power_operand_int  (* msr: machine state register *)
-      * power_operand_int  (* rs: source register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* msr: machine state register *)
+      * pwr_operand_int  (* rs: source register *)
 
   (* EREF:6-226 *)
   | MoveToSpecialPurposeRegister of
-      power_instruction_type_t
-      * power_operand_int  (* sprn: special-purpose register index *)
-      * power_operand_int  (* rs: source register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* sprn: special-purpose register index *)
+      * pwr_operand_int  (* rs: source register *)
 
   (* EREF:6-234 *)
   | MultiplyHighWordUnsigned of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
 
   (* EREF:6-236, VLEPEM:3-53 *)
   | MultiplyLowImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* op2: two operands *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source register *)
-      * power_operand_int  (* simm: signed immediate *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source register *)
+      * pwr_operand_int  (* simm: signed immediate *)
 
   (* EREF:6-237, VLEPEM:3-54 *)
   | MultiplyLowWord of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
 
   (* EREF:6-241 *)
   | Negate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source register *)
-      * power_operand_int  (* cr: condition register *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source register *)
+      * pwr_operand_int  (* cr: condition register *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
 
   (* EREF:6-243, VLEPEM:3-57 *)
   | Or of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
 
   (* EREF:6-246, VLEPEM:3-57 *)
   | OrImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* s: shifted *)
       * bool               (* op2: twp operands *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* uimm: unsigned immediate *)
-      * power_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* uimm: unsigned immediate *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
 
   (* EREF:6-254, e200z759n3:70 *)
   | ReturnFromDebugInterrupt of
-      power_instruction_type_t
-      * power_operand_int  (* msr: machine status register *)
-      * power_operand_int  (* dsr0: debug save/restore register 0 *)
-      * power_operand_int  (* dsr1: debug save/restore register 1 *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* msr: machine status register *)
+      * pwr_operand_int  (* dsr0: debug save/restore register 0 *)
+      * pwr_operand_int  (* dsr1: debug save/restore register 1 *)
 
   (* EREF:6-256, VLEPEM:3-59 *)
   | ReturnFromInterrupt of
-      power_instruction_type_t
-      * power_operand_int  (* machine status register (MSR) *)
-      * power_operand_int  (* sr0: save/restore register 0 *)
-      * power_operand_int  (* sr1: save/restore register 1 *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* machine status register (MSR) *)
+      * pwr_operand_int  (* sr0: save/restore register 0 *)
+      * pwr_operand_int  (* sr1: save/restore register 1 *)
 
   (* EREF:6-257, 200z759n3:74 *)
   | ReturnFromMachineCheckInterrupt of
-      power_instruction_type_t
-      * power_operand_int  (* msr: machine state register (MSR) *)
-      * power_operand_int  (* mcsr0: machine check save/restore register 0 *)
-      * power_operand_int  (* mcsr1: machine check save/restore register 1 *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* msr: machine state register (MSR) *)
+      * pwr_operand_int  (* mcsr0: machine check save/restore register 0 *)
+      * pwr_operand_int  (* mcsr1: machine check save/restore register 1 *)
 
   (* EREF:B-3 (simplified), VLEPEM:3-60 *)
   | RotateLeftWord of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register *)
 
   (* EREF:6-265, VLEPEM:3-62 *)
   | RotateLeftWordImmediateAndMask of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* sh: shift amount *)
-      * power_operand_int  (* mb: mask begin *)
-      * power_operand_int  (* me: mask end *)
-      * power_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* sh: shift amount *)
+      * pwr_operand_int  (* mb: mask begin *)
+      * pwr_operand_int  (* me: mask end *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
 
   (* EREF:6-275, VLEPEM:3-64 *)
   | ShiftLeftWord of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
 
   (* VLEPEM:3-64 *)
   | ShiftLeftWordImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* sh: shift amount *)
-      * power_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* sh: shift amount *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
 
   (* EREF:6-278 *)
   | ShiftRightAlgebraicWord of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* ca: carry (XER-CA) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ca: carry (XER-CA) *)
 
   (* EREF:6-279, VLEPEM:3-65 *)
   | ShiftRightAlgebraicWordImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* sh: shift amount *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* ca: carry (XER-CA) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* sh: shift amount *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ca: carry (XER-CA) *)
 
   (* EREF:6-281, VLEPEM:3-66 *)
   | ShiftRightWord of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
 
   (* VLEPEM:3-66 *)
   | ShiftRightWordImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* sh: shift amount *)
-      * power_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* sh: shift amount *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
 
   (* EREF:6-282,287, VLEPEM:3-67 *)
   | StoreByte of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* update *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-288,289, VLEPEM:3-67 *)
   | StoreByteIndexed of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* update *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* rb: index register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* rb: index register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-310, VLEPEM:3-68 *)
   | StoreHalfword of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* update *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-317,318, VLEPEM:3-68 *)
   | StoreHalfwordIndexed of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* update *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* rb: index register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* rb: index register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-320, VLEPEM:3-69 *)
   | StoreMultipleWord of
-      power_instruction_type_t
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* e200z759n3:80 *)
   | StoreMultipleVolatileGPRWord of
-      power_instruction_type_t
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* e200z759n3:81 *)
   | StoreMultipleVolatileSPRWord of
-      power_instruction_type_t
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
-      * power_operand_int  (* CR *)
-      * power_operand_int  (* LR *)
-      * power_operand_int  (* CTR *)
-      * power_operand_int  (* XER *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* CR *)
+      * pwr_operand_int  (* LR *)
+      * pwr_operand_int  (* CTR *)
+      * pwr_operand_int  (* XER *)
 
   (* e200z759n3:83 *)
   | StoreMultipleVolatileSRRWord of
-      power_instruction_type_t
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
-      * power_operand_int  (* SRR0 *)
-      * power_operand_int  (* SRR1 *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* SRR0 *)
+      * pwr_operand_int  (* SRR1 *)
 
   (* EREF:6-323,329, VLEPEM:3-70 *)
   | StoreWord of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* update *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* EREF:6-330,331, VLEPEM:3-70 *)
   | StoreWordIndexed of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* update *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* ra: memory base address register *)
-      * power_operand_int  (* rb: index register *)
-      * power_operand_int  (* mem: memory operand *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* rb: index register *)
+      * pwr_operand_int  (* mem: memory operand *)
 
   (* VLEPEM:3-71 *)
   | Subtract of
-      power_instruction_type_t
-      * power_operand_int  (* rx: destination, source 1 register *)
-      * power_operand_int  (* ry: source 2 register *)
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rx: destination, source 1 register *)
+      * pwr_operand_int  (* ry: source 2 register *)
 
   (* EREF:6-332, VLEPEM:3-72 *)
   | SubtractFrom of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: register to be subtracted *)
-      * power_operand_int  (* rb: register to be subtracted from *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* so: summary overflow field (XER-SO) *)
-      * power_operand_int  (* ov: overflow field (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: register to be subtracted *)
+      * pwr_operand_int  (* rb: register to be subtracted from *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* so: summary overflow field (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow field (XER-OV) *)
 
   (* EREF:6-337 *)
   | SubtractFromCarrying of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow detection *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* ca: carry field (XER-CA) *)
-      * power_operand_int  (* so: summary overflow field (XER-SO) *)
-      * power_operand_int  (* ov: overflow field (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ca: carry field (XER-CA) *)
+      * pwr_operand_int  (* so: summary overflow field (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow field (XER-OV) *)
 
   (* EREF:6-338 *)
   | SubtractFromExtended of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: detect overflow *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register field (CR0) *)
-      * power_operand_int  (* ca: carry (XER-CA) *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+      * pwr_operand_int  (* ca: carry (XER-CA) *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
 
   (* EREF:6-343, VLEPEM:3-73 *)
   | SubtractFromImmediateCarrying of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source register *)
-      * power_operand_int  (* simm: signed immediate *)
-      * power_operand_int  (* cr: condition register (CR0) *)
-      * power_operand_int  (* ca: carry (XER-CA) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source register *)
+      * pwr_operand_int  (* simm: signed immediate *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* ca: carry (XER-CA) *)
 
   (* EREF:6-349 *)
   | SubtractFromZeroExtended of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* oe: overflow exception *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source register *)
-      * power_operand_int  (* cr: condition register (CR0) *)
-      * power_operand_int  (* so: summary overflow (XER-SO) *)
-      * power_operand_int  (* ov: overflow (XER-OV) *)
-      * power_operand_int  (* ca: carry (XER-CA) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source register *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* so: summary overflow (XER-SO) *)
+      * pwr_operand_int  (* ov: overflow (XER-OV) *)
+      * pwr_operand_int  (* ca: carry (XER-CA) *)
 
   (* EREF:B-1 (simplified), VLEPEM:3-74 *)
   | SubtractImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* rd: destination register *)
-      * power_operand_int  (* ra: source register *)
-      * power_operand_int  (* imm: immediate value *)
-      * power_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source register *)
+      * pwr_operand_int  (* imm: immediate value *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
 
   (* EREF:6-367 *)
   | TLBWriteEntry of
-      power_instruction_type_t
+      pwr_instruction_type_t
 
   (* EREF:6-374 *)
   | WriteMSRExternalEnableImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* enable *)
-      * power_operand_int  (* msr: machine stat register *)
+      * pwr_operand_int  (* msr: machine stat register *)
 
   (* EREF:6-375 *)
   | Xor of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source 1 register *)
-      * power_operand_int  (* rb: source 2 register *)
-      * power_operand_int  (* cr: condition register (CR0) *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
 
   (* EREF:6-376, VLEPEM:3-75 *)
   | XorImmediate of
-      power_instruction_type_t
+      pwr_instruction_type_t
       * bool               (* rc: record condition *)
       * bool               (* s: shifted *)
-      * power_operand_int  (* ra: destination register *)
-      * power_operand_int  (* rs: source register *)
-      * power_operand_int  (* uimm: unsigned immediate *)
-      * power_operand_int  (* cr: condition register field *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* uimm: unsigned immediate *)
+      * pwr_operand_int  (* cr: condition register field *)
 
   | OpInvalid
   | NotCode of not_code_t option
@@ -1342,16 +1342,19 @@ type power_opcode_t =
   | NotRecognized of string * doubleword_int
 
 
-class type power_dictionary_int =
+class type pwr_dictionary_int =
   object
 
-    method index_pwr_opkind: power_operand_kind_t -> int
-    method index_pwr_operand: power_operand_int -> int
-    method index_pwr_branch_prediction: power_branch_prediction_t -> int
-    method index_pwr_opcode: power_opcode_t -> int
+    method index_pwr_opkind: pwr_operand_kind_t -> int
+    method index_pwr_operand: pwr_operand_int -> int
+    method index_pwr_branch_prediction: pwr_branch_prediction_t -> int
+    method index_pwr_opcode: pwr_opcode_t -> int
+    method index_pwr_bytestring: string -> int
 
+    method write_xml_pwr_bytestring:
+             ?tag:string -> xml_element_int -> string -> unit
     method write_xml_pwr_opcode:
-             ?tag:string -> xml_element_int -> power_opcode_t -> unit
+             ?tag:string -> xml_element_int -> pwr_opcode_t -> unit
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -1359,7 +1362,7 @@ class type power_dictionary_int =
   end
 
 
-class type power_assembly_instruction_int =
+class type pwr_assembly_instruction_int =
   object
 
     (* setters *)
@@ -1368,7 +1371,7 @@ class type power_assembly_instruction_int =
 
     (* accessors *)
     method get_address: doubleword_int
-    method get_opcode: power_opcode_t
+    method get_opcode: pwr_opcode_t
     method get_instruction_bytes: string
     method get_bytes_as_hexstring: string
 
@@ -1387,16 +1390,16 @@ class type power_assembly_instruction_int =
   end
 
 
-type power_assembly_instruction_result =
-  power_assembly_instruction_int traceresult
+type pwr_assembly_instruction_result =
+  pwr_assembly_instruction_int traceresult
 
 
-class type power_assembly_instructions_int =
+class type pwr_assembly_instructions_int =
   object
 
     (* setters *)
     method set_instruction:
-             doubleword_int -> power_assembly_instruction_int -> unit
+             doubleword_int -> pwr_assembly_instruction_int -> unit
     method set_not_code: data_block_int list -> unit
 
     (* accessors *)
@@ -1406,9 +1409,9 @@ class type power_assembly_instructions_int =
         [va]. If no instruction has been entered yet, a new instruction, with
         opcode [OpInvalid] is assigned and returned. If [va] is out-of-range
         an Error result is returned. *)
-    method get_instruction: doubleword_int -> power_assembly_instruction_result
+    method get_instruction: doubleword_int -> pwr_assembly_instruction_result
 
-    (* method at_address: doubleword_int -> power_assembly_instruction_int *)
+    (* method at_address: doubleword_int -> pwr_assembly_instruction_int *)
 
     (** [get_next_valid_instruction_address va] returns the least virtual
         address strictly larger than [va] with a valid assembly instruction.
@@ -1430,9 +1433,9 @@ class type power_assembly_instructions_int =
              -> doubleword_int list
 
     (* iterators *)
-    method iteri: (int -> power_assembly_instruction_int -> unit) -> unit
+    method iteri: (int -> pwr_assembly_instruction_int -> unit) -> unit
     method itera:
-             (doubleword_int -> power_assembly_instruction_int -> unit) -> unit
+             (doubleword_int -> pwr_assembly_instruction_int -> unit) -> unit
     method get_num_instructions: int
     method get_num_unknown_instructions: int
 
@@ -1453,13 +1456,13 @@ class type power_assembly_instructions_int =
     (* i/o *)
     method write_xml: xml_element_int -> unit
     method toString:
-             ?filter: (power_assembly_instruction_int -> bool) -> unit -> string
+             ?filter: (pwr_assembly_instruction_int -> bool) -> unit -> string
     method toPretty: pretty_t
 
   end
 
 
-class type power_assembly_block_int =
+class type pwr_assembly_block_int =
   object
 
     (* accessors *)
@@ -1474,9 +1477,9 @@ class type power_assembly_block_int =
     method get_instructions_rev:
              ?high:doubleword_int
              -> unit
-             -> power_assembly_instruction_int list
-    method get_instructions: power_assembly_instruction_int list
-    method get_instruction: doubleword_int -> power_assembly_instruction_int
+             -> pwr_assembly_instruction_int list
+    method get_instructions: pwr_assembly_instruction_int list
+    method get_instruction: doubleword_int -> pwr_assembly_instruction_int
 
     method get_bytes_as_hexstring: string
     method get_instruction_count: int
@@ -1490,7 +1493,7 @@ class type power_assembly_block_int =
              ?low:doubleword_int
              -> ?high:doubleword_int
              -> ?reverse:bool
-             -> (ctxt_iaddress_t -> power_assembly_instruction_int -> unit)
+             -> (ctxt_iaddress_t -> pwr_assembly_instruction_int -> unit)
              -> unit
 
     (* printing *)
@@ -1499,16 +1502,16 @@ class type power_assembly_block_int =
   end
 
 
-class type power_assembly_function_int =
+class type pwr_assembly_function_int =
   object
 
     (* accessors *)
     method faddr: doubleword_int
-    method blocks: power_assembly_block_int list
+    method blocks: pwr_assembly_block_int list
     method cfg_edges: (ctxt_iaddress_t * ctxt_iaddress_t) list
 
-    method get_block: ctxt_iaddress_t -> power_assembly_block_int
-    method get_instruction: doubleword_int -> power_assembly_instruction_int
+    method get_block: ctxt_iaddress_t -> pwr_assembly_block_int
+    method get_instruction: doubleword_int -> pwr_assembly_instruction_int
     method get_bytes_as_hexstring: string
     method get_function_md5: string
     method get_instruction_count: int
@@ -1516,12 +1519,12 @@ class type power_assembly_function_int =
     method get_not_valid_instr_count: int
 
     (* iterators *)
-    method iter: (power_assembly_block_int -> unit) -> unit
-    method itera: (ctxt_iaddress_t -> power_assembly_block_int -> unit) -> unit
+    method iter: (pwr_assembly_block_int -> unit) -> unit
+    method itera: (ctxt_iaddress_t -> pwr_assembly_block_int -> unit) -> unit
     method iteri:
              (doubleword_int
               -> ctxt_iaddress_t
-              -> power_assembly_instruction_int
+              -> pwr_assembly_instruction_int
               -> unit)
              -> unit
     method populate_callgraph: callgraph_int -> unit
@@ -1535,21 +1538,21 @@ class type power_assembly_function_int =
   end
 
 
-class type power_assembly_functions_int =
+class type pwr_assembly_functions_int =
   object
 
     (* reset *)
     method reset: unit
 
     (* setters *)
-    method add_function: power_assembly_function_int -> unit
+    method add_function: pwr_assembly_function_int -> unit
     method remove_function: doubleword_int -> unit
 
     (* accessors *)
     method get_callgraph: callgraph_int
-    method functions: power_assembly_function_int list
-    method get_function: dw_index_t -> power_assembly_function_int
-    method get_function_by_address: doubleword_int -> power_assembly_function_int
+    method functions: pwr_assembly_function_int list
+    method get_function: dw_index_t -> pwr_assembly_function_int
+    method get_function_by_address: doubleword_int -> pwr_assembly_function_int
     method get_function_coverage:
              int     (* coverage *)
              * int   (* overlap *)
@@ -1557,12 +1560,12 @@ class type power_assembly_functions_int =
     method get_num_functions: int
 
     (* iterators *)
-    method iter: (power_assembly_function_int -> unit) -> unit
-    method itera: (doubleword_int -> power_assembly_function_int -> unit) -> unit
+    method iter: (pwr_assembly_function_int -> unit) -> unit
+    method itera: (doubleword_int -> pwr_assembly_function_int -> unit) -> unit
     method bottom_up_itera:
-             (doubleword_int -> power_assembly_function_int -> unit) -> unit
+             (doubleword_int -> pwr_assembly_function_int -> unit) -> unit
     method top_down_itera:
-             (doubleword_int -> power_assembly_function_int -> unit) -> unit
+             (doubleword_int -> pwr_assembly_function_int -> unit) -> unit
 
     (* predicates *)
     method has_function_by_address: doubleword_int -> bool
@@ -1575,11 +1578,11 @@ class type power_assembly_functions_int =
   end
 
 
-class type power_code_pc_int =
+class type pwr_code_pc_int =
   object
 
     (* accessors *)
-    method get_next_instruction: ctxt_iaddress_t * power_assembly_instruction_int
+    method get_next_instruction: ctxt_iaddress_t * pwr_assembly_instruction_int
     method block_successors: ctxt_iaddress_t list
     method get_block_successor: ctxt_iaddress_t
     method get_false_branch_successor: ctxt_iaddress_t
@@ -1597,26 +1600,26 @@ class type power_code_pc_int =
   end
 
 
-class type power_chif_system_int =
+class type pwr_chif_system_int =
   object
 
     (* reset *)
     method reset: unit
 
     (* setters *)
-    method add_power_procedure: procedure_int -> unit
+    method add_pwr_procedure: procedure_int -> unit
 
     (* accessors *)
-    method get_power_system: system_int
-    method get_power_procedure_names: symbol_t list
-    method get_power_procedure: doubleword_int -> procedure_int
+    method get_pwr_system: system_int
+    method get_pwr_procedure_names: symbol_t list
+    method get_pwr_procedure: doubleword_int -> procedure_int
 
     (* predicates *)
-    method has_power_procedure: doubleword_int -> bool
+    method has_pwr_procedure: doubleword_int -> bool
   end
 
 
-class type power_opcode_dictionary_int =
+class type pwr_opcode_dictionary_int =
   object
 
     method index_sp_offset: int * interval_t -> int
@@ -1625,7 +1628,7 @@ class type power_opcode_dictionary_int =
         invariant expressions associated with the arguments of [instr],
         made accessible via the function location [floc].*)
     method index_instr:
-             power_assembly_instruction_int
+             pwr_assembly_instruction_int
              -> floc_int
              -> int
 
@@ -1639,7 +1642,7 @@ class type power_opcode_dictionary_int =
     method write_xml_instr:
              ?tag:string
              -> xml_element_int
-             -> power_assembly_instruction_int
+             -> pwr_assembly_instruction_int
              -> floc_int
              -> unit
 
@@ -1650,9 +1653,9 @@ class type power_opcode_dictionary_int =
   end
 
 
-class type power_analysis_results_int =
+class type pwr_analysis_results_int =
   object
-    method record_results: ?save:bool -> power_assembly_function_int -> unit
+    method record_results: ?save:bool -> pwr_assembly_function_int -> unit
     method write_xml: xml_element_int -> unit
     method save: unit
   end

@@ -65,17 +65,17 @@ let arrayLength = 100000
 let initialized_length = ref 0
 
 
-let power_instructions =
-  ref (Array.make 1 (make_power_assembly_instruction wordzero false OpInvalid ""))
+let pwr_instructions =
+  ref (Array.make 1 (make_pwr_assembly_instruction wordzero false OpInvalid ""))
 
 
-let power_instructions = 
+let pwr_instructions = 
   Array.make
     numArrays
-    (Array.make 1 (make_power_assembly_instruction wordzero false OpInvalid ""))
+    (Array.make 1 (make_pwr_assembly_instruction wordzero false OpInvalid ""))
 
 
-let initialize_power_instructions (len: int) =
+let initialize_pwr_instructions (len: int) =
   let _ =
     chlog#add
       "disassembly"
@@ -84,9 +84,9 @@ let initialize_power_instructions (len: int) =
   let index = ref 0 in
   begin
     while !remaining > 0 && !index < numArrays do
-      power_instructions.(!index) <-
+      pwr_instructions.(!index) <-
         Array.make
-          arrayLength (make_power_assembly_instruction wordzero false OpInvalid "");
+          arrayLength (make_pwr_assembly_instruction wordzero false OpInvalid "");
       remaining := !remaining - arrayLength ;
       index := !index + 1 
     done ;
@@ -102,10 +102,10 @@ let initialize_power_instructions (len: int) =
 let get_indices (index:int) = (index/arrayLength, index mod arrayLength)
 
 
-let set_instruction (index: int) (instruction: power_assembly_instruction_int) =
+let set_instruction (index: int) (instruction: pwr_assembly_instruction_int) =
   try
     let (i,j) = get_indices index in
-    power_instructions.(i).(j) <- instruction
+    pwr_instructions.(i).(j) <- instruction
   with
   | Invalid_argument s ->
      raise (Invalid_argument ("set_instruction: " ^ s))
@@ -113,36 +113,36 @@ let set_instruction (index: int) (instruction: power_assembly_instruction_int) =
 
 let initialize_instruction_segment (endindex: int) =
   for index = 0 to (endindex - 1) do
-    set_instruction index (make_power_assembly_instruction wordzero false OpInvalid "")
+    set_instruction index (make_pwr_assembly_instruction wordzero false OpInvalid "")
   done
 
 
-let get_instruction (index: int): power_assembly_instruction_result =
+let get_instruction (index: int): pwr_assembly_instruction_result =
   if index >= 0 && index <= !initialized_length then
     let (i,j) = get_indices index in
-    Ok (power_instructions.(i).(j))
+    Ok (pwr_instructions.(i).(j))
   else
     Error ["get_instruction:" ^ (string_of_int index)]
 
 
-let fold_instructions (f: 'a -> power_assembly_instruction_int -> 'a) (init: 'a) =
+let fold_instructions (f: 'a -> pwr_assembly_instruction_int -> 'a) (init: 'a) =
   Array.fold_left (fun a arr ->
-    Array.fold_left (fun a1 opc -> f a1 opc) a arr) init power_instructions
+    Array.fold_left (fun a1 opc -> f a1 opc) a arr) init pwr_instructions
 
 
-let iter_instructions (f: power_assembly_instruction_int -> unit) =
-  Array.iter (fun arr -> Array.iter f arr) power_instructions
+let iter_instructions (f: pwr_assembly_instruction_int -> unit) =
+  Array.iter (fun arr -> Array.iter f arr) pwr_instructions
 
 
-let iteri_instructions (f: int -> power_assembly_instruction_int -> unit) =
+let iteri_instructions (f: int -> pwr_assembly_instruction_int -> unit) =
   Array.iteri (fun i arr -> 
     let k = i * arrayLength in
-    Array.iteri (fun j instr -> f (k+j) instr) arr) power_instructions
+    Array.iteri (fun j instr -> f (k+j) instr) arr) pwr_instructions
 
 
-class power_assembly_instructions_t
+class pwr_assembly_instructions_t
         (len: int)
-        (codebase: doubleword_int): power_assembly_instructions_int =
+        (codebase: doubleword_int): pwr_assembly_instructions_int =
 object (self)
 
   val codeBase = codebase
@@ -159,13 +159,13 @@ object (self)
     else
       Error ["index:"^ va#to_hex_string]
 
-  method private at_index (index:int): power_assembly_instruction_result =
+  method private at_index (index:int): pwr_assembly_instruction_result =
     TR.tmap
       ~msg:"at_index"
       (fun instr ->
         if instr#get_address#equal wordzero then
           let newInstr =
-            make_power_assembly_instruction
+            make_pwr_assembly_instruction
               (codeBase#add_int index) true OpInvalid "" in
           begin
             set_instruction index newInstr;
@@ -176,14 +176,14 @@ object (self)
       (get_instruction index)
 
   method set_instruction
-           (va: doubleword_int) (instr:power_assembly_instruction_int) =
+           (va: doubleword_int) (instr:pwr_assembly_instruction_int) =
     log_tfold
       (mk_tracelog_spec ~tag:"disassembly" ("set instruction:" ^ va#to_hex_string))
       ~ok:(fun index -> set_instruction index instr)
       ~error:(fun _ -> ())
       (self#indexresult va)
 
-  method get_instruction (va:doubleword_int): power_assembly_instruction_result =
+  method get_instruction (va:doubleword_int): pwr_assembly_instruction_result =
     TR.tbind
       ~msg:"assembly_instructions:get_instruction"
       self#at_index
@@ -193,7 +193,7 @@ object (self)
     codeBase#le va && va#lt codeEnd
 
     (*
-  method set (index: int) (instr: power_assembly_instruction_int) =
+  method set (index: int) (instr: pwr_assembly_instruction_int) =
     try
       set_instruction index instr
     with
@@ -225,14 +225,14 @@ object (self)
              ("set_not_code_block:endaddr:" ^ endaddr#to_hex_string))
           ~ok: (fun endindex ->
             let startinstr =
-              make_power_assembly_instruction
+              make_pwr_assembly_instruction
                 startaddr true (NotCode (Some (DataBlock db))) "" in
             begin
               set_instruction startindex startinstr;
               for i = startindex + 1 to endindex - 1 do
                 set_instruction
                   i
-                  (make_power_assembly_instruction
+                  (make_pwr_assembly_instruction
                      (codeBase#add_int i) true (NotCode None) "")
               done;
               (if collect_diagnostics () then
@@ -251,14 +251,14 @@ object (self)
     let endaddr = db#get_end_address in
     let startindex = (TR.tget_ok (startaddr#subtract_to_int codeBase)) / 4 in
     let startinstr =
-      make_power_assembly_instruction
+      make_pwr_assembly_instruction
         startaddr false (NotCode (Some (DataBlock db))) "" in
     let endindex = (TR.tget_ok (endaddr#subtract_to_int codeBase)) / 4 in
     begin
       self#set startindex startinstr ;
       for i = startindex + 1  to endindex - 1 do
         let iaddr = codeBase#add_int i in
-        self#set i (make_power_assembly_instruction iaddr false (NotCode None) "")
+        self#set i (make_pwr_assembly_instruction iaddr false (NotCode None) "")
       done
     end
     *)
@@ -269,7 +269,7 @@ object (self)
       let instr = get_instruction index in
       if instr#get_address#equal wordzero then
 	let newInstr =
-          make_power_assembly_instruction
+          make_pwr_assembly_instruction
             (codeBase#add_int index) false NoOperation "" in
 	begin
           set_instruction index newInstr;
@@ -439,11 +439,11 @@ object (self)
           | _ -> ()) in
     !n
 
-  method iteri (f: int -> power_assembly_instruction_int -> unit) =
+  method iteri (f: int -> pwr_assembly_instruction_int -> unit) =
     iteri_instructions
       (fun i instr -> if i < len then f i instr else ())
 
-  method itera (f: doubleword_int -> power_assembly_instruction_int -> unit) =
+  method itera (f: doubleword_int -> pwr_assembly_instruction_int -> unit) =
     self#iteri (fun i instr -> f (codeBase#add_int i) instr)
 
   method write_xml (node: xml_element_int) = ()
@@ -533,10 +533,10 @@ object (self)
 end
 
 
-let power_assembly_instructions = ref (new power_assembly_instructions_t 1 wordzero)
+let pwr_assembly_instructions = ref (new pwr_assembly_instructions_t 1 wordzero)
 
 
-let initialize_power_assembly_instructions
+let initialize_pwr_assembly_instructions
       (length: int)    (* in bytes *)
       (codebase: doubleword_int) =
   begin
@@ -549,22 +549,22 @@ let initialize_power_assembly_instructions
            codebase#toPretty;
            STR " - ";
            (codebase#add_int length)#toPretty]);
-    power_assembly_instructions := new power_assembly_instructions_t length codebase
+    pwr_assembly_instructions := new pwr_assembly_instructions_t length codebase
   end
 
 
-let get_power_assembly_instruction (a: doubleword_int) =
-  !power_assembly_instructions#get_instruction a
+let get_pwr_assembly_instruction (a: doubleword_int) =
+  !pwr_assembly_instructions#get_instruction a
 
 
-let set_power_assembly_instruction (instr: power_assembly_instruction_int) =
-  !power_assembly_instructions#set_instruction instr#get_address instr
+let set_pwr_assembly_instruction (instr: pwr_assembly_instruction_int) =
+  !pwr_assembly_instructions#set_instruction instr#get_address instr
 
 
 let get_next_valid_instruction_address
       (a: doubleword_int): doubleword_int traceresult =
-  !power_assembly_instructions#get_next_valid_instruction_address a
+  !pwr_assembly_instructions#get_next_valid_instruction_address a
 
 
 let has_next_valid_instruction (a: doubleword_int) =
-  !power_assembly_instructions#has_next_valid_instruction a
+  !pwr_assembly_instructions#has_next_valid_instruction a

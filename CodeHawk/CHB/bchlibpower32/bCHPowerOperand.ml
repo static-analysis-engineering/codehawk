@@ -74,7 +74,7 @@ let e63 = e32 * e31
 let e64 = e32 * e32
 
 
-let power_operand_mode_to_string (m: power_operand_mode_t) =
+let pwr_operand_mode_to_string (m: pwr_operand_mode_t) =
   match m with
   | RD -> "RD"
   | WR -> "WR"
@@ -82,7 +82,7 @@ let power_operand_mode_to_string (m: power_operand_mode_t) =
   | NT -> "NT"
 
 
-let power_special_reg_to_string (reg: power_special_reg_t) =
+let pwr_special_reg_to_string (reg: pwr_special_reg_t) =
   match reg with
   | PowerCR -> "CR"
   | PowerCTR -> "CTR"
@@ -99,7 +99,7 @@ let power_special_reg_to_string (reg: power_special_reg_t) =
   | PowerMCSRR1 -> "MCSRR1"
 
 
-let power_register_field_to_string (f: power_register_field_t) =
+let pwr_register_field_to_string (f: pwr_register_field_t) =
   match f with
   | PowerCR0 -> "cr0"
   | PowerCR1 -> "cr1"
@@ -114,9 +114,9 @@ let power_register_field_to_string (f: power_register_field_t) =
   | PowerXERCA -> "XER[CA]"
 
 
-class power_operand_t
-        (kind: power_operand_kind_t)
-        (mode: power_operand_mode_t): power_operand_int =
+class pwr_operand_t
+        (kind: pwr_operand_kind_t)
+        (mode: pwr_operand_mode_t): pwr_operand_int =
 object (self)
 
   method get_kind = kind
@@ -205,8 +205,8 @@ object (self)
   method toString =
     match kind with
     | PowerGPReg index -> "r" ^ (string_of_int index)
-    | PowerSpecialReg reg -> (power_special_reg_to_string reg)
-    | PowerRegisterField f -> (power_register_field_to_string f)
+    | PowerSpecialReg reg -> (pwr_special_reg_to_string reg)
+    | PowerRegisterField f -> (pwr_register_field_to_string f)
     | PowerConditionRegisterBit i ->
        let c = function
          | 0 -> "lt"
@@ -230,40 +230,40 @@ object (self)
 end
 
 
-let power_gp_register_op ~(index: int) ~(mode: power_operand_mode_t) =
-  new power_operand_t (PowerGPReg index) mode
+let pwr_gp_register_op ~(index: int) ~(mode: pwr_operand_mode_t) =
+  new pwr_operand_t (PowerGPReg index) mode
 
 
-let power_special_register_op
-      ~(reg:power_special_reg_t) ~(mode: power_operand_mode_t) =
-  new power_operand_t (PowerSpecialReg reg) mode
+let pwr_special_register_op
+      ~(reg:pwr_special_reg_t) ~(mode: pwr_operand_mode_t) =
+  new pwr_operand_t (PowerSpecialReg reg) mode
 
 
-let power_register_field_op
-      ~(fld:power_register_field_t) ~(mode: power_operand_mode_t) =
-  new power_operand_t (PowerRegisterField fld) mode
+let pwr_register_field_op
+      ~(fld:pwr_register_field_t) ~(mode: pwr_operand_mode_t) =
+  new pwr_operand_t (PowerRegisterField fld) mode
 
 
-let power_indirect_register_op
-      ~(basegpr: int) ~(offset: numerical_t) ~(mode: power_operand_mode_t) =
-  new power_operand_t (PowerIndReg (basegpr, offset)) mode
+let pwr_indirect_register_op
+      ~(basegpr: int) ~(offset: numerical_t) ~(mode: pwr_operand_mode_t) =
+  new pwr_operand_t (PowerIndReg (basegpr, offset)) mode
 
 
-let power_indexed_indirect_register_op
-      ~(basegpr: int) ~(offsetgpr: int) ~(mode: power_operand_mode_t) =
-  new power_operand_t (PowerIndexedIndReg (basegpr, offsetgpr)) mode
+let pwr_indexed_indirect_register_op
+      ~(basegpr: int) ~(offsetgpr: int) ~(mode: pwr_operand_mode_t) =
+  new pwr_operand_t (PowerIndexedIndReg (basegpr, offsetgpr)) mode
 
 
-let power_absolute_op (addr: doubleword_int) (mode: power_operand_mode_t) =
+let pwr_absolute_op (addr: doubleword_int) (mode: pwr_operand_mode_t) =
   if system_info#is_code_address addr then
-    new power_operand_t (PowerAbsolute addr) mode
+    new pwr_operand_t (PowerAbsolute addr) mode
   else
     raise
       (BCH_failure
          (LBLOCK [STR "Invalid absolute address: "; addr#toPretty]))
 
 
-let power_immediate_op ~(signed: bool) ~(size: int) ~(imm: numerical_t) =
+let pwr_immediate_op ~(signed: bool) ~(size: int) ~(imm: numerical_t) =
   let immval =
     if signed then
       match size with
@@ -275,7 +275,7 @@ let power_immediate_op ~(signed: bool) ~(size: int) ~(imm: numerical_t) =
          raise
            (BCH_failure
               (LBLOCK [
-                   STR "Unexpected size in power-immediate-op: "; INT size]))
+                   STR "Unexpected size in pwr-immediate-op: "; INT size]))
     else
       if imm#geq numerical_zero then
         imm
@@ -289,25 +289,25 @@ let power_immediate_op ~(signed: bool) ~(size: int) ~(imm: numerical_t) =
            raise
              (BCH_failure
                 (LBLOCK [
-                     STR "Unexpected size in power-immediate-op: "; INT size])) in
+                     STR "Unexpected size in pwr-immediate-op: "; INT size])) in
   let op =
     PowerImmediate (TR.tget_ok (make_immediate signed size immval)) in
-  new power_operand_t op RD
+  new pwr_operand_t op RD
 
 
-let power_gp_register_op_convert (index: int) =
+let pwr_gp_register_op_convert (index: int) =
   if index = 0 then
-    power_immediate_op ~signed:false ~size:4 ~imm:numerical_zero
+    pwr_immediate_op ~signed:false ~size:4 ~imm:numerical_zero
   else
-    power_gp_register_op ~index ~mode:RD
+    pwr_gp_register_op ~index ~mode:RD
 
 
-let crbit_op (index: int) ~(mode: power_operand_mode_t) =
-  new power_operand_t (PowerConditionRegisterBit index) mode
+let crbit_op (index: int) ~(mode: pwr_operand_mode_t) =
+  new pwr_operand_t (PowerConditionRegisterBit index) mode
 
 
 let crf_op (index: int) =
-  power_register_field_op
+  pwr_register_field_op
     ~fld:(match index with
           | 0 -> PowerCR0
           | 1 -> PowerCR1
@@ -335,18 +335,18 @@ let cr2_op = crf_op 2
 
 let cr3_op = crf_op 3
 
-let cr_op = power_special_register_op ~reg:PowerCR
+let cr_op = pwr_special_register_op ~reg:PowerCR
 
-let ctr_op = power_special_register_op ~reg:PowerCTR
+let ctr_op = pwr_special_register_op ~reg:PowerCTR
 
-let lr_op = power_special_register_op ~reg:PowerLR
+let lr_op = pwr_special_register_op ~reg:PowerLR
 
-let msr_op = power_special_register_op ~reg:PowerMSR
+let msr_op = pwr_special_register_op ~reg:PowerMSR
 
-let xer_op = power_special_register_op ~reg:PowerXER
+let xer_op = pwr_special_register_op ~reg:PowerXER
 
-let xer_ca_op = power_register_field_op ~fld:PowerXERCA
+let xer_ca_op = pwr_register_field_op ~fld:PowerXERCA
 
-let xer_so_op = power_register_field_op ~fld:PowerXERSO
+let xer_so_op = pwr_register_field_op ~fld:PowerXERSO
 
-let xer_ov_op = power_register_field_op ~fld:PowerXEROV
+let xer_ov_op = pwr_register_field_op ~fld:PowerXEROV

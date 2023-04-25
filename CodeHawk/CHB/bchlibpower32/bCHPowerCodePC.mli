@@ -29,4 +29,4 @@
 (* bchlibpower32 *)
 open BCHPowerTypes
 
-val make_power_code_pc: power_assembly_block_int -> power_code_pc_int
+val make_pwr_code_pc: pwr_assembly_block_int -> pwr_code_pc_int

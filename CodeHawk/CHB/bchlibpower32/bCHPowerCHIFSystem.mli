@@ -34,5 +34,6 @@ open BCHLibTypes
 (* bchlibpower32 *)
 open BCHPowerTypes
 
-val power_chif_system: power_chif_system_int
-val make_power_proc_name: doubleword_int -> symbol_t
+val pwr_chif_system: pwr_chif_system_int
+
+val make_pwr_proc_name: doubleword_int -> symbol_t

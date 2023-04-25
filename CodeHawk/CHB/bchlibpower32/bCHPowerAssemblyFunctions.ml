@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023 Aarno Labs, LLC
+   Copyright (c) 2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -158,7 +158,7 @@ let create_ordering
   aux functions calls [] [] false
 
 
-class power_assembly_functions_t: power_assembly_functions_int =
+class pwr_assembly_functions_t: pwr_assembly_functions_int =
 object (self)
 
   val functions = H.create 53
@@ -167,7 +167,7 @@ object (self)
 
   method reset = H.clear functions
 
-  method add_function (f: power_assembly_function_int) =
+  method add_function (f: pwr_assembly_function_int) =
     H.replace functions f#faddr#index f
 
   method remove_function (faddr: doubleword_int) =
@@ -227,20 +227,20 @@ object (self)
       let _ = callgraphorder <- Some orderedList in
       orderedList
 
-  method bottom_up_itera (f:doubleword_int -> power_assembly_function_int -> unit) =
+  method bottom_up_itera (f:doubleword_int -> pwr_assembly_function_int -> unit) =
     let orderedList = self#get_bottomup_function_list in
     let orderedFunctions = List.map self#get_function_by_address orderedList in
     List.iter (fun afn -> f afn#faddr afn) orderedFunctions
       
-  method top_down_itera (f:doubleword_int -> power_assembly_function_int -> unit) =
+  method top_down_itera (f:doubleword_int -> pwr_assembly_function_int -> unit) =
     let orderedList = List.rev self#get_bottomup_function_list in
     let orderedFunctions = List.map self#get_function_by_address orderedList in
     List.iter (fun afn -> f afn#faddr afn) orderedFunctions
       
-  method iter (f: power_assembly_function_int -> unit) =
+  method iter (f: pwr_assembly_function_int -> unit) =
     List.iter (fun afn -> f afn) self#functions
 
-  method itera (f:doubleword_int -> power_assembly_function_int -> unit) =
+  method itera (f:doubleword_int -> pwr_assembly_function_int -> unit) =
     List.iter (fun afn -> f afn#faddr afn) self#functions
 
   method get_function_coverage =
@@ -353,7 +353,7 @@ object (self)
   method dark_matter_to_string =
     let table = self#get_live_instructions in
     let filter = (fun i -> not (H.mem table i#get_address#index)) in
-    let dark = !power_assembly_instructions#toString ~filter () in
+    let dark = !pwr_assembly_instructions#toString ~filter () in
     let functionstats = self#get_function_stats in
     dark ^ "\n\n" ^ functionstats
 
@@ -361,7 +361,7 @@ object (self)
     let table = self#get_duplicate_instructions in
     let lines = ref [] in
     begin
-      !power_assembly_instructions#itera
+      !pwr_assembly_instructions#itera
         (fun va instr ->
           if (H.mem table instr#get_address#index
               && (List.length (H.find table instr#get_address#index)) > 1) then
@@ -394,32 +394,32 @@ object (self)
 end
     
 
-let power_assembly_functions = new power_assembly_functions_t
+let pwr_assembly_functions = new pwr_assembly_functions_t
 
 
-let get_power_assembly_function (faddr: doubleword_int) =
-  power_assembly_functions#get_function_by_address faddr
+let get_pwr_assembly_function (faddr: doubleword_int) =
+  pwr_assembly_functions#get_function_by_address faddr
 
 
 let get_export_metrics () = exports_metrics_handler#init_value
 
 
-let get_power_disassembly_metrics () =
+let get_pwr_disassembly_metrics () =
   let _ = pverbose [STR "Compute coverage: "; NL] in
   let (coverage, overlap, alloverlap) =
-    power_assembly_functions#get_function_coverage in
+    pwr_assembly_functions#get_function_coverage in
   let _ = pverbose [STR "Get number of instructions: "; NL] in
-  let instrs = !power_assembly_instructions#get_num_instructions in
+  let instrs = !pwr_assembly_instructions#get_num_instructions in
   let _ = pverbose [STR "Get imports"; NL] in
   let imported_imports = [] in
   let loaded_imports = [] in
   let imports = imported_imports @ loaded_imports in
   let _ = pverbose [STR "Get unknown instructions: "; NL] in
-  let numunknown = !power_assembly_instructions#get_num_unknown_instructions in
+  let numunknown = !pwr_assembly_instructions#get_num_unknown_instructions in
   let _ = pverbose [STR "Found "; INT numunknown; STR " instructions"; NL] in
-  { dm_unknown_instrs = !power_assembly_instructions#get_num_unknown_instructions;
+  { dm_unknown_instrs = !pwr_assembly_instructions#get_num_unknown_instructions;
     dm_instrs = instrs;
-    dm_functions = power_assembly_functions#get_num_functions;
+    dm_functions = pwr_assembly_functions#get_num_functions;
     dm_coverage = coverage;
     dm_pcoverage = 100.0 *. (float_of_int coverage) /. (float_of_int instrs) ;    
     dm_overlap = overlap;

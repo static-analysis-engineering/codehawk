@@ -41,18 +41,18 @@ open BCHLibTypes
 open BCHPowerTypes
 
 
-let pwr_itype_mfts: power_instruction_type_t mfts_int =
+let pwr_itype_mfts: pwr_instruction_type_t mfts_int =
   mk_mfts
-    "power_instruction_type_t"
+    "pwr_instruction_type_t"
     [(PWR, "p"); (VLE16, "v"); (VLE32, "w")]
 
 
-class pwr_opkind_mcts_t: [power_operand_kind_t] mfts_int =
+class pwr_opkind_mcts_t: [pwr_operand_kind_t] mfts_int =
 object
 
-  inherit [power_operand_kind_t] mcts_t "power_oeprand_kind_t"
+  inherit [pwr_operand_kind_t] mcts_t "pwr_oeprand_kind_t"
 
-  method ts (k: power_operand_kind_t) =
+  method ts (k: pwr_operand_kind_t) =
     match k with
     | PowerGPReg _ -> "g"
     | PowerSpecialReg _ -> "s"
@@ -67,15 +67,15 @@ object
 
 end
 
-let pwr_opkind_mcts: power_operand_kind_t mfts_int = new pwr_opkind_mcts_t
+let pwr_opkind_mcts: pwr_operand_kind_t mfts_int = new pwr_opkind_mcts_t
 
 
-class pwr_branch_prediction_mcts_t: [power_branch_prediction_t] mfts_int =
+class pwr_branch_prediction_mcts_t: [pwr_branch_prediction_t] mfts_int =
 object
 
-  inherit [power_branch_prediction_t] mcts_t "power_branch_prediction_t"
+  inherit [pwr_branch_prediction_t] mcts_t "pwr_branch_prediction_t"
 
-  method ts (p: power_branch_prediction_t) =
+  method ts (p: pwr_branch_prediction_t) =
     match p with
     | BPNone -> "n"
     | BPPlus _ -> "p"
@@ -85,5 +85,5 @@ object
 
 end
 
-let pwr_branch_prediction_mcts: power_branch_prediction_t mfts_int =
+let pwr_branch_prediction_mcts: pwr_branch_prediction_t mfts_int =
   new pwr_branch_prediction_mcts_t

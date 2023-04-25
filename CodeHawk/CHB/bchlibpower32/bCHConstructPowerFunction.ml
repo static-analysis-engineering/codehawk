@@ -90,6 +90,10 @@ let get_successors
 
       let succ =
         match opcode with
+
+        (* unconditionarl return instruction *)
+        | BranchLinkRegister _ -> []
+
         (* unconditional branch *)
         | Branch (_, tgt) -> [tgt#get_absolute_address]
 
@@ -103,35 +107,35 @@ let get_successors
       List.map (fun va -> (make_location_by_address faddr va)#ci)
         (List.filter
            (fun va ->
-             if !power_assembly_instructions#is_code_address va then
+             if !pwr_assembly_instructions#is_code_address va then
                true
              else
                let loc = make_location_by_address faddr va in
                false) succ))
     []
-    (get_power_assembly_instruction iaddr)
+    (get_pwr_assembly_instruction iaddr)
 
 
 (* Returns inlinedblocks, block constructed, and newly discovered function 
    entry points *)
-let construct_power_assembly_block
+let construct_pwr_assembly_block
       (faddr: doubleword_int)
       (baddr: doubleword_int):
-      (power_assembly_block_int list
-       * power_assembly_block_int
+      (pwr_assembly_block_int list
+       * pwr_assembly_block_int
        * doubleword_int list) =
 
   let newfnentries = new DoublewordCollections.set_t in
 
   let set_block_entry (a: doubleword_int) =
     TR.titer (fun instr ->
-        instr#set_block_entry) (get_power_assembly_instruction a) in
+        instr#set_block_entry) (get_pwr_assembly_instruction a) in
 
-  let get_instr = get_power_assembly_instruction in
+  let get_instr = get_pwr_assembly_instruction in
   let has_next_instr =
-    !power_assembly_instructions#has_next_valid_instruction in
+    !pwr_assembly_instructions#has_next_valid_instruction in
   let get_next_instr_address =
-    !power_assembly_instructions#get_next_valid_instruction_address in
+    !pwr_assembly_instructions#get_next_valid_instruction_address in
 
   let rec find_last_instruction (va: doubleword_int) (prev: doubleword_int) =
     let instr =
@@ -210,12 +214,12 @@ let construct_power_assembly_block
             (List.map (make_location_by_address faddr) l) in
 
   (inlinedblocks,
-   make_power_assembly_block faddr baddr lastaddr succ,
+   make_pwr_assembly_block faddr baddr lastaddr succ,
    newfnentries#toList)
 
 
-let construct_power_assembly_function
-      (faddr: doubleword_int): (doubleword_int list * power_assembly_function_int) =
+let construct_pwr_assembly_function
+      (faddr: doubleword_int): (doubleword_int list * pwr_assembly_function_int) =
   let newfnentries = new DoublewordCollections.set_t in
   let workset = new DoublewordCollections.set_t in
   let doneset = new DoublewordCollections.set_t in
@@ -225,11 +229,11 @@ let construct_power_assembly_function
   let set_block_entry (baddr: doubleword_int) =
     TR.titer
       (fun instr -> instr#set_block_entry)
-      (get_power_assembly_instruction baddr) in
+      (get_pwr_assembly_instruction baddr) in
   let blocks = ref [] in
   let rec add_block (baddr: doubleword_int) =
     let (inlinedblocks, block, newfes) =
-      construct_power_assembly_block faddr baddr in
+      construct_pwr_assembly_block faddr baddr in
     let blocksucc =
       match inlinedblocks with
       | [] -> block#successors
@@ -252,11 +256,11 @@ let construct_power_assembly_function
     end in
   let _ = add_block faddr in
   let blocklist =
-    List.sort (fun (b1: power_assembly_block_int) (b2: power_assembly_block_int) ->
+    List.sort (fun (b1: pwr_assembly_block_int) (b2: pwr_assembly_block_int) ->
         Stdlib.compare b1#context_string b2#context_string) !blocks in
   let succ =
     List.fold_left
-      (fun acc (b: power_assembly_block_int) ->
+      (fun acc (b: pwr_assembly_block_int) ->
         let src = b#context_string in
         (List.map (fun tgt -> (src, tgt)) b#successors) @ acc) [] blocklist in
-  (newfnentries#toList, make_power_assembly_function faddr blocklist succ)
+  (newfnentries#toList, make_pwr_assembly_function faddr blocklist succ)

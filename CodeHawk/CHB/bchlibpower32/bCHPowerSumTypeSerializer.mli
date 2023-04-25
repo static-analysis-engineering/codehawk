@@ -32,8 +32,8 @@ open CHSumTypeSerializer
 open BCHPowerTypes
 
 
-val pwr_itype_mfts: power_instruction_type_t mfts_int
+val pwr_itype_mfts: pwr_instruction_type_t mfts_int
 
-val pwr_opkind_mcts: power_operand_kind_t mfts_int
+val pwr_opkind_mcts: pwr_operand_kind_t mfts_int
 
-val pwr_branch_prediction_mcts: power_branch_prediction_t mfts_int
+val pwr_branch_prediction_mcts: pwr_branch_prediction_t mfts_int

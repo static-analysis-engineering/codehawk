@@ -32,8 +32,8 @@ open BCHLibTypes
 open BCHPowerTypes
 
 
-(** [construct_power_assembly_function faddr] constructs assembly function [fn] at
+(** [construct_pwr_assembly_function faddr] constructs assembly function [fn] at
     address [faddr] and returns a list of new function entry points (discovered
     during the construction) and [fn].*)
-val construct_power_assembly_function:
-  doubleword_int -> (doubleword_int list * power_assembly_function_int)
+val construct_pwr_assembly_function:
+  doubleword_int -> (doubleword_int list * pwr_assembly_function_int)

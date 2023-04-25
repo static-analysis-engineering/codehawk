@@ -43,125 +43,125 @@ open BCHLibTypes
 open BCHPowerTypes
 
 
-val power_operand_mode_to_string: power_operand_mode_t -> string
+val pwr_operand_mode_to_string: pwr_operand_mode_t -> string
 
-val power_gp_register_op:
-  index:int -> mode:power_operand_mode_t -> power_operand_int
+val pwr_gp_register_op:
+  index:int -> mode:pwr_operand_mode_t -> pwr_operand_int
 
-val power_gp_register_op_convert: int -> power_operand_int
+val pwr_gp_register_op_convert: int -> pwr_operand_int
 
-val power_special_register_op:
-  reg:power_special_reg_t
-  -> mode:power_operand_mode_t
-  -> power_operand_int
+val pwr_special_register_op:
+  reg:pwr_special_reg_t
+  -> mode:pwr_operand_mode_t
+  -> pwr_operand_int
 
-val power_register_field_op:
-  fld:power_register_field_t
-  -> mode:power_operand_mode_t
-  -> power_operand_int
+val pwr_register_field_op:
+  fld:pwr_register_field_t
+  -> mode:pwr_operand_mode_t
+  -> pwr_operand_int
 
 
-(** [power_indirect_register_op ~basegpr ~offset ~mode] returns an operand that
+(** [pwr_indirect_register_op ~basegpr ~offset ~mode] returns an operand that
     represents a memory address with the base address location in the GPR with
     index [basegpr] and a constant offset with value [offset] *) 
-val power_indirect_register_op:
+val pwr_indirect_register_op:
   basegpr:int
   -> offset:numerical_t
-  -> mode:power_operand_mode_t
-  -> power_operand_int
+  -> mode:pwr_operand_mode_t
+  -> pwr_operand_int
 
 
-(** [power_indexed_indirect_register_op ~basegpr ~offsetgpr ~mode] returns an operand
+(** [pwr_indexed_indirect_register_op ~basegpr ~offsetgpr ~mode] returns an operand
     that represents a memory address with the base address located in the GPR
     with index [basegpr] and the offset located in the GPR with index
     [offsetgpr] *)
-val power_indexed_indirect_register_op:
+val pwr_indexed_indirect_register_op:
   basegpr:int
   -> offsetgpr:int
-  -> mode:power_operand_mode_t
-  -> power_operand_int
+  -> mode:pwr_operand_mode_t
+  -> pwr_operand_int
 
 
-(** [power_immediate_op ~signed ~size ~imm] returns a signed or unsigned
+(** [pwr_immediate_op ~signed ~size ~imm] returns a signed or unsigned
     immediate value operand of [size] bytes with unsigned value [imm]
 
     Note: if the immediate value is requested to be signed, values of [imm]
     that exceed the the maximum value that can be represented by a signed
     integer of the given size are interpreted as negative.
  *)
-val power_immediate_op:
+val pwr_immediate_op:
   signed:bool (* signed *)
   -> size:int (* size in bytes *)
   -> imm:numerical_t  (* value *)
-  -> power_operand_int
+  -> pwr_operand_int
 
 
 (** return an absolute address in operand form *)
-val power_absolute_op:
-  doubleword_int -> power_operand_mode_t -> power_operand_int
+val pwr_absolute_op:
+  doubleword_int -> pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return condition register field 0 (CR0) in operand form *)
-val cr0_op: mode:power_operand_mode_t -> power_operand_int
+val cr0_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return condition register field 1 (CR1) in operand form *)
-val cr1_op: mode:power_operand_mode_t -> power_operand_int
+val cr1_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return condition register field 2 (CR2) in operand form *)
-val cr2_op: mode:power_operand_mode_t -> power_operand_int
+val cr2_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return condition register field 3 (CR3) in operand form *)
-val cr3_op: mode:power_operand_mode_t -> power_operand_int
+val cr3_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** [crf_op f ~mode] returns condition register field [f] (CR[f]) in
     operand form *)
-val crf_op: int -> mode:power_operand_mode_t -> power_operand_int
+val crf_op: int -> mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** [crbi_op i ~mode] returns condition register field [i / 4] in
     operand form *)
-val crbi_op: int -> mode:power_operand_mode_t -> power_operand_int
+val crbi_op: int -> mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** [crbit_op i ~mode] returns condition register bit [i] in operand
     form *)
-val crbit_op: int -> mode:power_operand_mode_t -> power_operand_int
+val crbit_op: int -> mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return the condition register (CR) in operand form *)
-val cr_op: mode:power_operand_mode_t -> power_operand_int
+val cr_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return the count register (CTR) in operand form *)
-val ctr_op: mode:power_operand_mode_t -> power_operand_int
+val ctr_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return the link register (LR) in operand form *)
-val lr_op: mode:power_operand_mode_t -> power_operand_int
+val lr_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return the machine state register (MSR) in operand form *)
-val msr_op: mode:power_operand_mode_t -> power_operand_int
+val msr_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return the integer exception register (XER) in operand form *)
-val xer_op: mode:power_operand_mode_t -> power_operand_int
+val xer_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return the carry bit in the integer exception register (XER-CA)
     in operand form *)
-val xer_ca_op: mode:power_operand_mode_t -> power_operand_int
+val xer_ca_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return the summary overflow bit in the integer exception register
     (XER-SO) in operand form *)
-val xer_so_op: mode:power_operand_mode_t -> power_operand_int
+val xer_so_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
 (** return the overflow bit in the integer exception register (XER-OV)
     in operand form *)
-val xer_ov_op: mode:power_operand_mode_t -> power_operand_int
+val xer_ov_op: mode:pwr_operand_mode_t -> pwr_operand_int

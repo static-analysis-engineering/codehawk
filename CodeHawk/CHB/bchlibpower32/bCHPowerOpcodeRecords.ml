@@ -47,19 +47,19 @@ open BCHPowerTypes
 
 class type ['a] opcode_formatter_int =
   object
-    method ops: string -> power_operand_int list -> 'a
+    method ops: string -> pwr_operand_int list -> 'a
     method int_ops: string -> int list -> 'a
     method no_ops: string -> 'a
-    method ops_bc: string -> power_operand_int -> power_operand_int list -> 'a
+    method ops_bc: string -> pwr_operand_int -> pwr_operand_int list -> 'a
     method conditional_branch:
-             power_instruction_type_t -> int -> int -> power_operand_int -> 'a
+             pwr_instruction_type_t -> int -> int -> pwr_operand_int -> 'a
     method enable: string -> bool -> 'a
   end
 
 
 type 'a opcode_record_t ={
     mnemonic: string;
-    operands: power_operand_int list;
+    operands: pwr_operand_int list;
     ida_asm: 'a
   }
 
@@ -72,7 +72,7 @@ let mnemonic_oe_rc (s: string) (oe: bool) (rc: bool): string =
   | (true, true) -> s ^ "o."
 
 
-let mnemonic_bp (s: string) (bp: power_branch_prediction_t) =
+let mnemonic_bp (s: string) (bp: pwr_branch_prediction_t) =
   match bp with
   | BPNone -> s
   | BPPlus _ -> s ^ "+"
@@ -87,7 +87,7 @@ let mnemonic_bpp (s: string) (bph: bool) (bpt: bool): string =
   | (true, true) -> s ^ "+"
 
 
-let get_record (opc: power_opcode_t) =
+let get_record (opc: pwr_opcode_t) =
   match opc with
   | Add (pit, rc, oe, rd, ra, rb, cr, so, ov) ->
      let mnemonic = match pit with
@@ -1601,7 +1601,7 @@ let get_record (opc: power_opcode_t) =
 class string_formatter_t (width: int): [string] opcode_formatter_int =
 object (self)
 
-  method ops (s: string) (operands: power_operand_int list) =
+  method ops (s: string) (operands: pwr_operand_int list) =
     let s = (fixed_length_string s width) in
     let (_, result) =
       List.fold_left
@@ -1625,7 +1625,7 @@ object (self)
 
   method no_ops (s: string) = s
 
-  method ops_bc (s: string) (cr: power_operand_int) (ops: power_operand_int list) =
+  method ops_bc (s: string) (cr: pwr_operand_int) (ops: pwr_operand_int list) =
     if cr#is_default_cr then
       match ops with
       | [] -> self#no_ops s
@@ -1638,10 +1638,10 @@ object (self)
     if b then s ^ " 1" else s ^ " 0"
 
   method conditional_branch
-           (pit: power_instruction_type_t)
+           (pit: pwr_instruction_type_t)
            (bo: int)
            (bi: int)
-           (tgt: power_operand_int) =
+           (tgt: pwr_operand_int) =
     let prefix = match pit with
       | PWR -> "b"
       | VLE16 -> "se_b"
@@ -1656,10 +1656,10 @@ object (self)
 end
 
 
-let power_opcode_to_string ?(width=12) (opc: power_opcode_t) =
+let pwr_opcode_to_string ?(width=12) (opc: pwr_opcode_t) =
   let formatter = new string_formatter_t width in
   let default () = (get_record opc).ida_asm formatter in
   default ()
                   
 
-let power_opcode_name (opc: power_opcode_t) = (get_record opc).mnemonic
+let pwr_opcode_name (opc: pwr_opcode_t) = (get_record opc).mnemonic

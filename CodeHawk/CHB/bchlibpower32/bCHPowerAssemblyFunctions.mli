@@ -35,15 +35,15 @@ open BCHPowerTypes
 (** Provides the access point to retrieve assembly functions. *)
 
 
-(** Return the (sole instance) [arm_power_functions] object with access to all
+(** Return the (sole instance) [arm_pwr_functions] object with access to all
     assembly functions *)
-val power_assembly_functions: power_assembly_functions_int
+val pwr_assembly_functions: pwr_assembly_functions_int
 
 
-(** [get_power_assembly_function faddr] returns the assembly function with
+(** [get_pwr_assembly_function faddr] returns the assembly function with
     address [faddr]. *)
-val get_power_assembly_function: doubleword_int -> power_assembly_function_int
+val get_pwr_assembly_function: doubleword_int -> pwr_assembly_function_int
 
 
 (** Return metrics on all functions. *)
-val get_power_disassembly_metrics: unit -> disassembly_metrics_t
+val get_pwr_disassembly_metrics: unit -> disassembly_metrics_t

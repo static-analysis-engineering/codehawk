@@ -33,4 +33,4 @@ open BCHPowerTypes
 
 
 val disassemble_vle_instruction:
-  pushback_stream_int -> doubleword_int -> int -> power_opcode_t
+  pushback_stream_int -> doubleword_int -> int -> pwr_opcode_t

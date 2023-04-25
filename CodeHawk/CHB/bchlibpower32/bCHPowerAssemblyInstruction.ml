@@ -49,11 +49,11 @@ open BCHPowerTypes
 open BCHPowerOpcodeRecords
 
 
-class power_assembly_instruction_t
+class pwr_assembly_instruction_t
         (vaddr: doubleword_int)
         (is_vle: bool)
-        (opcode: power_opcode_t)
-        (instruction_bytes: string): power_assembly_instruction_int =
+        (opcode: pwr_opcode_t)
+        (instruction_bytes: string): pwr_assembly_instruction_int =
 object (self)
      
   val mutable block_entry = false
@@ -89,7 +89,7 @@ object (self)
 
   method get_bytes_as_hexstring = byte_string_to_printed_string instruction_bytes
 
-  method toString = power_opcode_to_string opcode
+  method toString = pwr_opcode_to_string opcode
 
   method toPretty = LBLOCK [STR self#toString]
 
@@ -98,9 +98,9 @@ object (self)
 end
 
                                                
-let make_power_assembly_instruction
+let make_pwr_assembly_instruction
       (va: doubleword_int)
       (is_vle: bool)
-      (opcode: power_opcode_t)
+      (opcode: pwr_opcode_t)
       (instructionbytes: string) =
-  new power_assembly_instruction_t va is_vle opcode instructionbytes
+  new pwr_assembly_instruction_t va is_vle opcode instructionbytes

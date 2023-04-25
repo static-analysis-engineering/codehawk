@@ -384,8 +384,7 @@ object (self)
   method is_program_section =
     match self#get_section_type with SHT_ProgBits -> true | _ -> false
 
-  method is_power_vle =
-    List.mem 28 sh_flags#get_bits_set
+  method is_pwr_vle = List.mem 28 sh_flags#get_bits_set
 
   method is_debug_info = self#get_section_name = ".debug_info"
 

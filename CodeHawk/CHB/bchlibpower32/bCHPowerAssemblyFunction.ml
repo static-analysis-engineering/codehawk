@@ -57,11 +57,11 @@ open BCHPowerTypes
 module H = Hashtbl
 
 
-class power_assembly_function_t
+class pwr_assembly_function_t
         (faddr: doubleword_int)
-        (blocks: power_assembly_block_int list)
+        (blocks: pwr_assembly_block_int list)
         (successors: (ctxt_iaddress_t * ctxt_iaddress_t) list)
-      :power_assembly_function_int =
+      :pwr_assembly_function_int =
 object (self)
 
   val blocktable =
@@ -87,7 +87,7 @@ object (self)
         ch_error_log#add
           "invocation error"
           (LBLOCK [
-               STR "power_assembly_function#get_block: "; STR bctxt]);
+               STR "pwr_assembly_function#get_block: "; STR bctxt]);
         raise
           (BCH_failure
              (LBLOCK [
@@ -106,7 +106,7 @@ object (self)
     | Not_found ->
        let msg =
          LBLOCK [
-             STR "power_assembly_function#get_instruction: "; iaddr#toPretty] in
+             STR "pwr_assembly_function#get_instruction: "; iaddr#toPretty] in
        begin
          ch_error_log#add "invocation_error" msg;
          raise (BCH_failure msg)
@@ -134,18 +134,18 @@ object (self)
   method get_function_md5 =
     byte_string_to_printed_string (Digest.string self#get_bytes_as_hexstring)
 
-  method iter (f: power_assembly_block_int -> unit) =
+  method iter (f: pwr_assembly_block_int -> unit) =
     List.iter (fun b -> f b) self#blocks
 
-  method itera (f: ctxt_iaddress_t -> power_assembly_block_int -> unit) =
+  method itera (f: ctxt_iaddress_t -> pwr_assembly_block_int -> unit) =
     List.iter (fun b -> f b#context_string b) self#blocks
 
   method iteri
            (f: doubleword_int
             -> ctxt_iaddress_t
-            -> power_assembly_instruction_int
+            -> pwr_assembly_instruction_int
             -> unit) =
-    List.iter (fun (b: power_assembly_block_int) ->
+    List.iter (fun (b: pwr_assembly_block_int) ->
         b#itera (fun iaddr instr -> f faddr iaddr instr)) self#blocks
 
   method populate_callgraph (callgraph: callgraph_int) =
@@ -167,11 +167,11 @@ object (self)
 end
 
 
-let make_power_assembly_function
+let make_pwr_assembly_function
       (va: doubleword_int)
-      (blocks: power_assembly_block_int list)
+      (blocks: pwr_assembly_block_int list)
       (successors: (ctxt_iaddress_t * ctxt_iaddress_t) list) =
   let blocks =
     List.sort (fun b1 b2 ->
         Stdlib.compare b1#context_string b2#context_string) blocks in
-  new power_assembly_function_t va blocks successors
+  new pwr_assembly_function_t va blocks successors
