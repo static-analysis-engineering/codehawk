@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,9 @@ open BCHMIPSTypes
 (* bchlibarm32 *)
 open BCHARMTypes
 
+(* bchlibpower32 *)
+open BCHPowerTypes
+
 
 val add_no_lineq: string -> unit
 val exclude_function: string -> unit
@@ -58,3 +61,9 @@ val analyze_arm_function:
   doubleword_int -> arm_assembly_function_int -> int -> unit
 
 val analyze_arm: float -> unit
+
+
+val analyze_pwr_function:
+  doubleword_int -> pwr_assembly_function_int -> int -> unit
+
+val analyze_pwr: float -> unit

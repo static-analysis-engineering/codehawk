@@ -72,6 +72,15 @@ open BCHARMLoopStructure
 open BCHARMMetrics
 open BCHTranslateARMToCHIF
 
+(* bchlibpower32 *)
+open BCHPowerAnalysisResults
+open BCHPowerAssemblyFunction
+open BCHPowerAssemblyFunctions
+open BCHPowerCHIFSystem
+open BCHPowerMetrics
+open BCHPowerTypes
+open BCHTranslatePowerToCHIF
+
 (* bchanalyze *)
 open BCHAnalysisTypes
 open BCHAnalyzeProcedure
@@ -436,6 +445,76 @@ let analyze_arm starttime =
              let _ = count := !count + 1 in
              try
                analyze_arm_function faddr f !count
+             with
+             | BCH_failure p ->
+                raise (BCH_failure p)));
+    file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime)
+  end
+
+
+let analyze_pwr_function
+      (faddr: doubleword_int) (f: pwr_assembly_function_int) (count: int) =
+  let fstarttime = Unix.gettimeofday () in
+  let finfo = load_function_info faddr in
+  let _ =
+    pverbose [
+        STR "Analyze ";
+        faddr#toPretty;
+        STR " (started: ";
+        STR (time_to_string fstarttime);
+        STR ")";
+        NL] in
+  let _ = translate_pwr_assembly_function f in
+  if pwr_chif_system#has_pwr_procedure faddr then
+    let proc = pwr_chif_system#get_pwr_procedure faddr in
+    begin
+      bb_invariants#reset;
+      analyze_procedure_with_intervals proc pwr_chif_system#get_pwr_system;
+      analyze_procedure_with_reaching_defs proc pwr_chif_system#get_pwr_system;
+      extract_ranges finfo bb_invariants#get_invariants;
+      extract_reaching_defs finfo bb_invariants#get_invariants;
+      finfo#reset_invariants;
+      save_function_info finfo;
+      save_function_invariants finfo;
+      save_function_var_invariants finfo;
+      pwr_analysis_results#record_results f;
+      save_function_variables finfo;
+      file_metrics#record_results
+        faddr
+        ((Unix.gettimeofday ()) -. fstarttime)
+        (get_pwr_memory_access_metrics f finfo)
+        (get_pwr_cfg_metrics f finfo#env)
+    end
+  else
+    pr_debug [STR "Translation failed for "; faddr#toPretty; NL]
+
+
+let analyze_pwr (starttime: float) =
+  let count = ref 0 in
+  begin
+    (if (List.length !fns_included) > 0 then
+       List.iter
+         (fun faddr ->
+           let faddr =
+             fail_tvalue
+               (trerror_record
+                  (LBLOCK [STR "analyze_pwr:faddr: "; STR faddr]))
+               (string_to_doubleword faddr) in
+           let f = pwr_assembly_functions#get_function_by_address faddr in
+           let _ = count := !count + 1 in
+           analyze_pwr_function faddr f !count) !fns_included
+     else
+       pwr_assembly_functions#bottom_up_itera
+         (fun faddr f ->
+           if List.mem faddr#to_hex_string !fns_excluded then
+             ()
+           else if file_metrics#is_stable faddr#to_hex_string []
+                   && (not !analyze_all) then
+             pwr_analysis_results#record_results ~save:false f
+           else
+             let _ = count := !count + 1 in
+             try
+               analyze_pwr_function faddr f !count
              with
              | BCH_failure p ->
                 raise (BCH_failure p)));

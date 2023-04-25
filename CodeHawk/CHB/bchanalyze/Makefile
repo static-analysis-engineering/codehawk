@@ -13,6 +13,7 @@ ELFLIB = $(CHB)/bchlibelf
 X86LIB = $(CHB)/bchlibx86
 MIPSLIB = $(CHB)/bchlibmips32
 ARMLIB = $(CHB)/bchlibarm32
+PWRLIB = $(CHB)/bchlibpower32
 
 CAMLDOC := ocamldoc
 
@@ -28,6 +29,7 @@ CAMLC := ocamlopt  -I str -I cmi -I cmx \
 	-I $(X86LIB)/cmi \
 	-I $(MIPSLIB)/cmi \
 	-I $(ARMLIB)/cmi \
+	-I $(PWRLIB)/cmi \
 
 CAMLLINK := ocamlopt \
 
@@ -70,7 +72,7 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-bchanalyze: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(ELFLIB)/bchlibelf.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPSLIB)/bchlibmips32.cmxa $(ARMLIB)/bchlibarm32.cmxa
+bchanalyze: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(ELFLIB)/bchlibelf.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPSLIB)/bchlibmips32.cmxa $(ARMLIB)/bchlibarm32.cmxa $(PWRLIB)/bchlibpower32.cmxa
 	$(CAMLLINK) -a -o bchanalyze.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli
