@@ -449,11 +449,13 @@ let get_resultmetrics_filename () =
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_metrics.xml")
 
+
 let get_resultdata_filename () =
   let exename = get_filename () in
   let fdir = get_results_dir () in
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_data.xml")
+
 
 let get_x86dictionary_filename  () =
   let exename = get_filename () in
@@ -461,11 +463,13 @@ let get_x86dictionary_filename  () =
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_x86dict.xml")
 
+
 let get_mips_dictionary_filename () =
   let exename = get_filename () in
   let fdir = get_results_dir () in
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_mipsdict.xml")
+
 
 let get_mips_assembly_instructions_filename () =
   let exename = get_filename () in
@@ -473,11 +477,13 @@ let get_mips_assembly_instructions_filename () =
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_mips_asm.xml")
 
+
 let get_arm_dictionary_filename () =
   let exename = get_filename () in
   let fdir = get_results_dir () in
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_armdict.xml")
+
 
 let get_arm_assembly_instructions_filename () =
   let exename = get_filename () in
@@ -485,11 +491,27 @@ let get_arm_assembly_instructions_filename () =
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_arm_asm.xml")
 
+
+let get_pwr_dictionary_filename () =
+  let exename = get_filename () in
+  let fdir = get_results_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_pwrdict.xml")
+
+
+let get_pwr_assembly_instructions_filename () =
+  let exename = get_filename () in
+  let fdir = get_results_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_pwr_asm.xml")
+
+
 let get_cfgs_filename () =
   let exename = get_filename () in
   let fdir = get_results_dir () in
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_cfgs.xml")
+
 
 let get_app_function_results_filename (name:string) =
   let exename = get_filename () in

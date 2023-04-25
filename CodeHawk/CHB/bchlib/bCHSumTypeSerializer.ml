@@ -143,9 +143,9 @@ let arm_special_reg_mfts: arm_special_reg_t mfts_int =
     [(APSR, "APSR"); (FPSCR, "FPSCR"); (APSR_nzcv, "APSR_nzcv")]
 
 
-let power_spr_mfts: power_special_reg_t mfts_int =
+let pwr_spr_mfts: pwr_special_reg_t mfts_int =
   mk_mfts
-    "power_special_reg_t"
+    "pwr_special_reg_t"
     [(PowerCR, "CR");
      (PowerCTR, "CTR");
      (PowerMSR, "MSR");
@@ -161,9 +161,9 @@ let power_spr_mfts: power_special_reg_t mfts_int =
      (PowerMCSRR1, "MCSRR1")]
 
 
-let power_crf_mfts: power_register_field_t mfts_int =
+let pwr_crf_mfts: pwr_register_field_t mfts_int =
   mk_mfts
-    "power_register_field_t"
+    "pwr_register_field_t"
     [(PowerCR0, "CR0");
      (PowerCR1, "CR1");
      (PowerCR2, "CR2");

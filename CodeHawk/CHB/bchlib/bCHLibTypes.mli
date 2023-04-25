@@ -401,7 +401,7 @@ type arm_extension_register_replicated_element_t = {
 
 (* ====================================================== power types === *)
 
-type power_special_reg_t =
+type pwr_special_reg_t =
   | PowerCR    (* Condition Register (contain CR0, CR1, CR2) *)
   | PowerCTR   (* Count Register *)
   | PowerMSR   (* Machine Status Register *)
@@ -417,7 +417,7 @@ type power_special_reg_t =
   | PowerMCSRR1 (* Machine Check Save/Restore Register 1 *)
 
 
-type power_register_field_t =
+type pwr_register_field_t =
   | PowerCR0   (* Condition Register, bits 32-35 *)
   | PowerCR1   (* Condition Register, bits 36-39 *)
   | PowerCR2   (* Condition Register, bits 40-43 *)
@@ -455,8 +455,8 @@ type register_t =
 | ARMExtensionRegisterReplicatedElement of
     arm_extension_register_replicated_element_t
 | PowerGPRegister of int
-| PowerSPRegister of power_special_reg_t
-| PowerCRField of power_register_field_t
+| PowerSPRegister of pwr_special_reg_t
+| PowerCRField of pwr_register_field_t
 
 
 type flag_t =
@@ -2762,7 +2762,7 @@ class type function_environment_int =
     method mk_arm_double_extension_register_variable:
              arm_extension_register_t -> arm_extension_register_t -> variable_t
 
-    method mk_power_gp_register_variable: int -> variable_t
+    method mk_pwr_gp_register_variable: int -> variable_t
 
     method mk_global_variable: ?size:int -> numerical_t -> variable_t
 

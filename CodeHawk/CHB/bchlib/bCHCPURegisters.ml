@@ -90,11 +90,11 @@ let armregs_from_string_table = H.create 17
 let arm_special_regs_to_string_table = H.create 3
 let arm_special_regs_from_string_table = H.create 3
 
-let power_sprs_to_string_table = H.create 3
-let power_sprs_from_string_table = H.create 3
+let pwr_sprs_to_string_table = H.create 3
+let pwr_sprs_from_string_table = H.create 3
 
-let power_crfs_to_string_table = H.create 3
-let power_crfs_from_string_table = H.create 3
+let pwr_crfs_to_string_table = H.create 3
+let pwr_crfs_from_string_table = H.create 3
 
 
 let _ = List.iter (fun (r,s) -> 
@@ -323,14 +323,14 @@ let arm_special_reg_from_string (name:string) =
     "arm_special_regs_from_string_table" arm_special_regs_from_string_table name
 
 
-let power_gpr_to_string (index: int) = "r" ^ (string_of_int index)
+let pwr_gpr_to_string (index: int) = "r" ^ (string_of_int index)
 
 
 let _ =
   List.iter (fun (r, s) ->
       add_to_sumtype_tables
-        power_sprs_to_string_table
-        power_sprs_from_string_table r s)
+        pwr_sprs_to_string_table
+        pwr_sprs_from_string_table r s)
     [(PowerCR, "cr");
      (PowerCTR, "ctr");
      (PowerMSR, "msr");
@@ -346,16 +346,16 @@ let _ =
      (PowerMCSRR1, "mcsrr1")]
 
 
-let power_spr_to_string (r: power_special_reg_t) =
+let pwr_spr_to_string (r: pwr_special_reg_t) =
   get_string_from_table
-    "power_sprs_to_string_table" power_sprs_to_string_table r
+    "pwr_sprs_to_string_table" pwr_sprs_to_string_table r
 
 
 let _ =
   List.iter (fun (r, s) ->
       add_to_sumtype_tables
-        power_crfs_to_string_table
-        power_crfs_from_string_table r s)
+        pwr_crfs_to_string_table
+        pwr_crfs_from_string_table r s)
     [(PowerCR0, "cr0");
      (PowerCR1, "cr1");
      (PowerCR2, "cr2");
@@ -369,9 +369,9 @@ let _ =
      (PowerXERCA, "xer-ca")]
 
 
-let power_crf_to_string (f: power_register_field_t) =
+let pwr_crf_to_string (f: pwr_register_field_t) =
   get_string_from_table
-    "power_crfs_to_string_table" power_crfs_to_string_table f
+    "pwr_crfs_to_string_table" pwr_crfs_to_string_table f
 
 
 let register_from_string (name: string) =
@@ -563,9 +563,9 @@ let register_to_string register =
   | ARMExtensionRegisterElement e -> arm_extension_reg_element_to_string e
   | ARMExtensionRegisterReplicatedElement e ->
      arm_extension_reg_rep_element_to_string e
-  | PowerGPRegister r -> power_gpr_to_string r
-  | PowerSPRegister r -> power_spr_to_string r
-  | PowerCRField f -> power_crf_to_string f
+  | PowerGPRegister r -> pwr_gpr_to_string r
+  | PowerSPRegister r -> pwr_spr_to_string r
+  | PowerCRField f -> pwr_crf_to_string f
 
 
 let extract_cpu_reg s =
