@@ -134,9 +134,9 @@ let package_transaction
   TRANSACTION (label, LF.mkCode (cnstAssigns @ cmds), None)
 
 
-let translate_power_instruction
+let translate_pwr_instruction
       ~(funloc: location_int)
-      ~(codepc: power_code_pc_int)
+      ~(codepc: pwr_code_pc_int)
       ~(blocklabel: symbol_t)
       ~(exitlabel: symbol_t)
       ~(cmds: cmd_t list) =
@@ -159,11 +159,11 @@ let translate_power_instruction
          (LBLOCK [
               loc#toPretty;
               STR ": ";
-              STR (power_opcode_to_string opc)]) in
+              STR (pwr_opcode_to_string opc)]) in
      default []
 
   
-class power_assembly_function_translator_t (f: power_assembly_function_int) =
+class pwr_assembly_function_translator_t (f: pwr_assembly_function_int) =
 object (self)
      
   val finfo = get_function_info f#faddr
@@ -175,13 +175,13 @@ object (self)
       (make_location {loc_faddr = f#faddr; loc_iaddr=f#faddr})#ci
   val codegraph = make_code_graph ()
                 
-  method translate_block (block: power_assembly_block_int) exitLabel =
-    let codepc = make_power_code_pc block in
+  method translate_block (block: pwr_assembly_block_int) exitLabel =
+    let codepc = make_pwr_code_pc block in
     let blocklabel = make_code_label block#context_string in
     let rec aux cmds =
       let (nodes, edges, newcmds) =
         try
-          translate_power_instruction
+          translate_pwr_instruction
             ~funloc ~codepc ~blocklabel ~exitlabel ~cmds
         with
         | BCH_failure p ->
@@ -194,7 +194,7 @@ object (self)
                  STR ": ";
                  p] in
            begin
-             ch_error_log#add "translate power block" msg;
+             ch_error_log#add "translate pwr block" msg;
              raise (BCH_failure msg)
            end in
       match nodes with
@@ -228,7 +228,7 @@ object (self)
     let env = finfo#env in
     let _ = env#start_transaction in
     let freeze_initial_gp_register_value (index: int) =
-      let regvar = env#mk_power_gp_register_variable index in
+      let regvar = env#mk_pwr_gp_register_variable index in
       let initvar = env#mk_initial_register_value (PowerGPRegister index) in
       let _ =
         ignore
@@ -292,7 +292,7 @@ object (self)
     let firstlabel = make_code_label funloc#ci in
     let entrylabel = make_code_label ~modifier:"entry" funloc#ci in
     let exitlabel = make_code_label ~modifier:"exit" funloc#ci in
-    let procname = make_power_proc_name faddr in
+    let procname = make_pwr_proc_name faddr in
     let _ = f#iter (fun b -> self#translate_block b exitlabel) in
     let entrycmd = self#get_entry_cmd [] in
     let exitcmd = self#get_exit_cmd in
@@ -303,13 +303,13 @@ object (self)
     let cfg = codegraph#to_cfg entrylabel exitlabel in
     let body = LF.mkCode [CFG (procname, cfg)] in
     let proc = LF.mkProcedure procname [] [] scope body in
-    power_chif_system#add_power_procedure proc
+    pwr_chif_system#add_pwr_procedure proc
 
 end
 
 
-let translate_power_assembly_function (f: power_assembly_function_int) =
-  let translator = new power_assembly_function_translator_t f in
+let translate_pwr_assembly_function (f: pwr_assembly_function_int) =
+  let translator = new pwr_assembly_function_translator_t f in
   try
     translator#translate
   with

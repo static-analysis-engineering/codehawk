@@ -28,4 +28,4 @@
 (* bchlibpower32 *)
 open BCHPowerTypes
 
-val power_dictionary: power_dictionary_int
+val pwr_dictionary: pwr_dictionary_int

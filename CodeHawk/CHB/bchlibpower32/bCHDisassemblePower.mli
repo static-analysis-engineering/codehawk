@@ -36,7 +36,7 @@ open BCHLibTypes
 open BCHPowerTypes
 
 
-val disassemble_power_sections: unit -> doubleword_int       
+val disassemble_pwr_sections: unit -> doubleword_int
 
    (*
 val extract_so_symbol: power_opcode_t list -> doubleword_int option
@@ -49,4 +49,4 @@ val construct_functions_mips: unit -> unit
 val resolve_indirect_power_calls: power_assembly_function_int -> unit
     *)
 
-val construct_functions_power: unit -> unit
+val construct_functions_pwr: unit -> unit

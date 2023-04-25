@@ -88,12 +88,12 @@ let disassemble
       (displacement: int)
       (x: string) =
   let size = String.length x in
-  let add_instr (position: int) (opcode: power_opcode_t) (bytes: string) =
+  let add_instr (position: int) (opcode: pwr_opcode_t) (bytes: string) =
     let index = (position + displacement) in
     let addr = base#add_int position in
-    let instr = make_power_assembly_instruction addr is_vle opcode bytes in
+    let instr = make_pwr_assembly_instruction addr is_vle opcode bytes in
     begin
-      set_power_assembly_instruction instr;
+      set_pwr_assembly_instruction instr;
       instr
     end in
   let ch = make_pushback_stream ~little_endian:system_info#is_little_endian x in
@@ -145,14 +145,14 @@ let disassemble
               pverbose [
                   (base#add_int prevPos)#toPretty;
                   STR "  ";
-                  STR (power_opcode_to_string opcode);
+                  STR (pwr_opcode_to_string opcode);
                   NL] in
             ()
           else
             let instrbytes = ch#read_doubleword in
             let opcode =
               try
-                disassemble_power_instruction ch iaddr instrbytes
+                disassemble_pwr_instruction ch iaddr instrbytes
               with
               | BCH_failure p ->
                  begin
@@ -184,7 +184,7 @@ let disassemble
               pverbose [
                   (base#add_int prevPos)#toPretty;
                   STR "  ";
-                  STR (power_opcode_to_string opcode);
+                  STR (pwr_opcode_to_string opcode);
                   NL] in
             ()
         with
@@ -214,7 +214,7 @@ let disassemble
      end
 
 
-let disassemble_power_sections () =
+let disassemble_pwr_sections () =
   let xSections = elf_header#get_executable_sections in
   let (startOfCode, endOfCode) =
     if (List.length xSections) = 0 then
@@ -245,7 +245,7 @@ let disassemble_power_sections () =
       (startOfCode, endOfCode) in
   let sizeOfCode = TR.tget_ok (endOfCode#subtract startOfCode) in
   (* can be 2 (VLE) or 4-byte aligned *)
-  let _ = initialize_power_instructions sizeOfCode#to_int in
+  let _ = initialize_pwr_instructions sizeOfCode#to_int in
   let _ =
     pr_debug [
         STR "Create space for ";
@@ -254,7 +254,7 @@ let disassemble_power_sections () =
         INT sizeOfCode#to_int;
         STR ")";
         STR " instructions"] in
-  let _ = initialize_power_assembly_instructions sizeOfCode#to_int startOfCode in
+  let _ = initialize_pwr_assembly_instructions sizeOfCode#to_int startOfCode in
   let _ =
     List.iter
       (fun (h, x) ->
@@ -262,13 +262,13 @@ let disassemble_power_sections () =
           fail_tvalue
             (trerror_record
                (LBLOCK [
-                    STR "Error in disassemble_power_secitons: displacement ";
+                    STR "Error in disassemble_power_sections: displacement ";
                     STR "header address: ";
                     h#get_addr#toPretty;
                     STR "; startOfCode: ";
                     startOfCode#toPretty]))
             (h#get_addr#subtract_to_int startOfCode) in
-        disassemble h#get_addr h#is_power_vle displacement x) xSections in
+        disassemble h#get_addr h#is_pwr_vle displacement x) xSections in
   sizeOfCode
 
 
@@ -276,7 +276,7 @@ let collect_function_entry_points () =
   let _ = pverbose [STR "Collect function entry points"; NL] in
   let addresses = new DoublewordCollections.set_t in
   begin
-    !power_assembly_instructions#itera
+    !pwr_assembly_instructions#itera
       (fun va instr ->
         match instr#get_opcode with
         | BranchLink (_, tgt, _) ->
@@ -289,7 +289,7 @@ let collect_function_entry_points () =
 
 let collect_call_targets () =
   let _ = pverbose [STR "Collect call targets"; NL] in
-  !power_assembly_instructions#itera
+  !pwr_assembly_instructions#itera
     (fun va instr ->
       match instr#get_opcode with
       | BranchLink (_, tgt, _) ->
@@ -308,13 +308,13 @@ let set_block_boundaries () =
          ~tag:"set_block_boundaries"
          ("set_inlined_call:" ^ a#to_hex_string))
       (fun instr -> instr#set_inlined_call)
-      (get_power_assembly_instruction a) in
+      (get_pwr_assembly_instruction a) in
   let set_block_entry a =
     let instr =
       fail_tvalue
         (trerror_record
            (LBLOCK [STR "set block boundaries:set_block_entry: "; a#toPretty]))
-        (get_power_assembly_instruction a) in
+        (get_pwr_assembly_instruction a) in
     instr#set_block_entry in
   let feps = functions_data#get_function_entry_points in
   begin
@@ -333,7 +333,7 @@ let set_block_boundaries () =
                   fe#toPretty])) feps;
 
     (* ----------------------------- record targets of unconditional jumps -- *)
-    !power_assembly_instructions#itera
+    !pwr_assembly_instructions#itera
       (fun va instr ->
         try
           (match instr#get_opcode with
@@ -358,11 +358,12 @@ let set_block_boundaries () =
                   p]));
 
     (* ----------------------- add block entries due to previous block-ending -- *)
-    !power_assembly_instructions#itera
+    !pwr_assembly_instructions#itera
       (fun va instr ->
         let opcode = instr#get_opcode in
         let is_block_ending =
           match opcode with
+          | BranchLinkRegister _ -> true
           | Branch _
             | BranchConditional _
             | CBranchDecrementNotZero _
@@ -386,10 +387,10 @@ let construct_assembly_function
       (count: int) (faddr: doubleword_int): doubleword_int list =
   try
     let newfns =
-      if !power_assembly_instructions#is_code_address faddr then
-        let (fl, fn) = construct_power_assembly_function faddr in
+      if !pwr_assembly_instructions#is_code_address faddr then
+        let (fl, fn) = construct_pwr_assembly_function faddr in
         begin
-          power_assembly_functions#add_function fn;
+          pwr_assembly_functions#add_function fn;
           fl
         end
       else
@@ -411,7 +412,7 @@ let construct_assembly_function
      end
 
 
-let construct_functions_power () =
+let construct_functions_pwr () =
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
   let _ = collect_call_targets () in

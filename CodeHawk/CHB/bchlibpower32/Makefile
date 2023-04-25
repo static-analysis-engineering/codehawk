@@ -8,6 +8,7 @@ EXTLIB = $(shell ocamlfind query extlib)
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
 BCHLIB = $(CHB)/bchlib
+BCHCIL = $(CHB)/bchcil
 ELFLIB = $(CHB)/bchlibelf
 
 CAMLDOC := ocamldoc
@@ -18,6 +19,7 @@ CAMLC := ocamlopt  -I str -I cmi -I cmx \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
+	-I $(BCHCIL)/cmi \
 	-I $(BCHLIB)/cmi \
 	-I $(ELFLIB)/cmi \
 
@@ -35,10 +37,16 @@ MLIS := \
 	bCHPowerAssemblyBlock \
 	bCHPowerAssemblyFunction \
 	bCHPowerAssemblyFunctions \
+	bCHPowerCodePC \
+	bCHPowerCHIFSystem \
 	bCHDisassemblePowerInstruction \
 	bCHDisassembleVLEInstruction \
 	bCHConstructPowerFunction \
 	bCHDisassemblePower \
+	bCHTranslatePowerToCHIF \
+	bCHPowerMetrics \
+	bCHFnPowerDictionary \
+	bCHPowerAnalysisResults \
 
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
@@ -54,10 +62,16 @@ SOURCES := \
 	bCHPowerAssemblyBlock \
 	bCHPowerAssemblyFunction \
 	bCHPowerAssemblyFunctions \
+	bCHPowerCodePC \
+	bCHPowerCHIFSystem \
 	bCHDisassemblePowerInstruction \
 	bCHDisassembleVLEInstruction \
 	bCHConstructPowerFunction \
 	bCHDisassemblePower \
+	bCHTranslatePowerToCHIF \
+	bCHPowerMetrics \
+	bCHFnPowerDictionary \
+	bCHPowerAnalysisResults \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 

@@ -38,33 +38,33 @@ open BCHLibTypes
 open BCHPowerTypes
 
 
-(** [make_power_assembly_block ~ctxt faddr baddr laddr succ] returns a new basic
+(** [make_pwr_assembly_block ~ctxt faddr baddr laddr succ] returns a new basic
     block with context [ctxt], function address [faddr], first address [baddr],
     last address [laddr], and successors [succ].*)
-val make_power_assembly_block:
+val make_pwr_assembly_block:
   ?ctxt:context_t list    (* inline context, other function first *)
   -> doubleword_int       (* function address *)
   -> doubleword_int       (* first address of the basic block *)
   -> doubleword_int       (* last address of the basic block *)
   -> ctxt_iaddress_t list (* addresses of successor blocks *)
-  -> power_assembly_block_int
+  -> pwr_assembly_block_int
 
 
-(** [make_ctxt_power_assembly_block ctxt blk succ] returns a new power basic 
+(** [make_ctxt_pwr_assembly_block ctxt blk succ] returns a new pwr basic 
     block that is a copy of [blk] with added context [ctxt] and added successors
     [succ]. This can be used to create an inlined block.*)
-val make_ctxt_power_assembly_block:
+val make_ctxt_pwr_assembly_block:
   context_t               (* new context to be prepended *)
-  -> power_assembly_block_int
+  -> pwr_assembly_block_int
   -> ctxt_iaddress_t list (* new successor blocks *)
-  -> power_assembly_block_int
+  -> pwr_assembly_block_int
 
 
-(** [update_power_assembly_block_successors block s_old s_new] returns a new
+(** [update_pwr_assembly_block_successors block s_old s_new] returns a new
     assembly basic block that is identical to [block] except that successor
     [s_old] is replaced by (possibly multiple) successors [s_new].*)
-val update_power_assembly_block_successors:
-  power_assembly_block_int
+val update_pwr_assembly_block_successors:
+  pwr_assembly_block_int
   -> ctxt_iaddress_t
   -> ctxt_iaddress_t list
-  -> power_assembly_block_int
+  -> pwr_assembly_block_int

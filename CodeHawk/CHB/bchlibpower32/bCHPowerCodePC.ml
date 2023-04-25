@@ -45,7 +45,7 @@ open BCHPowerOpcodeRecords
 open BCHPowerTypes
 
 
-class power_code_pc_t (block: power_assembly_block_int): power_code_pc_int =
+class pwr_code_pc_t (block: pwr_assembly_block_int): pwr_code_pc_int =
 object (self)
 
   val mutable instruction_list = block#get_instructions
@@ -61,7 +61,7 @@ object (self)
          LBLOCK [
              block#first_address#toPretty;
              STR ": ";
-             STR "power_code_pc#get_next_instruction"] in
+             STR "pwr_code_pc#get_next_instruction"] in
        begin
          ch_error_log#add "cfg error" msg;
          raise (BCH_failure msg)
@@ -161,6 +161,6 @@ object (self)
 end
 
 
-let make_power_code_pc (block: power_assembly_block_int) =
-  new power_code_pc_t block
+let make_pwr_code_pc (block: pwr_assembly_block_int) =
+  new pwr_code_pc_t block
                                                                

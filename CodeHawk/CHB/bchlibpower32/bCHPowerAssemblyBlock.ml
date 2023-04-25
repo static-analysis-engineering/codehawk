@@ -49,12 +49,12 @@ open BCHPowerTypes
 module TR = CHTraceResult
 
 
-class power_assembly_block_t
+class pwr_assembly_block_t
         ?(ctxt=[])                    
         (faddr: doubleword_int)       (* inner context function address *)
         (first_addr: doubleword_int)  (* address of first instruction *)
         (last_addr: doubleword_int)   (* address of last instruction *)
-        (successors: ctxt_iaddress_t list): power_assembly_block_int =
+        (successors: ctxt_iaddress_t list): pwr_assembly_block_int =
 object (self)
 
   val loc = make_location ~ctxt {loc_faddr = faddr; loc_iaddr = first_addr}
@@ -81,12 +81,12 @@ object (self)
         self#first_address
       else high in
     let addrs_rev =
-      !power_assembly_instructions#get_code_addresses_rev
+      !pwr_assembly_instructions#get_code_addresses_rev
         ~low:first_addr ~high () in
     TR.tfold_list
       ~ok:(fun acc v -> v::acc)
       []
-      (List.map (fun a -> get_power_assembly_instruction a) (List.rev addrs_rev))
+      (List.map (fun a -> get_pwr_assembly_instruction a) (List.rev addrs_rev))
 
   method get_instructions = List.rev (self#get_instructions_rev ())
 
@@ -111,7 +111,7 @@ object (self)
            ?(low=first_addr)
            ?(high=last_addr)
            ?(reverse=false)
-           (f: ctxt_iaddress_t -> power_assembly_instruction_int -> unit) =
+           (f: ctxt_iaddress_t -> pwr_assembly_instruction_int -> unit) =
     let instrs =
       if reverse then self#get_instructions_rev () else self#get_instructions in
     let instrs =
@@ -148,24 +148,24 @@ object (self)
 end
 
 
-let make_power_assembly_block = new power_assembly_block_t
+let make_pwr_assembly_block = new pwr_assembly_block_t
 
 
-let make_ctxt_power_assembly_block
+let make_ctxt_pwr_assembly_block
       (newctxt: context_t)
-      (b: power_assembly_block_int)
-      (newsucc: ctxt_iaddress_t list): power_assembly_block_int =
-  make_power_assembly_block
+      (b: pwr_assembly_block_int)
+      (newsucc: ctxt_iaddress_t list): pwr_assembly_block_int =
+  make_pwr_assembly_block
     ~ctxt:(newctxt :: b#context)
     b#faddr b#first_address b#last_address newsucc
 
 
-let update_power_assembly_block_successors
-      (b: power_assembly_block_int)
+let update_pwr_assembly_block_successors
+      (b: pwr_assembly_block_int)
       (s_old: ctxt_iaddress_t)
-      (s_new: ctxt_iaddress_t list): power_assembly_block_int =
+      (s_new: ctxt_iaddress_t list): pwr_assembly_block_int =
   let newsucc =
     List.fold_left (fun acc s ->
         if s = s_old then acc @ s_new else acc @ [s]) [] b#successors in
-  make_power_assembly_block
+  make_pwr_assembly_block
     ~ctxt:b#context b#faddr b#first_address b#last_address newsucc

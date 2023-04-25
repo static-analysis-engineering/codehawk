@@ -32,11 +32,11 @@ open BCHLibTypes
 open BCHPowerTypes
 
 
-(** [make_power_assembly_function faddr blocks succ] returns a new assembly 
+(** [make_pwr_assembly_function faddr blocks succ] returns a new assembly 
     function with function address [faddr], basic blocks [blocks], and successor 
     relation on basic block start addresses [succ].*)
-val make_power_assembly_function:
+val make_pwr_assembly_function:
   doubleword_int  (* function address *)
-  -> power_assembly_block_int list   (* basic blocks *)
+  -> pwr_assembly_block_int list   (* basic blocks *)
   -> (ctxt_iaddress_t * ctxt_iaddress_t) list   (* block successor relation *)
-  -> power_assembly_function_int
+  -> pwr_assembly_function_int

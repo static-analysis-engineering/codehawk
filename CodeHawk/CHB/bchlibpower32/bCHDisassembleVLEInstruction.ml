@@ -65,44 +65,44 @@ let parse_se_C_form
 
   (* < 0>< 0>< 0>< 4>    se_blr *)
   | 4 ->
-     let tgt = power_special_register_op ~reg:PowerLR ~mode:RD in
+     let tgt = pwr_special_register_op ~reg:PowerLR ~mode:RD in
      BranchLinkRegister (VLE16, tgt)
 
   (* < 0>< 0>< 0>< 5>    se_blrl *)
   | 5 ->
-     let tgt = power_special_register_op ~reg:PowerLR ~mode:RW in
+     let tgt = pwr_special_register_op ~reg:PowerLR ~mode:RW in
      BranchLinkRegisterLink (VLE16, tgt)
 
   (* < 0>< 0>< 0>< 6>    se_bctr *)
   | 6 ->
-     let tgt = power_special_register_op ~reg:PowerCTR ~mode:RD in
+     let tgt = pwr_special_register_op ~reg:PowerCTR ~mode:RD in
      BranchCountRegister (VLE16, tgt)
 
   (* < 0>< 0>< 0>< 7>    se_bctrl *)
   | 7 ->
-     let tgt = power_special_register_op ~reg:PowerCTR ~mode:RD in
+     let tgt = pwr_special_register_op ~reg:PowerCTR ~mode:RD in
      BranchCountRegisterLink (VLE16, tgt)
 
   (* < 0>< 0>< 0>< 8>    se_rfi *)
   | 8 ->
-     let msr = power_special_register_op ~reg:PowerMSR ~mode:WR in
-     let sr0 = power_special_register_op ~reg:PowerSRR0 ~mode:RD in
-     let sr1 = power_special_register_op ~reg:PowerSRR1 ~mode:RD in
+     let msr = pwr_special_register_op ~reg:PowerMSR ~mode:WR in
+     let sr0 = pwr_special_register_op ~reg:PowerSRR0 ~mode:RD in
+     let sr1 = pwr_special_register_op ~reg:PowerSRR1 ~mode:RD in
      ReturnFromInterrupt (VLE16, msr, sr0, sr1)
 
   (* < 0>< 0>< 0><10>   se_rfdi *)
   | 10 ->
-     let msr = power_special_register_op ~reg:PowerMSR ~mode:WR in
-     let dsr0 = power_special_register_op ~reg:PowerDSRR0 ~mode:RD in
-     let dsr1 = power_special_register_op ~reg:PowerDSRR1 ~mode:RD in
+     let msr = pwr_special_register_op ~reg:PowerMSR ~mode:WR in
+     let dsr0 = pwr_special_register_op ~reg:PowerDSRR0 ~mode:RD in
+     let dsr1 = pwr_special_register_op ~reg:PowerDSRR1 ~mode:RD in
      (* se_rfdi *)
      ReturnFromDebugInterrupt (VLE16, msr, dsr0, dsr1)
 
   (* < 0>< 0>< 0><11>   se_rfmci *)
   | 11 ->
-     let msr = power_special_register_op ~reg:PowerMSR ~mode:WR in
-     let mcsr0 = power_special_register_op ~reg:PowerMCSRR0 ~mode:RD in
-     let mcsr1 = power_special_register_op ~reg:PowerMCSRR1 ~mode:RD in
+     let msr = pwr_special_register_op ~reg:PowerMSR ~mode:WR in
+     let mcsr0 = pwr_special_register_op ~reg:PowerMCSRR0 ~mode:RD in
+     let mcsr1 = pwr_special_register_op ~reg:PowerMCSRR1 ~mode:RD in
      (* se_rfmci *)
      ReturnFromMachineCheckInterrupt (VLE16, msr, mcsr0, mcsr1)
   | _ ->     
@@ -121,7 +121,7 @@ let parse_se_R_form
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let opc = b 8 11 in
-  let rx = power_gp_register_op ~index:(rindex (b 12 15)) in
+  let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
   match opc with
 
   (* < 0>< 0>< 2><rx>   se_not *)
@@ -140,25 +140,25 @@ let parse_se_R_form
 
   (* < 0>< 0>< 8><rx>   se_mflr *)
   | 8 ->
-     let lr = power_special_register_op ~reg:PowerLR in     
+     let lr = pwr_special_register_op ~reg:PowerLR in
      (* se_mflr rX *)
      MoveFromLinkRegister (VLE16, rx ~mode:WR, lr ~mode:RD)
 
   (* < 0>< 0>< 9><rx>   se_mtlr *)
   | 9 ->
-     let lr = power_special_register_op ~reg:PowerLR in
+     let lr = pwr_special_register_op ~reg:PowerLR in
      (* se_mtrl rX *)
      MoveToLinkRegister (VLE16, lr ~mode:WR, rx ~mode:WR)
 
   (* < 0>< 0><10><rx>   se_mfctr *)
   | 10 ->
-     let ctr = power_special_register_op ~reg:PowerCTR in
+     let ctr = pwr_special_register_op ~reg:PowerCTR in
      (* se_mfctr rX *)
      MoveFromCountRegister (VLE16, rx ~mode:WR, ctr ~mode:RD)
 
   (* < 0>< 0><11><rx>   se_mtctr *)
   | 11 ->
-     let ctr = power_special_register_op ~reg:PowerCTR in     
+     let ctr = pwr_special_register_op ~reg:PowerCTR in
      (* se_mtctr rX *)
      MoveToCountRegister (VLE16, ctr ~mode:WR, rx ~mode:RD)
 
@@ -202,8 +202,8 @@ let parse_se_0RR_form
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
-  let rx = power_gp_register_op ~index:(rindex (b 12 15)) in
-  let ry = power_gp_register_op ~index:(rindex (b 8 11)) in
+  let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
+  let ry = pwr_gp_register_op ~index:(rindex (b 8 11)) in
   let cr_nt = cr_op ~mode:NT in
   let ov_nt = xer_ov_op ~mode:NT in
   let so_nt = xer_so_op ~mode:NT in
@@ -217,13 +217,13 @@ let parse_se_0RR_form
 
   (* < 0>< 2><ry><ax>   se_mtar *)
   | 2 ->
-     let arx = power_gp_register_op ~index:(arindex (b 12 15)) in
+     let arx = pwr_gp_register_op ~index:(arindex (b 12 15)) in
      MoveToAlternateRegister (VLE16, arx ~mode:WR, ry ~mode:RD)
 
   (* < 0>< 3><ay><rx>   se_mfar *)
   | 3 ->
      (* se_mfar rx, arY *)
-     let ary = power_gp_register_op ~index:(arindex (b 8 11)) in
+     let ary = pwr_gp_register_op ~index:(arindex (b 8 11)) in
      MoveFromAlternateRegister (VLE16, rx ~mode:WR, ary ~mode:RD)
 
   (* < 0>< 4><ry><rx>   se_add *)
@@ -283,10 +283,10 @@ let parse_se_IM_form
   let ui5 = b 7 11 in
   let oim5 = ui5 + 1 in
   let immop =
-    power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical oim5) in
+    pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical oim5) in
   let ui5op =
-    power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical ui5) in
-  let rx = power_gp_register_op ~index:(rindex (b 12 15)) in
+    pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical ui5) in
+  let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
   let opc = b 4 6 in
   match opc with
 
@@ -338,10 +338,10 @@ let parse_se_IM7_form
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
-  let rx = power_gp_register_op ~index:(rindex (b 12 15)) in
+  let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
   let imm7 = b 5 11 in
   let immop =
-    power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm7) in
+    pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm7) in
   LoadImmediate (VLE16, false, false, rx ~mode:WR, immop)
 
 
@@ -350,8 +350,8 @@ let parse_se_4RR_form
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
-  let rx = power_gp_register_op ~index:(rindex (b 12 15)) in
-  let ry = power_gp_register_op ~index:(rindex (b 8 11)) in
+  let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
+  let ry = pwr_gp_register_op ~index:(rindex (b 8 11)) in
   let opc = b 5 7 in
 
   match opc with
@@ -411,8 +411,8 @@ let parse_se_IM5_form
   let b = instr#get_reverse_segval 16 in
   let imm5 = b 7 11 in
   let immop =
-    power_immediate_op ~signed:false ~size: 4 ~imm:(mkNumerical imm5) in
-  let rx = power_gp_register_op ~index:(rindex (b 12 15)) in
+    pwr_immediate_op ~signed:false ~size: 4 ~imm:(mkNumerical imm5) in
+  let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
   let opc = b 4 6 in
   match opc with
   (* < 6><0><ui5><rx>    se_bclri *)
@@ -488,10 +488,10 @@ let parse_se_SD4_form
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let sd4 w = mkNumerical (w * (b 4 7)) in
-  let rz = power_gp_register_op ~index:(rindex (b 8 11)) in
-  let rx = power_gp_register_op ~index:(rindex (b 12 15)) in
+  let rz = pwr_gp_register_op ~index:(rindex (b 8 11)) in
+  let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
   let mem w =
-    power_indirect_register_op ~basegpr:(rindex (b 12 15)) ~offset:(sd4 w) in
+    pwr_indirect_register_op ~basegpr:(rindex (b 12 15)) ~offset:(sd4 w) in
   let opc = b 0 3 in
   match opc with
 
@@ -572,9 +572,9 @@ let parse_e_D8_form
                   STR ": ";
                   INT d8]))
       else
-        power_absolute_op (TR.tget_ok (int_to_doubleword d8)) mode
+        pwr_absolute_op (TR.tget_ok (int_to_doubleword d8)) mode
     else
-      power_indirect_register_op
+      pwr_indirect_register_op
         ~basegpr:ra_index
         ~offset:(mkNumerical d8)
         ~mode:mode in
@@ -583,94 +583,94 @@ let parse_e_D8_form
 
   (* < 1>10< rd>< ra>< 0>< 0><--d8-->    e_lbzu *)
   | (0, 0) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:ra_index in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lbzu" RD in
      LoadByteZero (VLE32, true, rd WR, ra RW, mem)
 
   (* < 1>10< rd>< ra>< 0>< 2><--d8-->    e_lwzu *)
   | (0, 2) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:ra_index in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lwzu" RD in
      LoadWordZero (VLE32, true, rd WR, ra RW, mem)
 
   (* < 1>10< rs>< ra>< 0>< 4><--d8-->    e_stbu *)
   | (0, 4) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:ra_index in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_stbu" WR in
      StoreByte (VLE32, true, rs RD, ra RW, mem)
 
   (* < 1>10< rs>< ra>< 0>< 6><--d8-->    e_stwu *)
   | (0, 6) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:ra_index in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_stwu" WR in
      StoreWord (VLE32, true, rs RD, ra RW, mem)
 
   (* < 1>10< rd>< ra>< 0>< 8><--d8-->    e_lmw *)
   | (0, 8) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:ra_index in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lmw" RD in
      LoadMultipleWord (VLE32, rd RW, ra RD, mem)
 
   (* < 1>10< rs>< ra>< 0>< 9><--d8-->    e_stmw *)
   | (0, 9) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:ra_index in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_stmw" WR in
      StoreMultipleWord (VLE32, rs RD, ra RD, mem)
 
   (* < 1>10<  0>< ra>< 1>< 0><--d8-->    e_lmvgprw *)
   | (1, 0) when (b 6 10) = 0 ->
-     let ra = power_gp_register_op ~index:ra_index in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lmvgprw" WR in
      LoadMultipleVolatileGPRWord (VLE32, ra RD, mem)
 
   (* < 1>10<  1>< ra>< 1>< 0><--d8-->    e_lmvsprw *)
   | (1, 0) when (b 6 10) = 1 ->
-     let ra = power_gp_register_op ~index:ra_index in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lmvsprw" WR in
-     let cr = power_special_register_op ~reg:PowerCR in
-     let lr = power_special_register_op ~reg:PowerLR in
-     let ctr = power_special_register_op ~reg:PowerCTR in
-     let xer = power_special_register_op ~reg:PowerXER in
+     let cr = pwr_special_register_op ~reg:PowerCR in
+     let lr = pwr_special_register_op ~reg:PowerLR in
+     let ctr = pwr_special_register_op ~reg:PowerCTR in
+     let xer = pwr_special_register_op ~reg:PowerXER in
      LoadMultipleVolatileSPRWord (
          VLE32, ra RD, mem, cr WR, lr WR, ctr WR, xer WR)
 
   (* < 1>10<  4>< ra>< 1>< 0><--d8-->    e_lmvsrrw *)
   | (1, 0) when (b 6 10) = 4 ->
-     let ra = power_gp_register_op ~index:ra_index in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lmvsrrw" WR in
-     let srr0 = power_special_register_op ~reg:PowerSRR0 in
-     let srr1 = power_special_register_op ~reg:PowerSRR1 in
+     let srr0 = pwr_special_register_op ~reg:PowerSRR0 in
+     let srr1 = pwr_special_register_op ~reg:PowerSRR1 in
      LoadMultipleVolatileSRRWord (VLE32, ra RD, mem, srr0 RD, srr1 RD)
 
   (* < 1>10<  0>< ra>< 1>< 1><--d8-->    e_stmvgprw *)
   | (1, 1) when (b 6 10) = 0 ->
-     let ra = power_gp_register_op ~index:ra_index in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let ea = mk_mem "e_stmvgprw" WR in
      StoreMultipleVolatileGPRWord (VLE32, ra RD, ea)
 
   (* < 1>10<  1>< ra>< 1>< 1><--d8-->    e_stmvsprw *)
   | (1, 1) when (b 6 10) = 1 ->
-     let ra = power_gp_register_op ~index:ra_index in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_stmvsprw" WR in
-     let cr = power_special_register_op ~reg:PowerCR in
-     let lr = power_special_register_op ~reg:PowerLR in
-     let ctr = power_special_register_op ~reg:PowerCTR in
-     let xer = power_special_register_op ~reg:PowerXER in
+     let cr = pwr_special_register_op ~reg:PowerCR in
+     let lr = pwr_special_register_op ~reg:PowerLR in
+     let ctr = pwr_special_register_op ~reg:PowerCTR in
+     let xer = pwr_special_register_op ~reg:PowerXER in
      StoreMultipleVolatileSPRWord (
          VLE32, ra RD, mem, cr RD, lr RD, ctr RD, xer RD)
 
   (* < 1>10<  4>< ra>< 1>< 1><--d8-->    e_stmvsrrw *)
   | (1, 1) when (b 6 10) = 4 ->
-     let ra = power_gp_register_op ~index:ra_index in
+     let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_stmvsrrw" WR in
-     let srr0 = power_special_register_op ~reg:PowerSRR0 in
-     let srr1 = power_special_register_op ~reg:PowerSRR1 in
+     let srr0 = pwr_special_register_op ~reg:PowerSRR0 in
+     let srr1 = pwr_special_register_op ~reg:PowerSRR1 in
      StoreMultipleVolatileSRRWord (VLE32, ra RD, mem, srr0 RD, srr1 RD)
 
   | _ ->
@@ -689,14 +689,14 @@ let parse_e_SCI8_form
   match opc with
   (* < 1>10< rd>< ra>< 8>cFsc<-ui8-->   e_addi *)
   | 8 ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let f = b 21 21 in
      let scl = b 22 23 in
      let ui8 = b 24 31 in
      let imm = sci8 f scl ui8 in
      let immop =
-       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
      let cr = cr_op ~mode:WR in
      (* e_addi rD,rA,SCI8 *)
      (* e_addi. rD,rA,SCI8 *)
@@ -705,14 +705,14 @@ let parse_e_SCI8_form
 
   (* < 1>10< rd>< ra>< 9>cFsc<--ui8->   e_addic *)
   | 9 ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let f = b 21 21 in
      let ui8 = b 24 31 in
      let scl = b 22 23 in
      let imm = sci8 f scl ui8 in
      let immop =
-       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
      let rc = (b 20 20) = 1 in
      let cr = cr0_op ~mode:WR in
      let ca = xer_ca_op ~mode:WR in
@@ -721,40 +721,40 @@ let parse_e_SCI8_form
 
   (* < 1>10< rd>< ra><10>0Fsc<--ui8->   e_mulli *)
   | 10 when (b 20 20) = 0 ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let f = b 21 21 in
      let ui8 = b 24 31 in
      let scl = b 22 23 in
      let imm = sci8 f scl ui8 in
      let immop =
-       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
      (* e_mulli rD,rA,SCI8 *)
      MultiplyLowImmediate (VLE32, false, rd ~mode:WR, ra ~mode:RD, immop)
 
   (* < 1>10<1>cr< ra><10>1Fsc<--ui8->   e_cmpli *)
   | 10 when (b 20 20) = 1 ->
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let f = b 21 21 in
      let ui8 = b 24 31 in
      let scl = b 22 23 in
      let imm = sci8 f scl ui8 in
      let immop =
-       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
      let cr = crf_op (b 9 10) in
      (* e_cmpli crD32,rA,SCI8 *)
      CompareLogicalImmediate (VLE32, false, cr ~mode:WR, ra ~mode:RD, immop)
 
   (* < 1>10< rd>< ra><11>cFsc<--ui8->   e_subfic *)
   | 11 ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let f = b 21 21 in
      let ui8 = b 24 31 in
      let scl = b 22 23 in
      let imm = sci8 f scl ui8 in
      let immop =
-       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
      let cr0 = cr0_op ~mode:WR in
      let ca = xer_ca_op ~mode:WR in
      (* e_subfic rD,rA,SCI8 *)
@@ -764,42 +764,42 @@ let parse_e_SCI8_form
 
   (* < 1>10< rs>< ra><12>cFsc<--ui8->   e_andi *)
   | 12 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let f = b 21 21 in
      let ui8 = b 24 31 in
      let scl = b 22 23 in
      let imm = sci8 f scl ui8 in
      let immop =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
      let cr0 = cr0_op ~mode:WR in
      (* e_andi rA,rS,SCI8 *)
      AndImmediate (VLE32, false, false, rc, ra ~mode:WR, rs ~mode:RD, immop, cr0)
 
 (* < 1>10< rs>< ra><13>cFsc<--ui18->   e_ori *)
   | 13 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let f = b 21 21 in
      let ui8 = b 24 31 in
      let scl = b 22 23 in
      let imm = sci8 f scl ui8 in
      let immop =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
      let cr0 = cr0_op ~mode:WR in
      (* e_ori rA,rS,SCI8 *)
      OrImmediate (VLE32, rc, false, false, ra ~mode:WR, rs ~mode:RD, immop, cr0)
 
   (* < 1>10< rs>< ra><14>cFsc<--ui8->   e_xori *)
   | 14 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let f = b 21 21 in
      let ui8 = b 24 31 in
      let scl = b 22 23 in
      let imm = sci8 f scl ui8 in
      let immop =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
      let cr0 = cr0_op ~mode:WR in
      (* e_xori rA,rS,SCI8 *)
      XorImmediate (VLE32, rc, false, ra ~mode:WR, rs ~mode:RD, immop, cr0)
@@ -824,11 +824,11 @@ let parse_e_D_form
 
   (* < 1>11<rd><ra><------si------>   e_add16i *)
   | (1, 3) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let imm = b 16 31 in
      let immop =
-       power_immediate_op ~signed:true ~size:2 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:2 ~imm:(mkNumerical imm) in
      let cr = cr_op ~mode:NT in
      (* e_add16i rD,rA,SI *)
      AddImmediate
@@ -836,62 +836,62 @@ let parse_e_D_form
 
   (* < 3>00< rd>< ra><------D------->    e_lbz *)
   | (3, 0) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let offset = mkNumerical (b 16 31) in
-     let mem = power_indirect_register_op ~basegpr:(b 11 15) ~offset in
+     let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset in
      (* e_lbz rD,D(rA) *)
      LoadByteZero (VLE32, false, rd ~mode:WR, ra ~mode:RD, mem ~mode:RD)
 
   (* < 3>01< rs>< ra><------D------->    e_stb *)
   | (3, 1) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let offset = mkNumerical (b 16 31) in
-     let mem = power_indirect_register_op ~basegpr:(b 11 15) ~offset in
+     let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset in
      (* e_stb rS,D(rA) *)
      StoreByte (VLE32, false, rs ~mode:RD, ra ~mode:RD, mem ~mode:WR)
 
   (* < 5>00< rd>< ra><-------D------>   e_lwz *)
   | (5, 0) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let offset = (b 16 31) in
      let offset = if (b 16 16) = 1 then offset - e16 else offset in
      let offset = mkNumerical offset in
-     let mem = power_indirect_register_op ~basegpr:(b 11 15) ~offset in
+     let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset in
      (* e_lwz rD,D(rA) *)
      LoadWordZero (VLE32, false, rd ~mode:WR, ra ~mode:RD, mem ~mode:RD)
 
   (* < 5>01< rs>< ra><------D------->   e_stw *)
   | (5, 1) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let offset = (b 16 31) in
      let offset = if (b 16 16) = 1 then offset - e16 else offset in
      let offset = mkNumerical offset in
-     let mem = power_indirect_register_op ~basegpr:(b 11 15) ~offset in
+     let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset in
      StoreWord (VLE32, false, rs ~mode:RD, ra ~mode:RD, mem ~mode:WR)
 
   (* < 5>10< rd>< ra><-------D------>   e_lhz *)
   | (5, 2) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let offset = (b 16 31) in
      let offset = if (b 16 16) = 1 then offset - e16 else offset in
      let offset = mkNumerical offset in
-     let mem = power_indirect_register_op ~basegpr:(b 11 15) ~offset in
+     let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset in
      (* e_lhz rD,D(rA) *)
      LoadHalfwordZero (VLE32, false, rd ~mode:WR, ra ~mode:RD, mem ~mode:RD)
 
   (* < 5>11< rs>< ra><-------D------>   e_sth *)
   | (5, 3) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let offset = (b 16 31) in
      let offset = if (b 16 16) = 1 then offset - e16 else offset in
      let offset = mkNumerical offset in
-     let mem = power_indirect_register_op ~basegpr:(b 11 15) ~offset in
+     let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset in
      (* e_sth rS,D(rA) *)
      StoreHalfword (VLE32, false, rs ~mode:RD, ra ~mode:RD, mem ~mode:WR)
 
@@ -909,18 +909,18 @@ let parse_e_misc_0_form
   (* < 7>00<rd><li2>0<li><---li---->   e_li (LI20) *)
   | (0, _) ->
      let imm = ((b 17 20) lsl 16) + ((b 11 15) lsl 11) + (b 21 31) in
-     let rx = power_gp_register_op ~index:(b 6 10) in
+     let rx = pwr_gp_register_op ~index:(b 6 10) in
      let immop =
-       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
      LoadImmediate (VLE32, true, false, rx ~mode:WR, immop)
 
   (* < 7>00<si4>< ra>1< 2><---si---->   e_add2is *)
   | (1, 2) ->
      let imm = ((b 6 10) lsl 11) + (b 21 31) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let cr = cr0_op ~mode:NT in
      let immop =
-       power_immediate_op ~signed:true ~size:2 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:2 ~imm:(mkNumerical imm) in
      (* e_add2is rA,SI *)
      AddImmediate
        (VLE32, true, true, false, false, ra ~mode:WR, ra ~mode:RD, immop, cr)
@@ -928,29 +928,29 @@ let parse_e_misc_0_form
   (* < 7>00<si4>< ra>1< 3><---si---->   e_cmp16i *)
   | (1, 3) ->
      let imm = ((b 6 10) lsl 11) + (b 21 31) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let cr = cr0_op ~mode:WR in
      let immop =
-       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
      (* e_cmp16i rA,SI *)
      CompareImmediate (VLE32, true, cr, ra ~mode:RD, immop)
 
   (* < 7>00<si4>< ra>1< 4><---si---->   e_mull2i *)
   | (1, 4) ->
      let imm = ((b 6 10) lsl 11) + (b 21 31) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let immop =
-       power_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:4 ~imm:(mkNumerical imm) in
      (* e_mull2i rA,SI *)
      MultiplyLowImmediate (VLE32, true, ra ~mode:WR, ra ~mode:RD, immop)
 
   (* < 7>00<ui5>< ra>1< 5><---ui---->   e_cmpl16i *)
   | (1, 5) ->
      let imm = ((b 6 10) lsl 11) + (b 21 31) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let cr = cr0_op ~mode:WR in
      let immop =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
      (* e_cmpl16i rA,UI *)
      CompareLogicalImmediate (VLE32, true, cr, ra ~mode:RD, immop)
 
@@ -958,9 +958,9 @@ let parse_e_misc_0_form
   (* < 7>00< rd><ui1>1<10><---ui---->   e_or2i *)
   | (1, 8) | (1, 10) ->
      let imm = ((b 11 15) lsl 11) + (b 21 31) in
-     let rx = power_gp_register_op ~index:(b 6 10) in
+     let rx = pwr_gp_register_op ~index:(b 6 10) in
      let immop =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical imm) in
      let cr = cr0_op ~mode:WR in
      let shifted = (b 17 20) = 10 in
      (* e_or2i rD,UI *)
@@ -970,17 +970,17 @@ let parse_e_misc_0_form
   (* < 7>00<rd><ui1>1<12><---ui---->   e_lis (LI20) *)
   | (1, 12) ->
      let imm = ((b 11 15) lsl 11) + (b 21 31) in
-     let rx = power_gp_register_op ~index:(b 6 10) in
+     let rx = pwr_gp_register_op ~index:(b 6 10) in
      let immop =
-       power_immediate_op ~signed:true ~size:2 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:true ~size:2 ~imm:(mkNumerical imm) in
      LoadImmediate (VLE32, true, true, rx ~mode:WR, immop)
 
   (* < 7>00<rd><ui1>1<13><---ui---->   e_and2is. *)
   | (1, 13) ->
      let imm = ((b 11 15) lsl 11) + (b 21 31) in
-     let rd = power_gp_register_op ~index:(b 6 10) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
      let immop =
-       power_immediate_op ~signed:false ~size:2 ~imm:(mkNumerical imm) in
+       pwr_immediate_op ~signed:false ~size:2 ~imm:(mkNumerical imm) in
      let cr = cr0_op ~mode:WR in
      (* e_and2is. rD,UI *)
      AndImmediate (VLE32, true, true, true, rd ~mode:WR, rd ~mode:RD, immop, cr)
@@ -998,50 +998,50 @@ let parse_e_misc_1_form
 
   (* < 7>01< rs>< ra>< sh>< mb>< me>0   e_rlwimi/e_insrwi *)
   | 0 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let sh = b 16 20 in
      let mb = b 21 25 in
      let me = b 26 30 in
      let n = (32 - sh) - mb in
      if me = (mb + n) -1 then
        let cr = cr0_op ~mode:NT in
-       let n = power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical n) in
-       let mb = power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical mb) in
+       let n = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical n) in
+       let mb = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical mb) in
        InsertRightWordImmediate (VLE32, false, ra ~mode:WR, rs ~mode:RD, n, mb, cr)
      else
        NotRecognized ("InsertRightWordImmediate-0", instr)
 
   (* < 7>01< rs>< ra><  0>< mb>< 31>1   e_clrlwi (VLEPIM) *)
   | 1 when (b 16 20) = 0 && (b 26 30) = 31 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let mb = b 21 25 in
-     let n = power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical mb) in
+     let n = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical mb) in
      (* e_clrlwi rA, rS, n *)
      ClearLeftWordImmediate (VLE32, false, ra ~mode:WR, rs ~mode:RD, n)
 
   (* < 7>01< rs>< ra><  0><  0>< me>1   e_clrrwi (VLEPIM) *)
   | 1 when (b 16 20) = 0 && (b 21 25) = 0 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let me = b 26 30 in
      let n = 31 - me in
-     let n = power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical n) in
+     let n = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical n) in
      let cr = cr0_op ~mode:NT in
      (* e_clrrwi rA, rS, n *)
      ClearRightWordImmediate (VLE32, false, ra ~mode:WR, rs ~mode:RD, n, cr)
 
   (* < 7>01< rs>< ra>< sh>< mb>< 31>1   e_extrwi (VLEPIM) *)
   | 1 when (b 26 30) = 31 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let sh = b 16 20 in
      let mb = b 21 25 in
      let n = 32 - mb in
      let b = (sh + mb) - 32 in
-     let n = power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical n) in
-     let b = power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical b) in
+     let n = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical n) in
+     let b = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical b) in
      let cr = cr0_op ~mode:NT in
      (* e_extrwi rA,rS,n,b *)
      ExtractRightJustifyWordImmediate
@@ -1049,14 +1049,14 @@ let parse_e_misc_1_form
 
   (* < 7>01< rs>< ra>< sh>< mb>< me>1   e_rlwinm *)
   | 1 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let sh =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical (b 16 20)) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical (b 16 20)) in
      let mb =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical (b 21 25)) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical (b 21 25)) in
      let me =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical (b 26 30)) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical (b 26 30)) in
      let cr = cr0_op ~mode:WR in
      (* e_rlwinm rA,rS,SH,MB,ME *)
      RotateLeftWordImmediateAndMask
@@ -1077,8 +1077,8 @@ let parse_e_misc_2_branchlink
     let offset = 2 * (b 7 30) in
     let offset = if (b 7 7) = 1 then offset - e25 else offset in
     let btea = iaddr#add_int offset in
-    let tgt = power_absolute_op btea RD in
-    let lr = power_special_register_op ~reg:PowerLR ~mode:WR in
+    let tgt = pwr_absolute_op btea RD in
+    let lr = pwr_special_register_op ~reg:PowerLR ~mode:WR in
     (* e_bl BD24 *)
     BranchLink (VLE32, tgt, lr)
 
@@ -1098,7 +1098,7 @@ let parse_e_misc_2_branchconditional
   let offset = b 16 31 in
   let offset = if offset >= e15 then offset - e16 else offset in
   let btea = iaddr#add_int offset in
-  let bd = power_absolute_op btea RD in
+  let bd = pwr_absolute_op btea RD in
   match (bo32, bi32) with
 
   (* < 7>10< 8>00<b>00<----BD15---->0   e_bge *)
@@ -1142,7 +1142,7 @@ let parse_e_misc_2_branchconditional
      let offset = b 16 31 in
      let offset = if offset >= e15 then offset - e16 else offset in
      let btea = iaddr#add_int offset in
-     let bd = power_absolute_op btea RD in
+     let bd = pwr_absolute_op btea RD in
      let bo32 = b 10 11 in
      let bi32 = b 12 15 in
      (* e_bc BO32,BI32,BD15 *)
@@ -1154,8 +1154,8 @@ let parse_e_misc_2_branchconditional
      let offset = if offset >= e15 then offset - e16 else offset in
      let btea = iaddr#add_int offset in
      let bo32 = b 10 11 in
-     let dst = power_absolute_op btea RD in
-     let ctr = power_special_register_op ~reg:PowerCTR ~mode:WR in
+     let dst = pwr_absolute_op btea RD in
+     let ctr = pwr_special_register_op ~reg:PowerCTR ~mode:WR in
      if (b 11 11 ) = 0 then
        (* e_bdnz dst *)
        CBranchDecrementNotZero (VLE32, false, bo32, bi32, BPNone, dst, ctr)
@@ -1184,7 +1184,7 @@ let parse_e_misc_2_branch
     let offset = 2 * (b 7 30) in
     let offset = if (b 7 7) = 1 then offset - e25 else offset in
     let btea = iaddr#add_int offset in
-    let bd = power_absolute_op btea RD in
+    let bd = pwr_absolute_op btea RD in
     (* e_b BD24 *)
     Branch (VLE32, bd)
 
@@ -1216,16 +1216,16 @@ let parse_e_misc_3_form
   (* < 7>11<<c>/0< ra>< rb><----0-->/   cmpw (BookE) *)
   | (0, 0) when (b 10 10) = 0 ->
      let crd = crf_op (b 6 8) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      (* cmpw cfrD,rA,rB *)
      CompareWord (PWR, crd ~mode:WR, ra ~mode:RD, rb ~mode:RD)
 
   (* < 7>11< rd>< ra>< rb>E<----8-->c   subfc (BookE) *)
   | (_, 8) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let rc = (b 31 31) = 1 in
      let oe = (b 21 21) = 1 in
      let cr = cr0_op ~mode:WR in
@@ -1238,9 +1238,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>E<---10-->c   addc (BookE) *)
   | (_, 10) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let rc = (b 31 31) = 1 in
      let oe = (b 21 21) = 1 in
      let cr = cr0_op ~mode:WR in
@@ -1253,9 +1253,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>/<---11-->c   mulhwu (BookE) *)
   | (0, 11) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let rc = (b 31 31) = 1 in
      let cr = cr0_op ~mode:WR in
      (* mulhwu rD,rA,rB *)
@@ -1264,9 +1264,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>0<---15-->/   isellt (BookE, simplified) *)
   | (0, 15) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:RD in
      (* isellt rD,rA,rB *)
      IntegerSelectLessThan (PWR, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr)
@@ -1280,18 +1280,18 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>0/////////0<---19-->/   mfcr (BookE) *)
   | (0, 19) when (b 11 11) = 0 ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let cr = power_special_register_op ~reg:PowerCR ~mode:RD in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let cr = pwr_special_register_op ~reg:PowerCR ~mode:RD in
      (* mfcr rD *)
      MoveFromConditionRegister (PWR, rd ~mode:WR, cr)
 
   (* < 7>11< rd>< ra>< rb>0<---23-->/   lwzx (BookE) *)
   | (0, 23) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let mem =
-       power_indexed_indirect_register_op
+       pwr_indexed_indirect_register_op
          ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
      (* lwzx *)
      LoadWordZeroIndexed
@@ -1299,9 +1299,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< rb>0<---24-->c   slw (BookE) *)
   | (0, 24) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let rc = (b 31 31) = 1 in
      let cr0 = cr0_op ~mode:WR in
      (* slw rA,rS,rB *)
@@ -1309,8 +1309,8 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>/////0<---26-->c   cntlzw (BookE) *)
   | (0, 26) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let cr0 = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* cntlzw ra,rs) *)
@@ -1318,9 +1318,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< rb>0<---28-->c   and (BookE) *)
   | (0, 28) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* and rA,rS,rB *)
@@ -1328,8 +1328,8 @@ let parse_e_misc_3_form
 
   (* < 7>11<c>/0< ra>< rb>0<---32-->/   cmplw (BookE, simplified mnemonic) *)
   | (0, 32) ->
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let crfd = crf_op (b 6 8) ~mode:WR in
      (* cmplw crfd, rA, rB *)
      CompareLogical (VLE32, crfd, ra ~mode:RD, rb ~mode:RD)
@@ -1343,9 +1343,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>E<---40-->c   subf (BookE) *)
   | (_, 40) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:WR in
      let so = xer_so_op ~mode:WR in
      let ov = xer_ov_op ~mode:WR in
@@ -1357,19 +1357,19 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>0<---47-->/   iselgt (BookE, simplified) *)
   | (0, 47) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:RD in
      (* iselgt rD,rA,rB *)
      IntegerSelectGreaterThan (PWR, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr)
 
   (* < 7>11< rs>< ra>< sh>0<---56-->c   e_slwi *)
   | (0, 56) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let sh = b 16 20 in
-     let sh = power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sh) in
+     let sh = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sh) in
      let cr0 = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* e_slwi rA,rS,SH *)
@@ -1377,9 +1377,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< rb>0<---60-->c   andc (BookE) *)
   | (0, 60) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* andc rA,rS,rB *)
@@ -1387,31 +1387,31 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>0<---79-->/   iseleq (BookE, simplified *)
   | (0, 79) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
      let ra =
        if (b 11 15) = 0 then
-         power_immediate_op ~signed:false ~size:4 ~imm:numerical_zero
+         pwr_immediate_op ~signed:false ~size:4 ~imm:numerical_zero
        else
-         power_gp_register_op ~index:(b 11 15) ~mode:RD in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+         pwr_gp_register_op ~index:(b 11 15) ~mode:RD in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:RD in
      (* iseleq rD,rA,rB *)
      IntegerSelectEqual (PWR, rd ~mode:WR, ra, rb ~mode:RD, cr)
 
   (* < 7>11< rd>//////////0<---83-->/   mfmsr (BookE) *)
   | (0, 83) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let msr = power_special_register_op ~reg:PowerMSR ~mode:RD in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let msr = pwr_special_register_op ~reg:PowerMSR ~mode:RD in
      (* mfmsr rD *)
      MoveFromMachineStateRegister (PWR, rd ~mode:WR, msr)
 
   (* < 7>11< rd>< ra>< rb>0<---87-->/   lbzx (BookE) *)
   | (0, 87) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let mem =
-       power_indexed_indirect_register_op
+       pwr_indexed_indirect_register_op
          ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
      (* lbzx rD,rA,rB *)
      LoadByteZeroIndexed
@@ -1419,8 +1419,8 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>/////E<--104-->c   neg (BookE) *)
   | (_, 104) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let rc = (b 31 31) = 1 in
      let oe = (b 21 21) = 1 in
      let cr = cr0_op ~mode:WR in
@@ -1431,8 +1431,8 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< rb>0<--124-->c   not (BookE) *)
   | (0, 124) when (b 6 10) = (b 16 20) ->
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* not rA,rB *)
@@ -1440,9 +1440,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>E<--136-->c   subfe (BookE) *)
   | (_, 136) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let oe = (b 21 21) = 1 in
      let rc = (b 31 31) = 1 in
      let cr = cr0_op ~mode:WR in
@@ -1455,9 +1455,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>E<--138-->c   adde (BookE) *)
   | (_, 138) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let oe = (b 21 21) = 1 in
      let rc = (b 31 31) = 1 in
      let cr = cr0_op ~mode:WR in
@@ -1470,34 +1470,34 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>0<15><15>/0<--144-->/   mtcr (BookE, simplified) *)
   | (0, 144) when (b 11 11) = 0 && (b 12 19) = 255 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let cr = power_special_register_op ~reg:PowerCR ~mode:WR in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let cr = pwr_special_register_op ~reg:PowerCR ~mode:WR in
      (* mtcr rS *)
      MoveToConditionRegister (PWR, cr, rs ~mode:RD)
 
   (* < 7>11< rs>0<--crm->/0<--144-->/   mtcrf (BookE) *)
   | (0, 144) when (b 11 11) = 0 ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
      let crm = b 12 19 in
      let crm =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical crm) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical crm) in
      (* mtcrf CRM,rS *)
      MoveToConditionRegisterFields (PWR, crm, rs ~mode:RD)
 
   (* < 7>11<rs><.........>0<--146-->/  mtmsr (BookE) *)
   | (0, 146) ->
-     let rx = power_gp_register_op ~index:(b 6 10) in
-     let msr = power_special_register_op ~reg:PowerMSR in
+     let rx = pwr_gp_register_op ~index:(b 6 10) in
+     let msr = pwr_special_register_op ~reg:PowerMSR in
      (* mtmsr RS *)
      MoveToMachineStateRegister (PWR, msr ~mode:WR, rx ~mode:RD)
 
   (* < 7>11< rs>< ra>< rb>0<--151-->/   stwx (BookE) *)
   | (0, 151) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let mem =
-       power_indexed_indirect_register_op
+       pwr_indexed_indirect_register_op
          ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
      (* stwx rS,rA,rB *)
      StoreWordIndexed
@@ -1505,18 +1505,18 @@ let parse_e_misc_3_form
 
   (* < 7>11//////////E////0<--163-->/   wrteei (BookE) *)
   | (0, 163) ->
-     let msr = power_special_register_op ~reg:PowerMSR ~mode:WR in
+     let msr = pwr_special_register_op ~reg:PowerMSR ~mode:WR in
      let enable = (b 16 16) = 1 in
      (* wrteei E *)
      WriteMSRExternalEnableImmediate (PWR, enable, msr)
 
   (* < 7>11< rs>< ra>< rb>0<--183-->/   stwux (BookE) *)
   | (0, 183) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let mem =
-       power_indexed_indirect_register_op
+       pwr_indexed_indirect_register_op
          ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
      (* stwx rS,rA,rB *)
      StoreWordIndexed
@@ -1524,8 +1524,8 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>/////E<--200-->c   subfze (BookE) *)
   | (_, 200) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let cr = cr0_op ~mode:WR in
      let so = xer_so_op ~mode:WR in
      let ov = xer_ov_op ~mode:WR in
@@ -1538,8 +1538,8 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>/////E<--202-->c   addze (BookE) *)
   | (_, 202) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let cr = cr_op ~mode:WR in
      let ca = xer_ca_op ~mode:WR in
      let so = xer_so_op ~mode:WR in
@@ -1551,11 +1551,11 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< rb>0<--215-->/   stbx (BookE) *)
   | (0, 215) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let mem =
-       power_indexed_indirect_register_op
+       pwr_indexed_indirect_register_op
          ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
      (* stbx rS,rA,rB *)
      StoreByteIndexed
@@ -1563,8 +1563,8 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>/////E<--234-->c   addme (BookE) *)
   | (_, 234) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let cr = cr0_op ~mode:WR in
      let so = xer_so_op ~mode:WR in
      let ov = xer_ov_op ~mode:WR in
@@ -1576,9 +1576,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>E<--235-->c   mullw (BookE) *)
   | (_, 235) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr_op ~mode:WR in
      let so = xer_so_op ~mode:WR in
      let ov = xer_ov_op ~mode:WR in
@@ -1590,9 +1590,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>E<--266-->c   add (BookE) *)
   | (_, 266) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr_op ~mode:WR in
      let so = xer_so_op ~mode:WR in
      let ov = xer_ov_op ~mode:WR in
@@ -1603,9 +1603,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< rb>0<--280-->c   e_rlw *)
   | (0, 280) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* e_rlw rA,rS,rB *)
@@ -1613,9 +1613,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< rb>0<--316-->c   xor (BookE) *)
   | (0, 316) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* xor rA,rS,rB *)
@@ -1623,25 +1623,25 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< 0 >< 1 >0<--339-->/   mfxer (BookE, simplified) *)
   | (0, 339) when (b 11 15) = 1 && (b 16 20) = 0 ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let xer = power_special_register_op ~reg:PowerXER ~mode:RD in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let xer = pwr_special_register_op ~reg:PowerXER ~mode:RD in
      (* mfxer rD *)
      MoveFromExceptionRegister (PWR, rd ~mode:WR, xer)
 
   (* < 7>11< rd><spr><spr>0<--339-->/   mfspr (BookE) *)
   | (0, 339) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
      let spr = ((b 16 20) lsl 5) + (b 11 15) in
      let spr =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical spr) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical spr) in
      (* mfspr rD, sprn *)
      MoveFromSpecialPurposeRegister (PWR, rd ~mode:WR, spr)
 
   (* < 7>11< rs>< ra>< rb>0<--444-->c   or (BookE) *)
   | (0, 444) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode: WR in
      let rc = (b 31 31) = 1 in
      (* or rA,rS,rB *)
@@ -1657,9 +1657,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rd>< ra>< rb>E<--459-->c   divwu (BookE) *)
   | (_, 459) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:WR in
      let so = xer_so_op ~mode:WR in
      let ov = xer_ov_op ~mode:WR in
@@ -1671,14 +1671,14 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs><  8><  0>0<--467-->/   mtlr (BookE) *)
   | (0, 467) when (b 11 15) = 8 && (b 16 20) = 0 ->
-     let rx = power_gp_register_op ~index:(b 6 10) in
+     let rx = pwr_gp_register_op ~index:(b 6 10) in
      let lr = lr_op ~mode:WR in
      (* mtctr rS *)
      MoveToLinkRegister (PWR, lr, rx ~mode:RD)
 
   (* < 7>11< rs><  9><  0>0<--467-->/   mtctr (BookE) *)
   | (0, 467) when (b 11 15) = 9 && (b 16 20) = 0 ->
-     let rx = power_gp_register_op ~index:(b 6 10) in
+     let rx = pwr_gp_register_op ~index:(b 6 10) in
      let ctr = ctr_op ~mode:WR in
      (* mtctr rS *)
      MoveToCountRegister (PWR, ctr, rx ~mode:RD)
@@ -1686,17 +1686,17 @@ let parse_e_misc_3_form
   (* < 7>11< rs><spr><spr>0<--467-->/   mtspr (BookE) *)
   | (0, 467) ->
      let sprn = ((b 16 20) lsl 5) + (b 11 15) in
-     let rx = power_gp_register_op ~index:(b 6 10) in
+     let rx = pwr_gp_register_op ~index:(b 6 10) in
      let immop =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sprn) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sprn) in
      (* mtspr sprN, rS *)
      MoveToSpecialPurposeRegister(PWR, immop, rx ~mode:WR)
 
   (* < 7>11< rd>< ra>< rb>E<--491-->c   divw (BookE) *)
   | (_, 491) ->
-     let rd = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:WR in
      let so = xer_so_op ~mode:WR in
      let ov = xer_ov_op ~mode:WR in
@@ -1707,9 +1707,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< rb>1<---24-->c   srw (BookE) *)
   | (1, 24) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* srw rA,rS,rB *)
@@ -1717,10 +1717,10 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< sh>1<---56-->c   e_srwi *)
   | (1, 56) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let sh = b 16 20 in
-     let sh = power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sh) in
+     let sh = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sh) in
      let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* srwi rA,rS,SH *)
@@ -1728,9 +1728,9 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< rb>1<--280-->c   sraw (BookE) *)
   | (1, 280) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
-     let rb = power_gp_register_op ~index:(b 16 20) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
      let rc = (b 31 31) = 1 in
      let cr = cr0_op ~mode:WR in
      let ca = xer_ca_op ~mode:WR in
@@ -1740,11 +1740,11 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>< sh>1<--312-->c   srawi (BookE) *)
   | (1, 312) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let sh = b 16 20 in
      let sh =
-       power_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sh) in
+       pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sh) in
      let rc = (b 31 31) = 1 in
      let cr = cr0_op ~mode:WR in
      let ca = xer_ca_op ~mode:WR in
@@ -1754,8 +1754,8 @@ let parse_e_misc_3_form
 
   (* < 7>11< rs>< ra>/////1<--410-->c   extsh (BookE) *)
   | (1, 410) ->
-     let rs = power_gp_register_op ~index:(b 6 10) in
-     let ra = power_gp_register_op ~index:(b 11 15) in
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
      let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* extsh rA,rS *)
@@ -1769,7 +1769,7 @@ let parse_e_misc_3_form
   (* < 7>11< mo>//////////1<--342-->/   mbar (BookE) *)
   | (1, 342) ->
      let mo = b 6 10 in
-     let mo = power_immediate_op ~signed:false ~size:1 ~imm:(mkNumerical mo) in
+     let mo = pwr_immediate_op ~signed:false ~size:1 ~imm:(mkNumerical mo) in
      (* mbar *)
      MemoryBarrier (PWR, mo)
 
@@ -1826,7 +1826,7 @@ let parse_e_instruction
 let parse_vle_opcode
       (ch: pushback_stream_int)
       (iaddr: doubleword_int)
-      (instrbytes: int): power_opcode_t =
+      (instrbytes: int): pwr_opcode_t =
   if instrbytes = 0 then
     OpcodeIllegal 0
   else
