@@ -377,11 +377,16 @@ object (self:'a)
 	      
   method get_initial_register_value_register =
     match denotation with
-    | AuxiliaryVariable (InitialRegisterValue (CPURegister r, 0)) -> CPURegister r
-    | AuxiliaryVariable (InitialRegisterValue (MIPSRegister r, 0)) -> MIPSRegister r
-    | AuxiliaryVariable (InitialRegisterValue (ARMRegister r, 0)) -> ARMRegister r
+    | AuxiliaryVariable (InitialRegisterValue (CPURegister r, 0)) ->
+       CPURegister r
+    | AuxiliaryVariable (InitialRegisterValue (MIPSRegister r, 0)) ->
+       MIPSRegister r
+    | AuxiliaryVariable (InitialRegisterValue (ARMRegister r, 0)) ->
+       ARMRegister r
     | AuxiliaryVariable (InitialRegisterValue (ARMExtensionRegister r, 0)) ->
        ARMExtensionRegister r
+    | AuxiliaryVariable (InitialRegisterValue (PowerGPRegister i, 0)) ->
+       PowerGPRegister i
     | _ ->
       begin
 	ch_error_log#add

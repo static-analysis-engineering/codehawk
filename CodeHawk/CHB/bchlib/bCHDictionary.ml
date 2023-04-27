@@ -252,6 +252,8 @@ object (self)
        ARMExtensionRegisterReplicatedElement
          (self#get_arm_extension_register_replicated_element (a 0))
     | "pwrgpr" -> PowerGPRegister (a 0)
+    | "pwrspr" -> PowerSPRegister (pwr_spr_mfts#fs (t 1))
+    | "pwrcrf" -> PowerCRField (pwr_crf_mfts#fs (t 1))
     | s -> raise_tag_error name s register_mcts#tags
 
 
