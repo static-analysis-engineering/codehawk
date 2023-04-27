@@ -43,7 +43,21 @@ let get_pwr_op_metrics
 
 let get_pwr_stackpointer_metrics
       (f: pwr_assembly_function_int) (finfo: function_info_int) =
-  (0, 0)
+  let faddr = f#faddr in
+  let sptop = ref 0 in
+  let sprange = ref 0 in
+  let _ =
+    f#iteri
+      (fun _ ctxtiaddr _ ->
+       let loc = ctxt_string_to_location faddr ctxtiaddr in
+       let floc = get_floc loc in
+       let (_, range) = floc#get_stackpointer_offset "pwr" in
+       if range#isTop then
+         sptop := !sptop + 1
+       else
+         match range#singleton with
+         | Some _ -> () | _ -> sprange := !sprange + 1) in
+  (!sptop, !sprange)
 
 
 let get_pwr_memory_access_metrics

@@ -340,7 +340,8 @@ let set_block_boundaries () =
            | Branch (_, tgt)
              | BranchConditional (_, _, _, _, tgt)
              | CBranchDecrementNotZero (_, _, _, _, _, tgt, _)
-             | CBranchDecrementZero(_, _, _, _, _, tgt, _) ->
+             | CBranchDecrementZero (_, _, _, _, _, tgt, _)
+             | CBranchLessEqual (_, _, _, _, _, _, tgt) ->
               if tgt#is_absolute_address then
                 let jumpaddr = tgt#get_absolute_address in
                 set_block_entry jumpaddr
@@ -367,7 +368,8 @@ let set_block_boundaries () =
           | Branch _
             | BranchConditional _
             | CBranchDecrementNotZero _
-            | CBranchDecrementZero _ -> true
+            | CBranchDecrementZero _
+            | CBranchLessEqual _ -> true
           | _ -> false in
         if is_block_ending && has_next_valid_instruction va then
           let nextva =

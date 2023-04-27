@@ -181,11 +181,59 @@ object (self)
     | _ -> false
 
   method to_variable (floc: floc_int): variable_t =
+    let env = floc#f#env in
+    match kind with
+    | PowerGPReg index ->
+       env#mk_pwr_gp_register_variable index
+    | PowerSpecialReg reg ->
+       env#mk_pwr_sp_register_variable reg
+    | PowerRegisterField f ->
+       env#mk_pwr_register_field_variable f
+    | PowerIndReg (index, offset) ->
+       let rvar = env#mk_pwr_gp_register_variable index in
+       floc#get_memory_variable_1 rvar offset
+    | _ ->
     raise
       (BCH_failure
          (LBLOCK [STR "To_variable not implemented for "; self#toPretty]))
     
-  method to_expr (floc: floc_int): xpr_t = XConst XRandom
+  method to_expr (floc: floc_int): xpr_t =
+    match kind with
+    | PowerImmediate imm -> num_constant_expr imm#to_numerical
+    | PowerGPReg _ -> XVar (self#to_variable floc)
+    | PowerSpecialReg _ -> XVar (self#to_variable floc)
+    | PowerRegisterField _ -> XVar (self#to_variable floc)
+    | PowerAbsolute a when elf_header#is_program_address a ->
+       num_constant_expr a#to_numerical
+    | PowerAbsolute a ->
+       begin
+         ch_error_log#add
+           "absolute address"
+           (LBLOCK [STR "Address "; a#toPretty; STR " not found"]);
+         num_constant_expr a#to_numerical
+       end
+    | PowerIndReg _ -> XVar (self#to_variable floc)
+    | _ ->
+       begin
+         ch_error_log#add
+           "op#to_expr"
+           (LBLOCK [STR "Not implemented for "; self#toPretty]);
+         XConst XRandom
+       end
+
+  method to_updated_offset_address (floc: floc_int): xpr_t =
+    match kind with
+    | PowerIndReg (_, offset) ->
+       let env = floc#f#env in
+       let memoff = num_constant_expr offset in
+       let addr = XOp (XPlus, [self#to_address floc; memoff]) in
+       floc#inv#rewrite_expr addr env#get_variable_comparator
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand is not an indirect register-address: ";
+                 self#toPretty]))
 
   method to_numerical =
     match kind with
@@ -196,11 +244,32 @@ object (self)
             (LBLOCK [STR "Operand is not an immediate value: "; self#toPretty]))
 
   method to_lhs (floc: floc_int): (variable_t * cmd_t list) =
-    raise
-      (BCH_failure
-         (LBLOCK [STR "Lhs not implemented for "; self#toPretty]))
+    match kind with
+    | PowerImmediate _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Immediate cannot be a lhs: "; self#toPretty]))
+    | PowerAbsolute _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Absolute address cannot be a lhs: "; self#toPretty]))
+    | _ -> (self#to_variable floc, [])
 
-  method to_address (floc: floc_int): xpr_t = XConst XRandom
+  method to_address (floc: floc_int): xpr_t =
+    match kind with
+    | PowerIndReg (index, offset) ->
+       let env = floc#f#env in
+       let memoff = num_constant_expr offset in
+       let rvar = env#mk_pwr_gp_register_variable index in
+       let addr = XOp (XPlus, [XVar rvar; memoff]) in
+       floc#inv#rewrite_expr addr env#get_variable_comparator
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Unable to take address of "; self#toPretty]))
 
   method toString =
     match kind with

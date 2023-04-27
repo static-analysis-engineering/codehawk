@@ -152,6 +152,67 @@ let translate_pwr_instruction
   let default newcmds = ([], [], cmds @ (invop :: newcmds) @ [bwdinvop]) in
 
   match instr#get_opcode with
+
+  | AddImmediate (_, _, _, _, _, rd, ra, simm, cr) ->
+     let vrd = rd#to_variable floc in
+     let xra = ra#to_expr floc in
+     let xsimm = simm#to_expr floc in
+     let xrhs = XOp (XPlus, [xra; xsimm]) in
+     let cmds = floc#get_assign_commands vrd xrhs in
+     default cmds
+
+  | LoadImmediate (_, _, _, rd, imm) ->
+     let vrd = rd#to_variable floc in
+     let ximm = imm#to_expr floc in
+     let cmds = floc#get_assign_commands vrd ximm in
+     default cmds
+
+  | LoadWordZero (_, update, rd, ra, mem) ->
+     let vrd = rd#to_variable floc in
+     let rhs =
+       floc#inv#rewrite_expr (mem#to_expr floc)
+         floc#env#get_variable_comparator in
+     let cmds = floc#get_assign_commands vrd rhs in
+     let updatecmds =
+       if update then
+         let vra = ra#to_variable floc in
+         let addr = mem#to_address floc in
+         floc#get_assign_commands vra addr
+       else
+         [] in
+     default (cmds @ updatecmds)
+
+  | MoveFromLinkRegister (_, rd, lr) ->
+     let vrd = rd#to_variable floc in
+     let xlr = lr#to_expr floc in
+     let cmds = floc#get_assign_commands vrd xlr in
+     default cmds
+
+  | MoveRegister (_, _, rd, rs) ->
+     let vrd = rd#to_variable floc in
+     let xrs = rs#to_expr floc in
+     let cmds = floc#get_assign_commands vrd xrs in
+     default cmds
+
+  | MoveToLinkRegister (_, lr, rs) ->
+     let vlr = lr#to_variable floc in
+     let xrs = rs#to_expr floc in
+     let cmds = floc#get_assign_commands vlr xrs in
+     default cmds
+
+  | StoreWord (_, update, rs, ra, mem) ->
+     let (vmem, memcmds) = mem#to_lhs floc in
+     let xrs = rs#to_expr floc in
+     let cmds = floc#get_assign_commands vmem xrs in
+     let updatecmds =
+       if update then
+         let vra = ra#to_variable floc in
+         let addr = mem#to_address floc in
+         floc#get_assign_commands vra addr
+       else
+         [] in
+     default (memcmds @ cmds @ updatecmds)
+
   | opc ->
      let _ =
        chlog#add

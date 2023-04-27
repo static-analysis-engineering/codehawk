@@ -76,7 +76,7 @@ object (self)
                    (instr: pwr_assembly_instruction_int) =
     let loc = ctxt_string_to_location faddr ctxtiaddr in
     let floc = get_floc loc in
-    let espoffset = floc#get_stackpointer_offset "arm" in
+    let espoffset = floc#get_stackpointer_offset "pwr" in
     begin
       pwr_dictionary#write_xml_pwr_opcode node instr#get_opcode;
       id#write_xml_instr node instr floc;
