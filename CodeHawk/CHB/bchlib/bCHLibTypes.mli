@@ -2763,11 +2763,13 @@ class type function_environment_int =
              arm_extension_register_t -> arm_extension_register_t -> variable_t
 
     method mk_pwr_gp_register_variable: int -> variable_t
+    method mk_pwr_sp_register_variable: pwr_special_reg_t -> variable_t
+    method mk_pwr_register_field_variable: pwr_register_field_t -> variable_t
 
     method mk_global_variable: ?size:int -> numerical_t -> variable_t
 
     method mk_initial_register_value: ?level:int -> register_t -> variable_t
-    method mk_initial_memory_value  : variable_t -> variable_t
+    method mk_initial_memory_value: variable_t -> variable_t
 
     method mk_flag_variable: flag_t -> variable_t
     method mk_bridge_value: ctxt_iaddress_t -> int -> variable_t

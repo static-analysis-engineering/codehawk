@@ -864,6 +864,12 @@ object (self)
   method mk_pwr_gp_register_variable (index: int) =
     self#mk_register_variable (PowerGPRegister index)
 
+  method mk_pwr_sp_register_variable (reg: pwr_special_reg_t) =
+    self#mk_register_variable (PowerSPRegister reg)
+
+  method mk_pwr_register_field_variable (f: pwr_register_field_t) =
+    self#mk_register_variable (PowerCRField f)
+
   method mk_bridge_value (address:ctxt_iaddress_t) (argnr:int) =
     self#mk_variable (varmgr#make_bridge_value address argnr)
       
@@ -1315,6 +1321,7 @@ object (self)
       | MIPSRegister r -> self#mk_mips_register_variable r
       | ARMRegister r -> self#mk_arm_register_variable r
       | ARMExtensionRegister r -> self#mk_arm_extension_register_variable r
+      | PowerGPRegister i -> self#mk_pwr_gp_register_variable i
       | _ ->
          let msg =
            LBLOCK [

@@ -164,14 +164,14 @@ let pwr_spr_mfts: pwr_special_reg_t mfts_int =
 let pwr_crf_mfts: pwr_register_field_t mfts_int =
   mk_mfts
     "pwr_register_field_t"
-    [(PowerCR0, "CR0");
-     (PowerCR1, "CR1");
-     (PowerCR2, "CR2");
-     (PowerCR3, "CR3");
-     (PowerCR4, "CR4");
-     (PowerCR5, "CR5");
-     (PowerCR6, "CR6");
-     (PowerCR7, "CR7");
+    [(PowerCR0, "cr0");
+     (PowerCR1, "cr1");
+     (PowerCR2, "cr2");
+     (PowerCR3, "cr3");
+     (PowerCR4, "cr4");
+     (PowerCR5, "cr5");
+     (PowerCR6, "cr6");
+     (PowerCR7, "cr7");
      (PowerXERSO, "XERSO");
      (PowerXEROV, "XEROV");
      (PowerXERCA, "XERCA")]

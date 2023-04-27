@@ -863,27 +863,31 @@ object (self)
     (self#f#env#is_initial_memory_value v)
     || (self#env#is_initial_register_value v)
       
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * esp offset                                                                   *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * esp offset                                                               *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method get_stackpointer_offset arch =
     match arch with
     | "x86" -> self#get_esp_offset
     | "mips" -> self#get_sp_offset
     | "arm" -> self#get_arm_sp_offset
+    | "pwr" -> self#get_pwr_sp_offset
     | _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Architecture not recognized: " ; STR arch ]))
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Architecture not recognized: "; STR arch]))
 
   method stackpointer_offset_to_string arch =
     match arch with
     | "x86" -> self#esp_offset_to_string
     | "mips" -> self#sp_offset_to_string
     | "arm" -> self#arm_sp_offset_to_string
+    | "pwr" -> self#pwr_sp_offset_to_string
     | _ ->
-       raise (BCH_failure
-                (LBLOCK [ STR "Architecture not recognized: " ; STR arch ]))
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Architecture not recognized: "; STR arch]))
 
   method private get_esp_offset =    (* specific to x86 *)
     let inv = self#inv in
@@ -920,6 +924,22 @@ object (self)
   method private get_arm_sp_offset =  (* specific to arm *)
     let inv = self#inv in
     let spreg = ARMRegister ARSP in
+    let sp = self#env#mk_register_variable spreg in
+    let sp0 = self#env#mk_initial_register_value ~level:0 spreg in
+    let sp0Offset = inv#get_interval_offset sp0 sp in
+    if sp0Offset#isTop then
+      let sp1 = self#env#mk_initial_register_value ~level:1 spreg in
+      let sp1Offset = inv#get_interval_offset sp1 sp in
+      if sp1Offset#isTop then
+        (0, topInterval)
+      else
+        (1, sp1Offset)
+    else
+      (0, sp0Offset)
+
+  method private get_pwr_sp_offset =  (* specific to power32 *)
+    let inv = self#inv in
+    let spreg = PowerGPRegister 1 in
     let sp = self#env#mk_register_variable spreg in
     let sp0 = self#env#mk_initial_register_value ~level:0 spreg in
     let sp0Offset = inv#get_interval_offset sp0 sp in
@@ -978,9 +998,24 @@ object (self)
 	  | _ -> "?" in
     openB ^ " " ^ offset ^ " " ^ closeB
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * jump tables                                                                   *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+  method private pwr_sp_offset_to_string =
+    let (level,offset) = self#get_pwr_sp_offset in
+    let openB = string_repeat "[" (level+1) in
+    let closeB = string_repeat "]" (level+1) in
+    let offset = if offset#isTop then " ? "	else
+	match offset#singleton with
+	| Some num -> num#toString
+	| _ ->
+	  match (offset#getMin#getBound, offset#getMax#getBound) with
+	  | (NUMBER lb, NUMBER ub) -> lb#toString  ^ " ; " ^ ub#toString
+	  | (NUMBER lb, _) -> lb#toString ^ " ; oo"
+	  | (_, NUMBER ub) -> "-oo ; " ^ ub#toString
+	  | _ -> "?" in
+    openB ^ " " ^ offset ^ " " ^ closeB
+
+  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
+   * jump tables                                                               *
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method set_jumptable_target
            (base:doubleword_int)  (t:jumptable_int) (reg:register_t) =
