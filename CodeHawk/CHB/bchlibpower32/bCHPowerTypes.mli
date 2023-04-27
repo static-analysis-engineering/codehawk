@@ -237,6 +237,7 @@ class type pwr_operand_int =
     method to_address: floc_int -> xpr_t
     method to_variable: floc_int -> variable_t
     method to_expr: floc_int -> xpr_t
+    method to_updated_offset_address: floc_int -> xpr_t
     method to_lhs: floc_int -> variable_t * cmd_t list
 
     (* predicates *)
@@ -298,10 +299,10 @@ type pwr_opcode_t =
   (* EREF:6-23, VLEPEM:3-7 *)
   | AddImmediate of
       pwr_instruction_type_t
-      * bool               (* s: shifted *)
-      * bool               (* op2: 2-operand *)
-      * bool               (* op16: 16-bit immediate *)
-      * bool               (* rc: record condition *)
+      * bool             (* s: shifted *)
+      * bool             (* op2: 2-operand *)
+      * bool             (* op16: 16-bit immediate *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source operand *)
       * pwr_operand_int  (* simm: signed immediate *)
@@ -608,7 +609,7 @@ type pwr_opcode_t =
      Full instruction: RotateLeftWordImmediateAndMask *)
   | ClearLeftWordImmediate of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* mb: mask begin *)
@@ -617,7 +618,7 @@ type pwr_opcode_t =
      Full instruction: RotateLeftWordImmediateAndMask *)
   | ClearRightWordImmediate of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* me: mask end *)
@@ -626,7 +627,7 @@ type pwr_opcode_t =
   (* EREF:6-46, VLEPEM:3-21 *)
   | CompareImmediate of
       pwr_instruction_type_t
-      * bool               (* op16: 16-bit immediate, VLE32 only *)
+      * bool             (* op16: 16-bit immediate, VLE32 only *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* ra: register operand *)
       * pwr_operand_int  (* simm: signed immediate *)
@@ -641,7 +642,7 @@ type pwr_opcode_t =
   (* EREF:6-48, VLEPEM:3-27 *)
   | CompareLogicalImmediate of
       pwr_instruction_type_t
-      * bool               (* op16: 16 bit immediate, VLE32 only *)
+      * bool             (* op16: 16 bit immediate, VLE32 only *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* ra: register operand *)
       * pwr_operand_int  (* uimm: unsigned immediate *)
@@ -809,7 +810,7 @@ type pwr_opcode_t =
   (* EREF:6-148,149, VLEPEM:3-39 *)
   | LoadByteZeroIndexed of
       pwr_instruction_type_t
-      * bool               (* u: update *)
+      * bool             (* u: update *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* rb: index register *)
@@ -818,7 +819,7 @@ type pwr_opcode_t =
   (* EREF:6-178,179, VLEPEM:3-41 *)
   | LoadHalfwordZero of
       pwr_instruction_type_t
-      * bool               (* u: update *)
+      * bool             (* u: update *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* mem: memory operand *)
@@ -826,8 +827,8 @@ type pwr_opcode_t =
   (* EREF:B-24 (simplified), VLEPEM:3-42 *)
   | LoadImmediate of
       pwr_instruction_type_t
-      * bool               (* sg: signed *)
-      * bool               (* sh: shifted *)
+      * bool             (* sg: signed *)
+      * bool             (* sh: shifted *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* imm: signed/unsigned immediate *)
 
@@ -865,7 +866,7 @@ type pwr_opcode_t =
   (* EREF:6-193,194, VLEPEM:3-44 *)
   | LoadWordZero of
       pwr_instruction_type_t
-      * bool               (* u: update *)
+      * bool             (* u: update *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: memory base register *)
       * pwr_operand_int  (* mem: memory operand *)
@@ -873,7 +874,7 @@ type pwr_opcode_t =
   (* EREF:6-195,196, VLEPEM:3-44 *)
   | LoadWordZeroIndexed of
       pwr_instruction_type_t
-      * bool               (* update *)
+      * bool             (* update *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* rb: index register *)
@@ -1215,7 +1216,7 @@ type pwr_opcode_t =
   (* EREF:6-323,329, VLEPEM:3-70 *)
   | StoreWord of
       pwr_instruction_type_t
-      * bool               (* update *)
+      * bool             (* update *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* mem: memory operand *)

@@ -349,14 +349,14 @@ let get_record (opc: pwr_opcode_t) =
        ida_asm = (fun f -> f#ops mnemonic [tgt])
      }
 
-  | BranchLinkRegister (pit, tgt) ->
+  | BranchLinkRegister (pit, lr) ->
      let mnemonic = match pit with
        | VLE16 -> "se_blr"
        | PWR -> "blr"
        | _ -> "xxxx_blr" in
      {
        mnemonic = mnemonic;
-       operands = [tgt];
+       operands = [lr];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
