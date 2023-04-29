@@ -3277,6 +3277,7 @@ object
   method get_call_args: (fts_parameter_t * xpr_t) list
   method get_mips_call_arguments : (fts_parameter_t * xpr_t) list
   method get_arm_call_arguments: (fts_parameter_t * xpr_t) list
+  method get_pwr_call_arguments: (fts_parameter_t * xpr_t) list
 
   (* method get_jumptable_indexed_targets: (int * doubleword_int) list *)
 
@@ -3293,6 +3294,8 @@ object
   method get_mips_syscall_commands: cmd_t list
 
   method get_arm_call_commands: cmd_t list
+
+  method get_pwr_call_commands: cmd_t list
 
   (* returns the CHIF code associated with an assignment instruction *)
   method get_assign_commands:

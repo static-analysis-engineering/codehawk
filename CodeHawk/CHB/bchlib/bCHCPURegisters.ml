@@ -351,6 +351,22 @@ let pwr_spr_to_string (r: pwr_special_reg_t) =
     "pwr_sprs_to_string_table" pwr_sprs_to_string_table r
 
 
+let pwr_special_registers: pwr_special_reg_t list =
+  [PowerCR;
+   PowerCTR;
+   PowerMSR;
+   PowerLR;
+   PowerXER;
+   PowerSRR0;
+   PowerSRR1;
+   PowerCSRR0;
+   PowerCSRR1;
+   PowerDSRR0;
+   PowerDSRR1;
+   PowerMCSRR0;
+   PowerMCSRR1]
+
+
 let _ =
   List.iter (fun (r, s) ->
       add_to_sumtype_tables
