@@ -257,8 +257,8 @@ object (self)
       | MoveRegister (pit, rc, rd, rs) -> (itags pit, [setb rc; oi rd; oi rs])
       | MoveToAlternateRegister (pit, arx, ry) -> (itags pit, [oi arx; oi ry])
       | MoveToConditionRegister (pit, cr, rs) -> (itags pit, [oi cr; oi rs])
-      | MoveToConditionRegisterFields (pit, crm, rs) ->
-         (itags pit, [oi crm; oi rs])
+      | MoveToConditionRegisterFields (pit, crm, rs, crfs) ->
+         (itags pit, [oi crm; oi rs] @ (List.map oi crfs))
       | MoveToCountRegister (pit, ctr, rs) -> (itags pit, [oi ctr; oi rs])
       | MoveToExceptionRegister (pit, xer, rs) -> (itags pit, [oi xer; oi rs])
       | MoveToLinkRegister (pit, lr, rs) -> (itags pit, [oi lr; oi rs])

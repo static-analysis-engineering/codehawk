@@ -155,6 +155,21 @@ object (self)
   method get_register_field =
     match kind with
     | PowerRegisterField f -> f
+    | PowerConditionRegisterBit i ->
+       (match i / 4 with
+        | 0 -> PowerCR0
+        | 1 -> PowerCR1
+        | 2 -> PowerCR2
+        | 3 -> PowerCR3
+        | 4 -> PowerCR4
+        | 5 -> PowerCR5
+        | 6 -> PowerCR6
+        | 7 -> PowerCR7
+        | _ ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Unexpected condition register bit value: "; INT i])))
     | _ ->
        raise
          (BCH_failure
@@ -218,6 +233,18 @@ object (self)
          ch_error_log#add
            "op#to_expr"
            (LBLOCK [STR "Not implemented for "; self#toPretty]);
+         XConst XRandom
+       end
+
+  method to_shifted_expr (shift: int): xpr_t =
+    match kind with
+    | PowerImmediate imm ->
+       num_constant_expr (imm#to_numerical#shift_left shift)
+    | _ ->
+       begin
+         ch_error_log#add
+           "op#to_shifted_expr"
+           (LBLOCK [STR "Only available for immediate: "; self#toPretty]);
          XConst XRandom
        end
 
@@ -395,6 +422,20 @@ let crf_op (index: int) =
                        STR " is invalid"])))
 
 let crbi_op (index: int) = crf_op (index / 4)
+
+
+let pwr_cr_field_list (crm: int) ~(mode: pwr_operand_mode_t) =
+  let indices =
+    let rec aux (pos: int) (v: int) (bits: int list) =
+      if pos = 8 then
+        bits
+      else if v mod 2 = 1 then
+        aux (pos + 1) (v lsr 1) (pos :: bits)
+      else
+        aux (pos + 1) (v lsr 1) bits in
+    aux 0 crm [] in
+  List.map (fun i -> crf_op i ~mode) indices
+
 
 let cr0_op = crf_op 0
 

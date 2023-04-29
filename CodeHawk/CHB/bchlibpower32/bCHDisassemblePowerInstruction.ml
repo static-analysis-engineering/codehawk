@@ -47,6 +47,24 @@ open BCHPowerTypes
 module TR = CHTraceResult
 
 
+let parse_opcode_4
+      (ch: pushback_stream_int)
+      (iaddr: doubleword_int)
+      (instr: doubleword_int): pwr_opcode_t =
+  let b = instr#get_reverse_segval 32 in
+
+  (* floating-point general pattern:
+     <   4>< rd>< ra>< rb><----i---->
+   *)
+  let rd = pwr_gp_register_op ~index:(b 6 10) in
+  let ra = pwr_gp_register_op ~index:(b 11 15) in
+  let rb = pwr_gp_register_op ~index:(b 16 20) in
+  let opc = b 21 31 in
+  match opc with
+  | _ ->
+     NotRecognized ("FP opcode:" ^ (string_of_int opc), instr)
+
+
 let parse_opcode_7
       (ch: pushback_stream_int)
       (iaddr: doubleword_int)
@@ -801,10 +819,11 @@ let parse_opcode_31
   | (0, 144) when (b 11 11) = 0 ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
      let crm = b 12 19 in
-     let crm =
+     let crmop =
        pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical crm) in
      (* mtcrf CRM,rS *)
-     MoveToConditionRegisterFields (PWR, crm, rs ~mode:RD)
+     let crfs = pwr_cr_field_list crm in
+     MoveToConditionRegisterFields (PWR, crmop, rs ~mode:RD, crfs ~mode:WR)
 
   (* < 7>11<rs><.........>0<--146-->/  mtmsr *)
   | (0, 146) ->
@@ -1223,6 +1242,8 @@ let parse_pwr_opcode
     let b = instr#get_reverse_segval 32 in
     let opc = b 0 5 in
     match opc with
+    | 1 | 5 | 6 | 57 | 60 | 61 -> OpcodeIllegal opc
+    | 4 -> parse_opcode_4 ch iaddr instr
     | 7 -> parse_opcode_7 ch iaddr instr
     | 8 -> parse_opcode_8 ch iaddr instr
     | 10 -> parse_opcode_10 ch iaddr instr
