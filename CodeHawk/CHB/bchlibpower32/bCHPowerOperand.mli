@@ -136,6 +136,11 @@ val crbit_op: int -> mode:pwr_operand_mode_t -> pwr_operand_int
 val cr_op: mode:pwr_operand_mode_t -> pwr_operand_int
 
 
+(** [pwr_cr_field_list crm ~mode] returns the list of condition register field
+    operands specified by mask [crm]. *)
+val pwr_cr_field_list: int -> mode:pwr_operand_mode_t -> pwr_operand_int list
+
+
 (** return the count register (CTR) in operand form *)
 val ctr_op: mode:pwr_operand_mode_t -> pwr_operand_int
 

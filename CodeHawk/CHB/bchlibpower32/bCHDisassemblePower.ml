@@ -247,13 +247,14 @@ let disassemble_pwr_sections () =
   (* can be 2 (VLE) or 4-byte aligned *)
   let _ = initialize_pwr_instructions sizeOfCode#to_int in
   let _ =
-    pr_debug [
+    pverbose [
         STR "Create space for ";
         sizeOfCode#toPretty;
         STR " (";
         INT sizeOfCode#to_int;
         STR ")";
-        STR " instructions"] in
+        STR " instructions";
+        NL] in
   let _ = initialize_pwr_assembly_instructions sizeOfCode#to_int startOfCode in
   let _ =
     List.iter
@@ -285,6 +286,20 @@ let collect_function_entry_points () =
         | _ -> ());
     addresses#toList
   end
+
+
+let get_so_target
+      (tgtaddr:doubleword_int) (instr: pwr_assembly_instruction_int) =
+  if functions_data#has_function_name tgtaddr then
+    let fndata = functions_data#get_function tgtaddr in
+    if fndata#is_library_stub then
+      Some fndata#get_function_name
+    else if function_summary_library#has_so_function fndata#get_function_name then
+      Some fndata#get_function_name
+    else
+      None
+  else
+    None
 
 
 let collect_call_targets () =
@@ -414,6 +429,91 @@ let construct_assembly_function
      end
 
 
+let record_call_targets_pwr () =
+  let _ = pverbose [STR "Record call targets"; NL] in
+  pwr_assembly_functions#itera
+    (fun faddr f ->
+      let finfo = get_function_info faddr in
+      begin
+        f#iteri (fun _ ctxtiaddr instr ->
+            match instr#get_opcode with
+            | BranchLink (_, tgtop, _) ->
+               if finfo#has_call_target ctxtiaddr
+                  && not (finfo#get_call_target ctxtiaddr)#is_unknown then
+                 let loc = ctxt_string_to_location faddr ctxtiaddr in
+                 let floc = get_floc loc in
+                 floc#update_call_target
+               else if tgtop#is_absolute_address then
+                 begin
+                   match get_so_target tgtop#get_absolute_address instr with
+                   | Some tgt ->
+                      finfo#set_call_target ctxtiaddr (mk_so_target tgt)
+                   | _ ->
+                      finfo#set_call_target
+                        ctxtiaddr (mk_app_target tgtop#get_absolute_address)
+                 end
+               else
+                 ()
+            | _ -> ())
+      end)
+
+
+let associate_condition_code_users_pwr () =
+  let _ = pverbose [STR "Associate condition code users"; NL] in
+  let set_condition
+        (crf_used: pwr_register_field_t)
+        (faddr: doubleword_int)
+        (ctxtiaddr: ctxt_iaddress_t)
+        (block: pwr_assembly_block_int) =
+    let finfo = get_function_info faddr in
+    let loc = ctxt_string_to_location faddr ctxtiaddr in
+    let revInstrs: pwr_assembly_instruction_int list =
+      block#get_instructions_rev ~high:loc#i () in
+
+    (* remove the conditional instruction itself *)
+    let revInstrs: pwr_assembly_instruction_int list =
+      match revInstrs with
+      | h::tl -> tl
+      | [] -> [] in
+
+    let rec set l =
+      match l with
+      | [] ->
+         log_titer
+           (mk_tracelog_spec
+              ~tag:"associate_condition_code_users"
+              ("set:" ^ loc#i#to_hex_string))
+           (fun instr ->
+             disassembly_log#add
+               "crf user without setter"
+               (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]))
+           (get_pwr_assembly_instruction loc#i)
+      | instr :: tl ->
+         match get_pwr_crfs_set instr#get_opcode with
+         | [] -> set tl
+         | crfs_set when List.mem crf_used crfs_set->
+            let iloc = ctxt_string_to_location faddr ctxtiaddr in
+            let instrctxt = (make_i_location iloc instr#get_address)#ci in
+            finfo#connect_cc_user ctxtiaddr instrctxt
+         | _ -> set tl in
+
+    set revInstrs in
+
+  pwr_assembly_functions#itera
+    (fun faddr f ->
+      f#iter
+        (fun block ->
+          block#itera
+            (fun iaddr instr ->
+              match get_pwr_crfs_used instr#get_opcode with
+              | [] -> ()
+              | [crf] -> set_condition crf faddr iaddr block
+              | _ ->
+                 ch_error_log#add
+                   "associate_condition_code_users"
+                   (LBLOCK [STR "Multiple cr fields used: "; STR iaddr]))))
+
+
 let construct_functions_pwr () =
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
@@ -441,5 +541,9 @@ let construct_functions_pwr () =
         else
           default ()) feps;
 
-    pr_debug [STR "Constructed: "; INT !count; STR " functions"; NL]
+    pverbose [STR "Constructed: "; INT !count; STR " functions"; NL];
+
+    record_call_targets_pwr ();
+    associate_condition_code_users_pwr ();
+
   end

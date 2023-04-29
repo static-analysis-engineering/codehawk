@@ -1479,10 +1479,11 @@ let parse_e_misc_3_form
   | (0, 144) when (b 11 11) = 0 ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
      let crm = b 12 19 in
-     let crm =
+     let crmop =
        pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical crm) in
+     let crfs = pwr_cr_field_list crm in
      (* mtcrf CRM,rS *)
-     MoveToConditionRegisterFields (PWR, crm, rs ~mode:RD)
+     MoveToConditionRegisterFields (PWR, crmop, rs ~mode:RD, crfs ~mode:WR)
 
   (* < 7>11<rs><.........>0<--146-->/  mtmsr (BookE) *)
   | (0, 146) ->

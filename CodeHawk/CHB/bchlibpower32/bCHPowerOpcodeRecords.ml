@@ -60,6 +60,8 @@ class type ['a] opcode_formatter_int =
 type 'a opcode_record_t ={
     mnemonic: string;
     operands: pwr_operand_int list;
+    crfs_set: pwr_register_field_t list;
+    crfs_used: pwr_register_field_t list;
     ida_asm: 'a
   }
 
@@ -87,6 +89,48 @@ let mnemonic_bpp (s: string) (bph: bool) (bpt: bool): string =
   | (true, true) -> s ^ "+"
 
 
+let all_cr_crfs () =
+  [PowerCR0;
+   PowerCR1;
+   PowerCR2;
+   PowerCR3;
+   PowerCR4;
+   PowerCR5;
+   PowerCR6;
+   PowerCR7]
+
+
+let all_xer_crfs () = [PowerXERSO; PowerXEROV; PowerXERCA]
+
+
+let all_crfs () = (all_cr_crfs ()) @ (all_xer_crfs ())
+
+
+let get_crfs_set (rc: bool) (oe: bool) =
+  (if rc then [PowerCR0] else []) @ (if oe then [PowerXERSO; PowerXEROV] else [])
+
+
+let get_crfs_used (bo: int) (bi: int) =
+  if bo > 15 then
+    []
+  else
+    let crf =
+      match bi / 4 with
+      | 0 -> PowerCR0
+      | 1 -> PowerCR1
+      | 2 -> PowerCR2
+      | 3 -> PowerCR3
+      | 4 -> PowerCR4
+      | 5 -> PowerCR5
+      | 6 -> PowerCR6
+      | 7 -> PowerCR7
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Invalid bi value in get_crfs_used: "; INT bi])) in
+    [crf]
+
+
 let get_record (opc: pwr_opcode_t) =
   match opc with
   | Add (pit, rc, oe, rd, ra, rb, cr, so, ov) ->
@@ -97,6 +141,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr; so; ov];
+       crfs_set = get_crfs_set rc oe;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [rd; rb]
@@ -110,6 +156,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr; so; ov; ca];
+       crfs_set = (get_crfs_set rc oe) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -120,6 +168,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr; so; ov; ca];
+       crfs_set = (get_crfs_set rc oe) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -138,6 +188,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; simm; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | PWR -> f#ops mnemonic [rd; ra; simm]
@@ -157,6 +209,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; simm; cr; ca];
+       crfs_set = (get_crfs_set rc false) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; simm])
      }
 
@@ -167,6 +221,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; cr; ca; so; ov];
+       crfs_set = (get_crfs_set rc oe) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra])
      }
 
@@ -177,6 +233,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; cr; ca; so; ov];
+       crfs_set = (get_crfs_set rc oe) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra])
      }
 
@@ -188,6 +246,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra; rb]
@@ -202,6 +262,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra; rb]
@@ -218,6 +280,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; uimm; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra; uimm]
@@ -232,6 +296,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rx; ui5];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rx; ui5])
      }
 
@@ -242,6 +308,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rx; ui5];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rx; ui5])
      }
 
@@ -252,6 +320,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rx; ui5];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rx; ui5])
      }
 
@@ -262,6 +332,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rx; ui5];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rx; ui5])
      }
 
@@ -272,6 +344,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rx; uimm; cr];
+       crfs_set = [PowerCR0];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rx; uimm])
      }
 
@@ -283,6 +357,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [tgt];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [tgt])
      }
 
@@ -294,6 +370,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [bd];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#conditional_branch pit bo bi bd)
      }
 
@@ -304,6 +382,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [lr];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#int_ops mnemonic [bo; bi; bh])
      }
 
@@ -314,6 +394,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [lr];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#int_ops mnemonic [bo; bi; bh])
      }
 
@@ -325,6 +407,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [tgt];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
@@ -335,6 +419,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [tgt];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
@@ -346,6 +432,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [tgt; lr];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [tgt])
      }
 
@@ -357,6 +445,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [lr];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
@@ -367,6 +457,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [tgt];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
@@ -378,6 +470,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [bd];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [bd])
      }
 
@@ -389,6 +483,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [bd];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops mnemonic [bd])
      }
 
@@ -400,6 +496,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; bd];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
      }
 
@@ -411,6 +509,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; lr];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [])
      }
 
@@ -422,6 +522,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; bd];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
      }
 
@@ -433,6 +535,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; lr];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [])
      }
 
@@ -444,6 +548,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; bd];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
      }
 
@@ -455,6 +561,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; lr];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [])
      }
 
@@ -466,6 +574,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; bd];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
      }
 
@@ -477,6 +587,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; lr];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [])
      }
 
@@ -488,6 +600,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; bd];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
      }
 
@@ -499,6 +613,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; lr];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [])
      }
 
@@ -510,6 +626,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; bd];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [bd])
      }
 
@@ -521,6 +639,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; lr];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
        ida_asm = (fun f -> f#ops_bc mnemonic cr [])
      }
 
@@ -531,6 +651,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; mb; sh];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; mb; sh])
      }
 
@@ -543,6 +665,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; mb];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; mb])
      }
 
@@ -555,6 +679,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; me];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; me])
      }
 
@@ -566,6 +692,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; ra; simm];
+       crfs_set = [cr#get_register_field];
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | PWR -> f#ops mnemonic [cr; ra; simm]
@@ -581,6 +709,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; ra; rb];
+       crfs_set = [cr#get_register_field];
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra; rb]
@@ -595,6 +725,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; ra; uimm];
+       crfs_set = [cr#get_register_field];
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | PWR -> f#ops mnemonic [cr; ra; uimm]
@@ -611,6 +743,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; ra; rb];
+       crfs_set = [cr#get_register_field];
+       crfs_used = [];
        ida_asm = (fun f ->
          if cr#is_default_cr then
            f#ops mnemonic [ra; rb]
@@ -626,6 +760,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra]
@@ -639,6 +775,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [crd; cra];
+       crfs_set = [crd#get_register_field];
+       crfs_used = [cra#get_register_field];
        ida_asm = (fun f -> f#ops mnemonic [crd; cra])
      }
 
@@ -650,6 +788,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [crd; cra; crb];
+       crfs_set = [crd#get_register_field];
+       crfs_used = [cra#get_register_field; crb#get_register_field];
        ida_asm = (fun f -> f#ops mnemonic [crd; cra; crb])
      }
 
@@ -660,6 +800,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; cr0];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs])
      }
 
@@ -670,6 +812,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr; so; ov];
+       crfs_set = get_crfs_set rc oe;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -680,6 +824,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr; so; ov];
+       crfs_set = get_crfs_set rc oe;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -691,6 +837,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra]
@@ -704,6 +852,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [mo];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [mo]);
      }
 
@@ -715,6 +865,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra]
@@ -728,6 +880,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [dst];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [dst])
      }
 
@@ -738,6 +892,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [dst];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [dst])
      }
 
@@ -749,6 +905,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; n; b];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; n; b])
      }
 
@@ -760,6 +918,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; sh; mb; cr];
+       crfs_set =  get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; sh; mb])
      }
 
@@ -771,6 +931,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
@@ -781,6 +943,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; crb];
+       crfs_set = [];
+       crfs_used = [crb#get_register_field];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb; crb])
      }
 
@@ -791,6 +955,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr];
+       crfs_set = [];
+       crfs_used = [cr#get_register_field];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -801,6 +967,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr];
+       crfs_set = [];
+       crfs_used = [cr#get_register_field];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -811,6 +979,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr];
+       crfs_set = [];
+       crfs_used = [cr#get_register_field];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -822,6 +992,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; mem])
      }
 
@@ -832,6 +1004,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -844,6 +1018,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; mem])
      }
 
@@ -855,6 +1031,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; imm];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; imm])
      }
 
@@ -865,6 +1043,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [mem])
      }
 
@@ -875,6 +1055,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; mem; cr; lr; ctr; xer];
+       crfs_set = all_crfs ();
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [mem])
      }
 
@@ -886,6 +1068,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; mem; srr0; srr1];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [mem])
      }
 
@@ -897,6 +1081,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; mem])
      }
 
@@ -909,6 +1095,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; mem])
      }
 
@@ -920,6 +1108,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -931,6 +1121,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [mo];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [mo])
      }
 
@@ -943,6 +1135,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [crfd; crs];
+       crfs_set = [crs#get_register_field];
+       crfs_used = [crfd#get_register_field];
        ida_asm = (fun f -> f#ops mnemonic [crfd; crs])
      }
 
@@ -954,6 +1148,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rx; ary];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rx; ary])
      }
 
@@ -964,6 +1160,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; cr];
+       crfs_set = [];
+       crfs_used = all_cr_crfs ();
        ida_asm = (fun f -> f#ops mnemonic [rd])
      }
 
@@ -975,6 +1173,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rx; ctr];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rx])
      }
 
@@ -985,6 +1185,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; xer];
+       crfs_set = [];
+       crfs_used = all_xer_crfs ();
        ida_asm = (fun f -> f#ops mnemonic [rd])
      }
 
@@ -996,6 +1198,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; lr];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd])
      }
 
@@ -1006,6 +1210,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; msr];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd])
      }
 
@@ -1016,6 +1222,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; sprn];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; sprn])
      }
 
@@ -1027,6 +1235,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs])
      }
 
@@ -1037,6 +1247,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [arx; ry];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [arx; ry])
      }
 
@@ -1048,10 +1260,12 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [cr; rs];
+       crfs_set = all_cr_crfs ();
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs])
      }
 
-  | MoveToConditionRegisterFields (pit, crm, rs) ->
+  | MoveToConditionRegisterFields (pit, crm, rs, crfs) ->
      let mnemonic =
        match pit with
        | PWR -> "mtcrf"
@@ -1059,6 +1273,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [crm; rs];
+       crfs_set = List.map (fun f -> f#get_register_field) crfs;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [crm; rs])
      }
 
@@ -1071,6 +1287,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ctr; rs];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs])
      }
 
@@ -1081,6 +1299,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [xer; rs];
+       crfs_set = all_xer_crfs ();
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs])
      }
 
@@ -1092,6 +1312,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [lr; rs];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs])
      }
 
@@ -1103,6 +1325,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [msr; rs];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs])
      }
 
@@ -1113,6 +1337,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [sprn; rs];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [sprn; rs])
      }
 
@@ -1123,6 +1349,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -1134,6 +1362,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; simm];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE32 when op2 -> f#ops mnemonic [rd; simm]
@@ -1148,6 +1378,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr; so; ov];
+       crfs_set = get_crfs_set rc oe;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [rd; rb]
@@ -1162,6 +1394,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; cr; so; ov];
+       crfs_set = get_crfs_set rc oe;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [rd]
@@ -1175,7 +1409,9 @@ let get_record (opc: pwr_opcode_t) =
        | _ -> "xxxx_or" in
      {
        mnemonic = mnemonic;
-       operands = [ra; rs; rb];
+       operands = [ra; rs; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra; rb]
@@ -1196,6 +1432,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; uimm];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm =
          (fun f ->
            match pit with
@@ -1213,6 +1451,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [msr; dsr0; dsr1];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
@@ -1224,6 +1464,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [msr; sr0; sr1];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
@@ -1235,6 +1477,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [msr; mcsr0; mcsr1];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
@@ -1246,6 +1490,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; rb])
      }
 
@@ -1257,6 +1503,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; sh; mb; me; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; sh; mb; me])
      }
 
@@ -1268,6 +1516,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm =
          (fun f ->
            match pit with
@@ -1283,6 +1533,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; sh; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; sh])
      }
 
@@ -1294,6 +1546,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; rb; cr; ca];
+       crfs_set = (get_crfs_set rc false) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra; rb]
@@ -1308,6 +1562,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; sh; cr; ca];
+       crfs_set = (get_crfs_set rc false) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; sh])
      }
 
@@ -1319,6 +1575,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [rs; rb]
@@ -1333,6 +1591,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; sh; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [ra; sh]
@@ -1347,6 +1607,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rs; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs; mem])
      }
 
@@ -1357,6 +1619,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rs; ra; rb; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs; ra; rb])
      }
 
@@ -1368,6 +1632,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rs; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs; mem])
      }
 
@@ -1378,6 +1644,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rs; ra; rb; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs; ra; rb])
      }
 
@@ -1389,6 +1657,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rs; ra; ea];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs; ea])
      }
 
@@ -1399,6 +1669,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; ea];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ea])
      }
 
@@ -1409,6 +1681,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [mem; ra; cr; lr; ctr; xer];
+       crfs_set = [];
+       crfs_used = all_crfs ();
        ida_asm = (fun f -> f#ops mnemonic [mem])
      }
 
@@ -1419,6 +1693,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; mem; srr0; srr1];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [mem])
      }
 
@@ -1430,6 +1706,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rs; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs; mem])
      }
 
@@ -1441,6 +1719,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rs; ra; rb; mem];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rs; ra; rb])
      }
 
@@ -1451,6 +1731,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rx; ry];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rx; ry])
      }
 
@@ -1462,6 +1744,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr; so; ov];
+       crfs_set = get_crfs_set rc oe;
+       crfs_used = [];
        ida_asm = (fun f ->
          match pit with
          | VLE16 -> f#ops mnemonic [rd; rb]
@@ -1475,6 +1759,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr; ca; so; ov];
+       crfs_set = (get_crfs_set rc oe) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -1485,6 +1771,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; rb; cr; ca; so; ov];
+       crfs_set = (get_crfs_set rc oe) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
@@ -1496,6 +1784,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; simm; cr; ca];
+       crfs_set = (get_crfs_set rc false) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; simm])
      }
 
@@ -1506,6 +1796,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; cr; so; ov; ca];
+       crfs_set = (get_crfs_set rc oe) @ [PowerXERCA];
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; ra])
      }
 
@@ -1517,6 +1809,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [rd; ra; imm; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm =
          (fun f ->
            match pit with
@@ -1531,6 +1825,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
@@ -1541,6 +1837,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [msr];
+       crfs_set = [];
+       crfs_used = [];
        ida_asm = (fun f -> f#enable mnemonic enable)
      }
 
@@ -1551,6 +1849,8 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; rb])
      }
 
@@ -1562,37 +1862,51 @@ let get_record (opc: pwr_opcode_t) =
      {
        mnemonic = mnemonic;
        operands = [ra; rs; uimm];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; uimm])
      }
 
   | NoOperation -> {
       mnemonic = "nop";
       operands = [];
+      crfs_set = [];
+      crfs_used = [];
       ida_asm = (fun f -> f#no_ops "nop")
     }
   | OpInvalid | NotCode _ -> {
       mnemonic = "invalid";
       operands = [];
+      crfs_set = [];
+      crfs_used = [];
       ida_asm = (fun f -> f#no_ops "invalid")
     }
   | OpcodeIllegal i -> {
       mnemonic = "ILLEGAL";
       operands = [];
+      crfs_set = [];
+      crfs_used = [];
       ida_asm = (fun f -> f#no_ops ("ILLEGAL: " ^ (string_of_int i)))
     }
   | OpcodeUndefined s -> {
       mnemonic = "UNDEFINED";
       operands = [];
+      crfs_set = [];
+      crfs_used = [];
       ida_asm = (fun f -> f#no_ops ("UNDEFINED: " ^ s))
     }
   | OpcodeUnpredictable s -> {
       mnemonic = "UNPREDICTABLE";
       operands = [];
+      crfs_set = [];
+      crfs_used = [];
       ida_asm = (fun f -> f#no_ops ("UNPREDICTABLE: " ^ s))
     }
   | NotRecognized (name, dw) -> {
       mnemonic = "not_recognized";
       operands = [];
+      crfs_set = [];
+      crfs_used = [];
       ida_asm =
         (fun f -> f#no_ops ("not_recognized " ^ name ^ ":" ^ dw#to_hex_string))
     }
@@ -1663,3 +1977,11 @@ let pwr_opcode_to_string ?(width=12) (opc: pwr_opcode_t) =
                   
 
 let pwr_opcode_name (opc: pwr_opcode_t) = (get_record opc).mnemonic
+
+
+let get_pwr_crfs_set (opc: pwr_opcode_t): pwr_register_field_t list =
+  (get_record opc).crfs_set
+
+
+let get_pwr_crfs_used (opc: pwr_opcode_t): pwr_register_field_t list =
+  (get_record opc).crfs_used

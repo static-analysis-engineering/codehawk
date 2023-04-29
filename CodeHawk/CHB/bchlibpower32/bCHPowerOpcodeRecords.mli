@@ -38,3 +38,7 @@ open BCHPowerTypes
 val pwr_opcode_to_string: ?width:int -> pwr_opcode_t -> string
 
 val pwr_opcode_name: pwr_opcode_t -> string
+
+val get_pwr_crfs_set: pwr_opcode_t -> pwr_register_field_t list
+
+val get_pwr_crfs_used: pwr_opcode_t -> pwr_register_field_t list

@@ -59,6 +59,34 @@ open BCHLibTypes
 
 type pwr_instruction_type_t = | PWR | VLE16 | VLE32
 
+(** General register usage
+    (from: https://www.ibm.com/docs/en/aix/7.1?topic=overview-register-usage-conventions
+
+    GPR0       volatile    in function prologs
+    GPR1       dedicated   stack pointer
+    GPR2       dedicated   table-of-contents pointer
+    GPR3       volatile    first word of arguments list;
+                           first word of scalar return value
+    GPR4       volatile    second word of arguments list;
+                           second word of scalar return value
+    GPR5       volatile    third word of arguments list
+    GPR6       volatile    fourth word of arguments list
+    GPR7       volatile    fifth word of arguments list
+    GPR8       volatile    sixth word of arguments list
+    GPR9       volatile    seventh word of arguments list
+    GPR10      volatile    eighth word of arguments list
+    GPR11      volatile    in calls by pointer
+    GPR12      volatile    special exception handling, glink code
+    GPR13      reserved    (not restored across system calls)
+    GPR14-31   nonvolatile must be preserved across a function call
+
+    Preferred method of using GPRs is to use the volatile registers first.
+    Next, use the nonvolatile registers in descending order, starting with
+    GPR31. GPR1 and GPR2 must be dedicated as stack table-of-contents area
+    pointers, resp. GPR1 and GPR2 must appear to be saved across a call,
+    and must have the same value at return as when the call was made.
+ *)
+
 (** Special registers
 
     Condition Register (CR)
@@ -169,7 +197,7 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
 (* defined in bchlib/bCHLibTypes:
 
 type pwr_special_reg_t =
-  | PowerCR    (* Condition Register (contain CR0, CR1, CR2) *)
+  | PowerCR    (* Condition Register (contains CR0, CR1, CR2) *)
   | PowerCTR   (* Count Register *)
   | PowerMSR   (* Machine Status Register *)
   | PowerLR    (* Link Register *)
@@ -237,6 +265,7 @@ class type pwr_operand_int =
     method to_address: floc_int -> xpr_t
     method to_variable: floc_int -> variable_t
     method to_expr: floc_int -> xpr_t
+    method to_shifted_expr: int -> xpr_t
     method to_updated_offset_address: floc_int -> xpr_t
     method to_lhs: floc_int -> variable_t * cmd_t list
 
@@ -261,8 +290,8 @@ type pwr_opcode_t =
   (* EREF:6-12, VLEPEM:3-6 *)
   | Add of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
-      * bool               (* oe: overflow detection *)
+      * bool             (* rc: record condition *)
+      * bool             (* oe: overflow detection *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -273,8 +302,8 @@ type pwr_opcode_t =
   (* EREF:6-17 *)
   | AddCarrying of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
-      * bool               (* oe: overflow detection *)
+      * bool             (* rc: record condition *)
+      * bool             (* oe: overflow detection *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -410,25 +439,25 @@ type pwr_opcode_t =
   (* EREF:6-37 *)
   | BranchConditional of
       pwr_instruction_type_t
-      * bool               (* aa: absolute address *)
-      * int                (* bo: branch operations (5 bits) *)
-      * int                (* bi: bit in condition register (5 bits)  *)
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations (5 bits) *)
+      * int              (* bi: bit in condition register (5 bits)  *)
       * pwr_operand_int  (* bd: branch destination *)
 
   (* EREF:6-41 *)
   | BranchConditionalLinkRegister of
       pwr_instruction_type_t
-      * int                (* bo: bracnch operations (5 bits) *)
-      * int                (* bi: bit in condition register (5 bits) *)
-      * int                (* bh: branch usage hint (2 bits) *)
+      * int              (* bo: bracnch operations (5 bits) *)
+      * int              (* bi: bit in condition register (5 bits) *)
+      * int              (* bh: branch usage hint (2 bits) *)
       * pwr_operand_int  (* lr: link register (LR) *)
 
   (* EREF:6-41 *)
   | BranchConditionalLinkRegisterLink of
       pwr_instruction_type_t
-      * int                (* bo: branch operations (5 bits) *)
-      * int                (* bi: bit in condition register (5 bits) *)
-      * int                (* bh: branch usage hint (2 bits *)
+      * int              (* bo: branch operations (5 bits) *)
+      * int              (* bi: bit in condition register (5 bits) *)
+      * int              (* bh: branch usage hint (2 bits *)
       * pwr_operand_int  (* lr: link register (LR) *)
 
   | BranchCountRegister of
@@ -458,9 +487,9 @@ type pwr_opcode_t =
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchDecrementNotZero of
       pwr_instruction_type_t
-      * bool               (* aa: absolute address *)
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
       * pwr_branch_prediction_t  (* bp: branch prediction *)
       * pwr_operand_int  (* bd: branch destination *)
       * pwr_operand_int  (* ctr: count register *)
@@ -468,9 +497,9 @@ type pwr_opcode_t =
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchDecrementZero of
       pwr_instruction_type_t
-      * bool               (* aa: absolute address *)
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
       * pwr_branch_prediction_t  (* bp: branch prediction *)
       * pwr_operand_int  (* bd: branch destination *)
       * pwr_operand_int  (* ctr: count register *)
@@ -488,9 +517,9 @@ type pwr_opcode_t =
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchEqualLinkRegister of
       pwr_instruction_type_t
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
-      * int                (* bh: branch usage hint *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
+      * int              (* bh: branch usage hint *)
       * pwr_branch_prediction_t (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* lr: link register *)
@@ -498,9 +527,9 @@ type pwr_opcode_t =
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchGreaterEqual of
       pwr_instruction_type_t
-      * bool               (* aa: absolute address *)
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
       * pwr_branch_prediction_t (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* bd: branch destination *)
@@ -508,9 +537,9 @@ type pwr_opcode_t =
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchGreaterEqualLinkRegister of
       pwr_instruction_type_t
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
-      * int                (* bh: branch usage hint *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
+      * int              (* bh: branch usage hint *)
       * pwr_branch_prediction_t (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* lr: link register *)
@@ -939,7 +968,7 @@ type pwr_opcode_t =
   (* EREF:6-241, EREF:B-25 (simplified), VLEPEM:3-49 *)
   | MoveRegister of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* rs: source register *)
 
@@ -960,6 +989,7 @@ type pwr_opcode_t =
       pwr_instruction_type_t
       * pwr_operand_int  (* crm: cr field mask *)
       * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int list  (* destination cr register fields *)
 
   (* EREF:B-23 (simplified), VLEPEM:3-51 *)
   | MoveToCountRegister of
@@ -1043,9 +1073,9 @@ type pwr_opcode_t =
   (* EREF:6-246, VLEPEM:3-57 *)
   | OrImmediate of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
-      * bool               (* s: shifted *)
-      * bool               (* op2: twp operands *)
+      * bool             (* rc: record condition *)
+      * bool             (* s: shifted *)
+      * bool             (* op2: twp operands *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* uimm: unsigned immediate *)
