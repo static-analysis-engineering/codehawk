@@ -153,17 +153,38 @@ let translate_pwr_instruction
 
   match instr#get_opcode with
 
-  | AddImmediate (_, _, _, _, _, rd, ra, simm, cr) ->
+  | Add (_, _, _, rd, ra, rb, _, _, _) ->
      let vrd = rd#to_variable floc in
      let xra = ra#to_expr floc in
-     let xsimm = simm#to_expr floc in
+     let xrb = rb#to_expr floc in
+     let xrhs = XOp (XPlus, [xra; xrb]) in
+     let cmds = floc#get_assign_commands vrd xrhs in
+     default cmds
+
+  | AddImmediate (_, shifted, _, _, _, rd, ra, simm, cr) ->
+     let vrd = rd#to_variable floc in
+     let xra = ra#to_expr floc in
+     let xsimm =
+       if shifted then
+         simm#to_shifted_expr 16
+       else
+         simm#to_expr floc in
      let xrhs = XOp (XPlus, [xra; xsimm]) in
      let cmds = floc#get_assign_commands vrd xrhs in
      default cmds
 
-  | LoadImmediate (_, _, _, rd, imm) ->
+  | BranchLink (_, tgt, _) when tgt#is_absolute_address ->
+     let floc = get_floc loc in
+     let cmds = floc#get_pwr_call_commands in
+     default cmds
+
+  | LoadImmediate (_, _, shifted, rd, imm) ->
      let vrd = rd#to_variable floc in
-     let ximm = imm#to_expr floc in
+     let ximm =
+       if shifted then
+         imm#to_shifted_expr 16
+       else
+         imm#to_expr floc in
      let cmds = floc#get_assign_commands vrd ximm in
      default cmds
 
@@ -198,6 +219,18 @@ let translate_pwr_instruction
      let vlr = lr#to_variable floc in
      let xrs = rs#to_expr floc in
      let cmds = floc#get_assign_commands vlr xrs in
+     default cmds
+
+  | OrImmediate (_, _, shifted, _, ra, rs, uimm, _) ->
+     let vra = ra#to_variable floc in
+     let xrs = rs#to_expr floc in
+     let xuimm =
+       if shifted then
+         uimm#to_shifted_expr 16
+       else
+         uimm#to_expr floc in
+     let rhs = XOp (XBOr, [xrs; xuimm]) in
+     let cmds = floc#get_assign_commands vra rhs in
      default cmds
 
   | StoreWord (_, update, rs, ra, mem) ->
@@ -295,8 +328,17 @@ object (self)
         ignore
           (finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initvar) in
       ASSERT (EQ (regvar, initvar)) in
-    let rAsserts =
+    let freeze_initial_sp_register_value (r: pwr_special_reg_t) =
+      let regvar = env#mk_pwr_sp_register_variable r in
+      let initvar = env#mk_initial_register_value (PowerSPRegister r) in
+      let _ =
+        ignore
+          (finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initvar) in
+      ASSERT (EQ (regvar, initvar)) in
+    let gprAsserts =
       List.map freeze_initial_gp_register_value (List.init 32 (fun i -> i)) in
+    let sprAsserts =
+      List.map freeze_initial_sp_register_value pwr_special_registers in
     let unknown_scalar = env#mk_special_variable "unknown_scalar" in
     let initialize_scalar =
       DOMAIN_OPERATION
@@ -313,7 +355,8 @@ object (self)
     let constantAssigns = env#end_transaction in
     let cmds =
       constantAssigns
-      @ rAsserts
+      @ gprAsserts
+      @ sprAsserts
       @ [initialize_scalar]
       @ initialize_reaching_defs in
     TRANSACTION (new symbol_t "entry", LF.mkCode cmds, None)

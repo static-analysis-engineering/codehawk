@@ -64,6 +64,7 @@ open BCHSystemInfo
 open BCHELFHeader
 
 (* bchlibpower32 *)
+open BCHPowerOperand
 open BCHPowerTypes
 
 
@@ -169,8 +170,170 @@ object (self)
               raise IO.No_more_input
             end in
 
+    let mk_instrx_data
+          ?(vars: variable_t list = [])
+          ?(xprs: xpr_t list = [])
+          ?(rdefs: int list = [])
+          ?(uses: int list = [])
+          ?(useshigh: int list = [])
+          () =
+      let varcount = List.length vars in
+      let xprcount = List.length xprs in
+      let rdefcount = List.length rdefs in
+      let defusecount = List.length uses in
+      let defusehighcount = List.length useshigh in
+      let varstring = string_repeat "v" varcount in
+      let xprstring = string_repeat "x" xprcount in
+      let rdefstring = string_repeat "r" rdefcount in
+      let defusestring = string_repeat "d" defusecount in
+      let defusehighstring = string_repeat "h" defusehighcount in
+      let tagstring =
+        "a:"
+        ^ varstring
+        ^ xprstring
+        ^ rdefstring
+        ^ defusestring
+        ^ defusehighstring in
+      let varargs = List.map xd#index_variable vars in
+      let xprargs = List.map xd#index_xpr xprs in
+      (tagstring, varargs @ xprargs @ rdefs @ uses @ useshigh) in
+
     let key =
       match instr#get_opcode with
+      | Add (_, _, _, rd, ra, rb, _, _, _) ->
+         let vrd = rd#to_variable floc in
+         let xra = ra#to_expr floc in
+         let xrb = rb#to_expr floc in
+         let rhs = XOp (XPlus, [xra; xrb]) in
+         let rrhs = rewrite_expr rhs in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xra; xrb; rhs; rrhs]
+             () in
+         ([tagstring], args)
+
+      | AddImmediate (_, _, _, _, _, rd, ra, simm, _) ->
+         let vrd = rd#to_variable floc in
+         let xra = ra#to_expr floc in
+         let xsimm = simm#to_expr floc in
+         let rhs = XOp (XPlus, [xra; xsimm]) in
+         let rrhs = rewrite_expr rhs in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xra; xsimm; rhs; rrhs]
+             () in
+         ([tagstring], args)
+
+      | BranchLink (_, tgt, _)
+           when floc#has_call_target
+                && floc#get_call_target#is_signature_valid ->
+         let args = List.map snd floc#get_pwr_call_arguments in
+         let vrd = (pwr_gp_register_op 3 WR)#to_variable floc in
+         let rv = floc#env#mk_return_value floc#cia in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[rv]
+             ~xprs:args
+             () in
+         let tags = tagstring :: ["call"] in
+         let args =
+           args @ [ixd#index_call_target floc#get_call_target#get_target] in
+         (tags, args)
+
+      | LoadImmediate (_, _, shifted, rd, imm) ->
+         let vrd = rd#to_variable floc in
+         let ximm =
+           if shifted then
+             imm#to_shifted_expr 16
+           else
+             imm#to_expr floc in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[ximm]
+             () in
+         ([tagstring], args)
+
+      | LoadWordZero (_, _, rd, ra, mem) ->
+         let vrd = rd#to_variable floc in
+         let xra = ra#to_expr floc in
+         let xaddr = mem#to_address floc in
+         let vmem = mem#to_variable floc in
+         let xmem = mem#to_expr floc in
+         let rxmem = rewrite_expr xmem in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd; vmem]
+             ~xprs:[xra; xmem; rxmem; xaddr]
+             () in
+         ([tagstring], args)
+
+      | MoveFromLinkRegister (_, rd, lr) ->
+         let vrd = rd#to_variable floc in
+         let xlr = lr#to_expr floc in
+         let rxlr = rewrite_expr xlr in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xlr; rxlr]
+             () in
+         ([tagstring], args)
+
+      | MoveRegister (_, _, rd, rs) ->
+         let vrd = rd#to_variable floc in
+         let xrs = rs#to_expr floc in
+         let rxrs = rewrite_expr xrs in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrs; rxrs]
+             () in
+         ([tagstring], args)
+
+      | MoveToLinkRegister (_, lr, rs) ->
+         let vlr = lr#to_variable floc in
+         let xrs = rs#to_expr floc in
+         let rxrs = rewrite_expr xrs in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vlr]
+             ~xprs:[xrs; rxrs]
+             () in
+         ([tagstring], args)
+
+      | OrImmediate (_, _, shifted, _, ra, rs, uimm, _) ->
+         let vra = ra#to_variable floc in
+         let xrs = rs#to_expr floc in
+         let xuimm =
+           if shifted then
+             uimm#to_shifted_expr 16
+           else
+             uimm#to_expr floc in
+         let xrhs = XOp (XBOr, [xrs; xuimm]) in
+         let rxrhs = rewrite_expr xrhs in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vra]
+             ~xprs:[xrs; xuimm; xrhs; rxrhs]
+             () in
+         ([tagstring], args)
+
+      | StoreWord (_, _, rs, ra, mem) ->
+         let vmem = mem#to_variable floc in
+         let xaddr = mem#to_address floc in
+         let xrs = rs#to_expr floc in
+         let rxrs = rewrite_expr xrs in
+         let xra = ra#to_expr floc in
+         let rxra = rewrite_expr xra in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vmem]
+             ~xprs:[xrs; rxrs; xra; rxra; xaddr]
+             () in
+         ([tagstring], args)
+
       | _ -> ([], []) in
     instrx_table#add key
 
