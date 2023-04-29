@@ -387,6 +387,8 @@ object (self:'a)
        ARMExtensionRegister r
     | AuxiliaryVariable (InitialRegisterValue (PowerGPRegister i, 0)) ->
        PowerGPRegister i
+    | AuxiliaryVariable (InitialRegisterValue (PowerSPRegister r, 0)) ->
+       PowerSPRegister r
     | _ ->
       begin
 	ch_error_log#add
@@ -603,21 +605,27 @@ object (self)
       match av#get_denotation with
       | AuxiliaryVariable a ->
          (match a with
-          | InitialRegisterValue (CPURegister Esp,0) ->
+          | InitialRegisterValue (CPURegister Esp, 0) ->
              memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (CPURegister Esp,1) ->
+          | InitialRegisterValue (CPURegister Esp, 1) ->
              memrefmgr#mk_realigned_stack_reference
-          | InitialRegisterValue (MIPSRegister MRsp,0) ->
+          | InitialRegisterValue (MIPSRegister MRsp, 0) ->
              memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (MIPSRegister MRsp,1) ->
+          | InitialRegisterValue (MIPSRegister MRsp, 1) ->
              memrefmgr#mk_realigned_stack_reference
-          | InitialRegisterValue (ARMRegister ARSP,0) ->
+          | InitialRegisterValue (ARMRegister ARSP, 0) ->
              memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (ARMRegister ARSP,1) ->
+          | InitialRegisterValue (ARMRegister ARSP, 1) ->
+             memrefmgr#mk_realigned_stack_reference
+          | InitialRegisterValue (PowerGPRegister 1, 0) ->
+             memrefmgr#mk_local_stack_reference
+          | InitialRegisterValue (PowerGPRegister 1, 1) ->
              memrefmgr#mk_realigned_stack_reference
           | InitialRegisterValue (CPURegister _, _)
             | InitialRegisterValue (MIPSRegister _, _)
             | InitialRegisterValue (ARMRegister _, _)
+            | InitialRegisterValue (PowerGPRegister _, _)
+            | InitialRegisterValue (PowerSPRegister _, _)
             | InitialMemoryValue _
             | FunctionReturnValue _ -> memrefmgr#mk_basevar_reference v
           | _ ->

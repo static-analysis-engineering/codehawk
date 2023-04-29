@@ -1322,6 +1322,7 @@ object (self)
       | ARMRegister r -> self#mk_arm_register_variable r
       | ARMExtensionRegister r -> self#mk_arm_extension_register_variable r
       | PowerGPRegister i -> self#mk_pwr_gp_register_variable i
+      | PowerSPRegister r -> self#mk_pwr_sp_register_variable r
       | _ ->
          let msg =
            LBLOCK [

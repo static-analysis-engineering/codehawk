@@ -569,6 +569,27 @@ object (self)
     else
       []
 
+  (* Power32 uses r3 through r10 as default argument registers *)
+  method get_pwr_call_arguments =
+    let get_regargs pars =
+      List.mapi
+        (fun i p ->
+          let reg = (i + 3) in
+          let avar = self#env#mk_pwr_gp_register_variable reg in
+          (p, self#inv#rewrite_expr (XVar avar) self#env#get_variable_comparator))
+        pars in
+    let ctinfo = self#get_call_target in
+    if ctinfo#is_signature_valid then
+      let fintf = ctinfo#get_function_interface in
+      let fts = fintf.fintf_type_signature in
+      let npars = List.length fts.fts_parameters in
+      if npars <= 8 then
+        get_regargs fts.fts_parameters
+      else
+        []
+    else
+      []
+
   method set_instruction_bytes (b:string) =
     self#f#set_instruction_bytes self#cia b
 
@@ -2018,6 +2039,26 @@ object (self)
       returnassign]
      @ sideeffect_assigns
      @ [ABSTRACT_VARS bridgeVars]
+
+   method get_pwr_call_commands =
+     let ctinfo = self#get_call_target in
+     let rv = self#env#mk_pwr_gp_register_variable 3 in
+     let opname = new symbol_t ~atts:["CALL"] ctinfo#get_name in
+     let returnassign =
+       let rvar = self#env#mk_return_value self#cia in
+       let _ =
+         if ctinfo#is_signature_valid then
+           let name = ctinfo#get_name ^ "_rtn_" ^ self#cia in
+           self#env#set_variable_name rvar name in
+       ASSIGN_NUM (rv, NUM_VAR rvar) in
+     let bridgevars = self#env#get_bridge_values_at self#cia in
+     let defClobbered =
+       List.map (fun i -> PowerGPRegister i) [3; 4; 5; 6; 7; 8; 9; 10; 11; 12] in
+     let abstrregs = List.map self#env#mk_register_variable defClobbered in
+     [OPERATION {op_name = opname; op_args = []};
+      ABSTRACT_VARS abstrregs;
+      returnassign]
+     @ [ABSTRACT_VARS bridgevars]
 
    method is_constant (var:variable_t) = self#inv#is_constant var
 

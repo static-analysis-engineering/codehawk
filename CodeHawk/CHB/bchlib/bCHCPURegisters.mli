@@ -84,6 +84,8 @@ val get_armreg_float_argument: int -> arm_extension_register_t
 val arm_special_reg_to_string: arm_special_reg_t -> string
 val arm_special_reg_from_string: string -> arm_special_reg_t
 
+val pwr_special_registers: pwr_special_reg_t list
+
 val cpureg_to_asm_string: cpureg_t -> string
 
 val cpureg_option_to_string: cpureg_t option -> string
