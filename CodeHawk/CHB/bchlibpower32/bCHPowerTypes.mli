@@ -259,6 +259,9 @@ class type pwr_operand_int =
     method get_special_register: pwr_special_reg_t
     method get_register_field: pwr_register_field_t
     method get_absolute_address: doubleword_int
+    method get_ind_base_register: int
+    method get_xind_base_register: int
+    method get_xind_index_register: int
 
     (* converters *)
     method to_numerical: numerical_t
@@ -273,8 +276,11 @@ class type pwr_operand_int =
     method is_read: bool
     method is_write: bool
     method is_gp_register: bool
+    method is_sp_register: bool
     method is_absolute_address: bool
     method is_register_field: bool
+    method is_ind_register: bool
+    method is_xind_register: bool
     method is_default_cr: bool
 
     (* printing *)

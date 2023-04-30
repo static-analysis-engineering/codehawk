@@ -32,6 +32,7 @@ open BCHLocation
 open BCHMetricsHandler
 
 (* bchlibpower32 *)
+open BCHPowerLoopStructure
 open BCHPowerOpcodeRecords
 open BCHPowerTypes
 
@@ -74,11 +75,11 @@ let get_pwr_memory_access_metrics
 
 let get_pwr_cfg_metrics
       (f: pwr_assembly_function_int) (env: function_environment_int) =
-  (* let _ = record_arm_loop_levels f#get_address in *)
+  let _ = record_pwr_loop_levels f#faddr in
   { mcfg_instrs = f#get_instruction_count;
     mcfg_bblocks = f#get_block_count;
-    mcfg_loops = 0; (* get_arm_loop_count_from_table f; *)
-    mcfg_loopdepth = 0; (* get_arm_loop_depth_from_table f; *)
+    mcfg_loops = get_pwr_loop_count_from_table f;
+    mcfg_loopdepth = get_pwr_loop_depth_from_table f;
     mcfg_complexity = 0;
     mcfg_vc_complexity = 0.0
   }

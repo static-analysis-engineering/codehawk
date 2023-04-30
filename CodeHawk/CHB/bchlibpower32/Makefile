@@ -32,6 +32,8 @@ MLIS := \
 	bCHPowerOperand \
 	bCHPowerOpcodeRecords \
 	bCHPowerDictionary \
+	bCHPowerConditionalExpr \
+	bCHPowerDisassemblyUtils \
 	bCHPowerAssemblyInstruction \
 	bCHPowerAssemblyInstructions \
 	bCHPowerAssemblyBlock \
@@ -43,6 +45,7 @@ MLIS := \
 	bCHDisassembleVLEInstruction \
 	bCHConstructPowerFunction \
 	bCHDisassemblePower \
+	bCHPowerLoopStructure \
 	bCHTranslatePowerToCHIF \
 	bCHPowerMetrics \
 	bCHFnPowerDictionary \
@@ -57,6 +60,8 @@ SOURCES := \
 	bCHPowerOperand \
 	bCHPowerOpcodeRecords \
 	bCHPowerDictionary \
+	bCHPowerConditionalExpr \
+	bCHPowerDisassemblyUtils \
 	bCHPowerAssemblyInstruction \
 	bCHPowerAssemblyInstructions \
 	bCHPowerAssemblyBlock \
@@ -68,6 +73,7 @@ SOURCES := \
 	bCHDisassembleVLEInstruction \
 	bCHConstructPowerFunction \
 	bCHDisassemblePower \
+	bCHPowerLoopStructure \
 	bCHTranslatePowerToCHIF \
 	bCHPowerMetrics \
 	bCHFnPowerDictionary \

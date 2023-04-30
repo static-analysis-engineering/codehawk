@@ -175,6 +175,32 @@ object (self)
          (BCH_failure
             (LBLOCK [self#toPretty; STR " is not a register field"]))
 
+  method get_ind_base_register =
+    match kind with
+    | PowerIndReg (base, _) -> base
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [self#toPretty; STR " is not an indirect register"]))
+
+  method get_xind_base_register =
+    match kind with
+    | PowerIndexedIndReg (base, _) -> base
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 self#toPretty; STR " is not an indexed indirect register"]))
+
+  method get_xind_index_register =
+    match kind with
+    | PowerIndexedIndReg (_, index) -> index
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 self#toPretty; STR " is not an indexed indirect register"]))
+
   method is_absolute_address =
     match kind with
     | PowerAbsolute _ -> true
@@ -185,9 +211,24 @@ object (self)
     | PowerGPReg _ -> true
     | _ -> false
 
+  method is_sp_register =
+    match kind with
+    | PowerSpecialReg _ -> true
+    | _ -> false
+
   method is_register_field =
     match kind with
     | PowerRegisterField _ -> true
+    | _ -> false
+
+  method is_ind_register =
+    match kind with
+    | PowerIndReg _ -> true
+    | _ -> false
+
+  method is_xind_register =
+    match kind with
+    | PowerIndexedIndReg _ -> true
     | _ -> false
 
   method is_default_cr =
