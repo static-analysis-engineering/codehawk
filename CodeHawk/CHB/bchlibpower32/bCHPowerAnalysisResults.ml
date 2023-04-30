@@ -53,6 +53,7 @@ open BCHPreFileIO
 (* bchlibpower32 *)
 open BCHFnPowerDictionary
 open BCHPowerDictionary
+open BCHPowerLoopStructure
 open BCHPowerTypes
 
 
@@ -106,12 +107,23 @@ object (self)
                    (node: xml_element_int) (b: pwr_assembly_block_int) =
     let set = node#setAttribute in
     let blockloc = b#location in
+    let looplevels = get_pwr_loop_levels b#context_string in
+    let llNode = xmlElement "loops" in
     begin
+      llNode#appendChildren
+        (List.map (fun a ->
+             let lNode = xmlElement "lv" in   (* level *)
+             begin
+               lNode#setAttribute "a" a;
+               lNode
+             end) looplevels);
+      node#appendChildren [llNode];
       set "ba" b#context_string;
       set "eq" (make_i_location blockloc b#last_address)#ci
     end
 
   method private write_xml_cfg (node: xml_element_int) =
+    let _ = record_pwr_loop_levels faddr in
     let nodes = ref [] in
     let edges = ref [] in
     let bbNode = xmlElement "blocks" in
