@@ -470,9 +470,13 @@ let analyze_pwr_function
     begin
       bb_invariants#reset;
       analyze_procedure_with_intervals proc pwr_chif_system#get_pwr_system;
+      analyze_procedure_with_linear_equalities proc pwr_chif_system#get_pwr_system;
+      analyze_procedure_with_valuesets proc pwr_chif_system#get_pwr_system;
       analyze_procedure_with_reaching_defs proc pwr_chif_system#get_pwr_system;
       extract_ranges finfo bb_invariants#get_invariants;
       extract_reaching_defs finfo bb_invariants#get_invariants;
+      extract_linear_equalities finfo bb_invariants#get_invariants;
+      extract_valuesets finfo bb_invariants#get_invariants;
       finfo#reset_invariants;
       save_function_info finfo;
       save_function_invariants finfo;
