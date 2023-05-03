@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleVLEInstructionTest"
-let lastupdated = "2023-02-07"
+let lastupdated = "2023-04-26"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -142,7 +142,7 @@ let vle16_basic () =
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
             let opcode = TF.disassemble_vle_instruction ch base instrbytes in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -216,7 +216,7 @@ let vle32_basic () =
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
             let opcode = TF.disassemble_vle_instruction ch base instrbytes in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
     TS.launch_tests ()
   end
@@ -260,7 +260,7 @@ let vle32_pc_relative () =
               let instrbytes = ch#read_ui16 in
               let iaddr = make_dw iaddr in
               let opcode = TF.disassemble_vle_instruction ch iaddr instrbytes in
-              let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+              let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
               A.equal_string result opcodetxt
             with BCH_failure p ->
               pr_debug [STR "Error: "; p; NL])) tests;
@@ -331,7 +331,7 @@ let nonvle_basic () =
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
             let opcode = TF.disassemble_vle_instruction ch base instrbytes in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
     TS.launch_tests ()
   end
