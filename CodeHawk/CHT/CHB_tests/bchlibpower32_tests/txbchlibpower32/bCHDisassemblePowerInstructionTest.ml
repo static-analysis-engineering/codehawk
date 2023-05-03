@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassemblePowerInstructionTest"
-let lastupdated = "2023-02-07"
+let lastupdated = "2023-04-26"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -95,8 +95,8 @@ let opcode_7_opcodes () =
           (fun () ->
             let ch = make_stream bytes in
             let instr = ch#read_doubleword in
-            let opcode = TF.disassemble_power_instruction ch base instr in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcode = TF.disassemble_pwr_instruction ch base instr in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -117,8 +117,8 @@ let opcode_10_11_opcodes () =
           (fun () ->
             let ch = make_stream bytes in
             let instr = ch#read_doubleword in
-            let opcode = TF.disassemble_power_instruction ch base instr in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcode = TF.disassemble_pwr_instruction ch base instr in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -169,8 +169,8 @@ let opcode_16_opcodes () =
               let ch = make_stream bytes in
               let instr = ch#read_doubleword in
               let iaddr = make_dw iaddr in
-              let opcode = TF.disassemble_power_instruction ch iaddr instr in
-              let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+              let opcode = TF.disassemble_pwr_instruction ch iaddr instr in
+              let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
               A.equal_string result opcodetxt
             with BCH_failure p ->
               pr_debug [STR "Error: "; p; NL])) tests;
@@ -196,8 +196,8 @@ let opcode_18_opcodes () =
               let ch = make_stream bytes in
               let instr = ch#read_doubleword in
               let iaddr = make_dw iaddr in
-              let opcode = TF.disassemble_power_instruction ch iaddr instr in
-              let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+              let opcode = TF.disassemble_pwr_instruction ch iaddr instr in
+              let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
               A.equal_string result opcodetxt
             with BCH_failure p ->
               pr_debug [STR "Error: "; p; NL])) tests;
@@ -231,8 +231,8 @@ let opcode_19_opcodes_npc () =
           (fun () ->
             let ch = make_stream bytes in
             let instr = ch#read_doubleword in
-            let opcode = TF.disassemble_power_instruction ch base instr in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcode = TF.disassemble_pwr_instruction ch base instr in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -259,8 +259,8 @@ let opcode_20_opcodes () =
           (fun () ->
             let ch = make_stream bytes in
             let instr = ch#read_doubleword in
-            let opcode = TF.disassemble_power_instruction ch base instr in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcode = TF.disassemble_pwr_instruction ch base instr in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -285,8 +285,8 @@ let opcode_24_29_opcodes () =
           (fun () ->
             let ch = make_stream bytes in
             let instr = ch#read_doubleword in
-            let opcode = TF.disassemble_power_instruction ch base instr in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcode = TF.disassemble_pwr_instruction ch base instr in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -357,8 +357,8 @@ let opcode_31_opcodes () =
           (fun () ->
             let ch = make_stream bytes in
             let instr = ch#read_doubleword in
-            let opcode = TF.disassemble_power_instruction ch base instr in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcode = TF.disassemble_pwr_instruction ch base instr in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -386,8 +386,8 @@ let load_opcodes () =
           (fun () ->
             let ch = make_stream bytes in
             let instr = ch#read_doubleword in
-            let opcode = TF.disassemble_power_instruction ch base instr in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcode = TF.disassemble_pwr_instruction ch base instr in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -412,8 +412,8 @@ let store_opcodes () =
           (fun () ->
             let ch = make_stream bytes in
             let instr = ch#read_doubleword in
-            let opcode = TF.disassemble_power_instruction ch base instr in
-            let opcodetxt = R.power_opcode_to_string ~width:12 opcode in
+            let opcode = TF.disassemble_pwr_instruction ch base instr in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()

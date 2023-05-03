@@ -17,6 +17,7 @@ ELFLIB = $(CODEHAWK)/CHB/bchlibelf
 X86LIB = $(CODEHAWK)/CHB/bchlibx86
 ARMLIB = $(CODEHAWK)/CHB/bchlibarm32
 MIPSLIB = $(CODEHAWK)/CHB/bchlibmips32
+PWRLIB = $(CODEHAWK)/CHB/bchlibpower32
 ANALYZE = $(CODEHAWK)/CHB/bchanalyze
 TESTLIB = $(CHT)/tchlib
 BCHLIBTESTLIB = $(CHT)/CHB_tests/bchlib_tests/tbchlib
@@ -37,6 +38,7 @@ CAMLC := ocamlopt  -I str -I cmi -I cmx \
 	-I $(X86LIB)/cmi \
 	-I $(MIPSLIB)/cmi \
 	-I $(ARMLIB)/cmi \
+	-I $(PWRLIB)/cmi \
 	-I $(ANALYZE)/cmi \
 	-I $(TESTLIB)/cmi \
 	-I $(BCHLIBTESTLIB)/cmi \
@@ -61,6 +63,7 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(X86LIB)/bchlibx86.cmxa \
 	$(ARMLIB)/bchlibarm32.cmxa \
 	$(MIPSLIB)/bchlibmips32.cmxa \
+	$(PWRLIB)/bchlibpower32.cmxa \
 	$(ANALYZE)/bchanalyze.cmxa \
 	$(TESTLIB)/tchlib.cmxa \
 	$(BCHLIBTESTLIB)/tbchlib.cmxa \

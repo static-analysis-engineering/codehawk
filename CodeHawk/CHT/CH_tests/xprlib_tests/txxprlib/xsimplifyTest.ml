@@ -7,7 +7,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ let simplify = S.simplify_xpr
 
 
 let testname = "xsimplifyTest"
-let lastupdated = "2023-03-02"
+let lastupdated = "2023-04-27"
 
 
 let basic () =
@@ -52,24 +52,28 @@ let basic () =
 
     (* 0 + 0 = 0 *)
     TS.add_simple_test
+      ~title:"add-zero"
       (fun () ->
         XA.equal_xpr
           XG.xzero (simplify (XOp (XPlus, [XG.xzero; XG.xzero]))));
 
     (* v - v  simplifies to 0 *)
     TS.add_simple_test
+      ~title:"subtract-equal"
       (fun () ->
         let v = XVar (XG.mk_var "v") in
         XA.equal_xpr XG.xzero (simplify (XOp (XMinus, [v; v]))));
 
     (* v <= v simplifies to true *)
     TS.add_simple_test
+      ~title:"less-than-or-equal"
       (fun () ->
         let v = XVar (XG.mk_var "v") in
         XA.is_true (simplify (XOp (XLe, [v; v]))));
 
     (* (v - 2) - (v - 1) simplifies to -1 *)
     TS.add_simple_test
+      ~title:"double-subtract"
       (fun () ->
         let v = XVar (XG.mk_var "v") in
         let x1 = XOp (XMinus, [v; XG.mk_ix 1]) in
@@ -78,6 +82,7 @@ let basic () =
 
     (* (v - 2) - (v - 1) < 0 simplifies to true *)
     TS.add_simple_test
+      ~title:"double-subtract-less-than"
       (fun () ->
         let v = XVar (XG.mk_var "v") in
         let x1 = XOp (XMinus, [v; XG.mk_ix 1]) in
@@ -87,6 +92,7 @@ let basic () =
 
     (* ((v - 1) * 4) - (v * 4) < 0 simplifies to true *)
     TS.add_simple_test
+      ~title:"subtract-multiply"
       (fun () ->
         let v = XVar (XG.mk_var "v") in
         let x1 = XOp (XMult, [v; XG.mk_ix 4]) in
@@ -96,6 +102,7 @@ let basic () =
 
     (* (v - 2) < (v - 1) simplifies to true *)
     TS.add_simple_test
+      ~title:"subtract-less-than"
       (fun () ->
         let v = XVar (XG.mk_var "v") in
         let x1 = XOp (XMinus, [v; XG.mk_ix 1]) in
@@ -104,6 +111,7 @@ let basic () =
 
     (* ((4 * v) - 39) - (4 * (v - 9)) = -3 simplifies to -3 *)
     TS.add_simple_test
+      ~title:"multiply-subtract"
       (fun () ->
         let four = XG.mk_ix 4 in
         let v = XVar (XG.mk_var "v") in
@@ -114,6 +122,7 @@ let basic () =
 
     (* ((((0 + (v * 4)) - 40) + 1) - (4 * ((v - 10) + 1))) simplifies to -3 *)
     TS.add_simple_test
+      ~title:"mult-subtr-add"
       (fun () ->
         let four = XG.mk_ix 4 in
         let ten = XG.mk_ix 10 in
@@ -128,6 +137,7 @@ let basic () =
 
     (* 32767 < (32767 / 2) simplifies to false *)
     TS.add_simple_test
+      ~title:"divide-less-than"
       (fun () ->
         let two = XG.mk_ix 2 in
         let a = XG.mk_ix 32767 in
@@ -137,6 +147,7 @@ let basic () =
 
     (* 2 < (32767 / 2) simplifies to true *)
     TS.add_simple_test
+      ~title:"less-than-divide"
       (fun () ->
         let two = XG.mk_ix 2 in
         let a = XG.mk_ix 32767 in
@@ -146,6 +157,7 @@ let basic () =
 
     (* (v1 < v2) != 0 simplifies to v1 < v2 *)
     TS.add_simple_test
+      ~title:"not-zero-predicate-lt"
       (fun () ->
         let v1 = XVar (XG.mk_var "v1") in
         let v2 = XVar (XG.mk_var "v2") in
@@ -155,12 +167,22 @@ let basic () =
 
     (* (v1 - v2) != 0 simplifies to v1 != v2) *)
     TS.add_simple_test
+      ~title:"not-zero-predicate-ne"
       (fun () ->
         let v1 = XVar (XG.mk_var "v1") in
         let v2 = XVar (XG.mk_var "v2") in
         let x1 = XOp (XMinus, [v1; v2]) in
         let xpr = XOp (XNe, [x1; XG.xzero]) in
         let expected = XOp (XNe, [v1; v2]) in
+        XA.equal_xpr expected (simplify xpr));
+
+    TS.add_simple_test
+      ~title:"bitwise-or"
+      (fun () ->
+        let n1 = XG.mk_ix (0x19ff * 0x10000) in
+        let n2 = XG.mk_ix 5376 in
+        let xpr = XOp (XBOr, [n1; n2]) in
+        let expected = XG.mk_ix 0x19ff1500 in
         XA.equal_xpr expected (simplify xpr));
 
     TS.launch_tests ()
