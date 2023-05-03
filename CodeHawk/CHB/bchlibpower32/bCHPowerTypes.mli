@@ -1159,7 +1159,7 @@ type pwr_opcode_t =
   (* EREF:6-279, VLEPEM:3-65 *)
   | ShiftRightAlgebraicWordImmediate of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* sh: shift amount *)
@@ -1169,7 +1169,7 @@ type pwr_opcode_t =
   (* EREF:6-281, VLEPEM:3-66 *)
   | ShiftRightWord of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -1178,7 +1178,7 @@ type pwr_opcode_t =
   (* VLEPEM:3-66 *)
   | ShiftRightWordImmediate of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* sh: shift amount *)
@@ -1187,7 +1187,7 @@ type pwr_opcode_t =
   (* EREF:6-282,287, VLEPEM:3-67 *)
   | StoreByte of
       pwr_instruction_type_t
-      * bool               (* update *)
+      * bool             (* update *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* mem: memory operand *)
@@ -1195,7 +1195,7 @@ type pwr_opcode_t =
   (* EREF:6-288,289, VLEPEM:3-67 *)
   | StoreByteIndexed of
       pwr_instruction_type_t
-      * bool               (* update *)
+      * bool             (* update *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* rb: index register *)
@@ -1204,7 +1204,7 @@ type pwr_opcode_t =
   (* EREF:6-310, VLEPEM:3-68 *)
   | StoreHalfword of
       pwr_instruction_type_t
-      * bool               (* update *)
+      * bool             (* update *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* mem: memory operand *)
@@ -1212,7 +1212,7 @@ type pwr_opcode_t =
   (* EREF:6-317,318, VLEPEM:3-68 *)
   | StoreHalfwordIndexed of
       pwr_instruction_type_t
-      * bool               (* update *)
+      * bool             (* update *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* rb: index register *)

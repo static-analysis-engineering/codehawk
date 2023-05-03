@@ -314,16 +314,50 @@ object (self)
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
          let args = List.map snd floc#get_pwr_call_arguments in
+         let rdefs = List.concat (List.map get_all_rdefs args) in
+         let regargs =
+           List.map
+             floc#f#env#mk_pwr_gp_register_variable
+             (List.init (List.length args) (fun i -> i + 3)) in
+         let regrdefs = List.map (fun r -> get_rdef (XVar r)) regargs in
          let vrd = (pwr_gp_register_op 3 WR)#to_variable floc in
          let rv = floc#env#mk_return_value floc#cia in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[rv]
              ~xprs:args
+             ~rdefs:(rdefs @ regrdefs)
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
              () in
          let tags = tagstring :: ["call"] in
          let args =
            args @ [ixd#index_call_target floc#get_call_target#get_target] in
+         (tags, args)
+
+      | CBranchGreaterThan (_, _, _, _, _, _, bd)
+           when bd#is_absolute_address && floc#has_test_expr ->
+         let xtgt = bd#to_expr floc in
+         let txpr = floc#get_test_expr in
+         let fxpr = XOp (XLNot, [txpr]) in
+         let csetter = floc#f#get_associated_cc_setter floc#cia in
+         let tcond = rewrite_test_expr csetter txpr in
+         let fcond = rewrite_test_expr csetter fxpr in
+         let instr =
+           fail_tvalue
+             (trerror_record
+                (LBLOCK [STR "Internal error in FnPowerDictionary:bgt"]))
+             (get_pwr_assembly_instruction
+                (fail_tvalue
+                   (trerror_record
+                      (LBLOCK [STR "FnPowerDictionary:bgt: "; STR csetter]))
+                   (string_to_doubleword csetter))) in
+         let bytestr = instr#get_bytes_as_hexstring in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[txpr; fxpr; tcond; fcond; xtgt]
+             () in
+         let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
          (tags, args)
 
       | CBranchLessEqual (_, _, _, _, _, _, bd)
@@ -351,6 +385,60 @@ object (self)
          let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
          (tags, args)
 
+      | ClearLeftWordImmediate (_, _, ra, rs, mb) ->
+         let vra = ra#to_variable floc in
+         let xrs = rs#to_expr floc in
+         let rxrs = rewrite_expr xrs in
+         let xmb = mb#to_expr floc in
+         let rdefs = [get_rdef xrs] in
+         let uses = [get_def_use vra] in
+         let useshigh = [get_def_use_high vra] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vra]
+             ~xprs:[xrs; rxrs; xmb]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         ([tagstring], args)
+
+      | ExtendSignHalfword (_, _, ra, rs, _) ->
+         let vra = ra#to_variable floc in
+         let xrs = rs#to_expr floc in
+         let rxrs = rewrite_expr xrs in
+         let rdefs = [get_rdef xrs] in
+         let uses = [get_def_use vra] in
+         let useshigh = [get_def_use_high vra] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vra]
+             ~xprs:[xrs; rxrs]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         ([tagstring], args)
+
+      | ExtractRightJustifyWordImmediate (_, _, ra, rs, n, b, _) ->
+         let vra = ra#to_variable floc in
+         let xrs = rs#to_expr floc in
+         let rxrs = rewrite_expr xrs in
+         let xn = n#to_expr floc in
+         let xb = b#to_expr floc in
+         let rdefs = [get_rdef xrs] in
+         let uses = [get_def_use vra] in
+         let useshigh = [get_def_use_high vra] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vra]
+             ~xprs:[xrs; rxrs; xn; xb]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         ([tagstring], args)
+
       | LoadImmediate (_, _, shifted, rd, imm) ->
          let vrd = rd#to_variable floc in
          let ximm =
@@ -366,6 +454,34 @@ object (self)
              ~xprs:[ximm]
              ~uses
              ~useshigh
+             () in
+         ([tagstring], args)
+
+      | LoadHalfwordZero (_, update, rd, ra, mem) ->
+         let vrd = rd#to_variable floc in
+         let xra = ra#to_expr floc in
+         let xaddr = mem#to_address floc in
+         let vmem = mem#to_variable floc in
+         let xmem = mem#to_expr floc in
+         let rxmem = rewrite_expr xmem in
+         let rdefs = [get_rdef xra; get_rdef_memvar vmem] in
+         let uses = [get_def_use vrd] in
+         let useshigh = [get_def_use_high vrd] in
+         let (upduses, updhigh) =
+           if update then
+             let vra = ra#to_variable floc in
+             let uses = [get_def_use vra] in
+             let useshigh = [get_def_use_high vra] in
+             (uses, useshigh)
+           else
+             ([], []) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd; vmem]
+             ~xprs:[xra; xmem; rxmem; xaddr]
+             ~rdefs
+             ~uses:(uses @ upduses)
+             ~useshigh:(useshigh @ updhigh)
              () in
          ([tagstring], args)
 
@@ -448,6 +564,25 @@ object (self)
              () in
          ([tagstring], args)
 
+      | Or (_, _, ra, rs, rb, _) ->
+         let vra = ra#to_variable floc in
+         let xrs = rs#to_expr floc in
+         let xrb = rb#to_expr floc in
+         let xrhs = XOp (XBOr, [xrs; xrb]) in
+         let rxrhs = rewrite_expr xrhs in
+         let rdefs = [get_rdef xrs] in
+         let uses = [get_def_use vra] in
+         let useshigh = [get_def_use_high vra] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vra]
+             ~xprs:[xrs; xrb; xrhs; rxrhs]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         ([tagstring], args)
+
       | OrImmediate (_, _, shifted, _, ra, rs, uimm, _) ->
          let vra = ra#to_variable floc in
          let xrs = rs#to_expr floc in
@@ -471,7 +606,59 @@ object (self)
              () in
          ([tagstring], args)
 
+      | ShiftLeftWordImmediate (_, _, ra, rs, sh, _) ->
+         let vra = ra#to_variable floc in
+         let xrs = rs#to_expr floc in
+         let rxrs = rewrite_expr xrs in
+         let xsh = sh#to_expr floc in
+         let rdefs = [get_rdef xrs] in
+         let uses = [get_def_use vra] in
+         let useshigh = [get_def_use_high vra] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vra]
+             ~xprs:[xrs; rxrs; xsh]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         ([tagstring], args)
+
       | StoreByte (_, update, rs, ra, mem) ->
+         let vmem = mem#to_variable floc in
+         let xaddr = mem#to_address floc in
+         let xrs = rs#to_expr floc in
+         let rxrs = rewrite_expr xrs in
+         let xra = ra#to_expr floc in
+         let rxra = rewrite_expr xra in
+         let rdefs = [get_rdef xrs; get_rdef xra] in
+         if update then
+           let vra = ra#to_variable floc in
+           let uses = [get_def_use vmem; get_def_use vra] in
+           let useshigh = [get_def_use_high vmem; get_def_use_high vra] in
+           let (tagstring, args) =
+             mk_instrx_data
+               ~vars:[vmem; vra]
+               ~xprs:[xrs; rxrs; xra; rxra; xaddr]
+               ~rdefs
+               ~uses
+               ~useshigh
+               () in
+           ([tagstring], args)
+         else
+           let uses = [get_def_use vmem] in
+           let useshigh = [get_def_use_high vmem] in
+           let (tagstring, args) =
+             mk_instrx_data
+               ~vars:[vmem]
+               ~xprs:[xrs; rxrs; xra; rxra; xaddr]
+               ~rdefs
+               ~uses
+               ~useshigh
+               () in
+           ([tagstring], args)
+
+      | StoreHalfword (_, update, rs, ra, mem) ->
          let vmem = mem#to_variable floc in
          let xaddr = mem#to_address floc in
          let xrs = rs#to_expr floc in
