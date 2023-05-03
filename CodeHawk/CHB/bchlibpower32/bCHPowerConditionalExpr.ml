@@ -144,6 +144,11 @@ let pwr_conditional_expr
         | CompareImmediate (_, _, _, ra, simm) ->
            (true, Some (XOp (XLe, [v ra; v simm])))
         | _ -> (false, None))
+    | CBranchGreaterThan _ ->
+       (match testopc with
+        | CompareImmediate (_, _, _, ra, simm) ->
+           (true, Some (XOp (XGt, [v ra; v simm])))
+        | _ -> (false, None))
     | _ -> (false, None) in
 
   if found then
