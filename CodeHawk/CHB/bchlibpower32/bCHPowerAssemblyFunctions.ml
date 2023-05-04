@@ -87,15 +87,15 @@ let create_ordering
     (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
 
   let rec aux fns cs result stats cycle =
-    match fns with 
-    | [] -> (result,stats,cycle)
+    match fns with
+    | [] -> (result, stats, cycle)
     | _ ->
-      let (leaves,nonleaves) = 
+      let (leaves, nonleaves) =
 	List.fold_left (fun (l,n) (f:doubleword_int) ->
-	  if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) -> 
-	    caller#equal f) cs) then 
+	  if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) ->
+	    caller#equal f) cs) then
 	    (l, f::n)
-	  else 
+	  else
 	    (f::l, n)) ([], []) fns in
       try
 	match leaves with
@@ -104,8 +104,8 @@ let create_ordering
 	      edges and remove one of the	outgoing edges from that node
 	      pass list of functions to avoid pivoting on a non-existing function *)
 	    let fnIndices = List.map (fun dw -> dw#index) fns in
-	    let (pivotNode, incoming) = get_pivot_node cs fnIndices in  
-	    let edge = 
+	    let (pivotNode, incoming) = get_pivot_node cs fnIndices in
+	    let edge =
 	      try
 		List.find (fun (c, _) -> c#equal pivotNode) cs
 	      with
@@ -133,8 +133,8 @@ let create_ordering
                      STR ")"]) in
 	    aux nonleaves newCalls result ((-1)::stats) true
 	| _ ->
-	  let newCalls = 
-	    List.filter (fun (_,callee) -> 
+	  let newCalls =
+	    List.filter (fun (_, callee) ->
 	      List.for_all (fun f -> not (callee#equal f)) leaves) cs in
 	  aux nonleaves newCalls (result@leaves) ((List.length leaves)::stats) cycle 
       with 

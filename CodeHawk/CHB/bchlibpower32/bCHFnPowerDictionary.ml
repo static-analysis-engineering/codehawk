@@ -335,6 +335,31 @@ object (self)
            args @ [ixd#index_call_target floc#get_call_target#get_target] in
          (tags, args)
 
+      | CBranchEqual (_, _, _, _, _, _, bd)
+           when bd#is_absolute_address && floc#has_test_expr ->
+         let xtgt = bd#to_expr floc in
+         let txpr = floc#get_test_expr in
+         let fxpr = XOp (XLNot, [txpr]) in
+         let csetter = floc#f#get_associated_cc_setter floc#cia in
+         let tcond = rewrite_test_expr csetter txpr in
+         let fcond = rewrite_test_expr csetter fxpr in
+         let instr =
+           fail_tvalue
+             (trerror_record
+                (LBLOCK [STR "Internal error in FnPowerDictionary:beq"]))
+             (get_pwr_assembly_instruction
+                (fail_tvalue
+                   (trerror_record
+                      (LBLOCK [STR "FnPowerDictionary:beq: "; STR csetter]))
+                   (string_to_doubleword csetter))) in
+         let bytestr = instr#get_bytes_as_hexstring in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[txpr; fxpr; tcond; fcond; xtgt]
+             () in
+         let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
+         (tags, args)
+
       | CBranchGreaterThan (_, _, _, _, _, _, bd)
            when bd#is_absolute_address && floc#has_test_expr ->
          let xtgt = bd#to_expr floc in
@@ -385,6 +410,56 @@ object (self)
          let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
          (tags, args)
 
+      | CBranchLessThan (_, _, _, _, _, _, bd)
+           when bd#is_absolute_address && floc#has_test_expr ->
+         let xtgt = bd#to_expr floc in
+         let txpr = floc#get_test_expr in
+         let fxpr = XOp (XLNot, [txpr]) in
+         let csetter = floc#f#get_associated_cc_setter floc#cia in
+         let tcond = rewrite_test_expr csetter txpr in
+         let fcond = rewrite_test_expr csetter fxpr in
+         let instr =
+           fail_tvalue
+             (trerror_record
+                (LBLOCK [STR "Internal error in FnPowerDictionary:blt"]))
+             (get_pwr_assembly_instruction
+                (fail_tvalue
+                   (trerror_record
+                      (LBLOCK [STR "FnPowerDictionary:blt: "; STR csetter]))
+                   (string_to_doubleword csetter))) in
+         let bytestr = instr#get_bytes_as_hexstring in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[txpr; fxpr; tcond; fcond; xtgt]
+             () in
+         let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
+         (tags, args)
+
+      | CBranchNotEqual (_, _, _, _, _, _, bd)
+           when bd#is_absolute_address && floc#has_test_expr ->
+         let xtgt = bd#to_expr floc in
+         let txpr = floc#get_test_expr in
+         let fxpr = XOp (XLNot, [txpr]) in
+         let csetter = floc#f#get_associated_cc_setter floc#cia in
+         let tcond = rewrite_test_expr csetter txpr in
+         let fcond = rewrite_test_expr csetter fxpr in
+         let instr =
+           fail_tvalue
+             (trerror_record
+                (LBLOCK [STR "Internal error in FnPowerDictionary:bne"]))
+             (get_pwr_assembly_instruction
+                (fail_tvalue
+                   (trerror_record
+                      (LBLOCK [STR "FnPowerDictionary:bne: "; STR csetter]))
+                   (string_to_doubleword csetter))) in
+         let bytestr = instr#get_bytes_as_hexstring in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[txpr; fxpr; tcond; fcond; xtgt]
+             () in
+         let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
+         (tags, args)
+
       | ClearLeftWordImmediate (_, _, ra, rs, mb) ->
          let vra = ra#to_variable floc in
          let xrs = rs#to_expr floc in
@@ -397,6 +472,25 @@ object (self)
            mk_instrx_data
              ~vars:[vra]
              ~xprs:[xrs; rxrs; xmb]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         ([tagstring], args)
+
+      | DivideWordUnsigned (_, _, _, rd, ra, rb, _, _, _) ->
+         let vrd = rd#to_variable floc in
+         let xra = ra#to_expr floc in
+         let xrb = rb#to_expr floc in
+         let xrhs = XOp (XDiv, [xra; xrb]) in
+         let rxrhs = rewrite_expr xrhs in
+         let rdefs = [get_rdef xra; get_rdef xrb] in
+         let uses = [get_def_use vrd] in
+         let useshigh = [get_def_use_high vrd] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xra; xrb; xrhs; rxrhs]
              ~rdefs
              ~uses
              ~useshigh
@@ -454,6 +548,34 @@ object (self)
              ~xprs:[ximm]
              ~uses
              ~useshigh
+             () in
+         ([tagstring], args)
+
+      | LoadByteZero (_, update, rd, ra, mem) ->
+         let vrd = rd#to_variable floc in
+         let xra = ra#to_expr floc in
+         let xaddr = mem#to_address floc in
+         let vmem = mem#to_variable floc in
+         let xmem = mem#to_expr floc in
+         let rxmem = rewrite_expr xmem in
+         let rdefs = [get_rdef xra; get_rdef_memvar vmem] in
+         let uses = [get_def_use vrd] in
+         let useshigh = [get_def_use_high vrd] in
+         let (upduses, updhigh) =
+           if update then
+             let vra = ra#to_variable floc in
+             let uses = [get_def_use vra] in
+             let useshigh = [get_def_use_high vra] in
+             (uses, useshigh)
+           else
+             ([], []) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd; vmem]
+             ~xprs:[xra; xmem; rxmem; xaddr]
+             ~rdefs
+             ~uses:(uses @ upduses)
+             ~useshigh:(useshigh @ updhigh)
              () in
          ([tagstring], args)
 
@@ -606,6 +728,26 @@ object (self)
              () in
          ([tagstring], args)
 
+      | RotateLeftWordImmediateAndMask (_, _, ra, rs, sh, mb, me, _) ->
+         let vra = ra#to_variable floc in
+         let xrs = rs#to_expr floc in
+         let rxrs = rewrite_expr xrs in
+         let xsh = sh#to_expr floc in
+         let xmb = mb#to_expr floc in
+         let xme = me#to_expr floc in
+         let rdefs = [get_rdef xrs] in
+         let uses = [get_def_use vra] in
+         let useshigh = [get_def_use_high vra] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vra]
+             ~xprs:[xrs; rxrs; xsh; xmb; xme]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         ([tagstring], args)
+
       | ShiftLeftWordImmediate (_, _, ra, rs, sh, _) ->
          let vra = ra#to_variable floc in
          let xrs = rs#to_expr floc in
@@ -725,6 +867,25 @@ object (self)
                ~useshigh
                () in
            ([tagstring], args)
+
+      | SubtractFrom (_, _, _, rd, ra, rb, _, _, _) ->
+         let vrd = rd#to_variable floc in
+         let xra = ra#to_expr floc in
+         let xrb = rb#to_expr floc in
+         let xrhs = XOp (XMinus, [xrb; xra]) in
+         let rxrhs = rewrite_expr xrhs in
+         let rdefs = [get_rdef xra; get_rdef xrb] in
+         let uses = [get_def_use vrd] in
+         let useshigh = [get_def_use_high vrd] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xra; xrb; xrhs; rxrhs]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         ([tagstring], args)
 
       | _ -> ([], []) in
     instrx_table#add key

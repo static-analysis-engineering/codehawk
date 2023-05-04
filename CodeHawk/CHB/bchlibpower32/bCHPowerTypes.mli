@@ -513,9 +513,9 @@ type pwr_opcode_t =
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchEqual of
       pwr_instruction_type_t
-      * bool               (* aa: absolute address *)
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
       * pwr_branch_prediction_t  (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* bd: branch destination *)
@@ -553,9 +553,9 @@ type pwr_opcode_t =
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchGreaterThan of
       pwr_instruction_type_t
-      * bool               (* aa: absolute address *)
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
       * pwr_branch_prediction_t (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* bd: branch destination *)
@@ -573,9 +573,9 @@ type pwr_opcode_t =
   (* EREF:6-37, EREF:B-4 (simplified mnemonics, VLEPEM:3-13) *)
   | CBranchLessEqual of
       pwr_instruction_type_t
-      * bool               (* aa: absolute address *)
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
       * pwr_branch_prediction_t  (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* bd: branch destination *)
@@ -583,9 +583,9 @@ type pwr_opcode_t =
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchLessEqualLinkRegister of
       pwr_instruction_type_t
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
-      * int                (* bh: branch usage hint *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
+      * int              (* bh: branch usage hint *)
       * pwr_branch_prediction_t (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* lr: link register *)
@@ -593,9 +593,9 @@ type pwr_opcode_t =
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchLessThan of
       pwr_instruction_type_t
-      * bool               (* aa: absolute address *)
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
       * pwr_branch_prediction_t  (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* bd: branch destination *)
@@ -603,9 +603,9 @@ type pwr_opcode_t =
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchLessThanLinkRegister of
       pwr_instruction_type_t
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
-      * int                (* bh: branch usage hint *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
+      * int              (* bh: branch usage hint *)
       * pwr_branch_prediction_t (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* lr: link register *)
@@ -613,9 +613,9 @@ type pwr_opcode_t =
   (* EREF:6-37, EREF:B-4 (simplified mnemonics), VLEPEM:3-13 *)
   | CBranchNotEqual of
       pwr_instruction_type_t
-      * bool               (* aa: absolute address *)
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
       * pwr_branch_prediction_t  (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* bd: branch destination *)
@@ -623,9 +623,9 @@ type pwr_opcode_t =
   (* EREF:6-41, EREF:B-3 (simplified) *)
   | CBranchNotEqualLinkRegister of
       pwr_instruction_type_t
-      * int                (* bo: branch operations *)
-      * int                (* bi: bit in condition register *)
-      * int                (* bh: branch usage hint *)
+      * int              (* bo: branch operations *)
+      * int              (* bi: bit in condition register *)
+      * int              (* bh: branch usage hint *)
       * pwr_branch_prediction_t (* bp: branch prediction *)
       * pwr_operand_int  (* cr: condition register field *)
       * pwr_operand_int  (* lr: link register *)
@@ -633,7 +633,7 @@ type pwr_opcode_t =
   (* EREF:B-3 (simplified *)
   | ClearLeftShiftLeftWordImmediate of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* mb: mask begin *)
@@ -713,7 +713,7 @@ type pwr_opcode_t =
   (* EREF:6-50 *)
   | CountLeadingZerosWord of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* cr0 *)
@@ -721,8 +721,8 @@ type pwr_opcode_t =
   (* EREF:6-88 *)
   | DivideWord of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
-      * bool               (* oe: overflow detection *)
+      * bool             (* rc: record condition *)
+      * bool             (* oe: overflow detection *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -733,8 +733,8 @@ type pwr_opcode_t =
   (* EREF:6-95 *)
   | DivideWordUnsigned of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
-      * bool               (* eo: overflow detection *)
+      * bool             (* rc: record condition *)
+      * bool             (* eo: overflow detection *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -753,7 +753,7 @@ type pwr_opcode_t =
   (* EREF:6-104, VLEPEM:3-35 *)
   | ExtendSignByte of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* cr: condition register field (CR0) *)
@@ -761,7 +761,7 @@ type pwr_opcode_t =
   (* EREF:6-105, VLEPEM:3-35 *)
   | ExtendSignHalfword of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* cr: condition register field (CR0) *)
@@ -780,7 +780,7 @@ type pwr_opcode_t =
      Full mnemonic: RotateLeftWordImmediateMaskInsert *)
   | ExtractRightJustifyWordImmediate of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* n: shift *)
@@ -791,7 +791,7 @@ type pwr_opcode_t =
      Full mnemonic: RotateLeftWordImmediateMaskInsert *)
   | InsertRightWordImmediate of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* sh: shift *)
@@ -1260,7 +1260,7 @@ type pwr_opcode_t =
   (* EREF:6-330,331, VLEPEM:3-70 *)
   | StoreWordIndexed of
       pwr_instruction_type_t
-      * bool               (* update *)
+      * bool             (* update *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* rb: index register *)
@@ -1275,8 +1275,8 @@ type pwr_opcode_t =
   (* EREF:6-332, VLEPEM:3-72 *)
   | SubtractFrom of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
-      * bool               (* oe: overflow detection *)
+      * bool             (* rc: record condition *)
+      * bool             (* oe: overflow detection *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: register to be subtracted *)
       * pwr_operand_int  (* rb: register to be subtracted from *)
@@ -1287,8 +1287,8 @@ type pwr_opcode_t =
   (* EREF:6-337 *)
   | SubtractFromCarrying of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
-      * bool               (* oe: overflow detection *)
+      * bool             (* rc: record condition *)
+      * bool             (* oe: overflow detection *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -1300,8 +1300,8 @@ type pwr_opcode_t =
   (* EREF:6-338 *)
   | SubtractFromExtended of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
-      * bool               (* oe: detect overflow *)
+      * bool             (* rc: record condition *)
+      * bool             (* oe: detect overflow *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -1313,7 +1313,7 @@ type pwr_opcode_t =
   (* EREF:6-343, VLEPEM:3-73 *)
   | SubtractFromImmediateCarrying of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source register *)
       * pwr_operand_int  (* simm: signed immediate *)
