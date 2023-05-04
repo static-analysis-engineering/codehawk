@@ -953,4 +953,6 @@ let construct_functions_arm () =
     pverbose [STR "Construct functions: Done"; NL];
 
     arm_assembly_functions#identify_datablocks;
+
+    pverbose [STR "Identify datablocks: Done"; NL];
   end
