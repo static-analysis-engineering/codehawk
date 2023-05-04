@@ -99,8 +99,11 @@ let get_successors
 
         (* conditional branch *)
         | BranchConditional (_, _, _, _, tgt)
+          | CBranchEqual (_, _, _, _, _, _, tgt)
           | CBranchGreaterThan (_, _, _, _, _, _, tgt)
-          | CBranchLessEqual (_, _, _, _, _, _, tgt) ->
+          | CBranchLessEqual (_, _, _, _, _, _, tgt)
+          | CBranchLessThan (_, _, _, _, _, _, tgt)
+          | CBranchNotEqual (_, _, _, _, _, _, tgt) ->
            (* false branch first, true branch second *)
            (next ()) @ [tgt#get_absolute_address]
 

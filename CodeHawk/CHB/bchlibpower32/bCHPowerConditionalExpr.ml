@@ -139,15 +139,39 @@ let pwr_conditional_expr
   let condfloc = get_floc condloc in
   let (found, optxpr) =
     match condopc with
+    | CBranchEqual _ ->
+       (match testopc with
+        | CompareImmediate (_, _, _, ra, simm) ->
+           (true, Some (XOp (XEq, [v ra; v simm])))
+        | CompareLogicalImmediate (_, _, _, ra, uimm) ->
+           (true, Some (XOp (XEq, [vu ra; vu uimm])))
+        | CompareWord (_, _, ra, rb) ->
+           (true, Some (XOp (XEq, [v ra; v rb])))
+        | _ -> (false, None))
     | CBranchLessEqual _ ->
        (match testopc with
         | CompareImmediate (_, _, _, ra, simm) ->
            (true, Some (XOp (XLe, [v ra; v simm])))
+        | CompareLogical (_, _, ra, rb) ->
+           (true, Some (XOp (XLe, [vu ra; vu rb])))
+        | CompareLogicalImmediate (_, _, _, ra, uimm)->
+           (true, Some (XOp (XLe, [vu ra; vu uimm])))
         | _ -> (false, None))
     | CBranchGreaterThan _ ->
        (match testopc with
         | CompareImmediate (_, _, _, ra, simm) ->
            (true, Some (XOp (XGt, [v ra; v simm])))
+        | _ -> (false, None))
+    | CBranchNotEqual _ ->
+       (match testopc with
+        | CompareImmediate (_, _, _, ra, simm) ->
+           (true, Some (XOp (XNe, [v ra; v simm])))
+        | CompareLogical (_, _, ra, rb) ->
+           (true, Some (XOp (XNe, [vu ra; vu rb])))
+        | CompareLogicalImmediate (_, _, _, ra, uimm) ->
+           (true, Some (XOp (XNe, [vu ra; vu uimm])))
+        | CompareWord (_, _, ra, rb) ->
+           (true, Some (XOp (XNe, [v ra; v rb])))
         | _ -> (false, None))
     | _ -> (false, None) in
 
@@ -159,4 +183,14 @@ let pwr_conditional_expr
        (frozenVars#listOfValues, optxpr)
     | _ -> (frozenVars#listOfValues, None)
   else
-    (frozenVars#listOfValues, None)
+    begin
+      chlog#add
+        "missing condition-test connection"
+        (LBLOCK [
+             condfloc#l#toPretty;
+             STR ": ";
+             STR (pwr_opcode_to_string condopc);
+             STR " with ";
+             STR (pwr_opcode_to_string testopc)]);
+      (frozenVars#listOfValues, None)
+    end
