@@ -68,6 +68,10 @@ module IntSet = Set.Make
     end)
 
 
+(* Maximum number of cycles tolerated in the bottom-up ordering *)
+let max_cycles = 10
+
+
 let preamble_exclusions = H.create 3
 let _ =
   List.iter (fun (b, t) -> H.add preamble_exclusions b t)
@@ -93,11 +97,11 @@ let _ =
 
 
 let create_ordering 
-    (functions:doubleword_int list) 
-    (calls:(doubleword_int * doubleword_int) list)  =
+    (functions: doubleword_int list) 
+    (calls: (doubleword_int * doubleword_int) list)  =
   let get_pivot_node cs fnIndices =
     let counts = H.create 10 in
-    let add dw = if H.mem counts dw then 
+    let add dw = if H.mem counts dw then
 	H.replace counts dw ((H.find counts dw) + 1)
       else
 	H.add counts dw 1 in
@@ -109,69 +113,104 @@ let create_ordering
              && List.mem k fnIndices then maxCount := (k, v)) counts in
     (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
 
-  let rec aux fns cs result stats cycle =
-    match fns with 
-    | [] -> (result,stats,cycle)
-    | _ ->
-      let (leaves,nonleaves) = 
-	List.fold_left (fun (l,n) (f:doubleword_int) ->
-	  if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) -> 
-	    caller#equal f) cs) then 
-	    (l, f::n)
-	  else 
-	    (f::l, n)) ([], []) fns in
-      try
-	match leaves with
-	  [] ->
-           (* there is a cycle; find the node with the largest number of incoming
-	      edges and remove one of the	outgoing edges from that node
+  let rec aux fns cs result stats cycle counter =
+    let _ = pverbose [
+                STR "create_ordering_aux. fns: ";
+                INT (List.length fns);
+                STR "; calls: ";
+                INT (List.length cs);
+                STR "; result: ";
+                INT (List.length result);
+                NL] in
+    if counter > max_cycles then
+      begin
+        ch_error_log#add
+          "too many cycles"
+          (LBLOCK [
+               STR "Abandon bottom-up iteration after encountering ";
+               INT max_cycles;
+               STR " cycles. Return original function list"]);
+        (functions, stats, true)
+      end
+    else
+      match fns with 
+      | [] -> (result, stats, cycle)
+      | _ ->
+         let (leaves, nonleaves) =
+	   List.fold_left (fun (l,n) (f:doubleword_int) ->
+	       if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) ->
+	               caller#equal f) cs) then
+	         (l, f::n)
+	       else
+	         (f::l, n)) ([], []) fns in
+         try
+	   match leaves with
+	   | [] ->
+              (* there is a cycle; find the node with the largest number of incoming
+	      edges and remove one of the outgoing edges from that node
 	      pass list of functions to avoid pivoting on a non-existing function *)
-	    let fnIndices = List.map (fun dw -> dw#index) fns in
-	    let (pivotNode,incoming) = get_pivot_node cs fnIndices in  
-	    let edge = 
-	      try
-		List.find (fun (c, _) -> c#equal pivotNode) cs
-	      with
-		Not_found ->
-		  begin
-		    ch_error_log#add "pivot node not found"
-		      (LBLOCK [ pivotNode#toPretty ]);
-		    raise Not_found
-		  end in
-	    let newCalls = List.filter 
-	      (fun (e1,e2) -> 
-		(not (e1#equal (fst edge))) || (not (e2#equal (snd edge)))) cs in
-	    let _ =
-              chlog#add "break cycle"
+	      let fnIndices = List.map (fun dw -> dw#index) fns in
+	      let (pivotNode, incoming) = get_pivot_node cs fnIndices in
+	      let edge =
+	        try
+		  List.find (fun (c, _) -> c#equal pivotNode) cs
+	        with
+	        | Not_found ->
+		   begin
+		     ch_error_log#add "pivot node not found"
+		       (LBLOCK [ pivotNode#toPretty ]);
+		     raise Not_found
+		   end in
+	      let newCalls =
+                List.filter
+	          (fun (e1, e2) ->
+		    (not (e1#equal (fst edge))) || (not (e2#equal (snd edge)))) cs in
+	      let _ =
+                chlog#add "break cycle"
+	          (LBLOCK [
+                       STR "remove ";
+                       STR "(";
+		       (fst edge)#toPretty;
+                       STR ",";
+                       (snd edge)#toPretty;
+		       STR ") with ";
+                       INT incoming;
+                       STR " edges (size of cycle: ";
+		       INT (List.length fns);
+                       STR ")"]) in
+	      aux nonleaves newCalls result ((-1)::stats) true (counter + 1)
+	   | _ ->
+	      let newCalls =
+	        List.filter (fun (_, callee) ->
+	            List.for_all (fun f -> not (callee#equal f)) leaves) cs in
+	      aux
+                nonleaves
+                newCalls
+                (result @leaves )
+                ((List.length leaves)::stats)
+                cycle
+                counter
+         with
+         | Not_found ->
+	    begin
+	      ch_error_log#add
+                "error in find cycle"
 	        (LBLOCK [
-                     STR "remove ";
-                     STR "(";
-		     (fst edge)#toPretty;
-                     STR ",";
-                     (snd edge)#toPretty;
-		     STR ") with ";
-                     INT incoming;
-                     STR " edges (size of cycle: ";
-		     INT (List.length fns);
-                     STR ")"]) in
-	    aux nonleaves newCalls result ((-1)::stats) true
-	| _ ->
-	  let newCalls = 
-	    List.filter (fun (_,callee) -> 
-	      List.for_all (fun f -> not (callee#equal f)) leaves) cs in
-	  aux nonleaves newCalls (result@leaves) ((List.length leaves)::stats) cycle 
-      with 
-	Not_found ->
-	  begin
-	    ch_error_log#add "error in find cycle" 
-	      (LBLOCK [ STR "calls: " ; pretty_print_list cs 
-		(fun (a1,a2) ->
-		  LBLOCK [ STR "(" ; a1#toPretty ; STR "," ; a2#toPretty ; STR ")" ]) 
-		" [" ", " "]" ]) ;
-	    (result,stats,cycle)
-	  end
+                     STR "calls: ";
+                     pretty_print_list
+                       cs
+                       (fun (a1,a2) ->
+		         LBLOCK [
+                             STR "(";
+                             a1#toPretty;
+                             STR ",";
+                             a2#toPretty;
+                             STR ")"])
+		       " [" ", " "]" ]) ;
+	      (result, stats, cycle)
+	    end
   in
-  aux functions calls [] [] false
+  aux functions calls [] [] false 0
 
 
 class arm_assembly_functions_t:arm_assembly_functions_int =
@@ -234,6 +273,7 @@ object (self)
 	calls :=
           (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
       let addresses = List.map (fun f -> f#get_address) self#get_functions in
+      let _ = pverbose [STR "Create ordering on functions ..."; NL] in
       let (orderedList,stats,cycle) = create_ordering addresses !calls in
       let _ =
         chlog#add "callgraph order"
@@ -245,6 +285,7 @@ object (self)
 
   method bottom_up_itera (f:doubleword_int -> arm_assembly_function_int -> unit) =
     let orderedList = self#get_bottomup_function_list in
+    let _ = pverbose [STR "Obtained bottom-up-ordered function list"; NL] in
     let orderedFunctions = List.map self#get_function_by_address orderedList in
     List.iter (fun afn -> f afn#get_address afn) orderedFunctions
       
