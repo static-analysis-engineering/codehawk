@@ -37,7 +37,7 @@ open BCHARMTypes
 
 val disassemble_arm_section: doubleword_int -> string -> unit
 
-val disassemble_arm_sections: unit -> doubleword_int
+val disassemble_arm_sections: unit -> unit
 
 
 (** Set block markers in the assembly instructions. Only used externally

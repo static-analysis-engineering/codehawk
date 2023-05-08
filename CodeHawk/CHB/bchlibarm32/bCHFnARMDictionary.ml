@@ -352,7 +352,7 @@ object (self)
          let result = XOp (XPlus, [xrn; xrm]) in
          let rresult = rewrite_expr ?restrict:(Some 4) result in
          let _ = ignore (get_string_reference floc rresult) in
-         let rdefs = [get_rdef xrn; get_rdef xrm] in
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
          let uses = get_def_use vrd in
          let useshigh = get_def_use_high vrd in
          let (tagstring, args) =
@@ -943,7 +943,9 @@ object (self)
          let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
-         let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
+         let rdefs =
+           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
+           @ (get_all_rdefs xmem) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let xrmem = rewrite_expr xmem in
@@ -974,7 +976,9 @@ object (self)
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
+         let rdefs =
+           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
+           @ (get_all_rdefs xmem) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let (tagstring, args) =
@@ -1052,7 +1056,9 @@ object (self)
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
+         let rdefs =
+           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
+           @ (get_all_rdefs xmem) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let (tagstring, args) =
@@ -1348,7 +1354,7 @@ object (self)
          let xrm = rm#to_expr floc in
          let result = XOp (XMinus, [xrm; xrn]) in
          let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] in
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
          let uses = [get_def_use vrd] in
          let useshigh = [get_def_use_high vrd] in
          let (tagstring, args) =
@@ -1653,7 +1659,7 @@ object (self)
          let xrm = rm#to_expr floc in
          let result = XOp (XMinus, [xrn; xrm]) in
          let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] in
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
          let uses = get_def_use vrd in
          let usehigh = get_def_use_high vrd in
          let (tagstring, args) =

@@ -97,6 +97,9 @@ let disassemble_arm_section
   let sectionsize = String.length sectionbytes in
   let mode = ref "arm" in
 
+  let _ =
+    pverbose [STR "Disassemble section at "; sectionbase#toPretty; NL] in
+
   let add_instruction
         (iaddr: doubleword_int) (opcode: arm_opcode_t) (bytes: string) =
     let instr =
@@ -278,99 +281,90 @@ let disassemble_arm_section
      end
 
 
-let disassemble_arm_sections () =
-  let xSections = elf_header#get_executable_sections in
-  let (startOfCode, endOfCode, sectionaddrs, headers) =
-    if (List.length xSections) = 0 then
-      raise (BCH_failure (STR "Executable does not have section headers"))
-    else
-      let headers =
-        List.sort (fun (h1,_) (h2,_) ->
-            h1#get_addr#compare h2#get_addr) xSections in
-      let (lowest,_) = List.hd headers in
-      let (highest,_) = List.hd (List.rev headers) in
-      let _ =
-        chlog#add
-          "disassembly"
-          (LBLOCK [
-               pretty_print_list
-                 headers
-                 (fun (s,_) ->
-                   LBLOCK [
-                       STR s#get_section_name;
-                       STR ":";
-                       s#get_addr#toPretty;
-                       STR " (";
-                       s#get_size#toPretty;
-                       STR ")"])
-                 "[" " ; " "]" ]) in
-      let startOfCode = lowest#get_addr in
-      let endOfCode = highest#get_addr#add highest#get_size in
-      let sectionaddrs = List.map (fun (h, _) -> h#get_addr) headers in
-      (startOfCode, endOfCode, sectionaddrs, headers) in
-  let programentrypoint = elf_header#get_program_entry_point in
-  let _ =
-    let (dw, r) = programentrypoint#to_aligned 4 in
-    begin
-      (if r = 1 then system_info#set_arm_thumb_switch dw "T");
-      ignore (functions_data#add_function dw)
-    end in
-  let sizeOfCode =
-    fail_tvalue
-      (trerror_record
-         (LBLOCK [
-              STR "disassemble_arm_sections:sizeOfCode: ";
-              startOfCode#toPretty;
-              STR ", ";
-              endOfCode#toPretty]))
-      (endOfCode#subtract startOfCode) in
-  let datablocks = system_info#get_data_blocks in
-  let _ =
-    (* make sure that no datablock extends beyond a section boundary *)
-    List.iter (fun db ->
-        let dbstart = db#get_start_address in
-        let dbend = db#get_end_address in
-        List.iter (fun (h, _) ->
-            let sa = h#get_addr in
-            if dbstart#lt sa && sa#lt dbend then
-              begin
-                pverbose [
-                    STR "Truncate data block at ";
-                    dbstart#toPretty;
-                    STR "; reduce end address from ";
-                    dbend#toPretty;
-                    STR " to ";
-                    sa#toPretty;
-                    STR " for section ";
-                    STR h#get_section_name;
-                    NL];
-                chlog#add
-                  "truncate datablock"
-                  (LBLOCK [
-                       dbstart#toPretty;
-                       STR ": original end: ";
-                       dbend#toPretty;
-                       STR "; new end: ";
-                       sa#toPretty]);
-                db#truncate sa
-              end) headers) datablocks in
-  let _ = initialize_arm_instructions sizeOfCode#to_int in
+let sanitize_datablocks
+      (headers: elf_section_header_int list) (datablocks: data_block_int list) =
   let _ =
     pverbose [
-        STR "Create space for ";
-        sizeOfCode#toPretty;
-        STR " (";
-	INT sizeOfCode#to_int;
-        STR ") instructions";
-        NL;
-        NL] in
-  let _ =
-    initialize_arm_assembly_instructions
-      sizeOfCode#to_int startOfCode datablocks in
-  let _ =
+        STR "sanitize "; INT (List.length datablocks); STR " data blocks"; NL] in
+  List.iter (fun db ->
+      let dbstart = db#get_start_address in
+      let dbend = db#get_end_address in
+      List.iter (fun h ->
+          let sa = h#get_addr in
+          let s_end = h#get_addr#add_int h#get_size#value in
+          if dbstart#lt sa && sa#lt dbend then
+            begin
+              pverbose [
+                  STR "Truncate data block at ";
+                  dbstart#toPretty;
+                  STR "; reduce end address from ";
+                  dbend#toPretty;
+                  STR " to ";
+                  sa#toPretty;
+                  STR " for section ";
+                  STR h#get_section_name;
+                  NL];
+              chlog#add
+                "truncate datablock"
+                (LBLOCK [
+                     dbstart#toPretty;
+                     STR ": original end: ";
+                     dbend#toPretty;
+                     STR "; new end: ";
+                     sa#toPretty]);
+              db#truncate sa
+            end
+          else if sa#le dbstart && dbstart#lt s_end && s_end#lt dbend then
+            begin
+              pverbose [
+                  STR "Truncate data block at ";
+                  dbstart#toPretty;
+                  STR "; reduce end address from ";
+                  dbend#toPretty;
+                  STR " to ";
+                  s_end#toPretty;
+                  STR " for section ";
+                  STR h#get_section_name;
+                  NL];
+              chlog#add
+                "truncate datablock"
+                (LBLOCK [
+                     dbstart#toPretty;
+                     STR ": original end: ";
+                     dbend#toPretty;
+                     STR "; new end: ";
+                     s_end#toPretty]);
+              db#truncate s_end
+            end
+        ) headers) datablocks
+
+
+let disassemble_arm_sections () =
+  let xSections = elf_header#get_executable_sections in
+  let headers =
+    List.sort (fun (h1, _) (h2, _) ->
+        h1#get_addr#compare h2#get_addr) xSections in
+  let sectionsizes =
+    List.map (fun (h, _) ->
+        (h#get_section_name, h#get_addr, h#get_size)) headers in
+  let is_in_executable_section (db: data_block_int) =
+    List.fold_left (fun found (_, ha, hsize) ->
+        found || (ha#le db#get_start_address && db#get_start_address#lt (ha#add_int hsize#value)))
+      false sectionsizes in
+  let programentrypoint = elf_header#get_program_entry_point in
+  let datablocks =
+    List.filter is_in_executable_section system_info#get_data_blocks in
+  begin
+    initialize_arm_instructions sectionsizes;
+    let (dw, r) = programentrypoint#to_aligned 4 in
+    (if (r = 1) then system_info#set_arm_thumb_switch dw "T");
+    ignore (functions_data#add_function dw);
+    sanitize_datablocks (List.map fst headers) datablocks;
+    initialize_arm_assembly_instructions sectionsizes datablocks;
     List.iter
-      (fun (h, x) -> disassemble_arm_section h#get_addr x) xSections in
-  sizeOfCode
+      (fun (h, x) -> disassemble_arm_section h#get_addr x) xSections
+  end
+
 
 (* recognizes patterns of library function calls
 

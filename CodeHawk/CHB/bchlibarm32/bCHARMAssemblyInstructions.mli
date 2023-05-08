@@ -49,14 +49,14 @@ val arm_assembly_instructions: arm_assembly_instructions_int ref
 
 
 (** Create an array of the given size to hold the assembly instructions. *)
-val initialize_arm_instructions: int -> unit
+val initialize_arm_instructions:
+  (string * doubleword_int * doubleword_int) list -> unit
 
 
 (** Initialize the instruction array with instructions *)
 val initialize_arm_assembly_instructions:
-  int  (* length in bytes of the combined executable sections *)
-  -> doubleword_int   (* address of code base *)
-  -> data_block_int list 
+  (string * doubleword_int * doubleword_int) list
+  -> data_block_int list
   -> unit
 
 

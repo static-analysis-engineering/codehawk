@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open CHLogger
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHDoubleword
 open BCHFloc
 open BCHLibTypes
 open BCHLocation
@@ -51,6 +52,8 @@ open BCHConstructARMFunction
 open BCHDisassembleARMInstruction
 open BCHDisassembleThumbInstruction
 
+module TR = CHTraceResult
+
 
 module DoublewordCollections = CHCollections.Make (
   struct
@@ -63,8 +66,9 @@ module DoublewordCollections = CHCollections.Make (
 let disassemble_arm_stream (va: doubleword_int) (codestring: string) =
   let size = String.length codestring in
   let ch = make_pushback_stream ~little_endian:true codestring in
-  let _ = initialize_arm_instructions size in
-  let _ = initialize_arm_assembly_instructions size va [] in
+  let sectionsizes = [("stream", va, (TR.tget_ok (int_to_doubleword size)))] in
+  let _ = initialize_arm_instructions sectionsizes in
+  let _ = initialize_arm_assembly_instructions sectionsizes [] in
   let add_instruction (pos: int) (opcode: arm_opcode_t) (bytes: string) =
     let addr = va#add_int pos in
     let instr = make_arm_assembly_instruction addr true opcode bytes in
@@ -90,13 +94,13 @@ let disassemble_arm_stream (va: doubleword_int) (codestring: string) =
   | IO.No_more_input -> ()
 
 
-
 let disassemble_thumb_stream (va: doubleword_int) (codestring: string) =
   let size = String.length codestring in
   let _ = pr_debug [STR "Codestring of length: "; INT size; NL] in
   let ch = make_pushback_stream ~little_endian:true codestring in
-  let _ = initialize_arm_instructions size in
-  let _ = initialize_arm_assembly_instructions size va [] in
+  let sectionsizes = [("stream", va, (TR.tget_ok (int_to_doubleword size)))] in
+  let _ = initialize_arm_instructions sectionsizes in
+  let _ = initialize_arm_assembly_instructions sectionsizes [] in
   let add_instruction (pos: int) (opcode: arm_opcode_t) (bytes: string) =
     let addr = va#add_int pos in
     let instr = make_arm_assembly_instruction addr false opcode bytes in

@@ -1589,7 +1589,7 @@ class type arm_assembly_instructions_int =
     method get_num_unknown_instructions: int
 
     (* iterators *)
-    method iteri: (int -> arm_assembly_instruction_int -> unit) -> unit
+    (* method iteri: (int -> arm_assembly_instruction_int -> unit) -> unit *)
     method itera: (doubleword_int -> arm_assembly_instruction_int -> unit) -> unit
 
     (* predicates *)
