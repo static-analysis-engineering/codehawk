@@ -645,11 +645,11 @@ object (self)
                  ()
              with
              | BCH_failure p ->
-                raise
-                  (BCH_failure
-                     (LBLOCK [
-                          STR "Error in identifying dataref datablocks: ";
-                          p])));
+                let msg =
+                     LBLOCK [
+                         STR "Error in identifying dataref datablocks: ";
+                         p] in
+                ch_error_log#add "identifying datablocks" msg);
       chlog#add
         "identify data-blocks"
         (LBLOCK [STR "Identified "; INT !count; STR " data-blocks"]);
@@ -759,13 +759,13 @@ object (self)
                 ()
           with
           | BCH_failure p ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Error in identifying data blocks: ";
-                       va#toPretty;
-                       STR ": ";
-                       p])));
+             let msg =
+                  LBLOCK [
+                      STR "Error in identifying data blocks: ";
+                      va#toPretty;
+                      STR ": ";
+                      p] in
+             ch_error_log#add "identifying datablocks" msg);
       chlog#add
         "identify data-blocks"
         (LBLOCK [STR "Identified "; INT !count; STR " data-blocks"]);

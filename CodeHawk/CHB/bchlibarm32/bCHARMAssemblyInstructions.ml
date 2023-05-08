@@ -69,10 +69,6 @@ let arrayLength = 100000
 
 let initialized_length = ref 0
 
-(*
-let arm_instructions =
-  ref (Array.make 1 (make_arm_assembly_instruction wordzero true OpInvalid ""))
- *)
 
 let arm_instructions =
   Array.make
@@ -80,24 +76,27 @@ let arm_instructions =
     (Array.make 1 (make_arm_assembly_instruction wordzero true OpInvalid ""))
 
 
-let initialize_arm_instructions (len:int) =
+let initialize_arm_section_instructions (startindex: int) (len: int): int =
   if len < numArrays * arrayLength then
     let _ =
       chlog#add
         "disassembly"
         (LBLOCK [STR "Initialize "; INT len; STR " instructions bytes"]) in
     let remaining = ref len in
-    let index = ref 0 in
+    let index = ref startindex in
     begin
       while !remaining > 0 && !index < numArrays do
+        let arraylen =
+          if !remaining > arrayLength then arrayLength else !remaining in
         arm_instructions.(!index) <-
           Array.make
-            arrayLength
+            arraylen
             (make_arm_assembly_instruction wordzero true OpInvalid "");
-        remaining := !remaining - arrayLength;
+        remaining := !remaining - arraylen;
         index := !index + 1
       done;
-      initialized_length := len
+      initialized_length := len;
+      !index
     end
   else
     raise
@@ -110,38 +109,149 @@ let initialize_arm_instructions (len:int) =
               INT (numArrays * arrayLength)]))
 
 
-let get_indices (index:int) = (index/arrayLength, index mod arrayLength)
+class address_translator_t =
+object (self)
+
+  val mutable indices: (string * int * int * int) list = []
+  val mutable allindices_rev: (int * int) list = []
+
+  method initialize (sections: (string * int * int) list) =
+    let (_, section_indices) =
+      List.fold_left (fun (startindex, indices) (name, start, size) ->
+          let newindex = initialize_arm_section_instructions startindex size in
+          let newindices = (name, start, size, startindex) :: indices in
+          let _ =
+            pverbose [
+                STR "initialized ";
+                STR name;
+                STR " at start address: ";
+                (TR.tget_ok (int_to_doubleword start))#toPretty;
+                STR " at index: ";
+                INT startindex;
+                STR " with size: ";
+                INT size;
+                STR "; new index: ";
+                INT newindex;
+                NL] in
+          (newindex, newindices)) (0, []) sections in
+    indices <- List.rev section_indices
+
+  method get_indices (addr: doubleword_int): int * int =
+    let index = addr#value in
+    let (found, result) =
+      List.fold_left (fun (fnd, r) (name, start, size, startindex) ->
+          if fnd then
+            (fnd, r)
+          else if index >= start && index < start + size then
+            let offset = index - start in
+            (true,
+             Some (startindex + (offset / arrayLength), offset mod arrayLength))
+          else
+            (false, r)) (false, None) indices in
+    match (found, result) with
+    | (true, Some (i, j)) -> (i, j)
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Address: ";
+                 addr#toPretty;
+                 STR " could not be translated to backing array indices"]))
+
+  method get_all_indices_rev: (int * int) list =
+    if (List.length allindices_rev) > 0 then
+      allindices_rev
+    else
+      let result = ref [] in
+      begin
+        List.iter (fun (_, _, size, startindex) ->
+            for i = 0 to size - 1 do
+              result :=
+                (startindex + (i / arrayLength), i mod arrayLength) :: !result
+            done) indices;
+        allindices_rev <- !result;
+        !result
+      end
+
+end
+
+
+let address_translator = new address_translator_t
+
+
+let initialize_arm_instructions
+      (sections: (string * doubleword_int * doubleword_int) list) =
+  address_translator#initialize
+    (List.map (fun (name, start, size) -> (name, start#value, size#value)) sections)
+
+
+let get_indices (addr: doubleword_int) = address_translator#get_indices addr
 
 
 (* Enter the instruction in the backing array at the given index. If the
    index is out-of-range of the initialized length of the backing array,
    log an error message (but don't fail).
  *)
-let set_instruction (index:int) (instr:arm_assembly_instruction_int) =
-  if index >= 0 && index <= !initialized_length then
-    let (i,j) = get_indices index in
+let set_instruction (addr: doubleword_int) (instr: arm_assembly_instruction_int) =
+  try
+    let (i, j) = get_indices addr in
     arm_instructions.(i).(j) <- instr
-  else
-    ch_error_log#add
-      "set_instruction:invalid address"
-      (LBLOCK [INT index; STR ": "; instr#toPretty])
+  with
+  | BCH_failure p ->
+     ch_error_log#add
+       "set_instruction:invalid address"
+       (LBLOCK [addr#toPretty; STR ": "; instr#toPretty])
 
 
-let initialize_instruction_segment (endindex:int) =
-  for index = 0 to (endindex - 1) do
+let initialize_instruction_section (addr: doubleword_int) (xsize: doubleword_int) =
+  let size = xsize#value in
+  for i = 0 to size - 1 do
     set_instruction
-      index (make_arm_assembly_instruction wordzero true OpInvalid "")
+      (addr#add_int i) (make_arm_assembly_instruction wordzero true OpInvalid "")
   done
 
 
+let initialize_instruction_sections
+      (sl: (string * doubleword_int * doubleword_int) list) =
+  List.iter (fun (name, addr, size) ->
+      begin
+        chlog#add
+          "disassembly:initialize"
+          (LBLOCK [
+               STR "section: ";
+               STR name;
+               STR "; startaddress: ";
+               addr#toPretty;
+               STR "; size: ";
+               size#toPretty]);
+        initialize_instruction_section addr size;
+        pverbose [
+            STR "initialized instructions for section "; STR name; NL]
+      end) sl
+
+
 (* Return the instruction at the given index from the backing store; if
-   the index is out-of-range, return None. *)
-let get_instruction (index:int): arm_assembly_instruction_result =
-  if index >= 0 && index <= !initialized_length then
-    let (i,j) = get_indices index in
+   the index is out-of-range, return Error.
+ *)
+let get_instruction (addr: doubleword_int): arm_assembly_instruction_result =
+  try
+    let (i, j) = get_indices addr in
     Ok (arm_instructions.(i).(j))
-  else
-    Error ["get_instruction:" ^ (string_of_int index)]
+  with
+  | BCH_failure p ->
+     Error ["get_instruction: " ^ addr#to_hex_string]
+
+
+let get_all_instruction_addrs (): doubleword_int list =
+  let result = ref [] in
+  begin
+    List.iter (fun (i, j) ->
+        let instr = arm_instructions.(i).(j) in
+        if instr#is_valid_instruction then
+          result := instr#get_address :: !result)
+      address_translator#get_all_indices_rev;
+    !result
+  end
 
 
 let fold_instructions (f:'a -> arm_assembly_instruction_int -> 'a) (init:'a) =
@@ -154,253 +264,156 @@ let iter_instructions (f:arm_assembly_instruction_int -> unit) =
   Array.iter (fun arr -> Array.iter f arr) arm_instructions
 
 
-let iteri_instructions (f:int -> arm_assembly_instruction_int -> unit) =
-  Array.iteri
-    (fun i arr ->
-      let k = i * arrayLength in
-      Array.iteri (fun j instr -> f (k+j) instr) arr) arm_instructions
-
-
 class arm_assembly_instructions_t
-        (len:int) (code_base:doubleword_int):arm_assembly_instructions_int =
+        (sections: (string * doubleword_int * doubleword_int) list) =
 object (self)
 
-  val codeBase = code_base
-  val codeEnd = code_base#add_int len
-  val length = len
+  val sections = sections
+  val mutable codeaddrs: doubleword_int list = []
+  val mutable codeaddrs_rev: doubleword_int list = []
   val aggregates = H.create 3
 
-  method length = length
-
-  (* Return the index that corresponds to the virtual address. If
-     the virtual address is out-of-range, return None. *)
-  method private indexresult (va: doubleword_int): int TR.traceresult =
-    if codeBase#le va && va#lt codeEnd then
-      va#subtract_to_int codeBase
-    else
-      Error ["index:"^ va#to_hex_string]
-
-  method private at_index (index:int): arm_assembly_instruction_result =
-    TR.tmap
-      ~msg:"at_index"
-      (fun instr ->
-        if instr#get_address#equal wordzero then
-          let newInstr =
-            make_arm_assembly_instruction
-              (codeBase#add_int index) true OpInvalid "" in
-          begin
-            set_instruction index newInstr;
-            newInstr
-          end
-        else
-          instr)
-      (get_instruction index)
+  method length =
+    List.fold_left (fun acc (_, _, size) -> acc + size#value) 0 sections
 
   method set_instruction
-           (va: doubleword_int) (instr:arm_assembly_instruction_int) =
-    log_tfold
-      (mk_tracelog_spec ~tag:"disassembly" ("set instruction:" ^ va#to_hex_string))
-      ~ok:(fun index -> set_instruction index instr)
-      ~error:(fun _ -> ())
-      (self#indexresult va)
+           (va: doubleword_int) (instr: arm_assembly_instruction_int) =
+    set_instruction va instr
 
-  method get_instruction (va:doubleword_int): arm_assembly_instruction_result =
-    TR.tbind
-      ~msg:"assembly_instructions:get_instruction"
-      self#at_index
-      (self#indexresult va)
+  method get_instruction (va: doubleword_int): arm_assembly_instruction_result =
+    get_instruction va
 
   method set_aggregate
            (va: doubleword_int) (agg: arm_instruction_aggregate_int) =
     begin
-      log_tfold
-        (mk_tracelog_spec ~tag:"disassembly" ("set aggregate:" ^ va#to_hex_string))
-        ~ok:(fun index ->
-          begin
-            H.add aggregates index agg;
-            agg#anchor#set_aggregate_anchor;
-            agg#entry#set_aggregate_entry;
-            agg#exitinstr#set_aggregate_exit;
-            List.iter (fun instr -> instr#set_in_aggregate va) agg#instrs
-          end)
-        ~error:(fun _ -> ())
-        (self#indexresult va);
+      H.add aggregates va#value agg;
+      agg#anchor#set_aggregate_anchor;
+      agg#entry#set_aggregate_entry;
+      agg#exitinstr#set_aggregate_exit;
+      List.iter (fun instr -> instr#set_in_aggregate va) agg#instrs;
       (match agg#kind with
        | ARMJumptable jt -> self#set_jumptable jt#to_jumptable
        | _ -> ())
     end
 
   method get_aggregate (va: doubleword_int): arm_instruction_aggregate_int =
-    let index =
-      fail_tvalue
-        (trerror_record
-           (LBLOCK [STR "get_aggregate:" ; va#toPretty]))
-        (self#indexresult va) in
-    if H.mem aggregates index then
-      H.find aggregates index
+    if H.mem aggregates va#value then
+      H.find aggregates va#value
     else
-      raise (BCH_failure (LBLOCK [STR "No aggregate found at "; va#toPretty]))
+      raise
+        (BCH_failure (LBLOCK [STR "No aggregate found at "; va#toPretty]))
 
-  method has_aggregate (va: doubleword_int): bool =
-    TR.to_bool (H.mem aggregates) (self#indexresult va)
+  method has_aggregate (va: doubleword_int): bool = H.mem aggregates va#value
 
   method set_not_code (data_blocks: data_block_int list) =
+    let _ =
+      pverbose [
+          STR "set_not_code ... with ";
+          INT (List.length data_blocks);
+          STR " data blocks";
+          NL] in
     List.iter self#set_not_code_block data_blocks
 
   method private set_not_code_block (db: data_block_int) =
     let startaddr = db#get_start_address in
     let endaddr = db#get_end_address in
-    log_tfold
-      (mk_tracelog_spec
-         ~tag:"disassembly"
-         ("set_not_code_block:startaddr:" ^ startaddr#to_hex_string))
-      ~ok:(fun startindex ->
-        log_tfold
-          (mk_tracelog_spec
-             ~tag:"disassembly"
-             ("set_not_code_block:endaddr:" ^ endaddr#to_hex_string))
-          ~ok: (fun endindex ->
-            let startinstr =
-              make_arm_assembly_instruction
-                startaddr true (NotCode (Some (DataBlock db))) "" in
-            begin
-              set_instruction startindex startinstr;
-              for i = startindex + 1 to endindex - 1 do
-                set_instruction
-                  i
-                  (make_arm_assembly_instruction
-                     (codeBase#add_int i) true (NotCode None) "")
-              done;
-              (if collect_diagnostics () then
-                 ch_diagnostics_log#add
-                   "not code (data block)"
-                   (LBLOCK [startaddr#toPretty; STR " - "; endaddr#toPretty]))
-            end)
-          ~error:(fun _ -> ())
-          (self#indexresult endaddr))
-      ~error:(fun _ -> ())
-      (self#indexresult startaddr)
-
-  (* method private set_jumptables (jumptables: jumptable_int list) =
-    List.iter self#set_jumptable jumptables *)
+    let len = endaddr#value - startaddr#value in
+    let _ =
+      pverbose [
+          STR "set-not-code at "; startaddr#toPretty; STR " with length "; INT len; NL] in
+    let startinstr =
+      make_arm_assembly_instruction
+        startaddr true (NotCode (Some (DataBlock db))) "" in
+    begin
+      set_instruction startaddr startinstr;
+      for i = 1 to (len - 1) do
+        let va = startaddr#add_int i in
+        set_instruction
+          va (make_arm_assembly_instruction va true (NotCode None) "")
+      done
+    end
 
   method private set_jumptable (jumptable: jumptable_int) =
     let saddr = jumptable#get_start_address in
     let eaddr = jumptable#get_end_address in
-    log_titer
-      (mk_tracelog_spec
-         ~tag:"disassembly"
-         ("set_jumptable:" ^ saddr#to_hex_string))
-      (fun startindex ->
-        log_titer
-          (mk_tracelog_spec
-             ~tag:"disassembly"
-             ("set_jumptable:" ^ eaddr#to_hex_string))
-          (fun endindex ->
-            let startinstr =
-              make_arm_assembly_instruction
-                saddr true (NotCode (Some (JumpTable jumptable))) "" in
-            begin
-              set_instruction startindex startinstr;
-              for i = startindex + 1 to endindex - 1 do
-                set_instruction
-                  i
-                  (make_arm_assembly_instruction
-                     (codeBase#add_int i) true (NotCode None) "")
-              done;
-              (if collect_diagnostics () then
-                 ch_diagnostics_log#add
-                   "not code (jump table)"
-                   (LBLOCK [saddr#toPretty; STR " - "; eaddr#toPretty]))
-            end)
-          (self#indexresult eaddr))
-      (self#indexresult saddr)
+    let len = saddr#value - eaddr#value in
+    let startinstr =
+      make_arm_assembly_instruction
+        saddr true (NotCode (Some (JumpTable jumptable))) "" in
+    begin
+      set_instruction saddr startinstr;
+      for i = 1 to (len - 1) do
+        let va = saddr#add_int i in
+        set_instruction
+          va (make_arm_assembly_instruction va true (NotCode None) "")
+      done
+    end
 
   method get_next_valid_instruction_address
            (va: doubleword_int): doubleword_int TR.traceresult =
-    TR.tbind
-      ~msg:("get_next_valid_instruction_address:" ^ va#to_hex_string)
-      (fun index ->
-        let optnextindex =
-          let rec loop i =
-            if i >= self#length then
-              None
-            else
-              match TR.to_option (self#at_index i) with
-              | Some instr when instr#is_not_code -> None
-              | Some instr ->
-                 (match instr#get_opcode with
-                  | OpInvalid -> loop (i + 1)
-                  | _ -> Some i)
-              | _ -> None in
-          loop (index + 1) in
-        (match optnextindex with
-         | Some nextindex -> Ok (codeBase#add_int nextindex)
-         | _ ->
-            Error [
-                "get_next_valid_instruction_address:not found:"
-                ^ va#to_hex_string]))
-      (self#indexresult va)
+    let rec loop i =
+      let iaddr = va#add_int i in
+      match TR.to_option (get_instruction iaddr) with
+      | Some instr when instr#is_not_code -> None
+      | Some instr ->
+         (match instr#get_opcode with
+          | OpInvalid -> loop (i + 1)
+          | _ -> Some iaddr)
+      | _ -> None in
+    (match loop 1 with
+     | Some iaddr -> Ok iaddr
+     | _ ->
+        Error [
+            "get_next_valid_instruction_address:not found:"
+            ^ va#to_hex_string])
 
   method get_prev_valid_instruction_address
            (va: doubleword_int): doubleword_int TR.traceresult =
-    TR.tbind
-      ~msg:("get_previous_valid_instruction_address:" ^ va#to_hex_string)
-      (fun index ->
-        let optprevindex =
-          let rec loop i =
-            if i < 0 then
-              None
-            else
-              match TR.to_option (self#at_index i) with
-              | Some instr when instr#is_not_code -> None
-              | Some instr ->
-                 (match instr#get_opcode with
-                  | OpInvalid -> loop (i - 1)
-                  | _ -> Some i)
-              | _ -> None in
-          loop (index - 1) in
-        (match optprevindex with
-         | Some previndex -> Ok (codeBase#add_int previndex)
-         | _ ->
-            Error [
-                "get_prev_valid_instruction_address:not found:"
-                ^ va#to_hex_string]))
-      (self#indexresult va)
+    let ival = va#value in
+    let rec loop i =
+      if i > ival then
+        None
+      else
+        let iaddr = TR.tget_ok (va#subtract_int i) in
+        match TR.to_option (get_instruction iaddr) with
+        | Some instr when instr#is_not_code -> None
+        | Some instr ->
+           (match instr#get_opcode with
+            | OpInvalid -> loop (i + 1)
+            | _ -> Some iaddr)
+        | _ -> None in
+    (match loop 1 with
+     | Some iaddr -> Ok iaddr
+     | _ ->
+        Error [
+            "get_prev_valid_instruction_address:not found:"
+            ^ va#to_hex_string])
 
   method has_next_valid_instruction (va: doubleword_int): bool =
-    TR.to_bool
-      (fun index ->
-        let rec loop i =
-          if i >= len then
-            false
-          else
-            (match TR.to_option (self#at_index i) with
-             | Some instr when instr#is_not_code -> false
-             | Some instr ->
-                (match instr#get_opcode with
-                 | OpInvalid -> loop (i + 1)
-                 | _ -> true)
-             | _ -> false) in
-        loop (index + 1))
-      (self#indexresult va)
+    let rec loop i =
+      match TR.to_option (get_instruction (va#add_int i)) with
+      | Some instr when instr#is_not_code -> false
+      | Some instr ->
+         (match instr#get_opcode with
+          | OpInvalid -> loop (i + 1)
+          | _ -> true)
+      | _ -> false in
+    loop 1
 
   method has_prev_valid_instruction (va: doubleword_int): bool =
-    TR.to_bool
-      (fun index ->
-        let rec loop i =
-          if i < 0 then
-            false
-          else
-            (match TR.to_option (self#at_index i) with
-             | Some instr when instr#is_not_code -> false
-             | Some instr ->
-                (match instr#get_opcode with
-                 | OpInvalid -> loop (i - 1)
-                 | _ -> true)
-             | _ -> false) in
-        loop (index - 1))
-      (self#indexresult va)
+    let ival = va#value in
+    let rec loop i =
+      if i <= ival then
+        match TR.to_option (get_instruction (TR.tget_ok (va#subtract_int i))) with
+        | Some instr when instr#is_not_code -> false
+        | Some instr ->
+           (match instr#get_opcode with
+            | OpInvalid -> loop (i + 1)
+            | _ -> true)
+        | _ -> false
+      else
+        false in
+    loop 1
 
   method is_code_address (va:doubleword_int) =
     TR.to_bool
@@ -449,38 +462,19 @@ object (self)
            end
         | _ -> ())
 
-  method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
-    let low = if low#lt codeBase then codeBase else low in
-    let high =
-      if (codeBase#add_int length)#lt high then
-        codeBase#add_int (length-1)
-      else
-        high in
+  method get_code_addresses_rev ?(low=wordzero) ?(high=wordmax) () =
     let high = if high#lt low then low else high in
-    let addresses = ref [] in
-    let _ =
-      log_titer
-        (mk_tracelog_spec
-           ~tag:"disassembly"
-           ("get_code_addresses_rev:low:" ^ low#to_hex_string))
-        (fun lowindex ->
-          log_titer
-            (mk_tracelog_spec
-               ~tag:"disassembly"
-               ("get_code_addresses_rev:high:" ^ high#to_hex_string))
-            (fun highindex ->
-              begin
-                for i = lowindex to highindex do
-                  (match TR.to_option (get_instruction i) with
-                   | Some instr ->
-                      if instr#is_valid_instruction then
-                        addresses := (codeBase#add_int i) :: !addresses
-                   | _ -> ())
-                done;
-              end)
-            (self#indexresult high))
-        (self#indexresult low) in
-    !addresses
+    let addrs_rev =
+      if List.length codeaddrs_rev > 0 then
+        codeaddrs_rev
+      else
+        let addrs = get_all_instruction_addrs () in
+        begin
+          codeaddrs_rev <- List.rev addrs;
+          codeaddrs <- addrs;
+          codeaddrs_rev
+        end in
+    List.filter (fun a -> low#le a && a#le high) addrs_rev
 
   method get_num_instructions =
     (List.length (self#get_code_addresses_rev ()))
@@ -488,18 +482,14 @@ object (self)
   method get_num_unknown_instructions =
     let n = ref 0 in
     let _ =
-      self#iteri (fun _ instr ->
+      self#itera (fun _ instr ->
           match instr#get_opcode with
           | NotRecognized _ -> n := !n + 1
           | _ -> ()) in
     !n
-      
-  method iteri (f:int -> arm_assembly_instruction_int -> unit) =
-    iteri_instructions
-      (fun i instr -> if i < len then f i instr else ())
 
   method itera (f:doubleword_int -> arm_assembly_instruction_int -> unit) =
-    self#iteri (fun i instr -> f (codeBase#add_int i) instr)
+    iter_instructions (fun instr -> f instr#get_address instr)
 
   method write_xml (node:xml_element_int) =
     let bnode = ref (xmlElement "b") in
@@ -519,7 +509,9 @@ object (self)
             (!bnode)#appendChildren [inode]
           end)
 
-  method toString ?(datarefs = []) ?(filter = fun _ -> true) () =
+  method toString
+           ?(datarefs:((string * arm_assembly_instruction_int list) list) = [])
+           ?(filter = fun _ -> true) () =
     let lines = ref [] in
     let firstNew = ref true in
     let datareftable = H.create (List.length datarefs) in
@@ -670,12 +662,6 @@ object (self)
                  let  _ =
                    if instr#is_block_entry then
                      Bytes.set statusString 2 'B' in
-                 (* let _ =
-                   if instr#is_aggregate then
-                     Bytes.set statusString 2 'A' in
-                 let _ =
-                   if instr#is_subsumed then
-                     Bytes.set statusString 2 'S' in  *)
                  let instrbytes = instr#get_instruction_bytes in
                  let spacedstring = byte_string_to_spaced_string instrbytes in
                  let len = String.length spacedstring in
@@ -721,7 +707,7 @@ object (self)
 end
 
 
-let arm_assembly_instructions = ref (new arm_assembly_instructions_t 1 wordzero)
+let arm_assembly_instructions = ref (new arm_assembly_instructions_t [])
 
 
 let get_arm_assembly_instruction (a: doubleword_int) =
@@ -742,33 +728,13 @@ let has_next_valid_instruction (a: doubleword_int) =
 
 
 let initialize_arm_assembly_instructions
-      (length:int)  (* in bytes *)
-      (codebase:doubleword_int)
+      (sections: (string * doubleword_int * doubleword_int) list)
       (datablocks: data_block_int list) =
   begin
-    chlog#add
-      "disassembly"
-      (LBLOCK [
-           STR "Initialize ";
-           INT length;
-           STR " bytes: ";
-           codebase#toPretty;
-           STR " - ";
-           (codebase#add_int length)#toPretty]);
-    if length <= !initialized_length then
-      begin
-        initialize_instruction_segment length;
-        arm_assembly_instructions := new arm_assembly_instructions_t length codebase;
-        !arm_assembly_instructions#set_not_code datablocks
-      end
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "Unable to initialize arm assembly instructions with length ";
-                INT length;
-                STR ". Initialized length is only ";
-                INT !initialized_length]))
+    initialize_instruction_sections sections;
+    arm_assembly_instructions := new arm_assembly_instructions_t sections;
+    !arm_assembly_instructions#set_not_code datablocks;
+    pverbose [STR "Finish initializing arm assembly instructions"; NL]
   end
 
 

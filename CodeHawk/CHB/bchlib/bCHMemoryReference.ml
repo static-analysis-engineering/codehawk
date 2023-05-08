@@ -142,7 +142,6 @@ let global_offset_to_name (size: int) (offset: memory_offset_t) =
        log_tfold_default
          (mk_tracelog_spec "global_offset_to_name")
          (fun dw ->
-           let _ = chlog#add "create global" (LBLOCK [STR prefix; STR dw#to_hex_string]) in
            prefix ^ dw#to_hex_string ^ (memory_offset_to_string s))
          ("gv_illegal_address")
          (numerical_to_doubleword n)

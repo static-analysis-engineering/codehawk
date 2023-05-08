@@ -315,9 +315,15 @@ let make_tests
         ~condloc
         ~testloc in
 
-  let convert_to_chif expr =
-    let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
-    cmds @ [ASSERT bxpr] in
+  let convert_to_chif ?(high=true) expr =
+    let vars = variables_in_expr expr in
+    let varscmds =
+      if high then
+        condfloc#get_vardef_commands ~usehigh:vars condloc#ci
+      else
+        condfloc#get_vardef_commands ~use:vars condloc#ci in
+    let (cmds, bxpr) = xpr_to_boolexpr reqN reqC expr in
+    cmds @ varscmds @ [ASSERT bxpr] in
   let convert_to_assert expr  =
     let vars = variables_in_expr expr in
     let varssize = List.length vars in
@@ -351,7 +357,10 @@ let make_tests
     let _ =
       if testsupport#requested_chif_conditionxprs then
         testsupport#submit_chif_conditionxprs condinstr testinstr xprs in
-    List.concat (List.map convert_to_chif xprs) in
+    let basic_asserts = convert_to_chif ~high:false (List.hd xprs) in
+    let rewritten_asserts = List.concat (List.map convert_to_chif (List.tl xprs)) in
+    basic_asserts @ rewritten_asserts in
+  (* List.concat (List.map convert_to_chif xprs) in *)
   let make_asserts exprs =
     let _ = env#start_transaction in
     let commands = List.concat (List.map convert_to_assert exprs) in
@@ -403,8 +412,10 @@ let make_local_tests
        raise (BCH_failure
                 (LBLOCK [STR "Unexpected condition: "; condinstr#toPretty])) in
   let convert_to_chif expr =
-    let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
-    cmds @ [ASSERT bxpr] in
+    let vars = variables_in_expr expr in
+    let defcmds = floc#get_vardef_commands ~usehigh:vars floc#l#ci in
+    let (cmds, bxpr) = xpr_to_boolexpr reqN reqC expr in
+    cmds @ defcmds @ [ASSERT bxpr] in
   let make_assert x =
     let _ = env#start_transaction in
     let commands = convert_to_chif x in
@@ -1893,18 +1904,12 @@ let translate_arm_instruction
      let increm = XConst (IntConst (mkNumerical (4 * regcount))) in
      let cmds = floc#get_assign_commands splhs (XOp (XPlus, [sprhs; increm])) in
      let useshigh =
-       let fname = finfo#get_summary#get_function_interface.fintf_name in
        let fsig = finfo#get_summary#get_function_signature in
        let rtype = fsig.fts_returntype in
-       let msg = LBLOCK [STR fname; STR ": "; btype_to_pretty rtype] in
        if rl#includes_pc then
          match rtype with
-         | TVoid _ ->
-            let _ = chlog#add "omit use of return value" msg in
-            []
-         | _ ->
-            let _ = chlog#add "register use of return value" msg in
-            [floc#f#env#mk_arm_register_variable AR0]
+         | TVoid _ -> []
+         | _ -> [floc#f#env#mk_arm_register_variable AR0]
        else
          [] in
      let defcmds =

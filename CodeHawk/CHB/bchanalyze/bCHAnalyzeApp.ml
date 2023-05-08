@@ -352,14 +352,6 @@ let analyze_mips starttime =
 let analyze_arm_function faddr f count =
   let fstarttime = Unix.gettimeofday () in
   let finfo = load_function_info faddr in
-  let _ =
-    pverbose [
-        STR "Analyze ";
-        faddr#toPretty;
-        STR " (started: ";
-        STR (time_to_string fstarttime);
-        STR ")";
-        NL] in
   let islarge = List.length f#get_blocks > 200 in
   let _ = translate_arm_assembly_function f in
   if arm_chif_system#has_arm_procedure faddr then
