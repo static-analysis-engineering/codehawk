@@ -85,6 +85,17 @@ let get_date_and_time () =
 let today = get_date_and_time ()
 
 
+let starttime = ref (Unix.gettimeofday ())
+
+
+let set_starttime (t: float) = starttime := t
+
+
+let timing () =
+  let diff = (Unix.gettimeofday ()) -. !starttime in
+  "[" ^ (Printf.sprintf "%f" diff) ^ "]"
+
+
 let make_date_and_time_string (tm:Unix.tm) =
   let yr = tm.tm_year + 1900 in
   let mn = tm.tm_mon + 1 in

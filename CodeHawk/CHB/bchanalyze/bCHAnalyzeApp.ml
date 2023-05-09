@@ -44,6 +44,7 @@ open BCHMetrics
 open BCHPreFileIO
 open BCHSystemInfo
 open BCHSystemSettings
+open BCHUtilities
 
 (* bchlibx86 *)
 open BCHAssemblyFunctions
@@ -353,13 +354,25 @@ let analyze_arm_function faddr f count =
   let fstarttime = Unix.gettimeofday () in
   let finfo = load_function_info faddr in
   let islarge = List.length f#get_blocks > 200 in
+  let _ =
+    pverbose [
+        STR (timing ());
+        STR "translate and analyze ";
+        faddr#toPretty;
+        STR " with ";
+        INT (List.length f#get_blocks);
+        STR " basic blocks ...";
+        NL] in
   let _ = translate_arm_assembly_function f in
   if arm_chif_system#has_arm_procedure faddr then
+    let _ = pverbose [STR (timing ()); STR "  record loop levels "; NL] in
     let _ = record_arm_loop_levels faddr in
     let proc = arm_chif_system#get_arm_procedure faddr in
     begin
       bb_invariants#reset;
+      pverbose [STR (timing ()); STR "  analyze with intervals ..."; NL];
       analyze_procedure_with_intervals proc arm_chif_system#get_arm_system;
+      pverbose [STR (timing ()); STR "  analyze with linear equalities ..."; NL];
       (if (List.mem faddr#to_hex_string !no_lineq) || islarge then
          begin
            chlog#add "skip linear equalities" (faddr#toPretty);
@@ -369,43 +382,52 @@ let analyze_arm_function faddr f count =
        else
          analyze_procedure_with_linear_equalities
            proc arm_chif_system#get_arm_system);
+      pverbose [STR (timing ()); STR "  analyze with value sets ..."; NL];
       analyze_procedure_with_valuesets proc arm_chif_system#get_arm_system;
-      (if islarge then pverbose [STR "  completed value sets"; NL]);
+      pverbose [STR (timing ()); STR "  analyze with designations ..."; NL];
       analyze_procedure_with_designations proc arm_chif_system#get_arm_system;
-      (if islarge then pverbose [STR "  completed procedure with designations"; NL]);
+      pverbose [STR (timing ()); STR "  analyze with reaching defs ..."; NL];
       analyze_procedure_with_reaching_defs proc arm_chif_system#get_arm_system;
-      (if islarge then pverbose [STR "  completed reaching defs"; NL]);      
+      pverbose [STR (timing ()); STR "  analyze with flag-reaching defs ..."; NL];
       analyze_procedure_with_flag_reaching_defs proc arm_chif_system#get_arm_system;
-      (if islarge then pverbose [STR "  completed flag reaching defs"; NL]);
       (if islarge then
          chlog#add "skip def-use" (faddr#toPretty)
        else
          analyze_procedure_with_def_use proc arm_chif_system#get_arm_system);
-      (if islarge then pverbose [STR "  completed def-use"; NL]);      
       (if islarge then
          chlog#add "skip def-use-high" (faddr#toPretty)
        else
          analyze_procedure_with_def_use_high proc arm_chif_system#get_arm_system);
-      (if islarge then pverbose [STR "  completed def-use-high"; NL]);      
+      pverbose [STR (timing ()); STR "  extract ranges ..."; NL];
       extract_ranges finfo bb_invariants#get_invariants;
+      pverbose [STR (timing ()); STR "  exract linear equalities ... "; NL];
       extract_linear_equalities finfo bb_invariants#get_invariants;
+      pverbose [STR (timing ()); STR "  extract value sets ..."; NL];
       extract_valuesets finfo bb_invariants#get_invariants;
+      pverbose [STR (timing ()); STR "  extract designations ..."; NL];
       extract_designations finfo bb_invariants#get_invariants;
+      pverbose [STR (timing ()); STR "  extract reaching defs ..."; NL];
       extract_reaching_defs finfo bb_invariants#get_invariants;
+      pverbose [STR (timing ()); STR "  extract flag-reaching defs ..."; NL];
       extract_flag_reaching_defs finfo bb_invariants#get_invariants;
+      pverbose [STR (timing ()); STR "  extract def-use ..."; NL];
       extract_def_use finfo bb_invariants#get_invariants;
+      pverbose [STR (timing ()); STR "  extract def-use-high ..."; NL];
       extract_def_use_high finfo bb_invariants#get_invariants;
       finfo#reset_invariants;
+      pverbose [STR (timing ()); STR "  save function info ..."; NL];
       save_function_info finfo;
       save_function_invariants finfo;
       save_function_var_invariants finfo;
       arm_analysis_results#record_results f;
       save_function_variables finfo;
+      pverbose [STR (timing ()); STR "  file-metrics ..."; NL];
       file_metrics#record_results
         faddr
         ((Unix.gettimeofday ()) -. fstarttime)
         (get_arm_memory_access_metrics f finfo)
-        (get_arm_cfg_metrics f finfo#env)
+        (get_arm_cfg_metrics f finfo#env);
+      pverbose [STR (timing ()); STR "  ===function "; faddr#toPretty; STR ":done ===="; NL]
     end
   else
     pr_debug [STR "Translation failed for "; faddr#toPretty; NL]

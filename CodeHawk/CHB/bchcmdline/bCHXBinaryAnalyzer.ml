@@ -53,6 +53,7 @@ open BCHPreFileIO
 open BCHSpecializations
 open BCHSystemInfo
 open BCHSystemSettings
+open BCHUtilities
 open BCHVersion
 open BCHXmlUtil
 
@@ -512,10 +513,10 @@ let main () =
       let _ = system_info#set_arm in
       let _ = system_info#initialize in
       let t = ref (Unix.gettimeofday ()) in
-      let _ = pr_debug [ STR "Load ARM file ..." ; NL ] in
+      let _ = pverbose [STR (timing ()); STR "load elf files ..."; NL] in
       let _ = load_elf_files () in
       let _ = List.iter parse_cil_file system_info#ifiles in
-      let _ = pr_debug [ STR "disassemble sections ..." ; NL ] in
+      let _ = pverbose [STR (timing ()); STR "disassemble sections ..." ; NL ] in
       let _ = disassemble_arm_sections () in
       let _ = disassembly_summary#record_disassembly_time
                 ((Unix.gettimeofday ()) -. !t) in
@@ -546,7 +547,7 @@ let main () =
         if !save_asm then
           begin
             let datarefs = get_arm_data_references () in
-            pverbose [STR "Saving asm file ..."; NL];
+            pverbose [STR (timing ()); STR "saving asm file ..."; NL];
             file_output#saveFile
               (get_asm_listing_filename ())
               (let instrs = !BCHARMAssemblyInstructions.arm_assembly_instructions in
@@ -554,29 +555,30 @@ let main () =
                     STR (instrs#toString ~datarefs ());
                     arm_callsites_records#toPretty;
                     arm_callsites_records#summary_to_pretty]));
-            pverbose [STR "Saving orphan file ..."; NL];
+            pverbose [STR (timing ()); STR "saving orphan file ..."; NL];
 	    file_output#saveFile
               (get_orphan_code_listing_filename ())
 	      (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
-            pverbose [STR "Saving duplicates file ..."; NL];
+            pverbose [STR (timing ()); STR "saving duplicates file ..."; NL];
             file_output#saveFile
               (get_duplicate_coverage_filename ())
               (STR (BCHARMAssemblyFunctions.arm_assembly_functions#duplicates_to_string));
-            (* pverbose [STR "Saving arm-assembly-instructions ..."; NL];
+            (* pverbose [STR (timing ()); STR "saving arm-assembly-instructions ..."; NL];
             save_arm_assembly_instructions (); *)
-            pverbose [STR "Saving system info ..."; NL];
+            pverbose [STR (timing ()); STR "saving system info ..."; NL];
             save_system_info ();
-            pverbose [STR "Saving arm-dictionary ..."; NL];
+            pverbose [STR (timing ()); STR "saving arm-dictionary ..."; NL];
             save_arm_dictionary ();
-            pverbose [STR "Saving interface-dictionary ..."; NL];
+            pverbose [STR (timing ()); STR "saving interface-dictionary ..."; NL];
             save_interface_dictionary ();
-            pverbose [STR "Saving bcdictionary ..."; NL];
+            pverbose [STR (timing ()); STR "saving bcdictionary ..."; NL];
             save_bcdictionary ();
-            pverbose [STR "Saving bdictionary ..."; NL];
+            pverbose [STR (timing ()); STR "saving bdictionary ..."; NL];
             save_bdictionary ()
           end;
-        pverbose [STR "Saving log files ..."; NL];
-        save_log_files "disassemble"
+        pverbose [STR (timing ()); STR "saving log files ..."; NL];
+        save_log_files "disassemble";
+        pverbose [STR (timing ()); STR "==Done=="; NL]
       end
                 
 
