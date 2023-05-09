@@ -1561,9 +1561,9 @@ class type arm_assembly_instructions_int =
     method get_instruction: doubleword_int -> arm_assembly_instruction_result
 
     (** [get_code_addresses_rev low high] returns the list of virtual addresses
-        bounded by [low] and [high] that hold valid instructions, in reverse
-        order. [low] defaults to [0x0], [high] defaults to [0xffffffff] *)
-    method get_code_addresses_rev:
+        bounded by [low] and [high] that hold valid instructions.
+        [low] defaults to [0x0], [high] defaults to [0xffffffff] *)
+    method get_code_addresses:
              ?low:doubleword_int
              -> ?high:doubleword_int
              -> unit
@@ -1648,7 +1648,7 @@ class type arm_assembly_block_int =
     (** [get_instructions_rev high] returns the list of instructions in this
         block from the instruction at the first address to the instruction
         at address [high] or the last address, whichever is smaller, in reverse
-        order. [high] defaults to the last address.*)
+        order. [high] defaults to the last address *)
     method get_instructions_rev:
              ?high:doubleword_int
              -> unit
