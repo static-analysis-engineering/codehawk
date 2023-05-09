@@ -79,13 +79,13 @@ object (self)
         self#get_first_address
       else
         high in
-    let addrsRev =
-      !arm_assembly_instructions#get_code_addresses_rev
+    let addrs =
+      !arm_assembly_instructions#get_code_addresses
         ~low:first_address ~high () in
     TR.tfold_list
       ~ok:(fun acc v -> v::acc)
       []
-      (List.map (fun a -> get_arm_assembly_instruction a) (List.rev addrsRev))
+      (List.map (fun a -> get_arm_assembly_instruction a) addrs)
 
   method get_instructions = List.rev (self#get_instructions_rev ())
 
@@ -101,7 +101,7 @@ object (self)
          (BCH_failure
             (LBLOCK [ STR "No instruction found at address "; va#toPretty ]))
 
-  method get_instruction_count = List.length (self#get_instructions_rev ())
+  method get_instruction_count = List.length (self#get_instructions)
 
   method get_bytes_as_hexstring =
     let s = ref "" in
@@ -113,8 +113,8 @@ object (self)
            ?(high=last_address)
            ?(reverse=false)
            (f:ctxt_iaddress_t -> arm_assembly_instruction_int -> unit) =
-    let instrs =
-      if reverse then self#get_instructions_rev () else self#get_instructions in
+    let instrs = self#get_instructions in
+    let instrs = if reverse then List.rev instrs else instrs in
     let instrs =
       if low#equal first_address then
         instrs
@@ -130,7 +130,7 @@ object (self)
 
   method includes_instruction_address (va:doubleword_int) =
     List.exists
-      (fun instr -> va#equal instr#get_address) (self#get_instructions_rev ())
+      (fun instr -> va#equal instr#get_address) self#get_instructions
 
   method has_conditional_return_instr =
     match self#get_context with
@@ -140,7 +140,7 @@ object (self)
            match instr#get_opcode with
            | Pop (_, _, rl, _) ->
               rl#includes_pc && is_opcode_conditional instr#get_opcode
-           | _ -> false) (self#get_instructions_rev ())
+           | _ -> false) self#get_instructions
     | _ -> false
 
   method is_returning =

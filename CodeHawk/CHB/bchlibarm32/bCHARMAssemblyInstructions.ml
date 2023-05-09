@@ -47,6 +47,7 @@ open BCHStreamWrapper
 open BCHStrings
 open BCHSystemInfo
 open BCHSystemSettings
+open BCHUtilities
 
 (* bchlibelf *)
 open BCHELFHeader
@@ -122,6 +123,7 @@ object (self)
           let newindices = (name, start, size, startindex) :: indices in
           let _ =
             pverbose [
+                STR (timing ());
                 STR "initialized ";
                 STR name;
                 STR " at start address: ";
@@ -157,6 +159,21 @@ object (self)
                  STR "Address: ";
                  addr#toPretty;
                  STR " could not be translated to backing array indices"]))
+
+  method get_range_indices
+           (startaddr: doubleword_int) (endaddr: doubleword_int): (int * int) list =
+    let (i_start, j_start) = self#get_indices startaddr in
+    let (i_end, j_end) = self#get_indices endaddr in
+    if i_start = i_end then
+      List.init ((j_end - j_start) + 1) (fun k -> (i_start, j_start + k))
+    else if (i_end - i_start) = 1 then
+      let lst1 = List.init (arrayLength - j_start) (fun k -> (i_start, j_start + k)) in
+      let lst2 = List.init (j_end + 1) (fun k -> (i_end, k)) in
+      lst1 @ lst2
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [STR "Indices spanning more than two arrays not yet supported"]))
 
   method get_all_indices_rev: (int * int) list =
     if (List.length allindices_rev) > 0 then
@@ -226,7 +243,10 @@ let initialize_instruction_sections
                size#toPretty]);
         initialize_instruction_section addr size;
         pverbose [
-            STR "initialized instructions for section "; STR name; NL]
+            STR (timing ());
+            STR "initialized instructions for section ";
+            STR name;
+            NL]
       end) sl
 
 
@@ -241,6 +261,30 @@ let get_instruction (addr: doubleword_int): arm_assembly_instruction_result =
   | BCH_failure p ->
      Error ["get_instruction: " ^ addr#to_hex_string]
 
+(* Return the addresses of valid instructions in the given address range (inclusive)
+ *)
+let get_range_instruction_addrs
+      (startaddr: doubleword_int) (endaddr: doubleword_int): doubleword_int list =
+  let result = ref [] in
+  begin
+    List.iter (fun (i, j) ->
+        try
+          let instr = arm_instructions.(i).(j) in
+          if instr#is_valid_instruction then
+            result := instr#get_address :: !result
+        with
+        | Invalid_argument _ ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Index out of bound with (";
+                     INT i;
+                     STR ", ";
+                     INT j;
+                     STR ")"])))
+      (address_translator#get_range_indices startaddr endaddr);
+    List.rev !result
+  end
 
 let get_all_instruction_addrs (): doubleword_int list =
   let result = ref [] in
@@ -308,6 +352,7 @@ object (self)
   method set_not_code (data_blocks: data_block_int list) =
     let _ =
       pverbose [
+          STR (timing ());
           STR "set_not_code ... with ";
           INT (List.length data_blocks);
           STR " data blocks";
@@ -318,9 +363,9 @@ object (self)
     let startaddr = db#get_start_address in
     let endaddr = db#get_end_address in
     let len = endaddr#value - startaddr#value in
-    let _ =
+    (* let _ =
       pverbose [
-          STR "set-not-code at "; startaddr#toPretty; STR " with length "; INT len; NL] in
+          STR "set-not-code at "; startaddr#toPretty; STR " with length "; INT len; NL] in *)
     let startinstr =
       make_arm_assembly_instruction
         startaddr true (NotCode (Some (DataBlock db))) "" in
@@ -462,22 +507,32 @@ object (self)
            end
         | _ -> ())
 
-  method get_code_addresses_rev ?(low=wordzero) ?(high=wordmax) () =
+  method get_code_addresses ?(low=wordzero) ?(high=wordmax) () =
+    (* let _ =
+      pverbose [
+          STR (timing ());
+          STR "get_code_addrs_rev: ";
+          low#toPretty; STR " - ";
+          high#toPretty;
+          STR " ...";
+          NL] in *)
     let high = if high#lt low then low else high in
-    let addrs_rev =
-      if List.length codeaddrs_rev > 0 then
-        codeaddrs_rev
-      else
-        let addrs = get_all_instruction_addrs () in
-        begin
-          codeaddrs_rev <- List.rev addrs;
-          codeaddrs <- addrs;
-          codeaddrs_rev
-        end in
-    List.filter (fun a -> low#le a && a#le high) addrs_rev
+    if low#equal wordzero && high#equal wordmax then
+      let addrs =
+        if List.length codeaddrs > 0 then
+          codeaddrs
+        else
+          let addrs = get_all_instruction_addrs () in
+          begin
+            codeaddrs <- addrs;
+            codeaddrs
+          end in
+      addrs
+    else
+      get_range_instruction_addrs low high
 
   method get_num_instructions =
-    (List.length (self#get_code_addresses_rev ()))
+    (List.length (self#get_code_addresses ()))
 
   method get_num_unknown_instructions =
     let n = ref 0 in
@@ -489,7 +544,11 @@ object (self)
     !n
 
   method itera (f:doubleword_int -> arm_assembly_instruction_int -> unit) =
-    iter_instructions (fun instr -> f instr#get_address instr)
+    begin
+      pverbose [STR (timing ()); STR "itera ..."; NL];
+      iter_instructions (fun instr -> f instr#get_address instr);
+      pverbose [STR (timing ()); STR "  itera: done"; NL]
+    end
 
   method write_xml (node:xml_element_int) =
     let bnode = ref (xmlElement "b") in
@@ -734,7 +793,8 @@ let initialize_arm_assembly_instructions
     initialize_instruction_sections sections;
     arm_assembly_instructions := new arm_assembly_instructions_t sections;
     !arm_assembly_instructions#set_not_code datablocks;
-    pverbose [STR "Finish initializing arm assembly instructions"; NL]
+    pverbose [
+        STR (timing ()); STR "Finish initializing arm assembly instructions"; NL]
   end
 
 

@@ -98,7 +98,8 @@ let disassemble_arm_section
   let mode = ref "arm" in
 
   let _ =
-    pverbose [STR "Disassemble section at "; sectionbase#toPretty; NL] in
+    pverbose [
+        STR (timing ()); STR "disassemble section at "; sectionbase#toPretty; NL] in
 
   let add_instruction
         (iaddr: doubleword_int) (opcode: arm_opcode_t) (bytes: string) =
@@ -173,6 +174,7 @@ let disassemble_arm_section
   try
     let _ =
       pverbose [
+          STR (timing ());
           STR "disassemble arm/thumb instructions: ";
           sectionbase#toPretty;
           STR "; size: ";
@@ -262,6 +264,7 @@ let disassemble_arm_section
            end
       done;
       pverbose [
+          STR (timing ());
           STR "  ...  finished disassembly of ";
           sectionbase#toPretty;
           STR "; size: ";
@@ -285,6 +288,7 @@ let sanitize_datablocks
       (headers: elf_section_header_int list) (datablocks: data_block_int list) =
   let _ =
     pverbose [
+        STR (timing ());
         STR "sanitize "; INT (List.length datablocks); STR " data blocks"; NL] in
   List.iter (fun db ->
       let dbstart = db#get_start_address in
@@ -340,6 +344,7 @@ let sanitize_datablocks
 
 
 let disassemble_arm_sections () =
+  let _ = set_starttime (Unix.gettimeofday ()) in
   let xSections = elf_header#get_executable_sections in
   let headers =
     List.sort (fun (h1, _) (h2, _) ->
@@ -471,7 +476,9 @@ let is_nr_call_instruction (instr:arm_assembly_instruction_int) =
 
 
 let collect_function_entry_points () =
-  let _ = pverbose [STR "Collect function entry points"; NL] in
+  let _ =
+    pverbose [
+        STR (timing ()); STR "collect function entry points ..."; NL] in
   let addresses = new DoublewordCollections.set_t in
   begin
     !arm_assembly_instructions#itera
@@ -489,7 +496,7 @@ let collect_function_entry_points () =
 
 
 let collect_call_targets () =
-  let _ = pverbose [STR "Collect call targets"; NL] in
+  let _ = pverbose [STR (timing ()); STR "collect call targets ..."; NL] in
   !arm_assembly_instructions#itera
     (fun va instr ->
       match instr#get_opcode with
@@ -503,7 +510,7 @@ let collect_call_targets () =
 
 
 let set_block_boundaries () =
-  let _ = pverbose [STR "Set block boundaries"; NL] in
+  let _ = pverbose [STR (timing ()); STR "set block boundaries ..."; NL] in
   let set_inlined_call (a: doubleword_int) =
     log_titer
       (mk_tracelog_spec
@@ -533,7 +540,7 @@ let set_block_boundaries () =
   let feps = functions_data#get_function_entry_points in
   let datablocks = system_info#get_data_blocks in
   begin
-    pverbose [STR "   record function entry points"; NL];
+    pverbose [STR (timing ()); STR "   record function entry points"; NL];
     (* -------------------------------- record function entry points -- *)
     List.iter
       (fun fe ->
@@ -547,7 +554,7 @@ let set_block_boundaries () =
                   STR "function entry point incorrect: ";
                   fe#toPretty])) feps;
 
-    pverbose [STR "   record end of data blocks"; NL];
+    pverbose [STR (timing ()); STR "   record end of data blocks"; NL];
     (* -------------------------------- record end of data blocks -- *)
     List.iter
       (fun db ->
@@ -561,7 +568,7 @@ let set_block_boundaries () =
                   STR "data block end address incorrect: ";
                   db#get_end_address#toPretty])) datablocks;
 
-    pverbose [STR "   record jumptables"; NL];
+    pverbose [STR (timing ()); STR "   record jumptables"; NL];
     (* --------------------------------------- record jumptables -- *)
     List.iter
       (fun jt ->
@@ -578,7 +585,7 @@ let set_block_boundaries () =
                     ~get_opt_function_name:(fun _ -> None)]))
       system_info#get_jumptables;
 
-    pverbose [STR "   record targets of unconditional jumps"; NL];
+    pverbose [STR (timing ()); STR "   record targets of unconditional jumps"; NL];
     (* ------------------- record targets of unconditional jumps -- *)
     !arm_assembly_instructions#itera
       (fun va instr ->
@@ -652,7 +659,7 @@ let set_block_boundaries () =
                   STR ": ";
                   p]));
 
-    pverbose [STR "   incorporate jump successors"; NL];
+    pverbose [STR (timing ()); STR "   incorporate jump successors"; NL];
     (* -------------------------- incorporate jump successors -- *)
     !arm_assembly_instructions#itera
       (fun va _ ->
@@ -664,7 +671,8 @@ let set_block_boundaries () =
              set_block_entry (va#add_int 4)
            end);
 
-    pverbose [STR "   add block entries due to previous block-ending"; NL];
+    pverbose [
+        STR (timing ()); STR "   add block entries due to previous block-ending"; NL];
     (* --------------- add block entries due to previous block-ending -- *)
     !arm_assembly_instructions#itera
       (fun va instr ->
@@ -706,7 +714,7 @@ let set_block_boundaries () =
         else
           ());
 
-    pverbose [STR "   set_block_entries: Done"; NL]
+    pverbose [STR (timing ()); STR "   set_block_entries: Done"; NL]
   end
 
 
@@ -758,7 +766,7 @@ let construct_assembly_function
 
 
 let record_call_targets_arm () =
-  let _ = pverbose [STR "Record call targets"; NL] in
+  let _ = pverbose [STR (timing ()); STR "record call targets ..."; NL] in
   arm_assembly_functions#itera
     (fun faddr f ->
       let finfo = get_function_info faddr in
@@ -816,7 +824,7 @@ let record_call_targets_arm () =
    (within the same basic block) that sets the flags
    ---------------------------------------------------------------------- *)
 let associate_condition_code_users () =
-  let _ = pverbose [STR "Associate condition code users"; NL] in
+  let _ = pverbose [STR (timing ()); STR "associate condition code users ..."; NL] in
   let set_condition
         (flags_used: arm_cc_flag_t list)
         (faddr: doubleword_int)
@@ -869,7 +877,9 @@ let construct_functions_arm () =
     system_info#initialize_function_entry_points collect_function_entry_points in
   let _ = collect_call_targets () in
   let _ = set_block_boundaries () in
+  let _ = pverbose [STR (timing ()); STR "collect callsites ..."; NL] in
   let _ = !arm_assembly_instructions#collect_callsites in
+  let _ = pverbose [STR (timing ()); STR "collect callsites: Done"; NL] in
   let _ =
     let nonrfns = arm_callsites_records#get_non_returning_functions in
     List.iter (fun faddr ->
@@ -880,6 +890,7 @@ let construct_functions_arm () =
   let newfns = ref fnentrypoints in
   let count = ref 0 in
   let addedfns = new DoublewordCollections.set_t in
+  let _= pverbose [STR (timing ()); STR "construct functions ..."; NL] in
   begin
     while (List.length !newfns) > 0 do
       begin
@@ -926,7 +937,13 @@ let construct_functions_arm () =
       end
     done;
 
+    let _ = pverbose [STR (timing ()); STR "construct functions: Done"; NL] in
     arm_assembly_functions#identify_dataref_datablocks;
+
+    let _ =
+      pverbose [
+          STR (timing ());
+          STR "add functions by preamble ..."; STR "; count: "; INT !count; NL] in
 
     List.iter (fun faddr ->
         begin
@@ -935,18 +952,21 @@ let construct_functions_arm () =
         end) arm_assembly_functions#add_functions_by_preamble;
 
     pverbose [
+        STR (timing ()); 
         STR "Function construction completed. ";
-        STR "Start identification of dataref blocks"; NL];
+        STR "; count: ";
+        INT !count;
+        STR ". Start identification of dataref blocks"; NL];
 
     arm_assembly_functions#identify_dataref_datablocks;
 
-    pverbose [STR "Identification of dataref blocks completed"; NL];
+    pverbose [STR (timing ()); STR "Identification of dataref blocks completed"; NL];
 
     record_call_targets_arm ();
     associate_condition_code_users ();
-    pverbose [STR "Construct functions: Done"; NL];
+    pverbose [STR (timing ()); STR "construct functions: Done"; NL];
 
     arm_assembly_functions#identify_datablocks;
 
-    pverbose [STR "Identify datablocks: Done"; NL];
+    pverbose [STR (timing ()); STR "identify datablocks: Done"; NL];
   end

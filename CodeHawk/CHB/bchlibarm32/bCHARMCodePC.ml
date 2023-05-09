@@ -37,6 +37,8 @@ open BCHBasicTypes
 open BCHFloc
 open BCHLibTypes
 open BCHLocation
+open BCHSystemSettings
+open BCHUtilities
 
 (* bchlibarm32 *)
 open BCHARMAssemblyInstruction

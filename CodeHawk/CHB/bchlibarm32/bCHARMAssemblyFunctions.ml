@@ -47,6 +47,7 @@ open BCHLocation
 open BCHMetricsHandler
 open BCHSystemInfo
 open BCHSystemSettings
+open BCHUtilities
 
 (* bchlibelf *)
 open BCHELFHeader
@@ -114,14 +115,16 @@ let create_ordering
     (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
 
   let rec aux fns cs result stats cycle counter =
-    let _ = pverbose [
-                STR "create_ordering_aux. fns: ";
-                INT (List.length fns);
-                STR "; calls: ";
-                INT (List.length cs);
-                STR "; result: ";
-                INT (List.length result);
-                NL] in
+    let _ =
+      pverbose [
+          STR (timing ());
+          STR "create_ordering_aux. fns: ";
+          INT (List.length fns);
+          STR "; calls: ";
+          INT (List.length cs);
+          STR "; result: ";
+          INT (List.length result);
+          NL] in
     if counter > max_cycles then
       begin
         ch_error_log#add
@@ -273,7 +276,8 @@ object (self)
 	calls :=
           (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
       let addresses = List.map (fun f -> f#get_address) self#get_functions in
-      let _ = pverbose [STR "Create ordering on functions ..."; NL] in
+      let _ =
+        pverbose [STR (timing ()); STR "Create ordering on functions ..."; NL] in
       let (orderedList,stats,cycle) = create_ordering addresses !calls in
       let _ =
         chlog#add "callgraph order"
@@ -285,7 +289,11 @@ object (self)
 
   method bottom_up_itera (f:doubleword_int -> arm_assembly_function_int -> unit) =
     let orderedList = self#get_bottomup_function_list in
-    let _ = pverbose [STR "Obtained bottom-up-ordered function list"; NL] in
+    let _ =
+      pverbose [
+          STR (timing ());
+          STR "  obtained bottom-up-ordered function list";
+          NL] in
     let orderedFunctions = List.map self#get_function_by_address orderedList in
     List.iter (fun afn -> f afn#get_address afn) orderedFunctions
       
@@ -506,6 +514,7 @@ object (self)
     dark ^ "\n\n" ^ functionstats
 
   method private collect_data_references =
+    let _ = pverbose [STR (timing ()); STR "collect data references ..."; NL] in
     let livetable = self#get_live_instructions in
     let filter = (fun i -> H.mem livetable i#get_address#index) in
     let table = H.create 11 in
@@ -552,6 +561,7 @@ object (self)
                    "VLDR from non-code-address"
                    (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
             | _ -> ());
+      pverbose [STR (timing ()); STR "  collect data references: done"; NL];
       table
     end
 
@@ -663,7 +673,9 @@ object (self)
     done
 
   method private identify_datablocks_aux =
+    let _ = pverbose [STR (timing ()); STR " get_live_instructions ..."; NL] in
     let table = self#get_live_instructions in
+    let _ = pverbose [STR (timing ()); STR " collect_data_references ..."; NL] in
     let datareftable = self#collect_data_references in
     let filter = (fun i -> not (H.mem table i#get_address#index)) in
     let dbstart = ref wordzero in
@@ -671,6 +683,9 @@ object (self)
     let notcode = ref false in
     let count = ref 0 in
     let fnremoved = ref 0 in
+    let _ =
+      pverbose [
+          STR (timing ()); STR "identify_datablocks_aux: "; INT !count; STR ", "; INT !fnremoved; NL] in
     begin
       !arm_assembly_instructions#itera
         (fun va instr ->
@@ -864,17 +879,18 @@ let get_export_metrics () = exports_metrics_handler#init_value
 
 
 let get_arm_disassembly_metrics () =
-  let _ = pverbose [STR "Compute coverage: "; NL] in
+  let _ = pverbose [STR (timing ()); STR "compute coverage ..."; NL] in
   let (coverage,overlap,alloverlap) = arm_assembly_functions#get_function_coverage in
-  let _ = pverbose [STR "Get number of instructions: "; NL] in
+  let _ = pverbose [STR (timing ()); STR "get number of instructions ... "; NL] in
   let instrs = !arm_assembly_instructions#get_num_instructions in
-  let _ = pverbose [STR "Get imports"; NL] in
+  let _ = pverbose [STR (timing ()); STR "get imports ..."; NL] in
   let imported_imports = [] in
   let loaded_imports = [] in
   let imports = imported_imports @ loaded_imports in
-  let _ = pverbose [STR "Get unknown instructions: "; NL] in
+  let _ = pverbose [STR (timing ()); STR "get unknown instructions ... "; NL] in
   let numunknown = !arm_assembly_instructions#get_num_unknown_instructions in
-  let _ = pverbose [STR "Found "; INT numunknown; STR " instructions"; NL] in
+  let _ =
+    pverbose [STR (timing ()); STR "  found "; INT numunknown; STR " instructions"; NL] in
   { dm_unknown_instrs = !arm_assembly_instructions#get_num_unknown_instructions;
     dm_instrs = instrs;
     dm_functions = arm_assembly_functions#get_num_functions;
