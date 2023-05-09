@@ -66,7 +66,7 @@ open BCHARMTypes
 
 
 let testname = "bCHARMJumptableTest"
-let lastupdated = "2023-01-06"
+let lastupdated = "2023-05-08"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -100,7 +100,6 @@ let jt_setup_thumb hexbase bytes: arm_jumptable_int TR.traceresult =
   let aggregate = ref None in
   let size = String.length bytestring in
   begin
-    ARMIS.initialize_arm_assembly_instructions (String.length bytes) base [];
     while ch#pos + 2 < size do
       let prevpos = ch#pos in
       let iaddr = base#add_int ch#pos in
@@ -132,7 +131,6 @@ let jt_setup_arm hexbase bytes: arm_jumptable_int TR.traceresult =
   let aggregate = ref None in
   let size = String.length bytestring in
   begin
-    ARMIS.initialize_arm_assembly_instructions (String.length bytes) base [];
     while ch#pos + 4 <= size do
       let prevpos = ch#pos in
       let iaddr = base#add_int ch#pos in
@@ -193,7 +191,7 @@ let tb_table_branch () =
     TS.new_testsuite (testname ^ "_tb_table_branch") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 1000;
+    ARMU.arm_instructions_setup (make_dw "0x10000") 0xc0000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
         let jtresult = jt_setup_thumb hexbase bytes in
         
@@ -231,7 +229,7 @@ let ldr_table_branch () =
     TS.new_testsuite (testname ^ "_ldr_table_branch") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 1000;
+    ARMU.arm_instructions_setup (make_dw "0x160000") 0x10000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
         let jtresult = jt_setup_thumb hexbase bytes in
         
@@ -270,7 +268,7 @@ let ldrls_jumptable () =
     TS.new_testsuite (testname ^ "_ldrls_jumptable") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 1000;
+    ARMU.arm_instructions_setup (make_dw "0x10000") 0x10000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
         let jtresult = jt_setup_arm hexbase bytes in
 
@@ -322,7 +320,7 @@ let bx_table_branch () =
     TS.new_testsuite (testname ^ "_bx_table_branch") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 1000;
+    ARMU.arm_instructions_setup (make_dw "0x60000") 0xa0000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
         let jtresult = jt_setup_thumb hexbase bytes in
         

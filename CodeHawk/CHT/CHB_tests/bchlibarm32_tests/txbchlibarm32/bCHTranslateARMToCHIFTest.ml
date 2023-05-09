@@ -86,7 +86,7 @@ open BCHARMTestSupport
 
 
 let testname = "bCHTranslateARMToCHIFTest"
-let lastupdated = "2023-03-20"
+let lastupdated = "2023-05-08"
 
 let x2p = xpr_formatter#pr_expr
 let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
@@ -136,7 +136,7 @@ let translate_store () =
     TS.new_testsuite (testname ^ "_translate_store") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 1000;
+    ARMU.arm_instructions_setup (make_dw "0x10000") 0x30000;
     List.iter (fun (title, sfaddr, bytes, expectedcmds) ->
 
         TS.add_simple_test
@@ -185,7 +185,7 @@ let thumb_chif_conditionxprs () =
     TS.new_testsuite (testname ^ "_thumb_chif_conditionxprs") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 1000;
+    ARMU.arm_instructions_setup (make_dw "0x4000") 0x10000;
     List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
 
         TS.add_simple_test
@@ -240,7 +240,7 @@ let thumb_instrxdata_conditionxprs () =
     TS.new_testsuite (testname ^ "_thumb_instrxdata_conditionxprs") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 1000;
+    ARMU.arm_instructions_setup (make_dw "0x4000") 0x10000;
     List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
 
         TS.add_simple_test

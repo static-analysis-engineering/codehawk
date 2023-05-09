@@ -85,7 +85,7 @@ open BCHARMTestSupport
 
 
 let testname = "bCHThumbITSequenceTest"
-let lastupdated = "2023-03-20"
+let lastupdated = "2023-05-08"
 
 let x2p = xpr_formatter#pr_expr
 let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
@@ -107,7 +107,7 @@ let show_function (faddr: doubleword_int) (fn: arm_assembly_function_int) =
   begin
     pr_debug [proc#toPretty; NL];
     pr_debug [fn#toPretty; NL]
-  end  
+  end
 
 
 (*
@@ -126,7 +126,7 @@ let thumb_it_predicates () =
     TS.new_testsuite (testname ^ "_thumb_it_predicates") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 100;
+    ARMU.arm_instructions_setup (make_dw "0xd000") 0x20000;
     List.iter (fun (title, cfaddr, ccaddr, bytes, expectedcond) ->
 
         TS.add_simple_test
@@ -184,7 +184,8 @@ let thumb_ite_predicates () =
     TS.new_testsuite (testname ^ "_thumb_ite_predicates") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 100;
+    ARMU.arm_instructions_setup (make_dw "0xd00") 0x30000;
+    (* ARMIS.initialize_arm_instructions 100; *)
     List.iter (fun (title, cfaddr, ccaddr, bytes, expectedcond) ->
 
         TS.add_simple_test

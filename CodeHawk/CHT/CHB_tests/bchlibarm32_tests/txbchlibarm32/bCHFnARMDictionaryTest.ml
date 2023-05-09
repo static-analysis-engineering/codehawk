@@ -85,7 +85,7 @@ open BCHARMTestSupport
 
 
 let testname = "bCHFnARMDictionaryTest"
-let lastupdated = "2023-03-21"
+let lastupdated = "2023-05-08"
 
 let x2p = xpr_formatter#pr_expr
 let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
@@ -152,7 +152,7 @@ let inlined_thumb_it_predicates () =
     TS.new_testsuite (testname ^ "_thumb_it_predicates") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 100;
+    ARMU.arm_instructions_setup (make_dw "0xd00") 0x60000;
     List.iter (fun (title, cfaddr, inlcfaddr, ccaddr, indices, bytes, expectedcond) ->
 
         TS.add_simple_test
