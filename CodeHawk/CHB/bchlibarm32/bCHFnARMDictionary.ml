@@ -1822,12 +1822,37 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | UnsignedSaturatingSubtract8 (_, rd, rn, rm) ->
+      | UnsignedSaturate (c, rd, imm, rn) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let ximm = imm#to_expr floc in
+         let rdefs = [get_rdef xrn] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[ximm; xrn]
+             ~rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | UnsignedSaturatingSubtract8 (c, rd, rn, rm) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
-         (["a:vxx"],
-          [xd#index_variable vrd; xd#index_xpr xrn; xd#index_xpr xrm])
+         let rdefs = [get_rdef xrn; get_rdef xrm] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrn; xrm]
+             ~rdefs
+             ~uses:[get_def_use vrd]
+             ~useshigh:[get_def_use_high vrd]
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | VectorAbsolute (c, _, dst, src) ->
          let vdst = dst#to_variable floc in

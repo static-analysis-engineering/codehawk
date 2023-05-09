@@ -398,6 +398,8 @@ object (self)
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
       | UnsignedMultiplyLong (s, c, rdlo, rdhi, rn, rm) ->
          (ctags c, [setb s; oi rdlo; oi rdhi; oi rn; oi rm])
+      | UnsignedSaturate (c, rd, imm, rn) ->
+         (ctags c, [oi rd; oi imm; oi rn])
       | UnsignedSaturatingSubtract8 (c, rd, rn, rm) ->
          (ctags c, [oi rd; oi rn; oi rm])
       | VectorAbsolute (c, dt, vd, vm) ->

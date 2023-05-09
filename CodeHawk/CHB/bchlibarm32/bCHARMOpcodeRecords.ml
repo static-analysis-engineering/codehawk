@@ -1043,6 +1043,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~writeback:s "UMULL" c [rdlo; rdhi; rn; rm])
     }
+  | UnsignedSaturate (c, rd, imm, rn) -> {
+      mnemonic = "USAT";
+      operands = [rd; imm; rn];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "USAT" c [rd; imm; rn])
+    }
   | UnsignedSaturatingSubtract8 (c, rd, rn, rm) -> {
       mnemonic = "UQSUB8";
       operands = [rd; rn; rm];
