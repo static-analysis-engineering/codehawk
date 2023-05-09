@@ -77,7 +77,7 @@ open BCHFunctionInfo
 
 
 let testname = "bCHARMAssemblyFunction"
-let lastupdated = "2023-01-03"
+let lastupdated = "2023-05-08"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -104,7 +104,7 @@ let conditional_return () =
     TS.new_testsuite (testname ^ "_conditional_return") lastupdated;
 
     SI.system_info#set_elf_is_code_address D.wordzero codemax;
-    ARMIS.initialize_arm_instructions 1000;
+    ARMU.arm_instructions_setup (make_dw "0x10000") 0x10000;
     List.iter (fun (title, sfaddr, bytes, expectedresult) ->
 
         TS.add_simple_test

@@ -72,14 +72,24 @@ let make_stream (s: string) =
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
 
 
+let arm_instructions_setup (base: doubleword_int) (size: int) =
+  let xsize = TR.tget_ok (int_to_doubleword size) in
+  let xsec = ("test", base, xsize) in
+  begin
+    initialize_arm_instructions [xsec];
+    initialize_arm_assembly_instructions [xsec] []
+  end
+
+
 let arm_function_setup
       (faddr: doubleword_int) (bytes: string): arm_assembly_function_int =
   let bytestring = write_hex_bytes_to_bytestring bytes in
   let ch = make_stream bytes in
   let size = String.length bytestring in
+  (* let xsize = TR.tget_ok (int_to_doubleword size) in *)
   begin
     ignore (functions_data#add_function faddr);
-    initialize_arm_assembly_instructions (String.length bytes) faddr [];
+    (* initialize_arm_assembly_instructions [("test", faddr, xsize)] []; *)
     while ch#pos + 4 < size do
       let prevpos = ch#pos in
       let iaddr = faddr#add_int ch#pos in
@@ -103,9 +113,10 @@ let thumb_function_setup
   let bytestring = write_hex_bytes_to_bytestring bytes in
   let ch = make_stream bytes in
   let size = String.length bytestring in
+  (* let xsize = TR.tget_ok (int_to_doubleword size) in *)
   begin
     ignore (functions_data#add_function faddr);
-    initialize_arm_assembly_instructions (String.length bytes) faddr [];
+    (* initialize_arm_assembly_instructions [("test", faddr, xsize)] []; *)
     while ch#pos + 2 < size do
       let prevpos = ch#pos in
       let iaddr = faddr#add_int ch#pos in

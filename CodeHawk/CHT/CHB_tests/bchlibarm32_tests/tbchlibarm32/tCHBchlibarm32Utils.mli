@@ -43,6 +43,9 @@ open BCHARMTypes
 val string_of_opcode: arm_opcode_t -> string
 
 
+val arm_instructions_setup: doubleword_int -> int -> unit
+
+
 val arm_function_setup: doubleword_int -> string -> arm_assembly_function_int
 
 
