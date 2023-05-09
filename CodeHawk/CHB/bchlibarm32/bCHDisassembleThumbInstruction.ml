@@ -2930,6 +2930,18 @@ let parse_t32_30_0
      (* BFI<c> <Rd>, <Rn>, #<lsb>, #<width> *)
      BitFieldInsert (cc, rd WR, rn RD, lsb, width, msb)
 
+  (* < 30>0< 28>0<rn>0<i><rd>i20<imm>   USAT - T1 *)
+  | 28 when i = 0 ->
+     let imm = TR.tget_ok (make_immediate false 4 (mkNumerical (b 4 0))) in
+     let immop = arm_immediate_op imm in
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let shimm = ((b 14 12) lsl 2) + (b 7 6) in
+     let (_, shift_n) = decode_imm_shift 0 shimm in
+     let rnreg = get_arm_reg (b 19 16) in
+     let rn = mk_arm_imm_shifted_register_op rnreg 0 shift_n in
+     (* USAT<c> <Rd>, #<imm>, <Rn[, <shift>] *)
+     UnsignedSaturate (cc, rd WR, immop, rn RD)
+
   (* < 30>0< 30>0<rn>0<i><rd>i20<wm1>   UBFX - T1 *)
   | 30 when i = 0 ->
      let lsb = (imm3 lsl 2) + (b 7 6) in
@@ -3871,6 +3883,12 @@ let parse_thumb32_31_1
      let rdhi = arm_register_op (get_arm_reg (b 11 8)) in
      let rm = arm_register_op (get_arm_reg (b 3 0)) in
      UnsignedMultiplyLong (false, cc, rdlo WR, rdhi WR, rn RD, rm RD)
+
+  (* < 31><3><11><rn><15><rd><15><rm>   UDIV -- T1 *)
+  | 27 when (b 15 12) = 15 && (b 7 4) = 15 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     (* UDIV<c> <Rd>, <Rn>, <Rm> *)
+     UnsignedDivide (cc, rd WR, rn RD, rm RD)
 
   (* < 31>01< 28><rn><rd><rd>0000<rm>   SMLAL - T1 *)
   | 28 when (b 7 4) = 0 ->

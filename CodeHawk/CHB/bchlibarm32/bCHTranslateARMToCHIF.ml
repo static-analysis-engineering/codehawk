@@ -2662,6 +2662,24 @@ let translate_arm_instruction
          ctxtiaddr in
      default (defcmds @ cmdslo @ cmdshi)
 
+  | UnsignedSaturate (c, rd, _, rn) ->
+     let floc = get_floc loc in
+     let vrd = rd#to_variable floc in
+     let xrn = rn#to_expr floc in
+     let cmds = floc#get_abstract_commands vrd () in
+     let usevars = get_register_vars [rn] in
+     let usehigh = get_use_high_vars [xrn] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vrd]
+         ~use:usevars
+         ~usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
   | UnsignedSaturatingSubtract8 (_, rd, _, _) ->
      let floc = get_floc loc in
      let vdst = rd#to_variable floc in
@@ -2687,15 +2705,135 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VectorAdd _ -> default []
+  | VectorAdd (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | VectorBitwiseBitClear _ -> default []
+  | VectorAddLong (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | VectorBitwiseNot _ -> default []
+  | VectorAddWide (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | VectorBitwiseOr _ -> default []
+  | VectorBitwiseAnd (c, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | VectorBitwiseOrNot _ -> default []
+  | VectorBitwiseBitClear (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorBitwiseExclusiveOr (c, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorBitwiseNot (c, _, dst, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorBitwiseOr (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorBitwiseOrNot (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorBitwiseSelect (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | VCompare (_, _, _, fdst, src1, src2) ->
      let floc = get_floc loc in
@@ -2868,7 +3006,70 @@ let translate_arm_instruction
          ctxtiaddr in
      default (defcmds @ cmds)
 
-  | VectorMultiply _ -> default []
+  | VectorMoveLong (c, _, dst, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorMoveNarrow (c, _, dst, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorMultiply (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorMultiplyAccumulateLong (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorMultiplyLong (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | VectorMultiplySubtract (c, _, dst, src1, src2) ->
      let floc = get_floc loc in
@@ -2889,13 +3090,96 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VectorNegate _ -> default []
+  | VectorNegate (c, _, dst, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | VectorReverseDoublewords _ -> default []
+  | VectorNegateMultiply (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | VectorReverseWords _ -> default []
+  | VectorNegateMultiplyAccumulate (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
-  | VectorReverseHalfwords _ -> default []
+  | VectorNegateMultiplySubtract (c, _, dst, _, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorReverseDoublewords (c, _, dst, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorReverseHalfwords (c, _, dst, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorReverseWords (c, _, dst, _) ->
+     let floc = get_floc loc in
+     let vdst = dst#to_variable floc in
+     let cmds = floc#get_abstract_commands vdst () in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vdst]
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | VectorShiftRightNarrow _ -> default []
 

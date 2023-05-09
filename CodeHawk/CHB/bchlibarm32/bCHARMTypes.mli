@@ -928,6 +928,11 @@ type arm_opcode_t =
       * arm_operand_int (* rdhi: destination 2 *)
       * arm_operand_int (* rn: source 1 *)
       * arm_operand_int (* rm: source 2 *)
+  | UnsignedSaturate of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* imm: source 1 *)
+      * arm_operand_int (* rn: source 2 *)
   | UnsignedSaturatingSubtract8 of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* rd: destination *)
