@@ -62,6 +62,12 @@ val make_date_and_time_string: Unix.tm -> string (* raises Invalid_argument *)
 
 val today:string
 
+
+(** utility for performance timing *)
+val set_starttime: float -> unit
+val timing: unit -> string
+
+
 exception No_file_found of string
 
 val initialize_activity_log: string -> unit
