@@ -34,6 +34,7 @@ open CHPretty
 open CHIndexTable
 open CHLogger
 open CHNumRecordTable
+open CHUtil
 open CHXmlDocument
 
 (* bchcil *)
@@ -51,6 +52,10 @@ module TR = CHTraceResult
 
 
 let bd = BCHDictionary.bdictionary
+
+
+let sanitize_function_name (s: string) =
+  string_replace '.' "_" s
 
 
 class function_data_t (fa:doubleword_int) =
@@ -102,7 +107,11 @@ object (self)
   method has_callsites = callsites > 0
 
   method add_name (s:string) =
-    if List.mem s names then () else names <- s::names
+    let s = sanitize_function_name s in
+    if List.mem s names then
+      ()
+    else
+      names <- s::names
 
   method set_class_info ~(classname:string) ~(isstatic:bool) =
     classinfo <- Some (classname,isstatic)
