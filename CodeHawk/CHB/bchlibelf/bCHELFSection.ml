@@ -93,7 +93,7 @@ object (self)
 
   method includes_VA (va:doubleword_int) =
     (* assume that at least 4 bytes must be available *)
-    wordzero#lt vaddr
+    wordzero#le vaddr
     && vaddr#le va
     && va#le (vaddr#add_int ((String.length s) - 4))
 
