@@ -682,7 +682,11 @@ let set_block_boundaries () =
           | Pop (_, _, rl, _) -> rl#includes_pc
           | Move (_, _, dst, _, _, _) ->
              dst#is_register && dst#get_register = ARPC
-          | Branch _ | BranchExchange _ -> true
+          | Branch _ | BranchExchange _ ->
+             (* Don't break up TBB/TBH and other jumptable sequences *)
+             (match instr#is_in_aggregate with
+              | Some dw -> not (get_aggregate dw)#is_jumptable
+              | _ -> true)
           | CompareBranchZero _ | CompareBranchNonzero _ -> true
           | LoadRegister (_, dst, _, _, _, _)
                when dst#is_register

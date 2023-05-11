@@ -349,6 +349,14 @@ object (self)
 
   method has_aggregate (va: doubleword_int): bool = H.mem aggregates va#value
 
+  method get_jumptables =
+    H.fold (fun va agg acc ->
+        match agg#kind with
+        | ARMJumptable jt ->
+           let xva = TR.tget_ok (int_to_doubleword va) in
+           (xva, jt) :: acc
+        | _ -> acc) aggregates []
+
   method set_not_code (data_blocks: data_block_int list) =
     let _ =
       pverbose [
@@ -855,3 +863,7 @@ let has_aggregate (iaddr: doubleword_int): bool =
 
 let get_aggregate (iaddr: doubleword_int): arm_instruction_aggregate_int =
   !arm_assembly_instructions#get_aggregate iaddr
+
+
+let get_arm_jumptables (): (doubleword_int * arm_jumptable_int) list =
+  !arm_assembly_instructions#get_jumptables

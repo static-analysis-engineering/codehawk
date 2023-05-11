@@ -620,9 +620,16 @@ let translate_arm_instruction
   let apsr_flagdefs =
     let flags_set = [APSR_N; APSR_Z; APSR_C; APSR_V] in
     List.map (fun f -> finfo#env#mk_flag_variable (ARMCCFlag f)) flags_set in
+  let in_jumptable_seq =
+    match instr#is_in_aggregate with
+    | Some dw -> (get_aggregate dw)#is_jumptable
+    | _ -> false in
 
   match instr#get_opcode with
 
+  | Branch _ | BranchExchange _ when in_jumptable_seq ->
+     (* nothing to add to the semantics at this point *)
+     default []
   | Branch (c, op, _)
     | BranchExchange (c, op) when is_cond_conditional c ->
      let thenaddr =

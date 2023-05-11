@@ -203,6 +203,9 @@ let cc_expr
     | (BitwiseAnd (true, ACCAlways, _, x, y, _), ACCEqual) ->
        XOp (XEq, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr])
 
+    | (LogicalShiftLeft (true, ACCAlways, _, x, y, _), ACCNonNegative) ->
+       XOp (XGe, [XOp (XLsl, [vu x; vu y]); zero_constant_expr])
+
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCNotEqual) ->
        XOp (XNe, [XOp (XMinus, [v x; v y]); zero_constant_expr])
 

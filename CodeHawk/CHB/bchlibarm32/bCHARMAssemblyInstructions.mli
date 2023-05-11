@@ -105,3 +105,7 @@ val has_aggregate: doubleword_int -> bool
 
     @raises [BCH_failure] if no aggregate is registered at [iaddr].*)
 val get_aggregate: doubleword_int -> arm_instruction_aggregate_int
+
+
+
+val get_arm_jumptables: unit -> (doubleword_int * arm_jumptable_int) list
