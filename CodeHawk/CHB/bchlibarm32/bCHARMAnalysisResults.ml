@@ -52,6 +52,7 @@ open BCHPreFileIO
 
 (* bchlibarm32 *)
 open BCHARMDictionary
+open BCHARMAssemblyInstructions
 open BCHARMDisassemblyUtils
 open BCHARMLoopStructure
 open BCHARMOpcodeRecords
@@ -148,16 +149,29 @@ object (self)
       node#appendChildren [bbNode; eeNode]
     end
 
+  method private write_xml_jumptables (node: xml_element_int) =
+    let jumptables = fn#get_jumptables in
+    node#appendChildren
+      (List.map (fun (va, jt) ->
+           let jtnode = xmlElement "jt" in
+           begin
+             jtnode#setAttribute "va" va#to_hex_string;
+             jt#write_xml jtnode;
+             jtnode
+           end) jumptables)
+
   method private write_xml (node:xml_element_int) =
     let append = node#appendChildren in
     let cNode = xmlElement "cfg" in
+    let jjNode = xmlElement "jump-tables" in
     let dNode = xmlElement "instr-dictionary" in
     let iiNode = xmlElement "instructions" in
     begin
       self#write_xml_cfg cNode;
+      self#write_xml_jumptables jjNode;
       self#write_xml_instructions iiNode;
       id#write_xml dNode;
-      append [cNode; dNode; iiNode]
+      append [cNode; dNode; iiNode; jjNode]
     end
 
   method save =

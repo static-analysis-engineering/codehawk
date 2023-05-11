@@ -77,7 +77,25 @@ object (self)
 
   method toCHIF (faddr: doubleword_int) = []
 
-  method write_xml (node: xml_element_int) = ()
+  method write_xml (node: xml_element_int) =
+    let append = node#appendChildren in
+    let set = node#setAttribute in
+    begin
+      append
+        (List.map (fun (tgtaddr, indices) ->
+             let tNode = xmlElement "tgt" in
+             begin
+               tNode#setAttribute "a" tgtaddr#to_hex_string;
+               tNode#setAttribute
+                 "cvs" (String.concat "," (List.map string_of_int indices));
+               tNode
+             end) self#indexed_targets);
+      set "default" self#default_target#to_hex_string;
+      set "start" self#start_address#to_hex_string;
+      (match self#end_address with
+       | Some dw -> set "end" dw#to_hex_string
+       | _ -> ())
+    end
 
   method toPretty =
     LBLOCK [

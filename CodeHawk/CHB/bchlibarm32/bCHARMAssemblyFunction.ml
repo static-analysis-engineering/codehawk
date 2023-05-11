@@ -51,6 +51,7 @@ open BCHUtilities
 
 (* bchlibarm32 *)
 open BCHARMAssemblyBlock
+open BCHARMAssemblyInstructions
 open BCHARMOpcodeRecords
 open BCHARMTypes
 
@@ -132,6 +133,20 @@ object (self)
 
   method get_function_md5 =
     byte_string_to_printed_string (Digest.string self#get_bytes_as_hexstring)
+
+  method get_jumptables =
+    let result = ref [] in
+    let _ =
+      self#iteri (fun _ _ instr ->
+          if instr#is_aggregate_anchor then
+            match instr#is_in_aggregate with
+            | Some dw ->
+               (match (get_aggregate dw)#kind with
+                | ARMJumptable jt ->
+                   result := (dw, jt) :: !result
+                | _ -> ())
+            | _ -> ()) in
+    !result
 
   method iter (f:arm_assembly_block_int -> unit) =
     List.iter (fun b -> f b) self#get_blocks

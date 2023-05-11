@@ -1574,6 +1574,8 @@ class type arm_assembly_instructions_int =
              -> unit
              -> doubleword_int list
 
+    method get_jumptables: (doubleword_int * arm_jumptable_int) list
+
     (** [get_next_valid_instruction_address va] returns the least virtual
         address strictly larger than [va] with a valid assembly instruction.
         If no such address exists, or if [va] is out-of-range, Error is
@@ -1708,6 +1710,7 @@ class type arm_assembly_function_int =
     method get_cfg_edges: (ctxt_iaddress_t * ctxt_iaddress_t) list
     method get_block: ctxt_iaddress_t -> arm_assembly_block_int
     method get_instruction: doubleword_int -> arm_assembly_instruction_int
+    method get_jumptables: (doubleword_int * arm_jumptable_int) list
     method get_bytes_as_hexstring: string
     method get_function_md5: string
     method get_instruction_count: int
