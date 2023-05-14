@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -258,9 +259,17 @@ let mk_lib_stub stub_name cms:JCHTGraph.taint_graph_t =
   let (fedges, bedges) = add_edges fsum in
   let empty_taint_set = new TaintNodeCollections.set_t in
 
-  new taint_graph_t stub_name nodes
-    empty_taint_set empty_taint_set empty_taint_set empty_taint_set
-    fedges bedges sources
+  new taint_graph_t
+    ~proc_name:stub_name
+    ~sig_nodes:nodes
+    ~fields:empty_taint_set
+    ~call_nodes:empty_taint_set
+    ~calls:empty_taint_set
+    ~var_nodes:empty_taint_set
+    ~edges:fedges
+    ~rev_edges:bedges
+    ~sources
+
 
 let get_lib_stub stub_name cmsig = 
   match lib_stub_table#get stub_name with 

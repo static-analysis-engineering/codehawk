@@ -10,7 +10,7 @@ JCHPRE = $(JCH)/jchpre
 JCHSYS = $(JCH)/jchsys
 JCHPOLY = $(JCH)/jchpoly
 
-CAMLC := ocamlopt -I str -I cmi -I cmx \
+CAMLC := ocamlopt -I +str -I +unix -I cmi -I cmx \
 	-I $(EXTLIB) \
 	-I $(ZARITHLIB) \
 	-I $(CHLIB)/cmi \

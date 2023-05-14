@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -163,11 +164,20 @@ let main () =
       let cInfo = app#get_class cn in
       begin
 	let _ = translate_base_system () in
-	JCHAnalysis.analyze_system 0 false 3 100 10 true 100 500 true;
+	JCHAnalysis.analyze_system
+          ~analysis_level:0
+          ~use_intervals:false
+          ~number_joins:3
+          ~max_poly_coeff:100
+          ~max_nb_constraints:10
+          ~use_time_limits:true
+          ~poly_analysis_time_limit:100
+          ~num_analysis_time_limit:500
+          ~use_overflow:true;
 	report_invariants cInfo
       end
     else
-      pr_debug [ STR "Class " ; STR !classname ; STR " could not be loaded" ; NL ]
+      pr_debug [STR "Class "; STR !classname; STR " could not be loaded"; NL]
   with
   | CHFailure p | JCH_failure p ->
     pr_debug [ STR "Error in processing class: " ; p ; NL ]

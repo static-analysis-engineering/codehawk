@@ -12,7 +12,7 @@ JCHFEA = $(JCH)/jchfeatures
 JCHSYS = $(JCH)/jchsys
 JCHPOLY= $(JCH)/jchpoly
 
-DEP_INCLUDES := -I cmi -I cmx \
+DEP_INCLUDES := -I +str -I +unix -I cmi -I cmx \
 	-I $(EXTLIB) \
 	-I $(ZARITHLIB) \
 	-I $(CHLIB)/cmi \

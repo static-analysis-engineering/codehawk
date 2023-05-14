@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -144,6 +145,7 @@ let get_assumptions (cn:class_name_int) =
   else
     begin save_xml_method_assumptions_file cn ; [] end
 
+
 let main () =
   try
     let _ = read_args () in
@@ -159,19 +161,19 @@ let main () =
       begin
 	let _ = translate_base_system  () in
 	JCHAnalysis.analyze_system 
-	  !analysis_level
-	  false                 (* use_intervals *)
-	  !joins 
-	  !maxcoeff
-	  !maxconstraints 
-	  false                 (* use_time_limits *)
-	  100                   (* poly_analysis_time *)
-	  500                   (* num_analysis_time *)
-	  !use_overflow;
+	  ~analysis_level:!analysis_level
+	  ~use_intervals:false
+	  ~number_joins:!joins 
+	  ~max_poly_coeff:!maxcoeff
+	  ~max_nb_constraints:!maxconstraints 
+	  ~use_time_limits:false
+	  ~poly_analysis_time_limit:100
+	  ~num_analysis_time_limit:500
+	  ~use_overflow:!use_overflow;
 	report_invariants starttime cInfo ;
       end
     else
-      pr_debug [ STR "Class " ; STR !classname ; STR " could not be loaded" ; NL ]
+      pr_debug [STR "Class "; STR !classname; STR " could not be loaded"; NL]
   with
   | CHFailure p | JCH_failure p ->
     pr_debug [ STR "Error in processing class: " ; p ; NL ]

@@ -5,7 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -537,12 +537,17 @@ let is_taint_origin_subset (s1:taint_origin_set_int) (s2:taint_origin_set_int) =
   let t2 = s2#get_origins in
   List.for_all (fun x1 -> List.mem x1 t2) t1
 
+
 let add_tainted_variable tvar index =
   if H.mem tainted_variables index then
     H.find tainted_variables index
   else
-    let v = new tainted_variable_t index tvar in
-    begin H.add tainted_variables index v ; v end
+    let v = new tainted_variable_t ~index ~data:tvar in
+    begin
+      H.add tainted_variables index v;
+      v
+    end
+
 
 let get_taint_origin index =
   if H.mem taint_origins index then

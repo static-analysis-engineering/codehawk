@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -478,12 +479,20 @@ end
   
 let make_class_info (c:java_class_or_interface_int) =
   let info_type =
-    if c#is_interface then InterfaceType c
-    else if c#is_abstract then AbstractClass c
-    else ConcreteClass c in
+    if c#is_interface
+    then
+      InterfaceType c
+    else if c#is_abstract then
+      AbstractClass c
+    else
+      ConcreteClass c in
   new class_info_t ~class_info_type:info_type
-    
-let make_class_stub_info (c:class_summary_int) = new class_info_t (StubbedClass c)
 
-let make_missing_class_info (cn:class_name_int)  = new class_info_t (MissingClass cn)
+
+let make_class_stub_info (c:class_summary_int) =
+  new class_info_t ~class_info_type:(StubbedClass c)
+
+
+let make_missing_class_info (cn:class_name_int)  =
+  new class_info_t ~class_info_type:(MissingClass cn)
   
