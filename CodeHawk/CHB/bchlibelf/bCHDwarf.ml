@@ -77,7 +77,7 @@ let decode_debug_attribute_value
     | DW_FORM_data4 ->
        (match attr with
         | DW_AT_location ->
-           let kind = secoffset_kind attr in
+           (* let kind = secoffset_kind attr in *)
            let offset = ch#read_doubleword in
            let loclist = get_loclist offset#index in
            DW_ATV_FORM_sec_offset_loclist (offset, loclist)

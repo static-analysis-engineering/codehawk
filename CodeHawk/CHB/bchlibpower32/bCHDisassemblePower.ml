@@ -89,7 +89,7 @@ let disassemble
       (x: string) =
   let size = String.length x in
   let add_instr (position: int) (opcode: pwr_opcode_t) (bytes: string) =
-    let index = (position + displacement) in
+    (* let index = (position + displacement) in *)
     let addr = base#add_int position in
     let instr = make_pwr_assembly_instruction addr is_vle opcode bytes in
     begin
@@ -317,13 +317,13 @@ let collect_call_targets () =
 
 let set_block_boundaries () =
   let _ = pverbose [STR "Set block boundaries"; NL] in
-  let set_inlined_call (a: doubleword_int) =
+  (* let set_inlined_call (a: doubleword_int) =
     log_titer
       (mk_tracelog_spec
          ~tag:"set_block_boundaries"
          ("set_inlined_call:" ^ a#to_hex_string))
       (fun instr -> instr#set_inlined_call)
-      (get_pwr_assembly_instruction a) in
+      (get_pwr_assembly_instruction a) in *)
   let set_block_entry a =
     let instr =
       fail_tvalue
@@ -535,7 +535,7 @@ let construct_functions_pwr () =
           try
             begin
               count := !count + 1;
-              let newfns = construct_assembly_function !count faddr in
+              (* let newfns = construct_assembly_function !count faddr in *)
               ()
             end
           with
