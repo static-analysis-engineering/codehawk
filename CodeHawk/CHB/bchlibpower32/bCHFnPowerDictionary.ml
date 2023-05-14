@@ -320,7 +320,7 @@ object (self)
              floc#f#env#mk_pwr_gp_register_variable
              (List.init (List.length args) (fun i -> i + 3)) in
          let regrdefs = List.map (fun r -> get_rdef (XVar r)) regargs in
-         let vrd = (pwr_gp_register_op 3 WR)#to_variable floc in
+         let vrd = (pwr_gp_register_op ~index:3 ~mode:WR)#to_variable floc in
          let rv = floc#env#mk_return_value floc#cia in
          let (tagstring, args) =
            mk_instrx_data

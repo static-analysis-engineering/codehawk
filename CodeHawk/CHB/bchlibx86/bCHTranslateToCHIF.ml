@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labss LLC
+   Copyright (c) 2021-2023 Aarno Labss LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1958,8 +1958,12 @@ object (self)
     let rec aux commands =
       let (nodes,edges,newCommands) =
 	try
-	  translate_instruction function_location codePC blockLabel 
-	    exit_label commands
+	  translate_instruction
+            ~function_location
+            ~code_pc:codePC
+            ~block_label:blockLabel 
+	    ~exit_label
+            ~commands
 	with
 	| Invocation_error s ->
 	  begin
@@ -2064,7 +2068,7 @@ object (self)
     let _ = code_graph#add_edge entryLabel firstInstructionLabel in
     let cfg = code_graph#to_cfg entryLabel exitLabel in
     let body = LF.mkCode [ CFG (procName, cfg) ] in
-    let proc = LF.mkProcedure procName [] [] scope body in
+    let proc = LF.mkProcedure procName ~signature:[] ~bindings:[] ~scope ~body:body in
     (* let _ = pverbose [ proc#toPretty ; NL ] in *)
     chif_system#add_procedure proc
 

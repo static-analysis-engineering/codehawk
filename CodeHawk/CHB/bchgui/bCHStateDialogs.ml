@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -189,7 +189,7 @@ let is_external_base_var (floc:floc_int) (name:symbol_t) =
   let env = floc#f#env in
   let baseVariable = env#varmgr#get_variable_by_index name#getSeqNumber in
   match baseVariable#get_denotation with
-  | MemoryVariable (memref,memoffset) ->
+  | MemoryVariable (_, memref, memoffset) ->
      let memref = env#varmgr#memrefmgr#get_memory_reference memref in
       begin
 	match memref#get_base with
@@ -224,7 +224,7 @@ let base_offset_to_address_pretty
     LBLOCK [ STR "SF:" ; pp_offset ]
   | AuxiliaryVariable (InitialRegisterValue (CPURegister Esp,1)) -> 
     LBLOCK [ STR "SF1:" ; pp_offset ]
-  | MemoryVariable (memref,memoffset) ->
+  | MemoryVariable (_, memref, memoffset) ->
      (match memoffset with
       | ConstantOffset (n,_)  when n#equal numerical_zero ->
          (STR base#getBaseName)

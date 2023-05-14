@@ -234,7 +234,7 @@ let read_xml_jumptable (node:xml_element_int) =
   let table =
     TR.tbind
       ~msg:("BCHJumpTable.read_xml_jumptable")
-      (fun saddr -> make_jumptable saddr targets ())
+      (fun saddr -> make_jumptable ~start_address:saddr ~targets ())
       startAddress in
   TR.tbind (fun jt ->
       begin
@@ -350,7 +350,7 @@ let find2_jumptable is_code_address ch len start_address target1 =
             (mk_tracelog_spec ~tag:"find2_jumptable" start_address#to_hex_string)
             (fun jt -> Some jt)
             None
-	    (make_jumptable start_address (List.rev !targets) ())
+	    (make_jumptable ~start_address ~targets:(List.rev !targets) ())
 	end
       else None
     else None

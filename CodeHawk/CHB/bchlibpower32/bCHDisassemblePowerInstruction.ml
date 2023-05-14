@@ -55,10 +55,11 @@ let parse_opcode_4
 
   (* floating-point general pattern:
      <   4>< rd>< ra>< rb><----i---->
-   *)
+
   let rd = pwr_gp_register_op ~index:(b 6 10) in
   let ra = pwr_gp_register_op ~index:(b 11 15) in
   let rb = pwr_gp_register_op ~index:(b 16 20) in
+   *)
   let opc = b 21 31 in
   match opc with
   | _ ->

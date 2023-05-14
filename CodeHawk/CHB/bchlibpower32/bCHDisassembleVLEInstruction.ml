@@ -586,48 +586,48 @@ let parse_e_D8_form
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lbzu" RD in
-     LoadByteZero (VLE32, true, rd WR, ra RW, mem)
+     LoadByteZero (VLE32, true, rd ~mode:WR, ra ~mode:RW, mem)
 
   (* < 1>10< rd>< ra>< 0>< 2><--d8-->    e_lwzu *)
   | (0, 2) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lwzu" RD in
-     LoadWordZero (VLE32, true, rd WR, ra RW, mem)
+     LoadWordZero (VLE32, true, rd ~mode:WR, ra ~mode:RW, mem)
 
   (* < 1>10< rs>< ra>< 0>< 4><--d8-->    e_stbu *)
   | (0, 4) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_stbu" WR in
-     StoreByte (VLE32, true, rs RD, ra RW, mem)
+     StoreByte (VLE32, true, rs ~mode:RD, ra ~mode:RW, mem)
 
   (* < 1>10< rs>< ra>< 0>< 6><--d8-->    e_stwu *)
   | (0, 6) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_stwu" WR in
-     StoreWord (VLE32, true, rs RD, ra RW, mem)
+     StoreWord (VLE32, true, rs ~mode:RD, ra ~mode:RW, mem)
 
   (* < 1>10< rd>< ra>< 0>< 8><--d8-->    e_lmw *)
   | (0, 8) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lmw" RD in
-     LoadMultipleWord (VLE32, rd RW, ra RD, mem)
+     LoadMultipleWord (VLE32, rd ~mode:RW, ra ~mode:RD, mem)
 
   (* < 1>10< rs>< ra>< 0>< 9><--d8-->    e_stmw *)
   | (0, 9) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_stmw" WR in
-     StoreMultipleWord (VLE32, rs RD, ra RD, mem)
+     StoreMultipleWord (VLE32, rs ~mode:RD, ra ~mode:RD, mem)
 
   (* < 1>10<  0>< ra>< 1>< 0><--d8-->    e_lmvgprw *)
   | (1, 0) when (b 6 10) = 0 ->
      let ra = pwr_gp_register_op ~index:ra_index in
      let mem = mk_mem "e_lmvgprw" WR in
-     LoadMultipleVolatileGPRWord (VLE32, ra RD, mem)
+     LoadMultipleVolatileGPRWord (VLE32, ra ~mode:RD, mem)
 
   (* < 1>10<  1>< ra>< 1>< 0><--d8-->    e_lmvsprw *)
   | (1, 0) when (b 6 10) = 1 ->
@@ -638,7 +638,13 @@ let parse_e_D8_form
      let ctr = pwr_special_register_op ~reg:PowerCTR in
      let xer = pwr_special_register_op ~reg:PowerXER in
      LoadMultipleVolatileSPRWord (
-         VLE32, ra RD, mem, cr WR, lr WR, ctr WR, xer WR)
+         VLE32,
+         ra ~mode:RD,
+         mem,
+         cr ~mode:WR,
+         lr ~mode:WR,
+         ctr ~mode:WR,
+         xer ~mode:WR)
 
   (* < 1>10<  4>< ra>< 1>< 0><--d8-->    e_lmvsrrw *)
   | (1, 0) when (b 6 10) = 4 ->
@@ -646,13 +652,14 @@ let parse_e_D8_form
      let mem = mk_mem "e_lmvsrrw" WR in
      let srr0 = pwr_special_register_op ~reg:PowerSRR0 in
      let srr1 = pwr_special_register_op ~reg:PowerSRR1 in
-     LoadMultipleVolatileSRRWord (VLE32, ra RD, mem, srr0 RD, srr1 RD)
+     LoadMultipleVolatileSRRWord
+       (VLE32, ra ~mode:RD, mem, srr0 ~mode:RD, srr1 ~mode:RD)
 
   (* < 1>10<  0>< ra>< 1>< 1><--d8-->    e_stmvgprw *)
   | (1, 1) when (b 6 10) = 0 ->
      let ra = pwr_gp_register_op ~index:ra_index in
      let ea = mk_mem "e_stmvgprw" WR in
-     StoreMultipleVolatileGPRWord (VLE32, ra RD, ea)
+     StoreMultipleVolatileGPRWord (VLE32, ra ~mode:RD, ea)
 
   (* < 1>10<  1>< ra>< 1>< 1><--d8-->    e_stmvsprw *)
   | (1, 1) when (b 6 10) = 1 ->
@@ -663,7 +670,7 @@ let parse_e_D8_form
      let ctr = pwr_special_register_op ~reg:PowerCTR in
      let xer = pwr_special_register_op ~reg:PowerXER in
      StoreMultipleVolatileSPRWord (
-         VLE32, ra RD, mem, cr RD, lr RD, ctr RD, xer RD)
+         VLE32, ra ~mode:RD, mem, cr ~mode:RD, lr ~mode:RD, ctr ~mode:RD, xer ~mode:RD)
 
   (* < 1>10<  4>< ra>< 1>< 1><--d8-->    e_stmvsrrw *)
   | (1, 1) when (b 6 10) = 4 ->
@@ -671,7 +678,8 @@ let parse_e_D8_form
      let mem = mk_mem "e_stmvsrrw" WR in
      let srr0 = pwr_special_register_op ~reg:PowerSRR0 in
      let srr1 = pwr_special_register_op ~reg:PowerSRR1 in
-     StoreMultipleVolatileSRRWord (VLE32, ra RD, mem, srr0 RD, srr1 RD)
+     StoreMultipleVolatileSRRWord
+       (VLE32, ra ~mode:RD, mem, srr0 ~mode:RD, srr1 ~mode:RD)
 
   | _ ->
      NotRecognized (

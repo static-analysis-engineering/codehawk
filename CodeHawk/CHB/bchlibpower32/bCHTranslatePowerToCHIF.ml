@@ -292,6 +292,7 @@ let translate_pwr_instruction
     List.map (fun (v, fv) -> ASSERT (EQ (v, fv)))
       (finfo#get_test_variables ctxtiaddr) in
 
+  (*
   let rewrite_expr floc (x: xpr_t): xpr_t =
     let xpr = floc#inv#rewrite_expr x floc#env#get_variable_comparator in
     let rec expand x =
@@ -301,6 +302,7 @@ let translate_pwr_instruction
       | XOp (op,l) -> XOp (op, List.map expand l)
       | _ -> x in
     simplify_xpr (expand xpr) in
+   *)
 
   let floc = get_floc loc in
 
@@ -946,7 +948,7 @@ object (self)
     let _ = codegraph#add_edge entrylabel firstlabel in
     let cfg = codegraph#to_cfg entrylabel exitlabel in
     let body = LF.mkCode [CFG (procname, cfg)] in
-    let proc = LF.mkProcedure procname [] [] scope body in
+    let proc = LF.mkProcedure procname ~signature:[] ~bindings:[] ~scope ~body in
     pwr_chif_system#add_pwr_procedure proc
 
 end

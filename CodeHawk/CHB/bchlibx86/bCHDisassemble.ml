@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -381,7 +381,10 @@ let identify_data_blocks is_code_address header =
                                  add_data_block instr nextInstr offset jtoffset jt
 			      | _ ->
 			         match create_jumptable
-                                         jtoffset sectionVA is_code_address codestring with
+                                         ~base:jtoffset
+                                         ~section_base:sectionVA
+                                         ~is_code_address
+                                         ~section_string:codestring with
 			         | Some jt ->
 			            begin
 				      system_info#add_jumptable jt ;

@@ -68,7 +68,7 @@ let get_successors
        ~tag:"get_successors"
        ("faddr:" ^ faddr#to_hex_string ^ ", iaddr: " ^ iaddr#to_hex_string))
     (fun instr ->
-      let get_next_iaddr = get_next_valid_instruction_address in
+      (* let get_next_iaddr = get_next_valid_instruction_address in *)
       let opcode = instr#get_opcode in
       let next () =
         log_tfold_default
@@ -79,14 +79,14 @@ let get_successors
           []
           (get_next_valid_instruction_address iaddr) in
 
-      let next_from (va: doubleword_int) =
+      (* let next_from (va: doubleword_int) =
         log_tfold_default
           (mk_tracelog_spec
              ~tag:"get_successors:next_from"
              ("faddr:" ^ faddr#to_hex_string ^ ", iaddr:" ^ iaddr#to_hex_string))
           (fun a -> [a])
           []
-          (get_next_valid_instruction_address va) in
+          (get_next_valid_instruction_address va) in *)
 
       let succ =
         match opcode with
@@ -115,7 +115,7 @@ let get_successors
              if !pwr_assembly_instructions#is_code_address va then
                true
              else
-               let loc = make_location_by_address faddr va in
+               (* let loc = make_location_by_address faddr va in *)
                false) succ))
     []
     (get_pwr_assembly_instruction iaddr)
@@ -132,9 +132,9 @@ let construct_pwr_assembly_block
 
   let newfnentries = new DoublewordCollections.set_t in
 
-  let set_block_entry (a: doubleword_int) =
+  (* let set_block_entry (a: doubleword_int) =
     TR.titer (fun instr ->
-        instr#set_block_entry) (get_pwr_assembly_instruction a) in
+        instr#set_block_entry) (get_pwr_assembly_instruction a) in *)
 
   let get_instr = get_pwr_assembly_instruction in
   let has_next_instr =
@@ -182,11 +182,11 @@ let construct_pwr_assembly_block
       (* dead end, no more instructions *)
       (None, va, []) in
 
-  let binstr =
+  (* let binstr =
     fail_tvalue
       (trerror_record
          (LBLOCK [STR "get_successors: "; baddr#toPretty]))
-      (get_instr baddr) in
+      (get_instr baddr) in *)
 
   let (succ, lastaddr, inlinedblocks) =
     if system_info#is_nonreturning_call faddr baddr then
