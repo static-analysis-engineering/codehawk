@@ -1,6 +1,6 @@
 ZARITHLIB = $(shell ocamlfind query zarith)
 
-CAMLC := ocamlopt -I $(ZARITHLIB) -I str -I cmi -I cmx 
+CAMLC := ocamlopt -I $(ZARITHLIB) -I str -I +unix -I cmi -I cmx 
 CAMLLINK := ocamlopt
 CAMLDOC := ocamldoc
 

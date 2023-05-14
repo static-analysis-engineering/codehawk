@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -484,7 +486,9 @@ object (self: 'a)
        (match n#getCst with
 	| NUM_CST c -> 
 	   [new numerical_constraint_t
-                [(numerical_one, new numerical_factor_t v)] c LINEAR_EQ]
+              ~factors:[(numerical_one, new numerical_factor_t v)]
+              ~constant:c
+              ~kind:LINEAR_EQ]
 	| _ -> []
        )
     | INTERVAL_VAL i ->
@@ -492,39 +496,51 @@ object (self: 'a)
        (match i#getMin#getBound with
 	| NUMBER n ->
 	   [new numerical_constraint_t
-                [(numerical_one#neg, f)] n#neg LINEAR_INEQ]
+              ~factors:[(numerical_one#neg, f)]
+              ~constant:n#neg
+              ~kind:LINEAR_INEQ]
 	| _ -> [])
        @ 	    
 	 (match i#getMax#getBound with
 	  | NUMBER n ->
 	     [new numerical_constraint_t
-                  [(numerical_one, f)] n LINEAR_INEQ]
+                ~factors:[(numerical_one, f)]
+                ~constant:n
+                ~kind:LINEAR_INEQ]
 	  | _ -> [])	      
     | TINTERVAL_VAL i ->
        let f = new numerical_factor_t v in
        (match i#getMin#getBound with
 	| NUMBER n ->
 	   [new numerical_constraint_t
-                [(numerical_one#neg, f)] n#neg LINEAR_INEQ]
+              ~factors:[(numerical_one#neg, f)]
+              ~constant:n#neg
+              ~kind:LINEAR_INEQ]
 	| _ -> [])
        @ 	    
 	 (match i#getMax#getBound with
 	  | NUMBER n ->
 	     [new numerical_constraint_t
-                  [(numerical_one, f)] n LINEAR_INEQ]
+                ~factors:[(numerical_one, f)]
+                ~constant:n
+                ~kind:LINEAR_INEQ]
 	  | _ -> [])	      
     | STRIDED_INTERVAL_VAL i ->                      (* This ignores the stride *)
        let f = new numerical_factor_t v in
        (match i#getMin#getBound with
 	| NUMBER n ->
 	   [new numerical_constraint_t
-                [(numerical_one#neg, f)] n#neg LINEAR_INEQ]
+              ~factors:[(numerical_one#neg, f)]
+              ~constant:n#neg
+              ~kind:LINEAR_INEQ]
 	| _ -> [])
        @ 	    
 	 (match i#getMax#getBound with
 	  | NUMBER n ->
 	     [new numerical_constraint_t
-                  [(numerical_one, f)] n LINEAR_INEQ]
+                ~factors:[(numerical_one, f)]
+                ~constant:n
+                ~kind:LINEAR_INEQ]
 	  | _ -> [])	      
     | _ -> []
          

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -181,6 +183,7 @@ module FactorCollections :
       end
     val set_of_list : ObjectSet.elt list -> set_t
   end
+
 
 class numerical_constraint_t :
   factors:(CHNumerical.numerical_t * FactorCollections.ObjectMap.key) list ->
