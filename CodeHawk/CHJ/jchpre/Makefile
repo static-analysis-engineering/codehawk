@@ -7,7 +7,7 @@ CHLIB  = $(CODEHAWK)/CH/chlib
 CHUTIL = $(CODEHAWK)/CH/chutil
 JCHLIB = $(JCH)/jchlib
 
-CAMLC := ocamlopt -I str -I cmi -I cmx \
+CAMLC := ocamlopt -I +str -I +unix -I cmi -I cmx \
 	-I $(EXTLIB) \
 	-I $(ZIPLIB) \
 	-I $(CHLIB)/cmi \

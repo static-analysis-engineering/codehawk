@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -823,7 +824,7 @@ let poly_op_semantics
 	      invariant#analyzeFwd (mk_dom_op operation)
 	    else 
 	      JCHAnalysisUtils.jch_op_semantics
-                invariant stable fwd_direction context operation
+                ~invariant ~stable ~fwd_direction ~context ~operation
 	| OpArrayLoad _
         | OpArrayStore _ 
 	| OpNewArray _ 
@@ -831,7 +832,7 @@ let poly_op_semantics
 	| OpDiv Float
 	| OpDiv Double 
 	| OpRem _ 
-	| OpGetStatic _ 
+	| OpGetStatic _
 	| OpGetField _ 
 	| OpAMultiNewArray _
 	| OpArrayLength 
@@ -924,7 +925,7 @@ let poly_op_semantics
 	      set_write_vars_to_top invariant  	    
 	| _ -> 
 	   JCHAnalysisUtils.jch_op_semantics
-             invariant stable fwd_direction context operation
+             ~invariant ~stable ~fwd_direction ~context ~operation
       end  
   | _ ->
      begin
@@ -934,7 +935,7 @@ let poly_op_semantics
         else
           ()) ;
        JCHAnalysisUtils.jch_op_semantics
-         invariant stable fwd_direction context operation
+         ~invariant ~stable ~fwd_direction ~context ~operation
      end
 
 let reset_refs

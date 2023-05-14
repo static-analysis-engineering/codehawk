@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -247,7 +248,8 @@ object (self: _)
 	       {op_name = exit_loop_sym; 
 		 op_args = [("loop_counter", loop_var, READ)]} in
 	  let new_entry_code =
-            JCHSystemUtils.add_cmds cms [exit_loop_op] [] entry_code in
+            JCHSystemUtils.add_cmds
+              ~cms ~init_cmds:[exit_loop_op] ~final_cmds:[] ~code:entry_code in
 	  code#setCmdAt (code#length - 1) (CODE (s, new_entry_code))
       | _ -> 
 	  begin
@@ -430,7 +432,8 @@ object (self: _)
 		       match self#get_branch_asserts (opn = "ii") opcode arg with 
 		       | Some acmd-> 
 			  let new_tcode =
-                            JCHSystemUtils.add_cmds cms [] [acmd] tcode in
+                            JCHSystemUtils.add_cmds
+                              ~cms ~init_cmds:[] ~final_cmds:[acmd] ~code:tcode in
 			  code#setCmdAt i (TRANSACTION (s, new_tcode, None))
 		       | None -> code#setCmdAt i (self#transformCmd cmd)
 		     end
@@ -537,9 +540,12 @@ let add_vars_op
                         proc#toPretty; NL] ;
 	      raise (JCH_failure (STR "exit_state code expected.")) 
 	    end in
-      let new_exit_code = JCHSystemUtils.add_cmds cms [] [remove_op] exit_code in
+      let new_exit_code =
+        JCHSystemUtils.add_cmds
+          ~cms ~init_cmds:[] ~final_cmds:[remove_op] ~code:exit_code in
       code#setCmdAt last_cmd (CODE (exit_state_sym, new_exit_code))
     end
+
 
 class length_transformer_t
         (proc:procedure_int)

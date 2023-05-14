@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -813,13 +814,20 @@ let add_cost_bounds (s: cost_bounds_t) (a: cost_bounds_t) =
           add_bounds false subs aubs;
         
         (if !dbg then
-           pr__debug [STR "new_lbs = "; pp_list !new_lbs; NL]) ;
+           pr__debug [STR "new_lbs = "; pp_list !new_lbs; NL]);
         
         (if !dbg then
-           pr__debug [STR "new_ubs = "; pp_list !new_ubs; NL]) ;
+           pr__debug [STR "new_ubs = "; pp_list !new_ubs; NL]);
         
-        new cost_bounds_t false false false new_inf_ub !new_lbs !new_ubs
+        new cost_bounds_t
+          ~bottom:false
+          ~simplify:false
+          ~inflb:false
+          ~infub:new_inf_ub
+          ~lbounds:!new_lbs
+          ~ubounds:!new_ubs
       end
+
 
 let neg_cost_bounds (s: cost_bounds_t) =
   if s#isBottom then bottom_cost_bounds
@@ -1194,7 +1202,13 @@ let subst_in_cost_bounds
       let new_lbs = List.concat (lbs_t :: new_lbs) in
       let new_ubs = List.map (subst_in_bound uchoices lchoices) ubs_f in
       let new_ubs = List.concat (ubs_t :: new_ubs) in
-      new cost_bounds_t false true inf_lb inf_ub new_lbs new_ubs
+      new cost_bounds_t
+        ~bottom:false
+        ~simplify:true
+        ~inflb:inf_lb
+        ~infub:inf_ub
+        ~lbounds:new_lbs
+        ~ubounds:new_ubs
     end
 
 

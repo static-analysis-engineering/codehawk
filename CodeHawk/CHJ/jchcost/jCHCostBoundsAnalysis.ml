@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -138,6 +139,7 @@ let get_sinks cmsix costmodel loopstructure =
 		     inv#toPretty ; NL ]
         end) svars) sinkinvariants
 
+
 let get_methodexit_bounds () =
   let domain = (H.find invariants ("methodexit",(-1)))#getDomain "cost_bounds" in
   let vars = domain#observer#getObservedVariables in
@@ -147,12 +149,22 @@ let get_methodexit_bounds () =
   | [ cvar ] ->
       let cost = get_bounds (varObserver cvar) in
       if !dbg then
-        pr__debug [STR "get_methodexit_bounds cost before simplifying "; NL;
-                   cost#toPretty; NL] ;
+        pr__debug [
+            STR "get_methodexit_bounds cost before simplifying ";
+            NL;
+            cost#toPretty;
+            NL];
       let (lbs, ubs, inf_lb, inf_ub) = JCHCostBounds.get_bounds cost in
-      new cost_bounds_t cost#isBottom true inf_lb inf_ub lbs#toList ubs#toList
+      new cost_bounds_t
+        ~bottom:cost#isBottom
+        ~simplify:true
+        ~inflb:inf_lb
+        ~infub:inf_ub
+        ~lbounds:lbs#toList
+        ~ubounds:ubs#toList
   | _ ->
      top_cost_bounds
+
 
 let default_opsemantics
       domain

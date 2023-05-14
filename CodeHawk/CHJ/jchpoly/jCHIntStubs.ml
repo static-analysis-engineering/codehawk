@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -414,7 +415,14 @@ let get_lib_stub stub_info =
   let all_poly_int_array = top_poly_int_array#set_poly poly in
   let restr_poly_int_array = all_poly_int_array#move_simple_ineqs in
 
-  let stub = new int_stub_t stub_name vars vars_with_lengths lengths return_var_opt return_length_opt in 
+  let stub =
+    new int_stub_t
+      ~stub_name
+      ~vars
+      ~vars_with_lengths
+      ~lengths
+      ~return_var_opt
+      ~return_lengths_ope:return_length_opt in 
   stub#set_poly_int_array restr_poly_int_array ;
   stub#set_extra_conds extra_conds ;
   stub
@@ -597,7 +605,12 @@ object (self: _)
 	     with _ -> (None, None) in 
 	   let stub =
              new int_stub_t
-                 proc_name bind_vars bind_arrays bind_lengths ret_var ret_length_var in 
+               ~stub_name:proc_name
+               ~vars:bind_vars
+               ~vars_with_lengths:bind_arrays
+               ~lengths:bind_lengths
+               ~return_var_opt:ret_var
+               ~return_lengths_ope:ret_length_var in 
 	   !stub_map#set proc_name stub ;
 	   stub in
       

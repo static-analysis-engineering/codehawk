@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (2) 2020-2023 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +36,8 @@ open JCHBasicTypesAPI
 open JCHPreAPI
 
 
-val make_class_info        : java_class_or_interface_int -> class_info_int
-val make_class_stub_info   : class_summary_int -> class_info_int
+val make_class_info: java_class_or_interface_int -> class_info_int
+
+val make_class_stub_info: class_summary_int -> class_info_int
+
 val make_missing_class_info: class_name_int -> class_info_int
