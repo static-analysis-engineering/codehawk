@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -723,9 +725,11 @@ object (self: 'a)
 	   let self_r = self#extendAndReflect clone [v; w] in
 	   let v_f = new numerical_factor_t v in
 	   let w_f = new numerical_factor_t w in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, v_f); (numerical_one#neg, w_f)]
-                        numerical_zero LINEAR_EQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f); (numerical_one#neg, w_f)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let _ = add_csts_r max_variable_set include_tmps self_r [eq] in
 	   let _ = relax_factor_r self_r v_f in
 	   self#reify self_r
@@ -741,12 +745,16 @@ object (self: 'a)
 	   let eq = 
 	     if x#equal y then		  
 	       new numerical_constraint_t
-                   [(numerical_one, v_f); ((mkNumerical 2)#neg, x_f)]
-                   numerical_zero LINEAR_EQ
+                   ~factors:[(numerical_one, v_f); ((mkNumerical 2)#neg, x_f)]
+                   ~constant:numerical_zero
+                   ~kind:LINEAR_EQ
 	     else
 	       new numerical_constraint_t
-                   [(numerical_one, v_f); (numerical_one#neg, x_f); (numerical_one#neg, y_f)]
-                   numerical_zero LINEAR_EQ 
+                 ~factors:[(numerical_one, v_f);
+                           (numerical_one#neg, x_f);
+                           (numerical_one#neg, y_f)]
+                 ~constant:numerical_zero
+                 ~kind:LINEAR_EQ
 	   in
 	   let _ = add_csts_r max_variable_set include_tmps self_r [eq] in
 	   let _ = relax_factor_r self_r v_f in
@@ -760,9 +768,13 @@ object (self: 'a)
 	 else
 	   let x_f = new numerical_factor_t x in
 	   let y_f = new numerical_factor_t y in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, v_f); (numerical_one#neg, x_f); (numerical_one, y_f)]
-                        numerical_zero LINEAR_EQ in		  
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f);
+                         (numerical_one#neg, x_f);
+                         (numerical_one, y_f)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let _ = add_csts_r max_variable_set include_tmps self_r [eq] in
 	   let _ = relax_factor_r self_r v_f in
 	   self#reify self_r
@@ -798,7 +810,9 @@ object (self: 'a)
 	 let self_r = self#extendAndReflect clone [v] in	
 	 let v_f = new numerical_factor_t v in
 	 let _ = relax_factor_r self_r v_f in
-	 let eq = new numerical_constraint_t [(numerical_one, v_f)] n LINEAR_EQ in		
+	 let eq =
+           new numerical_constraint_t
+             ~factors:[(numerical_one, v_f)] ~constant:n ~kind:LINEAR_EQ in
 	 let _ = add_csts_r max_variable_set include_tmps self_r [eq] in
 	 self#reify self_r
       | ASSIGN_NUM (v, NUM_VAR w) ->
@@ -809,9 +823,11 @@ object (self: 'a)
 	   let v_f = new numerical_factor_t v in
 	   let w_f = new numerical_factor_t w in
 	   let _ = relax_factor_r self_r v_f in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, v_f); (numerical_one#neg, w_f)]
-                        numerical_zero LINEAR_EQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f); (numerical_one#neg, w_f)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let _ = add_csts_r max_variable_set include_tmps self_r [eq] in
 	   self#reify self_r
       | ASSIGN_NUM (v, PLUS (x, y)) ->
@@ -822,18 +838,24 @@ object (self: 'a)
 	 let eq = 
 	   if x#equal y then
 	     new numerical_constraint_t
-                 [(numerical_one, dummy_factor); ((mkNumerical 2)#neg, x_f)]
-                 numerical_zero LINEAR_EQ
+                 ~factors:[(numerical_one, dummy_factor); ((mkNumerical 2)#neg, x_f)]
+                 ~constant:numerical_zero
+                 ~kind:LINEAR_EQ
 	   else
 	     new numerical_constraint_t
-                 [(numerical_one, dummy_factor); (numerical_one#neg, x_f); (numerical_one#neg, y_f)]
-                 numerical_zero LINEAR_EQ 
+               ~factors:[(numerical_one, dummy_factor);
+                         (numerical_one#neg, x_f);
+                         (numerical_one#neg, y_f)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ
 	 in
 	 let _ = add_csts_r max_variable_set include_tmps self_r [eq] in
 	 let _ = relax_factor_r self_r v_f in
-	 let eq' = new numerical_constraint_t
-                       [(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
-                       numerical_zero LINEAR_EQ in
+	 let eq' =
+           new numerical_constraint_t
+             ~factors:[(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
+             ~constant:numerical_zero
+             ~kind:LINEAR_EQ in
 	 let _ = add_csts_r max_variable_set include_tmps self_r [eq'] in
 	 let _ = relax_factor_r self_r dummy_factor in
 	 self#reify self_r
@@ -845,16 +867,20 @@ object (self: 'a)
 	   let v_f = new numerical_factor_t v in
 	   let x_f = new numerical_factor_t x in
 	   let y_f = new numerical_factor_t y in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, dummy_factor);
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, dummy_factor);
                          (numerical_one#neg, x_f);
                          (numerical_one, y_f)]
-                        numerical_zero LINEAR_EQ in
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let _ = add_csts_r max_variable_set include_tmps self_r [eq] in
 	   let _ = relax_factor_r self_r v_f in
-	   let eq' = new numerical_constraint_t
-                         [(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
-                         numerical_zero LINEAR_EQ in
+	   let eq' =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let _ = add_csts_r max_variable_set include_tmps self_r [eq'] in
 	   let _ = relax_factor_r self_r dummy_factor in
 	   self#reify self_r
@@ -871,14 +897,18 @@ object (self: 'a)
 	   {< >}
 	 else
 	   let v_f = new numerical_factor_t v in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, dummy_factor); (numerical_one#neg, v_f)]
-                        n LINEAR_EQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, dummy_factor); (numerical_one#neg, v_f)]
+               ~constant:n
+               ~kind:LINEAR_EQ in
 	   let _ = add_csts_r max_variable_set include_tmps self_r [eq] in
 	   let _ = relax_factor_r self_r v_f in
-	   let eq' = new numerical_constraint_t
-                         [(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
-                         numerical_zero LINEAR_EQ in
+	   let eq' =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let _ = add_csts_r max_variable_set include_tmps self_r [eq'] in
 	   let _ = relax_factor_r self_r dummy_factor in
 	   self#reify self_r
@@ -893,9 +923,11 @@ object (self: 'a)
 	   let self_r = self#extendAndReflect clone [x; y] in
 	   let x_f = new numerical_factor_t x in
 	   let y_f = new numerical_factor_t y in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, x_f); (numerical_one#neg, y_f)]
-                        numerical_zero LINEAR_EQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, x_f); (numerical_one#neg, y_f)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let _ = add_csts_r max_variable_set include_tmps self_r [eq] in
 	   self#reify self_r
       | _ ->

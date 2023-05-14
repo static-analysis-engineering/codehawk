@@ -4,7 +4,9 @@
    -----------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2019 Kestrel Technology LL
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -625,9 +627,11 @@ object (self: 'a)
 	   let self_r = self#reflect in
 	   let v_f = new numerical_factor_t v in
 	   let w_f = new numerical_factor_t w in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, v_f); (numerical_one#neg, w_f)]
-                        numerical_zero LINEAR_EQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f); (numerical_one#neg, w_f)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let self_r = self#add_constraints_r self_r [eq] in
 	   let self_r = self#remove_variables_r self_r [v] in
 	   self#reify self_r
@@ -643,14 +647,16 @@ object (self: 'a)
 	   let eq = 
 	     if x#equal y then		  
 	       new numerical_constraint_t
-                   [(numerical_one, v_f); ((mkNumerical 2)#neg, x_f)]
-                   numerical_zero LINEAR_EQ
+                   ~factors:[(numerical_one, v_f); ((mkNumerical 2)#neg, x_f)]
+                   ~constant:numerical_zero
+                   ~kind:LINEAR_EQ
 	     else
 	       new numerical_constraint_t
-                   [(numerical_one, v_f);
-                    (numerical_one#neg, x_f);
-                    (numerical_one#neg, y_f)]
-                   numerical_zero LINEAR_EQ 
+                   ~factors:[(numerical_one, v_f);
+                             (numerical_one#neg, x_f);
+                             (numerical_one#neg, y_f)]
+                   ~constant:numerical_zero
+                   ~kind:LINEAR_EQ 
 		in
 		let self_r = self#add_constraints_r self_r [eq] in
 		let self_r = self#remove_variables_r self_r [v] in
@@ -664,11 +670,13 @@ object (self: 'a)
 	 else
 	   let x_f = new numerical_factor_t x in
 	   let y_f = new numerical_factor_t y in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, v_f);
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f);
                          (numerical_one#neg, x_f);
                          (numerical_one, y_f)]
-                        numerical_zero LINEAR_EQ in		  
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let self_r = self#add_constraints_r self_r [eq] in
 	   let self_r = self#remove_variables_r self_r [v] in
 	   self#reify self_r
@@ -706,7 +714,9 @@ object (self: 'a)
 	 let self_r = self#reflect in
 	 let self_r = self#remove_variables_r self_r [v] in
 	 let v_f = new numerical_factor_t v in
-	 let eq = new numerical_constraint_t [(numerical_one, v_f)] n LINEAR_EQ in		
+	 let eq =
+           new numerical_constraint_t
+             ~factors:[(numerical_one, v_f)] ~constant:n ~kind:LINEAR_EQ in
 	 let self_r = self#add_constraints_r self_r [eq] in
 	 self#reify self_r
       | ASSIGN_NUM (v, NUM_VAR w) ->
@@ -717,9 +727,11 @@ object (self: 'a)
 	   let v_f = new numerical_factor_t v in
 	   let w_f = new numerical_factor_t w in
 	   let self_r = self#remove_variables_r self_r [v] in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, v_f); (numerical_one#neg, w_f)]
-                        numerical_zero LINEAR_EQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f); (numerical_one#neg, w_f)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let self_r = self#add_constraints_r self_r [eq] in
 	   self#reify self_r
       | ASSIGN_NUM (v, PLUS (x, y)) ->
@@ -730,20 +742,24 @@ object (self: 'a)
 	 let eq = 
 	   if x#equal y then
 	     new numerical_constraint_t
-                 [(numerical_one, dummy_factor); ((mkNumerical 2)#neg, x_f)]
-                 numerical_zero LINEAR_EQ
+                 ~factors:[(numerical_one, dummy_factor); ((mkNumerical 2)#neg, x_f)]
+                 ~constant:numerical_zero
+                 ~kind:LINEAR_EQ
 	   else
 	     new numerical_constraint_t
-                 [(numerical_one, dummy_factor);
-                  (numerical_one#neg, x_f);
-                  (numerical_one#neg, y_f)]
-                 numerical_zero LINEAR_EQ 
+                 ~factors:[(numerical_one, dummy_factor);
+                           (numerical_one#neg, x_f);
+                           (numerical_one#neg, y_f)]
+                 ~constant:numerical_zero
+                 ~kind:LINEAR_EQ
 	 in
 	 let self_r = self#add_constraints_r self_r [eq] in
 	 let self_r = self#remove_variables_r self_r [v] in
-	 let eq' = new numerical_constraint_t
-                       [(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
-                       numerical_zero LINEAR_EQ in
+	 let eq' =
+           new numerical_constraint_t
+             ~factors:[(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
+             ~constant:numerical_zero
+             ~kind:LINEAR_EQ in
 	 let self_r = self#add_constraints_r self_r [eq'] in
 	 let self_r = self#remove_variables_r self_r [dummy_variable] in
 	 self#reify self_r
@@ -755,16 +771,20 @@ object (self: 'a)
 	   let v_f = new numerical_factor_t v in
 	   let x_f = new numerical_factor_t x in
 	   let y_f = new numerical_factor_t y in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, dummy_factor);
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, dummy_factor);
                          (numerical_one#neg, x_f);
                          (numerical_one, y_f)]
-                        numerical_zero LINEAR_EQ in
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let self_r = self#add_constraints_r self_r [eq] in
 	   let self_r = self#remove_variables_r self_r [v] in
-	   let eq' = new numerical_constraint_t
-                         [(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
-                         numerical_zero LINEAR_EQ in
+	   let eq' =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let self_r = self#add_constraints_r self_r [eq'] in
 	   let self_r = self#remove_variables_r self_r [dummy_variable] in
 	   self#reify self_r
@@ -785,10 +805,14 @@ object (self: 'a)
 	      (mkNumericalConstantValue (mkNumericalConstant v_c))#toNumericalConstraints v
 	   | (Some x_c, None) ->
 	      [new numerical_constraint_t
-                   [(numerical_one, v_f); (x_c#neg, y_f)] numerical_zero LINEAR_EQ]
+                 ~factors:[(numerical_one, v_f); (x_c#neg, y_f)]
+                 ~constant:numerical_zero
+                 ~kind:LINEAR_EQ]
 	   | (None, Some y_c) ->
 	      [new numerical_constraint_t
-                   [(numerical_one, v_f); (y_c#neg, x_f)] numerical_zero LINEAR_EQ]
+                 ~factors:[(numerical_one, v_f); (y_c#neg, x_f)]
+                 ~constant:numerical_zero
+                 ~kind:LINEAR_EQ]
 	 in
 	 let self_r = self#add_constraints_r self_r csts in
 	 self#reify self_r
@@ -803,14 +827,18 @@ object (self: 'a)
 	   {< >}
 	 else
 	   let v_f = new numerical_factor_t v in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, dummy_factor); (numerical_one#neg, v_f)]
-                        n LINEAR_EQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, dummy_factor); (numerical_one#neg, v_f)]
+               ~constant:n
+               ~kind:LINEAR_EQ in
 	   let self_r = self#add_constraints_r self_r [eq] in
 	   let self_r = self#remove_variables_r self_r [v] in
-	   let eq' = new numerical_constraint_t
-                         [(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
-                         numerical_zero LINEAR_EQ in
+	   let eq' =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, v_f); (numerical_one#neg, dummy_factor)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let self_r = self#add_constraints_r self_r [eq'] in
 	   let self_r = self#remove_variables_r self_r [dummy_variable] in
 	   self#reify self_r
@@ -825,9 +853,11 @@ object (self: 'a)
 	   let self_r = self#reflect in
 	   let x_f = new numerical_factor_t x in
 	   let y_f = new numerical_factor_t y in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, x_f); (numerical_one#neg, y_f)]
-                        numerical_zero LINEAR_EQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, x_f); (numerical_one#neg, y_f)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_EQ in
 	   let self_r = self#add_constraints_r self_r [eq] in
 	   self#reify self_r
       | ASSERT (LEQ (x, y)) ->
@@ -837,9 +867,11 @@ object (self: 'a)
 	   let self_r = self#reflect in
 	   let x_f = new numerical_factor_t x in
 	   let y_f = new numerical_factor_t y in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, x_f); (numerical_one#neg, y_f)]
-                        numerical_zero LINEAR_INEQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, x_f); (numerical_one#neg, y_f)]
+               ~constant:numerical_zero
+               ~kind:LINEAR_INEQ in
 	   let self_r = self#add_constraints_r self_r [eq] in
 	   self#reify self_r
       | ASSERT (LT (x, y)) ->
@@ -849,9 +881,11 @@ object (self: 'a)
 	   let self_r = self#reflect in
 	   let x_f = new numerical_factor_t x in
 	   let y_f = new numerical_factor_t y in
-	   let eq = new numerical_constraint_t
-                        [(numerical_one, x_f); (numerical_one#neg, y_f)]
-                        numerical_one#neg LINEAR_INEQ in
+	   let eq =
+             new numerical_constraint_t
+               ~factors:[(numerical_one, x_f); (numerical_one#neg, y_f)]
+               ~constant:numerical_one#neg
+               ~kind:LINEAR_INEQ in
 	   let self_r = self#add_constraints_r self_r [eq] in
 	   self#reify self_r
       | ASSERT (GEQ (x, y)) ->
