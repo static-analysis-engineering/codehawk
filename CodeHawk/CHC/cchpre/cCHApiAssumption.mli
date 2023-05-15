@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,14 +32,24 @@ open CHXmlDocument
 
 (* cchpre *)
 open CCHPreTypes
-	
+
+
+(** [mk_api_assumption ~isfile ~isglobal ~ppos ~spos id] creates an api assumption
+    assumption for the predicate with index [id], the assumption id, with
+    dependent primary proof obligations [ppos] and supporting proof obligations
+    [spos] with file level scope if [file] is true, and including one or more
+    global variables if [global] is true.
+
+    An assumption with file level scope is not propagated to call sites.
+ *)
 val mk_api_assumption:
-  ?isfile:bool   (* assumption is at the file level, not propagates to call sites *)
-  -> ?isglobal:bool   (* assumption expression includes a global variable *)
-  -> ?ppos:int list   (* dependent ppos *)
-  -> ?spos:int list   (* dependent spos *)
-  -> int              (* assumption id *)
+  ?isfile:bool
+  -> ?isglobal:bool
+  -> ?ppos:int list
+  -> ?spos:int list
+  -> int
   -> api_assumption_int
+
 
 val read_xml_api_assumption: xml_element_int -> api_assumption_int
   

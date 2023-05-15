@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +59,8 @@ module H = Hashtbl
 let cd = CCHDictionary.cdictionary
 let pd = CCHPredicateDictionary.predicate_dictionary
 let id = CCHInterfaceDictionary.interface_dictionary
-	
+
+
 class function_api_t (fname:string):function_api_int =
 object (self)
 
@@ -73,7 +74,8 @@ object (self)
   val mutable contractcondition_failures = []
   val unevaluated = H.create 3
 
-  method add_contract_precondition (fdecls:cfundeclarations_int) (ix:int) =    (* xpredicate index *)
+  method add_contract_precondition
+           (fdecls:cfundeclarations_int) (ix:int) =    (* xpredicate index *)
     let precondition = id#get_xpredicate ix in
     let pred = xpredicate_to_po_predicate fdecls precondition in
     let predid = pd#index_po_predicate pred in
@@ -104,8 +106,8 @@ object (self)
     if H.mem api_assumptions index then
       let entry = H.find api_assumptions index in
       begin
-        List.iter entry#add_dependent_ppo ppos ;
-        List.iter entry#add_dependent_spo spos ;
+        List.iter entry#add_dependent_ppo ppos;
+        List.iter entry#add_dependent_spo spos;
         Some p
       end
     else
@@ -116,14 +118,14 @@ object (self)
          if H.mem api_assumptions index then
            let entry = H.find api_assumptions index in
            begin
-             List.iter entry#add_dependent_ppo ppos ;
-             List.iter entry#add_dependent_spo spos ;
+             List.iter entry#add_dependent_ppo ppos;
+             List.iter entry#add_dependent_spo spos;
              Some p
            end
          else
            let a = mk_api_assumption ~isfile ~isglobal ~ppos ~spos index in
            begin
-             H.add api_assumptions index a ;
+             H.add api_assumptions index a;
              Some p
            end
       | _ -> None   (* subsumed ? *)
@@ -163,7 +165,7 @@ object (self)
     if H.mem assumption_requests index then
       let entry = H.find assumption_requests index in
       begin
-        List.iter entry#add_dependent_ppo ppos ;
+        List.iter entry#add_dependent_ppo ppos;
         List.iter entry#add_dependent_spo spos
       end
     else
@@ -180,7 +182,7 @@ object (self)
     if H.mem postcondition_requests index then
       let entry = H.find postcondition_requests index in
       begin
-        List.iter entry#add_dependent_ppo ppos ;
+        List.iter entry#add_dependent_ppo ppos;
         List.iter entry#add_dependent_spo spos
       end
     else
@@ -209,8 +211,8 @@ object (self)
   method get_api_assumption (id:int) =
     if H.mem api_assumptions id then H.find api_assumptions id else
       raise (CCHFailure
-               (LBLOCK [ STR "No api assumption found for id " ; INT id ; 
-			 STR " in function " ; STR fname ]))
+               (LBLOCK [ STR "No api assumption found for id "; INT id;
+			 STR " in function "; STR fname ]))
 	
   method get_api_assumptions =
     List.sort (fun a1 a2 -> Stdlib.compare a1#index a2#index)
@@ -258,62 +260,62 @@ object (self)
          (List.map (fun a ->
               let anode = xmlElement "aa" in
               begin
-                a#write_xml anode ;
+                a#write_xml anode;
                 anode
-              end) self#get_api_assumptions)) ;
+              end) self#get_api_assumptions));
       (ccnode#appendChildren
          (List.map (fun a ->
               let anode = xmlElement "ca" in
               begin
-                a#write_xml anode ;
+                a#write_xml anode;
                 anode
-              end) self#get_contract_assumptions)) ;
+              end) self#get_contract_assumptions));
       (hhnode#appendChildren
          (List.map (fun a ->
               let anode = xmlElement "hh" in
               begin
-                a#write_xml anode ;
+                a#write_xml anode;
                 anode
-              end) self#get_assumption_requests)) ;
+              end) self#get_assumption_requests));
       (ppnode#appendChildren
          (List.map (fun p ->
               let pnode = xmlElement "rr" in
               begin
-                p#write_xml pnode ;
+                p#write_xml pnode;
                 pnode
-              end) self#get_postcondition_requests)) ;
+              end) self#get_postcondition_requests));
       (ggnode#appendChildren
          (List.map (fun g ->
               let gnode = xmlElement "gg" in
               begin
-                id#write_xml_xpredicate gnode g ;
+                id#write_xml_xpredicate gnode g;
                 gnode
-              end) self#get_postcondition_guarantees)) ;
+              end) self#get_postcondition_guarantees));
       (llnode#appendChildren
          (List.map (fun ((header,fname),count) ->
               let lnode = xmlElement "lc" in
               begin
-                lnode#setAttribute "h" header ;
-                lnode#setAttribute "f" fname ;
-                lnode#setIntAttribute "c" count ;
+                lnode#setAttribute "h" header;
+                lnode#setAttribute "f" fname;
+                lnode#setIntAttribute "c" count;
                 lnode
-              end) (H.fold (fun k v a -> (k,v)::a) library_calls []))) ;
+              end) (H.fold (fun k v a -> (k,v)::a) library_calls [])));
       (mmnode#appendChildren
          (List.map (fun n ->
               let mnode = xmlElement "ms" in
               begin
-                mnode#setAttribute "n" n ;
+                mnode#setAttribute "n" n;
                 mnode
               end) missing_summaries#toList));
       (unode#appendChildren
          (List.map (fun (poid,xlst) ->
               let pnode = xmlElement "uu" in
               begin
-                pnode#setIntAttribute "po-id" poid ;
+                pnode#setIntAttribute "po-id" poid;
                 node#setAttribute
                   "xlst" (String.concat "," (List.map string_of_int xlst));
                 pnode
-              end) self#get_unevaluated)) ;
+              end) self#get_unevaluated));
       (match contractcondition_failures with
        | [] -> ()
        | l ->
@@ -325,9 +327,9 @@ object (self)
                      xnode#setAttribute "name" name;
                      xnode#setAttribute "desc" desc;
                      xnode
-                   end) l) ;
-            node#appendChildren [ xxnode ]
-          end) ;
+                   end) l);
+            node#appendChildren [xxnode]
+          end);
       node#appendChildren
         [aanode; ccnode; hhnode; ppnode; ggnode; llnode; mmnode; unode]
     end
@@ -338,33 +340,33 @@ object (self)
     begin
       List.iter (fun anode ->
           let a = read_xml_api_assumption anode in
-          H.add api_assumptions a#index a) (getcc "api-assumptions" "aa") ;
+          H.add api_assumptions a#index a) (getcc "api-assumptions" "aa");
       List.iter (fun anode ->
           let a = read_xml_contract_assumption anode in
           H.add contract_assumptions
-                (a#index,a#get_callee) a)  (getcc "contract-assumptions" "ca") ;                 
+                (a#index,a#get_callee) a)  (getcc "contract-assumptions" "ca");
       List.iter (fun hnode ->
           let a = read_xml_global_assumption hnode in
           H.add assumption_requests
-                a#index a) (getcc "global-assumption-requests" "hh") ;
+                a#index a) (getcc "global-assumption-requests" "hh");
       List.iter (fun pnode ->
           let r = read_xml_postcondition_request pnode in
           let index = id#index_postrequest r#get_request in
           H.add postcondition_requests
-                index r) (getcc "postcondition-requests" "rr") ;
+                index r) (getcc "postcondition-requests" "rr");
       List.iter (fun gnode ->
           let g = id#read_xml_xpredicate gnode in
           self#add_postcondition_guarantee g)
-                (getcc "postcondition-guarantees" "gg") ;
+                (getcc "postcondition-guarantees" "gg");
       List.iter (fun lcnode ->
           let header = lcnode#getAttribute "h" in
           let fname = lcnode#getAttribute "f" in
           let count = lcnode#getIntAttribute "c" in
           H.replace library_calls
-                    (header,fname) count) (getcc "library-calls" "lc") ;
+                    (header,fname) count) (getcc "library-calls" "lc");
       List.iter (fun msnode ->
           let name = msnode#getAttribute "n" in
-          self#add_missing_summary name) (getcc "missing-summaries" "ms") ;
+          self#add_missing_summary name) (getcc "missing-summaries" "ms");
       (if hasc "contract-condition-failures" then
          List.iter (fun xnode ->
              let name = xnode#getAttribute "name" in

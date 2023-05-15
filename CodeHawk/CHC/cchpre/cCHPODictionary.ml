@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -110,16 +110,19 @@ object (self)
     | s -> raise_tag_error name s assumption_type_mcts#tags
 
   method index_ppo_type (p:ppo_type_t) =
-    let tags = [ ppo_type_mcts#ts p ] in
+    let tags = [ppo_type_mcts#ts p] in
     let key = match p with
-      | PPOprog (loc,ctxt,pred) ->
-         (tags,[ cdecls#index_location loc ;
-                 contexts#index_context ctxt ;
-                 pd#index_po_predicate pred ])
-      | PPOlib (loc,ctxt,pred,fname,pre) ->
-         (tags @ [ fname ],
-          [ cdecls#index_location loc ; contexts#index_context ctxt ;
-            pd#index_po_predicate pred ; id#index_xpredicate pre ]) in
+      | PPOprog (loc, ctxt, pred) ->
+         (tags,
+          [cdecls#index_location loc;
+           contexts#index_context ctxt;
+           pd#index_po_predicate pred])
+      | PPOlib (loc, ctxt, pred, fname, pre) ->
+         (tags @ [fname],
+          [cdecls#index_location loc;
+           contexts#index_context ctxt;
+           pd#index_po_predicate pred;
+           id#index_xpredicate pre ]) in
     ppo_type_table#add key
 
   method get_ppo_type (index:int):ppo_type_t =
@@ -140,14 +143,14 @@ object (self)
     let tags = [ spo_type_mcts#ts s ] in
     let key = match s with
       | LocalSPO (loc,ctxt,pred) ->
-         (tags,[ cdecls#index_location loc ; contexts#index_context ctxt ;
+         (tags,[ cdecls#index_location loc; contexts#index_context ctxt;
                  pd#index_po_predicate pred ])
       | CallsiteSPO (loc,ctxt,pred,apiid) ->
-         (tags,[ cdecls#index_location loc ; contexts#index_context ctxt ;
-                 pd#index_po_predicate pred ; apiid ])
+         (tags,[ cdecls#index_location loc; contexts#index_context ctxt;
+                 pd#index_po_predicate pred; apiid ])
       | ReturnsiteSPO (loc,ctxt,pred,pc) ->
-         (tags, [ cdecls#index_location loc ; contexts#index_context ctxt ;
-                  pd#index_po_predicate pred ; id#index_xpredicate pc ]) in
+         (tags, [ cdecls#index_location loc; contexts#index_context ctxt;
+                  pd#index_po_predicate pred; id#index_xpredicate pc ]) in
     spo_type_table#add key
 
   method get_spo_type (index:int) =
@@ -204,7 +207,7 @@ object (self)
       (List.map
          (fun t ->
            let tnode = xmlElement t#get_name in
-           begin t#write_xml tnode ; tnode end) tables)
+           begin t#write_xml tnode; tnode end) tables)
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
