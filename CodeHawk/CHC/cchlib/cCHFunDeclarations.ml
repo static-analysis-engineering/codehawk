@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,24 +49,33 @@ let cdecls = CCHDeclarations.cdeclarations
 
 let ibool b = if b then 1 else 0
 
+
 let t (name:string) (tags:string list) (n:int) =
   if List.length tags > n then
     List.nth tags n
   else
-    raise (CCHFailure
-             (LBLOCK [ STR "Expected to find at least " ; INT (n+1) ;
-                       STR " tags in " ; STR name ; STR ", but found only " ;
-                       INT (List.length tags) ]))
+    raise
+      (CCHFailure
+         (LBLOCK [
+              STR "Expected to find at least ";
+              INT (n+1);
+              STR " tags in ";
+              STR name; STR ", but found only ";
+              INT (List.length tags) ]))
+
 
 let a (name:string) (args:int list) (n:int) =
   if List.length args > n then
     List.nth args n
   else
-    raise (CCHFailure
-             (LBLOCK [ STR "Expected to find at least " ; INT (n+1) ;
-                       STR " args in " ; STR name ; STR ", but found only " ;
-                       INT (List.length args) ]))
-    
+    raise
+      (CCHFailure
+         (LBLOCK [
+              STR "Expected to find at least ";
+              INT (n+1);
+              STR " args in "; STR name;
+              STR ", but found only ";
+              INT (List.length args) ]))
 
 
 
@@ -96,35 +105,42 @@ object (self)
   method private xrep (tags,args): varinfo =
     let t = t "varinfo" tags in
     let a = a "varinfo" args in
-    { vname = t 0 ;
-      vstorage = storage_mfts#fs (t 1) ;
-      vid = a 0 ;
-      vtype = cd#get_typ (a 1) ;
-      vattr = cd#get_attributes (a 2) ;
-      vglob = (a 3) = 1 ;
-      vinline = (a 4) = 1 ;
-      vdecl = cdecls#get_location (a 5) ;
-      vaddrof = (a 6) = 1 ;
-      vparam = (a 7) ;
+    { vname = t 0;
+      vstorage = storage_mfts#fs (t 1);
+      vid = a 0;
+      vtype = cd#get_typ (a 1);
+      vattr = cd#get_attributes (a 2);
+      vglob = (a 3) = 1;
+      vinline = (a 4) = 1;
+      vdecl = cdecls#get_location (a 5);
+      vaddrof = (a 6) = 1;
+      vparam = (a 7);
       vinit = None
     }
 
   method get_formals =
-    List.filter (fun vinfo -> vinfo.vparam > 0)
-                (List.map self#xrep varinfo_table#values)
+    List.filter
+      (fun vinfo -> vinfo.vparam > 0)
+      (List.map self#xrep varinfo_table#values)
 
   method get_formal (n:int) =      (* starting index 1 *)
     try
-      List.find (fun vinfo -> vinfo.vparam = n)
-                (List.map self#xrep varinfo_table#values)
+      List.find
+        (fun vinfo -> vinfo.vparam = n)
+        (List.map self#xrep varinfo_table#values)
     with
     | Not_found ->
-       raise (CCHFailure (LBLOCK [ STR "Formal " ; INT n ;
-                                   STR " not found in function declarations"]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Formal ";
+                 INT n;
+                 STR " not found in function declarations"]))
     
   method get_locals =
-    List.filter (fun vinfo -> vinfo.vparam = 0)
-                (List.map self#xrep varinfo_table#values)
+    List.filter
+      (fun vinfo -> vinfo.vparam = 0)
+      (List.map self#xrep varinfo_table#values)
 
   method is_formal (vid:int) =
     vid > 0 && ((self#get_varinfo_by_vid vid).vparam > 0)
@@ -136,8 +152,9 @@ object (self)
 
   method get_varinfo_by_name (name:string) =
     try
-      List.find (fun vinfo -> vinfo.vname = name)
-                (List.map self#xrep varinfo_table#values)
+      List.find
+        (fun vinfo -> vinfo.vname = name)
+        (List.map self#xrep varinfo_table#values)
     with
     | Not_found ->
        if cdecls#has_varinfo_by_name name then
@@ -164,7 +181,7 @@ object (self)
   method index_formal (vinfo:varinfo) =
     let index = varinfo_table#add (self#getrep vinfo) in
     begin
-      H.replace vidtable vinfo.vid index ;
+      H.replace vidtable vinfo.vid index;
       index
     end              
 
@@ -174,7 +191,7 @@ object (self)
   method index_local (vinfo:varinfo) =
     let index = varinfo_table#add (self#getrep vinfo) in
     begin
-      H.replace vidtable vinfo.vid index ;
+      H.replace vidtable vinfo.vid index;
       index
     end
 
@@ -189,6 +206,7 @@ object (self)
     end
     
 end
+
 
 let mk_cfundeclarations () = new cfundeclarations_t
     
