@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -439,25 +441,45 @@ class type assignment_dictionary_int =
   end
   
 
-(* ======================================================== proof obligations === *)
+(* ==================================================== proof obligations === *)
 
+(** Predicates on expressions and other types that are evaluated on a program
+    state.*)
 type po_predicate_t =
-| PNotNull of exp                   (* pointer must not be null *)
-| PNull of exp                      (* pointer must be null *)
-| PValidMem of exp                  (* pointer to valid (not freed) memory region *)
-| PControlledResource of string * exp  (* value of exp must not be tainted  (user controlled)  *)
-| PInScope of exp                   (* pointer to memory that is currently in scope *)
-| PStackAddressEscape of lval option * exp
-            (* pointer expression should not be assigned to lval with longer lifetime,
-             and should not be returned *)
-| PAllocationBase of exp            (* exp holds the address of a dynamically allocated 
-				       memory region on the heap *)
-| PTypeAtOffset of typ * exp        (* should be checked when cast, not at access time *)
-| PLowerBound of typ * exp          (* pointer access in memory region, exp must be
-				       greater than or equal to zero *)
-| PUpperBound of typ * exp          (* pointer access in memory region, exp must be
-				       less than or equal to highest address that can
-				       be dereferenced for the given type *)
+
+  (** Pointer expression [exp] is not null.*)
+  | PNotNull of exp
+
+  (** Pointer expression [exp] is null.*)
+  | PNull of exp
+
+  (** Pointer expression [exp] points to a valid (not freed) memory region.*)
+  | PValidMem of exp
+
+  (** Value of controlled resource expression [exp] is not tainted.*)
+  | PControlledResource of string * exp
+
+  (** Pointer expression [exp] points to memory currently in scope.*)
+  | PInScope of exp
+
+  (** Pointer expression is not assigned to lval with longer lifetime and
+      is not returned. *)
+  | PStackAddressEscape of lval option * exp
+
+  (** Pointer expression [exp] holds the start address of a dynamically allocated
+      memory region (i.e., this expression can be freed)*)
+  | PAllocationBase of exp
+
+  (** Expression [exp] has the given type (to be checked when casting).*)
+  | PTypeAtOffset of typ * exp
+
+  (** Pointer expression [exp] with type [typ] has a value greater than or
+      equal to zero. *)
+  | PLowerBound of typ * exp
+
+  (** {Pointer expression [exp] has a value that is less than or equal to the
+      highest address that can be dereferenced for type [typ].*)
+  | PUpperBound of typ * exp
 | PIndexLowerBound of exp           (* array access within declared array with known length *)
 | PIndexUpperBound of exp * exp     (* array access within declared array with known length *)
 | PInitialized of lval              (* lval has a value *)

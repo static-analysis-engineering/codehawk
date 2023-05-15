@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +48,9 @@ open CCHPreTypes
 
 module H = Hashtbl
 
+
 let pd = CCHPredicateDictionary.predicate_dictionary
+
 
 class api_assumption_t
         ?(isfile=false)
@@ -86,16 +90,17 @@ object (self)
     let seti = node#setIntAttribute in
     begin
       (if (List.length dependent_ppos) > 0 then
-         set "ppos" (String.concat "," (List.map string_of_int dependent_ppos))) ;
+         set "ppos" (String.concat "," (List.map string_of_int dependent_ppos)));
       (if (List.length dependent_spos) > 0 then
-         set "spos" (String.concat "," (List.map string_of_int dependent_spos))) ;
-      seti "ipr" index ;
-      if isglobal then set "global" "yes" ;
-      if isfile then set "file" "yes" 
+         set "spos" (String.concat "," (List.map string_of_int dependent_spos)));
+      seti "ipr" index;
+      (if isglobal then set "global" "yes");
+      (if isfile then set "file" "yes")
     end
    
 end
-  
+
+
 let mk_api_assumption
       ?(isfile=false)
       ?(isglobal=false)
@@ -103,6 +108,7 @@ let mk_api_assumption
       ?(spos=[])
       (index:int):api_assumption_int =
   new api_assumption_t ~isfile ~isglobal ~ppos ~spos index
+
 
 let read_xml_api_assumption (node:xml_element_int) =
   let get = node#getAttribute in
@@ -120,10 +126,13 @@ let read_xml_api_assumption (node:xml_element_int) =
     let isfile = has "file" && (get "file") = "yes" in
     mk_api_assumption ~isfile ~isglobal ~ppos ~spos index
   with
-    Failure _ ->
-    raise (CCHFailure
-             (LBLOCK [ STR "read_xml_api_assumption: int_of_string on " ;
-                       STR (get "ppos") ; STR " and "  ; STR (get "spos") ]))
+  | Failure _ ->
+     raise (CCHFailure
+              (LBLOCK [
+                   STR "read_xml_api_assumption: int_of_string on ";
+                   STR (get "ppos");
+                   STR " and ";
+                   STR (get "spos")]))
 
     
     
