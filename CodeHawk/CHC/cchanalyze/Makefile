@@ -9,7 +9,7 @@ XPRLIB = $(CODEHAWK)/CH/xprlib
 CCHLIB = $(CCH)/cchlib
 CCHPRE = $(CCH)/cchpre
 
-CAMLC := ocamlopt -I str -I cmi -I cmx \
+CAMLC := ocamlopt -I +str -I +unix -I cmi -I cmx \
 	-I $(EXTLIB) \
 	-I $(CHLIB) \
 	-I $(ZARITHLIB) \

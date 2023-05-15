@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -180,7 +180,7 @@ object (self)
     let fbody = EU.mkCode (fglobalvalues @ fpreamble @ derefAssigns @ fblock) in
     let scope = env#get_scope in
     let fsymbol = EU.symbol f.svar.vname in
-    let proc = EU.mkProcedure fsymbol [] [] scope fbody in
+    let proc = EU.mkProcedure fsymbol ~signature:[] ~bindings:[] ~scope ~body:fbody in
     let csystem = EU.mkSystem (new symbol_t "c-system") in
     let _ = csystem#addProcedure proc in
     (None,csystem)
@@ -264,7 +264,7 @@ object
       EU.mkCode ([ rangeconstraints ] @ preamble @ derefAssigns @ fblock) in
     let scope = env#get_scope in
     let fsymbol = EU.symbol f.svar.vname in
-    let proc = EU.mkProcedure fsymbol [] [] scope fbody in
+    let proc = EU.mkProcedure fsymbol ~signature:[] ~bindings:[] ~scope ~body:fbody in
     let csystem = EU.mkSystem (new symbol_t "c-system") in
     let _ = csystem#addProcedure proc in
     (None,csystem)
@@ -331,7 +331,7 @@ object
       EU.mkCode ([ valuesetPreamble ] @ preamble @ derefAssigns @ fblock) in
     let scope = env#get_scope in
     let fsymbol = EU.symbol f.svar.vname in
-    let proc = EU.mkProcedure fsymbol [] [] scope fbody in
+    let proc = EU.mkProcedure fsymbol ~signature:[] ~bindings:[] ~scope ~body:fbody in
     let csystem = EU.mkSystem (new symbol_t "c-system") in
     let _ = csystem#addProcedure proc in
     (None,csystem)
@@ -366,7 +366,7 @@ object
       EU.mkCode (preamble @ callvarassign @ derefAssigns @ addressAssigns @ fblock) in
     let scope = env#get_scope in
     let fsymbol = EU.symbol f.svar.vname in
-    let proc = EU.mkProcedure fsymbol [] [] scope fbody in
+    let proc = EU.mkProcedure fsymbol ~signature:[] ~bindings:[] ~scope ~body:fbody in
     let csystem = EU.mkSystem (new symbol_t "c-system") in
     let _ = csystem#addProcedure proc in
     (None,csystem)
@@ -398,7 +398,7 @@ object
     let fbody = EU.mkCode ( preamble @ derefAssigns @ addressAssigns @ fblock) in
     let scope = env#get_scope in
     let fsymbol = EU.symbol f.svar.vname in
-    let proc = EU.mkProcedure fsymbol [] [] scope fbody in
+    let proc = EU.mkProcedure fsymbol ~signature:[] ~bindings:[] ~scope ~body:fbody in
     let csystem = EU.mkSystem (new symbol_t "c-system") in
     let _ = csystem#addProcedure proc in
     (None,csystem)
@@ -438,7 +438,7 @@ object
     let fbody = EU.mkCode (preamble @ fblock) in
     let scope = env#get_scope in
     let fsymbol = EU.symbol f.svar.vname in
-    let proc = EU.mkProcedure fsymbol [] [] scope fbody in
+    let proc = EU.mkProcedure fsymbol ~signature:[] ~bindings:[] ~scope ~body:fbody in
     let csystem = EU.mkSystem (new symbol_t "c-system") in
     let _ = csystem#addProcedure proc in
     (None, csystem)
