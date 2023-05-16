@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,8 @@ open CHXmlDocument
 
 type funarg = string * typ * attributes
 type enumitem = string * exp * location
-            
+
+
 class type cildictionary_int =
   object
 
@@ -66,6 +67,7 @@ class type cildictionary_int =
 
   end
 
+
 class type cildeclarations_int =
   object
 
@@ -93,6 +95,7 @@ class type cildeclarations_int =
     method write_xml: xml_element_int -> unit
 
   end
+
 
 class type cilfundeclarations_int =
   object

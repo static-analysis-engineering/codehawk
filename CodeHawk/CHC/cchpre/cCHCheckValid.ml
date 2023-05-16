@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -503,12 +505,10 @@ let rec is_global_address (e:exp) =
   | CastE (TPtr _, Const (CInt (i64,_,_))) when (Int64.compare i64 Int64.zero) = 1 -> true
   | BinOp (PlusPI,e1,_,_) -> is_global_address e1
   | _ -> false
-    
-let in_if_expr (c:cfg_context_int) =
-  let (tags,_) = context_node_table#retrieve (List.hd c#get_context) in
-  match tags with h::_ when h = "if-expr" -> true | _ -> false
 
-let check_ppo_validity (fname:string) (env:cfundeclarations_int) (ppo:proof_obligation_int) =
+
+let check_ppo_validity
+      (fname:string) (env:cfundeclarations_int) (ppo:proof_obligation_int) =
 
   let get_varinfo = env#get_varinfo_by_vid in
 
