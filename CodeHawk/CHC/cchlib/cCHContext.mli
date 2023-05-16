@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,14 +40,6 @@ open CHXmlDocument
 open CCHBasicTypes
 open CCHLibTypes
 
-val context_node_table : index_table_int
-val cfg_context_manager: cfg_context_manager_int
-val exp_context_manager: exp_context_manager_int
-	  
-val read_xml_cfg_context: xml_element_int -> cfg_context_int
-val read_xml_exp_context: xml_element_int -> exp_context_int
-  
-val context_node_to_pretty: context_node_t -> pretty_t
 
 val mk_program_context : unit -> program_context_int
 

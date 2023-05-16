@@ -412,9 +412,9 @@ let save_cfile_context () =
   let root = get_cch_root () in
   let cNode = xmlElement "c-contexts" in
   begin
-    ccontexts#write_xml cNode ;
-    doc#setNode root ;
-    root#appendChildren [ cNode ] ;
+    ccontexts#write_xml cNode;
+    doc#setNode root;
+    root#appendChildren [cNode];
     file_output#saveFile filename doc#toPretty
   end
 
@@ -427,12 +427,12 @@ let read_cfile_context () =
       let croot = cdoc#getRoot in
       let cNode = croot#getTaggedChild "c-contexts" in
       begin
-        ccontexts#reset ;
+        ccontexts#reset;
         ccontexts#read_xml cNode
       end
     with
-    | XmlDocumentError (line,col,p)
-      | XmlParseError (line,col,p) ->
+    | XmlDocumentError (line, col, p)
+      | XmlParseError (line, col, p) ->
        raise (CCHFailure (xml_error filename line col p))
 
 

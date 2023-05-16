@@ -287,100 +287,69 @@ class type cdeclarations_int =
 
   
 (* ================================================================= context === *)
-type context_node_t = {
-  cn_name   : string ;
-  cn_strings: string list ;
-  cn_numbers: int list
-}
   
 class type cfg_context_int =
   object ('a)
     method compare: 'a -> int
-    method index  : int
-    method equal  : 'a -> bool
+    method index: int
+    method equal: 'a -> bool
          
-    method pop : 'a
+    method pop: 'a
          
-    method add_instr      : int -> 'a
-    method add_stmt       : int -> 'a
-    method add_return     : 'a
-    method add_if_expr    : 'a
-    method add_if_then    : 'a
-    method add_if_else    : 'a
+    method add_instr: int -> 'a
+    method add_stmt: int -> 'a
+    method add_return: 'a
+    method add_if_expr: 'a
+    method add_if_then: 'a
+    method add_if_else: 'a
     method add_switch_expr: 'a
-    method add_loop       : 'a
-    method add_goto       : 'a
+    method add_loop: 'a
+    method add_goto: 'a
          
-    method get_context    : int list
-    method get_complexity : int
+    method get_context: int list
+    method get_complexity: int
 
     method is_return_context: bool
          
-    method write_xml      : xml_element_int -> unit
-    method to_string      : string
-    method toPretty       : pretty_t
-  end
-
-class type cfg_context_manager_int =
-  object
-
-    method reset: unit
-
-    method mk_cfg_context : int list -> cfg_context_int
-
-    method get_cfg_context: int -> cfg_context_int
-
     method write_xml: xml_element_int -> unit
-    method read_xml : xml_element_int -> unit
-
+    method to_string: string
+    method toPretty: pretty_t
   end
-	
+
+
 class type exp_context_int =
   object ('a)
-    method index  : int
+    method index: int
     method compare: 'a -> int
     
-    method add_var         : 'a
-    method add_arg         : int -> 'a (* index of argument, starting at 1 *)
-    method add_args        : int list -> 'a   (* list of argument indices, starting at 1 *)
-    method add_addrof      : 'a
-    method add_binop       : int -> 'a   (* first or second operator *)
-    method add_cast        : 'a
+    method add_var: 'a
+    method add_arg: int -> 'a (* index of argument, starting at 1 *)
+    method add_args: int list -> 'a   (* list of argument indices, starting at 1 *)
+    method add_addrof: 'a
+    method add_binop: int -> 'a   (* first or second operator *)
+    method add_cast: 'a
     method add_field_offset: string -> 'a   (* name of the field *)
-    method add_lhs         : 'a
-    method add_rhs         : 'a
-    method add_ftarget     : 'a
-    method add_unop        : 'a
-    method add_index       : 'a
+    method add_lhs: 'a
+    method add_rhs: 'a
+    method add_ftarget: 'a
+    method add_unop: 'a
+    method add_index: 'a
     method add_index_offset: 'a
-    method add_lval        : 'a
-    method add_mem         : 'a
-    method add_deref_read  : 'a
-    method add_question    :  int -> 'a  (* first, second, or third operator *)
-    method add_startof     : 'a
+    method add_lval: 'a
+    method add_mem: 'a
+    method add_deref_read: 'a
+    method add_question:  int -> 'a  (* first, second, or third operator *)
+    method add_startof: 'a
 
-    method get_context     : int list
-    method get_complexity  : int
+    method get_context: int list
+    method get_complexity: int
          
-    method write_xml       : xml_element_int -> unit
-    method to_string       : string
-    method toPretty        : pretty_t
-  end
-
-class type exp_context_manager_int =
-  object
-
-    method reset: unit
-
-    method mk_exp_context : int list -> exp_context_int
-
-    method get_exp_context: int -> exp_context_int
-
     method write_xml: xml_element_int -> unit
-    method read_xml : xml_element_int -> unit
-
+    method to_string: string
+    method toPretty: pretty_t
   end
-   
+
+
 class type program_context_int =
   object ('a)
 
@@ -389,45 +358,46 @@ class type program_context_int =
     method project_on_cfg: 'a
 
     method add_instr: int -> 'a
-    method add_stmt       : int -> 'a
-    method add_return     : 'a
-    method add_if_expr    : 'a
-    method add_if_then    : 'a
-    method add_if_else    : 'a
+    method add_stmt: int -> 'a
+    method add_return: 'a
+    method add_if_expr: 'a
+    method add_if_then: 'a
+    method add_if_else: 'a
     method add_switch_expr: 'a
-    method add_loop       : 'a
-    method add_goto       : 'a
+    method add_loop: 'a
+    method add_goto: 'a
 
-    method add_var         : 'a
-    method add_arg         : int -> 'a (* index of argument, starting at 1 *)
-    method add_args        : int list -> 'a   (* list of argument indices, starting at 1 *)
-    method add_addrof      : 'a
-    method add_binop       : int -> 'a   (* first or second operator *)
-    method add_cast        : 'a
+    method add_var: 'a
+    method add_arg: int -> 'a (* index of argument, starting at 1 *)
+    method add_args: int list -> 'a   (* list of argument indices, starting at 1 *)
+    method add_addrof: 'a
+    method add_binop: int -> 'a   (* first or second operator *)
+    method add_cast: 'a
     method add_field_offset: string -> 'a   (* name of the field *)
-    method add_lhs         : 'a
-    method add_rhs         : 'a
-    method add_ftarget     : 'a
-    method add_unop        : 'a
-    method add_index       : 'a
+    method add_lhs: 'a
+    method add_rhs: 'a
+    method add_ftarget: 'a
+    method add_unop: 'a
+    method add_index: 'a
     method add_index_offset: 'a
-    method add_lval        : 'a
-    method add_mem         : 'a
-    method add_deref_read  : 'a
-    method add_question    :  int -> 'a  (* first, second, or third operator *)
-    method add_startof     : 'a
+    method add_lval: 'a
+    method add_mem: 'a
+    method add_deref_read: 'a
+    method add_question:  int -> 'a  (* first, second, or third operator *)
+    method add_startof: 'a
 
-    method pop             : 'a
+    method pop: 'a
 
-    method get_cfg_context : cfg_context_int
-    method get_exp_context : exp_context_int
+    method get_cfg_context: cfg_context_int
+    method get_exp_context: exp_context_int
 
     method is_return_context: bool
 
     method to_string: string
-    method toPretty : pretty_t
+    method toPretty: pretty_t
 
   end
+
 
 class type ccontexts_int =
   object
@@ -437,11 +407,13 @@ class type ccontexts_int =
     method index_context: program_context_int -> int
     method get_context: int -> program_context_int
 
-    method write_xml_context: ?tag:string -> xml_element_int -> program_context_int -> unit
-    method read_xml_context: ?tag:string -> xml_element_int -> program_context_int
+    method write_xml_context:
+             ?tag:string -> xml_element_int -> program_context_int -> unit
+    method read_xml_context:
+             ?tag:string -> xml_element_int -> program_context_int
 
     method write_xml: xml_element_int -> unit
-    method read_xml : xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
 
   end
 
