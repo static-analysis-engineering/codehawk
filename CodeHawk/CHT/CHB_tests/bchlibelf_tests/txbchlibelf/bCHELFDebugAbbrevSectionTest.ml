@@ -260,7 +260,7 @@ let get_abbrev_entry_test () =
             let sectionheader = mk_elf_section_header () in
             let section = mk_elf_debug_abbrev_section bytestring sectionheader in
             let abbreventry = section#get_abbrev_entry in
-            EA.equal_abbrev_entry result abbreventry ())) tests;
+            EA.equal_abbrev_entry ~expected:result ~received:abbreventry ())) tests;
 
     TS.launch_tests ()
   end
