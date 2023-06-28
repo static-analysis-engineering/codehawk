@@ -178,7 +178,8 @@ let decode_variable_die_test () =
                 ~get_string
                 ~base
                 chi in
-            EA.equal_variable_debuginfo_entry result var ())) tests;
+            EA.equal_variable_debuginfo_entry
+              ~expected:result ~received:var ())) tests;
 
     TS.launch_tests ()
   end

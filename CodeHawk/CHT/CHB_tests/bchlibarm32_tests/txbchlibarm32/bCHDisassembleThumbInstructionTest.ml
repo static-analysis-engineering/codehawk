@@ -231,9 +231,11 @@ let thumb_4_basic () =
       ("SUB.W-T3",    "a6f17f01", "SUB.W          R1, R6, #0x7f");
       ("TBB-T1",      "dfe800f0", "TBB            [PC,R0]");
       ("UBFX-T1",     "c0f30743", "UBFX           R3, R0, #16, #8");
+      ("UDIV",        "b6fbf1f2", "UDIV           R2, R6, R1");
       ("UMLAL",       "e8fb0a23", "UMLAL          R2, R3, R8, R10");
       ("UMULL-T1",    "a4fb0232", "UMULL          R3, R2, R4, R2");
       ("UQSUB8",      "ccfa52f4", "UQSUB8         R4, R12, R2");
+      ("USAT",        "80f30100", "USAT           R0, #1, R0");
       ("UXTAB",       "52fa81f5", "UXTAB          R5, R2, R1");
       ("UXTB.W",      "5ffa83fe", "UXTB.W         LR, R3");
       ("UXTH.W",      "1ffa83f8", "UXTH.W         R8, R3");

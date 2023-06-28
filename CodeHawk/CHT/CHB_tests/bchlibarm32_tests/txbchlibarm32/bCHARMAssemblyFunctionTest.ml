@@ -113,7 +113,8 @@ let conditional_return () =
             let faddr = make_dw sfaddr in
             let fn = ARMU.arm_function_setup faddr bytes in
             begin
-              ARMA.equal_cfg_edges fn#get_cfg_edges expectedresult ()
+              ARMA.equal_cfg_edges
+                ~received:fn#get_cfg_edges ~expected:expectedresult ()
             end)
       ) tests;
 
