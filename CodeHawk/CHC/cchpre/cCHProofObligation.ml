@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,7 @@ let join_invs (invs1:int list) (invs2:int list):int list =
     List.sort Stdlib.compare s#toList
   end
 
+
 let join_dependencies (d1:dependencies_t) (d2:dependencies_t) =
   match (d1,d2) with
   | (DStmt, _) -> d2
@@ -81,6 +82,7 @@ let join_dependencies (d1:dependencies_t) (d2:dependencies_t) =
   | (DEnvC (invs1,assumptions1), DEnvC (invs2,assumptions2)) ->
      DEnvC (join_invs invs1 invs2, assumptions1 @ assumptions2)
 
+
 let write_xml_dependencies
       (node:xml_element_int)
       (pod:podictionary_int)
@@ -98,6 +100,7 @@ let write_xml_dependencies
        set "ids" (String.concat "," (List.map string_of_int ids))
      end
   | DUnreachable domain -> set "domain" domain
+
 
 let read_xml_dependencies
       (node:xml_element_int)
@@ -184,7 +187,10 @@ object (self)
   val messages = new StringCollections.set_t
 
   method clear =
-    begin H.clear invarianttable ; messages#removeList messages#toList end
+    begin
+      H.clear invarianttable;
+      messages#removeList messages#toList
+    end
 
   method set_invariants (index:int) (invariants:int list) =
     H.replace invarianttable index invariants
@@ -192,28 +198,29 @@ object (self)
   method get_invariants =
     H.fold (fun k v acc -> (k,v) :: acc) invarianttable []
 
-  method add_msg (s:string) = messages#add s
+  method add_msg (s:string): unit =
+    messages#add s
 
-  method add_arg_msg (index:int) (s:string) =
+  method add_arg_msg (index:int) (s:string): unit =
     let entry =
       if H.mem argmessages index then
         H.find argmessages index
       else
         let entry = new StringCollections.set_t in
         begin
-          H.add argmessages index entry ;
+          H.add argmessages index entry;
           entry
         end in
     entry#add s
 
-  method add_key_msg (key:string) (s:string) =
+  method add_key_msg (key:string) (s:string): unit =
     let entry =
       if H.mem keymessages key then
         H.find keymessages key
       else
         let entry = new StringCollections.set_t in
         begin
-          H.add keymessages key entry ;
+          H.add keymessages key entry;
           entry
         end in
     entry#add s
@@ -224,17 +231,17 @@ object (self)
   method private get_key_messages =
     H.fold (fun k v acc -> (k,v#toList) :: acc) keymessages []
     
-  method arg_messages_to_pretty =
+  method arg_messages_to_pretty: pretty_t =
     let arg_messages = self#get_arg_messages in
     let flat_messages = List.map ( fun(_, x) -> x) arg_messages in
     let flat_messages = List.flatten flat_messages in
-    LBLOCK (List.map ( fun s -> LBLOCK [ STR s ; NL] ) flat_messages )
+    LBLOCK (List.map (fun s -> LBLOCK [STR s; NL]) flat_messages)
 
-  method key_messages_to_pretty =
+  method key_messages_to_pretty: pretty_t =
     let key_messages = self#get_key_messages in
     let flat_messages = List.map ( fun(_, x) -> x) key_messages in
     let flat_messages = List.flatten flat_messages in
-    LBLOCK (List.map ( fun s -> LBLOCK [ STR s ; NL] ) flat_messages )
+    LBLOCK (List.map (fun s -> LBLOCK [STR s; NL]) flat_messages)
 
   method is_empty =
     (H.length invarianttable) = 0
@@ -264,25 +271,34 @@ object (self)
                 xnode#appendChildren
                   (List.map (fun msg ->
                        let snode = xmlElement "msg" in
-                       begin snode#setAttribute "t" msg; snode end) msgs);
+                       begin
+                         snode#setAttribute "t" msg;
+                         snode
+                       end) msgs);
                 xnode
-              end) self#get_arg_messages)) ;
+              end) self#get_arg_messages));
       (knode#appendChildren
          (List.map (fun (key,msgs) ->
               let xnode = xmlElement "key" in
               begin
-                xnode#setAttribute "k" key ;
+                xnode#setAttribute "k" key;
                 xnode#appendChildren
                   (List.map (fun msg ->
                        let snode = xmlElement "msg" in
-                       begin snode#setAttribute "t" msg ; snode end) msgs) ;
+                       begin
+                         snode#setAttribute "t" msg;
+                         snode
+                       end) msgs);
                 xnode
-              end) self#get_key_messages)) ;
+              end) self#get_key_messages));
       (mnode#appendChildren
          (List.map (fun s ->
               let snode = xmlElement "msg" in
-              begin snode#setAttribute "t" s ; snode end) messages#toList)) ;
-      node#appendChildren [ inode ; mnode ; anode ; knode ]
+              begin
+                snode#setAttribute "t" s;
+                snode
+              end) messages#toList));
+      node#appendChildren [inode; mnode; anode; knode]
     end
 
   method read_xml (node:xml_element_int) =
@@ -294,7 +310,7 @@ object (self)
       (List.iter (fun n ->
            let invs = List.map int_of_string (nsplit ',' (n#getAttribute "i")) in
            H.add invarianttable (n#getIntAttribute "a") invs)
-                 (inode#getTaggedChildren "arg")) ;
+         (inode#getTaggedChildren "arg"));
       (List.iter (fun n ->
            let amsgs =
              List.map (fun k -> k#getAttribute "t") (n#getTaggedChildren "msg") in
@@ -315,7 +331,7 @@ object (self)
         
 
 end
-      
+
 
 class proof_obligation_t
         (pod:podictionary_int)
@@ -387,23 +403,26 @@ object (self)
        else
          let dnode = xmlElement "d" in
          begin
-           diagnostic#write_xml dnode ;
-           node#appendChildren [ dnode ] ;
-         end) ;
+           diagnostic#write_xml dnode;
+           node#appendChildren [dnode];
+         end);
       (match status with
        | Orange -> ()
-       | _ -> node#setAttribute "s" (po_status_mfts#ts status)) ;
+       | _ -> node#setAttribute "s" (po_status_mfts#ts status));
       (match explanation with
        | Some e ->
           let enode = xmlElement "e" in
-          begin enode#setAttribute "txt" e; node#appendChildren [enode] end
-       | _ -> ()) ;
+          begin
+            enode#setAttribute "txt" e;
+            node#appendChildren [enode]
+          end
+       | _ -> ());
       (match dependencies with
        | Some d -> write_xml_dependencies node pod d
-       | _ -> ()) ;
+       | _ -> ());
       (match timestamp with
        | Some t -> node#setAttribute "ts" t
-       | _ -> ()) ;
+       | _ -> ());
     end
 
   method toPretty =
@@ -430,7 +449,7 @@ object
 
   method write_xml (node:xml_element_int) =
     begin
-      super#write_xml node ;
+      super#write_xml node;
       pod#write_xml_ppo_type node pt
     end
 
@@ -479,7 +498,7 @@ object
 
   method write_xml (node:xml_element_int) =
     begin
-      super#write_xml node ;
+      super#write_xml node;
       pod#write_xml_spo_type node st
     end
 
@@ -505,7 +524,7 @@ object
 
   method  write_xml (node:xml_element_int) =
     begin
-      super#write_xml node ;
+      super#write_xml node;
       pod#write_xml_spo_type node st
     end
 
@@ -533,42 +552,45 @@ let read_xml_proof_obligation
     (if hasc "e" then
        po#set_explanation ((getc "e")#getAttribute "txt"));
     (if hasc "d" then
-       po#get_diagnostic#read_xml (getc "d")) ;
+       po#get_diagnostic#read_xml (getc "d"));
     (if has "deps" then
        po#set_dependencies (read_xml_dependencies node pod));
     (if has "ts" then
        po#set_resolution_timestamp (node#getAttribute "ts")) 
   end
 
+
 let read_xml_ppo (node:xml_element_int) (pod:podictionary_int) =
   let ppotype = pod#read_xml_ppo_type node in
   let ppo = new ppo_t pod ppotype in
   begin
-    read_xml_proof_obligation node pod ppo ;
+    read_xml_proof_obligation node pod ppo;
     ppo
   end
+
 
 let read_xml_callsite_spo (node:xml_element_int) (pod:podictionary_int) =
   let spotype = pod#read_xml_spo_type node in
   let spo = new callsite_spo_t pod spotype in
   begin
-    read_xml_proof_obligation node pod spo ;
+    read_xml_proof_obligation node pod spo;
     spo
   end
+
 
 let read_xml_returnsite_spo (node:xml_element_int) (pod:podictionary_int) =
   let spotype = pod#read_xml_spo_type node in
   let spo = new returnsite_spo_t pod spotype in
   begin
-    read_xml_proof_obligation node pod spo ;
+    read_xml_proof_obligation node pod spo;
     spo
   end
+
 
 let read_xml_local_spo (node:xml_element_int) (pod:podictionary_int) =
   let spotype = pod#read_xml_spo_type node in
   let spo = new local_spo_t pod spotype in
   begin
-    read_xml_proof_obligation node pod spo ;
+    read_xml_proof_obligation node pod spo;
     spo
   end
-

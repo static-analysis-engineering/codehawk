@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +52,9 @@ open CCHSPO
 
 module H = Hashtbl
 
+
 let id = CCHInterfaceDictionary.interface_dictionary
+
 
 class proof_scaffolding_t:proof_scaffolding_int =
 object (self)
@@ -62,10 +66,10 @@ object (self)
 
   method reset =
     begin
-      H.clear apis ;
-      H.clear ppos ;
-      H.clear spos ;
-      H.clear pods ;
+      H.clear apis;
+      H.clear ppos;
+      H.clear spos;
+      H.clear pods;
     end
 
   method get_function_api (fname:string):function_api_int =
@@ -74,7 +78,7 @@ object (self)
     else
       let api = mk_function_api fname in
       begin
-        H.add apis fname api ;
+        H.add apis fname api;
         api
       end
 
@@ -85,7 +89,7 @@ object (self)
       (if file_contract#has_function_contract fname then
          let preconditions =
            (file_contract#get_function_contract fname)#get_precondition_ixs in
-         List.iter (fApi#add_contract_precondition fdecls) preconditions) ;
+         List.iter (fApi#add_contract_precondition fdecls) preconditions);
       (List.iter (fun gvar ->
            begin
              (if gvar.cgv_const then
@@ -97,7 +101,7 @@ object (self)
                                    NumConstant v) in
                    let xpredix = id#index_xpredicate xpred in
                    fApi#add_contract_precondition fdecls xpredix
-               | _ -> ()) ;
+               | _ -> ());
              (match gvar.cgv_lb with
               | Some lb ->
                  let lb = mkNumerical lb in
@@ -106,7 +110,7 @@ object (self)
                                  NumConstant lb) in
                  let xpredix = id#index_xpredicate xpred in
                  fApi#add_contract_precondition fdecls xpredix
-              | _ -> ()) ;
+              | _ -> ());
              (match gvar.cgv_ub with
               | Some ub ->
                  let ub = mkNumerical ub in
@@ -128,7 +132,7 @@ object (self)
     else
       let ppomgr = mk_ppo_manager fname pod in
       begin
-        H.add ppos fname ppomgr ;
+        H.add ppos fname ppomgr;
         ppomgr
       end
       
@@ -139,7 +143,7 @@ object (self)
     else
       let spomgr = mk_spo_manager fname pod in
       begin
-        H.add spos fname spomgr ;
+        H.add spos fname spomgr;
         spomgr
       end
 
@@ -178,7 +182,7 @@ object (self)
   method private get_pod (fname:string) =
     if H.mem pods fname then H.find pods fname else
       raise (CCHFailure
-               (LBLOCK [ STR "Proof obligation dictionary for " ; STR fname ;
+               (LBLOCK [ STR "Proof obligation dictionary for "; STR fname;
                          STR " not found" ]))
 
   method get_proof_obligations (fname:string) =
@@ -187,12 +191,12 @@ object (self)
     with
     | CCHFailure p ->
        raise (CCHFailure
-                (LBLOCK [ STR "Error in get_proof_obligations for " ; STR fname ]))
+                (LBLOCK [ STR "Error in get_proof_obligations for "; STR fname ]))
 
   method write_xml_api (node:xml_element_int) (fname:string) =
     let anode = xmlElement "api" in
     begin
-      (self#get_function_api fname)#write_xml anode ;
+      (self#get_function_api fname)#write_xml anode;
       node#appendChildren [ anode ]
     end
 
@@ -202,7 +206,7 @@ object (self)
   method write_xml_ppos (node:xml_element_int) (fname:string) =
     let pnode = xmlElement "ppos" in
     begin
-      (self#get_ppo_manager fname)#write_xml pnode ;
+      (self#get_ppo_manager fname)#write_xml pnode;
       node#appendChildren [ pnode ]
     end
 
@@ -212,7 +216,7 @@ object (self)
   method write_xml_spos (node:xml_element_int) (fname:string) =
     let snode = xmlElement "spos" in
     begin
-      (self#get_spo_manager fname)#write_xml snode ;
+      (self#get_spo_manager fname)#write_xml snode;
       node#appendChildren [ snode ]
     end
 
@@ -227,7 +231,7 @@ object (self)
            (node:xml_element_int) (fname:string) (fdecls:cfundeclarations_int) =
     let pod = mk_podictionary fname fdecls in
     begin
-      pod#read_xml node ;
+      pod#read_xml node;
       H.replace pods fname pod
     end
 

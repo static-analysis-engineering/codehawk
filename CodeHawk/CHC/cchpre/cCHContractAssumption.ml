@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,18 +51,26 @@ module H = Hashtbl
 
 let id = CCHInterfaceDictionary.interface_dictionary
 
+
 class contract_assumption_t
         ?(ppos=[]) ?(spos=[]) (index:int) (callee:int):contract_assumption_int =
 object (self)
 
+  val index = index
   val mutable dependent_ppos = ppos
   val mutable dependent_spos = spos
 
   method add_dependent_ppo (ippo:int) =
-    if List.mem ippo dependent_ppos then () else dependent_ppos <- ippo :: dependent_ppos
+    if List.mem ippo dependent_ppos then
+      ()
+    else
+      dependent_ppos <- ippo :: dependent_ppos
 
   method add_dependent_spo (ispo:int) =
-    if List.mem ispo dependent_spos then () else dependent_spos <- ispo :: dependent_spos
+    if List.mem ispo dependent_spos then
+      ()
+    else
+      dependent_spos <- ispo :: dependent_spos
 
   method index = index
 
@@ -83,14 +93,15 @@ object (self)
     let seti = node#setIntAttribute in
     begin
       (if (List.length dependent_ppos) > 0 then
-         set "ppos" (String.concat "," (List.map string_of_int dependent_ppos))) ;
+         set "ppos" (String.concat "," (List.map string_of_int dependent_ppos)));
       (if (List.length dependent_spos) > 0 then
-         set "spos" (String.concat "," (List.map string_of_int dependent_spos))) ;
-      seti "ixpre" index ;
+         set "spos" (String.concat "," (List.map string_of_int dependent_spos)));
+      seti "ixpre" index;
       if callee >= 0 then seti "callee" callee
     end
 
 end
+
 
 let mk_contract_assumption
       ?(ppos=[]) ?(spos=[]) (index:int) (callee:int):contract_assumption_int =
@@ -112,7 +123,11 @@ let read_xml_contract_assumption (node:xml_element_int) =
         List.map int_of_string (nsplit ',' (get "spos")) else [] in
     mk_contract_assumption ~ppos ~spos index callee
   with
-    Failure _ ->
-    raise (CCHFailure
-             (LBLOCK [ STR "read_xml_contract_assumption: int_of_string on " ;
-                       STR (get "ppos") ; STR " and " ; STR (get "spos") ]))
+  | Failure _ ->
+     raise
+       (CCHFailure
+          (LBLOCK [
+               STR "read_xml_contract_assumption: int_of_string on ";
+               STR (get "ppos");
+               STR " and ";
+               STR (get "spos")]))

@@ -322,6 +322,7 @@ let read_cfile_predicate_dictionary () =
       | XmlParseError (line,col,p) ->
        raise (CCHFailure (xml_error filename line col p))
 
+
 let save_cfile_interface_dictionary () =
   let filename = get_xml_interface_dictionary_name () in
   let doc = xmlDocument () in
@@ -333,6 +334,7 @@ let save_cfile_interface_dictionary () =
     root#appendChildren [ dNode ] ;
     file_output#saveFile filename doc#toPretty
   end
+
 
 let read_cfile_interface_dictionary () =
   let filename = get_xml_interface_dictionary_name () in
@@ -350,6 +352,7 @@ let read_cfile_interface_dictionary () =
       | XmlParseError (line,col,p) ->
        raise (CCHFailure (xml_error filename line col p))
 
+
 let read_global_contract () =
   if system_settings#has_contractpath then
     let filename = get_global_contract_filename () in
@@ -358,22 +361,24 @@ let read_global_contract () =
         let doc = readXmlDocument filename in
         let root = doc#getRoot in
         let node = root#getTaggedChild "global-definitions" in
-        let _ = if node#hasOneTaggedChild "global-assumptions" then
-                  let gasnode = node#getTaggedChild "global-assumptions" in
-                  global_contract#read_xml gasnode in
+        let _ =
+          if node#hasOneTaggedChild "global-assumptions" then
+            let gasnode = node#getTaggedChild "global-assumptions" in
+            global_contract#read_xml gasnode in
         if node#hasOneTaggedChild "library-function-summaries" then
           let libnode = node#getTaggedChild "library-function-summaries" in
           List.iter (fun n ->
               let name = n#getAttribute "name" in
               function_summary_library#read_xml_substitute_summary n name)
-                    (libnode#getTaggedChildren "function-summary")
+            (libnode#getTaggedChildren "function-summary")
         else
           ()
       with
-      | XmlDocumentError (line,col,p)
-        | XmlParseError (line,col,p) ->
+      | XmlDocumentError (line, col, p)
+        | XmlParseError (line, col, p) ->
          raise (CCHFailure (xml_error filename line col p))
-      
+
+
 let read_cfile_contract () =
   if system_settings#has_contractpath then
     let filename = get_xml_file_contract_name () in
@@ -384,13 +389,14 @@ let read_cfile_contract () =
         let root = doc#getRoot in
         let node = root#getTaggedChild "cfile" in
         begin
-          file_contract#reset ;
+          file_contract#reset;
           file_contract#read_xml node
         end
       with
-      | XmlDocumentError (line,col,p)
-        | XmlParseError (line,col,p) ->
+      | XmlDocumentError (line, col, p)
+        | XmlParseError (line, col, p) ->
          raise (CCHFailure (xml_error filename line col p))
+
 
 let save_cfile_contract () =
   if system_settings#has_contractpath then
@@ -400,11 +406,12 @@ let save_cfile_contract () =
     let root = get_cch_root () in
     let cNode = xmlElement "cfile" in
     begin
-      file_contract#write_xmlx cNode ;
-      doc#setNode root ;
-      root#appendChildren [ cNode ] ;
+      file_contract#write_xmlx cNode;
+      doc#setNode root;
+      root#appendChildren [cNode];
       file_output#saveFile filename doc#toPretty
     end
+
 
 let save_cfile_context () =
   let filename = get_xml_contexts_name () in

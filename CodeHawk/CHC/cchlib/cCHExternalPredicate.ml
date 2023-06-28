@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +47,7 @@ open CCHUtilities
 
 module H = Hashtbl
 
+
 let raise_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
     LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
@@ -53,7 +56,9 @@ let raise_error (node:xml_element_int) (msg:pretty_t) =
     raise (XmlParseError (node#getLineNumber, node#getColumnNumber, error_msg))
   end
 
+
 let macroconstants = H.create 11
+
 
 let _ =
   List.iter (fun (name,tval) ->
@@ -82,6 +87,7 @@ let get_macro_constant (name:string):s_term_t =
 let macrovalues32 = H.create 11
 let macrovalues64 = H.create 11
 let macrovalues = H.create  3
+
 
 let _ =
   List.iter (fun (name,tmacro) ->
@@ -114,11 +120,13 @@ let _ =
 let _ = H.add macrovalues 32 macrovalues32
 let _ = H.add macrovalues 64 macrovalues64
 
+
 let get_macro_value_size name wordsize =
   let default () =
-    let _ = chlog#add
-              "symbolic name in function summary"
-              (LBLOCK [ STR name ; STR " (wordsize: " ; INT wordsize ]) in
+    let _ =
+      chlog#add
+        "symbolic name in function summary"
+        (LBLOCK [STR name; STR " (wordsize: "; INT wordsize]) in
     NamedConstant name in
   if  H.mem macrovalues wordsize then
     let values = H.find macrovalues wordsize in
@@ -129,13 +137,23 @@ let get_macro_value_size name wordsize =
   else
     default ()
 
+
 let is_generic_macro_constant (name:string) =
-  List.mem name [ "MININT"; "MAXINT"; "MAXUINT";
-                  "MINLONG"; "MAXLONG"; "MAXULONG";
-                  "MAXULONGLONG"; "MINLONGLONG"; "MAXLONGLONG" ]
+  List.mem name
+    ["MININT";
+     "MAXINT";
+     "MAXUINT";
+     "MINLONG";
+     "MAXLONG";
+     "MAXULONG";
+     "MAXULONGLONG";
+     "MINLONGLONG";
+     "MAXLONGLONG"]
+
 
 let is_macro_value (name:string) =
   (is_macro_constant name) || (is_generic_macro_constant name)
+
 
 let get_macro_value (name:string):s_term_t =
   let default () =
@@ -150,6 +168,7 @@ let get_macro_value (name:string):s_term_t =
       default ()
   else
     default ()
+
 
 let xpredicate_tag p =
   match p with
@@ -194,6 +213,7 @@ let xpredicate_tag p =
   | XPolicyValue _ -> "policy-value"
   | XPolicyTransition _ -> "policy-transition"
 
+
 class s_term_walker_t =
 object (self)
 
@@ -228,6 +248,7 @@ object (self)
     | _ -> ()
 
 end
+
 
 class xpredicate_walker_t =
 object (self)
@@ -287,6 +308,7 @@ object (self)
 
 end
 
+
 class  find_global_walker_t =
 object
 
@@ -303,6 +325,7 @@ object
 
 end
 
+
 class xpredicate_get_term_walker_t  (walker:find_global_walker_t) =
 object
 
@@ -314,12 +337,14 @@ object
 
 end
 
+
 let find_xpredicate_global_vars (p:xpredicate_t) =
   let w = new find_global_walker_t in
   let walker = new xpredicate_get_term_walker_t w in
   let _ = walker#walk_xpredicate p in
   walker#get_result
-  
+
+
 let rec s_offset_to_pretty s =
   match s with
   | ArgNoOffset -> STR ""
@@ -327,6 +352,7 @@ let rec s_offset_to_pretty s =
      LBLOCK [ STR "." ; STR name ; s_offset_to_pretty t ]
   | ArgIndexOffset (index,t) ->
      LBLOCK [ STR "[" ; index#toPretty ; STR "]" ; s_offset_to_pretty t ]
+
 
 let rec s_term_to_pretty s =
   let opt_t_topretty optt =
@@ -359,6 +385,7 @@ let rec s_term_to_pretty s =
   | ChoiceValue (opt1,opt2) ->
      LBLOCK [ STR "choice(" ; opt_t_topretty opt1 ; STR "," ;
               opt_t_topretty opt2 ; STR ")" ]
+
 
 let xpredicate_to_pretty p =
   let sp = s_term_to_pretty in
@@ -426,6 +453,7 @@ let xpredicate_to_pretty p =
      LBLOCK [ STR "policy-transition(" ; sp t ; STR ",policy:" ; STR pname ;
               STR ",transition:" ; STR ptrans ]
 
+
 let rec get_term_parameters (t:s_term_t) =
   match t with
   | ArgValue (ParFormal i,_) -> [ i ]
@@ -439,8 +467,10 @@ let rec get_term_parameters (t:s_term_t) =
      (get_optterm_parameters opt1) @ (get_optterm_parameters opt2)
   | _ -> []
 
+
 and get_optterm_parameters (t:s_term_t option) =
   match t with Some t -> get_term_parameters t | _ -> []
+
 
 let rec get_term_global_variables (t:s_term_t) =
   match t with

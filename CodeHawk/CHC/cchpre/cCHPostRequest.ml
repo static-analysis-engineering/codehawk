@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +49,7 @@ open CCHProofObligation
 let cd = CCHDictionary.cdictionary
 let pd = CCHPredicateDictionary.predicate_dictionary
 let id = CCHInterfaceDictionary.interface_dictionary
+
 
 class postcondition_request_t
         ?(ppos=[]) ?(spos=[]) (request:postrequest_t):postcondition_request_int =
@@ -91,8 +94,10 @@ object (self)
 
 end
 
+
 let mk_postcondition_request ?(ppos=[]) ?(spos=[]) (request:postrequest_t) =
   new postcondition_request_t ~ppos ~spos request
+
 
 let read_xml_postcondition_request (node:xml_element_int) =
   let get = node#getAttribute in
@@ -101,15 +106,20 @@ let read_xml_postcondition_request (node:xml_element_int) =
   try
     let ppos =
       if has "ppos" then
-        List.map int_of_string (nsplit ',' (get "ppos")) else [] in
+        List.map int_of_string (nsplit ',' (get "ppos"))
+      else
+        [] in
     let spos =
       if has "spos" then
-        List.map int_of_string (nsplit ',' (get "spos")) else [] in
+        List.map int_of_string (nsplit ',' (get "spos"))
+      else
+        [] in
     mk_postcondition_request ~ppos ~spos request
   with
-    Failure _ ->
-    raise (CCHFailure
-             (LBLOCK [ STR "read_xml_postcondition_request: int_of_string on " ;
-                       STR (get "ppos") ; STR " and " ; STR (get "spos") ]))
-    
-     
+  | Failure _ ->
+     raise (CCHFailure
+              (LBLOCK [
+                   STR "read_xml_postcondition_request: int_of_string on ";
+                   STR (get "ppos");
+                   STR " and ";
+                   STR (get "spos")]))

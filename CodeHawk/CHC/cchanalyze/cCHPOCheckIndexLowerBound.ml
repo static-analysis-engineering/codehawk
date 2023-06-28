@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -53,11 +55,13 @@ open CCHProofObligation
 (* cchanalyze *)
 open CCHAnalysisTypes
 
+
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 let e2s e = p2s (exp_to_pretty e)
-    
+
+
 class index_lower_bound_checker_t
         (poq:po_query_int)
         (e:exp)
@@ -82,14 +86,14 @@ object (self)
     | _ ->
        let xpred = po_predicate_to_xpredicate poq#fenv pred in
        begin
-         poq#mk_global_request xpred ;
+         poq#mk_global_request xpred;
          None
        end
 
   method private var_implies_safe invindex v =
     if poq#env#is_function_return_value v then
       let callee = poq#env#get_callvar_callee v in
-      let (pcs,epcs) = poq#get_postconditions v in
+      let (pcs, epcs) = poq#get_postconditions v in
       let _ = poq#set_diagnostic ("return value from " ^ callee.vname) in
       let r =
         match epcs with
@@ -100,9 +104,12 @@ object (self)
                | _ ->
                   match pc with
                   | XRelationalExpr (Ge, ReturnValue, NumConstant n)
-                    | XRelationalExpr  (Eq, ReturnValue, NumConstant n) when n#geq numerical_zero ->
-                     let deps = DEnvC ( [ invindex ],[ PostAssumption (callee.vid,pc) ]) in
-                     let msg = "return value from " ^ callee.vname ^ " is non-negative" in
+                    | XRelationalExpr (Eq, ReturnValue, NumConstant n)
+                       when n#geq numerical_zero ->
+                     let deps =
+                       DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
+                     let msg =
+                       "return value from " ^ callee.vname ^ " is non-negative" in
                      Some (deps,msg)
                   | _ -> None) None pcs
         | _ -> None in
@@ -111,19 +118,19 @@ object (self)
       | _ ->
          let pc = XRelationalExpr (Ge, ReturnValue, NumConstant numerical_zero) in
          begin
-           poq#mk_postcondition_request pc callee ;
+           poq#mk_postcondition_request pc callee;
            None
          end
     else
       None
 
   method private xpr_implies_safe invindex x =
-    let xconstraint = XOp (XGe, [ x  ; zero_constant_expr ]) in
+    let xconstraint = XOp (XGe, [x; zero_constant_expr]) in
     let sconstraint = simplify_xpr xconstraint in
     if is_true sconstraint then
-      let deps = DLocal [ invindex ] in
-      let msg = "index: "  ^ (x2s x) ^ " satisfies constraint: "
-                ^ (x2s xconstraint) in
+      let deps = DLocal [invindex] in
+      let msg =
+        "index: "  ^ (x2s x) ^ " satisfies constraint: " ^ (x2s xconstraint) in
       Some (deps,msg)
     else if poq#is_global_expression x then
       match self#global_implies_safe invindex (poq#get_global_expression x) with
@@ -153,7 +160,7 @@ object (self)
              match self#inv_implies_safe inv with
              | Some (deps,msg) ->
                 begin
-                  poq#record_safe_result deps msg ;
+                  poq#record_safe_result deps msg;
                   true
                 end
              | _ -> false) false invs
@@ -162,15 +169,18 @@ object (self)
 
   method private var_implies_violation invindex v xincr =
     if poq#env#is_tainted_value v then
-      let xpr = XOp (XPlus, [ XVar v ; xincr ]) in
+      let xpr = XOp (XPlus, [XVar v; xincr]) in
       let vconstraint = self#mk_violation_constraint xpr in
       match poq#get_witness vconstraint v with
       | Some violationvalue -> 
-         let (s,callee,pc) = poq#get_tainted_value_origin v in
+         let (s, callee, pc) = poq#get_tainted_value_origin v in
          let deps = DEnvC ([ invindex ],[ PostAssumption (callee.vid,pc) ]) in
-         let msg = s ^ " choose value: " ^ (x2s violationvalue)
-                   ^ " to violate the zero lower bound" in
-         Some (deps,msg)
+         let msg =
+           s
+           ^ " choose value: "
+           ^ (x2s violationvalue)
+           ^ " to violate the zero lower bound" in
+         Some (deps, msg)
       | _ -> None
     else
       None
@@ -178,7 +188,7 @@ object (self)
   method private xpr_implies_violation invindex x =
     match x with
     | XConst (IntConst n) when n#lt numerical_zero ->
-       let deps = DLocal [ invindex ] in
+       let deps = DLocal [invindex] in
        let msg  = "upper bound on index value is negative: " ^ n#toString in
        Some (deps,msg)
     | XVar v ->
@@ -186,7 +196,7 @@ object (self)
     | XOp (XPlus, [ XVar v ; xincr ]) ->
        self#var_implies_violation invindex v xincr
     | XOp (XMinus, [ XVar v ; xdecr ]) ->
-       let xincr = simplify_xpr (XOp (XMinus, [ zero_constant_expr ; xdecr ])) in
+       let xincr = simplify_xpr (XOp (XMinus, [zero_constant_expr; xdecr])) in
        self#var_implies_violation invindex v xincr
     | _ -> None
 
@@ -212,11 +222,11 @@ object (self)
                    match acc with
                    | None -> None
                    | Some (deps,msg) ->
-                      match self#xpr_implies_violation inv#index x  with
-                      | Some (d,m) ->
+                      match self#xpr_implies_violation inv#index x with
+                      | Some (d, m) ->
                          let deps = join_dependencies deps d in
                          let msg = msg ^ ": " ^ m in
-                         Some (deps,msg)
+                         Some (deps, msg)
                       | _ -> None) (Some r) tl
             | _ -> None
           end
@@ -231,8 +241,8 @@ object (self)
                       match acc with
                       | None -> None
                       | Some (deps,msg) ->
-                         match  self#xprlist_implies_violation inv#index xl with
-                         | Some (d,m) ->
+                         match self#xprlist_implies_violation inv#index xl with
+                         | Some (d, m) ->
                             let deps = join_dependencies deps d in
                             let msg = msg ^ "; " ^ m in
                             Some (deps,msg)
@@ -260,14 +270,17 @@ object (self)
                    true
                  end
               | _ -> false) false invs
+
   (* ----------------------- delegation ------------------------------------- *)
 
   method private xpr_implies_delegation invindex x =
     if poq#is_api_expression x then
       let pred = self#mk_predicate (poq#get_api_expression x) in
-      let deps = DEnvC ([ invindex ],[ ApiAssumption pred ]) in
-      let msg = "condition " ^ (p2s (po_predicate_to_pretty pred))
-                ^ " delegated to the api" in
+      let deps = DEnvC ([invindex], [ApiAssumption pred]) in
+      let msg =
+        "condition "
+        ^ (p2s (po_predicate_to_pretty pred))
+        ^ " delegated to the api" in
       Some (deps,msg)
     else
       None
@@ -276,6 +289,7 @@ object (self)
     match inv#lower_bound_xpr with
     | Some  x -> self#xpr_implies_delegation inv#index x
     | _ -> None
+
   method check_delegation =
     match invs with
     | [] -> false
@@ -285,7 +299,7 @@ object (self)
              match self#inv_implies_delegation inv with
              | Some (deps,msg) ->
                 begin
-                  poq#record_safe_result deps msg ;
+                  poq#record_safe_result deps msg;
                   true
                 end
              | _ -> false) false invs

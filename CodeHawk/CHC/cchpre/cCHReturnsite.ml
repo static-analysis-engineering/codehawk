@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,9 +58,11 @@ open CCHPOPredicate
 
 module H = Hashtbl
 
+
 let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
 let id = CCHInterfaceDictionary.interface_dictionary
+
 
 let create_pc_spos
       (pod:podictionary_int)
@@ -113,7 +117,7 @@ object (self)
       ()
     else
       let spotype = ReturnsiteSPO (loc,ctxt,pred,xpred) in      
-      H.add spos xpredix [ (mk_returnsite_spo pod spotype) ]
+      H.add spos xpredix [(mk_returnsite_spo pod spotype)]
 
   method add_notnull_condition (gv:contract_global_var_t) =
     let gvar = file_environment#get_globalvar_by_name gv.cgv_name in
@@ -125,22 +129,24 @@ object (self)
     if H.mem spos xpredix then
       ()
     else
-      H.add spos xpredix [ (mk_returnsite_spo pod spotype) ]
+      H.add spos xpredix [(mk_returnsite_spo pod spotype)]
 
   method add_inequality_condition (gv:contract_global_var_t) (op:binop) (lb:int) =
     let gvar = file_environment#get_globalvar_by_name gv.cgv_name in
     let gexp = Lval (Var (gvar.vname, gvar.vid),NoOffset) in
     let lbexp = Const (CInt (Int64.of_int lb,IInt, None)) in
     let pred = PValueConstraint (BinOp (op, gexp, lbexp,TInt (IInt,[]))) in
-    let xpred = XRelationalExpr (op, ArgValue (ParGlobal gv.cgv_name,ArgNoOffset),
-                                 NumConstant (mkNumerical lb)) in
+    let xpred =
+      XRelationalExpr
+        (op,
+         ArgValue (ParGlobal gv.cgv_name,ArgNoOffset),
+         NumConstant (mkNumerical lb)) in
     let xpredix = id#index_xpredicate xpred in
     let spotype = ReturnsiteSPO (loc,ctxt,pred,xpred) in
     if H.mem spos xpredix then
       ()
     else
-      H.add spos xpredix [ (mk_returnsite_spo pod spotype) ]
-              
+      H.add spos xpredix [(mk_returnsite_spo pod spotype)]
 
   method get_location = loc
 
@@ -149,7 +155,8 @@ object (self)
   method get_exp =
     match exp with
     | Some e -> e
-    | _ -> raise (CCHFailure (LBLOCK [ STR "Returnsite does not have an expression" ]))
+    | _ ->
+       raise (CCHFailure (LBLOCK [STR "Returnsite does not have an expression"]))
 
   method has_exp = match exp with Some _ -> true | _ -> false
 
@@ -167,19 +174,24 @@ object (self)
                pnode#appendChildren
                  (List.map (fun spo ->
                       let snode = xmlElement "po" in
-                      begin spo#write_xml snode ; snode end) spos) ;
+                      begin
+                        spo#write_xml snode;
+                        snode
+                      end) spos);
                pnode#setIntAttribute "iipc" pcid;
                pnode
-           end) self#get_spo_lists) ;
-       node#appendChildren [ ppnode ] ;
-       cdecls#write_xml_location node loc ;
-       ccontexts#write_xml_context node ctxt ;
+           end) self#get_spo_lists);
+       node#appendChildren [ppnode];
+       cdecls#write_xml_location node loc;
+       ccontexts#write_xml_context node ctxt;
        cd#write_xml_exp_opt node exp
     end
 
 end
 
-let read_xml_returnsite (node:xml_element_int) (pod:podictionary_int):returnsite_t =
+
+let read_xml_returnsite
+      (node:xml_element_int) (pod:podictionary_int):returnsite_t =
   let exp = cd#read_xml_exp_opt node in
   let loc = cdecls#read_xml_location node in
   let ctxt = ccontexts#read_xml_context node in
@@ -188,8 +200,9 @@ let read_xml_returnsite (node:xml_element_int) (pod:podictionary_int):returnsite
     List.iter
       (fun pnode ->
         let spos = 
-          List.map (fun snode -> read_xml_returnsite_spo snode pod)
-                   (pnode#getTaggedChildren "po") in
+          List.map
+            (fun snode -> read_xml_returnsite_spo snode pod)
+            (pnode#getTaggedChildren "po") in
         let pcid = pnode#getIntAttribute "iipc" in
         H.add pcspos pcid spos)
       ((node#getTaggedChild "post-guarantees")#getTaggedChildren "pc") in
@@ -231,8 +244,11 @@ object (self)
       node#appendChildren
         (List.map (fun r ->
              let rnode = xmlElement "rs" in
-             begin r#write_xml rnode ; rnode end)
-                  (H.fold (fun _ v r -> v::r) returnsites [])) ;
+             begin
+               r#write_xml rnode;
+               rnode
+             end)
+           (H.fold (fun _ v r -> v::r) returnsites []))
     end
 
   method read_xml (node:xml_element_int) =
@@ -243,9 +259,11 @@ object (self)
           H.add returnsites ictxt r) (node#getTaggedChildren "rs")
     with
     | Failure s ->
-       raise (CCHFailure
-                (LBLOCK [ STR "Failure in returnsite manager:read_xml: " ; STR s ]))
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Failure in returnsite manager:read_xml: "; STR s]))
 
 end
+
 
 let mk_returnsite_manager = new returnsite_manager_t

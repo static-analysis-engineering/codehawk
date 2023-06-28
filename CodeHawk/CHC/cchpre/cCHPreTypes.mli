@@ -725,55 +725,62 @@ class type proof_obligation_int =
     method toPretty: pretty_t
   end
 
+
 class type ppo_manager_int =
   object
 
     method add_ppo: location -> program_context_int -> po_predicate_t -> unit
-
-    method add_lib_ppo: location -> program_context_int -> po_predicate_t
-         -> string -> xpredicate_t -> unit
+    method add_lib_ppo:
+             location
+             -> program_context_int
+             -> po_predicate_t
+             -> string
+             -> xpredicate_t
+             -> unit
 
     method get_ppo : int -> proof_obligation_int
     method get_ppos: proof_obligation_int list
 
     method write_xml: xml_element_int -> unit
-         
     method read_xml : xml_element_int -> unit
 
   end
-  
+
+
 class type indirect_callsite_int =
   object
 
-    method set_callees   : varinfo list -> unit
+    method set_callees: varinfo list -> unit
 
-    method get_callexp   : exp
-    method get_callees   : varinfo list
-    method get_arguments : exp list
-    method get_context   : program_context_int
-    method get_header    : string
-    method get_location  : location
-    method get_spos      : proof_obligation_int list
+    method get_callexp: exp
+    method get_callees: varinfo list
+    method get_arguments: exp list
+    method get_context: program_context_int
+    method get_header: string
+    method get_location: location
+    method get_spos: proof_obligation_int list
     method get_postassumes: annotated_xpredicate_t list
-    method get_spo_lists : (int * proof_obligation_int list) list
+    method get_spo_lists: (int * proof_obligation_int list) list
 
     method write_xml: xml_element_int -> unit
 
   end
+
 
 class type direct_callsite_int =
   object
-    method get_callee     : varinfo
-    method get_arguments  : exp list
-    method get_context    : program_context_int
-    method get_header     : string
-    method get_location   : location
-    method get_spos       : proof_obligation_int list
+    method get_callee: varinfo
+    method get_arguments: exp list
+    method get_context: program_context_int
+    method get_header: string
+    method get_location: location
+    method get_spos: proof_obligation_int list
     method get_postassumes: annotated_xpredicate_t list
-    method get_spo_lists  : (int * proof_obligation_int list) list
+    method get_spo_lists: (int * proof_obligation_int list) list
 
     method write_xml: xml_element_int -> unit
   end
+
 
 class type callsite_manager_int =
   object
@@ -808,7 +815,7 @@ class type returnsite_int =
     method add_inequality_condition: contract_global_var_t -> binop -> int -> unit
 
     method get_exp: exp
-    method get_context : program_context_int
+    method get_context: program_context_int
     method get_location: location
     method get_spos: proof_obligation_int list
 
@@ -816,6 +823,7 @@ class type returnsite_int =
 
     method write_xml: xml_element_int -> unit
   end
+
 
 class type returnsite_manager_int =
   object
@@ -865,15 +873,16 @@ object
 
   (* accessors *)
   method index: int
-  method get_predicate     : po_predicate_t
+  method get_predicate: po_predicate_t
   method get_dependent_ppos: int list
   method get_dependent_spos: int list
-  method toPretty : pretty_t
+  method toPretty: pretty_t
       
   (* xml *)
   method write_xml: xml_element_int -> unit
 
 end
+
 
 class type contract_assumption_int =
 object
@@ -906,12 +915,12 @@ object ('a)
   method add_dependent_spo: int -> unit
     
   (* accessors *)
-  method get_request       : postrequest_t
-  method get_postcondition : xpredicate_t
-  method get_callee        : int                    (* fvid of callee *)
+  method get_request: postrequest_t
+  method get_postcondition: xpredicate_t
+  method get_callee: int                    (* fvid of callee *)
   method get_dependent_ppos: int list
   method get_dependent_spos: int list
-  method toPretty : pretty_t
+  method toPretty: pretty_t
 
   (* xml *)
   method write_xml: xml_element_int -> unit
