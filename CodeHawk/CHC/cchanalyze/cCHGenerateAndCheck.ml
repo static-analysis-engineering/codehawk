@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -68,6 +70,7 @@ open CCHPostCondition
 
 module H = Hashtbl
 
+
 let fenv = CCHFileEnvironment.file_environment
 
 let prr p l = fixed_length_pretty ~alignment:StrRight p l
@@ -75,23 +78,24 @@ let function_to_be_analyzed = ref ""
 
 let max_callcount = 100
 
+
 type invariant_generation_spec_t = {
-  ig_domain: string ;
+  ig_domain: string;
   ig_get_exp_translator:
     c_environment_int
     -> orakel_int
-    -> exp_translator_int ;
-  ig_variable_type : variable_type_t ;
+    -> exp_translator_int;
+  ig_variable_type : variable_type_t;
   ig_get_function_translator:
     c_environment_int
     -> orakel_int
     -> operations_provider_int
-    -> function_translator_int ;
+    -> function_translator_int;
   ig_analysis:
     c_environment_int
     -> system_int
     -> domain_opsemantics_t
-    -> (string, (string, atlas_t) H.t) H.t ;
+    -> (string, (string, atlas_t) H.t) H.t;
   ig_invariant_extractor:
     c_environment_int
     -> invariant_io_int
@@ -103,63 +107,63 @@ type invariant_generation_spec_t = {
 let make_invariant_generation_spec t =
   match t with
     "linear equalities" -> {
-      ig_domain = t ;
-      ig_get_exp_translator = get_num_exp_translator ;
-      ig_variable_type = NUM_VAR_TYPE ;
-      ig_get_function_translator = get_num_translator ;
-      ig_analysis = analyze_linear_equalities ;
+      ig_domain = t;
+      ig_get_exp_translator = get_num_exp_translator;
+      ig_variable_type = NUM_VAR_TYPE;
+      ig_get_function_translator = get_num_translator;
+      ig_analysis = analyze_linear_equalities;
       ig_invariant_extractor = extract_external_value_facts
     }
   | "intervals" -> {
-      ig_domain = t ;
-      ig_get_exp_translator = get_num_exp_translator ;
-      ig_variable_type = NUM_VAR_TYPE ;
-      ig_get_function_translator = get_interval_translator ;
-      ig_analysis = analyze_intervals ;
+      ig_domain = t;
+      ig_get_exp_translator = get_num_exp_translator;
+      ig_variable_type = NUM_VAR_TYPE;
+      ig_get_function_translator = get_interval_translator;
+      ig_analysis = analyze_intervals;
       ig_invariant_extractor = extract_ranges
     }
   | "pepr" -> {
-      ig_domain = t ;
-      ig_get_exp_translator = get_num_exp_translator ;
-      ig_variable_type = NUM_VAR_TYPE ;
-      ig_get_function_translator = get_num_translator ;
-      ig_analysis = analyze_pepr ;
+      ig_domain = t;
+      ig_get_exp_translator = get_num_exp_translator;
+      ig_variable_type = NUM_VAR_TYPE;
+      ig_get_function_translator = get_num_translator;
+      ig_analysis = analyze_pepr;
       ig_invariant_extractor = extract_pepr
     }
   | "valuesets" -> {
-      ig_domain = t ;
-      ig_get_exp_translator = get_num_exp_translator ;
-      ig_variable_type = NUM_VAR_TYPE ;
-      ig_get_function_translator = get_valueset_translator ;
-      ig_analysis = analyze_valuesets ;
+      ig_domain = t;
+      ig_get_exp_translator = get_num_exp_translator;
+      ig_variable_type = NUM_VAR_TYPE;
+      ig_get_function_translator = get_valueset_translator;
+      ig_analysis = analyze_valuesets;
       ig_invariant_extractor = extract_valuesets
     }
   | "symbolic sets" -> {
-      ig_domain = t ;
-      ig_get_exp_translator = get_sym_exp_translator ;
-      ig_variable_type = SYM_VAR_TYPE ;
-      ig_get_function_translator = get_symbolicsets_translator ;
-      ig_analysis = analyze_symbols ;
+      ig_domain = t;
+      ig_get_exp_translator = get_sym_exp_translator;
+      ig_variable_type = SYM_VAR_TYPE;
+      ig_get_function_translator = get_symbolicsets_translator;
+      ig_analysis = analyze_symbols;
       ig_invariant_extractor = extract_symbols
     }
   | "state sets" -> {
-      ig_domain = t ;
-      ig_get_exp_translator = get_sym_exp_translator ;
-      ig_variable_type = SYM_VAR_TYPE ;
-      ig_get_function_translator = get_statesets_translator ;
-      ig_analysis = analyze_statesets ;
+      ig_domain = t;
+      ig_get_exp_translator = get_sym_exp_translator;
+      ig_variable_type = SYM_VAR_TYPE;
+      ig_get_function_translator = get_statesets_translator;
+      ig_analysis = analyze_statesets;
       ig_invariant_extractor = extract_states
     }      
   | "sym_pointersets" -> {
-      ig_domain = t ;
-      ig_get_exp_translator = get_sym_pointersets_exp_translator ;
-      ig_variable_type = SYM_VAR_TYPE ;
-      ig_get_function_translator = get_sym_pointersets_translator ;
-      ig_analysis = analyze_sym_pointersets ;
+      ig_domain = t;
+      ig_get_exp_translator = get_sym_pointersets_exp_translator;
+      ig_variable_type = SYM_VAR_TYPE;
+      ig_get_function_translator = get_sym_pointersets_translator;
+      ig_analysis = analyze_sym_pointersets;
       ig_invariant_extractor = extract_sym_pointersets
     }
   | _ -> raise (CCHFailure
-                  (LBLOCK [ STR "Analysis option " ; STR t ;
+                  (LBLOCK [ STR "Analysis option "; STR t;
 			    STR " not recognized"]))
 
 
@@ -176,13 +180,13 @@ let process_function gspecs fname =
       let _ = spomanager#create_contract_proof_obligations in
       let proofObligations = proof_scaffolding#get_proof_obligations fname in
       let openpos = List.filter (fun po -> not po#is_closed) proofObligations in
-      let _ = pr_debug [ STR "  " ; STR fname ; STR ": " ; NL ] in
+      let _ = pr_debug [STR "  "; STR fname; STR ": "; NL] in
       if (List.length proofObligations) = 0 then
         let _ = chlog#add "skip analysis (no proof obligations)" (STR fname) in
-        pr_debug [ STR "      no proof obligations: skip analysis" ; NL ; NL ]
+        pr_debug [ STR "      no proof obligations: skip analysis"; NL; NL ]
       else if (List.length openpos) = 0 then
         let _ = chlog#add "skip analysis (no open proof obligations)" (STR fname) in
-        pr_debug [ STR "      no open proof obligations: skip analysis" ; NL ; NL ]
+        pr_debug [ STR "      no open proof obligations: skip analysis"; NL; NL ]
       else
       let callcount = proof_scaffolding#get_call_count fname in
       let _ =
@@ -201,62 +205,62 @@ let process_function gspecs fname =
 	      let semantics = match optSem with Some sem -> sem | _ -> default_opsemantics in
 	      let invariants = gspec.ig_analysis env sys semantics in
               begin
-	        gspec.ig_invariant_extractor env invio invariants ;
-                record_postconditions fname env invio ;
-                pr_debug [ STR "  " ;
-                           STR (Printf.sprintf "%8.2f sec" ((Unix.gettimeofday ()) -. starttime)) ;
-                           STR "  " ; STR gspec.ig_domain ; NL ]
+	        gspec.ig_invariant_extractor env invio invariants;
+                record_postconditions fname env invio;
+                pr_debug [ STR "  ";
+                           STR (Printf.sprintf "%8.2f sec" ((Unix.gettimeofday ()) -. starttime));
+                           STR "  "; STR gspec.ig_domain; NL ]
               end
 	    with
 	    | CCHFailure p | CHFailure p ->
                begin
 	         ch_error_log#add
                    "failure" 
-	           (LBLOCK [ STR "function " ; STR fname ; 
-			     STR " (" ; STR gspec.ig_domain ; STR "): " ; p ]) ;
+	           (LBLOCK [ STR "function "; STR fname;
+			     STR " ("; STR gspec.ig_domain; STR "): "; p ]);
                  raise (CCHFailure
-                          (LBLOCK [ STR "CCHFailure in function " ; STR fname ; 
-			            STR " (" ; STR gspec.ig_domain ; STR "):" ; p ]))
+                          (LBLOCK [ STR "CCHFailure in function "; STR fname;
+			            STR " ("; STR gspec.ig_domain; STR "):"; p ]))
                end              
 	    | Invalid_argument s ->
                begin
 	         ch_error_log#add
                    "invalid argument" 
-	           (LBLOCK [ STR "function " ; STR fname ;
-                             STR " (" ; STR gspec.ig_domain ; STR "):" ; STR s ]) ;
+	           (LBLOCK [ STR "function "; STR fname;
+                             STR " ("; STR gspec.ig_domain; STR "):"; STR s ]);
                  raise (CCHFailure
-                          (LBLOCK [ STR "Invalid argument in function " ; STR fname ; 
-			            STR " (" ; STR gspec.ig_domain ; STR "):" ; STR s ]))
+                          (LBLOCK [ STR "Invalid argument in function "; STR fname;
+			            STR " ("; STR gspec.ig_domain; STR "):"; STR s ]))
                end
             | Failure s ->
                begin
 	         ch_error_log#add
                    "failure" 
-	           (LBLOCK [ STR "function " ; STR fname ; 
-			     STR " (" ; STR gspec.ig_domain ; STR "):" ; STR s ]) ;
+	           (LBLOCK [ STR "function "; STR fname;
+			     STR " ("; STR gspec.ig_domain; STR "):"; STR s ]);
                  raise (CCHFailure
-                          (LBLOCK [ STR "Failure in function " ; STR fname ; 
-			            STR " (" ; STR gspec.ig_domain ; STR "):" ; STR s ]))
+                          (LBLOCK [ STR "Failure in function "; STR fname;
+			            STR " ("; STR gspec.ig_domain; STR "):"; STR s ]))
                end
             | Division_by_zero ->
                begin
                  ch_error_log#add
                    "division-by-zero"
-                   (LBLOCK [ STR "function " ; STR fname ;
-                             STR " (" ; STR gspec.ig_domain ; STR ")" ]) ;
+                   (LBLOCK [ STR "function "; STR fname;
+                             STR " ("; STR gspec.ig_domain; STR ")" ]);
                  raise (CCHFailure
-                          (LBLOCK [ STR "Failure in function " ; STR fname ;
-                                    STR " (" ; STR gspec.ig_domain ; STR ")" ]))
+                          (LBLOCK [ STR "Failure in function "; STR fname;
+                                    STR " ("; STR gspec.ig_domain; STR ")" ]))
                end
 	    | Not_found ->
                begin
 	         ch_error_log#add
                    "not-found" 
-	           (LBLOCK [ STR "function " ; STR fname ; 
-			     STR " (" ; STR gspec.ig_domain ; STR ") "  ]) ;
+	           (LBLOCK [ STR "function "; STR fname;
+			     STR " ("; STR gspec.ig_domain; STR ") "  ]);
                  raise (CCHFailure
-                          (LBLOCK [ STR "Not found in function " ; STR fname ; 
-			            STR " (" ; STR gspec.ig_domain ; STR "):" ]))
+                          (LBLOCK [ STR "Not found in function "; STR fname;
+			            STR " ("; STR gspec.ig_domain; STR "):" ]))
                end) gspecs in
       let starttime = Unix.gettimeofday () in
       let fnApi = proof_scaffolding#get_function_api fname in
@@ -264,15 +268,15 @@ let process_function gspecs fname =
       let _ = check_proof_obligations env fnApi invio proofObligations in
       let t2 = Unix.gettimeofday() in
       begin
-        pr_debug [ STR "  " ; STR (Printf.sprintf "%8.2f sec" (t2 -. starttime)) ;
-                   STR "  " ; STR "check proof obligations" ; NL ] ;
-        save_invs fname invio ;
-        save_vars fname varmgr ;
-        save_proof_files fname ;
-        save_api fname ;
-        pr_debug [ STR "  " ;
-                   STR (Printf.sprintf "%8.2f sec" ((Unix.gettimeofday ()) -. t2)) ;
-                   STR "  " ; STR "saving function files" ; NL ]
+        pr_debug [ STR "  "; STR (Printf.sprintf "%8.2f sec" (t2 -. starttime));
+                   STR "  "; STR "check proof obligations"; NL ];
+        save_invs fname invio;
+        save_vars fname varmgr;
+        save_proof_files fname;
+        save_api fname;
+        pr_debug [ STR "  ";
+                   STR (Printf.sprintf "%8.2f sec" ((Unix.gettimeofday ()) -. t2));
+                   STR "  "; STR "saving function files"; NL ]
       end
     else
       ()
@@ -280,43 +284,43 @@ let process_function gspecs fname =
   | CCHFailure p ->
      begin
        ch_error_log#add
-         "failure" (LBLOCK [ STR "function " ; STR fname ; STR ": " ; p ]) ;
+         "failure" (LBLOCK [ STR "function "; STR fname; STR ": "; p ]);
        ()
      end
   | Invalid_argument s ->
      begin
        ch_error_log#add
          "invalid argument"
-         (LBLOCK [ STR "function " ; STR fname ; STR ": " ; STR s ]) ;
+         (LBLOCK [ STR "function "; STR fname; STR ": "; STR s ]);
        ()
      end
   | Not_found ->
      begin
        ch_error_log#add
-         "not-found" (LBLOCK [ STR "function " ; STR fname ]) ;
+         "not-found" (LBLOCK [ STR "function "; STR fname ]);
        ()
      end
   | Failure s ->
      begin
        ch_error_log#add
-         "failure" (LBLOCK [ STR "function " ; STR fname ; STR ": " ; STR s ]) ;
+         "failure" (LBLOCK [ STR "function "; STR fname; STR ": "; STR s ]);
        raise (CCHFailure
-                (LBLOCK [ STR "function " ; STR fname ; STR ": " ; STR s ]))
+                (LBLOCK [ STR "function "; STR fname; STR ": "; STR s ]))
      end
   | CHXmlReader.XmlParseError(line,col,p)
     | CHXmlDocument.XmlDocumentError(line,col,p) ->
      begin
-       pr_debug [ STR "Xml error while generating invariants for function " ;
-                  STR fname ; STR " ("; INT line ; STR "," ; INT col ;
-                  STR "): " ; p ; NL ] ;
+       pr_debug [ STR "Xml error while generating invariants for function ";
+                  STR fname; STR " ("; INT line; STR ","; INT col;
+                  STR "): "; p; NL ];
        ch_error_log#add
          "xml error"
-         (LBLOCK [ STR fname ; STR " (" ;
-                   INT line ; STR ", " ; INT col ; STR "): " ; p ]) ;
+         (LBLOCK [ STR fname; STR " (";
+                   INT line; STR ", "; INT col; STR "): "; p ]);
        raise (CHXmlDocument.XmlDocumentError(
                   line,col,
-                  LBLOCK [ STR "xml error in function " ;
-                           STR fname ; STR ": " ; p ]))
+                  LBLOCK [ STR "xml error in function ";
+                           STR fname; STR ": "; p ]))
      end
 
 
@@ -341,27 +345,46 @@ let generate_and_check_process_file domains =
     ()
   with
   | CHXmlReader.IllFormed ->
-    ch_error_log#add "ill-formed xml content for " (STR system_settings#get_cfilename)
-  | CHXmlReader.XmlParseError(line,col,p)
+     ch_error_log#add
+       "ill-formed xml content for " (STR system_settings#get_cfilename)
+  | CHXmlReader.XmlParseError(line, col, p)
     | CHXmlDocument.XmlDocumentError(line,col,p) ->
      begin
-       pr_debug [ STR "Xml error while generating invariants in file " ;
-                  STR system_settings#get_cfilename ;
-                  STR " (" ; INT line ; STR "," ; INT col ; STR "): " ; p ; NL ] ;
+       pr_debug [
+           STR "Xml error while generating invariants in file ";
+           STR system_settings#get_cfilename;
+           STR " (";
+           INT line;
+           STR ",";
+           INT col; STR "): ";
+           p;
+           NL];
        ch_error_log#add
          "xml error"
-         (LBLOCK [ STR system_settings#get_cfilename ;
-                   STR " (" ; INT line ; STR "," ;
-                   INT col ; STR "): " ; p ]) ;
-       raise (CCHFailure
-                (LBLOCK [ STR "Xml error while generating invariants in file " ;
-                          STR system_settings#get_cfilename ;
-                          STR " (" ; INT line ; STR "," ; INT col ;
-                          STR "): " ; p ; NL ] ))
+         (LBLOCK [
+              STR system_settings#get_cfilename;
+              STR " (";
+              INT line;
+              STR ",";
+              INT col;
+              STR "): ";
+              p]);
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Xml error while generating invariants in file ";
+                 STR system_settings#get_cfilename;
+                 STR " (";
+                 INT line;
+                 STR ",";
+                 INT col;
+                 STR "): ";
+                 p;
+                 NL]))
      end
   | CCHFailure p ->
      begin
-       pr_debug [ STR "Failure: " ; p ; NL ] ;
+       pr_debug [STR "Failure: "; p; NL];
        ch_error_log#add "failure" p
      end
                   

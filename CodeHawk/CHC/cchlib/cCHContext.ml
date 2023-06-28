@@ -50,6 +50,7 @@ type context_node_t = {
   cn_numbers: int list
   }
 
+
 class type cfg_context_manager_int =
   object
 
@@ -148,7 +149,7 @@ object (self:'a)
     
   method add_instr (n:int) = self#addi "instr" n
 
-  method add_stmt  (n:int) = self#addi "stmt" n
+  method add_stmt (n:int) = self#addi "stmt" n
 
   method add_if_expr = self#add "if-expr"
 
@@ -286,11 +287,11 @@ object (self:'a)
   method private adds s t = 
     {< nodes = (context_node_table#add([s;t],[])) :: nodes >}
     
-  method add_var  = self#add "var"
+  method add_var = self#add "var"
 
-  method add_lhs  = self#add "lhs"
+  method add_lhs = self#add "lhs"
 
-  method add_rhs  = self#add "rhs"
+  method add_rhs = self#add "rhs"
 
   method add_lval = self#add "lval"
 
@@ -304,9 +305,9 @@ object (self:'a)
 
   method add_binop i = self#addi "2op" i
 
-  method add_unop    = self#add "op" 
+  method add_unop = self#add "op"
 
-  method add_cast    = self#add "cast"
+  method add_cast = self#add "cast"
     
   method add_field_offset f = self#adds "field-offset" f
 

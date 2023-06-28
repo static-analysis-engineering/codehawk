@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,8 +54,11 @@ open CCHPrimaryProofObligations
 open CCHProofObligation
 open CCHProofScaffolding
 
+
 let prr p l = fixed_length_pretty ~alignment:StrRight p l
+
 let fenv = CCHFileEnvironment.file_environment
+
 
 let process_global (g:global) =
   match g with
@@ -64,30 +69,33 @@ let process_global (g:global) =
        set_global_value vinfo
      end
   | _ -> ()
-         
+
+
 let process_function (fname:string) =
   let _ =
     if system_settings#verbose then
-      pr_debug [ STR "Processing function " ; STR fname ; NL ] in
+      pr_debug [STR "Processing function "; STR fname; NL] in
   try
     let fundec = read_function_semantics fname in
     let fdecls = fundec.sdecls in
     let createppos = true in (* not (file_contract#ignore_function fname) in *)
     begin
-      read_proof_files fname fdecls ;
-      create_proof_obligations ~createppos fundec ;
-      CCHCheckValid.process_function fname ;
-      save_proof_files fname ;
-      save_api fname ;
+      read_proof_files fname fdecls;
+      create_proof_obligations ~createppos fundec;
+      CCHCheckValid.process_function fname;
+      save_proof_files fname;
+      save_api fname;
     end
   with
   | CCHFailure p ->
     begin
-      pr_debug [ STR "Error in processing function " ; STR fname ; STR ": " ; p ; NL ] ;
-      ch_error_log#add "failure" (LBLOCK [ STR "function " ; STR fname ; STR ": " ; p ])
+      pr_debug [STR "Error in processing function "; STR fname; STR ": "; p; NL];
+      ch_error_log#add
+        "failure" (LBLOCK [STR "function "; STR fname; STR ": "; p])
     end
   | Invalid_argument s ->
-    ch_error_log#add "failure" (LBLOCK [ STR "function " ; STR fname ; STR ": " ; STR s ])
+     ch_error_log#add
+       "failure" (LBLOCK [ STR "function "; STR fname; STR ": "; STR s])
     
 
 let primary_process_file () =
@@ -100,14 +108,14 @@ let primary_process_file () =
     let functions = fenv#get_application_functions in
     let _ = read_cfile_contract () in
     begin
-      List.iter (fun f -> process_function f.vname) functions ;
-      List.iter process_global cfile.globals ;
-      save_cfile_assignment_dictionary () ;
-      save_cfile_predicate_dictionary () ;
-      save_cfile_interface_dictionary() ;
-      save_cfile_dictionary () ;
-      save_cfile_context () ;
+      List.iter (fun f -> process_function f.vname) functions;
+      List.iter process_global cfile.globals;
+      save_cfile_assignment_dictionary ();
+      save_cfile_predicate_dictionary ();
+      save_cfile_interface_dictionary();
+      save_cfile_dictionary ();
+      save_cfile_context ();
     end
   with
-    CHXmlReader.IllFormed ->
+  | CHXmlReader.IllFormed ->
       ch_error_log#add "ill-formed content" (STR system_settings#get_cfilename)

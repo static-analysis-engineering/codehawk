@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -81,6 +83,7 @@ let preserves_null_termination fs (index:int) =      (* use index starting at 1 
 
 exception XmlReaderError of int * int * pretty_t
 
+
 let raise_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
     LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
@@ -89,12 +92,14 @@ let raise_error (node:xml_element_int) (msg:pretty_t) =
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, error_msg))
   end
 
+
 let summary_annotation_to_string (a:summary_annotation_t) (name:string) =
   match a with
   | ExternalCondition s -> "EC (" ^ name ^ "): " ^ s
   | EnvironmentCondition s -> "Env (" ^ name ^ "): " ^ s
   | UnmodeledArgumentDependency s -> "UAD (" ^ name ^ "): " ^ s
   | NoAnnotation -> "explanation missing"
+
 
 let get_summary_annotation_type (a:summary_annotation_t) =
   match a with
@@ -103,6 +108,7 @@ let get_summary_annotation_type (a:summary_annotation_t) =
   | UnmodeledArgumentDependency _ -> "UAD"
   | NoAnnotation -> "none"
 
+
 let get_summary_annotation_string (a:summary_annotation_t) =
   match a with
   | ExternalCondition s
@@ -110,11 +116,14 @@ let get_summary_annotation_string (a:summary_annotation_t) =
     | UnmodeledArgumentDependency s -> s
   | NoAnnotation -> "?"
 
+
 let annotated_xpredicate_to_string (a:annotated_xpredicate_t) =
-  let (p,a) = a in
+  let (p, a) = a in
   match a with
   | NoAnnotation -> p2s (xpredicate_to_pretty p)
-  | _ -> (p2s (xpredicate_to_pretty p))  ^  " [" ^ (get_summary_annotation_string a) ^ "]"
+  | _ ->
+     (p2s (xpredicate_to_pretty p)) ^ " [" ^ (get_summary_annotation_string a) ^ "]"
+
 
 let read_xml_summary_annotation (node:xml_element_int):summary_annotation_t =
   let get = node#getAttribute in
@@ -142,7 +151,8 @@ let read_xml_precondition_list
          List.map (fun p -> (p,a)) (read_xml_xpredicate pNode ~gvars params))
               (List.map (fun n ->
                    n#getTaggedChild "math") (node#getTaggedChildren "pre")))
-  
+
+
 let read_xml_postcondition_list 
       (node:xml_element_int)
       ?(gvars=[]) params :(annotated_xpredicate_t list * annotated_xpredicate_t list) =
@@ -158,7 +168,7 @@ let read_xml_postcondition_list
       | "notnull-null" -> 
 	((noa (XNotNull ReturnValue))::accP, (noa )(XNull ReturnValue)::accE)
       | "zero-negone" -> 
-	((noa (XRelationalExpr (Eq,ReturnValue,zero_val))):: accP,
+	((noa (XRelationalExpr (Eq,ReturnValue,zero_val))) :: accP,
 	 (noa (XRelationalExpr (Eq,ReturnValue,negone_val))) :: accE)
       | "zero-notzero" -> 
 	((noa (XRelationalExpr (Eq,ReturnValue,zero_val))) :: accP,
@@ -166,9 +176,12 @@ let read_xml_postcondition_list
       | "notzero-zero" -> 
 	((noa (XRelationalExpr (Ne,ReturnValue,zero_val))) :: accP,
 	 (noa (XRelationalExpr (Eq,ReturnValue,zero_val))) :: accE)
-      | s -> raise_error pNode 
-	(LBLOCK [ STR "Unknown predefined postcondition predicate: " ; 
-		  STR s ])) ([],[]) predefined in
+      | s ->
+         raise_error
+           pNode
+	   (LBLOCK [
+                STR "Unknown predefined postcondition predicate: ";
+		STR s ])) ([],[]) predefined in
   let postNodes = List.filter (fun p -> p#getTag = "post") node#getChildren in
   let errorpostNodes =
     List.filter (fun p -> p#getTag = "error-post") node#getChildren in
@@ -177,15 +190,26 @@ let read_xml_postcondition_list
       (List.map (fun pNode ->
            let a = read_xml_summary_annotation pNode in
            let pNode = pNode#getTaggedChild "math" in
-           List.map (fun p -> (p,a)) (read_xml_xpredicate pNode ~gvars params)) postNodes) in
+           List.map
+             (fun p -> (p, a))
+             (read_xml_xpredicate pNode ~gvars params)) postNodes) in
   let errorpost =
     List.concat
       (List.map (fun pNode ->
            let a = read_xml_summary_annotation  pNode in
            let pNode = pNode#getTaggedChild "math" in
-           List.map (fun p -> (p,a)) (read_xml_xpredicate pNode ~gvars params)) errorpostNodes) in
+           List.map
+             (fun p -> (p, a))
+             (read_xml_xpredicate pNode ~gvars params)) errorpostNodes) in
+  let _ =
+    List.map (fun p ->
+        ch_info_log#add
+          "postcondition"
+          (LBLOCK [STR (annotated_xpredicate_to_string p)]))
+      (predefinedPost @ post) in
   ((predefinedPost @ post), (predefinedErrorpost @ errorpost))
-    
+
+
 let read_xml_sideeffect_list
       (node:xml_element_int) ?(gvars=[]) params: annotated_xpredicate_t list =
   let sidenodes =
@@ -195,7 +219,8 @@ let read_xml_sideeffect_list
        (fun sNode ->
          let a = read_xml_summary_annotation sNode in
          List.map (fun s -> (s,a)) (read_xml_xpredicate sNode ~gvars params)) sidenodes)
-  
+
+
 let read_xml_parameter_list 
       (fname:string)
       (node:xml_element_int):(annotated_xpredicate_t list * (string * int) list) =

@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -114,8 +114,8 @@ object (self)
       (List.map  (fun (name,nr) ->
            let pnode = xmlElement "par" in
            begin
-             pnode#setAttribute "name" name ;
-             pnode#setIntAttribute "nr" nr ;
+             pnode#setAttribute "name" name;
+             pnode#setIntAttribute "nr" nr;
              pnode
            end)  self#get_params)
 
@@ -126,9 +126,9 @@ object (self)
         let has = n#hasNamedAttribute in
         let get = n#getAttribute in
         let note = {
-            cn_tag = if has "tag" then get "tag" else "all" ;
-            cn_prq = if has "prq" then get "prq" else "none" ;
-            cn_txt = if has "txt" then get "txt" else "none" } in
+            cn_tag = if has "tag" then get "tag" else "all";
+            cn_prq = if has "prq" then get "prq" else "none";
+            cn_txt = if has "txt" then get "txt" else "none"} in
         let entry =
           if H.mem notes note.cn_tag then H.find notes note.cn_tag else [] in
         H.replace notes note.cn_tag (note::entry)) (node#getTaggedChildren "note")
@@ -138,15 +138,15 @@ object (self)
       (List.map (fun n ->
            let nnode = xmlElement "note" in
            begin
-             (if n.cn_tag = "all" then () else nnode#setAttribute "tag" n.cn_tag) ;
-             (if n.cn_prq = "none" then () else nnode#setAttribute "prq" n.cn_prq)  ;
-             (if n.cn_txt = "none" then () else nnode#setAttribute "txt" n.cn_txt) ;
+             (if n.cn_tag = "all" then () else nnode#setAttribute "tag" n.cn_tag);
+             (if n.cn_prq = "none" then () else nnode#setAttribute "prq" n.cn_prq);
+             (if n.cn_txt = "none" then () else nnode#setAttribute "txt" n.cn_txt);
              nnode
            end) self#get_notes)
 
   method private read_xml_postconditions
                    (node:xml_element_int) (gvars:string list) =
-    let (post,errorpost) =
+    let (post, errorpost) =
       read_xml_postcondition_list node ~gvars self#get_params in
     let _ = match errorpost with
       | [] -> ()
@@ -154,14 +154,14 @@ object (self)
          raise
            (CCHFailure
               (STR "Error postconditions not supported in function contract")) in
-    List.iter (fun (p,_) -> postconditions#add (id#index_xpredicate p)) post
+    List.iter (fun (p, _) -> postconditions#add (id#index_xpredicate p)) post
 
   method private write_xml_postconditions (node:xml_element_int) =
     node#appendChildren
       (List.map (fun ipost ->
            let pnode = xmlElement "post" in
            begin
-             write_xmlx_xpredicate pnode self#get_params (id#get_xpredicate ipost) ;
+             write_xmlx_xpredicate pnode self#get_params (id#get_xpredicate ipost);
              pnode
            end) postconditions#toList)
 
@@ -174,7 +174,7 @@ object (self)
       (List.map (fun ipre ->
            let pnode = xmlElement "pre" in
            begin
-             write_xmlx_xpredicate pnode self#get_params (id#get_xpredicate ipre) ;
+             write_xmlx_xpredicate pnode self#get_params (id#get_xpredicate ipre);
              pnode
            end) preconditions#toList)
 
@@ -191,30 +191,33 @@ object (self)
            H.replace instrs line (i::entry)) setinstrs
 
   method private read_xml_localvars (node:xml_element_int) =
-    List.iter (fun n -> localvars <- (n#getAttribute "name") :: localvars)
-              (node#getTaggedChildren "lvar")
+    List.iter
+      (fun n -> localvars <- (n#getAttribute "name") :: localvars)
+      (node#getTaggedChildren "lvar")
 
   method private write_xml_localvars (node:xml_element_int) =
     node#appendChildren
       (List.map (fun v ->
            let vnode = xmlElement "lvar" in
-           begin vnode#setAttribute "name" v ; vnode end) localvars)
-        
+           begin
+             vnode#setAttribute "name" v;
+             vnode
+           end) localvars)
 
   method read_xml (node:xml_element_int) (gvars:string list) =
     let hasc = node#hasOneTaggedChild in
     let getc = node#getTaggedChild in
     try
       begin
-        self#read_xml_parameters (getc "parameters") ;
+        self#read_xml_parameters (getc "parameters");
         (if hasc "notes" then
-           self#read_xml_notes (getc "notes")) ;
+           self#read_xml_notes (getc "notes"));
         (if hasc "localvars" then
-           self#read_xml_localvars (getc "localvars")) ;
+           self#read_xml_localvars (getc "localvars"));
         (if hasc "preconditions" then
-           self#read_xml_preconditions (getc "preconditions") gvars) ;
+           self#read_xml_preconditions (getc "preconditions") gvars);
         (if hasc "postconditions" then
-           self#read_xml_postconditions (getc "postconditions") gvars) ;
+           self#read_xml_postconditions (getc "postconditions") gvars);
         (if hasc "instrs" then
            self#read_xml_instrs (getc "instrs"))
       end
@@ -223,27 +226,33 @@ object (self)
        begin
          ch_error_log#add
            "function contract"
-           (LBLOCK [ STR "function: " ; STR name ]) ;
-         raise (CCHFailure
-                  (LBLOCK [ STR "Error in reading function contract for " ;
-                            STR name ]))
+           (LBLOCK [STR "function: "; STR name]);
+         raise
+           (CCHFailure
+              (LBLOCK [
+                   STR "Error in reading function contract for ";
+                   STR name]))
        end
     | XmlReaderError (line,col,p) ->
-       let msg = LBLOCK [ STR "Xml error in function contract " ; STR name ;
-                          STR ": " ; p ] in
+       let msg =
+         LBLOCK [
+             STR "Xml error in function contract "; STR name; STR ": "; p] in
        begin
-         ch_error_log#add "function contract" msg ;
-         raise (XmlReaderError (line,col,msg))
+         ch_error_log#add "function contract" msg;
+         raise (XmlReaderError (line, col, msg))
        end
     | _ ->
        begin
          ch_error_log#add
            "function contract"
-           (LBLOCK [ STR "Unknown error in reading function contract for " ;
-                     STR name ]) ;
-         raise (CCHFailure
-                  (LBLOCK [ STR "Unknown error in reading function contract for " ;
-                            STR name ]))
+           (LBLOCK [
+                STR "Unknown error in reading function contract for ";
+                STR name ]);
+         raise
+           (CCHFailure
+              (LBLOCK [
+                   STR "Unknown error in reading function contract for ";
+                   STR name]))
        end
 
   method write_xmlx (node:xml_element_int) =
@@ -251,53 +260,59 @@ object (self)
       (if H.length notes > 0  then
          let nnode = xmlElement "notes" in
          begin
-           self#write_xml_notes nnode ;
-           node#appendChildren [ nnode ]
-         end) ;
+           self#write_xml_notes nnode;
+           node#appendChildren [nnode]
+         end);
       (let parnode = xmlElement "parameters" in
        begin
-         self#write_xml_parameters parnode ;
-         node#appendChildren [ parnode ]
-       end) ;
+         self#write_xml_parameters parnode;
+         node#appendChildren [parnode]
+       end);
       (if List.length localvars > 0 then
          let lnode = xmlElement "localvars" in
          begin
-           self#write_xml_localvars lnode ;
-           node#appendChildren [ lnode ]
+           self#write_xml_localvars lnode;
+           node#appendChildren [lnode]
          end);
       (if preconditions#size > 0 then
          let pnode = xmlElement "preconditions" in
          begin
-           self#write_xml_preconditions pnode ;
-           node#appendChildren [ pnode ]
-         end) ;
+           self#write_xml_preconditions pnode;
+           node#appendChildren [pnode]
+         end);
       (if postconditions#size > 0  then
          let pnode = xmlElement "postconditions" in
          begin
-           self#write_xml_postconditions pnode ;
-           node#appendChildren [ pnode ]
-         end) ;
+           self#write_xml_postconditions pnode;
+           node#appendChildren [pnode]
+         end);
     end
 
   method postconditions_to_pretty =
     LBLOCK
       (List.map (fun pc ->
-           LBLOCK [ xpredicate_to_pretty pc ; NL ]) self#get_postconditions)
+           LBLOCK [xpredicate_to_pretty pc; NL]) self#get_postconditions)
 
   method preconditions_to_pretty =
     LBLOCK
       (List.map (fun pre ->
-           LBLOCK [ xpredicate_to_pretty pre ; NL ]) self#get_preconditions)
+           LBLOCK [xpredicate_to_pretty pre; NL]) self#get_preconditions)
       
   method toPretty =
-    LBLOCK [ STR "Postconditions:" ; NL ;
-             INDENT (3,LBLOCK (List.map
-                                 (fun p ->
-                                   LBLOCK [ xpredicate_to_pretty p ; NL ])
-                                 self#get_postconditions)) ; NL ]
+    LBLOCK [
+        STR "Postconditions:";
+        NL;
+        INDENT
+          (3,
+           LBLOCK
+             (List.map
+                (fun p ->
+                  LBLOCK [xpredicate_to_pretty p; NL])
+                self#get_postconditions)); NL]
 
 
 end
+
 
 class file_contract_t:file_contract_int =
 object (self)
@@ -307,15 +322,15 @@ object (self)
 
   method reset =
     begin
-      globalvars <- [] ;
+      globalvars <- [];
       H.clear functioncontracts
     end
 
   method add_function_contract (name:string) (parameters:string list) =
     if H.mem functioncontracts name then
-      ch_error_log#add "function contract"
-                       (LBLOCK [ STR "Function contract for " ; STR name ;
-                                 STR "; not added" ])
+      ch_error_log#add
+        "function contract"
+        (LBLOCK [STR "Function contract for "; STR name; STR "; not added"])
     else
       let fn = new function_contract_t ~parameters false name in
       H.add functioncontracts name fn
@@ -324,20 +339,21 @@ object (self)
     if H.mem functioncontracts fname then
       let fncontract = H.find functioncontracts fname in
       let gvars = get_xpredicate_global_variables pre in
-      let _ = List.iter (fun gvname ->
-                  if self#has_global_variable gvname then
-                    ()
-                  else
-                    self#add_global_variable gvname) gvars in
+      let _ =
+        List.iter (fun gvname ->
+            if self#has_global_variable gvname then
+              ()
+            else
+              self#add_global_variable gvname) gvars in
       fncontract#add_precondition pre
 
   method get_function_contract (name:string) =
     if H.mem functioncontracts name then
       H.find functioncontracts name
     else
-      raise (CCHFailure
-               (LBLOCK [ STR "Function contract for " ; STR name ;
-                         STR " not found" ]))
+      raise
+        (CCHFailure
+           (LBLOCK [STR "Function contract for "; STR name; STR " not found"]))
 
   method private get_function_contracts =
     H.fold (fun _ v a -> v::a) functioncontracts []
@@ -349,12 +365,13 @@ object (self)
 
   method private get_global_variable (vname:string) =
     try
-      List.find (fun gv -> gv.cgv_name =  vname) globalvars
+      List.find (fun gv -> gv.cgv_name = vname) globalvars
     with
     | Not_found ->
-       raise (CCHFailure
-                (LBLOCK  [ STR "contract global variable " ; STR vname ;
-                           STR " not  found" ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "contract global variable "; STR vname; STR " not  found"]))
 
   method gv_is_not_null (vname:string) =
     (self#has_global_variable vname)
@@ -385,13 +402,13 @@ object (self)
 
   method private add_global_variable (name:string) =
     let gv = {
-        cgv_name = name ;
+        cgv_name = name;
         cgv_value = None;
-        cgv_lb = None ;
-        cgv_ub = None ;
-        cgv_static = false ;
-        cgv_const = false ;
-        cgv_notnull = false ;
+        cgv_lb = None;
+        cgv_ub = None;
+        cgv_static = false;
+        cgv_const = false;
+        cgv_notnull = false;
         cgv_initialized_fields = [] } in
     globalvars <- gv :: globalvars
 
@@ -402,13 +419,13 @@ object (self)
           let geti = n#getIntAttribute in
           let has = n#hasNamedAttribute in
           let gv = {
-              cgv_name = get "name" ;
-              cgv_value = if has "value" then Some (geti "value") else None ;
-              cgv_lb = if has "lb" then Some (geti "lb") else None ;
-              cgv_ub = if has "ub" then Some (geti "ub") else None ;
-              cgv_static = has "static" && (get "static" = "yes") ;
-              cgv_const = has "const" && (get "const" = "yes")  ;
-              cgv_notnull = has "notnull" && (get "notnull" = "yes") ;
+              cgv_name = get "name";
+              cgv_value = if has "value" then Some (geti "value") else None;
+              cgv_lb = if has "lb" then Some (geti "lb") else None;
+              cgv_ub = if has "ub" then Some (geti "ub") else None;
+              cgv_static = has "static" && (get "static" = "yes");
+              cgv_const = has "const" && (get "const" = "yes") ;
+              cgv_notnull = has "notnull" && (get "notnull" = "yes");
               cgv_initialized_fields = if has "finit" then [ (get "finit") ] else []
             } in
           globalvars <- gv :: globalvars)
@@ -417,28 +434,29 @@ object (self)
   method read_xml (node:xml_element_int) =
     try
       begin
-        self#read_xml_global_variables node ;
+        self#read_xml_global_variables node;
         List.iter (fun n ->
             let name = n#getAttribute "name" in
+            let _ = ch_info_log#add "function contract" (STR name) in
             let ignorefn =
               n#hasNamedAttribute "ignore" && (n#getAttribute "ignore") = "yes" in
             let c = new function_contract_t ignorefn name in
             begin
-              c#read_xml n (List.map (fun gv -> gv.cgv_name) globalvars) ;
+              c#read_xml n (List.map (fun gv -> gv.cgv_name) globalvars);
               H.add functioncontracts name c
             end) ((node#getTaggedChild "functions")#getTaggedChildren "function")
       end
     with
     | CCHFailure p ->
        begin
-         ch_error_log#add "file contract" p ;
+         ch_error_log#add "file contract" p;
          raise (CCHFailure p)
        end
     | XmlReaderError (line,col,p) ->
        raise (XmlReaderError (line,col,p))
     | _ ->
        begin
-         ch_error_log#add "file contract" (STR "unknown error") ;
+         ch_error_log#add "file contract" (STR "unknown error");
          raise (CCHFailure (STR "File contract: unknown error"))
        end
 
@@ -452,13 +470,13 @@ object (self)
            let set = gnode#setAttribute in
            let seti = gnode#setIntAttribute in
            begin
-             set "name" gv.cgv_name ;
-             (match gv.cgv_value with Some n -> seti "value" n | _ -> ()) ;
-             (match gv.cgv_lb with Some n -> seti "lb" n | _ -> ()) ;
-             (match gv.cgv_ub with Some n -> seti "ub" n | _ -> ()) ;
-             (if gv.cgv_static then set "static" "yes") ;
-             (if gv.cgv_const then set "const" "yes") ;
-             (if gv.cgv_notnull then set "notnull" "yes") ;
+             set "name" gv.cgv_name;
+             (match gv.cgv_value with Some n -> seti "value" n | _ -> ());
+             (match gv.cgv_lb with Some n -> seti "lb" n | _ -> ());
+             (match gv.cgv_ub with Some n -> seti "ub" n | _ -> ());
+             (if gv.cgv_static then set "static" "yes");
+             (if gv.cgv_const then set "const" "yes");
+             (if gv.cgv_notnull then set "notnull" "yes");
              gnode
            end) gvars)
 
@@ -470,8 +488,8 @@ object (self)
       (List.map  (fun fn ->
            let fnode = xmlElement "function" in
            begin
-             fn#write_xmlx fnode ;
-             fnode#setAttribute "name" fn#get_name ;
+             fn#write_xmlx fnode;
+             fnode#setAttribute "name" fn#get_name;
              fnode
            end) fncontracts)
 
@@ -479,9 +497,9 @@ object (self)
     let gnode = xmlElement "global-variables" in
     let fnode = xmlElement "functions" in
     begin
-      self#write_xml_global_variables gnode ;
-      self#write_xml_function_contracts fnode ;
-      node#appendChildren [ gnode ; fnode ]
+      self#write_xml_global_variables gnode;
+      self#write_xml_function_contracts fnode;
+      node#appendChildren [ gnode; fnode ]
     end
 
   method toPretty =
@@ -489,7 +507,9 @@ object (self)
 
 end
 
+
 let file_contract = new file_contract_t
+
 
 class global_contract_t:global_contract_int =
 object
@@ -503,20 +523,22 @@ object
         match n#getAttribute "name" with
         | "no-free" ->
            begin
-             nofree <- true ;
+             nofree <- true;
              chlog#add "global assumption" (STR "no free")
            end
         | s ->
            begin
              ch_error_log#add
                "global contract"
-               (LBLOCK [ STR "Global assumption " ; STR s ;
-                                        STR " not recognized" ]) ;
-             raise (CCHFailure
-                      (LBLOCK [ STR "Global assumption " ; STR s ;
-                                STR " not recognized" ]))
+               (LBLOCK [
+                    STR "Global assumption "; STR s; STR " not recognized"]);
+             raise
+               (CCHFailure
+                  (LBLOCK [
+                       STR "Global assumption "; STR s; STR " not recognized"]))
            end) (node#getTaggedChildren "ga")
 
 end
+
 
 let global_contract = new global_contract_t

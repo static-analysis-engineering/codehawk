@@ -666,6 +666,7 @@ type contract_global_var_t = {
     cgv_initialized_fields: string list
   }
 
+
 class type file_contract_int =
   object
     method reset: unit
@@ -684,11 +685,13 @@ class type file_contract_int =
     method toPretty: pretty_t
   end
 
+
 class type global_contract_int =
   object
     method is_nofree: bool
     method read_xml: xml_element_int -> unit
   end
+
 
 type analysis_level_t =
   | UndefinedBehavior               (* only indicate undefined behavior (Red) *)
@@ -696,6 +699,7 @@ type analysis_level_t =
                                        defined behavior (Red,Purple) (default) *)
   | ValueWrapAround  (* indicate undefined behavior, implementation-defined behavior,
                         and value wrap around of unsigned integers (Red, Purple, Blue) *)
+
 
 class type system_settings_int =
   object

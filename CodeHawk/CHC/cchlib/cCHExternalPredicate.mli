@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,19 +36,25 @@ open CHXmlDocument
 (* cchlib *)
 open CCHLibTypes
 
+
 val xpredicate_tag: xpredicate_t -> string
    
 val s_term_to_pretty: s_term_t -> pretty_t
+
 val xpredicate_to_pretty: xpredicate_t -> pretty_t
 
 val s_term_to_dfs_string: s_term_t -> string
+
 val xpredicate_to_dfs_string: xpredicate_t -> string
 
 val get_term_parameters: s_term_t -> int list
+
 val get_xpredicate_parameters: xpredicate_t -> int list
+
 val get_xpredicate_global_variables: xpredicate_t -> string list
 
 val simplify_sterm: s_term_t -> s_term_t
+
 val simplify_xpredicate: xpredicate_t -> xpredicate_t
 
 val read_xml_term:
@@ -75,4 +83,5 @@ val read_xml_instr:
   -> (string * int) list
   -> contract_instr_t
 
-val write_xmlx_xpredicate: xml_element_int -> (string * int) list -> xpredicate_t -> unit
+val write_xmlx_xpredicate:
+  xml_element_int -> (string * int) list -> xpredicate_t -> unit

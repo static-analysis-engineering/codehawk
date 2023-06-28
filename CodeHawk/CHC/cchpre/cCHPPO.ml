@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -59,13 +61,18 @@ object (self)
   val table = H.create 13          (* id -> proof_obligation_int *)
 
   method add_ppo (loc:location) (ctxt:program_context_int) (p:po_predicate_t) =
-    let ppotype = PPOprog (loc,ctxt,p) in
+    let ppotype = PPOprog (loc, ctxt, p) in
     let index = pod#index_ppo_type ppotype in
-    let _ = if H.mem table index then
-              ch_error_log#add "multiple ppo's with same id"
-                               (LBLOCK [ STR fname ; STR ": " ;
-                                         location_to_pretty loc ; STR "; " ;
-                                         ctxt#toPretty ]) in
+    let _ =
+      if H.mem table index then
+        ch_error_log#add
+          "multiple ppo's with same id"
+          (LBLOCK [
+               STR fname;
+               STR ": ";
+               location_to_pretty loc;
+               STR "; ";
+               ctxt#toPretty]) in
     let ppo = mk_ppo pod ppotype in
     H.add table index ppo
 
@@ -83,15 +90,19 @@ object (self)
     if H.mem table index then
       H.find table index
     else
-      raise (CCHFailure (LBLOCK [ STR "Ppo with index " ; INT index ;
-                                  STR " not found" ]))
+      raise
+        (CCHFailure
+           (LBLOCK [STR "Ppo with index "; INT index; STR " not found"]))
 
   method write_xml (node:xml_element_int) =
     node#appendChildren
       (List.map
          (fun ppo ->
            let pnode = xmlElement "ppo" in
-           begin ppo#write_xml pnode ; pnode end) self#get_ppos)
+           begin
+             ppo#write_xml pnode;
+             pnode
+           end) self#get_ppos)
 
   method read_xml (node:xml_element_int) =
     List.iter (fun pnode ->
@@ -99,5 +110,6 @@ object (self)
         H.add table ppo#index ppo) (node#getTaggedChildren "ppo")
 
 end
+
 
 let mk_ppo_manager = new ppo_manager_t       

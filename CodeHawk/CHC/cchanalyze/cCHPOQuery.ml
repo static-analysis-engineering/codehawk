@@ -132,16 +132,20 @@ object (self)
          if proof_scaffolding#has_direct_callsite fname callcontext then
            let directcallsite =
              proof_scaffolding#get_direct_callsite fname callcontext in
-           (directcallsite#get_postassumes,[])
+           (directcallsite#get_postassumes, [])
          else if proof_scaffolding#has_indirect_callsite fname callcontext then
            let indirectcallsite =
              proof_scaffolding#get_indirect_callsite fname callcontext in
-           (indirectcallsite#get_postassumes,[])
+           (indirectcallsite#get_postassumes, [])
          else
-           ([],[])
+           ([], [])
     else
-      raise (CCHFailure (LBLOCK [ STR "Variable " ; s#toPretty ;
-                                  STR " is not a function return value" ]))
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Variable ";
+                s#toPretty;
+                STR " is not a function return value"]))
 
   method get_sideeffects (v:variable_t) = self#get_sym_sideeffects v#getName
 
@@ -350,16 +354,19 @@ object (self)
        end
 
   method mk_global_request (p:xpredicate_t)  =
-    let (ppos,spos) = if po#is_ppo then ([po#index],[]) else ([],[po#index]) in
+    let (ppos,spos) = if po#is_ppo then ([po#index], []) else ([], [po#index]) in
     let _ = fApi#add_global_assumption_request ~ppos ~spos p in
     let expl = "submitted global request for " ^ (p2s (xpredicate_to_pretty p)) in
-    self#set_diagnostic expl ;
+    self#set_diagnostic expl;
 
   method mk_postcondition_request (pc:xpredicate_t) (callee:varinfo) =
-    let (ppos,spos) = if po#is_ppo then ([po#index],[]) else ([],[po#index]) in
+    let (ppos, spos) = if po#is_ppo then ([po#index], []) else ([], [po#index]) in
     let _ = fApi#add_postcondition_request ~ppos ~spos callee.vid pc in
-    let expl = "submitted postrequest for condition " ^ (p2s (xpredicate_to_pretty pc)) ^
-                 " to " ^ callee.vname in
+    let expl =
+      "submitted postrequest for condition "
+      ^ (p2s (xpredicate_to_pretty pc))
+      ^ " to "
+      ^ callee.vname in
     self#set_diagnostic expl
 
   method get_api_assumptions = fApi#get_api_assumptions

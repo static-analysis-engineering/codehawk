@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +51,7 @@ open CCHReturnsite
 
 module H = Hashtbl
 
+
 class spo_manager_t (fname:string) (pod:podictionary_int):spo_manager_int =
 object (self)
 
@@ -85,7 +88,7 @@ object (self)
 
   method create_contract_proof_obligations =
     begin
-      callsite_manager#create_contract_proof_obligations ;
+      callsite_manager#create_contract_proof_obligations;
       returnsite_manager#create_contract_proof_obligations
     end
 
@@ -96,8 +99,9 @@ object (self)
       List.find  (fun spo -> spo#index = index) self#get_spos
     with
     | Not_found ->
-       raise (CCHFailure (LBLOCK [ STR "Spo with index " ; INT index ;
-                                   STR " not found" ]))
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Spo with index "; INT index; STR " not found"]))
 
   method get_spos =
     self#get_local_spos @ callsite_manager#get_spos @ returnsite_manager#get_spos
@@ -123,12 +127,12 @@ object (self)
     begin
       (if H.length localspos > 0 then
          begin
-           self#write_xml_local_spos lnode ;
-           node#appendChildren [ lnode ]
+           self#write_xml_local_spos lnode;
+           node#appendChildren [lnode]
          end) ;
-      callsite_manager#write_xml cnode ;
-      returnsite_manager#write_xml rnode ;
-      node#appendChildren [ cnode ; rnode ]
+      callsite_manager#write_xml cnode;
+      returnsite_manager#write_xml rnode;
+      node#appendChildren [cnode; rnode]
     end
 
   method read_xml (node:xml_element_int) =
@@ -137,13 +141,15 @@ object (self)
     try
       begin
         (if hasc "localspos" then
-           self#read_xml_local_spos (getc "localspos")) ;
-        callsite_manager#read_xml (getc "callsites") ;
+           self#read_xml_local_spos (getc "localspos"));
+        callsite_manager#read_xml (getc "callsites");
         returnsite_manager#read_xml (getc "returnsites")
       end
     with
     | Failure s ->
-       raise (CCHFailure (LBLOCK [ STR "Failure in spo manager:read_xml: " ; STR s ]))
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Failure in spo manager:read_xml: "; STR s]))
 
 end
 

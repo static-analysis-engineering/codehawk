@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,23 +58,40 @@ open CCHVersion
 
 let _ = CHPretty.set_trace_level 0
 
-let cmds = [ "version" ; "gc" ; "primary" ; "secondary" ; "localinvs" ; 
-	     "globalinvs" ; "check" ; "generate_and_check" ]
+let cmds = [
+    "version";
+    "gc";
+    "primary";
+    "secondary";
+    "localinvs";
+    "globalinvs";
+    "check";
+    "generate_and_check"]
+
 
 let cmdchoices = String.concat ", " cmds 
+
 
 let cmd = ref "version"
 let setcmd s = if List.mem s cmds then
     cmd := s
   else
     begin
-      pr_debug [ STR "Command " ; STR s ; STR " not recognized. Valid choices are: " ;
-		 pretty_print_list cmds (fun s -> STR s) "[" ", " "]" ; NL ] ;
+      pr_debug [
+          STR "Command ";
+          STR s;
+          STR " not recognized. Valid choices are: ";
+	  pretty_print_list cmds (fun s -> STR s) "[" ", " "]";
+          NL];
       exit 1
     end
 
+
 let domains = ref []
+
 let add_domain d = domains := d :: !domains
+
+
 let set_domains s = 
   String.iter (fun c -> match c with
   | 'l' -> add_domain linear_equalities_domain
@@ -84,23 +103,26 @@ let set_domains s =
   (* | 'x' -> add_domain "state sets" *)
   | _ -> 
     begin
-      pr_debug [ STR "Some characters were not recognized in the domain specification: " ; 
-		 STR s ; NL ] ;
+      pr_debug [
+          STR "Some characters were not recognized in the domain specification: ";
+	  STR s;
+          NL];
       exit 1
     end) s
 
+
 let speclist = [
-  ("-version", Arg.Unit (fun () -> ()), "show version information and exit") ;
+  ("-version", Arg.Unit (fun () -> ()), "show version information and exit");
   ("-gc", Arg.Unit (fun () -> cmd := "gc"), 
-   "show ocaml garbage collector settings and exit") ;
+   "show ocaml garbage collector settings and exit");
   ("-summaries", Arg.String function_summary_library#add_summary_jar,
-   "location of jar with library function summaries") ;
-  ("-command", Arg.String setcmd, "choose action to perform: " ^ cmdchoices) ;
+   "location of jar with library function summaries");
+  ("-command", Arg.String setcmd, "choose action to perform: " ^ cmdchoices);
   ("-domains", Arg.String set_domains,
    "domains to be used in invariant generation: " ^
-     "[l:lineq; v:valuesets; i:intervals; s:symbolicsets]") ;
+     "[l:lineq; v:valuesets; i:intervals; s:symbolicsets]");
   ("-cfile", Arg.String system_settings#set_cfilename,
-   "relative filename of c source code file") ;
+   "relative filename of c source code file");
   ("-verbose", Arg.Unit (fun () -> system_settings#set_verbose true),
    "print status on proof obligations and invariants");
   ("-appname", Arg.String system_settings#set_application_name,
@@ -108,21 +130,24 @@ let speclist = [
    ("-nofilter", Arg.Unit (fun () -> system_settings#set_filterabspathfiles false),
     "do not filter out functions in files with absolute path names");
    ("-unreachability", Arg.Unit (fun () -> system_settings#set_use_unreachability),
-    "use unreachability as a justification for discharging proof obligations") ;
+    "use unreachability as a justification for discharging proof obligations");
    ("-wordsize", Arg.Int system_settings#set_wordsize,
-    "set word size (e.g., 16, 32, or 64)") ;
+    "set word size (e.g., 16, 32, or 64)");
    ("-contractpath", Arg.String system_settings#set_contractpath,"path to contract files")
 ]  
 
 let usage_msg = "chc_analyze <options> <path to analysis directory>"
+
 let read_args () = Arg.parse speclist system_settings#set_path usage_msg
+
 
 let save_log_files (contenttype:string) =
   begin
-    save_logfile ch_info_log contenttype "infolog" ;
-    append_to_logfile ch_error_log contenttype "errorlog" ;
+    save_logfile ch_info_log contenttype "infolog";
+    append_to_logfile ch_error_log contenttype "errorlog";
     save_logfile chlog contenttype "chlog"
   end
+
 
 let main () =
   try
@@ -130,25 +155,25 @@ let main () =
     let _ = chlog#set_max_entry_size 1000 in
     if !cmd = "version" then
       begin
-	pr_debug [ version#toPretty ; NL ] ;
+	pr_debug [version#toPretty; NL];
 	exit 0
       end
 
     else if !cmd = "gc" then
       begin
-	pr_debug [ garbage_collector_settings_to_pretty () ; NL ] ;
+	pr_debug [garbage_collector_settings_to_pretty (); NL];
 	exit 0
       end
 
     else if !cmd = "primary" then 
       begin
-	primary_process_file () ;
+	primary_process_file ();
 	save_log_files "primary"
       end
 	  
     else if !cmd = "localinvs" then 
       begin
-	invariants_process_file (List.rev !domains) ;
+	invariants_process_file (List.rev !domains);
 	save_log_files "localinvs"
       end
 
@@ -156,19 +181,19 @@ let main () =
 
     else if !cmd = "check" then 
       begin
-	check_process_file () ;
+	check_process_file ();
 	save_log_files "check"
       end
 
     else if !cmd = "generate_and_check" then
       begin
-        generate_and_check_process_file (List.rev !domains) ;
+        generate_and_check_process_file (List.rev !domains);
         save_log_files "gencheck"
       end
 
     else
       begin
-	pr_debug [ STR "Command " ; STR !cmd ; STR " not recognized" ; NL ] ;
+	pr_debug [STR "Command "; STR !cmd; STR " not recognized"; NL];
 	exit 1
       end
 
@@ -177,36 +202,37 @@ let main () =
   | CCHFunctionSummary.XmlReaderError (line,col,p)
   | XmlDocumentError (line,col,p) ->
      let msg =
-       LBLOCK [ STR "Xml error: (" ; INT line ; STR ", " ; INT col ; STR "): " ;
-                p ]  in
+       LBLOCK [
+           STR "Xml error: ("; INT line; STR ", "; INT col; STR "): "; p] in
      begin
-       ch_error_log#add "final failure" msg ;
-       pr_debug [ msg ; NL ] ;
-       save_log_files "failure" ;
+       ch_error_log#add "final failure" msg;
+       pr_debug [msg; NL];
+       save_log_files "failure";
        exit 3
     end
 
   | CHCommon.CHFailure p
   | CCHFailure p ->
      begin
-       ch_error_log#add "final failure" p ;
-       save_log_files "failure" ;
-       pr_debug [ STR "Failure: " ; p ; NL ] ;
+       ch_error_log#add "final failure" p;
+       save_log_files "failure";
+       pr_debug [STR "Failure: "; p; NL];
        exit 1
      end
 
   | Invalid_argument s ->
      begin
-       ch_error_log#add "final failure" (LBLOCK [ STR "Invalid argument: " ; STR s ]) ;
-       save_log_files "failure" ;
-       pr_debug [ STR "Error: " ; STR s ; NL ] ;
+       ch_error_log#add
+         "final failure" (LBLOCK [STR "Invalid argument: "; STR s ]);
+       save_log_files "failure";
+       pr_debug [STR "Error: "; STR s; NL];
        exit 1
      end
 
   | _ ->
      begin
-       save_log_files "failure" ;
-       pr_debug [ STR "Unknown error encountered" ; NL ] ;
+       save_log_files "failure";
+       pr_debug [STR "Unknown error encountered"; NL];
        exit 1
      end
 
