@@ -2,7 +2,7 @@ CHLIB = ../chlib
 EXTLIB = $(shell ocamlfind query extlib)
 ZARITHLIB = $(shell ocamlfind query zarith)
 
-CAMLC := ocamlopt -I cmi -I cmx \
+CAMLC := ocamlopt -I +unix -I cmi -I cmx \
 	-I $(CHLIB)/cmi \
 	-I $(EXTLIB) \
 	-I $(ZARITHLIB) \
