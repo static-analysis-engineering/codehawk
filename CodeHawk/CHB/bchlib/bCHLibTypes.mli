@@ -1527,6 +1527,7 @@ object
   (* setters *)
   method reset: unit
   method add_fact: invariant_fact_t -> unit
+  method remove_initial_value_fact: variable_t -> variable_t -> unit
   method get_facts: invariant_int list
   method get_count: int
 
@@ -1581,8 +1582,9 @@ object
   method add_valueset_fact:
            string -> variable_t -> symbol_t -> interval_t -> bool -> unit
 
-  (* add special-purpose facts *)
+  (* add/remove special-purpose facts *)
   method add_initial_value_fact: string -> variable_t -> variable_t -> unit
+  method remove_initial_value_fact: string -> variable_t -> variable_t -> unit
   method add_initial_disequality_fact: string -> variable_t -> variable_t -> unit
   method add_test_value_fact   :
            string

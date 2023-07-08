@@ -510,6 +510,27 @@ object (self)
                inv#toPretty])
       end
 
+  method remove_initial_value_fact (fvar: variable_t) (fval: variable_t) =
+    let index = fvar#getName#getSeqNumber in
+    if H.mem table index then
+      let e = H.find table index in
+      let newfacts =
+        List.filter (fun f ->
+            match f#get_fact with
+            | InitialVarEquality _ -> false
+            | _ -> true) e in
+      if (List.length e) != (List.length newfacts) then
+        begin
+          chlog#add
+            "remove initial-value fact"
+            (LBLOCK [STR iaddr; STR ":  "; fvar#toPretty; STR " - "; fval#toPretty]);
+          H.replace table index newfacts
+        end
+      else
+        ()
+    else
+      ()
+
   method private integrate_fact  (inv:invariant_int) =
     let add v f =
       let index = v#getName#getSeqNumber in
@@ -1133,6 +1154,10 @@ object (self)
 
   method add_initial_value_fact (iaddr:string) (v:variable_t) (ival:variable_t) =
     self#add iaddr (InitialVarEquality (v,ival))
+
+  method remove_initial_value_fact
+           (iaddr: string) (v: variable_t) (ival: variable_t) =
+    (self#get_location_invariant iaddr)#remove_initial_value_fact v ival
 
   method add_initial_disequality_fact
            (iaddr:string) (v:variable_t) (ival:variable_t) =

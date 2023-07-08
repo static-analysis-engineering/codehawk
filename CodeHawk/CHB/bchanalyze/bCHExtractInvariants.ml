@@ -333,32 +333,79 @@ let extract_initvar_equalities finfo iaddr domain flocinv =
   let numConstraints = domain#observer#getNumericalConstraints ~variables:None () in
   let constraintSets = get_constraint_sets numConstraints in 
   let disequalities = ref [] in
+
   let add_disequality fvar fval =
     begin
-      finfo#finv#add_initial_disequality_fact iaddr fvar fval ;
+      finfo#finv#add_initial_disequality_fact iaddr fvar fval;
       if finfo#env#is_initial_memory_value fval then
-	disequalities  := (fvar,fval) :: !disequalities
-    end in  
+	disequalities := (fvar,fval) :: !disequalities
+    end in
+  let invalidate_initial_equality (fvar: variable_t) (fval: variable_t) =
+    begin
+      finfo#finv#remove_initial_value_fact iaddr fvar fval;
+      add_disequality fvar fval
+    end in
+
+  let init_value_valid (fvar: variable_t) (fval: variable_t) =
+    if List.exists (fun v -> v#equal fvar) domVars then
+      let numcs = get_var_constraints constraintSets fvar fval domVars in
+      match numcs with
+      | [] ->
+         begin
+           invalidate_initial_equality fvar fval;
+           false
+         end
+      | [c] when is_equality c fvar fval -> true
+      | [c1; c2] when have_equal_values c1 c2 -> true
+      | _ ->
+         begin
+           invalidate_initial_equality fvar fval;
+           false
+         end
+    else
+      true in
+
   let propagate_disequalities l = () in
+
   let fvars =
     List.fold_left
       (fun acc fval ->
         let fvar = env#get_init_value_variable fval in
-        if List.exists (fun v -> v#equal fval) fvalsEq then 
-          fvar :: acc
+        if List.exists (fun v -> v#equal fval) fvalsEq then
+          if init_value_valid fvar fval then
+            fvar :: acc
+          else
+            acc
         else if List.exists (fun v -> v#equal fval) fvalsNotEq then
           acc 
         else if List.exists (fun v -> v#equal fvar) domVars then
           let numcs = get_var_constraints constraintSets fvar fval domVars in 
           match numcs with 
-          | [] -> begin add_disequality fvar fval ; acc end
-          | [ c ] when is_equality c fvar fval ->
-	     begin finfo#finv#add_initial_value_fact iaddr fvar fval ; fvar :: acc end
-          | [ c1 ; c2 ] when have_equal_values c1 c2 ->
-	     begin finfo#finv#add_initial_value_fact iaddr fvar fval ; fvar :: acc end
-          | _ -> begin add_disequality fvar fval ; acc end
+          | [] ->
+             begin
+               add_disequality fvar fval;
+               acc
+             end
+          | [c] when is_equality c fvar fval ->
+	     begin
+               finfo#finv#add_initial_value_fact iaddr fvar fval;
+               fvar :: acc
+             end
+          | [c1; c2] when have_equal_values c1 c2 ->
+	     begin
+               finfo#finv#add_initial_value_fact iaddr fvar fval;
+               fvar :: acc
+             end
+          | _ ->
+             begin
+               add_disequality fvar fval;
+               acc
+             end
         else 
-          begin add_disequality fvar fval ; acc end) [] fvals in
+          begin
+            add_disequality fvar fval;
+            acc
+          end) [] fvals in
   let _ = match !disequalities with [] -> () | l -> propagate_disequalities l in
   fvars
 
