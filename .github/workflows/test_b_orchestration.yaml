@@ -15,7 +15,7 @@ jobs:
       with:
         repository: static-analysis-engineering/CodeHawk-Binary
         path: CodeHawk-Binary
-    - uses: avsm/setup-ocaml@v2
+    - uses: ocaml/setup-ocaml@v2
       with:
         ocaml-version: 4.12.1
     - name: Install dependencies
