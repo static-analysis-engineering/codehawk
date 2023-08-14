@@ -4,7 +4,9 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2019  Kestrel Technology LLC
+   Copyright (c) 2020-2022  Henny Sipma
+   Copyright (c) 2023       Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,3 +28,10 @@
    ============================================================================= *)
 
 (** Utility to keep track of CPU time used on various tasks *)
+
+open CHPretty
+
+
+val pr_timing: pretty_t list -> unit
+
+val pr_interval_timing: pretty_t list -> float -> unit
