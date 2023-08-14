@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -68,6 +68,7 @@ type asm_operand_kind_t =
   | DoubleReg of cpureg_t * cpureg_t
   | Imm of immediate_int
   | Absolute of doubleword_int
+  | FarAbsolute of int * doubleword_int
   | SegAbsolute of segment_t * doubleword_int
   | DummyOp
 
@@ -173,7 +174,10 @@ type opcode_t =
 (* Misc *)
   | Arpl of operand_int * operand_int (* adjust RPL Field of segment selector *)
   | BreakPoint                        (*          call to interrupt procedure *)
-  | UndefinedInstruction
+  | UndefinedInstruction0 of operand_int * operand_int
+  | UndefinedInstruction1 of operand_int * operand_int
+  | UndefinedInstruction2
+  | TerminateBranch32
   | Pause     
   | Halt     
   | InterruptReturn of bool
@@ -181,6 +185,7 @@ type opcode_t =
   | ConvertWordToDoubleword of operand_int * operand_int
   | EmptyMmx
   | FlushCacheLine of operand_int
+  | MemoryFence
   | Cpuid
   | LoadFlags
   | StoreFlags
@@ -193,15 +198,34 @@ type opcode_t =
   | SysEnter                           (* fast call to system level function  *)
   | SysExit                                    (*   fast return from fast system call *)
   | SysReturn                                  (*        return from fast system call *)
+  | WriteBackInvalidateCache                   (*     write back and invalidate cache *)
   | TableLookupTranslation
   | Ldmxcsr of operand_int                     (*                 load mxcsr register *)
   | Stmxcsr of operand_int                     (*          store mxcsr register state *)
+  | XRestore of operand_int                    (*   restore processor extended states *)
+  | XRestoreSupervisor of operand_int (* restore processor extended states supervisor *)
+  | XSave of operand_int                       (*      save processor extended states *)
+  | XSaveSupervisor of operand_int       (* save processor extended states supervisor *)
+  | InvalidateTLBEntries of operand_int        (*              invalidate TLB entries *)
+  | InvalidatePCID of operand_int * operand_int (* invalidate process context identifier *)
   | Prefetch of string * operand_int           (*           prefetch data into caches *)
   | XGetBV                                     (*     get value from control register *)
+  | SerializeExecution                         (*     serialize instruction execution *)
   | ReadTimeStampCounter                       (*             read time stamp counter *)
+  | ReadModelSpecificRegister                  (*   read from model specific register *)
+  | ReadPerformanceMonitoringCounters          (*read performance monitoring counters *)
+  | WriteModelSpecificRegister                 (*    write to model specific register *)
   | MiscOp of string
   | MultiByteNop of int
   | StoreIDTR of operand_int             (* store interrupt descriptor table register *)
+  | StoreGDTR of operand_int                (* store global descriptor table register *)
+  | StoreLDTR of operand_int                 (* store local descriptor table register *)
+  | LoadGDTR of operand_int                  (* load global descriptor table register *)
+  | LoadIDTR of operand_int               (* load interrupt descriptor table register *)
+  | LoadLDTR of operand_int                   (* load local descriptor table register *)
+  | LoadTaskRegister of operand_int                             (* load task register *)
+  | StoreTaskRegister of operand_int                           (* store task register *)
+  | TimedPause of operand_int                                          (* timed pause *)
       
 (* Setting / Scanning bits *)      
   | BitTestComplement of operand_int * operand_int (*           bit test and complement *)
@@ -210,6 +234,7 @@ type opcode_t =
   | BitTest of operand_int * operand_int        (*                             bit test *)
   | BitScanForward of operand_int * operand_int (*                     bit scan forward *)
   | BitScanReverse of operand_int * operand_int (*                     bit scan reverse *)
+  | CountTrailingZeroBits of operand_int * operand_int (*      count trailing zero bits *)
 
 (* Stack operations *)
   | Pop of int * operand_int
@@ -223,15 +248,16 @@ type opcode_t =
   | AddCarry of operand_int * operand_int
   | Sub of operand_int * operand_int
   | SubBorrow of operand_int * operand_int
-  | Div of  int * operand_int * operand_int * operand_int * operand_int  (*  unsigned divide *)
-  | IDiv of int * operand_int * operand_int * operand_int * operand_int  (*    signed divide *)
-  | Mul of  int * operand_int * operand_int * operand_int   (*             unsigned multiply *)
-  | IMul of int * operand_int * operand_int * operand_int   (*               signed multiply *)
+  | Div of  int * operand_int * operand_int * operand_int * operand_int  (* unsigned divide *)
+  | IDiv of int * operand_int * operand_int * operand_int * operand_int  (* signed divide *)
+  | Mul of  int * operand_int * operand_int * operand_int   (* unsigned multiply *)
+  | IMul of int * operand_int * operand_int * operand_int   (* signed multiply *)
   | Increment of operand_int
   | Decrement of operand_int
 	
 (* Randomize *)
-  | RdRandomize of operand_int                             (*            randomize register *)
+  | RdRandomize of operand_int  (* randomize register *)
+  | ReadSeed of operand_int
 	
 (* Control flow *)
   | DirectCall of operand_int
@@ -424,6 +450,8 @@ class type x86dictionary_int =
     method index_opcode: opcode_t -> int
     method index_bytestring: string -> int
     method index_opcode_text: string -> int
+
+    method size: int
 
     method write_xml_opcode: ?tag:string -> xml_element_int -> opcode_t -> unit
     method write_xml_bytestring: ?tag:string -> xml_element_int -> string -> unit

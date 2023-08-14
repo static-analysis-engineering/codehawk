@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -530,10 +530,10 @@ let get_record (opc:opcode_t) =
     att_asm      = (fun f -> f#ops "cmp" [ op2 ; op1 ]) }
 
   (* CMPXCHG r/m8,r8 --- Compare AL with r/m8. If equal, ZF is
-                         set and r8 is loaded into r/m8. Else
+                         set and r8 is loaded into r/m8. Else       ---- 0F A6/r
                          clear ZF and load r/m8 into AL             ---- 0F B0/r
      CMPXCHG r/m32,r32 --- Compare EAX with r/m32. If equal, SF is
-                           set and r32 is loaded into r/m32. Else
+                           set and r32 is loaded into r/m32. Else   ---- 0F A7/r
                            clear ZF and load r/m32 into EAX         ---- 0F B1/r
   *)
   | CmpExchange (width,op1,op2) ->
@@ -624,7 +624,22 @@ let get_record (opc:opcode_t) =
                 information to the EAX, EBX, ECX and EDX
                 registers, as determined by input entered in EAX
                 (in some cases, ECX, as well)                         ---- 0F A2                
+   *)
+
+
+  (* TZCNT  r/m32,r32 ---- Count the number of trailing zero bits      ---- F3 0F BC/r
   *)
+  | CountTrailingZeroBits (op1, op2) -> {
+    docref       = "2B, 4-713" ;
+    mnemonic     = "tzcnt" ;
+    operands     = [op1; op2];
+    flags_set    = [CFlag; OFlag; SFlag; PFlag];
+    flags_used   = [] ;
+    group_name   = "bit operation" ;
+    long_name    = "CountTrailingZeroBits" ;
+    intel_asm    = (fun f -> f#ops "tzcnt" [op1; op2]);
+    att_asm      = (fun f -> f#ops "tzcnt" [op2; op1])}
+
   | Cpuid -> {
     docref       = "2A, 3-197" ;
     mnemonic     = "cpuid" ;
@@ -692,12 +707,13 @@ let get_record (opc:opcode_t) =
     att_asm      = (fun f -> f#ops "call" [ op ]) }
 
   (* JMP rel32 --- Jump near relative, RIP = RIP + 32bit disp        ---- E9 cd
+     JMP ptr 16:32  --- Jump far, absolute address given in operand  ---- EA cp
      JMP rel8  --- Jump near, RIP=RIP+8bit disp sign-extended        ---- EB cb
   *)
   | DirectJmp op -> {
     docref       = "2A, 3-572" ;
     mnemonic     = "jmp" ;
-    operands     = [ op ] ;
+    operands     = [op] ;
     flags_set    = [] ;
     flags_used   = [] ;
     group_name   = "control flow" ;
@@ -1753,6 +1769,28 @@ let get_record (opc:opcode_t) =
 	long_name    = "InterruptReturn" ;
 	intel_asm    = (fun f -> f#no_ops name) ;
 	att_asm      = (fun f -> f#no_ops name) }
+
+  | InvalidateTLBEntries op -> {
+      docref       = "2A, 3-533";
+      mnemonic     = "invlpg";
+      operands     = [op];
+      flags_set    = [];
+      flags_used   = [];
+      group_name   = "kernelmode";
+      long_name    = "InvalidateTLBEntries";
+      intel_asm    = (fun f -> f#ops "invlpg" [op]);
+      att_asm      = (fun f -> f#ops "invlpg" [op])}
+
+  | InvalidatePCID (op1, op2) -> {
+      docref       = "2A, 3-535";
+      mnemonic     = "invpcid";
+      operands     = [op1; op2];
+      flags_set    = [];
+      flags_used   = [];
+      group_name   = "kernelmode";
+      long_name    = "InvalidatePCID";
+      intel_asm    = (fun f -> f#ops "invpcid" [op1; op2]);
+      att_asm      = (fun f -> f#ops "invpcid" [op1; op2])}
        
   (* JO  rel8 --- Jump short if overflow       (OF=1)                ---- 70
      JNO rel8 --- Jump short if not overflow   (OF=0)                ---- 71
@@ -1862,21 +1900,69 @@ let get_record (opc:opcode_t) =
 
   (* LAHF ---- Load AH <- Eflags(SF:ZF:0:AF:0:PF:1:CF)               ---- 9F *)
   | LoadFlags -> {
-    docref       = "2A, 3-583" ;
-    mnemonic     = "lahf" ;
-    operands     = [ ah_r WR ] ;
-    flags_set    = [] ;
-    flags_used   = [ SFlag ; CFlag ] ;
-    group_name   = "misc" ;
-    long_name    = "LoadFlags" ;
-    intel_asm    = (fun f -> f#no_ops "lahf") ;
-    att_asm      = (fun f -> f#no_ops "lahf") }
+    docref       = "2A, 3-583";
+    mnemonic     = "lahf";
+    operands     = [ah_r WR];
+    flags_set    = [];
+    flags_used   = [SFlag; CFlag];
+    group_name   = "misc";
+    long_name    = "LoadFlags";
+    intel_asm    = (fun f -> f#no_ops "lahf");
+    att_asm      = (fun f -> f#no_ops "lahf")}
+
+ (* LGDT --- Load Global Descriptor Table Register               --- 0F 01/2 *)
+ | LoadGDTR op -> {
+     docref     = "2A, 3-599";
+     mnemonic   = "lgdt";
+     operands   = [op];
+     flags_set  = [];
+     flags_used = [];
+     group_name = "misc";
+     long_name  = "LoadGDTR";
+     intel_asm  = (fun f -> f#ops "lgdt" [op]);
+     att_asm    = (fun f -> f#ops "lgdt" [op])}
+
+ (* LIDT --- Load Interrupr Descriptor Table Register             --- 0F 01/2 *)
+ | LoadIDTR op -> {
+     docref     = "2A, 3-599";
+     mnemonic   = "lidt";
+     operands   = [op];
+     flags_set  = [];
+     flags_used = [];
+     group_name = "misc";
+     long_name  = "LoadIDTR";
+     intel_asm  = (fun f -> f#ops "lidt" [op]);
+     att_asm    = (fun f -> f#ops "lidt" [op])}
+
+ (* LLDT --- Load Local Descriptor Table Register                 --- 0F 00/2 *)
+ | LoadLDTR op -> {
+     docref     = "2A, 3-602";
+     mnemonic   = "lldt";
+     operands   = [op];
+     flags_set  = [];
+     flags_used = [];
+     group_name = "misc";
+     long_name  = "LoadLDTR";
+     intel_asm  = (fun f -> f#ops "lldt" [op]);
+     att_asm    = (fun f -> f#ops "lldt" [op])}
+
+ (* LTR --- Load Task Register                                    --- 0F 00/3 *)
+ | LoadTaskRegister op -> {
+     docref     = "2A, 3-620";
+     mnemonic   = "ltr";
+     operands   = [op];
+     flags_set  = [];
+     flags_used = [];
+     group_name = "misc";
+     long_name  = "LoadTaskRegister";
+     intel_asm  = (fun f -> f#ops "ltr" [op]);
+     att_asm    = (fun f -> f#ops "ltr" [op])}
 
   (* LODSB --- Load byte at address DS:[ESI] into AL                   ---- AC
      LODSW --- Load word at address DS:[ESI] into AX                   ---- AD
      LODSD --- Load dword at address DS:[ESI] into EAX                 ---- AD
   *)
-  | Lods (width, op) ->
+ | Lods (width, op) ->
     let name = "lods" ^ (width_suffix_string width) in
     let dst = try register_op (sized_reg_of_reg Eax width) width WR with _ ->
       raise (BCH_failure (LBLOCK [ STR "Error in lods operand size: " ; INT width ])) in
@@ -1932,8 +2018,20 @@ let get_record (opc:opcode_t) =
     intel_asm    = (fun f -> f#ops "or" [ op1 ; op2 ]) ;
     att_asm      = (fun f -> f#ops "or" [ op2 ; op1 ]) }
 
-  (* FEMMS    ---- Clear MMX state                                   --- 0F 0E 
-     VMCPUID  ---- Illegal opcode used by virtual machines           --- 0F C7 C8 01 00 *)
+  (* MFENCE --- Memory Fence                                     --- 0F AE F0 *)
+  | MemoryFence -> {
+    docref       = "2B, 4-22";
+    mnemonic     = "mfence";
+    operands     = [];
+    flags_set    = [];
+    flags_used   = [];
+    group_name   = "misc";
+    long_name    = "MemoryFence";
+    intel_asm    = (fun f -> f#no_ops "mfence");
+    att_asm      = (fun f -> f#no_ops "mfence")}
+
+  (* FEMMS    ---- Clear MMX state                         --- 0F 0E
+     VMCPUID  ---- Illegal opcode used by virtual machines --- 0F C7 C8 01 00 *)
 
   | MiscOp name -> {
     docref       = "" ;
@@ -3282,18 +3380,54 @@ let get_record (opc:opcode_t) =
    intel_asm    = (fun f -> f#no_ops "sahf") ;
    att_asm      = (fun f -> f#no_ops "sahf") }
 
- (* SIDT --- Store Interrupt Descriptor Table Register         --- 0F 01/1 *)
+ (* SGDT --- Store Global Descriptor Table Register               --- 0F 01/0 *)
+ | StoreGDTR op -> {
+     docref     = "2B, 4-617";
+     mnemonic   = "sgdt";
+     operands   = [op];
+     flags_set  = [];
+     flags_used = [];
+     group_name = "misc";
+     long_name  = "StoreGDTR";
+     intel_asm  = (fun f -> f#ops "sgdt" [op]);
+     att_asm    = (fun f -> f#ops "sgdt" [op])}
+
+ (* SIDT --- Store Local Descriptor Table Register                --- 0F 00/0 *)
+ | StoreLDTR op -> {
+     docref     = "2B, 4-645";
+     mnemonic   = "sldt";
+     operands   = [op];
+     flags_set  = [];
+     flags_used = [];
+     group_name = "misc";
+     long_name  = "StoreLDTR";
+     intel_asm  = (fun f -> f#ops "sldt" [op]);
+     att_asm    = (fun f -> f#ops "sldt" [op])}
+
+ (* SLDT --- Store Interrupt Descriptor Table Register            --- 0F 01/1 *)
  | StoreIDTR op -> {
      docref     = "2A, 4-440";
      mnemonic   = "sidt";
-     operands   = [ op ] ;
-     flags_set  = [] ;
-     flags_used = [] ;
-     group_name = "misc" ;
-     long_name  = "StoreIDTR" ;
-     intel_asm  = (fun f -> f#ops "sidt" [ op ]) ;
-     att_asm    = (fun f -> f#ops "sidt" [ op ]) }
-   
+     operands   = [op];
+     flags_set  = [];
+     flags_used = [];
+     group_name = "misc";
+     long_name  = "StoreIDTR";
+     intel_asm  = (fun f -> f#ops "sidt" [op]);
+     att_asm    = (fun f -> f#ops "sidt" [op])}
+
+ (* STR --- Store Task Register                                   --- 0F 00/1 *)
+ | StoreTaskRegister op -> {
+     docref     = "2B, 4-668";
+     mnemonic   = "str";
+     operands   = [op];
+     flags_set  = [];
+     flags_used = [];
+     group_name = "misc";
+     long_name  = "StoreTaskRegister";
+     intel_asm  = (fun f -> f#ops "str" [op]);
+     att_asm    = (fun f -> f#ops "str" [op])}
+
   (* STOS m8  --- Store AL  at address ES:EDI                        ---- AA
      STOS m32 --- Store EAX at address ES:EDI                        ---- AB
   *)
@@ -3392,7 +3526,7 @@ let get_record (opc:opcode_t) =
    intel_asm    = (fun f -> f#no_ops "syscall") ;
    att_asm      = (fun f -> f#no_ops "syscall") }
 
-   (* SYSRET --- Return to compatibility mode from fast system call         --- 0F 07 *)
+ (* SYSRET --- Return to compatibility mode from fast system call         --- 0F 07 *)
 
  | SysReturn -> {
    docref       = "2A, 4-412" ;
@@ -3419,6 +3553,18 @@ let get_record (opc:opcode_t) =
    intel_asm     = (fun f -> f#no_ops "xlat") ;
    att_asm       = (fun f -> f#no_ops "xlat") }
    
+ (* ENDBR32 --- Terminate an Indirect Branch in 32-bit and compatbility mode
+                                                             --- F3 0F 1E FB  *)
+ | TerminateBranch32 -> {
+   docref       = "2A, 3-345";
+   mnemonic     = "endbr32";
+   operands     = [];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "TerminateBranch32";
+   intel_asm    = (fun f -> f#no_ops "endbr32");
+   att_asm      = (fun f -> f#no_ops "endbr32")}
    
   (* TEST r/m8,r8   --- AND r8 with r/m8, set SF,ZF,PF according to result    ---- 84/r
      TEST r/m32,r32 --- AND r32 with r/m32, set SF,ZF,PF according to result  ---- 85/r
@@ -3437,7 +3583,19 @@ let get_record (opc:opcode_t) =
    long_name    = "Test" ;
    intel_asm    = (fun f -> f#ops "test" [ op1 ; op2 ]) ;
    att_asm      = (fun f -> f#ops "test" [ op2 ; op1 ]) }
-   
+
+ (* TPAUSE --- Timed Pause                                     --- 66 0F AE/6 *)
+ | TimedPause op -> {
+     docref     = "2B, 4-711";
+     mnemonic   = "tpause";
+     operands   = [op];
+     flags_set  = [];
+     flags_used = [];
+     group_name = "misc";
+     long_name  = "StoreGDTR";
+     intel_asm  = (fun f -> f#ops "tpause" [op]);
+     att_asm    = (fun f -> f#ops "tpause" [op])}
+
   (* NEG r/m8  --- Two's complement negate r/m8                      ---- F6/3
      NEG r/m32 --- Two's complement negate r/m 32                    ---- F7/3
   *)
@@ -3452,18 +3610,55 @@ let get_record (opc:opcode_t) =
    intel_asm    = (fun f -> f#ops "neg" [ op ]) ;
    att_asm      = (fun f -> f#ops "neg" [ op ]) }
   
-  (* UD2 --- Undefined instruction                                   ---- 0F 0B  *)
- | UndefinedInstruction -> {
-   docref       = "2B, 4-513" ;
-   mnemonic     = "ud2" ;
-   operands     = [] ;
-   flags_set    = [] ;
-   flags_used   = [] ;
-   group_name   = "misc" ;
-   long_name    = "UndefinedInstruction" ;
-   intel_asm    = (fun f -> f#no_ops "ud2") ;
-   att_asm      = (fun f -> f#no_ops "ud2") }
-   
+ (* UD0 --- Undefined instruction                             ---- 0F FF/r  *)
+ | UndefinedInstruction0 (op1, op2) -> {
+   docref       = "2B, 4-719";
+   mnemonic     = "ud0";
+   operands     = [op1; op2];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "UndefinedInstruction0";
+   intel_asm    = (fun f -> f#ops "ud0" [op1; op2]);
+   att_asm      = (fun f -> f#ops "ud0" [op1; op2])}
+
+ (* UD1 --- Undefined instruction                             ---- 0F B9/r  *)
+ | UndefinedInstruction1 (op1, op2) -> {
+   docref       = "2B, 4-719";
+   mnemonic     = "ud1";
+   operands     = [op1; op2];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "UndefinedInstruction0";
+   intel_asm    = (fun f -> f#ops "ud1" [op1; op2]);
+   att_asm      = (fun f -> f#ops "ud1" [op1; op2])}
+
+ (* UD2 --- Undefined instruction                                ---- 0F 0B  *)
+ | UndefinedInstruction2 -> {
+   docref       = "2B, 4-513";
+   mnemonic     = "ud2";
+   operands     = [];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "UndefinedInstruction2";
+   intel_asm    = (fun f -> f#no_ops "ud2");
+   att_asm      = (fun f -> f#no_ops "ud2")}
+
+ (* WBINVD --- Write Back and Invalidate Cache                      --- 0F 09 *)
+
+ | WriteBackInvalidateCache -> {
+   docref       = "2D, 6-3";
+   mnemonic     = "wbinvd";
+   operands     = [];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "kernelmode";
+   long_name    = "WriteBackInvalidateCache";
+   intel_asm    = (fun f -> f#no_ops "wbinvd");
+   att_asm      = (fun f -> f#no_ops "wbinvd")}
+
   (* XADD r/m8,r8   --- exchange r8 and r/m8; load sum into r/m8     ---- 0F C0/r
      XADD r/m32,r32 --- exchange r32 and r/m32; load sum into r/m32  ---- 0F C1/r 
   *)
@@ -3549,41 +3744,133 @@ let get_record (opc:opcode_t) =
    long_name    = "GetValueExtendedControlRegister" ;
    intel_asm    = (fun f -> f#no_ops "xgetbv") ;
    att_asm      = (fun f -> f#no_ops "xgetbv") }
-   
-  (* RDTSC --- Read Time Stamp Counter into EDX:EAX                              ---- 0F 31     *)
+
+ | XRestore op -> {
+   docref       = "2D, 6-45";
+   mnemonic     = "xrstor";
+   operands     = [op];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "XRestore";
+   intel_asm    = (fun f -> f#ops "xrstor" [op]);
+   att_asm      = (fun f -> f#ops "xrstor" [op])}
+
+ | XRestoreSupervisor op -> {
+   docref       = "2D, 6-50";
+   mnemonic     = "xrstors";
+   operands     = [op];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "XRestoreSupervisor";
+   intel_asm    = (fun f -> f#ops "xrstors" [op]);
+   att_asm      = (fun f -> f#ops "xrstors" [op])}
+
+ | XSave op -> {
+   docref       = "2D, 6-54";
+   mnemonic     = "xsave";
+   operands     = [op];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "XSave";
+   intel_asm    = (fun f -> f#ops "xsave" [op]);
+   att_asm      = (fun f -> f#ops "xsave" [op])}
+
+ | XSaveSupervisor op -> {
+   docref       = "2D, 6-63";
+   mnemonic     = "xsaves";
+   operands     = [op];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "XSaveSupervisor";
+   intel_asm    = (fun f -> f#ops "xsaves" [op]);
+   att_asm      = (fun f -> f#ops "xsaves" [op])}
+
+ (* RDMSR --- Read Model Specific Register into EDX:EAX        ---- 0F 32     *)
+ | ReadModelSpecificRegister -> {
+   docref       = "2B, 4-537" ;
+   mnemonic     = "rdmsr" ;
+   operands     = [ecx_r RD; double_register_op Edx Eax 8 WR];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc" ;
+   long_name    = "ReadModelSpecificRegister";
+   intel_asm    = (fun f -> f#no_ops "rdmsr");
+   att_asm      = (fun f -> f#no_ops "rdmsr")}
+
+ (* RDPMC --- Read Model Specific Register into EDX:EAX        ---- 0F 33     *)
+ | ReadPerformanceMonitoringCounters -> {
+   docref       = "2B, 4-542" ;
+   mnemonic     = "rdpmc" ;
+   operands     = [ecx_r RD; double_register_op Edx Eax 8 WR];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc" ;
+   long_name    = "ReadPerformanceMonitoringCounters";
+   intel_asm    = (fun f -> f#no_ops "rdpmc");
+   att_asm      = (fun f -> f#no_ops "rdpmc")}
+
+ (* RDTSC --- Read Time Stamp Counter into EDX:EAX              ---- 0F 31    *)
  | ReadTimeStampCounter -> {
-   docref       = "2B, 4-355" ;
-   mnemonic     = "rdtsc" ;
-   operands     = [ ecx_r RD ; double_register_op Edx Eax 8 WR ] ;
-   flags_set    = [] ;
-   flags_used   = [] ;
+   docref       = "2B, 4-355";
+   mnemonic     = "rdtsc";
+   operands     = [ecx_r RD; double_register_op Edx Eax 8 WR];
+   flags_set    = [];
+   flags_used   = [];
    group_name   = "misc" ;
-   long_name    = "ReadTimeStampCounter" ;
-   intel_asm    = (fun f -> f#no_ops "rdtsc") ;
-   att_asm      = (fun f -> f#no_ops "rdtsc") }
+   long_name    = "ReadTimeStampCounter";
+   intel_asm    = (fun f -> f#no_ops "rdtsc");
+   att_asm      = (fun f -> f#no_ops "rdtsc")}
    
-  (* Randomize the operand; new instruction added in 2012                        ---- 0F C7/6 *)		
+ (* Randomize the operand; new instruction added in 2012         ---- 0F C7/6 *)
  | RdRandomize op -> {
-   docref       = "" ;
-   mnemonic     = "randomize" ;
-   operands     = [ op ] ;
-   flags_set    = [] ;
-   flags_used   = [] ;
+   docref       = "";
+   mnemonic     = "rdrand";
+   operands     = [op];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "Randomize";
+   intel_asm    = (fun f -> f#ops "rdrand" [op]);
+   att_asm      = (fun f -> f#ops "rdrand" [op])}
+
+ (* Read a 32-bit NIST SP800-90B & C compliant random value       ---- 0F C7/7 *)
+ | ReadSeed op -> {
+   docref       = "";
+   mnemonic     = "rdseed";
+   operands     = [op];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "ReadSeed";
+   intel_asm    = (fun f -> f#ops "rdseed" [op]);
+   att_asm      = (fun f -> f#ops "rdseed" [op])}
+
+ (* SERIALIZE --- Serialize Instruction Execution             --- 0F 01 E8     *)
+ | SerializeExecution -> {
+   docref       = "2B, 4-610" ;
+   mnemonic     = "serialize" ;
+   operands     = [];
+   flags_set    = [];
+   flags_used   = [];
    group_name   = "misc" ;
-   long_name    = "Randomize" ;
-   intel_asm    = (fun f -> f#ops "randomize" [ op ]) ;
-   att_asm      = (fun f -> f#ops "randomize" [ op ]) }
+   long_name    = "SerializeExecution";
+   intel_asm    = (fun f -> f#no_ops "serialize");
+   att_asm      = (fun f -> f#no_ops "serialize")}
    
  | Ldmxcsr op -> {
-   docref       = "2A, 3-592" ;
-   mnemonic     = "ldmxcsr" ;
-   operands     = [ op ] ;
-   flags_set    = [] ;
-   flags_used   = [] ;
-   group_name   = "misc" ;
-   long_name    = "LoadMxcsrRegister" ;
-   intel_asm    = (fun f -> f#ops "ldmxcsr" [ op ]) ;
-   att_asm      = (fun f -> f#ops "ldmxcsr" [ op ]) }
+   docref       = "2A, 3-592";
+   mnemonic     = "ldmxcsr";
+   operands     = [op];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc";
+   long_name    = "LoadMxcsrRegister";
+   intel_asm    = (fun f -> f#ops "ldmxcsr" [op]);
+   att_asm      = (fun f -> f#ops "ldmxcsr" [op])}
    
  | Stmxcsr op -> {
    docref       = "2B, 4-465" ;
@@ -3705,6 +3992,19 @@ let get_record (opc:opcode_t) =
    long_name    = "Wait" ;
    intel_asm    = (fun f -> f#no_ops "wait") ;
    att_asm      = (fun f -> f#no_ops "wait") }
+
+ (* WRMSR --- Write Model Specific Register from EDX:EAX                 ---- 0F 32     *)
+
+ | WriteModelSpecificRegister -> {
+   docref       = "2B, 4-537" ;
+   mnemonic     = "rdmsr" ;
+   operands     = [ ecx_r RD; double_register_op Edx Eax 8 RD];
+   flags_set    = [];
+   flags_used   = [];
+   group_name   = "misc" ;
+   long_name    = "WriteModelSpecificRegister";
+   intel_asm    = (fun f -> f#no_ops "wrmsr");
+   att_asm      = (fun f -> f#no_ops "wrmsr")}
    
  | JumpTableEntry op -> {
    docref       = "" ;

@@ -4,7 +4,9 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2019  Kestrel Technology LLC
+   Copyright (c) 2020-2022  Henny Sipma
+   Copyright (c) 2023       Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,9 +46,31 @@ open BCHLibx86Types
 open BCHOperand
 open BCHX86Opcodes
 
-let px0f01 (ch:pushback_stream_int) = 
+
+let px0f00 (ch: pushback_stream_int) =
   let b3 = ch#read_byte in
-  let (md,reg,rm) = decompose_modrm b3 in
+  let (md, reg, rm) = decompose_modrm b3 in
+  match b3 with
+
+  (* 0F 00/0 --- SLDT --- Store Local Descriptor Table Register *)
+  (* 0F 00/1 --- STR  --- Store Task Register *)
+  (* 0F 00/2 --- LLDT --- Load Local Descriptor Table Register *)
+  (* 0F 00/3 --- LTR  --- Load Task Register *)
+
+  | _ ->
+     begin
+       match reg with
+       | 0 -> let op = get_rm_word_operand md rm ch WR in StoreLDTR op
+       | 1 -> let op = get_rm_word_operand md rm ch WR in StoreTaskRegister op
+       | 2 -> let op = get_rm_word_operand md rm ch WR in LoadLDTR op
+       | 3 -> let op = get_rm_word_operand md rm ch WR in LoadTaskRegister op
+       | _ -> Unknown
+     end
+
+
+let px0f01 (ch: pushback_stream_int) =
+  let b3 = ch#read_byte in
+  let (md, reg, rm) = decompose_modrm b3 in
   match b3 with
 
   (* 0F 01 D0 --- XGETBV --- Reads an extended control register specified by ECX into
@@ -56,12 +80,24 @@ let px0f01 (ch:pushback_stream_int) =
 
   | 0xd0 -> XGetBV
 
+  (* 0F 01 E8 --- SERIALIZE --- Serialize Instruction Execution *)
+
+  | 0xe8 -> SerializeExecution
+
+  (* 0F 01/0 --- SGDT --- Store Global Descriptor Table Register *)
   (* 0F 01/1 --- SIDT --- Store Interrupt Descriptor Table Register *)
+  (* 0F 01/2 --- LTDT --- Load Global Descriptor Table Register *)
+  (* 0F 01/3 --- LIDT --- Load Interrupt Descriptor Table Register *)
+  (* 0F 01/7 --- INVLPG --- Invalidate TLB Entries *)
 
   | _ ->
      begin
        match reg with
+       | 0 -> let op = get_rm_operand md rm ch WR in StoreGDTR op
        | 1 -> let op = get_rm_operand md rm ch WR in StoreIDTR op
+       | 2 -> let op = get_rm_operand md rm ch RD in LoadGDTR op
+       | 3 -> let op = get_rm_operand md rm ch RD in LoadIDTR op
+       | 7 -> let op = get_rm_operand md rm ch RD in InvalidateTLBEntries op
        | _ -> Unknown
      end
 
@@ -206,30 +242,42 @@ let px0f73 (ch:pushback_stream_int) =
 
   | _ -> Unknown
 
+
 let px0fae (ch:pushback_stream_int) =
-  let modrm = ch#read_byte in
-  let (md,reg,rm) = decompose_modrm modrm in
-  match reg with
+  let b3 = ch#read_byte in
+  let (md,reg,rm) = decompose_modrm b3 in
+  match b3 with
 
-  (* 0F AE/0 --- FXSAVE m512byte  --- Save the x87 FPU, MMX, XMM, and MXCSR register 
-                                      state to m512byte. 
-     0F AE/1 --- FXRSTOR m512byte --- Restore the x87 FPU, MMX, XMM, and MXCSR register 
-                                      state from m512byte.                             *)
+  (* 0F AE F0  --- MFENCE --- Memory Fence *)
+  | 0xf0 -> MemoryFence
 
-  | 0 -> let op = get_rm_operand md rm ~size:64 ch WR in FXSave op
-  | 1 -> let op = get_rm_operand md rm ~size:64 ch RD in FXRestore op
+  | _ ->
+     begin
+       match reg with
 
-  (* 0F AE/2 --- LDMXCSR m32 -- Load MXCSR register from m32
-     0F AE/3 --- STMXCSR m32 -- Store contents of MXCSR register to m32        
-     0F AE/7 --- CLFLUSH m8 --- Flushes cache line containing m8  
-     0F AE/7 --- SFENCE ------- Serializes store operations                *)
+       (* 0F AE/0 --- FXSAVE m512byte  --- Save the x87 FPU, MMX, XMM, and MXCSR register
+                                           state to m512byte.
+          0F AE/1 --- FXRSTOR m512byte --- Restore the x87 FPU, MMX, XMM, and MXCSR register
+                                           state from m512byte.                             *)
 
-  | 2 -> let op = get_rm_operand md rm ch RD in Ldmxcsr op
-  | 3 -> let op = get_rm_operand md rm ch WR in Stmxcsr op
+       | 0 -> let op = get_rm_operand md rm ~size:64 ch WR in FXSave op
+       | 1 -> let op = get_rm_operand md rm ~size:64 ch RD in FXRestore op
 
-  | 7 -> let op = get_rm_byte_operand md rm ch RD in FlushCacheLine op
+       (* 0F AE/2 --- LDMXCSR m32 -- Load MXCSR register from m32
+          0F AE/3 --- STMXCSR m32 -- Store contents of MXCSR register to m32
+          0F AE/4 --- XSAVE m32  --- Save Processor Extended States
+          0F AE/5 --- XRSTOR m32 --- Restore Processor Extended States
+          0F AE/7 --- CLFLUSH m8 --- Flushes cache line containing m8
+          0F AE/7 --- SFENCE ------- Serializes store operations                *)
 
-  | _ -> Unknown
+       | 2 -> let op = get_rm_operand md rm ch RD in Ldmxcsr op
+       | 3 -> let op = get_rm_operand md rm ch WR in Stmxcsr op
+       | 4 -> let op = get_rm_operand md rm ch WR in XSave op
+       | 5 -> let op = get_rm_operand md rm ch RD in XRestore op
+
+       | 7 -> let op = get_rm_byte_operand md rm ch RD in FlushCacheLine op
+       | _ -> Unknown
+     end
 
 
 let px0fba (ch:pushback_stream_int) =
@@ -264,6 +312,7 @@ let px0fba (ch:pushback_stream_int) =
 
   | _ -> Unknown
 
+
 let px0fc7 (ch:pushback_stream_int) =
   let modrm = ch#read_byte in
   match modrm with
@@ -286,32 +335,45 @@ let px0fc7 (ch:pushback_stream_int) =
     let (md,reg,rm) = decompose_modrm modrm in
     match reg with
 
-  (* 0F c7/1 --- CMPXCHG8B m64 --- Compare EDX:EAX with m64. If equal, set ZF and 
-     load ECX:EBX into m64. Else, clear ZF and load 
-     m64 into EDX:EAX.                             
+    (* 0F C7/1 --- CMPXCHG8B m64 --- Compare EDX:EAX with m64. If equal, set ZF and
+       load ECX:EBX into m64. Else, clear ZF and load
+       m64 into EDX:EAX.
 
-     Note: some of these encodings are not valid and cause a processor exception,
-     except when run in VirtualPC, which traps these exceptions, see
-     Peter Ferrie, Attacks on Virtual Machine Emulators                      *)
+       Note: some of these encodings are not valid and cause a processor exception,
+       except when run in VirtualPC, which traps these exceptions, see
+       Peter Ferrie, Attacks on Virtual Machine Emulators                      *)
 
     | 1 -> let op = get_rm_operand md rm ~size:8 ch WR in 
 	   let opsrc = double_register_op Ecx Ebx 8 RD in
 	   let opdst = double_register_op Edx Eax 8 WR in
 	   CmpExchange8B(op,opdst,opsrc)
 
-  (* 0F C7/6 --- Randomize the operand; new instruction added in 2012 
-     Documented in 
-     Intel(R) 64 and IA-32 Architectures  Software Developer's Manual
-     Documentation Changes, August 2012                                  *)
+    (* 0F C7/3 --- XRSTORS --- Restore Processor Extended States Supervisor *)
+    (* 0F C7/5 --- XSAVES --- Save Processor Extended States Supervisor *)
+
+    | 3 -> let op = get_rm_operand md rm ch RD in XRestoreSupervisor op
+    | 5 -> let op = get_rm_operand md rm ch WR in XSaveSupervisor op
+
+    (* 0F C7/6 --- Randomize the operand; new instruction added in 2012
+       Documented in
+       Intel(R) 64 and IA-32 Architectures  Software Developer's Manual
+       Documentation Changes, August 2012                                  *)
 
     | 6 -> let op = get_rm_operand md rm ch WR in RdRandomize op
 
+    (* 0F C7/7 --- RDSEED --- Read Random Seed *)
+
+    | 7 -> let op = get_rm_operand md rm ch WR in ReadSeed op
+
     | _ -> Unknown
+
 
 let px0f base opsize_override (ch:pushback_stream_int) =
   let opsize = if opsize_override then 2 else 4 in
   let b2 = ch#read_byte in
   match b2 with
+
+  | 0x0 -> px0f00 ch
 
   | 0x01 -> px0f01 ch
 
@@ -321,19 +383,15 @@ let px0f base opsize_override (ch:pushback_stream_int) =
   | 0x05 -> SysCall
 
   (* 0F 06 --- CLTS --- Clear TS flag in CR0 *)
-
-  | 0x06 -> ClearTaskSwitchedFlag
-
   (* 0F 07 --- SYSRET --- Return to compatibility mode from fast system call      *)
-
-  | 0x07 -> SysReturn
-
+  (* 0F 09 --- WBINVD --- Write Back and Invalidate Cache *)
   (* 0F 0B --- UD2 --- Undefined instruction *)
-
-  | 0x0b -> UndefinedInstruction
-
   (* 0F 0E --- FEMMS --- Clear MMX state *)
 
+  | 0x06 -> ClearTaskSwitchedFlag
+  | 0x07 -> SysReturn
+  | 0x009 -> WriteBackInvalidateCache
+  | 0x0b -> UndefinedInstruction2
   | 0x0e -> MiscOp "femms"
 
   (* 0F 10/r --- MOVUPS xmm1,xmm2/m128 --- Move packed single precision floating-point values
@@ -535,9 +593,15 @@ let px0f base opsize_override (ch:pushback_stream_int) =
   | 0x2f -> let (op1,op2) = get_modrm_xmm_operands ch 4 RD RD in
 	    FXmmOp ("comi",true,true,op2,op1)
 
-  (* 0F 31 --- RDTSC --- Read Time Stamp Counter into EDX:EAX                         *)
+  (* 0F 30 --- WRMSR --- Write to Model Specific Register from EDX:EAX        *)
+  (* 0F 31 --- RDTSC --- Read Time Stamp Counter into EDX:EAX                 *)
+  (* 0F 32 --- RDMSR --- Read From Model Specific Register into EDX:EAX       *)
+  (* 0F 33 --- RDPMC --- Read Performance Monitoring Counters into EDX:EAX    *)
 
+  | 0x30 -> WriteModelSpecificRegister
   | 0x31 -> ReadTimeStampCounter
+  | 0x32 -> ReadModelSpecificRegister
+  | 0x33 -> ReadPerformanceMonitoringCounters
 
   (* 0F 34 --- SYSENTER --- Fast call to privilege level 0 system procedures.         
      0F 35 --- SYSEXIT  --- Fast return from fast system call                         *)
@@ -874,6 +938,22 @@ let px0f base opsize_override (ch:pushback_stream_int) =
 
   | 0xa5 -> let (op1,op2) = get_modrm_operands ch RW RD in Shld(op1, op2, cl_r RD)
 
+  (* 0F A6/r --- CMPXCHG r/m8,r8 --- Compare AL with r/m8. If equal, ZF is
+                                     set and r8 is loaded into r/m8. Else
+                                     clear ZF and load r/m8 into AL
+     0F A7/r --- CMPXCHG r/m32,r32 --- Compare EAX with r/m32. If equal, SF is
+                                       set and r32 is loaded into r/m32. Else
+                                       clear ZF and load r/m32 into EAX
+     --- Non-standard encoding on Intel 80486 stepping A --- *)
+
+  | 0xa6 ->
+     let (op1, op2) = get_modrm_byte_operands ch RW RD in
+     CmpExchange (1, op1, op2)
+
+  | 0xa7 ->
+     let (op1, op2) = get_modrm_def_operands opsize_override ch RW RD in
+     CmpExchange (opsize, op1, op2)
+
   (* 0F A8 --- PUSH GS  -- Push Gs 
      0F A9 --- POP GS   -- Pop Gs *)
 
@@ -933,9 +1013,17 @@ let px0f base opsize_override (ch:pushback_stream_int) =
      Copies the contents of the source (second) operand to the destination operand
      and zero extends the value.                                                    *)
 
-  | 0xb6 -> let (op1,op2) = get_modrm_sized_operands ch 1 RD 4 WR in Movzx (4,op2,op1)
+  | 0xb6 ->
+     let (op1,op2) = get_modrm_sized_operands ch 1 RD 4 WR in Movzx (4,op2,op1)
   
-  | 0xb7 -> let (op1,op2) = get_modrm_sized_operands ch 2 RD 4 WR in Movzx (4,op2,op1)
+  | 0xb7 ->
+     let (op1,op2) = get_modrm_sized_operands ch 2 RD 4 WR in Movzx (4,op2,op1)
+
+  (* 0F B9/r --- UD1 r32, r/m32 -- Undefined Instruction *)
+
+  | 0xb9 ->
+     let (op1, op2) = get_modrm_operands ch RD RD in
+     UndefinedInstruction1 (op2, op1)
 
   | 0xba -> px0fba ch
 
@@ -1161,11 +1249,21 @@ let px0f base opsize_override (ch:pushback_stream_int) =
 
   (* 0F FC/r --- PADDB mm,mm/m64 --- Add packed byte integers from mm/m64 and mm   
      0F FD/r --- PADDW mm,mm/m64 --- Add packed word integers from mm/m64 and mm
-     0F FE/r --- PADDD mm,mm/m64 --- Add packed doubleword integers from mm/m64 and mm     *)
+     0F FE/r --- PADDD mm,mm/m64 --- Add packed doubleword integers from mm/m64 and mm
+     0F FF/r --- UD0 r32,r/m32   --- Raise invalid opcode instruction
+   *)
 
-  | 0xfc -> let (op1,op2) = get_modrm_mm_operands ch 8 RD RW in PackedAdd (false,false,1,op2,op1)
-  | 0xfd -> let (op1,op2) = get_modrm_mm_operands ch 8 RD RW in PackedAdd (false,false,2,op2,op1)
-  | 0xfe -> let (op1,op2) = get_modrm_mm_operands ch 8 RD RW in PackedAdd (false,false,4,op2,op1)
+  | 0xfc ->
+     let (op1, op2) = get_modrm_mm_operands ch 8 RD RW in
+     PackedAdd (false, false, 1, op2, op1)
+  | 0xfd ->
+     let (op1, op2) = get_modrm_mm_operands ch 8 RD RW in
+     PackedAdd (false, false, 2, op2, op1)
+  | 0xfe ->
+     let (op1, op2) = get_modrm_mm_operands ch 8 RD RW in
+     PackedAdd (false, false, 4, op2, op1)
+  | 0xff ->
+     let (op1, op2) = get_modrm_operands ch RD RD in
+     UndefinedInstruction0 (op2, op1)
 
   | _ -> Unknown
-
