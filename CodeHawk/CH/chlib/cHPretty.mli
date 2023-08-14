@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +49,11 @@ class pretty_printer_t :
     method print : pretty_t -> unit
   end
 
-val pr_debug : pretty_t list -> unit
+val pr_debug: pretty_t list -> unit
 
 val set_trace_level: int -> unit
-val pr_trace : int -> pretty_t list -> unit
+val pr_trace: int -> pretty_t list -> unit
+
+val pr_info: pretty_t list -> unit
+
+val pr_error: pretty_t list -> unit

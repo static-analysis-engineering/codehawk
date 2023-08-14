@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -116,3 +118,13 @@ let pr_trace n l =
     pr_debug l
   else
     ()
+
+
+let pr_info (l: pretty_t list) =
+  let pp = new pretty_printer_t stderr in
+  pp#print (LBLOCK (((STR "INFO: ") :: l) @ [NL]))
+
+
+let pr_error (l: pretty_t list) =
+  let pp = new pretty_printer_t stderr in
+  pp#print (LBLOCK (((STR "ERROR: ") :: l) @ [NL]))
