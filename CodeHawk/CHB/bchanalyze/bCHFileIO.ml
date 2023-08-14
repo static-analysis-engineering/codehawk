@@ -33,6 +33,7 @@ open CHPretty
 
 (* chutil *)
 open CHFileIO
+open CHTiming
 open CHXmlDocument
 open CHXmlReader
 
@@ -97,11 +98,13 @@ let get_bch_root (info:string):xml_element_int =
     root
   end
 
+
 let save_functions_list () =
   let filename = get_functions_filename () in
   let doc = xmlDocument () in
   let root  = get_bch_root "functions" in
   let ffNode = xmlElement "functions" in
+  let subnodes = ref [] in
   begin
     assembly_functions#bottom_up_itera (fun faddr f ->
       let fNode = xmlElement "function" in
@@ -109,20 +112,25 @@ let save_functions_list () =
       let seti = fNode#setIntAttribute in
       let setx t x = set t x#to_hex_string in
       begin
-	ffNode#appendChildren [ fNode ] ;
 	(if functions_data#has_function_name faddr then 
 	   let name = (functions_data#get_function faddr)#get_function_name in
-           let name = if has_control_characters name then
-                        "__xx__" ^ (hex_string name) else name in
-	    set "name" name) ;
-	 setx "va" faddr ;
-	 seti "instructions" f#get_instruction_count ;
-	 seti "blocks" f#get_block_count
-      end) ;
-    doc#setNode root ;
-    root#appendChildren [ ffNode ] ;
+           let name =
+             if has_control_characters name then
+               "__xx__" ^ (hex_string name)
+             else
+               name in
+	   set "name" name);
+	 setx "va" faddr;
+	 seti "instructions" f#get_instruction_count;
+	 seti "blocks" f#get_block_count;
+         subnodes := fNode :: !subnodes
+      end);
+    ffNode#appendChildren !subnodes;
+    doc#setNode root;
+    root#appendChildren [ffNode];
     file_output#saveFile filename doc#toPretty
   end
+
 
 let save_global_state () =
   let filename = get_global_state_filename () in
@@ -130,9 +138,9 @@ let save_global_state () =
   let root = get_bch_root "global-state" in
   let gNode = xmlElement "global-state" in
   begin
-    global_system_state#write_xml gNode ;
-    doc#setNode root ;
-    root#appendChildren [ gNode ] ; 
+    global_system_state#write_xml gNode;
+    doc#setNode root;
+    root#appendChildren [gNode];
     file_output#saveFile filename doc#toPretty
   end
 
@@ -195,15 +203,22 @@ let save_disassembly_status () =
   
 
 let save_x86dictionary () =
+  let _ = pr_timing [STR "Saving x86 dictionary ..."] in
   let filename = get_x86dictionary_filename () in
   let doc = xmlDocument () in
   let root = get_bch_root "x86dictionary" in
   let fnode = xmlElement "x86dictionary" in
   begin
-    x86dictionary#write_xml fnode ;
-    doc#setNode root ;
-    root#appendChildren [ fnode ] ;
-    file_output#saveFile filename doc#toPretty
+    x86dictionary#write_xml fnode;
+    pr_timing [STR "x86 dictionary written to xml"];
+    doc#setNode root;
+    root#appendChildren [fnode];
+    pr_timing [STR "x86 dictionary document set"];
+    (let p = doc#toPretty in
+     begin
+       pr_timing [STR "xml document converted to pretty"];
+       file_output#saveFile filename p
+     end)
   end
 
 let load_x86dictionary () =
