@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -92,9 +92,12 @@ object (self)
       H.find revtable index
     with
     | Not_found ->
-       raise (CHFailure
-                (LBLOCK [ STR "Index " ; INT index ;
-                          STR " not found in string table" ]))
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Index ";
+                 INT index;
+                 STR " not found in string table"]))
 
   method values = H.fold (fun k _ r -> k :: r) table []
 
@@ -123,21 +126,33 @@ object (self)
       next <- !maxcount + 1
     end
 
-  method write_xml (node:xml_element_int) =
-    node#appendChildren
-      (List.map (fun (index,s) ->
-           let snode = xmlElement "n" in
-           let set = snode#setAttribute in
-           let seti = snode#setIntAttribute in
-           let (ishex,encoding) = encode_string s in
-           let len = String.length s in
-           begin
-             (if ishex then set "hex" "y") ;
-             seti "ix" index ;
-             seti "len" len ;
-             set "v" encoding ;
-             snode
-           end) self#get_indexed_keys)
+  method write_xml (node: xml_element_int) =
+    let _ =
+      if (H.length revtable) > 5000 then
+        pr_info [
+            STR "Table ";
+            STR self#get_name;
+            STR ": ";
+            INT (H.length revtable);
+            STR " keys"] in
+    let subnodes = ref [] in
+    let _ =
+      H.iter (fun index s ->
+          let snode = xmlElement "n" in
+          let set = snode#setAttribute in
+          let seti = snode#setIntAttribute in
+          let (ishex,encoding) = encode_string s in
+          let len = String.length s in
+          begin
+            (if ishex then set "hex" "y");
+            seti "ix" index;
+            seti "len" len;
+            set "v" encoding;
+            subnodes := snode :: !subnodes
+          end) revtable in
+    node#appendChildren !subnodes
+
 end
+
 
 let mk_string_index_table = new string_index_table_t
