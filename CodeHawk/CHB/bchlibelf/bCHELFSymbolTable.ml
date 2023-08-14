@@ -199,12 +199,16 @@ object (self)
       end
     with
     | IO.No_more_input ->
-       ch_error_log#add "no more input"
-                        (LBLOCK [ STR "Unable to read the symbol table " ])
+       ch_error_log#add
+         "no more input"
+         (LBLOCK [STR "Unable to read the symbol table "])
 
   method set_symbol_names (t:elf_string_table_int) =
     H.iter (fun _ e ->
-        e#set_name (t#get_string e#get_st_name#to_int)) entries
+        let s_opt = t#get_string_at_address e#get_st_name in
+        match s_opt with
+        | Some s -> e#set_name s
+        | _ -> ()) entries
 
   method set_function_entry_points =
     let align (a: int) (size: int): int = (a / size) * size in

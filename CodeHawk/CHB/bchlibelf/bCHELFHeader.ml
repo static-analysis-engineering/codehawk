@@ -44,7 +44,9 @@ open CHUtils
 
 (* chutil *)
 open CHFileIO
-open CHLogger   
+open CHLogger
+open CHPrettyUtil
+open CHTiming
 open CHXmlDocument
 
 (* bchcil *)
@@ -947,7 +949,7 @@ object(self)
 
   method private set_symbol_names =
     if self#has_symbol_table then
-      let (header,symboltable) = self#get_symbol_table in
+      let (header, symboltable) = self#get_symbol_table in
       let stringtable = self#get_associated_string_table header in
       begin
         symboltable#set_symbol_names stringtable ;
@@ -960,7 +962,7 @@ object(self)
 
   method private set_dynamic_symbol_names =
     if self#has_dynamic_symbol_table then
-      let (header,symboltable) = self#get_dynamic_symbol_table in
+      let (header, symboltable) = self#get_dynamic_symbol_table in
       let stringtable = self#get_associated_string_table header in
       begin
         symboltable#set_symbol_names stringtable ;
@@ -1209,7 +1211,21 @@ object(self)
 	match load_section_file (string_of_int index) with
 	| Some node ->
            let section = read_xml_elf_section h node in
-	   H.add section_table index section
+           begin
+	     H.add section_table index section;
+             pr_timing [
+                 STR "section ";
+                 (fixed_length_pretty ~alignment:StrRight (INT index) 2);
+                 STR ": ";
+                 STR h#get_addr#to_fixed_length_hex_string;
+                 STR "  ";
+                 STR h#get_size#to_fixed_length_hex_string;
+                 STR "  ";
+                 STR h#get_section_name;
+                 STR " (";
+                 STR (doubleword_to_elf_section_header_string h#get_type);
+                 STR ") loaded"]
+           end
 	| _ -> 
 	   pr_debug [
                STR "Section ";
@@ -1272,9 +1288,10 @@ object(self)
                | _ -> ()) program_header_table
          end);
       self#set_symbol_names;
+      pr_timing [STR "elf: symbol names set"];
       self#set_dynamic_symbol_names;
       self#set_relocation_symbols;
-      self#initialize_dwarf_query_service
+      self#initialize_dwarf_query_service;
     end
       
   method toPretty = 
@@ -1484,8 +1501,10 @@ let load_elf_files () =
      (try
         begin
           elf_header#read_xml node;
+          pr_timing [STR "elf header and sections read"];
           elf_header#set_code_extent;
           elf_header#initialize_jump_tables;
+          pr_timing [STR "jump tables initialized"];
           elf_header#initialize_call_back_tables;
           elf_header#initialize_struct_tables;
         end
@@ -1512,7 +1531,7 @@ let read_elf_file (filename: string) (xsize: int) =
   let filesize = Bytes.length exeString in
   let default () =
     begin
-      system_info#set_file_string  (Bytes.to_string exeString);
+      system_info#set_file_string (Bytes.to_string exeString);
       elf_header#read;
       elf_header#set_code_extent;
       elf_header#initialize_jump_tables;

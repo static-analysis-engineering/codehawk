@@ -37,9 +37,10 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHDoubleword
 open BCHByteUtilities
+open BCHDoubleword
 open BCHLibTypes
+open BCHStreamWrapper
 
 (* bchlibelf *)
 open BCHELFSection
@@ -57,13 +58,15 @@ object (self)
   val entries = H.create 3
 
   method set_entries =
-    List.iter (fun (p,s) ->
+    List.iter (fun (p, s) ->
         let strva = vaddr#add_int p in
         H.add entries strva#to_hex_string s) self#get_strings
 
   method get_string (index:int) =
     if index < 0 || index >= String.length s then
-      raise (BCH_failure (LBLOCK [STR "String index out of bounds: "; INT index]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "String index out of bounds: "; INT index]))
     else if index = 0 then
       ""
     else
@@ -71,24 +74,22 @@ object (self)
       let input = IO.input_string suffix in
       IO.read_string input
 
-  method get_string_at_address (a:doubleword_int) =
+  method get_string_at_address (a: doubleword_int): string option =
     if H.mem entries a#to_hex_string then
       Some (H.find entries a#to_hex_string)
     else
       None
 
   method private get_strings =
-    let pos = ref 1 in
     let result = ref [] in
+    let slen = String.length s in
+    let ch = make_pushback_stream s in
+    let _ = ch#skip_bytes 1 in
     begin
-      while (!pos < String.length s) do
-        let suffix = string_suffix s !pos in
-        let s = IO.input_string suffix in
-        let s = IO.read_string s in
-        begin
-          result := (!pos,s) :: !result ;
-          pos := !pos + String.length(s) + 1
-        end
+      while ch#pos < slen do
+        let pos = ch#pos in
+        let s = ch#read_string in
+        result := (pos, s) :: !result
       done;
       !result
     end
