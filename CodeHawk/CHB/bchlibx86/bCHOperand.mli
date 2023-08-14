@@ -82,7 +82,11 @@ val esp_deref: ?with_offset:int -> operand_mode_t -> operand_int
 val ebp_deref: operand_mode_t -> operand_int
 
 val absolute_op: doubleword_int -> int -> operand_mode_t -> operand_int
-val seg_absolute_op: segment_t -> doubleword_int -> int -> operand_mode_t -> operand_int
+val seg_absolute_op:
+  segment_t -> doubleword_int -> int -> operand_mode_t -> operand_int
+val far_absolute_op:
+  int -> doubleword_int -> int -> operand_mode_t -> operand_int
+
 val immediate_op: immediate_int -> int -> operand_int
 
 val seg_indirect_register_op:

@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +42,7 @@ open BCHLibTypes
 (* bchlibx86 *)
 open BCHLibx86Types
 
+
 class opkind_mcts_t: [ asm_operand_kind_t ] mfts_int =
 object
 
@@ -62,10 +65,12 @@ object
     | Imm _ -> "i"
     | Absolute _ -> "a"
     | SegAbsolute _ -> "sa"
+    | FarAbsolute _ -> "fa"
     | DummyOp -> "u"
                
-  method tags = [ "a"; "c"; "d"; "f"; "i"; "m"; "r"; "rd";
-                  "ri"; "rs"; "s"; "sa"; "si"; "u"; "x" ]
+  method tags = [
+      "a"; "c"; "d"; "f"; "fa"; "i"; "m"; "r"; "rd";
+      "ri"; "rs"; "s"; "sa"; "si"; "u"; "x"]
               
 end
 

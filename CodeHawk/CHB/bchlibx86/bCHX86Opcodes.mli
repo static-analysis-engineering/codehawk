@@ -4,7 +4,9 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2019  Kestrel Technology LLC
+   Copyright (c) 2020-2022  Henny Sipma
+   Copyright (c) 2023       Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,16 +36,17 @@ open BCHLibTypes
 (* bchlibx86 *)
 open BCHLibx86Types
 
-val not_code_to_string  : not_code_t -> string
-val not_code_to_pretty  : not_code_t -> pretty_t
-val not_code_length     : not_code_t -> int
-val not_code_set_string : not_code_t -> string -> unit
+
+val not_code_to_string: not_code_t -> string
+val not_code_to_pretty: not_code_t -> pretty_t
+val not_code_length: not_code_t -> int
+val not_code_set_string: not_code_t -> string -> unit
 
 val index_to_condition_code: int -> condition_code_t
 val condition_code_to_suffix_string: condition_code_t -> string
-val condition_code_to_name         : condition_code_t -> string
-val flags_used_by_condition        : condition_code_t -> eflag_t list
+val condition_code_to_name: condition_code_t -> string
+val flags_used_by_condition: condition_code_t -> eflag_t list
 
-val width_suffix_string : int -> string
+val width_suffix_string: int -> string
 
 val is_nop_instruction: opcode_t -> bool

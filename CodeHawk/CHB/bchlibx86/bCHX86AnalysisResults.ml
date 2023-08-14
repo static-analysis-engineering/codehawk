@@ -82,11 +82,11 @@ object (self)
     let floc = get_floc loc in
     let espoffset = floc#get_stackpointer_offset "x86" in
     begin
-      x86dictionary#write_xml_opcode node instr#get_opcode ;
+      x86dictionary#write_xml_opcode node instr#get_opcode;
       id#write_xml_instr node instr floc;
-      id#write_xml_esp_offset node espoffset ;
+      id#write_xml_esp_offset node espoffset;
       x86dictionary#write_xml_bytestring
-        node (byte_string_to_printed_string instr#get_instruction_bytes) ;
+        node (byte_string_to_printed_string instr#get_instruction_bytes);
       x86dictionary#write_xml_opcode_text
         node (opcode_to_string instr#get_opcode)
     end
@@ -187,14 +187,19 @@ object (self)
 
   method write_xml (node:xml_element_int) =
     let ffnode = xmlElement "functions" in
-    let _ = H.iter (fun faddr fn ->
-                let fnode = xmlElement "fn" in
-                begin
-                  fnode#setAttribute "fa" faddr ;
-                  fnode#setAttribute "md5" fn#get_function_md5 ;
-                  ffnode#appendChildren [ fnode ]
-                end) table in
-    node#appendChildren [ ffnode ]
+    let subnodes = ref [] in
+    let _ =
+      H.iter (fun faddr fn ->
+          let fnode = xmlElement "fn" in
+          begin
+            fnode#setAttribute "fa" faddr ;
+            fnode#setAttribute "md5" fn#get_function_md5 ;
+            subnodes := fnode :: !subnodes
+          end) table in
+    begin
+      ffnode#appendChildren !subnodes;
+      node#appendChildren [ffnode]
+    end
 
   method save =
     let node = xmlElement "application-results" in

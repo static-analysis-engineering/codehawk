@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTiming
 open CHUtil
 
 (* xprlib *)
@@ -52,6 +53,7 @@ open BCHLocation
 open BCHMakeCallTargetInfo
 open BCHStreamWrapper
 open BCHSystemInfo
+open BCHSystemSettings
 open BCHUtilities
 
 (* bchlibelf *)
@@ -85,7 +87,7 @@ let pr_expr = xpr_formatter#pr_expr
 let x2p = xpr_formatter#pr_expr
 
 
-let disassemble (base:doubleword_int) (displacement:int) (x:string) =
+let disassemble (base: doubleword_int) (displacement: int) (x: string) =
   let add_instruction position opcode bytes =
     let index = position + displacement in
     let addr = base#add_int position in
@@ -100,15 +102,16 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
       let opcode = disassemble_instruction ch base firstByte in
       let currentPos = ch#pos in
       let instrLen = currentPos - prevPos in
-      let instrBytes = Bytes.make instrLen ' ' in
-      let _ = Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrLen in
-      let _ = add_instruction prevPos opcode (Bytes.to_string instrBytes) in
+      let instrBytes = ch#sub prevPos instrLen in
+      let _ = add_instruction prevPos opcode instrBytes in
       ()
     done
   with
   | BCH_failure p ->
-    ch_error_log#add "disassembly"
-      (LBLOCK [ STR "failure in disassembly: " ; p ])
+     ch_error_log#add
+       "disassembly"
+       (LBLOCK [ STR "failure in disassembly: "; p])
+
 
 let disassemble_elf_sections () =
   let xSections = elf_header#get_executable_sections in
@@ -121,6 +124,11 @@ let disassemble_elf_sections () =
   let endOfCode = highest#get_addr#add highest#get_size in
   let sizeOfCode = TR.tget_ok (endOfCode#subtract startOfCode) in
   let _ = initialize_instructions sizeOfCode#to_int in
+  let _ =
+    pr_timing [
+        STR "instructions initialized (";
+        sizeOfCode#toPretty;
+        STR " bytes)"]in
   let _ =
     chlog#add
       "initialization"
@@ -137,13 +145,24 @@ let disassemble_elf_sections () =
   let _ =
     List.iter
       (fun (h,x) ->
+        let base = h#get_addr in
         let displacement =
-          TR.tget_ok (h#get_addr#subtract_to_int startOfCode) in
-        disassemble h#get_addr displacement x) xSections in
+          TR.tget_ok (base#subtract_to_int startOfCode) in
+        begin
+          disassemble base displacement x;
+          pr_timing [
+              STR "section disassembled at ";
+              base#toPretty;
+              STR " with displacement ";
+              INT displacement;
+              STR " and length ";
+              INT (String.length x);
+              STR " bytes"]
+        end) xSections in
   sizeOfCode
 
 
-let get_indirect_jump_targets (op:operand_int) =
+let get_indirect_jump_targets (op: operand_int) =
   if op#is_jump_table_target then
     let (jumpbase,reg) = op#get_jump_table_target in
     try
@@ -510,6 +529,9 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
     let successors = match opcode with
       | RepzRet | Ret None | BndRet None -> get_return_successors (get_floc loc)
       | Ret _ | BndRet _ | Halt -> []
+      | UndefinedInstruction0 _
+        | UndefinedInstruction1 _
+        | UndefinedInstruction2 -> []
       | DirectJmp op
         | CfJmp (op,_,_) when op#is_absolute_address -> [op#get_absolute_address]
       | Jcc (_,op)
@@ -629,17 +651,31 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
   let get_next_instr_address = 
     !assembly_instructions#get_next_valid_instruction_address in
 
+  let is_undefined_instruction (instr: assembly_instruction_int) =
+    match instr#get_opcode with
+    | UndefinedInstruction0 _
+      | UndefinedInstruction1 _
+      | UndefinedInstruction2 -> true
+    | _ -> false in
+
   let rec find_last_instruction (va:doubleword_int) (prev:doubleword_int) =
     let instr = get_instr va in
     let floc = get_floc (make_location {loc_faddr = faddr; loc_iaddr = va}) in
     let _ = floc#set_instruction_bytes instr#get_instruction_bytes in
     if va#equal wordzero then
       (Some [], prev, [])
+
     else if instr#is_block_entry then 
       (None, prev, [])
+
     else if floc#has_call_target && floc#get_call_target#is_nonreturning then
       let _ = chlog#add "non-returning" floc#l#toPretty in
       (Some [], va, [])
+
+    else if is_undefined_instruction instr then
+      (* exception is raised, no successors *)
+      (Some [], va, [])
+
     else if instr#is_inlined_call then
       let a = match instr#get_opcode with
         | DirectCall op -> op#get_absolute_address
@@ -671,7 +707,7 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       find_last_instruction (get_next_instr_address va) va
     else (None, va, []) in
 
-  let (succ,lastAddress,inlinedblocks) = 
+  let (succ, lastAddress, inlinedblocks) =
     if !assembly_instructions#has_next_valid_instruction baddr then
       let floc = get_floc (make_location {loc_faddr = faddr; loc_iaddr = baddr}) in
       let _ = floc#set_instruction_bytes (get_instr baddr)#get_instruction_bytes in

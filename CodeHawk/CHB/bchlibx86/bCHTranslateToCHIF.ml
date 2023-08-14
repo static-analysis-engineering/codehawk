@@ -1921,8 +1921,13 @@ let translate_instruction
     | FXmmOp _ | FXmmOpEx _ -> default []
 
     (* these instructions have no effect on the state maintained *)
-    | ClearInterruptFlag | ClearTaskSwitchedFlag | Prefetch _ | UndefinedInstruction
-    | Test _ | Cmp _ -> default []
+    | ClearInterruptFlag
+      | ClearTaskSwitchedFlag
+      | Prefetch _
+      | UndefinedInstruction2
+      | Test _
+      | Cmp _ -> default []
+
     | Halt | Pause | Wait -> default []
 
     (* binary coded decimal instructions; semantics to be added; abstracting for now *)
@@ -2083,7 +2088,7 @@ let rec translate_assembly_function (f:assembly_function_int) =
   | CHFailure p
     | BCH_failure p -> 
      begin
-       pr_debug [ STR "Failure in translation: " ; p ; NL ] ;
+       pr_error [STR "Failure in translation: "; p; NL];
        raise (BCH_failure p)
      end
   | Request_function_retracing ->

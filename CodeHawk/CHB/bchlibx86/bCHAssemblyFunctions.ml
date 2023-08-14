@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTiming
 open CHXmlDocument
 
 (* bchlib *)
@@ -69,72 +70,106 @@ module IntSet = Set.Make
 let create_ordering 
     (functions:doubleword_int list) 
     (calls:(doubleword_int * doubleword_int) list)  =
-  let get_pivot_node cs fnIndices =
-    let counts = H.create 10 in
-    let add dw = if H.mem counts dw then 
-	H.replace counts dw ((H.find counts dw) + 1)
-      else
-	H.add counts dw 1 in
-    let maxCount = ref ((fst (List.hd cs))#index,-1) in
-    let _ = List.iter (fun (_,callee) -> add callee#index) cs in
-    let _ = H.iter (fun k v -> 
-      if v > (snd !maxCount) && List.mem k fnIndices then maxCount := (k,v)) counts in
-    (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
+  if (List.length functions) > 5000 then
+    let _ =
+      chlog#add
+        "callgraph order"
+        (LBLOCK [
+             STR "Skip ordering for ";
+             INT (List.length functions);
+             STR " functions"]) in
+    (functions, [], true)
+  else
+    let get_pivot_node cs fnIndices =
+      let counts = H.create 10 in
+      let add dw =
+        if H.mem counts dw then
+	  H.replace counts dw ((H.find counts dw) + 1)
+        else
+	  H.add counts dw 1 in
+      let maxCount = ref ((fst (List.hd cs))#index,-1) in
+      let _ = List.iter (fun (_,callee) -> add callee#index) cs in
+      let _ =
+        H.iter (fun k v ->
+            if v > (snd !maxCount) && List.mem k fnIndices then
+              maxCount := (k,v)) counts in
+      (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
 
-  let rec aux fns cs result stats cycle =
-    match fns with 
-      [] -> (result,stats,cycle)
-    | _ ->
-      let (leaves,nonleaves) = 
-	List.fold_left (fun (l,n) (f:doubleword_int) ->
-	  if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) -> 
-	    caller#equal f) cs) then 
-	    (l,f::n) 
-	  else 
-	    (f::l,n)) ([],[]) fns in
-      try
-	match leaves with
-	  [] ->  (* there is a cycle; find the node with the largest number of incoming 
-		    edges and remove one of the	outgoing edges from that node
-		    pass list of functions to avoid pivoting on a non-existing function *)
-	    let fnIndices = List.map (fun dw -> dw#index) fns in
-	    let (pivotNode,incoming) = get_pivot_node cs fnIndices in  
-	    let edge = 
-	      try
-		List.find (fun (c,_) -> c#equal pivotNode) cs
-	      with
-		Not_found ->
+    let rec aux fns cs result stats cycle =
+      match fns with
+      | [] -> (result,stats,cycle)
+      | _ ->
+         let (leaves, nonleaves) =
+	   List.fold_left (fun (l,n) (f:doubleword_int) ->
+	       if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) ->
+	               caller#equal f) cs) then
+	         (l,f::n)
+	       else
+	         (f::l,n)) ([],[]) fns in
+         try
+	   match leaves with
+	     [] ->
+              (* there is a cycle; find the node with the largest number of incoming
+		 edges and remove one of the	outgoing edges from that node
+		 pass list of functions to avoid pivoting on a non-existing function *)
+	      let fnIndices = List.map (fun dw -> dw#index) fns in
+	      let (pivotNode,incoming) = get_pivot_node cs fnIndices in
+	      let edge =
+	        try
+		  List.find (fun (c,_) -> c#equal pivotNode) cs
+	        with
+		  Not_found ->
 		  begin
-		    ch_error_log#add "pivot node not found"
+		    ch_error_log#add
+                      "pivot node not found"
 		      (LBLOCK [ pivotNode#toPretty ]) ;
 		    raise Not_found
 		  end in
-	    let newCalls = List.filter 
-	      (fun (e1,e2) -> 
-		(not (e1#equal (fst edge))) || (not (e2#equal (snd edge)))) cs in  	    
-	    let _ = chlog#add "break cycle" 
-	      (LBLOCK [ STR "remove " ; STR "(" ; 
-			(fst edge)#toPretty ; STR "," ; (snd edge)#toPretty ;
-			STR ") with " ; INT incoming ; STR " edges (size of cycle: " ;
-			INT (List.length fns) ; STR ")" ]) in
-	    aux nonleaves newCalls result ((-1)::stats) true
-	| _ ->
-	  let newCalls = 
-	    List.filter (fun (_,callee) -> 
-	      List.for_all (fun f -> not (callee#equal f)) leaves) cs in
-	  aux nonleaves newCalls (result@leaves) ((List.length leaves)::stats) cycle 
-      with 
-	Not_found ->
-	  begin
-	    ch_error_log#add "error in find cycle" 
-	      (LBLOCK [ STR "calls: " ; pretty_print_list cs 
-		(fun (a1,a2) ->
-		  LBLOCK [ STR "(" ; a1#toPretty ; STR "," ; a2#toPretty ; STR ")" ]) 
-		" [" ", " "]" ]) ;
-	    (result,stats,cycle)
-	  end
-  in
-  aux functions calls [] [] false
+	      let newCalls =
+                List.filter
+	          (fun (e1,e2) ->
+		    (not (e1#equal (fst edge))) || (not (e2#equal (snd edge)))) cs in
+	      let _ =
+                chlog#add
+                  "break cycle"
+	          (LBLOCK [
+                       STR "remove ";
+                       STR "(";
+		       (fst edge)#toPretty;
+                       STR ",";
+                       (snd edge)#toPretty;
+		       STR ") with ";
+                       INT incoming;
+                       STR " edges (size of cycle: ";
+		       INT (List.length fns);
+                       STR ")"]) in
+	      aux nonleaves newCalls result ((-1)::stats) true
+	   | _ ->
+	      let newCalls =
+	        List.filter (fun (_, callee) ->
+	            List.for_all (fun f -> not (callee#equal f)) leaves) cs in
+	      aux
+                nonleaves
+                newCalls
+                (result@leaves)
+                ((List.length leaves)::stats)
+                cycle
+         with
+	 | Not_found ->
+	    begin
+	      ch_error_log#add
+                "error in find cycle"
+	        (LBLOCK [
+                     STR "calls: ";
+                     pretty_print_list cs
+		       (fun (a1,a2) ->
+		         LBLOCK [
+                             STR "("; a1#toPretty; STR ","; a2#toPretty; STR ")"])
+		       " [" ", " "]" ]);
+	      (result, stats, cycle)
+	    end
+    in
+    aux functions calls [] [] false
     
     
 class assembly_functions_t:assembly_functions_int =
@@ -363,10 +398,13 @@ object (self)
                 acc) [] finfo#get_callees in
 	calls := (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
       let addresses = List.map (fun f -> f#get_address) self#get_functions in
-      let (orderedList,stats,cycle) = create_ordering addresses !calls in
-      let _ = chlog#add "callgraph order"
-	(LBLOCK [ pretty_print_list stats (fun s -> INT s) "[" "; " "]" ;
-		  (if cycle then STR " (cycle)" else STR "" ) ]) in
+      let (orderedList, stats, cycle) = create_ordering addresses !calls in
+      let _ = pr_timing [STR "created callgraph ordering"] in
+      let _ =
+        chlog#add "callgraph order"
+	  (LBLOCK [
+               pretty_print_list stats (fun s -> INT s) "[" "; " "]";
+	       (if cycle then STR " (cycle)" else STR "")]) in
       let _ = callgraph_order <- Some orderedList in
       orderedList
 
@@ -397,11 +435,12 @@ object (self)
 
 end
 
+
 let assembly_functions = new assembly_functions_t
+
 
 let get_assembly_function (faddr:doubleword_int) =
   assembly_functions#get_function_by_address faddr
-
 
 
 let get_export_metrics () =
