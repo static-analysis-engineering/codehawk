@@ -4,7 +4,9 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2019  Kestrel Technology LLC
+   Copyright (c) 2020-2022  Henny Sipma
+   Copyright (c) 2023       Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +34,7 @@ open CHPretty
 open CHIndexTable
 open CHLogger
 open CHStringIndexTable
+open CHTiming
 open CHXmlDocument
 
 (* bchlib *)
@@ -45,6 +48,7 @@ open BCHOperand
 open BCHX86OpcodeRecords
 open BCHX86Opcodes
 open BCHX86SumTypeSerializer
+
 
 let bd = BCHDictionary.bdictionary
    
@@ -72,10 +76,14 @@ object (self)
 
   initializer
     tables <- [
-      opkind_table ;
-      operand_table ;
+      opkind_table;
+      operand_table;
       opcode_table
     ]
+
+  method size: int =
+    let tablesum = List.fold_left (fun total table -> total + table#size) 0 tables in
+    tablesum + bytestring_table#size
 
   method index_opkind (k:asm_operand_kind_t) =
     let get_optc optc = match optc with Some c -> cpureg_mfts#ts c | _ -> "none" in
@@ -94,17 +102,18 @@ object (self)
          (tags @ [ segment_mfts#ts s ; cpureg_mfts#ts c ; n#toString ],[])
       | ScaledIndReg (optc1,optc2,scale,n) ->
          (tags @ [ get_optc optc1 ; get_optc optc2 ; n#toString ],[scale])
-      | DoubleReg (c1,c2) -> (tags @ [ cpureg_mfts#ts c1 ; cpureg_mfts#ts c2 ],[])
-      | Imm imm -> (tags @ [ imm#to_numerical#toString ],[])
-      | Absolute dw -> (tags,[ bd#index_address dw ])
-      | SegAbsolute (s,dw) -> (tags @ [ segment_mfts#ts s ],[ bd#index_address dw])
+      | DoubleReg (c1,c2) -> (tags @ [cpureg_mfts#ts c1; cpureg_mfts#ts c2], [])
+      | Imm imm -> (tags @ [imm#to_numerical#toString], [])
+      | Absolute dw -> (tags, [bd#index_address dw])
+      | SegAbsolute (s,dw) -> (tags @ [segment_mfts#ts s], [bd#index_address dw])
+      | FarAbsolute (s, dw) -> (tags, [s; bd#index_address dw])
       | DummyOp -> (tags,[]) in
     opkind_table#add key
-         
 
   method index_operand (op:operand_int) =
-    let key = ([ operand_mode_to_string op#get_mode ],
-               [ op#size ; self#index_opkind op#get_kind ]) in
+    let key =
+      ([operand_mode_to_string op#get_mode],
+       [op#size; self#index_opkind op#get_kind]) in
     operand_table#add key
 
   method index_opcode (opc:opcode_t) =
@@ -119,10 +128,24 @@ object (self)
       | FlushCacheLine op
         | Ldmxcsr op
         | Stmxcsr op
+        | XRestore op
+        | XRestoreSupervisor op
+        | XSave op
+        | XSaveSupervisor op
         | StoreIDTR op
+        | StoreGDTR op
+        | StoreLDTR op
+        | LoadGDTR op
+        | LoadIDTR op
+        | LoadLDTR op
+        | LoadTaskRegister op
+        | StoreTaskRegister op
+        | InvalidateTLBEntries op
+        | TimedPause op
         | Increment op
         | Decrement op
         | RdRandomize op
+        | ReadSeed op
         | DirectCall op
         | IndirectCall op
         | DirectJmp op
@@ -148,6 +171,10 @@ object (self)
         | BitTest (op1,op2)
         | BitScanForward (op1,op2)
         | BitScanReverse (op1,op2)
+        | CountTrailingZeroBits (op1, op2)
+        | InvalidatePCID (op1, op2)
+        | UndefinedInstruction0 (op1, op2)
+        | UndefinedInstruction1 (op1, op2)
         | Add (op1,op2)
         | XAdd (op1,op2)
         | AddCarry (op1,op2)
@@ -272,7 +299,7 @@ object (self)
          (tags, [ si s; oi op1 ; oi op2 ; ooi oop3 ])
       | FLoadConstant (s1,s2)
         | FStackOp (s1,s2) -> (tags, [ si s1 ; si s2 ])
-      | _ -> (tags,[]) in
+      | _ -> (tags, []) in
     opcode_table#add key
 
   method index_bytestring (s:string):int = bytestring_table#add s
@@ -289,24 +316,28 @@ object (self)
     node#setIntAttribute tag (self#index_opcode_text s)
 
   method write_xml (node:xml_element_int) =
+    let _ = pr_timing [STR "saving bytestring table ..."] in
     let s1node = xmlElement bytestring_table#get_name in
     let s2node = xmlElement opcode_text_table#get_name in
     begin
-      bytestring_table#write_xml s1node ;
-      opcode_text_table#write_xml s2node ;
-      node#appendChildren [ s1node ; s2node ] ;
+      bytestring_table#write_xml s1node;
+      opcode_text_table#write_xml s2node;
+      node#appendChildren [s1node; s2node];
       node#appendChildren
         (List.map
            (fun t ->
              let tnode = xmlElement t#get_name in
-             begin t#write_xml tnode ; tnode end) tables)
+             begin
+               t#write_xml tnode;
+               tnode
+             end) tables)
     end
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
     begin
-      bytestring_table#read_xml (getc bytestring_table#get_name) ;
-      opcode_text_table#read_xml (getc opcode_text_table#get_name) ;
+      bytestring_table#read_xml (getc bytestring_table#get_name);
+      opcode_text_table#read_xml (getc opcode_text_table#get_name);
       List.iter (fun t -> t#read_xml (getc t#get_name)) tables
     end
 

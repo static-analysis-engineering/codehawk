@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -293,6 +293,12 @@ let rec px660f
 
       | 0x40 -> let (op1,op2) = get_modrm_xmm_operands ch 16 RD RW in 
 		PackedMultiply ("ld", op2,op1)
+
+      (* 66 0F 38 82/r --- INVPCID r32, m128 --- Invalidate Process Context Identifier *)
+
+      | 0x82 ->
+         let (op1, op2) = get_modrm_sized_operands ch 16 RD 4 RD in
+         InvalidatePCID (op2, op1)
 
       (* 66 0F 38 DB/r --- AESIMC xmm1,xmm2/m128 --- Perform the InvMixColumn transformation on a
 	                   128-bit round key from xmm2/m128 and store the result in xmm1
@@ -743,6 +749,17 @@ let rec px660f
   | 0xa8 -> Push(2, seg_register_op GSegment RD)
   | 0xa9 -> Pop(2, seg_register_op GSegment WR)
 
+  (* 66 0F AE/6 --- TPAUSE r32, <edx>, <eax> Timed Pause *)
+
+  | 0xae ->
+     let modrmbyte = ch#read_byte in
+     let (md, reg, rm) = decompose_modrm modrmbyte in
+     begin
+       match reg with
+       | 6 -> let op = get_rm_operand md rm ch RD in TimedPause op
+       | _ -> Unknown
+     end
+
   (* 66 0F C2/r ib --- CMPPD xmm1,xmm2/m128,imm8 - Compare packed double-precision 
                                                    floating-point values in xmm2/m128 
                                                    and xmm1 using imm8 as comparison 
@@ -983,6 +1000,7 @@ let rec px660f
 	    PackedAdd (false,false,4,op2,op1)
 									
   | _ -> default 1
+
 
 and parse_opcode
     ?(seg_override=None) 
@@ -1443,7 +1461,7 @@ and parse_opcode
       else 
 	index_to_register index in
     let op2 = register_op reg opsize RW in
-    Xchg (op1, op2)
+    Xchg (op2, op1)
 
   (* 98 ------ CBW  (16 bits) -- AX      <- sign-extend of AL
      98 ------ CWDE (32 bits) -- EAX     <- sign-extend of AX   *)
@@ -1756,6 +1774,12 @@ and parse_opcode
 	  InconsistentInstr ("Direct jmp with address problem " ^ s)
     end
 
+  | 0xea ->
+     let addr = ch#read_doubleword in
+     let sd = ch#read_ui16 in
+     let op = far_absolute_op sd addr 4 RD in
+     DirectJmp op
+
   | 0xeb -> 
     begin
       try
@@ -1767,7 +1791,7 @@ and parse_opcode
 
   (* EC --- IN AL,DX   --- Input byte from I/O port in DX into AL
      ED --- IN AX,DX   --- Input word from I/O port in DX into AX
-     ED --- IN EAD,DX  --- Input word from I/O port in DX into EAX    *)
+     ED --- IN EAX,DX  --- Input word from I/O port in DX into EAX    *)
 
   | 0xec -> InputFromPort (1,al_r WR,dx_r RD)
   | 0xed -> 

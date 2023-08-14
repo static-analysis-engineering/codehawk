@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +47,7 @@ open BCHDisassemblyUtils
 open BCHLibx86Types
 open BCHOperand
 open BCHX86Opcodes
+
 
 let pxf20f (ch:pushback_stream_int) =
   let b2 = ch#read_byte in
@@ -267,6 +270,18 @@ let rec pxf2 dseg eseg opsize_override (ch:pushback_stream_int) (base:doubleword
 
   | _ -> Unknown
 
+
+let pxf30f1e (ch: pushback_stream_int) =
+  let b3 = ch#read_byte in
+  match b3 with
+
+  (* F3 0F 1E FB --- ENDBR32 --- Terminate an Indirect Branch in 32-bit and
+                                   Compatibility mode *)
+  | 0xfb -> TerminateBranch32
+
+  | _ -> Unknown
+
+
 let pxf30fa7 (ch:pushback_stream_int) =
   let b3 = ch#read_byte in
   match b3 with
@@ -284,6 +299,7 @@ let pxf30fa7 (ch:pushback_stream_int) =
   | 0xe8 -> XCrypt "Ofb"
 
   | _ -> Unknown
+
 
 let pxf30f (ch:pushback_stream_int) =
   let b2 = ch#read_byte in
@@ -309,7 +325,9 @@ let pxf30f (ch:pushback_stream_int) =
      from the low doubleword of an XMM register and a 32-bit memory location, or to 
      move a single-precision floating-point value between the low doublewords of 
      two XMM registers.
-  *)
+   *)
+
+  | 0x1e -> pxf30f1e ch
 
   | 0x10 -> let (op1,op2) = get_modrm_xmm_operands ch 4  RD WR in 
 	    FXmmMove ("",true,true,op2,op1)
@@ -431,6 +449,12 @@ let pxf30f (ch:pushback_stream_int) =
 
   | 0xa7 -> pxf30fa7 ch
 
+  (* F3 OF BC/r --- TZCNT r32, r/m32 --- Count the number of trailing zero bits *)
+
+  | 0xbc ->
+     let (op1, op2) = get_modrm_operands ch RW RD in
+     CountTrailingZeroBits (op1, op2)
+
   (* F3 0F C2/r --- CMPSS xmm1,xmm2/m32, imm8 --- Compare low single-precision floating-point
                                                   value in xmm2/m32 and xmm1 using imm8 as
                                                   comparison predicate                     *)
@@ -447,6 +471,7 @@ let pxf30f (ch:pushback_stream_int) =
 	    FConvert (false,"dq","pd",op2,op1)
 
   | _ -> Unknown
+
 
 let rec pxf3 dseg eseg opsize_override (ch:pushback_stream_int) =
   let opsize = if opsize_override then 2 else 4 in
@@ -645,9 +670,12 @@ let pxff seg_override opsize_override (ch:pushback_stream_int) =
 
   | 1 -> let op = get_rm_def_operand opsize_override md rm ch RW in Decrement op
 
-  (* FF/2 --- CALL r/m32 --- Call near, absolute indirect, address given in r/m32   *)
+  (* FF/2 --- CALL r/m32 --- Call near, absolute indirect, address given in r/m32 *)
+  (* FF/3 --- CALL m16:16 / m16:32 ---
+     Call far, absolute indirect address given in m16:16 / m16:32 *)
 
   | 2 -> let op = get_rm_def_operand opsize_override md rm ch RD in IndirectCall op
+  | 3 -> let op = get_rm_def_operand opsize_override md rm ch RD in IndirectCall op
 
   (* FF/4 --- JMP r/m32  --- Jump near, absolute indirect, address given in r/m32 *)
 
