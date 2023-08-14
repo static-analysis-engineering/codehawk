@@ -33,6 +33,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTiming
 open CHXmlDocument
 
 (* bchlib *)
@@ -115,28 +116,40 @@ let include_function s = fns_included := s :: !fns_included
 let analyze_x86_function faddr f =
   let fstarttime = Unix.gettimeofday () in
   let finfo =  load_function_info faddr in
-  let _ = pverbose [ STR "Analyze " ; faddr#toPretty ; STR  " (started: " ;
-                     STR (time_to_string fstarttime) ; STR ")" ; NL ] in
+  let _ =
+    pverbose [
+        STR "Analyze ";
+        faddr#toPretty;
+        STR  " (started: ";
+        STR (time_to_string fstarttime);
+        STR ")";
+        NL] in
   let _ = translate_assembly_function f in
   if chif_system#has_procedure_by_address faddr then
     let loopcomplexity = get_cfg_loop_complexity f in
     let varcomplexity = get_vc_complexity f finfo#env in
-    let relational = varcomplexity <= !maxrelationalvarcomplexity &&
-	               loopcomplexity <= !maxrelationalloopcomplexity in
+    let relational =
+      varcomplexity <= !maxrelationalvarcomplexity &&
+	loopcomplexity <= !maxrelationalloopcomplexity in
     let proc = chif_system#get_procedure_by_address faddr in
     begin
-      bb_invariants#reset ;
+      bb_invariants#reset;
       analyze_procedure_with_intervals proc chif_system#get_system ;
       (if relational then
 	 analyze_procedure_with_linear_equalities proc chif_system#get_system 
        else
          begin
 	   chlog#add "skip relational analysis" faddr#toPretty ;
-           pr_debug [ STR "skip LR analysis of " ; faddr#toPretty ;
-                      STR " (loop complexity: " ; INT loopcomplexity ;
-                      STR ", variable complexity: " ;
-                      STR (Printf.sprintf "%.0f" varcomplexity) ; STR ")" ; NL ]
-         end) ;
+           pr_info[
+               STR "skip LR analysis of ";
+               faddr#toPretty;
+               STR " (loop complexity: ";
+               INT loopcomplexity;
+               STR ", variable complexity: ";
+               STR (Printf.sprintf "%.0f" varcomplexity);
+               STR ")";
+               NL]
+         end);
       analyze_procedure_with_valuesets proc chif_system#get_system ;
       extract_ranges finfo bb_invariants#get_invariants ;
       (if relational then
@@ -159,7 +172,7 @@ let analyze_x86_function faddr f =
         (get_cfg_metrics f finfo#env) ;
     end
   else
-    pr_debug [ STR "Translation failed" ; NL ]
+    pr_error [STR "Translation failed"; NL]
 
 
 let analyze starttime =
@@ -167,67 +180,88 @@ let analyze starttime =
   let failedfunctions = ref [] in
   let functionfailure failuretype faddr p =
     begin
-      ch_error_log#add "function failure"
-	(LBLOCK [ STR failuretype ; STR ". " ; faddr#toPretty ; STR ": " ; p ]) ;
+      ch_error_log#add
+        "function failure"
+	(LBLOCK [
+             STR failuretype;
+             STR ". ";
+             faddr#toPretty;
+             STR ": ";
+             p]);
       failedfunctions := faddr :: !failedfunctions
     end in
 
   begin
-    assembly_functions#bottom_up_itera (fun faddr f ->
-      let callees = get_app_callees faddr in
-      let _ = List.iter (fun callee ->
-	let cfinfo = get_function_info callee in
-	if cfinfo#sideeffects_changed then
-	  begin
-	    (get_function_info faddr)#reset_invariants ;
-	    chlog#add "reset invariants"
-	      (LBLOCK [ faddr#toPretty ; STR " due to callee " ; callee#toPretty ])
-	  end) callees in
-      let appCallees = List.map (fun a -> a#to_hex_string) callees in
-      if file_metrics#is_stable faddr#to_hex_string appCallees &&
-	   (not !analyze_all) then
-        x86_analysis_results#record_results ~save:false f
-      else
-	let _ = count := !count + 1 in
-        try
-          analyze_x86_function faddr f        
-	with
-	| Failure s -> functionfailure "Failure" faddr (STR s)
-	| Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
-	| Internal_error s -> functionfailure "Internal error" faddr (STR s)
-	| Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
-	| CHFailure p -> functionfailure "CHFailure" faddr p
-	| BCH_failure p -> functionfailure "BCHFailure" faddr p ) ;
+    assembly_functions#bottom_up_itera
+      (fun faddr f ->
+        if List.mem faddr#to_hex_string !fns_excluded then
+          ()
+        else
+          let callees = get_app_callees faddr in
+          let _ =
+            List.iter (fun callee ->
+	        let cfinfo = get_function_info callee in
+	        if cfinfo#sideeffects_changed then
+	          begin
+	            (get_function_info faddr)#reset_invariants;
+	            chlog#add "reset invariants"
+	              (LBLOCK [
+                           faddr#toPretty;
+                           STR " due to callee ";
+                           callee#toPretty])
+	          end) callees in
+          let appCallees = List.map (fun a -> a#to_hex_string) callees in
+          if file_metrics#is_stable faddr#to_hex_string appCallees &&
+	       (not !analyze_all) then
+            x86_analysis_results#record_results ~save:false f
+          else
+	    let _ = count := !count + 1 in
+            try
+              analyze_x86_function faddr f;
+              pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
+	    with
+	    | Failure s -> functionfailure "Failure" faddr (STR s)
+	    | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
+	    | Internal_error s -> functionfailure "Internal error" faddr (STR s)
+	    | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
+	    | CHFailure p -> functionfailure "CHFailure" faddr p
+	    | BCH_failure p -> functionfailure "BCHFailure" faddr p );
 
     let propstarttime = Unix.gettimeofday () in
+    let _ = pr_timing [STR "bottom-up analysis finished"] in
     begin
-      assembly_functions#top_down_itera (fun faddr f ->
-	try
-	  begin
-	    f#iter_calls (fun _ floc ->
-	      if floc#has_call_target && floc#get_call_target#is_app_call then
-		let tgtaddr = floc#get_call_target#get_app_address in
-		let tgtfinfo = get_function_info tgtaddr in
-		begin
-		  save_function_info tgtfinfo
-		end ) ;
-	    save_function_summary (get_function_info faddr)
-	  end
-	with
-	| Failure s -> functionfailure "Failure" faddr (STR s)
-	| Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
-	| Internal_error s -> functionfailure "Internal error" faddr (STR s)
-	| Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
-	| CHFailure p -> functionfailure "CHFailure" faddr p
-	| BCH_failure p ->
-	  ch_error_log#add "pushing arguments" (LBLOCK [ faddr#toPretty ; STR ": " ; p ])) ;
-      file_metrics#record_propagation_time ((Unix.gettimeofday ()) -. propstarttime) ;
-      file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime) ;
+      assembly_functions#top_down_itera
+        (fun faddr f ->
+	  try
+	    begin
+	      f#iter_calls (fun _ floc ->
+	          if floc#has_call_target && floc#get_call_target#is_app_call then
+		    let tgtaddr = floc#get_call_target#get_app_address in
+		    let tgtfinfo = get_function_info tgtaddr in
+		    begin
+		      save_function_info tgtfinfo
+		    end );
+	      save_function_summary (get_function_info faddr)
+	    end
+	  with
+	  | Failure s -> functionfailure "Failure" faddr (STR s)
+	  | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
+	  | Internal_error s -> functionfailure "Internal error" faddr (STR s)
+	  | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
+	  | CHFailure p -> functionfailure "CHFailure" faddr p
+	  | BCH_failure p ->
+	     ch_error_log#add
+               "pushing arguments"
+               (LBLOCK [faddr#toPretty; STR ": "; p]));
+      file_metrics#record_propagation_time ((Unix.gettimeofday ()) -. propstarttime);
+      file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime);
+      pr_timing [STR "top-down analysis finished"];
       (match !failedfunctions with
-      | [] -> ()
-      | l ->
-	chlog#add "failed functions"
-	  (LBLOCK (List.map (fun faddr -> LBLOCK [ faddr#toPretty ; NL ]) l)))
+       | [] -> ()
+       | l ->
+	  chlog#add
+            "failed functions"
+	    (LBLOCK (List.map (fun faddr -> LBLOCK [faddr#toPretty; NL]) l)))
     end
   end
 
