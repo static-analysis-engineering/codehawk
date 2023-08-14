@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -500,24 +500,35 @@ object (self: 'a)
 	if List.mem k !atts then a else
 	  LBLOCK [ a ; attr k v ]) attributes (LBLOCK (List.rev !pp))
     
-  method toPretty:pretty_t = 
-    let cp = List.map (fun c -> c#toPretty) children in
+  method toPretty: pretty_t =
+    let cp = Array.map (fun c -> c#toPretty) (Array.of_list children) in
     let ap = self#attributes_to_pretty in
     let ns = match namestring with
       | Some s ->
          let len = 70 - (indent + String.length s) in
          let len = if len < 0 then 0 else len in
-         LBLOCK [ STR "<!-- " ; STR (string_repeat "~" len) ;
-                  STR " " ; STR s ; STR " -->" ; NL ]
+         LBLOCK [
+             STR "<!-- ";
+             STR (string_repeat "~" len);
+             STR " ";
+             STR s;
+             STR " -->";
+             NL]
       | _ -> STR "" in
     let gs = match groupstring with
       | Some s ->
          let len = 70 - (indent + String.length s) in
          let len = if len < 0 then 0 else len in
          let len = len/2 in
-         LBLOCK [ STR "<!-- " ; STR (string_repeat "=" len) ;
-                  STR " " ; STR s ; STR " " ; 
-                  STR (string_repeat "=" len) ; STR "  -->" ; NL ]
+         LBLOCK [
+             STR "<!-- ";
+             STR (string_repeat "=" len);
+             STR " ";
+             STR s;
+             STR " ";
+             STR (string_repeat "=" len);
+             STR "  -->";
+             NL]
       | _ -> STR "" in         
     let elementtxt =
       match text with
@@ -525,24 +536,35 @@ object (self: 'a)
          INDENT (
              indent,
              LBLOCK [
-	         STR "<" ; STR tag ; ap ; STR ">" ; STR (sanitize s) ; 
-	         STR "</" ; STR tag ; STR ">" ; NL ])
+	         STR "<";
+                 STR tag;
+                 ap;
+                 STR ">";
+                 STR (sanitize s);
+	         STR "</";
+                 STR tag;
+                 STR ">";
+                 NL])
       | _ ->
-         match cp with
-	 | [] ->
-            INDENT(
-	        indent, LBLOCK [
-	                    STR "<" ; STR tag ; ap ; STR "/>" ; NL ;
-	      ])
-         | _ ->
-            LBLOCK [
-	        STR "<" ; STR tag ; ap ; STR ">" ; NL ;
-	        INDENT (indent,LBLOCK cp)  ;
-                STR "</" ; STR tag ; STR ">" ; NL ] in
-    LBLOCK [ gs ; ns ; elementtxt ]
+         if (Array.length cp) = 0 then
+           INDENT(indent, LBLOCK [STR "<"; STR tag; ap; STR "/>"; NL])
+         else
+           LBLOCK [
+	       STR "<";
+               STR tag;
+               ap;
+               STR ">";
+               NL;
+	       INDENT (indent, ABLOCK cp);
+               STR "</";
+               STR tag;
+               STR ">";
+               NL] in
+    LBLOCK [gs; ns; elementtxt]
     
 end
-  
+
+
 class xml_document_t:xml_document_int =
 object
   
@@ -560,10 +582,12 @@ object
       ]
     
 end
-  
+
+
 let xmlDocument () = new xml_document_t
 let xmlElement tag = new xml_element_t tag
-                   
+
+
 let xml_string (tag:string) (v:string) =
   let e = xmlElement tag in
   begin
