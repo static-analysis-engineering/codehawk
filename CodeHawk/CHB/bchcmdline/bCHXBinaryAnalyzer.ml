@@ -27,6 +27,7 @@
    SOFTWARE.
    ============================================================================= *)
 
+
 (* chlib *)
 open CHPretty
 
@@ -35,6 +36,7 @@ open CHFileIO
 open CHGc
 open CHLogger
 open CHPrettyUtil
+open CHTiming
 open CHXmlDocument
 open CHXmlReader
 
@@ -389,33 +391,42 @@ let main () =
     else if !cmd = "disassemble"
             && !architecture = "x86"
             && !fileformat = "elf" then
+      let t0 = ref (Unix.gettimeofday ()) in
       let _ = system_info#set_elf in
       let _ = load_bdictionary () in      
       let _ = system_info#initialize in
-      let t = ref (Unix.gettimeofday ()) in
-      let _ = pr_debug [ STR "Load elf files ... " ; NL ] in
+      let _ = pr_timing [STR "system_info initialized"] in
       let _ = load_elf_files () in
-      let _ = pr_debug [ STR "disassemble sections ... " ; NL ] in
-      let _ = disassemble_elf_sections ()  in
-      let _ = disassembly_summary#record_disassembly_time
-                ((Unix.gettimeofday ()) -. !t) in
-      let t = ref (Unix.gettimeofday ()) in
+      let _ = pr_timing [STR "elf files loaded"] in
+      let _ = disassemble_elf_sections () in
+      let _ = pr_timing [STR "sections disassembled"] in
+      let _ =
+        disassembly_summary#record_disassembly_time
+          ((Unix.gettimeofday ()) -. !t0) in
+      let t1 = ref (Unix.gettimeofday ()) in
       let _ = construct_functions_elf () in
-      let _ = disassembly_summary#record_construct_functions_time
-                ((Unix.gettimeofday ()) -. !t) in
-      let _ = disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) in      
-      let _ =  pr_debug [ disassembly_summary#toPretty ; NL ] in
+      let _ = pr_timing [STR "functions constructed"] in
+      let _ =
+        disassembly_summary#record_construct_functions_time
+          ((Unix.gettimeofday ()) -. !t1) in
+      let _ =
+        disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) in      
+      let _ = pr_debug [disassembly_summary#toPretty; NL] in
       begin
         file_output#saveFile
           (get_asm_listing_filename ())
-          (STR ((!BCHAssemblyInstructions.assembly_instructions)#toString ())) ;
+          (STR ((!BCHAssemblyInstructions.assembly_instructions)#toString ()));
+        pr_timing [STR "assembly listing saved"];
 	file_output#saveFile
           (get_orphan_code_listing_filename ())
-	  (STR ((BCHAssemblyFunctions.assembly_functions#dark_matter_to_string))) ;
+	  (STR ((BCHAssemblyFunctions.assembly_functions#dark_matter_to_string)));
+        pr_timing [STR "orphan-code listing saved"];
         file_output#saveFile
           (get_duplicate_coverage_filename ())
-          (STR (BCHAssemblyFunctions.assembly_functions#duplicates_to_string)) ;
-          save_log_files "disassemble" 
+          (STR (BCHAssemblyFunctions.assembly_functions#duplicates_to_string));
+        pr_timing [STR "duplicates listing saved"];
+        save_log_files "disassemble";
+        pr_timing [STR "log files saved"]
       end
 
     else if !cmd = "disassemble"
@@ -635,32 +646,61 @@ let main () =
 	exit_with_error logcmd msg	    
       
     else if !cmd = "analyze" && !architecture = "x86" && !fileformat = "elf" then
-      let _ = register_hashed_elf_functions () in
+      (* let _ = register_hashed_elf_functions () in *)
       let starttime = Unix.gettimeofday () in
       let _ = system_info#set_elf in
+      let _ = load_bcdictionary () in
+      let _ = pr_timing [STR "bcdictionary loaded"] in
       let _ = load_bdictionary () in
-      let _ = system_info#initialize in      
+      let _ = pr_timing [STR "bdictionary loaded"] in
+      let _ = load_bc_files () in
+      let _ = pr_timing [STR "bc files loaded"] in
+      let _ = system_info#initialize in
+      let _ = pr_timing [STR "system_info initialized"] in
       let _ = load_interface_dictionary () in
+      let _ = pr_timing [STR "interface dictionary loaded"] in
       let _ = load_x86dictionary () in
+      let _ = pr_timing [STR "x86 dictionary loaded"] in
       let _ = global_system_state#initialize in
+      let _ = pr_timing [STR "global system state initialized"] in
       let _ = file_metrics#load_xml in
-      let _ = load_elf_files ()  in
+      let _ =
+        pr_timing [
+            STR "file metrics loaded (index "; INT file_metrics#get_index; STR ")"] in
+      let _ = load_elf_files () in
+      let _ = pr_timing [STR "elf files loaded"] in
       let index = file_metrics#get_index in
-      let logcmd = "analyze_"  ^  (string_of_int index) in
+      let logcmd = "analyze_"  ^ (string_of_int index) in
       let _ = disassemble_elf_sections () in
+      let _ = pr_timing [STR "elf sections disassembled"] in
       let _ = construct_functions_elf () in
+      let _ = pr_timing [STR "functions constructed"] in
       let _ = analyze starttime in
+      let _ = pr_timing [STR "analysis is finished"] in
       let _ = file_metrics#set_disassembly_results (get_disassembly_metrics ()) in      
       begin
 	save_functions_list ();
+        pr_timing [STR "functions list saved"];
 	save_system_info ();
+        pr_timing [STR "system_info saved"];
 	save_file_results ();
+        pr_timing [STR "file results saved"];
 	save_global_state ();
+        pr_timing [STR "global state saved"];
         x86_analysis_results#save;
+        pr_timing [STR "analysis results saved"];
         save_x86dictionary ();
+        pr_timing [STR "x86 dictionary saved"];
+        save_bc_files ();
+        pr_timing [STR "bc files saved"];
         save_interface_dictionary ();
+        pr_timing [STR "interface dictionary saved"];
+        save_bcdictionary ();
+        pr_timing [STR "bcdictionary saved"];
         save_bdictionary ();
+        pr_timing [STR "bdictionary saved"];
 	save_log_files logcmd;
+        pr_timing [STR "log files saved"];
 	exit 0
       end
 
