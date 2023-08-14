@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyricht (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,12 +36,13 @@ class type index_table_int =
     method add: (string list * int list) -> int
     method retrieve: int -> (string list * int list)
     method values: (string list * int list) list
-    method items : ((string list * int list) * int) list
+    method items: ((string list * int list) * int) list
     method size: int
     method get_name: string
     method write_xml: xml_element_int -> unit
-    method read_xml : xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
   end
+
 
 val get_list_suffix: 'a list -> int -> 'a list
 val list_pairup: 'a list -> ('a * 'a) list

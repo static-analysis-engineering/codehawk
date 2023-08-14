@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -58,6 +58,7 @@ let get_list_suffix l (n:int) =
     | [] -> []
     | _ -> if nn <= 0 then ll else aux (List.tl ll) (nn-1) in
   aux l n
+
 
 let list_pairup (lst:'a list):('a * 'a) list =
   let rec aux l r =
@@ -138,10 +139,16 @@ object (self: _)
       H.find revtable index
     with
     | Not_found ->
-       raise (CHFailure
-                (LBLOCK [ STR "Index not found in indexed hash table " ;
-                          STR name ; STR ": " ; INT index ;
-                          STR " (size: " ; INT (H.length table) ; STR ")" ]))
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Index not found in indexed hash table ";
+                 STR name;
+                 STR ": ";
+                 INT index;
+                 STR " (size: ";
+                 INT (H.length table);
+                 STR ")"]))
       
   method values = H.fold (fun k _ r -> k :: r) table []
 
@@ -154,22 +161,31 @@ object (self: _)
 
   method get_name = name
 
-  method write_xml (node:xml_element_int) =
-    let indexed_keys = self#get_indexed_keys in
-    node#appendChildren
-      (List.map (fun (k, (tags, args)) ->
-           let knode = xmlElement "n" in
-           begin
-             knode#setIntAttribute "ix" k ;
-             (match tags with
-              | [] -> () | _ -> knode#setAttribute "t" (String.concat "," tags)) ;
-             (match args with
-              | [] -> ()
-              | _ ->
-                 knode#setAttribute
-                   "a" (String.concat "," (List.map string_of_int args))) ;
-             knode
-           end) indexed_keys)
+  method write_xml (node: xml_element_int) =
+    let _ =
+      if (H.length revtable) > 5000 then
+        pr_info [
+            STR "Table ";
+            STR self#get_name;
+            STR ": ";
+            INT (H.length revtable);
+            STR " keys"] in
+    let subnodes = ref [] in
+    let _ =
+      H.iter (fun k (tags, args) ->
+          let knode = xmlElement "n" in
+          begin
+            knode#setIntAttribute "ix" k;
+            (match tags with
+             | [] -> () | _ -> knode#setAttribute "t" (String.concat "," tags));
+            (match args with
+             | [] -> ()
+             | _ ->
+                knode#setAttribute
+                  "a" (String.concat "," (List.map string_of_int args)));
+            subnodes := knode :: !subnodes
+          end) revtable in
+    node#appendChildren !subnodes
 
   method read_xml (node:xml_element_int) =
     let maxcount = ref 0 in
@@ -187,20 +203,22 @@ object (self: _)
                 []
             with
             | Failure _ ->
-               raise (CHFailure
-                        (LBLOCK [
-                             STR "int_of_string on ";
-                             STR (get "a");
-                             STR " in table ";
-                             STR self#get_name])) in
+               raise
+                 (CHFailure
+                    (LBLOCK [
+                         STR "int_of_string on ";
+                         STR (get "a");
+                         STR " in table ";
+                         STR self#get_name])) in
           begin
-            H.add table (tags,args) ix ;
-            H.add revtable ix (tags,args) ;
+            H.add table (tags,args) ix;
+            H.add revtable ix (tags,args);
             if ix > !maxcount then maxcount := ix
-          end) (node#getTaggedChildren "n") ;
+          end) (node#getTaggedChildren "n");
       next <- !maxcount + 1
     end
 
 end
-    
+
+
 let mk_index_table = new index_table_t
