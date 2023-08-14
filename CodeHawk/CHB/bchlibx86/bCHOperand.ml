@@ -72,7 +72,7 @@ let operand_kind_to_indicator_string (k:asm_operand_kind_t) =
   | ControlReg _ | DebugReg _ -> "reg"
   | IndReg _ | ScaledIndReg _ | SegIndReg _  -> "ind"
   | Imm _ -> "imm"
-  | Absolute _ | SegAbsolute _ -> "abs"
+  | Absolute _ | SegAbsolute _ | FarAbsolute _ -> "abs"
   | DummyOp -> "none"
 
 
@@ -93,6 +93,7 @@ let asm_operand_kind_is_equal a1 a2 =
   | (DoubleReg (r1a,r1b),DoubleReg (r2a,r2b)) -> r1a = r2a && r1b = r2b
   | (Imm i1, Imm i2) -> i1#equal i2
   | (Absolute d1, Absolute d2) -> d1#equal d2
+  | (FarAbsolute (s1, d1), FarAbsolute (s2, d2)) -> s1 = s2 && d1#equal d2
   | (SegAbsolute (s1,d1), SegAbsolute (s2,d2)) -> s1 = s2 && d1#equal d2
   | (DummyOp,DummyOp) -> true
   | _ -> false
@@ -169,6 +170,7 @@ let asm_operand_kind_to_string = function
      (cpureg_to_string rh) ^ ":" ^ (cpureg_to_string rl)
   | Imm imm -> imm#to_hex_string
   | Absolute dw -> dw#to_hex_string
+  | FarAbsolute (s, dw) -> dw#to_hex_string ^ " (" ^ (string_of_int s) ^ ")"
   | SegAbsolute (seg, dw) -> 
      Printf.sprintf "%s:%s" (segment_to_string seg) dw#to_hex_string
   | DummyOp -> ""
@@ -191,6 +193,7 @@ let asm_operand_kind_to_tag kind =
   | Imm _ -> "imm"
   | Absolute _ -> "absolute"
   | SegAbsolute _ -> "segabsolute"
+  | FarAbsolute _ -> "farabsolute"
   | DummyOp -> "none"
 
 
@@ -241,9 +244,14 @@ let write_xml_asm_operand_kind (node:xml_element_int) kind =
   | Absolute dw -> set "addr" dw#to_hex_string
   | SegAbsolute (seg,dw) ->
     begin
-      set "seg" (segment_to_string seg) ;
+      set "seg" (segment_to_string seg);
       set "addr" dw#to_hex_string
     end
+  | FarAbsolute (s, dw) ->
+     begin
+       seti "sd" s;
+       set "addr" dw#to_hex_string
+     end
   | _ -> ()
 
 
@@ -302,14 +310,16 @@ object (self:'a)
          raise (BCH_failure msg)
        end
       
-  method get_absolute_address = match kind with Absolute a -> a
-  | _ -> 
-    begin
-      ch_error_log#add
-        "invocation error" 
-	(LBLOCK [STR "operand#get_absolute_address: "; self#toPretty ]);
-      raise (Invocation_error "operand#get_absolute_address")
-    end
+  method get_absolute_address = match kind with
+    | Absolute a -> a
+    | FarAbsolute (_, a) -> a
+    | _ ->
+       begin
+         ch_error_log#add
+           "invocation error"
+	   (LBLOCK [STR "operand#get_absolute_address: "; self#toPretty]);
+         raise (Invocation_error "operand#get_absolute_address")
+       end
       
   method get_cpureg = match kind with
     | Reg r -> r
@@ -451,6 +461,7 @@ object (self:'a)
     | XmmReg regIndex -> env#mk_xmm_register_variable regIndex
     | DoubleReg (reg1,reg2) -> env#mk_double_register_variable reg1 reg2
     | Absolute address -> env#mk_global_variable address#to_numerical
+    | FarAbsolute (_, addr) -> env#mk_global_variable addr#to_numerical
     | ScaledIndReg (Some cpureg, None, 1, offset)
     | ScaledIndReg (None, Some cpureg, 1, offset)
     | IndReg (cpureg,offset) -> 
@@ -533,7 +544,10 @@ object (self:'a)
                                                           
   method is_seg_register = match kind with SegReg _ -> true | _ -> false
                                                                  
-  method is_absolute_address = match kind with Absolute _ -> true | _ -> false
+  method is_absolute_address =
+    match kind with
+    | Absolute _ | FarAbsolute _ -> true
+    | _ -> false
                                                                        
   method is_immediate_value = match kind with Imm _ -> true | _ -> false
 
@@ -640,6 +654,8 @@ object (self:'a)
               ^ "[-" ^ jtoffset#to_hex_string ^ "]"
 	  | _ -> "cav:" ^ addr#to_hex_string
       end
+    | FarAbsolute (s, addr) when self#is_read && system_info#is_code_address addr ->
+       "far:" ^ addr#to_hex_string ^ "(" ^ (string_of_int s) ^ ")"
     | _ -> asm_operand_kind_to_string kind
 
   method write_xml (node:xml_element_int) (floc:floc_int) = ()
@@ -736,6 +752,11 @@ let immediate_op (imm:immediate_int) (size:int) =
 let seg_absolute_op
       (seg:segment_t) (address:doubleword_int) (size:int) (mode:operand_mode_t) =
   new operand_t (SegAbsolute (seg,address)) size mode
+
+
+let far_absolute_op
+      (sd: int) (addr: doubleword_int) (size: int) (mode: operand_mode_t) =
+  new operand_t (FarAbsolute (sd, addr)) size mode
 
 
 (* Flag operands *)

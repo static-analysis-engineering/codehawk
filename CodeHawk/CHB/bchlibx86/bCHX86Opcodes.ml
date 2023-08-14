@@ -4,7 +4,9 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2005-2019  Kestrel Technology LLC
+   Copyright (c) 2020-2022  Henny Sipma
+   Copyright (c) 2023       Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,30 +50,37 @@ open BCHSystemInfo
 (* bchlibx86 *)
 open BCHLibx86Types
 
+
 let is_function_entry_point = functions_data#is_function_entry_point
-                            
+
+
 let get_opt_function_name fa =
   if functions_data#is_function_entry_point fa
      && functions_data#has_function_name fa then
     Some (functions_data#get_function fa)#get_function_name
   else
     None
-    
+
+
 let not_code_to_string nc =
   match nc with 
   | JumpTable jt -> jt#toString ~is_function_entry_point ~get_opt_function_name
   | DataBlock db -> db#toString
+
 
 let not_code_to_pretty nc = 
   match nc with 
   | JumpTable jt -> jt#toPretty ~is_function_entry_point ~get_opt_function_name
   | DataBlock db -> db#toPretty
 
+
 let not_code_length nc =
   match nc with JumpTable jt -> jt#get_length | DataBlock db -> db#get_length
 
+
 let not_code_set_string nc s = 
   match nc with DataBlock db -> db#set_data_string s | _ -> ()
+
 
 let index_to_condition_code (i:int) =
   match i with
@@ -96,7 +105,8 @@ let index_to_condition_code (i:int) =
       ch_error_log#add "disassemly" (LBLOCK [ STR "Invalid condition code: " ; INT i ]) ;
       raise (Invalid_argument ("invalid condition code: " ^ (string_of_int i)))
     end
-      
+
+
 let condition_code_to_suffix_string (cc:condition_code_t) =
   match cc with
   | CcOverflow -> "o"
@@ -115,7 +125,8 @@ let condition_code_to_suffix_string (cc:condition_code_t) =
   | CcGreaterEqual -> "ge"
   | CcLessEqual -> "le"
   | CcGreater -> "g"
-    
+
+
 let condition_code_to_name (cc:condition_code_t) =
   match cc with
   | CcOverflow -> "Overflow"
@@ -134,10 +145,11 @@ let condition_code_to_name (cc:condition_code_t) =
   | CcGreaterEqual -> "GreaterEqual"
   | CcLessEqual -> "LessEqual"
   | CcGreater -> "Greater"
-    
+
+
 let flags_used_by_condition (cc:condition_code_t) =
   match cc with
-    CcOverflow    | CcNotOverflow  -> [ OFlag ]
+  | CcOverflow    | CcNotOverflow  -> [ OFlag ]
   | CcCarry       | CcNotCarry     -> [ CFlag ]
   | CcZero        | CcNotZero      -> [ ZFlag ]
   | CcBelowEqual  | CcAbove        -> [ CFlag ; ZFlag ]
@@ -145,10 +157,11 @@ let flags_used_by_condition (cc:condition_code_t) =
   | CcParityEven  | CcParityOdd    -> [ PFlag ]
   | CcLess        | CcGreaterEqual -> [ SFlag ; OFlag ]
   | CcLessEqual   | CcGreater      -> [ ZFlag ; SFlag ; OFlag ]
-    
+
+
 let width_suffix_string (w:int) =
   match w with
-    0 -> "z" 
+  | 0 -> "z"
   | 1 -> "b"
   | 2 -> "w"
   | 4 -> "d"
@@ -165,10 +178,9 @@ let is_nop_instruction (opcode:opcode_t) =
   | Lea (dst,src) ->
     begin 
       match src#get_kind with
-	IndReg (opr,offset) 
-      | ScaledIndReg (Some opr,None,1,offset) ->
-	dst#is_register && (opr = dst#get_cpureg) && offset#equal numerical_zero
-	  
+      | IndReg (opr,offset)
+        | ScaledIndReg (Some opr,None,1,offset) ->
+	 dst#is_register && (opr = dst#get_cpureg) && offset#equal numerical_zero
       | _ -> false
     end
   | _ -> false

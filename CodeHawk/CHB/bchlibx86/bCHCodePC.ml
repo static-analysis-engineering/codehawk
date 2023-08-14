@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +41,7 @@ open BCHLocation
 (* bchlibx86 *)
 open BCHLibx86Types
 
+
 class code_pc_t (block:assembly_block_int):code_pc_int =
 object
 
@@ -48,10 +51,13 @@ object
   method get_next_instruction =
     match instruction_list with
     | [] -> 
-       let msg = LBLOCK [ block#get_first_address#toPretty ; STR ": " ; 
-			  STR "code_pc#get_next_instruction" ] in
+       let msg =
+         LBLOCK [
+             block#get_first_address#toPretty;
+             STR ": ";
+	     STR "code_pc#get_next_instruction"] in
        begin
-	 ch_error_log#add "cfg error" msg ;
+	 ch_error_log#add "cfg error" msg;
 	 raise (BCH_failure msg)
        end
     | h::tl ->
@@ -67,41 +73,57 @@ object
     match block#get_successors with
     | [ successor ] -> successor
     | []  ->
-      let msg = LBLOCK [ block#get_first_address#toPretty ; STR ": " ; 
-			 STR "get_block_successor has no successors" ] in
+       let msg =
+         LBLOCK [
+             block#get_first_address#toPretty;
+             STR ": ";
+	     STR "get_block_successor has no successors"] in
       begin
-	ch_error_log#add "cfg error" msg ;
+	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
       end
     | _ ->
-      let msg = LBLOCK [ block#get_first_address#toPretty ; STR ": " ;
-			 STR "block_successor has more than one successor" ] in
+       let msg =
+         LBLOCK [
+             block#get_first_address#toPretty;
+             STR ": ";
+	     STR "block_successor has more than one successor"] in
       begin
-	ch_error_log#add "cfg error" msg ;
+	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
       end
 
   method get_false_branch_successor =
     match block#get_successors with
-    | [ false_branch ; _ ] -> false_branch
+    | [false_branch; _] -> false_branch
     | _ ->
       let msg = 
-	LBLOCK [ block#get_first_address#toPretty ; NL ; block#toPretty ; NL ;
-		 INDENT (3, STR "get_false_branch_successor does not have two successors") ] in
+	LBLOCK [
+            block#get_first_address#toPretty;
+            NL;
+            block#toPretty;
+            NL;
+	    INDENT (
+                3, STR "get_false_branch_successor does not have two successors")] in
       begin
-	ch_error_log#add "cfg error" msg ;
+	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
       end
 
   method get_true_branch_successor =
     match block#get_successors with
-    | [ _ ; true_branch ] -> true_branch
+    |[ _; true_branch] -> true_branch
     | _ ->
       let msg = 
-	LBLOCK [ block#get_first_address#toPretty ; NL ; block#toPretty ; NL ;
-		 INDENT (3, STR "get_true_branch_successor does not have two successors") ] in
+	LBLOCK
+          [block#get_first_address#toPretty;
+           NL;
+           block#toPretty;
+           NL;
+	   INDENT (
+               3, STR "get_true_branch_successor does not have two successors")] in
       begin
-	ch_error_log#add "cfg error" msg ;
+	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
       end
 
