@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,3 +47,19 @@ let garbage_collector_settings_to_pretty () =
       STR "space_overhead        : " ; INT gc.space_overhead ; NL ;
       STR "max_overhead          : " ; INT gc.max_overhead ; NL ;
       STR (string_repeat "=" 80) ; NL ; NL ]
+
+
+let garbage_collector_stat_to_pretty () =
+  let stat = Gc.stat () in
+  LBLOCK [
+      STR "Garbage Collector Stats"; NL;
+      STR (string_repeat "-" 80); NL;
+      STR "minor collections          : "; INT stat.minor_collections; NL;
+      STR "major collections          : "; INT stat.major_collections; NL;
+      STR "heap words                 : "; INT stat.heap_words; NL;
+      STR "heap chunks                : "; INT stat.heap_chunks; NL;
+      STR "forced major collections   : "; INT stat.forced_major_collections; NL]
+
+
+let garbage_collector_full_major () =
+  Gc.full_major ()

@@ -91,20 +91,29 @@ object (self)
   method items = H.fold (fun k v r -> (k,v) :: r) table []
 
   method write_xml (node:xml_element_int) =
-    let items = List.sort Stdlib.compare self#items in
-    node#appendChildren
-      (List.map (fun (k,(tags,args)) ->
-           let knode = xmlElement "n" in
-           let set = knode#setAttribute in
-           begin
+    let _ =
+      if (H.length table) > 5000 then
+        pr_info [
+            STR "Table ";
+            STR self#get_name;
+            STR ": ";
+            INT (H.length table);
+            STR " entries"] in
+    let subnodes = ref [] in
+    let _ =
+      H.iter (fun k (tags, args) ->
+          let knode = xmlElement "n" in
+          let set = knode#setAttribute in
+          begin
              knode#setIntAttribute "id" k;
              (match tags with
               | [] -> () | _ -> set "t" (String.concat "," tags));
              (match args with
               | [] -> ()
               | _ -> set "a" (String.concat  "," (List.map string_of_int args)));
-             knode
-           end) items)
+             subnodes := knode :: !subnodes
+          end) table in
+    node#appendChildren !subnodes
 
   method read_xml (node:xml_element_int) =
     List.iter (fun n ->
