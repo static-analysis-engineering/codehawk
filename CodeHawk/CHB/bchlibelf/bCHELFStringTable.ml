@@ -84,15 +84,18 @@ object (self)
     let result = ref [] in
     let slen = String.length s in
     let ch = make_pushback_stream s in
-    let _ = ch#skip_bytes 1 in
-    begin
-      while ch#pos < slen do
-        let pos = ch#pos in
-        let s = ch#read_string in
-        result := (pos, s) :: !result
-      done;
-      !result
-    end
+    if slen > 0 then
+      let _ = ch#skip_bytes 1 in
+      begin
+        while ch#pos < slen do
+          let pos = ch#pos in
+          let s = ch#read_string in
+          result := (pos, s) :: !result
+        done;
+        !result
+      end
+    else
+      []
 
   method write_xml_strings (node:xml_element_int) =
     node#appendChildren
