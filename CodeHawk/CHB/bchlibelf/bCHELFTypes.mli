@@ -690,6 +690,7 @@ end
 class type elf_program_header_int =
 object
   method read: doubleword_int -> int -> unit
+  method set_type: doubleword_int -> unit
 
   (* accessors *)
   method get_type   : doubleword_int

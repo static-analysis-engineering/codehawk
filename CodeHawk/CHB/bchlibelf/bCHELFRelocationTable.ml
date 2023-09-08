@@ -196,7 +196,7 @@ object (self)
 
   method set_function_entry_points =
     List.iter (fun e ->
-        if e#is_function && e#has_address then
+        if e#is_function && e#has_address && system_info#is_arm then
           let fndata = functions_data#add_function e#get_address in
           begin
             fndata#set_library_stub;
@@ -215,7 +215,7 @@ object (self)
   method write_xml_entries (node:xml_element_int) =
     let table = mk_num_record_table "relocation-table" in
     begin
-      List.iter (fun e -> table#add e#id e#to_rep_record) entries ;
+      List.iter (fun e -> table#add e#id e#to_rep_record) entries;
       table#write_xml node
     end
 

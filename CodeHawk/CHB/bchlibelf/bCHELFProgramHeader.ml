@@ -162,6 +162,8 @@ object (self)
     end
 
   method get_type = p_type
+
+  method set_type (t: doubleword_int) = p_type <- t
   
   method get_offset = p_offset
 

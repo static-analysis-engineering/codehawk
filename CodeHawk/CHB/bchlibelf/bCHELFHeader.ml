@@ -1063,14 +1063,23 @@ object(self)
     let phoff = elf_file_header#get_program_header_table_offset in
     let phentsize = elf_file_header#get_program_header_table_entry_size in
     let phnum = elf_file_header#get_program_header_table_entry_num in
-    for i=0 to (phnum - 1) do
-      let ph = mk_elf_program_header () in
-      let offset = phoff#add_int (phentsize * i) in
-      begin 
-	ph#read offset phentsize; 
-	H.add program_header_table i ph
-      end
-    done
+    begin
+      for i=0 to (phnum - 1) do
+        let ph = mk_elf_program_header () in
+        let offset = phoff#add_int (phentsize * i) in
+        begin
+	  ph#read offset phentsize;
+	  H.add program_header_table i ph
+        end
+      done;
+      (if phnum = 1 then
+         self#add_dynamic_segment_header)
+    end
+
+  method private add_dynamic_segment_header =
+    let ph = mk_elf_program_header () in
+    let _ = ph#set_type (TR.tget_ok (int_to_doubleword 2)) in
+    H.add program_header_table 2 ph
 
   method private read_section_headers =
     let shoff = elf_file_header#get_section_header_table_offset in
@@ -1428,7 +1437,19 @@ let save_elf_section
      | _ -> ());
     doc#setNode root;
     root#appendChildren [sNode];
-    file_output#saveFile filename doc#toPretty
+    file_output#saveFile filename doc#toPretty;
+    pr_timing [
+        STR "section ";
+        (fixed_length_pretty ~alignment:StrRight (INT index) 2);
+        STR ": ";
+        STR (header#get_addr#to_fixed_length_hex_string);
+        STR ": ";
+        STR (header#get_size#to_fixed_length_hex_string);
+        STR "  ";
+        STR header#get_section_name;
+        STR " (";
+        STR (doubleword_to_elf_section_header_string header#get_type);
+        STR ") saved to xml"]
   end
 
 
@@ -1471,7 +1492,8 @@ let save_elf_program_segments () =
 
 let save_elf_files () =
   begin
-    save_elf_header () ;
+    save_elf_header ();
+    pr_timing [STR "elf header saved to xml"];
     (if elf_header#has_sections then
        List.iter (fun (index, header, s) ->
            save_elf_section index header s) elf_header#get_sections

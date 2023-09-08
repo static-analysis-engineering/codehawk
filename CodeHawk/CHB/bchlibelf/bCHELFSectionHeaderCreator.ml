@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -92,6 +92,19 @@ let ud_get_address (sectionname: string) =
          (LBLOCK [STR "No addr found for "; STR sectionname]))
 
 
+let ud_has_offset (sectionname: string) =
+  has_user_data sectionname && (get_user_data sectionname)#has_addr
+
+
+let ud_get_offset (sectionname: string) =
+  if ud_has_address sectionname then
+    (get_user_data sectionname)#get_offset
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [STR "No offset found for "; STR sectionname]))
+
+
 let assumption_violation (p:pretty_t) =
   let msg = LBLOCK [STR "Section header creation assumption violation: "; p] in
   begin
@@ -99,7 +112,9 @@ let assumption_violation (p:pretty_t) =
     raise (BCH_failure msg)
   end
 
+
 let warning (p:pretty_t) = chlog#add "section header creation" p
+
 
 class section_header_creator_t
         (phdrs:(int * elf_program_header_int * elf_segment_t) list)
@@ -119,7 +134,7 @@ object (self)
     match s with
     | Some s -> s
     | _ -> 
-       raise (BCH_failure (LBLOCK [ STR "Dynamic table not found" ]))
+       raise (BCH_failure (LBLOCK [STR "Dynamic table not found"]))
   val loadsegments =
     List.filter (fun (_,h,_) ->
         match h#get_program_header_type with
@@ -440,13 +455,27 @@ object (self)
         section_headers <- sh :: section_headers
       end
     else
+      let sh = mk_elf_section_header () in
+      let stype = s2d "0xb" in
+      let flags = s2d "0x2" in
+      let addr = wordzero in
+      let offset = wordzero in
+      let entsize = s2d "0x1" in
+      let size = wordzero in
+      let addralign = wordzero in
+      let info = s2d "0x1" in
       begin
-        chlog#add "dynamic table" (dynamicsegment#toPretty);
-        assumption_violation
-          (LBLOCK [
-               STR "One of DT_SYMTAB, DT_SYMENT, or DT_SYMTABNO not present";
-               NL;
-               dynamicsegment#toPretty])
+        sh#set_fields
+          ~stype
+          ~flags
+          ~addr
+          ~offset
+          ~size
+          ~entsize
+          ~addralign
+          ~info
+          ~sectionname ();
+        section_headers <- sh :: section_headers
       end
 
   (* inputs: from dynamic table, program header, type PT_Load (1)
@@ -480,7 +509,24 @@ object (self)
         section_headers <- sh :: section_headers
       end
     else
-      assumption_violation (STR "DT_STRTAB not present")
+      let sh = mk_elf_section_header () in
+      let stype = s2d "0x3" in
+      let flags = s2d "0x2" in
+      let addr = wordzero in
+      let offset = wordzero in
+      let size = wordzero in
+      let addralign = s2d "0x1" in
+      begin
+        sh#set_fields
+          ~stype
+          ~flags
+          ~addr
+          ~offset
+          ~size
+          ~addralign
+          ~sectionname ();
+        section_headers <- sh :: section_headers
+      end
 
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_VERSYM
@@ -659,12 +705,20 @@ object (self)
    *)
   method private create_text_header =
     let sectionname = ".text" in    
-    let vaddr = fileheader#get_program_entry_point in
+    let vaddr =
+      if ud_has_address sectionname then
+        ud_get_address sectionname
+      else
+        fileheader#get_program_entry_point in
     let sh = mk_elf_section_header () in
     let stype = s2d "0x1" in
     let flags = s2d "0x6" in
     let addr = vaddr in
-    let offset = self#get_offset_1 vaddr in
+    let offset =
+      if ud_has_offset sectionname then
+        ud_get_offset sectionname
+      else
+        self#get_offset_1 vaddr in
     let size =
       if has_user_data sectionname
          && (get_user_data sectionname)#has_size then
@@ -719,12 +773,11 @@ object (self)
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
-          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+          ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
         section_headers <- sh :: section_headers
       end
     else
-      pr_debug [ STR "Assumption violation: DT_FINI not present" ; NL ; NL ]      
-  (*  assumption_violation (STR "DT_FINI not present") *)
+      pr_debug [STR "Assumption violation: DT_FINI not present"; NL; NL]
 
   (* inputs: from program header, type PT_Load (1)
    * - addr: DT_FINI + 0x50
@@ -768,11 +821,15 @@ object (self)
     let stype = s2d "0x1" in
     let flags = s2d "0x2" in
     let addr = vaddr in
-    let offset = self#get_offset_1 vaddr in
+    let offset =
+      if ud_has_offset sectionname then
+        ud_get_offset sectionname
+      else
+        self#get_offset_1 vaddr in
     let addralign = s2d "0x10" in
     begin
       sh#set_fields
-        ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname () ;
+        ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
       section_headers <- sh :: section_headers
     end
 
@@ -821,7 +878,7 @@ object (self)
         section_headers <- sh :: section_headers
       end
     else
-     assumption_violation (STR "ctors: No second load segment")
+      ()
 
   (* inputs: program header, type PT_Load (2)
    * - addr: ph#get_vaddr + size (.ctors) (8)
@@ -846,7 +903,7 @@ object (self)
         section_headers <- sh :: section_headers
       end
     else
-      assumption_violation (STR "dtors: No second load segment")
+      ()
 
   (* inputs: program header, type PT_Load (2)
    * - addr: ph#get_vaddr  + size(.ctors) + size(.dtors)  (16)
@@ -871,7 +928,7 @@ object (self)
         section_headers <- sh :: section_headers
       end
     else
-      assumption_violation (STR "jcr: No second load segment")
+      ()
 
   (* inputs: program header, type PT_Load (2)
    * - addr: ph#get_vaddr + size(.ctors) + size(.dtors) + size(.jcr) (20)
@@ -1061,7 +1118,7 @@ let create_section_headers
     let _ = creator#create_section_headers in
     let headers = creator#get_section_headers in
     begin
-      pr_debug [STR "section headers"; NL; creator#toPretty; NL] ;
+      pr_debug [STR "section headers"; NL; creator#toPretty; NL];
       headers
     end
   with BCH_failure p ->
