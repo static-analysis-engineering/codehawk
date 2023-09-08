@@ -139,7 +139,17 @@ let speclist =
      "stream disassemble a hex-encoded stream of bytes");
     ("-startaddress",  Arg.String set_stream_start_address,
      "start address of the code stream");
+    ("-show_function_timing",
+     Arg.Unit (fun () -> system_settings#set_show_function_timing),
+     "show timing of analysis for every function");
+    ("-gc_compact",
+     Arg.Int system_settings#set_gc_compact_function_interval,
+     ("call garbage collector to compact memory after this many functions "
+     ^ "(expensive operation, suggested value > 1000)"));
     ("-arm", Arg.Unit (fun () -> architecture := "arm"), "arm executable");
+    ("-arm_extension_registers",
+     Arg.Unit (fun () -> system_settings#set_arm_extension_registers),
+     "include arm floating point registers in analysis");
     ("-thumb", Arg.Unit (fun () -> system_settings#set_thumb),
      "arm executable includes thumb instructions");
     ("-mips", Arg.Unit (fun () -> architecture := "mips"), "mips executable");
@@ -410,7 +420,7 @@ let main () =
         disassembly_summary#record_construct_functions_time
           ((Unix.gettimeofday ()) -. !t1) in
       let _ =
-        disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) in      
+        disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) in
       let _ = pr_debug [disassembly_summary#toPretty; NL] in
       begin
         file_output#saveFile
@@ -524,14 +534,18 @@ let main () =
       let _ = system_info#set_arm in
       let _ = system_info#initialize in
       let t = ref (Unix.gettimeofday ()) in
-      let _ = pverbose [STR (timing ()); STR "load elf files ..."; NL] in
       let _ = load_elf_files () in
+      let _ = pr_timing [STR "elf files loaded"] in
       let _ = List.iter parse_cil_file system_info#ifiles in
-      let _ = pverbose [STR (timing ()); STR "disassemble sections ..." ; NL ] in
+      let _ =
+        if (List.length system_info#ifiles) > 0 then
+          pr_timing [STR "c header files loaded"] in
       let _ = disassemble_arm_sections () in
+      let _ = pr_timing [STR "sections disassembled"] in
       let _ = disassembly_summary#record_disassembly_time
                 ((Unix.gettimeofday ()) -. !t) in
       let _ = construct_functions_arm () in
+      let _ = pr_timing [STR "functions constructed"] in
       let _ = if !set_datablocks then
                 arm_assembly_functions#set_datablocks in
       let _ = disassembly_summary#record_construct_functions_time
@@ -558,7 +572,6 @@ let main () =
         if !save_asm then
           begin
             let datarefs = get_arm_data_references () in
-            pverbose [STR (timing ()); STR "saving asm file ..."; NL];
             file_output#saveFile
               (get_asm_listing_filename ())
               (let instrs = !BCHARMAssemblyInstructions.arm_assembly_instructions in
@@ -566,30 +579,28 @@ let main () =
                     STR (instrs#toString ~datarefs ());
                     arm_callsites_records#toPretty;
                     arm_callsites_records#summary_to_pretty]));
-            pverbose [STR (timing ()); STR "saving orphan file ..."; NL];
+            pr_timing [STR "assembly listing saved"];
 	    file_output#saveFile
               (get_orphan_code_listing_filename ())
 	      (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
-            pverbose [STR (timing ()); STR "saving duplicates file ..."; NL];
+            pr_timing [STR "orphan code listing saved"];
             file_output#saveFile
               (get_duplicate_coverage_filename ())
               (STR (BCHARMAssemblyFunctions.arm_assembly_functions#duplicates_to_string));
-            (* pverbose [STR (timing ()); STR "saving arm-assembly-instructions ..."; NL];
-            save_arm_assembly_instructions (); *)
-            pverbose [STR (timing ()); STR "saving system info ..."; NL];
+            pr_timing [STR "duplicates listing saved"];
             save_system_info ();
-            pverbose [STR (timing ()); STR "saving arm-dictionary ..."; NL];
+            pr_timing [STR "system_info saved"];
             save_arm_dictionary ();
-            pverbose [STR (timing ()); STR "saving interface-dictionary ..."; NL];
+            pr_timing [STR "dictionary saved"];
             save_interface_dictionary ();
-            pverbose [STR (timing ()); STR "saving bcdictionary ..."; NL];
+            pr_timing [STR "interface dictionary saved"];
             save_bcdictionary ();
-            pverbose [STR (timing ()); STR "saving bdictionary ..."; NL];
-            save_bdictionary ()
+            pr_timing [STR "bcdictionary saved"];
+            save_bdictionary ();
+            pr_timing [STR "bdictionary saved"]
           end;
-        pverbose [STR (timing ()); STR "saving log files ..."; NL];
         save_log_files "disassemble";
-        pverbose [STR (timing ()); STR "==Done=="; NL]
+        pr_timing [STR "log files saved"]
       end
                 
 
@@ -756,51 +767,83 @@ let main () =
       let _ = system_info#set_elf in
       let _ = system_info#set_arm in
       let _ = load_bcdictionary () in
+      let _ = pr_timing [STR "bcdictionary loaded"] in
       let _ = load_bdictionary () in
+      let _ = pr_timing [STR "bdictionary loaded"] in
       let _ = load_bc_files () in
+      let _ = pr_timing [STR "bc files loaded"] in
       let _ = system_info#initialize in
+      let _ = pr_timing [STR "system info initialized"] in
       let _ = load_interface_dictionary () in
+      let _ = pr_timing [STR "interface dictionary loaded"] in
       let _ = load_arm_dictionary () in
+      let _ = pr_timing [STR "arm dictionary loaded"] in
       let _ = global_system_state#initialize in
+      let _ = pr_timing [STR "global system state initialized"] in
       let _ = file_metrics#load_xml in
+      let _ =
+        pr_timing [
+            STR "file metrics loaded (index ";
+            INT file_metrics#get_index;
+            STR ")"] in
       let _ = load_elf_files () in
+      let _ = pr_timing [STR "elf files loaded"] in
       let _ =
         List.iter
           (fun f -> parse_cil_file ~removeUnused:false f) system_info#ifiles in
+      let _ =
+        if (List.length system_info#ifiles > 0) then
+          pr_timing [STR "c header files parsed"] in
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let analysisstart = Unix.gettimeofday () in
       let _ = disassemble_arm_sections () in
+      let _ = pr_timing [STR "elf sections disassembled"] in
       let _ = construct_functions_arm () in
+      let _ = pr_timing [STR "functions constructed"] in
       let _ = analyze_arm analysisstart in
+      let _ = pr_timing [STR "analysis is finished"] in
       (*        for i = 0 to (!analysisrepeats - 1) do
           let analysisstart = Unix.gettimeofday () in
           analyze_arm analysisstart
         done in *)
-      let _ = file_metrics#set_disassembly_results
-                (get_arm_disassembly_metrics ()) in
+      let _ =
+        file_metrics#set_disassembly_results (get_arm_disassembly_metrics ()) in
       begin
         save_functions_list ();
+        pr_timing [STR "functions list saved"];
         save_system_info ();
+        pr_timing [STR "system info saved"];
         save_file_results ();
+        pr_timing [STR "file results saved"];
         save_global_state ();
+        pr_timing [STR "global state saved"];
         arm_analysis_results#save;
+        pr_timing [STR "analysis results saved"];
         (* save_arm_assembly_instructions (); *)
         save_arm_dictionary ();
+        pr_timing [STR "arm dictionary saved"];
         save_bc_files ();
+        pr_timing [STR "bc files saved"];
         save_interface_dictionary ();
+        pr_timing [STR "interface dictionary saved"];
         save_bcdictionary ();
+        pr_timing [STR "bc dictionary saved"];
         save_bdictionary ();
+        pr_timing [STR "bdictionary saved"];
         (if !save_asm then
            begin
              file_output#saveFile
                (get_asm_listing_filename ())
                (STR ((!BCHARMAssemblyInstructions.arm_assembly_instructions)#toString ()));
+             pr_timing [STR "assembly listing saved"];
              file_output#saveFile
                (get_orphan_code_listing_filename ())
-               (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)))
+               (STR ((BCHARMAssemblyFunctions.arm_assembly_functions#dark_matter_to_string)));
+             pr_timing [STR "orphan code listing saved"]
            end);
         save_log_files logcmd;
+        pr_timing [STR "log files saved"];
         exit 0
       end
 

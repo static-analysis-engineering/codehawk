@@ -1085,8 +1085,11 @@ object
   method add_so_library: string -> unit    (* name of so-library *)
   method set_jsignature_jar: string -> unit
   method set_verbose: unit
+  method set_show_function_timing: unit
+  method set_gc_compact_function_interval: int -> unit
   method set_vftables: unit
   method set_thumb: unit
+  method set_arm_extension_registers: unit
   method enable_sideeffects_on_globals : string list -> unit
   method disable_sideeffects_on_globals: string list -> unit
   method set_abstract_stackvars_disabled: unit
@@ -1100,6 +1103,7 @@ object
   method get_jsignature_paths: (string * Zip.in_file) list
   method get_export_dir: string
   method so_libraries: string list  (* names of so-libraries *)
+  method gc_compact_function_interval: int
 
   (* predicates *)
   method is_verbose: bool
@@ -1108,6 +1112,8 @@ object
   method is_abstract_stackvars_disabled: bool
   method is_set_vftables_enabled: bool
   method has_thumb: bool
+  method include_arm_extension_registers: bool
+  method show_function_timing: bool
 
 end
 

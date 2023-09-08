@@ -79,7 +79,10 @@ object (self)
   val mutable so_libraries = []    (* names of so-libraries *)
   val mutable exportdir = ""
   val mutable verbose = false
+  val mutable show_function_timing = false
+  val mutable gc_compact_function_interval = 0
   val mutable thumb = false
+  val mutable arm_extension_registers = false
   val mutable jni_enabled = false
   val mutable set_vftables_enabled = false
   val mutable record_sideeffects_on_globals = []
@@ -91,6 +94,19 @@ object (self)
   val mutable exclude_debug = false
 
   method set_verbose = verbose <- true
+
+  method set_show_function_timing = show_function_timing <- true
+
+  method show_function_timing = show_function_timing
+
+  method set_gc_compact_function_interval (count: int) =
+    gc_compact_function_interval <- count
+
+  method gc_compact_function_interval = gc_compact_function_interval
+
+  method set_arm_extension_registers = arm_extension_registers <- true
+
+  method include_arm_extension_registers = arm_extension_registers
 
   method exclude_debug = exclude_debug <- true
 
