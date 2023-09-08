@@ -309,6 +309,16 @@ object (self:'a)
          ch_error_log#add "invocation error" msg;
          raise (BCH_failure msg)
        end
+
+  method get_segment_register = match kind with
+    | SegReg s -> s
+    | _ ->
+       begin
+         ch_error_log#add
+           "invocation error"
+           (LBLOCK [STR "operand#get_segment_register: "; self#toPretty]);
+         raise (Invocation_error "operand#get_segment_register")
+       end
       
   method get_absolute_address = match kind with
     | Absolute a -> a

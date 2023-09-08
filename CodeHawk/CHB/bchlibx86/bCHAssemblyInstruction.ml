@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -60,10 +60,12 @@ object (self)
     
   method set_block_entry = 
     if not self#is_valid_instruction then
-      let msg = LBLOCK [ STR "Block entry not at instruction boundary: " ; 
-			 virtual_address#toPretty ] in
+      let msg =
+        LBLOCK [
+            STR "Block entry not at instruction boundary: "; 
+	    virtual_address#toPretty] in
       begin
-	chlog#add "disassembly" msg ;
+	chlog#add "disassembly" msg;
 	raise (BCH_failure msg)
       end
     else

@@ -1898,6 +1898,31 @@ let get_record (opc:opcode_t) =
       intel_asm  = (fun f -> f#ops "syscall" [ op ]) ;
       att_asm    = (fun f -> f#ops "syscall" [ op ]) }
 
+  (* LDS/LES/LFS/LGS/LSS --- Load Far Pointer *)
+  | LoadFarPointer (op1, op2, op3) ->
+     let mnem =
+       match op1#get_segment_register with
+       | StackSegment -> "ss"
+       | DataSegment -> "ds"
+       | ExtraSegment -> "es"
+       | FSegment -> "fs"
+       | GSegment -> "gs"
+       | CodeSegment ->
+          raise
+            (BCH_failure
+               (LBLOCK [STR "Unexpected segment in LoadFarPointer"])) in
+     {
+       docref = "2A, 3-587";
+       mnemonic = mnem;
+       operands = [op1; op2; op3];
+       flags_set = [];
+       flags_used = [];
+       group_name = "misc";
+       long_name = "LoadFarPointer";
+       intel_asm = (fun f -> f#ops mnem [op2; op3]);
+       att_asm = (fun f -> f#ops mnem [op3; op2])
+     }
+
   (* LAHF ---- Load AH <- Eflags(SF:ZF:0:AF:0:PF:1:CF)               ---- 9F *)
   | LoadFlags -> {
     docref       = "2A, 3-583";

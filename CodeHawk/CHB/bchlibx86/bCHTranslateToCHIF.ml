@@ -517,6 +517,54 @@ let translate_instruction
        let string_retriever = FFU.get_string_reference in
        default (floc#get_call_commands string_retriever)
      end
+
+  | CountTrailingZeroBits (op1, op2) ->
+     let floc = get_floc loc in
+     let (lhs, lhsCmds) = op1#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhsCmds @ cmds)
+
+  | StoreGDTR op ->
+     let floc = get_floc loc in
+     let (lhs, lhsCmds) = op#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhsCmds @ cmds)
+
+  | StoreLDTR op ->
+     let floc = get_floc loc in
+     let (lhs, lhsCmds) = op#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhsCmds @ cmds)
+
+  | StoreTaskRegister op ->
+     let floc = get_floc loc in
+     let (lhs, lhsCmds) = op#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhsCmds @ cmds)
+
+  | XSave op ->
+     let floc = get_floc loc in
+     let (lhs, lhsCmds) = op#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhsCmds @ cmds)
+
+  | XSaveSupervisor op ->
+     let floc = get_floc loc in
+     let (lhs, lhsCmds) = op#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhsCmds @ cmds)
+
+  | ReadModelSpecificRegister ->
+      let eax = env#mk_cpu_register_variable Eax in
+      let edx = env#mk_cpu_register_variable Edx in
+      let cmds = [ABSTRACT_VARS [eax; edx]] in
+      default cmds
+
+  | ReadPerformanceMonitoringCounters ->
+      let eax = env#mk_cpu_register_variable Eax in
+      let edx = env#mk_cpu_register_variable Edx in
+      let cmds = [ABSTRACT_VARS [eax; edx]] in
+      default cmds
       
   (* ------------------------------------------------ op1 := effective address of op2 *)
   | Lea (op1, op2) ->

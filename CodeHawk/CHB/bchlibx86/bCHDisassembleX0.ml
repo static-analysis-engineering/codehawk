@@ -1003,6 +1003,12 @@ let px0f base opsize_override (ch:pushback_stream_int) =
   | 0xb1 -> let (op1,op2) = get_modrm_def_operands opsize_override ch RW RD in 
 	    CmpExchange (opsize,op1,op2)
 
+  (* 0F B2 --- LSS r32,m32 --- Load SS:r32 with far pointer from memory *)
+
+  | 0xb2 ->
+     let (op1, op2) = get_modrm_operands ch WR RD in
+     LoadFarPointer (seg_register_op StackSegment WR, op1, op2)
+
   (* 0F B3 --- BTR r/m32,r32 --- Store selected bit in CF flag and clear      *)
 
   | 0xb3 -> let (op1,op2) = get_modrm_operands ch RW RD in BitTestReset (op1, op2)

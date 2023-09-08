@@ -204,6 +204,7 @@ object (self)
         | Shld (op1,op2,op3)
         | PackedRoundScalarDouble (op1,op2,op3)
         | PackedAlignRight (op1,op2,op3)
+        | LoadFarPointer (op1, op2, op3)
         | AESKeyGenAssist  (op1,op2,op3) -> (tags, [ oi op1 ; oi op2 ; oi op3 ])
       | VPackedAlignRight (op1,op2,op3,op4) ->
          (tags,[ oi op1 ; oi op2 ; oi op3 ; oi op4 ])

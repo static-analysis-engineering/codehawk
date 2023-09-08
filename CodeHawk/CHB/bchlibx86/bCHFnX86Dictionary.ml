@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -333,8 +333,11 @@ object (self)
          let rhs = op#to_expr floc in
          let rhsx =  XOp (XBNot, [ rhs ]) in
          let rrhsx = rewrite_expr rhsx in
-         ([ "a:vxxx" ],[ xd#index_variable lhs ; xd#index_xpr rhs ;
-                         xd#index_xpr rhsx ; xd#index_xpr rrhsx ])                   
+         (["a:vxxx"],
+          [xd#index_variable lhs;
+           xd#index_xpr rhs;
+           xd#index_xpr rhsx;
+           xd#index_xpr rrhsx])
          
       (* ------------------------------------------------------------- Pop -- *)         
       | Pop (_,op) when op#is_register ->
