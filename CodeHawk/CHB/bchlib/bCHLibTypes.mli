@@ -369,7 +369,8 @@ type arm_reg_t =
 
 
 type arm_special_reg_t =
-  | APSR   (* Core processor status word *)
+  | CPSR   (* Core processor status word *)
+  | SPSR   (* Saved Program Status Registers *)
   | FPSCR   (* Floating point processor status word *)
   | APSR_nzcv  (* Condition codes in core processor status word *)
 

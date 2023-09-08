@@ -140,7 +140,7 @@ let mips_special_reg_mfts: mips_special_reg_t mfts_int =
 let arm_special_reg_mfts: arm_special_reg_t mfts_int =
   mk_mfts
     "arm_special_reg_t"
-    [(APSR, "APSR"); (FPSCR, "FPSCR"); (APSR_nzcv, "APSR_nzcv")]
+    [(CPSR, "CPSR"); (SPSR, "SPSR"); (FPSCR, "FPSCR"); (APSR_nzcv, "APSR_nzcv")]
 
 
 let pwr_spr_mfts: pwr_special_reg_t mfts_int =
