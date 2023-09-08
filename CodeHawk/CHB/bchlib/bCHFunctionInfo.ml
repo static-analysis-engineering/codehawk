@@ -2042,14 +2042,23 @@ object (self)
       H.replace calltargets iaddr ctinfo
     end
 
-  method get_call_target (i:ctxt_iaddress_t) =
+  method get_call_target (i: ctxt_iaddress_t) =
     if H.mem calltargets i then
       H.find calltargets i
     else
-      raise
-        (BCH_failure
-           (LBLOCK [ STR "Function " ; self#a#toPretty ;
-                     STR "No call-target-info found at " ; STR i ]))
+      begin
+        ch_error_log#add
+          "call-target missing"
+          (LBLOCK [
+               STR "Function ";
+               self#a#toPretty ;
+               STR ": No call-target-info found at ";
+               STR i]);
+        mk_call_target_info
+          (default_function_interface "unknown" [])
+          default_function_semantics
+          UnknownTarget
+      end
 
   method has_call_target (i:ctxt_iaddress_t) =  H.mem calltargets i
 	

@@ -38,6 +38,11 @@ open BCHBasicTypes
 open BCHLibTypes
 open BCHUtilities
 
+
+let fns_included = ref []
+let include_function s = fns_included := s :: !fns_included
+let included_functions () = !fns_included
+
 (* -------------------------------------------------------------------------
  * Command-line switches:
  * - set_vftables: for all jump tables, if one of the targets is a function entry

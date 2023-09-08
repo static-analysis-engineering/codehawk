@@ -310,7 +310,7 @@ let _ =
       add_to_sumtype_tables
         arm_special_regs_to_string_table
         arm_special_regs_from_string_table r s)
-    [(APSR, "APSR"); (FPSCR, "FPSCR"); (APSR_nzcv, "APSR_nzcv")]
+    [(CPSR, "CPSR"); (SPSR, "SPSR"); (FPSCR, "FPSCR"); (APSR_nzcv, "APSR_nzcv")]
 
 
 let arm_special_reg_to_string (r: arm_special_reg_t) =

@@ -35,3 +35,6 @@ open BCHLibTypes
 
 val system_settings: system_settings_int
 val pverbose: pretty_t list -> unit
+
+val include_function: string -> unit
+val included_functions: unit -> string list
