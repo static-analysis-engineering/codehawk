@@ -111,6 +111,7 @@ object ('a)
   method get_address_registers: cpureg_t list
   method get_indirect_register: cpureg_t
   method get_indirect_register_offset: numerical_t
+  method get_segment_register: segment_t
 
   (* converters *)
   method to_address: floc_int -> xpr_t
@@ -226,6 +227,7 @@ type opcode_t =
   | LoadTaskRegister of operand_int                             (* load task register *)
   | StoreTaskRegister of operand_int                           (* store task register *)
   | TimedPause of operand_int                                          (* timed pause *)
+  | LoadFarPointer of operand_int * operand_int * operand_int
       
 (* Setting / Scanning bits *)      
   | BitTestComplement of operand_int * operand_int (*           bit test and complement *)
