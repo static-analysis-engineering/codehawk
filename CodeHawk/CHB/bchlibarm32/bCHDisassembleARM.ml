@@ -31,6 +31,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTiming
 
 (* xprlib *)
 open Xprt
@@ -96,10 +97,6 @@ let disassemble_arm_section
       (sectionbase: doubleword_int) (sectionbytes: string) =
   let sectionsize = String.length sectionbytes in
   let mode = ref "arm" in
-
-  let _ =
-    pverbose [
-        STR (timing ()); STR "disassemble section at "; sectionbase#toPretty; NL] in
 
   let add_instruction
         (iaddr: doubleword_int) (opcode: arm_opcode_t) (bytes: string) =
@@ -172,14 +169,6 @@ let disassemble_arm_section
            STR "; size: ";
            INT sectionsize]) in
   try
-    let _ =
-      pverbose [
-          STR (timing ());
-          STR "disassemble arm/thumb instructions: ";
-          sectionbase#toPretty;
-          STR "; size: ";
-          INT sectionsize;
-          NL] in
     begin
       while ch#pos + 2 < sectionsize do   (* <= causes problems at section end *)
         let prevPos = ch#pos in
@@ -205,10 +194,7 @@ let disassemble_arm_section
                () in
         try
           if is_data_block iaddr then
-            begin
-              (* pverbose [STR "Skip data block at "; iaddr#toPretty; NL]; *)
-              skip_data_block prevPos ch
-            end
+            skip_data_block prevPos ch
           else
             if system_settings#has_thumb && !mode = "thumb" then
               (* Thumb mode *)
@@ -262,14 +248,7 @@ let disassemble_arm_section
                     STR !mode]);
              raise (BCH_failure p)
            end
-      done;
-      pverbose [
-          STR (timing ());
-          STR "  ...  finished disassembly of ";
-          sectionbase#toPretty;
-          STR "; size: ";
-          INT sectionsize;
-          NL]
+      done
     end
   with
   | BCH_failure p ->
@@ -286,10 +265,6 @@ let disassemble_arm_section
 
 let sanitize_datablocks
       (headers: elf_section_header_int list) (datablocks: data_block_int list) =
-  let _ =
-    pverbose [
-        STR (timing ());
-        STR "sanitize "; INT (List.length datablocks); STR " data blocks"; NL] in
   List.iter (fun db ->
       let dbstart = db#get_start_address in
       let dbend = db#get_end_address in
@@ -298,16 +273,6 @@ let sanitize_datablocks
           let s_end = h#get_addr#add_int h#get_size#value in
           if dbstart#lt sa && sa#lt dbend then
             begin
-              pverbose [
-                  STR "Truncate data block at ";
-                  dbstart#toPretty;
-                  STR "; reduce end address from ";
-                  dbend#toPretty;
-                  STR " to ";
-                  sa#toPretty;
-                  STR " for section ";
-                  STR h#get_section_name;
-                  NL];
               chlog#add
                 "truncate datablock"
                 (LBLOCK [
@@ -320,16 +285,6 @@ let sanitize_datablocks
             end
           else if sa#le dbstart && dbstart#lt s_end && s_end#lt dbend then
             begin
-              pverbose [
-                  STR "Truncate data block at ";
-                  dbstart#toPretty;
-                  STR "; reduce end address from ";
-                  dbend#toPretty;
-                  STR " to ";
-                  s_end#toPretty;
-                  STR " for section ";
-                  STR h#get_section_name;
-                  NL];
               chlog#add
                 "truncate datablock"
                 (LBLOCK [
@@ -354,20 +309,46 @@ let disassemble_arm_sections () =
         (h#get_section_name, h#get_addr, h#get_size)) headers in
   let is_in_executable_section (db: data_block_int) =
     List.fold_left (fun found (_, ha, hsize) ->
-        found || (ha#le db#get_start_address && db#get_start_address#lt (ha#add_int hsize#value)))
+        found
+        || (ha#le db#get_start_address
+            && db#get_start_address#lt (ha#add_int hsize#value)))
       false sectionsizes in
   let programentrypoint = elf_header#get_program_entry_point in
   let datablocks =
     List.filter is_in_executable_section system_info#get_data_blocks in
   begin
     initialize_arm_instructions sectionsizes;
+    pr_timing [
+        STR "instructions initialized";
+        pretty_print_list
+          sectionsizes
+          (fun (name, addr, size) ->
+            LBLOCK [
+                STR "(";
+                STR name;
+                STR ", ";
+                addr#toPretty;
+                STR ", ";
+                size#toPretty;
+                STR ")"]) " [" ", " "]"];
     let (dw, r) = programentrypoint#to_aligned 4 in
     (if (r = 1) then system_info#set_arm_thumb_switch dw "T");
     ignore (functions_data#add_function dw);
     sanitize_datablocks (List.map fst headers) datablocks;
+    pr_timing [STR "data blocks sanitized ("; INT (List.length datablocks); STR ")"];
     initialize_arm_assembly_instructions sectionsizes datablocks;
+    pr_timing [STR "assembly instructions initialized"];
     List.iter
-      (fun (h, x) -> disassemble_arm_section h#get_addr x) xSections
+      (fun (h, x) ->
+        begin
+          disassemble_arm_section h#get_addr x;
+          pr_timing [
+              STR "section disassembled at ";
+              h#get_addr#toPretty;
+              STR " of length ";
+              INT (String.length x);
+              STR " bytes"]
+        end) xSections
   end
 
 
@@ -476,9 +457,6 @@ let is_nr_call_instruction (instr:arm_assembly_instruction_int) =
 
 
 let collect_function_entry_points () =
-  let _ =
-    pverbose [
-        STR (timing ()); STR "collect function entry points ..."; NL] in
   let addresses = new DoublewordCollections.set_t in
   begin
     !arm_assembly_instructions#itera
@@ -496,7 +474,6 @@ let collect_function_entry_points () =
 
 
 let collect_call_targets () =
-  let _ = pverbose [STR (timing ()); STR "collect call targets ..."; NL] in
   !arm_assembly_instructions#itera
     (fun va instr ->
       match instr#get_opcode with
@@ -510,7 +487,6 @@ let collect_call_targets () =
 
 
 let set_block_boundaries () =
-  let _ = pverbose [STR (timing ()); STR "set block boundaries ..."; NL] in
   let set_inlined_call (a: doubleword_int) =
     log_titer
       (mk_tracelog_spec
@@ -540,7 +516,6 @@ let set_block_boundaries () =
   let feps = functions_data#get_function_entry_points in
   let datablocks = system_info#get_data_blocks in
   begin
-    pverbose [STR (timing ()); STR "   record function entry points"; NL];
     (* -------------------------------- record function entry points -- *)
     List.iter
       (fun fe ->
@@ -554,7 +529,6 @@ let set_block_boundaries () =
                   STR "function entry point incorrect: ";
                   fe#toPretty])) feps;
 
-    pverbose [STR (timing ()); STR "   record end of data blocks"; NL];
     (* -------------------------------- record end of data blocks -- *)
     List.iter
       (fun db ->
@@ -568,7 +542,6 @@ let set_block_boundaries () =
                   STR "data block end address incorrect: ";
                   db#get_end_address#toPretty])) datablocks;
 
-    pverbose [STR (timing ()); STR "   record jumptables"; NL];
     (* --------------------------------------- record jumptables -- *)
     List.iter
       (fun jt ->
@@ -585,7 +558,6 @@ let set_block_boundaries () =
                     ~get_opt_function_name:(fun _ -> None)]))
       system_info#get_jumptables;
 
-    pverbose [STR (timing ()); STR "   record targets of unconditional jumps"; NL];
     (* ------------------- record targets of unconditional jumps -- *)
     !arm_assembly_instructions#itera
       (fun va instr ->
@@ -659,7 +631,6 @@ let set_block_boundaries () =
                   STR ": ";
                   p]));
 
-    pverbose [STR (timing ()); STR "   incorporate jump successors"; NL];
     (* -------------------------- incorporate jump successors -- *)
     !arm_assembly_instructions#itera
       (fun va _ ->
@@ -671,8 +642,6 @@ let set_block_boundaries () =
              set_block_entry (va#add_int 4)
            end);
 
-    pverbose [
-        STR (timing ()); STR "   add block entries due to previous block-ending"; NL];
     (* --------------- add block entries due to previous block-ending -- *)
     !arm_assembly_instructions#itera
       (fun va instr ->
@@ -716,9 +685,7 @@ let set_block_boundaries () =
               (get_next_valid_instruction_address va) in
           set_block_entry nextva
         else
-          ());
-
-    pverbose [STR (timing ()); STR "   set_block_entries: Done"; NL]
+          ())
   end
 
 
@@ -761,16 +728,18 @@ let construct_assembly_function
          begin
            ch_error_log#add
              "construct assembly function"
-             (LBLOCK [ faddr#toPretty ; STR ": " ; p ]);
+             (LBLOCK [faddr#toPretty; STR ": "; p]);
            raise
              (BCH_failure
-                (LBLOCK [ STR "Error in constructing function " ;
-                          faddr#toPretty ; STR ": " ; p ]))
+                (LBLOCK [
+                     STR "Error in constructing function ";
+                     faddr#toPretty;
+                     STR ": ";
+                     p]))
          end
 
 
 let record_call_targets_arm () =
-  let _ = pverbose [STR (timing ()); STR "record call targets ..."; NL] in
   arm_assembly_functions#itera
     (fun faddr f ->
       let finfo = get_function_info faddr in
@@ -797,9 +766,9 @@ let record_call_targets_arm () =
                else
                  let iaddr = instr#get_address in
                  if system_info#has_call_target faddr iaddr then
-                 let calltgt = system_info#get_call_target faddr iaddr in
-                 let ctinfo = mk_call_target_info calltgt in
-                 finfo#set_call_target ctxtiaddr ctinfo
+                   let calltgt = system_info#get_call_target faddr iaddr in
+                   let ctinfo = mk_call_target_info calltgt in
+                   finfo#set_call_target ctxtiaddr ctinfo
                else
                  ()
             | Branch (_, tgt, _) when
@@ -828,7 +797,6 @@ let record_call_targets_arm () =
    (within the same basic block) that sets the flags
    ---------------------------------------------------------------------- *)
 let associate_condition_code_users () =
-  let _ = pverbose [STR (timing ()); STR "associate condition code users ..."; NL] in
   let set_condition
         (flags_used: arm_cc_flag_t list)
         (faddr: doubleword_int)
@@ -865,36 +833,51 @@ let associate_condition_code_users () =
              let instrctxt = (make_i_location iloc instr#get_address)#ci in
 	    finfo#connect_cc_user ctxtiaddr instrctxt in
     set revInstrs in
+  let count = ref 0 in
   arm_assembly_functions#itera
     (fun faddr f ->
-      f#iter
-	(fun block ->
-	  block#itera
-	    (fun iaddr instr ->
-	      match get_arm_flags_used instr#get_opcode with
-	      | [] -> ()
-	      | flags -> set_condition flags faddr iaddr block)))
+      begin
+        f#iter
+	  (fun block ->
+	    block#itera
+	      (fun iaddr instr ->
+	        match get_arm_flags_used instr#get_opcode with
+	        | [] -> ()
+	        | flags -> set_condition flags faddr iaddr block));
+        count := !count + 1;
+        pr_interval_timing [STR "  associate condition codes: "; INT !count] 60.0
+      end)
 
 
 let construct_functions_arm () =
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
+  let fns_included = included_functions () in
+  let _ =
+    List.iter
+      (fun dw -> ignore (functions_data#add_function dw))
+      (List.map (fun s -> TR.tget_ok (string_to_doubleword s)) fns_included) in
   let _ = collect_call_targets () in
   let _ = set_block_boundaries () in
-  let _ = pverbose [STR (timing ()); STR "collect callsites ..."; NL] in
+  let _ = pr_timing [STR "block boundaries set"] in
   let _ = !arm_assembly_instructions#collect_callsites in
-  let _ = pverbose [STR (timing ()); STR "collect callsites: Done"; NL] in
+  let _ = pr_timing [STR "callsites collected"] in
   let _ =
     let nonrfns = arm_callsites_records#get_non_returning_functions in
     List.iter (fun faddr ->
         if functions_data#is_function_entry_point faddr then
           let fndata = functions_data#get_function faddr in
           fndata#set_non_returning) nonrfns in
-  let fnentrypoints = functions_data#get_function_entry_points in
+  let _ = pr_timing [STR "non-returning functions set"] in
+  let fnentrypoints =
+    if (List.length fns_included) > 0 then
+      (List.map
+         (fun faddr -> TR.tget_ok (string_to_doubleword faddr)) fns_included)
+    else
+      functions_data#get_function_entry_points in
   let newfns = ref fnentrypoints in
   let count = ref 0 in
   let addedfns = new DoublewordCollections.set_t in
-  let _= pverbose [STR (timing ()); STR "construct functions ..."; NL] in
   begin
     while (List.length !newfns) > 0 do
       begin
@@ -903,8 +886,11 @@ let construct_functions_arm () =
             let default () =
               try
                 let _ = count := !count + 1 in
-                let newfns = construct_assembly_function !count faddr in
-                addedfns#addList newfns
+                let newfunctions = construct_assembly_function !count faddr in
+                let _ =
+                  pr_interval_timing [
+                      STR "functions constructed: "; INT !count] 60.0 in
+                addedfns#addList newfunctions
               with
               | BCH_failure p ->
                  ch_error_log#add
@@ -941,36 +927,31 @@ let construct_functions_arm () =
       end
     done;
 
-    let _ = pverbose [STR (timing ()); STR "construct functions: Done"; NL] in
+    pr_timing [STR "functions constructed -- first pass"];
     arm_assembly_functions#identify_dataref_datablocks;
+    pr_timing [STR "datablocks identified -- first pass"];
 
-    let _ =
-      pverbose [
-          STR (timing ());
-          STR "add functions by preamble ..."; STR "; count: "; INT !count; NL] in
+    (if (List.length fns_included) = 0 then
+      begin
+        List.iter (fun faddr ->
+            begin
+              count := !count + 1;
+              ignore (construct_assembly_function ~check:true !count faddr);
+              pr_interval_timing [STR "functions constructed: "; INT !count] 60.0
+            end) arm_assembly_functions#add_functions_by_preamble;
 
-    List.iter (fun faddr ->
-        begin
-          count := !count + 1;
-          ignore (construct_assembly_function ~check:true !count faddr)
-        end) arm_assembly_functions#add_functions_by_preamble;
-
-    pverbose [
-        STR (timing ()); 
-        STR "Function construction completed. ";
-        STR "; count: ";
-        INT !count;
-        STR ". Start identification of dataref blocks"; NL];
-
-    arm_assembly_functions#identify_dataref_datablocks;
-
-    pverbose [STR (timing ()); STR "Identification of dataref blocks completed"; NL];
+        pr_timing [STR "functions constructed -- second pass"];
+        arm_assembly_functions#identify_dataref_datablocks;
+        pr_timing [STR "dataref blocks identified"];
+      end);
 
     record_call_targets_arm ();
+    pr_timing [STR "call targets recorded"];
     associate_condition_code_users ();
-    pverbose [STR (timing ()); STR "construct functions: Done"; NL];
-
-    arm_assembly_functions#identify_datablocks;
-
-    pverbose [STR (timing ()); STR "identify datablocks: Done"; NL];
+    pr_timing [STR "condition-codes associated"];
+    if (List.length fns_included) = 0 then
+      begin
+        arm_assembly_functions#identify_datablocks;
+        pr_timing [STR "datablocks identified"]
+      end
   end

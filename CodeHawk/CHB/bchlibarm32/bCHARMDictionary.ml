@@ -271,11 +271,13 @@ object (self)
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
       | Move (s, c, rd, rm, tw, aw) ->
          (ctags c, [setb s; oi rd; oi rm; setb tw; setb aw])
+      | MoveFromSpecialRegister (c, rd, src, p) -> (ctags c, [oi rd; oi src; setb p])
       | MoveRegisterCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
          (ctags c, [coproc; opc1; oi rt; crn; crm; opc2])
       | MoveToCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
          (ctags c, [coproc; opc1; oi rt; crn; crm; opc2])
       | MoveTop (c,rd,imm) -> (ctags c, [oi rd; oi imm])
+      | MoveToSpecialRegister (c, spr, imm, p) -> (ctags c, [oi spr; oi imm; setb p])
       | MoveTwoRegisterCoprocessor (c, coproc, opc, rt, rt2, crm) ->
          (ctags c, [coproc; opc; oi rt; oi rt2; crm])
       | Multiply (setflags, c, rd, rn, rm) ->

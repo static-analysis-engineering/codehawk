@@ -293,9 +293,22 @@ object (self:'a)
                | ARMImmSRT (SRType_LSL, 2) ->
                   let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 4]) in
                   XOp (XPlus, [shifted; xoffset])
+               | ARMImmSRT (SRType_ASR, 1) ->
+                  let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 2]) in
+                  XOp (XPlus, [shifted; xoffset])
+               | ARMImmSRT (SRType_ASR, 2) ->
+                  let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 4]) in
+                  XOp (XPlus, [shifted; xoffset])
+               | ARMImmSRT (SRType_ASR, 3) ->
+                  let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 8]) in
+                  XOp (XPlus, [shifted; xoffset])
                | ARMRegSRT (SRType_LSL, srtreg) ->
                   let shiftvar = env#mk_arm_register_variable srtreg in
                   let shifted = XOp (XLsl, [XVar indexvar; XVar shiftvar]) in
+                  XOp (XPlus, [shifted; xoffset])
+               | ARMRegSRT (SRType_ASR, srtreg) ->
+                  let shiftvar = env#mk_arm_register_variable srtreg in
+                  let shifted = XOp (XAsr, [XVar indexvar; XVar shiftvar]) in
                   XOp (XPlus, [shifted; xoffset])
                | _ ->
                   begin
@@ -516,6 +529,11 @@ object (self:'a)
        let env = floc#f#env in
        XOp
          (XLsr,
+          [XVar (env#mk_arm_register_variable r); int_constant_expr n])
+    | ARMShiftedReg (r, ARMImmSRT (SRType_ASR, n)) ->
+       let env = floc#f#env in
+       XOp
+         (XAsr,
           [XVar (env#mk_arm_register_variable r); int_constant_expr n])
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, n)) ->
        let env = floc#f#env in

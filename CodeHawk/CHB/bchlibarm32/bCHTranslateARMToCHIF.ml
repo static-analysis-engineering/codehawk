@@ -1079,6 +1079,29 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
+  | BranchLink (c,tgt)
+    | BranchLinkExchange (c, tgt) ->
+     let floc = get_floc loc in
+     let vr0 = floc#f#env#mk_arm_register_variable AR0 in
+     let vr1 = floc#f#env#mk_arm_register_variable AR1 in
+     let vr2 = floc#f#env#mk_arm_register_variable AR2 in
+     let vr3 = floc#f#env#mk_arm_register_variable AR3 in
+     let (defs, use, usehigh) =
+       let use = [vr0; vr1; vr2; vr3] in
+       ([vr0], use, []) in
+     let cmds = floc#get_arm_call_commands in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:defs
+         ~clobbers:[vr1; vr2; vr3]
+         ~use:use
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
   | ByteReverseWord (c, rd, rm, _) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = rd#to_lhs floc in
@@ -3422,8 +3445,11 @@ object (self)
       ASSERT (EQ (v, initVar)) in
     let rAsserts = List.map freeze_initial_register_value arm_regular_registers in
     let xAsserts =
-      List.map freeze_initial_extension_register_values
-      (arm_xsingle_extension_registers @ arm_xdouble_extension_registers) in
+      if system_settings#include_arm_extension_registers then
+        List.map freeze_initial_extension_register_values
+          (arm_xsingle_extension_registers @ arm_xdouble_extension_registers)
+      else
+        [] in
     let externalMemvars = env#get_external_memory_variables in
     let externalMemvars = List.filter env#has_constant_offset externalMemvars in
     let _ =

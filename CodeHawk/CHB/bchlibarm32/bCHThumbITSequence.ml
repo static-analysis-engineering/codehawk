@@ -165,7 +165,12 @@ let disassemble_instruction (iaddr: doubleword_int) (ch: pushback_stream_int) =
     try
       disassemble_thumb_instruction ch iaddr bytes
     with
-    | _ -> OpInvalid in
+    | _ ->
+       let _ =
+         chlog#add
+           "thumb-it-sequence disassemble-instruction"
+           (LBLOCK [iaddr#toPretty]) in
+       OpInvalid in
   let instrlen = ch#pos - instrpos in
   let instrbytes = ch#sub instrpos instrlen in
   let instr = make_arm_assembly_instruction iaddr false opcode instrbytes in

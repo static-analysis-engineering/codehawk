@@ -31,6 +31,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTiming
 open CHTraceResult
 open CHXmlDocument
 
@@ -358,22 +359,12 @@ object (self)
         | _ -> acc) aggregates []
 
   method set_not_code (data_blocks: data_block_int list) =
-    let _ =
-      pverbose [
-          STR (timing ());
-          STR "set_not_code ... with ";
-          INT (List.length data_blocks);
-          STR " data blocks";
-          NL] in
     List.iter self#set_not_code_block data_blocks
 
   method private set_not_code_block (db: data_block_int) =
     let startaddr = db#get_start_address in
     let endaddr = db#get_end_address in
     let len = endaddr#value - startaddr#value in
-    (* let _ =
-      pverbose [
-          STR "set-not-code at "; startaddr#toPretty; STR " with length "; INT len; NL] in *)
     let startinstr =
       make_arm_assembly_instruction
         startaddr true (NotCode (Some (DataBlock db))) "" in
@@ -468,9 +459,18 @@ object (self)
         false in
     loop 1
 
+    (* Note: If a va is not a valid instruction and not part of a non-code
+       block (and doesn't have instruction bytes associated with it) in
+       thumb mode, the reason may be that an instruction at va-2 was
+       initially disassembled as an (ultimately invalid) 4-byte thumb
+       instruction, leaving the last two bytes (which may be a valid 2 or
+       start of 4-byte instruction un-disassembled. The quick fix is to 
+       simply add the datablock to the userdata, so it will be pre-assigned
+       as non-code block, but this should eventually be fixed.
+     *)
   method is_code_address (va:doubleword_int) =
     TR.to_bool
-      (fun instr -> instr#is_valid_instruction) (self#get_instruction va)
+        (fun instr -> instr#is_valid_instruction) (self#get_instruction va)
 
   method collect_callsites =
     self#itera (fun va instr ->
@@ -800,9 +800,7 @@ let initialize_arm_assembly_instructions
   begin
     initialize_instruction_sections sections;
     arm_assembly_instructions := new arm_assembly_instructions_t sections;
-    !arm_assembly_instructions#set_not_code datablocks;
-    pverbose [
-        STR (timing ()); STR "Finish initializing arm assembly instructions"; NL]
+    !arm_assembly_instructions#set_not_code datablocks
   end
 
 

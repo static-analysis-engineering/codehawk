@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021 Aarno Labs LLC
+   Copyright (c) 2021-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,13 +49,17 @@ open BCHARMTypes
 
 module H = Hashtbl
 
+
 let loop_levels = H.create 53
 
+
 let add_loop_levels (address:ctxt_iaddress_t) (levels:ctxt_iaddress_t list) =
-  H.add loop_levels address levels
+  H.replace loop_levels address levels
+
 
 let get_arm_loop_levels (address:ctxt_iaddress_t) =
   try H.find loop_levels address with Not_found -> []
+
 
 let get_cfg (proc:procedure_int) =
   match proc#getBody#getCmdAt 0 with
@@ -69,7 +73,8 @@ let get_cfg (proc:procedure_int) =
        ch_error_log#add "invocation error" msg ;
        raise (BCH_failure msg)
      end
-    
+
+
 let get_strongly_connected_components (proc:procedure_int) =
   let cfg = get_cfg proc in
   let engine = new wto_engine_t (new fwd_graph_t cfg) in
@@ -111,6 +116,7 @@ let record_arm_loop_levels (faddr:doubleword_int) =
 	add_loop_levels baddr (List.rev levels))
   end
 
+
 let get_arm_loop_count_from_table (f:arm_assembly_function_int) =
   let table =  H.create 3 in
   let _ =
@@ -123,6 +129,7 @@ let get_arm_loop_count_from_table (f:arm_assembly_function_int) =
               H.add table a true)
           (get_arm_loop_levels baddr)) in
   H.length table
+
 
 let get_arm_loop_depth_from_table (f:arm_assembly_function_int) =
   let maxdepth = ref 0 in

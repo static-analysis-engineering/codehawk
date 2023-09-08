@@ -484,6 +484,11 @@ type arm_opcode_t =
       * arm_operand_int (* rm/imm: source *)
       * bool            (* T.W *)
       * bool            (* Arm wide *)
+  | MoveFromSpecialRegister of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* rd: destination *)
+      * arm_operand_int (* spec_reg: special register source *)
+      * bool            (* privileged *)
   | MoveRegisterCoprocessor of
       arm_opcode_cc_t   (* condition *)
       * int             (* coprocessor *)
@@ -501,9 +506,14 @@ type arm_opcode_t =
       * int             (* CRm *)
       * int             (* opc2 *)
   | MoveTop of
-      arm_opcode_cc_t (* condition *)
+      arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* rd: destination *)
       * arm_operand_int (* imm: source *)
+  | MoveToSpecialRegister of
+      arm_opcode_cc_t   (* condition *)
+      * arm_operand_int (* spec_reg: special register *)
+      * arm_operand_int (* imm: constant *)
+      * bool            (* privileged *)
   | MoveTwoRegisterCoprocessor of
       arm_opcode_cc_t   (* condition *)
       * int             (* coprocessor *)

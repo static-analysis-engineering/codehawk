@@ -58,6 +58,7 @@ class arm_assembly_block_t
 object (self)
 
   val loc = make_location ~ctxt { loc_faddr = faddr; loc_iaddr = first_address }
+  val mutable rev_instrs = []
 
   method get_location = loc
 
@@ -72,6 +73,22 @@ object (self)
   method get_context_string = loc#ci
 
   method get_instructions_rev ?(high=last_address) () =
+    let revinstrs =
+      if (List.length rev_instrs) > 0 then
+        rev_instrs
+      else
+        let addrs =
+          !arm_assembly_instructions#get_code_addresses
+            ~low:self#get_first_address ~high:self#get_last_address () in
+        let instrs =
+          TR.tfold_list
+            ~ok:(fun acc v -> v::acc)
+            []
+            (List.map (fun a -> get_arm_assembly_instruction a) addrs) in
+        begin
+          rev_instrs <- instrs;
+          instrs
+        end in
     let high =
       if self#get_last_address#lt high then
         self#get_last_address
@@ -79,13 +96,7 @@ object (self)
         self#get_first_address
       else
         high in
-    let addrs =
-      !arm_assembly_instructions#get_code_addresses
-        ~low:first_address ~high () in
-    TR.tfold_list
-      ~ok:(fun acc v -> v::acc)
-      []
-      (List.map (fun a -> get_arm_assembly_instruction a) addrs)
+    List.filter (fun instr -> instr#get_address#le high) revinstrs
 
   method get_instructions = List.rev (self#get_instructions_rev ())
 

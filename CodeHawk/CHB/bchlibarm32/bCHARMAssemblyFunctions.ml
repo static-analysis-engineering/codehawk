@@ -32,6 +32,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTiming
 open CHXmlDocument
 
 (* bchlib *)
@@ -99,121 +100,115 @@ let _ =
 
 let create_ordering 
     (functions: doubleword_int list) 
-    (calls: (doubleword_int * doubleword_int) list)  =
-  let get_pivot_node cs fnIndices =
-    let counts = H.create 10 in
-    let add dw = if H.mem counts dw then
-	H.replace counts dw ((H.find counts dw) + 1)
-      else
-	H.add counts dw 1 in
-    let maxCount = ref ((fst (List.hd cs))#index,-1) in
-    let _ = List.iter (fun (_, callee) -> add callee#index) cs in
-    let _ =
-      H.iter (fun k v ->
-          if v > (snd !maxCount)
-             && List.mem k fnIndices then maxCount := (k, v)) counts in
-    (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
+    (calls: (doubleword_int * doubleword_int) list) =
+  let fns_included = included_functions () in
+  if ((List.length fns_included) > 0) || (List.length functions > 5000) then
+    (functions, [], true)
+  else
+    let get_pivot_node cs fnIndices =
+      let counts = H.create 10 in
+      let add dw = if H.mem counts dw then
+	             H.replace counts dw ((H.find counts dw) + 1)
+                   else
+	             H.add counts dw 1 in
+      let maxCount = ref ((fst (List.hd cs))#index,-1) in
+      let _ = List.iter (fun (_, callee) -> add callee#index) cs in
+      let _ =
+        H.iter (fun k v ->
+            if v > (snd !maxCount)
+               && List.mem k fnIndices then maxCount := (k, v)) counts in
+      (TR.tget_ok (index_to_doubleword (fst !maxCount)), snd !maxCount) in
 
-  let rec aux fns cs result stats cycle counter =
-    let _ =
-      pverbose [
-          STR (timing ());
-          STR "create_ordering_aux. fns: ";
-          INT (List.length fns);
-          STR "; calls: ";
-          INT (List.length cs);
-          STR "; result: ";
-          INT (List.length result);
-          NL] in
-    if counter > max_cycles then
-      begin
-        ch_error_log#add
-          "too many cycles"
-          (LBLOCK [
-               STR "Abandon bottom-up iteration after encountering ";
-               INT max_cycles;
-               STR " cycles. Return original function list"]);
-        (functions, stats, true)
-      end
-    else
-      match fns with 
-      | [] -> (result, stats, cycle)
-      | _ ->
-         let (leaves, nonleaves) =
-	   List.fold_left (fun (l,n) (f:doubleword_int) ->
-	       if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) ->
-	               caller#equal f) cs) then
-	         (l, f::n)
-	       else
-	         (f::l, n)) ([], []) fns in
-         try
-	   match leaves with
-	   | [] ->
-              (* there is a cycle; find the node with the largest number of incoming
+    let rec aux fns cs result stats cycle counter =
+      if counter > max_cycles then
+        begin
+          ch_error_log#add
+            "too many cycles"
+            (LBLOCK [
+                 STR "Abandon bottom-up iteration after encountering ";
+                 INT max_cycles;
+                 STR " cycles. Return original function list"]);
+          (functions, stats, true)
+        end
+      else
+        match fns with 
+        | [] -> (result, stats, cycle)
+        | _ ->
+           let (leaves, nonleaves) =
+	     List.fold_left (fun (l,n) (f:doubleword_int) ->
+	         if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) ->
+	                 caller#equal f) cs) then
+	           (l, f::n)
+	         else
+	           (f::l, n)) ([], []) fns in
+           try
+	     match leaves with
+	     | [] ->
+                (* there is a cycle; find the node with the largest number of incoming
 	      edges and remove one of the outgoing edges from that node
 	      pass list of functions to avoid pivoting on a non-existing function *)
-	      let fnIndices = List.map (fun dw -> dw#index) fns in
-	      let (pivotNode, incoming) = get_pivot_node cs fnIndices in
-	      let edge =
-	        try
-		  List.find (fun (c, _) -> c#equal pivotNode) cs
-	        with
-	        | Not_found ->
-		   begin
-		     ch_error_log#add "pivot node not found"
-		       (LBLOCK [ pivotNode#toPretty ]);
-		     raise Not_found
-		   end in
-	      let newCalls =
-                List.filter
-	          (fun (e1, e2) ->
-		    (not (e1#equal (fst edge))) || (not (e2#equal (snd edge)))) cs in
-	      let _ =
-                chlog#add "break cycle"
+	        let fnIndices = List.map (fun dw -> dw#index) fns in
+	        let (pivotNode, incoming) = get_pivot_node cs fnIndices in
+	        let edge =
+	          try
+		    List.find (fun (c, _) -> c#equal pivotNode) cs
+	          with
+	          | Not_found ->
+		     begin
+		       ch_error_log#add "pivot node not found"
+		         (LBLOCK [ pivotNode#toPretty ]);
+		       raise Not_found
+		     end in
+	        let newCalls =
+                  List.filter
+	            (fun (e1, e2) ->
+		      (not (e1#equal (fst edge))) || (not (e2#equal (snd edge)))) cs in
+	        let _ =
+                  chlog#add "break cycle"
+	            (LBLOCK [
+                         STR "remove ";
+                         STR "(";
+		         (fst edge)#toPretty;
+                         STR ",";
+                         (snd edge)#toPretty;
+		         STR ") with ";
+                         INT incoming;
+                         STR " edges (size of cycle: ";
+		         INT (List.length fns);
+                         STR ")"]) in
+	        aux nonleaves newCalls result ((-1)::stats) true (counter + 1)
+	     | _ ->
+	        let newCalls =
+	          List.filter (fun (_, callee) ->
+	              List.for_all (fun f -> not (callee#equal f)) leaves) cs in
+	        aux
+                  nonleaves
+                  newCalls
+                  (result @leaves )
+                  ((List.length leaves)::stats)
+                  cycle
+                  counter
+           with
+           | Not_found ->
+	      begin
+	        ch_error_log#add
+                  "error in find cycle"
 	          (LBLOCK [
-                       STR "remove ";
-                       STR "(";
-		       (fst edge)#toPretty;
-                       STR ",";
-                       (snd edge)#toPretty;
-		       STR ") with ";
-                       INT incoming;
-                       STR " edges (size of cycle: ";
-		       INT (List.length fns);
-                       STR ")"]) in
-	      aux nonleaves newCalls result ((-1)::stats) true (counter + 1)
-	   | _ ->
-	      let newCalls =
-	        List.filter (fun (_, callee) ->
-	            List.for_all (fun f -> not (callee#equal f)) leaves) cs in
-	      aux
-                nonleaves
-                newCalls
-                (result @leaves )
-                ((List.length leaves)::stats)
-                cycle
-                counter
-         with
-         | Not_found ->
-	    begin
-	      ch_error_log#add
-                "error in find cycle"
-	        (LBLOCK [
-                     STR "calls: ";
-                     pretty_print_list
-                       cs
-                       (fun (a1,a2) ->
-		         LBLOCK [
-                             STR "(";
-                             a1#toPretty;
-                             STR ",";
-                             a2#toPretty;
-                             STR ")"])
-		       " [" ", " "]" ]) ;
-	      (result, stats, cycle)
-	    end
-  in
-  aux functions calls [] [] false 0
+                       STR "calls: ";
+                       pretty_print_list
+                         cs
+                         (fun (a1,a2) ->
+		           LBLOCK [
+                               STR "(";
+                               a1#toPretty;
+                               STR ",";
+                               a2#toPretty;
+                               STR ")"])
+		         " [" ", " "]" ]) ;
+	        (result, stats, cycle)
+	      end
+    in
+    aux functions calls [] [] false 0
 
 
 class arm_assembly_functions_t:arm_assembly_functions_int =
@@ -238,10 +233,11 @@ object (self)
       H.find functions index
     with
     | Not_found ->
-       let msg = [ STR "Unable to find function with index: " ;
-                   dw_index_to_pretty index ] in
+       let msg = [
+           STR "Unable to find function with index: ";
+           dw_index_to_pretty index] in
        begin
-         pr_debug (msg @ [ NL ]);
+         pr_debug (msg @ [NL]);
          raise (BCH_failure (LBLOCK msg))
        end
 
@@ -250,10 +246,12 @@ object (self)
       self#get_function faddr#index
     with
     | BCH_failure _ ->
-       let msg = [ STR "Unable to find function with address: " ;
-                   faddr#toPretty ] in
+       let msg = [
+           STR "Unable to find function with address: ";
+           faddr#toPretty] in
        begin
-         pr_debug (msg @ [ NL ]);
+         pr_debug (msg @ [NL]);
+         pr_debug [STR "Number of functions present: "; INT (H.length functions); NL];
          raise (BCH_failure (LBLOCK msg))
        end
 
@@ -602,7 +600,7 @@ object (self)
                     | BranchLink (_, op)
                       | BranchLinkExchange (_, op) when op#is_absolute_address ->
                        let tgtaddr = op#get_absolute_address in
-                       if functions_data#is_function_entry_point tgtaddr  then
+                       if functions_data#is_function_entry_point tgtaddr then
                          let fndata = functions_data#get_function tgtaddr in
                          let remaining = fndata#remove_callsite in
                          if remaining = 0 then
@@ -646,6 +644,14 @@ object (self)
                       end in
                  let _ = db#set_data_string datastring in
                  begin
+                   chlog#add
+                     "add data block"
+                     (LBLOCK [
+                          db#get_start_address#toPretty;
+                          STR " - ";
+                          db#get_end_address#toPretty;
+                          STR ": ";
+                          STR db#get_name]);
                    system_info#add_data_block db;
                    inBlock := false;
                    count := !count + 1;
@@ -683,9 +689,6 @@ object (self)
     let notcode = ref false in
     let count = ref 0 in
     let fnremoved = ref 0 in
-    let _ =
-      pverbose [
-          STR (timing ()); STR "identify_datablocks_aux: "; INT !count; STR ", "; INT !fnremoved; NL] in
     begin
       !arm_assembly_instructions#itera
         (fun va instr ->
@@ -879,18 +882,13 @@ let get_export_metrics () = exports_metrics_handler#init_value
 
 
 let get_arm_disassembly_metrics () =
-  let _ = pverbose [STR (timing ()); STR "compute coverage ..."; NL] in
   let (coverage,overlap,alloverlap) = arm_assembly_functions#get_function_coverage in
-  let _ = pverbose [STR (timing ()); STR "get number of instructions ... "; NL] in
   let instrs = !arm_assembly_instructions#get_num_instructions in
-  let _ = pverbose [STR (timing ()); STR "get imports ..."; NL] in
   let imported_imports = [] in
   let loaded_imports = [] in
   let imports = imported_imports @ loaded_imports in
-  let _ = pverbose [STR (timing ()); STR "get unknown instructions ... "; NL] in
   let numunknown = !arm_assembly_instructions#get_num_unknown_instructions in
-  let _ =
-    pverbose [STR (timing ()); STR "  found "; INT numunknown; STR " instructions"; NL] in
+  let _ = pverbose [STR "  found "; INT numunknown; STR " instructions"; NL] in
   { dm_unknown_instrs = !arm_assembly_instructions#get_num_unknown_instructions;
     dm_instrs = instrs;
     dm_functions = arm_assembly_functions#get_num_functions;

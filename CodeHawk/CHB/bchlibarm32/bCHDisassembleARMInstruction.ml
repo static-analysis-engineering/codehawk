@@ -588,6 +588,13 @@ let parse_data_proc_reg_type
      (* ADC{S}<c> <Rd>, <Rn>, <Rm>, <type> <Rs> *)
      ReverseSubtractCarry (setflags, c, rd, rn, rm)
 
+  (* <cc><0>< 8>0<15><rd>< 0>0000< 0> *)   (* MRS - A1 *)
+  | 8 when not setflags && (rx = 15) && (rz = 0) && (b 7 4) = 0 && (rt = 0) ->
+     let rd = r15 WR in
+     let rs = arm_special_register_op CPSR WR in
+     (* MRS<c> <Rd>, <spec_reg> *)
+     MoveFromSpecialRegister (c, rd, rs, false)
+
   (* <cc><0>< 8>0<rn><rd>< 0>0101<rm> *)   (* QADD - A1 *)
   | 8 when not setflags && (rz = 0) && (b 7 4) = 5 ->
      let rd = r15 WR in
@@ -655,6 +662,13 @@ let parse_data_proc_reg_type
   | 9 when (not setflags) && (rx = 15) && (ry = 15) && (rz = 15) && (b 7 4) = 3 ->
      (* BLX<c> <Rm> *)
      BranchLinkExchange(c, r3 RD)
+
+  (* <cc><0>< 9>0mm00<15>< 0>< 0><rn> *)   (* MSR (register) <spec_reg>, <Rn> *)
+  | 9 when (not setflags) && (b 17 16) = 1 && (ry = 15) && (rz = 0) && (b 7 4) = 0 ->
+     let rn = r3 RD in
+     let spr = arm_special_register_op CPSR WR in
+     (* MSR<c> <spec_reg>, <Rn> *)
+     MoveToSpecialRegister (c, spr, rn, false)
 
   (* <cc><0>< 9>0<rn><rd>< 0>0101<rm>*)    (* QSUB - A1 *)
   | 9 when (not setflags) && (rz = 0) && (b 7 4) = 5 ->
@@ -1073,6 +1087,20 @@ let parse_data_proc_imm_type
   | 9 when not setflags && (rx = 0) && (ry = 15) && (b 11 0) = 0 ->
      (* NOP<c> *)
      NoOperation c
+
+  (* <cc><1>< 9>0mm00<15><--imm12---> *)   (* MSR (immediate) - A1 *)
+  | 9 when not setflags && (b 17 16) = 0 && (ry = 15) ->
+     let spr = arm_special_register_op CPSR WR in
+     let imm = mk_imm (b 11 8) (b 7 0) in
+     (* MSR<c> <spec_reg>, #<const> *)
+     MoveToSpecialRegister (c, spr, imm, false)
+
+  (* <cc><1>< 9>0mm00<15><--imm12---> *)   (* MSR (immediate) - A1 *)
+  | 9 when not setflags && (b 17 16) = 1 && (ry = 15) ->
+     let spr = arm_special_register_op CPSR WR in
+     let imm = mk_imm (b 11 8) (b 7 0) in
+     (* MSR<c> <spec_reg>, #<const> *)
+     MoveToSpecialRegister (c, spr, imm, true)
 
   (* <cc><1>< 9>1<rn>< 0><--imm12---> *)   (* TEQ (immediate) - A1 *)
   | 9 when setflags && (ry = 0) ->
@@ -2027,6 +2055,17 @@ let parse_misc_7_type
      let elt = arm_extension_register_element_op XDouble d index esize in
      (* VMOV<c>.<dt> <Dd[x]>, <Rt> *)
      VectorMoveDS (c, dt, elt WR, rt RD)
+
+  (* <cc><7>0<c>1<rn><rt><co><c>1<rm> *)    (* MRC - A1 *)
+  | ((0 | 1), (1 | 3), _, 1) when not ((b 11 9) = 5) ->
+     let rt = arm_register_op (get_arm_reg (b 15 12)) in
+     let opc1 = b 23 21 in
+     let crn = b 19 16 in
+     let coproc = b 11 8 in
+     let opc2 = b 7 5 in
+     let crm = b 3 0 in
+     (* MRC<c> <coproc>, <opc1>, <Rt>, <CRn>, <CRm>, <opc2> *)
+     MoveRegisterCoprocessor (c, coproc, opc1, rt WR, crn, crm, opc2)
 
   (* <cc><7>00D10<vn><vd>101sN0M0<vm> *)    (* VMUL (floating-point) - A2 *)
   | (0, 2, 0, 0) when (b 11 9) = 5 ->
