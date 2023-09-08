@@ -390,6 +390,7 @@ object (self)
       | Adr (c, rd, imm) ->
          let vrd = rd#to_variable floc in
          let ximm = imm#to_expr floc in
+         let _ = ignore (get_string_reference floc ximm) in
          let uses = get_def_use vrd in
          let useshigh = get_def_use_high vrd in
          let (tagstring, args) =

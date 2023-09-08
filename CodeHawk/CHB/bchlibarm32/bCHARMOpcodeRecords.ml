@@ -458,6 +458,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s mnem c [rd;rm])
     }
+  | MoveFromSpecialRegister (c, rd, src, _) -> {
+      mnemonic = "MRS";
+      operands = [rd; src];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "MRS" c [rd; src])
+    }
   | MoveRegisterCoprocessor (c, coproc, opc1, rt, crn, crm, opc2) ->
      let preops =
        "p" ^ (string_of_int coproc) ^ ", " ^ (string_of_int opc1) ^ "," in
@@ -498,6 +505,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "MOVT" c [rd; imm])
+    }
+  | MoveToSpecialRegister (c, spr, imm, _) -> {
+      mnemonic = "MSR";
+      operands = [spr; imm];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc "MSR" c [spr; imm])
     }
   | MoveTwoRegisterCoprocessor (c, coproc, opc, rt, rt2, crm) ->
      let preops =
