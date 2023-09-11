@@ -32,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTiming
 open CHXmlDocument
 
 (* bchlib *)
@@ -207,13 +208,16 @@ object (self)
                 acc) [] finfo#get_callees in
 	calls := (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
       let addresses = List.map (fun f -> f#get_address) self#get_functions in
-      let (orderedList,stats,cycle) = create_ordering addresses !calls in
-      let _ = chlog#add "callgraph order"
-	(LBLOCK [ pretty_print_list stats (fun s -> INT s) "[" "; " "]" ;
-		  (if cycle then STR " (cycle)" else STR "" ) ]) in
+      let (orderedList, stats, cycle) = create_ordering addresses !calls in
+      let _ = pr_timing [STR "callgraph order constructed"] in
+      let _ =
+        chlog#add
+          "callgraph order"
+	  (LBLOCK [
+               pretty_print_list stats (fun s -> INT s) "[" "; " "]";
+	       (if cycle then STR " (cycle)" else STR "")]) in
       let _ = callgraphorder <- Some orderedList in
       orderedList
-
       
   method bottom_up_itera (f:doubleword_int -> mips_assembly_function_int -> unit) =
     let orderedList = self#get_bottomup_function_list in

@@ -1087,6 +1087,8 @@ object
   method set_verbose: unit
   method set_show_function_timing: unit
   method set_gc_compact_function_interval: int -> unit
+  method set_lineq_instr_cutoff: int -> unit
+  method set_lineq_block_cutoff: int -> unit
   method set_vftables: unit
   method set_thumb: unit
   method set_arm_extension_registers: unit
@@ -1104,6 +1106,8 @@ object
   method get_export_dir: string
   method so_libraries: string list  (* names of so-libraries *)
   method gc_compact_function_interval: int
+  method get_lineq_instr_cutoff: int
+  method get_lineq_block_cutoff: int
 
   (* predicates *)
   method is_verbose: bool
@@ -1114,6 +1118,7 @@ object
   method has_thumb: bool
   method include_arm_extension_registers: bool
   method show_function_timing: bool
+  method is_lineq_restricted: blocks:int -> instrs:int -> bool
 
 end
 

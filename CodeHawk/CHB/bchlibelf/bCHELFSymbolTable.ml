@@ -204,7 +204,11 @@ object (self)
          (LBLOCK [STR "Unable to read the symbol table "])
 
   method set_symbol_names (t:elf_string_table_int) =
-    H.iter (fun _ e ->
+    if system_info#is_mips || system_info#is_arm then
+      H.iter (fun _ e ->
+          e#set_name (t#get_string e#get_st_name#to_int)) entries
+    else
+      H.iter (fun _ e ->
         let s_opt = t#get_string_at_address e#get_st_name in
         match s_opt with
         | Some s -> e#set_name s

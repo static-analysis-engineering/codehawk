@@ -175,6 +175,12 @@ let speclist =
      "include the function with the given address in the analysis");
     ("-fn_no_lineq", Arg.String (fun s -> add_no_lineq s),
      "do not apply linear equality analysis to the function with the given address");
+    ("-lineq_instr_cutoff",
+     Arg.Int system_settings#set_lineq_instr_cutoff,
+     "maximum number of instructions for function to be analyzed with relational analysis");
+    ("-lineq_block_cutoff",
+     Arg.Int system_settings#set_lineq_block_cutoff,
+     "maximum number of basic blocks for function to be analyzed with relational analysis");
     ("-preamble_cutoff", Arg.Int system_info#set_preamble_cutoff,
      "preamble cutoff factor for generating function entry points");
     ("-save_cfgs", Arg.Unit (fun () -> savecfgs := true),
@@ -720,38 +726,65 @@ let main () =
       let _ = system_info#set_elf in
       let _ = system_info#set_mips in
       let _ = load_bcdictionary () in
+      let _ = pr_timing [STR "bcdictionary loaded"] in
       let _ = load_bdictionary () in
+      let _ = pr_timing [STR "bdictionary loaded"] in
       let _ = load_bc_files () in
+      let _ = pr_timing [STR "bc files loaded"] in
       let _ = system_info#initialize in
+      let _ = pr_timing [STR "system info initialized"] in
       let _ = load_interface_dictionary () in
+      let _ = pr_timing [STR "interface dictionary loaded"] in
       let _ = load_mips_dictionary () in
+      let _ = pr_timing [STR "mips dictionary loaded"] in
       let _ = global_system_state#initialize in
+      let _ = pr_timing [STR "global system state initialized"] in
       let _ = file_metrics#load_xml in
+      let _ =
+        pr_timing [
+            STR "file metrics loaded (index ";
+            INT file_metrics#get_index;
+            STR ")"] in
       let _ = load_elf_files () in
+      let _ = pr_timing [STR "elf files loaded"] in
       let _ =
         List.iter
           (fun f -> parse_cil_file ~removeUnused:false f) system_info#ifiles in
+      let _ =
+        if (List.length system_info#ifiles > 0) then
+          pr_timing [STR "c header files parsed"] in
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let _ = disassemble_mips_sections () in
+      let _ = pr_timing [STR "elf sections disassembled"] in
       let _ = construct_functions_mips () in
+      let _ = pr_timing [STR "functions constructed"] in
       let _ = mips_assembly_functions#inline_blocks in
       let _ = analyze_mips starttime in
+      let _ = pr_timing [STR "analysis is finished"] in
       let _ =
         file_metrics#set_disassembly_results
           (get_mips_disassembly_metrics ()) in
       begin
-	save_functions_list ();
 	save_system_info ();
+        pr_timing [STR "system info saved"];
 	save_file_results ();
+        pr_timing [STR "file results saved"];
 	save_global_state ();
+        pr_timing [STR "global state saved"];
         mips_analysis_results#save;
+        pr_timing [STR "analysis results saved"];
         save_mips_assembly_instructions ();
+        pr_timing [STR "assembly instructions saved"];
         save_mips_dictionary ();
+        pr_timing [STR "mips dictionary saved"];
         save_bc_files ();
         save_interface_dictionary ();
+        pr_timing [STR "interface dictionary saved"];
         save_bcdictionary ();
+        pr_timing [STR "bcdictionary saved"];
         save_bdictionary ();
+        pr_timing [STR "bdictionary saved"];
         (file_output#saveFile
            (get_asm_listing_filename ())
            (STR ((!BCHMIPSAssemblyInstructions.mips_assembly_instructions)#toString ())));
@@ -759,6 +792,7 @@ let main () =
           (get_orphan_code_listing_filename ())
 	  (STR ((BCHMIPSAssemblyFunctions.mips_assembly_functions#dark_matter_to_string)));
 	save_log_files logcmd;
+        pr_timing [STR "log files saved"];
 	exit 0
       end
 
