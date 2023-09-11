@@ -196,7 +196,9 @@ object (self)
 
   method set_function_entry_points =
     List.iter (fun e ->
-        if e#is_function && e#has_address && system_info#is_arm then
+        if e#is_function
+           && e#has_address
+           && (system_info#is_arm || system_info#is_mips) then
           let fndata = functions_data#add_function e#get_address in
           begin
             fndata#set_library_stub;

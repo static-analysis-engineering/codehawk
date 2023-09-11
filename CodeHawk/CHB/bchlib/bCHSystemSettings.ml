@@ -81,6 +81,8 @@ object (self)
   val mutable verbose = false
   val mutable show_function_timing = false
   val mutable gc_compact_function_interval = 0
+  val mutable lineq_instr_cutoff = 0
+  val mutable lineq_block_cutoff = 0
   val mutable thumb = false
   val mutable arm_extension_registers = false
   val mutable jni_enabled = false
@@ -103,6 +105,23 @@ object (self)
     gc_compact_function_interval <- count
 
   method gc_compact_function_interval = gc_compact_function_interval
+
+  method set_lineq_instr_cutoff (n: int) = lineq_instr_cutoff <- n
+
+  method get_lineq_instr_cutoff = lineq_instr_cutoff
+
+  method set_lineq_block_cutoff (n: int) = lineq_block_cutoff <- n
+
+  method get_lineq_block_cutoff = lineq_block_cutoff
+
+  method is_lineq_restricted ~(blocks: int) ~(instrs: int): bool =
+    let icutoff = self#get_lineq_instr_cutoff in
+    let bcutoff = self#get_lineq_block_cutoff in
+    match (bcutoff > 0, icutoff > 0) with
+    | (false, false) -> false
+    | (false, true) -> instrs > icutoff
+    | (true, false) -> blocks > bcutoff
+    | _ -> (blocks > bcutoff) || (instrs > icutoff)
 
   method set_arm_extension_registers = arm_extension_registers <- true
 

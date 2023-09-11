@@ -399,7 +399,9 @@ let set_library_stub_name faddr =
           else
             chlog#add "no stub name found" addr#toPretty
         else
-          chlog#add "no string match for stub" faddr#toPretty
+          chlog#add
+            "no string match for stub"
+            (LBLOCK [faddr#toPretty; STR ": "; STR bytestring])
   else
     chlog#add "faddr is not a program address" faddr#toPretty
 

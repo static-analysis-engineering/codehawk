@@ -397,13 +397,17 @@ let analyze_mips starttime =
            else
              let _ = count := !count + 1 in
              try
-               analyze_mips_function faddr f !count
+               analyze_mips_function faddr f !count;
+               pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
              with
              | Failure s -> functionfailure "Failure" faddr (STR s)
              | IO.No_more_input ->
                 begin
-                  pr_debug [ STR "Function failure for " ; faddr#toPretty ;
-                             STR ": No more input" ; NL ];
+                  pr_debug [
+                      STR "Function failure for ";
+                      faddr#toPretty;
+                      STR ": No more input";
+                      NL];
                   raise IO.No_more_input
                 end
              | Invalid_argument s ->
@@ -443,7 +447,9 @@ let analyze_arm_function faddr f count =
   let fstarttime = Unix.gettimeofday () in
   let finfo = load_function_info faddr in
   let islarge =
-    ((List.length f#get_blocks)) > 200 || (f#get_instruction_count > 5000) in
+    system_settings#is_lineq_restricted
+      ~blocks:(List.length f#get_blocks)
+      ~instrs:f#get_instruction_count in
   let _ = translate_arm_assembly_function f in
   if arm_chif_system#has_arm_procedure faddr then
     let _ = record_arm_loop_levels faddr in
