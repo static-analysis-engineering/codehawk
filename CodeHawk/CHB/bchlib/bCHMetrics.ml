@@ -43,6 +43,7 @@ open BCHLibTypes
 open BCHMetricsHandler
 open BCHPreFileIO
 open BCHSystemInfo
+open BCHSystemSettings
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -364,33 +365,35 @@ object (self)
       List.sort
         (fun r1 r2 -> Stdlib.compare r2.fres_addr r1.fres_addr) !fnResults in
     let fileRun = {
-      ffrun_index = index ;
-      ffrun_time = runtime ;
-      ffrun_propagation_time = propagation_time ;
-      ffrun_ftime = self#get_function_runtime ;
-      ffrun_fns_analyzed = fns_analyzed ; 
-      ffrun_vc_complexity = self#get_vc_complexity ;
-      ffrun_skips = skips ;
-      ffrun_resets = resets ;
-      ffrun_nonrel = nonrelational ;
-      ffrun_fns = List.length functions_data#get_function_entry_points ;
-      ffrun_delta_instrs = self#get_delta_instrs ;
-      ffrun_unresolved_calls = self#get_unresolved_calls ;
-      ffrun_unresolved_jumps = self#get_unresolved_jumps ;
-      ffrun_delta_vars = self#get_delta_vars ;
+      ffrun_index = index;
+      ffrun_time = runtime;
+      ffrun_propagation_time = propagation_time;
+      ffrun_ftime = self#get_function_runtime;
+      ffrun_fns_analyzed = fns_analyzed;
+      ffrun_vc_complexity = self#get_vc_complexity;
+      ffrun_skips = skips;
+      ffrun_resets = resets;
+      ffrun_nonrel = nonrelational;
+      ffrun_fns = List.length functions_data#get_function_entry_points;
+      ffrun_delta_instrs = self#get_delta_instrs;
+      ffrun_unresolved_calls = self#get_unresolved_calls;
+      ffrun_unresolved_jumps = self#get_unresolved_jumps;
+      ffrun_delta_vars = self#get_delta_vars;
       ffrun_delta_invs = self#get_delta_invs 
     } in
     let metricsLst = List.map (fun f -> f.fres_results) fnResults in
-    { ffres_stable = (fns_analyzed = 0) ;
-      ffres_time = totaltime +. runtime  ;
-      ffres_runs = fileRun :: runs ;
-      ffres_functions = fnResults ;
-      ffres_totals = compute_totals metricsLst ;
-      ffres_aggregate = compute_aggregate_metrics metricsLst ;
-      ffres_disassembly = disassembly_metrics ;
-      ffres_userdata = get_userdata_metrics () ;
+    { ffres_stable = (fns_analyzed = 0);
+      ffres_time = totaltime +. runtime ;
+      ffres_runs = fileRun :: runs;
+      ffres_functions = fnResults;
+      ffres_totals = compute_totals metricsLst;
+      ffres_aggregate = compute_aggregate_metrics metricsLst;
+      ffres_disassembly = disassembly_metrics;
+      ffres_userdata = get_userdata_metrics ();
       ffres_idadata = {
-          ida_function_entry_points = self#get_ida_function_entry_points}
+          ida_function_entry_points = self#get_ida_function_entry_points};
+      ffres_fns_included = included_functions ();
+      ffres_fns_excluded = excluded_functions ()
     }
 
   method write_xml_analysis_stats (node:xml_element_int) =

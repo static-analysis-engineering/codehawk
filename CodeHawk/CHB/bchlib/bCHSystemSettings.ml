@@ -40,8 +40,14 @@ open BCHUtilities
 
 
 let fns_included = ref []
-let include_function s = fns_included := s :: !fns_included
+let include_function (s: string) = fns_included := s :: !fns_included
 let included_functions () = !fns_included
+
+
+let fns_excluded = ref []
+let exclude_function (s: string) = fns_excluded := s :: !fns_excluded
+let excluded_functions () = !fns_excluded
+
 
 (* -------------------------------------------------------------------------
  * Command-line switches:

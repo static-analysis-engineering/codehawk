@@ -1206,6 +1206,7 @@ class type functions_data_int =
     (* accessors *)
     method get_functions: function_data_int list
     method get_function_entry_points: doubleword_int list
+    method get_inlined_function_entry_points: doubleword_int list
     method get_library_stubs: doubleword_int list
     method get_function: doubleword_int -> function_data_int
     method get_ida_provided_functions: function_data_int list
@@ -3922,7 +3923,9 @@ type file_results_t = {
   ffres_aggregate: aggregate_metrics_t;
   ffres_disassembly: disassembly_metrics_t;
   ffres_userdata: userdata_metrics_t;
-  ffres_idadata: ida_data_t
+  ffres_idadata: ida_data_t;
+  ffres_fns_included: string list;
+  ffres_fns_excluded: string list;
 }
 
 

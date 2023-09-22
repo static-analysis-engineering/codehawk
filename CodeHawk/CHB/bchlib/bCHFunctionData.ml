@@ -239,8 +239,11 @@ object (self)
 
   method get_functions = H.fold (fun _ v a -> v::a) table []
 
+  method get_inlined_function_entry_points =
+    self#retrieve_addresses (fun f -> f#is_inlined)
+
   method get_function_entry_points =
-    let inlinedfns = self#retrieve_addresses (fun f -> f#is_inlined) in
+    let inlinedfns = self#get_inlined_function_entry_points in
     let otherfns = self#retrieve_addresses (fun f -> not f#is_inlined) in
     (* List inlined functions before other functions, so they are guaranteed
        to have been constructed before the functions that inline them are
