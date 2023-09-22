@@ -107,10 +107,6 @@ let no_lineq = ref []
 let add_no_lineq s = no_lineq := s :: !no_lineq
 
 
-let fns_excluded = ref []
-let exclude_function s = fns_excluded := s :: !fns_excluded
-
-
 let analyze_x86_function faddr f count =
   let _ =
     if system_settings#show_function_timing then
@@ -187,6 +183,7 @@ let analyze_x86_function faddr f count =
 
 let analyze starttime =
   let fns_included = included_functions () in
+  let fns_excluded = excluded_functions () in
   let count = ref 0 in
   let failedfunctions = ref [] in
   let functionfailure failuretype faddr p =
@@ -226,7 +223,7 @@ let analyze starttime =
      else
        assembly_functions#bottom_up_itera
          (fun faddr f ->
-           if List.mem faddr#to_hex_string !fns_excluded then
+           if List.mem faddr#to_hex_string fns_excluded then
              ()
            else
              let callees = get_app_callees faddr in
@@ -510,6 +507,7 @@ let analyze_arm_function faddr f count =
 
 let analyze_arm starttime =
   let fns_included = included_functions () in
+  let fns_excluded = excluded_functions () in
   let count = ref 0 in
   let failedfunctions = ref [] in
   let functionfailure (failuretype: string) (faddr: doubleword_int) (p: pretty_t) =
@@ -549,7 +547,7 @@ let analyze_arm starttime =
      else
        arm_assembly_functions#bottom_up_itera
          (fun faddr f ->
-           if List.mem faddr#to_hex_string !fns_excluded then
+           if List.mem faddr#to_hex_string fns_excluded then
              ()
            else if file_metrics#is_stable faddr#to_hex_string []
                    && (not !analyze_all) then
@@ -613,6 +611,7 @@ let analyze_pwr_function
 
 let analyze_pwr (starttime: float) =
   let fns_included = included_functions () in
+  let fns_excluded = excluded_functions () in
   let count = ref 0 in
   begin
     (if (List.length fns_included) > 0 then
@@ -629,7 +628,7 @@ let analyze_pwr (starttime: float) =
      else
        pwr_assembly_functions#bottom_up_itera
          (fun faddr f ->
-           if List.mem faddr#to_hex_string !fns_excluded then
+           if List.mem faddr#to_hex_string fns_excluded then
              ()
            else if file_metrics#is_stable faddr#to_hex_string []
                    && (not !analyze_all) then

@@ -40,6 +40,7 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHFunctionData
 open BCHLibTypes
+open BCHSystemSettings
 open BCHUtilities
 
 module TR = CHTraceResult
@@ -1260,15 +1261,17 @@ object
   inherit [ file_results_t ] metrics_handler_t "file_results_t"
 
   method init_value = {
-      ffres_stable = false ;
-      ffres_time = 0.0 ;
-      ffres_runs = [] ;
-      ffres_functions = [] ;
-      ffres_totals = result_metrics_handler#init_value ;
-      ffres_aggregate = aggregate_metrics_handler#init_value ;
-      ffres_disassembly = disassembly_metrics_handler#init_value ;
-      ffres_userdata = userdata_metrics_handler#init_value ;
-      ffres_idadata = ida_data_handler#init_value
+      ffres_stable = false;
+      ffres_time = 0.0;
+      ffres_runs = [];
+      ffres_functions = [];
+      ffres_totals = result_metrics_handler#init_value;
+      ffres_aggregate = aggregate_metrics_handler#init_value;
+      ffres_disassembly = disassembly_metrics_handler#init_value;
+      ffres_userdata = userdata_metrics_handler#init_value;
+      ffres_idadata = ida_data_handler#init_value;
+      ffres_fns_included = included_functions ();
+      ffres_fns_excluded = excluded_functions ()
     }
 
   method write_xml (node:xml_element_int) (d:file_results_t) =
@@ -1282,30 +1285,42 @@ object
     let dNode = xmlElement "disassembly" in
     let uNode = xmlElement "userdata" in
     let iNode = xmlElement "idadata" in
+    let incNode = xmlElement "fns-included" in
+    let excNode = xmlElement "fns-excluded" in
     begin
       rrNode#appendChildren
         (List.map (fun r ->
              let rNode = xmlElement "run" in
              begin
-               file_run_handler#write_xml rNode r ;
+               file_run_handler#write_xml rNode r;
                rNode
-             end) d.ffres_runs) ;
+             end) d.ffres_runs);
       ffNode#appendChildren
         (List.map (fun f ->
              let function_results_handler =
                mk_function_results_handler f.fres_addr in
              let fNode = xmlElement "fn" in
              begin
-               function_results_handler#write_xml fNode f ;
+               function_results_handler#write_xml fNode f;
                fNode
-             end) d.ffres_functions) ;
-      result_metrics_handler#write_xml ftNode d.ffres_totals ;
-      aggregate_metrics_handler#write_xml aNode d.ffres_aggregate ;
-      disassembly_metrics_handler#write_xml dNode d.ffres_disassembly ;
-      userdata_metrics_handler#write_xml uNode d.ffres_userdata ;
-      ida_data_handler#write_xml iNode d.ffres_idadata ;
-      append [ rrNode ; ffNode ; ftNode ; aNode ; dNode ; uNode ; iNode ] ;
-      (if d.ffres_stable then set "stable" "yes") ;
+             end) d.ffres_functions);
+      result_metrics_handler#write_xml ftNode d.ffres_totals;
+      aggregate_metrics_handler#write_xml aNode d.ffres_aggregate;
+      disassembly_metrics_handler#write_xml dNode d.ffres_disassembly;
+      userdata_metrics_handler#write_xml uNode d.ffres_userdata;
+      ida_data_handler#write_xml iNode d.ffres_idadata;
+      append [rrNode; ffNode; ftNode; aNode; dNode; uNode; iNode];
+      (if (List.length d.ffres_fns_included) > 0 then
+        begin
+          incNode#setAttribute "addrs" (String.concat "," d.ffres_fns_included);
+          append [incNode]
+        end);
+      (if (List.length d.ffres_fns_excluded) > 0 then
+         begin
+           excNode#setAttribute "addrs" (String.concat "," d.ffres_fns_excluded);
+           append [excNode]
+         end);
+      (if d.ffres_stable then set "stable" "yes");
       setf "time" d.ffres_time 
     end
 
@@ -1314,11 +1329,12 @@ object
     let getc = node#getTaggedChild in
     let getf tag = float_of_string (get tag) in
     let has = node#hasNamedAttribute in
-    { ffres_stable = if has "stable" then (get "stable") = "yes" else false ;
-      ffres_time = getf "time" ;
+    { ffres_stable = if has "stable" then (get "stable") = "yes" else false;
+      ffres_time = getf "time";
       ffres_runs =
-        List.map file_run_handler#read_xml
-                 ((getc "runs")#getTaggedChildren "run") ;
+        List.map
+          file_run_handler#read_xml
+          ((getc "runs")#getTaggedChildren "run");
       ffres_functions = 
         List.map
           (fun n ->
@@ -1326,12 +1342,16 @@ object
             let function_results_handler =
               mk_function_results_handler faddr in
             function_results_handler#read_xml n)
-          ((getc "functions")#getTaggedChildren "fn") ; 
-      ffres_totals = result_metrics_handler#read_xml (getc "function-totals") ;
-      ffres_aggregate = aggregate_metrics_handler#read_xml (getc "aggregates") ;
-      ffres_disassembly = disassembly_metrics_handler#read_xml (getc "disassembly") ;
-      ffres_userdata = userdata_metrics_handler#read_xml (getc "userdata") ;
-      ffres_idadata = ida_data_handler#read_xml (getc "idadata")
+          ((getc "functions")#getTaggedChildren "fn");
+      ffres_totals = result_metrics_handler#read_xml (getc "function-totals");
+      ffres_aggregate = aggregate_metrics_handler#read_xml (getc "aggregates");
+      ffres_disassembly = disassembly_metrics_handler#read_xml (getc "disassembly");
+      ffres_userdata = userdata_metrics_handler#read_xml (getc "userdata");
+      ffres_idadata = ida_data_handler#read_xml (getc "idadata");
+      ffres_fns_included =
+        if has "fns-included" then nsplit ',' (get "addrs") else [];
+      ffres_fns_excluded =
+        if has "fns-excluded" then nsplit ',' (get "addrs") else [];
     }
 
   method toPretty (d:file_results_t) =

@@ -871,8 +871,12 @@ let construct_functions_arm () =
   let _ = pr_timing [STR "non-returning functions set"] in
   let fnentrypoints =
     if (List.length fns_included) > 0 then
-      (List.map
-         (fun faddr -> TR.tget_ok (string_to_doubleword faddr)) fns_included)
+      (* Add inlined functions to have these functions constructed before the
+         functions that inline these functions are constructed, so the cfgs are
+         available for the inlined calls *)
+      functions_data#get_inlined_function_entry_points
+      @ (List.map
+           (fun faddr -> TR.tget_ok (string_to_doubleword faddr)) fns_included)
     else
       functions_data#get_function_entry_points in
   let newfns = ref fnentrypoints in
@@ -927,7 +931,7 @@ let construct_functions_arm () =
       end
     done;
 
-    pr_timing [STR "functions constructed -- first pass"];
+    pr_timing [STR "functions constructed ("; INT !count; STR ") -- first pass"];
     arm_assembly_functions#identify_dataref_datablocks;
     pr_timing [STR "datablocks identified -- first pass"];
 
@@ -940,7 +944,7 @@ let construct_functions_arm () =
               pr_interval_timing [STR "functions constructed: "; INT !count] 60.0
             end) arm_assembly_functions#add_functions_by_preamble;
 
-        pr_timing [STR "functions constructed -- second pass"];
+        pr_timing [STR "functions constructed ("; INT !count; STR ") -- second pass"];
         arm_assembly_functions#identify_dataref_datablocks;
         pr_timing [STR "dataref blocks identified"];
       end);
