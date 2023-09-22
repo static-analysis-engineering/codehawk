@@ -45,7 +45,7 @@ let parse_cil_file ?(computeCFG=true) ?(removeUnused=true) (filename: string) =
   try
     let cilfile = Frontc.parse filename () in
     let _ = if computeCFG then Cfg.computeFileCFG cilfile in
-    let _ = if removeUnused then Rmtmps.removeUnusedTemps cilfile in
+    let _ = if removeUnused then RmUnused.removeUnused cilfile in
     let bcfile = cil_file_to_bcfile cilfile in
     begin
       bcfiles#add_bcfile bcfile;

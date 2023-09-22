@@ -52,7 +52,9 @@ let cil_fkind_to_fkind (fk: GoblintCil.fkind): fkind_t =
   | GoblintCil.FFloat -> FFloat
   | GoblintCil.FDouble -> FDouble
   | GoblintCil.FLongDouble -> FLongDouble
+  | GoblintCil.FFloat128 -> FLongDouble   (* to be changed to new type *)
   | GoblintCil.FComplexFloat -> FComplexFloat
+  | GoblintCil.FComplexFloat128 -> FComplexFloat (* to be changed to new type *)
   | GoblintCil.FComplexDouble -> FComplexDouble
   | GoblintCil.FComplexLongDouble -> FComplexLongDouble
 
