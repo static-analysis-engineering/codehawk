@@ -219,7 +219,7 @@ let save_xml_file f =
     let (target,absoluteTarget) = get_target_name () in
     let xmlfilename = absoluteTarget ^ "_cfile.xml"  in
     let dictionaryfilename = absoluteTarget ^ "_cdict.xml" in
-    let _ = (if !keepUnused then () else Rmtmps.removeUnusedTemps f) in
+    let _ = (if !keepUnused then () else RmUnused.removeUnused f) in
     let _ = Cfg.computeFileCFG f in
     let fns =
       List.fold_left (fun a g ->
