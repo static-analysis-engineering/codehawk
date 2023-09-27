@@ -382,84 +382,79 @@ object (self:'a)
     | ARMLiteralAddress dw ->
        floc#env#mk_global_variable dw#to_numerical
     | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, size) ->
-       (match offset with
-        | ARMImmOffset _ ->
-           let rvar = env#mk_arm_register_variable r in
-           let memoff =
-             match (offset,isadd) with
-             | (ARMImmOffset i, true) -> mkNumerical i
-             | (ARMImmOffset i, false) -> (mkNumerical i)#neg
-             | _ ->
-                raise
-                  (BCH_failure
-                     (LBLOCK [
-                          STR "to_variable: offset not implemented: ";
-                          self#toPretty])) in
-           floc#get_memory_variable_1 ~size ~align rvar memoff
-        | ARMShiftedIndexOffset _ ->
-           let rvar = env#mk_arm_register_variable r in
-           (match (offset, isadd) with
-            | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
-               let optscale =
-                 match srt with
-                 | ARMImmSRT (SRType_LSL, 2) -> Some 4
-                 | ARMImmSRT (SRType_LSL, 0) -> Some 1
-                 | _ -> None in
-               (match optscale with
-                | Some scale ->
-                   let ivar = env#mk_arm_register_variable ivar in
-                   if scale = 1 then
-                     let rx =
-                       floc#inv#rewrite_expr
-                         (XVar rvar) floc#env#get_variable_comparator in
-                     let ivax =
-                       floc#inv#rewrite_expr
-                         (XVar ivar) floc#env#get_variable_comparator in
-                     let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
-                     (match xoffset with
-                      | XConst (IntConst n) ->
-                         floc#env#mk_global_variable ~size n
-                      | _ ->
-                         let _ =
-                           if collect_diagnostics () then
-                             ch_diagnostics_log#add
-                               "shifted index offset memory variable"
-                               (LBLOCK [
-                                    self#toPretty;
-                                    STR "; rx: ";
-                                    x2p rx;
-                                    STR ": ivax: ";
-                                    x2p ivax]) in
-                         env#mk_unknown_memory_variable "operand")
-                   else
-                     floc#get_memory_variable_3 ~size rvar ivar scale (mkNumerical i)
-                | _ ->
-                   let _ =
-                     if collect_diagnostics () then
-                       ch_diagnostics_log#add
-                         "unknown memory variable"
-                         (LBLOCK [
-                              STR "ARMShiftedIndexOffset without scale: ";
-                              self#toPretty]) in
-                   env#mk_unknown_memory_variable "operand")
-            | _ ->
-               let _ =
-                 if collect_diagnostics () then
-                   ch_diagnostics_log#add
-                     "unknonwn memory variable"
-                     (LBLOCK [
-                          STR "ARMShiftedIndexOffset not recognized: ";
-                          self#toPretty]) in
-               env#mk_unknown_memory_variable "operand")
-        | _ ->
-           let _ =
-             if collect_diagnostics () then
-               ch_diagnostics_log#add
-                 "unknown memory variable"
-                 (LBLOCK [
-                      STR "ARMOffsetAddress not recognized: ";
-                      self#toPretty]) in
-           env#mk_unknown_memory_variable "operand")
+       let (var, trace) =
+         (match offset with
+          | ARMImmOffset _ ->
+             let rvar = env#mk_arm_register_variable r in
+             let memoff =
+               match (offset,isadd) with
+               | (ARMImmOffset i, true) -> mkNumerical i
+               | (ARMImmOffset i, false) -> (mkNumerical i)#neg
+               | _ ->
+                  raise
+                    (BCH_failure
+                       (LBLOCK [
+                            STR "to_variable: offset not implemented: ";
+                            self#toPretty])) in
+             (floc#get_memory_variable_1 ~size ~align rvar memoff,
+              [STR "ARMImmOffset"; STR "memory-variable-1"])
+          | ARMShiftedIndexOffset _ ->
+             let rvar = env#mk_arm_register_variable r in
+             (match (offset, isadd) with
+              | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
+                 let optscale =
+                   match srt with
+                   | ARMImmSRT (SRType_LSL, 2) -> Some 4
+                   | ARMImmSRT (SRType_LSL, 0) -> Some 1
+                   | _ -> None in
+                 (match optscale with
+                  | Some scale ->
+                     let ivar = env#mk_arm_register_variable ivar in
+                     if scale = 1 then
+                       let rx =
+                         floc#inv#rewrite_expr
+                           (XVar rvar) floc#env#get_variable_comparator in
+                       let ivax =
+                         floc#inv#rewrite_expr
+                           (XVar ivar) floc#env#get_variable_comparator in
+                       let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
+                       (match xoffset with
+                        | XConst (IntConst n) ->
+                           (floc#env#mk_global_variable ~size n,
+                            [STR "ARMShiftedIndexOffset"; STR "explicit"])
+                        | _ ->
+                           (env#mk_unknown_memory_variable "operand",
+                            [STR "ARMShiftedIndexOffset";
+                             self#toPretty;
+                             STR "; rx: ";
+                             x2p rx;
+                             STR ": ivax: ";
+                             x2p ivax]))
+                     else
+                       (floc#get_memory_variable_3
+                          ~size rvar ivar scale (mkNumerical i),
+                        [STR "ARMShiftedIndexOffset";
+                         self#toPretty;
+                         STR "memory-variable-3"])
+                  | _ ->
+                     (env#mk_unknown_memory_variable "operand",
+                      [STR "ARMShiftedIndexOffset"; STR "no scale"; self#toPretty]))
+              | _ ->
+                 (env#mk_unknown_memory_variable "operand",
+                  [STR "ARMShiftedIndexOffset"; STR "unsupported"; self#toPretty]))
+          | _ ->
+             (env#mk_unknown_memory_variable "operand",
+              [STR "ARMOffsetAddress"; STR "unsupported"; self#toPretty])) in
+       let _ =
+         if (env#is_unknown_memory_variable var) || var#isTemporary then
+           chlog#add
+             "unknown memory location"
+             (LBLOCK (
+                  [floc#l#toPretty; STR ". "]
+                  @ [List.hd trace]
+                  @ [STR ": "]
+                  @ (List.tl trace))) in
+       var
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
        env#mk_arm_register_variable r
     | _ ->
