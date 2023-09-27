@@ -7,7 +7,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,9 +41,16 @@ open XprTypes
 
 val xzero: xpr_t
 val xone: xpr_t
+val xtrue: xpr_t
+val xfalse: xpr_t
+val xnegone: xpr_t
+val xrnd: xpr_t
+val xi_unknown: xpr_t
 
 val mk_ix: int -> xpr_t
 val mk_nx: numerical_t -> xpr_t
+
+val mk_neg: xpr_t -> xpr_t
 
 val mk_var: string -> variable_t
 
