@@ -66,7 +66,7 @@ open BCHARMTypes
 
 
 let testname = "bCHARMJumptableTest"
-let lastupdated = "2023-05-08"
+let lastupdated = "2023-09-27"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -109,7 +109,6 @@ let jt_setup_thumb hexbase bytes: arm_jumptable_int TR.traceresult =
       let instrlen = currentpos - prevpos in
       let instrbytes = String.sub bytestring prevpos instrlen in
       let instr = add_instruction prevpos iaddr opcode instrbytes in
-      let _ = pr_debug [iaddr#toPretty; STR "  "; instr#toPretty; NL] in
       let optagg = TF.identify_arm_aggregate ch instr in
       match optagg with
       | Some agg -> aggregate := Some agg
@@ -119,7 +118,7 @@ let jt_setup_thumb hexbase bytes: arm_jumptable_int TR.traceresult =
     | Some agg ->
        (match agg#kind with
         | ARMJumptable jt ->
-           let _ = pr_debug [jt#toPretty; NL; NL] in
+           (* let _ = pr_debug [jt#toPretty; NL; NL] in *)
            Ok jt
           | _ -> Error ["other aggregate found"])
     | _ ->
