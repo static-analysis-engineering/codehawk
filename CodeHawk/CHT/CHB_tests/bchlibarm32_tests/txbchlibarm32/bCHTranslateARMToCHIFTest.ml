@@ -86,7 +86,7 @@ open BCHARMTestSupport
 
 
 let testname = "bCHTranslateARMToCHIFTest"
-let lastupdated = "2023-05-08"
+let lastupdated = "2023-09-27"
 
 let x2p = xpr_formatter#pr_expr
 let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
@@ -119,7 +119,7 @@ let translate_store () =
        [("arg.0004", "R4_in"); ("arg.0008", "LR_in")]);
       ("STR", "0x1b4bc", "08608de500", [("arg.0008", "R6_in")]);
       ("STRBwb", "0x10208", "015062e500",
-       [("R2_in[-1]", "sv__( lsb R5_in)__sv"); ("R2", "sv__(R2_in - 1)__sv")]);
+       [("R2_in[-1]", "sv__(lsb R5_in)__sv"); ("R2", "sv__(R2_in - 1)__sv")]);
       ("STRwb", "0x10568", "08402de500",
        [("var.0008", "R4_in"); ("SP", "sv__(SP_in - 8)__sv")]);
       ("STRDwb1", "0x1b4bc", "f0416de100",
@@ -130,7 +130,7 @@ let translate_store () =
        [("var.0012", "R4_in");
         ("var.0008", "R5_in");
         ("SP", "sv__(SP_in - 12)__sv")]);
-      ("STRH", "0x1b4bc", "b031cde100", [("arg.0016", "R3_in")])      
+      ("STRH", "0x1b4bc", "b031cde100", [("arg.0016", "sv__(lsh R3_in)__sv")])
     ] in
   begin
     TS.new_testsuite (testname ^ "_translate_store") lastupdated;
@@ -179,7 +179,7 @@ let thumb_chif_conditionxprs () =
        "0x4f12",
        "44f6251393f87094b9f1910ff94602d8a9f6e1594847a9f6e769484700",
        3,
-       "(( lsb gvb_0x4d94_in) <= 145)")
+       "((lsb gvb_0x4d94_in) <= 145)")
     ] in
   begin
     TS.new_testsuite (testname ^ "_thumb_chif_conditionxprs") lastupdated;
@@ -234,7 +234,7 @@ let thumb_instrxdata_conditionxprs () =
        "0x4f12",
        "44f6251393f87094b9f1910ff94602d8a9f6e1594847a9f6e769484700",
        3,
-       "(( lsb gvb_0x4d94_in) <= 145)")
+       "((lsb gvb_0x4d94_in) <= 145)")
     ] in
   begin
     TS.new_testsuite (testname ^ "_thumb_instrxdata_conditionxprs") lastupdated;
