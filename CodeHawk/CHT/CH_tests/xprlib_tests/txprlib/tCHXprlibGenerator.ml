@@ -7,7 +7,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,12 +42,24 @@ module X = Xprt
 
 
 let xzero = X.zero_constant_expr
+
 let xone = X.one_constant_expr
 
+let xtrue = X.true_constant_expr
+
+let xfalse = X.false_constant_expr
+
+let xnegone = X.int_constant_expr (-1)
+
+let xrnd = X.random_constant_expr
+
+let xi_unknown = X.unknown_int_constant_expr
 
 let mk_ix (i: int) = X.num_constant_expr (mkNumerical i)
+
 let mk_nx (n: numerical_t) = X.num_constant_expr n
 
+let mk_neg (x: xpr_t) = XOp (XNeg, [x])
 
 let mk_var (name: string) = new variable_t (new symbol_t name) NUM_VAR_TYPE
 
