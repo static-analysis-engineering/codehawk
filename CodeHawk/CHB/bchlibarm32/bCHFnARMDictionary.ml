@@ -542,6 +542,7 @@ object (self)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
+         let _ = ignore (get_string_reference floc rresult) in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
@@ -578,7 +579,7 @@ object (self)
                 && floc#has_test_expr ->
          let xtgt = tgt#to_expr floc in
          let txpr = floc#get_test_expr in
-         let fxpr = XOp (XLNot, [txpr]) in
+         let fxpr = simplify_xpr (XOp (XLNot, [txpr])) in
          let csetter = floc#f#get_associated_cc_setter floc#cia in
          let tcond = rewrite_test_expr csetter txpr in
          let fcond = rewrite_test_expr csetter fxpr in
@@ -592,7 +593,7 @@ object (self)
                       (LBLOCK [STR "FnARMDictionary:Branch: "; STR csetter]))
                    (string_to_doubleword csetter))) in
          let bytestr = instr#get_bytes_ashexstring in
-         let rdefs = get_all_rdefs tcond in
+         let rdefs = (get_all_rdefs txpr) @ (get_all_rdefs tcond) in
          let (tagstring, args) =
            mk_instrx_data
              ~xprs:[txpr; fxpr; tcond; fcond; xtgt]
@@ -975,7 +976,7 @@ object (self)
          let xrm = rm#to_expr floc in
          let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
+         let xmem = XOp (XXlsb, [mem#to_expr floc]) in
          let xrmem = rewrite_expr xmem in
          let rdefs =
            [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
@@ -1055,7 +1056,7 @@ object (self)
          let xrm = rm#to_expr floc in
          let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
+         let xmem = XOp (XXlsh, [mem#to_expr floc]) in
          let xrmem = rewrite_expr xmem in
          let rdefs =
            [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
@@ -1563,7 +1564,7 @@ object (self)
       | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
          let vmem = mem#to_variable floc in
          let xaddr = mem#to_address floc in
-         let xrt = rt#to_expr floc in
+         let xrt = XOp (XXlsb, [rt#to_expr floc]) in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let xxrt = rewrite_expr xrt in
@@ -1636,7 +1637,7 @@ object (self)
       | StoreRegisterHalfword (c, rt, rn, rm, mem, _) ->
          let vmem = mem#to_variable floc in
          let xaddr = mem#to_address floc in
-         let xrt = rt#to_expr floc in
+         let xrt = XOp (XXlsh, [rt#to_expr floc]) in
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let xxrt = rewrite_expr xrt in
@@ -1757,7 +1758,7 @@ object (self)
 
       | UnsignedExtendByte (c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
-         let xrm = rm#to_expr floc in
+         let xrm = XOp (XXlsb, [rm#to_expr floc]) in
          let result = xrm in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
@@ -1774,7 +1775,7 @@ object (self)
 
       | UnsignedExtendHalfword (c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
-         let xrm = rm#to_expr floc in
+         let xrm = XOp (XXlsh, [rm#to_expr floc]) in
          let result = xrm in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in

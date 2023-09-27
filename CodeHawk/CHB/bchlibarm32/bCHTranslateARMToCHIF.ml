@@ -521,7 +521,7 @@ let translate_arm_instruction
   let bwdinvlabel = get_invariant_label ~bwd:true loc in
   let bwdinvop = OPERATION {op_name = bwdinvlabel; op_args = []} in
   let frozenAsserts =
-    List.map (fun (v,fv) -> ASSERT (EQ (v,fv)))
+    List.map (fun (v,fv) -> ASSERT (EQ (v, fv)))
       (finfo#get_test_variables ctxtiaddr) in
   let rewrite_expr floc x:xpr_t =
     let xpr = floc#inv#rewrite_expr x floc#env#get_variable_comparator in
@@ -624,6 +624,14 @@ let translate_arm_instruction
     match instr#is_in_aggregate with
     | Some dw -> (get_aggregate dw)#is_jumptable
     | _ -> false in
+  let check_storage (op: arm_operand_int) (v: variable_t) =
+    if (floc#env#is_unknown_memory_variable v) || v#isTemporary then
+      ch_error_log#add
+        "unknown storage location"
+        (LBLOCK [
+             floc#l#toPretty;
+             STR "  ";
+             STR (arm_opcode_to_string instr#get_opcode)]) in
 
   match instr#get_opcode with
 
@@ -1526,9 +1534,7 @@ let translate_arm_instruction
    * ------------------------------------------------------------------------ *)
   | LoadRegister (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
-     let rhs =
-       floc#inv#rewrite_expr (mem#to_expr floc)
-         floc#env#get_variable_comparator in
+     let rhs = mem#to_expr floc in
      let (lhs, lhscmds) = rt#to_lhs floc in
      let updatecmds =
        if mem#is_offset_address_writeback then
@@ -1559,9 +1565,7 @@ let translate_arm_instruction
    * -------------------------------------------------------------------------*)
   | LoadRegisterByte (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
-     (* let rhs = mem#to_expr floc in *)
      let rhs = XOp (XXlsb, [mem#to_expr floc]) in
-     let rhs = floc#inv#rewrite_expr rhs floc#env#get_variable_comparator in
      let (lhs, lhscmds) = rt#to_lhs floc in
      let updatecmds =
        if mem#is_offset_address_writeback then
@@ -1572,7 +1576,7 @@ let translate_arm_instruction
          baselhscmds @ defupdatecmds @ ucmds
        else
          [] in
-     let cmds = (floc#get_assign_commands lhs rhs) @updatecmds in
+     let cmds = (floc#get_assign_commands lhs rhs) @ updatecmds in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [rhs] in
      let defcmds =
@@ -1609,9 +1613,7 @@ let translate_arm_instruction
 
   | LoadRegisterExclusive (c, rt, rn, rm, mem) ->
      let floc = get_floc loc in
-     let rhs =
-       floc#inv#rewrite_expr (mem#to_expr floc)
-         floc#env#get_variable_comparator in
+     let rhs = mem#to_expr floc in
      let (lhs, lhscmds) = rt#to_lhs floc in
      let cmds = floc#get_assign_commands lhs rhs in
      let usevars = get_register_vars [rn; rm] in
@@ -1648,7 +1650,6 @@ let translate_arm_instruction
   | LoadRegisterSignedHalfword (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
      let rhs = mem#to_expr floc in
-     let rhs = floc#inv#rewrite_expr rhs floc#env#get_variable_comparator in
      let (lhs, lhscmds) = rt#to_lhs floc in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [rhs] in
@@ -2409,7 +2410,9 @@ let translate_arm_instruction
   | StoreRegister (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
      let (vmem, memcmds) = mem#to_lhs floc in
+     let _ = check_storage mem vmem in
      let xrt = rt#to_expr floc in
+     let xrt = floc#inv#rewrite_expr xrt floc#env#get_variable_comparator in
      let cmds = memcmds @ (floc#get_assign_commands vmem xrt) in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
@@ -2436,6 +2439,7 @@ let translate_arm_instruction
   | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
      let (vmem, memcmds) = mem#to_lhs floc in
+     let _ = check_storage mem vmem in
      let xrt = XOp (XXlsb, [rt#to_expr floc]) in
      let cmds = floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn; rm] in
@@ -2477,6 +2481,8 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let (vmem, memcmds) = mem#to_lhs floc in
      let (vmem2, mem2cmds) = mem2#to_lhs floc in
+     let _ = check_storage mem vmem in
+     let _ = check_storage mem2 vmem2 in
      let xrt = rt#to_expr floc in
      let xrt2 = rt2#to_expr floc in
      let cmds1 = floc#get_assign_commands vmem xrt in
@@ -2499,6 +2505,7 @@ let translate_arm_instruction
   | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
      let floc = get_floc loc in
      let (vmem,memcmds) = mem#to_lhs floc in
+     let _ = check_storage mem vmem in
      let (vrd, vrdcmds) = rd#to_lhs floc in
      let xrt = rt#to_expr floc in
      let cmds = floc#get_assign_commands vmem xrt in
@@ -2512,7 +2519,8 @@ let translate_arm_instruction
   | StoreRegisterHalfword (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
      let (vmem, memcmds) = mem#to_lhs floc in
-     let xrt = rt#to_expr floc in
+     let _ = check_storage mem vmem in
+     let xrt = XOp (XXlsh, [rt#to_expr floc]) in
      let cmds = floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
@@ -3216,6 +3224,7 @@ let translate_arm_instruction
   | VStoreRegister(c, dd, rn, mem) ->
      let floc = get_floc loc in
      let (vmem, memcmds) = mem#to_lhs floc in
+     let _ = check_storage mem vmem in
      let xdd = dd#to_expr floc in
      let cmds = memcmds @ (floc#get_abstract_commands vmem ()) in
      let usevars = get_register_vars [dd; rn] in
