@@ -61,9 +61,9 @@ let get_struct expr =
   match expr with
   | XConst (IntConst n) -> 
      SConst n
-  | XOp (XNumRange, [XConst (IntConst lb) ; XConst (IntConst ub) ]) ->
+  | XOp (XNumRange, [XConst (IntConst lb); XConst (IntConst ub)]) ->
      SRange (lb, ub)
-  | XOp (XNumRange, [XConst (IntConst lb) ; _ ]) ->
+  | XOp (XNumRange, [XConst (IntConst lb); _]) ->
      SLBRange lb
   | XOp (XNumRange, [ _ ; XConst (IntConst ub)]) ->
      SUBRange ub
@@ -106,10 +106,10 @@ let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
   | XOp (XLNot, [e1]) ->
      let (m, s) = sim_expr m e1 in reduce_logical_not m s
   | XOp (XXlsb, [e1]) ->
-     let (m, s) = sim_expr m e1 in reduce_lsb m s
+     let (m, s) = sim_expr m e1 in reduce_xlsb m s
   | XOp (XXlsh, [e1]) ->
-     let (m, s) = sim_expr m e1 in reduce_lsh m s
-  | XOp ( op, [e1 ; e2] ) ->
+     let (m, s) = sim_expr m e1 in reduce_xlsh m s
+  | XOp (op, [e1; e2]) ->
      let (m1,s1) = sim_expr m e1 in
      let (m2,s2) = sim_expr m e2 in
      let m = m1 || m2 in
@@ -148,29 +148,13 @@ let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
      (m, XAttr (d,s))
   | _ -> (m, e)
 
-and reduce_neg m e1 =
+
+and reduce_neg (m: bool) (e1: xpr_t): (bool * xpr_t) =
   let default () = (m, XOp (XNeg, [e1])) in
   match e1 with
   | XConst (IntConst num) -> (true, XConst (IntConst num#neg))
   | _ -> default ()
 
-and reduce_lsb m e1 =
-  let default () = (m, XOp (XXlsb, [e1])) in
-  match e1 with
-  | XConst (IntConst num) when num#leq (mkNumerical 255) ->
-     (true, e1)
-  | XOp (XXlsb, [ee1]) -> (true, e1)
-  | XOp (XXlsh, [ee1]) -> (true, XOp (XXlsb, [ee1]))
-  | _ -> default ()
-
-and reduce_lsh m e1 =
-  let default () = (m, XOp (XXlsh, [e1])) in
-  match e1 with
-  | XConst (IntConst num) when num#leq (mkNumerical 65535) ->
-     (true, e1)
-  | XOp (XXlsh, [ee1]) -> (true, e1)
-  | XOp (XXlsb, [ee1]) -> (true, e1)
-  | _ -> default ()
        
 and reduce_max m e1 e2 =
   let default () = (m, XOp (Xf "max", [ e1 ; e2 ])) in 
@@ -199,116 +183,146 @@ and reduce_max_list m l =
      | _ -> default ()
               
 	
-and reduce_plus m e1 e2 =
-  let default () = (m, XOp (XPlus, [e1 ; e2])) in
-  let ne n = num_constant_expr n in
-  let nr n1 n2 = XOp (XNumRange, [ num_constant_expr n1 ; num_constant_expr n2]) in
-  let rs op args = sim_expr true (XOp (op, args)) in
-  if is_zero e1 then (true, e2)                           (* x + 0 = x *)
-  else if is_zero e2 then (true, e1)                      (* 0 + x = x *)
-  else if is_random e1 then (true, random_constant_expr)
-  else if is_random e2 then (true, random_constant_expr)
-  else
-    match (e1,e2) with
-    | (x, XOp (XMinus, [y ; z]))                                     (* x + (y-x) ~> y *)
-         when syntactically_equal x z -> (true, y)
-    | (XOp (XMinus, [y ; x]), z) when syntactically_equal x z ->
-       (true, y)                                                      (* (y-x) + x ~> y *)
+and reduce_plus (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
+  let default () = (m, XOp (XPlus, [e1; e2])) in                 (* no change *)
+  let ne (n: numerical_t) = num_constant_expr n in
+  let nr (n1: numerical_t) (n2: numerical_t) =
+    XOp (XNumRange, [num_constant_expr n1; num_constant_expr n2]) in
+  let rs (op: xop_t) (args: xpr_t list) =
+    sim_expr true (XOp (op, args)) in
 
-    | (XOp (XPlus, [ x ; y ]), XOp (XMinus, [ z ; t ])) when syntactically_equal y t ->
-       rs XPlus [ x ; z]                               (*  (x + y) + (z - y)  ~> x + z  *)
+  if is_zero e1 then
+    (* x + 0 = x *)
+    (true, e2)
+
+  else if is_zero e2 then
+    (* 0 + x = x *)
+    (true, e1)
+
+  else if is_random e1 then
+    (* ? + x = ? *)
+    (true, random_constant_expr)
+
+  else if is_random e2 then
+    (* x + ? = ? *)
+    (true, random_constant_expr)
+
+  else
+    match (e1, e2) with
+
+    (* x + (y-x) ~> y *)
+    | (x, XOp (XMinus, [y; z])) when syntactically_equal x z ->
+       (true, y)
+
+    (* (y -x) + x ~> y *)
+    | (XOp (XMinus, [y ; x]), z) when syntactically_equal x z ->
+       (true, y)
+
+    (*  (x + y) + (z - y)  ~> x + z  *)
+    | (XOp (XPlus, [x; y]), XOp (XMinus, [z; t])) when syntactically_equal y t ->
+       rs XPlus [x; z]
+
+    (* (z - y) + (x + y) -> z + x *)
+    | (XOp (XMinus, [z; y]), XOp (XPlus, [x; t])) when syntactically_equal y t ->
+       rs XPlus [z; x]
       
     | _ ->
        match (get_struct e1, get_struct e2) with
-	 (SConst a, SConst b) -> 
-	 (true, ne (a#add b))                                                  (* a + b *)
-	 
-       | (SConst c, SRange(a,b))
-	 | (SRange(a,b), SConst c) ->                           (* [a,b] + c = [a+c,b+c] *)
-	  (true, nr (a#add c) (b#add c)) 
-	 
-       | (SLBRange a, SLBRange b) ->                       (* [a,_] + [b,_] ~> [(a+b),_] *)
-	  (true, XOp (XNumRange, [ne (a#add b) ; unknown_int_constant_expr]))
-	 
-       | (SLBRange a, SRange(b,c))                         (* [a,_] + [b,c] ~> [(a+b),_] *)
+
+       (* a + b *)
+       | (SConst a, SConst b) ->
+	 (true, ne (a#add b))
+
+       (* [a, b] + c = [a+c, b+c] *)
+       | (SConst c, SRange(a, b))
+	 | (SRange(a, b), SConst c) ->
+	  (true, nr (a#add c) (b#add c))
+
+       (* [a, _] + [b, _] ~> [(a+b), _] *)
+       | (SLBRange a, SLBRange b) ->
+	  (true, XOp (XNumRange, [ne (a#add b); unknown_int_constant_expr]))
+
+       (* [a, _] + [b, c] ~> [(a+b), _] *)
+       | (SLBRange a, SRange(b,c))
 	 | (SRange(b,c), SLBRange a) ->                      
-	  (true, XOp (XNumRange, [ne (a#add b) ; unknown_int_constant_expr]))
-	 
-       | (SConst a, SLBRange b) ->                             (* a + [b,_] ~> [(a+b),_] *)
-	  (true, XOp (XNumRange, [ne (a#add b) ; unknown_int_constant_expr]))
-	 
+	  (true, XOp (XNumRange, [ne (a#add b); unknown_int_constant_expr]))
+
+       (* a + [b, _] ~> [(a+b), _] *)
+       | (SConst a, SLBRange b) ->
+	  (true, XOp (XNumRange, [ne (a#add b); unknown_int_constant_expr]))
+
+       (* a + (-b) -> a - b *)
        | (_ , SConst b) when b#lt numerical_zero ->
 	  let nb = b#mult (mkNumerical (-1)) in
-	  (true, XOp (XMinus, [e1 ; ne nb]))                        (* a + (-b) -> a - b *)
-	  
-       | (_, SLScalar (XMult, b, x)) when b#equal (mkNumerical (-1))  ->
-	  rs XMinus [ e1 ; x ]                                  (* y + (-1 * x) -> y - x *)
-	 
+	  (true, XOp (XMinus, [e1 ; ne nb]))
+
+       (* y + (-1 * x) -> y - x *)
+       | (_, SLScalar (XMult, b, x)) when b#equal (mkNumerical (-1)) ->
+	  rs XMinus [e1; x]
+
+       (* (-1 * x) + y -> y - x *)
        | (SLScalar (XMult, b, x), _) when b#equal (mkNumerical (-1))  ->
-	  rs XMinus [ e2 ; x ]                                  (* (-1 * x) + y -> y - x *)
+	  rs XMinus [e2; x]
 	 
-       | (SConst a, SLScalar (XPlus, b, x))                               (* a + (b + x) *)
-	 | (SConst a, SRScalar (XPlus, x, b))                             (* a + (x + b) *)
-	 | (SLScalar (XPlus, a, x), SConst b)                             (* (a + x) + b *)
-	 | (SRScalar (XPlus, x, a), SConst b) ->                          (* (x + a) + b *)
-	  rs XPlus [ x ; ne (a#add b) ]                                  (* ~> x + (a+b) *)
+       | (SConst a, SLScalar (XPlus, b, x))                    (* a + (b + x) *)
+	 | (SConst a, SRScalar (XPlus, x, b))                  (* a + (x + b) *)
+	 | (SLScalar (XPlus, a, x), SConst b)                  (* (a + x) + b *)
+	 | (SRScalar (XPlus, x, a), SConst b) ->               (* (x + a) + b *)
+	  rs XPlus [x; ne (a#add b)]                          (* ~> x + (a+b) *)
 	 
-       | (SConst a, SLScalar (XMinus, b, x))                              (* a + (b - x) *)
-	 | (SLScalar (XMinus, b, x), SConst a) ->                         (* (b - x) + a *)
-	  rs XMinus [ ne (a#add b) ; x]                                  (* ~> (a+b) - x *)
+       | (SConst a, SLScalar (XMinus, b, x))                   (* a + (b - x) *)
+	 | (SLScalar (XMinus, b, x), SConst a) ->              (* (b - x) + a *)
+	  rs XMinus [ne (a#add b); x]                         (* ~> (a+b) - x *)
 	 
-       | (SConst a, SRScalar (XMinus, x, b))                              (* a + (x - b) *)
-	 | (SRScalar (XMinus, x, b), SConst a) ->                         (* (x - b) + a *)
-	  rs XPlus [x ; ne (a#sub b)]                                    (* ~> x + (a-b) *)
+       | (SConst a, SRScalar (XMinus, x, b))                   (* a + (x - b) *)
+	 | (SRScalar (XMinus, x, b), SConst a) ->              (* (x - b) + a *)
+	  rs XPlus [x ; ne (a#sub b)]                         (* ~> x + (a-b) *)
 	 
-       | (SLScalar (XMinus, a, x), _) ->                                  (* (a - x) + y *)
-	  rs XPlus [ XOp (XMinus, [ e2 ; x ]) ; ne a ]                 (* ~> (y - x) + a *)
+       | (SLScalar (XMinus, a, x), _) ->                       (* (a - x) + y *)
+	  rs XPlus [ XOp (XMinus, [e2; x ]); ne a]          (* ~> (y - x) + a *)
 
-       | (SRScalar (XMinus, x, a), _) ->                                  (* (x - a) + y *)
-	  rs XMinus [ XOp (XPlus, [ x ; e2 ]) ; ne a ]                 (* -> (x + y) - a *)
+       | (SRScalar (XMinus, x, a), _) ->                       (* (x - a) + y *)
+	  rs XMinus [XOp (XPlus, [x; e2 ]); ne a]           (* -> (x + y) - a *)
 
-       | (_ , SLScalar(XMinus, a, x)) ->                                  (* y + (a - x) *)
-	  rs XPlus [ XOp (XMinus, [ e1 ; x ]); ne a ]                  (* ~> (x - y) + a *)
+       | (_ , SLScalar(XMinus, a, x)) ->                       (* y + (a - x) *)
+	  rs XPlus [XOp (XMinus, [e1; x]); ne a]            (* ~> (x - y) + a *)
 
-       | (_ , SRScalar (XMinus, x, a)) ->                                 (* y + (x - a) *)
-	  rs XMinus [ XOp (XPlus, [ e1 ; x ]) ; ne a ]                 (* ~> (y + x) - a *)
+       | (_ , SRScalar (XMinus, x, a)) ->                      (* y + (x - a) *)
+	  rs XMinus [XOp (XPlus, [e1; x]); ne a]            (* ~> (y + x) - a *)
 
-       | (SLScalar (XPlus, a, x), _)                                      (* (a + x) + y *)
-	 | (SRScalar (XPlus, x, a), _) ->                                 (* (x + a) + y *)
-	  rs XPlus [ XOp (XPlus, [ x ; e2 ]) ; ne a ]                  (* ~> (x + y) + a *)
+       | (SLScalar (XPlus, a, x), _)                           (* (a + x) + y *)
+	 | (SRScalar (XPlus, x, a), _) ->                      (* (x + a) + y *)
+	  rs XPlus [XOp (XPlus, [x; e2]); ne a]             (* ~> (x + y) + a *)
 
-       | (_, SLScalar (XPlus, a, x))                                      (* y + (a + x) *)
-	 | (_, SRScalar (XPlus, x, a)) ->                                 (* y + (x + a) *)
-	  rs XPlus [ XOp (XPlus, [ e1 ; x ]) ; ne a ]                  (* ~> (x + y) + a *)
+       | (_, SLScalar (XPlus, a, x))                           (* y + (a + x) *)
+	 | (_, SRScalar (XPlus, x, a)) ->                      (* y + (x + a) *)
+	  rs XPlus [XOp (XPlus, [e1; x]); ne a]             (* ~> (x + y) + a *)
 
-       | (SRScalar (XMult, x, a), _)
-	 | (SLScalar (XMult, a, x), _) when a#equal (mkNumerical (-1)) ->
-	  rs XMinus [ e2 ; x ]                                  (* (-1 * x) + z ~> z - x *)
-
-       | (_, SRScalar (XMult, x, a))
-	 | (_, SLScalar (XMult, a, x)) when a#equal (mkNumerical (-1)) ->
-	  rs XMinus [ e1 ; x ]                                  (* z + (-1 * x) ~> z - x *)
-	 
+       (* (a * u) + (b * u) -> (a+b) * u *)
        | (SLScalar (XMult, a, XVar u), 
 	  SLScalar (XMult, b, XVar v)) ->
-	  if u#equal v                                              (* (a * u) + (b * u) *)
+	  if u#equal v
 	  then
-	    sim_expr true (XOp (XMult, [ ne (a#add b) ; XVar u]))        (* ~> (a+b) * u *)
+	    sim_expr true (XOp (XMult, [ne (a#add b); XVar u]))
 	  else
 	    default ()
 	 
        | _ -> default ()
 
-and reduce_minus m e1 e2 = 
-  let default = (m, XOp (XMinus, [e1 ; e2])) in
-  let ne n = num_constant_expr n in   
-  let rs op args = sim_expr true (XOp (op, args)) in
-  if is_zero e2 then (true, e1)                           (* x - 0 = x *)
+
+and reduce_minus (m: bool) (e1: xpr_t) (e2: xpr_t) =
+  let default () = (m, XOp (XMinus, [e1; e2])) in     (* no change *)
+  let ne (n: numerical_t) = num_constant_expr n in
+  let rs (op: xop_t) (args: xpr_t list) = sim_expr true (XOp (op, args)) in
+  if is_zero e2 then
+    (true, e1)                                            (* x - 0 = x *)
   else if syntactically_equal e1 e2 
   then
     (true, zero_constant_expr)                            (* x - x = 0 *)
-  else if is_random e1 then (true, random_constant_expr)
-  else if is_random e2 then (true, random_constant_expr)
+  else if is_random e1 then
+    (true, random_constant_expr)
+  else if is_random e2 then
+    (true, random_constant_expr)
   else
     match (e1, e2) with
     (* (x << 3) - x)  -->  (7 * x) *)
@@ -360,235 +374,320 @@ and reduce_minus m e1 e2 =
 
     | _ ->
        match (get_struct e1, get_struct e2) with
-       | (SConst a, SConst b) ->                                                  (* a - b *)
-	  (true, ne (a#sub b))    
-	 
-       | (SLBRange a, SConst b) ->                             (* [a,_] - b  ~>  [(a-b),_] *)
-	  (true, XOp (XNumRange, [ ne (a#sub b) ; unknown_int_constant_expr]))
+       | (SConst a, SConst b) ->                                     (* a - b *)
+	  (true, ne (a#sub b))
+
+       (* [a, _] - b  ~>  [(a-b), _] *)
+       | (SLBRange a, SConst b) ->
+	  (true, XOp (XNumRange, [ne (a#sub b); unknown_int_constant_expr]))
          
-       | (SConst a, SLScalar (XPlus, b, x))                                 (* a - (b + x) *)
-	 | (SConst a, SRScalar (XPlus, x, b))                               (* a - (x + b) *)
-	 | (SLScalar (XMinus, a, x), SConst b) ->                           (* (a - x) - b *)
-	  rs XMinus [ ne (a#sub b) ; x ]                                   (* ~> (a-b) - x *)
+       | (SConst a, SLScalar (XPlus, b, x))                    (* a - (b + x) *)
+	 | (SConst a, SRScalar (XPlus, x, b))                  (* a - (x + b) *)
+	 | (SLScalar (XMinus, a, x), SConst b) ->              (* (a - x) - b *)
+	  rs XMinus [ne (a#sub b); x]                         (* ~> (a-b) - x *)
 	 
-       | (SLScalar (XPlus, a, x), SConst b)                                 (* (a + x) - b *)
-	 | (SRScalar (XPlus, x, a), SConst b)                               (* (x + a) - b *)
-	 | (SConst a, SLScalar (XMinus, b, x)) ->                           (* a - (b - x) *)
-	  rs XPlus [ x ; ne (a#sub b) ]                                    (* ~> x + (a-b) *)
+       | (SLScalar (XPlus, a, x), SConst b)                    (* (a + x) - b *)
+	 | (SRScalar (XPlus, x, a), SConst b)                  (* (x + a) - b *)
+	 | (SConst a, SLScalar (XMinus, b, x)) ->              (* a - (b - x) *)
+	  rs XPlus [x; ne (a#sub b)]                          (* ~> x + (a-b) *)
 	 
-       | (SConst a, SRScalar (XMinus, x, b)) ->                             (* a - (x - b) *)
-	  rs XMinus [ ne (a#add b) ; x ]                                   (* ~> (a+b) - x *)
+       | (SConst a, SRScalar (XMinus, x, b)) ->                (* a - (x - b) *)
+	  rs XMinus [ne (a#add b); x]                         (* ~> (a+b) - x *)
 	 
-       | (SRScalar (XMinus, x, a), SConst b) ->                             (* (x - a) - b *)
-	  rs XMinus [ x ; ne (a#add b) ]                                   (* ~> x - (a+b) *)
+       | (SRScalar (XMinus, x, a), SConst b) ->                (* (x - a) - b *)
+	  rs XMinus [ x ; ne (a#add b)]                       (* ~> x - (a+b) *)
          
-       | (SLScalar (XPlus, a, x), _)                                        (* (a + x) - y *)
-	 | (SRScalar (XPlus, x, a), _) ->                                   (* (x + a) - y *)
-	  rs XPlus [ XOp (XMinus, [ x ; e2 ]) ; ne a ]                   (* ~> (x - y) + a *)
+       | (SLScalar (XPlus, a, x), _)                           (* (a + x) - y *)
+	 | (SRScalar (XPlus, x, a), _) ->                      (* (x + a) - y *)
+	  rs XPlus [XOp (XMinus, [x; e2]); ne a]            (* ~> (x - y) + a *)
          
-       | (SRScalar (XMinus, x, a), _) ->                                    (* (x - a) - y *)
-	  rs XMinus [ XOp (XMinus, [ x ; e2 ]) ; ne a ]                  (* ~> (x - y) - a *)
+       | (SRScalar (XMinus, x, a), _) ->                       (* (x - a) - y *)
+	  rs XMinus [XOp (XMinus, [x; e2]); ne a]           (* ~> (x - y) - a *)
 
        | (_, SRScalar (XPlus, x, a))
-	 | (_, SLScalar (XPlus, a, x)) ->                                   (* y - (a + x) *)
-	  rs XMinus [ XOp (XMinus, [ e1 ; x ]) ; ne a ]                  (* ~> (y - x) - a *)
+	 | (_, SLScalar (XPlus, a, x)) ->                      (* y - (a + x) *)
+	  rs XMinus [XOp (XMinus, [e1; x]); ne a]           (* ~> (y - x) - a *)
 
-       | (_, SLScalar (XMinus, a, x)) ->                                    (* y - (a - x) *)
-	  rs XMinus [ XOp (XPlus, [ e1 ; x ]) ; ne a ]                   (* ~> (y + x) - a *)
+       | (_, SLScalar (XMinus, a, x)) ->                       (* y - (a - x) *)
+	  rs XMinus [XOp (XPlus, [e1; x]); ne a]            (* ~> (y + x) - a *)
 
-       | (_, SRScalar (XMinus, x, a)) ->                                    (* y - (x - a) *)
-	  rs XPlus [ XOp (XMinus, [ e1 ; x ]) ; ne a ]                   (* ~> (y - x) + a *)
+       | (_, SRScalar (XMinus, x, a)) ->                       (* y - (x - a) *)
+	  rs XPlus [XOp (XMinus, [e1; x]); ne a]            (* ~> (y - x) + a *)
 
-       | (_, SRScalar (XMult, x, a))                                       (* y - (-1 * x) *)
-	 | (_, SLScalar (XMult, a, x)) when a#equal (mkNumerical (-1)) ->
-	  rs XPlus [ e1 ; x ]                                                  (* ~> y + x *)
+       (* y - (-1 * x) ~> y + x *)
+       | (_, SRScalar (XMult, x, a))
+       | (_, SLScalar (XMult, a, x)) when a#equal (mkNumerical (-1)) ->
+	  rs XPlus [e1; x]
 
-       | (SLScalar (XMult, a, XVar u), 
-	  SLScalar (XMult, b, XVar v)) ->
-	  if u#equal v                                                (* (a * u) - (b * u) *)
+       (* (a * u) - (b * u) ~> (a-b) * u *)
+       | (SLScalar (XMult, a, XVar u), SLScalar (XMult, b, XVar v)) ->
+	  if u#equal v
 	  then
-	    rs XMult [ ne (a#sub b) ; XVar u ]                             (* ~> (a-b) * u *)
+	    rs XMult [ne (a#sub b); XVar u]
 	  else
-	    default
+	    default ()
        | _ -> 
-	  default 
-				
-and reduce_mult m e1 e2 = 
-  let default = (m, XOp (XMult, [e1 ; e2])) in
-  let ne n = num_constant_expr n in
-  let rs op args = sim_expr true (XOp (op, args)) in
-  if (is_zero e1) || (is_zero e2)
-  then
-    (true, zero_constant_expr)                            (* x * 0 = 0 * x = 0 *)
+	  default ()
+
+
+and reduce_mult (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
+  let default () = (m, XOp (XMult, [e1; e2])) in
+  let ne (n: numerical_t) = num_constant_expr n in
+  let rs (op: xop_t) (args: xpr_t list) = sim_expr true (XOp (op, args)) in
+  if (is_zero e1) || (is_zero e2) then
+    (true, zero_constant_expr)                           (* x * 0 = 0 * x = 0 *)
   else if is_one e1
   then
-    (true, e2)                                                    (* 1 * x = x *)
+    (true, e2)                                                   (* 1 * x = x *)
   else if is_one e2
   then
-    (true, e1)                                                    (* x * 1 = x *)
-  else if is_random e1 then (true, random_constant_expr)
-  else if is_random e2 then (true, random_constant_expr)
+    (true, e1)                                                   (* x * 1 = x *)
+  else if is_random e1 then
+    (true, random_constant_expr)
+  else if is_random e2 then
+    (true, random_constant_expr)
   else
     match (get_struct e1, get_struct e2) with
-    | (SConst a, SConst b) ->                                         (* a * b *)
+    | (SConst a, SConst b) ->                                        (* a * b *)
        (true, ne (a#mult b))
 
-    | (SRange (a,b), SConst c) ->                                 (* [a,b] * c *)
-       rs XNumRange [ne (a#mult c); ne (b#mult c)]             (* ~> [a*c,b*c] *)
-      
-    | (SLBRange a, SConst c) ->                                   (* [a,_] * c *)
-       rs XNumRange [ ne (a#mult c); unknown_int_constant_expr ]  (* ~> [a*c,> *)
-      
-    | (SRScalar (XMinus, x, a), SConst b) ->                    (* (x - a) * b *)
-       let p = XOp (XMult, [ num_constant_expr b ; x ]) in                     
-       rs XMinus [ p ; ne (a#mult b) ]                       (* ~> (b*x - a*b) *)
+    (* [a, b] * c ~> [a*c, b*c] *)
+    | (SRange (a, b), SConst c) when c#geq numerical_zero ->
+       rs XNumRange [ne (a#mult c); ne (b#mult c)]
 
-    | (SConst a, SRScalar (XMinus, x, b)) ->                     (* a * (x -b) *)
-       let p = XOp (XMult, [ num_constant_expr a  ; x ]) in
-       rs XMinus [ p ; ne (a#mult b) ]                       (* -> (a*x - a*b) *)
-       
-    | (SConst a, SLScalar (XPlus, b, x)) ->     (* a * (b + x)  -> a * x + a*b *)
-       rs XPlus [ (XOp (XMult, [ ne a ; x ])) ; ne (a#mult b) ]
-    | (SConst a, SLScalar (XMult, b, x))                        (* a * (b * x) *)
-      | (SConst a, SRScalar (XMult, x ,b))                      (* a * (x * b) *)
-      | (SLScalar (XMult, b, x), SConst a)                      (* (b * x) * a *)
-      | (SRScalar (XMult, x, b), SConst a) ->                   (* (x * b) * a *)
-       rs XMult [ne (a#mult b) ; x]                            (* ~> (a*b) * x *)
-      
-    | (SConst a, SLScalar (XDiv, b, x))                         (* a * (b / x) *)
-      | (SLScalar (XDiv, a, x), SConst b) ->                    (* (a / x) * b *)
-       rs XDiv [ne (a#mult b) ; x]                             (* ~> (a*b) / x *)
-      
-    | (SConst a, SRScalar (XDiv, x, b))                         (* a * (x / b) *)
-      | (SRScalar (XDiv, x, b), SConst a)                       (* (x / b) * a *)
-	 when divides b a ->
-       rs XMult [ne (a#div b) ; x]                             (* ~> (a/b) * x *)
+    (* [a, _] * c ~> [a*c, > *)
+    | (SLBRange a, SConst c) when c#geq numerical_zero ->
+       rs XNumRange [ne (a#mult c); unknown_int_constant_expr]
 
-    | (_, SConst a) -> rs XMult [ e2 ; e1 ]                  (* x * a -> a * x *)
+    (* (x - a) * b ->  ~> (b * x) - a*b) *)
+    | (SRScalar (XMinus, x, a), SConst b) ->
+       let p = XOp (XMult, [num_constant_expr b; x]) in
+       rs XMinus [p; ne (a#mult b)]
+
+    (* a * (x -b) -> (a*x - a*b) *)
+    | (SConst a, SRScalar (XMinus, x, b)) ->
+       let p = XOp (XMult, [num_constant_expr a; x]) in
+       rs XMinus [p; ne (a#mult b)]
+
+    (* a * (b + x)  -> a * x + a*b *)
+    | (SConst a, SLScalar (XPlus, b, x)) ->
+       rs XPlus [(XOp (XMult, [ne a; x])); ne (a#mult b)]
+
+    | (SConst a, SLScalar (XMult, b, x))                       (* a * (b * x) *)
+      | (SConst a, SRScalar (XMult, x ,b))                     (* a * (x * b) *)
+      | (SLScalar (XMult, b, x), SConst a)                     (* (b * x) * a *)
+      | (SRScalar (XMult, x, b), SConst a) ->                  (* (x * b) * a *)
+       rs XMult [ne (a#mult b); x]                            (* ~> (a*b) * x *)
+
+    | (_, SConst a) -> rs XMult [e2; e1]                    (* x * a -> a * x *)
       
-    | _ -> default
+    | _ -> default ()
 	 
 				
-and reduce_div m e1 e2 = 
-  let default = (m, XOp (XDiv, [e1 ; e2])) in
-  let ne n = num_constant_expr n in
-  let rs op args = sim_expr true (XOp (op, args)) in
+and reduce_div (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
+  let default () = (m, XOp (XDiv, [e1; e2])) in
+  let ne (n: numerical_t) = num_constant_expr n in
+  let rs (op: xop_t) (args: xpr_t list) = sim_expr true (XOp (op, args)) in
   if (is_zero e1)
   then
-    (true, zero_constant_expr)                                          (* 0 / x = 0 *)
+    (true, zero_constant_expr)                                   (* 0 / x = 0 *)
   else if is_one e2
   then
-    (true, e1)                                                          (* x / 1 = x *)
+    (true, e1)                                                   (* x / 1 = x *)
   else if is_zero e2
-  then default                                                  (* x / 0 ~~> warning *)
+  then
+    default ()                                           (* x / 0 ~~> warning *)
   else
     match (e1,e2) with
-    | (XOp (XPlus, [ ee1 ; ee2 ]), c) when is_intconst c ->          (*  (x + y)/c -> x/c + y/c *)
-       sim_expr true (XOp (XPlus, [ XOp (XDiv, [ ee1 ; c ]) ; XOp (XDiv, [ ee2 ; c ]) ]))
     | _ ->
        match (get_struct e1, get_struct e2) with
-	 (SConst a, SConst b) ->                                              (* a/b *)
-	 (true, ne (a#div b)) 
-       | (SLScalar (XMult, a, x), SConst b)                            (* (a * x)/b  *)             
-	 | (SRScalar (XMult, x, a), SConst b)                          (* (x * a)/b  *)
+       | (SConst a, SConst b) ->                                       (* a/b *)
+	  (true, ne (a#div b))
+
+       | (SLScalar (XMult, a, x), SConst b)                      (* (a * x)/b *)
+	 | (SRScalar (XMult, x, a), SConst b)                    (* (x * a)/b *)
 	    when divides b a ->
-	  rs XMult [ ne (a#div b) ; x ]                              (* ~> (a/b) * x *)
+	  rs XMult [ne (a#div b); x]                          (* ~> (a/b) * x *)
 	 
-       | _ -> default
+       | _ -> default ()
+
 	    
-and reduce_mod m e1 e2 = 
-  let default = (m, XOp (XMod, [e1 ; e2])) in
-  let ne n = num_constant_expr n in
-  if (is_zero e1)
+and reduce_mod (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
+  let default () = (m, XOp (XMod, [e1; e2])) in
+  let ne (n: numerical_t) = num_constant_expr n in
+  if (is_zero e2) then
+    default ()                                           (* x % 0 ~~> warning *)
+  else if (is_zero e1)
   then
     (true, zero_constant_expr)                            (* 0 % x = 0 *)
   else if is_one e2
   then
     (true, zero_constant_expr)                            (* x % 1 = 0 *)
-  else if is_zero e2
-  then default                                            (* x % 0 ~~> warning *)
   else
     match (get_struct e1, get_struct e2) with
     | (SConst a, SConst b) ->                             (* a%b *)
        let result = a#modulo b in
        (true, ne result)
+
+    (* x % b -> [0; (b-1)] *)
     | (_, SConst b) when b#geq numerical_zero ->
        let ub = b#sub numerical_one in
        (true, XOp (XNumRange, [zero_constant_expr; num_constant_expr ub]))
-    | _ -> default
+
+    | _ -> default ()
 
 
-and reduce_lt m e1 e2 = 
-  let default = (m, XOp (XLt, [e1 ; e2])) in
-  let ne n = num_constant_expr n in
-  let be b = (true, XConst (BoolConst b)) in
-  let rand = (true, XConst (XRandom)) in
-  let rs op args = sim_expr true (XOp (op, args)) in
+and reduce_xlsb (m: bool) (e1: xpr_t): (bool * xpr_t) =
+  let default () = (m, XOp (XXlsb, [e1])) in
+  match e1 with
+  | XConst (IntConst num) when num#leq (mkNumerical 255) ->
+     (true, e1)
+  | XOp (XXlsb, [ee1]) -> (true, e1)
+  | XOp (XXlsh, [ee1]) -> (true, XOp (XXlsb, [ee1]))
 
-  match (e1,e2) with
-  | (XVar v, XOp (XPlus, [ XVar w ; XConst (IntConst n) ])) 
+  (* xlsb ((xlsb x) / n) -> (xlsb x) / n *)
+  | XOp (XDiv, [XOp (XXlsb, [ee1]); XConst (IntConst num)])
+       when num#geq numerical_zero ->
+     (true, XOp (XDiv, [XOp (XXlsb, [ee1]); XConst (IntConst num)]))
+
+  (* xlsb ((xlsb x) & n) -> (xlsb x) & n *)
+  | XOp (XBAnd, [XOp (XXlsb, [ee1]); XConst (IntConst num)]) ->
+     (true, XOp (XBAnd, [XOp (XXlsb, [ee1]); XConst (IntConst num)]))
+
+  (* xlsb (x & n) -> x & n  if n < 256 *)
+  | XOp (XBAnd, [ee1; XConst (IntConst num)]) when num#leq (mkNumerical 255) ->
+     (true, XOp (XBAnd, [ee1; XConst (IntConst num)]))
+
+  (* xlsb (x relop y) -> x relop y *)
+  | XOp (xop, [ee1; ee2])
+       when (match xop with | XLt | XGt | XLe | XGe | XEq | XNe -> true
+                            | _ -> false) ->
+     (true, XOp (xop, [ee1; ee2]))
+
+  | _ -> default ()
+
+
+and reduce_xlsh (m: bool) (e1: xpr_t): (bool * xpr_t) =
+  let default () = (m, XOp (XXlsh, [e1])) in
+  match e1 with
+  | XConst (IntConst num) when num#leq (mkNumerical 65535) ->
+     (true, e1)
+  | XOp (XXlsh, [ee1]) -> (true, e1)
+  | XOp (XXlsb, [ee1]) -> (true, e1)
+  | XOp (XLsl, [XOp (XXlsb, [ee1]); XConst (IntConst num)])
+       when num#leq (mkNumerical 8) ->
+     (true, XOp (XLsl, [XOp (XXlsb, [ee1]); XConst (IntConst num)]))
+
+  (* xlsh ((xlsb x) / n) -> (xlsb x) / n *)
+  | XOp (XDiv, [XOp (XXlsb, [ee1]); XConst (IntConst num)])
+       when num#geq numerical_zero ->
+     (true, XOp (XDiv, [XOp (XXlsb, [ee1]); XConst (IntConst num)]))
+
+  (* xlsh ((xlsb x) & n) -> (xlsb x) & n *)
+  | XOp (XBAnd, [XOp (XXlsb, [ee1]); XConst (IntConst num)]) ->
+     (true, XOp (XBAnd, [XOp (XXlsb, [ee1]); XConst (IntConst num)]))
+
+  (* xlsh (x & n) -> x & n  if n < 65535 *)
+  | XOp (XBAnd, [ee1; XConst (IntConst num)]) when num#leq (mkNumerical 65535) ->
+     (true, XOp (XBAnd, [ee1; XConst (IntConst num)]))
+
+  (* xlsh ((xlsb x) + ((xlsb y) << n)) -> ((xlsb x) + ((xlsb y) << n)) if n <= 8 *)
+  | XOp (XPlus, [XOp (XXlsb, [ee1]);
+                 XOp (XLsl, [XOp (XXlsb, [ee2]); XConst (IntConst num)])])
+       when num#leq (mkNumerical 8) ->
+     (true,
+      XOp (XPlus, [XOp (XXlsb, [ee1]);
+                   XOp (XLsl, [XOp (XXlsb, [ee2]); XConst (IntConst num)])]))
+
+  | _ -> default ()
+
+
+and reduce_lt (m: bool) (e1: xpr_t) (e2: xpr_t) =
+  let default () = (m, XOp (XLt, [e1; e2])) in
+  let ne (n: numerical_t) = num_constant_expr n in
+  let be (b: bool) = (true, XConst (BoolConst b)) in
+  let rand () = (true, XConst (XRandom)) in
+  let rs (op: xop_t) (args: xpr_t list) = sim_expr true (XOp (op, args)) in
+
+  match (e1, e2) with
+
+  (* v < v + n -> true *)
+  | (XVar v, XOp (XPlus, [XVar w; XConst (IntConst n)]))
        when v#equal w && n#gt numerical_zero ->
-    be true
+     be true
 
-  | (XVar v, XOp (XPlus, [ XVar w  ; e' ])) 
-       when v#equal w ->
-     (true, XOp ( XGt, [ e' ; zero_constant_expr ]))
+  (* v < v - n -> false *)
+  | (XVar v, XOp (XMinus, [XVar w; XConst (IntConst n)]))
+       when v#equal w && n#gt numerical_zero ->
+    be false
 
-  | (XOp (XMinus, [ XVar v; XConst (IntConst a) ]),       (* (v - a) < (v - b) *)
-     XOp (XMinus, [ XVar w; XConst (IntConst b) ]))       (*  ~> a > b  *)
-       when v#equal w ->
+  (* v < v + x -> x > 0 *)
+  | (XVar v, XOp (XPlus, [XVar w; e'])) when v#equal w ->
+     (true, XOp (XGt, [e'; zero_constant_expr]))
+
+  (* (v - a) < (v - b) -> a > b  *)
+  | (XOp (XMinus, [XVar v; XConst (IntConst a)]),
+     XOp (XMinus, [XVar w; XConst (IntConst b)])) when v#equal w ->
      be (a#gt b)
 
   | _ ->
      match (get_struct e1, get_struct e2) with
-     | (SConst a, SConst b) ->                             (* a < b *)
-        be (a#lt b)
+     (* a < b *)
+     | (SConst a, SConst b) -> be (a#lt b)
 
-     | (SRange(a,b), SConst c) ->                          (* [a,b] < c *)
-	if b#lt c then be true                               (* b <  c ~> true  *)
-	else if a#geq c then be false                        (* a >= c ~> false *)
-	else rand                                            (*  ~> ? *)
-
-     | (SConst c, SRange(a,b)) ->                          (* c < [a,b] *)
-	if c#lt a then be true                               (* c <  a ~> true  *)
-        else if c#geq b then be false                        (* c >= b ~> false *)
-	else rand                                            (*  ~> ? *)
-       
-     | (SConst a, SLScalar (XPlus, b, x))                  (* a < b + x *)
-       | (SConst a, SRScalar (XPlus, x ,b))                  (* a < x + b *)
-       | (SLScalar (XMinus, a, x), SConst b) ->              (* a - x < b *)
-	rs XGt [x ; ne (a#sub b)]                                 (* ~> x > (a-b) *)
-
-     | (SRScalar (XMinus, x, a), SConst b) ->              (* x + a < b *)
-	rs XLt [ x ; ne (a#add b) ]                               (* ~> x < (a+b) *)
-
-     | (SConst a, SLScalar (XMinus, b, x))                 (* a < b - x *)
-       | (SLScalar (XPlus, a, x), SConst b)                  (* a + x < b *)
-       | (SRScalar (XPlus, x, a), SConst b) ->               (* x + a < b *)
-	rs XLt [x ; ne (b#sub a)]                                 (* ~> x < (b-a) *)
-
-     | (SConst a, SRScalar (XMinus, x, b)) ->              (* a < x - b *)
-	rs XGt [x ; ne (a#add b)]                                 (* ~> x > (a+b) *)
-
-     | (SConst a, SLScalar (XMult, b, x))                  (* a < b * x *)
-       | (SConst a, SRScalar (XMult, x, b))                  (* a < x * b *)
-	  when divides b a ->
-	let op = if neg_num b then XLt else XGt in                (* b < 0 ~> [ < ] *)
-	rs op [x ; ne (a#div b)]                                (* ~> x [<|>] a/b *)
-
-     | (SLScalar (XMult, a, x), SConst b)                  (* a * x < b *)
-       | (SRScalar (XMult, x, a), SConst b)                  (* x * a < b *)
-	  when divides a b ->
-	let op = if neg_num a then XGt else XLt in                (* a < 0 ~> [ > ] *)
-	rs op [x ; ne (b#div a)]                                (* ~> x [<|>] b/a *)
-
-     | (SConst a, SRScalar (XDiv, x, b)) ->                (* a < x / b *)
-	if zero_num b                                     (* b=0 ~~> warning *)
-	then default 
+     | (SRange(a, b), SConst c) ->                              (* [a, b] < c *)
+	if b#lt c then
+          be true                                           (* b <  c ~> true *)
+	else if a#geq c then
+          be false                                         (* a >= c ~> false *)
 	else
-	  let op = if neg_num b then XLt else XGt in              (* b < 0 ~> [ < ] *)
-	  rs op [x ; ne (a#mult b)]                             (* ~> x [<|>] a*b *)
-     | _ -> default
+          rand ()                                                    (*  ~> ? *)
+
+     | (SConst c, SRange(a,b)) ->                               (* c < [a, b] *)
+	if c#lt a then
+          be true                                          (* c <  a ~> true  *)
+        else if c#geq b then
+          be false                                         (* c >= b ~> false *)
+	else
+          rand ()                                                    (*  ~> ? *)
+       
+     | (SConst a, SLScalar (XPlus, b, x))                        (* a < b + x *)
+       | (SConst a, SRScalar (XPlus, x ,b))                      (* a < x + b *)
+       | (SLScalar (XMinus, a, x), SConst b) ->                  (* a - x < b *)
+	rs XGt [x ;ne (a#sub b)]                              (* ~> x > (a-b) *)
+
+     | (SRScalar (XMinus, x, a), SConst b) ->                    (* x - a < b *)
+	rs XLt [x; ne (a#add b)]                              (* ~> x < (a+b) *)
+
+     | (SConst a, SLScalar (XMinus, b, x))                       (* a < b - x *)
+       | (SLScalar (XPlus, a, x), SConst b)                      (* a + x < b *)
+       | (SRScalar (XPlus, x, a), SConst b) ->                   (* x + a < b *)
+	rs XLt [x; ne (b#sub a)]                              (* ~> x < (b-a) *)
+
+     | (SConst a, SRScalar (XMinus, x, b)) ->                    (* a < x - b *)
+	rs XGt [x; ne (a#add b)]                              (* ~> x > (a+b) *)
+
+     | (SConst a, SLScalar (XMult, b, x))                        (* a < b * x *)
+       | (SConst a, SRScalar (XMult, x, b))                      (* a < x * b *)
+	  when divides b a ->
+	let op = if neg_num b then XLt else XGt in          (* b < 0 ~> [ < ] *)
+	rs op [x; ne (a#div b)]                             (* ~> x [<|>] a/b *)
+
+     | (SLScalar (XMult, a, x), SConst b)                        (* a * x < b *)
+       | (SRScalar (XMult, x, a), SConst b)                      (* x * a < b *)
+	  when divides a b ->
+	let op = if neg_num a then XGt else XLt in          (* a < 0 ~> [ > ] *)
+	rs op [x; ne (b#div a)]                             (* ~> x [<|>] b/a *)
+
+     | (SConst a, SRScalar (XDiv, x, b)) ->                      (* a < x / b *)
+	if zero_num b then                                 (* b=0 ~~> warning *)
+	  default ()
+	else
+	  let op = if neg_num b then XLt else XGt in        (* b < 0 ~> [ < ] *)
+	  rs op [x; ne (a#mult b)]                          (* ~> x [<|>] a*b *)
+
+     | _ -> default ()
+
 
 and reduce_le m e1 e2 = 
   let default = (m, XOp (XLe, [e1 ; e2])) in
