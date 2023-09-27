@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -126,10 +126,10 @@ object (self)
 
   method private pr_op op l =
     match l with
-    | [e1 ; e2] ->
+    | [e1; e2] ->
        let f1 = self#pr_expr e1 in
        let f2 = self#pr_expr e2 in
-       let wrap p = LBLOCK [ STR "(" ; f1 ; p ; f2 ; STR ")"] in
+       let wrap p = LBLOCK [STR "("; f1; p; f2; STR ")"] in
        begin
 	 match op with
 	 | XPlus -> wrap (STR " + ")
@@ -172,7 +172,7 @@ object (self)
        end
     | [e] ->
        let f = self#pr_expr e in
-       let wrap p = LBLOCK [STR "(" ; p ; f  ; STR ")"] in
+       let wrap p = LBLOCK [STR "("; p; f; STR ")"] in
        begin
 	 match op with
 	 | XNeg -> wrap (STR "-")
@@ -180,9 +180,9 @@ object (self)
 	 | XLNot -> wrap (STR " not ")
 	 | XNumJoin -> wrap (STR " (+) ")
 	 | XNumRange -> wrap (STR " <+> ")
-         | XXlsb -> wrap (STR " lsb ")
-         | XXlsh -> wrap (STR " lsh ")
-	 | Xf s -> LBLOCK [ STR s ; STR " (" ; f ; STR ")" ]
+         | XXlsb -> wrap (STR "lsb ")
+         | XXlsh -> wrap (STR "lsh ")
+	 | Xf s -> LBLOCK [STR s; STR " ("; f; STR ")"]
 	 | _ ->
 	    begin
 	      pr_debug [
@@ -194,19 +194,19 @@ object (self)
        end
     | [] -> 
        begin
-	 pr_debug [ STR "Empty operand list in pr_op" ];
+	 pr_debug [STR "Empty operand list in pr_op"];
 	 failwith "CExprToPretty: pr_op"
        end
       
     | _ ->
        let fs = List.map self#pr_expr l in
-       let fs = LBLOCK (List.map (fun p -> LBLOCK [ p ; STR ", " ]) fs) in
-       let wrap p = LBLOCK [ STR "(" ; p ; fs ; STR ")" ] in
+       let fs = LBLOCK (List.map (fun p -> LBLOCK [p; STR ", "]) fs) in
+       let wrap p = LBLOCK [STR "("; p; fs; STR ")"] in
        begin
 	 match op with
 	 | XLt | XGt | XLe | XGe  -> wrap (STR "ptr_op")
 	 | XNumJoin | XNumRange -> wrap (STR (xop_to_string op))
-	 | Xf s -> LBLOCK [ STR s ; pretty_print_list l self#pr_expr "(" "," ")" ]
+	 | Xf s -> LBLOCK [STR s; pretty_print_list l self#pr_expr "(" "," ")" ]
 	 | _ ->
 	    begin
 	      pr_debug [
