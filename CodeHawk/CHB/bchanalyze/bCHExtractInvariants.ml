@@ -409,6 +409,7 @@ let extract_initvar_equalities finfo iaddr domain flocinv =
   let _ = match !disequalities with [] -> () | l -> propagate_disequalities l in
   fvars
 
+
 let extract_linear_equalities 
     (finfo:function_info_int)
     (invariants:(string, (string,atlas_t) H.t) H.t) =
@@ -451,16 +452,33 @@ let extract_linear_equalities
                  NL;
                  STR "initVars: ";
                  pretty_print_list initVars (fun v -> v#toPretty) "[" "," "]"]) in
-	let domain = domain#projectOut (knownVars @ initVars) in
+        (* In case of a delay in the propagation of the address of a lhs variable,
+           it may happen that an invariant on a variable needs to be revoked and
+           replaced with a new value, after an original value has earlier been
+           established because of the missing assignment to that variable. Thus
+           knownVars cannot be taken to be final.
+
+           Perhaps this can be relaxed if there are no undefined memory references,
+           to speed up invariant extraction.
+         *)
+	let domain = domain#projectOut ((* knownVars @ *) initVars) in
 	let extVars =
           extract_external_value_equalities finfo k domain flocinv starttime in
 	let domain = domain#projectOut extVars in
 	extract_relational_facts finfo k domain) invList
   with
     TimeOut (timeUsed,nVars,nExternalVars) ->
-      pr_debug [ STR "Timeout: " ; STR (Printf.sprintf "%4.1f" timeUsed) ; STR " secs" ;
-		 STR " (" ; INT nVars ; STR "vars; " ; INT nExternalVars ; 
-		 STR " external vars)" ; NL ] 
+    pr_debug [
+        STR "Timeout: ";
+        STR (Printf.sprintf "%4.1f" timeUsed);
+        STR " secs";
+	STR " (";
+        INT nVars;
+        STR "vars; ";
+        INT nExternalVars;
+	STR " external vars)";
+        NL]
+
 
 let extract_valuesets
     (finfo:function_info_int) 
@@ -473,13 +491,18 @@ let extract_valuesets
       let varObserver = domain#observer#getNonRelationalVariableObserver in
       let vars = domain#observer#getObservedVariables in
       let knownvars = flocinv#get_known_variables in
-      let vars = List.filter (fun v -> not (v#isTmp || List.mem v knownvars)) vars in
+      let vars =
+        List.filter (fun v -> not (v#isTmp || List.mem v knownvars)) vars in
       List.iter (fun (v:variable_t) ->
 	let valueset = (varObserver v)#toValueSet in
 	if valueset#isTop then () else
 	  if valueset#removeZeroOffset#isSingleBase then
 	    let (base,offset) = valueset#removeZeroOffset#getSingleBase in
 	    let canbenull:bool = valueset#includesZero in
-	    if v#getName#equal base then () else
-	    finfo#finv#add_valueset_fact k v base offset canbenull) vars) invariants
+	    if v#getName#equal base then
+              ()
+            else
+	      finfo#finv#add_valueset_fact k v base offset canbenull)
+        vars)
+    invariants
 
