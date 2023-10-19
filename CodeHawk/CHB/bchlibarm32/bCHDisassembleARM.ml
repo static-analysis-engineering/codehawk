@@ -378,6 +378,10 @@ let disassemble_arm_sections () =
          0x678    11 ca 8c e2       ADD      R12, R12, #0x11000
          0x67c    98 f9 bc e5       LDR      PC, [R12, #2456]!
 
+     F B 0x6f9b8  01 c6 8f e2       ADR      R12, 0x16f9b8
+         0x6f9bc  1f ca 8c e2       ADD      R12, R12, #0x1f000
+         0x6f9c0  b4 fd bc e5       LDR      PC, [R12,#0xdb4]!
+
 
  *)
 let is_library_stub faddr =
@@ -402,17 +406,17 @@ let set_library_stub_name faddr =
       byte_string_to_printed_string (elf_header#get_xsubstring faddr 12) in
     let regex = Str.regexp "\\(..\\)c68fe2\\(..\\)ca8ce2\\(..\\)f\\(.\\)bce5" in
     if Str.string_match regex bytestring 0 then
-      let imm8 = "0x" ^ (Str.matched_group 1 bytestring) in
-      let imm8 = to_int imm8 in
-      let offset1 = faddr#add_int ((arm_expand_imm 0 imm8) + 8) in
-      let imm8 = "0x" ^ (Str.matched_group 2 bytestring) in
-      let imm8 = to_int imm8 in
-      let offset2 = arm_expand_imm 10 imm8 in
-      let imm8 = Str.matched_group 3 bytestring in
-      let imm4 = "0x" ^ (Str.matched_group 4 bytestring) in
-      let imm12 = imm4 ^ imm8 in
-      let imm12 = to_int imm12 in
-      let addr = offset1#add_int (offset2 + imm12) in
+      let imm8_1h = "0x" ^ (Str.matched_group 1 bytestring) in
+      let imm8_1 = to_int imm8_1h in
+      let offset1 = faddr#add_int ((arm_expand_imm 6 imm8_1) + 8) in
+      let imm8_2h = "0x" ^ (Str.matched_group 2 bytestring) in
+      let imm8_2 = to_int imm8_2h in
+      let offset2 = arm_expand_imm 10 imm8_2 in
+      let imm8_3h = Str.matched_group 3 bytestring in
+      let imm4_4h = "0x" ^ (Str.matched_group 4 bytestring) in
+      let imm12_4h = imm4_4h ^ imm8_3h in
+      let imm12_4 = to_int imm12_4h in
+      let addr = offset1#add_int (offset2 + imm12_4) in
       if functions_data#has_function_name addr then
         let fndata = functions_data#add_function faddr in
         begin
@@ -425,7 +429,19 @@ let set_library_stub_name faddr =
       else
         chlog#add
           "no stub name found"
-          (LBLOCK [faddr#toPretty; STR " -> "; addr#toPretty])
+          (LBLOCK [
+               faddr#toPretty;
+               STR " -> ";
+               addr#toPretty;
+               STR " (imm8_1h: ";
+               STR imm8_1h;
+               STR "; offset1: ";
+               offset1#toPretty;
+               STR "; offset2: ";
+               INT offset2;
+               STR "; imm12_4h: ";
+               STR imm12_4h;
+               STR ")"])
     else
       chlog#add "no string match for stub" faddr#toPretty
   else
