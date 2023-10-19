@@ -31,6 +31,7 @@ _build/
 CodeHawk/CHB/bchcmdline/chx86_analyze
 CodeHawk/CHB/bchcmdline/chx86_inspect_summaries
 CodeHawk/CHB/bchgui/chx86_gui
+CodeHawk/CHB/bchcil/parseFile
 
 # c analyzer executables
 CodeHawk/CHC/cchcmdline/canalyzer
