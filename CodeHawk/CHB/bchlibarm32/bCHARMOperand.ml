@@ -70,6 +70,19 @@ let x2p = xpr_formatter#pr_expr
 
 let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
 
+
+let cps_effect_to_string (e: cps_effect_t) =
+  match e with
+  | Interrupt_NoChange -> ""
+  | _ -> cps_effect_mfts#ts e
+
+
+let interrupt_flags_to_string (i: interrupt_flags_t) =
+  match i with
+  | IFlag_None -> ""
+  | _ -> interrupt_flags_mfts#ts i
+
+
 let dmb_option_to_string = dmb_option_mfts#ts
 
 
@@ -657,6 +670,8 @@ object (self:'a)
   method toString =
     try
       match kind with
+      | ARMCPSEffect e -> cps_effect_to_string e
+      | ARMInterruptFlags f -> interrupt_flags_to_string f
       | ARMDMBOption o -> dmb_option_to_string o
       | ARMReg r -> armreg_to_string r
       | ARMDoubleReg (r1, r2) ->
@@ -737,6 +752,14 @@ let arm_dmb_option_op (op: dmb_option_t) =
 
 let arm_dmb_option_from_int_op (option: int) =
   arm_dmb_option_op (get_dmb_option option)
+
+
+let arm_cps_effect_op (e: cps_effect_t) =
+  new arm_operand_t (ARMCPSEffect e) RD
+
+
+let arm_interrupt_flags_op (f: interrupt_flags_t) =
+  new arm_operand_t (ARMInterruptFlags f) RD
 
 
 let arm_register_op (r: arm_reg_t) (mode: arm_operand_mode_t) =
@@ -925,11 +948,13 @@ let arm_fp_constant_op (c: float) =
 
 
 let arm_absolute_op (addr:doubleword_int) (mode:arm_operand_mode_t) =
+  new arm_operand_t (ARMAbsolute addr) mode
+  (*
   if system_info#is_code_address addr then
     new arm_operand_t (ARMAbsolute addr) mode
   else
     raise (Invalid_argument ("Invalid absolute address: " ^ addr#to_hex_string))
-
+   *)
 
 let arm_literal_op
       ?(align=4) ?(is_add=true) (pcaddr: doubleword_int) (imm: int) =
@@ -947,10 +972,13 @@ let mk_arm_absolute_target_op
       (imm:int)
       (mode:arm_operand_mode_t) =
   let tgtaddr = base#add_int imm in
+  arm_absolute_op tgtaddr mode
+  (*
   if system_info#is_code_address tgtaddr then
     arm_absolute_op tgtaddr mode
   else
     raise (Invalid_argument ("Invalid target address: " ^ tgtaddr#to_hex_string))
+   *)
 
 
 let mk_arm_offset_address_op

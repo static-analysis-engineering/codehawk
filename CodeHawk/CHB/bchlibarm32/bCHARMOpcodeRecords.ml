@@ -264,6 +264,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "BLX" c [ addr ])
     }
+  | Breakpoint op -> {
+      mnemonic = "BKPT";
+      operands = [op];
+      flags_set = [];
+      ccode = None;
+      ida_asm = (fun f -> f#ops "BKPT" [op])
+    }
   | ByteReverseWord (c, rd, rm, tw) -> {
       mnemonic = "REV";
       operands = [rd; rm];
@@ -277,6 +284,19 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "REV16" c [rd; rm])
+    }
+  | ChangeProcessorState (c, effect, iflags, optmode, tw) -> {
+      mnemonic = "CPS";
+      operands = [];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f ->
+        let s_effect = effect#toString in
+        let s_flags = iflags#toString in
+        let s_mode = match optmode with
+          | None -> ""
+          | Some mode -> " #" ^ (string_of_int mode) in
+        f#opscc ~thumbw:tw ("CPS" ^ s_effect) ~postops:(" " ^ s_flags ^ s_mode) c [])
     }
   | Compare (c, rn, rm, tw) -> {
       mnemonic = "CMP";
@@ -1201,6 +1221,13 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VEXT" c [dst; src1; src2; imm])
     }
+  | VectorFusedMultiplyAccumulate (c, dt, dst, src1, src2) -> {
+      mnemonic = "VFMA";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VFMA" c [dst; src1; src2])
+    }
   | VectorLoadFour (wb, c, dt, rl, rn, mem, rm) -> {
       mnemonic = "VLD4";
       operands = [rl; rn; mem; rm];
@@ -1570,13 +1597,13 @@ object (self)
         (fixed_length_string s width)
       else
         (fixed_length_string s width) ^ " " ^ preops in
-    let (_,result) =
+    let (_, result) =
       List.fold_left
         (fun (isfirst, a) op ->
           if isfirst then
             (false, s ^ " " ^ op#toString)
           else
-            (false, a ^ ", " ^ op#toString)) (true,s) operands in
+            (false, a ^ ", " ^ op#toString)) (true, s) operands in
     result ^ postops
 
   method opscc

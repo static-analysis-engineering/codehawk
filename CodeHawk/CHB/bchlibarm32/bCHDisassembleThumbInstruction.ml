@@ -1527,6 +1527,18 @@ let parse_thumb32_29_13
      (* VDIV<c>.F64 <Dd>, <Dn>, <Dm> *)
      VDivide (cc, dt, vd WR, vn RD, vm RD)
 
+  (* < 29><13>D10<vn><vd><5>1N0M0<vm>  VFMA (floating point) - T2-double *)
+  | (2, 1, 0, 0) ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let n = prefix_bit (bv 7) (b 19 16) in
+     let m = prefix_bit (bv 5) (b 3 0) in
+     let vd = arm_extension_register_op XDouble d in
+     let vn = arm_extension_register_op XDouble n in
+     let vm = arm_extension_register_op XDouble m in
+     let dt = VfpFloat 64 in
+     (* VFMA<c>.F64 <Dd>, <Dn>, <Dm> *)
+     VectorFusedMultiplyAccumulate (cc, dt, vd WR, vn RD, vm RD)
+
   (* < 29><13>D11<i4><vd><5>00000<i4>   VMOV (immediate) T2-single *)
   | (3, 0, 0, 0) when (bv 7) = 0 && (bv 5) = 0 ->
      let d = postfix_bit (bv 22) (b 15 12) in
@@ -3738,6 +3750,15 @@ let parse_thumb32_31_1
      (* UXTH.W <Rd>, <Rm>{, <rotation>} *)
      UnsignedExtendHalfword (cc, rd WR, rm RD, true)
 
+  (* < 31>01<  1><rn><15><rd>10ro<rm>  UXTAH - T1 *)
+  | 1 when (b 15 12) = 15 && (b 7 6) = 2 ->
+     let rd = arm_register_op (get_arm_reg (b 11 8)) in
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
+     let rotation = (b 5 4) lsl 3 in
+     let rm = mk_arm_rotated_register_op (get_arm_reg (b 3 0)) rotation in
+     (* UXTAH<c> <Rd>, <Rn>, <Rm>{, <rotation>} *)
+     UnsignedExtendAddHalfword (cc, rd WR, rn RD, rm RD)
+
   (* < 31>010001S<rn><15><rd>0000<rm>   LSR (register) - T2 *)
   | 2 | 3 when (b 15 12) = 15 && (b 7 4) = 0 ->
      let setflags = (b 20 20) = 1 in
@@ -5480,6 +5501,13 @@ let parse_t16_misc7
   let b = instr#get_segval in  
   match (b 8 8) with
 
+  (* 10111110<-imm8->  BKPT - T1 *)
+  | 0 ->
+     let imm32 = TR.tget_ok (make_immediate false 4 (mkNumerical (b 7 0))) in
+     let immop = arm_immediate_op imm32 in
+     (* BKTP #<imm8> *)
+     Breakpoint immop
+
   (* 1011111100000000  NOP - T1 *)
   | 1 when (b 7 0) = 0 ->
      (* NOP<c> *)
@@ -5541,6 +5569,18 @@ let parse_t16_misc
   let opc = b 11 9 in
   match opc with
   | 2 | 6 -> parse_t16_push_pop ~in_it ~cc iaddr instr
+
+  (* 10110110011m0AIF  CPS - T1 *)
+  | 3 when (b 8 5) = 3 && (b 3 3) = 0 ->
+     let effect = if (b 4 4) = 0 then Interrupt_Enable else Interrupt_Disable in
+     let effect = arm_cps_effect_op effect in
+     let iflags = get_interrupt_flags (b 2 0) in
+     (match iflags with
+      | IFlag_None -> NotRecognized ("t16_misc:CPS:zero iflags", instr)
+      | _ ->
+         let iflags = arm_interrupt_flags_op iflags in
+         (* CPS<effect> <iflags> *)
+         ChangeProcessorState (cc, effect, iflags, None, false))
 
   (* 1011101000<m><d>  REV - T1 *)
   | 5 when (b 8 6) = 0 ->

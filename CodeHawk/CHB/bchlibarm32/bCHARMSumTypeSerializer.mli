@@ -31,6 +31,9 @@ open CHSumTypeSerializer
 (* bchlibarm32 *)
 open BCHARMTypes
 
+val cps_effect_mfts: cps_effect_t mfts_int
+
+val interrupt_flags_mfts: interrupt_flags_t mfts_int
 
 val dmb_option_mfts: dmb_option_t mfts_int
 

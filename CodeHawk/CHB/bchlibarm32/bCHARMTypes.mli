@@ -41,6 +41,24 @@ open XprTypes
 (* bchlib *)
 open BCHLibTypes
 
+
+type cps_effect_t =  (* change processor status *)
+  | Interrupt_Enable
+  | Interrupt_Disable
+  | Interrupt_NoChange
+
+
+type interrupt_flags_t =   (* in change processor status *)
+  | IFlag_A
+  | IFlag_I
+  | IFlag_F
+  | IFlag_AI
+  | IFlag_AF
+  | IFlag_IF
+  | IFlag_AIF
+  | IFlag_None
+
+
 type shift_rotate_type_t =
   | SRType_LSL
   | SRType_LSR
@@ -95,6 +113,8 @@ type arm_simd_list_element_t =
 
 type arm_operand_kind_t =
   | ARMDMBOption of dmb_option_t
+  | ARMCPSEffect of cps_effect_t
+  | ARMInterruptFlags of interrupt_flags_t
   | ARMReg of arm_reg_t
   | ARMDoubleReg of arm_reg_t * arm_reg_t
   | ARMWritebackReg of
@@ -335,6 +355,8 @@ type arm_opcode_t =
   | BranchLinkExchange of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* target address *)
+  | Breakpoint of
+      arm_operand_int    (* for debugger use *)
   | ByteReverseWord of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
@@ -345,6 +367,12 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: source *)
       * bool             (* T.W. *)
+  | ChangeProcessorState of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* cps effect *)
+      * arm_operand_int  (* interrupt flags *)
+      * int option       (* mode *)
+      * bool             (* T.W *)
   | Compare of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rn: source 1 *)
@@ -1046,6 +1074,12 @@ type arm_opcode_t =
       * arm_operand_int (* source 1 *)
       * arm_operand_int (* source 2 *)
       * arm_operand_int (* imm *)
+  | VectorFusedMultiplyAccumulate of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* destination *)
+      * arm_operand_int  (* source 1 *)
+      * arm_operand_int  (* source 2 *)
   | VectorLoadMultipleIncrementAfter of
       bool    (* writeback *)
       * arm_opcode_cc_t  (* condition *)

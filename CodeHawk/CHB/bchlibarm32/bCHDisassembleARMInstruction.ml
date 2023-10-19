@@ -4624,6 +4624,10 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      (* PLD{W} [<Rn>, #+/-<imm12>] *)
      PreloadData (is_pldw, cc, rn RD, mem WR)
 
+  (* <15>< 10>111<15><15>< 0>0101<op> *)  (* DMB - A1 *)
+  | (10, 3, 0, 1, 1) when (bv 22) = 1 && (b 19 16) = 15 && (b 15 12) = 15 ->
+     DataMemoryBarrier (cc, arm_dmb_option_from_int_op (b 3 0))
+
   (* <15>< 11>101<15><15><--imm12---> *)  (* PLD (literal) - A1-add *)
   | (11, 1, _, _, _) when (bv 22) = 1 && (b 19 16) = 15 && (b 15 12) = 15 ->
      let imm12 = b 11 0 in

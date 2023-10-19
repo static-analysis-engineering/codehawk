@@ -41,6 +41,29 @@ open BCHLibTypes
 open BCHARMTypes
 
 
+let cps_effect_mfts: cps_effect_t mfts_int =
+  mk_mfts
+    "cps_effect_t"
+    [(Interrupt_Enable, "IE");
+     (Interrupt_Disable, "ID");
+     (Interrupt_NoChange, "NC")
+    ]
+
+
+let interrupt_flags_mfts: interrupt_flags_t mfts_int =
+  mk_mfts
+    "interrupt_flags_t"
+    [(IFlag_A, "A");
+     (IFlag_I, "I");
+     (IFlag_F, "F");
+     (IFlag_AI, "AI");
+     (IFlag_AF, "AF");
+     (IFlag_IF, "IF");
+     (IFlag_AIF, "AIF");
+     (IFlag_None, "N")
+    ]
+
+
 let dmb_option_mfts: dmb_option_t mfts_int =
   mk_mfts
     "dmb_option_t"
@@ -169,6 +192,8 @@ object
   method ts (k:arm_operand_kind_t) =
     match k with
     | ARMDMBOption _ -> "d"
+    | ARMCPSEffect _ -> "ce"
+    | ARMInterruptFlags _ -> "if"
     | ARMReg _ -> "r"
     | ARMDoubleReg _ -> "dr"
     | ARMWritebackReg _ -> "wr"
@@ -190,7 +215,7 @@ object
     | ARMSIMDList _ -> "simdl"
 
   method tags =
-    ["a"; "b"; "c"; "d"; "dr"; "dxr"; "i"; "l"; "m"; "o"; "p"; "r"; "r"; "s";
+    ["a"; "b"; "c"; "ce"; "d"; "dr"; "dxr"; "i"; "if"; "l"; "m"; "o"; "p"; "r"; "r"; "s";
      "simda"; "simdl"; "sr"; "wr"; "xr"]
 
 end
