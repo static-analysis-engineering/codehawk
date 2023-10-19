@@ -20,7 +20,7 @@
     <api adj="0" cc="cdecl" name="atexit">
       <par loc="stack" name="func" nr="1">
         <type><ptr>function-pointer</ptr></type>
-	<pre>function-pointer</pre>
+	<pre><function-pointer/></pre>
       </par>
       <returntype>int</returntype>
     </api>
