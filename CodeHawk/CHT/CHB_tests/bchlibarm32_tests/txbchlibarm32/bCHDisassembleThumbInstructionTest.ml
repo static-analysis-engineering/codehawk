@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleThumbInstructionTest"
-let lastupdated = "2023-03-22"
+let lastupdated = "2023-10-17"
 
 
 let two_byte_instr_opcode_failures = [
@@ -95,10 +95,13 @@ let thumb_2_basic () =
       ("ADD-SPI-T2", "0ab0", "ADD            SP, SP, #0x28");
       ("AND-R-T1",   "1e40", "AND            R6, R6, R3");
       ("ASRS-I-T1",  "4910", "ASRS           R1, R1, #1");
+      ("BKPT",       "fbbe", "BKPT           #0xfb");
       ("BLX-R-T1",   "9847", "BLX            R3");
       ("BX-T1",      "7047", "BX             LR");
       ("CMP-I-T1",   "102b", "CMP            R3, #0x10");
       ("CMP-R-T1",   "9a42", "CMP            R2, R3");
+      ("CPSID-I",    "72b6", "CPSID          I");
+      ("CPSIE-I",    "62b6", "CPSIE          I");
       ("LDR-I-T2",   "0099", "LDR            R1, [SP]");
       ("LDR-I-T2-o", "2d99", "LDR            R1, [SP,#0xb4]");
       ("LDRB-I-T1",  "9b78", "LDRB           R3, [R3,#2]");
@@ -237,6 +240,7 @@ let thumb_4_basic () =
       ("UQSUB8",      "ccfa52f4", "UQSUB8         R4, R12, R2");
       ("USAT",        "80f30100", "USAT           R0, #1, R0");
       ("UXTAB",       "52fa81f5", "UXTAB          R5, R2, R1");
+      ("UXTAH",       "12fa84f4", "UXTAH          R4, R2, R4");
       ("UXTB.W",      "5ffa83fe", "UXTB.W         LR, R3");
       ("UXTH.W",      "1ffa83f8", "UXTH.W         R8, R3");
     ] in
@@ -312,6 +316,7 @@ let thumb_4_vector () =
       ("VDIV.F64",                    "87ee067b", "VDIV.F64       D7, D7, D6");
       ("VDUP.8-scalar",               "ffff472c", "VDUP.8         Q9, D7[7]");
       ("VEOR-Q",                      "06ff7061", "VEOR           Q3, Q3, Q8");
+      ("VFMA.F64",                    "a6ee047b", "VFMA.F64       D7, D6, D4");
       ("VLD1.8",                      "6cf90d82", "VLD1.8         {D24,D25,D26,D27}, [R12]!");
       ("VLD1.32-1",                   "20f99d07", "VLD1.32        {D0}, [R0:64]!");
       ("VLD1.32-4",                   "60f99d42", "VLD1.32        {D20,D21,D22,D23}, [R0:64]!");
