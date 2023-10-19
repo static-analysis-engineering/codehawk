@@ -33,7 +33,7 @@
       </par>
       <par loc="stack" name="inp" nr="2">
         <type><ptr>in_addr</ptr></type>
-	<pre>deref-write</pre>
+	<pre><deref-write/></pre>
       </par>
       <returntype>int</returntype>
     </api>
