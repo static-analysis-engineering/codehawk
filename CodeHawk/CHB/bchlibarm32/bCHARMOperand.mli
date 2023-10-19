@@ -44,6 +44,8 @@ open BCHLibTypes
 open BCHARMTypes
 
 
+val cps_effect_to_string: cps_effect_t -> string
+
 val dmb_option_to_string: dmb_option_t -> string
 
 val vfp_datatype_to_string: vfp_datatype_t -> string
@@ -58,6 +60,10 @@ val arm_shifted_index_offset:
 val arm_dmb_option_op: dmb_option_t -> arm_operand_int
 
 val arm_dmb_option_from_int_op: int -> arm_operand_int
+
+val arm_cps_effect_op: cps_effect_t -> arm_operand_int
+
+val arm_interrupt_flags_op: interrupt_flags_t -> arm_operand_int
   
 val arm_register_op: arm_reg_t -> arm_operand_mode_t -> arm_operand_int
 

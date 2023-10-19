@@ -140,6 +140,8 @@ object (self)
     let tags = [arm_opkind_mcts#ts k] in
     let key = match k with
       | ARMDMBOption o -> (tags @ [dmb_option_mfts#ts o], [])
+      | ARMCPSEffect e -> (tags @ [cps_effect_mfts#ts e], [])
+      | ARMInterruptFlags f -> (tags @ [interrupt_flags_mfts#ts f], [])
       | ARMReg r -> (tags @ [arm_reg_mfts#ts r], [])
       | ARMDoubleReg (r1, r2) ->
          (tags @ [arm_reg_mfts#ts r1; arm_reg_mfts#ts r2], [])
@@ -227,9 +229,12 @@ object (self)
       | BranchExchange (c, rm) -> (ctags c, [oi rm])
       | BranchLink (c, addr) -> (ctags c, [oi addr])
       | BranchLinkExchange (c, addr) -> (ctags c, [oi addr])
+      | Breakpoint op -> (tags, [oi op])
       | ByteReverseWord (c, rd, rm, tw) -> (ctags c,[ oi rd; oi rm; setb tw])
       | ByteReversePackedHalfword (c, rd, rm, tw) ->
          (ctags c, [oi rd; oi rm; setb tw])
+      | ChangeProcessorState (c, effect, iflags, mode, tw) ->
+         (ctags c, [oi effect; oi iflags; setopt mode; setb tw])
       | Compare (c, rn, rm, tw) -> (ctags c, [oi rn; oi rm; setb tw])
       | CompareNegative (c, rn, rm) -> (ctags c, [oi rn; oi rm])
       | CountLeadingZeros (c, rd, rm) -> (ctags c, [oi rd; oi rm])
@@ -437,6 +442,8 @@ object (self)
          (ctags c, [di dt; regs; elements; oi dst; oi src])
       | VectorExtract (c, dt, dst, src1, src2, imm) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2; oi imm])
+      | VectorFusedMultiplyAccumulate (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorLoadMultipleIncrementAfter (wb, c, rn, rl, mem) ->
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | VectorLoadFour (wb, c, sz, rl, rn, mem, rm) ->

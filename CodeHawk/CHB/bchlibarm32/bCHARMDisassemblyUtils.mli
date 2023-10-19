@@ -35,6 +35,8 @@ open BCHLibTypes
 open BCHARMTypes
 
 
+val get_interrupt_flags: int -> interrupt_flags_t
+
 val get_it_condition_list: int -> int -> (string * arm_opcode_cc_t) list
 
 val get_string_reference: floc_int -> xpr_t -> string option

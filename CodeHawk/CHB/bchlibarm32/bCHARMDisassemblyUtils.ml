@@ -83,6 +83,22 @@ let rec pow2 n =
 let stri = string_of_int
 
 
+let get_interrupt_flags (n: int): interrupt_flags_t =
+  match n with
+  | 0 -> IFlag_None
+  | 1 -> IFlag_F
+  | 2 -> IFlag_I
+  | 3 -> IFlag_IF
+  | 4 -> IFlag_A
+  | 5 -> IFlag_AF
+  | 6 -> IFlag_AI
+  | 7 -> IFlag_AIF
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [STR "Unexpected value for interrupt_flags: "; INT n]))
+
+
 let get_it_condition_list (firstcond:int) (mask:int) =
   let fc0 = firstcond mod 2 in
   let elsecond = if fc0 = 1 then firstcond - 1 else firstcond + 1 in
