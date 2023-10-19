@@ -17,7 +17,7 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
 
-CAMLLINK := ocamlopt str.cmxa unix.cmxa \
+CAMLLINK := ocamlopt \
 	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
 	-I $(CIL) \
@@ -43,6 +43,7 @@ MLIS := \
 	bCHBCFiles \
 	bCHCTypeUtil \
 	bCHParseCilFile \
+	bCHXParseFile \
 
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
@@ -57,11 +58,12 @@ SOURCES := \
 	bCHBCFiles \
 	bCHCTypeUtil \
 	bCHParseCilFile \
+	bCHXParseFile \
 
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs bchcil
+all: make_dirs parse bchcil
 
 make_dirs:
 	@mkdir -p cmx
@@ -69,6 +71,10 @@ make_dirs:
 
 bchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB)
 	$(CAMLLINKL) -a -o bchcil.cmxa $(OBJECTS)
+
+parse: 	$(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa
+	$(CAMLLINK) -I $(ZARITHLIB) -o parseFile str.cmxa unix.cmxa $(ZARITHLIB)/zarith.cmxa $(CIL)/goblintCil.cmxa $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(OBJECTS)
+
 
 cmi/%.cmi: %.mli
 	$(CAMLC) -o $@ -c -opaque $<
