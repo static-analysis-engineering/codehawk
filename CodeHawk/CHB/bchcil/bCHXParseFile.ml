@@ -42,10 +42,10 @@ open CHPrettyUtil
 open CHUtil
 open CHXmlDocument
 
-(* bchcil *)
+(* bchlib *)
 open BCHBCDictionary
+open BCHBCTypes
 open BCHBCWriteXml
-open BCHCBasicTypes
 open BCHCilToCBasic
 
 
