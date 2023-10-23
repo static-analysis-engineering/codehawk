@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer C Parser using CIL
+   CodeHawk Binary Analyzer C Parser
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,12 +33,11 @@ open CHPretty
 open CHLogger
 open CHXmlDocument
 
-(* bchcil *)
+(* bchlib *)
 open BCHBCDictionary
+open BCHBCTypes   
 open BCHBCUtil
 open BCHBCWriteXml
-open BCHCBasicTypes
-open BCHCilTypes
 
 
 module H = Hashtbl
