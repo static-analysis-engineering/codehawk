@@ -33,9 +33,9 @@ open CHPretty
 open CHPrettyUtil
 open CHUtil
 
-(* bchcil *)
+(* bchlib *)
 open BCHBCDictionary
-open BCHCBasicTypes
+open BCHBCTypes
 
 
 let string_printer = CHPrettyUtil.string_printer
