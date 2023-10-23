@@ -43,10 +43,14 @@ open CHXmlDocument
 (* xprlib *)
 open XprTypes
 
-(* bchcil *)
-open BCHCBasicTypes
+(* bchlib *)
+open BCHBCTypes
 
-(* =========================================================== generic types === *)
+
+(** {b Principal type definitions for [bchlib].} *)
+
+
+(** {1 Generic types}*)
 
 class type ['a] sumtype_string_converter_int =
   object
@@ -60,413 +64,14 @@ type calling_convention_t = StdCall | CDecl
 
 type bool3 = Yes | No | Maybe
 
-type arg_io_t =
-| ArgRead
-| ArgReadWrite
-| ArgWrite
 
+(** {1 Constants and addresses} *)
 
-(* ======================================================== Data export spec === *)
+(** {2 Doubleword (32-bit value)} *)
 
-type data_export_spec_item_t = {
-  dex_offset : int;
-  dex_name: string;
-  dex_type: string;
-  dex_size: int
-}
-
-
-type data_export_spec_t = {
-  dex_description: string;
-  dex_items: data_export_spec_item_t list
-}
-
-
-class type data_export_value_int =
-object
-  method set_values: (int * string) list -> unit
-  method get_spec: data_export_spec_t
-  method get_size: int                             (* number of bytes *)
-  method get_values: (data_export_spec_item_t * string) list
-  method write_xml: xml_element_int -> unit
-  method toPretty: pretty_t
-end
-
-(* ============================================================== java types === *)
-
-class type class_name_int =
-object ('a)
-  method index: int
-  method name: string
-  method simple_name: string
-  method equal: 'a -> bool
-  method compare: 'a -> int
-  method package: string list
-  method package_name: string
-  method toPretty: pretty_t
-end
-
-
-type java_basic_type_t =
-  | Int
-  | Short
-  | Char
-  | Byte
-  | Bool
-  | Long
-  | Float
-  | Double
-  | Int2Bool
-  | ByteBool
-  | Object
-  | Void
-
-
-type object_type_t =
-  | TClass of class_name_int
-  | TArray of value_type_t
-
-
-and value_type_t =
-  | TBasic of java_basic_type_t
-  | TObject of object_type_t
-
-
-type access_t =
-  | Default
-  | Public
-  | Private
-  | Protected
-
-
-class type field_signature_data_int =
-object ('a)
-  method name: string
-  method descriptor: value_type_t
-  method compare: 'a -> int
-  method to_string: string
-  method toPretty: pretty_t
-end
-
-
-class type field_signature_int =
-object ('a)
-  method index: int
-  method name: string
-  method field_signature_data: field_signature_data_int
-  method descriptor: value_type_t
-  method equal: 'a -> bool
-  method compare: 'a -> int
-  method to_string: string
-  method toPretty: pretty_t
-end
-
-
-class type method_descriptor_int =
-object ('a)
-  method arguments: value_type_t list
-  method return_value: value_type_t option
-  method compare: 'a -> int
-  method to_string: string
-  method toPretty: pretty_t
-end
-
-
-class type method_signature_data_int =
-object ('a)
-  method name: string
-  method descriptor: method_descriptor_int
-  method compare: 'a -> int
-  method to_string: string
-  method toPretty: pretty_t
-end
-
-
-class type method_signature_int =
-object ('a)
-  method index: int
-  method method_signature_data: method_signature_data_int
-  method name: string
-  method descriptor: method_descriptor_int
-  method equal: 'a -> bool
-  method compare: 'a -> int
-  method to_string: string
-  method toPretty: pretty_t
-end
-
-
-type java_native_method_api_t =
-  { jnm_signature: method_signature_int;
-    jnm_access: access_t;
-    jnm_static: bool
-  }
-      
-
-class type java_dictionary_int =
-object
-  method make_class_name: string -> class_name_int
-  method make_field_signature: string -> value_type_t -> field_signature_int
-  method make_method_signature: string -> method_descriptor_int -> method_signature_int
-end
-
-
-type java_native_method_class_t = 
-{ jnmc_class: class_name_int ;
-  jnmc_native_methods: java_native_method_api_t list
-}
-
-
-class type java_method_name_int =
-object
-  (* setters *)
-  method set_class_name:string -> unit
-  method set_method_name:string -> unit
-  method add_argument_type: value_type_t -> unit
-
-  (* accessors *)
-  method get_class_name: string
-  method get_method_name: string
-  method get_arguments: value_type_t list
-
-  (* predicates *)
-  method has_arguments: bool
-
-  (* printing *)
-  method toPretty: pretty_t
-end
-
-(* ================================================================ CH types === *)
-
-type variable_comparator_t = variable_t -> variable_t -> int
-
-type cmd_t = (code_int, cfg_int) command_t 
-
-(* =============================================================== x86 types === *)
-
-(* OFlag : overflow
-   CFlag : carry
-   ZFlag : zero
-   SFlag : sign
-   PFlag : parity
-   DFlag : direction (set/cleared explicitly by std/cld)
-   IFlag : interrupt
-*)
-
-type eflag_t = OFlag | CFlag | ZFlag | SFlag | PFlag | DFlag | IFlag
-
-type cpureg_t = 
-| Eax
-| Ecx
-| Ebp
-| Ebx
-| Edx
-| Esp
-| Esi
-| Edi
-| Ax
-| Cx
-| Dx
-| Bx
-| Sp
-| Bp
-| Si
-| Di
-| Al
-| Cl
-| Dl
-| Bl
-| Ah
-| Ch
-| Dh
-| Bh
-
-
-type segment_t = 
-| StackSegment   (* 2 *)
-| CodeSegment    (* 1 *)
-| DataSegment    (* 3 *)
-| ExtraSegment   (* 0 *)
-| FSegment       (* 4 *)
-| GSegment       (* 5 *)
-
-(* ============================================================== mips types === *)
-
-type mips_reg_t =
-  | MRzero    (*  0: constant zero, ignored as destination *)
-  | MRat      (*  1: reserved for assembler *)
-  | MRv0      (*  2: function return value *)
-  | MRv1      (*  3: function return value *)
-  | MRa0      (*  4: argument 1 *)
-  | MRa1      (*  5: argument 2 *)
-  | MRa2      (*  6: argument 3 *)
-  | MRa3      (*  7: argument 4 *)
-  | MRt0      (*  8: temporary *)
-  | MRt1      (*  9: temporary *)
-  | MRt2      (* 10: temporary *)
-  | MRt3      (* 11: temporary *)
-  | MRt4      (* 12: temporary *)
-  | MRt5      (* 13: temporary *)
-  | MRt6      (* 14: temporary *)
-  | MRt7      (* 15: temporary *)
-  | MRs0      (* 16: saved temporary *)
-  | MRs1      (* 17: saved temporary *)
-  | MRs2      (* 18: saved temporary *)
-  | MRs3      (* 19: saved temporary *)
-  | MRs4      (* 20: saved temporary *)
-  | MRs5      (* 21: saved temporary *)
-  | MRs6      (* 22: saved temporary *)
-  | MRs7      (* 23: saved temporary *)
-  | MRt8      (* 24: temporary *)
-  | MRt9      (* 25: temporary *)
-  | MRk0      (* 26: reserved for OS kernel *)
-  | MRk1      (* 27: reserved for OS kernel *)
-  | MRgp      (* 28: pointer to global area *)
-  | MRsp      (* 29: stack pointer *)
-  | MRfp      (* 30: frame pointer, or saved temporary *)
-  | MRra      (* 31: return address *)
-
-
-type mips_special_reg_t =
-  | MMHi   (* high multiplication unit register *)
-  | MMLo   (* low multiplication unit register *)
-
-(* ======================================================= arm types === *)
-
-type arm_cc_flag_t =
-  | APSR_Z    (* zero condition flag. Set to 1 if the result of the instruction
-                 is zero, and to 0 otherwise.*)
-  | APSR_N    (* negative condition flag. Set to bit[31] of the result of the
-                 instruction. If the result is regarded as a twos' complement
-                 signed integer, then the processor sets N to 1 if the result is
-                 negative, and sets N to 0 if it is positive or zero.*)
-  | APSR_C    (* carry condition flag. Set to 1 if the instruction results in a
-                 carry condition, for example an unsigned overflow on an
-                 addition.*)
-  | APSR_V    (* overflow condition flag. Set to 1 if the instruction results in
-                 an overflow condition, for example a signed overflow on an
-                 addition.*)
-  | APSR_Q    (* overflow or saturation flag. Set to 1 to indicate overflow or
-                 saturation occurred in some instructions, normally related to
-                 DSP.*)
-
-type arm_reg_t =
-  | AR0
-  | AR1
-  | AR2
-  | AR3
-  | AR4
-  | AR5
-  | AR6
-  | AR7
-  | AR8
-  | AR9
-  | AR10
-  | AR11
-  | AR12
-  | ARSP
-  | ARLR
-  | ARPC
-
-
-type arm_special_reg_t =
-  | CPSR   (* Core processor status word *)
-  | SPSR   (* Saved Program Status Registers *)
-  | FPSCR   (* Floating point processor status word *)
-  | APSR_nzcv  (* Condition codes in core processor status word *)
-
-
-type arm_extension_reg_type_t =
-  | XSingle
-  | XDouble
-  | XQuad
-
-
-type arm_extension_register_t = {
-    armxr_type: arm_extension_reg_type_t;
-    armxr_index: int
-  }
-
-
-type arm_extension_register_element_t = {
-    armxr: arm_extension_register_t;
-    armxr_elem_index: int;
-    armxr_elem_size: int
-  }
-
-
-type arm_extension_register_replicated_element_t = {
-    armxrr: arm_extension_register_t;
-    armxrr_elem_size: int;
-    armxrr_elem_count: int
-  }
-
-(* ====================================================== power types === *)
-
-type pwr_special_reg_t =
-  | PowerCR    (* Condition Register (contain CR0, CR1, CR2) *)
-  | PowerCTR   (* Count Register *)
-  | PowerMSR   (* Machine Status Register *)
-  | PowerLR    (* Link Register *)
-  | PowerXER   (* Integer Exception Register *)
-  | PowerSRR0  (* Save/Restore Register 0 *)
-  | PowerSRR1  (* Save/Restore Register 1 *)
-  | PowerCSRR0 (* Critical Save/Restore Register 0 *)
-  | PowerCSRR1 (* Critical Save/Restore Register 1 *)
-  | PowerDSRR0 (* Debug Save/Restore Register 0 *)
-  | PowerDSRR1 (* Debug Save/Restore Register 1 *)
-  | PowerMCSRR0 (* Machine Check Save/Restore Register 0 *)
-  | PowerMCSRR1 (* Machine Check Save/Restore Register 1 *)
-
-
-type pwr_register_field_t =
-  | PowerCR0   (* Condition Register, bits 32-35 *)
-  | PowerCR1   (* Condition Register, bits 36-39 *)
-  | PowerCR2   (* Condition Register, bits 40-43 *)
-  | PowerCR3   (* Condition Register, bits 44-47 *)
-  | PowerCR4   (* Condition Register, bits 48-51 *)
-  | PowerCR5   (* Condition Register, bits 52-55 *)
-  | PowerCR6   (* Condition Register, bits 56-59 *)
-  | PowerCR7   (* Condition Register, bits 60-63 *)
-  | PowerXERSO (* Integer Exception Register, summary overflow *)
-  | PowerXEROV (* Integer Exception Register, overflow *)
-  | PowerXERCA (* Integer Exception Register, carry *)
-
-
-(* ============================================= combining architectures === *)
-
-type register_t = 
-| SegmentRegister of segment_t
-| CPURegister of cpureg_t
-| DoubleRegister of cpureg_t * cpureg_t
-| FloatingPointRegister of int
-| ControlRegister of int
-| DebugRegister of int
-| MmxRegister of int    (* 64 bit register *)
-| XmmRegister of int    (* 128 bit register *)
-| MIPSRegister of mips_reg_t
-| MIPSSpecialRegister of mips_special_reg_t
-| MIPSFloatingPointRegister of int
-| ARMRegister of arm_reg_t
-| ARMDoubleRegister of arm_reg_t * arm_reg_t
-| ARMSpecialRegister of arm_special_reg_t
-| ARMExtensionRegister of arm_extension_register_t
-| ARMDoubleExtensionRegister of
-    arm_extension_register_t * arm_extension_register_t
-| ARMExtensionRegisterElement of arm_extension_register_element_t
-| ARMExtensionRegisterReplicatedElement of
-    arm_extension_register_replicated_element_t
-| PowerGPRegister of int
-| PowerSPRegister of pwr_special_reg_t
-| PowerCRField of pwr_register_field_t
-
-
-type flag_t =
-  | X86Flag of eflag_t
-  | ARMCCFlag of arm_cc_flag_t
-
-(* =========================================================== Doubleword === *)
-
-
+(** Underlying type for doubleword. Int is assumed to be sufficient wide to
+    represent a 32-bit value (i.e., it must be at least a 64-bit ocaml
+    integer.*)
 type dw_index_t = int
 
 
@@ -628,10 +233,13 @@ object ('a)
 end
 
 
+(** [doubleword_int] with possible error value.*)
 type doubleword_result = doubleword_int traceresult
 
-(* ============================================================ Immediate === *)
 
+(** {2 Immediate value}*)
+
+(** Constant value with explicit size in bytes and signedness.*)
 class type immediate_int =
 object ('a)
 
@@ -690,10 +298,616 @@ object ('a)
 end
 
 
+(** [immediate_int] with possible error value.*)
 type immediate_result = immediate_int traceresult
 
-(* ====================================================== Pushback stream === *)
 
+(** {2 Location} *)
+
+type base_location_t = {
+    loc_faddr: doubleword_int;
+    loc_iaddr: doubleword_int;
+  }
+
+
+type fcontext_t = {
+    ctxt_faddr: doubleword_int;
+    ctxt_callsite: doubleword_int;
+    ctxt_returnsite: doubleword_int
+  }
+
+
+type context_t =
+  | FunctionContext of fcontext_t
+  | BlockContext of doubleword_int
+  | ConditionContext of bool  (* conditional instrs turned into blocks *)
+
+
+(** ctxt_iaddress_t spec:
+   [{
+   i  ( [], { faddr,iaddr } ) = iaddr
+   i  ( [ F{ fa,cs,rs } ], { faddr,iaddr }) = iaddr
+   i  ( [ B{ js } ], { faddr,iaddr }) = iaddr
+   i  ( [ C{c}], {faddr, iaddr}) = iaddr
+
+   f  ( [], { faddr,iaddr } ) = faddr
+   f  ( [ F{ fa,cs,rs }, _ ],  { faddr,iaddr } ) = fa
+   f  ( [ B{ js } ], { faddr,iaddr } ) = faddr
+   f  ( B{ js }::ctxt , { faddr,iaddr } ) = f (ctxt, {faddr,iaddr})
+   f  ( C{c}::ctxt, {faddr, iaddr}) = f(ctxt, {faddr, iaddr})
+
+   ci ( [], { faddr,iaddr } ) = iaddr
+   ci ( [ F{ fa,cs,rs } ], { faddr,iaddr } ) = F:cs_iaddr
+   ci ( [ F{ fa1,cs1,rs1 },F{ fa2,cs2,rs2 } ], { faddr,iaddr } ) = F:cs1_F:cs2_iaddr
+   ci ( [ B{ js } ], { faddr,iaddr }) = B:js_iaddr
+   ci ( [ B{ js1 }, B{ js2 } ], { faddr,iaddr }) = B:js1_B:js2_iaddr
+   ci ( [ C{true}], {faddr, iaddr}) = T_iaddr
+   ci ( [ C{false}], {faddr, iaddr}) = F_iaddr
+   }]
+ *)
+type ctxt_iaddress_t = string
+
+class type location_int =
+  object ('a)
+
+    method compare: 'a -> int
+
+    method i: doubleword_int         (* instruction address *)
+    method f: doubleword_int         (* function address of outer context *)
+    method ci: ctxt_iaddress_t       (* full context instruction address string *)
+
+    method base_loc: base_location_t (* inner function address, instruction address *)
+    method base_f: doubleword_int    (* function address of inner context *)
+    method ctxt: context_t list
+
+    method has_context: bool
+
+    method toPretty: pretty_t
+  end
+
+
+(** {1 Data export spec}*)
+
+type data_export_spec_item_t = {
+  dex_offset : int;
+  dex_name: string;
+  dex_type: string;
+  dex_size: int
+}
+
+
+type data_export_spec_t = {
+  dex_description: string;
+  dex_items: data_export_spec_item_t list
+}
+
+
+class type data_export_value_int =
+object
+  method set_values: (int * string) list -> unit
+  method get_spec: data_export_spec_t
+  method get_size: int                             (* number of bytes *)
+  method get_values: (data_export_spec_item_t * string) list
+  method write_xml: xml_element_int -> unit
+  method toPretty: pretty_t
+end
+
+
+(** {1 C-related types} *)
+
+type struct_field_t = {
+  fld_name: string;
+  fld_offset: int;
+  fld_size: int;
+  fld_type: btype_t
+}
+
+
+class type c_struct_int =
+object
+  method get_name: string
+  method get_field: int -> struct_field_t
+  method has_field: int -> bool
+  method iter: (struct_field_t -> unit) -> unit
+  method toPretty: pretty_t
+end
+
+
+type constant_definition_t = {
+  xconst_name: string;
+  xconst_value: doubleword_int;
+  xconst_type: btype_t;
+  xconst_desc: string;
+  xconst_is_addr: bool
+}
+
+
+type flag_definition_t = {
+  xflag_name: string;
+  xflag_pos: int;    (* lowest order bit is zero *)
+  xflag_desc: string;
+  xflag_type: btype_t
+}
+
+
+class type type_definitions_int =
+  object
+    method add_builtin_typeinfo: string -> btype_t -> unit
+    method add_builtin_compinfo: string -> bcompinfo_t -> unit
+    method add_builtin_enuminfo: string -> benuminfo_t -> unit
+
+    method add_typeinfo: string -> btype_t -> unit
+    method add_compinfo: string -> bcompinfo_t -> unit
+    method add_enuminfo: string -> benuminfo_t -> unit
+
+    method get_type: string -> btype_t
+    method get_compinfo: string -> bcompinfo_t
+    method get_enuminfo: string -> benuminfo_t
+
+    method has_type: string -> bool
+    method has_compinfo: string -> bool
+    method has_enuminfo: string -> bool
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+    method toPretty: pretty_t
+end
+
+
+(** {1 JNI-related types}*)
+
+class type class_name_int =
+object ('a)
+  method index: int
+  method name: string
+  method simple_name: string
+  method equal: 'a -> bool
+  method compare: 'a -> int
+  method package: string list
+  method package_name: string
+  method toPretty: pretty_t
+end
+
+
+type java_basic_type_t =
+  | Int
+  | Short
+  | Char
+  | Byte
+  | Bool
+  | Long
+  | Float
+  | Double
+  | Int2Bool
+  | ByteBool
+  | Object
+  | Void
+
+
+type object_type_t =
+  | TClass of class_name_int
+  | TArray of value_type_t
+
+
+and value_type_t =
+  | TBasic of java_basic_type_t
+  | TObject of object_type_t
+
+
+type access_t =
+  | Default
+  | Public
+  | Private
+  | Protected
+
+
+class type field_signature_data_int =
+object ('a)
+  method name: string
+  method descriptor: value_type_t
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
+end
+
+
+class type field_signature_int =
+object ('a)
+  method index: int
+  method name: string
+  method field_signature_data: field_signature_data_int
+  method descriptor: value_type_t
+  method equal: 'a -> bool
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
+end
+
+
+class type method_descriptor_int =
+object ('a)
+  method arguments: value_type_t list
+  method return_value: value_type_t option
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
+end
+
+
+class type method_signature_data_int =
+object ('a)
+  method name: string
+  method descriptor: method_descriptor_int
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
+end
+
+
+class type method_signature_int =
+object ('a)
+  method index: int
+  method method_signature_data: method_signature_data_int
+  method name: string
+  method descriptor: method_descriptor_int
+  method equal: 'a -> bool
+  method compare: 'a -> int
+  method to_string: string
+  method toPretty: pretty_t
+end
+
+
+type java_native_method_api_t =
+  { jnm_signature: method_signature_int;
+    jnm_access: access_t;
+    jnm_static: bool
+  }
+
+
+class type java_dictionary_int =
+object
+  method make_class_name: string -> class_name_int
+  method make_field_signature: string -> value_type_t -> field_signature_int
+  method make_method_signature: string -> method_descriptor_int -> method_signature_int
+end
+
+
+type java_native_method_class_t =
+{ jnmc_class: class_name_int ;
+  jnmc_native_methods: java_native_method_api_t list
+}
+
+
+class type java_method_name_int =
+object
+  (* setters *)
+  method set_class_name:string -> unit
+  method set_method_name:string -> unit
+  method add_argument_type: value_type_t -> unit
+
+  (* accessors *)
+  method get_class_name: string
+  method get_method_name: string
+  method get_arguments: value_type_t list
+
+  (* predicates *)
+  method has_arguments: bool
+
+  (* printing *)
+  method toPretty: pretty_t
+end
+
+
+(** {1 CHIF types} *)
+
+type variable_comparator_t = variable_t -> variable_t -> int
+
+type cmd_t = (code_int, cfg_int) command_t
+
+
+class type cmd_list_int =
+object
+  method cmd_list : cmd_t list
+  method reverse_cmds: unit
+  method toPretty: pretty_t
+end
+
+
+(** {2 Code graph} *)
+
+class type code_graph_int =
+object
+  (* setters *)
+  method add_node  : symbol_t -> cmd_t list -> unit
+  method add_edge  : symbol_t -> symbol_t -> unit
+  method set_cmd   : symbol_t -> cmd_t list -> unit
+
+  (* accessors *)
+  method get_cmds     : symbol_t -> cmd_list_int
+
+  (* actions *)
+  method remove_edge: symbol_t -> symbol_t -> unit
+
+  (* converters *)
+  method to_cfg: symbol_t -> symbol_t -> cfg_int
+end
+
+
+(** {1 Architecture-specific types} *)
+
+(** {2 X86 types} *)
+
+(* OFlag : overflow
+   CFlag : carry
+   ZFlag : zero
+   SFlag : sign
+   PFlag : parity
+   DFlag : direction (set/cleared explicitly by std/cld)
+   IFlag : interrupt
+*)
+
+type eflag_t = OFlag | CFlag | ZFlag | SFlag | PFlag | DFlag | IFlag
+
+type cpureg_t =
+| Eax
+| Ecx
+| Ebp
+| Ebx
+| Edx
+| Esp
+| Esi
+| Edi
+| Ax
+| Cx
+| Dx
+| Bx
+| Sp
+| Bp
+| Si
+| Di
+| Al
+| Cl
+| Dl
+| Bl
+| Ah
+| Ch
+| Dh
+| Bh
+
+
+type segment_t =
+| StackSegment   (** 2 *)
+| CodeSegment    (** 1 *)
+| DataSegment    (** 3 *)
+| ExtraSegment   (** 0 *)
+| FSegment       (** 4 *)
+| GSegment       (** 5 *)
+
+
+(** {2 MIPS types} *)
+
+type mips_reg_t =
+  | MRzero    (**  0: constant zero, ignored as destination *)
+  | MRat      (**  1: reserved for assembler *)
+  | MRv0      (**  2: function return value *)
+  | MRv1      (**  3: function return value *)
+  | MRa0      (**  4: argument 1 *)
+  | MRa1      (**  5: argument 2 *)
+  | MRa2      (**  6: argument 3 *)
+  | MRa3      (**  7: argument 4 *)
+  | MRt0      (**  8: temporary *)
+  | MRt1      (**  9: temporary *)
+  | MRt2      (** 10: temporary *)
+  | MRt3      (** 11: temporary *)
+  | MRt4      (** 12: temporary *)
+  | MRt5      (** 13: temporary *)
+  | MRt6      (** 14: temporary *)
+  | MRt7      (** 15: temporary *)
+  | MRs0      (** 16: saved temporary *)
+  | MRs1      (** 17: saved temporary *)
+  | MRs2      (** 18: saved temporary *)
+  | MRs3      (** 19: saved temporary *)
+  | MRs4      (** 20: saved temporary *)
+  | MRs5      (** 21: saved temporary *)
+  | MRs6      (** 22: saved temporary *)
+  | MRs7      (** 23: saved temporary *)
+  | MRt8      (** 24: temporary *)
+  | MRt9      (** 25: temporary *)
+  | MRk0      (** 26: reserved for OS kernel *)
+  | MRk1      (** 27: reserved for OS kernel *)
+  | MRgp      (** 28: pointer to global area *)
+  | MRsp      (** 29: stack pointer *)
+  | MRfp      (** 30: frame pointer, or saved temporary *)
+  | MRra      (** 31: return address *)
+
+
+type mips_special_reg_t =
+  | MMHi   (** high multiplication unit register *)
+  | MMLo   (** low multiplication unit register *)
+
+
+(** {2 ARM types} *)
+
+type arm_cc_flag_t =
+  | APSR_Z    (** zero condition flag. Set to 1 if the result of the instruction
+                 is zero, and to 0 otherwise.*)
+  | APSR_N    (** negative condition flag. Set to bit[31] of the result of the
+                 instruction. If the result is regarded as a twos' complement
+                 signed integer, then the processor sets N to 1 if the result is
+                 negative, and sets N to 0 if it is positive or zero.*)
+  | APSR_C    (** carry condition flag. Set to 1 if the instruction results in a
+                 carry condition, for example an unsigned overflow on an
+                 addition.*)
+  | APSR_V    (** overflow condition flag. Set to 1 if the instruction results in
+                 an overflow condition, for example a signed overflow on an
+                 addition.*)
+  | APSR_Q    (** overflow or saturation flag. Set to 1 to indicate overflow or
+                 saturation occurred in some instructions, normally related to
+                 DSP.*)
+
+type arm_reg_t =
+  | AR0
+  | AR1
+  | AR2
+  | AR3
+  | AR4
+  | AR5
+  | AR6
+  | AR7
+  | AR8
+  | AR9
+  | AR10
+  | AR11
+  | AR12
+  | ARSP
+  | ARLR
+  | ARPC
+
+
+type arm_special_reg_t =
+  | CPSR   (** Core processor status word *)
+  | SPSR   (** Saved Program Status Registers *)
+  | FPSCR   (** Floating point processor status word *)
+  | APSR_nzcv  (** Condition codes in core processor status word *)
+
+
+type arm_extension_reg_type_t =
+  | XSingle
+  | XDouble
+  | XQuad
+
+
+type arm_extension_register_t = {
+    armxr_type: arm_extension_reg_type_t;
+    armxr_index: int
+  }
+
+
+type arm_extension_register_element_t = {
+    armxr: arm_extension_register_t;
+    armxr_elem_index: int;
+    armxr_elem_size: int
+  }
+
+
+type arm_extension_register_replicated_element_t = {
+    armxrr: arm_extension_register_t;
+    armxrr_elem_size: int;
+    armxrr_elem_count: int
+  }
+
+
+(** {2 Power32 types} *)
+
+type pwr_special_reg_t =
+  | PowerCR    (** Condition Register (contain CR0, CR1, CR2) *)
+  | PowerCTR   (** Count Register *)
+  | PowerMSR   (** Machine Status Register *)
+  | PowerLR    (** Link Register *)
+  | PowerXER   (** Integer Exception Register *)
+  | PowerSRR0  (** Save/Restore Register 0 *)
+  | PowerSRR1  (** Save/Restore Register 1 *)
+  | PowerCSRR0 (** Critical Save/Restore Register 0 *)
+  | PowerCSRR1 (** Critical Save/Restore Register 1 *)
+  | PowerDSRR0 (** Debug Save/Restore Register 0 *)
+  | PowerDSRR1 (** Debug Save/Restore Register 1 *)
+  | PowerMCSRR0 (** Machine Check Save/Restore Register 0 *)
+  | PowerMCSRR1 (** Machine Check Save/Restore Register 1 *)
+
+
+type pwr_register_field_t =
+  | PowerCR0   (** Condition Register, bits 32-35 *)
+  | PowerCR1   (** Condition Register, bits 36-39 *)
+  | PowerCR2   (** Condition Register, bits 40-43 *)
+  | PowerCR3   (** Condition Register, bits 44-47 *)
+  | PowerCR4   (** Condition Register, bits 48-51 *)
+  | PowerCR5   (** Condition Register, bits 52-55 *)
+  | PowerCR6   (** Condition Register, bits 56-59 *)
+  | PowerCR7   (** Condition Register, bits 60-63 *)
+  | PowerXERSO (** Integer Exception Register, summary overflow *)
+  | PowerXEROV (** Integer Exception Register, overflow *)
+  | PowerXERCA (** Integer Exception Register, carry *)
+
+
+(** {2 Combining architecture registers} *)
+
+type register_t =
+| SegmentRegister of segment_t
+| CPURegister of cpureg_t
+| DoubleRegister of cpureg_t * cpureg_t
+| FloatingPointRegister of int
+| ControlRegister of int
+| DebugRegister of int
+| MmxRegister of int    (* 64 bit register *)
+| XmmRegister of int    (* 128 bit register *)
+| MIPSRegister of mips_reg_t
+| MIPSSpecialRegister of mips_special_reg_t
+| MIPSFloatingPointRegister of int
+| ARMRegister of arm_reg_t
+| ARMDoubleRegister of arm_reg_t * arm_reg_t
+| ARMSpecialRegister of arm_special_reg_t
+| ARMExtensionRegister of arm_extension_register_t
+| ARMDoubleExtensionRegister of
+    arm_extension_register_t * arm_extension_register_t
+| ARMExtensionRegisterElement of arm_extension_register_element_t
+| ARMExtensionRegisterReplicatedElement of
+    arm_extension_register_replicated_element_t
+| PowerGPRegister of int
+| PowerSPRegister of pwr_special_reg_t
+| PowerCRField of pwr_register_field_t
+
+
+type flag_t =
+  | X86Flag of eflag_t
+  | ARMCCFlag of arm_cc_flag_t
+
+
+(** {2 Dictionary} *)
+
+type constantstring = string * bool * int
+
+class type bdictionary_int =
+  object
+
+    method reset: unit
+
+    method index_string: string -> int
+    method index_address: doubleword_int -> int
+    method index_address_string: string -> int
+    method index_arm_extension_register: arm_extension_register_t -> int
+    method index_arm_extension_register_element:
+             arm_extension_register_element_t -> int
+    method index_arm_extension_register_replicated_element:
+             arm_extension_register_replicated_element_t -> int
+    method index_register: register_t -> int
+    method index_flag: flag_t -> int
+
+    method get_string: int -> string
+    method get_address: int -> doubleword_int
+    method get_address_string: int -> string
+    method get_arm_extension_register: int -> arm_extension_register_t
+    method get_arm_extension_register_element:
+             int -> arm_extension_register_element_t
+    method get_arm_extension_register_replicated_element:
+             int -> arm_extension_register_replicated_element_t
+    method get_register: int -> register_t
+    method get_flag: int -> flag_t
+
+    method write_xml_register: ?tag:string -> xml_element_int -> register_t -> unit
+    method write_xml_string: ?tag:string -> xml_element_int -> string -> unit
+    method read_xml_register: ?tag:string -> xml_element_int -> register_t
+    method read_xml_string: ?tag:string -> xml_element_int -> string
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+  end
+
+
+(** {1 Binary I/O} *)
+
+(** Wrapper for reading different types of data from file.*)
 class type virtual stream_wrapper_int = 
 object
     
@@ -718,6 +932,7 @@ object
 end
 
 
+(** Principal class for reading in executables.*)
 class type pushback_stream_int =
 object
   method skip_bytes: int -> unit
@@ -770,7 +985,9 @@ object
 end
 
 
-(* =========================================================== Data block === *)
+(** {1 Data blocks and tables} *)
+
+(** {2 Data block}*)
 
 (** Represents a fragment of a code section that holds data rather than code.
 
@@ -814,7 +1031,7 @@ object ('a)
   method toString: string
 end
 
-(* =========================================================== Jump table === *)
+(** {2 Jump table} *)
 
 class type jumptable_int =
 object
@@ -849,7 +1066,7 @@ object
 
 end
 
-(* ======================================================== struct tables === *)
+(** {2 Struct tables}*)
 
 (* Note: call-back-tables can be considered a subset of struct_tables; we
  * keep them separate for now, as they serve different purposes. *)
@@ -918,7 +1135,8 @@ class type struct_tables_int =
 
   end
 
-(* ======================================================Call-back tables === *)
+
+(** {2 Call-back tables} *)
 
 
 type call_back_table_value_t =
@@ -991,70 +1209,7 @@ class type call_back_tables_int =
 
   end
 
-(* ============================================================= Location === *)
-
-type base_location_t = {
-    loc_faddr: doubleword_int;
-    loc_iaddr: doubleword_int;
-  }
-
-
-type fcontext_t = {
-    ctxt_faddr: doubleword_int;
-    ctxt_callsite: doubleword_int;
-    ctxt_returnsite: doubleword_int
-  }
-
-
-type context_t =
-  | FunctionContext of fcontext_t
-  | BlockContext of doubleword_int
-  | ConditionContext of bool  (* conditional instrs turned into blocks *)
-
-
-(* ctxt_iaddress_t spec:
-
-   i  ( [], { faddr,iaddr } ) = iaddr
-   i  ( [ F{ fa,cs,rs } ], { faddr,iaddr }) = iaddr
-   i  ( [ B{ js } ], { faddr,iaddr }) = iaddr
-   i  ( [ C{c}], {faddr, iaddr}) = iaddr
-
-   f  ( [], { faddr,iaddr } ) = faddr
-   f  ( [ F{ fa,cs,rs }, _ ],  { faddr,iaddr } ) = fa
-   f  ( [ B{ js } ], { faddr,iaddr } ) = faddr
-   f  ( B{ js }::ctxt , { faddr,iaddr } ) = f (ctxt, {faddr,iaddr})
-   f  ( C{c}::ctxt, {faddr, iaddr}) = f(ctxt, {faddr, iaddr})
-
-   ci ( [], { faddr,iaddr } ) = iaddr
-   ci ( [ F{ fa,cs,rs } ], { faddr,iaddr } ) = F:cs_iaddr
-   ci ( [ F{ fa1,cs1,rs1 },F{ fa2,cs2,rs2 } ], { faddr,iaddr } ) = F:cs1_F:cs2_iaddr
-   ci ( [ B{ js } ], { faddr,iaddr }) = B:js_iaddr
-   ci ( [ B{ js1 }, B{ js2 } ], { faddr,iaddr }) = B:js1_B:js2_iaddr
-   ci ( [ C{true}], {faddr, iaddr}) = T_iaddr
-   ci ( [ C{false}], {faddr, iaddr}) = F_iaddr
- *)
-type ctxt_iaddress_t = string
-
-class type location_int =
-  object ('a)
-
-    method compare: 'a -> int
-
-    method i: doubleword_int         (* instruction address *)
-    method f: doubleword_int         (* function address of outer context *)
-    method ci: ctxt_iaddress_t       (* full context instruction address string *)
-
-    method base_loc: base_location_t (* inner function address, instruction address *)
-    method base_f: doubleword_int    (* function address of inner context *)
-    method ctxt: context_t list
-
-    method has_context: bool
-
-    method toPretty: pretty_t
-  end
-
-
-(* ========================================================= String table === *)
+(** {2 String table} *)
 
 class type string_table_int =
 object
@@ -1076,7 +1231,8 @@ object
 
 end
 
-(* ====================================================== System settings === *)
+
+(** {1 System-wide data} *)
 
 class type system_settings_int =
 object
@@ -1122,7 +1278,6 @@ object
 
 end
 
-(* ============================================================== System data === *)
 
 class type system_data_int =
 object
@@ -1143,7 +1298,26 @@ object
 
 end
 
-(* ============================================================ Function data === *)
+
+class type user_provided_directions_int =
+object
+  (* setters *)
+  method load_dll_ordinal_mappings: string -> unit
+  method set_dll_ordinal_mappings: string -> (int * string) list -> unit
+
+  (* getters *)
+  method get_dll_ordinal_mapping: string -> int -> string
+
+  (* predicates *)
+  method are_DS_and_ES_the_same_segment: bool
+
+  (* xml *)
+  method write_xml_ordinal_table: xml_element_int -> string -> unit
+end
+
+
+(** {1 Function data} *)
+
 
 class type function_data_int =
   object
@@ -1228,26 +1402,6 @@ class type functions_data_int =
 
   end
 
-(* ================================================= User-provided directions === *)
-
-class type user_provided_directions_int =
-object
-  (* setters *)
-  method load_dll_ordinal_mappings: string -> unit
-  method set_dll_ordinal_mappings: string -> (int * string) list -> unit
-
-  (* getters *)
-  method get_dll_ordinal_mapping: string -> int -> string
-
-  (* predicates *)
-  method are_DS_and_ES_the_same_segment: bool
-
-  (* xml *)
-  method write_xml_ordinal_table: xml_element_int -> string -> unit
-end
-
-
-(* =========================================================== Variable names === *)
 
 class type variable_names_int =
 object
@@ -1266,102 +1420,25 @@ object
 end
 
 
-(* ============================================================== C struct === *)
+(** {1 Invariants}*)
 
-type struct_field_t = {
-  fld_name: string;
-  fld_offset: int;
-  fld_size: int;
-  fld_type: btype_t
-}
+(** {2 Variable invariants} *)
 
-
-class type c_struct_int =
-object
-  method get_name: string
-  method get_field: int -> struct_field_t
-  method has_field: int -> bool
-  method iter: (struct_field_t -> unit) -> unit
-  method toPretty: pretty_t
-end
-
-(* ================================================== Constant definitions === *)
-
-type constant_definition_t = {
-  xconst_name: string;
-  xconst_value: doubleword_int;
-  xconst_type: btype_t;
-  xconst_desc: string;
-  xconst_is_addr: bool
-}
-
-
-type flag_definition_t = {
-  xflag_name: string;
-  xflag_pos: int;    (* lowest order bit is zero *)
-  xflag_desc: string;
-  xflag_type: btype_t
-}
-
-(* ====================================================== Type definitions === *)
-
-class type type_definitions_int =
-  object
-    method add_builtin_typeinfo: string -> btype_t -> unit
-    method add_builtin_compinfo: string -> bcompinfo_t -> unit
-    method add_builtin_enuminfo: string -> benuminfo_t -> unit
-         
-    method add_typeinfo: string -> btype_t -> unit
-    method add_compinfo: string -> bcompinfo_t -> unit
-    method add_enuminfo: string -> benuminfo_t -> unit
-         
-    method get_type: string -> btype_t
-    method get_compinfo: string -> bcompinfo_t
-    method get_enuminfo: string -> benuminfo_t
-         
-    method has_type: string -> bool
-    method has_compinfo: string -> bool
-    method has_enuminfo: string -> bool
-
-    method write_xml: xml_element_int -> unit
-    method read_xml: xml_element_int -> unit
-         
-    method toPretty: pretty_t
-end
-
-(* ======================================================== Demangled name === *)
-
-type demangled_name_t = {
-  dm_name : tname_t;
-  dm_name_space : tname_t list;
-  dm_parameter_types : btype_t list;
-  dm_returntype      : btype_t option;
-  dm_calling_convention: string;
-  dm_accessibility: string;
-  dm_storage_class: string;
-  dm_constructor  : bool;
-  dm_destructor   : bool;
-  dm_static       : bool;
-  dm_virtual      : bool;
-  dm_operator     : bool;
-  dm_const        : bool;
-  dm_vbtable      : bool;
-  dm_vftable      : bool 
-  }
-
-
-(* ================================================== Variable invariants === *)
-
+(** Pairing of a variable with a set of locations represented by symbols.*)
 type vardefuse_t = variable_t * symbol_t list
 
 
+(** Variable invariant fact *)
 type var_invariant_fact_t =
-  | ReachingDef of vardefuse_t
-  | FlagReachingDef of vardefuse_t
+  | ReachingDef of vardefuse_t  (** reaching definitions of a variable *)
+  | FlagReachingDef of vardefuse_t  (** reaching definitions of a flag variable *)
   | DefUse of vardefuse_t
+  (** list of locations where a variable definition is used *)
   | DefUseHigh of vardefuse_t
+  (** list of locations where a high-level variable is used *)
 
 
+(** Single variable invariant at a particular location.*)
 class type var_invariant_int =
   object ('a)
     method index: int
@@ -1383,6 +1460,7 @@ class type var_invariant_int =
   end
 
 
+(** All variable invariants at a particular location.*)
 class type location_var_invariant_int =
   object
     method reset: unit
@@ -1407,6 +1485,7 @@ class type location_var_invariant_int =
   end
 
 
+(** Access structure for all variable invariants for a single function.*)
 class type var_invariant_io_int =
   object
     method add_reaching_def: string -> variable_t -> symbol_t list  -> unit
@@ -1424,14 +1503,42 @@ class type var_invariant_io_int =
 
   end
 
-(* ======================================================= Type invariants === *)
 
+(** Variable invariant dictionary.*)
+class type varinvdictionary_int =
+  object
+
+    method xd: xprdictionary_int
+    method index_var_def_use: vardefuse_t -> int
+    method index_var_invariant_fact: var_invariant_fact_t -> int
+
+    method get_var_def_use: int -> vardefuse_t
+    method get_var_invariant_fact: int -> var_invariant_fact_t
+
+    method write_xml_var_invariant_fact:
+             ?tag:string -> xml_element_int -> var_invariant_fact_t -> unit
+    method read_xml_var_invariant_fact:
+             ?tag:string -> xml_element_int -> var_invariant_fact_t
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+    method toPretty: pretty_t
+
+  end
+
+
+(** {2 Type invariants} *)
+
+
+(** Type invariant fact. *)
 type type_invariant_fact_t = 
 | VarTypeFact of variable_t * btype_t * string list    (* struct, fields *)
 | ConstTypeFact of numerical_t * btype_t
 | XprTypeFact of xpr_t * btype_t
 
 
+(** Single type invariant at a particular location.*)
 class type type_invariant_int =
 object ('a)
   method index: int
@@ -1443,6 +1550,7 @@ object ('a)
 end
 
 
+(** All type invariants at a particular location.*)
 class type location_type_invariant_int =
 object
   method add_fact: type_invariant_fact_t -> unit
@@ -1460,6 +1568,7 @@ object
 end
 
 
+(** Access structure for all type invariants in a single function.*)
 class type type_invariant_io_int =
 object
   method add_var_fact:
@@ -1489,31 +1598,60 @@ object
   method toPretty: pretty_t
 end
 
-(* ===================================================== Location invariants === *)
 
+(** Type invariant dictionary.*)
+class type tinvdictionary_int =
+  object
+
+    method xd: xprdictionary_int
+    method index_type_invariant_fact: type_invariant_fact_t -> int
+    method get_type_invariant_fact: int -> type_invariant_fact_t
+
+    method write_xml_type_invariant_fact:
+             ?tag:string -> xml_element_int -> type_invariant_fact_t -> unit
+    method read_xml_type_invariant_fact:
+             ?tag:string -> xml_element_int -> type_invariant_fact_t
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+    method toPretty: pretty_t
+
+  end
+
+
+
+(** {2 Value invariants} *)
+
+(** Non-relational value (symbolic or numerical constant *)
 type non_relational_value_t =
 | FSymbolicExpr of xpr_t
 | FIntervalValue of numerical_t option * numerical_t option
 | FBaseOffsetValue of symbol_t * numerical_t option * numerical_t option * bool
 
 
-(* c1 f1 + c2 f2 .... + cn fn = constant *)
+(** Linear equality: [c1 f1 + c2 f2 .... + cn fn = constant] *)
 type linear_equality_t = {
-  leq_factors: (numerical_t * variable_t) list;
-  leq_constant: numerical_t
+    leq_factors: (numerical_t * variable_t) list; (** (coefficient, variable) list*)
+    leq_constant: numerical_t  (** constant *)
 }
 
 
+(** Value invariant fact.*)
 type invariant_fact_t =
-  | Unreachable of string      (* domain that signals unreachability *)
+  | Unreachable of string  (** name of domain that signals unreachability *)
   | NonRelationalFact of variable_t * non_relational_value_t
+  (** variable equals non-relational-value *)
   | RelationalFact of linear_equality_t
-  | InitialVarEquality of variable_t * variable_t   (* variable, initial value *)
-  | InitialVarDisEquality of variable_t * variable_t (* variable, initial value *)
+  | InitialVarEquality of variable_t * variable_t
+  (** variable, initial value: variable is equal to its initial value at function entry *)
+  | InitialVarDisEquality of variable_t * variable_t
+  (** variable, initial value: variable may not be equal to its initial value*)
   | TestVarEquality of variable_t * variable_t * ctxt_iaddress_t * ctxt_iaddress_t
-         (* variable, test value *)
+  (** variable, test value:  *)
 
 
+(** Single value invariant at a particular location.*)
 class type invariant_int =
 object ('a)
   method index: int
@@ -1534,6 +1672,7 @@ object ('a)
 end
 
 
+(** All value invariants at a particular location.*)
 class type location_invariant_int =
 object
 
@@ -1581,6 +1720,7 @@ object
 end
 
 
+(** Access structure for all value invariants for a single function.*)
 class type invariant_io_int =
 object
 
@@ -1623,8 +1763,8 @@ object
   method toPretty: pretty_t
 end
 
-(* ----------------------------------------------- Invariant Dictionary ----- *)
 
+(** Value invariant dictionary *)
 class type invdictionary_int =
   object
 
@@ -1653,70 +1793,54 @@ class type invdictionary_int =
   end
 
 
-class type tinvdictionary_int =
-  object
 
-    method xd: xprdictionary_int
-    method index_type_invariant_fact: type_invariant_fact_t -> int
-    method get_type_invariant_fact: int -> type_invariant_fact_t
+(** {1 Function summaries}*)
 
-    method write_xml_type_invariant_fact:
-             ?tag:string -> xml_element_int -> type_invariant_fact_t -> unit
-    method read_xml_type_invariant_fact:
-             ?tag:string -> xml_element_int -> type_invariant_fact_t
+(** {2 Function signatures} *)
 
-    method write_xml: xml_element_int -> unit
-    method read_xml: xml_element_int -> unit
+(** Location of a parameter of the function.
 
-    method toPretty: pretty_t
-
-  end
-
-
-class type varinvdictionary_int =
-  object
-
-    method xd: xprdictionary_int
-    method index_var_def_use: vardefuse_t -> int
-    method index_var_invariant_fact: var_invariant_fact_t -> int
-
-    method get_var_def_use: int -> vardefuse_t
-    method get_var_invariant_fact: int -> var_invariant_fact_t
-
-    method write_xml_var_invariant_fact:
-             ?tag:string -> xml_element_int -> var_invariant_fact_t -> unit
-    method read_xml_var_invariant_fact:
-             ?tag:string -> xml_element_int -> var_invariant_fact_t
-
-    method write_xml: xml_element_int -> unit
-    method read_xml: xml_element_int -> unit
-
-    method toPretty: pretty_t
-
-  end
-
-
-(* ====================================================== Function summaries === *)
-
-(* The stack parameter location indicates the location of the argument
+   The {b stack parameter} location indicates the location of the argument
    relative to the return address, in increments of 4 (that is, stack
    parameter 1 is located at offset 4, stack parameter 2 is at offset 8,
    etc.
 
-   The size of the argument defaults to 4 bytes.
+   The {b global parameter} location indicates the address of a global
+   variable that is accessed and/or modified by the function. This is not
+   a true parameter of the function in the usual sense, but including it
+   as a pseudo parameter allows the recording of the effects on the global
+   variable in the function summary, e.g., in preconditions or postconditions.
 
-   Function summaries can be annotated with io-actions and parameter roles.
+   The size of the argument defaults to 4 bytes.*)
+type parameter_location_t =
+| StackParameter of int
+| RegisterParameter of register_t
+| GlobalParameter of doubleword_int
+| UnknownParameterLocation
 
-   An io-action has the following attributes:
-   - cat : category (e.g. registry, services, filesystem, network, process, ...)
-   - desc: brief description of the action performed by this function
-   - pre : condition on argument values that decides whether the function
-           warrants reporting
+
+(** Type of format string for extracting format modifiers.*)
+type formatstring_type_t =
+  | NoFormat
+  | PrintFormat
+  | ScanFormat
+
+
+(** Mode of access for a parameter.*)
+type arg_io_t =
+| ArgRead
+| ArgReadWrite
+| ArgWrite
+
+
+(** Function type signature parameter.
 
    A parameter has the following annotation attributes:
-   - desc : general description of the parameter
-   - roles: a list of (rt,rn) pairs that indicate the role of the parameter under
-             different circumstances,
+   - desc: free form description of the parameter
+   - roles: a list of (roletype, rolename) pairs that indicate the role of the
+     parameter under different circumstances (primarily used in malware
+     analysis; ioc stands for indicator-of-compromise)
+     {[
             e.g. (ioc:network, protocol)
                  (ioc:filesystem, filename)
                  (ioc:registry, key)
@@ -1731,31 +1855,21 @@ class type varinvdictionary_int =
             or
                  (jni, class)
                  (jni, object)
+      ]}
       the last two will change the representation of the values into a symbolic
       name, or list of names
-   -  io : "r", "w", or "rw", depending on the whether the argument provided
+   -  io : "r", "w", or "rw", depending on whether the argument provided
         is input, output or both
 
-   The api has an additional attribute for the role of the return value
+   Note: The api has an additional attribute for the role of the return value
    - rv-roles: a list of pairs that indicate the role of the return value
                under different circumstances,
+     {[
                e.g. (ioc:filesystem, filename)
                     (ioc:network, protocol)
                     (jni, object)
+     ]}
 *)
-type parameter_location_t =
-| StackParameter of int
-| RegisterParameter of register_t
-| GlobalParameter of doubleword_int
-| UnknownParameterLocation
-
-
-type formatstring_type_t =
-  | NoFormat
-  | PrintFormat
-  | ScanFormat
-
-
 type fts_parameter_t = {
   apar_name: string;
   apar_type: btype_t;
@@ -1768,14 +1882,17 @@ type fts_parameter_t = {
 }
 
 
+(** Arithmetic operator used in expressions over api terms.*)
 type arithmetic_op_t =
   PPlus | PMinus | PDivide | PTimes
 
 
+(** Relational operator used in expressions over api terms.*)
 type relational_op_t = 
   PEquals | PLessThan | PLessEqual | PGreaterThan | PGreaterEqual | PNotEqual
 
 
+(** Function signature.*)
 type function_signature_t = {
   fts_parameters: fts_parameter_t list;
   fts_varargs: bool;
@@ -1788,6 +1905,7 @@ type function_signature_t = {
 }
 
 
+(** Function interface.*)
 type function_interface_t = {
     fintf_name: string;
     fintf_jni_index: int option;
@@ -1796,66 +1914,95 @@ type function_interface_t = {
   }
 
 
+(** Api term used in expressions that describe a function's externally observable
+    behavior.*)
 type bterm_t =
-  | ArgValue of fts_parameter_t
-  | RunTimeValue
-  | ReturnValue
-  | NamedConstant of string
-  | NumConstant of numerical_t
-  | ArgBufferSize of bterm_t        (* size of buffer pointed to by term in bytes *)
-  | IndexSize of bterm_t (* value of term, to be interpreted as size in type units *)
-  | ByteSize of bterm_t  (* value of term, to be interpreted as size in bytes *)
-  | ArgAddressedValue of bterm_t * bterm_t    (* address term, offset term *)
-  | ArgNullTerminatorPos of bterm_t
-  | ArgSizeOf of btype_t
+  | ArgValue of fts_parameter_t  (** argument value (including global values) *)
+  | RunTimeValue   (** unknown value *)
+  | ReturnValue    (** return value from the function *)
+  | NamedConstant of string  (** macro *)
+  | NumConstant of numerical_t  (** numerical constant *)
+  | ArgBufferSize of bterm_t        (** size of buffer pointed to by term in bytes *)
+  | IndexSize of bterm_t (** value of term, represented as size in type units *)
+  | ByteSize of bterm_t  (** value of term, represented as size in bytes *)
+  | ArgAddressedValue of bterm_t * bterm_t    (** [ArgAddressedValue (base, offset)]
+  refers to the value at address [base + offset] *)
+  | ArgNullTerminatorPos of bterm_t (** Pointer to the null-terminating byte in a
+  string *)
+  | ArgSizeOf of btype_t (** Size of type in bytes *)
   | ArithmeticExpr of arithmetic_op_t * bterm_t * bterm_t
+  (** arithmetic expression over terms *)
 
+(** {2 Call targets}*)
 
-
-(* ========================================================= call targets === *)
-
+(** Function stub identification.*)
 type function_stub_t =
-  | SOFunction of string (* ELF *)
-  | DllFunction of string * string (* PE *)
-  | JniFunction of int  (* Java Native Methods, call on ( *env) where env is the
+  | SOFunction of string (** name of library function (ELF) *)
+  | DllFunction of string * string (** name of library function (PE) *)
+  | JniFunction of int  (** Java Native Methods, call on ( *env) where env is the
     first argument on the calling function, with the jni identification number *)
-  | LinuxSyscallFunction of int (* numbers ranging from 4000 to 4999 *)
-  | PckFunction of string * string list * string   (* PE, with package names *)
+  | LinuxSyscallFunction of int (** numbers ranging from 4000 to 4999 *)
+  | PckFunction of string * string list * string   (** PE, with package names *)
                  
-(* Call target types:
-   StubTarget: dynamically linked function external to the executable
-   StaticStubTarget: library function with summary statically linked 
-                     in the executable
-   AppTarget: application function with address
-   InlinedAppTarget: application function with address that is inlined
-   WrappedTarget: application function that wraps a call to another function
-      a: address of wrapper function;
-      fapi: function api of wrapper function;
-      tgt: call target of wrapped function
-      mapping: maps wrapped function arguments to wrapper function arguments
-                 and constants provided by the wrapper function internally
-   VirtualTarget: virtual function specified in class vtable
-   IndirectTarget: indirect call on external variable (global variable, 
-                   function argument, or return value)
-   CallbackTableTarget: indirect call on a field of a struct from a list of
-                        those structs
-   UnknownTarget: target of indirect call that has not been resolved yet
-*)
+
+(** Identification of a call target in a call instruction.*)
 type call_target_t =
-  | StubTarget of function_stub_t
-  | StaticStubTarget of doubleword_int * function_stub_t
-  | AppTarget of doubleword_int
-  | InlinedAppTarget of doubleword_int * string
+  | StubTarget of function_stub_t (** call to dynamically linked function
+  external to the executable *)
+  | StaticStubTarget of doubleword_int * function_stub_t (** call to a statically
+  linked library function, with its address in the executable *)
+  | AppTarget of doubleword_int (** call to application function with the given address
+  in the executable *)
+  | InlinedAppTarget of doubleword_int * string (** [InlinedAppTarget (dw, name) is
+  call to an inlined application function with address [dw] and name [name] *)
   | WrappedTarget of
       doubleword_int
       * function_interface_t
       * call_target_t
       * (fts_parameter_t * bterm_t) list
-  | VirtualTarget of function_interface_t
+    (** [WrappedTarget (a, fapi, tgt, map)] is a call to a function that itself
+        is a thin wrapper for a call to another function with address [a] and api
+        [fapi], (inner) call target [tgt], with [map] a map of the parameters of
+        the inner function mapped to the values given to the outer call.*)
+  | VirtualTarget of function_interface_t (** call to a virtual function with a
+  known type signature *)
   | IndirectTarget of bterm_t option * call_target_t list
-  | CallbackTableTarget of doubleword_int * int (* table address, offset *)
-  | UnknownTarget
+  (** [IndirectTarget (t, tgts) is a call to a target expressed by
+      term [t] (if known, must be expressible by values
+      external to the function, e.g., a global variable or
+      a function argument, or a return value) and a list of
+      concreate call targets.*)
+  | CallbackTableTarget of doubleword_int * int
+  (** [CallbackTableTarget (dw, index)]
+      is an indirect call where the
+      target is in a table of pointers *)
+  | UnknownTarget (** indirect call to an unknown target *)
 
+
+(** {2 Jump targets} *)
+(* Indirect jump target types:
+   JumptableTarget (offset,jumptable,reg)
+      jmp* offset(.,reg,4) with offset within a jump table
+   OffsettableTarget (joffset, jumptable, datablock)
+      x86:movzx (reg, doffset(_)) where doffset is the start of an offset table
+      x86:jmp* joffset(., reg, 4) where joffset is within a jump table
+   JumpOnGlobal gvar
+      jump target is provided in a global variable
+   JumpOnArgument avar
+      jump target is provided in an argument variable (or one of its dereferences)
+   UnknownTarget: target of indirect jump has not been resolved yet
+*)
+
+type jump_target_t =
+| JumptableTarget of doubleword_int * jumptable_int * register_t
+| OffsettableTarget of doubleword_int * jumptable_int * data_block_int
+| JumpOnTerm of bterm_t
+| DllJumpTarget of string * string   (* PE *)
+| SOJumpTarget of string  (* shared object, ELF *)
+| UnknownJumpTarget
+
+
+(** {2 Preconditions} *)
 
 type c_struct_constant_t =
 | FieldValues of (int * c_struct_constant_t) list
@@ -1864,26 +2011,48 @@ type c_struct_constant_t =
 | FieldCallTarget of call_target_t
 
 
+(** Function precondition, an expression that only refers to terms external
+    to the function, e.g., parameters, global variables, or constants, that
+    must be true over the arguments for a call to the function to be valid
+    (safe).*)
 type precondition_t =
-| PreNullTerminated of bterm_t
-| PreNotNull of bterm_t
-| PreNull of bterm_t
-| PreDerefRead of btype_t * bterm_t * bterm_t * bool   (* dest, size, canbenull *)
-| PreDerefWrite of btype_t * bterm_t * bterm_t * bool  (* dest, size, canbenull *)
-| PreAllocationBase of bterm_t
-| PreFunctionPointer of btype_t * bterm_t   
-| PreNoOverlap of bterm_t * bterm_t
-| PreFormatString of bterm_t
+  | PreNullTerminated of bterm_t
+  (** [PreNullTerminated t]: term [t] is null-terminated *)
+  | PreNotNull of bterm_t (** [PreNotNull t]: term [t] is not null *)
+  | PreNull of bterm_t (** [PreNull t]: term [t] is null *)
+  | PreDerefRead of btype_t * bterm_t * bterm_t * bool (** [PreDerefRead
+  (ty, dest, size, canbenull): term [dest] points to a buffer
+  of at least [size] bytes accessible for reading, or [dest] is null (if
+  canbenull is true)*)
+  | PreDerefWrite of btype_t * bterm_t * bterm_t * bool (** [PreDerefWrite
+  (ty, dest, size, canbenull): term [dest] points to a buffer
+  of at least [size] bytes accessible for writing, or [dest] is null (if
+  canbenull is true)*)
+  | PreAllocationBase of bterm_t (** [PreAllocationBase t]: term [t] points to an
+  address returned by a dynamic allocation function (e.g., malloc)*)
+  | PreFunctionPointer of btype_t * bterm_t (** [PreFunctionPointer (ty, t)]:
+  term [t] is a function pointer of type [ty]*)
+  | PreNoOverlap of bterm_t * bterm_t (** [PreNoOverlap (t1, t2): terms [t1]
+  and [t2] do not overlap *)
+  | PreFormatString of bterm_t (** [PreFormatString t]: term [t] is a format
+  string *)
 
 (* value must be one of defined enumeration values;
    true if constant is set of flags *)
-| PreEnum of bterm_t * string * bool
-| PreRelationalExpr of relational_op_t * bterm_t * bterm_t
-| PreDisjunction of precondition_t list
-| PreConditional of precondition_t * precondition_t
-| PreIncludes of bterm_t * c_struct_constant_t
+  | PreEnum of bterm_t * string * bool (** [PreEnum (t, name, flags)]: term [t]
+  is one of the values included in the named enumeration; if [flags] is true
+  the constant is a set of flags *)
+  | PreRelationalExpr of relational_op_t * bterm_t * bterm_t (** [PreRelationalExpr
+  (op, t1, t2)]: terms [t1] and [t2] satisfy the given relational expression *)
+  | PreDisjunction of precondition_t list (** Disjunction of preconditions *)
+  | PreConditional of precondition_t * precondition_t
+  | PreIncludes of bterm_t * c_struct_constant_t
 
 
+(** {2 Postconditions} *)
+
+(** Function postcondition: an expression over the return value and potentially
+    other terms external to the function.*)
 type postcondition_t =
 | PostNewMemoryRegion of bterm_t * bterm_t   (* pointer returned, size in bytes *)
 | PostFunctionPointer of bterm_t * bterm_t   (* return value, name of function *)
@@ -1900,6 +2069,10 @@ type postcondition_t =
 | PostConditional of precondition_t * postcondition_t
 
 
+(** {2 Side effects} *)
+
+(** Function side effect: an expression that describes how the calling context
+    is changed by the call.*)
 type sideeffect_t =
 | BlockWrite of btype_t * bterm_t * bterm_t 
 | Modifies of bterm_t
@@ -1911,6 +2084,8 @@ type sideeffect_t =
 | UnknownSideeffect
 
 
+(** Informal description of the actions performed by a function, potentially
+    conditional on a precondition.*)
 type io_action_t = {
   iox_cat: string;
   iox_desc: string;                  (* description *)
@@ -1918,6 +2093,9 @@ type io_action_t = {
 }
 
 
+(** {2 Function semantics} *)
+
+(** Function semantics, combining pre- and postconditions and side effects.*)
 type function_semantics_t = {
   fsem_pre: precondition_t list;
   fsem_post: postcondition_t list;
@@ -1929,6 +2107,7 @@ type function_semantics_t = {
 }
 
 
+(** Function documentation (from an external source).*)
 type function_documentation_t = {
   fdoc_desc: string;
   fdoc_remarks: string;
@@ -1937,6 +2116,8 @@ type function_documentation_t = {
   fdoc_xapidoc: xml_element_int
 }
 
+
+(** {2 Function summary} *)
 
 class type function_summary_int =
 object ('a)
@@ -1982,38 +2163,250 @@ object ('a)
 end
 
 
-(* ============================================== function summary library == *)
-(* The function summary library holds
-   -- summaries (models) of dll functions, and
-   -- summaries (models) of jni functions
+(** {2 Global state}*)
+
+(** Operator used in expressions over global terms *)
+type g_arithmetic_op = GPlus | GMinus | GTimes | GDivide
+
+(** Term in expressions over globals *)
+type gterm_t =
+| GConstant of numerical_t
+| GReturnValue of location_int
+| GSideeffectValue of location_int * string (** call site, argument name *)
+| GArgValue of doubleword_int * int * int list (** function, arg index, offset *)
+| GUnknownValue
+| GArithmeticExpr of g_arithmetic_op * gterm_t * gterm_t
+
+
+class type gv_reader_int =
+object
+  method get_type: btype_t
+  method get_size: int option
+  method get_offset: int list
+  method is_function_pointer: bool
+  method write_xml: xml_element_int -> unit
+  method toPretty: pretty_t
+end
+
+
+class type gv_writer_int =
+object
+  (* accessors *)
+  method get_type: btype_t
+  method get_size: int option
+  method get_offset: int list
+  method get_value: gterm_t
+
+  (* xml *)
+  method write_xml: xml_element_int -> unit
+
+  (* printing *)
+  method toPretty: pretty_t
+  method to_report_pretty : (gterm_t -> pretty_t) -> pretty_t
+end
+
+
+class type global_variable_int =
+object
+  method add_reader:
+           ?ty:btype_t
+           -> ?size:int option
+           -> ?offset:int list
+           -> ?fp:bool
+           -> location_int
+           -> unit
+  method add_writer:
+           ?ty:btype_t
+           -> ?size:int option
+           -> ?offset:int list
+           -> gterm_t
+           -> location_int
+           -> unit
+
+  (* accessors *)
+  method get_address: doubleword_int
+  method get_values: gterm_t list
+  method get_types : btype_t list
+
+  (* predicates *)
+  method is_function_pointer: bool
+
+  (* xml *)
+  method write_xml: xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
+
+  (* printing *)
+  method toPretty: pretty_t
+  method to_report_pretty: (gterm_t -> pretty_t) -> pretty_t
+end
+
+
+class type global_system_state_int =
+object
+  method initialize: unit
+
+  method add_reader:
+           ?ty:btype_t
+           -> ?size:int option
+           -> ?offset:int list
+           -> ?fp:bool
+           -> doubleword_int
+           -> location_int
+           -> unit
+  method add_writer:
+           ?ty:btype_t
+           -> ?size:int option
+           -> ?offset:int list
+           -> gterm_t
+           -> doubleword_int
+           -> location_int
+           -> unit
+
+  (* accessors *)
+  method get_values: doubleword_int -> gterm_t list
+  method get_types: doubleword_int -> btype_t list
+  method get_destinations: gterm_t -> doubleword_int list
+
+  (* xml *)
+  method write_xml: xml_element_int -> unit
+  method read_xml: xml_element_int -> unit
+
+  (* printing *)
+  method toPretty: pretty_t
+  method to_report_pretty: (gterm_t -> pretty_t) -> pretty_t
+end
+
+
+(** {2 Interface dictionary} *)
+
+class type interface_dictionary_int =
+  object
+    method reset: unit
+
+    method index_parameter_location: parameter_location_t -> int
+    method index_role: (string * string) -> int
+    method index_roles: (string * string) list -> int
+    method index_fts_parameter: fts_parameter_t -> int
+    method index_bterm: bterm_t -> int
+    method index_gterm: gterm_t -> int
+    method index_fts_parameter_list: fts_parameter_t list -> int
+    method index_fts_parameter_value:  (fts_parameter_t * bterm_t) -> int
+    method index_function_signature: function_signature_t -> int
+    method index_function_interface: function_interface_t -> int
+    method index_precondition: precondition_t -> int
+    method index_postcondition: postcondition_t -> int
+    method index_sideeffect: sideeffect_t -> int
+    method index_function_stub: function_stub_t -> int
+    method index_call_target: call_target_t -> int
+    method index_c_struct_constant: c_struct_constant_t -> int
+    method index_struct_field_value: (int * c_struct_constant_t) -> int
+
+    method get_parameter_location: int -> parameter_location_t
+    method get_role: int -> (string * string)
+    method get_roles: int -> (string * string) list
+    method get_fts_parameter: int -> fts_parameter_t
+    method get_bterm: int -> bterm_t
+    method get_fts_parameter_list: int -> fts_parameter_t list
+    method get_fts_parameter_value:  int -> (fts_parameter_t * bterm_t)
+    method get_function_signature: int -> function_signature_t
+    method get_function_interface: int -> function_interface_t
+    method get_precondition: int -> precondition_t
+    method get_postcondition: int -> postcondition_t
+    method get_sideeffect: int -> sideeffect_t
+    method get_function_stub: int -> function_stub_t
+    method get_call_target: int -> call_target_t
+    method get_c_struct_constant: int -> c_struct_constant_t
+    method get_struct_field_value: int -> (int * c_struct_constant_t)
+
+    method write_xml_parameter_location:
+             ?tag:string -> xml_element_int -> parameter_location_t -> unit
+    method write_xml_fts_parameter:
+             ?tag:string -> xml_element_int -> fts_parameter_t -> unit
+    method write_xml_bterm: ?tag:string -> xml_element_int -> bterm_t -> unit
+
+    method write_xml_gterm: ?tag:string -> xml_element_int -> gterm_t -> unit
+    method write_xml_function_stub:
+             ?tag:string -> xml_element_int -> function_stub_t -> unit
+    method write_xml_call_target:
+             ?tag:string -> xml_element_int -> call_target_t -> unit
+    method write_xml_function_signature:
+             ?tag:string -> xml_element_int -> function_signature_t -> unit
+    method write_xml_function_interface:
+             ?tag:string -> xml_element_int -> function_interface_t -> unit
+
+    method write_xml_precondition:
+             ?tag:string -> xml_element_int -> precondition_t -> unit
+    method write_xml_postcondition:
+             ?tag:string -> xml_element_int -> postcondition_t -> unit
+    method write_xml_sideeffect:
+             ?tag:string -> xml_element_int -> sideeffect_t -> unit
+
+    method read_xml_parameter_location:
+             ?tag:string -> xml_element_int -> parameter_location_t
+    method read_xml_fts_parameter:
+             ?tag:string -> xml_element_int -> fts_parameter_t
+    method read_xml_bterm: ?tag:string -> xml_element_int -> bterm_t
+    method read_xml_function_stub:
+             ?tag:string -> xml_element_int -> function_stub_t
+    method read_xml_call_target: ?tag:string -> xml_element_int -> call_target_t
+    method read_xml_function_signature:
+             ?tag:string -> xml_element_int -> function_signature_t
+    method read_xml_function_interface:
+             ?tag:string -> xml_element_int -> function_interface_t
+    method read_xml_precondition:
+             ?tag:string -> xml_element_int -> precondition_t
+    method read_xml_postcondition:
+             ?tag:string -> xml_element_int -> postcondition_t
+    method read_xml_sideeffect:
+             ?tag:string -> xml_element_int -> sideeffect_t
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+  end
+
+
+(** {1 Function summary library}*)
+
+
+(** The function summary library holds
+   - summaries (models) of dll/so functions, and
+   - summaries (models) of jni functions
 
    Dll summaries are searched for by a combination of dll name, which provides
-   the directory of the summary, and by name.
+   the directory of the summary, and by name; so summaries are searched for
+   by name.
    Jni summaries are obtained by index number: jni_<index> from the jni directory.
 
    Some Windows library functions have two versions: an ASCII version (with 
-   suffix A) and an Unicode version (with suffix W). The api and semantics for
+   suffix A) and a Unicode version (with suffix W). The api and semantics for
    these functions are almost the same, so the models directory provides a
    neutral version (without suffix) that provides all documentation, api, and
    semantics, and an A and W version that refer to the neutral version by name
    and indicate all type changes to be made to obtain the respective version.
-   The format of the referring version is, e.g., for CreateProcessA: 
+   The format of the referring version is, e.g., for CreateProcessA:
+   {[
    <refer-to name="CreateProcess">
       <replace_type  src="STARTUPINFO" tgt="STARTUPINFOA"/>
    </refer-to>
+   ]}
    Replacement of the standard types is performed automatically:
+   {[
      TCHAR   -> char, wchar_t
      LPCTSTR -> LPCSTR, LPCWSTR
      LPTSTR   -> LPSTR, LPWSTR
+   ]}
    and so does not need to be included.
 
    Some functions appear in multiple libraries. To avoid having to maintain
    multiple copies of the same model, we provide one model and references to
    this model within other libraries (directories). 
-   The format of the referring version is, e.g., for send in wsock32.dll :
+   The format of the referring version is, e.g., for send in wsock32.dll:
+   {[
    <libfun lib="wsock32" name="send">
       <refer-to lib="ws_32" name="send"/>
    </libfun>
+   ]}
 
    All Jni function models are stored in the jni directory. The name of the
    file for jni function with index x is jni_x.xml . 
@@ -2023,14 +2416,18 @@ end
    The model directory provides a template version, that all ten other
    model files can refer to.
    The format of the referring version is, e.g., for CallIntMethod,
+   {[
    <jnifun index="49" prefix="Call" suffix="Method" typename="Int">
       <type>jint</type>
    </jnifun>
+   ]}
    or for GetIntArrayElements,
+   {[
    <jnifun prefix="Get" suffix="ArrayElements" typename="Int">
       <type>jint</type>
       <arrarytype>jintArray</arraytype>
    </jnifun>
+   ]}
 
    Dll names are internally always represented with a _dll suffix unless
    the dll has an explicit different suffix (e.g., spools.drv) in which
@@ -2039,7 +2436,6 @@ end
    Windows file systems are case insensitive.
 
 *)
-
 class type function_summary_library_int = 
 object
   (* setters *)
@@ -2073,7 +2469,63 @@ object
   method write_xml_missing_summaries: xml_element_int -> unit
 end
 
-(* =============================================================== Cpp class === *)
+
+(** {1 Callgraph}*)
+
+class type callgraph_int =
+object
+  (* setters *)
+  method add_app_node: doubleword_int -> unit
+
+  method add_app_edge:
+           doubleword_int
+           -> doubleword_int
+           -> ctxt_iaddress_t
+           -> (int * string * xpr_t) list
+           -> unit
+
+  method add_so_edge:
+           doubleword_int
+           -> string
+           -> ctxt_iaddress_t
+           -> (int * string * xpr_t) list
+           -> unit
+
+  method add_dll_edge:
+           doubleword_int
+           -> string
+           -> ctxt_iaddress_t
+           -> (int * string * xpr_t) list
+           -> unit
+
+  method add_jni_edge:
+           doubleword_int
+           -> int
+           -> ctxt_iaddress_t
+           -> (int * string * xpr_t) list
+           -> unit
+
+  method add_unresolved_edge:
+           doubleword_int
+           -> int
+           -> ctxt_iaddress_t
+           -> (int * string * xpr_t) list
+           -> unit
+
+  method add_virtual_edge:
+           doubleword_int
+           -> function_interface_t
+           -> ctxt_iaddress_t
+           -> (int * string * xpr_t) list
+           -> unit
+
+  (* saving *)
+  method write_xml  : xml_element_int -> unit
+
+end
+
+
+(** {1 C++ related types} *)
 
 type cpp_datamember_t = {
   cppdm_name: string;
@@ -2112,20 +2564,44 @@ class type cpp_class_int =
     method dm_iter: (cpp_datamember_t -> unit) -> unit
     method vf_iter: (cpp_vfpointer_t -> unit) -> unit
     method stats_to_pretty: pretty_t
-end
+  end
 
 
-(* ======================================================== Memory reference === *)
+type demangled_name_t = {
+  dm_name : tname_t;
+  dm_name_space : tname_t list;
+  dm_parameter_types : btype_t list;
+  dm_returntype      : btype_t option;
+  dm_calling_convention: string;
+  dm_accessibility: string;
+  dm_storage_class: string;
+  dm_constructor  : bool;
+  dm_destructor   : bool;
+  dm_static       : bool;
+  dm_virtual      : bool;
+  dm_operator     : bool;
+  dm_const        : bool;
+  dm_vbtable      : bool;
+  dm_vftable      : bool
+  }
 
+
+(** {1 Variables} *)
+
+(** {2 Memory references} *)
+
+(** Memory reference base: a base address for a logical region of memory.*)
 type memory_base_t =
-| BLocalStackFrame                                            (* local stack frame *)
-| BRealignedStackFrame                      (* local stack frame after realignment *)
-| BAllocatedStackFrame                         (* extended stack frame from alloca *)
-| BGlobal                                                           (* global data *)
-| BaseVar of variable_t      (* base provided by an externally controlled variable *)
-| BaseUnknown of string                          (* address without interpretation *)
+| BLocalStackFrame  (** local stack frame *)
+| BRealignedStackFrame (** local stack frame after realignment *)
+| BAllocatedStackFrame (** extended stack frame from alloca *)
+| BGlobal  (** global data *)
+| BaseVar of variable_t  (** base provided by an externally controlled variable,
+e.g., argument to the function, or return value from malloc *)
+| BaseUnknown of string  (** address without interpretation *)
 
-               
+
+(** Memory offset: a constant or symbolic offset from a memory base.*)
 type memory_offset_t =
   | NoOffset
   | ConstantOffset of numerical_t * memory_offset_t
@@ -2133,6 +2609,7 @@ type memory_offset_t =
   | UnknownOffset 
 
 
+(** Memory reference wrapper. *)
 class type memory_reference_int =
 object ('a)
   (* identification *)
@@ -2158,6 +2635,7 @@ object ('a)
 end
 
 
+(** Principal access points for creating and retrieving memory references.*)
 class type memory_reference_manager_int =
 object
   (* reset *)
@@ -2180,11 +2658,21 @@ object
   method read_xml: xml_element_int -> unit
 end
 
-(* =============================================================== Variables === *)
 
-(* Denotations
+(** {2 Assembly variable} *)
 
-   A bridge variable is used to carry function arguments from the point where
+(** Assembly variable denotations.*)
+type assembly_variable_denotation_t =
+  (* size (bytes) memory reference index *)
+  | MemoryVariable of int * int * memory_offset_t
+  | RegisterVariable of register_t
+  | CPUFlagVariable of flag_t
+  | AuxiliaryVariable of constant_value_variable_t
+
+(** Auxiliary variables: variables that have a constant (but unknown) value
+    within the function.
+
+   A {b bridge variable} is used to carry function arguments from the point where
    they are pushed on the stack to the point where they are used in the call:
    BridgeVariable (address_of_call, argument index number (starting at 1))
 
@@ -2201,7 +2689,7 @@ end
 
    In general, all auxiliary variable types are constants from the perspective
    of the function. They represent values that are set by the environment, before
-   the function is entered (InitialRegisterValue or InitialMemoryValue) or during
+   the function is entered ([InitialRegisterValue] or [InitialMemoryValue]) or during
    the execution of the function.
 
    External auxiliary variables are a vehicle to pass values across the call
@@ -2216,14 +2704,6 @@ end
    references
 
 *)
-
-type assembly_variable_denotation_t =
-  (* size (bytes) memory reference index *)
-  | MemoryVariable of int * int * memory_offset_t 
-  | RegisterVariable of register_t
-  | CPUFlagVariable of flag_t
-  | AuxiliaryVariable of constant_value_variable_t
-
 and constant_value_variable_t =
   | InitialRegisterValue of register_t * int            (* level *)
   | InitialMemoryValue of variable_t                    (* original variable *)
@@ -2255,41 +2735,6 @@ and constant_value_variable_t =
   | ChifTemp
 
 
-class type vardictionary_int =
-  object
-
-    method xd: xprdictionary_int
-    method reset: unit
-    method get_indexed_variables: (int * assembly_variable_denotation_t) list
-    method get_indexed_bases: (int * memory_base_t) list
-
-    method index_memory_offset: memory_offset_t -> int
-    method index_memory_base: memory_base_t -> int
-    method index_assembly_variable_denotation: assembly_variable_denotation_t -> int
-    method index_constant_value_variable: constant_value_variable_t -> int
-
-    method get_memory_offset: int -> memory_offset_t
-    method get_memory_base: int -> memory_base_t
-    method get_assembly_variable_denotation: int -> assembly_variable_denotation_t
-    method get_constant_value_variable: int -> constant_value_variable_t
-
-    method write_xml_memory_offset:
-             ?tag:string -> xml_element_int -> memory_offset_t -> unit
-    method read_xml_memory_offset:
-             ?tag:string -> xml_element_int -> memory_offset_t
-    method write_xml_memory_base:
-             ?tag:string -> xml_element_int -> memory_base_t -> unit
-    method read_xml_memory_base: ?tag:string -> xml_element_int -> memory_base_t
-    method write_xml_assembly_variable_denotation:
-             ?tag:string -> xml_element_int -> assembly_variable_denotation_t -> unit
-    method read_xml_assembly_variable_denotation:
-             ?tag:string -> xml_element_int -> assembly_variable_denotation_t
-
-    method write_xml: xml_element_int -> unit
-    method read_xml: xml_element_int -> unit
-
-  end
-  
 
 class type assembly_variable_int =
 object ('a)
@@ -2348,6 +2793,47 @@ object ('a)
 
 end
 
+
+(** {2 Variable dictionary} *)
+
+
+class type vardictionary_int =
+  object
+
+    method xd: xprdictionary_int
+    method reset: unit
+    method get_indexed_variables: (int * assembly_variable_denotation_t) list
+    method get_indexed_bases: (int * memory_base_t) list
+
+    method index_memory_offset: memory_offset_t -> int
+    method index_memory_base: memory_base_t -> int
+    method index_assembly_variable_denotation: assembly_variable_denotation_t -> int
+    method index_constant_value_variable: constant_value_variable_t -> int
+
+    method get_memory_offset: int -> memory_offset_t
+    method get_memory_base: int -> memory_base_t
+    method get_assembly_variable_denotation: int -> assembly_variable_denotation_t
+    method get_constant_value_variable: int -> constant_value_variable_t
+
+    method write_xml_memory_offset:
+             ?tag:string -> xml_element_int -> memory_offset_t -> unit
+    method read_xml_memory_offset:
+             ?tag:string -> xml_element_int -> memory_offset_t
+    method write_xml_memory_base:
+             ?tag:string -> xml_element_int -> memory_base_t -> unit
+    method read_xml_memory_base: ?tag:string -> xml_element_int -> memory_base_t
+    method write_xml_assembly_variable_denotation:
+             ?tag:string -> xml_element_int -> assembly_variable_denotation_t -> unit
+    method read_xml_assembly_variable_denotation:
+             ?tag:string -> xml_element_int -> assembly_variable_denotation_t
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+  end
+
+
+(** {2 Variable manager} *)
 
 class type variable_manager_int =
 object
@@ -2439,7 +2925,7 @@ object
   method is_calltarget_value: variable_t -> bool
   method is_symbolic_value: variable_t -> bool
   method is_signed_symbolic_value: variable_t -> bool
-       
+
   method is_memory_variable: variable_t -> bool
   method is_basevar_memory_variable: variable_t -> bool
   method is_basevar_memory_value: variable_t -> bool
@@ -2448,254 +2934,15 @@ object
   method is_unknown_memory_variable: variable_t -> bool
   method has_constant_offset: variable_t -> bool
   method is_global_sideeffect: variable_t -> bool
-    
+
   method has_global_address: variable_t -> bool
-    
+
 end
 
-(* ============================================================ Global state === *)
-
-type g_arithmetic_op = GPlus | GMinus | GTimes | GDivide
- 
-type gterm_t =
-| GConstant of numerical_t
-| GReturnValue of location_int
-| GSideeffectValue of location_int * string    (* call site, argument name *)
-| GArgValue of doubleword_int * int * int list (* function, arg index, offset *)
-| GUnknownValue
-| GArithmeticExpr of g_arithmetic_op * gterm_t * gterm_t
-
-
-class type gv_reader_int =
-object
-  method get_type: btype_t
-  method get_size: int option
-  method get_offset: int list
-  method is_function_pointer: bool
-  method write_xml: xml_element_int -> unit
-  method toPretty: pretty_t
-end
-
-
-class type gv_writer_int =
-object
-  (* accessors *)
-  method get_type: btype_t
-  method get_size: int option 
-  method get_offset: int list
-  method get_value: gterm_t
-
-  (* xml *)
-  method write_xml: xml_element_int -> unit
-
-  (* printing *)
-  method toPretty: pretty_t
-  method to_report_pretty : (gterm_t -> pretty_t) -> pretty_t
-end
-
-
-class type global_variable_int =
-object
-  method add_reader: 
-           ?ty:btype_t
-           -> ?size:int option
-           -> ?offset:int list
-           -> ?fp:bool
-           -> location_int
-           -> unit
-  method add_writer: 
-           ?ty:btype_t
-           -> ?size:int option
-           -> ?offset:int list
-           -> gterm_t
-           -> location_int
-           -> unit
-  
-  (* accessors *)    
-  method get_address: doubleword_int
-  method get_values: gterm_t list
-  method get_types : btype_t list
-
-  (* predicates *)
-  method is_function_pointer: bool
-    
-  (* xml *)
-  method write_xml: xml_element_int -> unit
-  method read_xml: xml_element_int -> unit
-
-  (* printing *)
-  method toPretty: pretty_t
-  method to_report_pretty: (gterm_t -> pretty_t) -> pretty_t
-end
-
-
-class type global_system_state_int =
-object
-  method initialize: unit
-
-  method add_reader: 
-           ?ty:btype_t
-           -> ?size:int option
-           -> ?offset:int list
-           -> ?fp:bool
-           -> doubleword_int
-           -> location_int
-           -> unit
-  method add_writer:
-           ?ty:btype_t
-           -> ?size:int option
-           -> ?offset:int list
-           -> gterm_t
-           -> doubleword_int
-           -> location_int
-           -> unit
-
-  (* accessors *)
-  method get_values: doubleword_int -> gterm_t list
-  method get_types: doubleword_int -> btype_t list
-  method get_destinations: gterm_t -> doubleword_int list
-
-  (* xml *)
-  method write_xml: xml_element_int -> unit
-  method read_xml: xml_element_int -> unit
-
-  (* printing *)
-  method toPretty: pretty_t
-  method to_report_pretty: (gterm_t -> pretty_t) -> pretty_t
-end
-
-
-
-(* ========================================================== dictionary ==== *)
-
-type constantstring = string * bool * int
-
-class type bdictionary_int =
-  object
-
-    method reset: unit
-
-    method index_string: string -> int
-    method index_address: doubleword_int -> int
-    method index_address_string: string -> int
-    method index_arm_extension_register: arm_extension_register_t -> int
-    method index_arm_extension_register_element:
-             arm_extension_register_element_t -> int
-    method index_arm_extension_register_replicated_element:
-             arm_extension_register_replicated_element_t -> int
-    method index_register: register_t -> int
-    method index_flag: flag_t -> int
-         
-    method get_string: int -> string
-    method get_address: int -> doubleword_int
-    method get_address_string: int -> string
-    method get_arm_extension_register: int -> arm_extension_register_t
-    method get_arm_extension_register_element:
-             int -> arm_extension_register_element_t
-    method get_arm_extension_register_replicated_element:
-             int -> arm_extension_register_replicated_element_t
-    method get_register: int -> register_t
-    method get_flag: int -> flag_t
-
-    method write_xml_register: ?tag:string -> xml_element_int -> register_t -> unit
-    method write_xml_string: ?tag:string -> xml_element_int -> string -> unit
-    method read_xml_register: ?tag:string -> xml_element_int -> register_t
-    method read_xml_string: ?tag:string -> xml_element_int -> string
-
-    method write_xml: xml_element_int -> unit
-    method read_xml: xml_element_int -> unit
-
-  end
-
-
-class type interface_dictionary_int =
-  object
-    method reset: unit
-
-    method index_parameter_location: parameter_location_t -> int
-    method index_role: (string * string) -> int
-    method index_roles: (string * string) list -> int
-    method index_fts_parameter: fts_parameter_t -> int
-    method index_bterm: bterm_t -> int
-    method index_gterm: gterm_t -> int
-    method index_fts_parameter_list: fts_parameter_t list -> int
-    method index_fts_parameter_value:  (fts_parameter_t * bterm_t) -> int
-    method index_function_signature: function_signature_t -> int
-    method index_function_interface: function_interface_t -> int
-    method index_precondition: precondition_t -> int
-    method index_postcondition: postcondition_t -> int
-    method index_sideeffect: sideeffect_t -> int
-    method index_function_stub: function_stub_t -> int
-    method index_call_target: call_target_t -> int
-    method index_c_struct_constant: c_struct_constant_t -> int
-    method index_struct_field_value: (int * c_struct_constant_t) -> int
-
-    method get_parameter_location: int -> parameter_location_t
-    method get_role: int -> (string * string)
-    method get_roles: int -> (string * string) list
-    method get_fts_parameter: int -> fts_parameter_t
-    method get_bterm: int -> bterm_t
-    method get_fts_parameter_list: int -> fts_parameter_t list
-    method get_fts_parameter_value:  int -> (fts_parameter_t * bterm_t)
-    method get_function_signature: int -> function_signature_t
-    method get_function_interface: int -> function_interface_t
-    method get_precondition: int -> precondition_t
-    method get_postcondition: int -> postcondition_t
-    method get_sideeffect: int -> sideeffect_t
-    method get_function_stub: int -> function_stub_t
-    method get_call_target: int -> call_target_t
-    method get_c_struct_constant: int -> c_struct_constant_t
-    method get_struct_field_value: int -> (int * c_struct_constant_t)
-
-    method write_xml_parameter_location:
-             ?tag:string -> xml_element_int -> parameter_location_t -> unit
-    method write_xml_fts_parameter:
-             ?tag:string -> xml_element_int -> fts_parameter_t -> unit
-    method write_xml_bterm: ?tag:string -> xml_element_int -> bterm_t -> unit
-
-    method write_xml_gterm: ?tag:string -> xml_element_int -> gterm_t -> unit
-    method write_xml_function_stub:
-             ?tag:string -> xml_element_int -> function_stub_t -> unit
-    method write_xml_call_target:
-             ?tag:string -> xml_element_int -> call_target_t -> unit
-    method write_xml_function_signature:
-             ?tag:string -> xml_element_int -> function_signature_t -> unit
-    method write_xml_function_interface:
-             ?tag:string -> xml_element_int -> function_interface_t -> unit
-
-    method write_xml_precondition:
-             ?tag:string -> xml_element_int -> precondition_t -> unit
-    method write_xml_postcondition:
-             ?tag:string -> xml_element_int -> postcondition_t -> unit
-    method write_xml_sideeffect:
-             ?tag:string -> xml_element_int -> sideeffect_t -> unit
-        
-    method read_xml_parameter_location:
-             ?tag:string -> xml_element_int -> parameter_location_t
-    method read_xml_fts_parameter:
-             ?tag:string -> xml_element_int -> fts_parameter_t
-    method read_xml_bterm: ?tag:string -> xml_element_int -> bterm_t
-    method read_xml_function_stub:
-             ?tag:string -> xml_element_int -> function_stub_t
-    method read_xml_call_target: ?tag:string -> xml_element_int -> call_target_t
-    method read_xml_function_signature:
-             ?tag:string -> xml_element_int -> function_signature_t
-    method read_xml_function_interface:
-             ?tag:string -> xml_element_int -> function_interface_t
-    method read_xml_precondition:
-             ?tag:string -> xml_element_int -> precondition_t
-    method read_xml_postcondition:
-             ?tag:string -> xml_element_int -> postcondition_t
-    method read_xml_sideeffect:
-             ?tag:string -> xml_element_int -> sideeffect_t
-
-    method write_xml: xml_element_int -> unit
-    method read_xml: xml_element_int -> unit
-
-  end
 
 (* =========================================================== Function info === *)
 
+  (*
 class type argument_values_int =
 object
   method add_argument_values : variable_t -> xpr_t list -> unit
@@ -2704,32 +2951,12 @@ object
   method read_xml            : xml_element_int -> unit
   method toPretty            : pretty_t
 end
+   *)
 
-(* Indirect jump target types:
-   JumptableTarget (offset,jumptable,reg)
-      jmp* offset(.,reg,4) with offset within a jump table
-   OffsettableTarget (joffset, jumptable, datablock)
-      x86:movzx (reg, doffset(_)) where doffset is the start of an offset table
-      x86:jmp* joffset(., reg, 4) where joffset is within a jump table
-   JumpOnGlobal gvar
-      jump target is provided in a global variable
-   JumpOnArgument avar
-      jump target is provided in an argument variable (or one of its dereferences)
-   UnknownTarget: target of indirect jump has not been resolved yet
-*)
+(** {2 Function symbol table} *)
 
-type jump_target_t =
-| JumptableTarget of doubleword_int * jumptable_int * register_t
-| OffsettableTarget of doubleword_int * jumptable_int * data_block_int
-| JumpOnTerm of bterm_t
-| DllJumpTarget of string * string   (* PE *)
-| SOJumpTarget of string  (* shared object, ELF *)
-| UnknownJumpTarget
-
-
-(* The function environment keeps track of all variables known to the
-   function
-*)
+(** Function environment: function symbol table that keeps track of all
+    variables known to the function.*)
 class type function_environment_int =
   object
 
@@ -2945,7 +3172,6 @@ class type function_environment_int =
          
   end
 
-(* ======================================================== call-target-info === *)
 
 class type call_target_info_int =
   object
@@ -3008,71 +3234,214 @@ class type call_target_info_int =
     method write_xml: xml_element_int -> unit
     method toPretty: pretty_t
 
-end
+  end
 
-(* ============================================================ function-info === *)
+(** {1 Functions} *)
 
-(* The function info keeps track of the following information:
-   - variables known to the function
-   - call targets
-   - jump targets
+(** {2 Function-info} *)
+
+
+(** {1 Principal access point for function characteristics and analysis results.}
+
+    This data structure keeps track of:
+    - variables known to the function
+    - call targets
+    - jump targets
+
+    It also maintains a summary of the function api and semantics.
 *)
 class type function_info_int =
 object
 
-  method a: doubleword_int  (* address of this function *)
-  method env: function_environment_int  (* variable definitions *)
+  (** {2 Address and symboltable}*)
 
-  (* invariant accessors *)
-  method finv: invariant_io_int   (* function invariant *)
-  method ftinv: type_invariant_io_int  (* function type invariant *)
+  (** Returns the address of the function.*)
+  method a: doubleword_int
+
+  (** Returns the function symbol table containing all variables.*)
+  method env: function_environment_int
+
+  (** {2 Invariant accessors} *)
+
+  (** Returns the access point for all value invariants for this function.*)
+  method finv: invariant_io_int
+
+  (** Returns the access point for all type invariants for this function.*)
+  method ftinv: type_invariant_io_int
+
+  (** Returns the access point for all variable invariants for this function.*)
   method fvarinv: var_invariant_io_int  (* function variables invariant *)
-  method iinv : ctxt_iaddress_t -> location_invariant_int (* instruction invariant *)
+
+  (** [finfo#iinv iaddr] returns the value invariant at instruction address
+      [iaddr].*)
+  method iinv : ctxt_iaddress_t -> location_invariant_int
+
+  (** [finfo#tinv iaddr] returns the type invariant at instruction address
+      [iaddr].*)
   method itinv: ctxt_iaddress_t -> location_type_invariant_int
+
+  (** [finfo#ivarinv idadr] returns the variable invariant at instruction address
+      [iaddr].*)
   method ivarinv: ctxt_iaddress_t -> location_var_invariant_int
 
-  (* setters *)
+  (** {2 Invariant reset} *)
 
+  (** Indicate change that requires invariants to be invalidated.*)
   method schedule_invariant_reset: unit
+
+  (** Remove all invariants if there was a prior invariant reset scheduled.*)
   method reset_invariants: unit
 
-  (* a function is considered complete if (1) all instructions are known, (2) all 
-     indirect jumps are resolved. If a
-     function is not complete its summary is not used for calls to this function,
-     instead the default summary is used *)
-  method set_incomplete: unit
-  method set_complete: unit
-  method set_dynlib_stub: call_target_t -> unit
+  (** {2 Function completeness} *)
 
+  (** Declare that all relevant information about a function is known.
+
+      In particular, this means that (1) all instructions are known, and (2) all
+      indirect jumps are resolved (i.e., all code is identified). Not necessarily
+      all indirect calls are resolved. This value is the default.
+      If a function is not complete its summary is not used for calls to this
+      function; instead a default summary is used.*)
+  method set_complete: unit
+
+  (** Declare that not all relevant information about a function is known *)
+  method set_incomplete: unit
+
+  (** Returns true if the associated function is considered complete.*)
+  method is_complete: bool
+
+
+  (* method set_dynlib_stub: call_target_t -> unit *)
+
+  (** {2 Instruction bytes} *)
+
+  (** [finfo#set_instruction_bytes iaddr b] associates the hexadecimal
+      representation of the instruction at address [iaddr] with that address.*)
   method set_instruction_bytes: ctxt_iaddress_t -> string -> unit
 
-  (* auxiliary variable that has a constant value within the function; 
-     typically a bridge
-     variable that represents an argument to a function call  *)
+  (** finfo#get_instruction_bytes iaddr] returns the hexadecimal
+      representation of the instruction bytes for the instruction at address
+      [iaddr].*)
+  method get_instruction_bytes: ctxt_iaddress_t -> string
+
+
+  (** {2 Auxiliary variable with constant value} *)
+
+  (** [finfo#add_constant var num] registers the fact that auxiliary
+      variable [var] (usually a bridge variable representing the argument
+      to a function call) has the constant value [num] in the function. *)
   method add_constant: variable_t -> numerical_t -> unit
 
-  (* sets the number of bytes that are popped off the stack by this function when 
-     it returns *)
+  (** [finfo#has_constant var] returns true if auxiliary variable [var] has
+      a constant value registered in the function. *)
+  method has_constant: variable_t -> bool
+
+  (** [finfo#get_constant var] returns the constant value registered
+      earlier for auxiliary variable [var].
+
+      @raise [Invocation_error] if no constant is associated with [var].
+   *)
+  method get_constant: variable_t -> numerical_t
+
+  (** {2 Stack adjustment (PE only)} *)
+
+  (** [finfo#set_stack_adjustment (Some n)] sets the number of bytes that are
+      popped off the stack by this function when it returns from a call.*)
   method set_stack_adjustment: int option -> unit
 
+  (** Returns the number of bytes that are popped off the stack by this function
+      when it returns from a call, or None, if no bytes are popped off (or if the
+      number is unknown).*)
+  method get_stack_adjustment: int option
+
+  (** {2 Function summaries}
+      Information registered to create a function summary for the application
+      function represented by this function_info (possibly including global
+      variables that are accessed and/or modified by the function).*)
+
+  (** [finfo#set_global_par dw ty] adds global variable with address [dw] and
+      type [ty] as a global parameter to the function api.*)
   method set_global_par: doubleword_int -> btype_t -> fts_parameter_t
+
+  (** [finfo#set_stack_par index ty] adds a stack parameter with index [index]
+      (one-based) and type [ty] to function api *)
   method set_stack_par: int -> btype_t -> fts_parameter_t
+
+  (** [finfo#set_register_par reg ty] adds a register parameter [reg] with type
+      [ty] to the function api.*)
   method set_register_par: register_t -> btype_t -> fts_parameter_t
 
-  (* records the test expression and auxiliary variable mappings for a
-   * conditional jump at the given address *)
+  (** {2 Condition codes}
+      The function info keeps track of test expressions and the variables used
+      therein for conditional jump instructions. These methods are used mainly
+      by architectures that use condition codes in the processor status word
+      that are set by a test instruction and then used by a subsequent conditional
+      jump instruction. However, they are also used for predicated instructions
+      (as, e.g., in ARM/Thumb-2) or for the SET<cc> instructions in x86.*)
+
+  (** [set_test_expr iaddr xpr] records test expression [xpr] for the
+      conditional jump instruction at [iaddr] *)
   method set_test_expr: ctxt_iaddress_t -> xpr_t -> unit
+
+  (** [set_test_variables iaddr vmap] records the variable mapping [vmap] between
+      regular function variables and auxiliary variables created (variables
+      frozen at a particular location) at the address of the test instruction
+      [iaddr].*)
   method set_test_variables:
            ctxt_iaddress_t -> (variable_t * variable_t) list -> unit
+
+  (** [finfo#connect_cc_user u_iaddr s_iaddr] records that the instruction at
+      address [u_addr] uses the test expression set by the instruction at
+      address [s_addr]. Usually the user is a conditional jump and the
+      setter is a test instruction (e.g., CMP) that sets the condition
+      codes in the processor status word.*)
+  method connect_cc_user: ctxt_iaddress_t -> ctxt_iaddress_t -> unit
+
+  (** [finfo#has_associated_cc_setter iaddr] returns true if the instruction
+      at address [iaddr] uses a test expression that is registered to have
+      been set by another instruction.*)
+  method has_associated_cc_setter: ctxt_iaddress_t -> bool
+
+  (** [finfo#get_associated_cc_setter iaddr] returns the address of the
+      instruction that sets the condition code used by the instruction at
+      [iaddr].
+
+      @raise [BCH_failure] if the instruction at [iaddr] does not have an
+      associated setter.*)
+  method get_associated_cc_setter: ctxt_iaddress_t -> ctxt_iaddress_t
+
+  (** [finfo#has_associated_cc_user iaddr] returns true if the instruction
+      at address [iaddr] sets a test expression that is registered to be
+      used by another instruction.*)
+  method has_associated_cc_user: ctxt_iaddress_t -> bool
+
+  (** [finfo#get_associated_cc_user iaddr] returns the address of the instruction
+      that uses the condition set by the instruction at [iaddr].
+
+      @raise [BCH_failure] if the instruction at [iaddr] does not have an
+      associated user.*)
+  method get_associated_cc_user: ctxt_iaddress_t -> ctxt_iaddress_t
+
+  (** {2 Indirect jumps}*)
+
+  (** [finfo#set_jumptable_target iaddr base jt reg] registers jumptable [jt]
+      with base address [base] to be the target of the indirect jump instruction
+      at [iaddr] with the selector value in register [reg].*)
+  method set_jumptable_target:
+           ctxt_iaddress_t -> doubleword_int -> jumptable_int -> register_t -> unit
+
+  method set_offsettable_target:
+    ctxt_iaddress_t -> doubleword_int -> jumptable_int -> data_block_int -> unit
+  method set_global_jumptarget: ctxt_iaddress_t -> variable_t -> unit
+  method set_argument_jumptarget: ctxt_iaddress_t -> variable_t -> unit
+  method set_dll_jumptarget:
+           ctxt_iaddress_t -> string -> string -> call_target_info_int -> unit
+  method set_so_jumptarget:
+           ctxt_iaddress_t -> string -> call_target_info_int -> unit
+  method set_unknown_jumptarget : ctxt_iaddress_t -> unit
 
   (* declares the variable to be a pointer that is dereferenced within
    * the function, causing it to be added as a base to the value set domain *)
   method add_base_pointer: variable_t -> unit
-
-  (* connects the user of a condition code (such as a conditional jump
-   * (at first address) to the address of the instruction that sets the
-   * condition code (second address) *)
-  method connect_cc_user: ctxt_iaddress_t -> ctxt_iaddress_t -> unit
 
   (* set targets for indirect jumps *)
   method set_java_native_method_signature: java_native_method_api_t -> unit
@@ -3100,14 +3469,14 @@ object
   method record_return_value: ctxt_iaddress_t -> xpr_t -> unit
 
   (* accessors *)
-  method get_associated_cc_setter: ctxt_iaddress_t -> ctxt_iaddress_t
-  method get_associated_cc_user: ctxt_iaddress_t -> ctxt_iaddress_t
+
+
   method get_num_conditions_associated: int
   method get_num_test_expressions: int
 
-  method get_instruction_bytes: ctxt_iaddress_t -> string
 
-  method get_dynlib_stub: call_target_t
+
+  (* method get_dynlib_stub: call_target_t *)
 
   method get_call_target: ctxt_iaddress_t -> call_target_info_int
 
@@ -3119,9 +3488,9 @@ object
   method get_summary: function_summary_int
 
   (* auxiliary variable with constant value *)
-  method get_constant: variable_t -> numerical_t
+
   method get_base_pointers: variable_t list (* list of base pointers used *)
-  method get_stack_adjustment: int option
+
 
   (* all test expressions in the function *)
   method get_test_exprs: (ctxt_iaddress_t * xpr_t) list
@@ -3149,19 +3518,18 @@ object
   method get_call_category_count: string -> int
 
   (* predicates *)
-  method is_complete: bool
-  method is_dynlib_stub: bool
+  (* method is_dynlib_stub: bool *)
   method were_invariants_reset: bool
   method sideeffects_changed  : bool
   method call_targets_were_set: bool
 
-  method has_associated_cc_user: ctxt_iaddress_t -> bool
-  method has_associated_cc_setter: ctxt_iaddress_t -> bool
+
+
   method has_call_target: ctxt_iaddress_t -> bool
   method is_dll_jumptarget: ctxt_iaddress_t -> bool
   method has_jump_target: ctxt_iaddress_t -> bool
   method has_unknown_jump_target : bool
-  method has_constant: variable_t -> bool
+
   method has_test_expr: ctxt_iaddress_t -> bool
   method is_base_pointer: variable_t -> bool
 
@@ -3182,7 +3550,7 @@ object
 end
 
 
-(* ================================================================== Floc === *)
+(** {2 Floc} *)
 
 class type floc_int =
 object
@@ -3381,7 +3749,10 @@ object
 
 end
 
-(* ========================================================= Specializations === *)
+
+(** {1 User data}*)
+
+(** {2 Specializations} *)
 
 type block_restriction_t =
   | BranchAssert of bool
@@ -3407,7 +3778,7 @@ class type specializations_int =
     method toPretty: pretty_t
   end
 
-(* ===================================================== Section header info === *)
+(** {2 Section header info}*)
 
 class type section_header_info_int =
   object
@@ -3459,7 +3830,7 @@ class type section_header_infos_int  =
   end
 
 
-(* ============================================================= System info === *)
+(** {1 System info} *)
 
 class type system_info_int =
 object
@@ -3627,88 +3998,7 @@ object
 end
 
 
-(* ============================================================== Code graph === *)
-
-class type cmd_list_int =
-object
-  method cmd_list : cmd_t list
-  method reverse_cmds: unit
-  method toPretty: pretty_t
-end
-
-class type code_graph_int =
-object 
-  (* setters *)
-  method add_node  : symbol_t -> cmd_t list -> unit
-  method add_edge  : symbol_t -> symbol_t -> unit
-  method set_cmd   : symbol_t -> cmd_t list -> unit
-
-  (* accessors *)
-  method get_cmds     : symbol_t -> cmd_list_int
-
-  (* actions *)
-  method remove_edge: symbol_t -> symbol_t -> unit
-
-  (* converters *)
-  method to_cfg: symbol_t -> symbol_t -> cfg_int
-end
-
-
-(* ============================================================== Call graph === *)
-
-class type callgraph_int =
-object
-  (* setters *)
-  method add_app_node: doubleword_int -> unit
-       
-  method add_app_edge:
-           doubleword_int
-           -> doubleword_int
-           -> ctxt_iaddress_t
-           -> (int * string * xpr_t) list
-           -> unit
-       
-  method add_so_edge:
-           doubleword_int
-           -> string
-           -> ctxt_iaddress_t
-           -> (int * string * xpr_t) list
-           -> unit
-       
-  method add_dll_edge:
-           doubleword_int
-           -> string
-           -> ctxt_iaddress_t
-           -> (int * string * xpr_t) list
-           -> unit
-       
-  method add_jni_edge:
-           doubleword_int
-           -> int
-           -> ctxt_iaddress_t
-           -> (int * string * xpr_t) list
-           -> unit
-       
-  method add_unresolved_edge:
-           doubleword_int
-           -> int
-           -> ctxt_iaddress_t
-           -> (int * string * xpr_t) list
-           -> unit
-       
-  method add_virtual_edge:
-           doubleword_int
-           -> function_interface_t
-           -> ctxt_iaddress_t
-           -> (int * string * xpr_t) list
-           -> unit
-      
-  (* saving *)
-  method write_xml  : xml_element_int -> unit
-
-end
-
-(* ============================================================== Metrics === *)
+(** {1 Metrics} *)
 
 class type ['a] metrics_handler_int =
   object
