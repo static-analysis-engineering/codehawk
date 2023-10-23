@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,10 +35,10 @@ open CHLogger
 open CHStringIndexTable
 open CHXmlDocument
 
-(* bchcil *)
-open BCHCBasicTypes
+(* bchlib *)
+open BCHBCTypes
 open BCHBCSumTypeSerializer
-open BCHCilTypes
+
 
 module H = Hashtbl
 
