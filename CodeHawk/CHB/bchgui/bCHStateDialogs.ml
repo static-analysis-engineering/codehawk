@@ -45,14 +45,12 @@ open CHLogger
 open Xprt
 open XprToPretty
 
-(* bchcil*)
-open BCHCBasicTypes
-
 (* bchlib *)
-open BCHFtsParameter
 open BCHBasicTypes
+open BCHBCTypes
 open BCHDoubleword
 open BCHFloc
+open BCHFtsParameter
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionSummaryLibrary

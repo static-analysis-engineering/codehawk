@@ -803,10 +803,10 @@ let record_call_targets () =
               let loc = ctxt_string_to_location faddr ctxtiaddr in
               let floc = get_floc loc in
               match instr#get_opcode with
-              | DirectCall op when
+              (* | DirectCall op when
                      op#is_absolute_address
                      && (get_function_info
-                           op#get_absolute_address)#is_dynlib_stub -> ()
+                           op#get_absolute_address)#is_dynlib_stub -> () *)
               | DirectCall op | IndirectCall op ->
                  if floc#has_call_target
                     && floc#get_call_target#is_app_call then

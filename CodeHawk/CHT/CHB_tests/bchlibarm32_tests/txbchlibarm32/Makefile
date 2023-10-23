@@ -56,8 +56,8 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
 	$(CIL)/goblintCil.cmxa \
-	$(BCHCIL)/bchcil.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
+	$(BCHCIL)/bchcil.cmxa \
 	$(PELIB)/bchlibpe.cmxa \
 	$(ELFLIB)/bchlibelf.cmxa \
 	$(X86LIB)/bchlibx86.cmxa \

@@ -38,10 +38,8 @@
 (* chutil *)
 open CHXmlDocument
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 (* bchlibx86 *)

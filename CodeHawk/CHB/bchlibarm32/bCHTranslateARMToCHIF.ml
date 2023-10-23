@@ -42,11 +42,9 @@ open XprToPretty
 open XprUtil
 open Xsimplify
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
 open BCHCallTarget
 open BCHCodegraph
 open BCHCPURegisters

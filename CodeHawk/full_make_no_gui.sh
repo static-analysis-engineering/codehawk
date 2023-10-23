@@ -8,8 +8,8 @@ make -C CHC/cchlib
 make -C CHC/cchpre
 make -C CHC/cchanalyze
 make -C CHC/cchcmdline
-make -C CHB/bchcil
 make -C CHB/bchlib
+make -C CHB/bchcil
 make -C CHB/bchlibpe
 make -C CHB/bchlibelf
 make -C CHB/bchlibx86
