@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +46,11 @@ open CHPretty
 open CHXmlDocument
 
 exception XmlParseError of int * int * pretty_t
+
+exception XmlReaderError of int * int * pretty_t
+
 exception IllFormed
+
 
 let utf8_length = [|        (* Char byte length according to first UTF-8 byte. *)
   1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 
