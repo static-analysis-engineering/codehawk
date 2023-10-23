@@ -28,8 +28,8 @@
 (* chlib*)
 open CHPretty
 
-(* bchcil *)
-open BCHCBasicTypes
+(* bchlib *)
+open BCHBCTypes
 
 val int_type_to_string: ikind_t -> string
 val float_type_to_string: fkind_t -> string
