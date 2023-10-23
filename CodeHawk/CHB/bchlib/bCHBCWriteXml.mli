@@ -28,8 +28,8 @@
 (* chutil *)
 open CHXmlDocument
 
-(* bchcil *)
-open BCHCBasicTypes
+(* bchlib *)
+open BCHBCTypes
 
 
 val write_xml_function_definition: xml_element_int -> bcfundec_t -> unit
