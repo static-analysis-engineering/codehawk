@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
-make -C bchcil
 make -C bchlib
+make -C bchcil
 make -C bchlibpe
 make -C bchlibelf
 make -C bchlibx86

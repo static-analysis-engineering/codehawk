@@ -10,8 +10,8 @@ make -C CHC/cchpre clean
 make -C CHC/cchanalyze clean
 make -C CHC/cchcmdline clean
 make -C CHC/cchgui clean
-make -C CHB/bchcil clean
 make -C CHB/bchlib clean
+make -C CHB/bchcil clean
 make -C CHB/bchlibpe clean
 make -C CHB/bchlibelf clean
 make -C CHB/bchlibx86 clean

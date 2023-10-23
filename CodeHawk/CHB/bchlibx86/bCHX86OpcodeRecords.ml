@@ -41,11 +41,9 @@ open CHPretty
 (* chutil *)
 open CHXmlDocument
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
 open BCHCPURegisters
 open BCHFunctionData
 open BCHLibTypes

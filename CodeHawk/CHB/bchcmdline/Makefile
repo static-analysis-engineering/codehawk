@@ -32,8 +32,8 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
-	-I $(BCHCIL)/cmi \
 	-I $(BCHLIB)/cmi \
+	-I $(BCHCIL)/cmi \
 	-I $(PELIB)/cmi \
 	-I $(ELFLIB)/cmi \
 	-I $(X86LIB)/cmi \
@@ -53,8 +53,8 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
 	$(CIL)/goblintCil.cmxa \
-	$(BCHCIL)/bchcil.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
+	$(BCHCIL)/bchcil.cmxa \
 	$(PELIB)/bchlibpe.cmxa \
 	$(ELFLIB)/bchlibelf.cmxa \
 	$(X86LIB)/bchlibx86.cmxa \

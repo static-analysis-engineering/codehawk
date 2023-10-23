@@ -98,7 +98,7 @@ make_dirs:
 mtest: $(OBJECTS) cmx/test.cmx $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(X86LIB)/bchlibx86.cmxa
 	$(CAMLBUILD) -o mtest $(OBJECTS) cmx/test.cmx
 
-bchlibelf: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(BCHCIL)/bchcil.cmxa $(PELIB)/bchlibpe.cmxa
+bchlibelf: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa
 	$(CAMLLINK) -a -o bchlibelf.cmxa $(OBJECTS)
 
 cmi/%.cmi: %.mli
