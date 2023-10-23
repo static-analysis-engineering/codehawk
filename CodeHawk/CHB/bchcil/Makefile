@@ -1,12 +1,14 @@
 CODEHAWK = ../..
 CIL = $(shell ocamlfind query goblint-cil)
 ZARITHLIB = $(shell ocamlfind query zarith)
+CHB = $(CODEHAWK)/CHB
 
 CHLIB = $(CODEHAWK)/CH/chlib
 CHUTIL = $(CODEHAWK)/CH/chutil
 XPRLIB = $(CODEHAWK)/CH/xprlib
 EXTLIB = $(shell ocamlfind query extlib)
 ZIPLIB = $(shell ocamlfind query zip)
+BCHLIB = $(CHB)/bchlib
 
 CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(ZARITHLIB) \
@@ -16,6 +18,7 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(CHLIB)/cmi \
 	-I $(CHUTIL)/cmi \
 	-I $(XPRLIB)/cmi \
+	-I $(BCHLIB)/cmi \
 
 CAMLLINK := ocamlopt \
 	-I $(ZIPLIB) \
@@ -28,20 +31,12 @@ CAMLLINK := ocamlopt \
 	$(CHLIB)/chlib.cmxa \
 	$(CHUTIL)/chutil.cmxa \
 	$(XPRLIB)/xpr.cmxa \
+	$(BCHLIB)/bchlib.cmxa \
 
 CAMLLINKL := ocamlopt
 
 MLIS := \
-	bCHCBasicTypes \
-	bCHCilTypes \
 	bCHCilToCBasic \
-	bCHBCSumTypeSerializer \
-	bCHBCDictionary \
-	bCHBCFunDeclarations \
-	bCHBCWriteXml \
-	bCHBCUtil \
-	bCHBCFiles \
-	bCHCTypeUtil \
 	bCHParseCilFile \
 	bCHXParseFile \
 
@@ -50,26 +45,19 @@ CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
 	bCHCilToCBasic \
-	bCHBCSumTypeSerializer \
-	bCHBCDictionary \
-	bCHBCFunDeclarations \
-	bCHBCWriteXml \
-	bCHBCUtil \
-	bCHBCFiles \
-	bCHCTypeUtil \
 	bCHParseCilFile \
 	bCHXParseFile \
 
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs parse bchcil
+all: make_dirs bchcil
 
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-bchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB)
+bchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB) $(BCHLIB)/bchlib.cmxa
 	$(CAMLLINKL) -a -o bchcil.cmxa $(OBJECTS)
 
 parse: 	$(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa
