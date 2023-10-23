@@ -47,13 +47,10 @@ open XprXml
 open XprToPretty
 open Xsimplify
 
-(* bchcil *)
-open BCHBCFiles
-open BCHCBasicTypes
-
 (* bchlib *)
-open BCHFtsParameter
 open BCHBasicTypes
+open BCHBCFiles
+open BCHBCTypes
 open BCHBTerm
 open BCHCallTarget
 open BCHCallTargetInfo
@@ -62,6 +59,7 @@ open BCHConstantDefinitions
 open BCHCppClass
 open BCHCStruct
 open BCHDoubleword
+open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionSemantics
@@ -1441,6 +1439,7 @@ object (self)
                 STR " in function ";
                 faddr#toPretty]))
 
+    (*
   method set_dynlib_stub (t:call_target_t) = dynlib_stub <- Some t
 
   method is_dynlib_stub =
@@ -1454,6 +1453,7 @@ object (self)
          (BCH_failure
             (LBLOCK [
                  STR "Function is not known to be dynamic library stub"]))
+     *)
 
   method sideeffects_changed = sideeffects_changed
 

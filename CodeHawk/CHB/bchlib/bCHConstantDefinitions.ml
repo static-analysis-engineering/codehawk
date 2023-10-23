@@ -42,12 +42,10 @@ open CHXmlDocument
 open XprToPretty   
 open XprTypes
 
-(* bchcil *)
-open BCHBCUtil
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
+open BCHBCUtil
 open BCHDoubleword
 open BCHLibTypes
 open BCHTypeDefinitions

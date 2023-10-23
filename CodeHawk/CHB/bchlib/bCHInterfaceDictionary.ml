@@ -39,11 +39,9 @@ open CHPrettyUtil
 open CHStringIndexTable
 open CHXmlDocument
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
 open BCHDoubleword
 open BCHDictionary
 open BCHLibTypes

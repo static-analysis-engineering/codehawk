@@ -27,10 +27,9 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* bchcil *)
-open BCHCBasicTypes
 
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 

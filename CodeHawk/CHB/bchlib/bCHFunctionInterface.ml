@@ -35,11 +35,9 @@ open CHLogger
 open CHXmlDocument
 open CHXmlReader
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
 open BCHCPURegisters
 open BCHFtsParameter
 open BCHInterfaceDictionary

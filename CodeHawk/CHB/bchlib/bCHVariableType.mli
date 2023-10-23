@@ -37,11 +37,11 @@ open CHXmlDocument
 (* xprlib *)
 open Xprt
 
-(* bchcil *)
-open BCHCBasicTypes
+(* bchlib *)
+open BCHBCTypes
 
 (* bchlib *)
-open BCHLibTypes
+(* open BCHLibTypes *)
 
 
 (* Reduce to basic type by removing all typedefs *)

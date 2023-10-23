@@ -30,10 +30,8 @@
 (* chutil *)
 open CHFormatStringParser
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 

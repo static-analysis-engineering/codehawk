@@ -41,17 +41,15 @@ open Xprt
 open XprToPretty
 open CHPrettyUtil
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
-open BCHFtsParameter
 open BCHBasicTypes
+open BCHBCTypes
 open BCHBTerm
 open BCHCallTarget
+open BCHCPURegisters
 open BCHDemangler
 open BCHDoubleword
-open BCHCPURegisters
+open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionSemantics
 open BCHLibTypes
@@ -63,6 +61,7 @@ open BCHTypeDefinitions
 open BCHUtilities
 open BCHVariableType
 open BCHXmlUtil
+
 
 let btype_compare = BCHBCUtil.typ_compare
 

@@ -38,10 +38,8 @@ open CHXmlDocument
 (* xprlib *)
 open XprTypes
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 

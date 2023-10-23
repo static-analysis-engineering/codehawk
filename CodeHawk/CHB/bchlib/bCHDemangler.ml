@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,11 +33,9 @@ open CHPretty
 (* chutil *)
 open CHLogger
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
 open BCHLibTypes
 open BCHVariableType
 
