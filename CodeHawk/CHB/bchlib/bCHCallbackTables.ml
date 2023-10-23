@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022 Aarno Labs LLC
+   Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,12 +33,10 @@ open CHPretty
 open CHLogger
 open CHXmlDocument
 
-(* bchcil *)
-open BCHBCFiles
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
+open BCHBCFiles
 open BCHDoubleword
 open BCHFunctionData
 open BCHLibTypes

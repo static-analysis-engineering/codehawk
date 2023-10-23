@@ -56,12 +56,10 @@ open CHUtil
 open XprTypes
 open XprXml
 
-(* bchcil *)
-open BCHBCFiles
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCFiles
+open BCHBCTypes
 open BCHByteUtilities
 open BCHCallbackTables
 open BCHConstantDefinitions

@@ -48,18 +48,16 @@ open XprUtil
 open Xsimplify
 open XprXml
 
-(* bchcil *)
-open BCHBCUtil
-open BCHCBasicTypes
-
 (* bchlib *)
-open BCHFtsParameter
 open BCHBasicTypes
+open BCHBCTypes
+open BCHBCUtil
 open BCHBTerm
 open BCHCallTarget
 open BCHCPURegisters
 open BCHDemangler
 open BCHDoubleword
+open BCHFtsParameter
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionSummary

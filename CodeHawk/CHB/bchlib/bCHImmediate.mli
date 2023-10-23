@@ -33,6 +33,9 @@ open CHNumerical
 open BCHLibTypes
 
 
+(** A constant value with a given size in bytes and signedness.*)
+
+
 (** [make_immediate signed size v] returns an immediate value of [size]
     bytes and value [v]. If the value [v] is outside the range that can be
     represented by the bytes with the given signedness, [Error] is returned.*)

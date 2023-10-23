@@ -41,13 +41,11 @@ open Xprt
 open XprToPretty
 open XprXml
 
-(* bchcil *)
-open BCHBCDictionary
-open BCHBCUtil
-open BCHCBasicTypes
-
 (* bchlib*)
 open BCHBasicTypes
+open BCHBCDictionary
+open BCHBCTypes
+open BCHBCUtil
 open BCHCallTarget
 open BCHConstantDefinitions
 open BCHDoubleword

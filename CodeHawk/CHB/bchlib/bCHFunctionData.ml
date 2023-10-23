@@ -37,11 +37,9 @@ open CHNumRecordTable
 open CHUtil
 open CHXmlDocument
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
 open BCHDemangler
 open BCHDoubleword
 open BCHLibTypes

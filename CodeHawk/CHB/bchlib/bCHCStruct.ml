@@ -36,11 +36,9 @@ open CHPrettyUtil
 open CHXmlDocument
 open CHXmlReader
 
-(* bchcil *)
-open BCHCBasicTypes
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
 open BCHDoubleword
 open BCHLibTypes
 open BCHPreFileIO

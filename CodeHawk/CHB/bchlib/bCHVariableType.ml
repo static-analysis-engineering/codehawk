@@ -41,16 +41,12 @@ open CHXmlDocument
 (* xprlib *)
 open Xprt
 
-(* bchcil *)
-open BCHBCFiles
-open BCHBCSumTypeSerializer
-open BCHBCUtil
-open BCHCBasicTypes
-open BCHCTypeUtil
-
 (* bchlib *)
 open BCHBasicTypes
-(* open BCHLibTypes *)
+open BCHBCFiles
+open BCHBCSumTypeSerializer
+open BCHBCTypes
+open BCHBCUtil
 open BCHXmlUtil
 
 module H = Hashtbl
@@ -71,7 +67,7 @@ let raise_error (node:xml_element_int) (msg:pretty_t) =
   end
 
 
-let ikind_type_size = BCHCTypeUtil.ikind_type_size
+let ikind_type_size = BCHBCTypeUtil.ikind_type_size
 
 
 let get_ikind_from_size ?(signed=true) (size:int) =
@@ -83,10 +79,10 @@ let get_ikind_from_size ?(signed=true) (size:int) =
   | _ -> INonStandard (signed,size)
 
 
-let fkind_type_size = BCHCTypeUtil.fkind_type_size
+let fkind_type_size = BCHBCTypeUtil.fkind_type_size
 
 
-let resolve_type = BCHCTypeUtil.resolve_type
+let resolve_type = BCHBCTypeUtil.resolve_type
 
 
 let get_compinfo_by_key (key: int): bcompinfo_t =
@@ -162,7 +158,7 @@ let t_enum ?(name_space=[]) name =
 
 
 let t_class ?(name_space=[]) name =
-  BCHCBasicTypes.TClass (to_tname name, List.map to_tname name_space, [])
+  BCHBCTypes.TClass (to_tname name, List.map to_tname name_space, [])
 
 
 let t_tcomp ?(name_space=[]) name = TCppComp (name, name_space, [])
@@ -172,7 +168,7 @@ let t_tenum ?(name_space=[]) name = TCppEnum (name, name_space, [])
 
 
 let t_tclass ?(name_space=[]) name =
-  BCHCBasicTypes.TClass (name, name_space, [])
+  BCHBCTypes.TClass (name, name_space, [])
 
 let t_function (returntype:btype_t) (args:bfunarg_t list) =
   TFun (returntype, Some args, false, [])
