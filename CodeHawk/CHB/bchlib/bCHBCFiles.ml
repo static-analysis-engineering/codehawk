@@ -35,8 +35,9 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBCDictionary
-open BCHBCTypes   
-open BCHBCUtil
+open BCHBCTypePretty
+open BCHBCTypes
+open BCHBCTypeTransformer
 open BCHBCWriteXml
 
 
@@ -58,8 +59,7 @@ object (self)
   val genumtagdecls = H.create 3  (* idem *)
   val gvardecls = H.create 3   (* bvname -> (varinfo.ix, loc.ix) *)
   val gvars = H.create 3   (* idem *)
-  val gfuns = H.create 3   (* bsvar.bvname -> fundec *)
-  val mutable ifuns = []
+  val gfuns = H.create 3   (* bsvar.bvname -> (fundec, loc.ix) *)
   val mutable varinfo_vid_counter = 10000
 
   method private get_varinfo_id =
@@ -102,10 +102,7 @@ object (self)
                | _ -> (-1)),
               i loc)
         | GFun (fundec, loc) ->
-           begin
-             H.add gfuns fundec.bsvar.bvname (fundec, loc);
-             ifuns <- (bcd#index_varinfo fundec.bsvar) :: ifuns
-           end
+             H.add gfuns fundec.bsvar.bvname (fundec, bcd#index_location loc);
         | _ -> ()) f.bglobals
 
   method update_global (g: bglobal_t) =
@@ -171,8 +168,7 @@ object (self)
           bsbody = {battrs = []; bstmts = []}
         } in
       begin
-        H.add gfuns name (fundec, fundec.bsvar.bvdecl);
-        ifuns <- (bcd#index_varinfo fundec.bsvar) :: ifuns;
+        H.add gfuns name (fundec, bcd#index_location fundec.bsvar.bvdecl);
         chlog#add
           "add function definition"
           (LBLOCK [STR name; STR ": "; btype_to_pretty ty])
@@ -208,6 +204,44 @@ object (self)
       raise
         (CHFailure
            (LBLOCK [STR "No typedef found with name "; STR name]))
+
+  method resolve_type (ty: btype_t): btype_t =
+    let rec aux (t: btype_t) =
+      match t with
+      | TVoid _
+        | TInt _
+        | TFloat _
+        | THandle _
+        | TComp _
+        | TEnum _
+        | TCppComp _
+        | TCppEnum _
+        | TClass _
+        | TBuiltin_va_list _
+        | TVarArg _
+        | TUnknown _ -> t
+      | TPtr (tt, a) -> TPtr (aux tt, a)
+      | TRef (tt, a) -> TRef (aux tt, a)
+      | TArray (tt, e, a) -> TArray (aux tt, e, a)
+      | TFun (tt, fs, b, a) -> TFun (aux tt, auxfs fs, b, a)
+      | TNamed (name, a) when self#has_typedef name ->
+         aux (add_attributes (self#get_typedef name) a)
+      | TNamed (name, _) ->
+         begin
+           ch_diagnostics_log#add
+             "unknown typedef"
+             (LBLOCK [STR "Named type "; STR name; STR " not defined"]);
+           t
+         end
+
+    and auxfs (fs: bfunarg_t list option): bfunarg_t list option =
+      match fs with
+      | None -> None
+      | Some l -> Some (List.map (fun (s, t, a) -> (s, aux t, a)) l)
+
+    in
+    aux ty
+
 
   method typedefs: (string * btype_t) list =
     H.fold (fun k (ix, loc) a -> (k, bcd#get_typ ix) :: a) gtypes []
@@ -282,7 +316,8 @@ object (self)
            (LBLOCK [STR "No function found with name "; STR name]))
 
   method get_gfun_names: string list =
-    List.map (fun i -> (bcd#get_varinfo i).bvname) ifuns
+    H.fold (fun k _ a -> k::a) gfuns []
+  (* List.map (fun i -> (bcd#get_varinfo i).bvname) ifuns *)
 
   method private write_xml_gtypes (node: xml_element_int) =
     let gtypedata = H.fold (fun k v a -> (k, v)::a) gtypes [] in
@@ -421,26 +456,25 @@ object (self)
         | [vix; locix] -> H.add gvardecls name (vix, locix)
         | _ -> ()) (getcc "vid")
 
-  method private write_xml_ifuns (node: xml_element_int) =
-    node#setIntListAttribute "ifuns" ifuns
+  method private write_xml_gfuns (node: xml_element_int) =
+    let gfundefs = H.fold (fun k v a -> (k, v)::a) gfuns [] in
+    node#appendChildren
+      (List.map (fun (name, (fundec, locix)) ->
+           let fnode = xmlElement "gfun" in
+           begin
+             fnode#setAttribute "name" name;
+             fnode#setIntAttribute "locix" locix;
+             write_xml_function_definition fnode fundec;
+             fnode
+           end) gfundefs)
 
-  method private read_xml_ifuns (node: xml_element_int) =
-    node#getIntListAttribute "ifuns"
-
-  method write_xml_function (node: xml_element_int) (name: string) =
-    if self#has_gfun name then
-      let (fundec, loc) = self#get_gfun_loc name in
-      begin
-        write_xml_function_definition node fundec;
-        bcd#write_xml_location node loc
-      end
-    else
-      ()
-
-  method read_xml_function (node: xml_element_int) (name: string) =
-    let fundec = read_xml_function_definition node in
-    let loc = bcd#read_xml_location node in
-    H.add gfuns name (fundec, loc)
+  method private read_xml_gfuns (node: xml_element_int) =
+    let getcc = node#getTaggedChildren in
+    List.iter (fun gn ->
+        let name = gn#getAttribute "name" in
+        let locix = gn#getIntAttribute "locix" in
+        let fundec = read_xml_function_definition gn in
+        H.add gfuns name (fundec, locix)) (getcc "gfun")
     
   method write_xml (node: xml_element_int) =
     let tnode = xmlElement "typeinfos" in
@@ -450,7 +484,7 @@ object (self)
     let ednode = xmlElement "enuminfodecls" in
     let vnode = xmlElement "varinfos" in
     let vdnode = xmlElement "varinfodecls" in
-    let ifunnode = xmlElement "ifuns" in
+    let gfunnode = xmlElement "gfuns" in
     begin
       self#write_xml_gtypes tnode;
       self#write_xml_gcomps cnode;
@@ -459,9 +493,9 @@ object (self)
       self#write_xml_genumdecls ednode;
       self#write_xml_gvars vnode;
       self#write_xml_gvardecls vdnode;
-      self#write_xml_ifuns ifunnode;
+      self#write_xml_gfuns gfunnode;
       node#appendChildren[
-          tnode; cnode; cdnode; enode; ednode; vnode; vdnode; ifunnode]
+          tnode; cnode; cdnode; enode; ednode; vnode; vdnode; gfunnode]
     end
 
   method read_xml (node: xml_element_int) =
@@ -474,7 +508,7 @@ object (self)
       self#read_xml_genumdecls (getc "enuminfodecls");
       self#read_xml_gvars (getc "varinfos");
       self#read_xml_gvardecls (getc "varinfodecls");
-      ifuns <- self#read_xml_ifuns (getc "ifuns")
+      self#read_xml_gfuns (getc "gfuns")
     end
  
 end
