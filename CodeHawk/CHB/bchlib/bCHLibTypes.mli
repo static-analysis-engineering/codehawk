@@ -1136,78 +1136,196 @@ class type struct_tables_int =
   end
 
 
-(** {2 Call-back tables} *)
+(** {2 Call-back tables}
 
+    Call-back tables are arrays of structs in memory that hold function pointers
+    that are selected as targets for indirect calls based on a string value
+    (e.g., a submit flag in an HTML post request).
 
+    Currently these call-back tables are constructed from the following
+    information:
+    - a global variable in a loaded c file, defined as a pointer to a struct;
+    - a call-back-tables entry in the (json) userdata that associates the
+       name with an address
+
+    Example c definition:
+    {[
+    struct _cbt_cgi_setobject {
+      char *tag;
+      int num;
+      int ( *cbp_cgi_setobject)(struct keyvaluepair_t *kvp, int len);
+    } cbt_cgi_setobject;
+
+    struct _cbt_cgi_setobject *cgi_setobject_table;
+    ]}
+
+    and associated userdata (in json):
+    {[
+	"call-back-tables": {
+	   "0x4a5c30": "cgi_setobject_table"
+	}
+    ]}
+
+    The call-back table addresses provided by the user-data are read in by
+    the system_info and set in the global structure callbacktables. The
+    global variable definition provided by the c-file is saved in the global
+    bcfiles structure.
+
+    Call-back table addresses are retrieved by the ELF header and matched
+    (by name) with their corresponding global variable definitions, which
+    provides the struct type. For each global variable a new call-back table
+    is created and its struct type is used to extract the individual records
+    from the array (assumed to be terminated by a null record) and added to
+    the call-back table.
+
+    The connection with the indirect call that uses a particular call-back
+    table is made via another entry in the userdata, in the call-targets
+    section, which identifies both the base of the call-back table and the
+    particular field-offset in the struct that provides the function pointer.
+
+    For example:
+    {[
+	"call-targets": [
+	   {"ia": "0x40d5dc",
+	    "fa": "0x40d510",
+	    "tgts": [{"cba": "0x4a5c30:8"}]
+	   }
+         ]
+    ]}
+    identifies the location of the indirect call instruction by its
+    instruction address (ia) in function (fa), and indicates that the
+    targets to be used are available in the call-back table with base
+    address 0x4a5c30, where the function pointer is located at offset 8.
+    The offset of the function pointer is indicated as call-back tables
+    may have multiple fields with function pointers, to be used by
+    different instructions.
+*)
+
+(** Types of fields in a a call-back table. *)
 type call_back_table_value_t =
-  | CBAddress of string
-  | CBTag of string
-  | CBValue of numerical_t
+  | CBAddress of string (** address, typically of a function pointer *)
+  | CBTag of string   (** constant string *)
+  | CBValue of numerical_t   (** constant numerical value *)
 
 
+(** A single record (struct instance) in a call-back table.*)
 class type call_back_table_record_int =
   object
 
-    (* getters *)
+    (** Returns the address in memory of this record (in hexadecimal).*)
     method address: string
+
+    (** Returns the a list of (offset, field-value) pairs.*)
     method values: (int * call_back_table_value_t) list
-    method stringvalue: int -> string  (* string at offset *)
-    method intvalue: int -> numerical_t   (* integer value at offset *)
+
+    (** [cbtr#stringvalue n] returns the string value ([CBTag]) at offset [n].
+
+    @raise BCH_failure if the field at offset [n] is not a [CBTag] value.*)
+    method stringvalue: int -> string
+
+    (** [cbtr#intvalue n] returns the numerical value ([CBValue]) at offset [n].
+
+    @raise BCH_failure if the field at offset [n] is not a [CBValue] value.*)
+    method intvalue: int -> numerical_t
+
+    (** [cbtr#addrvalue n] returns the address value ([CBAddress]) at offset [n].
+
+    @raise BCH_failure if the field at offset [n] is not a [CBAddress] value.*)
     method addrvalue: int -> string   (* address at offset *)
 
-    (* saving *)
+    (** [cbtr#write_xml xnode] writes the field values and offset to [xnode].*)
     method write_xml: xml_element_int -> unit
 
-    (* printing *)
     method toPretty: pretty_t
 
   end
 
 
+(** Array of call-back table records identified by a single global variable
+    (base address).*)
 class type call_back_table_int =
   object
 
-    (* setters *)
+    (** [cbt#add_record addr values] adds a new record to the array with
+        record address [addr] and field values [values].*)
     method add_record:
              string
              -> (int * call_back_table_value_t) list
              -> unit
 
-    (* getters *)
+    (** Returns the base address of the call-back table.*)
     method address: string
-    method length: int   (* number of records *)
+
+    (** Returns the number of records in the table (array).*)
+    method length: int
+
+    (** Returns the struct type of the records.*)
     method record_type: btype_t
+
+    (** [cbt#type_at_offset n] returns the type of the field at offset [n].
+
+    @raise BCH_failure if there is no field at offset [n].*)
     method type_at_offset: int -> btype_t
+
+    (** [cbt#fieldname_at_offset n] returns the name of the field at offset [n].
+
+    @raise BCH_failure if there is no field at offset [n].*)
     method fieldname_at_offset: int -> string
+
+    (** Returns a list of field-offset, field-type pairs containing all fields.*)
     method field_offset_types: (int * btype_t) list
-    method record_length: int   (* number of items in record *)
+
+    (** Returns the number of fields in a record.*)
+    method record_length: int
+
+    (** Returns the a list (field-name, field-type pairs containing all fields
+        that are function pointers.*)
     method function_pointer_values: (string * btype_t) list
 
-    (* saving *)
+    (** [cbt#write_xml xnode] writes and xml representation of the records of
+        this table to [xnode].*)
     method write_xml: xml_element_int -> unit
 
   end
 
 
+(** Global data structure that provides access to all call-back tables.*)
 class type call_back_tables_int =
   object
 
-    (* setters *)
+    (** [cbts#new_table addr type] returns a new (empty) call-back table with
+        base address [addr] (in hexadecimal) and struct (record) type [type]
+        and registers the table by address.*)
     method new_table: string -> btype_t -> call_back_table_int
+
+    (** [cbts#add_table_address addr vname] associates the address of a table
+        with global variable name [vname].*)
     method add_table_address: string -> string -> unit
+
+    (** Collects the function pointers from all tables and registers the
+        addresses as function entry points, and sets the function signatures.*)
     method set_function_pointers: unit
 
-    (* getters *)
-    method table_variables: (string * string) list   (* address, name *)
+    (** Returns a list of all table base addresses as a list of pairs
+        (address, name of global variable).*)
+    method table_variables: (string * string) list
+
+    (** [cbts#get_table addr] returns the call-back table with base address
+        [addr].
+
+    @raise BCH_failure if no call-back table is present at [addr].*)
     method get_table: string -> call_back_table_int
 
-    (* predicates *)
+    (** [cbts#has_table addr] returns true if there is a call-back table with
+        base address [addr].*)
     method has_table: string -> bool
 
-    (* saving *)
+    (** [cbts#write_xml xnode] writes an xml representation of all tables to
+        xml node [xnode].*)
     method write_xml: xml_element_int -> unit
 
   end
+
 
 (** {2 String table} *)
 
@@ -2705,14 +2823,28 @@ type assembly_variable_denotation_t =
 
 *)
 and constant_value_variable_t =
-  | InitialRegisterValue of register_t * int            (* level *)
-  | InitialMemoryValue of variable_t                    (* original variable *)
+  | InitialRegisterValue of register_t * int (** value of register variable
+  at function entry *)
+  | InitialMemoryValue of variable_t  (** value of memory variable at function
+  entry *)
   | FrozenTestValue of
       variable_t            (* variable being frozen *)
       * ctxt_iaddress_t     (* address of test instruction *)
       * ctxt_iaddress_t     (* address of jump instruction *)
-  | FunctionReturnValue  of ctxt_iaddress_t              (* call site *)
-  | SyscallErrorReturnValue of ctxt_iaddress_t           (* call site *)
+  (** [FrozenTestValue (var, t_iaddr, j_iaddr)]: frozen value of variable
+  [var] at the address [t_iaddr] where it participates in a test expression
+  that is used as a predicate for a conditional jump instruction (or other
+  condition instruction) at address [j_iaddr]*)
+  | FunctionReturnValue  of ctxt_iaddress_t
+  (** [FunctionReturnValue iaddr]: return value from call at instruction
+  address [iaddr]*)
+  | SyscallErrorReturnValue of ctxt_iaddress_t
+  (** [SyscallErrorReturnValue iaddr]: error return value from system call at
+  instruction address [iaddr]*)
+  | SSARegisterValue of register_t * ctxt_iaddress_t * btype_t
+  (** [SSARegisterValue (reg, iaddr, ty): static single assignment value
+  for assignment to register [reg] at instruction address [iaddr] with the
+  type of the expression that is assigned to it (which can be [t_unknown])*)
   | FunctionPointer of
       string                (* name of function *)
       * string              (* name of creator *)
@@ -2774,6 +2906,7 @@ object ('a)
        
   method is_initial_memory_value: bool
   method is_frozen_test_value: bool
+  method is_ssa_register_value: bool
   method is_bridge_value: bool
   method is_bridge_value_at: ctxt_iaddress_t -> bool
   method is_return_value: bool
@@ -2859,6 +2992,11 @@ object
   method make_special_variable: string -> assembly_variable_int
   method make_runtime_constant: string -> assembly_variable_int
   method make_return_value: ctxt_iaddress_t -> assembly_variable_int
+  method make_ssa_register_value:
+           register_t
+           -> ctxt_iaddress_t
+           -> btype_t
+           -> assembly_variable_int
   method make_calltarget_value: call_target_t -> assembly_variable_int
   method make_function_pointer_value:
            string -> string -> ctxt_iaddress_t -> assembly_variable_int
@@ -3030,6 +3168,8 @@ class type function_environment_int =
     method mk_special_variable: string -> variable_t
     method mk_runtime_constant: string -> variable_t
     method mk_return_value: ctxt_iaddress_t -> variable_t
+    method mk_ssa_register_value:
+             register_t -> ctxt_iaddress_t -> btype_t -> variable_t
 
     method mk_calltarget_value: call_target_t -> variable_t
     method mk_function_pointer_value:
@@ -3241,7 +3381,7 @@ class type call_target_info_int =
 (** {2 Function-info} *)
 
 
-(** {1 Principal access point for function characteristics and analysis results.}
+(** {b Principal access point for function characteristics and analysis results.}
 
     This data structure keeps track of:
     - variables known to the function
@@ -3253,15 +3393,23 @@ class type call_target_info_int =
 class type function_info_int =
 object
 
-  (** {2 Address and symboltable}*)
+  (** {1 Address and symboltable}*)
 
   (** Returns the address of the function.*)
   method a: doubleword_int
 
+  (** Returns the address of the function.*)
+  method get_address: doubleword_int
+
+  (** Returns the name of the function.*)
+  method get_name: string
+
   (** Returns the function symbol table containing all variables.*)
   method env: function_environment_int
 
-  (** {2 Invariant accessors} *)
+  (** {1 Function invariants} *)
+
+  (** {2 Accessors} *)
 
   (** Returns the access point for all value invariants for this function.*)
   method finv: invariant_io_int
@@ -3284,7 +3432,10 @@ object
       [iaddr].*)
   method ivarinv: ctxt_iaddress_t -> location_var_invariant_int
 
-  (** {2 Invariant reset} *)
+  (** {2 Invariant reset}
+
+   Note: currently used only for x86.
+   *)
 
   (** Indicate change that requires invariants to be invalidated.*)
   method schedule_invariant_reset: unit
@@ -3292,7 +3443,26 @@ object
   (** Remove all invariants if there was a prior invariant reset scheduled.*)
   method reset_invariants: unit
 
-  (** {2 Function completeness} *)
+  (** Returns true if invariants were reset.*)
+  method were_invariants_reset: bool
+
+  (** Returns true if the side effects of this function have changed since
+      the beginning of the analysis round.
+
+      Note: this is used
+      (1) to determine if invariants are to be reset for callers of this
+      function, and
+      (2) to determine if the analysis of a function has stabilized.
+   *)
+  method sideeffects_changed: bool
+
+  (** Returns true if call targets were set since the beginning of the
+      analysis round. This is used in determining whether analysis has
+      of the function has stabilized.*)
+  method call_targets_were_set: bool
+
+
+  (** {1 Function attributes} *)
 
   (** Declare that all relevant information about a function is known.
 
@@ -3309,6 +3479,18 @@ object
   (** Returns true if the associated function is considered complete.*)
   method is_complete: bool
 
+  (** {2 Function return}*)
+
+  (** Declares that this function is non-returning.*)
+  method set_nonreturning: unit
+
+  (** [finfo#record_return_value iaddr xpr] records that the function
+      returns value [xpr] at return instruction [iaddr].*)
+  method record_return_value: ctxt_iaddress_t -> xpr_t -> unit
+
+  (** Returns the function return values recorded for this function.*)
+  method get_return_values: xpr_t list
+
 
   (* method set_dynlib_stub: call_target_t -> unit *)
 
@@ -3324,7 +3506,7 @@ object
   method get_instruction_bytes: ctxt_iaddress_t -> string
 
 
-  (** {2 Auxiliary variable with constant value} *)
+  (** {2 Auxiliary variables} *)
 
   (** [finfo#add_constant var num] registers the fact that auxiliary
       variable [var] (usually a bridge variable representing the argument
@@ -3353,10 +3535,59 @@ object
       number is unknown).*)
   method get_stack_adjustment: int option
 
-  (** {2 Function summaries}
+  (** {2 Base pointers}*)
+
+  (** [finfo#add_base_pointer var] declares [var] to be pointer that is
+      dereferenced within the function.
+
+      [var] must be a constant-value variable (i.e., a symbolic constant in
+      the function) to be a valid base pointer.
+
+      Adding a variable as a base pointer has the effect of adding it, in the
+      next analysis round, as a base to the value set domain. *)
+  method add_base_pointer: variable_t -> unit
+
+  (** Returns the list of variables that were declared to be base pointers.*)
+  method get_base_pointers: variable_t list
+
+  (** [finfo#is_base_pointer var] returns true if variable [var] is registered
+      as a base pointer.*)
+  method is_base_pointer: variable_t -> bool
+
+
+  (** {2 Spilled registers} *)
+
+  (** [finfo#save_register iaddr reg] declares that register [reg] is saved
+      (spilled) to the stack by the instruction at address [iaddr].*)
+  method save_register: ctxt_iaddress_t -> register_t -> unit
+
+  (** [finfo#restore_register iaddr reg] declares that register [reg] is
+      restored from the stack by the instruction at address [iaddr].*)
+  method restore_register: ctxt_iaddress_t -> register_t -> unit
+
+
+  (** {1 Function summaries}
       Information registered to create a function summary for the application
       function represented by this function_info (possibly including global
       variables that are accessed and/or modified by the function).*)
+
+  (** [finfo#set_bc_summary fsum] sets the user-summary to be [fsum].*)
+  method set_bc_summary: function_summary_int -> unit
+
+  (** [finfo#read_xml_user_summary xnode] extracts the user-summary from its
+      xml representation in [xnode].*)
+  method read_xml_user_summary: xml_element_int -> unit
+
+  (** Returns a summary of the known, externally observable behavior of this
+      function.
+
+      Note that this information may be incomplete if it is constructed based
+      on analysis results available so far. Summaries are updated in every
+      round of analysis, and so tend to improve as analysis progresses.*)
+  method get_summary: function_summary_int
+
+
+  (** {2 Function signature}*)
 
   (** [finfo#set_global_par dw ty] adds global variable with address [dw] and
       type [ty] as a global parameter to the function api.*)
@@ -3370,7 +3601,29 @@ object
       [ty] to the function api.*)
   method set_register_par: register_t -> btype_t -> fts_parameter_t
 
-  (** {2 Condition codes}
+  (** [finfo#set_java_native_method_signature api] sets the user summary
+      with signature [api] and default semantics.*)
+  method set_java_native_method_signature: java_native_method_api_t -> unit
+
+  (** Creates the standard [jni$Env] parameter for a java native method.
+
+      Note: it does not set the user summary with this signature.*)
+  method set_unknown_java_native_method_signature: unit
+
+
+  (** {2 Side effects}*)
+
+  (** [finfo#record_sideeffect iaddr se] records side effect [se] (i.e.,
+      an effect that is observable outside of the function, such as writing
+      through a pointer provided as argument) at instruction address [iaddr].
+
+      This method is currently called only when an assignment is performed
+      with a left-hand-side that is an external memory reference.
+   *)
+  method record_sideeffect: ctxt_iaddress_t -> sideeffect_t -> unit
+
+
+  (** {1 Condition codes}
       The function info keeps track of test expressions and the variables used
       therein for conditional jump instructions. These methods are used mainly
       by architectures that use condition codes in the processor status word
@@ -3378,16 +3631,42 @@ object
       jump instruction. However, they are also used for predicated instructions
       (as, e.g., in ARM/Thumb-2) or for the SET<cc> instructions in x86.*)
 
+  (** {2 Test expressions}*)
+
   (** [set_test_expr iaddr xpr] records test expression [xpr] for the
       conditional jump instruction at [iaddr] *)
   method set_test_expr: ctxt_iaddress_t -> xpr_t -> unit
 
-  (** [set_test_variables iaddr vmap] records the variable mapping [vmap] between
-      regular function variables and auxiliary variables created (variables
-      frozen at a particular location) at the address of the test instruction
-      [iaddr].*)
+  (** Returns a list of all registered test expressions together with the
+      address of the test instruction.*)
+  method get_test_exprs: (ctxt_iaddress_t * xpr_t) list
+
+  (** [get_test_expr iaddr] returns the test expression created by the test
+      instruction at [iaddr].
+
+      Returns a random constant if no test expression is found.*)
+  method get_test_expr: ctxt_iaddress_t -> xpr_t
+
+  (** [finfo#has_test_expr iaddr] returns true if a test expression is
+      registered for instruction address [iaddr].*)
+  method has_test_expr: ctxt_iaddress_t -> bool
+
+  (** [finfo#set_test_variables iaddr vmap] records the variable mapping [vmap]
+      between regular function variables and auxiliary variables created
+      (variables frozen at a particular location) at the address of the test
+      instruction [iaddr].*)
   method set_test_variables:
            ctxt_iaddress_t -> (variable_t * variable_t) list -> unit
+
+  (** [finfo#get_test_variables iaddr] returns the mapping of test variables
+      that were registered for the instruction at [iaddr].
+
+      Returns the empty list if no test variables were registered for that
+      address.*)
+  method get_test_variables:
+           ctxt_iaddress_t -> (variable_t * variable_t) list
+
+  (** {2 Connections}*)
 
   (** [finfo#connect_cc_user u_iaddr s_iaddr] records that the instruction at
       address [u_addr] uses the test expression set by the instruction at
@@ -3421,7 +3700,17 @@ object
       associated user.*)
   method get_associated_cc_user: ctxt_iaddress_t -> ctxt_iaddress_t
 
-  (** {2 Indirect jumps}*)
+  (** {2 Statistics}*)
+
+  (** Returns the number of conditions that are associated with test expressions
+      in this function.*)
+  method get_num_conditions_associated: int
+
+  (** Returns the number of test expressions recorded in this function.*)
+  method get_num_test_expressions: int
+
+
+  (** {1 Indirect jumps}*)
 
   (** [finfo#set_jumptable_target iaddr base jt reg] registers jumptable [jt]
       with base address [base] to be the target of the indirect jump instruction
@@ -3439,71 +3728,21 @@ object
            ctxt_iaddress_t -> string -> call_target_info_int -> unit
   method set_unknown_jumptarget : ctxt_iaddress_t -> unit
 
-  (* declares the variable to be a pointer that is dereferenced within
-   * the function, causing it to be added as a base to the value set domain *)
-  method add_base_pointer: variable_t -> unit
-
-  (* set targets for indirect jumps *)
-  method set_java_native_method_signature: java_native_method_api_t -> unit
-  method set_unknown_java_native_method_signature: unit
-  method set_jumptable_target:
-    ctxt_iaddress_t -> doubleword_int -> jumptable_int -> register_t -> unit
-  method set_offsettable_target:
-    ctxt_iaddress_t -> doubleword_int -> jumptable_int -> data_block_int -> unit
-  method set_global_jumptarget: ctxt_iaddress_t -> variable_t -> unit
-  method set_argument_jumptarget: ctxt_iaddress_t -> variable_t -> unit
-  method set_dll_jumptarget:
-           ctxt_iaddress_t -> string -> string -> call_target_info_int -> unit
-  method set_so_jumptarget:
-           ctxt_iaddress_t -> string -> call_target_info_int -> unit
-  method set_unknown_jumptarget : ctxt_iaddress_t -> unit
-
-  method set_call_target: ctxt_iaddress_t -> call_target_info_int -> unit
-
-  method set_nonreturning: unit
-
-  method save_register: ctxt_iaddress_t -> register_t -> unit
-  method restore_register: ctxt_iaddress_t -> register_t -> unit
-    
-  method record_sideeffect: ctxt_iaddress_t -> sideeffect_t -> unit
-  method record_return_value: ctxt_iaddress_t -> xpr_t -> unit
-
-  (* accessors *)
-
-
-  method get_num_conditions_associated: int
-  method get_num_test_expressions: int
-
-
 
   (* method get_dynlib_stub: call_target_t *)
-
-  method get_call_target: ctxt_iaddress_t -> call_target_info_int
-
-  method get_callees: call_target_info_int list
-  method get_callees_located: (ctxt_iaddress_t * call_target_info_int) list
-
-  method get_address: doubleword_int (* address of this function *)
-  method get_name: string
-  method get_summary: function_summary_int
-
-  (* auxiliary variable with constant value *)
-
-  method get_base_pointers: variable_t list (* list of base pointers used *)
-
-
-  (* all test expressions in the function *)
-  method get_test_exprs: (ctxt_iaddress_t * xpr_t) list
-  method get_test_expr: ctxt_iaddress_t -> xpr_t  (* branch expr (simplified) *)
-
-  (* variable mapping for conditional jump expression *)
-  method get_test_variables:
-           ctxt_iaddress_t -> (variable_t * variable_t) list
 
   (* indirect jump targets *)
   method get_dll_jumptarget: ctxt_iaddress_t -> (string * string)
   method get_jump_target: ctxt_iaddress_t -> jump_target_t
   method get_jumptable_jumps: ctxt_iaddress_t list
+
+  method is_dll_jumptarget: ctxt_iaddress_t -> bool
+  method has_jump_target: ctxt_iaddress_t -> bool
+  method has_unknown_jump_target : bool
+
+
+  (** {2 Statistics} *)
+
   method get_jumptable_count: int
   method get_offsettable_count: int
   method get_global_jump_count: int
@@ -3512,34 +3751,52 @@ object
   method get_dll_jumps_count: int
   method get_indirect_jumps_count: int
 
-  method get_return_values: xpr_t list
 
+  (** {1 Call targets}*)
+
+  (** [finfo#set_call_target iaddr cti] registers a call target [cti] at
+      instruction address [iaddr].*)
+  method set_call_target: ctxt_iaddress_t -> call_target_info_int -> unit
+
+  (** [finfo#get_call_target iaddr] returns the call target registered at
+      instruction address [iaddr]. [UnknownTarget] is returned if no call
+      target is registered at [iaddr].*)
+  method get_call_target: ctxt_iaddress_t -> call_target_info_int
+
+  (** [finfo#has_call_target iaddr] returns true if a call target is
+      registered at instruction address [iaddr].*)
+  method has_call_target: ctxt_iaddress_t -> bool
+
+  (** Returns the call targets registered in this function.*)
+  method get_callees: call_target_info_int list
+
+  (** Returns the call targets registered in this function, coupled with
+      the address of the associated call instruction.*)
+  method get_callees_located: (ctxt_iaddress_t * call_target_info_int) list
+
+
+  (** {2 Statistics}*)
+
+  (** Returns the number of call targets registered for this function.*)
   method get_call_count: int
+
+  (** [get_call_category_count name] returns the number of call targets
+      in the category named [name].*)
   method get_call_category_count: string -> int
 
-  (* predicates *)
-  (* method is_dynlib_stub: bool *)
-  method were_invariants_reset: bool
-  method sideeffects_changed  : bool
-  method call_targets_were_set: bool
 
+  (** {1 Save and restore}*)
 
-
-  method has_call_target: ctxt_iaddress_t -> bool
-  method is_dll_jumptarget: ctxt_iaddress_t -> bool
-  method has_jump_target: ctxt_iaddress_t -> bool
-  method has_unknown_jump_target : bool
-
-  method has_test_expr: ctxt_iaddress_t -> bool
-  method is_base_pointer: variable_t -> bool
-
-  (* save and restore *)
-  method read_xml_user_summary: xml_element_int -> unit
-  method set_bc_summary: function_summary_int -> unit
+  (** [finfo#write_xml xnode] writes the internal state of the function-info
+      to xml element [xnode].*)
   method write_xml: xml_element_int -> unit
+
+  (** [finfo#read_xml xnode] initializes the function-info with with data
+      extracted from xml element [xnode].*)
   method read_xml: xml_element_int -> unit
 
-  (* printing *)
+  (** {1 Printing}*)
+
   method state_to_pretty: pretty_t 
   method summary_to_pretty: pretty_t
   method saved_registers_to_pretty: pretty_t
@@ -3552,13 +3809,61 @@ end
 
 (** {2 Floc} *)
 
+(** {b Floc (location in a function): principal access point for information
+    associated with a single instruction.} *)
 class type floc_int =
-object
+  object
 
-  (* setters *)
+    (** {2 Addresses and symboltable} *)
+
+    (** Returns the address of this instruction.*)
+    method ia: doubleword_int
+
+    (** Returns the full context of the address of this instruction. *)
+    method cia: ctxt_iaddress_t
+
+    (** Returns the address of the function this instruction belongs to.*)
+    method fa: doubleword_int
+
+    (** Returns the location of this instruction. *)
+    method l: location_int
+
+    (** Returns the function-info of the function this instruction belongs to.*)
+    method f: function_info_int
+
+    (** Returns the symbol table of the function this instruction belongs to.*)
+    method env: function_environment_int
+
+    (** {2 Invariant accessors} *)
+
+    (** Returns the value invariants for this instruction.*)
+    method inv: location_invariant_int
+
+    (** Returns the type invariants for this instruction.*)
+    method tinv: location_type_invariant_int
+
+    (** Returns the variable invariants for this instruction.*)
+    method varinv: location_var_invariant_int
+
+    (** [floc#add_var_type_fact var ty] creates a type invariant fact for
+    variable [var] to be type [ty].*)
+    method add_var_type_fact:
+             variable_t -> ?structinfo:string list -> btype_t -> unit
+
+    (** [floc#add_const_type_fact num ty] creates a type invariant fact for
+        constant [num].*)
+    method add_const_type_fact: numerical_t -> btype_t -> unit
+
+    (** [floc#add_type_fact xpr ty] creates a type invariant fact for
+        expression [xpr].*)
+    method add_xpr_type_fact: xpr_t -> btype_t -> unit
+
+  (** Associate instruction bytes (as a hex string) with instruction *)
   method set_instruction_bytes: string -> unit
 
-  (* sets the targets for an indirect jump at this instruction *)
+  (** [set_jumptable_target base jt reg] registers jumptable [jt] with base
+      address [base] to be target of this instruction (assumed to be an
+      indirect jump instruction) with the selector value in register [reg].*)
   method set_jumptable_target:
            doubleword_int -> jumptable_int -> register_t -> unit
 
@@ -3575,24 +3880,6 @@ object
   (* evaluates the value of eax at this location and reports it to the function 
      info *)
   method record_return_value: unit
-
-  (* add type facts *)
-  method add_var_type_fact:
-           variable_t -> ?structinfo:string list -> btype_t -> unit
-  method add_const_type_fact: numerical_t -> btype_t -> unit
-  method add_xpr_type_fact: xpr_t -> btype_t -> unit
-
-
-  (* accessors *)
-  method ia: doubleword_int            (* local instruction address *)
-  method cia: string                   (* full-context instruction address string *)
-  method fa: doubleword_int            (* address of function info *)
-  method l: location_int               (* location of this instruction *)
-  method f: function_info_int          (* function_info that this instruction belongs to *)
-  method env: function_environment_int (* variable environment of the function *)
-  method inv: location_invariant_int
-  method tinv: location_type_invariant_int
-  method varinv: location_var_invariant_int
 
   method evaluate_summary_address_term: bterm_t -> variable_t option
   method evaluate_summary_term: bterm_t -> variable_t -> xpr_t
@@ -3680,13 +3967,35 @@ object
 
   method get_pwr_call_commands: cmd_t list
 
-  (* returns the CHIF code associated with an assignment instruction *)
+  (** [floc#get_assign_commands var ~size ~vtype xpr] returns the CHIF commands
+      representing the assignment [var := xpr].
+
+      If [size] is not None and the left-hand side [var] is externally observable
+      (e.g., it is a memory write with external base) an external block-write is
+      recorded for this instruction for the enclosing function.
+
+      If [vtype] is known type facts are added for both [var] and [xpr] for this
+      instruction.
+   *)
   method get_assign_commands:
            variable_t
            -> ?size:xpr_t
            -> ?vtype:btype_t
            -> xpr_t
            -> cmd_t list
+
+  (** [floc#get_ssa_assign_commands reg ~vtype xpr] creates an ssa-register
+      variable [ssavar] for the current context address and returns
+      a tuple of the register-variable, and the CHIF commands representing
+      the assignments
+      {[ reg := ssavar
+         reg := xpr
+      ]} *)
+  method get_ssa_assign_commands:
+           register_t
+           -> ?vtype:btype_t
+           -> xpr_t ->
+           variable_t * cmd_t list
 
   (* returns the CHIF code to set definition/use instruction addresses *)
   method get_vardef_commands:
@@ -3706,6 +4015,13 @@ object
   (* returns the CHIF code associated with an abstraction of variables *)
   method get_abstract_commands:
            variable_t -> ?size:xpr_t -> ?vtype:btype_t -> unit -> cmd_t list
+
+  (** floc#[get_ssa_abstract_commands reg ty ()] creates an ssa-register
+      variable [ssavar] for the current context address and returns a tuple of
+      the register-variable and the CHIF commands representing the assignment
+      {[ reg := ssavar ]}*)
+  method get_ssa_abstract_commands:
+           register_t -> ?vtype:btype_t -> unit -> (variable_t * cmd_t list)
 
   method get_abstract_cpu_registers_command: cpureg_t list -> cmd_t
 
