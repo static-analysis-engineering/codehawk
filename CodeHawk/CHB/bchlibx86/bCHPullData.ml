@@ -42,6 +42,7 @@ open XprToPretty
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypes
+open BCHBCTypePretty
 open BCHCallTarget
 open BCHCPURegisters
 open BCHDemangler
@@ -56,7 +57,6 @@ open BCHLibTypes
 open BCHLocation
 open BCHSystemInfo
 open BCHSystemSettings
-open BCHVariableType
 
 (* bchlibx86 *)
 open BCHAssemblyFunctions

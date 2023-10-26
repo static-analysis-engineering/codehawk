@@ -40,14 +40,16 @@ open CHXmlReader
 open Xprt
 
 (* bchlib *)
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeTransformer
+open BCHBCTypeXml
 open BCHBTerm
 open BCHFtsParameter
 open BCHLibTypes
 open BCHPrecondition
 open BCHTypeDefinitions
 open BCHUtilities
-open BCHVariableType
 open BCHXmlUtil
 
 

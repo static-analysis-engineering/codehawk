@@ -40,10 +40,10 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypes
+open BCHBCTypeUtil
 open BCHDemangler
 open BCHDoubleword
 open BCHLibTypes
-open BCHVariableType
 
 module H = Hashtbl
 module TR = CHTraceResult

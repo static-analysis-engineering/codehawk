@@ -278,6 +278,23 @@ object (self:'a)
             (LBLOCK [
                  STR "Operand is not a pc-relative address: "; self#toPretty ]))
 
+  method to_register: register_t =
+    match kind with
+    | ARMReg r -> register_of_arm_register r
+    | ARMDoubleReg (r1, r2) -> register_of_arm_double_register r1 r2
+    | ARMWritebackReg (_, r, _) -> register_of_arm_register r
+    | ARMSpecialReg r -> register_of_arm_special_register r
+    | ARMExtensionReg r -> register_of_arm_extension_register r
+    | ARMDoubleExtensionReg (r1, r2) ->
+       register_of_arm_double_extension_register r1 r2
+    | ARMExtensionRegElement e -> register_of_arm_extension_register_element e
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand cannot be converted to a generic register: ";
+                 self#toPretty]))
+
   method to_numerical =
     match kind with
     | ARMImmediate imm -> imm#to_numerical

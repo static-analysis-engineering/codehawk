@@ -175,6 +175,7 @@ class type arm_operand_int =
 
     (* converters *)
     method to_numerical: numerical_t
+    method to_register: register_t
     method to_address: floc_int -> xpr_t
     method to_variable: floc_int -> variable_t
     method to_multiple_variable: floc_int -> variable_t list

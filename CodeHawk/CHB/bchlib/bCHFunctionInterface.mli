@@ -72,6 +72,7 @@ val default_function_interface:
   ?cc:string
   -> ?adj:int
   -> ?returntype:btype_t
+  -> ?varargs:bool
   -> string
   -> fts_parameter_t list
   -> function_interface_t

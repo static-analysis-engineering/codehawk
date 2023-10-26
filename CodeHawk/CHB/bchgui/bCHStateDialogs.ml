@@ -64,7 +64,6 @@ open BCHPreFileIO
 open BCHSystemInfo
 open BCHVariable
 open BCHVariableNames
-open BCHVariableType
 
 (* bchlibpe *)
 open BCHLibPETypes

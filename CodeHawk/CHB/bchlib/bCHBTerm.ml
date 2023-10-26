@@ -45,15 +45,15 @@ open XprToPretty
 (* bchlib *)
 open BCHFtsParameter
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeTransformer
+open BCHBCTypeUtil
+open BCHBCTypeXml
 open BCHLibTypes
 open BCHSystemSettings
 open BCHUtilities
-open BCHVariableType
 open BCHXmlUtil
-
-
-let btype_compare = BCHBCUtil.typ_compare
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =

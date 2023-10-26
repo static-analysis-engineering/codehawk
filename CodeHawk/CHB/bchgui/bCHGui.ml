@@ -52,7 +52,6 @@ open BCHMemoryReference
 open BCHPreFileIO
 open BCHSystemInfo
 open BCHVariable
-open BCHVariableType
 open BCHXmlUtil
 
 (* bchlibpe *)

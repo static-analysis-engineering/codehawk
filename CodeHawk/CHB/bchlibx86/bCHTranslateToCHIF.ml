@@ -46,6 +46,7 @@ open Xsimplify
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypes
+open BCHBCTypeUtil
 open BCHCodegraph
 open BCHCPURegisters
 open BCHDoubleword
@@ -61,7 +62,6 @@ open BCHSystemInfo
 open BCHSystemSettings
 open BCHUtilities
 open BCHVariable
-open BCHVariableType
 
 (* bchlibx86 *)
 open BCHAssemblyBlock
@@ -81,6 +81,7 @@ open BCHX86Opcodes
 module B = Big_int_Z
 module LF = CHOnlineCodeSet.LanguageFactory
 module FFU = BCHFileFormatUtil
+
 
 let cmd_to_pretty = CHLanguage.command_to_pretty 0
 
@@ -112,7 +113,7 @@ let trace_function (faddr:doubleword_int) =
 
 let cFour = int_constant_expr 4
 let voidPtr = t_voidptr
-let int_type (width:int) = get_ikind_from_size width
+let int_type (width:int) = size_to_int_ikind width
 let get_exp (n:int) = Const (CInt (Int64.of_int n, IInt,None))
 
 let make_code_label ?src ?modifier (address:ctxt_iaddress_t) = 

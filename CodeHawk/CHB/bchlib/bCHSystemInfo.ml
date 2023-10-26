@@ -60,6 +60,7 @@ open XprXml
 open BCHBasicTypes
 open BCHBCFiles
 open BCHBCTypes
+open BCHBCTypeXml
 open BCHByteUtilities
 open BCHCallbackTables
 open BCHConstantDefinitions
@@ -86,7 +87,6 @@ open BCHSystemSettings
 open BCHTypeDefinitions
 open BCHUtilities
 open BCHVariable
-open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl

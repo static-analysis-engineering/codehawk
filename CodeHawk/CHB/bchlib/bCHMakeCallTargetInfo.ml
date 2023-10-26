@@ -32,6 +32,7 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
 open BCHCallbackTables
 open BCHCallTarget
@@ -43,7 +44,6 @@ open BCHFunctionInfo
 open BCHFunctionSemantics
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
-open BCHVariableType
 
 
 let mk_default_target (name:string) (tgt:call_target_t) =

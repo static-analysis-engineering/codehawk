@@ -43,13 +43,15 @@ open XprToPretty
 (* bchlib *)
 open BCHFtsParameter
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeTransformer
+open BCHBCTypeXml
 open BCHBTerm
 open BCHCStructConstant
 open BCHLibTypes
 open BCHTypeDefinitions
 open BCHUtilities
-open BCHVariableType
 open BCHXmlUtil
 
 

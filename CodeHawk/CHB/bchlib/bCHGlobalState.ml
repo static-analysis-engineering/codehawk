@@ -44,8 +44,9 @@ open XprXml
 (* bchlib*)
 open BCHBasicTypes
 open BCHBCDictionary
+open BCHBCTypePretty
 open BCHBCTypes
-open BCHBCUtil
+open BCHBCTypeUtil
 open BCHCallTarget
 open BCHConstantDefinitions
 open BCHDoubleword
@@ -57,7 +58,6 @@ open BCHLocation
 open BCHMemoryReference
 open BCHPreFileIO
 open BCHSystemInfo
-open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl
@@ -87,6 +87,13 @@ let four = int_constant_expr 4
 
 let bcd = BCHBCDictionary.bcdictionary
 let id = BCHInterfaceDictionary.interface_dictionary
+
+
+let btype_equal (t1: btype_t) (t2: btype_t) =
+  let i1 = bcd#index_typ t1 in
+  let i2 = bcd#index_typ t2 in
+  i1 = i2
+
 
 module DoublewordCollections = CHCollections.Make 
   (struct

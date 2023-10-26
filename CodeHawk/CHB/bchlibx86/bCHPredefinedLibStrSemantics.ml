@@ -32,9 +32,9 @@ open CHPretty
 open Xprt
 
 (* bchlib *)
+open BCHBCTypeUtil
 open BCHLibTypes
 open BCHMakeCallTargetInfo
-open BCHVariableType
 
 (* bchlibx86 *)
 open BCHLibx86Types

@@ -36,11 +36,12 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypes
+open BCHBCTypePretty
 open BCHBCFiles
 open BCHDoubleword
 open BCHFunctionData
 open BCHLibTypes
-open BCHVariableType
+
 
 module H = Hashtbl
 
@@ -147,15 +148,15 @@ class struct_table_t (addr: string) (ty: btype_t): struct_table_int =
 object (self)
 
   val address = addr
-  val recordtype = resolve_type ty
+  val recordtype = bcfiles#resolve_type ty
   val records = H.create 7
   val fieldnames =
     let table = H.create 3 in
-    let recty = resolve_type ty in
+    let recty = bcfiles#resolve_type ty in
     let _ =
       match recty with
       | TPtr (TComp (ckey, _), _) ->
-         let compinfo = get_compinfo_by_key ckey in
+         let compinfo = bcfiles#get_compinfo ckey in
          List.iter (fun fld ->
              match fld.bfieldlayout with
              | Some (offset, _) ->
@@ -185,11 +186,11 @@ object (self)
 
   val offsettypes =
     let table = H.create 3 in
-    let recty = resolve_type ty in
+    let recty = bcfiles#resolve_type ty in
     let _ =
       match recty with
       | TPtr (TComp (ckey, _), _) ->
-         let compinfo = get_compinfo_by_key ckey in
+         let compinfo = bcfiles#get_compinfo ckey in
          List.iter (fun fld ->
              match fld.bfieldlayout with
              | Some (offset, _) ->

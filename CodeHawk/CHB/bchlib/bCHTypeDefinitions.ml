@@ -31,7 +31,7 @@
 open CHPretty
 open CHUtils
 
-(* chutils *)
+(* chutil *)
 open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
@@ -39,10 +39,10 @@ open CHXmlReader
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
-open BCHBCUtil
+open BCHBCTypeUtil
 open BCHLibTypes
-open BCHVariableType
 
 
 module H = Hashtbl
@@ -50,6 +50,12 @@ module H = Hashtbl
 
 let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
+
+
+let btype_equal (t1: btype_t) (t2: btype_t) =
+  let i1 = bcd#index_typ t1 in
+  let i2 = bcd#index_typ t2 in
+  i1 = i2
 
 
 let raise_error (node:xml_element_int) (msg:pretty_t) =
@@ -470,10 +476,6 @@ let function_types = [
     ("unknownfunction", TFun (t_unknown, None, false, []))
 ]
 
-let c_types = [
-    ("uint8_t", t_uchar)
-  ]
-
 
 let jni_types = [
   ("jboolean", t_uchar) ;
@@ -515,10 +517,10 @@ let jni_types = [
 let _ =
   List.iter
     (fun (name,ty) -> type_definitions#add_typeinfo name ty)
-    (pe_types @ function_types @ c_types @ jni_types)
+    (pe_types @ function_types @ jni_types)
 
 
-let get_size_of_type_definition (s:string) =
+let get_size_of_type_definition (s: string) =
   match s with
   | "byte" | "BYTE" | "char" -> Some 1
   | "UINT" -> Some 4
@@ -526,13 +528,13 @@ let get_size_of_type_definition (s:string) =
   | _ -> None
 
 
-let get_size_of_type (t:btype_t) =
+let get_size_of_type (t: btype_t) =
   match t with
   | TNamed (s,_) -> get_size_of_type_definition s
-  | _ -> get_size_of_btype t
+  | _ -> Some (size_of_btype t)
 
 
-let resolve_type (t:btype_t) =
+let resolve_type (t: btype_t) =
   match t with
   | TNamed (tname,_) -> if type_definitions#has_type tname then
       type_definitions#get_type tname

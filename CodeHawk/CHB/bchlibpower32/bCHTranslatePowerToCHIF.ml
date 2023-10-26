@@ -62,7 +62,6 @@ open BCHSystemInfo
 open BCHSystemSettings
 open BCHUtilities
 open BCHVariable
-open BCHVariableType
 
 (* bchlibpower32 *)
 open BCHPowerAssemblyBlock

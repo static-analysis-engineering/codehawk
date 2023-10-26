@@ -50,7 +50,6 @@ open BCHFunctionData
 open BCHLibTypes
 open BCHMakeCallTargetInfo
 open BCHSystemInfo
-open BCHVariableType
 
 (* bchlibx86 *)
 open BCHDisassemblyUtils

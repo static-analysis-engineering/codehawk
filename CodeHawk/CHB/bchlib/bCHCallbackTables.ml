@@ -35,12 +35,12 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCFiles
 open BCHDoubleword
 open BCHFunctionData
 open BCHLibTypes
-open BCHVariableType
 
 module H = Hashtbl
 
@@ -164,17 +164,17 @@ class call_back_table_t (cba: string) (ty: btype_t): call_back_table_int =
 object (self)
 
   val address = cba
-  val recordtype = resolve_type ty
+  val recordtype = bcfiles#resolve_type ty
   val records = H.create 7
   val fieldnames =
     let table = H.create 3 in
-    let recty = resolve_type ty in
+    let recty = bcfiles#resolve_type ty in
     let _ =
       match recty with
       | TFun _ | TPtr (TFun _, _) ->
          H.add table 0 ("cbp_" ^ cba)
       | TPtr (TComp (ckey, _), _) ->
-         let compinfo = get_compinfo_by_key ckey in
+         let compinfo = bcfiles#get_compinfo ckey in
          List.iteri (fun i fld ->
              H.add table (i * 4) fld.bfname) compinfo.bcfields
       | _ ->
@@ -187,14 +187,14 @@ object (self)
 
   val offsettypes =
     let table = H.create 3 in
-    let recty = resolve_type ty in
+    let recty = bcfiles#resolve_type ty in
     let _ =
       match recty with
       | TFun _ -> H.add table 0 ty
       | TPtr (TFun (rty, args, b, attr), _) ->
          H.add table 0 (TFun (rty, args, b, attr))
       | TPtr (TComp (ckey, _), _) ->
-         let compinfo = get_compinfo_by_key ckey in
+         let compinfo = bcfiles#get_compinfo ckey in
          List.iteri (fun i fld ->
              let offset = i * 4 in
              match fld.bftype with
@@ -202,7 +202,8 @@ object (self)
              | TPtr (TFun (rty, args, b, attr), _) ->
                 H.add table offset (TFun (rty, args, b, attr))
              | _ ->
-                H.add table offset (resolve_type fld.bftype)) compinfo.bcfields
+                H.add table offset (bcfiles#resolve_type fld.bftype))
+           compinfo.bcfields
       | _ ->
          raise
            (BCH_failure

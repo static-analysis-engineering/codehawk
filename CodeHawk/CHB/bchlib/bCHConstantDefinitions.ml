@@ -44,12 +44,13 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
-open BCHBCUtil
+open BCHBCTypeUtil
+open BCHBCTypeXml
 open BCHDoubleword
 open BCHLibTypes
 open BCHTypeDefinitions
-open BCHVariableType
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -62,9 +63,17 @@ let name_table = H.create 3
 
 let x2p = xpr_formatter#pr_expr
 
+let bcd = BCHBCDictionary.bcdictionary
+
 
 let has_symbolic_address_name (v: doubleword_int) =
   H.mem address_table v#index
+
+
+let btype_equal (t1: btype_t) (t2: btype_t) =
+  let i1 = bcd#index_typ t1 in
+  let i2 = bcd#index_typ t2 in
+  i1 = i2
 
 
 let get_symbolic_address_name (v: doubleword_int) =

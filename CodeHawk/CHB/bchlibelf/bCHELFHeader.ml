@@ -49,12 +49,11 @@ open CHPrettyUtil
 open CHTiming
 open CHXmlDocument
 
-(* bchcil *)
-open BCHBCFiles
-open BCHBCUtil
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCFiles
+open BCHBCTypes
+open BCHBCTypeUtil
 open BCHByteUtilities
 open BCHCallbackTables
 open BCHDoubleword
@@ -65,7 +64,6 @@ open BCHStreamWrapper
 open BCHStructTables
 open BCHSystemInfo
 open BCHSystemSettings
-open BCHVariableType
 
 (* bchlibelf *)
 open BCHDwarfQueryService
@@ -541,7 +539,7 @@ object(self)
   method private extract_call_back_table
                    (callbacktable: call_back_table_int)
                    (va: doubleword_int)
-                   (extractor: string list) =
+                   (fieldkinds: string list) =
     let nullrecord = ref false in
     let currva = ref va in
     while not !nullrecord do
@@ -561,7 +559,7 @@ object(self)
                     | _ -> CBTag "**unknown**")
                 | "value" -> CBValue (mkNumerical pv#to_int)
                 | _ -> CBValue numerical_zero in
-            cbvalues := ((i * 4), cbv) :: !cbvalues) extractor;
+            cbvalues := ((i * 4), cbv) :: !cbvalues) fieldkinds;
         (if List.for_all (fun (_, v) ->
                 match v with
                 | CBValue n -> n#equal numerical_zero
@@ -570,7 +568,7 @@ object(self)
          else
            begin
              callbacktable#add_record !currva#to_hex_string !cbvalues;
-             currva := !currva#add_int ((List.length extractor) * 4)
+             currva := !currva#add_int ((List.length fieldkinds) * 4)
            end)
       end
     done
@@ -579,7 +577,7 @@ object(self)
                    (structtable: struct_table_int)
                    (va: doubleword_int)
                    (recordsize: int)
-                   (extractor: (int * string) list) =
+                   (fieldkinds: (int * string) list) =
     let nullrecord = ref false in
     let currva = ref va in
     while not !nullrecord do
@@ -605,7 +603,7 @@ object(self)
                     | _ -> STVString "**unknown**")
                 | "value" -> STVNum (mkNumerical pv#to_int)
                 | _ -> STVNum numerical_zero in
-            stvalues := (offset, stv) :: !stvalues) extractor;
+            stvalues := (offset, stv) :: !stvalues) fieldkinds;
         (if List.for_all (fun (_, v) ->
                 match v with
                 | STVNum n -> n#equal numerical_zero
@@ -625,10 +623,10 @@ object(self)
       List.iter (fun (addr, vname) ->
           if bcfiles#has_varinfo vname then
             let varinfo = bcfiles#get_varinfo vname in
-            let extractor = get_struct_extractor varinfo.bvtype in
+            let fieldkinds = struct_field_categories varinfo.bvtype in
             let callbacktable = callbacktables#new_table addr varinfo.bvtype in
             let va = TR.tget_ok (string_to_doubleword addr) in
-            self#extract_call_back_table callbacktable va extractor
+            self#extract_call_back_table callbacktable va fieldkinds
           else
             chlog#add
               "call-back-table-variable"
@@ -643,10 +641,10 @@ object(self)
       List.iter (fun (addr, (vname, size)) ->
           if bcfiles#has_varinfo vname then
             let varinfo = bcfiles#get_varinfo vname in
-            let extractor = get_struct_offset_extractor varinfo.bvtype in
+            let fieldkinds = struct_offset_field_categories varinfo.bvtype in
             let structtable = structtables#new_table addr varinfo.bvtype in
             let va = TR.tget_ok (string_to_doubleword addr) in
-            self#extract_struct_table structtable va size extractor
+            self#extract_struct_table structtable va size fieldkinds
           else
             chlog#add
               "struct-table-variable"

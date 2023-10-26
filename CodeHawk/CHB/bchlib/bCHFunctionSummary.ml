@@ -43,7 +43,9 @@ open CHPrettyUtil
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeUtil
 open BCHBTerm
 open BCHCallTarget
 open BCHCPURegisters
@@ -59,11 +61,7 @@ open BCHSideeffect
 open BCHSystemSettings
 open BCHTypeDefinitions
 open BCHUtilities
-open BCHVariableType
 open BCHXmlUtil
-
-
-let btype_compare = BCHBCUtil.typ_compare
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -309,6 +307,45 @@ let make_function_summary
   new function_summary_t ~fintf ~sem ~doc
 
 
+let default_function_documentation = {
+    fdoc_desc = "";
+    fdoc_remarks = "";
+    fdoc_caution = "";
+    fdoc_apidoc = STR "";
+    fdoc_xapidoc = xmlElement "apidoc"
+}
+
+
+let function_summary_of_bvarinfo (vinfo: bvarinfo_t): function_summary_int =
+  let vname = vinfo.bvname in
+  let vtype = vinfo.bvtype in
+  let bfargs_to_params (fargs: bfunarg_t list option) =
+    match fargs with
+    | Some funargs ->
+       List.mapi
+         (fun i (name, btype, _) ->
+           mk_stack_parameter ~btype ~name i) funargs
+    | _ -> [] in
+  let fintf =
+    match vtype with
+    | TFun (returntype, fargs, varargs, _)
+      | TPtr (TFun (returntype, fargs, varargs, _), _) ->
+       let params = bfargs_to_params fargs in
+       default_function_interface ~returntype ~varargs vname params
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Unexpected type for function ";
+                 STR vname;
+                 STR ": ";
+                 btype_to_pretty vtype])) in
+  make_function_summary
+    ~fintf
+    ~sem:default_function_semantics
+    ~doc:default_function_documentation
+
+
 let read_xml_function_summary (node:xml_element_int) =
   let getc = node#getTaggedChild in
   let (fintf, sem) =
@@ -317,15 +354,6 @@ let read_xml_function_summary (node:xml_element_int) =
       (getc "semantics") in
   let doc = read_xml_function_documentation (getc "documentation") in
   make_function_summary ~fintf ~sem ~doc
-
-
-let default_function_documentation = {
-    fdoc_desc = "";
-    fdoc_remarks = "";
-    fdoc_caution = "";
-    fdoc_apidoc = STR "";
-    fdoc_xapidoc = xmlElement "apidoc" 
-}
 
 
 let default_summary name =
