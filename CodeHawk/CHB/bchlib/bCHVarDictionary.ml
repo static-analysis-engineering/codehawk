@@ -50,6 +50,7 @@ open BCHSumTypeSerializer
 open BCHUtilities
 
 
+let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
 let id = BCHInterfaceDictionary.interface_dictionary
 
@@ -173,22 +174,24 @@ object (self)
     | "a" -> AuxiliaryVariable (self#get_constant_value_variable (a 0))
     | s -> raise_tag_error name s assembly_variable_denotation_mcts#tags
 
-  method index_constant_value_variable (a:constant_value_variable_t) =
-    let tags = [ constant_value_variable_mcts#ts a ] in
-    let key = match a with
-      | InitialRegisterValue (r,level) -> (tags,[ bd#index_register r ; level])
-      | InitialMemoryValue v -> (tags,[ xd#index_variable v ])
-      | FrozenTestValue (v,a1,a2) ->
-         (tags @ [ a1 ; a2 ],[ xd#index_variable v ])
-      | FunctionReturnValue a -> (tags @ [ a ],[])
-      | SyscallErrorReturnValue a -> (tags @ [ a ],[])
-      | FunctionPointer (s1,s2,a) ->
-         (tags @ [ a ],[ bd#index_string s1 ; bd#index_string s2 ])
-      | CallTargetValue t -> (tags, [ id#index_call_target t ])
-      | SideEffectValue  (a,name,isglobal) ->
-         (tags @  [ a ],[ bd#index_string name ; (if isglobal then 1 else 0) ])
-      | MemoryAddress (i,o) -> (tags, [ i ; self#index_memory_offset o ] )
-      | BridgeVariable (a,i) -> (tags @ [ a ],[ i ])
+  method index_constant_value_variable (cvv: constant_value_variable_t) =
+    let tags = [constant_value_variable_mcts#ts cvv] in
+    let key = match cvv with
+      | InitialRegisterValue (r, level) -> (tags, [bd#index_register r; level])
+      | InitialMemoryValue v -> (tags, [xd#index_variable v])
+      | FrozenTestValue (v, a1, a2) ->
+         (tags @ [a1; a2], [xd#index_variable v])
+      | FunctionReturnValue a -> (tags @ [a], [])
+      | SyscallErrorReturnValue a -> (tags @ [a], [])
+      | SSARegisterValue (r, a, ty) ->
+         (tags @ [a], [bd#index_register r; bcd#index_typ ty])
+      | FunctionPointer (s1, s2, a) ->
+         (tags @ [a], [bd#index_string s1; bd#index_string s2])
+      | CallTargetValue t -> (tags, [id#index_call_target t])
+      | SideEffectValue  (a, name, isglobal) ->
+         (tags @  [a ], [bd#index_string name; (if isglobal then 1 else 0)])
+      | MemoryAddress (i, o) -> (tags, [i; self#index_memory_offset o])
+      | BridgeVariable (a,i) -> (tags @ [a], [i])
       | FieldValue (sname,offset,fname) ->
          (tags, [ bd#index_string sname ; offset ; bd#index_string fname ])
       | SymbolicValue x ->  (tags, [xd#index_xpr x])
@@ -209,6 +212,7 @@ object (self)
     | "ft" -> FrozenTestValue (xd#get_variable (a 0), t 1, t 2)
     | "fr" -> FunctionReturnValue (t 1)
     | "ev" -> SyscallErrorReturnValue (t 1)
+    | "ssa" -> SSARegisterValue (bd#get_register (a 0), t 1, bcd#get_typ (a 1))
     | "fp" -> FunctionPointer (bd#get_string (a 0), bd#get_string (a 1), t 1)
     | "ct" -> CallTargetValue (id#get_call_target (a 0))
     | "se" -> SideEffectValue (t 1, bd#get_string (a 0), (a 1) = 1)
