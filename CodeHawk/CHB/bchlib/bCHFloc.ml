@@ -51,7 +51,7 @@ open XprXml
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypes
-open BCHBCUtil
+open BCHBCTypeUtil
 open BCHBTerm
 open BCHCallTarget
 open BCHCPURegisters
@@ -78,7 +78,6 @@ open BCHTypeDefinitions
 open BCHUtilities
 open BCHVariable
 open BCHVariableNames
-open BCHVariableType
 open BCHXprUtil
 
 module H = Hashtbl
@@ -95,6 +94,16 @@ module POAnchorCollections = CHCollections.Make
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
+
+
+let bcd = BCHBCDictionary.bcdictionary
+
+
+let btype_equal (t1: btype_t) (t2: btype_t) =
+  let i1 = bcd#index_typ t1 in
+  let i2 = bcd#index_typ t2 in
+  i1 = i2
+
 
 (* Split a list into two lists, the first one with n elements,
    the second list with the remaining (if any) elements
@@ -1507,6 +1516,20 @@ object (self)
        else
          rhsCmds @ [ASSIGN_NUM (lhs,rhs)]
 
+   method get_ssa_assign_commands
+            (reg: register_t) ?(vtype=t_unknown) (rhsx: xpr_t):
+            variable_t * cmd_t list =
+     let s_rhsx = simplify_xpr rhsx in
+     let s_rhsx = self#inv#rewrite_expr s_rhsx self#env#get_variable_comparator in
+     let reqN () = self#env#mk_num_temp in
+     let reqC = self#env#request_num_constant in
+     let (rhscmds, rhs) = xpr_to_numexpr reqN reqC s_rhsx in
+     let regvar = self#env#mk_register_variable reg in
+     let ssavar = self#env#mk_ssa_register_value reg self#cia vtype in
+     let assigns =
+       [ASSIGN_NUM (regvar, rhs); ASSIGN_NUM (regvar, NUM_VAR ssavar)] in
+     (regvar, rhscmds @ assigns)
+
    method get_vardef_commands
             ?(defs: variable_t list = [])
             ?(clobbers: variable_t list = [])
@@ -1590,6 +1613,12 @@ object (self)
    method get_abstract_commands 
      (lhs:variable_t) ?(size=random_constant_expr) ?(vtype=t_unknown) () = 
      [ABSTRACT_VARS [lhs]]
+
+   method get_ssa_abstract_commands
+            (reg: register_t) ?(vtype=t_unknown) () =
+     let ssavar = self#env#mk_ssa_register_value reg self#cia vtype in
+     let regvar = self#env#mk_register_variable reg in
+     (regvar, [ASSIGN_NUM (regvar, NUM_VAR ssavar)])
 
    method get_abstract_cpu_registers_command (regs:cpureg_t list) =
      let regs =

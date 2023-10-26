@@ -47,11 +47,12 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHDoubleword
+open BCHBCTypePretty
+open BCHBCTypes
 open BCHCallTarget
-open BCHFunctionStub
-open BCHVariableType
 open BCHCPURegisters
+open BCHDoubleword
+open BCHFunctionStub
 open BCHLibTypes
 open BCHMemoryReference
 open BCHVarDictionary
@@ -67,30 +68,35 @@ let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 
 
-let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
+let raise_xml_error (node: xml_element_int) (msg: pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; INT node#getColumnNumber ; 
-	     STR ") " ; msg ] in
+    LBLOCK [
+        STR "(";
+        INT node#getLineNumber;
+        STR ",";
+        INT node#getColumnNumber;
+	STR ") ";
+        msg] in
   begin
     ch_error_log#add "xml parse error" error_msg ;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
 
 
-let raise_var_type_error (v:assembly_variable_int) (msg:pretty_t) =
+let raise_var_type_error (v: assembly_variable_int) (msg: pretty_t) =
   let errormsg =
-    LBLOCK [ STR "Expected: " ; msg ; STR "; Found: " ;  v#toPretty ] in
+    LBLOCK [STR "Expected: "; msg; STR "; Found: "; v#toPretty] in
   begin
-    ch_error_log#add "var type error" errormsg ;
+    ch_error_log#add "var type error" errormsg;
     raise (BCH_failure errormsg)
   end
 
 
-let raise_memref_type_error (r:memory_reference_int) (msg:pretty_t) =
+let raise_memref_type_error (r: memory_reference_int) (msg: pretty_t) =
   let errormsg =
-    LBLOCK [ STR "Expected: " ; msg ; STR "; Found: " ; r#toPretty ] in
+    LBLOCK [STR "Expected: "; msg; STR "; Found: "; r#toPretty] in
   begin
-    ch_error_log#add "memref type error" errormsg ;
+    ch_error_log#add "memref type error" errormsg;
     raise (BCH_failure errormsg)
   end
 
@@ -104,23 +110,34 @@ let rec denotation_to_pretty (v:assembly_variable_denotation_t) =
   | AuxiliaryVariable v -> LBLOCK [STR "Aux "; aux_var_to_pretty v]
 
 
-and aux_var_to_pretty (v:constant_value_variable_t) =
-  match v with
-  | InitialRegisterValue (r,level) -> 
-    LBLOCK [ STR "InitR(" ; INT level ; STR ") " ; STR (register_to_string r) ]
+and aux_var_to_pretty (cvv: constant_value_variable_t) =
+  match cvv with
+  | InitialRegisterValue (r, level) ->
+     LBLOCK [STR "InitR("; INT level; STR ") "; STR (register_to_string r)]
   | InitialMemoryValue v ->
-    LBLOCK [ STR "InitM(" ; v#toPretty ; STR ")" ]
+     LBLOCK [STR "InitM("; v#toPretty; STR ")"]
   | FrozenTestValue (fv,taddr,jaddr) -> 
-    LBLOCK [ STR "Frozen(" ; fv#toPretty ; STR " )@ " ; STR taddr ;
-	     STR " for " ; STR jaddr ]
-  | FunctionReturnValue addr -> LBLOCK [ STR "Return(" ; STR addr ; STR ")"]
-  | SyscallErrorReturnValue addr -> LBLOCK [ STR "ErrorValue(" ; STR addr ; STR ")" ]
-  | FunctionPointer (f,c,addr) -> 
-    LBLOCK [ STR "FunctionP(" ; STR f ; STR "," ; STR c ; STR "," ; STR addr ; STR ")" ]
+     LBLOCK [
+         STR "Frozen(";
+         fv#toPretty;
+         STR " )@ ";
+         STR taddr;
+	 STR " for ";
+         STR jaddr]
+  | FunctionReturnValue addr -> LBLOCK [STR "Return("; STR addr; STR ")"]
+  | SyscallErrorReturnValue addr ->
+     LBLOCK [STR "ErrorValue("; STR addr; STR ")"]
+  | SSARegisterValue (r, addr, ty) ->
+     LBLOCK [
+         STR "SSARegisterValue(";
+         STR (register_to_string r);
+         STR (btype_to_string ty)]
+  | FunctionPointer (f, c, addr) ->
+     LBLOCK [STR "FunctionP("; STR f; STR ","; STR c; STR ","; STR addr; STR ")"]
   | CallTargetValue tgt -> 
-    LBLOCK [ STR "CallTarget(" ; call_target_to_pretty tgt ; STR ")" ]
+     LBLOCK [ STR "CallTarget("; call_target_to_pretty tgt; STR ")"]
   | SideEffectValue (addr, arg, _) ->
-    LBLOCK [STR "SideEffect("; STR arg; STR addr; STR ")"]
+     LBLOCK [STR "SideEffect("; STR arg; STR addr; STR ")"]
   | FieldValue (sname, offset, fname) ->
      LBLOCK [
          STR "FieldValue(" ;
@@ -181,10 +198,13 @@ object (self:'a)
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
         | SyscallErrorReturnValue address -> "errval_" ^ address
+        | SSARegisterValue (r, addr, ty) ->
+           (register_to_string r) ^ "_" ^ addr
 	| CallTargetValue tgt -> 
 	  (match tgt with
 	  | StubTarget fs -> "stub:" ^ (function_stub_to_string fs)
-	  | StaticStubTarget (dw,fs) -> "staticstub:" ^ (function_stub_to_string fs)
+	  | StaticStubTarget (dw,fs) ->
+             "staticstub:" ^ (function_stub_to_string fs)
 	  | AppTarget a -> "tgt_" ^ a#to_hex_string
 	  | _ -> "tgt_?")
 	| SideEffectValue (address,arg,_) -> "se_" ^ address ^ "_" ^ arg
@@ -270,6 +290,11 @@ object (self:'a)
   method is_frozen_test_value =
     match denotation with
     | AuxiliaryVariable (FrozenTestValue _) -> true
+    | _ -> false
+
+  method is_ssa_register_value =
+    match denotation with
+    | AuxiliaryVariable (SSARegisterValue _) -> true
     | _ -> false
 
   method is_in_test_jump_range (a:ctxt_iaddress_t) =
@@ -666,6 +691,10 @@ object (self)
 
   method make_return_value (iaddr:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FunctionReturnValue iaddr))
+
+  method make_ssa_register_value
+           (reg: register_t) (iaddr: ctxt_iaddress_t) (ty: btype_t) =
+    self#mk_variable (AuxiliaryVariable (SSARegisterValue (reg, iaddr, ty)))
 
   method make_function_pointer_value
            (fname:string) (cname:string) (address:ctxt_iaddress_t) =
