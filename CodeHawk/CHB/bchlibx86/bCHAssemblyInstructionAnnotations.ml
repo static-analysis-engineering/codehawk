@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,15 +44,15 @@ open XprToPretty
 open Xsimplify
 
 (* bchlib *)
-open BCHFtsParameter
-open BCHAssemblyInstructions
 open BCHBasicTypes
+open BCHBCTypeUtil
 open BCHCallTarget
 open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDemangler
 open BCHDoubleword
 open BCHFloc
+open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHFunctionSummary
@@ -65,9 +65,9 @@ open BCHStrings
 open BCHSystemInfo
 open BCHVariable
 open BCHVariableNames
-open BCHVariableType
    
 (* bchlibx86 *)
+open BCHAssemblyInstructions
 open BCHConditionalJumpExpr
 open BCHDisassemblyUtils
 open BCHLibx86Types

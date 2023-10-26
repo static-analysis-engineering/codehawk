@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,18 +38,19 @@ open CHXmlReader
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeXml
 open BCHDoubleword
 open BCHLibTypes
 open BCHPreFileIO
 open BCHTypeDefinitions
-open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl
 
 
-class c_struct_t (name: string) (fields:struct_field_t list) =
+class c_struct_t (name: string) (fields: struct_field_t list) =
 object
 
   val table = 

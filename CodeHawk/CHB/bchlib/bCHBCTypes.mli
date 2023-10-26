@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -500,6 +500,9 @@ class type bcfiles_int =
     method add_fundef: string -> btype_t -> unit
     method update_global: bglobal_t -> unit
 
+    (* services *)
+    method resolve_type: btype_t -> btype_t
+
     (* getters *)
     method get_gfun_names: string list
     method get_gfun: string -> bcfundec_t
@@ -517,8 +520,8 @@ class type bcfiles_int =
     method has_varinfo: string -> bool
 
     (* saving *)
-    method write_xml_function: xml_element_int -> string -> unit
-    method read_xml_function: xml_element_int -> string -> unit
+    (* method write_xml_function: xml_element_int -> string -> unit
+    method read_xml_function: xml_element_int -> string -> unit *)
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
 

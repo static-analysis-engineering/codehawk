@@ -36,6 +36,8 @@ open CHXmlDocument
 (* bchlib *)
 open BCHFtsParameter
 open BCHBasicTypes
+open BCHBCTypes
+open BCHBCTypeUtil
 open BCHBTerm
 open BCHCallTarget
 open BCHDoubleword
@@ -45,7 +47,6 @@ open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
 open BCHInterfaceDictionary
 open BCHLibTypes
-open BCHVariableType
 
 
 let raise_error tgt msg =

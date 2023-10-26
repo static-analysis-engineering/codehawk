@@ -213,26 +213,12 @@ let get_bc_function_filename (name: string) =
   Filename.concat fdir (exename ^ "_" ^ name ^ "_bc.xml")
 
 
-let save_bc_function (name: string) =
-  let filename = get_bc_function_filename name in
-  let doc = xmlDocument () in
-  let root = get_bch_root "bcfunction" in
-  let bcnode = xmlElement "bcfunction" in
-  begin
-    bcfiles#write_xml_function bcnode name;
-    doc#setNode root;
-    root#appendChildren [bcnode];
-    file_output#saveFile filename doc#toPretty
-  end
-
-
 let save_bc_files () =
   let filename = get_bcfiles_filename () in
   let doc = xmlDocument () in
   let root = get_bch_root "bcfiles" in
   let bcnode = xmlElement "bcfiles" in
   begin
-    List.iter save_bc_function bcfiles#get_gfun_names;
     bcfiles#write_xml bcnode;
     doc#setNode root;
     root#appendChildren [bcnode];
@@ -624,16 +610,7 @@ let load_bc_files () =
   let filename = get_bcfiles_filename () in
   let optnode = load_xml_file filename "bcfiles" in
   match optnode with
-  | Some bcnode ->
-     begin
-       bcfiles#read_xml bcnode;
-       List.iter (fun name ->
-           let optbcnode = load_bc_function name in
-           match optbcnode with
-           | Some bcnode -> bcfiles#read_xml_function bcnode name
-           | _ -> ())
-         bcfiles#get_gfun_names
-     end
+  | Some bcnode -> bcfiles#read_xml bcnode;
   | _ -> ()
 
 

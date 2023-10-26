@@ -3,8 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2022-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,9 +35,10 @@ open CHPretty
 open Xprt
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHCodegraph
-open BCHDoubleword
 open BCHCPURegisters
+open BCHDoubleword
 open BCHFloc
 open BCHFunctionInfo
 open BCHLibTypes
@@ -44,7 +47,6 @@ open BCHLocation
 (* bchlibx86 *)
 open BCHAssemblyBlock
 open BCHAssemblyFunction
-open BCHBasicTypes
 open BCHCodePC
 open BCHIFSystem
 open BCHLibx86Types
@@ -53,7 +55,6 @@ open BCHX86Opcodes
 open BCHX86OpcodeRecords
 
 module LF = CHOnlineCodeSet.LanguageFactory
-
 
 
 let make_code_label ?src ?modifier (address:ctxt_iaddress_t) = 
@@ -65,12 +66,19 @@ let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
     | Some s -> s#to_fixed_length_hex_string :: atts | _ -> atts in
   ctxt_string_to_symbol name ~atts address
 
-let package_transaction (finfo:function_info_int) (label:symbol_t) (commands:cmd_t list) =
-  let commands = List.filter (fun cmd -> match cmd with SKIP -> false | _ -> true) commands in
+
+let package_transaction
+      (finfo:function_info_int) (label:symbol_t) (commands:cmd_t list) =
+  let commands =
+    List.filter (fun cmd ->
+        match cmd with | SKIP -> false | _ -> true) commands in
   let constantAssignments = finfo#env#end_transaction in
   TRANSACTION (label, LF.mkCode (constantAssignments @ commands), None)
 
-let get_invariant_label (loc:location_int) = doubleword_to_symbol "invariant" loc#i
+
+let get_invariant_label (loc:location_int) =
+  doubleword_to_symbol "invariant" loc#i
+
 
 let translate_instruction
     ~(function_location:location_int)

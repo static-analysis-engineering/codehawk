@@ -50,7 +50,9 @@ open Xsimplify
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCFiles
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeUtil
 open BCHBTerm
 open BCHCallTarget
 open BCHCallTargetInfo
@@ -68,9 +70,7 @@ open BCHFunctionSummaryLibrary
 open BCHJavaSignatures
 open BCHLibTypes
 open BCHLocation
-(* open BCHMemoryAccesses *)
 open BCHMemoryReference
-open BCHParseBCFunctionSummary
 open BCHPreFileIO
 open BCHSideeffect
 open BCHSystemInfo
@@ -78,7 +78,6 @@ open BCHSystemSettings
 open BCHUtilities
 open BCHVariable
 open BCHVariableNames
-open BCHVariableType
 open BCHXmlUtil
 open BCHXprUtil
 
@@ -883,6 +882,10 @@ object (self)
       
   method mk_return_value (address:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_return_value address)
+
+  method mk_ssa_register_value
+           (r: register_t) (iaddr: ctxt_iaddress_t) (ty: btype_t) =
+    self#mk_variable (varmgr#make_ssa_register_value r iaddr ty)
       
   method mk_function_pointer_value
     (fname:string) (cname:string) (address:ctxt_iaddress_t) =
@@ -2504,8 +2507,9 @@ let load_finfo_userdata (finfo: function_info_int) (faddr: doubleword_int) =
          let hexfaddr = faddr#to_hex_string in
          let lenfaddr = String.length hexfaddr in
          "sub_" ^ (String.sub (faddr#to_hex_string) 2 (lenfaddr - 2)) in
-     if bcfiles#has_gfun fname then
-       let bcsum = parse_bc_function_summary fname in
+     if bcfiles#has_varinfo fname then
+       let vinfo = bcfiles#get_varinfo fname in
+       let bcsum = function_summary_of_bvarinfo vinfo in
        begin
          finfo#set_bc_summary bcsum;
          chlog#add "bc-function-summary" (STR fname)

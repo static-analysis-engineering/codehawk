@@ -30,7 +30,7 @@
 open CHIndexTable
 open CHXmlDocument
 
-(* bchcil *)
+(* bchlib *)
 open BCHBCSumTypeSerializer
 open BCHBCTypes
 

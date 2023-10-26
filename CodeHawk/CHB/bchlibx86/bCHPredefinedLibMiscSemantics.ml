@@ -34,12 +34,12 @@ open CHPretty
 open Xprt
 
 (* bchlib *)
+open BCHBCTypeUtil
 open BCHFloc
 open BCHFunctionInterface
 open BCHLibTypes
 open BCHLocation
 open BCHMakeCallTargetInfo
-open BCHVariableType
 
 (* bchlibx86 *)
 open BCHLibx86Types

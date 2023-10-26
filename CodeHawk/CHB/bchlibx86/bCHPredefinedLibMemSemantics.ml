@@ -33,13 +33,13 @@ open Xprt
 open XprTypes
 
 (* bchlib *)
+open BCHBCTypeUtil
 open BCHFloc
 open BCHFunctionData
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHMakeCallTargetInfo
 open BCHSystemInfo
-open BCHVariableType
 
 (* bchlibx86 *)
 open BCHFunctionHashes

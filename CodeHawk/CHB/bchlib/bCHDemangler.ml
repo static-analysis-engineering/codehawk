@@ -35,13 +35,18 @@ open CHLogger
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeTransformer
+open BCHBCTypeUtil
 open BCHLibTypes
-open BCHVariableType
+
 
 module H = Hashtbl
 
-(* ==============================================================================
+(**
+   {[
+   ==============================================================================
    Grammar
    ==============================================================================
 
@@ -168,12 +173,40 @@ module H = Hashtbl
      U    struct
      V    class
      W    enum
+  ]}
 
   currently not supported yet:
     - fields
     - function pointers
 
-*)
+ *)
+
+let templated_btype_to_name (ty: btype_t) (index: int) =
+  let rec tn_string tn =
+    match tn with
+    | SimpleName name -> name
+    | TemplatedName (base,_) -> "t" ^ (tn_string base) in
+  let rec aux t =
+    match t with
+    | TVoid _ -> "void"
+    | TInt _ -> "i"
+    | TFloat _ -> "f"
+    | TPtr (t,_) -> "p" ^ (aux t)
+    | TRef (t,_) -> "r" ^ (aux t)
+    | THandle (s,_) -> "h" ^ s
+    | TArray (t,_,_) -> "a" ^ (aux t)
+    | TFun _ -> "fp"
+    | TNamed (s,_) -> s
+    | TComp (ckey, _) -> "struct" ^ (string_of_int ckey)
+    | TCppComp (tn, _, _) -> "cpp-struct" ^ (tn_string tn)
+    | TEnum (ename, _) -> "enum" ^ ename
+    | TCppEnum (tn, _, _) -> "cpp-enum" ^ (tn_string tn)
+    | TVarArg _ -> "vararg"
+    | TBuiltin_va_list _ -> "builtin-va-list"
+    | TClass (tn, _, _) -> "class" ^ (tn_string tn)
+    | TUnknown _ -> "arg" in
+  (aux ty) ^ "_" ^ (string_of_int index)
+
 
 let demangled_name_to_pretty dm =
   if dm.dm_vftable then STR "vftable"

@@ -37,13 +37,17 @@ open CHXmlReader
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeTransformer
+open BCHBCTypeUtil
+open BCHBCTypeXml
 open BCHCPURegisters
+open BCHDemangler
 open BCHFtsParameter
 open BCHInterfaceDictionary
 open BCHLibTypes
 open BCHUtilities
-open BCHVariableType
 open BCHXmlUtil
 
 
@@ -239,13 +243,13 @@ let demangled_name_to_function_interface (dm: demangled_name_t) =
   let returntype =
     match dm.dm_returntype with Some t -> t | _ -> t_void in
   let make_parameter index ty = {
-    apar_name = make_name_from_type ty (index + 1) ;
+    apar_name = templated_btype_to_name ty (index + 1) ;
     apar_type = ty ;
     apar_desc = "" ;
     apar_roles = [] ;
     apar_io = ArgReadWrite ;
     apar_location = StackParameter (index + 1) ;
-    apar_size = (match (get_size_of_btype ty) with Some s -> s | _ -> 4) ;
+    apar_size = size_of_btype ty;
     apar_fmt = NoFormat
     } in
   let fts =
@@ -269,11 +273,12 @@ let default_function_interface
       ?(cc="cdecl")
       ?(adj=0)
       ?(returntype=t_unknown)
+      ?(varargs=false)
       (name:string)
       (pars: fts_parameter_t list) =
   let fts = {
       fts_parameters = pars;
-      fts_varargs = false;
+      fts_varargs = varargs;
       fts_va_list = None;
       fts_returntype = returntype;
       fts_rv_roles = [];

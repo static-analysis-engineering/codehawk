@@ -533,6 +533,7 @@ object
     | FrozenTestValue _ -> "ft"
     | FunctionReturnValue _ -> "fr"
     | SyscallErrorReturnValue _ -> "ev"
+    | SSARegisterValue _ -> "ssa"
     | FunctionPointer _ -> "fp"
     | CallTargetValue _ -> "ct"
     | SideEffectValue _ -> "se"
@@ -547,7 +548,7 @@ object
 
   method tags = [
       "bv"; "chiftemp"; "ct"; "ev"; "fr"; "fp"; "ft"; "fv"; "ir";
-      "iv"; "ma"; "rt"; "se" ; "sp"; "sv"]
+      "iv"; "ma"; "rt"; "se" ; "sp"; "sv"; "ssa"; "ssv"]
 
 end
 

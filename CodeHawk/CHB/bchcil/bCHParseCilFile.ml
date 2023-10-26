@@ -37,7 +37,6 @@ open CHPretty
 open BCHBCFiles
 open BCHBCTypes
 open BCHBCTypeUtil
-open BCHBCUtil
 open BCHCilToCBasic
 
 

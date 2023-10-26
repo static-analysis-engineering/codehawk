@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,20 +38,44 @@ open CHXmlDocument
 open Xprt
 
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 
-val read_xml_function_summary: xml_element_int -> function_summary_int
+(** Function summary containing signature, semantics, and documentation.
 
+    These summaries are used both for library functions and application
+    functions. They can originate from:
+    - the function summaries in bchsummaries (in xml),
+    - constructed from a function prototype read in via a c file,
+    - created by the function-info based on analysis results.
+ *)
+
+
+(** [make_function_summary fintf sem doc] returns a function summary with
+    function signature [fintf], function semantics [sem] and function
+    documentation [doc].*)
 val make_function_summary:
   fintf:function_interface_t
-  ->  sem:function_semantics_t
-  ->  doc:function_documentation_t
+  -> sem:function_semantics_t
+  -> doc:function_documentation_t
   -> function_summary_int
 
+
+(** [function_summary_of_bvarinfo vinfo] returns a function summary from
+    a function prototype [vinfo] (typically read in from a c file), with
+    default (empty) semantics and default (empty) documentation.*)
+val function_summary_of_bvarinfo: bvarinfo_t -> function_summary_int
+
+(** Returns an empty documentation data structure.*)
 val default_function_documentation: function_documentation_t
 
+
+(** [default_summary name] returns a function summary with signature
+    [name()], empty semantics, and empty documentation.*)
 val default_summary: string -> function_summary_int
 
 
-
+(** [read_xml_function_summary xnode] constructs a function summary from
+    its xml reprsentation in [xnode].*)
+val read_xml_function_summary: xml_element_int -> function_summary_int

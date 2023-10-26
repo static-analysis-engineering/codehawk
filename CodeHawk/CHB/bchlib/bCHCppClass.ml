@@ -36,14 +36,15 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeXml
 open BCHDoubleword
 open BCHFunctionInterface
 open BCHFunctionSummary
 open BCHLibTypes
 open BCHPreFileIO
 open BCHTypeDefinitions
-open BCHVariableType
 
 module H = Hashtbl
 module TR = CHTraceResult

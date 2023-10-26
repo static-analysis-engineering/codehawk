@@ -62,7 +62,6 @@ open BCHSystemInfo
 open BCHSystemSettings
 open BCHUtilities
 open BCHVariable
-open BCHVariableType
 
 (* bchlibarm32 *)
 open BCHARMAssemblyBlock
@@ -752,12 +751,12 @@ let translate_arm_instruction
    * ------------------------------------------------------------------------ *)
   | AddCarry (_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
-     let vrd = rd#to_variable floc in
+     let rdreg = rd#to_register in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [xrn; xrm] in
-     let cmds = floc#get_abstract_commands vrd () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrd]
@@ -769,13 +768,13 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | Adr (c, dst, src) ->
+  | Adr (c, rd, src) ->
      let floc = get_floc loc in
-     let (lhs, lhscmds) = dst#to_lhs floc in
+     let rdreg = rd#to_register in
      let rhs = src#to_expr floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     let defcmds = floc#get_vardef_commands ~defs:[lhs] ctxtiaddr in
-     let cmds = lhscmds @ defcmds @ cmds in
+     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg rhs in
+     let defcmds = floc#get_vardef_commands ~defs:[vrd] ctxtiaddr in
+     let cmds = defcmds @ cmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)

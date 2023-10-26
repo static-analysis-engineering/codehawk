@@ -36,9 +36,9 @@ open BCHLibTypes
 open BCHMakeCallTargetInfo
 
 (* bchlibx86 *)
+open BCHBCTypeUtil
 open BCHLibx86Types
 open BCHPredefinedUtil
-open BCHVariableType
 
 module H = Hashtbl
 

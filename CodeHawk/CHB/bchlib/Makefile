@@ -23,6 +23,7 @@ CAMLLINK := ocamlopt \
 MLIS := \
 	bCHBCTypes \
 	bCHBCSumTypeSerializer \
+	bCHBCTypeTransformer \
 	bCHLibTypes \
 	bCHVersion \
 	bCHXprUtil \
@@ -31,22 +32,21 @@ MLIS := \
 	bCHBasicTypes \
 	bCHSystemSettings \
 	bCHSumTypeSerializer \
+	bCHBCTypePretty \
+	bCHBCTypeUtil \
+	bCHBCTypeXml \
 	bCHBCDictionary \
 	bCHDictionary \
 	bCHBCFunDeclarations \
 	bCHBCWriteXml \
-	bCHBCUtil \
 	bCHBCFiles \
-	bCHBCTypeUtil \
 	bCHInterfaceDictionary \
 	bCHVarDictionary \
 	bCHInvDictionary \
 	bCHVarInvDictionary \
 	bCHTypeInvDictionary \
 	bCHJavaBasicTypes \
-	bCHVariableType \
 	bCHTypeDefinitions \
-	bCHVariableTypeUtil \
 	bCHJavaSignatures \
 	bCHVariableNames \
 	bCHProofObligationTypes \
@@ -85,7 +85,6 @@ MLIS := \
 	bCHJumpTable \
 	bCHPreFileIO \
 	bCHSpecializations \
-	bCHParseBCFunctionSummary \
 	bCHUserProvidedDirections \
 	bCHJni \
 	bCHCStruct \
@@ -115,16 +114,17 @@ SOURCES := \
 	bCHXmlUtil \
 	bCHSystemSettings \
 	bCHBCSumTypeSerializer \
-	bCHSumTypeSerializer \
+	bCHBCTypeTransformer \
+	bCHBCTypePretty \
 	bCHBCDictionary \
-	bCHDictionary \
 	bCHBCFunDeclarations \
 	bCHBCWriteXml \
-	bCHBCUtil \
 	bCHBCFiles \
 	bCHBCTypeUtil \
+	bCHBCTypeXml \
+	bCHSumTypeSerializer \
+	bCHDictionary \
 	bCHInterfaceDictionary \
-	bCHVariableType \
 	bCHDemangler \
 	bCHFunctionData \
 	bCHMemoryReference \
@@ -133,7 +133,6 @@ SOURCES := \
 	bCHVarInvDictionary \
 	bCHTypeInvDictionary \
 	bCHTypeDefinitions \
-	bCHVariableTypeUtil \
 	bCHJavaSignatures \
 	bCHVariableNames \
 	bCHCodegraph \
@@ -167,7 +166,6 @@ SOURCES := \
 	bCHJumpTable \
 	bCHPreFileIO \
 	bCHSpecializations \
-	bCHParseBCFunctionSummary \
 	bCHUserProvidedDirections \
 	bCHJni \
 	bCHCStruct \

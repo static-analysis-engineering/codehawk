@@ -45,6 +45,7 @@ open XprToPretty
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHDoubleword
 open BCHFloc
 open BCHFunctionData
@@ -57,7 +58,6 @@ open BCHMemoryReference
 open BCHPreFileIO
 open BCHSystemInfo
 open BCHVariable
-open BCHVariableType
 
 (* bchlibx86 *)
 open BCHAssemblyFunction

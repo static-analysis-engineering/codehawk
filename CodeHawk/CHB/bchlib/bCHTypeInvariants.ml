@@ -48,17 +48,15 @@ open XprXml
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeUtil
 open BCHLibTypes
 open BCHTypeInvDictionary
 open BCHUtilities
-open BCHVariableType
 open BCHXmlUtil
 
 module H = Hashtbl
-
-
-let btype_compare = BCHBCUtil.typ_compare
 
 
 let maxlen = 20

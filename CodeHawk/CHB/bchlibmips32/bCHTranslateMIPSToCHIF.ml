@@ -63,7 +63,6 @@ open BCHSystemInfo
 open BCHSystemSettings
 open BCHUtilities
 open BCHVariable
-open BCHVariableType
 
 (* bchlibmips32 *)
 open BCHMIPSAssemblyBlock
