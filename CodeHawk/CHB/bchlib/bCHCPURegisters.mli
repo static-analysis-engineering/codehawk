@@ -33,8 +33,93 @@ open CHXmlDocument
 (* bchlib *)
 open BCHLibTypes
 
-val full_reg_of_reg: cpureg_t -> cpureg_t
 
+(** {b Encapsulation of architecture-specific registers into a generic
+    register type}*)
+
+
+(** {1 Conversion functions} *)
+
+(** {2 x86}*)
+
+(** Converts an x86 segment to a generic register.*)
+val register_of_segment: segment_t -> register_t
+
+(** Converts a regular x86 cpu register to a generic register.*)
+val register_of_cpuregister: cpureg_t -> register_t
+
+(** Converts a combination of two x86 cpu registers to a generic register.*)
+val register_of_double_register: cpureg_t -> cpureg_t -> register_t
+
+(** Converts the index of an x86 floating-point register to a generic register.*)
+val register_of_floating_point_register_index: int -> register_t
+
+(** Converts the index of an x86 control register to a generic register.*)
+val register_of_control_register_index: int -> register_t
+
+(** Converts the index of an x86 debug register to a generic register.*)
+val register_of_debug_register_index: int -> register_t
+
+(** Converts the index of an x86 mmx register to a generic register.*)
+val register_of_mmx_register_index: int -> register_t
+
+(** Converts the index of an x86 xmm register to a generic register .*)
+val register_of_xmm_register_index: int -> register_t
+
+
+(** {2 MIPS}*)
+
+(** Converts a regular MIPS register to a generic register.*)
+val register_of_mips_register: mips_reg_t -> register_t
+
+(** Converts a MIPS special register to a generic register.*)
+val register_of_mips_special_register: mips_special_reg_t -> register_t
+
+(** Converts the index of a MIPS floating point register to a generic register.*)
+val register_of_mips_floating_point_register_index: int -> register_t
+
+
+(** {2 ARM}*)
+
+(** Converts a regular ARM register to a generic register.*)
+val register_of_arm_register: arm_reg_t -> register_t
+
+(** Converts a combination of two ARM registers to a generic register.*)
+val register_of_arm_double_register: arm_reg_t -> arm_reg_t -> register_t
+
+(** Converts an ARM special register to a generic register.*)
+val register_of_arm_special_register: arm_special_reg_t -> register_t
+
+(** Converts an ARM extension register to a generic register.*)
+val register_of_arm_extension_register: arm_extension_register_t -> register_t
+
+(** Converts a combination of two ARM extension registers to a generic register.*)
+val register_of_arm_double_extension_register:
+  arm_extension_register_t -> arm_extension_register_t -> register_t
+
+(** Converts an ARM extension register element to a generic register.*)
+val register_of_arm_extension_register_element:
+  arm_extension_register_element_t -> register_t
+
+(** Converts an ARM extension register replicated element to a generic register.*)
+val register_of_arm_extension_register_replicated_element:
+  arm_extension_register_replicated_element_t -> register_t
+
+
+(** {2 Power32}*)
+
+(** Converts the index of a Power general-purpose (GP) register to a generic
+    register.*)
+val register_of_power_gp_register_index: int -> register_t
+
+(** Converts a Power special-purpose (SP) register to a generic register.*)
+val register_of_power_sp_register: pwr_special_reg_t -> register_t
+
+(** Converts a Power control-register (CR) register field to a generic register.*)
+val register_of_power_cr_register_field: pwr_register_field_t -> register_t
+
+
+val full_reg_of_reg: cpureg_t -> cpureg_t
 val full_registers: cpureg_t list
 
 val register_compare  : register_t -> register_t -> int

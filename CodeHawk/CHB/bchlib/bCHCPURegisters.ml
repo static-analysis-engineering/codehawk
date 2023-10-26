@@ -406,6 +406,87 @@ let register_from_string (name: string) =
               STR "No x86, mips, or arm register found with name "; STR name]))
 
 
+let register_of_segment (s: segment_t): register_t = (SegmentRegister s)
+
+
+let register_of_cpuregister (r: cpureg_t): register_t = (CPURegister r)
+
+
+let register_of_double_register (r1: cpureg_t) (r2: cpureg_t): register_t =
+  DoubleRegister (r1, r2)
+
+
+let register_of_floating_point_register_index (index: int): register_t =
+  FloatingPointRegister index
+
+
+let register_of_control_register_index (index: int): register_t =
+  ControlRegister index
+
+
+let register_of_debug_register_index (index: int): register_t =
+  DebugRegister index
+
+
+let register_of_mmx_register_index (index: int): register_t =
+  MmxRegister index
+
+
+let register_of_xmm_register_index (index: int): register_t =
+  XmmRegister index
+
+
+let register_of_mips_register (r: mips_reg_t): register_t = MIPSRegister r
+
+
+let register_of_mips_special_register (r: mips_special_reg_t): register_t =
+  MIPSSpecialRegister r
+
+
+let register_of_mips_floating_point_register_index (index: int): register_t =
+  MIPSFloatingPointRegister index
+
+
+let register_of_arm_register (r: arm_reg_t): register_t = ARMRegister r
+
+
+let register_of_arm_double_register (r1: arm_reg_t) (r2: arm_reg_t): register_t =
+  ARMDoubleRegister (r1, r2)
+
+
+let register_of_arm_special_register (r: arm_special_reg_t): register_t =
+  ARMSpecialRegister r
+
+
+let register_of_arm_extension_register (r: arm_extension_register_t): register_t =
+  ARMExtensionRegister r
+
+
+let register_of_arm_double_extension_register
+      (r1: arm_extension_register_t) (r2: arm_extension_register_t): register_t =
+  ARMDoubleExtensionRegister (r1, r2)
+
+
+let register_of_arm_extension_register_element
+      (e: arm_extension_register_element_t): register_t =
+  ARMExtensionRegisterElement e
+
+
+let register_of_arm_extension_register_replicated_element
+      (e: arm_extension_register_replicated_element_t) =
+  ARMExtensionRegisterReplicatedElement e
+
+
+let register_of_power_gp_register_index (index: int) = PowerGPRegister index
+
+
+let register_of_power_sp_register (r: pwr_special_reg_t) = PowerSPRegister r
+
+
+let register_of_power_cr_register_field (f: pwr_register_field_t) =
+  PowerCRField f
+
+
 let get_armreg_argument (index: int): arm_reg_t =
   match index with
   | 0 -> AR0
