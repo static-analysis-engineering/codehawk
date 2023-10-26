@@ -4,7 +4,9 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,27 +27,12 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib*)
-open CHPretty
-
 (* bchlib *)
 open BCHBCTypes
 
-val int_type_to_string: ikind_t -> string
-val float_type_to_string: fkind_t -> string
-val float_representation_to_string: frepresentation_t -> string
+val modify_type : type_transformer_t -> btype_t -> btype_t
 
-val attributes_to_string: b_attributes_t -> string
-val exp_to_string: bexp_t -> string
-val constant_to_string: bconstant_t -> string
-
-val tname_to_string: tname_t -> string
-
-val btype_to_string: btype_t -> string
-val btype_to_pretty: btype_t -> pretty_t
-
-val typ_compare: btype_t -> btype_t -> int
-
-val btype_equal: btype_t -> btype_t -> bool
+val t_add_attr: btype_t -> string -> btype_t
 
 val add_attributes: btype_t -> b_attributes_t -> btype_t
+                                       
