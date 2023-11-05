@@ -30,6 +30,7 @@
 type nr_domain_value_t =
   | NUM_CONSTANT_VAL of CHConstants.numerical_constant_t
   | SYM_CONSTANT_VAL of CHConstants.symbolic_constant_t
+  | ORDERED_SYM_CONSTANT_VAL of CHConstants.ordered_symbolic_constant_t
   | BOOL_CONSTANT_VAL of CHConstants.boolean_constant_t
   | INTERVAL_VAL of CHIntervals.interval_t
   | TINTERVAL_VAL of CHTIntervals.tinterval_t
@@ -65,6 +66,7 @@ class non_relational_domain_value_t :
     method toPretty : CHPretty.pretty_t
     method toStridedInterval : CHStridedIntervals.strided_interval_t
     method toSymbolicConstant : CHConstants.symbolic_constant_t
+    method toOrderedSymbolicConstant: CHConstants.ordered_symbolic_constant_t
     method toSymbolicSet : CHSymbolicSets.symbolic_set_t
     method toTInterval : CHTIntervals.tinterval_t
     method toPEPRValue: CHPEPRTypes.pepr_value_int
@@ -81,6 +83,9 @@ val mkNumericalConstantValue :
 
 val mkSymbolicConstantValue :
   CHConstants.symbolic_constant_t -> non_relational_domain_value_t
+
+val mkOrderedSymbolicConstantValue:
+  CHConstants.ordered_symbolic_constant_t -> non_relational_domain_value_t
 
 val mkBooleanConstantValue :
   CHConstants.boolean_constant_t -> non_relational_domain_value_t
