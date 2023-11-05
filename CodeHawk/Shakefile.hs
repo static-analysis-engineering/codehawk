@@ -113,32 +113,32 @@ runBuild flags = do
         return $ dropLibraryModules libraryModules modules
 
     let documentDir directory = do
-        "_build" </> takeBaseName directory -<.> "mld" %> \out -> do
-            mlis_full_path <- getDirectoryFiles directory ["*.mli"]
-            let children = unwords [takeBaseName mli | mli <- mlis_full_path]
-            let contents = "{0 " ++ takeBaseName directory ++ "}\n\n{!modules: " ++ children ++ "}"
-            writeFileChanged out contents
+                                    "_build" </> takeBaseName directory -<.> "mld" %> \out -> do
+                                        mlis_full_path <- getDirectoryFiles directory ["*.mli"]
+                                        let children = unwords [takeBaseName mli | mli <- mlis_full_path]
+                                        let contents = "{0 " ++ takeBaseName directory ++ "}\n\n{!modules: " ++ children ++ "}"
+                                        writeFileChanged out contents
 
-        "_build" </> "page-" ++ takeBaseName directory -<.> "odoc" %> \out -> do
-            need ["_build/page-_odoc.odoc"]
-            need ["_build" </> takeBaseName directory -<.> "mld"]
-            mlis_full_path <- getDirectoryFiles directory ["*.mli"]
-            let children = ["--child=" ++ takeBaseName mli | mli <- mlis_full_path]
-            cmd_ (Cwd "_build") "odoc compile" (takeBaseName directory -<.> "mld") children "-I . --parent=_odoc"
+                                    "_build" </> "page-" ++ takeBaseName directory -<.> "odoc" %> \out -> do
+                                        need ["_build/page-_odoc.odoc"]
+                                        need ["_build" </> takeBaseName directory -<.> "mld"]
+                                        mlis_full_path <- getDirectoryFiles directory ["*.mli"]
+                                        let children = ["--child=" ++ takeBaseName mli | mli <- mlis_full_path]
+                                        cmd_ (Cwd "_build") "odoc compile" (takeBaseName directory -<.> "mld") children "-I . --parent=_odoc"
 
-        "_build" </> "page-" ++ takeBaseName directory -<.> "odocl" %> \out -> do
-            need [out -<.> "odoc"]
-            need ["_build" </> takeBaseName directory -<.> "mld"]
-            mlis_full_path <- getDirectoryFiles directory ["*.mli"]
-            need ["_build" </> takeBaseName mli -<.> "odoc" | mli <- mlis_full_path]
-            cmd_ (Cwd "_build") "odoc link" ("page-" ++ takeBaseName directory -<.> "odoc") "-I ."
+                                    "_build" </> "page-" ++ takeBaseName directory -<.> "odocl" %> \out -> do
+                                        need [out -<.> "odoc"]
+                                        need ["_build" </> takeBaseName directory -<.> "mld"]
+                                        mlis_full_path <- getDirectoryFiles directory ["*.mli"]
+                                        need ["_build" </> takeBaseName mli -<.> "odoc" | mli <- mlis_full_path]
+                                        cmd_ (Cwd "_build") "odoc link" ("page-" ++ takeBaseName directory -<.> "odoc") "-I ."
 
-        "_odoc" </> takeBaseName directory </> "index.html" %> \out -> do
-            let odocl = "_build" </> "page-" ++ takeBaseName directory -<.> "odocl"
-            need [odocl]
-            mlis_full_path <- getDirectoryFiles directory ["*.mli"]
-            need ["_odoc" </> takeBaseName directory </> fileToModule (takeBaseName mli) </> "index.html" | mli <- mlis_full_path]
-            cmd_ "odoc html-generate" odocl "--output-dir . --support-uri=_odoc --theme-uri=_odoc"
+                                    "_odoc" </> takeBaseName directory </> "index.html" %> \out -> do
+                                        let odocl = "_build" </> "page-" ++ takeBaseName directory -<.> "odocl"
+                                        need [odocl]
+                                        mlis_full_path <- getDirectoryFiles directory ["*.mli"]
+                                        need ["_odoc" </> takeBaseName directory </> fileToModule (takeBaseName mli) </> "index.html" | mli <- mlis_full_path]
+                                        cmd_ "odoc html-generate" odocl "--output-dir . --support-uri=_odoc --theme-uri=_odoc"
 
     "_odoc" </> "*" </> "*" </> "index.html" %> \out -> do
         let modul = moduleToFile $ takeBaseName $ takeDirectory out
@@ -253,44 +253,44 @@ runBuild flags = do
         cmd_ (Cwd "_build") "ocamlfind ocamlc -color=always -c -package" (intercalate "," ocamlfind_libraries) (takeFileName ml) "-o" (takeFileName out) extra_flags
 
     let implDeps file alreadySeen stack ext = do
-        let fileAsCmx = "_build" </> takeFileName file -<.> ext
-        if elem file stack then do
-            error $ "Cycle detected: " ++ (intercalate " " stack) ++ " " ++ file
-        else if elem fileAsCmx alreadySeen then do
-            return alreadySeen
-        else do
-            modules <- getModuleDeps $ ModuleDependencies ("_build" </> takeFileName file -<.> "ml")
-            let modules2 = ["_build" </> moduleToFile modul -<.> ext | modul <- modules]
-            let unseen = filter (\dep -> not $ elem (dep -<.> ext) alreadySeen) modules2
-            let depsMl = ["_build" </> dep -<.> "ml" | dep <- unseen]
-            let mystack = stack ++ [file]
-            recursiveDeps <- foldM (\seen newfile -> do
-                recDeps <- implDeps newfile seen mystack ext
-                return recDeps) alreadySeen depsMl
-            return $ recursiveDeps ++ [fileAsCmx]
+            let fileAsCmx = "_build" </> takeFileName file -<.> ext
+            if elem file stack then do
+                error $ "Cycle detected: " ++ (intercalate " " stack) ++ " " ++ file
+            else if elem fileAsCmx alreadySeen then do
+                return alreadySeen
+            else do
+                modules <- getModuleDeps $ ModuleDependencies ("_build" </> takeFileName file -<.> "ml")
+                let modules2 = ["_build" </> moduleToFile modul -<.> ext | modul <- modules]
+                let unseen = filter (\dep -> not $ elem (dep -<.> ext) alreadySeen) modules2
+                let depsMl = ["_build" </> dep -<.> "ml" | dep <- unseen]
+                let mystack = stack ++ [file]
+                recursiveDeps <- foldM (\seen newfile -> do
+                    recDeps <- implDeps newfile seen mystack ext
+                    return recDeps) alreadySeen depsMl
+                return $ recursiveDeps ++ [fileAsCmx]
 
     let makeExecutable name main_file = do
-        "_bin" </> name %> \out -> do
-            let main_ml = "_build" </> main_file -<.> "ml"
-            let main_cmx = "_build" </> main_file -<.> "cmx"
-            absolute_out <- liftIO $ makeAbsolute out
-            deps <- implDeps main_ml [] [] "cmx"
-            let objs = [dep -<.> "o" | dep <- deps]
-            let reldeps = [takeFileName dep | dep <- deps]
-            need $ [main_cmx] ++ deps ++ objs
-            extra_flags <- askOracle $ ExtraFlags ()
-            cmd_ (Cwd "_build") "ocamlfind ocamlopt -color=always -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out extra_flags
-        return ()
-        "_bin" </> name -<.> "byte" %> \out -> do
-            let main_ml = "_build" </> main_file -<.> "ml"
-            let main_cmx = "_build" </> main_file -<.> "cmo"
-            absolute_out <- liftIO $ makeAbsolute out
-            deps <- implDeps main_ml [] [] "cmo"
-            let reldeps = [takeFileName dep | dep <- deps]
-            need $ [main_cmx] ++ deps
-            extra_flags <- askOracle $ ExtraFlags ()
-            cmd_ (Cwd "_build") "ocamlfind ocamlc -color=always -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out extra_flags
-        return ()
+                                            "_bin" </> name %> \out -> do
+                                                let main_ml = "_build" </> main_file -<.> "ml"
+                                                let main_cmx = "_build" </> main_file -<.> "cmx"
+                                                absolute_out <- liftIO $ makeAbsolute out
+                                                deps <- implDeps main_ml [] [] "cmx"
+                                                let objs = [dep -<.> "o" | dep <- deps]
+                                                let reldeps = [takeFileName dep | dep <- deps]
+                                                need $ [main_cmx] ++ deps ++ objs
+                                                extra_flags <- askOracle $ ExtraFlags ()
+                                                cmd_ (Cwd "_build") "ocamlfind ocamlopt -color=always -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out extra_flags
+                                                return ()
+                                            "_bin" </> name -<.> "byte" %> \out -> do
+                                                let main_ml = "_build" </> main_file -<.> "ml"
+                                                let main_cmx = "_build" </> main_file -<.> "cmo"
+                                                absolute_out <- liftIO $ makeAbsolute out
+                                                deps <- implDeps main_ml [] [] "cmo"
+                                                let reldeps = [takeFileName dep | dep <- deps]
+                                                need $ [main_cmx] ++ deps
+                                                extra_flags <- askOracle $ ExtraFlags ()
+                                                cmd_ (Cwd "_build") "ocamlfind ocamlc -color=always -linkpkg -package" (intercalate "," $ ocamlfind_libraries ++ ["str", "unix"]) reldeps "-o" absolute_out extra_flags
+                                                return ()
 
     let exes = [("chx86_make_lib_summary", "bCHXMakeLibSummary.ml"),
                 ("chx86_make_app_summary", "bCHXMakeAppSummary.ml"),
@@ -357,29 +357,29 @@ runBuild flags = do
         need [("_bin/" </> name -<.> "byte") | (name, _) <- exes ++ tests]
     
     let makeDocs dir private = do
-        -- warm ModuleDependencies cache
-        let files = [name | (name, original) <- Map.toList originalToMap]
-        let mls = filter (\file -> isInfixOf ".ml" file) files
-        askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
-        -- actual dependencies
-        let exe_files = ["_build" </> filename | (_, filename) <- exes ++ tests]
-        let foldCall accum file = do
-            recCall <- implDeps file (Set.toList accum) [] "cmx"
-            return $ Set.union accum $ Set.fromList recCall
-        allFiles <- foldM foldCall Set.empty exe_files 
-        let relFiles = [takeFileName file | file <- Set.toList allFiles]
-        let full_mls = ["_build" </> file -<.> "ml" | file <- relFiles]
-        let full_mlis = ["_build" </> file -<.> "mli" | file <- relFiles]
-        let full_cmis = ["_build" </> file -<.> "cmi" | file <- relFiles]
-        let full_cmxs = ["_build" </> file -<.> "cmx" | file <- relFiles]
-        need (full_mls ++ full_mlis ++ full_cmis ++ full_cmxs)
-        let rel_mls = [file -<.> "ml" | file <- relFiles]
-        let rel_mlis = [file -<.> "mli" | file <- relFiles]
-        liftIO $ removeFiles dir ["//*"]
-        writeFile' (dir </> ".file") "q"
-        let filesToDoc = if private then rel_mls else (rel_mls ++ rel_mlis)
-        let workaround = [file | file <- filesToDoc, file /= "cCHReturnsite.ml", file /= "cCHCallsite.ml"]
-        cmd_ (Cwd "_build") "ocamlfind ocamldoc -keep-code -html -d " ("../" ++ dir) "-package" (intercalate "," $ ocamlfind_libraries ++ ["str","unix"]) workaround
+                                    -- warm ModuleDependencies cache
+                                    let files = [name | (name, original) <- Map.toList originalToMap]
+                                    let mls = filter (\file -> isInfixOf ".ml" file) files
+                                    askOracles [ModuleDependencies $ "_build" </> file | file <- mls]
+                                    -- actual dependencies
+                                    let exe_files = ["_build" </> filename | (_, filename) <- exes ++ tests]
+                                    let foldCall accum file = do
+                                                                    recCall <- implDeps file (Set.toList accum) [] "cmx"
+                                                                    return $ Set.union accum $ Set.fromList recCall
+                                    allFiles <- foldM foldCall Set.empty exe_files
+                                    let relFiles = [takeFileName file | file <- Set.toList allFiles]
+                                    let full_mls = ["_build" </> file -<.> "ml" | file <- relFiles]
+                                    let full_mlis = ["_build" </> file -<.> "mli" | file <- relFiles]
+                                    let full_cmis = ["_build" </> file -<.> "cmi" | file <- relFiles]
+                                    let full_cmxs = ["_build" </> file -<.> "cmx" | file <- relFiles]
+                                    need (full_mls ++ full_mlis ++ full_cmis ++ full_cmxs)
+                                    let rel_mls = [file -<.> "ml" | file <- relFiles]
+                                    let rel_mlis = [file -<.> "mli" | file <- relFiles]
+                                    liftIO $ removeFiles dir ["//*"]
+                                    writeFile' (dir </> ".file") "q"
+                                    let filesToDoc = if private then rel_mls else (rel_mls ++ rel_mlis)
+                                    let workaround = [file | file <- filesToDoc, file /= "cCHReturnsite.ml", file /= "cCHCallsite.ml"]
+                                    cmd_ (Cwd "_build") "ocamlfind ocamldoc -keep-code -html -d " ("../" ++ dir) "-package" (intercalate "," $ ocamlfind_libraries ++ ["str","unix"]) workaround
     
     phony "docs_public" $ makeDocs "_docs_public" False
     phony "docs_private" $ makeDocs "_docs_private" True
