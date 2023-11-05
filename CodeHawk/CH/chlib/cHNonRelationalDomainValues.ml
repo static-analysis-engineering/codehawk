@@ -3,7 +3,7 @@
    Author: Arnaud Venet
    -----------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny Sipma
    Copyright (c) 2023      Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,16 +31,16 @@
 open CHBounds
 open CHCommon
 open CHConstants
-open CHExternalValues   
+open CHExternalValues
 open CHIntervals
-open CHLanguage   
+open CHLanguage
 open CHNumerical
 open CHNumericalConstraints
-open CHPEPRange   
-open CHPEPRTypes   
+open CHPEPRange
+open CHPEPRTypes
 open CHPretty
 open CHStridedIntervals
-open CHSymbolicSets   
+open CHSymbolicSets
 open CHTIntervals
 open CHValueSets
 
@@ -48,6 +48,7 @@ open CHValueSets
 type nr_domain_value_t =
   | NUM_CONSTANT_VAL of numerical_constant_t
   | SYM_CONSTANT_VAL of symbolic_constant_t
+  | ORDERED_SYM_CONSTANT_VAL of ordered_symbolic_constant_t
   | BOOL_CONSTANT_VAL of boolean_constant_t
   | INTERVAL_VAL of interval_t
   | TINTERVAL_VAL of tinterval_t
@@ -58,7 +59,7 @@ type nr_domain_value_t =
   | EXTERNAL_VALUE of external_value_int
   | TOP_VAL
   | BOTTOM_VAL
-  
+
 let normalize_nr_value v =
   match v with
   | NUM_CONSTANT_VAL n ->
@@ -69,6 +70,13 @@ let normalize_nr_value v =
      else
        v
   | SYM_CONSTANT_VAL s ->
+     if s#isTop then
+       TOP_VAL
+     else if s#isBottom then
+       BOTTOM_VAL
+     else
+       v
+  | ORDERED_SYM_CONSTANT_VAL s ->
      if s#isTop then
        TOP_VAL
      else if s#isBottom then
@@ -96,7 +104,7 @@ let normalize_nr_value v =
        BOTTOM_VAL
      else
        v
-  | STRIDED_INTERVAL_VAL n -> 
+  | STRIDED_INTERVAL_VAL n ->
      if n#isTop then
        TOP_VAL
      else if n#isBottom then
@@ -133,18 +141,19 @@ let normalize_nr_value v =
        v
   | _ ->
      v
-    
+
 class non_relational_domain_value_t (v: nr_domain_value_t) =
 object (self: 'a)
 
   val value = normalize_nr_value v
-	    
+
   method getValue = value
-                  
+
   method toPretty =
     match value with
     | NUM_CONSTANT_VAL v -> v#toPretty
     | SYM_CONSTANT_VAL v -> v#toPretty
+    | ORDERED_SYM_CONSTANT_VAL v -> v#toPretty
     | BOOL_CONSTANT_VAL v -> v#toPretty
     | INTERVAL_VAL v -> v#toPretty
     | TINTERVAL_VAL v -> v#toPretty
@@ -155,10 +164,10 @@ object (self: 'a)
     | EXTERNAL_VALUE v -> v#toPretty
     | TOP_VAL -> STR "<TOP>"
     | BOTTOM_VAL -> STR "_|_"
-                  
+
   method private notNormal =
     let _ = raise (CHFailure (STR "Non-relational value is not in normal form")) in ()
-                                                                                  
+
   method isTop =
     match value with
     | TOP_VAL -> true
@@ -168,7 +177,7 @@ object (self: 'a)
     match value with
     | BOTTOM_VAL -> true
     | _ -> false
-         
+
   method leq (v: 'a) =
     match (value, v#getValue) with
     | (BOTTOM_VAL, _) -> true
@@ -176,6 +185,7 @@ object (self: 'a)
     | (_, TOP_VAL) -> true
     | (TOP_VAL, _) -> false
     | (SYM_CONSTANT_VAL v1, SYM_CONSTANT_VAL v2) -> v1#leq v2
+    | (ORDERED_SYM_CONSTANT_VAL v1, ORDERED_SYM_CONSTANT_VAL v2) -> v1#leq v2
     | (NUM_CONSTANT_VAL v1, NUM_CONSTANT_VAL v2) -> v1#leq v2
     | (BOOL_CONSTANT_VAL v1, BOOL_CONSTANT_VAL v2) -> v1#leq v2
     | (INTERVAL_VAL v1, INTERVAL_VAL v2) -> v1#leq v2
@@ -185,20 +195,20 @@ object (self: 'a)
        v1#leq (intervalToStridedInterval v2)
     | (INTERVAL_VAL v1, STRIDED_INTERVAL_VAL v2) ->
        (intervalToStridedInterval v1)#leq v2
-    | (PEPR_VAL v1, PEPR_VAL v2) ->
-       let r = v1#leq v2 in
-       let _ =
-         pr_trace 3 [ STR "Iterator#leq: " ; v1#toPretty ; STR " leq " ; v2#toPretty ;
-                      STR " ==> " ; STR (if r then "true" else "false") ; NL ] in
-       r
+    | (PEPR_VAL v1, PEPR_VAL v2) -> v1#leq v2
     | (VALUESET_VAL v1, VALUESET_VAL v2) -> v1#leq v2
     | (SYM_SET_VAL v1, SYM_SET_VAL v2) -> v1#leq v2
     | (EXTERNAL_VALUE v1, EXTERNAL_VALUE v2) ->
        if v1#kind = v2#kind then
 	 v1#leq v2
        else
-	 raise (CHFailure (LBLOCK [STR "Comparison of incompatible external values: ";
-				   v1#toPretty; STR " and "; v2#toPretty]))
+	 raise
+           (CHFailure
+              (LBLOCK [
+                   STR "Comparison of incompatible external values: ";
+		   v1#toPretty;
+                   STR " and ";
+                   v2#toPretty]))
     | (NUM_CONSTANT_VAL v1, INTERVAL_VAL v2) ->
 	  begin
 	    match v1#getCst with
@@ -249,9 +259,9 @@ object (self: 'a)
 	      | SYM_CST s' -> s#equal s'
 	      | _ -> (self#notNormal; false)
 	    end
-       end	  
+       end
     | (_, _) -> false
-              
+
   method join (v: 'a) =
     match (value, v#getValue) with
     | (BOTTOM_VAL, _) -> v
@@ -260,6 +270,8 @@ object (self: 'a)
     | (_, TOP_VAL) -> {< value = TOP_VAL >}
     | (SYM_CONSTANT_VAL v1, SYM_CONSTANT_VAL v2) ->
        {< value = normalize_nr_value (SYM_CONSTANT_VAL (v1#join v2)) >}
+    | (ORDERED_SYM_CONSTANT_VAL v1, ORDERED_SYM_CONSTANT_VAL v2) ->
+       {< value = normalize_nr_value (ORDERED_SYM_CONSTANT_VAL (v1#join v2)) >}
     | (NUM_CONSTANT_VAL v1, NUM_CONSTANT_VAL v2) ->
        {< value = normalize_nr_value (NUM_CONSTANT_VAL (v1#join v2)) >}
     | (BOOL_CONSTANT_VAL v1, BOOL_CONSTANT_VAL v2) ->
@@ -267,43 +279,47 @@ object (self: 'a)
     | (INTERVAL_VAL v1, INTERVAL_VAL v2) ->
        {< value = normalize_nr_value (INTERVAL_VAL (v1#join v2)) >}
     | (PEPR_VAL v1, PEPR_VAL v2) ->
-       let r = {< value = normalize_nr_value (PEPR_VAL (v1#join v2)) >} in
-       let _ =
-         pr_trace 3 [ STR "Iterator#join: " ; v1#toPretty ; STR " join " ;
-                      v2#toPretty ; STR " ==> " ; r#toPretty ; NL ] in
-       r
+       {< value = normalize_nr_value (PEPR_VAL (v1#join v2)) >}
     | (TINTERVAL_VAL v1, TINTERVAL_VAL v2) ->
        {< value = normalize_nr_value (TINTERVAL_VAL (v1#join v2)) >}
     | (STRIDED_INTERVAL_VAL v1, STRIDED_INTERVAL_VAL v2) ->
        {< value = normalize_nr_value (STRIDED_INTERVAL_VAL (v1#join v2)) >}
-    | (INTERVAL_VAL v1, STRIDED_INTERVAL_VAL v2) ->                                 
+    | (INTERVAL_VAL v1, STRIDED_INTERVAL_VAL v2) ->
        {<value = normalize_nr_value
                    (INTERVAL_VAL (v1#join (stridedIntervalToInterval v2)))>}
     | (STRIDED_INTERVAL_VAL v1, INTERVAL_VAL v2) ->
-       {<value = normalize_nr_value
-                   (STRIDED_INTERVAL_VAL (v1#join (intervalToStridedInterval v2)))>}
+       {<value =
+           normalize_nr_value
+             (STRIDED_INTERVAL_VAL (v1#join (intervalToStridedInterval v2)))>}
     | (SYM_SET_VAL v1, SYM_SET_VAL v2) ->
        {< value = normalize_nr_value (SYM_SET_VAL (v1#join v2)) >}
     | (EXTERNAL_VALUE v1, EXTERNAL_VALUE v2) ->
        if v1#kind = v2#kind then
 	 {< value = EXTERNAL_VALUE (v1#join v2) >}
        else
-	 raise (CHFailure (LBLOCK [STR "Join of incompatible external values: ";
-				   v1#toPretty; STR " and "; v2#toPretty]))	  
+	 raise
+           (CHFailure
+              (LBLOCK [
+                   STR "Join of incompatible external values: ";
+		   v1#toPretty;
+                   STR " and ";
+                   v2#toPretty]))
     | (NUM_CONSTANT_VAL v1, INTERVAL_VAL v2) ->
        begin
 	 match v1#getCst with
 	 | NUM_CST n ->
-            {< value = normalize_nr_value
-                         (INTERVAL_VAL ((mkSingletonInterval n)#join v2)) >}
+            {< value =
+                 normalize_nr_value
+                   (INTERVAL_VAL ((mkSingletonInterval n)#join v2)) >}
 	 | _ -> (self#notNormal; v)
        end
     | (NUM_CONSTANT_VAL v1, STRIDED_INTERVAL_VAL v2) ->
        begin
 	 match v1#getCst with
 	 | NUM_CST n ->
-            {< value = normalize_nr_value
-                         (STRIDED_INTERVAL_VAL ((mkSingletonStridedInterval n)#join v2)) >}
+            {< value =
+                 normalize_nr_value
+                   (STRIDED_INTERVAL_VAL ((mkSingletonStridedInterval n)#join v2)) >}
 	 | _ -> (self#notNormal; v)
        end
     | (INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> v#join self
@@ -314,13 +330,14 @@ object (self: 'a)
        begin
 	 match v1#getCst with
 	 | SYM_CST s ->
-            {< value = normalize_nr_value
-                         (SYM_SET_VAL ((new symbolic_set_t [s])#join v2)) >}
+            {< value =
+                 normalize_nr_value
+                   (SYM_SET_VAL ((new symbolic_set_t [s])#join v2)) >}
 	 | _ -> (self#notNormal; v)
        end
     | (SYM_SET_VAL _, SYM_CONSTANT_VAL _) -> v#join self
     | (_, _) -> {< value = TOP_VAL >}
-              
+
   method widening (v: 'a) =
     match (value, v#getValue) with
     | (BOTTOM_VAL, _) -> v
@@ -329,6 +346,8 @@ object (self: 'a)
     | (_, TOP_VAL) -> {< value = TOP_VAL >}
     | (SYM_CONSTANT_VAL v1, SYM_CONSTANT_VAL v2) ->
        {< value = normalize_nr_value (SYM_CONSTANT_VAL (v1#widening v2)) >}
+    | (ORDERED_SYM_CONSTANT_VAL v1, ORDERED_SYM_CONSTANT_VAL v2) ->
+       {< value = normalize_nr_value (ORDERED_SYM_CONSTANT_VAL (v1#widening v2)) >}
     | (NUM_CONSTANT_VAL v1, NUM_CONSTANT_VAL v2) ->
        {< value = normalize_nr_value (NUM_CONSTANT_VAL (v1#widening v2)) >}
     | (BOOL_CONSTANT_VAL v1, BOOL_CONSTANT_VAL v2) ->
@@ -336,11 +355,7 @@ object (self: 'a)
     | (INTERVAL_VAL v1, INTERVAL_VAL v2) ->
        {< value = normalize_nr_value (INTERVAL_VAL (v1#widening v2)) >}
     | (PEPR_VAL v1, PEPR_VAL v2) ->
-       let r = {< value = normalize_nr_value (PEPR_VAL (v1#widening v2)) >} in
-       let _ =
-         pr_trace 3 [ STR "Iterator#widening: " ; v1#toPretty ; STR " widening " ;
-                      v2#toPretty ; STR " ==> " ; r#toPretty ; NL ] in
-       r
+       {< value = normalize_nr_value (PEPR_VAL (v1#widening v2)) >}
     | (TINTERVAL_VAL v1, TINTERVAL_VAL v2) ->
        {< value = normalize_nr_value (TINTERVAL_VAL (v1#widening v2)) >}
     | (STRIDED_INTERVAL_VAL v1, STRIDED_INTERVAL_VAL v2) ->
@@ -351,8 +366,13 @@ object (self: 'a)
        if v1#kind = v2#kind then
 	 {< value = EXTERNAL_VALUE (v1#widening v2) >}
        else
-	 raise (CHFailure (LBLOCK [STR "Widening of incompatible external values: ";
-				   v1#toPretty; STR " and "; v2#toPretty]))	  
+	 raise
+           (CHFailure
+              (LBLOCK [
+                   STR "Widening of incompatible external values: ";
+		   v1#toPretty;
+                   STR " and ";
+                   v2#toPretty]))
     | (NUM_CONSTANT_VAL v1, INTERVAL_VAL v2) -> self#join v
     | (NUM_CONSTANT_VAL v1, STRIDED_INTERVAL_VAL v2) -> self#join v
     | (INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> v#widening self
@@ -371,55 +391,58 @@ object (self: 'a)
     | (_, TOP_VAL) -> {< >}
     | (SYM_CONSTANT_VAL v1, SYM_CONSTANT_VAL v2) ->
        {< value = normalize_nr_value (SYM_CONSTANT_VAL (v1#meet v2)) >}
-      | (NUM_CONSTANT_VAL v1, NUM_CONSTANT_VAL v2) ->
-	 {< value = normalize_nr_value (NUM_CONSTANT_VAL (v1#meet v2)) >}
-      | (BOOL_CONSTANT_VAL v1, BOOL_CONSTANT_VAL v2) ->
-	 {< value = normalize_nr_value (BOOL_CONSTANT_VAL (v1#meet v2)) >}
-      | (INTERVAL_VAL v1, INTERVAL_VAL v2) ->
-	 {< value = normalize_nr_value (INTERVAL_VAL (v1#meet v2)) >}
-      | (PEPR_VAL v1, PEPR_VAL v2) ->
-         let r = {< value = normalize_nr_value (PEPR_VAL (v1#meet v2)) >} in
-         let _ =
-           pr_trace 3 [ STR "Iterator#meet: " ; v1#toPretty ; STR " meet " ;
-                        v2#toPretty ; STR " ==> " ; r#toPretty ; NL ] in
-         r
-      | (TINTERVAL_VAL v1, TINTERVAL_VAL v2) ->
-	 {< value = normalize_nr_value (TINTERVAL_VAL (v1#meet v2)) >}
-      | (STRIDED_INTERVAL_VAL v1, STRIDED_INTERVAL_VAL v2) ->
-	 {< value = normalize_nr_value (STRIDED_INTERVAL_VAL (v1#meet v2)) >}
-      | (VALUESET_VAL v1, VALUESET_VAL v2) ->
-	 {< value = normalize_nr_value (VALUESET_VAL (v1#meet v2)) >}
-      | (SYM_SET_VAL v1, SYM_SET_VAL v2) ->
-	 {< value = normalize_nr_value (SYM_SET_VAL (v1#meet v2)) >}
-      | (EXTERNAL_VALUE v1, EXTERNAL_VALUE v2) ->
-	 if v1#kind = v2#kind then
-	   {< value = EXTERNAL_VALUE (v1#meet v2) >}
-	 else
-	   raise (CHFailure (LBLOCK [STR "Meet of incompatible external values: ";
-				     v1#toPretty; STR " and "; v2#toPretty]))	  
-      | (NUM_CONSTANT_VAL v1, INTERVAL_VAL v2) ->
-	 begin
-	   match v1#getCst with
-	   | NUM_CST n -> if v2#contains n then {< >} else {< value = BOTTOM_VAL >}
-	   | _ -> (self#notNormal; v)
-	 end
-      | (NUM_CONSTANT_VAL v1, STRIDED_INTERVAL_VAL v2) ->
-	 begin
-	   match v1#getCst with
-	   | NUM_CST n -> if v2#contains n then {< >} else {< value = BOTTOM_VAL >}
-	   | _ -> (self#notNormal; v)
-	 end
-      | (INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> v#meet self
-      | (STRIDED_INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> v#meet self
-      | (SYM_CONSTANT_VAL v1, SYM_SET_VAL v2) ->
-	 begin
-	   match v1#getCst with
-	   | SYM_CST s -> if v2#contains s then {< >} else {< value = BOTTOM_VAL >}
-	   | _ -> (self#notNormal; v)
-	 end
-      | (SYM_SET_VAL _, SYM_CONSTANT_VAL _) -> v#meet self
-      | (_, _) -> {< value = BOTTOM_VAL >}
-                
+    | (ORDERED_SYM_CONSTANT_VAL v1, ORDERED_SYM_CONSTANT_VAL v2) ->
+       {< value = normalize_nr_value (ORDERED_SYM_CONSTANT_VAL (v1#meet v2)) >}
+    | (NUM_CONSTANT_VAL v1, NUM_CONSTANT_VAL v2) ->
+       {< value = normalize_nr_value (NUM_CONSTANT_VAL (v1#meet v2)) >}
+    | (BOOL_CONSTANT_VAL v1, BOOL_CONSTANT_VAL v2) ->
+       {< value = normalize_nr_value (BOOL_CONSTANT_VAL (v1#meet v2)) >}
+    | (INTERVAL_VAL v1, INTERVAL_VAL v2) ->
+       {< value = normalize_nr_value (INTERVAL_VAL (v1#meet v2)) >}
+    | (PEPR_VAL v1, PEPR_VAL v2) ->
+       {< value = normalize_nr_value (PEPR_VAL (v1#meet v2)) >}
+    | (TINTERVAL_VAL v1, TINTERVAL_VAL v2) ->
+       {< value = normalize_nr_value (TINTERVAL_VAL (v1#meet v2)) >}
+    | (STRIDED_INTERVAL_VAL v1, STRIDED_INTERVAL_VAL v2) ->
+       {< value = normalize_nr_value (STRIDED_INTERVAL_VAL (v1#meet v2)) >}
+    | (VALUESET_VAL v1, VALUESET_VAL v2) ->
+       {< value = normalize_nr_value (VALUESET_VAL (v1#meet v2)) >}
+    | (SYM_SET_VAL v1, SYM_SET_VAL v2) ->
+       {< value = normalize_nr_value (SYM_SET_VAL (v1#meet v2)) >}
+    | (EXTERNAL_VALUE v1, EXTERNAL_VALUE v2) ->
+       if v1#kind = v2#kind then
+	 {< value = EXTERNAL_VALUE (v1#meet v2) >}
+       else
+	 raise
+           (CHFailure
+              (LBLOCK [
+                   STR "Meet of incompatible external values: ";
+		   v1#toPretty;
+                   STR " and ";
+                   v2#toPretty]))
+    | (NUM_CONSTANT_VAL v1, INTERVAL_VAL v2) ->
+       begin
+	 match v1#getCst with
+	 | NUM_CST n -> if v2#contains n then {< >} else {< value = BOTTOM_VAL >}
+	 | _ -> (self#notNormal; v)
+       end
+    | (NUM_CONSTANT_VAL v1, STRIDED_INTERVAL_VAL v2) ->
+       begin
+	 match v1#getCst with
+	 | NUM_CST n -> if v2#contains n then {< >} else {< value = BOTTOM_VAL >}
+	 | _ -> (self#notNormal; v)
+       end
+    | (INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> v#meet self
+    | (STRIDED_INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> v#meet self
+    | (SYM_CONSTANT_VAL v1, SYM_SET_VAL v2) ->
+       begin
+	 match v1#getCst with
+	 | SYM_CST s -> if v2#contains s then {< >} else {< value = BOTTOM_VAL >}
+	 | _ -> (self#notNormal; v)
+       end
+    | (SYM_SET_VAL _, SYM_CONSTANT_VAL _) -> v#meet self
+    | (_, _) -> {< value = BOTTOM_VAL >}
+
   method narrowing (v: 'a) =
     match (value, v#getValue) with
     | (BOTTOM_VAL, _) -> {< value = BOTTOM_VAL >}
@@ -428,22 +451,16 @@ object (self: 'a)
     | (_, TOP_VAL) -> {< >}
     | (SYM_CONSTANT_VAL v1, SYM_CONSTANT_VAL v2) ->
        {< value = normalize_nr_value (SYM_CONSTANT_VAL (v1#narrowing v2)) >}
+    | (ORDERED_SYM_CONSTANT_VAL v1, ORDERED_SYM_CONSTANT_VAL v2) ->
+       {< value = normalize_nr_value (ORDERED_SYM_CONSTANT_VAL (v1#narrowing v2)) >}
     | (NUM_CONSTANT_VAL v1, NUM_CONSTANT_VAL v2) ->
        {< value = normalize_nr_value (NUM_CONSTANT_VAL (v1#narrowing v2)) >}
     | (BOOL_CONSTANT_VAL v1, BOOL_CONSTANT_VAL v2) ->
        {< value = normalize_nr_value (BOOL_CONSTANT_VAL (v1#narrowing v2)) >}
     | (INTERVAL_VAL v1, INTERVAL_VAL v2) ->
-       let r = {< value = normalize_nr_value (INTERVAL_VAL (v1#narrowing v2)) >} in
-       let _ =
-         pr_trace 3 [ STR "Iterator#narrowing: " ; v1#toPretty ; STR " narrowing " ;
-                      v2#toPretty ; STR " ==> " ; r#toPretty ; NL ] in
-       r
+       {< value = normalize_nr_value (INTERVAL_VAL (v1#narrowing v2)) >}
     | (PEPR_VAL v1, PEPR_VAL v2) ->
-       let r = {< value = normalize_nr_value (PEPR_VAL (v1#narrowing v2)) >} in
-       let _ =
-         pr_trace 3 [ STR "Iterator#narrowing: " ; v1#toPretty ; STR " narrowing " ;
-                      v2#toPretty ; STR " ==> " ; r#toPretty ; NL ] in
-       r
+       {< value = normalize_nr_value (PEPR_VAL (v1#narrowing v2)) >}
     | (TINTERVAL_VAL v1, TINTERVAL_VAL v2) ->
        {< value = normalize_nr_value (TINTERVAL_VAL (v1#narrowing v2)) >}
     | (STRIDED_INTERVAL_VAL v1, STRIDED_INTERVAL_VAL v2) ->
@@ -456,8 +473,13 @@ object (self: 'a)
        if v1#kind = v2#kind then
 	 {< value = EXTERNAL_VALUE (v1#narrowing v2) >}
        else
-	 raise (CHFailure (LBLOCK [STR "Narrowing of incompatible external values: ";
-				   v1#toPretty; STR " and "; v2#toPretty]))	  
+	 raise
+           (CHFailure
+              (LBLOCK [
+                   STR "Narrowing of incompatible external values: ";
+		   v1#toPretty;
+                   STR " and ";
+                   v2#toPretty]))
     | (NUM_CONSTANT_VAL v1, INTERVAL_VAL v2) -> self#meet v
     | (NUM_CONSTANT_VAL v1, STRIDED_INTERVAL_VAL v2) -> self#meet v
     | (INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> self#meet v
@@ -465,10 +487,10 @@ object (self: 'a)
     | (SYM_CONSTANT_VAL v1, SYM_SET_VAL v2) -> self#meet v
     | (SYM_SET_VAL _, SYM_CONSTANT_VAL _) -> self#meet v
     | (_, _) -> {< value = BOTTOM_VAL >}
-              
+
   method numericalConstant =
     match value with
-    | NUM_CONSTANT_VAL n -> 
+    | NUM_CONSTANT_VAL n ->
        begin
 	 match n#getCst with
 	 | NUM_CST c -> Some c
@@ -479,12 +501,12 @@ object (self: 'a)
     | VALUESET_VAL v -> v#zeroOffsetSingleton
     | PEPR_VAL v -> v#singleton
     | _ -> None
-         
+
   method toNumericalConstraints (v: variable_t) =
     match value with
     | NUM_CONSTANT_VAL n ->
        (match n#getCst with
-	| NUM_CST c -> 
+	| NUM_CST c ->
 	   [new numerical_constraint_t
               ~factors:[(numerical_one, new numerical_factor_t v)]
               ~constant:c
@@ -500,14 +522,14 @@ object (self: 'a)
               ~constant:n#neg
               ~kind:LINEAR_INEQ]
 	| _ -> [])
-       @ 	    
+       @
 	 (match i#getMax#getBound with
 	  | NUMBER n ->
 	     [new numerical_constraint_t
                 ~factors:[(numerical_one, f)]
                 ~constant:n
                 ~kind:LINEAR_INEQ]
-	  | _ -> [])	      
+	  | _ -> [])
     | TINTERVAL_VAL i ->
        let f = new numerical_factor_t v in
        (match i#getMin#getBound with
@@ -517,14 +539,14 @@ object (self: 'a)
               ~constant:n#neg
               ~kind:LINEAR_INEQ]
 	| _ -> [])
-       @ 	    
+       @
 	 (match i#getMax#getBound with
 	  | NUMBER n ->
 	     [new numerical_constraint_t
                 ~factors:[(numerical_one, f)]
                 ~constant:n
                 ~kind:LINEAR_INEQ]
-	  | _ -> [])	      
+	  | _ -> [])
     | STRIDED_INTERVAL_VAL i ->                      (* This ignores the stride *)
        let f = new numerical_factor_t v in
        (match i#getMin#getBound with
@@ -534,19 +556,19 @@ object (self: 'a)
               ~constant:n#neg
               ~kind:LINEAR_INEQ]
 	| _ -> [])
-       @ 	    
+       @
 	 (match i#getMax#getBound with
 	  | NUMBER n ->
 	     [new numerical_constraint_t
                 ~factors:[(numerical_one, f)]
                 ~constant:n
                 ~kind:LINEAR_INEQ]
-	  | _ -> [])	      
+	  | _ -> [])
     | _ -> []
-         
+
   method toInterval =
     match value with
-    | NUM_CONSTANT_VAL c -> 
+    | NUM_CONSTANT_VAL c ->
        begin
 	 match c#getCst with
 	 | NUM_CST n -> mkSingletonInterval n
@@ -555,14 +577,14 @@ object (self: 'a)
        end
     | INTERVAL_VAL i -> i
     | STRIDED_INTERVAL_VAL i -> stridedIntervalToInterval i
-    | VALUESET_VAL v -> 
+    | VALUESET_VAL v ->
        if v#isZeroOffset then v#getZeroOffset  else topInterval
     | BOTTOM_VAL -> bottomInterval
     | _ -> topInterval
-         
+
   method toTInterval =
     match value with
-    | NUM_CONSTANT_VAL c -> 
+    | NUM_CONSTANT_VAL c ->
        begin
 	 match c#getCst with
 	 | NUM_CST n -> mkSingletonTInterval n
@@ -572,10 +594,10 @@ object (self: 'a)
     | TINTERVAL_VAL i -> i
     | BOTTOM_VAL -> bottomTInterval
     | _ -> topTInterval
-         
+
   method toStridedInterval =
     match value with
-    | NUM_CONSTANT_VAL c -> 
+    | NUM_CONSTANT_VAL c ->
        begin
 	 match c#getCst with
 	 | NUM_CST n -> mkSingletonStridedInterval n
@@ -586,10 +608,10 @@ object (self: 'a)
     | STRIDED_INTERVAL_VAL i -> i
     | BOTTOM_VAL -> bottomStridedInterval
     | _ -> topStridedInterval
-         
+
   method toNumericalConstant =
     match value with
-    | INTERVAL_VAL i -> 
+    | INTERVAL_VAL i ->
        if i#isBottom then
 	 bottomNumericalConstant
        else
@@ -598,7 +620,7 @@ object (self: 'a)
 	   | Some n -> mkNumericalConstant n
 	   | None -> topNumericalConstant
 	    end
-    | STRIDED_INTERVAL_VAL i -> 
+    | STRIDED_INTERVAL_VAL i ->
        if i#isBottom then
 	 bottomNumericalConstant
        else
@@ -610,10 +632,10 @@ object (self: 'a)
     | NUM_CONSTANT_VAL c -> c
     | BOTTOM_VAL -> bottomNumericalConstant
     | _ -> topNumericalConstant
-         
+
   method toSymbolicConstant =
     match value with
-    | SYM_SET_VAL s -> 
+    | SYM_SET_VAL s ->
        if s#isBottom then
 	 bottomSymbolicConstant
        else
@@ -623,59 +645,100 @@ object (self: 'a)
 	   | None -> topSymbolicConstant
 	 end
     | SYM_CONSTANT_VAL c -> c
+    | ORDERED_SYM_CONSTANT_VAL c ->
+       if c#isBottom then
+         bottomSymbolicConstant
+       else
+         begin
+           match c#getCst with
+           | ORDERED_SYM_CST s -> mkSymbolicConstant s
+           | _ -> topSymbolicConstant
+         end
     | BOTTOM_VAL -> bottomSymbolicConstant
     | _ -> topSymbolicConstant
-         
+
+  method toOrderedSymbolicConstant =
+    match value with
+    | SYM_SET_VAL s ->
+       if s#isBottom then
+         bottomOrderedSymbolicConstant
+       else
+         begin
+           match s#singleton with
+           | Some sym -> mkOrderedSymbolicConstant sym
+           | None -> topOrderedSymbolicConstant
+         end
+    | SYM_CONSTANT_VAL c ->
+       if c#isBottom then
+         bottomOrderedSymbolicConstant
+       else
+         begin
+           match c#getCst with
+           | SYM_CST s -> mkOrderedSymbolicConstant s
+           | _ -> topOrderedSymbolicConstant
+         end
+    | ORDERED_SYM_CONSTANT_VAL c -> c
+    | BOTTOM_VAL -> bottomOrderedSymbolicConstant
+    | _ -> topOrderedSymbolicConstant
+
   method toSymbolicSet =
     match value with
-    | SYM_CONSTANT_VAL c -> 
+    | SYM_CONSTANT_VAL c ->
        begin
 	 match c#getCst with
 	 | SYM_CST s -> new symbolic_set_t [s]
 	 | SYM_BOTTOM -> bottomSymbolicSet
 	 | _ -> topSymbolicSet
        end
+    | ORDERED_SYM_CONSTANT_VAL c ->
+       begin
+         match c#getCst with
+         | ORDERED_SYM_CST s -> new symbolic_set_t [s]
+         | ORDERED_SYM_BOTTOM -> bottomSymbolicSet
+         | _ -> topSymbolicSet
+       end
     | SYM_SET_VAL s -> s
     | BOTTOM_VAL -> bottomSymbolicSet
     | _ -> topSymbolicSet
-	 
+
   method toExternalValue =
     match value with
     | EXTERNAL_VALUE s -> s
     | _ -> raise (CHFailure (LBLOCK [STR "Not an external value: "; self#toPretty]))
-         
+
   method toValueSet =
     match value with
     | VALUESET_VAL v -> v
     | BOTTOM_VAL -> bottomValueSet
     | _ -> topValueSet
-         
+
   method toPEPRValue =
     match value with
     | PEPR_VAL v -> v
     | BOTTOM_VAL -> bottom_pepr_value
     | _ -> top_pepr_value
-	 
+
 end
-  
+
 let topNonRelationalDomainValue = new non_relational_domain_value_t TOP_VAL
-                                
+
 let bottomNonRelationalDomainValue = new non_relational_domain_value_t BOTTOM_VAL
-                                   
+
 let mkNumericalConstantValue n = new non_relational_domain_value_t (NUM_CONSTANT_VAL n)
-                               
+
 let mkSymbolicConstantValue s = new non_relational_domain_value_t (SYM_CONSTANT_VAL s)
-                              
+
+let mkOrderedSymbolicConstantValue s =
+  new non_relational_domain_value_t (ORDERED_SYM_CONSTANT_VAL s)
+
 let mkBooleanConstantValue b = new non_relational_domain_value_t (BOOL_CONSTANT_VAL b)
-                             
+
 let mkIntervalValue i = new non_relational_domain_value_t (INTERVAL_VAL i)
-                      
+
 let mkTIntervalValue i = new non_relational_domain_value_t (TINTERVAL_VAL i)
-                       
+
 let mkStridedIntervalValue i = new non_relational_domain_value_t (STRIDED_INTERVAL_VAL i)
-                             
+
 let mkSymbolicSetValue s = new non_relational_domain_value_t (SYM_SET_VAL s)
-                         
+
 let mkValueSetValue v = new non_relational_domain_value_t (VALUESET_VAL v)
-                      
-                      

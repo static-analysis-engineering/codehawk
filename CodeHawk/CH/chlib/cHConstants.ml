@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -292,7 +294,145 @@ object (self: 'a)
        if b then (STR "true") else (STR "false")
       
 end
-  
+
+
+type ordered_sym_cst_t =
+  | ORDERED_SYM_BOTTOM
+  | ORDERED_SYM_CST of symbol_t
+  | ORDERED_SYM_TOP
+
+
+(* s1 is less than s2 if the name of s2 is a substring of the name of s1
+   (e.g., "aabb <= aab", but not "aaab <= aab").*)
+let ordered_sym_leq (s1: symbol_t) (s2: symbol_t): bool =
+  let n1 = s1#getBaseName in
+  let n2 = s2#getBaseName in
+  if n1 = n2 then
+    true
+  else
+    let l1 = String.length n1 in
+    let l2 = String.length n2 in
+    if l1 <= l2 then
+      false
+    else
+      (String.sub n1 0 l2) = n2
+
+
+(* returns a string that is the common prefix of the name of s1 and the name
+   of s2.*)
+let sym_common_prefix (s1: symbol_t) (s2: symbol_t): string option =
+  let n1 = s1#getBaseName in
+  let n2 = s2#getBaseName in
+  if n1 = n2 then
+    Some n1
+  else if n1 = "" || n2 = "" then
+    None
+  else
+    let l1 = String.length n1 in
+    let l2 = String.length n2 in
+    let lmin = Stdlib.min l1 l2 in
+    let s1sub = String.sub n1 0 lmin in
+    let s2sub = String.sub n2 0 lmin in
+    if s1sub = s2sub then
+      Some n1
+    else
+      let rec common_prefix (l: int) =
+        if l = 0 then
+          None
+        else
+          let ss1 = String.sub n1 0 l in
+          let ss2 = String.sub n2 0 l in
+          if ss1 = ss2 then
+            Some ss1
+          else common_prefix (l - 1) in
+      common_prefix (lmin - 1)
+
+
+let ordered_sym_join (s1: symbol_t) (s2: symbol_t): symbol_t option =
+  match sym_common_prefix s1 s2 with
+  | Some name -> Some (new symbol_t name)
+  | _ -> None
+
+
+class ordered_symbolic_constant_t (s: ordered_sym_cst_t) =
+object (self: 'a)
+
+  val cst = s
+
+  method getCst = cst
+
+  method private mkNew s =
+    {< cst = s >}
+
+  method mkTop = {< cst = ORDERED_SYM_TOP >}
+
+  method mkBottom = {< cst = ORDERED_SYM_BOTTOM >}
+
+  method isTop =
+    match cst with
+    | ORDERED_SYM_TOP -> true
+    | _ -> false
+
+  method isBottom =
+    match cst with
+    | ORDERED_SYM_BOTTOM -> true
+    | _ -> false
+
+  method equal (c: 'a) =
+    match (cst, c#getCst) with
+    | (ORDERED_SYM_BOTTOM, ORDERED_SYM_BOTTOM) -> true
+    | (ORDERED_SYM_TOP, ORDERED_SYM_TOP) -> true
+    | (ORDERED_SYM_CST s1, ORDERED_SYM_CST s2) -> s1#equal s2
+    | (_, _) -> false
+
+  method leq (c: 'a) =
+    match (cst, c#getCst) with
+    | (ORDERED_SYM_BOTTOM, _) -> true
+    | (_, ORDERED_SYM_TOP) -> true
+    | (ORDERED_SYM_CST s1, ORDERED_SYM_CST s2) -> ordered_sym_leq s1 s2
+    | (_, _) -> false
+
+  method join (c: 'a) =
+    match (cst, c#getCst) with
+    | (ORDERED_SYM_TOP, _) -> {< >}
+    | (_, ORDERED_SYM_TOP) -> c
+    | (ORDERED_SYM_BOTTOM, _) -> c
+    | (_, ORDERED_SYM_BOTTOM) -> {< >}
+    | (ORDERED_SYM_CST s1, ORDERED_SYM_CST s2) ->
+       if ordered_sym_leq s1 s2 then
+         c
+       else if ordered_sym_leq s2 s1 then
+         {< >}
+       else
+         match ordered_sym_join s1 s2 with
+         | None -> self#mkNew ORDERED_SYM_TOP
+         | Some sym -> self#mkNew (ORDERED_SYM_CST sym)
+
+  method meet (c: 'a) =
+    match (cst, c#getCst) with
+    | (ORDERED_SYM_TOP, _) -> c
+    | (_, ORDERED_SYM_TOP) -> {< >}
+    | (ORDERED_SYM_BOTTOM, _) -> {< >}
+    | (_, ORDERED_SYM_BOTTOM) -> c
+    | (ORDERED_SYM_CST s1, ORDERED_SYM_CST s2) ->
+       if s1#equal s2 then
+	 c
+       else
+	 self#mkNew ORDERED_SYM_BOTTOM
+
+  method widening = self#join
+
+  method narrowing = self#meet
+
+  method toPretty =
+    match cst with
+    | ORDERED_SYM_BOTTOM -> STR "_|_"
+    | ORDERED_SYM_TOP -> STR "T"
+    | ORDERED_SYM_CST s -> s#toPretty
+
+end
+
+
 let mkNumericalConstant n = new numerical_constant_t (NUM_CST n)
 
 let topNumericalConstant = new numerical_constant_t NUM_TOP
@@ -308,9 +448,18 @@ let bottomSymbolicConstant = new symbolic_constant_t SYM_BOTTOM
 let mkBooleanConstant b = new boolean_constant_t (BOOL_CST b)
                         
 let trueBooleanConstant = mkBooleanConstant true
+
 let falseBooleanConstant = mkBooleanConstant false
                          
 let topBooleanConstant = new boolean_constant_t BOOL_TOP
 
 let bottomBooleanConstant = new boolean_constant_t BOOL_BOTTOM
 
+let mkOrderedSymbolicConstant (s: symbol_t) =
+  new ordered_symbolic_constant_t (ORDERED_SYM_CST s)
+
+let topOrderedSymbolicConstant =
+  new ordered_symbolic_constant_t ORDERED_SYM_TOP
+
+let bottomOrderedSymbolicConstant =
+  new ordered_symbolic_constant_t ORDERED_SYM_BOTTOM

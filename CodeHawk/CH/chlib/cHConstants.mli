@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -92,6 +94,34 @@ class boolean_constant_t :
     method widening : 'a -> 'a
   end
 
+
+(** Partially ordered set of symbolic constants, with the partial order
+    induced by the name of the symbol.*)
+type ordered_sym_cst_t =
+  | ORDERED_SYM_BOTTOM
+  | ORDERED_SYM_CST of CHLanguage.symbol_t
+  | ORDERED_SYM_TOP
+
+class ordered_symbolic_constant_t :
+  ordered_sym_cst_t ->
+  object ('a)
+    val cst : ordered_sym_cst_t
+    method equal : 'a -> bool
+    method getCst : ordered_sym_cst_t
+    method isBottom : bool
+    method isTop : bool
+    method join : 'a -> 'a
+    method leq : 'a -> bool
+    method meet : 'a -> 'a
+    method mkBottom : 'a
+    method private mkNew : ordered_sym_cst_t -> 'a
+    method mkTop : 'a
+    method narrowing : 'a -> 'a
+    method toPretty : CHPretty.pretty_t
+    method widening : 'a -> 'a
+  end
+
+
 val mkNumericalConstant : CHNumerical.numerical_t -> numerical_constant_t
 
 val topNumericalConstant : numerical_constant_t
@@ -113,3 +143,14 @@ val falseBooleanConstant : boolean_constant_t
 val topBooleanConstant : boolean_constant_t
 
 val bottomBooleanConstant : boolean_constant_t
+
+val mkOrderedSymbolicConstant: CHLanguage.symbol_t -> ordered_symbolic_constant_t
+
+val topOrderedSymbolicConstant: ordered_symbolic_constant_t
+
+val bottomOrderedSymbolicConstant: ordered_symbolic_constant_t
+
+val ordered_sym_leq: CHLanguage.symbol_t -> CHLanguage.symbol_t -> bool
+
+val ordered_sym_join:
+  CHLanguage.symbol_t -> CHLanguage.symbol_t -> CHLanguage.symbol_t option
