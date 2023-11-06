@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -47,15 +47,21 @@ open BCHSumTypeSerializer
 
 let bd = BCHDictionary.bdictionary
 
+
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
+    LBLOCK [
+        STR "Type ";
+        STR name;
+        STR " tag: ";
+        STR tag ;
+        STR " not recognized. Accepted tags: ";
+        pretty_print_list accepted (fun s -> STR s) "" ", " ""] in
   begin
-    ch_error_log#add "serialization tag" msg ;
+    ch_error_log#add "serialization tag" msg;
     raise (BCH_failure msg)
   end
+
 
 class invdictionary_t (vard:vardictionary_int):invdictionary_int =
 object (self)
@@ -118,7 +124,7 @@ object (self)
     let vars = List.map self#xd#get_variable args in
     { leq_factors = List.map2 (fun c v -> (c,v)) coeffs vars ;
       leq_constant = mkNumericalFromString (t 0) }
-                  
+
   method index_invariant_fact (f:invariant_fact_t) =
     let tags = [ invariant_fact_mcts#ts f ] in
     let key =
@@ -127,13 +133,15 @@ object (self)
       | NonRelationalFact (v,nrv) ->
          (tags, [ self#xd#index_variable v ; self#index_non_relational_value nrv ])
       | RelationalFact x -> (tags, [ self#index_linear_equality x ])
-      | InitialVarEquality (v,iv) ->
-         (tags, [ self#xd#index_variable v ; self#xd#index_variable iv ])
+      | InitialVarEquality (v, iv) ->
+         (tags, [self#xd#index_variable v; self#xd#index_variable iv])
+      | SSAVarEquality (v, ssav) ->
+         (tags, [self#xd#index_variable v; self#xd#index_variable ssav])
       | InitialVarDisEquality (v,iv) ->
          (tags, [ self#xd#index_variable v ; self#xd#index_variable iv ])
-      | TestVarEquality (v,tv,iaddr1,iaddr2) -> 
-         (tags @ [ iaddr1 ; iaddr2 ],
-          [ self#xd#index_variable v ; self#xd#index_variable tv ]) in
+      | TestVarEquality (v, tv, iaddr1, iaddr2) ->
+         (tags @ [iaddr1; iaddr2],
+          [self#xd#index_variable v; self#xd#index_variable tv]) in
     invariant_fact_table#add key
 
   method get_invariant_fact (index:int) =
@@ -143,16 +151,22 @@ object (self)
     let a = a name args in
     match (t 0) with
     | "u" -> Unreachable (t 1)
-    | "n" -> NonRelationalFact
-               (self#xd#get_variable (a 0), self#get_non_relational_value (a 1))
+    | "n" ->
+       NonRelationalFact
+         (self#xd#get_variable (a 0), self#get_non_relational_value (a 1))
     | "r" -> RelationalFact (self#get_linear_equality (a 0))
-    | "ie" -> InitialVarEquality
-                (self#xd#get_variable (a 0), self#xd#get_variable (a 1))
-    | "id" -> InitialVarDisEquality
-                (self#xd#get_variable (a 0), self#xd#get_variable (a 1))
-    | "te" -> TestVarEquality
-                (self#xd#get_variable (a 0), self#xd#get_variable (a 1),
-                 t 1, t 2)
+    | "ie" ->
+       InitialVarEquality
+         (self#xd#get_variable (a 0), self#xd#get_variable (a 1))
+    | "sse" ->
+       SSAVarEquality
+         (self#xd#get_variable (a 0), self#xd#get_variable (a 1))
+    | "id" ->
+       InitialVarDisEquality
+         (self#xd#get_variable (a 0), self#xd#get_variable (a 1))
+    | "te" ->
+       TestVarEquality
+         (self#xd#get_variable (a 0), self#xd#get_variable (a 1), t 1, t 2)
     | s -> raise_tag_error name s invariant_fact_mcts#tags
 
   method write_xml_non_relational_value

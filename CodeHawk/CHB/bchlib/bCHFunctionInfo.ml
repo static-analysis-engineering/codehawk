@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -85,6 +85,8 @@ module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
 module TR = CHTraceResult
 
+let bcd = BCHBCDictionary.bcdictionary
+
 
 module NumericalCollections = CHCollections.Make
   (struct
@@ -146,19 +148,19 @@ let po_anchor_to_pretty a =
 
 class type saved_register_int =
 object ('a)
-  
+
   method compare              : 'a -> int
-    
+
   method set_save_address     : ctxt_iaddress_t -> unit
   method add_restore_address  : ctxt_iaddress_t -> unit
-    
+
   method get_register         : register_t
   method get_save_address     : ctxt_iaddress_t
   method get_restore_addresses: ctxt_iaddress_t list
-    
+
   method has_save_address     : bool
   method has_restore_addresses: bool
-    
+
   method is_save_or_restore_address: ctxt_iaddress_t -> bool
 
   method write_xml: xml_element_int -> unit
@@ -170,32 +172,32 @@ class saved_register_t (reg:register_t) =
 object (self:'a)
   val mutable save_address = None
   val restore_addresses = new StringCollections.set_t
-    
+
   method compare (other:'a) = Stdlib.compare reg other#get_register
-    
+
   method set_save_address (a:ctxt_iaddress_t) = save_address <- Some a
   method add_restore_address (a:ctxt_iaddress_t) = restore_addresses#add a
-    
+
   method get_register = reg
-    
-  method get_save_address = 
+
+  method get_save_address =
     match save_address with
       Some a -> a
     | _ ->
-      let msg = (LBLOCK [ STR "saved_register.get_save_address " ; 
+      let msg = (LBLOCK [ STR "saved_register.get_save_address " ;
 			  STR (register_to_string reg) ]) in
       begin
 	ch_error_log#add "invocation error" msg ;
 	raise (Invocation_error
                  ("saved_register.get_save_address " ^ (register_to_string reg)))
       end
-	
+
   method get_restore_addresses = restore_addresses#toList
-    
+
   method has_save_address = match save_address with Some _ -> true | _ -> false
-    
+
   method has_restore_addresses = not restore_addresses#isEmpty
-    
+
   method is_save_or_restore_address (iaddr:ctxt_iaddress_t) =
     (match save_address with Some a -> a = iaddr | _ -> false) ||
       (List.mem iaddr restore_addresses#toList)
@@ -209,9 +211,9 @@ object (self:'a)
       (if restore_addresses#isEmpty then () else
          node#setAttribute "restore" (String.concat ";" restore_addresses#toList))
     end
-      
+
   method toPretty =
-    let pSaved = match save_address with 
+    let pSaved = match save_address with
       | Some a -> LBLOCK [ STR "saved: " ; STR a ]
       | _ -> STR "not saved" in
     let pRestored = match restore_addresses#toList with
@@ -226,11 +228,11 @@ object (self:'a)
         pSaved;
         STR "; ";
         pRestored]
-      
+
 end
 
 
-module SavedRegistersCollections = CHCollections.Make 
+module SavedRegistersCollections = CHCollections.Make
   (struct
     type t = saved_register_int
     let compare r1 r2 = r1#compare r2
@@ -239,22 +241,23 @@ module SavedRegistersCollections = CHCollections.Make
 
 
 let pr_expr = xpr_formatter#pr_expr
-    
-		
+
+
 class function_environment_t
         (faddr:doubleword_int)
         (varmgr:variable_manager_int):function_environment_int =
 object (self)
-    
+
   val scope = LF.mkScope ()
   val virtual_calls = H.create 3
   val initial_call_target_values = H.create 3
   val initial_string_values = H.create 3
 
   initializer
-    List.iter (fun av -> ignore (self#mk_variable av)) varmgr#get_assembly_variables
+    List.iter (fun av ->
+        ignore (self#mk_variable av)) varmgr#get_assembly_variables
 
-  method get_variable_comparator =  varmgr#get_external_variable_comparator
+  method get_variable_comparator = varmgr#get_external_variable_comparator
 
   (* ------------------------------------------------------ variable names -- *)
 
@@ -296,7 +299,7 @@ object (self)
           begin
 	    self#set_variable_name fldvar fldname ;
             self#set_variable_name ifldvar ifldname ;
-	    if is_ptrto_known_struct fldtype then 
+	    if is_ptrto_known_struct fldtype then
 	      self#set_pointedto_struct_field_names
                 (level + 1) ifldvar fldname fldtype
           end)
@@ -308,7 +311,7 @@ object (self)
     let stackPars = [  (8, jthis, t_voidptr) ; (4, "jni$Env", t_voidptr) ] in
     let (_,_,stackPars) = List.fold_left (fun (count,off,pars) ty ->
       let name = (get_java_type_name_prefix ty) ^ "_" ^ (string_of_int count) in
-      (count+1, off + (get_java_type_length ty), 
+      (count+1, off + (get_java_type_length ty),
        (off, name, (get_java_type_btype ty)) :: pars)) (3,12,stackPars) args in
     List.iter (fun (offset,name,ty) ->
       let memref = self#mk_local_stack_reference in
@@ -322,7 +325,7 @@ object (self)
             self#mk_memory_variable jniInterfacePtrRef numerical_zero in
 	  let jniInterfacePtrIn = self#mk_initial_memory_value jniInterfacePtr in
 	  self#set_variable_name jniInterfacePtrIn "jni$Ifp"
-      end ) stackPars	 
+      end ) stackPars
 
   method set_unknown_java_native_method_signature =
     let stackPars = [ (4, "jni$Env", t_voidptr) ] in
@@ -338,7 +341,7 @@ object (self)
             self#mk_memory_variable jniInterfacePtrRef numerical_zero in
 	  let jniInterfacePtrIn = self#mk_initial_memory_value jniInterfacePtr in
 	  self#set_variable_name jniInterfacePtrIn "jni$Ifp"
-      end ) stackPars	 
+      end ) stackPars
 
   method set_argument_structconstant par sc =
     match par.apar_location with
@@ -348,7 +351,7 @@ object (self)
         self#mk_memory_variable ~save_name:false memref (mkNumerical (4*i)) in
       let argvarin = self#mk_initial_memory_value argvar in
       begin
-	match sc with 
+	match sc with
 	| FieldValues l ->
 	  List.iter (fun (offset,ssc) ->
 	      let mref = self#mk_base_variable_reference argvarin in
@@ -412,7 +415,7 @@ object (self)
       end
     | _ -> ()
 
-  method set_class_member_variable_names 
+  method set_class_member_variable_names
     (classinfos:(string * function_interface_t * bool) list) =
     match classinfos with
     | [(classname, fintf, isStatic)] ->
@@ -584,7 +587,7 @@ object (self)
 	let vname = name ^ "$" ^ (string_of_int offset) in
 	begin
 	  self#set_variable_name iv vname ;
-	  if is_ptrto_known_struct ty then 
+	  if is_ptrto_known_struct ty then
 	    self#set_pointedto_struct_field_names 1 iv vname ty
 	end) stackPars ;
       List.iter (fun (reg,name,ty) ->
@@ -592,21 +595,24 @@ object (self)
 	let vname = name in
 	begin
 	  self#set_variable_name v vname ;
-	  if is_ptrto_known_struct ty then 
+	  if is_ptrto_known_struct ty then
 	    self#set_pointedto_struct_field_names 1 v vname ty
-	end) regPars 
+	end) regPars
     end
-    
+
 
   (* --------------------------------------------------- memory references -- *)
 
-  method mk_unknown_memory_reference = 
+  method mk_unknown_memory_reference =
     varmgr#memrefmgr#mk_unknown_reference
 
-  method mk_local_stack_reference = 
+  method mk_global_memory_reference =
+    varmgr#memrefmgr#mk_global_reference
+
+  method mk_local_stack_reference =
       varmgr#memrefmgr#mk_local_stack_reference
 
-  method mk_realigned_stack_reference = 
+  method mk_realigned_stack_reference =
       varmgr#memrefmgr#mk_realigned_stack_reference
 
   method mk_base_variable_reference (v:variable_t) =
@@ -707,13 +713,13 @@ object (self)
   val mutable constant_table = new NumericalCollections.table_t
 
   method get_scope = scope
-    
-  method start_transaction = 
+
+  method start_transaction =
     begin
       scope#startTransaction ;
       in_transaction <- true
     end
-      
+
   method end_transaction =
     let constant_assignments =
       constant_table#fold
@@ -724,8 +730,8 @@ object (self)
       constant_table <- new NumericalCollections.table_t ;
       List.rev constant_assignments
     end
-      
-  method mk_num_temp = 
+
+  method mk_num_temp =
     if in_transaction then
       scope#requestNumTmpVariable
     else
@@ -733,7 +739,7 @@ object (self)
       let v = scope#requestNumTmpVariable in
       let _ = scope#endTransaction in
       v
-       	
+
   method mk_sym_temp = scope#requestSymTmpVariable
 
   method private mk_temp (t:variable_type_t):variable_t =
@@ -751,12 +757,12 @@ object (self)
           self#mk_sym_temp in
       let _ = self#end_transaction in
       tmp
-      
+
   method request_num_constant (constant:numerical_t) =
     match constant_table#get constant with
     | Some v -> v
     | _ ->
-       let tmp = self#mk_num_temp in 
+       let tmp = self#mk_num_temp in
        begin constant_table#set constant tmp ; tmp end
 
   (* ------------------------------------------------ create new variables -- *)
@@ -774,17 +780,17 @@ object (self)
       self#mk_num_temp
     else
       let optName = match memref#get_base with
-        | BaseVar v when variable_names#has v#getName#getSeqNumber -> 
+        | BaseVar v when variable_names#has v#getName#getSeqNumber ->
 	   Some (variable_names#get v#getName#getSeqNumber)
         | _ -> None in
       let offset = ConstantOffset (offset,NoOffset) in
       let avar = varmgr#make_memory_variable ~size memref offset in
       let v = self#mk_variable avar in
       let _ = match optName with
-	  Some name -> 
+	  Some name ->
 	  let name = name ^ (memory_offset_to_string offset) in
-	  if save_name && (not (variable_names#has v#getName#getSeqNumber)) then 
-	    self#set_variable_name v name 
+	  if save_name && (not (variable_names#has v#getName#getSeqNumber)) then
+	    self#set_variable_name v name
 	  else ()
         | _ -> () in
       v
@@ -799,24 +805,75 @@ object (self)
       let avar = varmgr#make_memory_variable memref ~size offset in
       self#mk_variable avar
 
-  method mk_global_variable ?(size=4) (offset:numerical_t) =
-    self#mk_variable (varmgr#make_global_variable ~size offset)
-    
+  method mk_index_offset_global_memory_variable
+           ?(elementsize=4)
+           (base: numerical_t)
+           (offset: memory_offset_t): variable_t =
+    let _ = self#mk_global_variable base in
+    let addr = TR.tget_ok (numerical_to_doubleword base) in
+    let var =
+      self#mk_index_offset_memory_variable
+        self#mk_global_memory_reference (ConstantOffset (base, offset)) in
+    let _ =
+      if has_symbolic_address_name addr then
+        let ivar = self#mk_variable (varmgr#make_initial_memory_value var) in
+        let sname = get_symbolic_address_name addr in
+        let iname =
+          match offset with
+          | IndexOffset (v, _, NoOffset) ->
+             if variable_names#has v#getName#getSeqNumber then
+               let ivname = variable_names#get v#getName#getSeqNumber in
+               "[" ^ ivname ^ "]"
+             else
+               memory_offset_to_string offset
+          | _ -> memory_offset_to_string offset in
+        let vname = sname ^ iname in
+        begin
+          self#set_variable_name var vname;
+          self#set_variable_name ivar (vname ^ "_in")
+        end in
+    var
+
+  method mk_global_variable ?(size=4) ?(offset=NoOffset) (base: numerical_t) =
+    let default () =
+      self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
+    let addr = TR.tget_ok (numerical_to_doubleword base) in
+    if is_in_global_structvar addr then
+      (match get_structvar_base_offset addr with
+       | Some (base, off) ->
+          let basename = get_symbolic_address_name base in
+          (match off with
+           | Field ((fname, fckey), NoOffset) ->
+              let foffset = FieldOffset ((fname, fckey), NoOffset) in
+              let var =
+                self#mk_variable
+                  (varmgr#make_global_variable
+                     ~offset:foffset base#to_numerical) in
+              let vname = basename ^ (memory_offset_to_string foffset) in
+              let _ = self#set_variable_name var vname in
+              var
+           | _ ->
+              default ())
+       | _ ->
+          default ())
+    else
+      default ()
+
   method mk_register_variable (register:register_t) =
     self#mk_variable (varmgr#make_register_variable register)
-      
+
   method mk_flag_variable (flag: flag_t) =
     self#mk_variable (varmgr#make_flag_variable flag)
-      
-  method mk_cpu_register_variable (cpureg:cpureg_t) = 
+
+  method mk_cpu_register_variable (cpureg:cpureg_t) =
     self#mk_register_variable (CPURegister cpureg)
 
   method mk_fpu_register_variable (reg:int) =
     self#mk_register_variable (FloatingPointRegister reg)
-      
+
   method mk_mmx_register_variable (reg:int) =
     self#mk_register_variable (MmxRegister reg)
-      
+
   method mk_xmm_register_variable (reg:int) =
     self#mk_register_variable (XmmRegister reg)
 
@@ -825,7 +882,7 @@ object (self)
 
   method mk_debug_register_variable (reg:int) =
     self#mk_register_variable (DebugRegister reg)
-      
+
   method mk_double_register_variable (reg1:cpureg_t) (reg2:cpureg_t) =
     self#mk_register_variable (DoubleRegister (reg1, reg2))
 
@@ -869,31 +926,31 @@ object (self)
 
   method mk_bridge_value (address:ctxt_iaddress_t) (argnr:int) =
     self#mk_variable (varmgr#make_bridge_value address argnr)
-      
-  method mk_frozen_test_value 
+
+  method mk_frozen_test_value
     (var:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_frozen_test_value var taddr jaddr)
-      
+
   method mk_special_variable (name:string) =
     self#mk_variable (varmgr#make_special_variable name)
-      
+
   method mk_runtime_constant (name:string) =
     self#mk_variable (varmgr#make_runtime_constant name)
-      
+
   method mk_return_value (address:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_return_value address)
 
   method mk_ssa_register_value
            (r: register_t) (iaddr: ctxt_iaddress_t) (ty: btype_t) =
     self#mk_variable (varmgr#make_ssa_register_value r iaddr ty)
-      
+
   method mk_function_pointer_value
     (fname:string) (cname:string) (address:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_function_pointer_value fname cname address)
 
   method mk_calltarget_value (tgt:call_target_t) =
     self#mk_variable (varmgr#make_calltarget_value tgt)
-      
+
   method mk_side_effect_value (iaddr:ctxt_iaddress_t) ?(global=false) (arg:string) =
     self#mk_variable (varmgr#make_side_effect_value iaddr ~global arg)
 
@@ -901,20 +958,23 @@ object (self)
     self#mk_variable (varmgr#make_field_value sname offset fname)
 
   method mk_symbolic_value (x:xpr_t) =
-    self#mk_variable (varmgr#make_symbolic_value x)
+    match x with
+    | XVar v -> v
+    | _ -> self#mk_variable (varmgr#make_symbolic_value x)
 
   method mk_signed_symbolic_value (x: xpr_t) (s0: int) (sx: int) =
     self#mk_variable (varmgr#make_signed_symbolic_value x s0 sx)
 
   method private probe_global_var_field_values (v:variable_t) (iv:variable_t) =
-    let addr = varmgr#get_global_variable_address v in
-    if has_symbolic_address_name addr then
-      let vname = get_symbolic_address_name addr in
-      let btype = get_symbolic_address_type addr in
-      let _ = self#set_variable_name v vname in
-      let _ = self#set_variable_name iv (vname ^ "_in") in
-      if is_ptrto_known_struct btype then
-        self#set_pointedto_struct_field_names 1 iv vname btype
+    if varmgr#has_global_variable_address v then
+      let addr = varmgr#get_global_variable_address v in
+      if has_symbolic_address_name addr then
+        let vname = get_symbolic_address_name addr in
+        let btype = get_symbolic_address_type addr in
+        let _ = self#set_variable_name v vname in
+        let _ = self#set_variable_name iv (vname ^ "_in") in
+        if is_ptrto_known_struct btype then
+          self#set_pointedto_struct_field_names 1 iv vname btype
 
   method mk_initial_memory_value (v:variable_t):variable_t =
     if (self#is_memory_variable v) && (self#has_constant_offset v) then
@@ -922,7 +982,7 @@ object (self)
       let _ =
         if varmgr#is_global_variable v then
           self#probe_global_var_field_values v iv in
-      iv        
+      iv
     else
       let msg =
 	(LBLOCK [
@@ -936,13 +996,13 @@ object (self)
 	raise (BCH_failure msg)
       end
 
-  method mk_initial_register_value ?(level=0) (r:register_t) = 
+  method mk_initial_register_value ?(level=0) (r:register_t) =
     self#mk_variable (varmgr#make_initial_register_value r level)
-      
+
 
   (* -------------------------------------------- accessors and predicates -- *)
-								       
-  method has_initialized_call_target_value (v:variable_t) = 
+
+  method has_initialized_call_target_value (v:variable_t) =
     H.mem initial_call_target_values v#getName#getSeqNumber
 
   method get_initialized_call_target_value (v:variable_t) =
@@ -1000,21 +1060,21 @@ object (self)
       raise
         (BCH_failure
            (LBLOCK [STR "No virtual target found for "; v#toPretty]))
-      
+
   method get_frozen_variable (variable:variable_t) =
-    varmgr#get_frozen_variable variable 
-      
+    varmgr#get_frozen_variable variable
+
   method private get_register_variables =
     List.filter varmgr#is_register_variable self#get_variables
-      
+
   method private get_function_pointers =
     List.filter varmgr#is_function_pointer self#get_variables
 
   method private get_side_effect_variables =
     List.filter self#is_sideeffect_value_derivative self#get_variables
-      
+
   method get_local_variables =
-    let is_local v = 
+    let is_local v =
       varmgr#is_local_variable v && varmgr#is_stack_variable v in
     List.filter is_local self#get_variables
 
@@ -1025,15 +1085,18 @@ object (self)
       && ((not (self#is_local_variable v))
           || (self#is_stack_parameter_variable v)) in
     List.filter is_external self#get_variables
-      
+
   method get_bridge_values_at (callsite:ctxt_iaddress_t) =
     List.filter (self#is_bridge_value_at callsite) self#get_variables
+
+  method get_ssa_values_at (cia: ctxt_iaddress_t) =
+    List.filter (self#is_ssa_register_value_at cia) self#get_variables
 
   method get_local_stack_variables =
     let is_local v = varmgr#is_local_variable v && varmgr#is_stack_variable v in
     List.filter is_local self#get_variables
 
-  method get_parent_stack_variables = 
+  method get_parent_stack_variables =
     List.filter varmgr#is_stack_parameter_variable self#get_variables
 
   method get_mips_argument_values =
@@ -1042,7 +1105,7 @@ object (self)
   method get_arm_argument_values =
     List.filter varmgr#is_initial_arm_argument_value self#get_variables
 
-  method get_realigned_stack_variables = 
+  method get_realigned_stack_variables =
     List.filter varmgr#is_realigned_stack_variable self#get_variables
 
   method get_stack_parameter_index (v:variable_t) =
@@ -1088,7 +1151,7 @@ object (self)
 
   method get_register = varmgr#get_register
 
-  method get_pointed_to_function_name = varmgr#get_pointed_to_function_name 
+  method get_pointed_to_function_name = varmgr#get_pointed_to_function_name
 
   method get_call_site = varmgr#get_call_site
 
@@ -1101,7 +1164,7 @@ object (self)
 
   method get_var_count = List.length self#get_variables
 
-  method get_globalvar_count = 
+  method get_globalvar_count =
     List.length (List.filter self#is_global_variable self#get_variables)
 
   method get_argvar_count =
@@ -1113,20 +1176,46 @@ object (self)
   method get_sideeffvar_count =
     List.length (List.filter self#is_sideeffect_value self#get_variables)
 
-  method is_global_variable (v:variable_t) = 
+  method is_global_variable (v:variable_t) =
     (varmgr#is_global_variable v) ||
       ((varmgr#is_initial_memory_value v) &&
 	  (let iv = varmgr#get_initial_memory_value_variable v in
-	  self#is_global_variable iv))
+	   self#is_global_variable iv))
 
-  method get_global_variable_address (v:variable_t) =
-    if varmgr#is_global_variable v then
-      varmgr#get_global_variable_address v
+  method has_global_variable_address (v: variable_t): bool =
+    varmgr#has_global_variable_address v
+
+  method get_global_variable_address (v: variable_t): doubleword_int =
+    if (varmgr#is_global_variable v) then
+      if varmgr#has_global_variable_address v then
+        varmgr#get_global_variable_address v
+      else
+        let msg =
+          LBLOCK [
+              STR "global variable does not have a numerical offset: ";
+              v#toPretty] in
+        begin
+          ch_error_log#add "function environment" msg;
+          raise (BCH_failure msg)
+        end
     else if varmgr#is_initial_memory_value v then
-      self#get_global_variable_address (varmgr#get_initial_memory_value_variable v)
+      let ivar = varmgr#get_initial_memory_value_variable v in
+      if varmgr#has_global_variable_address v then
+        self#get_global_variable_address ivar
+      else
+        let msg =
+          LBLOCK [
+              STR "initial memory value of global variable does not have ";
+              STR "a numerical offset: ";
+              v#toPretty] in
+        begin
+          ch_error_log#add "function environment" msg;
+          raise (BCH_failure msg)
+        end
     else
       let msg =
-        LBLOCK [STR "variable is not a global variable: "; v#toPretty] in
+        LBLOCK [
+            STR "variable is not a global variable: "; v#toPretty] in
       begin
 	ch_error_log#add "function environment" msg;
 	raise (BCH_failure msg)
@@ -1158,7 +1247,7 @@ object (self)
   method is_unknown_offset_memory_variable =
     varmgr#is_unknown_offset_memory_variable
 
-  method get_memory_reference (v:variable_t) = 
+  method get_memory_reference (v:variable_t) =
     if self#is_initial_memory_value v then
       let iv = varmgr#get_initial_memory_value_variable v in
       varmgr#get_memvar_reference iv
@@ -1300,6 +1389,10 @@ object (self)
 
   method is_register_variable = varmgr#is_register_variable
 
+  method is_ssa_register_value = varmgr#is_ssa_register_value
+
+  method is_ssa_register_value_at = varmgr#is_ssa_register_value_at
+
   method is_initial_register_value = varmgr#is_initial_register_value
 
   method is_initial_mips_argument_value = varmgr#is_initial_mips_argument_value
@@ -1308,9 +1401,9 @@ object (self)
 
   method is_function_initial_value = varmgr#is_function_initial_value
 
-  method is_initial_memory_value = varmgr#is_initial_memory_value 
+  method is_initial_memory_value = varmgr#is_initial_memory_value
 
-  method is_initial_value (v:variable_t) = 
+  method is_initial_value (v:variable_t) =
     self#is_initial_memory_value v || self#is_initial_register_value v
 
   method get_init_value_variable (v:variable_t) =
@@ -1332,7 +1425,7 @@ object (self)
          begin
            ch_error_log#add "function environment" msg ;
            raise (BCH_failure msg)
-         end           
+         end
     else
       let msg =
         LBLOCK [
@@ -1342,7 +1435,10 @@ object (self)
 	ch_error_log#add "function environment" msg ;
 	raise (BCH_failure msg)
       end
-      
+
+  method get_ssa_register_value_register_variable (v: variable_t) =
+    self#mk_register_variable (varmgr#get_ssa_register_value_register v)
+
   method get_initial_register_value_register (v:variable_t) =
     varmgr#get_initial_register_value_register v
 
@@ -1380,7 +1476,7 @@ object (self)
 end
 
 
-class function_info_t 
+class function_info_t
         (faddr: doubleword_int)
         (varmgr: variable_manager_int)
         (invio: invariant_io_int)
@@ -1393,16 +1489,19 @@ object (self)
    * analysis results.                                                         *
    * ------------------------------------------------------------------------- *)
   val env = new function_environment_t faddr varmgr
-  val constant_table = new VariableCollections.table_t    (* constants *)
-  val calltargets = H.create 5                            (* call-targets *)
+  val constant_table = new VariableCollections.table_t          (* constants *)
+  val calltargets = H.create 5                               (* call-targets *)
 
   val mutable base_pointers = new VariableCollections.set_t (* base-pointers *)
-  val mutable stack_adjustment = None                     (* stack-adjustment *)
-  val saved_registers = H.create 3                 (* saved-registers -- not read *)
+  val mutable stack_adjustment = None                    (* stack-adjustment *)
+  val saved_registers = H.create 3            (* saved-registers -- not read *)
 
-  val cc_user_to_setter = H.create 3                      (* cc-users *)
-  val test_expressions = H.create 3                       (* test-expressions *)
-  val test_variables   = H.create 3                       (* test-variables *)
+  val cc_user_to_setter = H.create 3                             (* cc-users *)
+  val test_expressions = H.create 3                      (* test-expressions *)
+  val test_variables = H.create 3                          (* test-variables *)
+
+  val cvariable_types = H.create 3      (* types of constant-value variables *)
+
   (* ------------------------------------------------------------------------- *)
 
   (* Function info transient state: ------------------------------------------ *
@@ -1423,10 +1522,10 @@ object (self)
   val mutable sideeffects_changed = false
   val mutable call_targets_set = false
   val nonreturning_calls = new StringCollections.set_t
-  val mutable invariants_to_be_reset = false                         
+  val mutable invariants_to_be_reset = false
   (* ------------------------------------------------------------------------- *)
 
-                                     
+
   method set_instruction_bytes (ia:ctxt_iaddress_t) (b:string) =
     H.add instrbytes ia b
 
@@ -1441,6 +1540,48 @@ object (self)
                 STR ia;
                 STR " in function ";
                 faddr#toPretty]))
+
+  method set_btype (v: variable_t) (ty: btype_t) =
+    let vix = v#getName#getSeqNumber in
+    let bix = bcd#index_typ ty in
+    let entry: int list =
+      if H.mem cvariable_types vix then
+        H.find cvariable_types vix
+      else
+        [] in
+    if List.mem bix entry then
+      ()
+    else
+      H.replace cvariable_types vix (bix :: entry)
+
+  method has_btype (v: variable_t): bool =
+    let vix = v#getName#getSeqNumber in
+    H.mem cvariable_types vix
+
+  method get_btype (v: variable_t): btype_t =
+    let vix = v#getName#getSeqNumber in
+    if H.mem cvariable_types vix then
+      let btypes = List.map bcd#get_typ (H.find cvariable_types vix) in
+      btype_join btypes
+    else
+      TUnknown []
+
+  method get_btypes (v: variable_t): btype_t list =
+    let vix = v#getName#getSeqNumber in
+    if H.mem cvariable_types vix then
+      List.map bcd#get_typ (H.find cvariable_types vix)
+    else
+      []
+
+  method get_btype_table: (int * int * int list) list =
+    let result = ref [] in
+    let _ =
+      H.iter (fun vix bixs ->
+          let btypes = List.map bcd#get_typ bixs in
+          let jbtype = btype_join btypes in
+          let entry = (vix, bcd#index_typ jbtype, bixs) in
+          result := entry :: !result) cvariable_types in
+    !result
 
     (*
   method set_dynlib_stub (t:call_target_t) = dynlib_stub <- Some t
@@ -1473,7 +1614,7 @@ object (self)
   method ftinv = tinvio
 
   method fvarinv = varinvio
-               
+
   method iinv (iaddr: ctxt_iaddress_t): location_invariant_int =
     invio#get_location_invariant iaddr
 
@@ -1492,10 +1633,10 @@ object (self)
 
   method schedule_invariant_reset = invariants_to_be_reset <- true
 
-  method were_invariants_reset = invariants_to_be_reset      
+  method were_invariants_reset = invariants_to_be_reset
 
-  method get_name = 
-    if functions_data#has_function_name self#get_address then 
+  method get_name =
+    if functions_data#has_function_name self#get_address then
       (functions_data#get_function self#get_address)#get_function_name
     else
       self#get_address#to_hex_string
@@ -1503,7 +1644,7 @@ object (self)
   method set_incomplete = complete <- false
   method set_complete = complete <- true
   method is_complete = complete
-    
+
   method set_stack_adjustment (a:int option) =
     let _ =
       match a with
@@ -1513,19 +1654,19 @@ object (self)
            (LBLOCK [self#get_address#toPretty; STR ": "; INT n])
       | _ -> () in
     stack_adjustment <- a
-      
+
   method get_stack_adjustment = stack_adjustment
-    
+
   method add_constant (v:variable_t) (c:numerical_t) = constant_table#set v c
-                                                     
-  method has_constant (v:variable_t) = 
+
+  method has_constant (v:variable_t) =
     match constant_table#get v with Some _ -> true | _ -> false
-                                                        
+
   method get_constant (v:variable_t) =
     match constant_table#get v with
       Some c -> c
     | _ -> raise (Invocation_error "function_info#get_constant")
-            
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * record register arguments                                                 *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
@@ -1540,7 +1681,7 @@ object (self)
 	savedReg#set_save_address iaddr ;
 	H.add saved_registers regstr savedReg
       end
-	
+
   method restore_register (iaddr:ctxt_iaddress_t) (reg:register_t) =
     let regstr = register_to_string reg in
     if H.mem saved_registers regstr then
@@ -1564,28 +1705,28 @@ object (self)
        LBLOCK [ STR "Saved Registers" ; NL ; STR (string_repeat "~" 80) ; NL ;
                 LBLOCK l ; NL ;
 		STR (string_repeat "~" 80) ; NL]
-      
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * record return values                                                    *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-    
+
   method record_return_value (iaddr:ctxt_iaddress_t) (x:xpr_t) =
     H.replace return_values iaddr x
-      
+
   method get_return_values = H.fold (fun _ x a -> x :: a) return_values []
-    
+
   method return_values_to_pretty =
     let p = ref [] in
     let _ = H.iter (fun iaddr x ->
       let pp = LBLOCK [ STR iaddr ; STR ": " ; pr_expr x ; NL ] in
       p := pp :: !p ) return_values in
     LBLOCK [ STR "Return values: (" ; INT (H.length return_values) ; STR ")" ; NL ;
-	     INDENT (3, LBLOCK !p) ; NL ]									 
-      
+	     INDENT (3, LBLOCK !p) ; NL ]
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * record side effects                                                     *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-    
+
   method record_sideeffect (iaddr: ctxt_iaddress_t) (s:sideeffect_t) =
     let index = id#index_sideeffect s in
     if H.mem sideeffects iaddr then
@@ -1609,13 +1750,13 @@ object (self)
 
   method private make_postconditions (xlist:xpr_t list) = ([],[])
 
-      
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * create a function summary from locally available information             *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method private add_fts_parameter (par: fts_parameter_t) =
-    let _ = 
+    let _ =
       if H.mem fts_parameters par.apar_name then
 	if (fts_parameter_compare par (H.find fts_parameters par.apar_name)) = 0
 	|| is_unknown_type par.apar_type then
@@ -1630,7 +1771,7 @@ object (self)
     let l = ref [] in
     let _ = H.iter (fun _ v -> l := v :: !l) fts_parameters in
     !l
-     
+
   method set_global_par (gaddr:doubleword_int) (btype:btype_t) =
     self#add_fts_parameter (mk_global_parameter ~btype gaddr)
 
@@ -1638,10 +1779,10 @@ object (self)
     let set_defaultpar () =
       let par = mk_stack_parameter ~btype index in
       begin ignore(self#add_fts_parameter par) ; par end in
-    match user_summary with 
+    match user_summary with
     | Some summary ->
       begin
-	try List.find (fun p -> 
+	try List.find (fun p ->
 	  match p.apar_location with
 	  | StackParameter i -> i = index
 	  | _ -> false) summary#get_parameters
@@ -1653,7 +1794,7 @@ object (self)
   method set_register_par (reg:register_t) (btype:btype_t) =
     self#add_fts_parameter (mk_register_parameter ~btype reg)
 
-  method set_nonreturning = 
+  method set_nonreturning =
     if nonreturning then () else
       let fa = self#get_address in
       begin
@@ -1666,7 +1807,7 @@ object (self)
      - user applications function summary
      - summary created from present analysis results
      - default summary
-     
+
      The summary returned is created as follows:
      - api:
          (1) take user application function summary if present
@@ -1681,9 +1822,9 @@ object (self)
      - doc:
          (1) take user application function doc if present
   *)
-  method get_summary  = 
+  method get_summary  =
     let fintf = match user_summary with
-      | Some summary -> 
+      | Some summary ->
 	 let sumintf = summary#get_function_interface in
          let sumfts = sumintf.fintf_type_signature in
 	 let parameters =
@@ -1712,7 +1853,7 @@ object (self)
     make_function_summary ~fintf ~sem ~doc
 
   method private get_function_semantics =
-    let usem = match user_summary with 
+    let usem = match user_summary with
       | Some summary -> Some summary#get_function_semantics
       | _ -> None in
     let fsem =
@@ -1825,7 +1966,7 @@ object (self)
     try
       let parameters =
         List.fold_left (fun acc v ->
-            match env#get_stack_parameter_index v with 
+            match env#get_stack_parameter_index v with
             | Some i -> (i,v) :: acc
             | _ -> acc) [] env#get_parent_stack_variables in
       let parameters =
@@ -1834,7 +1975,7 @@ object (self)
         List.fold_left (fun acc (nr,v) ->
             match env#get_stack_parameter_index v with
             | Some ix -> (mk_stack_parameter ix) :: acc
-            | _ -> acc) [] parameters in  
+            | _ -> acc) [] parameters in
       let adj = self#get_stack_adjustment in
       let cc = match adj with
         | Some a -> if a > 0 then "stdcall" else "cdecl"
@@ -1876,7 +2017,7 @@ object (self)
   method set_bc_summary (fs: function_summary_int) =
     user_summary <- Some fs
 
-  method read_xml_user_summary (node:xml_element_int) = 
+  method read_xml_user_summary (node:xml_element_int) =
     try
       let summary = read_xml_function_summary node in
       begin
@@ -1885,7 +2026,7 @@ object (self)
 	List.iter (fun p -> ignore (self#add_fts_parameter p))
 	  summary#get_function_interface.fintf_type_signature.fts_parameters;
 	List.iter (fun p -> match p with
-	| PreIncludes(ArgValue par,sc) -> 
+	| PreIncludes(ArgValue par,sc) ->
 	  self#env#set_argument_structconstant par sc
 	| _ -> ()) summary#get_preconditions;
 	chlog#add "user function summary" (LBLOCK [self#get_address#toPretty])
@@ -1940,24 +2081,24 @@ object (self)
       user_summary <- Some summary ;
       List.iter (fun p -> ignore (self#add_fts_parameter p))
 	summary#get_function_interface.fintf_type_signature.fts_parameters
-    end      
+    end
 
   method summary_to_pretty = self#get_summary#toPretty
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * setters and users of condiditon codes; conditional jumps                 *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-    
+
   method connect_cc_user
            (user_addr:ctxt_iaddress_t) (setter_addr:ctxt_iaddress_t) =
     begin
       H.replace cc_setter_to_user setter_addr user_addr ;
       H.replace cc_user_to_setter user_addr setter_addr
     end
-      
-  method has_associated_cc_setter (user_address:ctxt_iaddress_t) = 
+
+  method has_associated_cc_setter (user_address:ctxt_iaddress_t) =
     H.mem cc_user_to_setter user_address
-      
+
   method get_associated_cc_setter (user_address:ctxt_iaddress_t) =
     if H.mem cc_user_to_setter user_address then
       H.find cc_user_to_setter user_address
@@ -1965,10 +2106,10 @@ object (self)
       raise (BCH_failure
                (LBLOCK [STR "function_info#get_associated_condition: ";
 			STR user_address ]))
-	
-  method has_associated_cc_user (setter_address:ctxt_iaddress_t) = 
+
+  method has_associated_cc_user (setter_address:ctxt_iaddress_t) =
     H.mem cc_setter_to_user setter_address
-      
+
   method get_associated_cc_user (setter_address:ctxt_iaddress_t) =
     if H.mem cc_setter_to_user setter_address then
       H.find cc_setter_to_user setter_address
@@ -1977,37 +2118,37 @@ object (self)
         (BCH_failure
            (LBLOCK [STR "function_info#get_associated_jump: ";
                     STR setter_address ]))
-	
-  method set_test_expr (iaddr:ctxt_iaddress_t) (x:xpr_t) = 
+
+  method set_test_expr (iaddr:ctxt_iaddress_t) (x:xpr_t) =
     H.replace test_expressions iaddr x
-      
+
   method get_num_conditions_associated = H.length cc_user_to_setter
-    
+
   method get_num_test_expressions = H.length test_expressions
-    
-  method get_test_expr (iaddr:ctxt_iaddress_t) = 
-    if H.mem test_expressions iaddr then 
+
+  method get_test_expr (iaddr:ctxt_iaddress_t) =
+    if H.mem test_expressions iaddr then
       H.find test_expressions iaddr
-    else 
+    else
       random_constant_expr
 
   method get_test_exprs =
     let result = ref [] in
     let _ = H.iter (fun ix v -> result := (ix,v) :: !result) test_expressions in
     !result
-      
+
   method set_test_variables
            (test_iaddr: ctxt_iaddress_t)
            (vars: (variable_t * variable_t) list) =
     H.replace test_variables test_iaddr vars
-      
+
   method get_test_variables (test_iaddr:ctxt_iaddress_t) =
     if H.mem test_variables test_iaddr then
       H.find test_variables test_iaddr
     else []
-      
+
   method has_test_expr (iaddr:ctxt_iaddress_t) = H.mem test_expressions iaddr
-    
+
   method private conditional_jump_state_to_pretty =
     let p = ref [] in
     begin
@@ -2016,16 +2157,16 @@ object (self)
 	test_expressions ;
       LBLOCK [ STR "Test expressions: " ; NL ; (LBLOCK !p) ; NL ]
     end
-      
-  method private write_xml_cc_users (node:xml_element_int) = 
+
+  method private write_xml_cc_users (node:xml_element_int) =
     let l = ref [] in
     let _ = H.iter (fun k v -> l := (k,v) :: !l) cc_user_to_setter in
     node#appendChildren (List.map (fun (k,v) ->
       let cNode = xmlElement "user" in
       let set = cNode#setAttribute in
       begin set "src" k ; set "tgt" v ; cNode end ) !l)
-           
-  method private read_xml_cc_users (node:xml_element_int) = 
+
+  method private read_xml_cc_users (node:xml_element_int) =
     let getcc = node#getTaggedChildren in
     List.iter (fun cNode ->
       let get = cNode#getAttribute in
@@ -2064,10 +2205,10 @@ object (self)
       end
 
   method has_call_target (i:ctxt_iaddress_t) =  H.mem calltargets i
-	
+
   method get_callees =	H.fold (fun _ v a -> v::a) calltargets []
-    
-  method get_callees_located = 
+
+  method get_callees_located =
     H.fold (fun k v a -> (k,v)::a) calltargets []
 
   method get_call_count = H.length calltargets
@@ -2082,16 +2223,16 @@ object (self)
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * base pointers                                                             *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-      
+
   method add_base_pointer (var:variable_t) =
     let _ = track_function
               self#a (LBLOCK [ STR "add base pointer: " ; var#toPretty ]) in
-    base_pointers#add var 
-    
+    base_pointers#add var
+
   method get_base_pointers = base_pointers#toList
-    
+
   method is_base_pointer (var:variable_t) = base_pointers#has var
-    
+
   method base_pointers_to_pretty =
     if base_pointers#isEmpty then
       LBLOCK [
@@ -2105,7 +2246,7 @@ object (self)
       LBLOCK [
           STR (string_repeat "~" 80);
           NL;
-          STR "Base pointers: "; 
+          STR "Base pointers: ";
 	  pretty_print_list
             base_pointers#toList env#variable_name_to_pretty "" ", " "";
 	  NL;
@@ -2129,12 +2270,12 @@ object (self)
         new variable_t
           (new symbol_t ~seqnr:(geti "vx") (get "vn")) NUM_VAR_TYPE in
       self#add_base_pointer var) (node#getTaggedChildren "base")
-	
-	
+
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * jump table targets                                                        *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-	
+
   method set_jumptable_target
            (jumpAddr:ctxt_iaddress_t)
            (base:doubleword_int)
@@ -2236,7 +2377,7 @@ object (self)
            (BCH_failure
               (LBLOCK [
                    STR iaddr;
-                   STR ": "; 
+                   STR ": ";
 		   STR "Jump target is not a dll target"]))
     else
       raise
@@ -2244,9 +2385,9 @@ object (self)
            (LBLOCK [STR iaddr; STR ": "; STR "No jump target found"]))
 
   method set_unknown_jumptarget (jumpAddr:ctxt_iaddress_t) =
-    if H.mem jump_targets jumpAddr then () else 
+    if H.mem jump_targets jumpAddr then () else
       H.add jump_targets jumpAddr UnknownJumpTarget
-      
+
   method get_jump_target (jumpAddr:ctxt_iaddress_t) =
     if H.mem jump_targets jumpAddr then
       H.find jump_targets jumpAddr
@@ -2261,7 +2402,7 @@ object (self)
   method get_indirect_jumps_count = H.length jump_targets
 
   method get_unknown_jumps_count =
-    H.fold (fun _ v acc -> 
+    H.fold (fun _ v acc ->
       match v with UnknownJumpTarget -> acc+1 | _ -> acc) jump_targets 0
 
   method get_dll_jumps_count =
@@ -2269,7 +2410,7 @@ object (self)
       match v with DllJumpTarget _ -> acc+1 | _ -> acc) jump_targets 0
 
   method get_jumptable_count =
-    H.fold (fun _ v acc -> 
+    H.fold (fun _ v acc ->
       match v with JumptableTarget _ -> acc+1 | _ -> acc) jump_targets 0
 
   method get_offsettable_count =
@@ -2289,12 +2430,12 @@ object (self)
         | _ -> acc) jump_targets 0
 
   method has_jump_target (jumpAddr:ctxt_iaddress_t) =
-    H.mem jump_targets jumpAddr && 
+    H.mem jump_targets jumpAddr &&
       (match H.find jump_targets jumpAddr with
        | UnknownJumpTarget -> false | _ -> true)
 
   method has_unknown_jump_target =
-    H.fold (fun _ v acc -> 
+    H.fold (fun _ v acc ->
         acc
         || match v with
            | UnknownJumpTarget -> true
@@ -2317,19 +2458,19 @@ object (self)
         let a = cnode#getAttribute "a" in
         H.add calltargets a (read_xml_call_target_info cnode))
               (node#getTaggedChildren "ctinfo")
-    
+
   method private write_xml_constants (node:xml_element_int) =
     let var_to_xml (v,n) =
       let varNode = xmlElement "var" in
       let set = varNode#setAttribute in
       let seti = varNode#setIntAttribute in
-      begin 
+      begin
 	seti "id" v#getName#getSeqNumber ;
 	set "name" v#getName#getBaseName ;
 	set "value" n#toString ;
 	varNode
       end in
-    node#appendChildren (List.map var_to_xml constant_table#listOfPairs) 
+    node#appendChildren (List.map var_to_xml constant_table#listOfPairs)
 
   method private read_xml_constants (node:xml_element_int) =
     List.iter (fun n ->
@@ -2338,9 +2479,9 @@ object (self)
       let v = new variable_t (new symbol_t ~seqnr vn) NUM_VAR_TYPE in
       constant_table#set v (mkNumericalFromString (n#getAttribute "value")))
       (node#getTaggedChildren "var")
-      
+
   method private constants_from_xml (xconstants:xml_element_int) = ()
-         
+
   method private write_xml_test_expressions (node:xml_element_int) =
     let l = ref [] in
     let _ = H.iter (fun k e -> l := (k,e) :: !l) test_expressions in
@@ -2364,7 +2505,7 @@ object (self)
         (get "addr")
         (varmgr#vard#xd#read_xml_xpr eNode))
       (getcc "expr")
-      
+
   method private write_xml_test_variables (node:xml_element_int) =
     let aux (v,f) =
       let vNode = xmlElement "fvar" in
@@ -2415,7 +2556,7 @@ object (self)
     node#appendChildren
       (List.map (fun s ->
            let n = xmlElement "sr" in begin s#write_xml n ; n end) savedregs)
-    
+
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
     let ccNode = xmlElement "cc-users" in
@@ -2429,10 +2570,10 @@ object (self)
     let srNode = xmlElement "saved-registers" in
     let espNode = xmlElement "stack-adjustment" in
     begin
-      self#write_xml_constants cNode ; 
-      self#write_xml_cc_users ccNode ; 
+      self#write_xml_constants cNode ;
+      self#write_xml_cc_users ccNode ;
       self#write_xml_test_expressions teNode ;
-      self#write_xml_test_variables tvNode ; 
+      self#write_xml_test_variables tvNode ;
       (* self#write_xml_jump_targets jtNode ; *)
       self#write_xml_call_targets ctNode ;
       self#write_xml_base_pointers bpNode ;
@@ -2440,11 +2581,11 @@ object (self)
       self#write_xml_saved_registers srNode ;
       (match stack_adjustment with
        | Some i -> espNode#setIntAttribute "adj" i | _ -> ()) ;
-      append [ ccNode ; tvNode ; teNode ; cNode ; 
+      append [ ccNode ; tvNode ; teNode ; cNode ;
 	       ctNode ; jtNode ; bpNode ; vvNode ;
                srNode ; espNode ] ;
     end
-      
+
   method read_xml (node:xml_element_int) =
     let hasc = node#hasOneTaggedChild in
     try
@@ -2453,12 +2594,12 @@ object (self)
 	self#read_xml_constants (getc "constants") ;
         (if hasc "call-targets" then
            self#read_xml_call_targets (getc "call-targets")) ;
-	(if hasc "cc-users" then self#read_xml_cc_users (getc "cc-users")) ; 
-	(if hasc "test-variables" then 
+	(if hasc "cc-users" then self#read_xml_cc_users (getc "cc-users")) ;
+	(if hasc "test-variables" then
 	    self#read_xml_test_variables (getc "test-variables")) ;
 	(if hasc "test-expressions" then
 	    self#read_xml_test_expressions (getc "test-expressions")) ;
-	(if hasc "base-pointers" then 
+	(if hasc "base-pointers" then
 	   self#read_xml_base_pointers (getc "base-pointers")) ;
         (if hasc "variable-names" then
            self#read_xml_variable_names (getc "variable-names")) ;
@@ -2485,13 +2626,13 @@ object (self)
 	   self#get_address#toPretty;
            STR ")";
            NL]
-    
-  method state_to_pretty = 
+
+  method state_to_pretty =
     LBLOCK [self#conditional_jump_state_to_pretty; NL]
-      
+
 end
-  
-  
+
+
 let function_infos = H.create 13
 
 
@@ -2521,7 +2662,7 @@ let load_finfo_userdata (finfo: function_info_int) (faddr: doubleword_int) =
 let load_function_info ?(reload=false) (faddr:doubleword_int) =
   let is_java_native_method () =
     let names = (functions_data#get_function faddr)#get_names in
-    List.exists is_java_native_method_name names in 
+    List.exists is_java_native_method_name names in
   if H.mem function_infos faddr#index && (not reload) then
     H.find function_infos faddr#index
   else if functions_data#has_function faddr then
@@ -2553,10 +2694,10 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
 	      (functions_data#get_function faddr)#get_names in
 	  match get_java_native_method_signature faddr#to_hex_string names with
 	  | Some api -> finfo#set_java_native_method_signature api
-	  | _ -> finfo#set_unknown_java_native_method_signature in  
-      begin 
+	  | _ -> finfo#set_unknown_java_native_method_signature in
+      begin
         H.replace function_infos faddr#index finfo ;
-        finfo 
+        finfo
       end
     with
     | CHFailure p | BCH_failure p ->

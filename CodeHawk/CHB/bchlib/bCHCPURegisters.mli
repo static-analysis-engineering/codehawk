@@ -34,8 +34,8 @@ open CHXmlDocument
 open BCHLibTypes
 
 
-(** {b Encapsulation of architecture-specific registers into a generic
-    register type}*)
+(** Encapsulation of architecture-specific registers into a generic
+    register type*)
 
 
 (** {1 Conversion functions} *)
