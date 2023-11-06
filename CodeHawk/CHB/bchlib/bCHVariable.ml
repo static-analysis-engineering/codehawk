@@ -297,6 +297,11 @@ object (self:'a)
     | AuxiliaryVariable (SSARegisterValue _) -> true
     | _ -> false
 
+  method is_ssa_register_value_at (iaddr: ctxt_iaddress_t): bool =
+    match denotation with
+    | AuxiliaryVariable (SSARegisterValue (_, a, _)) -> a = iaddr
+    | _ -> false
+
   method is_in_test_jump_range (a:ctxt_iaddress_t) =
     match denotation with
     | AuxiliaryVariable (FrozenTestValue (_,taddr,jaddr)) -> taddr < a && a <= jaddr
@@ -428,6 +433,15 @@ object (self:'a)
 		  self#toPretty]))
       end
 
+  method get_ssa_register_value_register =
+    match denotation with
+    | AuxiliaryVariable (SSARegisterValue (r, _, _)) -> r
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "get_ssa_register_value_register: "; self#toPretty]))
+
   method get_initial_memory_value_variable =
     match denotation with
     | AuxiliaryVariable (InitialMemoryValue v) -> v
@@ -485,7 +499,7 @@ object (self:'a)
 
   method is_bridge_value_at (iaddr:ctxt_iaddress_t) =
     match denotation with
-    | AuxiliaryVariable (BridgeVariable (a,_)) -> a = iaddr
+    | AuxiliaryVariable (BridgeVariable (a, _)) -> a = iaddr
     | _ -> false
 
   method is_symbolic_value =
@@ -671,8 +685,8 @@ object (self)
   method make_flag_variable (flag: flag_t) =
     self#mk_variable (CPUFlagVariable flag)
 
-  method make_global_variable ?(size=4) (n:numerical_t) =
-    let offset = ConstantOffset (n, NoOffset) in
+  method make_global_variable ?(size=4) ?(offset=NoOffset) (n:numerical_t) =
+    let offset = ConstantOffset (n, offset) in
     let memref = memrefmgr#mk_global_reference in
     self#make_memory_variable ~size memref offset
 
@@ -725,7 +739,15 @@ object (self)
   method get_initial_memory_value_variable (v:variable_t) =
     (self#get_variable v)#get_initial_memory_value_variable
 
-  method get_global_variable_address (v:variable_t) =
+  method has_global_variable_address (v: variable_t): bool =
+    let memref = self#get_memvar_reference v in
+    if memref#is_global_reference then
+      let offset = self#get_memvar_offset v in
+      is_constant_offset offset
+    else
+      false
+
+  method get_global_variable_address (v: variable_t) =
     let memref = self#get_memvar_reference v in
     if memref#is_global_reference then
       let offset = self#get_memvar_offset v in
@@ -733,9 +755,17 @@ object (self)
         let noffset = get_total_constant_offset offset in
         TR.tget_ok (numerical_to_doubleword noffset)
       else
-        raise_memref_type_error memref (STR "Global reference")
+        raise_memref_type_error
+          memref
+          (LBLOCK [
+               STR "Global reference: non-constant offset: ";
+               v#toPretty])
     else
-      raise_memref_type_error memref (STR "Global reference")
+      raise_memref_type_error
+        memref
+        (LBLOCK [
+             STR "Global reference: not a global reference: ";
+             v#toPretty])
 	
   method get_pointed_to_function_name (v:variable_t) =
     (self#get_variable v)#get_pointed_to_function_name
@@ -763,6 +793,9 @@ object (self)
 
   method get_se_argument_descriptor (v:variable_t) =
     (self#get_variable v)#get_se_argument_descriptor
+
+  method get_ssa_register_value_register (v: variable_t) =
+    (self#get_variable v)#get_ssa_register_value_register
     
   method get_initial_register_value_register (v:variable_t) =
     (self#get_variable v)#get_initial_register_value_register
@@ -824,8 +857,10 @@ object (self)
 		 when (let memref = self#get_memvar_reference v2 in
                        match memref#get_base with 
 		  BGlobal -> true | _ -> false) -> 1
-	    | (AuxiliaryVariable (FunctionReturnValue _), _)  -> -1
-	    | (_, AuxiliaryVariable (FunctionReturnValue _))  -> 1
+	    | (AuxiliaryVariable (FunctionReturnValue _), _) -> -1
+	    | (_, AuxiliaryVariable (FunctionReturnValue _)) -> 1
+            | (AuxiliaryVariable (SSARegisterValue _), _) -> -1
+            | (_, AuxiliaryVariable (SSARegisterValue _)) -> 1
 	    | (MemoryVariable _, MemoryVariable _) ->
 	      begin
 		let memref1 = self#get_memvar_reference v1 in
@@ -910,8 +945,11 @@ object (self)
     if self#is_basevar_memory_variable v then
       (self#get_memvar_reference v)#get_external_base
     else
-      raise (BCH_failure (LBLOCK [ STR "variable does not have an external base: " ;
-                                   v#toPretty ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "variable does not have an external base: " ;
+                v#toPretty ]))
 
   method get_memval_basevar (v:variable_t) =
     if self#is_basevar_memory_value v then
@@ -923,9 +961,29 @@ object (self)
                     STR "memory variable";
                     v#toPretty]))
 
-  method has_constant_offset (v:variable_t) =
-    (self#has_var v) && (self#has_memvar v)
-    && is_constant_offset (self#get_memvar_offset v)
+  method is_constant_offset (offset: memory_offset_t) =
+    match offset with
+    | NoOffset -> true
+    | ConstantOffset (_, suboffset) -> self#is_constant_offset suboffset
+    | IndexOffset (v, _, suboffset) ->
+       (self#is_function_initial_value v)
+       && self#is_constant_offset suboffset
+    | _ -> false
+
+  method is_numerical_offset (offset: memory_offset_t) =
+    is_constant_offset offset
+
+  method has_numerical_offset (v: variable_t) =
+    if (self#has_var v) && (self#has_memvar v) then
+      self#is_numerical_offset (self#get_memvar_offset v)
+    else
+      false
+
+  method has_constant_offset (v: variable_t) =
+    if (self#has_var v) && (self#has_memvar v) then
+      self#is_constant_offset (self#get_memvar_offset v)
+    else
+      false
 
   method is_unknown_base_memory_variable (v:variable_t) =
     (self#has_var v) && (self#has_memvar v) && 
@@ -943,6 +1001,12 @@ object (self)
       
   method is_frozen_test_value (v:variable_t) =
     (self#has_var v) && (self#get_variable v)#is_frozen_test_value
+
+  method is_ssa_register_value (v: variable_t) =
+    (self#has_var v) && (self#get_variable v)#is_ssa_register_value
+
+  method is_ssa_register_value_at (iaddr: ctxt_iaddress_t) (v: variable_t) =
+    (self#has_var v) && ((self#get_variable v)#is_ssa_register_value_at iaddr)
       
   method is_initial_register_value (v:variable_t) = 
     (self#has_var v) && (self#get_variable v)#is_initial_register_value

@@ -494,10 +494,11 @@ object
     match o with
     | NoOffset -> "n"
     | ConstantOffset _ -> "c"
+    | FieldOffset _ -> "f"
     | IndexOffset _ -> "i"
     | UnknownOffset -> "u"
 
-  method tags = [ "c"; "i"; "n"; "u" ]
+  method tags = [ "c"; "f"; "i"; "n"; "u" ]
 end
 
 let memory_offset_mcts: memory_offset_t mfts_int = new memory_offset_mcts_t
@@ -606,10 +607,11 @@ object
     | NonRelationalFact _ -> "n"
     | RelationalFact _ -> "r"
     | InitialVarEquality _ -> "ie"
+    | SSAVarEquality _ -> "sse"
     | InitialVarDisEquality _ -> "id"
     | TestVarEquality _ -> "te"
 
-  method tags = [ "id"; "ie"; "n"; "r"; "te" ; "u" ]
+  method tags = ["id"; "ie"; "n"; "r"; "sse"; "te"; "u"]
 
 end
 

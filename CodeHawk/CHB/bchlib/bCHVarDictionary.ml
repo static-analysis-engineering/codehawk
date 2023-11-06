@@ -133,9 +133,11 @@ object (self)
     let key = match o with
       | NoOffset -> (tags,[])
       | ConstantOffset (n,m) ->
-         (tags @ [ n#toString ],[ self#index_memory_offset m ])
+         (tags @ [n#toString],[self#index_memory_offset m])
+      | FieldOffset ((fname, fkey), m) ->
+         (tags @ [fname], [fkey; self#index_memory_offset m])
       | IndexOffset (v,i,m) ->
-         (tags,[ xd#index_variable v; i ; self#index_memory_offset m ])
+         (tags, [xd#index_variable v; i; self#index_memory_offset m])
       | UnknownOffset -> (tags,[]) in
     memory_offset_table#add key
 
@@ -148,6 +150,7 @@ object (self)
     | "n" -> NoOffset
     | "c" ->
        ConstantOffset (mkNumericalFromString (t 1), self#get_memory_offset (a 0))
+    | "f" -> FieldOffset ((t 1, a 0), self#get_memory_offset (a 1))
     | "i" ->
        IndexOffset (xd#get_variable (a 0), a 1, self#get_memory_offset (a 2))
     | "u" -> UnknownOffset
