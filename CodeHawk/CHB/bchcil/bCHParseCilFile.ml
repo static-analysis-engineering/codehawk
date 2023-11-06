@@ -3,7 +3,7 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,12 +33,36 @@ open Frontc
 (* chlib *)
 open CHPretty
 
+(* chutil *)
+open CHLogger
+
 (* bchlib *)
 open BCHBCFiles
 open BCHBCTypes
+open BCHBCTypePretty
 open BCHBCTypeUtil
 open BCHCilToCBasic
+open BCHConstantDefinitions
 
+
+let update_symbolic_address_types () =
+  let globalvarnames = get_untyped_symbolic_address_names () in
+  begin
+    List.iter (fun name ->
+        if bcfiles#has_varinfo name then
+          let vinfo = bcfiles#get_varinfo name in
+          begin
+            update_symbolic_address_btype name vinfo.bvtype;
+            chlog#add
+              "symbolic address: update with vinfo"
+              (LBLOCK [STR name; STR ": "; STR (btype_to_string vinfo.bvtype)])
+          end
+        else
+          chlog#add "symbolic address: no update" (STR name)) globalvarnames;
+    chlog#add
+      "symbolic address updates"
+      (LBLOCK [STR "Names: "; STR (String.concat ", " globalvarnames)])
+  end
 
 
 let parse_cil_file ?(computeCFG=true) ?(removeUnused=true) (filename: string) =
@@ -55,7 +79,8 @@ let parse_cil_file ?(computeCFG=true) ?(removeUnused=true) (filename: string) =
              bcfiles#update_global (GCompTagDecl (layout_fields compinfo, loc))
           | GCompTag (compinfo, loc) ->
              bcfiles#update_global (GCompTag (layout_fields compinfo, loc))
-          | _ -> ()) bcfile.bglobals
+          | _ -> ()) bcfile.bglobals;
+      update_symbolic_address_types ()
     end
   with
   | ParseError s ->
@@ -69,4 +94,3 @@ let parse_cil_file ?(computeCFG=true) ?(removeUnused=true) (filename: string) =
        pr_debug [STR (Printexc.to_string e); NL];
        exit 1
      end
-    
