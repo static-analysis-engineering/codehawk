@@ -34,6 +34,7 @@ open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHBCDictionary
 open BCHBCTypePretty
 open BCHBCTypes
@@ -202,7 +203,7 @@ object (self)
       bcd#get_typ tix
     else
       raise
-        (CHFailure
+        (BCH_failure
            (LBLOCK [STR "No typedef found with name "; STR name]))
 
   method resolve_type (ty: btype_t): btype_t =
@@ -259,7 +260,7 @@ object (self)
       bcd#get_compinfo ix
     else
       raise
-        (CHFailure
+        (BCH_failure
            (LBLOCK [STR "No comptag found with key "; INT key]))
 
   method has_enuminfo (name: string) =
@@ -276,7 +277,7 @@ object (self)
       bcd#get_enuminfo ix
     else
       raise
-        (CHFailure
+        (BCH_failure
            (LBLOCK [STR "No enuminfo found with name "; STR name]))
 
   method has_varinfo (name: string) =
@@ -293,7 +294,7 @@ object (self)
       bcd#get_varinfo ix
     else
       raise
-        (CHFailure
+        (BCH_failure
            (LBLOCK [STR "No varinfo found with name "; STR name]))
     
   method has_gfun (name: string) = H.mem gfuns name
@@ -304,7 +305,7 @@ object (self)
       gfun
     else
       raise
-        (CHFailure
+        (BCH_failure
            (LBLOCK [STR "No function found with name "; STR name]))
 
   method private get_gfun_loc (name: string) =
@@ -312,7 +313,7 @@ object (self)
       H.find gfuns name
     else
       raise
-        (CHFailure
+        (BCH_failure
            (LBLOCK [STR "No function found with name "; STR name]))
 
   method get_gfun_names: string list =

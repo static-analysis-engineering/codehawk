@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,7 +39,7 @@ open BCHBCTypes
 
 
 let string_printer = CHPrettyUtil.string_printer
-let p2s = string_printer#print   
+let p2s = string_printer#print
 
 
 let mk_constantstring (s:string):constantstring =
@@ -141,7 +141,7 @@ let float_type_to_string (k: fkind_t) =
   | FComplexFloat -> "complex"
   | FComplexDouble -> "double complex"
   | FComplexLongDouble -> "long double complex"
-       
+
 
 let cil_constant_to_string (c: bconstant_t) =
   match c with
@@ -163,10 +163,10 @@ let constant_to_string (c: bconstant_t) =
      let (_,_,len) = mk_constantstring s in
      (string_of_int len) ^ "-char-string"
   | _ -> cil_constant_to_string c
-                     
+
 
 let attributes_to_string attrs =
-  match attrs with 
+  match attrs with
   | [] -> ""
   | l ->
      (String.concat
@@ -243,12 +243,12 @@ and cil_exp_to_pretty (x: bexp_t) =
      LBLOCK [STR "sizeofstr ("; INT len; STR "-char-string)"]
   | AlignOf t -> LBLOCK [STR "alignof (";  typ_to_pretty t; STR ")"]
   | AlignOfE e -> LBLOCK [STR "alignofe ("; pe e ; STR ")" ]
-  | UnOp (op,e,t) -> 
+  | UnOp (op,e,t) ->
      LBLOCK [
          STR "((";
          STR (unop_to_print_string op);
          STR " ";
-         pe e; 
+         pe e;
 	 STR "):";
          typ_to_pretty t;
          STR ")"]
@@ -281,9 +281,9 @@ and cil_exp_to_pretty (x: bexp_t) =
          STR "fn(";
          pe e;
          STR ")@ ";
-         INT loc.line; 
+         INT loc.line;
 	 pretty_print_list el peo "[" ", " "]"]
-  | CnApp (s,el,t) -> 
+  | CnApp (s,el,t) ->
     begin
       match el with
       | [] -> STR s
@@ -291,7 +291,7 @@ and cil_exp_to_pretty (x: bexp_t) =
     end
 
 
-and opt_cil_exp_to_pretty (e: bexp_t option) = 
+and opt_cil_exp_to_pretty (e: bexp_t option) =
   match e with Some e -> exp_to_pretty e | _ -> STR "_"
 
 
@@ -306,12 +306,12 @@ and exp_to_pretty (x: bexp_t) =
   | Lval l -> pl l
   | SizeOfE e -> LBLOCK [STR "sizeof("; pe e; STR ")"]
   | AlignOfE e -> LBLOCK [STR "alignof("; pe e; STR ")"]
-  | UnOp (op,e,t) -> 
+  | UnOp (op,e,t) ->
      LBLOCK [
          STR "((";
          STR (unop_to_print_string op);
          STR " ";
-         pe e; 
+         pe e;
 	 STR "):";
          typ_to_pretty t;
          STR ")"]
@@ -323,7 +323,7 @@ and exp_to_pretty (x: bexp_t) =
          pe e2;
 	 STR "):";
          typ_to_pretty t]
-  | CastE (t,e) -> 
+  | CastE (t,e) ->
      LBLOCK [STR "caste ("; pe e; STR ":"; typ_to_pretty t; STR ")"]
   | AddrOf l -> LBLOCK [STR "addrof ("; pl l; STR ")"]
   | StartOf l -> LBLOCK [STR "startof ("; pl l; STR ")"]
@@ -332,9 +332,9 @@ and exp_to_pretty (x: bexp_t) =
          STR "fn(";
          pe e ;
          STR ")@ ";
-         INT loc.line; 
+         INT loc.line;
 	 pretty_print_list el peo "[" ", " "]"]
-  | CnApp (s,el,t) -> 
+  | CnApp (s,el,t) ->
      begin
        match el with
        | [] -> STR s
@@ -343,14 +343,14 @@ and exp_to_pretty (x: bexp_t) =
   | _ -> cil_exp_to_pretty x
 
 
-and opt_exp_to_pretty (e: bexp_t option) = 
+and opt_exp_to_pretty (e: bexp_t option) =
   match e with Some e -> exp_to_pretty e | _ -> STR "_"
 
 
 and cil_lval_to_pretty ((host, offset): blval_t) =
   match (host, offset) with
   | (Var ((vname,_)),_) -> LBLOCK [STR vname; cil_offset_to_pretty offset]
-  | (Mem e,_) -> 
+  | (Mem e,_) ->
     LBLOCK [STR "*("; cil_exp_to_pretty e; STR ")"; cil_offset_to_pretty offset]
 
 
@@ -367,22 +367,22 @@ and cil_offset_to_pretty (offset: boffset_t) =
   match offset with
   | NoOffset -> STR ""
   | Field ((fname,_),o) -> LBLOCK [STR "."; STR fname; cil_offset_to_pretty o]
-  | Index (e,o) -> 
+  | Index (e,o) ->
      LBLOCK [STR "["; cil_exp_to_pretty e; STR "]"; cil_offset_to_pretty o]
 
 
 and offset_to_pretty (offset: boffset_t) =
   match offset with
-  | Field ((fname,_),offset1) -> 
+  | Field ((fname,_),offset1) ->
      LBLOCK [STR "."; STR fname; offset_to_pretty offset1]
-  | Index (e,offset1) -> 
+  | Index (e,offset1) ->
      LBLOCK [STR "["; exp_to_pretty e; STR "]"; offset_to_pretty offset1]
   | _ -> cil_offset_to_pretty offset
 
 
 let instr_to_pretty (instr: binstr_t) =
   match instr with
-  | Set (lval,x,loc) -> 
+  | Set (lval,x,loc) ->
      LBLOCK [
          STR "assign (";
          lval_to_pretty lval;
@@ -402,7 +402,41 @@ let exp_to_string (e: bexp_t) = p2s (exp_to_pretty e)
 
 
 let enuminfo_to_pretty (einfo: benuminfo_t) = STR einfo.bename
-                                        
-let compinfo_to_pretty (cinfo: bcompinfo_t) = STR cinfo.bcname
+
 
 let varinfo_to_pretty (vinfo: bvarinfo_t) = STR vinfo.bvname
+
+
+let fieldinfo_to_pretty (finfo: bfieldinfo_t) =
+  let layout_to_pretty = match finfo.bfieldlayout with
+    | Some (offset, size) ->
+       LBLOCK [STR " // offset: "; INT offset; STR " size: "; INT size]
+    | _ -> STR "" in
+  LBLOCK [
+      STR (btype_to_string finfo.bftype);
+      STR " ";
+      STR finfo.bfname;
+      STR "; ";
+      layout_to_pretty]
+
+
+let compinfo_to_pretty (cinfo: bcompinfo_t) =
+  let decl = if cinfo.bcstruct then "struct" else "union" in
+  LBLOCK [
+      STR decl;
+      STR " ";
+      STR cinfo.bcname;
+      STR " {"; NL;
+      LBLOCK
+        (List.map (fun fieldinfo ->
+             LBLOCK [STR "  "; fieldinfo_to_pretty fieldinfo; NL])
+           cinfo.bcfields);
+      STR "};"]
+
+
+let rec boffset_to_pretty (off: boffset_t) =
+  match off with
+  | NoOffset -> STR "no-offset"
+  | Field ((fname, fkey), foff) ->
+     LBLOCK [STR "field("; STR fname; STR ","; INT fkey; STR ")."; boffset_to_pretty foff]
+  | Index (_, eoff) -> LBLOCK [STR "index(_)."; boffset_to_pretty eoff]
