@@ -972,16 +972,16 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "SVC" cc [ imm ])
     }
-  | Swap (c, rt, rt2, mem) -> {
+  | Swap (c, rt, rt2, rn, mem) -> {
       mnemonic = "SWP";
-      operands = [rt; rt2; mem];
+      operands = [rt; rt2; rn; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SWP" c [rt; rt2; mem])
     }
-  | SwapByte (c, rt, rt2, mem) -> {
+  | SwapByte (c, rt, rt2, rn, mem) -> {
       mnemonic = "SWPB";
-      operands = [rt; rt2; mem];
+      operands = [rt; rt2; rn; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SWPB" c [rt; rt2; mem])

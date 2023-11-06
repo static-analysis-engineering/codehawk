@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -52,7 +52,7 @@ open BCHByteUtilities
 open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
-open BCHFloc   
+open BCHFloc
 open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHLibTypes
@@ -83,12 +83,13 @@ module TR = CHTraceResult
 let x2p = xpr_formatter#pr_expr
 
 let bd = BCHDictionary.bdictionary
+let bcd = BCHBCDictionary.bcdictionary
 let ixd = BCHInterfaceDictionary.interface_dictionary
 
 let rec pow a = function
   | 0 -> 1
   | 1 -> a
-  | n -> 
+  | n ->
     let b = pow a (n / 2) in
     b * b * (if n mod 2 = 0 then 1 else a)
 
@@ -127,7 +128,7 @@ object (self)
   (* Legend for tags:
      "nop": instruction is no-op,
      "save": saving a register to the stack,
-     "a:" (prefix,arg-key) (if present should be first): 
+     "a:" (prefix,arg-key) (if present should be first):
           a: address xpr; x: xpr; v: variable ; l: literal int ; s: string
    *)
 
@@ -137,20 +138,6 @@ object (self)
     let varinv = floc#varinv in
     let rewrite_expr ?(restrict:int option) (x: xpr_t): xpr_t =
       try
-        (*
-        let rec expand x =
-          match x with
-          | XVar v
-               when floc#env#is_global_variable v
-                    && elf_header#is_program_address
-                         (floc#env#get_global_variable_address v) ->
-             num_constant_expr
-               (elf_header#get_program_value
-                  (floc#env#get_global_variable_address v))#to_numerical
-          | XVar v when floc#env#is_symbolic_value v ->
-             expand (floc#env#get_symbolic_value_expr v)
-          | XOp (op, l) -> XOp (op, List.map expand l)
-          | _ -> x in *)
         let xpr =
           floc#inv#rewrite_expr x floc#env#get_variable_comparator in
         let xpr = simplify_xpr xpr in
@@ -306,18 +293,21 @@ object (self)
       let _ =
         if testsupport#requested_instrx_data then
           testsupport#submit_instrx_data instr#get_address vars xprs in
+      let ssavalues = floc#ssa_register_values in
       let varcount = List.length vars in
       let xprcount = List.length xprs in
       let rdefcount = List.length rdefs in
       let defusecount = List.length uses in
       let defusehighcount = List.length useshigh in
       let flagrdefcount = List.length flagrdefs in
+      let ssacount = List.length ssavalues in
       let varstring = string_repeat "v" varcount in
       let xprstring = string_repeat "x" xprcount in
       let rdefstring = string_repeat "r" rdefcount in
       let defusestring = string_repeat "d" defusecount in
       let defusehighstring = string_repeat "h" defusehighcount in
       let flagrdefstring = string_repeat "f" flagrdefcount in
+      let ssastring = string_repeat "c" ssacount in
       let tagstring =
         "a:"
         ^ varstring
@@ -325,10 +315,13 @@ object (self)
         ^ rdefstring
         ^ defusestring
         ^ defusehighstring
-        ^ flagrdefstring in
+        ^ flagrdefstring
+        ^ ssastring in
       let varargs = List.map xd#index_variable vars in
       let xprargs = List.map xd#index_xpr xprs in
-      (tagstring, varargs @ xprargs @ rdefs @ uses @ useshigh @ flagrdefs) in
+      let ssaargs = List.map xd#index_variable ssavalues in
+      (tagstring,
+       varargs @ xprargs @ rdefs @ uses @ useshigh @ flagrdefs @ ssaargs) in
 
     let add_optional_instr_condition
           (tagstring: string)
@@ -605,6 +598,17 @@ object (self)
       | Branch (_, tgt, _) ->
          let xtgt = tgt#to_expr floc in
          (["a:x"], [xd#index_xpr xtgt])
+
+      | BranchExchange (c, tgt)
+           when tgt#is_register && tgt#get_register = ARLR ->
+         let r0_op = arm_register_op AR0 RD in
+         let xr0 = r0_op#to_expr floc in
+         let xxr0 = rewrite_expr xr0 in
+         let rdefs = [get_rdef xr0] @ (get_all_rdefs xxr0) in
+         let (tagstring, args) =
+           mk_instrx_data ~xprs:[xr0; xxr0] ~rdefs:rdefs () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | BranchExchange (_, tgt) ->
          let xtgt = tgt#to_expr floc in
@@ -1056,7 +1060,7 @@ object (self)
          let xrm = rm#to_expr floc in
          let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
-         let xmem = XOp (XXlsh, [mem#to_expr floc]) in
+         let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
          let rdefs =
            [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
@@ -1693,6 +1697,58 @@ object (self)
          let xr7 = r7#to_expr floc in
          (["a:x"], [xd#index_xpr xr7])
 
+      | Swap (c, rt, rt2, rn, mem) ->
+         let vrt = rt#to_variable floc in
+         let vmem = mem#to_variable floc in
+         let xaddr = mem#to_address floc in
+         let xrt2 = rt2#to_expr floc in
+         let xxrt2 = rewrite_expr xrt2 in
+         let xrn = rn#to_expr floc in
+         let xmem = mem#to_expr floc in
+         let rdefs =
+           [get_rdef xrt2; get_rdef xrn; get_rdef_memvar vmem]
+           @ (get_all_rdefs xmem) in
+         let uses = [get_def_use vrt] in
+         let useshigh = [get_def_use_high vrt] in
+         let xrmem = rewrite_expr xmem in
+         let _ = ignore (get_string_reference floc xrmem) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrt; vmem]
+             ~xprs:[xrn; xrt2; xxrt2; xmem; xrmem; xaddr]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | SwapByte (c, rt, rt2, rn, mem) ->
+         let vrt = rt#to_variable floc in
+         let vmem = mem#to_variable floc in
+         let xaddr = mem#to_address floc in
+         let xrt2 = rt2#to_expr floc in
+         let xxrt2 = rewrite_expr xrt2 in
+         let xrn = rn#to_expr floc in
+         let xmem = mem#to_expr floc in
+         let rdefs =
+           [get_rdef xrt2; get_rdef xrn; get_rdef_memvar vmem]
+           @ (get_all_rdefs xmem) in
+         let uses = [get_def_use vrt] in
+         let useshigh = [get_def_use_high vrt] in
+         let xrmem = rewrite_expr xmem in
+         let _ = ignore (get_string_reference floc xrmem) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrt; vmem]
+             ~xprs:[xrn; xrt2; xxrt2; xmem; xrmem; xaddr]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
       | TableBranchByte (_, _, rm, _) ->
          let xrm = rm#to_expr floc in
          (["a:x"], [xd#index_xpr xrm])
@@ -1775,7 +1831,7 @@ object (self)
 
       | UnsignedExtendHalfword (c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
-         let xrm = XOp (XXlsh, [rm#to_expr floc]) in
+         let xrm = rm#to_expr floc in
          let result = xrm in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
@@ -1918,7 +1974,7 @@ object (self)
              ~useshigh:[get_def_use_high vdst]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
-         (tags, args)         
+         (tags, args)
 
       | VectorDuplicate (_, _, _, _, _, src) ->
          let src = src#to_expr floc in

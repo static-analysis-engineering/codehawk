@@ -138,6 +138,7 @@ let parse_data_proc_reg_misc (instr: doubleword_int) (cond: int) =
   (* <cc><0>10000<rn><rt>< 0>1001<rt> *)   (* SWP - A1 (deprecated) *)
   | 8 when (rz = 0) && (bv 20) = 0 ->
      let rnreg = get_arm_reg rx in
+     let rn = r19 in
      let rt = r15 in
      let rt2 = r3 in
      let offset = ARMImmOffset 0 in
@@ -145,11 +146,12 @@ let parse_data_proc_reg_misc (instr: doubleword_int) (cond: int) =
        mk_arm_offset_address_op
          rnreg offset ~isadd:true ~isindex:false ~iswback:false in
      (* SWP{B}<c> <Rt>, <Rt2>, [<Rn>] *)
-     Swap (c, rt WR, rt2 WR, mem WR)
+     Swap (c, rt WR, rt2 WR, rn RD, mem WR)
 
   (* <cc><0><10>0<rn><rt>< 0>1001<rt> *)   (* SWPB - A1 (deprecated) *)
   | 10 when (rz = 0) && (bv 20) = 0 ->
      let rnreg = get_arm_reg rx in
+     let rn = r19 in
      let rt = r15 in
      let rt2 = r3 in
      let offset = ARMImmOffset 0 in
@@ -157,7 +159,7 @@ let parse_data_proc_reg_misc (instr: doubleword_int) (cond: int) =
        mk_arm_offset_address_op
          rnreg offset ~isadd:true ~isindex:false ~iswback:false in
      (* SWP{B}<c> <Rt>, <Rt2>, [<Rn>] *)
-     SwapByte (c, rt WR, rt2 WR, mem WR)
+     SwapByte (c, rt WR, rt2 WR, rn RD, mem WR)
 
   (* <cc><0><12>0<rn><rn><15>1001<rt> *)    (* STREX - A1 *)
   | 12 when (rz = 15) && (bv 20) = 0 ->
