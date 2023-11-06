@@ -1452,11 +1452,12 @@ let arm_opcode_tests () =
         let rt = armreg_op WR in
         let rt2 = armreg_op WR in
         let rnreg = armreg () in
+        let rn = arm_register_op rnreg RD in
         let mem =
           mk_arm_offset_address_op
             rnreg (ARMImmOffset 0) ~isadd:true ~isindex:false ~iswback:false WR in
         let c = cc () in
-        let opc = Swap (c, rt, rt2, mem) in
+        let opc = Swap (c, rt, rt2, rn, mem) in
         index_check_opc_c opc c "SWP" 3);
 
     TS.add_simple_test
@@ -1465,11 +1466,12 @@ let arm_opcode_tests () =
         let rt = armreg_op WR in
         let rt2 = armreg_op WR in
         let rnreg = armreg () in
+        let rn = arm_register_op rnreg RD in
         let mem =
           mk_arm_offset_address_op
             rnreg (ARMImmOffset 0) ~isadd:true ~isindex:false ~iswback:false WR in
         let c = cc () in
-        let opc = SwapByte (c, rt, rt2, mem) in
+        let opc = SwapByte (c, rt, rt2, rn, mem) in
         index_check_opc_c opc c "SWPB" 3);
 
     TS.add_simple_test
