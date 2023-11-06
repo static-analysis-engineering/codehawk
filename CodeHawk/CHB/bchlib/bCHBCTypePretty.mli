@@ -41,3 +41,7 @@ val tname_to_string: tname_t -> string
 val btype_to_pretty: btype_t -> pretty_t
 
 val exp_to_string: bexp_t -> string
+
+val compinfo_to_pretty: bcompinfo_t -> pretty_t
+
+val offset_to_pretty: boffset_t -> pretty_t

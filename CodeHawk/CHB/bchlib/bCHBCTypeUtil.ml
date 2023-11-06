@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,6 +28,8 @@
    ============================================================================= *)
 
 (* chlib *)
+open CHConstants
+open CHLanguage
 open CHNumerical
 open CHPretty
 
@@ -56,16 +58,25 @@ let t_uchar = TInt (IUChar, [])
 let t_wchar = TInt (IWChar, [])
 
 let t_short = TInt (IShort, [])
+let t_ushort = TInt (IUShort, [])
 let t_int = TInt (IInt, [])
 let t_uint = TInt (IUInt, [])
 let t_long = TInt (ILong, [])
+let t_ulong = TInt (IULong, [])
 
 let t_float = TFloat (FFloat, FScalar, [])
 let t_double = TFloat (FDouble, FScalar, [])
+let t_longdouble = TFloat (FLongDouble, FScalar, [])
 
 let t_voidptr = TPtr (TVoid [], [])
 let t_refto t = TRef (t,[])
 let t_ptrto t = TPtr (t,[])
+
+let t_unknown_int = TUnknown [(Attr ("int", []))]
+
+let t_unknown_int_size (size: int) = TUnknown [(Attr ("int-size", [AInt size]))]
+
+let t_unknown_float = TUnknown [(Attr ("float", []))]
 
 
 let t_named name = TNamed (name, [])
@@ -118,14 +129,26 @@ let t_function_anon (returntype:btype_t) =
 
 let is_void t = match t with TVoid _ -> true | _ -> false
 
+let is_int t = match t with TInt _ -> true | _ -> false
+
+let is_float t = match t with TFloat _ -> true | _ -> false
+
 let is_pointer t = match t with TPtr _ -> true | _ -> false
 
+let is_scalar t = (is_int t) || (is_float t) || (is_pointer t)
+
 let is_pointer_to_struct t = match t with TPtr (TComp _,_) -> true | _ -> false
+
+let is_struct_type t = match t with TComp _ -> true | _ -> false
 
 let is_function_type t =
   match t with TFun _ | TPtr (TFun _,_) -> true | _ -> false
 
-let is_unknown_type t = match t with TUnknown _ -> true | _ -> false
+let is_unknown_type t =
+  match t with
+  | TUnknown _ -> true
+  | TNamed ("unknown", _) -> true
+  | _ -> false
 
 let is_known_type t = match t with TUnknown _ -> false | _ -> true
 
@@ -146,7 +169,7 @@ let size_of_int_ikind (k: ikind_t) =
   match k with
   | IChar | ISChar | IUChar -> 1
   | IWChar -> 2
-  | IBool -> 4
+  | IBool -> 1
   | IInt | IUInt -> 4
   | IShort | IUShort -> 2
   | ILong | IULong -> 4
@@ -168,7 +191,7 @@ let align_of_int_ikind (k: ikind_t): int =
   match k with
   | IChar | ISChar | IUChar -> 1
   | IWChar -> 2
-  | IBool -> 4
+  | IBool -> 1
   | IInt | IUInt -> 4
   | IShort | IUShort -> 2
   | ILong | IULong -> 4
@@ -256,7 +279,7 @@ let rec align_of_btype (t: btype_t): int =
 
 and alignof_comp (comp: bcompinfo_t): int =
   let aligns = List.map (fun finfo -> align_of_btype finfo.bftype) comp.bcfields in
-  List.fold_left (fun mx a -> if a > mx then mx else a) 0 aligns
+  List.fold_left (fun mx a -> if a > mx then a else mx) 0 aligns
 
 
 and size_of_btype (t: btype_t): int =
@@ -312,14 +335,6 @@ and size_of_btype_comp (comp: bcompinfo_t): int =
           offset_of_field_acc ~finfo ~acc) start_oa comp.bcfields in
     let size =
       add_trailing lastoff.oa_first_free (align_of_btype (TComp (comp.bckey, []))) in
-    let _ =
-      ch_diagnostics_log#add
-        "struct size"
-        (LBLOCK [
-             STR "ckey: ";
-             INT comp.bckey;
-             STR " ; size: ";
-             INT size]) in
     size
   else    (* union *)
     let size =
@@ -329,14 +344,6 @@ and size_of_btype_comp (comp: bcompinfo_t): int =
             fsize
           else
             mx) 0 comp.bcfields in
-    let _ =
-      ch_diagnostics_log#add
-        "union size"
-        (LBLOCK [
-             STR "ckey: ";
-             INT comp.bckey;
-             STR " ; size: ";
-             INT size]) in
     size
 
 
@@ -674,7 +681,66 @@ let btype_compare = typ_compare
 let bexp_compare = exp_compare
 
 
-(* ================================================ field layout *)
+(* ============================================================== abstraction *)
+
+let btype_abstract (btype: btype_t): symbol_t =
+  let rec aux (t: btype_t) (acc: string) =
+    match t with
+    | TUnknown [] -> "t_unknown"
+    | TUnknown [Attr ("int", [])] -> "t_int"
+    | TUnknown [Attr ("int-size", [AInt n])] -> "t_int_" ^ (string_of_int n)
+    | TUnknown [Attr ("float", [])] -> "t_float"
+    | TInt (IInt, []) -> "t_int_32s"
+    | TInt (IUInt, []) -> "t_int_32u"
+    | TInt (IShort, []) -> "t_int_16s"
+    | TInt (IUShort, []) -> "t_int_16u"
+    | TInt (IChar, []) -> "t_int_8s"
+    | TInt (IUChar, []) -> "t_int_8u"
+    | TFloat (FFloat, FScalar, []) -> "t_float_32"
+    | TFloat (FDouble, FScalar, []) -> "t_float_64"
+    | TFloat (FLongDouble, FScalar, []) -> "t_float_128"
+    | TPtr (TVoid [], []) -> "t_ptr"
+    | _ -> "t_unknown" in
+  new symbol_t (aux btype "")
+
+
+let btype_concretize (abtype: symbol_t): btype_t =
+  let rec aux (s: string) (acc: btype_t option) =
+    match s with
+    | "t_unknown" -> TUnknown []
+    | "t_int" -> TUnknown [Attr ("int", [])]
+    | "t_float" -> TUnknown [Attr ("float", [])]
+    | "t_int_8" -> TUnknown [Attr ("int-size", [AInt 8])]
+    | "t_int_16" -> TUnknown [Attr ("int-size", [AInt 16])]
+    | "t_int_32" -> TUnknown [Attr ("int-size", [AInt 32])]
+    | "t_int_8s" -> TInt (IChar, [])
+    | "t_int_8u" -> TInt (IUChar, [])
+    | "t_int_16s" -> TInt (IShort, [])
+    | "t_int_16u" -> TInt (IUShort, [])
+    | "t_int_32s" -> TInt (IInt, [])
+    | "t_int_32u" -> TInt (IUInt, [])
+    | "t_ptr" -> TPtr (TVoid [], [])
+    | _ -> TUnknown [] in
+  aux abtype#getBaseName None
+
+
+let btype_join (btypes: btype_t list): btype_t =
+  let abtypes = List.map btype_abstract btypes in
+  match abtypes with
+  | [] -> TUnknown []
+  | [ty] -> btype_concretize ty
+  | hdty::tl ->
+     let joinabty =
+       List.fold_left (fun acc ty ->
+           match acc with
+           | None -> None
+           | Some accty -> ordered_sym_join accty ty) (Some hdty) tl in
+     (match joinabty with
+      | None -> TUnknown []
+      | Some abty -> btype_concretize abty)
+
+
+(* ============================================================= field layout *)
 
 let has_field_layout (comp: bcompinfo_t): bool =
   List.for_all

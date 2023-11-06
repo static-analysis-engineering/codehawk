@@ -48,12 +48,25 @@ val t_uchar: btype_t
 val t_wchar: btype_t
 
 val t_short: btype_t
+val t_ushort: btype_t
 val t_int: btype_t
 val t_uint: btype_t
 val t_long: btype_t
+val t_ulong: btype_t
 
 val t_float: btype_t
 val t_double: btype_t
+val t_longdouble: btype_t
+
+(** {2 Unknown base types} *)
+
+(** The "int" and "int-size" attributes are used to refer to integer types
+    for which it is not known whether they are signed or not and, in case
+    of "int" what their size is.*)
+
+val t_unknown_int: btype_t
+val t_unknown_int_size: int -> btype_t
+val t_unknown_float: btype_t
 
 (** {2 Pointer types}*)
 
@@ -86,11 +99,15 @@ val t_function_anon: btype_t -> btype_t        (* arguments not known *)
 (** {1 Type predicates}*)
 
 val is_void: btype_t -> bool
+val is_int: btype_t -> bool
+val is_float: btype_t -> bool
+val is_scalar: btype_t -> bool
 val is_pointer: btype_t -> bool
 val is_unsigned: btype_t -> bool  (* true if unsigned, false if signed or unknown *)
 val is_function_type: btype_t -> bool
 val is_unknown_type: btype_t -> bool
 val is_known_type: btype_t -> bool
+val is_struct_type: btype_t -> bool
 val is_pointer_to_struct: btype_t -> bool
 
 
@@ -112,6 +129,8 @@ val size_of_float_fkind: fkind_t -> int
 
 val size_of_btype: btype_t -> int
 
+val size_of_btype_comp: bcompinfo_t -> int
+
 (** {2 Scalar kind}*)
 
 (** [size_to_int_ikind ~signed size] returns the integer kind with [size]
@@ -124,6 +143,15 @@ val size_to_int_ikind: ?signed:bool -> int -> ikind_t
 val btype_compare: btype_t -> btype_t -> int
 
 val bexp_compare: bexp_t -> bexp_t -> int
+
+
+(** {1 Abstraction} *)
+
+val btype_abstract: btype_t -> symbol_t
+
+val btype_concretize: symbol_t -> btype_t
+
+val btype_join: btype_t list -> btype_t
 
 
 (** {1 Compinfos} *)

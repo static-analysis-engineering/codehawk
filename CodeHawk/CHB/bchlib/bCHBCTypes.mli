@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,7 +38,7 @@ open CHXmlDocument
 type constantstring = string * bool * int
 
 
-type ikind_t = 
+type ikind_t =
 | IChar       (** [char] *)
 | ISChar      (** [signed char] *)
 | IUChar      (** [unsigned char] *)
@@ -51,16 +51,16 @@ type ikind_t =
 | ILong       (** [long] *)
 | IULong      (** [unsigned long] *)
 | ILongLong   (** [long long] (or [_int64] on Microsoft Visual C) *)
-| IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft 
+| IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft
                   Visual C) *)
 | IInt128     (** added in goblint-cil *)
 | IUInt128    (** added in goblint-cil *)
 (** [local to binary analyzer, not in cil: signed, size in bytes] *)
 | INonStandard of bool * int
 
-		
+
 (** Various kinds of floating-point numbers*)
-type fkind_t = 
+type fkind_t =
 | FFloat      (** [float] *)
 | FDouble     (** [double] *)
 | FLongDouble (** [long double] *)
@@ -103,7 +103,7 @@ type binop_t =
 | Ge
 | Eq
 | Ne
-| BAnd 
+| BAnd
 | BXor
 | BOr
 | LAnd
@@ -113,7 +113,8 @@ type varuse_t = string * int      (* vname, vid *)
 
 type fielduse_t = string * int    (* fname, fckey *)
 
-type fieldlayout_t = int * int    (* offset, size (in bytes) *)
+(** Offset and size (in bytes) of a struct field.*)
+type fieldlayout_t = int * int
 
 type type_transformer_t = string -> string
 
@@ -127,10 +128,10 @@ and btype_t =
 | TArray of btype_t * bexp_t option * b_attributes_t
 | TFun of btype_t * bfunarg_t list option * bool * b_attributes_t
 | TNamed of string * b_attributes_t
-| TComp of int * b_attributes_t  
+| TComp of int * b_attributes_t
 | TEnum of string * b_attributes_t
 | TCppComp of tname_t * tname_t list * b_attributes_t  (* C++ name spaces *)
-| TCppEnum of tname_t * tname_t list * b_attributes_t  (* C++ name spaces *)         
+| TCppEnum of tname_t * tname_t list * b_attributes_t  (* C++ name spaces *)
 | TClass of tname_t * tname_t list * b_attributes_t  (* C++ name spaces, not in cil *)
 | TBuiltin_va_list of b_attributes_t
 | TVarArg of b_attributes_t
@@ -138,14 +139,14 @@ and btype_t =
 
 and tname_t =
 | SimpleName of string
-| TemplatedName of tname_t * btype_t list  
+| TemplatedName of tname_t * btype_t list
 
 and bfunarg_t = string * btype_t * b_attributes_t
-		
+
 and b_attribute_t = Attr of string  * b_attrparam_t list
-		
+
 and b_attributes_t = b_attribute_t list
-	
+
 and b_attrparam_t =
 | AInt of int
 | AStr of string
@@ -181,21 +182,21 @@ and bfieldinfo_t = {
   bfloc: b_location_t;
   bfieldlayout: fieldlayout_t option
 }
-  
+
 and beitem_t = string * bexp_t * b_location_t
-  
+
 and benuminfo_t = {
   bename: string;
   beitems: beitem_t list;
   beattr: b_attributes_t;
   bekind: ikind_t;
 }
-  
+
 and btypeinfo_t = {
   btname: string;
   bttype: btype_t;
 }
-  
+
 and bvarinfo_t = {
   bvname: string;
   bvtype: btype_t;
@@ -209,7 +210,7 @@ and bvarinfo_t = {
   bvaddrof: bool;
   bvparam: int    (* 0 for local/global variables, seqnr for parameters *)
 }
-  
+
 and bexp_t =
 | Const of bconstant_t
 | Lval of blval_t
@@ -248,7 +249,7 @@ and blhost_t =
 | Var of varuse_t
 | Mem of bexp_t
 
-and boffset_t = 
+and boffset_t =
 | NoOffset
 | Field of fielduse_t * boffset_t
 | Index of bexp_t * boffset_t
@@ -258,26 +259,26 @@ and binit_t =
 | CompoundInit of btype_t * (boffset_t * binit_t) list
 
 and binitinfo_t = binit_t option
-  
+
 and bblock_t = {
   battrs: b_attributes_t;
   bstmts: bstmt_t list
 }
-  
+
 and bstmt_t = {
   labels: blabel_t list;
   skind: bstmtkind_t;
   sid: int;
   succs: int list;
-  preds: int list 
+  preds: int list
 }
-  
+
 and blabel_t =
 | Label of string * b_location_t * bool
 | Case of bexp_t * b_location_t
 | CaseRange of bexp_t * bexp_t * b_location_t
 | Default of b_location_t
-    
+
 and bstmtkind_t =
 | Instr of binstr_t list
 | Return of bexp_t option * b_location_t
@@ -295,11 +296,11 @@ and bstmtkind_t =
 | Block of bblock_t
 | TryFinally of bblock_t * bblock_t * b_location_t
 | TryExcept of bblock_t * (binstr_t list * bexp_t) * bblock_t * b_location_t
-    
+
 and b_asm_output_t = string option * string * blval_t (* name, constraint, lval *)
-  
+
 and b_asm_input_t = string option * string * bexp_t (* name, constraint, bexp_t *)
-  
+
 and binstr_t =
 | Set of blval_t * bexp_t * b_location_t
 | Call of blval_t option * bexp_t * bexp_t list * b_location_t
@@ -311,13 +312,13 @@ and binstr_t =
     * b_asm_input_t list
     * string list
     * b_location_t
-    
+
 and b_location_t = {
   line: int ;
   file: string ;
   byte: int
 }
-  
+
 and btypsig_t =
 | TSArray of btypsig_t * int64 option * b_attribute_t list
 | TSPtr of btypsig_t * b_attribute_t list
@@ -360,7 +361,7 @@ class type bcdictionary_int =
 
     method index_attrparam: b_attrparam_t -> int
     method index_attribute: b_attribute_t -> int
-    method index_attributes: b_attributes_t -> int         
+    method index_attributes: b_attributes_t -> int
     method index_constant: bconstant_t -> int
     method index_exp: bexp_t -> int
     method index_funarg: bfunarg_t -> int
@@ -368,7 +369,7 @@ class type bcdictionary_int =
     method index_lhost: blhost_t -> int
     method index_lval: blval_t -> int
     method index_opt_lval: blval_t option -> int
-    method index_offset: boffset_t -> int        
+    method index_offset: boffset_t -> int
     method index_typ: btype_t -> int
     method index_typsig: btypsig_t -> int
     method index_string: string -> int
@@ -410,7 +411,7 @@ class type bcdictionary_int =
     method get_compinfo: int -> bcompinfo_t
     method get_fieldinfo: int -> bfieldinfo_t
     method get_typeinfo: int -> btypeinfo_t
-         
+
     method write_xml_attributes:
              ?tag:string -> xml_element_int -> b_attributes_t -> unit
     method read_xml_attributes:
@@ -468,7 +469,7 @@ class type bcdictionary_int =
              ?tag:string -> xml_element_int -> b_location_t -> unit
     method read_xml_location:
              ?tag:string -> xml_element_int -> b_location_t
-         
+
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
 
@@ -492,36 +493,94 @@ class type bcfundeclarations_int =
   end
 
 
+(** Principal access structure for CIL-parsed c files.*)
 class type bcfiles_int =
   object
 
-    (* setters *)
+    (** {1 Initialization}*)
+
+    (** [add_bcfile f] adds a parsed file [f] to the storage.*)
     method add_bcfile: bcfile_t -> unit
+
+    (** [add_fundef name type] adds an otherwise constructed function
+        definition to the storage (i.e., not parsed).*)
     method add_fundef: string -> btype_t -> unit
+
+    (** [update_global c] allows for updates in global entries after
+        initial parsing. Currently this is used only to update compinfo
+        definitions and declarations with field layouts.*)
     method update_global: bglobal_t -> unit
 
-    (* services *)
+    (** {1 Services}*)
+
+    (** Resolves a btype to its basic form, i.e., it expands all typedefs.*)
     method resolve_type: btype_t -> btype_t
 
-    (* getters *)
+    (** {1 Access}*)
+
+    (** {2 Functions}*)
+
     method get_gfun_names: string list
     method get_gfun: string -> bcfundec_t
-    method get_typedef: string -> btype_t    (* retrieve by name *)
-    method typedefs: (string * btype_t) list
-    method get_compinfo: int -> bcompinfo_t  (* retrieve by key *)
-    method get_enuminfo: string -> benuminfo_t  (* retrieve by name *)
-    method get_varinfo: string -> bvarinfo_t (* retrieve by name *)
-
-    (* predicates *)
     method has_gfun: string -> bool
-    method has_typedef: string -> bool
-    method has_compinfo: int -> bool
-    method has_enuminfo: string -> bool
+
+    (** {2 Variables}*)
+
+    (** [get_varinfo name] returns the varinfo with name [name].
+
+        @raise BCH_failure if no varinfo exists with name [name].*)
+    method get_varinfo: string -> bvarinfo_t
+
+    (** [has_varinfo name] returns true if there exists either a defined or
+        declared variable with name [name]. Note that this includes function
+        names.*)
     method has_varinfo: string -> bool
 
-    (* saving *)
-    (* method write_xml_function: xml_element_int -> string -> unit
-    method read_xml_function: xml_element_int -> string -> unit *)
+    (** {2 Type definitions}*)
+
+    (** [get_typedef name] returns the (not necessarily fully expanded) type
+        definition associated with [name].
+
+        @raise BCH_failure if no typedef exists with name [name].
+     *)
+    method get_typedef: string -> btype_t
+
+    (** [has_typedef name] returns true if there exists a typedef with name
+        [name].*)
+    method has_typedef: string -> bool
+
+    (** Returns a list of (name, type) pairs of all stored typedefs. Note that
+        the types are not fully expanded.*)
+    method typedefs: (string * btype_t) list
+
+
+    (** {2 Compinfo's en enuminfo's}*)
+
+    (** [get_compinfo key] returns the compinfo structure associated with
+        (CIL-assigned) key [key].
+
+        @raise BCH_failure if no compinfo definition or declaration exists
+        with key [key].
+     *)
+    method get_compinfo: int -> bcompinfo_t
+
+    (** [has_compinfo key] returns true if a compinfo definition or declaration
+        exists with (CIL-assigned) key [key].*)
+    method has_compinfo: int -> bool
+
+    (** [get_enuminfo name] returns the enuminfo structure with name [name].
+
+        @raise BCH_failure if no enuminfo definition or declaration exists with
+        name [name]
+     *)
+    method get_enuminfo: string -> benuminfo_t
+
+    (** [has_enuminfo name] returns true if an enuminfo definition or declaration
+        exists with name [name].*)
+    method has_enuminfo: string -> bool
+
+    (** {1 Save and restore}*)
+
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
 
