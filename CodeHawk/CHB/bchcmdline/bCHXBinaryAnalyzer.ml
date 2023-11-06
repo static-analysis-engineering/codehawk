@@ -797,7 +797,6 @@ let main () =
       end
 
     else if !cmd = "analyze" && !architecture = "arm" && !fileformat = "elf" then
-      (* let starttime = Unix.gettimeofday () in *)
       let _ = system_info#set_elf in
       let _ = system_info#set_arm in
       let _ = load_bcdictionary () in
