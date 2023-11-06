@@ -35,7 +35,6 @@ open CHNonRelationalDomainNoArrays
 open CHNonRelationalDomainValues
 open CHOnlineCodeSet
 open CHSymbolicSets
-open CHSymbolicSetsDomainNoArrays
 open CHPretty
 
 (* chutil *)

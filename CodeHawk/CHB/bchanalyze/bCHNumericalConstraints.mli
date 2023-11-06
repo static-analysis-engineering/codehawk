@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,8 +34,12 @@ open CHNumericalConstraints
 (* bchanalyze *)
 open BCHAnalysisTypes
 
-val numerical_constraint_compare: numerical_constraint_t -> numerical_constraint_t -> int
 
-val project_out: constraint_set_int -> variable_t list -> constraint_set_int option
+val numerical_constraint_compare:
+  numerical_constraint_t -> numerical_constraint_t -> int
+
+val project_out:
+  constraint_set_int -> variable_t list -> constraint_set_int option
    
-val get_constraint_sets: numerical_constraint_t list -> constraint_set_int list
+val get_constraint_sets:
+  numerical_constraint_t list -> constraint_set_int list

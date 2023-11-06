@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -66,9 +66,9 @@ module H = Hashtbl
 
 
 module ConstraintCollections = CHCollections.Make
-  (struct 
+  (struct
     type t = numerical_constraint_t
-    let compare = numerical_constraint_compare 
+    let compare = numerical_constraint_compare
     let toPretty n = n#toPretty
    end)
 
@@ -90,40 +90,36 @@ exception TimeOut of float * int * int
 let timeout_value = ref 120.0
 let set_timeout_value t = timeout_value := (float t)
 
-let extract_ranges 
-    (finfo:function_info_int) 
+
+let extract_ranges
+    (finfo:function_info_int)
     (invariants:(string, (string,atlas_t) H.t) H.t) =
   H.iter (fun k v ->
     let flocinv = finfo#finv#get_location_invariant k in
     if H.mem v "intervals" then
       let inv = H.find v "intervals" in
       let domain = inv#getDomain "intervals" in
-      if domain#isBottom then 
+      if domain#isBottom then
 	finfo#finv#set_unreachable k "intervals"
       else
 	let vars = domain#observer#getObservedVariables in
-	let vars = List.filter (fun v -> not v#isTmp) vars in 
+	let vars = List.filter (fun v -> not v#isTmp) vars in
 	let vars = List.filter (fun v -> not (flocinv#is_constant v)) vars in
 	let varObserver = domain#observer#getNonRelationalVariableObserver in
 	List.iter (fun v ->
 	  let varIntv = (varObserver v)#toInterval in
-	  if varIntv#isTop then () else 
+	  if varIntv#isTop then () else
 	    finfo#finv#add_interval_fact k v varIntv) vars)
          invariants
 
-    
-let extract_external_value_equalities  
+
+let extract_external_value_equalities
     (finfo:function_info_int)
-    (iaddr:string) 
-    (domain:domain_int) 
-    (flocinv:location_invariant_int) 
+    (iaddr:string)
+    (domain:domain_int)
+    (flocinv:location_invariant_int)
     starttime =
   let rec expand_symbolic_values x =
-    let _ =
-      track_location
-        iaddr
-        (LBLOCK [
-             STR "expand-symbolic-value: "; x2p x]) in
     match  x with
     | XVar v when finfo#env#is_symbolic_value v ->
        expand_symbolic_values (finfo#env#get_symbolic_value_expr v)
@@ -164,7 +160,7 @@ let extract_external_value_equalities
     | [(c,v)] when c#equal numerical_one && constant#equal numerical_zero ->
        XVar v
     | [(c,v)] when c#equal numerical_one ->
-      if constant#gt numerical_zero then 
+      if constant#gt numerical_zero then
 	XOp (XPlus, [XVar v; num_constant_expr constant])
       else
 	XOp (XMinus, [XVar v; num_constant_expr constant#neg])
@@ -177,7 +173,7 @@ let extract_external_value_equalities
               XOp (XMult, [num_constant_expr c#abs; XVar v]) in
 	let op = if c#gt numerical_zero then XPlus else XMinus in
 	XOp (op, [x ; t])) (num_constant_expr constant) l in
-  
+
   let get_frozen_exp
         (k: numerical_constraint_t)
         (invert_factors: bool)
@@ -202,12 +198,8 @@ let extract_external_value_equalities
                p]) ;
 	None
       end in
-  
+
   List.fold_left (fun acc (c:numerical_constraint_t) ->
-      let _ =
-        track_location
-          iaddr
-          (LBLOCK [c#toPretty]) in
     match c#getFactors with
     | [ f ] ->
       let v = f#getVariable in
@@ -218,7 +210,7 @@ let extract_external_value_equalities
             finfo#finv#add_constant_fact iaddr v c#getConstant;    (* p = c *)
             v :: acc
           end
-	else 
+	else
           begin
             finfo#finv#add_constant_fact iaddr v c#getConstant#neg;  (* -p = c *)
             v :: acc
@@ -246,11 +238,14 @@ let extract_external_value_equalities
 	           ffactors c#getConstant with
 	   | Some fexp ->
 	      let v = pf#getVariable in
-              let fexpx = simplify_xpr (expand_symbolic_values fexp) in
-	      begin
-                finfo#finv#add_symbolic_expr_fact iaddr v fexpx ;
-                v :: acc
-              end
+              if finfo#env#is_ssa_register_value v then
+                acc
+              else
+                let fexpx = simplify_xpr (expand_symbolic_values fexp) in
+	        begin
+                  finfo#finv#add_symbolic_expr_fact iaddr v fexpx;
+                  v :: acc
+                end
 	   | _ -> acc
 	 end
       | _ -> acc) [] newConstraints#toList
@@ -260,6 +255,7 @@ let extract_relational_facts finfo iaddr domain =
   let constraints = domain#observer#getNumericalConstraints ~variables:None () in
   List.iter (finfo#finv#add_lineq iaddr) constraints
 
+
 let extract_testvar_equalities finfo iaddr domain =
   let env = finfo#env in
   let vars = domain#observer#getObservedVariables in
@@ -267,26 +263,14 @@ let extract_testvar_equalities finfo iaddr domain =
   List.fold_left (fun acc fval ->
     let (fvar, taddr, jaddr) = env#get_frozen_variable fval in
     if iaddr = jaddr then
-      let varsout = List.filter (fun v -> not ((fvar#equal v) || (fval#equal v))) vars in
+      let varsout =
+        List.filter (fun v -> not ((fvar#equal v) || (fval#equal v))) vars in
       let domain = domain#projectOut varsout in
-      let numConstrs = domain#observer#getNumericalConstraints ~variables:None () in
-      match numConstrs with 
-      | [] -> acc 
-      | _ -> 
-         let _ =
-           track_location
-             iaddr
-             (LBLOCK [
-                  STR "extract_testvar_equalities: ";
-                  STR "fval: ";
-                  fval#toPretty;
-                  STR "; fvar: ";
-                  fvar#toPretty;
-                  pretty_print_list
-                    numConstrs
-                    (fun c -> c#toPretty)
-                    " [" "; " "]";
-             ]) in
+      let numConstrs =
+        domain#observer#getNumericalConstraints ~variables:None () in
+      match numConstrs with
+      | [] -> acc
+      | _ ->
          if List.exists (fun nc ->
                 let factors = nc#getFactors in
                 let variables = List.map (fun f -> f#getVariable) factors in
@@ -302,20 +286,45 @@ let extract_testvar_equalities finfo iaddr domain =
       acc) [] fvals
 
 
+let extract_ssavar_equalities
+      (finfo: function_info_int) (iaddr: string) domain =
+  let env = finfo#env in
+  let vars = domain#observer#getObservedVariables in
+  let fvals = List.filter env#is_ssa_register_value vars in
+  let _ =
+    List.iter (fun fval ->
+        let rvar = env#get_ssa_register_value_register_variable fval in
+        let varsout =
+          List.filter (fun v -> not ((fval#equal v) || (rvar#equal v))) vars in
+        let domain = domain#projectOut varsout in
+        let numConstrs =
+          domain#observer#getNumericalConstraints ~variables:None () in
+        match numConstrs with
+        | [] -> ()
+        | _ ->
+           if List.exists (fun nc ->
+                  let factors = nc#getFactors in
+                  let variables = List.map (fun f -> f#getVariable) factors in
+                  List.exists (fun v -> fval#equal v) variables) numConstrs then
+             finfo#finv#add_ssa_value_fact iaddr rvar fval)
+      fvals in
+  fvals
+
+
 let extract_initvar_equalities finfo iaddr domain flocinv =
   let get_var_constraints constraint_sets v1 v2 domvars =
     let numCs = new ConstraintCollections.set_t in
     let _ = List.iter (fun cs ->
       if cs#has v1 && cs#has v2 then
-	let outvars = List.filter (fun v -> not ((v1#equal v) || (v2#equal v))) domvars in 
+	let outvars = List.filter (fun v -> not ((v1#equal v) || (v2#equal v))) domvars in
 	match project_out cs outvars with
 	| Some c -> numCs#addList c#get_constraints
 	| _ -> ()) constraint_sets in
     numCs#toList in
-  let is_equality c v1 v2 = 
+  let is_equality c v1 v2 =
     c#getConstant#equal numerical_zero &&
       (let factors = c#getFactors in
-       match factors with 
+       match factors with
        | [ f1 ; f2 ] ->
 	 let c1 = c#getCoefficient f1 in
 	 let c2 = c#getCoefficient f2 in
@@ -331,7 +340,7 @@ let extract_initvar_equalities finfo iaddr domain flocinv =
   let fvalsEq = flocinv#get_init_equalities in
   let fvalsNotEq = flocinv#get_init_disequalities in
   let numConstraints = domain#observer#getNumericalConstraints ~variables:None () in
-  let constraintSets = get_constraint_sets numConstraints in 
+  let constraintSets = get_constraint_sets numConstraints in
   let disequalities = ref [] in
 
   let add_disequality fvar fval =
@@ -377,10 +386,10 @@ let extract_initvar_equalities finfo iaddr domain flocinv =
           else
             acc
         else if List.exists (fun v -> v#equal fval) fvalsNotEq then
-          acc 
+          acc
         else if List.exists (fun v -> v#equal fvar) domVars then
-          let numcs = get_var_constraints constraintSets fvar fval domVars in 
-          match numcs with 
+          let numcs = get_var_constraints constraintSets fvar fval domVars in
+          match numcs with
           | [] ->
              begin
                add_disequality fvar fval;
@@ -401,7 +410,7 @@ let extract_initvar_equalities finfo iaddr domain flocinv =
                add_disequality fvar fval;
                acc
              end
-        else 
+        else
           begin
             add_disequality fvar fval;
             acc
@@ -410,11 +419,11 @@ let extract_initvar_equalities finfo iaddr domain flocinv =
   fvars
 
 
-let extract_linear_equalities 
+let extract_linear_equalities
     (finfo:function_info_int)
     (invariants:(string, (string,atlas_t) H.t) H.t) =
   let starttime = Unix.gettimeofday () in
-  let outside_test_jump_range v k = 
+  let outside_test_jump_range v k =
     finfo#env#is_frozen_test_value v &&
       not (finfo#env#is_in_test_jump_range v k) in
   let invList = ref [] in
@@ -423,35 +432,18 @@ let extract_linear_equalities
   try
     List.iter (fun (k, v) ->
       if H.mem v "karr" then
-	let inv = H.find v "karr" in
 	let flocinv = finfo#finv#get_location_invariant k in
-	let knownVars = flocinv#get_known_variables in
+	(* let knownVars = flocinv#get_known_variables in *)
+	let inv = H.find v "karr" in
 	let domain = inv#getDomain "karr" in
 	let vars = domain#observer#getObservedVariables in
+        let ssavars = extract_ssavar_equalities finfo k domain in
 	let outvars =
           List.filter (fun v -> v#isTmp || outside_test_jump_range v k) vars in
-        let _ =
-          track_location
-            k
-            (LBLOCK [
-                 STR "lineareq: "; NL;
-                 STR "knownVars: ";
-                 pretty_print_list knownVars (fun v -> v#toPretty) "[" "," "]";
-                 NL;
-                 STR "outvars: ";
-                 pretty_print_list outvars (fun v -> v#toPretty) "[" "," "]"]) in
-	let domain = domain#projectOut outvars in
+	let domain = domain#projectOut (outvars @ ssavars) in
 	let initVars = extract_initvar_equalities finfo k domain flocinv in
 	let testVals = extract_testvar_equalities finfo k domain in
-        let _ =
-          track_location
-            k
-            (LBLOCK [
-                 STR "testVals: ";
-                 pretty_print_list testVals (fun v -> v#toPretty) "[" "," "]";
-                 NL;
-                 STR "initVars: ";
-                 pretty_print_list initVars (fun v -> v#toPretty) "[" "," "]"]) in
+
         (* In case of a delay in the propagation of the address of a lhs variable,
            it may happen that an invariant on a variable needs to be revoked and
            replaced with a new value, after an original value has earlier been
@@ -481,7 +473,7 @@ let extract_linear_equalities
 
 
 let extract_valuesets
-    (finfo:function_info_int) 
+    (finfo:function_info_int)
     (invariants:(string, (string,atlas_t) H.t) H.t) =
   H.iter (fun k v ->
     if H.mem v "valuesets" then
@@ -492,7 +484,10 @@ let extract_valuesets
       let vars = domain#observer#getObservedVariables in
       let knownvars = flocinv#get_known_variables in
       let vars =
-        List.filter (fun v -> not (v#isTmp || List.mem v knownvars)) vars in
+        List.filter (fun v ->
+            not (v#isTmp
+                 || List.mem v knownvars
+                 || finfo#env#is_ssa_register_value v)) vars in
       List.iter (fun (v:variable_t) ->
 	let valueset = (varObserver v)#toValueSet in
 	if valueset#isTop then () else
@@ -505,4 +500,3 @@ let extract_valuesets
 	      finfo#finv#add_valueset_fact k v base offset canbenull)
         vars)
     invariants
-

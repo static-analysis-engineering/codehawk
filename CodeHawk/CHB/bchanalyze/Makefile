@@ -42,6 +42,7 @@ MLIS := \
 	bCHReachingDefs \
 	bCHDefUse \
 	bCHDefUseHigh \
+	bCHTypeConstantsDomainNoArrays \
 	bCHDesignation \
 	bCHFileIO \
 	bCHTrace \
@@ -58,6 +59,7 @@ SOURCES := \
 	bCHReachingDefs \
 	bCHDefUse \
 	bCHDefUseHigh \
+	bCHTypeConstantsDomainNoArrays \
 	bCHDesignation \
 	bCHFileIO \
 	bCHTrace \
