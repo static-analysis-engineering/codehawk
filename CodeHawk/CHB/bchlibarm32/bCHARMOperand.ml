@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -44,6 +44,8 @@ open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
+open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFunctionData
@@ -119,6 +121,27 @@ let vfp_datatype_to_string (t: vfp_datatype_t) =
   | VfpPolynomial s -> ".P" ^ (stri s)
   | VfpSignedInt s -> ".S" ^ (stri s)
   | VfpUnsignedInt s -> ".U" ^ (stri s)
+
+
+let vfp_datatype_to_btype (t: vfp_datatype_t): btype_t =
+  match t with
+  | VfpNone -> t_unknown
+  | VfpSize s -> t_unknown_int_size s
+  | VfpFloat 32 -> t_float
+  | VfpFloat 64 -> t_double
+  | VfpInt s -> t_unknown_int_size s
+  | VfpPolynomial _ -> t_unknown
+  | VfpSignedInt 8 -> t_char
+  | VfpSignedInt 16 -> t_short
+  | VfpSignedInt 32 -> t_int
+  | VfpSignedInt 64 -> t_long
+  | VfpUnsignedInt 8 -> t_uchar
+  | VfpUnsignedInt 16 -> t_ushort
+  | VfpUnsignedInt 32 -> t_uint
+  | VfpUnsignedInt 64 -> t_ulong
+  | _ ->
+     let _ = chlog#add "unknown vfp btype" (STR (vfp_datatype_to_string t)) in
+     t_unknown
 
 
 let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
@@ -295,6 +318,16 @@ object (self:'a)
                  STR "Operand cannot be converted to a generic register: ";
                  self#toPretty]))
 
+  method to_multiple_register: register_t list =
+    match kind with
+    | ARMRegList rl -> List.map register_of_arm_register rl
+    | ARMExtensionRegList rl -> List.map register_of_arm_extension_register rl
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "to_multiple_register not applicable: "; self#toPretty]))
+
   method to_numerical =
     match kind with
     | ARMImmediate imm -> imm#to_numerical
@@ -465,6 +498,7 @@ object (self:'a)
                           ~size rvar ivar scale (mkNumerical i),
                         [STR "ARMShiftedIndexOffset";
                          self#toPretty;
+                         STR ": ";
                          STR "memory-variable-3"])
                   | _ ->
                      (env#mk_unknown_memory_variable "operand",
@@ -565,14 +599,24 @@ object (self:'a)
        XOp
          (XLsl,
           [XVar (env#mk_arm_register_variable r); int_constant_expr n])
-    | ARMShiftedReg _ -> XConst (XRandom)
+    | ARMShiftedReg _ ->
+       let _ =
+         chlog#add
+           "DEBUG: shifted-reg unknown"
+           (LBLOCK [self#toPretty]) in
+       XConst (XRandom)
     | ARMRegBitSequence (r, lsb, widthm1) ->
+       let regvar = XVar (floc#env#mk_arm_register_variable r) in
        (match (lsb, widthm1) with
         | (8, 7) ->
-           let env = floc#env in
-           let regvar = XVar (env#mk_arm_register_variable r) in
            XOp (XXbyte, [int_constant_expr 1; regvar])
-        | _ -> XConst XRandom)
+        | _ ->
+           let mask = Int.shift_left 1 (widthm1+1) in
+           if lsb = 0 then
+             XOp (XBAnd, [regvar; int_constant_expr mask])
+           else
+             let shiftedreg = XOp (XLsr, [regvar; int_constant_expr lsb]) in
+             XOp (XBAnd, [shiftedreg; int_constant_expr mask]))
     | _ ->
        raise
          (BCH_failure
@@ -648,6 +692,20 @@ object (self:'a)
     match kind with
     | ARMSpecialReg APSR_nzcv -> true
     | _ -> false
+
+  method is_bit_sequence =
+    match kind with
+    | ARMRegBitSequence _ -> true
+    | _ -> false
+
+  method to_btype =
+    match kind with
+    | ARMRegBitSequence (_, _, widthm1) ->
+       (match widthm1 with
+        | 7 -> t_uchar
+        | 15 -> t_ushort
+        | _ -> t_uint)
+    | _ -> t_unknown
 
   method is_register_list = match kind with ARMRegList _ -> true | _ -> false
 

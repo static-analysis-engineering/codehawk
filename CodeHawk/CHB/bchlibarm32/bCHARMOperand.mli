@@ -38,6 +38,7 @@ open CHXmlDocument
 open Xprt
 
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 (* bchlibarm32 *)
@@ -49,6 +50,8 @@ val cps_effect_to_string: cps_effect_t -> string
 val dmb_option_to_string: dmb_option_t -> string
 
 val vfp_datatype_to_string: vfp_datatype_t -> string
+
+val vfp_datatype_to_btype: vfp_datatype_t -> btype_t
 
 val arm_operand_mode_to_string: arm_operand_mode_t -> string
 

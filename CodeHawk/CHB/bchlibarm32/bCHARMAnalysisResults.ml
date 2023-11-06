@@ -163,18 +163,34 @@ object (self)
              jtnode
            end) jumptables)
 
+  method private write_xml_btypes (node: xml_element_int) =
+    let btypes = finfo#get_btype_table in
+    node#appendChildren
+      (List.map (fun (vix, bix, bixs) ->
+           let btnode = xmlElement "bt" in
+           begin
+             btnode#setIntAttribute "vix" vix;
+             btnode#setIntAttribute "bix" bix;
+             btnode#setAttribute
+               "bixs"
+               (String.concat "," (List.map string_of_int bixs));
+             btnode
+           end) btypes)
+
   method private write_xml (node:xml_element_int) =
     let append = node#appendChildren in
     let cNode = xmlElement "cfg" in
     let jjNode = xmlElement "jump-tables" in
     let dNode = xmlElement "instr-dictionary" in
     let iiNode = xmlElement "instructions" in
+    let bNode = xmlElement "btypes" in
     begin
       self#write_xml_cfg cNode;
       self#write_xml_jumptables jjNode;
       self#write_xml_instructions iiNode;
+      self#write_xml_btypes bNode;
       id#write_xml dNode;
-      append [cNode; dNode; iiNode; jjNode]
+      append [cNode; dNode; iiNode; bNode; jjNode]
     end
 
   method save =
