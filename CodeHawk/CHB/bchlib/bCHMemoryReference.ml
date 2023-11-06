@@ -79,6 +79,8 @@ let rec memory_offset_to_string offset =
   | NoOffset -> ""
   | ConstantOffset (n,subOffset) -> 
      "[" ^ n#toString ^ "]" ^ (memory_offset_to_string subOffset)
+  | FieldOffset ((fname, _), subOffset) ->
+     "." ^ fname ^ (memory_offset_to_string subOffset)
   | IndexOffset (v,size,subOffset) -> 
     "[" ^ v#getName#getBaseName ^ ":" ^ (string_of_int size) ^ "]" ^ 
       (memory_offset_to_string subOffset)
@@ -103,9 +105,12 @@ let rec get_constant_offsets offset =
   | NoOffset -> [ numerical_zero ]
   | ConstantOffset (n, suboffset) -> n :: (get_constant_offsets suboffset)
   | _ ->
-     raise (BCH_failure
-              (LBLOCK [ STR "offset " ; STR (memory_offset_to_string offset) ;
-                        STR " is not constant" ]))
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "offset ";
+               STR (memory_offset_to_string offset);
+               STR " is not constant"]))
 
 let get_total_constant_offset offset =
   List.fold_left (fun acc n ->
