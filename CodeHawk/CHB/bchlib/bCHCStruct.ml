@@ -118,7 +118,9 @@ let read_xml_c_struct (name:string) (node:xml_element_int) =
        raise (XmlDocumentError (line,col,msg))
      end
 
-let cstructs = H.create 3
+
+let cstructs = H.create 3  (* name -> c_struct_int *)
+
 
 let add_user_c_struct (name:string) =
   if H.mem cstructs name then
@@ -144,6 +146,7 @@ let add_library_struct (node:xml_element_int) =
     chlog#add "library struct" (LBLOCK [ STR s#get_name ])
   end
 
+
 let get_c_struct (name:string) =
   try
     H.find cstructs name 
@@ -151,6 +154,7 @@ let get_c_struct (name:string) =
   | Not_found ->
      raise
        (BCH_failure (LBLOCK [STR "Struct " ;STR name; STR " not found"]))
+
 
 let get_pointedto_struct (ty:btype_t) =
   match ty with
@@ -162,6 +166,7 @@ let get_pointedto_struct (ty:btype_t) =
                STR "Type is not a pointer to a struct: ";
 	       btype_to_pretty ty]))
 
+
 let get_struct (ty:btype_t) =
   match ty with
   | TNamed (name,_) -> get_c_struct name
@@ -171,10 +176,12 @@ let get_struct (ty:btype_t) =
 	  (LBLOCK [
                STR "Type is not a known struct: "; btype_to_pretty ty]))
 
+
 let is_ptrto_known_struct (ty:btype_t) =
   match ty with
   | TPtr (TNamed (name,_),_) -> H.mem cstructs name
   | _ -> false
+
 
 let is_known_struct (ty:btype_t) =
   match ty with
