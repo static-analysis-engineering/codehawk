@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022-2023  Aarno Labs LLC
+   Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ open CHLanguage
 open BCHLibTypes
 
 
-val analyze_procedure_with_def_use: procedure_int -> system_int -> unit
+val analyze_procedure_with_btypes: procedure_int -> system_int -> unit
 
-val extract_def_use:
+val extract_btypes:
   function_info_int -> (string, (string, atlas_t) Hashtbl.t) Hashtbl.t -> unit

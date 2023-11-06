@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ class type constraint_set_int =
 object ('a)
   method add: numerical_constraint_t -> unit
   method get_constraints: numerical_constraint_t list
-  method project_out: variable_t  list -> 'a option
+  method project_out: variable_t list -> 'a option
   method has: variable_t -> bool
   method toPretty: pretty_t
 end
