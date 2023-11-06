@@ -385,8 +385,9 @@ object (self)
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw; setb w])
       | SubtractCarry (s, c, rd, rn, rm, tw) ->
          (ctags c, [setb s; oi rd; oi rn; oi rm; setb tw])
-      | Swap (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
-      | SwapByte (c, rt, rt2, mem) -> (ctags c, [oi rt; oi rt2; oi mem])
+      | Swap (c, rt, rt2, rn, mem) -> (ctags c, [oi rt; oi rt2; oi rn; oi mem])
+      | SwapByte (c, rt, rt2, rn, mem) ->
+         (ctags c, [oi rt; oi rt2; oi rn; oi mem])
       | TableBranchByte (c, rn, rm, mem) -> (ctags c, [oi rn; oi rm; oi mem])
       | TableBranchHalfword (c, rn, rm, mem) -> (ctags c, [oi rn; oi rm; oi mem])
       | Test (c, rn, rm, tw) -> (ctags c, [oi rn; oi rm; setb tw])

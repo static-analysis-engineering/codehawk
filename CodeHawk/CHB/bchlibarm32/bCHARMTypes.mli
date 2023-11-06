@@ -39,6 +39,7 @@ open CHXmlDocument
 open XprTypes
 
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 
@@ -176,6 +177,7 @@ class type arm_operand_int =
     (* converters *)
     method to_numerical: numerical_t
     method to_register: register_t
+    method to_multiple_register: register_t list
     method to_address: floc_int -> xpr_t
     method to_variable: floc_int -> variable_t
     method to_multiple_variable: floc_int -> variable_t list
@@ -184,6 +186,7 @@ class type arm_operand_int =
     method to_lhs: floc_int -> variable_t * cmd_t list
     method to_multiple_lhs: floc_int -> variable_t list * cmd_t list
     method to_updated_offset_address: floc_int -> xpr_t
+    method to_btype: btype_t
 
     (* predicate *)
     method is_read: bool
@@ -202,6 +205,7 @@ class type arm_operand_int =
     method is_pc_relative_address: bool
     method is_offset_address: bool
     method is_offset_address_writeback: bool
+    method is_bit_sequence: bool
 
     method includes_pc: bool
     method includes_lr: bool
@@ -894,11 +898,13 @@ type arm_opcode_t =
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt *)
       * arm_operand_int  (* rt2 *)
+      * arm_operand_int  (* rn *)
       * arm_operand_int  (* mem *)
   | SwapByte of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt *)
       * arm_operand_int  (* rt2 *)
+      * arm_operand_int  (* rn *)
       * arm_operand_int  (* mem *)
   | TableBranchByte of
       arm_opcode_cc_t    (* condition *)
@@ -1431,7 +1437,10 @@ type arm_assembly_instruction_result = arm_assembly_instruction_int traceresult
 type thumb_it_sequence_kind_t =
   (** in [inverse, dstop], [inverse] indicates whether the predicate itself
       or its inverse is to be assigned; [dstop] is the destination operand
-      for the predicate assignment.*)
+      for the predicate assignment.
+
+      The destination operand [dstop] is assumed to be a register.
+   *)
   | ITPredicateAssignment of bool * arm_operand_int
 
 
