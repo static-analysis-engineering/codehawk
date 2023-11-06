@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -413,6 +413,7 @@ object
 end
 
 
+(** Definition used for user-defined named addresses and constants.*)
 type constant_definition_t = {
   xconst_name: string;
   xconst_value: doubleword_int;
@@ -908,15 +909,15 @@ class type bdictionary_int =
 (** {1 Binary I/O} *)
 
 (** Wrapper for reading different types of data from file.*)
-class type virtual stream_wrapper_int = 
+class type virtual stream_wrapper_int =
 object
-    
+
   method read: char
   method nread: int -> string
   method really_nread: int -> string
   method input: string -> int -> int -> int
   method close_in: unit
-    
+
   method read_byte: int
   method read_signed_byte: int
   method virtual read_ui16: int
@@ -927,7 +928,7 @@ object
   method virtual read_double: float
   method read_string: string
   method read_line: string
-    
+
   method virtual read_doubleword: doubleword_int
 end
 
@@ -939,7 +940,7 @@ object
   method read: char
   method nread: int -> string
   method really_nread: int -> string
-    
+
   method read_byte: int
   method read_signed_byte: int
   method read_ui16: int
@@ -1650,7 +1651,7 @@ class type varinvdictionary_int =
 
 
 (** Type invariant fact. *)
-type type_invariant_fact_t = 
+type type_invariant_fact_t =
 | VarTypeFact of variable_t * btype_t * string list    (* struct, fields *)
 | ConstTypeFact of numerical_t * btype_t
 | XprTypeFact of xpr_t * btype_t
@@ -1762,7 +1763,10 @@ type invariant_fact_t =
   (** variable equals non-relational-value *)
   | RelationalFact of linear_equality_t
   | InitialVarEquality of variable_t * variable_t
-  (** variable, initial value: variable is equal to its initial value at function entry *)
+  (** variable, initial value: variable is equal to its initial value at
+      function entry *)
+  | SSAVarEquality of variable_t * variable_t
+  (** register variable, ssa value: register is equal to its assignment value *)
   | InitialVarDisEquality of variable_t * variable_t
   (** variable, initial value: variable may not be equal to its initial value*)
   | TestVarEquality of variable_t * variable_t * ctxt_iaddress_t * ctxt_iaddress_t
@@ -1810,7 +1814,7 @@ object
   method get_interval_offset: variable_t -> variable_t -> interval_t
   method get_external_exprs: variable_t -> xpr_t list
   method get_known_variables: variable_t list
-  method get_known_initial_values: variable_t list 
+  method get_known_initial_values: variable_t list
   method get_init_disequalities: variable_t list (* initial values *)
   method get_init_equalities: variable_t list (* initial values *)
   method rewrite_expr: xpr_t -> (variable_t -> variable_t -> int) ->  xpr_t
@@ -1855,6 +1859,7 @@ object
 
   (* add/remove special-purpose facts *)
   method add_initial_value_fact: string -> variable_t -> variable_t -> unit
+  method add_ssa_value_fact: string -> variable_t -> variable_t -> unit
   method remove_initial_value_fact: string -> variable_t -> variable_t -> unit
   method add_initial_disequality_fact: string -> variable_t -> variable_t -> unit
   method add_test_value_fact   :
@@ -1965,7 +1970,7 @@ type arg_io_t =
             or
                  (enum:const, <name of the enumeration>)
                  (enum:flags, <name of the flags enumeration>)
-            or 
+            or
                  (size:structure, <name of datastructure type>)
                  (size:buffer,    <name of function>)
                  (size:memory,    <name of function>)
@@ -2006,7 +2011,7 @@ type arithmetic_op_t =
 
 
 (** Relational operator used in expressions over api terms.*)
-type relational_op_t = 
+type relational_op_t =
   PEquals | PLessThan | PLessEqual | PGreaterThan | PGreaterEqual | PNotEqual
 
 
@@ -2061,7 +2066,7 @@ type function_stub_t =
     first argument on the calling function, with the jni identification number *)
   | LinuxSyscallFunction of int (** numbers ranging from 4000 to 4999 *)
   | PckFunction of string * string list * string   (** PE, with package names *)
-                 
+
 
 (** Identification of a call target in a call instruction.*)
 type call_target_t =
@@ -2192,7 +2197,7 @@ type postcondition_t =
 (** Function side effect: an expression that describes how the calling context
     is changed by the call.*)
 type sideeffect_t =
-| BlockWrite of btype_t * bterm_t * bterm_t 
+| BlockWrite of btype_t * bterm_t * bterm_t
 | Modifies of bterm_t
 | AllocatesStackMemory of bterm_t
 | StartsThread of bterm_t * bterm_t list   (* start address, parameters *)
@@ -2496,7 +2501,7 @@ class type interface_dictionary_int =
    by name.
    Jni summaries are obtained by index number: jni_<index> from the jni directory.
 
-   Some Windows library functions have two versions: an ASCII version (with 
+   Some Windows library functions have two versions: an ASCII version (with
    suffix A) and a Unicode version (with suffix W). The api and semantics for
    these functions are almost the same, so the models directory provides a
    neutral version (without suffix) that provides all documentation, api, and
@@ -2518,7 +2523,7 @@ class type interface_dictionary_int =
 
    Some functions appear in multiple libraries. To avoid having to maintain
    multiple copies of the same model, we provide one model and references to
-   this model within other libraries (directories). 
+   this model within other libraries (directories).
    The format of the referring version is, e.g., for send in wsock32.dll:
    {[
    <libfun lib="wsock32" name="send">
@@ -2527,7 +2532,7 @@ class type interface_dictionary_int =
    ]}
 
    All Jni function models are stored in the jni directory. The name of the
-   file for jni function with index x is jni_x.xml . 
+   file for jni function with index x is jni_x.xml .
    Several jni functions are variations of the same function, only with
    different types. E.g., there are ten jni functions of the form
    Call<type>Method, for ten different types, each with their own index.
@@ -2554,13 +2559,13 @@ class type interface_dictionary_int =
    Windows file systems are case insensitive.
 
 *)
-class type function_summary_library_int = 
+class type function_summary_library_int =
 object
   (* setters *)
   method load_dll_library_function: string -> string -> unit
   method load_so_function: string -> unit
   method read_summary_files: unit
-    
+
   (* accessors *)
   method get_function_dll: string -> string (* dll from which function was loaded *)
   method get_dll_function: string -> string -> function_summary_int
@@ -2723,8 +2728,9 @@ e.g., argument to the function, or return value from malloc *)
 type memory_offset_t =
   | NoOffset
   | ConstantOffset of numerical_t * memory_offset_t
+  | FieldOffset of fielduse_t * memory_offset_t
   | IndexOffset of variable_t * int * memory_offset_t
-  | UnknownOffset 
+  | UnknownOffset
 
 
 (** Memory reference wrapper. *)
@@ -2849,23 +2855,21 @@ and constant_value_variable_t =
       string                (* name of function *)
       * string              (* name of creator *)
       * ctxt_iaddress_t     (* address of creation *)
-  | CallTargetValue of call_target_t 
+  | CallTargetValue of call_target_t
   | SideEffectValue of
       ctxt_iaddress_t       (* callsite *)
       * string              (* argument description *)
-      * bool                (* is-global address *) 
+      * bool                (* is-global address *)
   | MemoryAddress of int * memory_offset_t   (* memory reference index *)
   | BridgeVariable of ctxt_iaddress_t * int      (* call site, argument index *)
   | FieldValue of string * int * string     (* struct name, offset, fieldname *)
-  | SymbolicValue of xpr_t  (* expression that consists entirely of symbolic constants *)
-  | SignedSymbolicValue of
-      xpr_t    (* sign-extended symbolic value *)
-      * int    (* original size (in bits) *)
-      * int    (* extended size (in bits) *)
+  | SymbolicValue of xpr_t
+  (** expression that consists entirely of symbolic constants *)
+  | SignedSymbolicValue of xpr_t * int * int
+  (** sign-extended symbolic value with the original size and new size in bits*)
   | Special of string
   | RuntimeConstant of string
   | ChifTemp
-
 
 
 class type assembly_variable_int =
@@ -2880,6 +2884,7 @@ object ('a)
   method get_name: string
   method get_denotation: assembly_variable_denotation_t
   method get_register: register_t
+  method get_ssa_register_value_register: register_t
   method get_pointed_to_function_name: string
   method get_call_site: ctxt_iaddress_t
   method get_se_argument_descriptor: string
@@ -2897,16 +2902,32 @@ object ('a)
   method is_arm_argument_variable: bool
   method is_memory_variable: bool
 
+  (** Returns true if this variable is set by the function environment and
+      does not change during the execution of the function.
+
+      The specific types of variables for which this is true:
+      - initial value of a register (upon function entry)
+      - intiial value of a memory location (upon function entry)
+      - function return value (from a call to that function)
+      - call-target value
+      - side-effect value (value set by a call to another function as a
+          side effect)
+      - field value
+      - symbolic value: a variable representing the value of an expression
+          over function-initial-values
+      - signed symbolic value: idem for a sign-extended value
+   *)
   method is_function_initial_value: bool    (* value from function environment *)
-       
+
   method is_initial_register_value: bool
   method is_initial_mips_argument_value: bool
   method is_initial_arm_argument_value: bool
   method is_initial_stackpointer_value: bool
-       
+
   method is_initial_memory_value: bool
   method is_frozen_test_value: bool
   method is_ssa_register_value: bool
+  method is_ssa_register_value_at: ctxt_iaddress_t -> bool
   method is_bridge_value: bool
   method is_bridge_value_at: ctxt_iaddress_t -> bool
   method is_return_value: bool
@@ -2970,60 +2991,201 @@ class type vardictionary_int =
 
 class type variable_manager_int =
 object
-  (* reset *)
+
+  (** {1 Management}*)
+
+  (** Resets the variable dictionary.*)
   method reset: unit
+
+  (** Returns the variable dictionary for this function.*)
   method vard: vardictionary_int
+
+  (** Returns the memory reference manager for this function.*)
   method memrefmgr: memory_reference_manager_int
 
-  (* constructors *)
+  (** {1 Creating variables}*)
+
+  (** {2 Registers and flags}*)
+
+  (** [make_register_variable r] returns the register variable for [r].*)
+  method make_register_variable: register_t -> assembly_variable_int
+
+  (** [make_flag_variable f] returns the flag variable [f].*)
+  method make_flag_variable: flag_t -> assembly_variable_int
+
+
+  (** {2 Memory variables}*)
+
+  (** [make_memory_variable ?size memref offset] returns the memory variable
+      with base [memref] and offset [offset].*)
   method make_memory_variable:
            ?size: int ->
            memory_reference_int ->
            memory_offset_t ->
            assembly_variable_int
-  method make_register_variable: register_t -> assembly_variable_int
-  method make_flag_variable: flag_t -> assembly_variable_int
-  method make_global_variable: ?size:int -> numerical_t -> assembly_variable_int
-  method make_frozen_test_value: 
-    variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t-> assembly_variable_int
+
+  (** [make_global_variable ?size ?offset address] returns the global variable
+      with address [address] and optional offset [offset].*)
+  method make_global_variable:
+           ?size:int
+           -> ?offset:memory_offset_t
+           -> numerical_t
+           -> assembly_variable_int
+
+  (** {2 Auxiliary variables}*)
+
+  (** [make_frozen_test_value var taddr jaddr] returns a frozen test value
+      for the variable [var] at test address [taddr] that is part of an
+      that is used in a conditional instruction (e.g., a conditional jump) at
+      address [jaddr].
+
+      A frozen test value captures the value of a variable at the address where
+      the test is evaluated. This value will be used in the predicate constructed
+      for the conditional instruction, where the value of the same variable may
+      have a different value.
+   *)
+  method make_frozen_test_value:
+           variable_t
+           -> ctxt_iaddress_t
+           -> ctxt_iaddress_t
+           -> assembly_variable_int
+
+  (** [make_bridge_value addr argix] returns a bridge value for the
+      variable [var] that is the stack argument with index [argix] (1-based)
+      for a call (x86 only).*)
   method make_bridge_value: ctxt_iaddress_t -> int -> assembly_variable_int
+
+  (** [make_initial_register_value r] returns the variable representing the
+      initial value of register [r] at function entry.*)
   method make_initial_register_value: register_t -> int -> assembly_variable_int
+
+  (** [make_initial_memory_value var] returns the variable representing the
+      initial value of memory variable [var] at function entry.]*)
   method make_initial_memory_value  : variable_t -> assembly_variable_int
-  method make_special_variable: string -> assembly_variable_int
-  method make_runtime_constant: string -> assembly_variable_int
+
+  (** [make_return_value addr] returns the variable representing the return
+      value from the call at address [addr].*)
   method make_return_value: ctxt_iaddress_t -> assembly_variable_int
+
+  (** [make_ssa_register_value r addr ty] returns the variable representing
+      the value assigned to register [r] at instruction address [addr] with
+      type [ty] (which may be unknown, [t_unknown]).*)
   method make_ssa_register_value:
            register_t
            -> ctxt_iaddress_t
            -> btype_t
            -> assembly_variable_int
+
+  (** [make_symbolic_value x] returns the variable representing the
+      value of expression [x], which must be an expression that consists
+      entirely of constant-value variables.*)
+  method make_symbolic_value: xpr_t -> assembly_variable_int
+
+  (** [make_signed_symbolic_value x oldsize newsize] returns that variable
+      representing the value of expression [x] sign-extended from [oldsize] to
+      [newsize] (in bits).*)
+  method make_signed_symbolic_value:
+           xpr_t -> int -> int -> assembly_variable_int
+
+  (** [make_special_variable name] returns a special-purpose variable with
+      name [name] (uninterpreted).*)
+  method make_special_variable: string -> assembly_variable_int
+
+  (** [make_runtime_constant name] returns a variable that represents a
+      run-time constant, identified by name [name].*)
+  method make_runtime_constant: string -> assembly_variable_int
+
   method make_calltarget_value: call_target_t -> assembly_variable_int
   method make_function_pointer_value:
            string -> string -> ctxt_iaddress_t -> assembly_variable_int
   method make_side_effect_value:
            ctxt_iaddress_t -> ?global:bool -> string -> assembly_variable_int
   method make_field_value: string -> int -> string -> assembly_variable_int
-  method make_symbolic_value: xpr_t -> assembly_variable_int
-  method make_signed_symbolic_value:
-           xpr_t -> int -> int -> assembly_variable_int
 
+  (** {2 Memory references}*)
+
+  (** [make_memref_from_basevar var] returns a memory reference with base
+      determined by [var].
+
+      In particular, the initial value of a stack-pointer returns a
+      stack-frame base; the initial value of other registers or of a
+      function return value or memory value returns a basevar reference.
+
+      @raise BCH_failure if [var] is not a constant-value variable.
+   *)
   method make_memref_from_basevar: variable_t -> memory_reference_int
 
-  (* accessors *)
+  (** {1 Variables from CHIF variables}*)
+
+  (** [get_variable chifvar] returns the assembly variable corresponding
+      to [chifvar]*)
   method get_variable: variable_t -> assembly_variable_int
+
+  (** [get_variable_by_index index] returns the assembly variable corresponding
+      to the chif variable with index [index].*)
   method get_variable_by_index: int -> assembly_variable_int
-  method get_memvar_reference: variable_t -> memory_reference_int
-  method get_memvar_offset: variable_t -> memory_offset_t
-  method get_initial_memory_value_variable: variable_t -> variable_t
-  method get_memvar_basevar: variable_t -> variable_t
-  method get_memval_basevar: variable_t -> variable_t
-  method get_memvar_offset: variable_t -> memory_offset_t
-  method get_memval_offset: variable_t -> memory_offset_t
+
+  (** {1 CHIF variable constituents}*)
+
+  (** {2 Address}*)
+
+  (** [get_global_variable_address var] returns the global address of
+      variable [var].
+
+      @raise BCH_failure if [var] is not a global variable (that is, a
+      global base with constant offset).
+   *)
   method get_global_variable_address: variable_t -> doubleword_int
+
+  (** {2 Base variable}*)
+
+  (** [get_memvar_basevar var] returns the base variable of memory variable
+      [var].
+
+      @raise BCH_failure if [var] is not a memory variable with a basevar.*)
+  method get_memvar_basevar: variable_t -> variable_t
+
+  (** [get_memval_basevar var] returns the base variable of the variable
+      representing the memory variable value [var]
+
+      @raise BCH_failure if [var] is not the initial value of a memory
+      variable with a basevar.*)
+  method get_memval_basevar: variable_t -> variable_t
+
+  (** [get_initial_memory_value_variable var] returns the variable representing
+      the memory variable of which [var] is the initial value at function
+      entry.
+
+      @raise BCH_failure if [var] is not an initial-memory value variable.*)
+  method get_initial_memory_value_variable: variable_t -> variable_t
+
+  (** {2 Memory reference}*)
+
+  (** [get_memvar_reference var] returns the base memory reference of
+      memory-variable [var].
+
+      @raise BCH_failure is [var] is not a memory variable.*)
+  method get_memvar_reference: variable_t -> memory_reference_int
+
+  (** {2 Memory offset}*)
+
+  (** [get_memvar_offset var] returns the offset of memory variable [var].
+
+      @raise BCH_failure if [var] is not a memory variable.*)
+  method get_memvar_offset: variable_t -> memory_offset_t
+
+  (** [get_memval_offset var] returns the offset of initial-memory variable
+      [var].
+
+      @raise BCH_failure if [var] is not an initial_memory variable.*)
+  method get_memval_offset: variable_t -> memory_offset_t
+
+
   method get_stack_parameter_index:
            variable_t -> int option (* assuming 4-byte parameters *)
   method get_register: variable_t -> register_t
   method get_initial_register_value_register: variable_t -> register_t
+  method get_ssa_register_value_register: variable_t -> register_t
   method get_pointed_to_function_name: variable_t -> string
   method get_calltarget_value: variable_t -> call_target_t
   method get_call_site: variable_t -> ctxt_iaddress_t
@@ -3036,16 +3198,40 @@ object
   method get_assembly_variables: assembly_variable_int list
   method get_external_variable_comparator: variable_comparator_t
 
-  (* predicates *)
+  (** {1 Predicates on CHIF variables}*)
+
+  (** {2 Offsets}*)
+
+  (** Returns true if [var] is a memory variable with a constant offset
+      (that is, if it is numerical value or if it is an index offset with
+      a constant-value variable. Idem for sub-offsets).*)
+  method has_constant_offset: variable_t -> bool
+
+  (** Returns true if [var] is a memory variable with an offset given by a
+      (known) numerical value.*)
+  method has_numerical_offset: variable_t -> bool
+
+  (** {2 Global variables}*)
+
+  (** Returns true if [var] is a memory variable with a global base.*)
+  method is_global_variable: variable_t -> bool
+
+  (** Returns true if [var] is a global variable with a numerical offset.*)
+  method has_global_variable_address: variable_t -> bool
+
+
   method is_stack_parameter_variable: variable_t -> bool  (* memory variable on the stack above the RA *)
+
   method is_realigned_stack_variable: variable_t -> bool
   method is_function_initial_value: variable_t -> bool
   method is_local_variable: variable_t -> bool  (* stack or register variable *)
-  method is_global_variable: variable_t -> bool
+
   method is_register_variable: variable_t -> bool
   method is_mips_argument_variable: variable_t -> bool
   method is_arm_argument_variable: variable_t -> bool
   method is_stack_variable: variable_t -> bool  (* memory variable anywhere on the stack  *)
+  method is_ssa_register_value: variable_t -> bool
+  method is_ssa_register_value_at: ctxt_iaddress_t -> variable_t -> bool
   method is_initial_register_value: variable_t -> bool
   method is_initial_mips_argument_value: variable_t -> bool
   method is_initial_arm_argument_value: variable_t -> bool
@@ -3070,10 +3256,19 @@ object
   method is_unknown_base_memory_variable: variable_t -> bool
   method is_unknown_offset_memory_variable: variable_t -> bool
   method is_unknown_memory_variable: variable_t -> bool
-  method has_constant_offset: variable_t -> bool
+
   method is_global_sideeffect: variable_t -> bool
 
   method has_global_address: variable_t -> bool
+
+  (** {1 Predicates on offsets}*)
+
+  (** Returns true if [offset] is a known numerical value.*)
+  method is_numerical_offset: memory_offset_t -> bool
+
+  (** Returns true if [offset] is a known numerical value, or it is an index
+      offset with constant-value index variable, idem for sub-offsets.*)
+  method is_constant_offset: memory_offset_t -> bool
 
 end
 
@@ -3100,7 +3295,7 @@ class type function_environment_int =
 
     method varmgr : variable_manager_int
     method variable_names: variable_names_int
-         
+
     (* setters *)
     method set_variable_name: variable_t -> string -> unit
     method set_class_member_variable_names:
@@ -3113,6 +3308,7 @@ class type function_environment_int =
 
     (* memory reference / assembly variable constructors *)
     method mk_unknown_memory_reference: string -> memory_reference_int
+    method mk_global_memory_reference: memory_reference_int
     method mk_local_stack_reference: memory_reference_int
     method mk_realigned_stack_reference: memory_reference_int
     method mk_base_variable_reference: variable_t -> memory_reference_int
@@ -3146,7 +3342,8 @@ class type function_environment_int =
     method mk_pwr_sp_register_variable: pwr_special_reg_t -> variable_t
     method mk_pwr_register_field_variable: pwr_register_field_t -> variable_t
 
-    method mk_global_variable: ?size:int -> numerical_t -> variable_t
+    method mk_global_variable:
+             ?size:int -> ?offset:memory_offset_t -> numerical_t -> variable_t
 
     method mk_initial_register_value: ?level:int -> register_t -> variable_t
     method mk_initial_memory_value: variable_t -> variable_t
@@ -3161,7 +3358,15 @@ class type function_environment_int =
              -> numerical_t
              -> variable_t
     method mk_index_offset_memory_variable:
-             ?size:int -> memory_reference_int -> memory_offset_t -> variable_t
+             ?size:int
+             -> memory_reference_int
+             -> memory_offset_t
+             -> variable_t
+    method mk_index_offset_global_memory_variable:
+             ?elementsize:int
+             -> numerical_t
+             -> memory_offset_t
+             -> variable_t
     method mk_unknown_memory_variable: string -> variable_t
     method mk_frozen_test_value:
              variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t -> variable_t
@@ -3182,7 +3387,7 @@ class type function_environment_int =
 
     (* accessors *)
     method get_variable_comparator: variable_t -> variable_t -> int
- 
+
     method get_frozen_variable:
              variable_t -> (variable_t * ctxt_iaddress_t * ctxt_iaddress_t)
 
@@ -3192,6 +3397,7 @@ class type function_environment_int =
     method get_mips_argument_values: variable_t list
     method get_arm_argument_values: variable_t list
     method get_bridge_values_at: ctxt_iaddress_t -> variable_t list
+    method get_ssa_values_at: ctxt_iaddress_t -> variable_t list
 
     method get_variable: int -> variable_t
     method get_variables: variable_t list
@@ -3211,34 +3417,35 @@ class type function_environment_int =
     method get_register: variable_t -> register_t
     method get_constant_offsets: variable_t -> numerical_t list option
     method get_total_constant_offset: variable_t -> numerical_t option
-         
+
     method get_stack_parameter_index: variable_t -> int option
+    method get_ssa_register_value_register_variable: variable_t -> variable_t
     method get_init_value_variable: variable_t -> variable_t (* memory or register *)
-    method get_initial_register_value_register: variable_t -> register_t         
+    method get_initial_register_value_register: variable_t -> register_t
     method get_pointed_to_function_name: variable_t -> string
     method get_call_site: variable_t -> ctxt_iaddress_t
     method get_se_argument_descriptor: variable_t -> string
     method get_global_variable_address: variable_t -> doubleword_int
     method get_calltarget_value: variable_t -> call_target_t
     method get_symbolic_value_expr: variable_t -> xpr_t
-         
+
     method get_argbasevar_with_offsets:
              variable_t -> (variable_t * numerical_t list) option
     method get_globalbasevar_with_offsets:
              variable_t -> (variable_t * numerical_t list) option
-         
+
     method get_initialized_call_target_value: variable_t -> call_target_t
     method get_initialized_string_value: variable_t -> int -> string
 
     method get_regarg_deref_val_register: variable_t -> register_t
     method get_regarg_deref_var_register: variable_t -> register_t
-         
+
     method get_var_count: int
     method get_globalvar_count: int
     method get_argvar_count: int
     method get_returnvar_count: int
     method get_sideeffvar_count: int
-         
+
     (* scope and transactions *)
     method get_scope: scope_int
     method start_transaction: unit
@@ -3247,8 +3454,9 @@ class type function_environment_int =
     method mk_sym_temp: variable_t
     method request_num_constant: numerical_t -> variable_t
     method mk_symbolic_variable: ?domains:string list -> variable_t -> variable_t
-         
+
     (* variable manager predicates *)
+    method has_global_variable_address: variable_t -> bool
     method is_unknown_base_memory_variable: variable_t -> bool
     method is_unknown_offset_memory_variable: variable_t -> bool
     method is_unknown_memory_variable: variable_t -> bool
@@ -3270,46 +3478,48 @@ class type function_environment_int =
     method is_calltarget_value: variable_t -> bool
     method is_symbolic_value: variable_t -> bool
     method is_signed_symbolic_value: variable_t -> bool
-         
+
     method is_stack_variable: variable_t -> bool  (* memory variable on the stack *)
     method is_stack_parameter_variable: variable_t -> bool (* stack-variable with positive offset *)
-         
+
     method is_register_variable: variable_t -> bool
+    method is_ssa_register_value: variable_t -> bool
+    method is_ssa_register_value_at: ctxt_iaddress_t -> variable_t -> bool
     method is_initial_register_value: variable_t -> bool
     method is_initial_mips_argument_value: variable_t -> bool
     method is_initial_arm_argument_value: variable_t -> bool
     method is_initial_stackpointer_value : variable_t -> bool
-         
+
     method is_initial_memory_value: variable_t -> bool
     method is_in_test_jump_range: variable_t -> ctxt_iaddress_t -> bool
-         
+
     method is_unknown_reference: int -> bool
-         
+
     (* derived variable manager predicates *)
     method is_stack_parameter_value: variable_t -> bool  (* initial value of stack-parameter *)
-         
+
     method is_initial_value: variable_t -> bool   (* memory or register initial value *)
-         
+
     method is_stackarg_deref_var: variable_t -> bool
     method is_stackarg_deref_val: variable_t -> bool
     method is_regarg_deref_var: variable_t -> bool
     method is_regarg_deref_val: variable_t -> bool
     method is_arg_deref_var: variable_t -> bool
     method is_arg_deref_val: variable_t -> bool
-         
+
     method is_return_value_derivative: variable_t -> bool
-         
+
     method is_sideeffect_value_derivative: variable_t -> bool
-         
+
     (* envionment data predicates *)
     method is_virtual_call : variable_t -> bool
     method has_initialized_call_target_value: variable_t -> bool
-    method has_initialized_string_value     : variable_t -> int -> bool       
-         
+    method has_initialized_string_value     : variable_t -> int -> bool
+
     (* printing *)
     method variable_name_to_string: variable_t -> string
     method variable_name_to_pretty: variable_t -> pretty_t
-         
+
   end
 
 
@@ -3566,6 +3776,34 @@ object
   method restore_register: ctxt_iaddress_t -> register_t -> unit
 
 
+  (** {2 Auxvar types}
+
+      The types set and retrieved are inferred variable types for constant-value
+      variables. Inferences are based on their appearance in certain instructions
+      or operations performed on them. Throughout the analysis different aspects
+      may be revealed, and a list of these is maintained.*)
+
+  (** [finfo#set_btype v ty] records type [ty] for variable [v].*)
+  method set_btype: variable_t -> btype_t -> unit
+
+  (** [finfo#has_btype v] returns true if at least one type has been recorded for
+      variable [v].*)
+  method has_btype: variable_t -> bool
+
+  (** [finfo#get_btype v] returns the join of all types that have been recorded
+      for variable [v]. If no types were recorded [t_unknown] is returned.*)
+  method get_btype: variable_t -> btype_t
+
+  (** [finfo#get_btypes v] returns all types that have been recorded for
+      variable [v]. If no types were recorded the empty list is returned.*)
+  method get_btypes: variable_t -> btype_t list
+
+  (** Returns a list of indexed variable type records, where each entry
+      represents (index of variable, index of joined type, indices of all
+      types).*)
+  method get_btype_table: (int * int * int list) list
+
+
   (** {1 Function summaries}
       Information registered to create a function summary for the application
       function represented by this function_info (possibly including global
@@ -3797,7 +4035,7 @@ object
 
   (** {1 Printing}*)
 
-  method state_to_pretty: pretty_t 
+  method state_to_pretty: pretty_t
   method summary_to_pretty: pretty_t
   method saved_registers_to_pretty: pretty_t
   method base_pointers_to_pretty: pretty_t
@@ -3809,12 +4047,12 @@ end
 
 (** {2 Floc} *)
 
-(** {b Floc (location in a function): principal access point for information
-    associated with a single instruction.} *)
+(** Floc (location in a function): principal access point for information
+    associated with a single instruction. *)
 class type floc_int =
   object
 
-    (** {2 Addresses and symboltable} *)
+    (** {1 Addresses and symboltable} *)
 
     (** Returns the address of this instruction.*)
     method ia: doubleword_int
@@ -3831,10 +4069,27 @@ class type floc_int =
     (** Returns the function-info of the function this instruction belongs to.*)
     method f: function_info_int
 
+    (** {2 Symbol table}*)
+
     (** Returns the symbol table of the function this instruction belongs to.*)
     method env: function_environment_int
 
-    (** {2 Invariant accessors} *)
+    (** {2 Instruction bytes}*)
+
+    (** Associate instruction bytes (as a hex string) with instruction *)
+    method set_instruction_bytes: string -> unit
+
+    (** Returns the bytes of the instruction as a hexstring *)
+    method get_instruction_bytes: string
+
+    (** {1 Variables} *)
+
+    (** Returns a list of ssa register values defined at this location.*)
+    method ssa_register_values: variable_t list
+
+    (** {1 Invariants} *)
+
+    (** {2 Accessors} *)
 
     (** Returns the value invariants for this instruction.*)
     method inv: location_invariant_int
@@ -3844,6 +4099,8 @@ class type floc_int =
 
     (** Returns the variable invariants for this instruction.*)
     method varinv: location_var_invariant_int
+
+    (** {2 Add invariants}*)
 
     (** [floc#add_var_type_fact var ty] creates a type invariant fact for
     variable [var] to be type [ty].*)
@@ -3858,210 +4115,238 @@ class type floc_int =
         expression [xpr].*)
     method add_xpr_type_fact: xpr_t -> btype_t -> unit
 
-  (** Associate instruction bytes (as a hex string) with instruction *)
-  method set_instruction_bytes: string -> unit
+    (** {2 Retrieve invariants/rewriting} *)
 
-  (** [set_jumptable_target base jt reg] registers jumptable [jt] with base
-      address [base] to be target of this instruction (assumed to be an
-      indirect jump instruction) with the selector value in register [reg].*)
-  method set_jumptable_target:
-           doubleword_int -> jumptable_int -> register_t -> unit
+    (* rewrites the variable to an expression with external variables *)
+    method rewrite_variable_to_external: variable_t -> xpr_t
 
-  method set_call_target: call_target_info_int -> unit
-  method update_call_target: unit
+    (* converts an expr into a list of expressions based on variables of
+       another function *)
+    method externalize_expr: doubleword_int -> xpr_t -> bterm_t list
 
-  (* sets the test expression for this instruction *)
-  method set_test_expr: xpr_t -> unit
+    (* returns the constant value of a variable at this instruction *)
+    method get_constant: variable_t -> numerical_t
 
-  (* sets the mapping between auxiliary variables and regular variables for a 
-     test expression *)
-  method set_test_variables: (variable_t * variable_t) list -> unit
- 
-  (* evaluates the value of eax at this location and reports it to the function 
-     info *)
-  method record_return_value: unit
+    (* returns the interval value of a variable at this instruction *)
+    method get_interval: variable_t -> interval_t
 
-  method evaluate_summary_address_term: bterm_t -> variable_t option
-  method evaluate_summary_term: bterm_t -> variable_t -> xpr_t
+    (** {2 Resolve memory variable}*)
 
-  (* returns the bytes of the instruction as a hexstring *)
-  method get_instruction_bytes: string
-
-  (* returns the value of the nth argument (starting from 1) to this call instruction *)
-  method get_function_arg_value: int -> xpr_t
-
-  (* returns the value of an api parameter *)
-  method get_fts_parameter_expr: fts_parameter_t -> xpr_t option
-
-  (* rewrites the variable to an expression with external variables *)
-  method rewrite_variable_to_external: variable_t -> xpr_t
-
-  (* converts an expr into a list of expressions based on variables of another function *)
-  method externalize_expr: doubleword_int -> xpr_t -> bterm_t list
-
-  (* returns the constant value of a variable at this instruction *)
-  method get_constant: variable_t -> numerical_t
-
-  (* returns the interval value of a variable at this instruction *)
-  method get_interval: variable_t -> interval_t
-
-  (* returns the memory reference corresponding to the address in
-     variable plus offset *)
-  method get_memory_variable_1:
+    (* returns the memory reference corresponding to the address in
+       variable plus offset *)
+    method get_memory_variable_1:
            ?align:int -> ?size:int -> variable_t -> numerical_t -> variable_t
 
-  (* returns the memory reference corresponding to a base and index
-     variable plus offset *)
-  method get_memory_variable_2:
-           ?size:int -> variable_t -> variable_t -> numerical_t -> variable_t
+    (* returns the memory reference corresponding to a base and index
+       variable plus offset *)
+    method get_memory_variable_2:
+             ?size:int -> variable_t -> variable_t -> numerical_t -> variable_t
 
-  (* returns the memory reference corresponding to a base and scaled index
-     variable plus offset *)
-  method get_memory_variable_3:
-           ?size:int -> variable_t -> variable_t -> int -> numerical_t -> variable_t
+    (* returns the memory reference corresponding to a base and scaled index
+       variable plus offset *)
+    method get_memory_variable_3:
+             ?size:int -> variable_t -> variable_t -> int -> numerical_t -> variable_t
 
-  (* returns the memory reference corresponding to a global base and scaled
-     index variable *)
-  method get_memory_variable_4: variable_t -> int -> numerical_t -> variable_t
+    (* returns the memory reference corresponding to a global base and scaled
+       index variable *)
+    method get_memory_variable_4: variable_t -> int -> numerical_t -> variable_t
 
-  (* returns the memory reference that corresponds to the address expression *)
-  method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
+    (* returns the memory reference that corresponds to the address expression *)
+    method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
 
-  (* returns the variable associated with the address expression *)
-  method get_lhs_from_address: xpr_t -> variable_t
+    (* returns the variable associated with the address expression *)
+    method get_lhs_from_address: xpr_t -> variable_t
 
-  (* returns the value of the bridge variable for a given stack
-     parameter at this instruction *)
-  method get_bridge_variable_value: int -> variable_t -> xpr_t
+    (* returns the value of the bridge variable for a given stack
+       parameter at this instruction *)
+    method get_bridge_variable_value: int -> variable_t -> xpr_t
 
-  (* returns the difference between esp and the location of the return address, 
-     or the difference between esp and a level of alignment indicated with the 
-     first returned value *)
-  method get_stackpointer_offset: string -> int * interval_t
+    (* returns the difference between esp and the location of the return address,
+       or the difference between esp and a level of alignment indicated with the
+       first returned value *)
+    method get_stackpointer_offset: string -> int * interval_t
 
-  (* returns the targets for the indirect jump instruction *)
-  method get_jump_target: jump_target_t
-  method get_jump_successors: doubleword_int list
+    (** {2 Predicates on variables}*)
 
-  method get_call_target: call_target_info_int
-  method get_call_args: (fts_parameter_t * xpr_t) list
-  method get_mips_call_arguments : (fts_parameter_t * xpr_t) list
-  method get_arm_call_arguments: (fts_parameter_t * xpr_t) list
-  method get_pwr_call_arguments: (fts_parameter_t * xpr_t) list
+    (* returns true if the given variable evaluates to a constant at this location *)
+    method is_constant: variable_t -> bool
 
-  (* method get_jumptable_indexed_targets: (int * doubleword_int) list *)
+    (* returns true if the given variable evaluates to a non-trivial interval
+       at this location *)
+    method is_interval: variable_t -> bool
 
-  (* returns the test expression for a conditional jump in this instruction *)
-  method get_test_expr: xpr_t
+    (* returns true if the given expression is a memory address *)
+    method is_address : xpr_t -> bool
 
-  (* returns the auxiliary variables used in a test expression *)
-  method get_test_variables: (variable_t * variable_t) list
+    method is_base_offset: variable_t -> bool
 
-  (* returns the CHIF code associated with the call instruction *)
-  method get_call_commands: (doubleword_int -> string option) -> cmd_t list
+    (* returns true if the given variable evaluates to an initial value of a
+       register *)
+    method has_initial_value: variable_t -> bool
 
-  method get_mips_call_commands: cmd_t list
-  method get_mips_syscall_commands: cmd_t list
 
-  method get_arm_call_commands: cmd_t list
+    (** {1 Conditional jumps}*)
 
-  method get_pwr_call_commands: cmd_t list
+    (* sets the test expression for this instruction *)
+    method set_test_expr: xpr_t -> unit
 
-  (** [floc#get_assign_commands var ~size ~vtype xpr] returns the CHIF commands
-      representing the assignment [var := xpr].
+    (* sets the mapping between auxiliary variables and regular variables for a
+       test expression *)
+    method set_test_variables: (variable_t * variable_t) list -> unit
 
-      If [size] is not None and the left-hand side [var] is externally observable
-      (e.g., it is a memory write with external base) an external block-write is
-      recorded for this instruction for the enclosing function.
+    (* returns the test expression for a conditional jump in this instruction *)
+    method get_test_expr: xpr_t
 
-      If [vtype] is known type facts are added for both [var] and [xpr] for this
-      instruction.
-   *)
-  method get_assign_commands:
-           variable_t
-           -> ?size:xpr_t
-           -> ?vtype:btype_t
-           -> xpr_t
-           -> cmd_t list
+    (* returns the auxiliary variables used in a test expression *)
+    method get_test_variables: (variable_t * variable_t) list
 
-  (** [floc#get_ssa_assign_commands reg ~vtype xpr] creates an ssa-register
-      variable [ssavar] for the current context address and returns
-      a tuple of the register-variable, and the CHIF commands representing
-      the assignments
-      {[ reg := ssavar
-         reg := xpr
-      ]} *)
-  method get_ssa_assign_commands:
-           register_t
-           -> ?vtype:btype_t
-           -> xpr_t ->
-           variable_t * cmd_t list
+    (* returns true if this instruction has a test expression for a conditional jump *)
+    method has_test_expr: bool
 
-  (* returns the CHIF code to set definition/use instruction addresses *)
-  method get_vardef_commands:
-           ?defs:variable_t list
-           -> ?clobbers:variable_t list
-           -> ?use:variable_t list
-           -> ?usehigh:variable_t list
-           -> ?flagdefs:variable_t list
-           -> string
-           -> cmd_t list
+    (** {1 Jump targets}*)
 
-  method get_conditional_assign_commands:
-           xpr_t -> variable_t -> xpr_t -> cmd_t list
+    (** [set_jumptable_target base jt reg] registers jumptable [jt] with base
+        address [base] to be target of this instruction (assumed to be an
+        indirect jump instruction) with the selector value in register [reg].*)
+    method set_jumptable_target:
+             doubleword_int -> jumptable_int -> register_t -> unit
 
-  method get_sideeffect_assigns: function_semantics_t -> cmd_t list
+    (* returns the targets for the indirect jump instruction *)
+    method get_jump_target: jump_target_t
 
-  (* returns the CHIF code associated with an abstraction of variables *)
-  method get_abstract_commands:
-           variable_t -> ?size:xpr_t -> ?vtype:btype_t -> unit -> cmd_t list
+    (* returns true if this instruction has jump table targets *)
+    method has_jump_target: bool
 
-  (** floc#[get_ssa_abstract_commands reg ty ()] creates an ssa-register
-      variable [ssavar] for the current context address and returns a tuple of
-      the register-variable and the CHIF commands representing the assignment
-      {[ reg := ssavar ]}*)
-  method get_ssa_abstract_commands:
-           register_t -> ?vtype:btype_t -> unit -> (variable_t * cmd_t list)
+    method get_jump_successors: doubleword_int list
 
-  method get_abstract_cpu_registers_command: cpureg_t list -> cmd_t
+    (** {1 Call targets}*)
 
-  method get_abstract_registers_command: register_t list -> cmd_t
+    method set_call_target: call_target_info_int -> unit
 
-  (* returns the CHIF code associated with an unmodeled operation *)
-  method get_operation_commands:
-           variable_t
-           -> ?size:xpr_t
-           -> ?vtype:btype_t
-           -> symbol_t
-           -> op_arg_t list
-           -> cmd_t list
+    method has_call_target: bool
 
-  (* predicates *)
+    method update_call_target: unit
 
-  (* returns true if the given variable evaluates to a constant at this location *)
-  method is_constant: variable_t -> bool
+    method get_call_target: call_target_info_int
+    method get_call_args: (fts_parameter_t * xpr_t) list
+    method get_mips_call_arguments : (fts_parameter_t * xpr_t) list
+    method get_arm_call_arguments: (fts_parameter_t * xpr_t) list
+    method get_pwr_call_arguments: (fts_parameter_t * xpr_t) list
 
-  (* returns true if the given variable evaluates to a non-trivial interval at this location *)
-  method is_interval: variable_t -> bool
+    (** {1 Function summary}*)
 
-  (* returns true if the given expression is a memory address *)
-  method is_address : xpr_t -> bool
+    (* evaluates the value of eax at this location and reports it to the function
+     info *)
+    method record_return_value: unit
 
-  method is_base_offset: variable_t -> bool
+    method evaluate_summary_address_term: bterm_t -> variable_t option
 
-  (* returns true if the given variable evaluates to an initial value of a register *)
-  method has_initial_value: variable_t -> bool
+    method evaluate_summary_term: bterm_t -> variable_t -> xpr_t
 
-  (* returns true if this instruction has a test expression for a conditional jump *)
-  method has_test_expr: bool
+  (* returns the value of the nth argument (starting from 1) to this call
+     instruction *)
+    method get_function_arg_value: int -> xpr_t
 
-  method has_call_target: bool
+    (* returns the value of an api parameter *)
+    method get_fts_parameter_expr: fts_parameter_t -> xpr_t option
 
-  (* returns true if this instruction has jump table targets *)
-  method has_jump_target: bool
 
- (* printing *)
-  method stackpointer_offset_to_string: string -> string
+    (** {1 CHIF code generation}*)
+
+    (** {2 Calls} *)
+
+    (* returns the CHIF code associated with the call instruction *)
+    method get_call_commands: (doubleword_int -> string option) -> cmd_t list
+
+    method get_mips_call_commands: cmd_t list
+    method get_mips_syscall_commands: cmd_t list
+
+    method get_arm_call_commands: cmd_t list
+
+    method get_pwr_call_commands: cmd_t list
+
+    (** {2 Assignments} *)
+
+    (** [floc#get_assign_commands var ~size ~vtype xpr] returns the CHIF commands
+        representing the assignment [var := xpr].
+
+        If [size] is not None and the left-hand side [var] is externally observable
+        (e.g., it is a memory write with external base) an external block-write is
+        recorded for this instruction for the enclosing function.
+
+        If [vtype] is known type facts are added for both [var] and [xpr] for this
+        instruction.
+     *)
+    method get_assign_commands:
+             variable_t
+             -> ?size:xpr_t
+             -> ?vtype:btype_t
+             -> xpr_t
+             -> cmd_t list
+
+    (** [floc#get_ssa_assign_commands reg ~vtype xpr] creates an ssa-register
+        variable [ssavar] for the current context address and returns
+        a tuple of the register-variable, and the CHIF commands representing
+        the assignment and assert-equal:
+        {[ reg := xpr
+           assert (reg = ssavar)
+        ]} *)
+    method get_ssa_assign_commands:
+             register_t
+             -> ?vtype:btype_t
+             -> xpr_t ->
+             variable_t * cmd_t list
+
+    method get_conditional_assign_commands:
+             xpr_t -> variable_t -> xpr_t -> cmd_t list
+
+    method get_sideeffect_assigns: function_semantics_t -> cmd_t list
+
+    (** {2 Variable abstraction}*)
+
+    (* returns the CHIF code associated with an abstraction of variables *)
+    method get_abstract_commands:
+             variable_t -> ?size:xpr_t -> ?vtype:btype_t -> unit -> cmd_t list
+
+    (** floc#[get_ssa_abstract_commands reg ty ()] creates an ssa-register
+        variable [ssavar] for the current context address and returns a tuple of
+        the register-variable and the CHIF commands representing the assignment
+        {[ reg := ssavar ]}*)
+    method get_ssa_abstract_commands:
+             register_t -> ?vtype:btype_t -> unit -> (variable_t * cmd_t list)
+
+    method get_abstract_cpu_registers_command: cpureg_t list -> cmd_t
+
+    method get_abstract_registers_command: register_t list -> cmd_t
+
+    (** {2 Operations}*)
+
+    (* returns the CHIF code associated with an unmodeled operation *)
+    method get_operation_commands:
+             variable_t
+             -> ?size:xpr_t
+             -> ?vtype:btype_t
+             -> symbol_t
+             -> op_arg_t list
+             -> cmd_t list
+
+    (* returns the CHIF code to set definition/use instruction addresses *)
+    method get_vardef_commands:
+             ?defs:variable_t list
+             -> ?clobbers:variable_t list
+             -> ?use:variable_t list
+             -> ?usehigh:variable_t list
+             -> ?flagdefs:variable_t list
+             -> string
+             -> cmd_t list
+
+    method get_set_btype_commands: variable_t -> btype_t -> cmd_t list
+
+    method get_propagate_btype_commands: variable_t -> variable_t -> cmd_t list
+
+    (** {1 Printing}*)
+
+    method stackpointer_offset_to_string: string -> string
 
 end
 
@@ -4158,7 +4443,7 @@ object
   method initialize_datablocks: (doubleword_int * string) list -> unit
   method initialize_function_entry_points: (unit -> doubleword_int list) -> unit
   method initialize_type_definitions     : unit
-    
+
   (* setters *)
   method set_filename: string -> unit
   method set_xfilesize: int -> unit
@@ -4174,7 +4459,7 @@ object
   method set_elf_is_code_address: doubleword_int -> doubleword_int -> unit
   method set_code_size: doubleword_int -> unit
   method set_address_of_entry_point: doubleword_int -> unit
-  method set_thread_start_address  : 
+  method set_thread_start_address  :
     doubleword_int -> ctxt_iaddress_t -> doubleword_int -> bterm_t list -> unit
   (* creation faddr, iaddr, function start addr, arguments *)
 
@@ -4206,7 +4491,7 @@ object
   method import_ida_function_entry_points: unit
 
   method decode_string: string -> doubleword_int -> string
-    
+
   (* accessors *)
   method get_size: int
   method get_code_size: doubleword_int
@@ -4239,7 +4524,7 @@ object
   method get_jumptable: doubleword_int -> jumptable_int
   method get_class_infos:
            doubleword_int -> (string * function_interface_t * bool) list
-  method get_jump_target: 
+  method get_jump_target:
     doubleword_int -> (doubleword_int * jumptable_int * data_block_int)
   method get_lib_functions_loaded : (string * string list) list
   method get_thread_start_arguments: doubleword_int -> bterm_t list list
@@ -4502,7 +4787,7 @@ type aggregate_metrics_t = {
   agg_median_function_size: int;
   agg_median_block_count: int;
   agg_median_cfgc: int;
-  agg_loop_activity: float 
+  agg_loop_activity: float
 }
 
 
@@ -4570,4 +4855,3 @@ object
   method write_xml: xml_element_int -> unit
   method toPretty: pretty_t
 end
-                           
