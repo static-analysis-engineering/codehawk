@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -252,7 +252,7 @@ object (self)
     raise
       (BCH_failure
          (LBLOCK [STR "To_variable not implemented for "; self#toPretty]))
-    
+
   method to_expr (floc: floc_int): xpr_t =
     match kind with
     | PowerImmediate imm -> num_constant_expr imm#to_numerical
@@ -268,7 +268,18 @@ object (self)
            (LBLOCK [STR "Address "; a#toPretty; STR " not found"]);
          num_constant_expr a#to_numerical
        end
-    | PowerIndReg _ -> XVar (self#to_variable floc)
+    | PowerIndReg (index, offset) ->
+       let rvar = floc#env#mk_pwr_gp_register_variable index in
+       let xvar = floc#inv#rewrite_expr (XVar rvar) floc#env#get_variable_comparator in
+       let default () = XVar (self#to_variable floc) in
+       (match xvar with
+        | XConst (IntConst n) ->
+           let addr = TR.tget_ok (numerical_to_doubleword (n#add offset)) in
+           if elf_header#is_program_address addr && addr#lt floc#ia then
+             num_constant_expr (elf_header#get_program_value addr)#to_numerical
+           else
+             default ()
+        | _ -> default ())
     | _ ->
        begin
          ch_error_log#add

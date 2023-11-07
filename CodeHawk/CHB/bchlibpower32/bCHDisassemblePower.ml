@@ -31,6 +31,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTiming
 
 (* xprlib *)
 open Xprt
@@ -141,12 +142,6 @@ let disassemble
                            STR "; size: ";
                            INT size])) in
             let _ = add_instr prevPos opcode (Bytes.to_string instrBytes) in
-            let _ =
-              pverbose [
-                  (base#add_int prevPos)#toPretty;
-                  STR "  ";
-                  STR (pwr_opcode_to_string opcode);
-                  NL] in
             ()
           else
             let instrbytes = ch#read_doubleword in
@@ -180,12 +175,6 @@ let disassemble
                            STR "; instrlen: ";
                            INT instrlen])) in
             let _ = add_instr prevPos opcode (Bytes.to_string instrBytes) in
-            let _ =
-              pverbose [
-                  (base#add_int prevPos)#toPretty;
-                  STR "  ";
-                  STR (pwr_opcode_to_string opcode);
-                  NL] in
             ()
         with
         | BCH_failure p ->
@@ -246,16 +235,8 @@ let disassemble_pwr_sections () =
   let sizeOfCode = TR.tget_ok (endOfCode#subtract startOfCode) in
   (* can be 2 (VLE) or 4-byte aligned *)
   let _ = initialize_pwr_instructions sizeOfCode#to_int in
-  let _ =
-    pverbose [
-        STR "Create space for ";
-        sizeOfCode#toPretty;
-        STR " (";
-        INT sizeOfCode#to_int;
-        STR ")";
-        STR " instructions";
-        NL] in
   let _ = initialize_pwr_assembly_instructions sizeOfCode#to_int startOfCode in
+  let _ = pr_timing [STR "Instructions initialized"] in
   let _ =
     List.iter
       (fun (h, x) ->
@@ -274,7 +255,7 @@ let disassemble_pwr_sections () =
 
 
 let collect_function_entry_points () =
-  let _ = pverbose [STR "Collect function entry points"; NL] in
+
   let addresses = new DoublewordCollections.set_t in
   begin
     !pwr_assembly_instructions#itera
@@ -303,7 +284,6 @@ let get_so_target
 
 
 let collect_call_targets () =
-  let _ = pverbose [STR "Collect call targets"; NL] in
   !pwr_assembly_instructions#itera
     (fun va instr ->
       match instr#get_opcode with
@@ -316,14 +296,6 @@ let collect_call_targets () =
 
 
 let set_block_boundaries () =
-  let _ = pverbose [STR "Set block boundaries"; NL] in
-  (* let set_inlined_call (a: doubleword_int) =
-    log_titer
-      (mk_tracelog_spec
-         ~tag:"set_block_boundaries"
-         ("set_inlined_call:" ^ a#to_hex_string))
-      (fun instr -> instr#set_inlined_call)
-      (get_pwr_assembly_instruction a) in *)
   let set_block_entry a =
     let instr =
       fail_tvalue
@@ -333,7 +305,6 @@ let set_block_boundaries () =
     instr#set_block_entry in
   let feps = functions_data#get_function_entry_points in
   begin
-    pverbose [STR "   record function entry points"; NL];
     (* -------------------------------- record function entry points -- *)
     List.iter
       (fun fe ->
@@ -354,6 +325,7 @@ let set_block_boundaries () =
           (match instr#get_opcode with
            | Branch (_, tgt)
              | BranchConditional (_, _, _, _, tgt)
+             | BranchConditionalLink (_, _, _, _, tgt)
              | CBranchDecrementNotZero (_, _, _, _, _, tgt, _)
              | CBranchDecrementZero (_, _, _, _, _, tgt, _)
              | CBranchEqual (_, _, _, _, _, _, tgt)
@@ -386,6 +358,7 @@ let set_block_boundaries () =
           | BranchLinkRegister _ -> true
           | Branch _
             | BranchConditional _
+            | BranchConditionalLink _
             | CBranchDecrementNotZero _
             | CBranchDecrementZero _
             | CBranchEqual _
@@ -402,9 +375,7 @@ let set_block_boundaries () =
               (get_next_valid_instruction_address va) in
           set_block_entry nextva
         else
-          ());
-
-    pverbose [STR "    set_block_entries: Done"; NL]
+          ())
   end
 
 
@@ -438,7 +409,6 @@ let construct_assembly_function
 
 
 let record_call_targets_pwr () =
-  let _ = pverbose [STR "Record call targets"; NL] in
   pwr_assembly_functions#itera
     (fun faddr f ->
       let finfo = get_function_info faddr in
@@ -467,7 +437,6 @@ let record_call_targets_pwr () =
 
 
 let associate_condition_code_users_pwr () =
-  let _ = pverbose [STR "Associate condition code users"; NL] in
   let set_condition
         (crf_used: pwr_register_field_t)
         (faddr: doubleword_int)
@@ -527,6 +496,7 @@ let construct_functions_pwr () =
     system_info#initialize_function_entry_points collect_function_entry_points in
   let _ = collect_call_targets () in
   let _ = set_block_boundaries () in
+  let _ = pr_timing [STR "block boundaries set"] in
   let feps = functions_data#get_function_entry_points in
   let count = ref 0 in
   begin
@@ -535,7 +505,7 @@ let construct_functions_pwr () =
           try
             begin
               count := !count + 1;
-              (* let newfns = construct_assembly_function !count faddr in *)
+              ignore (construct_assembly_function !count faddr);
               ()
             end
           with
@@ -549,9 +519,9 @@ let construct_functions_pwr () =
         else
           default ()) feps;
 
-    pverbose [STR "Constructed: "; INT !count; STR " functions"; NL];
-
+    pr_timing [STR "functions constructed: "; INT (!count)];
     record_call_targets_pwr ();
+    pr_timing [STR "call sites recorded"];
     associate_condition_code_users_pwr ();
-
+    pr_timing [STR "condition codes associated"]
   end

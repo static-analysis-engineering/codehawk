@@ -447,7 +447,15 @@ type pwr_opcode_t =
       pwr_instruction_type_t
       * bool             (* aa: absolute address *)
       * int              (* bo: branch operations (5 bits) *)
-      * int              (* bi: bit in condition register (5 bits)  *)
+      * int              (* bi: bit in condition register (5 bits) *)
+      * pwr_operand_int  (* bd: branch destination *)
+
+  (* EREF:6-37 *)
+  | BranchConditionalLink of
+      pwr_instruction_type_t
+      * bool             (* aa: absolute address *)
+      * int              (* bo: branch operations (5 bits) *)
+      * int              (* bi: bit in condition register (5 bits) *)
       * pwr_operand_int  (* bd: branch destination *)
 
   (* EREF:6-41 *)

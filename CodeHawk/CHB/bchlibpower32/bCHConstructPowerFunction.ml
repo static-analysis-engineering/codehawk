@@ -99,6 +99,7 @@ let get_successors
 
         (* conditional branch *)
         | BranchConditional (_, _, _, _, tgt)
+          | BranchConditionalLink (_, _, _, _, tgt)
           | CBranchEqual (_, _, _, _, _, _, tgt)
           | CBranchGreaterThan (_, _, _, _, _, _, tgt)
           | CBranchLessEqual (_, _, _, _, _, _, tgt)

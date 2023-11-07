@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -330,6 +330,7 @@ let translate_pwr_instruction
   match instr#get_opcode with
 
   | BranchConditional (_, _, _, _, tgt)
+    | BranchConditionalLink (_, _, _, _, tgt)
     | CBranchEqual (_, _, _, _, _, _, tgt)
     | CBranchGreaterThan (_, _, _, _, _, _, tgt)
     | CBranchLessEqual (_, _, _, _, _, _, tgt)
@@ -337,7 +338,15 @@ let translate_pwr_instruction
     | CBranchNotEqual (_, _, _, _, _, _, tgt) when tgt#is_absolute_address ->
      let thenaddr = (make_i_location loc tgt#get_absolute_address)#ci in
      let elseaddr = codepc#get_false_branch_successor in
-     let cmds = cmds @ [invop] in
+     let lrcmds =
+       match instr#get_opcode with
+       | BranchConditionalLink _ ->
+          let lrop = lr_op RD in
+          let vlr = lrop#to_variable floc in
+          let rhs = int_constant_expr (loc#i#to_int + 4) in
+          floc#get_assign_commands vlr rhs
+       | _ -> [] in
+     let cmds = cmds @ lrcmds @ [invop] in
      let transaction = package_transaction finfo blocklabel cmds in
      if finfo#has_associated_cc_setter ctxtiaddr then
        let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
@@ -428,8 +437,16 @@ let translate_pwr_instruction
 
   | ClearLeftWordImmediate (_, _, ra, rs, mb) ->
      let vra = ra#to_variable floc in
-     let xrs = rs#to_expr floc in
-     let cmds = floc#get_abstract_commands vra () in
+     let (xrs, cmds) =
+       let xrs = rs#to_expr floc in
+       let xmb = mb#to_expr floc in
+       match xmb with
+       | XConst (IntConst n) when n#toInt = 16 ->
+          let xrs = XOp (XXlsh, [xrs]) in
+          let cmds = floc#get_assign_commands vra xrs in
+          (xrs, cmds)
+       | _ ->
+          (xrs, floc#get_abstract_commands vra ()) in
      let usevars = get_register_vars [rs] in
      let usehigh = get_use_high_vars [xrs] in
      let defcmds =
@@ -774,10 +791,10 @@ let translate_pwr_instruction
               STR (pwr_opcode_to_string opc)]) in
      default []
 
-  
+
 class pwr_assembly_function_translator_t (f: pwr_assembly_function_int) =
 object (self)
-     
+
   val finfo = get_function_info f#faddr
   val funloc =
     make_location {loc_faddr = f#faddr; loc_iaddr = f#faddr}
@@ -786,7 +803,7 @@ object (self)
       ~modifier:"exit"
       (make_location {loc_faddr = f#faddr; loc_iaddr=f#faddr})#ci
   val codegraph = make_code_graph ()
-                
+
   method translate_block (block: pwr_assembly_block_int) exitLabel =
     let codepc = make_pwr_code_pc block in
     let blocklabel = make_code_label block#context_string in
@@ -899,7 +916,7 @@ object (self)
       @ initializeBasePointerOperations
       @ initialize_reaching_defs in
     TRANSACTION (new symbol_t "entry", LF.mkCode cmds, None)
-      
+
 
   method private get_exit_cmd =
     let env = finfo#env in
