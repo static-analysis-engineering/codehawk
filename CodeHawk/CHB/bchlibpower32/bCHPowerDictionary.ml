@@ -138,6 +138,8 @@ object (self)
       | Branch (pit, tgt) -> (itags pit, [oi tgt])
       | BranchConditional (pit, aa, bo, bi, bd) ->
          (itags pit, [setb aa; bo; bi; oi bd])
+      | BranchConditionalLink (pit, aa, bo, bi, bd) ->
+         (itags pit, [setb aa; bo; bi; oi bd])
       | BranchConditionalLinkRegister (pit, bo, bi, bh, lr) ->
          (itags pit, [bo; bi; bh; oi lr])
       | BranchConditionalLinkRegisterLink (pit, bo, bi, bh, lr) ->

@@ -375,6 +375,18 @@ let get_record (opc: pwr_opcode_t) =
        ida_asm = (fun f -> f#conditional_branch pit bo bi bd)
      }
 
+  | BranchConditionalLink (pit, aa, bo, bi, bd) ->
+     let mnemonic = match pit with
+       | PWR -> "bcl"
+       | _ -> "xxxx_bcl" in
+     {
+       mnemonic = mnemonic;
+       operands = [bd];
+       crfs_set = [];
+       crfs_used = get_crfs_used bo bi;
+       ida_asm = (fun f -> f#conditional_branch pit bo bi bd)
+     }
+
   | BranchConditionalLinkRegister (pit, bo, bi, bh, lr) ->
      let mnemonic = match pit with
        | PWR -> "bclr"

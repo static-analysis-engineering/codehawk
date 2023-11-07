@@ -636,7 +636,8 @@ let analyze_pwr (starttime: float) =
            else
              let _ = count := !count + 1 in
              try
-               analyze_pwr_function faddr f !count
+               analyze_pwr_function faddr f !count;
+               pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
              with
              | BCH_failure p ->
                 raise (BCH_failure p)));

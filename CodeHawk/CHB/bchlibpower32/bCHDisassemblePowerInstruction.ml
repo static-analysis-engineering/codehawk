@@ -282,9 +282,22 @@ let parse_opcode_16
       | _ ->
          BranchConditional (PWR, false, bo, bi, bd))
 
+  | 1 ->
+     (* <  16>< bo>< bi><------bd---->01   bcl *)
+     let btea = iaddr#add_int bdval in
+     let bd = pwr_absolute_op btea RD in
+     (match (bo, bi) with
+      (* <  16>< 20>< 31><------bd---->01   bcl *)
+      | (20, 31) ->
+         BranchConditionalLink (PWR, false, bo, bi, bd)
+
+      | _ ->
+         NotRecognized
+           ("bcl:" ^ (string_of_int bo) ^ "_" ^ (string_of_int bi), instr))
+
   | _ ->
      NotRecognized
-        ("bcalr:" ^ (string_of_int bo) ^ "," ^ (string_of_int bi), instr)
+        ("bcalr:" ^ (string_of_int bo) ^ "_" ^ (string_of_int bi), instr)
 
 
 let parse_opcode_18
