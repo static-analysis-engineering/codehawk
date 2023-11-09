@@ -138,8 +138,8 @@ object (self)
       | Branch (pit, tgt) -> (itags pit, [oi tgt])
       | BranchConditional (pit, aa, bo, bi, bd) ->
          (itags pit, [setb aa; bo; bi; oi bd])
-      | BranchConditionalLink (pit, aa, bo, bi, bd) ->
-         (itags pit, [setb aa; bo; bi; oi bd])
+      | BranchConditionalLink (pit, aa, bo, bi, bd, crf) ->
+         (itags pit, [setb aa; bo; bi; oi bd; oi crf])
       | BranchConditionalLinkRegister (pit, bo, bi, bh, lr) ->
          (itags pit, [bo; bi; bh; oi lr])
       | BranchConditionalLinkRegisterLink (pit, bo, bi, bh, lr) ->
@@ -193,9 +193,12 @@ object (self)
          (itags pit, [oi cr; oi ra; oi rb])
       | ComplementRegister (pit, rc, ra, rb, cr) ->
          (itags pit, [setb rc; oi ra; oi rb; oi cr])
+      | ConditionRegisterClear (pit, crd) -> (itags pit, [oi crd])
       | ConditionRegisterNot (pit, crd, cra) -> (itags pit, [oi crd; oi cra])
       | ConditionRegisterOr (pit, crd, cra, crb) ->
          (itags pit, [oi crd; oi cra; oi crb])
+      | ConvertFloatingPointDPSignedFraction (pit, rd, rb) ->
+         (itags pit, [oi rd; oi rb])
       | CountLeadingZerosWord (pit, rc, ra, rs, cr0) ->
          (itags pit, [setb rc; oi ra; oi rs; oi cr0])
       | DivideWord (pit, rc, oe, rd, ra, rb, cr, so, ov) ->
@@ -213,6 +216,14 @@ object (self)
       | ExtendZeroHalfword (pit, rx) -> (itags pit, [oi rx])
       | ExtractRightJustifyWordImmediate (pit, rc, ra, rs, n, b, cr) ->
          (itags pit, [setb rc; oi ra; oi rs; oi n; oi b; oi cr])
+      | FloatingPointDPCompareEqual (pit, crfd, ra, rb) ->
+         (itags pit, [oi crfd; oi ra; oi rb])
+      | FloatingPointDPCompareGreaterThan (pit, crfd, ra, rb) ->
+         (itags pit, [oi crfd; oi ra; oi rb])
+      | FloatingPointDPCompareLessThan (pit, crfd, ra, rb) ->
+         (itags pit, [oi crfd; oi ra; oi rb])
+      | FloatingPointSubtract (pit, rd, ra, rb) ->
+         (itags pit, [oi rd; oi ra; oi rb])
       | InsertRightWordImmediate (pit, rc, ra, rs, sh, mb, cr) ->
          (itags pit, [setb rc; oi ra; oi rs; oi sh; oi mb; oi cr])
       | InstructionSynchronize pit -> (itags pit, [])
@@ -228,8 +239,14 @@ object (self)
          (itags pit, [setb u; oi rd; oi ra; oi mem])
       | LoadByteZeroIndexed (pit, u, rd, ra, rb, mem) ->
          (itags pit, [setb u; oi rd; oi ra; oi rb; oi mem])
+      | LoadHalfwordAlgebraic (pit, u, rd, ra, mem) ->
+         (itags pit, [setb u; oi rd; oi ra; oi mem])
+      | LoadHalfwordAlgebraicIndexed (pit, u, rd, ra, rb, mem) ->
+         (itags pit, [setb u; oi rd; oi ra; oi rb; oi mem])
       | LoadHalfwordZero (pit, u, rd, ra, mem) ->
          (itags pit, [setb u; oi rd; oi ra; oi mem])
+      | LoadHalfwordZeroIndexed (pit, u, rd, ra, rb, mem) ->
+         (itags pit, [setb u; oi rd; oi ra; oi rb; oi mem])
       | LoadImmediate (pit, sg, sh, rd, imm) ->
          (itags pit, [setb sg; setb sh; oi rd; oi imm])
       | LoadMultipleVolatileGPRWord (pit, ra, mem) ->
@@ -267,6 +284,8 @@ object (self)
       | MoveToMachineStateRegister (pit, msr, rs) -> (itags pit, [oi msr; oi rs])
       | MoveToSpecialPurposeRegister (pit, spr, rs) ->
          (itags pit, [oi spr; oi rs])
+      | MultiplyHighWord (pit, rc, rd, ra, rb, cr) ->
+         (itags pit, [setb rc; oi rd; oi ra; oi rb; oi cr])
       | MultiplyHighWordUnsigned (pit, rc, rd, ra, rb, cr) ->
          (itags pit, [setb rc; oi rd; oi ra; oi rb; oi cr])
       | MultiplyLowImmediate (pit, op2, rd, ra, simm) ->
@@ -276,6 +295,8 @@ object (self)
       | Negate (pit, rc, oe, rd, ra, cr, so, ov) ->
          (itags pit, [setb rc; setb oe; oi rd; oi ra; oi cr; oi so; oi ov])
       | Or (pit, rc, ra, rs, rb, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
+      | OrComplement (pit, rc, ra, rs, rb, cr) ->
          (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
       | OrImmediate (pit, rc, s, op2, ra, rs, uimm, cr) ->
          (itags pit, [setb rc; setb s; setb op2; oi ra; oi rs; oi uimm; oi cr])
@@ -288,6 +309,8 @@ object (self)
       | RotateLeftWord (pit, rc, ra, rs, rb, cr) ->
          (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
       | RotateLeftWordImmediateAndMask (pit, rc, ra, rs, sh, mb, me, cr) ->
+         (itags pit, [setb rc; oi ra; oi rs; oi sh; oi mb; oi me; oi cr])
+      | RotateLeftWordImmediateMaskInsert (pit, rc, ra, rs, sh, mb, me, cr) ->
          (itags pit, [setb rc; oi ra; oi rs; oi sh; oi mb; oi me; oi cr])
       | ShiftLeftWord (pit, rc, ra, rs, rb, cr) ->
          (itags pit, [setb rc; oi ra; oi rs; oi rb; oi cr])
@@ -338,6 +361,11 @@ object (self)
       | SubtractImmediate (pit, rc, rd, ra, imm, cr) ->
          (itags pit, [setb rc; oi rd; oi ra; oi imm; oi cr])
       | TLBWriteEntry (pit) -> (itags pit, [])
+      | VectorLoadDoubleDouble (pit, rd, ra, mem) ->
+         (itags pit, [oi rd; oi ra; oi mem])
+      | VectorStoreDoubleDouble (pit, rs, ra, mem) ->
+         (itags pit, [oi rs; oi ra; oi mem])
+      | VectorXor (pit, rd, ra, rb) -> (itags pit, [oi rd; oi ra; oi rb])
       | WriteMSRExternalEnableImmediate (pit, enable, msr) ->
          (itags pit, [setb enable; oi msr])
       | Xor (pit, rc, ra, rs, rb, cr) ->

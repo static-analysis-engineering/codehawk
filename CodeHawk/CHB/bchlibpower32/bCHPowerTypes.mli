@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,7 +25,7 @@
    SOFTWARE.
    ============================================================================= *)
 (** Documentation used:
-    
+
     NXP. Book E: Enhanced PowerPC Architecture. Version 1.0, May 7, 2002
 
     NXP. EREF: A Programmer's Reference Manual for Freescale Power Architecture
@@ -292,8 +292,15 @@ class type pwr_operand_int =
 type not_code_t = DataBlock of data_block_int
 
 
+(** {2 Instruction representation}
+
+    References:
+    - [EREF]
+    - [VLEPEM]
+ *)
+
 type pwr_opcode_t =
-  (* EREF:6-12, VLEPEM:3-6 *)
+
   | Add of
       pwr_instruction_type_t
       * bool             (* rc: record condition *)
@@ -304,8 +311,8 @@ type pwr_opcode_t =
       * pwr_operand_int  (* cr: condition register (CR0) *)
       * pwr_operand_int  (* so: summary overflow (XER-SO) *)
       * pwr_operand_int  (* ov: overflow (XER-OV) *)
+  (** EREF:6-12, VLEPEM:3-6 *)
 
-  (* EREF:6-17 *)
   | AddCarrying of
       pwr_instruction_type_t
       * bool             (* rc: record condition *)
@@ -317,8 +324,8 @@ type pwr_opcode_t =
       * pwr_operand_int  (* so: summary overflow (XER-SO) *)
       * pwr_operand_int  (* ov: overflow (XER-OV) *)
       * pwr_operand_int  (* ca: carry (XER-CA) *)
+  (** EREF:6-17 *)
 
-  (* EREF:6-18 *)
   | AddExtended of
       pwr_instruction_type_t
       * bool               (* rc: record condition *)
@@ -330,8 +337,8 @@ type pwr_opcode_t =
       * pwr_operand_int  (* so: summary overflow (XER-SO) *)
       * pwr_operand_int  (* ov: overflow (XER-OV) *)
       * pwr_operand_int  (* ca: carry (XER-CA) *)
+  (** EREF:6-18 *)
 
-  (* EREF:6-23, VLEPEM:3-7 *)
   | AddImmediate of
       pwr_instruction_type_t
       * bool             (* s: shifted *)
@@ -342,6 +349,8 @@ type pwr_opcode_t =
       * pwr_operand_int  (* ra: source operand *)
       * pwr_operand_int  (* simm: signed immediate *)
       * pwr_operand_int  (* cr: condition register field (CR0) *)
+  (** EREF:6-23, VLEPEM:3-7 *)
+
 
   (* EREF:6-24, VLEPEM:3-9 *)
   | AddImmediateCarrying of
@@ -457,6 +466,7 @@ type pwr_opcode_t =
       * int              (* bo: branch operations (5 bits) *)
       * int              (* bi: bit in condition register (5 bits) *)
       * pwr_operand_int  (* bd: branch destination *)
+      * pwr_operand_int  (* crf: condition register field *)
 
   (* EREF:6-41 *)
   | BranchConditionalLinkRegister of
@@ -705,6 +715,11 @@ type pwr_opcode_t =
       * pwr_operand_int  (* rb: source register *)
       * pwr_operand_int  (* cr: condition register field (CR0) *)
 
+  (* EREF:B-21 *)
+  | ConditionRegisterClear of
+      pwr_instruction_type_t
+      * pwr_operand_int  (* crd: condition register to be cleared *)
+
   (* EREF:6-55, EREF:B-21 (simplified) *)
   | ConditionRegisterNot of
       pwr_instruction_type_t
@@ -717,6 +732,12 @@ type pwr_opcode_t =
       * pwr_operand_int  (* crd: condition register destination bit *)
       * pwr_operand_int  (* cra: condition register source 1 bit *)
       * pwr_operand_int  (* crb: condition register source 2 bit *)
+
+  (* SPEPEM:5-20 *)
+  | ConvertFloatingPointDPSignedFraction of
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* rb: source register *)
 
   (* EREF:6-50 *)
   | CountLeadingZerosWord of
@@ -795,6 +816,34 @@ type pwr_opcode_t =
       * pwr_operand_int  (* b: begin *)
       * pwr_operand_int  (* cr: condition register field (CR0) *)
 
+  (* SPEPEM:5-26 *)
+  | FloatingPointDPCompareEqual of
+      pwr_instruction_type_t
+      * pwr_operand_int (* crfd: condition register bit *)
+      * pwr_operand_int (* ra: source register 1 *)
+      * pwr_operand_int (* rb: source register 2 *)
+
+  (* SPEPEM:5-27 *)
+  | FloatingPointDPCompareGreaterThan of
+      pwr_instruction_type_t
+      * pwr_operand_int (* crfd: condition register bit *)
+      * pwr_operand_int (* ra: source register 1 *)
+      * pwr_operand_int (* rb: source register 2 *)
+
+  (* SPEPEM:5-28 *)
+  | FloatingPointDPCompareLessThan of
+      pwr_instruction_type_t
+      * pwr_operand_int (* crfd: condition register bit *)
+      * pwr_operand_int (* ra: source register 1 *)
+      * pwr_operand_int (* rb: source register 2 *)
+
+  (* SPEPEM:5-64 *)
+  | FloatingPointSubtract of
+      pwr_instruction_type_t
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source register 1 *)
+      * pwr_operand_int  (* rb: source register 2 *)
+
   (* Simplified mnemonic: EREF:B-3, VLEPIM:Table A-23
      Full mnemonic: RotateLeftWordImmediateMaskInsert *)
   | InsertRightWordImmediate of
@@ -859,6 +908,23 @@ type pwr_opcode_t =
       * pwr_operand_int  (* rb: index register *)
       * pwr_operand_int  (* mem: memory operand *)
 
+  (* EREF:6-169,170 *)
+  | LoadHalfwordAlgebraic of
+      pwr_instruction_type_t
+      * bool             (* u: update *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: memory base address register *)
+      * pwr_operand_int  (* mem: memory operand *)
+
+  (* EREF:6-171,172 *)
+  | LoadHalfwordAlgebraicIndexed of
+      pwr_instruction_type_t
+      * bool             (* u: update) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: base register *)
+      * pwr_operand_int  (* rb: index register *)
+      * pwr_operand_int  (* mem: memory location *)
+
   (* EREF:6-178,179, VLEPEM:3-41 *)
   | LoadHalfwordZero of
       pwr_instruction_type_t
@@ -866,6 +932,15 @@ type pwr_opcode_t =
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: memory base address register *)
       * pwr_operand_int  (* mem: memory operand *)
+
+  (* EREF:6-181 *)
+  | LoadHalfwordZeroIndexed of
+      pwr_instruction_type_t
+      * bool             (* u: update) *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: base register *)
+      * pwr_operand_int  (* rb: index register *)
+      * pwr_operand_int  (* mem: memory location *)
 
   (* EREF:B-24 (simplified), VLEPEM:3-42 *)
   | LoadImmediate of
@@ -1035,10 +1110,19 @@ type pwr_opcode_t =
       * pwr_operand_int  (* sprn: special-purpose register index *)
       * pwr_operand_int  (* rs: source register *)
 
+  (* EREF:6-233 *)
+  | MultiplyHighWord of
+      pwr_instruction_type_t
+      * bool             (* rc: record condition *)
+      * pwr_operand_int  (* rd: destination register *)
+      * pwr_operand_int  (* ra: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register field (CR0) *)
+
   (* EREF:6-234 *)
   | MultiplyHighWordUnsigned of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -1047,7 +1131,7 @@ type pwr_opcode_t =
   (* EREF:6-236, VLEPEM:3-53 *)
   | MultiplyLowImmediate of
       pwr_instruction_type_t
-      * bool               (* op2: two operands *)
+      * bool             (* op2: two operands *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source register *)
       * pwr_operand_int  (* simm: signed immediate *)
@@ -1055,8 +1139,8 @@ type pwr_opcode_t =
   (* EREF:6-237, VLEPEM:3-54 *)
   | MultiplyLowWord of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
-      * bool               (* oe: overflow detection *)
+      * bool             (* rc: record condition *)
+      * bool             (* oe: overflow detection *)
       * pwr_operand_int  (* rd: destination register *)
       * pwr_operand_int  (* ra: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -1078,7 +1162,16 @@ type pwr_opcode_t =
   (* EREF:6-243, VLEPEM:3-57 *)
   | Or of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source 1 register *)
+      * pwr_operand_int  (* rb: source 2 register *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
+
+  (* EREF:6-245 *)
+  | OrComplement of
+      pwr_instruction_type_t
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -1128,7 +1221,18 @@ type pwr_opcode_t =
   (* EREF:6-265, VLEPEM:3-62 *)
   | RotateLeftWordImmediateAndMask of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
+      * pwr_operand_int  (* ra: destination register *)
+      * pwr_operand_int  (* rs: source register *)
+      * pwr_operand_int  (* sh: shift amount *)
+      * pwr_operand_int  (* mb: mask begin *)
+      * pwr_operand_int  (* me: mask end *)
+      * pwr_operand_int  (* cr: condition register (CR0) *)
+
+  (* EREF:6-264 *)
+  | RotateLeftWordImmediateMaskInsert of
+      pwr_instruction_type_t
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* sh: shift amount *)
@@ -1139,7 +1243,7 @@ type pwr_opcode_t =
   (* EREF:6-275, VLEPEM:3-64 *)
   | ShiftLeftWord of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source 1 register *)
       * pwr_operand_int  (* rb: source 2 register *)
@@ -1148,7 +1252,7 @@ type pwr_opcode_t =
   (* VLEPEM:3-64 *)
   | ShiftLeftWordImmediate of
       pwr_instruction_type_t
-      * bool               (* rc: record condition *)
+      * bool             (* rc: record condition *)
       * pwr_operand_int  (* ra: destination register *)
       * pwr_operand_int  (* rs: source register *)
       * pwr_operand_int  (* sh: shift amount *)
@@ -1352,6 +1456,27 @@ type pwr_opcode_t =
   (* EREF:6-367 *)
   | TLBWriteEntry of
       pwr_instruction_type_t
+
+  (* SPEPEM:5-112 *)
+  | VectorLoadDoubleDouble of
+      pwr_instruction_type_t
+      * pwr_operand_int   (* rd: destination register *)
+      * pwr_operand_int   (* ra: base register *)
+      * pwr_operand_int   (* mem: source memory location *)
+
+  (* SPEPEM:5-228 *)
+  | VectorStoreDoubleDouble of
+      pwr_instruction_type_t
+      * pwr_operand_int   (* rs: source register *)
+      * pwr_operand_int   (* ra: base register *)
+      * pwr_operand_int   (* mem: destination memory location *)
+
+  (* SPEPEM:5-248 *)
+  | VectorXor of
+      pwr_instruction_type_t
+      * pwr_operand_int   (* rd: destination register *)
+      * pwr_operand_int   (* ra: source register *)
+      * pwr_operand_int   (* rb: source register *)
 
   (* EREF:6-374 *)
   | WriteMSRExternalEnableImmediate of

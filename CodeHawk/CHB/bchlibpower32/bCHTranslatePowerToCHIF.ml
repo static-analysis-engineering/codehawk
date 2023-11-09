@@ -330,7 +330,7 @@ let translate_pwr_instruction
   match instr#get_opcode with
 
   | BranchConditional (_, _, _, _, tgt)
-    | BranchConditionalLink (_, _, _, _, tgt)
+    | BranchConditionalLink (_, _, _, _, tgt, _)
     | CBranchEqual (_, _, _, _, _, _, tgt)
     | CBranchGreaterThan (_, _, _, _, _, _, tgt)
     | CBranchLessEqual (_, _, _, _, _, _, tgt)
