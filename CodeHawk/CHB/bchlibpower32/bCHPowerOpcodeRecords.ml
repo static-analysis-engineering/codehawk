@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2022-2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -51,6 +51,7 @@ class type ['a] opcode_formatter_int =
     method int_ops: string -> int list -> 'a
     method no_ops: string -> 'a
     method ops_bc: string -> pwr_operand_int -> pwr_operand_int list -> 'a
+    method ops_bcl: string -> int -> pwr_operand_int -> pwr_operand_int -> 'a
     method conditional_branch:
              pwr_instruction_type_t -> int -> int -> pwr_operand_int -> 'a
     method enable: string -> bool -> 'a
@@ -375,16 +376,16 @@ let get_record (opc: pwr_opcode_t) =
        ida_asm = (fun f -> f#conditional_branch pit bo bi bd)
      }
 
-  | BranchConditionalLink (pit, aa, bo, bi, bd) ->
+  | BranchConditionalLink (pit, aa, bo, bi, bd, crf) ->
      let mnemonic = match pit with
        | PWR -> "bcl"
        | _ -> "xxxx_bcl" in
      {
        mnemonic = mnemonic;
-       operands = [bd];
+       operands = [bd; crf];
        crfs_set = [];
        crfs_used = get_crfs_used bo bi;
-       ida_asm = (fun f -> f#conditional_branch pit bo bi bd)
+       ida_asm = (fun f -> f#ops_bcl mnemonic bo crf bd)
      }
 
   | BranchConditionalLinkRegister (pit, bo, bi, bh, lr) ->
@@ -780,6 +781,18 @@ let get_record (opc: pwr_opcode_t) =
          | _ -> f#ops mnemonic [ra; rb])
      }
 
+  | ConditionRegisterClear (pit, crd) ->
+     let mnemonic = match pit with
+       | PWR -> "crclr"
+       | _ -> "xxxx_crclr" in
+     {
+       mnemonic = mnemonic;
+       operands = [crd];
+       crfs_set = [crd#get_register_field];
+       crfs_used = [crd#get_register_field];
+       ida_asm = (fun f -> f#ops mnemonic [crd])
+     }
+
   | ConditionRegisterNot (pit, crd, cra) ->
      let mnemonic = match pit with
        | PWR -> "crnot"
@@ -803,6 +816,18 @@ let get_record (opc: pwr_opcode_t) =
        crfs_set = [crd#get_register_field];
        crfs_used = [cra#get_register_field; crb#get_register_field];
        ida_asm = (fun f -> f#ops mnemonic [crd; cra; crb])
+     }
+
+  | ConvertFloatingPointDPSignedFraction (pit, rd, rb) ->
+     let mnemonic = match pit with
+       | PWR -> "efdcfsf"
+       | _ -> "xxxx_efdcfsf" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; rb];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [rd; rb])
      }
 
   | CountLeadingZerosWord (pit, rc, ra, rs, cr0) ->
@@ -922,6 +947,54 @@ let get_record (opc: pwr_opcode_t) =
        ida_asm = (fun f -> f#ops mnemonic [ra; rs; n; b])
      }
 
+  | FloatingPointDPCompareEqual (pit, crfd, ra, rb) ->
+     let mnemonic = match pit with
+       | PWR -> "efdcmpeq"
+       | _ -> "xxxx_efdccmpeq" in
+     {
+       mnemonic = mnemonic;
+       operands = [crfd; ra; rb];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [crfd; ra; rb])
+     }
+
+  | FloatingPointDPCompareGreaterThan (pit, crfd, ra, rb) ->
+     let mnemonic = match pit with
+       | PWR -> "efdcmpgt"
+       | _ -> "xxxx_efdccmpgt" in
+     {
+       mnemonic = mnemonic;
+       operands = [crfd; ra; rb];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [crfd; ra; rb])
+     }
+
+  | FloatingPointDPCompareLessThan (pit, crfd, ra, rb) ->
+     let mnemonic = match pit with
+       | PWR -> "efdcmplt"
+       | _ -> "xxxx_efdccmplt" in
+     {
+       mnemonic = mnemonic;
+       operands = [crfd; ra; rb];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [crfd; ra; rb])
+     }
+
+  | FloatingPointSubtract (pit, rd, ra, rb) ->
+     let mnemonic = match pit with
+       | PWR -> "efssub"
+       | _ -> "xxxx_efssub" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; ra; rb];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
+     }
+
   | InsertRightWordImmediate (pit, rc, ra, rs, sh, mb, cr) ->
      let mnemonic = match pit with
        | PWR -> if rc then "insrwi." else "insrwi"
@@ -1021,6 +1094,30 @@ let get_record (opc: pwr_opcode_t) =
        ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
+  | LoadHalfwordAlgebraic (pit, update, rd, ra, mem) ->
+     let mnemonic = match pit with
+       | PWR -> if update then "lhau" else "lha"
+       | _ -> "xxxx_lha" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [rd; mem])
+     }
+
+  | LoadHalfwordAlgebraicIndexed (pit, update, rd, ra, rb, mem) ->
+     let mnemonic = match pit with
+       | PWR -> if update then "lhaux" else "lhax"
+       | _ -> "xxxx_lhax" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; ra; rb;  mem];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
+     }
+
   | LoadHalfwordZero (pit, update, rd, ra, mem) ->
      let mnemonic = match pit with
        | PWR -> if update then "lhzu" else "lhz"
@@ -1033,6 +1130,18 @@ let get_record (opc: pwr_opcode_t) =
        crfs_set = [];
        crfs_used = [];
        ida_asm = (fun f -> f#ops mnemonic [rd; mem])
+     }
+
+  | LoadHalfwordZeroIndexed (pit, update, rd, ra, rb, mem) ->
+     let mnemonic = match pit with
+       | PWR -> if update then "lhzux" else "lhzx"
+       | _ -> "xxxx_lhzx" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; ra; rb;  mem];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
      }
 
   | LoadImmediate (pit, signed, shifted, rd, imm) ->
@@ -1354,9 +1463,21 @@ let get_record (opc: pwr_opcode_t) =
        ida_asm = (fun f -> f#ops mnemonic [sprn; rs])
      }
 
+  | MultiplyHighWord (pit, rc, rd, ra, rb, cr) ->
+     let mnemonic = match pit with
+       | PWR -> if rc then "mulhw." else "mulhw"
+       | _ -> "xxxx_mulhw" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; ra; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
+     }
+
   | MultiplyHighWordUnsigned (pit, rc, rd, ra, rb, cr) ->
      let mnemonic = match pit with
-       | PWR -> "mulhwu"
+       | PWR -> if rc then "mulhwu." else "mulhwu"
        | _ -> "xxxx_mulhwu" in
      {
        mnemonic = mnemonic;
@@ -1419,6 +1540,21 @@ let get_record (opc: pwr_opcode_t) =
        | PWR -> if rc then "or." else "or"
        | VLE16 -> "se_or"
        | _ -> "xxxx_or" in
+     {
+       mnemonic = mnemonic;
+       operands = [ra; rs; rb; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
+       ida_asm = (fun f ->
+         match pit with
+         | VLE16 -> f#ops mnemonic [ra; rb]
+         | _ -> f#ops mnemonic [ra; rs; rb])
+     }
+
+  | OrComplement (pit, rc, ra, rs, rb, cr) ->
+     let mnemonic = match pit with
+       | PWR -> if rc then "orc." else "orc"
+       | _ -> "xxxx_orc" in
      {
        mnemonic = mnemonic;
        operands = [ra; rs; rb; cr];
@@ -1512,6 +1648,18 @@ let get_record (opc: pwr_opcode_t) =
        | PWR -> if rc then "rlwinm." else "rlwinm"
        | VLE32 -> "e_rlwinm"
        | _ -> "xxxx_rlwinm" in
+     {
+       mnemonic = mnemonic;
+       operands = [ra; rs; sh; mb; me; cr];
+       crfs_set = get_crfs_set rc false;
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [ra; rs; sh; mb; me])
+     }
+
+  | RotateLeftWordImmediateMaskInsert (pit, rc, ra, rs, sh, mb, me, cr) ->
+     let mnemonic = match pit with
+       | PWR -> if rc then "rlwimi." else "rlwimi"
+       | _ -> "xxxx_rlwimi" in
      {
        mnemonic = mnemonic;
        operands = [ra; rs; sh; mb; me; cr];
@@ -1842,6 +1990,42 @@ let get_record (opc: pwr_opcode_t) =
        ida_asm = (fun f -> f#no_ops mnemonic)
      }
 
+  | VectorLoadDoubleDouble (pit, rd, ra, mem) ->
+     let mnemonic = match pit with
+       | PWR -> "evldd"
+       | _ -> "xxxx_evldd" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [rd; mem])
+     }
+
+  | VectorStoreDoubleDouble (pit, rs, ra, mem) ->
+     let mnemonic = match pit with
+       | PWR -> "evstdd"
+       | _ -> "xxxx_evstdd" in
+     {
+       mnemonic = mnemonic;
+       operands = [rs; ra; mem];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [rs; mem])
+     }
+
+  | VectorXor (pit, rd, ra, rb) ->
+     let mnemonic = match pit with
+       | PWR -> "evxor"
+       | _ -> "xxxx_evxor" in
+     {
+       mnemonic = mnemonic;
+       operands = [rd; ra; rb];
+       crfs_set = [];
+       crfs_used = [];
+       ida_asm = (fun f -> f#ops mnemonic [rd; ra; rb])
+     }
+
   | WriteMSRExternalEnableImmediate (pit, enable, msr) ->
      let mnemonic = match pit with
        | PWR -> "wrteei"
@@ -1959,6 +2143,15 @@ object (self)
     else
       self#ops s (cr::ops)
 
+  method ops_bcl (s: string) (bo: int) (cr: pwr_operand_int) (tgt: pwr_operand_int) =
+    (fixed_length_string s width)
+    ^ " "
+    ^ (string_of_int bo)
+    ^ ", "
+    ^ cr#toString
+    ^ ", "
+    ^ tgt#toString
+
   method enable (s: string) (b: bool) =
     let s = (fixed_length_string s width) in
     if b then s ^ " 1" else s ^ " 0"
@@ -1986,7 +2179,7 @@ let pwr_opcode_to_string ?(width=12) (opc: pwr_opcode_t) =
   let formatter = new string_formatter_t width in
   let default () = (get_record opc).ida_asm formatter in
   default ()
-                  
+
 
 let pwr_opcode_name (opc: pwr_opcode_t) = (get_record opc).mnemonic
 

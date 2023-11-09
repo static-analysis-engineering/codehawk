@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassemblePowerInstructionTest"
-let lastupdated = "2023-04-26"
+let lastupdated = "2023-11-07"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -76,6 +76,35 @@ let make_stream ?(len=0) (s: string) =
 let base = make_dw "0x4000000"
 
 (* opcode-31 opcodes, not pc-relative *)
+
+
+let opcode_4_opcodes () =
+  let tests = [
+      ("efdcfsf",    "11403aef", "efdcfsf      r10, r7");
+      ("efdcmpeq",   "128742ee", "efdcmpeq     cr5, r7, r8");
+      ("efdcmpgt",   "138952ec", "efdcmpgt     cr7, r9, r10");
+      ("efdcmplt",   "138a3aed", "efdcmplt     cr7, r10, r7");
+      ("efssub",     "10e742c1", "efssub       r7, r7, r8");
+      ("evldd",      "13816b01", "evldd        r28, 104(r1)");
+      ("evstdd",     "13c17b21", "evstdd       r30, 120(r1)");
+      ("evxor",      "11084216", "evxor        r8, r8, r8")
+    ] in
+  begin
+    TS.new_testsuite (testname ^ "_opcode_4_opcodes") lastupdated;
+
+    List.iter (fun (title, bytes, result) ->
+        TS.add_simple_test
+          ~title
+          (fun () ->
+            let ch = make_stream bytes in
+            let instr = ch#read_doubleword in
+            let opcode = TF.disassemble_pwr_instruction ch base instr in
+            let opcodetxt = R.pwr_opcode_to_string ~width:12 opcode in
+            A.equal_string result opcodetxt)) tests;
+
+    TS.launch_tests ()
+  end
+
 
 let opcode_7_opcodes () =
   let tests = [
@@ -123,10 +152,11 @@ let opcode_10_11_opcodes () =
 
     TS.launch_tests ()
   end
-  
+
 
 let opcode_16_opcodes () =
   let tests = [
+      ("bcl",     "0x1f22c",  "429f0005", "bcl          20, 4*cr7+so, 0x1f230");
       ("bdnz",    "0x800630", "4200ffd8", "bdnz         0x800608");
       ("bdz",     "0x834bd4", "42400014", "bdz          0x834be8");
       ("beq",     "0x8349f0", "41820060", "beq          0x834a50");
@@ -216,7 +246,9 @@ let opcode_19_opcodes_npc () =
       ("blr",        "4e800020", "blr");
       ("bnelr_0",    "4c820020", "bnelr");
       ("bnelr+",     "4ca20020", "bnelr+");
+      ("crclr",      "4cc63182", "crclr        4*cr1+eq");
       ("crnot",      "4fdde842", "crnot        4*cr7+eq, 4*cr7+gt");
+      ("cror",       "4fbdab82", "cror         4*cr7+gt, 4*cr7+gt, 4*cr5+gt");
       ("isync",      "4c00012c", "isync");
       ("rfdi",       "4c00004e", "rfdi");
       ("rfi",        "4c000064", "rfi");
@@ -246,6 +278,7 @@ let opcode_20_opcodes () =
       ("clrrwi",     "54a8002e", "clrrwi       r8, r5, 0x8");
       ("extrwi",     "54c7ca7e", "extrwi       r7, r6, 0x17, 0x2");
       ("insrwi",     "50a6f800", "insrwi       r6, r5, 0x1, 0x0");
+      ("rlwimi",     "508ac77e", "rlwimi       r10, r4, 0x18, 0x1d, 0x1f");
       ("rlwinm",     "54e706b4", "rlwinm       r7, r7, 0x0, 0x1a, 0x1a");
       ("rotlw",      "5cc7383e", "rotlw        r7, r6, r7");
       ("slwi",       "548b083c", "slwi         r11, r4, 0x1");
@@ -290,9 +323,9 @@ let opcode_24_29_opcodes () =
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
-  end  
-  
-  
+  end
+
+
 let opcode_31_opcodes () =
   let tests = [
       ("add",        "7ce63a14", "add          r7, r6, r7");
@@ -311,10 +344,14 @@ let opcode_31_opcodes () =
       ("extsb",      "7ce70774", "extsb        r7, r7");
       ("extsh",      "7ce70734", "extsh        r7, r7");
       ("isel_7eq",   "7c671f9e", "isel         r3, r7, r3, 4*cr7+eq");
+      ("isel_7gt",   "7d4a3f5e", "isel         r10, r10, r7, 4*cr7+gt");
       ("isel_7lt",   "7ce63f1e", "isel         r7, r6, r7, 4*cr7+lt");
       ("iseleq",     "7fe0389e", "iseleq       r31, 0x0, r7");
       ("isellt",     "7f60381e", "isellt       r27, 0x0, r7");
       ("lbzx",       "7ce638ae", "lbzx         r7, r6, r7");
+      ("lhax",       "7d284aae", "lhax         r9, r8, r9");
+      ("lhzx",       "7d284a2e", "lhzx         r9, r8, r9");
+      ("lwzux",      "7c78e86e", "lwzux        r3, r24, r29");
       ("lwzx",       "7cfd302e", "lwzx         r7, r29, r6");
       ("mfcr",       "7c000026", "mfcr         r0");
       ("mfctr",      "7c0902a6", "mfctr        r0");
@@ -323,22 +360,25 @@ let opcode_31_opcodes () =
       ("mfxer",      "7c0102a6", "mfxer        r0");
       ("mr",         "7ce33b78", "mr           r3, r7");
       ("mtcr",       "7c2ff120", "mtcr         r1");
-      ("mtcrf",      "7d808120", "mtcrf        0x8, r12");      
+      ("mtcrf",      "7d808120", "mtcrf        0x8, r12");
       ("mtctr",      "7c2903a6", "mtctr        r1");
       ("mtlr",       "7fe803a6", "mtlr         r31");
       ("mtmsr",      "7cc00124", "mtmsr        r6");
       ("mtspr",      "7c709ba6", "mtspr        0x270, r3");
       ("mtxer",      "7c2103a6", "mtxer        r1");
+      ("mulhw",      "7d094096", "mulhw        r8, r9, r8");
       ("mulhwu",     "7cf8d016", "mulhwu       r7, r24, r26");
       ("mullw",      "7cc639d6", "mullw        r6, r6, r7");
       ("neg",        "7ce700d0", "neg          r7, r7");
       ("not",        "7ce738f8", "not          r7, r7");
       ("or",         "7cc73b78", "or           r7, r6, r7");
+      ("orc",        "7e063338", "orc          r6, r16, r6");
       ("slw",        "7ce73030", "slw          r7, r7, r6");
       ("sraw",       "7cfdee30", "sraw         r29, r7, r29");
       ("srawi",      "7c841670", "srawi        r4, r4, 0x2");
       ("srw",        "7cc73c30", "srw          r7, r6, r7");
       ("stbx",       "7ca639ae", "stbx         r5, r6, r7");
+      ("sthx",       "7cff4b2e", "sthx         r7, r31, r9");
       ("stwx",       "7c05312e", "stwx         r0, r5, r6");
       ("subf",       "7ce33850", "subf         r7, r3, r7");
       ("subfc",      "7d083010", "subfc        r8, r8, r6");
@@ -371,6 +411,8 @@ let load_opcodes () =
       ("lbzu",       "8cc70001", "lbzu         r6, 1(r7)");
       ("lbzu_",      "8cc4ffff", "lbzu         r6, -1(r4)");
       ("lhz",        "a0ff000c", "lhz          r7, 12(r31)");
+      ("lha",        "a8a50140", "lha          r5, 320(r5)");
+      ("lhau",       "ac9c0002", "lhau         r4, 2(r28)");
       ("lmw",        "bba1000c", "lmw          r29, 12(r1)");
       ("lwz",        "80e1000c", "lwz          r7, 12(r1)");
       ("lwz_",       "83abfff4", "lwz          r29, -12(r11)");
@@ -392,7 +434,7 @@ let load_opcodes () =
 
     TS.launch_tests ()
   end
-  
+
 
 let store_opcodes () =
   let tests = [
@@ -422,6 +464,7 @@ let store_opcodes () =
 let () =
   begin
     TS.new_testfile testname lastupdated;
+    opcode_4_opcodes ();
     opcode_7_opcodes ();
     opcode_10_11_opcodes ();
     opcode_16_opcodes ();
@@ -434,4 +477,3 @@ let () =
     store_opcodes ();
     TS.exit_file ()
   end
-             

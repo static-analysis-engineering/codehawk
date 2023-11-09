@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -54,14 +54,63 @@ let parse_opcode_4
   let b = instr#get_reverse_segval 32 in
 
   (* floating-point general pattern:
-     <   4>< rd>< ra>< rb><----i---->
+     <   4>< rd>< ra>< rb><----i----> *)
 
   let rd = pwr_gp_register_op ~index:(b 6 10) in
   let ra = pwr_gp_register_op ~index:(b 11 15) in
   let rb = pwr_gp_register_op ~index:(b 16 20) in
-   *)
+
   let opc = b 21 31 in
   match opc with
+
+  (* <   4>< rd>< ra>< rb><---534--->    SPE *)
+  | 534 ->
+     (* evxor rD,rA,rB   (SPE) *)
+     VectorXor (PWR, rd WR, ra RD, rb RD)
+
+  (* <   4>< rd>< ra>< rb><---705--->   SPE *)
+  | 705 ->
+     (* efssub rD,rA,rB *)
+     FloatingPointSubtract (PWR, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD)
+
+  (* <   4>crd00< ra>< rb><---748--->   SPE *)
+  | 748 when (b 9 10) = 0 ->
+     let crf = crf_op (b 6 8) ~mode:WR in
+     (* efdcmpgt crfD,rA,rB *)
+     FloatingPointDPCompareGreaterThan (PWR, crf, ra ~mode:RD, rb ~mode:RD)
+
+  (* <   4>crd00< ra>< rb><---749--->   SPE *)
+  | 749 when (b 9 10) = 0 ->
+     let crf = crf_op (b 6 8) ~mode:WR in
+     (* efdcmplt crfD,rA,rB *)
+     FloatingPointDPCompareLessThan (PWR, crf, ra ~mode:RD, rb ~mode:RD)
+
+  (* <   4>crd00< ra>< rb><---750--->   SPE *)
+  | 750 when (b 9 10) = 0 ->
+     let crf = crf_op (b 6 8) ~mode:WR in
+     (* efdcmpeq crfD,rA,rB *)
+     FloatingPointDPCompareEqual (PWR, crf, ra ~mode:RD, rb ~mode:RD)
+
+  (* <   4>< rd><  0>< rb><---751--->    SPE *)
+  | 751 when (b 11 15) = 0 ->
+     (* efdcfsf rD,rB *)
+     ConvertFloatingPointDPSignedFraction (PWR, rd ~mode:WR, rb ~mode:RD)
+
+  (* <   4>< rd>< ra><uim><---769--->    SPE *)
+  | 769 ->
+     let offset = mkNumerical ((b 16 20) * 8) in
+     let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset ~mode:WR in
+     (* evldd rD,d(rA)   (SPE) *)
+     VectorLoadDoubleDouble (PWR, rd RD, ra RD, mem)
+
+  (* <   4>< rs>< ra><uim><---801--->    SPE *)
+  | 801 ->
+     let rs = rd in
+     let offset = mkNumerical ((b 16 20) * 8) in
+     let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset ~mode:WR in
+     (* evstdd rS,d(rA)  (SPE) *)
+     VectorStoreDoubleDouble (PWR, rs RD, ra RD, mem)
+
   | _ ->
      NotRecognized ("FP opcode:" ^ (string_of_int opc), instr)
 
@@ -133,7 +182,7 @@ let parse_opcode_11
     CompareImmediate (PWR, false, crfd, ra ~mode:RD, simm)
   else
     NotRecognized ("CompareImmediate with L=1", instr)
-  
+
 
 let parse_opcode_12_13
       (ch: pushback_stream_int)
@@ -171,12 +220,12 @@ let parse_opcode_14_15
     LoadImmediate (PWR, true, shifted, rd ~mode:WR, simm)
   else
     let ra = pwr_gp_register_op ~index:(b 11 15) in
-    let cr = cr0_op ~mode:NT in    
+    let cr = cr0_op ~mode:NT in
     (* addi rD,rA,SIMM *)
     AddImmediate
       (PWR, shifted, false, false, false, rd ~mode:WR, ra ~mode:RD, simm, cr)
 
-    
+
 (* Branch Instruction Simplified Mnemonics
    ---------------------------------------
    BO Field (branch operations):
@@ -229,16 +278,16 @@ let parse_opcode_16
          let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in
          CBranchGreaterEqual (PWR, false, bo, bi, bp, crf, bd)
 
-      (* <  16><  5><c>01<------bd---->00    ble+ *)         
+      (* <  16><  5><c>01<------bd---->00    ble+ *)
       | (5, (1 | 5 | 9 | 13 | 17 | 21 | 25 | 29)) ->
          let crf = crbi_op bi ~mode:RD in
-         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in         
+         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in
          CBranchLessEqual (PWR, false, bo, bi, bp, crf, bd)
 
-      (* <  16><  5><c>10<------bd---->00    bne+ *)         
+      (* <  16><  5><c>10<------bd---->00    bne+ *)
       | (5, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30)) ->
          let crf = crbi_op bi ~mode:RD in
-         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in         
+         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in
          CBranchNotEqual (PWR, false, bo, bi, bp, crf, bd)
 
       (* <  16><  12><c>00<------bd---->00   blt *)
@@ -256,25 +305,25 @@ let parse_opcode_16
 
       | (13, (0 | 4 | 8 | 12 | 16 | 20 | 24 | 28)) ->
          let crf = crbi_op bi ~mode:RD in
-         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in         
+         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in
          CBranchLessThan (PWR, false, bo, bi, bp, crf, bd)
 
       | (13, (1 | 5 | 9 | 13 | 17 | 21 | 25 | 29)) ->
          let crf = crbi_op bi ~mode:RD in
-         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in         
+         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in
          CBranchGreaterThan (PWR, false, bo, bi, bp, crf, bd)
 
       | (13, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30)) ->
          let crf = crbi_op bi ~mode:RD in
-         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in         
+         let bp = if bdval > 0 then BPPlus 1 else BPMinus 1 in
          CBranchEqual (PWR, false, bo, bi, bp, crf, bd)
 
-      (* <  16>< 16><  0><------bd---->00   bdnz *)         
+      (* <  16>< 16><  0><------bd---->00   bdnz *)
       | (16, 0) ->
          let ctr = ctr_op ~mode:RW in
          CBranchDecrementNotZero (PWR, false, bo, bi, BPNone, bd, ctr)
 
-      (* <  16>< 18><  0><------bd---->00   bdz *)                  
+      (* <  16>< 18><  0><------bd---->00   bdz *)
       | (18, 0) ->
          let ctr = ctr_op ~mode:RW in
          CBranchDecrementZero (PWR, false, bo, bi, BPNone, bd, ctr)
@@ -286,10 +335,11 @@ let parse_opcode_16
      (* <  16>< bo>< bi><------bd---->01   bcl *)
      let btea = iaddr#add_int bdval in
      let bd = pwr_absolute_op btea RD in
+     let crf = crbit_op bi ~mode:RD in
      (match (bo, bi) with
       (* <  16>< 20>< 31><------bd---->01   bcl *)
       | (20, 31) ->
-         BranchConditionalLink (PWR, false, bo, bi, bd)
+         BranchConditionalLink (PWR, false, bo, bi, bd, crf)
 
       | _ ->
          NotRecognized
@@ -307,7 +357,7 @@ let parse_opcode_18
   let b = instr#get_reverse_segval 32 in
   let li = b 6 29 in
   let li = if (b 6 6) = 1 then li - e24 else li in
-  
+
   match (b 30 31) with
   | 0 ->
      (* <  18><----------LI---------->00  b *)
@@ -326,7 +376,7 @@ let parse_opcode_18
 
   | p ->
      NotRecognized ("Branch:" ^ (string_of_int p), instr)
-    
+
 
 let parse_opcode_19
       (ch: pushback_stream_int)
@@ -335,7 +385,7 @@ let parse_opcode_19
   let b = instr#get_reverse_segval 32 in
   let opc = b 21 30 in
 
-  
+
   match opc with
   | 16 ->
      let lr = lr_op ~mode:RD in
@@ -344,7 +394,7 @@ let parse_opcode_19
      let bh = b 19 20 in
 
      if (b 31 31) = 0 then
-     
+
        (match (bo, bi, bh) with
         (* <  19><  4><c>00///00<----16-->0    bgelr *)
         | (4, (0 | 4 | 8 | 12 | 16 | 20 | 24 | 28), 0) ->
@@ -353,19 +403,19 @@ let parse_opcode_19
            CBranchGreaterEqualLinkRegister (PWR, bo, bi, bh, BPNone, crf, lr)
 
         (* <  19><  4><c>01///00<----16-->0    blelr *)
-        | (4, (1 | 5 | 9 | 13 | 17 | 21 | 25 | 29), 0) ->           
+        | (4, (1 | 5 | 9 | 13 | 17 | 21 | 25 | 29), 0) ->
            let crf = crbi_op bi ~mode:RD in
            (* blelr cr *)
            CBranchLessEqualLinkRegister (PWR, bo, bi, bh, BPNone, crf, lr)
 
         (* <  19><  4><c>10///00<----16-->0    bnelr *)
-        | (4, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30), 0) ->           
+        | (4, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30), 0) ->
            let crf = crbi_op bi ~mode:RD in
            (* bnelr cr *)
            CBranchNotEqualLinkRegister (PWR, bo, bi, bh, BPNone, crf, lr)
 
         (* <  19><  5><c>10///00<----16-->0    bnelr *)
-        | (5, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30), 0) ->           
+        | (5, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30), 0) ->
            let crf = crbi_op bi ~mode:RD in
            (* bnelr cr *)
            CBranchNotEqualLinkRegister (PWR, bo, bi, bh, BPPlus 1, crf, lr)
@@ -377,13 +427,13 @@ let parse_opcode_19
            CBranchLessThanLinkRegister (PWR, bo, bi, bh, BPNone, crf, lr)
 
         (* <  19>< 12><c>01///00<----16-->0    bgtlr *)
-        | (12, (1 | 5 | 9 | 13 | 17 | 21 | 25 | 29), 0) ->           
+        | (12, (1 | 5 | 9 | 13 | 17 | 21 | 25 | 29), 0) ->
            let crf = crbi_op bi ~mode:RD in
            (* bgtlr cr *)
            CBranchGreaterThanLinkRegister (PWR, bo, bi, bh, BPNone, crf, lr)
 
         (* <  19>< 12><c>10///00<----16-->0    beqlr *)
-        | (12, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30), 0) ->           
+        | (12, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30), 0) ->
            let crf = crbi_op bi ~mode:RD in
            (* beqlr cr *)
            CBranchEqualLinkRegister (PWR, bo, bi, bh, BPNone, crf, lr)
@@ -395,21 +445,21 @@ let parse_opcode_19
            CBranchLessThanLinkRegister (PWR, bo, bi, bh, BPPlus 1, crf, lr)
 
         (* <  19>< 13><c>01///00<----16-->0    bgtlr+ *)
-        | (13, (1 | 5 | 9 | 13 | 17 | 21 | 25 | 29), 0) ->           
+        | (13, (1 | 5 | 9 | 13 | 17 | 21 | 25 | 29), 0) ->
            let crf = crbi_op bi ~mode:RD in
            (* bgtlr+ cr *)
            CBranchGreaterThanLinkRegister (PWR, bo, bi, bh, BPPlus 1, crf, lr)
 
         (* <  19>< 13><c>10///00<----16-->0    beqlr+ *)
-        | (13, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30), 0) ->           
+        | (13, (2 | 6 | 10 | 14 | 18 | 22 | 26 | 30), 0) ->
            let crf = crbi_op bi ~mode:RD in
            (* beqlr+ cr *)
            CBranchEqualLinkRegister (PWR, bo, bi, bh, BPPlus 1, crf, lr)
-           
-        (* <  19>< 20><  0>///00<----16-->0   blr *)         
+
+        (* <  19>< 20><  0>///00<----16-->0   blr *)
         | (20, 0, 0) ->
            BranchLinkRegister (PWR, lr)
-        | _ ->  
+        | _ ->
            BranchConditionalLinkRegister (PWR, bo, bi, bh, lr))
 
      else
@@ -451,6 +501,19 @@ let parse_opcode_19
      (* isync *)
      InstructionSynchronize PWR
 
+  (* <  19><crd><cra><crb><---193-->/   crclr *)
+  | 193 when (b 6 10) = (b 11 15) && (b 6 10) = (b 16 20) ->
+     let crd = crbit_op (b 6 10) ~mode:RW in
+     ConditionRegisterClear (PWR, crd)
+
+  (* <  19><crd><cra><crb><---449-->/   cror *)
+  | 449 ->
+     let crd = crbit_op (b 6 10) ~mode:WR in
+     let cra = crbit_op (b 11 15) ~mode:RD in
+     let crb = crbit_op (b 16 20) ~mode:RD in
+     (* cror crbD,crbA,crbB *)
+     ConditionRegisterOr (PWR, crd, cra, crb)
+
   (* <  19>< 20><  0>///00<---528-->0   bctr *)
   | 528 ->
      let ctr = ctr_op ~mode:RD in
@@ -480,7 +543,14 @@ let parse_opcode_20
     let mb = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical mb) in
     InsertRightWordImmediate (PWR, false, ra ~mode:WR, rs ~mode:RD, n, mb, cr)
   else
-    NotRecognized ("InsertRightWordImmediate", instr)
+    (* rlwimi rA,rS,SH,MB,ME  *)
+    let cr = cr0_op ~mode:WR in
+    let sh = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical sh) in
+    let mb = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical mb) in
+    let me = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical me) in
+    let rc = (b 31 31) = 1 in
+    RotateLeftWordImmediateMaskInsert
+      (PWR, rc, ra ~mode:WR, rs ~mode:RD, sh, mb, me, cr)
 
 
 let parse_opcode_21
@@ -501,7 +571,7 @@ let parse_opcode_21
     let n = 31 - me in
     let n = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical n) in
     (* clrrwi rA,rS,n *)
-    ClearRightWordImmediate (PWR, rc, ra ~mode:WR, rs ~mode:RD, n, cr0)    
+    ClearRightWordImmediate (PWR, rc, ra ~mode:WR, rs ~mode:RD, n, cr0)
 
   else if sh = 0 && me = 31 then
     (* <  21>< rs>< ra><  0>< mb>< 31>c   clrlwi *)
@@ -516,12 +586,12 @@ let parse_opcode_21
     ShiftLeftWordImmediate (PWR, rc, ra ~mode:WR, rs ~mode:RD, n, cr0)
 
   else if me = 31 then
-    (* <  21>< rs>< ra>< sh>< mb>< 31>c   extrwi *)        
+    (* <  21>< rs>< ra>< sh>< mb>< 31>c   extrwi *)
      let n = 32 - mb in
      let b = (sh + mb) - 32 in
      let n = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical n) in
      let b = pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical b) in
-     (* extrwi rA,rS,n,b *)   
+     (* extrwi rA,rS,n,b *)
      ExtractRightJustifyWordImmediate
        (PWR, rc, ra ~mode:WR, rs ~mode:RD, n, b, cr0)
 
@@ -595,7 +665,7 @@ let parse_opcode_24_29
     (* <  29>< rs>< ra><------uimm------>   andis. *)
     AndImmediate (PWR, shifted, false, true, ra ~mode:WR, rs ~mode:RD, uimm, crw)
 
-    
+
 let parse_opcode_31
       (ch: pushback_stream_int)
       (iaddr: doubleword_int)
@@ -627,7 +697,7 @@ let parse_opcode_31
      (* subfc rD,rA,rB *)
      SubtractFromCarrying
        (PWR, rc, oe, rd ~mode:WR, ra ~mode:WR, rb ~mode:RD, cr, ca, so, ov)
-     
+
   (* < 7>11< rd>< ra>< rb>E<---10-->c   addc *)
   | (_, 10) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -642,7 +712,7 @@ let parse_opcode_31
      (* addc rD,rA,rB *)
      AddCarrying
        (PWR, rc, oe, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr, so, ov, ca)
-     
+
   (* < 7>11< rd>< ra>< rb>/<---11-->c   mulhwu *)
   | (0, 11) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -662,14 +732,14 @@ let parse_opcode_31
      let cr = cr0_op ~mode:RD in
      (* isellt rD,rA,rB *)
      IntegerSelectLessThan (PWR, rd ~mode:WR, ra, rb ~mode:RD, cr)
-     
+
   (* < 7>11< rd>0/////////0<---19-->/   mfcr *)
   | (0, 19) when (b 11 11) = 0 ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let cr = pwr_special_register_op ~reg:PowerCR ~mode:RD in
      (* mfcr rD *)
      MoveFromConditionRegister (PWR, rd ~mode:WR, cr)
-    
+
   (* < 7>11< rd>< ra>< rb>0<---23-->/   lwzx *)
   | (0, 23) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -681,7 +751,7 @@ let parse_opcode_31
      (* lwzx *)
      LoadWordZeroIndexed
        (PWR, false, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, mem ~mode:RD)
-     
+
   (* < 7>11< rs>< ra>< rb>0<---24-->c   slw *)
   | (0, 24) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -700,7 +770,7 @@ let parse_opcode_31
      let rc = (b 31 31) = 1 in
      (* cntlzw ra,rs) *)
      CountLeadingZerosWord (PWR, rc, ra ~mode:WR, rs ~mode:RD, cr0)
-     
+
   (* < 7>11< rs>< ra>< rb>0<---28-->c   and *)
   | (0, 28) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -710,7 +780,7 @@ let parse_opcode_31
      let rc = (b 31 31) = 1 in
      (* and rA,rS,rB *)
      And (PWR, rc, ra ~mode:WR, rs ~mode:WR, rb ~mode:WR, cr)
-     
+
   (* < 7>11<c>/0< ra>< rb>0<---32-->/   cmplw (simplified mnemonic) *)
   | (0, 32) ->
      let ra = pwr_gp_register_op ~index:(b 11 15) in
@@ -718,7 +788,7 @@ let parse_opcode_31
      let crfd = crf_op (b 6 8) ~mode:WR in
      (* cmplw crfd, rA, rB *)
      CompareLogical (PWR, crfd, ra ~mode:RD, rb ~mode:RD)
-    
+
   (* < 7>11< rd>< ra>< rb>E<---40-->c   subf *)
   | (_, 40) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -733,6 +803,18 @@ let parse_opcode_31
      SubtractFrom
        (PWR, rc, oe, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr, so, ov)
 
+  (* < 7>11< rd>< ra>< rb>0<---55-->/   lwzux *)
+  | (0, 55) ->
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
+     let mem =
+       pwr_indexed_indirect_register_op
+         ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
+     (* lwzux *)
+     LoadWordZeroIndexed
+       (PWR, true, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, mem ~mode:RD)
+
   (* < 7>11< rs>< ra>< rb>0<---60-->c   andc *)
   | (0, 60) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -742,7 +824,18 @@ let parse_opcode_31
      let rc = (b 31 31) = 1 in
      (* andc rA,rS,rB *)
      AndComplement (PWR, rc, ra ~mode:WR, rs ~mode:RD, rb ~mode:RD, cr)
-     
+
+  (* < 7>11< rd>< ra>< rb>/<---75-->c   mulhw *)
+  | (0, 75) ->
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
+     let rc = (b 31 31) = 1 in
+     let cr = cr0_op ~mode:WR in
+     (* mulhw rD,rA,rB *)
+     MultiplyHighWord
+       (PWR, rc, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr)
+
   (* < 7>11< rd>< ra>< rb>0<---79-->/   iseleq (simplified *)
   | (0, 79) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -751,7 +844,7 @@ let parse_opcode_31
      let cr = cr0_op ~mode:RD in
      (* iseleq rD,rA,rB *)
      IntegerSelectEqual (PWR, rd ~mode:WR, ra, rb ~mode:RD, cr)
-     
+
   (* < 7>11< rd>//////////0<---83-->/   mfmsr *)
   | (0, 83) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -806,7 +899,7 @@ let parse_opcode_31
      (* subfe rD,rA,rB *)
      SubtractFromExtended
        (PWR, rc, oe, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr, ca, so, ov)
-     
+
   (* < 7>11< rd>< ra>< rb>E<--138-->c   adde *)
   | (_, 138) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -821,7 +914,7 @@ let parse_opcode_31
      (* adde rA,rB,rC *)
      AddExtended
        (PWR, rc, oe, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr, so, ov, ca)
-     
+
   (* < 7>11< rs>0<15><15>/0<--144-->/   mtcr (simplified) *)
   | (0, 144) when (b 11 11) = 0 && (b 12 19) = 255 ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -857,7 +950,7 @@ let parse_opcode_31
      (* stwx rS,rA,rB *)
      StoreWordIndexed
        (PWR, false, rs ~mode:RD, ra ~mode:RD, rb ~mode:RD, mem ~mode:WR)
-     
+
   (* < 7>11//////////E////0<--163-->/   wrteei *)
   | (0, 163) ->
      let msr = pwr_special_register_op ~reg:PowerMSR ~mode:WR in
@@ -878,7 +971,7 @@ let parse_opcode_31
      (* `subfze rD,rA *)
      SubtractFromZeroExtended
        (PWR, rc, oe, rd ~mode:WR, ra ~mode:RD, cr, so, ov, ca)
-     
+
   (* < 7>11< rd>< ra>/////E<--202-->c   addze *)
   | (_, 202) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -930,7 +1023,7 @@ let parse_opcode_31
      (* mullw rD,rA,rB *)
      MultiplyLowWord
        (PWR, rc, oe, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr, so, ov)
-     
+
   (* < 7>11< rd>< ra>< rb>E<--266-->c   add *)
   | (_, 266) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -943,7 +1036,18 @@ let parse_opcode_31
      let oe = (b 21 21) = 1 in
      (* add rD,rA,rB *)
      Add (PWR, rc, oe, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr, so, ov)
-     
+
+  (* < 7>11< rd>< ra>< rb>0<--279-->/   lhzx *)
+  | (o, 279) ->
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
+     let mem =
+       pwr_indexed_indirect_register_op
+         ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
+     (* lhzx rD,rA,rB *)
+     LoadHalfwordZeroIndexed (PWR, false, rd WR, ra RD, rb RD, mem RD)
+
   (* < 7>11< rs>< ra>< rb>0<--316-->c   xor *)
   | (0, 316) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -953,28 +1057,28 @@ let parse_opcode_31
      let rc = (b 31 31) = 1 in
      (* xor rA,rS,rB *)
      Xor (PWR, rc, ra ~mode:WR, rs ~mode:WR, rb ~mode:WR, cr)
-     
+
   (* < 7>11< rd>< 0 >< 1 >0<--339-->/   mfxer (simplified) *)
   | (0, 339) when (b 11 15) = 1 && (b 16 20) = 0 ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let xer = pwr_special_register_op ~reg:PowerXER ~mode:RD in
      (* mfxer rD *)
      MoveFromExceptionRegister (PWR, rd ~mode:WR, xer)
-     
+
   (* < 7>11< rd><  9><  0>0<--339-->/   mfctr (simplified) *)
   | (0, 339) when (b 11 15) = 9 && (b 16 20) = 0 ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let ctr = ctr_op ~mode:RD in
      (* mfctr rd *)
      MoveFromCountRegister (PWR, rd ~mode:WR, ctr)
-     
+
   (* < 7>11< rd><  8><  0>0<--339-->/   mflr (simplified) *)
   | (0, 339) when (b 11 15) = 8 && (b 16 20) = 0 ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let lr = lr_op ~mode:RD in
      (* mflr rd *)
      MoveFromLinkRegister (PWR, rd ~mode:WR, lr)
-     
+
   (* < 7>11< rd><spr><spr>0<--339-->/   mfspr *)
   | (0, 339) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -983,6 +1087,38 @@ let parse_opcode_31
        pwr_immediate_op ~signed:false ~size:4 ~imm:(mkNumerical spr) in
      (* mfspr rD, sprn *)
      MoveFromSpecialPurposeRegister (PWR, rd ~mode:WR, spr)
+
+  (* < 7>11< rd>< ra>< rb>0<--343-->/   lhax *)
+  | (o, 343) ->
+     let rd = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
+     let mem =
+       pwr_indexed_indirect_register_op
+         ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
+     (* lhax rD,rA,rB *)
+     LoadHalfwordAlgebraicIndexed (PWR, false, rd WR, ra RD, rb RD, mem RD)
+
+  (* < 7>11< rs>< ra>< rb>0<--407-->/   sthx *)
+  | (0, 407) ->
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
+     let mem =
+       pwr_indexed_indirect_register_op
+         ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
+     (* sthx rs, ra, rb *)
+     StoreHalfwordIndexed (PWR, false, rs RD, ra RD, rb RD, mem WR)
+
+(* < 7>11< rs>< ra>< rb>0<--412-->c   orc *)
+  | (0, 412) ->
+     let rs = pwr_gp_register_op ~index:(b 6 10) in
+     let ra = pwr_gp_register_op ~index:(b 11 15) in
+     let rb = pwr_gp_register_op ~index:(b 16 20) in
+     let cr = cr0_op ~mode:WR in
+     let rc = (b 31 31) = 1 in
+     (* orc ra,rs,rb *)
+     OrComplement (PWR, rc, ra WR, rs RD, rb RD, cr)
 
   (* < 7>11< rS>< rA>< rB>0<--444-->c   mr *)
   | (0, 444) when (b 6 10) = (b 16 20) ->
@@ -997,7 +1133,7 @@ let parse_opcode_31
      let rs = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op ~index:(b 11 15) in
      let rb = pwr_gp_register_op ~index:(b 16 20) in
-     let cr = cr0_op ~mode: WR in
+     let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* or rA,rS,rB *)
      Or (PWR, rc, ra ~mode:WR, rs ~mode:RD, rb ~mode:RD, cr)
@@ -1022,7 +1158,7 @@ let parse_opcode_31
      let xer = xer_op ~mode:WR in
      (* mtxer rS *)
      MoveToExceptionRegister (PWR, xer, rx ~mode:RD)
-     
+
   (* < 7>11< rs><  8><  0>0<--467-->/   mtlr *)
   | (0, 467) when (b 11 15) = 8 && (b 16 20) = 0 ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
@@ -1036,8 +1172,8 @@ let parse_opcode_31
      let ctr = ctr_op ~mode:WR in
      (* mtctr rS *)
      MoveToCountRegister (PWR, ctr, rd ~mode:RD)
-     
-  (* < 7>11< rs><spr><spr>0<--467-->/   mtspr *)    
+
+  (* < 7>11< rs><spr><spr>0<--467-->/   mtspr *)
   | (0, 467) ->
      let sprn = ((b 16 20) lsl 5) + (b 11 15) in
      let rx = pwr_gp_register_op ~index:(b 6 10) in
@@ -1058,7 +1194,7 @@ let parse_opcode_31
      let oe = (b 21 21) = 1 in
      (* divw rD,rA,rB *)
      DivideWord (PWR, rc, oe, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr, so, ov)
-     
+
   (* < 7>11< rs>< ra>< rb>1<---24-->c   srw *)
   | (1, 24) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -1080,7 +1216,7 @@ let parse_opcode_31
      (* sraw rA,rS,rB *)
      ShiftRightAlgebraicWord
        (PWR, rc, ra ~mode:WR, rs ~mode:RD, rb ~mode:RD, cr, ca)
-     
+
   (* < 7>11< rs>< ra>< sh>1<--312-->c   srawi *)
   | (1, 312) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -1094,7 +1230,7 @@ let parse_opcode_31
      (* srawi rA,rS,sh  documentation error? *)
      ShiftRightAlgebraicWordImmediate
        (PWR, rc, ra ~mode:WR, rs ~mode:RD, sh, cr, ca)
-     
+
   (* < 7>11< mo>//////////1<--342-->/   eieio *)
   | (1, 342) ->
      let mo = b 6 10 in
@@ -1110,7 +1246,7 @@ let parse_opcode_31
      let rc = (b 31 31) = 1 in
      (* extsh rA,rS *)
      ExtendSignHalfword (PWR, rc, ra ~mode:WR, rs ~mode:RD, cr)
-     
+
   (* < 7>11< rs>< ra>/////1<--442-->c   extsb *)
   | (1, 442) ->
      let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -1120,8 +1256,8 @@ let parse_opcode_31
      (* extsb rA,rS *)
      ExtendSignByte (PWR, rc, ra ~mode:WR, rs ~mode:RD, cr)
 
-  (* < 7>11< rd>< ra>< rb>1<--463-->/   isel (4*cr7+eq) *)
-  | (1, (399 | 463)) ->
+  (* < 7>11< rd>< ra>< rb><crb>< 15>/   isel (4*cr7+eq) *)
+  | (_, _) when (b 26 30) = 15 ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op_convert (b 11 15) in
      let rb = pwr_gp_register_op ~index:(b 16 20) in
@@ -1133,7 +1269,7 @@ let parse_opcode_31
   | (1, 466) when (b 6 6) = 0 ->
      (* tlbwe *)
      TLBWriteEntry PWR
-     
+
   | _ ->
      NotRecognized ("parse_opcode_31:" ^ (string_of_int opc), instr)
 
@@ -1150,7 +1286,7 @@ let parse_load_opcodes
   let offset = if (b 16 16) = 1 then offset - e16 else offset in
   let offset = mkNumerical offset in
   let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset ~mode:RD in
-  
+
   match opc with
 
   (* <  32>< rd>< ra><------D------->   lwz *)
@@ -1183,7 +1319,17 @@ let parse_load_opcodes
      (* lhzu rD,D(rA) *)
      LoadHalfwordZero (PWR, true, rd, ra, mem)
 
-  (* <  46>< rd>< ra><------D------->   lmw *)    
+  (* <  42>< rd>< ra> <-----D------->   lha *)
+  | 42 ->
+     (* lha rD,D(rA) *)
+     LoadHalfwordAlgebraic (PWR, false, rd, ra, mem)
+
+  (* <  42>< rd>< ra> <-----D------->   lha *)
+  | 43 ->
+     (* lha rD,D(rA) *)
+     LoadHalfwordAlgebraic (PWR, true, rd, ra, mem)
+
+  (* <  46>< rd>< ra><------D------->   lmw *)
   | 46 ->
      (* lmw rD,D(rA) *)
      LoadMultipleWord (PWR, rd, ra, mem)
@@ -1212,7 +1358,7 @@ let parse_store_opcodes
      (* stw rS,D(rA) *)
      StoreWord (PWR, false, rs, ra, mem)
 
-  (* <  37>< rs>< ra><------D------->   stwu *)    
+  (* <  37>< rs>< ra><------D------->   stwu *)
   | 37 ->
      (* stwu rS,D(rA) *)
      StoreWord (PWR, true, rs, ra, mem)
@@ -1221,7 +1367,7 @@ let parse_store_opcodes
   | 38 ->
      (* stb rS,D(rA) *)
      StoreByte (PWR, false, rs, ra, mem)
-    
+
   (* <  39>< rs>< ra><------D------->   stbu *)
   | 39 ->
      (* stbu rS,D(rA) *)
@@ -1245,7 +1391,7 @@ let parse_store_opcodes
   | _ ->
      NotRecognized ("Store opcodes:" ^ (string_of_int opc), instr)
 
-    
+
 let parse_pwr_opcode
       (ch: pushback_stream_int)
       (iaddr: doubleword_int)
@@ -1279,7 +1425,7 @@ let parse_pwr_opcode
     | _ ->
        NotRecognized ("parse_opcode:" ^ (string_of_int opc), instr)
 
-    
+
 let disassemble_pwr_instruction
       (ch: pushback_stream_int) (iaddr: doubleword_int) (instr: doubleword_int) =
   try

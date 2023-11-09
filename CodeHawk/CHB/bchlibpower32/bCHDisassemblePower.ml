@@ -325,7 +325,7 @@ let set_block_boundaries () =
           (match instr#get_opcode with
            | Branch (_, tgt)
              | BranchConditional (_, _, _, _, tgt)
-             | BranchConditionalLink (_, _, _, _, tgt)
+             | BranchConditionalLink (_, _, _, _, tgt, _)
              | CBranchDecrementNotZero (_, _, _, _, _, tgt, _)
              | CBranchDecrementZero (_, _, _, _, _, tgt, _)
              | CBranchEqual (_, _, _, _, _, _, tgt)

@@ -75,7 +75,7 @@ val ch_info_log: logger_int
 
 (** Logger for diagnostic messages; can be activated/deactivated with
     [activate_diagnostics] and [deactivate_diagnostics] respectively;
-    [collect_diagnostics] reports it diagnostic logging is active.*)
+    [collect_diagnostics] reports if diagnostic logging is active.*)
 val ch_diagnostics_log: logger_int
 
 
