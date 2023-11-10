@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -76,11 +76,11 @@ open BCHLoopStructure
 open BCHPredefinedCallSemantics
 open BCHTranslateToCHIF
 open BCHX86AnalysisResults
-   
+
 (* bchlibmips32 *)
 open BCHDisassembleMIPS
 open BCHMIPSAnalysisResults
-open BCHMIPSAssemblyFunctions   
+open BCHMIPSAssemblyFunctions
 open BCHMIPSAssemblyInstructions
 
 (* bchlibarm32 *)
@@ -129,7 +129,7 @@ let set_chif s = show_chif := Some s
 
 let speclist =
   [ ("-version", Arg.Unit (fun () -> ()), "show version information and exit") ;
-    ("-gc", Arg.Unit (fun () -> cmd := "gc"), 
+    ("-gc", Arg.Unit (fun () -> cmd := "gc"),
      "show ocaml garbage collector settings and exit") ;
     ("-set_vftables",Arg.Unit  (fun () -> system_settings#set_vftables),
      "declare jumptable targets as funcion entry points") ;
@@ -256,13 +256,13 @@ let function_stats_to_pretty l =
                         flp ~alignment:StrCenter (STR "complexity")  12  ; STR "  " ; NL ]  in
   let pplarge = if List.length largeentries > 0 then
                   LBLOCK [ STR "Large functions" ; NL ; ptitle ;
-                           STR (string_repeat "-" 80) ; NL ; plarge ; 
+                           STR (string_repeat "-" 80) ; NL ; plarge ;
                            STR (string_repeat "-" 80) ; NL ]
                 else
                   STR "" in
   LBLOCK [ STR "Small functions" ; NL ; STR (string_repeat "-" 80) ; NL ; psmall ; NL ;
            pplarge ]
-              
+
 
 let get_dll_functions () =
   if pe_sections#has_import_directory_table then
@@ -274,7 +274,7 @@ let get_dll_functions () =
               pr_debug [ STR "   " ; STR f ; NL ] ) e#get_functions ;
           pr_debug [ NL ]
         end) table
-  
+
 
 let main () =
   try
@@ -285,7 +285,7 @@ let main () =
 	pr_debug [version#toPretty; NL];
 	exit 0
       end
-	
+
     else if !cmd = "gc" then
       begin
 	pr_debug [garbage_collector_settings_to_pretty (); NL];
@@ -326,7 +326,7 @@ let main () =
         end
       else
         exit_with_error !cmd msg
-	
+
     else if !cmd = "extract" && !architecture = "x86" && !fileformat = "pe" then
       let _ = register_hashed_functions () in
       let (success,msg) = read_pe_file system_info#get_filename version#get_maxfilesize in
@@ -337,7 +337,7 @@ let main () =
 	  save_log_files "extract" ;
 	  exit 0
 	end
-      else 
+      else
 	exit_with_error !cmd msg
 
     else if !cmd = "extract" && !fileformat = "elf" then
@@ -373,13 +373,13 @@ let main () =
 	let t = ref (Unix.gettimeofday ()) in
 	let (success,msg) = construct_functions_pe () in
 	if success then
-	  let _ = disassembly_summary#record_construct_functions_time 
+	  let _ = disassembly_summary#record_construct_functions_time
 	            ((Unix.gettimeofday ()) -. !t) in
           if !save_xml then
             begin
               save_disassembly_status () ;
               exit 0
-            end          
+            end
           else
             let _ = disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) in
 	    let _ = pr_debug [ disassembly_summary#toPretty ; NL ] in
@@ -409,7 +409,7 @@ let main () =
             && !fileformat = "elf" then
       let t0 = ref (Unix.gettimeofday ()) in
       let _ = system_info#set_elf in
-      let _ = load_bdictionary () in      
+      let _ = load_bdictionary () in
       let _ = system_info#initialize in
       let _ = pr_timing [STR "system_info initialized"] in
       let _ = load_elf_files () in
@@ -514,15 +514,22 @@ let main () =
         save_log_files "disassemble";
       end
 
-    else if !cmd = "disassemble" && !architecture = "power" && !fileformat = "elf" then
+    else if !cmd = "disassemble"
+            && !architecture = "power"
+            && !fileformat = "elf" then
       let _ = system_info#set_elf in
       let _ = system_info#set_power in
       let _ = system_info#initialize in
-      let _ = pr_debug [STR "Load Power file ..."; NL] in
       let _ = load_elf_files () in
-      let _ = pr_debug [STR "Disassemble sections ..."; NL] in
+      let _ = pr_timing [STR "elf files loaded"] in
+      let _ = List.iter parse_cil_file system_info#ifiles in
+      let _ =
+        if (List.length system_info#ifiles) > 0 then
+          pr_timing [STR "c header files loaded"] in
       let _ = disassemble_pwr_sections () in
+      let _ = pr_timing [STR "sections disassembled"] in
       let _ = construct_functions_pwr () in
+      let _ = pr_timing [STR "functions constructed"] in
       let _ = disassembly_summary#set_disassembly_metrics
                 (get_pwr_disassembly_metrics ()) in
       let _ = pr_debug [NL; NL; disassembly_summary#toPretty; NL] in
@@ -608,14 +615,14 @@ let main () =
         save_log_files "disassemble";
         pr_timing [STR "log files saved"]
       end
-                
+
 
     else if !cmd = "analyze" && !architecture = "x86" && !fileformat = "pe" then
       let _ = register_hashed_functions () in
       let starttime = Unix.gettimeofday () in
       let _ = load_bdictionary () in
       let _ = system_info#initialize in
-      let _ = load_interface_dictionary () in      
+      let _ = load_interface_dictionary () in
       let _ = load_x86dictionary () in
       let _ = global_system_state#initialize in
       let _ = file_metrics#load_xml in
@@ -660,8 +667,8 @@ let main () =
 	else
 	  exit_with_error logcmd msg
       else
-	exit_with_error logcmd msg	    
-      
+	exit_with_error logcmd msg
+
     else if !cmd = "analyze" && !architecture = "x86" && !fileformat = "elf" then
       (* let _ = register_hashed_elf_functions () in *)
       let starttime = Unix.gettimeofday () in
@@ -694,7 +701,7 @@ let main () =
       let _ = pr_timing [STR "functions constructed"] in
       let _ = analyze starttime in
       let _ = pr_timing [STR "analysis is finished"] in
-      let _ = file_metrics#set_disassembly_results (get_disassembly_metrics ()) in      
+      let _ = file_metrics#set_disassembly_results (get_disassembly_metrics ()) in
       begin
 	save_functions_list ();
         pr_timing [STR "functions list saved"];
@@ -969,7 +976,7 @@ let main () =
     end
   | IO.No_more_input ->
      begin
-       save_log_files "failure" ; 
+       save_log_files "failure" ;
        pr_debug [ STR "Error: No more input" ; NL ] ;
        exit 1
      end
@@ -989,4 +996,3 @@ let main () =
     end
 
 let _ = Printexc.print main ()
-	    

@@ -289,7 +289,7 @@ class type pwr_operand_int =
 
   end
 
-type not_code_t = DataBlock of data_block_int
+type not_code_t = JumpTable of jumptable_int | DataBlock of data_block_int
 
 
 (** {2 Instruction representation}
@@ -1544,6 +1544,7 @@ class type pwr_assembly_instruction_int =
     method get_opcode: pwr_opcode_t
     method get_instruction_bytes: string
     method get_bytes_as_hexstring: string
+    method get_non_code_block: not_code_t
 
     (* predicates *)
     method is_block_entry: bool
@@ -1596,14 +1597,14 @@ class type pwr_assembly_instructions_int =
     (** [get_code_addresses_rev low high] returns the list of virtual addresses
         bounded by [low] and [high] that hold valid instructions, in reverse
         order. [low] defaults to [0x0], [high] defaults to [0xffffffff] *)
-    method get_code_addresses_rev:
+    method get_code_addresses:
              ?low:doubleword_int
              -> ?high:doubleword_int
              -> unit
              -> doubleword_int list
 
     (* iterators *)
-    method iteri: (int -> pwr_assembly_instruction_int -> unit) -> unit
+    (* method iteri: (int -> pwr_assembly_instruction_int -> unit) -> unit *)
     method itera:
              (doubleword_int -> pwr_assembly_instruction_int -> unit) -> unit
     method get_num_instructions: int

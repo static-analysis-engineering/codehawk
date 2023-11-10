@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -55,7 +55,7 @@ class pwr_assembly_instruction_t
         (opcode: pwr_opcode_t)
         (instruction_bytes: string): pwr_assembly_instruction_int =
 object (self)
-     
+
   val mutable block_entry = false
   val mutable inlined_call = false
   val is_vle = is_vle
@@ -81,6 +81,16 @@ object (self)
 
   method is_not_code = match opcode with NotCode _ -> true | _ -> false
 
+  method get_non_code_block =
+    match opcode with
+    | NotCode (Some b) -> b
+    | _ ->
+       let msg = (LBLOCK [STR "No data block found at "; vaddr#toPretty]) in
+       begin
+         ch_error_log#add "assembly instructions" msg;
+         raise (BCH_failure msg)
+       end
+
   method get_opcode = opcode
 
   method get_address = vaddr
@@ -97,7 +107,7 @@ object (self)
 
 end
 
-                                               
+
 let make_pwr_assembly_instruction
       (va: doubleword_int)
       (is_vle: bool)

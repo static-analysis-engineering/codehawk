@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -83,10 +83,9 @@ module DoublewordCollections = CHCollections.Make (
   end)
 
 
-let disassemble
+let disassemble_pwr_section
       (base: doubleword_int)
       (is_vle: bool)
-      (displacement: int)
       (x: string) =
   let size = String.length x in
   let add_instr (position: int) (opcode: pwr_opcode_t) (bytes: string) =
@@ -104,78 +103,128 @@ let disassemble
       (LBLOCK [
            STR "base: ";
            base#toPretty;
-           STR "; displacement";
-           INT displacement;
            STR "; size: ";
            INT size]) in
+
+  let not_code_length nc =
+    match nc with
+    | JumpTable jt -> jt#get_length
+    | DataBlock db -> db#get_length in
+
+  let not_code_set_string nc s =
+    match nc with
+    | DataBlock db -> db#set_data_string s
+    | _ -> () in
+
+  let is_data_block (iaddr: doubleword_int) =
+    TR.to_bool
+      (fun instr -> instr#is_non_code_block)
+      (get_pwr_assembly_instruction iaddr) in
+
+  let skip_data_block (pos: int) ch =
+    let iaddr = base#add_int pos in
+    log_titer
+      (mk_tracelog_spec
+         ~tag:"disassembly" ("skip_data_block:" ^ iaddr#to_hex_string))
+      (fun instr ->
+        let nonCodeBlock = instr#get_non_code_block in
+        let dblen = not_code_length nonCodeBlock in
+        if pos + dblen <= size then
+          let blockbytes =
+            try
+              ch#sub pos dblen
+            with
+            | BCH_failure p ->
+               begin
+                 ch_error_log#add
+                   "disassembly:skip data_block"
+                   (LBLOCK [STR "pos: "; INT pos; STR "; dblen: "; INT dblen]);
+                 ""
+               end in
+          begin
+            ch#skip_bytes dblen;
+            not_code_set_string nonCodeBlock blockbytes
+          end
+        else
+          ch_error_log#add
+            "data block problem"
+            (LBLOCK [
+                 STR "Data block at ";
+                 (base#add_int pos)#toPretty;
+                 STR " extends beyond end of section. Ignore"]))
+      (get_pwr_assembly_instruction iaddr) in
+
   try
     begin
       while ch#pos + 2 < size do
         let prevPos = ch#pos in
         let iaddr = base#add_int ch#pos in
         try
-          if is_vle then
-            let instrbytes = ch#read_ui16 in
-            let opcode =
-              try
-                disassemble_vle_instruction ch iaddr instrbytes
-              with
-              | _ -> OpInvalid in
-            let currentPos = ch#pos in
-            let instrlen = currentPos - prevPos in
-            let instrBytes = Bytes.make instrlen ' ' in
-            let _ =
-              try
-                Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen
-              with
-              | _ ->
-                 raise
-                   (BCH_failure
-                      (LBLOCK [
-                           STR "Error in Bytes.blit (VLE): ";
-                           STR "prevPos: ";
-                           INT prevPos;
-                           STR "; instrlen";
-                           INT instrlen;
-                           STR "; ch#pos";
-                           INT ch#pos;
-                           STR "; size: ";
-                           INT size])) in
-            let _ = add_instr prevPos opcode (Bytes.to_string instrBytes) in
-            ()
+          if is_data_block iaddr then
+            skip_data_block prevPos ch
           else
-            let instrbytes = ch#read_doubleword in
-            let opcode =
-              try
-                disassemble_pwr_instruction ch iaddr instrbytes
-              with
-              | BCH_failure p ->
-                 begin
-                   ch_error_log#add
-                     "instruction disassembly error"
-                     (LBLOCK [
-                          (base#add_int ch#pos)#toPretty; STR ": "; p]);
-                   NotRecognized ("error", instrbytes)
-                 end
-              | _ -> OpInvalid in
-            let currentPos = ch#pos in
-            let instrlen = currentPos - prevPos in
-            let instrBytes = Bytes.make instrlen ' ' in
-            let _ =
-              try
-                Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen
-              with
-              | _ ->
-                 raise
-                   (BCH_failure
-                      (LBLOCK [
-                           STR "Error in Bytes.blit (Power): ";
-                           STR "prevPos: ";
-                           INT prevPos;
-                           STR "; instrlen: ";
-                           INT instrlen])) in
-            let _ = add_instr prevPos opcode (Bytes.to_string instrBytes) in
-            ()
+            if is_vle then
+              let instrbytes = ch#read_ui16 in
+              let opcode =
+                try
+                  disassemble_vle_instruction ch iaddr instrbytes
+                with
+                | _ -> OpInvalid in
+              let currentPos = ch#pos in
+              let instrlen = currentPos - prevPos in
+              let instrBytes = Bytes.make instrlen ' ' in
+              let _ =
+                try
+                  Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen
+                with
+                | _ ->
+                   raise
+                     (BCH_failure
+                        (LBLOCK [
+                             STR "Error in Bytes.blit (VLE): ";
+                             STR "prevPos: ";
+                             INT prevPos;
+                             STR "; instrlen";
+                             INT instrlen;
+                             STR "; ch#pos";
+                             INT ch#pos;
+                             STR "; size: ";
+                             INT size])) in
+              let _ = add_instr prevPos opcode (Bytes.to_string instrBytes) in
+              ()
+            else
+              let instrbytes = ch#read_doubleword in
+              let opcode =
+                try
+                  disassemble_pwr_instruction ch iaddr instrbytes
+                with
+                | BCH_failure p ->
+                   begin
+                     ch_error_log#add
+                       "instruction disassembly error"
+                       (LBLOCK [
+                            (base#add_int ch#pos)#toPretty; STR ": "; p]);
+                     NotRecognized ("error", instrbytes)
+                   end
+                | _ -> OpInvalid in
+              let currentPos = ch#pos in
+              let instrlen = currentPos - prevPos in
+              let instrBytes = Bytes.make instrlen ' ' in
+              let _ =
+                try
+                  Bytes.blit (Bytes.of_string x) prevPos instrBytes 0 instrlen
+                with
+                | _ ->
+                   raise
+                     (BCH_failure
+                        (LBLOCK [
+                             STR "Error in Bytes.blit (Power): ";
+                             STR "prevPos: ";
+                             INT prevPos;
+                             STR "; instrlen: ";
+                             INT instrlen])) in
+              let _ = add_instr prevPos opcode (Bytes.to_string instrBytes) in
+              ()
         with
         | BCH_failure p ->
            begin
@@ -187,7 +236,7 @@ let disassemble
                  STR " in mode ";
                  STR (if is_vle then "VLE" else "PowerPC")]);
              raise (BCH_failure p)
-           end 
+           end
       done
     end
   with
@@ -205,53 +254,53 @@ let disassemble
 
 let disassemble_pwr_sections () =
   let xSections = elf_header#get_executable_sections in
-  let (startOfCode, endOfCode) =
-    if (List.length xSections) = 0 then
-      raise (BCH_failure (STR "Executable does not have section headers"))
-    else
-      let headers =
-        List.sort (fun (h1, _) (h2, _) ->
-            h1#get_addr#compare h2#get_addr) xSections in
-      let (lowest, _) = List.hd headers in
-      let (highest, _) = List.hd (List.rev headers) in
-      let _ =
-        chlog#add
-          "disassembly"
-          (LBLOCK [
-               pretty_print_list
-                 headers
-                 (fun (s, _) ->
-                   LBLOCK [
-                       STR s#get_section_name;
-                       STR ":";
-                       s#get_addr#toPretty;
-                       STR " (";
-                       s#get_size#toPretty;
-                       STR ")"])
-                 "[" " ; " "]"]) in
-      let startOfCode = lowest#get_addr in
-      let endOfCode = highest#get_addr#add highest#get_size in
-      (startOfCode, endOfCode) in
-  let sizeOfCode = TR.tget_ok (endOfCode#subtract startOfCode) in
+  let headers =
+    List.sort (fun (h1, _) (h2, _) ->
+        h1#get_addr#compare h2#get_addr) xSections in
+  let sectionsizes =
+    List.map (fun (h, _) ->
+        (h#get_section_name, h#get_addr, h#get_size)) headers in
+  let is_in_executable_section (db: data_block_int) =
+    List.fold_left (fun found (_, ha, hsize) ->
+        found
+        || (ha#le db#get_start_address
+            && db#get_start_address#lt (ha#add_int hsize#value)))
+      false sectionsizes in
+  let programentrypoint = elf_header#get_program_entry_point in
+  let datablocks =
+    List.filter is_in_executable_section system_info#get_data_blocks in
+
   (* can be 2 (VLE) or 4-byte aligned *)
-  let _ = initialize_pwr_instructions sizeOfCode#to_int in
-  let _ = initialize_pwr_assembly_instructions sizeOfCode#to_int startOfCode in
-  let _ = pr_timing [STR "Instructions initialized"] in
-  let _ =
+  begin
+    initialize_pwr_instructions sectionsizes;
+    pr_timing [
+        STR "instructions initialized";
+        pretty_print_list
+          sectionsizes
+          (fun (name, addr, size) ->
+            LBLOCK [
+                STR "(";
+                STR name;
+                STR ", ";
+                addr#toPretty;
+                STR ", ";
+                size#toPretty;
+                STR ")"]) " [" ", " "]"];
+    ignore (functions_data#add_function programentrypoint);
+    initialize_pwr_assembly_instructions sectionsizes datablocks;
+    pr_timing [STR "assembly instructions initialized"];
     List.iter
       (fun (h, x) ->
-        let displacement =
-          fail_tvalue
-            (trerror_record
-               (LBLOCK [
-                    STR "Error in disassemble_power_sections: displacement ";
-                    STR "header address: ";
-                    h#get_addr#toPretty;
-                    STR "; startOfCode: ";
-                    startOfCode#toPretty]))
-            (h#get_addr#subtract_to_int startOfCode) in
-        disassemble h#get_addr h#is_pwr_vle displacement x) xSections in
-  sizeOfCode
+        begin
+          disassemble_pwr_section h#get_addr h#is_pwr_vle x;
+          pr_timing [
+              STR "section disassembled at ";
+              h#get_addr#toPretty;
+              STR " of length ";
+              INT (String.length x);
+              STR " bytes"]
+        end) xSections
+  end
 
 
 let collect_function_entry_points () =
@@ -281,6 +330,16 @@ let get_so_target
       None
   else
     None
+
+
+(* can be used before functions have been constructed *)
+let is_nr_call_instruction (instr:pwr_assembly_instruction_int) =
+  match instr#get_opcode with
+  | BranchLink (_, tgt, _) when tgt#is_absolute_address ->
+     let tgtaddr = tgt#get_absolute_address in
+     ((functions_data#is_function_entry_point tgtaddr)
+      && (functions_data#get_function tgtaddr)#is_non_returning)
+  | _ -> false
 
 
 let collect_call_targets () =
