@@ -47,6 +47,7 @@ open BCHPowerAssemblyBlock
 open BCHPowerAssemblyFunction
 open BCHPowerAssemblyFunctions
 open BCHPowerAssemblyInstructions
+open BCHPowerDisassemblyUtils
 open BCHPowerTypes
 
 
@@ -97,16 +98,22 @@ let get_successors
         (* unconditional branch *)
         | Branch (_, tgt) -> [tgt#get_absolute_address]
 
+        (* unconditional jump to next instruction *)
+        | BranchConditionalLink _
+             when is_unconditional_nia_target_branch instr -> next ()
+
         (* conditional branch *)
-        | BranchConditional (_, _, _, _, tgt)
-          | BranchConditionalLink (_, _, _, _, tgt, _)
-          | CBranchEqual (_, _, _, _, _, _, tgt)
-          | CBranchGreaterThan (_, _, _, _, _, _, tgt)
-          | CBranchLessEqual (_, _, _, _, _, _, tgt)
-          | CBranchLessThan (_, _, _, _, _, _, tgt)
-          | CBranchNotEqual (_, _, _, _, _, _, tgt) ->
-           (* false branch first, true branch second *)
-           (next ()) @ [tgt#get_absolute_address]
+        | _ when is_conditional_absolute_branch_target instr ->
+           (match opt_conditional_absolute_branch_target instr with
+            | Some tgtaddr ->
+               (* false branch first, true branch second *)
+               (next ()) @ [tgtaddr]
+            | _ ->
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Internal failure:BCHConstructPowerFunction: ";
+                         STR "get_successors"])))
 
         | _ -> next () in
 
@@ -147,8 +154,32 @@ let construct_pwr_assembly_block
     match instr#get_opcode with
     | BranchCountRegister _ ->
        let _ =
-         chlog#add "assume tail call" (LBLOCK [instr#get_address#toPretty]) in
+         chlog#add
+           "assume tail call for bctr"
+           (LBLOCK [
+                faddr#toPretty;
+                STR ":";
+                instr#get_address#toPretty]) in
        true
+    | Branch (_, tgt) when tgt#is_absolute_address ->
+       let tgtaddr = tgt#get_absolute_address in
+       if functions_data#is_function_entry_point tgtaddr then
+         true
+       else if tgtaddr#lt faddr then
+         begin
+           ignore (functions_data#add_function tgtaddr);
+           chlog#add
+             "tail-call on assumed function entry point"
+             (LBLOCK [
+                  faddr#toPretty;
+                  STR ":";
+                  instr#get_address#toPretty;
+                  instr#toPretty]);
+           newfnentries#add tgtaddr;
+           true
+         end
+       else
+         false
     | _ -> false in
 
   let is_non_returning_call_instr (instr: pwr_assembly_instruction_int) =

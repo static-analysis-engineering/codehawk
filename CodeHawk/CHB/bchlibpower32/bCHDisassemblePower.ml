@@ -69,6 +69,7 @@ open BCHDisassembleVLEInstruction
 open BCHPowerAssemblyFunctions
 open BCHPowerAssemblyInstruction
 open BCHPowerAssemblyInstructions
+open BCHPowerDisassemblyUtils
 open BCHPowerOpcodeRecords
 open BCHPowerTypes
 
@@ -254,6 +255,11 @@ let disassemble_pwr_section
 
 let disassemble_pwr_sections () =
   let xSections = elf_header#get_executable_sections in
+  let xSections =
+    List.filter (fun (h, _) ->
+        match h#get_section_name with
+        | ".plt" | ".got" -> false
+        | _ -> true) xSections in
   let headers =
     List.sort (fun (h1, _) (h2, _) ->
         h1#get_addr#compare h2#get_addr) xSections in
@@ -377,55 +383,35 @@ let set_block_boundaries () =
                   STR "function entry point incorrect: ";
                   fe#toPretty])) feps;
 
-    (* ----------------------------- record targets of unconditional jumps -- *)
+    (* --------------------------- record targets of (un)conditional jumps -- *)
     !pwr_assembly_instructions#itera
       (fun va instr ->
-        try
-          (match instr#get_opcode with
-           | Branch (_, tgt)
-             | BranchConditional (_, _, _, _, tgt)
-             | BranchConditionalLink (_, _, _, _, tgt, _)
-             | CBranchDecrementNotZero (_, _, _, _, _, tgt, _)
-             | CBranchDecrementZero (_, _, _, _, _, tgt, _)
-             | CBranchEqual (_, _, _, _, _, _, tgt)
-             | CBranchGreaterThan (_, _, _, _, _, _, tgt)
-             | CBranchLessEqual (_, _, _, _, _, _, tgt)
-             | CBranchLessThan (_, _, _, _, _, _, tgt)
-             | CBranchNotEqual (_, _, _, _, _, _, tgt) ->
-              if tgt#is_absolute_address then
-                let jumpaddr = tgt#get_absolute_address in
-                set_block_entry jumpaddr
-              else
-                ()
-           | _ -> ())
-        with
-        | BCH_failure p ->
-           chlog#add
-             "disassembly"
-             (LBLOCK [
-                  STR "assembly instruction creates incorrect block entry: ";
-                  instr#toPretty;
-                  STR ": ";
-                  p]));
+        match opt_absolute_branch_target instr with
+        | Some tgtaddr ->
+           (try
+             set_block_entry tgtaddr
+           with
+           | BCH_failure p ->
+              ch_error_log#add
+                "disassembly:set-block-entry"
+                (LBLOCK [
+                     instr#get_address#toPretty;
+                     STR ":";
+                     instr#toPretty;
+                     STR " sets invalid address ";
+                     tgtaddr#toPretty]))
+        | _ -> ());
 
     (* ----------------------- add block entries due to previous block-ending -- *)
     !pwr_assembly_instructions#itera
-      (fun va instr ->
+    (fun va instr ->
         let opcode = instr#get_opcode in
         let is_block_ending =
-          match opcode with
-          | BranchLinkRegister _ -> true
-          | Branch _
-            | BranchConditional _
-            | BranchConditionalLink _
-            | CBranchDecrementNotZero _
-            | CBranchDecrementZero _
-            | CBranchEqual _
-            | CBranchGreaterThan _
-            | CBranchLessEqual _
-            | CBranchLessThan _
-            | CBranchNotEqual _ -> true
-          | _ -> false in
+          (is_absolute_branch_target instr)
+          ||
+            match opcode with
+            | BranchLinkRegister _ -> true
+            | _ -> false in
         if is_block_ending && has_next_valid_instruction va then
           let nextva =
             fail_tvalue

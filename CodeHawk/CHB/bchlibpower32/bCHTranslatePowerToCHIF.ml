@@ -72,10 +72,12 @@ open BCHPowerAssemblyInstructions
 open BCHPowerCHIFSystem
 open BCHPowerCodePC
 open BCHPowerConditionalExpr
+open BCHDisassemblePower
+open BCHPowerDisassemblyUtils
 open BCHPowerOpcodeRecords
 open BCHPowerOperand
 open BCHPowerTypes
-open BCHDisassemblePower
+
 
 
 module B = Big_int_Z
@@ -328,51 +330,60 @@ let translate_pwr_instruction
     ([], [], cmds @ frozenAsserts @ (invop :: newcmds) @ [bwdinvop]) in
 
   match instr#get_opcode with
+  | _ when is_conditional_absolute_branch_target instr ->
+     (match opt_conditional_absolute_branch_target instr with
+      | None ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Internal error: bCHTranslateToCHIF: ";
+                   STR "translate_pwr_instruction"]))
+      | Some tgtaddr ->
+         let thenaddr = (make_i_location loc tgtaddr)#ci in
+         let elseaddr = codepc#get_false_branch_successor in
+         let lrcmds =
+           match instr#get_opcode with
+           | BranchConditionalLink _ ->
+              let lrop = lr_op RD in
+              let vlr = lrop#to_variable floc in
+              let rhs = int_constant_expr (loc#i#to_int + 4) in
+              floc#get_assign_commands vlr rhs
+           | _ -> [] in
+         let cmds = cmds @ lrcmds @ [invop] in
+         let transaction = package_transaction finfo blocklabel cmds in
+         if finfo#has_associated_cc_setter ctxtiaddr then
+           let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+           let testloc = ctxt_string_to_location faddr testiaddr in
+           let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
+           let testinstr =
+             fail_tvalue
+               (trerror_record
+                  (LBLOCK [STR "Internal error in make_instr_tests"]))
+               (get_pwr_assembly_instruction testaddr) in
+           let (nodes, edges) =
+             make_condition
+               ~condinstr:instr
+               ~testinstr
+               ~condloc:loc
+               ~testloc
+               ~blocklabel
+               ~thenaddr
+               ~elseaddr in
+           ((blocklabel, [transaction]) :: nodes, edges, [])
+         else
+           let thenlabel = make_code_label thenaddr in
+           let elselabel = make_code_label elseaddr in
+           let nodes = [(blocklabel, [transaction])] in
+           let edges = [(blocklabel, thenlabel); (blocklabel, elselabel)] in
+           (nodes, edges, []))
 
-  | BranchConditional (_, _, _, _, tgt)
-    | BranchConditionalLink (_, _, _, _, tgt, _)
-    | CBranchEqual (_, _, _, _, _, _, tgt)
-    | CBranchGreaterThan (_, _, _, _, _, _, tgt)
-    | CBranchLessEqual (_, _, _, _, _, _, tgt)
-    | CBranchLessThan (_, _, _, _, _, _, tgt)
-    | CBranchNotEqual (_, _, _, _, _, _, tgt) when tgt#is_absolute_address ->
-     let thenaddr = (make_i_location loc tgt#get_absolute_address)#ci in
-     let elseaddr = codepc#get_false_branch_successor in
-     let lrcmds =
-       match instr#get_opcode with
-       | BranchConditionalLink _ ->
-          let lrop = lr_op RD in
-          let vlr = lrop#to_variable floc in
-          let rhs = int_constant_expr (loc#i#to_int + 4) in
-          floc#get_assign_commands vlr rhs
-       | _ -> [] in
-     let cmds = cmds @ lrcmds @ [invop] in
-     let transaction = package_transaction finfo blocklabel cmds in
-     if finfo#has_associated_cc_setter ctxtiaddr then
-       let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
-       let testloc = ctxt_string_to_location faddr testiaddr in
-       let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
-       let testinstr =
-         fail_tvalue
-           (trerror_record
-              (LBLOCK [STR "Internal error in make_instr_tests"]))
-           (get_pwr_assembly_instruction testaddr) in
-       let (nodes, edges) =
-         make_condition
-           ~condinstr:instr
-           ~testinstr
-           ~condloc:loc
-           ~testloc
-           ~blocklabel
-           ~thenaddr
-           ~elseaddr in
-       ((blocklabel, [transaction]) :: nodes, edges, [])
-     else
-       let thenlabel = make_code_label thenaddr in
-       let elselabel = make_code_label elseaddr in
-       let nodes = [(blocklabel, [transaction])] in
-       let edges = [(blocklabel, thenlabel); (blocklabel, elselabel)] in
-       (nodes, edges, [])
+  | BranchConditionalLink _ when is_unconditional_nia_target_branch instr ->
+     let lrop = lr_op RD in
+     let vlr = lrop#to_variable floc in
+     let rhs = int_constant_expr (loc#i#to_int + 4) in
+     let cmds = floc#get_assign_commands vlr rhs in
+     let defcmds = floc#get_vardef_commands ~defs:[vlr] ctxtiaddr in
+     default (defcmds @ cmds)
 
   | Add (_, _, _, rd, ra, rb, _, _, _) ->
      let vrd = rd#to_variable floc in

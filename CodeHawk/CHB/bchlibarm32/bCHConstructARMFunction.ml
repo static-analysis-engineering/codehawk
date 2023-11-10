@@ -287,7 +287,7 @@ let construct_arm_assembly_block
        if functions_data#is_function_entry_point tgtaddr then
          true
        else if tgtaddr#lt faddr then
-         let _ = functions_data#add_function faddr in
+         let _ = functions_data#add_function tgtaddr in
          let _ =
            chlog#add
              "tail-call function entry point"

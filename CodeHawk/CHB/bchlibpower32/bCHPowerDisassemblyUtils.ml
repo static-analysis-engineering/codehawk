@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,12 +25,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-
-(* Documentation reference:
- * ========================
- * ARM Architecture Reference Manual
- * ARMv7-A and ARMv7-R edition, March 29, 2018
- *)
 
 (* chlib *)
 open CHLanguage
@@ -52,6 +46,9 @@ open BCHSystemSettings
 
 (* bchlibelf *)
 open BCHELFHeader
+
+(* bchlibpower32 *)
+open BCHPowerTypes
 
 
 module TR = CHTraceResult
@@ -95,4 +92,67 @@ let get_string_reference (floc:floc_int) (xpr:xpr_t) =
     | _ -> None
   with
   | _ -> None
-              
+
+
+let is_unconditional_nia_target_branch
+      (instr: pwr_assembly_instruction_int): bool =
+  match instr#get_opcode with
+  | BranchConditionalLink (_, _, bo, _, tgt, _)
+       when tgt#is_absolute_address
+            && bo = 20
+            && tgt#get_absolute_address#to_int
+               = (instr#get_address#to_int + 4) -> true
+  | _ -> false
+
+
+let opt_absolute_branch_target
+      (instr: pwr_assembly_instruction_int): doubleword_int option =
+  match instr#get_opcode with
+  (* Special case that unconditionally jumps to the next instruction *)
+  | BranchConditionalLink _ when is_unconditional_nia_target_branch instr ->
+     None
+
+  | Branch (_, tgt)
+    | BranchConditional (_, _, _, _, tgt)
+    | BranchConditionalLink (_, _, _, _, tgt, _)
+    | CBranchDecrementNotZero (_, _, _, _, _, tgt, _)
+    | CBranchDecrementZero (_, _, _, _, _, tgt, _)
+    | CBranchEqual (_, _, _, _, _, _, tgt)
+    | CBranchGreaterThan (_, _, _, _, _, _, tgt)
+    | CBranchLessEqual (_, _, _, _, _, _, tgt)
+    | CBranchLessThan (_, _, _, _, _, _, tgt)
+    | CBranchNotEqual (_, _, _, _, _, _, tgt) when tgt#is_absolute_address ->
+     Some tgt#get_absolute_address
+  | _ -> None
+
+
+let is_absolute_branch_target
+      (instr: pwr_assembly_instruction_int): bool =
+  match opt_absolute_branch_target instr with
+  | Some _ -> true
+  | _ -> false
+
+
+let opt_conditional_absolute_branch_target
+      (instr: pwr_assembly_instruction_int): doubleword_int option =
+  match instr#get_opcode with
+  | BranchConditionalLink _ when is_unconditional_nia_target_branch instr ->
+     None
+
+  | BranchConditional (_, _, _, _, tgt)
+    | BranchConditionalLink (_, _, _, _, tgt, _)
+    | CBranchEqual (_, _, _, _, _, _, tgt)
+    | CBranchGreaterThan (_, _, _, _, _, _, tgt)
+    | CBranchLessEqual (_, _, _, _, _, _, tgt)
+    | CBranchLessThan (_, _, _, _, _, _, tgt)
+    | CBranchNotEqual (_, _, _, _, _, _, tgt) when tgt#is_absolute_address ->
+     Some tgt#get_absolute_address
+
+  | _ -> None
+
+
+let is_conditional_absolute_branch_target
+      (instr: pwr_assembly_instruction_int): bool =
+  match opt_conditional_absolute_branch_target instr with
+  | Some _ -> true
+  | _ -> false
