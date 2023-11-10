@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -50,7 +50,7 @@ module TR = CHTraceResult
 
 
 class pwr_assembly_block_t
-        ?(ctxt=[])                    
+        ?(ctxt=[])
         (faddr: doubleword_int)       (* inner context function address *)
         (first_addr: doubleword_int)  (* address of first instruction *)
         (last_addr: doubleword_int)   (* address of last instruction *)
@@ -58,6 +58,7 @@ class pwr_assembly_block_t
 object (self)
 
   val loc = make_location ~ctxt {loc_faddr = faddr; loc_iaddr = first_addr}
+  val mutable rev_instrs = []
 
   method location = loc
 
@@ -71,22 +72,33 @@ object (self)
 
   method context_string = loc#ci
 
-  method successors = successors                        
+  method successors = successors
 
   method get_instructions_rev ?(high=last_addr) () =
+    let revinstrs =
+      if (List.length rev_instrs) > 0 then
+        rev_instrs
+      else
+        let addrs =
+          !pwr_assembly_instructions#get_code_addresses
+            ~low:self#first_address ~high:self#last_address () in
+        let instrs =
+          TR.tfold_list
+            ~ok:(fun acc v -> v::acc)
+            []
+            (List.map (fun a -> get_pwr_assembly_instruction a) addrs) in
+        begin
+          rev_instrs <- instrs;
+          instrs
+        end in
     let high =
       if self#last_address#lt high then
         self#last_address
       else if high#lt self#first_address then
         self#first_address
-      else high in
-    let addrs_rev =
-      !pwr_assembly_instructions#get_code_addresses_rev
-        ~low:first_addr ~high () in
-    TR.tfold_list
-      ~ok:(fun acc v -> v::acc)
-      []
-      (List.map (fun a -> get_pwr_assembly_instruction a) (List.rev addrs_rev))
+      else
+        high in
+    List.filter (fun instr -> instr#get_address#le high) revinstrs
 
   method get_instructions = List.rev (self#get_instructions_rev ())
 

@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -122,7 +122,7 @@ let get_successors
     (get_pwr_assembly_instruction iaddr)
 
 
-(* Returns inlinedblocks, block constructed, and newly discovered function 
+(* Returns inlinedblocks, block constructed, and newly discovered function
    entry points *)
 let construct_pwr_assembly_block
       (faddr: doubleword_int)
@@ -142,6 +142,22 @@ let construct_pwr_assembly_block
     !pwr_assembly_instructions#has_next_valid_instruction in
   let get_next_instr_address =
     !pwr_assembly_instructions#get_next_valid_instruction_address in
+
+  let is_tail_call (instr: pwr_assembly_instruction_int) =
+    match instr#get_opcode with
+    | BranchCountRegister _ ->
+       let _ =
+         chlog#add "assume tail call" (LBLOCK [instr#get_address#toPretty]) in
+       true
+    | _ -> false in
+
+  let is_non_returning_call_instr (instr: pwr_assembly_instruction_int) =
+    match instr#get_opcode with
+    | BranchLink (_, tgt, _) when tgt#is_absolute_address ->
+       let tgtaddr = tgt#get_absolute_address in
+       ((functions_data#is_function_entry_point tgtaddr)
+        && (functions_data#get_function tgtaddr)#is_non_returning)
+    | _ -> false in
 
   let rec find_last_instruction (va: doubleword_int) (prev: doubleword_int) =
     let instr =
@@ -167,6 +183,14 @@ let construct_pwr_assembly_block
       (* we went beyond the end of the block, return previous *)
       (None, prev, [])
 
+    else if is_non_returning_call_instr instr then
+      (* end of function, no successors *)
+      (Some [], va, [])
+
+    else if is_tail_call instr then
+      (* call instruction that is not returning *)
+      (Some [], va,  [])
+
     else if system_info#is_nonreturning_call faddr va then
       (* user-declared non-returning call, no successors *)
       (Some [], va, [])
@@ -183,15 +207,19 @@ let construct_pwr_assembly_block
       (* dead end, no more instructions *)
       (None, va, []) in
 
-  (* let binstr =
+  let binstr =
     fail_tvalue
       (trerror_record
          (LBLOCK [STR "get_successors: "; baddr#toPretty]))
-      (get_instr baddr) in *)
+      (get_instr baddr) in
 
   let (succ, lastaddr, inlinedblocks) =
     if system_info#is_nonreturning_call faddr baddr then
       (* user-declared non-returning call, no successors *)
+      (Some [], baddr, [])
+
+    else if is_non_returning_call_instr binstr then
+      (* end of function, no successors *)
       (Some [], baddr, [])
 
     else if has_next_instr baddr then
