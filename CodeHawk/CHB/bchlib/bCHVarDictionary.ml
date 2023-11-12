@@ -186,8 +186,12 @@ object (self)
          (tags @ [a1; a2], [xd#index_variable v])
       | FunctionReturnValue a -> (tags @ [a], [])
       | SyscallErrorReturnValue a -> (tags @ [a], [])
-      | SSARegisterValue (r, a, ty) ->
-         (tags @ [a], [bd#index_register r; bcd#index_typ ty])
+      | SSARegisterValue (r, a, optname, ty) ->
+         let ntags =
+           match optname with
+           | Some name -> tags @ [a; name]
+           | _ -> tags @ [a] in
+         (ntags, [bd#index_register r; bcd#index_typ ty])
       | FunctionPointer (s1, s2, a) ->
          (tags @ [a], [bd#index_string s1; bd#index_string s2])
       | CallTargetValue t -> (tags, [id#index_call_target t])
@@ -215,7 +219,12 @@ object (self)
     | "ft" -> FrozenTestValue (xd#get_variable (a 0), t 1, t 2)
     | "fr" -> FunctionReturnValue (t 1)
     | "ev" -> SyscallErrorReturnValue (t 1)
-    | "ssa" -> SSARegisterValue (bd#get_register (a 0), t 1, bcd#get_typ (a 1))
+    | "ssa" ->
+       let optname =
+         match tags with
+         | [_; _; name] -> Some name
+         | _ -> None in
+       SSARegisterValue (bd#get_register (a 0), t 1, optname, bcd#get_typ (a 1))
     | "fp" -> FunctionPointer (bd#get_string (a 0), bd#get_string (a 1), t 1)
     | "ct" -> CallTargetValue (id#get_call_target (a 0))
     | "se" -> SideEffectValue (t 1, bd#get_string (a 0), (a 1) = 1)

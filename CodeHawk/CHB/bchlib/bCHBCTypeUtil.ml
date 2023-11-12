@@ -124,6 +124,28 @@ let t_vararg_function (returntype:btype_t) (args:bfunarg_t list) =
 let t_function_anon (returntype:btype_t) =
   TFun (returntype, None, false, [])
 
+(* =============================================================== attributes *)
+
+let get_attributes (t: btype_t): b_attributes_t =
+  match t with
+  | TVoid attrs
+    | TInt (_, attrs)
+    | TFloat (_, _, attrs)
+    | TPtr (_, attrs)
+    | TRef (_, attrs)
+    | THandle (_, attrs)
+    | TArray (_, _, attrs)
+    | TFun (_, _, _, attrs)
+    | TNamed (_, attrs)
+    | TComp (_, attrs)
+    | TEnum (_, attrs)
+    | TCppComp (_, _, attrs)
+    | TCppEnum (_, _, attrs)
+    | TClass (_, _, attrs)
+    | TBuiltin_va_list attrs
+    | TVarArg attrs
+    | TUnknown attrs -> attrs
+
 
 (* ========================================================== type predicates *)
 
@@ -160,6 +182,15 @@ let is_unsigned t = match t with
       | _ -> false
     end
   | _ -> false
+
+let is_volatile t =
+  match get_attributes t with
+  | [] -> false
+  | attrs ->
+     List.exists (fun attr ->
+         match attr with
+         | Attr ("volatile", _) -> true
+         | _ -> false) attrs
 
 
 (* ======================================================= size and alignment *)

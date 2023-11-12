@@ -127,10 +127,13 @@ and aux_var_to_pretty (cvv: constant_value_variable_t) =
   | FunctionReturnValue addr -> LBLOCK [STR "Return("; STR addr; STR ")"]
   | SyscallErrorReturnValue addr ->
      LBLOCK [STR "ErrorValue("; STR addr; STR ")"]
-  | SSARegisterValue (r, addr, ty) ->
+  | SSARegisterValue (r, addr, optname, ty) ->
      LBLOCK [
          STR "SSARegisterValue(";
          STR (register_to_string r);
+         STR ", ";
+         STR (match optname with Some name -> name | _ -> "none");
+         STR ", ";
          STR (btype_to_string ty)]
   | FunctionPointer (f, c, addr) ->
      LBLOCK [STR "FunctionP("; STR f; STR ","; STR c; STR ","; STR addr; STR ")"]
@@ -198,8 +201,10 @@ object (self:'a)
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
         | SyscallErrorReturnValue address -> "errval_" ^ address
-        | SSARegisterValue (r, addr, ty) ->
-           (register_to_string r) ^ "_" ^ addr
+        | SSARegisterValue (r, addr, optname, ty) ->
+           (match optname with
+            | Some name -> name
+            | _ -> (register_to_string r) ^ "_" ^ addr)
 	| CallTargetValue tgt -> 
 	  (match tgt with
 	  | StubTarget fs -> "stub:" ^ (function_stub_to_string fs)
@@ -299,7 +304,7 @@ object (self:'a)
 
   method is_ssa_register_value_at (iaddr: ctxt_iaddress_t): bool =
     match denotation with
-    | AuxiliaryVariable (SSARegisterValue (_, a, _)) -> a = iaddr
+    | AuxiliaryVariable (SSARegisterValue (_, a, _, _)) -> a = iaddr
     | _ -> false
 
   method is_in_test_jump_range (a:ctxt_iaddress_t) =
@@ -435,7 +440,7 @@ object (self:'a)
 
   method get_ssa_register_value_register =
     match denotation with
-    | AuxiliaryVariable (SSARegisterValue (r, _, _)) -> r
+    | AuxiliaryVariable (SSARegisterValue (r, _, _, _)) -> r
     | _ ->
        raise
          (BCH_failure
@@ -591,7 +596,9 @@ object (self)
        raise_var_type_error av (STR "Memory Variable")
 
   method get_memvar_offset (v:variable_t) =
-    if self#has_var v then
+    if self#is_initial_memory_value v then
+      self#get_memval_offset v
+    else if self#has_var v then
       let av = self#get_variable v in
       match av#get_denotation with
       | MemoryVariable (_, s, o) -> o
@@ -707,8 +714,11 @@ object (self)
     self#mk_variable (AuxiliaryVariable (FunctionReturnValue iaddr))
 
   method make_ssa_register_value
-           (reg: register_t) (iaddr: ctxt_iaddress_t) (ty: btype_t) =
-    self#mk_variable (AuxiliaryVariable (SSARegisterValue (reg, iaddr, ty)))
+           ?(name: string option=None)
+           (reg: register_t)
+           (iaddr: ctxt_iaddress_t)
+           (ty: btype_t) =
+    self#mk_variable (AuxiliaryVariable (SSARegisterValue (reg, iaddr, name, ty)))
 
   method make_function_pointer_value
            (fname:string) (cname:string) (address:ctxt_iaddress_t) =

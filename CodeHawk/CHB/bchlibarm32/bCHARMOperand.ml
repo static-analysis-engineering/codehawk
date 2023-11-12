@@ -602,7 +602,7 @@ object (self:'a)
     | ARMShiftedReg _ ->
        let _ =
          chlog#add
-           "DEBUG: shifted-reg unknown"
+           "shifted-reg unknown"
            (LBLOCK [self#toPretty]) in
        XConst (XRandom)
     | ARMRegBitSequence (r, lsb, widthm1) ->

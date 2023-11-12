@@ -87,6 +87,7 @@ module TR = CHTraceResult
 
 let bcd = BCHBCDictionary.bcdictionary
 
+let x2p = xpr_formatter#pr_expr
 
 module NumericalCollections = CHCollections.Make
   (struct
@@ -838,6 +839,18 @@ object (self)
     let default () =
       self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
     let addr = TR.tget_ok (numerical_to_doubleword base) in
+    let _ =
+      if has_symbolic_address_name addr then
+        let vname = get_symbolic_address_name addr in
+        let vtype = get_symbolic_address_type addr in
+        chlog#add
+          "make named global variable"
+          (LBLOCK [
+               addr#toPretty;
+               STR ": ";
+               STR vname;
+               STR " with type ";
+               STR (btype_to_string vtype)]) in
     if is_in_global_structvar addr then
       (match get_structvar_base_offset addr with
        | Some (base, off) ->
@@ -941,8 +954,11 @@ object (self)
     self#mk_variable (varmgr#make_return_value address)
 
   method mk_ssa_register_value
-           (r: register_t) (iaddr: ctxt_iaddress_t) (ty: btype_t) =
-    self#mk_variable (varmgr#make_ssa_register_value r iaddr ty)
+           ?(name: string option=None)
+           (r: register_t)
+           (iaddr: ctxt_iaddress_t)
+           (ty: btype_t) =
+    self#mk_variable (varmgr#make_ssa_register_value ~name r iaddr ty)
 
   method mk_function_pointer_value
     (fname:string) (cname:string) (address:ctxt_iaddress_t) =
@@ -970,11 +986,17 @@ object (self)
       let addr = varmgr#get_global_variable_address v in
       if has_symbolic_address_name addr then
         let vname = get_symbolic_address_name addr in
-        let btype = get_symbolic_address_type addr in
+        let vtype = get_symbolic_address_type addr in
         let _ = self#set_variable_name v vname in
-        let _ = self#set_variable_name iv (vname ^ "_in") in
-        if is_ptrto_known_struct btype then
-          self#set_pointedto_struct_field_names 1 iv vname btype
+        let _ =
+          if is_volatile vtype then
+            chlog#add
+              "volatile type not initialized"
+              (LBLOCK [STR (btype_to_string vtype); STR " "; STR vname])
+          else
+            self#set_variable_name iv (vname ^ "_in") in
+        if is_ptrto_known_struct vtype then
+          self#set_pointedto_struct_field_names 1 iv vname vtype
 
   method mk_initial_memory_value (v:variable_t):variable_t =
     if (self#is_memory_variable v) && (self#has_constant_offset v) then
@@ -1001,6 +1023,48 @@ object (self)
 
 
   (* -------------------------------------------- accessors and predicates -- *)
+
+  method private nested_exprs_in_var (v: variable_t): xpr_t list =
+    if self#is_symbolic_value v then
+      let x = self#get_symbolic_value_expr v in
+      let _ =
+        chlog#add
+          "nested exprs in var"
+          (LBLOCK [v#toPretty; STR ": "; x2p x]) in
+      [x]
+
+    else if self#is_global_variable v then
+      let memoff = self#get_memvar_offset v in
+      match memoff with
+      | ConstantOffset (_, IndexOffset (indexvar, _, _)) ->
+         let _ =
+           chlog#add
+             "nested exprs in var"
+             (LBLOCK [v#toPretty; STR ": "; indexvar#toPretty]) in
+         [XVar indexvar]
+      | _ -> []
+    else
+      []
+
+  method variables_in_expr (expr: xpr_t): variable_t list =
+
+    let s = new VariableCollections.set_t in
+
+    let rec vs x =
+      match x with
+      | XVar v ->
+         let xprs = self#nested_exprs_in_var v in
+         begin
+           s#add v;
+           List.iter vs xprs
+         end
+      | XConst _ -> ()
+      | XOp (_, l) -> List.iter vs l
+      | XAttr (_, e) -> vs e in
+    begin
+      vs expr;
+      s#toList
+    end
 
   method has_initialized_call_target_value (v:variable_t) =
     H.mem initial_call_target_values v#getName#getSeqNumber
@@ -1034,7 +1098,6 @@ object (self)
                 STR " at offset ";
                 INT offset;
 		STR " in " ; faddr#toPretty]))
-
 
   method private register_virtual_call
                    (v:variable_t) (s:function_interface_t) =
@@ -1081,6 +1144,7 @@ object (self)
   method get_external_memory_variables =
     let is_external v =
       self#is_memory_variable v
+      && (not (self#is_volatile_variable v))
       && (not (self#is_unknown_memory_variable v))
       && ((not (self#is_local_variable v))
           || (self#is_stack_parameter_variable v)) in
@@ -1220,6 +1284,17 @@ object (self)
 	ch_error_log#add "function environment" msg;
 	raise (BCH_failure msg)
       end
+
+  method is_volatile_variable (v: variable_t) =
+    if varmgr#has_global_variable_address v then
+      let addr = varmgr#get_global_variable_address v in
+      if has_symbolic_address_name addr then
+        let vtype = get_symbolic_address_type addr in
+        is_volatile vtype
+      else
+        false
+    else
+      false
 
   method is_local_variable = varmgr#is_local_variable
 

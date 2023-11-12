@@ -592,13 +592,16 @@ let translate_arm_instruction
              let rsvar = floc#env#mk_arm_register_variable rs in
              rvar :: rsvar :: acc
           | _ -> acc) [] ops in
-  let get_use_high_vars (xprs: xpr_t list):variable_t list =
+
+  let get_use_high_vars (xprs: xpr_t list): variable_t list =
     let inv = floc#inv in
     let comparator = floc#env#get_variable_comparator in
     List.fold_left (fun acc x ->
         let xw = inv#rewrite_expr x comparator in
         let xs = simplify_xpr xw in
-        (vars_in_expr_list [xs]) @ acc) [] xprs in
+        let vars = floc#env#variables_in_expr xs in
+        vars @ acc) [] xprs in
+
   let flagdefs =
     let flags_set = get_arm_flags_set instr#get_opcode in
     List.map (fun f -> finfo#env#mk_flag_variable (ARMCCFlag f)) flags_set in
@@ -734,7 +737,7 @@ let translate_arm_instruction
          ~usehigh:usehigh
          ~flagdefs:flagdefs
          ctxtiaddr in
-     let cmds = defcmds @ cmds in
+     let cmds = cmds @ defcmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
@@ -1540,13 +1543,6 @@ let translate_arm_instruction
   | LoadRegister (c, rt, rn, rm, mem, _) ->
      let floc = get_floc loc in
      let rhs = mem#to_expr floc in
-     let _ =
-       chlog#add
-         "DEBUG: load register"
-         (LBLOCK [
-              STR ctxtiaddr;
-              STR ": ";
-              x2p rhs]) in
      let rtreg = rt#to_register in
      let updatecmds =
        if mem#is_offset_address_writeback then
@@ -1591,7 +1587,7 @@ let translate_arm_instruction
          defupdatecmds @ ucmds
        else
          [] in
-     let vtype = t_unknown_int_size 8 in
+     let vtype = t_uchar in
      let (lhs, cmds) = floc#get_ssa_assign_commands rtreg ~vtype rhs in
      let cmds = cmds @ updatecmds in
      let usevars = get_register_vars [rn; rm] in
@@ -1650,7 +1646,8 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rhs = mem#to_expr floc in
      let rtreg = rt#to_register in
-     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg rhs in
+     let vtype = t_ushort in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype rhs in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [rhs] in
      let defcmds =
@@ -1677,17 +1674,18 @@ let translate_arm_instruction
        | XVar v -> is_external v
        | XConst _ -> true
        | XAttr _ -> false in
+     let vtype = t_short in
      let (vrt, cmds) =
        (match rhs with
         | XConst  (IntConst n) when n#toInt > e15 ->
            let rhs = XOp (XPlus, [rhs; int_constant_expr (e32-e16)]) in
-           floc#get_ssa_assign_commands rtreg rhs
+           floc#get_ssa_assign_commands rtreg ~vtype rhs
         | _ ->
            if is_symbolic_expr rhs then
              let rhs = floc#env#mk_signed_symbolic_value rhs 16 32 in
-             floc#get_ssa_assign_commands rtreg (XVar rhs)
+             floc#get_ssa_assign_commands rtreg ~vtype (XVar rhs)
            else
-             floc#get_ssa_abstract_commands rtreg ()) in
+             floc#get_ssa_abstract_commands rtreg ~vtype ()) in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrt]
@@ -1703,7 +1701,8 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rhs = mem#to_expr floc in
      let rtreg = rt#to_register in
-     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg rhs in
+     let vtype = t_char in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype rhs in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [rhs] in
      let defcmds =
@@ -2779,6 +2778,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrm = rm#to_expr floc in
+     let xrm = XOp (XXlsh, [xrm]) in
      let (vrd, cmds) = floc#get_ssa_assign_commands rdreg ~vtype:t_ushort xrm in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [xrm] in
@@ -2788,7 +2788,7 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     let cmds = defcmds @ cmds in
+     let cmds = cmds @ defcmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
