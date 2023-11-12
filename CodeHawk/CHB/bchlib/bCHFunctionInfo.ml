@@ -896,22 +896,10 @@ object (self)
                   (LBLOCK [addr#toPretty; STR ": "; var#toPretty; STR ": "; STR vname]) in
               var
            | _ ->
-              let _ =
-                chlog#add
-                  "DEBUG: no offset found"
-                  (LBLOCK [STR basename; STR ": "; addr#toPretty]) in
-              default ())
+             default ())
        | _ ->
-          let _ =
-            chlog#add
-              "DEBUG: no base found"
-              (LBLOCK [addr#toPretty]) in
           default ())
     else
-      let _ =
-        chlog#add
-          "DEBUG: no struct or array found"
-          (LBLOCK [addr#toPretty]) in
       default ()
 
   method mk_register_variable (register:register_t) =
