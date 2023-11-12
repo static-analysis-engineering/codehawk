@@ -77,6 +77,7 @@ object (self)
   val address_table = H.create 3    (* dw#index -> constant_definition_t *)
   val addrname_table = H.create 3     (* name -> constant_definition_t *)
   val globalstructvars = H.create 3   (* dw#index -> length *)
+  val globalarrayvars = H.create 3    (* dw#index -> length *)
 
   method add_address (a: constant_definition_t) =
     let index = a.xconst_value#index in
@@ -84,7 +85,7 @@ object (self)
     begin
       H.replace address_table index a;
       H.replace addrname_table name a;
-      self#update_structvar a
+      self#update_structured_var a
     end
 
   method is_in_structvar (dw: doubleword_int): bool =
@@ -97,6 +98,17 @@ object (self)
             true
           else
             acc) globalstructvars false
+
+  method is_in_arrayvar (dw: doubleword_int): bool =
+    let dwindex = dw#index in
+    H.fold (fun k v acc ->
+        if acc then
+          acc
+        else
+          if (dwindex >= k) && (dwindex < k + v) then
+            true
+          else
+            acc) globalarrayvars false
 
   method private get_fieldoffset_at
                    (c: bcompinfo_t) (offset: int):(boffset_t * int) =
@@ -186,7 +198,42 @@ object (self)
     else
       None
 
-  method private update_structvar (a: constant_definition_t) =
+  method get_arrayvar_base_offset
+           (dw: doubleword_int):(doubleword_int * boffset_t) option =
+    if self#is_in_arrayvar dw then
+      let dwindex = dw#index in
+      let optdwoffset =
+        H.fold (fun k v acc ->
+            match acc with
+            | Some _ -> acc
+            | _ ->
+               if (dwindex >= k) && (dwindex < k + v) then
+                 Some (k, dwindex - k)
+               else
+                 acc) globalarrayvars None in
+      match optdwoffset with
+      | Some (base, dwoffset) ->
+         if H.mem address_table base then
+           let constdef = H.find address_table base in
+           (match bcfiles#resolve_type constdef.xconst_type with
+            | TArray (ty, optlen, _) ->
+               let elsize = size_of_btype ty in
+               if elsize > 0 then
+                 let elindex = dwoffset / elsize in
+                 let boffset =
+                   Index (Const (CInt (Int64.of_int elindex, IInt, None)), NoOffset) in
+                 Some (TR.tget_ok (int_to_doubleword base), boffset)
+               else
+                 None
+            | _ ->
+               None)
+         else
+           None
+      | _ -> None
+    else
+      None
+
+  method private update_structured_var (a: constant_definition_t) =
     match bcfiles#resolve_type a.xconst_type with
     | TComp (key, _) as ty ->
        let compinfo = bcfiles#get_compinfo key in
@@ -204,6 +251,34 @@ object (self)
                 STR ": ";
                 INT size])
        end
+    | TArray (ty, optlen, _) ->
+       (match optlen with
+        | Some (Const (CInt (i64, _, _))) ->
+           let arraylen = Int64.to_int i64 in
+           let elsize = size_of_btype ty in
+           let arraysize = arraylen * elsize in
+           begin
+             H.replace globalarrayvars a.xconst_value#index arraysize;
+             chlog#add
+               "set global arrayvar size"
+               (LBLOCK [
+                    STR a.xconst_name;
+                    STR "; ";
+                    STR a.xconst_value#to_hex_string;
+                    STR ". ";
+                    STR "length: ";
+                    INT arraylen;
+                    STR "; size: ";
+                    INT arraysize])
+           end
+        | _ ->
+           chlog#add
+             "global array without length"
+             (LBLOCK [
+                  STR a.xconst_name;
+                  STR "; ";
+                  STR a.xconst_value#to_hex_string;
+                  STR "."]))
     | _ ->
        ()
 
@@ -234,7 +309,7 @@ object (self)
         begin
           H.replace addrname_table name new_c;
           H.replace address_table c.xconst_value#index new_c;
-          self#update_structvar new_c
+          self#update_structured_var new_c
         end
       else
         let c = H.find addrname_table name in
@@ -282,6 +357,14 @@ let is_in_global_structvar (v: doubleword_int) =
 
 let get_structvar_base_offset (v: doubleword_int) =
   symbolic_addresses#get_structvar_base_offset v
+
+
+let is_in_global_arrayvar (v: doubleword_int) =
+  symbolic_addresses#is_in_arrayvar v
+
+
+let get_arrayvar_base_offset (v: doubleword_int) =
+  symbolic_addresses#get_arrayvar_base_offset v
 
 
 let has_symbolic_address_name (v: doubleword_int) =

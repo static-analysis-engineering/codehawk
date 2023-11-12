@@ -689,8 +689,11 @@ object (self)
          let (memref, memoffset) = self#decompose_address  address in
          if is_constant_offset memoffset then
            let memvar =
-             self#env#mk_memory_variable
-               memref (get_total_constant_offset memoffset) in
+             if memref#is_global_reference then
+               self#env#mk_global_variable (get_total_constant_offset memoffset)
+             else
+               self#env#mk_memory_variable
+                 memref (get_total_constant_offset memoffset) in
            memvar
          else
            default () in
@@ -754,8 +757,11 @@ object (self)
     let address = self#inv#rewrite_expr addr comparator in
     let (memref, memoffset) = self#decompose_address address in
     if is_constant_offset memoffset then
-      self#env#mk_memory_variable
-        ~size memref (get_total_constant_offset memoffset)
+      if memref#is_global_reference then
+        self#env#mk_global_variable (get_total_constant_offset memoffset)
+      else
+        self#env#mk_memory_variable
+          ~size memref (get_total_constant_offset memoffset)
     else
       match memoffset with
       | IndexOffset _ ->

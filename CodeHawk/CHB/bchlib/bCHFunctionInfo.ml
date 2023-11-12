@@ -869,7 +869,49 @@ object (self)
               default ())
        | _ ->
           default ())
+    else if is_in_global_arrayvar addr then
+      (match get_arrayvar_base_offset addr with
+       | Some (base, off) ->
+          let basename = get_symbolic_address_name base in
+          let basevar =
+            self#mk_variable (varmgr#make_global_variable base#to_numerical) in
+          let _ = self#set_variable_name basevar basename in
+          (match off with
+           | Index (Const (CInt (i64, _, _)), _) ->
+              let cindex = mkNumericalFromInt64 i64 in
+              let ioffset = ConstantOffset (cindex, NoOffset) in
+              let var =
+                self#mk_variable
+                  (varmgr#make_global_variable
+                     ~offset:ioffset base#to_numerical) in
+              let ivar =
+                self#mk_initial_memory_value var in
+              let vname = basename ^ (memory_offset_to_string ioffset) in
+              let ivname = vname ^ "_in" in
+              let _ = self#set_variable_name var vname in
+              let _ = self#set_variable_name ivar ivname in
+              let _ =
+                chlog#add
+                  "array element variable"
+                  (LBLOCK [addr#toPretty; STR ": "; var#toPretty; STR ": "; STR vname]) in
+              var
+           | _ ->
+              let _ =
+                chlog#add
+                  "DEBUG: no offset found"
+                  (LBLOCK [STR basename; STR ": "; addr#toPretty]) in
+              default ())
+       | _ ->
+          let _ =
+            chlog#add
+              "DEBUG: no base found"
+              (LBLOCK [addr#toPretty]) in
+          default ())
     else
+      let _ =
+        chlog#add
+          "DEBUG: no struct or array found"
+          (LBLOCK [addr#toPretty]) in
       default ()
 
   method mk_register_variable (register:register_t) =
