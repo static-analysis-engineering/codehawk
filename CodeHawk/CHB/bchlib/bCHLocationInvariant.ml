@@ -425,6 +425,19 @@ object (self:'a)
     | NonRelationalFact (_, FSymbolicExpr _) -> true
     | _ -> false
 
+  method is_ssavar_equality =
+    match fact with
+    | SSAVarEquality _ -> true
+    | _ -> false
+
+  method get_ssa_regvar =
+    match fact with
+    | SSAVarEquality (v, _) -> v
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Not an ssavar equality: "; self#toPretty]))
+
   method is_linear_equality =
     match fact with
     | RelationalFact _ -> true
@@ -506,13 +519,7 @@ object (self)
       let inv = new invariant_t ~invd ~index ~fact  in
       begin
         H.add facts index inv;
-        self#integrate_fact inv;
-        track_location
-          iaddr
-          (LBLOCK [
-               STR iaddr;
-               STR ": add fact ";
-               inv#toPretty])
+        self#integrate_fact inv
       end
 
   method remove_initial_value_fact (fvar: variable_t) (fval: variable_t) =
@@ -583,7 +590,47 @@ object (self)
                  ch_error_log#add "base-offset-value facts" msg;
                  raise (BCH_failure msg)
                end
-	  else f :: e
+          else
+            match f#get_fact with
+            | SSAVarEquality (regvar, ssavar) ->
+               let sfacts =
+                 List.filter
+                   (fun p ->
+                     p#is_ssavar_equality
+                     && p#get_ssa_regvar#getName#getSeqNumber =
+                          regvar#getName#getSeqNumber) e in
+               (match sfacts with
+                | [] -> [f]
+                | [sv] ->
+                   begin
+                     ch_error_log#add
+                       "multiple ssa-equalities"
+                       (LBLOCK [
+                            STR "existing; ";
+                            sv#toPretty;
+                            STR "; new: ";
+                            f#toPretty]);
+                     (* this is an arbitrary choice for now, until a solution
+                        to this problem has been found.*)
+                     (if sv#index > f#index then
+                       [sv]
+                     else
+                       [f])
+                   end
+                | _ ->
+                   begin
+                     ch_error_log#add
+                       "multiple existing ssa-equalities"
+                       (LBLOCK [
+                            STR "existing: ";
+                            pretty_print_list
+                              sfacts (fun p -> p#toPretty) "[" ", " "]; ";
+                            STR "new: ";
+                            f#toPretty]);
+                     [f]
+                   end)
+            | _ ->
+               f :: e
 	else
 	  [f] in
       H.replace table index entry in
@@ -600,16 +647,20 @@ object (self)
                List.fold_left (fun a f ->
                    match f#get_fact with
                    | NonRelationalFact (_, nrv) ->
+                      let _ =
+                        chlog#add
+                          "transfer invariant"
+                          (LBLOCK [
+                               STR iaddr;
+                               STR ": ";
+                               v1#toPretty;
+                               STR " to ";
+                               v2#toPretty;
+                               STR ": ";
+                               f#toPretty]) in
+
                       (f#transfer v1) :: a
                    | _ -> a) [] v2facts in
-             let _ =
-               track_location
-                 iaddr
-                 (LBLOCK [
-                      STR "new v1facts: ";
-                      LBLOCK
-                        (List.map (fun inv ->
-                             LBLOCK [inv#toPretty; STR "; "]) v1newfacts)]) in
              if H.mem table v1index then
                let v1facts = H.find table v1index in
                List.iter (fun f -> add v1 f) (v1newfacts @ v1facts)

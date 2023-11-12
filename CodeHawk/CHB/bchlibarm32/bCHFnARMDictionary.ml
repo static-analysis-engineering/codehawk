@@ -241,7 +241,7 @@ object (self)
       | _ -> -1 in
 
     let get_all_rdefs (xpr: xpr_t): int list =
-      let vars = variables_in_expr xpr in
+      let vars = floc#env#variables_in_expr xpr in
       List.fold_left (fun acc v ->
           let symvar = floc#env#mk_symbolic_variable v in
           let varinvs = varinv#get_var_reaching_defs symvar in
@@ -1832,7 +1832,7 @@ object (self)
       | UnsignedExtendHalfword (c, rd, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         let result = xrm in
+         let result = XOp (XXlsh, [xrm]) in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
          let (tagstring, args) =

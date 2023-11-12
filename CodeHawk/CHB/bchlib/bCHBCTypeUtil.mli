@@ -110,6 +110,8 @@ val is_known_type: btype_t -> bool
 val is_struct_type: btype_t -> bool
 val is_pointer_to_struct: btype_t -> bool
 
+val is_volatile: btype_t -> bool
+
 
 (** {1 Type properties}*)
 
@@ -120,6 +122,7 @@ val align_of_int_ikind: ikind_t -> int
 val align_of_float_fkind: fkind_t -> int
 
 val align_of_btype: btype_t -> int
+
 
 (** {2 Size}*)
 
@@ -136,6 +139,11 @@ val size_of_btype_comp: bcompinfo_t -> int
 (** [size_to_int_ikind ~signed size] returns the integer kind with [size]
     bytes and given signedness. The default value for [signed] is [true].*)
 val size_to_int_ikind: ?signed:bool -> int -> ikind_t
+
+(** {2 Attributes}*)
+
+(** Returns the attributes associated with the type.*)
+val get_attributes: btype_t -> b_attributes_t
 
 
 (** {1 Comparisons} *)

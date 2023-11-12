@@ -1782,10 +1782,12 @@ object ('a)
   method get_fact: invariant_fact_t
   method get_variables: variable_t list
   method get_variable_equality_variables: variable_t list
+  method get_ssa_regvar: variable_t
   method is_constant: bool
   method is_interval: bool
   method is_base_offset_value: bool
   method is_symbolic_expr: bool
+  method is_ssavar_equality: bool
   method is_linear_equality: bool
   method is_variable_equality: bool
   method is_smaller: 'a -> bool
@@ -2847,10 +2849,16 @@ and constant_value_variable_t =
   | SyscallErrorReturnValue of ctxt_iaddress_t
   (** [SyscallErrorReturnValue iaddr]: error return value from system call at
   instruction address [iaddr]*)
-  | SSARegisterValue of register_t * ctxt_iaddress_t * btype_t
-  (** [SSARegisterValue (reg, iaddr, ty): static single assignment value
-  for assignment to register [reg] at instruction address [iaddr] with the
-  type of the expression that is assigned to it (which can be [t_unknown])*)
+  | SSARegisterValue of register_t * ctxt_iaddress_t * string option * btype_t
+  (** [SSARegisterValue (reg, iaddr, optional name, ty):
+  static single assignment value for assignment to register [reg] at
+  instruction address [iaddr] with the type of the expression that is
+  assigned to it (which can be [t_unknown]).
+  An optional name can be included for display purposes (e.g., for
+  lifting). The responsibility is on the user to ensure appropriate
+  uniqueness. The default name is unique: it is the name of the
+  register followed by the hex address of the assignment.
+  The name has no effect on propagation behavior.*)
   | FunctionPointer of
       string                (* name of function *)
       * string              (* name of creator *)
@@ -3071,7 +3079,8 @@ object
       the value assigned to register [r] at instruction address [addr] with
       type [ty] (which may be unknown, [t_unknown]).*)
   method make_ssa_register_value:
-           register_t
+           ?name:string option
+           -> register_t
            -> ctxt_iaddress_t
            -> btype_t
            -> assembly_variable_int
@@ -3374,7 +3383,11 @@ class type function_environment_int =
     method mk_runtime_constant: string -> variable_t
     method mk_return_value: ctxt_iaddress_t -> variable_t
     method mk_ssa_register_value:
-             register_t -> ctxt_iaddress_t -> btype_t -> variable_t
+             ?name:string option
+             -> register_t
+             -> ctxt_iaddress_t
+             -> btype_t
+             -> variable_t
 
     method mk_calltarget_value: call_target_t -> variable_t
     method mk_function_pointer_value:
@@ -3440,6 +3453,8 @@ class type function_environment_int =
     method get_regarg_deref_val_register: variable_t -> register_t
     method get_regarg_deref_var_register: variable_t -> register_t
 
+    method variables_in_expr: xpr_t -> variable_t list
+
     method get_var_count: int
     method get_globalvar_count: int
     method get_argvar_count: int
@@ -3478,6 +3493,8 @@ class type function_environment_int =
     method is_calltarget_value: variable_t -> bool
     method is_symbolic_value: variable_t -> bool
     method is_signed_symbolic_value: variable_t -> bool
+    method is_volatile_variable: variable_t -> bool
+
 
     method is_stack_variable: variable_t -> bool  (* memory variable on the stack *)
     method is_stack_parameter_variable: variable_t -> bool (* stack-variable with positive offset *)
@@ -4552,6 +4569,7 @@ object
   method get_user_struct_count: int
   method get_user_nonreturning_count: int
   method get_user_class_count: int
+  method get_variable_intro_name: doubleword_int -> string
 
   (* predicates *)
   method is_elf: bool
@@ -4584,6 +4602,7 @@ object
   method is_cfjmp: doubleword_int -> bool
   method is_inlined_function: doubleword_int -> bool
   method is_in_trampoline: doubleword_int -> bool
+  method has_variable_intro: doubleword_int -> bool
 
   (** [is_thumb addr] returns true if the architecture includes (arm) thumb
       instructions and the virtual address [addr] is in a code section that

@@ -1352,7 +1352,10 @@ object (self)
 
    method private is_composite_symbolic_value (x: xpr_t): bool =
      let is_external v = self#f#env#is_function_initial_value v in
-     let is_fixed_type v = (is_external v) || (self#f#env#is_ssa_register_value v) in
+     let is_fixed_type v =
+       (is_external v)
+       || (self#f#env#is_ssa_register_value v)
+       || (self#f#env#is_symbolic_value v) in
      List.for_all is_fixed_type (variables_in_expr x)
 
    method get_assign_commands
@@ -1497,10 +1500,16 @@ object (self)
      let reqC = self#env#request_num_constant in
      let (rhscmds, rhs_chif) = xpr_to_numexpr reqN reqC rhsx_assign in
      let regvar = self#env#mk_register_variable reg in
-     let ssavar = self#env#mk_ssa_register_value reg self#cia vtype in
+     let hasvarintro = system_info#has_variable_intro self#ia in
+     let ssavar =
+       if hasvarintro then
+         let name = system_info#get_variable_intro_name self#ia in
+         self#env#mk_ssa_register_value ~name:(Some name) reg self#cia vtype
+       else
+         self#env#mk_ssa_register_value reg self#cia vtype in
      let assigns =
-       if self#is_composite_symbolic_value rhsx then
-           [ASSIGN_NUM (regvar, rhs_chif)]
+       if (self#is_composite_symbolic_value rhsx) then
+         [ASSIGN_NUM (regvar, rhs_chif)]
        else
          let _ =
            chlog#add
@@ -1511,7 +1520,8 @@ object (self)
                   ssavar#toPretty;
                   STR ": ";
                   x2p rhsx_assign]) in
-         [ASSIGN_NUM (regvar, rhs_chif); ASSERT (EQ (regvar, ssavar))] in
+         let cmds = self#get_vardef_commands ~defs:[ssavar] self#cia in
+         [ASSIGN_NUM (regvar, rhs_chif); ASSERT (EQ (regvar, ssavar))] @ cmds in
      (regvar, rhscmds @ assigns)
 
    method get_vardef_commands
@@ -1614,7 +1624,13 @@ object (self)
 
    method get_ssa_abstract_commands
             (reg: register_t) ?(vtype=t_unknown) () =
-     let ssavar = self#env#mk_ssa_register_value reg self#cia vtype in
+     let hasvarintro = system_info#has_variable_intro self#ia in
+     let ssavar =
+       if hasvarintro then
+         let name = system_info#get_variable_intro_name self#ia in
+         self#env#mk_ssa_register_value ~name:(Some name) reg self#cia vtype
+       else
+         self#env#mk_ssa_register_value reg self#cia vtype in
      let regvar = self#env#mk_register_variable reg in
      (regvar, [ASSIGN_NUM (regvar, NUM_VAR ssavar)])
 
