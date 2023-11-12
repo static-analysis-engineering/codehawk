@@ -15,9 +15,11 @@ interpretation engine and the three analyzer front ends:
 - **CHC**: C source code analyzer front end
 - **CHJ**: Java byte code analyzer (in preparation)
 
-This repository is intended to be for reference only. The actual
-analyzers are provided in separate repositories with an extensive
-Python API to run the analyzer and report results:
+The ocaml-doc documentation for the code in this repository can be found on the
+[GitHub pages](https://static-analysis-engineering.github.io/codehawk/)
+
+The code in this repository forms the back-end for the three analyzer
+front-ends found here:
 
 - **CodeHawk-Binary**: [Binary Analyzer](https://github.com/static-analysis-engineering/CodeHawk-Binary)
 - **CodeHawk-C**: [C Source Code Analyzer](https://github.com/static-analysis-engineering/CodeHawk-C)
