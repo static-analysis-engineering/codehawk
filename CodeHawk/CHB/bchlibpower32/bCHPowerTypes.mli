@@ -24,7 +24,10 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-(** Documentation used:
+
+(** {1 Overview}*)
+
+(** {2 Documentation used}
 
     NXP. Book E: Enhanced PowerPC Architecture. Version 1.0, May 7, 2002
 
@@ -59,9 +62,9 @@ open BCHLibTypes
 
 type pwr_instruction_type_t = | PWR | VLE16 | VLE32
 
-(** General register usage
-    (from: https://www.ibm.com/docs/en/aix/7.1?topic=overview-register-usage-conventions
-
+(** {2 General register usage}
+    (from: [https://www.ibm.com/docs/en/aix/7.1?topic=overview-register-usage-conventions]
+    {[
     GPR0       volatile    in function prologs
     GPR1       dedicated   stack pointer
     GPR2       dedicated   table-of-contents pointer
@@ -79,7 +82,7 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     GPR12      volatile    special exception handling, glink code
     GPR13      reserved    (not restored across system calls)
     GPR14-31   nonvolatile must be preserved across a function call
-
+    ]}
     Preferred method of using GPRs is to use the volatile registers first.
     Next, use the nonvolatile registers in descending order, starting with
     GPR31. GPR1 and GPR2 must be dedicated as stack table-of-contents area
@@ -87,10 +90,10 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     and must have the same value at return as when the call was made.
  *)
 
-(** Special registers
+(** {2 Special registers}
 
-    Condition Register (CR)
-    -----------------------
+    {b Condition Register (CR)}
+
     The Condition Register (CR) is a 32-bit registers with bits numbered
     32 (most-significant) to 63 (least-significant). The Condition Register
     reflects the result of certain operations, and provides a mechanism
@@ -98,12 +101,15 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     (BookE, pg 45)
 
     EREF, 4.5 Registers for Branch Operations, pg 4-40
-    bits 32-63:
+
+    {[bits 32-63:
     <c0><c1><c2><c3><c4><c5><c6><c7>
     CR0 (<c0>) can be set as the implicit result of an integer instruction
     CR1 (<c1>) can be set as the implicit result of a floating point instruction.
+    ]}
 
     Branch Instruction (BI) Operand Settings for CR Fields (Table 4-13)
+    {[
     CRn Bits    BI    Description
     ----------------------------------------------------------------------------
     CR0[0]     00000  Negative (LT) -- Set when the result is negative
@@ -116,8 +122,10 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     CR0[3]     00011  Summary overflow (SO). Copy of XER[SO] at the instruction's
                       completion.
     ----------------------------------------------------------------------------
+    ]}
 
-    Count Register (CTR)
+    {b Count Register (CTR)}
+
     Bits 32:63 can be used to hold a loop count that can be decremented during
     execution of branch instructions that contain an appropriately encoded BO
     field. If the value in bits 32:63 of the Count Register is 0 before being
@@ -126,13 +134,15 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     target address for the Branch Conditional to Count Register instruction.
     (BookE, pg 48)
 
-    Link Register (LR)
+    {b Link Register (LR)}
+
     The Link Register can be used to provide the branch target address for the
     Branch Conditional to Link Register instruction, and it holds the return
     address after Branch and Link instructions.
     (BookE, pg 48)
 
-    Machine State Register (MSR)
+    {b Machine State Register (MSR)}
+
     The Machine State Register is a 32-bit register, numbered 32 (msb) to 63
     (lsb). This register defines the state of the processor (i.e., enabling
     and disabling of interrupts and debugging exceptions, selection of address
@@ -140,7 +150,8 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     processor is in supervisor or user mode).
     (BookE, pg 39)
 
-    Integer Exception Register (XER)
+    {b Integer Exception Register (XER)}
+
     The Integer Exception Register is a 64-bit register. Integer Exception
     Register bits are set based on the operation of an instruction considered
     as a whole, not on intermediate results.
@@ -149,7 +160,8 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     bit 34: Carry (CA)
     (BookE, pg 54)
 
-    Save/Restore Register 0 (SRR0)
+    {b Save/Restore Register 0 (SRR0)}
+
     Save/Restore Register 0 (SRR0) is a 64-bit register with bits numbered
     0 (most-significant) to 63 (least-significant). The register is used to
     save machine state on non-critical interrupts, and to restore machine
@@ -158,7 +170,8 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     instruction execution continues at the the address in SRR0.
     (BookE, pg 144)
 
-    Save/Restore Register 1 (SRR1)
+    {b Save/Restore Register 1 (SRR1)}
+
     Save/Restore Register 1 (SRR1) is a 32-bit register with bits numbered
     32 (most-significant) through 63 (least-significant). The register is
     used to save machine state on non-critical interrupts, and to restore
@@ -167,21 +180,23 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     the contents of SRR1 are placed into MSR.
     (BookE, pg 144)
 
-    Critical Save/Restore Register 0 (CSRR0)
+    {b Critical Save/Restore Register 0 (CSRR0)}
+
     Critical Save/Restore Register 0 (CSRR0) is a 64-bit register with bits
     numbered 0 (most-significant) through 63 (least-significant). The register
     is used to save machine state on critical interrupts, and to restore
     machine state when an rfci is executed.
     (BookE, pg 144)
 
-    Critical Save/Restore Register 1 (CSRR1)
+    {b Critical Save/Restore Register 1 (CSRR1)}
+
     Critical Save/Restore Register 1 (CSRR1) is a 32-bit register with bits
     numbered 32 (least-significant) through 63 (most-significant). The register
     is used to save machine state on critical interrupts, and to restore
     machine state when an rfci is executed.
     (BookE, pg 145)
 
-    Data Exception Address Register (DEAR)
+    {b Data Exception Address Register (DEAR)}
     The Data Exception Address Register (DEAR) is a 64-bit register with bits
     numbered 0 (most-significant) through 63 (least-significant). The DEAR
     contains the address that was referenced by a Load, Store, Cache Management
@@ -189,13 +204,17 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
     interrupt.
     (BookE, pg 145)
 
-    References:
+    {b References:}
+
     BookE: Book E: Enhanced PowerPC Architecture, Version 1.0, May 7 2002, NXP.
  *)
 
 
-(* defined in bchlib/bCHLibTypes:
+(** {1 Operands}
 
+defined in {! bchlib/bCHLibTypes}:
+
+{[
 type pwr_special_reg_t =
   | PowerCR    (* Condition Register (contains CR0, CR1, CR2) *)
   | PowerCTR   (* Count Register *)
@@ -224,6 +243,7 @@ type pwr_register_field_t =
   | PowerXERSO (* Integer Exception Register, summary overflow *)
   | PowerXEROV (* Integer Exception Register, overflow *)
   | PowerXERCA (* Integer Exception Register, carry *)
+]}
  *)
 
 type pwr_operand_kind_t =
@@ -238,10 +258,11 @@ type pwr_operand_kind_t =
 
 
 (** Operand modes:
-    RD: read
-    WR: write
-    RW: read-write
-    NT: not touched
+
+    - RD: read
+    - WR: write
+    - RW: read-write
+    - NT: not touched
  *)
 type pwr_operand_mode_t = RD | WR | RW | NT
 
@@ -266,6 +287,7 @@ class type pwr_operand_int =
     (* converters *)
     method to_numerical: numerical_t
     method to_address: floc_int -> xpr_t
+    method to_register: register_t
     method to_variable: floc_int -> variable_t
     method to_expr: floc_int -> xpr_t
     method to_shifted_expr: int -> xpr_t
@@ -292,11 +314,12 @@ class type pwr_operand_int =
 type not_code_t = JumpTable of jumptable_int | DataBlock of data_block_int
 
 
-(** {2 Instruction representation}
+(** {1 Instruction representation}
 
     References:
     - [EREF]
     - [VLEPEM]
+    - [SPEPEM]
  *)
 
 type pwr_opcode_t =
@@ -1512,6 +1535,8 @@ type pwr_opcode_t =
   | NotRecognized of string * doubleword_int
 
 
+(** {1 Dictionary}*)
+
 class type pwr_dictionary_int =
   object
 
@@ -1531,6 +1556,9 @@ class type pwr_dictionary_int =
 
   end
 
+(** {1 Assembly code} *)
+
+(** {2 Assembly Instruction(s)} *)
 
 class type pwr_assembly_instruction_int =
   object
@@ -1633,6 +1661,8 @@ class type pwr_assembly_instructions_int =
   end
 
 
+(** {2 Assembly block}*)
+
 class type pwr_assembly_block_int =
   object
 
@@ -1672,6 +1702,7 @@ class type pwr_assembly_block_int =
     method toPretty: pretty_t
   end
 
+(** {2 Assembly function(s)}*)
 
 class type pwr_assembly_function_int =
   object
@@ -1749,6 +1780,8 @@ class type pwr_assembly_functions_int =
   end
 
 
+(** {2 Assembly code PC}*)
+
 class type pwr_code_pc_int =
   object
 
@@ -1770,6 +1803,7 @@ class type pwr_code_pc_int =
     method has_conditional_successor: bool
   end
 
+(** {1 CHIF}*)
 
 class type pwr_chif_system_int =
   object
@@ -1789,6 +1823,10 @@ class type pwr_chif_system_int =
     method has_pwr_procedure: doubleword_int -> bool
   end
 
+
+(** {1 Analysis Results}*)
+
+(** {2 Opcode dictionary}*)
 
 class type pwr_opcode_dictionary_int =
   object
@@ -1823,6 +1861,7 @@ class type pwr_opcode_dictionary_int =
     method toPretty: pretty_t
   end
 
+(** {2 Results manager}*)
 
 class type pwr_analysis_results_int =
   object

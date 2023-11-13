@@ -236,6 +236,18 @@ object (self)
     | PowerRegisterField PowerCR0 -> true
     | _ -> false
 
+  method to_register: register_t =
+    match kind with
+    | PowerGPReg index -> register_of_power_gp_register_index index
+    | PowerSpecialReg reg -> register_of_power_sp_register reg
+    | PowerRegisterField f -> register_of_power_cr_register_field f
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand cannot be converted to a generic register: ";
+                 self#toPretty]))
+
   method to_variable (floc: floc_int): variable_t =
     let env = floc#f#env in
     match kind with
