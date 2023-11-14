@@ -836,21 +836,33 @@ object (self)
     var
 
   method mk_global_variable ?(size=4) ?(offset=NoOffset) (base: numerical_t) =
-    let default () =
-      self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
     let addr = TR.tget_ok (numerical_to_doubleword base) in
-    let _ =
+    let name: string option =
       if has_symbolic_address_name addr then
         let vname = get_symbolic_address_name addr in
         let vtype = get_symbolic_address_type addr in
-        chlog#add
-          "make named global variable"
-          (LBLOCK [
-               addr#toPretty;
-               STR ": ";
-               STR vname;
-               STR " with type ";
-               STR (btype_to_string vtype)]) in
+        begin
+          chlog#add
+            "make named global variable"
+            (LBLOCK [
+                 addr#toPretty;
+                 STR ": ";
+                 STR vname;
+                 STR " with type ";
+                 STR (btype_to_string vtype)]);
+          Some vname
+        end
+      else
+        None in
+    let default () =
+      let var =
+        self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
+      begin
+        (match name with
+         | Some vname -> self#set_variable_name var vname
+         | _ -> ());
+        var
+      end in
     if is_in_global_structvar addr then
       (match get_structvar_base_offset addr with
        | Some (base, off) ->
