@@ -404,7 +404,21 @@ object (self)
           end in
       addrs
     else
-      get_range_instruction_addrs low high
+      try
+        get_range_instruction_addrs low high
+      with
+      | BCH_failure p ->
+         begin
+           ch_error_log#add
+             "get-code-addresses"
+             (LBLOCK [
+                  low#toPretty;
+                  STR " - ";
+                  high#toPretty;
+                  STR ": ";
+                  p]);
+           []
+         end
 
   method get_num_instructions =
     (List.length (self#get_code_addresses ()))
