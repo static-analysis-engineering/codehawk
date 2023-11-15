@@ -273,6 +273,7 @@ let disassemble_pwr_sections () =
             && db#get_start_address#lt (ha#add_int hsize#value)))
       false sectionsizes in
   let programentrypoint = elf_header#get_program_entry_point in
+  let _ = pr_timing [STR "Program entry: "; programentrypoint#toPretty] in
   let datablocks =
     List.filter is_in_executable_section system_info#get_data_blocks in
 
@@ -298,6 +299,7 @@ let disassemble_pwr_sections () =
     List.iter
       (fun (h, x) ->
         begin
+          (* disassemble_pwr_section h#get_addr true x; *)
           disassemble_pwr_section h#get_addr h#is_pwr_vle x;
           pr_timing [
               STR "section disassembled at ";

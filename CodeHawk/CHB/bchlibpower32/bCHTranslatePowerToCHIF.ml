@@ -1000,4 +1000,6 @@ let translate_pwr_assembly_function (f: pwr_assembly_function_int) =
            f#faddr#toPretty;
            STR ": ";
            p] in
-     raise (BCH_failure msg)
+     ch_error_log#add "translation failure" msg
+
+       (* raise (BCH_failure msg) *)
