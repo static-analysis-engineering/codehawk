@@ -570,16 +570,19 @@ let analyze_arm starttime =
 
 let analyze_pwr_function
       (faddr: doubleword_int) (f: pwr_assembly_function_int) (count: int) =
+  let _ =
+    if system_settings#show_function_timing then
+      pr_timing [
+          STR "analyzing function (";
+          INT count;
+          STR "): ";
+          faddr#toPretty;
+          STR ": ";
+          INT f#get_instruction_count;
+          STR " instructions"] in
+
   let fstarttime = Unix.gettimeofday () in
   let finfo = load_function_info faddr in
-  let _ =
-    pverbose [
-        STR "Analyze ";
-        faddr#toPretty;
-        STR " (started: ";
-        STR (time_to_string fstarttime);
-        STR ")";
-        NL] in
   let _ = translate_pwr_assembly_function f in
   if pwr_chif_system#has_pwr_procedure faddr then
     let proc = pwr_chif_system#get_pwr_procedure faddr in

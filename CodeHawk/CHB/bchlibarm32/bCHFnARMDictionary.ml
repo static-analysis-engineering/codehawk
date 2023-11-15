@@ -1043,16 +1043,37 @@ object (self)
              (tags, args) in
          (tags, args)
 
-      | LoadRegisterExclusive (_, rt, rn, _, mem) ->
+      | LoadRegisterExclusive (c, rt, rn, rm, mem) ->
          let vrt = rt#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
+         let rdefs =
+           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
+           @ (get_all_rdefs xmem) in
+         let uses = [get_def_use vrt] in
+         let useshigh = [get_def_use_high vrt] in
          let xrmem = rewrite_expr xmem in
-         (["a:vvxx"],
-          [xd#index_variable vrt;
-           xd#index_variable vmem;
-           xd#index_xpr xmem;
-           xd#index_xpr xrmem])
+         let _ = ignore (get_string_reference floc xrmem) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrt; vmem]
+             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn = rn#to_variable floc in
+             let xaddr = mem#to_updated_offset_address floc in
+             add_base_update tags args vrn xaddr
+           else
+             (tags, args) in
+         (tags, args)
 
       | LoadRegisterHalfword (c, rt, rn, rm, mem, _) ->
          let vrt = rt#to_variable floc in
