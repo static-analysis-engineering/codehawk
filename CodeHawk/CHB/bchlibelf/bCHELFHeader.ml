@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,15 +27,15 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* 
+(*
    References used:
 
    The standard /usr/include/elf.h in Arch Linux
-   The latest draft of the System V Application Binary Interface: 
+   The latest draft of the System V Application Binary Interface:
    http://www.sco.com/developers/gabi/latest/contents.html
-   March 19, 1997 draft copy of the Intel Supplement to the System V 
+   March 19, 1997 draft copy of the Intel Supplement to the System V
    Application Binary Interface
-*) 
+*)
 
 (* chlib *)
 open CHNumerical
@@ -92,35 +92,35 @@ module H = Hashtbl
 module TR = CHTraceResult
 
 
-type object_file_type = 
-  | NoFileType 
-  | RelocatableFile 
-  | ExecutableFile 
-  | SharedObjectFile 
-  | CoreFile 
-  | OSSpecificFile of int 
+type object_file_type =
+  | NoFileType
+  | RelocatableFile
+  | ExecutableFile
+  | SharedObjectFile
+  | CoreFile
+  | OSSpecificFile of int
   | ProcessorSpecificFile of int
 
-type elf_symbol_type = 
+type elf_symbol_type =
   | NoSymbolType
-  | ObjectSymbol 
-  | FunctionSymbol 
-  | SectionSymbol 
+  | ObjectSymbol
+  | FunctionSymbol
+  | SectionSymbol
   | FileSymbol
   | UnknownSymbol of int
 
 (* Based on the Intel-specific part of the ABI *)
-type elf_relocation_type_i386 = 
-  | R_386_NONE 
-  | R_386_32 
-  | R_386_PC32 
-  | R_386_GOT32 
-  | R_386_PLT32 
-  | R_386_COPY 
+type elf_relocation_type_i386 =
+  | R_386_NONE
+  | R_386_32
+  | R_386_PC32
+  | R_386_GOT32
+  | R_386_PLT32
+  | R_386_COPY
   | R_386_GLOB_DAT
-  | R_386_JMP_SLOT 
-  | R_386_RELATIVE 
-  | R_386_GOTOFF 
+  | R_386_JMP_SLOT
+  | R_386_RELATIVE
+  | R_386_GOTOFF
   | R_386_GOTPC
 
 
@@ -190,7 +190,7 @@ let make_elf_segment (ph:elf_program_header_int) (s:string) =
   | PT_Dynamic -> ElfDynamicSegment (mk_elf_dynamic_segment s ph vaddr)
   | _ -> ElfOtherSegment (new elf_raw_segment_t s vaddr)
 
-    
+
 class elf_file_header_t:elf_file_header_int =
 object
 
@@ -223,7 +223,7 @@ object
       e_type <- input#read_ui16 ;
 
       (* 18, 2  --------------------------------------------------------------
-	 Specifies the required architecture for an individual file. 
+	 Specifies the required architecture for an individual file.
 	 EM_NONE     0    No machine
 	 EM_M32      1    AT&T WE 32100
 	 EM_SPARC    2    SUN SPARC
@@ -234,9 +234,9 @@ object
          EM_AVR     83    AVR
 	 --------------------------------------------------------------------- *)
       e_machine <- input#read_ui16;
-  
+
       (* 20, 4  --------------------------------------------------------------
-	 Identifies the object file version. 
+	 Identifies the object file version.
 	 EV_NONE     0    Invalid
 	 EV_CURRENT  1    Current version
 	 EV_NUM      2
@@ -249,99 +249,99 @@ object
 	 value is zero
 	 --------------------------------------------------------------------- *)
       e_entry <- input#read_doubleword;
-  
+
       (* 28, 4  --------------------------------------------------------------
-	 Program header table's file offset in bytes. 
-	 If the file has no program header table, this member holds zero. 
+	 Program header table's file offset in bytes.
+	 If the file has no program header table, this member holds zero.
          --------------------------------------------------------------------- *)
       e_phoff <- input#read_doubleword;
-  
+
       (* 32, 4  --------------------------------------------------------------
-	 Section header table's file offset in bytes. 
-	 If the file has no section header table, this member holds zero. 
+	 Section header table's file offset in bytes.
+	 If the file has no section header table, this member holds zero.
          --------------------------------------------------------------------- *)
       e_shoff <- input#read_doubleword;
-  
+
       (* 36, 4  --------------------------------------------------------------
-	 Processor-specific flags associated with the file. 
+	 Processor-specific flags associated with the file.
          --------------------------------------------------------------------- *)
       e_flags <- input#read_doubleword;
-  
+
       (* 40, 2  --------------------------------------------------------------
-	 ELF header's size in bytes 
+	 ELF header's size in bytes
          --------------------------------------------------------------------- *)
       e_ehsize <- input#read_ui16;
-  
+
       (* 42, 2  --------------------------------------------------------------
-	 Size in bytes of one entry in the file's program header table; all 
-	 entries are the same size. 
+	 Size in bytes of one entry in the file's program header table; all
+	 entries are the same size.
          --------------------------------------------------------------------- *)
       e_phentsize <- input#read_ui16;
-  
+
       (* 44, 2 --------------------------------------------------------------
 	 Number of entries in the program header table.
-	 Thus the product of phentsize and phnum gives the table's size 
-	 in bytes. If a file has no program header table, phnum holds the 
-	 value zero. 
+	 Thus the product of phentsize and phnum gives the table's size
+	 in bytes. If a file has no program header table, phnum holds the
+	 value zero.
          --------------------------------------------------------------------- *)
       e_phnum <- input#read_ui16;
-  
+
      (* 46, 2  ---------------------------------------------------------------
-	Section header's table entry size in bytes. A section header is 
-	one entry in the section header table; all entries are the same size. 
+	Section header's table entry size in bytes. A section header is
+	one entry in the section header table; all entries are the same size.
         ---------------------------------------------------------------------- *)
       e_shentsize <- input#read_ui16;
-  
+
      (* 48, 2  ---------------------------------------------------------------
-	Number of entries in the section header table. Thus the product of 
-	e_shentsize and e_shnum gives the section header table's size in bytes. 
-	If a file has no section header table, e_shnum holds the value zero. 
-     
+	Number of entries in the section header table. Thus the product of
+	e_shentsize and e_shnum gives the section header table's size in bytes.
+	If a file has no section header table, e_shnum holds the value zero.
+
 	If the number of sections is greater than or equal to SHN_LORESERVE(0xff00),
-	this member has the value zero and the actual number of section header table 
+	this member has the value zero and the actual number of section header table
 	entries is contained in the size field of the section header at index 0.
-	(Otherwise, the size member of the initial entry contains a zero). 
+	(Otherwise, the size member of the initial entry contains a zero).
         ---------------------------------------------------------------------- *)
       e_shnum <- input#read_ui16;
-  
+
       (* 50, 2  --------------------------------------------------------------
-	 Section header table index of the entry associated with the section name 
-	 string table. If the file has no section name string table, this member 
+	 Section header table index of the entry associated with the section name
+	 string table. If the file has no section name string table, this member
 	 holds the value SHN_UNDEF.
-     
+
 	 If the section name string table section index is greater than or
-	 equal to SHN_LORESERVE(0xff00), this member has the value 
-	 SHN_XINDEX(0xffff) and the actual index of the section name string 
-	 table is contained in the link field of the section header at index 0. 
-	 (Otherwise, the link member of the initial entry contains 0). 
+	 equal to SHN_LORESERVE(0xff00), this member has the value
+	 SHN_XINDEX(0xffff) and the actual index of the section name string
+	 table is contained in the link field of the section header at index 0.
+	 (Otherwise, the link member of the initial entry contains 0).
          --------------------------------------------------------------------- *)
       e_shstrndx <- input#read_ui16
     end
 
   method get_type = e_type
-    
+
   method get_machine = e_machine
-    
+
   method get_version = e_version
-    
+
   method get_program_entry_point = e_entry
-    
+
   method get_program_header_table_offset = e_phoff
-    
+
   method get_section_header_table_offset = e_shoff
-    
+
   method get_flags = e_flags
-    
+
   method get_header_size = e_ehsize
-    
+
   method get_program_header_table_entry_size = e_phentsize
-    
+
   method get_program_header_table_entry_num = e_phnum
-    
+
   method get_section_header_table_entry_size = e_shentsize
-    
+
   method get_section_header_table_entry_num = e_shnum
-    
+
   method get_section_header_string_table_index = e_shstrndx
 
   method write_xml (node:xml_element_int) =
@@ -447,7 +447,10 @@ object(self)
       H.iter (fun k v -> pr_debug [v#toPretty; NL]) program_header_table;
 
       (if elf_file_header#get_section_header_table_entry_num = 0 then
-         self#create_section_headers
+         if H.length (program_header_table) > 0 then
+           self#create_section_headers
+         else
+           pr_debug [STR "No program headers and no section headers found"]
        else
          self#read_section_headers);
 
@@ -478,7 +481,7 @@ object(self)
     let _ = H.iter (fun k v -> result := (k,v) :: !result) section_header_table in
     let compare = fun (i1,_) (i2,_) -> Stdlib.compare i1 i2 in
     let result = List.sort compare !result in
-    List.map (fun (index, sh) -> 
+    List.map (fun (index, sh) ->
         (index, sh, self#get_section index)) result
 
   method get_program_segments =
@@ -651,12 +654,16 @@ object(self)
               (LBLOCK [
                    STR "Variable "; STR vname; STR " not found"])) svars
     end
-          
+
   method get_executable_sections =
     let result = ref [] in
-    let _ = H.iter (fun k v -> if v#is_executable then result := (k,v) :: !result)
-      section_header_table in
-    List.map (fun (index,sh) -> 
+    let _ =
+      H.iter (fun k v -> if v#is_executable then result := (k,v) :: !result)
+        section_header_table in
+    let _ =
+      if (List.length !result) = 0 then
+        H.iter (fun k v -> result := (k, v) :: !result) section_header_table in
+    List.map (fun (index, sh) ->
         (sh, (elf_section_to_raw_section (self#get_section index))#get_xstring))
       !result
 
@@ -894,7 +901,7 @@ object(self)
             (LBLOCK [
                  STR "found multiple symbol  tables: ";
                  pretty_print_list l (fun (i,_) -> INT i) "" "," ""]))
-      
+
   method private get_dynamic_symbol_table =
     let result = ref [] in
     let _ =
@@ -1022,10 +1029,10 @@ object(self)
       if strindex > 0 then
         let s = self#get_section strindex in
         let get_name = match s with
-          | ElfStringTable t -> t#get_string 
+          | ElfStringTable t -> t#get_string
           | _ ->
 	     raise
-               (BCH_failure 
+               (BCH_failure
 		  (LBLOCK [
                        STR "Unexpected section type; ";
                        STR "string table expected"])) in
@@ -1035,11 +1042,11 @@ object(self)
         pr_debug [STR "String table index is zero"; NL]
     else
       pr_debug [STR "No section headers present."; NL]
-      
+
 
   method private check_elf =
     begin
-      (if (String.sub e_ident 1 3) = "ELF" then () else 
+      (if (String.sub e_ident 1 3) = "ELF" then () else
 	  raise (BCH_failure (STR "ELF header is missing"))) ;
       (if (String.get e_ident 4) = '\001' then () else
 	 raise (BCH_failure (STR "ELF file is not a 32 bit executable")));
@@ -1049,10 +1056,10 @@ object(self)
 
   method private set_endianness =
     let endianness = String.get e_ident 5 in
-    if endianness = '\001' then 
+    if endianness = '\001' then
       let _ =
         pr_debug [STR "Little endian (default)"; NL] in ()   (* default case *)
-    else if endianness = '\002' then 
+    else if endianness = '\002' then
       let _ = pr_debug [STR "Set big endian"; NL] in
       system_info#set_big_endian
     else raise (BCH_failure (STR ("Unknown endianness in ELF file")))
@@ -1170,8 +1177,8 @@ object(self)
     node#appendChildren (List.map (fun (k,h) ->
       let hNode = xmlElement "program-header" in
       begin
-	h#write_xml hNode ; 
-	hNode#setIntAttribute "index" k ; 
+	h#write_xml hNode ;
+	hNode#setIntAttribute "index" k ;
 	hNode
       end) headers)
 
@@ -1181,8 +1188,8 @@ object(self)
       let geti = hNode#getIntAttribute in
       let index = geti "index" in
       let header = mk_elf_program_header () in
-      begin 
-	header#read_xml hNode ; 
+      begin
+	header#read_xml hNode ;
 	H.add program_header_table index header
       end) (getcc "program-header")
 
@@ -1233,7 +1240,7 @@ object(self)
                  STR (doubleword_to_elf_section_header_string h#get_type);
                  STR ") loaded"]
            end
-	| _ -> 
+	| _ ->
 	   pr_debug [
                STR "Section ";
                STR h#get_section_name;
@@ -1300,20 +1307,20 @@ object(self)
       self#set_relocation_symbols;
       self#initialize_dwarf_query_service;
     end
-      
-  method toPretty = 
+
+  method toPretty =
     let programHeaders = ref [] in
     let sectionHeaders = ref [] in
-    let _ = H.iter (fun k v -> 
+    let _ = H.iter (fun k v ->
       programHeaders := (k,v) :: !programHeaders) program_header_table in
     let _ = H.iter (fun k v ->
       sectionHeaders := (k,v) :: !sectionHeaders) section_header_table in
     let compare = fun (i1,_) (i2,_) -> Stdlib.compare i1 i2 in
     let programHeaders = List.sort compare !programHeaders in
     let sectionHeaders = List.sort compare !sectionHeaders in
-    let prProgramHeader (i, h) = 
+    let prProgramHeader (i, h) =
       LBLOCK [STR "Program header "; INT i; NL; INDENT (3, h#toPretty); NL] in
-    let prSectionHeader (i, h) = 
+    let prSectionHeader (i, h) =
       LBLOCK [STR "Section header "; INT i; NL; INDENT (3, h#toPretty); NL] in
     LBLOCK [
         STR "File header:";
