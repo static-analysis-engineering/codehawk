@@ -521,7 +521,7 @@ let main () =
       let _ = system_info#set_power in
       let _ = system_info#initialize in
       let _ = load_elf_files () in
-      let _ = pr_timing [STR "elf files loaded"] in
+      let _ = pr_timing [STR "elf power files loaded"] in
       let _ = List.iter parse_cil_file system_info#ifiles in
       let _ =
         if (List.length system_info#ifiles) > 0 then
