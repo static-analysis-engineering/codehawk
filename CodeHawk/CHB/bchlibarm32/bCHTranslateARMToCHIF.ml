@@ -1030,6 +1030,20 @@ let translate_arm_instruction
            {armxr_type = XSingle; armxr_index = 0} in
          let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
          ([s0var], [s0var], [s0var])
+       else if ((List.length pars) = 3
+                && (is_floating_point_parameter (List.hd pars))
+                && (is_floating_point_parameter (List.nth pars 1))
+                && (is_floating_point_parameter (List.nth pars 2))) then
+         let s0: arm_extension_register_t =
+           {armxr_type = XSingle; armxr_index = 0} in
+         let s1: arm_extension_register_t =
+           {armxr_type = XSingle; armxr_index = 1} in
+         let s2: arm_extension_register_t =
+           {armxr_type = XSingle; armxr_index = 2} in
+         let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
+         let s1var = floc#f#env#mk_arm_extension_register_variable s1 in
+         let s2var = floc#f#env#mk_arm_extension_register_variable s2 in
+         ([s0var; s1var; s2var], [s0var; s1var; s2var], [s0var; s1var; s2var])
        else
          let usehigh = get_use_high_vars args in
          let use =
