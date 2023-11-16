@@ -140,25 +140,25 @@ let mips_special_reg_mfts: mips_special_reg_t mfts_int =
 let arm_special_reg_mfts: arm_special_reg_t mfts_int =
   mk_mfts
     "arm_special_reg_t"
-    [(CPSR, "CPSR"); (SPSR, "SPSR"); (FPSCR, "FPSCR"); (APSR_nzcv, "APSR_nzcv")]
+    [(CPSR, "CSSR"); (SPSR, "SRSR"); (FPSCR, "FPCSR"); (APSR_nzcv, "APSR_nzcv")]
 
 
 let pwr_spr_mfts: pwr_special_reg_t mfts_int =
   mk_mfts
     "pwr_special_reg_t"
-    [(PowerCR, "CR");
-     (PowerCTR, "CTR");
-     (PowerMSR, "MSR");
-     (PowerLR, "LR");
-     (PowerXER, "XER");
-     (PowerSRR0, "SRR0");
-     (PowerSRR1, "SRR1");
-     (PowerCSRR0, "CSRR0");
-     (PowerCSRR1, "CSRR1");
-     (PowerDSRR0, "DSRR0");
-     (PowerDSRR1, "DSRR1");
-     (PowerMCSRR0, "MCSRR0");
-     (PowerMCSRR1, "MCSRR1")]
+    [(PowerCR, "cr");
+     (PowerCTR, "ctr");
+     (PowerMSR, "msr");
+     (PowerLR, "lr");
+     (PowerXER, "xer");
+     (PowerSRR0, "srr0");
+     (PowerSRR1, "srr1");
+     (PowerCSRR0, "csrr0");
+     (PowerCSRR1, "csrr1");
+     (PowerDSRR0, "dsrr0");
+     (PowerDSRR1, "dsrr1");
+     (PowerMCSRR0, "mcsrr0");
+     (PowerMCSRR1, "mcsrr1")]
 
 
 let pwr_crf_mfts: pwr_register_field_t mfts_int =

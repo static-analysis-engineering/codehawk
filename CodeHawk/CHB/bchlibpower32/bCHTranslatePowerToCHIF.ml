@@ -45,6 +45,7 @@ open Xsimplify
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypes
+open BCHBCTypeUtil
 open BCHCallTarget
 open BCHCodegraph
 open BCHCPURegisters
@@ -489,7 +490,7 @@ let translate_pwr_instruction
   | ExtendSignHalfword (_, _, ra, rs, _) ->
      let rareg = ra#to_register in
      let xrs = rs#to_expr floc in
-     let (vra, cmds) = floc#get_ssa_assign_commands rareg xrs in
+     let (vra, cmds) = floc#get_ssa_assign_commands rareg ~vtype:t_short xrs in
      let usevars = get_register_vars [rs] in
      let usehigh = get_use_high_vars [xrs] in
      let defcmds =
@@ -530,7 +531,7 @@ let translate_pwr_instruction
      let rhs =
        floc#inv#rewrite_expr (mem#to_expr floc)
          floc#env#get_variable_comparator in
-     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg rhs in
+     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg ~vtype:t_uchar rhs in
      let usevars = get_register_vars [ra] in
      let usehigh = get_use_high_vars [rhs] in
      let defcmds =
@@ -543,7 +544,8 @@ let translate_pwr_instruction
        if update then
          let rareg = ra#to_register in
          let addr = mem#to_address floc in
-         let (vra, ucmds) = floc#get_ssa_assign_commands rareg addr in
+         let (vra, ucmds) =
+           floc#get_ssa_assign_commands rareg ~vtype:t_voidptr addr in
          let udefcmds = floc#get_vardef_commands ~defs:[vra] ctxtiaddr in
          udefcmds @ ucmds
        else
@@ -555,7 +557,7 @@ let translate_pwr_instruction
      let rhs =
        floc#inv#rewrite_expr (mem#to_expr floc)
          floc#env#get_variable_comparator in
-     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg rhs in
+     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg ~vtype:t_short rhs in
      let usevars = get_register_vars [ra] in
      let usehigh = get_use_high_vars [rhs] in
      let defcmds =
@@ -568,7 +570,8 @@ let translate_pwr_instruction
        if update then
          let rareg = ra#to_register in
          let addr = mem#to_address floc in
-         let (vra, ucmds) = floc#get_ssa_assign_commands rareg addr in
+         let (vra, ucmds) =
+           floc#get_ssa_assign_commands rareg ~vtype:t_voidptr addr in
          let udefcmds = floc#get_vardef_commands ~defs:[vra] ctxtiaddr in
          udefcmds @ ucmds
        else
@@ -580,7 +583,7 @@ let translate_pwr_instruction
      let rhs =
        floc#inv#rewrite_expr (mem#to_expr floc)
          floc#env#get_variable_comparator in
-     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg rhs in
+     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg ~vtype:t_uint rhs in
      let usevars = get_register_vars [ra] in
      let usehigh = get_use_high_vars [rhs] in
      let defcmds =
@@ -593,7 +596,8 @@ let translate_pwr_instruction
        if update then
          let rareg = ra#to_register in
          let addr = mem#to_address floc in
-         let (vra, ucmds) = floc#get_ssa_assign_commands rareg addr in
+         let (vra, ucmds) =
+           floc#get_ssa_assign_commands rareg ~vtype:t_voidptr addr in
          let udefcmds = floc#get_vardef_commands ~defs:[vra] ctxtiaddr in
          udefcmds @ ucmds
        else
@@ -603,7 +607,7 @@ let translate_pwr_instruction
   | MoveFromLinkRegister (_, rd, lr) ->
      let rdreg = rd#to_register in
      let xlr = lr#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg xlr in
+     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg ~vtype:t_voidptr xlr in
      let usevars = get_register_vars [lr] in
      let usehigh = get_use_high_vars [xlr] in
      let defcmds =
@@ -647,7 +651,7 @@ let translate_pwr_instruction
      let xrs = rs#to_expr floc in
      let xrb = rb#to_expr floc in
      let xrhs = XOp (XBOr, [xrs; xrb]) in
-     let (vra, cmds) = floc#get_ssa_assign_commands rareg xrhs in
+     let (vra, cmds) = floc#get_ssa_assign_commands rareg ~vtype:t_uint xrhs in
      let usevars = get_register_vars [rs; rb] in
      let usehigh = get_use_high_vars [xrhs] in
      let defcmds =
@@ -723,7 +727,7 @@ let translate_pwr_instruction
        if update then
          let rareg = ra#to_register in
          let addr = mem#to_address floc in
-         let (vra, ucmds) = floc#get_ssa_assign_commands rareg addr in
+         let (vra, ucmds) = floc#get_ssa_assign_commands rareg ~vtype:t_char addr in
          let udefcmds = floc#get_vardef_commands ~defs:[vra] ctxtiaddr in
          (udefcmds @ ucmds)
        else
@@ -747,7 +751,7 @@ let translate_pwr_instruction
        if update then
          let rareg = ra#to_register in
          let addr = mem#to_address floc in
-         let (vra, ucmds) = floc#get_ssa_assign_commands rareg addr in
+         let (vra, ucmds) = floc#get_ssa_assign_commands rareg ~vtype:t_short addr in
          let udefcmds = floc#get_vardef_commands ~defs:[vra] ctxtiaddr in
          (udefcmds @ ucmds)
        else
@@ -771,7 +775,7 @@ let translate_pwr_instruction
        if update then
          let rareg = ra#to_register in
          let addr = mem#to_address floc in
-         let (vra, ucmds) = floc#get_ssa_assign_commands rareg addr in
+         let (vra, ucmds) = floc#get_ssa_assign_commands rareg ~vtype:t_int addr in
          let udefcmds = floc#get_vardef_commands ~defs:[vra] ctxtiaddr in
          (udefcmds @ ucmds)
        else
