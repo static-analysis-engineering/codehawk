@@ -119,7 +119,7 @@ object (self)
                lNode#setAttribute "a" a;
                lNode
              end) looplevels);
-      (if system_info#is_in_trampoline b#get_first_address then
+      (if system_info#is_trampoline b#get_first_address then
          set "role" "trampoline");
       set "ba" b#get_context_string;
       set "ea" (make_i_location blockloc b#get_last_address)#ci

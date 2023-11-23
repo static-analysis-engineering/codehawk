@@ -4601,7 +4601,7 @@ object
   method is_cfnop: doubleword_int -> bool
   method is_cfjmp: doubleword_int -> bool
   method is_inlined_function: doubleword_int -> bool
-  method is_in_trampoline: doubleword_int -> bool
+  method is_trampoline: doubleword_int -> bool
   method has_variable_intro: doubleword_int -> bool
 
   (** [is_thumb addr] returns true if the architecture includes (arm) thumb
