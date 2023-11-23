@@ -373,13 +373,10 @@ object (self)
       chlog#add "add inlined function" (faddr#toPretty)
     end
 
-  method private add_trampoline
-                   (startaddr: doubleword_int) (endaddr: doubleword_int) =
+  method private add_trampoline (startaddr: doubleword_int) =
     begin
-      trampolines <- (startaddr, endaddr) :: trampolines;
-      chlog#add
-        "add trampoline"
-        (LBLOCK [startaddr#toPretty; STR ", "; endaddr#toPretty])
+      trampolines <- startaddr :: trampolines;
+      chlog#add "add trampoline" (LBLOCK [startaddr#toPretty])
     end
 
   method private add_inlined_block (faddr:doubleword_int) (baddr:doubleword_int) =
@@ -398,9 +395,9 @@ object (self)
   method is_inlined_function (a:doubleword_int) =
     List.exists (fun i -> a#equal i) inlined_functions
 
-  method is_in_trampoline (a: doubleword_int) =
-    List.fold_left (fun acc (startaddr, endaddr) ->
-        acc || (startaddr#le a && a#lt endaddr)) false trampolines
+  method is_trampoline (a: doubleword_int) =
+    List.fold_left (fun acc startaddr ->
+        acc || (startaddr#equal a)) false trampolines
 
   method get_esp_adjustment (faddr:doubleword_int) (iaddr:doubleword_int) =
     if H.mem esp_adjustments_i iaddr#index then
@@ -828,8 +825,8 @@ object (self)
          let inode = getc "inlined-blocks" in
          self#read_xml_inlined_blocks inode);
 
-      (if hasc "trampolines" then
-         let tnode = getc "trampolines" in
+      (if hasc "trampoline-payloads" then
+         let tnode = getc "trampoline-payloads" in
          self#read_xml_trampolines tnode);
 
       (if hasc "specializations" then
@@ -1333,13 +1330,12 @@ object (self)
   method private read_xml_trampolines (node: xml_element_int) =
     List.iter (fun n ->
         let geta n tag = geta_fail "read_xml_trampolines" n tag in
-        let startaddr = geta n "start" in
-        let endaddr = geta n "end" in
+        let startaddr = geta n "a" in
         let _ =
           chlog#add
             "add trampoline"
-            (LBLOCK [startaddr#toPretty; STR ", "; endaddr#toPretty]) in
-        self#add_trampoline startaddr endaddr) (node#getTaggedChildren "trampoline")
+            (LBLOCK [startaddr#toPretty]) in
+        self#add_trampoline startaddr) (node#getTaggedChildren "trampoline")
 
   method private read_xml_inlined_blocks (node:xml_element_int) =
     List.iter (fun n  ->
@@ -1813,7 +1809,7 @@ object (self)
 	List.iter
           (fun fe ->
             let fd = functions_data#add_function fe in
-            if self#is_in_trampoline fe then
+            if self#is_trampoline fe then
               fd#set_inlined
             else
               ()) feps
