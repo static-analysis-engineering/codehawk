@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -59,7 +59,7 @@ open BCHARMOpcodeRecords
 
 
 (* Conditional execution: conditions
-   
+
    EQ  Equal                        Z = 1
    NE  Not Equal                    Z = 0
    CS  Carry set                    C = 1
@@ -103,6 +103,7 @@ open BCHARMOpcodeRecords
  *)
 
 let x2p = xpr_formatter#pr_expr
+let max32_constant_expr = int_constant_expr e32
 
 let tracked_locations = []
 
@@ -113,7 +114,7 @@ let track_location loc p =
 
 let freeze_variables
       ?(unsigned=false)
-      (add:variable_t -> variable_t -> unit) 
+      (add:variable_t -> variable_t -> unit)
       (testloc:location_int)
       (condloc:location_int)
       (op:arm_operand_int)  =
@@ -126,7 +127,7 @@ let freeze_variables
   let varsKnown = ref true in
   let _ =
     List.iter (
-        fun v -> 
+        fun v ->
         if v#isTmp then
           varsKnown := false
         else if env#is_function_initial_value v then
@@ -175,8 +176,19 @@ let cc_expr
       (testopc: arm_opcode_t)
       (cc: arm_opcode_cc_t): (bool * xpr_t option) =
   let found = ref true in
-  let expr = 
+  let expr =
     match (testopc, cc) with
+
+    | (Add (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
+       XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr])
+
+    (* -------------------------------------------------------------- And --- *)
+
+    | (BitwiseAnd (true, ACCAlways, _, x, y, _), ACCEqual) ->
+       XOp (XEq, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr])
+
+    (* ---------------------------------------------------------- Compare --- *)
+
     | (Compare (ACCAlways, x, y, _), ACCEqual) -> XOp (XEq, [v x; v y])
     | (Compare (ACCAlways, x, y, _), ACCNotEqual) -> XOp (XNe, [v x; v y])
 
@@ -194,20 +206,65 @@ let cc_expr
     | (Compare (ACCAlways, x, y, _), ACCSignedLE) -> XOp (XLe, [v x; v y])
     | (Compare (ACCAlways, x, y, _), ACCSignedGT) -> XOp (XGt, [v x; v y])
 
-    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedGT) -> XOp (XGt, [v x; v y])
-    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedLE) -> XOp (XLe, [v x; v y])
-
-    | (Add (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
-       XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr])
-
-    | (BitwiseAnd (true, ACCAlways, _, x, y, _), ACCEqual) ->
-       XOp (XEq, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr])
-
     | (LogicalShiftLeft (true, ACCAlways, _, x, y, _), ACCNonNegative) ->
        XOp (XGe, [XOp (XLsl, [vu x; vu y]); zero_constant_expr])
 
+    (* ------------------------------------------------- Compare-negative --- *)
+
+    | (CompareNegative (ACCAlways, x, y), ACCEqual) ->
+       XOp (XEq, [XOp (XPlus, [v x; v y]); zero_constant_expr])
+
+    | (CompareNegative (ACCAlways, x, y), ACCNotEqual) ->
+       XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr])
+
+    | (CompareNegative (ACCAlways, x, y), ACCCarrySet) ->
+       XOp (XGe, [XOp (XPlus, [vu x; vu y]); max32_constant_expr])
+
+    | (CompareNegative (ACCAlways, x, y), ACCUnsignedHigher) ->
+       XOp (XGt, [XOp (XPlus, [vu x; vu y]); max32_constant_expr])
+
+    (* --------------------------------------------------------- Subtract --- *)
+
+    | (Subtract (true, ACCAlways, _, x, y, _, _), ACCEqual) ->
+       XOp (XEq, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+
+    | (Subtract (true, ACCAlways, _, x, y, _, _), ACCCarrySet) ->
+       XOp (XGe, [XOp (XMinus, [vu x; vu y]); zero_constant_expr])
+
+    | (Subtract (true, ACCAlways, _, x, y, _, _), ACCSignedGE) ->
+       XOp (XGe, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+
+    | (Subtract (true, ACCAlways, _, x, y, _, _), ACCSignedGT) ->
+       XOp (XGt, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+
+    | (Subtract (true, ACCAlways, _, x, y, _, _), ACCUnsignedHigher) ->
+       XOp (XGt, [XOp (XMinus, [vu x; vu y]); zero_constant_expr])
+
+    | (Subtract (true, ACCAlways, _, x, y, _, _), ACCSignedLE) ->
+       XOp (XLe, [XOp (XMinus, [vu x; vu y]); zero_constant_expr])
+
+    | (Subtract (true, ACCAlways, _, x, y, _, _), ACCSignedLT) ->
+       XOp (XLt, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+
+    | (Subtract (true, ACCAlways, _, x, y, _, _), ACCNegative) ->
+       XOp (XLt, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCNotEqual) ->
        XOp (XNe, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+
+    (* -------------------------------------------------------------- Test --- *)
+
+    | (Test (ACCAlways, x, y, _), ACCEqual) ->
+       XOp (XEq, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr])
+
+    | (Test (ACCAlways, x, y, _), ACCNotEqual) ->
+       XOp (XNe, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr])
+
+    (* ---------------------------------------------------------- VCompare --- *)
+
+    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedGT) -> XOp (XGt, [v x; v y])
+    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedLE) -> XOp (XLe, [v x; v y])
+
 
     | _ ->
        begin
@@ -240,13 +297,14 @@ let arm_conditional_expr
   if found then
     match optxpr with
     | Some expr ->
+       let expr = simplify_xpr expr in
        if is_false expr then (frozenVars#listOfValues, None) else
 	 begin
            (if collect_diagnostics () then
               ch_diagnostics_log#add "condition" (x2p expr));
 	   condfloc#set_test_expr expr;
 	   testfloc#set_test_variables frozenVars#listOfPairs;
-	   (frozenVars#listOfValues, optxpr)
+	   (frozenVars#listOfValues, (Some expr))
 	 end
     | _ -> (frozenVars#listOfValues, None)
   else
@@ -321,4 +379,3 @@ let arm_conditional_conditional_expr
        (frozenVars#toList, Some xpr)
      end
   | _ -> (frozenVars#toList, None)
-

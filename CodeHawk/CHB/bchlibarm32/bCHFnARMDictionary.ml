@@ -620,6 +620,8 @@ object (self)
                 && floc#get_call_target#is_signature_valid ->
          let pars = List.map fst floc#get_arm_call_arguments in
          let args = List.map snd floc#get_arm_call_arguments in
+         let args =
+           List.map (fun a -> rewrite_expr ?restrict:(Some 4) a) args in
          let rdefs = List.concat (List.map get_all_rdefs args) in
          let regargs =
            match List.length(args) with
@@ -1192,8 +1194,9 @@ object (self)
       | Move(_, c, rd, rm, _, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
-         let result = rewrite_expr xrm in
+         let result = rewrite_expr ?restrict:(Some 4) xrm in
          let rdefs = (get_rdef xrm) :: (get_all_rdefs result) in
+         let _ = ignore (get_string_reference floc result) in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrd]
