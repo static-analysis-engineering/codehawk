@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2023  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -48,6 +48,8 @@ type testdatatype_t =
   | Tst_instrx_tags of string list
   | Tst_chif_conditionxprs of
       arm_assembly_instruction_int * arm_assembly_instruction_int * xpr_t list
+  | Tst_arm_conditional_expr of
+      arm_assembly_instruction_int * arm_assembly_instruction_int * xpr_t option
 
 
 class testsupport_t: testsupport_int =
@@ -62,11 +64,16 @@ object (self)
   method request_chif_conditionxprs =
     H.add testdata "chif_conditionxprs" (H.create 3)
 
+  method request_arm_conditional_expr =
+    H.add testdata "arm_conditional_expr" (H.create 3)
+
   method requested_instrx_data = H.mem testdata "instrx_data"
 
   method requested_instrx_tags = H.mem testdata "instrx_tags"
 
   method requested_chif_conditionxprs = H.mem testdata "chif_conditionxprs"
+
+  method requested_arm_conditional_expr = H.mem testdata "arm_conditional_expr"
 
   method submit_instrx_data
            (iaddr: doubleword_int)
@@ -78,15 +85,6 @@ object (self)
         iaddr#to_hex_string
         (Tst_instrx_data (vars, xprs))
 
-  method submit_instrx_tags
-           (iaddr: doubleword_int)
-           (tags: string list) =
-    if H.mem testdata "instrx_tags" then
-      H.add
-        (H.find testdata "instrx_tags")
-        iaddr#to_hex_string
-        (Tst_instrx_tags tags)
-
   method retrieve_instrx_data (iaddr: string) =
     if H.mem testdata "instrx_data" then
       if H.mem (H.find testdata "instrx_data") iaddr then
@@ -97,6 +95,15 @@ object (self)
         Error ["no data submitted for instrx_data for iaddr: " ^ iaddr]
     else
       Error ["no request made for instrx_data "]
+
+  method submit_instrx_tags
+           (iaddr: doubleword_int)
+           (tags: string list) =
+    if H.mem testdata "instrx_tags" then
+      H.add
+        (H.find testdata "instrx_tags")
+        iaddr#to_hex_string
+        (Tst_instrx_tags tags)
 
   method retrieve_instrx_tags (iaddr: string) =
     if H.mem testdata "instrx_tags" then
@@ -127,7 +134,8 @@ object (self)
            Ok (consumer, producer, xprs)
         | _ -> Error ["retrieve_chif_conditionxprs: internal error"]
       else
-        let keys = H.fold (fun k _ v -> k::v) (H.find testdata "chif_conditionxprs") [] in
+        let keys =
+          H.fold (fun k _ v -> k::v) (H.find testdata "chif_conditionxprs") [] in
         Error [
             "no data submitted for chif_conditionxprs for iaddr: "
             ^ iaddr
@@ -136,6 +144,36 @@ object (self)
             ^ ")]"]
     else
       Error ["no request made for chif_conditionxprs"]
+
+  method submit_arm_conditional_expr
+           (consumer: arm_assembly_instruction_int)
+           (producer: arm_assembly_instruction_int)
+           (optexpr: xpr_t option) =
+    if H.mem testdata "arm_conditional_expr" then
+      H.add
+        (H.find testdata "arm_conditional_expr")
+        consumer#get_address#to_hex_string
+        (Tst_arm_conditional_expr (consumer, producer, optexpr))
+
+  method retrieve_arm_conditional_expr (iaddr: string) =
+    if H.mem testdata "arm_conditional_expr" then
+      if H.mem (H.find testdata "arm_conditional_expr") iaddr then
+        match (H.find (H.find testdata "arm_conditional_expr") iaddr) with
+        | Tst_arm_conditional_expr (consumer, producer, optexpr) ->
+           Ok (consumer, producer, optexpr)
+        | _ -> Error ["retrieve_arm_conditional_expr: internal error"]
+      else
+        let keys =
+          H.fold (fun k _ v -> k::v)
+            (H.find testdata "arm_conditional_expr") [] in
+        Error [
+            "no data submitted for arm_conditional_expr for iaddr: "
+            ^ iaddr
+            ^ " (values found: ["
+            ^ (String.concat "," keys)
+            ^ ")]"]
+    else
+      Error ["no request made for arm_conditional_expr"]
 
 end
 

@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2023 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -43,7 +43,13 @@ open BCHBCTypes
 open BCHLibTypes
 
 
-type cps_effect_t =  (* change processor status *)
+(** {b Principal type definitions for [bchlibarm32].} *)
+
+
+(** {1 Operand components}*)
+
+(** Change processor status*)
+type cps_effect_t =
   | Interrupt_Enable
   | Interrupt_Disable
   | Interrupt_NoChange
@@ -216,9 +222,12 @@ class type arm_operand_int =
   end
 
 
-type not_code_t = JumpTable of jumptable_int | DataBlock of data_block_int  
+(** {1 Assembly opcodes}*)
+
+type not_code_t = JumpTable of jumptable_int | DataBlock of data_block_int
 
 
+(** Opcode condition codes *)
 type arm_opcode_cc_t =
   | ACCEqual
   | ACCNotEqual
@@ -446,7 +455,7 @@ type arm_opcode_t =
       * arm_opcode_cc_t (* condition *)
       * arm_operand_int (* rn: base *)
       * arm_operand_int (* rl: register list *)
-      * arm_operand_int (* mem: multiple memory locations *)    
+      * arm_operand_int (* mem: multiple memory locations *)
   | LoadRegister of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rt: destination *)
@@ -1363,6 +1372,8 @@ type arm_opcode_t =
   | NotCode of not_code_t option
 
 
+(** {1 Opcode Dictionary}*)
+
 class type arm_dictionary_int =
   object
 
@@ -1388,6 +1399,7 @@ class type arm_dictionary_int =
 
   end
 
+(** {1 Assembly code}*)
 
 class type arm_assembly_instruction_int =
   object
@@ -1582,7 +1594,7 @@ class type arm_callsites_records_int =
 
     method summary_to_pretty: pretty_t
     method toPretty: pretty_t
-  end         
+  end
 
 
 class type arm_assembly_instructions_int =
@@ -1661,7 +1673,7 @@ class type arm_assembly_instructions_int =
     method is_code_address: doubleword_int -> bool
 
     (** [has_next_valid_instruction va] returns true if [va] is a virtual address
-        within the code and there exists a virtual address with a valid instruction 
+        within the code and there exists a virtual address with a valid instruction
         that is strictly larger than [va].*)
     method has_next_valid_instruction: doubleword_int -> bool
     method has_aggregate: doubleword_int -> bool
@@ -1818,7 +1830,7 @@ class type arm_assembly_functions_int =
              * int   (* multiplicity *)
     method get_num_functions: int
 
-    (** Returns a map of virtual addresses in a code section to lists of 
+    (** Returns a map of virtual addresses in a code section to lists of
         instructions that load the contents of the corresponding memory
         locations.*)
     method get_data_references:
@@ -1842,6 +1854,8 @@ class type arm_assembly_functions_int =
 
   end
 
+
+(** {1 CHIF translation}*)
 
 class type arm_code_pc_int =
   object
@@ -1885,6 +1899,8 @@ class type arm_chif_system_int =
   end
 
 
+(** {1 Analysis results}*)
+
 class type arm_opcode_dictionary_int =
   object
 
@@ -1927,36 +1943,79 @@ class type arm_analysis_results_int =
   end
 
 
+(** {1 Test support}*)
+
+(** Support for servicing data to unit tests.
+
+    Unit tests sometimes need access to data that is produced as part of the
+    disassembly, function construction, or analysis, but that is not easily
+    made available directly as part of the functions called by the unit test
+    itself. This data structure allows a unit test to request a particular
+    type of data, which will then be submitted in the course of the functions
+    called and can afterwards be retrieved here by the unit test for inspection
+    and comparison.
+*)
 class type testsupport_int =
   object
-    (* requests *)
+
+    (** {1 Instrx data}
+        Instrx data submitted is identified by the address of the instruction.
+        Submission is via doubleword, retrieval is via hex address.*)
+
     method request_instrx_data: unit
-    method request_instrx_tags: unit
-    method request_chif_conditionxprs: unit
-
-    (* predicates *)
     method requested_instrx_data: bool
-    method requested_instrx_tags: bool
-    method requested_chif_conditionxprs: bool
-
-    (* data submissions *)
     method submit_instrx_data:
              doubleword_int -> variable_t list -> xpr_t list -> unit
+    method retrieve_instrx_data:
+             string -> (variable_t list * xpr_t list) traceresult
+
+    (** {1 Instrx tags}
+        Instrx tags submitted is identified by the address of the instruction.
+        Submission is via doubleword, retrieval is via hex address.*)
+
+    method request_instrx_tags: unit
+    method requested_instrx_tags: bool
     method submit_instrx_tags: doubleword_int -> string list -> unit
+    method retrieve_instrx_tags: string -> (string list) traceresult
+
+    (** {1 CHIF condition exprs}
+        CHIF condition expressions are submitted with the conditional
+        jump instruction, the test setting instruction, and the
+        expressions that are converted to CHIF. They are retrieved using
+        the hex address of the conditional jump instruction.*)
+
+    method request_chif_conditionxprs: unit
+    method requested_chif_conditionxprs: bool
     method submit_chif_conditionxprs:
              arm_assembly_instruction_int
              -> arm_assembly_instruction_int
              -> xpr_t list
              -> unit
-
-    (* data retrievals *)
-    method retrieve_instrx_data:
-             string -> (variable_t list * xpr_t list) traceresult
-    method retrieve_instrx_tags: string -> (string list) traceresult
     method retrieve_chif_conditionxprs:
              string
              -> (arm_assembly_instruction_int
                  * arm_assembly_instruction_int
                  * xpr_t list) traceresult
+
+    (** {1 ARM conditional exprs}
+        ARM conditional expressions are the expressions constructed from a
+        combination of a condition code and a test. They are submiited with
+        the instruction that consumes the resulting predicate, the instruction
+        that provides the test, and the (optional) expression generated. They
+        are retrieved using the hex address of the instruction that consumes
+        the predicate.*)
+
+    method request_arm_conditional_expr: unit
+    method requested_arm_conditional_expr: bool
+    method submit_arm_conditional_expr:
+             arm_assembly_instruction_int
+             -> arm_assembly_instruction_int
+             -> xpr_t option
+             -> unit
+    method retrieve_arm_conditional_expr:
+             string
+             -> (arm_assembly_instruction_int
+                 * arm_assembly_instruction_int
+                 * xpr_t option) traceresult
 
   end

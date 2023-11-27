@@ -313,6 +313,10 @@ let make_tests
         ~condloc
         ~testloc in
 
+  let _ =
+    if testsupport#requested_arm_conditional_expr then
+      testsupport#submit_arm_conditional_expr condinstr testinstr optboolxpr in
+
   let convert_to_chif ?(high=true) expr =
     let vars = variables_in_expr expr in
     let varscmds =
@@ -722,6 +726,9 @@ let translate_arm_instruction
      let xrm = rm#to_expr floc in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let result = XOp (XPlus, [xrn; xrm]) in
+     let result =
+       floc#inv#rewrite_expr result floc#env#get_variable_comparator in
+     let result = simplify_xpr result in
      let result =
        match result with
        | XConst (IntConst n) when n#geq numerical_e32 ->
