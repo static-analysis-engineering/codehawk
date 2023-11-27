@@ -100,6 +100,7 @@ object (self)
   val mutable apps_dir = None
   val mutable app_name = None
   val mutable exclude_debug = false
+  val mutable ssa = false
 
   method set_verbose = verbose <- true
 
@@ -134,6 +135,10 @@ object (self)
   method include_arm_extension_registers = arm_extension_registers
 
   method exclude_debug = exclude_debug <- true
+
+  method set_ssa = ssa <- true
+
+  method use_ssa = ssa
 
   method set_thumb =
     begin

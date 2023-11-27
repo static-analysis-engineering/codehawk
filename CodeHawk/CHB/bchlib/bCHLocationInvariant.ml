@@ -606,6 +606,8 @@ object (self)
                      ch_error_log#add
                        "multiple ssa-equalities"
                        (LBLOCK [
+                            STR iaddr;
+                            STR ": ";
                             STR "existing; ";
                             sv#toPretty;
                             STR "; new: ";
@@ -622,6 +624,8 @@ object (self)
                      ch_error_log#add
                        "multiple existing ssa-equalities"
                        (LBLOCK [
+                            STR iaddr;
+                            STR ": ";
                             STR "existing: ";
                             pretty_print_list
                               sfacts (fun p -> p#toPretty) "[" ", " "]; ";
