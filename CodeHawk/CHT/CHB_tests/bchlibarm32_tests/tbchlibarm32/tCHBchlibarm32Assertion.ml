@@ -95,6 +95,16 @@ let equal_chif_conditionxprs
        A.fail expected (String.concat "," xs) msg
 
 
+let equal_arm_conditional_expr
+      ?(msg="")
+      ~(expected: string)
+      ~(received: xpr_t option)
+      () =
+  match received with
+  | None -> A.fail expected "no expression" msg
+  | Some x -> A.equal_string ~msg expected (x2s x)
+
+
 let equal_instrxdata_conditionxprs
       ?(msg="")
       ~(expected: string)

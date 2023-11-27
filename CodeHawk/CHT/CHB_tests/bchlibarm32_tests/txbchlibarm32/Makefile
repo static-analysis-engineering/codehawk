@@ -84,6 +84,7 @@ all: make_dirs \
 	bCHThumbITSequenceTest \
 	bCHARMJumptableTest \
 	bCHARMAssemblyFunctionTest \
+	bCHARMConditionalExprTest \
 	bCHTranslateARMToCHIFTest \
 	bCHFnARMDictionaryTest \
 
@@ -108,6 +109,9 @@ bCHThumbITSequenceTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil
 bCHARMJumptableTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHARMJumptableTest.cmi cmx/bCHARMJumptableTest.cmx
 	$(CAMLLINK) -o bCHARMJumptableTest $(OBJECTS) cmx/bCHARMJumptableTest.cmx
 
+bCHARMConditionalExprTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHARMConditionalExprTest.cmi cmx/bCHARMConditionalExprTest.cmx
+	$(CAMLLINK) -o bCHARMConditionalExprTest $(OBJECTS) cmx/bCHARMConditionalExprTest.cmx
+
 bCHTranslateARMToCHIFTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa $(BCHARMTESTLIB)/tbchlibarm32.cmxa cmi/bCHTranslateARMToCHIFTest.cmi cmx/bCHTranslateARMToCHIFTest.cmx
 	$(CAMLLINK) -o bCHTranslateARMToCHIFTest $(OBJECTS) cmx/bCHTranslateARMToCHIFTest.cmx
 
@@ -118,12 +122,13 @@ bCHFnARMDictionaryTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil
 	$(CAMLLINK) -o bCHFnARMDictionaryTest $(OBJECTS) cmx/bCHFnARMDictionaryTest.cmx
 
 
-run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHThumbITSequenceTest bCHARMJumptableTest bCHARMAssemblyFunctionTest bCHTranslateARMToCHIFTest bCHFnARMDictionaryTest
+run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHThumbITSequenceTest bCHARMJumptableTest bCHARMAssemblyFunctionTest bCHARMConditionalExprTest bCHTranslateARMToCHIFTest bCHFnARMDictionaryTest
 	./bCHDisassembleARMInstructionTest
 	./bCHDisassembleThumbInstructionTest
 	./bCHThumbITSequenceTest
 	./bCHARMJumptableTest
 	./bCHARMAssemblyFunctionTest
+	./bCHARMConditionalExprTest
 	./bCHTranslateARMToCHIFTest
 	./bCHFnARMDictionaryTest
 
@@ -151,6 +156,7 @@ clean:
 	rm -f bCHDisassembleARMInstructionTest
 	rm -f bCHThumbITSequenceTest
 	rm -f bCHARMJumptableTest
+	rm -f bCHARMCondtiionalTest
 	rm -f bCHTranslateARMToCHIFTest
 	rm -f bCHARMAssemblyFunctionTest
 	rm -f bCHFnARMDictionaryTest

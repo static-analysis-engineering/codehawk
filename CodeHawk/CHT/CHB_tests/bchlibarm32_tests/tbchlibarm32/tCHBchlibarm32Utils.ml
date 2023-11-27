@@ -103,8 +103,11 @@ let arm_function_setup
     done;
     let _ = set_block_boundaries () in
     let (_, fn) = construct_arm_assembly_function faddr in
-    arm_assembly_functions#add_function fn;
-    fn
+    begin
+      arm_assembly_functions#add_function fn;
+      associate_condition_code_users ();
+      fn
+    end
   end
 
 
