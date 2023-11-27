@@ -1360,6 +1360,7 @@ object
   method add_so_library: string -> unit    (* name of so-library *)
   method set_jsignature_jar: string -> unit
   method set_verbose: unit
+  method set_ssa: unit
   method set_show_function_timing: unit
   method set_gc_compact_function_interval: int -> unit
   method set_lineq_instr_cutoff: int -> unit
@@ -1391,6 +1392,7 @@ object
   method is_abstract_stackvars_disabled: bool
   method is_set_vftables_enabled: bool
   method has_thumb: bool
+  method use_ssa: bool
   method include_arm_extension_registers: bool
   method show_function_timing: bool
   method is_lineq_restricted: blocks:int -> instrs:int -> bool

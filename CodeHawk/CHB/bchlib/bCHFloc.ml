@@ -1506,29 +1506,35 @@ object (self)
      let reqC = self#env#request_num_constant in
      let (rhscmds, rhs_chif) = xpr_to_numexpr reqN reqC rhsx_assign in
      let regvar = self#env#mk_register_variable reg in
-     let hasvarintro = system_info#has_variable_intro self#ia in
-     let ssavar =
-       if hasvarintro then
-         let name = system_info#get_variable_intro_name self#ia in
-         self#env#mk_ssa_register_value ~name:(Some name) reg self#cia vtype
-       else
-         self#env#mk_ssa_register_value reg self#cia vtype in
-     let assigns =
-       if (self#is_composite_symbolic_value rhsx) then
-         [ASSIGN_NUM (regvar, rhs_chif)]
-       else
-         let _ =
-           chlog#add
-             "attach ssavar"
-             (LBLOCK [
-                  STR self#cia;
-                  STR ": ";
-                  ssavar#toPretty;
-                  STR ": ";
-                  x2p rhsx_assign]) in
-         let cmds = self#get_vardef_commands ~defs:[ssavar] self#cia in
-         [ASSIGN_NUM (regvar, rhs_chif); ASSERT (EQ (regvar, ssavar))] @ cmds in
-     (regvar, rhscmds @ assigns)
+
+     if system_settings#use_ssa then
+       let hasvarintro = system_info#has_variable_intro self#ia in
+       let ssavar =
+         if hasvarintro then
+           let name = system_info#get_variable_intro_name self#ia in
+           self#env#mk_ssa_register_value ~name:(Some name) reg self#cia vtype
+         else
+           self#env#mk_ssa_register_value reg self#cia vtype in
+       let assigns =
+         if (self#is_composite_symbolic_value rhsx) then
+           [ASSIGN_NUM (regvar, rhs_chif)]
+         else
+           let _ =
+             chlog#add
+               "attach ssavar"
+               (LBLOCK [
+                    STR self#cia;
+                    STR ": ";
+                    ssavar#toPretty;
+                    STR ": ";
+                    x2p rhsx_assign]) in
+           let cmds = self#get_vardef_commands ~defs:[ssavar] self#cia in
+           [ASSIGN_NUM (ssavar, rhs_chif);
+            ASSIGN_NUM (regvar, NUM_VAR ssavar)] @ cmds in
+       (regvar, rhscmds @ assigns)
+     else
+       let assigns = [ASSIGN_NUM (regvar, rhs_chif)] in
+       (regvar, rhscmds @ assigns)
 
    method get_vardef_commands
             ?(defs: variable_t list = [])
@@ -1630,15 +1636,18 @@ object (self)
 
    method get_ssa_abstract_commands
             (reg: register_t) ?(vtype=t_unknown) () =
-     let hasvarintro = system_info#has_variable_intro self#ia in
-     let ssavar =
-       if hasvarintro then
-         let name = system_info#get_variable_intro_name self#ia in
-         self#env#mk_ssa_register_value ~name:(Some name) reg self#cia vtype
-       else
-         self#env#mk_ssa_register_value reg self#cia vtype in
      let regvar = self#env#mk_register_variable reg in
-     (regvar, [ASSIGN_NUM (regvar, NUM_VAR ssavar)])
+     if system_settings#use_ssa then
+       let hasvarintro = system_info#has_variable_intro self#ia in
+       let ssavar =
+         if hasvarintro then
+           let name = system_info#get_variable_intro_name self#ia in
+           self#env#mk_ssa_register_value ~name:(Some name) reg self#cia vtype
+         else
+           self#env#mk_ssa_register_value reg self#cia vtype in
+       (regvar, [ASSIGN_NUM (regvar, NUM_VAR ssavar)])
+     else
+       (regvar, [ABSTRACT_VARS [regvar]])
 
    method get_abstract_cpu_registers_command (regs:cpureg_t list) =
      let regs =

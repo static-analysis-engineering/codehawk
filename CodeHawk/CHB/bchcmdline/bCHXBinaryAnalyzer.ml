@@ -134,7 +134,9 @@ let speclist =
     ("-set_vftables",Arg.Unit  (fun () -> system_settings#set_vftables),
      "declare jumptable targets as funcion entry points") ;
     ("-extracthex", Arg.Unit (fun () -> cmd := "extracthex"),
-     "extract executable content from lisphex encoded executable") ;
+     "extract executable content from lisphex encoded executable");
+    ("-ssa", Arg.Unit (fun () -> system_settings#set_ssa),
+     "use static single assignment for register assignments");
     ("-stream", Arg.Unit (fun () -> cmd := "stream"),
      "stream disassemble a hex-encoded stream of bytes");
     ("-startaddress",  Arg.String set_stream_start_address,
