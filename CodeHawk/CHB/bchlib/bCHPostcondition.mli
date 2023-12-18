@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,18 +38,28 @@ open BCHBCTypes
 open BCHLibTypes
 
 
-val postcondition_to_pretty: postcondition_t -> pretty_t
-
+(** [read_xml_postcondition node thisf pars] returns the postcondition
+    predicate encoded in the xml node [node] for the function identified
+    by [thisf] with parameters [pars]*)
 val read_xml_postcondition:
-  xml_element_int -> fts_parameter_t list -> postcondition_t
-  
-val read_xml_postconditions:
-  xml_element_int -> fts_parameter_t list -> postcondition_t list
-  
-val read_xml_errorpostconditions:
-  xml_element_int -> fts_parameter_t list -> postcondition_t list
-  
-val read_xml_shortcut_postconditions: 
-  xml_element_int -> (postcondition_t list * postcondition_t list)
+  xml_element_int -> bterm_t -> fts_parameter_t list -> xxpredicate_t
 
-val modify_types_post: type_transformer_t -> postcondition_t -> postcondition_t
+
+(** [read_xml_postconditions node thisf pars] returns the list of
+    postcondition predicates contained in the xml node [node] for the
+    function identified by [thisf] with parameters [pars]*)
+val read_xml_postconditions:
+  xml_element_int -> bterm_t -> fts_parameter_t list -> xxpredicate_t list
+
+
+(** [read_xml_errorpostconditions node thisf pars] returns the list of
+    error-postcondition predicates contained in the xml node [node] for
+    the function identified by [thisf] with parameters [pars]*)
+val read_xml_errorpostconditions:
+  xml_element_int -> bterm_t -> fts_parameter_t list -> xxpredicate_t list
+
+
+(** returns a tuple of postconditions and error-postconditions read
+    from a single xml node containing short-cut postconditions.*)
+val read_xml_shortcut_postconditions:
+  xml_element_int -> bterm_t -> (xxpredicate_t list * xxpredicate_t list)

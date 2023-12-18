@@ -4,9 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,15 +31,59 @@ open CHPretty
 (* chutil *)
 open CHXmlDocument
 
+(* xprlib *)
+open XprTypes
+
 (* bchlib *)
 open BCHBCTypes
 open BCHLibTypes
 
 
-val read_xml_par_sideeffects: xml_element_int -> bterm_t -> xxpredicate_t list
+(** {1 Comparison}*)
 
-val read_xml_sideeffect:
-  xml_element_int -> bterm_t -> fts_parameter_t list -> xxpredicate_t
+(** compares two xxpredicates with respect to predicate and arguments.
 
-val read_xml_sideeffects:
-  xml_element_int -> bterm_t -> fts_parameter_t list -> xxpredicate_t list
+    Two xxpredicates are considered equal if they have the same predicate
+    and their principal arguments are the same (that is, the xxpredicate
+    serves the same role).
+ *)
+val xxpredicate_compare: xxpredicate_t -> xxpredicate_t -> int
+
+
+(** {1 Modification}*)
+
+(** [modify_types_xxp tr xxp] returns an xxpredicate in which the types have
+    been transformed according to [tr].
+
+    This is mostly used in the processing of windows library function where
+    the summary is generic that can be specialized to either the ASCII version
+    or the wide-character version.*)
+val modify_types_xxp: type_transformer_t -> xxpredicate_t -> xxpredicate_t
+
+
+(** {1 Conversion}*)
+
+val relational_op_to_xop: relational_op_t -> xop_t
+
+val xop_to_relational_op: xop_t -> relational_op_t
+
+
+(** {1 Accessors}*)
+
+val is_relational_xop: xop_t -> bool
+
+val is_relational_operator: string -> bool
+
+val get_relational_operator: string -> relational_op_t
+
+(** returns the list of terms that appear in the xxpredicate *)
+val xxpredicate_terms: xxpredicate_t -> bterm_t list
+
+
+(** {1 Printing}*)
+
+val relational_op_to_string: relational_op_t -> string
+
+val relational_op_to_xml_string: relational_op_t -> string
+
+val xxpredicate_to_pretty: xxpredicate_t -> pretty_t

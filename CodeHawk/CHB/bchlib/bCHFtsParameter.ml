@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -52,10 +52,15 @@ open BCHXmlUtil
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
+    LBLOCK [
+        STR "(";
+        INT node#getLineNumber;
+        STR ",";
+	INT node#getColumnNumber;
+        STR ") ";
+        msg] in
   begin
-    ch_error_log#add "xml parse error" error_msg ;
+    ch_error_log#add "xml parse error" error_msg;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
 
@@ -64,11 +69,13 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
 let calling_convention_to_string =
   function StdCall -> "stdcall" | CDecl -> "cdecl"
 
+
 let arg_io_to_string (i:arg_io_t) =
   match i with
   | ArgRead -> "r"
   | ArgWrite -> "w"
   | ArgReadWrite -> "rw"
+
 
 let formatstring_type_to_string (t:formatstring_type_t) =
   match t with
@@ -76,14 +83,21 @@ let formatstring_type_to_string (t:formatstring_type_t) =
   | PrintFormat -> "print"
   | ScanFormat -> "scan"
 
+
 let parameter_location_to_string = function
   | StackParameter i -> "s_arg " ^ (string_of_int i)
   | RegisterParameter r -> "r_arg " ^ (register_to_string r)
   | GlobalParameter g -> "g_arg " ^ g#to_hex_string
   | UnknownParameterLocation -> "unknown"
 
+
 let fts_parameter_to_pretty (p: fts_parameter_t) =
-  LBLOCK [STR p.apar_name ; STR ": "; btype_to_pretty p.apar_type]
+  LBLOCK [
+      STR (parameter_location_to_string p.apar_location);
+      STR " ";
+      STR p.apar_name;
+      STR ": ";
+      btype_to_pretty p.apar_type]
 
 (* --------------------------------------------------------------- comparison *)
 
@@ -98,11 +112,15 @@ let parameter_location_compare l1 l2 =
   | (GlobalParameter dw1, GlobalParameter dw2) -> dw1#compare dw2
   | (GlobalParameter _, _) -> -1
   | (_, GlobalParameter _) -> 1
-  | (UnknownParameterLocation, UnknownParameterLocation) -> 0 
+  | (UnknownParameterLocation, UnknownParameterLocation) -> 0
 
 
 let fts_parameter_compare (p1: fts_parameter_t) (p2: fts_parameter_t) =
   parameter_location_compare p1.apar_location p2.apar_location
+
+
+let fts_parameter_equal (p1: fts_parameter_t) (p2: fts_parameter_t) =
+  (fts_parameter_compare p1 p2) = 0
 
 
 let read_xml_arg_io (s:string) =
@@ -114,6 +132,7 @@ let read_xml_arg_io (s:string) =
      raise
        (BCH_failure
           (LBLOCK [STR "Arg io "; STR s; STR " not recognized"]))
+
 
 let read_xml_formatstring_type (s:string) =
   match s with
@@ -127,7 +146,7 @@ let read_xml_formatstring_type (s:string) =
 
 
 let read_xml_roles (node:xml_element_int) =
-  List.map (fun n -> 
+  List.map (fun n ->
       let get = n#getAttribute in
       (get "rt", get "rn")) (node#getTaggedChildren "role")
 
@@ -141,7 +160,7 @@ let read_xml_parameter_location (node:xml_element_int):parameter_location_t =
          (STR ("BCHFtsParameter.read_xml_parameter_location:" ^ s)))
       (string_to_doubleword s) in
   match get "loc" with
-  | "stack" -> StackParameter (geti "nr") 
+  | "stack" -> StackParameter (geti "nr")
   | "register" -> RegisterParameter (register_from_string (get "reg"))
   | "global" -> GlobalParameter (getx (get "dw"))
   | "unknown" -> UnknownParameterLocation
@@ -161,15 +180,15 @@ let read_xml_fts_parameter (node:xml_element_int): fts_parameter_t =
   let geti = node#getIntAttribute in
   let getc = node#getTaggedChild in
   let has = node#hasNamedAttribute in
-  let hasc = node#hasOneTaggedChild in 
+  let hasc = node#hasOneTaggedChild in
   let tNode = if hasc "type" then getc "type" else getc "btype" in
-  { apar_name = get "name" ;
-    apar_desc = (if has "desc" then get "desc" else "") ;
-    apar_roles = (if hasc "roles" then read_xml_roles (getc "roles") else []) ;
-    apar_io = (if has "io" then read_xml_arg_io (get "io") else ArgReadWrite) ;
-    apar_size = (if has "size" then geti "size" else 4) ;
-    apar_type = read_xml_type tNode ;
-    apar_location = read_xml_parameter_location node ;
+  { apar_name = get "name";
+    apar_desc = (if has "desc" then get "desc" else "");
+    apar_roles = (if hasc "roles" then read_xml_roles (getc "roles") else []);
+    apar_io = (if has "io" then read_xml_arg_io (get "io") else ArgReadWrite);
+    apar_size = (if has "size" then geti "size" else 4);
+    apar_type = read_xml_type tNode;
+    apar_location = read_xml_parameter_location node;
     apar_fmt =
       (if has "fmt" then read_xml_formatstring_type (get "fmt") else NoFormat)
   }
@@ -216,11 +235,14 @@ let default_fts_parameter = {
   apar_fmt = NoFormat
 }
 
+
 let modify_types_par (f:type_transformer_t) (p: fts_parameter_t) =
   { p with apar_type = modify_type f p.apar_type }
 
+
 let modify_name_par (name:string) (p: fts_parameter_t) =
   { p with apar_name = name }
+
 
 let mk_global_parameter
       ?(btype=t_unknown)
@@ -239,6 +261,7 @@ let mk_global_parameter
      apar_location = GlobalParameter gaddr ;
      apar_fmt = fmt
   }
+
 
 let mk_stack_parameter
       ?(btype=t_unknown)
@@ -259,6 +282,7 @@ let mk_stack_parameter
     apar_fmt = fmt;
     apar_location = StackParameter arg_index
   }
+
 
 let mk_register_parameter
       ?(name="")
@@ -346,5 +370,5 @@ let convert_fmt_spec_arg
       | _ -> ArgRead);
     apar_fmt = NoFormat;
     apar_size = 4;
-    apar_location = StackParameter index
+    apar_location = StackParameter (index + 1)
   }
