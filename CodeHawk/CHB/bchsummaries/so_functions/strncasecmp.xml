@@ -46,7 +46,7 @@
       <math>
        <apply>
         <deref-read/>
-        <btype tname="char" ttag="tnamed"/>
+        <type>char</type>
         <ci>string1</ci>
         <ci>count</ci>
        </apply>
@@ -56,7 +56,7 @@
       <math>
        <apply>
         <deref-read/>
-        <btype tname="char" ttag="tnamed"/>
+        <type>char</type>
         <ci>string2</ci>
         <ci>count</ci>
        </apply>

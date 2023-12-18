@@ -96,7 +96,7 @@
       <math>
        <apply>
         <block-write/>
-        <btype tname="char" ttag="tnamed"/>
+        <type>char</type>
         <ci>buffer</ci>
         <ci>count</ci>
        </apply>

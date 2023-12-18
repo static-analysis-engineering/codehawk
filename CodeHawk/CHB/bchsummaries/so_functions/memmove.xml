@@ -79,7 +79,7 @@
       <math>
        <apply>
         <block-write/>
-        <btype tname="byte" ttag="tnamed"/>
+        <type>byte</type>
         <ci>dest</ci>
         <ci>count</ci>
        </apply>

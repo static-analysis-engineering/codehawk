@@ -21,7 +21,7 @@
      <roles>
       <role rt="ioc:memops" rn="src-bytes:file output" />
      </roles>
-     <btype tname="int" ttag="tnamed"/>
+     <type>int</type>
     </par>
     <par loc="stack" io="r" name="stream" rep="hex" nr="2">
      <roles>

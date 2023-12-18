@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <header date="2023-12-03 13:11:14"/>
+  <reference href="https://pubs.opengroup.org/onlinepubs/9699919799/"/>
+  <libfun lib="so_functions" name="readlink">
+    <documentation>
+      <desc>reads the contents of a symbolic link</desc>
+      <apidoc>
+        <pt>
+          <ll>ssize_t readlink(</ll>
+          <ld>const char *restrict path</ld>
+          <ld>char *restrict buf</ld>
+          <ld>size_t bufsize</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="path">path name</par>
+        <par name="buf">address of buffer to save the contents</par>
+        <par name="bufsize">size of the buffer in bytes</par>
+        <return>
+          <rc cond="success">count of bytes placed in the buffer</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api cc="cdecl" adj="0" name="readlink">
+      <par loc="stack" io="r" name="path" nr="1" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" io="w" name="buf" nr="2" rep="hex">
+        <type><ptr>char</ptr></type>
+	<pre><not-null/></pre>
+      </par>
+      <par loc="stack" name="bufsize" nr="3">
+        <type>size_t</type>
+      </par>
+      <returntype>ssize_t</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="fileops" desc="copies contents of a symbolic link"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>buf</ci>
+	      <ci>bufsize</ci>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <ci>bufsize</ci>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>buf</ci>
+	      <ci>bufsize</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2023, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
