@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -46,6 +46,7 @@ open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypeUtil
 open BCHCallTarget
 open BCHCodegraph
 open BCHCPURegisters
@@ -85,7 +86,7 @@ let x2p = xpr_formatter#pr_expr
 let rec pow a = function
   | 0 -> 1
   | 1 -> a
-  | n -> 
+  | n ->
     let b = pow a (n / 2) in
     b * b * (if n mod 2 = 0 then 1 else a)
 
@@ -101,7 +102,8 @@ let op_bitwise_sll = new symbol_t "bitwise_sll"
 let op_bitwise_srl = new symbol_t "bitwise_srl"
 let op_bitwise_sra = new symbol_t "bitwise_sra"
 
-let make_code_label ?src ?modifier (address:ctxt_iaddress_t) = 
+
+let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
   let name = "pc_" ^ address in
   let atts = match modifier with
     | Some s -> [s] | _ -> [] in
@@ -109,8 +111,13 @@ let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
     | Some s -> s#to_fixed_length_hex_string :: atts | _ -> atts in
   ctxt_string_to_symbol name ~atts address
 
-let get_invariant_label (loc:location_int) =
-  ctxt_string_to_symbol "invariant" loc#ci
+
+let get_invariant_label ?(bwd=false) (loc:location_int) =
+  if bwd then
+    ctxt_string_to_symbol "bwd-invariant" loc#ci
+  else
+    ctxt_string_to_symbol "invariant" loc#ci
+
 
 let package_transaction
       (finfo:function_info_int) (label:symbol_t) (cmds:cmd_t list) =
@@ -119,6 +126,7 @@ let package_transaction
       (fun cmd -> match cmd with SKIP -> false | _ -> true) cmds in
   let cnstAssigns = finfo#env#end_transaction in
   TRANSACTION (label, LF.mkCode (cnstAssigns @ cmds), None)
+
 
 let make_tests
       ~(testloc:location_int)
@@ -228,7 +236,7 @@ let make_tests
   let thencode = make_test_code thenexpr in
   let elsecode = make_test_code elseexpr in
   (frozenvars#listOfValues, thencode, elsecode)
-  
+
 
 let make_condition
       ~(testloc:location_int)
@@ -252,734 +260,1315 @@ let make_condition
   let (elsetestlabel, elsenode) =
     make_node_and_label elsetest  elseiaddr "else" in
   let thenedges =
-    [ (blocklabel, thentestlabel); (thentestlabel, thensucclabel) ] in
+    [(blocklabel, thentestlabel); (thentestlabel, thensucclabel)] in
   let elseedges =
-    [ (blocklabel, elsetestlabel); (elsetestlabel, elsesucclabel) ] in
-  ([ (thentestlabel, thennode); (elsetestlabel, elsenode) ], thenedges @ elseedges )
-  
+    [(blocklabel, elsetestlabel); (elsetestlabel, elsesucclabel)] in
+  ([(thentestlabel, thennode); (elsetestlabel, elsenode)], thenedges @ elseedges)
+
 
 let translate_mips_instruction
-      ~(funloc:location_int)      
+      ~(funloc:location_int)
       ~(codepc:mips_code_pc_int)
       ~(blocklabel:symbol_t)
       ~(exitlabel:symbol_t)
-      ~(cmds:cmd_t list) =                            (* commands carried over *)
+      ~(cmds:cmd_t list) =                         (* commands carried over *)
   let (ctxtiaddr,instr) = codepc#get_next_instruction in
   let faddr = funloc#f in
-  let loc = ctxt_string_to_location faddr ctxtiaddr in  (* instruction location *)
+  let loc = ctxt_string_to_location faddr ctxtiaddr in    (* instr location *)
   let finfo = get_function_info faddr in
-  let env = finfo#env in                       (* function variable environment *)
+  let env = finfo#env in
   let invlabel = get_invariant_label loc in
-  let invop = OPERATION { op_name = invlabel ; op_args = [] } in
+  let invop = OPERATION {op_name = invlabel; op_args = []} in
+  let bwdinvlabel = get_invariant_label ~bwd:true loc in
+  let bwdinvop = OPERATION {op_name = bwdinvlabel; op_args = []} in
   let frozenasserts =
-    List.map (fun (v,fv) -> ASSERT (EQ (v,fv)))
-             (finfo#get_test_variables ctxtiaddr) in
+    List.map (fun (v, fv) -> ASSERT (EQ (v, fv)))
+      (finfo#get_test_variables ctxtiaddr) in
   let rewrite_expr floc x:xpr_t =
-    let xpr = floc#inv#rewrite_expr x floc#env#get_variable_comparator in
+    let xpr = floc#inv#rewrite_expr x env#get_variable_comparator in
     let rec expand x =
       match x with
-      | XVar v when floc#env#is_symbolic_value v ->
-         expand (floc#env#get_symbolic_value_expr v)
-      | XOp (op,l) -> XOp (op, List.map expand l)
+      | XVar v when env#is_symbolic_value v ->
+         expand (env#get_symbolic_value_expr v)
+      | XOp (op, l) -> XOp (op, List.map expand l)
       | _ -> x in
     simplify_xpr (expand xpr) in
-  let default newcmds = ([],[], cmds @ frozenasserts @ (invop :: newcmds)) in
+  let floc = get_floc loc in
+  let default newcmds =
+    ([],[], cmds @ frozenasserts @ (invop :: newcmds) @ [bwdinvop]) in
+
+  let get_register_vars (ops: mips_operand_int list) =
+    List.fold_left (fun acc op ->
+        if op#is_register || op#is_special_register then
+          if not op#is_register_zero then
+            (op#to_variable floc) :: acc
+          else
+            acc
+        else
+          acc) [] ops in
+
+  let get_use_high_vars (xprs: xpr_t list): variable_t list =
+    let inv = floc#inv in
+    let comparator = env#get_variable_comparator in
+    List.fold_left (fun acc x ->
+        let xw = inv#rewrite_expr x comparator in
+        let xs = simplify_xpr xw in
+        let vars = env#variables_in_expr xs in
+        vars @ acc) [] xprs in
+
   match instr#get_opcode with
-  | Add (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs (XOp (XPlus, [rhs1; rhs2])) in
-     default (lhscmds @ cmds)
-     
-  | AddImmediate (dst,src,imm) ->
-     let floc = get_floc loc in
-     let rhs1 = src#to_expr floc in
-     let rhs2 = imm#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs (XOp (XPlus, [ rhs1 ; rhs2 ])) in
-     default (lhscmds @ cmds)
-     
-  | AddImmediateUnsigned (dst,src,imm) ->
-     let floc = get_floc loc in
-     let rhs1 = src#to_expr floc in
-     let rhs2 = imm#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs  (XOp (XPlus, [ rhs1 ; rhs2 ])) in
-     default (lhscmds @ cmds)
+  | Add (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XPlus, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_int result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
 
-  | AddUpperImmediate (dst,src,imm) ->
-     let floc = get_floc loc in
-     let rhs1 = src#to_expr floc in
-     let rhs2 = num_constant_expr (imm#to_numerical#mult (mkNumerical (256 * 256))) in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs (XOp (XPlus, [ rhs1 ; rhs2 ])) in
-     default (lhscmds @ cmds)
+  (* Format: ADDI rt, rs, immediate
+     Description: GPR[rt] <- GPR[rs] + immediate
+     The 16-bit signed immediate is added to the 32-bit value in GPR rs
+     to produce a 32-bit result.
+     If the addition results in 32-bit 2's complement arithmetic overflow,
+     the destination register is not modified and an Integer Overflow
+     exception occurs. If the addition does not overflow, the 32-bit result
+     is placed into GRP rt.
+   *)
+  | AddImmediate (rt, rs, imm) ->
+     let rtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let ximm = imm#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let result = XOp (XPlus, [xrs; ximm]) in
+     let (vrt, cmds) =
+       floc#get_ssa_assign_commands rtreg ~vtype:t_int result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
 
-  | AddUnsigned (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs (XOp (XPlus, [ rhs1 ; rhs2 ])) in
-     default (lhscmds @ cmds)
+  (* Format: ADDIU rt, rs, immediate
+     Description: GPR[rt] <- GPR[rs] + immediate
+     The 16-bit signed immediate is added to the 32-bit value in GPR
+     rs and the 32-bit arithmetic result is placed into GPT rt.
 
-  | CountLeadingZeros (dst,src) ->
+     Note: The term 'unsigned' in the instruction name is a misnomer;
+     this operation is 32-bit modulo arithmetic that does not trap on
+     overflow. This instruction is appropriate for unsigned arithmetic,
+     such as address arithmetic, or integer arithmetic environments that
+     ignore overflow, such as C language arithmetic.
+   *)
+  | AddImmediateUnsigned (rt, rs, imm) ->
+     let rtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let ximm = imm#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let result = XOp (XPlus, [xrs; ximm]) in
+     let (vrt, cmds) =
+       floc#get_ssa_assign_commands rtreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | AddUpperImmediate (rt, rs, imm) ->
+     let rtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let ximm =
+       num_constant_expr (imm#to_numerical#mult (mkNumerical (256 * 256))) in
+     let usehigh = get_use_high_vars [xrs] in
+     let result = XOp (XPlus, [xrs; ximm]) in
+     let (vrt, cmds) =
+       floc#get_ssa_assign_commands rtreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | AddUnsigned (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XPlus, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | And (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XBAnd, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | AndImmediate (rt, rs, imm) ->
+     let rtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let ximm = imm#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let result = XOp (XBAnd, [xrs; ximm]) in
+     let (vrt, cmds) =
+       floc#get_ssa_assign_commands rtreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | BranchEqual (rs, rt, _) ->
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchEqualLikely (rs, rt, _) ->
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchFPFalse _ -> default []
+
+  | BranchFPFalseLikely _ -> default []
+
+  | BranchFPTrue _ -> default []
+
+  | BranchFPTrueLikely _ -> default []
+
+  | BranchGEZero (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchGEZeroLikely (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchGEZeroLink (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchGTZero (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchGTZeroLikely (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchLEZero (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchLEZeroLikely (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchLink _ ->
+     default (get_floc loc)#get_mips_call_commands
+
+  | BranchLTZero (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchLTZeroLikely (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchLTZeroLink (rs, _) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchNotEqual (rs, rt, _) ->
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | BranchNotEqualLikely (rs, rt, _) ->
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | ControlWordFromFP (rt, fs) ->
+     let rtreg = rt#to_register in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg ~vtype:t_uint () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     default cmds
+
+  | ControlWordToFP (rt, fs) ->
+     let xrt = rt#to_expr floc in
+     let use = get_register_vars [rt] in
+     let usehigh = get_use_high_vars [xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | CountLeadingZeros (rd, rs) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     default cmds
+
+  | DivideWord (hi, lo, rs, rt) ->
+     let hireg = hi#to_register in
+     let loreg = lo#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XDiv, [xrs; xrt]) in
+     let (vhi, cmdshi) = floc#get_ssa_abstract_commands hireg () in
+     let (vlo, cmdslo) =
+       floc#get_ssa_assign_commands loreg ~vtype:t_int result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vhi; vlo] ~use ~usehigh ctxtiaddr in
+     let cmds = cmdshi @ cmdslo @ defcmds in
+     default cmds
+
+  | DivideUnsignedWord (hi, lo, rs, rt) ->
+     let hireg = hi#to_register in
+     let loreg = lo#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XDiv, [xrs; xrt]) in
+     let (vhi, cmdshi) = floc#get_ssa_abstract_commands hireg () in
+     let (vlo, cmdslo) =
+       floc#get_ssa_assign_commands loreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vhi; vlo] ~use ~usehigh ctxtiaddr in
+     let cmds = cmdshi @ cmdslo @ defcmds in
+     default cmds
+
+  | ExtractBitField (rt, rs, pos, size) ->
+     let vtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg ~vtype:t_uint () in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | FPAbsfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
-     
-  | And (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let result = XOp (XBAnd, [rhs1; rhs2]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
 
-  | AndImmediate (dst,src,imm) ->
+  | FPAddfmt (fmt, fd, fs, ft) ->
      let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src#to_expr floc in
-     let rhs2 = imm#to_expr floc in
-     let result = XOp (XBAnd, [rhs1; rhs2]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | ControlWordFromFP (rt,fs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rt#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | DivideWord (hi,lo,rs,rt) ->
+  | FPCeilLfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let (lhs1,lhs1cmds) = hi#to_lhs floc in
-     let (lhs2,lhs2cmds) = lo#to_lhs floc in
-     let rhs1 = rs#to_expr floc in
-     let rhs2 = rt#to_expr floc in
-     let result = XOp (XDiv, [rhs1; rhs2]) in
-     let cmds1 = floc#get_abstract_commands lhs1 () in
-     let cmds2 = floc#get_assign_commands lhs2 result in
-     default (lhs1cmds @ lhs2cmds @ cmds1 @ cmds2)
-
-  | DivideUnsignedWord (hi,lo,rs,rt) ->
-     let floc = get_floc loc in
-     let (lhs1,lhs1cmds) = hi#to_lhs floc in
-     let (lhs2,lhs2cmds) = lo#to_lhs floc in
-     let rhs1 = rs#to_expr floc in
-     let rhs2 = rt#to_expr floc in
-     let result = XOp (XDiv, [rhs1; rhs2]) in
-     let cmds1 = floc#get_abstract_commands lhs1 () in
-     let cmds2 = floc#get_assign_commands lhs2 result in
-     default (lhs1cmds @ lhs2cmds @ cmds1 @ cmds2)
-
-  | ExtractBitField (dst,src,pos,size) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | InsertBitField (dst,src,pos,size) ->
+  | FPCeilWfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPAbsfmt (fmt,fd,fs) ->
+  | FPCVTDfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let (lhs,lhscmds) = fd#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-     
-  | FPAddfmt (fmt,fd,fs,ft) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = fd#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPDivfmt (fmd,fd,fs,ft) ->
+  | FPCVTLfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let (lhs,lhscmds) = fd#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPMovfmt (fmt,fd,fs) ->
+  | FPCVTSfmt (fmt, fd, fs) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | FPCVTSPfmt (fmt, fd, fs) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | FPCVTWfmt (fmt, fd, fs) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | FPDivfmt (fmd, fd, fs, ft) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | FPFloorLfmt (fmt, fd, fs) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | FPFloorWfmt (fmt, fd, fs) ->
+     let floc = get_floc loc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     default (lhscmds @ cmds)
+
+  | FPMovfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let rhs = fs#to_expr floc in
      let cmds = floc#get_assign_commands lhs rhs in
      default (lhscmds @ cmds)
 
-  | FPMulfmt (fmt,fd,fs,ft) ->
+  | FPMulfmt (fmt, fd, fs, ft) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPSqrtfmt (fmt,fd,fs) ->
+  | FPNegfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPSubfmt (fmt,fd,fs,ft) ->
+  | FPRSqrtfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | LoadByte (dst,src) ->
+  | FPSqrtfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | LoadByteUnsigned (dst,src) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | LoadDoublewordToFP (dst,src) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
+     let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | LoadHalfWord (dst,src) ->
+  | FPSubfmt (fmt, fd, fs, ft) ->
      let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | LoadHalfWordUnsigned (dst,src) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | LoadImmediate (dst,imm) ->
-     let floc = get_floc loc in
-     let rhs = imm#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | LoadUpperImmediate (dst,imm)  ->
-     let floc = get_floc loc in
-     let rhs = num_constant_expr (imm#to_numerical#mult (mkNumerical (256 * 256))) in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-     
-  | LoadWord (dst,src) ->
-     let floc = get_floc loc in
-     let rhs = floc#inv#rewrite_expr (src#to_expr floc) floc#env#get_variable_comparator in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     let _ =
-       if dst#is_register then
-         match rhs with
-         | XVar rhsvar ->
-            if env#is_initial_register_value rhsvar then
-              match env#get_initial_register_value_register rhsvar with
-              | MIPSRegister r when r = dst#get_register ->
-                 finfo#restore_register floc#cia (MIPSRegister dst#get_register)
-              | _ -> ()
-            else ()
-         | _ -> () in
-     default (lhscmds @ cmds)
-
-  | LoadLinkedWord (dst,src) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | LoadWordFP (dst,src) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
+     let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | LoadWordLeft (dst,src) ->
+  | FPRoundLfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | LoadWordRight (dst,src) ->
+  | FPRoundWfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | MoveConditionalNotZero (dst,src,cond) ->
+  | FPTruncLfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let testxpr = cond#to_expr floc in
-     let testxpr = XOp (XNe, [ testxpr; zero_constant_expr ]) in
-     let cmds = floc#get_conditional_assign_commands testxpr lhs rhs in
-     default (lhscmds @ cmds)
-
-  | MoveConditionalZero (dst,src,cond) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let testxpr = cond#to_expr floc in
-     let testxpr = XOp (XEq, [ testxpr; zero_constant_expr ]) in
-     let cmds = floc#get_conditional_assign_commands testxpr lhs rhs in
-     default (lhscmds @ cmds)
-
-  | MovF (cc,dst,src) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | MovT (cc,dst,src) ->
+  | FPTruncWfmt (fmt, fd, fs) ->
      let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
+     let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | Move (dst,src) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs = src#to_expr floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
+  | InsertBitField (rt, rs, pos, size) ->
+     let vtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg ~vtype:t_uint () in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
 
-  | MoveFromHi (rd,hi) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rd#to_lhs floc in
-     let rhs = hi#to_expr floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
+  | Jump _ -> default []
 
-  | MoveToHi (hi,rs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = hi#to_lhs floc in
-     let rhs = rs#to_expr floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | MoveFromLo (rd,lo) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rd#to_lhs floc in
-     let rhs = lo#to_expr floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | MoveToLo (lo,rs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = lo#to_lhs floc in
-     let rhs = rs#to_expr floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | MoveWordFromFP (rt,fs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rt#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | MoveWordFromHighHalfFP (rt,fs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rt#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | MoveWordToHighHalfFP (rt,fs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = fs#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | MoveWordToFP (rt,fs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = fs#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | MoveFromCoprocessor0 (dst,_,_) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | MoveToCoprocessor0 _ -> default []
-
-  | MoveFromHighCoprocessor0 (dst,_,_) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | MoveToHighCoprocessor0 _ -> default []
-
-  | MoveWordFromCoprocessor2 (dst,_,_) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | MoveWordToCoprocessor2 _ -> default []
-
-  | MoveWordFromHighHalfCoprocessor2 (dst,_,_) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | MultiplyWord (hi,lo,rs,rt) ->
-     let floc = get_floc loc in
-     let (lhs1,lhs1cmds) = hi#to_lhs floc in
-     let (lhs2,lhs2cmds) = lo#to_lhs floc in
-     let rhs1 = rs#to_expr floc in
-     let rhs2 = rt#to_expr floc in
-     let xpr = XOp (XMult, [rhs1; rhs2]) in
-     let cmd1 = floc#get_assign_commands lhs2 xpr in
-     let cmd2 = floc#get_abstract_commands lhs1 () in
-     default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2 )
-
-  | MultiplyAddWord (hi,lo,rs,rt) ->
-     let floc = get_floc loc in
-     let (lhs1,lhs1cmds) = hi#to_lhs floc in
-     let (lhs2,lhs2cmds) = lo#to_lhs floc in
-     let rhs1 = rs#to_expr floc in
-     let rhs2 = rt#to_expr floc in
-     let rhslo = lo#to_expr floc in
-     let xpr = XOp (XPlus, [rhslo; XOp (XMult, [rhs1; rhs2])])  in
-     let cmd1 = floc#get_assign_commands lhs2 xpr in
-     let cmd2 = floc#get_abstract_commands lhs1 () in
-     default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2 )
-
-  | MultiplyAddUnsignedWord (hi,lo,rs,rt) ->
-     let floc = get_floc loc in
-     let (lhs1,lhs1cmds) = hi#to_lhs floc in
-     let (lhs2,lhs2cmds) = lo#to_lhs floc in
-     let rhs1 = rs#to_expr floc in
-     let rhs2 = rt#to_expr floc in
-     let rhslo = lo#to_expr floc in
-     let xpr = XOp (XPlus, [rhslo; XOp (XMult, [rhs1; rhs2])]) in
-     let cmd1 = floc#get_assign_commands lhs2 xpr in
-     let cmd2 = floc#get_abstract_commands lhs1 () in
-     default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2)
-
-  | MultiplyWordToGPR (rd,rs,rt) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rd#to_lhs floc in
-     let rhs1 = rs#to_expr floc in
-     let rhs2 = rt#to_expr floc in
-     let result = XOp (XMult, [rhs1; rhs2]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | MultiplyUnsignedWord (hi,lo,rs,rt) ->
-     let floc = get_floc loc in
-     let (lhs1,lhs1cmds) = hi#to_lhs floc in
-     let (lhs2,lhs2cmds) = lo#to_lhs floc in
-     let rhs1 = rs#to_expr floc in
-     let rhs2 = rt#to_expr floc in
-     let result = XOp (XMult, [rhs1; rhs2]) in
-     let cmd1 = floc#get_abstract_commands lhs1 () in
-     let cmd2 = floc#get_assign_commands lhs2 result in
-     default (lhs1cmds @ lhs2cmds @ cmd1 @ cmd2 )
-
-  | Nor (rd,rs,rt) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rd#to_lhs floc in
-     let rhs1 = rs#to_expr floc in
-     let rhs2 = rt#to_expr floc in
-     let result = XOp (XBNor, [rhs1; rhs2]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | Or (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let result = XOp (XBOr, [rhs1; rhs2])  in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | OrImmediate (dst,src,imm) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src#to_expr floc in
-     let rhs2 = imm#to_expr floc in
-     let result = XOp (XBOr, [rhs1 ;rhs2]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | Prefetch _ -> default []
-
-  | ReadHardwareRegister (dst,index) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | SetLT (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let result = XOp (XLt, [ rhs1 ; rhs2 ]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-     
-  | SetLTImmediate (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let result = XOp (XLt, [ rhs1 ; rhs2 ]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | SetLTImmediateUnsigned (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let result = XOp (XLt, [ rhs1 ; rhs2 ]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | SetLTUnsigned (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let result = XOp (XLt, [ rhs1 ; rhs2 ]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-     
-  | ShiftLeftLogical (dst,src,imm) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs = src#to_expr floc in
-     (match imm#to_expr floc with
-      | XConst (IntConst n) ->
-         let m = get_multiplier n in
-         let result = XOp (XMult, [ rhs ; m ]) in
-         let cmds = floc#get_assign_commands lhs result in
-         default (lhscmds @ cmds)
-      | _ ->
-         raise (BCH_failure
-                  (LBLOCK [ STR "Unexpected operand in ShiftLeftLogical: " ;
-                            imm#toPretty ])))
-
-  | ShiftLeftLogicalVariable (rd, rt, rs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rd#to_lhs floc in
-     let rhs1 = rt#to_expr floc in
-     let rhs2 = rs#to_expr floc in
-     let cmds =
-       (match rhs1 with
-        | XConst (IntConst n) when n#equal numerical_one ->
-           let result = XOp (XPow, [ int_constant_expr 2 ; rhs2 ]) in
-           floc#get_assign_commands lhs result
-        | _ ->
-           let result = XOp (XLsl, [rhs1; rhs2]) in
-           floc#get_assign_commands lhs result) in
-     default (lhscmds @ cmds)
-
-  | ShiftRightLogical (dst, src, imm) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src#to_expr floc in
-     let rhs2 = imm#to_expr floc in
-     let cmds =
-       match rhs2 with
-       | XConst (IntConst n) when n#toInt = 31 ->
-          (match rewrite_expr floc rhs1 with
-           | XOp (XBNor, [x1; x2]) when is_zero x1 ->
-              floc#get_assign_commands lhs (XOp (XGe, [x2; x1]))
-           | XOp (XBNor, [x1; x2]) when is_zero x2 ->
-              floc#get_assign_commands lhs (XOp (XGe, [x1; x2]))
-           | _ ->
-              let result = XOp (XGe, [rhs1; zero_constant_expr]) in
-              floc#get_assign_commands lhs result)
-       | _ ->
-          let result = XOp (XLsr, [rhs1; rhs2]) in
-          floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | ShiftRightLogicalVariable (rd, rt, rs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rd#to_lhs floc in
-     let rhs1 = rt#to_expr floc in
-     let rhs2 = rs#to_expr floc in
-     let result = XOp (XLsr, [rhs1; rhs2]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | ShiftRightArithmetic (dst, src, imm) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs = src#to_expr floc in
-     (match imm#to_expr floc with
-      | XConst (IntConst n) ->
-         let m = get_multiplier n in
-         let result = XOp (XDiv, [rhs; m]) in
-         let cmds = floc#get_assign_commands lhs result in
-         default (lhscmds @ cmds)
-      | _ ->
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "Unexpected operand in ShiftRightArithmetic: ";
-                   imm#toPretty])))
-
-  | ShiftRightArithmeticVariable (rd, rt, rs) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rd#to_lhs floc in
-     let rhs1 = rt#to_expr floc in
-     let rhs2 = rs#to_expr floc in
-     let result = XOp (XAsr, [rhs1; rhs2]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | SignExtendByte (rd,rt) ->        (* TODO: constrain rhs to byte *)
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rd#to_lhs floc in
-     let rhs = rt#to_expr floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | SignExtendHalfword (rd,rt) ->    (* TODO: constrain rhs to half word *)
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = rd#to_lhs floc in
-     let rhs = rt#to_expr floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | StoreByte (dst,src) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | StoreHalfWord (dst,src) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     default (lhscmds @ cmds)
-
-  | StoreWord (dst,src) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs rhs in
-     let _ =
-       if src#is_register then
-         let var = env#mk_mips_register_variable src#get_register in
-         if floc#has_initial_value var then
-           finfo#save_register floc#cia (MIPSRegister src#get_register) in
-     default (lhscmds @ cmds)
-
-  (* Assume that the write succeeds, that is, no concurrent conflicting accesses *)
-  | StoreConditionalWord (dst,src) ->
-     let floc = get_floc loc in
-     let rhs = src#to_expr floc in
-     let (lhs1,lhscmds1) = dst#to_lhs floc in
-     let (lhs2,lhscmds2) = src#to_lhs floc in
-     let cmds1 = floc#get_assign_commands lhs1 rhs in
-     let cmds2 = floc#get_assign_commands lhs2 one_constant_expr in
-     default (lhscmds1 @ lhscmds2 @ cmds1 @ cmds2)
-
-  | StoreWordFromFP (dst,src) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | StoreDoublewordFromFP (dst,src) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | StoreWordLeft (dst,src) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | StoreWordRight (dst,src) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | Subtract (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs (XOp (XMinus, [ rhs1 ; rhs2 ])) in
-     default (lhscmds @ cmds)     
-
-  | SubtractUnsigned (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_assign_commands lhs (XOp (XMinus, [ rhs1 ; rhs2 ])) in
-     default (lhscmds @ cmds)
-
-  | Xor (dst,src1,src2) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let rhs1 = src1#to_expr floc in
-     let rhs2 = src2#to_expr floc in
-     let result = XOp (XBXor, [ rhs1 ; rhs2 ]) in
-     let cmds = floc#get_assign_commands lhs result in
-     default (lhscmds @ cmds)
-
-  | XorImmediate (dst,src,imm) ->
-     let floc = get_floc loc in
-     let rhs1 = src#to_expr floc in
-     let rhs2 = imm#to_expr floc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds =
-       match rhs2 with
-       | XConst (IntConst n) when n#equal numerical_one ->
-          (match rewrite_expr floc rhs1 with
-           | XOp (XLt, [ x1 ; x2 ]) ->
-              let result = XOp (XGe, [ x1 ; x2 ]) in
-              floc#get_assign_commands lhs result
-           | _ -> floc#get_abstract_commands lhs ())
-       | _ -> floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
-
-  | WordSwapBytesHalfwords (dst,src) ->
-     let floc = get_floc loc in
-     let (lhs,lhscmds) = dst#to_lhs floc in
-     let cmds = floc#get_abstract_commands lhs () in
-     default (lhscmds @ cmds)
+  | JumpLink _ ->
+     default (get_floc loc)#get_mips_call_commands
 
   | JumpLinkRegister _ ->
      default (get_floc loc)#get_mips_call_commands
 
-  | JumpLink _ |  BranchLink _ ->
+  | JumpRegister _ when (get_floc loc)#has_call_target ->
      default (get_floc loc)#get_mips_call_commands
+
+  | JumpRegister _ -> default []
+
+  | LoadByte (rt, addr) ->
+     let rtreg = rt#to_register in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [rt; base] in
+     let rhs = XOp (XXlsb, [addr#to_expr floc]) in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_char rhs in
+     let usehigh = get_use_high_vars [rhs] in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | LoadByteUnsigned (rt, addr) ->
+     let rtreg = rt#to_register in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let rhs = XOp (XXlsb, [addr#to_expr floc]) in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_uchar rhs in
+     let usehigh = get_use_high_vars [rhs] in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | LoadDoublewordToFP (ft, addr) ->
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let rhs = addr#to_expr floc in
+     let usehigh = get_use_high_vars [rhs] in
+     let (lhs, lhscmds) = ft#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     let cmds = lhscmds @ cmds @ defcmds in
+     default cmds
+
+  | LoadHalfWord (rt, addr) ->
+     let rtreg = rt#to_register in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let rhs = XOp (XXlsh, [addr#to_expr floc]) in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_short rhs in
+     let usehigh = get_use_high_vars [rhs] in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | LoadHalfWordUnsigned (rt, addr) ->
+     let rtreg = rt#to_register in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let rhs = XOp (XXlsh, [addr#to_expr floc]) in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_ushort rhs in
+     let usehigh = get_use_high_vars [rhs] in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | LoadImmediate (rt, imm) ->
+     let rtreg = rt#to_register in
+     let rhs = imm#to_expr floc in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_int rhs in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | LoadLinkedWord (rt, addr) ->
+     let rtreg = rt#to_register in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let rhs = XOp (XXlsh, [addr#to_expr floc]) in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_int rhs in
+     let usehigh = get_use_high_vars [rhs] in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | LoadUpperImmediate (rt, imm) ->
+     let rtreg = rt#to_register in
+     let rhs =
+       num_constant_expr (imm#to_numerical#mult (mkNumerical (256 * 256))) in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_int rhs in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | LoadWord (rt, addr) ->
+     let rtreg = rt#to_register in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let rhs = addr#to_expr floc in
+     let rhs = floc#inv#rewrite_expr rhs floc#env#get_variable_comparator in
+     let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_int rhs in
+     let _ =
+       match rhs with
+       | XVar rhsvar ->
+          if env#is_initial_register_value rhsvar then
+            match env#get_initial_register_value_register rhsvar with
+            | MIPSRegister r when r = rt#get_register ->
+               let memaddr = addr#to_address floc in
+               let memaddr =
+                 floc#inv#rewrite_expr
+                   memaddr floc#env#get_variable_comparator in
+               finfo#restore_register
+                 memaddr floc#cia (MIPSRegister rt#get_register)
+            | _ -> ()
+          else
+            ()
+       | _ -> () in
+     let usehigh = get_use_high_vars [rhs] in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | LoadWordFP (ft, addr) ->
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let rhs = addr#to_expr floc in
+     let usehigh = get_use_high_vars [rhs] in
+     let (lhs, lhscmds) = ft#to_lhs floc in
+     let cmds = floc#get_abstract_commands lhs () in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     let cmds = lhscmds @ cmds @ defcmds in
+     default cmds
+
+  | LoadWordLeft (rt, addr) ->
+     let rtreg = rt#to_register in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg ~vtype:t_int () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ~use ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | LoadWordRight (rt, addr) ->
+     let rtreg = rt#to_register in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg ~vtype:t_int () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ~use ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveConditionalNotZero (rd, rs, rt) ->
+     let vrt = rd#to_variable floc in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let testxpr = XOp (XNe, [xrt; zero_constant_expr]) in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let cmds = floc#get_conditional_assign_commands xrt vrt testxpr in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveConditionalZero (rd, rs, rt) ->
+     let vrt = rd#to_variable floc in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let testxpr = XOp (XEq, [xrt; zero_constant_expr]) in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let cmds = floc#get_conditional_assign_commands xrt vrt testxpr in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MovF (cc, rd, rs) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MovT (cc, rd, rs) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | Move (rd, rs) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg xrs in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveFromHi (rd, hi) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [hi] in
+     let xhi = hi#to_expr floc in
+     let usehigh = get_use_high_vars [xhi] in
+     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg xhi in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveToHi (hi, rs) ->
+     let hireg = hi#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let (vhi, cmds) = floc#get_ssa_assign_commands hireg xrs in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vhi] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveFromLo (rd, lo) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [lo] in
+     let xlo = lo#to_expr floc in
+     let usehigh = get_use_high_vars [xlo] in
+     let (vrd, cmds) = floc#get_ssa_assign_commands rdreg xlo in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveToLo (lo, rs) ->
+     let loreg = lo#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let (vlo, cmds) = floc#get_ssa_assign_commands loreg xrs in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vlo] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveWordFromFP (rt, fs) ->
+     let vtreg = rt#to_register in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveWordFromHighHalfFP (rt, fs) ->
+     let vtreg = rt#to_register in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveWordToHighHalfFP (rt, fs) ->
+     let (lhs, lhscmds) = fs#to_lhs floc in
+     let use = get_register_vars [rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let cmds = floc#get_abstract_commands lhs () in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveWordToFP (rt, fs) ->
+     let (lhs, lhscmds) = fs#to_lhs floc in
+     let use = get_register_vars [rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let cmds = floc#get_abstract_commands lhs () in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveFromCoprocessor0 (rt, _, _) ->
+     let rtreg = rt#to_register in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveToCoprocessor0 (rt, _, _) ->
+     let use = get_register_vars [rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | MoveFromHighCoprocessor0 (rt, _, _) ->
+     let rtreg = rt#to_register in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveToHighCoprocessor0 (rt, _, _) ->
+     let use = get_register_vars [rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | MoveWordFromCoprocessor2 (rt, _, _) ->
+     let rtreg = rt#to_register in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveWordFromHighHalfCoprocessor2 (rt, _, _) ->
+     let rtreg = rt#to_register in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | MoveWordToCoprocessor2 (rt, _, _) ->
+     let use = get_register_vars [rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | MultiplyAddWord (hi, lo, rs, rt) ->
+     let hireg = hi#to_register in
+     let loreg = lo#to_register in
+     let use = get_register_vars [hi; lo; rs; rt] in
+     let xhi = hi#to_expr floc in
+     let xlo = lo#to_expr floc in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let result = XOp (XPlus, [xlo; XOp (XMult, [xrs; xrt])]) in
+     let usehigh = get_use_high_vars [xhi; xlo; xrs; xrt] in
+     let (vhi, hicmds) = floc#get_ssa_abstract_commands hireg () in
+     let (vlo, locmds) =
+       floc#get_ssa_assign_commands loreg ~vtype:t_int result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vlo; vhi] ~use ~usehigh ctxtiaddr in
+     let cmds = hicmds @ locmds @ defcmds in
+     default cmds
+
+  | MultiplyAddUnsignedWord (hi, lo, rs, rt) ->
+     let hireg = hi#to_register in
+     let loreg = lo#to_register in
+     let use = get_register_vars [hi; lo; rs; rt] in
+     let xhi = hi#to_expr floc in
+     let xlo = lo#to_expr floc in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let result = XOp (XPlus, [xlo; XOp (XMult, [xrs; xrt])]) in
+     let usehigh = get_use_high_vars [xhi; xlo; xrs; xrt] in
+     let (vhi, hicmds) = floc#get_ssa_abstract_commands hireg () in
+     let (vlo, locmds) =
+       floc#get_ssa_assign_commands loreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vlo; vhi] ~use ~usehigh ctxtiaddr in
+     let cmds = hicmds @ locmds @ defcmds in
+     default cmds
+
+  | MultiplyUnsignedWord (hi, lo, rs, rt) ->
+     let hireg = hi#to_register in
+     let loreg = lo#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let result = XOp (XMult, [xrs; xrt]) in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let (vhi, hicmds) = floc#get_ssa_abstract_commands hireg () in
+     let (vlo, locmds) =
+       floc#get_ssa_assign_commands loreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vlo; vhi] ~use ~usehigh ctxtiaddr in
+     let cmds = hicmds @ locmds @ defcmds in
+     default cmds
+
+  | MultiplyWord (hi, lo, rs, rt) ->
+     let hireg = hi#to_register in
+     let loreg = lo#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let result = XOp (XMult, [xrs; xrt]) in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let (vhi, hicmds) = floc#get_ssa_abstract_commands hireg () in
+     let (vlo, locmds) =
+       floc#get_ssa_assign_commands loreg ~vtype:t_int result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vlo; vhi] ~use ~usehigh ctxtiaddr in
+     let cmds = hicmds @ locmds @ defcmds in
+     default cmds
+
+  | MultiplyWordToGPR (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XMult, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_int result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | Nor (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XBNor, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | Or (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XBOr, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | OrImmediate (rt, rs, imm) ->
+     let rtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let ximm = imm#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let result = XOp (XBOr, [xrs; ximm]) in
+     let (vrt, cmds) =
+       floc#get_ssa_assign_commands rtreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | Prefetch (addr, _) ->
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let defcmds = floc#get_vardef_commands ~use ctxtiaddr in
+     default defcmds
+
+  | ReadHardwareRegister (rt, rd) ->
+     let rtreg = rt#to_register in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg () in
+     let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | SetLT (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XLt, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_bool result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | SetLTImmediate (rt, rs, imm) ->
+     let rtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let ximm = imm#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let result = XOp (XLt, [xrs; ximm]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rtreg ~vtype:t_bool result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | SetLTImmediateUnsigned (rt, rs, imm) ->
+     let rtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let ximm = imm#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let result = XOp (XLt, [xrs; ximm]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rtreg ~vtype:t_bool result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | SetLTUnsigned (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XLt, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_bool result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | ShiftLeftLogical (rd, rt, sa) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rt; sa] in
+     let xrt = rt#to_expr floc in
+     let xsa = sa#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let result =
+       match xsa with
+       | XConst (IntConst n) ->
+          let m = get_multiplier n in
+          XOp (XMult, [xrt; m])
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "Unexpected operand in ShiftLeftLogical (SLL): ";
+                    sa#toPretty])) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | ShiftLeftLogicalVariable (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result =
+       (match xrs with
+        | XConst (IntConst n) when n#equal numerical_one ->
+           XOp (XPow, [int_constant_expr 2; xrt])
+        | _ -> XOp (XLsl, [xrs; xrt])) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | ShiftRightArithmetic (rd, rt, sa) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rt; sa] in
+     let xrt = rt#to_expr floc in
+     let xsa = sa#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let result = XOp (XAsr, [xrt; xsa]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_int result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | ShiftRightArithmeticVariable (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XAsr, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_int result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | ShiftRightLogical (rd, rt, sa) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rt; sa] in
+     let xrt = rt#to_expr floc in
+     let xsa = sa#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let result =
+       match xsa with
+       | XConst (IntConst n) when n#toInt = 31 ->
+          (match rewrite_expr floc xrt with
+           | XOp (XBNor, [x1; x2]) when is_zero x1 ->
+              (XOp (XGe, [x2; x1]))
+           | XOp (XBNor, [x1; x2]) when is_zero x2 ->
+              (XOp (XGe, [x1; x2]))
+           | _ -> XOp (XGe, [xrt; zero_constant_expr]))
+       | _ ->
+          XOp (XLsr, [xrt; xsa]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | ShiftRightLogicalVariable (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XLsr, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | SignExtendByte (rd, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let result = XOp (XXlsb, [xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_char result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | SignExtendHalfword (rd, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let result = XOp (XXlsh, [xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_short result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | StoreByte (addr, rt) ->
+     let (vmem, memcmds) = addr#to_lhs floc in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base; rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let cmds = floc#get_assign_commands vmem xrt in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vmem] ~use ~usehigh ctxtiaddr in
+     let cmds = memcmds @ cmds @ defcmds in
+     default cmds
+
+  (* Assume that the write succeeds, that is, no concurrent conflicting
+     accesses *)
+  | StoreConditionalWord (addr, rt) ->
+     let (vmem, memcmds) = addr#to_lhs floc in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base; rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let cmds = floc#get_assign_commands vmem xrt in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vmem] ~use ~usehigh ctxtiaddr in
+     let cmds = memcmds @ cmds @ defcmds in
+     default cmds
+
+  | StoreDoublewordFromFP (addr, ft) ->
+     let (vmem, memcmds) = addr#to_lhs floc in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let xft = ft#to_expr floc in
+     let usehigh = get_use_high_vars [xft] in
+     let eight = int_constant_expr 8 in
+     let cmds =
+       floc#get_assign_commands vmem ~size:eight ~vtype:t_double xft in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vmem] ~use ~usehigh ctxtiaddr in
+     let cmds = memcmds @ cmds @ defcmds in
+     default cmds
+
+  | StoreHalfWord (addr, rt) ->
+     let (vmem, memcmds) = addr#to_lhs floc in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base; rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let cmds = floc#get_assign_commands vmem xrt in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vmem] ~use ~usehigh ctxtiaddr in
+     let cmds = memcmds @ cmds @ defcmds in
+     default cmds
+
+  | StoreWord (addr, rt) ->
+     let (vmem, memcmds) = addr#to_lhs floc in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base; rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let cmds = floc#get_assign_commands vmem xrt in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vmem] ~use ~usehigh ctxtiaddr in
+     let cmds = memcmds @ cmds @ defcmds in
+     let _ =
+       if not rt#is_register_zero then
+         let var = env#mk_mips_register_variable rt#get_register in
+         if floc#has_initial_value var then
+           finfo#save_register vmem floc#cia (MIPSRegister rt#get_register) in
+     default cmds
+
+  | StoreWordFromFP (addr, ft) ->
+     let (vmem, memcmds) = addr#to_lhs floc in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base] in
+     let xft = ft#to_expr floc in
+     let usehigh = get_use_high_vars [xft] in
+     let four = int_constant_expr 4 in
+     let cmds =
+       floc#get_assign_commands vmem ~size:four ~vtype:t_float xft in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vmem] ~use ~usehigh ctxtiaddr in
+     let cmds = memcmds @ cmds @ defcmds in
+     default cmds
+
+  (* TODO: StoreWordLeft and StoreWordRight semantics should be combined
+     into a single store, as per MIPS architecture documentation *)
+  | StoreWordLeft (addr, rt) ->
+     let (vmem, memcmds) = addr#to_lhs floc in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base; rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let cmds = floc#get_assign_commands vmem xrt in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vmem] ~use ~usehigh ctxtiaddr in
+     let cmds = memcmds @ cmds @ defcmds in
+     default cmds
+
+  | StoreWordRight (addr, rt) ->
+     let (vmem, memcmds) = addr#to_lhs floc in
+     let base = mips_register_op addr#get_indirect_register RD in
+     let use = get_register_vars [base; rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let cmds = floc#get_assign_commands vmem xrt in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vmem] ~use ~usehigh ctxtiaddr in
+     let cmds = memcmds @ cmds @ defcmds in
+     default cmds
+
+  | Subtract (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XMinus, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_int result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | SubtractUnsigned (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XMinus, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
 
   | Syscall _ ->
      let floc = get_floc loc in
@@ -988,32 +1577,76 @@ let translate_mips_instruction
      else
        default []
 
-  | Branch _
-    | BranchLEZero _
-    | BranchLEZeroLikely _
-    | BranchLTZero _
-    | BranchLTZeroLikely _
-    | BranchGEZero _
-    | BranchGEZeroLikely _
-    | BranchLTZeroLink _
-    | BranchGEZeroLink _
-    | BranchGTZero _
-    | BranchGTZeroLikely _
-    | BranchEqual _
-    | BranchEqualLikely _
-    | BranchNotEqual _
-    | BranchNotEqualLikely _
-    | Jump _
-    | JumpRegister _
-    | TrapIfEqualImmediate _
-    | TrapIfEqual _ -> default []
+  (* TODO: add an ASSERT on the condition *)
+  | TrapIfEqualImmediate (rs, imm) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  (* TODO: add an ASSERT on the condition *)
+  | TrapIfEqual (_, rs, rt) ->
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  | Xor (rd, rs, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let result = XOp (XBXor, [xrs; xrt]) in
+     let (vrd, cmds) =
+       floc#get_ssa_assign_commands rdreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | XorImmediate (rt, rs, imm) ->
+     let rtreg = rt#to_register in
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let ximm = imm#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let result =
+       match ximm with
+       | XConst (IntConst n) when n#equal numerical_one ->
+          (match rewrite_expr floc xrs with
+           | XOp (XLt, [x1; x2]) ->
+              XOp (XGe, [x1; x2])
+           | _ ->
+              XOp (XBXor, [xrs; ximm]))
+       | _ -> XOp (XBXor, [xrs; ximm]) in
+     let (vrt, cmds) =
+       floc#get_ssa_assign_commands rtreg ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
+
+  | WordSwapBytesHalfwords (rd, rt) ->
+     let rdreg = rd#to_register in
+     let use = get_register_vars [rt] in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrt] in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
+     let cmds = cmds @ defcmds in
+     default cmds
 
   | NoOperation -> default []
 
   | Halt -> default []
 
   | Sync _ -> default []
-     
+
   | opc ->
      let _ =
        chlog#add
@@ -1028,10 +1661,6 @@ object (self)
   val finfo = get_function_info f#get_address
   val funloc =
     make_location {loc_faddr = f#get_address; loc_iaddr = f#get_address}
-  val exitlabel =
-    make_code_label
-      ~modifier:"exit"
-      (make_location {loc_faddr = f#get_address; loc_iaddr = f#get_address})#ci
   val codegraph = make_code_graph ()
   val specialization =
     let faddr = f#get_address#to_hex_string in
@@ -1040,7 +1669,7 @@ object (self)
     else
       None
 
-  method translate_block (block:mips_assembly_block_int) =
+  method translate_block (block:mips_assembly_block_int) exitlabel =
     let codepc = make_mips_code_pc block in
     let blocklabel = make_code_label block#get_context_string in
     let restriction =
@@ -1054,7 +1683,7 @@ object (self)
            None
       | _ -> None in
     let rec aux cmds =
-      let (nodes,edges,newcmds) =
+      let (nodes, edges, newcmds) =
         try
           translate_mips_instruction ~funloc ~codepc ~blocklabel ~exitlabel ~cmds
         with
@@ -1069,7 +1698,7 @@ object (self)
          if codepc#has_more_instructions then
            aux newcmds
          else if codepc#has_conditional_successor then
-           let (testloc,jumploc,theniaddr,elseiaddr,testexpr) =
+           let (testloc, jumploc, theniaddr, elseiaddr, testexpr) =
              codepc#get_conditional_successor_info in
            let transaction = package_transaction finfo blocklabel newcmds in
            let (nodes,edges) =
@@ -1084,12 +1713,16 @@ object (self)
            ((blocklabel, [transaction ]) :: nodes, edges)
          else
            let transaction = package_transaction finfo blocklabel newcmds in
-           let nodes = [ (blocklabel, [ transaction ]) ] in
+           let nodes = [(blocklabel, [transaction])] in
            let edges =
              List.map
                (fun succ ->
                  let succlabel = make_code_label succ in
                  (blocklabel, succlabel)) codepc#get_block_successors in
+           let edges =
+             match edges with
+             | [] -> (blocklabel, exitlabel) :: edges
+             | _ -> edges in
            (nodes,edges)
       | _ -> (nodes,edges) in
     let _ = finfo#env#start_transaction in
@@ -1105,17 +1738,31 @@ object (self)
     let freeze_initial_register_value (reg:mips_reg_t) =
       let regVar = env#mk_mips_register_variable reg in
       let initVar = env#mk_initial_register_value (MIPSRegister reg) in
+      let _ =
+        ignore (env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
+      ASSERT (EQ (regVar, initVar)) in
+    let freeze_initial_special_register_value (reg: mips_special_reg_t) =
+      let regVar = env#mk_mips_special_register_variable reg in
+      let initVar = env#mk_initial_register_value (MIPSSpecialRegister reg) in
+      let _ =
+        ignore (env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
       ASSERT (EQ (regVar, initVar)) in
     let freeze_external_memory_values (v:variable_t) =
       let initVar = env#mk_initial_memory_value v in
+      let _ =
+        ignore (env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
       ASSERT (EQ (v, initVar)) in
     let t9Assign =
       let t9Var = env#mk_mips_register_variable MRt9 in
       let reqN () = env#mk_num_temp in
       let reqC = env#request_num_constant in
-      let (rhsCmds,rhs) = xpr_to_numexpr reqN reqC (num_constant_expr f#get_address#to_numerical)  in
+      let (rhsCmds,rhs) =
+        xpr_to_numexpr reqN reqC (num_constant_expr f#get_address#to_numerical) in
       rhsCmds @ [ASSIGN_NUM (t9Var, rhs)] in
-    let rAsserts = List.map freeze_initial_register_value mips_regular_registers in
+    let rAsserts =
+      List.map freeze_initial_register_value mips_regular_registers in
+    let xAsserts =
+      List.map freeze_initial_special_register_value [MMHi; MMLo] in
     let externalMemVars = env#get_external_memory_variables in
     let externalMemVars = List.filter env#has_constant_offset externalMemVars in
     let mAsserts = List.map freeze_external_memory_values externalMemVars in
@@ -1134,36 +1781,75 @@ object (self)
 	     {op_name = new symbol_t "initialize";
 	      op_args = [(base#getName#getBaseName, base, READ)]}))
 	finfo#get_base_pointers in
+    let initialize_reaching_defs: cmd_t list =
+      List.map (fun v ->
+          DOMAIN_OPERATION
+            (["reachingdefs"],
+             {op_name = new symbol_t ~atts:["init"] "def";
+              op_args = [("dst", v, WRITE)]}))
+      (env#get_domain_sym_variables "reachingdefs") in
     let constantAssigns = env#end_transaction in
     let cmds =
       constantAssigns
       @ t9Assign
       @ rAsserts
+      @ xAsserts
       @ mAsserts
       @ [initializeScalar]
-      @ initializeBasePointerOperations  in
+      @ initializeBasePointerOperations
+      @ initialize_reaching_defs in
     TRANSACTION (new symbol_t "entry", LF.mkCode cmds, None)
+
+  method private get_exit_cmd =
+    let env = finfo#env in
+    let _ = env#start_transaction in
+    let cmds: cmd_t list =
+      List.map (fun v ->
+          DOMAIN_OPERATION
+            (["defuse"],
+             {op_name = new symbol_t ~atts:["exit"] "use";
+              op_args = [("dst", v, WRITE)]}))
+        (finfo#env#get_domain_sym_variables "defuse") in
+    let cmdshigh: cmd_t list =
+      let symvars = env#get_domain_sym_variables "defusehigh" in
+      let symvars =
+        List.filter (fun v ->
+            if v#getName#getSeqNumber >= 0 then
+              let numvar = env#get_symbolic_num_variable v in
+              not (env#is_register_variable numvar
+                   || env#is_local_variable numvar)
+            else
+              false) symvars in
+      List.map (fun v ->
+          DOMAIN_OPERATION
+            (["defusehigh"],
+             {op_name = new symbol_t ~atts:["exit"] "use_high";
+              op_args = [("dst", v, WRITE)]})) symvars in
+    let constantAssigns = env#end_transaction in
+    let cmds = constantAssigns @ cmds @ cmdshigh in
+    TRANSACTION (new symbol_t "exit", LF.mkCode cmds, None)
 
   method translate =
     let faddr = f#get_address in
+    let entrylabel = make_code_label ~modifier:"entry" funloc#ci in
+    let exitlabel = make_code_label ~modifier:"exit" funloc#ci in
     let firstInstrLabel = make_code_label funloc#ci in
-    let entryLabel = make_code_label ~modifier:"entry" funloc#ci in
-    let exitLabel = make_code_label ~modifier:"exit" funloc#ci in
     let procname = make_mips_proc_name faddr in
-    let _ = f#iter self#translate_block in
+    let _ = f#iter (fun b -> self#translate_block b exitlabel) in
     let entrycmd = self#get_entry_cmd in
+    let exitcmd = self#get_exit_cmd in
     let scope = finfo#env#get_scope in
-    let _ = codegraph#add_node entryLabel [entrycmd] in
-    let _ = codegraph#add_node exitlabel [SKIP] in
-    let _ = codegraph#add_edge entryLabel firstInstrLabel in
-    let cfg = codegraph#to_cfg entryLabel exitLabel in
-    let body = LF.mkCode [ CFG (procname,cfg)] in
-    let proc = LF.mkProcedure  procname ~signature:[] ~bindings:[] ~scope ~body in
+    let _ = codegraph#add_node entrylabel [entrycmd] in
+    let _ = codegraph#add_node exitlabel [exitcmd] in
+    let _ = codegraph#add_edge entrylabel firstInstrLabel in
+    let cfg = codegraph#to_cfg entrylabel exitlabel in
+    let body = LF.mkCode [CFG (procname,cfg)] in
+    let proc = LF.mkProcedure procname ~signature:[] ~bindings:[] ~scope ~body in
     (* let _ = pverbose [proc#toPretty; NL] in *)
     mips_chif_system#add_mips_procedure proc
 
 end
-       
+
 let translate_mips_assembly_function (f:mips_assembly_function_int) =
   let translator = new mips_assembly_function_translator_t f in
   try

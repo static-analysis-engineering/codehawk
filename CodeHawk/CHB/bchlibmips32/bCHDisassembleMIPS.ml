@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -130,11 +130,11 @@ object (self)
     begin
       chlog#add
         "datablock"
-        (LBLOCK [refaddress#toPretty; STR " - "; addr#toPretty]); 
+        (LBLOCK [refaddress#toPretty; STR " - "; addr#toPretty]);
       system_info#add_data_block db;
       datablocks <- db :: datablocks
     end
-    
+
   method get_data_blocks =
     let _ =
       if not statusvalid then
@@ -145,7 +145,7 @@ end
 
 
 let disassemble (base:doubleword_int) (displacement:int) (x:string) =
-  let size = String.length x in  
+  let size = String.length x in
   let opcode_monitor = new opcode_monitor_t base size in
   let add_instruction position opcode bytes =
     let addr = base#add_int position in
@@ -196,7 +196,7 @@ let disassemble (base:doubleword_int) (displacement:int) (x:string) =
        pr_debug [STR "Error in disassembly: No more input"; NL];
        raise IO.No_more_input
      end
-  
+
 
 let disassemble_mips_sections () =
   let xSections = elf_header#get_executable_sections in
@@ -480,11 +480,11 @@ let set_block_boundaries () =
           set_block_entry fe
         with
 	| BCH_failure _ ->
-	  chlog#add "disassembly" 
+	  chlog#add "disassembly"
 	    (LBLOCK [ STR "function entry point incorrect: " ; fe#toPretty ])
 	| Invalid_argument s ->
 	  ch_error_log#add "disassembly"
-	    (LBLOCK [ STR "function entry point problem: " ; fe#toPretty ; 
+	    (LBLOCK [ STR "function entry point problem: " ; fe#toPretty ;
 		      STR ": " ; STR s ])
       ) feps ;
     (* ~~~~~~~~~~~~~~~~ record targets of unconditional and conditional jumps *)
@@ -619,16 +619,16 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
         let reg =
           MIPSRegister (get_indirect_jump_instruction_register instr#get_opcode) in
         let _ = finfo#set_jumptable_target ctxtiaddr jt#get_start_address jt reg in
-        (Some (mk_ci_succ targets),va#add_int 4,[])
+        (Some (mk_ci_succ targets), va#add_int 4, [])
       else if system_info#has_indirect_jump_targets faddr va then
         let targets = system_info#get_indirect_jump_targets faddr va in
-        (Some (mk_ci_succ targets),va#add_int 4,[])
+        (Some (mk_ci_succ targets), va#add_int 4, [])
       else
-        (Some [],va#add_int  4,[])
+        (Some [], va#add_int 4, [])
     else if instr#is_delay_slot then
-      (None,va,[])
+      (None, va, [])
     else if is_halt_instruction instr#get_opcode then
-      (Some [],va,[])
+      (Some [], va, [])
     else if instr#is_inlined_call then
       let a = match instr#get_opcode with
         | BranchLTZeroLink (_,tgt)
@@ -648,7 +648,7 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
             ctxt_returnsite = returnsite } in
       let callloc = make_location { loc_faddr = a ; loc_iaddr = a } in
       let ctxtcallloc = make_c_location callloc ctxt in
-      let callsucc = ctxtcallloc#ci in 
+      let callsucc = ctxtcallloc#ci in
       let inlinedblocks =
         List.map
           (fun b ->
@@ -677,9 +677,9 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       if system_info#has_jump_table_target faddr baddr then
         let (jt,_,lb,ub) = system_info#get_jump_table_target faddr baddr in
         let targets = jt#get_targets jt#get_start_address lb ub in
-        (Some (mk_ci_succ targets),baddr#add_int 4,[])
+        (Some (mk_ci_succ targets), baddr#add_int 4, [])
       else
-        (Some [],baddr#add_int 4,[])
+        (Some [], baddr#add_int 4, [])
     else if is_conditional_jump_instruction opcode then
       let nextblock = baddr#add_int 8 in
       let tgtblock = get_direct_jump_target_address opcode in
@@ -691,7 +691,7 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
       find_last_instr (get_next_instr_addr baddr) baddr in
 
   let successors =
-    match succ with Some s ->  s | _ -> get_successors faddr lastaddr in
+    match succ with Some s -> s | _ -> get_successors faddr lastaddr in
   (inlinedblocks, make_mips_assembly_block faddr baddr lastaddr successors)
 
 
@@ -702,7 +702,7 @@ let trace_function (faddr:doubleword_int) =
     TR.titer
       (fun instr -> instr#set_block_entry)
       (get_mips_assembly_instruction baddr) in
-  let get_iaddr s = (ctxt_string_to_location faddr s)#i in  
+  let get_iaddr s = (ctxt_string_to_location faddr s)#i in
   let add_to_workset l =
     List.iter (fun a -> if doneSet#has a then () else workSet#add a) l in
   let blocks = ref [] in
@@ -856,11 +856,13 @@ let decorate_functions () =
     record_call_targets ()
   end
 
+
 let construct_functions_mips () =
   begin
     construct_functions collect_function_entry_points ;
     decorate_functions ()
   end
+
 
 let set_call_address (floc:floc_int) (op:mips_operand_int) =
   let env = floc#f#env in
@@ -999,7 +1001,7 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
       (fun faddr ctxtiaddr instr ->
         let loc = ctxt_string_to_location faddr ctxtiaddr in
         match instr#get_opcode with
-        | JumpLinkRegister (ra,tgt) ->
+        | JumpLinkRegister (ra, tgt) ->
            let floc = get_floc loc in
            if (floc#has_call_target && floc#get_call_target#is_unknown)
               || not floc#has_call_target then
@@ -1015,6 +1017,7 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
              match ra with
              | XVar ra_var ->
                 if env#is_initial_register_value ra_var then
+                  (* this is a tail call; ra has already been restored *)
                   if (floc#has_call_target && floc#get_call_target#is_unknown)
                      || not floc#has_call_target then
                     set_call_address floc tgt
@@ -1032,4 +1035,3 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
         | _ ->
            ()) in
   ()
-
