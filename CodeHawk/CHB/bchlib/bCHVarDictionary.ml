@@ -77,6 +77,7 @@ object (self)
   val constant_value_variable_table =
     mk_index_table "constant-value-variable-table"
   val memory_access_table = mk_index_table "memory-access-table"
+  val stack_access_table = mk_index_table "stack-access-table"
 
   val mutable tables = []
 
@@ -85,7 +86,8 @@ object (self)
       memory_base_table;
       memory_offset_table;
       assembly_variable_denotation_table;
-      constant_value_variable_table
+      constant_value_variable_table;
+      stack_access_table
     ]
 
   method reset =
@@ -109,9 +111,9 @@ object (self)
       | BLocalStackFrame
         | BRealignedStackFrame 
         | BAllocatedStackFrame 
-        | BGlobal -> (tags,[])
-      | BaseVar v -> (tags,[ xd#index_variable v ])
-      | BaseUnknown s -> (tags, [ bd#index_string s ]) in
+        | BGlobal -> (tags, [])
+      | BaseVar v -> (tags, [xd#index_variable v])
+      | BaseUnknown s -> (tags, [bd#index_string s]) in
     memory_base_table#add key
 
   method get_memory_base (index:int)  =
@@ -238,6 +240,29 @@ object (self)
     | "chiftemp" -> ChifTemp
     | s -> raise_tag_error name s constant_value_variable_mcts#tags
 
+  method index_stack_access (sa: stack_access_t) =
+    let oi (v: int option) = match v with Some i -> i | _ -> -1 in
+    let ox (x: xpr_t option) =
+      match x with Some xx -> self#xd#index_xpr xx | _ -> -1 in
+    let tags = [stack_access_mcts#ts sa] in
+    let key = match sa with
+      | RegisterSpill (offset, reg) -> (tags, [offset; bd#index_register reg])
+      | RegisterRestore (offset, reg) -> (tags, [offset; bd#index_register reg])
+      | StackLoad (var, offset, optsize, ty) ->
+         (tags, [self#xd#index_variable var; offset; oi optsize; bcd#index_typ ty])
+      | StackStore (var, offset, optsize, ty, optxpr) ->
+         (tags,
+          [self#xd#index_variable var;
+           offset;
+           oi optsize;
+           bcd#index_typ ty;
+           ox optxpr])
+      | StackBlockRead (offset, optsize, ty) ->
+         (tags, [offset; oi optsize; bcd#index_typ ty])
+      | StackBlockWrite (offset, optsize, ty, optxpr) ->
+         (tags, [offset; oi optsize; bcd#index_typ ty; ox optxpr]) in
+    stack_access_table#add key
+
   method write_xml_memory_offset
            ?(tag="imo") (node:xml_element_int) (o:memory_offset_t) =
     node#setIntAttribute tag (self#index_memory_offset o)
@@ -264,6 +289,10 @@ object (self)
            ?(tag="ivd")
            (node:xml_element_int):assembly_variable_denotation_t =
     self#get_assembly_variable_denotation (node#getIntAttribute tag)
+
+  method write_xml_stack_access
+           ?(tag="isa") (node: xml_element_int) (sa: stack_access_t) =
+    node#setIntAttribute tag (self#index_stack_access sa)
 
   method write_xml (node:xml_element_int) =
     let vnode = xmlElement "var-dictionary" in

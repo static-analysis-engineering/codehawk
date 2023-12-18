@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,9 +37,12 @@ open CHXmlReader
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCFiles
 open BCHBCSumTypeSerializer
 open BCHBCTypes
 open BCHBCTypeUtil
+
+module H = Hashtbl
 
 
 let raise_error (node: xml_element_int) (msg: pretty_t) =
@@ -57,16 +60,36 @@ let raise_error (node: xml_element_int) (msg: pretty_t) =
   end
 
 
+(* Convert some standard type names as used in the legacy summaries to
+   btype enumerations*)
+let get_standard_txt_type (t: string): btype_t option =
+  match t with
+  | "byte" -> Some (TInt (IUChar, []))
+  | "char" -> Some (TInt (IChar, []))
+  | "double" -> Some (TFloat (FDouble, FScalar, []))
+  | "int" -> Some (TInt (IInt, []))
+  | "long" -> Some (TInt (ILong, []))
+  | "UINT" -> Some (TInt (IUInt, []))
+  | "void" -> Some (TVoid ([]))
+  | "VOID" -> Some (TVoid ([]))
+  | _ ->
+     let _ = chlog#add "legacy type name" (STR t) in
+     None
+
+
 let read_xml_summary_type (node: xml_element_int): btype_t =
   let rec aux n =
-    if n#hasText then 
-      TNamed (n#getText,[])
+    if n#hasText then
+      let txt = n#getText in
+      match get_standard_txt_type txt with
+      | Some ty -> ty
+      | _ -> TNamed (txt, [])
     else
       let nn = n#getChild in
       match nn#getTag with
       | "float" -> t_float
-      | "ptr" -> TPtr (aux nn,[])
-      | "array" -> 
+      | "ptr" -> TPtr (aux nn, [])
+      | "array" ->
 	 let size =
            if nn#hasNamedAttribute "size" then
 	     Some
@@ -78,7 +101,7 @@ let read_xml_summary_type (node: xml_element_int): btype_t =
       | "vararg" -> TVarArg []
       | "struct" -> t_named (nn#getAttribute "name")
       | s ->
-	raise_error node 
+	raise_error node
 	  (LBLOCK [ STR s ; STR " not recognized as a summary type" ]) in
   aux node
 
@@ -158,9 +181,9 @@ let read_xml_restricted_btype (node: xml_element_int): btype_t =
 
 
 let read_xml_type (node: xml_element_int) =
-  if node#getTag = "btype" || node#getTag = "typ" then 
-    read_xml_restricted_btype node 
-  else 
+  if node#getTag = "btype" || node#getTag = "typ" then
+    read_xml_restricted_btype node
+  else
     read_xml_summary_type node
 
 
@@ -194,12 +217,11 @@ let read_xml_type_transformer (node: xml_element_int) =
   let has = node#hasNamedAttribute in
   let replacements = List.map (fun n ->
     let get = n#getAttribute in (get "src", get "tgt")) (getcc "replace-type") in
-  let replacements = if has "char-type" then 
+  let replacements = if has "char-type" then
       (get_standard_char_type_replacements (get "char-type")) @ replacements
     else
       replacements in
-  let replace s = 
-    try let (_,t) = List.find (fun (x,_) -> x = s) replacements in t with 
+  let replace s =
+    try let (_,t) = List.find (fun (x,_) -> x = s) replacements in t with
       Not_found -> s in
   replace
-       

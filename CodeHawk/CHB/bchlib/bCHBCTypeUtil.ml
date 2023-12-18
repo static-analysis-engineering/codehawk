@@ -53,6 +53,7 @@ let t_unknown = TUnknown []
 let t_void = TVoid []
 let t_vararg = TVarArg []
 
+let t_bool = TInt (IBool, [])
 let t_char = TInt (IChar, [])
 let t_uchar = TInt (IUChar, [])
 let t_wchar = TInt (IWChar, [])
@@ -330,6 +331,7 @@ and size_of_btype (t: btype_t): int =
      let _ = chlog#add "unknown compinfo" (LBLOCK [STR "size: "; INT ckey]) in 0
   | TNamed _ -> size_of_btype (bcfiles#resolve_type t)
   | TPtr _
+    | TVoid _
     | TRef _
     | THandle _
     | TCppComp _
@@ -338,7 +340,7 @@ and size_of_btype (t: btype_t): int =
     | TBuiltin_va_list _
     | TVarArg _
     | TUnknown _ -> 4   (* all systems are 32-bit for now *)
-  | TVoid _ -> raise (BCH_failure (LBLOCK [STR "Type size error: tvoid"]))
+  (* | TVoid _ -> raise (BCH_failure (LBLOCK [STR "Type size error: tvoid"])) *)
   | TFun _ -> raise (BCH_failure (LBLOCK [STR "Type size error: tfun"]))
 
 

@@ -127,10 +127,13 @@ val register_to_string: register_t -> string
 val register_from_string: string -> register_t    (* incomplete *)
 
 (* Utility functions *)
-val is_register  : string -> bool
 
-val cpureg_to_string   : cpureg_t -> string
-val cpureg_from_string : string -> cpureg_t  (* raises Invalid_argument *)
+val is_stackpointer_register: register_t -> bool
+
+val is_register: string -> bool
+
+val cpureg_to_string : cpureg_t -> string
+val cpureg_from_string: string -> cpureg_t  (* raises Invalid_argument *)
 
 val mipsreg_to_string : mips_reg_t -> string
 val mipsreg_from_string: string -> mips_reg_t

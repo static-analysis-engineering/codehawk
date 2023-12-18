@@ -43,6 +43,7 @@ val t_unknown: btype_t
 val t_void: btype_t
 val t_vararg: btype_t
 
+val t_bool: btype_t
 val t_char: btype_t
 val t_uchar: btype_t
 val t_wchar: btype_t

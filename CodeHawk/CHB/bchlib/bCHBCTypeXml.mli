@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,8 +34,14 @@ open CHXmlDocument
 open BCHBCTypes
 
 
+(** [read_xml_type xnode] either parses a restricted type representation or
+    a full type representation as contained in the legacy function summaries.*)
 val read_xml_type: xml_element_int -> btype_t
+
+(** [read_xml_returntype xnode] either parses a restrict type representation or
+    a full type representation as contained in the legacy function summaries.*)
 val read_xml_returntype: xml_element_int -> btype_t
+
 val read_xml_summary_struct: xml_element_int -> bcompinfo_t
 
 val read_xml_type_transformer: xml_element_int -> type_transformer_t

@@ -518,6 +518,16 @@ let arm_temporaries = [AR0; AR1; AR2; AR3]
 let is_register name = is_string_of_sumtype cpuregs_from_string_table name
 
 
+let is_stackpointer_register (reg: register_t) =
+  match reg with
+  | CPURegister Esp   (* x86 *)
+    | MIPSRegister MRsp  (* mips *)
+    | ARMRegister ARSP   (* arm *)
+    | PowerGPRegister 1  (* power32 *)
+    -> true
+  | _ -> false
+
+
 let cpureg_to_asm_string reg = (cpureg_to_string reg)
 
 

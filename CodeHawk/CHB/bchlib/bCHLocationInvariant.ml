@@ -577,9 +577,9 @@ object (self)
             let pfacts = List.filter (fun p -> p#is_base_offset_value) e in
             match pfacts with
             | [] -> f :: e
-            | [ p ] when f#is_smaller p ->
+            | [p] when f#is_smaller p ->
                f :: (List.filter (fun p -> not p#is_base_offset_value) e)
-            | [ p ] -> e
+            | [p] -> e
             | _ ->
                let msg =
                  LBLOCK [
@@ -601,38 +601,13 @@ object (self)
                           regvar#getName#getSeqNumber) e in
                (match sfacts with
                 | [] -> [f]
-                | [sv] ->
-                   begin
-                     ch_error_log#add
-                       "multiple ssa-equalities"
-                       (LBLOCK [
-                            STR iaddr;
-                            STR ": ";
-                            STR "existing; ";
-                            sv#toPretty;
-                            STR "; new: ";
-                            f#toPretty]);
-                     (* this is an arbitrary choice for now, until a solution
-                        to this problem has been found.*)
-                     (if sv#index > f#index then
-                       [sv]
-                     else
-                       [f])
-                   end
                 | _ ->
-                   begin
-                     ch_error_log#add
-                       "multiple existing ssa-equalities"
-                       (LBLOCK [
-                            STR iaddr;
-                            STR ": ";
-                            STR "existing: ";
-                            pretty_print_list
-                              sfacts (fun p -> p#toPretty) "[" ", " "]; ";
-                            STR "new: ";
-                            f#toPretty]);
-                     [f]
-                   end)
+                   let sfacts_nof = List.fold_left (fun acc sv ->
+                       if sv#index = f#index then
+                         acc
+                       else
+                         sv :: acc) [] sfacts in
+                   f :: sfacts_nof)
             | _ ->
                f :: e
 	else
