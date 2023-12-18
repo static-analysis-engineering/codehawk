@@ -117,9 +117,6 @@ let save_xml = ref false  (* save disassembly status in xml *)
 let save_asm = ref false
 let set_datablocks = ref false   (* only supported for arm *)
 
-let architecture = ref "x86"
-let fileformat = ref "pe"
-
 let stream_start_address = ref wordzero
 let set_stream_start_address s =
   stream_start_address := TR.tget_ok (string_to_doubleword s)
@@ -137,6 +134,9 @@ let speclist =
      "extract executable content from lisphex encoded executable");
     ("-ssa", Arg.Unit (fun () -> system_settings#set_ssa),
      "use static single assignment for register assignments");
+    ("-collectdata", Arg.Unit (fun () -> system_settings#set_collect_data),
+     "analyze all functions, create ssa variables (if enabled), and "
+     ^ " create stacklayouts and proof obligations");
     ("-stream", Arg.Unit (fun () -> cmd := "stream"),
      "stream disassemble a hex-encoded stream of bytes");
     ("-startaddress",  Arg.String set_stream_start_address,
@@ -148,15 +148,19 @@ let speclist =
      Arg.Int system_settings#set_gc_compact_function_interval,
      ("call garbage collector to compact memory after this many functions "
      ^ "(expensive operation, suggested value > 1000)"));
-    ("-arm", Arg.Unit (fun () -> architecture := "arm"), "arm executable");
+    ("-arm", Arg.Unit (fun () -> system_settings#set_architecture "arm"),
+     "arm executable");
     ("-arm_extension_registers",
      Arg.Unit (fun () -> system_settings#set_arm_extension_registers),
      "include arm floating point registers in analysis");
     ("-thumb", Arg.Unit (fun () -> system_settings#set_thumb),
      "arm executable includes thumb instructions");
-    ("-mips", Arg.Unit (fun () -> architecture := "mips"), "mips executable");
-    ("-power", Arg.Unit (fun () -> architecture := "power"), "power executable");
-    ("-elf", Arg.Unit (fun () -> fileformat := "elf"), "ELF executable");
+    ("-mips", Arg.Unit (fun () -> system_settings#set_architecture "mips"),
+     "mips executable");
+    ("-power", Arg.Unit (fun () -> system_settings#set_architecture "power"),
+     "power executable");
+    ("-elf", Arg.Unit (fun () -> system_settings#set_fileformat "elf"),
+     "ELF executable");
     ("-extract", Arg.Unit (fun () -> cmd := "extract"),
      "extract executable content from executable and save in xml format");
     ("-xsize", Arg.Int system_info#set_xfilesize,
@@ -298,13 +302,13 @@ let main () =
       (* disable address checking in the creation of absolute addresses *)
       let _ = system_info#set_elf_is_code_address wordzero wordmax in
       (let codestring = read_hex_stream_file system_info#get_filename in
-       if !architecture = "x86" then
+       if system_settings#is_x86 then
          begin
            disassemble_stream !stream_start_address codestring;
            pr_debug
 	     [STR ((!BCHAssemblyInstructions.assembly_instructions)#toString ())]
          end
-       else if !architecture = "arm" then
+       else if system_settings#is_arm then
          let starttime = Unix.gettimeofday () in
          begin
            BCHDisassembleARMStream.disassemble_stream !stream_start_address codestring;
@@ -329,30 +333,28 @@ let main () =
       else
         exit_with_error !cmd msg
 
-    else if !cmd = "extract" && !architecture = "x86" && !fileformat = "pe" then
+    else if !cmd = "extract" && system_settings#is_x86 && system_settings#is_pe then
       let _ = register_hashed_functions () in
       let (success,msg) = read_pe_file system_info#get_filename version#get_maxfilesize in
       if success then
 	begin
-	  pverbose [ msg ; NL ] ;
-	  save_pe_files () ;
-	  save_log_files "extract" ;
+	  pverbose [msg; NL];
+	  save_pe_files ();
+	  save_log_files "extract";
 	  exit 0
 	end
       else
 	exit_with_error !cmd msg
 
-    else if !cmd = "extract" && !fileformat = "elf" then
-      let _ = if !architecture = "mips" then system_info#set_mips in
-      let _ = if !architecture = "arm" then system_info#set_arm in
+    else if !cmd = "extract" && system_settings#is_elf then
       let _ = system_info#initialize in
       let (success, msg) =
         read_elf_file system_info#get_filename system_info#get_xfilesize in
       if success then
         begin
-          pverbose [ msg ; NL ] ;
-          save_elf_files () ;
-          save_log_files "extract" ;
+          pverbose [msg; NL];
+          save_elf_files ();
+          save_log_files "extract";
           exit 0
         end
       else
@@ -362,8 +364,8 @@ let main () =
       dump_pe_file system_info#get_filename
 
     else if !cmd = "disassemble"
-            && !architecture = "x86"
-            && !fileformat = "pe" then
+            && system_settings#is_x86
+            && system_settings#is_pe then
       let _ = register_hashed_functions () in
       let t = ref (Unix.gettimeofday ()) in
       let _ = system_info#initialize in
@@ -407,10 +409,9 @@ let main () =
 	exit_with_error !cmd msg
 
     else if !cmd = "disassemble"
-            && !architecture = "x86"
-            && !fileformat = "elf" then
+            && system_settings#is_x86
+            && system_settings#is_elf then
       let t0 = ref (Unix.gettimeofday ()) in
-      let _ = system_info#set_elf in
       let _ = load_bdictionary () in
       let _ = system_info#initialize in
       let _ = pr_timing [STR "system_info initialized"] in
@@ -448,10 +449,8 @@ let main () =
       end
 
     else if !cmd = "disassemble"
-            && !architecture = "mips"
-            && !fileformat = "elf" then
-      let _ = system_info#set_elf in
-      let _ = system_info#set_mips in
+            && system_settings#is_mips
+            && system_settings#is_elf then
       let _ = system_info#initialize in
       let t = ref (Unix.gettimeofday ()) in
       let _ = pr_debug [STR "Load MIPS file ..."; NL] in
@@ -517,10 +516,8 @@ let main () =
       end
 
     else if !cmd = "disassemble"
-            && !architecture = "power"
-            && !fileformat = "elf" then
-      let _ = system_info#set_elf in
-      let _ = system_info#set_power in
+            && system_settings#is_power
+            && system_settings#is_elf then
       let _ = system_info#initialize in
       let _ = load_elf_files () in
       let _ = pr_timing [STR "elf power files loaded"] in
@@ -544,9 +541,9 @@ let main () =
         save_log_files "disassemble"
       end
 
-    else if !cmd = "disassemble" && !architecture = "arm" && !fileformat = "elf" then
-      let _ = system_info#set_elf in
-      let _ = system_info#set_arm in
+    else if !cmd = "disassemble"
+            && system_settings#is_arm
+            && system_settings#is_elf then
       let _ = system_info#initialize in
       let t = ref (Unix.gettimeofday ()) in
       let _ = load_elf_files () in
@@ -618,10 +615,12 @@ let main () =
         pr_timing [STR "log files saved"]
       end
 
-
-    else if !cmd = "analyze" && !architecture = "x86" && !fileformat = "pe" then
+    else if !cmd = "analyze"
+            && system_settings#is_x86
+            && system_settings#is_pe then
       let _ = register_hashed_functions () in
       let starttime = Unix.gettimeofday () in
+      let _ = load_bcdictionary () in
       let _ = load_bdictionary () in
       let _ = system_info#initialize in
       let _ = load_interface_dictionary () in
@@ -649,6 +648,7 @@ let main () =
             save_x86dictionary ();
 	    save_system_info ();
             save_interface_dictionary ();
+            save_bcdictionary ();
             save_bdictionary ();
 	    save_log_files logcmd;
 	    (if !save_asm then
@@ -671,10 +671,11 @@ let main () =
       else
 	exit_with_error logcmd msg
 
-    else if !cmd = "analyze" && !architecture = "x86" && !fileformat = "elf" then
+    else if !cmd = "analyze"
+            && system_settings#is_x86
+            && system_settings#is_elf then
       (* let _ = register_hashed_elf_functions () in *)
       let starttime = Unix.gettimeofday () in
-      let _ = system_info#set_elf in
       let _ = load_bcdictionary () in
       let _ = pr_timing [STR "bcdictionary loaded"] in
       let _ = load_bdictionary () in
@@ -730,10 +731,10 @@ let main () =
 	exit 0
       end
 
-    else if !cmd = "analyze" && !architecture = "mips" && !fileformat="elf" then
+    else if !cmd = "analyze"
+            && system_settings#is_mips
+            && system_settings#is_elf then
       let starttime = Unix.gettimeofday () in
-      let _ = system_info#set_elf in
-      let _ = system_info#set_mips in
       let _ = load_bcdictionary () in
       let _ = pr_timing [STR "bcdictionary loaded"] in
       let _ = load_bdictionary () in
@@ -805,9 +806,9 @@ let main () =
 	exit 0
       end
 
-    else if !cmd = "analyze" && !architecture = "arm" && !fileformat = "elf" then
-      let _ = system_info#set_elf in
-      let _ = system_info#set_arm in
+    else if !cmd = "analyze"
+            && system_settings#is_arm
+            && system_settings#is_elf then
       let _ = load_bcdictionary () in
       let _ = pr_timing [STR "bcdictionary loaded"] in
       let _ = load_bdictionary () in
@@ -889,9 +890,9 @@ let main () =
         exit 0
       end
 
-    else if !cmd = "analyze" && !architecture = "power" && !fileformat = "elf" then
-      let _ = system_info#set_elf in
-      let _ = system_info#set_power in
+    else if !cmd = "analyze"
+            && system_settings#is_power
+            && system_settings#is_elf then
       let _ = load_bcdictionary () in
       let _ = load_bdictionary () in
       let _ = load_bc_files () in
@@ -956,7 +957,7 @@ let main () =
 
     else
       begin
-	pr_debug [ STR "Command " ; STR !cmd ; STR " not recognized" ; NL ];
+	pr_debug [STR "Command "; STR !cmd; STR " not recognized"; NL];
 	exit 1
       end
   with
@@ -964,8 +965,8 @@ let main () =
   | XmlReaderError (line,col,p)
   | XmlDocumentError (line,col,p) ->
     begin
-      pr_debug [ STR "Xml error: (" ; INT line ; STR ", " ; INT col ; STR "): " ;
-		 p ; NL ] ;
+      pr_debug [
+          STR "Xml error: ("; INT line; STR ", "; INT col; STR "): "; p; NL];
       exit 3
     end
 
