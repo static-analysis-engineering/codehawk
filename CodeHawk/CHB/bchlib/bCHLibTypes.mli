@@ -1356,11 +1356,14 @@ end
 class type system_settings_int =
 object
   (* setters *)
+  method set_architecture: string -> unit
+  method set_fileformat: string -> unit
   method set_summary_jar: string -> unit
   method add_so_library: string -> unit    (* name of so-library *)
   method set_jsignature_jar: string -> unit
   method set_verbose: unit
   method set_ssa: unit
+  method set_collect_data: unit
   method set_show_function_timing: unit
   method set_gc_compact_function_interval: int -> unit
   method set_lineq_instr_cutoff: int -> unit
@@ -1377,6 +1380,8 @@ object
   method exclude_debug: unit
 
   (* accessors *)
+  method get_architecture: string
+  method get_fileformat: string
   method get_summary_paths: (string * Zip.in_file) list
   method get_jsignature_paths: (string * Zip.in_file) list
   method get_export_dir: string
@@ -1386,6 +1391,12 @@ object
   method get_lineq_block_cutoff: int
 
   (* predicates *)
+  method is_arm: bool
+  method is_mips: bool
+  method is_power: bool
+  method is_x86: bool
+  method is_elf: bool
+  method is_pe: bool
   method is_verbose: bool
   method is_debug_excluded: bool
   method is_sideeffects_on_global_enabled: string -> bool
@@ -1393,6 +1404,7 @@ object
   method is_set_vftables_enabled: bool
   method has_thumb: bool
   method use_ssa: bool
+  method collect_data: bool
   method include_arm_extension_registers: bool
   method show_function_timing: bool
   method is_lineq_restricted: blocks:int -> instrs:int -> bool
@@ -1650,7 +1662,6 @@ class type varinvdictionary_int =
 
 
 (** {2 Type invariants} *)
-
 
 (** Type invariant fact. *)
 type type_invariant_fact_t =
@@ -1932,6 +1943,13 @@ class type invdictionary_int =
    parameter 1 is located at offset 4, stack parameter 2 is at offset 8,
    etc.
 
+   All function summaries assume a standard cdecl x86-based function api.
+   Hence all function summaries represent parameters as stack-based. For
+   architectures that use argument registers (like ARM and MIPS), these
+   are converted at a later stage into the appropriate argument registers.
+   This applies to both library function summaries and application function
+   summaries that are constructed from preconditions.
+
    The {b global parameter} location indicates the address of a global
    variable that is accessed and/or modified by the function. This is not
    a true parameter of the function in the usual sense, but including it
@@ -2046,10 +2064,10 @@ type function_interface_t = {
 type bterm_t =
   | ArgValue of fts_parameter_t  (** argument value (including global values) *)
   | RunTimeValue   (** unknown value *)
-  | ReturnValue    (** return value from the function *)
+  | ReturnValue of bterm_t   (** return value from function identified by term *)
   | NamedConstant of string  (** macro *)
   | NumConstant of numerical_t  (** numerical constant *)
-  | ArgBufferSize of bterm_t        (** size of buffer pointed to by term in bytes *)
+  | ArgBufferSize of bterm_t   (** size of buffer pointed to by term in bytes *)
   | IndexSize of bterm_t (** value of term, represented as size in type units *)
   | ByteSize of bterm_t  (** value of term, represented as size in bytes *)
   | ArgAddressedValue of bterm_t * bterm_t    (** [ArgAddressedValue (base, offset)]
@@ -2138,77 +2156,62 @@ type c_struct_constant_t =
 | FieldCallTarget of call_target_t
 
 
-(** Function precondition, an expression that only refers to terms external
-    to the function, e.g., parameters, global variables, or constants, that
-    must be true over the arguments for a call to the function to be valid
-    (safe).*)
-type precondition_t =
-  | PreNullTerminated of bterm_t
-  (** [PreNullTerminated t]: term [t] is null-terminated *)
-  | PreNotNull of bterm_t (** [PreNotNull t]: term [t] is not null *)
-  | PreNull of bterm_t (** [PreNull t]: term [t] is null *)
-  | PreDerefRead of btype_t * bterm_t * bterm_t * bool (** [PreDerefRead
-  (ty, dest, size, canbenull): term [dest] points to a buffer
-  of at least [size] bytes accessible for reading, or [dest] is null (if
-  canbenull is true)*)
-  | PreDerefWrite of btype_t * bterm_t * bterm_t * bool (** [PreDerefWrite
-  (ty, dest, size, canbenull): term [dest] points to a buffer
-  of at least [size] bytes accessible for writing, or [dest] is null (if
-  canbenull is true)*)
-  | PreAllocationBase of bterm_t (** [PreAllocationBase t]: term [t] points to an
-  address returned by a dynamic allocation function (e.g., malloc)*)
-  | PreFunctionPointer of btype_t * bterm_t (** [PreFunctionPointer (ty, t)]:
-  term [t] is a function pointer of type [ty]*)
-  | PreNoOverlap of bterm_t * bterm_t (** [PreNoOverlap (t1, t2): terms [t1]
-  and [t2] do not overlap *)
-  | PreFormatString of bterm_t (** [PreFormatString t]: term [t] is a format
-  string *)
-
-(* value must be one of defined enumeration values;
-   true if constant is set of flags *)
-  | PreEnum of bterm_t * string * bool (** [PreEnum (t, name, flags)]: term [t]
-  is one of the values included in the named enumeration; if [flags] is true
-  the constant is a set of flags *)
-  | PreRelationalExpr of relational_op_t * bterm_t * bterm_t (** [PreRelationalExpr
-  (op, t1, t2)]: terms [t1] and [t2] satisfy the given relational expression *)
-  | PreDisjunction of precondition_t list (** Disjunction of preconditions *)
-  | PreConditional of precondition_t * precondition_t
-  | PreIncludes of bterm_t * c_struct_constant_t
-
-
-(** {2 Postconditions} *)
-
-(** Function postcondition: an expression over the return value and potentially
-    other terms external to the function.*)
-type postcondition_t =
-| PostNewMemoryRegion of bterm_t * bterm_t   (* pointer returned, size in bytes *)
-| PostFunctionPointer of bterm_t * bterm_t   (* return value, name of function *)
-| PostAllocationBase of bterm_t
-  (* the return value is a pointer to the base
-     of a dynamically allocated memory region *)
-| PostNull of bterm_t
-| PostNotNull of bterm_t
-| PostNullTerminated of bterm_t
-| PostEnum of bterm_t * string
-| PostFalse      (* function does not return *)
-| PostRelationalExpr of relational_op_t * bterm_t * bterm_t
-| PostDisjunction of postcondition_t list
-| PostConditional of precondition_t * postcondition_t
-
-
-(** {2 Side effects} *)
-
-(** Function side effect: an expression that describes how the calling context
-    is changed by the call.*)
-type sideeffect_t =
-| BlockWrite of btype_t * bterm_t * bterm_t
-| Modifies of bterm_t
-| AllocatesStackMemory of bterm_t
-| StartsThread of bterm_t * bterm_t list   (* start address, parameters *)
-| Invalidates of bterm_t
-| SetsErrno
-| ConditionalSideeffect of precondition_t * sideeffect_t
-| UnknownSideeffect
+(** Predicate over external terms to represent function preconditions,
+    postconditions, and side effects.*)
+type xxpredicate_t =
+  | XXAllocationBase of bterm_t
+  (** term is the start address of a dynamically allocated region*)
+  | XXBlockWrite of btype_t * bterm_t * bterm_t
+    (** [t1] is the start address of a memory region, [t2] is the number of
+        bytes written*)
+  | XXBuffer of btype_t * bterm_t * bterm_t
+    (** [t1] is the start address of a memory region with at least [t2]
+        bytes *)
+  | XXEnum of bterm_t * string * bool
+  (** term t is one of the values included in the named enumeration, if [flags]
+      is true, the constant is a set of flags *)
+  | XXFalse
+    (** always false, used as a post condition to indicate non-returning*)
+  | XXFreed of bterm_t  (** term pointed to is freed *)
+  | XXFunctional  (** function has no observable side effects *)
+  | XXFunctionPointer of btype_t * bterm_t  (** term is pointer to a function *)
+  | XXIncludes of bterm_t * c_struct_constant_t
+  | XXInitialized of bterm_t (** lval denoted is initialized *)
+  | XXInitializedRange of btype_t * bterm_t * bterm_t
+  (** memory region starting at [t1] is initialized for at least [t2] bytes*)
+  | XXInputFormatString of bterm_t
+  (** term points to format string for input (e.g., scanf)*)
+  | XXInvalidated of bterm_t
+  (** object pointed to may not be valid any more *)
+  | XXModified of bterm_t
+  (** term is modified (as a side effect of the function) *)
+  | XXNewMemory of bterm_t * bterm_t
+  (** [t1] points to newly allocated memory (since the start of
+      the function), stack or heap with size [t2] bytes *)
+  | XXStackAddress of bterm_t (** term is a stack address *)
+  | XXHeapAddress of bterm_t (** term is a heap address *)
+  | XXGlobalAddress of bterm_t (** term is a global address *)
+  | XXNoOverlap of bterm_t * bterm_t
+  (** the memory regions pointed at by [t1] and [t2] do not overlap *)
+  | XXNotNull of bterm_t   (** term is not null *)
+  | XXNull of bterm_t    (** term is null *)
+  | XXNotZero of bterm_t   (** term is not zero *)
+  | XXNonNegative of bterm_t  (** term is not negative *)
+  | XXPositive of bterm_t   (** term is positive *)
+  | XXNullTerminated of bterm_t  (** term points to null-terminated string *)
+  | XXOutputFormatString of bterm_t
+  (** term points to format string for output (e.g., sprintf) *)
+  | XXRelationalExpr
+    of relational_op_t * bterm_t * bterm_t  (** relational expression *)
+  | XXSetsErrno
+  | XXStartsThread of bterm_t * bterm_t list
+  (** starts a thread with [t1] as start address and the remaining terms as
+      parameters *)
+  | XXTainted of bterm_t (** value of term is externally controlled *)
+  | XXValidMem of bterm_t
+  (** memory region pointed to be by term has not been freed *)
+  | XXDisjunction of xxpredicate_t list
+  | XXConditional of xxpredicate_t * xxpredicate_t
 
 
 (** Informal description of the actions performed by a function, potentially
@@ -2216,7 +2219,7 @@ type sideeffect_t =
 type io_action_t = {
   iox_cat: string;
   iox_desc: string;                  (* description *)
-  iox_pre: precondition_t option;    (* condition for inclusion *)
+  iox_pre: xxpredicate_t option;     (* condition for inclusion *)
 }
 
 
@@ -2224,10 +2227,11 @@ type io_action_t = {
 
 (** Function semantics, combining pre- and postconditions and side effects.*)
 type function_semantics_t = {
-  fsem_pre: precondition_t list;
-  fsem_post: postcondition_t list;
-  fsem_errorpost: postcondition_t list;
-  fsem_sideeffects: sideeffect_t list;
+  fsem_pre: xxpredicate_t list;
+  fsem_post: xxpredicate_t list;
+  fsem_errorpost: xxpredicate_t list;
+  fsem_postrequests: xxpredicate_t list;
+  fsem_sideeffects: xxpredicate_t list;
   fsem_io_actions: io_action_t list;
   fsem_desc: string;
   fsem_throws: string list
@@ -2246,48 +2250,148 @@ type function_documentation_t = {
 
 (** {2 Function summary} *)
 
+(** The function summary data structure is immutable, any change creates a
+    new object.*)
 class type function_summary_int =
 object ('a)
-  (* accessors *)
+
+  (** {1 Function interface}*)
+
   method get_function_interface: function_interface_t
-  method get_function_signature: function_signature_t
-  method get_function_semantics: function_semantics_t
-  method get_function_documentation: function_documentation_t
 
   method get_name: string
-  method get_parameters: fts_parameter_t list
-  method get_returntype: btype_t
-  method get_stack_adjustment: int option
+
   method get_jni_index: int
+
   method get_syscall_index: int
 
-  method get_preconditions: precondition_t list
-  method get_postconditions: postcondition_t list
-  method get_errorpostconditions: postcondition_t list
-  method get_sideeffects: sideeffect_t list
-  method get_io_actions: io_action_t list
+  method is_jni_function: bool
 
-  method get_enums_referenced: string list
+  (** Modifies the types of the type signature according to the type transformer.
+      Is applied primarily to Windows library functions that have a generic summary
+      and can be specialized either for ASCII or Wide-string types.
+   *)
+  method modify_types: string -> type_transformer_t -> 'a
+
+  (** {2 Function type signature}*)
+
+  method get_function_signature: function_signature_t
+
+  method get_parameters: fts_parameter_t list
+
+  method get_returntype: btype_t
+
+  (** Returns a new function summary that is identical to this summary, except
+      for the return type of the type signature.*)
+  method set_returntype: btype_t -> 'a
+
+  (** Returns a new function summary that is identical to this summary, except
+      for the addition or replacement of the given parameter.
+
+      If a parameter with the same location already exists, that parameter is
+      replaced with the new parameter, otherwise the new parameter is added.
+   *)
+  method add_parameter: fts_parameter_t -> 'a
+
+  (** Returns the adjustment made by the callee to the stackpointer,
+      in bytes (x86, PE only)*)
+  method get_stack_adjustment: int option
+
+  (** Returns the registers preserved by the function that deviate from the
+      default registers preserved, (i.e., Eax, Ecx, Edx) (x86 only) *)
+  method get_registers_preserved: register_t list
+
+  (** {1 Function semantics}*)
+
+  method get_function_semantics: function_semantics_t
+
+  (** {2 Precondtiions}*)
+
+  method get_preconditions: xxpredicate_t list
+
+  method add_precondition: xxpredicate_t -> 'a
 
   (* name, specified as flags *)
   method get_enum_type: fts_parameter_t -> (btype_t * bool) option
 
-  (* deviation from default (Eax,Ecx,Edx) *)
-  method get_registers_preserved: register_t list
+  (** {2 Postconditions}*)
 
-  (* modifiers *)
-  method modify_types: string -> type_transformer_t -> 'a
+  method get_postconditions: xxpredicate_t list
 
-  (* predicates *)
-  method sets_errno: bool
-  method has_unknown_sideeffects: bool
   method is_nonreturning: bool
-  method is_jni_function: bool
 
-  (* i/o *)
+  (** {2 Error-postconditions}*)
+
+  method get_errorpostconditions: xxpredicate_t list
+
+  (** {2 Post-requests}*)
+
+  method get_postrequests: xxpredicate_t list
+
+  method add_postrequest: xxpredicate_t -> 'a
+
+  (** {2 Side effects}*)
+
+  method get_sideeffects: xxpredicate_t list
+
+  method add_sideeffect: xxpredicate_t -> 'a
+
+  method sets_errno: bool
+
+  method has_unknown_sideeffects: bool
+
+  method get_enums_referenced: string list
+
+  method get_io_actions: io_action_t list
+
+  (** {1 Function documentation}*)
+
+  method get_function_documentation: function_documentation_t
+
+  (** {1 Printing/saving}*)
+
   method write_xml: xml_element_int -> unit
   method toPretty: pretty_t
 end
+
+
+(** Instantiated xxpredicate (or other condition) with expressions in the
+    context of a function (proof obligation that can be discharged against
+    invariants).*)
+type xpo_predicate_t =
+  | XPOAllocationBase of xpr_t
+  | XPOBlockWrite of btype_t * xpr_t * xpr_t
+  | XPOBuffer of btype_t * xpr_t * xpr_t
+  | XPOEnum of xpr_t * string * bool
+  | XPOFalse
+  | XPOFreed of xpr_t
+  | XPOFunctional
+  | XPOFunctionPointer of btype_t * xpr_t
+  | XPOIncludes of xpr_t * c_struct_constant_t
+  | XPOInitialized of xpr_t
+  | XPOInitializedRange of btype_t * xpr_t * xpr_t
+  | XPOInputFormatString of xpr_t
+  | XPOInvalidated of xpr_t
+  | XPOModified of xpr_t
+  | XPONewMemory of xpr_t * xpr_t
+  | XPOStackAddress of xpr_t
+  | XPOHeapAddress of xpr_t
+  | XPOGlobalAddress of xpr_t
+  | XPONoOverlap of xpr_t * xpr_t
+  | XPONotNull of xpr_t
+  | XPONull of xpr_t
+  | XPONotZero of xpr_t
+  | XPONonNegative of xpr_t
+  | XPOPositive of xpr_t
+  | XPONullTerminated of xpr_t
+  | XPOOutputFormatString of xpr_t
+  | XPORelationalExpr of relational_op_t * xpr_t * xpr_t
+  | XPOSetsErrno
+  | XPOStartsThread of xpr_t * xpr_t list
+  | XPOTainted of xpr_t
+  | XPOValidMem of xpr_t
+  | XPODisjunction of xpo_predicate_t list
+  | XPOConditional of xpo_predicate_t * xpo_predicate_t
 
 
 (** {2 Global state}*)
@@ -2317,7 +2421,9 @@ end
 
 
 class type gv_writer_int =
-object
+  object ('a)
+    method compare_x: 'a -> int
+
   (* accessors *)
   method get_type: btype_t
   method get_size: int option
@@ -2349,6 +2455,8 @@ object
            -> gterm_t
            -> location_int
            -> unit
+
+  method add_precondition: location_int -> xxpredicate_t -> unit
 
   (* accessors *)
   method get_address: doubleword_int
@@ -2389,6 +2497,9 @@ object
            -> location_int
            -> unit
 
+  method add_precondition:
+           doubleword_int -> location_int -> xxpredicate_t -> unit
+
   (* accessors *)
   method get_values: doubleword_int -> gterm_t list
   method get_types: doubleword_int -> btype_t list
@@ -2410,82 +2521,128 @@ class type interface_dictionary_int =
   object
     method reset: unit
 
+    (** {1 Parameter location}*)
+
     method index_parameter_location: parameter_location_t -> int
-    method index_role: (string * string) -> int
-    method index_roles: (string * string) list -> int
-    method index_fts_parameter: fts_parameter_t -> int
-    method index_bterm: bterm_t -> int
-    method index_gterm: gterm_t -> int
-    method index_fts_parameter_list: fts_parameter_t list -> int
-    method index_fts_parameter_value:  (fts_parameter_t * bterm_t) -> int
-    method index_function_signature: function_signature_t -> int
-    method index_function_interface: function_interface_t -> int
-    method index_precondition: precondition_t -> int
-    method index_postcondition: postcondition_t -> int
-    method index_sideeffect: sideeffect_t -> int
-    method index_function_stub: function_stub_t -> int
-    method index_call_target: call_target_t -> int
-    method index_c_struct_constant: c_struct_constant_t -> int
-    method index_struct_field_value: (int * c_struct_constant_t) -> int
-
     method get_parameter_location: int -> parameter_location_t
-    method get_role: int -> (string * string)
-    method get_roles: int -> (string * string) list
-    method get_fts_parameter: int -> fts_parameter_t
-    method get_bterm: int -> bterm_t
-    method get_fts_parameter_list: int -> fts_parameter_t list
-    method get_fts_parameter_value:  int -> (fts_parameter_t * bterm_t)
-    method get_function_signature: int -> function_signature_t
-    method get_function_interface: int -> function_interface_t
-    method get_precondition: int -> precondition_t
-    method get_postcondition: int -> postcondition_t
-    method get_sideeffect: int -> sideeffect_t
-    method get_function_stub: int -> function_stub_t
-    method get_call_target: int -> call_target_t
-    method get_c_struct_constant: int -> c_struct_constant_t
-    method get_struct_field_value: int -> (int * c_struct_constant_t)
-
     method write_xml_parameter_location:
              ?tag:string -> xml_element_int -> parameter_location_t -> unit
-    method write_xml_fts_parameter:
-             ?tag:string -> xml_element_int -> fts_parameter_t -> unit
-    method write_xml_bterm: ?tag:string -> xml_element_int -> bterm_t -> unit
-
-    method write_xml_gterm: ?tag:string -> xml_element_int -> gterm_t -> unit
-    method write_xml_function_stub:
-             ?tag:string -> xml_element_int -> function_stub_t -> unit
-    method write_xml_call_target:
-             ?tag:string -> xml_element_int -> call_target_t -> unit
-    method write_xml_function_signature:
-             ?tag:string -> xml_element_int -> function_signature_t -> unit
-    method write_xml_function_interface:
-             ?tag:string -> xml_element_int -> function_interface_t -> unit
-
-    method write_xml_precondition:
-             ?tag:string -> xml_element_int -> precondition_t -> unit
-    method write_xml_postcondition:
-             ?tag:string -> xml_element_int -> postcondition_t -> unit
-    method write_xml_sideeffect:
-             ?tag:string -> xml_element_int -> sideeffect_t -> unit
-
     method read_xml_parameter_location:
              ?tag:string -> xml_element_int -> parameter_location_t
+
+    (** {1 Parameter role}*)
+
+    method index_role: (string * string) -> int
+    method get_role: int -> (string * string)
+
+    (** {1 Parameter roles}*)
+
+    method index_roles: (string * string) list -> int
+    method get_roles: int -> (string * string) list
+
+    (** {1 Fts parameters}*)
+
+    (** {2 Fts parameter}*)
+
+    method index_fts_parameter: fts_parameter_t -> int
+    method get_fts_parameter: int -> fts_parameter_t
+    method write_xml_fts_parameter:
+             ?tag:string -> xml_element_int -> fts_parameter_t -> unit
     method read_xml_fts_parameter:
              ?tag:string -> xml_element_int -> fts_parameter_t
+
+    (** {2 Fts parameter list}*)
+
+    method index_fts_parameter_list: fts_parameter_t list -> int
+    method get_fts_parameter_list: int -> fts_parameter_t list
+
+    (** {2 Fts parameter value}*)
+
+    method index_fts_parameter_value:  (fts_parameter_t * bterm_t) -> int
+    method get_fts_parameter_value:  int -> (fts_parameter_t * bterm_t)
+
+    (** {1 Bterm}*)
+
+    method index_bterm: bterm_t -> int
+    method get_bterm: int -> bterm_t
+    method write_xml_bterm: ?tag:string -> xml_element_int -> bterm_t -> unit
     method read_xml_bterm: ?tag:string -> xml_element_int -> bterm_t
-    method read_xml_function_stub:
-             ?tag:string -> xml_element_int -> function_stub_t
-    method read_xml_call_target: ?tag:string -> xml_element_int -> call_target_t
+
+    (** {1 Gterm}*)
+
+    method index_gterm: gterm_t -> int
+    method get_gterm: int -> gterm_t
+    method write_xml_gterm: ?tag:string -> xml_element_int -> gterm_t -> unit
+    method read_xml_gterm: ?tag:string -> xml_element_int -> gterm_t
+
+    (** {1 Function signature}*)
+
+    method index_function_signature: function_signature_t -> int
+    method get_function_signature: int -> function_signature_t
+    method write_xml_function_signature:
+             ?tag:string -> xml_element_int -> function_signature_t -> unit
     method read_xml_function_signature:
              ?tag:string -> xml_element_int -> function_signature_t
+
+    (** {1 Function interface}*)
+
+    method index_function_interface: function_interface_t -> int
+    method get_function_interface: int -> function_interface_t
+    method write_xml_function_interface:
+             ?tag:string -> xml_element_int -> function_interface_t -> unit
     method read_xml_function_interface:
              ?tag:string -> xml_element_int -> function_interface_t
-    method read_xml_precondition:
-             ?tag:string -> xml_element_int -> precondition_t
-    method read_xml_postcondition:
-             ?tag:string -> xml_element_int -> postcondition_t
-    method read_xml_sideeffect:
-             ?tag:string -> xml_element_int -> sideeffect_t
+
+    (** {1 Function semantics}*)
+
+    method index_function_semantics: function_semantics_t -> int
+    method get_function_semantics: int -> function_semantics_t
+    method write_xml_function_semantics:
+             ?tag:string -> xml_element_int -> function_semantics_t -> unit
+    method read_xml_function_semantics:
+             ?tag:string -> xml_element_int -> function_semantics_t
+
+    (** {1 XXPredicates}*)
+
+    method index_xxpredicate: xxpredicate_t -> int
+    method get_xxpredicate: int -> xxpredicate_t
+    method index_xxpredicate_list: xxpredicate_t list -> int
+    method get_xxpredicate_list: int -> xxpredicate_t list
+    method write_xml_xxpredicate:
+             ?tag:string -> xml_element_int -> xxpredicate_t -> unit
+    method read_xml_xxpredicate:
+             ?tag:string -> xml_element_int -> xxpredicate_t
+    method write_xml_xxpredicate_list:
+             ?tag:string -> xml_element_int -> xxpredicate_t list -> unit
+
+    (** {1 Function stub}*)
+
+    method index_function_stub: function_stub_t -> int
+    method get_function_stub: int -> function_stub_t
+    method write_xml_function_stub:
+             ?tag:string -> xml_element_int -> function_stub_t -> unit
+    method read_xml_function_stub:
+             ?tag:string -> xml_element_int -> function_stub_t
+
+    (** {1 Call target}*)
+
+    method index_call_target: call_target_t -> int
+    method get_call_target: int -> call_target_t
+    method write_xml_call_target:
+             ?tag:string -> xml_element_int -> call_target_t -> unit
+    method read_xml_call_target: ?tag:string -> xml_element_int -> call_target_t
+
+    (** {1 Struct constants}*)
+
+    method index_c_struct_constant: c_struct_constant_t -> int
+    method get_c_struct_constant: int -> c_struct_constant_t
+
+    (** {1 Struct field values}*)
+
+    method index_struct_field_value: (int * c_struct_constant_t) -> int
+    method get_struct_field_value: int -> (int * c_struct_constant_t)
+
+    (** {Save/restore}*)
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -2960,6 +3117,21 @@ end
 
 (** {2 Variable dictionary} *)
 
+(** Ways that data can be loaded from or stored to the function stack frame.*)
+type stack_access_t =
+  | RegisterSpill of int * register_t
+  (** stack offset *)
+  | RegisterRestore of int * register_t
+  (** stack offset *)
+  | StackLoad of variable_t * int * int option * btype_t
+  (** variable, offset, size *)
+  | StackStore of variable_t * int * int option * btype_t * xpr_t option
+  (** variable, offset, size, value *)
+  | StackBlockRead of int * int option * btype_t
+  (** offset, size *)
+  | StackBlockWrite of int * int option * btype_t * xpr_t option
+  (** offset, size *)
+
 
 class type vardictionary_int =
   object
@@ -2973,6 +3145,7 @@ class type vardictionary_int =
     method index_memory_base: memory_base_t -> int
     method index_assembly_variable_denotation: assembly_variable_denotation_t -> int
     method index_constant_value_variable: constant_value_variable_t -> int
+    method index_stack_access: stack_access_t -> int
 
     method get_memory_offset: int -> memory_offset_t
     method get_memory_base: int -> memory_base_t
@@ -2987,9 +3160,15 @@ class type vardictionary_int =
              ?tag:string -> xml_element_int -> memory_base_t -> unit
     method read_xml_memory_base: ?tag:string -> xml_element_int -> memory_base_t
     method write_xml_assembly_variable_denotation:
-             ?tag:string -> xml_element_int -> assembly_variable_denotation_t -> unit
+             ?tag:string
+             -> xml_element_int
+             -> assembly_variable_denotation_t
+             -> unit
     method read_xml_assembly_variable_denotation:
              ?tag:string -> xml_element_int -> assembly_variable_denotation_t
+
+    method write_xml_stack_access:
+             ?tag:string -> xml_element_int -> stack_access_t -> unit
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -3566,10 +3745,10 @@ class type call_target_info_int =
     method get_target: call_target_t
     method get_stack_adjustment: int option
 
-    method get_preconditions: precondition_t list
-    method get_postconditions: postcondition_t list
-    method get_errorpostconditions: postcondition_t list
-    method get_sideeffects: sideeffect_t list
+    method get_preconditions: xxpredicate_t list
+    method get_postconditions: xxpredicate_t list
+    method get_errorpostconditions: xxpredicate_t list
+    method get_sideeffects: xxpredicate_t list
     method get_io_actions: io_action_t list
 
     method get_enums_referenced : string list
@@ -3609,6 +3788,110 @@ class type call_target_info_int =
 
 (** {2 Function-info} *)
 
+class type xpodictionary_int =
+  object
+
+    method reset: unit
+
+    method xd: xprdictionary_int
+
+    method index_xpo_predicate: xpo_predicate_t -> int
+
+    method write_xml_xpo_predicate:
+             ?tag:string -> xml_element_int -> xpo_predicate_t -> unit
+
+    method write_xml: xml_element_int -> unit
+  end
+
+
+class type stackframe_int =
+  object
+
+    method add_register_spill:
+             offset:int -> register_t -> ctxt_iaddress_t -> unit
+    method add_register_restore:
+             offset:int -> register_t -> ctxt_iaddress_t -> unit
+
+    method add_load:
+             offset:int
+             -> size:int option
+             -> typ:btype_t option
+             -> variable_t
+             -> ctxt_iaddress_t
+             -> unit
+    method add_store:
+             offset:int
+             -> size:int option
+             -> typ:btype_t option
+             -> xpr:xpr_t option
+             -> variable_t
+             -> ctxt_iaddress_t
+             -> unit
+
+    method add_block_read:
+             offset:int
+             -> size:int option
+             -> typ:btype_t option
+             -> ctxt_iaddress_t
+             -> unit
+    method add_block_write:
+             offset:int
+             -> size:int option
+             -> typ:btype_t option
+             -> xpr:xpr_t option
+             -> ctxt_iaddress_t
+             -> unit
+
+    method write_xml: xml_element_int -> unit
+
+  end
+
+
+type po_status_t =
+  | Discharged of string
+  | Delegated of xxpredicate_t
+  | Requested of doubleword_int * xxpredicate_t
+  | DelegatedGlobal of doubleword_int * xxpredicate_t
+  | Violated of string
+  | Open
+
+
+class type proofobligation_int =
+  object
+
+    method xpo: xpo_predicate_t
+
+    method loc: location_int
+
+    method status: po_status_t
+
+  end
+
+
+class type proofobligations_int =
+  object
+
+    method faddr: doubleword_int
+
+    method xpod: xpodictionary_int
+
+    method add_proofobligation:
+             ctxt_iaddress_t -> xpo_predicate_t -> po_status_t -> unit
+
+    method loc_proofobligations:
+             ctxt_iaddress_t -> proofobligation_int list
+
+    method open_proofobligations: proofobligation_int list
+
+    method discharged_proofobligations: proofobligation_int list
+
+    method violated_proofobligations: proofobligation_int list
+
+    method delegated_proofobligations: proofobligation_int list
+
+    method write_xml: xml_element_int -> unit
+
+  end
 
 (** {b Principal access point for function characteristics and analysis results.}
 
@@ -3635,6 +3918,16 @@ object
 
   (** Returns the function symbol table containing all variables.*)
   method env: function_environment_int
+
+  (** Returns the local stackframe of the function *)
+  method stackframe: stackframe_int
+
+  (** Returns the xpo-dictionary to index proof obligations *)
+  method xpod: xpodictionary_int
+
+  (** Returns the object containing all active proof obligations.*)
+  method proofobligations: proofobligations_int
+
 
   (** {1 Function invariants} *)
 
@@ -3786,13 +4079,15 @@ object
 
   (** {2 Spilled registers} *)
 
-  (** [finfo#save_register iaddr reg] declares that register [reg] is saved
-      (spilled) to the stack by the instruction at address [iaddr].*)
-  method save_register: ctxt_iaddress_t -> register_t -> unit
+  (** [finfo#save_register vmem iaddr reg] declares that register [reg] is saved
+      (spilled) to the stack in variable [vmem] by the instruction at address
+      [iaddr].*)
+  method save_register: variable_t -> ctxt_iaddress_t -> register_t -> unit
 
-  (** [finfo#restore_register iaddr reg] declares that register [reg] is
-      restored from the stack by the instruction at address [iaddr].*)
-  method restore_register: ctxt_iaddress_t -> register_t -> unit
+  (** [finfo#restore_register memaddr iaddr reg] declares that register [reg] is
+      restored from the stack at stacklocation [memaddr] by the instruction at
+      address [iaddr].*)
+  method restore_register: xpr_t -> ctxt_iaddress_t -> register_t -> unit
 
 
   (** {2 Auxvar types}
@@ -3828,7 +4123,7 @@ object
       function represented by this function_info (possibly including global
       variables that are accessed and/or modified by the function).*)
 
-  (** [finfo#set_bc_summary fsum] sets the user-summary to be [fsum].*)
+  (** [finfo#set_bc_summary fsum] sets the app-summary to be [fsum].*)
   method set_bc_summary: function_summary_int -> unit
 
   (** [finfo#read_xml_user_summary xnode] extracts the user-summary from its
@@ -3843,28 +4138,18 @@ object
       round of analysis, and so tend to improve as analysis progresses.*)
   method get_summary: function_summary_int
 
+  method update_summary: function_summary_int -> unit
+
 
   (** {2 Function signature}*)
 
-  (** [finfo#set_global_par dw ty] adds global variable with address [dw] and
-      type [ty] as a global parameter to the function api.*)
-  method set_global_par: doubleword_int -> btype_t -> fts_parameter_t
-
-  (** [finfo#set_stack_par index ty] adds a stack parameter with index [index]
-      (one-based) and type [ty] to function api *)
-  method set_stack_par: int -> btype_t -> fts_parameter_t
-
-  (** [finfo#set_register_par reg ty] adds a register parameter [reg] with type
-      [ty] to the function api.*)
-  method set_register_par: register_t -> btype_t -> fts_parameter_t
-
-  (** [finfo#set_java_native_method_signature api] sets the user summary
+  (** [finfo#set_java_native_method_signature api] sets the app summary
       with signature [api] and default semantics.*)
   method set_java_native_method_signature: java_native_method_api_t -> unit
 
   (** Creates the standard [jni$Env] parameter for a java native method.
 
-      Note: it does not set the user summary with this signature.*)
+      Note: it does not set the app summary with this signature.*)
   method set_unknown_java_native_method_signature: unit
 
 
@@ -3877,7 +4162,7 @@ object
       This method is currently called only when an assignment is performed
       with a left-hand-side that is an external memory reference.
    *)
-  method record_sideeffect: ctxt_iaddress_t -> sideeffect_t -> unit
+  method record_sideeffect: ctxt_iaddress_t -> xxpredicate_t -> unit
 
 
   (** {1 Condition codes}
@@ -4066,6 +4351,143 @@ end
 
 (** {2 Floc} *)
 
+
+(** Records stack, global, or heap memory accesses performed by a
+    particular instruction *)
+class type memory_recorder_int =
+  object
+
+    method finfo: function_info_int
+
+    method iaddr: ctxt_iaddress_t
+
+    method record_assignment:
+             variable_t
+             -> xpr_t
+             -> ?size:int option
+             -> ?vtype:btype_t
+             -> unit
+             -> unit
+
+    method record_load:
+             addr:xpr_t
+             -> var:variable_t
+             -> size:int
+             -> vtype:btype_t
+             -> unit
+
+    method record_store:
+             addr:xpr_t
+             -> var:variable_t
+             -> size:int
+             -> vtype:btype_t
+             -> xpr:xpr_t
+             -> unit
+
+    method record_call_sideeffect:
+             xpr_t
+             -> xpr_t
+             -> ?size:int option
+             -> ?vtype:btype_t
+             -> unit
+             -> unit
+
+  end
+
+
+(** Propagator for types encountered in a function call to the function api *)
+class type argument_type_propagator_int =
+  object
+
+    method finfo: function_info_int
+
+    method callargs: (fts_parameter_t * xpr_t) list
+
+    (** Identifies function call arguments that are arguments of the caller
+        function and propagates their types to the caller's function interface.*)
+    method elevate_call_arguments: unit
+
+  end
+
+
+class type expression_externalizer_int =
+  object
+
+    method finfo: function_info_int
+
+    method xpr_to_bterm: btype_t -> xpr_t -> bterm_t option
+
+  end
+
+(** Evaluator of terms used in a particular function call.*)
+class type bterm_evaluator_int =
+  object
+
+    (** Return the function info in which context the term is to be evaluated.*)
+    method finfo: function_info_int
+
+    (** [bterm_xpr t] returns the expression with which [t] was instantiated
+        in the call.*)
+    method bterm_xpr: bterm_t -> xpr_t option
+
+    (** [xpr_local_stack_address x] returns the stack offset (from the initial
+        value of the stack pointer at function entry) if [x] is a stack address
+        and None otherwise.*)
+    method xpr_local_stack_address: xpr_t -> int option
+
+    (** [bterm_stack_address t] returns the expression with which [t] was
+        instantiated if that expression is a stack address, otherwise None.*)
+    method bterm_stack_address: bterm_t -> xpr_t option
+
+    (** [elevate_bterm t] evaluates term [t] wrt the corresponding argument
+        value. If the argument value is a caller function argument, the argument
+        is converted to a parameter value of the caller, otherwise None is
+        returned.*)
+    method elevate_bterm_to_argument: bterm_t -> fts_parameter_t option
+
+    (** [constant_bterm t] returns a constant-value bterm if the corresponding
+        argument to [t] is a constant, or if the original term was a constant*)
+    method constant_bterm: bterm_t -> bterm_t option
+
+    (** [propagate_to_api t] returns a bterm for [t] contextualized to the caller
+        function interface.*)
+    method propagate_to_api: bterm_t -> bterm_t option
+  end
+
+
+(** Propagator for preconditions, and side effects of a function call to the
+    function api.*)
+class type call_semantics_propagator_int =
+  object
+
+    method termev: bterm_evaluator_int
+
+    method propagate_precondition: xxpredicate_t -> xxpredicate_t option
+
+    method propagate_sideeffect: xxpredicate_t -> xxpredicate_t option
+  end
+
+
+class type call_semantics_recorder_int =
+  object
+
+    method loc: location_int
+
+    method termev: bterm_evaluator_int
+
+    method calltargetinfo: call_target_info_int
+
+    method finfo: function_info_int
+
+    method record_precondition: xxpredicate_t -> unit
+
+    method record_sideeffect: xxpredicate_t -> unit
+
+    method record_callsemantics: unit
+
+  end
+
+
 (** Floc (location in a function): principal access point for information
     associated with a single instruction. *)
 class type floc_int =
@@ -4087,6 +4509,8 @@ class type floc_int =
 
     (** Returns the function-info of the function this instruction belongs to.*)
     method f: function_info_int
+
+    method memrecorder: memory_recorder_int
 
     (** {2 Symbol table}*)
 
@@ -4274,14 +4698,17 @@ class type floc_int =
 
     (** {2 Calls} *)
 
-    (* returns the CHIF code associated with the call instruction *)
+    (** returns the CHIF code associated with the call instruction (x86) *)
     method get_call_commands: (doubleword_int -> string option) -> cmd_t list
 
+    (** returns the CHIF code associated with the call instruction (mips) *)
     method get_mips_call_commands: cmd_t list
     method get_mips_syscall_commands: cmd_t list
 
+    (** returns the CHIF code associated with the call instruction (arm) *)
     method get_arm_call_commands: cmd_t list
 
+    (** returns the CHIF code associated with the call instruction (power32) *)
     method get_pwr_call_commands: cmd_t list
 
     (** {2 Assignments} *)
@@ -4467,10 +4894,6 @@ object
   method set_filename: string -> unit
   method set_xfilesize: int -> unit
   method set_file_string: string -> unit
-  method set_elf: unit
-  method set_mips: unit
-  method set_arm: unit
-  method set_power: unit
   method set_big_endian: unit
   method set_preamble_cutoff: int -> unit
   method set_image_base: doubleword_int -> unit
@@ -4574,10 +4997,6 @@ object
   method get_variable_intro_name: doubleword_int -> string
 
   (* predicates *)
-  method is_elf: bool
-  method is_mips: bool
-  method is_arm: bool
-  method is_power: bool
   method is_little_endian: bool
   method is_nonreturning_call: doubleword_int -> doubleword_int -> bool
   method is_fixed_true_branch: doubleword_int -> bool
