@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="12/01/2023 23:39:54"/>
+  <reference href="https://linux.die.net/man/3/strcasestr"/>
+  <libfun lib="msvcrt" name="strcasestr">
+   <documentation>
+    <desc>finds a string (ignoring case)</desc>
+    <apidoc>
+     <pt>char *strcasestr (const char *s1, const char *s2)</pt>
+     <par name="s1">string to be searched</par>
+     <par name="s2">string to search for</par>
+     <return>
+      <rc cond="success">pointer to the located string</rc>
+      <rc cond="failure">NULL</rc>
+     </return>
+    </apidoc>
+   </documentation>
+   <api adj="0" cc="cdecl" name="strcasestr">
+     <returntype><ptr>char</ptr></returntype>
+     <par loc="stack" name="s1" rep="hex" io="r" nr="1">
+       <type><ptr>char</ptr></type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-string:search"/>
+	<role rt="ioc:inputs" rn="string search"/>
+      </roles>
+    </par>
+    <par loc="stack" io="r" name="s2" rep="hex" nr="2">
+      <type><ptr>char</ptr></type>
+      <pre><deref-read-nt/></pre>
+      <roles>
+	<role rt="ioc:memops" rn="src-string:search"/>
+	<role rt="ioc:inputs" rn="string search"/>
+      </roles>
+    </par>
+   </api>
+   <semantics>
+     <io-actions>
+       <io-action cat="inputs"
+		  desc="searches a string for another string"/>
+     </io-actions>
+    <preconditions/>
+    <postconditions>
+      <notnull-null/>
+      <post><math><apply><geq/><return/><ci>s2</ci></apply></math></post>
+      <post>
+	<math>
+	  <apply>
+	    <leq/>
+	    <return/>
+	    <apply>
+	      <plus/>
+	      <ci>s2</ci>
+	      <apply><null-terminator-pos/><ci>s2</ci></apply>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects/>
+   </semantics>
+  </libfun>
+ </codehawk-binary-analyzer>
