@@ -61,10 +61,12 @@ open BCHConstantDefinitions
 open BCHCppClass
 open BCHCStruct
 open BCHDoubleword
+open BCHExternalPredicate
 open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionSemantics
+open BCHFunctionStackframe
 open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
 open BCHJavaSignatures
@@ -72,6 +74,7 @@ open BCHLibTypes
 open BCHLocation
 open BCHMemoryReference
 open BCHPreFileIO
+open BCHProofObligations
 open BCHSideeffect
 open BCHSystemInfo
 open BCHSystemSettings
@@ -79,6 +82,7 @@ open BCHUtilities
 open BCHVariable
 open BCHVariableNames
 open BCHXmlUtil
+open BCHXPODictionary
 open BCHXprUtil
 
 module H = Hashtbl
@@ -1530,6 +1534,7 @@ object (self)
       match self#get_initial_register_value_register v with
       | CPURegister r -> self#mk_cpu_register_variable r
       | MIPSRegister r -> self#mk_mips_register_variable r
+      | MIPSSpecialRegister r -> self#mk_mips_special_register_variable r
       | ARMRegister r -> self#mk_arm_register_variable r
       | ARMExtensionRegister r -> self#mk_arm_extension_register_variable r
       | PowerGPRegister i -> self#mk_pwr_gp_register_variable i
@@ -1630,8 +1635,12 @@ object (self)
   val return_values = H.create 3
   val sideeffects = H.create 3  (* iaddr -> sideeffect-ix *)
   val mutable nonreturning = false
-  val mutable user_summary = None
-  val fts_parameters = H.create 3   (* function-type-signature parameters *)
+  val mutable user_summary = None     (* to be deprecated *)
+  val mutable appsummary =
+    let hexfaddr = faddr#to_hex_string in
+    let lenfaddr = String.length hexfaddr in
+    default_summary ("sub_" ^ (String.sub (faddr#to_hex_string) 2 (lenfaddr - 2)))
+  (* val fts_parameters = H.create 3 *)  (* function-type-signature parameters *)
   val cc_setter_to_user = H.create 3                      (* to be saved ? *)
   val mutable complete = true
 
@@ -1640,8 +1649,17 @@ object (self)
   val mutable call_targets_set = false
   val nonreturning_calls = new StringCollections.set_t
   val mutable invariants_to_be_reset = false
+  val stackframe = mk_function_stackframe varmgr
+  val proofobligations =
+    mk_proofobligations faddr (mk_xpodictionary varmgr#vard#xd)
+
   (* ------------------------------------------------------------------------- *)
 
+  method stackframe = stackframe
+
+  method xpod = self#proofobligations#xpod
+
+  method proofobligations = proofobligations
 
   method set_instruction_bytes (ia:ctxt_iaddress_t) (b:string) =
     H.add instrbytes ia b
@@ -1788,7 +1806,39 @@ object (self)
    * record register arguments                                                 *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-  method save_register (iaddr:ctxt_iaddress_t) (reg:register_t) =
+  method save_register
+           (vmem: variable_t) (iaddr:ctxt_iaddress_t) (reg:register_t) =
+    if self#env#is_stack_variable vmem then
+      let offset = self#env#get_memvar_offset vmem in
+      match offset with
+      | ConstantOffset (n, NoOffset) ->
+         self#stackframe#add_register_spill ~offset:n#toInt reg iaddr
+      | _ ->
+         ch_error_log#add
+           "save_register:no offset"
+           (LBLOCK [
+                self#get_address#toPretty;
+                STR " ";
+                STR iaddr;
+                STR ": ";
+                vmem#toPretty;
+                STR " (";
+                STR (register_to_string reg);
+                STR ")"])
+    else
+      ch_error_log#add
+        "save_register:not a stack variable"
+        (LBLOCK [
+             self#get_address#toPretty;
+             STR " ";
+             STR iaddr;
+             STR ": ";
+             vmem#toPretty;
+             STR " (";
+             STR (register_to_string reg);
+             STR ")"])
+
+           (*
     let regstr = register_to_string reg in
     if H.mem saved_registers regstr then
       (H.find saved_registers regstr)#set_save_address iaddr
@@ -1797,9 +1847,54 @@ object (self)
       begin
 	savedReg#set_save_address iaddr ;
 	H.add saved_registers regstr savedReg
-      end
+      end*)
 
-  method restore_register (iaddr:ctxt_iaddress_t) (reg:register_t) =
+  method restore_register
+           (memaddr: xpr_t) (iaddr:ctxt_iaddress_t) (reg:register_t) =
+    match memaddr with
+    | XOp (XMinus, [XVar v; offset]) ->
+       if self#env#is_initial_stackpointer_value v then
+         match offset with
+         | XConst (IntConst n) ->
+            self#stackframe#add_register_restore ~offset:n#neg#toInt reg iaddr
+         | _ ->
+            ch_error_log#add
+              "restore_register:no offset"
+              (LBLOCK [
+                   self#get_address#toPretty;
+                   STR " ";
+                   STR iaddr;
+                   STR ": ";
+                   x2p memaddr;
+                   STR " (";
+                   STR (register_to_string reg);
+                   STR ")"])
+       else
+         ch_error_log#add
+           "restore_register:not an initial value"
+           (LBLOCK [
+                self#get_address#toPretty;
+                STR " ";
+                STR iaddr;
+                STR ": ";
+                x2p memaddr;
+                STR " (";
+                STR (register_to_string reg);
+                STR ")"])
+      | _ ->
+         ch_error_log#add
+           "restore_register:not a stack address"
+           (LBLOCK [
+                self#get_address#toPretty;
+                STR " ";
+                STR iaddr;
+                STR ": ";
+                x2p memaddr;
+                STR " (";
+                STR (register_to_string reg);
+                STR ")"])
+
+           (*
     let regstr = register_to_string reg in
     if H.mem saved_registers regstr then
       (H.find saved_registers regstr)#add_restore_address iaddr
@@ -1808,7 +1903,7 @@ object (self)
       begin
 	savedReg#add_restore_address iaddr ;
 	H.add saved_registers regstr savedReg
-      end
+      end *)
 
   method saved_registers_to_pretty =
     let p = ref [] in
@@ -1844,8 +1939,8 @@ object (self)
    * record side effects                                                     *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-  method record_sideeffect (iaddr: ctxt_iaddress_t) (s:sideeffect_t) =
-    let index = id#index_sideeffect s in
+  method record_sideeffect (iaddr: ctxt_iaddress_t) (s: xxpredicate_t) =
+    let index = id#index_xxpredicate s in
     if H.mem sideeffects iaddr then
       let prev_ix = H.find sideeffects iaddr in
       if index = prev_ix then
@@ -1861,55 +1956,8 @@ object (self)
         sideeffects_changed <- true;
         chlog#add
           "sideeffects changed"
-          (LBLOCK [self#a#toPretty; STR ": "; sideeffect_to_pretty s])
+          (LBLOCK [self#a#toPretty; STR ": "; xxpredicate_to_pretty s])
       end
-
-
-  method private make_postconditions (xlist:xpr_t list) = ([],[])
-
-
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * create a function summary from locally available information             *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-
-  method private add_fts_parameter (par: fts_parameter_t) =
-    let _ =
-      if H.mem fts_parameters par.apar_name then
-	if (fts_parameter_compare par (H.find fts_parameters par.apar_name)) = 0
-	|| is_unknown_type par.apar_type then
-	  ()
-	else
-	  H.replace fts_parameters par.apar_name par
-      else
-	H.add fts_parameters par.apar_name par in
-    H.find fts_parameters par.apar_name
-
-  method private get_fts_parameters =
-    let l = ref [] in
-    let _ = H.iter (fun _ v -> l := v :: !l) fts_parameters in
-    !l
-
-  method set_global_par (gaddr:doubleword_int) (btype:btype_t) =
-    self#add_fts_parameter (mk_global_parameter ~btype gaddr)
-
-  method set_stack_par (index:int) (btype:btype_t) =
-    let set_defaultpar () =
-      let par = mk_stack_parameter ~btype index in
-      begin ignore(self#add_fts_parameter par) ; par end in
-    match user_summary with
-    | Some summary ->
-      begin
-	try List.find (fun p ->
-	  match p.apar_location with
-	  | StackParameter i -> i = index
-	  | _ -> false) summary#get_parameters
-	with
-	| Not_found -> set_defaultpar ()
-      end
-    | _ -> set_defaultpar ()
-
-  method set_register_par (reg:register_t) (btype:btype_t) =
-    self#add_fts_parameter (mk_register_parameter ~btype reg)
 
   method set_nonreturning =
     if nonreturning then () else
@@ -1920,219 +1968,15 @@ object (self)
 	nonreturning <- true
       end
 
-  (* A function summary can have several origins:
-     - user applications function summary
-     - summary created from present analysis results
-     - default summary
+  method get_summary = appsummary
 
-     The summary returned is created as follows:
-     - api:
-         (1) take user application function summary if present
-         (2) if complete: summary created from present analysis otherwise default api
-
-     - semantics:
-         - take user application function semantics if present
-         - take library function summary if present
-         - if complete: create semantics from analysis results else default
-         combine all of the above
-
-     - doc:
-         (1) take user application function doc if present
-  *)
-  method get_summary  =
-    let fintf = match user_summary with
-      | Some summary ->
-	 let sumintf = summary#get_function_interface in
-         let sumfts = sumintf.fintf_type_signature in
-	 let parameters =
-           List.fold_left
-             (fun acc par ->
-	       if List.exists (fun p ->
-                      (fts_parameter_compare p par) = 0) acc then
-	         acc
-               else par::acc)
-             sumfts.fts_parameters self#get_fts_parameters in
-         let newfts = {
-             sumfts with
-             fts_parameters = parameters } in
-	{ sumintf with fintf_type_signature = newfts }
-      | _ ->
-         if system_info#is_mips then
-           self#get_mips_local_function_api
-         else if system_info#is_arm then
-           self#get_arm_local_function_api
-         else
-           self#get_local_function_api in
-    let sem = self#get_function_semantics in
-    let doc = match user_summary with
-      | Some summary -> summary#get_function_documentation
-      | _ -> (default_summary self#get_name)#get_function_documentation in
-    make_function_summary ~fintf ~sem ~doc
+  method update_summary (fs: function_summary_int) = appsummary <- fs
 
   method private get_function_semantics =
-    let usem = match user_summary with
-      | Some summary -> Some summary#get_function_semantics
-      | _ -> None in
-    let fsem =
-      if self#is_complete then
-        Some self#get_local_function_semantics
-      else
-        None in
-    List.fold_left
-      join_semantics
-      (default_summary self#get_name)#get_function_semantics
-      [usem; fsem]
-
-  method private get_mips_local_function_api =
-    try
-      let parameters = env#get_mips_argument_values in
-      let paramregs =
-        List.map self#env#get_initial_register_value_register parameters in
-      let ftsparams = List.map mk_register_parameter paramregs in
-      let ftsparams =
-        match ftsparams with
-        | [] ->
-           let argregs = [
-               MIPSRegister MRa0;
-               MIPSRegister MRa1;
-               MIPSRegister MRa2;
-               MIPSRegister MRa3] in
-           List.map mk_register_parameter argregs
-        | _ -> ftsparams in
-      let _ =
-        List.iter (fun p ->  ignore (self#add_fts_parameter p)) ftsparams in
-      default_function_interface self#get_name self#get_fts_parameters
-    with
-    | BCH_failure p ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Finfo:get-mips-local-function-api: "; p]))
-
-  method private get_arm_local_function_api =
-    let argregs = [
-        ARMRegister AR0;
-        ARMRegister AR1;
-        ARMRegister AR2;
-        ARMRegister AR3] in
-    let default () =
-      let parameters = env#get_arm_argument_values in
-      let paramregs =
-        List.map self#env#get_initial_register_value_register parameters in
-      let ftsparams = List.map mk_register_parameter paramregs in
-      let ftsparams =
-        match ftsparams with
-        | [] -> List.map mk_register_parameter argregs
-        | _ -> ftsparams in
-      let _ =
-        List.iter (fun p -> ignore (self#add_fts_parameter p)) ftsparams in
-      default_function_interface self#get_name self#get_fts_parameters in
-
-    if functions_data#has_function_name faddr then
-      let functionname = (functions_data#get_function faddr)#get_function_name in
-      if bcfiles#has_varinfo functionname then
-        let vinfo = bcfiles#get_varinfo functionname in
-        let bvtype = vinfo.bvtype in
-        match bvtype with
-        | TFun (TFloat (fkind, _, _), Some [funarg], _, _) ->
-           let ftsparam =
-             let (name, btype, _) = funarg in
-             let regtype =
-               match fkind with
-               | FFloat -> XSingle
-               | _ -> XDouble in
-             let ftsreg = ARMExtensionRegister ({armxr_type=regtype; armxr_index=0}) in
-             mk_register_parameter ~name ~btype ftsreg in
-           let _ = ignore (self#add_fts_parameter ftsparam) in
-           let _ =
-             chlog#add
-               "floating-point function signature from headers"
-               (LBLOCK [
-                    faddr#toPretty;
-                    STR ": ";
-                    STR functionname;
-                    STR ": ";
-                    btype_to_pretty bvtype]) in
-           default_function_interface functionname self#get_fts_parameters
-        | TFun (returnty, Some funargs, _, _) ->
-           if (List.length funargs) <= 4 then
-             let ftsparams =
-               List.mapi
-                 (fun i (name, btype, _) ->
-                   mk_register_parameter ~name ~btype (List.nth argregs i)) funargs in
-             let _ =
-               List.iter (fun p -> ignore (self#add_fts_parameter p)) ftsparams in
-             let _ =
-               chlog#add
-                 "function signature from headers"
-                 (LBLOCK [
-                      faddr#toPretty;
-                      STR ": ";
-                      STR functionname;
-                      STR ": ";
-                      btype_to_pretty bvtype]) in
-             default_function_interface functionname self#get_fts_parameters
-           else
-             default ()
-        | _ -> default()
-      else
-        default ()
-    else
-      default ()
-
-  method private get_local_function_api =
-    try
-      let parameters =
-        List.fold_left (fun acc v ->
-            match env#get_stack_parameter_index v with
-            | Some i -> (i,v) :: acc
-            | _ -> acc) [] env#get_parent_stack_variables in
-      let parameters =
-        List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2) parameters in
-      let parameters =
-        List.fold_left (fun acc (nr,v) ->
-            match env#get_stack_parameter_index v with
-            | Some ix -> (mk_stack_parameter ix) :: acc
-            | _ -> acc) [] parameters in
-      let adj = self#get_stack_adjustment in
-      let cc = match adj with
-        | Some a -> if a > 0 then "stdcall" else "cdecl"
-        | _ -> "unknown" in
-      let _ =
-        List.iter (fun par ->
-            ignore (self#add_fts_parameter par)) parameters in
-      match adj with
-      | Some adj ->
-         default_function_interface
-           ~cc
-           ~adj
-           self#get_name
-           self#get_fts_parameters
-      | _ ->
-         default_function_interface ~cc self#get_name self#get_fts_parameters
-    with
-    | BCH_failure p ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Finfo:get-local-function-api: "; p]))
-
-  method private get_local_function_semantics:function_semantics_t =
-    let post = if nonreturning then [PostFalse] else [] in
-    let sixs = H.fold (fun _ v a -> v::a) sideeffects [] in
-    let sideeffects =
-      let ixs =
-        List.fold_left (fun a i -> if List.mem i a then a else i::a) sixs [] in
-      List.map id#get_sideeffect ixs in
-    { fsem_pre = [];
-      fsem_post = post;
-      fsem_errorpost = [];
-      fsem_sideeffects = sideeffects;
-      fsem_io_actions = [];
-      fsem_throws = [];
-      fsem_desc = ""
-    }
+    self#get_summary#get_function_semantics
 
   method set_bc_summary (fs: function_summary_int) =
-    user_summary <- Some fs
+    appsummary <- fs
 
   method read_xml_user_summary (node:xml_element_int) =
     try
@@ -2140,10 +1984,8 @@ object (self)
       begin
 	user_summary <- Some summary;
 	env#set_argument_names self#get_address summary#get_function_interface;
-	List.iter (fun p -> ignore (self#add_fts_parameter p))
-	  summary#get_function_interface.fintf_type_signature.fts_parameters;
 	List.iter (fun p -> match p with
-	| PreIncludes(ArgValue par,sc) ->
+	| XXIncludes (ArgValue par, sc) ->
 	  self#env#set_argument_structconstant par sc
 	| _ -> ()) summary#get_preconditions;
 	chlog#add "user function summary" (LBLOCK [self#get_address#toPretty])
@@ -2194,11 +2036,7 @@ object (self)
     let fsem = default_function_semantics in
     let fdoc = default_function_documentation in
     let summary = make_function_summary ~fintf ~sem:fsem ~doc:fdoc in
-    begin
-      user_summary <- Some summary ;
-      List.iter (fun p -> ignore (self#add_fts_parameter p))
-	summary#get_function_interface.fintf_type_signature.fts_parameters
-    end
+    appsummary <- summary;
 
   method summary_to_pretty = self#get_summary#toPretty
 
@@ -2559,14 +2397,14 @@ object (self)
            | _ -> acc) jump_targets false
 
   method private write_xml_call_targets (node:xml_element_int) =
-    let calltargets = H.fold (fun k v a -> (k,v)::a) calltargets [] in
+    let calltargets = H.fold (fun k v a -> (k, v)::a) calltargets [] in
     node#appendChildren
       (List.map
-         (fun (k,v) ->
+         (fun (k, v) ->
            let ctnode = xmlElement "ctinfo" in
            begin
-             v#write_xml ctnode ;
-             ctnode#setAttribute "a" k ;
+             v#write_xml ctnode;
+             ctnode#setAttribute "a" k;
              ctnode
            end) calltargets)
 
@@ -2672,10 +2510,29 @@ object (self)
     let savedregs = H.fold (fun _ v a -> v::a) saved_registers [] in
     node#appendChildren
       (List.map (fun s ->
-           let n = xmlElement "sr" in begin s#write_xml n ; n end) savedregs)
+           let n = xmlElement "sr" in
+           begin
+             s#write_xml n;
+             n
+           end) savedregs)
+
+  method private write_xml_app_summary (node: xml_element_int) =
+    let fsum = self#get_summary in
+    begin
+      id#write_xml_function_interface node fsum#get_function_interface;
+      id#write_xml_function_semantics node fsum#get_function_semantics
+    end
+
+  method private read_xml_app_summary (node: xml_element_int) =
+    let fintf = id#read_xml_function_interface node in
+    let sem = id#read_xml_function_semantics node in
+    let summary =
+      make_function_summary ~fintf ~sem ~doc:default_function_documentation in
+    appsummary <- summary
 
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
+    let sumNode = xmlElement "summary" in
     let ccNode = xmlElement "cc-users" in
     let cNode = xmlElement "constants" in
     let tvNode = xmlElement "test-variables" in
@@ -2685,22 +2542,35 @@ object (self)
     let bpNode = xmlElement "base-pointers" in
     let vvNode = xmlElement "variable-names" in
     let srNode = xmlElement "saved-registers" in
+    let sfNode = xmlElement "stackframe" in
     let espNode = xmlElement "stack-adjustment" in
     begin
-      self#write_xml_constants cNode ;
-      self#write_xml_cc_users ccNode ;
-      self#write_xml_test_expressions teNode ;
-      self#write_xml_test_variables tvNode ;
+      self#write_xml_app_summary sumNode;
+      self#write_xml_constants cNode;
+      self#write_xml_cc_users ccNode;
+      self#write_xml_test_expressions teNode;
+      self#write_xml_test_variables tvNode;
       (* self#write_xml_jump_targets jtNode ; *)
-      self#write_xml_call_targets ctNode ;
-      self#write_xml_base_pointers bpNode ;
-      self#write_xml_variable_names vvNode ;
-      self#write_xml_saved_registers srNode ;
+      self#write_xml_call_targets ctNode;
+      self#write_xml_base_pointers bpNode;
+      self#write_xml_variable_names vvNode;
+      self#write_xml_saved_registers srNode;
+      self#stackframe#write_xml sfNode;
       (match stack_adjustment with
-       | Some i -> espNode#setIntAttribute "adj" i | _ -> ()) ;
-      append [ ccNode ; tvNode ; teNode ; cNode ;
-	       ctNode ; jtNode ; bpNode ; vvNode ;
-               srNode ; espNode ] ;
+       | Some i -> espNode#setIntAttribute "adj" i | _ -> ());
+      append [
+          sumNode;
+          ccNode;
+          tvNode;
+          teNode;
+          cNode;
+	  ctNode;
+          jtNode;
+          bpNode;
+          vvNode;
+          srNode;
+          sfNode;
+          espNode]
     end
 
   method read_xml (node:xml_element_int) =
@@ -2723,7 +2593,8 @@ object (self)
         (if hasc "stack-adjustment" then
            let espNode = getc "stack-adjustment" in
            if espNode#hasNamedAttribute "adj" then
-             stack_adjustment <- Some (espNode#getIntAttribute "adj"))
+             stack_adjustment <- Some (espNode#getIntAttribute "adj"));
+        (if hasc "summary" then self#read_xml_app_summary (getc "summary"))
       end
     with
     | XmlDocumentError (line,col,p)
@@ -2813,7 +2684,7 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
 	  | Some api -> finfo#set_java_native_method_signature api
 	  | _ -> finfo#set_unknown_java_native_method_signature in
       begin
-        H.replace function_infos faddr#index finfo ;
+        H.replace function_infos faddr#index finfo;
         finfo
       end
     with
