@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -41,6 +41,7 @@ open BCHDoubleword
 open BCHLibTypes
 open BCHSectionHeadersInfo
 open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibelf *)
 open BCHELFSectionHeader
@@ -133,7 +134,7 @@ object (self)
              | _ -> None) None phdrs in
     match s with
     | Some s -> s
-    | _ -> 
+    | _ ->
        raise (BCH_failure (LBLOCK [STR "Dynamic table not found"]))
   val loadsegments =
     List.filter (fun (_,h,_) ->
@@ -306,7 +307,7 @@ object (self)
    * - size: ph#get_file_size
    *)
   method private create_interp_header =
-    let sectionname = ".interp" in    
+    let sectionname = ".interp" in
     let ph = self#get_interp_program_header in
     let sh = mk_elf_section_header () in
     let stype = s2d "0x1" in     (* SHT_ProgBits *)
@@ -327,7 +328,7 @@ object (self)
    * - size: ph#get_file_size
    *)
   method private create_reginfo_header =
-    let sectionname = ".reginfo" in    
+    let sectionname = ".reginfo" in
     if self#has_reginfo_program_header then
       let ph = self#get_reginfo_program_header in
       let sh = mk_elf_section_header () in
@@ -341,7 +342,7 @@ object (self)
         sh#set_fields ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
         section_headers <- sh :: section_headers
       end
-      
+
   (* inputs: from program header, type PT_Dynamic
    * - offset: ph#get_offset
    * - addr: ph#get_vaddr
@@ -350,7 +351,7 @@ object (self)
    * - link: to be set to .dynstr index
    *)
   method private create_dynamic_header =
-    let sectionname = ".dynamic" in    
+    let sectionname = ".dynamic" in
     let ph = self#get_dynamic_program_header in
     let sh = mk_elf_section_header () in
     let stype = s2d "0x6" in
@@ -373,7 +374,7 @@ object (self)
    * - link: to be set to .dynsym index
    *)
   method private create_hash_header =
-    let sectionname = ".hash" in    
+    let sectionname = ".hash" in
     if dynamicsegment#has_hash_address
        && not (dynamicsegment#get_hash_address#to_hex_string = "0x0")
        && dynamicsegment#has_symtab_address then
@@ -399,11 +400,11 @@ object (self)
     else
       assumption_violation
         (STR "DT_HASH or DT_SYMTAB not present, or DT_HASH is zero")
-      
+
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_SYMTAB
    * - offset: DT_SYMTAB - ph#get_vaddr
-   * - size: DT_SYMENT * DT_MIPS_SYMTABNO 
+   * - size: DT_SYMENT * DT_MIPS_SYMTABNO
    * - link: to be set to .dynstr index
    * - info: ?
    *)
@@ -417,7 +418,7 @@ object (self)
         if dynamicsegment#has_symtabno then
           let symtabno = dynamicsegment#get_symtabno in
           TR.tget_ok (numerical_to_doubleword (syment#mult symtabno))
-        else if system_info#is_arm
+        else if system_settings#is_arm
                 && dynamicsegment#has_strtab_address
                 && vaddr#lt dynamicsegment#get_strtab_address then
           let strtab_vaddr = dynamicsegment#get_strtab_address in
@@ -650,14 +651,14 @@ object (self)
       end
     else
       pr_debug [STR "No plt relocation table found"; NL]
-      
+
   (* inputs: from dynamic table, program header, type PT_Load (1)
    * - addr: DT_INIT
    * - offset: DT_INIT - ph#get_vaddr
    * - size: fh#get_program_entry_point - DT_INIT
    *)
   method private create_init_header =
-    let sectionname = ".init" in    
+    let sectionname = ".init" in
     if dynamicsegment#has_init_address then
       let vaddr = dynamicsegment#get_init_address in
       let sh = mk_elf_section_header () in
@@ -704,7 +705,7 @@ object (self)
    * - size: DT_FINI - fh#get_program_entry_point
    *)
   method private create_text_header =
-    let sectionname = ".text" in    
+    let sectionname = ".text" in
     let vaddr =
       if ud_has_address sectionname then
         ud_get_address sectionname
@@ -757,7 +758,7 @@ object (self)
    * - size: ?
    *)
   method private create_fini_header =
-    let sectionname = ".fini" in    
+    let sectionname = ".fini" in
     if dynamicsegment#has_fini_address then
       let vaddr = dynamicsegment#get_fini_address in
       let sh = mk_elf_section_header () in
@@ -839,7 +840,7 @@ object (self)
    * - size: 4?
    *)
   method private create_eh_frame_header =
-    let sectionname = ".eh_frame" in    
+    let sectionname = ".eh_frame" in
     let (_,ph,_) = List.hd loadsegments in
     let vaddr = TR.tget_ok ((ph#get_vaddr#add ph#get_file_size)#subtract_int 4) in
     let sh = mk_elf_section_header () in
@@ -861,7 +862,7 @@ object (self)
    * - size: 0x8 ?
    *)
   method private create_ctors_header =
-    let sectionname = ".ctors" in        
+    let sectionname = ".ctors" in
     if (List.length loadsegments) > 1 then
       let (_,ph,_) = List.hd (List.tl loadsegments) in
       let vaddr = ph#get_vaddr in
@@ -959,7 +960,7 @@ object (self)
    * - size: 0x4 ?
    *)
   method private create_data_header =
-    let sectionname = ".data" in    
+    let sectionname = ".data" in
     if (List.length loadsegments) > 1
     && dynamicsegment#has_rld_map_address then
       let (_,ph,_) = List.hd (List.tl loadsegments) in
@@ -981,14 +982,14 @@ object (self)
             ~stype ~flags ~addr ~offset ~size ~addralign ~sectionname ();
           section_headers <- sh :: section_headers
         end
-      
+
   (* inputs: dynamic table, program header, PT_Load (2)
    * - addr: DT_MIPS_RLD_MAP
    * - offset: (DT_MIPS_RLD_MAP - ph#get_vaddr) + ph#get_offset
    * - size: ?
    *)
   method private create_rld_map_header =
-    let sectionname = ".rld_map" in    
+    let sectionname = ".rld_map" in
     if dynamicsegment#has_rld_map_address then
       let vaddr = dynamicsegment#get_rld_map_address in
       let sh = mk_elf_section_header () in
@@ -1031,7 +1032,7 @@ object (self)
   (* inputs: dynamic table, program header, PT_Load (2)
    * - addr: DT_PLTGOT
    * - offset: (DT_PLTGOT - ph#get_vaddr) + ph#get_offset
-   * - size: ph#get_vaddr + ph#get_size  - DT_PLGOT 
+   * - size: ph#get_vaddr + ph#get_size  - DT_PLGOT
    *)
   method private create_got_header =
     let sectionname = ".got" in
@@ -1105,10 +1106,10 @@ object (self)
                    (if neg then STR " (neg)" else STR "");
                    NL]) addressmap) ]
 
-                             
+
 
 end
-  
+
 
 let create_section_headers
       (phdrs:(int * elf_program_header_int * elf_segment_t) list)

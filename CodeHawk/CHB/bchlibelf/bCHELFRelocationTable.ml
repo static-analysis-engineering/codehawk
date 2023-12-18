@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,7 +31,7 @@
 open CHPretty
 
 (* chutil *)
-open CHLogger   
+open CHLogger
 open CHNumRecordTable
 open CHXmlDocument
 
@@ -43,6 +43,7 @@ open BCHFunctionData
 open BCHLibTypes
 open BCHStreamWrapper
 open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibelf *)
 open BCHELFDictionary
@@ -65,16 +66,16 @@ object (self)
     try
       begin
         (* 0, 4, Offset --------------------------------------------------------
-           This member gives the location at which to apply the relocation action. 
+           This member gives the location at which to apply the relocation action.
            For a relocatable file, the value is the byte offset from the beginning
-           of the section to the storage unit affected by the relocation. For an 
-           executable file or a shared object, the value is the virtual address of 
+           of the section to the storage unit affected by the relocation. For an
+           executable file or a shared object, the value is the virtual address of
            the storage unit affected by the relocation.
            ---------------------------------------------------------------------- *)
         r_offset <- ch#read_doubleword;
 
         (* 4, 4, Info -----------------------------------------------------------
-           This member gives both the symbol table index with respect to which the 
+           This member gives both the symbol table index with respect to which the
            relocation must be made, and the type of relocation to apply.
            For example,
            a call instruction's relocation entry would hold the symbol table index
@@ -140,7 +141,7 @@ object (self)
        let args = args @ [nameix] in
        (tags, args)
     | _ -> (tags, args)
-       
+
 
 end
 
@@ -198,7 +199,7 @@ object (self)
     List.iter (fun e ->
         if e#is_function
            && e#has_address
-           && (system_info#is_arm || system_info#is_mips) then
+           && (system_settings#is_arm || system_settings#is_mips) then
           let fndata = functions_data#add_function e#get_address in
           begin
             fndata#set_library_stub;

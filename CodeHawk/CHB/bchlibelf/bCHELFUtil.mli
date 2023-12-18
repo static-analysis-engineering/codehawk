@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,10 +40,10 @@ open BCHLibTypes
 open BCHELFTypes
 
 
-val makeOffsetString : ?hexSize:doubleword_int -> 
+val makeOffsetString : ?hexSize:doubleword_int ->
   doubleword_int -> string -> unit -> string   (* raises Invalid_argument *)
 
-val makeOffsetInput : ?hexSize:doubleword_int -> 
+val makeOffsetInput : ?hexSize:doubleword_int ->
   doubleword_int -> string -> unit -> IO.input (* raises Invalid_argument *)
 
 val memoize: ('a -> 'b) -> ('a -> 'b)

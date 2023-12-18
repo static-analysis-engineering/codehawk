@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -74,29 +74,29 @@ object (self)
     try
       begin
         (* 0, 4, Name ----------------------------------------------------------
-           This member holds an index into the object file's symbol string table, 
-           which holds the character representations of the symbol names. If the 
-           value is non-zero, it represents a string table index that gives the 
+           This member holds an index into the object file's symbol string table,
+           which holds the character representations of the symbol names. If the
+           value is non-zero, it represents a string table index that gives the
            symbol name. Otherwise, the symbol table entry has no name.
            --------------------------------------------------------------------- *)
         st_name <- ch#read_doubleword;
 
         (* 4, 4, Value ---------------------------------------------------------
-           This member gives the value of the associated symbol. Depending on the 
+           This member gives the value of the associated symbol. Depending on the
            context, this may be an absolute value, an address, etc.
            --------------------------------------------------------------------- *)
         st_value <- ch#read_doubleword;
 
         (* 8, 4, Size ----------------------------------------------------------
-           Many symbols have associated sizes. For example, a data object's size 
-           is the number of bytes contained in the object. This member holds 0 if 
+           Many symbols have associated sizes. For example, a data object's size
+           is the number of bytes contained in the object. This member holds 0 if
            the symbol has no size or an unknown size.
            --------------------------------------------------------------------- *)
         st_size <- ch#read_doubleword;
 
         (* 12, 1, Info ---------------------------------------------------------
-           This member specifies the symbol's type and binding attributes. A list 
-           of the values and meanings appears below. The following code shows how 
+           This member specifies the symbol's type and binding attributes. A list
+           of the values and meanings appears below. The following code shows how
            to manipulate the values.
            #define ELF32_ST_BIND(i) ((i)>>4)
            #define ELF32_ST_TYPE(i) ((i)&0xf)
@@ -110,9 +110,9 @@ object (self)
         st_other <- ch#read_byte;
 
         (* 14, 2, Section index ------------------------------------------------
-           Every symbol table entry is "defined" in relation to some section; 
-           this member holds the relevant section header table index. As Figure 
-           1-7 and the related text describe, some section indexes indicate 
+           Every symbol table entry is "defined" in relation to some section;
+           this member holds the relevant section header table index. As Figure
+           1-7 and the related text describe, some section indexes indicate
            special meanings.
            --------------------------------------------------------------------- *)
         st_shndx <- ch#read_ui16;
@@ -180,7 +180,7 @@ object (self)
   val entries = H.create 3
 
   inherit elf_raw_section_t s vaddr as super
-        
+
   method read =
     try
       let ch =
@@ -193,7 +193,7 @@ object (self)
           begin
             entry#read ch;
             H.add entries !c entry;
-            c := !c + 1 
+            c := !c + 1
           end
         done;
       end
@@ -204,7 +204,7 @@ object (self)
          (LBLOCK [STR "Unable to read the symbol table "])
 
   method set_symbol_names (t:elf_string_table_int) =
-    if system_info#is_mips || system_info#is_arm then
+    if system_settings#is_mips || system_settings#is_arm then
       H.iter (fun _ e ->
           e#set_name (t#get_string e#get_st_name#to_int)) entries
     else
@@ -221,7 +221,7 @@ object (self)
         if e#is_function && e#has_address_value then
           let addr =
             let v = e#get_st_value in
-            if system_info#is_arm then
+            if system_settings#is_arm then
               align_dw v
             else
               v in
@@ -234,7 +234,7 @@ object (self)
         if e#is_function && e#has_address_value && e#has_name then
           let addr =
             let v = e#get_st_value in
-            if system_info#is_arm then
+            if system_settings#is_arm then
               align_dw v
             else
               v in

@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
    Copyright (c) 2022-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,26 +39,26 @@ open BCHELFTypes
 open BCHELFUtil
 
 
-type elf_symbol_type = 
+type elf_symbol_type =
   | NoSymbolType
-  | ObjectSymbol 
-  | FunctionSymbol 
-  | SectionSymbol 
+  | ObjectSymbol
+  | FunctionSymbol
+  | SectionSymbol
   | FileSymbol
   | UnknownSymbol of int
 
 (* Based on the Intel-specific part of the ABI *)
-type elf_relocation_type_i386 = 
-  | R_386_NONE 
-  | R_386_32 
-  | R_386_PC32 
-  | R_386_GOT32 
-  | R_386_PLT32 
-  | R_386_COPY 
+type elf_relocation_type_i386 =
+  | R_386_NONE
+  | R_386_32
+  | R_386_PC32
+  | R_386_GOT32
+  | R_386_PLT32
+  | R_386_COPY
   | R_386_GLOB_DAT
-  | R_386_JMP_SLOT 
-  | R_386_RELATIVE 
-  | R_386_GOTOFF 
+  | R_386_JMP_SLOT
+  | R_386_RELATIVE
+  | R_386_GOTOFF
   | R_386_GOTPC
 
 val elf_header    : elf_header_int
