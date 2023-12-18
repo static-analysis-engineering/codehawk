@@ -49,7 +49,6 @@ MLIS := \
 	bCHTypeDefinitions \
 	bCHJavaSignatures \
 	bCHVariableNames \
-	bCHProofObligationTypes \
 	bCHDemangler \
 	bCHCodegraph \
 	bCHDoubleword \
@@ -72,6 +71,7 @@ MLIS := \
 	bCHCallTarget \
 	bCHBTerm \
 	bCHCStructConstant \
+	bCHExternalPredicate \
 	bCHPrecondition \
 	bCHPostcondition \
 	bCHSideeffect \
@@ -92,13 +92,18 @@ MLIS := \
 	bCHSectionHeadersInfo \
 	bCHSystemInfo \
 	bCHFunctionSummaryLibrary \
+	bCHXPODictionary \
 	bCHCallTargetInfo \
+	bCHProofObligations \
+	bCHFunctionStackframe \
 	bCHFunctionInfo \
 	bCHMakeCallTargetInfo \
 	bCHGlobalState \
+	bCHMemoryRecorder \
+	bCHXPOPredicate \
+	bCHCallSemanticsRecorder \
 	bCHFloc \
 	bCHCallgraph \
-	bCHProofObligations \
 	bCHMetricsHandler \
 	bCHDisassemblySummary \
 	bCHMetrics \
@@ -112,6 +117,7 @@ SOURCES := \
 	bCHBasicTypes \
 	bCHDoubleword \
 	bCHXmlUtil \
+	bCHLocation \
 	bCHSystemSettings \
 	bCHBCSumTypeSerializer \
 	bCHBCTypeTransformer \
@@ -143,7 +149,6 @@ SOURCES := \
 	bCHImmediate \
 	bCHStreamWrapper \
 	bCHDataExportSpec \
-	bCHLocation \
 	bCHStrings \
 	bCHByteUtilities \
 	bCHCPURegisters \
@@ -153,6 +158,7 @@ SOURCES := \
 	bCHFunctionStub \
 	bCHCallTarget \
 	bCHCStructConstant \
+	bCHExternalPredicate \
 	bCHPrecondition \
 	bCHPostcondition \
 	bCHSideeffect \
@@ -173,13 +179,18 @@ SOURCES := \
 	bCHSectionHeadersInfo \
 	bCHSystemInfo \
 	bCHFunctionSummaryLibrary \
+	bCHXPODictionary \
 	bCHCallTargetInfo \
+	bCHProofObligations \
+	bCHFunctionStackframe \
 	bCHFunctionInfo \
 	bCHMakeCallTargetInfo \
 	bCHGlobalState \
+	bCHMemoryRecorder \
+	bCHXPOPredicate \
+	bCHCallSemanticsRecorder \
 	bCHFloc \
 	bCHCallgraph \
-	bCHProofObligations \
 	bCHMetricsHandler \
 	bCHDisassemblySummary \
 	bCHMetrics \

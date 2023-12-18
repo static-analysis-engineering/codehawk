@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2020      Henny B. Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
 
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -51,7 +51,7 @@ open BCHLibTypes
 
 let raise_error tgt msg =
   begin
-    ch_error_log#add "call target" msg ;
+    ch_error_log#add "call target" msg;
     raise (BCH_failure (LBLOCK [msg; STR ": "; call_target_to_pretty tgt]))
   end
 
@@ -66,9 +66,9 @@ class call_target_info_t
 object (self)
 
   method get_name = fintf.fintf_name
-                  
+
   method get_target = tgt
-                    
+
   method get_app_address =
     match tgt with
     | AppTarget a -> a
@@ -136,20 +136,20 @@ object (self)
   method get_signature = fintf.fintf_type_signature
 
   method get_parameters = self#get_signature.fts_parameters
-                       
+
   method get_returntype = self#get_signature.fts_returntype
-                        
+
   method get_stack_adjustment = self#get_signature.fts_stack_adjustment
 
   method get_semantics = sem
-                       
+
   method get_jni_index =
     match fintf.fintf_jni_index with
     | Some i -> i
     | _ ->
        begin
 	 ch_error_log#add
-           "invocation error" 
+           "invocation error"
 	   (LBLOCK [ STR "function_summary#get_jni_index" ]);
 	 raise
            (BCH_failure
@@ -159,13 +159,13 @@ object (self)
        end
 
   method get_preconditions = sem.fsem_pre
-                                         
+
   method get_postconditions = sem.fsem_post
-                            
+
   method get_errorpostconditions = sem.fsem_errorpost
-                                 
+
   method get_sideeffects = sem.fsem_sideeffects
-                         
+
   method get_io_actions = sem.fsem_io_actions
 
   method get_enums_referenced =
@@ -174,12 +174,12 @@ object (self)
     let _ =
       List.iter (fun p ->
           match p with
-          | PreEnum (_,s,_) -> add s
+          | XXEnum (_, s, _) -> add s
           | _ -> ()) self#get_preconditions in
     let _ =
       List.iter (fun p ->
           match p with
-          | PostEnum (_,s) -> add s
+          | XXEnum (_, s, _) -> add s
           | _ -> ()) self#get_postconditions in
     !l
 
@@ -189,17 +189,16 @@ object (self)
         | Some _ -> acc
         | _ ->
 	   match pre with
-	   | PreEnum (ArgValue p,s,flags) ->
+	   | XXEnum (ArgValue p, s, flags) ->
 	      if fts_parameter_compare p par = 0 then
-                Some (t_named s,flags)
+                Some (t_named s, flags)
               else
                 None
 	   | _ -> None) None self#get_preconditions
 
-
   method is_nonreturning =
     List.exists
-      (fun p -> match p with PostFalse -> true | _ -> false) sem.fsem_post
+      (fun p -> match p with XXFalse -> true | _ -> false) sem.fsem_post
 
   method has_sideeffects =
     match self#get_sideeffects with
@@ -207,9 +206,9 @@ object (self)
     | _ -> true
 
   method is_signature_valid = (* not api.fapi_inferred *) true
-                            
+
   method is_semantics_valid = true
-                            
+
   method is_app_call = match tgt with AppTarget _ -> true | _ -> false
 
   method is_in_application_call =
@@ -219,7 +218,7 @@ object (self)
     | InlinedAppTarget _ -> true
     | WrappedTarget _ -> true
     | _ -> false
-                                                                
+
   method is_dll_call =
     match tgt with
     | StubTarget fs | StaticStubTarget (_,fs) ->
@@ -241,23 +240,23 @@ object (self)
     | _ -> false
 
   method has_dll_target = self#is_dll_call || self#is_wrapped_dll_call
-         
+
   method is_inlined_call =
     match tgt with InlinedAppTarget _ -> true | _  -> false
-                                                     
+
   method is_wrapped_call =
     match tgt with WrappedTarget _ -> true | _ -> false
-                                                 
+
   method is_wrapped_app_call =
     match tgt with
     | WrappedTarget (_, _, AppTarget _, _) -> true
     | _ -> false
-         
+
   method is_static_lib_call =
     match tgt with
     | StaticStubTarget (_, PckFunction _) -> true
     | _ -> false
-         
+
   method is_jni_call =
     match tgt with
     | StubTarget (JniFunction _) -> true | _ -> false
@@ -267,7 +266,7 @@ object (self)
 
   method is_virtual_call =
     match tgt with VirtualTarget _ -> true | _ -> false
-         
+
   method is_unknown =
     match tgt with
     | UnknownTarget -> true
@@ -322,6 +321,7 @@ object (self)
   method write_xml (node:xml_element_int) =
     begin
       id#write_xml_call_target node tgt;
+      id#write_xml_function_semantics node sem;
       id#write_xml_function_interface node fintf
     end
 
@@ -335,5 +335,5 @@ let mk_call_target_info = new call_target_info_t
 let read_xml_call_target_info (node:xml_element_int) =
   new call_target_info_t
     (id#read_xml_function_interface node)
-    default_function_semantics
+    (id#read_xml_function_semantics node)
     (id#read_xml_call_target node)

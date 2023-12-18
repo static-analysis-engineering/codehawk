@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyrigth (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,7 +40,7 @@ open BCHBasicTypes
 open BCHLibTypes
 
 module H = Hashtbl
-         
+
 let calling_convention_mfts: calling_convention_t mfts_int =
   mk_mfts "calling_convention_t" [  (StdCall, "s"); (CDecl, "c") ]
 
@@ -279,7 +279,7 @@ object
     match t with
     | ArgValue _ -> "a"
     | RunTimeValue -> "rt"
-    | ReturnValue -> "r"
+    | ReturnValue _ -> "r"
     | NamedConstant _ -> "n"
     | NumConstant _ -> "c"
     | ArgBufferSize _ -> "s"
@@ -381,89 +381,110 @@ let c_struct_constant_mcts: c_struct_constant_t mfts_int =
   new c_struct_constant_mcts_t
 
 
-class precondition_mcts_t: [precondition_t] mfts_int =
+class xxpredicate_mcts_t: [xxpredicate_t] mfts_int =
 object
 
-  inherit [precondition_t] mcts_t "precondition_t"
+  inherit [xxpredicate_t] mcts_t "xxpredicate_t"
 
-  method ts (p: precondition_t) =
+  method ts (p: xxpredicate_t) =
     match p with
-    | PreNullTerminated _ -> "nt"
-    | PreNotNull _ -> "nn"
-    | PreNull _ -> "nu"
-    | PreDerefRead _ -> "dr"
-    | PreDerefWrite _ -> "dw"
-    | PreAllocationBase _ -> "ab"
-    | PreFunctionPointer _ -> "fp"
-    | PreNoOverlap _ -> "nov"
-    | PreFormatString _ -> "fs"
-    | PreEnum _ -> "en"
-    | PreRelationalExpr _ -> "re"
-    | PreDisjunction _ -> "dj"
-    | PreConditional _ -> "c"
-    | PreIncludes _ -> "ic"
+    | XXAllocationBase _ -> "ab"
+    | XXBlockWrite _ -> "bw"
+    | XXBuffer _ -> "b"
+    | XXEnum _ -> "e"
+    | XXFalse -> "f"
+    | XXFreed _ -> "fr"
+    | XXFunctional -> "fn"
+    | XXFunctionPointer _ -> "fp"
+    | XXIncludes _ -> "inc"
+    | XXInitialized _ -> "i"
+    | XXInitializedRange _ -> "ir"
+    | XXInputFormatString _ -> "ifs"
+    | XXInvalidated _ -> "inv"
+    | XXModified _ -> "m"
+    | XXNewMemory _ -> "nm"
+    | XXStackAddress _ -> "sa"
+    | XXHeapAddress _ -> "ha"
+    | XXGlobalAddress _ -> "ga"
+    | XXNoOverlap _ -> "no"
+    | XXNotNull _ -> "nn"
+    | XXNull _ -> "nu"
+    | XXNotZero _ -> "nz"
+    | XXNonNegative _ -> "nng"
+    | XXPositive _ -> "pos"
+    | XXNullTerminated _ -> "nt"
+    | XXOutputFormatString _ -> "ofs"
+    | XXRelationalExpr _ -> "x"
+    | XXSetsErrno -> "errno"
+    | XXStartsThread _ -> "st"
+    | XXTainted _ -> "t"
+    | XXValidMem _ -> "v"
+    | XXDisjunction _ -> "dis"
+    | XXConditional _ -> "con"
 
   method tags = [
-      "ab"; "c"; "dj"; "dr"; "dw"; "en"; "fp"; "fs"; "ic";
-      "nn"; "nov"; "nt"; "nu"; "re"]
+      "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
+      "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
+      "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
+      "pos"; "sa"; "st"; "t"; "v"; "x"
+    ]
 
 end
 
-let precondition_mcts: precondition_t mfts_int =
-  new precondition_mcts_t
+let xxpredicate_mcts: xxpredicate_t mfts_int = new xxpredicate_mcts_t
 
 
-class postcondition_mcts_t: [postcondition_t] mfts_int =
+class xpo_predicate_mcts_t: [xpo_predicate_t] mfts_int =
 object
 
-  inherit [postcondition_t] mcts_t "postcondition_t"
+  inherit [xpo_predicate_t] mcts_t "xpo_predicate_t"
 
-  method ts (p: postcondition_t) =
+  method ts (p: xpo_predicate_t) =
     match p with
-    | PostNewMemoryRegion _ -> "nm"
-    | PostFunctionPointer _ -> "fp"
-    | PostAllocationBase _ -> "ab"
-    | PostNotNull _ -> "nn"
-    | PostNull _ -> "nu"
-    | PostNullTerminated _ -> "nt"
-    | PostEnum _ -> "en"
-    | PostFalse -> "f"
-    | PostRelationalExpr _ -> "re"
-    | PostDisjunction _ -> "dj"
-    | PostConditional _ -> "c"
+    | XPOAllocationBase _ -> "ab"
+    | XPOBlockWrite _ -> "bw"
+    | XPOBuffer _ -> "b"
+    | XPOEnum _ -> "e"
+    | XPOFalse -> "f"
+    | XPOFreed _ -> "fr"
+    | XPOFunctional -> "fn"
+    | XPOFunctionPointer _ -> "fp"
+    | XPOIncludes _ -> "inc"
+    | XPOInitialized _ -> "i"
+    | XPOInitializedRange _ -> "ir"
+    | XPOInputFormatString _ -> "ifs"
+    | XPOInvalidated _ -> "inv"
+    | XPOModified _ -> "m"
+    | XPONewMemory _ -> "nm"
+    | XPOStackAddress _ -> "sa"
+    | XPOHeapAddress _ -> "ha"
+    | XPOGlobalAddress _ -> "ga"
+    | XPONoOverlap _ -> "no"
+    | XPONotNull _ -> "nn"
+    | XPONull _ -> "nu"
+    | XPONotZero _ -> "nz"
+    | XPONonNegative _ -> "nng"
+    | XPOPositive _ -> "pos"
+    | XPONullTerminated _ -> "nt"
+    | XPOOutputFormatString _ -> "ofs"
+    | XPORelationalExpr _ -> "x"
+    | XPOSetsErrno -> "errno"
+    | XPOStartsThread _ -> "st"
+    | XPOTainted _ -> "t"
+    | XPOValidMem _ -> "v"
+    | XPODisjunction _ -> "dis"
+    | XPOConditional _ -> "con"
 
   method tags = [
-      "ab"; "c"; "dj"; "en"; "f"; "fp"; "nm"; "nn"; "nt"; "nu"; "re"]
+      "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
+      "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
+      "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
+      "pos"; "sa"; "st"; "t"; "v"; "x"
+    ]
 
 end
 
-let postcondition_mcts: postcondition_t mfts_int =
-  new postcondition_mcts_t
-
-
-class sideeffect_mcts_t: [sideeffect_t] mfts_int =
-object
-
-  inherit [sideeffect_t] mcts_t "sideeffect_t"
-
-  method ts (s: sideeffect_t) =
-    match s with
-    | BlockWrite _ -> "bw"
-    | Modifies _ -> "m"
-    | AllocatesStackMemory _ -> "as"
-    | StartsThread _ -> "st"
-    | Invalidates _ -> "i"
-    | SetsErrno -> "se"
-    | ConditionalSideeffect _ -> "c"
-    | UnknownSideeffect -> "u"
-
-  method tags = ["as"; "bw"; "c"; "i"; "m"; "se"; "st"; "u"]
-
-end
-
-
-let sideeffect_mcts: sideeffect_t mfts_int =
-  new sideeffect_mcts_t
+let xpo_predicate_mcts: xpo_predicate_t mfts_int = new xpo_predicate_mcts_t
 
 
 class memory_base_mcts_t:[ memory_base_t ] mfts_int =
@@ -555,6 +576,28 @@ end
 
 let constant_value_variable_mcts:constant_value_variable_t mfts_int =
   new constant_value_variable_mcts_t
+
+
+class stack_access_mcts_t: [stack_access_t] mfts_int =
+object
+
+  inherit [stack_access_t] mcts_t "stack_access_t"
+
+  method ts (sa: stack_access_t) =
+    match sa with
+    | RegisterSpill _ -> "rs"
+    | RegisterRestore _ -> "rr"
+    | StackLoad _ -> "sl"
+    | StackStore _ -> "ss"
+    | StackBlockRead _ -> "br"
+    | StackBlockWrite _ -> "bw"
+
+  method tags = ["br"; "bw"; "rr"; "rs"; "sl"; "ss"]
+
+end
+
+let stack_access_mcts: stack_access_t mfts_int =
+  new stack_access_mcts_t
 
 
 class jump_target_mcts_t: [ jump_target_t ] mfts_int =
