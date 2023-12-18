@@ -442,7 +442,7 @@ let extract_linear_equalities
           List.filter (fun v -> v#isTmp || outside_test_jump_range v k) vars in
 	let domain = domain#projectOut (outvars @ ssavars) in
 	let initVars = extract_initvar_equalities finfo k domain flocinv in
-	let testVals = extract_testvar_equalities finfo k domain in
+	(* let testVals = extract_testvar_equalities finfo k domain in *)
 
         (* In case of a delay in the propagation of the address of a lhs variable,
            it may happen that an invariant on a variable needs to be revoked and
