@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -106,7 +106,7 @@ module DataBlockCollections = CHCollections.Make (
     let compare b1 b2 = b1#compare b2
     let toPretty b = b#toPretty
   end)
- 
+
 let file_as_string = ref ""
 let id = BCHInterfaceDictionary.interface_dictionary
 
@@ -139,10 +139,6 @@ object (self)
   val mutable has_file = false
   val mutable filename = ""
   val mutable xfilesize = 0
-  val mutable is_elf = false
-  val mutable is_mips = false
-  val mutable is_arm = false
-  val mutable is_power = false
   val mutable preamble_cutoff = 12   (* minimum number of observed preambles, to
                                         use instruction as reason to add function
                                         entry point *)
@@ -157,7 +153,7 @@ object (self)
   val jumptabletargets = H.create 13
 
   val indirect_jump_targets = H.create 13  (* fa,ia -> target list *)
-    
+
   val nonreturning_calls = new DoublewordCollections.table_t
   val fixedtrueconditionals = new DoublewordCollections.set_t
   val excluded_jumptables = new DoublewordCollections.set_t
@@ -167,7 +163,7 @@ object (self)
   val userdeclared_codesections = new DoublewordCollections.table_t
   val mutable readonly_ranges = []
   val initialized_memory = H.create 3
-    
+
   val function_call_targets = H.create 13  (* (faddr, iaddr) -> call_target_t *)
   val variable_intros = H.create 13 (* iaddr#index -> name *)
 
@@ -175,7 +171,7 @@ object (self)
   val esp_adjustments_i = H.create 3    (* indexed with iaddr *)
   val cfnops = H.create 3               (* indexed with iaddr, cfg obfuscations *)
   val cfjmps = H.create 3      (* indexed with iaddr, cfg obfuscated jumps *)
-  val thread_start_functions = H.create 13 
+  val thread_start_functions = H.create 13
   val exported_item_names = H.create 3
   val class_membership = H.create 2
   val mutable constant_files = []
@@ -203,9 +199,9 @@ object (self)
    *)
   val argument_constraints = H.create 3
 
-  val mutable user_data_blocks = 0 
+  val mutable user_data_blocks = 0
   val mutable user_call_targets = 0
-  val mutable user_structs = 0 
+  val mutable user_structs = 0
   val mutable user_nonreturning = 0
   val mutable user_classes = 0
   val mutable encodings = []
@@ -302,7 +298,7 @@ object (self)
 	      ida_function_entry_points#add a
 	    end) (node#getTaggedChildren "fe")
       end
-    | _ -> 
+    | _ ->
       chlog#add "initialization" (STR "No ida function entry points file found")
  *)
   method get_ida_function_entry_points =
@@ -312,11 +308,11 @@ object (self)
     (start_addr:doubleword_int) (args:bterm_t list) =
     let index = start_addr#index in
     let entry = if H.mem thread_start_functions index then
-	H.find thread_start_functions index 
-      else 
-	let e = H.create 3 in 
-	begin 
-	  H.add thread_start_functions index e ; 
+	H.find thread_start_functions index
+      else
+	let e = H.create 3 in
+	begin
+	  H.add thread_start_functions index e ;
 	  ignore (functions_data#add_function start_addr) ;
           chlog#add
             "set thread start address"
@@ -326,7 +322,7 @@ object (self)
                  STR iaddr;
                  STR ": ";
                  start_addr#toPretty]);
-	  e 
+	  e
 	end in
     H.replace entry (faddr#index,iaddr) args
 
@@ -520,7 +516,7 @@ object (self)
                 faddr#toPretty;
                 STR "@";
                 iaddr#toPretty]))
- 
+
   method private add_jump_table_target
                    (faddr: doubleword_int)
                    (iaddr: doubleword_int)
@@ -539,7 +535,7 @@ object (self)
                STR "): ";
                jta#toPretty]) in
     H.add jumptabletargets (faddr#index,iaddr#index) (jta, lb, ub)
-   
+
   method get_lib_functions_loaded =
     H.fold (fun k v a -> (k,v) :: a) lib_functions_loaded []
 
@@ -554,20 +550,20 @@ object (self)
   method get_user_call_target_count = user_call_targets
 
   method add_exported_item_name (addr:doubleword_int) (name:string) =
-    H.replace exported_item_names addr#index name 
+    H.replace exported_item_names addr#index name
 
-  method is_class_member_function (faddr:doubleword_int) = 
+  method is_class_member_function (faddr:doubleword_int) =
     H.mem class_membership faddr#index
 
   method get_class_infos (faddr:doubleword_int) =
     try
       H.find class_membership faddr#index
     with
-      Not_found -> 
-	raise (BCH_failure (LBLOCK [ STR "No class names found for " ; 
+      Not_found ->
+	raise (BCH_failure (LBLOCK [ STR "No class names found for " ;
 				     faddr#toPretty ]))
 
-  method private add_class_member 
+  method private add_class_member
     (faddr: doubleword_int)
     (classinfo: string * function_interface_t * bool) =
     let index = faddr#index in
@@ -597,25 +593,13 @@ object (self)
 
   method get_xfilesize = xfilesize
 
-  method set_elf = is_elf <- true
-  method is_elf = is_elf
-
-  method set_mips = is_mips <- true
-  method is_mips = is_mips
-
-  method set_arm = is_arm <- true
-  method is_arm = is_arm
-
-  method set_power = is_power <- true
-  method is_power = is_power
-
   (* system initialization :
      - load system_file (application specific, created by previous round)
      - load system_userdata (application specific, user-created )
      - load directory_file  (specification of export items, per directory)
      - set_functions_file_path (the invariants and finfos from the previous round)
   *)
-    
+
   method initialize =
     begin
       self#initialize_system_file;
@@ -629,8 +613,8 @@ object (self)
   method private initialize_system_file  =
     try
       match load_system_file () with
-      | Some node -> 
-         begin 
+      | Some node ->
+         begin
 	   has_file <- true;
 	   self#read_xml node;
 	   chlog#add "initialization" (STR "system_info: initialization from file")
@@ -652,7 +636,7 @@ object (self)
 	ch_error_log#add "xml error in system-info file"  p;
 	raise (XmlDocumentError (line, col, msg))
       end
-      
+
 
   method private initialize_user_directory_data = ()
 
@@ -671,14 +655,14 @@ object (self)
     let hasc = node#hasOneTaggedChild in
     let getc = node#getTaggedChild in
     begin
-      (if hasc "data-blocks" then 
+      (if hasc "data-blocks" then
 	  let dnode = getc "data-blocks" in
 	  begin
 	    self#read_xml_data_blocks dnode ;
 	    user_data_blocks <- List.length dnode#getChildren
 	  end)
     end
-      
+
 
   method private initialize_user_data =
     match load_userdata_system_file () with
@@ -689,7 +673,7 @@ object (self)
           "initialization" (STR "system_info: supplemented with user data")
       end
     | _ -> ()
-      
+
   method private read_xml_user_data (node:xml_element_int) =
     let get = node#getAttribute in
     let has = node#hasNamedAttribute in
@@ -702,14 +686,14 @@ object (self)
       (if hasc "settings" then
 	 self#read_xml_settings (getc "settings") );
 
-      (if hasc "function-entry-points" then 
+      (if hasc "function-entry-points" then
 	 let fenode = getc "function-entry-points" in
 	 self#read_xml_user_function_entry_points fenode);
 
-      (if hasc "function-names" then 
+      (if hasc "function-names" then
 	 self#read_xml_user_function_names (getc "function-names"));
 
-      (if hasc "non-returning-functions" then 
+      (if hasc "non-returning-functions" then
 	 let nrnode = getc "non-returning-functions" in
 	 begin
 	   self#read_xml_user_nonreturning_functions nrnode;
@@ -732,21 +716,21 @@ object (self)
 	   self#read_xml_readonly_ranges ronode
 	 end);
 
-      (if hasc "classes" then 
+      (if hasc "classes" then
 	 let cnode = getc "classes" in
 	 begin
 	   self#read_xml_classes cnode;
 	   user_classes <- List.length cnode#getChildren
 	 end);
 
-      (if hasc "structs" then 
+      (if hasc "structs" then
 	 let snode = getc "structs" in
 	 begin
 	   self#read_xml_structs snode;
 	   user_structs <- List.length snode#getChildren
 	 end);
 
-      (if hasc "data-blocks" then 
+      (if hasc "data-blocks" then
 	 let dnode = getc "data-blocks" in
 	 begin
 	   self#read_xml_data_blocks dnode;
@@ -796,14 +780,14 @@ object (self)
       (if hasc "cfnops" then
          self#read_xml_cfnops (getc "cfnops"));
 
-      (if hasc "fixed-conditionals" then 
+      (if hasc "fixed-conditionals" then
 	 self#read_xml_fixed_true_conditionals (getc "fixed-conditionals"));
 
-      (if hasc "excluded-jumptables" then 
+      (if hasc "excluded-jumptables" then
 	 self#read_xml_excluded_jumptables (getc "excluded-jumptables"));
 
       (if hasc "invalidated-jumptable-startaddresses" then
-	  self#read_xml_invalidated_jumptable_startaddresses 
+	  self#read_xml_invalidated_jumptable_startaddresses
 	    (getc "invalidated-jumptable-startaddresses"));
 
       (if hasc "jumptable-splits" then
@@ -839,13 +823,13 @@ object (self)
 	  let enode = getc "esp-adjustments-i" in
 	  self#read_xml_esp_adjustments_i enode);
 
-      (if hasc "use-struct-constants" then 
+      (if hasc "use-struct-constants" then
 	 self#read_xml_structconstants (getc "use-struct-constants"));
 
       (if hasc "use-constants" then
          self#read_xml_constants_files (getc "use-constants"));
 
-      (if hasc "symbolic-addresses" then 
+      (if hasc "symbolic-addresses" then
 	 read_xml_symbolic_addresses (getc "symbolic-addresses"));
 
       (if hasc "variable-introductions" then
@@ -881,13 +865,13 @@ object (self)
       List.iter (fun n ->
 	let name = n#getAttribute "name" in
 	match name with
-	| "sideeffects-on-globals" -> 
-	  let gvAffected = 
+	| "sideeffects-on-globals" ->
+	  let gvAffected =
 	    List.map (fun gn -> gn#getAttribute "a") (n#getTaggedChildren "gv") in
 	  system_settings#disable_sideeffects_on_globals gvAffected
 	| "abstract-stackvars" -> system_settings#set_abstract_stackvars_disabled ;
 	| _ ->
-           raise (BCH_failure 
+           raise (BCH_failure
 		    (LBLOCK [ STR "System setting disable not recognized: " ;
                               STR name ])))
 	(getc "disable") ;
@@ -956,9 +940,9 @@ object (self)
 
   method is_cfnop (a:doubleword_int) = H.mem cfnops a#index
 
-  method get_cfnop (a:doubleword_int) = 
+  method get_cfnop (a:doubleword_int) =
     if H.mem cfnops a#index then H.find cfnops a#index else
-      raise (BCH_failure (LBLOCK [ STR "No cfnop found at " ; a#toPretty ]))  
+      raise (BCH_failure (LBLOCK [ STR "No cfnop found at " ; a#toPretty ]))
 
   method is_cfjmp (a:doubleword_int) = H.mem cfjmps a#index
 
@@ -1110,7 +1094,7 @@ object (self)
             (LBLOCK [STR "Instruction at "; STR ia]) in
         H.add successors ia addrs)
       (node#getTaggedChildren "instr")
- 
+
   method private read_xml_encodings (node:xml_element_int) =
     List.iter (fun n ->
       let get = n#getAttribute in
@@ -1410,7 +1394,7 @@ object (self)
 	    read_xml_symbolic_flags node
 	  else
 	    raise
-              (BCH_failure 
+              (BCH_failure
 		 (LBLOCK [
                       STR "Symbolic constant file ";
                       STR filename;
@@ -1468,7 +1452,7 @@ object (self)
     let get n = n#getAttribute in
     let getcc = node#getTaggedChildren in
     let geta n = geta_fail "read_xml_user_function_names" n "a" in
-    List.iter (fun n -> 
+    List.iter (fun n ->
       let fa = geta n in
       let name = get n "n" in
       (functions_data#add_function fa)#add_name name) (getcc "fn")
@@ -1523,7 +1507,7 @@ object (self)
   method private read_xml_nonreturning_calls (node:xml_element_int) =
     let geta n tag = geta_fail "read_xml_nonreturning_functions" n tag in
     let getcc = node#getTaggedChildren in
-    List.iter (fun n -> 
+    List.iter (fun n ->
       let fa = geta n "fa" in
       let ia = geta n "ia" in
       let _ = chlog#add "user-defined nonreturning call"
@@ -1535,7 +1519,7 @@ object (self)
 	begin s#add ia; nonreturning_calls#set fa s end) (getcc "nrc")
 
   method private read_xml_classes (node:xml_element_int) =
-    List.iter add_user_cpp_class_file 
+    List.iter add_user_cpp_class_file
       (List.map
          (fun n -> n#getAttribute "name") (node#getTaggedChildren "cls"))
 
@@ -1566,7 +1550,7 @@ object (self)
 		    STR " not found"]))
 	end)
       (node#getTaggedChildren "sc")
-	
+
 
   method private read_xml_loaded_dlls (node:xml_element_int) =
     List.iter (fun dNode ->
@@ -1595,7 +1579,7 @@ object (self)
         let iaddr = geta "ia" in
         let tgt = geta "tgt" in
         self#add_goto_return iaddr tgt) (node#getTaggedChildren "goto")
-          
+
   method private read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
     let hasc = node#hasOneTaggedChild in
@@ -1617,9 +1601,9 @@ object (self)
       (if hasc "variable-introductions" then
          self#read_xml_variable_introductions (getc "variable-introductions"))
     end
-      
+
   method get_userdeclared_codesections = userdeclared_codesections#listOfKeys
-      
+
    (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
     *                                     stage 1: jump-tables and data-blocks *
     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
@@ -1629,10 +1613,10 @@ object (self)
 
   method private has_invalid_startaddress (iaddr:doubleword_int) =
     invalidated_jumptable_startaddresses#has iaddr
-      
-  method initialize_jumptables 
-    (is_code_address:doubleword_int -> bool) 
-    (read_only_section_strings:(doubleword_int * string) list) = 
+
+  method initialize_jumptables
+    (is_code_address:doubleword_int -> bool)
+    (read_only_section_strings:(doubleword_int * string) list) =
     let default () =
       if system_settings#is_set_vftables_enabled then
         List.iter (fun jt ->
@@ -1640,9 +1624,9 @@ object (self)
 	   self#set_virtual_function_table jt#get_start_address) self#get_jumptables in
     if has_file then default () else
       match jumptables with
-      | [] -> 
+      | [] ->
 	let l =  find_jumptables ~is_code_address ~read_only_section_strings in
-	let l = List.filter 
+	let l = List.filter
 	          (fun jt -> not (self#is_excluded_jumptable jt#get_start_address)) l in
         let l = List.fold_left
                   (fun acc jt ->
@@ -1662,12 +1646,12 @@ object (self)
       | _ -> default ()
 
   method initialize_datablocks
-    (read_only_section_strings:(doubleword_int * string) list) = 
+    (read_only_section_strings:(doubleword_int * string) list) =
     if has_file then () else
       let _ = pr_debug [ STR "Initialize data blocks " ; NL ] in
       data_blocks#addList (find_seh4_structures read_only_section_strings)
 
-	
+
   method get_jumptables = jumptables
 
   method get_jumptable (addr:doubleword_int) =
@@ -1695,7 +1679,7 @@ object (self)
     end
 
   method add_jumptable (jt:jumptable_int) = jumptables <- jt :: jumptables
-    
+
   method private write_xml_jumptables (node:xml_element_int) =
     node#appendChildren
       (List.map (fun j ->
@@ -1713,7 +1697,7 @@ object (self)
       Some (List.find (fun db ->
                 db#get_start_address#le addr && addr#lt db#get_end_address)
 	      data_blocks#toList)
-    with 
+    with
       Not_found ->  None
 
   method is_in_jumptable (addr:doubleword_int) =
@@ -1721,7 +1705,7 @@ object (self)
       Some (List.find (fun jt -> jt#includes_address addr) jumptables)
     with
       Not_found -> None
-	      
+
   method get_data_block (addr:doubleword_int) =
     try
       List.find (fun db -> db#get_start_address#equal addr) data_blocks#toList
@@ -1733,7 +1717,7 @@ object (self)
   method has_jumptable (addr:doubleword_int) =
     List.exists (fun jt -> jt#get_start_address#equal addr) jumptables
 
-  method add_data_block (db:data_block_int) = 
+  method add_data_block (db:data_block_int) =
     begin
       data_blocks#add db;
       (if collect_diagnostics () then
@@ -1746,7 +1730,7 @@ object (self)
                 STR ": ";
                 STR db#get_name]))
     end
-      
+
   method get_data_blocks = data_blocks#toList
 
   method set_jump_target (jaddr:doubleword_int) (base:doubleword_int)
@@ -1763,10 +1747,10 @@ object (self)
       raise
         (BCH_failure
 	   (LBLOCK [STR "No jump target found at "; jaddr#toPretty]))
-    
+
   method private write_xml_data_blocks (node:xml_element_int) =
-    node#appendChildren (List.map (fun d -> 
-      let dNode = xmlElement "db" in 
+    node#appendChildren (List.map (fun d ->
+      let dNode = xmlElement "db" in
       begin
         d#write_xml dNode;
         dNode
@@ -1783,11 +1767,11 @@ object (self)
       raise
         (BCH_failure
            (LBLOCK [STR "No variable intro found for address "; iaddr#toPretty]))
-      
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                            stage 2: function entry points *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-      
+
   method initialize_function_entry_points
            (collect_targets:unit -> doubleword_int list) =
     if has_file then
@@ -1826,8 +1810,8 @@ object (self)
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                                             function names *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-                                                 
-  method get_exported_item_name (a:doubleword_int) = 
+
+  method get_exported_item_name (a:doubleword_int) =
     if H.mem exported_item_names a#index then
       H.find exported_item_names a#index
     else
@@ -1835,15 +1819,15 @@ object (self)
         (BCH_failure
            (LBLOCK [STR "No exported item name found for "; a#toPretty]))
 
-  method has_exported_item_name (a:doubleword_int) = 
+  method has_exported_item_name (a:doubleword_int) =
     H.mem exported_item_names a#index
 
   method get_exported_data_spec (name:string) =
     if self#has_exported_data_spec name then
-      H.find data_export_specs name 
+      H.find data_export_specs name
     else
       raise (BCH_failure (LBLOCK [STR "No export spec found for "; STR name]))
-	
+
   method has_exported_data_spec (name:string) = H.mem data_export_specs name
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ goto returns ~ *)
@@ -1856,7 +1840,7 @@ object (self)
         (LBLOCK [iaddr#toPretty; STR ": "; tgt#toPretty])
     end
 
-  method is_goto_return (iaddr:doubleword_int) = 
+  method is_goto_return (iaddr:doubleword_int) =
     match goto_returns#get iaddr with Some _ -> true | _ -> false
 
   method get_goto_return (iaddr:doubleword_int) =
@@ -1866,7 +1850,7 @@ object (self)
        raise
          (BCH_failure
             (LBLOCK [STR "No goto-return found for "; iaddr#toPretty]))
-      
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                                          file information *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
@@ -1879,10 +1863,10 @@ object (self)
   val mutable address_of_entry_point = wordzero
   val locked_instructions = new DoublewordCollections.set_t
   val bound_library_functions = H.create 13
-    
+
   method set_file_string (s:string) = file_as_string := s
 
-  method set_big_endian = 
+  method set_big_endian =
     begin
       little_endian <- false ;
       file_stream_wrapper_function <- make_big_endian_stream_wrapper
@@ -1893,7 +1877,7 @@ object (self)
   method set_elf_is_code_address (lb:doubleword_int) (ub:doubleword_int) =
     is_code_address <- (fun a -> lb#le a  && a #lt ub)
 
-  method set_code_size (s:doubleword_int) = 
+  method set_code_size (s:doubleword_int) =
     let low = image_base#add base_of_code_rva in
     let high = low#add s in
     begin
@@ -1901,7 +1885,7 @@ object (self)
       is_code_address <- (fun a -> low#le a && a#lt high)
     end
 
-  method get_code_size = 
+  method get_code_size =
     List.fold_left
       (fun acc cs -> acc#add cs)
       code_size userdeclared_codesections#listOfValues
@@ -1941,7 +1925,7 @@ object (self)
   method get_file_string ?(hexSize=wordzero) (hexOffset:doubleword_int) =
     let offset = hexOffset#to_int in
     let size = hexSize#to_int in
-    let len = String.length !file_as_string in    
+    let len = String.length !file_as_string in
     if size > 0 then
       if offset > len then
 	let hexLen =
@@ -2024,32 +2008,32 @@ object (self)
                   INT len;
                   STR "; offset: ";
                   INT offset]))
-	
-  method set_image_base (a:doubleword_int) = 
+
+  method set_image_base (a:doubleword_int) =
     begin image_base <- a ; system_data#set_image_base a end
-    
+
   method get_image_base = image_base
-    
+
   method set_base_of_code_rva (a:doubleword_int) = base_of_code_rva <- a
-    
+
   method get_base_of_code_rva = base_of_code_rva
 
   method is_code_address = is_code_address
-    
-  method set_address_of_entry_point (a:doubleword_int) = 
+
+  method set_address_of_entry_point (a:doubleword_int) =
     begin
       address_of_entry_point <- a ;
       ignore (functions_data#add_function a)
     end
-  method get_address_of_entry_point = address_of_entry_point 
-    
+  method get_address_of_entry_point = address_of_entry_point
+
   method add_locked_instruction (a:doubleword_int) = locked_instructions#add a
-    
+
   method is_locked_instruction (a:doubleword_int) = locked_instructions#has a
-    
-  method add_bound_library_function (a:doubleword_int) (name:string * string) = 
+
+  method add_bound_library_function (a:doubleword_int) (name:string * string) =
     if a#equal wordzero then () else H.add bound_library_functions a#index name
-      
+
   method get_bound_library_function (a:doubleword_int) =
     if H.mem bound_library_functions a#index then
       H.find bound_library_functions a#index
@@ -2061,8 +2045,8 @@ object (self)
                STR "No bound library function found for "; a#toPretty]);
 	raise (Invocation_error "system_info#get_bound_library_function")
       end
-	
-  method has_bound_library_function (a:doubleword_int) = 
+
+  method has_bound_library_function (a:doubleword_int) =
     H.mem bound_library_functions a#index
 
   method private write_xml_loaded_dlls (node:xml_element_int) =
@@ -2117,7 +2101,7 @@ object (self)
 
   method private write_xml_struct_tables (node: xml_element_int) =
     structtables#write_xml node
-    
+
   method write_xml (node: xml_element_int) =
     let append = node#appendChildren in
     let fNode = xmlElement "functions-data" in
@@ -2144,7 +2128,7 @@ object (self)
       append [
           fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode]
     end
-      
+
 end
 
 

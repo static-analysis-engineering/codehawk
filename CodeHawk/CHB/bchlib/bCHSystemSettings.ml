@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -80,6 +80,8 @@ let excluded_functions () = !fns_excluded
 class system_settings_t:system_settings_int =
 object (self)
 
+  val mutable architecture = "x86"
+  val mutable fileformat = "pe"
   val mutable jsignature_paths = []
   val mutable summary_paths = []
   val mutable so_libraries = []    (* names of so-libraries *)
@@ -101,6 +103,43 @@ object (self)
   val mutable app_name = None
   val mutable exclude_debug = false
   val mutable ssa = false
+  val mutable collectdata = false
+
+  method set_collect_data = collectdata <- true
+
+  method collect_data = collectdata
+
+  method set_architecture (name: string) =
+    if List.mem name ["arm"; "mips"; "power"; "x86"] then
+      architecture <- name
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [STR "Architecture "; STR name; STR " not recognized"]))
+
+  method set_fileformat (name: string) =
+    if List.mem name ["elf"; "pe"] then
+      fileformat <- name
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [STR "File format "; STR name; STR " not recognized"]))
+
+  method get_architecture = architecture
+
+  method get_fileformat = fileformat
+
+  method is_arm = architecture = "arm"
+
+  method is_mips = architecture = "mips"
+
+  method is_power = architecture = "power"
+
+  method is_x86 = architecture = "x86"
+
+  method is_elf = fileformat = "elf"
+
+  method is_pe = fileformat = "pe"
 
   method set_verbose = verbose <- true
 
@@ -152,7 +191,7 @@ object (self)
 
   method is_set_vftables_enabled = set_vftables_enabled
 
-  method set_apps_dir s = 
+  method set_apps_dir s =
     begin
       apps_dir <- Some s ;
       chlog#add "applications directory" (LBLOCK [STR "Set to "; STR s])
@@ -191,7 +230,7 @@ object (self)
 
   method disable_sideeffects_on_globals (l:string list) =
     match l with
-    | [] -> 
+    | [] ->
       begin
 	sideeffects_on_globals_enabled <- true;
 	chlog#add "settings" (STR "disable sideeffects on globals")
@@ -208,7 +247,7 @@ object (self)
 		pretty_print_list l (fun a -> STR a) " [" "; " "]"])
        end
 
-  method set_summary_jar s = 
+  method set_summary_jar s =
     match open_path s with
     | Some p -> summary_paths <- summary_paths @ [ p ] | _ -> ()
 
@@ -227,7 +266,7 @@ object (self)
       let jSigFilename = sumDir ^ "jsignatures.jar" in
       let sumFilename  = sumDir ^ "bcodesummaries.jar" in
       let appjSigFilename = appJDir ^ appname ^ "_jsignatures.jar" in
-      let appSumFilename = appDir ^ appname ^ "_summaries.jar" in 
+      let appSumFilename = appDir ^ appname ^ "_summaries.jar" in
       begin
 	app_name <- Some appname;
 	self#set_summary_jar appSumFilename;
