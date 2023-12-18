@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023      Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +31,7 @@
 open CHPretty
 
 (* bchlib *)
-open BCHProofObligationTypes
+open BCHLibTypes
 
-val po_predicate_to_pretty: po_predicate_t -> pretty_t
+
+val mk_proofobligations: doubleword_int -> xpodictionary_int -> proofobligations_int
