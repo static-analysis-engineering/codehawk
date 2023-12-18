@@ -54,10 +54,12 @@ open BCHBCTypes
 open BCHBCTypePretty
 open BCHBCTypeUtil
 open BCHBTerm
+open BCHCallSemanticsRecorder
 open BCHCallTarget
 open BCHCPURegisters
 open BCHDemangler
 open BCHDoubleword
+open BCHExternalPredicate
 open BCHFtsParameter
 open BCHFunctionData
 open BCHFunctionInfo
@@ -68,6 +70,7 @@ open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
 open BCHMakeCallTargetInfo
+open BCHMemoryRecorder
 open BCHMemoryReference
 open BCHPostcondition
 open BCHPrecondition
@@ -107,14 +110,14 @@ let btype_equal (t1: btype_t) (t2: btype_t) =
 
 
 (* Split a list into two lists, the first one with n elements,
-   the second list with the remaining (if any) elements
-*)
+   the second list with the remaining (if any) elements *)
 let split_list (n:int) (l:'a list):('a list * 'a list) =
   let rec loop i p l =
     if i = n then
-      (List.rev p,l)
+      (List.rev p, l)
     else loop (i+1) ((List.hd l)::p) (List.tl l) in
-  if (List.length l) <= n then (l,[]) else loop 0 [] l
+  if (List.length l) <= n then (l, []) else loop 0 [] l
+
 
 let unknown_write_symbol = new symbol_t "unknown write"
 
@@ -176,6 +179,216 @@ end)
 let check_chain_for_address (cfaddr:doubleword_int) (v:variable_t) = false
 
 
+class mips_argument_type_propagator_t
+        (finfo: function_info_int)
+        (callargs: (fts_parameter_t * xpr_t) list): argument_type_propagator_int =
+object (self)
+
+  method finfo = finfo
+
+  method callargs = callargs
+
+  method elevate_call_arguments =
+    let set_stackpar (fty: btype_t) (index: int) =
+      let fpar = mk_stack_parameter ~btype:fty index in
+      self#finfo#update_summary (self#finfo#get_summary#add_parameter fpar) in
+    List.iter (fun (par, x) ->
+        match x with
+        | XVar v when self#finfo#env#is_initial_register_value v ->
+           let reg = self#finfo#env#get_initial_register_value_register v in
+           let fty = par.apar_type in
+           (match reg with
+            | MIPSRegister MRa0 -> set_stackpar fty 1
+            | MIPSRegister MRa1 -> set_stackpar fty 2
+            | MIPSRegister MRa2 -> set_stackpar fty 3
+            | MIPSRegister MRa3 -> set_stackpar fty 4
+            | _ -> ())
+        | XVar v when self#finfo#env#is_stack_parameter_value v ->
+           let indexopt = self#finfo#env#get_stack_parameter_index v in
+           (match indexopt with
+            | Some index ->
+               let fty = par.apar_type in
+               (* stack_parameter_index(arg.0016) = 4, which corresponds to the
+                  fifth argument in MIPS, hence the increment by 1 *)
+               set_stackpar fty (index + 1)
+            | _ -> ())
+        | _ -> ()) self#callargs
+
+end
+
+
+class mips_expression_externalizer_t
+        (finfo: function_info_int): expression_externalizer_int =
+object (self)
+
+  method finfo = finfo
+
+  method xpr_to_bterm (btype: btype_t) (xpr: xpr_t): bterm_t option =
+    match xpr with
+    | XConst (IntConst n) -> Some (NumConstant n)
+    | XVar v when self#finfo#env#is_initial_register_value v ->
+       let reg = self#finfo#env#get_initial_register_value_register v in
+       let ftspar =
+         (match reg with
+          | MIPSRegister MRa0 -> Some (mk_stack_parameter ~btype 1)
+          | MIPSRegister MRa1 -> Some (mk_stack_parameter ~btype 2)
+          | MIPSRegister MRa2 -> Some (mk_stack_parameter ~btype 3)
+          | MIPSRegister MRa3 -> Some (mk_stack_parameter ~btype 4)
+          | _ -> None) in
+       (match ftspar with
+        | Some p -> Some (ArgValue p)
+        | _ -> None)
+    | XVar v when self#finfo#env#is_stack_parameter_value v ->
+       let indexopt = self#finfo#env#get_stack_parameter_index v in
+       let ftspar =
+         (match indexopt with
+          | Some index -> Some (mk_stack_parameter ~btype index)
+          | _ -> None) in
+       (match ftspar with
+        | Some p -> Some (ArgValue p)
+        | _ -> None)
+    | XOp ((Xf "indexsize"), [xx]) ->
+       let optt = self#xpr_to_bterm t_int xx in
+       (match optt with
+        | Some tt -> Some (IndexSize tt)
+        | _ -> None)
+    | XOp ((Xf "ntpos"), [xx]) ->
+       let optt = self#xpr_to_bterm t_int xx in
+       (match optt with
+        | Some tt -> Some (ArgNullTerminatorPos tt)
+        | _ -> None)
+    | _ -> None
+
+end
+
+
+class mips_bterm_evaluator_t
+        (finfo: function_info_int)
+        (callargs: (fts_parameter_t * xpr_t) list): bterm_evaluator_int =
+object (self)
+
+  val finfo = finfo
+  val callargs = callargs
+
+  method finfo = finfo
+
+  method bterm_xpr (t: bterm_t): xpr_t option =
+    match t with
+    | ArgValue par ->
+       List.fold_left (fun acc (cpar, x) ->
+           match acc with
+           | Some _ -> acc
+           | _ ->
+              if (fts_parameter_equal cpar par) then Some x else None)
+         None callargs
+    | NumConstant n -> Some (XConst (IntConst n))
+    | IndexSize t ->
+       (match self#bterm_xpr t with
+        | Some x -> Some (XOp ((Xf "indexsize"), [x]))
+        | _ -> None)
+    | ByteSize t -> self#bterm_xpr t
+    | ArgNullTerminatorPos t ->
+       (match self#bterm_xpr t with
+        | Some x -> Some (XOp ((Xf "ntpos"), [x]))
+        | _ -> None)
+    | _ -> None
+
+  method xpr_local_stack_address (x: xpr_t): int option =
+    match x with
+    | XOp (XMinus, [XVar v; XConst (IntConst n)]) when n#geq numerical_zero ->
+       let sp0 =
+         self#finfo#env#mk_initial_register_value ~level:0 (MIPSRegister MRsp) in
+       if v#equal sp0 then
+         Some n#toInt
+       else
+         None
+    | _ -> None
+
+  method bterm_stack_address (t: bterm_t): xpr_t option =
+    match self#bterm_xpr t with
+    | Some (XOp (XMinus, [XVar v; c]) as addr) ->
+       let sp0 =
+         self#finfo#env#mk_initial_register_value ~level:0 (MIPSRegister MRsp) in
+       (match c with
+        | XConst (IntConst n) when n#geq numerical_zero ->
+           if v#equal sp0 then
+             Some addr
+           else
+             None
+        | _ -> None)
+    | _ -> None
+
+  method elevate_bterm_to_argument (t: bterm_t): fts_parameter_t option =
+    match t with
+    | ArgValue par ->
+       List.fold_left (fun acc (cpar, x) ->
+           match acc with
+           | Some _ -> acc
+           | _ ->
+              if (fts_parameter_equal cpar par) then
+                match x with
+                | XVar v when finfo#env#is_initial_register_value v ->
+                   let reg = finfo#env#get_initial_register_value_register v in
+                   let fty = cpar.apar_type in
+                   (match reg with
+                    | MIPSRegister MRa0 ->
+                       Some (mk_stack_parameter ~btype:fty 1)
+                    | MIPSRegister MRa1 ->
+                       Some (mk_stack_parameter ~btype:fty 2)
+                    | MIPSRegister MRa2 ->
+                       Some (mk_stack_parameter ~btype:fty 3)
+                    | MIPSRegister MRa3 ->
+                       Some (mk_stack_parameter ~btype:fty 4)
+                    | _ -> None)
+                | XVar v when finfo#env#is_stack_parameter_value v ->
+                   let indexopt = finfo#env#get_stack_parameter_index v in
+                   (match indexopt with
+                    | Some index ->
+                       let fty = cpar.apar_type in
+                       Some (mk_stack_parameter ~btype:fty index)
+                    | _ -> None)
+                | _ -> None
+              else
+                None) None callargs
+    | _ -> None
+
+  method constant_bterm (t: bterm_t): bterm_t option =
+    match t with
+    | NumConstant _ -> Some t
+    | ArgValue par ->
+       List.fold_left (fun acc (cpar, x) ->
+           match acc with
+           | Some _ -> acc
+           | _ ->
+              if (fts_parameter_equal cpar par) then
+                match x with
+                | XConst (IntConst n) -> Some (NumConstant n)
+                | _ -> None
+              else
+                None) None callargs
+    | IndexSize tt ->
+       (match self#constant_bterm tt with
+        | Some subterm -> Some (IndexSize subterm)
+        | _ -> None)
+    | ByteSize tt ->
+       (match self#constant_bterm tt with
+        | Some subterm -> Some (ByteSize subterm)
+        | _ -> None)
+    | ArgSizeOf _ -> Some t
+    | NamedConstant _ -> Some t
+    | _ -> None
+
+  method propagate_to_api (t: bterm_t): bterm_t option =
+    match self#elevate_bterm_to_argument t with
+    | Some fpar -> Some (ArgValue fpar)
+    | _ ->
+       match self#constant_bterm t with
+       | Some t -> Some t
+       | _ -> None
+
+end
+
+
 class floc_t (finfo:function_info_int) (loc:location_int):floc_int =
 object (self)
 
@@ -189,6 +402,8 @@ object (self)
   method inv = self#f#iinv self#cia
   method tinv = self#f#itinv self#cia
   method varinv = self#f#ivarinv self#cia
+
+  method memrecorder = mk_memory_recorder self#f self#cia
 
   method ssa_register_values = self#env#get_ssa_values_at self#cia
 
@@ -206,7 +421,8 @@ object (self)
    *                                                         type_invariants *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
-  method add_var_type_fact v ?(structinfo=[]) t =
+  method add_var_type_fact v ?(structinfo=[]) t = ()
+                                                    (*
     if v#isTmp then
       ()
     else
@@ -215,7 +431,7 @@ object (self)
 	self#f#ftinv#add_function_var_fact v ~structinfo t
       else
 	self#f#ftinv#add_var_fact self#cia v ~structinfo t
-
+                                                     *)
 
   method add_const_type_fact (c: numerical_t) (t: btype_t) = ()
                                                                (*
@@ -327,6 +543,10 @@ object (self)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method set_call_target (ctinfo:call_target_info_int) =
+    let _ =
+      chlog#add
+        "set call target"
+        (LBLOCK [STR self#cia; STR " "; STR ctinfo#get_name]) in
     self#f#set_call_target self#cia ctinfo
 
   method has_call_target = self#f#has_call_target self#cia
@@ -336,24 +556,34 @@ object (self)
   method update_call_target =
     if self#has_call_target then
       let ctinfo = self#get_call_target in
+      let ctinfo =
+        if ctinfo#is_app_call then
+          (* update call target with new analysis results for target function *)
+          let newctinfo = mk_app_target ctinfo#get_app_address in
+          let _ = self#set_call_target newctinfo in
+          newctinfo
+        else
+          ctinfo in
       if ctinfo#is_signature_valid then
-        try
-          match self#update_varargs ctinfo#get_function_interface with
-          | Some fintf ->
-             let _ =
-               chlog#add
-                 "update call target api"
-                 (LBLOCK [
-                      self#l#toPretty;
-                      STR ": ";
-                      STR fintf.fintf_name;
-                      STR ": ";
-                      INT (List.length
-                             fintf.fintf_type_signature.fts_parameters)]) in
-             self#set_call_target (update_target_interface ctinfo fintf)
-          | _ -> ()
-        with _ ->
-          ()
+        begin
+          (try
+             match self#update_varargs ctinfo#get_function_interface with
+             | Some fintf ->
+                let _ =
+                  chlog#add
+                    "update call target api"
+                    (LBLOCK [
+                         self#l#toPretty;
+                         STR ": ";
+                         STR fintf.fintf_name;
+                         STR ": ";
+                         INT (List.length
+                                fintf.fintf_type_signature.fts_parameters)]) in
+                self#set_call_target (update_target_interface ctinfo fintf)
+             | _ -> ()
+           with _ ->
+             ());
+        end
     else
       ()
 
@@ -411,7 +641,7 @@ object (self)
     if argcount = 0 then
       None
     else
-      let (lastpar,lastx) = List.nth args (argcount - 1) in
+      let (lastpar, lastx) = List.nth args (argcount - 1) in
       let arg = if is_formatstring_parameter lastpar then Some lastx else None in
       match arg with
       | Some (XConst (IntConst n)) ->
@@ -422,7 +652,6 @@ object (self)
            (fun addr ->
              if string_table#has_string addr then
                let fmtstring = string_table#get_string addr in
-               let _ = pverbose [ STR "Parse formatstring: " ; STR fmtstring ; NL ] in
                let fmtspec = parse_formatstring fmtstring false in
                if fmtspec#has_arguments then
                  let args = fmtspec#get_arguments in
@@ -456,17 +685,22 @@ object (self)
     match fts.fts_va_list with
     | Some _ -> None
     | _ ->
-       if system_info#is_mips then
+       if system_settings#is_mips then
          self#update_mips_varargs fintf
-       else if system_info#is_arm then
+       else if system_settings#is_arm then
          self#update_arm_varargs fintf
        else
          self#update_x86_varargs fintf
 
   (* experience so far:
      the first four arguments are passed in $a0-$a3, remaining arguments are passed
-     via the stack, with the fifth argument starting at offset sp+16 *)
-  method get_mips_call_arguments =
+     via the stack, with the fifth argument starting at offset sp+16
+
+     The fts_parameters returned are the original, stack-based parameters, that is,
+     the location of the parameter is not updated for the actual location used in
+     mips.
+   *)
+  method get_mips_call_arguments: (fts_parameter_t * xpr_t) list =
     let get_regargs pars =
       List.mapi
         (fun i p ->
@@ -485,8 +719,11 @@ object (self)
                | (0, sprange) ->
                   (match sprange#singleton with
                    | Some num ->
+                      (* stackparameter 1-4 in a function summary (i.e. function
+                         interface) correspond to $a0-$a3, stackparameter 5 and
+                         up correspond to arg.0016, arg.0020, etc ... *)
                       self#f#env#mk_memory_variable
-                        memref (num#add (mkNumerical (16 + (i * 4))))
+                        memref (num#add (mkNumerical ((i * 4) - 4)))
                    | _ ->
                       self#f#env#mk_unknown_memory_variable p.apar_name)
                | _ ->
@@ -507,7 +744,7 @@ object (self)
       if npars < 5 then
         get_regargs fts.fts_parameters
       else
-        let (regpars,stackpars) = split_list 4 fts.fts_parameters in
+        let (regpars, stackpars) = split_list 4 fts.fts_parameters in
         List.concat [(get_regargs regpars); (get_stackargs stackpars)]
     else
       []
@@ -1252,92 +1489,6 @@ object (self)
 
    method get_test_expr = self#f#get_test_expr self#cia
 
-   (* return the address of the memory reference *)
-   method private get_address_bterm
-                    (memref:memory_reference_int)
-                    (targetty:btype_t):bterm_t option = None
-
-   method private get_variable_bterm (v:variable_t) =
-     try
-       if self#env#is_stack_parameter_variable v then
-         match self#env#get_stack_parameter_index v with
-         | Some index -> ArgValue (self#f#set_stack_par index t_unknown)
-         | _ -> RunTimeValue
-       else if self#env#is_initial_register_value v then
-         let reg = self#env#get_initial_register_value_register v in
-         let par = self#f#set_register_par reg t_unknown in
-         ArgValue par
-       else if self#env#is_global_variable v then
-         if self#env#has_global_variable_address v then
-	   let address = self#env#get_global_variable_address v in
-	   ArgValue (self#f#set_global_par address t_unknown)
-         else
-	   RunTimeValue
-       else if self#env#is_initial_memory_value v then
-         let memref = self#env#get_memory_reference v in
-         match self#get_address_bterm memref t_unknown with
-         | Some bterm -> ArgAddressedValue (bterm, NumConstant numerical_zero)
-         | _ -> RunTimeValue
-       else
-         RunTimeValue
-     with
-     | BCH_failure p ->
-        raise (BCH_failure (LBLOCK [ STR "Floc:get-variable-bterm: " ; p ]))
-
-   method private get_xpr_bterm (x:xpr_t) =
-     let vars = variables_in_expr x in
-     let pars = H.create 5 in
-     let _ = List.iter (fun v ->
-       H.add pars v#getName#getSeqNumber (self#get_variable_bterm v)) vars in
-     let subst v = if H.mem pars v#getName#getSeqNumber then
-	 H.find pars v#getName#getSeqNumber
-       else
-	 RunTimeValue in
-     match xpr_to_bterm x subst with Some bterm -> bterm | _ -> RunTimeValue
-
-   method private record_block_write
-                    (memref:memory_reference_int) (size:xpr_t) (ty:btype_t) =
-     match self#get_address_bterm memref ty with
-     | Some dest ->
-        begin
-	  match dest with
-	  (* null dereference is taken care of elsewhere,
-             so it can be ignored here *)
-	  | NumConstant x when x#equal numerical_zero ->
-	     ()
-	  (* recording side effects on global variables has been disabled *)
-	  | NumConstant n ->
-             log_titer
-               (mk_tracelog_spec
-                  ~tag:"record_block_write"
-                  (self#cia ^ ": constant: " ^ n#toString))
-               (fun s ->
-                 if system_settings#is_sideeffects_on_global_enabled s then
-	           let sizeTerm = self#get_xpr_bterm size in
-	           self#f#record_sideeffect self#cia (BlockWrite (ty, dest, sizeTerm))
-                 else
-                   ())
-               (numerical_to_hex_string n)
-          | _ -> ()
-        end
-     | _ -> self#f#record_sideeffect self#cia UnknownSideeffect
-
-   method private get_assignment_type (lhs:variable_t) (rhs:xpr_t) =
-     match rhs with
-     | XVar v ->
-       let typefacts = self#f#ftinv#get_variable_facts self#l#i#to_hex_string v in
-       begin
-	 match typefacts with
-	 | [ t ] ->
-	   begin
-	     match t#get_fact with
-	     | VarTypeFact (_, ty,[]) -> ty
-	     | _ -> t_unknown
-	   end
-	 | _ -> t_unknown
-       end
-     | _ -> t_unknown
-
    method get_conditional_assign_commands
             (test_expr:xpr_t)
             (lhs:variable_t)
@@ -1362,118 +1513,41 @@ object (self)
        (is_external v)
        || (self#f#env#is_ssa_register_value v)
        || (self#f#env#is_symbolic_value v) in
-     List.for_all is_fixed_type (variables_in_expr x)
+     let vars = variables_in_expr x in
+     (List.length vars) > 0
+     &&List.for_all is_fixed_type (variables_in_expr x)
 
+   (* Note: recording of loads and stores is performed by the different
+      architectures directly in FnXXXDictionary.*)
    method get_assign_commands
      (lhs:variable_t)
      ?(size=random_constant_expr)
      ?(vtype=t_unknown)
      (rhs_expr:xpr_t) =
-     (* if self#inv#is_unreachable then
-       [ASSERT FALSE]
-     else *)
-       let is_external v = self#env#is_function_initial_value v in
-       let rhs_expr = simplify_xpr rhs_expr in
-       let rhs_expr =
-         self#inv#rewrite_expr rhs_expr self#env#get_variable_comparator in
+     let rhs_expr = simplify_xpr rhs_expr in
+     let rhs_expr =
+       self#inv#rewrite_expr rhs_expr self#env#get_variable_comparator in
 
-       let vtype =
-         if btype_equal vtype t_unknown then
-	   self#get_assignment_type lhs rhs_expr
-         else
-	   vtype in
-
-       (* if the rhs_expr is a composite symbolic expression, create a
+     (* if the rhs_expr is a composite symbolic expression, create a
         new variable for it *)
-       let rhs_expr =
-         if self#is_composite_symbolic_value rhs_expr then
-           let sv = self#env#mk_symbolic_value rhs_expr in
-           begin
-             (match vtype with
-              | TUnknown _ -> ()
-              | _ ->
-                 begin
-                   chlog#add
-                     "set constant-value variable type"
-                     (LBLOCK [
-                          STR self#cia;
-                          STR ": ";
-                          sv#toPretty;
-                          STR ": ";
-                          STR (btype_to_string vtype)]);
-                   self#f#set_btype sv vtype
-                 end);
-             XVar sv
-           end
-         else
-           rhs_expr in
-
-       let vtype =
-         if btype_equal vtype t_unknown then
-	   self#get_assignment_type lhs rhs_expr
-         else
-	   vtype in
-
-       let reqN () = self#env#mk_num_temp in
-       let reqC = self#env#request_num_constant in
-       let (rhsCmds,rhs) = xpr_to_numexpr reqN reqC rhs_expr in
-       let get_gvalue (x:xpr_t) = match x with
-         | XConst (IntConst n) -> GConstant n
-         | XVar v when self#env#is_return_value v ->
-	    let callSite = self#env#get_call_site v in
-	    GReturnValue (ctxt_string_to_location self#fa callSite)
-         | XVar v when self#env#is_sideeffect_value v ->
-	    let callSite = self#env#get_call_site v in
-	    let argdescr = self#env#get_se_argument_descriptor v in
-	    GSideeffectValue (ctxt_string_to_location self#fa callSite,argdescr)
-         | XVar v when self#env#is_stack_parameter_variable v ->
-	    begin
-              try
-	        match self#env#get_stack_parameter_index v with
-	        | Some index -> GArgValue (self#fa, index, [])
-	        | _ -> GUnknownValue
-              with
-              | BCH_failure p ->
-                 raise
-                   (BCH_failure (LBLOCK [STR "Floc:get-assign-commands: "; p]))
-	    end
-         | _ -> GUnknownValue in
-
-       (* if the lhs is an external variable, record the assignment as a side effect *)
-       let _ =
-         if is_external lhs (* && (not (is_constant rhs_expr)) *) then
-	   let memref = self#env#get_memory_reference lhs in
-	   self#record_block_write memref size vtype in
-
-       (* if the lhs is a global variable, record the assignment in the global state *)
-       let _ =
-         let size = match size with
-	   | XConst (IntConst n) -> Some n#toInt | _ -> None in
-         if (self#env#is_global_variable lhs)
-            && (self#env#has_global_variable_address lhs) then
-	   global_system_state#add_writer
-             ~ty:vtype
-             ~size
-	     (get_gvalue rhs_expr)
-             (self#env#get_global_variable_address lhs)
-             self#l in
-
-       let _ =
-         if is_known_type vtype then
-	   begin
-	     self#add_var_type_fact lhs vtype;
-	     self#add_xpr_type_fact rhs_expr vtype;
-	   end in
-
-       (* if the lhs is unknown, add an operation to record an unknown write *)
-       if lhs#isTmp || self#env#is_unknown_memory_variable lhs then
-         let op_args = get_rhs_op_args rhs in
-         [OPERATION ({ op_name = unknown_write_symbol; op_args = op_args});
-	  ASSIGN_NUM (lhs,rhs)]
-
-           (* else add the assignment to the lhs variable *)
+     let rhs_expr =
+       if self#is_composite_symbolic_value rhs_expr then
+         XVar (self#env#mk_symbolic_value rhs_expr)
        else
-         rhsCmds @ [ASSIGN_NUM (lhs, rhs)]
+         rhs_expr in
+
+     let reqN () = self#env#mk_num_temp in
+     let reqC = self#env#request_num_constant in
+     let (rhsCmds, rhs) = xpr_to_numexpr reqN reqC rhs_expr in
+
+     (* if the lhs is unknown, add an operation to record an unknown write *)
+     if lhs#isTmp || self#env#is_unknown_memory_variable lhs then
+       let op_args = get_rhs_op_args rhs in
+       [OPERATION ({ op_name = unknown_write_symbol; op_args = op_args});
+	ASSIGN_NUM (lhs, rhs)]
+
+     else
+       rhsCmds @ [ASSIGN_NUM (lhs, rhs)]
 
    method get_ssa_assign_commands
             (reg: register_t) ?(vtype=t_unknown) (rhs: xpr_t):
@@ -1592,7 +1666,7 @@ object (self)
    method evaluate_summary_term (t:bterm_t) (returnvar:variable_t) =
      match t with
      | ArgValue p -> self#evaluate_fts_argument p
-     | ReturnValue -> XVar returnvar
+     | ReturnValue _ -> XVar returnvar
      | NumConstant n -> num_constant_expr n
      | NamedConstant name -> XVar (self#env#mk_runtime_constant name)
      | ByteSize t -> self#evaluate_summary_term t returnvar
@@ -1602,7 +1676,15 @@ object (self)
        XOp (arithmetic_op_to_xop op, [ xpr1 ; xpr2 ])
      | _ -> random_constant_expr
 
-   method private evaluate_fts_address_argument (p: fts_parameter_t) = None
+   method private evaluate_fts_address_argument (p: fts_parameter_t) =
+     let _ =
+       chlog#add
+         "evaluate-fts-address-argument: failure"
+         (LBLOCK [
+              STR self#cia;
+              STR ": ";
+              fts_parameter_to_pretty p]) in
+     None
 
    method evaluate_summary_address_term (t:bterm_t) =
      match t with
@@ -1671,8 +1753,8 @@ object (self)
 
    method private assert_post
                     (name:string)
-                    (post:postcondition_t)
-                    (returnvar:variable_t)
+                    (post: xxpredicate_t)
+                    (returnvar: variable_t)
                     (string_retriever:doubleword_int -> string option) =
      let get_zero () = self#env#request_num_constant numerical_zero in
      let reqN () = self#env#mk_num_temp in
@@ -1715,10 +1797,10 @@ object (self)
        xpr_to_numvar reqN reqC termXpr in
      let get_null_commands (term:bterm_t) =
        let (cmds,termVar) = get_null_var term in
-       cmds @ [ ASSERT (EQ (termVar, get_zero ())) ] in
+       cmds @ [ASSERT (EQ (termVar, get_zero ()))] in
      let get_not_null_commands (term:bterm_t) =
        let (cmds,termVar) = get_null_var term in
-       cmds @ [ ASSERT (GT (termVar, get_zero ())) ] in
+       cmds @ [ASSERT (GT (termVar, get_zero ()))] in
      let get_post_expr_commands op t1 t2 =
        let xpr1 = self#evaluate_summary_term t1 returnvar in
        let xpr2 = self#evaluate_summary_term t2 returnvar in
@@ -1727,14 +1809,14 @@ object (self)
        let (cmds,bxpr) = xpr_to_boolexpr reqN reqC xpr in
        cmds @ [ASSERT bxpr] in
      match post with
-     | PostNewMemoryRegion (ReturnValue, sizeParameter) ->
+     | XXNewMemory (ReturnValue _, sizeParameter) ->
         [] (* get_new_memory_commands sizeParameter *)
-     | PostFunctionPointer (ReturnValue, nameParameter) ->
+     | XXFunctionPointer (_, ReturnValue nameParameter) ->
         get_function_pointer_commands nameParameter
-     | PostNull term -> get_null_commands term
-     | PostNotNull term -> get_not_null_commands term
-     | PostRelationalExpr (op, t1, t2) -> get_post_expr_commands op t1 t2
-     | PostFalse ->
+     | XXNull term -> get_null_commands term
+     | XXNotNull term -> get_not_null_commands term
+     | XXRelationalExpr (op, t1, t2) -> get_post_expr_commands op t1 t2
+     | XXFalse ->
         let ctinfo = self#get_call_target in
         if ctinfo#is_nonreturning then
           [] (* was known during translation, or has been established earlier *)
@@ -1747,7 +1829,7 @@ object (self)
 	    raise Request_function_retracing
 	  end
      | _ ->
-       let msg = postcondition_to_pretty post in
+       let msg = xxpredicate_to_pretty post in
        begin
 	 chlog#add "postcondition not used" (LBLOCK [self#l#toPretty; msg]);
 	 []
@@ -1772,9 +1854,9 @@ object (self)
      | ([], _) -> errorPostCommands
      | _ -> [BRANCH [LF.mkCode postCommands; LF.mkCode errorPostCommands]]
 
-   method private record_precondition_effect (pre:precondition_t) =
+   method private record_precondition_effect (pre:xxpredicate_t) =
      match pre with
-     | PreFunctionPointer (_,t) ->
+     | XXFunctionPointer (_,t) ->
        begin
 	 match self#evaluate_summary_term t self#env#mk_num_temp with
 	 | XConst (IntConst n) ->
@@ -1809,12 +1891,12 @@ object (self)
        end
      | _ -> ()
 
-   method private get_sideeffect_assign (side_effect:sideeffect_t) =
+   method private get_sideeffect_assign (side_effect: xxpredicate_t) =
      let msg =
        LBLOCK [
-           self#l#toPretty; STR ": "; sideeffect_to_pretty side_effect] in
+           self#l#toPretty; STR ": "; xxpredicate_to_pretty side_effect] in
      match side_effect with
-     | BlockWrite (ty, dest, size) ->
+     | XXBlockWrite (ty, dest, size) ->
        let get_index_size k =
 	 match get_size_of_type ty with
 	 | Some s -> num_constant_expr (k#mult (mkNumerical s))
@@ -1841,7 +1923,7 @@ object (self)
 		 (LBLOCK [
                       self#l#toPretty;
                       STR " ";
-		      sideeffect_to_pretty side_effect]) in
+		      xxpredicate_to_pretty side_effect]) in
 	   let rhs =
  	     match dest with
  	     | NumConstant n ->
@@ -1857,6 +1939,17 @@ object (self)
 	     | _ ->
 	        self#env#mk_side_effect_value self#cia (bterm_to_string dest) in
 	   let seAssign =
+             let _ =
+               chlog#add
+                 "side-effect assign"
+                 (LBLOCK [
+                      self#l#toPretty;
+                      STR " ";
+                      xxpredicate_to_pretty side_effect;
+                      STR ": ";
+                      memVar#toPretty;
+                      STR " := ";
+                      x2p (XVar rhs)]) in
 	     self#get_assign_commands memVar ~size:sizeExpr ~vtype:ty (XVar rhs) in
 	   let fldAssigns = [] in
 	   seAssign @ fldAssigns
@@ -1866,7 +1959,7 @@ object (self)
 	      []
 	    end
        end
-     | StartsThread (sa,pars) ->
+     | XXStartsThread (sa,pars) ->
        let _ =
 	 match self#evaluate_summary_term sa self#env#mk_num_temp with
 	 | XConst (IntConst n) ->
@@ -1880,26 +1973,6 @@ object (self)
               (numerical_to_doubleword n)
 	 | _ -> () in
        []
-     | AllocatesStackMemory size ->
-       begin
-	 let sizeExpr = self#evaluate_summary_term size (self#env#mk_num_temp) in
-	 let sizeExpr = simplify_xpr sizeExpr in
-	 let esp = self#env#mk_cpu_register_variable Esp in
-	 match sizeExpr with
-	 | XConst (IntConst num) ->
-	   let adj = self#env#request_num_constant num in
-	   [ASSIGN_NUM (esp, MINUS (esp, adj))]
-	 | _ ->
-	   begin
-	     chlog#add
-               "alloca"
-               (LBLOCK [
-                    self#l#toPretty;
-                    STR " size not known: ";
-		    x2p sizeExpr]);
-	     [ABSTRACT_VARS [esp]]
-	   end
-       end
      | _ ->
        begin
 	 chlog#add "side-effect ignored" msg;
@@ -1936,10 +2009,10 @@ object (self)
 	   add_type_facts argvar argval p.apar_type
 	 | _ -> ()) fts.fts_parameters
 
-   method private record_memory_reads (pres:precondition_t list) =
+   method private record_memory_reads (pres:xxpredicate_t list) =
      List.iter (fun pre ->
        match pre with
-       | PreDerefRead (ty,src,size,_) ->
+       | XXBuffer (ty,src,size) ->
 	 let get_index_size k =
 	   match get_size_of_type ty with
 	   | Some s -> num_constant_expr (k#mult (mkNumerical s))
@@ -1970,6 +2043,7 @@ object (self)
 	 end
        | _ -> ()) pres
 
+   (* Returns the CHIF code associated with a call (x86) *)
    method get_call_commands (string_retriever:doubleword_int -> string option) =
      let ctinfo = self#get_call_target in
      let fintf = ctinfo#get_function_interface in
@@ -2058,23 +2132,58 @@ object (self)
      [ OPERATION { op_name = opname ; op_args = [] } ;
        ABSTRACT_VARS (v1::abstrRegs) ; returnassign ]
 
+   method private get_bterm_xpr
+                    (t: bterm_t)
+                    (parargs: (fts_parameter_t * xpr_t) list): xpr_t option =
+     match t with
+     | ArgValue p ->
+        List.fold_left (fun acc (par, x) ->
+            match acc with
+            | Some _ -> acc
+            | _ ->
+               if (fts_parameter_compare p par) = 0 then
+                 Some x
+               else
+                 acc) None parargs
+     | ArgBufferSize tt -> self#get_bterm_xpr tt parargs
+     | IndexSize tt -> self#get_bterm_xpr tt parargs
+     | ByteSize tt -> self#get_bterm_xpr tt parargs
+     | ArgNullTerminatorPos tt -> self#get_bterm_xpr tt parargs
+     | _ -> None
+
    method get_mips_call_commands =
+     let parargs = self#get_mips_call_arguments in
      let ctinfo = self#get_call_target in
+     let argumentpropagator = new mips_argument_type_propagator_t self#f parargs in
+     let _ = argumentpropagator#elevate_call_arguments in
+     let termev = new mips_bterm_evaluator_t self#f parargs in
+     let xprxt = new mips_expression_externalizer_t self#f in
+     let semrecorder =
+       mk_callsemantics_recorder self#l self#f termev xprxt ctinfo in
+     let _ = semrecorder#record_callsemantics in
      let v0 = self#env#mk_mips_register_variable MRv0 in
      (* v1 may be an additional return value from the callee, abstract it for now *)
      let v1 = self#env#mk_mips_register_variable MRv1 in
      let opname = new symbol_t ~atts:["CALL"] ctinfo#get_name in
      let returnassign =
        let rvar = self#env#mk_return_value self#cia in
-       let _ =
-         if ctinfo#is_signature_valid then
+       if ctinfo#is_signature_valid then
+         let rty = ctinfo#get_returntype in
+         if is_void rty then
+           SKIP
+         else
            let name = ctinfo#get_name ^ "_rtn_" ^ self#cia in
-           self#env#set_variable_name rvar name in
-       ASSIGN_NUM (v0, NUM_VAR rvar) in
+           let _ = self#env#set_variable_name rvar name in
+           ASSIGN_NUM (v0, NUM_VAR rvar)
+       else
+         ASSIGN_NUM (v0, NUM_VAR rvar) in
+     let _ =
+       self#record_memory_reads self#get_call_target#get_semantics.fsem_pre in
      let defClobbered = List.map (fun r -> (MIPSRegister r)) mips_temporaries in
      let abstrRegs = List.map self#env#mk_register_variable defClobbered in
-     [ OPERATION { op_name = opname ; op_args = [] } ;
-       ABSTRACT_VARS (v1::abstrRegs) ; returnassign ]
+     [OPERATION { op_name = opname ; op_args = [] };
+      ABSTRACT_VARS (v1::abstrRegs)]
+     @ [returnassign]
 
    method get_arm_call_commands =
      let ctinfo = self#get_call_target in
