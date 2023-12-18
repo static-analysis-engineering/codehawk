@@ -960,7 +960,7 @@ object(self)
         symboltable#set_symbol_names stringtable ;
         symboltable#set_function_entry_points ;
         symboltable#set_function_names;
-        (if system_info#is_arm then symboltable#set_mapping_symbols);
+        (if system_settings#is_arm then symboltable#set_mapping_symbols);
       end
     else
       chlog#add "no symbols found" (STR "No symbols found")

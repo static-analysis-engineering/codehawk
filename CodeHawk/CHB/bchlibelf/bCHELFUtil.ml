@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
    Copyright (c) 2022-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,6 +40,7 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibelf *)
 open BCHELFTypes
@@ -93,7 +94,7 @@ let makeOffsetString
                  INT sizeAvailable;
                  STR ")";
                  NL]);
-	  string_suffix file_as_string offset 
+	  string_suffix file_as_string offset
 	end
       else
 	String.sub file_as_string offset size
@@ -106,7 +107,7 @@ let makeOffsetInput
   IO.input_string (makeOffsetString ~hexSize:hexSize hexOffset file_as_string ())
 
 
-let memoize fn = 
+let memoize fn =
   let cache = Hashtbl.create 10 in
   fun n ->
     if Hashtbl.mem cache n then
@@ -218,7 +219,7 @@ let doubleword_to_elf_section_header_tag_record (v:doubleword_int) =
     (sht, shtstr ^ "(" ^ v#to_fixed_length_hex_string ^ ")") in
   if H.mem section_header_tag_table tag then
     H.find section_header_tag_table tag
-  else if system_info#is_mips then
+  else if system_settings#is_mips then
     if H.mem mips_section_header_tag_table tag then
       H.find mips_section_header_tag_table tag
     else
@@ -274,7 +275,7 @@ let _ =
     ; ("0x15", DT_Debug, DTV_d_ptr, "DT_DEBUG")
     ; ("0x16", DT_TextRel, DTV_d_none, "DT_TEXTREL")
     ; ("0x17", DT_JmpRel, DTV_d_ptr, "DT_JMPREL")
-    ; ("0x6ffffff0", DT_VerSym, DTV_d_ptr, "DT_VERSYM") 
+    ; ("0x6ffffff0", DT_VerSym, DTV_d_ptr, "DT_VERSYM")
     ; ("0x6ffffffe", DT_VerNeed, DTV_d_ptr, "DT_VERNEED")
     ; ("0x6fffffff", DT_VerNeedNum, DTV_d_val, "DT_VERNEEDNUM")
     ; ("0x70000000", DT_LoProc, DTV_d_none, "DT_LOPROC")
@@ -297,11 +298,11 @@ let _ =
 
 
 let doubleword_to_dynamic_tag_record (tag:doubleword_int) =
-  let s_tag = tag#to_hex_string in  
+  let s_tag = tag#to_hex_string in
   let default = (DT_Unknown s_tag, DTV_d_none, "DT_Unknown:" ^ s_tag) in
   if H.mem dynamic_tag_table s_tag then
     H.find dynamic_tag_table s_tag
-  else if system_info#is_mips then
+  else if system_settings#is_mips then
     if H.mem mips_dynamic_tag_table s_tag then
       H.find mips_dynamic_tag_table s_tag
     else
