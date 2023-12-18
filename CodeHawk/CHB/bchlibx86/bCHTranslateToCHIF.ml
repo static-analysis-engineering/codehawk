@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
    Copyright (c) 2021-2023 Aarno Labss LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -106,7 +106,7 @@ let op_realignment = new symbol_t "alignment"
 let op_array_write = new symbol_t "array_write"
 
 let trace_function (faddr:doubleword_int) =
-  if system_info#is_elf then
+  if system_settings#is_elf then
     BCHDisassembleELF.trace_function faddr
   else
     BCHDisassemble.trace_function faddr
@@ -116,7 +116,7 @@ let voidPtr = t_voidptr
 let int_type (width:int) = size_to_int_ikind width
 let get_exp (n:int) = Const (CInt (Int64.of_int n, IInt,None))
 
-let make_code_label ?src ?modifier (address:ctxt_iaddress_t) = 
+let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
   let name = "pc_" ^ address in
   let atts = match modifier with
     | Some s -> [s] | _ -> [] in
@@ -133,7 +133,7 @@ let is_eh_prolog (finfo:function_info_int) (iaddr:ctxt_iaddress_t) =
   let loc = ctxt_string_to_location finfo#a iaddr in
   let floc = get_floc loc in
   floc#has_call_target && floc#get_call_target#get_name = "_EH_prolog"
-  
+
 let package_transaction (finfo:function_info_int) (label:symbol_t) (commands:cmd_t list) =
   let commands = List.filter (fun cmd -> match cmd with SKIP -> false | _ -> true) commands in
   let constantAssignments = finfo#env#end_transaction in
@@ -147,7 +147,7 @@ let add_unprocessed_instruction (function_location:location_int) (instruction:as
   unprocessed_instructions := instruction :: !unprocessed_instructions
 let get_unprocessed_instructions () = !unprocessed_instructions
 
-let get_number_of_instructions_processed () = 
+let get_number_of_instructions_processed () =
   let numNotProcessed = List.length (get_unprocessed_instructions ()) in
   (!countInstructions - numNotProcessed , !countInstructions)
 
@@ -182,12 +182,12 @@ let get_string_instruction_type (size:xpr_t) (width:int):btype_t =
   let optNumSize = match size with XConst (IntConst num) -> Some num#toInt | _ -> None in
   match optNumSize with
     Some n -> TArray (TInt (int_type width,[]), Some (get_exp (n/width)),[])
-  | _ -> TArray (TInt (int_type width,[]), None,[]) 
-    
+  | _ -> TArray (TInt (int_type width,[]), None,[])
+
 let get_string_instruction_destination
-    (floc:floc_int) 
-    (dst:operand_int) 
-    (size:xpr_t) 
+    (floc:floc_int)
+    (dst:operand_int)
+    (size:xpr_t)
     (width:int) =
   let env = floc#f#env in
   let dfVar = env#mk_flag_variable (X86Flag DFlag) in
@@ -203,7 +203,7 @@ let get_string_instruction_destination
 	match size with
 	  XConst (IntConst num) ->
 	      (env#mk_unknown_memory_variable "string-instrs",lhsCmds)
-	| _ -> 
+	| _ ->
 	  (env#mk_unknown_memory_variable "string-instrs", lhsCmds)
     else
       (lhs,lhsCmds)
@@ -213,7 +213,7 @@ let get_string_instruction_destination
       (env#mk_unknown_memory_variable "string-instr", lhsCmds)
     else
       (lhs,lhsCmds)
-      
+
 (* commands that increment or decrement a register based on the value of the direction flag *)
 let advance_string_pointer (reg:cpureg_t) (floc:floc_int) (size:xpr_t) =
   let regOp = register_op reg 4 WR in
@@ -229,7 +229,7 @@ let advance_string_pointer (reg:cpureg_t) (floc:floc_int) (size:xpr_t) =
   let decCmds = floc#get_assign_commands lhs (XOp (XMinus, [ XVar edi ; size ])) in
   let branch = BRANCH [ LF.mkCode (dfZero :: incCmds) ; LF.mkCode (dfOne :: decCmds) ] in
   lhsCmds @ [ branch ]
-    
+
 (* commands that increment or decrement Esi and Edi based on the value of the direction flag *)
 let advance_string_pointers (floc:floc_int) (size:xpr_t) =
   let env = floc#f#env in
@@ -256,7 +256,7 @@ object
 end
 
 let check_pic_target (floc:floc_int) instr =
-  if system_info#is_elf then
+  if system_settings#is_elf then
     begin
       chlog#add "attempt resolve pic" floc#l#toPretty ;
       BCHDisassembleELF.resolve_pic_target floc instr ;
@@ -266,19 +266,19 @@ let check_pic_target (floc:floc_int) instr =
     end
   else
     ()
-	
-let make_tests 
+
+let make_tests
     ~(jump_instruction:assembly_instruction_int)
     ~(test_instruction:assembly_instruction_int)
     ~(jump_location:location_int)
-    ~(test_location:location_int) = 
+    ~(test_location:location_int) =
   let testFloc = get_floc test_location in
   let jumpFloc = get_floc jump_location in
   let env = testFloc#f#env in
   let reqN () = env#mk_num_temp in
   let reqC i = env#request_num_constant i in
-  let (frozenVars,optBooleanExpr) = 
-    conditional_jump_expr ~jumpopc:jump_instruction#get_opcode 
+  let (frozenVars,optBooleanExpr) =
+    conditional_jump_expr ~jumpopc:jump_instruction#get_opcode
       ~testopc:test_instruction#get_opcode ~jumploc:jump_location ~testloc:test_location in
   let convert_to_chif expr =
     let (cmds,bxpr) = xpr_to_boolexpr reqN reqC expr in
@@ -286,7 +286,7 @@ let make_tests
   let convert_to_assert expr  =
     let vars = variables_in_expr expr in
     let varssize = List.length vars in
-    let xprs = 
+    let xprs =
       if varssize = 1 then
 	let var = List.hd vars in
 	let extExprs = jumpFloc#inv#get_external_exprs var in
@@ -299,7 +299,7 @@ let make_tests
 	let externalExprs1 = jumpFloc#inv#get_external_exprs var1 in
 	let externalExprs2 = jumpFloc#inv#get_external_exprs var2 in
 	let xprs = List.concat
-	  (List.map 
+	  (List.map
 	     (fun e1 ->
 	       List.map
 		 (fun e2 ->
@@ -335,15 +335,15 @@ let make_tests
       make_branch_assert disjuncts
     else
       make_assert expr in
-  match optBooleanExpr with 
+  match optBooleanExpr with
     Some booleanExpr ->
       let thenCode = make_test_code booleanExpr in
       let elseCode = make_test_code (simplify_xpr (XOp (XLNot, [ booleanExpr ]))) in
       (frozenVars,Some (thenCode, elseCode))
   | _ -> (frozenVars,None)
-    
-    
-let make_condition 
+
+
+let make_condition
     ~(jump_instruction:assembly_instruction_int)
     ~(test_instruction:assembly_instruction_int)
     ~(jump_location:location_int)
@@ -353,7 +353,7 @@ let make_condition
     ~(else_successor_address:ctxt_iaddress_t) =
   let thenSuccessorLabel = make_code_label then_successor_address in
   let elseSuccessorLabel = make_code_label else_successor_address in
-  let (frozenVars,tests) = 
+  let (frozenVars,tests) =
     make_tests ~jump_location ~test_location ~jump_instruction ~test_instruction in
   match tests with
     Some (then_test, else_test) ->
@@ -363,32 +363,32 @@ let make_condition
 	let testCode = testCode @ [ ABSTRACT_VARS frozenVars ] in
 	let transaction = TRANSACTION ( nextLabel, LF.mkCode testCode, None) in
 	(nextLabel, [ transaction ] ) in
-      let (thenTestLabel, thenNode) = 
+      let (thenTestLabel, thenNode) =
 	make_node_and_label then_test then_successor_address "then" in
-      let (elseTestLabel, elseNode) = 
+      let (elseTestLabel, elseNode) =
 	make_node_and_label else_test else_successor_address "else" in
-      let thenEdges = 
+      let thenEdges =
 	[ (block_label, thenTestLabel) ; (thenTestLabel, thenSuccessorLabel) ] in
-      let elseEdges = 
+      let elseEdges =
 	[ (block_label, elseTestLabel) ; (elseTestLabel, elseSuccessorLabel) ] in
       ( [ (thenTestLabel, thenNode) ; (elseTestLabel, elseNode) ], thenEdges @ elseEdges )
   | _ ->
-    let abstractLabel = 
+    let abstractLabel =
       make_code_label ~modifier:"abstract" test_location#ci in
-    let transaction = 
+    let transaction =
       TRANSACTION (abstractLabel, LF.mkCode [ ABSTRACT_VARS frozenVars ], None) in
     let edges = [ (block_label, abstractLabel) ; (abstractLabel, thenSuccessorLabel) ;
 		  (abstractLabel, elseSuccessorLabel) ] in
-    ([ (abstractLabel, [transaction])], edges) 
+    ([ (abstractLabel, [transaction])], edges)
 
 let record_operand_address_types finfo (iaddr:string) opcode =
   let add r =
     let rvar = finfo#env#mk_cpu_register_variable  r in
     let ftinv:type_invariant_io_int = finfo#ftinv in
     ftinv#add_var_fact iaddr rvar t_voidptr in
-  List.iter add 
+  List.iter add
     (List.concat (List.map (fun op -> op#get_address_registers) (get_operands opcode)))
-      
+
 let translate_instruction
     ~(function_location:location_int)
     ~(code_pc:code_pc_int)
@@ -398,7 +398,7 @@ let translate_instruction
   let _ = count_instruction () in
   let (ctxtiaddr,instruction) = code_pc#get_next_instruction in
   let faddr = function_location#f in
-  let loc = ctxt_string_to_location faddr ctxtiaddr in  
+  let loc = ctxt_string_to_location faddr ctxtiaddr in
   let finfo = get_function_info faddr in
   let inv = finfo#iinv ctxtiaddr in
   let env = finfo#env in
@@ -408,7 +408,7 @@ let translate_instruction
   let invariantOperation = OPERATION { op_name = invariantLabel ; op_args = [] } in
   let frozenAsserts = List.map (fun (v,fv) -> ASSERT (EQ (v,fv)))
     (finfo#get_test_variables ctxtiaddr) in
-  let default newCommands = 
+  let default newCommands =
     ([], [], commands @ frozenAsserts @ (invariantOperation :: newCommands)) in
   let _ = record_operand_address_types finfo ctxtiaddr instruction#get_opcode in
   match instruction#get_opcode with
@@ -420,7 +420,7 @@ let translate_instruction
     if op#is_absolute_address then
       let thenAddress = (make_i_location loc op#get_absolute_address)#ci in
       let elseAddress = code_pc#get_false_branch_successor in
-      let decCmds = match instruction#get_opcode with 
+      let decCmds = match instruction#get_opcode with
 	| DirectLoop _ -> dec_ecx_commands (get_floc loc) | _ -> [] in
       let cmds = commands @ [ invariantOperation ] @ decCmds in
       let transaction = package_transaction finfo block_label cmds in
@@ -428,7 +428,7 @@ let translate_instruction
 	let testIAddress = finfo#get_associated_cc_setter ctxtiaddr in
         let testloc = ctxt_string_to_location faddr testIAddress in
         let testAddress = (ctxt_string_to_location faddr testIAddress)#i in
-	let (nodes,edges) = make_condition 
+	let (nodes,edges) = make_condition
 	  ~jump_instruction:instruction
 	  ~test_instruction:(!assembly_instructions#at_address testAddress)
 	  ~jump_location:loc
@@ -441,12 +441,12 @@ let translate_instruction
 	let thenSuccessorLabel = make_code_label thenAddress in
 	let elseSuccessorLabel = make_code_label elseAddress in
 	let nodes = [ (block_label, [ transaction ]) ] in
-	let edges = [ (block_label, thenSuccessorLabel) ; 
+	let edges = [ (block_label, thenSuccessorLabel) ;
 		      (block_label, elseSuccessorLabel) ] in
 	(nodes, edges, [])
     else
       begin
-	ch_error_log#add "internal error" 
+	ch_error_log#add "internal error"
 	  (LBLOCK [ STR "Unexpected operand in conditional jump: " ; op#toPretty]) ;
 	raise (BCH_failure (LBLOCK [ STR "translate_instruction:conditional jump"]))
       end
@@ -502,7 +502,7 @@ let translate_instruction
 
   | IndirectCall op ->
     let floc = get_floc loc in
-    let _ = 
+    let _ =
       floc#add_xpr_type_fact (op#to_expr floc) (t_ptrto (t_function_anon t_unknown)) in
     let string_retriever = FFU.get_string_reference in
     default ((get_floc loc)#get_call_commands string_retriever)
@@ -564,7 +564,7 @@ let translate_instruction
       let edx = env#mk_cpu_register_variable Edx in
       let cmds = [ABSTRACT_VARS [eax; edx]] in
       default cmds
-      
+
   (* ------------------------------------------------ op1 := effective address of op2 *)
   | Lea (op1, op2) ->
 	  (* let typeOps = get_operand_type_inferences [ op1 ; op2 ] in *)
@@ -573,22 +573,22 @@ let translate_instruction
     let (lhs, lhsCmds) = op1#to_lhs floc in
     let cmds = floc#get_assign_commands lhs ~size:cFour rhs in
     default (cmds @ lhsCmds )
-      
-  | ConvertLongToDouble _ ->      
+
+  | ConvertLongToDouble _ ->
     let edx = env#mk_cpu_register_variable Edx in
     default [ ABSTRACT_VARS [ edx ] ]
-      
+
   | ConvertWordToDoubleword _ ->
     let eax = env#mk_cpu_register_variable Eax in
     default [ ABSTRACT_VARS [ eax ] ]
 
-  | SetALC -> 
+  | SetALC ->
     let floc = get_floc loc in
     let eax = eax_r WR in
     let (lhs,cmds) = eax#to_lhs floc in
     let abscmds = floc#get_abstract_commands lhs () in
     default (cmds @ abscmds)
-      
+
     (* move operations                                                                  *)
     (* --------------------------------------------------------------------- op1 := op2 *)
   | Mov (width, dst, src) when src#is_function_argument ->
@@ -606,16 +606,16 @@ let translate_instruction
 	floc#get_assign_commands bridgeVariable ~size rhs in
     let cmds = floc#get_assign_commands lhs ~size rhs in
     default ( cmds @ argCommands @ lhsCmds  )
-	    
+
     (* ----------------------------------------------------------------------- op1 := op2 *)
-  | Movdw (size, op1, op2) 
+  | Movdw (size, op1, op2)
   | Mov (size, op1, op2) -> (* let typeOps = get_operand_type_inferences [ op1 ; op2 ] in *)
     let floc = get_floc loc in
     let rhs = op2#to_expr floc in
     let (lhs, lhsCmds) = op1#to_lhs floc in
     let cmd = floc#get_assign_commands lhs ~size:(int_constant_expr size) rhs in
     default ( cmd @ lhsCmds  )
-      
+
     (* -------------------------------------------- op1 := zero-extend register op2 (byte) *)
   | Movzx (w, op1, op2) when op1#is_register && op2#is_register &&
       op1#get_cpureg = full_reg_of_reg op2#get_cpureg ->
@@ -624,7 +624,7 @@ let translate_instruction
     let (lhs,lhsCmds) = op1#to_lhs floc in
     let cmds = floc#get_assign_commands lhs ~size:(int_constant_expr w) rhs in
     default ( cmds @ lhsCmds )
-      
+
     (* ------------------------------------------------`-- op1 = zero-extend op2 (byte) *)
   | Movzx (w, op1, op2) ->
     let floc = get_floc loc in
@@ -632,14 +632,14 @@ let translate_instruction
     let (lhs, lhsCmds) = op1#to_lhs floc in
     let cmds = floc#get_assign_commands lhs ~size:(int_constant_expr w) rhs in
     default ( cmds @ lhsCmds )
-	    
+
     (* ------------------------------------------------`-- op1 = sign-extend op2 (byte) *)
   | Movsx (w, op1, op2) ->
     let floc = get_floc loc in
     let rhs = op2#to_expr (* ~src_size:1 ~dst_size:w ~sign_extend:true *) floc in
     let (lhs, lhsCmds) = op1#to_lhs floc in
     let cmds = floc#get_assign_commands lhs ~size:(int_constant_expr w) rhs in
-    default ( cmds @ lhsCmds )     
+    default ( cmds @ lhsCmds )
 
   (* ---------------------------------------------------- load Al with value from table *)
   | TableLookupTranslation ->
@@ -647,7 +647,7 @@ let translate_instruction
     let (lhs,lhsCmds) = (al_r WR)#to_lhs floc in
     let cmds = lhsCmds @ (floc#get_abstract_commands lhs ()) in
     default cmds
-      
+
     (* ----------------------------------------------------------`if cc then op1 := op2 *)
     (* Conditional move: only performed if condition is true, currently modeled by
 		   nondeterminstic choice                                               *)
@@ -658,7 +658,7 @@ let translate_instruction
     let cmds = floc#get_assign_commands lhs ~size:(int_constant_expr w) rhs in
     let branch = BRANCH [ LF.mkCode [] ; LF.mkCode cmds ] in
     default ([ branch ] @ lhsCmds )
-      
+
     (* -----------------------------------------------------------------------------------
      * IF al/ax/eax = DEST
      * THEN
@@ -690,13 +690,13 @@ let translate_instruction
 
     (* -----------------------------------------------------------------------------------
      * TEMP64 <- DEST;
-     * IF (EDX:EAX = TEMP64) 
+     * IF (EDX:EAX = TEMP64)
      *   THEN
      *      ZF <- 1;
-     *      DEST <- ECX:EBX; 
+     *      DEST <- ECX:EBX;
      *   ELSE
      *      ZF <- 0;
-     *      EDX:EAX <- TEMP64; 
+     *      EDX:EAX <- TEMP64;
      *      DEST <- TEMP64;
      *   FI;
      * FI;
@@ -720,12 +720,12 @@ let translate_instruction
     let neqCmds = neqtestCmds @ [ ASSERT neqxpr ] @ neqAssignCmds1 @ neqAssignCmds2 in
     let branch = BRANCH [ LF.mkCode eqCmds ; LF.mkCode neqCmds ] in
     default ( branch :: (tmpLhsCmds @ opEdxEaxLhsCmds))
-    
 
-    (* ------------------------------------------------------------------------------ 
+
+    (* ------------------------------------------------------------------------------
      * Move string
      *   mem [ ES:EDI ] <- mem [ DS:ESI ]
-     *   IF DF = 0 THEN 
+     *   IF DF = 0 THEN
      *     EDI <- EDI + width
      *   ELSE
      *     EDI <- EDI - width
@@ -739,7 +739,7 @@ let translate_instruction
     let stringPtrCmds = advance_string_pointers floc size in
     default (cmds @ stringPtrCmds @ lhsCmds )
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Move floating-point values between xmm registers and memory
      * ------------------------------------------------------------------------------ *)
   | FXmmMove (_,scalar,single,dst,_) ->
@@ -750,7 +750,7 @@ let translate_instruction
     let cmds = floc#get_abstract_commands dstLhs ~size	~vtype () in
     default ( cmds @ dstLhsCmds )
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Compare floating point values and store result in dst
      * ------------------------------------------------------------------------------ *)
   | FXmmCompare (_,_,dst,_,_) ->
@@ -760,7 +760,7 @@ let translate_instruction
     let cmds = floc#get_abstract_commands dstLhs ~size () in
     default ( cmds @ dstLhsCmds )
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Convert floating point values between single, double precision, integers
      * ------------------------------------------------------------------------------ *)
   | FConvert (_,_,_,dst,_) ->
@@ -770,22 +770,22 @@ let translate_instruction
     let cmds = floc#get_abstract_commands dstLhs ~size () in
     default ( cmds @ dstLhsCmds )
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Compare string operands
      *   SetStatusFlags ( mem [ DS:ESI ] - mem [ ES:EDI ] )
-     *   IF DF = 0 THEN 
+     *   IF DF = 0 THEN
      *     EDI <- EDI + width
      *     ESI <- ESI + width
      *   ELSE
      *     EDI <- EDI - width
      *     ESI <- ESI - width
      * ------------------------------------------------------------------------------ *)
-  | Cmps (width,_,_) -> 
+  | Cmps (width,_,_) ->
     let floc = get_floc loc in
     let size = int_constant_expr width in
     default (advance_string_pointers floc size)
 
-  (* ------------------------------------------------------------------------------ 
+  (* ------------------------------------------------------------------------------
    * Input byte/word/dword from port: dest <- I/O data
    * ------------------------------------------------------------------------------ *)
   | InputFromPort (_,op,_) ->
@@ -794,10 +794,10 @@ let translate_instruction
     let abstrCmds = floc#get_abstract_commands lhs () in
     default (lhsCmds @ abstrCmds)
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Input data from port
      *   mem [ ES:EDI ] <- SRC (read from I/O port)
-     *   IF DF = 0 THEN 
+     *   IF DF = 0 THEN
      *     EDI <- EDI + width
      *   ELSE
      *     EDI <- EDI - width
@@ -810,15 +810,15 @@ let translate_instruction
     let abstrCmds = floc#get_abstract_commands lhs () in
     default (lhsCmds @ stringPtrCmds @ abstrCmds)
 
-  (* ------------------------------------------------------------------------------ 
+  (* ------------------------------------------------------------------------------
    * Output byte/word/dword to port
    * ------------------------------------------------------------------------------ *)
   | OutputToPort _ -> default []
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Output data to port
      *   I/O port <- mem [ DS:ESI ]
-     *   IF DF = 0 THEN 
+     *   IF DF = 0 THEN
      *     EDI <- ESI + width
      *   ELSE
      *     EDI <- ESI - width
@@ -828,10 +828,10 @@ let translate_instruction
     let size = int_constant_expr width in
     default (advance_string_pointer Esi floc size)
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Load string
      *   DEST <- mem [ DS:ESI ]
-     *   IF DF = 0 THEN 
+     *   IF DF = 0 THEN
      *     ESI <- ESI + width
      *   ELSE
      *     ESI <- ESI - width
@@ -846,23 +846,23 @@ let translate_instruction
       let stringPtrCmds = advance_string_pointer Esi floc size in
       default (lhsCmds @ cmds @ stringPtrCmds)
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Scan string
      *   SetStatusFlags ( al/ax/eax - mem [ ES:EDI ] )
-     *   IF DF = 0 THEN 
+     *   IF DF = 0 THEN
      *     EDI <- EDI + width
      *   ELSE
      *     EDI <- EDI - width
      * ------------------------------------------------------------------------------ *)
-    | Scas (width,_) -> 
+    | Scas (width,_) ->
       let floc = get_floc loc in
       let size = int_constant_expr width in
       default (advance_string_pointer Edi floc size)
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Store string
      *   mem [ ES:EDI ] <- al/ax/eax
-     *   IF DF = 0 THEN 
+     *   IF DF = 0 THEN
      *     EDI <- EDI + width
      *   ELSE
      *     EDI <- EDI - width
@@ -892,7 +892,7 @@ let translate_instruction
      *     ESI' < ESI and ESI' >= ESI - size
      *     EDI' < EDI and EDI' >= EDI - size
      * ----------------------------------------------------------------------------------- *)
-    | RepECmps (width, _, _) 
+    | RepECmps (width, _, _)
     | RepNeCmps (width, _, _) ->
       let floc = get_floc loc in
       let abstractRegs = floc#get_abstract_cpu_registers_command [ Ecx ; Esi ; Edi ] in
@@ -911,7 +911,7 @@ let translate_instruction
      *   if DF = 1 :
      *     EDI' < EDI and EDI' >= EDI - size
      * ----------------------------------------------------------------------------------- *)
-    | RepEScas (width, _) 
+    | RepEScas (width, _)
     | RepNeScas (width, _) ->
       let floc = get_floc loc in
       let abstractRegs = floc#get_abstract_cpu_registers_command [ Ecx ; Edi ] in
@@ -931,7 +931,7 @@ let translate_instruction
      * ----------------------------------------------------------------------------------- *)
     | RepIns (width, dst) ->
       let floc = get_floc loc in
-      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ; 
+      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ;
 					     (ecx_r RD)#to_expr floc ])) in
       let (lhs, lhsCmds) = get_string_instruction_destination floc dst size width in
       let zeroEcxCmds = zero_ecx_commands floc in
@@ -951,22 +951,22 @@ let translate_instruction
      *   EXC := 0
      *   if DF = 0 :
      *     ESI := ESI + size
-     *     al/ax/eax := mem [ EDI ; EDI + size - width ] 
+     *     al/ax/eax := mem [ EDI ; EDI + size - width ]
      *   if DF = 1 ;
      *     ESI := ESI - size
-     *     al/ax/eax := mem [ EDI - size + width ; EDI ] 
+     *     al/ax/eax := mem [ EDI - size + width ; EDI ]
      * ----------------------------------------------------------------------------------- *)
     | RepLods (width, src) ->
       let floc = get_floc loc in
-      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ; 
+      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ;
 					     (ecx_r RD)#to_expr floc ])) in
       let zeroEcxCmds = zero_ecx_commands floc in
       let stringPtrCmds = advance_string_pointer Esi floc size in
       let dst = if width = 1 then al_r WR else if width = 2 then ax_r WR else eax_r WR in
       let (lhs,lhsCmds) = dst#to_lhs floc in
       let cmds = floc#get_abstract_commands lhs () in
-      default (cmds @ stringPtrCmds @ zeroEcxCmds @ lhsCmds )			
-	
+      default (cmds @ stringPtrCmds @ zeroEcxCmds @ lhsCmds )
+
     (* -----------------------------------------------------------------------------------
      * RepMovs: Move ECX bytes/words/doublewords from DS:[ESI] to ES:[EDI]
      * Semantics (parallel)
@@ -983,7 +983,7 @@ let translate_instruction
      * ----------------------------------------------------------------------------------- *)
     | RepMovs (width, dst, src) | RepNeMovs (width, dst, src) ->
       let floc = get_floc loc in
-      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ; 
+      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ;
 					     (ecx_r RD)#to_expr floc ])) in
       let (lhs, lhsCmds) = get_string_instruction_destination floc dst size width in
       let zeroEcxCmds = zero_ecx_commands floc in
@@ -995,20 +995,20 @@ let translate_instruction
       default cmds
 
     (* -----------------------------------------------------------------------------------
-     * RepOuts: Output ECX bytes/words/doublewords from DS:[ESI] to port DX 
+     * RepOuts: Output ECX bytes/words/doublewords from DS:[ESI] to port DX
      * Semantics (parallel)
      *   let size = ECX * width in
      *   EXC := 0
      *   if DF = 0 :
      *     ESI := ESI + size
-     *     output := mem [ EDI ; EDI + size - width ] 
+     *     output := mem [ EDI ; EDI + size - width ]
      *   if DF = 1 ;
      *     ESI := ESI - size
-     *     output := mem [ EDI - size + width ; EDI ] 
+     *     output := mem [ EDI - size + width ; EDI ]
      * ----------------------------------------------------------------------------------- *)
     | RepOuts (width, dst) ->
       let floc = get_floc loc in
-      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ; 
+      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ;
 					     (ecx_r RD)#to_expr floc ])) in
       let zeroEcxCmds = zero_ecx_commands floc in
       let stringPtrCmds = advance_string_pointer Esi floc size in
@@ -1028,7 +1028,7 @@ let translate_instruction
      * ----------------------------------------------------------------------------------- *)
     | RepStos (width, dst) | RepNeStos (width, dst) ->
       let floc = get_floc loc in
-      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ; 
+      let size = simplify_xpr (XOp (XMult, [ int_constant_expr width ;
 					     (ecx_r RD)#to_expr floc ])) in
       let (lhs, lhsCmds) = get_string_instruction_destination floc dst size width in
       let zeroEcxCmds = zero_ecx_commands floc in
@@ -1038,7 +1038,7 @@ let translate_instruction
       let cmds = floc#get_assign_commands lhs ~size ~vtype:dstType (XVar rhs) in
       let cmds = lhsCmds @ stringPtrCmds @ zeroEcxCmds @ cmds in
       default cmds
-	
+
 
     | XCrypt _ ->
       let floc = get_floc loc in
@@ -1068,12 +1068,12 @@ let translate_instruction
       let dstRegInc = ASSIGN_NUM (dstRegLhs, PLUS (dstRegVar, finalIncVar)) in
       let memAssignCmds = floc#get_assign_commands lhs (XVar rhs) in
       let cntrlAssign = ASSIGN_NUM (cntrlVar, NUM numerical_zero) in
-      let cmds = lhsCmds @ cntrlCmds @ srcCmds @ dstCmds @ incCmds @ 
-	[ tmpSrcRegInc ; tmpDstRegInc ] @ memAssignCmds @ 
+      let cmds = lhsCmds @ cntrlCmds @ srcCmds @ dstCmds @ incCmds @
+	[ tmpSrcRegInc ; tmpDstRegInc ] @ memAssignCmds @
 	[ cmd ; srcRegInc ; dstRegInc ; cntrlAssign ] in
       default cmds
 
-    (* ------------------------------------------------------------------------------ 
+    (* ------------------------------------------------------------------------------
      * Exchange register/memory with register
      *    TEMP <- DEST
      *	  DEST <- SRC
@@ -1092,7 +1092,7 @@ let translate_instruction
       let dstCmds = floc#get_assign_commands dstLhs ~size srcRhs in
       let srcCmds = floc#get_assign_commands srcLhs ~size (XVar temp)  in
       default (dstLhsCmds @ srcLhsCmds @ [ tempCmd ] @ dstCmds @ srcCmds)
-      
+
     (* -----------------------------------------------------------------------------
      * ENTER (size,nesting):  (nesting = 0)
      *    ESP <- ESP - 4
@@ -1121,10 +1121,10 @@ let translate_instruction
          espLhsCommands @ ebpLhsCommands @ stackLhsCommands @ cmds1 @ cmds2 @ cmds3 in
        let _ =
          if floc#has_initial_value ebp then
-           finfo#save_register floc#cia (CPURegister Ebp) in
+           finfo#save_register stackLhs floc#cia (CPURegister Ebp) in
        default cmds
-    
-    (* ------------------------------------------------------------------------------ 
+
+    (* ------------------------------------------------------------------------------
      * LEAVE:
      *    ESP <- EBP
      *	  EBP <- SS:ESP
@@ -1136,14 +1136,15 @@ let translate_instruction
       let (espLhs,espLhsCommands) = (esp_r WR)#to_lhs floc in
       let ebp = env#mk_cpu_register_variable Ebp in
       let (ebpLhs,ebpLhsCommands) = (ebp_r WR)#to_lhs floc in
-      let restoredValue= (ebp_deref RD)#to_expr floc in
-      let _ = finfo#restore_register floc#cia (CPURegister Ebp) in
+      let restoredValue = (ebp_deref RD)#to_expr floc in
+      let memaddr = (ebp_deref RD)#to_address floc in
+      let _ = finfo#restore_register memaddr floc#cia (CPURegister Ebp) in
       let size = int_constant_expr 4 in
       let reqN () = floc#f#env#mk_num_temp in
       let reqC = floc#f#env#request_num_constant in
       let cmds1 = floc#get_assign_commands espLhs ~size (XVar ebp) in
       let cmds2 = floc#get_assign_commands ebpLhs ~size restoredValue in
-      let (newEspCmds,newEsp) = 
+      let (newEspCmds,newEsp) =
 	xpr_to_numexpr reqN reqC (XOp (XPlus, [ XVar esp ; size ])) in
       let cmd3 = ASSIGN_NUM (espLhs, newEsp) in
       let cmds =
@@ -1268,7 +1269,7 @@ let translate_instruction
       let one  = int_constant_expr 1 in
       let cmds0 =
         floc#get_assign_commands dstLhs ~size (XOp (XMinus, [ dstRhs ; srcRhs ])) in
-      let cmds1 = floc#get_assign_commands dstLhs ~size 
+      let cmds1 = floc#get_assign_commands dstLhs ~size
 	(XOp (XMinus, [ dstRhs ; XOp (XPlus, [ srcRhs ; one ]) ])) in
       let branch = BRANCH [ LF.mkCode cmds0 ; LF.mkCode cmds1 ] in
       default (dstLhsCmds @ [ branch ])
@@ -1307,7 +1308,7 @@ let translate_instruction
       let (remLhs,remLhsCmds) = rem#to_lhs floc in
       let dividendRhs = dividend#to_expr floc in
       let divisorRhs = op#to_expr floc in
-      let quotCmds = floc#get_assign_commands quotLhs ~size ~vtype 
+      let quotCmds = floc#get_assign_commands quotLhs ~size ~vtype
 	(XOp (XDiv, [dividendRhs ; divisorRhs ])) in
       let remCmds = floc#get_assign_commands remLhs ~size ~vtype
 	(XOp (XMod, [ dividendRhs ; divisorRhs ])) in
@@ -1319,24 +1320,24 @@ let translate_instruction
     | OnesComplementNegate op ->
       let floc = get_floc loc in
       let (lhs, lhsCmds) = op#to_lhs floc in
-      let cmds = floc#get_operation_commands lhs 
+      let cmds = floc#get_operation_commands lhs
 	~size:(int_constant_expr op#size) op_not [ ] in
       let cmds = lhsCmds @ cmds in
       default cmds
 
-    (* --------------------------------------------------------------- op2 = op1 & op2 *) 
+    (* --------------------------------------------------------------- op2 = op1 & op2 *)
     (* likely stack realignment operation                                              *)
     | LogicalAnd (dst, src) when (dst#equal (esp_r WR)) && src#is_immediate_value ->
       let floc = get_floc loc in
       let esp = env#mk_cpu_register_variable Esp in
       let esp1 = env#mk_initial_register_value ~level:1 (CPURegister Esp) in
-      let cmds1 = floc#get_operation_commands esp op_realignment 
+      let cmds1 = floc#get_operation_commands esp op_realignment
 	[ ("arg1", esp, READ) ; ("result", esp, WRITE) ] in
       let cmd2 = ASSERT (EQ (esp, esp1)) in
       let _ = finfo#add_base_pointer esp1 in
       let cmds = cmds1 @ [ cmd2 ] in
       default cmds
-      
+
     (* when one of the operands is zero and the other a register                       *)
     | LogicalAnd (dst, src) when (dst#is_zero || src#is_zero) && dst#is_register ->
       let floc = get_floc loc in
@@ -1353,7 +1354,7 @@ let translate_instruction
       let (lhs, lhsCmds) = dst#to_lhs floc in
       let cmds = floc#get_assign_commands lhs ~size ~vtype zero_constant_expr in
       default (lhsCmds @ cmds)
-   
+
     (* if one of the operands has one bit set the result is either that value or zero *)
     | LogicalAnd (dst, src) when src#has_one_bit_set ->
       let floc = get_floc loc in
@@ -1374,7 +1375,7 @@ let translate_instruction
       let absCmd = ABSTRACT_VARS [ lhs ] in
       let assCmd = ASSERT (LEQ (lhs, rhsVar)) in
       default ( absCmd :: (lhsCmds @ rhsCmds @ [ assCmd ]))
-	
+
     | LogicalAnd (dst, src) ->
       let floc = get_floc loc in
       let size = int_constant_expr dst#size in
@@ -1459,16 +1460,16 @@ let translate_instruction
       default (lhsCmds @ cmds)
 
     (* -------------------------------------------------------------------------------
-     * note: not the same as signed division IDiv (Sar rounds to negative infinity, 
+     * note: not the same as signed division IDiv (Sar rounds to negative infinity,
      * IDiv rounds to zero). Currently not accounted for.
-     * ------------------------------------------------------------- op1 = op1 / 2^op2 *) 
-    | Sar (op1, op2) when op2#is_immediate_value -> 
-      let floc = get_floc loc in   
+     * ------------------------------------------------------------- op1 = op1 / 2^op2 *)
+    | Sar (op1, op2) when op2#is_immediate_value ->
+      let floc = get_floc loc in
       let size = int_constant_expr op1#size in
       let exponent = match op2#get_immediate_value#to_int with
 	  Some i -> check_range ~high:31 ~low:0 instruction#toPretty i
 	| _ ->
-	  let msg = LBLOCK [ STR "Instruction operand of " ; 
+	  let msg = LBLOCK [ STR "Instruction operand of " ;
 			     instruction#toPretty ; STR " is out of range " ;
 			     STR "(does not fit in 32 bit integer); assign 0" ] in
 	  begin
@@ -1498,12 +1499,12 @@ let translate_instruction
       let exponent = match op2#get_immediate_value#to_int with
 	  Some i -> check_range ~high:31 ~low:0 instruction#toPretty i
 	| _ ->
-	  let msg = LBLOCK [ STR "Instruction operand of " ; instruction#toPretty ; 
+	  let msg = LBLOCK [ STR "Instruction operand of " ; instruction#toPretty ;
 			     STR " is out of range " ;
 			     STR "(does not fit in 32 bit integer); assign 0" ] in
 	  begin
 	    ch_error_log#add "translation" (LBLOCK [ floc#l#toPretty ; STR ": " ; msg ]) ;
-	    0 
+	    0
 	  end in
       let cmds =
 	match exponent with
@@ -1514,7 +1515,7 @@ let translate_instruction
 	  floc#get_assign_commands
             lhs ~size (XOp (XMult, [ num_constant_expr multiplier ; rhs ])) in
       default (lhsCmds @ cmds )
-	
+
     | Shl (op1, op2) ->
       let floc = get_floc loc in
       let size = int_constant_expr op1#size in
@@ -1533,8 +1534,8 @@ let translate_instruction
     (* ----------------------------------------------------------------------------------- *
      * divide by 2^31; result is either 0 or 1                                             *
      * ----------------------------------------------------------------------------------- *)
-    | Shr (op1, op2) when (op2#is_immediate_value && 
-			     match op2#get_immediate_value#to_int with 
+    | Shr (op1, op2) when (op2#is_immediate_value &&
+			     match op2#get_immediate_value#to_int with
 			       Some i -> i=31 | _ -> false) ->
       let floc = get_floc loc in
       let size = int_constant_expr op1#size in
@@ -1564,19 +1565,19 @@ let translate_instruction
       let cfVar = env#mk_flag_variable (X86Flag CFlag) in
       let cmd = ABSTRACT_VARS [ cfVar ] in
       default [ cmd ]
-	
+
     (* BitScanForward:
-       searches the source (2nd) operand for the least significant set bit. 
-       If a least significant 1 bit is found, its bit index is stored in the 
-       destination (first) operand. The bit index is an unsigned offset from 
+       searches the source (2nd) operand for the least significant set bit.
+       If a least significant 1 bit is found, its bit index is stored in the
+       destination (first) operand. The bit index is an unsigned offset from
        bit 0 of the source operand. If the content of the source operand is
-       0, the content of the destination operand is undefined 
- 
-       BitScanReverse: 
+       0, the content of the destination operand is undefined
+
+       BitScanReverse:
        searches the source for the most significant set bit.
-       
-       Over-approximating semantics is the same for both instructions: if the rhs 
-       value is non-zero, assert that the destination value is between 0 and 31, 
+
+       Over-approximating semantics is the same for both instructions: if the rhs
+       value is non-zero, assert that the destination value is between 0 and 31,
        if the rhs value is zero, abstract the destination variable.
     *)
     | BitScanReverse (op1, op2)
@@ -1589,23 +1590,23 @@ let translate_instruction
       let (zeroTestCmds,zeroBoolExpr) = xpr_to_boolexpr reqN reqC zeroTestExpr in
       let (notzeroTestCmds,notzeroBoolExpr) = xpr_to_boolexpr reqN reqC notzeroTestExpr in
       let abstractCmds = floc#get_abstract_commands lhs () in
-      let zeroCmds = zeroTestCmds @ [ ASSERT zeroBoolExpr ] @ abstractCmds in			
-      let notzeroCmds = 
+      let zeroCmds = zeroTestCmds @ [ ASSERT zeroBoolExpr ] @ abstractCmds in
+      let notzeroCmds =
 	let xpr = XOp (XNumRange, [ zero_constant_expr; int_constant_expr 31 ]) in
 	let assignCmds = floc#get_assign_commands lhs xpr in
 	notzeroTestCmds @ [ ASSERT notzeroBoolExpr ] @ assignCmds in
       let branchCmd = BRANCH [ LF.mkCode zeroCmds ; LF.mkCode notzeroCmds ] in
       default (lhsCmds @ [ branchCmd ])
-	
+
     (* Reverses the byte order of a 32 bit register *)
     | BSwap op ->
       let floc = get_floc loc in
       let (lhs,lhsCmds) = op#to_lhs floc in
       let abstractCmds = floc#get_abstract_commands lhs () in
       default (lhsCmds @ abstractCmds)
-	
+
     (* ------------------------------------------------------------ sets a bit in op1 *)
-    | BitTestComplement (op1, op2) 
+    | BitTestComplement (op1, op2)
     | BitTestAndSet (op1, op2)
     | BitTestReset (op1, op2) ->
       let floc = get_floc loc in
@@ -1618,11 +1619,11 @@ let translate_instruction
 
     (* stack operations *)
     (* ------------------------------------------------- esp = esp - 4 ; mem[esp] = op *)
-    (* ESP <- (ESP - 4); 
+    (* ESP <- (ESP - 4);
          IF (SRC is FS or GS) THEN
             TEMP = ZeroExtend32(SRC);
          ELSE IF (SRC is IMMEDIATE) THEN
-            TEMP = SignExtend32(SRC); FI; 
+            TEMP = SignExtend32(SRC); FI;
          ELSE
             TEMP = SRC; FI;
          SS:ESP <- TEMP;
@@ -1655,7 +1656,7 @@ let translate_instruction
 	if op#is_register then
 	  let var = env#mk_cpu_register_variable op#get_cpureg in
 	  if floc#has_initial_value var then
-	    finfo#save_register floc#cia (CPURegister op#get_cpureg) in
+	    finfo#save_register stackLhs floc#cia (CPURegister op#get_cpureg) in
       default cmds
 
     (* ------------------------------------------------------------ load flags into AH *)
@@ -1690,10 +1691,10 @@ let translate_instruction
 	op#to_lhs floc) regs in
       let decr = int_constant_expr 32 in
       let espCmds = floc#get_assign_commands espLhs (XOp (XMinus, [ XVar espRhs ; decr ])) in
-      let regCmds = List.map2 
-	(fun lhs rhs -> floc#get_assign_commands lhs rhs) 
+      let regCmds = List.map2
+	(fun lhs rhs -> floc#get_assign_commands lhs rhs)
 	(List.map fst stLhss) (List.map (fun v -> XVar v) regRhss) in
-      let cmds = espLhsCmds @ (List.concat (List.map snd stLhss)) @ espCmds @ 
+      let cmds = espLhsCmds @ (List.concat (List.map snd stLhss)) @ espCmds @
 	(List.concat regCmds) in
       default cmds
 
@@ -1710,10 +1711,11 @@ let translate_instruction
         floc#get_assign_commands espLhs (XOp (XPlus, [XVar espRhs; opsize ])) in
       let cmds = espLhsCommands @ lhsCmds @ cmds1 @ cmds2 in
       let _ =   (* inform function-info if this instruction restores a register *)
-	if op#is_register then 
-	  if inv#are_equal stackRhs 
-	    (env#mk_initial_register_value (CPURegister op#get_cpureg)) then
-	    finfo#restore_register floc#cia (CPURegister op#get_cpureg) in
+	if op#is_register then
+	  if inv#are_equal stackRhs
+	       (env#mk_initial_register_value (CPURegister op#get_cpureg)) then
+            let memaddr = (esp_deref RD)#to_address floc in
+	    finfo#restore_register memaddr floc#cia (CPURegister op#get_cpureg) in
       default cmds
 
     (* ------------------------------------- flags = mem[esp] ; esp = esp + 4 *)
@@ -1744,18 +1746,18 @@ let translate_instruction
       let regs1 = List.rev [ Ebp ; Esi ; Edi ] in
       let regVars1 = List.map env#mk_cpu_register_variable regs1 in
       let regVars2 = List.map env#mk_cpu_register_variable regs2 in
-      let stRhs1 = List.mapi 
+      let stRhs1 = List.mapi
 	(fun i _ -> (esp_deref ~with_offset:(4*i) RD)#to_expr floc) regs1 in
       let stRhs2 = List.mapi
 	(fun i _ -> (esp_deref ~with_offset:((4*i) + 16) RD)#to_expr floc) regs2 in
       let espCmds = floc#get_assign_commands espLhs (XOp (XPlus, [ XVar espRhs ; incr ])) in
-      let regCmds1 = List.map2 
+      let regCmds1 = List.map2
 	(fun lhs rhs -> floc#get_assign_commands lhs rhs) regVars1 stRhs1 in
-      let regCmds2 = List.map2 
+      let regCmds2 = List.map2
 	(fun lhs rhs -> floc#get_assign_commands lhs rhs) regVars2 stRhs2 in
       let cmds = espLhsCmds  @ espCmds @ (List.concat regCmds1) @ (List.concat regCmds2) in
       default cmds
-	
+
     (* ---------------------------------------------------------------------------- setcc op *)
     (* sets the operand to zero or one depending on the status bit in the eflags register    *)
     | Setcc (_, op) ->
@@ -1784,7 +1786,7 @@ let translate_instruction
       let ifVar = env#mk_flag_variable (X86Flag IFlag) in
       let cmd = ASSIGN_NUM (ifVar, NUM numerical_one) in
       default [ cmd ]
-	
+
     (* -------------------------------------------------------------- DF := 0 *)
     | ClearDF ->
       let dfVar = env#mk_flag_variable (X86Flag DFlag) in
@@ -1796,14 +1798,14 @@ let translate_instruction
       let cfVar = env#mk_flag_variable (X86Flag CFlag) in
       let cmd = ASSIGN_NUM (cfVar, NUM numerical_zero) in
       default [ cmd ]
-	
+
     (* ------------------------ ---------------------------------- CF := 1-CF *)
     | ComplementCF ->
       let cfVar = env#mk_flag_variable (X86Flag DFlag) in
       let one = env#request_num_constant numerical_one in
       let cmd = ASSIGN_NUM (cfVar, MINUS (one, cfVar)) in
       default [ cmd ]
-	
+
     (* -------------------------------------------------- store AH into flags *)
     | StoreFlags ->
       let ofVar = env#mk_flag_variable (X86Flag OFlag) in
@@ -1815,7 +1817,7 @@ let translate_instruction
 
     (* special instructions *)
     (* --------------------------------------------------- cpu identification *)
-    | Cpuid ->                                                    
+    | Cpuid ->
       let eax = env#mk_cpu_register_variable Eax in
       let ebx = env#mk_cpu_register_variable Ebx in
       let ecx = env#mk_cpu_register_variable Ecx in
@@ -1830,7 +1832,7 @@ let translate_instruction
 	 ASSIGN_NUM (ecx, NUM_VAR idC);
          ASSIGN_NUM (edx, NUM_VAR idD)] in
       default cmds
-	
+
     (* return instruction is used as an indirect jump *)
     | Ret None | BndRet None when system_info#is_goto_return loc#i ->
       let floc = get_floc loc in
@@ -1857,18 +1859,18 @@ let translate_instruction
          chlog#add
            "inline-return"
            (LBLOCK [pretty_print_list cmds cmd_to_pretty "[" ", " "]" ]) in
-       default cmds       
+       default cmds
 
     (* different control flow *)
     | RepzRet | Ret _ | BndRet _ ->
       let floc = get_floc loc in
       let _ = floc#record_return_value in
-      let transaction = package_transaction finfo block_label 
+      let transaction = package_transaction finfo block_label
 	(commands @ [ invariantOperation ]) in
       let nodes = [ (block_label, [transaction]) ] in
       let edges = [ (block_label, exit_label) ] in
       (nodes, edges, [])
-	
+
     | PackedAlignRight (dst,_,_)
     | PackedExtract (_,dst,_,_)
     | PackedInsert (_,dst,_,_)
@@ -1892,7 +1894,7 @@ let translate_instruction
       let (dstLhs,dstLhsCmds) = lhs#to_lhs floc in
       let cmds = floc#get_assign_commands dstLhs (XConst XRandom) in
       default (dstLhsCmds @ cmds)
-	
+
     | VPackedAdd (_,_,_,dst,_,_)
     | VPackedOp (_,_,dst,_,_)
     | VPackedShift (_,_,dst,_,_)
@@ -1903,7 +1905,7 @@ let translate_instruction
       let (lhs,lhsCmds) = dst#to_lhs floc in
       let cmds = floc#get_assign_commands lhs ~size (XConst XRandom) in
       default (lhsCmds @ cmds)
-	
+
     (* operations on xmm registers *)
     | Movdq (_, dst,_)  ->
       let floc = get_floc loc in
@@ -1911,7 +1913,7 @@ let translate_instruction
       let (lhs, lhsCmds) = dst#to_lhs ~size:dst#size floc in
       let cmds = floc#get_assign_commands lhs ~size (XConst XRandom) in
       default (lhsCmds @ cmds)
-	
+
     (* floating point operations that write to memory *)
     | Fbstp dst
     | FSaveState (_,dst)
@@ -1922,15 +1924,15 @@ let translate_instruction
       let (lhs, lhsCmds) = dst#to_lhs floc in
       let cmds = floc#get_assign_commands lhs (XConst XRandom) in
       default (lhsCmds @ cmds)
-	
+
     (* miscellaneous *)
     | ReadTimeStampCounter (* read time stamp counter into Edx:Eax *)
     | XGetBV -> (* read value of control register into Edx:Eax ; could assert Ecx = 0 here *)
       let eax = env#mk_cpu_register_variable Eax in
       let edx = env#mk_cpu_register_variable Edx in
-      let cmds = [ ABSTRACT_VARS [ eax ; edx ] ] in 
+      let cmds = [ ABSTRACT_VARS [ eax ; edx ] ] in
       default cmds
-	
+
     | RdRandomize op | Stmxcsr op ->
       let floc = get_floc loc in
       let size = int_constant_expr op#size in
@@ -1938,20 +1940,20 @@ let translate_instruction
       let cmds = floc#get_abstract_commands lhs ~size () in
       default (lhsCmds @ cmds)
 
-    (* SIDT :  Stores the content the interrupt descriptor table 
-       register (IDTR) in the destination operand. The destination 
+    (* SIDT :  Stores the content the interrupt descriptor table
+       register (IDTR) in the destination operand. The destination
        operand specifies a 6-byte memory location. *)
     | StoreIDTR op ->
        let floc = get_floc loc in
        let (lhs, lhsCmds) = op#to_lhs floc in
        let cmds = floc#get_abstract_commands lhs ~size:(int_constant_expr 6) () in
        default (lhsCmds @ cmds)
-	
+
      (* the destination operation is an xmm register *)
-    | AESDecrypt _ | AESDecryptLast _ | AESEncrypt _ | AESEncryptLast _ | AESInvMix _ 
-    | AESKeyGenAssist _ 
+    | AESDecrypt _ | AESDecryptLast _ | AESEncrypt _ | AESEncryptLast _ | AESInvMix _
+    | AESKeyGenAssist _
     | VZeroAll -> default []
-      
+
     (* the destination operand is always an FPU data register *)
     | FLoadConstant _ | FLoad _ | FStackOp _
     | Fadd _ | Fsub _ | Fsubr _ | Fmul _ | Fdiv _ | Fdivr _
@@ -2013,7 +2015,7 @@ object (self)
 	  translate_instruction
             ~function_location
             ~code_pc:codePC
-            ~block_label:blockLabel 
+            ~block_label:blockLabel
 	    ~exit_label
             ~commands
 	with
@@ -2033,15 +2035,15 @@ object (self)
                                           function_location#toPretty ; STR ": " ; p ]))
            end in
       match nodes with
-	[] -> 
-	  if codePC#has_more_instructions then 
+	[] ->
+	  if codePC#has_more_instructions then
 	    aux newCommands
 	  else
 	    let transaction = package_transaction finfo blockLabel newCommands in
 	    let nodes = [ (blockLabel,  [transaction]) ] in
-	    let edges = List.map 
-	      (fun successor -> 
-		let successorLabel = make_code_label successor in 
+	    let edges = List.map
+	      (fun successor ->
+		let successorLabel = make_code_label successor in
 		(blockLabel, successorLabel)) codePC#get_block_successors in
 	    (nodes, edges)
       | _ ->
@@ -2071,18 +2073,18 @@ object (self)
     let _ = finfo#add_base_pointer esp0 in
     let unknown_scalar = env#mk_special_variable "unknown_scalar" in
     let initializeScalar =
-      DOMAIN_OPERATION ( [ valueset_domain ], 
+      DOMAIN_OPERATION ( [ valueset_domain ],
 			 { op_name = new symbol_t "set_unknown_scalar" ;
 			   op_args = [ ("unknown_scalar", unknown_scalar, WRITE) ] } ) in
     let initializeBasePointerOperations:cmd_t list =
       List.map (fun base ->
-	DOMAIN_OPERATION ( [ valueset_domain ], 
+	DOMAIN_OPERATION ( [ valueset_domain ],
 			   { op_name = new symbol_t "initialize" ;
 			     op_args = [ (base#getName#getBaseName, base, READ) ] } ))
 	finfo#get_base_pointers in
     (* -------------------------------------------------------------------------
        The System V Intel386 ABI (chapter Registers and the Stack Frame) says that :
-       The direction flag must be set to the "forward" (that is, zero) direction before 
+       The direction flag must be set to the "forward" (that is, zero) direction before
        entry and upon exit from a function.
        ------------------------------------------------------------------------- *)
     let dfFlagCmd =
@@ -2103,7 +2105,7 @@ object (self)
     begin
       finfo#ftinv#add_function_var_fact esp t_voidptr ;
       finfo#ftinv#add_function_var_fact espin t_voidptr
-    end      
+    end
 
   method translate =
     let faddr = f#get_address in
@@ -2133,7 +2135,7 @@ let rec translate_assembly_function (f:assembly_function_int) =
     translator#translate
   with
   | CHFailure p
-    | BCH_failure p -> 
+    | BCH_failure p ->
      begin
        pr_error [STR "Failure in translation: "; p; NL];
        raise (BCH_failure p)
@@ -2143,13 +2145,13 @@ let rec translate_assembly_function (f:assembly_function_int) =
     let _ = chlog#add "retrace function" (LBLOCK [ faddr#toPretty ]) in
     let newF = trace_function faddr in
     begin
-      (if newF#is_nonreturning then (get_function_info faddr)#set_nonreturning) ; 
+      (if newF#is_nonreturning then (get_function_info faddr)#set_nonreturning) ;
       assembly_functions#replace_function newF ;
-      translate_assembly_function newF 
+      translate_assembly_function newF
     end
-    
 
-	
+
+
 let rec translate_assembly_function_by_address (faddr:doubleword_int) =
   let f = assembly_functions#get_function_by_address faddr in
   try
@@ -2160,11 +2162,11 @@ let rec translate_assembly_function_by_address (faddr:doubleword_int) =
       let _ = chlog#add "retrace function" (LBLOCK [ faddr#toPretty ]) in
       let newF = trace_function faddr in
       begin
-	(if newF#is_nonreturning then (get_function_info faddr)#set_nonreturning) ; 
+	(if newF#is_nonreturning then (get_function_info faddr)#set_nonreturning) ;
 	assembly_functions#replace_function newF ;
 	translate_assembly_function_by_address faddr
       end
-	
+
 let translate_assembly_functions () =
   (* let msg = ref [] in *)
   let failedfunctions = ref [] in

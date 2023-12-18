@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,6 +38,7 @@ open XprUtil
 open Xsimplify
 
 (* bchlib *)
+open BCHExternalPredicate
 open BCHLibTypes
 open BCHMakeCallTargetInfo
 open BCHPrecondition
@@ -120,7 +123,7 @@ object (self)
   method get_description = "predicate on the value of a register"
 
 end
-    
+
 
 
 (* ======================================================= __fld_<n>_<p>_<v>__
@@ -142,7 +145,7 @@ object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
-  method get_name = 
+  method get_name =
     let spred = relational_op_to_xml_string pred in
     let v = match rhs with | PConstantValue n -> n#toString ^ "__" | _ -> "__" in
     "__test_fld_" ^ (string_of_int offset) ^ "_" ^ spred ^ "_" ^ v
@@ -180,7 +183,7 @@ object (self)
   method get_description = "predicate on the value of a field"
 
 end
-    
+
 let predicate_patterns = [
 
   (* predicate on a field value with constant value *)
@@ -189,7 +192,7 @@ let predicate_patterns = [
     regex_f = fun faddr fnbytes fnhash ->
       let off = todwoff (Str.matched_group 1 fnbytes) in
       let v = toimm2 (Str.matched_group 2 fnbytes) in
-      let sem = new field_predicate_semantics_t fnhash Eax off PNotEqual 
+      let sem = new field_predicate_semantics_t fnhash Eax off PNotEqual
 	(PConstantValue (mkNumerical v)) 3 in
       let msg = LBLOCK [ STR " with offset " ; INT off ; STR " and value " ; INT v ] in
       sometemplate ~msg sem
@@ -201,11 +204,11 @@ let predicate_patterns = [
     regex_f = fun faddr fnbytes fnhash ->
       let off = tooff (Str.matched_group 1 fnbytes) in
       let v = toimm2 (Str.matched_group 2 fnbytes) in
-      let sem = new field_predicate_semantics_t fnhash Eax off PNotEqual 
+      let sem = new field_predicate_semantics_t fnhash Eax off PNotEqual
 	(PConstantValue (mkNumerical v)) 3 in
       let msg = LBLOCK [ STR " with offset " ; INT off ; STR " and value " ; INT v ] in
       sometemplate ~msg sem
-  } ; 
+  } ;
 
   (* predicate on a field value with constant value *)
   { regex_s = Str.regexp "80b8\\(........\\)\\(..\\)0f94c0c3$" ;
@@ -217,7 +220,7 @@ let predicate_patterns = [
 	(PConstantValue (mkNumerical v)) 3 in
       let msg = LBLOCK [ STR " with offset " ; INT off ; STR " and value " ; INT v ] in
       sometemplate ~msg sem
-  } ; 
+  } ;
 
   (* predicate on a field value with constant value *)
   { regex_s = Str.regexp "8378\\(..\\)\\(..\\)0f94c0c3$" ;
@@ -273,16 +276,16 @@ let predicate_patterns = [
       let msg = LBLOCK [ STR " with offset " ; INT off ; STR " and value " ; INT v ] in
       sometemplate ~msg sem
   } ;
-    
+
 
   (* predicate on a register value with global variable *)
   { regex_s = Str.regexp "3b05\\(........\\)0f94c0c3$" ;
-    
+
     regex_f = fun faddr fnbytes fnhash ->
       let gv = todw (Str.matched_group 1 fnbytes) in
       let sem = new reg_predicate_semantics_t fnhash Eax PEquals (PGlobalVar gv) 3 in
       let msg = LBLOCK [ STR " with global variable gv_" ; gv#toPretty ] in
       sometemplate ~msg sem
   }
-      
+
 ]
