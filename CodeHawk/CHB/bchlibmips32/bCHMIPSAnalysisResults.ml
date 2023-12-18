@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -55,7 +55,7 @@ open BCHSpecializations
 
 (* bchlibmips32 *)
 open BCHMIPSDisassemblyUtils
-open BCHFnMIPSDictionary   
+open BCHFnMIPSDictionary
 open BCHMIPSTypes
 open BCHMIPSLoopStructure
 open BCHMIPSOperand
@@ -71,8 +71,9 @@ object (self)
   val finfo = get_function_info  fn#get_address
   val env = (get_function_info fn#get_address)#env
   val vard = (get_function_info fn#get_address)#env#varmgr#vard
-  val id = mk_mips_opcode_dictionary
-             fn#get_address (get_function_info fn#get_address)#env#varmgr#vard
+  val id =
+    mk_mips_opcode_dictionary
+      fn#get_address (get_function_info fn#get_address)#env#varmgr#vard
   val specialization =
     let fa = fn#get_address#to_hex_string in
     if specializations#has_specialization fa then
@@ -119,7 +120,8 @@ object (self)
           bNode#setAttribute "ba" baddr
         end)
 
-  method private write_xml_cfg_block (node:xml_element_int) (b:mips_assembly_block_int) =
+  method private write_xml_cfg_block
+                   (node:xml_element_int) (b:mips_assembly_block_int) =
     let set = node#setAttribute in
     let blockloc = b#get_location in
     let looplevels = get_loop_levels b#get_context_string in
@@ -135,7 +137,7 @@ object (self)
       node#appendChildren [ llNode ] ;
       set "ba" b#get_context_string ;
       set "ea" (make_i_location blockloc b#get_last_address)#ci ;
-    end 
+    end
 
   method private write_xml_cfg (node:xml_element_int) =
     let _ = record_loop_levels faddr in
@@ -147,20 +149,20 @@ object (self)
       fn#itera (fun baddr block ->
 	let bNode = xmlElement "bl" in
 	begin
-	  self#write_xml_cfg_block bNode block ;
+	  self#write_xml_cfg_block bNode block;
 	  List.iter (fun succ ->
 	    let eNode = xmlElement "e" in
 	    let seta tag a = eNode#setAttribute tag a in
 	    begin
-	      seta "src" baddr ;
-	      seta "tgt" succ ;
+	      seta "src" baddr;
+	      seta "tgt" succ;
 	      edges := eNode :: !edges
-	    end) block#get_successors ;
+	    end) block#get_successors;
 	  nodes := bNode :: !nodes
 	end) ;
-      bbNode#appendChildren (List.rev !nodes) ;
-      eeNode#appendChildren (List.rev !edges) ;
-      node#appendChildren [ bbNode ; eeNode ]
+      bbNode#appendChildren (List.rev !nodes);
+      eeNode#appendChildren (List.rev !edges);
+      node#appendChildren [bbNode; eeNode]
     end
 
   method private write_xml (node:xml_element_int) =
@@ -168,23 +170,30 @@ object (self)
     let cNode = xmlElement "cfg" in
     let dNode = xmlElement "instr-dictionary" in
     let iiNode = xmlElement "instructions" in
+    let sfNode = xmlElement "stackframe" in
+    let xpodNode = xmlElement "xpodictionary" in
+    let poNode = xmlElement "proofobligations" in
     begin
-      self#write_xml_cfg cNode ;
-      self#write_xml_instructions iiNode ;
-      id#write_xml dNode ;
-      append [ cNode ; dNode ; iiNode ]
+      self#write_xml_cfg cNode;
+      self#write_xml_instructions iiNode;
+      finfo#stackframe#write_xml sfNode;
+      finfo#proofobligations#write_xml poNode;
+      finfo#xpod#write_xml xpodNode;
+      id#write_xml dNode;
+      append [cNode; dNode; iiNode; sfNode; xpodNode; poNode]
     end
 
   method save =
     let node = xmlElement "application-results" in
     begin
-      self#write_xml node ;
-      node#setAttribute "a" faddr#to_hex_string ;
-      save_app_function_results_file faddr#to_hex_string node ;
+      self#write_xml node;
+      node#setAttribute "a" faddr#to_hex_string;
+      save_app_function_results_file faddr#to_hex_string node;
       save_vars faddr#to_hex_string vard
     end
 
 end
+
 
 class mips_analysis_results_t:mips_analysis_results_int =
 object (self)
@@ -194,29 +203,29 @@ object (self)
   method record_results ?(save=true) (fn:mips_assembly_function_int) =
     let fndata = new fn_analysis_results_t fn in
     begin
-      (if save then fndata#save) ;
+      (if save then fndata#save);
       H.add table fn#get_address#to_hex_string fn
     end
 
   method write_xml (node:xml_element_int) =
     let ffnode = xmlElement "functions" in
-    let _ = H.iter (fun faddr fn ->
-                let fnode = xmlElement "fn" in
-                begin
-                  fnode#setAttribute "fa" faddr ;
-                  fnode#setAttribute "md5" fn#get_function_md5 ;
-                  ffnode#appendChildren [ fnode ]
-                end) table in
-    node#appendChildren [ ffnode ]
+    let _ =
+      H.iter (fun faddr fn ->
+          let fnode = xmlElement "fn" in
+          begin
+            fnode#setAttribute "fa" faddr;
+            fnode#setAttribute "md5" fn#get_function_md5;
+            ffnode#appendChildren [fnode]
+          end) table in
+    node#appendChildren [ffnode]
 
   method save =
     let node = xmlElement "application-results" in
     begin
-      self#write_xml node ;
+      self#write_xml node;
       save_resultdata_file node
     end
 
 end
 
 let mips_analysis_results = new mips_analysis_results_t
-  

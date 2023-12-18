@@ -92,6 +92,18 @@ object (self:'a)
             (LBLOCK [
                  STR "Operand is not an immediate value: "; self#toPretty]))
 
+  method to_register =
+    match kind with
+    | MIPSReg r -> register_of_mips_register r
+    | MIPSSpecialReg r -> register_of_mips_special_register r
+    | MIPSFPReg i -> register_of_mips_floating_point_register_index i
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Operand cannot be converted to a generic register: ";
+                 self#toPretty]))
+
   method to_address (floc:floc_int):xpr_t =
     let env = floc#f#env in
     match kind with
@@ -105,10 +117,20 @@ object (self:'a)
          (BCH_failure
             (LBLOCK [
                  STR "Cannot take address of register: "; self#toPretty]))
-    | MIPSIndReg (r,offset) ->
+    | MIPSIndReg (r, offset) ->
        let v = env#mk_mips_register_variable r in
        XOp (XPlus, [XVar v; num_constant_expr offset])
     | MIPSAbsolute a -> num_constant_expr a#to_numerical
+
+  method get_address_alignment =
+    match kind with
+    | MIPSIndReg (_, offset) -> offset#toInt mod 4
+    | MIPSAbsolute a -> a#to_numerical#toInt mod 4
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "address alignment not available for "; self#toPretty]))
 
   method to_variable (floc:floc_int):variable_t =
     let env = floc#f#env in
@@ -119,7 +141,7 @@ object (self:'a)
     | MIPSReg r -> env#mk_mips_register_variable r
     | MIPSSpecialReg r -> env#mk_mips_special_register_variable r
     | MIPSFPReg index -> env#mk_mips_fp_register_variable index
-    | MIPSIndReg (r,offset) ->
+    | MIPSIndReg (r, offset) ->
        let rvar = env#mk_mips_register_variable r in
        floc#get_memory_variable_1 rvar offset
     | MIPSAbsolute a -> env#mk_global_variable a#to_numerical
@@ -146,7 +168,20 @@ object (self:'a)
             (LBLOCK [STR "Immediate cannot be a lhs: "; imm#toPretty]))
     | _ -> (self#to_variable floc, [])
 
-  method is_register = match kind with MIPSReg r -> true | _ -> false
+  method is_register =
+    match kind with
+    | MIPSReg _ -> true
+    | _ -> false
+
+  method is_register_zero =
+    match kind with
+    | MIPSReg MRzero -> true
+    | _ -> false
+
+  method is_special_register =
+    match kind with
+    | MIPSSpecialReg _ -> true
+    | _ -> false
                                                               
   method get_register =
     match kind with

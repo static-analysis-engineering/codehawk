@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -67,21 +67,21 @@ type mips_instr_format_t =
       * int (* rt:5 *)
       * int (* rd:5 *)
       * int (* shamt:5 *)
-      * int (* funct:6 *) 
+      * int (* funct:6 *)
   | R2Type of    (*  SPECIAL2:28 *)
       int (* opcode:6 (28) *)
       * int (* rs:5 *)
       * int (* rt:5 *)
       * int (* rd:5 *)
       * int (* shamt:5 *)
-      * int (* funct:6 *) 
+      * int (* funct:6 *)
   | R3Type of    (*  SPECIAL3:31 *)
       int (* opcode:6 (31) *)
       * int (* rs:5 *)
       * int (* rt:5 *)
       * int (* rd:5 *)
       * int (* shamt:5 *)
-      * int (* funct:6 *) 
+      * int (* funct:6 *)
   | IType of
       int (* opcode:6 *)
       * int (* rs:5 *)
@@ -155,8 +155,10 @@ class type mips_operand_int =
     method get_indirect_register_index: int
     method get_indirect_offset: numerical_t
     method get_absolute_address: doubleword_int
+    method get_address_alignment: int
 
     (* converters *)
+    method to_register: register_t
     method to_numerical: numerical_t
     method to_address: floc_int -> xpr_t
     method to_variable: floc_int -> variable_t
@@ -167,6 +169,8 @@ class type mips_operand_int =
     method is_read : bool
     method is_write: bool
     method is_register: bool
+    method is_register_zero: bool
+    method is_special_register: bool
     method is_absolute_address: bool
 
     (* printing *)
@@ -174,212 +178,499 @@ class type mips_operand_int =
     method toPretty: pretty_t
 
   end
-         
+
 type not_code_t = DataBlock of data_block_int
 
 type mips_opcode_t =
-  (* SyscallType *)
-  | Syscall of int
-  (* RSyncType *)
-  | Sync of int
-  (* RBreakType  *)
-  | Break of int
-  (* I-type: branch/function call *)
-  | BranchLink of mips_operand_int
-  | BranchLEZero of mips_operand_int * mips_operand_int
-  | BranchLEZeroLikely of mips_operand_int * mips_operand_int
-  | BranchLTZero of mips_operand_int * mips_operand_int
-  | BranchLTZeroLikely of mips_operand_int * mips_operand_int
-  | BranchGEZero of mips_operand_int * mips_operand_int
-  | BranchGEZeroLikely of mips_operand_int * mips_operand_int
-  | BranchGTZero of mips_operand_int * mips_operand_int
-  | BranchGTZeroLikely of mips_operand_int * mips_operand_int
-  | BranchLTZeroLink of mips_operand_int * mips_operand_int
-  | BranchGEZeroLink of mips_operand_int * mips_operand_int
-  | BranchEqual of mips_operand_int * mips_operand_int * mips_operand_int
-  | BranchEqualLikely of mips_operand_int * mips_operand_int * mips_operand_int
-  | BranchNotEqual of mips_operand_int * mips_operand_int * mips_operand_int
-  | BranchNotEqualLikely of mips_operand_int * mips_operand_int * mips_operand_int
-  | Branch of mips_operand_int
-  (* I-type: arithmetic/logic *)
-  | AddImmediate of mips_operand_int * mips_operand_int * mips_operand_int (* dest, src1, src2 *)
-  | AddImmediateUnsigned of mips_operand_int * mips_operand_int * mips_operand_int
-  | SetLTImmediate of mips_operand_int * mips_operand_int * mips_operand_int
-  | SetLTImmediateUnsigned of mips_operand_int * mips_operand_int * mips_operand_int
-  | AndImmediate of mips_operand_int * mips_operand_int * mips_operand_int
-  | OrImmediate of mips_operand_int * mips_operand_int * mips_operand_int
-  | XorImmediate of mips_operand_int * mips_operand_int * mips_operand_int
-  (* I-type: memory *)
-  | AddUpperImmediate of mips_operand_int * mips_operand_int * mips_operand_int (* dest,src,imm *)
-  | LoadUpperImmediate of mips_operand_int * mips_operand_int (* dest, imm *)
-  | LoadByte of mips_operand_int * mips_operand_int   (* dest, src *)
-  | LoadHalfWord of mips_operand_int * mips_operand_int (* dest, src *)
-  | LoadWordLeft of mips_operand_int * mips_operand_int (* dest, src *)
-  | LoadWord of mips_operand_int * mips_operand_int (* dest, src *)
-  | LoadLinkedWord of mips_operand_int * mips_operand_int (* dest, src *)
-  | LoadByteUnsigned of mips_operand_int * mips_operand_int (* dest, src *)
-  | LoadHalfWordUnsigned of mips_operand_int * mips_operand_int (* dest, src *)
-  | LoadWordRight of mips_operand_int * mips_operand_int (* dest, src *)
-  | StoreByte of mips_operand_int * mips_operand_int (* dest, src *)
-  | StoreHalfWord of mips_operand_int * mips_operand_int (* dest, src *)
-  | StoreWordLeft of
-      mips_operand_int   (* destination memory location *)
-      * mips_operand_int (* source register *)
-  | StoreWord of
-      mips_operand_int   (* destination memory location *)
-      * mips_operand_int (* source register *)
-  | StoreConditionalWord of mips_operand_int * mips_operand_int (* dest, src *)
-  | StoreWordRight of mips_operand_int * mips_operand_int (* dest, src *)
-  | LoadWordFP of mips_operand_int * mips_operand_int (* dest, src *)
-  | LoadDoublewordToFP of mips_operand_int * mips_operand_int
-  | StoreWordFromFP of mips_operand_int * mips_operand_int
-  | StoreDoublewordFromFP of mips_operand_int * mips_operand_int
-  | Prefetch of mips_operand_int * int
-  | TrapIfEqualImmediate of mips_operand_int * mips_operand_int
-  (* I-type: floating point *)
-  | MoveWordFromCoprocessor2 of mips_operand_int * int * int
-  | MoveWordToCoprocessor2 of mips_operand_int * int * int
-  | MoveWordFromHighHalfCoprocessor2 of mips_operand_int * int * int
-  (* J-type *)
-  | Jump of mips_operand_int
-  | JumpLink of mips_operand_int
-  (* R-type *)
-  | ShiftLeftLogical of mips_operand_int * mips_operand_int * mips_operand_int
-  | ShiftRightLogical of mips_operand_int * mips_operand_int * mips_operand_int
-  | ShiftRightArithmetic of mips_operand_int * mips_operand_int * mips_operand_int
-  | ShiftLeftLogicalVariable of mips_operand_int * mips_operand_int * mips_operand_int
-  | ShiftRightLogicalVariable of mips_operand_int * mips_operand_int * mips_operand_int
-  | ShiftRightArithmeticVariable of mips_operand_int * mips_operand_int * mips_operand_int
-  | JumpRegister of mips_operand_int
-  | JumpLinkRegister of mips_operand_int * mips_operand_int (* returnaddr, target *)
-  | MoveFromHi of mips_operand_int * mips_operand_int (* dest, HI *)
-  | MoveToHi of mips_operand_int * mips_operand_int (* src, HI *)
-  | MoveFromLo of mips_operand_int * mips_operand_int (* dest, LO *)
-  | MoveToLo of mips_operand_int * mips_operand_int (* src, LO *)
-  | MoveConditionalNotZero of
-      mips_operand_int   (* destination *)
-      * mips_operand_int (* source *)
-      * mips_operand_int (* test *)
-  | MoveConditionalZero of
-      mips_operand_int   (* destination *)
-      * mips_operand_int (* source *)
-      * mips_operand_int (* test *)
-  | MultiplyWord of
-      mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-  | MultiplyUnsignedWord of
-      mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-  | MultiplyAddUnsignedWord of
-      mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-  | DivideWord of
-      mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-  | DivideUnsignedWord of
-      mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-      * mips_operand_int
-  | Add of
-      mips_operand_int   (* destination *)
-      * mips_operand_int (* source 1 *)
-      * mips_operand_int (* source 2 *)
-  | AddUnsigned of
-      mips_operand_int   (* destination *)
-      * mips_operand_int (* source 1 *)
-      * mips_operand_int (* source 2 *)
-  | Subtract of mips_operand_int * mips_operand_int * mips_operand_int
-  | SubtractUnsigned of mips_operand_int * mips_operand_int * mips_operand_int
-  | And of mips_operand_int * mips_operand_int * mips_operand_int
-  | Or of mips_operand_int * mips_operand_int * mips_operand_int
-  | Xor of mips_operand_int * mips_operand_int * mips_operand_int
-  | Nor of mips_operand_int * mips_operand_int * mips_operand_int
-  | SetLT of mips_operand_int * mips_operand_int * mips_operand_int
-  | SetLTUnsigned of mips_operand_int * mips_operand_int * mips_operand_int
-  | TrapIfEqual of int * mips_operand_int * mips_operand_int
-  (* R2-type *)
-  | CountLeadingZeros of mips_operand_int * mips_operand_int
-  | MultiplyWordToGPR of mips_operand_int * mips_operand_int * mips_operand_int
-  | MultiplyAddWord of mips_operand_int * mips_operand_int * mips_operand_int * mips_operand_int
-  (* R3-type *)
-  | ExtractBitField of mips_operand_int * mips_operand_int * int * int
-  | InsertBitField of mips_operand_int * mips_operand_int * int * int
-  | ReadHardwareRegister of mips_operand_int * int
-  | SignExtendByte of mips_operand_int * mips_operand_int
-  | SignExtendHalfword of mips_operand_int * mips_operand_int
-  | WordSwapBytesHalfwords of mips_operand_int * mips_operand_int
-  (* FPCM-type *)
-  | MovF of int * mips_operand_int * mips_operand_int   (* cc, dst, src *)
-  | MovT of int * mips_operand_int * mips_operand_int   (* cc, dst, src *)
-  (* FPRType *)
-  | FPAddfmt of mips_fp_format_t * mips_operand_int * mips_operand_int * mips_operand_int
-  | FPSubfmt of mips_fp_format_t * mips_operand_int * mips_operand_int * mips_operand_int
-  | FPMulfmt of mips_fp_format_t * mips_operand_int * mips_operand_int * mips_operand_int
-  | FPDivfmt of mips_fp_format_t * mips_operand_int * mips_operand_int * mips_operand_int
-  | FPSqrtfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPAbsfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPMovfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPNegfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPRoundLfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPTruncLfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPCeilLfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPFloorLfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPRoundWfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPTruncWfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPCeilWfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPFloorWfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPRSqrtfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPCVTSfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPCVTDfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPCVTWfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPCVTLfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  | FPCVTSPfmt of mips_fp_format_t * mips_operand_int * mips_operand_int
-  (* FPRIType *)
-  | MoveWordFromFP of mips_operand_int * mips_operand_int (* dst, src *)
-  | MoveWordToFP of mips_operand_int * mips_operand_int (* src, dst *)
-  | MoveWordFromHighHalfFP of mips_operand_int * mips_operand_int (* dst, src *)
-  | MoveWordToHighHalfFP of mips_operand_int * mips_operand_int (* src, dst *)
-  | ControlWordFromFP of mips_operand_int * mips_operand_int (* dst, src *)
-  | ControlWordToFP of mips_operand_int * mips_operand_int (* src, dst *)
-  | MoveFromCoprocessor0 of mips_operand_int * mips_operand_int * int (* dst, src, sel *)
-  | MoveToCoprocessor0 of mips_operand_int * mips_operand_int * int (* src, dst, sel *)
-  | MoveFromHighCoprocessor0 of mips_operand_int * mips_operand_int * int (* dst, src, sel *)
-  | MoveToHighCoprocessor0 of mips_operand_int * mips_operand_int * int (* src, dst, sel *)
-  (* FPICCType  *)
-  | BranchFPFalse of int * mips_operand_int
-  | BranchFPTrue of int * mips_operand_int
-  | BranchFPFalseLikely of int * mips_operand_int
-  | BranchFPTrueLikely of int * mips_operand_int
-  (* FPCompare *)
-  | FPCompare of
+  | Add of                                                     (* ADD; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | AddImmediate of                         (* ADDI; I-type; arithmetic/logic *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* imm: immediate *)
+  | AddImmediateUnsigned of                (* ADDIU; I-type; arithmetic/logic *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* imm: immediate *)
+  | AddUpperImmediate of                               (* AUI; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* imm: immediate *)
+  | AddUnsigned of                                            (* ADDU; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | And of                                                     (* AND; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | AndImmediate of                         (* ANDI; I-type; arithmetic/logic *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* imm: immediate *)
+  | Branch of                                            (* B: I-type: branch *)
+      mips_operand_int   (* offset: relative target offset *)
+  | BranchEqual of                                     (* BEQ; I-type: branch *)
+      mips_operand_int   (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchEqualLikely of                              (* BEQL; I-type: branch *)
+      mips_operand_int   (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchFPFalse of                                      (* BC1F; FPICC Type *)
+      int                (* cc: FP condition code *)
+      * mips_operand_int (* offset: relatieve target offset *)
+  | BranchFPFalseLikely of                               (* BC1FL; FPICC Type *)
+      int                (* cc: FP condition code *)
+      * mips_operand_int (* offset: relatieve target offset *)
+  | BranchFPTrue of                                       (* BC1T; FPICC Type *)
+      int                (* cc: FP condition code *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchFPTrueLikely of                                (* BC1TL; FPICC Type *)
+      int                (* cc: FP condition code *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchGEZero of                                   (* BGEZ; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchGEZeroLikely of                            (* BGEZL; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchGEZeroLink of                             (* BGEZAL; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchGTZero of                                   (* BGTZ; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchGTZeroLikely of                            (* BGTZL; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchLEZero of                                   (* BLEZ; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchLEZeroLikely of                            (* BLEZL; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchLink of                               (* BAL: I-type: function call *)
+      mips_operand_int   (* offset: relative target offset *)
+  | BranchLTZero of                                   (* BLTZ; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchLTZeroLikely of                            (* BLTZL; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchLTZeroLink of                             (* BLTZAL; I-type: branch *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchNotEqual of                                  (* BNE; I-type: branch *)
+      mips_operand_int   (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+      * mips_operand_int (* offset: relative target offset *)
+  | BranchNotEqualLikely of                           (* BNEL; I-type: branch *)
+      mips_operand_int   (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+      * mips_operand_int (* offset: relative target offset *)
+  | Break of                                            (* BREAK; RBreak type *)
+      int                (* code: software parameters *)
+  | ControlWordFromFP of  (* FPRI Type *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* fs: source *)
+  | ControlWordToFP of    (* FPRI Type *)
+      mips_operand_int   (* rt: source *)
+      * mips_operand_int (* fs: destination *)
+  | CountLeadingZeros of                                      (* CLZ; R2-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source *)
+  | DivideWord of                                              (* DIV; R-type *)
+      mips_operand_int   (* hi: special register HI *)
+      * mips_operand_int (* lo: special register LO *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | DivideUnsignedWord of                                     (* DIVU; R-type *)
+      mips_operand_int   (* hi: special register HI *)
+      * mips_operand_int (* lo: special register LO *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | ExtractBitField of                                        (* EXT; R3-type *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rs: source *)
+      * int              (* pos: starting position *)
+      * int              (* size: number of bits to be extracted *)
+  | InsertBitField of                                         (* INS; R3-type *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rs: source *)
+      * int              (* pos: starting position *)
+      * int              (* size: number of bits to be inserted *)
+  | FPAbsfmt of                                          (* ABS.fmt; FPR type *)
       mips_fp_format_t
-      * int (* cc *)
-      * int (* cond *)
-      * int (* exception *)
-      * mips_operand_int (* fs *)
-      * mips_operand_int (* ft *)
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPAddfmt of                                          (* ADD.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source 1 *)
+      * mips_operand_int (* ft: source 2 *)
+  | FPCeilLfmt of                                     (* CEIL.L.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPCeilWfmt of                                     (* CEIL.W.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPCompare of                                                (* C.cond.fmt *)
+      mips_fp_format_t
+      * int              (* cc: condition code *)
+      * int              (* cond: predicate *)
+      * int              (* exception *)
+      * mips_operand_int (* fs: source 1 *)
+      * mips_operand_int (* ft: source 2 *)
+  | FPCVTDfmt of                                        (* CVTD.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPCVTLfmt of                                        (* CVTL.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPCVTSfmt of                                        (* CVTS.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPCVTSPfmt of                                      (* CVTSP.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPCVTWfmt of                                        (* CVTW.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPDivfmt of                                          (* DIV.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source 1 *)
+      * mips_operand_int (* ft: source 2 *)
+  | FPFloorLfmt of                                   (* FLOOR.L.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPFloorWfmt of                                   (* FLOOR.W.fmt; FPR type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPRoundLfmt of                                   (* ROUND.L.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPMovfmt of                                          (* MOV.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPMulfmt of                                          (* MUL.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source 1 *)
+      * mips_operand_int (* fd: source 2 *)
+  | FPNegfmt of                                          (* NEG.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPRoundWfmt of                                   (* ROUND.W.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPRSqrtfmt of                                      (* RSQRT.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPSqrtfmt of                                        (* SQRT.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPSubfmt of                                          (* SUB.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source 1 *)
+      * mips_operand_int (* ft: source 2 *)
+  | FPTruncLfmt of                                   (* TRUNC.L.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | FPTruncWfmt of                                   (* TRUNC.W.fmt; FPR-type *)
+      mips_fp_format_t
+      * mips_operand_int (* fd: destination *)
+      * mips_operand_int (* fs: source *)
+  | Jump of                                                      (* J; J-type *)
+      mips_operand_int   (* tgt: target address *)
+  | JumpLink of                                                (* JAL; J-type *)
+      mips_operand_int   (* tgt: target address *)
+  | JumpLinkRegister of                                       (* JALR; R-type *)
+      mips_operand_int   (* rd: return address *)
+      * mips_operand_int (* rs: target address *)
+  | JumpRegister of                                             (* JR; R-type *)
+      mips_operand_int   (* rs: target address *)
+  | LoadByte of                                         (* LB; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | LoadByteUnsigned of                                (* LBU; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | LoadDoublewordToFP of                             (* LDC1; I-type: memory *)
+      mips_operand_int   (* ft: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | LoadHalfWord of                                     (* LH; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | LoadHalfWordUnsigned of                            (* LHU; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | LoadImmediate of                               (* LI;  pseudo instruction *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* imm: immediate *)
+  | LoadLinkedWord of                                   (* LL; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | LoadUpperImmediate of                              (* LUI; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* imm: immediate *)
+  | LoadWord of                                         (* LW; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | LoadWordFP of                                     (* LWC1; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | LoadWordLeft of                                    (* LWL; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | LoadWordRight of                                   (* LWR; I-type: memory *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* addr: base-offset address *)
+  | MoveConditionalNotZero of                                 (* MOVN; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source *)
+      * mips_operand_int (* rt: value to be tested for not zero *)
+  | MoveConditionalZero of                                    (* MOVZ; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source *)
+      * mips_operand_int (* rt: value to be tested for zero *)
+  | MovF of  (* FPCM type *)
+      int                (* cc: fp condition code *)
+      * mips_operand_int (* rd: destination *)
+      * mips_operand_int (* rs: source *)
+  | MovT of  (* FPCM type *)
+      int                (* cc: fp condition code *)
+      * mips_operand_int (* rd: destination *)
+      * mips_operand_int (* rs: source *)
+  | Move of                                             (* pseudo instruction *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source *)
+  | MoveFromHi of                                             (* MFHI; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* hi: source (special register HI) *)
+  | MoveToHi of                                               (* MTHI; R-type *)
+      mips_operand_int   (* hi: destination (special register HI) *)
+      * mips_operand_int (* rs: source *)
+  | MoveFromLo of                                             (* MFLO; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* lo: source (special register LO) *)
+  | MoveToLo of                                               (* MTLO; R-type *)
+      mips_operand_int   (* lo: destination (special register LO) *)
+      * mips_operand_int (* rs: source *)
+  | MoveWordFromFP of                                      (* MFC1; FPRI type *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* fs: floating point register *)
+  | MoveWordFromHighHalfFP of                             (* MFHC1; FPRI type *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* fs: floating point register *)
+  | MoveWordToHighHalfFP of                               (* MTHC1; FPRI type *)
+      mips_operand_int   (* rt: source *)
+      * mips_operand_int (* fs: destination *)
+  | MoveWordToFP of                                        (* MTC1; FPRI type *)
+      mips_operand_int   (* rt: source *)
+      * mips_operand_int (* fs: destination *)
+  | MoveFromCoprocessor0 of                                (* MFC0; FPRI type *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rd: source selector *)
+      * int              (* sel: selector *)
+  | MoveToCoprocessor0 of                                  (* MTC0; FPRI type *)
+      mips_operand_int   (* rt: source *)
+      * mips_operand_int (* rd: destination selector *)
+      * int              (* sel: selector *)
+  | MoveFromHighCoprocessor0 of                           (* MFHC0; FPRI type *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rd: source selector *)
+      * int              (* sel: selector *)
+  | MoveToHighCoprocessor0 of                             (* MTHC0; FPRI type *)
+      mips_operand_int   (* rt: source *)
+      * mips_operand_int (* rd: destination selector *)
+      * int              (* sel: selector *)
+  | MoveWordFromCoprocessor2 of                (* MFC2; I-type floating point *)
+      mips_operand_int   (* rt: destination *)
+      * int              (* rd: source selector *)
+      * int              (* sel: selector *)
+  | MoveWordFromHighHalfCoprocessor2 of       (* MFHC2; I-type floating point *)
+      mips_operand_int   (* rt: destination *)
+      * int              (* rd: source selector *)
+      * int              (* sel: selector *)
+  | MoveWordToCoprocessor2 of                  (* MTC2; I-type floating point *)
+      mips_operand_int   (* rt: source *)
+      * int              (* rd: destination selector *)
+      * int              (* sel: selector *)
+  | MultiplyAddWord of                                       (* MADD; R2-type *)
+      mips_operand_int   (* hi: high word destination *)
+      * mips_operand_int (* lo: low word destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | MultiplyAddUnsignedWord of                               (* MADDU; R-type *)
+      mips_operand_int   (* hi: high word destination *)
+      * mips_operand_int (* lo: low word destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | MultiplyUnsignedWord of                                  (* MULTU; R-type *)
+      mips_operand_int   (* hi: high word destination *)
+      * mips_operand_int (* lo: low word destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | MultiplyWord of                                           (* MULT; R-type *)
+      mips_operand_int   (* hi: high word destination *)
+      * mips_operand_int (* lo: low word destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | MultiplyWordToGPR of                                      (* MUL; R2-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | Nor of                                                     (* NOR; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | Or of                                                       (* OR; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rd: source 2 *)
+  | OrImmediate of                           (* ORI; I-type: arithmetic/logic *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* imm: immediate *)
+  | Prefetch of                                       (* PREF; I-type: memory *)
+      mips_operand_int   (* offset(base) *)
+      * int              (* hint *)
+  | ReadHardwareRegister of                                 (* RDHWR; R3-type *)
+      mips_operand_int   (* rt: destination *)
+      * int              (* rd: hardware selection *)
+  | SetLT of                                                   (* SLT; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2*)
+  | SetLTImmediate of                       (* SLTI; I-type: arithmetic/logic *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* imm: immediate *)
+  | SetLTImmediateUnsigned of              (* SLTIU; I-type: arithmetic/logic *)
+      mips_operand_int   (* rt: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* imm: immediate *)
+  | SetLTUnsigned of                                          (* SLTU; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2*)
+  | ShiftLeftLogical of                                        (* SLL; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rt: source 1 *)
+      * mips_operand_int (* sa: source 2*)
+  | ShiftLeftLogicalVariable of                               (* SLLV; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2*)
+  | ShiftRightArithmetic of                                    (* SRA; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2*)
+  | ShiftRightArithmeticVariable of                           (* SRAV; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2*)
+  | ShiftRightLogical of                                       (* SRL; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2*)
+  | ShiftRightLogicalVariable of                              (* SRLV; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2*)
+  | SignExtendByte of                                         (* SEB; R3-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rt: source *)
+  | SignExtendHalfword of                                     (* SEH; R3-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rt: source *)
+  | StoreByte of                                        (* SB; I-type: memory *)
+      mips_operand_int   (* addr: base offset address *)
+      * mips_operand_int (* rt: source register *)
+  | StoreConditionalWord of                             (* SC; I-type: memory *)
+      mips_operand_int   (* addr: base offset address *)
+      * mips_operand_int (* rt: source register *)
+  | StoreDoublewordFromFP of                          (* SDC1; I-type: memory *)
+      mips_operand_int   (* addr: base offset address *)
+      * mips_operand_int (* ft: source register *)
+  | StoreHalfWord of                                    (* SH; I-type: memory *)
+      mips_operand_int   (* addr: base offset address *)
+      * mips_operand_int (* rt: source register *)
+  | StoreWord of                                        (* SW; I-type: memory *)
+      mips_operand_int   (* addr: base offset address *)
+      * mips_operand_int (* rt: source register *)
+  | StoreWordFromFP of                                (* SWC1; I-type: memory *)
+      mips_operand_int   (* addr: base offset address *)
+      * mips_operand_int (* ft: source register *)
+  | StoreWordLeft of                                   (* SWL; I-type: memory *)
+      mips_operand_int   (* addr: base offset address *)
+      * mips_operand_int (* rt: source register *)
+  | StoreWordRight of                                  (* SWR; I-type: memory *)
+      mips_operand_int   (* addr: base offset address *)
+      * mips_operand_int (* rt: source register *)
+  | Subtract of                                                (* SUB; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | SubtractUnsigned of                                       (* SUBU; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | Sync of                                               (* SYNC; RSync type *)
+      int                (* stype *)
+  | Syscall of                                       (* SYSCALL; Syscall type *)
+      int (* code: software parameters *)
+  | TrapIfEqual of                                             (* TEQ: R-type *)
+      int                (* code: ignored by hardware *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | TrapIfEqualImmediate of                           (* TEQI; I-type: memory *)
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* imm: constant to compare against *)
+  | Xor of                                                     (* XOR; R-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | XorImmediate of                         (* XORI; I-type: arithmetic/logic *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* imm: immediate *)
+  | WordSwapBytesHalfwords of                                (* WSBH; R3-type *)
+      mips_operand_int   (* rd: destination *)
+      * mips_operand_int (* rt: source *)
 
   (* Pseudo instructions *)
-  | Move of mips_operand_int * mips_operand_int (*dst, src *)
-  | LoadImmediate of mips_operand_int * mips_operand_int (* dst, imm *)
   | NoOperation
   | Halt
-  
+
   (* Misc *)
   | NotCode of not_code_t option
   | NotRecognized of string * doubleword_int
   | OpcodeUnpredictable of string
   | OpInvalid
-  
+
 
 (* =================================================== MIPS opcode dictionary === *)
 
@@ -503,7 +794,7 @@ class type mips_assembly_block_int =
 
     (** Return the address of the function to which this block belongs. If this
         block is part of an inlined function, the address of the original
-        function is returned (the inner function), not the address of the 
+        function is returned (the inner function), not the address of the
         function in which the block is inlined.*)
     method get_faddr: doubleword_int
 
@@ -546,7 +837,7 @@ class type mips_assembly_block_int =
 
     (** Return number of instructions in this basic block.*)
     method get_instruction_count: int
-         
+
     (* predicates *)
     method includes_instruction_address: doubleword_int -> bool
     method is_returning: bool
@@ -642,7 +933,7 @@ object
   (* accessors *)
   method get_next_instruction      : ctxt_iaddress_t * mips_assembly_instruction_int
   method get_block_successors      : ctxt_iaddress_t list
-  method get_block_successor       : ctxt_iaddress_t 
+  method get_block_successor       : ctxt_iaddress_t
   method get_false_branch_successor: ctxt_iaddress_t
   method get_true_branch_successor : ctxt_iaddress_t
   method get_conditional_successor_info:
@@ -653,7 +944,7 @@ object
   method has_conditional_successor: bool
 end
 
-         
+
 (* =========================================================== CHIF System === *)
 
 class type mips_chif_system_int =
@@ -661,7 +952,7 @@ class type mips_chif_system_int =
 
     (* reset *)
     method reset: unit
-         
+
     (* setters *)
     method add_mips_procedure: procedure_int -> unit
 
@@ -711,4 +1002,3 @@ class type mips_analysis_results_int =
     method save: unit
 
   end
-

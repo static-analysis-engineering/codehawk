@@ -714,9 +714,9 @@ let get_record (opc:mips_opcode_t) =
    *   (pAddr, CCA) <- AddressTranslation(vAddr, DATA, LOAD)
    *   Prefetch(CCA, pAddr, vAddr, DATA, hint)
    * ------------------------------------------------------------------------ *)
-  | Prefetch (op,hint) -> {
+  | Prefetch (op, hint) -> {
       mnemonic = "pref";
-      operands = [ op ];
+      operands = [op];
       delay_slot = false;
       ida_asm = (fun f -> f#pre_int_ops "pref" [hint] [op])
     }
@@ -1626,11 +1626,11 @@ let get_record (opc:mips_opcode_t) =
    *   data <- CPR[0,reg,sel]
    *   GPR[rt] <- data
    * --------------------------------------------------------------------------- *)
-  | MoveFromCoprocessor0 (rt,rd,sel) -> {
+  | MoveFromCoprocessor0 (rt, rd, sel) -> {
       mnemonic   = "mfc0";
-      operands   = [ rt; rd ];
+      operands   = [rt; rd];
       delay_slot = false;
-      ida_asm    = (fun f -> f#int_ops "mfc0" [ rt; rd ] [sel])
+      ida_asm    = (fun f -> f#int_ops "mfc0" [rt; rd] [sel])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1647,9 +1647,9 @@ let get_record (opc:mips_opcode_t) =
    * --------------------------------------------------------------------------- *)
   | MoveToCoprocessor0 (rt,rd,sel) -> {
       mnemonic   = "mtc0";
-      operands   = [ rt; rd ];
+      operands   = [rt; rd];
       delay_slot = false;
-      ida_asm    = (fun f -> f#int_ops "mtc0" [ rt; rd ] [sel])
+      ida_asm    = (fun f -> f#int_ops "mtc0" [rt; rd] [sel])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1664,11 +1664,11 @@ let get_record (opc:mips_opcode_t) =
    *   data <- CPR[0,reg,sel]
    *   GPR[rt] <- data(63..32)
    * --------------------------------------------------------------------------- *)
-  | MoveFromHighCoprocessor0 (rt,rd,sel) -> {
+  | MoveFromHighCoprocessor0 (rt, rd, sel) -> {
       mnemonic   = "mfhc0";
       operands   = [ rt; rd ];
       delay_slot = false;
-      ida_asm    = (fun f -> f#int_ops "mfhc0" [ rt; rd ] [sel])
+      ida_asm    = (fun f -> f#int_ops "mfhc0" [rt; rd] [sel])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1683,11 +1683,11 @@ let get_record (opc:mips_opcode_t) =
    *   reg <- rd
    *   CPR[0,reg,sel](63..32) <- data
    * --------------------------------------------------------------------------- *)
-  | MoveToHighCoprocessor0 (rt,rd,sel) -> {
+  | MoveToHighCoprocessor0 (rt, rd, sel) -> {
       mnemonic   = "mthc0";
       operands   = [ rt; rd ];
       delay_slot = false;
-      ida_asm    = (fun f -> f#int_ops "mthc0" [ rt; rd ] [ sel ])
+      ida_asm    = (fun f -> f#int_ops "mthc0" [rt; rd] [sel])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1824,6 +1824,22 @@ let get_record (opc:mips_opcode_t) =
        delay_slot = false ;
        ida_asm = (fun f -> f#ops mnemonic [src1; src2])
      }
+
+  (* ----------------------------------------------------------- FPCM type ---*)
+
+  | MovF (cc, rd, rs) -> {    (* Move Conditional on Floating Point False *)
+      mnemonic = "movf";
+      operands = [rd; rs];
+      delay_slot = false;
+      ida_asm = (fun f -> f#cc_ops "movf" cc [rd; rs])
+    }
+
+  | MovT (cc, rd, rs) -> {    (* Move Conditional on Floating Point True *)
+      mnemonic = "movt";
+      operands = [rd; rs];
+      delay_slot = false;
+      ida_asm = (fun f -> f#cc_ops "movt" cc [rd; rs])
+    }
       
   (* ---------------------------------------------------- Pseudo instructions *)
 
