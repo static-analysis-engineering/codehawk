@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -56,10 +56,15 @@ let id = BCHInterfaceDictionary.interface_dictionary
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
+    LBLOCK [
+        STR "(";
+        INT node#getLineNumber;
+        STR ",";
+	INT node#getColumnNumber;
+        STR ") ";
+        msg] in
   begin
-    ch_error_log#add "xml parse error" error_msg ;
+    ch_error_log#add "xml parse error" error_msg;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
 
@@ -73,7 +78,7 @@ let function_interface_to_prototype_string
     | Some n -> n
     | _ -> fintf.fintf_name in
   let stackPars = List.fold_left (fun a p ->
-    match p.apar_location with 
+    match p.apar_location with
     | StackParameter i -> (i,p.apar_name,p.apar_type)::a
     | _ -> a) [] fts.fts_parameters in
   let stackPars =
@@ -95,7 +100,7 @@ let function_interface_to_pretty (fintf: function_interface_t) =
       NL;
       INDENT (
           3,
-          LBLOCK [pretty_print_list fts.fts_parameters 
+          LBLOCK [pretty_print_list fts.fts_parameters
 	            (fun p ->
                       LBLOCK [
                           fts_parameter_to_pretty p; NL])
@@ -113,8 +118,14 @@ let get_stack_adjustment (calling_convention:string) (npars:int) =
   match calling_convention with
   | "stdcall" -> 4 * npars
   | "cdecl" -> 0
-  | s -> raise (BCH_failure (LBLOCK [ STR "calling convention " ; STR s ;
-				      STR " not recognized" ]))
+  | s ->
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "calling convention ";
+               STR s;
+	       STR " not recognized"]))
+
 
 let read_xml_function_interface (node:xml_element_int):function_interface_t =
   let get = node#getAttribute in
@@ -130,8 +141,8 @@ let read_xml_function_interface (node:xml_element_int):function_interface_t =
       Some (get_stack_adjustment cc (List.length parameters))
     else
       None in
-  let find l default = 
-    List.fold_left (fun acc s -> 
+  let find l default =
+    List.fold_left (fun acc s ->
         if hasc s then read_xml_returntype (getc s) else acc) default l in
   let fts = {
       fts_parameters = parameters;
@@ -158,7 +169,7 @@ let read_xml_function_interface (node:xml_element_int):function_interface_t =
 let write_xml_function_interface
       (node: xml_element_int) (fintf: function_interface_t) =
   id#write_xml_function_interface node fintf
-  
+
 (* ---------------------------------------------------------------- operators *)
 
 let modify_function_interface
@@ -174,19 +185,62 @@ let modify_function_interface
     fintf_type_signature = newfts
   }
 
+
+let set_function_interface_returntype
+      (fintf: function_interface_t) (ty: btype_t): function_interface_t =
+  let fts = fintf.fintf_type_signature in
+  let newfts = {fts with fts_returntype = ty} in
+  {fintf with fintf_type_signature = newfts}
+
+
+let add_function_parameter
+      (fintf: function_interface_t) (par: fts_parameter_t): function_interface_t =
+  let fts = fintf.fintf_type_signature in
+  let params = fts.fts_parameters in
+  let newparams =
+    if List.exists (fun p -> (fts_parameter_compare p par) = 0) params then
+      List.map (fun p ->
+          if (fts_parameter_compare p par) = 0 then
+            par
+          else
+            p) params
+    else
+      match par.apar_location with
+      | StackParameter index ->
+         let preparams =
+           if index > 1 then
+             (* remove index 0 *)
+             List.tl (List.init index (fun i -> mk_stack_parameter i))
+           else
+             [] in
+         let missingparams =
+           List.fold_left (fun acc pp ->
+               if List.exists (fun p -> (fts_parameter_compare p pp) = 0) params then
+                 acc
+               else
+                 pp :: acc) [] preparams in
+         par :: (missingparams @ params)
+      | _ ->
+         par :: params in
+  let newparams = List.sort fts_parameter_compare newparams in
+  let newfts = {fts with fts_parameters = newparams} in
+  {fintf with fintf_type_signature = newfts}
+
+
 let get_stack_parameter (fintf: function_interface_t) (index:int) =
   let fts = fintf.fintf_type_signature in
   try
     List.find (fun p ->
         match p.apar_location with
         | StackParameter n -> n = index
-        | _ -> false) fts.fts_parameters 
+        | _ -> false) fts.fts_parameters
   with
     Not_found ->
       raise (BCH_failure
 	       (LBLOCK [
                     STR "No stack parameter found with index: ";
                     INT index]))
+
 
 let get_stack_parameter_name (fintf: function_interface_t) (index:int) =
   (get_stack_parameter fintf index).apar_name
@@ -203,7 +257,7 @@ let get_stack_parameter_names (fintf: function_interface_t) =
 
 let get_stack_parameter_count (fintf: function_interface_t) =
   let fts = fintf.fintf_type_signature in
-  List.length (List.filter (fun p -> match p.apar_location with 
+  List.length (List.filter (fun p -> match p.apar_location with
   | StackParameter _ -> true | _ -> false) fts.fts_parameters)
 
 
@@ -234,7 +288,7 @@ let get_fmt_parameter_index (fintf: function_interface_t) =
               (LBLOCK [STR "no format argument found in function signature"]))
 
 
-let demangled_name_to_function_interface (dm: demangled_name_t) = 
+let demangled_name_to_function_interface (dm: demangled_name_t) =
   let stack_adjustment = match dm.dm_calling_convention with
     | "__cdecl" -> Some 0
     | "__thiscall"
@@ -269,7 +323,7 @@ let demangled_name_to_function_interface (dm: demangled_name_t) =
     fintf_type_signature = fts
   }
 
-let default_function_interface 
+let default_function_interface
       ?(cc="cdecl")
       ?(adj=0)
       ?(returntype=t_unknown)
@@ -292,4 +346,3 @@ let default_function_interface
     fintf_syscall_index = None;
     fintf_type_signature = fts
   }
-                       

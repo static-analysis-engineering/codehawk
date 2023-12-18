@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -45,9 +45,11 @@ open BCHBCTypes
 open BCHDoubleword
 open BCHDictionary
 open BCHLibTypes
+open BCHLocation
 open BCHSumTypeSerializer
 open BCHUtilities
 
+module TR = CHTraceResult
 
 let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
@@ -81,9 +83,9 @@ object (self)
   val fts_parameter_value_table = mk_index_table "parameter-value-table"
   val function_signature_table = mk_index_table "function-signature-table"
   val function_interface_table = mk_index_table "function-interface-table"
-  val precondition_table = mk_index_table "precondition-table"
-  val postcondition_table = mk_index_table "postcondition-table"
-  val sideeffect_table = mk_index_table "sideeffect-table"
+  val function_semantics_table = mk_index_table "function-semantics-table"
+  val xxpredicate_table = mk_index_table "xxpredicate-table"
+  val xxpredicate_list_table = mk_index_table "xxpredicate-list-table"
   val function_stub_table = mk_index_table "function-stub-table"
   val call_target_table = mk_index_table "call-target-table"
   val jump_target_table = mk_index_table "jump_target_table"
@@ -100,14 +102,18 @@ object (self)
       fts_parameter_table;
       fts_parameter_list_table;
       bterm_table;
+      gterm_table;
       fts_parameter_value_table;
       function_signature_table;
       function_interface_table;
+      function_semantics_table;
+      xxpredicate_table;
+      xxpredicate_list_table;
       function_stub_table;
       call_target_table;
       jump_target_table;
       c_struct_constant_table;
-      struct_field_value_table 
+      struct_field_value_table
     ]
 
   method reset =
@@ -116,12 +122,12 @@ object (self)
     end
 
   method index_parameter_location (p:parameter_location_t) =
-    let tags = [ parameter_location_mcts#ts p ] in
+    let tags = [parameter_location_mcts#ts p] in
     let key = match p with
-      | StackParameter i -> (tags, [ i ])
-      | RegisterParameter r -> (tags, [ bd#index_register r])
-      | GlobalParameter a -> (tags, [ bd#index_address a ])
-      | UnknownParameterLocation -> (tags,[]) in
+      | StackParameter i -> (tags, [i])
+      | RegisterParameter r -> (tags, [bd#index_register r])
+      | GlobalParameter a -> (tags, [bd#index_address a])
+      | UnknownParameterLocation -> (tags, []) in
     parameter_location_table#add key
 
   method get_parameter_location (index:int):parameter_location_t =
@@ -179,21 +185,21 @@ object (self)
       apar_location = self#get_parameter_location (a 5) }
 
   method index_bterm (t:bterm_t) =
-    let tags = [ bterm_mcts#ts t ] in
+    let tags = [bterm_mcts#ts t] in
     let key = match t with
-      | ArgValue p -> (tags,[ self#index_fts_parameter p ])
-      | RunTimeValue
-        | ReturnValue -> (tags,[])
-      | NamedConstant s -> (tags,[bd#index_string s])
+      | ArgValue p -> (tags, [self#index_fts_parameter p])
+      | RunTimeValue -> (tags, [])
+      | ReturnValue t -> (tags, [self#index_bterm t])
+      | NamedConstant s -> (tags, [bd#index_string s])
       | NumConstant n -> (tags @ [n#toString], [])
-      | ArgBufferSize t 
+      | ArgBufferSize t
         | IndexSize t
         | ByteSize t -> (tags, [self#index_bterm t])
       | ArgAddressedValue (t1,t2) ->
          (tags, [self#index_bterm t1; self#index_bterm t2])
       | ArgNullTerminatorPos t -> (tags, [self#index_bterm t])
       | ArgSizeOf t -> (tags, [bcd#index_typ t])
-      | ArithmeticExpr (op,t1,t2) ->
+      | ArithmeticExpr (op,t1, t2) ->
          (tags @ [arithmetic_op_mfts#ts op],
           [self#index_bterm t1; self#index_bterm t2]) in
     bterm_table#add key
@@ -206,8 +212,9 @@ object (self)
     match (t 0) with
     | "a" -> ArgValue (self#get_fts_parameter (a 0))
     | "rt" -> RunTimeValue
-    | "r" -> ReturnValue
+    | "r" -> ReturnValue (self#get_bterm (a 0))
     | "n" -> NamedConstant (bd#get_string (a 0))
+    | "nt" -> ArgNullTerminatorPos (self#get_bterm (a 0))
     | "c" -> NumConstant (mkNumericalFromString (t 1))
     | "s" -> ArgBufferSize (self#get_bterm (a 0))
     | "i" -> IndexSize (self#get_bterm (a 0))
@@ -237,6 +244,28 @@ object (self)
           [self#index_gterm g1; self#index_gterm g2]) in
     gterm_table#add key
 
+  method get_gterm (index: int): gterm_t =
+    let name = "gterm" in
+    let (tags, args) = gterm_table#retrieve index in
+    let getdw (s: string) = TR.tget_ok (string_to_doubleword s) in
+    let makeloc (faddr: string) (ci: string) =
+      let dw = TR.tget_ok (string_to_doubleword faddr) in
+      ctxt_string_to_location dw ci in
+    let t = t name tags in
+    let a = a name args in
+    match (t 0) with
+    | "c" -> GConstant (mkNumericalFromString (t 1))
+    | "r" -> GReturnValue (makeloc (t 1) (t 2))
+    | "s" -> GSideeffectValue (makeloc (t 1) (t 2), bd#get_string (a 0))
+    | "a" -> GArgValue (getdw (t 1), (a 0), List.tl args)
+    | "u" -> GUnknownValue
+    | "x" ->
+       GArithmeticExpr
+         (g_arithmetic_op_mfts#fs (t 1),
+          self#get_gterm (a 0),
+          self#get_gterm (a 1))
+    | s -> raise_tag_error name s gterm_mcts#tags
+
   method index_fts_parameter_value (r: (fts_parameter_t * bterm_t)) =
     let (p, t) = r in
     fts_parameter_value_table#add
@@ -258,7 +287,7 @@ object (self)
     let tags = [fs.fts_calling_convention] in
     let args = [
         self#index_fts_parameter_list fs.fts_parameters;
-        if fs.fts_varargs  then 1 else 0;
+        if fs.fts_varargs then 1 else 0;
         (match fs.fts_va_list with
          | Some l -> self#index_fts_parameter_list l
          | _ -> (-1));
@@ -287,7 +316,7 @@ object (self)
       fts_registers_preserved =
         (List.map bd#get_register (get_list_suffix args 6))
     }
-                 
+
   method index_function_interface (fintf: function_interface_t) =
     let tags = [] in
     let args = [
@@ -308,131 +337,124 @@ object (self)
       fintf_type_signature = self#get_function_signature (a 3)
     }
 
-  method index_precondition (p: precondition_t) =
+  method index_function_semantics (fsem: function_semantics_t) =
+    let tags = [] in
+    let args = [
+        self#index_xxpredicate_list fsem.fsem_pre;
+        self#index_xxpredicate_list fsem.fsem_post;
+        self#index_xxpredicate_list fsem.fsem_errorpost;
+        self#index_xxpredicate_list fsem.fsem_sideeffects;
+        self#index_xxpredicate_list fsem.fsem_postrequests
+      ] in
+    function_semantics_table#add (tags, args)
+
+  method get_function_semantics (index: int): function_semantics_t =
+    let name = "function-semantics" in
+    let (tags, args) = function_semantics_table#retrieve index in
+    let a = a name args in
+    { fsem_pre = self#get_xxpredicate_list (a 0);
+      fsem_post = self#get_xxpredicate_list (a 1);
+      fsem_errorpost = self#get_xxpredicate_list (a 2);
+      fsem_sideeffects = self#get_xxpredicate_list (a 3);
+      fsem_postrequests = self#get_xxpredicate_list (a 4);
+      fsem_io_actions = [];
+      fsem_desc = "id";
+      fsem_throws = []
+    }
+
+  method index_xxpredicate (p: xxpredicate_t) =
     let ib b = if b then 1 else 0 in
     let it = self#index_bterm in
-    let tags = [precondition_mcts#ts p] in
+    let ity = bcd#index_typ in
+    let tags = [xxpredicate_mcts#ts p] in
     let key = match p with
-      | PreNullTerminated t -> (tags, [it t])
-      | PreNotNull t -> (tags, [it t])
-      | PreNull t -> (tags, [it t])
-      | PreDerefRead (ty, t1, t2, b) ->
-         (tags, [bcd#index_typ ty; it t1; it t2; ib b])
-      | PreDerefWrite (ty, t1, t2, b) ->
-         (tags, [bcd#index_typ ty; it t1; it t2; ib b])
-      | PreAllocationBase t -> (tags, [it t])
-      | PreFunctionPointer (ty, t) -> (tags, [bcd#index_typ ty; it t])
-      | PreNoOverlap (t1, t2) -> (tags, [it t1; it t2])
-      | PreFormatString t -> (tags, [it t])
-      | PreEnum (t, s, b) -> (tags, [it t; bd#index_string s; ib b])
-      | PreRelationalExpr (op, t1, t2) ->
+      | XXAllocationBase t -> (tags, [it t])
+      | XXBlockWrite (ty, t1, t2) -> (tags, [ity ty; it t1; it t2])
+      | XXBuffer (ty, t1, t2) -> (tags, [ity ty; it t1; it t2])
+      | XXEnum (t, s, b) -> (tags, [it t; bd#index_string s; ib b])
+      | XXFalse -> (tags, [])
+      | XXFreed t -> (tags, [it t])
+      | XXFunctional -> (tags, [])
+      | XXFunctionPointer (ty, t) -> (tags, [ity ty; it t])
+      | XXIncludes (t, c) -> (tags, [it t; self#index_c_struct_constant c])
+      | XXInitialized t -> (tags, [it t])
+      | XXInitializedRange (ty, t1, t2) -> (tags, [ity ty; it t1; it t2])
+      | XXInputFormatString t -> (tags, [it t])
+      | XXInvalidated t -> (tags, [it t])
+      | XXModified t -> (tags, [it t])
+      | XXNewMemory (t1, t2) -> (tags, [it t1; it t2])
+      | XXStackAddress t -> (tags, [it t])
+      | XXHeapAddress t -> (tags, [it t])
+      | XXGlobalAddress t -> (tags, [it t])
+      | XXNoOverlap (t1, t2) -> (tags, [it t1; it t2])
+      | XXNotNull t -> (tags, [it t])
+      | XXNull t -> (tags, [it t])
+      | XXNotZero t -> (tags, [it t])
+      | XXNonNegative t -> (tags, [it t])
+      | XXNullTerminated t -> (tags, [it t])
+      | XXOutputFormatString t -> (tags, [it t])
+      | XXPositive t -> (tags, [it t])
+      | XXRelationalExpr (op, t1, t2) ->
          (tags @ [relational_op_mfts#ts op], [it t1; it t2])
-      | PreDisjunction pl -> (tags, List.map self#index_precondition pl)
-      | PreConditional (p1, p2) ->
-         (tags, [self#index_precondition p1; self#index_precondition p2])
-      | PreIncludes (t, c) -> (tags, [it t; self#index_c_struct_constant c])
+      | XXSetsErrno -> (tags, [])
+      | XXStartsThread (t, tl) -> (tags, List.map it (t::tl))
+      | XXTainted t -> (tags, [it t])
+      | XXValidMem t -> (tags, [it t])
+      | XXDisjunction pl -> (tags, [self#index_xxpredicate_list pl])
+      | XXConditional (p1, p2) ->
+         (tags, [self#index_xxpredicate p1; self#index_xxpredicate p2])
     in
-    precondition_table#add key
+    xxpredicate_table#add key
 
-  method get_precondition (index: int): precondition_t =
-    let name = "precondition_t" in
-    let (tags, args) = precondition_table#retrieve index in
+  method index_xxpredicate_list (l: xxpredicate_t list) =
+    xxpredicate_list_table#add ([], List.map self#index_xxpredicate l)
+
+  method get_xxpredicate_list (index: int) =
+    let (_, args) = xxpredicate_list_table#retrieve index in
+    List.map self#get_xxpredicate args
+
+  method get_xxpredicate (index: int): xxpredicate_t =
+    let name = "xxpredicate_t" in
+    let (tags, args) = xxpredicate_table#retrieve index in
     let t = t name tags in
     let a = a name args in
     let gt = self#get_bterm in
     let gty = bcd#get_typ in
     match (t 0) with
-    | "nt" -> PreNullTerminated (gt (a 0))
-    | "nn" -> PreNotNull (gt (a 0))
-    | "nu" -> PreNull (gt (a 0))
-    | "dr" -> PreDerefRead (gty (a 0), gt (a 1), gt (a 2), (a 3) = 1)
-    | "dw" -> PreDerefWrite (gty (a 0), gt (a 1), gt (a 2), (a 3) = 1)
-    | "ab" -> PreAllocationBase (gt (a 0))
-    | "fp" -> PreFunctionPointer (gty (a 0), gt (a 1))
-    | "nov" -> PreNoOverlap (gt (a 0), gt (a 1))
-    | "fs" -> PreFormatString (gt (a 0))
-    | "en" -> PreEnum (gt (a 0), bd#get_string (a 1), (a 2) = 1)
-    | "re" -> PreRelationalExpr (relational_op_mfts#fs (t 1), gt (a 0), gt (a 1))
-    | "dj" -> PreDisjunction (List.map self#get_precondition args)
-    | "c" ->
-       PreConditional (self#get_precondition (a 0), self#get_precondition (a 1))
-    | "ic" -> PreIncludes (gt (a 0), self#get_c_struct_constant (a 1))
-    | s -> raise_tag_error name s precondition_mcts#tags
-
-  method index_postcondition (p: postcondition_t) =
-    let it = self#index_bterm in
-    let tags = [postcondition_mcts#ts p] in
-    let key = match p with
-      | PostNewMemoryRegion (t1, t2) -> (tags, [it t1; it t2])
-      | PostFunctionPointer (t1, t2) -> (tags, [it t1; it t2])
-      | PostAllocationBase t -> (tags, [it t])
-      | PostNull t -> (tags, [it t])
-      | PostNotNull t -> (tags, [it t])
-      | PostNullTerminated t -> (tags, [it t])
-      | PostEnum (t, s) -> (tags, [it t; bd#index_string s])
-      | PostFalse -> (tags, [])
-      | PostRelationalExpr (op, t1, t2) ->
-         (tags @ [relational_op_mfts#ts op], [it t1; it t2])
-      | PostDisjunction pl -> (tags, List.map self#index_postcondition pl)
-      | PostConditional (p1, p2) ->
-         (tags, [self#index_precondition p1; self#index_postcondition p2])
-    in
-    postcondition_table#add key
-
-  method get_postcondition (index: int): postcondition_t =
-    let name = "postcondition_t" in
-    let (tags, args) = postcondition_table#retrieve index in
-    let t = t name tags in
-    let a = a name args in
-    let gt = self#get_bterm in
-    match (t 0) with
-    | "nm" -> PostNewMemoryRegion (gt (a 0), gt (a 1))
-    | "fp" -> PostFunctionPointer (gt (a 0), gt (a 1))
-    | "ab" -> PostAllocationBase (gt (a 0))
-    | "nn" -> PostNotNull (gt (a 0))
-    | "nu" -> PostNull (gt (a 0))
-    | "nt" -> PostNullTerminated (gt (a 0))
-    | "en" -> PostEnum (gt (a 0), bd#get_string (a 1))
-    | "f" -> PostFalse
-    | "re" -> PostRelationalExpr (relational_op_mfts#fs (t 1), gt (a 0), gt (a 1))
-    | "dj" -> PostDisjunction (List.map self#get_postcondition args)
-    | "c" ->
-       PostConditional (self#get_precondition (a 0), self#get_postcondition (a 1))
-    | s -> raise_tag_error name s postcondition_mcts#tags
-
-  method index_sideeffect (s: sideeffect_t) =
-    let it = self#index_bterm in
-    let tags = [sideeffect_mcts#ts s] in
-    let key = match s with
-      | BlockWrite (ty, t1, t2) -> (tags, [bcd#index_typ ty; it t1; it t2])
-      | Modifies t -> (tags, [it t])
-      | AllocatesStackMemory t -> (tags, [it t])
-      | StartsThread (t, tl) -> (tags, (it t)::(List.map it tl))
-      | Invalidates t -> (tags, [it t])
-      | SetsErrno -> (tags, [])
-      | ConditionalSideeffect (p, ss) ->
-         (tags, [self#index_precondition p; self#index_sideeffect ss])
-      | UnknownSideeffect -> (tags,  []) in
-    sideeffect_table#add key
-
-  method get_sideeffect (index: int): sideeffect_t =
-    let name = "sideeffect_t" in
-    let (tags, args) = sideeffect_table#retrieve index in
-    let t = t name tags in
-    let a = a name args in
-    let gt = self#get_bterm in
-    match (t 0) with
-    | "bw" -> BlockWrite (bcd#get_typ (a 0), gt (a 1), gt (a 2))
-    | "m" -> Modifies (gt (a 0))
-    | "as" -> AllocatesStackMemory (gt (a 0))
-    | "st" -> StartsThread (gt (a 0), List.map gt (List.tl args))
-    | "i" -> Invalidates (gt (a 0))
-    | "se" -> SetsErrno
-    | "c" ->
-       ConditionalSideeffect
-         (self#get_precondition (a 0), self#get_sideeffect (a 1))
-    | "u" -> UnknownSideeffect
-    | s -> raise_tag_error name s sideeffect_mcts#tags
+    | "ab" -> XXAllocationBase (gt (a 0))
+    | "bw" -> XXBlockWrite (gty (a 0), gt (a 1), gt (a 2))
+    | "b" -> XXBuffer (gty (a 0), gt (a 1), gt (a 2))
+    | "e" -> XXEnum (gt (a 0), bd#get_string (a 1), (a 2) = 1)
+    | "f" -> XXFalse
+    | "fr" -> XXFreed (gt (a 0))
+    | "fn" -> XXFunctional
+    | "fp" -> XXFunctionPointer (gty (a 0), gt (a 1))
+    | "inc" -> XXIncludes (gt (a 0), self#get_c_struct_constant (a 1))
+    | "i" -> XXInitialized (gt (a 0))
+    | "ir" -> XXInitializedRange (gty (a 0), gt (a 1), gt (a 2))
+    | "ifs" -> XXInputFormatString (gt (a 0))
+    | "inv" -> XXInvalidated (gt (a 0))
+    | "m" -> XXModified (gt (a 0))
+    | "nm" -> XXNewMemory (gt (a 0), gt (a 1))
+    | "sa" -> XXStackAddress (gt (a 0))
+    | "ha" -> XXHeapAddress (gt (a 0))
+    | "ga" -> XXGlobalAddress (gt (a 0))
+    | "no" -> XXNoOverlap (gt (a 0), gt (a 1))
+    | "nn" -> XXNotNull (gt (a 0))
+    | "nu" -> XXNull (gt (a 0))
+    | "nz" -> XXNotZero (gt (a 0))
+    | "nng" -> XXNonNegative (gt (a 0))
+    | "nt" -> XXNullTerminated (gt (a 0))
+    | "ofs" -> XXOutputFormatString (gt (a 0))
+    | "pos" -> XXPositive (gt (a 0))
+    | "x" -> XXRelationalExpr (relational_op_mfts#fs (t 1), gt (a 0), gt (a 1))
+    | "errno" -> XXSetsErrno
+    | "st" -> XXStartsThread (gt (a 0), List.map gt (List.tl args))
+    | "t" -> XXTainted (gt (a 0))
+    | "v" -> XXValidMem (gt (a 0))
+    | "dis" -> XXDisjunction (self#get_xxpredicate_list (a 0))
+    | "con" -> XXConditional (self#get_xxpredicate (a 0), self#get_xxpredicate (a 1))
+    | s -> raise_tag_error name s xxpredicate_mcts#tags
 
   method index_function_stub (fstub:function_stub_t) =
     let tags = [ function_stub_mcts#ts fstub ] in
@@ -551,7 +573,7 @@ object (self)
     let (_,args) = struct_field_value_table#retrieve index in
     let a = a "struct_field_value" args in
     (a 0, self#get_c_struct_constant (a 1))
-                               
+
   method write_xml_parameter_location
            ?(tag="ploc") (node:xml_element_int) (p:parameter_location_t) =
     node#setIntAttribute tag (self#index_parameter_location p)
@@ -576,6 +598,14 @@ object (self)
            ?(tag="fsig") (node: xml_element_int): function_signature_t =
     self#get_function_signature (node#getIntAttribute tag)
 
+  method write_xml_function_semantics
+           ?(tag="fsem") (node: xml_element_int) (fsem: function_semantics_t) =
+    node#setIntAttribute tag (self#index_function_semantics fsem)
+
+  method read_xml_function_semantics
+           ?(tag="fsem") (node: xml_element_int): function_semantics_t =
+    self#get_function_semantics (node#getIntAttribute tag)
+
   method write_xml_function_interface
            ?(tag="fintf") (node:xml_element_int) (fintf: function_interface_t) =
     node#setIntAttribute tag (self#index_function_interface fintf)
@@ -584,29 +614,17 @@ object (self)
            ?(tag="fintf") (node:xml_element_int):function_interface_t =
     self#get_function_interface (node#getIntAttribute tag)
 
-  method write_xml_precondition
-           ?(tag="prec") (node: xml_element_int) (p: precondition_t) =
-    node#setIntAttribute tag (self#index_precondition p)
+  method write_xml_xxpredicate
+           ?(tag="xxpre") (node: xml_element_int) (p: xxpredicate_t) =
+    node#setIntAttribute tag (self#index_xxpredicate p)
 
-  method read_xml_precondition
-           ?(tag="prec") (node: xml_element_int): precondition_t =
-    self#get_precondition (node#getIntAttribute tag)
+  method write_xml_xxpredicate_list
+           ?(tag="xxprelst") (node: xml_element_int) (pl: xxpredicate_t list) =
+    node#setIntAttribute tag (self#index_xxpredicate_list pl)
 
-  method write_xml_postcondition
-           ?(tag="pstc") (node: xml_element_int) (p: postcondition_t) =
-    node#setIntAttribute tag (self#index_postcondition p)
-
-  method read_xml_postcondition
-           ?(tag="pstc") (node: xml_element_int): postcondition_t =
-    self#get_postcondition (node#getIntAttribute tag)
-
-  method write_xml_sideeffect
-           ?(tag="see") (node: xml_element_int) (s: sideeffect_t) =
-    node#setIntAttribute tag (self#index_sideeffect s)
-
-  method read_xml_sideeffect
-           ?(tag="see") (node: xml_element_int): sideeffect_t =
-    self#get_sideeffect (node#getIntAttribute tag)
+  method read_xml_xxpredicate
+           ?(tag="xxpre") (node: xml_element_int): xxpredicate_t =
+    self#get_xxpredicate (node#getIntAttribute tag)
 
   method write_xml_bterm ?(tag="ibt") (node:xml_element_int) (t:bterm_t) =
     node#setIntAttribute tag (self#index_bterm t)
@@ -616,6 +634,9 @@ object (self)
 
   method write_xml_gterm ?(tag="igt") (node: xml_element_int) (t: gterm_t) =
     node#setIntAttribute tag (self#index_gterm t)
+
+  method read_xml_gterm ?(tag="igt") (node: xml_element_int): gterm_t =
+    self#get_gterm (node#getIntAttribute tag)
 
   method write_xml_function_stub
            ?(tag="ifst") (node:xml_element_int) (s:function_stub_t) =
@@ -637,8 +658,9 @@ object (self)
     begin
       node#appendChildren
         (List.map
-           (fun t -> let tnode = xmlElement t#get_name in
-                     begin t#write_xml tnode ; tnode end) tables)
+           (fun t ->
+             let tnode = xmlElement t#get_name in
+             begin t#write_xml tnode ; tnode end) tables)
     end
 
   method read_xml (node:xml_element_int) =
@@ -647,8 +669,7 @@ object (self)
       List.iter (fun t -> t#read_xml (getc t#get_name)) tables
     end
 
-  
-
 end
+
 
 let interface_dictionary = new interface_dictionary_t
