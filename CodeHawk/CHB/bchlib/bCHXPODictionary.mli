@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,13 +28,7 @@
 (* xprlib *)
 open XprTypes
 
+(* bchlib *)
+open BCHLibTypes
 
-type po_predicate_t =
-| PFPointer of xpr_t
-
-type proof_obligation_t = {
-  po_id : int ;
-  po_predicate: po_predicate_t ;
-  po_location : string ;
-  po_oparg    : int
-}
+val mk_xpodictionary: xprdictionary_int -> xpodictionary_int
