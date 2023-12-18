@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -54,7 +54,12 @@ val bterm_opt_compare: bterm_t option -> bterm_t option -> int
 val is_arithmetic_operator: string -> bool
 val get_arithmetic_operator: string -> arithmetic_op_t
 
-val read_xml_bterm: xml_element_int -> fts_parameter_t list -> bterm_t
+
+(** [read_xml_bterm node thisf pars] reads a bterm from xml node [node]
+    for a function identified by [thisf] and with parameter [pars]*)
+val read_xml_bterm:
+  xml_element_int -> bterm_t -> fts_parameter_t list -> bterm_t
+
 
 val mk_global_parameter_term:
   ?btype:btype_t
@@ -65,7 +70,7 @@ val mk_global_parameter_term:
   -> doubleword_int
   -> bterm_t
 
-(* stack parameters are numbered starting from 1 
+(* stack parameters are numbered starting from 1
    (located at 4 bytes above the return address) *)
 val mk_stack_parameter_term:
   ?btype:btype_t

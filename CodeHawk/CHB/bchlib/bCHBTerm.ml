@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -58,10 +58,15 @@ open BCHXmlUtil
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
+    LBLOCK [
+        STR "(";
+        INT node#getLineNumber;
+        STR ",";
+	INT node#getColumnNumber;
+        STR ") ";
+        msg] in
   begin
-    ch_error_log#add "xml parse error" error_msg ;
+    ch_error_log#add "xml parse error" error_msg;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
 
@@ -69,10 +74,11 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
 (* ----------------------------------------------------------------- printing *)
 
 let arithmetic_op_to_string = function
-  | PPlus -> " + " 
-  | PMinus -> " - " 
-  | PDivide -> " / " 
+  | PPlus -> " + "
+  | PMinus -> " - "
+  | PDivide -> " / "
   | PTimes -> " * "
+
 
 let arithmetic_op_to_xml_string = function
   | PPlus -> "plus"
@@ -80,11 +86,12 @@ let arithmetic_op_to_xml_string = function
   | PDivide -> "divide"
   | PTimes -> "times"
 
+
 let rec bterm_to_string (t:bterm_t) =
   match t with
   | ArgValue p -> p.apar_name
   | RunTimeValue -> "runtime-value"
-  | ReturnValue -> "return-value"
+  | ReturnValue t -> "return-value (" ^ (bterm_to_string t) ^ ")"
   | NamedConstant name -> name
   | NumConstant num -> num#toString
   | ArgBufferSize x -> "buffersize (" ^ (bterm_to_string x) ^ ")"
@@ -107,7 +114,7 @@ let rec bterm_to_pretty (t:bterm_t) =
   match t with
   | ArgValue p -> STR p.apar_name
   | RunTimeValue -> STR "runtime-value"
-  | ReturnValue  -> STR "return-value"
+  | ReturnValue t -> LBLOCK [STR "return-value ("; bterm_to_pretty t; STR ")"]
   | NamedConstant name -> STR name
   | NumConstant num -> num#toPretty
   | ArgBufferSize x -> LBLOCK [STR "buffersize ("; bterm_to_pretty x; STR ")"]
@@ -120,7 +127,7 @@ let rec bterm_to_pretty (t:bterm_t) =
          STR ", ";
 	 bterm_to_pretty offset;
          STR ")"]
-  | ArgNullTerminatorPos x -> 
+  | ArgNullTerminatorPos x ->
     LBLOCK [STR "null-terminator-pos ("; bterm_to_pretty x ; STR ")"]
   | ArgSizeOf ty -> LBLOCK [STR "size-of ("; STR (btype_to_string ty); STR ")"]
   | ArithmeticExpr (op, x, y) ->
@@ -141,9 +148,9 @@ let rec bterm_compare n1 n2 =
   | (RunTimeValue, RunTimeValue) -> 0
   | (RunTimeValue, _) -> -1
   | (_, RunTimeValue) -> 1
-  | (ReturnValue, ReturnValue) -> 0
-  | (ReturnValue, _) -> -1
-  | (_, ReturnValue) -> 1
+  | (ReturnValue t1, ReturnValue t2) -> bterm_compare t1 t2
+  | (ReturnValue _, _) -> -1
+  | (_, ReturnValue _) -> 1
   | (NamedConstant s1, NamedConstant s2) -> Stdlib.compare s1 s2
   | (NamedConstant _, _) -> -1
   | (_, NamedConstant _) -> 1
@@ -204,19 +211,20 @@ let is_global_parameter_term (t:bterm_t) =
   | ArgValue p ->
      (match p.apar_location with GlobalParameter _ -> true | _ -> false)
   | _ -> false
-  
+
 let get_arithmetic_operator (numOperator:string) =
   match numOperator with
   | "plus" -> PPlus
   | "minus" -> PMinus
   | "times" -> PTimes
-  | "divide" -> PDivide 
+  | "divide" -> PDivide
   | _ ->
     begin
-      ch_error_log#add "internal error" 
+      ch_error_log#add "internal error"
 	(LBLOCK [ STR "get_arithmetic_operator " ; STR numOperator ]) ;
       raise (Internal_error "get_arithmetic_operator")
     end
+
 
 let get_parameter_reference node parameters =
   let name = node#getText in
@@ -224,19 +232,24 @@ let get_parameter_reference node parameters =
     ArgValue (List.find (fun p -> p.apar_name = name) parameters)
   with
     Not_found ->
-      raise_xml_error node 
-	(LBLOCK [ STR "No parameter with name " ; STR name ; 
-		  STR " (parameter names: " ; 
-		  pretty_print_list (List.map (fun p -> p.apar_name) parameters)
-		    (fun s -> STR s) "[" "," "]" ])
-      
+      raise_xml_error node
+	(LBLOCK [
+             STR "No parameter with name ";
+             STR name;
+	     STR " (parameter names: ";
+	     pretty_print_list (List.map (fun p -> p.apar_name) parameters)
+	       (fun s -> STR s) "[" "," "]" ])
+
+
 let rec read_xml_bterm
-          (node: xml_element_int) (parameters: fts_parameter_t list) =
+          (node: xml_element_int)
+          (thisf: bterm_t)
+          (parameters: fts_parameter_t list) =
   let read_xml_type = read_xml_type in
-  let recurse n = read_xml_bterm n parameters in
+  let recurse n = read_xml_bterm n thisf parameters in
   match node#getTag with
   | "runtime-value" -> RunTimeValue
-  | "return-value" | "return" -> ReturnValue
+  | "return-value" | "return" -> ReturnValue thisf
   | "cn" -> NumConstant (mkNumericalFromString node#getText)
   | "ci" -> get_parameter_reference node parameters
   | "apply" ->
@@ -261,13 +274,17 @@ let rec read_xml_bterm
 	| "bytesize" -> ByteSize (recurse (arg 0))
 	| "addressed-value" ->
            ArgAddressedValue (recurse (arg 0), recurse (arg 1))
-	| s -> raise_xml_error
-                 node (LBLOCK [ STR "Numerical term operator: " ;
-				STR s ; STR " not recognized"])
+	| s ->
+           raise_xml_error
+             node
+             (LBLOCK [
+                  STR "Numerical term operator: ";
+		  STR s;
+                  STR " not recognized"])
       end
   | s ->
      raise_xml_error
-       node 
+       node
        (LBLOCK [STR "Numerical term type "; STR s; STR " not recognized"])
 
 (* ---------------------------------------------------------------- operators *)
@@ -283,11 +300,11 @@ let get_arithmetic_operator (numOperator:string) =
   | "plus" -> PPlus
   | "minus" -> PMinus
   | "times" -> PTimes
-  | "divide" -> PDivide 
+  | "divide" -> PDivide
   | _ ->
     begin
       ch_error_log#add
-        "internal error" 
+        "internal error"
 	(LBLOCK [ STR "get_arithmetic_operator " ; STR numOperator ]) ;
       raise (Internal_error "get_arithmetic_operator")
     end
@@ -337,7 +354,7 @@ let rec xpr_to_bterm (xpr:xpr_t) (subst:variable_t -> bterm_t) =
              "xpr to bterm failure" (xpr_formatter#pr_expr xpr));
 	None
       end
-  | XVar v -> 
+  | XVar v ->
      let nv = subst v in
      begin match nv with RunTimeValue -> None | _ -> Some nv end
   | _ -> None
@@ -375,4 +392,3 @@ let rec modify_types_bterm (f:type_transformer_t) (t:bterm_t) =
   | ArgSizeOf t -> ArgSizeOf (modify_type f t)
   | ArithmeticExpr (op,t1,t2) -> ArithmeticExpr (op,aux t1, aux t2)
   | _ -> t
-
