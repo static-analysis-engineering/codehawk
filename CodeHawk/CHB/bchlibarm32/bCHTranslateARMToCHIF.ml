@@ -673,7 +673,8 @@ let translate_arm_instruction
      let thenaddr = (make_i_location loc tgt#get_absolute_address)#ci in
      let elseaddr = codepc#get_false_branch_successor in
      let usevars = get_register_vars [op] in
-     let defcmds = floc#get_vardef_commands ~use:usevars ctxtiaddr in
+     let usehigh = get_use_high_vars [op#to_expr floc] in
+     let defcmds = floc#get_vardef_commands ~use:usevars ~usehigh ctxtiaddr in
      let cmds = cmds @ defcmds @ [invop] in
      let transaction = package_transaction finfo blocklabel cmds in
      let (nodes, edges) =

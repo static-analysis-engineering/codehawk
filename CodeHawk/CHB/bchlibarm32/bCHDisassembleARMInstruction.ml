@@ -1299,7 +1299,7 @@ let parse_load_store_reg_type (instr: doubleword_int) (cond: int) =
 
 
 let parse_media_type (instrbytes: doubleword_int) (cond: int) =
-  (* opc (b 17 25) = 3, bitval 4 = 1 *)
+  (* opc (b 27 25) = 3, bitval 4 = 1 *)
   let b = instrbytes#get_segval in
   let c = get_opcode_cc cond in
   let opc = b 24 20 in
@@ -1450,6 +1450,15 @@ let parse_media_type (instrbytes: doubleword_int) (cond: int) =
      let rn = mk_arm_reg_bit_sequence_op (get_arm_reg rz) lsb widthm1 RD in
      (* UBFX<c> <Rd>, <Rn>, #<lsb>, #<width> *)
      UnsignedBitFieldExtract (c, rd, rn)
+
+  (* <cc><3>< 31><---imm12--><15><i4> *)    (* UDF - A1 *)
+  | 31 when (b 7 4) = 15 ->
+     let imm12 = b 19 8 in
+     let imm4 = b 3 0 in
+     let imm32 = mkNumerical ((imm12 lsl 4) + imm4) in
+     let immop = TR.tget_ok (mk_arm_immediate_op false 4 imm32) in
+     (* UDF<c> #<imm16> *)
+     PermanentlyUndefined (c, immop)
 
   | _ ->
      NotRecognized ("media_type:" ^ (stri opc), instrbytes)
