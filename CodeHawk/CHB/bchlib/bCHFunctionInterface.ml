@@ -79,7 +79,7 @@ let function_interface_to_prototype_string
     | _ -> fintf.fintf_name in
   let stackPars = List.fold_left (fun a p ->
     match p.apar_location with
-    | StackParameter i -> (i,p.apar_name,p.apar_type)::a
+    | [StackParameter (i, _)] -> (i,p.apar_name,p.apar_type)::a
     | _ -> a) [] fts.fts_parameters in
   let stackPars =
     List.sort (fun (i1,_,_) (i2,_,_) -> Stdlib.compare i1 i2) stackPars in
@@ -97,14 +97,9 @@ let function_interface_to_pretty (fintf: function_interface_t) =
       STR fintf.fintf_name ;
       STR ": ";
       btype_to_pretty fts.fts_returntype;
-      NL;
-      INDENT (
-          3,
-          LBLOCK [pretty_print_list fts.fts_parameters
-	            (fun p ->
-                      LBLOCK [
-                          fts_parameter_to_pretty p; NL])
-                    "" "" "" ])]
+      STR " ";
+      pretty_print_list
+        fts.fts_parameters fts_parameter_to_pretty " (" ", " ")"]
 
 (* ----------------------------------------------------------------- read xml *)
 
@@ -162,7 +157,9 @@ let read_xml_function_interface (node:xml_element_int):function_interface_t =
   { fintf_name = get "name";
     fintf_jni_index = if has "jni" then Some (geti "jni") else None;
     fintf_syscall_index = if has "syscall" then Some (geti "syscall") else None;
-    fintf_type_signature = fts
+    fintf_type_signature = fts;
+    fintf_bctype = None;
+    fintf_parameter_locations = []
   }
 
 
@@ -206,7 +203,7 @@ let add_function_parameter
             p) params
     else
       match par.apar_location with
-      | StackParameter index ->
+      | [StackParameter (index, _)] ->
          let preparams =
            if index > 1 then
              (* remove index 0 *)
@@ -232,7 +229,7 @@ let get_stack_parameter (fintf: function_interface_t) (index:int) =
   try
     List.find (fun p ->
         match p.apar_location with
-        | StackParameter n -> n = index
+        | [StackParameter (n, _)] -> n = index
         | _ -> false) fts.fts_parameters
   with
     Not_found ->
@@ -251,19 +248,19 @@ let get_stack_parameter_names (fintf: function_interface_t) =
   List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2)
     (List.fold_left (fun acc p ->
       match p.apar_location with
-      | StackParameter i -> (i,p.apar_name) :: acc
+      | [StackParameter (i, _)] -> (i,p.apar_name) :: acc
       | _ -> acc) [] fts.fts_parameters)
 
 
 let get_stack_parameter_count (fintf: function_interface_t) =
   let fts = fintf.fintf_type_signature in
   List.length (List.filter (fun p -> match p.apar_location with
-  | StackParameter _ -> true | _ -> false) fts.fts_parameters)
+  | [StackParameter _] -> true | _ -> false) fts.fts_parameters)
 
 
 let is_stack_parameter (p: fts_parameter_t) (n: int) =
   match p.apar_location with
-  | StackParameter i -> i = n
+  | [StackParameter (i, _)] -> i = n
   | _ -> false
 
 
@@ -296,13 +293,15 @@ let demangled_name_to_function_interface (dm: demangled_name_t) =
     | _ -> None in
   let returntype =
     match dm.dm_returntype with Some t -> t | _ -> t_void in
+  let locdetail ty = {pld_type = ty; pld_size = size_of_btype ty; pld_extract = None} in
   let make_parameter index ty = {
+      apar_index = None;
     apar_name = templated_btype_to_name ty (index + 1) ;
     apar_type = ty ;
     apar_desc = "" ;
     apar_roles = [] ;
     apar_io = ArgReadWrite ;
-    apar_location = StackParameter (index + 1) ;
+    apar_location = [StackParameter (index + 1, locdetail ty)];
     apar_size = size_of_btype ty;
     apar_fmt = NoFormat
     } in
@@ -320,7 +319,9 @@ let demangled_name_to_function_interface (dm: demangled_name_t) =
     fintf_name = tname_to_string dm.dm_name;
     fintf_jni_index = None;
     fintf_syscall_index = None;
-    fintf_type_signature = fts
+    fintf_type_signature = fts;
+    fintf_parameter_locations = [];
+    fintf_bctype = None
   }
 
 let default_function_interface
@@ -344,5 +345,7 @@ let default_function_interface
     fintf_name = name;
     fintf_jni_index = None;
     fintf_syscall_index = None;
-    fintf_type_signature = fts
+    fintf_type_signature = fts;
+    fintf_parameter_locations = [];
+    fintf_bctype = None
   }

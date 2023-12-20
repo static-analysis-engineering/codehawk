@@ -350,7 +350,7 @@ object (self)
 
   method set_argument_structconstant par sc =
     match par.apar_location with
-    | StackParameter i ->
+    | [StackParameter (i, _)] ->
       let memref = self#mk_local_stack_reference  in
       let argvar =
         self#mk_memory_variable ~save_name:false memref (mkNumerical (4*i)) in
@@ -428,12 +428,12 @@ object (self)
        let stackParams =
          List.fold_left (fun a p ->
 	     match p.apar_location with
-             | StackParameter i -> (i,p.apar_name) :: a | _ -> a)
+             | [StackParameter (i, _)] -> (i,p.apar_name) :: a | _ -> a)
 	[] fts.fts_parameters in
        let regParams =
          List.fold_left (fun a p ->
 	     match p.apar_location with
-             | RegisterParameter r -> (r,p.apar_name) :: a | _ -> a)
+             | [RegisterParameter (r, _)] -> (r,p.apar_name) :: a | _ -> a)
 	[] fts.fts_parameters in
        let stackVars =
          List.map (fun (i,name) ->
@@ -574,12 +574,12 @@ object (self)
     let stackPars =
       List.fold_left (fun acc p ->
           match p.apar_location with
-          | StackParameter i -> (i, p.apar_name,p.apar_type) :: acc
+          | [StackParameter (i, _)] -> (i, p.apar_name,p.apar_type) :: acc
           | _ -> acc) [] pars in
     let regPars =
       List.fold_left (fun acc p ->
           match p.apar_location with
-          | RegisterParameter reg ->
+          | [RegisterParameter (reg, _)] ->
 	     (reg, p.apar_name,p.apar_type) :: acc
           | _ -> acc) [] pars in
     begin
@@ -2032,7 +2032,9 @@ object (self)
         fintf_name = api.jnm_signature#name;
         fintf_jni_index = None;
         fintf_syscall_index = None;
-        fintf_type_signature = fts } in
+        fintf_type_signature = fts;
+        fintf_bctype = None;
+        fintf_parameter_locations = []} in
     let fsem = default_function_semantics in
     let fdoc = default_function_documentation in
     let summary = make_function_summary ~fintf ~sem:fsem ~doc:fdoc in

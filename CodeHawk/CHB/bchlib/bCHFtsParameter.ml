@@ -84,16 +84,35 @@ let formatstring_type_to_string (t:formatstring_type_t) =
   | ScanFormat -> "scan"
 
 
-let parameter_location_to_string = function
-  | StackParameter i -> "s_arg " ^ (string_of_int i)
-  | RegisterParameter r -> "r_arg " ^ (register_to_string r)
-  | GlobalParameter g -> "g_arg " ^ g#to_hex_string
-  | UnknownParameterLocation -> "unknown"
+let parameter_location_detail_to_string (d: parameter_location_detail_t) =
+  let si = string_of_int in
+  let p_extract (x: (int * int) option) =
+    match x with
+    | Some (start, size) -> "[" ^ (si start) ^ ", " ^ (si size) ^ "]"
+    | _ -> "" in
+  let p_btype (t: btype_t) =
+    match t with
+    | TUnknown _ -> ""
+    | _ -> ", " ^ (btype_to_string t) in
+  "(" ^ si d.pld_size ^ (p_btype d.pld_type) ^ (p_extract d.pld_extract) ^ ")"
+
+
+let parameter_location_to_string (loc: parameter_location_t) =
+  let ds = parameter_location_detail_to_string in
+  match loc with
+  | StackParameter (i, d) -> "s_arg " ^ (string_of_int i) ^ " " ^ (ds d)
+  | RegisterParameter (r, d) -> "r_arg " ^ (register_to_string r) ^ " " ^ (ds d)
+  | GlobalParameter (g, d) -> "g_arg " ^ g#to_hex_string ^ " " ^ (ds d)
+  | UnknownParameterLocation d -> "unknown " ^ (ds d)
 
 
 let fts_parameter_to_pretty (p: fts_parameter_t) =
+  let ploc loc =
+    match loc with
+    | [l] -> parameter_location_to_string l
+    | _ -> "[" ^ String.concat "; " (List.map parameter_location_to_string loc) in
   LBLOCK [
-      STR (parameter_location_to_string p.apar_location);
+      STR (ploc p.apar_location);
       STR " ";
       STR p.apar_name;
       STR ": ";
@@ -103,20 +122,20 @@ let fts_parameter_to_pretty (p: fts_parameter_t) =
 
 let parameter_location_compare l1 l2 =
   match (l1,l2) with
-  | (StackParameter i1, StackParameter i2) -> Stdlib.compare i1 i2
+  | (StackParameter (i1, _), StackParameter (i2, _)) -> Stdlib.compare i1 i2
   | (StackParameter _, _) -> -1
   | (_, StackParameter _) -> 1
-  | (RegisterParameter r1, RegisterParameter r2) -> Stdlib.compare r1 r2
+  | (RegisterParameter (r1, _), RegisterParameter (r2, _)) -> Stdlib.compare r1 r2
   | (RegisterParameter _, _) -> -1
   | (_, RegisterParameter _) -> 1
-  | (GlobalParameter dw1, GlobalParameter dw2) -> dw1#compare dw2
+  | (GlobalParameter (dw1, _), GlobalParameter (dw2, _)) -> dw1#compare dw2
   | (GlobalParameter _, _) -> -1
   | (_, GlobalParameter _) -> 1
-  | (UnknownParameterLocation, UnknownParameterLocation) -> 0
+  | (UnknownParameterLocation _ , UnknownParameterLocation _) -> 0
 
 
 let fts_parameter_compare (p1: fts_parameter_t) (p2: fts_parameter_t) =
-  parameter_location_compare p1.apar_location p2.apar_location
+  list_compare p1.apar_location p2.apar_location parameter_location_compare
 
 
 let fts_parameter_equal (p1: fts_parameter_t) (p2: fts_parameter_t) =
@@ -151,19 +170,26 @@ let read_xml_roles (node:xml_element_int) =
       (get "rt", get "rn")) (node#getTaggedChildren "role")
 
 
+let default_parameter_location_detail ?(ty=t_unknown) (size: int) = {
+    pld_type = ty;
+    pld_size = size;
+    pld_extract = None
+  }
+
 let read_xml_parameter_location (node:xml_element_int):parameter_location_t =
   let get = node#getAttribute in
   let geti = node#getIntAttribute in
+  let pdef = default_parameter_location_detail 4 in
   let getx s =
     fail_tvalue
       (trerror_record
          (STR ("BCHFtsParameter.read_xml_parameter_location:" ^ s)))
       (string_to_doubleword s) in
   match get "loc" with
-  | "stack" -> StackParameter (geti "nr")
-  | "register" -> RegisterParameter (register_from_string (get "reg"))
-  | "global" -> GlobalParameter (getx (get "dw"))
-  | "unknown" -> UnknownParameterLocation
+  | "stack" -> StackParameter (geti "nr", pdef)
+  | "register" -> RegisterParameter (register_from_string (get "reg"), pdef)
+  | "global" -> GlobalParameter (getx (get "dw"), pdef)
+  | "unknown" -> UnknownParameterLocation pdef
   | s ->
      raise_xml_error
        node
@@ -182,13 +208,20 @@ let read_xml_fts_parameter (node:xml_element_int): fts_parameter_t =
   let has = node#hasNamedAttribute in
   let hasc = node#hasOneTaggedChild in
   let tNode = if hasc "type" then getc "type" else getc "btype" in
-  { apar_name = get "name";
+  { apar_index =
+      (if has "ix" then
+         Some (geti "ix")
+       else if has "nr" then
+         Some (geti "nr")
+       else
+         None);
+    apar_name = get "name";
     apar_desc = (if has "desc" then get "desc" else "");
     apar_roles = (if hasc "roles" then read_xml_roles (getc "roles") else []);
     apar_io = (if has "io" then read_xml_arg_io (get "io") else ArgReadWrite);
     apar_size = (if has "size" then geti "size" else 4);
     apar_type = read_xml_type tNode;
-    apar_location = read_xml_parameter_location node;
+    apar_location = [read_xml_parameter_location node];
     apar_fmt =
       (if has "fmt" then read_xml_formatstring_type (get "fmt") else NoFormat)
   }
@@ -196,15 +229,15 @@ let read_xml_fts_parameter (node:xml_element_int): fts_parameter_t =
 (* --------------------------------------------------------------- predicates *)
 
 let is_global_parameter (p: fts_parameter_t) =
-  match p.apar_location with GlobalParameter _ -> true | _ -> false
+  match p.apar_location with [GlobalParameter _] -> true | _ -> false
 
 
 let is_stack_parameter (p: fts_parameter_t) =
-  match p.apar_location with StackParameter _ -> true | _ -> false
+  match p.apar_location with [StackParameter _] -> true | _ -> false
 
 
 let is_register_parameter (p: fts_parameter_t) =
-  match p.apar_location with RegisterParameter _ -> true | _ -> false
+  match p.apar_location with [RegisterParameter _] -> true | _ -> false
 
 
 let is_arg_parameter (p: fts_parameter_t) =
@@ -225,14 +258,15 @@ let is_floating_point_parameter (p: fts_parameter_t) =
 (* ---------------------------------------------------------------- operators *)
 
 let default_fts_parameter = {
-  apar_name = "unnknown-fts-parameter" ;
-  apar_type = t_unknown ;
-  apar_roles = [] ;
-  apar_desc = "" ;
-  apar_io = ArgReadWrite;
-  apar_size = 4 ;
-  apar_location = UnknownParameterLocation ;
-  apar_fmt = NoFormat
+    apar_index = None;
+    apar_name = "unnknown-fts-parameter" ;
+    apar_type = t_unknown ;
+    apar_roles = [] ;
+    apar_desc = "" ;
+    apar_io = ArgReadWrite;
+    apar_size = 4;
+    apar_location = [UnknownParameterLocation (default_parameter_location_detail 4) ];
+    apar_fmt = NoFormat
 }
 
 
@@ -252,14 +286,16 @@ let mk_global_parameter
       ?(size=4)
       ?(fmt=NoFormat)
       (gaddr:doubleword_int) =
-  {  apar_name = "gv_" ^ gaddr#to_hex_string ;
-     apar_type = btype ;
-     apar_desc = desc ;
-     apar_roles = roles ;
-     apar_io = io ;
-     apar_size = size ;
-     apar_location = GlobalParameter gaddr ;
-     apar_fmt = fmt
+  let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
+  { apar_index = None;
+    apar_name = "gv_" ^ gaddr#to_hex_string;
+    apar_type = btype;
+    apar_desc = desc;
+    apar_roles = roles;
+    apar_io = io;
+    apar_size = size;
+    apar_location = [GlobalParameter (gaddr, locdetail)];
+    apar_fmt = fmt
   }
 
 
@@ -272,7 +308,9 @@ let mk_stack_parameter
       ?(size=4)
       ?(fmt=NoFormat)
       (arg_index:int) =
-  { apar_name =
+  let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
+  { apar_index = Some arg_index;
+    apar_name =
       if name = "" then "arg_" ^ (string_of_int arg_index) else name;
     apar_type = btype;
     apar_desc = desc;
@@ -280,7 +318,7 @@ let mk_stack_parameter
     apar_io = io;
     apar_size = size;
     apar_fmt = fmt;
-    apar_location = StackParameter arg_index
+    apar_location = [StackParameter (arg_index, locdetail)]
   }
 
 
@@ -293,15 +331,17 @@ let mk_register_parameter
       ?(size=4)
       ?(fmt=NoFormat)
       (reg:register_t) =
-  { apar_name =
+  let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
+  { apar_index = None;
+    apar_name =
       if name = "" then "reg_" ^ (register_to_string reg) else name;
-    apar_type = btype ;
-    apar_desc = desc ;
-    apar_roles = roles ;
-    apar_io = io ;
-    apar_size = size ;
-    apar_fmt = fmt ;
-    apar_location = RegisterParameter reg
+    apar_type = btype;
+    apar_desc = desc;
+    apar_roles = roles;
+    apar_io = io;
+    apar_size = size;
+    apar_fmt = fmt;
+    apar_location = [RegisterParameter (reg, locdetail)]
   }
 
 (* -------------------------------------------------------- format arguments *)
@@ -347,9 +387,9 @@ let get_fmt_spec_type (spec:argspec_int):btype_t =
        let fkind = match spec#get_lengthmodifier with
          | LongDoubleModifier -> FLongDouble
          | _ -> FDouble in
-       TFloat (fkind,FScalar,[])
+       TFloat (fkind, FScalar,[])
      else
-       TFloat (FDouble,FScalar,[])
+       TFloat (FDouble, FScalar,[])
   | UnsignedCharConverter -> TInt (IUChar,[])
   | StringConverter -> TPtr (TInt (IChar, []),[])
   | PointerConverter -> TPtr (TVoid [],[])
@@ -360,8 +400,11 @@ let get_fmt_spec_type (spec:argspec_int):btype_t =
 let convert_fmt_spec_arg
       (index:int)         (* index of argument, zero-based *)
       (spec:argspec_int): fts_parameter_t =
-  { apar_name = "vararg_" ^ (string_of_int index);
-    apar_type = get_fmt_spec_type spec;
+  let ftype = get_fmt_spec_type spec in
+  let locdetail = {pld_type = ftype; pld_size = 4; pld_extract = None} in
+  { apar_index = Some (index + 1);
+    apar_name = "vararg_" ^ (string_of_int index);
+    apar_type = ftype;
     apar_desc = "vararg";
     apar_roles = [];
     apar_io =
@@ -370,5 +413,5 @@ let convert_fmt_spec_arg
       | _ -> ArgRead);
     apar_fmt = NoFormat;
     apar_size = 4;
-    apar_location = StackParameter (index + 1)
+    apar_location = [StackParameter (index + 1, locdetail) ]
   }

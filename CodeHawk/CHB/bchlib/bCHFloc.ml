@@ -63,6 +63,7 @@ open BCHExternalPredicate
 open BCHFtsParameter
 open BCHFunctionData
 open BCHFunctionInfo
+open BCHFunctionInterface
 open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
 open BCHGlobalState
@@ -575,10 +576,7 @@ object (self)
                     (LBLOCK [
                          self#l#toPretty;
                          STR ": ";
-                         STR fintf.fintf_name;
-                         STR ": ";
-                         INT (List.length
-                                fintf.fintf_type_signature.fts_parameters)]) in
+                         (function_interface_to_pretty fintf)]) in
                 self#set_call_target (update_target_interface ctinfo fintf)
              | _ -> ()
            with _ ->
@@ -606,7 +604,6 @@ object (self)
            (fun addr ->
              if string_table#has_string addr then
                let fmtstring = string_table#get_string addr in
-               let _ = pverbose [STR "Parse formatstring:"; STR fmtstring; NL] in
                let fmtspec = parse_formatstring fmtstring false in
                if fmtspec#has_arguments then
                  let args = fmtspec#get_arguments in
@@ -712,7 +709,7 @@ object (self)
       List.map
         (fun p ->
           match p.apar_location with
-          | StackParameter i ->
+          | [StackParameter (i, _)] ->
              let memref = self#f#env#mk_local_stack_reference in
              let argvar =
                match self#get_stackpointer_offset "mips" with
@@ -760,7 +757,7 @@ object (self)
         pars in
     let get_float_arg (par: fts_parameter_t) =
       match par.apar_location with
-      | RegisterParameter (ARMExtensionRegister r) ->
+      | [RegisterParameter (ARMExtensionRegister r, _)] ->
          let avar = self#env#mk_arm_extension_register_variable r in
          [(par, self#inv#rewrite_expr (XVar avar) self#env#get_variable_comparator)]
       | _ ->
@@ -774,7 +771,7 @@ object (self)
         (fun p ->
           (* The first stack argument is at offset 0 (different from mips) *)
           match p.apar_location with
-          | StackParameter i ->
+          | [StackParameter (i, _)] ->
              let memref = self#f#env#mk_local_stack_reference in
              let argvar =
                match self#get_stackpointer_offset "arm" with
@@ -861,7 +858,7 @@ object (self)
       let fintf = ctinfo#get_function_interface in
       let fts = fintf.fintf_type_signature in
       let pcompare p1 p2 =
-	parameter_location_compare p1.apar_location p2.apar_location in
+	list_compare p1.apar_location p2.apar_location parameter_location_compare in
       let parameters = List.sort pcompare fts.fts_parameters in
       List.map (fun p -> (p,self#evaluate_fts_argument p)) parameters
     else if system_info#has_esp_adjustment self#l#base_f self#l#i then
@@ -1515,7 +1512,7 @@ object (self)
        || (self#f#env#is_symbolic_value v) in
      let vars = variables_in_expr x in
      (List.length vars) > 0
-     &&List.for_all is_fixed_type (variables_in_expr x)
+     && List.for_all is_fixed_type (variables_in_expr x)
 
    (* Note: recording of loads and stores is performed by the different
       architectures directly in FnXXXDictionary.*)
@@ -1590,8 +1587,10 @@ object (self)
          else
            self#env#mk_ssa_register_value reg self#cia vtype in
        let assigns =
-         if (self#is_composite_symbolic_value rhsx) then
+         if (self#is_composite_symbolic_value rhsx)
+            || (match rhsx with XConst _ -> true | _ -> false) then
            [ASSIGN_NUM (regvar, rhs_chif)]
+
          else
            let _ =
              chlog#add
@@ -1652,13 +1651,13 @@ object (self)
 
    method private evaluate_fts_argument (p: fts_parameter_t) =
      match p.apar_location with
-     | StackParameter index ->
+     | [StackParameter (index, _)] ->
        let argvar = self#env#mk_bridge_value self#cia index in
        self#get_bridge_variable_value index argvar
-     | RegisterParameter r ->
+     | [RegisterParameter (r, _)] ->
        let argvar = self#env#mk_register_variable r in
        self#rewrite_variable_to_external argvar
-     | GlobalParameter a ->
+     | [GlobalParameter (a, _)] ->
        let argvar = self#env#mk_global_variable a#to_numerical in
        self#rewrite_variable_to_external argvar
      | _ -> random_constant_expr
@@ -1995,15 +1994,15 @@ object (self)
 	 end in
      List.iter (fun p ->
        match p.apar_location with
-	 | StackParameter index ->
+	 | [StackParameter (index, _)] ->
 	   let argvar = self#f#env#mk_bridge_value self#cia index in
 	   let argval = self#get_bridge_variable_value index argvar in
 	   add_type_facts argvar argval p.apar_type
-	 | RegisterParameter r ->
+	 | [RegisterParameter (r, _)] ->
 	   let argvar = self#f#env#mk_register_variable r in
 	   let argval = self#rewrite_variable_to_external argvar in
 	   add_type_facts argvar argval p.apar_type
-	 | GlobalParameter a ->
+	 | [GlobalParameter (a, _)] ->
 	   let argvar = self#f#env#mk_global_variable a#to_numerical in
 	   let argval = self#rewrite_variable_to_external argvar in
 	   add_type_facts argvar argval p.apar_type

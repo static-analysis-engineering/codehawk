@@ -1957,11 +1957,17 @@ class type invdictionary_int =
    variable in the function summary, e.g., in preconditions or postconditions.
 
    The size of the argument defaults to 4 bytes.*)
+type parameter_location_detail_t = {
+    pld_type: btype_t;
+    pld_size: int;
+    pld_extract: (int * int) option
+  }
+
 type parameter_location_t =
-| StackParameter of int
-| RegisterParameter of register_t
-| GlobalParameter of doubleword_int
-| UnknownParameterLocation
+| StackParameter of int * parameter_location_detail_t
+| RegisterParameter of register_t * parameter_location_detail_t
+| GlobalParameter of doubleword_int * parameter_location_detail_t
+| UnknownParameterLocation of parameter_location_detail_t
 
 
 (** Type of format string for extracting format modifiers.*)
@@ -2016,15 +2022,16 @@ type arg_io_t =
      ]}
 *)
 type fts_parameter_t = {
-  apar_name: string;
-  apar_type: btype_t;
-  apar_desc: string;
-  apar_roles: (string * string) list;
-  apar_io: arg_io_t;
-  apar_size: int;
-  apar_location: parameter_location_t;
-  apar_fmt: formatstring_type_t
-}
+    apar_index: int option;  (* 1-based parameter index, may be unknown *)
+    apar_name: string;
+    apar_type: btype_t;
+    apar_desc: string;
+    apar_roles: (string * string) list;
+    apar_io: arg_io_t;
+    apar_size: int;
+    apar_location: parameter_location_t list;
+    apar_fmt: formatstring_type_t
+  }
 
 
 (** Arithmetic operator used in expressions over api terms.*)
@@ -2037,7 +2044,13 @@ type relational_op_t =
   PEquals | PLessThan | PLessEqual | PGreaterThan | PGreaterEqual | PNotEqual
 
 
-(** Function signature.*)
+(** Function signature
+
+    A function signature is either directly obtained from a header file
+    or function summary library (direct source perspective), or inferred
+    from a list of parameter locations that are discovered during the
+    analysis (inferred binary perspective).
+.*)
 type function_signature_t = {
   fts_parameters: fts_parameter_t list;
   fts_varargs: bool;
@@ -2050,12 +2063,45 @@ type function_signature_t = {
 }
 
 
-(** Function interface.*)
+(** Function interface.
+
+    A function interface contains both a binary and a source perspective.
+    The source perspective is reprsented by the type_signature, while the
+    binary perspective is represented by the parameter_location list,
+    which refer to registers, stack locations (and perhaps globals). It
+    depends on the situation which perspective is known first.
+
+    If a function signature is provided via a header file, or obtained from
+    a function summary library, the type_signature
+    is constructed from this type, and the type itself is kept in the bctype
+    field. This is the only case where the function_interface has a bctype
+    field. The fts_parameters in the type_signature are constructed with the
+    default locations for the architecture, according to the ABI. Note that
+    there may be some uncertainty, e.g., parameters may be packed, or parameter
+    allocation may depend on the presence of floating point registers (ARM).
+    The list of parameter locations is not populated during this construction.
+
+    If no function signature is provided a priori, it can be inferred from
+    references to initial values of argument registers and/or stack argument
+    locations. In this case these locations are collected in the
+    parameter_locations field. Only when a type signature
+    is needed, a type_signature (possibly incomplete) is constructed based
+    on these locations. Note that a type_signature often cannot be
+    constructed on the fly, because there is no direct relationship between
+    parameter locations and an ordered list of parameters.
+
+    Even if the function signature is provided via a header or summary library,
+    parameter locations are still collected in the parameter_locations field
+    during analysis. These may be compared with those in the fts_parameters
+    for consistency.
+*)
 type function_interface_t = {
     fintf_name: string;
     fintf_jni_index: int option;
     fintf_syscall_index: int option;
     fintf_type_signature: function_signature_t;
+    fintf_parameter_locations: parameter_location_t list;
+    fintf_bctype: btype_t option
   }
 
 
@@ -2522,13 +2568,20 @@ class type interface_dictionary_int =
     method reset: unit
 
     (** {1 Parameter location}*)
-
+    method index_parameter_location_detail: parameter_location_detail_t -> int
+    method get_parameter_location_detail: int -> parameter_location_detail_t
     method index_parameter_location: parameter_location_t -> int
     method get_parameter_location: int -> parameter_location_t
+    method index_parameter_location_list: parameter_location_t list -> int
+    method get_parameter_location_list: int -> parameter_location_t list
     method write_xml_parameter_location:
              ?tag:string -> xml_element_int -> parameter_location_t -> unit
     method read_xml_parameter_location:
              ?tag:string -> xml_element_int -> parameter_location_t
+    method write_xml_parameter_location_list:
+             ?tag:string -> xml_element_int -> parameter_location_t list -> unit
+    method read_xml_parameter_location_list:
+             ?tag:string -> xml_element_int -> parameter_location_t list
 
     (** {1 Parameter role}*)
 
