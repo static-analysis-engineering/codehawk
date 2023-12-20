@@ -73,7 +73,11 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
 class interface_dictionary_t:interface_dictionary_int =
 object (self)
 
+  val parameter_location_detail_table =
+    mk_index_table "parameter-location-detail-table"
   val parameter_location_table = mk_index_table "parameter-location-table"
+  val parameter_location_list_table =
+    mk_index_table "parameter-location-list-table"
   val role_table = mk_index_table "role-table"
   val roles_table = mk_index_table "roles-table"
   val fts_parameter_table = mk_index_table "fts-parameter-table"
@@ -96,7 +100,9 @@ object (self)
 
   initializer
     tables <- [
+      parameter_location_detail_table;
       parameter_location_table;
+      parameter_location_list_table;
       role_table;
       roles_table;
       fts_parameter_table;
@@ -121,33 +127,63 @@ object (self)
       List.iter (fun t -> t#reset) tables
     end
 
+  method index_parameter_location_detail (d: parameter_location_detail_t) =
+    let index_extract (x: (int * int) option) =
+      match x with
+      | None -> [-1]
+      | Some (start, size) -> [start; size] in
+    let key =
+      ([],
+       [bcd#index_typ d.pld_type; d.pld_size] @ (index_extract d.pld_extract)) in
+    parameter_location_detail_table#add key
+
+  method get_parameter_location_detail (index: int): parameter_location_detail_t =
+    let name = "parameter_location_detail" in
+    let (_, args) = parameter_location_detail_table#retrieve index in
+    let a = a name args in
+    { pld_type = bcd#get_typ (a 0);
+      pld_size = a 1;
+      pld_extract = if (a 2) = (-1) then None else Some (a 2, a 3)
+    }
+
   method index_parameter_location (p:parameter_location_t) =
+    let idetail (d: parameter_location_detail_t) =
+      self#index_parameter_location_detail d in
     let tags = [parameter_location_mcts#ts p] in
     let key = match p with
-      | StackParameter i -> (tags, [i])
-      | RegisterParameter r -> (tags, [bd#index_register r])
-      | GlobalParameter a -> (tags, [bd#index_address a])
-      | UnknownParameterLocation -> (tags, []) in
+      | StackParameter (i, d) -> (tags, [i; idetail d])
+      | RegisterParameter (r, d) -> (tags, [bd#index_register r; idetail d])
+      | GlobalParameter (a, d) -> (tags, [bd#index_address a; idetail d])
+      | UnknownParameterLocation d -> (tags, [idetail d]) in
     parameter_location_table#add key
 
   method get_parameter_location (index:int):parameter_location_t =
     let name = "parameter_location" in
     let (tags,args) = parameter_location_table#retrieve index in
+    let gdetail (i: int) = self#get_parameter_location_detail i in
     let t = t name tags in
     let a = a name args in
     match (t 0) with
-    | "s" -> StackParameter (a 0)
-    | "r" -> RegisterParameter (bd#get_register (a 0))
-    | "g" -> GlobalParameter (bd#get_address (a 0))
-    | "u" -> UnknownParameterLocation
+    | "s" -> StackParameter (a 0, gdetail (a 1))
+    | "r" -> RegisterParameter (bd#get_register (a 0), gdetail (a 1))
+    | "g" -> GlobalParameter (bd#get_address (a 0), gdetail (a 1))
+    | "u" -> UnknownParameterLocation (gdetail (a 0))
     | s -> raise_tag_error name s parameter_location_mcts#tags
 
+  method index_parameter_location_list (l: parameter_location_t list): int =
+    let key = ([], List.map self#index_parameter_location l) in
+    parameter_location_list_table#add key
+
+  method get_parameter_location_list (index: int): parameter_location_t list =
+    let (_, args) = parameter_location_list_table#retrieve index in
+    List.map self#get_parameter_location args
+
   method index_role (r:(string * string)) =
-    let key = ([],[ bd#index_string (fst r) ; bd#index_string (snd r) ]) in
+    let key = ([], [bd#index_string (fst r); bd#index_string (snd r)]) in
     role_table#add key
 
   method get_role (index:int) =
-    let (_,args) = role_table#retrieve index in
+    let (_, args) = role_table#retrieve index in
     let a = a "role" args in
     (bd#get_string (a 0), bd#get_string (a 1))
 
@@ -159,30 +195,35 @@ object (self)
     List.map self#get_role args
 
   method index_fts_parameter (p:fts_parameter_t) =
+    let iopt (i: int option) = match i with Some i -> i | _ -> (-1) in
     let tags = [
         arg_io_mfts#ts p.apar_io;
         formatstring_type_mfts#ts p.apar_fmt] in
     let args = [
+        iopt p.apar_index;
         bd#index_string p.apar_name;
         bcd#index_typ p.apar_type;
         bd#index_string p.apar_desc;
         self#index_roles p.apar_roles;
         p.apar_size;
-        self#index_parameter_location p.apar_location ] in
-    fts_parameter_table#add (tags,args)
+        self#index_parameter_location_list p.apar_location
+      ] in
+    fts_parameter_table#add (tags, args)
 
   method get_fts_parameter (index:int): fts_parameter_t =
+    let getopt (index: int) = if index = (-1) then None else Some index in
     let (tags, args) = fts_parameter_table#retrieve index in
     let t = t "fts-parameter" tags in
     let a = a "fts-parameter" args in
-    { apar_name = bd#get_string (a 0);
-      apar_type = bcd#get_typ (a 1);
-      apar_desc = bd#get_string (a 2);
-      apar_roles = self#get_roles (a 3);
+    { apar_index = getopt (a 0);
+      apar_name = bd#get_string (a 1);
+      apar_type = bcd#get_typ (a 2);
+      apar_desc = bd#get_string (a 3);
+      apar_roles = self#get_roles (a 4);
       apar_io = arg_io_mfts#fs (t 0);
       apar_fmt = formatstring_type_mfts#fs (t 1);
-      apar_size = a 4;
-      apar_location = self#get_parameter_location (a 5) }
+      apar_size = a 5;
+      apar_location = self#get_parameter_location_list (a 6) }
 
   method index_bterm (t:bterm_t) =
     let tags = [bterm_mcts#ts t] in
@@ -323,7 +364,9 @@ object (self)
         bd#index_string fintf.fintf_name;
         (match fintf.fintf_jni_index with Some n -> n | _ -> (-1));
         (match fintf.fintf_syscall_index with Some n -> n | _ -> (-1));
-        self#index_function_signature fintf.fintf_type_signature
+        self#index_function_signature fintf.fintf_type_signature;
+        self#index_parameter_location_list fintf.fintf_parameter_locations;
+        (match fintf.fintf_bctype with Some t -> bcd#index_typ t | _ -> (-1));
       ] in
     function_interface_table#add (tags, args)
 
@@ -334,7 +377,9 @@ object (self)
     { fintf_name = bd#get_string (a 0);
       fintf_jni_index = if (a 1) = (-1) then None else Some (a 1);
       fintf_syscall_index = if (a 2) = (-1) then None else Some (a 2);
-      fintf_type_signature = self#get_function_signature (a 3)
+      fintf_type_signature = self#get_function_signature (a 3);
+      fintf_parameter_locations = self#get_parameter_location_list (a 4);
+      fintf_bctype = if (a 5) = (-1) then None else Some (bcd#get_typ (a 5))
     }
 
   method index_function_semantics (fsem: function_semantics_t) =
@@ -581,6 +626,14 @@ object (self)
   method read_xml_parameter_location
            ?(tag="ploc") (node:xml_element_int):parameter_location_t =
     self#get_parameter_location (node#getIntAttribute tag)
+
+  method write_xml_parameter_location_list
+           ?(tag="plocs") (node: xml_element_int) (l: parameter_location_t list) =
+    node#setIntAttribute tag (self#index_parameter_location_list l)
+
+  method read_xml_parameter_location_list
+           ?(tag="plocs") (node: xml_element_int): parameter_location_t list =
+    self#get_parameter_location_list (node#getIntAttribute tag)
 
   method write_xml_fts_parameter
            ?(tag="ftsp") (node:xml_element_int) (p: fts_parameter_t) =

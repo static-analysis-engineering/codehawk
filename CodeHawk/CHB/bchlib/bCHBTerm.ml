@@ -203,13 +203,13 @@ let is_arithmetic_operator (numOperator:string) =
 let is_stack_parameter_term (t:bterm_t) =
   match t  with
   | ArgValue p ->
-     (match p.apar_location with StackParameter _ -> true | _ -> false)
+     (match p.apar_location with [StackParameter _] -> true | _ -> false)
   | _ -> false
 
 let is_global_parameter_term (t:bterm_t) =
   match t with
   | ArgValue p ->
-     (match p.apar_location with GlobalParameter _ -> true | _ -> false)
+     (match p.apar_location with [GlobalParameter _] -> true | _ -> false)
   | _ -> false
 
 let get_arithmetic_operator (numOperator:string) =

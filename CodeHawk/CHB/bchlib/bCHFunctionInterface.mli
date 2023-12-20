@@ -66,7 +66,8 @@ val set_function_interface_returntype:
     parameter is replaced with the [par], otherwise [par] is added to the list
     of parameters.
 
-    Function parameters are sorted according to the [fts_parameter_compare] function.
+    Function parameters are sorted according to the [fts_parameter_compare]
+    function.
  *)
 val add_function_parameter:
   function_interface_t -> fts_parameter_t -> function_interface_t

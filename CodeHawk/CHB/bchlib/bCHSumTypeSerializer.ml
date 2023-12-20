@@ -253,16 +253,16 @@ let register_mcts: register_t mfts_int = new register_mcts_t
 class parameter_location_mcts_t: [parameter_location_t] mfts_int =
 object
 
-  inherit [ parameter_location_t ] mcts_t "parameter_location"
+  inherit [parameter_location_t] mcts_t "parameter_location"
 
   method ts (p:parameter_location_t) =
     match p with
     | StackParameter _ -> "s"
     | RegisterParameter _ -> "r"
     | GlobalParameter _ -> "g"
-    | UnknownParameterLocation -> "u"
+    | UnknownParameterLocation _ -> "u"
 
-  method tags = [ "g"; "r"; "s"; "u" ]
+  method tags = ["g"; "r"; "s"; "u"]
 
 end
 
