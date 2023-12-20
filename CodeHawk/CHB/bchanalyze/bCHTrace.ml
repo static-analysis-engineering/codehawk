@@ -175,7 +175,7 @@ let rec trace_fwd faddr op =
         let call_args = callee#get_call_args in
         List.iter (fun (p,e) ->
 	    match p.apar_location with
-	    | StackParameter par ->
+	    | [StackParameter (par, _)] ->
 	       let argIndices = get_xarg_indices finfo e in
 	       if List.mem op argIndices then
 	         begin
