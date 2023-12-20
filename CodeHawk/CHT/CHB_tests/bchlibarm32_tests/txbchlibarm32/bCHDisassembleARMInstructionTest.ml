@@ -61,7 +61,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleARMInstructionTest"
-let lastupdated = "2023-10-16"
+let lastupdated = "2023-12-19"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -158,6 +158,7 @@ let arm_basic () =
       ("SUBS",   "062052e0", "SUBS           R2, R2, R6");
       ("TST",    "020c12e3", "TST            R2, #0x200");
       ("UBFX",   "50ede2e7", "UBFX           LR, R0, #26, #3");
+      ("UDF",    "fedeffe7", "UDF            #0xfdee");
       ("UMLAL",  "9324a5e0", "UMLAL          R2, R5, R3, R4");
       ("UXTB",   "7600efe6", "UXTB           R0, R6")
     ] in
