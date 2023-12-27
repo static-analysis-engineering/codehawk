@@ -32,12 +32,16 @@ open CHPretty
 
 (* chutil *)
 open CHFormatStringParser
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
 open BCHBCTypes
 open BCHLibTypes
 
+(** Function-type-signature parameter*)
+
+(** {1 Parameter constructors}*)
 
 val default_fts_parameter: fts_parameter_t
 
@@ -51,9 +55,8 @@ val mk_global_parameter:
   -> doubleword_int
   -> fts_parameter_t
 
-(* stack parameters are numbered starting from 1
-   (located at 4 bytes above the return address) *)
-val mk_stack_parameter:
+
+val mk_indexed_stack_parameter:
   ?btype:btype_t
   -> ?name:string
   -> ?desc:string
@@ -61,8 +64,11 @@ val mk_stack_parameter:
   -> ?io:arg_io_t
   -> ?size:int
   -> ?fmt:formatstring_type_t
-  -> int
+  -> ?locations:parameter_location_t list
+  -> int   (* offset *)
+  -> int   (* index *)
   -> fts_parameter_t
+
 
 val mk_register_parameter:
   ?name:string
@@ -75,11 +81,22 @@ val mk_register_parameter:
   -> register_t
   -> fts_parameter_t
 
-val convert_fmt_spec_arg: int -> argspec_int -> fts_parameter_t
 
-val calling_convention_to_string: calling_convention_t -> string
+val mk_indexed_register_parameter:
+  ?btype:btype_t
+  -> ?name:string
+  -> ?desc:string
+  -> ?roles:(string * string) list
+  -> ?io:arg_io_t
+  -> ?size:int
+  -> ?fmt:formatstring_type_t
+  -> ?locations:parameter_location_t list
+  -> register_t
+  -> int   (* index *)
+  -> fts_parameter_t
 
-val fts_parameter_to_pretty: fts_parameter_t -> pretty_t
+
+(** {1 Parameter comparison}*)
 
 val parameter_location_compare:
   parameter_location_t -> parameter_location_t -> int
@@ -92,27 +109,74 @@ val fts_parameter_compare: fts_parameter_t -> fts_parameter_t -> int
     the same parameter location.*)
 val fts_parameter_equal: fts_parameter_t -> fts_parameter_t -> bool
 
-val read_xml_roles: xml_element_int -> (string * string) list
 
-val read_xml_parameter_location :
-  xml_element_int -> parameter_location_t
+(** {1 Parameter accessors}*)
 
-(** [read_xml_fts_parameter xnode] parses a parameter element from a legacy
-    function summary.*)
-val read_xml_fts_parameter: xml_element_int -> fts_parameter_t
+val get_parameter_signature: fts_parameter_t -> (string * btype_t)
 
-val modify_types_par: type_transformer_t -> fts_parameter_t -> fts_parameter_t
 
-val modify_name_par: string -> fts_parameter_t -> fts_parameter_t
+val get_parameter_type: fts_parameter_t -> btype_t
+
+
+val get_parameter_name: fts_parameter_t -> string
+
+
+val get_stack_parameter_offset: fts_parameter_t -> int traceresult
+
+
+val get_register_parameter_register: fts_parameter_t -> register_t traceresult
+
+
+val convert_fmt_spec_arg: int -> argspec_int -> fts_parameter_t
+
+
+val get_fmt_spec_type: argspec_int -> btype_t
+
+
+(** {1 Predicates}*)
 
 val is_global_parameter: fts_parameter_t -> bool
 
+(** Returns true if the parameter has a single parameter location, which is
+    on the stack.*)
 val is_stack_parameter: fts_parameter_t -> bool
 
+(** [is_stack_parameter_at_offset p n] returns true if parameter [p] is a
+    stack parameter with offset [n] bytes.*)
+val is_stack_parameter_at_offset: fts_parameter_t -> int -> bool
+
+(** Returns true if the parameter has a single parameter location, which is
+    a register.*)
 val is_register_parameter: fts_parameter_t -> bool
+
+val is_register_parameter_for_register: fts_parameter_t -> register_t -> bool
 
 val is_arg_parameter: fts_parameter_t -> bool
 
 val is_formatstring_parameter: fts_parameter_t -> bool
 
 val is_floating_point_parameter: fts_parameter_t -> bool
+
+
+(** {1 Printing}*)
+
+val calling_convention_to_string: calling_convention_t -> string
+
+val fts_parameter_to_pretty: fts_parameter_t -> pretty_t
+
+val parameter_location_to_string: parameter_location_t -> string
+
+(** {1 Xml reading}*)
+
+val read_xml_roles: xml_element_int -> (string * string) list
+
+(** [read_xml_fts_parameter xnode] parses a parameter element from a legacy
+    function summary.*)
+val read_xml_fts_parameter: xml_element_int -> fts_parameter_t
+
+
+(** {1 Modification}*)
+
+val modify_types_par: type_transformer_t -> fts_parameter_t -> fts_parameter_t
+
+val modify_name_par: string -> fts_parameter_t -> fts_parameter_t

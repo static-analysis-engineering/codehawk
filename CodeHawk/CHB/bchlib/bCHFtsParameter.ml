@@ -33,6 +33,7 @@ open CHPretty
 (* chutil *)
 open CHFormatStringParser
 open CHLogger
+open CHTraceResult
 open CHXmlDocument
 open CHXmlReader
 
@@ -63,6 +64,15 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
     ch_error_log#add "xml parse error" error_msg;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
+
+
+let xfail_tvalue
+      (node: xml_element_int) (msg: pretty_t) (r: 'a traceresult): 'a =
+  match r with
+  | Ok v -> v
+  | Error e ->
+     let msg = LBLOCK [msg; STR " ("; STR (String.concat "; " e); STR ")"] in
+     raise_xml_error node msg
 
 (* ----------------------------------------------------------------- printing *)
 
@@ -118,16 +128,53 @@ let fts_parameter_to_pretty (p: fts_parameter_t) =
       STR ": ";
       btype_to_pretty p.apar_type]
 
+
+(* ---------------------------------------------------------------- accessors *)
+
+let get_parameter_signature (p: fts_parameter_t): (string * btype_t) =
+  (p.apar_name, p.apar_type)
+
+
+let get_parameter_type (p: fts_parameter_t): btype_t = p.apar_type
+
+
+let get_parameter_name (p: fts_parameter_t): string = p.apar_name
+
+
+let get_stack_parameter_offset (p: fts_parameter_t): int traceresult =
+  match p.apar_location with
+  | [StackParameter (i, _)] -> Ok i
+  | [loc] ->
+     Error [
+         "get_stack_parameter_offset with location: "
+         ^ (parameter_location_to_string loc)]
+  | h::_ -> Error ["get_stack_parameter_offset:multiple locations"]
+  | [] -> Error ["get_stack_parameter_offset:no locations"]
+
+
+let get_register_parameter_register
+      (p: fts_parameter_t): register_t traceresult =
+  match p.apar_location with
+  | [RegisterParameter (reg, _)] -> Ok reg
+  | [loc] ->
+     Error [
+         "get_register_parameter_register with location: "
+         ^ (parameter_location_to_string loc)]
+  | h::_ -> Error ["get_register_parameter_register:multiple locations"]
+  | [] -> Error ["get_register_parameter_register:no locations"]
+
+
+
 (* --------------------------------------------------------------- comparison *)
 
 let parameter_location_compare l1 l2 =
   match (l1,l2) with
+  | (RegisterParameter (r1, _), RegisterParameter (r2, _)) -> register_compare r1 r2
+  | (RegisterParameter _, _) -> -1
+  | (_, RegisterParameter _) -> 1
   | (StackParameter (i1, _), StackParameter (i2, _)) -> Stdlib.compare i1 i2
   | (StackParameter _, _) -> -1
   | (_, StackParameter _) -> 1
-  | (RegisterParameter (r1, _), RegisterParameter (r2, _)) -> Stdlib.compare r1 r2
-  | (RegisterParameter _, _) -> -1
-  | (_, RegisterParameter _) -> 1
   | (GlobalParameter (dw1, _), GlobalParameter (dw2, _)) -> dw1#compare dw2
   | (GlobalParameter _, _) -> -1
   | (_, GlobalParameter _) -> 1
@@ -142,26 +189,20 @@ let fts_parameter_equal (p1: fts_parameter_t) (p2: fts_parameter_t) =
   (fts_parameter_compare p1 p2) = 0
 
 
-let read_xml_arg_io (s:string) =
+let read_xml_arg_io (s:string): arg_io_t traceresult =
   match s with
-  | "r" -> ArgRead
-  | "w" -> ArgWrite
-  | "rw" -> ArgReadWrite
-  | _ ->
-     raise
-       (BCH_failure
-          (LBLOCK [STR "Arg io "; STR s; STR " not recognized"]))
+  | "r" -> Ok ArgRead
+  | "w" -> Ok ArgWrite
+  | "rw" -> Ok ArgReadWrite
+  | _ -> Error ["Arg io: " ^ s ^ " not recognized"]
 
 
-let read_xml_formatstring_type (s:string) =
+let read_xml_formatstring_type (s:string): formatstring_type_t traceresult =
   match s with
-  | "no" -> NoFormat
-  | "print" -> PrintFormat
-  | "scan" -> ScanFormat
-  | _ ->
-     raise
-       (BCH_failure
-          (LBLOCK [STR "Formatstring type "; STR s; STR " not recognized"]))
+  | "no" -> Ok NoFormat
+  | "print" -> Ok PrintFormat
+  | "scan" -> Ok ScanFormat
+  | _ -> Error ["Formatstring type: " ^ s ^ " not recognized"]
 
 
 let read_xml_roles (node:xml_element_int) =
@@ -176,14 +217,15 @@ let default_parameter_location_detail ?(ty=t_unknown) (size: int) = {
     pld_extract = None
   }
 
-let read_xml_parameter_location (node:xml_element_int):parameter_location_t =
+let read_xml_parameter_location
+      (node:xml_element_int) (btype: btype_t): parameter_location_t =
   let get = node#getAttribute in
   let geti = node#getIntAttribute in
-  let pdef = default_parameter_location_detail 4 in
+  let pdef = default_parameter_location_detail ~ty:btype 4 in
   let getx s =
-    fail_tvalue
-      (trerror_record
-         (STR ("BCHFtsParameter.read_xml_parameter_location:" ^ s)))
+    xfail_tvalue
+      node
+      (STR ("read_xml_parameter_location: " ^ s))
       (string_to_doubleword s) in
   match get "loc" with
   | "stack" -> StackParameter (geti "nr", pdef)
@@ -208,6 +250,15 @@ let read_xml_fts_parameter (node:xml_element_int): fts_parameter_t =
   let has = node#hasNamedAttribute in
   let hasc = node#hasOneTaggedChild in
   let tNode = if hasc "type" then getc "type" else getc "btype" in
+  let btype = read_xml_type tNode in
+  let get_arg_io s =
+    xfail_tvalue
+      node (STR ("read_xml_fts_parameter: " ^ s)) (read_xml_arg_io s) in
+  let get_fmt s =
+    xfail_tvalue
+      node
+      (STR ("read_xml_fts_parameter: " ^ s))
+      (read_xml_formatstring_type s) in
   { apar_index =
       (if has "ix" then
          Some (geti "ix")
@@ -218,12 +269,11 @@ let read_xml_fts_parameter (node:xml_element_int): fts_parameter_t =
     apar_name = get "name";
     apar_desc = (if has "desc" then get "desc" else "");
     apar_roles = (if hasc "roles" then read_xml_roles (getc "roles") else []);
-    apar_io = (if has "io" then read_xml_arg_io (get "io") else ArgReadWrite);
+    apar_io = (if has "io" then get_arg_io (get "io") else ArgReadWrite);
     apar_size = (if has "size" then geti "size" else 4);
-    apar_type = read_xml_type tNode;
-    apar_location = [read_xml_parameter_location node];
-    apar_fmt =
-      (if has "fmt" then read_xml_formatstring_type (get "fmt") else NoFormat)
+    apar_type = btype;
+    apar_location = [read_xml_parameter_location node btype];
+    apar_fmt = (if has "fmt" then get_fmt (get "fmt") else NoFormat)
   }
 
 (* --------------------------------------------------------------- predicates *)
@@ -236,8 +286,20 @@ let is_stack_parameter (p: fts_parameter_t) =
   match p.apar_location with [StackParameter _] -> true | _ -> false
 
 
+let is_stack_parameter_at_offset (p: fts_parameter_t) (n: int): bool =
+  match p.apar_location with
+  | [StackParameter (i, _)] -> i = n
+  | _ -> false
+
+
 let is_register_parameter (p: fts_parameter_t) =
   match p.apar_location with [RegisterParameter _] -> true | _ -> false
+
+
+let is_register_parameter_for_register (p: fts_parameter_t) (reg: register_t) =
+  match p.apar_location with
+  | [RegisterParameter (r, _)] -> register_equal reg r
+  | _ -> false
 
 
 let is_arg_parameter (p: fts_parameter_t) =
@@ -265,7 +327,8 @@ let default_fts_parameter = {
     apar_desc = "" ;
     apar_io = ArgReadWrite;
     apar_size = 4;
-    apar_location = [UnknownParameterLocation (default_parameter_location_detail 4) ];
+    apar_location =
+      [UnknownParameterLocation (default_parameter_location_detail 4)];
     apar_fmt = NoFormat
 }
 
@@ -299,7 +362,8 @@ let mk_global_parameter
   }
 
 
-let mk_stack_parameter
+(* index starts at 1 (re: counting) *)
+let mk_indexed_stack_parameter
       ?(btype=t_unknown)
       ?(name="")
       ?(desc="")
@@ -307,18 +371,25 @@ let mk_stack_parameter
       ?(io=ArgReadWrite)
       ?(size=4)
       ?(fmt=NoFormat)
-      (arg_index:int) =
-  let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
-  { apar_index = Some arg_index;
-    apar_name =
-      if name = "" then "arg_" ^ (string_of_int arg_index) else name;
+      ?(locations=[])
+      (offset: int)
+      (index: int) =
+  let locations =
+    match locations with
+    | [] ->
+       (* create a single stack location at the given offset *)
+       let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
+       [StackParameter (offset, locdetail)]
+    | _ -> locations in
+  { apar_index = Some index;
+    apar_name = if name = "" then "arg_" ^ (string_of_int index) else name;
     apar_type = btype;
     apar_desc = desc;
     apar_roles = roles;
     apar_io = io;
     apar_size = size;
     apar_fmt = fmt;
-    apar_location = [StackParameter (arg_index, locdetail)]
+    apar_location = locations
   }
 
 
@@ -343,6 +414,37 @@ let mk_register_parameter
     apar_fmt = fmt;
     apar_location = [RegisterParameter (reg, locdetail)]
   }
+
+
+let mk_indexed_register_parameter
+      ?(btype=t_unknown)
+      ?(name="")
+      ?(desc="")
+      ?(roles=[])
+      ?(io=ArgReadWrite)
+      ?(size=4)
+      ?(fmt=NoFormat)
+      ?(locations=[])
+      (reg:register_t)
+      (index: int) =
+  let locations =
+    match locations with
+    | [] ->
+       (* create a single register location for the given register *)
+       let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
+       [RegisterParameter (reg, locdetail)]
+    | _ -> locations in
+  { apar_index = Some index;
+    apar_name = if name = "" then "arg_" ^ (string_of_int index) else name;
+    apar_type = btype;
+    apar_desc = desc;
+    apar_roles = roles;
+    apar_io = io;
+    apar_size = size;
+    apar_fmt = fmt;
+    apar_location = locations
+  }
+
 
 (* -------------------------------------------------------- format arguments *)
 
