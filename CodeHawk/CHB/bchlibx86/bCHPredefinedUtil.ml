@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -48,6 +48,7 @@ open BCHByteUtilities
 open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
+open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionSummary
@@ -68,7 +69,7 @@ open BCHOperand
 module H = Hashtbl
 module FFU = BCHFileFormatUtil
 module TR = CHTraceResult
-   
+
 
 let todw s =
   TR.tget_ok (string_to_doubleword (littleendian_hexstring_todwstring s))
@@ -78,10 +79,10 @@ let tow s =
   TR.tget_ok (string_to_doubleword (littleendian_hexstring_towstring s))
 
 
-let todwoff s = ((todw s)#to_signed_numerical)#toInt 
+let todwoff s = ((todw s)#to_signed_numerical)#toInt
 
 
-let tooff s = 
+let tooff s =
   let offset = TR.tget_ok (string_to_doubleword ("0x" ^ s)) in
   let offset = offset#to_int in
   if offset > 127 then offset - 256 else offset
@@ -119,7 +120,7 @@ let regindexstring_to_reg (s:string) =
   match s with
   | "0" -> Eax | "1" -> Ecx | "2" -> Edx | "3" -> Ebx
   | "5" -> Ebp | "6" -> Esi | "7" -> Edi
-  | s -> 
+  | s ->
     begin
       ch_error_log#add "matched template with unexpected register"
 	(LBLOCK [ STR "Character: " ; STR s ]) ;
@@ -133,7 +134,7 @@ let xpr_to_basepretty (x:xpr_t) =
   let variable_to_pretty v = STR v#getName#getBaseName in
   let xpr_formatter = make_xpr_formatter sym_printer variable_to_pretty in
   xpr_formatter#pr_expr x
-    
+
 
 let xpr_to_pretty (floc:floc_int) (x:xpr_t) =
   let sym_printer = (fun s -> STR s#getBaseName) in
@@ -141,7 +142,7 @@ let xpr_to_pretty (floc:floc_int) (x:xpr_t) =
   let xpr_formatter = make_xpr_formatter sym_printer variable_to_pretty in
   let default () = xpr_formatter#pr_expr x in
   try
-    (match x with 
+    (match x with
     | XVar v when floc#env#is_bridge_value v -> STR "?"
     | XConst (IntConst n) when FFU.is_image_address n ->
        (TR.tget_ok (numerical_to_doubleword n))#toPretty
@@ -162,7 +163,7 @@ let xpr_to_hexpretty (floc:floc_int) (x:xpr_t) =
   | _ -> xpr_to_pretty floc x
 
 
-let xpr_to_fppretty (floc:floc_int) (x:xpr_t) = 
+let xpr_to_fppretty (floc:floc_int) (x:xpr_t) =
   try
     (match x with
      | XConst (IntConst num) ->
@@ -215,7 +216,7 @@ let pr_argument_expr
       ?(typespec=None) (p: fts_parameter_t) (xpr: xpr_t) (floc: floc_int) =
   match get_string_reference floc xpr with
   | Some s -> STR ("\"" ^ s ^ "\"")
-  | _ -> 
+  | _ ->
      let x = simplify_xpr xpr in
      match get_xpr_symbolic_name ~typespec x with
      | Some name -> STR name
@@ -231,16 +232,19 @@ let patternrhs_to_string (rhs:patternrhs_t) =
   | PUnknown -> "?"
 
 
-let get_arg args (n:int) (floc:floc_int) =
-  let cmpv = floc#env#get_variable_comparator in 
+
+let get_arg (args: (fts_parameter_t * xpr_t) list) (n: int) (floc: floc_int) =
+  let cmpv = floc#env#get_variable_comparator in
   try
-    let (_,arg) = List.find (fun (p,_) -> is_stack_parameter p n) args in
+    let (_, arg) =
+      List.find (fun (p, _) -> is_stack_parameter_at_offset p (n * 4)) args in
     floc#inv#rewrite_expr arg cmpv
   with
   | Not_found ->
     begin
-      ch_error_log#add "get argument" 
-	(LBLOCK [ floc#l#toPretty ; STR ": Unable to get argument " ; INT n ]) ;
+      ch_error_log#add
+        "get argument"
+	(LBLOCK [floc#l#toPretty; STR ": Unable to get argument "; INT n]);
       random_constant_expr
     end
 
@@ -287,7 +291,7 @@ let get_patternrhs_value ?(args=[]) (rhs:patternrhs_t) (floc:floc_int) =
    are adjusted by -4
 *)
 let get_var_lhs (varoffset:int) (floc:floc_int) =
-  let offset = -(varoffset + 4) in               
+  let offset = -(varoffset + 4) in
   (esp_deref ~with_offset:offset WR)#to_lhs floc
 
 
@@ -313,7 +317,7 @@ let get_nested_deref_lhs (r:cpureg_t) (offsets:int list) (floc:floc_int) =
   match offsets with
   | [] ->
      raise
-       (BCH_failure 
+       (BCH_failure
 	  (LBLOCK [
                STR "Offsets missing in get_nested_deref_lhs: ";
 	       floc#l#toPretty ]))
@@ -396,11 +400,11 @@ let set_delphi_exception_handler_table (floc:floc_int) (x:xpr_t) =
       with
       | _ -> ())
   | _ -> ()
-	  
+
 
 let get_adjustment_commands (adj:int) (floc:floc_int) =
   if adj > 0 then
-    let (esplhs,esplhscmds) = get_reg_lhs Esp floc in 
+    let (esplhs,esplhscmds) = get_reg_lhs Esp floc in
     let espv = get_reg_value Esp floc in
     let xadj = int_constant_expr adj in
     let cmds = floc#get_assign_commands esplhs (XOp (XPlus, [ espv ; xadj ])) in
@@ -466,7 +470,7 @@ let is_named_lib_call (faddr:doubleword_int) (offset:int) (fname:string) =
   && floc#get_call_target#is_static_lib_call
   && floc#get_call_target#get_name = fname
 
-  
+
 let sometemplate ?(msg=STR "") (sem:predefined_callsemantics_int) =
   begin
     chlog#add "matched template function" (LBLOCK [ STR sem#get_name ; msg ]) ;
@@ -478,7 +482,7 @@ let get_fnhashes (name:string) (f:string -> int -> predefined_callsemantics_int)
   List.map (fun (hash,instrs) -> f hash instrs) (get_function_hashes name)
 
 
-let get_return_assign summary floc = 
+let get_return_assign summary floc =
   let fintf = summary#get_function_interface in
   let fts = fintf.fintf_type_signature in
   let rty = fts.fts_returntype in
@@ -499,7 +503,7 @@ let get_esp_adjustment_assign (summary: function_summary_int) (floc: floc_int) =
   | _ -> [ floc#get_abstract_cpu_registers_command [Esp]]
 
 
-let get_side_effects summary floc = 
+let get_side_effects summary floc =
   floc#get_sideeffect_assigns summary#get_function_semantics
 
 
@@ -536,7 +540,7 @@ end
 class dllfun_semantics_t
         (dll:string)
         (summary:function_summary_int)
-        (md5hash:string) 
+        (md5hash:string)
         (instrs:int):predefined_callsemantics_int =
 object (self)
 
@@ -548,7 +552,7 @@ object (self)
 
   method get_annotation (floc:floc_int) =
     (* let api = summary#get_function_api in *)
-    let pr_arg p xpr = 
+    let pr_arg p xpr =
       let typespec = summary#get_enum_type p in
       pr_argument_expr ~typespec p xpr floc in
     LBLOCK [ STR self#get_name  ;
@@ -584,7 +588,7 @@ let add_dllfun table (dll:string) (fname:string) =
   if function_summary_library#has_dll_function dll fname then
     begin
       H.add table fname (mk_dllfun_semantics dll fname) ;
-      chlog#add "add statically linked dll function" 
+      chlog#add "add statically linked dll function"
 	(LBLOCK [ STR dll ; STR ":" ; STR fname ])
     end
   else
@@ -596,13 +600,13 @@ class libfun_semantics_t
         (pkgs:string list)
         (fname:string)
         (summary:function_summary_int)
-        (md5hash:string) 
+        (md5hash:string)
         (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
-  method get_name = 
+  method get_name =
     let pkgs = String.concat "::" pkgs in
     "__" ^ pkgs ^ "::" ^ fname ^ "__"
 
@@ -614,17 +618,17 @@ object (self)
 	     pretty_print_list floc#get_call_args
 	       (fun (p,expr) ->
 		 LBLOCK [ STR p.apar_name ; STR ":" ; pr_arg p expr]) "(" "," ")" ]
-      
+
   method get_commands (floc:floc_int) =
     let sideeffects = get_side_effects summary floc in
     let returnassign = get_return_assign summary floc in
     let adjassign = get_esp_adjustment_assign summary floc in
     let abstrassign = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
     List.concat [ abstrassign ; sideeffects ; returnassign ; adjassign ]
-      
+
   method get_parametercount =
     get_stack_parameter_count summary#get_function_interface
-    
+
   method get_call_target (a:doubleword_int) =
     mk_static_pck_stub_target a "RTL" pkgs fname
 
@@ -649,5 +653,3 @@ let add_libfun table (pkgs:string list) (fname:string) =
   else
     chlog#add "statically linked library function not registered"
       (LBLOCK [ STR (String.concat "::" pkgs) ; STR "::" ; STR fname ])
-
-

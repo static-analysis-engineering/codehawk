@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -68,15 +68,18 @@ val xpr_to_hexpretty: floc_int -> xpr_t -> pretty_t
 
 val patternrhs_to_string: patternrhs_t -> string
 
+(** [get_arg argvals n floc] returns the value of the n'th stack argument
+    (counting starting from 1) at location [floc] *)
 val get_arg: (fts_parameter_t * xpr_t) list -> int -> floc_int -> xpr_t
+
 val get_reg_value: cpureg_t -> floc_int -> xpr_t
 val get_gv_value: doubleword_int -> floc_int -> xpr_t
 val get_reg_derefvalue: cpureg_t -> int -> floc_int -> xpr_t
 val get_x_derefvalue: xpr_t -> int -> floc_int -> xpr_t
-val get_patternrhs_value: 
+val get_patternrhs_value:
   ?args:(fts_parameter_t * xpr_t) list -> patternrhs_t -> floc_int -> xpr_t
 
-val get_var_lhs: int -> floc_int -> (variable_t * cmd_t list)  
+val get_var_lhs: int -> floc_int -> (variable_t * cmd_t list)
 val get_arg_lhs: int -> floc_int -> (variable_t * cmd_t list)   (* byte offset *)
 val get_reg_lhs: cpureg_t -> floc_int -> (variable_t * cmd_t list)
 val get_reg_deref_lhs: cpureg_t -> ?size:int -> int -> floc_int -> (variable_t * cmd_t list)
@@ -101,7 +104,7 @@ val is_named_dll_call: doubleword_int -> int -> string -> bool
 val is_named_inlined_call: doubleword_int -> int -> string -> bool
 val is_named_lib_call: doubleword_int -> int -> string -> bool
 
-val sometemplate: 
+val sometemplate:
   ?msg:pretty_t -> predefined_callsemantics_int -> predefined_callsemantics_int option
 
 val get_fnhashes: string -> (string -> int -> predefined_callsemantics_int) ->
@@ -112,8 +115,8 @@ val mk_dllfun_semantics: string -> string -> (string -> int -> predefined_callse
 val add_dllfun: (string,(string -> int -> predefined_callsemantics_int)) Hashtbl.t ->
   string -> string -> unit
 
-val mk_libfun_semantics: 
-  string list -> string -> (string -> int -> predefined_callsemantics_int) 
+val mk_libfun_semantics:
+  string list -> string -> (string -> int -> predefined_callsemantics_int)
 
 val add_libfun: (string,(string -> int -> predefined_callsemantics_int)) Hashtbl.t ->
   string list -> string -> unit
