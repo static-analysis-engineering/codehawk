@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
    Copyright (c) 2022-2023 Aarno Labs LLC
@@ -15,10 +15,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,6 +36,10 @@ open CHPretty
 open CHTraceResult
 
 (* bchlib *)
+open BCHBCTypePretty
+open BCHBCTypes
+open BCHBCTypeUtil
+open BCHCPURegisters
 open BCHLibTypes
 
 module A = TCHAssertion
@@ -136,3 +140,103 @@ let returns_error ?(msg="") (prn: 'a -> string) (f: unit -> 'a traceresult) =
     A.fail "Error result" ("Ok result:" ^ (prn v)) msg
   else
     ()
+
+
+type x_fts_loc_t = {
+    xftsl_kind: string;
+    xftsl_type: btype_t;
+    xftsl_offset: string;
+    xftsl_reg: string
+  }
+
+type x_fts_param_t = {
+    xfts_index: int;
+    xfts_name: string;
+    xfts_type: btype_t;
+    xfts_size: int;
+    xfts_locations: x_fts_loc_t list
+  }
+
+
+let equal_function_parameters
+      ?(msg="")
+      ~(expected: (x_fts_param_t list))
+      ~(received: (fts_parameter_t list))
+      () =
+  let convert_paramloc (l: parameter_location_t): x_fts_loc_t =
+    match l with
+    | StackParameter (i, pld) ->
+       { xftsl_kind = "s";
+         xftsl_type = pld.pld_type;
+         xftsl_offset = string_of_int i;
+         xftsl_reg = "none"
+       }
+    | RegisterParameter (r, pld) ->
+        { xftsl_kind = "r";
+          xftsl_type = pld.pld_type;
+          xftsl_offset = "-1";
+          xftsl_reg = register_to_string r
+        }
+    | GlobalParameter (dw, pld) ->
+       { xftsl_kind = "g";
+         xftsl_type = pld.pld_type;
+         xftsl_offset = dw#to_hex_string;
+         xftsl_reg = "none"
+       }
+    | UnknownParameterLocation pld ->
+       { xftsl_kind = "u";
+         xftsl_type = pld.pld_type;
+         xftsl_offset = "-1";
+         xftsl_reg = "none"
+       } in
+
+  let convert_param (p: fts_parameter_t): x_fts_param_t =
+    { xfts_index = (match p.apar_index with Some i -> i | _ -> (-1));
+      xfts_name = p.apar_name;
+      xfts_type = p.apar_type;
+      xfts_size = p.apar_size;
+      xfts_locations = List.map convert_paramloc p.apar_location
+    } in
+
+  let recvd = List.map convert_param received in
+  A.make_equal_list
+    (fun xfts rfts ->
+      (List.length xfts.xfts_locations) = (List.length rfts.xfts_locations)
+      && xfts.xfts_index = rfts.xfts_index
+      && xfts.xfts_name = rfts.xfts_name
+      && btype_equal xfts.xfts_type rfts.xfts_type
+      && xfts.xfts_size = rfts.xfts_size
+      && List.for_all2
+           (fun xl rl ->
+             xl.xftsl_kind = rl.xftsl_kind
+             && btype_equal xl.xftsl_type rl.xftsl_type
+             && xl.xftsl_offset = rl.xftsl_offset
+             && xl.xftsl_reg = rl.xftsl_reg) xfts.xfts_locations rfts.xfts_locations)
+    (fun p ->
+      "("
+      ^ (string_of_int p.xfts_index)
+      ^ ", "
+      ^ p.xfts_name
+      ^ ", "
+      ^ (btype_to_string p.xfts_type)
+      ^ ", "
+      ^ (string_of_int p.xfts_size)
+      ^ ", "
+      ^ "["
+      ^ (String.concat
+           "; "
+           (List.map
+              (fun pl ->
+                "("
+                ^ pl.xftsl_kind
+                ^ ", "
+                ^ (btype_to_string pl.xftsl_type)
+                ^ ", "
+                ^ pl.xftsl_offset
+                ^ ", "
+                ^ pl.xftsl_reg
+                ^ ")") p.xfts_locations))
+      ^ "])")
+    ~msg
+    expected
+    recvd
