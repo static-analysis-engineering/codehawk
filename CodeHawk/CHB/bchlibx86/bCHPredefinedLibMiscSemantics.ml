@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -239,7 +239,7 @@ object (self)
     let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
-    let fintf = default_function_interface ~returntype:t_void self#get_name [] in
+    let fintf = default_function_interface ~returntypes:[t_void] self#get_name in
     mk_wrapped_target a fintf wtgt []
 
   method get_description = "wraps CxxThrowException"

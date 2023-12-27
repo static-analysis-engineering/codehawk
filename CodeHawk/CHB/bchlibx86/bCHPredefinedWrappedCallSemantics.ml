@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,10 +38,12 @@ open CHLogger
 open Xprt
 
 (* bchlib *)
-open BCHFtsParameter
+
 open BCHBasicTypes
+open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHFloc
+open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHLibTypes
@@ -57,7 +59,7 @@ module FFU = BCHFileFormatUtil
 
 (* ========================================================== wrappedcall
    example: V494:0x40eba0
-   
+
   0x40eba0   [ 0 ]    push ebp       [0x40eb6a : ?arg_3 = ebp ]
   0x40eba1   [ -4 ]   mov ebp, esp   ebp := esp = (esp_in - 4)
   0x40eba3   [ -4 ]   push 0x0       [0x40eb6a : arg_2 = 0 ]
@@ -67,18 +69,18 @@ module FFU = BCHFileFormatUtil
   0x40ebae   [ -8 ]   pop ecx        ecx := 0 ; esp := esp + 4 = (esp_in - 4)
   0x40ebaf   [ -4 ]   pop ebp        restore ebp
   0x40ebb0   [ 0 ]    ret            return
-   
+
 *)
-class wrapped_call_semantics_t 
-  (md5hash:string) 
-  (faddr:doubleword_int) 
-  (tgt:doubleword_int) 
+class wrapped_call_semantics_t
+  (md5hash:string)
+  (faddr:doubleword_int)
+  (tgt:doubleword_int)
   (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
-  method get_name = "__wraps_" ^ tgt#to_hex_string ^ "__" 
+  method get_name = "__wraps_" ^ tgt#to_hex_string ^ "__"
 
   method get_annotation (floc:floc_int) =
     try
@@ -101,18 +103,20 @@ object (self)
   method get_parametercount = 1
 
   method get_call_target (a:doubleword_int) =
-    let par1 = mk_stack_parameter 1 in
-    let par2 = mk_stack_parameter 2 in
-    let fintf = default_function_interface faddr#to_hex_string [par1] in
+    let par1 = mk_indexed_stack_parameter 4 1 in
+    let par2 = mk_indexed_stack_parameter 8 2 in
+    let bctype = t_fsignature t_unknown [("arg_1", t_unknown)] in
+    let fintf = bfuntype_to_function_interface faddr#to_hex_string bctype in
+    (* let fintf = default_function_interface faddr#to_hex_string [par1] in *)
     let tgtloc =
-      make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 8 } in
+      make_location {loc_faddr = faddr; loc_iaddr = faddr#add_int 8} in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
     let t1 = ArgValue par1 in
     let t2 = NumConstant numerical_zero in
     let argmapping = [(par1,t1); (par2,t2)] in
     mk_wrapped_target a fintf wtgt argmapping
-      
+
   method get_description = "wraps a call to another function"
 
 end
@@ -132,9 +136,9 @@ end
 
 *)
 class wrapped_call_reg_semantics_t
-  (md5hash:string) 
-  (reg:cpureg_t) 
-  (faddr:doubleword_int) 
+  (md5hash:string)
+  (reg:cpureg_t)
+  (faddr:doubleword_int)
   (tgt:doubleword_int)
   (instrs:int):predefined_callsemantics_int =
 object (self)
@@ -145,11 +149,16 @@ object (self)
 
   method get_annotation (floc:floc_int) =
     let regv = get_reg_value reg floc in
-    LBLOCK [ STR tgt#to_hex_string ; STR "(reg_" ; STR (cpureg_to_string reg) ;
-	     STR ":" ; xpr_to_pretty floc regv ; STR ")" ]
+    LBLOCK [
+        STR tgt#to_hex_string;
+        STR "(reg_";
+        STR (cpureg_to_string reg);
+	STR ":";
+        xpr_to_pretty floc regv ; STR ")"]
 
   method get_commands (floc:floc_int) =
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 1 } in
+    let tgtloc =
+      make_location {loc_faddr = faddr ; loc_iaddr = faddr#add_int 1} in
     let tgtfloc = get_floc tgtloc in
     get_wrapped_call_commands floc tgtfloc
 
@@ -157,14 +166,17 @@ object (self)
 
   method get_call_target (a:doubleword_int) =
     let regpar = mk_register_parameter (CPURegister reg) in
-    let fintf = default_function_interface faddr#to_hex_string [regpar] in
+    let fintf = default_function_interface faddr#to_hex_string in
+    let fintf =
+      add_function_register_parameter_location
+        fintf (CPURegister reg) t_unknown 4 in
     let tgtloc =
-      make_location { loc_faddr = faddr; loc_iaddr = faddr#add_int 1 } in
+      make_location {loc_faddr = faddr; loc_iaddr = faddr#add_int 1} in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
-    let par1 = mk_stack_parameter 1 in
+    let par1 = mk_indexed_stack_parameter 4 1 in
     let t1 = ArgValue regpar in
-    let argmapping = [ (par1,t1) ] in
+    let argmapping = [(par1, t1)] in
     mk_wrapped_target a fintf wtgt argmapping
 
   method get_description = "wraps a call to another function"
@@ -178,10 +190,10 @@ end
   0x40900d   [ -4 ]   call* 0x40d030   DecodePointer(ptr:gv_0x435cd0_in) (adj 4)
   0x409013   [ 0 ]    ret              return
 *)
-class wrappeddllcall_semantics_t 
-  (md5hash:string) 
-  (argloc:doubleword_int) 
-  (funloc:doubleword_int) 
+class wrappeddllcall_semantics_t
+  (md5hash:string)
+  (argloc:doubleword_int)
+  (funloc:doubleword_int)
   (faddr:doubleword_int)
   (instrs:int):predefined_callsemantics_int =
 object (self)
@@ -192,7 +204,7 @@ object (self)
 
   method get_annotation (floc:floc_int) =
     let gvv = get_gv_value argloc floc in
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in    
+    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in
     let tgtfloc = get_floc tgtloc in
     let name =
       if tgtfloc#has_call_target
@@ -203,7 +215,7 @@ object (self)
     LBLOCK [ STR name ; STR "(" ; xpr_to_pretty floc gvv ; STR ")" ]
 
   method get_commands (floc:floc_int) =
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in    
+    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 6 } in
     let tgtfloc = get_floc tgtloc in
     get_wrapped_call_commands floc tgtfloc
 
@@ -211,14 +223,16 @@ object (self)
 
   method get_call_target (a:doubleword_int) =
     let tpar = mk_global_parameter argloc in
-    let fintf =  default_function_interface faddr#to_hex_string [tpar] in
+    let fintf =  default_function_interface faddr#to_hex_string in
+    let fintf =
+      add_function_global_parameter_location fintf argloc t_unknown 4 in
     let tgtloc =
-      make_location { loc_faddr = faddr; loc_iaddr = faddr#add_int 6 } in
+      make_location {loc_faddr = faddr; loc_iaddr = faddr#add_int 6} in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
-    let par1 = mk_stack_parameter 1 in
+    let par1 = mk_indexed_stack_parameter 4 1 in
     let t1 = ArgValue tpar in
-    mk_wrapped_target a fintf wtgt [ (par1,t1) ]
+    mk_wrapped_target a fintf wtgt [(par1, t1)]
 
   method get_description = "wraps a dll call"
 
@@ -230,12 +244,12 @@ end
   0x4023b4   [ 0 ]    push 0x8bb        [Sleep : dwMilliseconds = 2235 ]
   0x4023b9   [ -4 ]   call* 0x403000    Sleep(dwMilliseconds:2235) (adj 4)
   0x4023bf   [ 0 ]    ret               return
-*) 
-    
-class wrappeddllcallimm_semantics_t 
-  (md5hash:string) 
-  (arg:doubleword_int) 
-  (funloc:doubleword_int) 
+*)
+
+class wrappeddllcallimm_semantics_t
+  (md5hash:string)
+  (arg:doubleword_int)
+  (funloc:doubleword_int)
   (faddr:doubleword_int)
   (instrs:int):predefined_callsemantics_int =
 object (self)
@@ -245,31 +259,33 @@ object (self)
   method get_name = "__wraps_call_" ^ funloc#to_hex_string ^ "__"
 
   method get_annotation (floc:floc_int) =
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 5 } in        
+    let tgtloc =
+      make_location {loc_faddr = faddr; loc_iaddr = faddr#add_int 5} in
     let tgtfloc = get_floc tgtloc in
     let name =
       if tgtfloc#has_call_target
          && tgtfloc#get_call_target#is_dll_call then
         tgtfloc#get_call_target#get_name
       else "(*" ^ funloc#to_hex_string ^ ")"  in
-    LBLOCK [ STR name ; STR "(" ; arg#toPretty ; STR ")" ]
+    LBLOCK [STR name; STR "("; arg#toPretty; STR ")"]
 
   method get_commands (floc:floc_int) =
-    let tgtloc = make_location { loc_faddr = faddr ; loc_iaddr = faddr#add_int 5 } in        
+    let tgtloc =
+      make_location {loc_faddr = faddr; loc_iaddr = faddr#add_int 5} in
     let tgtfloc = get_floc tgtloc in
     get_wrapped_call_commands floc tgtfloc
 
   method get_parametercount = 0
 
   method get_call_target (a:doubleword_int) =
-    let fintf =  default_function_interface faddr#to_hex_string [] in
+    let fintf =  default_function_interface faddr#to_hex_string in
     let tgtloc =
-      make_location { loc_faddr = faddr; loc_iaddr = faddr#add_int 5 } in
+      make_location {loc_faddr = faddr; loc_iaddr = faddr#add_int 5} in
     let tgtfloc = get_floc tgtloc in
     let wtgt = tgtfloc#get_call_target#get_target in
-    let par1 = mk_stack_parameter 1 in
+    let par1 = mk_indexed_stack_parameter 4 1 in
     let t1 = NumConstant arg#to_numerical in
-    mk_wrapped_target a fintf wtgt [ (par1,t1) ]
+    mk_wrapped_target a fintf wtgt [(par1, t1)]
 
   method get_description = "wraps a dll call"
 
@@ -299,7 +315,7 @@ object (self)
 	let procaddr = num_constant_expr procaddr#to_numerical in
 	(match (get_string_reference floc libaddr, get_string_reference floc procaddr) with
 	| (Some libname, Some procname) ->
-	  LBLOCK [ STR "eax := GetProcAddress(" ; 
+	  LBLOCK [ STR "eax := GetProcAddress(" ;
 		   STR libname ; STR "," ; STR procname ; STR ")"]
 	| _ -> default ())
       | _ -> default ())
@@ -331,7 +347,7 @@ object (self)
     let adjcmds = get_adjustment_commands 4 floc in
     List.concat [ cmds ; adjcmds ]
 
-  method get_parametercount = 1 
+  method get_parametercount = 1
 
   method get_call_target (a:doubleword_int) =
     mk_inlined_app_target a self#get_name
@@ -364,14 +380,14 @@ let wrapper_patterns = [
   { regex_s = Str.regexp "56e8\\(........\\)59c3$" ;   (* esi *)
     regex_f = regcall Esi
   } ;
-  
+
   { regex_s = Str.regexp "57e8\\(........\\)59c3$" ;   (* edi *)
     regex_f = regcall Edi
   } ;
 
   (* wraps dll call with hardcoded argument location (V3fc:0x409007) *)
   { regex_s = Str.regexp "ff35\\(........\\)ff15\\(........\\)c3$" ;
-    
+
     regex_f = fun faddr fnbytes fnhash ->
       let argloc = todw (Str.matched_group 1 fnbytes) in
       let funloc = todw (Str.matched_group 2 fnbytes) in
@@ -393,7 +409,7 @@ let wrapper_patterns = [
 
   (* wraps dll call GetProcAddress with index for library and procedure name
      (V09035b:0x408037) *)
-  
+
   { regex_s = Str.regexp
       ("5589e5565383ec108b5d088b34dd\\(........\\)893424ff15\\(........\\)85c052" ^
        "89c27512893424ff15\\(........\\)89c231c05185d274168b04dd\\(........\\)89" ^
@@ -406,16 +422,13 @@ let wrapper_patterns = [
 	(is_named_dll_call faddr 37 "LoadLibraryA") &&
 	(is_named_dll_call faddr 66 "GetProcAddress") then
 	let sem = new wrappedgetprocaddress_semantics_t fnhash libbase procbase 31 in
-	let msg = LBLOCK [ STR " with libbase " ; libbase#toPretty ; 
+	let msg = LBLOCK [ STR " with libbase " ; libbase#toPretty ;
 			   STR " and procbase " ; procbase#toPretty ] in
 	sometemplate ~msg sem
       else
 	None
   }
-  
-      
+
+
 
 ]
-
-    
-    

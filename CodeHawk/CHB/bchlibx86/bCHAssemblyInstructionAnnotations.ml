@@ -269,7 +269,7 @@ let create_annotation_aux (floc:floc_int) =
                      STR functionName;
                      STR ": ";
                      p]) ;
-	      mk_stack_parameter argIndex ;
+	      mk_indexed_stack_parameter (4 * argIndex) argIndex;
 	    end in
       let rhs = get_rhs src floc in
       let rhs_pp = match get_string_reference floc rhs with 
@@ -874,8 +874,8 @@ let create_annotation_aux (floc:floc_int) =
 	      begin
 		ch_error_log#add
                   "number of arguments"
-		  (LBLOCK [ STR fName ; STR ": " ; p ]) ;
-		mk_stack_parameter argIndex
+		  (LBLOCK [ STR fName; STR ": "; p ]);
+		mk_indexed_stack_parameter (4 * argIndex) argIndex
 	      end in
 	let rhs_pp = match get_string_reference floc rhs with 
 	  | Some s -> STR s
