@@ -73,6 +73,8 @@ let t_voidptr = TPtr (TVoid [], [])
 let t_refto t = TRef (t,[])
 let t_ptrto t = TPtr (t,[])
 
+let t_charptr = t_ptrto t_char
+
 let t_unknown_int = TUnknown [(Attr ("int", []))]
 
 let t_unknown_int_size (size: int) = TUnknown [(Attr ("int-size", [AInt size]))]
@@ -116,6 +118,11 @@ let t_tclass ?(name_space=[]) name =
 
 let t_function (returntype:btype_t) (args:bfunarg_t list) =
   TFun (returntype, Some args, false, [])
+
+
+let t_fsignature (returntype: btype_t) (args: (string * btype_t) list) =
+  let funargs = List.map (fun (name, ty) -> (name, ty, [])) args in
+  t_function returntype funargs
 
 
 let t_vararg_function (returntype:btype_t) (args:bfunarg_t list) =
@@ -711,6 +718,8 @@ and constant_compare c1 c2 =
 
 let btype_compare = typ_compare
 
+let btype_equal (t1: btype_t) (t2: btype_t) = (btype_compare t1 t2) = 0
+
 let bexp_compare = exp_compare
 
 
@@ -771,6 +780,28 @@ let btype_join (btypes: btype_t list): btype_t =
      (match joinabty with
       | None -> TUnknown []
       | Some abty -> btype_concretize abty)
+
+
+let btype_meet (btypes: btype_t list): btype_t option =
+  let abtypes = List.map btype_abstract btypes in
+  match abtypes with
+  | [] -> None
+  | [ty] -> Some (btype_concretize ty)
+  | hdty :: tl ->
+     let meetabty =
+       List.fold_left (fun acc ty ->
+           match acc with
+           | None -> None
+           | Some accty ->
+              if ordered_sym_leq accty ty then
+                acc
+              else if ordered_sym_leq ty accty then
+                Some ty
+              else
+                None) (Some hdty) tl in
+     (match meetabty with
+      | Some abty -> Some (btype_concretize abty)
+      | _ -> None)
 
 
 (* ============================================================= field layout *)

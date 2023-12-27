@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -68,7 +68,7 @@ let full_reg_of_reg = function
   | Sp | Esp -> Esp
   | Bp | Ebp -> Ebp
   | Si | Esi -> Esi
-  | Di | Edi -> Edi 
+  | Di | Edi -> Edi
 
 let full_registers = [ Esp ; Ebp ; Eax ; Ebx ; Ecx ; Edx ; Esi ; Edi ]
 
@@ -97,7 +97,7 @@ let pwr_crfs_to_string_table = H.create 3
 let pwr_crfs_from_string_table = H.create 3
 
 
-let _ = List.iter (fun (r,s) -> 
+let _ = List.iter (fun (r,s) ->
   add_to_sumtype_tables cpuregs_to_string_table cpuregs_from_string_table r s)
   [ (Eax,"eax") ; (Ebx,"ebx") ; (Ecx,"ecx") ; (Edx,"edx") ;
     (Ebp,"ebp") ; (Esp,"esp") ; (Esi,"esi") ; (Edi,"edi") ;
@@ -106,14 +106,14 @@ let _ = List.iter (fun (r,s) ->
     (Al,"al")   ; (Bl,"bl")   ; (Cl,"cl")   ; (Dl,"dl") ;
     (Ah,"ah")   ; (Bh,"bh")   ; (Ch,"ch")   ; (Dh,"dh") ]
 
-let cpureg_to_string (r:cpureg_t) = 
+let cpureg_to_string (r:cpureg_t) =
   get_string_from_table "cpuregs_to_string_table" cpuregs_to_string_table r
 
-let cpureg_from_string (name:string) = 
+let cpureg_from_string (name:string) =
   get_sumtype_from_table "cpuregs_from_string_table" cpuregs_from_string_table name
 
 
-let _ = List.iter (fun (r,s) -> 
+let _ = List.iter (fun (r,s) ->
   add_to_sumtype_tables segregs_to_string_table segregs_from_string_table r s)
   [ (StackSegment, "%ss") ;
     (CodeSegment , "%cs") ;
@@ -283,6 +283,27 @@ let arm_extension_reg_type_to_string (t: arm_extension_reg_type_t): string =
   | XSingle -> "S"
   | XDouble -> "D"
   | XQuad -> "Q"
+
+
+let index_of_arm_extension_reg (r: arm_extension_register_t) = r.armxr_index
+
+
+let mk_arm_sp_reg (index: int) =
+  if index >= 0 && index < 32 then
+    {armxr_type = XSingle; armxr_index = index}
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [STR "mk_arm_sp_reg: index out of range: "; INT index]))
+
+
+let mk_arm_dp_reg (index: int) =
+  if index >= 0 && index < 16 then
+    {armxr_type = XDouble; armxr_index = index}
+  else
+    raise
+      (BCH_failure
+         (LBLOCK [STR "mk_arm_dp_reg: index out of range: "; INT index]))
 
 
 let arm_extension_reg_to_string (r: arm_extension_register_t) =
@@ -637,14 +658,18 @@ let register_compare r1 r2 =
   | (XmmRegister i1, XmmRegister i2) -> Stdlib.compare i1 i2
   | (XmmRegister _, _) -> -1
   | (_, XmmRegister _) -> 1
-  | (SegmentRegister s1, SegmentRegister s2) -> 
+  | (SegmentRegister s1, SegmentRegister s2) ->
       Stdlib.compare (segment_to_string s1) (segment_to_string s2)
   | (SegmentRegister _, _) -> -1
   | (_, SegmentRegister _) -> 1
-  | (DoubleRegister (c11,c12), DoubleRegister (c21,c22)) -> 
-      Stdlib.compare 
+  | (DoubleRegister (c11,c12), DoubleRegister (c21,c22)) ->
+      Stdlib.compare
 	(cpureg_to_string c11, cpureg_to_string c12)
         (cpureg_to_string c21, cpureg_to_string c22)
+
+
+let register_equal (r1: register_t) (r2: register_t) =
+  (register_compare r1 r2) = 0
 
 
 let register_to_string register =
@@ -724,7 +749,7 @@ let register_from_string (s:string) =
                  p]))
 
 
-let byte_reg_of_reg r = 
+let byte_reg_of_reg r =
   match r with
   | Eax -> Al
   | Ecx -> Cl
@@ -738,10 +763,10 @@ let byte_reg_of_reg r =
   | Cx -> Cl
   | Dx -> Dl
   | Bx -> Bl
-  | _ -> 
+  | _ ->
     begin
-      ch_error_log#add "invalid argument" 
-	(LBLOCK [ STR "byte_reg_of_reg: " ; STR (cpureg_to_string r) ; 
+      ch_error_log#add "invalid argument"
+	(LBLOCK [ STR "byte_reg_of_reg: " ; STR (cpureg_to_string r) ;
 		  STR " has no corresponding byte register"]);
       raise (Invalid_argument "byte_reg_of_reg")
     end
@@ -757,24 +782,24 @@ let word_reg_of_reg r =
   | Ebp -> Bp
   | Esi -> Si
   | Edi -> Di
-  | _ -> 
+  | _ ->
     begin
-      ch_error_log#add "invalid argument" 
-	(LBLOCK [ STR "word_reg_of_reg: " ; STR (cpureg_to_string r) ; 
+      ch_error_log#add "invalid argument"
+	(LBLOCK [ STR "word_reg_of_reg: " ; STR (cpureg_to_string r) ;
 		  STR " has no corresponding word register"]);
       raise (Invalid_argument "word_reg_of_reg")
     end
 
 
-let sized_reg_of_reg r size = 
-  match size with 
+let sized_reg_of_reg r size =
+  match size with
     1 -> byte_reg_of_reg r
   | 2 -> word_reg_of_reg r
   | 4 -> r
-  | _ -> 
+  | _ ->
     begin
-      ch_error_log#add "invalid argument" 
-	(LBLOCK [ STR "sized_reg_of_reg: " ; STR (cpureg_to_string r) ; 
+      ch_error_log#add "invalid argument"
+	(LBLOCK [ STR "sized_reg_of_reg: " ; STR (cpureg_to_string r) ;
 		  STR " invalid width: " ; INT size ]) ;
       raise (Invalid_argument "sized_reg_of_reg")
     end

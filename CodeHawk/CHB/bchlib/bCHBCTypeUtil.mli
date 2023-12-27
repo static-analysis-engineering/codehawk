@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
    Copyright (c) 2021-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -75,6 +75,7 @@ val t_voidptr: btype_t
 
 val t_refto: btype_t -> btype_t
 val t_ptrto: btype_t -> btype_t
+val t_charptr: btype_t
 
 
 (** {2 Type definition}*)
@@ -93,6 +94,7 @@ val t_tenum: ?name_space:tname_t list -> tname_t -> btype_t
 val t_tclass: ?name_space:tname_t list -> tname_t -> btype_t
 
 val t_function: btype_t -> bfunarg_t list -> btype_t
+val t_fsignature: btype_t -> (string * btype_t) list -> btype_t
 val t_vararg_function: btype_t -> bfunarg_t list -> btype_t
 val t_function_anon: btype_t -> btype_t        (* arguments not known *)
 
@@ -151,6 +153,8 @@ val get_attributes: btype_t -> b_attributes_t
 
 val btype_compare: btype_t -> btype_t -> int
 
+val btype_equal: btype_t -> btype_t -> bool
+
 val bexp_compare: bexp_t -> bexp_t -> int
 
 
@@ -160,7 +164,16 @@ val btype_abstract: btype_t -> symbol_t
 
 val btype_concretize: symbol_t -> btype_t
 
+
+(** Returns the smallest type that is larger than or equal to the types in
+    the list.*)
 val btype_join: btype_t list -> btype_t
+
+
+(** Returns the largest type that is smaller than or equal to the types in
+    the list. If no such type exists (that is, some of the types are
+    incomparable) return [None] (that is, bottom).*)
+val btype_meet: btype_t list -> btype_t option
 
 
 (** {1 Compinfos} *)
