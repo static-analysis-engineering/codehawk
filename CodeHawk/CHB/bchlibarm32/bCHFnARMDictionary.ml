@@ -560,7 +560,7 @@ object (self)
 
       | Branch (_, tgt, _)
            when tgt#is_absolute_address && floc#has_call_target ->
-         let args = List.map snd floc#get_arm_call_arguments in
+         let args = List.map snd floc#get_call_arguments in
          let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
          ([xtag; "call"],
           (List.map xd#index_xpr args)
@@ -618,8 +618,8 @@ object (self)
         | BranchLinkExchange (_, tgt)
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
-         let pars = List.map fst floc#get_arm_call_arguments in
-         let args = List.map snd floc#get_arm_call_arguments in
+         let pars = List.map fst floc#get_call_arguments in
+         let args = List.map snd floc#get_call_arguments in
          let args =
            List.map (fun a -> rewrite_expr ?restrict:(Some 4) a) args in
          let rdefs = List.concat (List.map get_all_rdefs args) in
@@ -1323,14 +1323,26 @@ object (self)
                let xaddr = XOp (XPlus, [sprhs; int_constant_expr (i * 4)]) in
                rewrite_expr xaddr) in
          let rrhsexprs = List.map rewrite_expr rhsexprs in
+         let (r0rdefs, xr0) =
+           if rl#includes_pc then
+             let r0_op = arm_register_op AR0 RD in
+             let xr0 = r0_op#to_expr floc in
+             let xxr0 = rewrite_expr xr0 in
+             ([get_rdef xr0] @ (get_all_rdefs xxr0), Some xxr0)
+           else
+             ([], None) in
          let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
          let uses = List.map get_def_use (splhs :: lhsvars) in
          let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
+         let xprs =
+           (sprhs :: spresult :: rspresult :: rrhsexprs)
+           @ xaddrs
+           @ (match xr0 with Some x -> [x] | _ -> []) in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:(splhs :: lhsvars)
-             ~xprs:((sprhs :: spresult :: rspresult :: rrhsexprs) @ xaddrs)
-             ~rdefs:rdefs
+             ~xprs
+             ~rdefs:(rdefs @ r0rdefs)
              ~uses:uses
              ~useshigh:useshigh
              () in

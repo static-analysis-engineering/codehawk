@@ -313,7 +313,7 @@ object (self)
       | BranchLink (_, tgt, _)
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
-         let args = List.map snd floc#get_pwr_call_arguments in
+         let args = List.map snd floc#get_call_arguments in
          let rdefs = List.concat (List.map get_all_rdefs args) in
          let regargs =
            List.map

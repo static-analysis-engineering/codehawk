@@ -429,7 +429,7 @@ let translate_pwr_instruction
        List.map
          floc#f#env#mk_pwr_gp_register_variable
          [3; 4; 5; 6; 7; 8; 9; 10] in
-     let args = List.map snd floc#get_pwr_call_arguments in
+     let args = List.map snd floc#get_call_arguments in
      let (defs, use, usehigh) =
        let usehigh = get_use_high_vars args in
        let argcount = List.length args in
