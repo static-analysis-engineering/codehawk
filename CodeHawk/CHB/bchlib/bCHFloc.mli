@@ -31,7 +31,8 @@
 open BCHLibTypes
 
 
-(** A [floc] represents a function location.
+(** The principal access point for commands on and analysis results of an
+    assembly instruction.
 
     It can be used to access various properties about that location, such as
     invariants, call target and call arguments (if the instruction at the location

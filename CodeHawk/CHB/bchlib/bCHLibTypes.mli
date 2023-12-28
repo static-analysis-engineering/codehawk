@@ -2094,6 +2094,11 @@ type function_signature_t = {
     parameter locations are still collected in the parameter_locations field
     during analysis. These may be compared with those in the fts_parameters
     for consistency.
+
+    A function interface is included in the call-target-infos stored in the
+    function infos. To ensure that this function interface reflects the most
+    recent analysis results, if inferred, each disassembler calls the
+    floc#update_call_target directly after function construction.
 *)
 type function_interface_t = {
     fintf_name: string;
@@ -2101,6 +2106,7 @@ type function_interface_t = {
     fintf_syscall_index: int option;
     fintf_type_signature: function_signature_t;
     fintf_parameter_locations: parameter_location_t list;
+    fintf_returntypes: btype_t list;
     fintf_bctype: btype_t option
   }
 
@@ -2325,19 +2331,19 @@ object ('a)
 
   method get_parameters: fts_parameter_t list
 
+  method get_parameter_for_register: register_t -> fts_parameter_t
+
+  method get_parameter_at_stack_offset: int -> fts_parameter_t
+
   method get_returntype: btype_t
 
   (** Returns a new function summary that is identical to this summary, except
       for the return type of the type signature.*)
   method set_returntype: btype_t -> 'a
 
-  (** Returns a new function summary that is identical to this summary, except
-      for the addition or replacement of the given parameter.
+  method add_stack_parameter_location: int -> btype_t -> int -> 'a
 
-      If a parameter with the same location already exists, that parameter is
-      replaced with the new parameter, otherwise the new parameter is added.
-   *)
-  method add_parameter: fts_parameter_t -> 'a
+  method add_register_parameter_location: register_t -> btype_t -> int -> 'a
 
   (** Returns the adjustment made by the callee to the stackpointer,
       in bytes (x86, PE only)*)
@@ -3540,12 +3546,21 @@ class type function_environment_int =
     method variable_names: variable_names_int
 
     (* setters *)
+
+    (** [set_variable_name var name] associates [var] with the name [name]
+        in the variable_names structure for this function.*)
     method set_variable_name: variable_t -> string -> unit
+
     method set_class_member_variable_names:
              (string * function_interface_t * bool) list -> unit
     method set_java_native_method_signature: java_native_method_api_t -> unit
     method set_unknown_java_native_method_signature: unit
-    method set_argument_names: doubleword_int -> function_interface_t -> unit
+
+    (** [set_argument_names addr fintf] creates variable names for all of the
+        known arguments of the function interface of this function, and
+        registers those names in the variable_names structure for this function.*)
+    method set_argument_names: function_interface_t -> unit
+
     method set_argument_structconstant: fts_parameter_t -> c_struct_constant_t -> unit
     method register_virtual_call: variable_t -> function_interface_t -> unit
 
@@ -4492,19 +4507,10 @@ class type bterm_evaluator_int =
         instantiated if that expression is a stack address, otherwise None.*)
     method bterm_stack_address: bterm_t -> xpr_t option
 
-    (** [elevate_bterm t] evaluates term [t] wrt the corresponding argument
-        value. If the argument value is a caller function argument, the argument
-        is converted to a parameter value of the caller, otherwise None is
-        returned.*)
-    method elevate_bterm_to_argument: bterm_t -> fts_parameter_t option
-
     (** [constant_bterm t] returns a constant-value bterm if the corresponding
         argument to [t] is a constant, or if the original term was a constant*)
     method constant_bterm: bterm_t -> bterm_t option
 
-    (** [propagate_to_api t] returns a bterm for [t] contextualized to the caller
-        function interface.*)
-    method propagate_to_api: bterm_t -> bterm_t option
   end
 
 
@@ -4662,6 +4668,8 @@ class type floc_int =
        first returned value *)
     method get_stackpointer_offset: string -> int * interval_t
 
+    method get_singleton_stackpointer_offset: numerical_t traceresult
+
     (** {2 Predicates on variables}*)
 
     (* returns true if the given variable evaluates to a constant at this location *)
@@ -4725,9 +4733,7 @@ class type floc_int =
 
     method get_call_target: call_target_info_int
     method get_call_args: (fts_parameter_t * xpr_t) list
-    method get_mips_call_arguments : (fts_parameter_t * xpr_t) list
-    method get_arm_call_arguments: (fts_parameter_t * xpr_t) list
-    method get_pwr_call_arguments: (fts_parameter_t * xpr_t) list
+    method get_call_arguments: (fts_parameter_t * xpr_t) list
 
     (** {1 Function summary}*)
 

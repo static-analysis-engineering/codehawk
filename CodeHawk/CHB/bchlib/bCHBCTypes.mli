@@ -536,6 +536,8 @@ class type bcfiles_int =
         names.*)
     method has_varinfo: string -> bool
 
+    method list_varinfos: string list
+
     (** {2 Type definitions}*)
 
     (** [get_typedef name] returns the (not necessarily fully expanded) type

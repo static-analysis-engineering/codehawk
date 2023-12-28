@@ -47,7 +47,7 @@ open BCHLibTypes
 
 
 let mk_default_target (name:string) (tgt:call_target_t) =
-  let fintf = default_function_interface name [] in
+  let fintf = default_function_interface name in
   mk_call_target_info fintf default_function_semantics tgt
 
 
@@ -112,20 +112,20 @@ let mk_call_back_table_target
       (ctgt: call_target_t) (cba: doubleword_int) (offset: int) =
   let addr = cba#to_hex_string in
 
-  let bfargs_to_parameters (fargs: bfunarg_t list option) =
+(*  let bfargs_to_parameters (fargs: bfunarg_t list option) =
     match fargs with
     | Some funargs ->
        List.mapi
          (fun i (name, btype, _) ->
            mk_stack_parameter ~btype ~name i) funargs
-    | _ -> [] in
+    | _ -> [] in *)
 
   if callbacktables#has_table addr then
     let cbt = callbacktables#get_table addr in
     let fname = cbt#fieldname_at_offset offset in
     let fty = cbt#type_at_offset offset in
-    let fintf =
-      match fty with
+    let fintf = bfuntype_to_function_interface fname fty in
+      (* match fty with
       | TFun (rty, fargs, _, _) | TPtr (TFun (rty, fargs, _, _), _) ->
          let params = bfargs_to_parameters fargs in
          default_function_interface ~returntype:rty fname params
@@ -136,7 +136,7 @@ let mk_call_back_table_target
                    STR "Unexpected type for call-back-table at ";
                    STR addr;
                    STR " with offset ";
-                   INT offset])) in
+                   INT offset])) in *)
     begin
       chlog#add
         "callback-table target created"

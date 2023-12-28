@@ -67,6 +67,7 @@ val make_function_summary:
     default (empty) semantics and default (empty) documentation.*)
 val function_summary_of_bvarinfo: bvarinfo_t -> function_summary_int
 
+
 (** Returns an empty documentation data structure.*)
 val default_function_documentation: function_documentation_t
 

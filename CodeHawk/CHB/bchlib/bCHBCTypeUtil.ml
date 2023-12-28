@@ -804,6 +804,29 @@ let btype_meet (btypes: btype_t list): btype_t option =
       | _ -> None)
 
 
+(* ================================================================ promotion *)
+
+let promote_float (ty: btype_t): btype_t =
+  match ty with
+  | TFloat (FFloat, rep, attrs) -> TFloat (FDouble, rep, attrs)
+  | TFloat _ -> ty
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [STR "Not a float: "; btype_to_pretty ty]))
+
+
+let promote_int (ty: btype_t): btype_t =
+  match ty with
+  | TInt ((IChar | ISChar | IWChar | IBool | IShort), attrs) ->
+     TInt (IInt, attrs)
+  | TInt ((IUChar | IUShort), attrs) -> TInt (IUInt, attrs)
+  | TInt _ -> ty
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK[STR "Not an int: "; btype_to_pretty ty]))
+
 (* ============================================================= field layout *)
 
 let has_field_layout (comp: bcompinfo_t): bool =

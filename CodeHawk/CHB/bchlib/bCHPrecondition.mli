@@ -49,7 +49,7 @@ open BCHLibTypes
     predicates that are encoded in the xml node [node] for the function
     identified with [thisf]*)
 val read_xml_par_preconditions:
-  xml_element_int -> bterm_t -> xxpredicate_t list
+  xml_element_int -> bterm_t -> fts_parameter_t list -> xxpredicate_t list
 
 
 (** [read_xml_precondition_xxpredicate node thisf pars] returns the

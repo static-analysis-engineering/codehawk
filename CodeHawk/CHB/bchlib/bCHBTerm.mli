@@ -71,14 +71,14 @@ val mk_global_parameter_term:
   -> bterm_t
 
 (* stack parameters are numbered starting from 1
-   (located at 4 bytes above the return address) *)
+   (located at 4 bytes above the return address)
 val mk_stack_parameter_term:
   ?btype:btype_t
   -> ?desc:string
   -> ?roles:(string * string) list
   -> ?io:arg_io_t
   -> ?size:int
-  -> int -> bterm_t
+  -> int -> bterm_t *)
 
 val arithmetic_op_to_xop: arithmetic_op_t -> xop_t
 val xop_to_arithmetic_op: xop_t -> arithmetic_op_t

@@ -296,6 +296,15 @@ object (self)
       raise
         (BCH_failure
            (LBLOCK [STR "No varinfo found with name "; STR name]))
+
+  method list_varinfos =
+    let result = ref [] in
+    let v2s v = v.bvname ^ ": " ^ (btype_to_string v.bvtype) in
+    begin
+      H.iter (fun name (ix, _, _) -> result := (v2s (bcd#get_varinfo ix)) :: !result) gvars;
+            H.iter (fun name (ix, _) -> result := (v2s (bcd#get_varinfo ix)) :: !result) gvardecls;
+      !result
+    end
     
   method has_gfun (name: string) = H.mem gfuns name
 

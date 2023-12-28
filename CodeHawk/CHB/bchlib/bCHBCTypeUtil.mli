@@ -176,6 +176,12 @@ val btype_join: btype_t list -> btype_t
 val btype_meet: btype_t list -> btype_t option
 
 
+(** {1 Promotions} *)
+
+val promote_float: btype_t -> btype_t
+
+val promote_int: btype_t -> btype_t
+
 (** {1 Compinfos} *)
 
 (** {2 Field layout}*)

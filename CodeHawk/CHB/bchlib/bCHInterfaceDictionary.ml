@@ -42,6 +42,7 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypes
+open BCHBCTypeUtil
 open BCHDoubleword
 open BCHDictionary
 open BCHLibTypes
@@ -366,6 +367,11 @@ object (self)
         (match fintf.fintf_syscall_index with Some n -> n | _ -> (-1));
         self#index_function_signature fintf.fintf_type_signature;
         self#index_parameter_location_list fintf.fintf_parameter_locations;
+        (* only the most precise type is saved, or none if incompatible*)
+        (let mtype = btype_meet fintf.fintf_returntypes in
+         match mtype with
+         | Some ty -> bcd#index_typ ty
+         | _ -> -1);
         (match fintf.fintf_bctype with Some t -> bcd#index_typ t | _ -> (-1));
       ] in
     function_interface_table#add (tags, args)
@@ -379,7 +385,8 @@ object (self)
       fintf_syscall_index = if (a 2) = (-1) then None else Some (a 2);
       fintf_type_signature = self#get_function_signature (a 3);
       fintf_parameter_locations = self#get_parameter_location_list (a 4);
-      fintf_bctype = if (a 5) = (-1) then None else Some (bcd#get_typ (a 5))
+      fintf_returntypes = (if (a 5) = (-1) then [] else [bcd#get_typ (a 5)]);
+      fintf_bctype = if (a 6) = (-1) then None else Some (bcd#get_typ (a 6))
     }
 
   method index_function_semantics (fsem: function_semantics_t) =
