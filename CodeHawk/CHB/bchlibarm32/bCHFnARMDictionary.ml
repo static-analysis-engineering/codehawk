@@ -2160,6 +2160,87 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | VectorPop (c, sp, rl, _) ->
+         let splhs = sp#to_variable floc in
+         let sprhs = sp#to_expr floc in
+         let regcount = rl#get_register_count in
+         let regsize =
+           if rl#is_double_extension_register_list then 8 else 4 in
+         let spresult =
+           XOp (XPlus, [sprhs; int_constant_expr (regcount * regsize)]) in
+         let rspresult = rewrite_expr spresult in
+         let lhsvars =
+           List.map (fun (op: arm_operand_int) ->
+               op#to_variable floc) rl#get_extension_register_op_list in
+         let rhsops =
+           List.map (fun offset ->
+               arm_sp_deref ~with_offset:offset RD)
+             (List.init rl#get_register_count (fun i -> regsize * i)) in
+         let rhsexprs =
+           List.map (fun (x: arm_operand_int) -> x#to_expr floc) rhsops in
+         let xaddrs =
+           List.init
+             regcount
+             (fun i ->
+               let xaddr =
+                 XOp (XPlus, [sprhs; int_constant_expr (i * regsize)]) in
+               rewrite_expr xaddr) in
+         let rrhsexprs = List.map rewrite_expr rhsexprs in
+         let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
+         let uses = List.map get_def_use (splhs :: lhsvars) in
+         let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
+         let xprs = (sprhs :: spresult :: rspresult :: rrhsexprs) @ xaddrs in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:(splhs :: lhsvars)
+             ~xprs
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | VectorPush (c, sp, rl, _) ->
+         let splhs = sp#to_variable floc in
+         let sprhs = sp#to_expr floc in
+         let rhsexprs =
+           List.map (fun (op: arm_operand_int) ->
+               op#to_expr floc) rl#get_extension_register_op_list in
+         let rrhsexprs = List.map rewrite_expr rhsexprs in
+         let regcount = List.length rhsexprs in
+         let regsize =
+           if rl#is_double_extension_register_list then 8 else 4 in
+         let lhsops =
+           List.map (fun offset ->
+               arm_sp_deref ~with_offset:offset WR)
+             (List.init
+                regcount (fun i -> ((- regsize * regcount) + (regsize * i)))) in
+         let lhsvars = List.map (fun v -> v#to_variable floc) lhsops in
+         let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
+         let uses = List.map get_def_use (splhs :: lhsvars) in
+         let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
+         let spresult =
+           XOp (XMinus, [sprhs; int_constant_expr (regcount * regsize)]) in
+         let rspresult = rewrite_expr spresult in
+         let xaddrs =
+           List.init
+             regcount
+             (fun i ->
+               let xaddr =
+                 XOp (XPlus, [rspresult; int_constant_expr (i * regsize)]) in
+               rewrite_expr xaddr) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:(splhs :: lhsvars)
+             ~xprs:((sprhs :: spresult :: rspresult :: rrhsexprs) @ xaddrs)
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
       | VStoreRegister (c, src, base, mem) ->
          let vmem = mem#to_variable floc in
          let xaddr = mem#to_address floc in
