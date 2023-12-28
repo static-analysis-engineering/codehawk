@@ -1029,8 +1029,8 @@ let translate_arm_instruction
      let vr1 = floc#f#env#mk_arm_register_variable AR1 in
      let vr2 = floc#f#env#mk_arm_register_variable AR2 in
      let vr3 = floc#f#env#mk_arm_register_variable AR3 in
-     let pars = List.map fst floc#get_arm_call_arguments in
-     let args = List.map snd floc#get_arm_call_arguments in
+     let pars = List.map fst floc#get_call_arguments in
+     let args = List.map snd floc#get_call_arguments in
      let (defs, use, usehigh) =
        if ((List.length pars) = 1
            && (is_floating_point_parameter (List.hd pars))) then
@@ -1081,8 +1081,8 @@ let translate_arm_instruction
      let vr1 = floc#f#env#mk_arm_register_variable AR1 in
      let vr2 = floc#f#env#mk_arm_register_variable AR2 in
      let vr3 = floc#f#env#mk_arm_register_variable AR3 in
-     let pars = List.map fst floc#get_arm_call_arguments in
-     let args = List.map snd floc#get_arm_call_arguments in
+     let pars = List.map fst floc#get_call_arguments in
+     let args = List.map snd floc#get_call_arguments in
      let (defs, use, usehigh) =
        if ((List.length pars) = 1
            && (is_floating_point_parameter (List.hd pars))) then
@@ -3629,11 +3629,11 @@ object (self)
       ASSERT (EQ (v, initVar)) in
     let rAsserts = List.map freeze_initial_register_value arm_regular_registers in
     let xAsserts =
-      if system_settings#include_arm_extension_registers then
+      (* if system_settings#include_arm_extension_registers then *)
         List.map freeze_initial_extension_register_values
           (arm_xsingle_extension_registers @ arm_xdouble_extension_registers)
-      else
-        [] in
+      (* else
+        [] *) in
     let externalMemvars = env#get_external_memory_variables in
     let externalMemvars = List.filter env#has_constant_offset externalMemvars in
     let _ =

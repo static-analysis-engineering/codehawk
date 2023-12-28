@@ -636,7 +636,7 @@ object (self)
         | Jump _
         | JumpLinkRegister _
         | JumpRegister _ when floc#has_call_target ->
-         let args = List.map snd floc#get_mips_call_arguments in
+         let args = List.map snd floc#get_call_arguments in
          let rdefs = List.concat (List.map get_all_rdefs args) in
          let regargs =
            match List.length(args) with
@@ -1885,7 +1885,7 @@ object (self)
          ([tagstring], args)
 
       | Syscall _ when floc#has_call_target ->
-         let args = List.map snd floc#get_mips_call_arguments in
+         let args = List.map snd floc#get_call_arguments in
          let rdefs = List.concat (List.map get_all_rdefs args) in
          let regargs =
            match List.length(args) with
