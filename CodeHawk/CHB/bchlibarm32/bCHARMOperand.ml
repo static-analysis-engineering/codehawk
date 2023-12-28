@@ -677,6 +677,14 @@ object (self:'a)
   method is_double_extension_register =
     match kind with ARMDoubleExtensionReg _ -> true | _ -> false
 
+  method is_double_extension_register_list =
+    match kind with
+    | ARMExtensionRegList rl ->
+       (match rl with
+        | r :: _ -> (match r.armxr_type with XDouble -> true | _ -> false)
+        | _ -> false)
+    | _ -> false
+
   method is_extension_register =
     match kind with
     | ARMExtensionReg _ -> true

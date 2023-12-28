@@ -202,6 +202,7 @@ class type arm_operand_int =
     method is_double_register: bool
     method is_extension_register: bool
     method is_double_extension_register: bool
+    method is_double_extension_register_list: bool
     method is_writeback_register: bool
     method is_special_register: bool
     method is_APSR_condition_flags: bool

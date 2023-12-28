@@ -3181,17 +3181,19 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VLoadRegister(c, dst, rn, mem) ->
+  | VLoadRegister(c, rt, rn, mem) ->
      let floc = get_floc loc in
-     let vdst = dst#to_variable floc in
+     let rtreg = rt#to_register in
      let xrn = rn#to_expr floc in
      let xmem = mem#to_expr floc in
      let usevars = get_register_vars [rn] in
      let usehigh = get_use_high_vars [xrn; xmem] in
-     let cmds = floc#get_assign_commands vdst xmem in
+     let vtype =
+       if rt#is_double_extension_register then t_double else t_float in
+     let (lhs, cmds) = floc#get_ssa_assign_commands rtreg ~vtype xmem in
      let defcmds =
        floc#get_vardef_commands
-         ~defs:[vdst]
+         ~defs:[lhs]
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
@@ -3284,14 +3286,15 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VectorMultiplySubtract (c, _, dst, src1, src2) ->
+  | VectorMultiplySubtract (c, dt, dst, src1, src2) ->
      let floc = get_floc loc in
-     let vdst = dst#to_variable floc in
+     let dstreg = dst#to_register in
      let xsrc1 = src1#to_expr floc in
      let xsrc2 = src2#to_expr floc in
      let usevars = get_register_vars [src1; src2] in
      let usehigh = get_use_high_vars [xsrc1; xsrc2] in
-     let cmds = floc#get_abstract_commands vdst () in
+     let vtype = vfp_datatype_to_btype dt in
+     let (vdst, cmds) = floc#get_ssa_abstract_commands dstreg ~vtype () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdst]
@@ -3351,6 +3354,81 @@ let translate_arm_instruction
          ~defs:[vdst]
          ctxtiaddr in
      let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorPop (c, sp, rl, _) ->
+     let floc = get_floc loc in
+     let regcount =rl#get_register_count in
+     let regsize =
+       if rl#is_double_extension_register_list then 8 else 4 in
+     let sprhs = sp#to_expr floc in
+     let regs = rl#to_multiple_register in
+     let (stackops, _) =
+       List.fold_left
+         (fun (acc, off) reg ->
+           let (splhs, splhscmds) = (sp_r RD)#to_lhs floc in
+           let stackop = arm_sp_deref ~with_offset:off RD in
+           let stackvar = stackop#to_variable floc in
+           let stackrhs = stackop#to_expr floc in
+           let (regvar, cmds1) = floc#get_ssa_assign_commands reg stackrhs in
+           let usehigh = get_use_high_vars [stackrhs] in
+           let defcmds1 =
+             floc#get_vardef_commands
+               ~defs:[regvar]
+               ~use:[stackvar]
+               ~usehigh
+               ctxtiaddr in
+           (acc @ defcmds1 @ cmds1 @ splhscmds, off + regsize)) ([], 0) regs in
+     let spreg = (sp_r WR)#to_register in
+     let increm = XConst (IntConst (mkNumerical (regsize * regcount))) in
+     let (splhs, cmds) =
+       floc#get_ssa_assign_commands spreg (XOp (XPlus, [sprhs; increm])) in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[splhs]
+         ~use:(get_register_vars [sp])
+         ctxtiaddr in
+     let cmds = stackops @ defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorPush (c, sp, rl, _) ->
+     let floc = get_floc loc in
+     let regcount = rl#get_register_count in
+     let regsize =
+       if rl#is_double_extension_register_list then 8 else 4 in
+     let sprhs = sp#to_expr floc in
+     let rhsvars = rl#to_multiple_variable floc in
+     let (stackops, _) =
+       List.fold_left
+         (fun (acc, off) rhsvar ->
+           let stackop = arm_sp_deref ~with_offset:off WR in
+           let (stacklhs, stacklhscmds) = stackop#to_lhs floc in
+           let rhsexpr = rewrite_expr floc (XVar rhsvar) in
+           let cmds1 = floc#get_assign_commands stacklhs rhsexpr in
+           let usehigh = get_use_high_vars [rhsexpr] in
+           let defcmds1 =
+             floc#get_vardef_commands
+               ~defs:[stacklhs]
+               ~use:[rhsvar]
+               ~usehigh
+               ctxtiaddr in
+           (acc @ stacklhscmds @ defcmds1 @ cmds1, off + regsize))
+         ([], (- (regsize * regcount))) rhsvars in
+     let spreg = (sp_r WR)#to_register in
+     let decrem = XConst (IntConst (mkNumerical (regsize * regcount))) in
+     let (splhs, cmds) =
+       floc#get_ssa_assign_commands
+         spreg ~vtype:t_voidptr (XOp (XMinus, [sprhs; decrem])) in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[splhs]
+         ~use:(get_register_vars [sp])
+         ctxtiaddr in
+     let cmds = stackops @ defcmds @ cmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
@@ -3415,14 +3493,15 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VectorSubtract (c, _, dst, src1, src2) ->
+  | VectorSubtract (c, dt, dst, src1, src2) ->
      let floc = get_floc loc in
-     let vdst = dst#to_variable floc in
+     let dstreg = dst#to_register in
      let xsrc1 = src1#to_expr floc in
      let xsrc2 = src2#to_expr floc in
      let usevars = get_register_vars [src1; src2] in
      let usehigh = get_use_high_vars [xsrc1; xsrc2] in
-     let cmds = floc#get_abstract_commands vdst () in
+     let vtype = vfp_datatype_to_btype dt in
+     let (vdst, cmds) = floc#get_ssa_abstract_commands dstreg ~vtype () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdst]
