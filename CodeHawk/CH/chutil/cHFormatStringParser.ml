@@ -3,8 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -124,7 +126,7 @@ let c_W        = 0x0057   (* W *)
 let c_X        = 0x0058   (* X *)
 let c_Y        = 0x0059   (* Y *)
 let c_Z        = 0x005A   (* Z *)
-               
+
 let c_a        = 0x0061   (* a *)
 let c_b        = 0x0062   (* b *)
 let c_c        = 0x0063   (* c *)
@@ -151,7 +153,7 @@ let c_w        = 0x0077   (* w *)
 let c_x        = 0x0078   (* x *)
 let c_y        = 0x0079   (* y *)
 let c_z        = 0x007A   (* z *)
-               
+
 let c_zero     = 0x0030   (* 0 *)
 let c_one      = 0x0031   (* 1 *)
 let c_two      = 0x0032   (* 2 *)
@@ -162,7 +164,7 @@ let c_six      = 0x0036   (* 6 *)
 let c_seven    = 0x0037   (* 7 *)
 let c_eight    = 0x0038   (* 8 *)
 let c_nine     = 0x0039   (* 9 *)
-               
+
 let in_range c lb ub = c >= lb && c <= ub
 
 let is_percent_sign c = c = c_percent
@@ -181,7 +183,8 @@ let is_precision_start c = c = c_period
 
 let is_number c = in_range c c_zero c_nine
 
-let is_flag c = c = c_minus || c = c_plus || c = c_space || c = c_hash || c = c_zero
+let is_flag c =
+  c = c_minus || c = c_plus || c = c_space || c = c_hash || c = c_zero
 
 let is_fieldwidth_start c =  (is_star c) || (is_number c)
 
@@ -233,43 +236,43 @@ let lengthmodifier_table = H.create 23
 let invlengthmodifier_table = H.create 23
 let _ = List.iter (fun (m,lm) ->
             begin
-              H.add lengthmodifier_table m lm ;
+              H.add lengthmodifier_table m lm;
               H.add invlengthmodifier_table lm m
             end)
-                  [ ("hh", CharModifier) ;
-                    ("h" , ShortModifier) ;
-                    ("l" , LongModifier) ;
-                    ("ll", LongLongModifier) ;
-                    ("j" , IntMaxModifier) ;
-                    ("z" , SizeModifier) ;
-                    ("t" , PtrDiffModifier) ;
-                    ("L" , LongDoubleModifier) ]
+                  [ ("hh", CharModifier);
+                    ("h" , ShortModifier);
+                    ("l" , LongModifier);
+                    ("ll", LongLongModifier);
+                    ("j" , IntMaxModifier);
+                    ("z" , SizeModifier);
+                    ("t" , PtrDiffModifier);
+                    ("L" , LongDoubleModifier)]
 
 let conversion_table = H.create 23
 let invconversion_table = H.create 23
-let _ = List.iter (fun (ch,cv) ->
+let _ = List.iter (fun (ch, cv) ->
             begin
-              H.add conversion_table ch cv ;
+              H.add conversion_table ch cv;
               H.add invconversion_table cv ch
             end)
-                  [ (c_d, DecimalConverter) ;
-                    (c_i, IntConverter) ;
-                    (c_o, UnsignedOctalConverter) ;
-                    (c_u, UnsignedDecimalConverter) ;
-                    (c_x, UnsignedHexConverter false) ;
-                    (c_X, UnsignedHexConverter true) ;
-                    (c_f, FixedDoubleConverter false) ;
-                    (c_F, FixedDoubleConverter true) ;
-                    (c_e, ExpDoubleConverter false) ;
-                    (c_E, ExpDoubleConverter true) ;
-                    (c_g, FlexDoubleConverter false) ;
-                    (c_G, FlexDoubleConverter true) ;
-                    (c_a, HexDoubleConverter false) ;
-                    (c_A, HexDoubleConverter true) ;
-                    (c_c, UnsignedCharConverter) ;
-                    (c_s, StringConverter) ;
-                    (c_p, PointerConverter) ;
-                    (c_n, OutputArgument) ]
+                  [ (c_d, DecimalConverter);
+                    (c_i, IntConverter);
+                    (c_o, UnsignedOctalConverter);
+                    (c_u, UnsignedDecimalConverter);
+                    (c_x, UnsignedHexConverter false);
+                    (c_X, UnsignedHexConverter true);
+                    (c_f, FixedDoubleConverter false);
+                    (c_F, FixedDoubleConverter true);
+                    (c_e, ExpDoubleConverter false);
+                    (c_E, ExpDoubleConverter true);
+                    (c_g, FlexDoubleConverter false);
+                    (c_G, FlexDoubleConverter true);
+                    (c_a, HexDoubleConverter false);
+                    (c_A, HexDoubleConverter true);
+                    (c_c, UnsignedCharConverter);
+                    (c_s, StringConverter);
+                    (c_p, PointerConverter);
+                    (c_n, OutputArgument)]
 
 class type argspec_int =
   object
@@ -353,66 +356,75 @@ object (self)
   method set_lengthmodifier m =
     if H.mem lengthmodifier_table m then
       begin
-        lengthmodifier <- H.find lengthmodifier_table m ;
+        lengthmodifier <- H.find lengthmodifier_table m;
         slengthmodifier <- m
       end
     else
-      raise (CHFailure (LBLOCK [ STR "String " ; STR m ;
-                                 STR " is not a valid length modifier" ]))
+      raise (CHFailure (LBLOCK [ STR "String "; STR m;
+                                 STR " is not a valid length modifier"]))
 
   method set_conversion c =
     if H.mem conversion_table c then
       begin
-        conversion <- H.find conversion_table c ;
+        conversion <- H.find conversion_table c;
         cconversion <- c
       end
     else
-      raise (CHFailure (LBLOCK [ STR "Character " ; INT c ;
-                                 STR " is not a valid conversion specifier" ]))
-    
+      raise (CHFailure (LBLOCK [ STR "Character "; INT c;
+                                 STR " is not a valid conversion specifier"]))
+
   method get_flags = List.rev flags
-                   
+
   method get_fieldwidth =
     if self#has_fieldwidth then
       fieldwidth
     else
-      raise (CHFailure (LBLOCK [ STR "Format argument spec does not have a field width" ]))
-                        
+      raise
+        (CHFailure
+           (LBLOCK [STR "Format argument spec does not have a field width"]))
+
   method get_precision =
     if self#has_precision then
       precision
     else
-      raise (CHFailure (LBLOCK [ STR "Format argument spec does not have a precision" ]))
+      raise
+        (CHFailure
+           (LBLOCK [STR "Format argument spec does not have a precision"]))
 
   method get_lengthmodifier =
     if self#has_lengthmodifier then
       lengthmodifier
     else
-      raise (CHFailure (LBLOCK [ STR "Argument spec does not have a length modifier" ]))
-                       
+      raise
+        (CHFailure
+           (LBLOCK [STR "Argument spec does not have a length modifier"]))
+
   method get_conversion = conversion
 
-  method has_fieldwidth = match fieldwidth with NoFieldwidth -> false | _ -> true
+  method has_fieldwidth =
+    match fieldwidth with NoFieldwidth -> false | _ -> true
 
-  method has_precision = match precision with NoPrecision -> false | _ -> true
+  method has_precision =
+    match precision with NoPrecision -> false | _ -> true
 
-  method has_lengthmodifier = match lengthmodifier with NoModifier -> false | _ -> true
+  method has_lengthmodifier =
+    match lengthmodifier with NoModifier -> false | _ -> true
 
   method is_scanset = isscanset
 
   method private has_flag c = List.mem c flags
 
   method is_well_defined =
-    let has_simple_lengthmodifier = 
+    let has_simple_lengthmodifier =
         if self#has_lengthmodifier then
             match self#get_lengthmodifier with
             | CharModifier
-            | ShortModifier 
+            | ShortModifier
             | LongLongModifier
             | IntMaxModifier
             | SizeModifier
             | PtrDiffModifier -> true
-            | _ -> false 
+            | _ -> false
         else false in
     let has_longdouble_lengthmodifier =
       self#has_lengthmodifier && self#get_lengthmodifier = LongDoubleModifier in
@@ -422,11 +434,11 @@ object (self)
     | DecimalConverter ->
        not (self#has_flag c_hash || has_longdouble_lengthmodifier)
     | UnsignedOctalConverter ->
-       not has_longdouble_lengthmodifier 
+       not has_longdouble_lengthmodifier
     | UnsignedDecimalConverter ->
        not (self#has_flag c_hash || has_longdouble_lengthmodifier)
     | UnsignedHexConverter _ ->
-       not has_longdouble_lengthmodifier 
+       not has_longdouble_lengthmodifier
     | FixedDoubleConverter _ ->
        not has_simple_lengthmodifier
     | ExpDoubleConverter _ ->
@@ -445,36 +457,38 @@ object (self)
        not (self#has_flag c_hash || self#has_flag c_zero || self#has_precision
             || self#has_lengthmodifier)
     | OutputArgument ->
-       let cur_flags = self#get_flags in 
-       not (List.length cur_flags <> 0 || self#has_precision || self#has_fieldwidth 
+       let cur_flags = self#get_flags in
+       not (List.length cur_flags <> 0 || self#has_precision || self#has_fieldwidth
             || has_longdouble_lengthmodifier)
-                        
-                        
+
+
   method toPretty =
     let pflags = match flags with
       | [] -> STR ""
-      | l -> LBLOCK [ STR "flags: " ;
-                      pretty_print_list self#get_flags
-                                        (fun f -> STR (Char.escaped (Char.chr f)))
-                                        "'" " " "'" ; NL ] in
+      | l ->
+         LBLOCK [
+             STR "flags: ";
+             pretty_print_list self#get_flags
+               (fun f -> STR (Char.escaped (Char.chr f)))
+               "'" " " "'"; NL] in
     let pfieldwidth = match fieldwidth with
       | FieldwidthConstant 0 | NoFieldwidth -> STR ""
-      | FieldwidthArgument -> LBLOCK [ STR "fieldwidth: argument" ; NL ]
-      | FieldwidthConstant n -> LBLOCK [ STR "fieldwidth: " ; INT n ; NL ] in
+      | FieldwidthArgument -> LBLOCK [ STR "fieldwidth: argument"; NL]
+      | FieldwidthConstant n -> LBLOCK [ STR "fieldwidth: "; INT n; NL] in
     let pprecision = match precision with
       | PrecisionConstant 1 | NoPrecision -> STR ""
-      | PrecisionArgument -> LBLOCK [ STR "precision: argument" ; NL ]
-      | PrecisionConstant n -> LBLOCK [ STR "precision: " ; INT n ; NL ] in
+      | PrecisionArgument -> LBLOCK [ STR "precision: argument"; NL]
+      | PrecisionConstant n -> LBLOCK [ STR "precision: "; INT n; NL] in
     let plengthmodifier = match lengthmodifier with
       | NoModifier -> STR ""
-      | m -> LBLOCK [ STR "length modifier: " ; STR slengthmodifier ; NL ] in
-    let pconversion = LBLOCK [ STR "conversion: " ;
-                               STR (Char.escaped (Char.chr cconversion)) ; NL ] in
-    LBLOCK [ pconversion ; plengthmodifier ; pflags ; pfieldwidth ; pprecision ]
-    
+      | m -> LBLOCK [ STR "length modifier: "; STR slengthmodifier; NL] in
+    let pconversion = LBLOCK [ STR "conversion: ";
+                               STR (Char.escaped (Char.chr cconversion)); NL] in
+    LBLOCK [ pconversion; plengthmodifier; pflags; pfieldwidth; pprecision]
+
 end
-  
-  
+
+
 class formatstring_spec_t:formatstring_spec_int =
 object (self)
 
@@ -491,138 +505,156 @@ object (self)
   method is_well_defined =
     List.fold_left (fun result a ->
         result && a#is_well_defined) true self#get_arguments
-    
+
   method start_argspec = currentspec <- Some (new argspec_t)
-                       
+
   method set_literal_length n = literallength <- n
-                              
+
   method private stop msg =
-    raise (CHFailure (LBLOCK [ STR "No current spec active when adding " ;
-                               STR msg ]))
-    
+    raise (CHFailure (LBLOCK [ STR "No current spec active when adding ";
+                               STR msg]))
+
   method add_flag f =
     match currentspec with
     | Some s -> s#add_flag f
     | _ -> self#stop "flag"
-         
+
   method set_precision p =
     match currentspec with
     | Some s -> s#set_precision p
     | _ -> self#stop "precision"
-         
+
   method set_fieldwidth w =
     match currentspec with
     | Some s -> s#set_fieldwidth w
     | _ -> self#stop "field width"
-         
+
   method set_precision_arg =
     begin
       (match currentspec with
        | Some s -> s#set_precision_arg
-       | _ -> self#stop "precision argument") ;
-      argspecs <- (new argspec_t) :: argspecs ;
+       | _ -> self#stop "precision argument");
+      argspecs <- (new argspec_t) :: argspecs;
     end
-    
+
   method set_fieldwidth_arg =
     begin
       (match currentspec  with
        | Some s -> s#set_fieldwidth_arg
-       | _ -> self#stop "field width argument") ;
-      argspecs <- (new argspec_t) :: argspecs ;
+       | _ -> self#stop "field width argument");
+      argspecs <- (new argspec_t) :: argspecs;
     end
-    
+
   method set_lengthmodifier m =
     match currentspec with
     | Some s -> s#set_lengthmodifier m
     | _ -> self#stop "length modifier"
-         
+
   method set_conversion c =
     match currentspec with
     | Some s ->
        begin
-         s#set_conversion c ;
-         argspecs <- s :: argspecs ;
+         s#set_conversion c;
+         argspecs <- s :: argspecs;
          currentspec <- None
        end
     | _ -> self#stop "conversion"
-         
+
   method set_scanset =
     match currentspec with
     | Some s ->
        begin
-         s#set_scanset ;
-         argspecs <- s :: argspecs ;
+         s#set_scanset;
+         argspecs <- s :: argspecs;
          currentspec <- None
        end
     | _ -> self#stop "scanset"
-         
+
   method toPretty =
     LBLOCK
       (List.mapi (fun i a ->
-           LBLOCK [ STR "Argument " ; INT i ; NL ;
-                    INDENT (3,a#toPretty); NL ]) self#get_arguments)
-    
+           LBLOCK [
+               STR "Argument ";
+               INT i;
+               NL;
+               INDENT (3,a#toPretty);
+               NL]) self#get_arguments)
+
 end
-  
+
+
 class virtual formatstring_parser_t (s:string) =
 object (self)
-     
+
   val len = String.length s
   val mutable literallen = 0
   val mutable ch = IO.input_string s
   val mutable pos = 0
   val mutable char_la = 0
   val result = new formatstring_spec_t
-             
+
   method get_result = result
-                    
+
   method get_literal_length = literallen
-                            
-  method private read = begin pos <- pos + 1 ; Char.code (IO.read ch) end
-                      
+
+  method private read =
+    begin pos <- pos + 1; Char.code (IO.read ch) end
+
   method private next_char =
     if pos = len then
-      raise (CHFailure
-               (LBLOCK [ STR "End of string encountered. Current format: " ;
-                         result#toPretty ]))
+      raise
+        (CHFailure
+           (LBLOCK [
+                STR "End of string encountered. Current format: ";
+                result#toPretty]))
     else
       char_la <- self#read
-    
+
   method private read_char expected_char =
     if char_la = expected_char then
       self#next_char
     else
-      raise (CHFailure
-               (LBLOCK [ STR "Expected to see " ; INT expected_char ;
-                         STR ", but found " ; INT char_la ]))
+      raise
+        (CHFailure
+           (LBLOCK [
+                STR "Expected to see ";
+                INT expected_char;
+                STR ", but found ";
+                INT char_la]))
 
   method private check_char_la predicate msg =
     if predicate char_la then () else raise (CHFailure msg)
-    
+
   method virtual parse: unit
-                
+
   method private read_fieldwidth =
     if is_star char_la then
-      begin result#set_fieldwidth_arg ; self#read_char c_asterisk end
+      begin
+        result#set_fieldwidth_arg;
+        self#read_char c_asterisk
+      end
     else
       result#set_fieldwidth self#read_number
-    
+
   method private read_precision =
     begin
-      self#read_char c_period ;
+      self#read_char c_period;
       if is_star char_la then
-        begin result#set_precision_arg ; self#read_char c_asterisk end
+        begin
+          result#set_precision_arg;
+          self#read_char c_asterisk
+        end
       else
         result#set_precision self#read_number
     end
-    
+
   method private read_lengthmodifier =
     if char_la = c_h then
       begin
-        self#read_char c_h ;
+        self#read_char c_h;
         if char_la = c_h then
           begin
-            result#set_lengthmodifier "hh" ;
+            result#set_lengthmodifier "hh";
             self#read_char c_h
           end
         else
@@ -630,10 +662,10 @@ object (self)
       end
     else if char_la = c_l then
       begin
-        self#read_char c_l ;
+        self#read_char c_l;
         if char_la = c_l then
           begin
-            result#set_lengthmodifier "ll" ;
+            result#set_lengthmodifier "ll";
             self#read_char c_l
           end
         else
@@ -641,43 +673,45 @@ object (self)
       end
     else if char_la = c_j then
       begin
-        result#set_lengthmodifier "j" ;
+        result#set_lengthmodifier "j";
         self#read_char c_j
       end
     else if char_la = c_z then
       begin
-        result#set_lengthmodifier "z" ;
+        result#set_lengthmodifier "z";
         self#read_char c_z
       end
     else if char_la = c_t then
       begin
-        result#set_lengthmodifier "t" ;
+        result#set_lengthmodifier "t";
         self#read_char c_t
       end
     else if char_la = c_L then
       begin
-        result#set_lengthmodifier "L" ;
+        result#set_lengthmodifier "L";
         self#read_char c_L
       end
     else
-      raise (CHFailure
-               (LBLOCK [ STR "Expected to see length modifier but encountered " ;
-                         STR (Char.escaped (Char.chr char_la)) ]))
-    
+      raise
+        (CHFailure
+           (LBLOCK [
+                STR "Expected to see length modifier but encountered ";
+                STR (Char.escaped (Char.chr char_la))]))
+
   method private read_number =
     let numval = ref 0 in
-    let _ = 
+    let _ =
       while (is_number char_la) do
         begin
-          numval := (10 * !numval) + (char_la - 0x0030) ;
+          numval := (10 * !numval) + (char_la - 0x0030);
           self#next_char
         end
       done in
     !numval
-    
+
   method private read_conversion =
     begin
-      result#set_conversion char_la ;
+      result#set_conversion char_la;
     end
 
 end
@@ -691,23 +725,33 @@ object (self)
     try
       while (pos < len) do
         begin
-          self#next_char ;
+          self#next_char;
           while (not (is_percent_sign char_la)) && (pos < len) do
-            begin literallen <- literallen + 1 ; self#next_char end done ;
+            begin
+              literallen <- literallen + 1;
+              self#next_char
+            end
+          done;
           if pos < len then
             begin
-              self#read_char c_percent ;
+              self#read_char c_percent;
               if (is_percent_sign char_la) then
                 let _ = (if pos = len then () else self#read_char c_percent) in
                 literallen <- literallen + 1
               else
                 begin
-                  result#start_argspec ;
+                  result#start_argspec;
                   (while (is_flag char_la && pos < len) do
-                     begin result#add_flag char_la ; self#next_char end done) ;
-                  if (is_fieldwidth_start char_la) then self#read_fieldwidth ;
-                  if (is_period char_la) then self#read_precision ;
-                  if (is_lengthmodifier_start char_la) then self#read_lengthmodifier ;
+                     begin
+                       result#add_flag char_la;
+                       self#next_char
+                     end
+                   done);
+                  (if (is_fieldwidth_start char_la) then
+                     self#read_fieldwidth);
+                  (if (is_period char_la) then self#read_precision);
+                  (if (is_lengthmodifier_start char_la) then
+                    self#read_lengthmodifier);
                   self#read_conversion
                 end
             end
@@ -716,14 +760,17 @@ object (self)
     with
     | CHFailure p ->
        let unparsed = String.sub s (pos-1) (((String.length s) - pos) + 1) in
-       raise (CHFailure (LBLOCK [
-                             STR "Format string parse error: " ; p ; NL ;
-                             STR "Format string: " ; STR s ; NL ;
-                             STR "Error at position: " ; INT pos ; NL ;
-                             STR "Remaining string: " ; STR unparsed ; NL ]))
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Format string parse error: "; p; NL;
+                 STR "Format string: "; STR s; NL;
+                 STR "Error at position: "; INT pos; NL;
+                 STR "Remaining string: "; STR unparsed; NL]))
 
 
 end
+
 
 class input_formatstring_parser_t (s:string):formatstring_parser_int =
 object (self)
@@ -732,15 +779,17 @@ object (self)
 
   method private read_scanset =
     begin
-      self#read_char c_lbracket ;
-      (if is_right_bracket char_la then self#read_char c_rbracket) ;
+      self#read_char c_lbracket;
+      (if is_right_bracket char_la then self#read_char c_rbracket);
       (if is_caret char_la then
          begin
-           self#read_char c_caret ;
+           self#read_char c_caret;
            (if is_right_bracket char_la then self#read_char c_rbracket)
-         end) ;
-      while (not (is_right_bracket char_la)) && (pos < len) do self#next_char done ;
-      self#read_char c_rbracket ;
+         end);
+      (while (not (is_right_bracket char_la)) && (pos < len) do
+        self#next_char
+      done);
+      self#read_char c_rbracket;
       result#set_scanset
     end
 
@@ -748,19 +797,24 @@ object (self)
     try
       while (pos < len) do
         begin
-          self#next_char ;
-          while (not (is_percent_sign char_la)) && (pos < len) do self#next_char done ;
+          self#next_char;
+          (while (not (is_percent_sign char_la)) && (pos < len) do
+            self#next_char
+          done);
           if pos < len then
             begin
-              self#read_char c_percent ;
+              self#read_char c_percent;
               if (is_percent_sign char_la) then
                 (if pos = len then () else self#read_char c_percent)
               else
                 begin
-                  result#start_argspec ;
-                  if (is_fieldwidth_start char_la) then self#read_fieldwidth ;
-                  if (is_lengthmodifier_start char_la) then self#read_lengthmodifier ;
-                  if (is_left_bracket char_la) then self#read_scanset ;
+                  result#start_argspec;
+                  (if (is_fieldwidth_start char_la) then
+                     self#read_fieldwidth);
+                  (if (is_lengthmodifier_start char_la) then
+                     self#read_lengthmodifier);
+                  (if (is_left_bracket char_la) then
+                    self#read_scanset);
                   self#read_conversion
                 end
             end
@@ -769,19 +823,21 @@ object (self)
     with
     | CHFailure p ->
        let unparsed = String.sub s (pos-1) (((String.length s) - pos) + 1) in
-       raise (CHFailure (LBLOCK [
-                             STR "Format string parse error: " ; p ; NL ;
-                             STR "Format string: " ; STR s ; NL ;
-                             STR "Error at position: " ; INT pos ; NL ;
-                             STR "Remaining string: " ; STR unparsed ; NL ]))
-
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Format string parse error: "; p; NL;
+                 STR "Format string: "; STR s; NL;
+                 STR "Error at position: "; INT pos; NL;
+                 STR "Remaining string: "; STR unparsed; NL]))
 
 end
-        
+
+
 let get_output_formatstring_parser = new output_formatstring_parser_t
 
 let get_input_formatstring_parser = new input_formatstring_parser_t
-                                         
+
 let parse_formatstring (s:string) (isinput:bool) =
   let parser =
     if isinput then
