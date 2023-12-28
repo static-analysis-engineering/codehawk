@@ -73,24 +73,28 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
 (* ----------------------------------------------------------------- read xml *)
 
 let read_xml_par_preconditions
-      (node:xml_element_int) (thisf: bterm_t): xxpredicate_t list =
+      (node:xml_element_int)
+      (thisf: bterm_t)
+      (parameters: fts_parameter_t list): xxpredicate_t list =
   let one = IndexSize (NumConstant numerical_one) in
   let hasc = node#hasOneTaggedChild in
   let getc = node#getTaggedChild in
   let pNodes = if hasc "pre" then (getc "pre")#getChildren else [] in
-  let par = read_xml_fts_parameter node in
-  let t = ArgValue par in
-  let ty () = match BCHTypeDefinitions.resolve_type par.apar_type with
-    | TFun _ -> par.apar_type
+  let parname = node#getAttribute "name" in
+  let thispar =
+    List.find (fun p -> (get_parameter_name p) = parname) parameters in
+  let t = ArgValue thispar in
+  let ty () = match BCHTypeDefinitions.resolve_type (get_parameter_type thispar) with
+    | TFun _ -> get_parameter_type thispar
     | TPtr (t, _) -> t
     | THandle (s, _) -> TNamed (s, [])
     | _ ->
       raise_xml_error node
 	(LBLOCK [
              STR "Pre: Expected pointer type for ";
-             STR par.apar_name;
+             STR (get_parameter_name thispar);
 	     STR ", but found ";
-             btype_to_pretty par.apar_type]) in
+             btype_to_pretty (get_parameter_type thispar)]) in
   let getsize n typ =
     let has = n#hasNamedAttribute in
     let geti = n#getIntAttribute in
@@ -159,7 +163,7 @@ let read_xml_par_preconditions
 let read_xml_precondition_xxpredicate
       (node: xml_element_int)
       (thisf: bterm_t)
-    (parameters: fts_parameter_t list): xxpredicate_t list =
+      (parameters: fts_parameter_t list): xxpredicate_t list =
   let gt n = read_xml_bterm n thisf parameters in
   let gty = read_xml_type in
   let rec aux node =

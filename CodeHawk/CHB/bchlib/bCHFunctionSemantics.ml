@@ -214,15 +214,20 @@ let read_xml_function_interface_and_semantics
   let thisf = NamedConstant fname in
   let pNodes = aNode#getTaggedChildren "par" in
   let fintf = read_xml_function_interface aNode in
+  let ftspars = get_fts_parameters fintf in
   let parPre =
-    List.concat (List.map (fun n -> read_xml_par_preconditions n thisf) pNodes) in
+    List.concat
+      (List.map (fun n ->
+           read_xml_par_preconditions n thisf ftspars) pNodes) in
   let parSE =
-    List.concat (List.map (fun n -> read_xml_par_sideeffects n thisf) pNodes) in
+    List.concat
+      (List.map (fun n ->
+           read_xml_par_sideeffects n thisf) pNodes) in
   let sem =
     read_xml_function_semantics
       sNode
       fname
-      fintf.fintf_type_signature.fts_parameters in
+      ftspars in
   let sem = {
       sem with
       fsem_pre = sem.fsem_pre @ parPre;

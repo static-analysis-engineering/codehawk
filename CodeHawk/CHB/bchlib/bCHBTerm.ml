@@ -202,14 +202,12 @@ let is_arithmetic_operator (numOperator:string) =
 
 let is_stack_parameter_term (t:bterm_t) =
   match t  with
-  | ArgValue p ->
-     (match p.apar_location with [StackParameter _] -> true | _ -> false)
+  | ArgValue p -> is_stack_parameter p
   | _ -> false
 
 let is_global_parameter_term (t:bterm_t) =
   match t with
-  | ArgValue p ->
-     (match p.apar_location with [GlobalParameter _] -> true | _ -> false)
+  | ArgValue p -> is_global_parameter p
   | _ -> false
 
 let get_arithmetic_operator (numOperator:string) =
@@ -369,7 +367,7 @@ let mk_global_parameter_term
       (gaddr:doubleword_int) =
   ArgValue (mk_global_parameter ~btype ~desc ~roles ~io ~size gaddr)
 
-
+(*
 let mk_stack_parameter_term
       ?(btype=t_unknown)
       ?(desc="")
@@ -378,7 +376,7 @@ let mk_stack_parameter_term
       ?(size=4)
       (arg_index:int) =
   ArgValue (mk_stack_parameter ~btype ~desc ~roles ~io ~size arg_index)
-
+ *)
 
 let rec modify_types_bterm (f:type_transformer_t) (t:bterm_t) =
   let aux = modify_types_bterm f in

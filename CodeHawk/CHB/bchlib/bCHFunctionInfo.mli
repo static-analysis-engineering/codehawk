@@ -38,7 +38,7 @@ open CHXmlDocument
 open BCHLibTypes
 
 
-(** A [functioninfo] represents an assembly function.
+(** The principal access point for analysis results for an assembly function.
 
     It is the main access points for analysis results (invariants), call targets
     of instructions, jump targets of indirect jumps, function api, etc.

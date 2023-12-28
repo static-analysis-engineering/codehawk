@@ -424,17 +424,22 @@ object (self)
     (classinfos:(string * function_interface_t * bool) list) =
     match classinfos with
     | [(classname, fintf, isStatic)] ->
-       let fts = fintf.fintf_type_signature in
-       let stackParams =
-         List.fold_left (fun a p ->
-	     match p.apar_location with
-             | [StackParameter (i, _)] -> (i,p.apar_name) :: a | _ -> a)
-	[] fts.fts_parameters in
-       let regParams =
-         List.fold_left (fun a p ->
-	     match p.apar_location with
-             | [RegisterParameter (r, _)] -> (r,p.apar_name) :: a | _ -> a)
-	[] fts.fts_parameters in
+      let stackpardata =
+         List.map (fun p ->
+             let name = get_parameter_name p in
+             let offset =
+               fail_tvalue
+                 (trerror_record (STR "set_class_member_variable_names"))
+                 (get_stack_parameter_offset p) in
+             (offset, name)) (get_stack_parameters fintf) in
+       let regpardata =
+         List.map (fun p ->
+             let name = get_parameter_name p in
+             let register =
+               fail_tvalue
+                 (trerror_record (STR "set_class_member_variable_names"))
+                 (get_register_parameter_register p) in
+             (register, name)) (get_register_parameters fintf) in
        let stackVars =
          List.map (fun (i,name) ->
 	     let memref = self#mk_local_stack_reference in
@@ -445,11 +450,11 @@ object (self)
                  (mkNumerical
                     (i * 4)) in
 	     let memInitVar = self#mk_initial_memory_value memvar in
-	     (name,memInitVar)) stackParams in
+	     (name,memInitVar)) stackpardata in
        let regVars =
          List.map (fun (r,name) ->
 	     let regInitVar = self#mk_initial_register_value ~level:0 r in
-	     (name,regInitVar)) regParams in
+	     (name,regInitVar)) regpardata in
        let paramVars = stackVars @ regVars in
        let _ =
          List.iter (fun (name,v) ->
@@ -567,23 +572,19 @@ object (self)
                 (fun s -> STR s)
 		"[" ", " "]"])
 
-  method set_argument_names
-           (faddr: doubleword_int) (fintf: function_interface_t) =
-    let fts = fintf.fintf_type_signature in
-    let pars = fts.fts_parameters in
-    let stackPars =
-      List.fold_left (fun acc p ->
-          match p.apar_location with
-          | [StackParameter (i, _)] -> (i, p.apar_name,p.apar_type) :: acc
-          | _ -> acc) [] pars in
-    let regPars =
-      List.fold_left (fun acc p ->
-          match p.apar_location with
-          | [RegisterParameter (reg, _)] ->
-	     (reg, p.apar_name,p.apar_type) :: acc
-          | _ -> acc) [] pars in
+  method set_argument_names (fintf: function_interface_t) =
+    let stackpardata =
+      List.map (fun p ->
+          let (name, ty) = get_parameter_signature p in
+          let offset = TR.tget_ok (get_stack_parameter_offset p) in
+          (offset, name, ty)) (get_stack_parameters fintf) in
+    let regpardata =
+      List.map (fun p ->
+          let (name, ty) = get_parameter_signature p in
+          let reg = TR.tget_ok (get_register_parameter_register p) in
+          (reg, name, ty)) (get_register_parameters fintf) in
     begin
-      List.iter (fun (offset,name,ty) ->
+      List.iter (fun (offset, name, ty) ->
 	let memref = self#mk_local_stack_reference  in
 	let v =
           self#mk_memory_variable
@@ -594,7 +595,7 @@ object (self)
 	  self#set_variable_name iv vname ;
 	  if is_ptrto_known_struct ty then
 	    self#set_pointedto_struct_field_names 1 iv vname ty
-	end) stackPars ;
+	end) stackpardata;
       List.iter (fun (reg,name,ty) ->
 	let v = self#mk_initial_register_value ~level:0 reg in
 	let vname = name in
@@ -602,7 +603,7 @@ object (self)
 	  self#set_variable_name v vname ;
 	  if is_ptrto_known_struct ty then
 	    self#set_pointedto_struct_field_names 1 v vname ty
-	end) regPars
+	end) regpardata
     end
 
 
@@ -1640,7 +1641,7 @@ object (self)
     let hexfaddr = faddr#to_hex_string in
     let lenfaddr = String.length hexfaddr in
     default_summary ("sub_" ^ (String.sub (faddr#to_hex_string) 2 (lenfaddr - 2)))
-  (* val fts_parameters = H.create 3 *)  (* function-type-signature parameters *)
+
   val cc_setter_to_user = H.create 3                      (* to be saved ? *)
   val mutable complete = true
 
@@ -1838,17 +1839,6 @@ object (self)
              STR (register_to_string reg);
              STR ")"])
 
-           (*
-    let regstr = register_to_string reg in
-    if H.mem saved_registers regstr then
-      (H.find saved_registers regstr)#set_save_address iaddr
-    else
-      let savedReg = new saved_register_t reg in
-      begin
-	savedReg#set_save_address iaddr ;
-	H.add saved_registers regstr savedReg
-      end*)
-
   method restore_register
            (memaddr: xpr_t) (iaddr:ctxt_iaddress_t) (reg:register_t) =
     match memaddr with
@@ -1893,17 +1883,6 @@ object (self)
                 STR " (";
                 STR (register_to_string reg);
                 STR ")"])
-
-           (*
-    let regstr = register_to_string reg in
-    if H.mem saved_registers regstr then
-      (H.find saved_registers regstr)#add_restore_address iaddr
-    else
-      let savedReg = new saved_register_t reg in
-      begin
-	savedReg#add_restore_address iaddr ;
-	H.add saved_registers regstr savedReg
-      end *)
 
   method saved_registers_to_pretty =
     let p = ref [] in
@@ -1976,14 +1955,17 @@ object (self)
     self#get_summary#get_function_semantics
 
   method set_bc_summary (fs: function_summary_int) =
-    appsummary <- fs
+    begin
+      appsummary <- fs;
+      env#set_argument_names fs#get_function_interface
+    end
 
   method read_xml_user_summary (node:xml_element_int) =
     try
       let summary = read_xml_function_summary node in
       begin
 	user_summary <- Some summary;
-	env#set_argument_names self#get_address summary#get_function_interface;
+	env#set_argument_names summary#get_function_interface;
 	List.iter (fun p -> match p with
 	| XXIncludes (ArgValue par, sc) ->
 	  self#env#set_argument_structconstant par sc
@@ -2000,6 +1982,8 @@ object (self)
   method set_unknown_java_native_method_signature =
     self#env#set_unknown_java_native_method_signature
 
+  (* Note: this method may be out-of-sync with the current definition of
+     function_interface *)
   method set_java_native_method_signature (api:java_native_method_api_t) =
     let _ = self#env#set_java_native_method_signature api in
     let args = api.jnm_signature#descriptor#arguments in
@@ -2014,7 +1998,8 @@ object (self)
            (off, name, (get_java_type_btype ty)) :: pars)) (3,12,stackPars) args in
     let mkparam (offset, name, btype) =
       let desc = if offset = 0 then "JNI interface pointer" else "" in
-      let par = mk_stack_parameter ~btype ~desc (offset/4) in
+      let index = offset / 4 in
+      let par = mk_indexed_stack_parameter ~btype ~desc offset index in
       modify_name_par name par in
     let fts = {
       fts_parameters = List.map mkparam stackPars;
@@ -2034,7 +2019,8 @@ object (self)
         fintf_syscall_index = None;
         fintf_type_signature = fts;
         fintf_bctype = None;
-        fintf_parameter_locations = []} in
+        fintf_parameter_locations = [];
+        fintf_returntypes = []} in
     let fsem = default_function_semantics in
     let fdoc = default_function_documentation in
     let summary = make_function_summary ~fintf ~sem:fsem ~doc:fdoc in
@@ -2156,7 +2142,7 @@ object (self)
                STR ": No call-target-info found at ";
                STR i]);
         mk_call_target_info
-          (default_function_interface "unknown" [])
+          (default_function_interface "unknown")
           default_function_semantics
           UnknownTarget
       end
@@ -2277,7 +2263,11 @@ object (self)
         match env#get_stack_parameter_index v with
         | Some index ->
            H.replace
-             jump_targets jumpAddr (JumpOnTerm (mk_stack_parameter_term index))
+             jump_targets
+             jumpAddr
+             (JumpOnTerm
+                (ArgValue
+                   (mk_indexed_stack_parameter (4 * index) index)))
         | _ ->
            raise
              (BCH_failure
@@ -2521,7 +2511,7 @@ object (self)
   method private write_xml_app_summary (node: xml_element_int) =
     let fsum = self#get_summary in
     begin
-      id#write_xml_function_interface node fsum#get_function_interface;
+      write_xml_function_interface node fsum#get_function_interface;
       id#write_xml_function_semantics node fsum#get_function_semantics
     end
 
@@ -2643,7 +2633,12 @@ let load_finfo_userdata (finfo: function_info_int) (faddr: doubleword_int) =
        let bcsum = function_summary_of_bvarinfo vinfo in
        begin
          finfo#set_bc_summary bcsum;
-         chlog#add "bc-function-summary" (STR fname)
+         chlog#add
+           "bc-function-summary"
+           (LBLOCK [
+                STR fname;
+                STR ": ";
+                function_interface_to_pretty bcsum#get_function_interface])
        end
      else
        ()

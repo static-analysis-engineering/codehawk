@@ -198,22 +198,59 @@ object (self:'a)
   val doc = doc
 
   method get_function_interface = finterface
-  method get_function_signature = fts
+
+  method get_function_signature = get_fintf_fts self#get_function_interface
+
   method get_function_semantics = sem
+
   method get_function_documentation = doc
 
-  method get_name = finterface.fintf_name
-  method get_parameters = fts.fts_parameters
-  method get_returntype = fts.fts_returntype
-  method get_stack_adjustment = fts.fts_stack_adjustment
+  method get_name = get_fintf_name self#get_function_interface
+
+  method get_parameters = get_fts_parameters self#get_function_interface
+
+  method get_parameter_for_register (reg: register_t): fts_parameter_t =
+    let rpar = get_register_parameter_for_register self#get_function_interface reg in
+    match rpar with
+    | Some p -> p
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Internal error: get_parameter_for_register"]))
+
+  method get_parameter_at_stack_offset (offset: int): fts_parameter_t =
+    let spar = get_stack_parameter_at_offset self#get_function_interface offset in
+    match spar with
+    | Some p -> p
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Internal error: get_parameter_at_stack_offset"]))
+
+  method get_returntype = get_fts_returntype self#get_function_interface
+
+  method get_stack_adjustment =
+    get_fts_stack_adjustment self#get_function_interface
 
   method set_returntype (ty: btype_t): 'a =
     let fintf = self#get_function_interface in
     {< finterface = set_function_interface_returntype fintf ty >}
 
-  method add_parameter (par: fts_parameter_t): 'a =
+  method add_stack_parameter_location (offset: int) (ty: btype_t) (size: int) =
     let fintf = self#get_function_interface in
-    {< finterface = add_function_parameter fintf par >}
+    {< finterface = add_function_stack_parameter_location fintf offset ty size >}
+
+  method add_register_parameter_location
+           (reg: register_t) (ty: btype_t) (size: int) =
+    let fintf = self#get_function_interface in
+    let _ =
+      chlog#add
+        "add-register-parameter-location"
+        (LBLOCK [
+             STR (get_fintf_name self#get_function_interface);
+             STR ": ";
+             STR (register_to_string reg)]) in
+    {< finterface = add_function_register_parameter_location fintf reg ty size >}
 
   method get_registers_preserved = fts.fts_registers_preserved
 
@@ -353,33 +390,11 @@ let default_function_documentation = {
     fdoc_caution = "";
     fdoc_apidoc = STR "";
     fdoc_xapidoc = xmlElement "apidoc"
-}
+  }
 
 
 let function_summary_of_bvarinfo (vinfo: bvarinfo_t): function_summary_int =
-  let vname = vinfo.bvname in
-  let vtype = vinfo.bvtype in
-  let bfargs_to_params (fargs: bfunarg_t list option) =
-    match fargs with
-    | Some funargs ->
-       List.mapi
-         (fun i (name, btype, _) ->
-           mk_stack_parameter ~btype ~name i) funargs
-    | _ -> [] in
-  let fintf =
-    match vtype with
-    | TFun (returntype, fargs, varargs, _)
-      | TPtr (TFun (returntype, fargs, varargs, _), _) ->
-       let params = bfargs_to_params fargs in
-       default_function_interface ~returntype ~varargs vname params
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Unexpected type for function ";
-                 STR vname;
-                 STR ": ";
-                 btype_to_pretty vtype])) in
+  let fintf = bvarinfo_to_function_interface vinfo in
   make_function_summary
     ~fintf
     ~sem:default_function_semantics
@@ -397,7 +412,7 @@ let read_xml_function_summary (node:xml_element_int) =
 
 
 let default_summary name =
-  let fintf = default_function_interface ~cc:"cdecl" name [] in
+  let fintf = default_function_interface ~cc:"cdecl" name in
   let sem = default_function_semantics in
   let doc = default_function_documentation in
   make_function_summary ~fintf ~sem ~doc

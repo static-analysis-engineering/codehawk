@@ -38,6 +38,7 @@ open CHPretty
 open CHFormatStringParser
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -190,28 +191,30 @@ object (self)
   method callargs = callargs
 
   method elevate_call_arguments =
-    let set_stackpar (fty: btype_t) (index: int) =
-      let fpar = mk_stack_parameter ~btype:fty index in
-      self#finfo#update_summary (self#finfo#get_summary#add_parameter fpar) in
+    let set_regpar (fty: btype_t) (reg: mips_reg_t) =
+      let register = register_of_mips_register reg in
+      self#finfo#update_summary
+        (self#finfo#get_summary#add_register_parameter_location register fty 4) in
+    let set_stackpar (fty: btype_t) (offset: int) =
+      self#finfo#update_summary
+        (self#finfo#get_summary#add_stack_parameter_location offset  fty 4) in
     List.iter (fun (par, x) ->
         match x with
         | XVar v when self#finfo#env#is_initial_register_value v ->
            let reg = self#finfo#env#get_initial_register_value_register v in
            let fty = par.apar_type in
            (match reg with
-            | MIPSRegister MRa0 -> set_stackpar fty 1
-            | MIPSRegister MRa1 -> set_stackpar fty 2
-            | MIPSRegister MRa2 -> set_stackpar fty 3
-            | MIPSRegister MRa3 -> set_stackpar fty 4
+            | MIPSRegister MRa0 -> set_regpar fty MRa0
+            | MIPSRegister MRa1 -> set_regpar fty MRa1
+            | MIPSRegister MRa2 -> set_regpar fty MRa2
+            | MIPSRegister MRa3 -> set_regpar fty MRa3
             | _ -> ())
         | XVar v when self#finfo#env#is_stack_parameter_value v ->
            let indexopt = self#finfo#env#get_stack_parameter_index v in
            (match indexopt with
             | Some index ->
                let fty = par.apar_type in
-               (* stack_parameter_index(arg.0016) = 4, which corresponds to the
-                  fifth argument in MIPS, hence the increment by 1 *)
-               set_stackpar fty (index + 1)
+               set_stackpar fty (4 * index)
             | _ -> ())
         | _ -> ()) self#callargs
 
@@ -229,25 +232,24 @@ object (self)
     | XConst (IntConst n) -> Some (NumConstant n)
     | XVar v when self#finfo#env#is_initial_register_value v ->
        let reg = self#finfo#env#get_initial_register_value_register v in
-       let ftspar =
-         (match reg with
-          | MIPSRegister MRa0 -> Some (mk_stack_parameter ~btype 1)
-          | MIPSRegister MRa1 -> Some (mk_stack_parameter ~btype 2)
-          | MIPSRegister MRa2 -> Some (mk_stack_parameter ~btype 3)
-          | MIPSRegister MRa3 -> Some (mk_stack_parameter ~btype 4)
-          | _ -> None) in
-       (match ftspar with
-        | Some p -> Some (ArgValue p)
-        | _ -> None)
+       let _ =
+         self#finfo#update_summary
+           (self#finfo#get_summary#add_register_parameter_location
+              reg btype 4) in
+       let ftspar = self#finfo#get_summary#get_parameter_for_register reg in
+       Some (ArgValue ftspar)
     | XVar v when self#finfo#env#is_stack_parameter_value v ->
        let indexopt = self#finfo#env#get_stack_parameter_index v in
-       let ftspar =
-         (match indexopt with
-          | Some index -> Some (mk_stack_parameter ~btype index)
-          | _ -> None) in
-       (match ftspar with
-        | Some p -> Some (ArgValue p)
-        | _ -> None)
+       (match indexopt with
+       | Some index ->
+          let _ =
+            self#finfo#update_summary
+              (self#finfo#get_summary#add_stack_parameter_location
+                 (4 * index) btype 4) in
+          let ftspar =
+            self#finfo#get_summary#get_parameter_at_stack_offset (4 * index) in
+          Some (ArgValue ftspar)
+       | _ -> None)
     | XOp ((Xf "indexsize"), [xx]) ->
        let optt = self#xpr_to_bterm t_int xx in
        (match optt with
@@ -319,40 +321,6 @@ object (self)
         | _ -> None)
     | _ -> None
 
-  method elevate_bterm_to_argument (t: bterm_t): fts_parameter_t option =
-    match t with
-    | ArgValue par ->
-       List.fold_left (fun acc (cpar, x) ->
-           match acc with
-           | Some _ -> acc
-           | _ ->
-              if (fts_parameter_equal cpar par) then
-                match x with
-                | XVar v when finfo#env#is_initial_register_value v ->
-                   let reg = finfo#env#get_initial_register_value_register v in
-                   let fty = cpar.apar_type in
-                   (match reg with
-                    | MIPSRegister MRa0 ->
-                       Some (mk_stack_parameter ~btype:fty 1)
-                    | MIPSRegister MRa1 ->
-                       Some (mk_stack_parameter ~btype:fty 2)
-                    | MIPSRegister MRa2 ->
-                       Some (mk_stack_parameter ~btype:fty 3)
-                    | MIPSRegister MRa3 ->
-                       Some (mk_stack_parameter ~btype:fty 4)
-                    | _ -> None)
-                | XVar v when finfo#env#is_stack_parameter_value v ->
-                   let indexopt = finfo#env#get_stack_parameter_index v in
-                   (match indexopt with
-                    | Some index ->
-                       let fty = cpar.apar_type in
-                       Some (mk_stack_parameter ~btype:fty index)
-                    | _ -> None)
-                | _ -> None
-              else
-                None) None callargs
-    | _ -> None
-
   method constant_bterm (t: bterm_t): bterm_t option =
     match t with
     | NumConstant _ -> Some t
@@ -378,14 +346,6 @@ object (self)
     | ArgSizeOf _ -> Some t
     | NamedConstant _ -> Some t
     | _ -> None
-
-  method propagate_to_api (t: bterm_t): bterm_t option =
-    match self#elevate_bterm_to_argument t with
-    | Some fpar -> Some (ArgValue fpar)
-    | _ ->
-       match self#constant_bterm t with
-       | Some t -> Some t
-       | _ -> None
 
 end
 
@@ -588,7 +548,7 @@ object (self)
   method private update_x86_varargs (s: function_interface_t) = None
 
   method private update_arm_varargs (fintf: function_interface_t) =
-    let args = self#get_arm_call_arguments in
+    let args = self#get_call_arguments in
     let argcount = List.length args in
     if argcount = 0 then
       None
@@ -606,24 +566,9 @@ object (self)
                let fmtstring = string_table#get_string addr in
                let fmtspec = parse_formatstring fmtstring false in
                if fmtspec#has_arguments then
-                 let args = fmtspec#get_arguments in
-                 let pars =
-                   List.mapi
-                     (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
-                 let fts = fintf.fintf_type_signature in
-                 let newpars = fts.fts_parameters @ pars in
-                 let newfts = {fts with fts_parameters = newpars} in
-                 begin
-                   chlog#add
-                     "format args"
-                     (LBLOCK [
-                          self#l#toPretty;
-                          STR "; ";
-                          STR fintf.fintf_name;
-                          STR ": ";
-                          INT (List.length args)]);
-                   Some {fintf with fintf_type_signature = newfts}
-                 end
+                 let fmtargs = fmtspec#get_arguments in
+                 let newfintf = add_format_spec_parameters fintf fmtargs in
+                 Some newfintf
                else
                  None
              else
@@ -633,7 +578,7 @@ object (self)
       | _ -> None
 
   method private update_mips_varargs (fintf: function_interface_t) =
-    let args = self#get_mips_call_arguments in
+    let args = self#get_call_arguments in
     let argcount = List.length args in
     if argcount = 0 then
       None
@@ -689,131 +634,8 @@ object (self)
        else
          self#update_x86_varargs fintf
 
-  (* experience so far:
-     the first four arguments are passed in $a0-$a3, remaining arguments are passed
-     via the stack, with the fifth argument starting at offset sp+16
-
-     The fts_parameters returned are the original, stack-based parameters, that is,
-     the location of the parameter is not updated for the actual location used in
-     mips.
-   *)
-  method get_mips_call_arguments: (fts_parameter_t * xpr_t) list =
-    let get_regargs pars =
-      List.mapi
-        (fun i p ->
-          let reg = get_mipsreg_argument i in
-          let avar = self#env#mk_mips_register_variable reg in
-          (p, self#inv#rewrite_expr (XVar avar) self#env#get_variable_comparator))
-        pars in
-    let get_stackargs pars =
-      List.map
-        (fun p ->
-          match p.apar_location with
-          | [StackParameter (i, _)] ->
-             let memref = self#f#env#mk_local_stack_reference in
-             let argvar =
-               match self#get_stackpointer_offset "mips" with
-               | (0, sprange) ->
-                  (match sprange#singleton with
-                   | Some num ->
-                      (* stackparameter 1-4 in a function summary (i.e. function
-                         interface) correspond to $a0-$a3, stackparameter 5 and
-                         up correspond to arg.0016, arg.0020, etc ... *)
-                      self#f#env#mk_memory_variable
-                        memref (num#add (mkNumerical ((i * 4) - 4)))
-                   | _ ->
-                      self#f#env#mk_unknown_memory_variable p.apar_name)
-               | _ ->
-                  self#f#env#mk_unknown_memory_variable p.apar_name in
-             (p, self#inv#rewrite_expr (XVar argvar) self#env#get_variable_comparator)
-          | _ ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Unexpected parameter type in ";
-                       self#l#toPretty])))
-        pars in
-    let ctinfo = self#get_call_target in
-    if ctinfo#is_signature_valid then
-      let fintf = ctinfo#get_function_interface in
-      let fts = fintf.fintf_type_signature in
-      let npars = List.length fts.fts_parameters in
-      if npars < 5 then
-        get_regargs fts.fts_parameters
-      else
-        let (regpars, stackpars) = split_list 4 fts.fts_parameters in
-        List.concat [(get_regargs regpars); (get_stackargs stackpars)]
-    else
-      []
-
-  (* ARM uses R0 through R3 as default argument registers *)
-  method get_arm_call_arguments =
-    let get_regargs pars =
-      List.mapi
-        (fun i p ->
-          let reg = get_armreg_argument i in
-          let avar = self#env#mk_arm_register_variable reg in
-          (p, self#inv#rewrite_expr (XVar avar) self#env#get_variable_comparator))
-        pars in
-    let get_float_arg (par: fts_parameter_t) =
-      match par.apar_location with
-      | [RegisterParameter (ARMExtensionRegister r, _)] ->
-         let avar = self#env#mk_arm_extension_register_variable r in
-         [(par, self#inv#rewrite_expr (XVar avar) self#env#get_variable_comparator)]
-      | _ ->
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "Internal error in get_float_arg: ";
-                   fts_parameter_to_pretty par])) in
-    let get_stackargs pars =
-      List.map
-        (fun p ->
-          (* The first stack argument is at offset 0 (different from mips) *)
-          match p.apar_location with
-          | [StackParameter (i, _)] ->
-             let memref = self#f#env#mk_local_stack_reference in
-             let argvar =
-               match self#get_stackpointer_offset "arm" with
-               | (0, sprange) ->
-                  (match sprange#singleton with
-                   | Some num ->
-                      self#f#env#mk_memory_variable
-                        memref (num#add (mkNumerical (i * 4)))
-                   | _ ->
-                      self#f#env#mk_unknown_memory_variable p.apar_name)
-               | _ ->
-                  self#f#env#mk_unknown_memory_variable p.apar_name in
-             (p,
-              self#inv#rewrite_expr
-                (XVar argvar) self#env#get_variable_comparator)
-          | _ ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Unexpected parameter type in ";
-                       self#l#toPretty])))
-        pars in
-    let ctinfo = self#get_call_target in
-    if ctinfo#is_signature_valid then
-      let fintf = ctinfo#get_function_interface in
-      let fts = fintf.fintf_type_signature in
-      let npars = List.length fts.fts_parameters in
-      if npars = 1 then
-        let ftspar = List.hd fts.fts_parameters in
-        let ftspartype = ftspar.apar_type in
-        match ftspartype with
-        | TFloat _ -> get_float_arg ftspar
-        | _ -> get_regargs fts.fts_parameters
-      else if npars < 5 then
-        get_regargs fts.fts_parameters
-      else
-        let (regpars,stackpars) = split_list 4 fts.fts_parameters in
-        List.concat [(get_regargs regpars); (get_stackargs stackpars)]
-    else
-      []
-
   (* Power32 uses r3 through r10 as default argument registers *)
+      (*
   method get_pwr_call_arguments =
     let get_regargs pars =
       List.mapi
@@ -833,6 +655,7 @@ object (self)
         []
     else
       []
+       *)
 
   method set_instruction_bytes (b:string) =
     self#f#set_instruction_bytes self#cia b
@@ -849,6 +672,55 @@ object (self)
       | NumConstant x -> num_constant_expr x
       | _ -> random_constant_expr in
       (p,x)) argmapping
+
+  method get_call_arguments: (fts_parameter_t * xpr_t) list =
+    let get_regargs (pars: fts_parameter_t list): (fts_parameter_t * xpr_t) list =
+      List.map (fun p ->
+          let reg =
+            fail_tvalue
+              (trerror_record (STR "get_call_arguments"))
+              (get_register_parameter_register p) in
+          let rvar = self#env#mk_register_variable reg in
+          let xpr =
+            self#inv#rewrite_expr (XVar rvar) self#env#get_variable_comparator in
+          (p, xpr)) pars in
+    let get_stackargs (pars: fts_parameter_t list):
+          (fts_parameter_t * xpr_t) list =
+      List.map (fun p ->
+          let name = get_parameter_name p in
+          let memref = self#f#env#mk_local_stack_reference in
+          let p_offset =
+            fail_tvalue
+              (trerror_record (STR "get_call_arguments"))
+              (get_stack_parameter_offset p) in
+          let svar =
+            log_tfold_default
+              (mk_tracelog_spec ("get_call_arguments"))
+              (fun s_offset ->
+                self#f#env#mk_memory_variable
+                  memref (s_offset#add (mkNumerical p_offset)))
+              (self#f#env#mk_unknown_memory_variable name)
+              self#get_singleton_stackpointer_offset in
+          (p, self#inv#rewrite_expr (XVar svar) self#env#get_variable_comparator)
+        ) pars in
+    let ctinfo = self#get_call_target in
+    let fintf = ctinfo#get_function_interface in
+    let stackpars = get_stack_parameters fintf in
+    let regpars = get_register_parameters fintf in
+    let _ =
+      chlog#add
+        "call arguments"
+        (LBLOCK [
+             self#l#toPretty;
+             STR "  ";
+             STR ctinfo#get_name;
+             STR ": ";
+             INT (List.length stackpars);
+             STR " stackparameters; ";
+             INT (List.length regpars);
+             STR " register parameters"]) in
+
+    List.concat [(get_regargs regpars); (get_stackargs stackpars)]
 
   method get_call_args =
     let ctinfo = self#get_call_target in
@@ -869,10 +741,11 @@ object (self)
           if n <= 0 then acc else add (n::acc) (n-1) in
         add [] adj in
       List.map (fun p ->
-	let par = mk_stack_parameter p in
-	let argvar = self#f#env#mk_bridge_value self#cia p in
-	let argval = self#get_bridge_variable_value p argvar in
-	(par,argval)) indices
+          let offset = 4 * p in
+	  let par = mk_indexed_stack_parameter offset p in
+	  let argvar = self#f#env#mk_bridge_value self#cia p in
+	  let argval = self#get_bridge_variable_value p argvar in
+	  (par,argval)) indices
     else
       []
 
@@ -1083,6 +956,19 @@ object (self)
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * esp offset                                                               *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+
+  method get_singleton_stackpointer_offset: numerical_t traceresult =
+    let ename = "get_singleton_stackpointer_offset" in
+    let arch = system_settings#get_architecture in
+    let roffset = self#get_stackpointer_offset arch in
+    match roffset with
+    | (0, sprange) ->
+       (match sprange#singleton with
+        | Some num -> Ok num
+        | _ ->
+           Error [ename ^ ": " ^ (self#stackpointer_offset_to_string arch)])
+    | (level, _) ->
+       Error [ename ^ ": level: " ^ (string_of_int level)]
 
   method get_stackpointer_offset arch =
     match arch with
@@ -2151,7 +2037,7 @@ object (self)
      | _ -> None
 
    method get_mips_call_commands =
-     let parargs = self#get_mips_call_arguments in
+     let parargs = self#get_call_arguments in
      let ctinfo = self#get_call_target in
      let argumentpropagator = new mips_argument_type_propagator_t self#f parargs in
      let _ = argumentpropagator#elevate_call_arguments in
