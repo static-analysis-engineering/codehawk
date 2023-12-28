@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2023 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -56,9 +56,20 @@ val list_compare_r: 'a list -> 'a list -> ('a -> 'a -> int) -> int
 
 val list_union_f: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list
 val list_difference: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list
-  
+
+(** [list_update lst el eq better] updates list [lst] with element [el] if
+    (1) no element in [lst] compares equal (using [eq]) with [el] or (2) if
+    element [el] is better (according to [better]) than the element in [lst]
+    that compares equal with [el]. The order is not necessarily preserved.
+
+    Note: the function performs a (non-tail) recursive update, so it is not
+    recommended for large lists.
+*)
+val list_update:
+  'a list -> 'a -> ('a -> 'a -> bool) -> ('a -> 'a -> bool) -> 'a list
+
 val remove_duplicates: 'a list -> 'a list
-val remove_duplicates_f: 'a list -> ('a ->'a -> bool) -> 'a list
+val remove_duplicates_f: 'a list -> ('a -> 'a -> bool) -> 'a list
 
 val array_fold_lefti: ('b -> int -> 'a -> 'b) -> 'b ->  'a array -> 'b
 
