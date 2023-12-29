@@ -151,7 +151,7 @@ let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
     else if off > 9 then
       Printf.sprintf "#%#x" off
     else if off < -9 then
-      Printf.sprintf "#%-#x" off
+      Printf.sprintf "#%#x" off
     else
       "#" ^ (string_of_int off) in
   match offset with

@@ -1,0 +1,4 @@
+(lang dune 3.11)
+
+(package (name codehawk))
+(package (name exes))

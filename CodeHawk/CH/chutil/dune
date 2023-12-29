@@ -1,0 +1,9 @@
+(library
+  (name chutil)
+  (libraries chlib extlib str unix zarith)
+  (public_name codehawk.chutil)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

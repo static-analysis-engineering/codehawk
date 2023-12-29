@@ -774,9 +774,9 @@ let cost_bounds_from_jterm_range (r: jterm_range_int) =
       ~lbounds:lower_cost_bounds
       ~ubounds:upper_cost_bounds
       
-let get_bounds bounds =
+let get_bounds (bounds: cost_bounds_t) =
+  let _ = bounds#kind in
   begin
-    bounds#kind;
     get_st_bounds ()
   end
 

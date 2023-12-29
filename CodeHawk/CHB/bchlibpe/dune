@@ -1,0 +1,9 @@
+(library
+  (name bchlibpe)
+  (libraries bchlib chlib chutil extlib xprlib)
+  (public_name codehawk.bchlibpe)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

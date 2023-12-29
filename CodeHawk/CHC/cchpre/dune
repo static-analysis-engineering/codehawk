@@ -1,0 +1,9 @@
+(library
+  (name cchpre)
+  (libraries cchlib chlib chutil str xprlib)
+  (public_name codehawk.cchpre)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

@@ -1,0 +1,38 @@
+(executable
+  (name jCHXClassExperiment)
+  (libraries chlib chutil jchlib jchpre)
+  (modules jCHXClassExperiment)
+  (package exes)
+  (public_name chj_experiment))
+
+(executable
+  (name jCHXTemplate)
+  (libraries chlib chutil jchlib jchpre)
+  (modules jCHXTemplate)
+  (package exes)
+  (public_name chj_template))
+
+(executable
+  (name jCHXIntegrateSummaries)
+  (libraries chlib chutil jchlib jchpre)
+  (modules jCHXIntegrateSummaries)
+  (package exes)
+  (public_name chj_integrate))
+
+(executable
+  (name jCHXInspectSummaries)
+  (libraries chlib chutil jchlib jchpre)
+  (modules jCHXInspectSummaries)
+  (package exes)
+  (public_name chj_inspect))
+
+(executable
+  (name jCHXNativeMethodSignatures)
+  (libraries chlib chutil jchlib jchpre)
+  (modules jCHXNativeMethodSignatures)
+  (package exes)
+  (public_name chj_native))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

@@ -1,0 +1,9 @@
+(library
+  (name jchpoly)
+  (libraries chlib chutil jchlib jchpre jchsys)
+  (public_name codehawk.jchpoly)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

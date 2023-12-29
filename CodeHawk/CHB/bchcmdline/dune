@@ -1,0 +1,52 @@
+(executable
+  (name bCHXBinaryAnalyzer)
+  (libraries bchanalyze bchcil bchlib bchlibarm32 bchlibmips32 bchlibpe bchlibpower32 bchlibx86 chlib chutil goblint-cil zip)
+  (modules bCHXBinaryAnalyzer)
+  (package exes)
+  (public_name chx86_analyze))
+
+(executable
+  (name bCHXInspectSummaries)
+  (libraries bchlib bchlibpe chlib chutil zip)
+  (modules bCHXInspectSummaries)
+  (package exes)
+  (public_name chx86_inspect_summaries))
+
+(executable
+  (name bCHXSaveExports)
+  (libraries bchlib bchlibpe bchlibx86 chlib chutil zip)
+  (modules bCHXSaveExports)
+  (package exes)
+  (public_name chx86_save_exports))
+
+(executable
+  (name bCHXMakeLibSummary)
+  (libraries bchlib chlib chutil)
+  (modules bCHXMakeLibSummary)
+  (package exes)
+  (public_name chx86_make_lib_summary))
+
+(executable
+  (name bCHXMakeAppSummary)
+  (libraries bchlib chlib chutil)
+  (modules bCHXMakeAppSummary)
+  (package exes)
+  (public_name chx86_make_app_summary))
+
+(executable
+  (name bCHXMakeConstSummary)
+  (libraries chlib chutil)
+  (modules bCHXMakeConstSummary)
+  (package exes)
+  (public_name chx86_make_const_summary))
+
+(executable
+  (name bCHXMakeStructDefinition)
+  (libraries chlib chutil)
+  (modules bCHXMakeStructDefinition)
+  (package exes)
+  (public_name chx86_make_structdef))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

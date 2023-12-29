@@ -1,0 +1,10 @@
+(library
+  (name bchlibelf)
+  (libraries bchcil bchlib bchlibpe chlib chutil extlib xprlib)
+  (modules :standard \ bCHDebugARangesSection)
+  (public_name codehawk.bchlibelf)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

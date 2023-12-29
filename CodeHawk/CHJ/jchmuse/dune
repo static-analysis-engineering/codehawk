@@ -1,0 +1,31 @@
+(executable
+  (name jCHXExtractFeatures)
+  (libraries chlib chutil jchlib jchfeatures jchpre)
+  (modules jCHXExtractFeatures)
+  (package exes)
+  (public_name chj_features))
+
+(executable
+  (name jCHXExtractExprFeatures)
+  (libraries chlib chutil jchlib jchfeatures jchpre)
+  (modules jCHXExtractExprFeatures)
+  (package exes)
+  (public_name chj_efeatures))
+
+(executable
+  (name jCHXClassPoly)
+  (libraries chlib chutil jchlib jchpoly jchpre jchsys)
+  (modules jCHXClassPoly)
+  (package exes)
+  (public_name chj_invariants))
+
+(executable
+  (name jCHXCollectPatterns)
+  (libraries chlib chutil jchlib jchpre)
+  (modules jCHXCollectPatterns)
+  (package exes)
+  (public_name chj_patterns))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

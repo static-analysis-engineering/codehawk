@@ -1,0 +1,9 @@
+(library
+  (name bchcil)
+  (libraries bchlib chlib chutil extlib goblint-cil xprlib zarith zip)
+  (public_name codehawk.bchcil)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
