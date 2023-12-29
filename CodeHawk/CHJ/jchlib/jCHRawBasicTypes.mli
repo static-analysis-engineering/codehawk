@@ -32,11 +32,11 @@ val write_ui8 : 'a IO.output -> int -> unit
 val write_i8 : 'a IO.output -> int -> unit
 
 val write_string_with_length :
-  ('a IO.output -> int -> 'b) -> 'a IO.output -> string -> unit
+  ('a IO.output -> int -> unit) -> 'a IO.output -> string -> unit
 
 val write_with_length :
-  ('a IO.output -> int -> 'b) ->
-  'a IO.output -> (string IO.output -> 'c) -> unit
+  ('a IO.output -> int -> unit) ->
+  'a IO.output -> (string IO.output -> unit) -> unit
 
 val write_with_size :
   ('a IO.output -> int -> unit) ->

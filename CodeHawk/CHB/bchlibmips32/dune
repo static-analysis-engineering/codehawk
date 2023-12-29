@@ -1,0 +1,9 @@
+(library
+  (name bchlibmips32)
+  (libraries bchlib bchlibelf chlib chutil extlib xprlib zarith)
+  (public_name codehawk.bchlibmips32)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

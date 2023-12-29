@@ -1,0 +1,9 @@
+(library
+  (name bchanalyze)
+  (libraries bchlib bchlibarm32 bchlibelf bchlibmips32 bchlibpe bchlibpower32 bchlibx86 chlib chutil extlib zarith)
+  (public_name codehawk.bchanalyze)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

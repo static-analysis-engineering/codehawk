@@ -2256,7 +2256,7 @@ let remove_duplicates poly =
 let restrict_to_vars poly vars = 
   poly#special "restrict_to_vars" (List.map (fun v -> VAR_DOM_ARG v) vars)
 
-let get_relational_exprs_vars_fields poly vars = 
-  poly#special
-    "get_vars_fields_rel_exprs" (List.map (fun v -> VAR_DOM_ARG v) vars) ;
+let get_relational_exprs_vars_fields (poly: poly_int_domain_no_arrays_t) vars = 
+  let _ = poly#special
+      "get_vars_fields_rel_exprs" (List.map (fun v -> VAR_DOM_ARG v) vars) in
   get_st_relational_exprs ()

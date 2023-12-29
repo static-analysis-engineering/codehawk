@@ -256,7 +256,7 @@ let write_xml_default_summary (node:xml_element_int) =
   node#appendChildren [ xmlElement "taint" ]
 
 let write_xml_pattern_summary
-      (node:xml_element_int) (mInfo:method_info_int) ?(libsummary=None) (p:bc_pattern_t) =
+      (node:xml_element_int) (mInfo:method_info_int) ?(libsummary:function_summary_int option=None) (p:bc_pattern_t) =
   let cms = mInfo#get_class_method_signature in
   let ms = cms#method_signature in
   let append = node#appendChildren in
@@ -342,18 +342,18 @@ let write_xml_pattern_summary
        let ssnode = xmlElement "sinks" in
        begin
          ssnode#appendChildren
-           (List.map (fun s ->
+           (List.map ((fun s ->
                 let snode = xmlElement "sink" in
                 begin
-                  s#write_xml snode ;
+                  (* TODO: find a method_signature_int for the second argument s#write_xml snode ; *)
                   snode#setAttribute "type" "string" ;
                   snode
-                end) stringsinks) ;
+                end): (string_sink_int -> xml_element_int)) stringsinks) ;
          ssnode#appendChildren
            (List.map (fun s ->
                 let snode = xmlElement "sink" in
                 begin
-                  s#write_xml snode ;
+                  (* TODO: find a method_signature_int for the second argument s#write_xml snode ; *)
                   snode#setAttribute "type" "resource" ;
                   snode
                 end) resourcesinks) ;
@@ -362,7 +362,7 @@ let write_xml_pattern_summary
   !valid
  
 let write_xml_method_summary
-      (node:xml_element_int) (cInfo:class_info_int) ?(libsummary=None) (mInfo:method_info_int) =
+      (node:xml_element_int) (cInfo:class_info_int) ?(libsummary:function_summary_int option = None) (mInfo:method_info_int) =
   let default () =
     match libsummary with
     | Some s -> begin s#write_xml_summary node ; true end

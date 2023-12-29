@@ -1,0 +1,9 @@
+(library
+  (name jchsys)
+  (libraries chlib chutil extlib jchlib jchpre str zarith)
+  (public_name codehawk.jchsys)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

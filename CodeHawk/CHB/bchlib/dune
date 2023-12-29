@@ -1,0 +1,10 @@
+(library
+  (name bchlib)
+  (libraries chlib chutil extlib str unix xprlib zarith zip)
+  (modules_without_implementation bCHJavaBasicTypes)
+  (public_name codehawk.bchlib)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

@@ -1,0 +1,9 @@
+(library
+  (name jchlib)
+  (libraries chlib chutil extlib zarith zip)
+  (public_name codehawk.jchlib)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

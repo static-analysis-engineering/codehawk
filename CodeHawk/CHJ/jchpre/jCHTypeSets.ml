@@ -508,7 +508,7 @@ let simple_union_type_sets set1 set2 =
   | _ -> top_type_set
   
 let get_number set = 
-  set#kind ;
+  let _ = set#kind in
   match get_st_type_set () with 
   | SYM_TYPE_SET set -> -1
   | NUM_TYPE_SET n -> n

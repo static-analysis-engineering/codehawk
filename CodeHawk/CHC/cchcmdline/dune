@@ -1,0 +1,17 @@
+(executable
+  (name cCHXInspectSummaries)
+  (libraries chlib cchlib cchpre)
+  (modules cCHXInspectSummaries)
+  (package exes)
+  (public_name inspectsummaries))
+
+(executable
+  (name cCHXCAnalyzer)
+  (libraries chlib cchlib cchpre cchanalyze)
+  (modules cCHXCAnalyzer cCHVersion)
+  (package exes)
+  (public_name canalyzer))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

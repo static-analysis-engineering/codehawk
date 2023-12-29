@@ -1,0 +1,9 @@
+(library
+  (name jchpre)
+  (libraries chlib chutil extlib jchlib zip)
+  (public_name codehawk.jchpre)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
