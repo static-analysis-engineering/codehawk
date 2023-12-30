@@ -22,31 +22,19 @@ jobs:
           ocaml-compiler: 4.12.1
       - name: Install dependencies with opam
         run: |
-          opam install extlib camlzip zarith ocamlbuild goblint-cil
-          opam install odoc=2.2.1
-      - name: Install dependencies for shake
-        run: |
-          sudo apt update -y
-          sudo apt install cabal-install pkg-config m4 zlib1g-dev -y
-          cabal update
-          cabal new-install --lib shake
-          cabal install --lib base
-          cabal install --lib unordered-containers
-          cabal install --lib containers
-          cabal install --lib directory
-          cabal install shake
+          opam install dune extlib camlzip zarith ocamlbuild odoc goblint-cil
       - name: Build docs
         run: |
-          cd CodeHawk && eval $(opam env) && ~/.local/bin/shake -VV odoc
+          cd CodeHawk && eval $(opam env) && dune build @doc
       - name: Fix permissions
         run: |
-          chmod -c -R +rX "CodeHawk/_odoc/" | while read line; do
+          chmod -c -R +rX "CodeHawk/_build/default/_doc/_html" | while read line; do
             echo "::warning title=Invalid file permissions automatically fixed::$line"
           done
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: ./CodeHawk/_odoc
+          path: ./CodeHawk/_build/default/_doc/_html
 
   deploy:
     environment:
