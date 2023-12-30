@@ -1,0 +1,7 @@
+(tests 
+  (names xconsequenceTest xsimplifyTest)
+  (libraries chlib chutil extlib tchlib txprlib xprlib zarith))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

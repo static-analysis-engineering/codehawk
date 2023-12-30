@@ -1,0 +1,7 @@
+(tests 
+  (names bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest)
+  (libraries bchlib chlib chutil extlib tbchlib tchlib txprlib xprlib zarith))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

@@ -1,0 +1,7 @@
+(tests 
+  (names bCHDisassembleInstructionTest bCHDisassembleX0Test)
+  (libraries bchlib bchlibx86 chlib chutil extlib tbchlib tbchlibx86 tchlib txprlib xprlib zarith))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
