@@ -1,0 +1,9 @@
+(library
+  (name txprlib)
+  (libraries chlib chutil extlib tchlib xprlib zarith)
+  (public_name codehawk.txprlib)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

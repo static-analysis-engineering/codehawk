@@ -1,0 +1,9 @@
+(library
+  (name tbchlib)
+  (libraries bchlib chlib chutil extlib tchlib xprlib zarith zip)
+  (public_name codehawk.tbchlib)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

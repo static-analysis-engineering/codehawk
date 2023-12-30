@@ -1,0 +1,9 @@
+(library
+  (name tchlib)
+  (libraries chlib chutil extlib zip)
+  (public_name codehawk.tchlib)
+  (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

@@ -1,0 +1,7 @@
+(tests 
+  (names bCHAssembleMIPSInstructionTest bCHDisassembleMIPSInstructionTest)
+  (libraries bchlib bchlibmips32 chlib chutil extlib tbchlib tchlib txprlib xprlib zarith))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))

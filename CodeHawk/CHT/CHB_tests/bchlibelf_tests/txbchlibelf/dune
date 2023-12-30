@@ -1,0 +1,7 @@
+(tests 
+  (names bCHDwarfTest bCHELFDebugAbbrevSectionTest bCHELFDebugLocSectionTest)
+  (libraries bchlib bchlibelf chlib chutil extlib tbchlib tbchlibelf tchlib txprlib xprlib zarith))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
