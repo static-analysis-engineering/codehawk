@@ -1,0 +1,21 @@
+name: dune CI
+
+on: [pull_request, push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: ocaml/setup-ocaml@v2
+      with:
+        ocaml-compiler: 4.12.1
+    - name: Install dependencies
+      run: |
+        opam install extlib camlzip zarith ocamlbuild odoc goblint-cil
+    - name: Build executables
+      run: eval $(opam env) && cd CodeHawk && dune build @install
+    - name: Build documentation
+      run: eval $(opam env) && cd CodeHawk && dune build @doc
+    - name: Run tests
+      run: eval $(opam env) && cd CodeHawk && dune test
