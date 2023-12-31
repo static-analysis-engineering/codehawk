@@ -27,8 +27,6 @@
 
 (* chlib *)
 open CHCommon
-open CHNumerical
-open CHPretty
    
 
 let bitstring_size = 16
@@ -39,7 +37,7 @@ let bitindex_size (n: int) =
 
 
 class bitstring_t (n: int32) =
-object (self: 'a)
+object (_self: 'a)
   
   val _b: int32 = n
   
@@ -96,7 +94,7 @@ let bitstring_cmp (r1: bitstring_t array) (r2: bitstring_t array) =
     !res
 
 class bitindex_t (col: int) =
-object (self: 'a)
+object (_self: 'a)
   
   val mutable _index: int = col
 

@@ -74,7 +74,7 @@ end
 class virtual local_iteration_sigma_combinator_t
                 ~(domain_1: string)
                 ~(domain_2: string) =
-object (self: 'a)
+object (_self: 'a)
              
   inherit local_iteration_sigma_combinator_with_threshold_t
             ~domain_1:domain_1 ~domain_2:domain_2 ~threshold:(-1)

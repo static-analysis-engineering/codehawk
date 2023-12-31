@@ -26,9 +26,7 @@
   ------------------------------------------------------------------------------ *)
 
 (* chlib *)
-open CHCommon
 open CHLanguage   
-open CHPretty
 
    
 module UF =
@@ -51,12 +49,12 @@ object (self: _)
                
   method virtual refineSymbolicType: 'a -> variable_type_t
                
-  method walkCmd (cmd: (code_int, cfg_int) command_t) =
+  method! walkCmd (cmd: (code_int, cfg_int) command_t) =
     match cmd with
     | ASSIGN_SYM (x, e) ->
        begin
 	 match e with
-	 | SYM s -> self#abstract x
+	 | SYM _s -> self#abstract x
 	 | SYM_VAR y -> 
 	    begin
 	      self#union x y;

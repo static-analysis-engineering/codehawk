@@ -762,7 +762,7 @@ object (self: 'a)
 	let nbrows = ref 0 in
 	let _ =
 	  match (!(pa#c), !(pa#f), !(pb#c), !(pb#f)) with
-	  | (Some pa_c, Some pa_f, Some pb_c, Some pb_f) ->		
+	  | (Some _pa_c, Some pa_f, Some pb_c, Some _pb_f) ->		
 	     let npoly_c = new matrix_t ((!pGD)#dec - 1 + pb_c#nbrows) pb_c#nbcolumns false in
 	     let _ = npoly#set_c npoly_c in
 	     begin

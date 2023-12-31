@@ -26,7 +26,6 @@
   ============================================================================== *)
 
 (* chlib *)
-open CHCommon
 open CHDomainObserver   
 open CHLanguage
 open CHNonRelationalDomainValues

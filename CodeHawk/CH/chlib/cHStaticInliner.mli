@@ -25,8 +25,9 @@
    SOFTWARE.
   ------------------------------------------------------------------------------ *)
 
+[@@@warning "-67"]
 module Make :
-functor (F : CHLanguage.LANGUAGE_FACTORY) ->
+functor (F: CHLanguage.LANGUAGE_FACTORY) ->
 sig
   class inlining_processor_t :
           int ->

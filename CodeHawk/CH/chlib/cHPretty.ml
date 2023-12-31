@@ -55,7 +55,7 @@ object
     
   method print p =    
     let prTabs t =
-      for i = 0 to t - 1 do
+      for _i = 0 to t - 1 do
 	output_string out " "	
       done
     in

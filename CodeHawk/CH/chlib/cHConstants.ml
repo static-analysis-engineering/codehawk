@@ -28,11 +28,9 @@
   ============================================================================== *)
 
 (* chlib *)
-open CHCommon
 open CHLanguage   
 open CHNumerical   
 open CHPretty
-open CHUtils
 
 
 type num_cst_t =

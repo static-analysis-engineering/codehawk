@@ -26,7 +26,6 @@
   ------------------------------------------------------------------------------ *)
 
 (* chlib *)
-open CHBounds
 open CHIntervals
 open CHLanguage
 open CHNumerical

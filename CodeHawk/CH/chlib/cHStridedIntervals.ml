@@ -68,7 +68,7 @@ let adjustStride (mn: bound_t) (mx: bound_t) (st: numerical_t) : numerical_t =
   if (mx#leq mn) then numerical_one else st
   
 (* assumes mn, mx are reachable with the stride; ensures rem < stride *)
-let adjustRem (mn: bound_t) (mx: bound_t) (st: numerical_t) (rm: numerical_t) : numerical_t =                                     
+let adjustRem (_mn: bound_t) (_mx: bound_t) (st: numerical_t) (rm: numerical_t) : numerical_t =                                     
   if (st#equal numerical_one) then numerical_zero else rm#modulo st
   
   
@@ -196,11 +196,11 @@ object (self : 'a)
   method isBoundInInterval (b: bound_t) : bool = 
     match (min#getBound, max#getBound, b#getBound) with
     | (NUMBER mn, NUMBER mx, NUMBER x) -> (x#geq mn) && (x#leq mx)
-    | (NUMBER mn, NUMBER mx, _) -> false
+    | (NUMBER _mn, NUMBER _mx, _) -> false
     | (NUMBER mn, PLUS_INF, NUMBER x) -> x#geq mn
-    | (NUMBER mn, PLUS_INF, PLUS_INF) -> true
+    | (NUMBER _mn, PLUS_INF, PLUS_INF) -> true
     | (MINUS_INF, NUMBER mx, NUMBER x) -> x#leq mx
-    | (MINUS_INF, NUMBER mx, MINUS_INF) -> true
+    | (MINUS_INF, NUMBER _mx, MINUS_INF) -> true
     | (MINUS_INF, PLUS_INF, _) -> true
     | (_,_,_) -> false
                

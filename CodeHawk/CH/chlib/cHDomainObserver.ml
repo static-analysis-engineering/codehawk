@@ -33,8 +33,8 @@ open CHNonRelationalDomainValues
 open CHNumerical
 open CHNumericalConstraints
 open CHPolyhedra   
-open CHUtils
 
+[@@@warning "-27"]
 
 class domain_observer_t =
 object
@@ -43,16 +43,16 @@ object
     
   method getObservedArrays: variable_t list = []
       
-  method getObservedArrayIndices (a: variable_t): numerical_t list = []
+  method getObservedArrayIndices (_a: variable_t): numerical_t list = []
 
   method getObservedFactors: numerical_factor_t list = []
 
   method getNonRelationalVariableObserver: variable_t -> non_relational_domain_value_t =
-    fun v -> topNonRelationalDomainValue      
+    fun _v -> topNonRelationalDomainValue      
 
   method getNonRelationalExtensiveArrayObserver:
            variable_t -> numerical_t -> non_relational_domain_value_t =
-    fun v i -> topNonRelationalDomainValue      
+    fun _v _i -> topNonRelationalDomainValue      
 
   method getNumericalConstraints
            ~(variables: variable_t list option) (): numerical_constraint_t list =

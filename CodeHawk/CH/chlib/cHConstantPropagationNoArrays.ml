@@ -27,18 +27,14 @@
 
 (* chlib *)
 open CHAtlas
-open CHCommon
 open CHConstants   
-open CHDomain
 open CHIterator   
 open CHLanguage
 open CHNonRelationalDomainValues   
-open CHNumerical
 open CHNumericalConstantsDomainNoArrays   
-open CHPretty
 open CHSymbolicConstantsDomainNoArrays
-open CHUtils
 
+[@@@warning "-27"]
 
 class constant_propagation_no_arrays_t system =
   let simplifier ~invariant ~context ~cmd =

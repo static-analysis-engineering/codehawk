@@ -26,12 +26,10 @@
   ============================================================================== *)
 
 (* chlib *)
-open CHCommon
 open CHConstants   
 open CHLocalIterationSigmaCombinator
 open CHNonRelationalDomainValues
 open CHNumericalConstraints   
-open CHPretty   
 open CHStridedIntervals
 
 exception Bottom_found

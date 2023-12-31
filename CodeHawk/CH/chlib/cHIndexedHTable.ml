@@ -34,7 +34,7 @@ open CHPretty
 module H = Hashtbl
 
 class indexed_htable_t (name:string):indexed_htable_int =
-object (self)
+object (_self)
 
   val mutable next = 1
   val table = H.create 3

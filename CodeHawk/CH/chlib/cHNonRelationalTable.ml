@@ -27,18 +27,15 @@
 
 (* chlib *)
 open CHCommon
-open CHConstants   
-open CHDomain   
 open CHLanguage
 open CHNonRelationalDomainValues   
-open CHNumerical
 open CHPretty
 open CHSymbolicSets   
 open CHUtils
 
 
 class table_index_t (l: (string * symbol_t) list) =
-object (self: 'a)
+object (_self: 'a)
   
   val assoc_list = l
                  
@@ -75,7 +72,7 @@ object (self: 'a)
 end
   
 class table_row_t (r: (string * non_relational_domain_value_t) list) =
-object (self: 'a)
+object (_self: 'a)
      
   val row = r
           
@@ -261,7 +258,7 @@ object (self: 'a)
 end
   
 class non_relational_table_t (k: string) (s: nr_table_signature_t) =
-object (self: 'a)
+object (_self: 'a)
      
   val key: string = k
                   

@@ -40,6 +40,7 @@ open CHNumericalConstraints
 open CHPretty
 open CHUtils
 
+[@@@warning "-27"]
 
 exception Contradiction
 exception Got_integer of int
@@ -85,7 +86,7 @@ let reflect_trivial (vars: variable_t list) =
     matrix = Array.make 0 None
   }    
   
-let reflected_to_pretty rs =
+let _reflected_to_pretty rs =
   if rs.bottom then
     STR "_|_"
   else
@@ -517,11 +518,11 @@ object (self: 'a)
     object
       inherit domain_observer_t
             
-      method getObservedFactors = factors#toList
+      method! getObservedFactors = factors#toList
                                 
-      method getObservedVariables = List.map (fun f -> f#getVariable) factors#toList
+      method! getObservedVariables = List.map (fun f -> f#getVariable) factors#toList
                                   
-      method getNumericalConstraints ~(variables: variable_t list option) () =
+      method! getNumericalConstraints ~(variables: variable_t list option) () =
         let get_csts mat =
 	  Array.fold_right (fun c a -> match c with Some cst -> cst :: a | None -> a) mat []
         in

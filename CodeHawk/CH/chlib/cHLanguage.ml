@@ -107,7 +107,7 @@ let internal_symbol_table = new SymbolInternalization.internal_table_t 1000000
                           
 class symbol_t ?(atts = []) ?(seqnr = -1) (s: string) =
   let (id, sym) = internal_symbol_table#internalize (new internal_symbol_t atts seqnr s) in
-  object (self: 'a)
+  object (_self: 'a)
        
     val index = id
               
@@ -312,7 +312,7 @@ let rec compare_types t1 t2 =
   | (_, STRUCT_TYPE _) -> 1
   | _ -> Stdlib.compare t1 t2
        
-let variable_index = ref (-1)
+let _variable_index = ref (-1)
                    
 class internal_variable_t
         (the_name: symbol_t)
@@ -486,7 +486,7 @@ class variable_t
         ?(path = [])
         (vtype: variable_type_t) =
   let (id, var) = internal_variable_table#internalize (new internal_variable_t name suffix register path vtype) in
-  object (self: 'a)
+  object (_self: 'a)
        
     val internal_variable = var
                           
@@ -890,7 +890,7 @@ let bindings_to_pretty b =
   in
   pretty_print_list b pp "{" "; " "}"
   
-let rec command_to_pretty (_:int) (cmd: (code_int, cfg_int) command_t) =
+let command_to_pretty (_:int) (cmd: (code_int, cfg_int) command_t) =
   match cmd with
   | CODE (s, code) ->
      LBLOCK [ STR "CODE "; STR "(" ; s#toPretty ; STR ")" ; code#toPretty ]
@@ -1044,7 +1044,7 @@ object (self: _)
       self#walkCmd (code#getCmdAt i)
     done
     
-  method walkVar v = ()
+  method walkVar _v = ()
                    
   method walkNumExp e =
     match e with
@@ -1110,7 +1110,7 @@ object (self: _)
 	 | None -> ()
 	 | Some code -> self#walkCode code
        end
-    | BREAKOUT_BLOCK (s, code) ->
+    | BREAKOUT_BLOCK (_s, code) ->
        self#walkCode code
     | GOTO_BLOCK code ->
        self#walkCode code
@@ -1177,8 +1177,8 @@ object (self: _)
        self#walkCode c1;
        self#walkCode c2;
        self#walkCode c3
-    | OPERATION {op_args = args} 
-      | DOMAIN_OPERATION (_, {op_args = args}) ->
+    | OPERATION {op_args = args; _} 
+    | DOMAIN_OPERATION (_, {op_args = args; _}) ->
        List.iter (fun (_, v, _) -> self#walkVar v) args
     | CALL (_, params) ->
        List.iter (fun (_, v) -> self#walkVar v) params
@@ -1236,7 +1236,7 @@ object (self: _)
 	 | Some code -> self#transformCode code
        in
        cmd
-    | BREAKOUT_BLOCK (s, code) ->
+    | BREAKOUT_BLOCK (_s, code) ->
        let _ = self#transformCode code in
        cmd
     | GOTO_BLOCK code ->
@@ -1299,10 +1299,10 @@ let modified_vars_in_cmd_fwd cmd =
   | ASSERT (NEQ (x, y)) -> [x; y]
   | ASSERT (SUBSET (x, _))-> [x]
   | ASSERT (DISJOINT (x, _)) -> [x]
-  | SELECT {selected = selected} -> List.map (fun (_, v) -> v) selected
-  | INSERT {into = into} -> [into]
-  | DELETE {rows_from = from} -> [from]
-  | ASSIGN_TABLE (t1, t2) -> [t1]
+  | SELECT {selected = selected; _} -> List.map (fun (_, v) -> v) selected
+  | INSERT {into = into; _} -> [into]
+  | DELETE {rows_from = from; _} -> [from]
+  | ASSIGN_TABLE (t1, _t2) -> [t1]
   | _ -> []
        
 module VariableCollections' =
@@ -1316,13 +1316,13 @@ module VariableCollections' =
 class var_collector_t =
 object
   
-  inherit code_walker_t as super
+  inherit code_walker_t as _super
         
   val vars = new VariableCollections'.set_t
            
   method getVars = vars#toList
                  
-  method walkVar var = vars#add var
+  method! walkVar var = vars#add var
     
 end
   
@@ -1360,9 +1360,9 @@ let modified_vars_in_cmd_bwd cmd =
   | ASSERT (NEQ (x, y)) -> [x; y]
   | ASSERT (SUBSET (x, _))-> [x]
   | ASSERT (DISJOINT (x, _)) -> [x]
-  | SELECT {selected = selected} -> List.map (fun (_, v) -> v) selected
-  | INSERT {into = into} -> [into]
-  | DELETE {rows_from = from} -> [from]
+  | SELECT {selected = selected; _} -> List.map (fun (_, v) -> v) selected
+  | INSERT {into = into; _} -> [into]
+  | DELETE {rows_from = from; _} -> [from]
   | ASSIGN_TABLE (t1, t2) -> [t1; t2]
   | _ -> []
        
@@ -1371,7 +1371,7 @@ object
   
   inherit var_collector_t as super
         
-  method walkVar var =
+  method! walkVar var =
     if var#isTmp then
       super#walkVar var
     else
@@ -1402,9 +1402,9 @@ object (self: _)
                        
   method private addl l = List.iter self#add l
                         
-  method walkVar _ = ()
+  method! walkVar _ = ()
                    
-  method walkNumExp e =
+  method! walkNumExp e =
     match e with
     | NUM _ -> ()
     | NUM_VAR v -> self#add v
@@ -1413,12 +1413,12 @@ object (self: _)
       | MULT (x, y) 
       | DIV (x, y) -> self#addl [x; y]
 	            
-  method walkSymExp e =
+  method! walkSymExp e =
     match e with
     | SYM _ -> ()
     | SYM_VAR v -> self#add v
 	         
-  method walkBoolExp e =
+  method! walkBoolExp e =
     match e with
     | RANDOM -> ()
     | TRUE -> ()
@@ -1432,7 +1432,7 @@ object (self: _)
     | SUBSET (v, _) 
       | DISJOINT (v, _) -> self#add v
                          
-  method walkCmd (cmd: (code_int, cfg_int) command_t) =
+  method! walkCmd (cmd: (code_int, cfg_int) command_t) =
     match cmd with
     | ABSTRACT_ELTS (_, min, max) -> self#addl [min; max]
     | ASSIGN_STRUCT (_, y) -> self#add y
@@ -1444,8 +1444,8 @@ object (self: _)
     | SHIFT_ARRAY (_, src, _) -> self#add src
     | BLIT_ARRAYS (_, tgt_o, src, src_o, n) -> self#addl [tgt_o; src; src_o; n]
     | SET_ARRAY_ELTS (_, s, n, v) -> self#addl [s; n; v]
-    | OPERATION {op_args = args} 
-      | DOMAIN_OPERATION (_, {op_args = args}) ->
+    | OPERATION {op_args = args; _} 
+    | DOMAIN_OPERATION (_, {op_args = args; _}) ->
        List.iter (fun (_, v, mode) -> match mode with WRITE -> () | _ -> self#add v) args
     | CALL (f, params) ->
        let read_params = 

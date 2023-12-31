@@ -373,13 +373,13 @@ object (self: 'a)
 		   v1#toPretty;
                    STR " and ";
                    v2#toPretty]))
-    | (NUM_CONSTANT_VAL v1, INTERVAL_VAL v2) -> self#join v
-    | (NUM_CONSTANT_VAL v1, STRIDED_INTERVAL_VAL v2) -> self#join v
+    | (NUM_CONSTANT_VAL _v1, INTERVAL_VAL _v2) -> self#join v
+    | (NUM_CONSTANT_VAL _v1, STRIDED_INTERVAL_VAL _v2) -> self#join v
     | (INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> v#widening self
     | (STRIDED_INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> v#widening self
     | (VALUESET_VAL v1, VALUESET_VAL v2) ->
        {< value = normalize_nr_value (VALUESET_VAL (v1#widening v2)) >}
-    | (SYM_CONSTANT_VAL v1, SYM_SET_VAL v2) -> self#join v
+    | (SYM_CONSTANT_VAL _v1, SYM_SET_VAL _v2) -> self#join v
     | (SYM_SET_VAL _, SYM_CONSTANT_VAL _) -> v#widening self
     | (_, _) -> {< value = TOP_VAL >}
 
@@ -480,11 +480,11 @@ object (self: 'a)
 		   v1#toPretty;
                    STR " and ";
                    v2#toPretty]))
-    | (NUM_CONSTANT_VAL v1, INTERVAL_VAL v2) -> self#meet v
-    | (NUM_CONSTANT_VAL v1, STRIDED_INTERVAL_VAL v2) -> self#meet v
+    | (NUM_CONSTANT_VAL _v1, INTERVAL_VAL _v2) -> self#meet v
+    | (NUM_CONSTANT_VAL _v1, STRIDED_INTERVAL_VAL _v2) -> self#meet v
     | (INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> self#meet v
     | (STRIDED_INTERVAL_VAL _, NUM_CONSTANT_VAL _) -> self#meet v
-    | (SYM_CONSTANT_VAL v1, SYM_SET_VAL v2) -> self#meet v
+    | (SYM_CONSTANT_VAL _v1, SYM_SET_VAL _v2) -> self#meet v
     | (SYM_SET_VAL _, SYM_CONSTANT_VAL _) -> self#meet v
     | (_, _) -> {< value = BOTTOM_VAL >}
 
