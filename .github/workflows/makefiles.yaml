@@ -1,10 +1,10 @@
-name: dune CI
+name: "Makefile CI"
 
 on: [pull_request, push]
 
 jobs:
   build:
-    name: "Compile and test CodeHawk"
+    name: "Compile CodeHawk"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -12,24 +12,17 @@ jobs:
           - "4.12.1"
           - "4.13.1"
           - "4.14.1"
-          - "5.0.0"
-          - "5.1.1"
     steps:
     - uses: actions/checkout@v1
     - uses: ocaml/setup-ocaml@v2
       with:
         ocaml-compiler: ${{ matrix.ocaml-compiler }}
     - name: Install dependencies
-      run: |
-        opam install extlib camlzip zarith ocamlbuild odoc goblint-cil
-    - name: Build executables
-      run: eval $(opam env) && cd CodeHawk && dune build @install
-    - name: Build documentation
-      run: eval $(opam env) && cd CodeHawk && dune build @doc
-    - name: Run tests
-      run: eval $(opam env) && cd CodeHawk && dune test
+      run: opam install extlib camlzip zarith ocamlbuild goblint-cil
+    - name: Compile CodeHawk
+      run: eval $(opam env) && cd CodeHawk && ./full_make_no_gui.sh
     - name: Prepare tar file for upload
-      run: tar -hcvf artifacts.tar CodeHawk/_build/install/default/bin/*
+      run: tar -cvf artifacts.tar CodeHawk/CHB/bchcmdline/chx86_analyze CodeHawk/CHC/cchcil/parseFile CodeHawk/CHC/cchcmdline/canalyzer
     - name: Upload artifacts tar file
       uses: actions/upload-artifact@v3
       with:
@@ -45,8 +38,6 @@ jobs:
           - "4.12.1"
           - "4.13.1"
           - "4.14.1"
-          - "5.0.0"
-          - "5.1.1"
     steps:
     - uses: actions/checkout@v2
       with:
@@ -60,7 +51,7 @@ jobs:
     - name: Extract artifacts
       run: |
         tar xvf artifacts.tar
-        mv CodeHawk/_build/install/default/bin/chx86_analyze chb/bin/binaries/linux/chx86_analyze
+        mv CodeHawk/CHB/bchcmdline/chx86_analyze chb/bin/binaries/linux/chx86_analyze
     - name: Run binary analyzer tests
       run: PYTHONPATH=$PWD chb/cmdline/chkx test runall
   c_orchestration:
@@ -73,8 +64,6 @@ jobs:
           - "4.12.1"
           - "4.13.1"
           - "4.14.1"
-          - "5.0.0"
-          - "5.1.1"
     steps:
     - uses: actions/checkout@v2
       with:
@@ -90,8 +79,8 @@ jobs:
     - name: Extract artifacts
       run: |
         tar xvf artifacts.tar
-        mv CodeHawk/_build/install/default/bin/parseFile chc/bin/linux/parseFile
-        mv CodeHawk/_build/install/default/bin/canalyzer chc/bin/linux/canalyzer
+        mv CodeHawk/CHC/cchcil/parseFile chc/bin/linux/parseFile
+        mv CodeHawk/CHC/cchcmdline/canalyzer chc/bin/linux/canalyzer
     - name: Run kendra test suite
       run: |
         PYTHONPATH=$PWD python3 chc/cmdline/kendra/chc_test_kendrasets.py | tee kendra_output.txt
