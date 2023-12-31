@@ -19,6 +19,8 @@ CAMLC := ocamlopt -I +str -I +unix -I cmi -I cmx \
 	-I $(JCHPRE)/cmi \
 	-I $(JCHSYS)/cmi \
 
+OCAMLDEP := ocamldep
+
 
 MLIS := \
         jCHAnalysisUtils \
@@ -70,23 +72,24 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs jchpoly
+all: jchpoly.cmxa
 
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
 
-jchpoly: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHSYS)/jchsys.cmxa
-	$(CAMLC) -a -o jchpoly.cmxa $(OBJECTS)
+jchpoly.cmxa: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHSYS)/jchsys.cmxa
+	$(CAMLC) -a -o $@ $(OBJECTS)
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) -o $@ -c -opaque $<
 
-cmx/%.cmx: %.ml
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
 
 clean:
+	rm -f .depend
 	rm -f */*.cmx
 	rm -f */*.cmi
 	rm -f */*.o
@@ -94,3 +97,10 @@ clean:
 	rm -f *.a
 	rm -f *.cmxa
 	rm -f Makefile~	
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean

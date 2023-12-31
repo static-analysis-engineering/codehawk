@@ -27,6 +27,8 @@ CAMLLINK := ocamlopt  \
 	-I $(CCHLIB)/cmi \
 	-I $(CCHPRE)/cmi \
 
+OCAMLDEP := ocamldep
+
 MLIS := \
 	cCHAnalysisTypes \
 	cCHNumericalConstraints \
@@ -158,22 +160,23 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs cchanalyze
+all: cchanalyze.cmxa
 
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-cchanalyze: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa
+cchanalyze.cmxa: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa
 	$(CAMLLINK) -a -o cchanalyze.cmxa $(OBJECTS)
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) -o $@ -c -opaque $<
 
-cmx/%.cmx: %.ml
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
 
 clean:
+	rm -f .depend
 	rm -f */*.cmx
 	rm -f */*.cmi
 	rm -f */*.o
@@ -188,3 +191,10 @@ clean:
 	rm -f testinvariants
 	rm -f checkpo
 	rm -f call_checkpo
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean

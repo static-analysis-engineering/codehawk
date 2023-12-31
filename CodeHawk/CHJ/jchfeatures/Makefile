@@ -14,6 +14,8 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(JCHLIB)/cmi \
 	-I $(JCHPRE)/cmi \
 
+OCAMLDEP := ocamldep
+
 MLIS = \
 	jCHFeaturesAPI \
 	jCHSubgraph \
@@ -35,22 +37,23 @@ SOURCES = \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs jchfeatures
+all: jchfeatures.cmxa
 
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-jchfeatures: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLC) -a -o jchfeatures.cmxa $(OBJECTS)
+jchfeatures.cmxa: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLC) -a -o $@ $(OBJECTS)
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) -o $@ -c -opaque $<
 
-cmx/%.cmx: %.ml
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
 
 clean:
+	rm -f .depend
 	rm -f */*.cmx
 	rm -f */*.cmi
 	rm -f */*.o
@@ -59,3 +62,9 @@ clean:
 	rm -f *.cmxa
 	rm -f Makefile~	
 
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean

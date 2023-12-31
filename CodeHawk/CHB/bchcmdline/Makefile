@@ -63,6 +63,8 @@ CAMLLINK := ocamlopt str.cmxa unix.cmxa \
 	$(PWRLIB)/bchlibpower32.cmxa \
 	$(ANALYZ)/bchanalyze.cmxa \
 
+OCAMLDEP := ocamldep
+
 MLIS := \
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
@@ -71,7 +73,7 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs xanalyzer inspect
+all: chx86_analyze chx86_inspect_summaries
 
 make_dirs:
 	@mkdir -p cmx
@@ -79,37 +81,38 @@ make_dirs:
 
 defs: make_dirs libsum appsum constsum classsum structdef
 
-xanalyzer:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPSLIB)/bchlibmips32.cmxa $(ARMLIB)/bchlibarm32.cmxa $(PWRLIB)/bchlibpower32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
-	$(CAMLLINK) -o chx86_analyze cmx/bCHXBinaryAnalyzer.cmx
+chx86_analyze:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa $(X86LIB)/bchlibx86.cmxa $(MIPSLIB)/bchlibmips32.cmxa $(ARMLIB)/bchlibarm32.cmxa $(PWRLIB)/bchlibpower32.cmxa $(ANALYZ)/bchanalyze.cmxa cmi/bCHXBinaryAnalyzer.cmi cmx/bCHXBinaryAnalyzer.cmx
+	$(CAMLLINK) -o $@ cmx/bCHXBinaryAnalyzer.cmx
 
-inspect: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa cmi/bCHXInspectSummaries.cmi cmx/bCHXInspectSummaries.cmx
-	$(CAMLLINK) -o chx86_inspect_summaries $(OBJECTS) cmx/bCHXInspectSummaries.cmx
+chx86_inspect_summaries: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa cmi/bCHXInspectSummaries.cmi cmx/bCHXInspectSummaries.cmx
+	$(CAMLLINK) -o $@ $(OBJECTS) cmx/bCHXInspectSummaries.cmx
 
-export:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa cmx/bCHXSaveExports.cmx
-	$(CAMLLINK) -o chx86_save_exports $(OBJECTS) cmx/bCHXSaveExports.cmx
+chx86_save_exports:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(ZIPLIB)/zip.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa cmx/bCHXSaveExports.cmx
+	$(CAMLLINK) -o $@ $(OBJECTS) cmx/bCHXSaveExports.cmx
 
-libsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeLibSummary.cmi cmx/bCHXMakeLibSummary.cmx
-	$(CAMLLINK) -o chx86_make_lib_summary cmx/bCHXMakeLibSummary.cmx
+chx86_make_lib_summary: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeLibSummary.cmi cmx/bCHXMakeLibSummary.cmx
+	$(CAMLLINK) -o $@ cmx/bCHXMakeLibSummary.cmx
 
-appsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeAppSummary.cmi cmx/bCHXMakeAppSummary.cmx
-	$(CAMLLINK) -o chx86_make_app_summary cmx/bCHXMakeAppSummary.cmx
+chx86_make_app_summary: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeAppSummary.cmi cmx/bCHXMakeAppSummary.cmx
+	$(CAMLLINK) -o $@ cmx/bCHXMakeAppSummary.cmx
 
-constsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeConstSummary.cmi cmx/bCHXMakeConstSummary.cmx
-	$(CAMLLINK) -o chx86_make_const_summary cmx/bCHXMakeConstSummary.cmx
+chx86_make_const_summary: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeConstSummary.cmi cmx/bCHXMakeConstSummary.cmx
+	$(CAMLLINK) -o $@ cmx/bCHXMakeConstSummary.cmx
 
-classsum: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeClassSummary.cmi cmx/bCHXMakeClassSummary.cmx
-	$(CAMLLINK) -o chx86_make_class_summary cmx/bCHXMakeClassSummary.cmx
+chx86_make_class_summary: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeClassSummary.cmi cmx/bCHXMakeClassSummary.cmx
+	$(CAMLLINK) -o $@ cmx/bCHXMakeClassSummary.cmx
 
-structdef: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeStructDefinition.cmi cmx/bCHXMakeStructDefinition.cmx
-	$(CAMLLINK) -o chx86_make_structdef cmx/bCHXMakeStructDefinition.cmx
+chx86_make_structdef: $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa cmi/bCHXMakeStructDefinition.cmi cmx/bCHXMakeStructDefinition.cmx
+	$(CAMLLINK) -o $@ cmx/bCHXMakeStructDefinition.cmx
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) -o $@ -c -opaque $<
 
-cmx/%.cmx: %.ml $(CMIS)
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
 
 clean:
+	rm -f .depend
 	rm -f cmx/*.cm*
 	rm -f cmi/*.cmi
 	rm -f cmx/*.o
@@ -128,3 +131,10 @@ clean:
 	rm -rf chx86_make_const_summary
 	rm -rf chx86_make_structdef
 	rm -rf doc
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean

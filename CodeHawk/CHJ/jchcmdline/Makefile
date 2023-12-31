@@ -31,38 +31,39 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 
 CAMLDOC := ocamldoc
 JAVAC = javac
+OCAMLDEP := ocamldep
 
-all: make_dirs template integrate inspect native experiment
+all: chj_template chj_integrate chj_inspect chj_native chj_experiment
 
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
 # program to experiment with applying certain functionality to a single class
-experiment: cmi/jCHXClassExperiment.cmi cmx/jCHXClassExperiment.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLBUILD) -o chj_experiment cmx/jCHXClassExperiment.cmx
+chj_experiment: cmi/jCHXClassExperiment.cmi cmx/jCHXClassExperiment.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLBUILD) -o $@ cmx/jCHXClassExperiment.cmx
 
 # program to generate xml starting point for library method summaries
-template: cmi/jCHXTemplate.cmi cmx/jCHXTemplate.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLBUILD) -o chj_template cmx/jCHXTemplate.cmx
+chj_template: cmi/jCHXTemplate.cmi cmx/jCHXTemplate.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLBUILD) -o $@ cmx/jCHXTemplate.cmx
 
 # program to integrate platform-independent and platform dependent library summaries
-integrate: cmi/jCHXIntegrateSummaries.cmi cmx/jCHXIntegrateSummaries.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLBUILD) -o chj_integrate cmx/jCHXIntegrateSummaries.cmx
+chj_integrate: cmi/jCHXIntegrateSummaries.cmi cmx/jCHXIntegrateSummaries.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLBUILD) -o $@ cmx/jCHXIntegrateSummaries.cmx
 
 # program to inspect library method summaries for syntactic correctness and semantic consistency
-inspect: cmi/jCHXInspectSummaries.cmi cmx/jCHXInspectSummaries.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLBUILD) -o chj_inspect cmx/jCHXInspectSummaries.cmx
+chj_inspect: cmi/jCHXInspectSummaries.cmi cmx/jCHXInspectSummaries.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLBUILD) -o $@ cmx/jCHXInspectSummaries.cmx
 
 # program to generate class xml files with the signatures of native methods (NM)
-native: cmi/jCHXNativeMethodSignatures.cmi cmx/jCHXNativeMethodSignatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLBUILD) -o chj_native cmx/jCHXNativeMethodSignatures.cmx
+chj_native: cmi/jCHXNativeMethodSignatures.cmi cmx/jCHXNativeMethodSignatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLBUILD) -o $@ cmx/jCHXNativeMethodSignatures.cmx
 
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) -o $@ -c $<
 
-cmx/%.cmx: %.ml
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
 
 
@@ -70,6 +71,7 @@ cleanjava:
 	rm -f *.class
 
 clean:
+	rm -f .depend
 	rm -f */*.cmx
 	rm -f */*.cmi
 	rm -f */*.o
@@ -83,3 +85,10 @@ clean:
 	rm -f chj_integrate
 	rm -f chj_inspect
 	rm -f chj_native
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean

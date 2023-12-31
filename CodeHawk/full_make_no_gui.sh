@@ -1,29 +1,29 @@
 #!/bin/bash
 set -e
-make -C CH/chlib
-make -C CH/chutil
-make -C CH/xprlib
-make -C CHC/cchcil
-make -C CHC/cchlib
-make -C CHC/cchpre
-make -C CHC/cchanalyze
-make -C CHC/cchcmdline
-make -C CHB/bchlib
-make -C CHB/bchcil
-make -C CHB/bchlibpe
-make -C CHB/bchlibelf
-make -C CHB/bchlibx86
-make -C CHB/bchlibmips32
-make -C CHB/bchlibarm32
-make -C CHB/bchlibpower32
-make -C CHB/bchanalyze
-make -C CHB/bchcmdline
-make -C CHJ/jchlib
-make -C CHJ/jchpre
-make -C CHJ/jchsys
-make -C CHJ/jchpoly
-make -C CHJ/jchfeatures
-make -C CHJ/jchmuse
-make -C CHJ/jchcost
-make -C CHJ/jchcmdline
-make -C CHJ/jchstac
+make -C CH/chlib -j$(nproc)
+make -C CH/chutil -j$(nproc)
+make -C CH/xprlib -j$(nproc)
+make -C CHC/cchcil -j$(nproc)
+make -C CHC/cchlib -j$(nproc)
+make -C CHC/cchpre -j$(nproc)
+make -C CHC/cchanalyze -j$(nproc)
+make -C CHC/cchcmdline -j$(nproc)
+make -C CHB/bchlib -j$(nproc)
+make -C CHB/bchcil -j$(nproc)
+make -C CHB/bchlibpe -j$(nproc)
+make -C CHB/bchlibelf -j$(nproc)
+make -C CHB/bchlibx86 -j$(nproc)
+make -C CHB/bchlibmips32 -j$(nproc)
+make -C CHB/bchlibarm32 -j$(nproc)
+make -C CHB/bchlibpower32 -j$(nproc)
+make -C CHB/bchanalyze -j$(nproc)
+make -C CHB/bchcmdline -j$(nproc)
+make -C CHJ/jchlib -j$(nproc)
+make -C CHJ/jchpre -j$(nproc)
+make -C CHJ/jchsys -j$(nproc)
+make -C CHJ/jchpoly -j$(nproc)
+make -C CHJ/jchfeatures -j$(nproc)
+make -C CHJ/jchmuse -j$(nproc)
+make -C CHJ/jchcost -j$(nproc)
+make -C CHJ/jchcmdline -j$(nproc)
+make -C CHJ/jchstac -j$(nproc)

@@ -67,11 +67,13 @@ CAMLBUILDPOLY := ocamlopt str.cmxa unix.cmxa \
 	$(JCHSYS)/jchsys.cmxa \
 	$(JCHPOLY)/jchpoly.cmxa \
 
+OCAMLDEP := ocamldep
+
 
 CAMLDOC := ocamldoc
 JAVAC = javac
 
-all: make_dirs features exprfeatures pattern poly
+all: chj_features chj_efeatures chj_patterns chj_invariants
 
 make_dirs:
 	@mkdir -p cmx
@@ -79,31 +81,32 @@ make_dirs:
 
 
 # program to generate key-value pairs (MUSE)
-features: cmi/jCHXExtractFeatures.cmi cmx/jCHXExtractFeatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHFEA)/jchfeatures.cmxa
+chj_features: cmi/jCHXExtractFeatures.cmi cmx/jCHXExtractFeatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHFEA)/jchfeatures.cmxa
 	$(CAMLBUILD) -o chj_features cmx/jCHXExtractFeatures.cmx
 
-exprfeatures: cmi/jCHXExtractExprFeatures.cmi cmx/jCHXExtractExprFeatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHFEA)/jchfeatures.cmxa
-	$(CAMLBUILD) -o chj_efeatures cmx/jCHXExtractExprFeatures.cmx
+chj_efeatures: cmi/jCHXExtractExprFeatures.cmi cmx/jCHXExtractExprFeatures.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa $(JCHFEA)/jchfeatures.cmxa
+	$(CAMLBUILD) -o $@ cmx/jCHXExtractExprFeatures.cmx
 
-poly: cmi/jCHXClassPoly.cmi cmx/jCHXClassPoly.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLBUILDPOLY) -o chj_invariants cmx/jCHXClassPoly.cmx
+chj_invariants: cmi/jCHXClassPoly.cmi cmx/jCHXClassPoly.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLBUILDPOLY) -o $@ cmx/jCHXClassPoly.cmx
 
-pattern: cmi/jCHXCollectPatterns.cmi cmx/jCHXCollectPatterns.cmx  $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLBUILD) -o chj_patterns cmx/jCHXCollectPatterns.cmx
+chj_patterns: cmi/jCHXCollectPatterns.cmi cmx/jCHXCollectPatterns.cmx  $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLBUILD) -o $@ cmx/jCHXCollectPatterns.cmx
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) -o $@ -c $<
 
-cmx/jCHXClassPoly.cmx: jCHXClassPoly.ml
+cmx/jCHXClassPoly.cmx: jCHXClassPoly.ml make_dirs
 	$(CAMLCPOLY)  -o $@ -c $<
 
-cmx/%.cmx: %.ml
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
 
 cleanjava:
 	rm -f *.class
 
 clean:
+	rm -f .depend
 	rm -f */*.cmx
 	rm -f */*.cmi
 	rm -f */*.o
@@ -117,3 +120,9 @@ clean:
 	rm -f chj_patterns
 	rm -f chj_invariants
 
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean cleanjava

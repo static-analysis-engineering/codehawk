@@ -23,7 +23,8 @@ CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(BCHLIB)/cmi \
 	-I $(ELFLIB)/cmi \
 
-CAMLLINK := ocamlopt \
+CAMLLINK := ocamlopt
+OCAMLDEP := ocamldep
 
 MLIS := \
 	bCHARMTypes \
@@ -92,22 +93,23 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs bchlibarm32
+all: bchlibarm32.cmxa
 
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-bchlibarm32: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(ELFLIB)/bchlibelf.cmxa
-	$(CAMLLINK) -a -o bchlibarm32.cmxa $(OBJECTS)
+bchlibarm32.cmxa: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(ELFLIB)/bchlibelf.cmxa
+	$(CAMLLINK) -a -o $@ $(OBJECTS)
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) -o $@ -c -opaque $<
 
-cmx/%.cmx: %.ml $(CMIS)
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
 
 clean:
+	rm -f .depend
 	rm -f cmx/*.cm*
 	rm -f cmi/*.cmi
 	rm -f cmx/*.o
@@ -117,3 +119,10 @@ clean:
 	rm -f *.mli~
 	rm -f Makefile~ 
 	rm -rf doc
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean

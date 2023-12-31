@@ -64,36 +64,38 @@ CAMLPREBUILD := ocamlopt str.cmxa unix.cmxa \
 	$(JCHLIB)/jchlib.cmxa \
 	$(JCHPRE)/jchpre.cmxa \
 
+OCAMLDEP := ocamldep
 
-all: make_dirs initialize classinvariants translateclass
+all: chj_initialize chj_class_invariants chj_translate_class
 
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-initialize: cmi/jCHVersion.cmi cmx/jCHVersion.cmx cmi/jCHXInitializeAnalysis.cmi cmx/jCHXInitializeAnalysis.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+chj_initialize: cmi/jCHVersion.cmi cmx/jCHVersion.cmx cmi/jCHXInitializeAnalysis.cmi cmx/jCHXInitializeAnalysis.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
 	$(CAMLBUILD) -o chj_initialize cmx/jCHVersion.cmx cmx/jCHXInitializeAnalysis.cmx
 
-classinvariants: cmi/jCHXClassInvariants.cmi cmx/jCHXClassInvariants.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLBUILD) -o chj_class_invariants cmx/jCHXClassInvariants.cmx
+chj_class_invariants: cmi/jCHXClassInvariants.cmi cmx/jCHXClassInvariants.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLBUILD) -o $@ cmx/jCHXClassInvariants.cmx
 
-translateclass: cmi/jCHXTranslateClass.cmi cmx/jCHXTranslateClass.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLPREBUILD) -o chj_translate_class cmx/jCHXTranslateClass.cmx
+chj_translate_class: cmi/jCHXTranslateClass.cmi cmx/jCHXTranslateClass.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLPREBUILD) -o $@ cmx/jCHXTranslateClass.cmx
 
-usertemplate: cmi/jCHXTemplate.cmi cmx/jCHXTemplate.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
-	$(CAMLBUILD) -o chj_template cmx/jCHXTemplate.cmx
+chj_template: cmi/jCHXTemplate.cmi cmx/jCHXTemplate.cmx $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(JCHLIB)/jchlib.cmxa $(JCHPRE)/jchpre.cmxa
+	$(CAMLBUILD) -o $@ cmx/jCHXTemplate.cmx
 
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) $(INCLUDES) -o $@ -c $<
 
-cmx/%.cmx: %.ml
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) $(INCLUDES) -o $@ -c $<
 
 cleanjava:
 	rm -f *.class
 
 clean:
+	rm -f .depend
 	rm -f */*.cmx
 	rm -f */*.cmi
 	rm -f */*.o
@@ -107,3 +109,10 @@ clean:
 	rm -f chj_translate_class
 	rm -f chj_class_invariants
 	rm -f .depend
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean
