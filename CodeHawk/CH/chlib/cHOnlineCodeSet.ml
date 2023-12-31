@@ -28,7 +28,6 @@
 (* chlib *)
 open CHCommon
 open CHLanguage   
-open CHNumerical   
 open CHPretty
 open CHUtils
 
@@ -36,7 +35,7 @@ class code_t
         (code_id: int) 
         ?(command_to_pretty=(CHLanguage.command_to_pretty 0))
         (l: ((code_int, cfg_int) command_t) list): code_int =
-object (self: _)
+object (_self: _)
      
   val id = code_id
          

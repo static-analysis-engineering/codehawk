@@ -30,7 +30,6 @@ open CHCommon
 open CHLanguage   
 open CHNumerical
 open CHPretty
-open CHStack
 open CHUtils
 
 module Make (F: LANGUAGE_FACTORY) =
@@ -67,7 +66,7 @@ module Make (F: LANGUAGE_FACTORY) =
 	   | Some d -> d#lt depth
 	   | None -> true
                    
-      method transformCmd cmd =
+      method! transformCmd cmd =
         match cmd with
 	| CONTEXT (s, code) ->
 	   let processor' = {< context = s :: context >} in
@@ -176,7 +175,7 @@ module Make (F: LANGUAGE_FACTORY) =
             ?(op_proc: op_processor_t option)
             ?(exclusions: (symbol_t -> bool) option)
             (sys: system_int) =
-    object (self: _)
+    object (_self: _)
          
       val system = sys
                  

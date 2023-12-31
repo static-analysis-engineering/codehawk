@@ -368,13 +368,13 @@ object (self:'a)
     match v with
     | PEPRTOP -> xtop_pepr_bound
     | PEPRANGE r -> r#get_min
-    | PEPRDEP d -> raise (CHFailure (self#wrongtypeErrorMsg "get_min"))
+    | PEPRDEP _d -> raise (CHFailure (self#wrongtypeErrorMsg "get_min"))
 
   method get_max =
     match v with
     | PEPRTOP -> xtop_pepr_bound
     | PEPRANGE r -> r#get_max
-    | PEPRDEP d -> raise (CHFailure (self#wrongtypeErrorMsg "get_max"))
+    | PEPRDEP _d -> raise (CHFailure (self#wrongtypeErrorMsg "get_max"))
 
   method is_top = match v with PEPRTOP -> true | _ -> false
 
@@ -388,7 +388,7 @@ object (self:'a)
       match v with
       | PEPRTOP -> false
       | PEPRANGE r -> r#is_bounded
-      | PEPRDEP d -> raise (CHFailure (self#wrongtypeErrorMsg "is_bounded"))
+      | PEPRDEP _d -> raise (CHFailure (self#wrongtypeErrorMsg "is_bounded"))
 
   method equal (a:'a) =
     match (self#is_top, a#is_top) with

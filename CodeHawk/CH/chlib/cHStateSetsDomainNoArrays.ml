@@ -27,12 +27,9 @@
 
 (* chlib *)
 open CHCommon
-open CHConstants   
-open CHDomain   
 open CHLanguage
 open CHNonRelationalDomainNoArrays
 open CHNonRelationalDomainValues   
-open CHNumerical   
 open CHPretty
 open CHSymbolicSets
 open CHUtils
@@ -43,6 +40,8 @@ module H = Hashtbl
 (* policy: policy-name, transitions
    transition: transition       -name, (pre,post) list
  *)
+
+[@@@warning "-27"]
          
 class state_sets_domain_no_arrays_t
         (policies:(string * (string * (symbol_t * symbol_t) list) list) list) = 
@@ -78,7 +77,7 @@ object (self: 'a)
   method private setValue' t v x =
     self#setValue t v (new non_relational_domain_value_t (SYM_SET_VAL x))
     
-  method special cmd args = {< >}
+  method special _cmd _args = {< >}
                           
   method private importValue v =
     new non_relational_domain_value_t (SYM_SET_VAL (v#toSymbolicSet))
@@ -207,8 +206,8 @@ object (self: 'a)
     else
       raise (CHFailure (LBLOCK [ STR "Policy " ; STR name ; STR " not found" ]))
     
-  method analyzeOperation ~(domain_name:string) ~(fwd_direction:bool)
-                          ~(operation:operation_t):'a =
+  method! analyzeOperation ~(domain_name:string) ~(fwd_direction:bool)
+                           ~(operation:operation_t):'a =
     let name = operation.op_name#getBaseName in
     let policyname = List.hd operation.op_name#getAttributes in
     let transitiontable = self#get_transition_table policyname in
@@ -225,7 +224,7 @@ object (self: 'a)
        if H.mem transitiontable name then
          let preposts = H.find transitiontable name in
          begin
-           List.iter (fun (sym,v,_) ->
+           List.iter (fun (_sym,v,_) ->
                if fwd_direction then
                  let states = self#getValue' v in
                  if states#isTop || states#isBottom then

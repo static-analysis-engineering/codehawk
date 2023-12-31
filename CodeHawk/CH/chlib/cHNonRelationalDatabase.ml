@@ -32,7 +32,6 @@ open CHLanguage
 open CHNonRelationalDomainValues
 open CHNonRelationalTable   
 open CHPretty
-open CHSymbolicSets   
 open CHUtils
 
 
@@ -85,11 +84,11 @@ object (self: 'a)
     in
     {< tables = tables'' >}    
     
-  method meet (db: 'a) =
+  method meet (_db: 'a) =
     (* Databases are not subject to refinement because updates are conservative *)
     {< >}
     
-  method narrowing (db: 'a) =
+  method narrowing (_db: 'a) =
     (* Databases are not subject to refinement because updates are conservative *)
     {< >}
     
@@ -124,7 +123,7 @@ object (self: 'a)
   method analyzeQueryNoDB
            (cmd: (code_int, cfg_int) command_t): (variable_t * non_relational_domain_value_t) list =
     match cmd with
-    | SELECT {selected = selected; from = from; where = where} ->
+    | SELECT {selected = selected; from = _from; where = _where} ->
        List.map (fun (_, v) -> (v, topNonRelationalDomainValue)) selected
     | _ ->
        raise (CHFailure (STR "Database error #5"))
@@ -181,7 +180,7 @@ object (self: 'a)
 		 begin
 		   try
 		     let (k, _) =
-                       List.find (fun (k, (_, index)) ->
+                       List.find (fun (_k, (_, index)) ->
                            match index with
                            | PRIMARY_INDEX -> true
                            | _ -> false) s in

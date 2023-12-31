@@ -26,13 +26,10 @@
   ============================================================================== *)
 
 (* chlib *)
-open CHCommon
 open CHDomainObserver
 open CHLanguage
 open CHNonRelationalDomainValues
-open CHNumerical
 open CHNumericalConstraints
-open CHPEPRBounds
 open CHPEPRTypes
 open CHPretty
 

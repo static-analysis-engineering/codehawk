@@ -27,8 +27,6 @@
 
 (* chlib *)
 open CHBounds
-open CHCollections   
-open CHCommon
 open CHLanguage
 open CHNumerical   
 open CHPretty

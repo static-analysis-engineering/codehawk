@@ -3,7 +3,3 @@
   (libraries str unix zarith)
   (public_name codehawk.chlib)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

@@ -29,15 +29,11 @@
 
 (* chlib *)
 open CHCommon
-open CHConstants   
-open CHDomain   
 open CHLanguage
 open CHNonRelationalDomainNoArrays
 open CHNonRelationalDomainValues   
-open CHNumerical   
 open CHPretty
 open CHSymbolicSets
-open CHUtils
 
    
 class symbolic_sets_domain_no_arrays_t = 
@@ -62,7 +58,7 @@ object (self: 'a)
   method private setValue' t v x =
     self#setValue t v (new non_relational_domain_value_t (SYM_SET_VAL x))
     
-  method special cmd args = {< >}
+  method special _cmd _args = {< >}
                           
   method private importValue v =
     new non_relational_domain_value_t (SYM_SET_VAL (v#toSymbolicSet))

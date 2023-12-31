@@ -358,7 +358,7 @@ let backsubstitute (intp: int array) (con: matrix_t) (rank: int) =
       done
     end
 
-let simplify (con: matrix_t) (ray: matrix_t) (satf: satmat_t) (nbline: int) =
+let simplify (con: matrix_t) (ray: matrix_t) (satf: satmat_t) (_nbline: int) =
   let i = ref 0 in
   let j = ref 0 in
   let nb = ref 0 in
@@ -697,7 +697,7 @@ let add_dimensions (_C: matrix_t option) (_F: matrix_t option)
 	p_satCres := !nsatC
       end
 
-let checksatmat (con_to_ray: bool) (c: matrix_t) (f: matrix_t) (satC: satmat_t) =
+let checksatmat (_con_to_ray: bool) (c: matrix_t) (f: matrix_t) (satC: satmat_t) =
   try
     for i = 0 to f#nbrows - 1 do
       let j = new bitindex_t 0 in
@@ -717,7 +717,7 @@ let checksatmat (con_to_ray: bool) (c: matrix_t) (f: matrix_t) (satC: satmat_t) 
     true
   with Found -> false
 
-let checksat (con_to_ray: bool) (c: matrix_t) (nbequations: int)
+let checksat (_con_to_ray: bool) (c: matrix_t) (nbequations: int)
     (f: matrix_t) (nblines: int) (satC: satmat_t) =
   let nb = ref 0 in
   let rank = ref 0 in

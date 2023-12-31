@@ -27,12 +27,9 @@
 
 (* chlib *)
 open CHCommon
-open CHConstants   
-open CHDomain   
 open CHLanguage
 open CHNonRelationalDomainNoArrays
 open CHNonRelationalDomainValues   
-open CHNumerical   
 open CHPretty
 open CHStridedIntervals
 open CHUtils
@@ -54,7 +51,7 @@ object (self: 'a)
                    (v: variable_t) (x: strided_interval_t) =
     self#setValue t v (new non_relational_domain_value_t (STRIDED_INTERVAL_VAL x))
     
-  method special (cmd: string) (args: domain_cmd_arg_t list) : 'a = {< >}
+  method special (_cmd: string) (_args: domain_cmd_arg_t list) : 'a = {< >}
                                                                   
   method private importValue v =
     new non_relational_domain_value_t
@@ -242,12 +239,12 @@ object (self: 'a)
 	     self#setValue' table' z z_i'';
 	     default()
 	   end	    
-      | ASSIGN_NUM (v, MULT (x, y)) ->
+      | ASSIGN_NUM (v, MULT (_x, _y)) ->
 	 begin
 	   table'#remove v;
 	   default ()
 	 end
-      | ASSIGN_NUM (v, DIV (x, y)) ->
+      | ASSIGN_NUM (v, DIV (_x, _y)) ->
 	 begin
 	   table'#remove v;
 	   default ()

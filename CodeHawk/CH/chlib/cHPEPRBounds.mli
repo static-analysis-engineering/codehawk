@@ -26,11 +26,9 @@
   ============================================================================== *)
 
 (* chlib *)
-open CHIntervals
 open CHLanguage
 open CHNumerical
 open CHPEPRTypes
-open CHPretty
 
 val mk_pepr_params: variable_t list -> pepr_params_int
 

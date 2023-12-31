@@ -30,7 +30,6 @@
 (* chlib *)
 open CHAtlas
 open CHCommon
-open CHDomain   
 open CHLanguage   
 open CHNumerical
 open CHPretty
@@ -231,7 +230,7 @@ object (self: _)
                    loop_stack_table
                    loop_mode_table
                    inv_table
-                   loop_counter_table
+                   _loop_counter_table
                    src
                    tgt
                    inv =
@@ -1151,7 +1150,7 @@ object (self: _)
        up_iteration post_loop 1
     | OPERATION operation ->
        let mods =
-         List.filter (fun (_, v, mode) ->
+         List.filter (fun (_, _v, mode) ->
              match mode with READ -> false | _ -> true) operation.op_args in
        let mods_l = List.map (fun (_, v, _) -> v) mods in
        begin
@@ -1454,7 +1453,7 @@ object (self: _)
                match mode with
 	       | STABLE_MODE -> 
 		  ()
-	       | BREAKOUT_POINT (s', breakout_inv) when not(s#equal s') ->
+	       | BREAKOUT_POINT (s', _breakout_inv) when not(s#equal s') ->
 		  ()
 	       | BREAKOUT_POINT (s', breakout_inv) when s#equal s' ->
 		  breakout_inv := pre#join (!breakout_inv);

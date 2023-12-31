@@ -27,7 +27,6 @@
 
 (* chlib *)
 open CHCommon
-open CHDomain
 open CHPretty
 
 class virtual ['a] domain_downlink_int =

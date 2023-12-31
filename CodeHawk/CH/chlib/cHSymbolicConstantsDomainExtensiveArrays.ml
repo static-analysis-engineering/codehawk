@@ -26,16 +26,15 @@
   ============================================================================== *)
 
 (* chlib *)
-open CHDomain
 open CHNonRelationalDomainExtensiveArrays
 open CHSymbolicConstantsDomainNoArrays
 
 class symbolic_constants_domain_extensive_arrays_t
         ?(do_precise_read_write = false)
         (index_domain: string) =
-object (self: 'a)
+object (_self: 'a)
   
   inherit symbolic_constants_domain_no_arrays_t
-  inherit non_relational_domain_extensive_arrays_t do_precise_read_write index_domain
+  inherit! non_relational_domain_extensive_arrays_t do_precise_read_write index_domain
     
 end

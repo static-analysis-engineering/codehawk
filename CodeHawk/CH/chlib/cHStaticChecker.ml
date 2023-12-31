@@ -28,7 +28,6 @@
 (* chlib *)
 open CHCommon
 open CHLanguage
-open CHNumerical
 open CHPretty
 open CHUtils
 
@@ -62,7 +61,7 @@ object (self: _)
   method private hasVariable (varList : CHUtils.VariableCollections.set_t) searchVar =
     let rec findVarInType searchPath (searchVarIn : variable_t) =
       match searchVarIn#getType with
-      | STRUCT_TYPE st ->
+      | STRUCT_TYPE _st ->
          (match searchPath with 
           | [name] -> (searchVarIn#field name)#equal searchVar
           | first :: last -> findVarInType last (searchVarIn#field first)
@@ -72,7 +71,7 @@ object (self: _)
     if varList#has searchVar then true else
       varList#fold (fun myBool myVar -> myBool || (findVarInType (searchVar#getPath) myVar)) false
     
-  method walkVar v =
+  method! walkVar v =
     let err () =
       self#error [STR "Variable "; v#toPretty; STR " is undefined"]
     in
@@ -103,7 +102,7 @@ object (self: _)
        else
 	 err ()
       
-  method walkNumExp e =
+  method! walkNumExp e =
     let error v =
       self#error [STR "Variable "; v#toPretty; STR " used in numerical expression"]
     in
@@ -127,7 +126,7 @@ object (self: _)
     in
     super#walkNumExp e
     
-  method walkSymExp e =
+  method! walkSymExp e =
     let _ = match e with
       | SYM_VAR v ->
 	 if v#isSymbolic && not(v#isArray) then
@@ -139,7 +138,7 @@ object (self: _)
     in
     super#walkSymExp e
     
-  method walkBoolExp e =
+  method! walkBoolExp e =
     let _ = match e with
       | LEQ (x, y)
         | GEQ (x, y)
@@ -166,13 +165,13 @@ object (self: _)
     in
     super#walkBoolExp e
     
-  method walkCmd cmd =
+  method! walkCmd cmd =
     match cmd with
     | TRANSACTION (_, code, post_code) ->
        let checker = object
 	   inherit code_walker_t
 	         
-	   method walkCmd cmd =
+	   method! walkCmd cmd =
 	     match cmd with
 	     | LOOP _
 	       | CFG _ ->

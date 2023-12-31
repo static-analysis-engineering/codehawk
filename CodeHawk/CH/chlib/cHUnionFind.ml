@@ -125,7 +125,7 @@ struct
 	
     method get (x: E.t) = attribute_table#get (self#find x)
 
-    method union (x: E.t) (y: E.t) =
+    method! union (x: E.t) (y: E.t) =
       let e_x = self#find x in
       let e_y = self#find y in
       let att = match (attribute_table#get e_x, attribute_table#get e_y) with
@@ -143,7 +143,7 @@ struct
 	  | Some a -> attribute_table#set (self#find x) a
       end
 	
-    method reset =
+    method! reset =
       super#reset;
       attribute_table <- new C.simple_table_t
 	

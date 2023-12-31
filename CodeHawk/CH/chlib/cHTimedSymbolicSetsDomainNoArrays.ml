@@ -27,26 +27,19 @@
 
 (* chlib  *)
 open CHCommon
-open CHConstants   
-open CHDomain   
 open CHLanguage
-open CHNonRelationalDomainNoArrays
-open CHNonRelationalDomainValues   
-open CHNumerical   
-open CHPretty
 open CHSymbolicSetsDomainNoArrays
-open CHUtils
 
 
    
 class timed_symbolic_sets_domain_no_arrays_t (timeout:float) = 
-object (self: 'a)
+object (_self: 'a)
      
   inherit symbolic_sets_domain_no_arrays_t as super
         
   val starttime = Unix.gettimeofday ()
                 
-  method private analyzeFwd' (cmd:(code_int, cfg_int) command_t) =
+  method! private analyzeFwd' (cmd:(code_int, cfg_int) command_t) =
     let _ =
       if ((Unix.gettimeofday ()) -. starttime) > timeout then
         raise (CHTimeOut "symbolic sets") in

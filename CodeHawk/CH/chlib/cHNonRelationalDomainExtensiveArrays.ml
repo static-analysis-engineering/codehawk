@@ -29,7 +29,6 @@
 open CHCommon
 open CHCommunications   
 open CHConstants   
-open CHDomain
 open CHDomainObserver   
 open CHIntervals   
 open CHLanguage
@@ -40,6 +39,7 @@ open CHPretty
 open CHStridedIntervals
 open CHUtils
 
+[@@@warning "-27"]
 
 class virtual non_relational_domain_extensive_arrays_t
                 (do_precise_read_write: bool)
@@ -101,7 +101,7 @@ object (self: 'a)
   method private getExpansion v =
     match expand_all_arrays with
     | Some r -> r
-    | none ->
+    | None ->
        begin
 	 match expansions#get v with
 	 | None -> bottomInterval
@@ -132,18 +132,18 @@ object (self: 'a)
     object
       inherit domain_observer_t
             
-      method getObservedVariables = observer'#getObservedVariables
+      method! getObservedVariables = observer'#getObservedVariables
                                   
-      method getObservedArrays = arrays#listOfKeys
+      method! getObservedArrays = arrays#listOfKeys
                                
-      method getObservedArrayIndices a =
+      method! getObservedArrayIndices a =
         match arrays#get a with
 	| None -> []
 	| Some elts -> elts#listOfKeys
                      
-      method getNonRelationalVariableObserver = observer'#getNonRelationalVariableObserver
+      method !getNonRelationalVariableObserver = observer'#getNonRelationalVariableObserver
                                               
-      method getNonRelationalExtensiveArrayObserver a i =
+      method !getNonRelationalExtensiveArrayObserver a i =
         match arrays#get a with
 	| None ->
 	   topNonRelationalDomainValue
@@ -200,7 +200,7 @@ object (self: 'a)
 	else
 	  table'#remove v) vars
     
-  method private assign_array_elt table' arrays' a i x =
+  method private assign_array_elt _table' arrays' a i x =
     let expansion_r = self#getExpansion a in
     if expansion_r#isBottom then
       ()
@@ -246,7 +246,7 @@ object (self: 'a)
 	   else
 	     self#abstractElements arrays' a i_r
 	  
-  method private read_array_elt table' arrays' x a i =
+  method private read_array_elt table' _arrays' x a i =
     let expansion_r = self#getExpansion a in
     if expansion_r#isBottom then
       table'#remove x
@@ -282,7 +282,7 @@ object (self: 'a)
 	     | None -> table'#remove x
 	     | Some e -> self#setValue table' x e				      
                
-  method private abstract_elts arrays' expansions' a min max =
+  method private abstract_elts arrays' _expansions' a min max =
     let expansion_r = self#getExpansion a in
     if expansion_r#isBottom then
       ()
@@ -463,7 +463,7 @@ object (self: 'a)
        {< table = table'; arrays = arrays' >}
     | BLIT_ARRAYS (tgt, tgt_o, src, src_o, n) ->
        (self#analyzeFwd (BLIT_ARRAYS (src, src_o, tgt, tgt_o, n)))#analyzeFwd (ABSTRACT_VARS [tgt])
-    | SET_ARRAY_ELTS (a, s, n, _) ->
+    | SET_ARRAY_ELTS (a, _s, _n, _) ->
        (* The backward semantics of this operation can be modeled more precisely *)
        self#analyzeFwd (ABSTRACT_VARS [a])
     | SHIFT_ARRAY (tgt, src, n) ->

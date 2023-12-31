@@ -28,15 +28,11 @@
 (* chlib *)
 open CHBounds
 open CHCommon
-open CHConstants   
-open CHDomain
 open CHIntervals   
 open CHLanguage
 open CHNonRelationalDomainNoArrays
 open CHNonRelationalDomainValues   
-open CHNumerical   
 open CHPretty
-open CHUtils
 
   
 class intervals_domain_no_arrays_t =
@@ -53,7 +49,7 @@ object (self: 'a)
   method private setValue' t v x =
     self#setValue t v (new non_relational_domain_value_t (INTERVAL_VAL x))
     
-  method special cmd args = {< >}
+  method special _cmd _args = {< >}
                           
   method private importValue v =
     new non_relational_domain_value_t (INTERVAL_VAL (v#toInterval))
@@ -268,12 +264,12 @@ object (self: 'a)
 	     self#setValue' table' z z_i'';
 	     default()
 	   end	    
-      | ASSIGN_NUM (v, MULT (x, y)) ->
+      | ASSIGN_NUM (v, MULT (_x, _y)) ->
 	 begin
 	   table'#remove v;
 	   default ()
 	 end
-      | ASSIGN_NUM (v, DIV (x, y)) ->
+      | ASSIGN_NUM (v, DIV (_x, _y)) ->
 	 begin
 	   table'#remove v;
 	   default ()

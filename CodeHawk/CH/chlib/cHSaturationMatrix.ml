@@ -28,8 +28,6 @@
 (* chlib *)
 open CHBitstring
 open CHCommon
-open CHNumerical   
-open CHPretty
 
 
 class satmat_t nr nc =

@@ -29,10 +29,8 @@
 
 (* chlib *)
 open CHCommon
-open CHIntervals
 open CHLanguage
 open CHNumerical
-open CHPEPRDictionary
 open CHPEPRTypes
 open CHPretty
 
@@ -162,7 +160,7 @@ object (self:'a)
         | [] ->
            raise (CHFailure (LBLOCK [ STR "Single coefficient index not found in: " ;
                                       self#toPretty ]))
-        | h::tl when h#equal numerical_one -> i
+        | h::_tl when h#equal numerical_one -> i
         | _::tl -> aux tl (i+1) in
       aux k 0
     else
@@ -279,13 +277,13 @@ object (self:'a)
 
   method neg = self#mkNew (List.map (fun x -> x#neg) s)
 
-  method add (a:'a) = self#mkNew (self#x_product (fun x x' -> x#add x') s)
+  method add (_a:'a) = self#mkNew (self#x_product (fun x x' -> x#add x') s)
 
   method sub (a:'a) = self#add a#neg
 
-  method mult (a:'a) = self#mkNew []
+  method mult (_a:'a) = self#mkNew []
 
-  method div (a:'a) = self#mkNew []
+  method div (_a:'a) = self#mkNew []
 
   method toPretty =
     LBLOCK [ pretty_print_list s (fun x -> x#toPretty) "[" "; " "]" ]
@@ -747,8 +745,8 @@ let mk_pex_pset (p:pex_set_int list) =
   let index = pd#index_pex_pset_data p in
   new pex_pset_t index p
 
-let zero_pex_pset_lb = mk_pex_pset [ zero_pex_set_lb ]
-let zero_pex_pset_ub = mk_pex_pset [ zero_pex_set_ub ]
+let _zero_pex_pset_lb = mk_pex_pset [ zero_pex_set_lb ]
+let _zero_pex_pset_ub = mk_pex_pset [ zero_pex_set_ub ]
 
 let mk_number_pex_pset_lb n = mk_pex_pset [ mk_number_pex_set_lb n ]
 let mk_number_pex_pset_ub n = mk_pex_pset [ mk_number_pex_set_ub n ]
@@ -759,7 +757,7 @@ let mk_parameter_pex_pset_lb index size =
 let mk_parameter_pex_pset_ub index size =
   mk_pex_pset [ mk_parameter_pex_set_ub index size ]
 
-let top_pex_pset = mk_pex_pset [ top_pex_set ]
+let _top_pex_pset = mk_pex_pset [ top_pex_set ]
 
 let normalize_pepr_bound (b:pepr_bounds_t) =
   match b with
@@ -838,7 +836,7 @@ object (self:'a)
       | (XTOP,_) | (_, XTOP) -> self#mkNew XTOP
       | (XPSET p, XPSET p') when p#is_number -> self#mkNew (XPSET (p'#mult p#get_number))
       | (XPSET p, XPSET p') when p'#is_number -> self#mkNew (XPSET (p#mult p'#get_number))
-      | (XPSET p, XPSET p') -> self#mkNew XTOP in
+      | (XPSET _p, XPSET _p') -> self#mkNew XTOP in
     let _ = trace_binary 2 "Bound#mult" self " mult " a r in
     r
 

@@ -28,7 +28,6 @@
   ------------------------------------------------------------------------------ *)
 
 (* chlib *)
-open CHCommon
 open CHLanguage
 open CHNumerical   
 open CHPretty

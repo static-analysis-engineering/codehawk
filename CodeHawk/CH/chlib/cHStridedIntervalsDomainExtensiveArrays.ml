@@ -26,16 +26,15 @@
   ============================================================================== *)
 
 (* chlib *)
-open CHDomain
 open CHNonRelationalDomainExtensiveArrays
 open CHStridedIntervalsDomainNoArrays
 
 class strided_intervals_domain_extensive_arrays_t
         ?(do_precise_read_write = false)
         (index_domain: string) =
-object (self: 'a)
+object (_self: 'a)
 
   inherit strided_intervals_domain_no_arrays_t
-  inherit non_relational_domain_extensive_arrays_t do_precise_read_write index_domain
+  inherit! non_relational_domain_extensive_arrays_t do_precise_read_write index_domain
     
 end

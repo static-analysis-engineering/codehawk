@@ -28,16 +28,15 @@
 (* chlib *)
 open CHCommon
 open CHCommunications   
-open CHDomain   
 open CHLanguage
 open CHDomainObserver   
 open CHNonRelationalDomainBase   
 open CHNonRelationalDomainValues   
-open CHNumerical
 open CHNumericalConstraints   
 open CHPretty
 open CHUtils
 
+[@@@warning "-27"]
 
 class virtual non_relational_domain_t =
 object (self: 'a)
@@ -233,9 +232,9 @@ object (self: 'a)
     object
       inherit domain_observer_t
             
-      method getObservedVariables = table#listOfKeys
+      method! getObservedVariables = table#listOfKeys
                                   
-      method getNonRelationalVariableObserver = get_value
+      method! getNonRelationalVariableObserver = get_value
     end
     
   method observer = self#observer'

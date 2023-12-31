@@ -28,7 +28,6 @@
 (* chlib *)
 open CHAtlas
 open CHCommon   
-open CHPretty
 
 module Make (S: STOREABLE) =
 struct
@@ -38,7 +37,7 @@ struct
   open C
 
   class atlas_table_t =
-  object (self: 'a)
+  object (_self: 'a)
     
     val table = new table_t
 

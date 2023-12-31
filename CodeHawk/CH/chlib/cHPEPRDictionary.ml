@@ -26,10 +26,8 @@
   ============================================================================== *)
 
 (* chlib *)
-open CHBounds
 open CHCommon
 open CHIndexedHTable
-open CHIntervals
 open CHNumerical
 open CHPEPRTypes
 open CHPretty

@@ -31,7 +31,6 @@
 open CHCommon
 open CHCommunications
 open CHConstants   
-open CHDomain
 open CHDomainObserver
 open CHIntervals   
 open CHLanguage   
@@ -45,6 +44,7 @@ open CHPretty
 open CHVector
 open CHUtils
 
+[@@@warning "-27"]
 
 let dummy_variable = new variable_t (new symbol_t "<#dummy#>") NUM_VAR_TYPE
 let dummy_factor = new numerical_factor_t dummy_variable
@@ -283,18 +283,18 @@ object (self: 'a)
     object
       inherit domain_observer_t
             
-      method getObservedVariables = var2index#keys#toList
+      method! getObservedVariables = var2index#keys#toList
                                   
-      method getPolyhedron =
+      method! getPolyhedron =
         if self#isBottom then
 	  None
         else
 	  Some polyhedron
 	
-      method getNonRelationalVariableObserver v =
+      method! getNonRelationalVariableObserver v =
         self#getNonRelationalValue v
 	
-      method getNumericalConstraints ~(variables: variable_t list option) () =
+      method! getNumericalConstraints ~(variables: variable_t list option) () =
         if self#isBottom then
 	  []
         else
@@ -310,7 +310,7 @@ object (self: 'a)
 	     let self_r' = self#remove_variables_r self_r variables_to_remove#toList in
 	     (self#reify self_r')#observer#getNumericalConstraints ~variables:None ()
              
-      method getVariableOrdering = Some index2var
+      method! getVariableOrdering = Some index2var
     end
     
   method private arrangeVariables (vars: VariableCollections.set_t) =

@@ -32,7 +32,7 @@ open CHLanguage
 open CHNumerical   
 open CHPretty
 
-let pr_debug_vs (p:pretty_t list) = ()
+let pr_debug_vs (_p:pretty_t list) = ()
 
 type base_offset_t = symbol_t * interval_t
 type base_offset_null_t = symbol_t * interval_t * bool

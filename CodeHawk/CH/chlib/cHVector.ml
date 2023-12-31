@@ -223,7 +223,7 @@ object (self: 'a)
     in
       !res
 
-  method permute_remove_dimensions (newq: vector_t) (dimsup: int) (permut: int array) =
+  method permute_remove_dimensions (newq: vector_t) (_dimsup: int) (permut: int array) =
     let q = self in
       begin
 	for j = 0 to (!pGD)#dec - 1 do

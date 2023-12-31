@@ -33,7 +33,6 @@ open CHNonRelationalDomainNoArrays
 open CHNonRelationalDomainValues
 open CHNumerical
 open CHNumericalConstraints
-open CHPEPRBounds
 open CHPEPRange
 open CHPEPRTypes
 open CHPretty
@@ -127,7 +126,7 @@ object (self:'a)
         let r = self#getValue' v in
         pr_trace [ v#toPretty ; STR ": " ; r#toPretty ; NL ]) vars
 
-  method special cmd args = {< >}
+  method special _cmd _args = {< >}
 
   method private is_parameter (v:variable_t) = params#has_variable v
 
@@ -445,12 +444,12 @@ object (self:'a)
                self#setValue' table' z z_i'';
                default ()
              end
-        | ASSIGN_NUM (v, MULT (x, y)) ->
+        | ASSIGN_NUM (v, MULT (_x, _y)) ->
            begin
              table'#remove v ;
              default ()
            end
-        | ASSIGN_NUM (v, DIV (x, y)) ->
+        | ASSIGN_NUM (v, DIV (_x, _y)) ->
            begin
              table'#remove v ;
              default ()

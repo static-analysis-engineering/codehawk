@@ -28,14 +28,11 @@
 (* chlib *)
 open CHCommon
 open CHConstants   
-open CHDomain   
 open CHLanguage
 open CHNonRelationalDomainNoArrays
 open CHNonRelationalDomainValues   
-open CHNumerical
 open CHNumericalConstraints   
 open CHPretty
-open CHUtils
 
 
 class symbolic_constants_domain_no_arrays_t =
@@ -52,12 +49,12 @@ object (self: 'a)
   method private setValue' t v x =
     self#setValue t v (new non_relational_domain_value_t (SYM_CONSTANT_VAL x))
     
-  method special cmd args = {< >}
+  method special _cmd _args = {< >}
                           
   method private importValue v =
     new non_relational_domain_value_t (NUM_CONSTANT_VAL (v#toNumericalConstant))
     
-  method importNumericalConstraints (csts: numerical_constraint_t list) = {< >}
+  method! importNumericalConstraints (_csts: numerical_constraint_t list) = {< >}
                                                                         
   method private analyzeFwd' (cmd: (code_int, cfg_int) command_t) =
     if bottom then

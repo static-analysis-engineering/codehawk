@@ -34,8 +34,9 @@ open CHNumerical
 open CHPretty
 open CHValueSets
 
+[@@@warning "-27"]
 
-let pr_debug_vs p = ()
+let pr_debug_vs _p = ()
 let command_to_pretty = CHLanguage.command_to_pretty 0
                       
 class valueset_domain_no_arrays_t =
@@ -62,7 +63,7 @@ object (self: 'a)
   method private setValue' t v x =
     self#setValue t v (new non_relational_domain_value_t (VALUESET_VAL x))
 
-  method special cmd args = {< >}
+  method special _cmd _args = {< >}
 
   method private importValue v = 
     new non_relational_domain_value_t (VALUESET_VAL (v#toValueSet))
@@ -369,8 +370,8 @@ object (self: 'a)
       | _ ->
 	 default ()
 	
-  method analyzeOperation ~(domain_name:string) ~(fwd_direction:bool) 
-                          ~(operation:operation_t):'a =
+  method! analyzeOperation ~(domain_name:string) ~(fwd_direction:bool) 
+                           ~(operation:operation_t):'a =
     let name = operation.op_name#getBaseName in
     let table' = table#clone in
     let default () = {< table = table' >} in
