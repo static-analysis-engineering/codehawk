@@ -31,6 +31,8 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa \
 	$(BCHCIL)/bchcil.cmxa \
 	$(PELIB)/bchlibpe.cmxa
 
+OCAMLDEP := ocamldep
+
 MLIS := \
 	bCHDwarfTypes \
 	bCHELFTypes \
@@ -89,7 +91,7 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs bchlibelf
+all: bchlibelf.cmxa
 
 make_dirs:
 	@mkdir -p cmx
@@ -98,16 +100,17 @@ make_dirs:
 mtest: $(OBJECTS) cmx/test.cmx $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(X86LIB)/bchlibx86.cmxa
 	$(CAMLBUILD) -o mtest $(OBJECTS) cmx/test.cmx
 
-bchlibelf: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa
-	$(CAMLLINK) -a -o bchlibelf.cmxa $(OBJECTS)
+bchlibelf.cmxa: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(BCHLIB)/bchlib.cmxa $(PELIB)/bchlibpe.cmxa
+	$(CAMLLINK) -a -o $@ $(OBJECTS)
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) -o $@ -c -opaque $<
 
-cmx/%.cmx: %.ml $(CMIS)
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
 
 clean:
+	rm -f .depend
 	rm -f cmx/*.cmx
 	rm -f cmi/*.cmi
 	rm -f cmx/*.o
@@ -119,3 +122,10 @@ clean:
 	rm -rf bchlibelf
 	rm -rf doc
 	rm -f mtest
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean

@@ -33,6 +33,8 @@ CAMLLINK := ocamlopt \
 	$(XPRLIB)/xpr.cmxa \
 	$(BCHLIB)/bchlib.cmxa \
 
+OCAMLDEP := ocamldep
+
 CAMLLINKL := ocamlopt
 
 MLIS := \
@@ -51,26 +53,27 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs bchcil
+all: bchcil.cmxa
 
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-bchcil: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB) $(BCHLIB)/bchlib.cmxa
-	$(CAMLLINKL) -a -o bchcil.cmxa $(OBJECTS)
+bchcil.cmxa: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB) $(BCHLIB)/bchlib.cmxa
+	$(CAMLLINKL) -a -o $@ $(OBJECTS)
 
 parse: 	$(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXTLIB) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa
 	$(CAMLLINK) -I $(ZARITHLIB) -o parseFile str.cmxa unix.cmxa $(ZARITHLIB)/zarith.cmxa $(CIL)/goblintCil.cmxa $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(OBJECTS)
 
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs
 	$(CAMLC) -o $@ -c -opaque $<
 
-cmx/%.cmx: %.ml
+cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
 
 clean:
+	rm -f .depend
 	rm -f */*.cmx
 	rm -f */*.cmi
 	rm -f */*.o
@@ -79,3 +82,10 @@ clean:
 	rm -f *.cmxa
 	rm -f Makefile~
 	rm -f bchcil.cmxa
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean

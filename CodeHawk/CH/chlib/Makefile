@@ -3,6 +3,7 @@ ZARITHLIB = $(shell ocamlfind query zarith)
 CAMLC := ocamlopt -I $(ZARITHLIB) -I str -I +unix -I cmi -I cmx 
 CAMLLINK := ocamlopt
 CAMLDOC := ocamldoc
+OCAMLDEP := ocamldep
 
 MLIS := \
 	cHPretty \
@@ -149,20 +150,20 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs chlib.cmxa
+all: chlib.cmxa
 
 make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli make_dirs 
 	$(CAMLC) -o $@ -c -opaque $<
 
-cmx/%.cmx: %.ml
+cmx/%.cmx: %.ml make_dirs 
 	$(CAMLC) -o $@ -c $<
 
 chlib.cmxa: $(CMIS) $(OBJECTS)
-	$(CAMLLINK) -a -o chlib.cmxa $(OBJECTS)
+	$(CAMLLINK) -a -o $@ $(OBJECTS)
 
 doc: $(OBJECTS)
 	rm -rf doc
@@ -170,6 +171,7 @@ doc: $(OBJECTS)
 	$(CAMLDOC) -html -d doc -v -stars -html -I . $(OBJECTS)
 
 clean:
+	rm -f .depend
 	rm -f */*.cmx
 	rm -f */*.cmi
 	rm -f */*.o
@@ -178,3 +180,10 @@ clean:
 	rm -f *.cmxa
 	rm -f Makefile~
 	rm -rf doc
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all make_dirs doc clean

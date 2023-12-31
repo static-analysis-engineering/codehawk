@@ -40,17 +40,19 @@ CAMLBUILD := ocamlopt str.cmxa unix.cmxa  \
 	$(CCHPRE)/cchpre.cmxa \
 	$(CCHANALYZE)/cchanalyze.cmxa
 
-all: dirs canalyzer inspect
+OCAMLDEP := ocamldep
+
+all: canalyzer inspectsummaries
 
 dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-inspect: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa cmx/cCHXInspectSummaries.cmx
-	$(CAMLBUILD) -o inspectsummaries cmx/cCHXInspectSummaries.cmx
+inspectsummaries: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa cmx/cCHXInspectSummaries.cmx
+	$(CAMLBUILD) -o $@ cmx/cCHXInspectSummaries.cmx
 
 canalyzer: $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHVersion.cmi cmx/cCHVersion.cmx cmi/cCHXCAnalyzer.cmi cmx/cCHXCAnalyzer.cmx
-	$(CAMLBUILD) -o canalyzer cmx/cCHVersion.cmx cmx/cCHXCAnalyzer.cmx
+	$(CAMLBUILD) -o $@ cmx/cCHVersion.cmx cmx/cCHXCAnalyzer.cmx
 
 capplication: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHVersion.cmi cmx/cCHVersion.cmx cmi/cCHXCAnalyzer.cmi cmx/cCHXCApplication.cmx
 	$(CAMLBUILD) -o capplication cmx/cCHVersion.cmx cmx/cCHXCApplication.cmx
@@ -58,13 +60,14 @@ capplication: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cm
 canalyzer_object: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHVersion.cmi cmx/cCHVersion.cmx cmi/cCHXCAnalyzer.cmi cmx/cCHXCAnalyzer.cmx
 	$(CAMLBUILD) -output-obj -o $(COBJ)/canalyzer.o cmx/cCHVersion.cmx cmx/cCHXCAnalyzer.cmx
 
-cmi/%.cmi: %.mli
+cmi/%.cmi: %.mli dirs
 	$(CAMLC) -o $@ -c $<
 
-cmx/%.cmx: %.ml
+cmx/%.cmx: %.ml dirs
 	$(CAMLC) -o $@ -c $<
 
 clean:
+	rm -f .depend
 	rm -f */*.cmx
 	rm -f */*.cmi
 	rm -f */*.o
@@ -77,3 +80,10 @@ clean:
 	rm -f inspectsummaries
 	rm -f canalyzer
 	rm -f capplication
+
+.depend:
+	$(OCAMLDEP) *.mli *.ml | sed "s|[^\t ]\+\.cmx|cmx/\0|" | sed "s|[^\t ]\+\.cmi|cmi/\0|" > .depend
+
+include .depend
+
+.PHONY: all dirs canalyzer_object clean
