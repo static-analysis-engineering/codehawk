@@ -2,6 +2,8 @@ name: Build and deploy odoc documentation
 
 on:
   push:
+    branches:
+      - "main"
 
 permissions:
   contents: read
