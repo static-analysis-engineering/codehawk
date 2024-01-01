@@ -94,17 +94,34 @@ let formatstring_type_to_string (t:formatstring_type_t) =
   | ScanFormat -> "scan"
 
 
+let pld_position_to_string (p: pld_position_t) =
+  let stri = string_of_int in
+  match p with
+  | FieldPosition (ckey, foffset, fname) ->
+     "F:" ^ (stri ckey) ^ ":" ^ (stri foffset) ^ ":" ^ fname
+  | ArrayPosition index -> "A:" ^ (stri index)
+
+
 let parameter_location_detail_to_string (d: parameter_location_detail_t) =
   let si = string_of_int in
   let p_extract (x: (int * int) option) =
     match x with
-    | Some (start, size) -> "[" ^ (si start) ^ ", " ^ (si size) ^ "]"
+    | Some (start, size) -> "size[" ^ (si start) ^ ", " ^ (si size) ^ "]"
     | _ -> "" in
   let p_btype (t: btype_t) =
     match t with
     | TUnknown _ -> ""
-    | _ -> ", " ^ (btype_to_string t) in
-  "(" ^ si d.pld_size ^ (p_btype d.pld_type) ^ (p_extract d.pld_extract) ^ ")"
+    | _ -> ":" ^ (btype_to_string t) in
+  let p_pos (l: pld_position_t list) =
+    match l with
+    | [] -> ""
+    | _ ->
+       ":[" ^ (String.concat ", " (List.map pld_position_to_string l)) ^ "]" in
+  "("
+  ^ si d.pld_size
+  ^ (p_btype d.pld_type)
+  ^ (p_extract d.pld_extract) ^ ")"
+  ^ (p_pos d.pld_position)
 
 
 let parameter_location_to_string (loc: parameter_location_t) =
@@ -127,6 +144,15 @@ let fts_parameter_to_pretty (p: fts_parameter_t) =
       STR p.apar_name;
       STR ": ";
       btype_to_pretty p.apar_type]
+
+
+let fts_parameter_to_string (p: fts_parameter_t) =
+  let ploc loc =
+    ":[" ^ String.concat "; " (List.map parameter_location_to_string loc) in
+  (btype_to_string p.apar_type)
+    ^ " "
+    ^ p.apar_name
+    ^ (ploc p.apar_location)
 
 
 (* ---------------------------------------------------------------- accessors *)
@@ -167,9 +193,45 @@ let get_register_parameter_register
 
 (* --------------------------------------------------------------- comparison *)
 
+let pld_pos_compare (pos1: pld_position_t) (pos2: pld_position_t) =
+  match (pos1, pos2) with
+  | FieldPosition (ckey1, foffset1, _), FieldPosition (ckey2, foffset2, _) ->
+     Stdlib.compare (ckey1, foffset1) (ckey2, foffset2)
+  | (FieldPosition _, _) -> -1
+  | (_, FieldPosition _) -> 1
+  | (ArrayPosition i1, ArrayPosition i2) -> Stdlib.compare i1 i2
+
+
+let pld_compare
+      (pld1: parameter_location_detail_t) (pld2: parameter_location_detail_t) =
+  let compare_extract (p1: (int * int) option) (p2: (int * int) option): int =
+    match (p1, p2) with
+    | (None, None) -> 0
+    | (None, _) -> -1
+    | (_, None) -> 1
+    | (Some (o1, _), Some (o2, _)) -> Stdlib.compare o1 o2 in
+  let compare_pos (p1: pld_position_t list) (p2: pld_position_t list) =
+    list_compare p1 p2 pld_pos_compare in
+  let l1 = compare_extract pld1.pld_extract pld2.pld_extract in
+  if l1 = 0 then
+    compare_pos pld1.pld_position pld2.pld_position
+  else
+    l1
+
+
+let pld_equal
+      (pld1: parameter_location_detail_t) (pld2: parameter_location_detail_t) =
+  (pld_compare pld1 pld2) = 0
+
+
 let parameter_location_compare l1 l2 =
   match (l1,l2) with
-  | (RegisterParameter (r1, _), RegisterParameter (r2, _)) -> register_compare r1 r2
+  | (RegisterParameter (r1, pld1), RegisterParameter (r2, pld2)) ->
+     let l1 = register_compare r1 r2 in
+     if l1 = 0 then
+       pld_compare pld1 pld2
+     else
+       l1
   | (RegisterParameter _, _) -> -1
   | (_, RegisterParameter _) -> 1
   | (StackParameter (i1, _), StackParameter (i2, _)) -> Stdlib.compare i1 i2
@@ -179,6 +241,11 @@ let parameter_location_compare l1 l2 =
   | (GlobalParameter _, _) -> -1
   | (_, GlobalParameter _) -> 1
   | (UnknownParameterLocation _ , UnknownParameterLocation _) -> 0
+
+
+let parameter_location_equal
+      (l1: parameter_location_t) (l2: parameter_location_t) =
+  (parameter_location_compare l1 l2) = 0
 
 
 let fts_parameter_compare (p1: fts_parameter_t) (p2: fts_parameter_t) =
@@ -214,7 +281,8 @@ let read_xml_roles (node:xml_element_int) =
 let default_parameter_location_detail ?(ty=t_unknown) (size: int) = {
     pld_type = ty;
     pld_size = size;
-    pld_extract = None
+    pld_extract = None;
+    pld_position = []
   }
 
 let read_xml_parameter_location
@@ -341,6 +409,13 @@ let modify_name_par (name:string) (p: fts_parameter_t) =
   { p with apar_name = name }
 
 
+let mk_field_position (ckey: int) (offset: int) (name: string): pld_position_t =
+  FieldPosition (ckey, offset, name)
+
+
+let mk_array_position (index: int) = ArrayPosition index
+
+
 let mk_global_parameter
       ?(btype=t_unknown)
       ?(desc="")
@@ -349,7 +424,7 @@ let mk_global_parameter
       ?(size=4)
       ?(fmt=NoFormat)
       (gaddr:doubleword_int) =
-  let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
+  let locdetail = default_parameter_location_detail ~ty:btype size in
   { apar_index = None;
     apar_name = "gv_" ^ gaddr#to_hex_string;
     apar_type = btype;
@@ -360,6 +435,15 @@ let mk_global_parameter
     apar_location = [GlobalParameter (gaddr, locdetail)];
     apar_fmt = fmt
   }
+
+
+let mk_stack_parameter_location
+      ?(btype=t_unknown)
+      ?(size=4)
+      ?(extract=None)
+      (offset: int): parameter_location_t =
+  let locdetail = default_parameter_location_detail ~ty:btype size in
+  StackParameter (offset, locdetail)
 
 
 (* index starts at 1 (re: counting) *)
@@ -378,8 +462,7 @@ let mk_indexed_stack_parameter
     match locations with
     | [] ->
        (* create a single stack location at the given offset *)
-       let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
-       [StackParameter (offset, locdetail)]
+       [mk_stack_parameter_location ~btype ~size offset]
     | _ -> locations in
   { apar_index = Some index;
     apar_name = if name = "" then "arg_" ^ (string_of_int index) else name;
@@ -402,7 +485,7 @@ let mk_register_parameter
       ?(size=4)
       ?(fmt=NoFormat)
       (reg:register_t) =
-  let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
+  let locdetail = default_parameter_location_detail ~ty:btype size in
   { apar_index = None;
     apar_name =
       if name = "" then "reg_" ^ (register_to_string reg) else name;
@@ -414,6 +497,20 @@ let mk_register_parameter
     apar_fmt = fmt;
     apar_location = [RegisterParameter (reg, locdetail)]
   }
+
+
+let mk_register_parameter_location
+      ?(btype=t_unknown)
+      ?(size=4)
+      ?(extract=None)
+      ?(position=[])
+      (reg: register_t): parameter_location_t =
+  let locdetail =
+    {pld_type = btype;
+     pld_size = size;
+     pld_extract = extract;
+     pld_position = position} in
+  RegisterParameter (reg, locdetail)
 
 
 let mk_indexed_register_parameter
@@ -431,8 +528,7 @@ let mk_indexed_register_parameter
     match locations with
     | [] ->
        (* create a single register location for the given register *)
-       let locdetail = {pld_type = btype; pld_size = size; pld_extract = None} in
-       [RegisterParameter (reg, locdetail)]
+       [mk_register_parameter_location ~btype ~size reg]
     | _ -> locations in
   { apar_index = Some index;
     apar_name = if name = "" then "arg_" ^ (string_of_int index) else name;
@@ -442,6 +538,27 @@ let mk_indexed_register_parameter
     apar_io = io;
     apar_size = size;
     apar_fmt = fmt;
+    apar_location = locations
+  }
+
+
+let mk_indexed_multiple_locations_parameter
+      ?(btype=t_unknown)
+      ?(name="")
+      ?(desc="")
+      ?(roles=[])
+      ?(io=ArgRead)
+      ?(size=4)
+      (locations: parameter_location_t list)
+      (index: int) =
+  { apar_index = Some index;
+    apar_name = if name = "" then "arg_" ^ (string_of_int index) else name;
+    apar_type = btype;
+    apar_desc = desc;
+    apar_roles = roles;
+    apar_io = io;
+    apar_size = size;
+    apar_fmt = NoFormat;
     apar_location = locations
   }
 
@@ -503,7 +620,7 @@ let convert_fmt_spec_arg
       (index:int)         (* index of argument, zero-based *)
       (spec:argspec_int): fts_parameter_t =
   let ftype = get_fmt_spec_type spec in
-  let locdetail = {pld_type = ftype; pld_size = 4; pld_extract = None} in
+  let locdetail = default_parameter_location_detail ~ty:ftype 4 in
   { apar_index = Some (index + 1);
     apar_name = "vararg_" ^ (string_of_int index);
     apar_type = ftype;

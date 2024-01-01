@@ -3163,13 +3163,14 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let vdst1 = dst1#to_variable floc in
      let vdst2 = dst2#to_variable floc in
-     let vddst = ddst#to_variable floc in
+     let ddstreg = ddst#to_register in
      let xsrc = src#to_expr floc in
      let usevars = get_register_vars [src] in
      let usehigh = get_use_high_vars [xsrc] in
      let cmds1 = floc#get_abstract_commands vdst1 () in
      let cmds2 = floc#get_abstract_commands vdst2 () in
-     let cmds3 = floc#get_abstract_commands vddst () in
+     let (vddst, cmds3) =
+       floc#get_ssa_assign_commands ddstreg ~vtype:t_double xsrc in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdst1; vdst2; vddst]

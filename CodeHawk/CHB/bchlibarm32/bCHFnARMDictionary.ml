@@ -2000,11 +2000,13 @@ object (self)
          let vdst = dst#to_variable floc in
          let xsrc1 = src1#to_expr floc in
          let xsrc2 = src2#to_expr floc in
+         let rxsrc1 = rewrite_expr xsrc1 in
+         let rxsrc2 = rewrite_expr xsrc2 in
          let rdefs = [get_rdef xsrc1; get_rdef xsrc2] in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vdst]
-             ~xprs:[xsrc1; xsrc2]
+             ~xprs:[xsrc1; xsrc2; rxsrc1; rxsrc2]
              ~rdefs:rdefs
              ~uses:[get_def_use vdst]
              ~useshigh:[get_def_use_high vdst]

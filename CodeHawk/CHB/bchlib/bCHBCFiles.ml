@@ -251,6 +251,10 @@ object (self)
     let e1 = H.fold (fun (_, ckey) _ a -> a || key = ckey) gcomptags false in
     e1 || (H.fold (fun (_, ckey) _ a -> a || key = ckey) gcomptagdecls false)
 
+  method has_compinfo_by_name (name: string) =
+    let e1 = H.fold (fun (cname, _) _ a -> a || cname = name) gcomptags false in
+    e1 || (H.fold (fun (cname, _) _ a -> a || cname = name) gcomptagdecls false)
+
   method get_compinfo (key: int): bcompinfo_t =
     if self#has_compinfo key then
       let values =
@@ -262,6 +266,24 @@ object (self)
       raise
         (BCH_failure
            (LBLOCK [STR "No comptag found with key "; INT key]))
+
+  method get_compinfo_by_name (name: string): bcompinfo_t =
+    let found =
+      H.fold (fun (cname, _) (ix, _) acc ->
+          match acc with
+          | Some _ -> acc
+          | _ -> if cname = name then Some ix else acc) gcomptags None in
+    let found =
+      H.fold (fun (cname, _) (ix, _) acc ->
+          match acc with
+          | Some _ -> acc
+          | _ -> if cname = name then Some ix else acc) gcomptagdecls found in
+    match found with
+    | Some ix -> bcd#get_compinfo ix
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "No comptag found with name "; STR name]))
 
   method has_enuminfo (name: string) =
     (H.mem genumtags name) || (H.mem genumtagdecls name)

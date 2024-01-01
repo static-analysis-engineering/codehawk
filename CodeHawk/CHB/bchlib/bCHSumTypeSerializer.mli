@@ -58,6 +58,7 @@ val pwr_crf_mfts: pwr_register_field_t mfts_int
 val flag_mcts: flag_t mfts_int
 val register_mcts: register_t mfts_int
 
+val pld_position_mcts: pld_position_t mfts_int
 val parameter_location_mcts: parameter_location_t mfts_int
 val bterm_mcts: bterm_t mfts_int
 val gterm_mcts: gterm_t mfts_int

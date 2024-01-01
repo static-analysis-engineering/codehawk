@@ -43,7 +43,14 @@ open BCHLibTypes
 
 (** {1 Parameter constructors}*)
 
+val default_parameter_location_detail:
+  ?ty:btype_t -> int -> parameter_location_detail_t
+
 val default_fts_parameter: fts_parameter_t
+
+val mk_field_position: int -> int -> string -> pld_position_t
+
+val mk_array_position: int -> pld_position_t
 
 val mk_global_parameter:
   ?btype:btype_t
@@ -96,10 +103,50 @@ val mk_indexed_register_parameter:
   -> fts_parameter_t
 
 
+val mk_register_parameter_location:
+  ?btype:btype_t
+  -> ?size:int
+  -> ?extract:(int * int) option
+  -> ?position: pld_position_t list
+  -> register_t
+  -> parameter_location_t
+
+
+val mk_stack_parameter_location:
+  ?btype:btype_t
+  -> ?size:int
+  -> ?extract:(int * int) option
+  -> int
+  -> parameter_location_t
+
+
+val mk_indexed_multiple_locations_parameter:
+  ?btype:btype_t
+  -> ?name:string
+  -> ?desc:string
+  -> ?roles:(string * string) list
+  -> ?io: arg_io_t
+  -> ?size:int
+  -> parameter_location_t list
+  -> int    (* index *)
+  -> fts_parameter_t
+
+
 (** {1 Parameter comparison}*)
+
+val pld_pos_compare: pld_position_t -> pld_position_t -> int
+
+val pld_compare:
+  parameter_location_detail_t -> parameter_location_detail_t -> int
+
+val pld_equal:
+  parameter_location_detail_t -> parameter_location_detail_t -> bool
 
 val parameter_location_compare:
   parameter_location_t -> parameter_location_t -> int
+
+val parameter_location_equal:
+  parameter_location_t -> parameter_location_t -> bool
 
 (** [fts_parameter_compare p1 p2] compares the parameter locations of
     [p1] and [p2]*)
@@ -162,7 +209,15 @@ val is_floating_point_parameter: fts_parameter_t -> bool
 
 val calling_convention_to_string: calling_convention_t -> string
 
+val pld_position_to_string: pld_position_t -> string
+
+val parameter_location_detail_to_string: parameter_location_detail_t -> string
+
+val parameter_location_to_string: parameter_location_t -> string
+
 val fts_parameter_to_pretty: fts_parameter_t -> pretty_t
+
+val fts_parameter_to_string: fts_parameter_t -> string
 
 val parameter_location_to_string: parameter_location_t -> string
 

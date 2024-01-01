@@ -566,9 +566,13 @@ class type bcfiles_int =
      *)
     method get_compinfo: int -> bcompinfo_t
 
+    method get_compinfo_by_name: string -> bcompinfo_t
+
     (** [has_compinfo key] returns true if a compinfo definition or declaration
         exists with (CIL-assigned) key [key].*)
     method has_compinfo: int -> bool
+
+    method has_compinfo_by_name: string -> bool
 
     (** [get_enuminfo name] returns the enuminfo structure with name [name].
 

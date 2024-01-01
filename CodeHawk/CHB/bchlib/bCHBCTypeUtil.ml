@@ -75,6 +75,9 @@ let t_ptrto t = TPtr (t,[])
 
 let t_charptr = t_ptrto t_char
 
+let t_array (t: btype_t) (len: int) =
+  TArray (t, Some (Const (CInt ((Int64.of_int len), IInt, None))), [])
+
 let t_unknown_int = TUnknown [(Attr ("int", []))]
 
 let t_unknown_int_size (size: int) = TUnknown [(Attr ("int-size", [AInt size]))]
@@ -171,6 +174,8 @@ let is_pointer_to_struct t = match t with TPtr (TComp _,_) -> true | _ -> false
 
 let is_struct_type t = match t with TComp _ -> true | _ -> false
 
+let is_array_type t = match t with TArray _ -> true | _ -> false
+
 let is_function_type t =
   match t with TFun _ | TPtr (TFun _,_) -> true | _ -> false
 
@@ -202,6 +207,8 @@ let is_volatile t =
 
 
 (* ======================================================= size and alignment *)
+
+let resolve_type (btype: btype_t) = bcfiles#resolve_type btype
 
 
 let size_of_int_ikind (k: ikind_t) =
@@ -855,6 +862,48 @@ let layout_fields (comp: bcompinfo_t): bcompinfo_t =
             let fieldlayout = Some (0, size_of_btype finfo.bftype) in
             {finfo with bfieldlayout = fieldlayout}) comp.bcfields in
       {comp with bcfields = newfields}
+
+
+let get_struct_field_name (bfinfo: bfieldinfo_t): string = bfinfo.bfname
+
+let get_struct_field_type (bfinfo: bfieldinfo_t): btype_t = bfinfo.bftype
+
+let get_struct_field_layout (bfinfo: bfieldinfo_t): fieldlayout_t option =
+  bfinfo.bfieldlayout
+
+
+let get_struct_field_offset (bfinfo: bfieldinfo_t): int option =
+  match get_struct_field_layout bfinfo with
+  | Some (offset, _) -> Some offset
+  | _ -> None
+
+
+let get_struct_field_size (bfinfo: bfieldinfo_t): int option =
+  match get_struct_field_layout bfinfo with
+  | Some (_, size) -> Some size
+  | _ -> None
+
+
+let get_struct_type_compinfo (ty: btype_t): bcompinfo_t =
+  match bcfiles#resolve_type ty with
+  | TComp (ckey, _) -> bcfiles#get_compinfo ckey
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [STR "Type is not a struct: "; btype_to_pretty ty]))
+
+
+let get_compinfo_struct_type (c: bcompinfo_t): btype_t = TComp (c.bckey, [])
+
+
+
+let get_struct_type_fields (ty: btype_t): bfieldinfo_t list =
+      if is_struct_type ty then
+        let cinfo = get_struct_type_compinfo ty in
+        let cinfo = layout_fields cinfo in
+        cinfo.bcfields
+      else
+        []
 
 
 let struct_field_categories (ty: btype_t): string list =

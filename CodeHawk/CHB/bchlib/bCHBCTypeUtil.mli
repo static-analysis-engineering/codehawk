@@ -78,6 +78,11 @@ val t_ptrto: btype_t -> btype_t
 val t_charptr: btype_t
 
 
+(** {2 Array types)*)
+
+val t_array: btype_t -> int -> btype_t
+
+
 (** {2 Type definition}*)
 
 val t_named: string -> btype_t
@@ -111,10 +116,14 @@ val is_function_type: btype_t -> bool
 val is_unknown_type: btype_t -> bool
 val is_known_type: btype_t -> bool
 val is_struct_type: btype_t -> bool
+val is_array_type: btype_t -> bool
 val is_pointer_to_struct: btype_t -> bool
 
 val is_volatile: btype_t -> bool
 
+(** {1 Type resolution}*)
+
+val resolve_type: btype_t -> btype_t
 
 (** {1 Type properties}*)
 
@@ -183,6 +192,25 @@ val promote_float: btype_t -> btype_t
 val promote_int: btype_t -> btype_t
 
 (** {1 Compinfos} *)
+
+val get_struct_type_compinfo: btype_t -> bcompinfo_t
+
+val get_struct_type_fields: btype_t -> bfieldinfo_t list
+
+val get_compinfo_struct_type: bcompinfo_t -> btype_t
+
+(** {2 Fieldinfos}*)
+
+val get_struct_field_name: bfieldinfo_t -> string
+
+val get_struct_field_type: bfieldinfo_t -> btype_t
+
+val get_struct_field_layout: bfieldinfo_t -> fieldlayout_t option
+
+val get_struct_field_offset: bfieldinfo_t -> int option
+
+val get_struct_field_size: bfieldinfo_t -> int option
+
 
 (** {2 Field layout}*)
 
