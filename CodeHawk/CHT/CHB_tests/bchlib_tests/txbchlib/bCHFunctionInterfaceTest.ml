@@ -72,6 +72,10 @@ module FI = BCHFunctionInterface
 let testname = "bCHFunctionInterfaceTest"
 let lastupdated = "2023-12-21"
 
+let t_struct_type (cname: string) =
+  let cinfo = bcfiles#get_compinfo_by_name cname in
+  TComp (cinfo.bckey, [])
+
 
 let function_signature_of_bvarinfo_x86 () =
   let tests = [
@@ -136,7 +140,29 @@ let function_signature_of_bvarinfo_arm () =
       ("f_5", [(1, "x", TU.t_float, 4, [("r", TU.t_float, "S0")]);
                (2, "y", TU.t_double, 8, [("r", TU.t_double, "D1")]);
                (3, "z", TU.t_float, 4, [("r", TU.t_float, "S1")]);
-               (4, "t", TU.t_float, 4, [("r", TU.t_float, "S4")])])
+               (4, "t", TU.t_float, 4, [("r", TU.t_float, "S4")])]);
+      ("f_7", [(1, "a", t_struct_type "struct1_t", 12,
+                [("r", TU.t_int, "R0");
+                 ("r", TU.t_int, "R1");
+                 ("r", TU.t_int, "R2")])]);
+      ("f_8", [(1, "a", t_struct_type "struct2_t", 8,
+                [("r", TU.t_voidptr, "R0");
+                 ("rp", TU.t_ushort, "R1:0");
+                 ("rp", TU.t_ushort, "R1:2")])]);
+      ("f_9", [(1, "a", TU.t_int, 4, [("r", TU.t_int, "R0")]);
+               (2, "b", TU.t_int, 4, [("r", TU.t_int, "R1")]);
+               (3, "c", t_struct_type "struct2_t", 8,
+                [("r", TU.t_voidptr, "R2");
+                 ("rp", TU.t_ushort, "R3:0");
+                 ("rp", TU.t_ushort, "R3:2")])]);
+      ("f_10", [(1, "a", TU.t_int, 4, [("r", TU.t_int, "R0")]);
+                (2, "b", TU.t_int, 4, [("r", TU.t_int, "R1")]);
+                (3, "c", TU.t_int, 4, [("r", TU.t_int, "R2")]);
+                (4, "d", t_struct_type "struct2_t", 8,
+                [("r", TU.t_voidptr, "R3");
+                 ("s", TU.t_ushort, "0");
+                 ("s", TU.t_ushort, "2")])]);
+      (* ("f_11", [(1, "a", t_struct_type "struct3_t", 16, [])]) *)
     ] in
   begin
     TS.new_testsuite
@@ -155,9 +181,15 @@ let function_signature_of_bvarinfo_arm () =
               else
                 raise
                   (BCH_failure (LBLOCK [STR title; STR " not found"])) in
-            let xresult = List.map BU.convert_fts_parameter_input result in
-            let fintf = FI.bvarinfo_to_function_interface bvinfo in
-            let tsig = fintf.fintf_type_signature in
+            let (xresult, fintf, tsig) =
+              try
+                let xresult = List.map BU.convert_fts_parameter_input result in
+                let fintf = FI.bvarinfo_to_function_interface bvinfo in
+                let tsig = fintf.fintf_type_signature in
+                (xresult, fintf, tsig)
+              with
+              | BCH_failure p ->
+                 begin pr_debug [STR "Error: "; p; NL]; raise (BCH_failure p) end in
             BA.equal_function_parameters
               ~expected:xresult
               ~received:tsig.fts_parameters ())) tests;

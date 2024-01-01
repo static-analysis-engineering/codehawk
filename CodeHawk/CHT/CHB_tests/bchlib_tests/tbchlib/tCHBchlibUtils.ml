@@ -103,6 +103,21 @@ let convert_parameter_location_input
        xftsl_type = lty;
        xftsl_offset = "-1";
        xftsl_reg = ldata}
+  | "rp" ->
+     let ldata = String.split_on_char ':' ldata in
+     (match ldata with
+      | [reg; offset] ->
+         { xftsl_kind = "rp";
+           xftsl_type = lty;
+           xftsl_offset = offset;
+           xftsl_reg = reg
+         }
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "convert_fts_parameter: expected ";
+                   STR "register offset"])))
   | _ ->
      raise
        (BCH_failure
@@ -116,7 +131,11 @@ let input_parameter_location_to_parameter_location
       (arch: string)
       (p: input_parameter_location_t): parameter_location_t =
   let (kind, lty, ldata) = p in
-  let pld = {pld_type = lty; pld_size = 4; pld_extract = None} in
+  let pld = {
+      pld_type = lty;
+      pld_size = 4;
+      pld_extract = None;
+      pld_position = []} in
   match kind with
   | "s" -> StackParameter (int_of_string ldata, pld)
   | "r" ->

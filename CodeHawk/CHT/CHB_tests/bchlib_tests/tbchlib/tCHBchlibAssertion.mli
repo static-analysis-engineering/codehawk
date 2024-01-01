@@ -35,6 +35,7 @@ open CHLanguage
 open CHTraceResult
 
 (* bchlib *)
+open BCHARMFunctionInterface
 open BCHBCTypes
 open BCHLibTypes
 
@@ -77,6 +78,30 @@ val equal_assignments:
   -> function_info_int
   -> expected:(string * string) list
   -> received:(variable_t * numerical_exp_t) list
+  -> unit
+
+
+val equal_arm_argument_state:
+  ?msg:string
+  -> expected:arm_argument_state_t
+  -> received:arm_argument_state_t
+  -> unit
+  -> unit
+
+
+val equal_param_locations:
+  ?msg:string
+  -> expected:parameter_location_t list
+  -> received:parameter_location_t list
+  -> unit
+  -> unit
+
+
+val equal_fts_parameter:
+  ?msg:string
+  -> expected:fts_parameter_t
+  -> received:fts_parameter_t
+  -> unit
   -> unit
 
 
