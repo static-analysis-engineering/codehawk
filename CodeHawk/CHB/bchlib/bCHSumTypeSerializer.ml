@@ -249,6 +249,22 @@ end
 
 let register_mcts: register_t mfts_int = new register_mcts_t
 
+class pld_position_mcts_t: [pld_position_t] mfts_int =
+object
+
+  inherit [pld_position_t] mcts_t "pld_position"
+
+  method ts (p: pld_position_t) =
+    match p with
+    | FieldPosition _ -> "f"
+    | ArrayPosition _ -> "a"
+
+  method tags = ["a"; "f"]
+
+end
+
+let pld_position_mcts: pld_position_t mfts_int = new pld_position_mcts_t
+
 
 class parameter_location_mcts_t: [parameter_location_t] mfts_int =
 object

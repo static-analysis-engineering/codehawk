@@ -74,6 +74,8 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
 class interface_dictionary_t:interface_dictionary_int =
 object (self)
 
+  val pld_position_table = mk_index_table "pld-position-table"
+  val pld_position_list_table = mk_index_table "pld-position-table-list"
   val parameter_location_detail_table =
     mk_index_table "parameter-location-detail-table"
   val parameter_location_table = mk_index_table "parameter-location-table"
@@ -101,6 +103,8 @@ object (self)
 
   initializer
     tables <- [
+      pld_position_table;
+      pld_position_list_table;
       parameter_location_detail_table;
       parameter_location_table;
       parameter_location_list_table;
@@ -128,6 +132,33 @@ object (self)
       List.iter (fun t -> t#reset) tables
     end
 
+  method index_pld_position (p: pld_position_t) =
+    let tags = [pld_position_mcts#ts p] in
+    let key =
+      match p with
+      | FieldPosition (ckey, foffset, fname) ->
+         (tags, [ckey; foffset; bd#index_string fname])
+      | ArrayPosition (index) -> (tags, [index]) in
+    pld_position_table#add key
+
+  method get_pld_position (index: int): pld_position_t =
+    let name = "pld_position" in
+    let (tags, args) = pld_position_table#retrieve index in
+    let t = t name tags in
+    let a = a name args in
+    match (t 0) with
+    | "f" -> FieldPosition (a 0, a 1, bd#get_string (a 2))
+    | "a" -> ArrayPosition (a 0)
+    | s -> raise_tag_error name s pld_position_mcts#tags
+
+  method index_pld_position_list (l: pld_position_t list) =
+    let key = ([], List.map self#index_pld_position l) in
+    pld_position_list_table#add key
+
+  method get_pld_position_list (index: int) =
+    let (_, args) = pld_position_list_table#retrieve index in
+    List.map self#get_pld_position args
+
   method index_parameter_location_detail (d: parameter_location_detail_t) =
     let index_extract (x: (int * int) option) =
       match x with
@@ -135,7 +166,10 @@ object (self)
       | Some (start, size) -> [start; size] in
     let key =
       ([],
-       [bcd#index_typ d.pld_type; d.pld_size] @ (index_extract d.pld_extract)) in
+       [bcd#index_typ d.pld_type;
+        d.pld_size;
+        self#index_pld_position_list d.pld_position]
+       @ (index_extract d.pld_extract)) in
     parameter_location_detail_table#add key
 
   method get_parameter_location_detail (index: int): parameter_location_detail_t =
@@ -144,7 +178,8 @@ object (self)
     let a = a name args in
     { pld_type = bcd#get_typ (a 0);
       pld_size = a 1;
-      pld_extract = if (a 2) = (-1) then None else Some (a 2, a 3)
+      pld_position = self#get_pld_position_list (a 2);
+      pld_extract = if (a 3) = (-1) then None else Some (a 3, a 4)
     }
 
   method index_parameter_location (p:parameter_location_t) =

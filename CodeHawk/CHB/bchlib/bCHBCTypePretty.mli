@@ -44,4 +44,6 @@ val exp_to_string: bexp_t -> string
 
 val compinfo_to_pretty: bcompinfo_t -> pretty_t
 
+val fieldinfo_to_pretty: bfieldinfo_t -> pretty_t
+
 val offset_to_pretty: boffset_t -> pretty_t

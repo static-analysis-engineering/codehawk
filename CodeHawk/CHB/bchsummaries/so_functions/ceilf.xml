@@ -16,7 +16,7 @@
       </apidoc>
     </documentation>
     <api adj="0" cc="cdecl" name="ceilf">
-      <par loc="register" reg="S0" name="x" nr="1">
+      <par loc="stack" name="x" nr="1">
         <type>float</type>
       </par>
       <returntype>float</returntype>

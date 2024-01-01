@@ -1956,11 +1956,33 @@ class type invdictionary_int =
    as a pseudo parameter allows the recording of the effects on the global
    variable in the function summary, e.g., in preconditions or postconditions.
 
-   The size of the argument defaults to 4 bytes.*)
+   The size of the argument defaults to 4 bytes.
+
+   The parameter_location_detail_t data structure provides additional
+   information when a parameter is distributed over multiple registers,
+   or when multiple parameters (or fields or array elements) are packed
+   into a single register (i.e., a kind of serialization of a nested
+   data structure over a linear list of locations).
+   The pld_extract field is used to select a subset of the bytes of a
+   location (0-based starting point, number of bytes) used when multiple
+   distinct data entities (with their own type) are packed into a single
+   location.
+   The pld_position field is a list of positions that record the position
+   of the data in this location in the (potentially nested) data structure
+   type of the parameter to which it belongs.
+ *)
+
+type pld_position_t =
+  | FieldPosition of int * int * string  (* ckey, field offset, field name *)
+  | ArrayPosition of int   (* array element index (o-based) *)
+
+
 type parameter_location_detail_t = {
     pld_type: btype_t;
     pld_size: int;
-    pld_extract: (int * int) option
+    pld_extract:
+      (int * int) option;  (* starting byte (0-based), number of bytes *)
+    pld_position: pld_position_t list
   }
 
 type parameter_location_t =
@@ -2574,6 +2596,10 @@ class type interface_dictionary_int =
     method reset: unit
 
     (** {1 Parameter location}*)
+    method index_pld_position: pld_position_t -> int
+    method get_pld_position: int -> pld_position_t
+    method index_pld_position_list: pld_position_t list -> int
+    method get_pld_position_list: int -> pld_position_t list
     method index_parameter_location_detail: parameter_location_detail_t -> int
     method get_parameter_location_detail: int -> parameter_location_detail_t
     method index_parameter_location: parameter_location_t -> int
