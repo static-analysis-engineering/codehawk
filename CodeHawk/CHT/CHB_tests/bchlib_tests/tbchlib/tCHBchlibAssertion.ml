@@ -36,10 +36,12 @@ open CHPretty
 open CHTraceResult
 
 (* bchlib *)
+open BCHARMFunctionInterface
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
 open BCHCPURegisters
+open BCHFtsParameter
 open BCHLibTypes
 
 module A = TCHAssertion
@@ -142,6 +144,42 @@ let returns_error ?(msg="") (prn: 'a -> string) (f: unit -> 'a traceresult) =
     ()
 
 
+let equal_param_locations
+      ?(msg="")
+      ~(expected: parameter_location_t list)
+      ~(received: parameter_location_t list) () =
+  A.make_equal_list
+    parameter_location_equal
+    parameter_location_to_string
+    ~msg
+    expected
+    received
+
+
+let equal_fts_parameter
+      ?(msg="")
+      ~(expected: fts_parameter_t)
+      ~(received: fts_parameter_t) () =
+  A.make_equal
+    fts_parameter_equal
+    fts_parameter_to_string
+    ~msg
+    expected
+    received
+
+
+let equal_arm_argument_state
+      ?(msg="")
+      ~(expected: arm_argument_state_t)
+      ~(received: arm_argument_state_t) () =
+  A.make_equal
+    arm_argument_state_equal
+    arm_argument_state_to_string
+    ~msg
+    expected
+    received
+
+
 type x_fts_loc_t = {
     xftsl_kind: string;
     xftsl_type: btype_t;
@@ -171,6 +209,13 @@ let equal_function_parameters
          xftsl_offset = string_of_int i;
          xftsl_reg = "none"
        }
+    | RegisterParameter (r, pld) when Option.is_some pld.pld_extract ->
+       { xftsl_kind = "rp";
+         xftsl_type = pld.pld_type;
+         xftsl_offset =
+           string_of_int (fst (Option.get pld.pld_extract));
+         xftsl_reg = register_to_string r
+       }
     | RegisterParameter (r, pld) ->
         { xftsl_kind = "r";
           xftsl_type = pld.pld_type;
@@ -199,12 +244,18 @@ let equal_function_parameters
     } in
 
   let recvd = List.map convert_param received in
+  let btstr (ty: btype_t): string =
+    match ty with
+    | TComp (ckey, attrs) ->
+       let cinfo = get_struct_type_compinfo ty in
+       "struct " ^ cinfo.bcname
+    | _ -> btype_to_string ty in
   A.make_equal_list
     (fun xfts rfts ->
       (List.length xfts.xfts_locations) = (List.length rfts.xfts_locations)
       && xfts.xfts_index = rfts.xfts_index
       && xfts.xfts_name = rfts.xfts_name
-      && btype_equal xfts.xfts_type rfts.xfts_type
+      && (btstr xfts.xfts_type) = (btstr rfts.xfts_type)
       && xfts.xfts_size = rfts.xfts_size
       && List.for_all2
            (fun xl rl ->
@@ -218,7 +269,7 @@ let equal_function_parameters
       ^ ", "
       ^ p.xfts_name
       ^ ", "
-      ^ (btype_to_string p.xfts_type)
+      ^ (btstr p.xfts_type)
       ^ ", "
       ^ (string_of_int p.xfts_size)
       ^ ", "
@@ -230,7 +281,7 @@ let equal_function_parameters
                 "("
                 ^ pl.xftsl_kind
                 ^ ", "
-                ^ (btype_to_string pl.xftsl_type)
+                ^ (btstr pl.xftsl_type)
                 ^ ", "
                 ^ pl.xftsl_offset
                 ^ ", "

@@ -53,7 +53,7 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest bCHFunctionInterfaceTest
+all: make_dirs bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest bCHFunctionInterfaceTest bCHARMFunctionInterfaceTest
 
 doc: 
 
@@ -76,12 +76,16 @@ bCHStreamWrapperTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cm
 bCHFunctionInterfaceTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHFunctionInterfaceTest.cmi cmx/bCHFunctionInterfaceTest.cmx
 	$(CAMLLINK) -o bCHFunctionInterfaceTest $(OBJECTS) cmx/bCHFunctionInterfaceTest.cmx
 
+bCHARMFunctionInterfaceTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHARMFunctionInterfaceTest.cmi cmx/bCHARMFunctionInterfaceTest.cmx
+	$(CAMLLINK) -o bCHARMFunctionInterfaceTest $(OBJECTS) cmx/bCHARMFunctionInterfaceTest.cmx
+
 run: bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest
 	./bCHDoublewordTest
 	./bCHImmediateTest
 	./bCHLocationTest
 	./bCHStreamWrapperTest
 	./bCHFunctionInterfaceTest
+	./bCHARMFunctionInterfaceTest
 
 cmi/%.cmi: %.mli
 	$(CAMLC) -o $@ -c -opaque $<
