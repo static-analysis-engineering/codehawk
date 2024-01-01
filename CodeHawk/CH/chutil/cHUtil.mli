@@ -27,8 +27,8 @@
    SOFTWARE.
    ============================================================================= *)
 
+(** {1 String utility functions} *)
 
-(* string functions *)
 val string_replace: char -> string -> string -> string
 val string_nsplit: char -> string -> string list
 
@@ -42,7 +42,8 @@ val dehex_string: string -> string
 val encode_string: string -> bool * string
 val decode_string: bool * string -> string
 
-(* list functions *)
+(** {1 List utility functions} *)
+
 val list_split: int -> 'a list -> ('a list * 'a list)
 val list_split_p: ('a -> bool) -> 'a list -> ('a list * 'a list)
 
@@ -51,10 +52,21 @@ val list_sub: 'a list -> int -> int -> 'a list
 val list_suffix: int -> 'a list -> 'a list
 
 val list_maxf: 'a list -> ('a -> 'a -> int) -> 'a
+
+(** [list_compare lst1 lst2 f] returns -1 if [lst1] has strictly fewer
+    elements than [lst2], returns 1 if [lst1] has strictly more elements
+    than [lst2] and otherwise returns the element-wise comparison of [lst1]
+    and [lst2] starting from the first element.*)
 val list_compare: 'a list -> 'a list -> ('a -> 'a -> int) -> int
+
+(** [list_compare_r lst1 lst2 f] returns -1 if [lst1] has strictly fewer
+    elements than [lst2], returns 1 if [lst1] has strictly more elements
+    than [lst2] and otherwise returns the element-wise comparison of [lst1]
+    and [lst2] starting from the last element.*)
 val list_compare_r: 'a list -> 'a list -> ('a -> 'a -> int) -> int
 
 val list_union_f: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list
+
 val list_difference: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list
 
 (** [list_update lst el eq better] updates list [lst] with element [el] if
@@ -71,10 +83,15 @@ val list_update:
 val remove_duplicates: 'a list -> 'a list
 val remove_duplicates_f: 'a list -> ('a -> 'a -> bool) -> 'a list
 
-val array_fold_lefti: ('b -> int -> 'a -> 'b) -> 'b ->  'a array -> 'b
-
 val xproduct: 'a list -> 'a list -> ('a * 'a) list
 
+(** {1 Array utility functions}*)
 
-(* other comparison functions *)
+val array_fold_lefti: ('b -> int -> 'a -> 'b) -> 'b ->  'a array -> 'b
+
+
+
+
+(** {1 Miscellaneous} *)
+
 val optvalue_compare: 'a option -> 'a option -> ('a -> 'a -> int) -> int
