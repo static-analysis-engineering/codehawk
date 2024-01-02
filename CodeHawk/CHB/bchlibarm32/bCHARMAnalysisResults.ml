@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2021-2023  Aarno Labs LLC
+
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,26 +25,12 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHIntervals
-open CHPretty
-
 (* chutil *)
-open CHIndexTable
-open CHLogger
 open CHXmlDocument
 
-(* xprlib *)
-open Xprt
-open XprTypes
-
 (* bchlib *)
-open BCHFtsParameter
-open BCHBasicTypes
 open BCHByteUtilities
-open BCHConstantDefinitions
 open BCHFloc
-open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
@@ -53,15 +39,12 @@ open BCHSystemInfo
 
 (* bchlibarm32 *)
 open BCHARMDictionary
-open BCHARMAssemblyInstructions
-open BCHARMDisassemblyUtils
 open BCHARMLoopStructure
-open BCHARMOpcodeRecords
-open BCHARMOperand
 open BCHARMTypes
 open BCHFnARMDictionary
 
 module H = Hashtbl
+
 
 class fn_analysis_results_t (fn:arm_assembly_function_int) =
 object (self)
@@ -204,6 +187,7 @@ object (self)
 
 end
 
+
 class arm_analysis_results_t:arm_analysis_results_int =
 object (self)
 
@@ -213,7 +197,7 @@ object (self)
     let fndata = new fn_analysis_results_t fn in
     begin
       (if save then fndata#save);
-      H.add table fn#get_address#to_hex_string fn; 
+      H.add table fn#get_address#to_hex_string fn;
     end
 
   method write_xml (node:xml_element_int) =
@@ -237,5 +221,5 @@ object (self)
 
 end
 
+
 let arm_analysis_results = new arm_analysis_results_t
-                   

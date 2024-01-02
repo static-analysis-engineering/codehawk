@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2021-2023 Aarno Labs, LLC
+
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,8 +32,6 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
-open CHTiming
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
@@ -54,9 +52,7 @@ open BCHUtilities
 open BCHELFHeader
 
 (* bchlibarm32 *)
-open BCHARMAssemblyFunction
 open BCHARMAssemblyInstructions
-open BCHARMOpcodeRecords
 open BCHARMTypes
 
 module H = Hashtbl
@@ -98,8 +94,8 @@ let _ =
     ]
 
 
-let create_ordering 
-    (functions: doubleword_int list) 
+let create_ordering
+    (functions: doubleword_int list)
     (calls: (doubleword_int * doubleword_int) list) =
   let fns_included = included_functions () in
   if ((List.length fns_included) > 0) || (List.length functions > 5000) then
@@ -131,7 +127,7 @@ let create_ordering
           (functions, stats, true)
         end
       else
-        match fns with 
+        match fns with
         | [] -> (result, stats, cycle)
         | _ ->
            let (leaves, nonleaves) =
@@ -265,8 +261,8 @@ object (self)
       let calls = ref [] in
       let _ = self#itera (fun faddr _ ->
 	let finfo = get_function_info faddr in
-	let appCallees = 
-	  List.fold_left (fun acc c -> 
+	let appCallees =
+	  List.fold_left (fun acc c ->
 	      if c#is_app_call then
                 (c#get_app_address)::acc
               else
@@ -294,24 +290,24 @@ object (self)
           NL] in
     let orderedFunctions = List.map self#get_function_by_address orderedList in
     List.iter (fun afn -> f afn#get_address afn) orderedFunctions
-      
+
   method top_down_itera (f:doubleword_int -> arm_assembly_function_int -> unit) =
     let orderedList = List.rev self#get_bottomup_function_list in
     let orderedFunctions = List.map self#get_function_by_address orderedList in
     List.iter (fun afn -> f afn#get_address afn) orderedFunctions
-      
+
   method iter (f:arm_assembly_function_int -> unit) =
     List.iter (fun assemblyFunction -> f assemblyFunction) self#get_functions
 
   method itera (f:doubleword_int -> arm_assembly_function_int -> unit) =
-    List.iter (fun assemblyFunction -> 
+    List.iter (fun assemblyFunction ->
         f assemblyFunction#get_address assemblyFunction) self#get_functions
 
   method get_function_coverage =
     let table = H.create 37 in
     let add faddr ctxta =
       let a = (ctxt_string_to_location faddr ctxta)#i in
-      if H.mem table a#index then 
+      if H.mem table a#index then
 	H.replace table a#index ((H.find table a#index) + 1)
       else
 	H.add table a#index 1 in
@@ -333,11 +329,11 @@ object (self)
       List.iter add_library_stub functions_data#get_library_stubs in
     let overlap = ref 0 in
     let multiple = ref 0 in
-    let _ = 
+    let _ =
       H.iter (fun _ v ->
           if v = 1 then
             ()
-          else 
+          else
 	    begin
               overlap := !overlap + 1;
               multiple := !multiple + (v-1)
@@ -855,13 +851,13 @@ object (self)
             lines := line :: !lines);
       String.concat "\n" (List.rev !lines)
     end
-    
+
   method get_num_functions = H.length functions
-                           
+
   method has_function_by_address (va:doubleword_int) = H.mem functions va#index
 
   method includes_instruction_address (va:doubleword_int)=
-    H.fold 
+    H.fold
       (fun _ f found ->
         if found then
           true
@@ -892,7 +888,7 @@ let get_arm_disassembly_metrics () =
     dm_instrs = instrs;
     dm_functions = arm_assembly_functions#get_num_functions;
     dm_coverage = coverage;
-    dm_pcoverage = 100.0 *. (float_of_int coverage) /. (float_of_int instrs) ;    
+    dm_pcoverage = 100.0 *. (float_of_int coverage) /. (float_of_int instrs) ;
     dm_overlap = overlap;
     dm_alloverlap = alloverlap;
     dm_jumptables = List.length system_info#get_jumptables;
@@ -900,6 +896,6 @@ let get_arm_disassembly_metrics () =
     dm_imports = imports;
     dm_exports = get_export_metrics()
   }
-                           
+
 
 let get_arm_data_references () = arm_assembly_functions#get_data_references

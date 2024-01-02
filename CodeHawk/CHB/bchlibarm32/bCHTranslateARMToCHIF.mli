@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023  Aarno Labs LLC
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ val translate_arm_instruction:
   funloc:location_int
   -> codepc:arm_code_pc_int
   -> blocklabel:symbol_t
-  -> exitlabel:symbol_t
+  -> _exitlabel:symbol_t
   -> cmds:cmd_t list
   -> ((symbol_t
        * (code_t, 'a) command_t list) list

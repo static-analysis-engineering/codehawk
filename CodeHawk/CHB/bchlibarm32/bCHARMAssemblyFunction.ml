@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023 Aarno Labs, LLC
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,42 +26,28 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
-open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
-open BCHFunctionInfo
-open BCHFloc
-open BCHFunctionInterface
-open BCHFunctionData
-open BCHFunctionSummary
-open BCHFunctionSummaryLibrary
 open BCHLibTypes
-open BCHLocation
-open BCHSystemInfo
-open BCHUtilities
 
 (* bchlibarm32 *)
 open BCHARMAssemblyBlock
 open BCHARMAssemblyInstructions
-open BCHARMOpcodeRecords
 open BCHARMTypes
 
 module H = Hashtbl
 
 
 class arm_assembly_function_t
-        (faddr:doubleword_int)
-        (blocks:arm_assembly_block_int list)
-        (successors:(ctxt_iaddress_t * ctxt_iaddress_t) list)
+        (faddr: doubleword_int)
+        (blocks: arm_assembly_block_int list)
+        (successors: (ctxt_iaddress_t * ctxt_iaddress_t) list)
       :arm_assembly_function_int =
 object (self)
 
@@ -162,8 +148,8 @@ object (self)
     List.iter (fun (b:arm_assembly_block_int) ->
         b#itera (fun iaddr instr -> f faddr iaddr instr)) self#get_blocks
 
-  method populate_callgraph (callgraph:callgraph_int) =
-    self#iteri (fun _ iaddr instr -> ())
+  method populate_callgraph (_callgraph: callgraph_int) =
+    self#iteri (fun _ _iaddr _instr -> ())
 
   method includes_instruction_address (va:doubleword_int) =
     List.exists (fun b -> b#includes_instruction_address va) blocks

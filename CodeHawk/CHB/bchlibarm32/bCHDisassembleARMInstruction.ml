@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023 Aarno Labs, LLC
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,21 +31,14 @@ open CHNumerical
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHCPURegisters
 open BCHDoubleword
 open BCHImmediate
 open BCHLibTypes
-open BCHStreamWrapper
-open BCHSystemInfo
-open BCHSystemSettings
 
 (* bchlibarm32 *)
-open BCHARMDisassemblyUtils
-open BCHARMOpcodeRecords
 open BCHARMOperand
 open BCHARMPseudocode
 open BCHARMTypes
@@ -960,7 +953,7 @@ let parse_data_proc_reg_type
 
 
 let parse_data_proc_imm_type
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int)
       (cond: int) =
@@ -2510,9 +2503,9 @@ let parse_misc_7_type
          ^ (stri n),
          instr)
 
-
+(*
 let parse_vector_structured_store
-      (instr: doubleword_int) (iaddr: doubleword_int) =
+      (instr: doubleword_int) (_iaddr: doubleword_int) =
   (* (b 27 24) = 4, (b 21 20) = 0 *)
   let b = instr#get_segval in
   let bv = instr#get_bitval in
@@ -2584,9 +2577,11 @@ let parse_vector_structured_store
 
   else
     NotRecognized ("arm_vector_structured_store_1", instr)
+ *)
 
-
-let parse_vector_structured_load (instr: doubleword_int) (iaddr: doubleword_int) =
+(*
+let parse_vector_structured_load
+      (instr: doubleword_int) (_iaddr: doubleword_int) =
   (* (b 27 24) = 4, (b 21 20) = 2 *)
   let b = instr#get_segval in
   let bv = instr#get_bitval in
@@ -2707,7 +2702,7 @@ let parse_vector_structured_load (instr: doubleword_int) (iaddr: doubleword_int)
 
   else
     NotRecognized ("arm_vector_structured_load_1", instr)
-
+ *)
 
 let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
   let b = instr#get_segval in
@@ -3091,7 +3086,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorMoveLong (cc, dt, vd WR, vm RD)
 
   (* <15><  5>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - A1-s (Q=0) *)
-  | (5, sz, 0, 0, 1) ->
+  | (5, _, 0, 0, 1) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -3121,7 +3116,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - A1-s (Q=1) *)
-  | (5, sz, 0, 1, 1) ->
+  | (5, _, 0, 1, 1) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -3155,7 +3150,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - A1-s (Q=0) *)
-  | (5, sz, 1, 0, 1) ->
+  | (5, _, 1, 0, 1) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -3185,7 +3180,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - A1-s (Q=1) *)
-  | (5, sz, 1, 1, 1) ->
+  | (5, _, 1, 1, 1) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -3219,7 +3214,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - A1-s (Q=0) *)
-  | (5, sz, 3, 0, 1) ->
+  | (5, _, 3, 0, 1) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -3249,7 +3244,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - A1-s (Q=1) *)
-  | (5, sz, 3, 1, 1) ->
+  | (5, _, 3, 1, 1) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -3283,7 +3278,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 5>LQM1<vm> *) (* VSHL - A1 (Q=0) *)
-  | (5, sz, 5, 0, 1) ->
+  | (5, _, 5, 0, 1) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -3313,7 +3308,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorShiftLeft (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  5>D<imm6><vd>< 5>LQM1<vm> *) (* VSHL - A1 (Q=1) *)
-  | (5, sz, 5, 1, 1) ->
+  | (5, _, 5, 1, 1) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -4005,7 +4000,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      SHA1FixedRotate (cc, dt, vd WR, vm RD)
 
   (* <15><  7>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - A1-u (Q=0) *)
-  | (7, sz, 0, 0, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
+  | (7, _, 0, 0, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -4035,7 +4030,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  7>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - A1-u (Q=1) *)
-  | (7, sz, 0, 1, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
+  | (7, _, 0, 1, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -4069,7 +4064,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  7>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - A1-u (Q=0) *)
-  | (7, sz, 1, 0, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
+  | (7, _, 1, 0, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -4099,7 +4094,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  7>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - A1-u (Q=1) *)
-  | (7, sz, 1, 1, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
+  | (7, _, 1, 1, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -4133,7 +4128,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  7>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - A1-u (Q=0) *)
-  | (7, sz, 3, 0, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
+  | (7, _, 3, 0, 1)  when ((bv 7) = 1 || (b 21 19) > 0) ->
      let imm6 = b 21 16 in
       let d = prefix_bit (bv 22) (b 15 12) in
       let m = prefix_bit (bv 5) (b 3 0) in
@@ -4163,7 +4158,7 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
       VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* <15><  7>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - A1-u (Q=1) *)
-  | (7, sz, 3, 1, 1) when ((bv 7) = 1 || (b 21 19) > 0) ->
+  | (7, _, 3, 1, 1) when ((bv 7) = 1 || (b 21 19) > 0) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
