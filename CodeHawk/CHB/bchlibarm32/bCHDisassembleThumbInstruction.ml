@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023  Aarno Labs, LLC
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,14 +34,12 @@ open CHLogger
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHCPURegisters
 open BCHDoubleword
 open BCHImmediate
 open BCHLibTypes
 
 (* bchlibarm32 *)
 open BCHARMDisassemblyUtils
-open BCHARMOpcodeRecords
 open BCHARMOperand
 open BCHARMPseudocode
 open BCHARMTypes
@@ -446,10 +444,10 @@ let itblock = new itblock_t
 
 
 let parse_thumb32_29_0
-      ?(in_it: bool = false)
+      ?(_in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   let bv = instr#get_bitval in
@@ -624,15 +622,15 @@ let parse_thumb32_29_0
      (* STM<c>.W <Rn>{!}, <registers> *)
      StoreMultipleDecrementBefore (wback, cc, rn, rl RD , mem WR)
 
-  | s ->
+  | selector ->
      NotRecognized (
          "parse_thumb32_29_0:" ^ (string_of_int selector), instr)
 
 
 let parse_thumb32_29_1
-      ?(in_it: bool = false)
+      ?(_in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -791,16 +789,16 @@ let parse_thumb32_29_1
      (* RSB{S}<c> <Rd>, <Rn>, <Rm>{, <shift>} *)
      ReverseSubtract (setflags, cc, rd WR, rn RD, rm RD, false)
 
-  | s ->
+  | (selector, _) ->
      NotRecognized (
          "parse_thumb32_29_1:" ^ (string_of_int selector), instr)
 
 
 let parse_thumb32_29_2
-      ?(in_it: bool = false)
+      ?(_in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   let bv = instr#get_bitval in
@@ -1145,7 +1143,7 @@ let parse_thumb32_29_2
        (* VPUSH<c> <list> *)
        VectorPush (cc, sp WR, rl RD, mem WR)
 
-    | (a, b, c) ->
+    | (selector, isz, cmode) ->
        NotRecognized (
            "parse_thumb32_29_2: "
            ^ (string_of_int selector)
@@ -1157,10 +1155,10 @@ let parse_thumb32_29_2
 
 
 let parse_thumb32_29_12
-      ?(in_it: bool = false)
+      ?(_in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   let bv = instr#get_bitval in
@@ -1427,9 +1425,9 @@ let parse_thumb32_29_12
 
 
 let parse_thumb32_29_13
-      ?(in_it: bool = false)
+      ?(_in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -1860,16 +1858,16 @@ let parse_thumb32_29_110
 
   else
     if (bv 23) = 0 then
-      parse_thumb32_29_12 ~in_it ~cc ch iaddr instr
+      parse_thumb32_29_12 ~_in_it:in_it ~cc ch iaddr instr
     else
-      parse_thumb32_29_13 ~in_it ~cc ch iaddr instr
+      parse_thumb32_29_13 ~_in_it:in_it ~cc ch iaddr instr
 
 
 let parse_thumb32_29_14
-      ?(in_it: bool = false)
+      ?(_in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   let bv = instr#get_bitval in
@@ -2127,9 +2125,9 @@ let parse_thumb32_29_14
 
 
 let parse_thumb32_29_15
-      ?(in_it: bool = false)
+      ?(_in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -2341,7 +2339,7 @@ let parse_thumb32_29_15
      VectorMoveLong (cc, dt, vd WR, vm RD)
 
   (* < 29><15>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - T1-s (Q=0) *)
-  | (sz, 0, 0, 1) ->
+  | (_sz, 0, 0, 1) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -2371,7 +2369,7 @@ let parse_thumb32_29_15
      VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
   (* < 29><15>D<imm6><vd>< 0>LQM1<vm> *) (* VSHR - T1-s (Q=1) *)
-  | (sz, 0, 1, 1) ->
+  | (_sz, 0, 1, 1) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -2405,7 +2403,7 @@ let parse_thumb32_29_15
      VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
   (* < 29><15>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - T1-s (Q=0) *)
-  | (sz, 1, 0, 1) ->
+  | (_sz, 1, 0, 1) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -2435,7 +2433,7 @@ let parse_thumb32_29_15
      VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* < 29><15>D<imm6><vd>< 1>LQM1<vm> *) (* VSRA - T1-s (Q=1) *)
-  | (sz, 1, 1, 1) ->
+  | (_sz, 1, 1, 1) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -2469,7 +2467,7 @@ let parse_thumb32_29_15
      VectorShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* < 29><15>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - T1-s (Q=0) *)
-  | (sz, 3, 0, 1) ->
+  | (_sz, 3, 0, 1) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -2499,7 +2497,7 @@ let parse_thumb32_29_15
      VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* < 29><15>D<imm6><vd>< 3>LQM1<vm> *) (* VRSRA - T1-s (Q=1) *)
-  | (sz, 3, 1, 1) ->
+  | (_sz, 3, 1, 1) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -2533,7 +2531,7 @@ let parse_thumb32_29_15
      VectorRoundingShiftRightAccumulate (cc, dt, vd WR, vm RD, imm)
 
   (* < 29><15>D<imm6><vd>< 5>LQM1<vm> *) (* VSHL - T1 (Q=0) *)
-  | (sz, 5, 0, 1) ->
+  | (_sz, 5, 0, 1) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -2563,7 +2561,7 @@ let parse_thumb32_29_15
      VectorShiftLeft (cc, dt, vd WR, vm RD, imm)
 
   (* < 29><15>D<imm6><vd>< 5>LQM1<vm> *) (* VSHL - T1 (Q=1) *)
-  | (sz, 5, 1, 1) ->
+  | (_sz, 5, 1, 1) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -2597,7 +2595,7 @@ let parse_thumb32_29_15
      VectorShiftLeft (cc, dt, vd WR, vm RD, imm)
 
   (* < 29><15>D<imm6><vd>< 8>00M1<vm> *) (* VSHRN - T1 *)
-  | (sz, 8, 0, 1) ->
+  | (_sz, 8, 0, 1) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -2764,10 +2762,10 @@ let parse_thumb32_29_15
 
 
 let parse_t32_30_0
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   let i = b 26 26 in
@@ -2966,9 +2964,9 @@ let parse_t32_30_0
      NotRecognized ("t32_30_0:" ^ (string_of_int tag), instr)
 
 let parse_t32_branch
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -3112,16 +3110,16 @@ let parse_thumb32_30
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   match b 15 15 with
-  | 0 -> parse_t32_30_0 ~in_it ~cc ch iaddr instr
-  | 1 -> parse_t32_branch ~in_it ~cc ch iaddr instr
+  | 0 -> parse_t32_30_0 ~_in_it:in_it ~cc ch iaddr instr
+  | 1 -> parse_t32_branch ~_in_it:in_it ~cc ch iaddr instr
   | _ ->
      NotRecognized ("parse_thumb32_30", instr)
 
 
 let parse_thumb32_31_0
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -3747,10 +3745,10 @@ let parse_thumb32_31_0
 
 
 let parse_thumb32_31_1
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   let rnreg = get_arm_reg (b 19 16) in
@@ -3965,10 +3963,10 @@ let parse_thumb32_31_1
 
 
 let parse_thumb32_31_2
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   let bv = instr#get_bitval in
@@ -4008,10 +4006,10 @@ let parse_thumb32_31_2
 
 
 let parse_thumb32_31_110
-      ?(in_it: bool=false)
-      ?(cc: arm_opcode_cc_t=ACCAlways)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      ?(_in_it: bool=false)
+      ?(_cc: arm_opcode_cc_t=ACCAlways)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
   match (b 22 20) with
@@ -4021,9 +4019,9 @@ let parse_thumb32_31_110
 
 
 let parse_thumb32_31_14
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -4158,9 +4156,9 @@ let parse_thumb32_31_14
 
 
 let parse_thumb32_31_15
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -4646,7 +4644,7 @@ let parse_thumb32_31_15
      SHA1FixedRotate (cc, dt, vd WR, vm RD)
 
   (* <31><15>D<imm6><vd>< 0>LQM1<vm> *)   (* VSHR - T1-u (Q=0) *)
-  | (sz, 0, 0, 1) when ((bv 7) = 1 || (b 21 19) > 0) ->
+  | (_sz, 0, 0, 1) when ((bv 7) = 1 || (b 21 19) > 0) ->
      let imm6 = b 21 16 in
      let d = prefix_bit (bv 22) (b 15 12) in
      let m = prefix_bit (bv 5) (b 3 0) in
@@ -4676,7 +4674,7 @@ let parse_thumb32_31_15
      VectorShiftRight (cc, dt, vd WR, vm RD, imm)
 
   (* <31><15>D<imm6><vd>< 0>LQM1<vm> *)   (* VSHR - T1-u (Q=1) *)
-  | (sz, 0, 1, 1) when ((bv 7) = 1 || (b 21 19) > 0) ->
+  | (_sz, 0, 1, 1) when ((bv 7) = 1 || (b 21 19) > 0) ->
      let _ =
        if (bv 12) = 1 || (bv 0) = 1 then
          raise
@@ -4957,14 +4955,14 @@ let parse_thumb32_opcode
   match (b 31 27) with
   | 29 ->
      (match (b 26 25) with
-      | 0 -> parse_thumb32_29_0 ~in_it ~cc ch iaddr instr
-      | 1 -> parse_thumb32_29_1 ~in_it ~cc ch iaddr instr
-      | 2 -> parse_thumb32_29_2 ~in_it ~cc ch iaddr instr
+      | 0 -> parse_thumb32_29_0 ~_in_it:in_it ~cc ch iaddr instr
+      | 1 -> parse_thumb32_29_1 ~_in_it:in_it ~cc ch iaddr instr
+      | 2 -> parse_thumb32_29_2 ~_in_it:in_it ~cc ch iaddr instr
       | 3 ->
          (match (b 24 23) with
           | 0 | 1 -> parse_thumb32_29_110 ~in_it ~cc ch iaddr instr
-          | 2 -> parse_thumb32_29_14 ~in_it ~cc ch iaddr instr
-          | 3 -> parse_thumb32_29_15 ~in_it ~cc ch iaddr instr
+          | 2 -> parse_thumb32_29_14 ~_in_it:in_it ~cc ch iaddr instr
+          | 3 -> parse_thumb32_29_15 ~_in_it:in_it ~cc ch iaddr instr
           | _ ->
              raise
                (BCH_failure
@@ -4977,14 +4975,14 @@ let parse_thumb32_opcode
   | 30 -> parse_thumb32_30 ~in_it ~cc ch iaddr instr
   | 31 ->
      (match (b 26 25) with
-      | 0 ->  parse_thumb32_31_0 ~in_it ~cc ch iaddr instr
-      | 1 ->  parse_thumb32_31_1 ~in_it ~cc ch iaddr instr
-      | 2 ->  parse_thumb32_31_2 ~in_it ~cc ch iaddr instr
+      | 0 ->  parse_thumb32_31_0 ~_in_it:in_it ~cc ch iaddr instr
+      | 1 ->  parse_thumb32_31_1 ~_in_it:in_it ~cc ch iaddr instr
+      | 2 ->  parse_thumb32_31_2 ~_in_it:in_it ~cc ch iaddr instr
       | 3 ->
          (match (b 24 23) with
-          | 0 | 1 -> parse_thumb32_31_110 ~in_it ~cc ch iaddr instr
-          | 2 -> parse_thumb32_31_14 ~in_it ~cc ch iaddr instr
-          | 3 -> parse_thumb32_31_15 ~in_it ~cc ch iaddr instr
+          | 0 | 1 -> parse_thumb32_31_110 ~_in_it:in_it ~_cc:cc ch iaddr instr
+          | 2 -> parse_thumb32_31_14 ~_in_it:in_it ~cc ch iaddr instr
+          | 3 -> parse_thumb32_31_15 ~_in_it:in_it ~cc ch iaddr instr
           | _ ->
              raise
                (BCH_failure
@@ -5102,7 +5100,7 @@ let parse_t16_00
 let parse_t16_01
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (iaddr: doubleword_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let r (i: int) (m: arm_operand_mode_t) =
@@ -5212,7 +5210,7 @@ let parse_t16_01
 let parse_t16_01_1
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (iaddr: doubleword_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let r (i: int) (m: arm_operand_mode_t) =
@@ -5270,9 +5268,9 @@ let parse_t16_01_1
 
 
 let parse_t16_load_store_reg
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (iaddr: doubleword_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let reg (i: int): arm_reg_t = get_arm_reg i in
@@ -5335,7 +5333,7 @@ let parse_t16_load_store_reg
 
 
 let parse_t16_load_literal
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
@@ -5351,10 +5349,10 @@ let parse_t16_load_literal
   
 
 let parse_t16_load_store_imm
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       ?(hw: bool=false)
-      (iaddr: doubleword_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let reg (i: int): arm_reg_t = get_arm_reg i in
@@ -5405,7 +5403,7 @@ let parse_t16_load_store_imm
 
 
 let parse_t16_load_store_imm_relative
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
@@ -5467,9 +5465,9 @@ let parse_t16_load_store_imm_relative
 
 
 let parse_t16_push_pop
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (iaddr: doubleword_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let regs s = (b 7 0) + ((b 8 8) lsl s) in
@@ -5492,8 +5490,8 @@ let parse_t16_push_pop
 
 
 let parse_t16_compare_branch
-      ?(in_it: bool=false)
-      ?(cc: arm_opcode_cc_t=ACCAlways)
+      ?(_in_it: bool=false)
+      ?(_cc: arm_opcode_cc_t=ACCAlways)
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
@@ -5525,9 +5523,9 @@ let parse_t16_compare_branch
 
 
 let parse_t16_misc7
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (iaddr: doubleword_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in  
   match (b 8 8) with
@@ -5559,9 +5557,9 @@ let parse_t16_misc7
      NotRecognized ("t16_misc7", instr)
 
 let parse_t16_bit_extract
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (iaddr: doubleword_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let rd = arm_register_op (get_arm_reg (b 2 0)) in
@@ -5599,7 +5597,7 @@ let parse_t16_misc
   let b = instr#get_segval in
   let opc = b 11 9 in
   match opc with
-  | 2 | 6 -> parse_t16_push_pop ~in_it ~cc iaddr instr
+  | 2 | 6 -> parse_t16_push_pop ~_in_it:in_it ~cc iaddr instr
 
   (* 10110110011m0AIF  CPS - T1 *)
   | 3 when (b 8 5) = 3 && (b 3 3) = 0 ->
@@ -5627,21 +5625,21 @@ let parse_t16_misc
      (* REV16<c> <Rd>, <Rm> *)
      ByteReversePackedHalfword (cc, rd WR, rm RD, false)
 
-  | 7 -> parse_t16_misc7 ~in_it ~cc iaddr instr
+  | 7 -> parse_t16_misc7 ~_in_it:in_it ~cc iaddr instr
 
   | _ when (b 8 8) = 1 ->
-     parse_t16_compare_branch ~in_it ~cc iaddr instr
+     parse_t16_compare_branch ~_in_it:in_it ~_cc:cc iaddr instr
 
-  | 1 -> parse_t16_bit_extract ~in_it ~cc iaddr instr
+  | 1 -> parse_t16_bit_extract ~_in_it:in_it ~cc iaddr instr
 
   | tag ->
      NotRecognized ("t16_misc_" ^ (string_of_int tag), instr)
 
 
 let parse_t16_store_load_multiple
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (iaddr: doubleword_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let rnreg = get_arm_reg (b 10 8) in
@@ -5668,7 +5666,7 @@ let parse_t16_store_load_multiple
 
 
 let parse_t16_conditional
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
@@ -5704,7 +5702,7 @@ let parse_t16_conditional
 
 
 let parse_t16_unconditional
-      ?(in_it: bool=false)
+      ?(_in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
@@ -5725,7 +5723,7 @@ let parse_t16_unconditional
 let parse_thumb16_opcode
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): arm_opcode_t =
   let b = instr#get_segval in
@@ -5741,23 +5739,23 @@ let parse_thumb16_opcode
   | 1 when (b 13 10) = 1 ->
      parse_t16_01_1 ~in_it ~cc iaddr instr
   | 1 when (b 13 12) = 1 ->
-     parse_t16_load_store_reg ~in_it ~cc iaddr instr
+     parse_t16_load_store_reg ~_in_it:in_it ~cc iaddr instr
   | 1 when (b 13 13) = 0 ->
-     parse_t16_load_literal ~in_it ~cc iaddr instr
+     parse_t16_load_literal ~_in_it:in_it ~cc iaddr instr
   | 1 when (b 13 13) = 1 ->
-     parse_t16_load_store_imm ~in_it ~cc iaddr instr
+     parse_t16_load_store_imm ~_in_it:in_it ~cc iaddr instr
   | 2 when (b 13 12) = 0 ->
-     parse_t16_load_store_imm ~hw:true ~in_it ~cc iaddr instr
+     parse_t16_load_store_imm ~hw:true ~_in_it:in_it ~cc iaddr instr
   | 2 when is_imm_relative () ->
-     parse_t16_load_store_imm_relative ~in_it ~cc iaddr instr
+     parse_t16_load_store_imm_relative ~_in_it:in_it ~cc iaddr instr
   | _ when (b 15 12) = 11 ->
      parse_t16_misc ~in_it ~cc iaddr instr
   | _ when (b 15 12) = 12 ->
-     parse_t16_store_load_multiple ~in_it ~cc iaddr instr
+     parse_t16_store_load_multiple ~_in_it:in_it ~cc iaddr instr
   | _ when (b 15 12) = 13 ->
-     parse_t16_conditional ~in_it ~cc iaddr instr
+     parse_t16_conditional ~_in_it:in_it ~cc iaddr instr
   | _ when (b 15 11) = 28 ->
-     parse_t16_unconditional ~in_it ~cc iaddr instr
+     parse_t16_unconditional ~_in_it:in_it ~cc iaddr instr
   | _ -> NotRecognized ("thumb16_opcode", instr)
 
 

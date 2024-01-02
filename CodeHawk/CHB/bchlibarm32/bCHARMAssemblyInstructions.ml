@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2021-2023  Aarno Labs, LLC
+
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,7 +31,6 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
-open CHTiming
 open CHTraceResult
 open CHXmlDocument
 
@@ -40,12 +39,9 @@ open BCHBasicTypes
 open BCHByteUtilities
 open BCHDataBlock
 open BCHDoubleword
-open BCHFunctionInterface
 open BCHFunctionData
-open BCHFunctionSummary
 open BCHLibTypes
 open BCHStreamWrapper
-open BCHStrings
 open BCHSystemInfo
 open BCHSystemSettings
 open BCHUtilities
@@ -142,7 +138,7 @@ object (self)
   method get_indices (addr: doubleword_int): int * int =
     let index = addr#value in
     let (found, result) =
-      List.fold_left (fun (fnd, r) (name, start, size, startindex) ->
+      List.fold_left (fun (fnd, r) (_name, start, size, startindex) ->
           if fnd then
             (fnd, r)
           else if index >= start && index < start + size then
@@ -162,19 +158,22 @@ object (self)
                  STR " could not be translated to backing array indices"]))
 
   method get_range_indices
-           (startaddr: doubleword_int) (endaddr: doubleword_int): (int * int) list =
+           (startaddr: doubleword_int)
+           (endaddr: doubleword_int): (int * int) list =
     let (i_start, j_start) = self#get_indices startaddr in
     let (i_end, j_end) = self#get_indices endaddr in
     if i_start = i_end then
       List.init ((j_end - j_start) + 1) (fun k -> (i_start, j_start + k))
     else if (i_end - i_start) = 1 then
-      let lst1 = List.init (arrayLength - j_start) (fun k -> (i_start, j_start + k)) in
+      let lst1 =
+        List.init (arrayLength - j_start) (fun k -> (i_start, j_start + k)) in
       let lst2 = List.init (j_end + 1) (fun k -> (i_end, k)) in
       lst1 @ lst2
     else
       raise
         (BCH_failure
-           (LBLOCK [STR "Indices spanning more than two arrays not yet supported"]))
+           (LBLOCK [
+                STR "Indices spanning more than two arrays not yet supported"]))
 
   method get_all_indices_rev: (int * int) list =
     if (List.length allindices_rev) > 0 then
@@ -208,8 +207,7 @@ let get_indices (addr: doubleword_int) = address_translator#get_indices addr
 
 (* Enter the instruction in the backing array at the given index. If the
    index is out-of-range of the initialized length of the backing array,
-   log an error message (but don't fail).
- *)
+   log an error message (but don't fail).*)
 let set_instruction (addr: doubleword_int) (instr: arm_assembly_instruction_int) =
   try
     let (i, j) = get_indices addr in
@@ -218,7 +216,7 @@ let set_instruction (addr: doubleword_int) (instr: arm_assembly_instruction_int)
   | BCH_failure p ->
      ch_error_log#add
        "set_instruction:invalid address"
-       (LBLOCK [addr#toPretty; STR ": "; instr#toPretty])
+       (LBLOCK [addr#toPretty; STR ": "; instr#toPretty; STR ": "; p])
 
 
 let initialize_instruction_section (addr: doubleword_int) (xsize: doubleword_int) =
@@ -252,18 +250,21 @@ let initialize_instruction_sections
 
 
 (* Return the instruction at the given index from the backing store; if
-   the index is out-of-range, return Error.
- *)
+   the index is out-of-range, return Error.*)
 let get_instruction (addr: doubleword_int): arm_assembly_instruction_result =
   try
     let (i, j) = get_indices addr in
     Ok (arm_instructions.(i).(j))
   with
   | BCH_failure p ->
-     Error ["get_instruction: " ^ addr#to_hex_string]
+     Error [
+         "get_instruction: "
+         ^ addr#to_hex_string
+         ^ ": "
+         ^ (pretty_to_string p)]
 
-(* Return the addresses of valid instructions in the given address range (inclusive)
- *)
+(* Return the addresses of valid instructions in the given address range 
+   (inclusive) *)
 let get_range_instruction_addrs
       (startaddr: doubleword_int) (endaddr: doubleword_int): doubleword_int list =
   let result = ref [] in
@@ -298,12 +299,12 @@ let get_all_instruction_addrs (): doubleword_int list =
     !result
   end
 
-
+(*
 let fold_instructions (f:'a -> arm_assembly_instruction_int -> 'a) (init:'a) =
   Array.fold_left
     (fun a arr ->
       Array.fold_left (fun a1 opc -> f a1 opc) a arr) init arm_instructions
-
+ *)
 
 let iter_instructions (f:arm_assembly_instruction_int -> unit) =
   Array.iter (fun arr -> Array.iter f arr) arm_instructions
@@ -464,7 +465,7 @@ object (self)
        thumb mode, the reason may be that an instruction at va-2 was
        initially disassembled as an (ultimately invalid) 4-byte thumb
        instruction, leaving the last two bytes (which may be a valid 2 or
-       start of 4-byte instruction un-disassembled. The quick fix is to 
+       start of 4-byte instruction un-disassembled. The quick fix is to
        simply add the datablock to the userdata, so it will be pre-assigned
        as non-code block, but this should eventually be fixed.
      *)
@@ -599,7 +600,8 @@ object (self)
          let addr = ref alignedaddr in
          let contents = ref [] in
          let make_stream (v: doubleword_int) =
-           let bytestring = write_hex_bytes_to_bytestring v#to_fixed_length_hex_string_le in
+           let bytestring =
+             write_hex_bytes_to_bytestring v#to_fixed_length_hex_string_le in
            make_pushback_stream ~little_endian:true bytestring in
          let opcode_string (addr: doubleword_int) (v: doubleword_int) =
            try
@@ -637,7 +639,7 @@ object (self)
            if prefix > 0 && (String.length s) >= prefix then ch#skip_bytes prefix in
          try
            begin
-             for i = 0 to (((len - prefix)/4) - 1) do
+             for _i = 0 to (((len - prefix)/4) - 1) do
                begin
                  contents := (!addr, ch#read_doubleword) :: !contents;
                  addr := !addr#add_int 4
@@ -741,7 +743,7 @@ object (self)
                      end
                    else
                      spacedstring ^ "\n" ^ (String.make 24 ' ') in
-                 let _ = 
+                 let _ =
                    if !firstNew then
                      begin lines := "\n" :: !lines ; firstNew := false end in
                  let _ = add_function_names va in

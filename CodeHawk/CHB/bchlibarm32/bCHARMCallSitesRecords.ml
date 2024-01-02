@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs, LLC
+
+   Copyright (c) 2023-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -81,12 +81,12 @@ let is_r0_clobber (instr: arm_assembly_instruction_int): bool =
   | LoadRegister (_, rt, _, _, _, _) -> is_r0 rt
   | _ -> false
 
-
+(*
 let is_pop_lr (instr: arm_assembly_instruction_int): bool =
   match instr#get_opcode with
   | Pop (_, _, rl, _) -> rl#includes_lr
   | _ -> false
-
+ *)
 
 let is_pop_pc (instr: arm_assembly_instruction_int): bool =
   match instr#get_opcode with
@@ -233,9 +233,9 @@ object (self)
         STR "Post-block instruction: ";
         STR "  ";
         STR (arm_opcode_to_string self#postblock_instr#get_opcode)]
-        
 
-end          
+
+end
 
 
 class arm_callsites_record_t (tgtaddr: doubleword_int): arm_callsites_record_int =
@@ -352,7 +352,7 @@ object (self)
       (0, 0, 0)
 
   method get_non_returning_functions =
-    H.fold (fun k v a ->
+    H.fold (fun k _ a ->
         let dw = TR.tget_ok (int_to_doubleword k) in
         let (s, c, n) = self#is_non_returning dw in
         if (s - c) > (n + 2) then dw :: a else a) table []
@@ -370,7 +370,7 @@ object (self)
           NL] in
     let fns =
       LBLOCK
-        (List.map (fun (k, v) ->
+        (List.map (fun (k, _) ->
              let faddr = TR.tget_ok (int_to_doubleword k) in
              let pbool (s, c, n) =
                LBLOCK [
@@ -419,7 +419,7 @@ object (self)
             (H.fold (fun k v a -> (k, v) :: a) table [])))
 
 end
-    
+
 
 let arm_callsites_records: arm_callsites_records_int =
   new arm_callsites_records_t

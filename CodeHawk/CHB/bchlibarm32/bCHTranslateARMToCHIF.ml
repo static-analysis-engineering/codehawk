@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2023  Aarno Labs LLC
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,6 @@ open CHPretty
 open CHCommon
 open CHNumerical
 open CHLanguage
-open CHUtils
 
 (* chutil *)
 open CHLogger
@@ -38,7 +37,6 @@ open CHLogger
 (* xprlib *)
 open Xprt
 open XprTypes
-open XprToPretty
 open XprUtil
 open Xsimplify
 
@@ -46,29 +44,17 @@ open Xsimplify
 open BCHBasicTypes
 open BCHBCTypes
 open BCHBCTypeUtil
-open BCHCallTarget
 open BCHCodegraph
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
 open BCHFtsParameter
-open BCHFunctionData
 open BCHFunctionInfo
-open BCHFunctionSummary
 open BCHLibTypes
 open BCHLocation
-open BCHMemoryReference
-open BCHSpecializations
 open BCHSystemInfo
-open BCHSystemSettings
-open BCHUtilities
-open BCHVariable
 
 (* bchlibarm32 *)
-open BCHARMAssemblyBlock
-open BCHARMAssemblyFunction
-open BCHARMAssemblyFunctions
-open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
 open BCHARMCHIFSystem
 open BCHARMCodePC
@@ -77,7 +63,6 @@ open BCHARMOpcodeRecords
 open BCHARMOperand
 open BCHARMTestSupport
 open BCHARMTypes
-open BCHDisassembleARM
 
 
 module B = Big_int_Z
@@ -85,8 +70,7 @@ module LF = CHOnlineCodeSet.LanguageFactory
 module TR = CHTraceResult
 
 let valueset_domain = "valuesets"
-let x2p = xpr_formatter#pr_expr
-let cmd_to_pretty = CHLanguage.command_to_pretty 0
+
 
 let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
   let name =
@@ -112,15 +96,6 @@ let get_invariant_label ?(bwd=false) (loc:location_int) =
     ctxt_string_to_symbol "bwd-invariant" loc#ci
   else
     ctxt_string_to_symbol "invariant" loc#ci
-
-
-let make_instruction_operation
-      ?(atts=[])
-      (opname: string)
-      (address: string)
-      (op_args: (string * variable_t * arg_mode_t) list) =
-  let op_name = new symbol_t ~atts:(address :: atts) opname in
-  OPERATION {op_name = op_name; op_args = op_args}
 
 
 let package_transaction
@@ -215,7 +190,7 @@ let make_instr_local_tests
 	let var = List.hd vars in
 	let extxprs = condfloc#inv#get_external_exprs var in
 	let extxprs =
-          List.map (fun e -> substitute_expr (fun v -> e) expr) extxprs in
+          List.map (fun e -> substitute_expr (fun _ -> e) expr) extxprs in
 	expr :: extxprs
       else if varssize = 2 then
 	let varlist = vars in
@@ -334,7 +309,7 @@ let make_tests
 	let var = List.hd vars in
 	let extxprs = condfloc#inv#get_external_exprs var in
 	let extxprs =
-          List.map (fun e -> substitute_expr (fun v -> e) expr) extxprs in
+          List.map (fun e -> substitute_expr (fun _ -> e) expr) extxprs in
         match extxprs with
         | [] -> [expr]
         | _ -> extxprs
@@ -499,7 +474,7 @@ let translate_arm_instruction
       ~(funloc:location_int)
       ~(codepc:arm_code_pc_int)
       ~(blocklabel:symbol_t)
-      ~(exitlabel:symbol_t)
+      ~(_exitlabel:symbol_t)
       ~(cmds:cmd_t list) =
   let (ctxtiaddr, instr) = codepc#get_next_instruction in
   let faddr = funloc#f in
@@ -546,7 +521,7 @@ let translate_arm_instruction
   let pcassign = floc#get_assign_commands pcv (XConst (IntConst iaddr8)) in
   let default newcmds =
     ([], [], cmds @ frozenAsserts @ (invop :: newcmds) @ [bwdinvop] @ pcassign) in
-  let make_conditional_commands (c: arm_opcode_cc_t) (cmds: cmd_t list) =
+  let make_conditional_commands (_c: arm_opcode_cc_t) (cmds: cmd_t list) =
     if instr#is_condition_covered then
       default cmds
     else if finfo#has_associated_cc_setter ctxtiaddr then
@@ -559,7 +534,7 @@ let translate_arm_instruction
              (LBLOCK [STR "Internal error in make_instr_local_tests"]))
           (get_arm_assembly_instruction testaddr) in
 
-      let (frozenvars, tests) =
+      let (_, tests) =
         make_instr_local_tests ~condloc:loc ~testloc ~condinstr:instr ~testinstr in
       match tests with
       | Some (thentest, elsetest) ->
@@ -616,7 +591,7 @@ let translate_arm_instruction
     match instr#is_in_aggregate with
     | Some dw -> (get_aggregate dw)#is_jumptable
     | _ -> false in
-  let check_storage (op: arm_operand_int) (v: variable_t) =
+  let check_storage (_op: arm_operand_int) (v: variable_t) =
     if (floc#env#is_unknown_memory_variable v) || v#isTemporary then
       ch_error_log#add
         "unknown storage location"
@@ -793,7 +768,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | ArithmeticShiftRight(setflags, c, rd, rn, rm, _) ->
+  | ArithmeticShiftRight(_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrn = rn#to_expr floc in
@@ -850,7 +825,7 @@ let translate_arm_instruction
          ctxtiaddr in
      default (defcmds @ cmds)
 
-  | BitwiseAnd (setflags, c, rd, rn, rm, _) ->
+  | BitwiseAnd (_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrn = rn#to_expr floc in
@@ -927,7 +902,7 @@ let translate_arm_instruction
    *     APSR.Z = IsZeroBit(result);
    *     APSR.C = carry;
    * ------------------------------------------------------------------------ *)
-  | BitwiseNot (setflags, c, rd, rm, _) when rm#is_immediate ->
+  | BitwiseNot (_, c, rd, rm, _) when rm#is_immediate ->
      let floc = get_floc loc in
      let rhs = rm#to_expr floc in
      let notrhs =
@@ -1113,8 +1088,8 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | BranchLink (c,tgt)
-    | BranchLinkExchange (c, tgt) ->
+  | BranchLink (c,_)
+    | BranchLinkExchange (c, _) ->
      let floc = get_floc loc in
      let vr0 = floc#f#env#mk_arm_register_variable AR0 in
      let vr1 = floc#f#env#mk_arm_register_variable AR1 in
@@ -1241,7 +1216,7 @@ let translate_arm_instruction
   | DataMemoryBarrier _ ->
      default []
 
-  | IfThen (c, xyz) when instr#is_aggregate_anchor ->
+  | IfThen _ when instr#is_aggregate_anchor ->
      let floc = get_floc loc in
      if finfo#has_associated_cc_setter ctxtiaddr then
        let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
@@ -1256,7 +1231,7 @@ let translate_arm_instruction
        let its = itagg#it_sequence in
        (match its#kind with
         | ITPredicateAssignment (inverse, dstop) ->
-           let (frozenvars, optpredicate) =
+           let (_, optpredicate) =
              make_conditional_predicate
                ~condinstr:instr
                ~testinstr:testinstr
@@ -1289,7 +1264,7 @@ let translate_arm_instruction
              (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
        default []
 
-  | IfThen (c, _) when instr#is_block_condition ->
+  | IfThen _ when instr#is_block_condition ->
      let thenaddr = codepc#get_true_branch_successor in
      let elseaddr = codepc#get_false_branch_successor in
      let cmds = cmds @ [invop] in
@@ -1790,7 +1765,7 @@ let translate_arm_instruction
    *    APSR.N = result<31>;
    *    APSR.Z = IsZeroBit(result);
    * ------------------------------------------------------------------------ *)
-  | Move (_, c, rd, rm, _, _) when Option.is_some instr#is_in_aggregate ->
+  | Move _ when Option.is_some instr#is_in_aggregate ->
      let _ =
        if collect_diagnostics () then
          ch_diagnostics_log#add
@@ -1798,7 +1773,7 @@ let translate_arm_instruction
            (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
      default []
 
-  | Move (setflags, c, rd, rm, _, _) ->
+  | Move (_, c, rd, rm, _, _) ->
      let floc = get_floc loc in
      let vrd = rd#to_register in
      let xrm = rm#to_expr floc in
@@ -1956,7 +1931,7 @@ let translate_arm_instruction
      let (stackops,_) =
        List.fold_left
          (fun (acc, off) reg ->
-           let (splhs,splhscmds) = (sp_r RD)#to_lhs floc in
+           let (splhs, splhscmds) = (sp_r RD)#to_lhs floc in
            let stackop = arm_sp_deref ~with_offset:off RD in
            let stackvar = stackop#to_variable floc in
            let stackrhs = stackop#to_expr floc in
@@ -1964,7 +1939,7 @@ let translate_arm_instruction
            let usehigh = get_use_high_vars [stackrhs] in
            let defcmds1 =
              floc#get_vardef_commands
-               ~defs:[regvar]
+               ~defs:[regvar; splhs]
                ~use:[stackvar]
                ~usehigh:usehigh
                ctxtiaddr in
@@ -2556,13 +2531,20 @@ let translate_arm_instruction
 
   | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
      let floc = get_floc loc in
-     let (vmem,memcmds) = mem#to_lhs floc in
+     let (vmem, memcmds) = mem#to_lhs floc in
      let _ = check_storage mem vmem in
      let rdreg = rd#to_register in
      let xrt = rt#to_expr floc in
      let cmds = floc#get_assign_commands vmem xrt in
+     let usevars = get_register_vars [rt; rn] in
+     let usehigh = get_use_high_vars [xrt] in
      let (vrd, scmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_int () in
-     let defcmds = floc#get_vardef_commands ~defs:[vmem; vrd] ctxtiaddr in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vmem; vrd]
+         ~use:usevars
+         ~usehigh
+         ctxtiaddr in
      let cmds = memcmds @ defcmds @ cmds @ scmds in
      (match c with
       | ACCAlways -> default cmds
@@ -2832,7 +2814,10 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     default (defcmds @ cmdslo @ cmdshi)
+     let cmds = defcmds @ cmdslo @ cmdshi in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | UnsignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
      let floc = get_floc loc in
@@ -2851,7 +2836,10 @@ let translate_arm_instruction
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     default (defcmds @ cmdslo @ cmdshi)
+     let cmds = defcmds @ cmdslo @ cmdshi in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
 
   | UnsignedSaturate (c, rd, _, rn) ->
      let floc = get_floc loc in
@@ -3377,7 +3365,7 @@ let translate_arm_instruction
            let usehigh = get_use_high_vars [stackrhs] in
            let defcmds1 =
              floc#get_vardef_commands
-               ~defs:[regvar]
+               ~defs:[splhs; regvar]
                ~use:[stackvar]
                ~usehigh
                ctxtiaddr in
@@ -3547,7 +3535,8 @@ object (self)
     let rec aux cmds =
       let (nodes,edges,newcmds) =
         try
-          translate_arm_instruction ~funloc ~codepc ~blocklabel ~exitlabel ~cmds
+          translate_arm_instruction
+            ~funloc ~codepc ~blocklabel ~_exitlabel:exitlabel ~cmds
         with
         | BCH_failure p ->
            let msg =
