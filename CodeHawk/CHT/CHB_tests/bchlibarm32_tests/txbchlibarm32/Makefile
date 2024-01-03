@@ -125,6 +125,7 @@ bCHFnARMDictionaryTest:  $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil
 run: bCHDisassembleARMInstructionTest bCHDisassembleThumbInstructionTest bCHThumbITSequenceTest bCHARMJumptableTest bCHARMAssemblyFunctionTest bCHARMConditionalExprTest bCHTranslateARMToCHIFTest bCHFnARMDictionaryTest
 	./bCHDisassembleARMInstructionTest
 	./bCHDisassembleThumbInstructionTest
+	./bCHARMDictionaryTest
 	./bCHThumbITSequenceTest
 	./bCHARMJumptableTest
 	./bCHARMAssemblyFunctionTest

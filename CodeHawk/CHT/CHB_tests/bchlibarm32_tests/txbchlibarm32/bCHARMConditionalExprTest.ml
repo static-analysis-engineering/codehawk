@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,69 +41,36 @@ module BU = TCHBchlibUtils
 module ARMA = TCHBchlibarm32Assertion
 module ARMU = TCHBchlibarm32Utils
 
-
-(* chlib *)
-open CHPretty
-open CHLanguage
-open CHLogger
-open BCHUtilities
-open BCHFnARMDictionary
-open BCHFloc
-open BCHARMAssemblyInstructions
-open XprToPretty
-
-(* chutil *)
-open CHPrettyUtil
 module TR = CHTraceResult
 
+
 (* bchlib *)
-module D = BCHDoubleword
-module L = BCHLocation
-module SI = BCHSystemInfo
-module SW = BCHStreamWrapper
-module U = BCHByteUtilities
+open BCHDoubleword
+open BCHFunctionData
+open BCHSystemInfo
 
 (* bchlibarm32 *)
-module ARMIS = BCHARMAssemblyInstructions
-module R = BCHARMOpcodeRecords
-module DT = BCHDisassembleARMInstruction
-module TF = BCHTranslateARMToCHIF
-
-open BCHSystemSettings
-open BCHFunctionData
-open BCHBasicTypes
-open BCHARMAssemblyBlock
-open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
-open BCHARMAssemblyInstruction
-open BCHLibTypes
-open BCHARMTypes
-open BCHARMCodePC
-open BCHAnalyzeApp
-open BCHARMCHIFSystem
-open BCHFunctionInfo
 open BCHARMTestSupport
+open BCHTranslateARMToCHIF
+
+
+(* bchanalyze *)
+
+open BCHAnalyzeApp
 
 
 let testname = "bCHARMConditionalExprTest"
-let lastupdated = "2023-11-25"
+let lastupdated = "2024-01-02"
 
-let x2p = xpr_formatter#pr_expr
-let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
 
-let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
+let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
 
 
 let codemax = make_dw "0x400000"
 
 (* a: BX LR; ---; a+8: BX LR; --- *)
 let bxlr_bxlr = "1eff2fe1000000001eff2fe100000000"
-
-
-let make_stream ?(len=0) (s: string) =
-  let bytestring = U.write_hex_bytes_to_bytestring s in
-  let s = (String.make len ' ') ^ bytestring in
-  SW.make_pushback_stream ~little_endian:true s
 
 
 (* Compare subtracts the second argument from the first, updates the condition
@@ -133,7 +100,7 @@ let compare_tests () =
   begin
     TS.new_testsuite (testname ^ "_compare_tests") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x100b0") 0x10000;
     List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
 
@@ -147,14 +114,15 @@ let compare_tests () =
             let fn = ARMU.arm_function_setup faddr bytes in
             (* let _ = pr_debug [fn#toPretty; NL] in *)
             let _ =
-              for i = 1 to iterations do
+              for _i = 1 to iterations do
                 analyze_arm_function faddr fn 0
               done in
             let _ = testsupport#request_arm_conditional_expr in
-            let _ = TF.translate_arm_assembly_function fn in
+            let _ = translate_arm_assembly_function fn in
             let (_, _, optxpr) =
               TR.tget_ok (testsupport#retrieve_arm_conditional_expr ccaddr) in
-            ARMA.equal_arm_conditional_expr ~expected:expectedcond ~received:optxpr ())
+            ARMA.equal_arm_conditional_expr
+              ~expected:expectedcond ~received:optxpr ())
       ) tests;
 
     TS.launch_tests ()
@@ -182,7 +150,7 @@ let compare_negative_tests () =
   begin
     TS.new_testsuite (testname ^ "_compare_negative_tests") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x100b0") 0x10000;
     List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
 
@@ -196,14 +164,15 @@ let compare_negative_tests () =
             let fn = ARMU.arm_function_setup faddr bytes in
             (* let _ = pr_debug [fn#toPretty; NL] in *)
             let _ =
-              for i = 1 to iterations do
+              for _i = 1 to iterations do
                 analyze_arm_function faddr fn 0
               done in
             let _ = testsupport#request_arm_conditional_expr in
-            let _ = TF.translate_arm_assembly_function fn in
+            let _ = translate_arm_assembly_function fn in
             let (_, _, optxpr) =
               TR.tget_ok (testsupport#retrieve_arm_conditional_expr ccaddr) in
-            ARMA.equal_arm_conditional_expr ~expected:expectedcond ~received:optxpr ())
+            ARMA.equal_arm_conditional_expr
+              ~expected:expectedcond ~received:optxpr ())
       ) tests;
 
     TS.launch_tests ()
@@ -238,7 +207,7 @@ let subtract_tests () =
   begin
     TS.new_testsuite (testname ^ "_subtract_tests") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x100b0") 0x10000;
     List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
 
@@ -252,22 +221,23 @@ let subtract_tests () =
             let fn = ARMU.arm_function_setup faddr bytes in
             (* let _ = pr_debug [fn#toPretty; NL] in *)
             let _ =
-              for i = 1 to iterations do
+              for _i = 1 to iterations do
                 analyze_arm_function faddr fn 0
               done in
             let _ = testsupport#request_arm_conditional_expr in
-            let _ = TF.translate_arm_assembly_function fn in
+            let _ = translate_arm_assembly_function fn in
             let (_, _, optxpr) =
               TR.tget_ok (testsupport#retrieve_arm_conditional_expr ccaddr) in
-            ARMA.equal_arm_conditional_expr ~expected:expectedcond ~received:optxpr ())
+            ARMA.equal_arm_conditional_expr
+              ~expected:expectedcond ~received:optxpr ())
       ) tests;
 
     TS.launch_tests ()
   end
 
 
-(* Test performs a bitwise AND operation, updates the condition flags based on the
-   result and discards the result.
+(* Test performs a bitwise AND operation, updates the condition flags based on
+   the result and discards the result.
 
    TST x, y
 
@@ -285,7 +255,7 @@ let test_tests () =
   begin
     TS.new_testsuite (testname ^ "_test_tests") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x100b0") 0x10000;
     List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
 
@@ -299,20 +269,19 @@ let test_tests () =
             let fn = ARMU.arm_function_setup faddr bytes in
             (* let _ = pr_debug [fn#toPretty; NL] in *)
             let _ =
-              for i = 1 to iterations do
+              for _i = 1 to iterations do
                 analyze_arm_function faddr fn 0
               done in
             let _ = testsupport#request_arm_conditional_expr in
-            let _ = TF.translate_arm_assembly_function fn in
+            let _ = translate_arm_assembly_function fn in
             let (_, _, optxpr) =
               TR.tget_ok (testsupport#retrieve_arm_conditional_expr ccaddr) in
-            ARMA.equal_arm_conditional_expr ~expected:expectedcond ~received:optxpr ())
+            ARMA.equal_arm_conditional_expr
+              ~expected:expectedcond ~received:optxpr ())
       ) tests;
 
     TS.launch_tests ()
   end
-
-
 
 
 let () =

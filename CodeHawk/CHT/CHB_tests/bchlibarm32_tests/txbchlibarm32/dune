@@ -1,6 +1,6 @@
 (tests 
   (names
-    ; bCHARMDictionaryTest
+    bCHARMDictionaryTest
     bCHDisassembleARMInstructionTest
     bCHDisassembleThumbInstructionTest
     bCHThumbITSequenceTest
@@ -10,7 +10,3 @@
     bCHARMAssemblyFunctionTest
     bCHFnARMDictionaryTest)
   (libraries bchanalyze bchcil bchlibarm32 chlib chutil extlib tbchlib tbchlibarm32 tchlib txprlib xprlib zarith))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

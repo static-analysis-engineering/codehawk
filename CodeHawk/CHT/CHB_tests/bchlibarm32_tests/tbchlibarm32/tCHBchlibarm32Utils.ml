@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,10 +25,6 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-
-(* chlib *)
-open CHLanguage
-open CHPretty
 
 (* bchlib *)
 open BCHByteUtilities
@@ -39,13 +35,9 @@ open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
 open BCHStreamWrapper
-open BCHSystemInfo
 
 (* bchlibarm32 *)
-open BCHARMAssemblyBlock
-open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
-open BCHARMAssemblyInstructions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
 open BCHARMInstructionAggregate
@@ -67,9 +59,6 @@ let string_of_opcode (opcode: arm_opcode_t) = arm_opcode_to_string opcode
 let make_stream (s: string) =
   let bytestring = write_hex_bytes_to_bytestring s in
   make_pushback_stream ~little_endian:true bytestring
-
-
-let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
 
 
 let arm_instructions_setup (base: doubleword_int) (size: int) =
@@ -148,7 +137,7 @@ let get_instrxdata_xprs (faddr: doubleword_int) (iaddr: doubleword_int) =
   let id = mk_arm_opcode_dictionary faddr finfo#env#varmgr#vard in
   let _ =
     fn#itera
-      (fun baddr block ->
+      (fun _baddr block ->
         block#itera
           (fun ctxtiaddr instr ->
             let loc = ctxt_string_to_location faddr ctxtiaddr in
@@ -166,7 +155,7 @@ let get_instrxdata_tags (faddr: doubleword_int) (iaddr: doubleword_int) =
   let id = mk_arm_opcode_dictionary faddr finfo#env#varmgr#vard in
   let _ =
     fn#itera
-      (fun baddr block ->
+      (fun _baddr block ->
         block#itera
           (fun ctxtiaddr instr ->
             let loc = ctxt_string_to_location faddr ctxtiaddr in

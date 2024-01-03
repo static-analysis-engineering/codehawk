@@ -1,13 +1,13 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -15,10 +15,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,9 +33,7 @@ open TCHTestApi
 
 (* bchlib *)
 open BCHCPURegisters
-open BCHDoubleword
 open BCHLibTypes
-open BCHSystemInfo
 
 (* bchlibarm32 *)
 open BCHARMOpcodeRecords
@@ -51,12 +49,8 @@ module BG = TCHBchlibGenerator
 module TR = CHTraceResult
 
 
-let e7   = 128
 let e8   = 256
-let e15  = e7 * e8
 let e16  = e8 * e8
-let e31 = e16 * e15
-let e32 = e16 * e16
 
 
 let operand_to_string = (fun op -> op#toString)
@@ -76,11 +70,11 @@ let dmb_option_operand: arm_operand_int generator_t =
 
 
 let ifthen_xyz: string generator_t =
-  ((fun r -> 
+  ((fun r ->
     let gen_c = G.select_letter ['T'; 'E'] in
     let gen_l = G.make_int 0 4 in
     let gen_s = G.string gen_l gen_c in
-    (fst gen_s) r), U.string_of_string) 
+    (fst gen_s) r), U.string_of_string)
 
 
 let lsb_width_msb: (int * int * int) generator_t =

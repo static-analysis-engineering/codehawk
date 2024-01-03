@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,66 +41,33 @@ module BU = TCHBchlibUtils
 module ARMA = TCHBchlibarm32Assertion
 module ARMU = TCHBchlibarm32Utils
 
-
-(* chlib *)
-open CHPretty
-open CHLanguage
-open CHLogger
-open BCHUtilities
-open BCHFnARMDictionary
-open BCHFloc
-open BCHARMAssemblyInstructions
-open XprToPretty
-
-(* chutil *)
-open CHPrettyUtil
 module TR = CHTraceResult
 
+
 (* bchlib *)
-module D = BCHDoubleword
-module L = BCHLocation
-module SI = BCHSystemInfo
-module SW = BCHStreamWrapper
-module U = BCHByteUtilities
+open BCHDoubleword
+open BCHFunctionData
+open BCHFunctionInfo
+open BCHSystemInfo
+open BCHSystemSettings
 
 (* bchlibarm32 *)
-module ARMIS = BCHARMAssemblyInstructions
-module R = BCHARMOpcodeRecords
-module DT = BCHDisassembleARMInstruction
-module TF = BCHTranslateARMToCHIF
-
-open BCHSystemSettings
-open BCHFunctionData
-open BCHBasicTypes
-open BCHARMAssemblyBlock
-open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
-open BCHARMAssemblyInstruction
-open BCHLibTypes
-open BCHARMTypes
-open BCHARMCodePC
-open BCHAnalyzeApp
 open BCHARMCHIFSystem
-open BCHFunctionInfo
 open BCHARMTestSupport
+open BCHTranslateARMToCHIF
+
+(* bchanalyze *)
+open BCHAnalyzeApp
 
 
 let testname = "bCHTranslateARMToCHIFTest"
-let lastupdated = "2023-09-27"
+let lastupdated = "2024-01-02"
 
-let x2p = xpr_formatter#pr_expr
-let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
-
-let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
+let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
 
 
 let codemax = make_dw "0x400000"
-
-
-let make_stream ?(len=0) (s: string) =
-  let bytestring = U.write_hex_bytes_to_bytestring s in
-  let s = (String.make len ' ') ^ bytestring in
-  SW.make_pushback_stream ~little_endian:true s
 
 
 let translate_store () =
@@ -135,7 +102,7 @@ let translate_store () =
   begin
     TS.new_testsuite (testname ^ "_translate_store") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x10000") 0x30000;
     List.iter (fun (title, sfaddr, bytes, expectedcmds) ->
 
@@ -145,7 +112,7 @@ let translate_store () =
             let faddr = make_dw sfaddr in
             let fn = ARMU.arm_function_setup faddr bytes in
             let _ = analyze_arm_function faddr fn 0 in
-            let _ = TF.translate_arm_assembly_function fn in
+            let _ = translate_arm_assembly_function fn in
             let proc = arm_chif_system#get_arm_procedure faddr in
             (* remove the PC assignment at the end of the transaction *)
             let assigns = BU.extract_chif_cfg_assignments ~len:(-1) proc in
@@ -184,7 +151,7 @@ let thumb_chif_conditionxprs () =
   begin
     TS.new_testsuite (testname ^ "_thumb_chif_conditionxprs") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x4000") 0x10000;
     List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
 
@@ -195,14 +162,14 @@ let thumb_chif_conditionxprs () =
             let _ = arm_assembly_functions#reset in
             let _ = system_settings#set_thumb in
             let faddr = make_dw cfaddr in
-            let _ = SI.system_info#set_arm_thumb_switch faddr "T" in
+            let _ = system_info#set_arm_thumb_switch faddr "T" in
             let fn = ARMU.thumb_function_setup faddr bytes in
             let _ =
-              for i = 1 to iterations do
+              for _i = 1 to iterations do
                 analyze_arm_function faddr fn 0
               done in
             let _ = testsupport#request_chif_conditionxprs in
-            let _ = TF.translate_arm_assembly_function fn in
+            let _ = translate_arm_assembly_function fn in
             let (_, _, txprs) =
               TR.tget_ok (testsupport#retrieve_chif_conditionxprs ccaddr) in
             ARMA.equal_chif_conditionxprs ~expected:expectedcond ~received:txprs ())
@@ -238,7 +205,7 @@ let thumb_instrxdata_conditionxprs () =
   begin
     TS.new_testsuite (testname ^ "_thumb_instrxdata_conditionxprs") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x4000") 0x10000;
     List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
 
@@ -249,11 +216,11 @@ let thumb_instrxdata_conditionxprs () =
             let _ = arm_assembly_functions#reset in
             let _ = system_settings#set_thumb in
             let faddr = make_dw cfaddr in
-            let _ = SI.system_info#set_arm_thumb_switch faddr "T" in
+            let _ = system_info#set_arm_thumb_switch faddr "T" in
             let iccaddr = make_dw ccaddr in
             let fn = ARMU.thumb_function_setup faddr bytes in
             let _ =
-              for i = 1 to iterations do
+              for _i = 1 to iterations do
                 analyze_arm_function faddr fn 0
               done in
             let xprs = ARMU.get_instrxdata_xprs faddr iccaddr in
