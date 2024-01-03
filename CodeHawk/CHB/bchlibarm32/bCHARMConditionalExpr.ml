@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2023  Aarno Labs LLC
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@
 
 (* chlib *)
 open CHLanguage
-open CHNumerical
 open CHPretty
 open CHUtils
 
@@ -42,19 +41,12 @@ open XprUtil
 open Xsimplify
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHDoubleword
 open BCHFloc
-open BCHFunctionInfo
 open BCHLibTypes
-open BCHLocation
-open BCHSystemSettings
-open BCHVariable
 
 (* bchlibarm32 *)
-open BCHARMAssemblyInstruction
 open BCHARMTypes
-open BCHARMOperand
 open BCHARMOpcodeRecords
 
 
@@ -106,6 +98,7 @@ let x2p = xpr_formatter#pr_expr
 let max32_constant_expr = int_constant_expr e32
 
 let tracked_locations = []
+
 
 let track_location loc p =
   if List.mem loc tracked_locations then
@@ -172,7 +165,7 @@ let freeze_variables
 let cc_expr
       (v: arm_operand_int -> xpr_t)   (* signed *)
       (vu: arm_operand_int -> xpr_t)  (* unsigned *)
-      (testfloc: floc_int)
+      (_testfloc: floc_int)
       (testopc: arm_opcode_t)
       (cc: arm_opcode_cc_t): (bool * xpr_t option) =
   let found = ref true in
@@ -264,7 +257,7 @@ let cc_expr
 
     | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedGT) -> XOp (XGt, [v x; v y])
     | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedLE) -> XOp (XLe, [v x; v y])
-
+    | (VCompare (_, ACCAlways, _, _, x, y), ACCNonNegative) -> XOp (XGe, [v x; v y])
 
     | _ ->
        begin

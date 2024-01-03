@@ -1702,13 +1702,23 @@ let translate_arm_instruction
      let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype rhs in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [rhs] in
+     let updatecmds =
+       if mem#is_offset_address_writeback then
+         let addr = mem#to_updated_offset_address floc in
+         let basereg = rn#to_register in
+         let (baselhs, ucmds) =
+           floc#get_ssa_assign_commands basereg ~vtype:t_voidptr addr in
+         let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
+         defupdatecmds @ ucmds
+       else
+         [] in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrt]
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
-     let cmds = defcmds @ cmds in
+     let cmds = defcmds @ cmds @ updatecmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
@@ -3278,10 +3288,11 @@ let translate_arm_instruction
   | VectorMultiplySubtract (c, dt, dst, src1, src2) ->
      let floc = get_floc loc in
      let dstreg = dst#to_register in
+     let xsrc0 = dst#to_expr floc in
      let xsrc1 = src1#to_expr floc in
      let xsrc2 = src2#to_expr floc in
-     let usevars = get_register_vars [src1; src2] in
-     let usehigh = get_use_high_vars [xsrc1; xsrc2] in
+     let usevars = get_register_vars [dst; src1; src2] in
+     let usehigh = get_use_high_vars [xsrc0; xsrc1; xsrc2] in
      let vtype = vfp_datatype_to_btype dt in
      let (vdst, cmds) = floc#get_ssa_abstract_commands dstreg ~vtype () in
      let defcmds =

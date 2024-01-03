@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2023  Aarno Labs LLC
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,11 +30,9 @@ open CHIntervals
 open CHLanguage
 open CHNumerical
 open CHPretty
-open CHUtils
 
 (* chutil *)
 open CHIndexTable
-open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
 
@@ -48,27 +46,15 @@ open Xsimplify
 (* bchlib *)
 open BCHFtsParameter
 open BCHBasicTypes
-open BCHByteUtilities
-open BCHConstantDefinitions
-open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
-open BCHFunctionInterface
-open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
-open BCHPreFileIO
-open BCHSystemInfo
-
-(* bchlibelf *)
-open BCHELFHeader
 
 (* bchlibarm32 *)
 open BCHARMAssemblyInstructions
 open BCHARMConditionalExpr
-open BCHARMDictionary
 open BCHARMDisassemblyUtils
-open BCHARMLoopStructure
 open BCHARMOperand
 open BCHARMOpcodeRecords
 open BCHARMPseudocode
@@ -82,20 +68,7 @@ module TR = CHTraceResult
 
 let x2p = xpr_formatter#pr_expr
 
-let bd = BCHDictionary.bdictionary
-let bcd = BCHBCDictionary.bcdictionary
 let ixd = BCHInterfaceDictionary.interface_dictionary
-
-let rec pow a = function
-  | 0 -> 1
-  | 1 -> a
-  | n ->
-    let b = pow a (n / 2) in
-    b * b * (if n mod 2 = 0 then 1 else a)
-
-
-let get_multiplier (n:numerical_t) =
-  int_constant_expr (pow 2 n#toInt)
 
 
 class arm_opcode_dictionary_t
@@ -121,7 +94,7 @@ object (self)
     sp_offset_table#add key
 
   method get_sp_offset (index:int) =
-    let (tags, args) = sp_offset_table#retrieve index in
+    let (_, args) = sp_offset_table#retrieve index in
     let a = a "sp-offset" args in
     (a 0, xd#get_interval (a 1))
 
@@ -152,7 +125,7 @@ object (self)
               let testfloc = get_floc testloc in
               let extxprs = testfloc#inv#get_external_exprs testvar in
               let extxprs =
-                List.map (fun e -> substitute_expr (fun v -> e) xpr) extxprs in
+                List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
               (match extxprs with
                | [] -> xpr
                | _ -> List.hd extxprs)
@@ -193,7 +166,7 @@ object (self)
             let testfloc = get_floc testloc in
             let extxprs = testfloc#inv#get_external_exprs testvar in
             let extxprs =
-              List.map (fun e -> substitute_expr (fun v -> e) xpr) extxprs in
+              List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
             (match extxprs with
              | [] -> xpr
              | _ -> List.hd extxprs)
@@ -614,8 +587,8 @@ object (self)
          let xtgt = tgt#to_expr floc in
          (["a:x"], [xd#index_xpr xtgt])
 
-      | BranchLink (_, tgt)
-        | BranchLinkExchange (_, tgt)
+      | BranchLink _
+        | BranchLinkExchange _
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
          let pars = List.map fst floc#get_call_arguments in
@@ -778,7 +751,7 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | IfThen (c, xyz) when instr#is_aggregate_anchor ->
+      | IfThen _ when instr#is_aggregate_anchor ->
          let finfo = floc#f in
          let ctxtiaddr = floc#l#ci in
          if finfo#has_associated_cc_setter ctxtiaddr then
@@ -825,7 +798,7 @@ object (self)
          else
            ([], [])
 
-      | IfThen (c, xyz) when instr#is_block_condition && floc#has_test_expr ->
+      | IfThen _ when instr#is_block_condition && floc#has_test_expr ->
          let txpr = floc#get_test_expr in
          let fxpr = XOp (XLNot, [txpr]) in
          let csetter = floc#f#get_associated_cc_setter floc#cia in
@@ -847,8 +820,7 @@ object (self)
          let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
          (tags, args)
 
-      | IfThen (c, xyz)  ->
-         ([], [])
+      | IfThen _  -> ([], [])
 
       | LoadMultipleDecrementAfter (_, _, base, rl, _) ->
          let reglhss = rl#to_multiple_variable floc in
@@ -856,7 +828,7 @@ object (self)
          let regcount = rl#get_register_count in
          let (memreads, _) =
            List.fold_left
-             (fun (acc, off) reglhs ->
+             (fun (acc, off) _reglhs ->
                let memop = arm_reg_deref ~with_offset:off basereg RD in
                let memrhs = memop#to_expr floc in
                (acc @ [memrhs], off + 4)) ([], 4 -(4 * regcount)) reglhss in
@@ -876,7 +848,7 @@ object (self)
          let regcount = rl#get_register_count in
          let (memreads, _) =
            List.fold_left
-             (fun (acc, off) reglhs ->
+             (fun (acc, off) _reglhs ->
                let memop = arm_reg_deref ~with_offset:off basereg RD in
                let memrhs = memop#to_expr floc in
                (acc @ [memrhs], off + 4)) ([], -(4 * regcount)) reglhss in
@@ -898,7 +870,7 @@ object (self)
          let regcount = rl#get_register_count in
          let (memreads, _) =
            List.fold_left
-             (fun (acc, off) reglhs ->
+             (fun (acc, off) _reglhs ->
                let memop = arm_reg_deref ~with_offset:off basereg RD in
                let memrhs = memop#to_expr floc in
                (acc @ [memrhs], off + 4)) ([], 0) reglhss in
@@ -930,7 +902,7 @@ object (self)
          let regcount = rl#get_register_count in
          let (memreads, _) =
            List.fold_left
-             (fun (acc, off) reglhs ->
+             (fun (acc, off) _reglhs ->
                let memop = arm_reg_deref ~with_offset:off basereg RD in
                let memrhs = memop#to_expr floc in
                (acc @ [memrhs], off + 4)) ([], 4) reglhss in
@@ -1108,16 +1080,36 @@ object (self)
              (tags, args) in
          (tags, args)
 
-      | LoadRegisterSignedByte (_, rt, rn, _, mem, _) ->
+      | LoadRegisterSignedByte (c, rt, rn, rm, mem, _) ->
          let vrt = rt#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let xaddr = mem#to_address floc in
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
-         (["a:vvxx"],
-          [xd#index_variable vrt;
-           xd#index_variable vmem;
-           xd#index_xpr xmem;
-           xd#index_xpr xrmem])
+         let rdefs =
+           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
+           @ (get_all_rdefs xmem) in
+         let uses = [get_def_use vrt] in
+         let useshigh = [get_def_use_high vrt] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrt; vmem]
+             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn = rn#to_variable floc in
+             let xaddr = mem#to_updated_offset_address floc in
+             add_base_update tags args vrn xaddr
+           else
+             (tags, args) in
+         (tags, args)
 
       | LoadRegisterSignedHalfword (c, rt, rn, rm, mem, _) ->
          let vrt = rt#to_variable floc in
@@ -1184,7 +1176,7 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | Move(_, c, rd, rm, _, _) when (Option.is_some instr#is_in_aggregate) ->
+      | Move _ when (Option.is_some instr#is_in_aggregate) ->
          (match instr#is_in_aggregate with
           | Some va ->
              let ctxtva = (make_i_location floc#l va)#ci in
@@ -1349,7 +1341,7 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | PreloadData (w, _, base, mem) ->
+      | PreloadData (_, _, base, mem) ->
          let xbase = base#to_expr floc in
          let xmem = mem#to_expr floc in
          (["a:xx"], [xd#index_xpr xbase; xd#index_xpr xmem])
@@ -1505,7 +1497,7 @@ object (self)
          let rrhss = List.map rewrite_expr rhss in
          let (memlhss, _) =
            List.fold_left
-             (fun (acc, off) reg ->
+             (fun (acc, off) _reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs = memop#to_variable floc in
                let memop1 = arm_reg_deref ~with_offset:(off+1) basereg WR in
@@ -1545,7 +1537,7 @@ object (self)
          let rrhss = List.map rewrite_expr rhss in
          let (memlhss, _) =
            List.fold_left
-             (fun (acc, off) reg ->
+             (fun (acc, off) _reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs = memop#to_variable floc in
                (acc @ [memlhs], off + 4)) ([], 0) rl#get_register_op_list in
@@ -1566,7 +1558,7 @@ object (self)
          let rrhss = List.map rewrite_expr rhss in
          let (memlhss, _) =
            List.fold_left
-             (fun (acc, off) reg ->
+             (fun (acc, off) _reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs = memop#to_variable floc in
                (acc @ [memlhs], off + 4)) ([], 4) rl#get_register_op_list in
@@ -2150,7 +2142,7 @@ object (self)
          let rxsrc1 = rewrite_expr xsrc1 in
          let xsrc2 = src2#to_expr floc in
          let rxsrc2 = rewrite_expr xsrc2 in
-         let rdefs = [get_rdef xsrc1; get_rdef xsrc2] in
+         let rdefs = [get_rdef xsrc1; get_rdef xsrc2; get_rdef xdst] in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vdst]
