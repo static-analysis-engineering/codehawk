@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,20 +26,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-open CHXmlReader
-
-(* bchlib *)
-open BCHBasicTypes
-open BCHLibTypes
-
-(* bchlibarm32 *)
-open BCHARMTypes
-
 (* tchlib *)
 module TS = TCHTestSuite
 
@@ -47,40 +33,34 @@ module A = TCHAssertion
 module G = TCHGenerator
 module S = TCHSpecification
 
-(* bchlib *)
-module D = BCHDoubleword
-module SI = BCHSystemInfo
-module SW = BCHStreamWrapper
-module U = BCHByteUtilities
-
-(* bchlibarm32 *)
-module R = BCHARMOpcodeRecords
-module TF = BCHDisassembleARMInstruction
-
 module TR = CHTraceResult
 
 
+(* bchlib *)
+open BCHByteUtilities
+open BCHDoubleword
+open BCHStreamWrapper
+open BCHSystemInfo
+
+(* bchlibarm32 *)
+open BCHARMOpcodeRecords
+open BCHDisassembleARMInstruction
+
+
 let testname = "bCHDisassembleARMInstructionTest"
-let lastupdated = "2023-12-19"
+let lastupdated = "2024-01-02"
 
 
-let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
+let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
 
 
 let make_stream ?(len=0) (s: string) =
-  let bytestring = U.write_hex_bytes_to_bytestring s in
+  let bytestring = write_hex_bytes_to_bytestring s in
   let s = (String.make len ' ') ^ bytestring in
-  SW.make_pushback_stream ~little_endian:true s
+  make_pushback_stream ~little_endian:true s
 
 
 let base = make_dw "0x400000"
-
-
-let arm_basic_failures = [
-    ("ANDS",   "0c001ae2", "AND            R0, R10, #0xc");  (* needs to be ANDS *)
-    ("BFC",    "1f19dfe7", "BFC            R1, 18, 14"); (* should be R1, #18, #14 *)
-    ("BIC",    "0e72c6e3", "BIC            R7, R6, #0x40000000");  (* should be #0xe0000000 *)
-  ]
 
 
 (* basic arm opcodes *)
@@ -171,8 +151,8 @@ let arm_basic () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_doubleword in
-            let opcode = TF.disassemble_arm_instruction ch base instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_arm_instruction ch base instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -195,7 +175,7 @@ let arm_pc_relative () =
     TS.new_testsuite (testname ^ "_arm_pc_relative") lastupdated;
 
     (* set code extent so checks on absolute code addresses pass *)
-    SI.system_info#set_elf_is_code_address D.wordzero base;
+    system_info#set_elf_is_code_address wordzero base;
     List.iter (fun (title, iaddr, bytes, result) ->
         TS.add_simple_test
           ~title
@@ -203,8 +183,8 @@ let arm_pc_relative () =
             let ch = make_stream bytes in
             let instrbytes = ch#read_doubleword in
             let iaddr = make_dw iaddr in
-            let opcode = TF.disassemble_arm_instruction ch iaddr instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_arm_instruction ch iaddr instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -243,8 +223,8 @@ let arm_vector () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_doubleword in
-            let opcode = TF.disassemble_arm_instruction ch base instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_arm_instruction ch base instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -254,7 +234,7 @@ let arm_vector () =
 (* ARM-V8 crypto extension instructions *)
 let armv8_crypto () =
   let tests = [
-      ("AESD.8-A1",     "4043b0f3", "AESD.8         Q2, Q0");
+      ("AESD,8-A1",     "4043b0f3", "AESD.8         Q2, Q0");
       ("AESE.8-A1",     "0043b0f3", "AESE.8         Q2, Q0");
       ("AESIMC.8-A1",   "c443b0f3", "AESIMC.8       Q2, Q2");
       ("AESMC.8-A1",    "8443b0f3", "AESMC.8        Q2, Q2");
@@ -268,8 +248,8 @@ let armv8_crypto () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_doubleword in
-            let opcode = TF.disassemble_arm_instruction ch base instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_arm_instruction ch base instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -285,4 +265,3 @@ let () =
     armv8_crypto ();
     TS.exit_file ()
   end
-                

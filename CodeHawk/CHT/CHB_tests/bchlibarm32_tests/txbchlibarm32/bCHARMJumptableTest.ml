@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -41,61 +41,55 @@ module ARMA = TCHBchlibarm32Assertion
 module ARMU = TCHBchlibarm32Utils
 
 
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 module TR = CHTraceResult
 
 (* bchlib *)
-module D = BCHDoubleword
-module SI = BCHSystemInfo
-module SW = BCHStreamWrapper
-module U = BCHByteUtilities
+open BCHDoubleword
+open BCHLibTypes
+open BCHSystemInfo
+open BCHStreamWrapper
+open BCHByteUtilities
 
 (* bchlibarm32 *)
-module ARMIS = BCHARMAssemblyInstructions
-module R = BCHARMOpcodeRecords
-module DT = BCHDisassembleThumbInstruction
-module DA = BCHDisassembleARMInstruction
-module TF = BCHARMInstructionAggregate
-
-open BCHARMAssemblyInstruction
-open BCHLibTypes
 open BCHARMTypes
+open BCHARMAssemblyInstruction
+open BCHARMAssemblyInstructions
+open BCHDisassembleThumbInstruction
+open BCHDisassembleARMInstruction
+open BCHARMInstructionAggregate
 
 
 let testname = "bCHARMJumptableTest"
-let lastupdated = "2023-09-27"
+let lastupdated = "2024-01-02"
 
 
-let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
+let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
 
 
 let codemax = make_dw "0x400000"
 
 
 let make_stream ?(len=0) (s: string) =
-  let bytestring = U.write_hex_bytes_to_bytestring s in
+  let bytestring = write_hex_bytes_to_bytestring s in
   let s = (String.make len ' ') ^ bytestring in
-  SW.make_pushback_stream ~little_endian:true s
+  make_pushback_stream ~little_endian:true s
 
 
 let add_instruction
-      (pos: int)
+      (_pos: int)
       (iaddr: doubleword_int)
       (opcode: arm_opcode_t)
       (bytes: string) =
   let instr = make_arm_assembly_instruction iaddr false opcode bytes in
   begin
-    (* pr_debug [iaddr#toPretty; STR "  "; STR (ARMU.string_of_opcode opcode); NL]; *)
-    ARMIS.set_arm_assembly_instruction instr;
+    set_arm_assembly_instruction instr;
     instr
   end
 
 let jt_setup_thumb hexbase bytes: arm_jumptable_int TR.traceresult =
   let base = make_dw hexbase in
-  let bytestring = U.write_hex_bytes_to_bytestring bytes in
+  let bytestring = write_hex_bytes_to_bytestring bytes in
   let ch = make_stream bytes in
   let aggregate = ref None in
   let size = String.length bytestring in
@@ -104,12 +98,12 @@ let jt_setup_thumb hexbase bytes: arm_jumptable_int TR.traceresult =
       let prevpos = ch#pos in
       let iaddr = base#add_int ch#pos in
       let instrbytes = ch#read_ui16 in
-      let opcode = DT.disassemble_thumb_instruction ch iaddr instrbytes in
+      let opcode = disassemble_thumb_instruction ch iaddr instrbytes in
       let currentpos = ch#pos in
       let instrlen = currentpos - prevpos in
       let instrbytes = String.sub bytestring prevpos instrlen in
       let instr = add_instruction prevpos iaddr opcode instrbytes in
-      let optagg = TF.identify_arm_aggregate ch instr in
+      let optagg = identify_arm_aggregate ch instr in
       match optagg with
       | Some agg -> aggregate := Some agg
       | _ -> ()
@@ -128,7 +122,7 @@ let jt_setup_thumb hexbase bytes: arm_jumptable_int TR.traceresult =
 
 let jt_setup_arm hexbase bytes: arm_jumptable_int TR.traceresult =
   let base = make_dw hexbase in
-  let bytestring = U.write_hex_bytes_to_bytestring bytes in
+  let bytestring = write_hex_bytes_to_bytestring bytes in
   let ch = make_stream bytes in
   let aggregate = ref None in
   let size = String.length bytestring in
@@ -137,12 +131,12 @@ let jt_setup_arm hexbase bytes: arm_jumptable_int TR.traceresult =
       let prevpos = ch#pos in
       let iaddr = base#add_int ch#pos in
       let instrbytes = ch#read_doubleword in
-      let opcode = DA.disassemble_arm_instruction ch iaddr instrbytes in
+      let opcode = disassemble_arm_instruction ch iaddr instrbytes in
       let currentpos = ch#pos in
       let instrlen = currentpos - prevpos in
       let instrbytes = String.sub bytestring prevpos instrlen in
       let instr = add_instruction prevpos iaddr opcode instrbytes in
-      let optagg = TF.identify_arm_aggregate ch instr in
+      let optagg = identify_arm_aggregate ch instr in
       match optagg with
       | Some agg -> aggregate := Some agg
       | _ -> ()
@@ -156,7 +150,7 @@ let jt_setup_arm hexbase bytes: arm_jumptable_int TR.traceresult =
        Error ["no aggregate found:" ^ (string_of_int ch#pos)]
   end
 
-    
+
 let tb_table_branch () =
   let tests = [
       ("tbb", "0x120f6", "0x12144",
@@ -192,11 +186,11 @@ let tb_table_branch () =
   begin
     TS.new_testsuite (testname ^ "_tb_table_branch") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x10000") 0xc0000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
         let jtresult = jt_setup_thumb hexbase bytes in
-        
+
         TS.add_simple_test
           ~title:(title ^ "-targets")
           (fun () ->
@@ -230,11 +224,11 @@ let ldr_table_branch () =
   begin
     TS.new_testsuite (testname ^ "_ldr_table_branch") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x160000") 0x10000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
         let jtresult = jt_setup_thumb hexbase bytes in
-        
+
         TS.add_simple_test
           ~title:(title ^ "-targets")
           (fun () ->
@@ -269,7 +263,7 @@ let ldrls_jumptable () =
   begin
     TS.new_testsuite (testname ^ "_ldrls_jumptable") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x10000") 0x10000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
         let jtresult = jt_setup_arm hexbase bytes in
@@ -321,11 +315,11 @@ let bx_table_branch () =
   begin
     TS.new_testsuite (testname ^ "_bx_table_branch") lastupdated;
 
-    SI.system_info#set_elf_is_code_address D.wordzero codemax;
+    system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x60000") 0xa0000;
     List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
         let jtresult = jt_setup_thumb hexbase bytes in
-        
+
         TS.add_simple_test
           ~title:(title ^ "-targets")
           (fun () ->
@@ -348,7 +342,7 @@ let bx_table_branch () =
 
     TS.launch_tests ()
   end
-  
+
 
 let () =
   begin
@@ -359,5 +353,3 @@ let () =
     bx_table_branch ();
     TS.exit_file ()
   end
-            
-          

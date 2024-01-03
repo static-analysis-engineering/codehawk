@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,20 +26,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-open CHXmlReader
-
-(* bchlib *)
-open BCHBasicTypes
-open BCHLibTypes
-
-(* bchlibarm32 *)
-open BCHARMTypes
-
 (* tchlib *)
 module TS = TCHTestSuite
 
@@ -47,39 +33,30 @@ module A = TCHAssertion
 module G = TCHGenerator
 module S = TCHSpecification
 
+module TR = CHTraceResult
+
 (* bchlib *)
-module D = BCHDoubleword
-module SI = BCHSystemInfo
-module SW = BCHStreamWrapper
-module U = BCHByteUtilities
+open BCHByteUtilities
+open BCHDoubleword
+open BCHStreamWrapper
+open BCHSystemInfo
 
 (* bchlibarm32 *)
-module R = BCHARMOpcodeRecords
-module TF = BCHDisassembleThumbInstruction
-
-module TR = CHTraceResult
+open BCHDisassembleThumbInstruction
+open BCHARMOpcodeRecords
 
 
 let testname = "bCHDisassembleThumbInstructionTest"
-let lastupdated = "2023-10-17"
+let lastupdated = "2024-01-02"
 
 
-let two_byte_instr_opcode_failures = [
-    ("03c4", "STM            R4!, {R0,R1}");  (* needs writeback register *)    
-  ]
-
-
-let four_byte_instr_opcode_failures = [
-  ]    
-
-
-let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
+let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
 
 
 let make_stream ?(len=0) (s: string) =
-  let bytestring = U.write_hex_bytes_to_bytestring s in
+  let bytestring = write_hex_bytes_to_bytestring s in
   let s = (String.make len ' ') ^ bytestring in
-  SW.make_pushback_stream ~little_endian:true s
+  make_pushback_stream ~little_endian:true s
 
 
 let base = make_dw "0x400000"
@@ -137,8 +114,8 @@ let thumb_2_basic () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
-            let opcode = TF.disassemble_thumb_instruction ch base instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_thumb_instruction ch base instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -168,7 +145,7 @@ let thumb_2_pc_relative () =
     TS.new_testsuite (testname ^ "_thumb_2_pc_relative") lastupdated;
 
     (* set code extent so checks on absolute code addresses pass *)
-    SI.system_info#set_elf_is_code_address D.wordzero base;
+    system_info#set_elf_is_code_address wordzero base;
     List.iter (fun (title, iaddr, bytes, result) ->
         TS.add_simple_test
           ~title
@@ -176,8 +153,8 @@ let thumb_2_pc_relative () =
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
             let iaddr = make_dw iaddr in
-            let opcode = TF.disassemble_thumb_instruction ch iaddr instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_thumb_instruction ch iaddr instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -254,8 +231,8 @@ let thumb_4_basic () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
-            let opcode = TF.disassemble_thumb_instruction ch base instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_thumb_instruction ch base instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -279,7 +256,7 @@ let thumb_4_pc_relative () =
     TS.new_testsuite (testname ^ "_thumb_4_pc_relative") lastupdated;
 
     (* set code extent so checks on absolute code addresses pass *)
-    SI.system_info#set_elf_is_code_address D.wordzero base;
+    system_info#set_elf_is_code_address wordzero base;
     List.iter (fun (title, iaddr, bytes, result) ->
         TS.add_simple_test
           ~title
@@ -287,8 +264,8 @@ let thumb_4_pc_relative () =
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
             let iaddr = make_dw iaddr in
-            let opcode = TF.disassemble_thumb_instruction ch iaddr instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_thumb_instruction ch iaddr instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -369,8 +346,8 @@ let thumb_4_vector () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
-            let opcode = TF.disassemble_thumb_instruction ch base instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_thumb_instruction ch base instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -401,8 +378,8 @@ let thumb_armv8_crypto () =
           (fun () ->
             let ch = make_stream bytes in
             let instrbytes = ch#read_ui16 in
-            let opcode = TF.disassemble_thumb_instruction ch base instrbytes in
-            let opcodetxt = R.arm_opcode_to_string ~width:14 opcode in
+            let opcode = disassemble_thumb_instruction ch base instrbytes in
+            let opcodetxt = arm_opcode_to_string ~width:14 opcode in
             A.equal_string result opcodetxt)) tests;
 
     TS.launch_tests ()
@@ -420,5 +397,3 @@ let () =
     thumb_armv8_crypto();
     TS.exit_file ()
   end
-
-  

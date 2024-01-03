@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs LLC
+
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,8 +27,13 @@
    ============================================================================= *)
 
 
+module B = Big_int_Z
+
 module TS = TCHTestSuite
+module G = TCHGenerator
+
 module ARMA = TCHBchlibarm32Assertion
+module ARMG = TCHBchlibarm32Generator
 
 (* chlib *)
 open CHNumerical
@@ -52,16 +57,12 @@ open BCHARMPseudocode
 open BCHARMSumTypeSerializer
 open BCHARMTypes
 
-module B = Big_int_Z
-
-module G = TCHGenerator
-module ARMG = TCHBchlibarm32Generator
 
 module TR = CHTraceResult
 
 
 let testname = "bCHARMDictionaryTest"
-let lastupdated = "2023-04-22"
+let lastupdated = "2024-01-02"
 
 let e8 = 256
 let e16 = e8 * e8
@@ -77,7 +78,7 @@ let get_bch_root (info:string):xml_element_int =
     root#appendChildren [hNode];
     root
   end
-                
+
 let save_bdictionary filename =
   let doc = xmlDocument () in
   let root = get_bch_root "bdictionary" in
@@ -88,7 +89,7 @@ let save_bdictionary filename =
     root#appendChildren [fnode];
     file_output#saveFile filename doc#toPretty
   end
-                
+
 
 let arm_opcode_tests () =
   begin
@@ -146,7 +147,7 @@ let arm_opcode_tests () =
     let lsb_width_msb () = (fst (ARMG.lsb_width_msb)) prngstate in
     let cc () = (fst ARMG.arm_opcode_cc) prngstate in
     let dmb_op () = (fst ARMG.dmb_option_operand) prngstate in
-    
+
     let armd = arm_dictionary in
     let doc = xmlDocument () in
     let root = xmlElement "codehawk-binary-analysis" in
@@ -359,7 +360,7 @@ let arm_opcode_tests () =
     TS.add_simple_test
       ~title:"Branch"
       (fun () ->
-        let tw = boolvalue () in        
+        let tw = boolvalue () in
         let tgt = absolute_op RD in
         let c = cc () in
         let opc = Branch (c, tgt, tw) in
@@ -661,7 +662,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = LoadRegisterHalfword (c, rt, rn, rm, mem, false) in
         index_check_opc_c opc c "LDRH" 5);
-    
+
     TS.add_simple_test
       ~title:"LoadRegisterSignedByte (register)"
       (fun () ->
@@ -687,7 +688,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = LoadRegisterSignedHalfword (c, rt, rn, rm, mem, false) in
         index_check_opc_c opc c "LDRSH" 5);
-    
+
     TS.add_simple_test
       ~title:"LogicalShiftLeft"
       (fun () ->
@@ -831,7 +832,7 @@ let arm_opcode_tests () =
         let opc = PreloadData (pldw, c, rn, mem) in
         let mnem = if pldw then "PLDW" else "PLD" in
         index_check_opc_c opc c mnem 3);
-                
+
     TS.add_simple_test
       ~title:"Push"
       (fun () ->
@@ -872,7 +873,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = ReverseSubtractCarry (setflags, c, rd, rn, rm) in
         index_check_opc_c opc c "RSC" 4);
-    
+
     TS.add_simple_test
       ~title:"RotateRight (register)"
       (fun () ->
@@ -914,7 +915,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = SaturatingDoubleAdd (c, rd, rm, rn) in
         index_check_opc_c opc c "QDADD" 3);
-    
+
     TS.add_simple_test
       ~title:"SaturatingDoubleSubtract"
       (fun () ->
@@ -954,7 +955,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = SHA1FixedRotate (c, dt, vd, vm) in
         index_check_opc_c opc c "SHA1H" 3);
-    
+
     TS.add_simple_test
       ~title:"SHA1HashUpdateChoose"
       (fun () ->
@@ -1117,7 +1118,7 @@ let arm_opcode_tests () =
             (c, rd, rn, rm, ra, roundf) in
         let mnem = if roundf = 1 then "SMMLAR" else "SMMLA" in
         index_check_opc_c opc c mnem 5);
-    
+
     TS.add_simple_test
       ~title:"SignedMultiplyAccumulateBB"
       (fun () ->
@@ -1236,7 +1237,7 @@ let arm_opcode_tests () =
         let c =  cc () in
         let opc = SignedMultiplyHalfwordsTT (c, rd, rn, rm) in
         index_check_opc_c opc c "SMULTT" 3);
-    
+
     TS.add_simple_test
       ~title:"SignedMultiplyLong"
       (fun () ->
@@ -1295,7 +1296,7 @@ let arm_opcode_tests () =
         let mem = mk_arm_mem_multiple_op rnreg rlen WR in
         let opc = StoreMultipleDecrementAfter (wback, c, rn, rl, mem) in
         index_check_opc_c opc c "STMDA" 4);
-    
+
     TS.add_simple_test
       ~title:"StoreMultipleDecrementBefore"
       (fun () ->
@@ -1323,7 +1324,7 @@ let arm_opcode_tests () =
         let mem = mk_arm_mem_multiple_op rnreg rlen WR in
         let opc = StoreMultipleIncrementAfter (wback, c, rnop, rl, mem, tw) in
         index_check_opc_c opc c "STM" 5);
-    
+
     TS.add_simple_test
       ~title:"StoreMultipleIncrementBefore"
       (fun () ->
@@ -1336,7 +1337,7 @@ let arm_opcode_tests () =
         let mem = mk_arm_mem_multiple_op rnreg rlen WR in
         let opc = StoreMultipleIncrementBefore (wback, c, rn, rl, mem) in
         index_check_opc_c opc c "STMIB" 4);
-    
+
     TS.add_simple_test
       ~title:"StoreRegister (immediate)"
       (fun () ->
@@ -1364,7 +1365,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = StoreRegister (c, rt, rn, rm, mem, tw) in
         index_check_opc_c opc c "STR" 5);
-    
+
     TS.add_simple_test
       ~title:"StoreRegisterByte (register)"
       (fun () ->
@@ -1405,7 +1406,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = StoreRegisterExclusive (c, rt, rn, imm_op, mem) in
         index_check_opc_c opc c "STREX" 4);
-    
+
     TS.add_simple_test
       ~title:"StoreRegisterHalfword (register)"
       (fun () ->
@@ -1431,9 +1432,9 @@ let arm_opcode_tests () =
         let rm = armreg_op RD in
         let c = cc () in
         let opc = Subtract (setflags, c, rd, rn, rm, tw, aw) in
-        let mnem = if aw then "SUBW" else "SUB" in        
+        let mnem = if aw then "SUBW" else "SUB" in
         index_check_opc_c opc c mnem 6);
-    
+
     TS.add_simple_test
       ~title:"SubtractCarry (register)"
       (fun () ->
@@ -1458,7 +1459,7 @@ let arm_opcode_tests () =
             rnreg (ARMImmOffset 0) ~isadd:true ~isindex:false ~iswback:false WR in
         let c = cc () in
         let opc = Swap (c, rt, rt2, rn, mem) in
-        index_check_opc_c opc c "SWP" 3);
+        index_check_opc_c opc c "SWP" 4);
 
     TS.add_simple_test
       ~title:"SwapByte"
@@ -1472,7 +1473,7 @@ let arm_opcode_tests () =
             rnreg (ARMImmOffset 0) ~isadd:true ~isindex:false ~iswback:false WR in
         let c = cc () in
         let opc = SwapByte (c, rt, rt2, rn, mem) in
-        index_check_opc_c opc c "SWPB" 3);
+        index_check_opc_c opc c "SWPB" 4);
 
     TS.add_simple_test
       ~title:"TableBranchByte"
@@ -1565,7 +1566,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = UnsignedExtendAddHalfword (c, rd, rn, rm) in
         index_check_opc_c opc c "UXTAH" 3);
-    
+
     TS.add_simple_test
       ~title:"UnsignedExtendByte"
       (fun () ->
@@ -1770,7 +1771,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = VCompare (nan, c, dt, fdst, vd, vm) in
         let mnem = if nan then "VCMPE" else "VCMP" in
-        index_check_opc_c opc c mnem 4);
+        index_check_opc_c opc c mnem 5);
 
     TS.add_simple_test
       ~title:"VectorConvert (float-int)"
@@ -1879,7 +1880,8 @@ let arm_opcode_tests () =
         let rlist =
           arm_simd_reg_elt_list_op
             XDouble [vd; vd + inc; vd + (2 * inc); vd + (3 * inc)] index esize in
-        let opc = VectorLoadFour (wb, c, VfpSize esize, rlist RD, rnop, mem WR, rmop) in
+        let opc =
+          VectorLoadFour (wb, c, VfpSize esize, rlist RD, rnop, mem WR, rmop) in
         index_check_opc_c opc c "VLD4" 6);
 
     TS.add_simple_test
@@ -1905,8 +1907,8 @@ let arm_opcode_tests () =
         let rtd = arm_double_register_op rtreg rt2reg WR in
         let c = cc () in
         let opc = VectorMoveDDSS (c, VfpNone, rt, rt2, rtd, sm, sm1, smd) in
-        index_check_opc_c opc c "VMOV" 5);
-        
+        index_check_opc_c opc c "VMOVDDSS" 7);
+
     TS.add_simple_test
       ~title:"VectorMoveLong"
       (fun () ->
@@ -1992,7 +1994,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = VectorMultiplyLong (c, dt, vd, vn, elt) in
         index_check_opc_c opc c "VMULL" 4);
-                    
+
     TS.add_simple_test
       ~title:"VectorMultiplySubtract (floating-point)"
       (fun () ->
@@ -2025,7 +2027,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = VectorPop (c, sp, rl, mem) in
         index_check_opc_c opc c "VPOP" 3);
-        
+
     TS.add_simple_test
       ~title:"VectorPush (A1)"
       (fun () ->
@@ -2203,7 +2205,7 @@ let arm_opcode_tests () =
         let c = cc () in
         let opc = VectorStoreMultipleDecrementBefore (wb, c, rn, rl, mem) in
         index_check_opc_c opc c "VSTMDB" 4);
-    
+
     TS.add_simple_test
       ~title:"VectorStoreMultipleIncrementAfter"
       (fun () ->
@@ -2281,7 +2283,8 @@ let arm_opcode_tests () =
         let rlist =
           arm_simd_reg_elt_list_op
             XDouble [vd; vd + inc; vd + (2 * inc); vd + (3 * inc)] index esize in
-        let opc = VectorStoreFour (wb, c, VfpSize esize, rlist WR, rnop, mem RD, rmop) in
+        let opc =
+          VectorStoreFour (wb, c, VfpSize esize, rlist WR, rnop, mem RD, rmop) in
         index_check_opc_c opc c "VST4" 6);
 
     TS.add_simple_test
@@ -2343,7 +2346,7 @@ let arm_opcode_tests () =
         let imm32 = arm_immediate_op (TR.tget_ok (signed_immediate_from_int op)) in
         let opc = SupervisorCall (c, imm32) in
         index_check_opc_c opc c "SVC" 1);
-    
+
     TS.launch_tests ();
     armd#write_xml fNode;
     doc#setNode root;
@@ -2358,4 +2361,3 @@ let () =
     arm_opcode_tests ();
     TS.exit_file ()
   end
-       
