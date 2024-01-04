@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,17 +37,14 @@ open CHLogger
 open CHXmlDocument
 
 (* xprlib *)
-open XprDictionary
 open XprTypes
-   
+
 (* bchlib *)
 open BCHBasicTypes
-open BCHDictionary
-open BCHDoubleword
-open BCHInterfaceDictionary
+open BCHCPURegisters
 open BCHLibTypes
+open BCHLocation
 open BCHSumTypeSerializer
-open BCHUtilities
 
 
 let bcd = BCHBCDictionary.bcdictionary
@@ -57,18 +54,25 @@ let id = BCHInterfaceDictionary.interface_dictionary
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
+    LBLOCK [
+        STR "Type ";
+        STR name;
+        STR " tag: ";
+        STR tag;
+        STR " not recognized. Accepted tags: ";
+        pretty_print_list accepted (fun s -> STR s) "" ", " ""] in
   begin
-    ch_error_log#add "serialization tag" msg ;
+    ch_error_log#add "serialization tag" msg;
     raise (BCH_failure msg)
   end
 
 
-class vardictionary_t (xd: xprdictionary_int):vardictionary_int =
+class vardictionary_t
+        (faddr: doubleword_int)
+        (xd: xprdictionary_int):vardictionary_int =
 object (self)
 
+  val faddr = faddr
   val xd = xd
   val memory_base_table = mk_index_table "memory-base-table"
   val memory_offset_table = mk_index_table "memory-offset-table"
@@ -95,6 +99,8 @@ object (self)
       List.iter (fun t -> t#reset) tables
     end
 
+  method faddr = faddr
+
   method xd = xd
 
   method get_indexed_variables =
@@ -105,18 +111,18 @@ object (self)
     List.map (fun (_,index) -> (index,self#get_memory_base index))
              memory_base_table#items
 
-  method index_memory_base (b:memory_base_t) =
+  method index_memory_base (b: memory_base_t) =
     let tags = [ memory_base_mcts#ts b ] in
     let key = match b with
       | BLocalStackFrame
-        | BRealignedStackFrame 
-        | BAllocatedStackFrame 
+        | BRealignedStackFrame
+        | BAllocatedStackFrame
         | BGlobal -> (tags, [])
       | BaseVar v -> (tags, [xd#index_variable v])
       | BaseUnknown s -> (tags, [bd#index_string s]) in
     memory_base_table#add key
 
-  method get_memory_base (index:int)  =
+  method get_memory_base (index: int)  =
     let name = memory_base_mcts#name in
     let (tags,args) = memory_base_table#retrieve index in
     let t = t name tags in
@@ -157,7 +163,7 @@ object (self)
        IndexOffset (xd#get_variable (a 0), a 1, self#get_memory_offset (a 2))
     | "u" -> UnknownOffset
     | s -> raise_tag_error name s memory_offset_mcts#tags
-                       
+
   method index_assembly_variable_denotation (v:assembly_variable_denotation_t) =
     let tags = [ assembly_variable_denotation_mcts#ts v ] in
     let key = match v with
@@ -189,10 +195,11 @@ object (self)
       | FunctionReturnValue a -> (tags @ [a], [])
       | SyscallErrorReturnValue a -> (tags @ [a], [])
       | SSARegisterValue (r, a, optname, ty) ->
+         let rname = ssa_register_value_name r self#faddr a in
          let ntags =
            match optname with
-           | Some name -> tags @ [a; name]
-           | _ -> tags @ [a] in
+           | Some name -> tags @ [a; rname; name]
+           | _ -> tags @ [a; rname] in
          (ntags, [bd#index_register r; bcd#index_typ ty])
       | FunctionPointer (s1, s2, a) ->
          (tags @ [a], [bd#index_string s1; bd#index_string s2])
@@ -224,7 +231,7 @@ object (self)
     | "ssa" ->
        let optname =
          match tags with
-         | [_; _; name] -> Some name
+         | [_; _; _; name] -> Some name
          | _ -> None in
        SSARegisterValue (bd#get_register (a 0), t 1, optname, bcd#get_typ (a 1))
     | "fp" -> FunctionPointer (bd#get_string (a 0), bd#get_string (a 1), t 1)

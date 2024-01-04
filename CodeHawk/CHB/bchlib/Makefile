@@ -30,8 +30,9 @@ MLIS := \
 	bCHXprUtil \
 	bCHXmlUtil \
 	bCHUtilities \
-	bCHBasicTypes \
 	bCHSystemSettings \
+	bCHCPURegisters \
+	bCHBasicTypes \
 	bCHSumTypeSerializer \
 	bCHBCTypePretty \
 	bCHBCTypeUtil \
@@ -64,7 +65,6 @@ MLIS := \
 	bCHLocation \
 	bCHStrings \
 	bCHByteUtilities \
-	bCHCPURegisters \
 	bCHMemoryReference \
 	bCHFtsParameter \
 	bCHARMFunctionInterface \
@@ -119,8 +119,9 @@ SOURCES := \
 	bCHBasicTypes \
 	bCHDoubleword \
 	bCHXmlUtil \
-	bCHLocation \
 	bCHSystemSettings \
+	bCHCPURegisters \
+	bCHLocation \
 	bCHBCSumTypeSerializer \
 	bCHBCTypeTransformer \
 	bCHBCTypePretty \
@@ -153,7 +154,6 @@ SOURCES := \
 	bCHDataExportSpec \
 	bCHStrings \
 	bCHByteUtilities \
-	bCHCPURegisters \
 	bCHFtsParameter \
 	bCHARMFunctionInterface \
 	bCHFunctionInterface \

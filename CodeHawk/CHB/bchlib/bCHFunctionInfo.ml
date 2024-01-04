@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@
 
 (* chlib *)
 open CHCommon
-open CHIntervals
 open CHLanguage
 open CHNumerical
 open CHPretty
@@ -43,9 +42,7 @@ open CHXmlDocument
 (* xprlib *)
 open Xprt
 open XprTypes
-open XprXml
 open XprToPretty
-open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
@@ -68,22 +65,17 @@ open BCHFunctionData
 open BCHFunctionSemantics
 open BCHFunctionStackframe
 open BCHFunctionSummary
-open BCHFunctionSummaryLibrary
 open BCHJavaSignatures
 open BCHLibTypes
-open BCHLocation
 open BCHMemoryReference
 open BCHPreFileIO
 open BCHProofObligations
-open BCHSideeffect
 open BCHSystemInfo
-open BCHSystemSettings
 open BCHUtilities
 open BCHVariable
 open BCHVariableNames
 open BCHXmlUtil
 open BCHXPODictionary
-open BCHXprUtil
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
@@ -108,28 +100,7 @@ module DoublewordCollections = CHCollections.Make
    end)
 
 
-let bd = BCHDictionary.bdictionary
 let id = BCHInterfaceDictionary.interface_dictionary
-
-
-let raise_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [
-        STR "(";
-        INT node#getLineNumber;
-        STR ",";
-        INT node#getColumnNumber;
-	STR ") ";
-        msg] in
-  begin
-    ch_error_log#add "xml parse error" error_msg ;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
-
-let get_sorted_kv_list t f =
-  let l = ref [] in
-  let _ = H.iter (fun k v -> l := (k,v) :: !l) t in
-  List.sort f !l
 
 
 type po_anchor_t =                      (* proof obligation anchor *)
@@ -170,70 +141,6 @@ object ('a)
 
   method write_xml: xml_element_int -> unit
   method toPretty: pretty_t
-end
-
-
-class saved_register_t (reg:register_t) =
-object (self:'a)
-  val mutable save_address = None
-  val restore_addresses = new StringCollections.set_t
-
-  method compare (other:'a) = Stdlib.compare reg other#get_register
-
-  method set_save_address (a:ctxt_iaddress_t) = save_address <- Some a
-  method add_restore_address (a:ctxt_iaddress_t) = restore_addresses#add a
-
-  method get_register = reg
-
-  method get_save_address =
-    match save_address with
-      Some a -> a
-    | _ ->
-      let msg = (LBLOCK [ STR "saved_register.get_save_address " ;
-			  STR (register_to_string reg) ]) in
-      begin
-	ch_error_log#add "invocation error" msg ;
-	raise (Invocation_error
-                 ("saved_register.get_save_address " ^ (register_to_string reg)))
-      end
-
-  method get_restore_addresses = restore_addresses#toList
-
-  method has_save_address = match save_address with Some _ -> true | _ -> false
-
-  method has_restore_addresses = not restore_addresses#isEmpty
-
-  method is_save_or_restore_address (iaddr:ctxt_iaddress_t) =
-    (match save_address with Some a -> a = iaddr | _ -> false) ||
-      (List.mem iaddr restore_addresses#toList)
-
-  method write_xml (node:xml_element_int) =
-    begin
-      bd#write_xml_register node reg ;
-      (match save_address with
-       | Some a -> node#setAttribute "save" a ;
-       | _ -> ()) ;
-      (if restore_addresses#isEmpty then () else
-         node#setAttribute "restore" (String.concat ";" restore_addresses#toList))
-    end
-
-  method toPretty =
-    let pSaved = match save_address with
-      | Some a -> LBLOCK [ STR "saved: " ; STR a ]
-      | _ -> STR "not saved" in
-    let pRestored = match restore_addresses#toList with
-      | [] -> STR "not restored"
-      | l ->
-         LBLOCK [
-             STR "restored: ";
-	     pretty_print_list l (fun a -> STR a) "[" ", " "]" ] in
-    LBLOCK [
-        STR (register_to_string reg);
-        STR ". ";
-        pSaved;
-        STR "; ";
-        pRestored]
-
 end
 
 
@@ -318,7 +225,7 @@ object (self)
       let name = (get_java_type_name_prefix ty) ^ "_" ^ (string_of_int count) in
       (count+1, off + (get_java_type_length ty),
        (off, name, (get_java_type_btype ty)) :: pars)) (3,12,stackPars) args in
-    List.iter (fun (offset,name,ty) ->
+    List.iter (fun (offset, name, _ty) ->
       let memref = self#mk_local_stack_reference in
       let v = self#mk_memory_variable memref (mkNumerical offset) in
       let initV = self#mk_initial_memory_value v in
@@ -334,7 +241,7 @@ object (self)
 
   method set_unknown_java_native_method_signature =
     let stackPars = [ (4, "jni$Env", t_voidptr) ] in
-    List.iter (fun (offset,name,ty) ->
+    List.iter (fun (offset, name, _ty) ->
       let memref = self#mk_local_stack_reference in
       let v = self#mk_memory_variable memref (mkNumerical offset) in
       let initV = self#mk_initial_memory_value v in
@@ -819,6 +726,7 @@ object (self)
     let addr = TR.tget_ok (numerical_to_doubleword base) in
     let var =
       self#mk_index_offset_memory_variable
+        ~size:elementsize
         self#mk_global_memory_reference (ConstantOffset (base, offset)) in
     let _ =
       if has_symbolic_address_name addr then
@@ -910,7 +818,12 @@ object (self)
               let _ =
                 chlog#add
                   "array element variable"
-                  (LBLOCK [addr#toPretty; STR ": "; var#toPretty; STR ": "; STR vname]) in
+                  (LBLOCK [
+                       addr#toPretty;
+                       STR ": ";
+                       var#toPretty;
+                       STR ": ";
+                       STR vname]) in
               var
            | _ ->
              default ())
@@ -2427,8 +2340,6 @@ object (self)
       constant_table#set v (mkNumericalFromString (n#getAttribute "value")))
       (node#getTaggedChildren "var")
 
-  method private constants_from_xml (xconstants:xml_element_int) = ()
-
   method private write_xml_test_expressions (node:xml_element_int) =
     let l = ref [] in
     let _ = H.iter (fun k e -> l := (k,e) :: !l) test_expressions in
@@ -2610,6 +2521,14 @@ object (self)
   method state_to_pretty =
     LBLOCK [self#conditional_jump_state_to_pretty; NL]
 
+  method save =
+    let node = xmlElement "function-info" in
+    let fname = self#get_address#to_hex_string in
+    begin
+      self#write_xml node;
+      save_function_info_file fname node
+    end
+
 end
 
 
@@ -2653,7 +2572,8 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
   else if functions_data#has_function faddr then
     try
       let fname = faddr#to_hex_string in
-      let varmgr = read_vars fname  in
+      let xvard = load_function_vard_file fname in
+      let varmgr = make_variable_manager faddr xvard  in
       let invio = read_invs fname varmgr#vard in
       let tinvio = read_tinvs fname varmgr#vard in
       let varinvio = read_varinvs fname varmgr#vard in

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,6 @@ open CHLogger
 open CHPrettyUtil
 open CHTiming
 open CHXmlDocument
-open CHXmlReader
 
 (* bchcil *)
 open BCHParseCilFile
@@ -55,12 +54,10 @@ open BCHPreFileIO
 open BCHSpecializations
 open BCHSystemInfo
 open BCHSystemSettings
-open BCHUtilities
 open BCHVersion
 open BCHXmlUtil
 
 (* bchlibpe *)
-open BCHPESections
 open BCHPEHeader
 
 (* bchlibelf *)
@@ -70,8 +67,6 @@ open BCHELFHeader
 open BCHAssemblyFunctions
 open BCHDisassemble
 open BCHDisassembleELF
-open BCHDisassembleStream
-open BCHIFSystem
 open BCHLoopStructure
 open BCHPredefinedCallSemantics
 open BCHTranslateToCHIF
@@ -81,7 +76,6 @@ open BCHX86AnalysisResults
 open BCHDisassembleMIPS
 open BCHMIPSAnalysisResults
 open BCHMIPSAssemblyFunctions
-open BCHMIPSAssemblyInstructions
 
 (* bchlibarm32 *)
 open BCHARMAnalysisResults
@@ -96,7 +90,6 @@ open BCHPowerAnalysisResults
 open BCHPowerAssemblyFunctions
 
 (* bchanalyze *)
-open BCHAnalysisTypes
 open BCHAnalyzeApp
 open BCHFileIO
 open BCHSaveExports
@@ -270,18 +263,6 @@ let function_stats_to_pretty l =
            pplarge ]
 
 
-let get_dll_functions () =
-  if pe_sections#has_import_directory_table then
-    let table = pe_sections#get_import_directory_table in
-    List.iter (fun e ->
-        begin
-          pr_debug [ STR e#get_name ; NL ] ;
-          List.iter (fun f ->
-              pr_debug [ STR "   " ; STR f ; NL ] ) e#get_functions ;
-          pr_debug [ NL ]
-        end) table
-
-
 let main () =
   try
     let _ = read_args () in
@@ -312,7 +293,7 @@ let main () =
          let starttime = Unix.gettimeofday () in
          begin
            BCHDisassembleARMStream.disassemble_stream !stream_start_address codestring;
-           for i = 1 to 10 do
+           for _i = 1 to 10 do
              analyze_arm starttime
            done;
            pr_debug [(get_function_info !stream_start_address)#finv#toPretty]

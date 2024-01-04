@@ -220,6 +220,8 @@ val register_to_string: register_t -> string
 
 val register_from_string: string -> register_t    (* incomplete *)
 
+val register_to_ssa_prefix: register_t -> string
+
 
 (** {2 x86}*)
 

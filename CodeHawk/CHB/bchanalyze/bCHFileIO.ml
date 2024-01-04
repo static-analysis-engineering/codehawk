@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,7 +28,6 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
 open CHPretty
 
 (* chutil *)
@@ -37,33 +36,19 @@ open CHTiming
 open CHXmlDocument
 open CHXmlReader
 
-(* xprlib *)
-open Xprt
-open XprToPretty
-open Xsimplify
-
 (* bchlib *)
 open BCHBasicTypes
 open BCHDisassemblySummary
-open BCHFloc
-open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionInfo
-open BCHFunctionSummary
 open BCHGlobalState
 open BCHLibTypes
-open BCHLocation
 open BCHPreFileIO
 open BCHSystemInfo
-open BCHVariableNames
 open BCHXmlUtil
-   
+
 (* bchlibx86 *)
-open BCHAssemblyFunction
 open BCHAssemblyFunctions
-open BCHAssemblyInstructionAnnotations
-open BCHDisassemblyMetrics
-open BCHDisassemblyUtils
 open BCHLibx86Types
 open BCHX86Dictionary
 
@@ -80,9 +65,17 @@ open BCHPowerAssemblyInstructions
 open BCHPowerDictionary
 
 
-let xml_error filename line column p = 
-  LBLOCK [ STR "Xml error in " ; STR filename ; 
-     STR " (" ; INT line ; STR ", " ; INT column ; STR "): " ; p ]
+let xml_error (filename: string) (line: int) (column: int) (p: pretty_t) =
+  LBLOCK [
+      STR "Xml error in ";
+      STR filename;
+      STR " (";
+      INT line;
+      STR ", ";
+      INT column;
+      STR "): ";
+      p]
+
 
 let get_bch_root (info:string):xml_element_int =
   let exename = system_info#get_filename in
@@ -112,7 +105,7 @@ let save_functions_list () =
       let seti = fNode#setIntAttribute in
       let setx t x = set t x#to_hex_string in
       begin
-	(if functions_data#has_function_name faddr then 
+	(if functions_data#has_function_name faddr then
 	   let name = (functions_data#get_function faddr)#get_function_name in
            let name =
              if has_control_characters name then
@@ -169,7 +162,7 @@ let save_resultmetrics (rnode:xml_element_int) =
 
 let load_system_info () =
   let filename = get_system_info_filename () in
-  load_xml_file filename "system-info" 
+  load_xml_file filename "system-info"
 
 let save_function_asm (f:assembly_function_int) =
   try
@@ -200,7 +193,7 @@ let save_disassembly_status () =
     root#appendChildren [ fnode ] ;
     file_output#saveFile filename doc#toPretty
   end
-  
+
 
 let save_x86dictionary () =
   let _ = pr_timing [STR "Saving x86 dictionary ..."] in
@@ -325,20 +318,7 @@ let load_pwr_dictionary () =
   match optnode with
   | Some xnode -> pwr_dictionary#read_xml xnode
   | _ -> ()
-               
 
-let save_function_info (finfo:function_info_int) = 
-  let fname = finfo#get_address#to_hex_string in
-  let filename = get_function_filename fname "finfo.xml" in
-  let doc = xmlDocument () in
-  let root = get_bch_root "function-info" in
-  let fNode = xmlElement "function-info" in
-  begin
-    finfo#write_xml fNode ;
-    doc#setNode root ;
-    root#appendChildren [ fNode ] ;
-    file_output#saveFile filename doc#toPretty
-  end 
 
 let save_function_variables (finfo:function_info_int) =
   let fname = finfo#get_address#to_hex_string in
@@ -360,20 +340,10 @@ let save_function_var_invariants (finfo: function_info_int) =
   save_varinvs fname finfo#fvarinv
 
 
-let save_function_summary (finfo:function_info_int) = ()
-
-
-let save_function_chif (fname:string) (proc:procedure_int) =
-  let filename = get_function_filename fname "chif.txt" in
-  file_output#saveFile filename proc#toPretty
-
-
-let write_xml_jni_calls (node:xml_element_int) jniCalls = ()
-
-
 let save_results_jni_calls () =
   let jniCalls = get_jni_calls() in
-  let num_calls = (List.fold_left (fun acc (_,l) -> acc + (List.length l)) 0 jniCalls) in
+  let num_calls =
+    (List.fold_left (fun acc (_,l) -> acc + (List.length l)) 0 jniCalls) in
   let results_file_name = (get_resultmetrics_filename()) in
   try
     let results_doc = readXmlDocument results_file_name in
@@ -388,5 +358,4 @@ let save_results_jni_calls () =
   with
   | XmlDocumentError (line,col,p)
   | XmlParseError (line,col,p) ->
-    raise (BCH_failure (xml_error results_file_name line col p))  
-
+    raise (BCH_failure (xml_error results_file_name line col p))
