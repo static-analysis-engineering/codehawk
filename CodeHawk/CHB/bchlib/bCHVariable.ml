@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,13 +29,11 @@
 (* A variable manager and variable dictionary are created per function. *)
 
 (* chlib *)
-open CHCommon
 open CHLanguage
 open CHNumerical
 open CHPretty
 
 (* chutil *)
-open CHFileIO
 open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
@@ -47,16 +45,14 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCTypePretty
 open BCHBCTypes
-open BCHCallTarget
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFunctionStub
 open BCHLibTypes
+open BCHLocation
 open BCHMemoryReference
 open BCHVarDictionary
-open BCHVariableNames
 open BCHXmlUtil
 
 module H = Hashtbl
@@ -66,21 +62,6 @@ module TR = CHTraceResult
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
-
-
-let raise_xml_error (node: xml_element_int) (msg: pretty_t) =
-  let error_msg =
-    LBLOCK [
-        STR "(";
-        INT node#getLineNumber;
-        STR ",";
-        INT node#getColumnNumber;
-	STR ") ";
-        msg] in
-  begin
-    ch_error_log#add "xml parse error" error_msg ;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
 
 
 let raise_var_type_error (v: assembly_variable_int) (msg: pretty_t) =
@@ -101,72 +82,6 @@ let raise_memref_type_error (r: memory_reference_int) (msg: pretty_t) =
   end
 
 
-let rec denotation_to_pretty (v:assembly_variable_denotation_t) =
-  match v with
-  | MemoryVariable (memref, size, offset) ->
-     LBLOCK [STR "Mem "; INT memref; STR "(size:"; INT size; STR ")"]
-  | RegisterVariable r -> LBLOCK [STR "Reg "; STR (register_to_string r)]
-  | CPUFlagVariable f -> LBLOCK [STR "Flag "; STR (flag_to_string f)]
-  | AuxiliaryVariable v -> LBLOCK [STR "Aux "; aux_var_to_pretty v]
-
-
-and aux_var_to_pretty (cvv: constant_value_variable_t) =
-  match cvv with
-  | InitialRegisterValue (r, level) ->
-     LBLOCK [STR "InitR("; INT level; STR ") "; STR (register_to_string r)]
-  | InitialMemoryValue v ->
-     LBLOCK [STR "InitM("; v#toPretty; STR ")"]
-  | FrozenTestValue (fv,taddr,jaddr) ->
-     LBLOCK [
-         STR "Frozen(";
-         fv#toPretty;
-         STR " )@ ";
-         STR taddr;
-	 STR " for ";
-         STR jaddr]
-  | FunctionReturnValue addr -> LBLOCK [STR "Return("; STR addr; STR ")"]
-  | SyscallErrorReturnValue addr ->
-     LBLOCK [STR "ErrorValue("; STR addr; STR ")"]
-  | SSARegisterValue (r, addr, optname, ty) ->
-     LBLOCK [
-         STR "SSARegisterValue(";
-         STR (register_to_string r);
-         STR ", ";
-         STR (match optname with Some name -> name | _ -> "none");
-         STR ", ";
-         STR (btype_to_string ty)]
-  | FunctionPointer (f, c, addr) ->
-     LBLOCK [STR "FunctionP("; STR f; STR ","; STR c; STR ","; STR addr; STR ")"]
-  | CallTargetValue tgt ->
-     LBLOCK [ STR "CallTarget("; call_target_to_pretty tgt; STR ")"]
-  | SideEffectValue (addr, arg, _) ->
-     LBLOCK [STR "SideEffect("; STR arg; STR addr; STR ")"]
-  | FieldValue (sname, offset, fname) ->
-     LBLOCK [
-         STR "FieldValue(" ;
-         STR sname ;
-         STR "," ;
-         INT offset ;
-	 STR "," ;
-         STR fname]
-  | SymbolicValue x -> LBLOCK [STR "SymbolicValue("; x2p x; STR ")"]
-  | SignedSymbolicValue (x, s0, sx) ->
-     LBLOCK [
-         STR "SignedSymbolicValue(";
-         x2p x;
-         STR ", ";
-         INT s0;
-         STR ">";
-         INT sx;
-         STR ")"]
-  | BridgeVariable (addr,arg) ->
-    LBLOCK [ STR "Bridge(" ; STR addr ; STR "," ; INT arg ; STR ")" ]
-  | Special s -> LBLOCK [ STR "Special " ; STR s ]
-  | RuntimeConstant s -> LBLOCK [ STR "Runtime " ; STR s ]
-  | MemoryAddress (i,offset) -> LBLOCK [ STR "memaddr-" ; INT i ]
-  | ChifTemp -> STR "ChifTemp"
-
-
 class assembly_variable_t
         ~(vard:vardictionary_int)
         ~(memrefmgr:memory_reference_manager_int)
@@ -180,7 +95,7 @@ object (self:'a)
   method get_denotation = denotation
 
   method get_name  =
-    let rec aux den = match den with
+    let aux den = match den with
       | MemoryVariable (i, size, offset) ->
          let basename = (memrefmgr#get_memory_reference i)#get_name in
          (match basename with
@@ -201,14 +116,14 @@ object (self:'a)
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
         | SyscallErrorReturnValue address -> "errval_" ^ address
-        | SSARegisterValue (r, addr, optname, ty) ->
+        | SSARegisterValue (r, addr, optname, _ty) ->
            (match optname with
             | Some name -> name
-            | _ -> (register_to_string r) ^ "_" ^ addr)
+            | _ -> ssa_register_value_name r vard#faddr addr)
 	| CallTargetValue tgt ->
 	  (match tgt with
 	  | StubTarget fs -> "stub:" ^ (function_stub_to_string fs)
-	  | StaticStubTarget (dw,fs) ->
+	  | StaticStubTarget (_dw, fs) ->
              "staticstub:" ^ (function_stub_to_string fs)
 	  | AppTarget a -> "tgt_" ^ a#to_hex_string
 	  | _ -> "tgt_?")
@@ -228,7 +143,11 @@ object (self:'a)
 	  "arg_" ^ (string_of_int n) ^ "_for_call_at_" ^ address
 	| Special s -> "special_" ^ s
   	| RuntimeConstant s -> "rtc_" ^ s
-        | MemoryAddress (i,offset) -> "memaddr-" ^ (string_of_int i)
+        | MemoryAddress (i, offset) ->
+           "memaddr_"
+           ^ (string_of_int i)
+           ^ "_"
+           ^ (memory_offset_to_string offset)
 	| ChifTemp -> "temp" in
     let name = aux denotation in
     if has_control_characters name then
@@ -247,10 +166,12 @@ object (self:'a)
     else name
 
   method is_function_pointer =
-    match denotation with AuxiliaryVariable (FunctionPointer _) -> true | _ -> false
+    match denotation with
+    | AuxiliaryVariable (FunctionPointer _) -> true | _ -> false
 
   method is_calltarget_value =
-    match denotation with AuxiliaryVariable (CallTargetValue _) -> true | _ -> false
+    match denotation with
+    | AuxiliaryVariable (CallTargetValue _) -> true | _ -> false
 
   method get_calltarget_value =
     match denotation with
@@ -309,18 +230,27 @@ object (self:'a)
 
   method is_in_test_jump_range (a:ctxt_iaddress_t) =
     match denotation with
-    | AuxiliaryVariable (FrozenTestValue (_,taddr,jaddr)) -> taddr < a && a <= jaddr
-    | _ -> raise (BCH_failure (LBLOCK [ STR "Variable is not a frozen test value" ]))
+    | AuxiliaryVariable (FrozenTestValue (_,taddr,jaddr)) ->
+       taddr < a && a <= jaddr
+    | _ ->
+       raise
+         (BCH_failure (LBLOCK [STR "Variable is not a frozen test value"]))
 
-  method get_frozen_variable = (* the variable associated with the frozen value *)
+  (* the variable associated with the frozen value *)
+  method get_frozen_variable =
     match denotation with
-    | AuxiliaryVariable (FrozenTestValue (fv,taddr,jaddr)) -> (fv,taddr,jaddr)
+    | AuxiliaryVariable (FrozenTestValue (fv, taddr, jaddr)) ->
+       (fv, taddr, jaddr)
     | _ ->
       begin
-	ch_error_log#add "assembly variable acess"
-	  (LBLOCK [ STR "assembly_variable#get_frozen_variable: " ; self#toPretty ]) ;
-	raise (BCH_failure
-		 (LBLOCK [ STR "variable is not a frozen test value: " ; self#toPretty ]))
+	ch_error_log#add
+          "assembly variable acess"
+	  (LBLOCK [
+               STR "assembly_variable#get_frozen_variable: "; self#toPretty]);
+	raise
+          (BCH_failure
+	     (LBLOCK [
+                  STR "variable is not a frozen test value: "; self#toPretty]))
       end
 
   method get_call_site =
@@ -337,20 +267,25 @@ object (self:'a)
     match denotation with
     | (AuxiliaryVariable (SideEffectValue (_,name,_))) -> name
     | _ ->
-      raise (BCH_failure (LBLOCK [ STR "Variable is not a sideeffect value: " ;
-				   self#toPretty ]))
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Variable is not a sideeffect value: "; self#toPretty]))
 
   method is_auxiliary_variable =
     match denotation with AuxiliaryVariable _ -> true | _ -> false
 
   method is_return_value =
-    match denotation with AuxiliaryVariable (FunctionReturnValue _) -> true | _ -> false
+    match denotation with
+    | AuxiliaryVariable (FunctionReturnValue _) -> true | _ -> false
 
   method is_sideeffect_value =
-    match denotation with AuxiliaryVariable (SideEffectValue _) -> true | _ -> false
+    match denotation with
+    | AuxiliaryVariable (SideEffectValue _) -> true | _ -> false
 
   method is_initial_memory_value =
-    match denotation with AuxiliaryVariable (InitialMemoryValue _) -> true | _ -> false
+    match denotation with
+    | AuxiliaryVariable (InitialMemoryValue _) -> true | _ -> false
 
   (* a variable with a value determined by the environment of the function that
      does not change during the execution of the function
@@ -377,10 +312,13 @@ object (self:'a)
     | RegisterVariable r -> r
     | _ ->
       begin
-	ch_error_log#add "assembly variable access"
-	  (LBLOCK [ STR "get_register with " ; self#toPretty ]) ;
-	raise (BCH_failure (LBLOCK [ STR "variable is not a register variable: " ;
-				   self#toPretty ]))
+	ch_error_log#add
+          "assembly variable access"
+	  (LBLOCK [STR "get_register with "; self#toPretty]);
+	raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "variable is not a register variable: "; self#toPretty]))
       end
 
   method is_initial_register_value =
@@ -498,13 +436,16 @@ object (self:'a)
     | _ -> false
 
   method is_special_variable =
-    match denotation with AuxiliaryVariable (Special _) -> true | _ -> false
+    match denotation with
+    | AuxiliaryVariable (Special _) -> true | _ -> false
 
   method is_runtime_constant =
-    match denotation with AuxiliaryVariable (RuntimeConstant _) -> true | _ -> false
+    match denotation with
+    | AuxiliaryVariable (RuntimeConstant _) -> true | _ -> false
 
   method is_bridge_value =
-    match denotation with AuxiliaryVariable (BridgeVariable _) -> true | _ -> false
+    match denotation with
+    | AuxiliaryVariable (BridgeVariable _) -> true | _ -> false
 
   method is_bridge_value_at (iaddr:ctxt_iaddress_t) =
     match denotation with
@@ -539,11 +480,13 @@ end
 
 
 class variable_manager_t
+        (faddr: doubleword_int)
         (optnode: xml_element_int option)
         (vard: vardictionary_int)
         (memrefmgr: memory_reference_manager_int): variable_manager_int =
 object (self)
 
+  val faddr = faddr
   val vartable = H.create 3     (* index -> assembly_variable_int *)
   val vard = vard
   val memrefmgr = memrefmgr
@@ -564,8 +507,12 @@ object (self)
        end
     | _ -> ()
 
+  method faddr = faddr
+
   method reset = vard#reset
+
   method vard = vard
+
   method memrefmgr = memrefmgr
 
   method private mk_variable (denotation:assembly_variable_denotation_t) =
@@ -609,8 +556,11 @@ object (self)
     else if self#has_var v then
       let av = self#get_variable v in
       match av#get_denotation with
-      | MemoryVariable (_, s, o) -> o
-      | _ -> raise_var_type_error av (STR "Memory Variable: get_memvar_offset: ")
+      | MemoryVariable (_, _, o) -> o
+      | _ ->
+         raise_var_type_error
+           av
+           (LBLOCK [STR "Memory Variable: get_memvar_offset: "; v#toPretty])
     else
       raise (BCH_failure (LBLOCK [STR "Temporary variable: "; v#toPretty]))
 
@@ -859,7 +809,7 @@ object (self)
 		 when (let memref = self#get_memvar_reference v1 in
                        match memref#get_base with
                        | BGlobal -> true | _ -> false) -> -1
-	    | (_, MemoryVariable (i1, _, _))
+	    | (_, MemoryVariable _)
 		 when (let memref = self#get_memvar_reference v2 in
                        match memref#get_base with
                        |BGlobal -> true | _ -> false) -> 1
@@ -901,7 +851,8 @@ object (self)
             | (_, MemoryVariable _) ->
                let memref = self#get_memvar_reference v2 in
 	       if memref#is_unknown_reference then -1 else 1
-	    | (RegisterVariable r1, RegisterVariable r2) -> register_compare r1 r2
+	    | (RegisterVariable r1, RegisterVariable r2) ->
+               register_compare r1 r2
 	    | (RegisterVariable _, _) -> -1
 	    | (_, RegisterVariable _) -> 1
 	    | (AuxiliaryVariable (FrozenTestValue _), _) -> -1
@@ -1010,7 +961,7 @@ object (self)
   method is_unknown_offset_memory_variable (v:variable_t) =
     (self#has_var v)
       && (match (self#get_variable v)#get_denotation with
-          | MemoryVariable (_, s, o) -> is_unknown_offset o
+          | MemoryVariable (_, _, o) -> is_unknown_offset o
           | _ -> false)
 
   method is_unknown_memory_variable (v:variable_t) =
@@ -1081,8 +1032,9 @@ object (self)
 end
 
 
-let make_variable_manager (optnode:xml_element_int option) =
+let make_variable_manager
+      (faddr: doubleword_int) (optnode:xml_element_int option) =
   let xd = mk_xprdictionary () in
-  let vard = mk_vardictionary xd in
+  let vard = mk_vardictionary faddr xd in
   let memrefmgr = make_memory_reference_manager vard in
-  new variable_manager_t optnode vard memrefmgr
+  new variable_manager_t faddr optnode vard memrefmgr

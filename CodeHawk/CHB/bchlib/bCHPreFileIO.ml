@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -53,7 +53,6 @@ open BCHSystemSettings
 open BCHTypeInvariants
 open BCHXmlUtil
 open BCHUtilities
-open BCHVariable
 open BCHVersion
 
 (* Filename conventions -------------------------------------------------------
@@ -108,14 +107,16 @@ open BCHVersion
  * ----------------------------------------------------------------------------
  *)
 
-let get_filename () = 
+let get_filename () =
   let name = replace_dot system_data#get_filename in
-  if system_data#is_elf then name ^ "_ELF" else name 
+  if system_data#is_elf then name ^ "_ELF" else name
 
 let get_chdir () = system_data#get_filename ^ ".ch"
-                        
+
 let get_analysis_dir () = Filename.concat (get_chdir ()) "a"
+
 let get_results_dir () = Filename.concat (get_chdir ()) "r"
+
 let get_bc_dir () = Filename.concat (get_chdir ()) "c"
 let get_executable_dir () = Filename.concat (get_chdir ()) "x"
 let get_export_dir () = Filename.concat (get_chdir ())  "exports"
@@ -140,7 +141,7 @@ let string_nsplit (separator:char) (s:string):string list =
       begin
 	result := substring :: !result ;
 	start := s_index + 1
-      end 
+      end
     done;
     List.rev !result
   end
@@ -176,7 +177,7 @@ let create_directory dir =
     | (d,[]) -> [ d ]
     | (d,["/"]) -> [ "/" ^ d ]
     | (d,h::_) -> (h ^ "/" ^ d) :: a) [] subs in
-  List.iter (fun d -> if Sys.file_exists d then () else sys_command ("mkdir " ^ d)) 
+  List.iter (fun d -> if Sys.file_exists d then () else sys_command ("mkdir " ^ d))
     (List.rev directories)
 
 
@@ -202,15 +203,6 @@ let get_bc_filename (name: string) =
 
 
 let get_bcfiles_filename () = get_bc_filename "bcfiles.xml"
-
-
-let get_bc_function_filename (name: string) =
-  let exename = get_filename () in
-  let fdir = get_bc_dir () in
-  let _ = create_directory fdir in
-  let fdir = Filename.concat fdir "functions" in
-  let _ = create_directory fdir in
-  Filename.concat fdir (exename ^ "_" ^ name ^ "_bc.xml")
 
 
 let save_bc_files () =
@@ -281,9 +273,6 @@ let get_userdata_jumptable_filename (jaddr:string) =
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_" ^ jaddr ^ "_jt_u.xml")
 
-let has_user_function_file (name:string) =
-  Sys.file_exists (get_userdata_function_filename name)
-
 (* ------------------------------------------------------- exported files *)
 let get_export_function_filename (name:string) =
   let fdir = get_export_dir () in
@@ -333,7 +322,7 @@ let get_elf_dictionary_filename () =
   get_disassembly_filename "elf_dictionary.xml"
 
 (* ------------------------------------------------------- analysis files *)
-  
+
 let get_functions_filename () =
   let exename = get_filename () in
   let fdir = get_analysis_dir () in
@@ -372,7 +361,7 @@ let get_functions_directory () =
   let _ = create_directory fdir in
   let fdir = Filename.concat fdir "functions" in
   let _ = create_directory fdir in
-  fdir 
+  fdir
 
 let get_global_state_filename () =
   let exename = get_filename () in
@@ -421,7 +410,7 @@ let get_duplicate_coverage_filename () =
   let fdir = get_analysis_dir () in
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_duplicates.log")
-  
+
 let get_jni_calls_filename () =
   let exename = get_filename () in
   let fdir = get_analysis_dir () in
@@ -515,7 +504,7 @@ let get_disassembly_status_filename () =
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_disassembly.xml")
 
-                        
+
 let load_xml_file (filename:string) (tag:string) =
   if Sys.file_exists filename then
     try
@@ -547,7 +536,7 @@ let load_system_file () =
 let load_global_state_file () =
   let filename = get_global_state_filename () in
   load_xml_file filename "global-state"
-  
+
 let load_userdata_system_file () =
   let filename = get_userdata_system_filename () in
   load_xml_file filename "system-info"
@@ -601,11 +590,6 @@ let load_userdata_struct_file (name:string) =
   load_xml_file filename "struct"
 
 
-let load_bc_function (name: string) =
-  let filename = get_bc_function_filename name in
-  load_xml_file filename "bcfunction"
-
-
 let load_bc_files () =
   let filename = get_bcfiles_filename () in
   let optnode = load_xml_file filename "bcfiles" in
@@ -621,7 +605,7 @@ let save_export_function_summary_file (fname:string) (node:xml_element_int) =
   begin
     doc#setNode root ;
     root#appendChildren [ node ] ;
-    file_output#saveFile filename doc#toPretty 
+    file_output#saveFile filename doc#toPretty
   end
 
 let save_userdata_function_summary_file (fname: string) (node: xml_element_int) =
@@ -701,7 +685,7 @@ let save_executable_dump (node:xml_element_int) =
   let doc = xmlDocument () in
   let root = get_bch_root "executable-dump" in
   begin
-    doc#setNode root ; 
+    doc#setNode root ;
     root#appendChildren [ node ] ;
     file_output#saveFile filename doc#toPretty
   end
@@ -714,7 +698,7 @@ let save_resultmetrics (rnode:xml_element_int) =
     doc#setNode root ;
     root#appendChildren [ rnode ] ;
     file_output#saveFile filename doc#toPretty
-  end  
+  end
 
 let load_export_ordinal_table (name:string) =
   let path = system_settings#get_summary_paths in
@@ -729,10 +713,10 @@ let load_export_ordinal_table (name:string) =
     else
       None
   | _ -> None
-  
 
-let load_pe_header_file () = 
-  let filename = get_pe_header_filename () in 
+
+let load_pe_header_file () =
+  let filename = get_pe_header_filename () in
   load_xml_file filename "pe-header"
 
 let load_elf_header_file () =
@@ -740,7 +724,7 @@ let load_elf_header_file () =
   load_xml_file filename "elf-header"
 
 let load_section_file (sname:string) =
-  let filename = get_section_filename sname in 
+  let filename = get_section_filename sname in
   load_xml_file filename "raw-section"
 
 let load_segment_file (index:int) =
@@ -807,7 +791,7 @@ let load_interface_dictionary () =
   match optnode with
   | Some inode -> interface_dictionary#read_xml inode
   | _ -> ()
-                
+
 
 let get_function_file_xnode (fname:string) (ext:string) (tag:string) =
   let exename = get_filename () in
@@ -825,7 +809,7 @@ let extract_function_file (fname:string) (ext:string) (tag:string) =
   let path = get_functions_file_path () in
   let optStr = get_file_from_jar path filename in
   match optStr with
-  | Some s -> 
+  | Some s ->
     let doc = readXmlDocumentString s in
     let root = doc#getRoot in
     if root#hasOneTaggedChild tag then
@@ -856,17 +840,16 @@ let save_vars (fname:string) (vard:vardictionary_int) =
     file_output#saveFile filename doc#toPretty
   end
 
-let read_vars (fname:string) =
-  let optnode =
-    try
-      extract_function_file fname "vars.xml" "function"
-    with
-    | Zip.Error (_,s,_) ->
-       begin
-         ch_error_log#add "zip error" (LBLOCK [STR fname; STR ": "; STR s]);
-         None
-       end in
-  make_variable_manager optnode
+
+let load_function_vard_file (fname: string): xml_element_int option =
+  try
+    extract_function_file fname "vars.xml" "function"
+  with
+  | Zip.Error (_, s, _) ->
+     begin
+       ch_error_log#add "zip error" (LBLOCK [STR fname; STR ": "; STR s]);
+       None
+     end
 
 
 let save_invs (fname:string) (invio:invariant_io_int) =
@@ -929,9 +912,9 @@ let extract_function_info_file (fname:string) =
   try
     extract_function_file fname "finfo.xml" "function-info"
   with
-  | Zip.Error (_,s,_) ->
-     get_function_file_xnode fname "finfo.xml" "function-info"    
-    
+  | Zip.Error _ ->
+     get_function_file_xnode fname "finfo.xml" "function-info"
+
 
 let extract_inferred_function_summary_file (fname:string) =
   extract_function_file fname "fsum.xml" "function-summary"
@@ -961,4 +944,14 @@ let save_log_files name =
 let read_memory_string_file (address:string) =
   let filename = get_memory_string_filename address in
   read_hex_stream_file filename
-  
+
+
+let save_function_info_file (fname: string) (node: xml_element_int) =
+  let filename = get_function_filename fname "finfo.xml" in
+  let doc = xmlDocument () in
+  let root = get_bch_root "function-info" in
+  begin
+    doc#setNode root;
+    root#appendChildren [node];
+    file_output#saveFile filename doc#toPretty
+  end

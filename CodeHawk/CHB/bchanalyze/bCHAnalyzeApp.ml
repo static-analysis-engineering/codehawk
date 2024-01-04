@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-open Gc
-
 (* chlib *)
 open CHCommon
 open CHPretty
@@ -36,7 +34,6 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHTiming
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
@@ -44,10 +41,7 @@ open BCHDoubleword
 open BCHLibTypes
 open BCHFunctionInfo
 open BCHMetrics
-open BCHPreFileIO
-open BCHSystemInfo
 open BCHSystemSettings
-open BCHUtilities
 
 (* bchlibx86 *)
 open BCHAssemblyFunctions
@@ -68,7 +62,6 @@ open BCHMIPSMetrics
 open BCHTranslateMIPSToCHIF
 
 (* bchlibarm32 *)
-open BCHDisassembleARM
 open BCHARMAnalysisResults
 open BCHARMAssemblyFunctions
 open BCHARMCHIFSystem
@@ -78,7 +71,6 @@ open BCHTranslateARMToCHIF
 
 (* bchlibpower32 *)
 open BCHPowerAnalysisResults
-open BCHPowerAssemblyFunction
 open BCHPowerAssemblyFunctions
 open BCHPowerCHIFSystem
 open BCHPowerMetrics
@@ -86,7 +78,6 @@ open BCHPowerTypes
 open BCHTranslatePowerToCHIF
 
 (* bchanalyze *)
-open BCHAnalysisTypes
 open BCHAnalyzeProcedure
 open BCHDefUse
 open BCHDefUseHigh
@@ -165,7 +156,7 @@ let analyze_x86_function faddr f count =
       resolve_indirect_calls f ;
       record_fpcallback_arguments f ;
       finfo#reset_invariants ;
-      save_function_info finfo ;
+      finfo#save;
       save_function_invariants finfo ;
       save_function_type_invariants finfo ;
       x86_analysis_results#record_results f ;
@@ -252,9 +243,12 @@ let analyze starttime =
                  pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
 	       with
 	       | Failure s -> functionfailure "Failure" faddr (STR s)
-	       | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
-	       | Internal_error s -> functionfailure "Internal error" faddr (STR s)
-	       | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
+	       | Invalid_argument s ->
+                  functionfailure "Invalid argument" faddr (STR s)
+	       | Internal_error s ->
+                  functionfailure "Internal error" faddr (STR s)
+	       | Invocation_error s ->
+                  functionfailure "Invocation error" faddr (STR s)
 	       | CHFailure p -> functionfailure "CHFailure" faddr p
 	       | BCH_failure p -> functionfailure "BCHFailure" faddr p));
 
@@ -265,17 +259,12 @@ let analyze starttime =
         assembly_functions#top_down_itera
           (fun faddr f ->
 	    try
-	      begin
-	        f#iter_calls (fun _ floc ->
-	            if floc#has_call_target && floc#get_call_target#is_app_call then
-		      let tgtaddr = floc#get_call_target#get_app_address in
-		      let tgtfinfo = get_function_info tgtaddr in
-                      if not (List.mem tgtaddr !failedfunctions) then
-		        begin
-		          save_function_info tgtfinfo
-		        end);
-	        save_function_summary (get_function_info faddr)
-	      end
+	      f#iter_calls (fun _ floc ->
+	          if floc#has_call_target && floc#get_call_target#is_app_call then
+		    let tgtaddr = floc#get_call_target#get_app_address in
+		    let tgtfinfo = get_function_info tgtaddr in
+                    if not (List.mem tgtaddr !failedfunctions) then
+		      tgtfinfo#save)
 	    with
 	    | Failure s -> functionfailure "Failure" faddr (STR s)
 	    | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
@@ -286,7 +275,8 @@ let analyze starttime =
 	       ch_error_log#add
                  "pushing arguments"
                  (LBLOCK [faddr#toPretty; STR ": "; p]));
-        file_metrics#record_propagation_time ((Unix.gettimeofday ()) -. propstarttime);
+        file_metrics#record_propagation_time
+          ((Unix.gettimeofday ()) -. propstarttime);
         file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime);
         pr_timing [STR "top-down analysis finished"];
         (match !failedfunctions with
@@ -394,7 +384,7 @@ let analyze_mips_function faddr f count =
       save_function_var_invariants finfo;
       save_function_type_invariants finfo;
       mips_analysis_results#record_results f;
-      save_function_info finfo;
+      finfo#save;
       save_function_variables finfo;
       file_metrics#record_results
 	~nonrel:(not !dorelational)
@@ -558,7 +548,7 @@ let analyze_arm_function faddr f count =
       extract_def_use finfo bb_invariants#get_invariants;
       extract_def_use_high finfo bb_invariants#get_invariants;
       finfo#reset_invariants;
-      save_function_info finfo;
+      finfo#save;
       save_function_invariants finfo;
       save_function_var_invariants finfo;
       arm_analysis_results#record_results f;
@@ -672,7 +662,7 @@ let analyze_pwr_function
       extract_def_use finfo bb_invariants#get_invariants;
       extract_def_use_high finfo bb_invariants#get_invariants;
       finfo#reset_invariants;
-      save_function_info finfo;
+      finfo#save;
       save_function_invariants finfo;
       save_function_var_invariants finfo;
       pwr_analysis_results#record_results f;

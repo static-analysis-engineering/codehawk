@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -71,8 +71,8 @@ val get_disassembly_status_filename: unit -> string
 
 val load_xml_file: string -> string -> xml_element_int option
 
-val load_resultmetrics_file     : unit -> xml_element_int option
-val load_system_file            : unit -> xml_element_int option
+val load_resultmetrics_file: unit -> xml_element_int option
+val load_system_file: unit -> xml_element_int option
 val load_global_state_file      : unit -> xml_element_int option
 
 val load_userdata_system_file   : unit -> xml_element_int option
@@ -122,7 +122,7 @@ val save_resultmetrics: xml_element_int -> unit
 
 (* save and restore function variable dictionary *)
 val save_vars: string -> vardictionary_int -> unit
-val read_vars: string -> variable_manager_int
+(* val read_vars: string -> variable_manager_int *)
 
 (* save and restore function invariants *)
 val save_invs: string -> invariant_io_int -> unit
@@ -139,3 +139,7 @@ val read_varinvs: string -> vardictionary_int -> var_invariant_io_int
 val create_userdata_system_file: string -> unit
 
 val save_log_files: string -> unit
+
+val save_function_info_file: string -> xml_element_int -> unit
+
+val load_function_vard_file: string -> xml_element_int option

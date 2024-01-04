@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,15 +31,11 @@
 open CHPretty
 open CHLanguage
 
-(* chutil *)
-open CHLogger
-open CHXmlDocument
-
 (* bchlib *)
 open BCHBasicTypes
+open BCHCPURegisters
 open BCHDoubleword
 open BCHLibTypes
-open BCHXmlUtil
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -60,7 +56,7 @@ let nsplit (separator:char) (s:string):string list =
       begin
 	result := substring :: !result;
 	start := s_index + 1
-      end 
+      end
     done;
     List.rev !result
   end
@@ -77,8 +73,8 @@ let fcontext_compare (c1:fcontext_t) (c2:fcontext_t) =
 let context_compare (c1:context_t) (c2:context_t) =
   match (c1,c2) with
   | (ConditionContext c1, ConditionContext c2) -> Stdlib.compare c1 c2
-  | (ConditionContext c, _) -> 1
-  | (_, ConditionContext c) -> -1
+  | (ConditionContext _, _) -> 1
+  | (_, ConditionContext _) -> -1
   | (BlockContext b1, BlockContext b2) -> b1#compare b2
   | (BlockContext _, _) -> 1
   |  (_, BlockContext _) -> -1
@@ -88,7 +84,7 @@ let context_compare (c1:context_t) (c2:context_t) =
 let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
   let length = List.length in
   if (length l1) < (length l2) then -1
-  else if (length l1) > (length l2) then 1 
+  else if (length l1) > (length l2) then 1
   else List.fold_right2 (fun e1 e2 a -> if a = 0 then (f e1 e2) else a) l1 l2 0
 
 
@@ -159,7 +155,7 @@ let get_context (faddr: doubleword_int) (s: string) =
         (BCH_failure
            (LBLOCK [STR "No contexts found for "; STR faddr]))
 
-      
+
 let decompose_ctxt_string
       (faddr:doubleword_int)    (* outer function address *)
       (s:ctxt_iaddress_t) =
@@ -214,7 +210,7 @@ object (self:'a)
        if l0 = 0 then h.ctxt_callsite#compare other#i else l0
     | (ctx1, ctx2) ->
        let l0 = context_list_compare ctx1 ctx2 in
-       if l0 = 0 then self#i#compare other#i else l0       
+       if l0 = 0 then self#i#compare other#i else l0
 
   method i = loc.loc_iaddr    (* instruction address *)
 
@@ -320,3 +316,41 @@ let symbol_to_ctxt_string (s:symbol_t) =
 
 let ctxt_string_to_symbol (name:string) ?(atts=[]) (s:ctxt_iaddress_t) =
   new symbol_t ~atts:(s::atts) name
+
+
+class ssa_register_store_t =
+object
+
+  val store = H.create 3
+  val nextindex = H.create 3
+
+  method get_name (name: string) (faddr: string) (iaddr: string): string =
+    let key = faddr ^ "_" ^ iaddr ^ "_" ^ name in
+    if H.mem store key then
+      H.find store key
+    else
+      let xkey = faddr ^ "_" ^ name in
+      let fnxtindex =
+        if H.mem nextindex xkey then
+          H.find nextindex xkey
+        else
+          1 in
+      let rname = name ^ "_" ^ (string_of_int fnxtindex) in
+      begin
+        H.replace nextindex xkey (fnxtindex + 1);
+        H.add store key rname;
+        rname
+      end
+
+end
+
+
+let store = new ssa_register_store_t
+
+
+let ssa_register_value_name
+      (reg: register_t)
+      (faddr: doubleword_int)
+      (iaddr: ctxt_iaddress_t): string =
+  let name = register_to_ssa_prefix reg in
+  store#get_name name faddr#to_hex_string iaddr

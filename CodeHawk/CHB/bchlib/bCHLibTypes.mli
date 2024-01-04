@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1381,6 +1381,7 @@ object
 
   (* accessors *)
   method get_architecture: string
+  method get_instruction_alignment: int
   method get_fileformat: string
   method get_summary_paths: (string * Zip.in_file) list
   method get_jsignature_paths: (string * Zip.in_file) list
@@ -3222,6 +3223,7 @@ class type vardictionary_int =
   object
 
     method xd: xprdictionary_int
+    method faddr: doubleword_int
     method reset: unit
     method get_indexed_variables: (int * assembly_variable_denotation_t) list
     method get_indexed_bases: (int * memory_base_t) list
@@ -3270,6 +3272,10 @@ object
 
   (** Resets the variable dictionary.*)
   method reset: unit
+
+  (** Returns the address of the function to which this variable manager
+      belongs.*)
+  method faddr: doubleword_int
 
   (** Returns the variable dictionary for this function.*)
   method vard: vardictionary_int
@@ -4430,6 +4436,9 @@ object
   (** [finfo#read_xml xnode] initializes the function-info with with data
       extracted from xml element [xnode].*)
   method read_xml: xml_element_int -> unit
+
+  (** Saves the function info in [a/functions/<fname>/<fname>_finfo.xml].*)
+  method save: unit
 
   (** {1 Printing}*)
 

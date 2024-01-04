@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,10 +29,6 @@
 
 (* chlib *)
 open CHLanguage
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
 
 (* bchlib *)
 open BCHLibTypes
@@ -198,5 +194,15 @@ val has_true_condition_context: ctxt_iaddress_t -> bool
 val symbol_to_ctxt_string: symbol_t -> ctxt_iaddress_t
 
 
-val ctxt_string_to_symbol: string -> ?atts:string list -> ctxt_iaddress_t -> symbol_t
+val ctxt_string_to_symbol:
+  string -> ?atts:string list -> ctxt_iaddress_t -> symbol_t
 
+
+(** [ssa_register_value_reg name faddr iaddr] returns a name for the
+    variable created as part of an ssa register assignment or abstraction
+    to the register [reg] at address [iaddr] in function [faddr].
+
+    Note: the case where [iaddr] has a context may produce a name that
+    is not a valid variable name in C.*)
+val ssa_register_value_name:
+  register_t -> doubleword_int -> ctxt_iaddress_t -> string

@@ -700,6 +700,31 @@ let register_to_string register =
   | PowerCRField f -> pwr_crf_to_string f
 
 
+let register_to_ssa_prefix (register: register_t): string =
+  match register with
+  | CPURegister _ -> "vr"
+  | SegmentRegister _ -> "vsr"
+  | ControlRegister _ -> "vcr"
+  | DebugRegister _ -> "vdr"
+  | DoubleRegister _ -> "vdd"
+  | FloatingPointRegister _ -> "vf"
+  | MmxRegister _ -> "vmmx"
+  | XmmRegister _ -> "vxmm"
+  | MIPSRegister _ -> "vr"
+  | MIPSSpecialRegister _ -> "vsr"
+  | MIPSFloatingPointRegister _ -> "vf"
+  | ARMRegister _ -> "vr"
+  | ARMDoubleRegister _ -> "vrr"
+  | ARMSpecialRegister _ -> "vsr"
+  | ARMExtensionRegister _ -> "vq"
+  | ARMDoubleExtensionRegister _ -> "vqq"
+  | ARMExtensionRegisterElement _ -> "vre"
+  | ARMExtensionRegisterReplicatedElement _ -> "vee"
+  | PowerGPRegister _ -> "vr"
+  | PowerSPRegister _ -> "vsr"
+  | PowerCRField f -> "vcr"
+
+
 let extract_cpu_reg s =
   let len = String.length s in
   let rsub = String.sub s 4 (len - 5) in
