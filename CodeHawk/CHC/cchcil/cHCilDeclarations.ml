@@ -30,9 +30,6 @@
 (* cil *)
 open GoblintCil
 
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 open CHIndexTable
 open CHStringIndexTable
@@ -40,7 +37,6 @@ open CHXmlDocument
 
 (* chcil *)
 open CHCilTypes
-open CHCilDictionary
 open CHCilFileUtil
 open CHCilSumTypeSerializer
 

@@ -30,12 +30,7 @@
 (* cil *)
 open GoblintCil
 
-(* chlib *)
-open CHCommon
-open CHPretty
-
 (* chutil *)
-open CHPrettyUtil
 open CHSumTypeSerializer
 
 module H = Hashtbl

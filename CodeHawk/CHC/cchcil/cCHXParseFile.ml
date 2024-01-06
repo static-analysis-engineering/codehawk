@@ -29,7 +29,6 @@
 
 (* cil *)
 open GoblintCil
-open Errormsg
 open Frontc
 
 (* chlib *)
