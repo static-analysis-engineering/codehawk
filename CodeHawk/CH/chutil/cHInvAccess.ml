@@ -30,19 +30,13 @@
 (* chlib *)
 open CHAtlas
 open CHIntervals
-open CHIntervalsDomainNoArrays
-open CHIterator   
 open CHLanguage
-open CHLinearEqualitiesDomainNoArrays
 open CHNonRelationalDomainValues   
 open CHNumerical
 open CHNumericalConstraints   
-open CHPolyhedraDomainNoArrays   
-open CHPretty   
 open CHValueSets
 
 (* chutil *)
-open CHLogger
 open CHUtil
 
 class type inv_accessor_int = 

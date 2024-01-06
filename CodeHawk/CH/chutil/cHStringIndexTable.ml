@@ -32,7 +32,6 @@ open CHCommon
 open CHPretty
 
 (* chutil *)
-open CHUtil
 open CHXmlDocument
    
 module H = Hashtbl

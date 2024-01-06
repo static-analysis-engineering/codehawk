@@ -35,12 +35,9 @@ open CHIntervalsDomainNoArrays
 open CHIterator   
 open CHLanguage
 open CHLinearEqualitiesDomainNoArrays
-open CHNumerical
-open CHNumericalConstraints   
 open CHOnlineCodeSet
 open CHPolyhedraDomainNoArrays   
 open CHPretty
-open CHStridedIntervals
 open CHStridedIntervalsDomainNoArrays
 open CHValueSetsDomainNoArrays
 
