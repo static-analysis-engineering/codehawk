@@ -34,8 +34,6 @@ open GoblintCil
 open CHXmlDocument
 
 (* cchcil *)
-open CHCilDeclarations
-open CHCilDictionary
 open CHCilFunDeclarations
 open CHCilSumTypeSerializer
 open CHCilTypes

@@ -30,9 +30,6 @@
 (* cil *)
 open GoblintCil
 
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 open CHIndexTable
 open CHStringIndexTable

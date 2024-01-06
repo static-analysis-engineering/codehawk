@@ -27,10 +27,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHCommon
-open CHPretty
-
 (* chutil *)
 open CHFileIO
 
