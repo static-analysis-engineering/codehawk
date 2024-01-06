@@ -74,7 +74,7 @@ let get_struct expr =
   | XOp (op, [e1 ; e2]) ->
      begin 
        match (get_const e1, get_const e2) with
-	 (Some c1, Some c2) -> 
+	 (Some _c1, Some _c2) -> 
 	 begin
 	   chlog#add
              "unreduced constants in simplification"
@@ -95,7 +95,7 @@ let divides x y =
     (y#modulo x)#equal numerical_zero
 
 
-let pos_num x = x#gt numerical_zero
+let _pos_num x = x#gt numerical_zero
 let neg_num x = x#lt numerical_zero
 let zero_num x = x#equal numerical_zero
 
@@ -243,8 +243,8 @@ and reduce_plus (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
 	  (true, XOp (XNumRange, [ne (a#add b); unknown_int_constant_expr]))
 
        (* [a, _] + [b, c] ~> [(a+b), _] *)
-       | (SLBRange a, SRange(b,c))
-	 | (SRange(b,c), SLBRange a) ->                      
+       | (SLBRange a, SRange(b,_c))
+	 | (SRange(b,_c), SLBRange a) ->                      
 	  (true, XOp (XNumRange, [ne (a#add b); unknown_int_constant_expr]))
 
        (* a + [b, _] ~> [(a+b), _] *)
@@ -479,7 +479,7 @@ and reduce_mult (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
       | (SRScalar (XMult, x, b), SConst a) ->                  (* (x * b) * a *)
        rs XMult [ne (a#mult b); x]                            (* ~> (a*b) * x *)
 
-    | (_, SConst a) -> rs XMult [e2; e1]                    (* x * a -> a * x *)
+    | (_, SConst _a) -> rs XMult [e2; e1]                    (* x * a -> a * x *)
       
     | _ -> default ()
 	 
@@ -542,7 +542,7 @@ and reduce_xlsb (m: bool) (e1: xpr_t): (bool * xpr_t) =
   match e1 with
   | XConst (IntConst num) when num#leq (mkNumerical 255) ->
      (true, e1)
-  | XOp (XXlsb, [ee1]) -> (true, e1)
+  | XOp (XXlsb, [_ee1]) -> (true, e1)
   | XOp (XXlsh, [ee1]) -> (true, XOp (XXlsb, [ee1]))
 
   (* xlsb ((xlsb x) / n) -> (xlsb x) / n *)
@@ -572,8 +572,8 @@ and reduce_xlsh (m: bool) (e1: xpr_t): (bool * xpr_t) =
   match e1 with
   | XConst (IntConst num) when num#leq (mkNumerical 65535) ->
      (true, e1)
-  | XOp (XXlsh, [ee1]) -> (true, e1)
-  | XOp (XXlsb, [ee1]) -> (true, e1)
+  | XOp (XXlsh, [_ee1]) -> (true, e1)
+  | XOp (XXlsb, [_ee1]) -> (true, e1)
   | XOp (XLsl, [XOp (XXlsb, [ee1]); XConst (IntConst num)])
        when num#leq (mkNumerical 8) ->
      (true, XOp (XLsl, [XOp (XXlsb, [ee1]); XConst (IntConst num)]))
@@ -1031,7 +1031,7 @@ and reduce_or m e1 e2 =
          | (XOp (XLOr, [b; XConst XRandom]), XConst XRandom) ->
 	  (true, XOp (XLOr, [b ; XConst XRandom]))
        | (XOp (XLe, [ x ; XOp (XNumJoin, [ y ; z ]) ]),
-	  XOp (XSubset, [ s ; t ])) 
+	  XOp (XSubset, [ _s ; _t ])) 
 	    when (is_zero y) ->
 	  (true, XOp (XLe, [ x ; z]))
        | _ ->
@@ -1056,7 +1056,7 @@ and reduce_bitwiseand m e1 e2 =
                default
           | _ ->
              (match e1 with
-              | XOp (XBAnd, [e11; XConst (IntConst a)]) when a#equal b ->
+              | XOp (XBAnd, [_e11; XConst (IntConst a)]) when a#equal b ->
                  (true, e1)
               | _ -> default))
     | _ -> default
@@ -1430,6 +1430,6 @@ let rec simple_sim_expr expr =
     | _ -> expr
 
 
-let simple_simplify_expr expr:xpr_t = simple_sim_expr expr
+let _simple_simplify_expr expr:xpr_t = simple_sim_expr expr
       
 
