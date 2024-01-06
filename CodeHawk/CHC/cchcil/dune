@@ -1,13 +1,13 @@
 (library
   (name cchcil)
-  (libraries chlib chutil extlib goblint-cil zarith)
+  (libraries chutil goblint-cil)
   (modules :standard \ cCHXParseFile)
   (public_name codehawk.cchcil)
   (wrapped false))
 
 (executable
   (name cCHXParseFile)
-  (libraries cchcil chlib chutil extlib goblint-cil zarith)
+  (libraries cchcil chlib chutil goblint-cil)
   (modules cCHXParseFile)
   (package exes)
   (public_name parseFile))

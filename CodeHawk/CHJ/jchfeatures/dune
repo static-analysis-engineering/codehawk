@@ -1,6 +1,6 @@
 (library
   (name jchfeatures)
-  (libraries chlib chutil jchlib jchpre)
+  (libraries chlib chutil extlib jchlib jchpre)
   (public_name codehawk.jchfeatures)
   (wrapped false))
 

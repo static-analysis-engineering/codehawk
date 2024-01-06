@@ -1,6 +1,6 @@
 (library
   (name bchanalyze)
-  (libraries bchlib bchlibarm32 bchlibelf bchlibmips32 bchlibpe bchlibpower32 bchlibx86 chlib chutil extlib zarith)
+  (libraries bchlib bchlibarm32 bchlibmips32 bchlibpe bchlibpower32 bchlibx86 chlib chutil extlib xprlib)
   (public_name codehawk.bchanalyze)
   (wrapped false))
 

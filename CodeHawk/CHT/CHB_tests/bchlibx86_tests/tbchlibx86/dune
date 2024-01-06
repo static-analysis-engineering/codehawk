@@ -1,6 +1,6 @@
 (library
   (name tbchlibx86)
-  (libraries bchlib bchlibx86 chlib chutil extlib tchlib tbchlib zarith zip)
+  (libraries bchlib chlib chutil tchlib xprlib)
   (public_name codehawk.tbchlibx86)
   (wrapped false))
 

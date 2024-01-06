@@ -1,6 +1,6 @@
 (library
   (name cchpre)
-  (libraries cchlib chlib chutil str xprlib)
+  (libraries cchlib chlib chutil xprlib)
   (public_name codehawk.cchpre)
   (wrapped false))
 
