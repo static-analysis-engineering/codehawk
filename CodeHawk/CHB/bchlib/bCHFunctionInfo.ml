@@ -2573,7 +2573,7 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
     try
       let fname = faddr#to_hex_string in
       let xvard = load_function_vard_file fname in
-      let varmgr = make_variable_manager faddr xvard  in
+      let varmgr = make_variable_manager faddr xvard in
       let invio = read_invs fname varmgr#vard in
       let tinvio = read_tinvs fname varmgr#vard in
       let varinvio = read_varinvs fname varmgr#vard in

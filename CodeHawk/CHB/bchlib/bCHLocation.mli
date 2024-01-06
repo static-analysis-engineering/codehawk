@@ -206,3 +206,10 @@ val ctxt_string_to_symbol:
     is not a valid variable name in C.*)
 val ssa_register_value_name:
   register_t -> doubleword_int -> ctxt_iaddress_t -> string
+
+
+(** [ssa_register_value_join_name name faddr] returns a name that may be
+    used for multiple ssa variables that can be colocated to the same variable
+    location.*)
+val ssa_register_value_join_name:
+  register_t -> doubleword_int -> ctxt_iaddress_t list -> string

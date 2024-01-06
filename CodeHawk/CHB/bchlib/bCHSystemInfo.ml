@@ -65,6 +65,7 @@ open BCHByteUtilities
 open BCHCallbackTables
 open BCHConstantDefinitions
 open BCHCppClass
+open BCHCPURegisters
 open BCHCStruct
 open BCHCStructConstant
 open BCHDataBlock
@@ -75,6 +76,7 @@ open BCHFunctionData
 open BCHInterfaceDictionary
 open BCHJumpTable
 open BCHLibTypes
+open BCHLocation
 open BCHMemoryReference
 open BCHPreFileIO
 open BCHSectionHeadersInfo
@@ -1479,12 +1481,33 @@ object (self)
              STR " variable introductions"])
     end
 
+  method add_computed_join_varintros
+           (faddr: doubleword_int)
+           (iaddrs: ctxt_iaddress_t list)
+           (reg: register_t) =
+    let name = ssa_register_value_join_name reg faddr iaddrs in
+    List.iter (fun iaddr ->
+        if is_iaddress iaddr then
+          let loc = ctxt_string_to_location faddr iaddr in
+          let iaddr = loc#i in
+          let _ =
+            chlog#add
+              "add computed join variable"
+              (LBLOCK [
+                   loc#toPretty;
+                   STR " ";
+                   STR (register_to_string reg);
+                   STR ": ";
+                   STR name]) in
+          H.replace variable_intros iaddr#index name) iaddrs
+
   method private write_xml_variable_introductions (node: xml_element_int) =
     let vintros = H.fold (fun k v a -> (k, v)::a) variable_intros [] in
     List.iter (fun (dwindex, name) ->
         let vnode = xmlElement "vintro" in
         begin
-          vnode#setAttribute "ia" (TR.tget_ok (int_to_doubleword dwindex))#to_hex_string;
+          vnode#setAttribute
+            "ia" (TR.tget_ok (int_to_doubleword dwindex))#to_hex_string;
           vnode#setAttribute "name" name;
           node#appendChildren [vnode];
         end) vintros
@@ -1759,6 +1782,8 @@ object (self)
 
   method has_variable_intro (iaddr: doubleword_int) =
     H.mem variable_intros iaddr#index
+
+  method has_variable_intros: bool = (H.length variable_intros) > 0
 
   method get_variable_intro_name (iaddr: doubleword_int): string =
     if self#has_variable_intro iaddr then
@@ -2113,6 +2138,7 @@ object (self)
     let gNode = xmlElement "goto-returns" in
     let cbNode = xmlElement "call-back-tables" in
     let stNode = xmlElement "struct-tables" in
+    let viNode = xmlElement "variable-introductions" in
     (* let viNode = xmlElement "variable-introductions" in *)
     begin
       functions_data#write_xml fNode;
@@ -2123,10 +2149,10 @@ object (self)
       self#write_xml_goto_returns gNode;
       self#write_xml_call_back_tables cbNode;
       self#write_xml_struct_tables stNode;
-      (* self#write_xml_variable_introductions viNode; *)
+      self#write_xml_variable_introductions viNode;
       string_table#write_xml sNode;
       append [
-          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode]
+          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode; viNode]
     end
 
 end

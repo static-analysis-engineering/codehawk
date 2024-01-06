@@ -95,12 +95,27 @@ object (self: 'a)
     | DefUseHigh _ -> true
     | _ -> false
 
+  method has_multiple_reaching_defs: bool =
+    match fact with
+    | ReachingDef ((_, sl)) -> (List.length sl) > 1
+    | _ -> false
+
   method get_variable: variable_t =
     match fact with
     | ReachingDef (v, _)
       | FlagReachingDef (v, _)
       | DefUse (v, _)
       | DefUseHigh (v, _) -> v
+
+  method get_reaching_defs: symbol_t list =
+    match fact with
+    | ReachingDef (_, sl) -> sl
+    | _ -> []
+
+  method get_def_uses: symbol_t list =
+    match fact with
+    | DefUse (_, sl) -> sl
+    | _ -> []
 
   method write_xml (node: xml_element_int) =
     begin
@@ -242,6 +257,15 @@ object (self)
          invariants#set iaddr locInv;
          locInv
        end
+
+  method get_multiple_reaching_defs: (string * var_invariant_int) list =
+    let result = ref [] in
+    let _ =
+      invariants#iter (fun loc lv ->
+          List.iter (fun v ->
+              if v#has_multiple_reaching_defs then
+                result := (loc, v) :: !result) lv#get_facts) in
+    !result
 
   method write_xml (node: xml_element_int) =
     let dNode = xmlElement "varinv-dictionary" in

@@ -904,9 +904,15 @@ let save_varinvs (fname: string) (varinvio: var_invariant_io_int) =
   end
 
 
+(* The variable invariants are regenerated each round to avoid spurious
+   invariants when locations have not yet been fully recovered *)
 let read_varinvs (fname: string) (vard: vardictionary_int): var_invariant_io_int =
-  (* let optnode = extract_function_file fname "varinvs.xml" "function" in *)
-  mk_var_invariant_io None vard fname
+  let optnode =
+    if system_settings#use_ssa then
+      extract_function_file fname "varinvs.xml" "function"
+    else
+      None in
+  mk_var_invariant_io optnode vard fname
 
 let extract_function_info_file (fname:string) =
   try
