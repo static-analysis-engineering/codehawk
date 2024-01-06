@@ -30,22 +30,15 @@
 (* chlib *)
 open CHAtlas
 open CHCommon
-open CHIntervalsDomainNoArrays
-open CHIterator   
 open CHLanguage
-open CHLinearEqualitiesDomainNoArrays   
 open CHNonRelationalDomainValues
-open CHNumerical
 open CHNumericalConstraints   
-open CHPolyhedraDomainNoArrays   
 open CHPretty   
 open CHUtils   
 
 (* chutil *)
 open CHInvAccess   
-open CHPrettyUtil
 open CHUtil
-open CHXmlDocument
 
 class type invariant_store_int =
   object

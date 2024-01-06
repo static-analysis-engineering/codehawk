@@ -28,8 +28,7 @@
 (* chlib *)
 open CHLanguage
 open CHOnlineCodeSet
-open CHPretty
-   
+
 module LF = LanguageFactory
 
 type cmd_t = (code_t, cfg_t) command_t
