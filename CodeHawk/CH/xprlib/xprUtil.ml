@@ -29,7 +29,6 @@
 
 (* chlib *)
 open CHCommon
-open CHIntervals
 open CHLanguage
 open CHNumerical
 open CHPEPRTypes
@@ -40,7 +39,6 @@ open CHNestedCommands
 
 (* xprlib *)
 open Xprt
-open XprToPretty
 open XprTypes   
 open Xsimplify
 
