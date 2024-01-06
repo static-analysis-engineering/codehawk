@@ -1581,12 +1581,15 @@ class type var_invariant_int =
     (* accessors *)
     method get_fact: var_invariant_fact_t
     method get_variable: variable_t
+    method get_reaching_defs: symbol_t list
+    method get_def_uses: symbol_t list
 
     (* predicates *)
     method is_reaching_def: bool
     method is_flag_reaching_def: bool
     method is_def_use: bool
     method is_def_use_high: bool
+    method has_multiple_reaching_defs: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
@@ -1629,6 +1632,7 @@ class type var_invariant_io_int =
 
     (* accessors *)
     method get_location_var_invariant: string -> location_var_invariant_int
+    method get_multiple_reaching_defs: (string * var_invariant_int) list
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
@@ -5019,6 +5023,16 @@ object
   method add_goto_return: doubleword_int -> doubleword_int -> unit
   method set_virtual_function_table: doubleword_int -> unit
 
+  (** [add_computed_varintros faddr iaddrs name] adds the name to be used for
+      the instructions at locations [iaddrs] in function [faddr] for
+      ssa-assignments and ssa-abstractions.
+
+      These names will be added as an optional, introduced name in addition to
+      the regular ssa name.
+   *)
+  method add_computed_join_varintros:
+           doubleword_int -> ctxt_iaddress_t list -> register_t -> unit
+
   (** [set_arm_thumb_switch addr arch] records a switch from arm to thumb at
       address [addr] if [arch] is ['T'] and a switch from thumb to arm if [arch]
       is ['A'].*)
@@ -5118,6 +5132,7 @@ object
   method is_inlined_function: doubleword_int -> bool
   method is_trampoline: doubleword_int -> bool
   method has_variable_intro: doubleword_int -> bool
+  method has_variable_intros: bool
 
   (** [is_thumb addr] returns true if the architecture includes (arm) thumb
       instructions and the virtual address [addr] is in a code section that

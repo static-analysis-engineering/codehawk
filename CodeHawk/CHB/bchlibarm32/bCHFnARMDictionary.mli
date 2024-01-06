@@ -36,3 +36,7 @@ val mk_arm_opcode_dictionary:
   doubleword_int  (* function address *)
   -> vardictionary_int
   -> arm_opcode_dictionary_int
+
+
+val compute_arm_ssa_varintros:
+  function_info_int -> arm_assembly_function_int -> unit
