@@ -30,7 +30,6 @@
 (* chlib *)
 open CHBounds
 open CHCommon
-open CHIntervals
 open CHLanguage
 open CHNumerical
 open CHPretty               

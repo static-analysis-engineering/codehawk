@@ -29,9 +29,6 @@
 
 (** Serialization of sum types *)
 
-(* chlib *)
-open CHLanguage
-
 (* chutil *)
 open CHSumTypeSerializer
 

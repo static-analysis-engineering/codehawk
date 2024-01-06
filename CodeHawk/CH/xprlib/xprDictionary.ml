@@ -37,7 +37,6 @@ open CHPretty
 
 (* chutil *)
 open CHIndexTable
-open CHStringIndexTable
 open CHSumTypeSerializer
 open CHXmlDocument
 
