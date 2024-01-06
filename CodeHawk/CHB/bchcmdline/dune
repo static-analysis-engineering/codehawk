@@ -1,20 +1,20 @@
 (executable
   (name bCHXBinaryAnalyzer)
-  (libraries bchanalyze bchcil bchlib bchlibarm32 bchlibmips32 bchlibpe bchlibpower32 bchlibx86 chlib chutil goblint-cil zip)
+  (libraries bchanalyze bchcil bchlib bchlibarm32 bchlibelf bchlibmips32 bchlibpe bchlibpower32 bchlibx86 chlib chutil extlib)
   (modules bCHXBinaryAnalyzer)
   (package exes)
   (public_name chx86_analyze))
 
 (executable
   (name bCHXInspectSummaries)
-  (libraries bchlib bchlibpe chlib chutil zip)
+  (libraries bchlib chlib chutil)
   (modules bCHXInspectSummaries)
   (package exes)
   (public_name chx86_inspect_summaries))
 
 (executable
   (name bCHXSaveExports)
-  (libraries bchlib bchlibpe bchlibx86 chlib chutil zip)
+  (libraries bchlib bchlibpe bchlibx86 chlib chutil)
   (modules bCHXSaveExports)
   (package exes)
   (public_name chx86_save_exports))

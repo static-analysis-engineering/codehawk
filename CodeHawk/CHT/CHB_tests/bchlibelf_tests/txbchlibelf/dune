@@ -1,6 +1,6 @@
 (tests 
   (names bCHDwarfTest bCHELFDebugAbbrevSectionTest bCHELFDebugLocSectionTest)
-  (libraries bchlib bchlibelf chlib chutil extlib tbchlib tbchlibelf tchlib txprlib xprlib zarith))
+  (libraries bchlib bchlibelf chlib chutil tbchlibelf tchlib))
 
 (env
   (dev

@@ -1,6 +1,6 @@
 (library
   (name bchcil)
-  (libraries bchlib chlib chutil extlib goblint-cil xprlib zarith zip)
+  (libraries bchlib chlib chutil goblint-cil)
   (public_name codehawk.bchcil)
   (wrapped false))
 

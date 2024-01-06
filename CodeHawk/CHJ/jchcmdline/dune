@@ -1,6 +1,6 @@
 (executable
   (name jCHXClassExperiment)
-  (libraries chlib chutil jchlib jchpre)
+  (libraries chlib jchlib jchpre)
   (modules jCHXClassExperiment)
   (package exes)
   (public_name chj_experiment))

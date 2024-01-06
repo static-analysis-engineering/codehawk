@@ -1,5 +1,5 @@
 (library
   (name chlib)
-  (libraries str unix zarith)
+  (libraries unix zarith)
   (public_name codehawk.chlib)
   (wrapped false))

@@ -1,27 +1,27 @@
 (executable
   (name jCHXInitializeAnalysis)
-  (libraries chlib chutil jchcost jchlib jchpre jchpoly)
+  (libraries chlib chutil jchcost jchlib jchpre jchpoly jchsys)
   (modules jCHVersion jCHXInitializeAnalysis)
   (package exes)
   (public_name chj_initialize))
 
 (executable
   (name jCHXClassInvariants)
-  (libraries chlib chutil jchlib jchpoly jchpre jchsys)
+  (libraries chlib chutil extlib jchlib jchpoly jchpre jchsys)
   (modules jCHXClassInvariants)
   (package exes)
   (public_name chj_class_invariants))
 
 (executable
   (name jCHXTranslateClass)
-  (libraries chlib chutil jchlib jchpre)
+  (libraries chlib chutil extlib jchlib jchpre)
   (modules jCHXTranslateClass)
   (package exes)
   (public_name chj_translate_class))
 
 (executable
   (name jCHXTemplate)
-  (libraries chlib chutil jchlib jchpre)
+  (libraries chlib jchlib jchpre)
   (modules jCHXTemplate)
   (package exes)
   (public_name chj_usertemplate))

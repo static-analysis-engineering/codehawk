@@ -1,6 +1,6 @@
 (tests 
   (names bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest)
-  (libraries bchlib chlib chutil extlib tbchlib tchlib txprlib xprlib zarith))
+  (libraries bchlib chlib chutil tbchlib tchlib))
 
 (env
   (dev

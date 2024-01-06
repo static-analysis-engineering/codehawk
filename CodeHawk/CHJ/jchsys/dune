@@ -1,6 +1,6 @@
 (library
   (name jchsys)
-  (libraries chlib chutil extlib jchlib jchpre str zarith)
+  (libraries chlib chutil jchlib jchpre zarith)
   (public_name codehawk.jchsys)
   (wrapped false))
 

@@ -1,6 +1,6 @@
 (library
   (name bchlibelf)
-  (libraries bchcil bchlib bchlibpe chlib chutil extlib xprlib)
+  (libraries bchlib bchlibpe chlib chutil extlib)
   (modules :standard \ bCHDebugARangesSection)
   (public_name codehawk.bchlibelf)
   (wrapped false))

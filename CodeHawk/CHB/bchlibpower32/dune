@@ -1,6 +1,6 @@
 (library
   (name bchlibpower32)
-  (libraries bchcil bchlib bchlibelf chlib chutil extlib xprlib zarith)
+  (libraries bchlib bchlibelf chlib chutil extlib xprlib)
   (public_name codehawk.bchlibpower32)
   (wrapped false))
 

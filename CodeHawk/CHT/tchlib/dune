@@ -1,6 +1,6 @@
 (library
   (name tchlib)
-  (libraries chlib chutil extlib zip)
+  (libraries chlib chutil)
   (public_name codehawk.tchlib)
   (wrapped false))
 

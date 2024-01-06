@@ -1,6 +1,6 @@
 (library
   (name txprlib)
-  (libraries chlib chutil extlib tchlib xprlib zarith)
+  (libraries chlib chutil tchlib xprlib)
   (public_name codehawk.txprlib)
   (wrapped false))
 

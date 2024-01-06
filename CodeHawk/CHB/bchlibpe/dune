@@ -1,6 +1,6 @@
 (library
   (name bchlibpe)
-  (libraries bchlib chlib chutil extlib xprlib)
+  (libraries bchlib chlib chutil extlib str)
   (public_name codehawk.bchlibpe)
   (wrapped false))
 

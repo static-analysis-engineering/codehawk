@@ -9,4 +9,4 @@
     bCHTranslateARMToCHIFTest
     bCHARMAssemblyFunctionTest
     bCHFnARMDictionaryTest)
-  (libraries bchanalyze bchcil bchlibarm32 chlib chutil extlib tbchlib tbchlibarm32 tchlib txprlib xprlib zarith))
+  (libraries bchanalyze bchlib bchlibarm32 chlib chutil tbchlib tbchlibarm32 tchlib zarith))

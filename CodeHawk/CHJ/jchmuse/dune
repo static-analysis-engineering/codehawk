@@ -1,20 +1,20 @@
 (executable
   (name jCHXExtractFeatures)
-  (libraries chlib chutil jchlib jchfeatures jchpre)
+  (libraries chlib chutil extlib jchlib jchfeatures jchpre)
   (modules jCHXExtractFeatures)
   (package exes)
   (public_name chj_features))
 
 (executable
   (name jCHXExtractExprFeatures)
-  (libraries chlib chutil jchlib jchfeatures jchpre)
+  (libraries chlib chutil extlib jchlib jchfeatures jchpre)
   (modules jCHXExtractExprFeatures)
   (package exes)
   (public_name chj_efeatures))
 
 (executable
   (name jCHXClassPoly)
-  (libraries chlib chutil jchlib jchpoly jchpre jchsys)
+  (libraries chlib chutil extlib jchlib jchpoly jchpre jchsys)
   (modules jCHXClassPoly)
   (package exes)
   (public_name chj_invariants))
