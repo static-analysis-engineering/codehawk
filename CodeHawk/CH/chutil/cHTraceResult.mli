@@ -3,8 +3,8 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs LLC
+
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,7 +28,7 @@
 (** Result values with a list of strings as error value.*)
 
 
-(** The type for result values. Either a value [Ok v] or an error 
+(** The type for result values. Either a value [Ok v] or an error
     [Error <string-list>].*)
 type 'a traceresult = ('a, string list) result
 
@@ -67,7 +67,7 @@ val tfold_default: ('a -> 'c ) -> 'c -> 'a traceresult -> 'c
 val tprop: 'a traceresult -> string -> 'a traceresult
 
 
-(** [tbind f r] is [f v] if [r] is [Ok v] and [r] if [r] is [Error _]; 
+(** [tbind f r] is [f v] if [r] is [Ok v] and [r] if [r] is [Error _];
     [tbind msg f r], is [f v] if [r] is [Ok v] and [Error (msg::e)] if
     [r] is [Error e].*)
 val tbind:
@@ -75,12 +75,22 @@ val tbind:
 
 
 (** [titer f r] is [f v] if [r] is [Ok v] and [()] otherwise.*)
-val titer: ('a -> unit) -> ('a traceresult) -> unit  
+val titer: ('a -> unit) -> ('a traceresult) -> unit
 
 
 (** [tfold_list ~ok init rl] folds [Ok] values left to right, starting from
     [init], ignoring [Error] values.*)
 val tfold_list: ok:('c -> 'a -> 'c) -> 'c -> ('a traceresult) list -> 'c
+
+
+(** [tfold_list_default ~ok ~err init rl] folds [Ok] values left to right,
+    startint from [init], using a default accumulator [err] for [Error]
+    values.
+
+    This function differs from [tfold_list] in that it enables making the
+    presence of error values visible in the final result.*)
+val tfold_list_default:
+  ok:('c -> 'a -> 'c) -> err:('c -> 'c) -> 'c -> ('a traceresult) list -> 'c
 
 
 (** [to_bool f r] is [f v] if [r] is [Ok v] and [false] otherwise.*)

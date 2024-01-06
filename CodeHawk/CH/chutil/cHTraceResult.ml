@@ -3,8 +3,8 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs LLC
+
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,7 +26,7 @@
    ============================================================================= *)
 
 
-type 'a traceresult = ('a, string list) result 
+type 'a traceresult = ('a, string list) result
 
 
 let tvalue (r: 'a traceresult) ~(default: 'a) = Result.value r ~default
@@ -83,6 +83,17 @@ let tfold_list ~(ok: 'c -> 'a -> 'c) (initacc: 'c) (rl: ('a traceresult) list) =
       match r with
       | Ok v -> ok acc v
       | Error _ -> acc) initacc rl
+
+
+let tfold_list_default
+      ~(ok: 'c -> 'a -> 'c)
+      ~(err: 'c -> 'c)
+      (initacc: 'c)
+      (rl: ('a traceresult) list): 'c =
+  List.fold_left (fun acc r ->
+      match r with
+      | Ok v -> ok acc v
+      | Error _ -> err acc) initacc rl
 
 
 let to_bool (f: 'a -> bool) (r: 'a traceresult) =
