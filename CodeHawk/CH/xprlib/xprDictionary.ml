@@ -75,7 +75,7 @@ object (self)
   method index_numerical (n:numerical_t) = numerical_table#add ([n#toString],[])
 
   method get_numerical (index:int) =
-    let (tags,args) = numerical_table#retrieve index in
+    let (tags,_args) = numerical_table#retrieve index in
     let t = t "numerical" tags in
     mkNumericalFromString (t 0)
 
@@ -104,7 +104,7 @@ object (self)
     interval_table#add key
 
   method get_interval (index:int) =
-    let (tags,args) = interval_table#retrieve index in
+    let (_tags,args) = interval_table#retrieve index in
     let a = a "interval" args in
     new interval_t (self#get_bound (a 0)) (self#get_bound (a 1))     
 

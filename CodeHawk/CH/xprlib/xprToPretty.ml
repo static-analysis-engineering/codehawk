@@ -230,7 +230,7 @@ let xpr_formatter =
   new xpr_formatter_t
     default_attr_to_pretty default_sym_to_pretty default_var_to_pretty
 
-let xpr_formatter_customized f = new xpr_formatter_t f
+let _xpr_formatter_customized f = new xpr_formatter_t f
 
 let make_xpr_formatter symPrinter varPrinter =
   new xpr_formatter_t default_attr_to_pretty symPrinter varPrinter

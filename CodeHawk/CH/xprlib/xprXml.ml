@@ -123,7 +123,7 @@ let _ =
 let variable_type_to_string (v:variable_type_t) =
   get_string_from_table variable_types_to_string v
   
-let variable_type_from_string (s:string) =
+let _variable_type_from_string (s:string) =
   get_sumtype_from_table variable_types_from_string s
   
 let symbol_to_xml (s:symbol_t) =
@@ -192,7 +192,7 @@ let expr_to_xml (xpr:xpr_t) =
                                 xpr_formatter#pr_expr xpr ; 
 			        STR " to xml: " ; STR s ]))
     
-let write_xml_expr (node:xml_element_int) (x:xpr_t) =
+let _write_xml_expr (node:xml_element_int) (x:xpr_t) =
   let set = node#setAttribute in
   let seti = node#setIntAttribute in
   let setp = node#setPrettyAttribute in
@@ -274,7 +274,7 @@ let expr_from_xml (xxpr:xml_element_int) =
 	      LBLOCK [ STR "unexpected element encountered in expr_from_xml: " ;
 		       STR xxpr#getChild#getTag ; STR " (math expected)" ]))
   
-let read_xml_expr (node:xml_element_int) =
+let _read_xml_expr (node:xml_element_int) =
   let get = node#getAttribute in
   let getb t = let v = get t in if v = "true" then true else false in
   let geti = node#getIntAttribute in

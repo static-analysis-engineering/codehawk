@@ -48,7 +48,7 @@ let sym_constant s = SymSet [s]
 let sym_constant_expr s = XConst (sym_constant s)
 
 let sym_set_constant l = SymSet l
-let sym_set_constant_expr l = XConst (sym_set_constant l)
+let _sym_set_constant_expr l = XConst (sym_set_constant l)
 
 let zero_constant = IntConst (numerical_zero)
 let zero_constant_expr = XConst (zero_constant)
@@ -63,7 +63,7 @@ let num_constant_expr n = XConst (IntConst n)
 let random_constant_expr = XConst XRandom
 let unknown_int_constant_expr = XConst XUnknownInt
 
-let interval_expr i =
+let _interval_expr i =
   match i#singleton with 
     Some num -> num_constant_expr num
   | _ ->
@@ -79,7 +79,7 @@ let interval_expr i =
     | _ -> 
        random_constant_expr
 	
-let unknown_set_constant_expr = XConst XUnknownSet
+let _unknown_set_constant_expr = XConst XUnknownSet
   
 let true_constant = BoolConst true
 let true_constant_expr = XConst true_constant
@@ -97,7 +97,7 @@ let is_false = function
   | XConst (BoolConst b) -> not b
   | _ -> false
        
-let get_bool expr =
+let _get_bool expr =
   match expr with
   | XConst (BoolConst b) -> b
   | _ ->
@@ -113,7 +113,7 @@ let is_one = function
   | XConst (IntConst num) -> num#equal numerical_one
   | _ -> false
 
-let is_non_zero_int = function
+let _is_non_zero_int = function
   | XConst (IntConst num) -> not (num#equal numerical_zero)
   | _ -> false
 
@@ -147,19 +147,19 @@ let get_const = function
       if b then Some numerical_one else Some numerical_zero
   | _ -> None
 
-let get_sym_const = function
+let _get_sym_const = function
   | XConst (SymSet [s]) -> Some s
   | _ -> None
 
-let get_sym_set = function
+let _get_sym_set = function
   | XConst (SymSet l) -> Some l
   | _ -> None
 
-let make_ch_symbolic_set = function
+let _make_ch_symbolic_set = function
   | XConst (SymSet l) -> new symbolic_set_t l
   | _ -> topSymbolicSet
 
-let is_bool_op = function
+let _is_bool_op = function
   | XLt
   | XGt
   | XLe
@@ -172,7 +172,7 @@ let is_bool_op = function
   | XLOr -> true
   | _ -> false
 
-let is_numeric_bool_op = function
+let _is_numeric_bool_op = function
   | XLt
   | XGt
   | XLe
@@ -181,7 +181,7 @@ let is_numeric_bool_op = function
   | XEq -> true
   | _ -> false
 
-let is_symbolic_bool_op = function
+let _is_symbolic_bool_op = function
   | XSubset
   | XDisjoint -> true
   | _ -> false
@@ -191,10 +191,10 @@ type engine_expr_type_t =
   | SymbolicType
   | BoolType
 
-let engine_type_of_var v = 
+let _engine_type_of_var v = 
   if is_numerical_type v#getType then NumericType else SymbolicType
 
-let engine_type_of_const = function
+let _engine_type_of_const = function
   | SymSet _
   | XUnknownSet -> SymbolicType
   | XUnknownInt
@@ -281,7 +281,7 @@ let op_strings =
 
 let get_op_string op = 
   try
-    let (_,s) = List.find (fun (o,s) -> op = o) op_strings in s
+    let (_,s) = List.find (fun (o,_s) -> op = o) op_strings in s
   with
   | Not_found ->
      raise (CHFailure (LBLOCK [STR  "Operator not found in get_op_string"]))
@@ -342,10 +342,10 @@ let syntactic_comparison expr1 expr2 =
   e_compare expr1 expr2
   
   
-let rec num_terms e = 
+let rec _num_terms e = 
   match e with
     XVar _ | XConst _ | XAttr _ -> 1
     | XOp (XPlus, l) | XOp (XMinus, l) ->
-       List.fold_left (fun a x -> a + (num_terms x)) 0 l
+       List.fold_left (fun a x -> a + (_num_terms x)) 0 l
     | _ -> 1
          

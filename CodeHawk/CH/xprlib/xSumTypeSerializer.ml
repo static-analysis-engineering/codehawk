@@ -102,7 +102,7 @@ object
 
   inherit [xcst_t] mcts_t "xcst_t"  
 
-  method ts (c:xcst_t) =
+  method! ts (c:xcst_t) =
     match c with
     | SymSet _ -> "ss"
     | IntConst _ -> "ic"
@@ -111,7 +111,7 @@ object
     | XUnknownInt -> "ui" 
     | XUnknownSet -> "us"
 
-  method tags = [ "bc"; "ic"; "r"; "ss"; "ui"; "us" ]
+  method! tags = [ "bc"; "ic"; "r"; "ss"; "ui"; "us" ]
 
 end
 
@@ -124,14 +124,14 @@ object
 
   inherit [xpr_t] mcts_t "xpr_t"
 
-  method ts (x:xpr_t) =
+  method! ts (x:xpr_t) =
     match x with
     | XVar _ -> "v"
     | XConst _ -> "c"
     | XOp _ -> "x"
     | XAttr _ -> "a"
 
-  method tags = [ "a"; "c"; "v"; "x" ]
+  method! tags = [ "a"; "c"; "v"; "x" ]
 
 end
                              

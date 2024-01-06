@@ -47,7 +47,7 @@ open Xsimplify
    =============================================================================== 
  *)
    
-let xconst_2_numexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (c:xcst_t):code_num_t =
+let xconst_2_numexpr (reqN:tmp_provider_t) (_reqC:cst_provider_t) (c:xcst_t):code_num_t =
     match c with
     | IntConst num -> (make_nested_nop (), NUM num)
     | BoolConst b ->
@@ -55,7 +55,7 @@ let xconst_2_numexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (c:xcst_t):code
         (make_nested_nop (), NUM num)
     | _ -> (make_nested_nop (), NUM_VAR (reqN ()))
 
-let xconst_2_boolexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (c:xcst_t):code_bool_t =
+let xconst_2_boolexpr (_reqN:tmp_provider_t) (_reqC:cst_provider_t) (c:xcst_t):code_bool_t =
     let bxpr = match c with
     | BoolConst b -> if b then TRUE else FALSE
     | IntConst num -> if num#equal numerical_zero then FALSE else TRUE
@@ -77,10 +77,10 @@ and xop_2_numexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (op:xop_t) (l:xpr_
     | (XNeg, [e]) ->
        xpr_2_numexpr reqN reqC (XOp (XMinus, [ zero_constant_expr ; e ]))
 
-    | (XLNot, [e])
-    | (XBNot, [e])
-    | (XXlsb, [e])
-    | (XXlsh, [e]) ->
+    | (XLNot, [_e])
+    | (XBNot, [_e])
+    | (XXlsb, [_e])
+    | (XXlsh, [_e]) ->
        (make_nested_nop (), NUM_VAR (reqN ()))
 
     | (XMult, [ XConst (IntConst n) ; XVar v ])
@@ -171,12 +171,12 @@ and xop_2_boolexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (op:xop_t) (l:xpr
     (_, []) ->
       raise (CHFailure (STR "Empty operand list in xop_2_boolexpr"))
 
-  | (XNeg, [e]) ->
+  | (XNeg, [_e]) ->
       xpr_2_boolexpr reqN reqC (XOp (XNe, [ XOp (op, l) ; zero_constant_expr]))
-  | (XLNot, [e])
-  | (XBNot, [e])
-  | (XXlsb, [e])
-  | (XXlsh, [e]) ->
+  | (XLNot, [_e])
+  | (XBNot, [_e])
+  | (XXlsb, [_e])
+  | (XXlsh, [_e]) ->
       default
 
   | (XDisjoint, [XVar v ; XConst (SymSet l) ]) ->
@@ -277,9 +277,9 @@ let occurs_check (var:variable_t) (x:xpr_t) =
   let rec aux exp =
     match exp with
     | XVar v when v#equal var -> true
-    | XVar v -> false
-    | XOp (op,l) -> List.exists aux l
-    | XAttr (s,e) -> aux e
+    | XVar _v -> false
+    | XOp (_op,l) -> List.exists aux l
+    | XAttr (_s,e) -> aux e
     | _ -> false in
   aux x
 
@@ -329,7 +329,7 @@ let get_pepr_range_xprs (params:pepr_params_int) (range:pepr_range_int):pepr_xpr
     | Some i -> (range#remove_interval i, { result with pepr_i = Some i })
     | _ -> (range,result) in
   let (range,result) =
-    List.fold_left (fun (ran,res) (k,n) ->
+    List.fold_left (fun (ran,_res) (k,n) ->
         (ran#remove_equality k n,
          { result with pepr_equalities =
                        (pepr_parameter_expr_to_xpr params k n) :: result.pepr_equalities} ))
