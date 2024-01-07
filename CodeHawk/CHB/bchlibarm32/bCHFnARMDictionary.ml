@@ -782,7 +782,7 @@ object (self)
            let agg = get_aggregate floc#ia in
            (match agg#it_sequence#kind with
             | ITPredicateAssignment (inverse, dstop) ->
-               let (_, optpredicate) =
+               let (_, optpredicate, _opsused) =
                  arm_conditional_expr
                    ~condopc:instr#get_opcode
                    ~testopc:testinstr#get_opcode

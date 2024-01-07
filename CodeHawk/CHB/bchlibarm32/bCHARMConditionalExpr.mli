@@ -42,7 +42,7 @@ val arm_conditional_expr:
   -> testopc:arm_opcode_t
   -> condloc:location_int
   -> testloc:location_int
-  -> (variable_t list * xpr_t option)
+  -> (variable_t list * xpr_t option * arm_operand_int list)
 
 
 val arm_conditional_conditional_expr:
@@ -52,4 +52,4 @@ val arm_conditional_conditional_expr:
   -> condloc: location_int
   -> testloc: location_int
   -> testtestloc: location_int
-  -> (variable_t list * xpr_t option)
+  -> (variable_t list * xpr_t option * arm_operand_int list)
