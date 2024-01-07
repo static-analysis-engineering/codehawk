@@ -167,107 +167,118 @@ let cc_expr
       (vu: arm_operand_int -> xpr_t)  (* unsigned *)
       (_testfloc: floc_int)
       (testopc: arm_opcode_t)
-      (cc: arm_opcode_cc_t): (bool * xpr_t option) =
+      (cc: arm_opcode_cc_t): (bool * xpr_t option * arm_operand_int list) =
   let found = ref true in
-  let expr =
+  let (expr, opsused) =
     match (testopc, cc) with
 
     | (Add (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
-       XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr])
+       (XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr]), [x; y])
 
     (* -------------------------------------------------------------- And --- *)
 
     | (BitwiseAnd (true, ACCAlways, _, x, y, _), ACCEqual) ->
-       XOp (XEq, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr])
+       (XOp (XEq, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr]), [x; y])
 
     (* ---------------------------------------------------------- Compare --- *)
 
-    | (Compare (ACCAlways, x, y, _), ACCEqual) -> XOp (XEq, [v x; v y])
-    | (Compare (ACCAlways, x, y, _), ACCNotEqual) -> XOp (XNe, [v x; v y])
+    | (Compare (ACCAlways, x, y, _), ACCEqual) ->
+       (XOp (XEq, [v x; v y]), [x; y])
+    | (Compare (ACCAlways, x, y, _), ACCNotEqual) ->
+       (XOp (XNe, [v x; v y]), [x; y])
 
-    | (Compare (_, x, y, _), ACCCarrySet) -> XOp (XGe, [vu x; vu y])
-    | (Compare (_, x, y, _), ACCCarryClear) -> XOp (XLt, [vu x; vu y])
+    | (Compare (_, x, y, _), ACCCarrySet) ->
+       (XOp (XGe, [vu x; vu y]), [x; y])
+    | (Compare (_, x, y, _), ACCCarryClear) ->
+       (XOp (XLt, [vu x; vu y]), [x; y])
 
     | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
-       XOp (XGt, [vu x; vu y])
+       (XOp (XGt, [vu x; vu y]), [x; y])
     | (Compare (ACCAlways, x, y, _), ACCNotUnsignedHigher) ->
-       XOp (XLe, [vu x; vu y])
+       (XOp (XLe, [vu x; vu y]), [x; y])
 
-    | (Compare (ACCAlways, x, y, _), ACCSignedGE) -> XOp (XGe, [v x; v y])
-    | (Compare (ACCAlways, x, y, _), ACCSignedLT) -> XOp (XLt, [v x; v y])
+    | (Compare (ACCAlways, x, y, _), ACCSignedGE) ->
+       (XOp (XGe, [v x; v y]), [x; y])
+    | (Compare (ACCAlways, x, y, _), ACCSignedLT) ->
+       (XOp (XLt, [v x; v y]), [x; y])
 
-    | (Compare (ACCAlways, x, y, _), ACCSignedLE) -> XOp (XLe, [v x; v y])
-    | (Compare (ACCAlways, x, y, _), ACCSignedGT) -> XOp (XGt, [v x; v y])
+    | (Compare (ACCAlways, x, y, _), ACCSignedLE) ->
+       (XOp (XLe, [v x; v y]), [x; y])
+    | (Compare (ACCAlways, x, y, _), ACCSignedGT) ->
+       (XOp (XGt, [v x; v y]), [x; y])
 
     | (LogicalShiftLeft (true, ACCAlways, _, x, y, _), ACCNonNegative) ->
-       XOp (XGe, [XOp (XLsl, [vu x; vu y]); zero_constant_expr])
+      (XOp (XGe, [XOp (XLsl, [vu x; vu y]); zero_constant_expr]), [x; y])
 
     (* ------------------------------------------------- Compare-negative --- *)
 
     | (CompareNegative (ACCAlways, x, y), ACCEqual) ->
-       XOp (XEq, [XOp (XPlus, [v x; v y]); zero_constant_expr])
+       (XOp (XEq, [XOp (XPlus, [v x; v y]); zero_constant_expr]), [x; y])
 
     | (CompareNegative (ACCAlways, x, y), ACCNotEqual) ->
-       XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr])
+       (XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr]), [x; y])
 
     | (CompareNegative (ACCAlways, x, y), ACCCarrySet) ->
-       XOp (XGe, [XOp (XPlus, [vu x; vu y]); max32_constant_expr])
+       (XOp (XGe, [XOp (XPlus, [vu x; vu y]); max32_constant_expr]), [x; y])
 
     | (CompareNegative (ACCAlways, x, y), ACCUnsignedHigher) ->
-       XOp (XGt, [XOp (XPlus, [vu x; vu y]); max32_constant_expr])
+       (XOp (XGt, [XOp (XPlus, [vu x; vu y]); max32_constant_expr]), [x; y])
 
     (* --------------------------------------------------------- Subtract --- *)
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCEqual) ->
-       XOp (XEq, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+       (XOp (XEq, [XOp (XMinus, [v x; v y]); zero_constant_expr]), [x; y])
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCCarrySet) ->
-       XOp (XGe, [XOp (XMinus, [vu x; vu y]); zero_constant_expr])
+       (XOp (XGe, [XOp (XMinus, [vu x; vu y]); zero_constant_expr]), [x; y])
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCSignedGE) ->
-       XOp (XGe, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+       (XOp (XGe, [XOp (XMinus, [v x; v y]); zero_constant_expr]), [x; y])
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCSignedGT) ->
-       XOp (XGt, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+       (XOp (XGt, [XOp (XMinus, [v x; v y]); zero_constant_expr]), [x; y])
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCUnsignedHigher) ->
-       XOp (XGt, [XOp (XMinus, [vu x; vu y]); zero_constant_expr])
+       (XOp (XGt, [XOp (XMinus, [vu x; vu y]); zero_constant_expr]), [x; y])
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCSignedLE) ->
-       XOp (XLe, [XOp (XMinus, [vu x; vu y]); zero_constant_expr])
+       (XOp (XLe, [XOp (XMinus, [vu x; vu y]); zero_constant_expr]), [x; y])
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCSignedLT) ->
-       XOp (XLt, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+       (XOp (XLt, [XOp (XMinus, [v x; v y]); zero_constant_expr]), [x; y])
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCNegative) ->
-       XOp (XLt, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+       (XOp (XLt, [XOp (XMinus, [v x; v y]); zero_constant_expr]), [x; y])
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCNotEqual) ->
-       XOp (XNe, [XOp (XMinus, [v x; v y]); zero_constant_expr])
+       (XOp (XNe, [XOp (XMinus, [v x; v y]); zero_constant_expr]), [x; y])
 
     (* -------------------------------------------------------------- Test --- *)
 
     | (Test (ACCAlways, x, y, _), ACCEqual) ->
-       XOp (XEq, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr])
+       (XOp (XEq, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr]), [x; y])
 
     | (Test (ACCAlways, x, y, _), ACCNotEqual) ->
-       XOp (XNe, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr])
+       (XOp (XNe, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr]), [x; y])
 
     (* ---------------------------------------------------------- VCompare --- *)
 
-    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedGT) -> XOp (XGt, [v x; v y])
-    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedLE) -> XOp (XLe, [v x; v y])
-    | (VCompare (_, ACCAlways, _, _, x, y), ACCNonNegative) -> XOp (XGe, [v x; v y])
+    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedGT) ->
+       (XOp (XGt, [v x; v y]), [x; y])
+    | (VCompare (_, ACCAlways, _, _, x, y), ACCSignedLE) ->
+       (XOp (XLe, [v x; v y]), [x; y])
+    | (VCompare (_, ACCAlways, _, _, x, y), ACCNonNegative) ->
+       (XOp (XGe, [v x; v y]), [x; y])
 
     | _ ->
        begin
          found := false;
-         random_constant_expr
+         (random_constant_expr, [])
        end in
   if is_random expr then
-    (!found, None)
+    (!found, None, opsused)
   else
-    (true, Some expr)
+    (true, Some expr, opsused)
 
 
 let arm_conditional_expr
@@ -281,25 +292,27 @@ let arm_conditional_expr
   let vu = freeze_variables ~unsigned:true add testloc condloc in
   let testfloc = get_floc testloc in
   let condfloc = get_floc condloc in
-  let (found, optxpr) =
+  let (found, optxpr, opsused) =
     match get_arm_opcode_condition condopc with
     | Some c when is_cond_conditional c ->
        cc_expr v vu testfloc testopc c
-    | _ -> (false, None) in
+    | _ -> (false, None, []) in
 
   if found then
     match optxpr with
     | Some expr ->
        let expr = simplify_xpr expr in
-       if is_false expr then (frozenVars#listOfValues, None) else
+       if is_false expr then
+         (frozenVars#listOfValues, None, opsused)
+       else
 	 begin
            (if collect_diagnostics () then
               ch_diagnostics_log#add "condition" (x2p expr));
 	   condfloc#set_test_expr expr;
 	   testfloc#set_test_variables frozenVars#listOfPairs;
-	   (frozenVars#listOfValues, (Some expr))
+	   (frozenVars#listOfValues, (Some expr), opsused)
 	 end
-    | _ -> (frozenVars#listOfValues, None)
+    | _ -> (frozenVars#listOfValues, None, opsused)
   else
     begin
       (if collect_diagnostics () then
@@ -311,7 +324,7 @@ let arm_conditional_expr
 	        STR (arm_opcode_to_string condopc);
                 STR " with ";
 	        STR (arm_opcode_to_string testopc)]));
-      (frozenVars#listOfValues, None)
+      (frozenVars#listOfValues, None, opsused)
     end
 
 
@@ -323,19 +336,19 @@ let arm_conditional_conditional_expr
       ~(testloc: location_int)
       ~(testtestloc: location_int) =
   let condfloc = get_floc condloc in
-  let (fv1, cond1) =
+  let (fv1, cond1, opsused1) =
     arm_conditional_expr
       ~condopc: testopc
       ~testopc: testtestopc
       ~condloc: testloc
       ~testloc: testtestloc in
-  let (fv2, cond2) =
+  let (fv2, cond2, opsused2) =
     arm_conditional_expr
       ~condopc
       ~testopc
       ~condloc
       ~testloc in
-  let (fv3, cond3) =
+  let (fv3, cond3, opsused3) =
     arm_conditional_expr
       ~condopc
       ~testopc: testtestopc
@@ -345,6 +358,7 @@ let arm_conditional_conditional_expr
   let _ = frozenVars#addList fv1 in
   let _ = frozenVars#addList fv2 in
   let _ = frozenVars#addList fv3 in
+  let opsused = opsused1 @ opsused2 @ opsused3 in
   match (cond1, cond2, cond3) with
   | (Some cond1, Some cond2, Some cond3) ->
      let _ =
@@ -369,6 +383,6 @@ let arm_conditional_conditional_expr
        (if collect_diagnostics () then
           ch_diagnostics_log#add "condition" (x2p xpr));
        condfloc#set_test_expr xpr;
-       (frozenVars#toList, Some xpr)
+       (frozenVars#toList, Some xpr, opsused)
      end
-  | _ -> (frozenVars#toList, None)
+  | _ -> (frozenVars#toList, None, opsused)

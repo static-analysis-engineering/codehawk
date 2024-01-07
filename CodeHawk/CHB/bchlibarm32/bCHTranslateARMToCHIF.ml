@@ -112,13 +112,13 @@ let make_conditional_predicate
       ~(testinstr: arm_assembly_instruction_int)
       ~(condloc: location_int)
       ~(testloc: location_int) =
-  let (frozenvars, optxpr) =
+  let (frozenvars, optxpr, opsused) =
     arm_conditional_expr
       ~condopc:condinstr#get_opcode
       ~testopc:testinstr#get_opcode
       ~condloc:condloc
       ~testloc:testloc in
-  (frozenvars, optxpr)
+  (frozenvars, optxpr, opsused)
 
 
 let make_instr_local_tests
@@ -131,7 +131,7 @@ let make_instr_local_tests
   let env = testfloc#f#env in
   let reqN () = env#mk_num_temp in
   let reqC i = env#request_num_constant i in
-  let (frozenVars, optboolxpr) =
+  let (frozenVars, optboolxpr, _) =
     if is_opcode_conditional testinstr#get_opcode then
       let finfo = testfloc#f in
       let faddr = testfloc#fa in
@@ -245,7 +245,7 @@ let make_tests
   let env = testfloc#f#env in
   let reqN () = env#mk_num_temp in
   let reqC i = env#request_num_constant i in
-  let (frozenVars, optboolxpr) =
+  let (frozenVars, optboolxpr, _) =
     if is_opcode_conditional testinstr#get_opcode then
       let finfo = testfloc#f in
       let faddr = testfloc#fa in
@@ -614,8 +614,31 @@ let translate_arm_instruction
          "exit"
        else
          "?" in
+     let defcmds =
+       if finfo#has_associated_cc_setter ctxtiaddr then
+         let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+         let testloc = ctxt_string_to_location faddr testiaddr in
+         let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
+         let testinstr =
+           fail_tvalue
+             (trerror_record
+                (LBLOCK [STR "Internal error in make_instr_local_tests"]))
+             (get_arm_assembly_instruction testaddr) in
+         let (_, optxpr, opsused) =
+           make_conditional_predicate
+             ~condinstr:instr
+             ~testinstr:testinstr
+             ~condloc:loc
+             ~testloc in
+         let use = get_register_vars opsused in
+         let usehigh = match optxpr with
+           | Some xpr -> get_use_high_vars [xpr]
+           | _ -> [] in
+         floc#get_vardef_commands ~use ~usehigh ctxtiaddr
+       else
+         [] in
      let elseaddr = codepc#get_false_branch_successor in
-     let cmds = cmds @ [invop] in
+     let cmds = cmds @ defcmds @ [invop] in
      let transaction = package_transaction finfo blocklabel cmds in
      if finfo#has_associated_cc_setter ctxtiaddr then
        let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
@@ -1231,7 +1254,7 @@ let translate_arm_instruction
        let its = itagg#it_sequence in
        (match its#kind with
         | ITPredicateAssignment (inverse, dstop) ->
-           let (_, optpredicate) =
+           let (_, optpredicate, _opsused) =
              make_conditional_predicate
                ~condinstr:instr
                ~testinstr:testinstr
