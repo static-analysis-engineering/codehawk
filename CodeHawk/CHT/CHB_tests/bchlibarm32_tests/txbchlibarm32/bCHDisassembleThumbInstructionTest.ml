@@ -75,6 +75,7 @@ let thumb_2_basic () =
       ("BKPT",       "fbbe", "BKPT           #0xfb");
       ("BLX-R-T1",   "9847", "BLX            R3");
       ("BX-T1",      "7047", "BX             LR");
+      ("CMP-I-T1-1", "002f", "CMP            R7, #0");
       ("CMP-I-T1",   "102b", "CMP            R3, #0x10");
       ("CMP-R-T1",   "9a42", "CMP            R2, R3");
       ("CPSID-I",    "72b6", "CPSID          I");
@@ -86,6 +87,7 @@ let thumb_2_basic () =
       ("LSLS-I-T1",  "c507", "LSLS           R5, R0, #0x1f");
       ("LSRS-I-T1",  "9b08", "LSRS           R3, R3, #2");
       ("MOV-R-T1",   "1346", "MOV            R3, R2");
+      ("MOV-I-T1",   "0a27", "MOVS           R7, #0xa");
       ("MOVS-I-T1",  "2022", "MOVS           R2, #0x20");
       ("ORRS-R-T1",  "1e43", "ORRS           R6, R6, R3");
       ("POP-3-T1",   "90bd", "POP            {R4,R7,PC}");
@@ -98,6 +100,7 @@ let thumb_2_basic () =
       ("STR-I-T1",   "3560", "STR            R5, [R6]");
       ("STRB-I-T1",  "2170", "STRB           R1, [R4]");
       ("STRH-I-T1",  "8d80", "STRH           R5, [R1,#4]");
+      ("SUB-I-T1",   "7f1e", "SUBS           R7, R7, #1");
       ("SUB-SPI-T1", "85b0", "SUB            SP, SP, #0x14");
       ("SUBS-R-T1",  "ea1a", "SUBS           R2, R5, R3");
       ("SXTH-T1",    "36b2", "SXTH           R6, R6");
@@ -133,12 +136,14 @@ let thumb_2_pc_relative () =
       ("BGT-T1",   "0x11dbe", "33dc", "BGT            0x11e28");
       ("BHI-T1",   "0x11ab8", "09d8", "BHI            0x11ace");
       ("BLE-T1",   "0x113e6", "38dd", "BLE            0x1145a");
+      ("BLT-T1+",  "0x108fe", "11db", "BLT            0x10924");
       ("BLT-T1",   "0x111ea", "f9db", "BLT            0x111e0");
       ("BMI-T1",   "0x11744", "4bd4", "BMI            0x117de");
       ("BNE-T1",   "0x11ccc", "f5d1", "BNE            0x11cba");
       ("BPL-T1",   "0x117f6", "06d5", "BPL            0x11806");
       ("CBNZ-T1",  "0x11a52", "0bb9", "CBNZ           R3, 0x11a58");
-      ("CBZ-T1",   "0x11d86", "13b1", "CBZ            R3, 0x11d8e");
+      ("CBZ-T1-1", "0x108fe", "8fb1", "CBZ            R7, 0x10924");
+      ("CBZ-T1-2", "0x11d86", "13b1", "CBZ            R3, 0x11d8e");
       ("LDR-L-T1", "0x11ca8", "744c", "LDR            R4, 0x11e7c")
     ] in
   begin
@@ -209,6 +214,7 @@ let thumb_4_basic () =
       ("STREX-T1",    "44e80031", "STREX          R1, R3, [R4]");
       ("STRH.W-T2",   "a4f84430", "STRH.W         R3, [R4,#0x44]");
       ("SUB.W-T3",    "a6f17f01", "SUB.W          R1, R6, #0x7f");
+      ("SUBW-T4",     "a0f20107", "SUBW           R7, R0, #1");
       ("TBB-T1",      "dfe800f0", "TBB            [PC,R0]");
       ("UBFX-T1",     "c0f30743", "UBFX           R3, R0, #16, #8");
       ("UDIV",        "b6fbf1f2", "UDIV           R2, R6, R1");
