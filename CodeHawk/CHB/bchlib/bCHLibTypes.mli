@@ -5130,7 +5130,8 @@ object
   method is_cfnop: doubleword_int -> bool
   method is_cfjmp: doubleword_int -> bool
   method is_inlined_function: doubleword_int -> bool
-  method is_trampoline: doubleword_int -> bool
+  method is_trampoline_payload: doubleword_int -> bool
+  method is_trampoline_wrapper: doubleword_int -> bool
   method has_variable_intro: doubleword_int -> bool
   method has_variable_intros: bool
 

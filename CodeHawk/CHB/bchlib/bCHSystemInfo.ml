@@ -208,7 +208,8 @@ object (self)
   val mutable user_classes = 0
   val mutable encodings = []
   val mutable inlined_functions = []
-  val mutable trampolines = []
+  val mutable trampoline_payloads = []
+  val mutable trampoline_wrappers = []
 
   val data_export_specs = H.create 3
 
@@ -371,11 +372,11 @@ object (self)
       chlog#add "add inlined function" (faddr#toPretty)
     end
 
-  method private add_trampoline (startaddr: doubleword_int) =
-    begin
-      trampolines <- startaddr :: trampolines;
-      chlog#add "add trampoline" (LBLOCK [startaddr#toPretty])
-    end
+  method private add_trampoline_payload (startaddr: doubleword_int) =
+    trampoline_payloads <- startaddr :: trampoline_payloads;
+
+  method private add_trampoline_wrapper (startaddr: doubleword_int) =
+    trampoline_wrappers <- startaddr :: trampoline_wrappers
 
   method private add_inlined_block (faddr:doubleword_int) (baddr:doubleword_int) =
     let fd = functions_data#add_function faddr in
@@ -393,9 +394,13 @@ object (self)
   method is_inlined_function (a:doubleword_int) =
     List.exists (fun i -> a#equal i) inlined_functions
 
-  method is_trampoline (a: doubleword_int) =
+  method is_trampoline_payload (a: doubleword_int) =
     List.fold_left (fun acc startaddr ->
-        acc || (startaddr#equal a)) false trampolines
+        acc || (startaddr#equal a)) false trampoline_payloads
+
+  method is_trampoline_wrapper (a: doubleword_int) =
+    List.fold_left (fun acc startaddr ->
+        acc || (startaddr#equal a)) false trampoline_wrappers
 
   method get_esp_adjustment (faddr:doubleword_int) (iaddr:doubleword_int) =
     if H.mem esp_adjustments_i iaddr#index then
@@ -1313,15 +1318,30 @@ object (self)
         let _ = chlog#add "add inlined function" faddr#toPretty in
         self#add_inlined_function faddr) (node#getTaggedChildren "inline")
 
+  method private read_xml_trampoline (node: xml_element_int) =
+    let geta tag = geta_fail "read_xml_trampolines" node tag in
+    let trentry = node#getAttribute "logicalva" in
+    let logmsg tag addr =
+      chlog#add
+        "add trampoline address"
+        (LBLOCK [STR trentry; STR "  "; STR tag; STR ": "; addr#toPretty]) in
+    begin
+      (if node#hasNamedAttribute "payload" then
+         let payloadaddr = geta "payload" in
+         begin
+           logmsg "payload" payloadaddr;
+           self#add_trampoline_payload payloadaddr
+         end);
+      (if node#hasNamedAttribute "wrapper" then
+         let wrapperaddr = geta "wrapper" in
+         begin
+           logmsg "wrapper" wrapperaddr;
+           self#add_trampoline_wrapper wrapperaddr
+         end)
+    end
+
   method private read_xml_trampolines (node: xml_element_int) =
-    List.iter (fun n ->
-        let geta n tag = geta_fail "read_xml_trampolines" n tag in
-        let startaddr = geta n "a" in
-        let _ =
-          chlog#add
-            "add trampoline"
-            (LBLOCK [startaddr#toPretty]) in
-        self#add_trampoline startaddr) (node#getTaggedChildren "trampoline")
+    List.iter self#read_xml_trampoline (node#getTaggedChildren "trampoline")
 
   method private read_xml_inlined_blocks (node:xml_element_int) =
     List.iter (fun n  ->
@@ -1818,7 +1838,7 @@ object (self)
 	List.iter
           (fun fe ->
             let fd = functions_data#add_function fe in
-            if self#is_trampoline fe then
+            if self#is_trampoline_payload fe then
               fd#set_inlined
             else
               ()) feps

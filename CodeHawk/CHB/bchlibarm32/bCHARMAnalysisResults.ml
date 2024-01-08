@@ -102,8 +102,10 @@ object (self)
                lNode#setAttribute "a" a;
                lNode
              end) looplevels);
-      (if system_info#is_trampoline b#get_first_address then
-         set "role" "trampoline");
+      (if system_info#is_trampoline_payload b#get_first_address then
+         set "role" "trampoline_payload");
+      (if system_info#is_trampoline_wrapper b#get_first_address then
+         set "role" "trampoline_wrapper");
       set "ba" b#get_context_string;
       set "ea" (make_i_location blockloc b#get_last_address)#ci
     end
