@@ -31,3 +31,16 @@ make -C CHJ/jchcost clean
 make -C CHJ/jchcmdline clean
 make -C CHJ/jchstac clean
 make -C CHJ/jchstacgui clean
+make -C CHT/tchlib clean
+make -C CHT/CH_tests/xprlib_tests/txprlib clean
+make -C CHT/CH_tests/xprlib_tests/txxprlib clean
+make -C CHT/CHB_tests/bchlib_tests/tbchlib clean
+make -C CHT/CHB_tests/bchlib_tests/txbchlib clean
+make -C CHT/CHB_tests/bchlibelf_tests/tbchlibelf clean
+make -C CHT/CHB_tests/bchlibelf_tests/txbchlibelf clean
+make -C CHT/CHB_tests/bchlibarm32_tests/tbchlibarm32 clean
+make -C CHT/CHB_tests/bchlibarm32_tests/txbchlibarm32 clean
+make -C CHT/CHB_tests/bchlibmips32_tests/txbchlibmips32 clean
+make -C CHT/CHB_tests/bchlibpower32_tests/txbchlibpower32 clean
+make -C CHT/CHB_tests/bchlibx86_tests/tbchlibx86 clean
+make -C CHT/CHB_tests/bchlibx86_tests/txbchlibx86 clean
