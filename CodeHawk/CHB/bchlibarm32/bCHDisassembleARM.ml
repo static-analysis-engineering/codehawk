@@ -685,7 +685,7 @@ let set_block_boundaries () =
           | BranchLink (_, op) | BranchLinkExchange (_, op)
                when op#is_absolute_address
                     && (system_info#is_inlined_function op#get_absolute_address
-                        || system_info#is_trampoline op#get_absolute_address) ->
+                        || system_info#is_trampoline_payload op#get_absolute_address) ->
              begin
                chlog#add "add inlined call" va#toPretty;
                set_inlined_call va;
