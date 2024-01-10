@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs, LLC
+   Copyright (c) 2023-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,32 +26,17 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
-open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
-open BCHFunctionInfo
-open BCHFloc
-open BCHFunctionInterface
-open BCHFunctionData
-open BCHFunctionSummary
-open BCHFunctionSummaryLibrary
 open BCHLibTypes
-open BCHLocation
-open BCHSystemInfo
-open BCHUtilities
 
 (* bchlibpower32 *)
-open BCHPowerAssemblyBlock
-open BCHPowerOpcodeRecords
 open BCHPowerTypes
 
 module H = Hashtbl
@@ -148,8 +133,8 @@ object (self)
     List.iter (fun (b: pwr_assembly_block_int) ->
         b#itera (fun iaddr instr -> f faddr iaddr instr)) self#blocks
 
-  method populate_callgraph (callgraph: callgraph_int) =
-    self#iteri (fun _ iaddr instr -> ())
+  method populate_callgraph (_callgraph: callgraph_int) =
+    self#iteri (fun _ _iaddr _instr -> ())
 
   method includes_instruction_address (va: doubleword_int) =
     List.exists (fun b -> b#includes_instruction_address va) blocks

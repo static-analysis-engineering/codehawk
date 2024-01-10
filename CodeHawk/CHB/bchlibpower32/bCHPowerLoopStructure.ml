@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs LLC
+
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,13 +36,10 @@ open CHLogger
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHDoubleword
 open BCHLibTypes
 open BCHLocation
 
 (* bchlibpower32 *)
-open BCHPowerAssemblyBlock
-open BCHPowerAssemblyFunction
 open BCHPowerAssemblyFunctions
 open BCHPowerCHIFSystem
 open BCHPowerTypes
@@ -70,7 +67,7 @@ let get_cfg (proc: procedure_int) =
            STR "Procedure ";
            symbol_to_pretty proc#getName;
            STR " does not have a CFG"] in
-     begin 
+     begin
        ch_error_log#add "invocation error" msg;
        raise (BCH_failure msg)
      end
@@ -98,7 +95,7 @@ let record_pwr_loop_levels (faddr: doubleword_int) =
 	  ch_error_log#add "loops" msg;
           raise (BCH_failure msg)
 	end
-    | hd::_ -> get_wto_component_head hd 
+    | hd::_ -> get_wto_component_head hd
   and get_wto_component_head wtoComponent =
     match wtoComponent with
     | VERTEX s -> get_ctxt_string s
@@ -108,11 +105,11 @@ let record_pwr_loop_levels (faddr: doubleword_int) =
   and record_wto_component wtoComponent levels =
     match wtoComponent with
     | VERTEX s -> H.add table (get_ctxt_string s) levels
-    | SCC scc -> record_wto scc ((get_wto_head scc) :: levels) in 
+    | SCC scc -> record_wto scc ((get_wto_head scc) :: levels) in
   let sccs = get_strongly_connected_components proc in
   begin
     (match sccs with [] -> () | _ -> record_wto sccs []);
-    f#itera (fun baddr block ->
+    f#itera (fun baddr _block ->
       if H.mem table baddr then
 	let levels = H.find table baddr in
 	add_loop_levels baddr (List.rev levels))

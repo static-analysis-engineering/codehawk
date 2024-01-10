@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023 Aarno Labs, LLC
+   Copyright (c) 2023-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,13 +32,10 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHByteUtilities
 open BCHCallgraph
-open BCHDataBlock
 open BCHDoubleword
 open BCHFunctionData
 open BCHFunctionInfo
@@ -46,15 +43,9 @@ open BCHLibTypes
 open BCHLocation
 open BCHMetricsHandler
 open BCHSystemInfo
-open BCHSystemSettings
-
-(* bchlibelf *)
-open BCHELFHeader
 
 (* bchlibpower32 *)
-open BCHPowerAssemblyFunction
 open BCHPowerAssemblyInstructions
-open BCHPowerOpcodeRecords
 open BCHPowerTypes
 
 module H = Hashtbl

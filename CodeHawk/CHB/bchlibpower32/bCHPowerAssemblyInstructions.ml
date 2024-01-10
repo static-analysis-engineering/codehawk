@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,11 +38,8 @@ open CHXmlDocument
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHDoubleword
-open BCHFunctionInterface
 open BCHFunctionData
-open BCHFunctionSummary
 open BCHLibTypes
-open BCHSystemInfo
 
 (* bchlibpower32 *)
 open BCHPowerAssemblyInstruction
@@ -113,7 +110,7 @@ object (self)
   method get_indices (addr: doubleword_int): int * int =
     let index = addr#value in
     let (found, result) =
-      List.fold_left (fun (fnd, r) (name, start, size, startindex) ->
+      List.fold_left (fun (fnd, r) (_name, start, size, startindex) ->
           if fnd then
             (fnd, r)
           else if index >= start && index < start + size then
@@ -190,7 +187,7 @@ let set_instruction (addr: doubleword_int) (instr: pwr_assembly_instruction_int)
   | BCH_failure p ->
      ch_error_log#add
        "set_instruction:invalid address"
-       (LBLOCK [addr#toPretty; STR ": "; instr#toPretty])
+       (LBLOCK [addr#toPretty; STR ": "; instr#toPretty; STR ": "; p])
 
 
 let initialize_instruction_section (addr: doubleword_int) (xsize: doubleword_int) =
@@ -226,7 +223,13 @@ let get_instruction (addr: doubleword_int): pwr_assembly_instruction_result =
     Ok (pwr_instructions.(i).(j))
   with
   | BCH_failure p ->
-     Error ["get_instruction: " ^ addr#to_hex_string]
+     Error [
+         "get_instruction: "
+         ^ addr#to_hex_string
+         ^ "("
+         ^ (pretty_to_string p)
+         ^ ")"
+       ]
 
 
 (* Return the addresses of valid instructions in the given address range
@@ -267,7 +270,7 @@ let get_all_instruction_addrs (): doubleword_int list =
   end
 
 
-let fold_instructions (f: 'a -> pwr_assembly_instruction_int -> 'a) (init: 'a) =
+let _fold_instructions (f: 'a -> pwr_assembly_instruction_int -> 'a) (init: 'a) =
   Array.fold_left (fun a arr ->
     Array.fold_left (fun a1 opc -> f a1 opc) a arr) init pwr_instructions
 
@@ -276,7 +279,7 @@ let iter_instructions (f: pwr_assembly_instruction_int -> unit) =
   Array.iter (fun arr -> Array.iter f arr) pwr_instructions
 
 
-let iteri_instructions (f: int -> pwr_assembly_instruction_int -> unit) =
+let _iteri_instructions (f: int -> pwr_assembly_instruction_int -> unit) =
   Array.iteri (fun i arr ->
     let k = i * arrayLength in
     Array.iteri (fun j instr -> f (k+j) instr) arr) pwr_instructions
@@ -543,22 +546,6 @@ end
 
 let pwr_assembly_instructions = ref (new pwr_assembly_instructions_t [])
 
-let get_pwr_assembly_instruction (a: doubleword_int) =
-  !pwr_assembly_instructions#get_instruction a
-
-
-let set_pwr_assembly_instruction (instr: pwr_assembly_instruction_int) =
-  !pwr_assembly_instructions#set_instruction instr#get_address instr
-
-
-let get_next_valid_instruction_address
-      (a: doubleword_int): doubleword_int traceresult =
-  !pwr_assembly_instructions#get_next_valid_instruction_address a
-
-
-let has_next_valid_instruction (a: doubleword_int) =
-  !pwr_assembly_instructions#has_next_valid_instruction a
-
 
 let initialize_pwr_assembly_instructions
       (sections: (string * doubleword_int * doubleword_int) list)
@@ -570,7 +557,7 @@ let initialize_pwr_assembly_instructions
   end
 
 
-let get_pwr_assembly_instruction (a: doubleword_int) =
+let get_pwr_assembly_instruction (a: doubleword_int): pwr_assembly_instruction_result =
   !pwr_assembly_instructions#get_instruction a
 
 

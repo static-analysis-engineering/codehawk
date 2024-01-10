@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022-2023  Aarno Labs, LLC
+   Copyright (c) 2022-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,20 +27,10 @@
 
 
 (* chlib *)
-open CHNumerical
 open CHPretty
-
-(* chutil *)
-open CHLogger
-open CHPrettyUtil
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHDoubleword
-open BCHLibTypes
-
-(* bchlibpower32 *)
-open BCHPowerTypes
 
 
 let oim5 (v: int): int = v + 1

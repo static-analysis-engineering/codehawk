@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,41 +26,27 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHLogger
 open CHTiming
 
-(* xprlib *)
-open Xprt
-open XprToPretty
-open XprTypes
-open Xsimplify
-
 (* bchlib *)
 open BCHBasicTypes
-open BCHByteUtilities
-open BCHDataBlock
-open BCHDoubleword
 open BCHFloc
-open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionSummaryLibrary
-open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
 open BCHMakeCallTargetInfo
 open BCHStreamWrapper
 open BCHSystemInfo
-open BCHSystemSettings
 open BCHUtilities
 
 (* bchlibelf *)
 open BCHELFHeader
-open BCHELFTypes
 
 (* bchlibpower32 *)
 open BCHConstructPowerFunction
@@ -139,7 +125,13 @@ let disassemble_pwr_section
                begin
                  ch_error_log#add
                    "disassembly:skip data_block"
-                   (LBLOCK [STR "pos: "; INT pos; STR "; dblen: "; INT dblen]);
+                   (LBLOCK [
+                        STR "pos: ";
+                        INT pos;
+                        STR "; dblen: ";
+                        INT dblen;
+                        STR ": ";
+                        p]);
                  ""
                end in
           begin
@@ -316,7 +308,7 @@ let collect_function_entry_points () =
   let addresses = new DoublewordCollections.set_t in
   begin
     !pwr_assembly_instructions#itera
-      (fun va instr ->
+      (fun _va instr ->
         match instr#get_opcode with
         | BranchLink (_, tgt, _) ->
            let tgtaddr = tgt#get_absolute_address in
@@ -327,7 +319,7 @@ let collect_function_entry_points () =
 
 
 let get_so_target
-      (tgtaddr:doubleword_int) (instr: pwr_assembly_instruction_int) =
+      (tgtaddr:doubleword_int) (_instr: pwr_assembly_instruction_int) =
   if functions_data#has_function_name tgtaddr then
     let fndata = functions_data#get_function tgtaddr in
     if fndata#is_library_stub then
@@ -341,7 +333,7 @@ let get_so_target
 
 
 (* can be used before functions have been constructed *)
-let is_nr_call_instruction (instr:pwr_assembly_instruction_int) =
+let _is_nr_call_instruction (instr:pwr_assembly_instruction_int) =
   match instr#get_opcode with
   | BranchLink (_, tgt, _) when tgt#is_absolute_address ->
      let tgtaddr = tgt#get_absolute_address in
@@ -352,7 +344,7 @@ let is_nr_call_instruction (instr:pwr_assembly_instruction_int) =
 
 let collect_call_targets () =
   !pwr_assembly_instructions#itera
-    (fun va instr ->
+    (fun _va instr ->
       match instr#get_opcode with
       | BranchLink (_, tgt, _) ->
          let tgtaddr = tgt#get_absolute_address in
@@ -387,7 +379,7 @@ let set_block_boundaries () =
 
     (* --------------------------- record targets of (un)conditional jumps -- *)
     !pwr_assembly_instructions#itera
-      (fun va instr ->
+      (fun _va instr ->
         match opt_absolute_branch_target instr with
         | Some tgtaddr ->
            (try
@@ -401,7 +393,9 @@ let set_block_boundaries () =
                      STR ":";
                      instr#toPretty;
                      STR " sets invalid address ";
-                     tgtaddr#toPretty]))
+                     tgtaddr#toPretty;
+                     STR ": ";
+                     p]))
         | _ -> ());
 
     (* ----------------------- add block entries due to previous block-ending -- *)
@@ -427,7 +421,7 @@ let set_block_boundaries () =
 
 
 let construct_assembly_function
-      (count: int) (faddr: doubleword_int): doubleword_int list =
+      (_count: int) (faddr: doubleword_int): doubleword_int list =
   try
     let newfns =
       if !pwr_assembly_instructions#is_code_address faddr then
@@ -497,7 +491,7 @@ let associate_condition_code_users_pwr () =
     (* remove the conditional instruction itself *)
     let revInstrs: pwr_assembly_instruction_int list =
       match revInstrs with
-      | h::tl -> tl
+      | _::tl -> tl
       | [] -> [] in
 
     let rec set l =

@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs LLC
+
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,7 +27,6 @@
 
 (* chlib *)
 open CHLanguage
-open CHNumerical
 open CHPretty
 open CHUtils
 
@@ -37,28 +36,15 @@ open CHLogger
 (* xprlib *)
 open Xprt
 open XprTypes
-open XprToPretty
 open XprUtil
-open Xsimplify
 
 (* bchlib *)
-open BCHBasicTypes
-open BCHDoubleword
 open BCHFloc
-open BCHFunctionInfo
 open BCHLibTypes
-open BCHLocation
-open BCHSystemSettings
-open BCHVariable
 
 (* bchlibpower32 *)
-open BCHPowerAssemblyInstruction
-open BCHPowerOperand
 open BCHPowerOpcodeRecords
 open BCHPowerTypes
-
-
-let x2p = xpr_formatter#pr_expr
 
 
 let tracked_locations = []
@@ -70,8 +56,8 @@ let track_location loc p =
 
 
 let freeze_variables
-      ?(unsigned=false)
-      (add: variable_t -> variable_t -> unit) 
+      ?(_unsigned=false)
+      (add: variable_t -> variable_t -> unit)
       (testloc: location_int)
       (condloc: location_int)
       (op: pwr_operand_int)  =
@@ -84,7 +70,7 @@ let freeze_variables
   let varsKnown = ref true in
   let _ =
     List.iter (
-        fun v -> 
+        fun v ->
         if v#isTmp then
           varsKnown := false
         else if env#is_function_initial_value v then
@@ -124,7 +110,7 @@ let freeze_variables
     end
   else
     random_constant_expr
-        
+
 
 let pwr_conditional_expr
       ~(condopc: pwr_opcode_t)
@@ -134,7 +120,7 @@ let pwr_conditional_expr
   let frozenVars = new VariableCollections.table_t in
   let add v fv = frozenVars#set v fv in
   let v = freeze_variables add testloc condloc in
-  let vu = freeze_variables ~unsigned:true add testloc condloc in
+  let vu = freeze_variables ~_unsigned:true add testloc condloc in
   let testfloc = get_floc testloc in
   let condfloc = get_floc condloc in
   let (found, optxpr) =
