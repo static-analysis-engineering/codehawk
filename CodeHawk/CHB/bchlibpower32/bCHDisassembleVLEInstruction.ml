@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2021-2023  Aarno Labs, LLC
+
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,9 +34,7 @@ open CHLogger
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHCPURegisters
 open BCHDoubleword
-open BCHImmediate
 open BCHLibTypes
 
 (* bchlibpower32 *)
@@ -47,12 +45,9 @@ open BCHPowerTypes
 module TR = CHTraceResult
 
 
-let stri = string_of_int
-
-
 let parse_se_C_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let opc = b 12 15 in
@@ -105,7 +100,7 @@ let parse_se_C_form
      let mcsr1 = pwr_special_register_op ~reg:PowerMCSRR1 ~mode:RD in
      (* se_rfmci *)
      ReturnFromMachineCheckInterrupt (VLE16, msr, mcsr0, mcsr1)
-  | _ ->     
+  | _ ->
      NotRecognized("000-C:" ^ (string_of_int opc), instr)
 
 
@@ -116,8 +111,8 @@ let parse_se_C_form
     12..15: RX (GPR in the ranges GPR0-GPR7 or GPR24-GPR31, src or dst)
 *)
 let parse_se_R_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let opc = b 8 11 in
@@ -183,7 +178,7 @@ let parse_se_R_form
      let cr = cr0_op ~mode:NT in
      (* se_extsh rX *)
      ExtendSignHalfword (VLE16, false, rx ~mode:WR, rx ~mode:RD, cr)
-  
+
   | _ ->
      NotRecognized("00-R:" ^ (string_of_int opc), instr)
 
@@ -198,8 +193,8 @@ let parse_se_R_form
                      /alternate GPR in the range GPR8-GPR23 as dst)
  *)
 let parse_se_0RR_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
@@ -209,7 +204,7 @@ let parse_se_0RR_form
   let so_nt = xer_so_op ~mode:NT in
   let opc = b 4 7 in
   match opc with
-    
+
   (* < 0>< 1><ry><rx>    se_mr *)
   | 1 ->
      (* se_mr rX, rY *)
@@ -276,8 +271,8 @@ let parse_se_0RR_form
     12..15: RX (GPR in the ranges GPR0-GPR7, or GPR24-GPR31, as src or dst)
  *)
 let parse_se_IM_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let ui5 = b 7 11 in
@@ -334,8 +329,8 @@ let parse_se_IM_form
 
 
 let parse_se_IM7_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
@@ -346,8 +341,8 @@ let parse_se_IM7_form
 
 
 let parse_se_4RR_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let rx = pwr_gp_register_op ~index:(rindex (b 12 15)) in
@@ -392,7 +387,7 @@ let parse_se_4RR_form
      let rc = (b 7 7) = 1 in
      let cr = cr_op ~mode:WR in
      And (VLE16, rc, rx ~mode:WR, rx ~mode:RD, ry ~mode:RD, cr)
-     
+
   | _ ->
      NotRecognized("4-RR:" ^ (string_of_int opc), instr)
 
@@ -405,8 +400,8 @@ let parse_se_4RR_form
     12..15: RX (GPR in the ranges GPR0-GPR7, or GPR24-GPR31, as src or dst)
  *)
 let parse_se_IM5_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let imm5 = b 7 11 in
@@ -461,8 +456,8 @@ let parse_se_IM5_form
 
 
 let parse_se_branch
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let opc = b 4 7 in
@@ -483,8 +478,8 @@ let parse_se_branch
             or dst).
  *)
 let parse_se_SD4_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 16 in
   let sd4 w = mkNumerical (w * (b 4 7)) in
@@ -528,7 +523,7 @@ let parse_se_SD4_form
   | _ ->
      NotRecognized("SD4:" ^ (string_of_int opc), instr)
 
-     
+
 let parse_se_instruction
       (ch: pushback_stream_int)
       (iaddr: doubleword_int)
@@ -553,8 +548,8 @@ let parse_se_instruction
 
 
 let parse_e_D8_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 32 in
   let opc1 = b 16 19 in
@@ -687,8 +682,8 @@ let parse_e_D8_form
 
 
 let parse_e_SCI8_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 32 in
   let opc = b 16 19 in
@@ -823,8 +818,8 @@ let parse_e_SCI8_form
     16..31: D (offset, signed)
  *)
 let parse_e_D_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int)
       (prefix: int) =
   let b = instr#get_reverse_segval 32 in
@@ -904,12 +899,12 @@ let parse_e_D_form
      StoreHalfword (VLE32, false, rs ~mode:RD, ra ~mode:RD, mem ~mode:WR)
 
   | (p, x) ->
-     NotRecognized ("D:" ^ (string_of_int prefix) ^ "_" ^ (string_of_int x), instr)
+     NotRecognized ("D:" ^ (string_of_int p) ^ "_" ^ (string_of_int x), instr)
 
 
 let parse_e_misc_0_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 32 in
   match (b 16 16, b 17 20) with
@@ -998,8 +993,8 @@ let parse_e_misc_0_form
 
 
 let parse_e_misc_1_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 32 in
   match (b 31 31) with
@@ -1075,7 +1070,7 @@ let parse_e_misc_1_form
 
 
 let parse_e_misc_2_branchlink
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 32 in
@@ -1095,7 +1090,7 @@ let parse_e_misc_2_branchlink
 
 
 let parse_e_misc_2_branchconditional
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int) =
 
@@ -1215,8 +1210,8 @@ let parse_e_misc_2_form
 
 
 let parse_e_misc_3_form
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_reverse_segval 32 in
   match (b 21 21, b 22 30) with
@@ -1848,7 +1843,7 @@ let parse_vle_opcode
     else
       let instr16 = TR.tget_ok (int_to_doubleword instrbytes) in
       parse_se_instruction ch iaddr instr16
-  
+
 
 let disassemble_vle_instruction
       (ch: pushback_stream_int) (iaddr: doubleword_int) (instrbytes: int) =

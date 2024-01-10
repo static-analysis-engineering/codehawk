@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2023  Aarno Labs, LLC
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,22 +34,19 @@ open CHLogger
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHCPURegisters
 open BCHDoubleword
-open BCHImmediate
 open BCHLibTypes
 
 (* bchlibpower32 *)
 open BCHPowerOperand
-open BCHPowerPseudocode
 open BCHPowerTypes
 
 module TR = CHTraceResult
 
 
 let parse_opcode_4
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
 
@@ -66,7 +63,7 @@ let parse_opcode_4
   (* <   4>< rd>< ra>< rb><---534--->    SPE *)
   | 534 ->
      (* evxor rD,rA,rB   (SPE) *)
-     VectorXor (PWR, rd WR, ra RD, rb RD)
+     VectorXor (PWR, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD)
 
   (* <   4>< rd>< ra>< rb><---705--->   SPE *)
   | 705 ->
@@ -101,7 +98,7 @@ let parse_opcode_4
      let offset = mkNumerical ((b 16 20) * 8) in
      let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset ~mode:WR in
      (* evldd rD,d(rA)   (SPE) *)
-     VectorLoadDoubleDouble (PWR, rd RD, ra RD, mem)
+     VectorLoadDoubleDouble (PWR, rd ~mode:RD, ra ~mode:RD, mem)
 
   (* <   4>< rs>< ra><uim><---801--->    SPE *)
   | 801 ->
@@ -109,15 +106,15 @@ let parse_opcode_4
      let offset = mkNumerical ((b 16 20) * 8) in
      let mem = pwr_indirect_register_op ~basegpr:(b 11 15) ~offset ~mode:WR in
      (* evstdd rS,d(rA)  (SPE) *)
-     VectorStoreDoubleDouble (PWR, rs RD, ra RD, mem)
+     VectorStoreDoubleDouble (PWR, rs ~mode:RD, ra ~mode:RD, mem)
 
   | _ ->
      NotRecognized ("FP opcode:" ^ (string_of_int opc), instr)
 
 
 let parse_opcode_7
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
 
@@ -131,8 +128,8 @@ let parse_opcode_7
 
 
 let parse_opcode_8
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
 
@@ -149,8 +146,8 @@ let parse_opcode_8
 
 
 let parse_opcode_10
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
 
@@ -167,8 +164,8 @@ let parse_opcode_10
 
 
 let parse_opcode_11
-      (ch:pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch:pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
 
@@ -185,8 +182,8 @@ let parse_opcode_11
 
 
 let parse_opcode_12_13
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
 
@@ -204,8 +201,8 @@ let parse_opcode_12_13
 
 
 let parse_opcode_14_15
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
 
@@ -241,7 +238,7 @@ let parse_opcode_14_15
    3 - 4 : LT, GT, EQ, SO
  *)
 let parse_opcode_16
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
@@ -351,7 +348,7 @@ let parse_opcode_16
 
 
 let parse_opcode_18
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
@@ -379,8 +376,8 @@ let parse_opcode_18
 
 
 let parse_opcode_19
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
   let opc = b 21 30 in
@@ -525,8 +522,8 @@ let parse_opcode_19
 
 
 let parse_opcode_20
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
 
@@ -554,8 +551,8 @@ let parse_opcode_20
 
 
 let parse_opcode_21
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
   let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -615,8 +612,8 @@ let parse_opcode_21
 
 
 let parse_opcode_23
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
   let rs = pwr_gp_register_op ~index:(b 6 10) in
@@ -637,8 +634,8 @@ let parse_opcode_23
 
 
 let parse_opcode_24_29
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
   let shifted = (b 5 5) = 1 in
@@ -667,8 +664,8 @@ let parse_opcode_24_29
 
 
 let parse_opcode_31
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
   let opc = b 22 30 in
@@ -1038,7 +1035,7 @@ let parse_opcode_31
      Add (PWR, rc, oe, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, cr, so, ov)
 
   (* < 7>11< rd>< ra>< rb>0<--279-->/   lhzx *)
-  | (o, 279) ->
+  | (0, 279) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op ~index:(b 11 15) in
      let rb = pwr_gp_register_op ~index:(b 16 20) in
@@ -1046,7 +1043,8 @@ let parse_opcode_31
        pwr_indexed_indirect_register_op
          ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
      (* lhzx rD,rA,rB *)
-     LoadHalfwordZeroIndexed (PWR, false, rd WR, ra RD, rb RD, mem RD)
+     LoadHalfwordZeroIndexed
+       (PWR, false, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, mem ~mode:RD)
 
   (* < 7>11< rs>< ra>< rb>0<--316-->c   xor *)
   | (0, 316) ->
@@ -1089,7 +1087,7 @@ let parse_opcode_31
      MoveFromSpecialPurposeRegister (PWR, rd ~mode:WR, spr)
 
   (* < 7>11< rd>< ra>< rb>0<--343-->/   lhax *)
-  | (o, 343) ->
+  | (0, 343) ->
      let rd = pwr_gp_register_op ~index:(b 6 10) in
      let ra = pwr_gp_register_op ~index:(b 11 15) in
      let rb = pwr_gp_register_op ~index:(b 16 20) in
@@ -1097,7 +1095,8 @@ let parse_opcode_31
        pwr_indexed_indirect_register_op
          ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
      (* lhax rD,rA,rB *)
-     LoadHalfwordAlgebraicIndexed (PWR, false, rd WR, ra RD, rb RD, mem RD)
+     LoadHalfwordAlgebraicIndexed
+       (PWR, false, rd ~mode:WR, ra ~mode:RD, rb ~mode:RD, mem ~mode:RD)
 
   (* < 7>11< rs>< ra>< rb>0<--407-->/   sthx *)
   | (0, 407) ->
@@ -1108,7 +1107,8 @@ let parse_opcode_31
        pwr_indexed_indirect_register_op
          ~basegpr:(b 11 15) ~offsetgpr:(b 16 20) in
      (* sthx rs, ra, rb *)
-     StoreHalfwordIndexed (PWR, false, rs RD, ra RD, rb RD, mem WR)
+     StoreHalfwordIndexed
+       (PWR, false, rs ~mode:RD, ra ~mode:RD, rb ~mode:RD, mem ~mode:WR)
 
 (* < 7>11< rs>< ra>< rb>0<--412-->c   orc *)
   | (0, 412) ->
@@ -1118,7 +1118,7 @@ let parse_opcode_31
      let cr = cr0_op ~mode:WR in
      let rc = (b 31 31) = 1 in
      (* orc ra,rs,rb *)
-     OrComplement (PWR, rc, ra WR, rs RD, rb RD, cr)
+     OrComplement (PWR, rc, ra ~mode:WR, rs ~mode:RD, rb ~mode:RD, cr)
 
   (* < 7>11< rS>< rA>< rB>0<--444-->c   mr *)
   | (0, 444) when (b 6 10) = (b 16 20) ->
@@ -1276,8 +1276,8 @@ let parse_opcode_31
 
 let parse_load_opcodes
       (opc: int)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
   let rd = pwr_gp_register_op ~index:(b 6 10) ~mode:WR in
@@ -1340,8 +1340,8 @@ let parse_load_opcodes
 
 let parse_store_opcodes
       (opc: int)
-      (ch: pushback_stream_int)
-      (iaddr: doubleword_int)
+      (_ch: pushback_stream_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int): pwr_opcode_t =
   let b = instr#get_reverse_segval 32 in
   let rs = pwr_gp_register_op ~index:(b 6 10) ~mode:RD in

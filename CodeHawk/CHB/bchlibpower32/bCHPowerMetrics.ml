@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma and Andrew McGraw
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs LLC
+
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,21 +29,19 @@
 open BCHFloc
 open BCHLibTypes
 open BCHLocation
-open BCHMetricsHandler
 
 (* bchlibpower32 *)
 open BCHPowerLoopStructure
-open BCHPowerOpcodeRecords
 open BCHPowerTypes
 
 
 let get_pwr_op_metrics
-      (f: pwr_assembly_function_int) (finfo: function_info_int) =
+      (_f: pwr_assembly_function_int) (_finfo: function_info_int) =
   (0, 0, 0, 0)
 
 
 let get_pwr_stackpointer_metrics
-      (f: pwr_assembly_function_int) (finfo: function_info_int) =
+      (f: pwr_assembly_function_int) (_finfo: function_info_int) =
   let faddr = f#faddr in
   let sptop = ref 0 in
   let sprange = ref 0 in
@@ -74,7 +72,7 @@ let get_pwr_memory_access_metrics
   }
 
 let get_pwr_cfg_metrics
-      (f: pwr_assembly_function_int) (env: function_environment_int) =
+      (f: pwr_assembly_function_int) (_env: function_environment_int) =
   let _ = record_pwr_loop_levels f#faddr in
   { mcfg_instrs = f#get_instruction_count;
     mcfg_bblocks = f#get_block_count;
@@ -83,4 +81,3 @@ let get_pwr_cfg_metrics
     mcfg_complexity = 0;
     mcfg_vc_complexity = 0.0
   }
-

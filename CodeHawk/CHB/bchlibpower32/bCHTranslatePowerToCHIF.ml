@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +28,7 @@
 (* chlib *)
 open CHPretty
 open CHCommon
-open CHNumerical
 open CHLanguage
-open CHUtils
 
 (* chutil *)
 open CHLogger
@@ -44,36 +42,19 @@ open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCTypes
 open BCHBCTypeUtil
-open BCHCallTarget
 open BCHCodegraph
 open BCHCPURegisters
-open BCHDoubleword
 open BCHFloc
-open BCHFtsParameter
-open BCHFunctionData
 open BCHFunctionInfo
-open BCHFunctionSummary
 open BCHLibTypes
 open BCHLocation
-open BCHMemoryReference
-open BCHSpecializations
-open BCHSystemInfo
-open BCHSystemSettings
-open BCHUtilities
-open BCHVariable
 
 (* bchlibpower32 *)
-open BCHPowerAssemblyBlock
-open BCHPowerAssemblyFunction
-open BCHPowerAssemblyFunctions
-open BCHPowerAssemblyInstruction
 open BCHPowerAssemblyInstructions
 open BCHPowerCHIFSystem
 open BCHPowerCodePC
 open BCHPowerConditionalExpr
-open BCHDisassemblePower
 open BCHPowerDisassemblyUtils
 open BCHPowerOpcodeRecords
 open BCHPowerOperand
@@ -87,8 +68,9 @@ module TR = CHTraceResult
 
 
 let valueset_domain = "valuesets"
-let x2p = xpr_formatter#pr_expr
-let cmd_to_pretty = CHLanguage.command_to_pretty 0
+
+let _x2p = xpr_formatter#pr_expr
+let _cmd_to_pretty = CHLanguage.command_to_pretty 0
 
 
 let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
@@ -117,7 +99,7 @@ let get_invariant_label ?(bwd=false) (loc:location_int) =
     ctxt_string_to_symbol "invariant" loc#ci
 
 
-let make_instruction_operation
+let _make_instruction_operation
       ?(atts=[])
       (opname: string)
       (address: string)
@@ -164,7 +146,7 @@ let make_tests
         let var = List.hd vars in
         let extxprs = condfloc#inv#get_external_exprs var in
         let extxprs =
-          List.map (fun e -> substitute_expr (fun v -> e) expr) extxprs in
+          List.map (fun e -> substitute_expr (fun _v -> e) expr) extxprs in
         match extxprs with
         | [] -> [expr]
         | _ -> extxprs
@@ -346,7 +328,7 @@ let translate_pwr_instruction
          let lrcmds =
            match instr#get_opcode with
            | BranchConditionalLink _ ->
-              let lrop = lr_op RD in
+              let lrop = lr_op ~mode:RD in
               let vlr = lrop#to_variable floc in
               let rhs = int_constant_expr (loc#i#to_int + 4) in
               floc#get_assign_commands vlr rhs
@@ -380,7 +362,7 @@ let translate_pwr_instruction
            (nodes, edges, []))
 
   | BranchConditionalLink _ when is_unconditional_nia_target_branch instr ->
-     let lrop = lr_op RD in
+     let lrop = lr_op ~mode:RD in
      let vlr = lrop#to_variable floc in
      let rhs = int_constant_expr (loc#i#to_int + 4) in
      let cmds = floc#get_assign_commands vlr rhs in
@@ -403,7 +385,7 @@ let translate_pwr_instruction
          ctxtiaddr in
      default (defcmds @ cmds)
 
-  | AddImmediate (_, shifted, _, _, _, rd, ra, simm, cr) ->
+  | AddImmediate (_, shifted, _, _, _, rd, ra, simm, _cr) ->
      let rdreg = rd#to_register in
      let xra = ra#to_expr floc in
      let xsimm =
@@ -501,7 +483,7 @@ let translate_pwr_instruction
          ctxtiaddr in
      default (defcmds @ cmds)
 
-  | ExtractRightJustifyWordImmediate (_, _, ra, rs, n, b, _) ->
+  | ExtractRightJustifyWordImmediate (_, _, ra, rs, _n, _b, _) ->
      let rareg = ra#to_register in
      let xrs = rs#to_expr floc in
      let (vra, cmds) = floc#get_ssa_abstract_commands rareg () in
@@ -682,7 +664,7 @@ let translate_pwr_instruction
          ctxtiaddr in
      default (defcmds @ cmds)
 
-  | RotateLeftWordImmediateAndMask (_, _, ra, rs, sh, _, _, _) ->
+  | RotateLeftWordImmediateAndMask (_, _, ra, rs, _sh, _, _, _) ->
      let rareg = ra#to_register in
      let xrs = rs#to_expr floc in
      let (vra, cmds) = floc#get_ssa_abstract_commands rareg () in
@@ -696,7 +678,7 @@ let translate_pwr_instruction
          ctxtiaddr in
      default (defcmds @ cmds)
 
-  | ShiftLeftWordImmediate (_, _, ra, rs, sh, _) ->
+  | ShiftLeftWordImmediate (_, _, ra, rs, _sh, _) ->
      let rareg = ra#to_register in
      let xrs = rs#to_expr floc in
      let (vra, cmds) = floc#get_ssa_abstract_commands rareg () in
@@ -875,7 +857,7 @@ object (self)
     end
 
   method private get_entry_cmd
-                   (argconstraints:
+                   (_argconstraints:
                       (string * int option * int option * int option) list) =
     let env = finfo#env in
     let _ = env#start_transaction in

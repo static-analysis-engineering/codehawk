@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,23 +26,16 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHLogger
 open CHXmlDocument
 
-(* xprlib *)
-open Xprt
-open XprTypes
-
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
-open BCHFunctionData
 open BCHLibTypes
-open BCHSystemInfo
 
 (* bchlibpower32 *)
 open BCHPowerTypes
@@ -103,7 +96,7 @@ object (self)
 
   method toPretty = LBLOCK [STR self#toString]
 
-  method write_xml (node: xml_element_int) = ()
+  method write_xml (_node: xml_element_int) = ()
 
 end
 
