@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,7 +42,7 @@ open XprTypes
 (* bchlib *)
 open BCHLibTypes
 
-(* ================================================================ Cfg loops === *)
+(* ============================================================= Cfg loops === *)
 
 class type cfg_loops_int =
 object
@@ -51,7 +51,7 @@ object
   method toPretty: pretty_t
 end
 
-(* ================================================================== Operand === *)
+(* =============================================================== Operand === *)
 
 type asm_operand_kind_t =
   | Flag of eflag_t
@@ -74,60 +74,142 @@ type asm_operand_kind_t =
 
 type operand_mode_t = RD | WR | RW | AD  (* AD : address *)
 
-(* Operand data
-
-   An operand may be the source of data that is passed to a function later. If this
-   is the case is_function_argument is true and get_function_argument returns the
-   address of the call instruction that uses the argument and the index number of 
-   the argument (starting at 1).
-*)
 
 class type operand_int =
 object ('a)
 
-  (* comparison *)
+  (** {1 Comparison} *)
+
   method equal: 'a -> bool
 
-  (* actions *)
+  (** {1 Function arguments}
+
+      An operand may be the source of data that is passed to a function later.
+      This can be recorded in the operand with the address of the call and the
+      index of the argument in the call.
+   *)
+
+  (** [set_function_argument addr argindex] records the address [addr] of a call
+      instruction that uses this operand as argument index [argindex] (starting
+      at 1).*)
   method set_function_argument: ctxt_iaddress_t -> int -> unit
+
+  (** Returns true if a function argument has been recorded for this operand.*)
+  method is_function_argument: bool
+
+  (** [Retrieves the address and argument index (starting at 1).
+
+      @raises BCH_failure if no function argument has been set.*)
+  method get_function_argument: ctxt_iaddress_t * int
+
+  (** removes the function argument, if one is set.*)
   method reset_function_argument: unit
 
-  (* converters *)
+  (** {1 Converters} *)
+
   method to_byte_operand: 'a
   method to_word_operand: 'a
   method sign_extend: int -> 'a
 
-  (* accessors *)
+  (** {1 Accessors} *)
+
   method size: int
   method get_kind: asm_operand_kind_t
   method get_mode: operand_mode_t
-  method get_cpureg: cpureg_t          (* raises Invocation_error *)
-  method get_absolute_address: doubleword_int    (* raises Invocation_error *)
-  method get_immediate_value: immediate_int    (* raises Invocation_error *)
-  method get_function_argument: ctxt_iaddress_t * int  (* raises Invocation_error *)
-  method get_esp_offset: numerical_t       (* raises Invocation_error *)
 
-  method get_jump_table_target: (numerical_t * register_t)     (* raises Invocation_error *)
+  (** Returns the register.
+
+      @raises BCH_failure if this operand is not a register operand.*)
+  method get_cpureg: cpureg_t
+
+  (** Returns the absolute address associated with this operand.
+
+      @raises Invocation_error if this operand is not an absolute address
+      operand.*)
+  method get_absolute_address: doubleword_int
+
+  (** Returns the immediate value associated with this operand.
+
+      @raises Invocation_error if this operand is not an immediate value.*)
+  method get_immediate_value: immediate_int
+
+  (** Returns the offset part of an indirect register operand.
+
+      @raises Invocation_error if this operand is not an indirect register.*)
+  method get_esp_offset: numerical_t
+
+  (** Returns the register and offset that may be used as the operand in a
+      jumptable (scaled index register with scale 4).
+
+      @raises Invocation_error if this operand is not a scaled indirect
+      register with scale factor 4.*)
+  method get_jump_table_target: (numerical_t * register_t)
+
+  (** Returns the registers that are part of this operand, or the empty list
+      if this operand does not involve any registers.*)
   method get_address_registers: cpureg_t list
+
+  (** Returns the base register of an indirect register operand.
+
+      @raises BCH_failure if this operand is not an indirect register.*)
   method get_indirect_register: cpureg_t
+
+  (** Returns the offset of indirect register operand.
+
+      @raises BCH_failure if this operand is not an indirect register.*)
   method get_indirect_register_offset: numerical_t
+
+  (** Returns the segment of a segment register operand.
+
+      @raises Invocation_error if this operand is not a segment register.*)
   method get_segment_register: segment_t
 
-  (* converters *)
-  method to_address: floc_int -> xpr_t
-  method to_value: floc_int -> xpr_t
-  method to_variable: floc_int -> variable_t  (* raises Invocation_error *)
-  method to_expr: ?unsigned:bool -> floc_int -> xpr_t
-  method to_lhs:                              (* raises Invocation_error *)
-           ?size:int -> floc_int -> variable_t * cmd_t list
+  (** {1 Converters}
 
-  (* predicates *)
+      All converters take a [floc] as argument that is used to retrieve
+      invariants at the corresponding locations that assist in the conversion.*)
+
+  (** Returns an expression that is the address represented by this operand
+      or a random constant if the address cannot be determined from the
+      invariants available.
+
+      @raises Invocation_error if the operand is an immediate or register,
+      which do not have an address.*)
+  method to_address: floc_int -> xpr_t
+
+  (** Returns the rhs-value associated with this operand, or a random constant
+      if the value cannot be determined from the invariants available.*)
+  method to_value: floc_int -> xpr_t
+
+  (** Returns the lhs-variable (CHIF variable) associated with this operand.
+
+      For indirect registers, if not sufficient information is available to
+      determine the associated memory variable, an unknown memory variable
+      is returned.
+
+      @raises Invocation_error if the operand is an immediate value, which
+      does not have an associated storage location (variable).*)
+  method to_variable: floc_int -> variable_t
+
+  (** Returns the rhs-value associated with this operand, or the variable
+      that holds the value, if the value itself cannot be determined.*)
+  method to_expr: ?unsigned:bool -> floc_int -> xpr_t
+
+  (** Returns the lhs-variable (CHIF variable) associated with this operand
+      together with the CHIF commands required to create this operand.
+
+      @raises Invocation_error if the operand is an immediate value, which
+      cannot be converted to a lhs.*)
+  method to_lhs: ?_size:int -> floc_int -> variable_t * cmd_t list
+
+  (** {1 Predicates} *)
+
   method is_register: bool
   method is_seg_register: bool
   method is_memory_access: bool
   method is_absolute_address: bool
   method is_immediate_value: bool
-  method is_function_argument: bool
+
   method is_esp_offset: bool
   method is_indirect_register: bool
 
@@ -139,16 +221,18 @@ object ('a)
 
   method is_jump_table_target: bool
 
-  (* xml *)
+  (** {1 Xml} *)
+
   method write_xml: xml_element_int -> floc_int -> unit
 
-  (* printing *)
+  (** {1 Printing} *)
+
   method toString: string
   method toPretty: pretty_t
 
 end
 
-(* ============================================================== X86 opcodes === *)
+(* ============================================================ X86 opcodes === *)
 
 type not_code_t = JumpTable of jumptable_int | DataBlock of data_block_int
 
@@ -171,7 +255,7 @@ type condition_code_t =
 | CcGreater              (* ZF = 0 and SF = OF *)
 
 type opcode_t =
-    
+
 (* Misc *)
   | Arpl of operand_int * operand_int (* adjust RPL Field of segment selector *)
   | BreakPoint                        (*          call to interrupt procedure *)
@@ -179,8 +263,8 @@ type opcode_t =
   | UndefinedInstruction1 of operand_int * operand_int
   | UndefinedInstruction2
   | TerminateBranch32
-  | Pause     
-  | Halt     
+  | Pause
+  | Halt
   | InterruptReturn of bool
   | ConvertLongToDouble of operand_int * operand_int
   | ConvertWordToDoubleword of operand_int * operand_int
@@ -197,17 +281,17 @@ type opcode_t =
   | SysCall           (*                    fast system call *)
   | LinuxSystemCall of operand_int     (*    linux system call with id in eax *)
   | SysEnter                           (* fast call to system level function  *)
-  | SysExit                                    (*   fast return from fast system call *)
-  | SysReturn                                  (*        return from fast system call *)
-  | WriteBackInvalidateCache                   (*     write back and invalidate cache *)
+  | SysExit                            (*   fast return from fast system call *)
+  | SysReturn                          (*        return from fast system call *)
+  | WriteBackInvalidateCache           (*     write back and invalidate cache *)
   | TableLookupTranslation
-  | Ldmxcsr of operand_int                     (*                 load mxcsr register *)
-  | Stmxcsr of operand_int                     (*          store mxcsr register state *)
-  | XRestore of operand_int                    (*   restore processor extended states *)
+  | Ldmxcsr of operand_int             (*                 load mxcsr register *)
+  | Stmxcsr of operand_int             (*          store mxcsr register state *)
+  | XRestore of operand_int            (*   restore processor extended states *)
   | XRestoreSupervisor of operand_int (* restore processor extended states supervisor *)
-  | XSave of operand_int                       (*      save processor extended states *)
-  | XSaveSupervisor of operand_int       (* save processor extended states supervisor *)
-  | InvalidateTLBEntries of operand_int        (*              invalidate TLB entries *)
+  | XSave of operand_int                (*      save processor extended states *)
+  | XSaveSupervisor of operand_int  (* save processor extended states supervisor *)
+  | InvalidateTLBEntries of operand_int  (*              invalidate TLB entries *)
   | InvalidatePCID of operand_int * operand_int (* invalidate process context identifier *)
   | Prefetch of string * operand_int           (*           prefetch data into caches *)
   | XGetBV                                     (*     get value from control register *)
@@ -228,8 +312,8 @@ type opcode_t =
   | StoreTaskRegister of operand_int                           (* store task register *)
   | TimedPause of operand_int                                          (* timed pause *)
   | LoadFarPointer of operand_int * operand_int * operand_int
-      
-(* Setting / Scanning bits *)      
+
+(* Setting / Scanning bits *)
   | BitTestComplement of operand_int * operand_int (*           bit test and complement *)
   | BitTestReset  of operand_int * operand_int  (*                   bit test and reset *)
   | BitTestAndSet of operand_int * operand_int  (*                     bit test and set *)
@@ -243,7 +327,7 @@ type opcode_t =
   | Push of int * operand_int
   | PushRegisters
   | PopRegisters
-	
+
 (* Arithmetic operations *)
   | Add of operand_int * operand_int
   | XAdd of operand_int * operand_int
@@ -256,11 +340,11 @@ type opcode_t =
   | IMul of int * operand_int * operand_int * operand_int   (* signed multiply *)
   | Increment of operand_int
   | Decrement of operand_int
-	
+
 (* Randomize *)
   | RdRandomize of operand_int  (* randomize register *)
   | ReadSeed of operand_int
-	
+
 (* Control flow *)
   | DirectCall of operand_int
   | IndirectCall of operand_int
@@ -268,16 +352,16 @@ type opcode_t =
   | IndirectJmp of operand_int
   | DirectLoop of operand_int
   | Ret of int option
-  | BndRet of int option     (* used in MPX mode *)         
+  | BndRet of int option     (* used in MPX mode *)
   | RepzRet
   | Enter of (operand_int * operand_int)
   | Leave
-  
+
 (* Floating point operations *)
   | Finit of bool                                  (*      initialize floating point unit *)
   | Fclex of bool                                  (*                    clear exceptions *)
   | Fbstp of operand_int                           (*                           store bcd *)
-  
+
   | FLoadConstant of string * string        (*    load floating point constant into ST(0) *)
   | FLoad of bool * int * operand_int       (* load operand (with given width) into ST(0) *)
   | FLoadState of string * int * operand_int (*      load fpu status information into fpu *)
@@ -289,12 +373,12 @@ type opcode_t =
   | FXSave of operand_int                                           (* save x87 fpu state *)
   | FXRestore of operand_int                                     (* restore x87 fpu state *)
 
-  | Fadd  of bool * bool * int * operand_int * operand_int 
-  | Fsub  of bool * bool * int * operand_int * operand_int 
-  | Fsubr of bool * bool * int * operand_int * operand_int 
-  | Fmul  of bool * bool * int * operand_int * operand_int 
-  | Fdiv  of bool * bool * int * operand_int * operand_int 
-  | Fdivr of bool * bool * int * operand_int * operand_int 
+  | Fadd  of bool * bool * int * operand_int * operand_int
+  | Fsub  of bool * bool * int * operand_int * operand_int
+  | Fsubr of bool * bool * int * operand_int * operand_int
+  | Fmul  of bool * bool * int * operand_int * operand_int
+  | Fdiv  of bool * bool * int * operand_int * operand_int
+  | Fdivr of bool * bool * int * operand_int * operand_int
 
   | Fcom  of int * bool * int * operand_int                     (* floating point comparison *)
   | Fucom of int * operand_int                        (* unordered floating point comparison *)
@@ -302,7 +386,7 @@ type opcode_t =
   | Fxch of operand_int                                       (* exchange operand with ST(0) *)
 
   | FXmmMove of string * bool * bool * operand_int * operand_int
-  | FXmmOp of string * bool * bool * operand_int * operand_int 
+  | FXmmOp of string * bool * bool * operand_int * operand_int
   | FXmmOpEx of string * bool * bool * operand_int * operand_int * operand_int
   | FXmmCompare of bool * bool * operand_int * operand_int * operand_int
   | FConvert of bool * string * string * operand_int * operand_int
@@ -313,13 +397,13 @@ type opcode_t =
 
 (* Conditional moves *)
   | CMovcc of condition_code_t * int * operand_int * operand_int
-  
+
 (* Comparison *)
   | Cmp of operand_int * operand_int
   | CmpExchange of int * operand_int * operand_int
   | CmpExchange8B of operand_int * operand_int * operand_int
-  
-(* Move *) 
+
+(* Move *)
   | Lea of operand_int * operand_int
   | Mov of int * operand_int * operand_int
   | Movdw of int * operand_int * operand_int
@@ -332,12 +416,12 @@ type opcode_t =
 
 (* BCD operations *)
   | AAA                                         (*       ASCII adjust ax after addition *)
-  | AAD of operand_int                          (*      ASCII adjust ax before division *) 
+  | AAD of operand_int                          (*      ASCII adjust ax before division *)
   | AAM of operand_int                          (*       ASCII adjust ax after multiply *)
   | AAS                                         (*    ASCII adjust al after subtraction *)
   | DAA                                         (*     Decimal adjust al after addition *)
   | DAS                                         (*  Decimal adjust al after subtraction *)
-  
+
 (* Logical operations *)
   | LogicalAnd of operand_int * operand_int
   | LogicalOr of operand_int * operand_int
@@ -345,11 +429,11 @@ type opcode_t =
   | TwosComplementNegate of operand_int
   | Test of operand_int * operand_int
   | Xor of operand_int * operand_int
-  
+
 (* Shift operations *)
   | Sar of operand_int * operand_int             (*                       signed divide *)
   | Shr of operand_int * operand_int             (*                     unsigned divide *)
-  | Shl of operand_int * operand_int             (*                            multiply *) 
+  | Shl of operand_int * operand_int             (*                            multiply *)
   | Shrd of operand_int * operand_int * operand_int (*     double precision shift right *)
   | Shld of operand_int * operand_int * operand_int (*      double precision shift left *)
   | Ror of operand_int * operand_int             (*           rotate 32 bits right once *)
@@ -363,7 +447,7 @@ type opcode_t =
   | Scas of int * operand_int                    (*                         scan string *)
   | Stos of int * operand_int * operand_int * operand_int * operand_int  (* store string: dst, src, edi, df *)
   | Lods of int * operand_int                    (*                           load word *)
-  
+
 (* Rep instructions *)
   | RepIns of int * operand_int
   | RepOuts of int * operand_int
@@ -389,14 +473,14 @@ type opcode_t =
   | PackedShift of string * int * operand_int * operand_int
   | PackedShuffle of string * operand_int * operand_int * operand_int option
   | PackedExtract of int * operand_int * operand_int * operand_int
-  | PackedInsert  of int * operand_int * operand_int * operand_int 
+  | PackedInsert  of int * operand_int * operand_int * operand_int
   | PackedAlignRight of operand_int * operand_int * operand_int
   | PackedConvert of string * operand_int * operand_int
-  | Unpack of string * int * operand_int * operand_int 
+  | Unpack of string * int * operand_int * operand_int
 
 (* Advanced Vector Extension (AVX) instructions *)
-  | VZeroAll 
-  | VMovdq of bool * operand_int * operand_int 
+  | VZeroAll
+  | VMovdq of bool * operand_int * operand_int
   | VPackedOp of string * int * operand_int  * operand_int * operand_int
   | VPackedAdd of bool * bool * int * operand_int * operand_int * operand_int
   | VPackedShift of string * int * operand_int * operand_int * operand_int
@@ -419,12 +503,12 @@ type opcode_t =
   | InputFromPort of int * operand_int * operand_int
   | OutputToPort of int * operand_int * operand_int
   | InputStringFromPort of int * operand_int
-  | OutputStringToPort of int * operand_int 
+  | OutputStringToPort of int * operand_int
 
 (* Extended instruction opcodes for cryptographic functions *)
   | XStoreRng
   | XCrypt of string
-  
+
 (* AES encryption *)
   | AESDecrypt of operand_int * operand_int
   | AESDecryptLast of operand_int * operand_int
@@ -442,7 +526,7 @@ type opcode_t =
   | InconsistentInstr of string   (* inconsistent instruction at failure on input *)
   | NotCode of not_code_t option  (* start (Some b) or inside (None) a data block *)
 
-(* ===================================================== X86 Opcode Dictionary == *)
+(* =================================================== X86 Opcode Dictionary == *)
 
 class type x86dictionary_int =
   object
@@ -463,8 +547,8 @@ class type x86dictionary_int =
     method read_xml: xml_element_int -> unit
 
   end
-  
-(* ================================================= Predefined call semantics == *)
+
+(* =============================================== Predefined call semantics == *)
 
 class type predefined_callsemantics_int =
 object
@@ -484,7 +568,7 @@ object
   method toPretty: pretty_t
 end
 
-type patternrhs_t = 
+type patternrhs_t =
 | PConstantValue of numerical_t
 | PRegister of cpureg_t
 | PArgument of int
@@ -624,7 +708,7 @@ object
   method is_returning: bool
 
   (* iterators *)
-  method itera : ?low:doubleword_int -> ?high:doubleword_int -> ?reverse:bool -> 
+  method itera : ?low:doubleword_int -> ?high:doubleword_int -> ?reverse:bool ->
     (ctxt_iaddress_t -> assembly_instruction_int -> unit) -> unit
 
   (* xml *)
@@ -652,8 +736,8 @@ object
   method get_dll_stub             : string * string
   method get_bytes_ashexstring    : string
   method get_function_md5         : string
-    
-  method get_num_conditional_instructions: int * int * int   
+
+  method get_num_conditional_instructions: int * int * int
 
   method get_num_indirect_calls   : int * int           (* calls, resolved *)
 
@@ -737,7 +821,7 @@ object
   (* accessors *)
   method get_next_instruction      : ctxt_iaddress_t * assembly_instruction_int
   method get_block_successors      : ctxt_iaddress_t list
-  method get_block_successor       : ctxt_iaddress_t 
+  method get_block_successor       : ctxt_iaddress_t
   method get_false_branch_successor: ctxt_iaddress_t
   method get_true_branch_successor : ctxt_iaddress_t
 

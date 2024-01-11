@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,28 +27,19 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHLanguage
-open CHPretty
-
 (* chutil *)
-open CHPrettyUtil
 open CHSumTypeSerializer
-
-(* bchlib *)
-open BCHBasicTypes
-open BCHLibTypes
 
 (* bchlibx86 *)
 open BCHLibx86Types
 
 
-class opkind_mcts_t: [ asm_operand_kind_t ] mfts_int =
+class opkind_mcts_t: [asm_operand_kind_t] mfts_int =
 object
 
-  inherit [ asm_operand_kind_t ] mcts_t "asm_operand_kind_t"
-        
-  method ts (k:asm_operand_kind_t) =
+  inherit [asm_operand_kind_t] mcts_t "asm_operand_kind_t"
+
+  method! ts (k:asm_operand_kind_t) =
     match k with
     | Flag _ -> "v"
     | Reg _ -> "r"
@@ -67,11 +58,11 @@ object
     | SegAbsolute _ -> "sa"
     | FarAbsolute _ -> "fa"
     | DummyOp -> "u"
-               
-  method tags = [
+
+  method! tags = [
       "a"; "c"; "d"; "f"; "fa"; "i"; "m"; "r"; "rd";
       "ri"; "rs"; "s"; "sa"; "si"; "u"; "x"]
-              
+
 end
 
 let opkind_mcts:asm_operand_kind_t mfts_int = new opkind_mcts_t

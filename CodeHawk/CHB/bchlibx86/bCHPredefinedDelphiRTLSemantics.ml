@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,7 +40,6 @@ open XprTypes
 open BCHFunctionData
 open BCHLibTypes
 open BCHMakeCallTargetInfo
-open BCHSystemInfo
 
 (* bchlibx86 *)
 open BCHLibx86Types
@@ -87,18 +88,22 @@ module LF = CHOnlineCodeSet.LanguageFactory
    System::Sysinit:InitExe
 
    System::delphi_unknown1   (made up)
- * ------------------------------------------------------------------------------- *)
+ * --------------------------------------------------------------------------- *)
 
 let table = H.create 11
 
+
 let load_rtl_functions () =
-  List.iter (fun m -> add_libfun table [ "System" ] m)
-            [ "Copy" ; "FillChar" ; "Move" ; "UpCase" ]
+  List.iter
+    (fun m -> add_libfun table ["System"] m)
+    ["Copy"; "FillChar"; "Move"; "UpCase"]
+
 
 let mk_target ?(pkgs=[ "System" ]) (a:doubleword_int) (name:string) =
   mk_static_pck_stub_target a "RTL" pkgs name
 
-(* =============================================================== System::AStrCmp
+
+(* ============================================================= System::AStrCmp
    example: V01a:0x402cd4
    md5hash: 185e45d24958ad6c5099b5c25a309299
 
@@ -154,7 +159,7 @@ let mk_target ?(pkgs=[ "System" ]) (a:doubleword_int) (name:string) =
   0x402d21   [ -8 ]   cmp cl, 0x2(edx)          cmp cl, 0x2(edx)
   0x402d24   [ -8 ]   jnz 0x402d40              if (cl != Unknown) then goto 0x402d40
 --------------------------------------------------------------------------------
-  0x402d26   [ -8 ]   xor eax, eax              eax := 0 
+  0x402d26   [ -8 ]   xor eax, eax              eax := 0
   0x402d28   [ -8 ]   pop esi                   restore esi
   0x402d29   [ -4 ]   pop ebx                   restore ebx
   0x402d2a   [ 0 ]    ret                       return
@@ -185,28 +190,30 @@ object (self)
 
   method get_name = "__System::AStrCmp__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
     let ecxv = get_reg_value Ecx floc in
-    LBLOCK [ STR self#get_name ; STR "(reg_eax:" ; xpr_to_pretty floc eaxv ;
-	     STR ",reg_edx:" ; xpr_to_pretty floc edxv ;
-	     STR ",reg_ecx:" ; xpr_to_pretty floc ecxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(reg_eax:"; xpr_to_pretty floc eaxv;
+	STR ",reg_edx:"; xpr_to_pretty floc edxv;
+	STR ",reg_ecx:"; xpr_to_pretty floc ecxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
-    [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ]
+  method! get_commands (floc:floc_int) =
+    [ floc#get_abstract_cpu_registers_command [ Eax; Ecx; Edx ] ]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "AStrCmp"
+  method! get_call_target (a:doubleword_int) = mk_target a "AStrCmp"
 
-  method get_description = "Delphi RTL function System::AStrCmp"
+  method! get_description = "Delphi RTL function System::AStrCmp"
 
 end
 
 let _ = H.add table "System::AStrCmp" (new rtl_system_astrcmp_semantics_t)
 
-(* ============================================================== System::_CLenToPasStr
+
+(* ======================================================== System::_CLenToPasStr
    example: V1da:0x420fd0
    md5hash: 7a05fc3f003bcbede77d6c3015447139
 
@@ -227,7 +234,7 @@ let _ = H.add table "System::AStrCmp" (new rtl_system_astrcmp_semantics_t)
   0x402fe9   [ -8 ]   dec ecx                   ecx := ecx - 1
   0x402fea   [ -8 ]   jnz 0x402fdf              if (ecx != 1) then goto 0x402fdf
 --------------------------------------------------------------------------------
-  0x402fec   [ -8 ]   pop edx                   edx := eax_in ; esp := esp + 4 = (esp_in - 4)
+  0x402fec   [ -8 ]   pop edx                   edx := eax_in; esp := esp + 4 = (esp_in - 4)
   0x402fed   [ -4 ]   sub eax, edx              eax := eax - edx = (eax - eax_in)
   0x402fef   [ -4 ]   mov (edx), al             (eax_in)[0] := al
   0x402ff1   [ -4 ]   pop ebx                   restore ebx
@@ -241,32 +248,35 @@ object (self)
 
   method get_name = "__System::_CLenToPasStr__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
     let ecxv = get_reg_value Ecx floc in
-    LBLOCK [ STR self#get_name ; STR "(Dest:" ; xpr_to_pretty floc eaxv ;
-	     STR ",Source:" ; xpr_to_pretty floc edxv ;
-	     STR ",Count:" ; xpr_to_pretty floc ecxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(Dest:"; xpr_to_pretty floc eaxv;
+	STR ",Source:"; xpr_to_pretty floc edxv;
+	STR ",Count:"; xpr_to_pretty floc ecxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (lhs,lhscmds) = get_reg_deref_lhs Eax 0 floc in
     let rhs = floc#env#mk_side_effect_value floc#cia "Dest" in
     let cmds1 = floc#get_assign_commands lhs (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Edx ; Ecx ] ] in
-    List.concat [ lhscmds ; cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Edx; Ecx]] in
+    List.concat [lhscmds; cmds1; cmds2]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "_CLenToPasStr"
+  method! get_call_target (a:doubleword_int) = mk_target a "_CLenToPasStr"
 
-  method get_description = "Delphi RTL function System::_CLenToPasStr"
+  method! get_description = "Delphi RTL function System::_CLenToPasStr"
 
 end
 
-let _ = H.add table "System::_CLenToPasStr" (new rtl_system_clentopasstr_semantics_t)
+let _ =
+  H.add table "System::_CLenToPasStr" (new rtl_system_clentopasstr_semantics_t)
 
-(* ============================================================== System::_CToPasStr
+
+(* ========================================================== System::_CToPasStr
    example: V1da: 0x402fc4
 
   0x402fc4   [ 0 ]    mov ecx, 0xff      ecx := 255
@@ -281,26 +291,28 @@ object (self)
 
   method get_name = "__System::_CToPasStr__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(Dest:" ; xpr_to_pretty floc eaxv ;
-	     STR ",Source:" ; xpr_to_pretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(Dest:"; xpr_to_pretty floc eaxv;
+	STR ",Source:"; xpr_to_pretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (lhs,lhscmds) = get_reg_deref_lhs Eax 0 floc in
     let rhs = floc#env#mk_side_effect_value floc#cia "Dest" in
     let cmds1 = floc#get_assign_commands lhs (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Edx ; Ecx ] ] in
-    List.concat [ lhscmds ; cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Edx; Ecx]] in
+    List.concat [lhscmds; cmds1; cmds2]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "_CToPasStr"
+  method! get_call_target (a:doubleword_int) = mk_target a "_CToPasStr"
 
-  method get_description = "Delphi RTL function System::_CToPasStr"
+  method! get_description = "Delphi RTL function System::_CToPasStr"
 
-end   
+end
+
 
 (* ============================================================== System::EXP
    example: V01a:0x402ae8
@@ -327,30 +339,30 @@ object (self)
 
   method get_name = "__System::EXP__"
 
-  method get_annotation (floc:floc_int) =
-    LBLOCK [ STR "ST(0) = " ; STR self#get_name ; STR "()" ]
+  method! get_annotation (_floc:floc_int) =
+    LBLOCK [ STR "ST(0) = "; STR self#get_name; STR "()" ]
 
-  method get_commands (floc:floc_int) = []
+  method! get_commands (_floc:floc_int) = []
 
-  method get_parametercount = 0 
+  method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "EXP"
+  method! get_call_target (a:doubleword_int) = mk_target a "EXP"
 
-  method get_description = "Delphi RTL function System::EXP"
+  method! get_description = "Delphi RTL function System::EXP"
 
 end
 
 let _ = H.add table "System::EXP" (new rtl_system_exp_semantics_t)
 
 
-(* ============================================================== System::Get8087CW
+(* =========================================================== System::Get8087CW
    example: V01a:0x402ae0
    md5hash: 4419e9eee8a3958c8f13aa2d92620a39
 
-  0x402ae0   [ 0 ]    push 0x0                  esp := esp - 4 ; var.0004 := 0
-  0x402ae2   [ -4 ]   fnstcw (esp,,1)           var.0004 := FPU control word
-  0x402ae5   [ -4 ]   pop eax                   eax := var.0004 ; esp := esp + 4 = esp_in
-  0x402ae6   [ 0 ]    ret                       return
+  0x402ae0   [ 0 ]    push 0x0           esp := esp - 4 ; var.0004 := 0
+  0x402ae2   [ -4 ]   fnstcw (esp,,1)    var.0004 := FPU control word
+  0x402ae5   [ -4 ]   pop eax            eax := var.0004 ; esp := esp + 4 = esp_in
+  0x402ae6   [ 0 ]    ret                return
 *)
 class rtl_system_get8087cw_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
@@ -360,31 +372,32 @@ object (self)
 
   method get_name = "__System::Get8087CW__"
 
-  method get_annotation (floc:floc_int) =
-    LBLOCK [ STR self#get_name ; STR "()" ]
+  method! get_annotation (_floc:floc_int) =
+    LBLOCK [STR self#get_name; STR "()"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (lhs,lhscmds) = get_reg_lhs Eax floc in
     let rhs = get_return_value self#get_name floc in
     let cmds = floc#get_assign_commands lhs (XVar rhs) in
-    List.concat [ lhscmds ; cmds ]
+    List.concat [lhscmds; cmds]
 
-  method get_parametercount = 0 
+  method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "Get8087CW"
+  method! get_call_target (a:doubleword_int) = mk_target a "Get8087CW"
 
-  method get_description = "Delphi RTL function Get8087CW"
+  method! get_description = "Delphi RTL function Get8087CW"
 
-end 
+end
 
 let _ = H.add table "System::Get8087CW" (new rtl_system_get8087cw_semantics_t)
+
 
 (* ============================================================== System::InitImports
    example: V1da:0x404034
    md5hash: 983a85c93a0722b0964f271fe4094cfd
 
   0x404034   [ 0 ]    push ebx                  save ebx
-  0x404035   [ -4 ]   xor ebx, ebx              ebx := 0 
+  0x404035   [ -4 ]   xor ebx, ebx              ebx := 0
   0x404037   [ -4 ]   push edi                  save edi
   0x404038   [ -8 ]   push esi                  save esi
   0x404039  [ -12 ]   mov edi, (eax,ebx,1)      edi := (eax_in)[0] = (eax_in)[0]_in
@@ -412,26 +425,27 @@ object (self)
 
   method get_name = "__System::InitImports__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    LBLOCK [ STR self#get_name ; STR "(Addr:" ; xpr_to_dspretty floc eaxv ; STR ")" ]
+    LBLOCK [STR self#get_name; STR "(Addr:"; xpr_to_dspretty floc eaxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (lhs,lhscmds) = get_reg_deref_lhs Eax 0 floc in
     let rhs = floc#env#mk_side_effect_value floc#cia "Addr" in
     let cmds1 = floc#get_assign_commands lhs (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Edx ] ] in
-    List.concat [ lhscmds ; cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Edx]] in
+    List.concat [lhscmds; cmds1; cmds2 ]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "InitImports"
+  method! get_call_target (a:doubleword_int) = mk_target a "InitImports"
 
-  method get_description = "Delphi Rtl function System::InitImports"
+  method! get_description = "Delphi Rtl function System::InitImports"
 
 end
 
 let _ = H.add table "System::InitImports" (new rtl_system_initimports_semantics_t)
+
 
 (* ============================================================== System::IntfAddRef
    example: V01a:0x405b84
@@ -454,58 +468,61 @@ object (self)
 
   method get_name = "__System::IntfAddRef__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc eaxv ; STR ")" ]
+    LBLOCK [STR self#get_name; STR "("; xpr_to_pretty floc eaxv; STR ")"]
 
-  method get_commands (floc:floc_int) = []
+  method! get_commands (_floc:floc_int) = []
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "IntfAddRef"
+  method! get_call_target (a:doubleword_int) = mk_target a "IntfAddRef"
 
-  method get_description = "Delphi RTL system function System::IntfAddRef"
+  method! get_description = "Delphi RTL system function System::IntfAddRef"
 
 end
 
 let _ = H.add table "System::IntfAddRef" (new rtl_system_intfaddref_semantics_t)
 
-(* ============================================================== System::IntfCopy
+
+(* ============================================================= System::IntfCopy
    example: V01a:0x405b28
    md5hash: e97ccd25e34e32a714d3d1ee73d31b4c
 *)
 class rtl_system_intfcopy_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
-  
+
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__System::IntfCopy__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(dst:" ; xpr_to_pretty floc eaxv ;
-	     STR ",src:" ; xpr_to_pretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(dst:"; xpr_to_pretty floc eaxv;
+	STR ",src:"; xpr_to_pretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (lhs,lhscmds) = get_reg_lhs Eax floc in
     let rhs = floc#env#mk_side_effect_value floc#cia "dst" in
     let cmds1 = floc#get_assign_commands lhs (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
-    List.concat [ lhscmds ; cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]] in
+    List.concat [lhscmds; cmds1; cmds2]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "IntfCopy"
+  method! get_call_target (a:doubleword_int) = mk_target a "IntfCopy"
 
-  method get_description = "Delphi RTL function System::IntfCopy"
+  method! get_description = "Delphi RTL function System::IntfCopy"
 
 end
 
 let _ = H.add table "System::IntfCopy" (new rtl_system_intfcopy_semantics_t)
 
-(* ==================================================================== System::IsClass
+
+(* ============================================================== System::IsClass
    example: V1da:0x403674
 
   0x403674   [ 0 ]    push ebx           save ebx
@@ -522,7 +539,7 @@ let _ = H.add table "System::IntfCopy" (new rtl_system_intfcopy_semantics_t)
   0x403687   [ -8 ]   test al, al        test al, al
   0x403689   [ -8 ]   jnz 0x403690       if (al != 0) then goto 0x403690
 --------------------------------------------------------------------------------
-  0x40368b   [ -8 ]   xor eax, eax       eax := 0 
+  0x40368b   [ -8 ]   xor eax, eax       eax := 0
   0x40368d   [ -8 ]   pop esi            restore esi
   0x40368e   [ -4 ]   pop ebx            restore ebx
   0x40368f   [ 0 ]    ret                return
@@ -540,27 +557,29 @@ object (self)
 
   method get_name = "__System::IsClass__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(Obj:" ; xpr_to_pretty floc eaxv ;
-	     STR ",AClass:" ; xpr_to_pretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(Obj:"; xpr_to_pretty floc eaxv;
+	STR ",AClass:"; xpr_to_pretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (lhs,lhscmds) = get_reg_lhs Eax floc in
     let rhs = get_return_value self#get_name floc in
     let cmds1 = floc#get_assign_commands lhs (XVar rhs) in
-    List.concat [ lhscmds ; cmds1 ]
+    List.concat [lhscmds; cmds1]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =  mk_target a "IsClass"
+  method! get_call_target (a:doubleword_int) =  mk_target a "IsClass"
 
-  method get_description = "Delphi Rtl function System::IsClass"
+  method! get_description = "Delphi Rtl function System::IsClass"
 
 end
 
-(* ============================================================== System::LStrAddRef
+
+(* ========================================================== System::LStrAddRef
    example: V1da:0x40479c
    md5hash: e2e4a17e3d634dee00cf9744452c6233
 
@@ -584,33 +603,35 @@ object (self)
 
   method get_name = "__System::LStrAddRef__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    LBLOCK [ STR self#get_name ; STR "(Str:" ; xpr_to_pretty floc eaxv ; STR ")" ]
+    LBLOCK [STR self#get_name; STR "(Str:"; xpr_to_pretty floc eaxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let eaxderefval = get_reg_derefvalue Eax (-8) floc in
     let (lhs,lhscmds) = get_reg_deref_lhs Eax (-8) floc in
     let one = int_constant_expr 1 in
-    let cmds1 = floc#get_assign_commands lhs (XOp (XPlus, [ eaxderefval ; one ])) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Edx ] ] in
-    List.concat [ lhscmds ; cmds1 ; cmds2 ]
+    let cmds1 =
+      floc#get_assign_commands lhs (XOp (XPlus, [eaxderefval; one])) in
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Edx]] in
+    List.concat [lhscmds; cmds1; cmds2]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "LStrAddRef"
+  method! get_call_target (a:doubleword_int) = mk_target a "LStrAddRef"
 
-  method get_description = "Delphi Rtl function System::LStrAddRef"
+  method! get_description = "Delphi Rtl function System::LStrAddRef"
 
 end
 
 let _ = H.add table "System::LStrAddRef" (new rtl_system_lstraddref_semantics_t)
 
-(* ============================================================== System::LStrCmp
+
+(* ============================================================= System::LStrCmp
    example: V01a:0x4045c4
    md5hash: 23bf95961be3ce25595b58665e1a6c77
 *)
-class rtl_system_lstrcmp_semantics_t 
+class rtl_system_lstrcmp_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
@@ -618,28 +639,30 @@ object (self)
 
   method get_name = "__System::LStrCmp__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(s1:" ; xpr_to_strpretty floc eaxv ;
-	     STR ",s2:" ; xpr_to_strpretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(s1:"; xpr_to_strpretty floc eaxv;
+	STR ",s2:"; xpr_to_strpretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (eaxlhs,eaxlhscmds) = get_reg_lhs Eax floc in
     let rhs = get_return_value self#get_name floc in
     let cmds1 = floc#get_assign_commands eaxlhs (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Edx ; Ecx ] ] in
-    List.concat [ eaxlhscmds ; cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Edx; Ecx]] in
+    List.concat [eaxlhscmds; cmds1; cmds2]
 
-  method get_parametercount = 0 
+  method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "LStrCmp"
+  method! get_call_target (a:doubleword_int) = mk_target a "LStrCmp"
 
-  method get_description = "Delphi RTL system function System::LStrCmp"
+  method! get_description = "Delphi RTL system function System::LStrCmp"
 
 end
 
 let _ = H.add table "System::LStrCmp" (new rtl_system_lstrcmp_semantics_t)
+
 
 (* ============================================================== System::LStrPos
    example: V01a:0x4047bc
@@ -653,28 +676,30 @@ object (self)
 
   method get_name = "__System::LStrPos__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(s1:" ; xpr_to_strpretty floc eaxv ; 
-	     STR ",s2:" ; xpr_to_strpretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(s1:"; xpr_to_strpretty floc eaxv;
+	STR ",s2:"; xpr_to_strpretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (eaxlhs,eaxlhscmds) = get_reg_lhs Eax floc in
     let rhs = get_return_value self#get_name floc in
     let cmds1 = floc#get_assign_commands eaxlhs (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Ecx ; Edx ] ] in
-    List.concat [ eaxlhscmds ; cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Ecx; Edx]] in
+    List.concat [eaxlhscmds; cmds1; cmds2]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "LStrPos"
+  method! get_call_target (a:doubleword_int) = mk_target a "LStrPos"
 
-  method get_description = "Delphi RTL system function System::LStrPos"
+  method! get_description = "Delphi RTL system function System::LStrPos"
 
 end
 
 let _ = H.add table "System::LStrPos" (new rtl_system_lstrpos_semantics_t)
+
 
 (* ============================================================== System::PStrCmp
    example: V01a:0x402c50
@@ -685,8 +710,8 @@ let _ = H.add table "System::LStrPos" (new rtl_system_lstrpos_semantics_t)
   0x402c52   [ -8 ]   push edi                  save edi
   0x402c53  [ -12 ]   mov esi, eax              esi := eax = eax_in
   0x402c55  [ -12 ]   mov edi, edx              edi := edx = edx_in
-  0x402c57  [ -12 ]   xor eax, eax              eax := 0 
-  0x402c59  [ -12 ]   xor edx, edx              edx := 0 
+  0x402c57  [ -12 ]   xor eax, eax              eax := 0
+  0x402c59  [ -12 ]   xor edx, edx              edx := 0
   0x402c5b  [ -12 ]   mov al, (esi)             al := (eax_in)[0] = (eax_in)[0]_in
   0x402c5d  [ -12 ]   mov dl, (edi)             dl := (edx_in)[0] = (edx_in)[0]_in
   0x402c5f  [ -12 ]   inc esi                   esi := esi + 1 = (eax_in + 1)
@@ -696,7 +721,7 @@ let _ = H.add table "System::LStrPos" (new rtl_system_lstrpos_semantics_t)
 --------------------------------------------------------------------------------
   0x402c65  [ -12 ]   add edx, eax              edx := edx + eax
 --------------------------------------------------------------------------------
-  0x402c67  [ -12 ]   push edx                  esp := esp - 4 ; var.0016 := edx
+  0x402c67  [ -12 ]   push edx                  esp := esp - 4; var.0016 := edx
   0x402c68  [ -16 ]   shr edx, 0x2              edx := edx / 4
   0x402c6b  [ -16 ]   jz 0x402c93               if ? then goto 0x402c93
 --------------------------------------------------------------------------------
@@ -723,7 +748,7 @@ let _ = H.add table "System::LStrPos" (new rtl_system_lstrpos_semantics_t)
   0x402c8d  [ -16 ]   add esi, 0x4              esi := esi + 4
   0x402c90  [ -16 ]   add edi, 0x4              edi := edi + 4
 --------------------------------------------------------------------------------
-  0x402c93  [ -16 ]   pop edx                   edx := var.0016 ; esp := (esp_in - 12)
+  0x402c93  [ -16 ]   pop edx                   edx := var.0016; esp := (esp_in - 12)
   0x402c94  [ -12 ]   and edx, 0x3              edx := edx & 3
   0x402c97  [ -12 ]   jz 0x402cb5               if ? then goto 0x402cb5
 --------------------------------------------------------------------------------
@@ -748,7 +773,7 @@ let _ = H.add table "System::LStrPos" (new rtl_system_lstrpos_semantics_t)
   0x402cb5  [ -12 ]   add eax, eax              eax := eax + eax
   0x402cb7  [ -12 ]   jmp 0x402cce              goto 0x402cce
 --------------------------------------------------------------------------------
-  0x402cb9  [ -16 ]   pop edx                   edx := var.0016 ; esp := (esp_in - 12)
+  0x402cb9  [ -16 ]   pop edx                   edx := var.0016; esp := (esp_in - 12)
   0x402cba  [ -12 ]   cmp cl, bl                cmp cl, bl
   0x402cbc  [ -12 ]   jnz 0x402cce              if (cl != bl) then goto 0x402cce
 --------------------------------------------------------------------------------
@@ -775,24 +800,26 @@ object (self)
 
   method get_name = "__System::PStrCmp__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(reg_eax:" ; xpr_to_pretty floc eaxv ;
-	     STR ",reg_edx:" ; xpr_to_pretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(reg_eax:"; xpr_to_pretty floc eaxv;
+	STR ",reg_edx:"; xpr_to_pretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
-    [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ]
+  method! get_commands (floc:floc_int) =
+    [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]]
 
-  method get_parametercount = 0 
+  method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "PStrCmp"
+  method! get_call_target (a:doubleword_int) = mk_target a "PStrCmp"
 
-  method get_description = "Delphi RTL function System::PStrCmp"
+  method! get_description = "Delphi RTL function System::PStrCmp"
 
 end
 
 let _ = H.add table "System::PStrCmp" (new rtl_system_pstrcmp_semantics_t)
+
 
 (* ============================================================== System::PStrNCpy
    example V1da:0x402dc0
@@ -814,7 +841,7 @@ let _ = H.add table "System::PStrCmp" (new rtl_system_pstrcmp_semantics_t)
   0x402dd9   [ -4 ]   pop ebx            restore ebx
   0x402dda   [ 0 ]    ret                return
 *)
-class rtl_system_pstrncpy_semantics_t 
+class rtl_system_pstrncpy_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
@@ -822,15 +849,16 @@ object (self)
 
   method get_name = "__System::PStrNCpy__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
     let ecxv = get_reg_value Ecx floc in
-    LBLOCK [ STR self#get_name ; STR "(Dest:" ; xpr_to_pretty floc eaxv ;
-	     STR ",Source:" ; xpr_to_strpretty floc edxv ;
-	     STR ",Count:" ; xpr_to_pretty floc ecxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(Dest:"; xpr_to_pretty floc eaxv;
+	STR ",Source:"; xpr_to_strpretty floc edxv;
+	STR ",Count:"; xpr_to_pretty floc ecxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (lhs,lhscmds) = get_reg_deref_lhs Eax 0 floc in
     let (eaxlhs,eaxlhscmds) = get_reg_lhs Eax floc in
     let (edxlhs,edxlhscmds) = get_reg_lhs Edx floc in
@@ -840,18 +868,19 @@ object (self)
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
     let cmds1 = floc#get_assign_commands lhs ~size (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Ecx ] ] in
-    let cmds3 = floc#get_assign_commands eaxlhs (XOp (XPlus, [ eaxv ; one ])) in
-    let cmds4 = floc#get_assign_commands edxlhs (XOp (XPlus, [ edxv ; one ])) in
-    List.concat [ lhscmds ; eaxlhscmds ; edxlhscmds ; cmds1 ; cmds2 ; cmds3 ; cmds4 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Ecx]] in
+    let cmds3 = floc#get_assign_commands eaxlhs (XOp (XPlus, [eaxv; one])) in
+    let cmds4 = floc#get_assign_commands edxlhs (XOp (XPlus, [edxv; one])) in
+    List.concat [lhscmds; eaxlhscmds; edxlhscmds; cmds1; cmds2; cmds3; cmds4]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "PStrNCpy"
+  method! get_call_target (a:doubleword_int) = mk_target a "PStrNCpy"
 
-  method get_description = "Delphi RTL function System::PStrNCpy"
+  method! get_description = "Delphi RTL function System::PStrNCpy"
 
 end
+
 
 (* ============================================================== System::ROUND
    example: V01a:0x402b00
@@ -860,8 +889,8 @@ end
   0x402b00   [ 0 ]    sub esp, 0x8     esp := esp - 8 = (esp_in - 8)
   0x402b03   [ -8 ]   fistp (esp,,1)   var.0008 := ST(0) (8 bytes)
   0x402b06   [ -8 ]   wait             wait
-  0x402b07   [ -8 ]   pop eax          eax := var.0008 ; esp := esp + 4 = (esp_in - 4)
-  0x402b08   [ -4 ]   pop edx          edx := var.0004 ; esp := esp + 4 = esp_in
+  0x402b07   [ -8 ]   pop eax          eax := var.0008; esp := esp + 4 = (esp_in - 4)
+  0x402b08   [ -4 ]   pop edx          edx := var.0004; esp := esp + 4 = esp_in
   0x402b09   [ 0 ]    ret              return
 *)
 class rtl_system_round_semantics_t
@@ -872,31 +901,32 @@ object (self)
 
   method get_name = "__System::ROUND__"
 
-  method get_annotation (floc:floc_int) =
-    LBLOCK [ STR "(eax,edx) := " ; STR self#get_name ; STR "()" ]
+  method! get_annotation (_floc:floc_int) =
+    LBLOCK [STR "(eax,edx) := "; STR self#get_name; STR "()"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (eaxlhs,eaxlhscmds) = get_reg_lhs Eax floc in
     let (edxlhs,edxlhscmds) = get_reg_lhs Edx floc in
     let rhs1 = get_return_value (self#get_name ^ "_low") floc in
     let rhs2 = get_return_value (self#get_name ^ "_high") floc in
     let cmds1 = floc#get_assign_commands eaxlhs (XVar rhs1) in
     let cmds2 = floc#get_assign_commands edxlhs (XVar rhs2) in
-    List.concat [ eaxlhscmds ; edxlhscmds ; cmds1 ; cmds2 ]
+    List.concat [eaxlhscmds; edxlhscmds; cmds1; cmds2]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "ROUND"
+  method! get_call_target (a:doubleword_int) = mk_target a "ROUND"
 
-  method get_description = "Delphi RTL function System::ROUND"
+  method! get_description = "Delphi RTL function System::ROUND"
 
 end
 
 let _ = H.add table "System::ROUND" (new rtl_system_round_semantics_t)
 
-(* ============================================================== System::Set8087CW
+
+(* =========================================================== System::Set8087CW
    example: V01a:0x402ad0
-   
+
    __fastcall System::Set8087CW(unsigned short)
 
   0x402ad0   [ 0 ]    mov 0x4a6020, eax         gv_0x4a6020 := eax = eax_in
@@ -912,49 +942,51 @@ object (self)
 
   method get_name = "__System::Set8087CW__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc eaxv ;
-	     STR ",gv:" ; gv#toPretty ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "("; xpr_to_pretty floc eaxv;
+	STR ",gv:"; gv#toPretty; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let vgv = floc#env#mk_global_variable gv#to_numerical in
     floc#get_assign_commands vgv eaxv
 
-  method get_parametercount = 0 
+  method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "Set8087CW"
+  method! get_call_target (a:doubleword_int) = mk_target a "Set8087CW"
 
-  method get_description = "Delphi RTL function Set8087CW"
+  method! get_description = "Delphi RTL function Set8087CW"
 
 end
 
-(* ============================================================== System::SetElem
+
+(* ============================================================= System::SetElem
    example: V01a:0x402e68
    md5hash: d504a9f352a457dc0d87511db895f1a6
 
-  0x402e68   [ 0 ]    push ebx                  save ebx
-  0x402e69   [ -4 ]   push edi                  save edi
-  0x402e6a   [ -8 ]   mov edi, eax              edi := eax = eax_in
-  0x402e6c   [ -8 ]   xor ebx, ebx              ebx := 0 
-  0x402e6e   [ -8 ]   mov bl, cl                bl := cl
-  0x402e70   [ -8 ]   mov ecx, ebx              ecx := ebx
-  0x402e72   [ -8 ]   xor eax, eax              eax := 0 
-  0x402e74   [ -8 ]   rep stos                  (Edi): (eax_in)[0]; Ecx: ecx (width: 1)
-  0x402e76   [ -8 ]   sub edi, ebx              edi := edi - ebx
-  0x402e78   [ -8 ]   inc eax                   eax := eax + 1 = 1
-  0x402e79   [ -8 ]   mov cl, dl                cl := dl
-  0x402e7b   [ -8 ]   rol al, cl                rol al, cl
-  0x402e7d   [ -8 ]   shr ecx, 0x3              ecx := ecx / 8
-  0x402e80   [ -8 ]   cmp ecx, ebx              cmp ecx, ebx
-  0x402e82   [ -8 ]   jnc 0x402e87              if (ecx >= ebx) then goto 0x402e87
---------------------------------------------------------------------------------
-  0x402e84   [ -8 ]   or (ecx,edi,1), al        ? :=  ?  (tmpN) | al
---------------------------------------------------------------------------------
-  0x402e87   [ -8 ]   pop edi                   restore edi
-  0x402e88   [ -4 ]   pop ebx                   restore ebx
-  0x402e89   [ 0 ]    ret                       return
+  0x402e68   [ 0 ]    push ebx              save ebx
+  0x402e69   [ -4 ]   push edi              save edi
+  0x402e6a   [ -8 ]   mov edi, eax          edi := eax = eax_in
+  0x402e6c   [ -8 ]   xor ebx, ebx          ebx := 0
+  0x402e6e   [ -8 ]   mov bl, cl            bl := cl
+  0x402e70   [ -8 ]   mov ecx, ebx          ecx := ebx
+  0x402e72   [ -8 ]   xor eax, eax          eax := 0
+  0x402e74   [ -8 ]   rep stos              (Edi): (eax_in)[0]; Ecx: ecx (width: 1)
+  0x402e76   [ -8 ]   sub edi, ebx          edi := edi - ebx
+  0x402e78   [ -8 ]   inc eax               eax := eax + 1 = 1
+  0x402e79   [ -8 ]   mov cl, dl            cl := dl
+  0x402e7b   [ -8 ]   rol al, cl            rol al, cl
+  0x402e7d   [ -8 ]   shr ecx, 0x3          ecx := ecx / 8
+  0x402e80   [ -8 ]   cmp ecx, ebx          cmp ecx, ebx
+  0x402e82   [ -8 ]   jnc 0x402e87          if (ecx >= ebx) then goto 0x402e87
+----------------------------------------------------------------------------
+  0x402e84   [ -8 ]   or (ecx,edi,1), al    ? :=  ?  (tmpN) | al
+----------------------------------------------------------------------------
+  0x402e87   [ -8 ]   pop edi               restore edi
+  0x402e88   [ -4 ]   pop ebx               restore ebx
+  0x402e89   [ 0 ]    ret                   return
 *)
 class rtl_system_setelem_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
@@ -964,47 +996,49 @@ object (self)
 
   method get_name = "__System::SetElem__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let ecxv = get_reg_value Ecx floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(A:" ; xpr_to_pretty floc eaxv ;
-	     STR ",reg_ecx:" ; xpr_to_pretty floc ecxv ;
-	     STR ",reg_edx:" ; xpr_to_pretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(A:"; xpr_to_pretty floc eaxv;
+	STR ",reg_ecx:"; xpr_to_pretty floc ecxv;
+	STR ",reg_edx:"; xpr_to_pretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let size = get_reg_value Ecx floc in
     let lhs = floc#get_lhs_from_address eaxv in
     let rhs = floc#env#mk_side_effect_value floc#cia "A" in
     let cmds1 = floc#get_assign_commands lhs ~size (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]] in
+    List.concat [ cmds1; cmds2 ]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "SetElem"
+  method! get_call_target (a:doubleword_int) = mk_target a "SetElem"
 
-  method get_description = "Delphi RTL function System::SetElem"
+  method! get_description = "Delphi RTL function System::SetElem"
 
 end
 
 let _ = H.add table "System::SetElem" (new rtl_system_setelem_semantics_t)
 
+
 (* ============================================================== System::SetEq
    example: V01a: 0x402ee4
    md5hash: b1ed2ec21524c71591df3025a7749ad9
 
-  0x402ee4   [ 0 ]    push esi           save esi
-  0x402ee5   [ -4 ]   push edi           save edi
-  0x402ee6   [ -8 ]   mov esi, eax       esi := eax = eax_in
-  0x402ee8   [ -8 ]   mov edi, edx       edi := edx = edx_in
-  0x402eea   [ -8 ]   and ecx, 0xff      ecx := ecx & 255
-  0x402ef0   [ -8 ]   repe cmps          (Edi):(edx_in)[0]_in; 
-                                            (Edi): (eax_in)[0]_in; Ecx: ecx (width: 1)
-  0x402ef2   [ -8 ]   pop edi            restore edi
-  0x402ef3   [ -4 ]   pop esi            restore esi
-  0x402ef4   [ 0 ]    ret                return
+  0x402ee4   [ 0 ]    push esi        save esi
+  0x402ee5   [ -4 ]   push edi        save edi
+  0x402ee6   [ -8 ]   mov esi, eax    esi := eax = eax_in
+  0x402ee8   [ -8 ]   mov edi, edx    edi := edx = edx_in
+  0x402eea   [ -8 ]   and ecx, 0xff   ecx := ecx & 255
+  0x402ef0   [ -8 ]   repe cmps       (Edi):(edx_in)[0]_in;
+                                         (Edi): (eax_in)[0]_in; Ecx: ecx (width: 1)
+  0x402ef2   [ -8 ]   pop edi         restore edi
+  0x402ef3   [ -4 ]   pop esi         restore esi
+  0x402ef4   [ 0 ]    ret             return
 *)
 class rtl_system_seteq_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
@@ -1014,25 +1048,27 @@ object (self)
 
   method get_name = "__System::SetEq__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
     let ecxv = get_reg_value Ecx floc in
-    LBLOCK [ STR self#get_name ; STR "A1:" ; xpr_to_pretty floc eaxv ;
-	     STR ",A2:" ; xpr_to_pretty floc edxv ;
-	     STR ",Count:" ; xpr_to_pretty floc ecxv ]
+    LBLOCK [
+        STR self#get_name; STR "A1:"; xpr_to_pretty floc eaxv;
+	STR ",A2:"; xpr_to_pretty floc edxv;
+	STR ",Count:"; xpr_to_pretty floc ecxv]
 
-  method get_commands (floc:floc_int) = []
-   
+  method! get_commands (_floc:floc_int) = []
+
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "SetEq"
+  method! get_call_target (a:doubleword_int) = mk_target a "SetEq"
 
-  method get_description = "Delphi RTL function System::SetEq"
+  method! get_description = "Delphi RTL function System::SetEq"
 
 end
 
 let _ = H.add table "System::SetEq" (new rtl_system_seteq_semantics_t)
+
 
 (* ============================================================== System::SetRange
    example: V01a:0x402e8c
@@ -1041,13 +1077,13 @@ let _ = H.add table "System::SetEq" (new rtl_system_seteq_semantics_t)
   0x402e8c   [ 0 ]    push ebx                  save ebx
   0x402e8d   [ -4 ]   push esi                  save esi
   0x402e8e   [ -8 ]   push edi                  save edi
-  0x402e8f  [ -12 ]   xor ebx, ebx              ebx := 0 
+  0x402e8f  [ -12 ]   xor ebx, ebx              ebx := 0
   0x402e91  [ -12 ]   mov bl, ah                bl := ah
   0x402e93  [ -12 ]   movzx esi, al             esi := al
   0x402e96  [ -12 ]   movzx edx, dl             edx := dl
   0x402e99  [ -12 ]   mov edi, ecx              edi := ecx = ecx_in
   0x402e9b  [ -12 ]   mov ecx, ebx              ecx := ebx
-  0x402e9d  [ -12 ]   xor eax, eax              eax := 0 
+  0x402e9d  [ -12 ]   xor eax, eax              eax := 0
   0x402e9f  [ -12 ]   rep stos                  (Edi): (ecx_in)[0]; Ecx: ecx (width: 1)
   0x402ea1  [ -12 ]   sub edi, ebx              edi := edi - ebx
   0x402ea3  [ -12 ]   shl ebx, 0x3              ebx := ebx * 8
@@ -1097,31 +1133,33 @@ object (self)
 
   method get_name = "__System::SetRange__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in   (* TODO: separate out Ah,Al *)
     let ecxv = get_reg_value Ecx floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(A:" ; xpr_to_pretty floc ecxv ;
-	     STR ",reg_eax:" ; xpr_to_pretty floc eaxv ;
-	     STR ",reg_edx:" ; xpr_to_pretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(A:"; xpr_to_pretty floc ecxv;
+	STR ",reg_eax:"; xpr_to_pretty floc eaxv;
+	STR ",reg_edx:"; xpr_to_pretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let ecxv = get_reg_value Ecx floc in
     let lhs = floc#get_lhs_from_address ecxv in
     let rhs = floc#env#mk_side_effect_value floc#cia "A" in
     let cmds1 = floc#get_assign_commands lhs (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]] in
+    List.concat [cmds1; cmds2 ]
 
-  method get_parametercount = 0 
+  method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "SetRange"
+  method! get_call_target (a:doubleword_int) = mk_target a "SetRange"
 
-  method get_description = "Delphi RTL function System::SetRange"
+  method! get_description = "Delphi RTL function System::SetRange"
 
 end
 
 let _ = H.add table "System::SetRange" (new rtl_system_setrange_semantics_t)
+
 
 (* ============================================================== System::SetSub
    example: V01a:0x402f04
@@ -1145,35 +1183,36 @@ object (self)
 
   method get_name = "__System::SetSub__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let ecxv = get_reg_value Ecx floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(dst:" ; xpr_to_pretty floc eaxv ; 
-	     STR ",src:" ; xpr_to_pretty floc edxv ; 
-	     STR ",count:" ; xpr_to_pretty floc ecxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(dst:"; xpr_to_pretty floc eaxv;
+	STR ",src:"; xpr_to_pretty floc edxv;
+	STR ",count:"; xpr_to_pretty floc ecxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let size = get_reg_value Ecx floc in
     let lhs = floc#get_lhs_from_address eaxv in
     let rhs = floc#env#mk_side_effect_value floc#cia "dst" in
     let cmds1 = floc#get_assign_commands lhs ~size (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]] in
+    List.concat [cmds1; cmds2]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "SetSub"
+  method! get_call_target (a:doubleword_int) = mk_target a "SetSub"
 
-  method get_description = "Delphi RTL function System::SetSub"
+  method! get_description = "Delphi RTL function System::SetSub"
 
 end
 
 let _ = H.add table "System::SetSub" (new rtl_system_setsub_semantics_t)
 
 
-(* ============================================================== System::SetUnion
+(* ============================================================ System::SetUnion
    example: V01a:0x402ef8
    md5hash: d4e3bccc7b882275fbe7b0aa0b368941
 
@@ -1186,7 +1225,7 @@ let _ = H.add table "System::SetSub" (new rtl_system_setsub_semantics_t)
 --------------------------------------------------------------------------------
   0x402f02   [ 0 ]    ret                       return
 *)
-class rtl_system_setunion_semantics_t 
+class rtl_system_setunion_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
@@ -1194,32 +1233,34 @@ object (self)
 
   method get_name = "__System::SetUnion__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let ecxv = get_reg_value Ecx floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(dst:" ; xpr_to_pretty floc eaxv ; 
-	     STR ",src:" ; xpr_to_pretty floc edxv ; 
-	     STR ",count:" ; xpr_to_pretty floc ecxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(dst:"; xpr_to_pretty floc eaxv;
+	STR ",src:"; xpr_to_pretty floc edxv;
+	STR ",count:"; xpr_to_pretty floc ecxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let size = get_reg_value Ecx floc in
     let lhs = floc#get_lhs_from_address eaxv in
     let rhs = floc#env#mk_side_effect_value floc#cia "dst" in
     let cmds1 = floc#get_assign_commands lhs ~size (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]] in
+    List.concat [cmds1; cmds2]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "SetUnion"
+  method! get_call_target (a:doubleword_int) = mk_target a "SetUnion"
 
-  method get_description = "Delphi RTL function System::SetUnion"
+  method! get_description = "Delphi RTL function System::SetUnion"
 
 end
 
 let _ = H.add table "System::SetUnion" (new rtl_system_setunion_semantics_t)
+
 
 (* ============================================================== System::LStrLen
    example: V8af:0x403f28
@@ -1233,7 +1274,7 @@ let _ = H.add table "System::SetUnion" (new rtl_system_setunion_semantics_t)
   0x2f  ret                       return
 
 *)
-class rtl_system_strlen_semantics_t 
+class rtl_system_strlen_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
@@ -1241,16 +1282,16 @@ object (self)
 
   method get_name = "__System::LStrLen__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     match eaxv with
-    | XConst (IntConst n) when n#is_zero -> LBLOCK [ STR "__fnop__" ]
+    | XConst (IntConst n) when n#is_zero -> LBLOCK [STR "__fnop__"]
     | _ ->
       let eaxv = get_reg_value Eax floc in
-      LBLOCK [ STR self#get_name ; STR "(str:" ; xpr_to_strpretty floc eaxv ; 
-	       STR ")" ]
+      LBLOCK [
+          STR self#get_name; STR "(str:"; xpr_to_strpretty floc eaxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     match eaxv with
     | XConst (IntConst n) when n#is_zero -> []
@@ -1262,21 +1303,24 @@ object (self)
       let eaxderefv = get_reg_derefvalue Eax (-4) floc in
       let (eaxlhs,eaxlhscmds) = get_reg_lhs Eax floc in
       let cmds1 = floc#get_assign_commands eaxlhs eaxderefv in
-      [ BRANCH [ LF.mkCode [ eaxzero ] ; LF.mkCode (eaxnzero :: (eaxlhscmds @ cmds1)) ] ]
+      [BRANCH [
+           LF.mkCode [eaxzero]; LF.mkCode (eaxnzero :: (eaxlhscmds @ cmds1))]]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_inlined_app_target a self#get_name
+  method! get_call_target (a:doubleword_int) =
+    mk_inlined_app_target a self#get_name
 
-  method get_description = "Delphi RTL function System::LStrLen"
+  method! get_description = "Delphi RTL function System::LStrLen"
 
 end
 
 let _ = H.add table "System::StrLen" (new rtl_system_strlen_semantics_t)
 
-(* ============================================================== System::LStrToPChar
+
+(* ========================================================= System::LStrToPChar
    example: V01a:0x404678
-   
+
   0x404678   [ 0 ]    test eax, eax             test eax, eax
   0x40467a   [ 0 ]    jz 0x40467e               if (eax_in = 0) then goto 0x40467e
 --------------------------------------------------------------------------------
@@ -1285,7 +1329,7 @@ let _ = H.add table "System::StrLen" (new rtl_system_strlen_semantics_t)
   0x40467e   [ 0 ]    mov eax,db:0x40467d[0x0]  eax := 4212349
   0x404683   [ 0 ]    ret                       return
 
-  ----------------------------------------------------------------- System::WStrToPWChar
+  --------------------------------------------------------- System::WStrToPWChar
    example: V1da:0x404b28
 
   0x404b28   [ 0 ]    test eax, eax          test eax, eax
@@ -1304,22 +1348,23 @@ object (self)
 
   method get_name = "__System::" ^ name ^ "__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_strpretty floc eaxv ; STR ")" ]
+    LBLOCK [ STR self#get_name; STR "("; xpr_to_strpretty floc eaxv; STR ")" ]
 
-  method get_commands (floc:floc_int) = []
+  method! get_commands (_floc:floc_int) = []
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
+  method! get_call_target (a:doubleword_int) =
     mk_inlined_app_target a self#get_name
 
-  method get_description = "Delphi function checks that string argument is not null"
+  method! get_description =
+    "Delphi function checks that string argument is not null"
 
 end
 
-(* ========================================================== System::initExnHandling
+(* ===================================================== System::initExnHandling
    example: V1da:0x403f38
 *)
 class rtl_system_initexnhandling_semantics_t
@@ -1330,26 +1375,27 @@ object (self)
 
   method get_name = "__System::initExnHandling__"  (* made up *)
 
-  method get_annotation (floc:floc_int) =
-    LBLOCK [ STR self#get_name ; STR "()" ]
+  method! get_annotation (_floc:floc_int) =
+    LBLOCK [STR self#get_name; STR "()"]
 
-  method get_commands (floc:floc_int) =
-    [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ]
+  method! get_commands (floc:floc_int) =
+    [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "initExnHandling"
+  method! get_call_target (a:doubleword_int) = mk_target a "initExnHandling"
 
-  method get_description = "Delphi RTL function to initialize exception handling"
+  method! get_description =
+    "Delphi RTL function to initialize exception handling"
 
 end
 
 
 
-(* ============================================================== System::initTIBInfo
+(* ========================================================= System::initTIBInfo
    example: V1da:0x403e80
 
-  0x403e80   [ 0 ]    xor edx, edx              edx := 0 
+  0x403e80   [ 0 ]    xor edx, edx              edx := 0
   0x403e82   [ 0 ]    lea eax, -0xc(ebp)        eax := (ebp - 12) = (ebp_in - 12)
   0x403e85   [ 0 ]    mov ecx, %fs:(edx)        ecx :=  ?  (tmpN)
   0x403e88   [ 0 ]    mov %fs:(edx), eax        ? := eax = (ebp_in - 12)
@@ -1367,41 +1413,43 @@ object (self)
 
   method get_name = "__System::initTIBInfo__"   (* made up *)
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let ebpv = get_reg_value Ebp floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc ebpv ; STR ")" ]
+    LBLOCK [STR self#get_name; STR "("; xpr_to_pretty floc ebpv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (lhs,lhscmds) = get_reg_deref_lhs Ebp (-12) floc in
     let rhs = floc#env#mk_special_variable "fs:0x0" in
     let cmds1 = floc#get_assign_commands lhs (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
-    List.concat [ lhscmds ; cmds1 ; cmds2 ]
+    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax; Ecx; Edx ] ] in
+    List.concat [ lhscmds; cmds1; cmds2 ]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "initTIBInfo"
+  method! get_call_target (a:doubleword_int) = mk_target a "initTIBInfo"
 
-  method get_description = "Delphi RTL function System::initTIBInfo"
+  method! get_description = "Delphi RTL function System::initTIBInfo"
 
 end
+
 
 (* ============================================================== delphi_unknown1
    example V4a6371:0x300022d4
 
   0x300022d4   [ 0 ]    mov eax, 0x300295b0  eax := gv_0x300295b0 = gv_0x300295b0_in
   0x300022d9   [ 0 ]    test eax, eax        test eax, eax
-  0x300022db   [ 0 ]    jz 0x300022ec        if (gv_0x300295b0_in = 0) then goto 0x300022ec
+  0x300022db   [ 0 ]    jz 0x300022ec        if (gv_0x300295b0_in = 0) then
+                                                   goto 0x300022ec
 --------------------------------------------------------------------------------
   0x300022dd   [ 0 ]    mov edx, (eax)       edx := (gv_0x300295b0_in)[0]_in
-  0x300022df   [ 0 ]    xor ecx, ecx         ecx := 0 
+  0x300022df   [ 0 ]    xor ecx, ecx         ecx := 0
   0x300022e1   [ 0 ]    mov eax, 0x4(eax)    eax := (gv_0x300295b0_in)[4]_in
   0x300022e4   [ 0 ]    xchg edx, ecx        tmp := ecx; ecx := edx; edx := tmp
   0x300022e6   [ 0 ]    call* 0x3002503c     *( gv_0x3002503c_in )()
 --------------------------------------------------------------------------------
   0x300022ec  [  ?  ]   ret                  return
 *)
-class rtl_system_delphiunknown1_semantics_t 
+class rtl_system_delphiunknown1_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
@@ -1409,21 +1457,22 @@ object (self)
 
   method get_name = "__System::delphi_unknown1__"   (* made up *)
 
-  method get_annotation (floc:floc_int) =
-    LBLOCK [ STR self#get_name ; STR "()" ]
+  method! get_annotation (_floc:floc_int) =
+    LBLOCK [STR self#get_name; STR "()"]
 
-  method get_commands (floc:floc_int) =
-    [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ]
+  method! get_commands (floc:floc_int) =
+    [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "delphi_unknown1"
+  method! get_call_target (a:doubleword_int) = mk_target a "delphi_unknown1"
 
-  method get_description = "Delphi RTL function to initialize exception handling?"
+  method! get_description =
+    "Delphi RTL function to initialize exception handling?"
 
 end
-    
-		
+
+
 
 (* ============================================================== System::StartExe
    example: V1da:0x403fa8
@@ -1431,7 +1480,7 @@ end
   0x403fa8   [ 0 ]    mov 0x47c014,fp:0x4011fc  gv_0x47c014 := 4198908
   0x403fb2   [ 0 ]    mov 0x47c018,fp:0x401204  gv_0x47c018 := 4198916
   0x403fbc   [ 0 ]    mov 0x47c63c, eax         gv_0x47c63c := eax = eax_in
-  0x403fc1   [ 0 ]    xor eax, eax              eax := 0 
+  0x403fc1   [ 0 ]    xor eax, eax              eax := 0
   0x403fc3   [ 0 ]    mov 0x47c640, eax         gv_0x47c640 := eax = 0
   0x403fc8   [ 0 ]    mov 0x47c644, edx         gv_0x47c644 := edx = edx_in
   0x403fce   [ 0 ]    mov eax, 0x4(edx)         eax := (edx_in)[4] = (edx_in)[4]_in
@@ -1447,7 +1496,7 @@ end
   0x300022f0   [ 0 ]    mov 0x30029010,fp:0x300010fc  gv_0x30029010 := 805310716
   0x300022fa   [ 0 ]    mov 0x30029014,ca:0x3000110c  gv_0x30029014 := 805310732
   0x30002304   [ 0 ]    mov 0x300295b0, eax           gv_0x300295b0 := eax = eax_in
-  0x30002309   [ 0 ]    xor eax, eax                  eax := 0 
+  0x30002309   [ 0 ]    xor eax, eax                  eax := 0
   0x3000230b   [ 0 ]    mov 0x300295b4, eax           gv_0x300295b4 := eax = 0
   0x30002310   [ 0 ]    mov 0x300295b8, edx           gv_0x300295b8 := edx = edx_in
   0x30002316   [ 0 ]    mov eax, 0x4(edx)             eax := (edx_in)[4] = (edx_in)[4]_in
@@ -1465,19 +1514,20 @@ object (self)
 
   method get_name = "__System::StartExe__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(pPackageInfoTable:" ; xpr_to_pretty floc eaxv ;
-	     STR ",pTLibModule:" ; xpr_to_pretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(pPackageInfoTable:"; xpr_to_pretty floc eaxv;
+	STR ",pTLibModule:"; xpr_to_pretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) = []
+  method! get_commands (_floc:floc_int) = []
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "StartExe"
+  method! get_call_target (a:doubleword_int) = mk_target a "StartExe"
 
-  method get_description = "Delphi RTL system function System::StartExe"
+  method! get_description = "Delphi RTL system function System::StartExe"
 
 end
 
@@ -1495,9 +1545,9 @@ end
   0x402b22  [ -12 ]   fistp 0x4(esp,,1)      var.0008 := ST(0) (8 bytes)
   0x402b26  [ -12 ]   wait                   wait
   0x402b27  [ -12 ]   fldcw (esp,,1)         FPU control word := var.0012
-  0x402b2a  [ -12 ]   pop ecx                ecx := var.0012 ; esp := (esp_in - 8)
-  0x402b2b   [ -8 ]   pop eax                eax := var.0008 ; esp := (esp_in - 4)
-  0x402b2c   [ -4 ]   pop edx                edx := var.0004 ; esp := esp_in
+  0x402b2a  [ -12 ]   pop ecx                ecx := var.0012; esp := (esp_in - 8)
+  0x402b2b   [ -8 ]   pop eax                eax := var.0008; esp := (esp_in - 4)
+  0x402b2c   [ -4 ]   pop edx                edx := var.0004; esp := esp_in
   0x402b2d   [ 0 ]    ret                    return
 *)
 class rtl_system_trunc_semantics_t
@@ -1508,10 +1558,10 @@ object (self)
 
   method get_name = "__System::TRUNC__"
 
-  method get_annotation (floc:floc_int) =
-    LBLOCK [ STR "(ecx,eax,edx) := " ; STR self#get_name ; STR "()" ]
+  method! get_annotation (_floc:floc_int) =
+    LBLOCK [STR "(ecx,eax,edx) := "; STR self#get_name; STR "()"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (ecxlhs,ecxlhscmds) = get_reg_lhs Ecx floc in
     let (eaxlhs,eaxlhscmds) = get_reg_lhs Eax floc in
     let (edxlhs,edxlhscmds) = get_reg_lhs Edx floc in
@@ -1521,21 +1571,21 @@ object (self)
     let cmds1 = floc#get_assign_commands ecxlhs (XVar rhs1) in
     let cmds2 = floc#get_assign_commands eaxlhs (XVar rhs2) in
     let cmds3 = floc#get_assign_commands edxlhs (XVar rhs3) in
-    List.concat [ ecxlhscmds ; eaxlhscmds ; edxlhscmds ; cmds1 ; cmds2 ; cmds3 ]
+    List.concat [ecxlhscmds; eaxlhscmds; edxlhscmds; cmds1; cmds2; cmds3]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "TRUNC"
+  method! get_call_target (a:doubleword_int) = mk_target a "TRUNC"
 
-  method get_description = "Delphi RTL function System::TRUNC"
+  method! get_description = "Delphi RTL function System::TRUNC"
 
 end
 
 let _ = H.add table "System::TRUNC" (new rtl_system_trunc_semantics_t)
-    
-    
 
-(* ==================================================================== System::ValLong
+
+
+(* ============================================================= System::ValLong
    example: V01a:0x402d64
    md5hash: 53624ad4bcd014d5276ab05b392555a0
 
@@ -1547,8 +1597,8 @@ let _ = H.add table "System::TRUNC" (new rtl_system_trunc_semantics_t)
   0x402d6a  [ -16 ]   test eax, eax             test eax, eax
   0x402d6c  [ -16 ]   jz 0x402dda               if (eax_in = 0) then goto 0x402dda
 --------------------------------------------------------------------------------
-  0x402d6e  [ -16 ]   xor eax, eax              eax := 0 
-  0x402d70  [ -16 ]   xor ebx, ebx              ebx := 0 
+  0x402d6e  [ -16 ]   xor eax, eax              eax := 0
+  0x402d70  [ -16 ]   xor ebx, ebx              ebx := 0
   0x402d72  [ -16 ]   mov edi, 0xccccccc        edi := 214748364
 --------------------------------------------------------------------------------
   0x402d77  [ -16 ]   mov bl, (esi)             bl :=  ?  (tmpN)
@@ -1596,7 +1646,8 @@ let _ = H.add table "System::TRUNC" (new rtl_system_trunc_semantics_t)
   0x402dbc  [ -16 ]   ja 0x402de3               if (bl > 9) then goto 0x402de3
 --------------------------------------------------------------------------------
   0x402dbe  [ -16 ]   cmp eax, edi              cmp eax, edi
-  0x402dc0  [ -16 ]   ja 0x402de3               if (eax > 214748364) then goto 0x402de3
+  0x402dc0  [ -16 ]   ja 0x402de3               if (eax > 214748364) then
+                                                   goto 0x402de3
 --------------------------------------------------------------------------------
   0x402dc2  [ -16 ]   lea eax, (eax,eax,4)      eax := (eax + (4 * eax))
   0x402dc5  [ -16 ]   add eax, eax              eax := eax + eax
@@ -1622,7 +1673,7 @@ let _ = H.add table "System::TRUNC" (new rtl_system_trunc_semantics_t)
 --------------------------------------------------------------------------------
   0x402de1  [ -16 ]   js 0x402e2c               if ? then goto 0x402e2c
 --------------------------------------------------------------------------------
-  0x402de3  [ -16 ]   pop ebx                   ebx := eax_in ; esp := esp + 4 = (esp_in - 12)
+  0x402de3  [ -16 ]   pop ebx                   ebx := eax_in; esp := esp + 4 = (esp_in - 12)
   0x402de4  [ -12 ]   sub esi, ebx              esi := esi - ebx = (esi - eax_in)
   0x402de6  [ -12 ]   jmp 0x402e2f              goto 0x402e2f
 --------------------------------------------------------------------------------
@@ -1654,7 +1705,8 @@ let _ = H.add table "System::TRUNC" (new rtl_system_trunc_semantics_t)
   0x402e13  [ -16 ]   add bl, 0xa               bl := bl + 10
 --------------------------------------------------------------------------------
   0x402e16  [ -16 ]   cmp eax, edi              cmp eax, edi
-  0x402e18  [ -16 ]   ja 0x402de3               if (eax > 268435455) then goto 0x402de3
+  0x402e18  [ -16 ]   ja 0x402de3               if (eax > 268435455) then
+                                                   goto 0x402de3
 --------------------------------------------------------------------------------
   0x402e1a  [ -16 ]   shl eax, 0x4              eax := eax * 16
   0x402e1d  [ -16 ]   add eax, ebx              eax := eax + ebx
@@ -1668,8 +1720,8 @@ let _ = H.add table "System::TRUNC" (new rtl_system_trunc_semantics_t)
 --------------------------------------------------------------------------------
   0x402e2a  [ -16 ]   neg eax                   eax := 0 - eax
 --------------------------------------------------------------------------------
-  0x402e2c  [ -16 ]   pop ecx                   ecx := eax_in ; esp := esp + 4 = (esp_in - 12)
-  0x402e2d  [ -12 ]   xor esi, esi              esi := 0 
+  0x402e2c  [ -16 ]   pop ecx                   ecx := eax_in; esp := esp + 4 = (esp_in - 12)
+  0x402e2d  [ -12 ]   xor esi, esi              esi := 0
 --------------------------------------------------------------------------------
   0x402e2f  [ -12 ]   mov (edx), esi            (edx_in)[0] := esi
   0x402e31  [ -12 ]   pop edi                   restore edi
@@ -1686,32 +1738,34 @@ object (self)
 
   method get_name = "__System::ValLong__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(str:" ; xpr_to_pretty floc eaxv ; 
-	     STR ",lpVal:" ; xpr_to_pretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(str:"; xpr_to_pretty floc eaxv;
+	STR ",lpVal:"; xpr_to_pretty floc edxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let edxv = get_reg_value Edx floc in
     let lhs = floc#get_lhs_from_address edxv in
     let rhs = floc#env#mk_side_effect_value floc#cia "dst" in
     let size = int_constant_expr 4 in
     let cmds1 = floc#get_assign_commands lhs ~size (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Edx ; Ecx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Edx; Ecx]] in
+    List.concat [cmds1; cmds2]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "ValLong"
+  method! get_call_target (a:doubleword_int) = mk_target a "ValLong"
 
-  method get_description = "Delphi RTL function System::ValLong"
+  method! get_description = "Delphi RTL function System::ValLong"
 
 end
 
 let _ = H.add table "System::ValLong" (new rtl_system_vallong_semantics_t)
 
-(* ==================================================================== System::WStrCmp
+
+(* ============================================================= System::WStrCmp
    example: V01a:0x404a58
    md5hash: 5bf4432a4b3e10f024087649e3a041bc
 *)
@@ -1723,29 +1777,30 @@ object (self)
 
   method get_name = "__System::WStrCmp__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(s1:" ; xpr_to_strpretty floc eaxv ;
-	     STR ",s2:" ; xpr_to_strpretty floc edxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(s1:"; xpr_to_strpretty floc eaxv;
+	STR ",s2:"; xpr_to_strpretty floc edxv; STR ")"]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "WStrCmp"
+  method! get_call_target (a:doubleword_int) = mk_target a "WStrCmp"
 
-  method get_description = "Delphi RTL system function System::WStrCmp"
+  method! get_description = "Delphi RTL system function System::WStrCmp"
 
 end
 
 let _ = H.add table "System::WStrCmp" (new rtl_system_wstrcmp_semantics_t)
 
-(* ============================================================ System::RegisterModule
+(* ====================================================== System::RegisterModule
    example: V1da:0x405990
 
-  0x405990   [ 0 ]    mov edx, 0x478034         edx := gv_0x478034 = gv_0x478034_in
-  0x405996   [ 0 ]    mov (eax), edx            (eax_in)[0] := edx = gv_0x478034_in
-  0x405998   [ 0 ]    mov 0x478034, eax         gv_0x478034 := eax = eax_in
-  0x40599d   [ 0 ]    ret                       return
+  0x405990   [ 0 ]    mov edx, 0x478034     edx := gv_0x478034 = gv_0x478034_in
+  0x405996   [ 0 ]    mov (eax), edx        (eax_in)[0] := edx = gv_0x478034_in
+  0x405998   [ 0 ]    mov 0x478034, eax     gv_0x478034 := eax = eax_in
+  0x40599d   [ 0 ]    ret                   return
 *)
 class rtl_system_registermodule_semantics_t
   (md5hash:string) (gv:doubleword_int) (instrs:int):predefined_callsemantics_int =
@@ -1755,30 +1810,30 @@ object (self)
 
   method get_name = "__System::RegisterModule__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc eaxv ; STR ")" ]
+    LBLOCK [STR self#get_name; STR "("; xpr_to_pretty floc eaxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let (eaxdlhs,eaxdlhscmds) = get_reg_deref_lhs Eax 0 floc in
     let gval = get_gv_value gv floc in
     let gvar = floc#env#mk_global_variable gv#to_numerical in
     let cmds1 = floc#get_assign_commands eaxdlhs gval in
     let cmds2 = floc#get_assign_commands gvar eaxv in
-    let cmds3 = [ floc#get_abstract_cpu_registers_command [ Edx ] ] in
-    List.concat [ eaxdlhscmds ; cmds1 ; cmds2 ; cmds3 ]
+    let cmds3 = [floc#get_abstract_cpu_registers_command [Edx]] in
+    List.concat [eaxdlhscmds; cmds1; cmds2; cmds3]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
+  method! get_call_target (a:doubleword_int) =
     mk_inlined_app_target a self#get_name
 
-  method get_description = "Delphi RTL system function System::RegisterModule"
+  method! get_description = "Delphi RTL system function System::RegisterModule"
 
 end
 
-(* ============================================================ System::wRegisterModule
+(* ===================================================== System::wRegisterModule
    example: V1da:0x406194
 
   0x406194   [ 0 ]    mov eax, 0x4780a4         eax := 4685988
@@ -1786,29 +1841,31 @@ end
   0x40619e   [ 0 ]    ret                       return
 *)
 class rtl_system_wregistermodule_semantics_t
-  (md5hash:string) (ptlibmodule:doubleword_int) (instrs:int):predefined_callsemantics_int =
-object (self)
+        (md5hash:string)
+        (ptlibmodule:doubleword_int)
+        (instrs:int):predefined_callsemantics_int =
+object
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__System::RegisterModule_wrapper__"
 
-  method get_annotation (floc:floc_int) =
-    LBLOCK [ STR "__System::RegisterModule(" ; ptlibmodule#toPretty ; STR ")" ]
+  method! get_annotation (_floc:floc_int) =
+    LBLOCK [STR "__System::RegisterModule("; ptlibmodule#toPretty; STR ")"]
 
-  method get_commands (floc:floc_int) = []
+  method! get_commands (_floc:floc_int) = []
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
+  method! get_call_target (a:doubleword_int) =
     mk_target a "RegisterModule_wrapper"
 
-  method get_description = "RTL system function that wraps RegisterModule"
+  method! get_description = "RTL system function that wraps RegisterModule"
 
 end
-    
 
-(* ==================================================================== System::WStrLen
+
+(* ============================================================= System::WStrLen
    example: V01a:0x404a04
    md5hash: ff41d3d352405142c298ae47b896cc85
 
@@ -1828,51 +1885,53 @@ object (self)
 
   method get_name = "__System::WStrLen__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let eaxderefvalue = get_reg_derefvalue Eax (-4) floc in
-    let rhs = XOp (XDiv, [ eaxderefvalue ; int_constant_expr 2 ]) in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_strpretty floc eaxv ; STR ")" ;
-	     STR " [ eax := " ; xpr_to_pretty floc rhs ; STR " ]" ]
+    let rhs = XOp (XDiv, [ eaxderefvalue; int_constant_expr 2 ]) in
+    LBLOCK [
+        STR self#get_name; STR "("; xpr_to_strpretty floc eaxv; STR ")";
+	STR " [ eax := "; xpr_to_pretty floc rhs; STR " ]"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (eaxlhs,eaxlhscmds) = get_reg_lhs Eax floc in
     let rhs = get_return_value self#get_name floc in
     let cmds = floc#get_assign_commands eaxlhs (XVar rhs) in
-    List.concat [ eaxlhscmds ; cmds ]
+    List.concat [eaxlhscmds; cmds]
 
-  method get_parametercount = 0 
+  method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_target a "WStrLen"
+  method! get_call_target (a:doubleword_int) = mk_target a "WStrLen"
 
-  method get_description = "Delphi RTL system function System::WStrLen"
+  method! get_description = "Delphi RTL system function System::WStrLen"
 
 end
 
 let _ = H.add table "System::WStrLen" (new rtl_system_wstrlen_semantics_t)
 
-(* =========================================================== System::Sysinit::InitExe
+
+(* ==================================================== System::Sysinit::InitExe
    example: V1da:0x4061a0
 
-  0x4061a0   [ 0 ]    push ebx                  save ebx
-  0x4061a1   [ -4 ]   mov ebx, eax              ebx := eax = eax_in
-  0x4061a3   [ -4 ]   xor eax, eax              eax := 0 
-  0x4061a5   [ -4 ]   mov 0x47809c, eax         gv_0x47809c := eax = 0
-  0x4061aa   [ -4 ]   push 0x0                  [GetModuleHandleA : lpModuleName = 0 ]
-  0x4061ac   [ -8 ]   call 0x4060dc             GetModuleHandleA(lpModuleName:0) (adj 4)
-  0x4061b1   [ -4 ]   mov 0x47c664, eax         gv_0x47c664 := GetModuleHandleA_rtn_0x4061ac
-  0x4061b6   [ -4 ]   mov eax, 0x47c664         eax := GetModuleHandleA_rtn_0x4061ac
-  0x4061bb   [ -4 ]   mov 0x4780a8, eax         gv_0x4780a8 := GetModuleHandleA_rtn_0x4061ac
-  0x4061c0   [ -4 ]   xor eax, eax              eax := 0 
-  0x4061c2   [ -4 ]   mov 0x4780ac, eax         gv_0x4780ac := eax = 0
-  0x4061c7   [ -4 ]   xor eax, eax              eax := 0 
-  0x4061c9   [ -4 ]   mov 0x4780b0, eax         gv_0x4780b0 := eax = 0
-  0x4061ce   [ -4 ]   call 0x406194             0x406194()
-  0x4061d3   [ -4 ]   mov edx, 0x4780a4         edx := 4685988
-  0x4061d8   [ -4 ]   mov eax, ebx              eax := ebx = eax_in
-  0x4061da   [ -4 ]   call 0x403fa8             0x403fa8(reg_eax:eax_in, reg_edx:ds:0x4780a4)
-  0x4061df   [ -4 ]   pop ebx                   restore ebx
-  0x4061e0   [ 0 ]    ret                       return
+  0x4061a0   [ 0 ]    push ebx             save ebx
+  0x4061a1   [ -4 ]   mov ebx, eax         ebx := eax = eax_in
+  0x4061a3   [ -4 ]   xor eax, eax         eax := 0
+  0x4061a5   [ -4 ]   mov 0x47809c, eax    gv_0x47809c := eax = 0
+  0x4061aa   [ -4 ]   push 0x0             [GetModuleHandleA: lpModuleName = 0]
+  0x4061ac   [ -8 ]   call 0x4060dc        GetModuleHandleA(lpModuleName:0) (adj 4)
+  0x4061b1   [ -4 ]   mov 0x47c664, eax    gv_0x47c664 := GetModuleHandleA_rtn_0x4061ac
+  0x4061b6   [ -4 ]   mov eax, 0x47c664    eax := GetModuleHandleA_rtn_0x4061ac
+  0x4061bb   [ -4 ]   mov 0x4780a8, eax    gv_0x4780a8 := GetModuleHandleA_rtn_0x4061ac
+  0x4061c0   [ -4 ]   xor eax, eax         eax := 0
+  0x4061c2   [ -4 ]   mov 0x4780ac, eax    gv_0x4780ac := eax = 0
+  0x4061c7   [ -4 ]   xor eax, eax         eax := 0
+  0x4061c9   [ -4 ]   mov 0x4780b0, eax    gv_0x4780b0 := eax = 0
+  0x4061ce   [ -4 ]   call 0x406194        0x406194()
+  0x4061d3   [ -4 ]   mov edx, 0x4780a4    edx := 4685988
+  0x4061d8   [ -4 ]   mov eax, ebx         eax := ebx = eax_in
+  0x4061da   [ -4 ]   call 0x403fa8        0x403fa8(reg_eax:eax_in, reg_edx:ds:0x4780a4)
+  0x4061df   [ -4 ]   pop ebx              restore ebx
+  0x4061e0   [ 0 ]    ret                  return
 *)
 class rtl_system_sysinit_initexe_semantics_t
   (md5hash:string) (instrs:int):predefined_callsemantics_int =
@@ -1882,46 +1941,47 @@ object (self)
 
   method get_name = "__System::Sysinit::InitExe__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc eaxv ; STR ")" ]
+    LBLOCK [STR self#get_name; STR "("; xpr_to_pretty floc eaxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let _ = set_delphi_exception_handler_table floc eaxv in
-    [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ]
+    [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]]
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
-    mk_target a ~pkgs:[ "System" ; "Sysinit" ] "InitExe"
+  method! get_call_target (a:doubleword_int) =
+    mk_target a ~pkgs:["System"; "Sysinit"] "InitExe"
 
-  method get_description = "Delphi RTL function System::Sysinit::InitExe"
+  method! get_description = "Delphi RTL function System::Sysinit::InitExe"
 
 end
+
 
 (* ============================================================== set_handler
    example: V1da:0x470008
 
-  0x470008   [ 0 ]    push ebp                  save ebp
-  0x470009   [ -4 ]   mov ebp, esp              ebp := esp = (esp_in - 4)
-  0x47000b   [ -4 ]   xor eax, eax              eax := 0 
-  0x47000d   [ -4 ]   push ebp                  esp := esp - 4 ; var.0008 := ebp
-  0x47000e   [ -8 ]   push ca:0x47002d          esp := esp - 4 ; var.0012 := 4653101
-  0x470013  [ -12 ]   push (eax)                esp := esp - 4 ; var.0016 :=  ?  (tmpN)
-  0x470016  [ -16 ]   mov (eax), esp            ? := esp = (esp_in - 16)
-  0x470019  [ -16 ]   inc 0x47d9f8              gv_0x47d9f8 := (gv_0x47d9f8_in + 1)
-  0x47001f  [ -16 ]   xor eax, eax              eax := 0 
-  0x470021  [ -16 ]   pop edx                   edx := var.0016 ; esp := (esp_in - 12)
-  0x470022  [ -12 ]   pop ecx                   ecx := 4653101 ; esp := (esp_in - 8)
-  0x470023   [ -8 ]   pop ecx                   ecx := (esp_in - 4) ; esp := (esp_in - 4)
-  0x470024   [ -4 ]   mov (eax), edx            ? := edx
-  0x470027   [ -4 ]   push ca:0x470034          esp := esp - 4 ; var.0008 := 4653108
+  0x470008   [ 0 ]    push ebp            save ebp
+  0x470009   [ -4 ]   mov ebp, esp        ebp := esp = (esp_in - 4)
+  0x47000b   [ -4 ]   xor eax, eax        eax := 0
+  0x47000d   [ -4 ]   push ebp            esp := esp - 4; var.0008 := ebp
+  0x47000e   [ -8 ]   push ca:0x47002d    esp := esp - 4; var.0012 := 4653101
+  0x470013  [ -12 ]   push (eax)          esp := esp - 4; var.0016 :=  ?  (tmpN)
+  0x470016  [ -16 ]   mov (eax), esp      ? := esp = (esp_in - 16)
+  0x470019  [ -16 ]   inc 0x47d9f8        gv_0x47d9f8 := (gv_0x47d9f8_in + 1)
+  0x47001f  [ -16 ]   xor eax, eax        eax := 0
+  0x470021  [ -16 ]   pop edx             edx := var.0016; esp := (esp_in - 12)
+  0x470022  [ -12 ]   pop ecx             ecx := 4653101; esp := (esp_in - 8)
+  0x470023   [ -8 ]   pop ecx             ecx := (esp_in - 4); esp := (esp_in - 4)
+  0x470024   [ -4 ]   mov (eax), edx      ? := edx
+  0x470027   [ -4 ]   push ca:0x470034    esp := esp - 4; var.0008 := 4653108
 --------------------------------------------------------------------------------
-  0x47002c   [ -8 ]   ret                       esp := esp + 4 ; goto 0x470034
+  0x47002c   [ -8 ]   ret                 esp := esp + 4; goto 0x470034
 --------------------------------------------------------------------------------
-  0x470034   [ -4 ]   pop ebp                   restore ebp
-  0x470035   [ 0 ]    ret                       return
+  0x470034   [ -4 ]   pop ebp             restore ebp
+  0x470035   [ 0 ]    ret                 return
 *)
 
 class rtl_system_sethandler_semantics_t
@@ -1932,134 +1992,136 @@ object (self)
 
   method get_name = "__set_handler_" ^ gv#to_hex_string ^ "__"
 
-  method get_annotation (floc:floc_int) =
-    LBLOCK [ STR self#get_name ; STR "()" ]
+  method! get_annotation (_floc:floc_int) =
+    LBLOCK [STR self#get_name; STR "()"]
 
-  method get_commands (floc:floc_int) = []
+  method! get_commands (_floc:floc_int) = []
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) = mk_app_target a
+  method! get_call_target (a:doubleword_int) = mk_app_target a
 
-  method get_description = "Delphi set exception handler"
+  method! get_description = "Delphi set exception handler"
 
 end
 
-let delphi_rtl_functions () = H.fold (fun k v a -> a @ (get_fnhashes k v)) table []
+let delphi_rtl_functions () =
+  H.fold (fun k v a -> a @ (get_fnhashes k v)) table []
+
 
 let delphi_rtl_patterns = [
 
   (* set exception handler (V1da:0x470008) *)
   { regex_s = Str.regexp
       ("558bec33c05568\\(........\\)64ff30648920ff05\\(........\\)33c05a5959" ^
-       "64891068\\(........\\)c35dc3$") ;
+       "64891068\\(........\\)c35dc3$");
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun _faddr fnbytes fnhash ->
       let fp1 = todw (Str.matched_group 1 fnbytes) in
       let fp2 = todw (Str.matched_group 3 fnbytes) in
       let gv = todw (Str.matched_group 2 fnbytes) in
       let sem = new rtl_system_sethandler_semantics_t fnhash gv 17 in
-      let msg = LBLOCK [ STR " with handlers " ; fp1#toPretty ; STR " and " ;
- 			 fp2#toPretty ] in
+      let msg =
+        LBLOCK [STR " with handlers "; fp1#toPretty; STR " and "; fp2#toPretty] in
       sometemplate ~msg sem
-  } ;
+  };
 
   (* Set8087CW(unsigned short) (V01a:0x402ad0) *)
-  { regex_s = Str.regexp "66a3\\(........\\)dbe2d92d\\(........\\)c3$" ;
-    
-    regex_f = fun faddr fnbytes fnhash ->
+  { regex_s = Str.regexp "66a3\\(........\\)dbe2d92d\\(........\\)c3$";
+
+    regex_f = fun _faddr fnbytes fnhash ->
       let gv1 = todw (Str.matched_group 1 fnbytes) in
       let gv2 = todw (Str.matched_group 2 fnbytes) in
       if gv1#equal gv2 then
 	let sem = new rtl_system_set8087cw_semantics_t fnhash gv1 4 in
-	let msg = LBLOCK [ STR " with source gv_" ; gv1#toPretty ] in
+	let msg = LBLOCK [STR " with source gv_"; gv1#toPretty] in
 	sometemplate ~msg sem
       else
 	None
-  } ;
+  };
 
   (* System::_CToPasStr (V1da:0x402fc4) *)
-  { regex_s = Str.regexp "b9ff000000e8\\(........\\)c3$" ;
+  { regex_s = Str.regexp "b9ff000000e8\\(........\\)c3$";
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun faddr _fnbytes fnhash ->
       if is_named_lib_call faddr 5 "_CLenToPasStr" then
 	let sem = new rtl_system_ctopasstr_semantics_t fnhash 3 in
 	sometemplate sem
       else None
-  } ;
+  };
 
   (* System::IsClass  (V1da: 0x403674) *)
   { regex_s = Str.regexp
-      ("53568bf28bd885db740d8bd68b03e8\\(........\\)84c0750533c05e5bc3b0015e5bc3$") ;
+      ("53568bf28bd885db740d8bd68b03e8\\(........\\)84c0750533c05e5bc3b0015e5bc3$");
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun faddr _fnbytes fnhash ->
       if is_named_lib_call faddr 14 "InheritsFrom" then
 	let sem = new rtl_system_isclasssemantics_t fnhash 19 in
 	sometemplate sem
       else None
-  } ;
+  };
 
   (* LStrToPChar(s: void (V01a:0x404678) *)
-  { regex_s = Str.regexp "85c07402c3b8\\(........\\)c3$" ;
+  { regex_s = Str.regexp "85c07402c3b8\\(........\\)c3$";
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun _faddr fnbytes fnhash ->
       let gv = todw (Str.matched_group 1 fnbytes) in
       let sem = new rtl_system_strtopchar_semantics_t fnhash "LStrToPChar" 5 in
-      let msg = LBLOCK [ STR " with nullstr at " ; gv#toPretty ] in
+      let msg = LBLOCK [ STR " with nullstr at "; gv#toPretty ] in
       sometemplate ~msg sem
-  } ;
+  };
 
   (* WStrToPWChar (V1da:0x404b28) *)
-  { regex_s = Str.regexp "85c07404c3b8\\(........\\)c3$" ;
+  { regex_s = Str.regexp "85c07404c3b8\\(........\\)c3$";
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun _faddr fnbytes fnhash ->
       let gv = todw (Str.matched_group 1 fnbytes) in
       let sem = new rtl_system_strtopchar_semantics_t fnhash "WStrToPWChar" 5 in
-      let msg = LBLOCK [ STR " with nullstr at " ; gv#toPretty ] in
+      let msg = LBLOCK [ STR " with nullstr at "; gv#toPretty ] in
       sometemplate ~msg sem
-  } ;
+  };
 
   (* System::PStrNCpy (V1da:0x402dc0) *)
   { regex_s = Str.regexp
-      ("538a1a3acb76028bcb8808424081e1ff00000092e8\\(........\\)5bc3$") ;
+      ("538a1a3acb76028bcb8808424081e1ff00000092e8\\(........\\)5bc3$");
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun faddr _fnbytes fnhash ->
       if is_named_lib_call faddr 20 "Move" then
 	let sem = new rtl_system_pstrncpy_semantics_t fnhash 13 in
 	sometemplate sem
       else None
-  } ;
+  };
 
   (* System::RegisterModule (V1da:0x405990) *)
-  { regex_s = Str.regexp "8b15\\(........\\)8910a3\\(........\\)c3$" ;
+  { regex_s = Str.regexp "8b15\\(........\\)8910a3\\(........\\)c3$";
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun _faddr fnbytes fnhash ->
       let gv1 = todw (Str.matched_group 1 fnbytes) in
       let gv2 = todw (Str.matched_group 2 fnbytes) in
       if gv1#equal gv2 then
 	let sem = new rtl_system_registermodule_semantics_t fnhash gv1 4 in
-	let msg = LBLOCK [ STR " with location " ; gv1#toPretty ] in
+	let msg = LBLOCK [ STR " with location "; gv1#toPretty ] in
 	sometemplate ~msg sem
       else None
-  } ;
+  };
 
   (* System::RegisterModule_wrapper (V1da:0x406194) *)
-  { regex_s = Str.regexp "b8\\(........\\)e8\\(........\\)c3$" ;
+  { regex_s = Str.regexp "b8\\(........\\)e8\\(........\\)c3$";
 
     regex_f = fun faddr fnbytes fnhash ->
       let gv = todw (Str.matched_group 1 fnbytes) in
       if is_named_inlined_call faddr 5 "__System::RegisterModule__" then
 	let sem = new rtl_system_wregistermodule_semantics_t fnhash gv 3 in
-	let msg = LBLOCK [ STR " with pTLibModule " ; gv#toPretty ] in
+	let msg = LBLOCK [ STR " with pTLibModule "; gv#toPretty ] in
 	sometemplate ~msg sem
       else None
-  } ;
+  };
 
   (* System::StartExe (V1da:0x403fa8) *)
-  { regex_s = Str.regexp 
+  { regex_s = Str.regexp
       ("c705\\(........\\)\\(........\\)c705\\(........\\)\\(........\\)a3" ^
        "\\(........\\)33c0a3\\(........\\)8915\\(........\\)8b4204a3\\(........\\)" ^
-       "e8\\(........\\)c605\\(........\\)00e8\\(........\\)c3$") ;
+       "e8\\(........\\)c605\\(........\\)00e8\\(........\\)c3$");
 
     regex_f = fun faddr fnbytes fnhash ->
       let dgv1 = todw (Str.matched_group 1 fnbytes) in
@@ -2076,32 +2138,34 @@ let delphi_rtl_patterns = [
       if (is_named_lib_call faddr 46 "initTIBInfo") &&
 	(is_named_lib_call faddr 58 "initExnHandling") then
 	let sem = new rtl_system_startexe_semantics_t fnhash 12 in
-	let msg = LBLOCK [ 
-	  STR " with global variables set " ; 
-	  pretty_print_list [ dgv1 ; dgv2 ; dgv3 ; dgv4 ; dgv5 ; dgv6 ; dgv7 ]
+	let msg = LBLOCK [
+	  STR " with global variables set ";
+	  pretty_print_list [ dgv1; dgv2; dgv3; dgv4; dgv5; dgv6; dgv7 ]
 	    (fun g -> g#toPretty) "[" ", " "]" ] in
 	sometemplate ~msg sem
       else None
-  } ;
+  };
 
   (* System::delphi_unknown1 (V4a6371:0x300022d4) *)
   { regex_s = Str.regexp
-      ("a1\\(........\\)85c0740f8b1033c98b400487caff15\\(........\\)c3$") ;
+      ("a1\\(........\\)85c0740f8b1033c98b400487caff15\\(........\\)c3$");
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun _faddr fnbytes fnhash ->
       let gv1 = todw (Str.matched_group 1 fnbytes) in
       let gv2 = todw (Str.matched_group 2 fnbytes) in
       let sem = new rtl_system_delphiunknown1_semantics_t fnhash 9 in
-      let msg = LBLOCK [ STR " with global variables " ; gv1#toPretty ; STR " and " ;
-			 gv2#toPretty ] in
+      let msg =
+        LBLOCK [
+            STR " with global variables "; gv1#toPretty; STR " and ";
+	    gv2#toPretty] in
       sometemplate ~msg sem
-  } ;
+  };
 
   (* System::StartExe1 (V4a6371:0x300022f0) *)
   { regex_s = Str.regexp
       ("c705\\(........\\)\\(........\\)c705\\(........\\)\\(........\\)a3" ^
        "\\(........\\)33c0a3\\(........\\)8915\\(........\\)8b4204a3\\(........\\)" ^
-       "c605\\(........\\)00e8\\(........\\)c3$") ;
+       "c605\\(........\\)00e8\\(........\\)c3$");
 
     regex_f = fun faddr fnbytes fnhash ->
       let dgv1 = todw (Str.matched_group 1 fnbytes) in
@@ -2117,67 +2181,67 @@ let delphi_rtl_patterns = [
       let _ = functions_data#add_function src2 in
       if (is_named_lib_call faddr 53 "delphi_unknown1") then
 	let sem = new rtl_system_startexe_semantics_t fnhash 11 in
-	let msg = LBLOCK [ 
-	  STR " with global variables set " ; 
-	  pretty_print_list [ dgv1 ; dgv2 ; dgv3 ; dgv4 ; dgv5 ; dgv6 ; dgv7 ]
+	let msg = LBLOCK [
+	  STR " with global variables set ";
+	  pretty_print_list [ dgv1; dgv2; dgv3; dgv4; dgv5; dgv6; dgv7 ]
 	    (fun g -> g#toPretty) "[" ", " "]" ] in
 	sometemplate ~msg sem
       else None
-  } ;
+  };
 
 
   (* System::initTIBInfo (V1da:0x403e80) *)
   { regex_s = Str.regexp
-      "31d28d45f4648b0a6489028908c74004\\(........\\)896808a3\\(........\\)c3$" ;
+      "31d28d45f4648b0a6489028908c74004\\(........\\)896808a3\\(........\\)c3$";
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun _faddr fnbytes fnhash ->
       let fp = todw (Str.matched_group 1 fnbytes) in
       let gv = todw (Str.matched_group 2 fnbytes) in
       let _ = functions_data#add_function fp in
       let sem = new rtl_system_inittibinfo_semantics_t fnhash 9 in
-      let msg = LBLOCK [ STR " with global variable " ; gv#toPretty ] in
+      let msg = LBLOCK [ STR " with global variable "; gv#toPretty ] in
       sometemplate ~msg sem
-  } ;
+  };
 
   (* System::initExnHandling (V1da:0x403f38) *)
   { regex_s = Str.regexp
       ("558bec83c4f8535657bf\\(........\\)8b470885c074548b3033db8b40048945fc33c0" ^
        "5568\\(........\\)64ff306489203bf37e1a8b45fc8b04d88945f843895f0c837df800" ^
-       "7403ff55f83bf37fe633c05a5959648910eb145f5e5b59595dc3$") ;
+       "7403ff55f83bf37fe633c05a5959648910eb145f5e5b59595dc3$");
 
-    regex_f = fun faddr fnbytes fnhash ->
+    regex_f = fun _faddr fnbytes fnhash ->
       let gv = todw (Str.matched_group 1 fnbytes) in
       let fp = todw (Str.matched_group 2 fnbytes) in
       let _ = functions_data#add_function fp in
       let sem = new rtl_system_initexnhandling_semantics_t fnhash 44 in
-      let msg = LBLOCK [ STR " with base " ; gv#toPretty ] in
+      let msg = LBLOCK [ STR " with base "; gv#toPretty ] in
       sometemplate ~msg sem
-  } ;
+  };
 
   (* System::initExnHandling (V01a:0403e00) *)
   { regex_s = Str.regexp
       ("558bec535657a1\\(........\\)85c0744b8b3033db8b780433d25568\\(........\\)" ^
        "64ff326489223bf37e148b04df43891d\\(........\\)85c07402ffd03bf37fec33c05a" ^
-       "5959648910eb145f5e5b5dc3$") ;
+       "5959648910eb145f5e5b5dc3$");
 
-    regex_f = fun faddr fnbytes fnhash -> 
+    regex_f = fun _faddr fnbytes fnhash ->
       let gv1 = todw (Str.matched_group 1 fnbytes) in
       let fp = todw (Str.matched_group 2 fnbytes) in
       let gv2 = todw (Str.matched_group 3 fnbytes) in
       let _ = functions_data#add_function fp in
       let sem = new rtl_system_initexnhandling_semantics_t fnhash 37 in
-      let msg = LBLOCK [ STR " with bases " ; gv1#toPretty ; STR " and " ;
+      let msg = LBLOCK [ STR " with bases "; gv1#toPretty; STR " and ";
 			 gv2#toPretty ] in
       sometemplate ~msg sem
-  } ;
-  
+  };
+
 
   (* System::Sysinit::InitExe (V1da:0x4061a0) *)
-  { regex_s = Str.regexp 
+  { regex_s = Str.regexp
       ("538bd833c0a3\\(........\\)6a00e8\\(........\\)a3\\(........\\)a1" ^
        "\\(........\\)a3\\(........\\)33c0a3\\(........\\)33c0a3" ^
        "\\(........\\)e8\\(........\\)ba\\(........\\)8bc3e8\\(........\\)" ^
-       "5bc3$") ;
+       "5bc3$");
 
     regex_f = fun faddr fnbytes fnhash ->
               (* let tlsindex = todw (Str.matched_group 1 fnbytes) in *)
@@ -2190,8 +2254,8 @@ let delphi_rtl_patterns = [
 	(is_named_lib_call faddr 46 "RegisterModule_wrapper") &&
 	(is_named_lib_call faddr 58 "StartExe") then
 	let sem = new rtl_system_sysinit_initexe_semantics_t fnhash 19 in
-	let msg = LBLOCK [ STR " with globals " ; 
-			   pretty_print_list [ gv1 ; gv2 ; gv3 ; gv4 ; gv5 ]
+	let msg = LBLOCK [ STR " with globals ";
+			   pretty_print_list [ gv1; gv2; gv3; gv4; gv5 ]
 			     (fun g -> g#toPretty) "[" ", " "]" ] in
 	sometemplate ~msg sem
       else

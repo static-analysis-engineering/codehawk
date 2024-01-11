@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,11 +28,7 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
 open CHPretty
-
-(* xprlib *)
-open Xprt
 
 (* bchlib *)
 open BCHLibTypes
@@ -45,9 +43,9 @@ module H = Hashtbl
 
 let table = H.create 3
 
-(* =========================================================== __alloca__(eax:size)  
-   hash    : 11e41922ff27869c267f0226b448d937   
-   instrs  : 19 
+(* ======================================================== __alloca__(eax:size)
+   hash    : 11e41922ff27869c267f0226b448d937
+   instrs  : 19
    examples: V4b4:0x40dc40
 
   0x40    [ 0 ]       push ecx                  save ecx
@@ -74,9 +72,9 @@ let table = H.create 3
   0x69    [ -4 ]      jmp 0x40dc54              goto 0x40dc54
 
 
-   ========================================================= __alloca__(eax:size)     
-   hash   : d9fd5da9ba4d793a57eec03378c22267  
-   instrs : 17 
+   =============================================== ======= __alloca__(eax:size)
+   hash   : d9fd5da9ba4d793a57eec03378c22267
+   instrs : 17
    example: V225:0x402390
 
   0x90    [ 0 ]       push ecx                  save ecx
@@ -100,8 +98,8 @@ let table = H.create 3
   0xbe   [  ?  ]      ret                       return
 
 
-   ======================================================= __alloca__(eax:size) 
-   hash   : ea9e1808f313809c4630d7c5daab76d4   
+   ======================================================= __alloca__(eax:size)
+   hash   : ea9e1808f313809c4630d7c5daab76d4
    instrs : 17
    example: V944:0x403c30
 
@@ -127,10 +125,11 @@ let table = H.create 3
 
 *)
 
-class alloca_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class alloca_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
-  (* semantics is modeled by increasing the stack size by the value of eax ;
+  (* semantics is modeled by increasing the stack size by the value of eax;
      no alignment is performed
   *)
 
@@ -138,31 +137,33 @@ object (self)
 
   method get_name = "__alloca__"
 
-  method get_annotation (floc:floc_int) = 
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc eaxv ; STR ")" ]
+    LBLOCK [STR self#get_name ; STR "("; xpr_to_pretty floc eaxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let env = floc#f#env in
     let (esplhs,esplhscmds) = (esp_r WR)#to_lhs floc in
     let esp = env#mk_cpu_register_variable Esp in
     let eaxv = get_reg_value Eax floc in
-    let cmds1 = floc#get_assign_commands esplhs (XOp (XMinus, [ XVar esp ; eaxv ])) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ] ] in
+    let cmds1 =
+      floc#get_assign_commands esplhs (XOp (XMinus, [XVar esp; eaxv])) in
+    let cmds2 = [ floc#get_abstract_cpu_registers_command [Eax; Ecx]] in
     esplhscmds @ cmds1 @ cmds2
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
+  method! get_call_target (a:doubleword_int) =
     mk_inlined_app_target a self#get_name
 
-  method get_description = "dynamically allocates memory on the stack"
+  method! get_description = "dynamically allocates memory on the stack"
 
 end
 
+
 let _ = H.add table "alloca" (new alloca_semantics_t)
 
-(* ================================================================ __alloca__16 
+(* ================================================================ __alloca__16
   parameterized on absolute jump address
 
   0x4528c0    [ 0 ]       esp := esp - 4 ; var.0004 := ecx
@@ -199,8 +200,11 @@ let _ = H.add table "alloca" (new alloca_semantics_t)
   0x461af1    [ 0 ]       goto 0x4528c0                        <-- absolute jump
 *)
 
-class alloca16_semantics_t 
-  (md5hash:string) (jaddr:doubleword_int) (instrs):predefined_callsemantics_int =
+
+class alloca16_semantics_t
+        (md5hash:string)
+        (_jaddr:doubleword_int)
+        (instrs):predefined_callsemantics_int =
 object (self)
 
   (* semantics is modeled by increasing the stack size by the value of eax;
@@ -211,51 +215,58 @@ object (self)
 
   method get_name = "__alloca16__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let ecxv = get_reg_value Ecx floc in
-    LBLOCK [ STR self#get_name ; STR "(size:" ; xpr_to_pretty floc eaxv ; STR ", " ;
-	     xpr_to_pretty floc ecxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name;
+        STR "(size:";
+        xpr_to_pretty floc eaxv;
+        STR ", ";
+	xpr_to_pretty floc ecxv;
+        STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let env = floc#f#env in
     let (esplhs,esplhscmds) = (esp_r WR)#to_lhs floc in
     let esp = env#mk_cpu_register_variable Esp in
     let eaxv = get_reg_value Eax floc in
-    let cmds1 = floc#get_assign_commands esplhs (XOp (XMinus, [ XVar esp ; eaxv ])) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ] ] in
+    let cmds1 =
+      floc#get_assign_commands esplhs (XOp (XMinus, [XVar esp; eaxv])) in
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Ecx]] in
     esplhscmds @ cmds1 @ cmds2
 
   method get_parametercount = 0
 
-  method get_call_target (a:doubleword_int) =
+  method! get_call_target (a:doubleword_int) =
     mk_inlined_app_target a self#get_name
-  (* InlinedAppTarget (a,self#get_name)  *)
 
-  method get_description = "dynamically allocates memory on the stack"
+  method! get_description = "dynamically allocates memory on the stack"
 
 end
+
 
 let alloca_functions = H.fold (fun k v a -> a @ (get_fnhashes k v)) table []
 
 
-let alloca16_matcher faddr fnbytes fnhash =
+let alloca16_matcher _faddr fnbytes fnhash =
   let addr = todw (Str.matched_group 1 fnbytes) in
   let sem = new alloca16_semantics_t fnhash addr 28 in
-  let msg = LBLOCK [ STR " with address " ; addr#toPretty ] in
+  let msg = LBLOCK [STR " with address "; addr#toPretty] in
   sometemplate ~msg sem
+
 
 let alloca_patterns = [
 
   (* alloca16 *)
-  { regex_s = Str.regexp 
+  { regex_s = Str.regexp
       ("518d4c24042bc81bc0f7d023c88bc42500f0ffff3bc8720a8bc159948b00890424c32d00" ^
        "1000008500ebe9518d4c24082bc883e10f03c11bc90bc159e9\\(........\\)$" ) ;
 
     regex_f = alloca16_matcher
   } ;
 
-  { regex_s = Str.regexp 
+  { regex_s = Str.regexp
       ("518d4c24082bc883e10f03c11bc90bc159e9\\(........\\)518d4c24042bc81bc0f7d0" ^
        "23c88bc42500f0ffff3bc8720a8bc159948b00890424c32d001000008500ebe9$" ) ;
 

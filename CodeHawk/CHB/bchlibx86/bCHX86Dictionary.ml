@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019  Kestrel Technology LLC
    Copyright (c) 2020-2022  Henny Sipma
-   Copyright (c) 2023       Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,14 +32,12 @@ open CHPretty
 
 (* chutil *)
 open CHIndexTable
-open CHLogger
 open CHStringIndexTable
 open CHTiming
 open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHLibTypes
 open BCHSumTypeSerializer
 
 (* bchlibx86 *)
@@ -51,16 +49,6 @@ open BCHX86SumTypeSerializer
 
 
 let bd = BCHDictionary.bdictionary
-   
-let raise_tag_error (name:string) (tag:string) (accepted:string list) =
-  let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
-  begin
-    ch_error_log#add "serialization tag" msg ;
-    raise (BCH_failure msg)
-  end
 
 
 class x86dictionary_t:x86dictionary_int =
@@ -82,26 +70,28 @@ object (self)
     ]
 
   method size: int =
-    let tablesum = List.fold_left (fun total table -> total + table#size) 0 tables in
+    let tablesum =
+      List.fold_left (fun total table -> total + table#size) 0 tables in
     tablesum + bytestring_table#size
 
   method index_opkind (k:asm_operand_kind_t) =
-    let get_optc optc = match optc with Some c -> cpureg_mfts#ts c | _ -> "none" in
-    let tags = [ opkind_mcts#ts k ] in
+    let get_optc optc =
+      match optc with Some c -> cpureg_mfts#ts c | _ -> "none" in
+    let tags = [opkind_mcts#ts k] in
     let key = match k with
-      | Flag f -> (tags @ [ eflag_to_string f ],[])
-      | Reg r -> (tags @ [ cpureg_mfts#ts r ],[])
-      | FpuReg i 
-        | ControlReg i 
+      | Flag f -> (tags @ [eflag_to_string f],[])
+      | Reg r -> (tags @ [cpureg_mfts#ts r],[])
+      | FpuReg i
+        | ControlReg i
         | DebugReg i
-        | MmReg i 
-        | XmmReg i -> (tags, [ i ])
-      | SegReg s -> (tags @ [ segment_mfts#ts s ],[])
-      | IndReg (c,n) -> (tags @ [ cpureg_mfts#ts c ; n#toString ], [])
+        | MmReg i
+        | XmmReg i -> (tags, [i])
+      | SegReg s -> (tags @ [segment_mfts#ts s],[])
+      | IndReg (c,n) -> (tags @ [cpureg_mfts#ts c; n#toString], [])
       | SegIndReg (s,c,n) ->
-         (tags @ [ segment_mfts#ts s ; cpureg_mfts#ts c ; n#toString ],[])
+         (tags @ [segment_mfts#ts s; cpureg_mfts#ts c; n#toString],[])
       | ScaledIndReg (optc1,optc2,scale,n) ->
-         (tags @ [ get_optc optc1 ; get_optc optc2 ; n#toString ],[scale])
+         (tags @ [get_optc optc1; get_optc optc2; n#toString],[scale])
       | DoubleReg (c1,c2) -> (tags @ [cpureg_mfts#ts c1; cpureg_mfts#ts c2], [])
       | Imm imm -> (tags @ [imm#to_numerical#toString], [])
       | Absolute dw -> (tags, [bd#index_address dw])
@@ -121,10 +111,11 @@ object (self)
     let oi o = self#index_operand o in
     let ooi oo = match oo with Some o -> oi o | _ -> (-1) in
     let si s = bd#index_string s in
-    let tags = [ get_opcode_name opc ] in
+    let tags = [get_opcode_name opc] in
     let key = match opc with
       | Jcc (cc,op)
-        | Setcc (cc,op) -> (tags @ [ condition_code_to_suffix_string cc ],[ oi op ])
+        | Setcc (cc,op) ->
+         (tags @ [condition_code_to_suffix_string cc],[oi op])
       | FlushCacheLine op
         | Ldmxcsr op
         | Stmxcsr op
@@ -161,8 +152,8 @@ object (self)
         | AAM op
         | OnesComplementNegate op
         | TwosComplementNegate op
-        | JumpTableEntry op -> (tags,[ oi op ])
-      | Arpl (op1,op2) 
+        | JumpTableEntry op -> (tags,[oi op])
+      | Arpl (op1,op2)
         | ConvertLongToDouble (op1,op2)
         | ConvertWordToDoubleword (op1,op2)
         | BitTestComplement (op1,op2)
@@ -181,7 +172,7 @@ object (self)
         | Sub (op1,op2)
         | SubBorrow (op1,op2)
         | Enter (op1,op2)
-        | Lea (op1,op2) 
+        | Lea (op1,op2)
         | Xchg (op1,op2)
         | LogicalAnd (op1,op2)
         | LogicalOr (op1,op2)
@@ -199,19 +190,19 @@ object (self)
         | AESDecryptLast (op1,op2)
         | AESEncrypt (op1,op2)
         | AESEncryptLast (op1,op2)
-        | AESInvMix (op1,op2) -> (tags, [ oi op1 ; oi op2 ])
+        | AESInvMix (op1,op2) -> (tags, [oi op1; oi op2])
       | Shrd (op1,op2,op3)
         | Shld (op1,op2,op3)
         | PackedRoundScalarDouble (op1,op2,op3)
         | PackedAlignRight (op1,op2,op3)
         | LoadFarPointer (op1, op2, op3)
-        | AESKeyGenAssist  (op1,op2,op3) -> (tags, [ oi op1 ; oi op2 ; oi op3 ])
+        | AESKeyGenAssist  (op1,op2,op3) -> (tags, [oi op1; oi op2; oi op3])
       | VPackedAlignRight (op1,op2,op3,op4) ->
-         (tags,[ oi op1 ; oi op2 ; oi op3 ; oi op4 ])
+         (tags,[oi op1; oi op2; oi op3; oi op4])
       | InterruptReturn b
         | Finit b
-        | Fclex b  ->  (tags, [ bi b ])
-      | FStore (b1,b2,i,op) -> (tags, [ (bi b1) ; (bi b2) ; i ; oi op ])
+        | Fclex b  ->  (tags, [bi b])
+      | FStore (b1,b2,i,op) -> (tags, [(bi b1); (bi b2); i; oi op])
       | Fadd (b1,b2,i,op1,op2)
         | Fsub (b1,b2,i,op1,op2)
         | Fsubr (b1,b2,i,op1,op2)
@@ -219,25 +210,25 @@ object (self)
         | Fdiv (b1,b2,i,op1,op2)
         | Fdivr (b1,b2,i,op1,op2)
         | PackedAdd (b1,b2,i,op1,op2)
-        | PackedSubtract (b1,b2,i,op1,op2) ->
-         (tags, [ bi b1; bi b2 ; i ; oi op1 ; oi op2 ])
-      | VPackedAdd (b1,b2,i,op1,op2,op3) ->
-          (tags,[ bi b1 ; bi b2 ; i ; oi op1 ; oi op2 ; oi op3 ])
-      | Fcomi (b1,b2,op) -> (tags, [ bi b1 ; bi b2 ])
-      | FXmmCompare (b1,b2,op1,op2,op3)
-        | PackedCompareString (b1,b2,op1,op2,op3) ->
-         (tags, [ bi b1 ; bi b2 ; oi op1 ; oi op2 ; oi op3 ])
-      | FLoad (b,i,op) -> (tags, [ (bi b) ; i ; oi op ])
-      | Movnt (b,i,op1,op2) -> (tags, [ bi b ; i ; oi op1 ; oi op2 ])
-      | FSaveState (b,op) -> (tags, [ bi b ; oi op ])
+        | PackedSubtract (b1, b2, i, op1, op2) ->
+         (tags, [bi b1; bi b2; i; oi op1; oi op2])
+      | VPackedAdd (b1, b2, i, op1, op2, op3) ->
+          (tags,[bi b1; bi b2; i; oi op1; oi op2; oi op3])
+      | Fcomi (b1, b2, _op) -> (tags, [bi b1; bi b2])
+      | FXmmCompare (b1, b2, op1, op2, op3)
+        | PackedCompareString (b1, b2, op1, op2, op3) ->
+         (tags, [bi b1; bi b2; oi op1; oi op2; oi op3])
+      | FLoad (b,i,op) -> (tags, [(bi b); i; oi op])
+      | Movnt (b,i,op1,op2) -> (tags, [bi b; i; oi op1; oi op2])
+      | FSaveState (b,op) -> (tags, [bi b; oi op])
       | Movdq (b,op1,op2)
-        | VMovdq (b,op1,op2) -> (tags, [ bi b ; oi op1 ; oi op2 ])
+        | VMovdq (b,op1,op2) -> (tags, [bi b; oi op1; oi op2])
       | FConvert (b,s1,s2,op1,op2) ->
-         (tags, [ bi b; si s1 ; si s2 ; oi op1 ; oi op2 ])
-      | MultiByteNop i -> (tags, [ i ])
+         (tags, [bi b; si s1; si s2; oi op1; oi op2])
+      | MultiByteNop i -> (tags, [i])
       | Ret opti
-        | BndRet opti -> (tags, match opti with Some i -> [ i ] | _ -> [])
-      | Fcom (i1,b,i2,op) -> (tags,[ i1 ; bi b ; i2 ; oi op ]) 
+        | BndRet opti -> (tags, match opti with Some i -> [i] | _ -> [])
+      | Fcom (i1,b,i2,op) -> (tags,[i1; bi b; i2; oi op])
       | Pop (i,op)
         | Push (i,op)
         | Fucom (i,op)
@@ -251,7 +242,7 @@ object (self)
         | RepEScas (i,op)
         | RepNeScas (i,op)
         | InputStringFromPort (i,op)
-        | OutputStringToPort (i,op) -> (tags,[ i ; oi op ])
+        | OutputStringToPort (i,op) -> (tags,[i; oi op])
       | Mov (i,op1,op2)
         | Movdw (i,op1,op2)
         | Movzx (i,op1,op2)
@@ -262,44 +253,44 @@ object (self)
         | RepECmps (i,op1,op2)
         | RepNeCmps (i,op1,op2)
         | InputFromPort (i,op1,op2)
-        | OutputToPort (i,op1,op2) -> (tags, [ i ; oi op1 ; oi op2 ])
+        | OutputToPort (i,op1,op2) -> (tags, [i; oi op1; oi op2])
       | IMul (i,op1,op2,op3)
         | Mul (i,op1,op2,op3)
         | PackedExtract (i,op1,op2,op3)
         | PackedInsert (i,op1,op2,op3) ->
-         (tags, [ i ; oi op1 ; oi op2 ; oi op3 ])
+         (tags, [i; oi op1; oi op2; oi op3])
       | Div (i,op1,op2,op3,op4)
         | IDiv (i,op1,op2,op3,op4)
-        | Movs (i,op1,op2,op3,op4)      
+        | Movs (i,op1,op2,op3,op4)
         | Stos(i,op1,op2,op3,op4) ->
-         (tags, [ i; oi op1 ; oi op2 ; oi op3 ; oi op4 ])      
-      | CfNop (i,s) -> (tags, [ i ; si s ])
-      | CfJmp (op,i,s) -> (tags, [ oi op ; i ; si s ])
+         (tags, [i; oi op1; oi op2; oi op3; oi op4])
+      | CfNop (i,s) -> (tags, [i; si s])
+      | CfJmp (op,i,s) -> (tags, [oi op; i; si s])
       | MiscOp s
         | XCrypt s
-        | InconsistentInstr s -> (tags, [ si s ])
+        | InconsistentInstr s -> (tags, [si s])
       | FXmmMove (s,b1,b2,op1,op2)
         | FXmmOp (s,b1,b2,op1,op2) ->
-         (tags, [ si s ; bi b1 ; bi b2 ; oi op1 ; oi op2 ])
+         (tags, [si s; bi b1; bi b2; oi op1; oi op2])
       | FXmmOpEx  (s,b1,b2,op1,op2,op3) ->
-         (tags, [ si s ; bi b1 ; bi b2 ; oi op1 ; oi op2 ; oi op3 ])
-      | FStoreState (s,b,i,op) -> (tags, [ si s ; bi b ; i ; oi op ])
-      | FLoadState (s,i,op) -> (tags, [ si s ; i ; oi op ])
+         (tags, [si s; bi b1; bi b2; oi op1; oi op2; oi op3])
+      | FStoreState (s,b,i,op) -> (tags, [si s; bi b; i; oi op])
+      | FLoadState (s,i,op) -> (tags, [si s; i; oi op])
       | PackedOp (s,i,op1,op2)
         | PackedCompare (s,i,op1,op2)
         | PackedShift (s,i,op1,op2)
-        | Unpack (s,i,op1,op2) -> (tags, [ si s ; i ; oi op1 ; oi op2 ])
+        | Unpack (s,i,op1,op2) -> (tags, [si s; i; oi op1; oi op2])
       | VPackedOp (s,i,op1,op2,op3)
         | VPackedShift (s,i,op1,op2,op3) ->
-         (tags,[ si s ; i ; oi op1 ; oi op2 ; oi op3 ])
-      | Prefetch (s,op) -> (tags, [ si s ; oi op ])
+         (tags,[si s; i; oi op1; oi op2; oi op3])
+      | Prefetch (s,op) -> (tags, [si s; oi op])
       | PackedMultiply (s,op1,op2)
-        | PackedConvert (s,op1,op2) -> (tags, [ si s ; oi op1 ; oi op2 ])
+        | PackedConvert (s,op1,op2) -> (tags, [si s; oi op1; oi op2])
       | PackedShuffle (s,op1,op2,oop3)
         | VPackedShuffle (s,op1,op2,oop3) ->
-         (tags, [ si s; oi op1 ; oi op2 ; ooi oop3 ])
+         (tags, [si s; oi op1; oi op2; ooi oop3])
       | FLoadConstant (s1,s2)
-        | FStackOp (s1,s2) -> (tags, [ si s1 ; si s2 ])
+        | FStackOp (s1,s2) -> (tags, [si s1; si s2])
       | _ -> (tags, []) in
     opcode_table#add key
 
@@ -345,4 +336,3 @@ object (self)
 end
 
 let x86dictionary = new  x86dictionary_t
-                  
