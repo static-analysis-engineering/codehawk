@@ -1763,7 +1763,7 @@ let translate_instruction
     | Setcc (_, op) ->
       let floc = get_floc loc in
       let size = int_constant_expr 1 in
-      let (lhs, lhsCmds) = op#to_lhs ~size:1 floc in
+      let (lhs, lhsCmds) = op#to_lhs ~_size:1 floc in
       let zCmds = floc#get_assign_commands lhs ~size zero_constant_expr in
       let oCmds = floc#get_assign_commands lhs ~size one_constant_expr in
       let branch = BRANCH [ LF.mkCode zCmds ; LF.mkCode oCmds ] in
@@ -1910,7 +1910,7 @@ let translate_instruction
     | Movdq (_, dst,_)  ->
       let floc = get_floc loc in
       let size = int_constant_expr dst#size in
-      let (lhs, lhsCmds) = dst#to_lhs ~size:dst#size floc in
+      let (lhs, lhsCmds) = dst#to_lhs ~_size:dst#size floc in
       let cmds = floc#get_assign_commands lhs ~size (XConst XRandom) in
       default (lhsCmds @ cmds)
 

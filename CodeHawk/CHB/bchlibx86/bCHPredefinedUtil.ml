@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,7 +51,6 @@ open BCHDoubleword
 open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionData
-open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
 open BCHFloc
 open BCHLibTypes
@@ -94,13 +93,6 @@ let toimm2 s = (TR.tget_ok (string_to_doubleword ("0x" ^ s)))#to_int
 let mk_loc faddr iaddr = make_location (mk_base_location faddr iaddr)
 
 
-let is_code_address (n:numerical_t) =
-  try
-    system_info#is_code_address (TR.tget_ok (numerical_to_doubleword n))
-  with
-  | _ -> false
-
-
 let intvalue_to_string (n:int) =
   try
     if n = wordnegone#to_int then
@@ -128,6 +120,7 @@ let regindexstring_to_reg (s:string) =
                (LBLOCK [ STR "Unexpected reg character in getregfield: " ;
 			 STR s ]))
     end
+
 
 let xpr_to_basepretty (x:xpr_t) =
   let sym_printer = (fun s -> STR s#getBaseName) in
@@ -213,7 +206,7 @@ let xpr_to_strpretty (floc:floc_int) (x:xpr_t) =
 
 
 let pr_argument_expr
-      ?(typespec=None) (p: fts_parameter_t) (xpr: xpr_t) (floc: floc_int) =
+      ?(typespec=None) (_p: fts_parameter_t) (xpr: xpr_t) (floc: floc_int) =
   match get_string_reference floc xpr with
   | Some s -> STR ("\"" ^ s ^ "\"")
   | _ ->
@@ -230,7 +223,6 @@ let patternrhs_to_string (rhs:patternrhs_t) =
   | PArgument i -> "arg" ^ (string_of_int i)
   | PGlobalVar dw -> "gv_" ^ (dw#to_hex_string)
   | PUnknown -> "?"
-
 
 
 let get_arg (args: (fts_parameter_t * xpr_t) list) (n: int) (floc: floc_int) =
@@ -268,10 +260,13 @@ let get_reg_derefvalue (reg:cpureg_t) (offset:int) (floc:floc_int) =
 
 let get_x_derefvalue (x:xpr_t) (offset:int) (floc:floc_int) =
   let cmpv = floc#env#get_variable_comparator in
-  let x = floc#inv#rewrite_expr (XOp (XPlus, [ x ; int_constant_expr offset ])) cmpv in
+  let x =
+    floc#inv#rewrite_expr
+      (XOp (XPlus, [x; int_constant_expr offset])) cmpv in
   let (memref,memoffset) = floc#decompose_address x in
   if is_constant_offset memoffset then
-    let memvar = floc#env#mk_memory_variable memref (get_total_constant_offset memoffset) in
+    let memvar =
+      floc#env#mk_memory_variable memref (get_total_constant_offset memoffset) in
     floc#inv#rewrite_expr (XVar memvar) cmpv
   else
     XVar (floc#env#mk_unknown_memory_variable "x-deref")
@@ -305,7 +300,9 @@ let get_reg_deref_lhs (r:cpureg_t) ?(size=4) (offset:int) (floc:floc_int) =
 
 let get_x_deref_lhs (x:xpr_t) (offset:int) (floc:floc_int) =
   let cmpv = floc#env#get_variable_comparator in
-  let x = floc#inv#rewrite_expr (XOp (XPlus, [ x ; int_constant_expr offset ])) cmpv in
+  let x =
+    floc#inv#rewrite_expr
+      (XOp (XPlus, [x; int_constant_expr offset])) cmpv in
   let (memref,memoffset) = floc#decompose_address x in
   if is_constant_offset memoffset then
     floc#env#mk_memory_variable memref (get_total_constant_offset memoffset)
@@ -473,7 +470,7 @@ let is_named_lib_call (faddr:doubleword_int) (offset:int) (fname:string) =
 
 let sometemplate ?(msg=STR "") (sem:predefined_callsemantics_int) =
   begin
-    chlog#add "matched template function" (LBLOCK [ STR sem#get_name ; msg ]) ;
+    chlog#add "matched template function" (LBLOCK [STR sem#get_name; msg]);
     Some sem
   end
 
@@ -514,8 +511,8 @@ object (self)
 
   method get_md5hash = md5hash
 
-  method get_annotation (floc:floc_int) =
-    LBLOCK [ STR "eax := " ; STR self#get_name ; STR "()" ]
+  method get_annotation (_floc: floc_int) =
+    LBLOCK [STR "eax := " ; STR self#get_name; STR "()"]
 
   method get_commands (floc:floc_int) =
     let (lhs,lhscmds) = get_reg_lhs Eax floc in
@@ -550,18 +547,19 @@ object (self)
     let name = summary#get_function_interface.fintf_name in
     "__" ^ name ^ "__"
 
-  method get_annotation (floc:floc_int) =
-    (* let api = summary#get_function_api in *)
+  method! get_annotation (floc:floc_int) =
     let pr_arg p xpr =
       let typespec = summary#get_enum_type p in
       pr_argument_expr ~typespec p xpr floc in
-    LBLOCK [ STR self#get_name  ;
+    LBLOCK [ STR self#get_name;
 	     pretty_print_list floc#get_call_args
 	       (fun (p,expr) ->
-		 LBLOCK [ STR p.apar_name ; STR ":" ;
-                          pr_arg p expr]) "(" "," ")" ]
+		 LBLOCK [
+                     STR p.apar_name;
+                     STR ":";
+                     pr_arg p expr]) "(" "," ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let sideeffects = get_side_effects summary floc in
     let returnassign = get_return_assign summary floc in
     let adjassign = get_esp_adjustment_assign summary floc in
@@ -572,7 +570,7 @@ object (self)
   method get_parametercount =
     get_stack_parameter_count summary#get_function_interface
 
-  method get_call_target (a: doubleword_int) =
+  method! get_call_target (a: doubleword_int) =
     let name = summary#get_function_interface.fintf_name in
     mk_static_dll_stub_target a dll name
 
@@ -610,29 +608,34 @@ object (self)
     let pkgs = String.concat "::" pkgs in
     "__" ^ pkgs ^ "::" ^ fname ^ "__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let pr_arg p xpr =
       let typespec = summary#get_enum_type p in
       pr_argument_expr ~typespec p xpr floc in
-    LBLOCK [ STR self#get_name  ;
-	     pretty_print_list floc#get_call_args
-	       (fun (p,expr) ->
-		 LBLOCK [ STR p.apar_name ; STR ":" ; pr_arg p expr]) "(" "," ")" ]
+    LBLOCK [
+        STR self#get_name  ;
+	pretty_print_list floc#get_call_args
+	  (fun (p,expr) ->
+	    LBLOCK [
+                STR p.apar_name;
+                STR ":";
+                pr_arg p expr]) "(" "," ")" ]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let sideeffects = get_side_effects summary floc in
     let returnassign = get_return_assign summary floc in
     let adjassign = get_esp_adjustment_assign summary floc in
-    let abstrassign = [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ] in
-    List.concat [ abstrassign ; sideeffects ; returnassign ; adjassign ]
+    let abstrassign =
+      [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]] in
+    List.concat [abstrassign; sideeffects; returnassign; adjassign]
 
   method get_parametercount =
     get_stack_parameter_count summary#get_function_interface
 
-  method get_call_target (a:doubleword_int) =
+  method! get_call_target (a:doubleword_int) =
     mk_static_pck_stub_target a "RTL" pkgs fname
 
-  method get_description = "RTL function"
+  method! get_description = "RTL function"
 
 end
 

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -82,7 +82,8 @@ val get_patternrhs_value:
 val get_var_lhs: int -> floc_int -> (variable_t * cmd_t list)
 val get_arg_lhs: int -> floc_int -> (variable_t * cmd_t list)   (* byte offset *)
 val get_reg_lhs: cpureg_t -> floc_int -> (variable_t * cmd_t list)
-val get_reg_deref_lhs: cpureg_t -> ?size:int -> int -> floc_int -> (variable_t * cmd_t list)
+val get_reg_deref_lhs:
+  cpureg_t -> ?size:int -> int -> floc_int -> (variable_t * cmd_t list)
 val get_x_deref_lhs: xpr_t -> int -> floc_int -> variable_t
 val get_nested_deref_lhs: cpureg_t -> int list -> floc_int -> variable_t
 
@@ -105,21 +106,33 @@ val is_named_inlined_call: doubleword_int -> int -> string -> bool
 val is_named_lib_call: doubleword_int -> int -> string -> bool
 
 val sometemplate:
-  ?msg:pretty_t -> predefined_callsemantics_int -> predefined_callsemantics_int option
+  ?msg:pretty_t
+  -> predefined_callsemantics_int
+  -> predefined_callsemantics_int option
 
-val get_fnhashes: string -> (string -> int -> predefined_callsemantics_int) ->
-  predefined_callsemantics_int list
+val get_fnhashes:
+  string
+  -> (string -> int -> predefined_callsemantics_int)
+  -> predefined_callsemantics_int list
 
-val mk_dllfun_semantics: string -> string -> (string -> int -> predefined_callsemantics_int)
+val mk_dllfun_semantics:
+  string -> string -> (string -> int -> predefined_callsemantics_int)
 
-val add_dllfun: (string,(string -> int -> predefined_callsemantics_int)) Hashtbl.t ->
-  string -> string -> unit
+val add_dllfun:
+  (string, (string -> int -> predefined_callsemantics_int)) Hashtbl.t
+  -> string
+  -> string
+  -> unit
 
 val mk_libfun_semantics:
   string list -> string -> (string -> int -> predefined_callsemantics_int)
 
-val add_libfun: (string,(string -> int -> predefined_callsemantics_int)) Hashtbl.t ->
-  string list -> string -> unit
+val add_libfun:
+  (string,(string -> int -> predefined_callsemantics_int)) Hashtbl.t
+  -> string list
+  -> string
+  -> unit
+
 
 class virtual predefined_callsemantics_base_t:
     string -> int ->

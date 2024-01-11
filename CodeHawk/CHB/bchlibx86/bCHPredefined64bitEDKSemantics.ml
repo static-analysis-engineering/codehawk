@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,18 +28,13 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
 open CHPretty
-
-(* xprlib *)
-open Xprt
 
 (* bchlib *)
 open BCHLibTypes
 
 (* bchlibx86 *)
 open BCHLibx86Types
-open BCHOperand
 open BCHPredefinedUtil
 
 module H = Hashtbl
@@ -67,7 +64,7 @@ let table = H.create 7
   0x4048c0   [ 0 ]    push edi                  save edi
   0x4048c1   [ -4 ]   push esi                  save esi
   0x4048c2   [ -8 ]   push ebx                  save ebx
-  0x4048c3  [ -12 ]   xor edi, edi              edi := 0 
+  0x4048c3  [ -12 ]   xor edi, edi              edi := 0
   0x4048c5  [ -12 ]   mov eax, 0x14(esp,,1)     eax := arg.0008 = arg.0008_in
   0x4048c9  [ -12 ]   or eax, eax               eax := eax | eax
   0x4048cb  [ -12 ]   jge 0x4048e1              if ? then goto 0x4048e1
@@ -97,7 +94,7 @@ let table = H.create 7
 --------------------------------------------------------------------------------
   0x404901  [ -12 ]   mov ecx, 0x18(esp,,1)     ecx := arg.0012
   0x404905  [ -12 ]   mov eax, 0x14(esp,,1)     eax := arg.0008
-  0x404909  [ -12 ]   xor edx, edx              edx := 0 
+  0x404909  [ -12 ]   xor edx, edx              edx := 0
   0x40490b  [ -12 ]   div ecx                   (eax,edx) = eax / ecx (unsigned)
   0x40490d  [ -12 ]   mov ebx, eax              ebx := eax
   0x40490f  [ -12 ]   mov eax, 0x10(esp,,1)     eax := arg.0004
@@ -136,7 +133,7 @@ let table = H.create 7
 --------------------------------------------------------------------------------
   0x404955  [ -12 ]   dec esi                   esi := esi - 1
 --------------------------------------------------------------------------------
-  0x404956  [ -12 ]   xor edx, edx              edx := 0 
+  0x404956  [ -12 ]   xor edx, edx              edx := 0
   0x404958  [ -12 ]   mov eax, esi              eax := esi
 --------------------------------------------------------------------------------
   0x40495a  [ -12 ]   dec edi                   edi := edi - 1
@@ -151,46 +148,49 @@ let table = H.create 7
   0x404966   [ -4 ]   pop edi                   restore edi
   0x404967   [ 0 ]    ret 16                    return (increment stackpointer by 16)
  *)
-class alldiv_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class alldiv_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object(self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__alldiv__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let args = floc#get_call_args in
     let arg1 = get_arg args 1 floc in
     let arg2 = get_arg args 2 floc in
     let arg3 = get_arg args 3 floc in
     let arg4 = get_arg args 4 floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc arg1 ; 
-	     STR "," ; xpr_to_pretty floc arg2 ; 
-	     STR "," ; xpr_to_pretty floc arg3 ; 
-	     STR "," ; xpr_to_pretty floc arg4 ; STR ") (adj 16)" ]
+    LBLOCK [
+        STR self#get_name; STR "("; xpr_to_pretty floc arg1;
+	STR ","; xpr_to_pretty floc arg2;
+	STR ","; xpr_to_pretty floc arg3;
+	STR ","; xpr_to_pretty floc arg4; STR ") (adj 16)"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let cmds1 = get_adjustment_commands 16 floc in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ebx ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 =
+      [floc#get_abstract_cpu_registers_command [Eax; Ebx; Ecx; Edx]] in
+    List.concat [cmds1; cmds2]
 
   method get_parametercount = 4
 
-  method get_description = "64 bit division"
+  method! get_description = "64 bit division"
 
 end
 
 let _ = H.add table "alldiv" (new alldiv_semantics_t)
 
 
-(* =========================================================== __alldvrm__(A,B,C,D)
+(* ========================================================= __alldvrm__(A,B,C,D)
    example: Vb4b:0x409be0
 
   0x409be0   [ 0 ]    push edi                  save edi
   0x409be1   [ -4 ]   push esi                  save esi
   0x409be2   [ -8 ]   push ebp                  save ebp
-  0x409be3  [ -12 ]   xor edi, edi              edi := 0 
-  0x409be5  [ -12 ]   xor ebp, ebp              ebp := 0 
+  0x409be3  [ -12 ]   xor edi, edi              edi := 0
+  0x409be5  [ -12 ]   xor ebp, ebp              ebp := 0
   0x409be7  [ -12 ]   mov eax, 0x14(esp,,1)     eax := arg.0008 = arg.0008_in
   0x409beb  [ -12 ]   or eax, eax               eax := eax | eax
   0x409bed  [ -12 ]   jge 0x409c04              if ? then goto 0x409c04
@@ -221,7 +221,7 @@ let _ = H.add table "alldiv" (new alldiv_semantics_t)
 --------------------------------------------------------------------------------
   0x409c24  [ -12 ]   mov ecx, 0x18(esp,,1)     ecx := arg.0012
   0x409c28  [ -12 ]   mov eax, 0x14(esp,,1)     eax := arg.0008
-  0x409c2c  [ -12 ]   xor edx, edx              edx := 0 
+  0x409c2c  [ -12 ]   xor edx, edx              edx := 0
   0x409c2e  [ -12 ]   div ecx                   (eax,edx) = eax / ecx (unsigned)
   0x409c30  [ -12 ]   mov ebx, eax              ebx := eax
   0x409c32  [ -12 ]   mov eax, 0x10(esp,,1)     eax := arg.0004
@@ -268,7 +268,7 @@ let _ = H.add table "alldiv" (new alldiv_semantics_t)
   0x409c89  [ -12 ]   sub eax, 0x18(esp,,1)     eax := eax - arg.0012
   0x409c8d  [ -12 ]   sbb edx, 0x1c(esp,,1)     edx := edx - (arg.0016 - (0 or 1))
 --------------------------------------------------------------------------------
-  0x409c91  [ -12 ]   xor ebx, ebx              ebx := 0 
+  0x409c91  [ -12 ]   xor ebx, ebx              ebx := 0
 --------------------------------------------------------------------------------
   0x409c93  [ -12 ]   sub eax, 0x10(esp,,1)     eax := eax - arg.0004
   0x409c97  [ -12 ]   sbb edx, 0x14(esp,,1)     edx := edx - (arg.0008 - (0 or 1))
@@ -298,32 +298,35 @@ let _ = H.add table "alldiv" (new alldiv_semantics_t)
 
 *)
 
-class alldvrm_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class alldvrm_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__alldvrm__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let args = floc#get_call_args in
     let arg1 = get_arg args 1 floc in
     let arg2 = get_arg args 2 floc in
     let arg3 = get_arg args 3 floc in
     let arg4 = get_arg args 4 floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc arg1 ; 
-	     STR "," ; xpr_to_pretty floc arg2 ; 
-	     STR "," ; xpr_to_pretty floc arg3 ; 
-	     STR "," ; xpr_to_pretty floc arg4 ; STR ") (adj 16)" ]
+    LBLOCK [
+        STR self#get_name; STR "("; xpr_to_pretty floc arg1;
+	STR ","; xpr_to_pretty floc arg2;
+	STR ","; xpr_to_pretty floc arg3;
+	STR ","; xpr_to_pretty floc arg4; STR ") (adj 16)"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let cmds1 = get_adjustment_commands 16 floc in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ebx ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 =
+      [floc#get_abstract_cpu_registers_command [Eax; Ebx; Ecx; Edx]] in
+    List.concat [cmds1; cmds2]
 
   method get_parametercount = 4
 
-  method get_description = "64 bit division and remainder"
+  method! get_description = "64 bit division and remainder"
 
 end
 
@@ -336,60 +339,63 @@ let _ = H.add table "alldvrm" (new alldvrm_semantics_t)
   0x40db24  [ 0 ]    mov ecx, 0x10(esp,,1)  ecx := arg.0016 = arg.0016_in
   0x40db28  [ 0 ]    or ecx, eax            ecx := ecx | eax
   0x40db2a  [ 0 ]    mov ecx, 0xc(esp,,1)   ecx := arg.0012 = arg.0012_in
-  0x40db2e  [ 0 ]    jnz 0x40db39           if ((arg.0016_in != 0) or (arg.0008_in != 0)) 
+  0x40db2e  [ 0 ]    jnz 0x40db39           if ((arg.0016_in != 0) or (arg.0008_in != 0))
                                               then goto 0x40db39
 --------------------------------------------------------------------------------
   0x40db30  [ 0 ]    mov eax, 0x4(esp,,1)   eax := arg.0004 = arg.0004_in
-  0x40db34  [ 0 ]    mul ecx                edx_eax := eax * ecx = 
+  0x40db34  [ 0 ]    mul ecx                edx_eax := eax * ecx =
                                                 (arg.0004_in * arg.0012_in) (unsigned)
   0x40db36  [ 0 ]    ret 16                 return (increment stackpointer by 16)
 --------------------------------------------------------------------------------
   0x40db39  [ 0 ]    push ebx               save ebx
-  0x40db3a  [ -4 ]   mul ecx                edx_eax := eax * ecx = 
+  0x40db3a  [ -4 ]   mul ecx                edx_eax := eax * ecx =
                                                 (arg.0008_in * arg.0012_in) (unsigned)
   0x40db3c  [ -4 ]   mov ebx, eax           ebx := eax
   0x40db3e  [ -4 ]   mov eax, 0x8(esp,,1)   eax := arg.0004 = arg.0004_in
-  0x40db42  [ -4 ]   mul 0x14(esp,,1)       edx_eax := eax * arg.0016 = 
+  0x40db42  [ -4 ]   mul 0x14(esp,,1)       edx_eax := eax * arg.0016 =
                                                 (arg.0004_in * arg.0016_in) (unsigned)
   0x40db46  [ -4 ]   add ebx, eax           ebx := ebx + eax
   0x40db48  [ -4 ]   mov eax, 0x8(esp,,1)   eax := arg.0004 = arg.0004_in
-  0x40db4c  [ -4 ]   mul ecx                edx_eax := eax * ecx = 
+  0x40db4c  [ -4 ]   mul ecx                edx_eax := eax * ecx =
                                                 (arg.0004_in * arg.0012_in) (unsigned)
   0x40db4e  [ -4 ]   add edx, ebx           edx := edx + ebx
   0x40db50  [ -4 ]   pop ebx                restore ebx
   0x40db51  [ 0 ]    ret 16                 return (increment stackpointer by 16)
 
 *)
-class allmul_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
-object (self)
+class allmul_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
+object
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__allmul__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let args = floc#get_call_args in
     let arg1 = get_arg args 1 floc in
     let arg2 = get_arg args 2 floc in
     let arg3 = get_arg args 3 floc in
     let arg4 = get_arg args 4 floc in
-    LBLOCK [ STR "__allmul(" ; xpr_to_pretty floc arg1 ; 
-	     STR "," ; xpr_to_pretty floc arg2 ; 
-	     STR "," ; xpr_to_pretty floc arg3 ; 
-	     STR "," ; xpr_to_pretty floc arg4 ; STR ") (adj 16)" ]
+    LBLOCK [
+        STR "__allmul("; xpr_to_pretty floc arg1;
+	STR ","; xpr_to_pretty floc arg2;
+	STR ","; xpr_to_pretty floc arg3;
+	STR ","; xpr_to_pretty floc arg4; STR ") (adj 16)"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let cmds1 = get_adjustment_commands 16 floc in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ebx ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Ebx; Ecx; Edx]] in
+    List.concat [cmds1; cmds2]
 
   method get_parametercount = 4
 
-  method get_description = "64 bit multiplication"
+  method! get_description = "64 bit multiplication"
 
 end
 
 let _ = H.add table "allmul" (new allmul_semantics_t)
+
 
 (* ============================================================== __allrem__
    example: V03be08:0x4094e0
@@ -397,7 +403,7 @@ let _ = H.add table "allmul" (new allmul_semantics_t)
 
   0x4094e0   [ 0 ]    push ebx                  save ebx
   0x4094e1   [ -4 ]   push edi                  save edi
-  0x4094e2   [ -8 ]   xor edi, edi              edi := 0 
+  0x4094e2   [ -8 ]   xor edi, edi              edi := 0
   0x4094e4   [ -8 ]   mov eax, 0x10(esp,,1)     eax := arg.0008 = arg.0008_in
   0x4094e8   [ -8 ]   or eax, eax               eax := eax | eax
   0x4094ea   [ -8 ]   jge 0x409500              if ? then goto 0x409500
@@ -426,12 +432,12 @@ let _ = H.add table "allmul" (new allmul_semantics_t)
 --------------------------------------------------------------------------------
   0x40951f   [ -8 ]   mov ecx, 0x14(esp,,1)     ecx := arg.0012
   0x409523   [ -8 ]   mov eax, 0x10(esp,,1)     eax := arg.0008
-  0x409527   [ -8 ]   xor edx, edx              edx := 0 
+  0x409527   [ -8 ]   xor edx, edx              edx := 0
   0x409529   [ -8 ]   div ecx                   (eax,edx) = eax / ecx (unsigned)
   0x40952b   [ -8 ]   mov eax, 0xc(esp,,1)      eax := arg.0004
   0x40952f   [ -8 ]   div ecx                   (eax,edx) = edx_eax / ecx (unsigned)
   0x409531   [ -8 ]   mov eax, edx              eax := edx
-  0x409533   [ -8 ]   xor edx, edx              edx := 0 
+  0x409533   [ -8 ]   xor edx, edx              edx := 0
   0x409535   [ -8 ]   dec edi                   edi := edi - 1
   0x409536   [ -8 ]   jns 0x409586              if (edi > 0) then goto 0x409586
 --------------------------------------------------------------------------------
@@ -481,32 +487,35 @@ let _ = H.add table "allmul" (new allmul_semantics_t)
   0x40958e   [ -4 ]   pop ebx                   restore ebx
   0x40958f   [ 0 ]    ret 16                    return (increment stackpointer by 16)
 *)
-class allrem_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class allrem_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__allrem__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let args = floc#get_call_args in
     let arg1 = get_arg args 1 floc in
     let arg2 = get_arg args 2 floc in
     let arg3 = get_arg args 3 floc in
     let arg4 = get_arg args 4 floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc arg1 ; 
-	     STR "," ; xpr_to_pretty floc arg2 ; 
-	     STR "," ; xpr_to_pretty floc arg3 ; 
-	     STR "," ; xpr_to_pretty floc arg4 ; STR ") (adj 16)" ]
+    LBLOCK [
+        STR self#get_name; STR "("; xpr_to_pretty floc arg1;
+	STR ","; xpr_to_pretty floc arg2;
+	STR ","; xpr_to_pretty floc arg3;
+	STR ","; xpr_to_pretty floc arg4; STR ") (adj 16)"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let cmds1 = get_adjustment_commands 16 floc in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ebx ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 =
+      [floc#get_abstract_cpu_registers_command [Eax; Ebx; Ecx; Edx]] in
+    List.concat [cmds1; cmds2]
 
   method get_parametercount = 4
 
-  method get_description = "64 bit remainder"
+  method! get_description = "64 bit remainder"
 
 end
 
@@ -514,7 +523,7 @@ let _ = H.add table "allrem" (new allrem_semantics_t)
 
 
 
-(* ============================================================== __allshl(eax,edx,cl)
+(* ========================================================= __allshl(eax,edx,cl)
    example: putty:0x44bd80
    md5hash: 86aee56a335d8d457990da457cbb4642
 
@@ -529,40 +538,43 @@ let _ = H.add table "allrem" (new allrem_semantics_t)
   0x44bd8f   [ 0 ]    ret                       return
 --------------------------------------------------------------------------------
   0x44bd90   [ 0 ]    mov edx, eax              edx := eax = eax_in
-  0x44bd92   [ 0 ]    xor eax, eax              eax := 0 
+  0x44bd92   [ 0 ]    xor eax, eax              eax := 0
   0x44bd94   [ 0 ]    and cl, 0x1f              cl := cl & 31
   0x44bd97   [ 0 ]    shl edx, cl               edx := edx << cl
   0x44bd99   [ 0 ]    ret                       return
 --------------------------------------------------------------------------------
-  0x44bd9a   [ 0 ]    xor eax, eax              eax := 0 
-  0x44bd9c   [ 0 ]    xor edx, edx              edx := 0 
+  0x44bd9a   [ 0 ]    xor eax, eax              eax := 0
+  0x44bd9c   [ 0 ]    xor edx, edx              edx := 0
   0x44bd9e   [ 0 ]    ret                       return
 *)
-class allshl_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class allshl_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__allshl__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let ecxv = get_reg_value Ecx floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(eax:" ; xpr_to_pretty floc eaxv ;
-	     STR ",edx:" ; xpr_to_pretty floc edxv ;
-	     STR ",ecx:" ; xpr_to_pretty floc ecxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(eax:"; xpr_to_pretty floc eaxv;
+	STR ",edx:"; xpr_to_pretty floc edxv;
+	STR ",ecx:"; xpr_to_pretty floc ecxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
-    [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ]
+  method! get_commands (floc:floc_int) =
+    [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]]
 
   method get_parametercount = 0
 
-  method get_description = "64 bit left shift"
+  method! get_description = "64 bit left shift"
 
 end
 
 let _ = H.add table "allshl" (new allshl_semantics_t)
+
 
 (* =============================================================== allshr ==
    example: V102:0x41d000
@@ -588,33 +600,36 @@ let _ = H.add table "allshl" (new allshl_semantics_t)
   0x41d01e   [ 0 ]    mov eax, edx              eax := edx
   0x41d020   [ 0 ]    ret                       return
 *)
-class allshr_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class allshr_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__allshr__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let ecxv = get_reg_value Ecx floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(eax:" ; xpr_to_pretty floc eaxv ;
-	     STR ",edx:" ; xpr_to_pretty floc edxv ;
-	     STR ",ecx:" ; xpr_to_pretty floc ecxv ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(eax:"; xpr_to_pretty floc eaxv;
+	STR ",edx:"; xpr_to_pretty floc edxv;
+	STR ",ecx:"; xpr_to_pretty floc ecxv; STR ")"]
 
-  method get_commands (floc:floc_int) =
-    [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ]
+  method! get_commands (floc:floc_int) =
+    [floc#get_abstract_cpu_registers_command [Eax; Ecx; Edx]]
 
   method get_parametercount = 0
 
-  method get_description = "64 bit right shift"
+  method! get_description = "64 bit right shift"
 
 end
 
 let _ = H.add table "allshr" (new allshr_semantics_t)
 
-(* =========================================================== __aulldiv__(A,B,C,D)
+
+(* ========================================================= __aulldiv__(A,B,C,D)
    example: V02c:0x40b7f0
 
   0x40b7f0  [ 0 ]       push ebx                  save ebx
@@ -625,12 +640,12 @@ let _ = H.add table "allshr" (new allshr_semantics_t)
 --------------------------------------------------------------------------------
   0x40b7fa  [ -8 ]      mov ecx, 0x14(esp,,1)     ecx := arg.0012 = arg.0012_in
   0x40b7fe  [ -8 ]      mov eax, 0x10(esp,,1)     eax := arg.0008 = arg.0008_in
-  0x40b802  [ -8 ]      xor edx, edx              edx := 0 
-  0x40b804  [ -8 ]      div ecx                   (eax,edx) = eax / ecx = 
+  0x40b802  [ -8 ]      xor edx, edx              edx := 0
+  0x40b804  [ -8 ]      div ecx                   (eax,edx) = eax / ecx =
                                                      (arg.0008_in / arg.0012_in) (unsigned)
   0x40b806  [ -8 ]      mov ebx, eax              ebx := eax
   0x40b808  [ -8 ]      mov eax, 0xc(esp,,1)      eax := arg.0004 = arg.0004_in
-  0x40b80c  [ -8 ]      div ecx                   (eax,edx) = edx_eax / ecx = 
+  0x40b80c  [ -8 ]      div ecx                   (eax,edx) = edx_eax / ecx =
                                                      (edx_eax / arg.0012_in) (unsigned)
   0x40b80e  [ -8 ]      mov edx, ebx              edx := ebx
   0x40b810  [ -8 ]      jmp 0x40b853              goto 0x40b853
@@ -649,11 +664,11 @@ let _ = H.add table "allshr" (new allshr_semantics_t)
 --------------------------------------------------------------------------------
   0x40b82c  [ -8 ]      div ebx                   (eax,edx) = edx_eax / ebx (unsigned)
   0x40b82e  [ -8 ]      mov esi, eax              esi := eax
-  0x40b830  [ -8 ]      mul 0x18(esp,,1)          edx_eax := eax * arg.0016 = 
+  0x40b830  [ -8 ]      mul 0x18(esp,,1)          edx_eax := eax * arg.0016 =
                                                      (eax * arg.0016_in) (unsigned)
   0x40b834  [ -8 ]      mov ecx, eax              ecx := eax
   0x40b836  [ -8 ]      mov eax, 0x14(esp,,1)     eax := arg.0012 = arg.0012_in
-  0x40b83a  [ -8 ]      mul esi                   edx_eax := eax * esi = 
+  0x40b83a  [ -8 ]      mul esi                   edx_eax := eax * esi =
                                                      (arg.0012_in * esi) (unsigned)
   0x40b83c  [ -8 ]      add edx, ecx              edx := edx + ecx
   0x40b83e  [ -8 ]      jc 0x40b84e               if ? then goto 0x40b84e
@@ -668,7 +683,7 @@ let _ = H.add table "allshr" (new allshr_semantics_t)
 --------------------------------------------------------------------------------
   0x40b84e  [ -8 ]      dec esi                   esi := esi - 1
 --------------------------------------------------------------------------------
-  0x40b84f  [ -8 ]      xor edx, edx              edx := 0 
+  0x40b84f  [ -8 ]      xor edx, edx              edx := 0
   0x40b851  [ -8 ]      mov eax, esi              eax := esi
 --------------------------------------------------------------------------------
   0x40b853  [ -8 ]      pop esi                   restore esi
@@ -677,36 +692,40 @@ let _ = H.add table "allshr" (new allshr_semantics_t)
 
 *)
 
-class aulldiv_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class aulldiv_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__aulldiv__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let args = floc#get_call_args in
     let arg1 = get_arg args 1 floc in
     let arg2 = get_arg args 2 floc in
     let arg3 = get_arg args 3 floc in
     let arg4 = get_arg args 4 floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc arg1 ; 
-	     STR "," ; xpr_to_pretty floc arg2 ; 
-	     STR "," ; xpr_to_pretty floc arg3 ; 
-	     STR "," ; xpr_to_pretty floc arg4 ; STR ") (adj 16)" ]
+    LBLOCK [
+        STR self#get_name; STR "("; xpr_to_pretty floc arg1;
+	STR ","; xpr_to_pretty floc arg2;
+	STR ","; xpr_to_pretty floc arg3;
+	STR ","; xpr_to_pretty floc arg4; STR ") (adj 16)"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let cmds1 = get_adjustment_commands 16 floc in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ebx ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 =
+      [floc#get_abstract_cpu_registers_command [Eax; Ebx; Ecx; Edx]] in
+    List.concat [cmds1; cmds2]
 
   method get_parametercount = 4
 
-  method get_description = "64 bit unsigned divide"
+  method! get_description = "64 bit unsigned divide"
 
 end
 
 let _ = H.add table "aulldiv" (new aulldiv_semantics_t)
+
 
 (* ======================================================= __aulldvrm__(A,B,C,D)
    Example: V0c3
@@ -718,20 +737,20 @@ let _ = H.add table "aulldiv" (new aulldiv_semantics_t)
 --------------------------------------------------------------------------------
   0x43c9e9   [ -4 ]   mov ecx, 0x10(esp,,1)     ecx := arg.0012 = arg.0012_in
   0x43c9ed   [ -4 ]   mov eax, 0xc(esp,,1)      eax := arg.0008 = arg.0008_in
-  0x43c9f1   [ -4 ]   xor edx, edx              edx := 0 
-  0x43c9f3   [ -4 ]   div ecx                   (eax,edx) = eax / ecx = 
+  0x43c9f1   [ -4 ]   xor edx, edx              edx := 0
+  0x43c9f3   [ -4 ]   div ecx                   (eax,edx) = eax / ecx =
                                                     (arg.0008_in / arg.0012_in) (unsigned)
   0x43c9f5   [ -4 ]   mov ebx, eax              ebx := eax
   0x43c9f7   [ -4 ]   mov eax, 0x8(esp,,1)      eax := arg.0004 = arg.0004_in
-  0x43c9fb   [ -4 ]   div ecx                   (eax,edx) = edx_eax / ecx = 
+  0x43c9fb   [ -4 ]   div ecx                   (eax,edx) = edx_eax / ecx =
                                                     (edx_eax / arg.0012_in) (unsigned)
   0x43c9fd   [ -4 ]   mov esi, eax              esi := eax
   0x43c9ff   [ -4 ]   mov eax, ebx              eax := ebx
-  0x43ca01   [ -4 ]   mul 0x10(esp,,1)          edx_eax := eax * arg.0012 = 
+  0x43ca01   [ -4 ]   mul 0x10(esp,,1)          edx_eax := eax * arg.0012 =
                                                     (eax * arg.0012_in) (unsigned)
   0x43ca05   [ -4 ]   mov ecx, eax              ecx := eax
   0x43ca07   [ -4 ]   mov eax, esi              eax := esi
-  0x43ca09   [ -4 ]   mul 0x10(esp,,1)          edx_eax := eax * arg.0012 = 
+  0x43ca09   [ -4 ]   mul 0x10(esp,,1)          edx_eax := eax * arg.0012 =
                                                     (eax * arg.0012_in) (unsigned)
   0x43ca0d   [ -4 ]   add edx, ecx              edx := edx + ecx
   0x43ca0f   [ -4 ]   jmp 0x43ca58              goto 0x43ca58
@@ -750,11 +769,11 @@ let _ = H.add table "aulldiv" (new aulldiv_semantics_t)
 --------------------------------------------------------------------------------
   0x43ca2b   [ -4 ]   div ebx                   (eax,edx) = edx_eax / ebx (unsigned)
   0x43ca2d   [ -4 ]   mov esi, eax              esi := eax
-  0x43ca2f   [ -4 ]   mul 0x14(esp,,1)          edx_eax := eax * arg.0016 = 
+  0x43ca2f   [ -4 ]   mul 0x14(esp,,1)          edx_eax := eax * arg.0016 =
                                                     (eax * arg.0016_in) (unsigned)
   0x43ca33   [ -4 ]   mov ecx, eax              ecx := eax
   0x43ca35   [ -4 ]   mov eax, 0x10(esp,,1)     eax := arg.0012 = arg.0012_in
-  0x43ca39   [ -4 ]   mul esi                   edx_eax := eax * esi = 
+  0x43ca39   [ -4 ]   mul esi                   edx_eax := eax * esi =
                                                     (arg.0012_in * esi) (unsigned)
   0x43ca3b   [ -4 ]   add edx, ecx              edx := edx + ecx
   0x43ca3d   [ -4 ]   jc 0x43ca4d               if ? then goto 0x43ca4d
@@ -771,7 +790,7 @@ let _ = H.add table "aulldiv" (new aulldiv_semantics_t)
   0x43ca4e   [ -4 ]   sub eax, 0x10(esp,,1)     eax := eax - arg.0012 = (eax - arg.0012_in)
   0x43ca52   [ -4 ]   sbb edx, 0x14(esp,,1)     edx := edx - (arg.0016 - (0 or 1))
 --------------------------------------------------------------------------------
-  0x43ca56   [ -4 ]   xor ebx, ebx              ebx := 0 
+  0x43ca56   [ -4 ]   xor ebx, ebx              ebx := 0
 --------------------------------------------------------------------------------
   0x43ca58   [ -4 ]   sub eax, 0x8(esp,,1)      eax := eax - arg.0004 = (eax - arg.0004_in)
   0x43ca5c   [ -4 ]   sbb edx, 0xc(esp,,1)      edx := edx - (arg.0008 - (0 or 1))
@@ -788,32 +807,35 @@ let _ = H.add table "aulldiv" (new aulldiv_semantics_t)
 
 *)
 
-class aulldvrm_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class aulldvrm_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__aulldvrm__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let args = floc#get_call_args in
     let arg1 = get_arg args 1 floc in
     let arg2 = get_arg args 2 floc in
     let arg3 = get_arg args 3 floc in
     let arg4 = get_arg args 4 floc in
-    LBLOCK [ STR self#get_name ; STR "(" ; xpr_to_pretty floc arg1 ; 
-	     STR "," ; xpr_to_pretty floc arg2 ; 
-	     STR "," ; xpr_to_pretty floc arg3 ; 
-	     STR "," ; xpr_to_pretty floc arg4 ; STR ") (adj 16)" ]
+    LBLOCK [
+        STR self#get_name; STR "("; xpr_to_pretty floc arg1;
+	STR ","; xpr_to_pretty floc arg2;
+	STR ","; xpr_to_pretty floc arg3;
+	STR ","; xpr_to_pretty floc arg4; STR ") (adj 16)"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let cmds1 = get_adjustment_commands 16 floc in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Eax ; Ebx ; Ecx ; Edx ] ] in
-    List.concat [ cmds1 ; cmds2 ]
+    let cmds2 =
+      [floc#get_abstract_cpu_registers_command [Eax; Ebx; Ecx; Edx]] in
+    List.concat [cmds1; cmds2]
 
   method get_parametercount = 4
 
-  method get_description = "64 bit unsigned divide and remainder"
+  method! get_description = "64 bit unsigned divide and remainder"
 
 end
 
@@ -834,38 +856,39 @@ let _ = H.add table "aulldvrm" (new aulldvrm_semantics_t)
   0x409ccf   [ 0 ]    ret                    return
 --------------------------------------------------------------------------------
   0x409cd0   [ 0 ]    mov eax, edx           eax := edx = edx_in
-  0x409cd2   [ 0 ]    xor edx, edx           edx := 0 
+  0x409cd2   [ 0 ]    xor edx, edx           edx := 0
   0x409cd4   [ 0 ]    and cl, 0x1f           cl := cl & 31
   0x409cd7   [ 0 ]    shr eax, cl            eax := eax >> cl
   0x409cd9   [ 0 ]    ret                    return
 --------------------------------------------------------------------------------
-  0x409cda   [ 0 ]    xor eax, eax           eax := 0 
-  0x409cdc   [ 0 ]    xor edx, edx           edx := 0 
+  0x409cda   [ 0 ]    xor eax, eax           eax := 0
+  0x409cdc   [ 0 ]    xor edx, edx           edx := 0
   0x409cde   [ 0 ]    ret                    return
 
 *)
 
-class aullshr_semantics_t (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class aullshr_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__aullshr__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
     let ecxv = get_reg_value Ecx floc in
     let edxv = get_reg_value Edx floc in
-    LBLOCK [ STR self#get_name ; STR "(eax:" ; xpr_to_pretty floc eaxv ; 
-	     STR ",edx:" ; xpr_to_pretty floc edxv ;
-	     STR ",ecx:" ; xpr_to_pretty floc ecxv ; STR ")" ]
+    LBLOCK [ STR self#get_name; STR "(eax:"; xpr_to_pretty floc eaxv;
+	     STR ",edx:"; xpr_to_pretty floc edxv;
+	     STR ",ecx:"; xpr_to_pretty floc ecxv; STR ")" ]
 
-  method get_commands (floc:floc_int) =
-    [ floc#get_abstract_cpu_registers_command [ Eax ; Ecx ; Edx ] ]
+  method! get_commands (floc:floc_int) =
+    [ floc#get_abstract_cpu_registers_command [ Eax; Ecx; Edx ] ]
 
   method get_parametercount = 0
 
-  method get_description = "unsigned 64 bit right shift"
+  method! get_description = "unsigned 64 bit right shift"
 
 end
 

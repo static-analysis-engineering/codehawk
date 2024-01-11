@@ -180,7 +180,7 @@ let get_record (opc:opcode_t) =
      ADC r/m32,imm32 ---- Add with CF imm32 to r/m32                 ---- 81/2 id
      ADC r/m32,imm8  ---- Add with CF sign extended imm8 into r/m32  ---- 83/2 ib
   *)
-  | AddCarry (op1,op2) -> {
+  | AddCarry (op1, op2) -> {
     docref       = "2A, 3-27";
     mnemonic     = "adc";
     operands     = [op1; op2];
@@ -494,7 +494,7 @@ let get_record (opc:opcode_t) =
      CMOVLE r32,r/m32  --- Move if less or equal (ZF=1 or SF!=OF)    ---- 0F 4E/r
      CMOVG r32,r/m32   --- Move if greater (ZF=0 and SF=OF)          ---- 0F 4F/r
 *)
-  | CMovcc (cc,width,op1,op2) ->
+  | CMovcc (cc, _width, op1, op2) ->
     let name = "cmov" ^ (condition_code_to_suffix_string cc) in
     { docref      = "2A, 3-151";
       mnemonic    = name;
@@ -734,7 +734,7 @@ let get_record (opc:opcode_t) =
                             result stored in EAX <- quotient,
                             EDX <- remainder                        ---- F7/6
   *)
-  | Div (width,quot,rem,dividend,divisor) ->
+  | Div (_width, quot, rem, dividend, divisor) ->
     { docref       = "2A, 3-310";
       mnemonic     = "div";
       operands     = [quot; rem; dividend; divisor];
@@ -770,7 +770,7 @@ let get_record (opc:opcode_t) =
      fp   : source operand is a floating point number (no need for conversion)
      width: width of the source operand
   *)
-  | Fadd (pop,fp,width,dst,src) ->
+  | Fadd (pop, fp, _width, dst, src) ->
      let name =
        "f" ^ (if fp then "" else "i") ^ "add" ^ (if pop then "p" else "") in
     { docref       = "2A, 3-347";
@@ -816,7 +816,7 @@ let get_record (opc:opcode_t) =
      fp   : source operand is a floating point number (no need for conversion)
      width: width of the source operand
   *)
-  | Fcom (pop,fp,width,src) ->
+  | Fcom (pop, fp, _width, src) ->
     let name = "f" ^ (fp_infix fp) ^ "com" ^ (npop_suffix pop) in
     { docref       = "2A, 3-362";
       mnemonic     = name;
@@ -843,7 +843,7 @@ let get_record (opc:opcode_t) =
      pop       : floating point stack is popped after operation
      unordered : QNaNs do not raise an exception, but set result to unordered
   *)
-  | Fcomi (pop,unordered,src) ->
+  | Fcomi (pop, unordered, src) ->
     let name = "f" ^ (unordered_infix unordered) ^ "comi" ^ (pop_suffix pop) in
     { docref       = "2A, 3-366";
       mnemonic     = name;
@@ -882,7 +882,7 @@ let get_record (opc:opcode_t) =
      fp    : source operand is a floating point number (no need for conversion)
      width : width of the source operand
   *)
-  | Fdiv (pop,fp,width,dst,src) ->
+  | Fdiv (pop, fp, _width, dst, src) ->
      let name =
        "f" ^ (if fp then "" else "i") ^ "add" ^ (if pop then "p" else "") in
     { docref       = "2A, 3-373";
@@ -915,7 +915,7 @@ let get_record (opc:opcode_t) =
      fp    : source operand is a floating point number (no need for conversion)
      width : width of the source operand
   *)
-  | Fdivr (pop,fp,width,dst,src) ->
+  | Fdivr (pop, fp, _width, dst, src) ->
      let name =
        "f" ^ (if fp then "" else "i") ^ "div" ^ (if pop then "p" else "") in
     { docref       = "2A, 3-377";
@@ -970,7 +970,7 @@ let get_record (opc:opcode_t) =
      fp    : source operand is a floating point number (no need for conversion)
      width : width of the source operand
   *)
-  | Fmul (pop,fp,width,dst,src) ->
+  | Fmul (pop, fp, _width, dst, src) ->
      let name =
        "f" ^ (if fp then "" else "i") ^ "mul" ^ (if pop then "p" else "") in
     { docref       = "2A, 3-408";
@@ -1004,7 +1004,7 @@ let get_record (opc:opcode_t) =
       fp    : source operand is a floating point number (no need for conversion)
       width : width of source operand
   *)
-  | Fsub (pop,fp,width,dst,src) ->
+  | Fsub (pop, fp, _width, dst, src) ->
      let name =
        "f" ^ (if fp then "" else "i") ^ "sub" ^ (if pop then "p" else "") in
     { docref       = "2A, 3-455";
@@ -1038,7 +1038,7 @@ let get_record (opc:opcode_t) =
       width : width of the source operand
    *)
 
-  | Fsubr (pop,fp,width,dst,src) ->
+  | Fsubr (pop, fp, _width, dst, src) ->
      let name =
        "f" ^ (if fp then "" else "i") ^ "subr" ^ (if pop then "p" else "") in
     { docref       = "2A, 3-459";
@@ -1206,7 +1206,7 @@ let get_record (opc:opcode_t) =
      width: width of the source operand, to be extended to 80-bit
                double-extended precision
   *)
-  | FLoad (fp,width,src) ->
+  | FLoad (fp,_width, src) ->
     let name = "f" ^ (fp_infix fp) ^ "ld" in
     {	docref       = "2A, 3-398";
 	mnemonic     = name;
@@ -1226,7 +1226,7 @@ let get_record (opc:opcode_t) =
      FLDLN2 -- Push log_e 2 onto the FPU register stack              ---- D9 ED
      FLDZ ---- Push +0.0 onto the FPU register stack                 ---- D9 EE
   *)
-  | FLoadConstant (suffix,descr) ->
+  | FLoadConstant (suffix, _descr) ->
     let name = "fld" ^ suffix in
     {	docref       = "2A, 3-401";
 	mnemonic     = name;
@@ -1242,7 +1242,7 @@ let get_record (opc:opcode_t) =
      --- Load FPU environment from m15byte or m28byte                 ---- D9/4
      FLDCW m2byte      --- Load FPU control word from m2byte          ---- D9/5
    *)
-  | FLoadState (state,width,src) ->
+  | FLoadState (state, _width, src) ->
     let name = "fld" ^ state in
     { docref       = "2A, 3-403, 3-405";
       mnemonic     = name;
@@ -1279,7 +1279,7 @@ let get_record (opc:opcode_t) =
      FSIN   --- Replace ST(0) with its sine                            ---- D9 FE
      FCOS   --- Replace ST(0) with its cosine                          ---- D9 FF
   *)
-  | FStackOp (name,descr) -> {
+  | FStackOp (name, _descr) -> {
     docref       = "";
     mnemonic     = name;
     operands     = [fpu_register_op 0 RW];
@@ -1307,7 +1307,7 @@ let get_record (opc:opcode_t) =
        fp    : number is stored in destination in floating point format
        width : width of destination operand
     *)
-  | FStore (pop,fp,width,dst) ->
+  | FStore (pop, fp, _width, dst) ->
     let name = "f" ^ (fp_infix fp) ^ "st" ^ (pop_suffix pop) in
     { docref       = "2A, 3-391, 3-443";
       mnemonic     = name;
@@ -1366,7 +1366,7 @@ let get_record (opc:opcode_t) =
                            without checking for pending unmasked
                            floating- point exceptions. Then
                            re-initialize the FPU                     ---- DD/6 *)
-  | FSaveState (chex,dst) ->
+  | FSaveState (chex, dst) ->
     let name = if chex then "fsave" else "fnsave" in
     { docref     = "2A 3-327";
       mnemonic   = name;
@@ -1422,7 +1422,7 @@ let get_record (opc:opcode_t) =
       cpe  : check for pending floating point exceptions
       width: width of destination operand
   *)
-  | FStoreState (state,cpe, width, dst) ->
+  | FStoreState (state, cpe, _width, dst) ->
     let name = "f" ^ (cpe_infix cpe) ^ "st" ^ state in
     { docref       = "2A, 3-446, 3-452";
       mnemonic     = name;
@@ -1452,7 +1452,7 @@ let get_record (opc:opcode_t) =
      single : single or double precision
      predicate: first 3 bits contain condition code
   *)
-  | FXmmCompare (scalar,single,dst,src,predicate) ->
+  | FXmmCompare (scalar, single, dst, src, predicate) ->
     let name = "cmp" ^ (scalar_infix scalar) ^ (single_infix single) in
     { docref       = "2A";
       mnemonic     = name;
@@ -1562,11 +1562,12 @@ let get_record (opc:opcode_t) =
     scalar : scalar or packed
     single : single or double precision
   *)
-  | FXmmMove (modifier,scalar,single,dst,src) ->
-    let name = if is_dup modifier then
-	"mov" ^ (single_infix single) ^ modifier
-      else
-	"mov" ^ modifier ^ (scalar_infix scalar) ^ (single_infix single) in
+  | FXmmMove (modifier, scalar, single, dst, src) ->
+     let name =
+       if is_dup modifier then
+	 "mov" ^ (single_infix single) ^ modifier
+       else
+	 "mov" ^ modifier ^ (scalar_infix scalar) ^ (single_infix single) in
     { docref       = "2A";
       mnemonic     = name;
       operands     = [dst; src];
@@ -1745,7 +1746,7 @@ let get_record (opc:opcode_t) =
 		 scalar : scalar (S) or packed (P)
 		 single : single (S) or double precision (D)
   *)
-  | FXmmOp (opname,scalar,single,dst,src) ->
+  | FXmmOp (opname, scalar, single, dst, src) ->
     let name = opname ^ (scalar_infix scalar) ^ (single_infix single) in
     { docref       = "2A,2B";
       mnemonic     = name;
@@ -1767,7 +1768,7 @@ let get_record (opc:opcode_t) =
          values selected by imm8 from xmm1 and
          xmm2/m128 to xmm1                                     ---- 66 0F C6/r ib
   *)
-  | FXmmOpEx (opname,scalar,single,dst,src,extop) ->
+  | FXmmOpEx (opname, scalar, single, dst, src, extop) ->
     let name = opname ^ (scalar_infix scalar) ^ (single_infix single) in
     { docref       = "2A, 2B";
       mnemonic     = name;
@@ -1807,7 +1808,7 @@ let get_record (opc:opcode_t) =
   (* IDIV r/m8  --- Signed divide:  AL,AH <- AX / r/m8               ---- F6/7
      IDIV r/m32 --- Signed divide (EAX,EDX) <- EDX:EAX / r/m32       ---- F7/7
   *)
-  | IDiv (width,quot,rem,dividend,divisor) ->
+  | IDiv (_width, quot, rem, dividend, divisor) ->
     { docref       = "2A, 3-511";
       mnemonic     = "idiv";
       operands     = [quot; rem; dividend; divisor];
@@ -1827,7 +1828,7 @@ let get_record (opc:opcode_t) =
      IMUL r/m8           --- Signed multiply AX <- AL * r/m8        ---- F6/5
      IMUL r/m32          --- Signed multiply EDX:EAX <- EAX * r/m32 ---- F7/5
 *)
-  | IMul (width,op1,op2,op3) -> {
+  | IMul (_width, op1, op2, op3) -> {
     docref       = "2A, 3-515";
     mnemonic     = "imul";
     operands     = [op1; op2; op3];
@@ -1886,7 +1887,7 @@ let get_record (opc:opcode_t) =
      IN AL,DX   --- Input byte from I/O port in DX into AL             ---- EC
      IN AX,DX   --- Input word from I/O port in DX into AX             ---- ED
      IN EAX,DX  --- Input doubleword from I/O port in DX into EAX      ---- ED *)
-  | InputFromPort (width,dest,port) -> {
+  | InputFromPort (_width, dest, port) -> {
     docref        = "2A, 3-398";
     mnemonic      = "in";
     operands      = [dest; port];
@@ -2148,8 +2149,13 @@ let get_record (opc:opcode_t) =
   *)
  | Lods (width, op) ->
     let name = "lods" ^ (width_suffix_string width) in
-    let dst = try register_op (sized_reg_of_reg Eax width) width WR with _ ->
-      raise (BCH_failure (LBLOCK [STR "Error in lods operand size: "; INT width])) in
+    let dst =
+      try
+        register_op (sized_reg_of_reg Eax width) width WR
+      with _ ->
+        raise
+          (BCH_failure
+             (LBLOCK [STR "Error in lods operand size: "; INT width])) in
     { docref       = "2A, 3-618";
       mnemonic     = name;
       operands     = [dst; op; esi_r RW ];
@@ -2170,7 +2176,7 @@ let get_record (opc:opcode_t) =
      AND r/m32,imm32 -- r/m32 AND r32                                ---- 81/4 id
      AND r/m32,imm8 --- r/m32 AND imm8 (sign-extended)               ---- 83/4 ib
   *)
-  | LogicalAnd (dst,src) -> {
+  | LogicalAnd (dst, src) -> {
     docref       = "2A, 3-71";
     mnemonic     = "and";
     operands     = [dst; src];
@@ -2191,7 +2197,7 @@ let get_record (opc:opcode_t) =
      OR  r/m32,imm32 ---- r/m32 OR r32                                ---- 81/1 id
      OR  r/m32,imm8  ---- r/m32 or imm8 (sign-extended)               ---- 83/1 ib
   *)
-  | LogicalOr (op1,op2) -> {
+  | LogicalOr (op1, op2) -> {
     docref       = "2A, 4-15";
     mnemonic     = "or";
     operands     = [op1; op2];
@@ -2241,7 +2247,7 @@ let get_record (opc:opcode_t) =
      MOV r/m8,imm8  ----  Move imm8 to r/m8                          ---- C6/0
      MOV r/m32,imm32 ---- Move imm32 to r/m32                        ---- C7/0
   *)
-  | Mov (width,dst,src) -> {
+  | Mov (_width, dst, src) -> {
     docref       = "2A, 3-667";
     mnemonic     = "mov";
     operands     = [dst; src];
@@ -2261,7 +2267,7 @@ let get_record (opc:opcode_t) =
      MOVQ xmm1,xmm2/m64 --- Move quadword from xmm2/m64 to xmm1    ---- F3 0F 7E/r
      MOVQ xmm2/m64,xmm1 --- Move quadword from xmm1 to xmm2/mem64  ---- 66 0F D6/r
    *)
-  | Movdw (width,op1,op2) ->
+  | Movdw (width, op1, op2) ->
     let name = if width = 4 then "movd" else "movq" in
     {	docref       = "2A, 3-689";
 	mnemonic     = name;
@@ -2282,7 +2288,7 @@ let get_record (opc:opcode_t) =
      MOVDQU xmm2/m128,xmm1
      --- Move unaligned double quadword from xmm1 to xmm2/m128   ---- F3 0F 7F/r
   *)
-  | Movdq (aligned,dst,src) ->
+  | Movdq (aligned, dst, src) ->
     let name = "movdq" ^ (if aligned then "a" else "u") in
     { docref       = "2A, 3-696";
       mnemonic     = name;
@@ -2305,9 +2311,14 @@ let get_record (opc:opcode_t) =
      --- Move double quadword from xmm to m128 using
          non-temporal hint                                        ---- 66 0F E7/r
   *)
-  | Movnt (aligned,width,dst,src) ->
-    let name = "movnt" ^ (match width with 4 -> "i" | 8 -> "q" | _ -> "dq") ^
-      (if aligned then "a" else "") in
+  | Movnt (aligned, width, dst, src) ->
+     let name =
+       "movnt"
+       ^ (match width with
+          | 4 -> "i"
+          | 8 -> "q"
+          | _ -> "dq")
+       ^ (if aligned then "a" else "") in
   { docref       = "2A, 3-724";
     mnemonic     = name;
     operands     = [dst; src];
@@ -2321,7 +2332,7 @@ let get_record (opc:opcode_t) =
   (* MOVS m8,m8    ----- move byte from address DS:[ESI] to ES:[EDI]     ---- A4
      MOVS m32,m32  ----- move dword from address DS:[ESI] to ES:[EDI]    ---- A5
   *)
-  | Movs (width,dst,src,srcptr,dstptr) ->
+  | Movs (width, dst, src, srcptr, dstptr) ->
     let name = "movs" ^ (width_suffix_string width) in
   { docref       = "2A, 3-746";
     mnemonic     = "movs";
@@ -2336,7 +2347,7 @@ let get_record (opc:opcode_t) =
   (* MOVSX r32,r/m8 --- Move byte to doubleword with sign extension  ---- 0F BE
      MOVSX r32,r/m16 -- Move word to doubleword with sign extension  ---- 0F BF
   *)
-  | Movsx (width,dst,src) -> {
+  | Movsx (_width, dst, src) -> {
     docref       = "2A, 3-763";
     mnemonic     = "movsx";
     operands     = [dst; src];
@@ -2350,7 +2361,7 @@ let get_record (opc:opcode_t) =
   (* MOVZX r32,r/m8 --- Move byte to doubleword with zero extension ---- 0F B6
      MOVZX r32,r/m16 -- Move word to doubleword with zero extension ---- 0F B7
   *)
-  | Movzx (width,dst,src) -> {
+  | Movzx (_width, dst, src) -> {
     docref       = "2A, 3-772";
     mnemonic     = "movzx";
     operands     = [dst; src];
@@ -2364,17 +2375,18 @@ let get_record (opc:opcode_t) =
   (* MUL r/m8  ---- Unsigned multiply: AX <- AL * r/m8               ---- F6/4
      MUL r/m32 ---- Unsigned multiply EDX:EAX <- EAX * r/m32         ---- F7/4
   *)
-  | Mul (width,dst,src,op) ->
+  | Mul (_width, dst, src, op) ->
     {	docref       = "2A, 3-778";
 	mnemonic     = "mul";
 	operands     = [dst; src; op];
 	flags_set    = [OFlag; CFlag; SFlag; ZFlag; PFlag];
-                                                   (* SFlag, ZFlag, PFlag undefined *)
+        (* SFlag, ZFlag, PFlag undefined *)
 	flags_used   = [];
 	group_name   = "integer arithmetic";
 	long_name    = "UnsignedMultiply";
 	intel_asm    = (fun f -> f#ops "mul" [op]);
 	att_asm      = (fun f -> f#ops "mul" [op])}
+
   (* NOP (2 bytes)  -- 66 90
    * NOP (3 bytes)  -- 0F 1F 00
    * NOP (4 bytes)  -- 0F 1F 40 00
@@ -2418,7 +2430,7 @@ let get_record (opc:opcode_t) =
      --- Output doubleword from memory location specified in
          DE:(E)SI or RSI to I/O port specified in DX                   ---- 6F
   *)
-  | OutputStringToPort (width,op) ->
+  | OutputStringToPort (width, op) ->
     let name = "outs" ^ (width_suffix_string width) in
     { docref       = "2A, 3-525";
       mnemonic     = name;
@@ -2438,7 +2450,7 @@ let get_record (opc:opcode_t) =
      OUT DX,AX   ---- Output word in AX to I/O port address in DX          EF
      OUT DX,EAX  ---- Output doubleword in EAX to I/O port address in DX   EF *)
 
-  | OutputToPort (width,port,src) -> {
+  | OutputToPort (_width, port, src) -> {
     docref       = "2B 4-17";
     mnemonic     = "out";
     operands     = [port; src];
@@ -2448,7 +2460,6 @@ let get_record (opc:opcode_t) =
     long_name    = "OutputToPort";
     intel_asm    = (fun f -> f#ops "out" [port; src]);
     att_asm      = (fun f -> f#ops "out" [src; port])}
-
 
   (* PADDQ mm1,mm2/m64 --- Add quadword integer mm2/m64 to mm1      ---- 0F D4/r
      PADDUSB mm1,mm2/m64
@@ -2495,7 +2506,7 @@ let get_record (opc:opcode_t) =
      us: unsigned saturation
      width: width of packed entries
   *)
-  | PackedAdd (ss,us,width,dst,src) ->
+  | PackedAdd (ss, us, width, dst, src) ->
      let name =
        "padd" ^ (signed_saturation_infix ss) ^ (unsigned_saturation_infix us) ^
       (width_suffix_string width) in
@@ -2557,7 +2568,7 @@ let get_record (opc:opcode_t) =
      pred : predicate to be used for comparison (eq or gt)
      width: width of the packed entries
   *)
-  | PackedCompare (pred,width,dst,src) ->
+  | PackedCompare (pred, width, dst, src) ->
     let name = "pcmp" ^ pred ^ (width_suffix_string width) in
     { docref       = "2B, 4-88";
       mnemonic     = name;
@@ -2589,7 +2600,7 @@ let get_record (opc:opcode_t) =
      index    : true: result is an index saved in ecx
                 false: result is a mask saved in xmm0
   *)
-  | PackedCompareString (explicit,index,op1,op2,controlbyte) ->
+  | PackedCompareString (explicit, index, op1, op2, controlbyte) ->
     let echar = if explicit then "e" else "i" in
     let ichar = if index then "i" else "m" in
     let ename = if explicit then "explicit" else "implicit" in
@@ -2642,7 +2653,7 @@ let get_record (opc:opcode_t) =
          saturation                                              ---- 66 0f 6B/r
 
   *)
-  | PackedConvert (ty,dst,src) -> {
+  | PackedConvert (ty, dst, src) -> {
     docref         = "page 120";
     mnemonic       = "pack" ^ ty;
     operands       = [dst; src];
@@ -2668,7 +2679,7 @@ let get_record (opc:opcode_t) =
       ---- Extract the word specified by imm8 from xmm and
            move it to reg bits 15-0                            ---- 66 0F C5/r ib
   *)
-  | PackedExtract (width,dst,src,selector) ->
+  | PackedExtract (width, dst, src, selector) ->
     let name = "pextr" ^ (width_suffix_string width)  in
     { docref       = "2B, 4-114";
       mnemonic     = name;
@@ -2689,7 +2700,7 @@ let get_record (opc:opcode_t) =
          extract byte-aligned result shifted to the
          right by constant value imm8 into xmm1                ---- 66 0F 3A 0F
   *)
-  | PackedAlignRight (dst,src,shift) -> {
+  | PackedAlignRight (dst, src, shift) -> {
     docref       = "2B, 4-62";
     mnemonic    = "palignr";
     operands     = [dst; src; shift];
@@ -2716,7 +2727,7 @@ let get_record (opc:opcode_t) =
      --- Insert the low word from r32 or from m16
          into mm at the word position specified by imm8       ---- 66 0F C4/r ib
   *)
-  | PackedInsert (width,dst,src,extop) ->
+  | PackedInsert (width, dst, src, extop) ->
     let name = "pinsr" ^ (width_suffix_string width) in
     { docref       = "2B, 4-137";
       mnemonic     = name;
@@ -2764,7 +2775,7 @@ let get_record (opc:opcode_t) =
      --- Shuffle the high words in xmm2/m128 based on
          the encoding in imm8 and store the result in xmm1    ---- F3 0F 70/r ib
   *)
-  | PackedShuffle (suffix,dst,src,optEncoding) ->
+  | PackedShuffle (suffix, dst, src, optEncoding) ->
     let name = "pshuf" ^ suffix in
     let ops = match optEncoding with
       | Some encoding -> [dst; src; encoding] | _ -> [dst; src] in
@@ -2819,7 +2830,7 @@ let get_record (opc:opcode_t) =
          xmm1 by packed unsigned doubleword integers in
          xmm2/m128 and store quadword result in xmm1             ---- 66 0F F4/r
   *)
-  | PackedMultiply (suffix,dst,src) ->
+  | PackedMultiply (suffix, dst, src) ->
     let name = "pmul" ^ suffix in
     { docref       = "2B, 4-197";
       mnemonic     = name;
@@ -2901,7 +2912,7 @@ let get_record (opc:opcode_t) =
      PXOR xmm1,xmm2/m128
      ---- Bitwise XOR of xmm2/m128 and xmm1                      ---- 66 0F EF/r
 *)
- | PackedOp (opname,width,dst,src) ->
+ | PackedOp (opname,width, dst, src) ->
    let name = "p" ^ opname ^ (width_suffix_string width) in
    { docref       = "2B";
      mnemonic     = name;
@@ -2996,7 +3007,7 @@ let get_record (opc:opcode_t) =
            "ra"; right arithmetic
      width: width of packed entries
   *)
- | PackedShift (dir,width,dst,src) ->
+ | PackedShift (dir, width, dst, src) ->
    let name = "ps" ^ dir ^ (width_suffix_string width) in
    { docref       = "2B, 4-268";
      mnemonic     = name;
@@ -3065,7 +3076,7 @@ let get_record (opc:opcode_t) =
      us: unsigned saturation
      width: width of packed entries
   *)
- | PackedSubtract (ss,us,width,dst,src) ->
+ | PackedSubtract (ss, us, width, dst, src) ->
     let name =
       "psub" ^ (signed_saturation_infix ss) ^ (unsigned_saturation_infix us) ^
      (width_suffix_string width) in
@@ -3120,7 +3131,7 @@ let get_record (opc:opcode_t) =
      --- Unpack and interleave high-order bytes
          from xmm1 and xmm2/m128 into xmm1                       ---- 66 0F 6D/r
   *)
- | Unpack (hilo,width,dst,src) ->
+ | Unpack (hilo, width, dst, src) ->
     let name =
       "punpck"
       ^ hilo
@@ -3147,7 +3158,7 @@ let get_record (opc:opcode_t) =
      POP r32 --- Pop top of stack into r32; increment stack pointer  ---- 58+rd
      POP r/m32 - Pop top of stack into m32, increment stack pointer  ---- 8F/0
   *)
- | Pop (_,op) -> {
+ | Pop (_, op) -> {
    docref       = "2A, 4-220";
    mnemonic     = "pop";
    operands     = [op; esp_r RW; esp_deref RD];
@@ -3192,7 +3203,7 @@ let get_record (opc:opcode_t) =
      PREFETCHT2 m8
      --- move data from m8 closer to the processor using T2 hint    ---- 0F 18/3
   *)
- | Prefetch (suffix,op) ->
+ | Prefetch (suffix, op) ->
    let name = "prefetch" ^ suffix in
    { docref       = "2A, 4-239";
      mnemonic     = name;
@@ -3215,7 +3226,7 @@ let get_record (opc:opcode_t) =
      PUSH imm8 -- Push sign-extended imm8                            ---- 6A
      PUSH r/m32 - Push r/m32                                         ---- FF/6
   *)
- | Push (size,op) -> {
+ | Push (size, op) -> {
    docref       = "2A, 4-319";
    mnemonic     = "push";
    operands     = [op; esp_deref ~with_offset:(-(size)) WR; esp_r RW];
@@ -3259,7 +3270,7 @@ let get_record (opc:opcode_t) =
      RCL r/m8,CL   ---- Rotate 9 bits (CF,r/m8) left CL times        ---- D2/2
      RCL r/m32, CL ---- Rotate 33 bits (CF,r/m32) left CL times      ---- D3/3
   *)
- | Rcl (op1,op2) -> {
+ | Rcl (op1, op2) -> {
    docref       = "2A, 4-333";
    mnemonic     = "rcl";
    operands     = [op1; op2];
@@ -3277,7 +3288,7 @@ let get_record (opc:opcode_t) =
      RCR r/m8,CL   ---- Rotate 9 bits (CF,r/m8) right CL times       ---- D2/3
      RCR r/m32, CL ---- Rotate 33 bits (CF,r/m32) right CL times     ---- D3/3
   *)
- | Rcr (op1,op2) -> {
+ | Rcr (op1, op2) -> {
    docref       = "2A, 4-333";
    mnemonic     = "rcr";
    operands     = [op1; op2];
@@ -3293,7 +3304,7 @@ let get_record (opc:opcode_t) =
      REPE CMPS m32 m32
      --- Find nonmatching doublewords in ES:[EDI] and DS:[ESI]        ---- F3 A7
    *)
- | RepECmps (width,src1,src2) -> {
+ | RepECmps (_width, src1, src2) -> {
    docref       = "2A, 4-359";
    mnemonic     = "repe cmps";
    operands     = [ecx_r RW; edi_r RW; esi_r RW; src1; src2 ];
@@ -3307,7 +3318,7 @@ let get_record (opc:opcode_t) =
   (* REPE SCAS m8  --- Find non-AL byte starting at ES:[EDI]          ---- F3 AE
      REPE SCAS m32 --- Find non-EAX doubleword starting at ES:[EDI]   ---- F3 AF
   *)
- | RepEScas (width,op) ->
+ | RepEScas (width, op) ->
     let src =
       if width = 1 then
         al_r WR
@@ -3329,7 +3340,7 @@ let get_record (opc:opcode_t) =
    * REP INS m32,DX
    --- Input ECX doublewords from port DX into ES:[EDI]               ---- F3 6D
    *)
- | RepIns (width,dst) -> {
+ | RepIns (_width, dst) -> {
    docref       = "2A, 4-359";
    mnemonic     = "rep ins";
    operands     = [dst; ecx_r RW; edi_r RW; dx_r RD];
@@ -3343,7 +3354,7 @@ let get_record (opc:opcode_t) =
   (* REP LODS m8  --- Load ECX bytes from DS:[ESI] into AL            ---- F3 AC
    * REP LODS m32 --- Load ECX doublewords from DS:[ESI] into EAX     ---- F3 AD
    *)
- | RepLods (width,src) ->
+ | RepLods (width, src) ->
     let dst =
       if width = 1 then
         al_r WR
@@ -3365,7 +3376,7 @@ let get_record (opc:opcode_t) =
      REP MOVS m32 m32
      --- Move ECX double words from DS:[ESI] to ES:[EDI]              ---- F3 A5
   *)
- | RepMovs (width,dst,src) -> {
+ | RepMovs (_width, dst, src) -> {
    docref       = "2A, 4-359";
    mnemonic     = "rep movs";
    operands     = [dst; ecx_r RW; edi_r RW; esi_r RW; src ];
@@ -3381,7 +3392,7 @@ let get_record (opc:opcode_t) =
      REPNE MOVS m32 m32
      --- Move ECX double words from DS:[ESI] to ES:[EDI]              ---- F2 A5
   *)
- | RepNeMovs (width,dst,src) -> {
+ | RepNeMovs (_width, dst, src) -> {
    docref       = "not documented";
    mnemonic     = "repne movs";
    operands     = [dst; ecx_r RW; edi_r RW; esi_r RW; src ];
@@ -3397,7 +3408,7 @@ let get_record (opc:opcode_t) =
      REPNE CMPS m32
      --- Find matching doublewords in ES:[EDI] and DS:[EDI]           ---- F2 A7
   *)
- | RepNeCmps (width,src1,src2) -> {
+ | RepNeCmps (_width, src1, src2) -> {
    docref       = "2A, 4-359";
    mnemonic     = "repne cmps";
    operands     = [ecx_r RW; edi_r RW; esi_r RW; src1; src2 ];
@@ -3411,7 +3422,7 @@ let get_record (opc:opcode_t) =
   (* REPNE SCAS m8 --- Find AL starting at ES:[EDI]                   ---- F2 AE
      REPNE SCAS m32 -- Find EAX starting at ES:[EDI]                  ---- F2 AF
    *)
- | RepNeScas (width,dst) ->
+ | RepNeScas (width, dst) ->
     let src =
       if width = 1 then
         al_r WR
@@ -3434,7 +3445,7 @@ let get_record (opc:opcode_t) =
    * REP OUTS m32,DX
    --- Input ECX doublewords from DS:[ESI] to port DX                 ---- F3 6F
    *)
- | RepOuts (width,op) -> {
+ | RepOuts (_width, op) -> {
    docref       = "2A, 4-359";
    mnemonic     = "rep outs";
    operands     = [op; ecx_r RW; esi_r RW; dx_r RD];
@@ -3448,7 +3459,7 @@ let get_record (opc:opcode_t) =
   (* REP STOS m8  --- Fill ECX bytes at ES:[EDI] with AL              ---- F3 AA
      REP STOS m32 --- Fill ECX doublewords at ES:[EDI] with EAX       ---- F3 AB
   *)
- | RepStos (width,op) ->
+ | RepStos (width, op) ->
     let src =
       if width = 1 then
         al_r WR
@@ -3469,7 +3480,7 @@ let get_record (opc:opcode_t) =
   (* REPNE STOS m8  --- Fill ECX bytes at ES:[EDI] with AL             ---- F2 AA
      REPNE STOS m32 --- Fill ECX doublewords at ES:[EDI] with EAX      ---- F2 AB
   *)
- | RepNeStos (width,op) ->
+ | RepNeStos (width, op) ->
     let src =
       if width = 1 then
         al_r WR
