@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2020-2021 Henny B. Sipma
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,8 +36,11 @@ open BCHLibTypes
 (* bchlibx86 *)
 open BCHLibx86Types
 
+
 exception InconsistentInstruction of string
 
+
+(** {1 Predicates on instructions}*)
 
 val is_conditional_jump_instruction: opcode_t -> bool
 
@@ -45,11 +48,40 @@ val is_direct_jump_instruction: opcode_t -> bool
 
 val is_jump_instruction: opcode_t -> bool
 
+val is_call_instruction: opcode_t -> bool
+
+val is_fall_through_instruction: opcode_t -> bool
+
+(** {1 Opcode accessors}*)
+
 val get_jump_operand: opcode_t -> operand_int
 
-(* deconstructing operands from the assembly instructions *)
+(** {1 Deconstructing operands} *)
 
+(** [select_word_or_dword_reg opsize_override index] returns the 32-bit
+    register associated with [index], or the 16-bit register associated
+    with [index] if [opsize_override] is [true].
+
+    Register correspondences:
+    {
+        index      16-bit reg     32-bit reg
+          0           Ax            Eax
+          1           Cx            Ecx
+          2           Dx            Edx
+          3           Bx            Ebx
+          4           Sp            Esp
+          5           Bp            Ebp
+          6           Si            Esi
+          7           Di            Edi
+    }
+    @raises [InconsistendInstruction] if [index] is outside the range
+    0 - 7.
+ *)
 val select_word_or_dword_reg: bool -> int -> cpureg_t
+
+val flags_used_by_condition: condition_code_t -> eflag_t list
+
+val allflags: eflag_t list
 
 val decompose_avx_lpp: int -> (int * int * int)
 val decompose_avx_rxb: int -> (int * int)
@@ -179,5 +211,8 @@ val get_modrm_dr_operands:
   -> operand_mode_t
   -> operand_mode_t
   -> (operand_int * operand_int)
+
+
+(** {1 String references} *)
 
 val get_string_reference: floc_int -> xpr_t -> string option

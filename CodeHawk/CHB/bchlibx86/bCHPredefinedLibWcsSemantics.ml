@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,9 +29,6 @@
 
 (* chlib *)
 open CHPretty
-
-(* xprlib *)
-open Xprt
 
 (* bchlib *)
 open BCHLibTypes
@@ -44,10 +43,24 @@ module H = Hashtbl
 
 let table = H.create 11
 
+
 let load_wcs_functions () =
-  List.iter (fun m -> add_dllfun table "msvcrt.dll" m)
-    [ "wcscat" ; "wcschr" ; "wcscpy" ; "wcscspn" ; "wcslen" ; "wcsnlen" ; "wcsncat" ; 
-      "wcsncmp"; "wcspbrk" ; "wcsstr"; "wcscmp"; "wcsncpy" ; "wcsrchr" ; "wcsspn" ]
+  List.iter
+    (fun m -> add_dllfun table "msvcrt.dll" m)
+    ["wcscat";
+     "wcschr";
+     "wcscpy";
+     "wcscspn";
+     "wcslen";
+     "wcsnlen";
+     "wcsncat";
+     "wcsncmp";
+     "wcspbrk";
+     "wcsstr";
+     "wcscmp";
+     "wcsncpy";
+     "wcsrchr";
+     "wcsspn"]
 
 (* ============================================================= wcsnicmp_ascii
    example: V3fc:0x40a5c6
@@ -57,24 +70,29 @@ let load_wcs_functions () =
   0x40a5c7   [ -4 ]   mov ebp, esp              ebp := esp = (esp_in - 4)
   0x40a5c9   [ -4 ]   push esi                  save esi
   0x40a5ca   [ -8 ]   mov esi, 0x10(ebp)        esi := arg.0012 = arg.0012_in
-  0x40a5cd   [ -8 ]   xor eax, eax              eax := 0 
+  0x40a5cd   [ -8 ]   xor eax, eax              eax := 0
   0x40a5cf   [ -8 ]   test esi, esi             test esi, esi
-  0x40a5d1   [ -8 ]   jz 0x40a631               if (arg.0012_in = 0) then goto 0x40a631
+  0x40a5d1   [ -8 ]   jz 0x40a631               if (arg.0012_in = 0) then
+                                                  goto 0x40a631
 --------------------------------------------------------------------------------
   0x40a5d3   [ -8 ]   mov ecx, 0xc(ebp)         ecx := arg.0008 = arg.0008_in
   0x40a5d6   [ -8 ]   push ebx                  save ebx
   0x40a5d7  [ -12 ]   push edi                  save edi
   0x40a5d8  [ -16 ]   mov edi, 0x8(ebp)         edi := arg.0004 = arg.0004_in
-  0x40a5db  [ -16 ]   push 0x41                 esp := esp - 4 ; var.0020 := 65
-  0x40a5dd  [ -20 ]   pop ebx                   ebx := 65 ; esp := esp + 4 = (esp_in - 16)
-  0x40a5de  [ -16 ]   push 0x5a                 esp := esp - 4 ; var.0020 := 90
-  0x40a5e0  [ -20 ]   pop edx                   edx := 90 ; esp := esp + 4 = (esp_in - 16)
-  0x40a5e1  [ -16 ]   sub edi, ecx              edi := edi - ecx = (arg.0004_in - arg.0008_in)
+  0x40a5db  [ -16 ]   push 0x41                 esp := esp - 4; var.0020 := 65
+  0x40a5dd  [ -20 ]   pop ebx                   ebx := 65;
+                                                  esp := esp + 4 = (esp_in - 16)
+  0x40a5de  [ -16 ]   push 0x5a                 esp := esp - 4; var.0020 := 90
+  0x40a5e0  [ -20 ]   pop edx                   edx := 90;
+                                                  esp := esp + 4 = (esp_in - 16)
+  0x40a5e1  [ -16 ]   sub edi, ecx              edi := edi - ecx
+                                                  = (arg.0004_in - arg.0008_in)
   0x40a5e3  [ -16 ]   mov 0x10(ebp), edx        arg.0012 := edx = 90
   0x40a5e6  [ -16 ]   jmp 0x40a5eb              goto 0x40a5eb
 --------------------------------------------------------------------------------
-  0x40a5e8  [ -16 ]   push 0x5a                 esp := esp - 4 ; var.0020 := 90
-  0x40a5ea  [ -20 ]   pop edx                   edx := 90 ; esp := esp + 4 = (esp_in - 16)
+  0x40a5e8  [ -16 ]   push 0x5a                 esp := esp - 4; var.0020 := 90
+  0x40a5ea  [ -20 ]   pop edx                   edx := 90;
+                                                   esp := esp + 4 = (esp_in - 16)
 --------------------------------------------------------------------------------
   0x40a5eb  [ -16 ]   movzx eax, (edi,ecx,1)    eax :=  ?  (tmpN)
   0x40a5ef  [ -16 ]   cmp ax, bx                cmp ax, bx
@@ -119,40 +137,41 @@ let load_wcs_functions () =
   0x40a632   [ -4 ]   pop ebp                   restore ebp
   0x40a633   [ 0 ]    ret                       return
 *)
-class wcsnicmp_ascii_semantics_t 
-  (md5hash:string) (instrs:int):predefined_callsemantics_int =
+class wcsnicmp_ascii_semantics_t
+        (md5hash:string) (instrs:int):predefined_callsemantics_int =
 object (self)
 
   inherit predefined_callsemantics_base_t md5hash instrs
 
   method get_name = "__wcsnicmp_ascii__"
 
-  method get_annotation (floc:floc_int) =
+  method! get_annotation (floc:floc_int) =
     let args = floc#get_call_args in
     let arg1 = get_arg args 1 floc in
     let arg2 = get_arg args 2 floc in
     let arg3 = get_arg args 3 floc in
-    LBLOCK [ STR self#get_name ; STR "(str1:" ; xpr_to_strpretty floc arg1 ;
-	     STR ",str2:" ; xpr_to_strpretty floc arg2 ;
-	     STR ",count:" ; xpr_to_pretty floc arg3 ; STR ")" ]
+    LBLOCK [
+        STR self#get_name; STR "(str1:"; xpr_to_strpretty floc arg1;
+	STR ",str2:"; xpr_to_strpretty floc arg2;
+	STR ",count:"; xpr_to_pretty floc arg3; STR ")"]
 
-  method get_commands (floc:floc_int) =
+  method! get_commands (floc:floc_int) =
     let (eaxlhs,eaxlhscmds) = get_reg_lhs Eax floc in
     let rhs = get_return_value self#get_name floc in
     let cmds1 = floc#get_assign_commands eaxlhs ~vtype:t_int (XVar rhs) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [ Ecx ; Edx ] ] in
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Ecx; Edx]] in
     eaxlhscmds @ cmds1 @ cmds2
 
   method get_parametercount = 3
 
-  method get_call_target (a:doubleword_int) =
+  method! get_call_target (a:doubleword_int) =
     mk_static_dll_stub_target a "msvcrt.dll" "_wcsnicmp"
 
-  method get_description = "compares two string"
+  method! get_description = "compares two string"
 
 end
 
 let _ = H.add table "wcsnicmp_ascii" (new wcsnicmp_ascii_semantics_t)
 
-let libwcs_functions () = H.fold (fun k v a -> a @ (get_fnhashes k v)) table []
 
+let libwcs_functions () = H.fold (fun k v a -> a @ (get_fnhashes k v)) table []
