@@ -63,18 +63,20 @@ val get_jump_operand: opcode_t -> operand_int
     with [index] if [opsize_override] is [true].
 
     Register correspondences:
-    {
-        index      16-bit reg     32-bit reg
-          0           Ax            Eax
-          1           Cx            Ecx
-          2           Dx            Edx
-          3           Bx            Ebx
-          4           Sp            Esp
-          5           Bp            Ebp
-          6           Si            Esi
-          7           Di            Edi
+    {t
+       | index | 16-bit register | 32-bit register |
+       |:-----:|:---------------:|:---------------:|
+       | 0     | Ax              | Eax             |
+       | 1     | Cx              | Ecx             |
+       | 2     | Dx              | Edx             |
+       | 3     | Bx              | Ebx             |
+       | 4     | Sp              | Esp             |
+       | 5     | Bp              | Ebp             |
+       | 6     | Si              | Esi             |
+       | 7     | Di              | Edi             |
     }
-    @raises [InconsistendInstruction] if [index] is outside the range
+
+    @raises [InconsistentInstruction] if [index] is outside the range
     0 - 7.
  *)
 val select_word_or_dword_reg: bool -> int -> cpureg_t

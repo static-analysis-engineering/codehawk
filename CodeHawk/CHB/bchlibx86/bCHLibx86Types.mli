@@ -42,7 +42,6 @@ open XprTypes
 (* bchlib *)
 open BCHLibTypes
 
-(* ============================================================= Cfg loops === *)
 
 class type cfg_loops_int =
 object
@@ -51,7 +50,7 @@ object
   method toPretty: pretty_t
 end
 
-(* =============================================================== Operand === *)
+(** {1 Operands} *)
 
 type asm_operand_kind_t =
   | Flag of eflag_t
@@ -232,27 +231,27 @@ object ('a)
 
 end
 
-(* ============================================================ X86 opcodes === *)
+(** {1 x86 opcodes} *)
 
 type not_code_t = JumpTable of jumptable_int | DataBlock of data_block_int
 
 type condition_code_t =
-| CcOverflow             (* OF = 1 *)
-| CcNotOverflow          (* OF = 0 *)
-| CcCarry                (* CF = 1 *)
-| CcNotCarry             (* CF = 0 *)
-| CcZero                 (* ZF = 1 *)
-| CcNotZero              (* ZF = 0 *)
-| CcBelowEqual           (* CF = 1 or  ZF = 1 *)
-| CcAbove                (* CF = 0 and ZF = 0 *)
-| CcSign                 (* SF = 1 *)
-| CcNotSign              (* SF = 0 *)
-| CcParityEven           (* PF = 1 *)
-| CcParityOdd            (* PF = 0 *)
-| CcLess                 (* SF != OF *)
-| CcGreaterEqual         (* SF = OF *)
-| CcLessEqual            (* ZF = 1 or  SF != OF *)
-| CcGreater              (* ZF = 0 and SF = OF *)
+| CcOverflow             (** OF = 1 *)
+| CcNotOverflow          (** OF = 0 *)
+| CcCarry                (** CF = 1 *)
+| CcNotCarry             (** CF = 0 *)
+| CcZero                 (** ZF = 1 *)
+| CcNotZero              (** ZF = 0 *)
+| CcBelowEqual           (** CF = 1 or  ZF = 1 *)
+| CcAbove                (** CF = 0 and ZF = 0 *)
+| CcSign                 (** SF = 1 *)
+| CcNotSign              (** SF = 0 *)
+| CcParityEven           (** PF = 1 *)
+| CcParityOdd            (** PF = 0 *)
+| CcLess                 (** SF != OF *)
+| CcGreaterEqual         (** SF = OF *)
+| CcLessEqual            (** ZF = 1 or  SF != OF *)
+| CcGreater              (** ZF = 0 and SF = OF *)
 
 type opcode_t =
 
@@ -526,7 +525,7 @@ type opcode_t =
   | InconsistentInstr of string   (* inconsistent instruction at failure on input *)
   | NotCode of not_code_t option  (* start (Some b) or inside (None) a data block *)
 
-(* =================================================== X86 Opcode Dictionary == *)
+(** {1 Opcode dictionary} *)
 
 class type x86dictionary_int =
   object
@@ -548,7 +547,7 @@ class type x86dictionary_int =
 
   end
 
-(* =============================================== Predefined call semantics == *)
+(** {1 Predefined call semantics} *)
 
 class type predefined_callsemantics_int =
 object
@@ -577,10 +576,13 @@ type patternrhs_t =
 
 type regexpattern_t = {
   regex_s: Str.regexp ;
-  regex_f: doubleword_int -> string -> string -> predefined_callsemantics_int option
+  regex_f:
+    doubleword_int -> string -> string -> predefined_callsemantics_int option
 }
 
-(* ===================================================== Assembly instruction === *)
+(** {1 Assembly artifacts}*)
+
+(** {2 Assembly instructions} *)
 
 class type assembly_instruction_int =
 object
@@ -615,7 +617,6 @@ object
 
 end
 
-(* ==================================================== Assembly instructions === *)
 
 class type assembly_instructions_int =
 object
@@ -661,7 +662,6 @@ object
 
 end
 
-(* ========================================= Assembly instruction annotations === *)
 
 type assembly_instruction_annotation_type_t =
   | LibraryCall of string
@@ -675,6 +675,7 @@ type assembly_instruction_annotation_type_t =
   | NotModeled
   | NoAnnotation
 
+
 class type assembly_instruction_annotation_int =
 object
   (* accessors *)
@@ -684,7 +685,7 @@ object
   method toPretty : pretty_t
 end
 
-(* =========================================================== Assembly block === *)
+(** {2 Assembly block} *)
 
 class type assembly_block_int =
 object
@@ -721,7 +722,7 @@ object
   method to_annotated_pretty: pretty_t
 end
 
-(* ======================================================== Assembly function === *)
+(** {2 Assembly functions} *)
 
 class type assembly_function_int =
 object
@@ -765,27 +766,48 @@ object
 
 end
 
-(* ======================================================= Assembly functions === *)
 
 class type assembly_functions_int =
 object
 
-  (* reset *)
+  (** {1 Reset} *)
   method reset: unit
 
-  (* setters *)
-  method add_function    : assembly_function_int -> unit
+  (** {1 Setters} *)
+
+  method add_function: assembly_function_int -> unit
   method replace_function: assembly_function_int -> unit
   method add_functions_by_preamble: doubleword_int list
 
-  (* accessors *)
-  method get_callgraph       : callgraph_int
-  method get_num_functions   : int
-  method get_num_complete_functions       : int
-  method get_num_basic_blocks             : int
-  method get_num_conditional_instructions : int * int * int
-  method get_num_indirect_calls           : int * int
-  method get_function_coverage            : int * int * int (* coverage, overlap, multiplicity *)
+  (** {1 Accessors} *)
+
+  (** {2 Callgraph} *)
+
+  method get_callgraph: callgraph_int
+
+  (** {2 System-wide metrics} *)
+
+  (** Returns the number of functions disassembled and analyzed. *)
+  method get_num_functions: int
+
+  (** Returns the number of functions that do not include any unresolved
+      indirect jumps.*)
+  method get_num_complete_functions: int
+
+  (** Returns the number of basic blocks across all functions.*)
+  method get_num_basic_blocks: int
+
+  (** Returns the number of instructions that depend on a condition-code
+      status flag across all functions, the number of those instructions
+      that were associated with the instruction that sets the condition code,
+      and the number of instructions for which that association resulted in
+      a usable predicate.*)
+  method get_num_conditional_instructions: int * int * int
+
+  (** Returns the number of instructions that are indirect calls, and the
+      number of those that were successfully resolved.*)
+  method get_num_indirect_calls: int * int
+  method get_function_coverage: int * int * int (* coverage, overlap, multiplicity *)
 
   method get_functions                  : assembly_function_int list
   method get_application_functions      : assembly_function_int list
@@ -814,7 +836,7 @@ object
 
 end
 
-(* ================================================================== Code pc === *)
+(** {1 CHIF artifacts} *)
 
 class type code_pc_int =
 object
@@ -829,7 +851,6 @@ object
   method has_more_instructions: bool
 end
 
-(* ============================================================== CHIF system === *)
 
 class type chif_system_int =
 object
@@ -854,7 +875,7 @@ object
   method has_procedure_by_address: doubleword_int -> bool
 end
 
-(* ======================================================= Disassembly metrics === *)
+(** {1 Disassembly metrics} *)
 
 class type disassembly_metrics_int =
 object
@@ -870,7 +891,7 @@ object
   method toPretty : pretty_t
 end
 
-(* =========================================== X86 instruction dictionary === *)
+(** {1 Analysis results} *)
 
 class type x86_opcode_dictionary_int =
   object
@@ -894,6 +915,7 @@ class type x86_opcode_dictionary_int =
 
     method toPretty: pretty_t
   end
+
 
 class type x86_analysis_results_int =
   object

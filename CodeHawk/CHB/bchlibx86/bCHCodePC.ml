@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,7 +35,6 @@ open CHLogger
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHLibTypes
 open BCHLocation
 
 (* bchlibx86 *)
@@ -50,7 +49,7 @@ object
 
   method get_next_instruction =
     match instruction_list with
-    | [] -> 
+    | [] ->
        let msg =
          LBLOCK [
              block#get_first_address#toPretty;
@@ -63,7 +62,7 @@ object
     | h::tl ->
        let ctxtiaddr = (make_i_location ctxtloc h#get_address)#ci in
        begin
-         instruction_list <- tl ;
+         instruction_list <- tl;
          (ctxtiaddr,h)
        end
 
@@ -97,14 +96,15 @@ object
     match block#get_successors with
     | [false_branch; _] -> false_branch
     | _ ->
-      let msg = 
+      let msg =
 	LBLOCK [
             block#get_first_address#toPretty;
             NL;
             block#toPretty;
             NL;
 	    INDENT (
-                3, STR "get_false_branch_successor does not have two successors")] in
+                3,
+                STR "get_false_branch_successor does not have two successors")] in
       begin
 	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
@@ -114,20 +114,22 @@ object
     match block#get_successors with
     |[ _; true_branch] -> true_branch
     | _ ->
-      let msg = 
+      let msg =
 	LBLOCK
           [block#get_first_address#toPretty;
            NL;
            block#toPretty;
            NL;
 	   INDENT (
-               3, STR "get_true_branch_successor does not have two successors")] in
+               3,
+               STR "get_true_branch_successor does not have two successors")] in
       begin
 	ch_error_log#add "cfg error" msg;
 	raise (BCH_failure msg)
       end
 
-  method has_more_instructions = match instruction_list with [] -> false | _ -> true
+  method has_more_instructions =
+    match instruction_list with [] -> false | _ -> true
 end
 
 
