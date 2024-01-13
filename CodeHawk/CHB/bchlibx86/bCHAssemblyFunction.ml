@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,7 +29,6 @@
 
 (* chlib *)
 open CHLanguage
-open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -44,7 +43,6 @@ open BCHFunctionInfo
 open BCHFloc
 open BCHFunctionInterface
 open BCHFunctionData
-open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHLocation
@@ -61,7 +59,7 @@ module H = Hashtbl
 module FFU = BCHFileFormatUtil
 
 
-class assembly_function_t 
+class assembly_function_t
         (faddr:doubleword_int)                 (* function entry address *)
         (blocks:assembly_block_int list)       (* basic blocks, may be inlined *)
         (successors:(ctxt_iaddress_t * ctxt_iaddress_t) list)
@@ -110,11 +108,11 @@ object (self)
   method get_function_md5 =
     byte_string_to_printed_string (Digest.string self#get_bytes_ashexstring)
 
-  method get_instruction_count = 
+  method get_instruction_count =
     List.fold_left (fun a b -> a + b#get_instruction_count) 0 blocks
 
   (* a function is a dll stub if the only action it performs is to call a dll
-     function and return to the caller 
+     function and return to the caller
      Example:
      F B 0x407b02  55                              push ebp
          0x407b03  a1 88 c4 42 00                  mov eax, 0x42c488
@@ -125,12 +123,13 @@ object (self)
   method is_dll_stub = match dll_stub with Some _ -> true | _ -> false
 
   method get_dll_stub =
-    match dll_stub with 
+    match dll_stub with
     | Some (lib,fname) -> (lib,fname)
-    | _ -> raise (BCH_failure (LBLOCK [ self#get_address#toPretty ; 
-					STR " is not a dll stub" ]))
-
-  method private check_dll_stub = ()
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 self#get_address#toPretty; STR " is not a dll stub"]))
 
   method private is_esp_manipulating =
     let result = ref [] in
@@ -139,9 +138,10 @@ object (self)
         (fun faddr ctxtiaddr instr ->
           let iloc = ctxt_string_to_location faddr ctxtiaddr in
           let floc = get_floc iloc in
-          if instr#is_esp_manipulating floc then result := ctxtiaddr :: !result) in
+          if instr#is_esp_manipulating floc then
+            result := ctxtiaddr :: !result) in
     !result
-				 
+
   method get_stack_adjustment =
     let valid = ref true in
     let adjustments = ref [] in
@@ -166,15 +166,16 @@ object (self)
                      | BndRet (Some n) -> adjustments := n :: !adjustments
 	           | _ -> () in
 	         let floc = get_floc iloc in
-	         let (level,offset) = floc#get_stackpointer_offset "x86" in
+	         let (level, offset) = floc#get_stackpointer_offset "x86" in
 	         if level = 0 then
 	           match offset#singleton with
 	           | Some n when n#is_zero -> default ()
-	           | Some n -> 
+	           | Some n ->
 	              begin
 	                chlog#add
                           "stack adjustment"
-		          (LBLOCK [faddr#toPretty; STR ": offset is "; n#toPretty]);
+		          (LBLOCK [
+                               faddr#toPretty; STR ": offset is "; n#toPretty]);
 	                valid := false
 	              end
 	           | _ ->
@@ -197,19 +198,20 @@ object (self)
 	           begin
 	             chlog#add
                        "stack adjustment"
-	               (LBLOCK [faddr#toPretty; STR ": level is "; INT level]) ;
+	               (LBLOCK [faddr#toPretty; STR ": level is "; INT level]);
 	             valid := false
 	           end
             | IndirectJmp _ ->
 	       let finfo = get_function_info faddr in
 	       if finfo#is_dll_jumptarget ctxtiaddr then
-	         let (dll,fname) = finfo#get_dll_jumptarget ctxtiaddr in
-	         let _ = self#check_dll_stub in
-	         let _ = function_summary_library#load_dll_library_function dll fname in
+	         let (dll, fname) = finfo#get_dll_jumptarget ctxtiaddr in
+	         let _ =
+                   function_summary_library#load_dll_library_function dll fname in
 	         let adj =
                    if function_summary_library#has_dll_function dll fname then
-	             (function_summary_library#get_dll_function dll fname)#get_stack_adjustment 
-	           else None in
+	             (function_summary_library#get_dll_function dll fname)#get_stack_adjustment
+	           else
+                     None in
 	         match adj with
 	         | Some n -> adjustments := n :: !adjustments
 	         | _ -> ()
@@ -219,28 +221,33 @@ object (self)
     match !adjustments with
       [] -> None
     | h::tl ->
-       if !valid then 
+       if !valid then
 	 (if List.for_all (fun t -> h=t) tl then Some h else
 	    begin
 	      chlog#add
-                "disassembly" 
-		(LBLOCK [ STR "Inconsistent stack adjustments for " ; 
-			  self#get_address#toPretty ; STR ": " ; 
-			  pretty_print_list !adjustments (fun i -> INT i) "[" ";" "]" ]) ;
+                "disassembly"
+		(LBLOCK [
+                     STR "Inconsistent stack adjustments for ";
+		     self#get_address#toPretty; STR ": ";
+		     pretty_print_list
+                       !adjustments (fun i -> INT i) "[" ";" "]" ]);
 	      None
 	    end)
        else
 	 None
-	     
-  method get_num_conditional_instructions = 
-    let nJumps = ref 0 in
-    let _ = self#iteri 
-      (fun _ _ instr -> 
-	if is_conditional_instruction instr#get_opcode then nJumps := !nJumps + 1 ) in
-    let finfo = get_function_info self#get_address in
-    (!nJumps, finfo#get_num_conditions_associated, finfo#get_num_test_expressions)
 
-  method get_num_indirect_calls = 
+  method get_num_conditional_instructions =
+    let nJumps = ref 0 in
+    let _ = self#iteri
+      (fun _ _ instr ->
+	if is_conditional_instruction instr#get_opcode then
+          nJumps := !nJumps + 1 ) in
+    let finfo = get_function_info self#get_address in
+    (!nJumps,
+     finfo#get_num_conditions_associated,
+     finfo#get_num_test_expressions)
+
+  method get_num_indirect_calls =
     let nCalls = ref 0 in
     let nResolved = ref 0 in
     let _ =
@@ -248,20 +255,19 @@ object (self)
         (fun _ ctxtiaddr instr ->
           let iloc = ctxt_string_to_location faddr ctxtiaddr in
 	  match instr#get_opcode with
-	    IndirectCall op ->	
-	    let floc = get_floc iloc in
-	    begin
-	      nCalls := !nCalls + 1 ;
-	      if floc#has_call_target
-                 && floc#get_call_target#is_unknown then
-                ()
-              else
-                nResolved := !nResolved + 1
-	    end
+	  | IndirectCall _ ->
+	     let floc = get_floc iloc in
+	     begin
+	       nCalls := !nCalls + 1;
+	       if floc#has_call_target && floc#get_call_target#is_unknown then
+                 ()
+               else
+                 nResolved := !nResolved + 1
+	     end
 	  | _ -> ()) in
-    (!nCalls, !nResolved) 
-      
-  method populate_callgraph (callgraph:callgraph_int) = 
+    (!nCalls, !nResolved)
+
+  method populate_callgraph (callgraph:callgraph_int) =
     let finfo = get_function_info faddr in
     self#iteri (fun _ ctxtiaddr instr ->
         let iloc = ctxt_string_to_location faddr ctxtiaddr in
@@ -293,10 +299,10 @@ object (self)
                  callgraph#add_so_edge
                    faddr ("syscall-" ^ (string_of_int index)) ctxtiaddr argExprs
 	      | StubTarget (DllFunction (_,name))
-	        | StaticStubTarget (_, DllFunction(_,name)) -> 
+	        | StaticStubTarget (_, DllFunction(_,name)) ->
 		 callgraph#add_dll_edge faddr name ctxtiaddr argExprs
 	      | AppTarget a -> callgraph#add_app_edge faddr a ctxtiaddr argExprs
-              | StubTarget (PckFunction(_,pkgs,name)) 
+              | StubTarget (PckFunction(_,pkgs,name))
 	        | StaticStubTarget (_,PckFunction(_,pkgs,name)) ->
 		 callgraph#add_dll_edge
                    faddr ((String.concat "::" pkgs) ^ name) ctxtiaddr argExprs
@@ -312,24 +318,25 @@ object (self)
               | CallbackTableTarget _ -> (* not implemented yet *) ()
 	      | IndirectTarget (_,tgts) -> List.iter add_call_target tgts in
 	    add_call_target (finfo#get_call_target ctxtiaddr)#get_target
-	  else 
-	    begin 
-	      match instr#get_opcode with 
+	  else
+	    begin
+	      match instr#get_opcode with
 		IndirectCall _ ->
                  callgraph#add_unresolved_edge faddr (-1) ctxtiaddr argExprs
 	      | _ -> ()
 	    end
       | _ -> ())
-      
-  method iter (f:assembly_block_int -> unit) = 
+
+  method iter (f:assembly_block_int -> unit) =
     List.iter (fun block -> f block) self#get_blocks
-    
+
   method itera (f:ctxt_iaddress_t -> assembly_block_int -> unit) =
     List.iter (fun block -> f block#get_context_string block) self#get_blocks
-      
+
   method iteri
-           (f:doubleword_int -> ctxt_iaddress_t -> assembly_instruction_int -> unit) =
-    List.iter (fun (block:assembly_block_int) -> 
+           (f:doubleword_int -> ctxt_iaddress_t -> assembly_instruction_int
+            -> unit) =
+    List.iter (fun (block:assembly_block_int) ->
       block#itera (fun iaddr instr -> f faddr iaddr instr)) self#get_blocks
 
   method iter_calls (f:ctxt_iaddress_t -> floc_int -> unit) =
@@ -337,7 +344,8 @@ object (self)
         let iloc = ctxt_string_to_location faddr ctxtiaddr in
       match instr#get_opcode with
       | DirectCall _ | IndirectCall _ -> f ctxtiaddr (get_floc iloc)
-      | IndirectJmp _ when (get_function_info faddr)#is_dll_jumptarget ctxtiaddr ->
+      | IndirectJmp _
+           when (get_function_info faddr)#is_dll_jumptarget ctxtiaddr ->
 	f ctxtiaddr (get_floc iloc)
       | _ -> ())
 
@@ -347,7 +355,7 @@ object (self)
       let _ = self#iteri (fun _ _ instr ->
 	if !result then
 	  match instr#get_opcode with
-	  | DirectCall _ | IndirectCall _ 
+	  | DirectCall _ | IndirectCall _
 	  | DirectJmp _  | IndirectJmp _
 	  | Jcc _ -> result := false
 	  | _ -> ()) in
@@ -357,40 +365,50 @@ object (self)
 
   method private get_unknown_instructions =
     let n = ref 0 in
-    begin self#iteri (fun _ _ instr -> if instr#is_unknown then n := !n + 1) ; !n end
-      
+    begin
+      self#iteri (fun _ _ instr -> if instr#is_unknown then n := !n + 1);
+      !n
+    end
+
   method is_complete =
     let finfo = get_function_info self#get_address in
     let hasUnresolvedJumps = finfo#has_unknown_jump_target in
     let unknowns = self#get_unknown_instructions in
-    (not hasUnresolvedJumps) &&	unknowns = 0 
-      
-  method is_nonreturning = List.for_all (fun b -> not b#is_returning) self#get_blocks
+    (not hasUnresolvedJumps) &&	unknowns = 0
+
+  method is_nonreturning =
+    List.for_all (fun b -> not b#is_returning) self#get_blocks
 
   method includes_instruction_address (va:doubleword_int) =
     List.exists (fun b -> b#includes_instruction_address va) blocks
-      
-  method toPretty = 
-    LBLOCK (List.map (fun block -> LBLOCK [ block#toPretty ; NL ]) blocks)
+
+  method toPretty =
+    LBLOCK (List.map (fun block -> LBLOCK [ block#toPretty; NL ]) blocks)
 
   method to_annotated_pretty =
-    LBLOCK [ 
-      NL ; NL ; STR (string_repeat "~" 80) ; NL ;
-      faddr#toPretty ; 
+    LBLOCK [
+      NL; NL; STR (string_repeat "~" 80); NL;
+      faddr#toPretty;
       (if functions_data#has_function_name faddr then
-	 LBLOCK [ STR " (" ; STR (functions_data#get_function faddr)#get_function_name ;
-                  STR ")" ]
-       else STR "") ; NL ;
-      STR (string_repeat "~" 80) ; NL ;
-      LBLOCK (List.map (fun block -> LBLOCK [ block#to_annotated_pretty ; NL ]) blocks)
-    ]
-    
+	 LBLOCK [
+             STR " (";
+             STR (functions_data#get_function faddr)#get_function_name;
+             STR ")"]
+       else
+         STR "");
+      NL;
+      STR (string_repeat "~" 80);
+      NL;
+      LBLOCK
+        (List.map (fun block -> LBLOCK [block#to_annotated_pretty; NL]) blocks)
+      ]
+
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
     let addr = self#get_address in
     let bbNode = xmlElement "blocks" in
     begin
-      node#setAttribute "a" addr#to_hex_string ;
+      node#setAttribute "a" addr#to_hex_string;
       (if functions_data#has_function_name addr then
          let name = (functions_data#get_function addr)#get_function_name in
          let name =
@@ -398,22 +416,26 @@ object (self)
              "__xx__" ^ (hex_string name)
            else
              name in
-	  node#setAttribute "fn" name) ;
-      bbNode#appendChildren (List.map (fun block -> 
+	  node#setAttribute "fn" name);
+      bbNode#appendChildren (List.map (fun block ->
 	let bNode = xmlElement "block" in
-	begin block#write_xml bNode; bNode end) blocks) ;
-      append [ bbNode ]
+	begin
+          block#write_xml bNode;
+          bNode
+        end) blocks);
+      append [bbNode]
     end
-      
+
   method private cfg_to_xml (cfg:cfg_int) =
     let cfgLoops = make_cfg_loops cfg in
     let node = xmlElement "cfg" in
-    begin 
-      node#appendChildren 
-	(List.map (fun b -> b#to_xml cfgLoops) self#get_blocks) ; node end
-      
+    begin
+      node#appendChildren
+	(List.map (fun b -> b#to_xml cfgLoops) self#get_blocks); node end
+
 end
-  
+
+
 let make_assembly_function
       (va:doubleword_int)
       (blocks:assembly_block_int list)
@@ -424,37 +446,38 @@ let make_assembly_function
     blocks in
   let fn = new assembly_function_t va blocks successors in
   begin
-    register_predefined_callsemantics 
-      fn#get_bytes_ashexstring 
-      fn#get_function_md5 
+    register_predefined_callsemantics
+      fn#get_bytes_ashexstring
+      fn#get_function_md5
       fn#get_instruction_count
-      fn#get_address ;
-    FFU.register_exn_handler fn#get_address fn#get_bytes_ashexstring ;
+      fn#get_address;
+    FFU.register_exn_handler fn#get_address fn#get_bytes_ashexstring;
    fn
   end
-    
+
+
 let get_op_metrics (f:assembly_function_int) (finfo:function_info_int) =
   let faddr = f#get_address in
   let reads = ref 0 in
   let qreads = ref 0 in
   let writes = ref 0 in
   let qwrites = ref 0 in
-  let is_memory_op op = 
+  let is_memory_op op =
     match op#get_kind with
     | IndReg _ | ScaledIndReg _ -> true | _ -> false in
   let is_loc_unknown floc (op:operand_int) =
-    let (v,_) = op#to_lhs floc in
+    let (v, _) = op#to_lhs floc in
     v#isTmp || (finfo#env#is_unknown_memory_variable v) in
   let add_read floc (op:operand_int) =
-    if is_memory_op op then 
-      begin 
-	reads := !reads + 1 ; 
+    if is_memory_op op then
+      begin
+	reads := !reads + 1;
 	if is_loc_unknown floc op then qreads := !qreads + 1
       end in
   let add_write floc (op:operand_int) =
     if is_memory_op op then
       begin
-	writes := !writes + 1 ;
+	writes := !writes + 1;
 	if is_loc_unknown floc op then qwrites := !qwrites + 1
       end in
   let _ = f#iteri (fun _ ctxtiaddr instr ->
@@ -466,13 +489,14 @@ let get_op_metrics (f:assembly_function_int) (finfo:function_info_int) =
        let floc = get_floc loc in
        List.iter (fun (op:operand_int) ->
 	   match op#get_mode with
-	   | RD -> add_read floc op 
+	   | RD -> add_read floc op
 	   | WR -> add_write floc op
-	   | RW -> begin add_read floc op ; add_write floc op end
+	   | RW -> begin add_read floc op; add_write floc op end
 	   | AD -> ()) ops)  in
-  (!reads,!qreads,!writes,!qwrites)
+  (!reads, !qreads, !writes, !qwrites)
 
-let get_esp_metrics (f:assembly_function_int) (finfo:function_info_int) =
+
+let get_esp_metrics (f:assembly_function_int): (int * int) =
   let faddr = f#get_address in
   let esptop = ref 0 in
   let esprange = ref 0 in
@@ -481,21 +505,11 @@ let get_esp_metrics (f:assembly_function_int) (finfo:function_info_int) =
       (fun _ ctxtiaddr _ ->
         let loc = ctxt_string_to_location faddr ctxtiaddr in
         let floc = get_floc loc in
-        let (_,range) = floc#get_stackpointer_offset "x86" in
+        let (_, range) = floc#get_stackpointer_offset "x86" in
         if range#isTop then
           esptop := !esptop + 1
-        else match range#singleton with 
-               Some _ -> () | _ -> esprange := !esprange + 1) in
-  (!esptop,!esprange)
-
-
-let get_memory_access_metrics (f:assembly_function_int) (finfo:function_info_int) =
-  let (reads,qreads,writes,qwrites) = get_op_metrics f finfo in
-  let (esptop,esprange) = get_esp_metrics f finfo in
-  { mmem_reads = reads ;
-    mmem_qreads = qreads ;
-    mmem_writes = writes ;
-    mmem_qwrites = qwrites ;
-    mmem_esptop = esptop ;
-    mmem_esprange = esprange
-  }
+        else
+          match range#singleton with
+          | Some _ -> ()
+          | _ -> esprange := !esprange + 1) in
+  (!esptop, !esprange)

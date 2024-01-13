@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,7 +33,6 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHTiming
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
@@ -67,8 +66,8 @@ module IntSet = Set.Make
     end)
 
 
-let create_ordering 
-    (functions:doubleword_int list) 
+let create_ordering
+    (functions:doubleword_int list)
     (calls:(doubleword_int * doubleword_int) list)  =
   if (List.length functions) > 5000 then
     let _ =
@@ -101,7 +100,8 @@ let create_ordering
       | _ ->
          let (leaves, nonleaves) =
 	   List.fold_left (fun (l,n) (f:doubleword_int) ->
-	       if (List.exists (fun ((caller,_):(doubleword_int * doubleword_int)) ->
+	       if (List.exists
+                     (fun ((caller,_):(doubleword_int * doubleword_int)) ->
 	               caller#equal f) cs) then
 	         (l,f::n)
 	       else
@@ -109,26 +109,28 @@ let create_ordering
          try
 	   match leaves with
 	     [] ->
-              (* there is a cycle; find the node with the largest number of incoming
-		 edges and remove one of the	outgoing edges from that node
-		 pass list of functions to avoid pivoting on a non-existing function *)
+              (* there is a cycle; find the node with the largest number of
+                 incoming edges and remove one of the outgoing edges from
+                 that node pass list of functions to avoid pivoting on a
+                 non-existing function *)
 	      let fnIndices = List.map (fun dw -> dw#index) fns in
 	      let (pivotNode,incoming) = get_pivot_node cs fnIndices in
 	      let edge =
 	        try
-		  List.find (fun (c,_) -> c#equal pivotNode) cs
+		  List.find (fun (c, _) -> c#equal pivotNode) cs
 	        with
 		  Not_found ->
 		  begin
 		    ch_error_log#add
                       "pivot node not found"
-		      (LBLOCK [ pivotNode#toPretty ]) ;
+		      (LBLOCK [ pivotNode#toPretty ]);
 		    raise Not_found
 		  end in
 	      let newCalls =
                 List.filter
 	          (fun (e1,e2) ->
-		    (not (e1#equal (fst edge))) || (not (e2#equal (snd edge)))) cs in
+		    (not (e1#equal (fst edge)))
+                    || (not (e2#equal (snd edge)))) cs in
 	      let _ =
                 chlog#add
                   "break cycle"
@@ -170,17 +172,19 @@ let create_ordering
 	    end
     in
     aux functions calls [] [] false
-    
-    
+
+
 class assembly_functions_t:assembly_functions_int =
 object (self)
-  
+
   val functions = H.create 53
-  val mutable callgraph_order = None    (* cache bottom-up traversal order of call graph *)
-    
+
+  (* cache bottom-up traversal order of call graph *)
+  val mutable callgraph_order = None
+
   method reset = H.clear functions
-    
-  method add_function (f:assembly_function_int) = 
+
+  method add_function (f:assembly_function_int) =
     H.add functions f#get_address#index f
 
   method replace_function (f:assembly_function_int) =
@@ -188,23 +192,24 @@ object (self)
 
   method get_num_functions = H.length functions
 
-  method get_num_complete_functions = 
+  method get_num_complete_functions =
     List.length (List.filter (fun f -> f#is_complete) self#get_functions)
 
   method get_num_basic_blocks =
     List.fold_left (fun a f -> a + f#get_block_count) 0 self#get_functions
 
-  (* returns: number of instructions that depend on a condition-code status flag   *)
   method get_num_conditional_instructions =
-    List.fold_left 
+    List.fold_left
       (fun (c,a,t) f ->
-	let (cf,af,tf) = f#get_num_conditional_instructions in (c+cf,a+af,t+tf)) 
-      (0,0,0) self#get_functions
+	let (cf,af,tf) = f#get_num_conditional_instructions in
+        (c+cf, a+af, t+tf))
+      (0, 0, 0) self#get_functions
 
   method get_num_indirect_calls =
     List.fold_left
-      (fun (c,r) f -> 
-	let (cf,rf) = f#get_num_indirect_calls in (c+cf,r+rf)) (0,0) self#get_functions
+      (fun (c, r) f ->
+	let (cf, rf) =
+          f#get_num_indirect_calls in (c+cf, r+rf)) (0, 0) self#get_functions
 
   method get_functions = H.fold (fun _ v a -> v::a) functions []
 
@@ -212,23 +217,32 @@ object (self)
     let table = H.create 37 in
     let add faddr ctxta =
       let a = (ctxt_string_to_location faddr ctxta)#i in
-      if H.mem table a#index then 
+      if H.mem table a#index then
 	H.replace table a#index ((H.find table a#index) + 1)
       else
 	H.add table a#index 1 in
-    let _ = List.iter (fun f -> f#iteri (fun faddr a _ -> add faddr a)) self#get_functions in
+    let _ =
+      List.iter (fun f ->
+          f#iteri (fun faddr a _ -> add faddr a))
+        self#get_functions in
     let overlap = ref 0 in
     let multiple = ref 0 in
-    let _ = 
-      H.iter (fun _ v -> if v = 1 then () else 
-	  begin overlap := !overlap + 1 ; multiple := !multiple + (v-1) end) table in
+    let _ =
+      H.iter (fun _ v ->
+          if v = 1 then
+            ()
+          else
+	    begin
+              overlap := !overlap + 1;
+              multiple := !multiple + (v-1)
+            end) table in
     (H.length table, !overlap, !multiple)
 
   method add_functions_by_preamble =
     let table = H.create 37 in
     let add faddr ctxta =
       let a = (ctxt_string_to_location faddr ctxta)#i in
-      if H.mem table a#index then 
+      if H.mem table a#index then
 	H.replace table a#index ((H.find table a#index) + 1)
       else
 	H.add table a#index 1 in
@@ -241,42 +255,52 @@ object (self)
     let p1 a = pfaddr := a in
     let p2 () =
       begin
-        pverbose [ STR "add function by preamble: " ; !pfaddr#toPretty ; NL ] ;
-        ignore (functions_data#add_function !pfaddr) ;
-        fnsAdded := !pfaddr :: !fnsAdded ;
+        pverbose [ STR "add function by preamble: "; !pfaddr#toPretty; NL ];
+        ignore (functions_data#add_function !pfaddr);
+        fnsAdded := !pfaddr :: !fnsAdded;
         reset ()
       end in
-    let _ = !assembly_instructions#itera (fun a instr ->
-      if H.mem table a#index then reset () else
-	let bytes = (instr#get_instruction_bytes) in
-	if !pfaddr#equal wordzero && (String.length bytes) = 1 && 
-	  Char.code (String.get bytes 0) = 85 (* 0x55 : push ebp *) then
-	  p1 a
-	else if wordzero#lt !pfaddr && ((!pfaddr)#add_int 1)#equal a && 
-	    (String.length bytes) = 2 && 
-	       (let c1 = Char.code (String.get bytes 0) in
-		let c2 = Char.code (String.get bytes 1) in
-		((c1 = 139 && c2 = 236) (* 8b ec: mov ebp, esp *)
-		    || (c1 = 137 && c2 = 229))) then p2 ()    (* 89 e5: mov ebp, esp *)
-	else reset () ) in
+    let _ =
+      !assembly_instructions#itera (fun a instr ->
+          if H.mem table a#index then reset () else
+	    let bytes = (instr#get_instruction_bytes) in
+	    if !pfaddr#equal wordzero
+               && (String.length bytes) = 1
+               && Char.code (String.get bytes 0) = 85 (* 0x55 : push ebp *) then
+	      p1 a
+	    else
+              if wordzero#lt !pfaddr
+                 && ((!pfaddr)#add_int 1)#equal a
+                 && (String.length bytes) = 2
+                 && (let c1 = Char.code (String.get bytes 0) in
+		     let c2 = Char.code (String.get bytes 1) in
+		     ((c1 = 139 && c2 = 236) (* 8b ec: mov ebp, esp *)
+		      || (c1 = 137 && c2 = 229))) then
+                p2 ()    (* 89 e5: mov ebp, esp *)
+	      else
+                reset ()) in
     begin
-      chlog#add "initialization"
-	(LBLOCK [ STR "Add " ; INT (List.length !fnsAdded) ; 
-		  STR " functions by preamble" ]) ;
+      chlog#add
+        "initialization"
+	(LBLOCK [
+             STR "Add "; INT (List.length !fnsAdded);
+	     STR " functions by preamble"]);
       !fnsAdded
     end
-      
+
   method dark_matter_to_string =
     let table = H.create 37 in
     let add faddr ctxta =
       let a = (ctxt_string_to_location faddr ctxta)#i in
-      if H.mem table a#index then 
+      if H.mem table a#index then
 	H.replace table a#index ((H.find table a#index) + 1)
       else
 	H.add table a#index 1 in
-    let _ = List.iter (fun f -> f#iteri (fun faddr a _ -> add faddr a)) self#get_functions in
-    let filter = (fun i -> 
-      not ((H.mem table i#get_address#index) || i#is_nop)) in
+    let _ =
+      List.iter (fun f ->
+          f#iteri (fun faddr a _ -> add faddr a)) self#get_functions in
+    let filter = (fun i ->
+        not ((H.mem table i#get_address#index) || i#is_nop)) in
     !assembly_instructions#toString ~filter ()
 
   method duplicates_to_string =
@@ -299,9 +323,11 @@ object (self)
     let table = H.create 37 in
     let largeentries = ref [] in
     let addentry flen =
-      let entry = if H.mem table flen then
-                    H.find table flen
-                  else 0 in
+      let entry =
+        if H.mem table flen then
+          H.find table flen
+        else
+          0 in
       H.replace table flen (entry + 1) in
     let add f =
       let flen = f#get_instruction_count in
@@ -312,14 +338,12 @@ object (self)
       else if flen  <= 1000 then
         addentry  1000
       else
-        begin
-          largeentries := f :: !largeentries
-        end in
+          largeentries := f :: !largeentries in
     let _ = List.iter add self#get_functions in
     let entries =
       List.sort Stdlib.compare (H.fold (fun k v a -> (k,v)::a) table []) in
-    (entries,!largeentries)
-    
+    (entries, !largeentries)
+
   method get_application_functions = self#get_functions
 
   method get_statically_linked_functions = []
@@ -329,23 +353,26 @@ object (self)
       H.find functions index
     with
       Not_found ->
-	let msg = [ STR "Unable to find function with index " ; 
-		    dw_index_to_pretty index ] in
+      let msg =
+        [STR "Unable to find function with index "; dw_index_to_pretty index] in
 	begin
-	  pr_debug (msg @ [ NL ]) ;
+	  pr_debug (msg @ [NL]);
 	  raise (BCH_failure (LBLOCK msg))
 	end
 
-  method get_function_by_address (address:doubleword_int) = 
+  method get_function_by_address (address:doubleword_int) =
     self#get_function address#index
 
   method get_containing_function (va:doubleword_int) =
-    let result = H.fold
-      (fun index f found ->
-	match found with Some _ -> found | _ -> 
-	  if f#includes_instruction_address va then 
-	    Some index 
-	  else None) functions None in
+    let result =
+      H.fold (fun index f found ->
+	  match found with
+          | Some _ -> found
+          | _ ->
+             if f#includes_instruction_address va then
+	       Some index
+	     else
+               None) functions None in
     match result with
     | Some index -> TR.tget_ok (index_to_doubleword index)
     | _ ->
@@ -357,28 +384,27 @@ object (self)
 
   method get_opcode_stats =
     let stats = H.create 53 in
-    let add s = if H.mem stats s then 
-	H.replace stats s ((H.find stats s) + 1) 
+    let add s = if H.mem stats s then
+	H.replace stats s ((H.find stats s) + 1)
       else
 	H.add stats s 1 in
     begin
       self#iter (fun f ->
-	f#iteri (fun _ _ instr -> add (get_opcode_long_name instr#get_opcode))) ;
+	f#iteri (fun _ _ instr -> add (get_opcode_long_name instr#get_opcode)));
       H.fold (fun k v a -> (k,v) :: a) stats []
     end
 
   method get_opcode_group_stats =
     let stats = H.create 53 in
-    let add s = if H.mem stats s then 
-	H.replace stats s ((H.find stats s) + 1) 
+    let add s = if H.mem stats s then
+	H.replace stats s ((H.find stats s) + 1)
       else
 	H.add stats s 1 in
     begin
       self#iter (fun f ->
-	f#iteri (fun _ _ instr -> add (get_opcode_group instr#get_opcode))) ;
+	f#iteri (fun _ _ instr -> add (get_opcode_group instr#get_opcode)));
       H.fold (fun k v a -> (k,v) :: a) stats []
     end
-
 
   method get_callgraph =
     let callgraph = make_callgraph () in
@@ -386,52 +412,58 @@ object (self)
     callgraph
 
   method private get_bottomup_function_list =
-    match callgraph_order with Some l -> l | _ ->
-      let calls = ref [] in
-      let _ = self#itera (fun faddr _ ->
-	let finfo = get_function_info faddr in
-	let appCallees = 
-	  List.fold_left (fun acc c -> 
-	      if c#is_app_call then
-                c#get_app_address::acc
-              else
-                acc) [] finfo#get_callees in
-	calls := (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
-      let addresses = List.map (fun f -> f#get_address) self#get_functions in
-      let (orderedList, stats, cycle) = create_ordering addresses !calls in
-      let _ = pr_timing [STR "created callgraph ordering"] in
-      let _ =
-        chlog#add "callgraph order"
-	  (LBLOCK [
+    match callgraph_order with
+    | Some l -> l
+    | _ ->
+       let calls = ref [] in
+       let _ =
+         self#itera (fun faddr _ ->
+	     let finfo = get_function_info faddr in
+	     let appCallees =
+	       List.fold_left (fun acc c ->
+	           if c#is_app_call then
+                     c#get_app_address::acc
+                   else
+                     acc) [] finfo#get_callees in
+	     calls :=
+               (List.map (fun callee -> (faddr, callee)) appCallees) @ !calls) in
+       let addresses = List.map (fun f -> f#get_address) self#get_functions in
+       let (orderedList, stats, cycle) = create_ordering addresses !calls in
+       let _ = pr_timing [STR "created callgraph ordering"] in
+       let _ =
+         chlog#add
+           "callgraph order"
+	   (LBLOCK [
                pretty_print_list stats (fun s -> INT s) "[" "; " "]";
 	       (if cycle then STR " (cycle)" else STR "")]) in
       let _ = callgraph_order <- Some orderedList in
       orderedList
 
-      
   method bottom_up_itera (f:doubleword_int -> assembly_function_int -> unit) =
     let orderedList = self#get_bottomup_function_list in
     let orderedFunctions = List.map self#get_function_by_address orderedList in
     List.iter (fun afn -> f afn#get_address afn) orderedFunctions
-      
+
   method top_down_itera (f:doubleword_int -> assembly_function_int -> unit) =
     let orderedList = List.rev self#get_bottomup_function_list in
     let orderedFunctions = List.map self#get_function_by_address orderedList in
     List.iter (fun afn -> f afn#get_address afn) orderedFunctions
-      
+
   method iter (f:assembly_function_int -> unit) =
     List.iter (fun assemblyFunction -> f assemblyFunction) self#get_functions
 
   method itera (f:doubleword_int -> assembly_function_int -> unit) =
-    List.iter (fun assemblyFunction -> 
+    List.iter (fun assemblyFunction ->
       f assemblyFunction#get_address assemblyFunction) self#get_functions
 
   method has_function_by_address (va:doubleword_int) = H.mem functions va#index
 
   method includes_instruction_address (va:doubleword_int)=
-    H.fold 
+    H.fold
       (fun _ f found ->
-        if found then true else f#includes_instruction_address va) functions false
+        if found then
+          true
+        else f#includes_instruction_address va) functions false
 
 end
 
@@ -447,43 +479,49 @@ let get_export_metrics () =
   if FFU.has_export_directory_table () then
     let table = FFU.get_export_directory_table () in
     let names = List.map snd table#get_exported_function_names in
-    { exm_count = List.length names ;
-      exm_cpp = List.length (List.filter has_demangled_name names) ;
+    { exm_count = List.length names;
+      exm_cpp = List.length (List.filter has_demangled_name names);
       exm_java = List.length (List.filter is_java_native_method_name names)
     }
   else
     exports_metrics_handler#init_value
 
-let get_disassembly_metrics () = 
-  let (coverage,overlap,alloverlap) = assembly_functions#get_function_coverage in
+let get_disassembly_metrics () =
+  let (coverage, overlap, alloverlap) =
+    assembly_functions#get_function_coverage in
   let instrs = !assembly_instructions#get_num_instructions in
-  let imported_imports = 
+  let imported_imports =
     if FFU.has_import_directory_table () then
       let table = FFU.get_import_directory_table () in
-      List.map (fun e -> 
+      List.map (fun e ->
 	let dll = e#get_name in
-	let summaries = List.fold_left (fun acc f ->
-	  if function_summary_library#has_dll_function dll f then acc + 1 else acc)
-	  0 e#get_functions in
+	let summaries =
+          List.fold_left (fun acc f ->
+	      if function_summary_library#has_dll_function dll f then
+                acc + 1 else acc)
+	    0 e#get_functions in
 	(e#get_name,List.length e#get_functions, summaries,false)) table
-    else [] in
+    else
+      [] in
   let loaded_imports =
     let imports = system_info#get_lib_functions_loaded in
     List.map (fun (dll,fns) ->
-      let summaries = List.fold_left (fun acc f ->
-	if function_summary_library#has_dll_function dll f then acc + 1 else acc)
-	0 fns in
-      (dll,List.length fns, summaries, true)) imports in
+        let summaries =
+          List.fold_left (fun acc f ->
+	      if function_summary_library#has_dll_function dll f then
+                acc + 1 else acc)
+	    0 fns in
+        (dll, List.length fns, summaries, true)) imports in
   let imports = imported_imports @ loaded_imports in
-  { dm_unknown_instrs = !assembly_instructions#get_num_unknown_instructions ;
-    dm_instrs = instrs ;
-    dm_functions = assembly_functions#get_num_functions ;
-    dm_coverage = coverage ;
-    dm_pcoverage = 100.0 *. (float_of_int coverage) /. (float_of_int instrs) ;
-    dm_overlap = overlap ;
-    dm_alloverlap = alloverlap ;
-    dm_jumptables = List.length system_info#get_jumptables ;
-    dm_datablocks = List.length system_info#get_data_blocks ;
-    dm_imports = imports ;
+  { dm_unknown_instrs = !assembly_instructions#get_num_unknown_instructions;
+    dm_instrs = instrs;
+    dm_functions = assembly_functions#get_num_functions;
+    dm_coverage = coverage;
+    dm_pcoverage = 100.0 *. (float_of_int coverage) /. (float_of_int instrs);
+    dm_overlap = overlap;
+    dm_alloverlap = alloverlap;
+    dm_jumptables = List.length system_info#get_jumptables;
+    dm_datablocks = List.length system_info#get_data_blocks;
+    dm_imports = imports;
     dm_exports = get_export_metrics ()
   }
