@@ -284,20 +284,7 @@ let construct_arm_assembly_block
     | Branch (ACCAlways, tgt, _)
       | BranchExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
        let tgtaddr = tgt#get_absolute_address in
-       if functions_data#is_function_entry_point tgtaddr then
-         true
-       else if tgtaddr#lt faddr then
-         let _ = functions_data#add_function tgtaddr in
-         let _ =
-           chlog#add
-             "tail-call function entry point"
-             (LBLOCK [faddr#toPretty; STR " call to: "; tgtaddr#toPretty]) in
-         begin
-           newfnentries#add tgtaddr;
-           true
-         end
-       else
-         false
+       functions_data#is_function_entry_point tgtaddr
     | _ -> false in
 
   let is_non_returning_call_instr (instr: arm_assembly_instruction_int) =
