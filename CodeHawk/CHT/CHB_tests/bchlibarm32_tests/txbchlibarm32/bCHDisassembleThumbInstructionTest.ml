@@ -89,6 +89,7 @@ let thumb_2_basic () =
       ("MOV-R-T1",   "1346", "MOV            R3, R2");
       ("MOV-I-T1",   "0a27", "MOVS           R7, #0xa");
       ("MOVS-I-T1",  "2022", "MOVS           R2, #0x20");
+      ("NOP",        "00bf", "NOP           ");
       ("ORRS-R-T1",  "1e43", "ORRS           R6, R6, R3");
       ("POP-3-T1",   "90bd", "POP            {R4,R7,PC}");
       ("POP-5-T1",   "f0bd", "POP            {R4,R5,R6,R7,PC}");
@@ -248,6 +249,8 @@ let thumb_4_basic () =
 (* 4-byte thumb opcodes, pc-relative *)
 let thumb_4_pc_relative () =
   let tests = [
+      ("B.W-T3?",    "0x7200",  "f9f73ebe", "B.W            0xe80");
+      ("B.W-T3??",   "0xe7c",   "06f0bcb9", "B.W            0x71f8");
       ("B.W-T4",     "0x11a7a", "24f1e3be", "B.W            0x136844");
       ("BEQ.W-T3",   "0x1119e", "00f0ed81", "BEQ.W          0x1157c");
       ("BHI.W-T3",   "0x11e6a", "3ff626af", "BHI.W          0x11cba");

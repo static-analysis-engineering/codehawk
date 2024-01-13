@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -698,31 +698,6 @@ let register_to_string register =
   | PowerGPRegister r -> pwr_gpr_to_string r
   | PowerSPRegister r -> pwr_spr_to_string r
   | PowerCRField f -> pwr_crf_to_string f
-
-
-let register_to_ssa_prefix (register: register_t): string =
-  match register with
-  | CPURegister _ -> "r"
-  | SegmentRegister _ -> "sr"
-  | ControlRegister _ -> "cr"
-  | DebugRegister _ -> "dr"
-  | DoubleRegister _ -> "dd"
-  | FloatingPointRegister _ -> "f"
-  | MmxRegister _ -> "mmx"
-  | XmmRegister _ -> "xmm"
-  | MIPSRegister _ -> "r"
-  | MIPSSpecialRegister _ -> "sr"
-  | MIPSFloatingPointRegister _ -> "f"
-  | ARMRegister _ -> "r"
-  | ARMDoubleRegister _ -> "rr"
-  | ARMSpecialRegister _ -> "sr"
-  | ARMExtensionRegister _ -> "q"
-  | ARMDoubleExtensionRegister _ -> "qq"
-  | ARMExtensionRegisterElement _ -> "re"
-  | ARMExtensionRegisterReplicatedElement _ -> "ee"
-  | PowerGPRegister _ -> "r"
-  | PowerSPRegister _ -> "sr"
-  | PowerCRField f -> "cr"
 
 
 let extract_cpu_reg s =
