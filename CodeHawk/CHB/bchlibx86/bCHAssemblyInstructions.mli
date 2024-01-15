@@ -32,7 +32,6 @@ open BCHLibTypes
 
 (* bchlibx86 *)
 open BCHLibx86Types
-open BCHAssemblyInstruction
 
 
 (** Holds an array of all of the assembly instructions, made available through

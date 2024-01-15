@@ -29,13 +29,8 @@
 
 (* chlib *)
 open CHLanguage
-open CHPretty
-
-(* xprlib *)
-open Xprt
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHCodegraph
 open BCHCPURegisters
 open BCHDoubleword
@@ -45,13 +40,10 @@ open BCHLibTypes
 open BCHLocation
 
 (* bchlibx86 *)
-open BCHAssemblyBlock
-open BCHAssemblyFunction
 open BCHCodePC
 open BCHIFSystem
 open BCHLibx86Types
 open BCHOperand
-open BCHX86Opcodes
 open BCHX86OpcodeRecords
 
 module LF = CHOnlineCodeSet.LanguageFactory
@@ -83,8 +75,8 @@ let get_invariant_label (loc:location_int) =
 let translate_instruction
     ~(function_location:location_int)
     ~(code_pc:code_pc_int)
-    ~(block_label:symbol_t)
-    ~(exit_label:symbol_t)
+    ~(_block_label:symbol_t)
+    ~(_exit_label:symbol_t)
     ~(commands:cmd_t list) = 
   let (ctxtiaddr,instruction) = code_pc#get_next_instruction in
   let faddr = function_location#f in
@@ -103,7 +95,8 @@ let translate_instruction
   let addrAsserts = List.map (fun reg ->
     let v = finfo#env#mk_cpu_register_variable reg in
     ASSERT (SUBSET (v, [ ptrSym ]))) addrRegs in
-  let default newCommands = ([],[],commands @ (invOp :: (addrAsserts @ newCommands))) in
+  let default newCommands =
+    ([],[],commands @ (invOp :: (addrAsserts @ newCommands))) in
   match instruction#get_opcode with
   | Mov (_, dst, src) ->
     let (lhs, lhsCmds) = dst#to_lhs floc in
@@ -127,7 +120,7 @@ let translate_instruction
       else
 	SKIP in
     default [ cmd ; retcmd ]
-  | IMul (_,op1,op2,op3) ->
+  | IMul (_, op1, op2, _op3) ->
     let (lhs,lhsCmds) = op1#to_lhs floc in
     let rhs2 = op2#to_expr floc in
     let rhs3 = op2#to_expr floc in
@@ -138,7 +131,7 @@ let translate_instruction
       | XVar v -> ASSERT (SUBSET (v, [ scalarSym ]))
       | _ -> SKIP in
     default  ((ASSERT ( SUBSET (lhs, [scalarSym]))) :: cmd2 :: cmd3 :: lhsCmds)
-  | Push (_,op) ->
+  | Push (_, _op) ->
     let (lhs,lhsCmds) = (esp_deref ~with_offset:(-4) WR)#to_lhs floc in
     default ( (ABSTRACT_VARS [ lhs ]) :: lhsCmds )
   | Pop (_,op) ->
@@ -176,8 +169,12 @@ object (self)
     let blockLabel = make_code_label block#get_context_string in
     let rec aux commands =
       let (nodes,edges,newCommands) =
-	translate_instruction function_location codePc blockLabel
-	  exit_label commands in
+	translate_instruction
+          ~function_location
+          ~code_pc:codePc
+          ~_block_label:blockLabel
+	  ~_exit_label:exit_label
+          ~commands in
       match nodes with
       | [] ->
 	if codePc#has_more_instructions then
@@ -211,7 +208,7 @@ object (self)
     let _ = code_graph#add_edge entryLabel firstInstructionLabel in
     let cfg = code_graph#to_cfg entryLabel exitLabel in
     let body = LF.mkCode [ CFG (procName, cfg) ] in
-    let proc = LF.mkProcedure procName [] [] scope body in
+    let proc = LF.mkProcedure procName ~signature:[] ~bindings:[] ~scope ~body in
     chif_system#add_procedure proc
 
 end

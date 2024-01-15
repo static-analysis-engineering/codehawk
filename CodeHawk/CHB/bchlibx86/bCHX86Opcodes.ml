@@ -45,7 +45,6 @@ open CHLogger
 (* bchlib *)
 open BCHLibTypes
 open BCHFunctionData
-open BCHSystemInfo
 
 (* bchlibx86 *)
 open BCHLibx86Types

@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -49,16 +49,16 @@ module TR = CHTraceResult
 let make_proc_name address = doubleword_to_symbol "proc" address
 
 
-class location_collector_t (proc_name:symbol_t) =
-object (self: _)
+class location_collector_t (_proc_name:symbol_t) =
+object
 
   inherit code_walker_t as super
 
   val mutable locations = []
 
-  method walkCmd cmd =
+  method! walkCmd cmd =
     match cmd with
-      OPERATION { op_name=opName ; op_args = opargs } ->
+      OPERATION {op_name=opName; op_args = _opargs} ->
 	begin
 	  match opName#getBaseName with
 	    "invariant" ->
@@ -70,9 +70,9 @@ object (self: _)
 
   method get_locations = locations
 end
-	    
 
-class chif_system_t:chif_system_int = 
+
+class chif_system_t:chif_system_int =
 object (self)
 
   val mutable system = LF.mkSystem (new symbol_t "binary-analysis system")
@@ -87,7 +87,7 @@ object (self)
 
   method get_procedure (procName: symbol_t) =
     if system#hasProcedure procName then
-      system#getProcedure procName 
+      system#getProcedure procName
     else
       begin
 	ch_error_log#add "invocation error" (STR "chif_system#get_procedure");
@@ -99,14 +99,15 @@ object (self)
   method get_procedure_by_address (fa:doubleword_int) =
     let procName = make_proc_name fa in
     if system#hasProcedure procName then
-      system#getProcedure procName 
+      system#getProcedure procName
     else
       begin
 	ch_error_log#add
           "invocation error" (STR "chif_system#get_procedure_by_address");
 	raise
           (BCH_failure
-	     (LBLOCK [STR "chif_system#get_procedure_by_address: "; fa#toPretty]))
+	     (LBLOCK [
+                  STR "chif_system#get_procedure_by_address: "; fa#toPretty]))
       end
 
   method get_procedure_by_index (index:dw_index_t) =

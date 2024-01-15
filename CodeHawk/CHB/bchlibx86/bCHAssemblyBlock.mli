@@ -27,11 +27,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
 
 (* bchlib *)
 open BCHLibTypes
