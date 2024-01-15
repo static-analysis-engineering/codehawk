@@ -3560,7 +3560,7 @@ end
 
 (* =========================================================== Function info === *)
 
-  (*
+
 class type argument_values_int =
 object
   method add_argument_values : variable_t -> xpr_t list -> unit
@@ -3569,7 +3569,7 @@ object
   method read_xml            : xml_element_int -> unit
   method toPretty            : pretty_t
 end
-   *)
+
 
 (** {2 Function symbol table} *)
 
@@ -3597,7 +3597,9 @@ class type function_environment_int =
         registers those names in the variable_names structure for this function.*)
     method set_argument_names: function_interface_t -> unit
 
-    method set_argument_structconstant: fts_parameter_t -> c_struct_constant_t -> unit
+    method set_argument_structconstant:
+             fts_parameter_t -> c_struct_constant_t -> unit
+
     method register_virtual_call: variable_t -> function_interface_t -> unit
 
     (* memory reference / assembly variable constructors *)
