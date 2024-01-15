@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2020-2021 Henny B. Sipma
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -43,7 +43,6 @@ open CHUtils
 open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
-open CHXmlReader
 
 (* bchlib *)
 open BCHBasicTypes
@@ -52,7 +51,6 @@ open BCHDoubleword
 open BCHFunctionData
 open BCHLibTypes
 open BCHStreamWrapper
-open BCHSystemInfo
 
 (* bchlibpe *)
 open BCHLibPETypes
@@ -80,52 +78,52 @@ object (self)
       begin
       (* 0, 8, Name ------------------------------------------------------------
 	 The name of the symbol, represented by a union of three structures. An
-	 array of 8 bytes is used if the name is not more than 8 bytes long; 
+	 array of 8 bytes is used if the name is not more than 8 bytes long;
 	 otherwise the lower order four bytes are zero and the high-order four
 	 bytes contain the offset into string table
 	 ----------------------------------------------------------------------- *)
-	name_low  <- ch#read_doubleword ;
-	name_high <- ch#read_doubleword ;
-	
+	name_low  <- ch#read_doubleword;
+	name_high <- ch#read_doubleword;
+
       (* 8, 4, Value -----------------------------------------------------------
-	 The value that is associated with the symbol. The interpretation of 
-	 field depends on SectionNumber and StorageClass. A typical meaning is 
+	 The value that is associated with the symbol. The interpretation of
+	 field depends on SectionNumber and StorageClass. A typical meaning is
 	 the relocatable address
 	 ----------------------------------------------------------------------- *)
-	stValue <- ch#read_doubleword ;
-	
+	stValue <- ch#read_doubleword;
+
       (* 12, 2, SectionNumber --------------------------------------------------
-	 The signed integer that idenitifies the section, using a one-based 
+	 The signed integer that idenitifies the section, using a one-based
 	 index into the section table.
 	 ----------------------------------------------------------------------- *)
-	sectionNumber <- ch#read_i16 ;
-	
+	sectionNumber <- ch#read_i16;
+
       (* 14, 2, Type -----------------------------------------------------------
 	 A number that represents type. Microsoft tools set this field to 0x20
 	 (function) or 0x0 (not a function).
 	 ----------------------------------------------------------------------- *)
-	stType <- ch#read_ui16 ;
-	
+	stType <- ch#read_ui16;
+
       (* 16, 1, StorageClass ---------------------------------------------------
 	 An enumerated value that represents storage class.
 	 ----------------------------------------------------------------------- *)
-	storageClass <- ch#read_byte ;
-	
+	storageClass <- ch#read_byte;
+
       (* 17, 1, NumberOfAuxSymbols ---------------------------------------------
 	 The number of auxiliary symbol table entries that follow this record.
 	 ----------------------------------------------------------------------- *)
-	numberOfAuxSymbols <- ch#read_byte ;
-	
-	for i=1 to numberOfAuxSymbols do
+	numberOfAuxSymbols <- ch#read_byte;
+
+	for _i=1 to numberOfAuxSymbols do
           self#read_auxiliary_entry ch
-	done ;
-	
+	done;
+
 	1 + numberOfAuxSymbols
       end
     with
 	IO.No_more_input ->
 	  begin
-	    ch_error_log#add "no more input" (STR "pe_symbol_table_entry_t#read") ;
+	    ch_error_log#add "no more input" (STR "pe_symbol_table_entry_t#read");
 	    raise IO.No_more_input
 	  end
 
@@ -143,8 +141,8 @@ object (self)
     with
 	IO.No_more_input ->
 	  begin
-	    ch_error_log#add "no more input" 
-	      (STR "pe_symbol_table_entry_t#read_auxiliary_entry") ;
+	    ch_error_log#add "no more input"
+	      (STR "pe_symbol_table_entry_t#read_auxiliary_entry");
 	    raise IO.No_more_input
 	  end
 
@@ -152,33 +150,41 @@ object (self)
     if name_low#equal wordzero then
       let offset = name_high#to_int - 4 in
       try
-	let len = 
+	let len =
 	  let i = ref 0 in
-	  begin while not (Char.code (s.[offset + (!i)]) = 0) do i := !i + 1 done; !i end in
+	  begin
+            while not (Char.code (s.[offset + (!i)]) = 0) do
+              i := !i + 1
+            done;
+            !i
+          end in
 	let n = String.sub s offset len in
 	begin
-	  name <- n ;
-	  stackAdjustment <- self#extract_stack_adjustment ;
+	  name <- n;
+	  stackAdjustment <- self#extract_stack_adjustment;
 	  (stackAdjustment,name)
 	end
       with
 	_ ->
 	  begin
-	    ch_error_log#add "symbol table" 
-	      (LBLOCK [ STR "set_name; Offset: " ; INT offset ; STR s ]) ;
+	    ch_error_log#add
+              "symbol table"
+	      (LBLOCK [ STR "set_name; Offset: "; INT offset; STR s]);
 	    (0, "ch_unknown_ch")
 	  end
     else
       let l = name_low#to_string_fragment in
       let h = name_high#to_string_fragment in
       begin
-        name <- l ^ h ;
-	stackAdjustment <- self#extract_stack_adjustment ;
+        name <- l ^ h;
+	stackAdjustment <- self#extract_stack_adjustment;
         (stackAdjustment, name)
       end
-	
+
   method is_function = stType = 32
+
   method get_address = stValue
+
   method get_name = name
 
   method write_xml (node:xml_element_int) =
@@ -186,11 +192,11 @@ object (self)
     let seti t i = if i = 0 then () else node#setIntAttribute t i in
     let setx t x = if x#equal wordzero then () else set t x#to_hex_string in
     begin
-      set "name" name ;
-      setx "st-value" stValue ;
-      seti "section-number" sectionNumber ;
-      seti "symbol-type" stType ;
-      seti "storage-class" storageClass ;
+      set "name" name;
+      setx "st-value" stValue;
+      seti "section-number" sectionNumber;
+      seti "symbol-type" stType;
+      seti "storage-class" storageClass;
       seti "number-of-aux-symbols" numberOfAuxSymbols
     end
 
@@ -206,23 +212,24 @@ object (self)
     begin
       name <- get "name";
       stValue <- getx "st-value";
-      sectionNumber <- geti "section-number" ;
-      stType <- geti "symbol-type" ;
-      storageClass <- geti "storage-class" ;
+      sectionNumber <- geti "section-number";
+      stType <- geti "symbol-type";
+      storageClass <- geti "storage-class";
       numberOfAuxSymbols <- geti "number-of-aux-symbols"
     end
-    
-    
+
+
   method toPretty = LBLOCK [
-    STR "Name               " ; STR name ; NL ;
-    STR "Value              " ; STR stValue#to_hex_string ; NL ;
-    STR "SectionNumber      " ; INT sectionNumber ; NL ;
-    STR "Type               " ; INT stType ; NL ;
-    STR "StorageClass       " ; INT storageClass ; NL ;
-    STR "NumberOfAuxSymbols " ; INT numberOfAuxSymbols ; NL ]
-    
+    STR "Name               "; STR name; NL;
+    STR "Value              "; STR stValue#to_hex_string; NL;
+    STR "SectionNumber      "; INT sectionNumber; NL;
+    STR "Type               "; INT stType; NL;
+    STR "StorageClass       "; INT storageClass; NL;
+    STR "NumberOfAuxSymbols "; INT numberOfAuxSymbols; NL]
+
 end
- 
+
+
 class pe_symboltable_t:pe_symboltable_int  =
 object (self)
 
@@ -238,7 +245,7 @@ object (self)
       baseOfCode <- wordzero;
       symboltable#removeList symboltable#listOfKeys;
       Hashtbl.clear function_address_name_table;
-      Hashtbl.clear function_name_address_table 
+      Hashtbl.clear function_name_address_table
     end
 
   (* ------------------------------------------------------ auxiliary functions *)
@@ -264,12 +271,12 @@ object (self)
 	  raise
             (Invocation_error "pe_symbol_table_t#find_function_address_name")
 	end
-	  
+
   method private fold_function_address_name fn initial_value =
-    Hashtbl.fold (fun k v a -> 
+    Hashtbl.fold (fun k v a ->
         fn (TR.tget_ok (index_to_doubleword k)) v a)
       function_address_name_table initial_value
-      
+
   method private add_function_name_address (name:string) (address:doubleword_int) =
     Hashtbl.add function_name_address_table name address
 
@@ -279,13 +286,13 @@ object (self)
   (* ================================================================== Setters *)
 
   method set_image_base (b:doubleword_int) = imageBase <- b
-  method set_base_of_code (b:doubleword_int) = baseOfCode <- b 
+  method set_base_of_code (b:doubleword_int) = baseOfCode <- b
 
   (* ================================================================== Readers *)
 
-  method read 
-      (start_address:doubleword_int) 
-      (number_of_entries:doubleword_int) 
+  method read
+      (_start_address:doubleword_int)
+      (number_of_entries:doubleword_int)
       (exeString:string) =
     try
       let ch = make_pushback_stream exeString in
@@ -296,18 +303,18 @@ object (self)
 	while (!c < n) do
           let entry = new pe_symboltable_entry_t in
           begin
-            c := !c + entry#read ch ;
+            c := !c + entry#read ch;
             lst := entry :: !lst
           end
-	done ;
-	let stringtable_size = ch#read_doubleword#to_int in 
+	done;
+	let stringtable_size = ch#read_doubleword#to_int in
 	let stringtable = ch#really_nread (stringtable_size - 4) in
-	List.iter (fun e -> self#resolve_entry e stringtable) !lst ;
+	List.iter (fun e -> self#resolve_entry e stringtable) !lst;
       end
     with
       IO.No_more_input ->
 	ch_error_log#add "no more input"
-	  (LBLOCK [ STR "Unable to read the symbol table " ])
+	  (LBLOCK [ STR "Unable to read the symbol table "])
 
   method private record_name e =
     let address = (e#get_address#add imageBase)#add baseOfCode in
@@ -323,34 +330,36 @@ object (self)
     let isTable = dname = "vftable" || dname = "vbtable" in
     begin
       (if isTable then () else
-         (functions_data#add_function address)#add_name name) ;
-      self#add_function_address_name address name ;
+         (functions_data#add_function address)#add_name name);
+      self#add_function_address_name address name;
       self#add_function_name_address name address
     end
-	  
-  method private resolve_entry e s = 
-    let (stack_adjustment,name) = e#set_name s in
+
+  method private resolve_entry e s =
+    let (_stack_adjustment, name) = e#set_name s in
     begin
-      symboltable#set name e ;
+      symboltable#set name e;
       if e#is_function then self#record_name e else ()
     end
-      
+
   (* ================================================================ Accessors *)
-      
-  method get_function_name (dw:doubleword_int) = 
+
+  method get_function_name (dw:doubleword_int) =
     try
       self#find_function_address_name dw
     with
       Not_found ->
 	begin
-	  ch_error_log#add "invocation error"
-	    (LBLOCK [ STR "pe_symbol_table_t#get_function_name: No name found for " ; 
-		      dw#toPretty]);
+	  ch_error_log#add
+            "invocation error"
+	    (LBLOCK [
+                 STR "pe_symbol_table_t#get_function_name: No name found for ";
+		 dw#toPretty]);
 	  raise (Invocation_error "pe_symbol_table_t#get_function_name")
 	end
-	  
-	  
-  method get_function_address (fname:string) = 
+
+
+  method get_function_address (fname:string) =
     try
       self#find_function_name_address fname
     with
@@ -365,12 +374,12 @@ object (self)
 	  raise
             (Invocation_error "pe_symbol_table_t#find_function_address")
 	end
-	  
-	  
+
+
   (* ================================================================ Predicates *)
-	  
+
   method has_function_name (dw:doubleword_int) = self#mem_function_address_name dw
-    
+
   (* ======================================================================== xml *)
 
   method write_xml (node:xml_element_int) =
@@ -385,25 +394,25 @@ object (self)
   method read_xml (node:xml_element_int) =
     List.iter (fun sNode ->
       let entry = new pe_symboltable_entry_t in
-      begin 
-	entry#read_xml sNode ; 
-	symboltable#set entry#get_name entry ;
+      begin
+	entry#read_xml sNode;
+	symboltable#set entry#get_name entry;
 	if entry#is_function then self#record_name entry
       end) (node#getTaggedChildren "symbol")
 
   (* ============================================================ Pretty printing *)
-    
-  method toPretty = 
-    let symbols = symboltable#fold (fun a k v -> 
-      LBLOCK [ a ; NL ; STR k ; NL ; INDENT (3, v#toPretty) ] ) (STR "Symbols") in
-    let f_addresses = self#fold_function_address_name 
+
+  method toPretty =
+    let symbols = symboltable#fold (fun a k v ->
+      LBLOCK [ a; NL; STR k; NL; INDENT (3, v#toPretty)] ) (STR "Symbols") in
+    let f_addresses = self#fold_function_address_name
       (fun k v a ->
-	LBLOCK [ a ; NL ; STR k#to_hex_string ; STR ": " ; STR v ]) 
+	LBLOCK [ a; NL; STR k#to_hex_string; STR ": "; STR v])
       (STR "Function addresses") in
-    LBLOCK [ symbols ; NL ; f_addresses ]
-      
-      
+    LBLOCK [ symbols; NL; f_addresses]
+
+
 end
-  
+
 
 let pe_symboltable = new pe_symboltable_t

@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2020-2021 Henny B. Sipma
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,7 +31,7 @@
    The implementation in this file is based on the documents:
 
    Matt Pietrek. A Crash Course on the Depths of Win32 Structured Exception Handling.
-   http://www.microsoft.com/msj/0197/exception/exception.aspx ;
+   http://www.microsoft.com/msj/0197/exception/exception.aspx;
 
    Igorsk, Reversing Microsoft Visual C++ Part I: Exception Handling
    http://www.openrce.org/articles/full_view/21
@@ -54,7 +54,6 @@ open BCHFunctionData
 open BCHLibTypes
 open BCHLocation
 open BCHStreamWrapper
-open BCHSystemInfo
 
 (* bchlibpe *)
 open BCHPESections
@@ -73,7 +72,7 @@ object (self)
   method read (s:string) =
     let ch = make_pushback_stream s in
     begin
-      toState <- ch#read_doubleword#to_signed_numerical#toInt ;
+      toState <- ch#read_doubleword#to_signed_numerical#toInt;
       action <- ch#read_doubleword
     end
 
@@ -83,15 +82,15 @@ object (self)
 
   method write_xml (node:xml_element_int) =
     begin
-      node#setIntAttribute "targetstate" self#get_targetstate ;
+      node#setIntAttribute "targetstate" self#get_targetstate;
       node#setAttribute "action" self#get_action#to_hex_string
     end
 
   method toPretty =
-    LBLOCK [ 
-      STR "target state: " ; INT self#get_targetstate ; NL ;
-      STR "action      : " ; self#get_action#toPretty ; NL
-    ]
+    LBLOCK [
+      STR "target state: "; INT self#get_targetstate; NL;
+      STR "action      : "; self#get_action#toPretty; NL
+   ]
 
 end
 
@@ -112,50 +111,50 @@ object (self)
   method read (s:string) =
     let ch = make_pushback_stream s in
     begin
-      (* compiler version ---------------------------------------------------------
-	 0x19930520: up to VC6, 0x19930521: VC7.x(2002-2003), 0x19930522: VC8 (2005) 
-	 -------------------------------------------------------------------------- *)
-      magicNumber <- ch#read_doubleword ;
+      (* compiler version ---------------------------------------------------
+	 0x19930520: up to VC6, 0x19930521: VC7.x(2002-2003), 0x19930522: VC8 (2005)
+	 -------------------------------------------------------------------- *)
+      magicNumber <- ch#read_doubleword;
 
-      (* maxState -----------------------------------------------------------------
+      (* maxState -----------------------------------------------------------
 	 number of entries in unwind table
-	 -------------------------------------------------------------------------- *)
-      maxState <- ch#read_i32 ;
+	 -------------------------------------------------------------------- *)
+      maxState <- ch#read_i32;
 
-      (* pUnwindMap ---------------------------------------------------------------
+      (* pUnwindMap ---------------------------------------------------------
 	 table of unwind destructors
-	 -------------------------------------------------------------------------- *)
-	pUnwindMap <- ch#read_doubleword ;
+	 -------------------------------------------------------------------- *)
+	pUnwindMap <- ch#read_doubleword;
 
-      (* nTryBlocks ---------------------------------------------------------------
+      (* nTryBlocks ---------------------------------------------------------
 	 number of try blocks in the function
-	 -------------------------------------------------------------------------- *)
-	nTryBlocks <- ch#read_i32 ;
+	 -------------------------------------------------------------------- *)
+	nTryBlocks <- ch#read_i32;
 
-      (* pTryBlockMap -------------------------------------------------------------
+      (* pTryBlockMap -------------------------------------------------------
 	 mapping of catch blocks to try blocks
-	 -------------------------------------------------------------------------- *)
-	pTryBlockMap <- ch#read_doubleword ;
+	 -------------------------------------------------------------------- *)
+	pTryBlockMap <- ch#read_doubleword;
 
-      (* nIPMapEntries ------------------------------------------------------------
+      (* nIPMapEntries ------------------------------------------------------
 	 not used on x86
-	 -------------------------------------------------------------------------- *)
-	nIPMapEntries <- ch#read_i32 ;
+	 -------------------------------------------------------------------- *)
+	nIPMapEntries <- ch#read_i32;
 
-      (* pIPtoStateMap ------------------------------------------------------------
+      (* pIPtoStateMap ------------------------------------------------------
 	 not used on x86
-	 -------------------------------------------------------------------------- *)
-	pIPtoStateMap <- ch#read_doubleword ;
-	
-      (* pESTypeList -------------------------------------------------------------
+	 -------------------------------------------------------------------- *)
+	pIPtoStateMap <- ch#read_doubleword;
+
+      (* pESTypeList --------------------------------------------------------
 	 VC7+ only, expected exceptions list (function "throw" specifier)
-	 ------------------------------------------------------------------------- *)
-	pESTypeList <- ch#read_doubleword ;
+	 -------------------------------------------------------------------- *)
+	pESTypeList <- ch#read_doubleword;
 
-      (* eHFlags -----------------------------------------------------------------
+      (* eHFlags ------------------------------------------------------------
 	 VC8+ only, bit 0 set if function was compiled with /EHs
-	 ------------------------------------------------------------------------- *)
-	eHFlags <- ch#read_i32 
+	 -------------------------------------------------------------------- *)
+	eHFlags <- ch#read_i32
 
     end
 
@@ -177,34 +176,35 @@ object (self)
     let seta t v = node#setAttribute t v#to_hex_string in
     let seti = node#setIntAttribute in
     begin
-      seta "magic" self#get_magicnumber ;
-      seti "maxstate" self#get_maxstate ;
-      seta "unwindmap" self#get_unwindmap ;
-      seti "ntryblocks" self#get_ntryblocks ;
-      seta "tryblockmap" self#get_tryblockmap ;
-      seta "estypelist" self#get_estypelist ;
+      seta "magic" self#get_magicnumber;
+      seti "maxstate" self#get_maxstate;
+      seta "unwindmap" self#get_unwindmap;
+      seti "ntryblocks" self#get_ntryblocks;
+      seta "tryblockmap" self#get_tryblockmap;
+      seta "estypelist" self#get_estypelist;
       seti "ehflags" self#get_ehflags
     end
 
-  method toPretty = 
+  method toPretty =
     LBLOCK [
-      STR "magic number : " ; self#get_magicnumber#toPretty ; NL ;
-      STR "max state    : " ; INT self#get_maxstate ; NL ;
-      STR "unwindmap    : " ; self#get_unwindmap#toPretty ; NL ;
-      STR "try blocks   : " ; INT self#get_ntryblocks ; NL ;
-      STR "tryblockmap  : " ; self#get_tryblockmap#toPretty ; NL ;
-      STR "es type list : " ; self#get_estypelist#toPretty ; NL ;
-      STR "EH flags     : " ; INT self#get_ehflags ; NL
-    ]
+      STR "magic number : "; self#get_magicnumber#toPretty; NL;
+      STR "max state    : "; INT self#get_maxstate; NL;
+      STR "unwindmap    : "; self#get_unwindmap#toPretty; NL;
+      STR "try blocks   : "; INT self#get_ntryblocks; NL;
+      STR "tryblockmap  : "; self#get_tryblockmap#toPretty; NL;
+      STR "es type list : "; self#get_estypelist#toPretty; NL;
+      STR "EH flags     : "; INT self#get_ehflags; NL
+   ]
 
 end
 
-class exn_handler_t 
+
+class exn_handler_t
   (voff1:int option)
   (voff2:int option)
   (voff3:int option)
   (voff4:int option)
-  (exnfinfo:exn_function_info_int) 
+  (exnfinfo:exn_function_info_int)
   (unwindmaps:exn_unwind_map_entry_int list) =
 object (self)
 
@@ -216,22 +216,22 @@ object (self)
     List.iter (fun (vt,vv) ->
       match vv with
       | Some i -> node#setIntAttribute vt i
-      | _ -> ()) [ ("v1",voff1) ; ("v2",voff2) ; ("v3",voff3) ; ("v4",voff4) ]
+      | _ -> ()) [("v1",voff1); ("v2",voff2); ("v3",voff3); ("v4",voff4)]
 
   method private write_xml_unwindmaps (node:xml_element_int) =
     node#appendChildren (List.map (fun m ->
       let mnode = xmlElement "unwindmap" in
-      begin m#write_xml mnode ; mnode end) unwindmaps)
+      begin m#write_xml mnode; mnode end) unwindmaps)
 
-  method write_xml (node:xml_element_int) = 
+  method write_xml (node:xml_element_int) =
     let fnode = xmlElement "funcinfo" in
     let unode = xmlElement "unwindmaps" in
     let vnode = xmlElement "varoffsets" in
     begin
-      self#get_function_info#write_xml fnode ;
-      self#write_xml_varoffsets vnode ;
-      self#write_xml_unwindmaps unode ;
-      node#appendChildren [ fnode ; vnode ; unode ]
+      self#get_function_info#write_xml fnode;
+      self#write_xml_varoffsets vnode;
+      self#write_xml_unwindmaps unode;
+      node#appendChildren [fnode; vnode; unode]
     end
 end
 
@@ -253,11 +253,18 @@ let write_xml_exnhandlers (node:xml_element_int) =
       hnode#setAttribute "faddr" a#to_hex_string;
       hnode
     end) handlers)
-    
+
 
 let get_unwindmaps (n:int) (addr:doubleword_int) =
   let pesection = pe_sections#get_containing_section addr in
-  let rec range n = if n = 0 then [] else if n > 0 then (n-1) :: range (n-1) else [] in
+  let rec range n =
+    if n = 0 then
+      []
+    else
+      if n > 0 then
+        (n-1) :: range (n-1)
+      else
+        [] in
   match pesection with
   | Some section ->
     let s = section#get_exe_string in
@@ -276,12 +283,12 @@ let get_unwindmaps (n:int) (addr:doubleword_int) =
             (BCH_failure
                (LBLOCK [
                     STR "get-unwindmaps: String.suffix. length: ";
-                    INT sectionlen ; STR "; offset: ";
-                    INT offset ]))) (List.rev (range n))
+                    INT sectionlen; STR "; offset: ";
+                    INT offset]))) (List.rev (range n))
   | _ -> []
 
 
-let add_exnhandler 
+let add_exnhandler
     ?(voff1=None)
     ?(voff2=None)
     ?(voff3=None)
@@ -293,14 +300,18 @@ let add_exnhandler
   let name = "__SEHandler_" ^ exnfinfo#to_hex_string ^ "__" in
   let _ = match sccaddr with
     | Some a ->
-       let _ = chlog#add
-                 "add function"
-                 (LBLOCK [ faddr#toPretty ; STR ": " ; a#toPretty ;
-                           STR ": security check cookie" ]) in
+       let _ =
+         chlog#add
+           "add function"
+           (LBLOCK [
+                faddr#toPretty; STR ": ";
+                a#toPretty;
+                STR ": security check cookie"]) in
        (functions_data#add_function a)#add_name "__security_check_cookie__"
     | _ -> () in
   let _ =
-    (functions_data#add_function fhaddr)#add_name "__InternalCxxFrameHandler__" in
+    (functions_data#add_function
+       fhaddr)#add_name "__InternalCxxFrameHandler__" in
   let _ = (functions_data#add_function faddr)#add_name name in
   let _ =
     chlog#add
@@ -383,7 +394,8 @@ let add_seh_exnhandler (exnfinfo:doubleword_int) (faddr:doubleword_int) =
      if sectionlen > offset then
        let exnfinfo_str = string_suffix s offset in
        let _ = xfinfo#read exnfinfo_str in
-       let unwindmaps = get_unwindmaps xfinfo#get_maxstate xfinfo#get_unwindmap in
+       let unwindmaps =
+         get_unwindmaps xfinfo#get_maxstate xfinfo#get_unwindmap in
        let _ =
          List.iteri (fun i m ->
              let name =
@@ -401,10 +413,11 @@ let add_seh_exnhandler (exnfinfo:doubleword_int) (faddr:doubleword_int) =
                       m#get_action#toPretty;
                       STR "; ";
                       STR name]) in
-	     (functions_data#add_function m#get_action)#add_name name) unwindmaps in
+	     (functions_data#add_function m#get_action)#add_name name)
+           unwindmaps in
        let exnhandler = new exn_handler_t None None None None xfinfo unwindmaps in
        begin
-         H.add exnhandlers faddr#index exnhandler ;
+         H.add exnhandlers faddr#index exnhandler;
          true
        end
      else
@@ -414,7 +427,7 @@ let add_seh_exnhandler (exnfinfo:doubleword_int) (faddr:doubleword_int) =
                  STR "add-seh-exnhandler: String.suffix. Section length: ";
                  INT sectionlen;
                  STR "; offset: ";
-                 INT offset ]))
+                 INT offset]))
   | _ ->
     begin
       pr_debug [STR "No section found for "; exnfinfo#toPretty; NL];
@@ -422,12 +435,12 @@ let add_seh_exnhandler (exnfinfo:doubleword_int) (faddr:doubleword_int) =
     end
 
 
-let todw s = 
+let todw s =
   TR.tget_ok (string_to_doubleword (littleendian_hexstring_todwstring s))
 
 
-let todwoff s = 
-  ((todw s)#to_signed_numerical)#toInt  (* signed doubleword offset *) 
+let todwoff s =
+  ((todw s)#to_signed_numerical)#toInt  (* signed doubleword offset *)
 
 
 let tooff s =
@@ -440,18 +453,18 @@ let exnpatterns = [
 
   (* example: V03c:0x4298fb
 
-  0x4288f6  jmp* 0x42a110      __CxxFrameHandler(pExcept:?, pRN:?, pContext:?, pDC:?)
+  0x4288f6  jmp* 0x42a110 __CxxFrameHandler(pExcept:?, pRN:?, pContext:?, pDC:?)
 --------------------------------------------------------------------------------
   0x4298fb  mov eax, 0x42ba78  eax := 4373112
   0x429900  jmp 0x4288f6       goto 0x4288f6
   *)
-  { xregex_s = Str.regexp ("ff25\\(........\\)b8\\(........\\)e9\\(........\\)$") ;
+  { xregex_s = Str.regexp ("ff25\\(........\\)b8\\(........\\)e9\\(........\\)$");
 
     xregex_f = fun faddr fnbytes ->
       let imm = todw (Str.matched_group 2 fnbytes) in
       let coff = todw (Str.matched_group 3 fnbytes) in
       let jmpaddr = (faddr#add coff)#add_int 10 in
-      let loc = make_location { loc_faddr = faddr ; loc_iaddr = jmpaddr } in
+      let loc = make_location { loc_faddr = faddr; loc_iaddr = jmpaddr } in
       let floc = get_floc loc in
       floc#has_call_target
         && floc#get_call_target#is_dll_call
@@ -460,12 +473,12 @@ let exnpatterns = [
       (*
 	(let (_,name) = floc#get_dll_target in name = "__CxxFrameHandler") &&
 	add_seh_exnhandler imm faddr *)
-  } ;
+  };
 
-  { xregex_s = Str.regexp 
+  { xregex_s = Str.regexp
       ("558bec83ec08535657fc8945fc33c0505050ff75fcff7514ff7510ff750cff7508e8" ^
        "\\(........\\)83c4208945f85f5e5b8b45f88be55dc3b8\\(........\\)e9" ^
-       "\\(........\\)$") ;
+       "\\(........\\)$");
 
     xregex_f = fun faddr fnbytes ->
       let coff1 = todw (Str.matched_group 1 fnbytes) in
@@ -474,7 +487,7 @@ let exnpatterns = [
       let jmpaddr = (faddr#add coff2)#add_int 10 in
       let fhaddr = (jmpaddr#add coff1)#add_int 38 in
       add_exnhandler None fhaddr imm faddr
-  } ;
+  };
 
   (* Vc91099:0x10023683
      1  e8<4>    InternalCxxFrameHandler
@@ -487,7 +500,7 @@ let exnpatterns = [
   { xregex_s = Str.regexp
       ("558bec83ec08535657fc8945fc33c0505050ff75fcff7514ff7510ff750cff7508e8" ^
        "\\(........\\)83c4208945f85f5e5b8b45f88be55dc38b5424088d42\\(..\\)8b4a" ^
-       "\\(..\\)33c8e8\\(........\\)b8\\(........\\)e9\\(........\\)$") ;
+       "\\(..\\)33c8e8\\(........\\)b8\\(........\\)e9\\(........\\)$");
 
     xregex_f = fun faddr fnbytes ->
       let coff1 = todw (Str.matched_group 1 fnbytes) in
@@ -500,7 +513,7 @@ let exnpatterns = [
       let jmpaddr = (faddr#add coff3)#add_int 27 in
       let fhaddr = (jmpaddr#add coff1)#add_int 38 in
       add_exnhandler ~voff1 ~voff2 sccaddr fhaddr imm faddr
-  } ;
+  };
 
   (* Vc91099:0x10029908
      1  e8<4>    InternalCxxFrameHandler
@@ -512,11 +525,11 @@ let exnpatterns = [
      7  b8<4>    mov eax,imm32
      8  e9<4>    jmp
   *)
-  { xregex_s = Str.regexp 
+  { xregex_s = Str.regexp
       ("558bec83ec08535657fc8945fc33c0505050ff75fcff7514ff7510ff750cff7508e8" ^
        "\\(........\\)83c4208945f85f5e5b8b45f88be55dc38b5424088d42\\(..\\)8b4a" ^
        "\\(..\\)33c8e8\\(........\\)8b4a\\(..\\)33c8e8\\(........\\)b8" ^
-       "\\(........\\)e9\\(........\\)$") ;
+       "\\(........\\)e9\\(........\\)$");
 
     xregex_f = fun faddr fnbytes ->
       let coff1 = todw (Str.matched_group 1 fnbytes) in
@@ -529,8 +542,8 @@ let exnpatterns = [
       let sccaddr = Some ((faddr#add coff2)#add_int 17) in
       let jmpaddr = (faddr#add coff4)#add_int 37 in
       let fhaddr = (jmpaddr#add coff1)#add_int 38 in
-      add_exnhandler ~voff1 ~voff2 ~voff4 sccaddr fhaddr imm faddr 
-  } ;
+      add_exnhandler ~voff1 ~voff2 ~voff4 sccaddr fhaddr imm faddr
+  };
 
   (* Vc91099:0x10023fe1
      1  e8<4>    InternalCxxFrameHandler
@@ -542,11 +555,11 @@ let exnpatterns = [
      7  b8<4>    mov eax,imm32
      8  e9<4>    jmp
   *)
-  { xregex_s = Str.regexp 
+  { xregex_s = Str.regexp
       ("558bec83ec08535657fc8945fc33c0505050ff75fcff7514ff7510ff750cff7508e8" ^
        "\\(........\\)83c4208945f85f5e5b8b45f88be55dc38b5424088d42\\(..\\)8b8a" ^
        "\\(........\\)33c8e8\\(........\\)8b4a\\(..\\)33c8e8\\(........\\)b8" ^
-       "\\(........\\)e9\\(........\\)$") ;
+       "\\(........\\)e9\\(........\\)$");
 
     xregex_f = fun faddr fnbytes ->
       let coff1 = todw (Str.matched_group 1 fnbytes) in
@@ -559,10 +572,10 @@ let exnpatterns = [
       let sccaddr = Some ((faddr#add coff2)#add_int 17) in
       let jmpaddr = (faddr#add coff4)#add_int 37 in
       let fhaddr = (jmpaddr#add coff1)#add_int 38 in
-      add_exnhandler ~voff1 ~voff2 ~voff4 sccaddr fhaddr imm faddr 
-  } ;
+      add_exnhandler ~voff1 ~voff2 ~voff4 sccaddr fhaddr imm faddr
+  };
 
-  (* V007:0x45bed6 
+  (* V007:0x45bed6
      1  e8<4>    InternalCxxFrameHandler
      2  8d82<4>  voff1
      3  8b8a<4>  voff2
@@ -570,10 +583,10 @@ let exnpatterns = [
      5  b8<4>    mov eax,imm32
      6  e9<4>    jmp
   *)
-  { xregex_s = Str.regexp 
+  { xregex_s = Str.regexp
       ("558bec83ec08535657fc8945fc33c0505050ff75fcff7514ff7510ff750cff7508e8" ^
        "\\(........\\)83c4208945f85f5e5b8b45f88be55dc38b5424088d82\\(........\\)" ^
-       "8b8a\\(........\\)33c8e8\\(........\\)b8\\(........\\)e9\\(........\\)$") ;
+       "8b8a\\(........\\)33c8e8\\(........\\)b8\\(........\\)e9\\(........\\)$");
 
     xregex_f = fun faddr fnbytes ->
       let coff1 = todw (Str.matched_group 1 fnbytes) in
@@ -585,10 +598,10 @@ let exnpatterns = [
       let sccaddr = Some ((faddr#add coff2)#add_int 23) in
       let jmpaddr = (faddr#add coff4)#add_int 33 in
       let fhaddr = (jmpaddr#add coff1)#add_int 38 in
-      add_exnhandler ~voff1 ~voff2 sccaddr fhaddr imm faddr  
-  } ;
+      add_exnhandler ~voff1 ~voff2 sccaddr fhaddr imm faddr
+  };
 
-  (* V007:45b925 
+  (* V007:45b925
      1 e8<4>    InternalCxxFrameHandler
      2 8d82<4>  voff1
      3 8b8a<4>  voff2
@@ -599,11 +612,11 @@ let exnpatterns = [
      8 b8<4>    mov eax,imm32
      9 e9<4>    jmp
   *)
-  { xregex_s = Str.regexp 
+  { xregex_s = Str.regexp
       ("558bec83ec08535657fc8945fc33c0505050ff75fcff7514ff7510ff750cff7508e8" ^
        "\\(........\\)83c4208945f85f5e5b8b45f88be55dc38b5424088d82\\(........\\)" ^
        "8b8a\\(........\\)33c8e8\\(........\\)83c0\\(..\\)8b4a\\(..\\)33c8e8" ^
-       "\\(........\\)b8\\(........\\)e9\\(........\\)$") ;
+       "\\(........\\)b8\\(........\\)e9\\(........\\)$");
 
     xregex_f = fun faddr fnbytes ->
       let coff1 = todw (Str.matched_group 1 fnbytes) in
@@ -611,14 +624,14 @@ let exnpatterns = [
       let voff2 = Some (todwoff (Str.matched_group 3 fnbytes)) in
       let coff2 = todw (Str.matched_group 4 fnbytes) in
       let voff3 = Some (tooff (Str.matched_group 5 fnbytes)) in
-      let voff4 = Some (tooff (Str.matched_group 6 fnbytes)) in 
+      let voff4 = Some (tooff (Str.matched_group 6 fnbytes)) in
       let imm = todw (Str.matched_group 8 fnbytes) in
       let coff4 = todw (Str.matched_group 9 fnbytes) in
       let sccaddr = Some ((faddr#add coff2)#add_int 23) in
       let jmpaddr = (faddr#add coff4)#add_int 46 in
       let fhaddr = (jmpaddr#add coff1)#add_int 38 in
-      add_exnhandler ~voff1 ~voff2 ~voff3 ~voff4 sccaddr fhaddr imm faddr 
-  } ;
+      add_exnhandler ~voff1 ~voff2 ~voff3 ~voff4 sccaddr fhaddr imm faddr
+  };
 
   (* V2bd:0x1001ddc8
      1 e8<4>    InternalCxxFrameHandler
@@ -631,11 +644,11 @@ let exnpatterns = [
      8 b8<4>    mov eax,imm32
      9 e9<4>    jmp
   *)
-  { xregex_s = Str.regexp 
+  { xregex_s = Str.regexp
       ("558bec83ec08535657fc8945fc33c0505050ff75fcff7514ff7510ff750cff7508e8" ^
        "\\(........\\)83c4208945f85f5e5b8b45f88be55dc38b5424088d42\\(..\\)8b4a" ^
        "\\(..\\)33c8e8\\(........\\)83c0\\(..\\)8b4a\\(..\\)33c8e8\\(........\\)" ^
-       "b8\\(........\\)e9\\(........\\)$") ;
+       "b8\\(........\\)e9\\(........\\)$");
 
     xregex_f = fun faddr fnbytes ->
       let coff1 = todw (Str.matched_group 1 fnbytes) in
@@ -643,7 +656,7 @@ let exnpatterns = [
       let voff2 = Some (tooff (Str.matched_group 3 fnbytes)) in
       let coff2 = todw (Str.matched_group 4 fnbytes) in
       let voff3 = Some (tooff (Str.matched_group 5 fnbytes)) in
-      let voff4 = Some (tooff (Str.matched_group 6 fnbytes)) in 
+      let voff4 = Some (tooff (Str.matched_group 6 fnbytes)) in
       let imm = todw (Str.matched_group 8 fnbytes) in
       let coff4 = todw (Str.matched_group 9 fnbytes) in
       let sccaddr = Some ((faddr#add coff2)#add_int 17) in

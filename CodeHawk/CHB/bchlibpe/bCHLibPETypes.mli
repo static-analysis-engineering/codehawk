@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,27 +38,28 @@ open BCHLibTypes
 
 
 (* Basic Win32 exception handling function information structure
-   reference: 
-   Matt Pietrek. A Crash Course on the Depths of Win32 Structured Exception Handling.
+   reference:
+   Matt Pietrek. A Crash Course on the Depths of Win32 Structured Exception
+   Handling.
    http://www.microsoft.com/msj/0197/exception/exception.aspx ;
 
    Igorsk, Reversing Microsoft Visual C++ Part I: Exception Handling
    http://www.openrce.org/articles/full_view/21
 *)
 class type exn_unwind_map_entry_int =
-object 
+object
   (* actions *)
   method read: string -> unit
 
   (* accessors *)
-  method get_targetstate : int
-  method get_action      : doubleword_int
+  method get_targetstate: int
+  method get_action: doubleword_int
 
   (* xml *)
-  method write_xml : xml_element_int -> unit
+  method write_xml: xml_element_int -> unit
 
   (* printing *)
-  method toPretty  : pretty_t
+  method toPretty: pretty_t
 end
 
 
@@ -66,13 +69,13 @@ object
   method read: string -> unit
 
   (* accessors *)
-  method get_magicnumber : doubleword_int
-  method get_maxstate    : int
-  method get_unwindmap   : doubleword_int
-  method get_ntryblocks  : int
-  method get_tryblockmap : doubleword_int
-  method get_estypelist  : doubleword_int
-  method get_ehflags     : int
+  method get_magicnumber: doubleword_int
+  method get_maxstate: int
+  method get_unwindmap: doubleword_int
+  method get_ntryblocks: int
+  method get_tryblockmap: doubleword_int
+  method get_estypelist: doubleword_int
+  method get_ehflags: int
 
   (* xml *)
   method write_xml : xml_element_int -> unit
@@ -81,12 +84,13 @@ object
   method toPretty : pretty_t
 end
 
+
 type xregexpattern_t = {
   xregex_s: Str.regexp ;
   xregex_f: doubleword_int -> string -> bool
 }
 
-(* ========================================================= PE string table === *)
+(* ====================================================== PE string table === *)
 
 class type string_table_int =
 object
@@ -97,7 +101,7 @@ object
   method add: doubleword_int -> string -> unit
 
   (* accessors *)
-  method get        : doubleword_int -> string        (* raises Invocation_error *)
+  method get: doubleword_int -> string        (* raises Invocation_error *)
   method get_strings: (doubleword_int * string) list
 
   (* predicates *)
@@ -107,7 +111,7 @@ object
   method toPretty: pretty_t
 end
 
-(* ========================================================== PE symbol table === *)
+(* ====================================================== PE symbol table === *)
 
 class type pe_symboltable_int =
 object
@@ -117,11 +121,11 @@ object
   method reset: unit
 
   (* setters *)
-  method set_image_base  : doubleword_int -> unit
+  method set_image_base: doubleword_int -> unit
   method set_base_of_code: doubleword_int -> unit
 
   (* accessors *)
-  method get_function_name   : doubleword_int -> string    (* raises Invocation_error *)
+  method get_function_name: doubleword_int -> string    (* raises Invocation_error *)
   method get_function_address: string -> doubleword_int    (* raises Invocation_error *)
 
   (* predicates *)
@@ -163,7 +167,7 @@ object
 
   method get_name_RVA                 : doubleword_int
 
-  method get_export_name_low_high     : string -> doubleword_int * doubleword_int 
+  method get_export_name_low_high     : string -> doubleword_int * doubleword_int
 
   method get_exported_functions       : doubleword_int list    (* absolute addresses *)
   method get_exported_function_names  : (doubleword_int * string) list
@@ -202,7 +206,7 @@ object
   method set_SE_handler_table         : doubleword_int -> doubleword_int -> unit
 
   (* accessors *)
-  method get_fragments_in: doubleword_int -> doubleword_int -> 
+  method get_fragments_in: doubleword_int -> doubleword_int ->
     (doubleword_int * doubleword_int * string) list
 
   (* xml *)
@@ -335,66 +339,103 @@ end
 
 class type pe_section_int =
 object
-  (* identification *)
+  (** {1 Identification} *)
+
   method index: int
 
-  (* actions *)
-  method read_export_directory_table      : doubleword_int -> doubleword_int -> unit
-  method read_import_directory_table      : doubleword_int -> unit
-  method read_load_configuration_structure: doubleword_int -> unit
-  method read_resource_directory_table    : doubleword_int -> unit
+  (** {1 Readers} *)
 
-  (* accessors *)
-  method get_name        : string
-  method get_header      : pe_section_header_int
-  method get_exe_string  : string
-  method get_section_VA  : doubleword_int    (* section start address as an absolute address *)
-  method get_section_RVA : doubleword_int    (* section start address relative to image base *)
+  method read_export_directory_table: doubleword_int -> doubleword_int -> unit
+
+  method read_import_directory_table: doubleword_int -> unit
+
+  method read_load_configuration_structure: doubleword_int -> unit
+
+  method read_resource_directory_table: doubleword_int -> unit
+
+  (** {1 Accessors} *)
+
+  method get_name: string
+
+  method get_header: pe_section_header_int
+
+  method get_exe_string : string
+
+  (** Returns the section start address as an absolute address. *)
+  method get_section_VA: doubleword_int
+
+  (** Returns the section start address relative to the image base. *)
+  method get_section_RVA : doubleword_int
+
   method get_virtual_size: doubleword_int
 
-  method get_import_directory_table      : import_directory_entry_int list
-  method get_export_directory_table      : export_directory_table_int
+  method get_import_directory_table: import_directory_entry_int list
+
+  method get_export_directory_table: export_directory_table_int
+
   method get_load_configuration_directory: load_configuration_directory_int
 
-  method get_SE_handlers       : doubleword_int list
+  method get_SE_handlers: doubleword_int list
+
   method get_imported_functions: (string * string list) list
+
   method get_exported_functions: doubleword_int list
+
   method get_exported_data_values: doubleword_int list
 
-  method get_imported_function         : doubleword_int -> (string * string) option
-  method get_imported_function_by_index: doubleword_int -> (string * string) option
+  method get_imported_function: doubleword_int -> (string * string) option
+
+  method get_imported_function_by_index:
+           doubleword_int -> (string * string) option
 
   method get_initialized_doubleword: doubleword_int -> doubleword_int option
-  method get_n_doublewords         : doubleword_int -> int -> doubleword_int list
-  method get_string_reference      : doubleword_int -> string option
-  method get_wide_string_reference : doubleword_int -> string option
 
-  method get_data_values           : doubleword_int -> data_export_spec_t ->
-    (int * doubleword_int) list
+  method get_n_doublewords: doubleword_int -> int -> doubleword_int list
 
+  method get_string_reference: doubleword_int -> string option
 
-  (* predicates *)
-  method includes_VA : doubleword_int -> bool (* true if between section_VA and section_VA + virtual_size *)
+  method get_wide_string_reference: doubleword_int -> string option
+
+  method get_data_values:
+           doubleword_int
+           -> data_export_spec_t
+           -> (int * doubleword_int) list
+
+  (** {1 Predicates} *)
+
+  (** [includes_VA addr] returns true if [addr] is between [section_VA] and
+      [section_VA + virtual_size].*)
+  method includes_VA: doubleword_int -> bool
+
   method includes_RVA: doubleword_int -> bool
+
   method includes_VA_in_file_image: doubleword_int -> bool
 
-  method is_read_only : bool
-  method is_writable  : bool
+  method is_read_only: bool
+
+  method is_writable: bool
+
   method is_executable: bool
 
-  method has_import_directory_table      : bool
-  method has_export_directory_table      : bool
+  method has_import_directory_table: bool
+
+  method has_export_directory_table: bool
+
   method has_load_configuration_directory: bool
 
-  (* xml *)
-  method write_xml: xml_element_int -> unit (* writes out all bytes of the section in chunks of 16 *)
+  (** {1 Xml / Printing} *)
 
-  (* printing *)
+  (** Writes all bytes of the section to the given node in chunks of 16.*)
+  method write_xml: xml_element_int -> unit
+
   method raw_data_to_string: doubleword_int list -> string   (* option to mark globals written *)
   method import_directory_entry_to_pretty: string -> pretty_t       (* raises Invalid_argument *)
   method import_directory_table_to_pretty: pretty_t
+
   method export_directory_table_to_pretty: pretty_t
+
   method load_configuration_directory_to_pretty: pretty_t
+
   method toPretty: pretty_t
 
 end
@@ -414,7 +455,7 @@ object
 
   (* setters *)
   method add_section : pe_section_header_int -> string -> unit
- 
+
   (* accessors *)
   method get_export_directory_table      : export_directory_table_int
   method get_import_directory_table      : import_directory_entry_int list
@@ -448,7 +489,7 @@ object
   method is_writable_address : doubleword_int -> bool
   method is_read_only_address: doubleword_int -> bool
   method is_exported         : doubleword_int -> bool
- 
+
   (* printing *)
   method import_directory_entry_to_pretty      : string -> pretty_t
   method import_directory_table_to_pretty      : pretty_t
