@@ -29,7 +29,6 @@
 
 (* bchlibx86 *)
 open BCHLibx86Types
-open BCHPredefinedUtil
 
 
 val internalcrt_functions: predefined_callsemantics_int list

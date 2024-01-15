@@ -27,8 +27,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
 
 (* bchlib *)
 open BCHLibTypes

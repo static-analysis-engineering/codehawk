@@ -34,5 +34,15 @@ open BCHLibTypes
 open BCHLibx86Types
 
 
+(** [disassemble_instruction ch base firstbyte] returns the opcode that starts
+    with [firstbyte] and whose potential continuation can be obtained from the
+    inputstream [ch]. The [base] argument is provided to enable the compuatation
+    of an absolute target address for a relative jump or call, that is,
+
+    {absolute_address = base + position}
+
+    so [base] should be the base of the code section being disassembled, not
+    necessarily the code base, if there are multiple code sections.
+ *)
 val disassemble_instruction:
   pushback_stream_int -> doubleword_int -> int -> opcode_t

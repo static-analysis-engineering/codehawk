@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,51 +30,40 @@
 (* chlib *)
 open CHPretty
 open CHNumerical
-open CHBounds
 open CHLanguage
 
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTiming
 open CHUtil
 
 (* xprlib *)
-open Xprt
 open XprToPretty
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHByteUtilities
 open BCHCallTarget
 open BCHCppClass
-open BCHCPURegisters
 open BCHDataBlock
 open BCHDoubleword
 open BCHFloc
 open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionInfo
-open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
-open BCHGlobalState
-open BCHJni
 open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
-open BCHLocationInvariant
 open BCHMakeCallTargetInfo
-open BCHPreFileIO
 open BCHStreamWrapper
 open BCHSystemInfo
 open BCHSystemSettings
 open BCHUtilities
-open BCHVariable
-open BCHVariableNames
 
 (* bchlibpe *)
 open BCHLibPETypes
 open BCHPEHeader
-open BCHPESectionHeader
 open BCHPESections
 
 (* bchlibx86 *)
@@ -116,7 +105,9 @@ let hex_string s =
   let h = ref "" in
   let len = String.length s in
   begin
-    for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
+    for _i = 0 to len-1 do
+      h := !h ^ (byte_to_string (IO.read_byte ch))
+    done;
     !h
   end
 
@@ -128,13 +119,14 @@ let has_control_characters s =
 
 
 let disassemble (displacement:int) (header:pe_section_header_int) =
-  let sname = 
+  let sname =
     let name = header#get_name in
-    if has_control_characters name then 
-      ("hex_encoded_" ^ (hex_string name)) 
+    if has_control_characters name then
+      ("hex_encoded_" ^ (hex_string name))
     else name in
   let _ =
-    chlog#add "initialization"
+    chlog#add
+      "initialization"
       (LBLOCK [
            STR "Disassemble section ";
            STR sname;
@@ -151,15 +143,15 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
     !assembly_instructions#set index instruction in
   let ch = make_pushback_stream codeString in
   let size = String.length codeString in
-  let is_data_block (pos:int) = 
+  let is_data_block (pos:int) =
     (!assembly_instructions#at_index (pos+displacement))#is_non_code_block in
-  let is_not_code (pos:int) = 
+  let is_not_code (pos:int) =
     let instr = !assembly_instructions#at_index (pos+displacement) in
     match instr#get_opcode with
     | NotCode None -> true
     | _ -> false in
   let skip_data_block (pos:int) ch =
-    let nonCodeBlock = 
+    let nonCodeBlock =
       (!assembly_instructions#at_index (pos+displacement))#get_non_code_block in
     let len = not_code_length nonCodeBlock in
     let dataString = Bytes.make len ' ' in
@@ -168,7 +160,7 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
       chlog#add
         "skip data block"
         (LBLOCK [STR "pos: "; INT pos; STR "; length: "; INT len]);
-      ch#skip_bytes len  ;
+      ch#skip_bytes len ;
       not_code_set_string nonCodeBlock (Bytes.to_string dataString)
     end in
   try
@@ -179,10 +171,14 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
 	  skip_data_block prevPos ch
 	else if is_not_code prevPos then
 	  begin
-	    ch_error_log#add "disassembly" 
-	      (LBLOCK [ STR "Unexpected not-code at " ; 
-			(sectionVA#add_int prevPos)#toPretty ]);
-	    while is_not_code ch#pos do ignore ch#read_byte done
+	    ch_error_log#add
+              "disassembly"
+	      (LBLOCK [
+                   STR "Unexpected not-code at ";
+		   (sectionVA#add_int prevPos)#toPretty]);
+	    while is_not_code ch#pos do
+              ignore ch#read_byte
+            done
 	  end
 	else
 	  (* let index = prevPos + displacement in *)
@@ -191,16 +187,20 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
 	    let (len,desc) = system_info#get_cfnop va in
 	    let opcode = CfNop(len,desc) in
 	    let dataString = Bytes.make len ' ' in
-	    let _ = Bytes.blit (Bytes.of_string codeString) prevPos dataString 0 len in
-	    let _ = add_instruction prevPos opcode (Bytes.to_string dataString) in
+	    let _ =
+              Bytes.blit (Bytes.of_string codeString) prevPos dataString 0 len in
+	    let _ =
+              add_instruction prevPos opcode (Bytes.to_string dataString) in
 	    ch#skip_bytes len
 	  else if system_info#is_cfjmp va then
 	    let (tgt,len,desc) = system_info#get_cfjmp va in
 	    let tgt = absolute_op tgt 4 RD in
 	    let opcode = CfJmp(tgt,len,desc) in
 	    let dataString = Bytes.make len ' ' in
-	    let _ = Bytes.blit (Bytes.of_string codeString) prevPos dataString 0 len in
-	    let _ = add_instruction prevPos opcode (Bytes.to_string dataString) in
+	    let _ =
+              Bytes.blit (Bytes.of_string codeString) prevPos dataString 0 len in
+	    let _ =
+              add_instruction prevPos opcode (Bytes.to_string dataString) in
 	    ch#skip_bytes len
 	  else
 	    let firstByte = ch#read_byte in
@@ -211,39 +211,52 @@ let disassemble (displacement:int) (header:pe_section_header_int) =
 	    let _ = add_instruction prevPos opcode instrBytes in
 	    ()
       with
-	Invalid_argument s ->
+      | Invalid_argument s ->
 	  begin
-	    ch_error_log#add "disassembly"
-	      (LBLOCK [ STR "failure in disassembling instruction at " ; 
-			(sectionVA#add_int prevPos)#toPretty ]) ;
+	    ch_error_log#add
+              "disassembly"
+	      (LBLOCK [
+                   STR "failure in disassembling instruction at ";
+		   (sectionVA#add_int prevPos)#toPretty]);
 	    raise (Invalid_argument s)
 	  end
     done
   with
   | BCH_failure p ->
-    ch_error_log#add "disassembly"
-      (LBLOCK [ STR "failure in disassembling section " ; 
-		STR header#get_name ; STR ": " ; p ])
+     ch_error_log#add
+       "disassembly"
+       (LBLOCK [
+            STR "failure in disassembling section ";
+	    STR header#get_name; STR ": "; p])
   | Invalid_argument s ->
-    ch_error_log#add "disassembly"
-      (LBLOCK [ STR "failure in disassembling section " ; 
-		STR header#get_name ; STR ": " ; STR s ])
+     ch_error_log#add
+       "disassembly"
+       (LBLOCK [
+            STR "failure in disassembling section ";
+	    STR header#get_name; STR ": "; STR s])
   | IO.No_more_input ->
      begin
-       ch_error_log#add "disassembly"
-                        (LBLOCK [ STR "No more input when reading section at " ;
-                                  sectionVA#toPretty ]) ;
+       ch_error_log#add
+         "disassembly"
+         (LBLOCK [
+              STR "No more input when reading section at ";
+              sectionVA#toPretty]);
        ()
      end
 
-let disassemble_string (displacement:int) (vastart:doubleword_int) (codestring:string) =
+
+let disassemble_string
+      (displacement:int)
+      (vastart:doubleword_int)
+      (codestring:string) =
   let size = String.length codestring in
   let imageBase = system_info#get_image_base in
   let baseOfCodeRVA = system_info#get_base_of_code_rva in
   let baseOfCode = imageBase#add baseOfCodeRVA in
   let ch = make_pushback_stream ~little_endian:true codestring in
-  let _ = initialize_assembly_instructions
-            displacement size system_info#get_code_size#to_int baseOfCode [] [] in
+  let _ =
+    initialize_assembly_instructions
+      displacement size system_info#get_code_size#to_int baseOfCode [] [] in
   let add_instruction position opcode bytes =
     let index = position + displacement in
     let va = vastart#add_int position in
@@ -262,45 +275,51 @@ let disassemble_string (displacement:int) (vastart:doubleword_int) (codestring:s
       with
       | Invalid_argument s ->
          begin
-           ch_error_log#add "string disassembly"
-                            (LBLOCK [ STR "failure disassembling instruction at " ;
-                                      (vastart#add_int prevpos)#toPretty ]) ;
+           ch_error_log#add
+             "string disassembly"
+             (LBLOCK [
+                  STR "failure disassembling instruction at ";
+                  (vastart#add_int prevpos)#toPretty]);
            raise (Invalid_argument s)
          end
     done
   with
   | BCH_failure p ->
-     ch_error_log#add "stream disassembly"
-                      (LBLOCK [ STR "failure in disassembling codestring: " ;  p ])
+     ch_error_log#add
+       "stream disassembly"
+       (LBLOCK [STR "failure in disassembling codestring: ";  p])
   |  IO.No_more_input -> ()
-  
+
 
 let add_class_functions classes isCodeAddress =
   List.iter (fun c ->
       let _ =
-        c#initialize_function_interfaces pe_sections#get_virtual_function_address in
+        c#initialize_function_interfaces
+          pe_sections#get_virtual_function_address in
       let add l isstatic =
         let classname = c#get_name in
-        List.iter (fun (fa,functionname)  -> 
-            if isCodeAddress fa then 
+        List.iter (fun (fa,functionname)  ->
+            if isCodeAddress fa then
               let fd = functions_data#add_function fa in
               begin
-                fd#set_class_info ~classname ~isstatic ;
-                fd#add_name functionname ;
-	        chlog#add "add class method"
-	                  (LBLOCK [ fa#toPretty ; STR "  " ;
-		                    STR classname ; STR "::" ;
-                                    STR functionname ])
-	end) l in
+                fd#set_class_info ~classname ~isstatic;
+                fd#add_name functionname;
+	        chlog#add
+                  "add class method"
+	          (LBLOCK [
+                       fa#toPretty; STR "  ";
+		       STR classname; STR "::";
+                       STR functionname])
+	      end) l in
       begin
-        add c#get_instance_functions false ;
+        add c#get_instance_functions false;
         add c#get_class_functions true
       end) classes
 
 
 (* Look for code patterns of the form:
       movzx dreg, ooffset(_,ireg,_)
-      jmp* joffset(_,dreg,4) 
+      jmp* joffset(_,dreg,4)
 *)
 let identify_data_blocks is_code_address header =
   let section = pe_sections#get_section header#index in
@@ -317,7 +336,7 @@ let identify_data_blocks is_code_address header =
       (numerical_to_doubleword n) in
   let get_instr = !assembly_instructions#at_address in
   let has_next_instr = !assembly_instructions#has_next_valid_instruction in
-  let get_next_instr iaddr = 
+  let get_next_instr iaddr =
     get_instr
       (!assembly_instructions#get_next_valid_instruction_address iaddr) in
   let get_jumptable = !assembly_instructions#get_jumptable in
@@ -339,8 +358,8 @@ let identify_data_blocks is_code_address header =
            trdb in
     begin
       system_info#set_jump_target nextInstr#get_address jtoffset jt db;
-      system_info#add_data_block db ;
-      newDataBlocks := !newDataBlocks + 1 ;
+      system_info#add_data_block db;
+      newDataBlocks := !newDataBlocks + 1;
       chlog#add "jumptable offset block"
         (LBLOCK [
              db#get_start_address#toPretty;
@@ -349,7 +368,7 @@ let identify_data_blocks is_code_address header =
              STR " (";
 	     instr#toPretty;
              STR ", ";
-             nextInstr#toPretty ; STR ")";
+             nextInstr#toPretty; STR ")";
 	     STR " jtlength = ";
              INT jtlength])
     end in
@@ -358,8 +377,8 @@ let identify_data_blocks is_code_address header =
     | Movzx (_,dst,src) ->
       begin
 	match (dst#get_kind,src#get_kind) with
-	| (Reg dreg, IndReg (_,offset))
-	| (Reg dreg, ScaledIndReg (_,_,_,offset)) when is_code offset ->
+	| (Reg dreg, IndReg (_, offset))
+	| (Reg dreg, ScaledIndReg (_, _, _, offset)) when is_code offset ->
 	   if system_info#has_data_block
                 (TR.tget_ok (numerical_to_doubleword offset)) then
              ()
@@ -373,7 +392,8 @@ let identify_data_blocks is_code_address header =
 		      match op#get_kind with
 		      | ScaledIndReg (_,Some ireg,_,jtoffset)
                            when is_code jtoffset && ireg = dreg ->
-		         let jtoffset = TR.tget_ok (numerical_to_doubleword jtoffset) in
+		         let jtoffset =
+                           TR.tget_ok (numerical_to_doubleword jtoffset) in
 		         (try
 			    begin
 			      match get_jumptable jtoffset with
@@ -387,21 +407,30 @@ let identify_data_blocks is_code_address header =
                                          ~section_string:codestring with
 			         | Some jt ->
 			            begin
-				      system_info#add_jumptable jt ;
-				      add_data_block instr nextInstr offset jtoffset jt ;
-				      chlog#add "add 2-jump table"
-				                (LBLOCK [ jtoffset#toPretty ; STR ": " ;
-					                  nextInstr#toPretty ])
+				      system_info#add_jumptable jt;
+				      add_data_block
+                                        instr nextInstr offset jtoffset jt;
+				      chlog#add
+                                        "add 2-jump table"
+				        (LBLOCK [
+                                             jtoffset#toPretty;
+                                             STR ": ";
+					     nextInstr#toPretty])
 			            end
 			         | _ -> ()
 			    end
 		          with
-			    BCH_failure p ->
-			    ch_error_log#add
-                              "incorrect data block"
-			      (LBLOCK [ iaddr#toPretty ;
-				        STR "; jtoffset: " ; jtoffset#toPretty ;
-				        STR "; offset: " ; offset#toPretty]))
+			  | BCH_failure p ->
+			     ch_error_log#add
+                               "incorrect data block"
+			       (LBLOCK [
+                                    iaddr#toPretty;
+				    STR "; jtoffset: ";
+                                    jtoffset#toPretty;
+				    STR "; offset: ";
+                                    offset#toPretty;
+                                    STR ": ";
+                                    p]))
 		      | _ -> ()
 		    end
 	         | _ -> ()
@@ -410,14 +439,15 @@ let identify_data_blocks is_code_address header =
       end
     | _ -> ())
 
-let identify_misaligned_functions header =
+
+let identify_misaligned_functions (header: pe_section_header_int) =
   let section = pe_sections#get_section header#index in
   let sectionVA = section#get_section_VA in
   let codestring = section#get_exe_string in
   let codelen = String.length codestring in
   let newDataBlocks = ref 0 in
   let is_code = system_info#is_code_address in
-  let is_valid_instr a = 
+  let is_valid_instr (a: doubleword_int) =
     is_code a && (!assembly_instructions#at_address a)#is_valid_instruction in
   let add_datablock start endaddr =
     let db = TR.tget_ok (make_data_block start endaddr "zeroes") in
@@ -434,25 +464,28 @@ let identify_misaligned_functions header =
     end in
   let feps = functions_data#get_function_entry_points in
   List.iter (fun fe ->
-    if is_valid_instr fe then () else
-      try
-	if sectionVA#le fe then
-	  let feindex = TR.tget_ok (fe#subtract_to_int sectionVA) in
-	  if feindex < codelen then
-	    let index = ref (feindex - 1) in
-	    begin
-	      while !index > 0
-                    && Char.code (Bytes.get (Bytes.of_string codestring) !index) = 0 do
-		index := !index - 1
-	      done;
-	      index := !index + 1;
-	      let dblen = feindex - !index in
-	      if dblen > 0 then
-		add_datablock (TR.tget_ok (fe#subtract_int dblen)) fe
-	    end
-      with
-	Invalid_argument s ->
-	  pr_debug [STR s; STR ": "; fe#toPretty; NL]) feps
+      if is_valid_instr fe then
+        ()
+      else
+        try
+	  if sectionVA#le fe then
+	    let feindex = TR.tget_ok (fe#subtract_to_int sectionVA) in
+	    if feindex < codelen then
+	      let index = ref (feindex - 1) in
+	      begin
+	        while !index > 0
+                      && Char.code
+                           (Bytes.get (Bytes.of_string codestring) !index) = 0 do
+		  index := !index - 1
+	        done;
+	        index := !index + 1;
+	        let dblen = feindex - !index in
+	        if dblen > 0 then
+		  add_datablock (TR.tget_ok (fe#subtract_int dblen)) fe
+	      end
+        with
+        | Invalid_argument s ->
+	   pr_debug [STR s; STR ": "; fe#toPretty; NL]) feps
 
 
 let disassemble_sections (headers:pe_section_header_int list) =
@@ -461,20 +494,27 @@ let disassemble_sections (headers:pe_section_header_int list) =
   let baseOfCode = imageBase#add baseOfCodeRVA in
   let codeSize = system_info#get_code_size in
   let isCodeAddress = system_info#is_code_address in
-  let readOnlySections = List.filter 
+  let readOnlySections = List.filter
     (fun s -> s#is_read_only || s#is_executable) pe_sections#get_sections in
-  let  _ = pverbose [ STR "filter readonly section strings ... " ; NL ] in
-  let readOnlySectionStrings = List.map (fun s -> 
+  let  _ = pr_timing [STR "filter readonly section strings ... "] in
+  let readOnlySectionStrings = List.map (fun s ->
     (s#get_section_VA, s#get_exe_string)) readOnlySections in
   let _ = system_info#initialize_jumptables isCodeAddress readOnlySectionStrings in
-  let _ = pverbose [ STR "initialized jump tables" ; NL ] in
+  let _ = pr_timing [STR "initialized jump tables"] in
   let classes = get_cpp_classes () in
   let _ = add_class_functions classes isCodeAddress in
   let _ = initialize_instructions codeSize#to_int in
-  let _ = chlog#add "initialization" 
-    (LBLOCK [ STR "Create space for " ; codeSize#toPretty ; STR " (" ;
-	      INT codeSize#to_int ; STR ")" ; STR "instructions" ]) in
-  let _ = List.iter 
+  let _ =
+    chlog#add
+      "initialization"
+      (LBLOCK [
+           STR "Create space for ";
+           codeSize#toPretty;
+           STR " (";
+	   INT codeSize#to_int;
+           STR ")";
+           STR "instructions"]) in
+  let _ = List.iter
     (fun header ->
       let section = pe_sections#get_section header#index in
       let displacement =
@@ -487,15 +527,15 @@ let disassemble_sections (headers:pe_section_header_int list) =
 	let jumpTables = system_info#get_jumptables in
 	let dataBlocks = system_info#get_data_blocks in
 	begin
-	  itcount := !itcount + 1 ;
-	  initialize_assembly_instructions 
+	  itcount := !itcount + 1;
+	  initialize_assembly_instructions
 	    displacement
             endSection
             codeSize#to_int baseOfCode jumpTables
             dataBlocks;
 	  disassemble displacement header;
 	  identify_data_blocks isCodeAddress header;
-	  (* identify_misaligned_functions header ; *)
+	  (* identify_misaligned_functions header; *)
 	  (let dbCount = List.length system_info#get_data_blocks in
 	  if dbCount > !datablockCount then
 	    datablockCount := dbCount
@@ -503,12 +543,12 @@ let disassemble_sections (headers:pe_section_header_int list) =
 	    newDataBlocks := false)
 	end
       done) headers in
-  let _ = List.iter
-            (fun (vastart,s) ->
-              let displacement = TR.tget_ok (vastart#subtract_to_int baseOfCode) in
-              disassemble_string displacement vastart s)
-            system_info#get_initialized_memory_strings in
-              
+  let _ =
+    List.iter
+      (fun (vastart,s) ->
+        let displacement = TR.tget_ok (vastart#subtract_to_int baseOfCode) in
+        disassemble_string displacement vastart s)
+      system_info#get_initialized_memory_strings in
   codeSize#to_int
 
 
@@ -518,18 +558,20 @@ let get_dll_target (instr:assembly_instruction_int) =
          ..: ....
          a : jump *b
          -----------------
-         b : c                data section  
+         b : c                data section
 *)
   let check_case_I target_address =
     if !assembly_instructions#is_code_address target_address then
-      let targetOpcode = (!assembly_instructions#at_address target_address)#get_opcode in
+      let targetOpcode =
+        (!assembly_instructions#at_address target_address)#get_opcode in
       match targetOpcode with
       | IndirectJmp jumpTarget ->
-	  if jumpTarget#is_absolute_address then
-	    pe_sections#get_imported_function jumpTarget#get_absolute_address
-	  else
-	    None
-      | _ -> None
+	 if jumpTarget#is_absolute_address then
+	   pe_sections#get_imported_function jumpTarget#get_absolute_address
+	 else
+	   None
+      | _ ->
+         None
     else
       None in
   (*
@@ -543,19 +585,24 @@ let get_dll_target (instr:assembly_instruction_int) =
           a : c               data section
          where c is a code address
   *)
-  let check_case_II target_address = pe_sections#get_imported_function target_address in
+  let check_case_II target_address =
+    pe_sections#get_imported_function target_address in
   match instr#get_opcode with
-  | DirectCall op when op#is_absolute_address -> check_case_I op#get_absolute_address
-  | IndirectCall op when op#is_absolute_address -> check_case_II op#get_absolute_address
-  | _ -> None
+  | DirectCall op when op#is_absolute_address ->
+     check_case_I op#get_absolute_address
+  | IndirectCall op when op#is_absolute_address ->
+     check_case_II op#get_absolute_address
+  | _ ->
+     None
 
 
-let is_dll_target (instr:assembly_instruction_int) = 
+let is_dll_target (instr:assembly_instruction_int) =
   match get_dll_target instr with Some _ -> true | _ -> false
-		
+
+
 let is_dll_jump_target (target_address:doubleword_int) =
-  match pe_sections#get_imported_function target_address with 
-  | Some _ -> true 
+  match pe_sections#get_imported_function target_address with
+  | Some _ -> true
   | _ -> match pe_sections#get_imported_function_by_index target_address with
     | Some _ -> true
     | _ -> false
@@ -599,7 +646,6 @@ let get_indirect_jump_targets (op:operand_int) =
 
 
 (* Checks for non-returning functions *)
-
 let is_nr_dllfname (dll:string) (name:string) =
   function_summary_library#has_dll_function dll name &&
     (function_summary_library#get_dll_function dll name)#is_nonreturning
@@ -619,7 +665,7 @@ let is_nr_declared (faddr:doubleword_int) =
 let is_nr_call_instruction (instr:assembly_instruction_int) =
   match get_dll_target instr with
   | Some (dll,name) -> is_nr_dllfname dll name
-  | _ -> 
+  | _ ->
     match instr#get_opcode with
     | DirectCall op when op#is_absolute_address ->
       is_nr_declared op#get_absolute_address
@@ -647,7 +693,7 @@ let set_block_boundaries () =
     let feps = functions_data#get_function_entry_points in
     begin
       (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ record targets of jump tables *)
-      List.iter (fun jt -> 
+      List.iter (fun jt ->
           try
 	    List.iter set_block_entry jt#get_all_targets
           with
@@ -669,13 +715,13 @@ let set_block_boundaries () =
                        STR ": ";
                        STR  s]))
         ) jumpTables;
-      
+
       (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ record function entry points *)
-      List.iter 
+      List.iter
         (fun fe ->
 	  try
-	    set_block_entry fe 
-	  with 
+	    set_block_entry fe
+	  with
 	  | BCH_failure _ ->
 	     chlog#add
                "disassembly"
@@ -689,7 +735,7 @@ let set_block_boundaries () =
 		    STR ": ";
                     STR s])
         ) feps;
-      
+
       (* ~~~~~~~~~~~~~~ record targets of unconditional and conditional jumps *)
       !assembly_instructions#itera
        (fun va instr ->
@@ -740,23 +786,24 @@ let set_block_boundaries () =
                       va#toPretty;
                       STR ": ";
                       STR s]))
-       ) ;
+       );
       (* ~~~~~~~~~ add block entries due to previous block-ending instruction *)
       !assembly_instructions#itera
        (fun va instr ->
          try
 	   let opcode = instr#get_opcode in
-	   let isBlockEnding = 
-	     is_jump_instruction opcode || 
-	       (match opcode with 
-	        | Ret _ | BndRet _ | RepzRet | InterruptReturn _ -> true 
+	   let isBlockEnding =
+	     is_jump_instruction opcode ||
+	       (match opcode with
+	        | Ret _ | BndRet _ | RepzRet | InterruptReturn _ -> true
 	        | IndirectCall _
                   | DirectCall _ when is_nr_call_instruction instr -> true
                 | DirectCall op when
                        op#is_absolute_address
-                       && system_info#is_inlined_function op#get_absolute_address ->
+                       && system_info#is_inlined_function
+                            op#get_absolute_address ->
                    begin
-                     chlog#add "add inlined call" va#toPretty ;
+                     chlog#add "add inlined call" va#toPretty;
                      pverbose [STR  "set inlined call "; va#toPretty; NL];
                      set_inlined_call va;
                      true
@@ -782,21 +829,21 @@ let set_block_boundaries () =
   | BCH_failure p ->
      raise (BCH_failure (LBLOCK [STR "Error in set-block-boundaries: "; p]))
   | Invalid_argument s ->
-     raise (BCH_failure (LBLOCK [ STR "Error in set-block-boundaries: "; STR s]))
+     raise (BCH_failure (LBLOCK [STR "Error in set-block-boundaries: "; STR s]))
 
 
 (* it is assumed that these are successors to a toplevel block;
    blocks of inlined functions are incorporated all at once *)
 let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
   if system_info#is_nonreturning_call faddr iaddr then [] else
-    let loc = make_location { loc_faddr = faddr ; loc_iaddr = iaddr } in
+    let loc = make_location { loc_faddr = faddr; loc_iaddr = iaddr } in
     let ctxtiaddr = loc#ci in
     let instr = !assembly_instructions#at_address iaddr in
     let finfo = get_function_info faddr in
     let opcode = instr#get_opcode in
     let next () =
       if !assembly_instructions#has_next_valid_instruction iaddr then
-        [ !assembly_instructions#get_next_valid_instruction_address iaddr ]
+        [!assembly_instructions#get_next_valid_instruction_address iaddr]
       else
         begin
 	  disassembly_log#add
@@ -810,12 +857,16 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
 	  []
         end in
 
-    let get_absolute_op (op:operand_int) = 
-      let floc = get_floc (make_location {loc_faddr = faddr; loc_iaddr = iaddr}) in
+    let get_absolute_op (op:operand_int) =
+      let floc =
+        get_floc (make_location {loc_faddr = faddr; loc_iaddr = iaddr}) in
       let opExpr = op#to_expr floc in
-      let opExpr = floc#inv#rewrite_expr opExpr finfo#env#get_variable_comparator in
+      let opExpr =
+        floc#inv#rewrite_expr opExpr finfo#env#get_variable_comparator in
       match opExpr with
-      | XVar v when finfo#env#is_global_variable v && finfo#env#has_constant_offset v ->
+      | XVar v
+           when finfo#env#is_global_variable v
+                && finfo#env#has_constant_offset v ->
          let gaddr = finfo#env#get_global_variable_address v in
          pe_sections#get_read_only_initialized_doubleword gaddr
       | XConst (IntConst c) ->
@@ -823,7 +874,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
 	   try
 	     Some (TR.tget_ok (numerical_to_doubleword c))
 	   with
-	     _ -> None 
+	     _ -> None
          end
       | _ -> None in
 
@@ -835,7 +886,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
     let get_dll_jump_target_op op =
       let dw =
         if op#is_absolute_address then
-	  op#get_absolute_address 
+	  op#get_absolute_address
         else
 	  match get_absolute_op op with
 	  | Some dw -> dw
@@ -844,7 +895,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
 	       (BCH_failure
                   (STR "Internal failure in get_dll_jump_target_op (1)")) in
       match pe_sections#get_imported_function_by_index dw with
-      | Some (lib, fname) -> (lib,fname) 
+      | Some (lib, fname) -> (lib,fname)
       | _ ->
          match pe_sections#get_imported_function dw with
          | Some (lib,fname) -> (lib,fname)
@@ -855,18 +906,18 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
 
     let successors = match opcode with
       | Ret _ | BndRet _ | RepzRet -> []
-      | DirectJmp op 
-        | CfJmp(op,_,_) when op#is_absolute_address -> [op#get_absolute_address]
-      | Jcc (_,op)
+      | DirectJmp op
+        | CfJmp(op, _, _) when op#is_absolute_address -> [op#get_absolute_address]
+      | Jcc (_, op)
            when system_info#is_fixed_true_branch iaddr && op#is_absolute_address ->
          [op#get_absolute_address]
-      | IndirectJmp _ when system_info#has_jump_target iaddr -> 
+      | IndirectJmp _ when system_info#has_jump_target iaddr ->
          let (base,jt,db) = system_info#get_jump_target iaddr in
          begin
 	   finfo#set_offsettable_target ctxtiaddr base jt db;
 	   (get_floc loc)#get_jump_successors
          end
-      | IndirectJmp op when finfo#is_dll_jumptarget ctxtiaddr -> []
+      | IndirectJmp _ when finfo#is_dll_jumptarget ctxtiaddr -> []
       | IndirectJmp op when is_dll_jump_target_op op ->
          let (lib,fname) = get_dll_jump_target_op op in
          let ctinfo = mk_dll_target lib fname in
@@ -957,7 +1008,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
 		  instr#toPretty]);
 	   []
          end
-      | IndirectCall op | DirectCall op ->
+      | IndirectCall _ | DirectCall _ ->
          if is_nr_call_instruction instr
 	   || finfo#has_call_target ctxtiaddr
               && (finfo#get_call_target ctxtiaddr)#is_nonreturning then
@@ -975,7 +1026,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
 	   (next ())
       | DirectLoop op ->
          if op#is_absolute_address then
-	   (next ()) @ [ op#get_absolute_address ]
+	   (next ()) @ [op#get_absolute_address]
          else
 	   begin
 	     chlog#add
@@ -1008,11 +1059,11 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
          else
 	   (next ()) in
     List.map
-      (fun va -> (make_location { loc_faddr = faddr ; loc_iaddr = va })#ci)
+      (fun va -> (make_location { loc_faddr = faddr; loc_iaddr = va })#ci)
       (List.filter
          (fun va ->
            if !assembly_instructions#is_code_address va then true else
-             begin 
+             begin
 	       chlog#add
                  "disassembly"
 	         (LBLOCK [
@@ -1023,18 +1074,13 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
              end) successors)
 
 
-let get_call_addr instr =
-  match instr#get_opcode with
-  | DirectCall op when op#is_absolute_address -> op#get_absolute_address
-  | _ -> raise (BCH_failure (LBLOCK [ STR "Internal error in get_call_addr" ]))
-
-
 (* it is assumed that the block is at the toplevel; blocks for inlined
    functions are incorporated together all at once *)
 let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
-  let set_block_entry a = (!assembly_instructions#at_address a)#set_block_entry in  
+  let set_block_entry (a: doubleword_int) =
+    (!assembly_instructions#at_address a)#set_block_entry in
   let get_instr = !assembly_instructions#at_address in
-  let get_next_instr_address = 
+  let get_next_instr_address =
     !assembly_instructions#get_next_valid_instruction_address in
 
   let rec find_last_instruction (va:doubleword_int) (prev:doubleword_int) =
@@ -1065,7 +1111,7 @@ let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
            ctxt_returnsite = returnsite} in
       let tgtloc = make_location {loc_faddr = a; loc_iaddr = a} in
       let ctxttgtloc = make_c_location tgtloc ctxt in
-      let callsucc = ctxttgtloc#ci in 
+      let callsucc = ctxttgtloc#ci in
       let inlinedblocks =
         List.map
           (fun b ->
@@ -1098,7 +1144,7 @@ let trace_function (faddr:doubleword_int) =
   let doneSet = new DoublewordCollections.set_t in   (* toplevel only *)
   let set_block_entry a = (!assembly_instructions#at_address a)#set_block_entry in
   let get_iaddr s = (ctxt_string_to_location faddr s)#i in
-  let add_to_workset l = 
+  let add_to_workset l =
     List.iter (fun a -> if doneSet#has a then () else workSet#add a) l in
   let blocks = ref [] in
   let rec add_block (blockEntry:doubleword_int) =
@@ -1130,7 +1176,7 @@ let trace_function (faddr:doubleword_int) =
     List.fold_left (fun acc b ->
         let src = b#get_context_string in
         (List.map (fun tgt -> (src,tgt)) b#get_successors) @ acc) [] blockList in
-  make_assembly_function faddr blockList successors 
+  make_assembly_function faddr blockList successors
 
 
 let collect_function_entry_points () =
@@ -1141,7 +1187,7 @@ let collect_function_entry_points () =
        try
          if is_dll_target instr then () else
 	   match instr#get_opcode with
-	   | DirectCall op when op#is_absolute_address -> 
+	   | DirectCall op when op#is_absolute_address ->
 	      addresses#add op#get_absolute_address
 	   | _ -> ()
        with
@@ -1149,50 +1195,38 @@ let collect_function_entry_points () =
           begin
             ch_error_log#add
               "collect function entry points"
-              (LBLOCK [ va#toPretty ; STR ": " ; STR s]) ;
+              (LBLOCK [va#toPretty; STR ": "; STR s]);
             raise (BCH_failure
-                     (LBLOCK [ STR "Error in collect functin entry points: " ;
-                               va#toPretty ; STR ": " ; STR s ]))
+                     (LBLOCK [
+                          STR "Error in collect functin entry points: ";
+                          va#toPretty; STR ": "; STR s]))
           end);
     chlog#add
-      "initialization" 
-      (LBLOCK [ STR "Collected " ; INT addresses#size ; STR " functions" ]) ;
-    system_info#import_ida_function_entry_points ;
-    addresses#addList system_info#get_ida_function_entry_points ;
+      "initialization"
+      (LBLOCK [STR "Collected "; INT addresses#size; STR " functions"]);
+    system_info#import_ida_function_entry_points;
+    addresses#addList system_info#get_ida_function_entry_points;
     chlog#add
       "initialization"
-      (LBLOCK [ STR "Total number of function entry points: " ;
-                INT addresses#size ]) ;
+      (LBLOCK [
+           STR "Total number of function entry points: ";
+           INT addresses#size]);
       addresses#toList
     end
 
+
 let construct_assembly_function
-      (count:int) (starttime:float) (faddr:doubleword_int) =
-  let ftime = ref (Unix.gettimeofday ()) in
-  let _ = pverbose [ NL ] in
+      (_count:int) (_starttime:float) (faddr:doubleword_int) =
   try
     if !assembly_instructions#is_code_address faddr then
-      let _ = pverbose [ STR "." ] in
-      let _ = if system_settings#is_verbose then
-	  begin
-	    pverbose [ faddr#toPretty ; STR "  " ] ;
-	    ftime := Unix.gettimeofday () 
-	  end in
       let fn = trace_function faddr in
       let finfo = load_function_info faddr in
       let _ = if fn#is_complete then () else finfo#set_incomplete in
       let _ = finfo#set_stack_adjustment fn#get_stack_adjustment in
       let _ = if fn#is_nonreturning then finfo#set_nonreturning in
-      let _ = if system_settings#is_verbose then
-	  let t = Unix.gettimeofday () in
-	  let dt = t -. !ftime in
-	  let dtt = t -. starttime in
-	  let prt t = STR (Printf.sprintf "%10.4f" t) in
-	  pverbose [ fixed_length_pretty ~alignment:StrRight (INT count) 6 ; STR "  " ;
-		     faddr#toPretty ; STR "  " ; 
-		     prt dt ; STR "  " ; prt dtt ; NL ] in		     
       assembly_functions#add_function fn
-    else if system_info#has_data_block faddr && functions_data#has_function_name faddr then
+    else if system_info#has_data_block faddr
+            && functions_data#has_function_name faddr then
       let bname = (functions_data#get_function faddr)#get_function_name in
       (system_info#get_data_block faddr)#set_name bname
     else
@@ -1200,66 +1234,70 @@ let construct_assembly_function
   with
   | BCH_failure p ->
     begin
-      ch_error_log#add "construct assembly function" 
-	(LBLOCK [ faddr#toPretty ; STR ": " ; p ]) ;
-      raise (BCH_failure (LBLOCK [ STR "Error in constructing function " ; 
-				   faddr#toPretty ; STR ": " ; p ]))
+      ch_error_log#add
+        "construct assembly function"
+	(LBLOCK [faddr#toPretty; STR ": "; p]);
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Error in constructing function ";
+		faddr#toPretty; STR ": "; p]))
     end
 
 
 let construct_functions () =
-  let _ = system_info#initialize_function_entry_points collect_function_entry_points in
+  let _ =
+    system_info#initialize_function_entry_points collect_function_entry_points in
   let _ = set_block_boundaries () in
   let count = ref 0 in
   let starttime = ref (Unix.gettimeofday ()) in
-  (* let ftime = ref (Unix.gettimeofday ()) in *)
   let functionEntryPoints = functions_data#get_function_entry_points in
-  let _ = pverbose [ NL ; STR "Tracing " ; INT (List.length functionEntryPoints) ;
-		     STR " function entry points ... " ; NL ] in
-  let _ = chlog#add "initialization" 
-    (LBLOCK [ STR "constructing functions for " ; 
-	      pp_quantity  (List.length functionEntryPoints) 	
-		"function entry point" "function entry points" ]) in
+  let _ =
+    chlog#add
+      "initialization"
+      (LBLOCK [
+           STR "constructing functions for ";
+	   pp_quantity  (List.length functionEntryPoints)
+	     "function entry point" "function entry points"]) in
   begin
     List.iter (fun faddr ->
       try
 	begin
-	  count := !count + 1 ;
+	  count := !count + 1;
 	  construct_assembly_function !count !starttime faddr
 	end
       with
       | BCH_failure p ->
-	ch_error_log#add "construct functions"
-	                 (LBLOCK [ STR "Function " ; faddr#toPretty ; STR ": " ; p])
+	 ch_error_log#add
+           "construct functions"
+	   (LBLOCK [STR "Function "; faddr#toPretty; STR ": "; p])
       | Invalid_argument s ->
-         ch_error_log#add "construct functions"
-                          (LBLOCK [ STR "Function " ; faddr#toPretty ; STR ": " ; STR s ])
-    ) functionEntryPoints ;
-    pverbose [ NL ; STR "Adding functions found by preamble ... " ; NL ] ;
+         ch_error_log#add
+           "construct functions"
+           (LBLOCK [STR "Function "; faddr#toPretty; STR ": "; STR s])
+    ) functionEntryPoints;
+    pr_timing [STR "Adding functions found by preamble ... "];
     List.iter (fun faddr ->
       begin
-	count := !count + 1 ;
+	count := !count + 1;
 	construct_assembly_function !count !starttime faddr
       end) assembly_functions#add_functions_by_preamble
   end
 
+
 let record_call_targets () =
-  let starttime = ref (Unix.gettimeofday ()) in
-  let prt f = STR (Printf.sprintf "%8.4f" f) in
-  let prl i = fixed_length_pretty ~alignment:StrRight (INT i) 8 in
   let count = ref 0 in
   assembly_functions#itera
     (fun faddr f ->
       try
 	let finfo = get_function_info faddr in
-	let ftime = Unix.gettimeofday () in
 	begin
-	  count := !count + 1 ;
+	  count := !count + 1;
 	  f#iteri
             (fun _ ctxtiaddr instr ->
               let iaddr = (ctxt_string_to_location faddr ctxtiaddr)#i in
 	      match instr#get_opcode with
-	      | DirectCall op | IndirectCall op ->
+	      | DirectCall _ | IndirectCall _ ->
 	         if finfo#has_call_target ctxtiaddr
                     && (finfo#get_call_target ctxtiaddr)#is_app_call
                     && has_callsemantics
@@ -1271,18 +1309,18 @@ let record_call_targets () =
                    if predefined_ctinfo#is_static_lib_call
                       || predefined_ctinfo#is_inlined_call then
 		     begin
-		       finfo#set_call_target ctxtiaddr predefined_ctinfo ;
-		       finfo#schedule_invariant_reset ;
+		       finfo#set_call_target ctxtiaddr predefined_ctinfo;
+		       finfo#schedule_invariant_reset;
 		       chlog#add
                          "reset invariants"
-                         (LBLOCK [ finfo#a#toPretty ; 
-				   STR ":" ; STR ctxtiaddr ])
+                         (LBLOCK [finfo#a#toPretty; STR ":"; STR ctxtiaddr])
 		     end
 	           else
                      chlog#add
                        "unrecognized predefined call semantics"
-                       (LBLOCK [ faddr#toPretty ; STR ": " ;
-                                 STR predefined_ctinfo#get_name ])
+                       (LBLOCK [
+                            faddr#toPretty; STR ": ";
+                            STR predefined_ctinfo#get_name])
                  else
 		   if system_info#has_call_target faddr iaddr then
                      let calltgt = system_info#get_call_target faddr iaddr in
@@ -1293,8 +1331,8 @@ let record_call_targets () =
 		     | ("dll",dllname,dllfn) ->
                         let ctinfo = mk_dll_target dllname dllfn in
                         finfo#set_call_target ctxtiaddr ctinfo
-		     | ("app",tgtAddr,_) when 
-		            has_callsemantics (string_to_doubleword tgtAddr) -> 
+		     | ("app",tgtAddr,_) when
+		            has_callsemantics (string_to_doubleword tgtAddr) ->
 		        finfo#set_call_target
                           ctxtiaddr
 		          (get_callsemantics_target (string_to_doubleword tgtAddr))
@@ -1304,19 +1342,20 @@ let record_call_targets () =
 		     | ("jni",index,_) ->
                         let ctinfo = mk_jni_target (int_of_string index) in
                         finfo#set_call_target ctxtiaddr ctinfo
-		     | _ -> raise (BCH_failure 
+		     | _ -> raise (BCH_failure
 				     (STR "system_info#get_call_target internal error"))
                       *)
 		   else
-		     begin 
+		     begin
 		       match get_dll_target instr with
 		       | Some (dll,tgt) ->
                           let _ =
                             track_function
                               ~iaddr:ctxtiaddr
                               faddr
-                              (LBLOCK [ STR "Dll: " ; STR dll ; STR "; function: " ;
-                                        STR tgt ]) in
+                              (LBLOCK [
+                                   STR "Dll: "; STR dll; STR "; function: ";
+                                   STR tgt]) in
                           let ctinfo = mk_dll_target dll tgt in
                           finfo#set_call_target ctxtiaddr ctinfo
 		       | _ ->
@@ -1328,28 +1367,19 @@ let record_call_targets () =
                                ctxtiaddr
 			       (get_callsemantics_target op#get_absolute_address)
 		          | DirectCall op when op#is_absolute_address ->
-                             let _ = track_function
-                                       ~iaddr:ctxtiaddr
-                                       faddr
-                                       (LBLOCK [ STR "App: " ;
-                                                 op#get_absolute_address#toPretty ]) in
+                             let _ =
+                               track_function
+                                 ~iaddr:ctxtiaddr
+                                 faddr
+                                 (LBLOCK [
+                                      STR "App: ";
+                                      op#get_absolute_address#toPretty]) in
                              let ctinfo = mk_app_target op#get_absolute_address in
 			     finfo#set_call_target ctxtiaddr ctinfo
 		          | _ ->
                              finfo#set_call_target ctxtiaddr (mk_unknown_target ())
 		     end
-	      | _ -> ()) ;
-	  if system_settings#is_verbose then
-	    let etime = Unix.gettimeofday () in
-	    pverbose [
-                prl !count; STR "  ";
-                faddr#toPretty; STR "  ";
-		prt (etime -. ftime); STR "  ";
-		prt (etime -. !starttime); STR "  ";
-		prl f#get_block_count; STR "  ";
-		prl f#get_instruction_count; STR "  ";
-		prl finfo#env#get_var_count; STR "  ";
-		prl finfo#get_call_count; NL]
+	      | _ -> ());
 	end
       with
       | BCH_failure p ->
@@ -1357,11 +1387,11 @@ let record_call_targets () =
            "record call targets"
 	   (LBLOCK [STR "Function "; faddr#toPretty; STR ": "; p])
     )
-  
-  
+
+
 (* ---------------------------------------------------------------------
    associate conditional jump instructions with the closest instruction
-   (within the same basic block) that sets the flags                     
+   (within the same basic block) that sets the flags
    ---------------------------------------------------------------------- *)
 let associate_condition_code_users () =
   let set_condition flags_used faddr (ctxtiaddr:ctxt_iaddress_t) block =
@@ -1371,13 +1401,15 @@ let associate_condition_code_users () =
       match l with
       | [] ->
 	  let loc = ctxt_string_to_location faddr ctxtiaddr in
-	  disassembly_log#add "cc user without setter"
-	    (LBLOCK [ loc#toPretty ; STR ": " ; 
-		      (!assembly_instructions#at_address loc#i)#toPretty ])
+	  disassembly_log#add
+            "cc user without setter"
+	    (LBLOCK [
+                 loc#toPretty; STR ": ";
+		 (!assembly_instructions#at_address loc#i)#toPretty])
       | instr :: tl ->
 	match get_flags_set instr#get_opcode with
 	| [] -> set tl
-	| flags_set -> 
+	| flags_set ->
 	   if List.for_all (fun fUsed -> List.mem fUsed flags_set) flags_used then
              let iloc = ctxt_string_to_location faddr ctxtiaddr in
              let instrctxt = (make_i_location iloc instr#get_address)#ci in
@@ -1385,11 +1417,12 @@ let associate_condition_code_users () =
            else
              chlog#add
                "no flag setter"
-               (LBLOCK [faddr#toPretty;
-                        STR ", ";
-                        STR ctxtiaddr;
-                        STR ": ";
-                        instr#toPretty]) in
+               (LBLOCK [
+                    faddr#toPretty;
+                    STR ", ";
+                    STR ctxtiaddr;
+                    STR ": ";
+                    instr#toPretty]) in
     set revInstrs in
   assembly_functions#itera
     (fun faddr assemblyFunction ->
@@ -1400,25 +1433,23 @@ let associate_condition_code_users () =
 	      match get_flags_used instr#get_opcode with
 	      | [] -> ()
 	      | flags -> set_condition flags faddr ctxtiaddr block) ) )
-    
-    
-    
+
+
+
 (* -----------------------------------------------------------------------------
    associate values that get pushed onto the stack immediately before a call
    instruction with the call, with arguments counted upwards going back from
    the call. Collect push statements until the beginning of the block or up
    to the number of arguments if the function prototype is known. Exclude
    pushing of Ebp
-     ----------------------------------------------------------------------------- 
+     -----------------------------------------------------------------------------
 *)
-    
-let is_save_caller_reg op = op#is_register && op#get_register = Ebp 
-  
 let associate_function_arguments_push () =
-  let _ = pverbose [ NL ; STR "Associating function arguments for non-gcc compilers" ; NL ] in
+  let _ =
+    pr_timing [STR "Associating function arguments for non-gcc compilers"] in
   let identify_known_arguments
         ~(callAddress:ctxt_iaddress_t)
-        ~(numParams:int) 
+        ~(numParams:int)
         ~(block:assembly_block_int)
         faddr =
     let argNr = ref 0 in
@@ -1441,10 +1472,10 @@ let associate_function_arguments_push () =
                compensateForPop := !compensateForPop - 1
 	    | Push (_,op) ->
 	      begin
-		argNr := !argNr + 1 ;
-		op#set_function_argument callAddress !argNr ;
+		argNr := !argNr + 1;
+		op#set_function_argument callAddress !argNr;
 	      end
-	    | DirectCall _ | IndirectCall _ -> 
+	    | DirectCall _ | IndirectCall _ ->
 	      let floc = get_floc loc in
 	      if floc#has_call_target
                    && floc#get_call_target#is_signature_valid then
@@ -1454,7 +1485,7 @@ let associate_function_arguments_push () =
 		| Some adj -> compensateForPop := !compensateForPop + (adj / 4)
 		| _ -> valid := false
 	      else ()
-	    | Sub (dst,_) 
+	    | Sub (dst,_)
 	      | Add (dst,_ ) when dst#is_register && dst#get_cpureg = Esp ->
                valid := false
 	    | Mov (4,dst,_) when dst#is_memory_access ->
@@ -1465,8 +1496,9 @@ let associate_function_arguments_push () =
 		  if offset#equal numerical_zero then valid := false
 		| _ -> ())
 	    | _ -> ()) in
-  
-  let identify_arguments ~(callAddress:ctxt_iaddress_t) ~(block:assembly_block_int) =
+
+  let identify_arguments
+        ~(callAddress:ctxt_iaddress_t) ~(block:assembly_block_int) =
     let argNr = ref 0 in
     let active = ref true in
     let first = ref true in
@@ -1476,7 +1508,7 @@ let associate_function_arguments_push () =
     let callloc = ctxt_string_to_location faddr callAddress in
     block#itera
       ~high:callloc#i ~reverse:true
-      (fun ctxtiaddr instr ->
+      (fun _ctxtiaddr instr ->
 	if !first then
           first := false        (* skip the call itself *)
 	else
@@ -1484,15 +1516,15 @@ let associate_function_arguments_push () =
 	    match instr#get_opcode with
 	    | Pop _ -> compensateForPop := true
 	    | Push _ when !compensateForPop -> compensateForPop := false
-	    (*| Push op when is_save_caller_reg op -> () *)
-	    | Push (_,op) -> 
-	      begin 
-		argNr := !argNr + 1 ;
+	    | Push (_, op) ->
+	      begin
+		argNr := !argNr + 1;
 		op#set_function_argument callAddress !argNr;
 	      end
-	    | Sub (dst,_) 
-	    | Add (dst,_ ) when dst#is_register && dst#get_cpureg = Esp -> valid := false
-	    | Mov (4,dst,_) when dst#is_memory_access ->
+	    | Sub (dst, _)
+	      | Add (dst, _ ) when dst#is_register && dst#get_cpureg = Esp ->
+               valid := false
+	    | Mov (4, dst, _) when dst#is_memory_access ->
 		(match dst#get_kind with
 		| IndReg (Esp, offset)
 		| ScaledIndReg (None, Some Esp, 1, offset)
@@ -1501,7 +1533,7 @@ let associate_function_arguments_push () =
 		| _ -> ())
 	    | DirectCall _ | IndirectCall _ -> active := false
 	    | _ -> ())  in
-  
+
   assembly_functions#itera
     (fun faddr assemblyFunction ->
       try
@@ -1513,12 +1545,13 @@ let associate_function_arguments_push () =
                 let iaddr = loc#i in
 		let floc = get_floc loc in
 		match instr#get_opcode with
-		| DirectCall op when 
+		| DirectCall op when
 		       op#is_absolute_address
                        && has_callsemantics op#get_absolute_address ->
 		  let semantics = get_callsemantics op#get_absolute_address in
 		  let numParams = semantics#get_parametercount in
-		  identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block faddr
+		  identify_known_arguments
+                    ~callAddress:ctxtiaddr ~numParams ~block faddr
 		| DirectCall _ | IndirectCall _ ->
 		   if floc#has_call_target
                       && floc#get_call_target#is_signature_valid then
@@ -1545,16 +1578,13 @@ let associate_function_arguments_push () =
                 STR ": ";
                 p])
     )
-		
+
+
 let associate_function_arguments_mov () =
-  let _ =
-    pverbose [
-        NL;
-        STR "Associating function arguments for gcc-like compilers" ;
-	NL] in
+  let _ = pr_timing [STR "Associating function arguments (gcc-like)"] in
   let identify_known_arguments
         ~(callAddress:ctxt_iaddress_t)
-        ~(numParams:int) 
+        ~(numParams:int)
         ~(block:assembly_block_int) =
     let active = ref true in
     let first = ref true in
@@ -1564,7 +1594,7 @@ let associate_function_arguments_mov () =
     let callloc = ctxt_string_to_location faddr callAddress in
     begin
       block#itera ~high:callloc#i ~reverse:true
-	(fun va instr ->
+	(fun _va instr ->
 	  if !first then first := false       (* skip the call itself *)
 	  else
 	    if !active then
@@ -1574,15 +1604,15 @@ let associate_function_arguments_mov () =
 		 let argNr = (offset / 4) + 1 in
 		 if argNr <= numParams then
 		   begin
-		     src#set_function_argument callAddress argNr ;
-		     argumentsFound := argNr :: !argumentsFound ;
-		     if argNr > !maxIndex then maxIndex := argNr 
+		     src#set_function_argument callAddress argNr;
+		     argumentsFound := argNr :: !argumentsFound;
+		     if argNr > !maxIndex then maxIndex := argNr
 		   end
 		 else
 		   ()
-	      | DirectCall _ | IndirectCall _ -> 
-		 let argumentsNotFound = 
-		   list_difference 
+	      | DirectCall _ | IndirectCall _ ->
+		 let argumentsNotFound =
+		   list_difference
 		     (List.init
                         numParams
                         (fun i->i)) !argumentsFound (fun x y -> x=y) in
@@ -1601,10 +1631,11 @@ let associate_function_arguments_mov () =
 			      STR " are missing"]));
 		   active := false
 		 end
-	      | _ -> ()) 
+	      | _ -> ())
     end in
-	
-  let identify_arguments ~(callAddress:ctxt_iaddress_t) ~(block:assembly_block_int) =
+
+  let identify_arguments
+        ~(callAddress:ctxt_iaddress_t) ~(block:assembly_block_int) =
     let active = ref true in
     let first = ref true in
     let argumentsFound = ref [] in
@@ -1612,7 +1643,7 @@ let associate_function_arguments_mov () =
     let callloc = ctxt_string_to_location faddr callAddress in
     begin
       block#itera ~high:callloc#i ~reverse:true
-	(fun va instr ->
+	(fun _va instr ->
 	  if !first then first := false          (* skip the call itself *)
 	  else
 	    if !active then
@@ -1621,30 +1652,30 @@ let associate_function_arguments_mov () =
 		let offset = dst#get_esp_offset#toInt in
 		let argNr = (offset/4) + 1 in
 		begin
-		  src#set_function_argument callAddress argNr ;
+		  src#set_function_argument callAddress argNr;
 		  argumentsFound := src :: !argumentsFound
 		end
 	      | DirectCall _ | IndirectCall _ -> active := false
-	      | _ -> ()) ;
+	      | _ -> ());
       !argumentsFound
     end in
-	
+
   let sanitize_arguments (arguments:operand_int list) =
     let arguments = List.sort
       (fun op1 op2 ->
 	let (_,nr1) = op1#get_function_argument in
 	let (_,nr2) = op2#get_function_argument in
 	Stdlib.compare nr1 nr2) arguments in
-    let (arguments, notArguments,_) =
+    let (_arguments, notArguments, _) =
       List.fold_left
 	(fun (args,notArgs,seqNr) op ->
 	  let (_,nr) = op#get_function_argument in
-	  if nr = seqNr + 1 then 
-	    (op::args, notArgs, nr) 
-	  else 
+	  if nr = seqNr + 1 then
+	    (op::args, notArgs, nr)
+	  else
 	    (args, op::notArgs,nr)) ([],[],0) arguments in
     List.iter (fun op -> op#reset_function_argument) notArguments in
-	
+
   assembly_functions#itera
     (fun faddr assemblyFunction ->
       try
@@ -1655,17 +1686,18 @@ let associate_function_arguments_mov () =
                 let loc = ctxt_string_to_location faddr ctxtiaddr in
 		let floc = get_floc loc in
 		match instr#get_opcode with
-		| DirectCall op when 
+		| DirectCall op when
 		       op#is_absolute_address
                        && has_callsemantics op#get_absolute_address ->
 		  let semantics = get_callsemantics op#get_absolute_address in
 		  let numParams = semantics#get_parametercount in
-		  identify_known_arguments ~callAddress:ctxtiaddr ~numParams ~block
-		| DirectCall _	| IndirectCall _ ->  
+		  identify_known_arguments
+                    ~callAddress:ctxtiaddr ~numParams ~block
+		| DirectCall _	| IndirectCall _ ->
 		   if floc#has_call_target
                       && floc#get_call_target#is_signature_valid then
 		      let fintf = floc#get_call_target#get_function_interface in
-		      let numParams = 
+		      let numParams =
 			List.length (get_stack_parameter_names fintf) in
 		      identify_known_arguments
                         ~callAddress:ctxtiaddr ~numParams ~block
@@ -1685,7 +1717,8 @@ let associate_function_arguments_mov () =
                 STR ": ";
                 p])
     )
-		
+
+
 let associate_function_arguments () =
   let pushcount = ref 0 in
   let callcount = ref 0 in
@@ -1695,31 +1728,28 @@ let associate_function_arguments () =
 	match instr#get_opcode with
 	| Push _ -> pushcount := !pushcount + 1
 	| DirectCall _ | IndirectCall _ -> callcount := !callcount + 1
-	| _ -> ()) ;
+	| _ -> ());
     if !pushcount > !callcount then
       associate_function_arguments_push ()
     else
       associate_function_arguments_mov ()
   end
 
+
 let decorate_functions () =
   let starttime = ref (Unix.gettimeofday ()) in
   let prt t = STR (Printf.sprintf "%8.4f" t) in
   let get_time () = (Unix.gettimeofday ()) -. !starttime in
   begin
-    record_call_targets () ;
-    pverbose [ STR "-- record call targets: " ; prt (get_time ()) ; NL ] ;
-    associate_condition_code_users () ;
-    pverbose [ STR "-- associate condition codes: " ; prt (get_time ()) ; NL ] ;
-    associate_function_arguments () ;
-    pverbose [ STR "-- associate function arguments: " ; prt (get_time ()) ; NL ]
+    record_call_targets ();
+    pverbose [STR "-- record call targets: "; prt (get_time ()); NL];
+    associate_condition_code_users ();
+    pverbose [STR "-- associate condition codes: "; prt (get_time ()); NL];
+    associate_function_arguments ();
+    pverbose [STR "-- associate function arguments: "; prt (get_time ()); NL]
   end
 
 
-let get_arg_var_offset (floc:floc_int) (var:variable_t) = None
-                                                        
-let get_init_reg_offset (floc:floc_int) (var:variable_t) = None
-                                                         
 let is_jni_environment_variable (floc:floc_int) (v:variable_t) =
   (not v#isTmp) &&
     (((floc#f#env#variable_name_to_string v) = "jni$Env") ||
@@ -1727,12 +1757,10 @@ let is_jni_environment_variable (floc:floc_int) (v:variable_t) =
 
 
 let set_call_address (floc:floc_int) (op:operand_int) =
-  let _ = pverbose [ STR "Resolve " ; floc#l#toPretty ; STR ": " ; op#toPretty ] in
   let env = floc#f#env in
   let variable_to_pretty = env#variable_name_to_pretty in
   let opExpr = op#to_expr floc in
   let opExpr = floc#inv#rewrite_expr opExpr env#get_variable_comparator in
-  let _ = pverbose [ STR " rewrites to " ; xpr_formatter#pr_expr opExpr ; NL ] in
   let changes_stack_adjustment () =
     if floc#has_call_target
        && floc#get_call_target#is_signature_valid then
@@ -1741,48 +1769,43 @@ let set_call_address (floc:floc_int) (op:operand_int) =
       | _ -> false
     else
       false in
-  let reset () = 
+  let reset () =
     if (floc#has_call_target && floc#get_call_target#has_sideeffects)
-       || changes_stack_adjustment () then 
-      begin 
-	floc#f#schedule_invariant_reset ;
-	chlog#add "reset invariants" (LBLOCK [ floc#l#toPretty ])
+       || changes_stack_adjustment () then
+      begin
+	floc#f#schedule_invariant_reset;
+	chlog#add "reset invariants" (LBLOCK [floc#l#toPretty])
       end in
-  let logmsg msg = chlog#add "indirect call resolved" 
-    (LBLOCK [ floc#l#toPretty ; STR ": " ; msg ]) in
+  let logmsg msg = chlog#add "indirect call resolved"
+    (LBLOCK [floc#l#toPretty; STR ": "; msg]) in
   let pull_data v =
     match pull_call_targets floc v with
-    | [] -> 
-      chlog#add "indirect call not resolved"
-	(LBLOCK [ floc#l#toPretty ; STR ": " ; v#toPretty ])
-    | [ StubTarget (DllFunction (dll,fname)) ] ->
+    | [] ->
+       chlog#add
+         "indirect call not resolved"
+	 (LBLOCK [floc#l#toPretty; STR ": "; v#toPretty])
+    | [StubTarget (DllFunction (dll,fname))] ->
        let ctinfo = mk_dll_target dll fname in
-      begin 
-	pverbose [ STR "Set dll target " ; STR fname ; NL ] ;
-	floc#set_call_target ctinfo
-      end
-    | [ AppTarget addr ] ->
+       floc#set_call_target ctinfo
+    | [AppTarget addr] ->
        let ctinfo = mk_app_target addr in
-      begin
-	pverbose [ STR "Set app target " ; addr#toPretty ; NL ] ;
-	floc#set_call_target ctinfo
-      end
-    | [ StubTarget (JniFunction jni) ] ->
+       floc#set_call_target ctinfo
+    | [StubTarget (JniFunction jni)] ->
        floc#set_call_target (mk_jni_target jni)
-    | l -> () in
+    | _ -> () in
   match opExpr with
   | XConst (IntConst c) ->
     begin
       match get_constant_call_targets floc c with
-      | [ tgt ] -> 
+      | [tgt] ->
 	begin
 	  (match tgt with
 	   | StubTarget (DllFunction (dll,name)) ->
               floc#set_call_target (mk_dll_target dll name)
 	   | AppTarget dw ->
               floc#set_call_target (mk_app_target dw)
-	  | _ -> ()) ;
-	  logmsg (call_target_to_pretty tgt) ;
+	  | _ -> ());
+	  logmsg (call_target_to_pretty tgt);
 	  reset ()
 	end
       | _ -> ()
@@ -1796,8 +1819,8 @@ let set_call_address (floc:floc_int) (op:operand_int) =
           floc#set_call_target (mk_dll_target dll name)
        | AppTarget dw ->
           floc#set_call_target (mk_app_target dw)
-      | _ -> ()) ;
-      logmsg (call_target_to_pretty tgt) ;
+      | _ -> ());
+      logmsg (call_target_to_pretty tgt);
       reset ()
     end
 
@@ -1809,14 +1832,14 @@ let set_call_address (floc:floc_int) (op:operand_int) =
 	if (!assembly_instructions)#is_code_address dw then
 	  if assembly_functions#has_function_by_address dw then
 	    begin
-	      logmsg (LBLOCK [ STR "application call to " ; dw#toPretty ]) ;
-	      floc#set_call_target (mk_app_target dw) ;
+	      logmsg (LBLOCK [STR "application call to "; dw#toPretty]);
+	      floc#set_call_target (mk_app_target dw);
 	      reset ()
 	    end
 	  else
 	    begin
-	      ignore (functions_data#add_function dw) ;
-              pverbose [ STR "add funcion entry point: " ; dw#toPretty ; NL ] ;
+	      ignore (functions_data#add_function dw);
+              pverbose [STR "add funcion entry point: "; dw#toPretty; NL];
 	      chlog#add "global variable function entry point" dw#toPretty
 	    end
 	else
@@ -1824,23 +1847,26 @@ let set_call_address (floc:floc_int) (op:operand_int) =
 	    match pe_sections#get_imported_function gaddr with
 	      Some (dll,name) ->
 		begin
-		  logmsg (LBLOCK [ STR "library call to " ; STR name ]) ;
-		  floc#set_call_target (mk_dll_target dll name) ;
-		  reset () ;
+		  logmsg (LBLOCK [STR "library call to "; STR name]);
+		  floc#set_call_target (mk_dll_target dll name);
+		  reset ();
 		  (* check_nonreturning name floc *)
 		end
-	    | _ -> 
-	      chlog#add "indirect call not resolved" 
-		(LBLOCK [ floc#l#toPretty ; 
-			  STR " Indirect call resolves to address outside code section: " ;
-			  dw#toPretty ])
+	    | _ ->
+	       chlog#add
+                 "indirect call not resolved"
+		 (LBLOCK [
+                      floc#l#toPretty;
+		      STR "  Indirect call resolves to address outside ";
+                      STR "code section: ";
+		      dw#toPretty])
 	  end
-      | _ ->       
+      | _ ->
 	match pe_sections#get_imported_function gaddr with
-	| Some (dll,name) -> 
+	| Some (dll,name) ->
 	  begin
-	    logmsg (LBLOCK [ STR "library call to " ; STR name ]) ;
-	    floc#set_call_target (mk_dll_target dll name) ;
+	    logmsg (LBLOCK [STR "library call to "; STR name]);
+	    floc#set_call_target (mk_dll_target dll name);
 	    reset ()
 	  end
 	| _ -> pull_data v
@@ -1848,16 +1874,20 @@ let set_call_address (floc:floc_int) (op:operand_int) =
   | XVar v when env#is_virtual_call v ->
      let ctinfo = mk_virtual_target (env#get_virtual_target v) in
     begin
-      chlog#add "indirect call resolved"
-	        (LBLOCK [ floc#l#toPretty ;
-                          STR ": virtual call " ; variable_to_pretty v ]) ;
+      chlog#add
+        "indirect call resolved"
+	(LBLOCK [
+             floc#l#toPretty; STR ": virtual call "; variable_to_pretty v]);
       floc#set_call_target ctinfo
     end
   | XVar v -> pull_data v
-  | _ -> 
-    chlog#add "indirect call not resolved" 
-      (LBLOCK [ floc#l#toPretty ; STR ": expression not recognized " ; pr_expr opExpr ])
-      
+  | _ ->
+     chlog#add
+       "indirect call not resolved"
+       (LBLOCK [
+            floc#l#toPretty; STR ": expression not recognized "; pr_expr opExpr])
+
+
 let resolve_indirect_calls (f:assembly_function_int) =
   let _ =
     f#iteri
@@ -1872,7 +1902,8 @@ let resolve_indirect_calls (f:assembly_function_int) =
         | _ -> ()) in
   ()
 
-let disassemble_pe () =
+
+let disassemble_pe (): bool * pretty_t =
   let entrypointVA = system_info#get_address_of_entry_point in
   let codeSectionHeaders =
     List.find_all (fun h ->
@@ -1881,54 +1912,59 @@ let disassemble_pe () =
       pe_header#get_section_headers in
   let msg = ref [] in
   match codeSectionHeaders with
-  | [] -> (false, LBLOCK [ STR "No executable sections found" ; NL ])
+  | [] -> (false, LBLOCK [STR "No executable sections found"; NL])
   | l ->
     try
       let numSections = List.length l in
       let _ =
 	if numSections > 1 then
-	  msg := (LBLOCK [ STR "Found " ; INT numSections ; 
-			   STR " executable sections" ; NL ]) :: !msg in
+	  msg :=
+            (LBLOCK [
+                 STR "Found ";
+                 INT numSections;
+		 STR " executable sections";
+                 NL]) :: !msg in
       let size = disassemble_sections codeSectionHeaders in
       begin
-	msg := (LBLOCK [ STR "Disassembled " ; INT size ; STR " bytes into " ; 
-			 INT !assembly_instructions#get_num_instructions ;
-			 STR " instructions" ; NL ]) :: !msg ;
+	msg :=
+          (LBLOCK [
+               STR "Disassembled ";
+               INT size;
+               STR " bytes into ";
+	       INT !assembly_instructions#get_num_instructions;
+	       STR " instructions";
+               NL]) :: !msg;
 	(true,LBLOCK (List.rev !msg))
       end
     with
     | Invocation_error s
-    | Invalid_argument s 
+    | Invalid_argument s
     | Failure s ->
       begin
-	msg := (LBLOCK [ STR "Failure in disassembly: " ; STR s ; NL ]) :: !msg ;
+	msg := (LBLOCK [STR "Failure in disassembly: "; STR s; NL]) :: !msg;
 	(false, LBLOCK (List.rev !msg))
       end
     | BCH_failure p ->
       begin
-	msg := (LBLOCK [ STR "Failure in disassembly: " ; p ; NL ]) :: ! msg ;
+	msg := (LBLOCK [STR "Failure in disassembly: "; p; NL]) :: ! msg;
 	(false, LBLOCK (List.rev !msg))
       end
 
 let construct_functions_pe () =
   try
     begin
-      construct_functions () ;
-      decorate_functions () ;
-      (true, LBLOCK [ STR "Constructed " ; 
-		      INT (List.length assembly_functions#get_functions) ;
-		      STR " functions" ; NL ])
+      construct_functions ();
+      decorate_functions ();
+      (true,
+       LBLOCK [
+           STR "Constructed ";
+	   INT (List.length assembly_functions#get_functions);
+	   STR " functions"; NL])
     end
   with
   | Invocation_error s
   | Invalid_argument s
   | Failure s ->
-    (false, LBLOCK [ STR "Failure in constructing functions: " ; STR s ; NL ])
+    (false, LBLOCK [STR "Failure in constructing functions: "; STR s; NL])
   | BCH_failure p ->
-    (false, LBLOCK [ STR "Failure in constructing functions: " ; p ; NL ])
-      
-
-      
-
-
-		
+    (false, LBLOCK [STR "Failure in constructing functions: "; p; NL])

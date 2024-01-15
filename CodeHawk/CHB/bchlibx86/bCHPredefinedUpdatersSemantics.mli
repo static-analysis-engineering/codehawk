@@ -27,9 +27,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* bchlib *)
-open BCHLibTypes
-
 (* bchlibx86 *)
 open BCHLibx86Types
 

@@ -5,8 +5,8 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,13 +36,17 @@ open BCHLibTypes
 (* bchlibx86 *)
 open BCHLibx86Types
 
+
 val reset_translation_to_chif: unit -> unit
 
 val is_invariant_opname: symbol_t -> bool
 
 val get_unprocessed_instructions: unit -> assembly_instruction_int list
+
 val get_number_of_instructions_processed: unit -> int * int
 
 val translate_assembly_function: assembly_function_int -> unit
+
 val translate_assembly_function_by_address: doubleword_int -> unit
+
 val translate_assembly_functions: unit -> unit
