@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,14 +36,12 @@
 
 (* chlib *)
 open CHPretty
-open CHUtils
 
 (* chutil *)
 open CHFileIO
 open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
-open CHXmlReader
 
 (* bchlib *)
 open BCHBasicTypes
@@ -52,8 +50,6 @@ open BCHDoubleword
 open BCHLibTypes
 open BCHPreFileIO
 open BCHStreamWrapper
-open BCHSystemSettings
-
 
 (* bchlibpe *)
 open BCHPESymbolTable
@@ -61,7 +57,6 @@ open BCHPEAssemblyTableLayout
 open BCHLibPETypes
 open BCHPESectionHeader
 open BCHPEResourceDirectory
-open BCHPESection
 open BCHPESections
 open BCHSystemInfo
 
@@ -70,10 +65,10 @@ module TR = CHTraceResult
 
 
 (*
-let attribute_formats = [ ("coff-file-header", [ RightJustifiedColumn ]) ;
-			  ("directory-entry", [ RightJustifiedColumn ]) ;
-			  ("optional-header", [ RightJustifiedColumn ]) ;
-			  ("section", [ RightJustifiedColumn ]) ; ]
+let attribute_formats = [("coff-file-header", [RightJustifiedColumn]) ;
+			  ("directory-entry", [RightJustifiedColumn]) ;
+			  ("optional-header", [RightJustifiedColumn]) ;
+			  ("section", [RightJustifiedColumn]) ;]
 let _ = List.iter (fun (e,f) -> set_attribute_format e f) attribute_formats
 *)
 
@@ -91,12 +86,12 @@ object (self)
 
   method reset =
     begin
-      machine <- 0 ;
-      numberOfSections <- 0 ;
-      timeDateStamp <- wordzero ;
-      pointerToSymbolTable <- wordzero ;
-      numberOfSymbols <- wordzero ;
-      sizeOfOptionalHeader <- 0 ;
+      machine <- 0;
+      numberOfSections <- 0;
+      timeDateStamp <- wordzero;
+      pointerToSymbolTable <- wordzero;
+      numberOfSymbols <- wordzero;
+      sizeOfOptionalHeader <- 0;
       characteristics <- 0
     end
 
@@ -105,45 +100,45 @@ object (self)
       (* 0, 2, Machine ---------------------------------------------------------
 	 The number that identifies the type of target machine.
 	 ----------------------------------------------------------------------- *)
-      machine <- ch#read_ui16 ;
+      machine <- ch#read_ui16;
 
       (* 2, 2, NumberOfSections ------------------------------------------------
 	 The number of sections. This indicates the size of the section table,
 	 which immediately follows the headers.
 	 ----------------------------------------------------------------------- *)
-      numberOfSections <- ch#read_ui16 ;
+      numberOfSections <- ch#read_ui16;
 
       (* 4, 4, TimeDateStamp ---------------------------------------------------
 	 The low 32 bits of the number of seconds since 00:00 January 1, 1970
 	 (a C run-time time_t value), that indicates when the file was created.
 	 ----------------------------------------------------------------------- *)
-      timeDateStamp <- ch#read_doubleword ;
+      timeDateStamp <- ch#read_doubleword;
 
       (* 8, 4, PointerToSymbolTable --------------------------------------------
-	 The file offset of the COFF symbol table, or zero if no COFF symbol 
+	 The file offset of the COFF symbol table, or zero if no COFF symbol
 	 table is present. This value should be zero for an image because COFF
 	 debugging information is deprecated.
 	 ----------------------------------------------------------------------- *)
-      pointerToSymbolTable <- ch#read_doubleword ;
-  
+      pointerToSymbolTable <- ch#read_doubleword;
+
       (* 12, 4, NumberOfSymbols ------------------------------------------------
 	 The number of entries in the symbol table. This data can be used to
-	 locate the string table, which immediately follows the symbol table. 
+	 locate the string table, which immediately follows the symbol table.
 	 This value should be zero for an image because COFF debugging
 	 information is deprecated.
 	 ----------------------------------------------------------------------- *)
-      numberOfSymbols <- ch#read_doubleword ;
+      numberOfSymbols <- ch#read_doubleword;
 
       (* 16, 2, SizeOfOptionalHeader -------------------------------------------
-	 The size of the optional header, which is required for executable 
-	 files. 
+	 The size of the optional header, which is required for executable
+	 files.
 	 ----------------------------------------------------------------------- *)
-      sizeOfOptionalHeader <- ch#read_ui16 ;
+      sizeOfOptionalHeader <- ch#read_ui16;
 
       (* 18, 2, Characteristics ------------------------------------------------
 	 The flags that indicate the attributes of the file.
 	 ----------------------------------------------------------------------- *)
-      characteristics <- ch#read_ui16 ;
+      characteristics <- ch#read_ui16;
 
       self#set_characteristics
   end
@@ -174,7 +169,7 @@ object (self)
     | 12 -> "IMAGE_FILE_SYSTEM"
     | 13 -> "IMAGE_FILE_DLL"
     | 14 -> "IMAGE_FILE_UP_SYSTEM_ONLY"
-    | 15 -> "IMAGE_FILE_BYTES_REVERSED_HI" 
+    | 15 -> "IMAGE_FILE_BYTES_REVERSED_HI"
     | _ -> ("Unexpected pos: " ^ (string_of_int n))
 
   method private characteristics_to_pretty =
@@ -233,20 +228,21 @@ object (self)
 
   method toPretty =
     let fls s = STR (fixed_length_int_string s 35) in
-    let flsx s v = LBLOCK [ fls s ; STR v#to_hex_string ; NL ] in
-    let flsi s i = LBLOCK [ fls s ; INT i ; NL ] in
+    let flsx s v = LBLOCK [fls s; STR v#to_hex_string; NL] in
+    let flsi s i = LBLOCK [fls s; INT i; NL] in
     LBLOCK [
-    flsi "Machine" machine ;
-    flsi "Number of sections" numberOfSections ;
-    flsx "Pointer to symbol table" pointerToSymbolTable ;
-    flsx "Number of symbols" numberOfSymbols ;
-    flsi "Size of optional header" sizeOfOptionalHeader ;
-    fls "Time/Date" ; STR timeDateStamp#to_time_date_string ; NL ;
-    flsi "Characteristics" characteristics ;
-    INDENT(3, self#characteristics_to_pretty) ; NL
-  ]
+    flsi "Machine" machine;
+    flsi "Number of sections" numberOfSections;
+    flsx "Pointer to symbol table" pointerToSymbolTable;
+    flsx "Number of symbols" numberOfSymbols;
+    flsi "Size of optional header" sizeOfOptionalHeader;
+    fls "Time/Date"; STR timeDateStamp#to_time_date_string; NL;
+    flsi "Characteristics" characteristics;
+    INDENT(3, self#characteristics_to_pretty); NL
+ ]
 
 end
+
 
 class pe_optional_header_t =
 object (self)
@@ -254,7 +250,7 @@ object (self)
   val mutable magicNumber = 0
   val mutable majorLinkerVersion = 0
   val mutable minorLinkerVersion = 0
-  val mutable sizeOfCode = wordzero 
+  val mutable sizeOfCode = wordzero
   val mutable sizeOfInitializedData = wordzero
   val mutable sizeOfUninitializedData = wordzero
   val mutable addressOfEntryPoint = wordzero
@@ -284,112 +280,112 @@ object (self)
 
   method reset =
     begin
-      magicNumber <- 0 ;
-      majorLinkerVersion <- 0 ;
-      minorLinkerVersion <- 0 ;
-      sizeOfCode <- wordzero ;
-      sizeOfInitializedData <- wordzero ;
-      sizeOfUninitializedData <- wordzero ;
-      addressOfEntryPoint <- wordzero ;
-      baseOfCode <- wordzero ;
-      baseOfData <- wordzero ;
-      imageBase <- wordzero ;
-      sectionAlignment <- wordzero ;
-      fileAlignment <- wordzero ;
-      majorOperatingSystemVersion <- 0 ;
-      minorOperatingSystemVersion <- 0 ;
-      majorImageVersion <- 0 ;
-      minorImageVersion <- 0 ;
-      majorSubsystemVersion <- 0 ;
-      minorSubsystemVersion <- 0 ;
-      win32VersionValue <- wordzero ;
-      sizeOfImage <- wordzero ;
-      sizeOfHeaders <- wordzero ;
-      checkSum <- wordzero ;
-      subsystem <- 0 ;
-      dllCharacteristics <- 0 ;
-      sizeOfStackReserve <- wordzero ;
-      sizeOfStackCommit <- wordzero ;
-      sizeOfHeapReserve <- wordzero ;
-      sizeOfHeapCommit <- wordzero ;
-      loaderFlags <- wordzero ;
+      magicNumber <- 0;
+      majorLinkerVersion <- 0;
+      minorLinkerVersion <- 0;
+      sizeOfCode <- wordzero;
+      sizeOfInitializedData <- wordzero;
+      sizeOfUninitializedData <- wordzero;
+      addressOfEntryPoint <- wordzero;
+      baseOfCode <- wordzero;
+      baseOfData <- wordzero;
+      imageBase <- wordzero;
+      sectionAlignment <- wordzero;
+      fileAlignment <- wordzero;
+      majorOperatingSystemVersion <- 0;
+      minorOperatingSystemVersion <- 0;
+      majorImageVersion <- 0;
+      minorImageVersion <- 0;
+      majorSubsystemVersion <- 0;
+      minorSubsystemVersion <- 0;
+      win32VersionValue <- wordzero;
+      sizeOfImage <- wordzero;
+      sizeOfHeaders <- wordzero;
+      checkSum <- wordzero;
+      subsystem <- 0;
+      dllCharacteristics <- 0;
+      sizeOfStackReserve <- wordzero;
+      sizeOfStackCommit <- wordzero;
+      sizeOfHeapReserve <- wordzero;
+      sizeOfHeapCommit <- wordzero;
+      loaderFlags <- wordzero;
       numberOfRvaAndSizes <- wordzero
     end
 
   method read (ch:pushback_stream_int) =
   begin
     (* 0, 2, Magic -------------------------------------------------------------
-       The usigned integer that identifies the state of the image file.  The 
+       The usigned integer that identifies the state of the image file.  The
        most common number is 0x10b, which identifies it as a normal executable
        file. 0x107 identifies it as a ROM image, and 0x20b identifies it as a
        PE32+ executable.
        ------------------------------------------------------------------------- *)
-    magicNumber <- ch#read_ui16 ;
+    magicNumber <- ch#read_ui16;
 
     (* 2, 1, MajorLinkerVersion ------------------------------------------------
        The linker major version number.
        ------------------------------------------------------------------------- *)
-    majorLinkerVersion <- ch#read_byte ;
+    majorLinkerVersion <- ch#read_byte;
 
     (* 3, 1, MinorLinkerVersion ------------------------------------------------
        The linker minor version number.
        ------------------------------------------------------------------------- *)
-    minorLinkerVersion <- ch#read_byte ;
+    minorLinkerVersion <- ch#read_byte;
 
-    (* 4, 4, SizeOfCode -------------------------------------------------------- 
+    (* 4, 4, SizeOfCode --------------------------------------------------------
        The size of the code (text) section, or the sum of all code sections if
        there are multiple sections.
        ------------------------------------------------------------------------- *)
-    sizeOfCode <- ch#read_doubleword ;
+    sizeOfCode <- ch#read_doubleword;
 
     (* 8, 4, SizeOfInitializedData ---------------------------------------------
        The size of the initialized data section, or the sum of all such sections
        if there are multiple data sections.
        ------------------------------------------------------------------------- *)
-    sizeOfInitializedData <- ch#read_doubleword ;
+    sizeOfInitializedData <- ch#read_doubleword;
 
     (* 12, 4, SizeOfUninitializeData -------------------------------------------
        The size of the uninitialized data section (BSS), or the sum of all such
        sections if there are multiple BSS sections.
        ------------------------------------------------------------------------- *)
-    sizeOfUninitializedData <- ch#read_doubleword ;
+    sizeOfUninitializedData <- ch#read_doubleword;
 
     (* 16, 4, AddressOfEntryPoint ----------------------------------------------
        The address of the entry point relative to the image based when the
-       executable file is loaded into memory. For program images, this is the 
-       starting address. For device drivers, this is the address of the 
+       executable file is loaded into memory. For program images, this is the
+       starting address. For device drivers, this is the address of the
        initialization function. An entry point is optional for DLLs. When no
        entry point is present, this field must be zero.
        ------------------------------------------------------------------------- *)
-    addressOfEntryPoint <- ch#read_doubleword ;
+    addressOfEntryPoint <- ch#read_doubleword;
 
     (* 20, 4, BaseOfCode -------------------------------------------------------
        The address that is relative to the image base of the beginning of code
        section when it is loaded into memory.
        ------------------------------------------------------------------------- *)
-    baseOfCode <- ch#read_doubleword ;
+    baseOfCode <- ch#read_doubleword;
 
     (* 24, 4, BaseOfData -------------------------------------------------------
        The address that is relative to the image base of the beginning of the
        data section when it is loaded into memory.
        ------------------------------------------------------------------------- *)
-    baseOfData <- ch#read_doubleword ;
+    baseOfData <- ch#read_doubleword;
 
-    (* 28, 4, ImageBase -------------------------------------------------------- 
+    (* 28, 4, ImageBase --------------------------------------------------------
        The preferred address of the first byte of image when loaded into memory;
-       must be a multiple of 64K. The default for DLLs is 0x10000000. The 
+       must be a multiple of 64K. The default for DLLs is 0x10000000. The
        default for Windows CE EXEs is 0x00010000. The default for Windows NT,
        Windows 2000, Windows XP, Windows 95, Windows 98, and Windows Me is
        0x00400000.
        ------------------------------------------------------------------------- *)
-    imageBase <- ch#read_doubleword ;
+    imageBase <- ch#read_doubleword;
 
     (* 32, 4, SectionAlignment -------------------------------------------------
        The alignment (in bytes) of sections when they are loaded into memory. It
        must be greater than or equal to FileAlignment. The default is the page
        size for the architecture.
        ------------------------------------------------------------------------- *)
-    sectionAlignment <- ch#read_doubleword ;
+    sectionAlignment <- ch#read_doubleword;
 
     (* 36, 4, FileAlignment ----------------------------------------------------
        The alignment factor (in bytes) that is used to align the raw data of
@@ -398,54 +394,54 @@ object (self)
        than the architecture's page size, then FileAlignment must match
        SectionAlignment.
        ------------------------------------------------------------------------- *)
-    fileAlignment <- ch#read_doubleword ;
+    fileAlignment <- ch#read_doubleword;
 
     (* 40, 2, MajorOperatingSystemVersion --------------------------------------
        The major version number of the required operating system.
        ------------------------------------------------------------------------- *)
-    majorOperatingSystemVersion <- ch#read_ui16 ;
+    majorOperatingSystemVersion <- ch#read_ui16;
 
     (* 42, 2, MinorOperationgSystemVersion -------------------------------------
        The minor version number of the required operating system.
        ------------------------------------------------------------------------- *)
-    minorOperatingSystemVersion <- ch#read_ui16 ;
+    minorOperatingSystemVersion <- ch#read_ui16;
 
     (* 44, 2, MajorImageVersion ------------------------------------------------
        The major version number of the image.
        ------------------------------------------------------------------------- *)
-    majorImageVersion <- ch#read_ui16 ;
+    majorImageVersion <- ch#read_ui16;
 
     (* 46, 2, MinorImageVersion ------------------------------------------------
        The minor version number of the image.
        ------------------------------------------------------------------------- *)
-    minorImageVersion <- ch#read_ui16 ;
+    minorImageVersion <- ch#read_ui16;
 
     (* 48, 2, MajorSubsystemVersion --------------------------------------------
        The major version number of the subsystem.
        ------------------------------------------------------------------------- *)
-    majorSubsystemVersion <- ch#read_ui16 ;
+    majorSubsystemVersion <- ch#read_ui16;
 
     (* 50, 2, MinorSubsystemVersion --------------------------------------------
        The minor version number of the subsystem.
        ------------------------------------------------------------------------- *)
-    minorSubsystemVersion <- ch#read_ui16 ;
+    minorSubsystemVersion <- ch#read_ui16;
 
     (* 52, 4, Win32VersionValue ------------------------------------------------
        Reserved, must be zero.
        ------------------------------------------------------------------------- *)
-    win32VersionValue <- ch#read_doubleword ;
+    win32VersionValue <- ch#read_doubleword;
 
     (* 56, 4, SizeOfImage ------------------------------------------------------
        The size (in bytes) fo the image, including all headers, as the image is
        loaded in memory. It must be a multiple of SectionAlignment.
        ------------------------------------------------------------------------- *)
-    sizeOfImage <- ch#read_doubleword ;
+    sizeOfImage <- ch#read_doubleword;
 
     (* 60, 4, SizeOfHeaders ----------------------------------------------------
        The combined size of an MS-DOS stub, PE header, and section headers
        rounded up to a multiple of FileAlignment.
        ------------------------------------------------------------------------- *)
-    sizeOfHeaders <- ch#read_doubleword ;
+    sizeOfHeaders <- ch#read_doubleword;
 
     (* 64, 4, CheckSum ---------------------------------------------------------
        The image file checksum. The algorithm for computing the checksum is
@@ -453,51 +449,51 @@ object (self)
        at load time: all drivers, any DLL loaded at boot time, and any DLL that
        is loaded into a critical Windows process
        ------------------------------------------------------------------------- *)
-    checkSum <- ch#read_doubleword ;
+    checkSum <- ch#read_doubleword;
 
     (* 68, 2, Subsystem --------------------------------------------------------
        The subsystem that is required to run this image.
        ------------------------------------------------------------------------- *)
-    subsystem <- ch#read_ui16 ;
+    subsystem <- ch#read_ui16;
 
     (* 70, 2, DllCharacteristics -----------------------------------------------
        ------------------------------------------------------------------------- *)
-    dllCharacteristics <- ch#read_ui16 ;
+    dllCharacteristics <- ch#read_ui16;
 
     (* 72, 4, SizeOfStackReserve -----------------------------------------------
-       The size of the stack to reserve. Only SizeOfStackCommit is committed; 
+       The size of the stack to reserve. Only SizeOfStackCommit is committed;
        the rest is made available one page at a time until the reserve size is
        reached.
        ------------------------------------------------------------------------- *)
-    sizeOfStackReserve <- ch#read_doubleword ;
+    sizeOfStackReserve <- ch#read_doubleword;
 
     (* 76, 4, SizeOfStackCommit ------------------------------------------------
        The size of the stack commit.
        ------------------------------------------------------------------------- *)
-    sizeOfStackCommit <- ch#read_doubleword ;
+    sizeOfStackCommit <- ch#read_doubleword;
 
     (* 80, 4, SizeOfHeapReserve ------------------------------------------------
        The size of the local heap space to reserve. Only SizeOfHeapCommit is
-       committed; the rest is made available one page at a time until the 
+       committed; the rest is made available one page at a time until the
        reserve size is reached.
        ------------------------------------------------------------------------- *)
-    sizeOfHeapReserve <- ch#read_doubleword ;
+    sizeOfHeapReserve <- ch#read_doubleword;
 
     (* 84, 4, SizeOfHeapCommit -------------------------------------------------
        The size of the local heap space to commit.
        ------------------------------------------------------------------------- *)
-    sizeOfHeapCommit <- ch#read_doubleword ;
+    sizeOfHeapCommit <- ch#read_doubleword;
 
     (* 88, 4, LoaderFlags ------------------------------------------------------
        Reserved, must be zero.
        ------------------------------------------------------------------------- *)
-    loaderFlags <- ch#read_doubleword ;
-  
+    loaderFlags <- ch#read_doubleword;
+
     (* 92, 4, NumberOfRvaAndSizes ----------------------------------------------
        The number of data-directory entries in the remainder of the optional
        header. Each describes a location and a size.
        ------------------------------------------------------------------------- *)
-    numberOfRvaAndSizes <- ch#read_doubleword ;
+    numberOfRvaAndSizes <- ch#read_doubleword;
 
   end
 
@@ -514,7 +510,7 @@ object (self)
     | 10 -> "IMAGE_DLL_CHARACTERISTICS_NO_SEH"
     | 11 -> "IMAGE_DLL_CHARACTERISTICS_NO_BIND"
     | 13 -> "IMAGE_DLL_CHARACTERISTICS_WDM_DRIVER"
-    | 15 -> "IMAGE_DLL_CHARACTERISTICS_TERMINAL_SERVER_AWARE" 
+    | 15 -> "IMAGE_DLL_CHARACTERISTICS_TERMINAL_SERVER_AWARE"
     | _ -> ("Unexpected pos: " ^ (string_of_int n))
 
   method private dll_characteristics_to_pretty =
@@ -642,17 +638,18 @@ object (self)
     flsx "Size of Headers" sizeOfHeaders;
     flsx "Checksum" checkSum;
     flsi "Subsystem" subsystem;
-    LBLOCK [ fls "Dll characteristics"; INT dllCharacteristics ];
+    LBLOCK [fls "Dll characteristics"; INT dllCharacteristics];
     INDENT (3, self#dll_characteristics_to_pretty); NL; NL;
     flsx "Size of Stack Reserve" sizeOfStackReserve;
     flsx "Size of Stack Commit" sizeOfStackCommit;
     flsx "Size of Heap Reserve" sizeOfHeapReserve;
     flsx "Size of Heap Commit" sizeOfHeapCommit;
     flsx "Loader flags" loaderFlags;
-    flsx "Number of Rva and Sizes" numberOfRvaAndSizes 
-  ]
-    
+    flsx "Number of Rva and Sizes" numberOfRvaAndSizes
+ ]
+
 end
+
 
 class pe_data_directory_t =
 object (self)
@@ -693,9 +690,8 @@ object (self)
       clrRuntimeHeader <- (wordzero, wordzero);
       reserved <- (wordzero, wordzero)
     end
-	
 
-  method private read_entry ch = 
+  method private read_entry ch =
     let addr = ch#read_doubleword in
     let size = ch#read_doubleword in
     (addr, size)
@@ -706,7 +702,7 @@ object (self)
 	 The export table address and size.
 	 ----------------------------------------------------------------------- *)
       exportTable <- self#read_entry ch;
-      
+
       (* 104, 8, Import Table --------------------------------------------------
 	 The import table address and size.
 	 ----------------------------------------------------------------------- *)
@@ -736,7 +732,7 @@ object (self)
 	 The debug starting address and size.
 	 ----------------------------------------------------------------------- *)
       debugData <- self#read_entry ch;
-										
+
       (* 152, 8, Architecture --------------------------------------------------
 	 Reserved, must be 0.
 	 ----------------------------------------------------------------------- *)
@@ -758,7 +754,7 @@ object (self)
 	 ----------------------------------------------------------------------- *)
       loadConfigTable <- self#read_entry ch;
 
-      (* 184, 8, Bound Import -------------------------------------------------- 
+      (* 184, 8, Bound Import --------------------------------------------------
 	 The bound import table address and size.
 	 ----------------------------------------------------------------------- *)
       boundImport <- self#read_entry ch;
@@ -796,10 +792,15 @@ object (self)
     let setx n t x = set n t x#to_hex_string in
     let sete n (a,s) = begin setx n "va" a; setx n "size" s end in
     let is_zero (a,s) = a#equal wordzero && s#equal wordzero in
-    let f i e t = 
+    let f i e t =
       if is_zero e then () else
-	let eNode = xmlElement "entry" in 
-	begin set eNode "index" i; set eNode "tag" t; sete eNode e; append [ eNode ] end in
+	let eNode = xmlElement "entry" in
+	begin
+          set eNode "index" i;
+          set eNode "tag" t;
+          sete eNode e;
+          append [eNode]
+        end in
     begin
       f "0" exportTable "export-table";
       f "1" importTable "import-table";
@@ -817,11 +818,11 @@ object (self)
       f "d" delayImportDescriptor "delay-import-descriptor";
       f "e" clrRuntimeHeader "clr-runtime-header";
       f "f" reserved "reserved";
-    end   
+    end
 
   method read_xml (node:xml_element_int) =
     let entries = node#getTaggedChildren "entry" in
-    let get t = 
+    let get t =
       try
 	let entry = List.find (fun n -> (n#getAttribute "tag") = t) entries in
 	let getx t = TR.tget_ok (string_to_doubleword (entry#getAttribute t)) in
@@ -876,8 +877,9 @@ object (self)
       f "d" delayImportDescriptor "Delay Import Descriptor";
       f "e" clrRuntimeHeader "CLR Runtime Header";
       f "f" reserved "Reserved, must be zero";
-    ]
+   ]
 end
+
 
 class pe_header_t:pe_header_int =
 object (self)
@@ -887,7 +889,7 @@ object (self)
   val data_directory = new pe_data_directory_t
   val section_headers = H.create 3
 
-  method reset = 
+  method reset =
     begin
       coff_file_header#reset;
       optional_header#reset;
@@ -895,52 +897,60 @@ object (self)
       H.clear section_headers
     end
 
-  method get_number_of_sections = coff_file_header#get_number_of_sections
-  method get_time_date_stamp = coff_file_header#get_time_date_stamp
+  method get_number_of_sections =
+    coff_file_header#get_number_of_sections
+
+  method get_time_date_stamp =
+    coff_file_header#get_time_date_stamp
 
   method get_containing_section_name (va: doubleword_int) =
     let result = ref None in
-    let _  = H.iter (fun _ v -> if v#includes_VA va then result := Some v#get_name) section_headers in
+    let _  =
+      H.iter
+        (fun _ v -> if v#includes_VA va then result := Some v#get_name)
+        section_headers in
     !result
 
-  method get_section_headers = H.fold (fun _ v a -> v::a) section_headers []
+  method get_section_headers =
+    H.fold (fun _ v a -> v::a) section_headers []
 
   method read  =
     let exeString = system_info#get_file_string wordzero in
     let ch = make_pushback_stream exeString in
     begin
-      ch#skip_bytes 0x3c ;   (* file offset to the PE signature is at address 0x3c *)
+      ch#skip_bytes 0x3c;   (* file offset to the PE signature is at address 0x3c *)
       let file_offset = ch#read_ui16 in
       let skips = file_offset - ch#pos in
-      ch#skip_bytes skips ;
+      ch#skip_bytes skips;
       let _ = ch#read_doubleword in    (* magic *)
-      coff_file_header#read ch ;
-      optional_header#read ch ;
-      system_info#set_image_base optional_header#get_image_base ;
-      system_info#set_base_of_code_rva optional_header#get_base_of_code ;
-      system_info#set_address_of_entry_point 
-	(optional_header#get_address_of_entry_point#add optional_header#get_image_base) ;
-      data_directory#read ch ;
-      self#set_table_layout ;
-      pe_symboltable#set_image_base optional_header#get_image_base ;
-      pe_symboltable#set_base_of_code optional_header#get_base_of_code ;
-      self#read_section_headers ch ;
-      self#read_sections ; 
-      self#read_symboltable ;
+      coff_file_header#read ch;
+      optional_header#read ch;
+      system_info#set_image_base optional_header#get_image_base;
+      system_info#set_base_of_code_rva optional_header#get_base_of_code;
+      system_info#set_address_of_entry_point
+	(optional_header#get_address_of_entry_point#add
+           optional_header#get_image_base);
+      data_directory#read ch;
+      self#set_table_layout;
+      pe_symboltable#set_image_base optional_header#get_image_base;
+      pe_symboltable#set_base_of_code optional_header#get_base_of_code;
+      self#read_section_headers ch;
+      self#read_sections;
+      self#read_symboltable;
       let (impAddr, impSize) = data_directory#get_import_table in
-      pe_sections#read_import_directory_table impAddr impSize ; 
+      pe_sections#read_import_directory_table impAddr impSize;
       let (expAddr, expSize) = data_directory#get_export_table in
-        pe_sections#read_export_directory_table expAddr expSize ;
+        pe_sections#read_export_directory_table expAddr expSize;
       let (loadCAddr, loadCSize) = data_directory#get_load_config_table in
-      pe_sections#read_load_configuration_structure loadCAddr loadCSize ;
+      pe_sections#read_load_configuration_structure loadCAddr loadCSize;
       let (resrcAddr, resrcSize) = data_directory#get_resource_table in
-      pe_sections#read_resource_directory_table resrcAddr resrcSize ;
-      self#set_SE_handlers ;
-      system_info#set_code_size self#get_code_size ;      
-    end    
+      pe_sections#read_resource_directory_table resrcAddr resrcSize;
+      self#set_SE_handlers;
+      system_info#set_code_size self#get_code_size;
+    end
 
-  method private read_section_headers ch = 
-    for i=0 to self#get_number_of_sections-1 do
+  method private read_section_headers ch =
+    for _i=0 to self#get_number_of_sections-1 do
        let header = make_pe_section_header () in
        begin
          header#read ch;
@@ -953,8 +963,8 @@ object (self)
     let (debugRVA, debugsize) = data_directory#get_debug_data in
     let imageBase = optional_header#get_image_base in
     begin
-      assembly_table_layout#set_IAT (iatRVA#add imageBase) iatsize ;
-      assembly_table_layout#set_debug_data (debugRVA#add imageBase) debugsize 
+      assembly_table_layout#set_IAT (iatRVA#add imageBase) iatsize;
+      assembly_table_layout#set_debug_data (debugRVA#add imageBase) debugsize
     end
 
   method private set_SE_handlers = ()
@@ -978,12 +988,12 @@ object (self)
                  p]))
 
   method private read_sections =
-    List.iter (fun h -> 
+    List.iter (fun h ->
       if h#get_size_of_raw_data#equal wordzero then () else self#load_section h)
       self#get_section_headers
 
   method private read_symboltable =
-    if coff_file_header#get_number_of_symbols#equal wordzero then 
+    if coff_file_header#get_number_of_symbols#equal wordzero then
       ()
     else
       let fileOffset = coff_file_header#get_pointer_to_symbol_table in
@@ -1010,20 +1020,20 @@ object (self)
   method section_headers_to_pretty =
     let countSectionHeaders = H.length section_headers in
     H.fold
-      (fun k v a ->
+      (fun _k v a ->
         LBLOCK [a; NL; NL; STR v#get_name; NL; INDENT (5, v#toPretty)])
       section_headers (LBLOCK [INT countSectionHeaders; STR " sections: "])
-      
+
   method resource_directory_to_pretty = resource_directory_table#toPretty
 
   method table_layout_to_pretty = assembly_table_layout#toPretty
 
-  method private write_xml_section_headers (node:xml_element_int) = 
+  method private write_xml_section_headers (node:xml_element_int) =
     let append = node#appendChildren in
     let seti = node#setIntAttribute in
     begin
-      H.iter (fun k v ->
-	let sNode = xmlElement "section-header" in 
+      H.iter (fun _k v ->
+	let sNode = xmlElement "section-header" in
 	begin
           v#write_xml sNode;
           append [sNode]
@@ -1031,13 +1041,13 @@ object (self)
       seti "number" (H.length section_headers)
     end
 
-  method private write_xml_export_directory_table (node:xml_element_int) = 
+  method private write_xml_export_directory_table (node:xml_element_int) =
     if pe_sections#has_export_directory_table then
       pe_sections#get_export_directory_table#write_xml node
     else
       ()
 
-  method private write_xml_import_directory_table (node:xml_element_int) = 
+  method private write_xml_import_directory_table (node:xml_element_int) =
     if pe_sections#has_import_directory_table then
       let entries = pe_sections#get_import_directory_table in
       node#appendChildren
@@ -1050,7 +1060,7 @@ object (self)
     else
       ()
 
-  method private write_xml_load_configuration_directory (node:xml_element_int) = 
+  method private write_xml_load_configuration_directory (node:xml_element_int) =
     if pe_sections#has_load_configuration_directory then
       let d = pe_sections#get_load_configuration_directory in
       d#write_xml node
@@ -1059,11 +1069,15 @@ object (self)
 
   method private get_code_size =
     let imageBase = optional_header#get_image_base in
-    let entrypointVA = optional_header#get_address_of_entry_point#add imageBase in
+    let entrypointVA =
+      optional_header#get_address_of_entry_point#add imageBase in
     let baseOfCodeRVA = optional_header#get_base_of_code in
-    let execHeaders = List.find_all (fun h -> 
-      h#is_executable || (h#includes_VA entrypointVA)) self#get_section_headers in
-    let sortedHeaders = List.sort (fun h1 h2 -> h2#get_RVA#compare h1#get_RVA) execHeaders in
+    let execHeaders =
+      List.find_all (fun h ->
+          h#is_executable || (h#includes_VA entrypointVA))
+        self#get_section_headers in
+    let sortedHeaders =
+      List.sort (fun h1 h2 -> h2#get_RVA#compare h1#get_RVA) execHeaders in
     let highest = List.hd sortedHeaders in
     let diff = TR.tget_ok (highest#get_RVA#subtract baseOfCodeRVA) in
     diff#add highest#get_size
@@ -1101,13 +1115,13 @@ object (self)
 	  lcdNode;
           rtNode;
           tlNode;
-          sNode ];
+          sNode];
       node#setAttribute "code-size" self#get_code_size#to_hex_string
     end
 
   method private read_xml_section_headers (node:xml_element_int) =
     let hNodes = node#getTaggedChildren "section-header" in
-    List.iter (fun hNode -> 
+    List.iter (fun hNode ->
       let header = make_pe_section_header () in
       begin
 	header#read_xml hNode;
@@ -1116,10 +1130,10 @@ object (self)
 
   method private read_xml_sections =
     let headers = self#get_section_headers in
-    List.iter (fun h -> 
-      if h#get_size_of_raw_data#equal wordzero then 
+    List.iter (fun h ->
+      if h#get_size_of_raw_data#equal wordzero then
 	pe_sections#add_section h ""
-      else 
+      else
 	let hname =
           h#get_characteristics_digest ^ "_" ^ h#get_RVA#to_hex_string in
 	match load_section_file hname with
@@ -1128,8 +1142,6 @@ object (self)
 	    pe_sections#add_section h exeString
 	| _ ->
            pr_debug [STR "Section not found: "; STR hname; NL]) headers
-
-  method private read_xml_import_directory_table (node:xml_element_int) = ()
 
   method read_xml node =
     let getc = node#getTaggedChild in
@@ -1140,8 +1152,9 @@ object (self)
       self#read_xml_section_headers (getc "section-headers");
       system_info#set_image_base optional_header#get_image_base;
       system_info#set_base_of_code_rva optional_header#get_base_of_code;
-      system_info#set_address_of_entry_point 
-	(optional_header#get_address_of_entry_point#add optional_header#get_image_base);
+      system_info#set_address_of_entry_point
+	(optional_header#get_address_of_entry_point#add
+           optional_header#get_image_base);
       system_info#set_code_size
         (TR.tget_ok (string_to_doubleword (node#getAttribute "code-size")));
       self#read_xml_sections;
@@ -1158,25 +1171,32 @@ object (self)
       pe_symboltable#read_xml (getc "symbol-table")
     end
 
-  method toPretty = 
+  method toPretty =
     LBLOCK [
-        STR "COFF File Header"; NL; coff_file_header#toPretty; NL;
-        STR "Optional Header"; NL; optional_header#toPretty; NL;
-        STR "Data Directory"; NL; data_directory#toPretty; NL;
-        STR "Section Headers"; NL; self#section_headers_to_pretty; NL; NL;
+        STR "COFF File Header"; NL;
+        coff_file_header#toPretty; NL;
+        STR "Optional Header"; NL;
+        optional_header#toPretty; NL;
+        STR "Data Directory"; NL;
+        data_directory#toPretty; NL;
+        STR "Section Headers"; NL;
+        self#section_headers_to_pretty; NL; NL;
         STR "Export Table"; NL; NL;
         pe_sections#export_directory_table_to_pretty; NL; NL; NL;
         STR "Import Tables"; NL; NL;
         pe_sections#import_directory_table_to_pretty; NL; NL;
         STR "Load Configuration Directory"; NL; NL;
         pe_sections#load_configuration_directory_to_pretty; NL; NL;
-        STR "Resource Table"; NL; NL; resource_directory_table#toPretty; NL; NL;
-        STR "Table Layout "; NL; INDENT (5, assembly_table_layout#toPretty ); NL; NL;
-      ]
+        STR "Resource Table"; NL; NL;
+        resource_directory_table#toPretty; NL; NL;
+        STR "Table Layout "; NL;
+        INDENT (5, assembly_table_layout#toPretty ); NL; NL;
+     ]
 end
 
 
 let pe_header = new pe_header_t
+
 
 let save_pe_header () =
   let filename = get_pe_header_filename () in
@@ -1186,13 +1206,15 @@ let save_pe_header () =
   begin
     doc#setNode root;
     pe_header#write_xml hNode;
-    root#appendChildren [ hNode ];
+    root#appendChildren [hNode];
     file_output#saveFile filename doc#toPretty
   end
 
+
 let save_pe_section (s:pe_section_int) =
   let header = s#get_header in
-  let sname = header#get_characteristics_digest ^ "_" ^ header#get_RVA#to_hex_string in
+  let sname =
+    header#get_characteristics_digest ^ "_" ^ header#get_RVA#to_hex_string in
   let _ =
     pr_debug [
         STR "Saving section ";
@@ -1206,9 +1228,9 @@ let save_pe_section (s:pe_section_int) =
   let root = get_bch_root "raw-section" in
   let sNode = xmlElement "raw-section" in
   begin
-    s#write_xml sNode ;
-    doc#setNode root ;
-    root#appendChildren [ sNode ] ;
+    s#write_xml sNode;
+    doc#setNode root;
+    root#appendChildren [sNode];
     let p = doc#toPretty in
     file_output#saveFile filename p
   end
@@ -1216,7 +1238,7 @@ let save_pe_section (s:pe_section_int) =
 
 let save_pe_files () =
   begin
-    save_pe_header () ;
+    save_pe_header ();
     List.iter save_pe_section pe_sections#get_sections
   end
 
@@ -1240,7 +1262,7 @@ let read_pe_file (filename:string) (optmaxsize:int option) =
   let ch = IO.input_channel ch in
   let exeString = IO.nread ch maxStringSize in
   let filesize = Bytes.length exeString in
-  let default () = 
+  let default () =
     let hexsize = TR.tget_ok (int_to_doubleword filesize) in
     begin
       system_info#set_file_string (Bytes.to_string exeString);
@@ -1254,7 +1276,7 @@ let read_pe_file (filename:string) (optmaxsize:int option) =
            INT filesize;
            STR " (";
            hexsize#toPretty;
-	   STR ") bytes" ; NL])
+	   STR ") bytes"; NL])
     end in
   match optmaxsize with
   | Some maxsize ->
@@ -1310,7 +1332,7 @@ let read_hexlified_pe_file (filename:string) =
          STR ") bytes";
          NL])
   end
-       
+
 
 let dump_pe_file filename =
   let maxStringSize = 100000000 in

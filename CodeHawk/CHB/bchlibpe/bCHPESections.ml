@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2020-2021 Henny B. Sipma
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,24 +39,18 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
 open BCHDataBlock
-open BCHDataExportSpec
 open BCHDoubleword
 open BCHFunctionData
 open BCHLibTypes
 open BCHSystemInfo
 
 (* bchlibpe *)
-open BCHPEExportDirectory
-open BCHPEImportDirectory
 open BCHLibPETypes
-open BCHPELoadConfigurationStructure
 open BCHPESection
-open BCHPESectionHeader
 
 module TR = CHTraceResult
 
@@ -92,21 +86,25 @@ object (self)
       (fun db -> system_info#add_data_block db)
       (make_data_block startAddr endAddr name)
 
-  method read_import_directory_table (address:doubleword_int) (size:doubleword_int) =
+  method read_import_directory_table
+           (address:doubleword_int) (size:doubleword_int) =
     if address#equal wordzero then () else
     try
-      let section = 
+      let section =
 	List.find (fun s -> s#includes_RVA address) self#get_sections in
       begin
-	section#read_import_directory_table address ;
+	section#read_import_directory_table address;
 	if section#is_executable then
 	  self#block_out_data address size "import directory table"
       end
     with
       Not_found ->
-        chlog#add "loading executable"
-	  (LBLOCK [ STR "There is no section that contains the address of the import " ;
-                    STR "directory table: " ; STR address#to_hex_string ])
+      chlog#add
+        "loading executable"
+	(LBLOCK [
+             STR "There is no section that contains the address of the import ";
+             STR "directory table: ";
+             STR address#to_hex_string])
 
   method private record_exported_data_values =
     let exportedDataItems = self#get_exported_data_values in
@@ -118,26 +116,27 @@ object (self)
 	  let exvalues = self#get_data_values a spec in
 	  List.iter (fun item ->
 	    if item.dex_type = "function-pointer" then
-	      if List.exists (fun (i,v) -> i = item.dex_offset) exvalues then
+	      if List.exists (fun (i, _v) -> i = item.dex_offset) exvalues then
 		let (_, v) =
-                  List.find (fun (i,v) -> i = item.dex_offset) exvalues in
+                  List.find (fun (i, _v) -> i = item.dex_offset) exvalues in
 		begin
 		  ignore
                     (functions_data#add_function
                        (TR.tget_ok (string_to_doubleword v)));
-		  chlog#add "record function entry point from exported item" 
+		  chlog#add "record function entry point from exported item"
 		    (LBLOCK [STR item.dex_name; STR ": "; STR v])
 		end) spec.dex_items) exportedDataItems
 
-  method read_export_directory_table (address:doubleword_int) (size:doubleword_int) =
+  method read_export_directory_table
+           (address:doubleword_int) (size:doubleword_int) =
     if address#equal wordzero then () else
     try
-      let section = 
+      let section =
         List.find (fun s -> s#includes_RVA address) self#get_sections in
       begin
-	section#read_export_directory_table address size ;
+	section#read_export_directory_table address size;
 	if section#is_executable then
-	  self#block_out_data address size "export directory table" ;
+	  self#block_out_data address size "export directory table";
 	self#record_exported_data_values
       end
     with
@@ -153,10 +152,10 @@ object (self)
            (address:doubleword_int) (size:doubleword_int) =
     if address#equal wordzero then () else
     try
-      let section = 
+      let section =
         List.find (fun s -> s#includes_RVA address) self#get_sections in
       begin
-	section#read_load_configuration_structure address ;
+	section#read_load_configuration_structure address;
 	if section#is_executable then
 	  self#block_out_data address size "load configuration structure"
       end
@@ -221,7 +220,8 @@ object (self)
     with
     | Not_found -> None
 
-  method get_imported_function (address:doubleword_int):(string * string) option =
+  method get_imported_function
+           (address:doubleword_int):(string * string) option =
     try
       let section =
 	List.find (fun s -> s#includes_VA address) self#get_sections in
@@ -234,7 +234,7 @@ object (self)
       Some (List.find (fun s -> s#includes_VA address) self#get_sections)
     with
     | Not_found -> None
-      
+
 
   method get_read_only_initialized_doubleword
            (address:doubleword_int):doubleword_int option =
@@ -244,7 +244,8 @@ object (self)
             (s#includes_VA address)
             && (s#is_read_only
                 || s#has_import_directory_table
-                || system_info#is_in_readonly_range address)) self#get_sections in
+                || system_info#is_in_readonly_range address))
+          self#get_sections in
       section#get_initialized_doubleword address
     with
     | Not_found ->
@@ -258,16 +259,17 @@ object (self)
 
   method get_n_doublewords (address:doubleword_int) (n:int) =
     try
-      let section = List.find (fun s -> s#includes_VA address) self#get_sections in
+      let section =
+        List.find (fun s -> s#includes_VA address) self#get_sections in
       section#get_n_doublewords address n
     with
     | Not_found ->
-       let _
-         = chlog#add
-             "section data"
-             (LBLOCK [
-                  STR "No section found that includes ";
-		  STR address#to_hex_string]) in
+       let _ =
+         chlog#add
+           "section data"
+           (LBLOCK [
+                STR "No section found that includes ";
+		STR address#to_hex_string]) in
        []
 
   method get_string_reference (address:doubleword_int):string option =
@@ -289,23 +291,25 @@ object (self)
     with
     | Not_found -> None
 
-  method get_virtual_function_address (address:doubleword_int):doubleword_int option =
+  method get_virtual_function_address
+           (address:doubleword_int):doubleword_int option =
     try
       let section =
 	List.find (fun s -> s#includes_VA address) self#get_sections in
-      section#get_initialized_doubleword address 
+      section#get_initialized_doubleword address
     with
     | Not_found -> None
 
-  method private evaluate_exported_values  
+  method private evaluate_exported_values
     (spec:data_export_spec_t) (l:(int * doubleword_int) list) =
-    List.map (fun (i,a) -> 
-      let ty = 
-	try (List.find (fun item -> item.dex_offset = i) spec.dex_items).dex_type 
+    List.map (fun (i,a) ->
+      let ty =
+	try (List.find (fun item -> item.dex_offset = i) spec.dex_items).dex_type
 	with Not_found -> "unknown" in
-      let v = match ty with
-	| "function-pointer" -> a#to_hex_string 
-	| "string" -> 
+      let v =
+        match ty with
+	| "function-pointer" -> a#to_hex_string
+	| "string" ->
 	   (match self#get_string_reference a with
            | Some s -> s
            | _ -> "unknown string")
@@ -321,7 +325,7 @@ object (self)
       self#evaluate_exported_values spec values
     with
     | Not_found -> []
-	    
+
   method get_imported_functions =
     try
       let section =
@@ -358,7 +362,8 @@ object (self)
     | Not_found -> (LBLOCK [STR "No importdirectory table found. "; NL])
 
   method get_import_directory_table =
-    List.concat (List.map (fun s -> s#get_import_directory_table) self#get_sections)
+    List.concat
+      (List.map (fun s -> s#get_import_directory_table) self#get_sections)
 
   method get_export_directory_table =
     try
@@ -386,11 +391,11 @@ object (self)
     List.exists (fun s -> s#has_export_directory_table) self#get_sections
 
   method has_load_configuration_directory =
-    List.exists (fun s -> s#has_load_configuration_directory) self#get_sections 
+    List.exists (fun s -> s#has_load_configuration_directory) self#get_sections
 
   method import_directory_table_to_pretty =
     try
-      let section = 
+      let section =
 	List.find (fun s -> s#has_import_directory_table) self#get_sections in
       section#import_directory_table_to_pretty
     with
@@ -420,7 +425,8 @@ object (self)
     List.exists (fun s -> s#includes_VA address) self#get_sections
 
   method is_writable_address (address:doubleword_int) =
-    List.exists (fun s -> s#includes_VA address && s#is_writable) self#get_sections
+    List.exists
+      (fun s -> s#includes_VA address && s#is_writable) self#get_sections
 
   method is_read_only_address (address:doubleword_int):bool =
     List.exists (fun s ->
@@ -428,9 +434,9 @@ object (self)
         && (s#is_read_only || system_info#is_in_readonly_range address))
       self#get_sections
 
-  method toPretty = 
+  method toPretty =
     Hashtbl.fold (fun _ v a -> LBLOCK [a; NL; STR v#get_name])
-      sections (STR "Sections:") 
+      sections (STR "Sections:")
 
 end
 
