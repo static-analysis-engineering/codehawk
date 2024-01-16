@@ -3,3 +3,7 @@
   (libraries bchlib bchlibpe bchlibelf chlib chutil extlib xprlib zarith)
   (public_name codehawk.bchlibx86)
   (wrapped false))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
