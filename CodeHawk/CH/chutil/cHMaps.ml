@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,6 +31,7 @@
 open CHPretty
 
 exception Duplicate_found of string
+
 
 module type STRINGMAP =
 sig
@@ -60,7 +61,7 @@ struct
 	       type t = string
 	       let compare = Stdlib.compare
 	     end)
-    
+
   include PreStringMap
 
   let get (k:string) (m:'a t):'a option =
@@ -68,12 +69,12 @@ struct
 
   let keys (m:'a t):string list = fold (fun k _ a -> k::a) m []
 
-  let addUnique (k:string) (v:'a) (m:'a t):'a t = 
-    match get k m with 
+  let addUnique (k:string) (v:'a) (m:'a t):'a t =
+    match get k m with
 	Some _ -> raise (Duplicate_found k)
       | _ -> add k v m
 
-  let addUniquePairs (pairs:((string * 'a) list)) (m:'a t):'a t = 
+  let addUniquePairs (pairs:((string * 'a) list)) (m:'a t):'a t =
     List.fold_right (fun (k,v) a -> addUnique k v a) pairs m
 
   let listOfPairs (m:'a t):(string * 'a) list =
@@ -88,6 +89,7 @@ struct
 
 end
 
+
 module type INTMAP =
 sig
   type +'a t
@@ -96,19 +98,21 @@ sig
     val get: int -> 'a t -> 'a option
     val add: int -> 'a -> 'a t -> 'a t
     val empty: 'a t
+    val toPretty: 'a t -> ('a -> pretty_t) -> pretty_t
 end
+
 
 module IntMap:INTMAP =
 struct
-  
+
   module PreIntMap =
     Map.Make (struct
 	       type t = int
 	       let compare = Stdlib.compare
 	     end)
-    
+
   include PreIntMap
-				 
+
   let mapMerge (m1:'a t) (m2:'a t) (f: 'a -> 'a -> 'a):'a t =
     fold (fun k v a ->
             let b = mem k a in
@@ -117,15 +121,13 @@ struct
                   add k n a
               else
                 add k v a) m1 m2
-      
+
   let get (k:int) (m:'a t):'a option =
     try Some (find k m) with Not_found -> None
-    
+
   let toPretty (m:'a t) (p:'a -> pretty_t):pretty_t =
-    let elts = fold (fun k v a -> LBLOCK [INT k; STR " -> "; p v; NL; a]) 
+    let elts = fold (fun k v a -> LBLOCK [INT k; STR " -> "; p v; NL; a])
       m (LBLOCK []) in
       LBLOCK [STR "{"; NL; INDENT (2, elts); STR "}"]
-	
+
 end
-
-

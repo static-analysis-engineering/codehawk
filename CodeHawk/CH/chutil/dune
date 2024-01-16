@@ -3,7 +3,3 @@
   (libraries chlib extlib zarith)
   (public_name codehawk.chutil)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A -w @33))))

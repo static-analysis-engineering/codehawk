@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2020-2021 Henny B. Sipma
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,8 +36,9 @@ open CHPrettyUtil
 
 exception CHIOFailure of string
 
+
 (* Convert standard Unix time representation to a string *)
-let time_to_string (f: float): string = 
+let time_to_string (f: float): string =
   let tm = Unix.localtime f in
   let sp ip = if ip < 10 then LBLOCK [STR "0"; INT ip] else INT ip in
   let p =
@@ -72,21 +73,22 @@ let file_permissions_to_string (p: Unix.file_perm) = string_of_int p
 
 let stats_to_pretty (stats: Unix.stats) =
   LBLOCK [
-      STR "device number          : " ; INT stats.st_dev ; NL ;
-      STR "inode number           : " ; INT stats.st_ino ; NL ;
-      STR "file kind              : " ; STR (file_kind_to_string stats.st_kind) ; NL ;
-      STR "access rights          : " ; STR (file_permissions_to_string stats.st_perm) ; NL ;
-      STR "number of links        : " ; INT stats.st_nlink ; NL ;
-      STR "user id (owner)        : " ; INT stats.st_uid ; NL ;
-      STR "group id               : " ; INT stats.st_gid ; NL ;
-      STR "device minor number    : " ; INT stats.st_rdev ; NL ;
-      STR "size in bytes          : " ; INT stats.st_size ; NL ;
-      STR "last access time       : " ; STR (time_to_string stats.st_atime) ; NL ;
-      STR "last modification time : " ; STR (time_to_string stats.st_mtime) ; NL ;
-      STR "last status change time: " ; STR (time_to_string stats.st_ctime) ; NL ]
+      STR "device number          : "; INT stats.st_dev; NL;
+      STR "inode number           : "; INT stats.st_ino; NL;
+      STR "file kind              : "; STR (file_kind_to_string stats.st_kind); NL;
+      STR "access rights          : "; STR (file_permissions_to_string stats.st_perm); NL;
+      STR "number of links        : "; INT stats.st_nlink; NL;
+      STR "user id (owner)        : "; INT stats.st_uid; NL;
+      STR "group id               : "; INT stats.st_gid; NL;
+      STR "device minor number    : "; INT stats.st_rdev; NL;
+      STR "size in bytes          : "; INT stats.st_size; NL;
+      STR "last access time       : "; STR (time_to_string stats.st_atime); NL;
+      STR "last modification time : "; STR (time_to_string stats.st_mtime); NL;
+      STR "last status change time: "; STR (time_to_string stats.st_ctime); NL]
 
 
-let stats_to_string (stats: Unix.stats) = pretty_to_string (stats_to_pretty stats)
+let stats_to_string (stats: Unix.stats) =
+  pretty_to_string (stats_to_pretty stats)
 
 
 class type file_output_int =
@@ -107,21 +109,21 @@ object (self)
   val mutable project_result_path: string = Unix.getcwd ()
   val mutable project_name: string = "CH_Analysis"
 
-  method setProjectSourcePath (s: string) = 
+  method setProjectSourcePath (s: string) =
     let source_path =
       if Filename.is_relative s
       then
 	Filename.concat (Unix.getcwd ()) s
-      else 
+      else
 	s in
       project_source_path <- source_path
 
-  method setProjectResultPath (s: string) = 
+  method setProjectResultPath (s: string) =
     let result_path =
       if Filename.is_relative s
       then
 	Filename.concat (Unix.getcwd ()) s
-      else 
+      else
 	s in
       project_result_path <- result_path
 
@@ -153,12 +155,12 @@ object (self)
     try
       let fout = open_out name in
       begin
-	output_string fout contents ;
-	flush fout ;
+	output_string fout contents;
+	flush fout;
 	close_out fout
       end
     with
-      Sys_error e ->
+    | Sys_error e ->
          let stats = Unix.stat name in
          let msg =
            "Error opening "
@@ -171,7 +173,7 @@ object (self)
 
   (* save the contents to a file with the given name and extension *)
   method saveFile (name: string) (contents: pretty_t) =
-    let fout = 
+    let fout =
       try
 	open_out name
       with
@@ -193,11 +195,11 @@ object (self)
 
   (* append the contents to a file with the given name *)
   method appendToFile (name: string) (contents: pretty_t) =
-    let fout = 
+    let fout =
       try
 	open_out_gen [Open_append; Open_creat] 0o644 name
       with
-      |	Sys_error e -> 
+      |	Sys_error e ->
 	 failwith ("Cannot append to file: " ^ name ^ ": " ^ e) in
     begin
       self#toStream fout contents;
@@ -254,7 +256,8 @@ let rec normalize_path (s: string): string =
   else
     if has_directory_dot s then
       let dotindex = String.index s '.' in
-      if dotindex + 2 < len && (String.get s (dotindex+1)) = '.'
+      if dotindex + 2 < len
+         && (String.get s (dotindex+1)) = '.'
          && (String.get s (dotindex+2)) = '/' then
         if String.rcontains_from s dotindex '/' then
           let slsindex = String.rindex_from s dotindex '/' in
@@ -262,7 +265,7 @@ let rec normalize_path (s: string): string =
             let sls2index = String.rindex_from s (slsindex-1) '/' in
             let s1 = String.sub s 0 sls2index in
             let s2 = String.sub s (dotindex + 2) (len - (dotindex + 2)) in
-            normalize_path (String.concat "" [ s1 ; s2 ])
+            normalize_path (String.concat "" [s1; s2])
           else if slsindex > 0 then
             normalize_path (String.sub s (dotindex + 3) (len - (dotindex + 3)))
           else    (* no second slash found *)
@@ -278,5 +281,3 @@ let rec normalize_path (s: string): string =
           raise (CHFailure (LBLOCK [STR "Error in normalize_path: "; STR s]))
     else   (* no dots *)
       s
-  
-  
