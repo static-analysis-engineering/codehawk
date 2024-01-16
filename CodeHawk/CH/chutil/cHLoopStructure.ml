@@ -3,8 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright 9c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,7 +40,9 @@ open CHXmlDocument
 
 module H = Hashtbl
 
+
 let get_node_name i = new symbol_t ~seqnr:i (string_of_int i)
+
 
 class bb_graph_t (root:int) (succ:(int * int) list):graph_t =
 object
@@ -51,6 +55,7 @@ object
     List.map (fun (_,t) -> get_node_name t) edges
 
 end
+
 
 class type loop_structure_int =
 object
@@ -72,25 +77,26 @@ end
 class loop_structure_t (looplevels:(int, int list) H.t) =
 object (self)
 
-  method get_loopheads = 
+  method get_loopheads =
     let s = new IntCollections.set_t in
     let _ = H.iter (fun _ v -> s#addList v) looplevels in
     s#toList
 
-  method get_loop (loophead:int) = 
+  method get_loop (loophead:int) =
     let s = new IntCollections.set_t in
-    let _ = H.iter (fun k v -> if List.mem loophead v then s#add k) looplevels in
+    let _ =
+      H.iter (fun k v -> if List.mem loophead v then s#add k) looplevels in
     s#toList
 
-  method get_pc_loopheads (pc:int) = 
+  method get_pc_loopheads (pc:int) =
     if H.mem looplevels pc then H.find looplevels pc else []
 
   method get_nesting_level (pc:int) = List.length (self#get_pc_loopheads pc)
-    
+
   method is_loophead (pc:int) = List.mem pc self#get_loopheads
 
-  method is_inloop (pc:int) = 
-    (H.mem looplevels pc) && 
+  method is_inloop (pc:int) =
+    (H.mem looplevels pc) &&
       (match H.find looplevels pc with [] -> false | _ -> true)
 
   method is_inloop_with_loophead (pc:int) (loophead:int) =
@@ -102,13 +108,13 @@ object (self)
       let lNode = xmlElement "loop" in
       let loop = self#get_loop lh in
       begin
-	lNode#setIntAttribute "lh" lh ;
-	write_xml_indices lNode loop ;
+	lNode#setIntAttribute "lh" lh;
+	write_xml_indices lNode loop;
 	lNode
       end) self#get_loopheads)
-    
 
 end
+
 
 let get_loop_structure (root:int) (succ:(int * int) list):loop_structure_int =
   let sccs = (new wto_engine_t (new bb_graph_t root succ))#computeWTO in
@@ -118,8 +124,9 @@ let get_loop_structure (root:int) (succ:(int * int) list):loop_structure_int =
     match wto with
     | [] ->
       begin
-	ch_error_log#add "invalid argument"
-	  (STR "Encountered empty wto in get_cfg_loop_levels") ;
+	ch_error_log#add
+          "invalid argument"
+	  (STR "Encountered empty wto in get_cfg_loop_levels");
 	raise (Invalid_argument "record loops")
       end
     | hd::_ -> get_wto_component_head hd
@@ -134,12 +141,12 @@ let get_loop_structure (root:int) (succ:(int * int) list):loop_structure_int =
     | VERTEX s -> H.add table s#getSeqNumber levels
     | SCC scc -> record_wto scc ((get_wto_head scc) :: levels) in
   begin
-    (match sccs with [] -> () | _ -> record_wto sccs []) ;
+    (match sccs with [] -> () | _ -> record_wto sccs []);
     List.iter (fun (b,_) ->
       if H.mem table b then
 	let levels = List.map (fun s -> s#getSeqNumber) (H.find table b) in
 	H.add looplevels b (List.rev levels)
       else
-	H.add looplevels b []) succ ;
+	H.add looplevels b []) succ;
     new loop_structure_t looplevels
   end

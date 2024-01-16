@@ -5,8 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -59,23 +59,6 @@ let deactivate_diagnostics () = diagnostics := false
 let collect_diagnostics () = !diagnostics
 
 
-class log_message_t (index:int) (tag:string) (msg:pretty_t) =
-object (self: 'a)
-    
-  val index = index
-  val tag = tag
-  val msg = msg
-
-  method getIndex = index
-  method getTag = tag
-  method getMsg = msg
-
-  method compare (m: 'a) = Stdlib.compare index m#getIndex
-  method toPretty = LBLOCK [ STR tag ; STR ": " ; msg ]
-
-end
-
-
 class type logger_int =
   object
     method set_max_entry_size: int -> unit
@@ -95,7 +78,7 @@ type tracelogspec_t = {
 
 
 class logger_t:logger_int =
-object (self)
+object
 
   val store = H.create 3
   val order = H.create 3

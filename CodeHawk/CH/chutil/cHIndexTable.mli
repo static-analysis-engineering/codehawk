@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyricht (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs
+   Copyricht (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,6 +29,7 @@
 
 (* chutil *)
 open CHXmlDocument
+
 
 class type index_table_int =
   object
@@ -44,11 +45,16 @@ class type index_table_int =
   end
 
 
+val keystring: (string list * int list) -> string
+
 val get_list_suffix: 'a list -> int -> 'a list
+
 val list_pairup: 'a list -> ('a * 'a) list
+
 val list_tripleup: 'a list -> ('a * 'a * 'a) list
 
 val t: string -> string list -> int -> string
+
 val a: string -> int list -> int -> int
 
 val mk_index_table: string -> index_table_int

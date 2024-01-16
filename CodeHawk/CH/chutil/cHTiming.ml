@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019  Kestrel Technology LLC
-   Copyright (c) 2020-2022  Henny Sipma
-   Copyright (c) 2023       Aarno Labs LLC
+   Copyright (c) 2020-2022  Henny B. Sipma
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -65,7 +65,7 @@ object
       last_time <- start_time
     end
 
-  method end_timing = 
+  method end_timing =
     begin
       last_time <- Unix.gettimeofday ();
       total_time <- last_time -. start_time
@@ -100,34 +100,7 @@ object
 end
 
 
-let chtimer = new timing_t
-
-
-class timer_t = 
-object
-  val start_times = Array.make 10 0.
-  val total_times = Array.make 10 0.
-
-  method start i =
-    start_times.(i) <- Unix.gettimeofday ()
-
-  method stop i =
-    let time = Unix.gettimeofday () -. start_times.(i) in
-    total_times.(i) <- total_times.(i) +. time
-
-  method toPretty =
-    LBLOCK [
-        STR "Total times : ";
-        NL;
-	pretty_print_list
-          (Array.to_list total_times)
-          (fun f -> STR (Printf.sprintf "%f" f)) "[| " "; " " |]";
-        NL]
-
-end
-
-
-let atimer = new timer_t
+let mk_task_timer () = new timing_t
 
 
 class progress_timer_t =

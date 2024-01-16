@@ -5,8 +5,8 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,22 +29,31 @@
 
 (** {1 String utility functions} *)
 
+
+(** [string_replace c sc s] returns the string in which each character in [s]
+    that matches [c] is replaced with [sc]. *)
 val string_replace: char -> string -> string -> string
+
 val string_nsplit: char -> string -> string list
 
 val has_control_characters: string -> bool
+
 val byte_to_string: int -> string
+
 val value_from_byte: int -> int
 
 val hex_string: string -> string
+
 val dehex_string: string -> string
 
 val encode_string: string -> bool * string
+
 val decode_string: bool * string -> string
 
 (** {1 List utility functions} *)
 
 val list_split: int -> 'a list -> ('a list * 'a list)
+
 val list_split_p: ('a -> bool) -> 'a list -> ('a list * 'a list)
 
 val list_sub: 'a list -> int -> int -> 'a list
@@ -88,9 +97,6 @@ val xproduct: 'a list -> 'a list -> ('a * 'a) list
 (** {1 Array utility functions}*)
 
 val array_fold_lefti: ('b -> int -> 'a -> 'b) -> 'b ->  'a array -> 'b
-
-
-
 
 (** {1 Miscellaneous} *)
 

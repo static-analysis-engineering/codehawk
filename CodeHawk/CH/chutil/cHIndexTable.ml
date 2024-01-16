@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -66,9 +66,13 @@ let list_pairup (lst:'a list):('a * 'a) list =
     | x :: y :: tl -> aux tl ((x,y)::r)
     | [] -> List.rev r
     | _ ->
-       raise (CHFailure (LBLOCK [ STR "Odd number of entries in list to pair up: " ;
-                                   INT (List.length lst) ])) in
+       raise
+         (CHFailure
+            (LBLOCK
+               [STR "Odd number of entries in list to pair up: ";
+                INT (List.length lst)])) in
   aux lst []
+
 
 let list_tripleup (lst:'a list):('a * 'a * 'a) list =
   let rec aux l r =
@@ -76,9 +80,11 @@ let list_tripleup (lst:'a list):('a * 'a * 'a) list =
     | x :: y :: z :: tl -> aux tl ((x,y,z)::r)
     | [] -> List.rev r
     | _ ->
-       raise (CHFailure
-                (LBLOCK [ STR "Number of entries is not a multiple of 3: " ;
-                          INT (List.length lst) ])) in
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Number of entries is not a multiple of 3: ";
+                 INT (List.length lst)])) in
   aux lst []
 
 
@@ -86,26 +92,41 @@ let t (name:string) (tags:string list) (n:int) =
   if List.length tags > n then
     List.nth tags n
   else
-    raise (CHFailure
-             (LBLOCK [ STR "Expected to find at least " ; INT (n+1) ;
-                       STR " tags in " ; STR name ; STR ", but found only " ;
-                       INT (List.length tags) ]))
+    raise
+      (CHFailure
+         (LBLOCK [
+              STR "Expected to find at least ";
+              INT (n+1);
+              STR " tags in "; STR name;
+              STR ", but found only ";
+              INT (List.length tags)]))
+
 
 let a (name:string) (args:int list) (n:int) =
   if List.length args > n then
     List.nth args n
   else
-    raise (CHFailure
-             (LBLOCK [ STR "Expected to find at least " ; INT (n+1) ;
-                       STR " args in " ; STR name ; STR ", but found only " ;
-                       INT (List.length args) ]))
+    raise
+      (CHFailure
+         (LBLOCK [
+              STR "Expected to find at least ";
+              INT (n+1);
+              STR " args in ";
+              STR name;
+              STR ", but found only ";
+              INT (List.length args)]))
+
 
 let tags_args_string (tags:string list) (args:int list) =
-  "t_" ^ (String.concat "," tags) ^ "_a_" ^
-    (String.concat "," (List.map string_of_int args))
+  "t_"
+  ^ (String.concat "," tags)
+  ^ "_a_"
+  ^ (String.concat "," (List.map string_of_int args))
+
 
 let keystring (k:(string list * int list)) =
-  let (tags,args) = k in tags_args_string tags args
+  let (tags, args) = k in
+  tags_args_string tags args
 
 
 class index_table_t (name:string):index_table_int =
@@ -117,8 +138,8 @@ object (self: _)
 
   method reset =
     begin
-      next <- 1 ;
-      H.clear table ;
+      next <- 1;
+      H.clear table;
       H.clear revtable
     end
 
@@ -128,9 +149,9 @@ object (self: _)
     else
       let index = next in
       begin
-        H.add table k index ;
-        H.add revtable index k ;
-        next <- next + 1 ;
+        H.add table k index;
+        H.add revtable index k;
+        next <- next + 1;
         index
       end
 
@@ -149,7 +170,7 @@ object (self: _)
                  STR " (size: ";
                  INT (H.length table);
                  STR ")"]))
-      
+
   method values = H.fold (fun k _ r -> k :: r) table []
 
   method items = H.fold (fun k index r -> (k,index) :: r) table []
@@ -177,7 +198,8 @@ object (self: _)
           begin
             knode#setIntAttribute "ix" k;
             (match tags with
-             | [] -> () | _ -> knode#setAttribute "t" (String.concat "," tags));
+             | [] -> ()
+             | _ -> knode#setAttribute "t" (String.concat "," tags));
             (match args with
              | [] -> ()
              | _ ->

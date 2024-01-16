@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,9 +37,10 @@ open CHPretty
 (* chutil *)
 open CHPrettyUtil
 
+
 let garbage_collector_settings_to_pretty () =
   let gc = Gc.get () in
-  LBLOCK 
+  LBLOCK
     [ STR "Garbage Collector Settings" ; NL ;
       STR (string_repeat "-" 80) ; NL ;
       STR "minor_heap_size       : " ; INT gc.minor_heap_size ; NL ;
@@ -59,7 +60,3 @@ let garbage_collector_stat_to_pretty () =
       STR "heap words                 : "; INT stat.heap_words; NL;
       STR "heap chunks                : "; INT stat.heap_chunks; NL;
       STR "forced major collections   : "; INT stat.forced_major_collections; NL]
-
-
-let garbage_collector_full_major () =
-  Gc.full_major ()

@@ -5,8 +5,8 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ let string_nsplit (separator:char) (s:string):string list =
         | Not_found -> len in
       let substring = String.sub s !start (s_index - !start) in
       begin
-	result := substring :: !result ;
+	result := substring :: !result;
 	start := s_index + 1
       end
     done;
@@ -96,7 +96,7 @@ let hex_string (s: string): string =
   let h = ref "" in
   let len = String.length s in
   begin
-    for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
+    for _i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done;
     !h
   end
 
@@ -106,7 +106,7 @@ let dehex_string (h: string): string =
   let len = String.length h in
   let s = ref "" in
   begin
-    for i = 0 to (len/2) - 1 do
+    for _i = 0 to (len/2) - 1 do
       let b1 = value_from_byte (IO.read_byte ch) in
       let b2 = value_from_byte (IO.read_byte ch) in
       let ich = b1 * 16 + b2 in
@@ -119,7 +119,7 @@ let dehex_string (h: string): string =
         end
       else
         s := !s ^ (String.make 1 (Char.chr ich))
-    done ;
+    done;
     !s
   end
 
@@ -267,6 +267,7 @@ let optvalue_compare (o1:'a option) (o2:'a option) (f:'a -> 'a -> int): int =
 let xproduct (l1:'a list) (l2:'a list):('a * 'a) list =
   List.concat (List.map (fun x -> List.map (fun y -> (x,y)) l2) l1)
 
+
 let list_sub (l:'a list) (s:int) (n:int):'a list =
   let len = List.length l in
   if s < 0 then
@@ -288,6 +289,7 @@ let list_sub (l:'a list) (s:int) (n:int):'a list =
     let rec sub l n result =
       if n = 0 then result else sub (List.tl l) (n-1) ((List.hd l)::result)  in
     List.rev (sub l' n [])
+
 
 (* Fold left on an array with access to the array index *)
 let array_fold_lefti (f: 'b -> int -> 'a -> 'b) (init: 'b) (a: 'a array) =

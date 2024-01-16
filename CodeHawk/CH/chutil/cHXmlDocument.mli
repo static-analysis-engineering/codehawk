@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      HennyB.  Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,16 +33,21 @@
 open CHIntervals
 open CHPretty
 
+
 exception XmlDocumentError of int * int * pretty_t
 
-type attribute_format_t = 
+
+type attribute_format_t =
 | FANL
 | FAttr of string
 | FAttrL of string * int   (* minimum length *)
 
+
 type attribute_format_list_t = attribute_format_t list
 
+
 val set_attribute_format: string -> attribute_format_list_t -> unit
+
 
 class type xml_element_int =
 object ('a)
@@ -64,7 +69,7 @@ object ('a)
   (* accessors *)
   method getTag: string
   method getChild: 'a
-  method getTaggedChild: string -> 'a 
+  method getTaggedChild: string -> 'a
   method getChildren: 'a list
   method getTaggedChildren: string -> 'a list
   method getAttribute: string -> string
@@ -81,20 +86,31 @@ object ('a)
   method getColumnNumber: int
 
   (* predicates *)
-  (** has exactly one child *)
+  (** Returns true if this element has exactly one child *)
   method hasOneChild: bool
-  (** has one or more children *)
+
+  (** Returns true if this element has one or more children *)
   method hasChildren: bool
-  (** has exactly one child with the given tag *)
+
+  (** Returns true if this element has exactly one child with the given tag *)
   method hasOneTaggedChild: string -> bool
-  (** has one or more children with the given tag *)
+
+  (** Returns true if this element has one or more children with the given tag *)
   method hasTaggedChildren: string -> bool
+
+  (** Returns true if this element has attributes *)
   method hasAttributes: bool
+
+  (** Returns true if this element has an attribute with the given name *)
   method hasNamedAttribute: string -> bool
+
+  (** Returns true if this element has embedded text *)
   method hasText: bool
+
   method isEmpty: bool
 
-  (* printing *)
+  (** printing *)
+
   method toPretty: pretty_t
 end
 
@@ -110,16 +126,27 @@ end
 val replace: char -> string -> string -> string
 
 val stri: int -> string
+
+(** [hex_string s] returns the string in which all characters of [s] have
+    been converted to hexadecimal characters.*)
+val hex_string: string -> string
+
 val time_to_string: float -> string
+
 val current_time_to_string: unit -> string
 
 val xmlDocument: unit -> xml_document_int
+
 val xmlElement: string -> xml_element_int
 
 val xml_string: string -> string -> xml_element_int
+
 val xml_pretty: string -> pretty_t -> xml_element_int
+
 val xml_attr_string: string -> string -> string -> xml_element_int
+
 val xml_attr_int: string -> string -> int -> xml_element_int
+
 val xml_interval: interval_t -> xml_element_int
 
 val ch_xml_header: unit -> xml_element_int
