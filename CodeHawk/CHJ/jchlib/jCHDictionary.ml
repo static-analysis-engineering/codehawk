@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2024 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,6 @@
 
 (* chlib *)
 open CHCommon
-open CHLanguage
 open CHPretty
 
 (* chutil *)
@@ -48,26 +47,34 @@ module H = Hashtbl
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ;
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
+    LBLOCK [
+        STR "(";
+        INT node#getLineNumber;
+        STR ",";
+	INT node#getColumnNumber;
+        STR ") ";
+        msg] in
   begin
-    ch_error_log#add "xml parse error" error_msg ;
+    ch_error_log#add "xml parse error" error_msg;
     raise (XmlParseError (node#getLineNumber, node#getColumnNumber, msg))
   end
+
 
 let byte_to_string (b:int) =
   let l = b mod 16 in
   let h = b lsr 4 in
   Printf.sprintf "%x%x" h l
 
+
 let hex_string s =
   let ch = IO.input_string s in
   let h = ref "" in
   let len = String.length s in
   begin
-    for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
+    for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done;
     !h
   end
+
 
 let has_control_characters s =
   let found = ref false in
@@ -76,21 +83,25 @@ let has_control_characters s =
       found  := true) s in
   !found
 
+
 let mk_constantstring (s:string):constantstring =
   if has_control_characters s then
     (hex_string s, true, String.length s)
   else
-    (s,false, String.length s)
+    (s, false, String.length s)
+
 
 let rec value_type_to_asm_string (v:value_type_t) =
   match v with
   | TBasic t -> java_basic_type_serializer#to_string t
   | TObject t -> object_type_to_asm_string t
 
+
 and object_type_to_asm_string (v:object_type_t) =
   match v with
   | TClass cn -> "L" ^ (string_replace '.' "/" cn#name) ^ ";"
   | TArray vt -> "[" ^ (value_type_to_asm_string vt)
+
 
 let method_descriptor_to_asm_string (md:method_descriptor_int) =
   String.concat "_" (List.map value_type_to_asm_string md#arguments)
@@ -148,22 +159,22 @@ object (self: _)
 
   initializer
     tables <- [
-      string_table ;
-      class_name_table ;
-      object_type_table ;
-      value_type_table ;
-      method_descriptor_table ;
-      descriptor_table ;
-      field_signature_data_table ;
-      method_signature_data_table ;
-      class_field_signature_data_table ;
-      class_method_signature_data_table ;
-      constant_value_table ;
-      method_handle_type_table ;
-      constant_table ;
-      bootstrap_argument_table ;
+      string_table;
+      class_name_table;
+      object_type_table;
+      value_type_table;
+      method_descriptor_table;
+      descriptor_table;
+      field_signature_data_table;
+      method_signature_data_table;
+      class_field_signature_data_table;
+      class_method_signature_data_table;
+      constant_value_table;
+      method_handle_type_table;
+      constant_table;
+      bootstrap_argument_table;
       bootstrap_method_data_table
-    ]
+   ]
 
   method index_class_name (name:string) =
     let l =  ExtString.String.nsplit name "." in
@@ -188,7 +199,7 @@ object (self: _)
     make_field_signature_data ~name ~field_descriptor
 
   method index_class_field_signature_data (d:class_field_signature_data_int) =
-    let args = [ d#class_name#index ; d#field_signature#index ] in
+    let args = [d#class_name#index; d#field_signature#index] in
     class_field_signature_data_table#add ([],args)
 
   method get_class_field_signature_data (index:int) =
@@ -214,7 +225,7 @@ object (self: _)
     make_method_signature_data ~is_static ~name ~method_descriptor
 
   method index_class_method_signature_data (d:class_method_signature_data_int) =
-    let args = [ d#class_name#index ; d#method_signature#index ] in
+    let args = [d#class_name#index; d#method_signature#index] in
     class_method_signature_data_table#add ([],args)
 
   method get_class_method_signature_data (index:int) =
@@ -225,7 +236,7 @@ object (self: _)
     make_class_method_signature_data ~class_name ~method_signature
 
   method index_object_type (t:object_type_t) =
-    let tags = [ object_type_serializer#to_string t ] in
+    let tags = [object_type_serializer#to_string t] in
     let key = match t with
       | TClass cn -> (tags,[cn#index])
       | TArray vt -> (tags,[self#index_value_type vt]) in
@@ -252,7 +263,7 @@ object (self: _)
     self#get_object_type (node#getIntAttribute tag)
 
   method index_value_type (t:value_type_t) =
-    let tags = [ value_type_serializer#to_string t ] in
+    let tags = [value_type_serializer#to_string t] in
     let key = match t with
       | TBasic b -> (tags @ [java_basic_type_serializer#to_string b],[])
       | TObject o -> (tags,[self#index_object_type o]) in
@@ -280,8 +291,8 @@ object (self: _)
 
   method index_method_descriptor (d:method_descriptor_int) =
     let rv = match d#return_value with
-      | Some vt -> [ 1 ; self#index_value_type vt ]
-      | _ -> [ 0 ] in
+      | Some vt -> [1; self#index_value_type vt]
+      | _ -> [0] in
     let args = List.map self#index_value_type d#arguments in
     method_descriptor_table#add ([],rv @ args)
 
@@ -306,10 +317,10 @@ object (self: _)
     self#get_method_descriptor (node#getIntAttribute tag)
 
   method index_descriptor (d:descriptor_t) =
-    let tags = [ descriptor_serializer#to_string d ] in
+    let tags = [descriptor_serializer#to_string d] in
     let key = match d with
-      | SValue vt -> (tags,[ self#index_value_type vt ])
-      | SMethod md -> (tags,[ self#index_method_descriptor md]) in
+      | SValue vt -> (tags,[self#index_value_type vt])
+      | SMethod md -> (tags,[self#index_method_descriptor md]) in
     descriptor_table#add key
 
   method get_descriptor (index:int):descriptor_t =
@@ -332,14 +343,14 @@ object (self: _)
     self#get_descriptor (node#getIntAttribute tag)
 
   method index_constant_value (cv:constant_value_t) =
-    let tags = [ constant_value_serializer#to_string cv ] in
+    let tags = [constant_value_serializer#to_string cv] in
     let key = match cv with
-      | ConstString s -> (tags, [ self#index_string s ])
-      | ConstInt i32 -> (tags, [ Int32.to_int i32 ])
-      | ConstFloat f -> (tags @ [ string_of_float f ], [])
-      | ConstLong i64 -> (tags @ [ Int64.to_string i64 ], [])
-      | ConstDouble d -> (tags @ [ string_of_float d ], [])
-      | ConstClass ot -> (tags, [ self#index_object_type ot ]) in
+      | ConstString s -> (tags, [self#index_string s])
+      | ConstInt i32 -> (tags, [Int32.to_int i32])
+      | ConstFloat f -> (tags @ [string_of_float f], [])
+      | ConstLong i64 -> (tags @ [Int64.to_string i64], [])
+      | ConstDouble d -> (tags @ [string_of_float d], [])
+      | ConstClass ot -> (tags, [self#index_object_type ot]) in
     constant_value_table#add key
 
   method get_constant_value (index:int) =
@@ -367,11 +378,11 @@ object (self: _)
     self#get_constant_value (node#getIntAttribute tag)
 
   method index_method_handle_type (h:method_handle_type_t) =
-    let tags = [ method_handle_type_serializer#to_string h ] in
+    let tags = [method_handle_type_serializer#to_string h] in
     let key = match h with
-      | FieldHandle (cn,fs) -> (tags,[cn#index ; fs#index])
-      | MethodHandle (ot,ms) -> (tags,[self#index_object_type ot ; ms#index ])
-      | InterfaceHandle (cn,ms) -> (tags,[ cn#index ; ms#index ]) in
+      | FieldHandle (cn,fs) -> (tags,[cn#index; fs#index])
+      | MethodHandle (ot,ms) -> (tags,[self#index_object_type ot; ms#index])
+      | InterfaceHandle (cn,ms) -> (tags,[cn#index; ms#index]) in
     method_handle_type_table#add key
 
   method get_method_handle_type (index:int):method_handle_type_t =
@@ -408,20 +419,20 @@ object (self: _)
     self#get_method_handle_type (node#getIntAttribute tag)
 
   method index_constant (c:constant_t) =
-    let tags = [ constant_serializer#to_string c ] in
+    let tags = [constant_serializer#to_string c] in
     let key = match c with
-      | ConstValue cv -> (tags, [ self#index_constant_value cv ])
-      | ConstField (cn,fs) -> (tags, [ cn#index ; fs#index ])
-      | ConstMethod (ot,ms)-> (tags, [ self#index_object_type ot; ms#index ])
-      | ConstInterfaceMethod (cn,ms) -> (tags, [ cn#index ; ms#index ])
-      | ConstDynamicMethod (index,ms) -> (tags, [ index; ms#index ])
+      | ConstValue cv -> (tags, [self#index_constant_value cv])
+      | ConstField (cn,fs) -> (tags, [cn#index; fs#index])
+      | ConstMethod (ot,ms)-> (tags, [self#index_object_type ot; ms#index])
+      | ConstInterfaceMethod (cn,ms) -> (tags, [cn#index; ms#index])
+      | ConstDynamicMethod (index,ms) -> (tags, [index; ms#index])
       | ConstNameAndType (s,d) ->
-         (tags, [ self#index_string s ; self#index_descriptor d ])
-      | ConstStringUTF8 s -> (tags,[ self#index_string s ])
+         (tags, [self#index_string s; self#index_descriptor d])
+      | ConstStringUTF8 s -> (tags,[self#index_string s])
       | ConstMethodHandle (k,h) ->
-         (tags @ [ reference_kind_serializer#to_string k ],
-          [ self#index_method_handle_type h ])
-      | ConstMethodType md -> (tags, [ self#index_method_descriptor md ])
+         (tags @ [reference_kind_serializer#to_string k],
+          [self#index_method_handle_type h])
+      | ConstMethodType md -> (tags, [self#index_method_descriptor md])
       | ConstUnusable -> (tags,[]) in
     constant_table#add key
 
@@ -459,13 +470,13 @@ object (self: _)
     self#get_constant (node#getIntAttribute tag)
 
   method index_bootstrap_argument (a:bootstrap_argument_t) =
-    let tags = [ bootstrap_argument_serializer#to_string a ] in
+    let tags = [bootstrap_argument_serializer#to_string a] in
     let key = match a with
-      | BootstrapArgConstantValue cv -> (tags,[ self#index_constant_value cv ])
+      | BootstrapArgConstantValue cv -> (tags,[self#index_constant_value cv])
       | BootstrapArgMethodHandle (k,h) ->
          (tags @ [reference_kind_serializer#to_string k],
           [self#index_method_handle_type h])
-      | BootstrapArgMethodType md -> (tags,[self#index_method_descriptor md ]) in
+      | BootstrapArgMethodType md -> (tags,[self#index_method_descriptor md]) in
     bootstrap_argument_table#add key
 
   method get_bootstrap_argument (index:int) =
@@ -497,7 +508,7 @@ object (self: _)
     self#get_bootstrap_argument (node#getIntAttribute tag)
 
   method index_bootstrap_method_data (d:bootstrap_method_data_t) =
-    let tags = [ reference_kind_serializer#to_string d.bm_kind ] in
+    let tags = [reference_kind_serializer#to_string d.bm_kind] in
     let args = (self#index_method_handle_type d.bm_handle) ::
                  (List.map self#index_bootstrap_argument d.bm_args) in
     bootstrap_method_data_table#add (tags,args)
@@ -506,8 +517,8 @@ object (self: _)
     let (tags,args) = bootstrap_method_data_table#retrieve index in
     let t = t "bootstrap-method-data" tags in
     let a = a "bootstrap-method-data" args in
-    { bm_kind = reference_kind_serializer#from_string (t 0) ;
-      bm_handle = self#get_method_handle_type (a 0) ;
+    { bm_kind = reference_kind_serializer#from_string (t 0);
+      bm_handle = self#get_method_handle_type (a 0);
       bm_args = List.map self#get_bootstrap_argument (List.tl args) }
 
   method write_xml_bootstrap_method_data
@@ -521,9 +532,9 @@ object (self: _)
   method index_string (s:string):int =
     let cs = mk_constantstring s in
     let (s,ishex,len) = cs in
-    let x = if ishex then [ "x" ] else [] in
-    let tags = if len = 0 then [] else [ s ] @ x in
-    let args = [ len ] in
+    let x = if ishex then ["x"] else [] in
+    let tags = if len = 0 then [] else [s] @ x in
+    let args = [len] in
     string_table#add (tags,args)
 
   method get_string (index:int) =
@@ -552,8 +563,8 @@ object (self: _)
     else
       let name = "__cn__" ^ (string_of_int unrecognizedclassindex) in
       begin
-	unrecognizedclassindex <- unrecognizedclassindex + 1 ;
-	H.add unrecognizedclassnames cn name ;
+	unrecognizedclassindex <- unrecognizedclassindex + 1;
+	H.add unrecognizedclassnames cn name;
 	name
       end
 
@@ -563,7 +574,7 @@ object (self: _)
     else if has_control_characters name then
       let newname = "__xx__" ^ (hex_string name) in
       begin
-	H.add convertedmethodnames name newname ;
+	H.add convertedmethodnames name newname;
 	newname
       end
     else
@@ -572,12 +583,12 @@ object (self: _)
   method list_unrecognized_class_names =
     let lst = ref [] in
     let _ = H.iter (fun k v -> lst := (k,v) :: !lst) unrecognizedclassnames in
-    List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !lst
+    List.sort (fun (k1, _) (k2, _) -> Stdlib.compare k1 k2) !lst
 
   method list_converted_method_names =
     let lst = ref [] in
     let _ = H.iter (fun k v -> lst := (k,v) :: !lst) convertedmethodnames in
-    List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !lst
+    List.sort (fun (k1, _) (k2, _) -> Stdlib.compare k1 k2) !lst
 
   method list_class_names =
     H.fold (fun _ v acc -> v :: acc) cached_classnames []
@@ -588,7 +599,7 @@ object (self: _)
     else
       let cn = make_class_name ~index ~name in
       begin
-        H.add cached_classnames index cn ;
+        H.add cached_classnames index cn;
         cn
       end
 
@@ -596,8 +607,8 @@ object (self: _)
     if H.mem cached_classnames index then
       H.find cached_classnames index
     else
-      raise (JCH_failure (LBLOCK [ STR "Cached class name " ; INT index ;
-                                   STR " not found" ]))
+      raise (JCH_failure (LBLOCK [STR "Cached class name "; INT index;
+                                   STR " not found"]))
 
   method make_class_name (cn:string) =
     let valid_class_name =
@@ -662,7 +673,7 @@ object (self: _)
     else
       let fs = make_field_signature ~index ~field_signature_data:fsd in
       begin
-        H.add cached_fieldsignatures index fs ;
+        H.add cached_fieldsignatures index fs;
         fs
       end
 
@@ -677,7 +688,10 @@ object (self: _)
       H.find cached_methodsignatures index
     else
       let ms = make_method_signature ~index ~method_signature_data:msd in
-      begin H.add cached_methodsignatures index ms ; ms end
+      begin
+        H.add cached_methodsignatures index ms;
+        ms
+      end
 
   method make_method_signature is_static name mdesc =
     let name = self#check_method_name_encoding name in
@@ -693,7 +707,10 @@ object (self: _)
     else
       let cfs =
         make_class_field_signature ~index ~class_field_signature_data:cfsd in
-      begin H.add cached_classfieldsignatures index cfs ; cfs end
+      begin
+        H.add cached_classfieldsignatures index cfs;
+        cfs
+      end
 
   method make_class_field_signature class_name fsig =
     let cfsd =
@@ -708,7 +725,7 @@ object (self: _)
     else
       let cms =
         make_class_method_signature ~index ~class_method_signature_data:cmsd in
-      begin H.add cached_classmethodsignatures index cms ; cms end
+      begin H.add cached_classmethodsignatures index cms; cms end
 
   method make_class_method_signature class_name msig =
     let cmsd =
@@ -722,15 +739,19 @@ object (self: _)
   method private write_xml_type_dictionary (node:xml_element_int) =
     node#appendChildren
       (List.map
-         (fun t -> let tnode = xmlElement t#get_name in
-           begin t#write_xml tnode ; tnode end) tables)
+         (fun t ->
+           let tnode = xmlElement t#get_name in
+           begin
+             t#write_xml tnode;
+             tnode
+           end) tables)
 
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
     let ttNode = xmlElement "type-dictionary" in
     begin
-      self#write_xml_type_dictionary ttNode ;
-      append [ ttNode ] ;
+      self#write_xml_type_dictionary ttNode;
+      append [ttNode];
     end
 
   method private read_xml_type_dictionary (node:xml_element_int) =
@@ -739,9 +760,10 @@ object (self: _)
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
-    self#read_xml_type_dictionary (getc "type-dictionary") ;
+    self#read_xml_type_dictionary (getc "type-dictionary");
 
 end
+
 
 let common_dictionary = new dictionary_t
 
@@ -767,8 +789,9 @@ let rec read_xmlx_value_type (node:xml_element_int) =
   | s ->
     try
       TBasic (java_basic_type_of_string s)
-    with JCH_failure p ->
-      raise_xml_error node (LBLOCK [STR "Error in reading value type: "; p])
+    with
+    | JCH_failure p ->
+       raise_xml_error node (LBLOCK [STR "Error in reading value type: "; p])
 
 
 let read_xmlx_object_type (node:xml_element_int) =
@@ -799,7 +822,7 @@ let read_xmlx_method_descriptor (node:xml_element_int) =
       Some (read_xmlx_value_type (getc "return"))
     else
       None in
-  (argtypes,returnType)
+  (argtypes, returnType)
 
 
 let read_xmlx_method_signature

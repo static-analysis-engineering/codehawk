@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -54,13 +55,16 @@ val get_field : constant_t array -> int -> class_name_int * field_signature_int
 
 val get_method : constant_t array -> int -> object_type_t * method_signature_int
 
-val get_method_handle: constant_t array -> int -> reference_kind_t * method_handle_type_t
+val get_method_handle:
+  constant_t array -> int -> reference_kind_t * method_handle_type_t
 
 val get_bootstrap_argument: constant_t array -> int -> bootstrap_argument_t
 
-val get_callsite_specifier: constant_t array -> int -> (int * method_signature_int)
+val get_callsite_specifier:
+  constant_t array -> int -> (int * method_signature_int)
 
-val get_interface_method : constant_t array -> int -> class_name_int * method_signature_int
+val get_interface_method :
+  constant_t array -> int -> class_name_int * method_signature_int
 
 val get_string : constant_t array -> int -> string
 
@@ -74,26 +78,32 @@ val value_to_int : constant_t DynArray.t -> constant_value_t -> int
 
 val object_type_to_int : constant_t DynArray.t -> object_type_t -> int
 
-val field_to_int : constant_t DynArray.t -> class_name_int * field_signature_int -> int
+val field_to_int :
+  constant_t DynArray.t -> class_name_int * field_signature_int -> int
 
-val method_to_int : constant_t DynArray.t -> object_type_t * method_signature_int -> int
+val method_to_int :
+  constant_t DynArray.t -> object_type_t * method_signature_int -> int
 
 val class_to_int : constant_t DynArray.t -> class_name_int -> int
 
 val string_to_int : constant_t DynArray.t -> string -> int
 
-val name_and_type_to_int : constant_t DynArray.t -> string * descriptor_t -> int
+val name_and_type_to_int :
+  constant_t DynArray.t -> string * descriptor_t -> int
 
-val write_constant : 'a IO.output -> constant_t DynArray.t -> constant_t -> unit
+val write_constant :
+  'a IO.output -> constant_t DynArray.t -> constant_t -> unit
 
-val write_value : 'a IO.output -> constant_t DynArray.t -> constant_value_t -> unit
+val write_value :
+  'a IO.output -> constant_t DynArray.t -> constant_value_t -> unit
 
-val write_object_type : 'a IO.output -> constant_t DynArray.t -> object_type_t -> unit
+val write_object_type :
+  'a IO.output -> constant_t DynArray.t -> object_type_t -> unit
 
-val write_class : 'a IO.output -> constant_t DynArray.t -> class_name_int -> unit
+val write_class :
+  'a IO.output -> constant_t DynArray.t -> class_name_int -> unit
 
 val write_string : 'a IO.output -> constant_t DynArray.t -> string -> unit
 
-val write_name_and_type : 
+val write_name_and_type :
   'a IO.output -> constant_t DynArray.t ->  string * descriptor_t -> unit
-

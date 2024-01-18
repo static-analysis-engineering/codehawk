@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2024 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,100 +31,100 @@
  * analyzer. It is used in the method summaries to express pre- and postconditions,
  * side effects, and time/space cost. It is also used internally to express
  * and share invariants.
- * 
+ *
  * The internal and external (in xml) representations of the jterm are the same
  * except for the representation of arguments. Internally both arguments and
  * local variables are represented by their internal local variable number,
  * since in bytecode method arguments (including "this") are simply the first
  * local variables. The return value is represented by JLocalVar -1.
- * 
- * There are two external (xml) representations for the jterm, one for method 
- * summaries and generally for user-directed input/output, and one for 
- * intermediate storage of invariants, cost data, etc. The first external 
- * representation (referred to as xmlx) follows the W3C mathml convention for 
+ *
+ * There are two external (xml) representations for the jterm, one for method
+ * summaries and generally for user-directed input/output, and one for
+ * intermediate storage of invariants, cost data, etc. The first external
+ * representation (referred to as xmlx) follows the W3C mathml convention for
  * representing expressions and makes a distinction between arguments and local
- * variables. It numbers the method arguments as they are encountered in the 
+ * variables. It numbers the method arguments as they are encountered in the
  * source code, starting with 1; the "this" argument for an object method is
- * represented by <this/>, and the return value is represented by <return/>. 
+ * represented by <this/>, and the return value is represented by <return/>.
  * Thus, in this xmlx representation the argument number for a static method is
- * equal to the local variable internal representation plus 1; for object 
+ * equal to the local variable internal representation plus 1; for object
  * methods the argument numbering is the same for the internal local variable
  * numbering except for the name "this" for the first bytecode method argument.
- * 
+ *
  * The second external (xml) representation is a more systematic attribute-based
  * representation that closely reflects the internal representation.
- * 
+ *
  * Examples:
  * -----------------------------------------
  * Example 1:
- * 
- * IndexOutOfBounds precondition for 
+ *
+ * IndexOutOfBounds precondition for
  *                             java.util.ArrayList.listIterator(int index):
- * 
+ *
  * public ListIterator<E> listIterator(int index)
- * 
+ *
  * with published condition for ArrayIndexOutOfBoundsException:
  *     if the index is out of range (index < 0 || index > size())
- * 
+ *
  * summary representation of lower-bound condition:
  * <math><apply><geq/><arg nr="1"/><cn>0</cn></apply></math>
- * 
+ *
  * summary representation of upper-bound condition:
  * <math><apply><leq/><arg nr="1"/><apply><size/><this/></apply></apply></math>
- * 
+ *
  * In the internal xml representation these conditions would be represented as
  * <jxpr xtag="binop" binop="geq">
  *    <jxpr1 xtag="var" nr="1"/>
  *    <jxpr2 xtag="iconst" val="0"/>
  * </jxpr>
- * 
- * and 
+ *
+ * and
  * <jxpr xtag="binop" binop="leq">
  *    <jxpr1 xtag="var" nr="1"/>
  *    <jxpr2 xtag="size">
  *       <jxpr xtag="var" nr="0"/>
  * </jxpr>
- * 
+ *
  * The internal representation for both external representations is the same
  * (omitting the numerical datatype):
- * 
+ *
  * (GreaterEqual, JLocalVar 1, JConstant 0)
- * 
+ *
  * and
- * 
+ *
  * (LessEqual, JLocalVar 1, JSize(JLocalVar 0))
- * 
+ *
  * -------------------------------------------------
  * Example 2:
- * 
+ *
  * public static int[] copyOf(int[] original, int newLength)
- * 
+ *
  * published condition for NegativeArraySizeException:
  *    if newLength is negative
- * 
+ *
  * summary representation:
  * <math><apply><geq/><arg nr="2"/><cn>0</cn></apply></math>
- * 
+ *
  * the internal xml representation would be
  * <jxpr xtag="binop" binop="geq">
  *    <jxpr1 xtag="var" nr="2"/>
  *    <jxpr2 xtag="iconst" val="0"/>
  * </jxpr>
- * 
+ *
  * The internal data structure representation for both is
- * 
+ *
  * (GreaterEqual, JLocalVar 2, JConstant 0)
- * 
+ *
  * -----------------------------------------------------
- * 
- * Note: 
+ *
+ * Note:
  * To all other parts of the code the internal data structures are the
  * only representation relevant; the external xml representation is irrelevant
  * to all other parts of the code. It is described here only to document
  * the two different input/output formats.
- * 
+ *
  * Data structure description:
- * 
+ *
  * JAuxiliaryVar <name>  : used to introduce a local binding for constraints
  * JLocalVar <seqnr>     : argument/local variable starting with 0
  *                         return value is represented by JLocalVar -1
@@ -137,7 +137,7 @@
  * JPower (<t>,n)        : t^n
  * JUninterpreted (name,terms) : uninterpreted function name over argument terms
  * JArithmeticExpr (op,t1,t2): arithmetic expression of terms
- * 
+ *
  * -----------------------------------------------------------------------------
  *)
 
@@ -158,11 +158,10 @@ open JCHBasicTypes
 open JCHBasicTypesAPI
 open JCHDictionary
 open JCHJTDictionary
-open JCHXmlUtil
 
 module H = Hashtbl
 
-         
+
 let p2s = string_printer#print
 
 let maxint = mkNumericalFromString "2147483647"
@@ -176,12 +175,12 @@ let macroconstants = H.create 11
 let _ =
   List.iter (fun (name,tval) ->
       H.add macroconstants name (mkNumericalFromString tval))
-            [ ("MAXCHAR", "65535");
-              ("MAXCODEPOINT", "1114111");
-              ("MAXINT", "2147483647");
-              ("MININT", "-2147483648");
-              ("MAXLONG", "9223372036854775807");
-              ("MINLONG", "-9223372036854775808") ]
+            [("MAXCHAR", "65535");
+             ("MAXCODEPOINT", "1114111");
+             ("MAXINT", "2147483647");
+             ("MININT", "-2147483648");
+             ("MAXLONG", "9223372036854775807");
+             ("MINLONG", "-9223372036854775808")]
 
 let is_macro_constant (name:string) = H.mem macroconstants name
 
@@ -189,22 +188,26 @@ let get_macro_constant (name:string):numerical_t =
   if H.mem macroconstants name then
     H.find macroconstants name
   else
-    raise (JCH_failure (LBLOCK [ STR "Macro constant " ; STR name ;
-                                 STR " not found" ]))
+    raise (JCH_failure (LBLOCK [STR "Macro constant "; STR name;
+                                 STR " not found"]))
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
+    LBLOCK [
+        STR "("; INT node#getLineNumber;
+        STR ",";
+	INT node#getColumnNumber;
+        STR ") ";
+        msg] in
   begin
-    ch_error_log#add "xml parse error" error_msg ;
+    ch_error_log#add "xml parse error" error_msg;
     raise (XmlParseError (node#getLineNumber, node#getColumnNumber, msg))
   end
 
 
-let arithmetic_op_to_string = function 
+let arithmetic_op_to_string = function
   | JPlus -> " + "
-  | JMinus -> " - " 
+  | JMinus -> " - "
   | JDivide -> " / "
   | JTimes -> " x "
 
@@ -250,7 +253,7 @@ let relational_op_to_xml_string = function
 
 let xml_string_to_relational_op (s:string) =
   match s with
-  | "eq" -> JEquals 
+  | "eq" -> JEquals
   | "lt" -> JLessThan
   | "leq" -> JLessEqual
   | "gt" -> JGreaterThan
@@ -265,7 +268,7 @@ let xml_string_to_relational_op (s:string) =
 	       STR " not recognized"]))
 
 
-let xml_string_to_arithmetic_op (s:string) =
+let _xml_string_to_arithmetic_op (s:string) =
   match s with
   | "plus" -> JPlus
   | "minus" -> JMinus
@@ -285,7 +288,7 @@ let is_relational_op (s:string) =
   | "eq" | "lt" | "leq" | "gt" | "geq" | "neq" -> true | _ -> false
 
 
-let is_arithmetic_op (s:string) =
+let _is_arithmetic_op (s:string) =
   match s with
   | "plus" | "minus" | "times" | "divide" -> true | _ -> false
 
@@ -418,12 +421,12 @@ let symbolic_jterm_constant_to_string (c:symbolic_jterm_constant_t) =
   | (_,Some lb, _, name) ->
      "symconst:" ^ name ^ " [" ^ lb#toString ^ "; ->"
   | (_,_, Some ub, name) ->
-     "symconst:" ^ name ^ " <- ; " ^ ub#toString ^ "]"
+     "symconst:" ^ name ^ " <-; " ^ ub#toString ^ "]"
   | (_,_,_,name) -> "symconst:" ^ name
 
 
-let rec jterm_to_string 
-    ?(varname=default_varname_mapping) 
+let rec jterm_to_string
+    ?(varname=default_varname_mapping)
     (t:jterm_t) =
     match t with
     | JLocalVar (-1) -> "return"
@@ -433,7 +436,7 @@ let rec jterm_to_string
     | JLoopCounter i -> "loop-counter@pc_" ^ (string_of_int i)
     | JStaticFieldValue (cnix,name) ->
        ((retrieve_cn cnix)#name ^ "." ^ name)
-    | JObjectFieldValue (cmsix,varix,cnix,name) ->
+    | JObjectFieldValue (cmsix, varix, _cnix, name) ->
        let mname = (retrieve_cms cmsix)#name in
        mname ^ ":var" ^ (string_of_int varix) ^ "." ^ name
     | JConstant i -> i#toString
@@ -459,11 +462,11 @@ let rec jterm_to_string
        ^ ")"
 
 
-let rec jterm_to_pretty 
-    ?(varname=default_varname_mapping) 
+let rec jterm_to_pretty
+    ?(varname=default_varname_mapping)
     (t:jterm_t) =
     match t with
-    | JArithmeticExpr (op, t1, t2) ->  
+    | JArithmeticExpr (op, t1, t2) ->
        LBLOCK [
            STR "(";
            jterm_to_pretty ~varname t1;
@@ -477,15 +480,15 @@ let rec jterm_to_pretty
     | jterm -> STR (jterm_to_string ~varname jterm)
 
 
-let rec jterm_to_sexpr_pretty 
-    ?(varname=default_varname_mapping) 
+let rec jterm_to_sexpr_pretty
+    ?(varname=default_varname_mapping)
     (t:jterm_t) =
   match t with
   | JArithmeticExpr (op, t1, t2) ->
-    LBLOCK [ STR "(" ; STR (arithmetic_op_to_string op) ; STR " " ; 
-	     jterm_to_sexpr_pretty ~varname t1 ; STR " " ;
-	     jterm_to_sexpr_pretty ~varname t2 ; STR ")" ]
-  | JConstant i -> i#toPretty ;
+    LBLOCK [STR "("; STR (arithmetic_op_to_string op); STR " ";
+	     jterm_to_sexpr_pretty ~varname t1; STR " ";
+	     jterm_to_sexpr_pretty ~varname t2; STR ")"]
+  | JConstant i -> i#toPretty;
   | JSize t -> LBLOCK [STR "(size "; jterm_to_sexpr_pretty ~varname t; STR ")"]
   | jterm -> STR (jterm_to_string ~varname jterm)
 
@@ -494,7 +497,7 @@ let rec get_jterm_class_dependencies (t:jterm_t) =
   match t with
   | JStaticFieldValue (cnix,_)
     | JObjectFieldValue (_,_,cnix,_) ->
-     [ retrieve_cn cnix ]
+     [retrieve_cn cnix]
   | JSize t | JPower (t,_) -> get_jterm_class_dependencies t
   | JUninterpreted (_,l) ->
      List.concat (List.map get_jterm_class_dependencies l)
@@ -503,17 +506,17 @@ let rec get_jterm_class_dependencies (t:jterm_t) =
   | _ -> []
 
 
-let relational_expr_to_pretty 
-    ?(varname=default_varname_mapping) 
+let relational_expr_to_pretty
+    ?(varname=default_varname_mapping)
     (x:relational_expr_t) =
   let (op,t1,t2) = x in
-  LBLOCK [ jterm_to_pretty ~varname t1 ; STR " " ; 
-	   STR (relational_op_to_string op) ; STR " " ;
-	   jterm_to_pretty ~varname t2 ]
+  LBLOCK [jterm_to_pretty ~varname t1; STR " ";
+	   STR (relational_op_to_string op); STR " ";
+	   jterm_to_pretty ~varname t2]
 
 
-let relational_expr_to_sexpr_pretty 
-    ?(varname=default_varname_mapping) 
+let relational_expr_to_sexpr_pretty
+    ?(varname=default_varname_mapping)
     (x:relational_expr_t) =
   let (op,t1,t2) = x in
   LBLOCK [
@@ -527,17 +530,17 @@ let relational_expr_to_sexpr_pretty
 
 
 let is_relational x =
-  let (op,t1,t2) = x in
+  let (_op, t1, t2) = x in
   let isCompound t = match t with JArithmeticExpr _ -> true | _ -> false in
   isCompound t1 || isCompound t2
 
 
-let findupperbound (v:string) (cc:relational_expr_t list) =
+let _findupperbound (v:string) (cc:relational_expr_t list) =
   let ub = List.fold_left (fun acc c ->
     match c with
-    | (JLessEqual, JAuxiliaryVar vv, JConstant n) 
-    | (JGreaterEqual, JConstant n, JAuxiliaryVar vv) when vv = v -> 
-      (match acc with 
+    | (JLessEqual, JAuxiliaryVar vv, JConstant n)
+    | (JGreaterEqual, JConstant n, JAuxiliaryVar vv) when vv = v ->
+      (match acc with
       | Some b when n#lt b -> Some n | Some _ -> acc | None -> Some n)
     | _ -> acc) None cc in
   match ub with
@@ -545,7 +548,7 @@ let findupperbound (v:string) (cc:relational_expr_t list) =
   | _ -> new bound_t PLUS_INF
 
 
-let findlowerbound (v:string) (cc:relational_expr_t list) =
+let _findlowerbound (v:string) (cc:relational_expr_t list) =
   let lb = List.fold_left (fun acc c ->
     match c with
     | (JGreaterEqual, JAuxiliaryVar vv, JConstant n)
@@ -555,8 +558,8 @@ let findlowerbound (v:string) (cc:relational_expr_t list) =
     | _ -> acc) None cc in
   match lb with
   | Some n -> new bound_t (NUMBER n)
-  | _ -> new bound_t MINUS_INF  
-  
+  | _ -> new bound_t MINUS_INF
+
 
 (* -------------------------------------------------------------------------
  * External xml representation according to W3C mathml standard
@@ -564,20 +567,20 @@ let findlowerbound (v:string) (cc:relational_expr_t list) =
 
 let jterm_to_xmlx (jterm:jterm_t) (ms:method_signature_int):xml_element_int =
   let argcount = List.length ms#descriptor#arguments in
-  let var tag i = 
-    let node = xmlElement tag in 
-    begin node#setIntAttribute "nr" i ; node end in
-  let localvar i = 
+  let var tag i =
+    let node = xmlElement tag in
+    begin node#setIntAttribute "nr" i; node end in
+  let localvar i =
     if ms#is_static then
       if i < argcount then var "arg" (i+1) else var "var" i
     else
       if i <= argcount then var "arg" i else var "var" i in
   let lc i =
-    let node = xmlElement "loop-counter" in 
-    begin node#setIntAttribute "pc" i ; node end in
+    let node = xmlElement "loop-counter" in
+    begin node#setIntAttribute "pc" i; node end in
   let auxvar s =
     let node = xml_string "ci" s in
-    begin node#setAttribute "kind" "aux" ; node end in
+    begin node#setAttribute "kind" "aux"; node end in
   let symconst (typ,lbopt,ubopt,name) =
     let node = xmlElement "symbolic-constant" in
     begin
@@ -598,8 +601,8 @@ let jterm_to_xmlx (jterm:jterm_t) (ms:method_signature_int):xml_element_int =
        let node = xmlElement "static-field-value" in
        let cname = (retrieve_cn cnix)#name in
        begin
-         node#setAttribute "cname" cname ;
-         node#setAttribute "fname" fname ;
+         node#setAttribute "cname" cname;
+         node#setAttribute "fname" fname;
          node
        end
     | JObjectFieldValue (cmsix,varix,cnix,fname) ->
@@ -609,13 +612,13 @@ let jterm_to_xmlx (jterm:jterm_t) (ms:method_signature_int):xml_element_int =
          else
            let n = xmlElement "arg" in
            let argix = if ms#is_static then varix + 1 else varix in
-           begin n#setIntAttribute "nr" argix ; n end in             
+           begin n#setIntAttribute "nr" argix; n end in
        let cname = (retrieve_cn cnix)#name in
        let cms = retrieve_cms cmsix in
        let cn = cms#class_name in
        begin
-         node#setAttribute "field" fname ;
-         (if cn#index = cnix then () else node#setAttribute "cn" cname) ;
+         node#setAttribute "field" fname;
+         (if cn#index = cnix then () else node#setAttribute "cn" cname);
          node
        end
     | JConstant n -> xml_string "cn" n#toString
@@ -627,32 +630,32 @@ let jterm_to_xmlx (jterm:jterm_t) (ms:method_signature_int):xml_element_int =
     | JStringConstant s -> xml_string "cs" s
     | JSize t ->
       let node = xmlElement "apply" in
-      begin 
-	node#appendChildren [ xmlElement "size" ; aux t ] ; 
-	node 
+      begin
+	node#appendChildren [xmlElement "size"; aux t];
+	node
       end
     | JPower (t,n) ->
        let node = xmlElement "apply" in
        let tnode = xmlElement "pow" in
        begin
-         node#appendChildren [ tnode ; aux t ] ;
-         tnode#setIntAttribute "exp" n ;
+         node#appendChildren [tnode; aux t];
+         tnode#setIntAttribute "exp" n;
          node
        end
     | JUninterpreted (name,terms) ->
        let node = xmlElement "apply" in
        let tnode = xmlElement "free" in
        begin
-         node#appendChildren (tnode :: (List.map aux terms)) ;
-         tnode#setAttribute "name" name ;
+         node#appendChildren (tnode :: (List.map aux terms));
+         tnode#setAttribute "name" name;
          node
        end
     | JArithmeticExpr (op,t1,t2) ->
       let node = xmlElement "apply" in
-      begin 
+      begin
 	node#appendChildren
-	 [ xmlElement (arithmetic_op_to_xml_string op) ; aux t1 ; aux t2 ] ; 
-	node 
+	 [xmlElement (arithmetic_op_to_xml_string op); aux t1; aux t2];
+	node
       end in
   aux jterm
 
@@ -671,9 +674,9 @@ let read_xmlx_simple_jterm
      let ubopt =
        if has "ub" then Some (mkNumericalFromString (get "ub")) else None in
      JSymbolicConstant (typ,lbopt,ubopt,name)
-  | "return-value" | "return" -> 
+  | "return-value" | "return" ->
     (match ms#descriptor#return_value with
-    | Some _ -> JLocalVar (-1) 
+    | Some _ -> JLocalVar (-1)
     | _ ->
       raise_xml_error node (STR "Method does not have a return value"))
   | "loop-counter" -> JLoopCounter (node#getIntAttribute "pc")
@@ -711,7 +714,7 @@ let read_xmlx_simple_jterm
           || arg > (List.length ms#descriptor#arguments)
           || (ms#is_static && arg >= List.length ms#descriptor#arguments) then
 	       raise_xml_error
-                 node 
+                 node
 	         (LBLOCK [
                       STR "Term "; INT arg; STR " is not part of signature"]) in
      if has "field" then
@@ -734,24 +737,24 @@ let rec read_xmlx_jterm
     (node:xml_element_int)
     ?(argumentnames:(int * string) list = [])
     (cms:class_method_signature_int):jterm_t =
-  let ms = cms#method_signature in          
+  let ms = cms#method_signature in
   let get = node#getAttribute in
   let geti = node#getIntAttribute in
   let has = node#hasNamedAttribute in
   let getterm n = read_xmlx_jterm n ~argumentnames cms in
   let getconstantvalue s =
-    try JConstant (mkNumericalFromString s) with _ -> 
-      raise_xml_error node 
-	(LBLOCK [ STR "Error in constant value: " ; STR s ]) in
+    try JConstant (mkNumericalFromString s) with _ ->
+      raise_xml_error node
+	(LBLOCK [STR "Error in constant value: "; STR s]) in
   let getfloatconstantvalue s =
     try JFloatConstant (float_of_string s) with _ ->
       raise_xml_error node
-	(LBLOCK [ STR "Error in constant float value: " ; STR s ]) in
+	(LBLOCK [STR "Error in constant float value: "; STR s]) in
   let getargument n =
     let argnr = if ms#is_static then n-1 else n in
     let _ =
       if argnr < 0 || argnr > (List.length ms#descriptor#arguments) then
-	raise_xml_error node 
+	raise_xml_error node
 	  (LBLOCK [
                STR "Term ";
                INT argnr;
@@ -766,22 +769,23 @@ let rec read_xmlx_jterm
         getargument i
     with
     | JCH_failure p ->
-       raise_xml_error n (LBLOCK [ STR "Macro error: " ; p ])
-    | Not_found -> 
+       raise_xml_error n (LBLOCK [STR "Macro error: "; p])
+    | Not_found ->
       if n#hasNamedAttribute "kind" && (n#getAttribute "kind") = "aux" then
-	JAuxiliaryVar name 
+	JAuxiliaryVar name
       else
 	raise_xml_error n
-	  (LBLOCK [ STR "Name of argument not found: " ; STR name ]) in
+	  (LBLOCK [STR "Name of argument not found: "; STR name]) in
   let getreturnvalue () = match ms#descriptor#return_value with
     | Some _ -> JLocalVar (-1)
     | _ ->
-      raise_xml_error node 
-	(LBLOCK [ STR "Method does not have a return value"]) in
+      raise_xml_error node
+	(LBLOCK [STR "Method does not have a return value"]) in
   let getthis () =
     if ms#is_static then
-      raise_xml_error node 
-	              (LBLOCK [ STR "Static method does not have a this value"])
+      raise_xml_error
+        node
+	(LBLOCK [STR "Static method does not have a this value"])
     else
       JLocalVar 0 in
   let jterm =
@@ -789,7 +793,7 @@ let rec read_xmlx_jterm
     | "math" -> read_xmlx_jterm node#getChild ~argumentnames cms
     | "loop-counter" -> JLoopCounter (geti "pc")
     | "var" -> JLocalVar (geti "nr")
-    | "cn" when has "type" && (get "type") = "float" -> 
+    | "cn" when has "type" && (get "type") = "float" ->
        getfloatconstantvalue node#getText
     | "cn" -> getconstantvalue node#getText
     | "ci" -> getnamedargument node node#getText
@@ -818,7 +822,7 @@ let rec read_xmlx_jterm
     | "this" -> getthis ()
     | "true" -> JBoolConstant true
     | "false" -> JBoolConstant false
-    | "arg" -> getargument (geti "nr") 
+    | "arg" -> getargument (geti "nr")
     | "apply" ->
        let cc = node#getChildren in
        begin
@@ -842,7 +846,7 @@ let rec read_xmlx_jterm
 	      let op = match tag with
 	        | "plus" -> JPlus
 	        | "minus" -> JMinus
-	        | "times" -> JTimes 
+	        | "times" -> JTimes
 	        | "divide" -> JDivide
 	        | _ ->
                    raise_xml_error
@@ -852,7 +856,7 @@ let rec read_xmlx_jterm
               let t2 = getterm (getarg 1) in
 	      JArithmeticExpr (op, t1, t2) in
 	    match fNode#getTag with
-	    | "times" | "plus" | "minus" | "divide" -> 
+	    | "times" | "plus" | "minus" | "divide" ->
 	       read_arithmetic_expr fNode#getTag
             | "scale" ->
                let multfactor =
@@ -876,14 +880,14 @@ let rec read_xmlx_jterm
                           JConstant (mkNumerical d)) in
                     JArithmeticExpr (JTimes, scalefactor, t)
                end
-            | "pow" -> JPower (getterm (getarg 0),fNode#getIntAttribute "exp") 
+            | "pow" -> JPower (getterm (getarg 0),fNode#getIntAttribute "exp")
             | "free" ->
                let freeargs = List.map getterm args in
-               JUninterpreted (fNode#getAttribute "name",freeargs) 
+               JUninterpreted (fNode#getAttribute "name",freeargs)
 	    | "array-length" -> JSize (getterm (getarg 0))
 	    | "string-length" -> JSize (getterm (getarg 0))
 	    | "size" -> JSize (getterm (getarg 0))
-	    | tag -> 
+	    | tag ->
 	       raise_xml_error
                  node
 	         (LBLOCK [
@@ -898,7 +902,7 @@ let rec read_xmlx_jterm
   jterm
 
 
-let write_xmlx_relational_expr 
+let write_xmlx_relational_expr
       (node:xml_element_int)
       (ms:method_signature_int)
       ?(setxpr=true)
@@ -907,13 +911,13 @@ let write_xmlx_relational_expr
   let txml t = jterm_to_xmlx t ms in
   let apply_terms tag t1 t2 =
     let aNode = xmlElement "apply" in
-    begin 
-      aNode#appendChildren [ xmlElement tag ; txml t1 ; txml t2 ] ; 
+    begin
+      aNode#appendChildren [xmlElement tag; txml t1; txml t2];
       aNode
     end in
   let aNode = apply_terms (relational_op_to_xml_string op) t1 t2 in
   begin
-    node#appendChildren [ aNode ] ;
+    node#appendChildren [aNode];
     (if setxpr then node#setAttribute "xpr" (p2s (relational_expr_to_pretty x)));
     (if is_relational x then node#setAttribute "relational" "yes")
   end
@@ -921,7 +925,7 @@ let write_xmlx_relational_expr
 
 (* node tag is expected to be "apply", with the operator and arguments
    as children *)
-let read_xmlx_relational_expr 
+let read_xmlx_relational_expr
       (node:xml_element_int)
       ?(argumentnames=[])
       (cms:class_method_signature_int) =
@@ -937,7 +941,7 @@ let read_xmlx_relational_expr
 	raise_xml_error
           node
 	  (LBLOCK [STR "Expected "; INT (n+1); STR " arguments"]) in
-    let op = 
+    let op =
       try
         xml_string_to_relational_op opNode#getTag
       with _ ->
@@ -954,7 +958,7 @@ let read_xmlx_relational_expr
  * Internal xml representation following the data structure
  * ------------------------------------------------------------------------- *)
 
-let write_constant (node:xml_element_int) (n:numerical_t) =
+let _write_constant (node:xml_element_int) (n:numerical_t) =
   let set = node#setAttribute in
   if n#equal minint then
     set "xtag" "minint"
@@ -971,7 +975,7 @@ let write_constant (node:xml_element_int) (n:numerical_t) =
     end
 
 
-let simplify (t:jterm_t) =
+let _simplify (t:jterm_t) =
   match t with
   | JArithmeticExpr (JPlus, JConstant n1, JConstant n2) ->
      JConstant (n1#add n2)
@@ -987,7 +991,7 @@ let simplify (t:jterm_t) =
                        (JPlus,
                         (JAuxiliaryVar "aux"),
                         JConstant n1), JConstant n2) ->
-     JArithmeticExpr (JPlus, (JAuxiliaryVar "aux"), JConstant (n1#add n2))     
+     JArithmeticExpr (JPlus, (JAuxiliaryVar "aux"), JConstant (n1#add n2))
   | JArithmeticExpr (JTimes, JConstant n1, JConstant n2) ->
      JConstant (n1#mult n2)
   | _ -> t
@@ -1022,7 +1026,7 @@ object (self:'a)
       match (t,self#get_fixed_lowerbound) with
       | (JConstant n, Some m) when m#leq n -> self
       | (JConstant _, Some _) ->
-         let newlowerbounds = 
+         let newlowerbounds =
            List.rev
              (List.fold_left (fun acc x ->
                   match x with
@@ -1045,7 +1049,7 @@ object (self:'a)
     let newupperbounds = List.map (jterm_add t) upperbounds in
     self#mk_new newlowerbounds newupperbounds
 
-    
+
   method add_upperbound (t:jterm_t) =
     if List.exists (fun x -> (jterm_compare t x) = 0) upperbounds then
       self
@@ -1084,15 +1088,15 @@ object (self:'a)
 
   method to_interval =
     match (lowerbounds,upperbounds) with
-    | ([ JConstant n ],[]) ->
+    | ([JConstant n],[]) ->
        Some (new interval_t (bound_of_num n) plus_inf_bound)
-    | ([],[ JConstant n ]) ->
+    | ([],[JConstant n]) ->
        Some (new interval_t minus_inf_bound (bound_of_num n))
     | _ -> None
 
   method to_constant =
     match (lowerbounds,upperbounds) with
-    | ([ JConstant n ], [ JConstant m ]) when n#equal m -> Some n
+    | ([JConstant n], [JConstant m]) when n#equal m -> Some n
     | _ -> None
 
   method to_jterm =
@@ -1121,12 +1125,12 @@ object (self:'a)
   method write_xmlx (node:xml_element_int) (ms:method_signature_int) =
     let set = node#setAttribute in
     match self#to_jterm with
-    | Some j -> node#appendChildren [ jterm_to_xmlx j ms ]
+    | Some j -> node#appendChildren [jterm_to_xmlx j ms]
     | _ ->
        match (lowerbounds,upperbounds) with
-       | ([ JConstant n ],[]) -> set "lb" n#toString
-       | ([],[ JConstant n ]) -> set "ub" n#toString
-       | ([ JConstant lb ],[ JConstant ub ]) ->
+       | ([JConstant n],[]) -> set "lb" n#toString
+       | ([],[JConstant n]) -> set "ub" n#toString
+       | ([JConstant lb],[JConstant ub]) ->
           begin
             set "lb" lb#toString;
             set "ub" ub#toString
@@ -1140,7 +1144,7 @@ object (self:'a)
                let _ =
                  bbNode#appendChildren
                    (List.map (fun b -> jterm_to_xmlx b ms) lowerbounds) in
-               node#appendChildren [ bbNode ] in
+               node#appendChildren [bbNode] in
           let _ =
             match upperbounds with
             | [] -> ()
@@ -1149,7 +1153,7 @@ object (self:'a)
                let _ =
                  bbNode#appendChildren
                    (List.map (fun b -> jterm_to_xmlx b ms) upperbounds) in
-               node#appendChildren [ bbNode ] in
+               node#appendChildren [bbNode] in
           ()
 
   method toPretty =
@@ -1168,11 +1172,11 @@ object (self:'a)
                    pretty_print_list lowerbounds jterm_to_pretty "[" "; " "]";
                    STR "; upperbounds:";
                    pretty_print_list upperbounds jterm_to_pretty "[" ";" "]"]
-              
+
   method private mk_new (lb:jterm_t list) (ub:jterm_t list) =
     let newindex = jtdictionary#index_jterm_range lb ub in
-    {< index = newindex ; lowerbounds = lb ; upperbounds = ub >}
-    
+    {< index = newindex; lowerbounds = lb; upperbounds = ub >}
+
 end
 
 
@@ -1206,11 +1210,11 @@ let mk_boolconstant_jterm_range (b:bool) =
 let mk_intrange (lb:numerical_t option) (ub:numerical_t option) =
   let lbs =
     match lb with
-    | Some lb -> [ JConstant lb ]
+    | Some lb -> [JConstant lb]
     | _ -> [] in
   let ubs =
     match ub with
-    | Some ub -> [ JConstant ub ]
+    | Some ub -> [JConstant ub]
     | _ -> [] in
   mk_jterm_range lbs ubs
 
@@ -1246,24 +1250,23 @@ let read_xmlx_jterm_range
   else
     let tag = node#getChild#getTag in
     raise_xml_error node
-                    (LBLOCK [ STR "jterm range not recognized: " ; STR tag])
+                    (LBLOCK [STR "jterm range not recognized: "; STR tag])
 
 
 let top_jterm_range = mk_jterm_range [] []
 
 
-let intminmax_jterm_range = 
+let intminmax_jterm_range =
   mk_intrange (Some (mkNumerical (-2147483648))) (Some (mkNumerical (2147483647)))
 
 
 let mk_floatrange (lb:float option) (ub:float option) =
   let lbs =
     match lb with
-    | Some lb -> [ JFloatConstant lb ]
+    | Some lb -> [JFloatConstant lb]
     | _ -> [] in
   let ubs =
     match ub with
-    | Some ub ->[ JFloatConstant ub ]
+    | Some ub ->[JFloatConstant ub]
     | _ -> [] in
   mk_jterm_range lbs ubs
-

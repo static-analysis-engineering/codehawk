@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,14 +28,14 @@
 
 (* chlib *)
 open CHPretty
-open CHCollections
 
 (* jchlib *)
 open JCHBasicTypes
 open JCHBasicTypesAPI
 open JCHDictionary
 
-class virtual field_t 
+
+class virtual field_t
   ~(signature: field_signature_int)
   ~(class_signature: class_field_signature_int)
   ~(generic_signature: field_type_signature_int option)
@@ -83,7 +84,7 @@ object (self: _)
 end
 
 
-class class_field_t 
+class class_field_t
   ~(signature: field_signature_int)
   ~(class_signature: class_field_signature_int)
   ~(generic_signature: field_type_signature_int option)
@@ -99,8 +100,8 @@ class class_field_t
   ~(other_flags: int list)
   ~(attributes: attributes_int):field_int
   =
-object (self: _)
-  
+object
+
   inherit field_t
     ~signature:signature
     ~class_signature:class_signature
@@ -111,9 +112,9 @@ object (self: _)
     ~other_flags:other_flags
     ~attributes:attributes
     ()
-    
+
   method is_class_field = true
-    
+
   method get_visibility = access
 
   method is_static = is_static
@@ -132,7 +133,8 @@ end
 
 let make_class_field = new class_field_t
 
-class interface_field_t 
+
+class interface_field_t
   ~(signature: field_signature_int)
   ~(class_signature: class_field_signature_int)
   ~(generic_signature: field_type_signature_int option)
@@ -143,8 +145,8 @@ class interface_field_t
   ~(other_flags: int list)
   ~(attributes: attributes_int):field_int
   =
-object (self: _)
-  
+object
+
   inherit field_t
     ~signature:signature
     ~class_signature:class_signature
@@ -155,21 +157,21 @@ object (self: _)
     ~other_flags:other_flags
     ~attributes:attributes
     ()
-    
+
   method is_class_field = false
-    
+
   method get_visibility = Public
 
   method is_static = true
 
   method is_final = is_final
 
-  method is_enum = 
+  method is_enum =
     raise (JCH_runtime_type_error (STR "Interface field cannot be an enum"))
 
   method kind = Final
 
-  method is_transient = 
+  method is_transient =
     raise (JCH_runtime_type_error (STR "Interface field cannot be transient"))
 
   method toPretty = class_signature#toPretty
@@ -177,6 +179,7 @@ object (self: _)
 end
 
 let make_interface_field = new interface_field_t
+
 
 class inner_class_t
   ?(name: class_name_int option)
@@ -192,7 +195,7 @@ class inner_class_t
   ~(kind: inner_class_kind_t)
   ():inner_class_int
 =
-object (self: 'a)
+object
 
   method get_name = name
 
@@ -220,7 +223,8 @@ end
 
 let make_inner_class = new inner_class_t
 
-class virtual java_class_or_interface_t 
+
+class virtual java_class_or_interface_t
   ~(name: class_name_int)
   ~(version: version_t)
   ~(access: access_t)
@@ -247,7 +251,7 @@ object (self: _)
   method is_interface = not(self#is_class)
 
   method get_name = name
-    
+
   method get_version = version
 
   method get_visibility = access
@@ -285,11 +289,15 @@ object (self: _)
     if index < (List.length l) then
       List.nth l index
     else
-      raise (JCH_failure
-               (LBLOCK [ STR "Illegal bootstrap method index: " ; INT index ;
-                         STR "; only " ; INT (List.length l) ;
-                         STR " bootstrap methods found in class " ;
-                         self#get_name#toPretty ]))
+      raise
+        (JCH_failure
+           (LBLOCK [
+                STR "Illegal bootstrap method index: ";
+                INT index;
+                STR "; only ";
+                INT (List.length l);
+                STR " bootstrap methods found in class ";
+                self#get_name#toPretty]))
 
   method get_other_flags = other_flags
 
@@ -301,7 +309,8 @@ object (self: _)
 
   method virtual get_super_class: class_name_int option
 
-  method virtual get_enclosing_method: (class_name_int * method_signature_int option) option
+  method virtual get_enclosing_method:
+                   (class_name_int * method_signature_int option) option
 
   method virtual is_synthetic: bool
 
@@ -313,15 +322,15 @@ object (self: _)
 
   method get_method_signatures = List.map (fun m -> m#get_signature) methods
 
-  method get_method (ms: method_signature_int) = 
+  method get_method (ms: method_signature_int) =
     try
       Some (List.find (fun m -> m#get_signature#equal ms) methods)
     with
       Not_found -> None
 
   method get_concrete_methods = List.filter (fun m -> m#is_concrete) methods
-     
-  method get_instruction_count = 
+
+  method get_instruction_count =
     List.fold_left (fun acc m ->
       if m#is_concrete then
 	match m#get_implementation with
@@ -329,32 +338,32 @@ object (self: _)
 	| Bytecode bc -> bc#get_code#instr_count + acc
       else
 	acc) 0 methods
-      
-  method get_field (fs: field_signature_int) =  
+
+  method get_field (fs: field_signature_int) =
     try
       Some (List.find (fun f -> f#get_signature#equal fs) fields)
     with
       Not_found -> None
-      
-  method defines_method (ms: method_signature_int) = 
+
+  method defines_method (ms: method_signature_int) =
     List.exists (fun m -> m#get_signature#equal ms) methods
-      
-  method defines_field (fs: field_signature_int) = 
+
+  method defines_field (fs: field_signature_int) =
     List.exists (fun f -> f#get_signature#equal fs) fields
-      
+
   method virtual toPretty: pretty_t
 
 end
 
 
-class java_class_t 
+class java_class_t
   ~(name: class_name_int)
   ~(version: version_t)
   ~(access: access_t)
   ~(is_final: bool)
   ~(is_abstract: bool)
   ~(super_class: class_name_int option)
-  ~(generic_signature: class_signature_int option)  
+  ~(generic_signature: class_signature_int option)
   ~(fields: field_int list)
   ~(interfaces: class_name_int list)
   ~(consts: constant_t array)
@@ -410,7 +419,7 @@ object (self: 'a)
 
   method is_enum = is_enum
 
-  method is_annotation = 
+  method is_annotation =
     raise (JCH_runtime_type_error (STR "Class is not an annotation"))
 
   method get_initializer =
@@ -421,20 +430,25 @@ object (self: 'a)
 	    Some m
 	  else
 	    raise (JCH_failure (STR "A class initializer cannot be abstract"))
-	      
-  method toPretty: pretty_t = 
+
+  method toPretty: pretty_t =
     let super_class_to_pretty = match super_class with
-      Some c -> LBLOCK [ STR " extends " ; STR c#simple_name ; STR " " ]
-    | _ -> STR " " in
-    LBLOCK [ access_to_pretty access ; STR " class " ; STR name#simple_name ; 
-	     super_class_to_pretty ; NL ; 
-	     LBLOCK (List.map (fun m -> LBLOCK [ m#toPretty ; NL ]) methods) ; NL ]
-  
+      | Some c -> LBLOCK [STR " extends "; STR c#simple_name; STR " "]
+      | _ -> STR " " in
+    LBLOCK [
+        access_to_pretty access; STR " class ";
+        STR name#simple_name;
+	super_class_to_pretty;
+        NL;
+	LBLOCK (List.map (fun m -> LBLOCK [ m#toPretty; NL]) methods);
+        NL]
+
 end
 
 let make_java_class = new java_class_t
 
-class java_interface_t 
+
+class java_interface_t
   ~(name: class_name_int)
   ~(version: version_t)
   ~(access: access_t)
@@ -456,7 +470,7 @@ class java_interface_t
   ~(fields: field_int list)
   ~(methods: method_int list)
   ():java_class_or_interface_int =
-object (self: 'a)
+object
 
   inherit java_class_or_interface_t
     ~name:name
@@ -485,17 +499,17 @@ object (self: 'a)
 
   method is_abstract = true
 
-  method get_super_class = 
+  method get_super_class =
     let java_lang_object = common_dictionary#make_class_name "java.lang.Object" in
     Some java_lang_object
 
-  method get_enclosing_method = 
+  method get_enclosing_method =
     raise (JCH_runtime_type_error (STR "Interface does not have an enclosing method"))
 
-  method is_synthetic = 
+  method is_synthetic =
     raise (JCH_runtime_type_error (STR "Interface cannot be synthetic"))
 
-  method is_enum = 
+  method is_enum =
     raise (JCH_runtime_type_error (STR "Interface cannot be an enum"))
 
   method is_annotation = is_annotation
@@ -506,7 +520,7 @@ object (self: 'a)
      the clinit_signature; is it different from the method signature itself?
      why is the same not done for classes?
   *)
-  method get_methods = methods
+  method! get_methods = methods
 
 (*    let methods' = methods#clone in
     let _ = match self#get_initializer with
@@ -516,7 +530,7 @@ object (self: 'a)
       methods'  *)
 
   method toPretty = name#toPretty
-    
+
 end
 
 let make_java_interface = new java_interface_t

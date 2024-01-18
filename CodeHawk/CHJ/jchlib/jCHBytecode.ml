@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,16 +36,18 @@ open CHPrettyUtil
 open JCHBasicTypes
 open JCHBasicTypesAPI
 
+
 let has_control_characters s =
   let found = ref false in
-  let _ = String.iter (fun c -> 
+  let _ = String.iter (fun c ->
     if !found then
       ()
     else if Char.code c = 10 then      (* NL *)
       ()
-    else if (Char.code c) < 32 || (Char.code c) > 126 then 
+    else if (Char.code c) < 32 || (Char.code c) > 126 then
       found  := true) s in
   !found
+
 
 let replace_control_characters s =
   String.map (fun c ->
@@ -60,7 +63,7 @@ let jvm_basic_type place = function
   | Float -> 2
   | Double -> 3
   | _ -> raise (JCH_class_structure_error
-                  (LBLOCK [ STR "Illegal type of " ; STR place ]))
+                  (LBLOCK [STR "Illegal type of "; STR place]))
 
 let jvm_basic_type' place = function
   | Int -> 0
@@ -68,17 +71,19 @@ let jvm_basic_type' place = function
   | Float -> 2
   | Double -> 3
   | _ -> raise (JCH_class_structure_error
-                  (LBLOCK [ STR "Illegal type of " ; STR place]))
+                  (LBLOCK [STR "Illegal type of "; STR place]))
 
 let opcode_to_opcode_index (opc:opcode_t) =
   match opc with
   | OpNop -> 0
   | OpAConstNull -> 1
   | OpIntConst n when (Int32.compare Int32.minus_one n) = 0 -> 2
-  | OpIntConst n when (Int32.to_int n) >= 0 && (Int32.to_int n) <= 5 -> (Int32.to_int n) + 5 
+  | OpIntConst n when (Int32.to_int n) >= 0 && (Int32.to_int n) <= 5 ->
+     (Int32.to_int n) + 5
   | OpLongConst n when (Int64.compare Int64.zero n) = 0 -> 9
   | OpLongConst n when (Int64.compare Int64.one n) = 0 -> 10
-  | OpFloatConst n when (n -. 11.) >= 0. && (n -. 11.) <= 2. -> int_of_float (n +. 11.)
+  | OpFloatConst n when (n -. 11.) >= 0. && (n -. 11.) <= 2. ->
+     int_of_float (n +. 11.)
   | OpDoubleConst 0. -> 14
   | OpDoubleConst 1. -> 15
   | OpByteConst _ -> 16
@@ -212,8 +217,10 @@ let opcode_to_opcode_index (opc:opcode_t) =
   | OpInvalid -> 255
   | _ -> (-1)
 
+
 let opcode_to_opcode_index_string (opc:opcode_t) =
   Printf.sprintf "%x" (opcode_to_opcode_index opc)
+
 
 let name_hex_of_opcode (opc:opcode_t) =
   match opc with
@@ -244,8 +251,8 @@ let name_hex_of_opcode (opc:opcode_t) =
   | OpAdd _   -> ("add","63")
   | OpSub _   -> ("sub","67")
   | OpMult _  -> ("mult","6b")
-  | OpDiv _   -> ("div","6f") 
-  | OpRem _   -> ("rem","73") 
+  | OpDiv _   -> ("div","6f")
+  | OpRem _   -> ("rem","73")
   | OpNeg _   -> ("neg","77")
 
   | OpIShl  -> ("ishl","78")
@@ -284,22 +291,22 @@ let name_hex_of_opcode (opc:opcode_t) =
   | OpCmpDL -> ("cmpdl","97")
   | OpCmpDG -> ("cmpdg","98")
 
-  | OpIfEq _      -> ("ifEq","99") 
-  | OpIfNe _      -> ("ifNe","9a") 
-  | OpIfLt _      -> ("ifLt","9b") 
-  | OpIfGe _      -> ("ifGe","9c") 
+  | OpIfEq _      -> ("ifEq","99")
+  | OpIfNe _      -> ("ifNe","9a")
+  | OpIfLt _      -> ("ifLt","9b")
+  | OpIfGe _      -> ("ifGe","9c")
   | OpIfGt _      -> ("ifGt","9d")
-  | OpIfLe _      -> ("ifLe","9e") 
-  | OpIfNull _    -> ("ifnull","c6") 
-  | OpIfNonNull _ -> ("ifnonnull","c7") 
+  | OpIfLe _      -> ("ifLe","9e")
+  | OpIfNull _    -> ("ifnull","c6")
+  | OpIfNonNull _ -> ("ifnonnull","c7")
   | OpIfCmpEq _   -> ("ifcmpEq","9f")
-  | OpIfCmpNe _   -> ("ifcmpNe","a0") 
-  | OpIfCmpLt _   -> ("ifcmpLt","a1") 
-  | OpIfCmpGe _   -> ("ifcmpGe","a2") 
-  | OpIfCmpGt _   -> ("ifcmpGt","a3") 
+  | OpIfCmpNe _   -> ("ifcmpNe","a0")
+  | OpIfCmpLt _   -> ("ifcmpLt","a1")
+  | OpIfCmpGe _   -> ("ifcmpGe","a2")
+  | OpIfCmpGt _   -> ("ifcmpGt","a3")
   | OpIfCmpLe _   -> ("ifcmpLe","a4")
   | OpIfCmpAEq _  -> ("ifacmpEq","a5")
-  | OpIfCmpANe _  -> ("ifacmpNe","a6") 
+  | OpIfCmpANe _  -> ("ifacmpNe","a6")
 
   | OpGoto _      -> ("goto","a7")
   | OpJsr _       -> ("jsr","a8")
@@ -311,18 +318,18 @@ let name_hex_of_opcode (opc:opcode_t) =
   | OpNewArray _   -> ("new array","bd")
   | OpAMultiNewArray _  -> ("new multi array","c5")
   | OpCheckCast _     -> ("checkcast","c0")
-  | OpInstanceOf _    -> ("instanceof","c1") 
+  | OpInstanceOf _    -> ("instanceof","c1")
   | OpGetStatic _     -> ("getstatic","b2")
   | OpPutStatic _     -> ("putstatic","b3")
-  | OpGetField _      -> ("getfield","b4") 
+  | OpGetField _      -> ("getfield","b4")
   | OpPutField _      -> ("putfield","b5")
   | OpArrayLength     -> ("arraylength","be")
-  | OpArrayLoad _     -> ("arrayload","32") 
+  | OpArrayLoad _     -> ("arrayload","32")
   | OpArrayStore _    -> ("arraystore","53")
 
   | OpInvokeVirtual _   -> ("invokevirtual","b6")
   | OpInvokeSpecial _   -> ("invokespecial","b7")
-  | OpInvokeStatic _    -> ("invokestatic","b8") 
+  | OpInvokeStatic _    -> ("invokestatic","b8")
   | OpInvokeInterface _ -> ("invokeinterface","b9")
   | OpInvokeDynamic _   -> ("invokedynamic","ba")
   | OpReturn _          -> ("return","b0")
@@ -335,8 +342,11 @@ let name_hex_of_opcode (opc:opcode_t) =
   | OpBreakpoint -> ("breakpoint","ca")
   | OpInvalid -> ("invalid","ff")
 
+
 let name_of_opcode (opc:opcode_t) =  fst (name_hex_of_opcode opc)
+
 let hex_of_opcode (opc:opcode_t)  = snd (name_hex_of_opcode opc)
+
 
 let hex_of_arithmetic_opcode (opc:opcode_t) =
   match opc with
@@ -344,7 +354,7 @@ let hex_of_arithmetic_opcode (opc:opcode_t) =
   | OpAdd Float -> "62"
   | OpAdd Double -> "63"
   | OpAdd _ -> "60"
-             
+
   | OpDiv Long -> "6d"
   | OpDiv Float -> "6e"
   | OpDiv Double -> "6f"
@@ -354,12 +364,12 @@ let hex_of_arithmetic_opcode (opc:opcode_t) =
   | OpMult Float -> "6a"
   | OpMult Double -> "6b"
   | OpMult _ -> "68"
-             
+
   | OpNeg Long -> "75"
   | OpNeg Float -> "76"
   | OpNeg Double -> "77"
   | OpNeg _ -> "74"
-             
+
   | OpRem Long -> "71"
   | OpRem Float -> "72"
   | OpRem Double -> "73"
@@ -371,39 +381,44 @@ let hex_of_arithmetic_opcode (opc:opcode_t) =
   | OpSub _ -> "64"
 
   | _ ->
-     raise (JCH_failure (LBLOCK [ STR "Invalid argument to hex_of_arithmetic_opcode: " ;
-                                  STR (name_of_opcode opc) ]))
+     raise
+       (JCH_failure (
+            LBLOCK
+              [STR "Invalid argument to hex_of_arithmetic_opcode: ";
+               STR (name_of_opcode opc)]))
+
 
 let ms_arg_types (ms:method_signature_int) =
-  ms#descriptor#arguments @ 
-    (match ms#descriptor#return_value with Some vt -> [ vt ] | _ -> [])
+  ms#descriptor#arguments @
+    (match ms#descriptor#return_value with Some vt -> [vt] | _ -> [])
+
 
 let opcode_arg_types (opc:opcode_t) =
   match opc with
-  | OpClassConst ot -> [ TObject ot ]
+  | OpClassConst ot -> [TObject ot]
   | OpAdd bt
   | OpSub bt
   | OpMult bt
   | OpDiv bt
   | OpRem bt
-  | OpNeg bt -> [ TBasic bt ]
-  | OpNew cn -> [ TObject (TClass cn) ]
-  | OpNewArray vt -> [ vt ]
-  | OpAMultiNewArray (ot,_) -> [ TObject ot ]
-  | OpCheckCast ot -> [ TObject ot ]
-  | OpInstanceOf ot -> [ TObject ot ]
-  | OpGetStatic (cn,fs) 
+  | OpNeg bt -> [TBasic bt]
+  | OpNew cn -> [TObject (TClass cn)]
+  | OpNewArray vt -> [vt]
+  | OpAMultiNewArray (ot,_) -> [TObject ot]
+  | OpCheckCast ot -> [TObject ot]
+  | OpInstanceOf ot -> [TObject ot]
+  | OpGetStatic (cn,fs)
   | OpGetField (cn,fs)
   | OpPutStatic (cn,fs)
-  | OpPutField (cn,fs) -> [ TObject (TClass cn) ; fs#descriptor ]
-  | OpArrayLoad bt 
-  | OpArrayStore bt -> [ TBasic bt ]
+  | OpPutField (cn,fs) -> [TObject (TClass cn); fs#descriptor]
+  | OpArrayLoad bt
+  | OpArrayStore bt -> [TBasic bt]
   | OpInvokeVirtual (ot,ms) -> (TObject ot) :: (ms_arg_types ms)
   | OpInvokeSpecial (cn,ms)
     | OpInvokeStatic (cn,ms)
     | OpInvokeInterface (cn,ms) -> (TObject (TClass cn)) :: (ms_arg_types ms)
   | OpInvokeDynamic (index,ms)  -> []       (* TBD *)
-  | OpReturn bt -> [ TBasic bt ]
+  | OpReturn bt -> [TBasic bt]
   | _ -> []
 
 
@@ -434,15 +449,15 @@ let opcode_to_string opc =
   | OpDoubleConst d -> "dconst "  ^ (Printf.sprintf "%f" d)
   | OpByteConst i   -> "biconst " ^ (stri i)
   | OpShortConst i  -> "siconst " ^ (stri i)
-  | OpStringConst s -> "ld string " ^ s 
+  | OpStringConst s -> "ld string " ^ s
   | OpClassConst c  -> "ld object " ^ (ot c)
 
   | OpAdd ty   -> "add "  ^ (jb ty)
   | OpSub ty   -> "sub "  ^ (jb ty)
-  | OpMult ty  -> "mult " ^ (jb ty) 
-  | OpDiv ty   -> "div "  ^ (jb ty) 
-  | OpRem ty   -> "rem "  ^ (jb ty) 
-  | OpNeg ty   -> "neg "  ^ (jb ty) 
+  | OpMult ty  -> "mult " ^ (jb ty)
+  | OpDiv ty   -> "div "  ^ (jb ty)
+  | OpRem ty   -> "rem "  ^ (jb ty)
+  | OpNeg ty   -> "neg "  ^ (jb ty)
 
   | OpIShl  -> "ishl"
   | OpLShl  -> "lshl"
@@ -504,7 +519,7 @@ let opcode_to_string opc =
   | OpLookupSwitch _ -> "lookupswitch"
 
   | OpNew cn       -> "new " ^ cn#simple_name
-  | OpNewArray ty  -> "new array " ^ (vt ty) 
+  | OpNewArray ty  -> "new array " ^ (vt ty)
   | OpAMultiNewArray (ty,i) -> "new multi array " ^ (ot ty) ^ " " ^ (stri i)
   | OpCheckCast ty     -> "checkcast " ^ (ot ty)
   | OpInstanceOf ty    -> "instanceof " ^ (ot ty)
@@ -513,14 +528,19 @@ let opcode_to_string opc =
   | OpGetField (cn,f)  -> "getfield "  ^ cn#simple_name ^ ":" ^ f#name
   | OpPutField (cn,f)  -> "putfield "  ^ cn#simple_name ^ ":" ^ f#name
   | OpArrayLength      -> "arraylength"
-  | OpArrayLoad ty     -> "arrayload " ^ (jb ty) 
+  | OpArrayLoad ty     -> "arrayload " ^ (jb ty)
   | OpArrayStore ty    -> "arraystore " ^ (jb ty)
 
-  | OpInvokeVirtual (ty,m)   -> "invokevirtual " ^ (ot ty) ^ ":" ^ m#name
-  | OpInvokeSpecial (cn,m)   -> "invokespecial " ^ cn#simple_name ^ ":" ^ m#name
-  | OpInvokeStatic (cn,m)    -> "invokestatic "  ^ cn#simple_name ^ ":" ^ m#name
-  | OpInvokeInterface (cn,m) -> "invokeinterface " ^ cn#simple_name ^ ":" ^ m#name
-  | OpInvokeDynamic (index,m)   -> "invokedynamic " ^ (string_of_int index) ^ ":" ^ m#name
+  | OpInvokeVirtual (ty, m) ->
+     "invokevirtual " ^ (ot ty) ^ ":" ^ m#name
+  | OpInvokeSpecial (cn, m) ->
+     "invokespecial " ^ cn#simple_name ^ ":" ^ m#name
+  | OpInvokeStatic (cn, m) ->
+     "invokestatic "  ^ cn#simple_name ^ ":" ^ m#name
+  | OpInvokeInterface (cn, m) ->
+     "invokeinterface " ^ cn#simple_name ^ ":" ^ m#name
+  | OpInvokeDynamic (index, m) ->
+     "invokedynamic " ^ (string_of_int index) ^ ":" ^ m#name
   | OpReturn ty -> "return " ^ (jb ty)
 
   | OpThrow -> "throw"
@@ -531,10 +551,14 @@ let opcode_to_string opc =
   | OpBreakpoint -> "breakpoint"
   | OpInvalid -> "invalid"
 
+
 let opcode_to_pretty = function
-    OpLoad (ty,i)  -> LBLOCK [ STR "load "  ; java_basic_type_to_pretty ty ; STR " " ; INT i ]
-  | OpStore (ty,i) -> LBLOCK [ STR "store " ; java_basic_type_to_pretty ty ; STR " " ; INT i ]
-  | OpIInc (i1, i2)-> LBLOCK [ STR "iinc "  ; INT i1 ; STR " " ; INT i2 ]
+    OpLoad (ty, i)  ->
+     LBLOCK [STR "load " ; java_basic_type_to_pretty ty; STR " "; INT i]
+  | OpStore (ty, i) ->
+     LBLOCK [STR "store "; java_basic_type_to_pretty ty; STR " "; INT i]
+  | OpIInc (i1, i2)->
+     LBLOCK [STR "iinc " ; INT i1; STR " "; INT i2]
 
   | OpPop    -> STR "pop"
   | OpPop2   -> STR "pop2"
@@ -547,23 +571,25 @@ let opcode_to_pretty = function
   | OpSwap   -> STR "swap"
 
   | OpAConstNull    -> STR "aconstnull"
-  | OpIntConst i    -> LBLOCK [ STR "iconst "  ; STR (Int32.to_string i) ]
-  | OpLongConst i   -> LBLOCK [ STR "lconst "  ; STR (Int64.to_string i) ]
-  | OpFloatConst f  -> LBLOCK [ STR "fconst "  ; STR (Printf.sprintf "%f" f)]
-  | OpDoubleConst d -> LBLOCK [ STR "dconst "  ; STR (Printf.sprintf "%f" d)]
-  | OpByteConst i   -> LBLOCK [ STR "biconst " ; INT i ]
-  | OpShortConst i  -> LBLOCK [ STR "siconst " ; INT i ]
+  | OpIntConst i    -> LBLOCK [STR "iconst " ; STR (Int32.to_string i)]
+  | OpLongConst i   -> LBLOCK [STR "lconst " ; STR (Int64.to_string i)]
+  | OpFloatConst f  -> LBLOCK [STR "fconst " ; STR (Printf.sprintf "%f" f)]
+  | OpDoubleConst d -> LBLOCK [STR "dconst " ; STR (Printf.sprintf "%f" d)]
+  | OpByteConst i   -> LBLOCK [STR "biconst "; INT i]
+  | OpShortConst i  -> LBLOCK [STR "siconst "; INT i]
   | OpStringConst s ->
-     let s = if has_control_characters s then replace_control_characters s else s in
-     LBLOCK [ STR "ld string "    ; STR s ]
-  | OpClassConst c  -> LBLOCK [ STR "ld object "    ; object_type_to_pretty c ]
+     let s =
+       if has_control_characters s then replace_control_characters s else s in
+     LBLOCK [STR "ld string "; STR s]
+  | OpClassConst c ->
+     LBLOCK [STR "ld object "; object_type_to_pretty c]
 
-  | OpAdd ty   -> LBLOCK [ STR "add "  ; java_basic_type_to_pretty ty ]
-  | OpSub ty   -> LBLOCK [ STR "sub "  ; java_basic_type_to_pretty ty ]
-  | OpMult ty  -> LBLOCK [ STR "mult " ; java_basic_type_to_pretty ty ]
-  | OpDiv ty   -> LBLOCK [ STR "div "  ; java_basic_type_to_pretty ty ]
-  | OpRem ty   -> LBLOCK [ STR "rem "  ; java_basic_type_to_pretty ty ]
-  | OpNeg ty   -> LBLOCK [ STR "neg "  ; java_basic_type_to_pretty ty ]
+  | OpAdd ty  -> LBLOCK [STR "add " ; java_basic_type_to_pretty ty]
+  | OpSub ty  -> LBLOCK [STR "sub " ; java_basic_type_to_pretty ty]
+  | OpMult ty -> LBLOCK [STR "mult "; java_basic_type_to_pretty ty]
+  | OpDiv ty  -> LBLOCK [STR "div " ; java_basic_type_to_pretty ty]
+  | OpRem ty  -> LBLOCK [STR "rem " ; java_basic_type_to_pretty ty]
+  | OpNeg ty  -> LBLOCK [STR "neg " ; java_basic_type_to_pretty ty]
 
   | OpIShl  -> STR "ishl"
   | OpLShl  -> STR "lshl"
@@ -601,81 +627,138 @@ let opcode_to_pretty = function
   | OpCmpDL -> STR "cmpdl"
   | OpCmpDG -> STR "cmpdg"
 
-  | OpIfEq i      -> LBLOCK [ STR "ifEq " ; INT i ]
-  | OpIfNe i      -> LBLOCK [ STR "ifNe " ; INT i ]
-  | OpIfLt i      -> LBLOCK [ STR "ifLt " ; INT i ]
-  | OpIfGe i      -> LBLOCK [ STR "ifGe " ; INT i ]
-  | OpIfGt i      -> LBLOCK [ STR "ifGt " ; INT i ]
-  | OpIfLe i      -> LBLOCK [ STR "ifLe " ; INT i ]
-  | OpIfNull i    -> LBLOCK [ STR "ifnull " ; INT i ]
-  | OpIfNonNull i -> LBLOCK [ STR "ifnonnull " ; INT i ]
-  | OpIfCmpEq i   -> LBLOCK [ STR "ifcmpEq " ; INT i ]
-  | OpIfCmpNe i   -> LBLOCK [ STR "ifcmpNe " ; INT i ]
-  | OpIfCmpLt i   -> LBLOCK [ STR "ifcmpLt " ; INT i ]
-  | OpIfCmpGe i   -> LBLOCK [ STR "ifcmpGe " ; INT i ]
-  | OpIfCmpGt i   -> LBLOCK [ STR "ifcmpGt " ; INT i ]
-  | OpIfCmpLe i   -> LBLOCK [ STR "ifcmpLe " ; INT i ]
-  | OpIfCmpAEq i  -> LBLOCK [ STR "ifacmpEq " ; INT i ]
-  | OpIfCmpANe i  -> LBLOCK [ STR "ifacmpNe " ; INT i ]
+  | OpIfEq i      -> LBLOCK [STR "ifEq "; INT i]
+  | OpIfNe i      -> LBLOCK [STR "ifNe "; INT i]
+  | OpIfLt i      -> LBLOCK [STR "ifLt "; INT i]
+  | OpIfGe i      -> LBLOCK [STR "ifGe "; INT i]
+  | OpIfGt i      -> LBLOCK [STR "ifGt "; INT i]
+  | OpIfLe i      -> LBLOCK [STR "ifLe "; INT i]
+  | OpIfNull i    -> LBLOCK [STR "ifnull "; INT i]
+  | OpIfNonNull i -> LBLOCK [STR "ifnonnull "; INT i]
+  | OpIfCmpEq i   -> LBLOCK [STR "ifcmpEq "; INT i]
+  | OpIfCmpNe i   -> LBLOCK [STR "ifcmpNe "; INT i]
+  | OpIfCmpLt i   -> LBLOCK [STR "ifcmpLt "; INT i]
+  | OpIfCmpGe i   -> LBLOCK [STR "ifcmpGe "; INT i]
+  | OpIfCmpGt i   -> LBLOCK [STR "ifcmpGt "; INT i]
+  | OpIfCmpLe i   -> LBLOCK [STR "ifcmpLe "; INT i]
+  | OpIfCmpAEq i  -> LBLOCK [STR "ifacmpEq "; INT i]
+  | OpIfCmpANe i  -> LBLOCK [STR "ifacmpNe "; INT i]
 
-  | OpGoto i      -> LBLOCK [ STR "goto " ; INT i ]
-  | OpJsr i       -> LBLOCK [ STR "jsr "  ; INT i ]
-  | OpRet i       -> LBLOCK [ STR "ret "  ; INT i ]
-  | OpTableSwitch (default,low,high,table) ->
-     LBLOCK [ STR "tableswitch " ; INT default ; STR " (" ;
-              STR (Int32.to_string low) ; STR "," ; STR (Int32.to_string high) ;
-              STR "): " ;
-              pretty_print_list (Array.to_list table) (fun i -> INT i) "[" "," "]" ]
-              
-  | OpLookupSwitch (n,l) ->
-     LBLOCK [ STR "lookupswitch " ; INT n ; STR ": " ;
-              pretty_print_list
-                l (fun (i32,i) ->
-                  LBLOCK [ STR "(" ; STR (Int32.to_string i32) ; STR ", " ; INT i ; STR ")" ])
-              "[" "; " "]" ]
+  | OpGoto i      -> LBLOCK [STR "goto "; INT i]
+  | OpJsr i       -> LBLOCK [STR "jsr " ; INT i]
+  | OpRet i       -> LBLOCK [STR "ret " ; INT i]
 
-  | OpNew cn       -> LBLOCK [ STR "new " ; STR cn#abbreviated_name ]
-  | OpNewArray ty  -> LBLOCK [ STR "new array " ; value_type_to_abbreviated_pretty ty ]
-  | OpAMultiNewArray (ty,i) -> 
-    LBLOCK [ STR "new multi array " ; object_type_to_abbreviated_pretty ty ; STR " " ; INT i ]
-  | OpCheckCast ty -> LBLOCK [ STR "checkcast " ; object_type_to_abbreviated_pretty ty ]
-  | OpInstanceOf ty -> LBLOCK [ STR "instanceof " ; object_type_to_abbreviated_pretty ty ]
-  | OpGetStatic (cn,f) -> 
-    LBLOCK [ STR "getstatic " ; STR cn#simple_name ; STR ":" ; f#to_abbreviated_pretty ]
-  | OpPutStatic (cn,f) -> 
-    LBLOCK [ STR "putstatic " ; STR cn#simple_name ; STR ":" ; f#to_abbreviated_pretty ]
-  | OpGetField (cn,f)  -> 
-    LBLOCK [ STR "getfield "  ; STR cn#simple_name ; STR ":" ; f#to_abbreviated_pretty ]
-  | OpPutField (cn,f)  -> 
-    LBLOCK [ STR "putfield "  ; STR cn#simple_name ; STR ":" ; f#to_abbreviated_pretty ]
-  | OpArrayLength      -> STR "arraylength"
-  | OpArrayLoad ty     -> LBLOCK [ STR "arrayload " ; java_basic_type_to_pretty ty ]
-  | OpArrayStore ty    -> LBLOCK [ STR "arraystore " ; java_basic_type_to_pretty ty ]
+  | OpTableSwitch (default, low, high, table) ->
+     LBLOCK [
+         STR "tableswitch ";
+         INT default;
+         STR " (";
+         STR (Int32.to_string low);
+         STR ",";
+         STR (Int32.to_string high);
+         STR "): ";
+         pretty_print_list (Array.to_list table) (fun i -> INT i) "[" "," "]"]
 
-  | OpInvokeVirtual (ty,m) -> 
-    LBLOCK [ STR "invokevirtual " ; object_type_to_abbreviated_pretty ty ; 
-	     STR ":" ; m#to_abbreviated_pretty ]
-  | OpInvokeSpecial (cn,m) -> 
-    LBLOCK [ STR "invokespecial " ; STR cn#abbreviated_name ; STR ":" ; 
-	     m#to_abbreviated_pretty ]
-  | OpInvokeStatic (cn,m)  -> 
-    LBLOCK [ STR "invokestatic "  ; STR cn#abbreviated_name ; STR ":" ;
-	     m#to_abbreviated_pretty ]
-  | OpInvokeInterface (cn,m) -> 
-    LBLOCK [ STR "invokeinterface " ; STR cn#abbreviated_name ; STR ":" ; 
-	     m#to_abbreviated_pretty ]
-  | OpInvokeDynamic (index,m) ->
-     LBLOCK [ STR "invokedynamic " ; INT index ; STR ":" ;
-              m#to_abbreviated_pretty ]
-  | OpReturn ty -> LBLOCK [ STR "return " ; java_basic_type_to_pretty ty ]
+  | OpLookupSwitch (n, l) ->
+     LBLOCK [
+         STR "lookupswitch ";
+         INT n;
+         STR ": ";
+         pretty_print_list
+           l (fun (i32,i) ->
+             LBLOCK [STR "("; STR (Int32.to_string i32); STR ", "; INT i; STR ")"])
+           "[" "; " "]"]
+
+  | OpNew cn ->
+     LBLOCK [STR "new "; STR cn#abbreviated_name]
+
+  | OpNewArray ty ->
+     LBLOCK [STR "new array "; value_type_to_abbreviated_pretty ty]
+
+  | OpAMultiNewArray (ty, i) ->
+     LBLOCK [
+         STR "new multi array ";
+         object_type_to_abbreviated_pretty ty;
+         STR " ";
+         INT i]
+
+  | OpCheckCast ty ->
+     LBLOCK [STR "checkcast "; object_type_to_abbreviated_pretty ty]
+
+  | OpInstanceOf ty ->
+     LBLOCK [STR "instanceof "; object_type_to_abbreviated_pretty ty]
+
+  | OpGetStatic (cn, f) ->
+     LBLOCK [
+         STR "getstatic "; STR cn#simple_name; STR ":"; f#to_abbreviated_pretty]
+
+  | OpPutStatic (cn, f) ->
+     LBLOCK [
+         STR "putstatic "; STR cn#simple_name; STR ":"; f#to_abbreviated_pretty]
+
+  | OpGetField (cn, f) ->
+     LBLOCK [
+         STR "getfield "; STR cn#simple_name; STR ":"; f#to_abbreviated_pretty]
+
+  | OpPutField (cn, f) ->
+     LBLOCK [
+         STR "putfield "; STR cn#simple_name; STR ":"; f#to_abbreviated_pretty]
+
+  | OpArrayLength ->
+     STR "arraylength"
+
+  | OpArrayLoad ty ->
+     LBLOCK [STR "arrayload "; java_basic_type_to_pretty ty]
+
+  | OpArrayStore ty ->
+     LBLOCK [STR "arraystore "; java_basic_type_to_pretty ty]
+
+  | OpInvokeVirtual (ty, m) ->
+     LBLOCK [
+         STR "invokevirtual ";
+         object_type_to_abbreviated_pretty ty;
+	 STR ":";
+         m#to_abbreviated_pretty]
+
+  | OpInvokeSpecial (cn, m) ->
+     LBLOCK [
+         STR "invokespecial ";
+         STR cn#abbreviated_name;
+         STR ":";
+	 m#to_abbreviated_pretty]
+
+  | OpInvokeStatic (cn, m) ->
+     LBLOCK [
+         STR "invokestatic ";
+         STR cn#abbreviated_name;
+         STR ":";
+	 m#to_abbreviated_pretty]
+
+  | OpInvokeInterface (cn, m) ->
+     LBLOCK [
+         STR "invokeinterface ";
+         STR cn#abbreviated_name;
+         STR ":";
+	 m#to_abbreviated_pretty]
+
+  | OpInvokeDynamic (index, m) ->
+     LBLOCK [
+         STR "invokedynamic ";
+         INT index;
+         STR ":";
+         m#to_abbreviated_pretty]
+
+  | OpReturn ty ->
+     LBLOCK [STR "return "; java_basic_type_to_pretty ty]
 
   | OpThrow -> STR "throw"
   | OpMonitorEnter -> STR "enter monitor"
-  | OpMonitorExit  -> STR "exit monitor"
+  | OpMonitorExit -> STR "exit monitor"
 
   | OpNop -> STR "nop"
   | OpBreakpoint -> STR "breakpoint"
   | OpInvalid -> STR "invalid"
+
 
 let is_binop_opcode (opc:opcode_t) =
   match opc with
@@ -701,13 +784,16 @@ let is_binop_opcode (opc:opcode_t) =
     | OpLXor  -> true
   | _ -> false
 
+
 let is_arithmetic_binop_opcode  (opc:opcode_t) =
   match opc with
   | OpAdd _ | OpSub _ | OpMult _ | OpDiv _ | OpRem _ -> true
   | _ -> false
 
+
 let is_logical_binop_opcode (opc:opcode_t) =
   (is_binop_opcode opc) && (not (is_arithmetic_binop_opcode opc))
+
 
 let is_converter_opcode (opc:opcode_t) =
   match opc with
@@ -727,6 +813,7 @@ let is_converter_opcode (opc:opcode_t) =
     | OpI2C
     | OpI2S -> true
   | _ -> false
+
 
 let is_test_opcode (opc:opcode_t) =
   match opc with
@@ -748,6 +835,7 @@ let is_test_opcode (opc:opcode_t) =
   | OpIfCmpANe _ -> true
   | _ -> false
 
+
 let get_target_offset (opc:opcode_t) =
   match opc with
   | OpIfEq n
@@ -768,11 +856,17 @@ let get_target_offset (opc:opcode_t) =
     | OpIfCmpANe n
     | OpGoto n -> n
   | _ ->
-     raise (JCH_failure (LBLOCK [ STR "Opcode " ; opcode_to_pretty opc ;
-                                  STR " does not have an offset" ]))
-                    
+     raise
+       (JCH_failure
+          (LBLOCK [
+               STR "Opcode ";
+               opcode_to_pretty opc;
+               STR " does not have an offset"]))
+
+
 let is_backward_test_opcode (opc:opcode_t) =
   (is_test_opcode opc) && ((get_target_offset opc) < 0)
+
 
 let is_unary_test_opcode (opc:opcode_t) =
   match opc with
@@ -786,8 +880,10 @@ let is_unary_test_opcode (opc:opcode_t) =
     | OpIfNonNull _ -> true
   | _ -> false
 
+
 let is_forward_unary_test_opcode (opc:opcode_t) =
-  (is_unary_test_opcode opc) && ((get_target_offset opc) > 0)  
+  (is_unary_test_opcode opc) && ((get_target_offset opc) > 0)
+
 
 let is_binary_test_opcode (opc:opcode_t) =
   match opc with
@@ -801,8 +897,10 @@ let is_binary_test_opcode (opc:opcode_t) =
     | OpIfCmpANe _ -> true
   | _ -> false
 
+
 let is_forward_binary_test_opcode (opc:opcode_t) =
   (is_binary_test_opcode opc) && ((get_target_offset opc) > 0)
+
 
 let is_comparison_opcode (opc:opcode_t) =
   match opc with
@@ -812,7 +910,7 @@ let is_comparison_opcode (opc:opcode_t) =
     | OpCmpDL
     | OpCmpDG -> true
   | _ -> false
-       
+
 let invert_conditional_opcode (opc:opcode_t) =
   match opc with
     OpIfEq offset -> OpIfNe offset
@@ -832,8 +930,9 @@ let invert_conditional_opcode (opc:opcode_t) =
   | OpIfNull offset     -> OpIfNonNull offset
   | OpIfNonNull offset  -> OpIfNull offset
   | _ ->
-      raise (JCH_failure 
-	       (LBLOCK [ STR "opcode is not a conditional : " ; opcode_to_pretty opc ]))
+     raise
+       (JCH_failure
+	  (LBLOCK [STR "opcode is not a conditional : "; opcode_to_pretty opc]))
 
 
 class opcodes_t (opcodes: opcode_t array):opcodes_int =
@@ -847,89 +946,94 @@ object (self: _)
     if i >= 0 && i < self#length then
       Array.set opcodes i opcode
 
-  method instr_count = 
-    Array.fold_right (fun opc acc -> 
+  method instr_count =
+    Array.fold_right (fun opc acc ->
       match opc with OpInvalid ->  acc | _ -> acc + 1) opcodes 0
-      
+
   method at (i: int) =
     try
       self#opcodes.(i)
-    with Invalid_argument _ -> raise (JCH_failure (LBLOCK [STR "No bytecode at "; INT i]))
+    with
+    | Invalid_argument _ ->
+       raise (JCH_failure (LBLOCK [STR "No bytecode at "; INT i]))
 
   method iteri (f:int -> opcode_t -> unit) =
     let oparray = Array.mapi (fun i opc -> (i,opc)) opcodes in
-    let oplist = Array.fold_right (fun (i,opc) acc -> 
+    let oplist = Array.fold_right (fun (i,opc) acc ->
       match opc with OpInvalid -> acc | _ -> (i,opc) :: acc) oparray [] in
     List.iter (fun (i,opc) -> f i opc) oplist
 
-  method private is_valid (i:int) = 
-    i >= 0 && i < self#length && (match self#opcodes.(i) with OpInvalid -> false | _ -> true)
+  method private is_valid (i:int) =
+    i >= 0
+    && i < self#length
+    && (match self#opcodes.(i) with OpInvalid -> false | _ -> true)
 
   method next (i:int) =
     if i >= 0 && i < self#length then
       let k = ref (i+1) in
       begin
-	while not (self#is_valid !k) && !k < (self#length -1) do k := !k+1 done ;
+	while not (self#is_valid !k) && !k < (self#length -1) do k := !k+1 done;
 	if self#is_valid !k then Some !k else None
       end
     else
       None
 
-  method previous (i:int) = 
+  method previous (i:int) =
     if i > 0 && i < self#length then
       let k = ref (i-1) in
       begin
-	while not (self#is_valid !k) && !k > 0 do k := !k-1 done ;
+	while not (self#is_valid !k) && !k > 0 do k := !k-1 done;
 	if self#is_valid !k then Some !k else None
       end
     else
       None
 
-  method offset_to_instrn_array = 
+  method offset_to_instrn_array =
     let length = self#length in
     let a = Array.make length 0 in
     let  instr = ref (-1) in
-    for i = 0 to length - 1 do 
+    for i = 0 to length - 1 do
       begin
 	match self#opcodes.(i) with
-	| OpInvalid -> () 
-	| _ -> 
-	    instr := !instr + 1 
-      end ;
-      a.(i) <- !instr 
-    done ;
+	| OpInvalid -> ()
+	| _ ->
+	    instr := !instr + 1
+      end;
+      a.(i) <- !instr
+    done;
     a
 
-  method offset_to_from_instrn_arrays = 
+  method offset_to_from_instrn_arrays =
     let length = self#length in
     let a = Array.make length 0 in
     let pcs = ref [] in
     let  instr = ref (-1) in
-    for i = 0 to length - 1 do 
+    for i = 0 to length - 1 do
       begin
 	match self#opcodes.(i) with
-	| OpInvalid -> () 
-	| _ -> 
-	    instr := !instr + 1 ;
-	    pcs := i :: !pcs 
-      end ;
-      a.(i) <- !instr 
-    done ;
+	| OpInvalid -> ()
+	| _ ->
+	    instr := !instr + 1;
+	    pcs := i :: !pcs
+      end;
+      a.(i) <- !instr
+    done;
     (a, Array.of_list (List.rev !pcs))
 
   method toPretty =
     let oparray = Array.mapi (fun i opc -> (i,opc)) opcodes in
-    let oppretty = Array.fold_right 
-	(fun (i,opc) acc -> 
+    let oppretty = Array.fold_right
+	(fun (i,opc) acc ->
 	  match opc with
 	    OpInvalid -> acc
-	  | _ -> LBLOCK [ INT i ; STR " " ; opcode_to_pretty opc ; NL ; acc ]) 
+	  | _ -> LBLOCK [INT i; STR " "; opcode_to_pretty opc; NL; acc])
 	oparray (STR "") in
     oppretty
 
 end
 
 let make_opcodes = new opcodes_t
+
 
 class exception_handler_t
   ~(h_start: int)
@@ -948,23 +1052,28 @@ object (self: _)
   method catch_type = catch_type
 
   method toPretty =
-    LBLOCK [ fixed_length_pretty ~alignment:StrRight (INT h_start) 4 ; STR "  " ; 
-	     fixed_length_pretty ~alignment:StrRight (INT h_end) 4   ; STR "  " ; 
-	     fixed_length_pretty ~alignment:StrRight (INT handler) 4 ; STR "  " ;
-	     (match catch_type with Some c -> c#toPretty | _ -> STR "any") ]
+    LBLOCK [
+        fixed_length_pretty ~alignment:StrRight (INT h_start) 4;
+        STR "  ";
+	fixed_length_pretty ~alignment:StrRight (INT h_end) 4  ;
+        STR "  ";
+	fixed_length_pretty ~alignment:StrRight (INT handler) 4;
+        STR "  ";
+	(match catch_type with Some c -> c#toPretty | _ -> STR "any")]
 
 end
 
 let make_exception_handler = new exception_handler_t
 
-class bytecode_t 
+
+class bytecode_t
   ~(max_stack: int)
   ~(max_locals: int)
   ~(code: opcodes_int)
   ~(exception_table: exception_handler_int list)
   ?(line_number_table: (int * int) list option)
   ?(local_variable_table: (int * int * string * value_type_t * int) list option)
-  ?(local_variable_type_table : (int * int * string * field_type_signature_int * int) list option)
+  ?(local_variable_type_table: (int * int * string * field_type_signature_int * int) list option)
   ?(stack_map_midp: stackmap_int list option)
   ?(stack_map_java6: stackmap_int list option)
   ~(attributes: (string * string) list)
@@ -982,7 +1091,7 @@ object (self: _)
   method get_line_number_table = line_number_table
 
   method get_local_variable_table = local_variable_table
-  
+
   method get_local_variable_type_table = local_variable_type_table
 
   method get_stack_map_midp = stack_map_midp
@@ -1008,7 +1117,7 @@ object (self: _)
           in
 	    try
 	      let (_, _, name, variable_type, _) =
-		List.find 
+		List.find
 		  (fun (start, len, _, _, index) ->
 		     program_point + offset >= start
                      && program_point + offset <= start + len
@@ -1017,7 +1126,7 @@ object (self: _)
               in
 		Some (name, variable_type)
             with _ -> None
-	      
+
   method get_source_line_number (program_point: int) =
     match self#get_line_number_table with
       | None -> None
@@ -1028,7 +1137,7 @@ object (self: _)
 		else find_line line_number r
             | [] -> Some prev
           in
-            try 
+            try
 	      find_line (snd (List.hd lnt)) lnt
             with _ -> None
 
@@ -1044,20 +1153,26 @@ object (self: _)
 	List.map (fun i -> i+start) (List.rev !lst)
       end in
     let rec aux r = function
-	[] -> r
+      | [] -> r
       | [(i1,i2)] -> (i2, opc_indices i1 ((Array.length code)-i1)) :: r
       | (i1,i2) :: (j1,j2) :: tl ->
 	  aux ((i2, opc_indices i1 (j1-i1)) :: r) ((j1,j2)::tl) in
     match lt with
-      Some t ->  aux [] t
+    | Some t ->  aux [] t
     | _ -> []
 
   method toPretty =
-    LBLOCK [ STR "max stack:  " ; INT max_stack ; NL ;
-	     STR "max locals: " ; INT max_locals ; NL ;
-	     code#toPretty ; NL ]
-    
-	      
+    LBLOCK [
+        STR "max stack:  ";
+        INT max_stack;
+        NL;
+	STR "max locals: ";
+        INT max_locals;
+        NL;
+	code#toPretty;
+        NL]
+
+
 end
 
 let make_bytecode = new bytecode_t

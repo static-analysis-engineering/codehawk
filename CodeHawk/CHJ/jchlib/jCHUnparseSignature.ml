@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,17 +26,12 @@
    SOFTWARE.
    ============================================================================= *)
 
-open IO
-open IO.BigEndian
-
 (* chlib *)
 open CHPretty
 
 (* jchlib *)
 open JCHBasicTypes
 open JCHBasicTypesAPI
-open JCHRawClass
-open JCHSignature
 
 (* Descriptors and classname encoding *)
 (************************************)
@@ -64,7 +60,7 @@ and unparse_value_type = function
   | TBasic b -> unparse_basic_type b
   | TObject o -> unparse_object_type o
 
-let rec unparse_method_descriptor desc =
+let unparse_method_descriptor desc =
   let sigs = desc#arguments in
   let s = desc#return_value in
     List.fold_left
@@ -75,8 +71,8 @@ let rec unparse_method_descriptor desc =
     ^ (match s with
 	 | Some s -> unparse_value_type s
 	 | None -> "V")
-      
-let rec unparse_descriptor = function
+
+let unparse_descriptor = function
   | SValue v -> unparse_value_type v
   | SMethod m -> unparse_method_descriptor m
 
@@ -148,7 +144,8 @@ and unparse_FormalTypeParameter (ftp:formal_type_parameter_int) : string =
   ^ unparse_ClassBound ftp#class_bound
   ^ unparse_InterfaceBounds ftp#interface_bounds
 
-and unparse_FormalTypeParameters :formal_type_parameter_int list -> string = function
+and unparse_FormalTypeParameters:
+      formal_type_parameter_int list -> string = function
   | [] -> ""
   | ftp -> "<" ^ String.concat "" (List.map unparse_FormalTypeParameter ftp) ^ ">"
 
@@ -172,8 +169,10 @@ let unparse_MethodTypeSignature (mts:method_type_signature_int) : string =
       (List.map
 	 (function ts ->
 	    match ts#kind with
-	    | ThrowsClass -> "^" ^ unparse_ClassTypeSignature ts#class_type_signature
-	    | ThrowsTypeVariable -> "^" ^ unparse_TypeVariableSignature ts#type_variable)
+	    | ThrowsClass ->
+               "^" ^ unparse_ClassTypeSignature ts#class_type_signature
+	    | ThrowsTypeVariable ->
+               "^" ^ unparse_TypeVariableSignature ts#type_variable)
 	 tsl)
   in
      unparse_FormalTypeParameters mts#formal_type_parameters
@@ -182,4 +181,3 @@ let unparse_MethodTypeSignature (mts:method_type_signature_int) : string =
     ^ ")"
     ^ unparse_ReturnType mts#return_type
     ^ unparse_ThrowsSignature mts#throws
-
