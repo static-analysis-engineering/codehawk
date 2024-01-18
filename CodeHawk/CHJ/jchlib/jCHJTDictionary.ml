@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2024 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,10 +32,8 @@ open CHPretty
 
 (* chutil *)
 open CHIndexTable
-open CHLogger
-open CHPrettyUtil
 open CHXmlDocument
-   
+
 (* jchlib *)
 open JCHBasicTypes
 open JCHBasicTypesAPI
@@ -49,25 +47,25 @@ let byte_to_string (b:int) =
   let l = b mod 16 in
   let h = b lsr 4 in
   Printf.sprintf "%x%x" h l
-    
+
 let hex_string s =
   let ch = IO.input_string s in
   let h = ref "" in
   let len = String.length s in
   begin
-    for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
+    for _i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
     !h
   end
 
-         
+
 let has_control_characters s =
   let found = ref false in
-  let _ = String.iter (fun c -> 
+  let _ = String.iter (fun c ->
     if !found then
       ()
     else if Char.code c = 10 then      (* NL *)
       ()
-    else if (Char.code c) < 32 || (Char.code c) > 126 then 
+    else if (Char.code c) < 32 || (Char.code c) > 126 then
       found  := true) s in
   !found
 
@@ -187,7 +185,7 @@ object (self)
     let t = t "relational-expr" tags in
     let a = a "relational-expr" args in
     (relational_op_serializer#from_string (t 0),
-     self#get_jterm (a 0),self#get_jterm (a 1))    
+     self#get_jterm (a 0),self#get_jterm (a 1))
 
   method index_jterm_list (l:jterm_t list):int =
     jterm_list_table#add
@@ -235,7 +233,7 @@ object (self)
     let tags = if len = 0 then [] else [ s ] @ x in
     let args = [ len ] in
     string_table#add (tags,args)
-    
+
   method get_string (index:int) =
     let (tags,args) = string_table#retrieve index in
     let (s,_,_) = if (List.length tags) > 0  && (List.length args) > 0 then
@@ -306,14 +304,14 @@ object (self)
     node#setIntAttribute tag (self#index_string s)
 
   method read_xml_string ?(tag="istr") (node:xml_element_int):string =
-    self#get_string (node#getIntAttribute tag)    
+    self#get_string (node#getIntAttribute tag)
 
   method write_xml (node:xml_element_int) =
     node#appendChildren
       (List.map
          (fun t -> let tnode = xmlElement t#get_name in
            begin t#write_xml tnode; tnode end) tables)
-    
+
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in

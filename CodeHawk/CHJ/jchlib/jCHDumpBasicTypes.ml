@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,6 +32,7 @@ open CHPretty
 (* jchlib *)
 open JCHBasicTypes
 open JCHBasicTypesAPI
+
 
 let sprintf = Printf.sprintf
 
@@ -87,11 +89,11 @@ let type2shortstring t =
     | TObject t -> ot2ss t
   in vt2ss t
 
-let rettype2shortstring = function
+let _rettype2shortstring = function
   | None -> "V"
   | Some t -> type2shortstring t
 
-let arraytype2shortstring = function
+let _arraytype2shortstring = function
   | Long -> "J"
   | Float -> "F"
   | Double -> "D"
@@ -148,14 +150,18 @@ let dump_constant ch = function
   | ConstMethod (cl,ms) ->
      let mn = ms#name
      and md = ms#descriptor in
-     IO.printf ch "method : %s"
-               (method_signature (object_value_signature cl ^ "::" ^ mn) md)
-  | ConstInterfaceMethod (cn,ms) ->
+     IO.printf
+       ch
+       "method : %s"
+       (method_signature (object_value_signature cl ^ "::" ^ mn) md)
+  | ConstInterfaceMethod (cn, ms) ->
      let mn = ms#name
      and md = ms#descriptor in
-     IO.printf ch "interface-method : %s"
-               (method_signature (cn#name ^ "::" ^ mn) md)
-  | ConstDynamicMethod (i,ms) ->
+     IO.printf
+       ch
+       "interface-method : %s"
+       (method_signature (cn#name ^ "::" ^ mn) md)
+  | ConstDynamicMethod (_i, ms) ->
      let mn = ms#name
      and md = ms#descriptor in
      IO.printf ch "dynamic-method : %s" (method_signature mn md)
@@ -165,24 +171,32 @@ let dump_constant ch = function
   | ConstMethodHandle (k,FieldHandle(cn,fs)) ->
      let fn = fs#name
      and ft = fs#descriptor in
-     IO.printf ch "field-method-handle(%s): %s %s::%s"
-               (reference_kind_to_string k) (value_signature ft) cn#name fn
+     IO.printf
+       ch
+       "field-method-handle(%s): %s %s::%s"
+       (reference_kind_to_string k)
+       (value_signature ft)
+       cn#name fn
   | ConstMethodHandle (k,MethodHandle(ot,ms)) ->
      let mn = ms#name
      and md = ms#descriptor in
-     IO.printf ch "method-method-handle(%s): %s"
-               (reference_kind_to_string k)
-               (method_signature (object_value_signature ot ^ "::" ^ mn) md)
+     IO.printf
+       ch
+       "method-method-handle(%s): %s"
+       (reference_kind_to_string k)
+       (method_signature (object_value_signature ot ^ "::" ^ mn) md)
   | ConstMethodHandle (k,InterfaceHandle(cn,ms)) ->
      let mn = ms#name
      and md = ms#descriptor in
-     IO.printf ch "interface-method-handle(%s): %s"
-               (reference_kind_to_string k)
-               (method_signature (cn#name ^ "::" ^ mn) md)
+     IO.printf
+       ch "interface-method-handle(%s): %s"
+       (reference_kind_to_string k)
+       (method_signature (cn#name ^ "::" ^ mn) md)
   | ConstMethodType md -> IO.printf ch "method-type: %s" md#to_string
   | ConstUnusable -> IO.printf ch "unusable"
 
-let dump_constantpool ch =
+
+let _dump_constantpool ch =
   Array.iteri
     (fun i c ->
       IO.printf ch "    %d  " i;
@@ -201,14 +215,17 @@ let dump_verification_type = function
   | VObject c -> sprintf "Object %s" (object_value_signature c)
   | VUninitialized off -> sprintf "Uninitialized %d" off
 
-let dump_stackmap ch (offset,locals,stack) =
-  IO.printf ch "\n      offset=%d,\n      locals=[" offset;
-  List.iter (fun t -> IO.printf ch "\n        %s" (dump_verification_type t)) locals;
-  IO.printf ch "],\n      stack=[";
-  List.iter (fun t -> IO.printf ch "\n        %s" (dump_verification_type t)) stack;
-  IO.printf ch "]"
+let dump_stackmap ch (offset, locals, stack) =
+  begin
+    IO.printf ch "\n      offset=%d,\n      locals=[" offset;
+    List.iter
+      (fun t -> IO.printf ch "\n        %s" (dump_verification_type t)) locals;
+    IO.printf ch "],\n      stack=[";
+    List.iter
+      (fun t -> IO.printf ch "\n        %s" (dump_verification_type t)) stack;
+    IO.printf ch "]"
+  end
 
-open JCHBytecode
 
 let dump_exc ch _cl exc =
   IO.printf ch "\n      [%d-%d] -> %d (" exc#h_start exc#h_end exc#handler;
@@ -216,5 +233,3 @@ let dump_exc ch _cl exc =
      | None -> IO.printf ch "<finally>"
      | Some cl -> IO.printf ch "class %s" (cl#name));
   IO.printf ch ")"
-
-

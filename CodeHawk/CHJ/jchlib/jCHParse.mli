@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,19 +43,20 @@ type tmp_constant =
   | ConstantNameAndType of int * int                (* 12 *)
   | ConstantStringUTF8 of string                    (*  1 *)
   | ConstantMethodHandle of reference_kind_t * int  (* 15 *)
-  | ConstantMethodType of int                       (* 16 *)                        
+  | ConstantMethodType of int                       (* 16 *)
   | ConstantInvokeDynamic of int  * int             (* 18 *)
   | ConstantUnusable                      (* second part of 64-bit entry *)
+
 
 type attribute_name_t =
   (* Code *)
   | LineNumberTable
-  | LocalVariableTable 
+  | LocalVariableTable
   | LocalVariableTypeTable
   | StackMap
   (* ClassFile, field_info, method_info *)
-  | Synthetic 
-  | Deprecated 
+  | Synthetic
+  | Deprecated
   | Signature
   (* ClassFile, field_info, method_info, Code *)
   | RuntimeVisibleAnnotations
@@ -70,7 +72,7 @@ type attribute_name_t =
   | ConstantValue
   (* ClassFile *)
   | SourceFile
-  | InnerClasses 
+  | InnerClasses
   | EnclosingMethod
   | SourceDebugExtension
   | BootstrapMethods

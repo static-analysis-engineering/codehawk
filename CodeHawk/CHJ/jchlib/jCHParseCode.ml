@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,9 +43,9 @@ open JCHRawBasicTypes
 open JCHRawClass
 
 
-(** Parsing of opcodes *)
+(** {1 Parsing of opcodes} *)
 
-(* Int2Bool represents the 32-bit JVM type that is the basic storage unit 
+(* Int2Bool represents the 32-bit JVM type that is the basic storage unit
    and the type used in all integer arithmetic operations
 *)
 let jvm_basic_type place = function
@@ -52,21 +53,26 @@ let jvm_basic_type place = function
   | 1 -> Long
   | 2 -> Float
   | 3 -> Double
-  | n -> raise (JCH_class_structure_error
-                  (LBLOCK [ STR "Illegal type of "; STR place ; STR ": " ; INT n ]))
+  | n ->
+     raise
+       (JCH_class_structure_error
+          (LBLOCK [STR "Illegal type of "; STR place; STR ": "; INT n]))
 
 let jvm_basic_type' place = function
   | 0 -> Int
   | 1 -> Long
   | 2 -> Float
   | 3 -> Double
-  | n -> raise (JCH_class_structure_error
-                  (LBLOCK [ STR "Illegal type of " ; STR place ; STR ": " ; INT n]))
+  | n ->
+     raise
+       (JCH_class_structure_error
+          (LBLOCK [STR "Illegal type of "; STR place; STR ": "; INT n]))
 
 
 let read_unsigned ch wide = if wide then read_ui16 ch else IO.read_byte ch
 
 let read_signed ch wide = if wide then read_i16 ch else IO.read_signed_byte ch
+
 
 let parse_opcode op ch wide =
   match op with
@@ -91,7 +97,7 @@ let parse_opcode op ch wide =
   | 21 | 22 | 23 | 24 ->
     OpLoad (jvm_basic_type "load" (op - 21),read_unsigned ch wide)
   | 25 -> OpALoad (read_unsigned ch wide)
-  | 26 | 27 | 28 | 29 -> OpLoad (Int2Bool,op - 26)    
+  | 26 | 27 | 28 | 29 -> OpLoad (Int2Bool,op - 26)
   | 30 | 31 | 32 | 33 -> OpLoad (Long,op - 30)
   | 34 | 35 | 36 | 37 -> OpLoad (Float,op - 34)
   | 38 | 39 | 40 | 41 -> OpLoad (Double,op - 38)
@@ -155,7 +161,7 @@ let parse_opcode op ch wide =
   | 131 -> OpLXor
 
   (* ---- incr ----------------------------------- *)
-  | 132 -> 
+  | 132 ->
     let idx = read_unsigned ch wide in
     let c = read_signed ch wide in
     OpIInc (idx,c)
@@ -204,15 +210,15 @@ let parse_opcode op ch wide =
     let def = read_i32 ch in
     let low = read_real_i32 ch in
     let high = read_real_i32 ch in
-    let asize = (Int32.to_int (Int32.sub high low) + 1) in 
+    let asize = (Int32.to_int (Int32.sub high low) + 1) in
     let tbl =
       try
         Array.init asize (fun _ -> read_i32 ch)
       with
       | Invalid_argument s ->
-         let msg = LBLOCK [ STR s ; STR " with array size " ; INT asize ] in
+         let msg = LBLOCK [STR s; STR " with array size "; INT asize] in
          begin
-           ch_error_log#add "parse opTableSwitch opcode" msg ;
+           ch_error_log#add "parse opTableSwitch opcode" msg;
            raise (JCH_failure msg)
          end in
     OpTableSwitch (def,low,high,tbl)
@@ -262,8 +268,10 @@ let parse_opcode op ch wide =
     | 9 -> Short
     | 10 -> Int
     | 11 -> Long
-    | n -> raise (JCH_class_structure_error
-                    (LBLOCK [ STR "Illegal type of newarray: " ; INT n ])))
+    | n ->
+       raise
+         (JCH_class_structure_error
+            (LBLOCK [STR "Illegal type of newarray: "; INT n])))
   | 189 -> OpANewArray (read_ui16 ch)
   | 190 -> OpArrayLength
   | 191 -> OpThrow
@@ -281,8 +289,10 @@ let parse_opcode op ch wide =
   | 201 -> OpJsrW (read_i32 ch)
   | 202 -> OpBreakpoint
   | _ ->
-     raise (JCH_class_structure_error
-              (LBLOCK [ STR "Illegal opcode: " ; INT op ]))
+     raise
+       (JCH_class_structure_error
+          (LBLOCK [STR "Illegal opcode: "; INT op]))
+
 
 let parse_full_opcode ch pos =
   let p = pos() in
@@ -295,6 +305,7 @@ let parse_full_opcode ch pos =
     then ignore(IO.really_nread ch (4 - offsetmod4));
     parse_opcode op ch false
 
+
 let parse_code ch len =
   let ch , pos = IO.pos_in ch in
   let code = Array.make len OpInvalid in
@@ -304,7 +315,7 @@ let parse_code ch len =
   done;
   code
 
-(** Unparsing of opcodes *)
+(** {1 Unparsing of opcodes} *)
 
 exception OpcodeLengthError of int * raw_opcode_t
 
@@ -361,7 +372,7 @@ let simple_table =
       190, [|OpArrayLength; OpThrow |];
       194, [|OpMonitorEnter; OpMonitorExit |];
       202, [|OpBreakpoint|]
-    ]
+   ]
 
 exception Not_in_range
 
@@ -384,7 +395,7 @@ let int_of_jvm_basic_type = function
 (* Instructions with a jvm_basic_type argument added to the base opcode. *)
 let jvm_basic_type ch length inst =
   let jvm_basic_type, opcode = match inst with
-    | OpArrayLoad k -> (match k with Int -> Int2Bool | _ -> k), 46       
+    | OpArrayLoad k -> (match k with Int -> Int2Bool | _ -> k), 46
     | OpArrayStore k -> (match k with Int -> Int2Bool | _  -> k), 79
     | OpAdd i -> i, 96
     | OpSub i -> i, 100
@@ -420,25 +431,29 @@ let ilfda_loadstore ch length instr =
     | OpAStore value -> value
     | _ -> raise Not_in_range
   in
-  if (length = 1 && value < 4)
-  then
+  if (length = 1 && value < 4) then
     write_ui8 ch
       (value +
 	 match instr with
-	 | OpLoad (jvm_basic_type, _) -> 26 + 4 * int_of_jvm_basic_type jvm_basic_type
+	 | OpLoad (jvm_basic_type, _) ->
+            26 + 4 * int_of_jvm_basic_type jvm_basic_type
 	 | OpALoad _ -> 42
-	 | OpStore (jvm_basic_type, _) -> 59 + 4 * int_of_jvm_basic_type jvm_basic_type
+	 | OpStore (jvm_basic_type, _) ->
+            59 + 4 * int_of_jvm_basic_type jvm_basic_type
 	 | OpAStore _ -> 75
 	 | _ -> assert false)
   else
     unparse_local_instruction
       (match instr with
-      | OpLoad (jvm_basic_type, _) -> 21 +  int_of_jvm_basic_type jvm_basic_type
+       | OpLoad (jvm_basic_type, _) ->
+          21 +  int_of_jvm_basic_type jvm_basic_type
       | OpALoad _ -> 25
-      | OpStore (jvm_basic_type, _) -> 54 +  int_of_jvm_basic_type jvm_basic_type
+      | OpStore (jvm_basic_type, _) ->
+         54 +  int_of_jvm_basic_type jvm_basic_type
       | OpAStore _ -> 58
       | _ -> assert false)
       value
+
 
 (* Instructions with one 16 bits signed argument *)
 let i16 ch length inst =
@@ -464,9 +479,12 @@ let i16 ch length inst =
     | OpIfNonNull i -> i, 199
     | _ -> raise Not_in_range
   in
-  if length <> 3 then raise (OpcodeLengthError (length,inst));
-  write_ui8 ch opcode;
-  write_i16 ch i
+  begin
+    (if length <> 3 then raise (OpcodeLengthError (length,inst)));
+    write_ui8 ch opcode;
+    write_i16 ch i
+  end
+
 
 (* Instructions with one 16 bits unsigned argument *)
 let ui16 ch length inst =
@@ -486,9 +504,12 @@ let ui16 ch length inst =
     | OpInvokeStatic i -> i, 184
     | _ -> raise Not_in_range
   in
-  if length <> 3 then raise (OpcodeLengthError (length,inst));
-  write_ui8 ch opcode;
-  write_ui16 ch i
+  begin
+    (if length <> 3 then raise (OpcodeLengthError (length,inst)));
+    write_ui8 ch opcode;
+    write_ui16 ch i
+  end
+
 
 let basic_type = [|
   Bool;
@@ -501,11 +522,13 @@ let basic_type = [|
   Long
 		 |]
 
+
 let padding ch count =
   flush ch;
-  for i = 1 + (count () - 1) mod 4 to 3 do
+  for _i = 1 + (count () - 1) mod 4 to 3 do
     write_ui8 ch 0
   done
+
 
 (* Other instructions *)
 let other count ch length instr =
@@ -513,9 +536,11 @@ let other count ch length instr =
   | OpIConst n ->
      begin
        (if not (-1l <= n && n <= 5l)  then
-         raise (JCH_class_structure_error
-                  (STR "Arguments of iconst should be between -1l and 5l (inclusive)")));
-       (if length <> 1 then raise (OpcodeLengthError (length,instr)));
+          raise
+            (JCH_class_structure_error
+               (STR "Arguments of iconst should be between -1l and 5l (inclusive)")));
+       (if length <> 1 then
+          raise (OpcodeLengthError (length,instr)));
        write_ui8 ch (3 + Int32.to_int n)
      end
   | OpLConst n ->
@@ -600,7 +625,7 @@ let other count ch length instr =
        end
      end
   | OpLookupSwitch (def, tbl) ->
-     begin   
+     begin
        flush ch;
        let padding_size = (3 - (1 + (count () - 2) mod 4)) in
        begin
@@ -630,7 +655,7 @@ let other count ch length instr =
        (if length <> 5 then raise (OpcodeLengthError (length,instr)));
        write_ui8 ch 186;
        write_ui16 ch index;
-       write_ui8 ch 0 ;
+       write_ui8 ch 0;
        write_ui8 ch 0
      end
   | OpNewArray at ->
@@ -659,7 +684,8 @@ let other count ch length instr =
        write_i32 ch i
      end
   | OpInvalid -> ()
-  | op -> raise Not_in_range
+  | _ -> raise Not_in_range
+
 
 let unparse_instruction ch count length inst =
   try
@@ -677,28 +703,33 @@ let unparse_instruction ch count length inst =
 	i16;
 	ui16;
 	other count
-      ];
+     ];
     assert false
   with
     Exit -> ()
 
+
 let unparse_code ch code =
   let ch, count = pos_out ch in
-  Array.iteri
-    (fun i opcode ->
-         (* We know that unparse_instruction writes nothing for OpInvalid *)
-      let length =
-        let j = ref (i+1) in
-        while !j < Array.length code && code.(!j) = OpInvalid do
-          incr j
-        done;
-        !j-i
-      in
-      if not (opcode = OpInvalid || count () = i)
-      then raise (JCH_class_structure_error
-                    (STR "unparsing Badly alligned low level bytecode"));
-      unparse_instruction ch count length opcode)
-    code;
-  if not (count () = Array.length code)
-  then raise (JCH_class_structure_error
-                (STR "unparsing Badly alligned low level bytecode"))
+  begin
+    Array.iteri
+      (fun i opcode ->
+        (* We know that unparse_instruction writes nothing for OpInvalid *)
+        let length =
+          let j = ref (i+1) in
+          while !j < Array.length code && code.(!j) = OpInvalid do
+            incr j
+          done;
+          !j-i
+        in
+        if not (opcode = OpInvalid || count () = i) then
+          raise
+            (JCH_class_structure_error
+               (STR "unparsing Badly alligned low level bytecode"));
+        unparse_instruction ch count length opcode)
+      code;
+    if not (count () = Array.length code) then
+      raise
+        (JCH_class_structure_error
+           (STR "unparsing Badly alligned low level bytecode"))
+  end

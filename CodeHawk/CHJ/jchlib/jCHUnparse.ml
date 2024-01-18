@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,18 +30,16 @@ open IO
 open IO.BigEndian
 
 (* jchlib *)
-open JCHBasicTypes
 open JCHBasicTypesAPI
 open JCHRawBasicTypes
 open JCHRawClass
-open JCHParseCode
 open JCHUnparseSignature
 
 let io_nwrite ch s = nwrite ch (Bytes.of_string s)
-                   
+
 (* Constant pool unparsing *)
 
-let unparse_reference_kind ch kind =
+let _unparse_reference_kind ch kind =
   match kind with
   | REFGetField -> write_ui8 ch 1
   | REFGetStatic -> write_ui8 ch 2
@@ -87,7 +86,7 @@ let unparse_constant ch consts =
 	write_ui8 ch 11;
 	write_class ch consts c;
 	write_name_and_type ch consts (ms#name, SMethod ms#descriptor)
-    | ConstDynamicMethod (aindex, ms) ->
+    | ConstDynamicMethod (_aindex, _ms) ->
        write_ui8 ch 18;
     | ConstNameAndType (s, signature) ->
 	write_ui8 ch 12;
@@ -96,17 +95,18 @@ let unparse_constant ch consts =
     | ConstStringUTF8 s ->
 	write_ui8 ch 1;
 	write_string_with_length write_ui16 ch s
-    | ConstMethodHandle (kind,FieldHandle(cn,fs)) ->
+    | ConstMethodHandle (_kind, FieldHandle(_cn, _fs)) ->
        write_ui8 ch 15 ;    (* TBD; incomplete *)
-    | ConstMethodHandle (kind,MethodHandle(ot,ms)) ->
+    | ConstMethodHandle (_kind, MethodHandle(_ot, _ms)) ->
        write_ui8 ch 15 ;    (* TBD, incomplete *)
-    | ConstMethodHandle (kind,InterfaceHandle(cn,ms)) ->
+    | ConstMethodHandle (_kind, InterfaceHandle(_cn, _ms)) ->
        write_ui8 ch 15 ;    (* TBD, incomplete *)
-    | ConstMethodType md ->
+    | ConstMethodType _md ->
        write_ui8 ch 16 ;    (* TBD, incomplete *)
     | ConstUnusable -> ()
 
-let unparse_constant_pool ch consts =
+
+let _unparse_constant_pool ch consts =
   let ch'' = output_string ()
   and i = ref 0 in
     while ! i < DynArray.length consts do
@@ -118,7 +118,7 @@ let unparse_constant_pool ch consts =
 
 (* Acess (and other) flags unparsing *)
 (*************************************)
-let class_flags =
+let _class_flags =
   [AccPublic; AccRFU 0x2; AccRFU 0x4; AccRFU 0x8;
    AccFinal; AccSuper; AccRFU 0x40; AccRFU 0x80;
    AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
@@ -128,12 +128,12 @@ let innerclass_flags =
    AccFinal; AccRFU 0x20; AccRFU 0x40; AccRFU 0x80;
    AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
    AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000]
-let field_flags =
+let _field_flags =
   [AccPublic; AccPrivate; AccProtected; AccStatic;
    AccFinal; AccRFU 0x20; AccVolatile; AccTransient;
    AccRFU 0x100; AccRFU 0x200; AccRFU 0x400; AccRFU 0x800;
    AccSynthetic; AccRFU 0x2000; AccEnum; AccRFU 0x8000]
-let method_flags =
+let _method_flags =
   [AccPublic; AccPrivate; AccProtected; AccStatic;
    AccFinal; AccSynchronized; AccBridge; AccVarArgs;
    AccNative; AccRFU 0x200; AccAbstract; AccStrict;
@@ -423,8 +423,8 @@ let rec unparse_attribute_to_strings consts =
          ("MethodParameters", close_out ch)           (* TBD, incomplete *)
 
 and unparse_attribute ch consts attr =
-  let (name,content) = unparse_attribute_to_strings consts attr
-  in
+  let (name,content) = unparse_attribute_to_strings consts attr in
+  begin
     write_string ch consts name;
     write_string_with_length write_i32 ch content
-
+  end

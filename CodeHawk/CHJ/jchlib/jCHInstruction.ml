@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2920-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,7 +27,6 @@
    ============================================================================= *)
 
 open IO
-open IO.BigEndian
 
 (* chlib *)
 open CHPretty
@@ -38,6 +38,7 @@ open JCHDictionary
 open JCHRawBasicTypes
 open JCHRawClass
 
+
 let count =
   List.fold_left
     (fun n vt ->
@@ -45,6 +46,7 @@ let count =
       | TBasic (Double | Long) -> 2
       | _ -> 1)
     1
+
 
 let opcode2instruction consts (raw:raw_opcode_t):opcode_t =
   match raw with
@@ -64,12 +66,15 @@ let opcode2instruction consts (raw:raw_opcode_t):opcode_t =
     | ConstString c -> OpStringConst c
     | ConstClass c -> OpClassConst c
     | ConstLong _ | ConstDouble _ ->
-      raise (JCH_class_structure_error (STR "Illegal constant for Ldc1: long/double")))
+       raise
+         (JCH_class_structure_error
+            (STR "Illegal constant for Ldc1: long/double")))
   | OpLdc2w n ->
     (match get_constant_value consts n with
     | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
-       raise (JCH_class_structure_error
-                (STR "Illegal constant for Ldc2: int/float/string/class"))
+       raise
+         (JCH_class_structure_error
+            (STR "Illegal constant for Ldc2: int/float/string/class"))
     | ConstLong c -> OpLongConst c
     | ConstDouble c -> OpDoubleConst c)
 
@@ -172,33 +177,59 @@ let opcode2instruction consts (raw:raw_opcode_t):opcode_t =
   | OpAReturn -> OpReturn Object
   | OpReturnVoid -> OpReturn Void
 
-  | OpGetStatic i -> let cs, fs = get_field consts i in OpGetStatic (cs, fs)
-  | OpPutStatic i -> let cs, fs = get_field consts i in OpPutStatic (cs, fs)
-  | OpGetField i ->  let cs, fs = get_field consts i in OpGetField (cs, fs)
-  | OpPutField i -> let cs, fs = get_field consts i in OpPutField (cs, fs)
-  | OpInvokeVirtual i -> let t, ms = get_method consts i in OpInvokeVirtual (t, ms)
+  | OpGetStatic i ->
+     let cs, fs = get_field consts i in
+     OpGetStatic (cs, fs)
+
+  | OpPutStatic i ->
+     let cs, fs = get_field consts i in
+     OpPutStatic (cs, fs)
+
+  | OpGetField i ->
+     let cs, fs = get_field consts i in
+     OpGetField (cs, fs)
+
+  | OpPutField i ->
+     let cs, fs = get_field consts i in
+     OpPutField (cs, fs)
+
+  | OpInvokeVirtual i ->
+     let t, ms = get_method consts i in
+     OpInvokeVirtual (t, ms)
+
   | OpInvokeNonVirtual i ->
     (match get_method consts i with
     | TClass cs, ms -> OpInvokeSpecial (cs, ms)
-    | _ -> raise (JCH_class_structure_error (STR "Illegal invokespecial: array class")))
+    | _ ->
+       raise
+         (JCH_class_structure_error (STR "Illegal invokespecial: array class")))
+
   | OpInvokeStatic i ->
     (match get_method consts i with
     | TClass cs, ms ->
-      let ms = make_ms true ms#name ms#descriptor in OpInvokeStatic (cs, ms)
-    | _ -> raise (JCH_class_structure_error (STR "Illegal invokestatic: array class")))
+       let ms = make_ms true ms#name ms#descriptor in
+       OpInvokeStatic (cs, ms)
+    | _ ->
+       raise
+         (JCH_class_structure_error (STR "Illegal invokestatic: array class")))
+
   | OpInvokeInterface (i, c) ->
-    let cs, ms = get_interface_method consts i in
-    if count (ms#descriptor#arguments) <> c
-    then raise (JCH_class_structure_error (STR "wrong count in invokeinterface"));
-    OpInvokeInterface (cs, ms)
+     let cs, ms = get_interface_method consts i in
+     begin
+       (if count (ms#descriptor#arguments) <> c then
+          raise
+            (JCH_class_structure_error (STR "wrong count in invokeinterface")));
+       OpInvokeInterface (cs, ms)
+     end
+
   | OpInvokeDynamic i ->
      (match get_callsite_specifier consts i with
       | (index,ms) -> OpInvokeDynamic (index,ms))
 
   | OpNew i -> OpNew (get_class consts i)
   | OpNewArray bt -> OpNewArray (TBasic bt)
-  | OpANewArray i -> OpNewArray (TObject
-					       (get_object_type consts i))
+  | OpANewArray i ->
+     OpNewArray (TObject (get_object_type consts i))
   | OpArrayLength -> OpArrayLength
   | OpThrow -> OpThrow
   | OpCheckCast i -> OpCheckCast (get_object_type consts i)
@@ -213,8 +244,10 @@ let opcode2instruction consts (raw:raw_opcode_t):opcode_t =
 
   | OpInvalid -> OpInvalid
 
+
 let opcodes2code consts opcodes =
   Array.map (opcode2instruction consts) opcodes
+
 
 let instruction2opcode consts length (opcode:opcode_t) =
   match opcode with
@@ -237,7 +270,7 @@ let instruction2opcode consts length (opcode:opcode_t) =
        else
          raise
 	   (JCH_class_structure_error
-              (LBLOCK [ STR "OpConst cannot be encoded in " ; INT length ;
+              (LBLOCK [STR "OpConst cannot be encoded in "; INT length;
                         STR " bytes"] )) in
      (match opcode with
       | OpAConstNull -> OpAConstNull
@@ -267,9 +300,9 @@ let instruction2opcode consts length (opcode:opcode_t) =
       | OpClassConst v -> opldc_w (ConstClass v)
       | _ -> raise (JCH_failure (STR "Unreachable"))
      )
-      
+
   | OpLoad (k, l) -> (match k with | Object -> OpALoad l | _ -> OpLoad (k, l))
-                   
+
   | OpArrayLoad k ->
      (match k with
       | Object -> OpAALoad
@@ -277,9 +310,9 @@ let instruction2opcode consts length (opcode:opcode_t) =
       | Char -> OpCALoad
       | Short -> OpSALoad
       | _ -> OpArrayLoad k)
-    
+
   | OpStore (k, l) -> (match k with | Object -> OpAStore l | _ -> OpStore (k, l))
-                    
+
   | OpArrayStore k ->
      (match k with
       | Object -> OpAAStore
@@ -287,7 +320,7 @@ let instruction2opcode consts length (opcode:opcode_t) =
       | Char -> OpCAStore
       | Short -> OpSAStore
       | _ -> OpArrayStore k)
-    
+
   | OpPop -> OpPop
   | OpPop2 -> OpPop2
   | OpDup -> OpDup
@@ -297,14 +330,14 @@ let instruction2opcode consts length (opcode:opcode_t) =
   | OpDup2X1 -> OpDup2X1
   | OpDup2X2 -> OpDup2X2
   | OpSwap -> OpSwap
-            
+
   | OpAdd k -> OpAdd k
   | OpSub k -> OpSub k
   | OpMult k -> OpMult k
   | OpDiv k -> OpDiv k
   | OpRem k -> OpRem k
   | OpNeg k -> OpNeg k
-             
+
   | OpIShl -> OpIShl
   | OpLShl -> OpLShl
   | OpIShr -> OpIShr
@@ -317,9 +350,9 @@ let instruction2opcode consts length (opcode:opcode_t) =
   | OpLOr -> OpLOr
   | OpIXor -> OpIXor
   | OpLXor -> OpLXor
-            
+
   | OpIInc (index, incr) -> OpIInc (index, incr)
-                          
+
   | OpI2L -> OpI2L
   | OpI2F -> OpI2F
   | OpI2D -> OpI2D
@@ -364,8 +397,12 @@ let instruction2opcode consts length (opcode:opcode_t) =
      else
        raise
          (JCH_class_structure_error
-            (LBLOCK [ STR "OpGoto "; INT pc ; STR " cannot be encoded in " ;
-	              INT length ; STR " bytes" ]))
+            (LBLOCK [
+                 STR "OpGoto ";
+                 INT pc;
+                 STR " cannot be encoded in ";
+	         INT length;
+                 STR " bytes"]))
   | OpJsr pc ->
      if length = 3 then
        OpJsr pc
@@ -374,33 +411,39 @@ let instruction2opcode consts length (opcode:opcode_t) =
      else
        raise
          (JCH_class_structure_error
-            (LBLOCK [ STR "OpJsr " ; INT pc ; STR " cannot be encoded in " ;
-	              INT length ; STR " bytes"] ))
+            (LBLOCK [
+                 STR "OpJsr ";
+                 INT pc;
+                 STR " cannot be encoded in ";
+	         INT length;
+                 STR " bytes"] ))
   | OpRet l -> OpRet l
-             
+
   | OpTableSwitch (def, low, high, tbl) -> OpTableSwitch  (def, low, high, tbl)
   | OpLookupSwitch (def, tbl) -> OpLookupSwitch (def, tbl)
-                               
+
   | OpReturn k ->
      (match k with
       | Object -> OpAReturn
       | Void -> OpReturnVoid
       | _ -> OpReturn k)
-    
+
   | OpGetStatic (cs, fs) -> OpGetStatic (field_to_int consts (cs,fs))
   | OpPutStatic (cs, fs) -> OpPutStatic (field_to_int consts (cs,fs))
   | OpGetField (cs, fs) ->  OpGetField (field_to_int consts (cs, fs))
   | OpPutField (cs, fs) ->  OpPutField (field_to_int consts (cs, fs))
   | OpInvokeVirtual (t, ms) ->  OpInvokeVirtual (method_to_int consts (t, ms))
-  | OpInvokeSpecial (t, ms) ->  OpInvokeNonVirtual(method_to_int consts (TClass t, ms))
-  | OpInvokeStatic (t, ms) -> OpInvokeStatic (method_to_int consts (TClass t, ms))
+  | OpInvokeSpecial (t, ms) ->
+     OpInvokeNonVirtual(method_to_int consts (TClass t, ms))
+  | OpInvokeStatic (t, ms) ->
+     OpInvokeStatic (method_to_int consts (TClass t, ms))
   | OpInvokeInterface (t, ms) ->
     OpInvokeInterface
       (constant_to_int consts
-	               (ConstInterfaceMethod (t, ms)), count (ms#descriptor#arguments))
+	 (ConstInterfaceMethod (t, ms)), count (ms#descriptor#arguments))
   | OpInvokeDynamic (aindex,ms) ->
      OpInvokeDynamic (constant_to_int consts (ConstDynamicMethod (aindex,ms)))
-      
+
   | OpNew cs -> OpNew (class_to_int consts cs)
   | OpNewArray t ->
     (match t with
@@ -417,8 +460,9 @@ let instruction2opcode consts length (opcode:opcode_t) =
   | OpAMultiNewArray (i, dims) ->
     OpAMultiNewArray (object_type_to_int consts i, dims)
   | OpBreakpoint -> OpBreakpoint
-    
+
   | OpInvalid -> OpInvalid
+
 
 let check_space _consts offset length (opcode:raw_opcode_t) =
   let ch = output_string () in
@@ -426,7 +470,7 @@ let check_space _consts offset length (opcode:raw_opcode_t) =
   let offsetmod4 = offset mod 4 in
   begin
     (* for aligned instructions *)
-    for i = 1 to offsetmod4 do write_byte ch 0 done;
+    for _i = 1 to offsetmod4 do write_byte ch 0 done;
     JCHParseCode.unparse_instruction ch count length opcode;
     let space_taken = count () - offsetmod4 in
     let opcodestring = close_out ch in
@@ -439,23 +483,27 @@ let check_space _consts offset length (opcode:raw_opcode_t) =
 
 let code2opcodes consts (code:opcode_t array) =
   let opcodes = Array.make (Array.length code) OpNop in
-  Array.iteri
-    (fun i (instr:opcode_t) ->
-      if instr <> OpInvalid then
-        (let length =
-           let j = ref (i+1) in
-           while !j < Array.length code && code.(!j) = OpInvalid do
-             opcodes.(!j) <- OpInvalid;
-             incr j
-           done;
-           !j-i in
-	 let opcode = instruction2opcode consts length instr in
-         begin
-	   opcodes.(i) <- opcode;
-	   if not (is_permissive ()) && not (check_space consts i length opcode) then
-             raise (JCH_class_structure_error
-                      (LBLOCK [ STR "Low level translation of instruction is too long " ;
-                                STR "for the allocated space in high level code"]));
-         end))
-    code;
-  opcodes
+  begin
+    (Array.iteri
+       (fun i (instr:opcode_t) ->
+         if instr <> OpInvalid then
+           (let length =
+              let j = ref (i+1) in
+              while !j < Array.length code && code.(!j) = OpInvalid do
+                opcodes.(!j) <- OpInvalid;
+                incr j
+              done;
+              !j-i in
+	    let opcode = instruction2opcode consts length instr in
+            begin
+	      opcodes.(i) <- opcode;
+	      if not (is_permissive ())
+                 && not (check_space consts i length opcode) then
+                raise
+                  (JCH_class_structure_error
+                     (LBLOCK [
+                          STR "Low level translation of instruction is too long ";
+                          STR "for the allocated space in high level code"]));
+            end)) code);
+    opcodes
+  end
