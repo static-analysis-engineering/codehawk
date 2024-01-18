@@ -46,7 +46,6 @@ MLIS := \
 	bCHVarDictionary \
 	bCHInvDictionary \
 	bCHVarInvDictionary \
-	bCHTypeInvDictionary \
 	bCHJavaBasicTypes \
 	bCHTypeDefinitions \
 	bCHJavaSignatures \
@@ -81,7 +80,6 @@ MLIS := \
 	bCHFunctionSummary \
 	bCHVariable \
 	bCHLocationInvariant \
-	bCHTypeInvariants \
 	bCHLocationVarInvariant \
 	bCHDataBlock \
 	bCHJumpTable \
@@ -140,7 +138,6 @@ SOURCES := \
 	bCHVarDictionary \
 	bCHInvDictionary \
 	bCHVarInvDictionary \
-	bCHTypeInvDictionary \
 	bCHTypeDefinitions \
 	bCHJavaSignatures \
 	bCHVariableNames \
@@ -169,7 +166,6 @@ SOURCES := \
 	bCHFunctionSummary \
 	bCHVariable \
 	bCHLocationInvariant \
-	bCHTypeInvariants \
 	bCHLocationVarInvariant \
 	bCHDataBlock \
 	bCHJumpTable \

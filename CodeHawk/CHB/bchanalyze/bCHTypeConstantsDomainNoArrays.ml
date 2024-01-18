@@ -338,6 +338,9 @@ let analyze_procedure_with_btypes
       ~atlas:(new atlas_t ~sigmas:[] init)
       (CODE (new symbol_t "code", code)) in
   ()
+
+
+let tconstraints = H.create 5
   
 
 let extract_btypes
@@ -356,7 +359,8 @@ let extract_btypes
             else
               match abtype#getCst with
               | ORDERED_SYM_CST s ->
-                 finfo#ftinv#add_var_fact k v (btype_concretize s)
+                 H.add tconstraints k (v, (btype_concretize))
+              (* finfo#ftinv#add_var_fact k v (btype_concretize s) *)
               | _ -> ()) vars) invariants
 
      

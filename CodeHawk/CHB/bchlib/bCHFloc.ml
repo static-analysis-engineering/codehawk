@@ -361,7 +361,7 @@ object (self)
 
   method env = self#f#env
   method inv = self#f#iinv self#cia
-  method tinv = self#f#itinv self#cia
+
   method varinv = self#f#ivarinv self#cia
 
   method memrecorder = mk_memory_recorder self#f self#cia
@@ -378,126 +378,6 @@ object (self)
     let returnExpr = self#rewrite_variable_to_external eax in
     self#f#record_return_value self#cia returnExpr
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                         type_invariants *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-
-  method add_var_type_fact v ?(structinfo=[]) t = ()
-                                                    (*
-    if v#isTmp then
-      ()
-    else
-      if self#f#env#is_initial_memory_value v
-         || self#f#env#is_initial_register_value v then
-	self#f#ftinv#add_function_var_fact v ~structinfo t
-      else
-	self#f#ftinv#add_var_fact self#cia v ~structinfo t
-                                                     *)
-
-  method add_const_type_fact (c: numerical_t) (t: btype_t) = ()
-                                                               (*
-    begin
-      self#f#ftinv#add_const_fact self#cia c t ;
-      match t with
-      | TPtr (tty,_) when c#gt numerical_zero ->
-         (try
-	    let base = numerical_to_doubleword c in
-	    if system_info#get_image_base#le base then
-	      let gv = self#f#env#mk_global_variable c in
-	      begin
-	        self#add_var_type_fact gv tty;
-	        match tty with
-	        | TNamed (name,_) when type_definitions#has_type name ->
-	           let tinfo = type_definitions#get_type name in
-	           begin
-		     match tinfo with
-		     | TCppComp (SimpleName cname, [], _)
-                          when type_definitions#has_compinfo cname ->
-		        let cinfo = type_definitions#get_compinfo cname in
-		        List.iter (fun fldinfo ->
-                            let goffset = c#add (mkNumerical fldinfo.bfoffset) in
-		            let gvar = self#f#env#mk_global_variable goffset in
-		            self#add_var_type_fact
-                              gvar
-                              ~structinfo:[name ; fldinfo.bfname ]
-                              fldinfo.bftype) cinfo.bcfields
-		     | _ -> ()
-	           end
-	        | _ -> ()
-	      end
-          with
-          | BCH_failure p ->
-             let msg =
-               LBLOCK [
-                   STR "add_const_type_fact: ";
-                   c#toPretty;
-                   STR "; ";
-                   self#l#toPretty;
-                   STR " (";
-                   p;
-                   STR ")"] in
-             begin
-               ch_error_log#add "doubleword conversion" msg ;
-               ()
-             end)
-      | _ -> ()
-    end
-                                                                *)
-
-  method add_xpr_type_fact (x: xpr_t) (t: btype_t) = ()
-                                                       (*
-    if is_random x then
-      ()
-    else
-      if List.exists (fun v -> v#isTmp) (variables_in_expr x) then
-        ()
-      else
-	try
-	  begin
-	    match x with
-	    | XVar v -> self#add_var_type_fact v t
-	    | XConst (IntConst c) -> self#add_const_type_fact c t
-	    | XOp (XPlus, [XVar v; XConst _])
-	    | XOp (XMinus, [XVar v; XConst _]) when (not (is_pointer t)) ->
-	      self#add_var_type_fact v t
-	    | XOp (XMinus, [XVar v; XConst (IntConst n)])
-		 when self#f#env#is_initial_stackpointer_value v
-                      && n#gt numerical_zero ->
-	      let memref = self#f#env#mk_local_stack_reference in
-	      let localVar = self#f#env#mk_memory_variable memref n#neg in
-	      let tty = match t with
-		| TPtr (tty,_) -> tty
-		| _ ->
-                   raise
-                     (BCH_failure
-                        (STR "Internal error in add_xpr_type_fact")) in
-	      begin
-		self#add_var_type_fact localVar tty;
-		match tty with
-		| TNamed (name,_) when type_definitions#has_type name ->
-		  let tinfo = type_definitions#get_type name in
-		  begin
-		    match tinfo with
-		    | TCppComp (SimpleName cname, [], _)
-                         when type_definitions#has_compinfo cname ->
-		      let cinfo = type_definitions#get_compinfo cname in
-		      List.iter (fun fldinfo ->
-			let off = n#neg#add (mkNumerical fldinfo.bfoffset) in
-			let memref = self#f#env#mk_local_stack_reference in
-			let svar = self#f#env#mk_memory_variable memref off in
-			self#add_var_type_fact
-                          svar
-                          ~structinfo:[name ; fldinfo.bfname ]
-                          fldinfo.bftype) cinfo.bcfields
-		    | _ -> ()
-		  end
-		| _ -> ()
-	      end
-	    | _ -> self#f#ftinv#add_xpr_fact self#cia x t
-	  end
-	with
-	| Invalid_argument msg -> ()
-                                                        *)
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                                            call targets *
@@ -1870,30 +1750,6 @@ object (self)
    method get_sideeffect_assigns  (sem:function_semantics_t) =
      List.concat (List.map self#get_sideeffect_assign sem.fsem_sideeffects)
 
-   method private record_call_argument_types (fintf: function_interface_t) =
-     let fts = fintf.fintf_type_signature in
-     let add_type_facts v x t =
-       if is_known_type t then
-	 begin
-	   self#add_var_type_fact v t;
-	   self#add_xpr_type_fact x t
-	 end in
-     List.iter (fun p ->
-       match p.apar_location with
-	 | [StackParameter (index, _)] ->
-	   let argvar = self#f#env#mk_bridge_value self#cia index in
-	   let argval = self#get_bridge_variable_value index argvar in
-	   add_type_facts argvar argval p.apar_type
-	 | [RegisterParameter (r, _)] ->
-	   let argvar = self#f#env#mk_register_variable r in
-	   let argval = self#rewrite_variable_to_external argvar in
-	   add_type_facts argvar argval p.apar_type
-	 | [GlobalParameter (a, _)] ->
-	   let argvar = self#f#env#mk_global_variable a#to_numerical in
-	   let argval = self#rewrite_variable_to_external argvar in
-	   add_type_facts argvar argval p.apar_type
-	 | _ -> ()) fts.fts_parameters
-
    method private record_memory_reads (pres:xxpredicate_t list) =
      List.iter (fun pre ->
        match pre with
@@ -1951,12 +1807,7 @@ object (self)
 	 else
 	   let name = ctinfo#get_name ^ "_rtn_" ^ self#cia in
 	   let _ = self#env#set_variable_name rvar name in
-	   let rty = ctinfo#get_returntype in
-	   begin
-	     self#f#ftinv#add_function_var_fact rvar rty ;
-	     self#add_var_type_fact eax rty ;
-	     ASSIGN_NUM (eax, NUM_VAR rvar)
-	   end
+	   ASSIGN_NUM (eax, NUM_VAR rvar)
        else
 	 ASSIGN_NUM (eax, NUM_VAR rvar) in
 

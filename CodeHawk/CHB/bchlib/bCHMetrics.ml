@@ -121,11 +121,6 @@ let get_invs_metrics (invio:invariant_io_int) = {
     minvs_count = invio#get_invariant_count
 }
 
-let get_tinvs_metrics (tinvio:type_invariant_io_int) = {
-    mtinvs_table = tinvio#get_table_size ;
-    mtinvs_count = tinvio#get_invariant_count
-}
-
 
 let get_result_metrics
       (finfo:function_info_int)
@@ -141,7 +136,6 @@ let get_result_metrics
     mres_jumps = get_jumps_metrics finfo ;
     mres_cc = get_cc_metrics finfo ;
     mres_invs = get_invs_metrics finfo#finv ;
-    mres_tinvs = get_tinvs_metrics finfo#ftinv
   }
 
 

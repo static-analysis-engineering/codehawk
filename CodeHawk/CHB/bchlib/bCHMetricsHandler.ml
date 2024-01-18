@@ -784,43 +784,6 @@ end
 
 let invs_metrics_handler = new invs_metrics_handler_t
 
-(* ----------------------------------------------------- type invs metrics --- *)
-
-class tinvs_metrics_handler_t: [ tinvs_metrics_t ] metrics_handler_int =
-object
-
-  inherit [ tinvs_metrics_t ] metrics_handler_t "tinvs_metrics_t"
-
-  method init_value = {
-      mtinvs_table = 0 ;
-      mtinvs_count = 0 
-    }
-
-  method add (d1:tinvs_metrics_t) (d2:tinvs_metrics_t) = {
-      mtinvs_table = d1.mtinvs_table + d2.mtinvs_table ;
-      mtinvs_count = d1.mtinvs_count + d2.mtinvs_count
-    }
-
-  method write_xml (node:xml_element_int) (d:tinvs_metrics_t) =
-    let seti = node#setIntAttribute in
-    begin
-      seti "table" d.mtinvs_table ;
-      seti "count" d.mtinvs_count
-    end
-
-  method read_xml (node:xml_element_int):tinvs_metrics_t =
-    let geti = node#getIntAttribute in
-    { mtinvs_table = geti "table" ;
-      mtinvs_count = geti "count"
-    }
-
-  method toPretty (d:tinvs_metrics_t) =
-    LBLOCK [
-        STR "table: " ; INT d.mtinvs_table ; NL ;
-        STR "count: " ; INT d.mtinvs_count ; NL ]
-end
-
-let tinvs_metrics_handler = new tinvs_metrics_handler_t
 
 (* ------------------------------------------------------- result metrics --- *)
 
@@ -840,7 +803,6 @@ object
         mres_jumps = jumps_metrics_handler#init_value ;
         mres_cc = cc_metrics_handler#init_value ;
         mres_invs = invs_metrics_handler#init_value ;
-        mres_tinvs = tinvs_metrics_handler#init_value
       }
                         
   method add (d1:result_metrics_t) (d2:result_metrics_t) = {
@@ -852,7 +814,6 @@ object
       mres_jumps = jumps_metrics_handler#add d1.mres_jumps d2.mres_jumps ;
       mres_cc = cc_metrics_handler#add d1.mres_cc d2.mres_cc ;
       mres_invs = invs_metrics_handler#add d1.mres_invs d2.mres_invs ;
-      mres_tinvs = tinvs_metrics_handler#add d1.mres_tinvs d2.mres_tinvs
     }
                                                          
   method write_xml (node:xml_element_int) (d:result_metrics_t) =
@@ -865,7 +826,6 @@ object
     let jNode = xmlElement "jumps" in
     let ccNode = xmlElement "cc" in
     let iNode = xmlElement "invs" in
-    let tNode = xmlElement "tinvs" in
     let prec_metrics_handler =
       mk_prec_metrics_handler memacc_metrics_handler#init_value in
     begin
@@ -877,13 +837,11 @@ object
       jumps_metrics_handler#write_xml jNode d.mres_jumps ;
       cc_metrics_handler#write_xml ccNode d.mres_cc ;
       invs_metrics_handler#write_xml iNode d.mres_invs ;
-      tinvs_metrics_handler#write_xml tNode d.mres_tinvs ;
-      append [ pNode ; mNode ; gNode ; vNode ; cNode ; jNode ; ccNode ; iNode ; tNode ]
+      append [ pNode ; mNode ; gNode ; vNode ; cNode ; jNode ; ccNode ; iNode ]
     end
     
   method read_xml (node:xml_element_int):result_metrics_t =
     let getc = node#getTaggedChild in
-    let hasc = node#hasOneTaggedChild in
     let prec_metrics_handler =
       mk_prec_metrics_handler memacc_metrics_handler#init_value in
     { mres_prec = prec_metrics_handler#read_xml (getc "prec") ;
@@ -894,11 +852,6 @@ object
       mres_jumps = jumps_metrics_handler#read_xml (getc "jumps") ;
       mres_cc = cc_metrics_handler#read_xml (getc "cc") ;
       mres_invs = invs_metrics_handler#read_xml (getc "invs") ;
-      mres_tinvs = 
-        if hasc"tinvs" then 
-	  tinvs_metrics_handler#read_xml (getc "tinvs")
-        else
-	  tinvs_metrics_handler#init_value	
     }
 
   method toPretty (d:result_metrics_t) =
@@ -918,9 +871,7 @@ object
         STR "Jumps" ; NL ;
         INDENT (3, jumps_metrics_handler#toPretty d.mres_jumps) ;
         STR "Invariants" ; NL ;
-        INDENT (3, invs_metrics_handler#toPretty d.mres_invs) ; NL ;
-        STR "Type invariants: " ; NL ;
-        INDENT (3, tinvs_metrics_handler#toPretty d.mres_tinvs) ; NL ]
+        INDENT (3, invs_metrics_handler#toPretty d.mres_invs) ; NL ]
 end
 
 let result_metrics_handler = new result_metrics_handler_t
