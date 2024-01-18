@@ -423,11 +423,7 @@ let get_wrapped_call_commands (hfloc:floc_int) (tgtfloc:floc_int) =
       else
 	let name = ctinfo#get_name ^ "_rtn_" ^ hfloc#cia in
 	let _ = hfloc#env#set_variable_name rvar name in
-	begin
-	  hfloc#f#ftinv#add_function_var_fact rvar rty ;
-	  hfloc#add_var_type_fact eax rty ;
-	  ASSIGN_NUM (eax, NUM_VAR rvar)
-	end
+	ASSIGN_NUM (eax, NUM_VAR rvar)
     else
       ASSIGN_NUM (eax, NUM_VAR rvar) in
   let acmd = hfloc#get_abstract_cpu_registers_command [ Ecx ; Edx ] in

@@ -55,7 +55,6 @@ val save_pwr_dictionary: unit -> unit
 val save_pwr_assembly_instructions: unit -> unit
 
 val save_function_variables: function_info_int -> unit
-val save_function_type_invariants: function_info_int -> unit
 val save_function_invariants: function_info_int -> unit
 val save_function_var_invariants: function_info_int -> unit
 val save_results_jni_calls: unit -> unit

@@ -426,16 +426,6 @@ let make_condition
     ([(abstractLabel, [transaction])], edges)
 
 
-let record_operand_address_types finfo (iaddr:string) opcode =
-  let add r =
-    let rvar = finfo#env#mk_cpu_register_variable  r in
-    let ftinv:type_invariant_io_int = finfo#ftinv in
-    ftinv#add_var_fact iaddr rvar t_voidptr in
-  List.iter add
-    (List.concat
-       (List.map (fun op -> op#get_address_registers) (get_operands opcode)))
-
-
 let translate_instruction
     ~(function_location:location_int)
     ~(code_pc:code_pc_int)
@@ -457,7 +447,6 @@ let translate_instruction
     (finfo#get_test_variables ctxtiaddr) in
   let default newCommands =
     ([], [], commands @ frozenAsserts @ (invariantOperation :: newCommands)) in
-  let _ = record_operand_address_types finfo ctxtiaddr instruction#get_opcode in
   match instruction#get_opcode with
     (* control flow is handled separately *)
   | Jcc _ when system_info#is_fixed_true_branch loc#i -> default []
@@ -569,10 +558,6 @@ let translate_instruction
         @ cmds6)
 
   | IndirectCall op ->
-     let floc = get_floc loc in
-     let _ =
-       floc#add_xpr_type_fact
-         (op#to_expr floc) (t_ptrto (t_function_anon t_unknown)) in
      let string_retriever = FFU.get_string_reference in
      default ((get_floc loc)#get_call_commands string_retriever)
 
@@ -2298,14 +2283,6 @@ object (self)
       @ initializeBasePointerOperations  in
     TRANSACTION (new symbol_t "entry", LF.mkCode cmds, None)
 
-  method initialize_types =
-    let esp = finfo#env#mk_cpu_register_variable Esp in
-    let espin = finfo#env#mk_initial_register_value (CPURegister Esp) in
-    begin
-      finfo#ftinv#add_function_var_fact esp t_voidptr;
-      finfo#ftinv#add_function_var_fact espin t_voidptr
-    end
-
   method translate =
     let faddr = f#get_address in
     let firstInstructionLabel = make_code_label function_location#ci in
@@ -2313,7 +2290,6 @@ object (self)
     let exitLabel  = make_code_label ~modifier:"exit"  function_location#ci in
     let procName = make_proc_name faddr in
     let _ = f#iter self#translate_block in
-    let _ = self#initialize_types in
     let entry_cmd = self#get_entry_cmd in
     let scope = finfo#env#get_scope in
     let _ = code_graph#add_node entryLabel [entry_cmd] in

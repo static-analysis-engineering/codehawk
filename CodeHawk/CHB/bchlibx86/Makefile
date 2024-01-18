@@ -84,7 +84,6 @@ MLIS := \
 	bCHIFSystem \
 	bCHLoopStructure \
 	bCHTranslateToCHIF \
-	bCHTranslateToTypeCHIF \
 	bCHDisassemblyMetrics \
 	bCHX86Metrics \
 	bCHFnX86Dictionary \
@@ -147,7 +146,6 @@ SOURCES := \
 	bCHIFSystem \
 	bCHLoopStructure \
 	bCHTranslateToCHIF \
-	bCHTranslateToTypeCHIF \
 	bCHDisassemblyMetrics \
 	bCHX86Metrics \
 	bCHFnX86Dictionary \

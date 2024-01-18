@@ -57,8 +57,6 @@ val cc_metrics_handler: cc_metrics_t metrics_handler_int
 
 val invs_metrics_handler: invs_metrics_t metrics_handler_int
 
-val tinvs_metrics_handler: tinvs_metrics_t metrics_handler_int
-
 val result_metrics_handler: result_metrics_t metrics_handler_int
 
 val function_run_handler: function_run_t metrics_handler_int

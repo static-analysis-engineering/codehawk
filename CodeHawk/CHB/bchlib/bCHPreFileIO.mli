@@ -128,10 +128,6 @@ val save_vars: string -> vardictionary_int -> unit
 val save_invs: string -> invariant_io_int -> unit
 val read_invs: string -> vardictionary_int -> invariant_io_int
 
-(* save and restore function type invariants *)
-val save_tinvs: string -> type_invariant_io_int -> unit
-val read_tinvs: string -> vardictionary_int -> type_invariant_io_int
-
 (* save and restore function variable invariants *)
 val save_varinvs: string -> var_invariant_io_int -> unit
 val read_varinvs: string -> vardictionary_int -> var_invariant_io_int

@@ -330,11 +330,6 @@ let save_function_invariants (finfo:function_info_int) =
   save_invs fname finfo#finv
 
 
-let save_function_type_invariants (finfo:function_info_int) =
-  let fname = finfo#get_address#to_hex_string in
-  save_tinvs fname finfo#ftinv
-
-
 let save_function_var_invariants (finfo: function_info_int) =
   let fname = finfo#get_address#to_hex_string in
   save_varinvs fname finfo#fvarinv

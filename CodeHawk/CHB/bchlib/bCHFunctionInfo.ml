@@ -1516,7 +1516,6 @@ class function_info_t
         (faddr: doubleword_int)
         (varmgr: variable_manager_int)
         (invio: invariant_io_int)
-        (tinvio: type_invariant_io_int)
         (varinvio: var_invariant_io_int):function_info_int =
 object (self)
 
@@ -1660,15 +1659,10 @@ object (self)
 
   method finv = invio
 
-  method ftinv = tinvio
-
   method fvarinv = varinvio
 
   method iinv (iaddr: ctxt_iaddress_t): location_invariant_int =
     invio#get_location_invariant iaddr
-
-  method itinv (iaddr: ctxt_iaddress_t): location_type_invariant_int =
-    tinvio#get_location_type_invariant iaddr
 
   method ivarinv (iaddr: ctxt_iaddress_t): location_var_invariant_int =
     varinvio#get_location_var_invariant iaddr
@@ -2575,9 +2569,8 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
       let xvard = load_function_vard_file fname in
       let varmgr = make_variable_manager faddr xvard in
       let invio = read_invs fname varmgr#vard in
-      let tinvio = read_tinvs fname varmgr#vard in
       let varinvio = read_varinvs fname varmgr#vard in
-      let finfo = new function_info_t faddr varmgr invio tinvio varinvio in
+      let finfo = new function_info_t faddr varmgr invio varinvio in
       let _ =
         match extract_function_info_file fname with
         | Some node -> finfo#read_xml node

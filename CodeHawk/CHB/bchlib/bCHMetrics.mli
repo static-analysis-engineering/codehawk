@@ -36,7 +36,6 @@ val get_calls_metrics: function_info_int -> calls_metrics_t
 val get_jumps_metrics: function_info_int -> jumps_metrics_t
 val get_cc_metrics: function_info_int -> cc_metrics_t
 val get_invs_metrics: invariant_io_int -> invs_metrics_t
-val get_tinvs_metrics: type_invariant_io_int -> tinvs_metrics_t
 
 val get_result_metrics:
   function_info_int

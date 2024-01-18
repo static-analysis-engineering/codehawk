@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -80,4 +80,3 @@ val jump_target_mcts: jump_target_t mfts_int
 val non_relational_value_mcts: non_relational_value_t mfts_int
 val invariant_fact_mcts: invariant_fact_t mfts_int
 val var_invariant_fact_mcts: var_invariant_fact_t mfts_int
-val type_invariant_fact_mcts: type_invariant_fact_t mfts_int

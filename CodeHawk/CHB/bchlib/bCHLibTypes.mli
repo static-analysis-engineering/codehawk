@@ -1666,98 +1666,6 @@ class type varinvdictionary_int =
   end
 
 
-(** {2 Type invariants} *)
-
-(** Type invariant fact. *)
-type type_invariant_fact_t =
-| VarTypeFact of variable_t * btype_t * string list    (* struct, fields *)
-| ConstTypeFact of numerical_t * btype_t
-| XprTypeFact of xpr_t * btype_t
-
-
-(** Single type invariant at a particular location.*)
-class type type_invariant_int =
-object ('a)
-  method index: int
-  method compare: 'a -> int
-  method get_fact: type_invariant_fact_t
-  method get_variables: variable_t list
-  method write_xml: xml_element_int -> unit
-  method toPretty: pretty_t
-end
-
-
-(** All type invariants at a particular location.*)
-class type location_type_invariant_int =
-object
-  method add_fact: type_invariant_fact_t -> unit
-
-  (* accessors *)
-  method get_var_facts: variable_t -> type_invariant_int list
-  method get_facts: type_invariant_int list
-  method get_count: int
-
-  (* predicates *)
-  method has_facts: bool
-
-  (* printing *)
-  method toPretty: pretty_t
-end
-
-
-(** Access structure for all type invariants in a single function.*)
-class type type_invariant_io_int =
-object
-  method add_var_fact:
-           string -> variable_t -> ?structinfo:string list -> btype_t -> unit
-  method add_const_fact: string -> numerical_t -> btype_t -> unit
-  method add_xpr_fact: string -> xpr_t -> btype_t -> unit
-  method add_function_var_fact:    (* location independent *)
-           variable_t
-           -> ?structinfo:string list
-           -> btype_t
-           -> unit
-
-  (* accessors *)
-  method get_location_type_invariant: string -> location_type_invariant_int
-  method get_facts: type_invariant_int list (* all facts *)
-  method get_function_facts: type_invariant_int list (* function-valid facts *)
-  method get_location_facts: (string * type_invariant_int list) list
-  method get_variable_facts: string -> variable_t -> type_invariant_int list
-  method get_table_size: int
-  method get_invariant_count: int
-
-  (* save and restore *)
-  method write_xml: xml_element_int -> unit
-  method read_xml: xml_element_int -> unit
-
-  (* printing *)
-  method toPretty: pretty_t
-end
-
-
-(** Type invariant dictionary.*)
-class type tinvdictionary_int =
-  object
-
-    method xd: xprdictionary_int
-    method index_type_invariant_fact: type_invariant_fact_t -> int
-    method get_type_invariant_fact: int -> type_invariant_fact_t
-
-    method write_xml_type_invariant_fact:
-             ?tag:string -> xml_element_int -> type_invariant_fact_t -> unit
-    method read_xml_type_invariant_fact:
-             ?tag:string -> xml_element_int -> type_invariant_fact_t
-
-    method write_xml: xml_element_int -> unit
-    method read_xml: xml_element_int -> unit
-
-    method toPretty: pretty_t
-
-  end
-
-
-
 (** {2 Value invariants} *)
 
 (** Non-relational value (symbolic or numerical constant *)
@@ -4042,19 +3950,12 @@ object
   (** Returns the access point for all value invariants for this function.*)
   method finv: invariant_io_int
 
-  (** Returns the access point for all type invariants for this function.*)
-  method ftinv: type_invariant_io_int
-
   (** Returns the access point for all variable invariants for this function.*)
   method fvarinv: var_invariant_io_int  (* function variables invariant *)
 
   (** [finfo#iinv iaddr] returns the value invariant at instruction address
       [iaddr].*)
   method iinv : ctxt_iaddress_t -> location_invariant_int
-
-  (** [finfo#tinv iaddr] returns the type invariant at instruction address
-      [iaddr].*)
-  method itinv: ctxt_iaddress_t -> location_type_invariant_int
 
   (** [finfo#ivarinv idadr] returns the variable invariant at instruction address
       [iaddr].*)
@@ -4637,26 +4538,8 @@ class type floc_int =
     (** Returns the value invariants for this instruction.*)
     method inv: location_invariant_int
 
-    (** Returns the type invariants for this instruction.*)
-    method tinv: location_type_invariant_int
-
     (** Returns the variable invariants for this instruction.*)
     method varinv: location_var_invariant_int
-
-    (** {2 Add invariants}*)
-
-    (** [floc#add_var_type_fact var ty] creates a type invariant fact for
-    variable [var] to be type [ty].*)
-    method add_var_type_fact:
-             variable_t -> ?structinfo:string list -> btype_t -> unit
-
-    (** [floc#add_const_type_fact num ty] creates a type invariant fact for
-        constant [num].*)
-    method add_const_type_fact: numerical_t -> btype_t -> unit
-
-    (** [floc#add_type_fact xpr ty] creates a type invariant fact for
-        expression [xpr].*)
-    method add_xpr_type_fact: xpr_t -> btype_t -> unit
 
     (** {2 Retrieve invariants/rewriting} *)
 
@@ -5268,12 +5151,6 @@ type invs_metrics_t = {
 }
 
 
-type tinvs_metrics_t = {
-  mtinvs_table: int;      (* number of distinct type invariants *)
-  mtinvs_count: int       (* total number of type invariants *)
-}
-
-
 type result_metrics_t = {
   mres_prec : prec_metrics_t;
   mres_memacc: memacc_metrics_t;
@@ -5283,7 +5160,6 @@ type result_metrics_t = {
   mres_jumps: jumps_metrics_t;
   mres_cc: cc_metrics_t;
   mres_invs: invs_metrics_t;
-  mres_tinvs: tinvs_metrics_t
 }
 
 

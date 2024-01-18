@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyrigth (c) 2021-2023 Aarno Labs LLC
+   Copyrigth (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ open BCHLibTypes
 module H = Hashtbl
 
 let calling_convention_mfts: calling_convention_t mfts_int =
-  mk_mfts "calling_convention_t" [  (StdCall, "s"); (CDecl, "c") ]
+  mk_mfts "calling_convention_t" [(StdCall, "s"); (CDecl, "c")]
 
 
 let relational_op_mfts: relational_op_t mfts_int =
@@ -675,25 +675,6 @@ object
 end
 
 let invariant_fact_mcts:invariant_fact_t mfts_int =  new invariant_fact_mcts_t
-
-
-class type_invariant_fact_mcts_t:[type_invariant_fact_t] mfts_int =
-object
-
-  inherit [type_invariant_fact_t] mcts_t "type_invariant_fact_t"
-
-  method ts (t:type_invariant_fact_t) =
-    match t with
-    | VarTypeFact _ -> "v"
-    | ConstTypeFact _ -> "c"
-    | XprTypeFact _ -> "x"
-
-  method tags = [ "v"; "c"; "x" ]
-
-end
-
-let type_invariant_fact_mcts:type_invariant_fact_t mfts_int =
-  new type_invariant_fact_mcts_t
 
 
 class var_invariant_fact_mcts_t: [var_invariant_fact_t] mfts_int =

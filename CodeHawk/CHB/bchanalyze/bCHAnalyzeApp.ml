@@ -160,7 +160,6 @@ let analyze_x86_function faddr f count =
       finfo#reset_invariants ;
       finfo#save;
       save_function_invariants finfo ;
-      save_function_type_invariants finfo ;
       x86_analysis_results#record_results f ;
       save_function_variables finfo ;
       file_metrics#record_results
@@ -384,7 +383,6 @@ let analyze_mips_function faddr f count =
       finfo#reset_invariants;
       save_function_invariants finfo;
       save_function_var_invariants finfo;
-      save_function_type_invariants finfo;
       mips_analysis_results#record_results f;
       finfo#save;
       save_function_variables finfo;

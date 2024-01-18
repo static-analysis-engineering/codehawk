@@ -50,7 +50,6 @@ open BCHLocationInvariant
 open BCHLocationVarInvariant
 open BCHSystemData
 open BCHSystemSettings
-open BCHTypeInvariants
 open BCHXmlUtil
 open BCHUtilities
 open BCHVersion
@@ -869,25 +868,6 @@ let save_invs (fname:string) (invio:invariant_io_int) =
 let read_invs (fname:string) (vard:vardictionary_int):invariant_io_int =
   let optnode = extract_function_file fname "invs.xml" "function" in
   mk_invariant_io optnode vard fname
-
-
-let save_tinvs (fname:string) (tinvio:type_invariant_io_int) =
-  let filename = get_tinvs_filename fname in
-  let doc = xmlDocument () in
-  let root = get_bch_root "function" in
-  let tnode = xmlElement "function" in
-  begin
-    tinvio#write_xml tnode ;
-    tnode#setAttribute "fname" fname ;
-    doc#setNode root ;
-    root#appendChildren [ tnode ] ;
-    file_output#saveFile filename doc#toPretty
-  end
-
-
-let read_tinvs (fname:string) (vard:vardictionary_int):type_invariant_io_int =
-  let optnode = extract_function_file fname "tinvs.xml" "function" in
-  mk_type_invariant_io optnode vard fname
 
 
 let save_varinvs (fname: string) (varinvio: var_invariant_io_int) =
