@@ -27,7 +27,6 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHCommon
 open CHPretty
 
 (* chutil *)
@@ -71,7 +70,7 @@ let hex_string s =
   let h = ref "" in
   let len = String.length s in
   begin
-    for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done;
+    for _i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done;
     !h
   end
 
@@ -93,7 +92,7 @@ let mk_constantstring (s:string):constantstring =
 
 let rec value_type_to_asm_string (v:value_type_t) =
   match v with
-  | TBasic t -> java_basic_type_serializer#to_string t
+  | TBasic t -> java_basic_type_mfts#ts t
   | TObject t -> object_type_to_asm_string t
 
 
@@ -103,7 +102,7 @@ and object_type_to_asm_string (v:object_type_t) =
   | TArray vt -> "[" ^ (value_type_to_asm_string vt)
 
 
-let method_descriptor_to_asm_string (md:method_descriptor_int) =
+let _method_descriptor_to_asm_string (md:method_descriptor_int) =
   String.concat "_" (List.map value_type_to_asm_string md#arguments)
 
 
@@ -236,7 +235,7 @@ object (self: _)
     make_class_method_signature_data ~class_name ~method_signature
 
   method index_object_type (t:object_type_t) =
-    let tags = [object_type_serializer#to_string t] in
+    let tags = [object_type_mcts#ts t] in
     let key = match t with
       | TClass cn -> (tags,[cn#index])
       | TArray vt -> (tags,[self#index_value_type vt]) in
@@ -263,9 +262,9 @@ object (self: _)
     self#get_object_type (node#getIntAttribute tag)
 
   method index_value_type (t:value_type_t) =
-    let tags = [value_type_serializer#to_string t] in
+    let tags = [value_type_mcts#ts t] in
     let key = match t with
-      | TBasic b -> (tags @ [java_basic_type_serializer#to_string b],[])
+      | TBasic b -> (tags @ [java_basic_type_mfts#ts b],[])
       | TObject o -> (tags,[self#index_object_type o]) in
     value_type_table#add key
 
@@ -274,7 +273,7 @@ object (self: _)
     let t = t "value-type" tags in
     let a = a "value-type" args in
     match (t 0) with
-    | "b" -> TBasic (java_basic_type_serializer#from_string (t 1))
+    | "b" -> TBasic (java_basic_type_mfts#fs (t 1))
     | "o" -> TObject (self#get_object_type (a 0))
     | s ->
        raise
@@ -317,7 +316,7 @@ object (self: _)
     self#get_method_descriptor (node#getIntAttribute tag)
 
   method index_descriptor (d:descriptor_t) =
-    let tags = [descriptor_serializer#to_string d] in
+    let tags = [descriptor_mcts#ts d] in
     let key = match d with
       | SValue vt -> (tags,[self#index_value_type vt])
       | SMethod md -> (tags,[self#index_method_descriptor md]) in
@@ -343,7 +342,7 @@ object (self: _)
     self#get_descriptor (node#getIntAttribute tag)
 
   method index_constant_value (cv:constant_value_t) =
-    let tags = [constant_value_serializer#to_string cv] in
+    let tags = [constant_value_mcts#ts cv] in
     let key = match cv with
       | ConstString s -> (tags, [self#index_string s])
       | ConstInt i32 -> (tags, [Int32.to_int i32])
@@ -378,7 +377,7 @@ object (self: _)
     self#get_constant_value (node#getIntAttribute tag)
 
   method index_method_handle_type (h:method_handle_type_t) =
-    let tags = [method_handle_type_serializer#to_string h] in
+    let tags = [method_handle_type_mcts#ts h] in
     let key = match h with
       | FieldHandle (cn,fs) -> (tags,[cn#index; fs#index])
       | MethodHandle (ot,ms) -> (tags,[self#index_object_type ot; ms#index])
@@ -419,7 +418,7 @@ object (self: _)
     self#get_method_handle_type (node#getIntAttribute tag)
 
   method index_constant (c:constant_t) =
-    let tags = [constant_serializer#to_string c] in
+    let tags = [constant_mcts#ts c] in
     let key = match c with
       | ConstValue cv -> (tags, [self#index_constant_value cv])
       | ConstField (cn,fs) -> (tags, [cn#index; fs#index])
@@ -430,7 +429,7 @@ object (self: _)
          (tags, [self#index_string s; self#index_descriptor d])
       | ConstStringUTF8 s -> (tags,[self#index_string s])
       | ConstMethodHandle (k,h) ->
-         (tags @ [reference_kind_serializer#to_string k],
+         (tags @ [reference_kind_mfts#ts k],
           [self#index_method_handle_type h])
       | ConstMethodType md -> (tags, [self#index_method_descriptor md])
       | ConstUnusable -> (tags,[]) in
@@ -454,8 +453,9 @@ object (self: _)
     | "d" -> ConstDynamicMethod (a 0, self#retrieve_method_signature (a 1))
     | "n" -> ConstNameAndType (self#get_string (a 0), self#get_descriptor (a 1))
     | "s" -> ConstStringUTF8 (self#get_string (a 0))
-    | "h" -> ConstMethodHandle (reference_kind_serializer#from_string (t 1),
-                                self#get_method_handle_type (a 0))
+    | "h" ->
+       ConstMethodHandle (
+           reference_kind_mfts#fs (t 1), self#get_method_handle_type (a 0))
     | "t" -> ConstMethodType (self#get_method_descriptor (a 0))
     | "u" -> ConstUnusable
     | s ->
@@ -470,11 +470,11 @@ object (self: _)
     self#get_constant (node#getIntAttribute tag)
 
   method index_bootstrap_argument (a:bootstrap_argument_t) =
-    let tags = [bootstrap_argument_serializer#to_string a] in
+    let tags = [bootstrap_argument_mcts#ts a] in
     let key = match a with
       | BootstrapArgConstantValue cv -> (tags,[self#index_constant_value cv])
       | BootstrapArgMethodHandle (k,h) ->
-         (tags @ [reference_kind_serializer#to_string k],
+         (tags @ [reference_kind_mfts#ts k],
           [self#index_method_handle_type h])
       | BootstrapArgMethodType md -> (tags,[self#index_method_descriptor md]) in
     bootstrap_argument_table#add key
@@ -487,7 +487,7 @@ object (self: _)
     | "c" -> BootstrapArgConstantValue (self#get_constant_value (a 0))
     | "h" ->
        BootstrapArgMethodHandle (
-           reference_kind_serializer#from_string (t 1),
+           reference_kind_mfts#fs (t 1),
            self#get_method_handle_type (a 0))
     | "t" ->
        BootstrapArgMethodType (self#get_method_descriptor (a 0))
@@ -508,16 +508,17 @@ object (self: _)
     self#get_bootstrap_argument (node#getIntAttribute tag)
 
   method index_bootstrap_method_data (d:bootstrap_method_data_t) =
-    let tags = [reference_kind_serializer#to_string d.bm_kind] in
-    let args = (self#index_method_handle_type d.bm_handle) ::
-                 (List.map self#index_bootstrap_argument d.bm_args) in
+    let tags = [reference_kind_mfts#ts d.bm_kind] in
+    let args =
+      (self#index_method_handle_type d.bm_handle) ::
+        (List.map self#index_bootstrap_argument d.bm_args) in
     bootstrap_method_data_table#add (tags,args)
 
   method get_bootstrap_method_data (index:int) =
     let (tags,args) = bootstrap_method_data_table#retrieve index in
     let t = t "bootstrap-method-data" tags in
     let a = a "bootstrap-method-data" args in
-    { bm_kind = reference_kind_serializer#from_string (t 0);
+    { bm_kind = reference_kind_mfts#fs (t 0);
       bm_handle = self#get_method_handle_type (a 0);
       bm_args = List.map self#get_bootstrap_argument (List.tl args) }
 

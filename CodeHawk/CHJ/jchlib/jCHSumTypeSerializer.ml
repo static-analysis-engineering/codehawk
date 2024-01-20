@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,123 +26,67 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHLanguage
-open CHPretty
-
 (* chutil *)
-open CHPrettyUtil
-   
+open CHSumTypeSerializer
+
 (* jchlib *)
 open JCHBasicTypesAPI
-open JCHBasicTypes
-   
-module H = Hashtbl
 
-class type ['a] sumtype_string_converter_int =
-  object
-    method to_string: 'a -> string
-    method from_string: string -> 'a
-  end
 
-class ['a] sumtype_string_converter_t
-           (name:string) (pairs:('a * string) list):['a] sumtype_string_converter_int =
-object
-
-  val tstable = H.create (List.length pairs)
-  val sttable = H.create (List.length pairs)
-
-  initializer
-    List.iter (fun (t,s) -> begin H.add tstable t s ; H.add sttable s t end) pairs
-
-  method to_string (t:'a) =
-    if H.mem tstable t then
-      H.find tstable t
-    else
-      raise (JCH_failure (LBLOCK [ STR "Type not found for sumtype " ; STR name ]))
-
-  method from_string (s:string) =
-    if H.mem sttable s then
-      H.find sttable s
-    else
-      raise (JCH_failure (LBLOCK [ STR "No sumtype " ; STR name ;
-                                  STR " for string " ; STR s ]))
-
-end
-
-let mk_sumtype_string_converter = new sumtype_string_converter_t
-
-(* Converter that can be used when only a few types have
-   additional data, which can be encoded into and decoded
-   from the string
- *)
-class ['a] fn_sumtype_string_converter_t
-           (name:string)
-           (pairs:('a * string) list)
-           (f:'a -> string)
-           (g:string -> 'a):['a] sumtype_string_converter_int =
-object
-
-  inherit ['a] sumtype_string_converter_t name pairs as super
-
-  method to_string (t:'a) =
-    try
-      super#to_string t
-    with
-    | JCH_failure _ -> f t
-
-  method from_string (s:string) =
-    try
-      super#from_string s
-    with
-    | JCH_failure _ -> g s
-
-end
-
-let mk_fn_sumtype_string_converter = new fn_sumtype_string_converter_t
-
-let java_basic_type_serializer: java_basic_type_t sumtype_string_converter_int =
-  mk_sumtype_string_converter
+let java_basic_type_mfts: java_basic_type_t mfts_int =
+  mk_mfts
     "java_basic_type_t"
-    [ (Int,"I"); (Short,"S"); (Char,"C"); (Byte,"B"); (Bool,"Z"); (Long,"L");
-      (Float,"F"); (Double,"D"); (Int2Bool, "XIZX"); (ByteBool,"XBZX");
-      (Object,"XLX"); (Void,"V") ]
+    [(Int,"I");
+     (Short,"S");
+     (Char,"C");
+     (Byte,"B");
+     (Bool,"Z");
+     (Long,"L");
+     (Float,"F");
+     (Double,"D");
+     (Int2Bool, "XIZX");
+     (ByteBool,"XBZX");
+     (Object,"XLX");
+     (Void,"V") ]
 
-let reference_kind_serializer: reference_kind_t sumtype_string_converter_int =
-  mk_sumtype_string_converter
+
+let reference_kind_mfts: reference_kind_t mfts_int =
+  mk_mfts
     "reference_kind_t"
-    [ (REFGetField, "gf"); (REFGetStatic, "gs"); (REFPutField,"pf");
-      (REFPutStatic,"ps"); (REFInvokeVirtual, "iv"); (REFInvokeStatic, "is");
-      (REFInvokeSpecial,"ip"); (REFNewInvokeSpecial,"in"); (REFInvokeInterface,"if") ]
+    [(REFGetField, "gf");
+     (REFGetStatic, "gs");
+     (REFPutField,"pf");
+     (REFPutStatic,"ps");
+     (REFInvokeVirtual, "iv");
+     (REFInvokeStatic, "is");
+     (REFInvokeSpecial,"ip");
+     (REFNewInvokeSpecial,"in");
+     (REFInvokeInterface,"if")]
 
-let arithmetic_op_serializer: arithmetic_op_t sumtype_string_converter_int =
-  mk_sumtype_string_converter
+
+let arithmetic_op_mfts: arithmetic_op_t mfts_int =
+  mk_mfts
     "arithmetic_op_t"
-    [ (JPlus,"add"); (JMinus, "sub"); (JDivide, "div"); (JTimes, "mult") ]
+    [(JPlus,"add"); (JMinus, "sub"); (JDivide, "div"); (JTimes, "mult")]
 
-let relational_op_serializer: relational_op_t sumtype_string_converter_int =
-  mk_sumtype_string_converter
+
+let relational_op_mfts: relational_op_t mfts_int =
+  mk_mfts
     "relational_op_t"
-    [ (JEquals,"eq"); (JLessThan,"lt"); (JLessEqual,"le"); (JGreaterEqual,"ge");
-      (JGreaterThan,"gt"); (JNotEqual,"ne") ]
+    [ (JEquals,"eq");
+      (JLessThan,"lt");
+      (JLessEqual,"le");
+      (JGreaterEqual,"ge");
+      (JGreaterThan,"gt");
+      (JNotEqual,"ne") ]
 
-class virtual ['a] complextyp_string_converter_t (name:string) =
+
+class jterm_mcts_t:[jterm_t] mfts_int =
 object
 
-  method virtual to_string: 'a -> string
+  inherit [jterm_t] mcts_t "jterm_t"
 
-  method from_string (s:string):'a =
-    raise (JCH_failure (LBLOCK [ STR "No reverse construction possible for " ; STR name ]))
-
-end
-
-
-class jterm_string_converter_t:[jterm_t] sumtype_string_converter_int =
-object
-
-  inherit [jterm_t] complextyp_string_converter_t "jterm_t"
-
-  method to_string (t:jterm_t) =
+  method! ts (t:jterm_t) =
     match t with
     | JAuxiliaryVar _ -> "xv"
     | JLocalVar _ -> "lv"
@@ -158,48 +103,56 @@ object
     | JUninterpreted _ -> "un"
     | JArithmeticExpr _ -> "ar"
 
+  method! tags = [
+      "ar"; "bc"; "c"; "fc"; "lc"; "lv"; "of"; "pw"; "sc"; "sf"; "si"; "symc";
+      "un"; "xv"
+    ]
+
 end
 
-let jterm_serializer:jterm_t sumtype_string_converter_int =
-  new jterm_string_converter_t
+let jterm_mcts: jterm_t mfts_int = new jterm_mcts_t
 
-class object_type_string_converter_t:[object_type_t] sumtype_string_converter_int =
+
+class object_type_mcts_t:[object_type_t] mfts_int =
 object
 
-  inherit [object_type_t] complextyp_string_converter_t "object_type_t"
+  inherit [object_type_t] mcts_t "object_type_t"
 
-  method to_string (t:object_type_t) =
+  method! ts (t:object_type_t) =
     match t with
     | TClass _ -> "c"
     | TArray _ -> "a"
 
+  method! tags = ["a"; "c"]
+
 end
 
-let object_type_serializer:object_type_t sumtype_string_converter_int =
-  new object_type_string_converter_t
+let object_type_mcts:object_type_t mfts_int =  new object_type_mcts_t
 
-class value_type_string_converter_t:[value_type_t] sumtype_string_converter_int =
+
+class value_type_mcts_t:[value_type_t] mfts_int =
 object
 
-  inherit [value_type_t] complextyp_string_converter_t "value_type_t"
+  inherit [value_type_t] mcts_t "value_type_t"
 
-  method to_string (t:value_type_t) =
+  method! ts (t:value_type_t) =
     match t with
     | TBasic _ -> "b"
     | TObject _ -> "o"
 
+  method! tags = ["b"; "o"]
+
 end
 
-let value_type_serializer:value_type_t sumtype_string_converter_int =
-  new value_type_string_converter_t
-  
+let value_type_mcts:value_type_t mfts_int = new value_type_mcts_t
 
-class constant_value_string_converter_t:[constant_value_t] sumtype_string_converter_int =
+
+class constant_value_mcts_t:[constant_value_t] mfts_int =
 object
 
-  inherit [constant_value_t] complextyp_string_converter_t "constant_value_t"
+  inherit [constant_value_t] mcts_t "constant_value_t"
 
-  method to_string (t:constant_value_t) =
+  method! ts (t:constant_value_t) =
     match t with
     | ConstString _ -> "s"
     | ConstInt _ -> "i"
@@ -208,48 +161,55 @@ object
     | ConstDouble _ -> "d"
     | ConstClass _ -> "c"
 
+  method! tags = ["c"; "d"; "f"; "i"; "l"; "s"]
+
 end
 
-let constant_value_serializer:constant_value_t sumtype_string_converter_int =
-  new constant_value_string_converter_t
+let constant_value_mcts:constant_value_t mfts_int = new constant_value_mcts_t
 
-class descriptor_string_converter_t:[descriptor_t] sumtype_string_converter_int =
+
+class descriptor_mcts_t:[descriptor_t] mfts_int =
 object
 
-  inherit [descriptor_t] complextyp_string_converter_t "descriptor_t"
+  inherit [descriptor_t] mcts_t "descriptor_t"
 
-  method to_string (d:descriptor_t) =
+  method! ts (d:descriptor_t) =
     match d with
     | SValue _ -> "v"
     | SMethod _ -> "m"
 
+  method! tags = ["m"; "v"]
+
 end
 
-let descriptor_serializer:descriptor_t sumtype_string_converter_int =
-  new descriptor_string_converter_t
+let descriptor_mcts:descriptor_t mfts_int =  new descriptor_mcts_t
 
-class method_handle_type_string_converter_t:[method_handle_type_t] sumtype_string_converter_int =
+
+class method_handle_type_mcts_t:[method_handle_type_t] mfts_int =
 object
 
-  inherit [method_handle_type_t] complextyp_string_converter_t "method_handle_type_t"
+  inherit [method_handle_type_t] mcts_t "method_handle_type_t"
 
-  method to_string (h:method_handle_type_t) =
+  method! ts (h:method_handle_type_t) =
     match h with
     | FieldHandle _ -> "f"
     | MethodHandle _ -> "m"
     | InterfaceHandle _ -> "i"
 
+  method! tags = ["f"; "i"; "m"]
+
 end
 
-let method_handle_type_serializer:method_handle_type_t sumtype_string_converter_int =
-  new method_handle_type_string_converter_t
+let method_handle_type_mcts:method_handle_type_t mfts_int =
+  new method_handle_type_mcts_t
 
-class constant_serializer_t:[constant_t] sumtype_string_converter_int =
+
+class constant_mcts_t:[constant_t] mfts_int =
 object
 
-  inherit [constant_t] complextyp_string_converter_t "constant_t"
+  inherit [constant_t] mcts_t "constant_t"
 
-  method to_string (c:constant_t) =
+  method! ts (c:constant_t) =
     match c with
     | ConstValue _ -> "v"
     | ConstField _ -> "f"
@@ -262,33 +222,38 @@ object
     | ConstMethodType _ -> "t"
     | ConstUnusable -> "u"
 
+  method! tags = ["d"; "f"; "h"; "i"; "m"; "n"; "s"; "t"; "u"; "v"]
+
 end
 
-let constant_serializer:constant_t sumtype_string_converter_int =
-  new constant_serializer_t
+let constant_mcts:constant_t mfts_int = new constant_mcts_t
 
-class bootstrap_argument_serializer_t:[bootstrap_argument_t] sumtype_string_converter_int =
+
+class bootstrap_argument_mcts_t:[bootstrap_argument_t] mfts_int =
 object
 
-  inherit [bootstrap_argument_t] complextyp_string_converter_t "bootstrap_argument_t"
+  inherit [bootstrap_argument_t] mcts_t "bootstrap_argument_t"
 
-  method to_string (a:bootstrap_argument_t) =
+  method! ts (a:bootstrap_argument_t) =
     match a with
     | BootstrapArgConstantValue _ -> "c"
     | BootstrapArgMethodHandle _ -> "h"
     | BootstrapArgMethodType _ -> "t"
 
+  method! tags = ["c"; "h"; "t"]
+
 end
 
-let bootstrap_argument_serializer:bootstrap_argument_t sumtype_string_converter_int =
-  new bootstrap_argument_serializer_t
-  
-class opcode_serializer_t:[opcode_t] sumtype_string_converter_int =
+let bootstrap_argument_mcts:bootstrap_argument_t mfts_int =
+  new bootstrap_argument_mcts_t
+
+
+class opcode_mcts_t:[opcode_t] mfts_int =
 object
 
-  inherit [opcode_t] complextyp_string_converter_t "opcode_t" as super
+  inherit [opcode_t] mcts_t "opcode_t" as super
 
-  method to_string (opc:opcode_t) =
+  method! ts (opc:opcode_t) =
     match opc with
     | OpLoad _ -> "ld"
     | OpStore _ -> "st"
@@ -395,7 +360,7 @@ object
     | OpBreakpoint -> "bp"
     | OpInvalid -> "invalid"
 
-  method from_string (s:string) =
+  method! fs (s:string) =
     match s with
     | "pop" -> OpPop
     | "pop2" -> OpPop2
@@ -445,10 +410,9 @@ object
     | "nop" -> OpNop
     | "bp" -> OpBreakpoint
     | "invalid" -> OpInvalid
-    | s -> super#from_string s
+    | s -> super#fs s
 
 end
-               
-             
-let opcode_serializer:opcode_t sumtype_string_converter_int =
-  new opcode_serializer_t
+
+
+let opcode_mcts:opcode_t mfts_int = new opcode_mcts_t

@@ -3,8 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,7 +33,8 @@ open CHPretty
 
 (* chutil *)
 open CHPrettyUtil
-   
+open CHSumTypeSerializer
+
 (* jchlib *)
 open JCHBasicTypesAPI
 open JCHBasicTypes
@@ -40,92 +42,39 @@ open JCHBytecode
 
 (* jchpre *)
 open JCHPreAPI
-  
-   
-module H = Hashtbl
 
-class type ['a] sumtype_string_converter_int =
-  object
-    method to_string: 'a -> string
-    method from_string: string -> 'a
-  end
 
-class ['a] sumtype_string_converter_t
-           (name:string) (pairs:('a * string) list):['a] sumtype_string_converter_int =
-object
-  
-  val tstable = H.create (List.length pairs)
-  val sttable = H.create (List.length pairs)
-              
-  initializer
-    List.iter (fun (t,s) -> begin H.add tstable t s ; H.add sttable s t end) pairs
-  
-  method to_string (t:'a) =
-    if H.mem tstable t then
-      H.find tstable t
-    else
-      raise (JCH_failure (LBLOCK [ STR "Type not found for sumtype " ; STR name ]))
-    
-  method from_string (s:string) =
-    if H.mem sttable s then
-      H.find sttable s
-    else
-      raise (JCH_failure (LBLOCK [ STR "No sumtype " ; STR name ;
-                                   STR " for string " ; STR s ]))
-    
-end
-
-let mk_sumtype_string_converter = new sumtype_string_converter_t
-
-(* Converter that can be used when only a few types have
-   additional data, which can be encoded into and decoded
-   from the strin
- *)
-class ['a] fn_sumtype_string_converter_t
-           (name:string)
-           (pairs:('a * string) list)
-           (f:'a -> string)
-           (g:string -> 'a):['a] sumtype_string_converter_int =
-object
-
-  inherit ['a] sumtype_string_converter_t name pairs as super
-
-  method to_string (t:'a) =
-    try
-      super#to_string t
-    with
-    | JCH_failure _ -> f t
-
-  method from_string (s:string) =
-    try
-      super#from_string s
-    with
-    | JCH_failure _ -> g s
-
-end
-
-let mk_fn_sumtype_string_converter = new fn_sumtype_string_converter_t                                
-
-let variable_type_serializer: variable_type_t sumtype_string_converter_int =
-  mk_sumtype_string_converter
+let variable_type_mfts: variable_type_t mfts_int =
+  mk_mfts
     "variable_type_t"
-    [ (NUM_LOOP_COUNTER_TYPE, "nlc"); (NUM_TMP_VAR_TYPE, "ntv");
-      (SYM_TMP_VAR_TYPE, "stv"); (NUM_TMP_ARRAY_TYPE, "nta");
-      (SYM_TMP_ARRAY_TYPE, "sta"); (NUM_VAR_TYPE, "nv");
-      (SYM_VAR_TYPE, "sv"); (NUM_ARRAY_TYPE, "na");
-      (SYM_ARRAY_TYPE, "sa") ]
+    [(NUM_LOOP_COUNTER_TYPE, "nlc");
+     (NUM_TMP_VAR_TYPE, "ntv");
+     (SYM_TMP_VAR_TYPE, "stv");
+     (NUM_TMP_ARRAY_TYPE, "nta");
+     (SYM_TMP_ARRAY_TYPE, "sta");
+     (NUM_VAR_TYPE, "nv");
+     (SYM_VAR_TYPE, "sv");
+     (NUM_ARRAY_TYPE, "na");
+     (SYM_ARRAY_TYPE, "sa")]
 
-class converteropcode_serializer_t:[opcode_t] sumtype_string_converter_int =
+
+class converteropcode_mcts_t:[opcode_t] mfts_int =
 object
 
-  method to_string (opc:opcode_t) =
+  inherit [opcode_t] mcts_t "converter_opcode_t"
+
+  method! ts (opc:opcode_t) =
     if is_converter_opcode opc then
       opcode_to_string opc
     else
-      raise (JCH_failure (LBLOCK [ STR "Opcode " ; opcode_to_pretty opc ;
-                                   STR " is not a converter opcode" ]))
+      raise
+        (JCH_failure
+           (LBLOCK [
+                STR "Opcode ";
+                opcode_to_pretty opc;
+                STR " is not a converter opcode"]))
 
-  method from_string (s:string) =
+  method! fs (s:string) =
     match s with
     | "i2l" -> OpI2L
     | "i2f" -> OpI2F
@@ -143,16 +92,23 @@ object
     | "i2c" -> OpI2C
     | "i2s" -> OpI2S
     | s ->
-       raise (JCH_failure (LBLOCK [ STR "Opcode tag " ; STR s ;
-                                    STR " not recognized as a converter opcode" ]))
+       raise
+         (JCH_failure
+            (LBLOCK [
+                 STR "Opcode tag ";
+                 STR s;
+                 STR " not recognized as a converter opcode"]))
 end
 
-let converteropcode_serializer = new converteropcode_serializer_t
+let converteropcode_mcts = new converteropcode_mcts_t
 
-class binopcode_serializer_t:[opcode_t] sumtype_string_converter_int =
+
+class binopcode_mcts_t:[opcode_t] mfts_int =
 object
 
-  method to_string (opc:opcode_t) =
+  inherit [opcode_t] mcts_t "bin_opcode_t"
+
+  method! ts (opc:opcode_t) =
     let addt s t = s ^ "_" ^ (java_basic_type_to_signature_string t) in
     if is_binop_opcode opc then
       match opc with
@@ -161,15 +117,20 @@ object
       | OpMult t -> addt "mult" t
       | OpDiv t -> addt "div" t
       | OpRem t -> addt "rem" t
-      | _ -> opcode_to_string opc
+      | _ ->
+         opcode_to_string opc
     else
-      raise (JCH_failure (LBLOCK [ STR "Opcode " ; opcode_to_pretty opc ;
-                                   STR " is not a binory operation opcode" ]))
+      raise
+        (JCH_failure
+           (LBLOCK [
+                STR "Opcode ";
+                opcode_to_pretty opc;
+                STR " is not a binory operation opcode"]))
 
-  method from_string (s:string) =
+  method! fs (s:string) =
     let gett = java_basic_type_of_signature_string in
     match (nsplit '_' s) with
-    | [ s1 ; s2 ] ->
+    | [ s1; s2] ->
        (match s1 with
         | "add" -> OpAdd (gett s2)
         | "sub" -> OpSub (gett s2)
@@ -177,9 +138,11 @@ object
         | "div" -> OpDiv (gett s2)
         | "rem" -> OpRem (gett s2)
         | s ->
-           raise (JCH_failure (LBLOCK [ STR "Opcode tag " ; STR s ;
-                                        STR " not recognized" ])))
-    | [ s ] ->
+           raise
+             (JCH_failure
+                (LBLOCK [
+                     STR "Opcode tag "; STR s; STR " not recognized"])))
+    | [s] ->
        (match s with
         | "ishl" -> OpIShl
         | "lshl" -> OpLShl
@@ -194,56 +157,61 @@ object
         | "ixor" -> OpIXor
         | "lxor" -> OpLXor
         | s ->
-           raise (JCH_failure (LBLOCK [ STR "Opcode tag " ; STR s ;
-                                        STR " not recognized" ])))
-    | [] ->
-       raise (JCH_failure (LBLOCK [ STR "No opcode tag found" ]))
-    | l ->
-       raise (JCH_failure (LBLOCK [ STR "Unexpected sequence of strings for opcode: ";
-                                    pretty_print_list l (fun s -> STR s) "[" "; " "]" ]))
-end
-    
-let binopcode_serializer = new binopcode_serializer_t
-                         
-let non_virtual_target_type_serializer: non_virtual_target_type_t sumtype_string_converter_int =
-  mk_sumtype_string_converter
-    "non_virtual_target_type_t"
-    [ (PrivateMethod, "p"); (StaticMethod, "s"); (FinalClass, "fc"); (FinalMethod, "fm");
-      (LocalAnalysis, "la") ]
+           raise
+             (JCH_failure
+                (LBLOCK [
+                     STR "Opcode tag "; STR s; STR " not recognized"])))
 
-class virtual ['a] complextyp_string_converter_t (name:string) =
-        object
-          
-          method virtual to_string: 'a -> string
-                       
-          method from_string (s:string):'a =
-            raise (JCH_failure (LBLOCK [ STR "No reverse construction possible for " ; STR name ]))
-            
-        end
-        
-class call_targets_string_converter_t:[call_targets_t] sumtype_string_converter_int =
+    | [] ->
+       raise (JCH_failure (LBLOCK [STR "No opcode tag found"]))
+
+    | l ->
+       raise
+         (JCH_failure
+            (LBLOCK [
+                 STR "Unexpected sequence of strings for opcode: ";
+                 pretty_print_list l (fun s -> STR s) "[" "; " "]"]))
+
+end
+
+let binopcode_mcts = new binopcode_mcts_t
+
+
+let non_virtual_target_type_mfts: non_virtual_target_type_t mfts_int =
+  mk_mfts
+    "non_virtual_target_type_t"
+    [(PrivateMethod, "p");
+     (StaticMethod, "s");
+     (FinalClass, "fc");
+     (FinalMethod, "fm");
+     (LocalAnalysis, "la")]
+
+
+class call_targets_mcts_t:[call_targets_t] mfts_int =
 object
 
-  inherit [ call_targets_t ] complextyp_string_converter_t "call_targets_t"
+  inherit [call_targets_t] mcts_t "call_targets_t"
 
-  method to_string (e:call_targets_t) =
+  method! ts (e:call_targets_t) =
     match e with
     | NonVirtualTarget _ -> "nv"
     | ConstrainedVirtualTargets _ -> "cv"
     | VirtualTargets _ -> "v"
     | EmptyTarget _ -> "empty"
 
+  method! tags = ["cv"; "empty"; "nv"; "v"]
+
 end
 
-let call_targets_serializer:call_targets_t sumtype_string_converter_int =
-  new call_targets_string_converter_t
+let call_targets_mcts:call_targets_t mfts_int = new call_targets_mcts_t
 
-class taint_origin_type_converter_t:[taint_origin_type_t] sumtype_string_converter_int =
+
+class taint_origin_type_mcts_t:[taint_origin_type_t] mfts_int =
 object
 
-  inherit [ taint_origin_type_t ] complextyp_string_converter_t "taint_origin_type_t"
+  inherit [taint_origin_type_t] mcts_t "taint_origin_type_t"
 
-  method to_string (t:taint_origin_type_t) =
+  method! ts (t:taint_origin_type_t) =
     match t with
     | T_ORIG_VAR _ -> "v"
     | T_ORIG_FIELD _ -> "f"
@@ -251,17 +219,20 @@ object
     | T_ORIG_TOP_TARGET _ -> "t"
     | T_ORIG_STUB _ -> "s"
 
+  method! tags = ["c"; "f"; "s"; "t"; "v"]
+
 end
 
-let taint_origin_type_serializer:taint_origin_type_t sumtype_string_converter_int =
-  new taint_origin_type_converter_t
+let taint_origin_type_mcts:taint_origin_type_t mfts_int =
+  new taint_origin_type_mcts_t
 
-class taint_node_type_converter_t:[taint_node_type_t] sumtype_string_converter_int =
+
+class taint_node_type_mcts_t:[taint_node_type_t] mfts_int =
 object
 
-  inherit [ taint_node_type_t ] complextyp_string_converter_t "taint_node_type_t"
+  inherit [taint_node_type_t] mcts_t "taint_node_type_t"
 
-  method to_string (t:taint_node_type_t) =
+  method! ts (t:taint_node_type_t) =
     match t with
     | TN_FIELD _ -> "f"
     | TN_OBJECT_FIELD _ -> "o"
@@ -273,17 +244,20 @@ object
     | TN_SIZE _ -> "s"
     | TN_REF_EQUAL -> "r"
 
+  method! tags = ["c"; "f"; "j"; "o"; "q"; "r"; "s"; "u"; "v"]
+
 end
 
-let taint_node_type_serializer:taint_node_type_t sumtype_string_converter_int =
-  new taint_node_type_converter_t
+let taint_node_type_mcts:taint_node_type_t mfts_int =
+  new taint_node_type_mcts_t
 
-class bc_basicvalue_converter_t:[bc_basicvalue_t] sumtype_string_converter_int =
+
+class bc_basicvalue_mcts_t:[bc_basicvalue_t] mfts_int =
 object
 
-  inherit [ bc_basicvalue_t ] complextyp_string_converter_t "bc_basicvalue_t"
+  inherit [bc_basicvalue_t] mcts_t "bc_basicvalue_t"
 
-  method to_string (a:bc_basicvalue_t) =
+  method! ts (a:bc_basicvalue_t) =
     match a with
     | BcvArg 0 -> "0"
     | BcvArg 1 -> "1"
@@ -311,15 +285,15 @@ object
 
 end
 
-let bc_basicvalue_serializer:bc_basicvalue_t sumtype_string_converter_int =
-  new bc_basicvalue_converter_t
+let bc_basicvalue_mcts:bc_basicvalue_t mfts_int = new bc_basicvalue_mcts_t
 
-class bc_objectvalue_converter_t:[bc_objectvalue_t] sumtype_string_converter_int =
+
+class bc_objectvalue_mcts_t:[bc_objectvalue_t] mfts_int =
 object
 
-  inherit [ bc_objectvalue_t] complextyp_string_converter_t "bc_objectvalue_t"
+  inherit [bc_objectvalue_t] mcts_t "bc_objectvalue_t"
 
-  method to_string (a:bc_objectvalue_t) =
+  method! ts (a:bc_objectvalue_t) =
     match a with
     | BcoArg 0 -> "0"
     | BcoArg 1 -> "1"
@@ -341,15 +315,15 @@ object
 
 end
 
-let bc_objectvalue_serializer:bc_objectvalue_t sumtype_string_converter_int =
-  new bc_objectvalue_converter_t
+let bc_objectvalue_mcts:bc_objectvalue_t mfts_int = new bc_objectvalue_mcts_t
 
-class bc_action_converter_t:[bc_action_t] sumtype_string_converter_int =
+
+class bc_action_mcts_t:[bc_action_t] mfts_int =
 object
 
-  inherit [ bc_action_t ] complextyp_string_converter_t "bc_action_t"
+  inherit [bc_action_t] mcts_t "bc_action_t"
 
-  method to_string (a:bc_action_t) =
+  method! ts (a:bc_action_t) =
     match a with
     | BcNop -> "n"
     | BcNopX -> "x"
@@ -361,21 +335,21 @@ object
     | BcPutThatField _ -> "p"
     | BcPutStaticField _ -> "d"
     | BcArrayStore _ -> "a"
-    | BcConditionalAction _ -> "c"                                            
+    | BcConditionalAction _ -> "c"
     | BcWrapCall _ -> "w"
     | BcThrow _ -> "t"
 
 end
 
-let bc_action_serializer:bc_action_t sumtype_string_converter_int =
-  new bc_action_converter_t
-                    
-class bc_pattern_converter_t:[bc_pattern_t] sumtype_string_converter_int =
+let bc_action_mcts:bc_action_t mfts_int = new bc_action_mcts_t
+
+
+class bc_pattern_mcts_t:[bc_pattern_t] mfts_int =
 object
 
-  inherit [ bc_pattern_t ] complextyp_string_converter_t "bc_pattern_t"
+  inherit [bc_pattern_t] mcts_t "bc_pattern_t"
 
-  method to_string (p:bc_pattern_t) =
+  method! ts (p:bc_pattern_t) =
     match p with
     | BcpNop -> "n"
     | BcpNopX -> "x"
@@ -391,5 +365,4 @@ object
 
 end
 
-let bc_pattern_serializer:bc_pattern_t sumtype_string_converter_int =
-  new bc_pattern_converter_t
+let bc_pattern_mcts:bc_pattern_t mfts_int = new bc_pattern_mcts_t

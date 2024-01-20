@@ -120,11 +120,11 @@ object (self)
     List.map self#get_stack_slot_data args
 
   method index_opcode (opc:opcode_t) =
-    let tags = [opcode_serializer#to_string opc] in
+    let tags = [opcode_mcts#ts opc] in
     let key = match opc with
       | OpLoad (t,reg)
         | OpStore (t,reg) ->
-         (tags @ [java_basic_type_serializer#to_string t], [reg])
+         (tags @ [java_basic_type_mfts#ts t], [reg])
       | OpIInc (inc, reg) ->
          (tags, [inc; reg])
       | OpIntConst i32 ->
@@ -144,7 +144,7 @@ object (self)
         | OpMult t
         | OpDiv t
         | OpRem t
-        | OpNeg t -> (tags @ [java_basic_type_serializer#to_string t], [])
+        | OpNeg t -> (tags @ [java_basic_type_mfts#ts t], [])
       | OpIfEq i
         | OpIfNe i
         | OpIfLt i
@@ -185,16 +185,17 @@ object (self)
          (tags, [cn#index; fs#index])
       | OpArrayLoad t
         | OpArrayStore t ->
-         (tags @ [java_basic_type_serializer#to_string t], [])
-      | OpInvokeVirtual (t,ms) ->
+         (tags @ [java_basic_type_mfts#ts t], [])
+      | OpInvokeVirtual (t, ms) ->
          (tags, [cd#index_object_type t; ms#index])
-      | OpInvokeSpecial (cn,ms)
-        | OpInvokeStatic (cn,ms)
-        | OpInvokeInterface (cn,ms) ->
+      | OpInvokeSpecial (cn, ms)
+        | OpInvokeStatic (cn, ms)
+        | OpInvokeInterface (cn, ms) ->
          (tags, [cn#index; ms#index])
-      | OpInvokeDynamic (i,ms) -> (tags, [i; ms#index])
+      | OpInvokeDynamic (i, ms) ->
+         (tags, [i; ms#index])
       | OpReturn t ->
-         (tags @ [java_basic_type_serializer#to_string t], [])
+         (tags @ [java_basic_type_mfts#ts t], [])
       | _ -> (tags,[]) in
     opcode_table#add key
 
@@ -204,9 +205,9 @@ object (self)
     let a = a "opcode" args in
     match (t 0) with
     | "ld" ->
-       OpLoad (java_basic_type_serializer#from_string (t 1), a 0)
+       OpLoad (java_basic_type_mfts#fs (t 1), a 0)
     | "st" ->
-       OpStore (java_basic_type_serializer#from_string (t 1), a 0)
+       OpStore (java_basic_type_mfts#fs (t 1), a 0)
     |"inc" ->
       OpIInc (a 0, a 1)
     | "icst" ->
@@ -226,17 +227,17 @@ object (self)
     | "ccst" ->
        OpClassConst (cd#get_object_type (a 0))
     | "add" ->
-       OpAdd (java_basic_type_serializer#from_string (t 1))
+       OpAdd (java_basic_type_mfts#fs (t 1))
     | "sub" ->
-       OpSub (java_basic_type_serializer#from_string (t 1))
+       OpSub (java_basic_type_mfts#fs (t 1))
     | "mult" ->
-       OpMult (java_basic_type_serializer#from_string (t 1))
+       OpMult (java_basic_type_mfts#fs (t 1))
     | "div" ->
-       OpDiv (java_basic_type_serializer#from_string (t 1))
+       OpDiv (java_basic_type_mfts#fs (t 1))
     | "rem" ->
-       OpRem (java_basic_type_serializer#from_string (t 1))
+       OpRem (java_basic_type_mfts#fs (t 1))
     | "neg" ->
-       OpNeg (java_basic_type_serializer#from_string (t 1))
+       OpNeg (java_basic_type_mfts#fs (t 1))
     | "ifeq" ->
        OpIfEq (a 0)
     | "ifne" ->
@@ -310,9 +311,9 @@ object (self)
        OpPutField
          (cd#retrieve_class_name (a 0), cd#retrieve_field_signature (a 1))
     | "ald" ->
-       OpArrayLoad (java_basic_type_serializer#from_string (t 1))
+       OpArrayLoad (java_basic_type_mfts#fs (t 1))
     | "ast" ->
-       OpArrayStore (java_basic_type_serializer#from_string (t 1))
+       OpArrayStore (java_basic_type_mfts#fs (t 1))
     | "invv" ->
        OpInvokeVirtual
          (cd#get_object_type (a 0), cd#retrieve_method_signature (a 1))
@@ -328,8 +329,8 @@ object (self)
     | "invd" ->
        OpInvokeDynamic (a 0, cd#retrieve_method_signature (a 1))
     | "ret" ->
-       OpReturn (java_basic_type_serializer#from_string (t 1))
-    | s -> opcode_serializer#from_string s
+       OpReturn (java_basic_type_mfts#fs (t 1))
+    | s -> opcode_mcts#fs s
 
   method write_xml_stack_slot_data_list
            ?(tag="issdl") (node:xml_element_int) (l:stack_slot_data_t list) =
