@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -44,6 +44,7 @@ open XprToPretty
 open CHCanvasBase
 
 (* bchlib *)
+open BCHBCTypes
 open BCHDoubleword
 open BCHFloc
 open BCHFunctionInfo
@@ -82,12 +83,12 @@ let sanitize (s:string) =
   end
 
 let make_va_node_name (va:doubleword_int) = "n" ^ (string_of_int va#value)
-                                          
+
 let make_index_node_name (index:dw_index_t) = "n" ^ (string_of_int index)
-                                            
-let get_address (nodeName:string) = 
+
+let get_address (nodeName:string) =
   TR.tget_ok (index_to_doubleword (int_of_string (string_suffix nodeName 1)))
-  
+
 let get_fname faddr =
   if functions_data#has_function_name faddr then
     (functions_data#get_function faddr)#get_function_name
@@ -100,14 +101,14 @@ let print_argument (floc:floc_int) invio par =
     let (_,arg) =
       List.find (fun (p,_) ->
           match p.apar_location with
-          | StackParameter i -> i = par | _ -> false) args in
+          | [StackParameter (i, _)] -> i = par | _ -> false) args in
     xpr_formatter#pr_expr arg
   with
     Not_found -> STR ("?" ^ (string_of_int par) ^ "?")
-	
+
 let trace_forward_arg (graph:dot_graph_int) faddress op_n =
   let make_sig_node faddr op = "n" ^ faddr#to_hex_string ^ (string_of_int op) in
-  let make_call_node faddr iaddr par = 
+  let make_call_node faddr iaddr par =
     "n" ^ faddr#to_hex_string ^ iaddr#to_hex_string ^ (string_of_int par) in
   let make_dll_node name par = "n" ^ name ^ (string_of_int par) in
   let make_jni_node fintf par = "n" ^ fintf.fintf_name ^ (string_of_int par) in
@@ -115,27 +116,27 @@ let trace_forward_arg (graph:dot_graph_int) faddress op_n =
     (get_fname faddr) ^ "(" ^ (string_of_int op) ^ ")" in
   let make_call_label floc invio par =
     string_printer#print (print_argument floc invio par) in
-  let make_dll_label dll name par = 
+  let make_dll_label dll name par =
     if function_summary_library#has_dll_function dll name then
       let fsum = function_summary_library#get_dll_function dll name in
       let pars = fsum#get_parameters in
-      let pname = 
+      let pname =
 	try
 	  let par = List.find (fun p -> match p.apar_location with
-	    | StackParameter i -> i = par | _ -> false) pars in
+	    | [StackParameter (i, _)] -> i = par | _ -> false) pars in
 	  "," ^ par.apar_name
 	with
 	  Not_found -> "" in
-      name ^ "(" ^ (string_of_int par) ^ pname ^ ")" 
-    else 
+      name ^ "(" ^ (string_of_int par) ^ pname ^ ")"
+    else
       name ^ "(" ^ (string_of_int par) ^ ")" in
   let make_jni_label fintf par =
     let fts = fintf.fintf_type_signature in
     let pars = fts.fts_parameters in
-      let pname = 
+      let pname =
 	try
 	  let par = List.find (fun p -> match p.apar_location with
-	    | StackParameter i -> i = par | _ -> false) pars in
+	    | [StackParameter (i, _)] -> i = par | _ -> false) pars in
 	  "," ^ par.apar_name
 	with
 	  Not_found -> "" in
@@ -161,7 +162,7 @@ let trace_forward_arg (graph:dot_graph_int) faddress op_n =
 	  let call_args = callee#get_call_args in
 	  List.iter (fun (p,e) ->
 	      match p.apar_location with
-	      | StackParameter par ->
+	      | [StackParameter (par, _)] ->
 	         let argIndices = [] in  (* get_xarg_indices finfo e in *)
 	         if List.mem op argIndices then
 	           let label = make_call_label callee callee par in
@@ -175,7 +176,7 @@ let trace_forward_arg (graph:dot_graph_int) faddress op_n =
 		       let target = ctinfo#get_application_target in
 		       begin
 		         graph#addEdge callNode (tgtSigNode target) ;
-		         if H.mem table (make_sig_label target par) then () else 
+		         if H.mem table (make_sig_label target par) then () else
 		           begin
 			     H.add table (make_sig_label target par) 1;
 			     aux target par
@@ -222,7 +223,7 @@ let trace_fwd_returnval (graph:dot_graph_int) faddr v =
       List.iter (fun (p,x) ->
 	if var_is_referenced finfo x v then
 	  match p.apar_location with
-	  | StackParameter i -> 
+	  | [StackParameter (i, _)] ->
 	     if callee#has_call_target then
                let ctinfo = callee#get_call_target in
                if ctinfo#is_app_call then
@@ -241,8 +242,8 @@ let trace_fwd_returnval (graph:dot_graph_int) faddr v =
 	     else
 	       ()
 	  | _ -> ()) call_args ) callees
-		
-  
+
+
 let trace_fwd_sideeffect (graph:dot_graph_int) faddr floc v =
   let finfo = get_function_info faddr in
   let callees = get_callees faddr in
@@ -253,7 +254,7 @@ let trace_fwd_sideeffect (graph:dot_graph_int) faddr floc v =
       List.iter (fun (p,x) ->
 	if se_address_is_referenced finfo floc x v then
 	  match p.apar_location with
-	  | StackParameter i -> 
+	  | [StackParameter (i, _)] ->
 	    if ctinfo#is_app_call then
 	      let target = ctinfo#get_application_target in
 	      let (node,_,_) = trace_forward_arg graph target i in
@@ -269,7 +270,7 @@ let trace_fwd_sideeffect (graph:dot_graph_int) faddr floc v =
 	      ()
 	  | _ -> ()) call_args ) callees
 
- 
+
 class type canvas_call_graph_int =
 object
   method reset: unit
@@ -297,7 +298,7 @@ object (self)
       else if List.mem nodeName jniNodes then
 	node#set_color CHCanvasBase.yellow) nodes
 
-  method sub_call_graph_to_dot 
+  method sub_call_graph_to_dot
     (function_index:dw_index_t) (canvas_window:canvas_window_int) =
     let nodeName = make_index_node_name function_index in
     let functionAddress = TR.tget_ok (index_to_doubleword function_index) in
@@ -305,16 +306,16 @@ object (self)
 	(functions_data#get_function functionAddress)#get_function_name
       else
 	functionAddress#to_hex_string in
-    let (graph,dllNodes,jniNodes) = 
-      match opt_system_call_graph with 
-      | Some g -> g 
+    let (graph,dllNodes,jniNodes) =
+      match opt_system_call_graph with
+      | Some g -> g
       | _ -> self#system_call_graph_to_dot_aux "LR" in
     let subgraph = graph#subgraph nodeName graphName in
     let (nodes,_) = canvas_window#show_graph subgraph graphName in
     let _ = self#color_nodes nodes dllNodes jniNodes in
-    ()    
- 
-  method sub_rv_call_graph_to_dot 
+    ()
+
+  method sub_rv_call_graph_to_dot
     (function_index:dw_index_t) (canvas_window:canvas_window_int) =
     let nodeName = make_index_node_name function_index in
     let functionAddress = TR.tget_ok (index_to_doubleword function_index) in
@@ -322,18 +323,18 @@ object (self)
 	(functions_data#get_function functionAddress)#get_function_name
       else
 	functionAddress#to_hex_string in
-    let (graph,_,_) = 
-      match opt_system_call_graph with 
-      | Some g -> g 
+    let (graph,_,_) =
+      match opt_system_call_graph with
+      | Some g -> g
       | _ -> self#system_call_graph_to_dot_aux "TB" in
     let subgraph = graph#revsubgraph nodeName graphName in
     let _ = canvas_window#show_graph subgraph graphName in
-    ()    
-   
+    ()
+
   method system_call_graph_to_dot (canvas_window:canvas_window_int) =
     let name = "system-call-graph" in
-    let (graph,dllNodes,jniNodes) = 
-      match opt_system_call_graph with 
+    let (graph,dllNodes,jniNodes) =
+      match opt_system_call_graph with
       | Some g -> g
       | _ -> self#system_call_graph_to_dot_aux "LR" in
     let (nodes,_) = canvas_window#show_graph graph name in
@@ -349,7 +350,7 @@ object (self)
     let _ = self#color_nodes nodes dllNodes jniNodes in
     ()
 
-  method trace_rv_to_dot 
+  method trace_rv_to_dot
     (findex:dw_index_t) (v:variable_t) (canvas_window:canvas_window_int) =
     let faddr = TR.tget_ok (index_to_doubleword findex) in
     let graph = mk_dot_graph "rv-graph" in
@@ -367,21 +368,21 @@ object (self)
     let _ = trace_fwd_sideeffect graph faddr floc v in
     let _ = canvas_window#show_graph graph "rv-graph" in
     ()
-    
-    
+
+
   method private system_call_graph_to_dot_aux rankdir =
     let name = "system-call-graph" in
     let graph = mk_dot_graph name in
     let _ = graph#setRankdir rankdir in
     let dllNodes = ref [] in
     let jniNodes = ref [] in
-    let add_dll_node (name:string)  = 
+    let add_dll_node (name:string)  =
       if List.mem name !dllNodes then () else dllNodes := name :: !dllNodes in
     let add_jni_node (name:string) =
       if List.mem name !jniNodes then () else jniNodes := name :: !jniNodes in
     let add_tgt_node (nodename:string) (tgt:call_target_t) =
-      match tgt with 
-      | StubTarget (DllFunction (_,dllfn)) -> 
+      match tgt with
+      | StubTarget (DllFunction (_,dllfn)) ->
 	begin
 	  add_dll_node dllfn ;
 	  graph#addEdge nodename dllfn
@@ -411,7 +412,7 @@ object (self)
 	          if function_summary_library#has_jni_function jniIndex then
 		    let fsum = function_summary_library#get_jni_function jniIndex in
 		    let fintf = fsum#get_function_interface in
-		    begin 
+		    begin
 		      add_jni_node fintf.fintf_name  ;
 		      graph#addEdge nodename fintf.fintf_name
 		    end
@@ -428,5 +429,4 @@ object (self)
 
 end
 
-let canvas_call_graph = new canvas_call_graph_t						     
-	    
+let canvas_call_graph = new canvas_call_graph_t
