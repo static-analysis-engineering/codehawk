@@ -114,7 +114,7 @@ let opcode_to_opcode_index (opc:opcode_t) =
   | OpStore (Float, t) when t >= 0 && t <= 3 -> t + 67
   | OpStore (Double, t) when t >= 0 && t <= 3 -> t + 71
   | OpStore (Object, t) when t >= 0 && t <= 3 -> t + 75
-  | OpStore (n, t) -> (jvm_basic_type "store" n) + 54
+  | OpStore (n, _t) -> (jvm_basic_type "store" n) + 54
   | OpArrayStore t when t = Int || t = Long || t = Float || t = Double ->
      (jvm_basic_type' "arraystore" t) + 79
   | OpArrayStore Object -> 83
@@ -417,7 +417,7 @@ let opcode_arg_types (opc:opcode_t) =
   | OpInvokeSpecial (cn,ms)
     | OpInvokeStatic (cn,ms)
     | OpInvokeInterface (cn,ms) -> (TObject (TClass cn)) :: (ms_arg_types ms)
-  | OpInvokeDynamic (index,ms)  -> []       (* TBD *)
+  | OpInvokeDynamic (_index, _ms)  -> []       (* TBD *)
   | OpReturn bt -> [TBasic bt]
   | _ -> []
 
@@ -1025,7 +1025,7 @@ object (self: _)
     let oppretty = Array.fold_right
 	(fun (i,opc) acc ->
 	  match opc with
-	    OpInvalid -> acc
+	  | OpInvalid -> acc
 	  | _ -> LBLOCK [INT i; STR " "; opcode_to_pretty opc; NL; acc])
 	oparray (STR "") in
     oppretty
@@ -1041,7 +1041,7 @@ class exception_handler_t
   ~(handler: int)
   ?(catch_type: class_name_int option)
   ():exception_handler_int =
-object (self: _)
+object
 
   method h_start = h_start
 
@@ -1055,7 +1055,7 @@ object (self: _)
     LBLOCK [
         fixed_length_pretty ~alignment:StrRight (INT h_start) 4;
         STR "  ";
-	fixed_length_pretty ~alignment:StrRight (INT h_end) 4  ;
+	fixed_length_pretty ~alignment:StrRight (INT h_end) 4;
         STR "  ";
 	fixed_length_pretty ~alignment:StrRight (INT handler) 4;
         STR "  ";
@@ -1073,7 +1073,8 @@ class bytecode_t
   ~(exception_table: exception_handler_int list)
   ?(line_number_table: (int * int) list option)
   ?(local_variable_table: (int * int * string * value_type_t * int) list option)
-  ?(local_variable_type_table: (int * int * string * field_type_signature_int * int) list option)
+  ?(local_variable_type_table:
+      (int * int * string * field_type_signature_int * int) list option)
   ?(stack_map_midp: stackmap_int list option)
   ?(stack_map_java6: stackmap_int list option)
   ~(attributes: (string * string) list)
@@ -1141,7 +1142,7 @@ object (self: _)
 	      find_line (snd (List.hd lnt)) lnt
             with _ -> None
 
-  method get_opcodes_per_line:( (int * int list) list)  =
+  method get_opcodes_per_line:((int * int list) list) =
     let lt = self#get_line_number_table in
     let code = self#get_code#opcodes in
     let opc_indices start len =

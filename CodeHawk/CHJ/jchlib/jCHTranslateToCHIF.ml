@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny Sipma
+   Copyright (c) 2020-2024 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,6 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-
-open Big_int_Z
 
 (* chlib *)
 open CHLanguage
@@ -48,7 +46,8 @@ open JCHJTerm
 module F = CHOnlineCodeSet.LanguageFactory
 module H = Hashtbl
 
-let is_system_exit (cn:class_name_int) (msig:method_signature_int) =
+
+let _is_system_exit (cn:class_name_int) (msig:method_signature_int) =
   cn#name = "java.lang.System" && msig#name = "exit"
 
 let command_pretty_printer = ref CHLanguage.command_to_pretty
@@ -59,13 +58,13 @@ let current_cms_index = ref 0
 let set_current_method cms =
   let cms_index = cms#index in
   begin
-    F.set_command_pretty_printer (!command_pretty_printer cms_index) ;
+    F.set_command_pretty_printer (!command_pretty_printer cms_index);
     current_cms_index := cms_index
   end
 
 
 class cmd_list_t (l: (code_int, cfg_int) command_t list) =
-object (self: _)
+object
 
   val mutable cmds = l
 
@@ -102,13 +101,13 @@ let makeBytecodeOperation
   let s = if inverted then "ii" else "i" in
   let op_name = new symbol_t ~atts ~seqnr:pc s in
   (* let op_args = List.filter (fun (s,_,_) -> not (s = "throw")) op_args in  *)
-  OPERATION { op_name = op_name ; op_args = op_args }
+  OPERATION { op_name = op_name; op_args = op_args }
 
 
-let makeExnBytecodeOperation
+let _makeExnBytecodeOperation
       (pc:int) (op_args: (string * variable_t * arg_mode_t) list) =
   let op_name = new symbol_t ~seqnr:pc "e" in
-  OPERATION { op_name = op_name ; op_args = op_args }
+  OPERATION { op_name = op_name; op_args = op_args }
 
 
 let node_pool = new StringCollections.table_t
@@ -289,7 +288,7 @@ let translate_java_basic_type (t: java_basic_type_t) =
 let translate_value_type (t: value_type_t) =
   match t with
     | TBasic b -> translate_java_basic_type b
-    | TObject TClass cl ->
+    | TObject TClass _ ->
 	SYM_VAR_TYPE
     | TObject TArray _ ->
 	SYM_VAR_TYPE
@@ -343,7 +342,7 @@ let get_register_variable n ty =
   make_register_variable n (translate_value_type ty)
 
 
-let make_field_variable (cn:class_name_int) (fs:field_signature_int) =
+let _make_field_variable (cn:class_name_int) (fs:field_signature_int) =
   let t = translate_value_type fs#descriptor in
   let suffix = ch_type_to_suffix t in
   let name = cn#name ^ "." ^ fs#name ^ "_field" in
@@ -381,9 +380,9 @@ let handler_pc_label (pc: int) = (pc_label pc) ^ "-handler"
 
 let return_no_exc_pc_label (pc: int) = (pc_label pc) ^ "-no-exc"
 
-let return_exc_pc_label (pc:int) = (pc_label pc) ^ "-exc"
+let _return_exc_pc_label (pc:int) = (pc_label pc) ^ "-exc"
 
-let exc_handler_pc_label (pc:int) (h:int) =
+let _exc_handler_pc_label (pc:int) (h:int) =
   (pc_label pc) ^ "-handler=" ^ (string_of_int h)
 
 
@@ -418,7 +417,7 @@ let java_basic_type_to_stack t pc =
 let value_type_to_stack t pc =
   match t with
     | TBasic b -> java_basic_type_to_stack b pc
-    | TObject _ -> [A [ pc]]
+    | TObject _ -> [A [pc]]
 
 
 let var_assign tgt src t =
@@ -454,13 +453,13 @@ class destination_info_t =
 	| Some set ->
 	    if not (dests#subset set) then
 	      begin
-		set#addSet dests ;
+		set#addSet dests;
 		vars_with_changed_destinations#add var
 	      end
 	| _ ->
-	    destinations#set var (dests#clone) ;
+	    destinations#set var (dests#clone);
 	    vars_with_changed_destinations#add var in
-      if not dests#isEmpty then List.iter set_dests vars ;
+      if not dests#isEmpty then List.iter set_dests vars;
       vars_with_changed_destinations
 
     method get_all_destinations =
@@ -469,7 +468,7 @@ class destination_info_t =
 	let work_set = VariableCollections.set_of_list [var] in
 	while not work_set#isEmpty do
 	  let v = Option.get work_set#choose in
-	  work_set#remove v ;
+	  work_set#remove v;
 	  match tgt_to_srcs#get v with
 	  | Some set ->
 	     let vars_with_changed_destinations =
@@ -487,7 +486,7 @@ class destination_info_t =
 	  | None -> () in
 	add_srcs var in
        *)
-      init_destinations#iter add_dest ;
+      init_destinations#iter add_dest;
       let remove_large var dests =
 	if dests#size > 10 then
 	  destinations#set var (new IntCollections.set_t) in
@@ -511,7 +510,7 @@ object (self: 'a)
 
   method get_contents = stack
 
-  method merge (other:'a) (pc_label:string):'a =
+  method merge (other:'a) (_pc_label:string):'a =
     let otherStack = other#get_contents in
     let join_sources l1 l2 =
       List.fold_left (fun a s -> if List.mem s a then a else s::a) l1 l2 in
@@ -526,9 +525,13 @@ object (self: 'a)
 	(I (join_types ty1 ty2, join_sources src1 src2)) :: (aux tl1 tl2)
       | (TOP :: tl1, TOP :: tl2) -> TOP :: (aux tl1 tl2)
       | _ ->
-	raise (JCH_failure
-		 (LBLOCK [ STR "Error in merging stacks " ; self#toPretty ;
-			   STR " and " ; other#toPretty ])) in
+	 raise
+           (JCH_failure
+	      (LBLOCK [
+                   STR "Error in merging stacks ";
+                   self#toPretty;
+		   STR " and ";
+                   other#toPretty])) in
     let newContents = aux stack otherStack in
     {< stack = newContents >}
 
@@ -559,11 +562,11 @@ object (self: 'a)
 
   method copy ~(src: int) ~(tgt: int): (code_int, cfg_int) command_t list =
     let abstract_var (var:variable_t) =
-      OPERATION { op_name = new symbol_t "dead_vars" ;
-		  op_args = [ ("var", var, READ) ]} in
+      OPERATION { op_name = new symbol_t "dead_vars";
+		  op_args = [("var", var, READ)]} in
     let (_, code) = List.fold_left (fun (n, c) l ->
       match l with
-	| A _ -> 
+	| A _ ->
 	  let tgt_var = make_stack_variable n tgt SYM_VAR_TYPE in
 	  let src_var = make_stack_variable n src SYM_VAR_TYPE in
 	  let _ = !destination_info#add_copy tgt_var src_var in
@@ -599,7 +602,7 @@ end
 
 
 class stack_table_t =
-object (self: _)
+object
 
   val table: op_stack_t StringCollections.table_t = new StringCollections.table_t
 
@@ -636,8 +639,9 @@ let exception_handler_table: exception_handler_int list ref = ref []
 let exception_var = ref (make_variable "exception" SYM_VAR_TYPE)
 
 let exnExitOperation =
-  OPERATION { op_name = new symbol_t "exn-exit" ;
-	      op_args = [ ("throw", !exception_var, READ) ] }
+  OPERATION {
+      op_name = new symbol_t "exn-exit";
+      op_args = [("throw", !exception_var, READ)]}
 
 
 class exn_info_t  className getCode getCatchInfo:exn_info_int =
@@ -659,7 +663,7 @@ let defaultExnInfo =
 
 let defaultExnInfoFn (m:method_int) =
   let noExns = (fun (_:int) -> []) in
-  let defaultExn = (fun (_:int) -> [ defaultExnInfo ]) in
+  let defaultExn = (fun (_:int) -> [defaultExnInfo]) in
   if m#is_concrete then
     match m#get_implementation with
       Bytecode bc ->
@@ -674,7 +678,7 @@ let defaultExnInfoFn (m:method_int) =
 
 
 let initializationOperation =
-  OPERATION { op_name = new symbol_t "method-init" ; op_args = [] }
+  OPERATION {op_name = new symbol_t "method-init"; op_args = []}
 
 
 let simplifier =
@@ -706,7 +710,7 @@ let code_label_no_exc (pc:int) =
   new symbol_t ~atts:[string_of_int pc] "pc-no-exc"
 
 let code_label_exc (pc:int) (exn:int) =
-  new symbol_t ~atts:[string_of_int pc ; string_of_int exn ] "pc-exc"
+  new symbol_t ~atts:[string_of_int pc; string_of_int exn] "pc-exc"
 
 
 let get_stack (pc: int) =
@@ -731,7 +735,7 @@ class logical_stack_slot_t
   (sources: int list)
   (destinations: IntCollections.set_t VariableCollections.table_t)
   (is_symbolic:bool)
-  (bytecode_size: int):logical_stack_slot_int =
+  (_bytecode_size: int):logical_stack_slot_int =
 object (self)
 
   val mutable taint = TAINT_UNKNOWN
@@ -746,33 +750,48 @@ object (self)
   val mutable transformed_var : variable_t option = None
 
   method set_type ts = types <- ts
+
   method set_taint t = taint <- t
+
   method set_value v = value <- Some v
 
   method get_variable = variable
+
   method set_transformed_variable tr_var =
     transformed_var <- Some tr_var
+
   method get_transformed_variable =
     Option.get transformed_var
 
   method get_level = level
+
   method get_taint = taint
+
   method get_type = types
+
   method get_sources = sources
+
   method get_destinations = destinations
-  method get_value = match value with Some v -> v | _ ->
-    raise (JCH_failure (LBLOCK [ STR "Stack slot does not have a value" ]))
+
+  method get_value =
+    match value with
+    | Some v -> v
+    | _ ->
+       raise (JCH_failure (LBLOCK [STR "Stack slot does not have a value"]))
 
   method is_double_slot = is_double
+
   method is_numeric  = not is_symbolic
+
   method is_symbolic = is_symbolic
+
   method has_value = match value with Some _ -> true | _ -> false
 
   method to_stack_slot_data = {
-      ss_srcs = self#get_sources ;
-      ss_dsts = self#get_destinations ;
-      ss_level = self#get_level ;
-      ss_types = self#get_type ;
+      ss_srcs = self#get_sources;
+      ss_dsts = self#get_destinations;
+      ss_level = self#get_level;
+      ss_types = self#get_type;
       ss_value = match value with Some v -> v | _ -> top_jterm_range }
 
   method toPretty =
@@ -825,18 +844,39 @@ object (self)
       match l with
       | A sources ->
 	let var = make_stack_variable n pc SYM_VAR_TYPE in
-	let slot = new logical_stack_slot_t n var false
-	  [TBasic Object] sources destinations true bytecode_size in
+	let slot =
+          new logical_stack_slot_t
+            n
+            var
+            false
+	    [TBasic Object]
+            sources
+            destinations
+            true
+            bytecode_size in
 	(n - 1, slot :: acc)
+
       | I (types,sources) ->
 	let var = make_stack_variable n pc NUM_VAR_TYPE in
 	let vtypes = List.map (fun jbt -> TBasic jbt) types in
-	let slot = new logical_stack_slot_t n var !isDoubleSlot vtypes sources
-	  destinations false bytecode_size in
+	let slot =
+          new logical_stack_slot_t
+            n
+            var
+            !isDoubleSlot
+            vtypes
+            sources
+            destinations
+            false
+            bytecode_size in
 	let _ = isDoubleSlot := false in
 	(n - 1, slot :: acc)
-      | TOP -> begin isDoubleSlot := true ; (n - 1, acc) end
-    ) (List.length contents, []) contents in
+
+      | TOP ->
+         begin
+           isDoubleSlot := true;
+           (n - 1, acc)
+         end) (List.length contents, []) contents in
     let _ = List.iter (fun s -> table#set s#get_level s) slots in
     table
 
@@ -859,7 +899,7 @@ object (self)
     else
       let slotlst =
 	List.sort
-          (fun (i1,_) (i2,_) -> Stdlib.compare i2 i1) slots#listOfPairs in
+          (fun (i1, _) (i2, _) -> Stdlib.compare i2 i1) slots#listOfPairs in
       let rec aux l i result =
 	if i = 0 then
 	  result
@@ -1049,7 +1089,7 @@ let translate_arg_bindings
     | Some t ->
       let ch_type = translate_value_type t in
       let stack_var = make_stack_variable (inv_stack#height + 1) pc' ch_type in
-      ((return_symbol, stack_var) :: 
+      ((return_symbol, stack_var) ::
 	  arg_bindings, inv_stack, inv_stack#pushx (value_type_to_stack t pc))
   with
   | JCH_failure p ->
@@ -1064,7 +1104,7 @@ let translate_arg_bindings
 	      STR ": ";
               p;
               NL;
-	      INDENT (3, stack#toPretty) ]);
+	      INDENT (3, stack#toPretty)]);
        raise
          (JCH_failure
             (LBLOCK [
@@ -1096,8 +1136,7 @@ let translate_opcode
     ~(pc:int)
     ~(normal_exit: string)
     ~(exceptional_exit: string)
-    ~(code: opcodes_int)
-    ~(bytecode: bytecode_int) =
+    ~(code: opcodes_int) =
   let opcode = code#at pc in
   if (!translated_opcodes)#has pc then
     ()
@@ -1130,7 +1169,7 @@ let translate_opcode
       in
       loop (pc + 1)
     in
-    let add_exn_to_cfg (pc:int) (pc':int) (args:op_arg_t list) commands =
+    let add_exn_to_cfg (pc:int) (pc':int) (_args:op_arg_t list) commands =
       let handlers = get_exception_handler_infos pc in
       (* let args = List.filter (fun (s,_,m) -> s = "throw" || m = READ) args in
          let exnOp = makeExnBytecodeOperation pc args in *)
@@ -1142,15 +1181,15 @@ let translate_opcode
           (pc_label pc) ^ "-to-" ^ hNode ^ "-for-" ^ (string_of_int exnId) in
 	begin
 	  let code = CODE (code_label_exc pc exnId, F.mkCode code) in
-	  (!graph)#add_node exnNode [ code ] ;
-	  (!graph)#add_edge thisNode exnNode ;
+	  (!graph)#add_node exnNode [code];
+	  (!graph)#add_edge thisNode exnNode;
 	  (!graph)#add_edge exnNode hNode
 	end in
       begin
 	let noExnCode = CODE (code_label_no_exc pc, F.mkCode commands) in
-	(!graph)#add_node noExnNode [ noExnCode ] ;
-	(!graph)#add_edge thisNode noExnNode ;
-	(!graph)#add_edge noExnNode nextNode ;
+	(!graph)#add_node noExnNode [noExnCode];
+	(!graph)#add_edge thisNode noExnNode;
+	(!graph)#add_edge noExnNode nextNode;
 	List.iter (fun exnInfo ->
 	  let caught = ref false in
 	  let exnId = exnInfo#get_exception#index in
@@ -1159,10 +1198,10 @@ let translate_opcode
 	      if !caught then () else
 	      begin
 		match handler#catch_type with
-		  None ->
+		| None ->
 		    begin
 		      make_exn_node exnId (handler_pc_label handler#handler)
-		        (exnInfo#get_code !scope !exception_var) ;
+		        (exnInfo#get_code !scope !exception_var);
 		      caught := true
 		    end
 		| Some cn ->
@@ -1170,14 +1209,14 @@ let translate_opcode
 		    WillCatch ->
 		      begin
 			make_exn_node exnId (handler_pc_label handler#handler)
-			  (exnInfo#get_code !scope !exception_var) ;
+			  (exnInfo#get_code !scope !exception_var);
 			caught := true
 		      end
 		  | MayCatch ->
 		    make_exn_node exnId (handler_pc_label handler#handler)
 		      (exnInfo#get_code !scope !exception_var)
 		  | _ -> ()
-	      end ) handlers ;
+	      end ) handlers;
 	    if !caught then
               ()
             else
@@ -1196,9 +1235,8 @@ let translate_opcode
 	translate_arg_bindings pc pc' has_this stack signature in
       let op_args =
 	(List.map (fun (p, v) ->
-             (String.concat
-                ""
-                p#getSymbol, v,
+             (String.concat "" p#getSymbol,
+              v,
 	      match p#getSymbol with
 	      | "return" :: _ | "throw" :: _ -> WRITE
 	      | _ -> READ)) bindings) in
@@ -1223,7 +1261,7 @@ let translate_opcode
 	  let stack_var = make_stack_variable (stack#height + 1) pc' ch_type in
 	  let reg = make_register_variable n ch_type in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
-	  let op_args = [ ("dst1", stack_var, READ) ; ("src1", reg, READ) ] in
+	  let op_args = [("dst1", stack_var, READ); ("src1", reg, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  (var_assign stack_var reg ch_type) :: op :: (stack#copy ~src:pc ~tgt:pc')
 
@@ -1238,7 +1276,7 @@ let translate_opcode
             make_stack_variable (stack#height - t_size + 1) pc ch_type in
 	  let _ = set_destination pc [stack_var] in
 	  let reg = make_register_variable n ch_type in
-	  let op_args = [ ("dst1", reg, READ) ; ("src1", stack_var, READ) ] in
+	  let op_args = [("dst1", reg, READ); ("src1", stack_var, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
 	  (var_assign reg stack_var ch_type) :: op :: (stack'#copy ~src:pc ~tgt:pc')
@@ -1249,7 +1287,7 @@ let translate_opcode
 	  let _ = set_stack pc' stack in
 	  let reg = make_register_variable r NUM_VAR_TYPE in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
-	  let op_args = [ ("src_dst", reg, READ) ] in
+	  let op_args = [("src_dst", reg, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  (INCREMENT (reg, mkNumerical c)) :: op :: (stack#copy ~src:pc ~tgt:pc')
 
@@ -1262,13 +1300,13 @@ let translate_opcode
 	    let ch_type = stack_level_to_ch_type t in
 	    let stack_var = make_stack_variable stack#height pc ch_type in
 	    begin
-	      set_destination pc [stack_var] ;
+	      set_destination pc [stack_var];
 	      stack_var
 	    end in
 	  let stack' = stack#pop in
 	  let _ = set_stack pc' stack' in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
-	  let op_args = [ ("src", stack_var, READ) ] in
+	  let op_args = [("src", stack_var, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (stack'#copy ~src:pc ~tgt:pc')
 
@@ -1279,16 +1317,18 @@ let translate_opcode
 	    match stack#get_contents with
 	    | TOP :: TOP :: _
 	      | _ :: TOP :: _ ->
-               ch_error_log#add "stack corruption" (LBLOCK [ stack#toPretty])
+               ch_error_log#add "stack corruption" (LBLOCK [stack#toPretty])
 	    | TOP :: t :: _->
 		let ch_type = stack_level_to_ch_type t in
-		let stack_var = make_stack_variable (stack#height - 1) pc ch_type in
+		let stack_var =
+                  make_stack_variable (stack#height - 1) pc ch_type in
 		set_destination pc [stack_var]
 	    | t1 :: t2 :: _->
 		let ch_type = stack_level_to_ch_type t1 in
 		let stack_var1 = make_stack_variable stack#height pc ch_type in
 		let ch_type = stack_level_to_ch_type t2 in
-		let stack_var2 = make_stack_variable (stack#height - 1) pc ch_type in
+		let stack_var2 =
+                  make_stack_variable (stack#height - 1) pc ch_type in
 		set_destination pc [stack_var1; stack_var2]
 	    | _ -> () in
 	  let stack' = stack#popx 2 in
@@ -1306,12 +1346,14 @@ let translate_opcode
 	  let _ = set_stack pc' stack' in
 	  let stack_var_1 = make_stack_variable stack#height pc ch_type in
 	  let stack_var_2 = make_stack_variable stack'#height pc' ch_type in
-	  set_destination pc [stack_var_1] ;
+	  set_destination pc [stack_var_1];
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
 	  let op_args =
             [("dst1", stack_var_2, READ); ("src1", stack_var_1, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
-	  (var_assign stack_var_2 stack_var_1 ch_type) :: op :: (stack#copy ~src:pc ~tgt:pc')
+	  (var_assign stack_var_2 stack_var_1 ch_type)
+          :: op
+          :: (stack#copy ~src:pc ~tgt:pc')
 
 	| OpDupX1 ->
 	  let stack_1 = get_stack pc in
@@ -1323,7 +1365,7 @@ let translate_opcode
 	  let t_2 = stack_2#top in
 	  let ch_type_2 = stack_level_to_ch_type t_2 in
 	  let stack_var_2 = make_stack_variable stack_2#height pc ch_type_2 in
-	  set_destination pc [stack_var_1; stack_var_2] ;
+	  set_destination pc [stack_var_1; stack_var_2];
 	  let inv_stack = stack_2#pop in
 	  let stack' =
             inv_stack#pushx [change_stack_level_source t_1 pc; t_2; t_1] in
@@ -1347,7 +1389,7 @@ let translate_opcode
 	   var_assign stack_var_2' stack_var_2 ch_type_2;
 	   var_assign stack_var_3' stack_var_1 ch_type_1;
 	   op
-	  ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	 ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 
 	| OpDupX2 ->
 	  let stack_1 = get_stack pc in
@@ -1361,7 +1403,7 @@ let translate_opcode
 	    let t_2 = stack_2'#top in
 	    let ch_type_2 = stack_level_to_ch_type t_2 in
 	    let stack_var_2 = make_stack_variable stack_2'#height pc ch_type_2 in
-	    set_destination pc [stack_var_1; stack_var_2]  ;
+	    set_destination pc [stack_var_1; stack_var_2] ;
 	    let inv_stack = stack_2'#pop in
 	    let stack' =
               inv_stack#pushx [change_stack_level_source t_1 pc; t_2; TOP; t_1] in
@@ -1385,7 +1427,7 @@ let translate_opcode
 	     var_assign stack_var_2' stack_var_2 ch_type_2;
 	     var_assign stack_var_3' stack_var_1 ch_type_1;
 	     op
-	    ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	   ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 	  else
 	    let t_2 = stack_2#top in
 	    let ch_type_2 = stack_level_to_ch_type t_2 in
@@ -1394,7 +1436,7 @@ let translate_opcode
 	    let t_3 = stack_3#top in
 	    let ch_type_3 = stack_level_to_ch_type t_3 in
 	    let stack_var_3 = make_stack_variable stack_3#height pc ch_type_3 in
-	    set_destination pc [stack_var_1; stack_var_2; stack_var_3]  ;
+	    set_destination pc [stack_var_1; stack_var_2; stack_var_3] ;
 	    let inv_stack = stack_3#pop in
 	    let stack' =
               inv_stack#pushx [change_stack_level_source t_1 pc; t_3; t_2; t_1] in
@@ -1423,7 +1465,7 @@ let translate_opcode
 	     var_assign stack_var_3' stack_var_3 ch_type_3;
 	     var_assign stack_var_4' stack_var_1 ch_type_1;
 	     op
-	    ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	   ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 
 	| OpDup2 ->
 	  let stack_1 = get_stack pc in
@@ -1433,8 +1475,8 @@ let translate_opcode
 	    let stack = stack_1#pop in
 	    let t = stack#top in
 	    let ch_type = stack_level_to_ch_type t in
-	    let stack_var = make_stack_variable stack#height pc ch_type in  
-	    set_destination pc [stack_var]  ;
+	    let stack_var = make_stack_variable stack#height pc ch_type in
+	    set_destination pc [stack_var] ;
 	    let inv_stack = stack#pop in
 	    let stack' =
               inv_stack#pushx [t; TOP; change_stack_level_source t pc; TOP] in
@@ -1453,7 +1495,7 @@ let translate_opcode
 	    [var_assign stack_var_1' stack_var ch_type;
 	     var_assign stack_var_2' stack_var ch_type;
 	     op
-	    ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	   ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 	  else
 	    let ch_type_1 = stack_level_to_ch_type t_1 in
 	    let stack_var_1 = make_stack_variable stack_1#height pc ch_type_1 in
@@ -1461,7 +1503,7 @@ let translate_opcode
 	    let t_2 = stack_2#top in
 	    let ch_type_2 = stack_level_to_ch_type t_2 in
 	    let stack_var_2 = make_stack_variable stack_2#height pc ch_type_2 in
-	    set_destination pc [stack_var_1; stack_var_2]  ;
+	    set_destination pc [stack_var_1; stack_var_2] ;
 	    let inv_stack = stack_2#pop in
 	    let stack' =
               inv_stack#pushx
@@ -1493,7 +1535,7 @@ let translate_opcode
 	     var_assign stack_var_3' stack_var_1 ch_type_1;
 	     var_assign stack_var_4' stack_var_2 ch_type_2;
 	     op
-	    ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	   ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 
 	| OpDup2X1 ->
 	  let stack_1 = get_stack pc in
@@ -1508,7 +1550,7 @@ let translate_opcode
 	    let t_2 = stack_2#top in
 	    let ch_type_2 = stack_level_to_ch_type t_2 in
 	    let stack_var_2 = make_stack_variable stack_2#height pc ch_type_2 in
-	    set_destination pc [stack_var_1; stack_var_2]  ;
+	    set_destination pc [stack_var_1; stack_var_2] ;
 	    let inv_stack = stack_2#pop in
 	    let stack' =
               inv_stack#pushx [
@@ -1533,7 +1575,7 @@ let translate_opcode
 	     var_assign stack_var_2' stack_var_2 ch_type_2;
 	     var_assign stack_var_3' stack_var_1 ch_type_1;
 	     op
-	    ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	   ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 	  else
 	    let ch_type_1 = stack_level_to_ch_type t_1 in
 	    let stack_var_1 = make_stack_variable stack_1#height pc ch_type_1 in
@@ -1545,7 +1587,7 @@ let translate_opcode
 	    let t_3 = stack_3#top in
 	    let ch_type_3 = stack_level_to_ch_type t_3 in
 	    let stack_var_3 = make_stack_variable stack_3#height pc ch_type_3 in
-	    set_destination pc [stack_var_1; stack_var_2; stack_var_3]  ;
+	    set_destination pc [stack_var_1; stack_var_2; stack_var_3] ;
 	    let inv_stack = stack_3#pop in
 	    let stack' =
               inv_stack#pushx [
@@ -1584,7 +1626,7 @@ let translate_opcode
 	     var_assign stack_var_4' stack_var_1 ch_type_1;
 	     var_assign stack_var_5' stack_var_2 ch_type_2;
 	     op
-	    ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	   ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 
 	| OpDup2X2 ->
 	  let stack_1 = get_stack pc in
@@ -1633,7 +1675,7 @@ let translate_opcode
 	       var_assign stack_var_2' stack_var_2 ch_type_2;
 	       var_assign stack_var_3' stack_var_1 ch_type_1;
 	       op
-	      ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	     ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 	    else (* Form 2 *)
               (********)
 	      let stack_2' = stack_2#pop in
@@ -1647,7 +1689,7 @@ let translate_opcode
 	      let ch_type_3 = stack_level_to_ch_type t_3 in
 	      let stack_var_3 =
                 make_stack_variable stack_3#height pc ch_type_3 in
-	      set_destination pc [stack_var_1; stack_var_2; stack_var_3]  ;
+	      set_destination pc [stack_var_1; stack_var_2; stack_var_3] ;
 	      let inv_stack = stack_3#pop in
 	      let stack' =
                 inv_stack#pushx [
@@ -1694,7 +1736,7 @@ let translate_opcode
 	       var_assign stack_var_3' stack_var_3 ch_type_3;
 	       var_assign stack_var_4' stack_var_1 ch_type_1;
 	       op
-	      ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	     ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 	  else (* Forms 1 & 3 *)
 	    let ch_type_1 = stack_level_to_ch_type t_1 in
 	    let stack_var_1 = make_stack_variable stack_1#height pc ch_type_1 in
@@ -1709,7 +1751,7 @@ let translate_opcode
 	      let t_3' = stack_3'#top in
 	      let ch_type_3 = stack_level_to_ch_type t_3' in
 	      let stack_var_3 = make_stack_variable stack_3'#height pc ch_type_3 in
-	      set_destination pc [stack_var_1; stack_var_2; stack_var_3]  ;
+	      set_destination pc [stack_var_1; stack_var_2; stack_var_3] ;
 	      let inv_stack = stack_3'#pop in
 	      let stack' =
                 inv_stack#pushx [
@@ -1748,7 +1790,7 @@ let translate_opcode
 	       var_assign stack_var_4' stack_var_1 ch_type_1;
 	       var_assign stack_var_5' stack_var_2 ch_type_2;
 	       op
-	      ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	     ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 	    else (* Form 1 *)
 	      let ch_type_3 = stack_level_to_ch_type t_3 in
 	      let stack_var_3 = make_stack_variable stack_3#height pc ch_type_3 in
@@ -1802,7 +1844,7 @@ let translate_opcode
 	       var_assign stack_var_5' stack_var_1 ch_type_1;
 	       var_assign stack_var_6' stack_var_2 ch_type_2;
 	       op
-	      ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	     ] @ (inv_stack#copy ~src:pc ~tgt:pc')
 
 	| OpSwap ->
 	  let stack = get_stack pc in
@@ -1819,7 +1861,7 @@ let translate_opcode
             make_stack_variable (stack#height - 1) pc ch_type_2 in
 	  let stack_var_1' = make_stack_variable stack#height pc' ch_type_2 in
 	  let inv_stack = stack_2#pop in
-	  let stack' = inv_stack#pushx [t_1 ; t_2] in
+	  let stack' = inv_stack#pushx [t_1; t_2] in
 	  let _ = set_stack pc' stack' in
 	  let _ = !destination_info#add_copy stack_var_1' stack_var_2 in
 	  let _ = !destination_info#add_copy stack_var_2' stack_var_1 in
@@ -1833,7 +1875,7 @@ let translate_opcode
 	  let op = makeBytecodeOperation pc op_args in
 	  [var_assign stack_var_1' stack_var_2 ch_type_2;
 	   var_assign stack_var_2' stack_var_1 ch_type_1;
-	   op ] @ (inv_stack#copy ~src:pc ~tgt:pc')
+	   op] @ (inv_stack#copy ~src:pc ~tgt:pc')
 
 	(* Constant loading *)
 	| OpAConstNull ->
@@ -1854,7 +1896,7 @@ let translate_opcode
 	  let _ = set_stack pc' stack' in
 	  let stack_var = make_stack_variable stack'#height pc' NUM_VAR_TYPE in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
-	  let op_args = [ ("dst1", stack_var, READ) ] in
+	  let op_args = [("dst1", stack_var, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  (ASSIGN_NUM (stack_var, NUM (mkNumericalFromInt32 n)))
           :: op :: (stack#copy ~src:pc ~tgt:pc')
@@ -1864,9 +1906,10 @@ let translate_opcode
 	  let pc' = next_pc () in
 	  let stack' = stack#pushx [I ([Long],[pc]); TOP] in
 	  let _ = set_stack pc' stack' in
-	  let stack_var = make_stack_variable (stack'#height - 1) pc' NUM_VAR_TYPE in
+	  let stack_var =
+            make_stack_variable (stack'#height - 1) pc' NUM_VAR_TYPE in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
-	  let op_args = [ ("dst1", stack_var, READ) ] in
+	  let op_args = [("dst1", stack_var, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  (ASSIGN_NUM (stack_var, NUM (mkNumericalFromInt64 n)))
           :: op :: (stack#copy ~src:pc ~tgt:pc')
@@ -1884,7 +1927,7 @@ let translate_opcode
 	  let stack_var =
             make_stack_variable (stack#height + 1) pc' NUM_VAR_TYPE in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
-	  let op_args = [ ("dst1", stack_var, WRITE) ] in
+	  let op_args = [("dst1", stack_var, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (stack#copy ~src:pc ~tgt:pc')
 
@@ -1897,29 +1940,31 @@ let translate_opcode
 	  let _ = set_stack pc' stack' in
 	  let stack_var = make_stack_variable stack'#height pc' NUM_VAR_TYPE in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
-	  let op_args = [ ("dst1", stack_var, READ) ] in
+	  let op_args = [("dst1", stack_var, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
-	  (ASSIGN_NUM (stack_var, NUM (mkNumerical n))) :: op :: (stack#copy ~src:pc ~tgt:pc')
+	  (ASSIGN_NUM (stack_var, NUM (mkNumerical n)))
+          :: op
+          :: (stack#copy ~src:pc ~tgt:pc')
 
-	| OpStringConst s ->
+	| OpStringConst _ ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let stack' = stack#push (A [pc]) in
 	  let _ = set_stack pc' stack' in
 	  let stack_var = make_stack_variable stack'#height pc' SYM_VAR_TYPE in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
-	  let op_args = [ ("ref", stack_var, WRITE) ] in
+	  let op_args = [("ref", stack_var, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (stack#copy ~src:pc ~tgt:pc')
 
-	| OpClassConst o ->
+	| OpClassConst _ ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let stack' = stack#push (A [pc]) in
 	  let _ = set_stack pc' stack' in
 	  let stack_var = make_stack_variable stack'#height pc' SYM_VAR_TYPE in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
-	  let op_args = [("ref", stack_var, WRITE) ] in
+	  let op_args = [("ref", stack_var, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (stack#copy ~src:pc ~tgt:pc')
 
@@ -1976,7 +2021,7 @@ let translate_opcode
 		end
 	    | _ ->
 	      begin
-		(!graph)#add_edge (pc_label pc) (pc_label pc') ;
+		(!graph)#add_edge (pc_label pc) (pc_label pc');
 		c :: op :: (inv_stack#copy ~src:pc ~tgt:pc')
 	      end
 	  end
@@ -2049,7 +2094,7 @@ let translate_opcode
               (stack#height - operand2_size + 1) pc NUM_VAR_TYPE in
 	  let _ = set_destination pc [stack_var_1; stack_var_2] in
 	  let op_args =
-	    [ ("dst1", stack_var, WRITE);
+	    [("dst1", stack_var, WRITE);
 	      ("src1_1", stack_var_1, READ);
               ("src1_2", stack_var_2, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
@@ -2070,11 +2115,11 @@ let translate_opcode
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
 	  let _ = set_destination pc [stack_var] in
 	  let op_args = [
-              ("dst1", stack_var', WRITE) ; ("src1", stack_var , READ) ] in
+              ("dst1", stack_var', WRITE); ("src1", stack_var , READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (inv_stack#copy ~src:pc ~tgt:pc')
         (*
-	  let op_args = [("dst1", stack_var', READ) ; ("src1", stack_var , READ) ] in
+	  let op_args = [("dst1", stack_var', READ); ("src1", stack_var , READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  (var_assign stack_var' stack_var NUM_VAR_TYPE)
           :: op :: (inv_stack#copy pc pc')
@@ -2101,7 +2146,7 @@ let translate_opcode
 	  let _ = set_destination pc [stack_var] in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
 	  let op_args = [
-              ("dst1", stack_var', WRITE) ; ("src1", stack_var , READ) ] in
+              ("dst1", stack_var', WRITE); ("src1", stack_var , READ)] in
 	  let op = makeBytecodeOperation pc op_args in
           (*	  (var_assign stack_var' stack_var NUM_VAR_TYPE)
                   :: op :: (inv_stack#copy pc pc')  *)
@@ -2132,7 +2177,7 @@ let translate_opcode
 	    | _ -> 1 in
 	  let (tgt_size, tgt_levels) = match opcode with
 	    | OpI2D | OpL2D | OpF2L | OpF2D | OpD2L ->
-               (2, [I ([tgtType],[pc]) ; TOP])
+               (2, [I ([tgtType],[pc]); TOP])
 	    | _ -> (1, [I ([tgtType],[pc])]) in
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
@@ -2146,7 +2191,7 @@ let translate_opcode
 	  let _ = set_destination pc [stack_var] in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
 	  let op_args = [
-              ("dst1", stack_var', WRITE) ; ("src1", stack_var, READ)] in
+              ("dst1", stack_var', WRITE); ("src1", stack_var, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (inv_stack#copy ~src:pc ~tgt:pc')
 
@@ -2185,7 +2230,7 @@ let translate_opcode
 			  ASSERT (LT (stack_var_1, stack_var_2));
 			  ASSIGN_NUM (stack_var', NUM numerical_one#neg)
 			]
-		    ]
+		   ]
 		],
 	      None)
 	  ) :: op:: (inv_stack#copy ~src:pc ~tgt:pc')
@@ -2310,9 +2355,13 @@ let translate_opcode
 	    begin
 	      (!graph)#add_node
                 (pc_label_then pc)
-                (op :: test_then :: (List.rev (stack'#copy ~src:pc ~tgt:pc_then)));
+                (op
+                 :: test_then
+                 :: (List.rev (stack'#copy ~src:pc ~tgt:pc_then)));
 	      (!graph)#add_node (pc_label_else pc)
-		(inverted_op :: test_else :: (List.rev (stack'#copy ~src:pc ~tgt:pc_else)));
+		(inverted_op
+                 :: test_else
+                 :: (List.rev (stack'#copy ~src:pc ~tgt:pc_else)));
 	      (!graph)#add_edge (pc_label pc) (pc_label_then pc);
 	      (!graph)#add_edge (pc_label pc) (pc_label_else pc);
 	      (!graph)#add_edge (pc_label_then pc) (pc_label pc_then);
@@ -2357,19 +2406,23 @@ let translate_opcode
 	    if is_binop then
 	      let stack_var_1 =
                 make_stack_variable (stack#height - 1) pc SYM_VAR_TYPE in
-	      let stack_var_2 = make_stack_variable stack#height pc SYM_VAR_TYPE in
+	      let stack_var_2 =
+                make_stack_variable stack#height pc SYM_VAR_TYPE in
 	      let _ = set_destination pc [stack_var_1; stack_var_2] in
 	      let op_args = [
                   ("src1", stack_var_1, READ); ("src2", stack_var_2, READ)] in
 	      let op = makeBytecodeOperation pc op_args in
-	      let inverted_op = makeBytecodeOperation pc ~inverted:true op_args in
+	      let inverted_op =
+                makeBytecodeOperation pc ~inverted:true op_args in
 	      (op, inverted_op)
 	    else
-	      let stack_var = make_stack_variable stack#height pc SYM_VAR_TYPE in
+	      let stack_var =
+                make_stack_variable stack#height pc SYM_VAR_TYPE in
 	      let _ = set_destination pc [stack_var] in
-	      let op_args = [ ("src1", stack_var, READ) ] in
+	      let op_args = [("src1", stack_var, READ)] in
 	      let op = makeBytecodeOperation pc op_args in
-	      let inverted_op = makeBytecodeOperation pc ~inverted:true op_args in
+	      let inverted_op =
+                makeBytecodeOperation pc ~inverted:true op_args in
 	      (op,inverted_op)
 	  in
 	  let _ =
@@ -2405,7 +2458,7 @@ let translate_opcode
                        STR "at pc = ";
                        INT pc;
                        STR " goto target is ";
-                       INT pc']) ;
+                       INT pc']);
 		raise
                   (JCH_failure
                      (LBLOCK [STR "Inconsistent bytecode; pc' = "; INT pc']))
@@ -2441,7 +2494,7 @@ let translate_opcode
                          STR "at pc = ";
                          INT pc;
 			 STR " table switch branch target is ";
-                         INT pc']) ;
+                         INT pc']);
 		  raise
                     (JCH_failure
                        (LBLOCK [
@@ -2459,7 +2512,7 @@ let translate_opcode
 			     :: (stack'#copy ~src:pc ~tgt:pc')),
 		   None
 	      )
-	    ];
+	   ];
 	    (!graph)#add_edge (pc_label pc) label;
 	    (!graph)#add_edge label (pc_label pc') in
 	  let _ =
@@ -2496,7 +2549,7 @@ let translate_opcode
                          STR "at pc = ";
                          INT pc;
 			 STR " lookup switch branch target is ";
-                         INT pc']) ;
+                         INT pc']);
 		  raise
                     (JCH_failure
                        (LBLOCK [
@@ -2513,7 +2566,7 @@ let translate_opcode
 			     :: (stack'#copy ~src:pc ~tgt:pc')),
 		   None
 	      )
-	    ];
+	   ];
 	    (!graph)#add_edge (pc_label pc) label;
 	    (!graph)#add_edge label (pc_label pc') in
 	  let _ = List.iter (fun (i, tgt_offset) ->
@@ -2530,7 +2583,7 @@ let translate_opcode
 	       F.mkCode [
                    ASSIGN_NUM (tmp, NUM cst);
 		   ASSERT (NEQ (index, tmp))
-		 ],
+		],
 	       None) in
 	  let pc_default = pc + default in
 	  let _ =
@@ -2564,18 +2617,18 @@ let translate_opcode
 	  [makeBytecodeOperation pc []]
 
 	(* Heap and static field manipulations *)
-	| OpNew class_name ->
+	| OpNew _ ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let stack' = stack#push (A [pc])in
 	  let _ = set_stack pc' stack' in
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
 	  let returnvar = make_stack_variable stack'#height pc' SYM_VAR_TYPE in
-	  let op_args = [ ("ref", returnvar, WRITE) ] in
+	  let op_args = [("ref", returnvar, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (stack#copy ~src:pc ~tgt:pc')
 
-	| OpNewArray t ->
+	| OpNewArray _ ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let inv_stack = stack#pop in
@@ -2590,11 +2643,12 @@ let translate_opcode
               ("ref", arrayvar, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  begin
-	    add_exn_to_cfg pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc'));
+	    add_exn_to_cfg
+              pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc'));
 	    []
 	  end
 
-	| OpAMultiNewArray (t, n) ->
+	| OpAMultiNewArray (_t, n) ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let inv_stack = stack#popx n in
@@ -2618,7 +2672,7 @@ let translate_opcode
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (inv_stack#copy ~src:pc ~tgt:pc')
 
-	| OpCheckCast t ->
+	| OpCheckCast _ ->
 	  let stack = get_stack pc in
 	  let inv_stack = stack#pop in
 	  let pc' = next_pc () in
@@ -2632,11 +2686,11 @@ let translate_opcode
               ("dst1", stack_var',WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  begin
-	    add_exn_to_cfg pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc')) ;
+	    add_exn_to_cfg pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc'));
 	    []
 	  end
 
-	| OpInstanceOf t ->
+	| OpInstanceOf _ ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let inv_stack = stack#pop in
@@ -2646,11 +2700,11 @@ let translate_opcode
 	  let refvar = make_stack_variable stack#height pc SYM_VAR_TYPE in
 	  let valvar = make_stack_variable stack'#height pc' NUM_VAR_TYPE in
 	  let _ = set_destination pc [refvar] in
-	  let op_args = [ ("ref", refvar, READ) ; ("val", valvar, WRITE) ] in
+	  let op_args = [("ref", refvar, READ); ("val", valvar, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (inv_stack#copy ~src:pc ~tgt:pc')
 
-	| OpGetStatic (class_name, field_signature) ->
+	| OpGetStatic (_class_name, field_signature) ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let t = field_signature#descriptor in
@@ -2659,11 +2713,11 @@ let translate_opcode
 	  let _ = (!graph)#add_edge (pc_label pc) (pc_label pc') in
 	  let returnvar =
             make_stack_variable (stack#height + 1) pc' (translate_value_type t) in
-	  let op_args = [ ("val", returnvar, WRITE) ] in
+	  let op_args = [("val", returnvar, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  op :: (stack#copy ~src:pc ~tgt:pc')
 
-	| OpGetField (class_name, field_signature) ->
+	| OpGetField (_class_name, field_signature) ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let t = field_signature#descriptor in
@@ -2681,11 +2735,12 @@ let translate_opcode
               ("val", valvar, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  begin
-	    add_exn_to_cfg pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc'));
+	    add_exn_to_cfg
+              pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc'));
 	    []
 	  end
 
-	| OpPutStatic (class_name, field_signature) ->
+	| OpPutStatic (_class_name, field_signature) ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let t = field_signature#descriptor in
@@ -2696,19 +2751,21 @@ let translate_opcode
             make_stack_variable
               (stack'#height + 1) pc (translate_value_type t) in
 	  let _ = set_destination pc [valvar] in
-	  let op_args = [ ("val", valvar, READ) ] in
+	  let op_args = [("val", valvar, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  (op :: (stack'#copy ~src:pc ~tgt:pc'))
 
-	| OpPutField (class_name, field_signature) ->
+	| OpPutField (_class_name, field_signature) ->
 	  let stack = get_stack pc in
 	  let pc' = next_pc () in
 	  let t = field_signature#descriptor in
 	  let stack' = (stack#popx (size_of_value_type t))#pop in
 	  let _ = set_stack pc' stack' in
-	  let refvar = make_stack_variable (stack'#height + 1) pc SYM_VAR_TYPE in
+	  let refvar =
+            make_stack_variable (stack'#height + 1) pc SYM_VAR_TYPE in
 	  let valvar =
-            make_stack_variable (stack'#height + 2) pc (translate_value_type t) in
+            make_stack_variable
+              (stack'#height + 2) pc (translate_value_type t) in
 	  let _ = set_destination pc [refvar] in
 	  let _ = set_destination pc [valvar] in
 	  let op_args = [
@@ -2717,7 +2774,7 @@ let translate_opcode
               ("val", valvar, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  begin
-	    add_exn_to_cfg pc pc' op_args (op :: (stack'#copy ~src:pc ~tgt:pc')) ;
+	    add_exn_to_cfg pc pc' op_args (op :: (stack'#copy ~src:pc ~tgt:pc'));
 	    []
 	  end
 
@@ -2736,7 +2793,8 @@ let translate_opcode
               ("val", valvar, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  begin
-	    add_exn_to_cfg pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc'));
+	    add_exn_to_cfg
+              pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc'));
 	    []
 	  end
 
@@ -2747,9 +2805,11 @@ let translate_opcode
 	  let inv_stack = stack#popx 2 in
 	  let stack' = inv_stack#pushx (java_basic_type_to_stack t pc) in
 	  let _ = set_stack pc' stack' in
-	  let array_ref = make_stack_variable (stack#height - 1) pc SYM_VAR_TYPE in
+	  let array_ref =
+            make_stack_variable (stack#height - 1) pc SYM_VAR_TYPE in
 	  let index = make_stack_variable stack#height pc NUM_VAR_TYPE in
-	  let element = make_stack_variable (inv_stack#height + 1) pc' ch_type in
+	  let element =
+            make_stack_variable (inv_stack#height + 1) pc' ch_type in
 	  let _ = set_destination pc [array_ref; index] in
 	  let op_args = [
               ("throw",!exception_var, WRITE);
@@ -2758,7 +2818,8 @@ let translate_opcode
               ("val", element, WRITE)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  begin
-	    add_exn_to_cfg pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc')) ;
+	    add_exn_to_cfg
+              pc pc' op_args (op :: (inv_stack#copy ~src:pc ~tgt:pc'));
 	    []
 	  end
 
@@ -2769,9 +2830,12 @@ let translate_opcode
 	  let pc' = next_pc () in
 	  let stack' = stack#popx (2 + size) in
 	  let _ = set_stack pc' stack' in
-	  let array_ref = make_stack_variable (stack'#height + 1) pc SYM_VAR_TYPE in
-	  let index = make_stack_variable (stack'#height + 2) pc NUM_VAR_TYPE in
-	  let element = make_stack_variable (stack'#height + 3) pc ch_type in
+	  let array_ref =
+            make_stack_variable (stack'#height + 1) pc SYM_VAR_TYPE in
+	  let index =
+            make_stack_variable (stack'#height + 2) pc NUM_VAR_TYPE in
+	  let element =
+            make_stack_variable (stack'#height + 3) pc ch_type in
 	  let _ = set_destination pc [array_ref; index; element] in
 	  let op_args = [
               ("throw",!exception_var,WRITE);
@@ -2780,7 +2844,8 @@ let translate_opcode
               ("val", element, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  begin
-	    add_exn_to_cfg pc pc' op_args (op :: (stack'#copy ~src:pc ~tgt:pc')) ;
+	    add_exn_to_cfg
+              pc pc' op_args (op :: (stack'#copy ~src:pc ~tgt:pc'));
 	    []
 	  end
 
@@ -2795,14 +2860,15 @@ let translate_opcode
 	  let stack = get_stack pc in
 	  let _ = (!graph)#add_edge (pc_label pc) normal_exit in
 	  if is_void t then
-	    [ makeBytecodeOperation pc [] ]
+	    [makeBytecodeOperation pc []]
 	  else
 	    let ch_type = translate_java_basic_type t in
 	    let size = size_of_java_basic_type t in
 	    let ret_var = make_variable "return" ch_type in
 	    let stack_var =
               make_stack_variable (stack#height - size + 1) pc ch_type in
-	    let op_args = [("dst1", ret_var, READ); ("src1", stack_var, READ)] in
+	    let op_args =
+              [("dst1", ret_var, READ); ("src1", stack_var, READ)] in
 	    let _ = set_destination pc [stack_var] in
 	    let op = makeBytecodeOperation pc op_args in
 	    [var_assign ret_var stack_var ch_type; op]
@@ -2823,9 +2889,9 @@ let translate_opcode
                 (!graph)#add_edge
                   (pc_label pc) pc') (exceptional_exit :: handler_pcs) in
 	  let stack_var = make_stack_variable stack#height pc SYM_VAR_TYPE in
-	  set_destination pc [stack_var] ;
+	  set_destination pc [stack_var];
 	  let op = makeBytecodeOperation pc  [] in
-	  [var_assign (!exception_var) stack_var SYM_VAR_TYPE ; op ]
+	  [var_assign (!exception_var) stack_var SYM_VAR_TYPE; op]
 
 	| OpMonitorEnter ->
 	  let stack = get_stack pc in
@@ -2837,8 +2903,8 @@ let translate_opcode
 	  let op = makeBytecodeOperation pc op_args in
 	  begin
 	    set_stack pc' stack';
-	    set_destination pc [refvar] ;
-	    add_exn_to_cfg pc pc' op_args (op :: (stack'#copy ~src:pc ~tgt:pc')) ;
+	    set_destination pc [refvar];
+	    add_exn_to_cfg pc pc' op_args (op :: (stack'#copy ~src:pc ~tgt:pc'));
 	    []
 	  end
 
@@ -2851,9 +2917,9 @@ let translate_opcode
               ("throw",!exception_var,WRITE); ("ref", refvar, READ)] in
 	  let op = makeBytecodeOperation pc op_args in
 	  begin
-	    set_stack pc' stack' ;
-	    set_destination pc [refvar] ;
-	    add_exn_to_cfg pc pc' op_args (op :: (stack'#copy ~src:pc ~tgt:pc')) ;
+	    set_stack pc' stack';
+	    set_destination pc [refvar];
+	    add_exn_to_cfg pc pc' op_args (op :: (stack'#copy ~src:pc ~tgt:pc'));
 	    []
 	  end
 
@@ -2880,14 +2946,14 @@ let translate_opcode
      in
      let invariant_op =
        let op_name = get_invariant_op_symbol pc in
-       OPERATION { op_name = op_name ; op_args = []} in
+       OPERATION {op_name = op_name; op_args = []} in
      let cmds = invariant_op :: cmds in
      let c = CODE (code_label pc, F.mkCode cmds) in
      (!graph)#add_node (pc_label pc) [c]
 
 
 let translate_bytecode
-    ?(exn_infos_fn=(fun _ -> [ defaultExnInfo ]))
+    ?(exn_infos_fn=(fun _ -> [defaultExnInfo]))
     ?(initialization_cmd=SKIP)
     (java_method: method_int) : CHOnlineCodeSet.code_t =
   match java_method#get_implementation with
@@ -2898,7 +2964,7 @@ let translate_bytecode
   | Bytecode bc ->
     let code = bc#get_code in
     let handler_stack = (new op_stack_t)#push (A [-1]) in
-    let _ = 
+    let _ =
       try
 	begin
 	  (* Initializing opcode translation queue *)
@@ -2942,13 +3008,12 @@ let translate_bytecode
 	      ~normal_exit:normal_exit_node
 	      ~exceptional_exit:exceptional_exit_node
 	      ~pc:i
-	      ~code:code
-	      ~bytecode:bc;
+	      ~code:code;
 	    (!translated_opcodes)#add i
 	  done;
 	  (!graph)#add_node exceptional_exit_node [exnExitOperation];
 	  (!graph)#add_node
-            initialization_node [initializationOperation ; initialization_cmd ];
+            initialization_node [initializationOperation; initialization_cmd];
 	  (!graph)#add_node normal_exit_node [SKIP];
 	  (!graph)#add_node method_exit_node [SKIP];
 	  (!graph)#add_edge exceptional_exit_node method_exit_node;
@@ -2979,7 +3044,7 @@ let get_procname_symbol (cms:class_method_signature_int) =
 	let index = cms#index in
 	let sym = new symbol_t ~seqnr:index "procname" in
 	begin
-	  H.add procname_symbol_store index sym ;
+	  H.add procname_symbol_store index sym;
 	  sym
 	end
 
@@ -2990,17 +3055,17 @@ let translate_method
     ~(transform: bool)
     ~(java_method: method_int)
     ~(code_set: system_int)
-    ?(exn_infos_fn=(fun _ -> [ defaultExnInfo ]))
+    ?(exn_infos_fn=(fun _ -> [defaultExnInfo]))
     ?(initialization_cmd=SKIP)
     () =
   let _ =
     begin
-      variable_pool#removeList variable_pool#listOfKeys ;
+      variable_pool#removeList variable_pool#listOfKeys;
       scope := F.mkScope ();
       exception_var := make_variable "exception" SYM_VAR_TYPE;
       graph := new bc_graph_t;
-      stack_table := new stack_table_t ;
-      destination_info := new destination_info_t ;
+      stack_table := new stack_table_t;
+      destination_info := new destination_info_t;
       set_current_method java_method#get_class_method_signature
     end
   in
@@ -3091,7 +3156,7 @@ let get_method_stack_layout (code_set:system_int) (java_method:method_int) =
 let translate_class
     ~(java_class: java_class_or_interface_int)
     ~(code_set: system_int)
-    ?(proc_filter = fun p -> true)
+    ?(proc_filter = fun _ -> true)
     ?(simplify = false)
     ?(transform = false)
     () =

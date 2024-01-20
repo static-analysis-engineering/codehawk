@@ -28,28 +28,27 @@
 
 (* chlib *)
 open CHPretty
-open CHCollections
 
 (* jchlib *)
 open JCHBasicTypesAPI
 open JCHBasicTypes
 
 
-let type_argument_kind_to_string a = match a with
+let _type_argument_kind_to_string a = match a with
   | ArgumentExtends -> "argument extends "
   | ArgumentInherits -> "argument inherits "
   | ArgumentIs -> "argument is "
   | ArgumentIsAny -> "argument is any "
 
-let throws_signature_kind_to_string a = match a with
+let _throws_signature_kind_to_string a = match a with
   | ThrowsClass -> "throws class "
   | ThrowsTypeVariable -> "throws type variable "
 
-let type_signature_kind_to_string a = match a with
+let _type_signature_kind_to_string a = match a with
   | BasicType -> "basic type "
   | ObjectType -> "object type "
 
-let field_type_signature_kind_to_string a = match a with
+let _field_type_signature_kind_to_string a = match a with
   | ClassType -> "class type "
   | ArrayType -> "array type "
   | TypeVariable -> "type variable "

@@ -1,10 +1,11 @@
 (* =============================================================================
-   CodeHawk Java Analyzer 
+   CodeHawk Java Analyzer
    Author: Arnaud Venet
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -70,13 +71,13 @@ val descriptor_to_pretty: descriptor_t -> pretty_t
 val size_of_value_type     : value_type_t -> int
 val size_of_java_basic_type: java_basic_type_t -> int
 
-val write_xmlx_basic_type : xml_element_int -> java_basic_type_t -> unit  
+val write_xmlx_basic_type : xml_element_int -> java_basic_type_t -> unit
 val write_xmlx_value_type : xml_element_int -> value_type_t -> unit
 val write_xmlx_object_type: xml_element_int -> object_type_t -> unit
 
 val write_xml_visibility: xml_element_int -> access_t -> unit
 
-val write_xmlx_constant_value: xml_element_int -> constant_value_t -> unit 
+val write_xmlx_constant_value: xml_element_int -> constant_value_t -> unit
 
 val compare_value_type_lists : value_type_t list -> value_type_t list -> int
 
@@ -97,7 +98,7 @@ val make_method_descriptor:
   arguments:value_type_t list ->
   ?return_value:value_type_t -> unit -> method_descriptor_int
 
-val make_method_signature_data: 
+val make_method_signature_data:
   is_static:bool ->
   name:string ->
   method_descriptor:method_descriptor_int -> method_signature_data_int
@@ -117,11 +118,11 @@ val make_class_method_signature_data:
 val make_class_field_signature:
   index:int ->
   class_field_signature_data:class_field_signature_data_int -> class_field_signature_int
-  
+
 val make_class_method_signature:
   index:int ->
   class_method_signature_data:class_method_signature_data_int -> class_method_signature_int
-  
+
 val make_procname: int -> symbol_t
 
 val make_bootstrap_method: bootstrap_method_data_t -> bootstrap_method_int

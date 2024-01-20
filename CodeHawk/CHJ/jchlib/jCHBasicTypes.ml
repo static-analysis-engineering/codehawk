@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2024 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,8 @@ open CHLanguage
 open CHPretty
 
 (* chutil *)
-open CHLogger
 open CHStringIndexTable
 open CHXmlDocument
-open CHXmlReader
 
 (* jchlib *)
 open JCHBasicTypesAPI
@@ -69,20 +67,11 @@ exception JCH_class_structure_error of pretty_t
  * ----------------------------------------------------------------------------- *)
 
 let raise_jch_failure (p:pretty_t) =
-  begin pr_debug [ p ; NL ] ; raise (JCH_failure p) end
-
-let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ;
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
-  begin
-    ch_error_log#add "xml parse error" error_msg ;
-    raise (XmlParseError (node#getLineNumber, node#getColumnNumber, msg))
-  end
+  begin pr_debug [p; NL]; raise (JCH_failure p) end
 
 
 let abbreviatedpackages =
-  [ "java.lang" ; "java.util" ; "java.io" ; "java.math" ]
+  ["java.lang"; "java.util"; "java.io"; "java.math"]
 
 let byte_to_string (b:int) =
   let l = b mod 16 in
@@ -94,7 +83,7 @@ let hex_string s =
   let h = ref "" in
   let len = String.length s in
   begin
-    for i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
+    for _i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done;
     !h
   end
 
@@ -133,8 +122,8 @@ object (self: 'a)
         String.concat "" (List.map (fun s -> String.sub s 0 1) self#package)
     with
     | Invalid_argument _ ->
-       raise (JCH_failure (LBLOCK [ STR "Error in abbreviated_package_name: " ;
-                                    STR self#package_name ]))
+       raise (JCH_failure (LBLOCK [STR "Error in abbreviated_package_name: ";
+                                    STR self#package_name]))
 
   method abbreviated_name =
     let pname = self#abbreviated_package_name in
@@ -149,15 +138,17 @@ end
 
 let make_class_name = new class_name_t
 
+
 class stackmap_t
   (stack: int * verification_type_t list * verification_type_t list):stackmap_int =
-object (self: _)
+object
 
   method stack = stack
 
 end
 
 let make_stackmap = new stackmap_t
+
 
 let rec compare_value_types t1 t2 =
   match (t1, t2) with
@@ -173,16 +164,19 @@ and compare_object_types t1 t2 =
   | (TClass c1, TClass c2) -> c1#compare c2
   | (TArray v1, TArray v2) -> compare_value_types v1 v2
 
+
 let size_of_java_basic_type (t:java_basic_type_t) =
   match t with
   | Int | Short | Char | Byte | Bool | Int2Bool | ByteBool -> 4
   | Float | Object | Void -> 4
   | Long | Double -> 8
 
+
 let size_of_value_type (t:value_type_t) =
   match t with
   | TBasic bt -> size_of_java_basic_type bt
-  | TObject ot -> 4
+  | TObject _ -> 4
+
 
 let java_basic_type_to_string t =
   match t with
@@ -198,6 +192,7 @@ let java_basic_type_to_string t =
   | ByteBool -> "ByteBool"
   | Object -> "Object"
   | Void -> "void"
+
 
 let java_basic_type_of_string s =
   match s with
@@ -272,11 +267,13 @@ let string_to_access (s:string) =
        (JCH_failure
           (LBLOCK [STR "access type "; STR s; STR " not recognized"]))
 
+
 let access_to_pretty = function
   | Default -> STR ""
   | Public  -> STR "public"
   | Private -> STR "private"
   | Protected -> STR "protected"
+
 
 let rec value_type_to_pretty t =
   match t with
@@ -298,15 +295,17 @@ and object_type_to_pretty o =
   | TClass c -> c#toPretty
   | TArray v -> LBLOCK [value_type_to_pretty v; STR "[]"]
 
+
 let rec object_type_to_abbreviated_pretty o =
   match o with
   | TClass c -> STR c#abbreviated_name
-  | TArray v -> LBLOCK [ value_type_to_abbreviated_pretty v ; STR "[]" ]
+  | TArray v -> LBLOCK [value_type_to_abbreviated_pretty v; STR "[]"]
 
 and value_type_to_abbreviated_pretty v =
   match v with
   | TBasic b -> java_basic_type_to_pretty b
   | TObject o -> object_type_to_abbreviated_pretty o
+
 
 let rec value_type_to_signature_string t =
   match t with
@@ -319,19 +318,24 @@ and object_type_to_signature_string o =
   | TClass c -> "L" ^ (replace_dots c#name) ^ ";"
   | TArray v -> "[" ^ (value_type_to_signature_string v)
 
+
 let write_xml_visibility (node:xml_element_int) (access:access_t) =
   node#setAttribute "access" (access_to_string access)
 
+
 let write_xmlx_basic_type (node:xml_element_int) (v:java_basic_type_t) =
-  node#appendChildren [ xmlElement (java_basic_type_to_string v) ]
+  node#appendChildren [xmlElement (java_basic_type_to_string v)]
+
 
 let write_xmlx_object (node:xml_element_int) (cn:class_name_int) =
-  node#appendChildren [ xml_string "object" cn#name ]
+  node#appendChildren [xml_string "object" cn#name]
+
 
 let rec write_xmlx_value_type (node:xml_element_int) (v:value_type_t) =
   match v with
   | TBasic bt -> write_xmlx_basic_type node bt
   | TObject ot -> write_xmlx_object_type node ot
+
 
 and write_xmlx_object_type (node:xml_element_int) (v:object_type_t) =
   let append = node#appendChildren in
@@ -339,11 +343,12 @@ and write_xmlx_object_type (node:xml_element_int) (v:object_type_t) =
   | TClass cn -> write_xmlx_object node cn
   | TArray vt ->
     let aNode = xmlElement "array" in
-    begin write_xmlx_value_type aNode vt ; append [ aNode ] end
+    begin write_xmlx_value_type aNode vt; append [aNode] end
+
 
 let write_xmlx_constant_value (node:xml_element_int) (v:constant_value_t) =
   let append = node#appendChildren in
-  let app tag key v = append [ xml_attr_string tag key v ] in
+  let app tag key v = append [xml_attr_string tag key v] in
   match v with
   | ConstString s ->
      let (ishex,newstring) = encode_string s in
@@ -356,6 +361,7 @@ let write_xmlx_constant_value (node:xml_element_int) (v:constant_value_t) =
   | ConstLong l -> app "long" "value" (Int64.to_string l)
   | ConstDouble d -> app "double" "value" (Printf.sprintf "%f" d)
   | ConstClass ot -> write_xmlx_object_type node ot
+
 
 class field_signature_data_t
   ~(name: string)
@@ -421,6 +427,7 @@ let make_field_signature
   ~(field_signature_data: field_signature_data_int) =
   new field_signature_t ~index ~field_signature_data
 
+
 let rec compare_value_type_lists l1 l2 =
   match (l1, l2) with
     | ([], []) -> 0
@@ -432,6 +439,7 @@ let rec compare_value_type_lists l1 l2 =
 	    compare_value_type_lists l1 l2
 	  else
 	    c
+
 
 class method_descriptor_t
   ~(arguments: value_type_t list)
@@ -461,7 +469,7 @@ object (self: 'a)
 	     (List.map (fun a -> value_type_to_string a) arguments)) ^ ")"
 
   method toPretty: pretty_t =
-    LBLOCK [ pretty_print_list arguments value_type_to_pretty "(" "," ")" ]
+    LBLOCK [pretty_print_list arguments value_type_to_pretty "(" "," ")"]
 
 end
 
@@ -503,9 +511,9 @@ object (self: 'a)
 
   method toPretty: pretty_t =
     let ret_pretty = match method_descriptor#return_value with
-      Some v -> LBLOCK [ value_type_to_pretty v ; STR " " ]
+      Some v -> LBLOCK [value_type_to_pretty v; STR " "]
     | None -> STR "" in
-    LBLOCK [ ret_pretty ; STR name ; method_descriptor#toPretty ]
+    LBLOCK [ret_pretty; STR name; method_descriptor#toPretty]
 
 end
 
@@ -567,11 +575,11 @@ object (self: 'a)
       pretty_print_list
         self#descriptor#arguments value_type_to_abbreviated_pretty "(" "," ")" in
     let rv = match self#descriptor#return_value with
-      | Some v -> LBLOCK [ STR ":" ; value_type_to_abbreviated_pretty v ]
+      | Some v -> LBLOCK [STR ":"; value_type_to_abbreviated_pretty v]
       | _ -> STR "" in
-    LBLOCK [ STR self#name ; args ; rv ]
+    LBLOCK [STR self#name; args; rv]
 
-  method toPretty: pretty_t = LBLOCK [ method_signature_data#toPretty ]
+  method toPretty: pretty_t = LBLOCK [method_signature_data#toPretty]
 
   method write_xmlx ?(varnamemapping=None) (node:xml_element_int) =
     let append = node#appendChildren in
@@ -583,10 +591,10 @@ object (self: 'a)
 	    | Some f -> pNode#setAttribute "name" (f par)
 	    | _ -> () in
           begin
-	    write_xmlx_value_type pNode a ;
-	    pNode#setIntAttribute "nr" (i+1) ;
+	    write_xmlx_value_type pNode a;
+	    pNode#setIntAttribute "nr" (i+1);
 	    append [pNode]
-          end) self#descriptor#arguments ;
+          end) self#descriptor#arguments;
       (match self#descriptor#return_value with
        | Some r ->
 	  let rNode = xmlElement "return" in
@@ -599,16 +607,19 @@ object (self: 'a)
 
 end
 
+
 let make_method_signature
     ~(index:int)
     ~(method_signature_data:method_signature_data_int) =
   new method_signature_t ~index ~method_signature_data
+
 
 let clinit_signature_data =
   new method_signature_data_t
     ~is_static:true
     ~name:"<clinit>"
     ~method_descriptor:(new method_descriptor_t ~arguments:[] ~return_value:None ())
+
 
 let clinit_signature =
   new method_signature_t
@@ -636,14 +647,16 @@ object (self: 'a)
 	c
 
   method toPretty: pretty_t =
-    LBLOCK [ class_name#toPretty ; STR "." ; field_signature#toPretty ]
+    LBLOCK [class_name#toPretty; STR "."; field_signature#toPretty]
 
 end
+
 
 let make_class_field_signature_data
     ~(class_name:class_name_int)
     ~(field_signature:field_signature_int) =
   new class_field_signature_data_t ~class_name ~field_signature
+
 
 class class_method_signature_data_t
   ~(class_name: class_name_int)
@@ -666,7 +679,7 @@ object (self: 'a)
   method is_static = method_signature#is_static
 
   method toPretty:pretty_t =
-    LBLOCK [ class_name#toPretty ; STR "." ; method_signature#toPretty ]
+    LBLOCK [class_name#toPretty; STR "."; method_signature#toPretty]
 
   method to_abbreviated_pretty:pretty_t =
     LBLOCK [
@@ -708,10 +721,11 @@ object (self: 'a)
       class_field_signature_data#field_signature#to_string
 
   method toPretty: pretty_t =
-    LBLOCK [class_field_signature_data#class_name#toPretty ; STR ":";
+    LBLOCK [class_field_signature_data#class_name#toPretty; STR ":";
 	    class_field_signature_data#field_signature#toPretty]
 
 end
+
 
 let make_class_field_signature
     ~(index:int)
@@ -742,7 +756,7 @@ object (self: 'a)
   method is_static = class_method_signature_data#is_static
 
   method toPretty: pretty_t =
-    LBLOCK [ class_method_signature_data#toPretty ]
+    LBLOCK [class_method_signature_data#toPretty]
 
   method to_abbreviated_pretty: pretty_t =
     class_method_signature_data#to_abbreviated_pretty
@@ -778,7 +792,7 @@ let constant_value_to_pretty v =
   | ConstInt i -> STR (Int32.to_string i)
   | ConstFloat f -> STR (Printf.sprintf "%f" f)
   | ConstLong l -> STR (Int64.to_string l)
-  | ConstDouble f -> LBLOCK [ STR (Printf.sprintf "%f" f) ; STR " (double)" ]
+  | ConstDouble f -> LBLOCK [STR (Printf.sprintf "%f" f); STR " (double)"]
   | ConstClass ot -> object_type_to_pretty ot
 
 
@@ -797,17 +811,17 @@ let reference_kind_to_string k =
 
 let method_handle_to_pretty h =
   match h with
-  | FieldHandle (cn,fs) -> LBLOCK [ cn#toPretty ; STR ":" ; fs#toPretty ]
+  | FieldHandle (cn,fs) -> LBLOCK [cn#toPretty; STR ":"; fs#toPretty]
   | MethodHandle (ot,ms) ->
      LBLOCK [object_type_to_pretty ot; STR ":"; ms#toPretty]
-  | InterfaceHandle (cn,ms) -> LBLOCK [ cn#toPretty ; STR ":" ; ms#toPretty ]
+  | InterfaceHandle (cn,ms) -> LBLOCK [cn#toPretty; STR ":"; ms#toPretty]
 
 
 let constant_to_pretty c =
   match c with
   | ConstValue cv -> LBLOCK [STR "ConstValue: "; constant_value_to_pretty cv]
   | ConstField (cn,fs) ->
-     LBLOCK [ STR "ConstField: " ; cn#toPretty ; STR ":" ; fs#toPretty ]
+     LBLOCK [STR "ConstField: "; cn#toPretty; STR ":"; fs#toPretty]
   | ConstMethod (ot,ms) ->
      LBLOCK [
          STR "ConstMethod: "; object_type_to_pretty ot; STR ", "; ms#toPretty]
@@ -819,12 +833,13 @@ let constant_to_pretty c =
      LBLOCK [STR "ConstNameAndType: "; STR s; descriptor_to_pretty d]
   | ConstStringUTF8 s -> LBLOCK [STR "ConstStringUTF8: "; STR s]
   | ConstMethodHandle (k,h) ->
-     LBLOCK [STR "ConstMethodHandle: ";
-             STR (reference_kind_to_string k);
-             STR ", ";
-             method_handle_to_pretty h]
-  | ConstMethodType d -> LBLOCK [ STR "ConstMethodType: " ; d#toPretty ]
-  | ConstUnusable -> LBLOCK [ STR "ConstUnusable" ]
+     LBLOCK [
+         STR "ConstMethodHandle: ";
+         STR (reference_kind_to_string k);
+         STR ", ";
+         method_handle_to_pretty h]
+  | ConstMethodType d -> LBLOCK [STR "ConstMethodType: "; d#toPretty]
+  | ConstUnusable -> LBLOCK [STR "ConstUnusable"]
 
 
 let bootstrap_argument_to_pretty a =
@@ -837,7 +852,7 @@ let bootstrap_argument_to_pretty a =
          method_handle_to_pretty h;
          STR ":";
          STR (reference_kind_to_string kind)]
-  | BootstrapArgMethodType d -> LBLOCK [ STR "MT:" ; d#toPretty ]
+  | BootstrapArgMethodType d -> LBLOCK [STR "MT:"; d#toPretty]
 
 
 class bootstrap_method_t (data:bootstrap_method_data_t):bootstrap_method_int =
@@ -852,14 +867,15 @@ object (self)
     match self#get_method_ref with
     | MethodHandle (TClass cn,ms)
          when (cn#name = "java.lang.invoke.LambdaMetafactory")
-              && ms#name = "metafactory" && (List.length self#get_arguments) > 2 ->
+              && ms#name = "metafactory"
+              && (List.length self#get_arguments) > 2 ->
        let arg2 = List.nth self#get_arguments 1 in
        begin
          match arg2 with
-         | BootstrapArgMethodHandle (REFInvokeStatic, MethodHandle (ot,ms)) ->
-            Some (ot,ms)
-         | BootstrapArgMethodHandle (REFInvokeVirtual, MethodHandle (ot,ms)) ->
-            Some (ot,ms)
+         | BootstrapArgMethodHandle (REFInvokeStatic, MethodHandle (ot, ms)) ->
+            Some (ot, ms)
+         | BootstrapArgMethodHandle (REFInvokeVirtual, MethodHandle (ot, ms)) ->
+            Some (ot, ms)
          | _ -> None
        end
     | _ -> None
@@ -873,14 +889,16 @@ object (self)
         LBLOCK (
             List.map (fun a ->
                 LBLOCK [
-                    INDENT(3, bootstrap_argument_to_pretty a); NL ])
+                    INDENT(3, bootstrap_argument_to_pretty a); NL])
               self#get_arguments)]
 end
 
 let make_bootstrap_method = new bootstrap_method_t
 
 let jch_permissive = ref false
+
 let set_permissive b = jch_permissive := b
+
 let is_permissive () = !jch_permissive
 
 let make_procname (seqnr:int) = new symbol_t ~seqnr "procname"
