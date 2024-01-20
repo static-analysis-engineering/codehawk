@@ -26,9 +26,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHLanguage
-
 (* chutil *)
 open CHXmlDocument
 

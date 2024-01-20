@@ -3,9 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,18 +27,15 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHCommon
 open CHPretty
 
 (* chutil *)
 open CHFileIO
 open CHLogger
-open CHPrettyUtil
 open CHXmlDocument
 
 (* jchlib *)
 open JCHBasicTypes
-open JCHBasicTypesAPI
 open JCHBytecode
 open JCHDictionary
 open JCHParse
@@ -55,7 +52,7 @@ open JCHSystemSettings
 module H = Hashtbl
 
 
-let methodcount = ref 0
+let _methodcount = ref 0
 let maxlog = ref 24
 let maxmatch = ref 24
 let outputname = ref ""
@@ -76,7 +73,7 @@ let usage_msg = "chj_patterns -md5 <md5 of jarfile> -o <outputfile> <jarfile>"
 let read_args () = Arg.parse speclist   (fun s -> jarname := s) usage_msg
 
 let _ = system_settings#disable_logging_missing_classes
-  
+
 let categorize_patterns plist =
   let basicvalues = ref [] in
   let objectvalues = ref [] in
@@ -212,18 +209,18 @@ let categorize_patterns plist =
     let t = H.create 3 in
     let _ =
       List.iter (fun a ->
-          let tag = serializer#to_string a in
+          let tag = serializer#ts a in
           let entry = if H.mem t tag then H.find t tag else 0 in
           H.replace t tag (entry + 1)) l in
     let counts = H.fold (fun k v a -> (k,v) :: a)  t [] in
     List.sort (fun (_,v1) (_,v2) -> Stdlib.compare v1 v2) counts in
-  (countlist !basicvalues bc_basicvalue_serializer,
-   countlist !objectvalues bc_objectvalue_serializer,
-   countlist !actions bc_action_serializer,
-   countlist !patterns bc_pattern_serializer,
+  (countlist !basicvalues bc_basicvalue_mcts,
+   countlist !objectvalues bc_objectvalue_mcts,
+   countlist !actions bc_action_mcts,
+   countlist !patterns bc_pattern_mcts,
    get_exceptions_ignored (),
    get_exceptions_handled ())
-  
+
 let write_xml_values node values =
   node#appendChildren
     (List.map (fun (k,v) ->
@@ -286,7 +283,7 @@ let write_xml_packages node =
     writelist jnode thispackages ;
     writelist cnode callpackages ;
     node#appendChildren [ jnode ; cnode ]
-  end                      
+  end
 
 let write_xml_patterns node count patterns =
   let (basicvalues,objectvalues,actions,patterns,xi,xh) =
@@ -426,17 +423,16 @@ let main () =
          begin
            pr_debug [ STR "Please specify an md5 with -md5" ; NL ] ;
            exit 1
-         end) ;           
+         end) ;
       process_jar !jarname ;
       file_output#saveFile
         (!outputname ^ ".chlog")
         (LBLOCK [ noteworthy_to_pretty () ; interesting_to_pretty () ;
                   chlog#toPretty  ]) ;
       (if ch_error_log#size > 0 then
-         file_output#saveFile (!outputname ^ ".ch_error_log") ch_error_log#toPretty) 
+         file_output#saveFile (!outputname ^ ".ch_error_log") ch_error_log#toPretty)
     end
   with
-  | JCH_failure p -> pr_debug [ STR "Failure: " ; p ; NL ] 
+  | JCH_failure p -> pr_debug [ STR "Failure: " ; p ; NL ]
 
 let _ = Printexc.print main ()
-                  

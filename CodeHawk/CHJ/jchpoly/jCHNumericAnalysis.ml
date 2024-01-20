@@ -5,7 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny Sipma
+   Copyright (c) 2020-2024 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1871,12 +1871,12 @@ let read_xml_symbol (node:xml_element_int): symbol_t =
 let write_xml_variable (node: xml_element_int) (v: variable_t) =
   begin
     node#setAttribute
-      "type" (variable_type_serializer#to_string v#getType) ;
+      "type" (variable_type_mfts#ts v#getType) ;
     write_xml_symbol node v#getName
   end
 
 let read_xml_variable (node: xml_element_int): variable_t =
-  let t = variable_type_serializer#from_string (node#getAttribute "type") in
+  let t = variable_type_mfts#fs (node#getAttribute "type") in
   let name_sym = read_xml_symbol node in
   new variable_t name_sym t
 

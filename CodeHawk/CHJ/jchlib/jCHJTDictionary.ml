@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2024 Henny Sipma
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ let hex_string s =
   let h = ref "" in
   let len = String.length s in
   begin
-    for _i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done ;
+    for _i = 0 to len-1 do h := !h ^ (byte_to_string (IO.read_byte ch)) done;
     !h
   end
 
@@ -74,7 +74,7 @@ let mk_constantstring (s:string):constantstring =
   if has_control_characters s then
     (hex_string s, true, String.length s)
   else
-    (s,false, String.length s)
+    (s, false, String.length s)
 
 
 class jtdictionary_t:jtdictionary_int =
@@ -95,16 +95,16 @@ object (self)
 
   initializer
     tables <- [
-      symbolic_jterm_constant_table ;
-      jterm_table ;
-      relational_expr_table ;
-      jterm_list_table ;
-      relational_expr_list_table ;
-      jterm_range_table ;
-      string_table ;
-      numerical_table ;
+      symbolic_jterm_constant_table;
+      jterm_table;
+      relational_expr_table;
+      jterm_list_table;
+      relational_expr_list_table;
+      jterm_range_table;
+      string_table;
+      numerical_table;
       float_table
-    ]
+   ]
 
   method index_symbolic_jterm_constant (t:symbolic_jterm_constant_t) =
     let (typ,lbopt,ubopt,name) = t in
@@ -125,26 +125,26 @@ object (self)
     (typ, lbopt, ubopt, name)
 
   method index_jterm (t:jterm_t) =
-    let tags = [ jterm_serializer#to_string t ] in
+    let tags = [jterm_mcts#ts t] in
     let key = match t with
-      | JAuxiliaryVar s -> (tags,[ self#index_string s ])
-      | JLocalVar i -> (tags,[i])
-      | JLoopCounter i -> (tags,[i])
+      | JAuxiliaryVar s -> (tags, [self#index_string s])
+      | JLocalVar i -> (tags, [i])
+      | JLoopCounter i -> (tags, [i])
       | JSymbolicConstant c -> (tags, [self#index_symbolic_jterm_constant c])
-      | JConstant n -> (tags,[ self#index_numerical n ])
-      | JStaticFieldValue (cnix,fname) -> (tags,[ cnix ; self#index_string fname ])
-      | JObjectFieldValue (cmsix,varix,cnix,fname) ->
-         (tags, [ cmsix ; varix ; cnix ; self#index_string fname ])
-      | JBoolConstant b -> (tags,[ if b then 1 else 0 ])
-      | JFloatConstant fc -> (tags, [ self#index_float fc ])
-      | JStringConstant s -> (tags, [ self#index_string s ])
-      | JSize t -> (tags, [ self#index_jterm t ])
-      | JPower (t,n) -> (tags, [ self#index_jterm t; n ])
+      | JConstant n -> (tags,[self#index_numerical n])
+      | JStaticFieldValue (cnix, fname) -> (tags,[cnix; self#index_string fname])
+      | JObjectFieldValue (cmsix, varix, cnix, fname) ->
+         (tags, [cmsix; varix; cnix; self#index_string fname])
+      | JBoolConstant b -> (tags,[if b then 1 else 0])
+      | JFloatConstant fc -> (tags, [self#index_float fc])
+      | JStringConstant s -> (tags, [self#index_string s])
+      | JSize t -> (tags, [self#index_jterm t])
+      | JPower (t,n) -> (tags, [self#index_jterm t; n])
       | JUninterpreted (name,terms) ->
-         (tags @ [ name ], List.map self#index_jterm terms)
+         (tags @ [name], List.map self#index_jterm terms)
       | JArithmeticExpr (op,t1,t2) ->
-         (tags @ [ arithmetic_op_serializer#to_string op ],
-          [ self#index_jterm t1 ; self#index_jterm t2 ]) in
+         (tags @ [arithmetic_op_mfts#ts op],
+          [self#index_jterm t1; self#index_jterm t2]) in
     jterm_table#add key
 
   method get_jterm (index:int) =
@@ -167,7 +167,7 @@ object (self)
     | "un" -> JUninterpreted ((t 1), (List.map self#get_jterm args))
     | "ar" ->
        JArithmeticExpr
-         (arithmetic_op_serializer#from_string (t 1),
+         (arithmetic_op_mfts#fs (t 1),
           self#get_jterm (a 0), self#get_jterm (a 1))
     | s ->
        raise
@@ -175,16 +175,16 @@ object (self)
             (LBLOCK [STR "jterm tag "; STR s; STR " not recognizezd"]))
 
   method index_relational_expr (x:relational_expr_t) =
-    let (op,t1,t2) = x in
-    let tags = [ relational_op_serializer#to_string op ] in
-    let args = [ self#index_jterm t1 ; self#index_jterm t2 ] in
+    let (op, t1, t2) = x in
+    let tags = [relational_op_mfts#ts op] in
+    let args = [self#index_jterm t1; self#index_jterm t2] in
     relational_expr_table#add (tags,args)
 
   method get_relational_expr (index:int):relational_expr_t =
-    let (tags,args) = relational_expr_table#retrieve index in
+    let (tags, args) = relational_expr_table#retrieve index in
     let t = t "relational-expr" tags in
     let a = a "relational-expr" args in
-    (relational_op_serializer#from_string (t 0),
+    (relational_op_mfts#fs (t 0),
      self#get_jterm (a 0),self#get_jterm (a 1))
 
   method index_jterm_list (l:jterm_t list):int =
@@ -192,7 +192,7 @@ object (self)
       ([],List.sort Stdlib.compare (List.map self#index_jterm l))
 
   method get_jterm_list (index:int):jterm_t list  =
-    let (_,args) = jterm_list_table#retrieve index in
+    let (_, args) = jterm_list_table#retrieve index in
     List.map self#get_jterm args
 
   method index_relational_expr_list (l:relational_expr_t list) =
@@ -200,15 +200,15 @@ object (self)
       ([],List.sort Stdlib.compare (List.map self#index_relational_expr l))
 
   method get_relational_expr_list (index:int):relational_expr_t list =
-    let (_,args) = relational_expr_list_table#retrieve index in
+    let (_, args) = relational_expr_list_table#retrieve index in
     List.map self#get_relational_expr args
 
   method index_jterm_range (lb:jterm_t list) (ub:jterm_t list) =
-    jterm_range_table#add ([],[ self#index_jterm_list lb ;
-                                self#index_jterm_list ub ])
+    jterm_range_table#add
+      ([],[self#index_jterm_list lb; self#index_jterm_list ub])
 
   method get_jterm_range (index:int):(jterm_t list * jterm_t list) =
-    let (_,args) = jterm_range_table#retrieve index in
+    let (_, args) = jterm_range_table#retrieve index in
     let a = a "jterm-range" args in
     (self#get_jterm_list (a 0), self#get_jterm_list (a 1))
 
@@ -219,7 +219,7 @@ object (self)
     let t = t "numerical" tags in
     mkNumericalFromString (t 0)
 
-  method index_float (f:float) = float_table#add ([ (string_of_float f) ], [])
+  method index_float (f:float) = float_table#add ([(string_of_float f)], [])
 
   method get_float (index:int) =
     let (tags,_) = float_table#retrieve index in
@@ -228,10 +228,10 @@ object (self)
 
   method index_string (s:string):int =
     let cs = mk_constantstring s in
-    let (s,ishex,len) = cs in
-    let x = if ishex then [ "x" ] else [] in
-    let tags = if len = 0 then [] else [ s ] @ x in
-    let args = [ len ] in
+    let (s, ishex,len) = cs in
+    let x = if ishex then ["x"] else [] in
+    let tags = if len = 0 then [] else [s] @ x in
+    let args = [len] in
     string_table#add (tags,args)
 
   method get_string (index:int) =
@@ -315,7 +315,7 @@ object (self)
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
-    List.iter (fun t -> t#read_xml (getc t#get_name)) tables ;
+    List.iter (fun t -> t#read_xml (getc t#get_name)) tables;
 
   method toPretty =
     LBLOCK

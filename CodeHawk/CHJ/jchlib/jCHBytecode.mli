@@ -26,14 +26,11 @@
    SOFTWARE.
    ============================================================================= *)
 
-open Int32
-
 (* chlib *)
 open CHPretty
 
 (* jchlib *)
 open JCHBasicTypesAPI
-open JCHSignature
 
 
 val name_of_opcode: opcode_t -> string

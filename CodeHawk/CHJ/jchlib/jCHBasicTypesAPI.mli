@@ -39,13 +39,6 @@ open CHXmlDocument
 
 (** {1 Basic types} *)
 
-class type ['a] sumtype_string_converter_int =
-  object
-    method to_string: 'a -> string
-    method from_string: string -> 'a
-  end
-
-
 class type indexed_hash_table_int =
   object
 
