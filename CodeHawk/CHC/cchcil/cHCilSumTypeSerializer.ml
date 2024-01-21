@@ -5,8 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2020-2021 Henny B. Sipma
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -109,7 +109,7 @@ object
 
   inherit [typ] mcts_t "typ"
   
-  method ts (t: typ) =
+  method! ts (t: typ) =
     match t with
     | TVoid _ -> "tvoid"
     | TInt _ -> "tint"
@@ -122,7 +122,7 @@ object
     | TEnum _ -> "tenum"
     | TBuiltin_va_list _ -> "tbuiltin-va-list"
 
-  method tags = [
+  method! tags = [
       "tarray";
       "tbuiltin-va-list";
       "tcomp";
@@ -145,7 +145,7 @@ object
 
   inherit [exp] mcts_t "exp"
 
-  method ts (e: exp) =
+  method! ts (e: exp) =
     match e with
     | Const _ -> "const"
     | Lval _ -> "lval"
@@ -164,7 +164,7 @@ object
     | AddrOfLabel _ -> "addroflabel"
     | StartOf _ -> "startof"
 
-  method tags = [
+  method! tags = [
       "addrof";
       "addroflabel";
       "alignof";
@@ -189,7 +189,7 @@ object
 
   inherit [attrparam] mcts_t "attrparam"
 
-  method ts (a: attrparam) =
+  method! ts (a: attrparam) =
     match a with
     | AInt _ -> "aint"
     | AStr _ -> "astr"
@@ -208,7 +208,7 @@ object
     | AIndex _ -> "aindex"
     | AQuestion _ -> "aquestion"
 
-  method tags = [
+  method! tags = [
       "aaddrof";
       "aalignof";
       "aalignofe";
@@ -237,7 +237,7 @@ object
 
   inherit [constant] mcts_t "constant"
 
-  method ts (c: constant) =
+  method! ts (c: constant) =
     match c with
     | CInt _ -> "int"
     | CStr _ -> "str"
@@ -246,7 +246,7 @@ object
     | CReal _ -> "real"
     | CEnum _ -> "enum"
 
-  method tags = ["chr"; "enum"; "int"; "real"; "str"; "wstr"]
+  method! tags = ["chr"; "enum"; "int"; "real"; "str"; "wstr"]
                
 end
 
@@ -258,13 +258,13 @@ object
 
   inherit [offset] mcts_t "offset"
 
-  method ts (o: offset) =
+  method! ts (o: offset) =
     match o with
     | NoOffset -> "n"
     | Field _ -> "f"
     | Index _ -> "i"
 
-  method tags = ["f"; "i"; "n"]
+  method! tags = ["f"; "i"; "n"]
                
 end
 
@@ -276,7 +276,7 @@ object
 
   inherit [typsig] mcts_t "typsig"
 
-  method ts (t: typsig) =
+  method! ts (t: typsig) =
     match t with
     | TSArray _ -> "tsarray"
     | TSPtr _ -> "tsptr"
@@ -285,7 +285,7 @@ object
     | TSEnum _ -> "tsenum"
     | TSBase _ -> "tsbase"
 
-  method tags = ["tsarray"; "tsbase"; "tscomp"; "tsenum"; "tsfun"; "tsptr"]
+  method! tags = ["tsarray"; "tsbase"; "tscomp"; "tsenum"; "tsfun"; "tsptr"]
                 
 end
 
@@ -298,14 +298,14 @@ object
 
   inherit [label] mcts_t "label"
 
-  method ts (l: label) =
+  method! ts (l: label) =
     match l with
     | Label _ -> "label"
     | Case _ -> "case"
     | CaseRange _ -> "caserange"
     | Default _ -> "default"
 
-  method tags = ["case"; "caserange"; "default"; "label"]
+  method! tags = ["case"; "caserange"; "default"; "label"]
                  
 end
 
@@ -317,7 +317,7 @@ object
 
   inherit [stmtkind] mcts_t "stmtkind"
 
-  method ts (s: stmtkind) =
+  method! ts (s: stmtkind) =
     match s with
     | Instr _ -> "instr"
     | Return _ -> "return"
@@ -330,7 +330,7 @@ object
     | Loop _ -> "loop"
     | Block _ -> "block"
 
-  method tags = [
+  method! tags = [
       "block";
       "break";
       "computedgoto";
@@ -354,14 +354,14 @@ object
 
   inherit [instr] mcts_t "instr"
 
-  method ts (i: instr) =
+  method! ts (i: instr) =
     match i with
     | Set _ -> "set"
     | Call _ -> "call"
     | VarDecl _ -> "vardecl"
     | Asm _ -> "asm"
 
-  method tags = ["asm"; "call"; "set"; "vardecl"]
+  method! tags = ["asm"; "call"; "set"; "vardecl"]
              
 end
 

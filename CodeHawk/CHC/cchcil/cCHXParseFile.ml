@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2020-2021 Henny B. Sipma
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -48,8 +48,6 @@ open CHCilFileUtil
 open CHCilWriteXml
 
 
-exception Invocation_error of string
-
 let projectpath = ref ""
 let targetdirectory = ref ""
 let filename = ref ""
@@ -68,12 +66,13 @@ let set_projectpath s =
 
 let speclist = [
     ("-projectpath", Arg.String set_projectpath,
-     "path to the project base directory") ;
+     "path to the project base directory");
     ("-targetdirectory", Arg.String set_targetdirectory,
-     "directory to store the generated xml files") ;
+     "directory to store the generated xml files");
     ("-nofilter", Arg.Unit (fun () -> filterfiles := false),
      "don't filter out functions in files starting with slash");
-    ("-keepUnused", Arg.Set keepUnused, "keep unused type and function definitions") ]
+    ("-keepUnused",
+     Arg.Set keepUnused, "keep unused type and function definitions")]
 
 
 let usage_msg =
@@ -111,7 +110,7 @@ let sanitize_targetfilename name =
     let pos = String.rindex name '.' in
     let spos1 = String.rindex_from name pos '/' in
     let spos2 = String.rindex_from name (spos1-1) '/' in
-    let newname = (String.sub name 0 (spos2+1)) ^ 
+    let newname = (String.sub name 0 (spos2+1)) ^
       (String.sub name (pos+2) ((String.length name) - (pos+2))) in
     let _ = Printf.printf "Change %s into %s\n" name newname in
     newname
@@ -121,25 +120,26 @@ let sanitize_targetfilename name =
 
 (* Assume '/' directory separator; to be adapted for Windows *)
 let create_directory dir =
-  let sys_command s = 
+  let sys_command s =
     let _ = Printf.printf "Trying %s\n" s in
-    let e = Sys.command s in 
+    let e = Sys.command s in
     Printf.printf "Executing %s (exitvalue: %d)\n" s e in
   let subs = string_nsplit '/' dir in
-  let _ = pr_debug [ pretty_print_list subs (fun s -> STR s) "[" " ; " "]" ; NL ] in
+  let _ = pr_debug [pretty_print_list subs (fun s -> STR s) "[" "; " "]"; NL] in
   let directories = List.fold_left (fun a s ->
     match (s,a) with
-    | ("",[]) -> [ "/" ]
+    | ("",[]) -> ["/"]
     | ("",_) -> a
-    | (d,[]) -> [ d ]
-    | (d,[ "/" ]) -> [ "/" ^ d ]
+    | (d,[]) -> [d]
+    | (d,["/"]) -> ["/" ^ d]
     | (d,h::_) -> (h ^ "/" ^ d) :: a) [] subs in
   let _ =
     pr_debug [
-        pretty_print_list (List.rev directories) (fun s -> STR s) "[" " ; " "]"; NL] in
+        pretty_print_list
+          (List.rev directories) (fun s -> STR s) "[" "; " "]"; NL] in
   List.iter (fun d ->
       if Sys.file_exists d then () else sys_command ("mkdir " ^ d))
-    (List.rev directories) 
+    (List.rev directories)
 
 
 let get_target_name () =
@@ -191,9 +191,9 @@ let cil_function_to_file target (f: fundec) (dir: string) =
   let doc = xmlDocument () in
   let root = get_cch_root target in
   let functionNode = xmlElement "function" in
-  let sys_command s = 
+  let sys_command s =
     let _ = Printf.printf "Trying %s\n" s in
-    let e = Sys.command s in 
+    let e = Sys.command s in
     Printf.printf "Executing %s (exitvalue: %d)\n" s e in
   let _ =
     if Sys.file_exists dir then () else sys_command ("mkdir " ^ dir) in
@@ -210,19 +210,20 @@ let cil_function_to_file target (f: fundec) (dir: string) =
     write_xml_function_definition functionNode f target;
     root#appendChildren [functionNode];
     Printf.printf "\nSaving function file: %s\n" ffilename;
-    file_output#saveFile ffilename doc#toPretty 
+    file_output#saveFile ffilename doc#toPretty
   end
 
 
 let save_xml_file f =
-    let (target,absoluteTarget) = get_target_name () in
+    let (target, absoluteTarget) = get_target_name () in
     let xmlfilename = absoluteTarget ^ "_cfile.xml"  in
     let dictionaryfilename = absoluteTarget ^ "_cdict.xml" in
     let _ = (if !keepUnused then () else RmUnused.removeUnused f) in
     let _ = Cfg.computeFileCFG f in
     let fns =
       List.fold_left (fun a g ->
-          match g with GFun (fdec,loc) -> fdec :: a | _ -> a) [] f.globals in
+          match g with
+          | GFun (fdec, _loc) -> fdec :: a | _ -> a) [] f.globals in
     let fns =
       if !filterfiles then
         List.filter (fun fdec ->
@@ -231,9 +232,9 @@ let save_xml_file f =
         fns in
     begin
       Printf.printf "Saving %d function file(s) ... \n" (List.length fns);
-      List.iter (fun f -> cil_function_to_file target f absoluteTarget) fns ;
-      save_cil_xml_file target f xmlfilename ;
-      save_dictionary_xml_file target dictionaryfilename ;
+      List.iter (fun f -> cil_function_to_file target f absoluteTarget) fns;
+      save_cil_xml_file target f xmlfilename;
+      save_dictionary_xml_file target dictionaryfilename;
       pr_debug [
           STR " ============================================================== ";
           NL;
@@ -250,12 +251,17 @@ let main () =
   try
       let _ = read_args () in
       let _ = pr_debug [STR "Parsing "; STR !filename; NL]  in
-      let cilfile = Frontc.parse !filename () in 
+      let cilfile = Frontc.parse !filename () in
       save_xml_file cilfile
   with
   | ParseError s ->
      begin
-       pr_debug [STR "Error when parsing (CIL) "; STR !filename; NL];
+       pr_debug [
+           STR "Error when parsing (CIL) ";
+           STR !filename;
+           STR ": ";
+           STR s;
+           NL];
        exit 1
      end
   | CHFailure p ->
