@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,9 +42,10 @@ open CHXmlDocument
 open CCHBasicTypes
 
 
-(* =========================================================== machine sizes === *
- * Adapted from the automatically generated machdep file in CIL                  *
- * ============================================================================= *)
+(** {1 Machine sizes}
+
+    Adapted from the automatically generated machdep in CIL
+ *)
 
 type machine_sizes_t = {
   sizeof_short : xpr_t ;
@@ -101,7 +102,8 @@ class type ['a] sumtype_string_converter_int =
     method from_string: string -> 'a
   end
 
-(* ============================================================== dictionary === *)
+
+(** {1 Dictionary}*)
 
 type constantstring = string * bool * int
 
@@ -112,7 +114,7 @@ class type cdictionary_int =
 
     method index_attrparam: attrparam -> int
     method index_attribute: attribute -> int
-    method index_attributes: attributes -> int         
+    method index_attributes: attributes -> int
     method index_attrparam: attrparam -> int
     method index_constant: constant -> int
     method index_exp: exp -> int
@@ -121,7 +123,7 @@ class type cdictionary_int =
     method index_lhost: lhost -> int
     method index_lval: lval -> int
     method index_opt_lval: lval option -> int
-    method index_offset: offset -> int        
+    method index_offset: offset -> int
     method index_typ: typ -> int
     method index_typsig: typsig -> int
     method index_string: string -> int
@@ -141,7 +143,7 @@ class type cdictionary_int =
     method get_typ: int -> typ
     method get_typsig: int -> typsig
     method get_string: int -> string
-         
+
     method read_xml_attributes: ?tag:string -> xml_element_int -> attributes
 
     method write_xml_exp: ?tag:string -> xml_element_int -> exp -> unit
@@ -170,56 +172,8 @@ class type cdictionary_int =
     method toPretty : pretty_t
 
   end
-(* =========================================================== xpr dictionary == *)
-(*
-class type xprdictionary_int =
-  object
 
-    method index_numerical: numerical_t -> int
-    method index_symbol: symbol_t -> int
-    method index_variable: variable_t -> int
-    method index_xcst: xcst_t -> int
-    method index_xpr: xpr_t -> int
-    method index_xpr_list: xpr_t list -> int
-    method index_xpr_list_list: xpr_t list list -> int
-
-    method get_numerical: int -> numerical_t
-    method get_symbol: int -> symbol_t
-    method get_variable: int -> variable_t
-    method get_xcst: int -> xcst_t
-    method get_xpr: int -> xpr_t
-    method get_xpr_list: int -> xpr_t list
-    method get_xpr_list_list: int -> xpr_t list list
-
-    method write_xml_numerical: ?tag:string -> xml_element_int -> numerical_t -> unit
-    method read_xml_numerical: ?tag:string -> xml_element_int -> numerical_t
-
-    method write_xml_symbol: ?tag:string -> xml_element_int -> symbol_t -> unit
-    method read_xml_symbol: ?tag:string -> xml_element_int -> symbol_t
-
-    method write_xml_variable: ?tag:string -> xml_element_int -> variable_t -> unit
-    method read_xml_variable: ?tag:string -> xml_element_int -> variable_t
-
-    method write_xml_xcst: ?tag:string -> xml_element_int -> xcst_t -> unit
-    method read_xml_xcst: ?tag:string -> xml_element_int -> xcst_t
-
-    method write_xml_xpr: ?tag:string -> xml_element_int -> xpr_t -> unit
-    method read_xml_xpr: ?tag:string -> xml_element_int -> xpr_t
-
-    method write_xml_xpr_list: ?tag:string -> xml_element_int -> xpr_t list -> unit
-    method read_xml_xpr_list: ?tag:string -> xml_element_int -> xpr_t list
-
-    method write_xml_xpr_list_list: ?tag:string -> xml_element_int -> xpr_t list list -> unit
-    method read_xml_xpr_list_list: ?tag:string -> xml_element_int -> xpr_t list list
-
-    method write_xml: xml_element_int -> unit
-    method read_xml: xml_element_int -> unit
-
-    method toPretty : pretty_t
-
-  end
- *)
-(* ============================================================ declarations === *)
+(** {1 Declarations} *)
 
 type enumitem = string * exp * location
 
@@ -259,22 +213,22 @@ class type cdeclarations_int =
 
     method write_xml_typeinfo: ?tag:string -> xml_element_int -> typeinfo -> unit
     method read_xml_typeinfo : ?tag:string -> xml_element_int -> typeinfo
-         
+
     method write_xml_varinfo: ?tag:string -> xml_element_int -> varinfo -> unit
     method read_xml_varinfo : ?tag:string -> xml_element_int -> varinfo
-         
+
     method write_xml_fieldinfo: ?tag:string -> xml_element_int -> fieldinfo -> unit
     method read_xml_fieldinfo : ?tag:string -> xml_element_int -> fieldinfo
-         
+
     method write_xml_compinfo: ?tag:string -> xml_element_int -> compinfo -> unit
     method read_xml_compinfo : ?tag:string -> xml_element_int -> compinfo
-         
+
     method write_xml_enumitem: ?tag:string -> xml_element_int -> enumitem -> unit
     method read_xml_enumitem : ?tag:string -> xml_element_int -> enumitem
-         
+
     method write_xml_enuminfo: ?tag:string -> xml_element_int -> enuminfo -> unit
     method read_xml_enuminfo : ?tag:string -> xml_element_int -> enuminfo
-         
+
     method write_xml_location: ?tag:string -> xml_element_int -> location -> unit
     method read_xml_location : ?tag:string -> xml_element_int -> location
 
@@ -285,17 +239,17 @@ class type cdeclarations_int =
 
   end
 
-  
-(* ================================================================= context === *)
-  
+
+(** {1 Context} *)
+
 class type cfg_context_int =
   object ('a)
     method compare: 'a -> int
     method index: int
     method equal: 'a -> bool
-         
+
     method pop: 'a
-         
+
     method add_instr: int -> 'a
     method add_stmt: int -> 'a
     method add_return: 'a
@@ -305,12 +259,12 @@ class type cfg_context_int =
     method add_switch_expr: 'a
     method add_loop: 'a
     method add_goto: 'a
-         
+
     method get_context: int list
     method get_complexity: int
 
     method is_return_context: bool
-         
+
     method write_xml: xml_element_int -> unit
     method to_string: string
     method toPretty: pretty_t
@@ -321,7 +275,7 @@ class type exp_context_int =
   object ('a)
     method index: int
     method compare: 'a -> int
-    
+
     method add_var: 'a
     method add_arg: int -> 'a (* index of argument, starting at 1 *)
     method add_args: int list -> 'a   (* list of argument indices, starting at 1 *)
@@ -343,7 +297,7 @@ class type exp_context_int =
 
     method get_context: int list
     method get_complexity: int
-         
+
     method write_xml: xml_element_int -> unit
     method to_string: string
     method toPretty: pretty_t
@@ -417,36 +371,36 @@ class type ccontexts_int =
 
   end
 
-(* ============================================================ environments === *)
+(** {1 Environments} *)
 
 class type file_environment_int =
   object
 
-    method initialize     : file -> unit
+    method initialize: file -> unit
 
     (* accessors *)
-    method get_globalvar    : int -> varinfo
-    method get_globalvars   : varinfo list
+    method get_globalvar: int -> varinfo
+    method get_globalvars: varinfo list
     method get_globalvar_by_name: string -> varinfo
-    method get_comp         : int -> compinfo
-    method get_enum         : string -> enuminfo
-    method get_type         : string -> typ
-    method get_field_type   : int -> string -> typ
-    method get_field_info   : int -> string -> fieldinfo
+    method get_comp: int -> compinfo
+    method get_enum: string -> enuminfo
+    method get_type: string -> typ
+    method get_field_type: int -> string -> typ
+    method get_field_info: int -> string -> fieldinfo
     method get_type_unrolled: typ -> typ
     method get_external_header: string -> string
     method get_application_functions: varinfo list
-         
+
     method get_machine_sizes: machine_sizes_t
 
     (* predicates *)
     method has_globalvar: int -> bool
     method is_external_function: string -> bool
-    method has_external_header : string -> bool
+    method has_external_header: string -> bool
     method is_application_function: int -> bool
-end
+  end
 
-(* ============================================================ transformers === *)
+(** {1 Transformers} *)
 
 class type exp_transformer_int =
 object
@@ -467,7 +421,7 @@ object
 end
 
 
-(* ======================================================== function summary === *)
+(** {1 Function summary} *)
 
 type api_parameter_t =
   | ParFormal of int           (* starting at 1 *)
@@ -523,7 +477,7 @@ type xpredicate_t =      (* predicate used in representation of external conditi
   | XNullTerminated of s_term_t         (* term pointed to is null-terminated *)
   | XOutputFormatString of s_term_t     (* term points to printf format string *)
   | XPreservesAllMemory                 (* function does not free any external memory *)
-  | XPreservesAllMemoryX of s_term_t list (* function does not free any external memory except given terms *)      
+  | XPreservesAllMemoryX of s_term_t list (* function does not free any external memory except given terms *)
   | XPreservesMemory of s_term_t        (* function does not free pointed to memory *)
   | XPreservesValue of s_term_t         (* function does not modify the value of s_term *)
   | XPreservesNullTermination           (* function does not strip null-terminating bytes *)
@@ -540,8 +494,8 @@ type xpredicate_t =      (* predicate used in representation of external conditi
   | XPolicyValue of s_term_t * string * string option
   (* the term is a newly created policy value and optionally makes a first transition *)
   | XPolicyTransition of s_term_t * string * string (* the term transitions according to a named transition
-                                                       in the policy *)     
-                      
+                                                       in the policy *)
+
 type postrequest_t = int * xpredicate_t  (* fvid of callee *)
 
 type postassume_t = int * xpredicate_t (* fvid of callee *)
@@ -560,18 +514,32 @@ type ds_condition_t = {
     dsc_ckey : int ;
     dsc_fields : xpredicate_t list
   }
-                    
+
 type function_summary_t = {
     fs_fname : string ;
-    fs_domainref: (string * string) option;             (* specialized reasoning domain *)
+    fs_domainref: (string * string) option; (* specialized reasoning domain *)
     fs_params : (string * int) list ;
     fs_preconditions: annotated_xpredicate_t list ;
     fs_postconditions: annotated_xpredicate_t list ;
     fs_error_postconditions: annotated_xpredicate_t list ;
-    fs_sideeffects: annotated_xpredicate_t list 
+    fs_sideeffects: annotated_xpredicate_t list
   }
 
-(* ---------------------------------------- Interface dictionary -- *)
+
+class type function_summary_library_int =
+object
+  method add_summary_jar: string -> unit
+  method read_function_summary_string: string -> string -> unit
+  method read_xml_substitute_summary:
+           xml_element_int -> string -> unit (* from globaldefs.xml contract *)
+  method get_summary : string -> function_summary_t
+  method has_summary : string -> string -> bool
+  method has_builtin_summary: string -> bool
+  method statistics_to_pretty: pretty_t
+end
+
+
+(** {1 Interface dictionary} *)
 
 class type interface_dictionary_int =
   object
@@ -613,8 +581,11 @@ class type interface_dictionary_int =
     method read_xml_postrequest:
              ?tag:string -> xml_element_int -> postrequest_t
 
-    method write_xml_ds_condition: ?tag:string -> xml_element_int -> ds_condition_t -> unit
-    method read_xml_ds_condition: ?tag:string -> xml_element_int -> ds_condition_t
+    method write_xml_ds_condition:
+             ?tag:string -> xml_element_int -> ds_condition_t -> unit
+
+    method read_xml_ds_condition:
+             ?tag:string -> xml_element_int -> ds_condition_t
 
     method write_xml: xml_element_int -> unit
     method read_xml : xml_element_int -> unit
@@ -622,6 +593,9 @@ class type interface_dictionary_int =
     method toPretty: pretty_t
 
   end
+
+
+(** {1 Contracts} *)
 
 type contract_instr_t =
   SetVar of int * s_term_t * s_term_t        (* line, lhs, rhs *)
@@ -693,6 +667,9 @@ class type global_contract_int =
   end
 
 
+(** {1 System settings} *)
+
+
 type analysis_level_t =
   | UndefinedBehavior               (* only indicate undefined behavior (Red) *)
   | ImplementationDefinedBehavior   (* indicate undefined behavior and implementation
@@ -703,17 +680,17 @@ type analysis_level_t =
 
 class type system_settings_int =
   object
-    method set_path       : string -> unit
-    method set_cfilename  : string -> unit
+    method set_path: string -> unit
+    method set_cfilename: string -> unit
     method set_application_name: string -> unit
     method set_contractpath: string -> unit
-    method set_verbose    : bool -> unit
+    method set_verbose: bool -> unit
     method set_filterabspathfiles: bool -> unit
-    method set_wordsize   : int -> unit
+    method set_wordsize: int -> unit
     method set_use_unreachability: unit
     method set_analysis_level: analysis_level_t -> unit
-         
-    method get_path     : string
+
+    method get_path: string
     method get_cfilename: string
     method get_application_name: string
     method get_contractpath: string
@@ -721,21 +698,10 @@ class type system_settings_int =
 
     method use_unreachability: bool
     method has_wordsize: bool
-    method verbose     : bool
+    method verbose: bool
     method filterabspathfiles: bool
     method has_contractpath: bool
     method is_undefined_only: bool
     method is_implementation_defined: bool
     method is_value_wrap_around: bool
   end
-  
-class type function_summary_library_int =
-object
-  method add_summary_jar: string -> unit
-  method read_function_summary_string: string -> string -> unit
-  method read_xml_substitute_summary: xml_element_int -> string -> unit (* from globaldefs.xml contract *)
-  method get_summary : string -> function_summary_t
-  method has_summary : string -> string -> bool
-  method has_builtin_summary: string -> bool
-  method statistics_to_pretty: pretty_t
-end

@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,11 +29,11 @@
 
 (* chlib *)
 open CHPretty
-   
+
 (* cchlib *)
 open CCHLibTypes
-open CCHBasicTypes
 open CCHUtilities
+
 
 class system_settings_t:system_settings_int =
 object
@@ -53,7 +55,7 @@ object
   method set_contractpath (p:string) = contractpath <- p
 
   method set_analysis_level s = analysis_level <- s
-                           
+
   method set_verbose (v:bool) = verbose <- v
   method set_filterabspathfiles (v:bool) = filterabspathfiles <- v
   method set_wordsize (v:int) = wordsize <- Some v
@@ -70,7 +72,10 @@ object
     | _ -> raise (CCHFailure (STR "No wordsize specified in settings"))
 
   method is_undefined_only = analysis_level = UndefinedBehavior
-  method is_implementation_defined = analysis_level = ImplementationDefinedBehavior
+
+  method is_implementation_defined =
+    analysis_level = ImplementationDefinedBehavior
+
   method is_value_wrap_around = analysis_level = ValueWrapAround
 
   method use_unreachability = use_unreachability
@@ -78,7 +83,7 @@ object
   method filterabspathfiles = filterabspathfiles
   method has_wordsize = match wordsize with Some _ -> true | _ -> false
   method has_contractpath = not (contractpath = "")
-                                                                
+
 end
 
 let system_settings = new system_settings_t
