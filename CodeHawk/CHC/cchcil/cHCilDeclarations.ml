@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2020-2021 Henny B. Sipma
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -89,12 +89,12 @@ object (self)
          (["compound"],
           (cd#index_typ typ) :: (List.map self#index_offset_init olist)) in
     initinfo_table#add (tags,args)
-                                        
+
   method index_offset_init (oi: (offset * init)) =
     let (offset, init) = oi in
     let args = [cd#index_offset offset; self#index_init init] in
     offset_init_table#add ([], args)
-    
+
   method index_varinfo (vinfo: varinfo) =
     let vinit_ix = match vinfo.vinit.init with
       | Some i -> [self#index_init i]

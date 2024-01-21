@@ -3,10 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -68,26 +68,26 @@ object (self)
   initializer
     begin
       tables <- [
-        attrparam_table ;
-        attribute_table ;
-        attributes_table ;
-        constant_table ;
-        exp_table ;
-        funarg_table ;
-        funargs_table ;
-        lhost_table ;
-        lval_table ;
-        offset_table ;
-        typ_table ;
-        typsig_table ;
-        typsiglist_table ;
-      ] ;
-      ignore (offset_table#add (["n"],[])) ;
-      ignore (attributes_table#add ([],[]))
+        attrparam_table;
+        attribute_table;
+        attributes_table;
+        constant_table;
+        exp_table;
+        funarg_table;
+        funargs_table;
+        lhost_table;
+        lval_table;
+        offset_table;
+        typ_table;
+        typsig_table;
+        typsiglist_table;
+     ];
+      ignore (offset_table#add (["n"], []));
+      ignore (attributes_table#add ([], []))
     end
-                       
+
   method index_attrparam (a:attrparam) =
-    let tags = [ attrparam_mcts#ts a ] in
+    let tags = [attrparam_mcts#ts a] in
     let key = match a with
       | AInt i -> (tags, [i])
       | AStr s -> (tags, [self#index_string s])
@@ -118,21 +118,25 @@ object (self)
   method index_constant (c: constant):int =
     let tags = [constant_mcts#ts c] in
     let key = match c with
-      | CInt (i64, ik, opts) ->
-         (tags @ [Int64.to_string (GoblintCil.Cilint.int64_of_cilint i64); ikind_mfts#ts ik ], [])
+      | CInt (i64, ik, _opts) ->
+         (tags
+          @ [Int64.to_string (GoblintCil.Cilint.int64_of_cilint i64);
+             ikind_mfts#ts ik],
+          [])
       | CStr (s, _todo_encoding) -> (tags, [self#index_string s])
-      | CWStr (i64r, _todo_encoding) -> (tags @ (List.map Int64.to_string i64r), [])
+      | CWStr (i64r, _todo_encoding) ->
+         (tags @ (List.map Int64.to_string i64r), [])
       | CChr c -> (tags, [Char.code c])
       | CReal (f, fk, opts) ->
          (tags
           @ [string_of_float f;
              fkind_mfts#ts fk;
-             match opts with Some s -> s | _ -> "" ],
+             match opts with Some s -> s | _ -> ""],
           [])
       | CEnum (exp, ename, iname) ->
          (tags @ [ename; iname.ename], [self#index_exp exp]) in
     constant_table#add key
-    
+
   method index_lval ((lhost, offset): lval): int =
     lval_table#add ([], [self#index_lhost lhost; self#index_offset offset])
 
@@ -172,10 +176,10 @@ object (self)
       | Lval lval -> (tags,[self#index_lval lval])
       | UnOp (unop, exp, typ) ->
          (tags @ [unop_mfts#ts unop], [self#index_exp exp; self#index_typ typ])
-      | BinOp (binop,exp1,exp2,typ) ->
-         (tags @ [ binop_mfts#ts binop],
+      | BinOp (binop, exp1, exp2, typ) ->
+         (tags @ [binop_mfts#ts binop],
           [self#index_exp exp1; self#index_exp exp2; self#index_typ typ])
-      | Question (exp1,exp2,exp3,typ) ->
+      | Question (exp1, exp2, exp3, typ) ->
          (tags,
           [self#index_exp exp1;
            self#index_exp exp2;
@@ -205,7 +209,7 @@ object (self)
           let name = if name = "" then "$par$" ^ (string_of_int (i+1)) else name in
           (name, typ, attrs)) r in
     funargs_table#add ([], List.map self#index_funarg r)
-    
+
   method private index_opt_funargs (f: funarg list option) =
     match f with None -> (-1) | Some r -> self#index_funargs r
 
@@ -214,7 +218,7 @@ object (self)
     let ia attrs = match attrs with
       | [] -> []
       | _ -> [self#index_attributes attrs] in
-    let tags = [typ_mcts#ts typ ] in
+    let tags = [typ_mcts#ts typ] in
     let key = match typ with
       | TVoid attrs -> (tags, ia attrs )
       | TInt (ik, attrs) -> (tags @ [ikind_mfts#ts ik], ia attrs)
@@ -231,7 +235,7 @@ object (self)
       | TNamed (tinfo,attrs) -> (tags @ [tinfo.tname], ia attrs)
       | TComp (cinfo, attrs) -> (tags, (cinfo.ckey) :: ia attrs)
       | TEnum (einfo, attrs) -> (tags @ [einfo.ename], ia attrs)
-      | TBuiltin_va_list attrs -> (tags, ia attrs) in                                       
+      | TBuiltin_va_list attrs -> (tags, ia attrs) in
     typ_table#add key
 
   method private index_opti64 (i64: int64 option): string =
@@ -241,19 +245,23 @@ object (self)
     typsiglist_table#add ([],List.map self#index_typsig tsigs)
 
   method private index_typsig_list_option (opttsigs: typsig list option): int =
-    match opttsigs with Some tsigs -> self#index_typsig_list tsigs | _ -> (-1)
+    match opttsigs with
+    | Some tsigs -> self#index_typsig_list tsigs
+    | _ -> (-1)
 
   method index_string (s: string) = string_table#add s
 
   method index_typsig (typsig: typsig): int =
-    let tags = [ typsig_mcts#ts typsig ] in
+    let tags = [typsig_mcts#ts typsig] in
     (* omit entry for empty attributes *)
     let ia attrs = match attrs with
       | [] -> []
       | _ -> [self#index_attributes attrs] in
     let key = match typsig with
       | TSArray (tsig, opti64, attrs) ->
-         (tags @ [self#index_opti64 (Option.map GoblintCil.Cilint.int64_of_cilint opti64)],
+         (tags
+          @ [self#index_opti64
+               (Option.map GoblintCil.Cilint.int64_of_cilint opti64)],
           [self#index_typsig tsig] @ ia attrs)
       | TSPtr (tsig, attrs) -> (tags, (self#index_typsig tsig) :: ia attrs)
       | TSComp (b,s,attrs) -> (tags @ [s], (if b then 1 else 0) :: ia attrs)
@@ -269,14 +277,14 @@ object (self)
   method write_xml_attributes
            ?(tag="iattrs") (node: xml_element_int) (attr: attributes) =
     node#setIntAttribute tag (self#index_attributes attr)
-       
+
   method write_xml_exp ?(tag="iexp") (node: xml_element_int) (exp: exp) =
     node#setIntAttribute tag (self#index_exp exp)
 
   method write_xml_funarg_list
            ?(tag="ifunargs") (node: xml_element_int) (r: funarg list) =
     node#setIntAttribute tag (self#index_funargs r)
-    
+
   method write_xml_lval ?(tag="ilval") (node: xml_element_int) (lval: lval) =
     node#setIntAttribute tag (self#index_lval lval)
 
@@ -293,14 +301,17 @@ object (self)
   method write_xml (node: xml_element_int) =
     let snode = xmlElement string_table#get_name in
     begin
-      string_table#write_xml snode ;
+      string_table#write_xml snode;
       node#appendChildren
         (List.map
            (fun t ->
              let tnode = xmlElement t#get_name in
-             begin t#write_xml tnode ; tnode end)
-           tables) ;
-      node#appendChildren [ snode ]
+             begin
+               t#write_xml tnode;
+               tnode
+             end)
+           tables);
+      node#appendChildren [snode]
     end
 end
 
