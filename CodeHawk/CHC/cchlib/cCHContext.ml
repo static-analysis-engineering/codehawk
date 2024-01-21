@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,7 +38,6 @@ open CHPrettyUtil
 open CHXmlDocument
 
 (* cchlib *)
-open CCHBasicTypes
 open CCHIndexedCollections
 open CCHLibTypes
 open CCHUtilities
@@ -84,7 +83,7 @@ class type exp_context_manager_int =
 let mk_context_node (key:string list * int list) =
   let (tags,args) = key in
   if (List.length tags) > 0 then
-    { cn_name = List.hd tags; cn_strings = List.tl tags; cn_numbers = args }
+    {cn_name = List.hd tags; cn_strings = List.tl tags; cn_numbers = args}
   else
     raise (CCHFailure (LBLOCK [STR "Context node without a name"]))
 
@@ -126,27 +125,27 @@ module IntListCollections =
 
 let context_node_table = mk_index_table "context-node-table"
 
-    
+
 class cfg_context_t ~(index:int) ~(nodes:int list):cfg_context_int =
 object (self:'a)
-  
+
   val nodes = nodes
 
   method index = index
 
   method compare (other:'a) = lcompare nodes other#get_context Stdlib.compare
-  
+
   method equal (other:'a) = (self#compare other) = 0
-    
-  method pop = 
+
+  method pop =
     if (List.length nodes) > 0 then {< nodes = List.tl nodes >} else {< >}
-      
-  method private add s = 
+
+  method private add s =
     {< nodes = (context_node_table#add ([s],[])) :: nodes >}
 
-  method private addi s i = 
+  method private addi s i =
     {< nodes = (context_node_table#add ([s],[i])) :: nodes >}
-    
+
   method add_instr (n:int) = self#addi "instr" n
 
   method add_stmt (n:int) = self#addi "stmt" n
@@ -158,15 +157,15 @@ object (self:'a)
   method add_if_else = self#add "if-else"
 
   method add_goto = self#add "goto"
-    
+
   method add_loop = self#add "loop"
 
   method add_return = self#add "return"
 
   method add_switch_expr = self#add "switch-expr"
-    
+
   method get_context = nodes
-    
+
   method get_complexity =
     let cnodes = List.map context_node_table#retrieve nodes in
     let loops = List.filter (fun (tags,_) -> (List.hd tags) = "loop") cnodes in
@@ -177,9 +176,10 @@ object (self:'a)
     (List.length ifs) + ( 5 * (List.length loops))
 
   method is_return_context =
-    (List.length nodes) > 0 &&
-      (is_return_node (mk_context_node (context_node_table#retrieve (List.hd nodes))))
-      
+    (List.length nodes) > 0
+    && (is_return_node
+          (mk_context_node (context_node_table#retrieve (List.hd nodes))))
+
   method write_xml (node:xml_element_int) =
     begin
       node#setAttribute "a" (String.concat "," (List.map string_of_int nodes));
@@ -192,14 +192,14 @@ object (self:'a)
       (List.map (fun ix ->
            context_node_to_string
              (mk_context_node (context_node_table#retrieve ix))) nodes)
-      
-  method toPretty = 
+
+  method toPretty =
     pretty_print_list
-      nodes (fun ix -> 
+      nodes (fun ix ->
         LBLOCK [
             context_node_to_pretty
               (mk_context_node (context_node_table#retrieve ix)); NL ]) "" "" ""
-      
+
 end
 
 
@@ -219,7 +219,7 @@ let read_xml_cfg_context (node:xml_element_int):cfg_context_int =
 
 
 class cfg_context_table_t =
-object (self)
+object
 
   inherit [int list, cfg_context_int] indexed_table_with_retrieval_t as super
 
@@ -229,7 +229,11 @@ object (self)
   method lookup = map#get
   method values = map#listOfValues
 
-  method reset = begin map#removeList map#listOfKeys; super#reset end
+  method! reset =
+    begin
+      map#removeList map#listOfKeys;
+      super#reset
+    end
 
 end
 
@@ -264,29 +268,29 @@ end
 
 
 let cfg_context_manager = new cfg_context_manager_t
-                        
-    
+
+
 class exp_context_t ~(index:int) ~(nodes:int list):exp_context_int =
 object (self:'a)
-  
+
   val nodes = nodes
 
   method index = index
-    
+
   method compare (other:'a) = lcompare nodes other#get_context Stdlib.compare
-    
-  method private add s = 
+
+  method private add s =
     {< nodes = (context_node_table#add([s],[])) :: nodes >}
 
-  method private addi s i = 
+  method private addi s i =
     {< nodes = (context_node_table#add([s],[i])) :: nodes >}
 
   method private addii s l =
     {< nodes = (context_node_table#add([s],l)) :: nodes >}
 
-  method private adds s t = 
+  method private adds s t =
     {< nodes = (context_node_table#add([s;t],[])) :: nodes >}
-    
+
   method add_var = self#add "var"
 
   method add_lhs = self#add "lhs"
@@ -298,8 +302,8 @@ object (self:'a)
   method add_mem  = self#add "mem"
 
   method add_deref_read = self#add "deref-read"
-    
-  method add_addrof  = self#add "addrof" 
+
+  method add_addrof  = self#add "addrof"
 
   method add_startof = self#add "startof"
 
@@ -308,13 +312,13 @@ object (self:'a)
   method add_unop = self#add "op"
 
   method add_cast = self#add "cast"
-    
+
   method add_field_offset f = self#adds "field-offset" f
 
-  method add_index = self#add "index" 
+  method add_index = self#add "index"
 
   method add_index_offset = self#add "index-offset"
-    
+
   method add_ftarget = self#add "ftarget"       (* indirect call target *)
 
   method add_arg i = self#addi "arg" i
@@ -322,16 +326,16 @@ object (self:'a)
   method add_args l = self#addii "args" l       (* depends on multiple arguments *)
 
   method add_question i = self#addi "question" i
-    
+
   method get_context = nodes
-    
-  method get_complexity = 
+
+  method get_complexity =
     5 * (List.length
            (List.filter
               (fun n ->
                 let (tags,_) = context_node_table#retrieve n in
                 List.hd tags = "mem") nodes))
-    
+
   method write_xml (node:xml_element_int) =
     begin
       node#setAttribute "a" (String.concat "," (List.map string_of_int nodes));
@@ -344,14 +348,13 @@ object (self:'a)
       (List.map (fun ix ->
            context_node_to_string
              (mk_context_node (context_node_table#retrieve ix))) nodes)
-      
-  method toPretty = 
+
+  method toPretty =
     pretty_print_list
       nodes (fun n ->
-        let cn =
-          mk_context_node (context_node_table#retrieve n) in
+        let cn = mk_context_node (context_node_table#retrieve n) in
         LBLOCK [context_node_to_pretty cn; NL]) "" "" ""
-      
+
 end
 
 
@@ -360,18 +363,18 @@ let read_xml_exp_context (node:xml_element_int):exp_context_int =
     try
       List.map int_of_string (nsplit ',' (node#getAttribute "a"))
     with
-      Failure _ ->
-      raise
-        (CCHFailure
-           (LBLOCK [
-                STR "read_xml_exp_context: int_of_string on ";
-                STR (node#getAttribute "a")])) in
+    | Failure _ ->
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "read_xml_exp_context: int_of_string on ";
+                 STR (node#getAttribute "a")])) in
   let index = node#getIntAttribute "ix" in
   new exp_context_t ~index ~nodes
 
 
 class exp_context_table_t =
-object (self)
+object
 
   inherit [int list, exp_context_int] indexed_table_with_retrieval_t as super
 
@@ -381,8 +384,11 @@ object (self)
   method lookup = map#get
   method values = map#listOfValues
 
-  method reset =
-    begin map#removeList map#listOfKeys; super#reset end
+  method! reset =
+    begin
+      map#removeList map#listOfKeys;
+      super#reset
+    end
 
 end
 
@@ -553,7 +559,8 @@ object (self)
            ?(tag="ictxt") (node:xml_element_int) (c:program_context_int) =
     node#setIntAttribute tag (self#index_context c)
 
-  method read_xml_context ?(tag="ictxt") (node:xml_element_int):program_context_int =
+  method read_xml_context
+           ?(tag="ictxt") (node:xml_element_int):program_context_int =
     self#get_context (node#getIntAttribute tag)
 
   method write_xml (node:xml_element_int) =
@@ -566,7 +573,7 @@ object (self)
       cfg_context_manager#write_xml gnode;
       exp_context_manager#write_xml enode;
       table#write_xml cnode;
-      node#appendChildren [ nnode; gnode; enode; cnode ]
+      node#appendChildren [nnode; gnode; enode; cnode]
     end
 
   method read_xml (node:xml_element_int) =

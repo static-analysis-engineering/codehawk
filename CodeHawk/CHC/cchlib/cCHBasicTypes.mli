@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,13 +32,10 @@
  * selectors that seem to be primarily used for transformation have been removed. *
  * ============================================================================== *)
 
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 open CHXmlDocument
 
-type ikind = 
+type ikind =
 | IChar       (** [char] *)
 | ISChar      (** [signed char] *)
 | IUChar      (** [unsigned char] *)
@@ -48,11 +47,11 @@ type ikind =
 | ILong       (** [long] *)
 | IULong      (** [unsigned long] *)
 | ILongLong   (** [long long] (or [_int64] on Microsoft Visual C) *)
-| IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft 
+| IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft
                   Visual C) *)
-		
+
 (** Various kinds of floating-point numbers*)
-type fkind = 
+type fkind =
 | FFloat      (** [float] *)
 | FDouble     (** [double] *)
 | FLongDouble (** [long double] *)
@@ -87,7 +86,7 @@ type binop =
 | Ge
 | Eq
 | Ne
-| BAnd 
+| BAnd
 | BXor
 | BOr
 | LAnd
@@ -105,16 +104,16 @@ type typ =
 | TArray of typ * exp option * attributes
 | TFun of typ * funarg list option * bool * attributes
 | TNamed of string * attributes
-| TComp of int * attributes  
+| TComp of int * attributes
 | TEnum of string * attributes
 | TBuiltin_va_list of attributes
 
 and funarg = string * typ * attributes
-		
+
 and attribute = Attr of string  * attrparam list
-		
+
 and attributes = attribute list
-	
+
 and attrparam =
 | AInt of int
 | AStr of string
@@ -140,7 +139,7 @@ and compinfo = {
   cfields: fieldinfo list ;
   cattr  : attributes ;
 }
-  
+
 and fieldinfo = {
   fckey    : int ;   (* key of the containing compinfo *)
   fname    : string ;
@@ -149,21 +148,21 @@ and fieldinfo = {
   fattr    : attributes ;
   floc     : location
 }
-  
+
 and eitem = string * exp * location
-  
+
 and enuminfo = {
   ename    : string ;
   eitems   : eitem list ;
   eattr    : attributes ;
   ekind    : ikind ;
 }
-  
+
 and typeinfo = {
   tname    : string ;
   ttype    : typ ;
 }
-  
+
 and varinfo = {
   vname    : string ;
   vtype    : typ ;
@@ -177,7 +176,7 @@ and varinfo = {
   vaddrof  : bool ;
   vparam   : int    (* 0 for local/global variables, seqnr for parameters *)
 }
-  
+
 and exp =
 | Const of constant
 | Lval of lval
@@ -210,7 +209,7 @@ and lhost =
 | Var of varuse
 | Mem of exp
 
-and offset = 
+and offset =
 | NoOffset
 | Field of fielduse * offset
 | Index of exp * offset
@@ -220,26 +219,26 @@ and init =
 | CompoundInit of typ * (offset * init) list
 
 and initinfo = init option
-  
+
 and block = {
   battrs  : attributes ;
   bstmts  : stmt list
 }
-  
+
 and stmt = {
   labels  : label list ;
   skind   : stmtkind ;
   sid     : int ;
   succs   : int list ;
-  preds   : int list 
+  preds   : int list
 }
-  
+
 and label =
 | Label of string * location * bool
 | Case of exp * location
 | CaseRange of exp * exp * location
 | Default of location
-    
+
 and stmtkind =
 | Instr of instr list
 | Return of exp option * location
@@ -253,22 +252,22 @@ and stmtkind =
 | Block of block
 | TryFinally of block * block * location
 | TryExcept of block * (instr list * exp) * block * location
-    
+
 and asm_output_t = string option * string * lval (* name, constraint, lval *)
-  
+
 and asm_input_t = string option * string * exp (* name, constraint, exp *)
-  
+
 and instr =
 | Set of lval * exp * location
 | Call of lval option * exp * exp list * location
 | Asm of attributes * int list * asm_output_t list * asm_input_t list * int list * location
-    
+
 and location = {
   line : int ;
   file : string ;
   byte : int
 }
-  
+
 and typsig =
 | TSArray of typsig * int64 option * attribute list
 | TSPtr of typsig * attribute list
@@ -276,7 +275,7 @@ and typsig =
 | TSFun of typsig * typsig list option * bool * attribute list
 | TSEnum of string * attribute list
 | TSBase of typ
-    
+
 type global =
 | GType of typeinfo * location
 | GCompTag of compinfo * location
@@ -316,12 +315,11 @@ class type cfundeclarations_int =
 type fundec = {
     svar    : varinfo ;
     sdecls  : cfundeclarations_int ;
-    sbody   : block 
+    sbody   : block
 }
 
-      
-type file = {	
-  fileName: string ;	
-  globals: global list  
-}
 
+type file = {
+  fileName: string ;
+  globals: global list
+}

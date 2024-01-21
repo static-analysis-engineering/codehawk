@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,11 +33,9 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHIndexTable
-open CHPrettyUtil
 open CHStringIndexTable
-open CHUtil
 open CHXmlDocument
-   
+
 (* cchlib *)
 open CCHBasicTypes
 open CCHLibTypes
@@ -60,17 +58,17 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
     ch_error_log#add "serialization tag" msg;
     raise (CCHFailure msg)
   end
-  
+
 let mk_constantstring (s:string):constantstring =
   if has_control_characters s then
     (hex_string s, true, String.length s)
   else
     (s,false, String.length s)
-    
+
 
 class cdictionary_t:cdictionary_int =
 object (self)
-     
+
   val attrparam_table = mk_index_table "attrparam-table"
   val attribute_table = mk_index_table "attribute-table"
   val attributes_table = mk_index_table "attributes-table"
@@ -85,58 +83,58 @@ object (self)
   val typsig_table = mk_index_table "typsig-table"
   val typsiglist_table = mk_index_table "typsiglist-table"
   val string_table = mk_string_index_table "string-table"
-                   
+
   val mutable tables = []
 
   initializer
     tables <- [
-      attrparam_table ;
-      attribute_table ;
-      attributes_table ;
-      constant_table ;
-      exp_table ;
-      funarg_table ;
-      funargs_table ;
-      lhost_table ;
-      lval_table ;
-      offset_table ;
-      typ_table ;
-      typsig_table ;
+      attrparam_table;
+      attribute_table;
+      attributes_table;
+      constant_table;
+      exp_table;
+      funarg_table;
+      funargs_table;
+      lhost_table;
+      lval_table;
+      offset_table;
+      typ_table;
+      typsig_table;
       typsiglist_table
-    ]
+   ]
 
   method reset =
     begin
-      string_table#reset ;
+      string_table#reset;
       List.iter (fun t -> t#reset) tables
     end
 
   method index_attrparam (a:attrparam) =
-    let tags = [ attrparam_mcts#ts a ] in
+    let tags = [attrparam_mcts#ts a] in
     let key = match a with
       | AInt i -> (tags, [i])
       | AStr s -> (tags, [self#index_string s])
       | ACons (s,r) -> (tags @ [s], List.map self#index_attrparam r)
-      | ASizeOf typ -> (tags, [ self#index_typ typ ])
-      | ASizeOfE a -> (tags, [ self#index_attrparam a ])
-      | ASizeOfS s -> (tags, [ self#index_typsig s ])
-      | AAlignOf typ -> (tags, [ self#index_typ typ ])
-      | AAlignOfE a -> (tags, [ self#index_attrparam a ])
-      | AAlignOfS s -> (tags, [ self#index_typsig s ])
+      | ASizeOf typ -> (tags, [self#index_typ typ])
+      | ASizeOfE a -> (tags, [self#index_attrparam a])
+      | ASizeOfS s -> (tags, [self#index_typsig s])
+      | AAlignOf typ -> (tags, [self#index_typ typ])
+      | AAlignOfE a -> (tags, [self#index_attrparam a])
+      | AAlignOfS s -> (tags, [self#index_typsig s])
       | AUnOp (unop,a) ->
-         (tags @ [unop_mfts#ts unop], [ self#index_attrparam a])
+         (tags @ [unop_mfts#ts unop], [self#index_attrparam a])
       | ABinOp (binop,a1,a2) ->
          (tags @ [binop_mfts#ts binop] ,
-          [ self#index_attrparam a1; self#index_attrparam a2])
-      | ADot (a,s) -> (tags @ [s], [ self#index_attrparam a])
-      | AStar a -> (tags, [ self#index_attrparam a])
-      | AAddrOf a -> (tags, [ self#index_attrparam a])
+          [self#index_attrparam a1; self#index_attrparam a2])
+      | ADot (a,s) -> (tags @ [s], [self#index_attrparam a])
+      | AStar a -> (tags, [self#index_attrparam a])
+      | AAddrOf a -> (tags, [self#index_attrparam a])
       | AIndex (a1,a2) ->
-         (tags, [ self#index_attrparam a1; self#index_attrparam a2 ])
+         (tags, [self#index_attrparam a1; self#index_attrparam a2])
       | AQuestion (a1, a2, a3) ->
          (tags,
-          [ self#index_attrparam a1; self#index_attrparam a2;
-            self#index_attrparam a3 ]) in
+          [self#index_attrparam a1; self#index_attrparam a2;
+            self#index_attrparam a3]) in
     attrparam_table#add key
 
   method get_attrparam (index:int):attrparam =
@@ -168,18 +166,18 @@ object (self)
     | s -> raise_tag_error name s attrparam_mcts#tags
 
   method index_constant (c:constant):int =
-    let tags = [ constant_mcts#ts c ] in
+    let tags = [constant_mcts#ts c] in
     let key = match c with
-      | CInt (i64,ik, opts) ->
+      | CInt (i64,ik, _opts) ->
          (tags @ [Int64.to_string i64; ikind_mfts#ts ik], [])
-      | CStr s -> (tags, [ self#index_string s ])
+      | CStr s -> (tags, [self#index_string s])
       | CWStr i64r -> (tags @ (List.map Int64.to_string i64r), [])
-      | CChr c -> (tags, [ Char.code c ])
+      | CChr c -> (tags, [Char.code c])
       | CReal (f,fk,opts) ->
-         (tags @ [ string_of_float f; fkind_mfts#ts fk ;
-                   match opts with Some s -> s | _ -> "" ], [])
+         (tags @ [string_of_float f; fkind_mfts#ts fk;
+                   match opts with Some s -> s | _ -> ""], [])
       | CEnum (exp,ename,iname) ->
-         (tags @ [ename; iname], [ self#index_exp exp ]) in
+         (tags @ [ename; iname], [self#index_exp exp]) in
     constant_table#add key
 
   method get_constant (index:int):constant =
@@ -206,16 +204,19 @@ object (self)
   method get_lval (index:int):lval =
     let (_,args) = lval_table#retrieve index in
     match args with
-    | [ lhostindex; offsetindex ] ->
+    | [lhostindex; offsetindex] ->
        (self#get_lhost lhostindex, self#get_offset offsetindex)
     | _ ->
-       raise (CCHFailure (LBLOCK [ STR "lval invalid format: " ;
-                                   pretty_print_list args (fun i -> INT i) "[" ";" "]" ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "lval invalid format: ";
+                 pretty_print_list args (fun i -> INT i) "[" ";" "]"]))
 
   method index_lhost (h:lhost):int =
     let key = match h with
-    | Var (vname,vid) -> (["var"; vname], [ vid ])
-    | Mem exp -> (["mem"], [ self#index_exp exp ]) in
+    | Var (vname,vid) -> (["var"; vname], [vid])
+    | Mem exp -> (["mem"], [self#index_exp exp]) in
     lhost_table#add key
 
   method get_lhost (index:int):lhost =
@@ -226,16 +227,16 @@ object (self)
     match (t 0) with
     | "var" -> Var (t 1, a 0)
     | "mem" -> Mem (self#get_exp (a 0))
-    | s -> raise_tag_error name s [ "var"; "mem" ]
+    | s -> raise_tag_error name s ["var"; "mem"]
 
   method index_offset (offset:offset):int =
-    let tags = [ offset_mcts#ts offset ] in
+    let tags = [offset_mcts#ts offset] in
     let key = match offset with
       | NoOffset -> (tags, [])
       | Field ((fname,fkey), suboffset ) ->
-         (tags @ [fname ], [ fkey ; self#index_offset suboffset ])
+         (tags @ [fname], [fkey; self#index_offset suboffset])
       | Index (exp,suboffset) ->
-         (tags, [ self#index_exp exp; self#index_offset suboffset ]) in
+         (tags, [self#index_exp exp; self#index_offset suboffset]) in
     offset_table#add key
 
   method get_offset (index:int):offset =
@@ -268,30 +269,30 @@ object (self)
     List.map self#get_opt_exp r
 
   method index_exp (exp:exp) =
-    let tags = [ exp_mcts#ts exp ] in
+    let tags = [exp_mcts#ts exp] in
     let key = match exp with
-    | Const c -> (tags,[ self#index_constant c ])
-    | Lval lval -> (tags,[ self#index_lval lval ])
-    | SizeOf typ -> (tags,[ self#index_typ typ ])
-    | SizeOfE exp -> (tags,[ self#index_exp exp ])
-    | SizeOfStr s -> (tags, [ self#index_string s ])
-    | AlignOf typ -> (tags, [ self#index_typ typ ])
-    | AlignOfE exp -> (tags, [self#index_exp exp ])
+    | Const c -> (tags,[self#index_constant c])
+    | Lval lval -> (tags,[self#index_lval lval])
+    | SizeOf typ -> (tags,[self#index_typ typ])
+    | SizeOfE exp -> (tags,[self#index_exp exp])
+    | SizeOfStr s -> (tags, [self#index_string s])
+    | AlignOf typ -> (tags, [self#index_typ typ])
+    | AlignOfE exp -> (tags, [self#index_exp exp])
     | UnOp (unop,exp,typ) ->
-       (tags @ [unop_mfts#ts unop ],
-        [self#index_exp exp; self#index_typ typ ])
+       (tags @ [unop_mfts#ts unop],
+        [self#index_exp exp; self#index_typ typ])
     | BinOp (binop,exp1,exp2,typ) ->
-       (tags @ [binop_mfts#ts binop ],
-        [self#index_exp exp1; self#index_exp exp2; self#index_typ typ ])
+       (tags @ [binop_mfts#ts binop],
+        [self#index_exp exp1; self#index_exp exp2; self#index_typ typ])
     | Question (exp1,exp2,exp3,typ) ->
        (tags,
         [self#index_exp exp1; self#index_exp exp2; self#index_exp exp3;
-         self#index_typ typ ])
+         self#index_typ typ])
     | CastE (typ,exp) ->
-       (tags, [self#index_typ typ; self#index_exp exp ])
-    | AddrOf lval -> (tags, [ self#index_lval lval ])
-    | AddrOfLabel label -> (tags, [ label ])
-    | StartOf lval -> (tags, [ self#index_lval lval ])
+       (tags, [self#index_typ typ; self#index_exp exp])
+    | AddrOf lval -> (tags, [self#index_lval lval])
+    | AddrOfLabel label -> (tags, [label])
+    | StartOf lval -> (tags, [self#index_lval lval])
     | FnApp (loc,exp,optexps) ->
        (tags @ [loc.file],
         [loc.line; loc.byte;
@@ -335,7 +336,7 @@ object (self)
       | "startof" -> StartOf (self#get_lval (a 0))
       | "fnapp" ->
          let loc = { file = (t 1); line = (a 0); byte = (a 1) } in
-         let optexps = self#get_opt_exp_list (suffixa 3) in 
+         let optexps = self#get_opt_exp_list (suffixa 3) in
          FnApp (loc, self#get_exp (a 2), optexps)
       | "cnapp" ->
          let optexps = self#get_opt_exp_list (suffixa 1) in
@@ -343,20 +344,25 @@ object (self)
       | s -> raise_tag_error name s exp_mcts#tags
     with
     | Failure s ->
-       raise (CCHFailure (LBLOCK [ STR "Failure in cdictionary get_exp " ; INT index ;
-                                   STR ": " ; STR s ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Failure in cdictionary get_exp ";
+                 INT index;
+                 STR ": ";
+                 STR s]))
 
   method private index_attribute (a:attribute) =
     match a with
     | Attr (name, attrparams) ->
-       attribute_table#add ([ name ], List.map self#index_attrparam attrparams)
+       attribute_table#add ([name], List.map self#index_attrparam attrparams)
 
   method private get_attribute (index:int):attribute =
     let (tags,args) = attribute_table#retrieve index in
     if (List.length tags) > 0 then
       Attr (List.hd tags, List.map self#get_attrparam args)
     else
-      raise (CCHFailure (LBLOCK [ STR "Attribute without a name " ]))
+      raise (CCHFailure (LBLOCK [STR "Attribute without a name "]))
 
   method private index_attributes (r:attributes) =
     attributes_table#add ([], List.map self#index_attribute r)
@@ -367,7 +373,7 @@ object (self)
     List.map self#get_attribute args
 
   method private index_funarg ((name,typ,attrs):funarg) =
-    funarg_table#add ( [ name ], [ self#index_typ typ; self#index_attributes attrs ])
+    funarg_table#add ( [name], [self#index_typ typ; self#index_attributes attrs])
 
   method private get_funarg (index:int):funarg =
     let (tags,args) = funarg_table#retrieve index in
@@ -379,17 +385,20 @@ object (self)
           [] in
       (List.hd tags, self#get_typ (List.hd args),attrs)
     else
-      raise (CCHFailure
-               (LBLOCK [ STR "Invalid funarg: " ;
-                         STR "tags: " ;
-                         pretty_print_list tags (fun s -> STR s) "[" "," "], " ;
-                         STR "args: " ;
-                         pretty_print_list args (fun a -> INT a) "[" "," "]" ]))
-    
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Invalid funarg: ";
+                STR "tags: ";
+                pretty_print_list tags (fun s -> STR s) "[" "," "], ";
+                STR "args: ";
+                pretty_print_list args (fun a -> INT a) "[" "," "]"]))
+
   method index_funargs (r:funarg list) =
     let r =
       List.mapi (fun i (name,typ,attrs) ->
-          let name = if name = "" then "$par$" ^ (string_of_int (i+1)) else name in
+          let name =
+            if name = "" then "$par$" ^ (string_of_int (i+1)) else name in
           (name,typ,attrs)) r in
     funargs_table#add ([], List.map self#index_funarg r)
 
@@ -404,7 +413,7 @@ object (self)
     if index = (-1) then None else Some (self#get_funargs index)
 
   method index_typ (typ:typ):int =
-    let tags = [ typ_mcts#ts typ ] in
+    let tags = [typ_mcts#ts typ] in
     let ia attrs =
       match attrs with [] -> [] | _ -> [self#index_attributes attrs] in
     let key = match typ with
@@ -414,13 +423,13 @@ object (self)
       | TPtr (typ,attrs) -> (tags, (self#index_typ typ) :: ia attrs)
       | TArray (typ,optexp,attrs) ->
          (tags,
-          [ self#index_typ typ ; self#index_opt_exp optexp ] @ ia attrs)
+          [self#index_typ typ; self#index_opt_exp optexp] @ ia attrs)
       | TFun (typ,optfunargs,varargs,attrs) ->
-         (tags, [ self#index_typ typ; self#index_opt_funargs optfunargs ;
-                      (if varargs then 1 else 0) ] @ ia attrs)
-      | TNamed (name,attrs) -> (tags @ [ name], ia attrs)
+         (tags, [self#index_typ typ; self#index_opt_funargs optfunargs;
+                      (if varargs then 1 else 0)] @ ia attrs)
+      | TNamed (name,attrs) -> (tags @ [name], ia attrs)
       | TComp (key, attrs) -> (tags, key :: ia attrs )
-      | TEnum (name, attrs) -> (tags @ [ name], ia attrs)
+      | TEnum (name, attrs) -> (tags @ [name], ia attrs)
       | TBuiltin_va_list attrs -> (tags, ia attrs) in
     typ_table#add key
 
@@ -479,21 +488,22 @@ object (self)
 
 
   method index_typsig (typsig:typsig):int =
-    let tags = [ typsig_mcts#ts typsig ] in
-    let ia attrs = match attrs with [] -> [] | _ -> [ self#index_attributes attrs ] in
+    let tags = [typsig_mcts#ts typsig] in
+    let ia attrs =
+      match attrs with [] -> [] | _ -> [self#index_attributes attrs] in
     let key = match typsig with
       | TSArray (tsig, opti64, attrs) ->
-         (tags @ [self#index_opti64 opti64 ],
+         (tags @ [self#index_opti64 opti64],
           (self#index_typsig tsig) :: ia attrs)
       | TSPtr (tsig, attrs) ->
          (tags,(self#index_typsig tsig) :: ia attrs)
       | TSComp (b,s,attrs) ->
          (tags @ [s],(if b then 1 else 0) :: ia attrs)
       | TSFun (tsig,tsigs,b,attrs) ->
-         (tags,[ self#index_typsig tsig; self#index_typsig_list_option tsigs;
-                      (if b then 1 else 0) ] @ ia attrs )
+         (tags,[self#index_typsig tsig; self#index_typsig_list_option tsigs;
+                      (if b then 1 else 0)] @ ia attrs )
       | TSEnum (name,attrs) -> (tags @ [name], ia attrs)
-      | TSBase typ -> (tags, [ self#index_typ typ ]) in
+      | TSBase typ -> (tags, [self#index_typ typ]) in
     typsig_table#add key
 
   method get_typsig (index:int):typsig =
@@ -504,13 +514,16 @@ object (self)
     let attrs n =
       if List.length args > n then self#get_attributes (a n) else [] in
     match (t 0) with
-    | "tsarray" -> 
+    | "tsarray" ->
        TSArray (self#get_typsig (a 0), self#get_opti64 (t 1), attrs 1)
     | "tsptr" -> TSPtr (self#get_typsig (a 0), attrs 1)
     | "tscomp" -> TSComp ((a 0) = 1, (t 1), attrs 1)
     | "tsfun" ->
-       TSFun (self#get_typsig (a 0), self#get_typsig_list_option (a 1), (a 2) = 1,
-              attrs 3)
+       TSFun (
+           self#get_typsig (a 0),
+           self#get_typsig_list_option (a 1),
+           (a 2) = 1,
+           attrs 3)
     | "tsenum" -> TSEnum (t 1, attrs 0)
     | "tsbase" -> TSBase (self#get_typ (a 0))
     | s -> raise_tag_error name s typsig_mcts#tags
@@ -518,7 +531,7 @@ object (self)
   method index_string (s:string):int = string_table#add s
 
   method get_string (index:int) = string_table#retrieve index
-                                
+
   method read_xml_attributes ?(tag="iattrs") (node:xml_element_int):attributes =
     if node#hasNamedAttribute tag then
       self#get_attributes (node#getIntAttribute tag)
@@ -528,7 +541,8 @@ object (self)
   method write_xml_exp ?(tag="iexp") (node:xml_element_int) (exp:exp) =
     node#setIntAttribute tag (self#index_exp exp)
 
-  method write_xml_exp_opt ?(tag="iexp") (node:xml_element_int) (optexp:exp option) =
+  method write_xml_exp_opt
+           ?(tag="iexp") (node:xml_element_int) (optexp:exp option) =
     match optexp with
     | Some exp -> self#write_xml_exp ~tag node exp
     | _ -> ()
@@ -538,7 +552,7 @@ object (self)
       self#get_exp (node#getIntAttribute tag)
     with
     | Failure s ->
-       raise (CCHFailure (LBLOCK [ STR "Failure in read_xml_exp: " ; STR s ]))
+       raise (CCHFailure (LBLOCK [STR "Failure in read_xml_exp: "; STR s]))
 
   method read_xml_exp_opt ?(tag="iexp") (node:xml_element_int):exp option =
     if node#hasNamedAttribute tag then
@@ -546,7 +560,8 @@ object (self)
     else
       None
 
-  method read_xml_funarg_list ?(tag="ifunargs") (node:xml_element_int):funarg list =
+  method read_xml_funarg_list
+           ?(tag="ifunargs") (node:xml_element_int):funarg list =
     self#get_funargs (node#getIntAttribute tag)
 
   method write_xml_lval ?(tag="ilval") (node:xml_element_int) (lval:lval) =
@@ -585,26 +600,33 @@ object (self)
   method write_xml (node:xml_element_int) =
     let snode = xmlElement string_table#get_name in
     begin
-      string_table#write_xml snode ;
-      node#appendChildren [ snode ] ;
+      string_table#write_xml snode;
+      node#appendChildren [snode];
       node#appendChildren
         (List.map
-           (fun t -> let tnode = xmlElement t#get_name in
-                     begin t#write_xml tnode ; tnode end) tables)
-    end    
+           (fun t ->
+             let tnode = xmlElement t#get_name in
+             begin
+               t#write_xml tnode;
+               tnode
+             end) tables)
+    end
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
     begin
-      string_table#read_xml (getc string_table#get_name) ;
+      string_table#read_xml (getc string_table#get_name);
       List.iter (fun t -> t#read_xml (getc t#get_name)) tables
     end
 
   method toPretty =
-    LBLOCK [ STR "string-table: " ; INT string_table#size ; NL ;
-             (LBLOCK (List.map (fun t ->
-                          LBLOCK [ STR t#get_name ; STR ": " ; INT t#size ; NL ]) tables)) ]
-
+    LBLOCK [
+        STR "string-table: ";
+        INT string_table#size;
+        NL;
+        (LBLOCK
+           (List.map (fun t ->
+                LBLOCK [STR t#get_name; STR ": "; INT t#size; NL]) tables))]
 
 end
 
