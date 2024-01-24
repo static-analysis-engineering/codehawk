@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,7 +33,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHXmlDocument
-   
+
 (* cchlib *)
 open CCHExternalPredicate
 open CCHFunctionSummary
@@ -42,13 +42,15 @@ open CCHUtilities
 
 module H = Hashtbl
 
-   
+
 let id = CCHInterfaceDictionary.interface_dictionary
+
 
 let read_xml_instr_list (node:xml_element_int) params lvars =
   List.map
     (fun n -> read_xml_instr n ~lvars params) (node#getTaggedChildren "instr")
-       
+
+
 class function_contract_t
         ?(parameters=[])
         (ignorefn:bool)
@@ -130,7 +132,10 @@ object (self)
             cn_prq = if has "prq" then get "prq" else "none";
             cn_txt = if has "txt" then get "txt" else "none"} in
         let entry =
-          if H.mem notes note.cn_tag then H.find notes note.cn_tag else [] in
+          if H.mem notes note.cn_tag then
+            H.find notes note.cn_tag
+          else
+            [] in
         H.replace notes note.cn_tag (note::entry)) (node#getTaggedChildren "note")
 
   method private write_xml_notes (node:xml_element_int) =
@@ -138,9 +143,18 @@ object (self)
       (List.map (fun n ->
            let nnode = xmlElement "note" in
            begin
-             (if n.cn_tag = "all" then () else nnode#setAttribute "tag" n.cn_tag);
-             (if n.cn_prq = "none" then () else nnode#setAttribute "prq" n.cn_prq);
-             (if n.cn_txt = "none" then () else nnode#setAttribute "txt" n.cn_txt);
+             (if n.cn_tag = "all" then
+                ()
+              else
+                nnode#setAttribute "tag" n.cn_tag);
+             (if n.cn_prq = "none" then
+                ()
+              else
+                nnode#setAttribute "prq" n.cn_prq);
+             (if n.cn_txt = "none" then
+                ()
+              else
+                nnode#setAttribute "txt" n.cn_txt);
              nnode
            end) self#get_notes)
 
@@ -165,7 +179,8 @@ object (self)
              pnode
            end) postconditions#toList)
 
-  method private read_xml_preconditions (node:xml_element_int) (gvars:string list) =
+  method private read_xml_preconditions
+                   (node:xml_element_int) (gvars:string list) =
     let pre = read_xml_precondition_list node ~gvars self#get_params in
     List.iter (fun (p,_) -> preconditions#add (id#index_xpredicate p)) pre
 
@@ -174,16 +189,19 @@ object (self)
       (List.map (fun ipre ->
            let pnode = xmlElement "pre" in
            begin
-             write_xmlx_xpredicate pnode self#get_params (id#get_xpredicate ipre);
+             write_xmlx_xpredicate
+               pnode self#get_params (id#get_xpredicate ipre);
              pnode
            end) preconditions#toList)
 
-  method private read_xml_sideeffects (node:xml_element_int) (gvars:string list) =
+  method private read_xml_sideeffects
+                   (node:xml_element_int) (gvars:string list) =
     let se = read_xml_sideeffect_list node ~gvars self#get_params in
     List.iter (fun (p,_) -> sideeffects#add (id#index_xpredicate p)) se
 
   method private read_xml_instrs (node:xml_element_int) =
-    let setinstrs = read_xml_instr_list node self#get_params self#get_local_vars in
+    let setinstrs =
+      read_xml_instr_list node self#get_params self#get_local_vars in
     List.iter (fun i ->
         match i with
         | SetVar (line,_,_) ->
@@ -231,7 +249,9 @@ object (self)
            (CCHFailure
               (LBLOCK [
                    STR "Error in reading function contract for ";
-                   STR name]))
+                   STR name;
+                   STR ": ";
+                   p]))
        end
     | XmlReaderError (line,col,p) ->
        let msg =
@@ -247,7 +267,7 @@ object (self)
            "function contract"
            (LBLOCK [
                 STR "Unknown error in reading function contract for ";
-                STR name ]);
+                STR name]);
          raise
            (CCHFailure
               (LBLOCK [
@@ -297,7 +317,7 @@ object (self)
     LBLOCK
       (List.map (fun pre ->
            LBLOCK [xpredicate_to_pretty pre; NL]) self#get_preconditions)
-      
+
   method toPretty =
     LBLOCK [
         STR "Postconditions:";
@@ -334,7 +354,7 @@ object (self)
     else
       let fn = new function_contract_t ~parameters false name in
       H.add functioncontracts name fn
-      
+
   method add_precondition (fname:string) (pre:xpredicate_t) =
     if H.mem functioncontracts fname then
       let fncontract = H.find functioncontracts fname in
@@ -371,7 +391,9 @@ object (self)
        raise
          (CCHFailure
             (LBLOCK [
-                 STR "contract global variable "; STR vname; STR " not  found"]))
+                 STR "contract global variable ";
+                 STR vname;
+                 STR " not  found"]))
 
   method gv_is_not_null (vname:string) =
     (self#has_global_variable vname)
@@ -424,9 +446,9 @@ object (self)
               cgv_lb = if has "lb" then Some (geti "lb") else None;
               cgv_ub = if has "ub" then Some (geti "ub") else None;
               cgv_static = has "static" && (get "static" = "yes");
-              cgv_const = has "const" && (get "const" = "yes") ;
+              cgv_const = has "const" && (get "const" = "yes");
               cgv_notnull = has "notnull" && (get "notnull" = "yes");
-              cgv_initialized_fields = if has "finit" then [ (get "finit") ] else []
+              cgv_initialized_fields = if has "finit" then [(get "finit")] else []
             } in
           globalvars <- gv :: globalvars)
                 ((node#getTaggedChild "global-variables")#getTaggedChildren "gvar")
@@ -499,7 +521,7 @@ object (self)
     begin
       self#write_xml_global_variables gnode;
       self#write_xml_function_contracts fnode;
-      node#appendChildren [ gnode; fnode ]
+      node#appendChildren [gnode; fnode]
     end
 
   method toPretty =
