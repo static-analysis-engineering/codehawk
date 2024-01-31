@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,13 +38,8 @@ open CHXmlDocument
 (* cchlib *)
 open CCHBasicTypes
 open CCHContext
-open CCHDeclarations
-open CCHDictionary
 open CCHExternalPredicate
-open CCHFileContract
-open CCHFunctionSummary
 open CCHLibTypes
-open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
@@ -59,7 +54,7 @@ let id = CCHInterfaceDictionary.interface_dictionary
 
 
 class callsite_t
-    (pod:podictionary_int)
+    (_pod:podictionary_int)
     ?(apispos:(int * proof_obligation_int list) list = [])
     ?(postassumes:annotated_xpredicate_t list = [])
     (loc:location)
@@ -145,7 +140,8 @@ let read_xml_callsite (node:xml_element_int) (pod:podictionary_int):callsite_t =
     let args = List.map cd#get_exp iargs in
     let ctxt = ccontexts#read_xml_context node in
     let loc = cdecls#read_xml_location node in
-    let header = if node#hasNamedAttribute "header" then get "header" else "" in
+    let header =
+      if node#hasNamedAttribute "header" then get "header" else "" in
     let apispos = H.create 3 in
     let _ =
       List.iter
@@ -190,7 +186,7 @@ object
 
   method get_callee = callee
 
-  method write_xml (node:xml_element_int) =
+  method! write_xml (node:xml_element_int) =
     begin
       super#write_xml node;
       cdecls#write_xml_varinfo node callee
@@ -215,7 +211,9 @@ let read_xml_direct_callsite
       cs#get_arguments
   with
   | Failure s ->
-     raise (CCHFailure (LBLOCK [STR "Failure in read xml direct callsite"]))
+     raise
+       (CCHFailure
+          (LBLOCK [STR "Failure in read xml direct callsite: "; STR s]))
 
 
 class indirect_callsite_t
@@ -240,7 +238,7 @@ object
 
   method get_callees = callees
 
-  method write_xml (node:xml_element_int) =
+  method! write_xml (node:xml_element_int) =
     let set = node#setAttribute in
     let seti = node#setIntAttribute in
     let icallees = List.map cdecls#index_varinfo callees in
@@ -300,11 +298,15 @@ let read_xml_indirect_callsite
                   STR "Failure in creating indirect callsite: "; STR s])))
   with
   | Failure s ->
-     raise (CCHFailure (LBLOCK [ STR "Failure in read xml indirect callsite: " ; STR s ]))
+     raise
+       (CCHFailure
+          (LBLOCK [
+               STR "Failure in read xml indirect callsite: " ; STR s ]))
 
 
-class callsite_manager_t (fname:string) (pod:podictionary_int):callsite_manager_int =
-object (self)
+class callsite_manager_t
+        (_fname:string) (pod:podictionary_int):callsite_manager_int =
+object
 
   val directcalls = H.create 13         (* ictxt -> callsite_int *)
   val indirectcalls = H.create 1        (* ictxt -> callsite_int *)
@@ -334,8 +336,8 @@ object (self)
   method get_call_count = (H.length directcalls) + (H.length indirectcalls)
 
   method get_spos =
-    (List.concat (H.fold (fun _ v r -> v#get_spos::r) directcalls [])) @
-      (List.concat (H.fold (fun _ v r -> v#get_spos::r) indirectcalls []))
+    (List.concat (H.fold (fun _ v r -> v#get_spos::r) directcalls []))
+    @ (List.concat (H.fold (fun _ v r -> v#get_spos::r) indirectcalls []))
 
   method get_direct_callsites =
     H.fold (fun _ v a -> v::a) directcalls []
@@ -349,7 +351,8 @@ object (self)
       H.find directcalls ictxt
     else
       raise
-        (CCHFailure (LBLOCK [STR "Callsite not found for context "; INT ictxt ]))
+        (CCHFailure
+           (LBLOCK [STR "Callsite not found for context "; INT ictxt ]))
 
   method get_indirect_callsite (ctxt:program_context_int) =
     let ictxt = ccontexts#index_context ctxt in
@@ -358,7 +361,8 @@ object (self)
     else
       raise
         (CCHFailure
-           (LBLOCK [STR "Indirect callsite not found for context "; INT ictxt ]))
+           (LBLOCK [
+                STR "Indirect callsite not found for context "; INT ictxt ]))
 
   method has_direct_callsite (ctxt:program_context_int) =
     let ictxt = ccontexts#index_context ctxt in
@@ -409,11 +413,11 @@ object (self)
       end
     with
     | Failure s ->
-       raise (CCHFailure
-                (LBLOCK [STR "Failure in callsite manager:read_xml: "; STR s]))
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Failure in callsite manager:read_xml: "; STR s]))
 
 end
 
 
 let mk_callsite_manager = new callsite_manager_t
-  

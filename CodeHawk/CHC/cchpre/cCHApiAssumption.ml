@@ -5,8 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,19 +31,14 @@
 open CHPretty
 
 (* chutil *)
-open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
 
 (* cchlib *)
-open CCHBasicTypes
-open CCHLibTypes
-open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
 open CCHPOPredicate
-open CCHProofObligation
 open CCHPreTypes
 
 module H = Hashtbl
@@ -58,7 +53,7 @@ class api_assumption_t
         ?(isglobal=false)
         ?(spos=[])
         (index:int):api_assumption_int =
-object (self)
+object
   
   val mutable dependent_ppos = ppos
   val mutable dependent_spos = spos
@@ -127,12 +122,13 @@ let read_xml_api_assumption (node:xml_element_int) =
     mk_api_assumption ~isfile ~isglobal ~ppos ~spos index
   with
   | Failure _ ->
-     raise (CCHFailure
-              (LBLOCK [
-                   STR "read_xml_api_assumption: int_of_string on ";
-                   STR (get "ppos");
-                   STR " and ";
-                   STR (get "spos")]))
+     raise
+       (CCHFailure
+          (LBLOCK [
+               STR "read_xml_api_assumption: int_of_string on ";
+               STR (get "ppos");
+               STR " and ";
+               STR (get "spos")]))
 
     
     

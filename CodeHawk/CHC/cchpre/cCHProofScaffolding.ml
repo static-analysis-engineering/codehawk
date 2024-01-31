@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,15 +34,12 @@ open CHPretty
 (* chutil *)
 open CHXmlDocument
 
-(* xprlib *)
-open Xprt
-
 (* cchlib *)
 open CCHBasicTypes
 open CCHFileContract
 open CCHLibTypes
 open CCHUtilities
-   
+
 (* cchpre *)
 open CCHFunctionAPI
 open CCHPODictionary
@@ -82,7 +79,8 @@ object (self)
         api
       end
 
-  method retrieve_contract_preconditions (fdecls:cfundeclarations_int) (fname:string) =
+  method retrieve_contract_preconditions
+           (fdecls:cfundeclarations_int) (fname:string) =
     let fApi = self#get_function_api fname in
     let gvars = file_contract#get_global_variables in
     begin
@@ -96,35 +94,36 @@ object (self)
                 match gvar.cgv_value with
                 | Some v ->
                    let v = mkNumerical v in
-                   let xpred = XRelationalExpr (
-                                   Eq, ArgValue (ParGlobal gvar.cgv_name,ArgNoOffset),
-                                   NumConstant v) in
+                   let xpred =
+                     XRelationalExpr (
+                         Eq, ArgValue (ParGlobal gvar.cgv_name,ArgNoOffset),
+                         NumConstant v) in
                    let xpredix = id#index_xpredicate xpred in
                    fApi#add_contract_precondition fdecls xpredix
                | _ -> ());
              (match gvar.cgv_lb with
               | Some lb ->
                  let lb = mkNumerical lb in
-                 let xpred = XRelationalExpr (
-                                 Le, ArgValue (ParGlobal gvar.cgv_name,ArgNoOffset),
-                                 NumConstant lb) in
+                 let xpred =
+                   XRelationalExpr (
+                       Le, ArgValue (ParGlobal gvar.cgv_name,ArgNoOffset),
+                       NumConstant lb) in
                  let xpredix = id#index_xpredicate xpred in
                  fApi#add_contract_precondition fdecls xpredix
               | _ -> ());
              (match gvar.cgv_ub with
               | Some ub ->
                  let ub = mkNumerical ub in
-                 let xpred = XRelationalExpr (
-                                 Ge, ArgValue (ParGlobal gvar.cgv_name,ArgNoOffset),
-                                 NumConstant ub) in
+                 let xpred =
+                   XRelationalExpr (
+                       Ge, ArgValue (ParGlobal gvar.cgv_name,ArgNoOffset),
+                       NumConstant ub) in
                  let xpredix = id#index_xpredicate xpred in
                  fApi#add_contract_precondition fdecls xpredix
               | _ -> ())
            end) gvars)
     end
-                  
-                          
-      
+
   method get_ppo_manager (fname:string):ppo_manager_int =
     let pod = self#get_pod fname in
     if H.mem ppos fname then
@@ -135,7 +134,7 @@ object (self)
         H.add ppos fname ppomgr;
         ppomgr
       end
-      
+
   method get_spo_manager (fname:string):spo_manager_int =
     let pod = self#get_pod fname in
     if H.mem spos fname then
@@ -177,21 +176,29 @@ object (self)
 
   method has_indirect_callsite (fname:string) (ctxt:program_context_int) =
     (self#get_spo_manager fname)#get_callsite_manager#has_indirect_callsite ctxt
-    
 
   method private get_pod (fname:string) =
     if H.mem pods fname then H.find pods fname else
-      raise (CCHFailure
-               (LBLOCK [ STR "Proof obligation dictionary for "; STR fname;
-                         STR " not found" ]))
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Proof obligation dictionary for ";
+                STR fname;
+                STR " not found"]))
 
   method get_proof_obligations (fname:string) =
     try
-      (self#get_ppo_manager fname)#get_ppos @ (self#get_spo_manager fname)#get_spos
+      (self#get_ppo_manager fname)#get_ppos
+      @ (self#get_spo_manager fname)#get_spos
     with
     | CCHFailure p ->
-       raise (CCHFailure
-                (LBLOCK [ STR "Error in get_proof_obligations for "; STR fname ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Error in get_proof_obligations for ";
+                 STR fname;
+                 STR ": ";
+                 p]))
 
   method write_xml_api (node:xml_element_int) (fname:string) =
     let anode = xmlElement "api" in
@@ -211,7 +218,7 @@ object (self)
     end
 
   method read_xml_ppos (node:xml_element_int) (fname:string) =
-    (self#get_ppo_manager fname)#read_xml (node#getTaggedChild "ppos") 
+    (self#get_ppo_manager fname)#read_xml (node#getTaggedChild "ppos")
 
   method write_xml_spos (node:xml_element_int) (fname:string) =
     let snode = xmlElement "spos" in
@@ -240,5 +247,6 @@ object (self)
 
 
 end
+
 
 let proof_scaffolding = new proof_scaffolding_t

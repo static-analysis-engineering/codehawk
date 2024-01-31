@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,13 +36,10 @@ open CHXmlDocument
 (* cchlib *)
 open CCHBasicTypes
 open CCHLibTypes
-open CCHFileEnvironment
-open CCHTypesUtil
 open CCHUtilities
 
-(* cchpre *) 
+(* cchpre *)
 open CCHPreTypes
-open CCHProofObligation
 
 
 let data_structure_assumption_compare d1 d2 =
@@ -68,17 +65,19 @@ let data_structure_assumption_compare d1 d2 =
 
 
 class data_structure_invariant_t
-        (ckey:int) (name:string) (assumptions:data_structure_assumption_t list) =
+        (ckey:int)
+        (name:string)
+        (assumptions:data_structure_assumption_t list) =
 object (self)
 
   method private has (d:data_structure_assumption_t) =
     List.exists (
         fun dd -> (data_structure_assumption_compare d dd) = 0) assumptions
-      
-  method has_assumption (env:file_environment_int) (p:po_predicate_t) =
-    let get_lval_key lval = 
+
+  method has_assumption (_env:file_environment_int) (p:po_predicate_t) =
+    let get_lval_key lval =
       match lval with
-      | (Mem _,Field ((fname,fckey),NoOffset)) -> fckey
+      | (Mem _, Field ((_fname, fckey), NoOffset)) -> fckey
       | _ -> (-1) in
     let get_key e =
       match e with Lval lval -> get_lval_key lval | _ -> (-1) in
@@ -93,9 +92,9 @@ object (self)
       | PValidMem e -> (get_key e) = ckey && self#has (DValidMem (get_field e))
       | PInitialized lval ->
 	(get_lval_key lval) = ckey && self#has (DInitialized (get_lval_field lval))
-      | PLowerBound (_,e) -> 
+      | PLowerBound (_,e) ->
 	(get_key e) = ckey && self#has (DLowerBound (get_field e))
-      | PUpperBound (_,e) -> 
+      | PUpperBound (_,e) ->
 	(get_key e) = ckey && self#has (DUpperBound (get_field e))
       | _ -> false in
     if has then Some name else None
@@ -107,7 +106,7 @@ class data_structure_invariants_t (l:data_structure_invariant_t list) =
 object
 
   method has_assumption env (p:po_predicate_t) =
-    List.fold_left (fun acc a -> match acc with 
+    List.fold_left (fun acc a -> match acc with
     | Some _ -> acc | _ -> a#has_assumption env p) None l
 end
 
@@ -137,8 +136,8 @@ let read_xml_data_structure_invariant (node:xml_element_int) =
     (node#getTaggedChildren "assume") in
   new data_structure_invariant_t gkey name predicates
 
+
 let read_xml_data_structure_invariants (node:xml_element_int) =
-  let invariants = List.map read_xml_data_structure_invariant 
+  let invariants = List.map read_xml_data_structure_invariant
     (node#getTaggedChildren "data-structure-invariant") in
   new data_structure_invariants_t invariants
-

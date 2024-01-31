@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,23 +31,18 @@
 open CHPretty
 
 (* chutil *)
-open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
 
 (* cchlib *)
-open CCHBasicTypes
 open CCHLibTypes
 open CCHUtilities
 open CCHExternalPredicate
 
 (* cchpre *)
-open CCHPODictionary
 open CCHPreTypes
-open CCHProofObligation
 
-let cd = CCHDictionary.cdictionary
-let pd = CCHPredicateDictionary.predicate_dictionary
+
 let id = CCHInterfaceDictionary.interface_dictionary
 
 
@@ -78,7 +73,7 @@ object (self)
 
   method get_dependent_ppos = dependent_ppos
 
-  method get_dependent_spos = dependent_spos 
+  method get_dependent_spos = dependent_spos
 
   method toPretty = xpredicate_to_pretty (self#get_postcondition)
 
@@ -117,9 +112,10 @@ let read_xml_postcondition_request (node:xml_element_int) =
     mk_postcondition_request ~ppos ~spos request
   with
   | Failure _ ->
-     raise (CCHFailure
-              (LBLOCK [
-                   STR "read_xml_postcondition_request: int_of_string on ";
-                   STR (get "ppos");
-                   STR " and ";
-                   STR (get "spos")]))
+     raise
+       (CCHFailure
+          (LBLOCK [
+               STR "read_xml_postcondition_request: int_of_string on ";
+               STR (get "ppos");
+               STR " and ";
+               STR (get "spos")]))

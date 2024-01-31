@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,12 +29,11 @@
 
 (* chlib *)
 open CHPretty
-   
+
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
 open CHXmlDocument
-   
+
 (* cchlib *)
 open CCHBasicTypes
 open CCHLibTypes
@@ -42,18 +41,12 @@ open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
-open CCHPODictionary
-open CCHPreSumTypeSerializer
 open CCHPreTypes
 open CCHProofObligation
 
 module H = Hashtbl
 
 
-let contexts = CCHContext.ccontexts
-let cdecls = CCHDeclarations.cdeclarations
-
-       
 class ppo_manager_t (fname:string) (pod:podictionary_int):ppo_manager_int =
 object (self)
 
@@ -84,7 +77,7 @@ object (self)
     let ppo = mk_ppo pod ppotype in
     H.add table index ppo
 
-  method get_ppos = H.fold (fun k v r -> v :: r) table []
+  method get_ppos = H.fold (fun _ v r -> v :: r) table []
 
   method get_ppo (index:int) =
     if H.mem table index then
@@ -112,4 +105,4 @@ object (self)
 end
 
 
-let mk_ppo_manager = new ppo_manager_t       
+let mk_ppo_manager = new ppo_manager_t

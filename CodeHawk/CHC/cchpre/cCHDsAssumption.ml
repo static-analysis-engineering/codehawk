@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,27 +27,18 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 open CHPrettyUtil
 open CHXmlDocument
 
-(* cchlib *)
-open CCHBasicTypes
-open CCHLibTypes
-open CCHUtilities
-
 (* cchpre *)
-open CCHPODictionary
-open CCHProofObligation
 open CCHPreTypes
 
 
 let pd = CCHPredicateDictionary.predicate_dictionary
 
-let write_xml_dependent_proof_obligations
+
+let _write_xml_dependent_proof_obligations
       (node:xml_element_int) (l:string list) =
   let l = List.sort Stdlib.compare l in
   node#appendChildren
@@ -55,15 +46,16 @@ let write_xml_dependent_proof_obligations
          let iNode = xmlElement "po" in
          begin iNode#setAttribute "id" i; iNode end) l)
 
+
 class ds_assumption_t ?(pos=[]) (index:int):ds_assumption_int =
-object (self)
+object
 
   val mutable dependent_ppos = List.filter (fun i -> i > 0) pos
   val mutable dependent_spos = List.filter (fun i -> i < 0) pos
 
   method add_dependents (pos:int list) =
     begin
-      dependent_ppos <- (List.filter (fun i -> i > 0) pos) @ dependent_ppos ;
+      dependent_ppos <- (List.filter (fun i -> i > 0) pos) @ dependent_ppos;
       dependent_spos <- (List.filter (fun i -> i < 0) pos) @ dependent_spos
     end
 
@@ -90,7 +82,7 @@ object (self)
 end
 
 
-let mk_ds_assumption ?(pos=[]) (index:int):ds_assumption_int = 
+let mk_ds_assumption ?(pos=[]) (index:int):ds_assumption_int =
   new ds_assumption_t ~pos index
 
 
@@ -111,5 +103,3 @@ let read_xml_ds_assumption (node:xml_element_int) =
       [] in
   let spos = List.map (fun i -> (-i)) spos in
   mk_ds_assumption ~pos:(ppos@spos) index
-    
-    

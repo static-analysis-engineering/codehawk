@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,14 +33,10 @@ open CHPretty
 (* chutil *)
 open CHIndexTable
 open CHLogger
-open CHPrettyUtil
 open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
-open CCHDictionary
-open CCHLibTypes
-open CCHSumTypeSerializer
 open CCHUtilities
 
 (* cchpre *)
@@ -50,50 +46,53 @@ open CCHPreTypes
 module H = Hashtbl
 
 
-let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
 let pd = CCHPredicateDictionary.predicate_dictionary
 let id = CCHInterfaceDictionary.interface_dictionary
 let contexts = CCHContext.ccontexts
 
+
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
+    LBLOCK [
+        STR "Type ";
+        STR name; STR " tag: ";
+        STR tag;
+        STR " not recognized. Accepted tags: ";
+        pretty_print_list accepted (fun s -> STR s) "" ", " ""] in
   begin
-    ch_error_log#add "serialization tag" msg ;
+    ch_error_log#add "serialization tag" msg;
     raise (CCHFailure msg)
   end
 
 
 class podictionary_t
-        (fname:string) (fdecls:cfundeclarations_int):podictionary_int =
+        (_fname:string) (fdecls:cfundeclarations_int):podictionary_int =
 object (self)
 
   val assumption_table = mk_index_table "assumption-table"
   val ppo_type_table = mk_index_table "ppo-type-table"
   val spo_type_table = mk_index_table "spo-type-table"
-                  
+
   val mutable tables = []
 
   initializer
     tables <- [
-      assumption_table ;
-      ppo_type_table ;
-      spo_type_table 
-    ]
+      assumption_table;
+      ppo_type_table;
+      spo_type_table
+   ]
 
   method fdecls = fdecls
 
   method index_assumption (a:assumption_type_t) =
-    let tags = [ assumption_type_mcts#ts a ] in
+    let tags = [assumption_type_mcts#ts a] in
     let key = match a with
-      | LocalAssumption pred -> (tags,[pd#index_po_predicate pred ])
-      | ApiAssumption pred -> (tags,[pd#index_po_predicate pred ])
-      | GlobalApiAssumption pred -> (tags,[pd#index_po_predicate pred])
-      | PostAssumption (i,x) -> (tags,[i; id#index_xpredicate x ])
-      | GlobalAssumption x -> (tags,[id#index_xpredicate x ]) in
+      | LocalAssumption pred -> (tags, [pd#index_po_predicate pred])
+      | ApiAssumption pred -> (tags, [pd#index_po_predicate pred])
+      | GlobalApiAssumption pred -> (tags, [pd#index_po_predicate pred])
+      | PostAssumption (i, x) -> (tags,[i; id#index_xpredicate x])
+      | GlobalAssumption x -> (tags, [id#index_xpredicate x]) in
     assumption_table#add key
 
   method get_assumption (index:int):assumption_type_t =
@@ -105,7 +104,7 @@ object (self)
     | "la" -> LocalAssumption (pd#get_po_predicate (a 0))
     | "aa" -> ApiAssumption (pd#get_po_predicate (a 0))
     | "gi" -> GlobalApiAssumption (pd#get_po_predicate (a 0))
-    | "ca" -> PostAssumption (a 0,id#get_xpredicate (a 1))
+    | "ca" -> PostAssumption (a 0, id#get_xpredicate (a 1))
     | "ga" -> GlobalAssumption (id#get_xpredicate (a 0))
     | s -> raise_tag_error name s assumption_type_mcts#tags
 
@@ -122,7 +121,7 @@ object (self)
           [cdecls#index_location loc;
            contexts#index_context ctxt;
            pd#index_po_predicate pred;
-           id#index_xpredicate pre ]) in
+           id#index_xpredicate pre]) in
     ppo_type_table#add key
 
   method get_ppo_type (index:int):ppo_type_t =
@@ -132,25 +131,39 @@ object (self)
     let a = a name args in
     match (t 0) with
     | "p" ->
-       PPOprog (cdecls#get_location (a 0), contexts#get_context (a 1),
-                pd#get_po_predicate (a 2))
+       PPOprog
+         (cdecls#get_location (a 0),
+          contexts#get_context (a 1),
+          pd#get_po_predicate (a 2))
     | "pl" ->
-       PPOlib (cdecls#get_location (a 0), contexts#get_context (a 1),
-               pd#get_po_predicate (a  2), t 1, id#get_xpredicate (a 3))
+       PPOlib
+         (cdecls#get_location (a 0),
+          contexts#get_context (a 1),
+          pd#get_po_predicate (a  2),
+          t 1,
+          id#get_xpredicate (a 3))
     | s -> raise_tag_error name s ppo_type_mcts#tags
 
   method index_spo_type (s:spo_type_t) =
-    let tags = [ spo_type_mcts#ts s ] in
+    let tags = [spo_type_mcts#ts s] in
     let key = match s with
       | LocalSPO (loc,ctxt,pred) ->
-         (tags,[ cdecls#index_location loc; contexts#index_context ctxt;
-                 pd#index_po_predicate pred ])
-      | CallsiteSPO (loc,ctxt,pred,apiid) ->
-         (tags,[ cdecls#index_location loc; contexts#index_context ctxt;
-                 pd#index_po_predicate pred; apiid ])
-      | ReturnsiteSPO (loc,ctxt,pred,pc) ->
-         (tags, [ cdecls#index_location loc; contexts#index_context ctxt;
-                  pd#index_po_predicate pred; id#index_xpredicate pc ]) in
+         (tags,
+          [cdecls#index_location loc;
+           contexts#index_context ctxt;
+           pd#index_po_predicate pred])
+      | CallsiteSPO (loc, ctxt, pred, apiid) ->
+         (tags,
+          [cdecls#index_location loc;
+           contexts#index_context ctxt;
+           pd#index_po_predicate pred;
+           apiid])
+      | ReturnsiteSPO (loc, ctxt, pred, pc) ->
+         (tags,
+          [cdecls#index_location loc;
+           contexts#index_context ctxt;
+           pd#index_po_predicate pred;
+           id#index_xpredicate pc]) in
     spo_type_table#add key
 
   method get_spo_type (index:int) =
@@ -201,7 +214,7 @@ object (self)
   method read_xml_spo_type
            ?(tag="ispo") (node:xml_element_int):spo_type_t =
     self#get_spo_type (node#getIntAttribute tag)
-    
+
   method write_xml (node:xml_element_int) =
     node#appendChildren
       (List.map
