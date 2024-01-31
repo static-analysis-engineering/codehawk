@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,29 +27,15 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-
 (* cchlib *)
 open CCHBasicTypes
-open CCHBasicTypesXml
-open CCHDictionary
-open CCHDeclarations
-open CCHLibTypes
-open CCHTypesCompare
-open CCHTypesToPretty
-open CCHUtilities
 
 (* cchpre *)
 open CCHPreTypes
-open CCHProofObligation
 
-let cd = CCHDictionary.cdictionary
-let cdecls = CCHDeclarations.cdeclarations
+
 let ad = CCHAssignDictionary.assigndictionary
+
 
 let set_global_value (vinfo:varinfo) =
   let assignments = ad#get_assignments in
@@ -67,10 +55,13 @@ let set_global_value (vinfo:varinfo) =
            match a with
            | StaticAssignment (_,_,vid,d) when vinfo.vid = vid ->
               d.asg_rhs :: acc
-           | _ -> acc) [] assignments in
-     ignore (ad#index_global_value (GlobalValue (vinfo.vname, vinfo.vid, initexp, exps)))
+           | _ -> acc)[] assignments in
+     ignore
+       (ad#index_global_value
+          (GlobalValue (vinfo.vname, vinfo.vid, initexp, exps)))
   | _ -> ()
-                    
+
+
 let get_global_value (vinfo:varinfo) =
   let globalvalues = ad#get_global_values in
   List.fold_left (fun acc gv ->
@@ -78,5 +69,5 @@ let get_global_value (vinfo:varinfo) =
       | Some _ -> acc
       | _ ->
          match gv with
-         | GlobalValue (_,vid,Some e,[]) when vinfo.vid = vid -> Some e
+         | GlobalValue (_, vid, Some e, []) when vinfo.vid = vid -> Some e
          | _ -> acc) None globalvalues

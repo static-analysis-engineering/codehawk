@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,18 +32,13 @@ open CHLanguage
 open CHPretty
 
 (* chutil *)
-open CHPrettyUtil
 open CHXmlDocument
 
 (* cchlib *)
-open CCHBasicTypes
-open CCHTypesCompare
-open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
 open CCHPreTypes
-open CCHIndexedCollections
 open CCHMemoryBase
 
 module H = Hashtbl
@@ -125,10 +120,10 @@ object (self:'a)
 
   method write_xml (node:xml_element_int) =
     begin
-      vard#write_xml_memory_base node memory_base ;
+      vard#write_xml_memory_base node memory_base;
       node#setIntAttribute "index" index
-    end      
-                                   
+    end
+
   method toPretty = memory_base_to_pretty memory_base
 end
 
@@ -212,13 +207,13 @@ object (self)
     self#mk_sym (self#mk_uninterpreted_region s)
 
   method get_null_syms =
-    H.fold (fun k v acc ->
+    H.fold (fun _ v acc ->
         match v#get_memory_base with
         | CNull i -> (self#mk_null_sym i) :: acc
         | _ -> acc) table []
 
   method get_basevar_regions =
-    H.fold (fun k v acc ->
+    H.fold (fun _ v acc ->
         if v#is_basevar_region then
           v :: acc
         else

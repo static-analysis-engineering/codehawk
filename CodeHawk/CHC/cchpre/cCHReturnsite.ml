@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,24 +31,17 @@
 (* chlib *)
 open CHNumerical
 open CHPretty
-open CHUtils
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
 open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
 open CCHContext
-open CCHDeclarations
-open CCHDictionary
-open CCHExternalPredicate
 open CCHFileContract
 open CCHFileEnvironment
-open CCHFunctionSummary
 open CCHLibTypes
-open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
@@ -71,10 +64,11 @@ let create_pc_spos
       (ctxt:program_context_int)
       (exp:exp option) =
   let postcondition = id#get_xpredicate pcid in
-  let pred = xpredicate_to_po_predicate ~returnexp:exp pod#fdecls postcondition  in
+  let pred =
+    xpredicate_to_po_predicate ~returnexp:exp pod#fdecls postcondition  in
   let spotype = ReturnsiteSPO (loc,ctxt,pred,postcondition) in
   mk_returnsite_spo pod spotype
-     
+
 
 class returnsite_t
         (pod:podictionary_int)
@@ -95,7 +89,7 @@ object (self)
             with
             | CCHFailure p -> ch_error_log#add "postcondition" p)
         | _ -> H.add spos k v) pcspos
-    
+
   method add_postcondition (index:int) =
     match id#get_xpredicate index with
     | XTainted _ -> ()
@@ -111,12 +105,13 @@ object (self)
     let gvar = file_environment#get_globalvar_by_name gv.cgv_name in
     let gexp = Lval (Var (gvar.vname, gvar.vid),NoOffset) in
     let pred = PValuePreserved gexp in
-    let xpred = XPreservesValue (ArgValue (ParGlobal gv.cgv_name,ArgNoOffset)) in
+    let xpred =
+      XPreservesValue (ArgValue (ParGlobal gv.cgv_name,ArgNoOffset)) in
     let xpredix = id#index_xpredicate xpred in
     if H.mem spos xpredix then
       ()
     else
-      let spotype = ReturnsiteSPO (loc,ctxt,pred,xpred) in      
+      let spotype = ReturnsiteSPO (loc,ctxt,pred,xpred) in
       H.add spos xpredix [(mk_returnsite_spo pod spotype)]
 
   method add_notnull_condition (gv:contract_global_var_t) =
@@ -131,7 +126,8 @@ object (self)
     else
       H.add spos xpredix [(mk_returnsite_spo pod spotype)]
 
-  method add_inequality_condition (gv:contract_global_var_t) (op:binop) (lb:int) =
+  method add_inequality_condition
+           (gv:contract_global_var_t) (op:binop) (lb:int) =
     let gvar = file_environment#get_globalvar_by_name gv.cgv_name in
     let gexp = Lval (Var (gvar.vname, gvar.vid),NoOffset) in
     let lbexp = Const (CInt (Int64.of_int lb,IInt, None)) in
@@ -156,7 +152,8 @@ object (self)
     match exp with
     | Some e -> e
     | _ ->
-       raise (CCHFailure (LBLOCK [STR "Returnsite does not have an expression"]))
+       raise
+         (CCHFailure (LBLOCK [STR "Returnsite does not have an expression"]))
 
   method has_exp = match exp with Some _ -> true | _ -> false
 
@@ -199,7 +196,7 @@ let read_xml_returnsite
   let _ =
     List.iter
       (fun pnode ->
-        let spos = 
+        let spos =
           List.map
             (fun snode -> read_xml_returnsite_spo snode pod)
             (pnode#getTaggedChildren "po") in
@@ -212,12 +209,13 @@ let read_xml_returnsite
 
 class returnsite_manager_t
         (fname:string) (pod:podictionary_int):returnsite_manager_int =
-object (self)
+object
 
   val returnsites = H.create 1
   val postconditions = new CHUtils.IntCollections.set_t
 
-  method add_return (loc:location) (ctxt:program_context_int) (exp:exp option) =
+  method add_return
+           (loc:location) (ctxt:program_context_int) (exp:exp option) =
     let ictxt = ccontexts#index_context ctxt in
     let returnsite = new returnsite_t pod loc ctxt exp in
     H.add returnsites ictxt returnsite
@@ -230,7 +228,7 @@ object (self)
       if file_contract#has_function_contract fname then
         begin
           postconditions#addList
-            (file_contract#get_function_contract fname)#get_postcondition_ixs ;
+            (file_contract#get_function_contract fname)#get_postcondition_ixs;
           postconditions#iter (fun pcid ->
               H.iter (fun _ v -> v#add_postcondition pcid) returnsites)
         end

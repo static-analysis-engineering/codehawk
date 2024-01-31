@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,17 +32,11 @@ open CHPretty
 open CHUtils
 
 (* chutil *)
-open CHPrettyUtil
 open CHXmlDocument
 
 (* cchlib *)
-open CCHDictionary
 open CCHBasicTypes
-open CCHExternalPredicate
-open CCHFileContract
-open CCHFileEnvironment
 open CCHLibTypes
-open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
@@ -56,7 +50,6 @@ open CCHPreTypes
 module H = Hashtbl
 
 
-let cd = CCHDictionary.cdictionary
 let pd = CCHPredicateDictionary.predicate_dictionary
 let id = CCHInterfaceDictionary.interface_dictionary
 
@@ -65,13 +58,25 @@ class function_api_t (fname:string):function_api_int =
 object (self)
 
   val api_assumptions = H.create 3
-  val contract_assumptions = H.create 3        (* (xpredicate_id,callee_vid) -> contract_assumption *)
-  val assumption_requests = H.create 3         (* requests made for (global) assumptions *)
-  val postcondition_requests = H.create 3      (* requests made to other functions *)
-  val postcondition_guarantees = H.create 3    (* guarantee postconditions of this function *)
+
+  (* (xpredicate_id,callee_vid) -> contract_assumption *)
+  val contract_assumptions = H.create 3
+
+  (* requests made for (global) assumptions *)
+  val assumption_requests = H.create 3
+
+  (* requests made to other functions *)
+  val postcondition_requests = H.create 3
+
+  (* guarantee postconditions of this function *)
+  val postcondition_guarantees = H.create 3
+
   val library_calls = H.create 3
+
   val missing_summaries = new StringCollections.set_t
+
   val mutable contractcondition_failures = []
+
   val unevaluated = H.create 3
 
   method add_contract_precondition
@@ -85,7 +90,7 @@ object (self)
       let a = mk_api_assumption ~isglobal:true predid in
       H.add api_assumptions predid a
 
-  method add_contract_condition_failure (name:string) (desc:string) = 
+  method add_contract_condition_failure (name:string) (desc:string) =
     contractcondition_failures <- (name,desc) :: contractcondition_failures
 
   method add_library_call header fname =
@@ -95,8 +100,8 @@ object (self)
       else 0 in
     H.replace library_calls (header,fname) (entry + 1)
 
-  method add_missing_summary name = missing_summaries#add name 
-    
+  method add_missing_summary name = missing_summaries#add name
+
   method add_api_assumption
            ?(isfile=false)
            ?(isglobal=false)
@@ -132,7 +137,8 @@ object (self)
 
   method private check_assumptions (p:po_predicate_t) =
     let assumptions = H.fold (fun _ v acc -> v::acc) api_assumptions [] in
-    check_assumption_predicates (List.map (fun a -> a#get_predicate) assumptions) p
+    check_assumption_predicates
+      (List.map (fun a -> a#get_predicate) assumptions) p
 
   method add_postcondition_assumption
            ?(ppos=[])
@@ -207,16 +213,21 @@ object (self)
   method private add_to_table t k v =
     let entry = if H.mem t k then H.find t k else [] in
     H.replace t k (v::entry)
-                      
+
   method get_api_assumption (id:int) =
     if H.mem api_assumptions id then H.find api_assumptions id else
-      raise (CCHFailure
-               (LBLOCK [ STR "No api assumption found for id "; INT id;
-			 STR " in function "; STR fname ]))
-	
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "No api assumption found for id ";
+                INT id;
+		STR " in function ";
+                STR fname]))
+
   method get_api_assumptions =
-    List.sort (fun a1 a2 -> Stdlib.compare a1#index a2#index)
-              (H.fold (fun _ v r -> v::r) api_assumptions [])
+    List.sort
+      (fun a1 a2 -> Stdlib.compare a1#index a2#index)
+      (H.fold (fun _ v r -> v::r) api_assumptions [])
 
   method get_contract_assumptions =
     List.sort
@@ -225,8 +236,9 @@ object (self)
       (H.fold  (fun _ v r -> v::r) contract_assumptions [])
 
   method get_assumption_requests =
-    List.sort (fun a1 a2 -> Stdlib.compare a1#index a2#index)
-              (H.fold (fun _ v r -> v::r) assumption_requests [])
+    List.sort
+      (fun a1 a2 -> Stdlib.compare a1#index a2#index)
+      (H.fold (fun _ v r -> v::r) assumption_requests [])
 
   method get_postcondition_requests =
     H.fold (fun _ v r -> v::r) postcondition_requests []
@@ -333,7 +345,7 @@ object (self)
       node#appendChildren
         [aanode; ccnode; hhnode; ppnode; ggnode; llnode; mmnode; unode]
     end
-           
+
   method read_xml (node:xml_element_int) =
     let hasc = node#hasOneTaggedChild in
     let getcc tag = (node#getTaggedChild tag)#getTaggedChildren in
@@ -373,10 +385,10 @@ object (self)
              let desc = xnode#getAttribute "desc" in
              self#add_contract_condition_failure name desc)
                    (getcc "contract-condition-failures" "failure"))
-         
+
     end
-      
+
 end
 
 
-let mk_function_api = new function_api_t    
+let mk_function_api = new function_api_t

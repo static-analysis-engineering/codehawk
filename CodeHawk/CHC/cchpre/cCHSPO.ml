@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,14 +31,10 @@
 open CHPretty
 
 (* chutil *)
-open CHPrettyUtil
 open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
-open CCHContext
-open CCHDeclarations
-open CCHDictionary
 open CCHLibTypes
 open CCHUtilities
 
@@ -83,7 +79,8 @@ object (self)
            (args:exp list) =
     callsite_manager#add_indirect_call loc ctxt ~header callee args
 
-  method add_return (loc:location) (ctxt:program_context_int) (exp:exp option) =
+  method add_return
+           (loc:location) (ctxt:program_context_int) (exp:exp option) =
     returnsite_manager#add_return loc ctxt exp
 
   method create_contract_proof_obligations =
@@ -104,7 +101,9 @@ object (self)
             (LBLOCK [STR "Spo with index "; INT index; STR " not found"]))
 
   method get_spos =
-    self#get_local_spos @ callsite_manager#get_spos @ returnsite_manager#get_spos
+    self#get_local_spos
+    @ callsite_manager#get_spos
+    @ returnsite_manager#get_spos
 
   method get_callsite_manager = callsite_manager
 
@@ -113,7 +112,7 @@ object (self)
     node#appendChildren
       (List.map (fun spo ->
            let snode = xmlElement "po"  in
-           begin spo#write_xml snode ; snode end) spos)
+           begin spo#write_xml snode; snode end) spos)
 
   method private read_xml_local_spos (node:xml_element_int) =
     List.iter (fun snode ->
@@ -129,7 +128,7 @@ object (self)
          begin
            self#write_xml_local_spos lnode;
            node#appendChildren [lnode]
-         end) ;
+         end);
       callsite_manager#write_xml cnode;
       returnsite_manager#write_xml rnode;
       node#appendChildren [cnode; rnode]
@@ -155,4 +154,3 @@ end
 
 
 let mk_spo_manager = new spo_manager_t
-             

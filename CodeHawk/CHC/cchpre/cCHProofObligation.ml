@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,18 +30,15 @@
 (* chlib *)
 open CHPretty
 open CHUtils
-   
+
 (* chutil *)
 open CHPrettyUtil
 open CHXmlDocument
-   
+
 (* cchlib *)
-open CCHBasicTypes
-open CCHLibTypes
 open CCHUtilities
 
 (* cchpre *)
-open CCHPODictionary
 open CCHPOPredicate
 open CCHPreSumTypeSerializer
 open CCHPreTypes
@@ -49,14 +46,11 @@ open CCHPreTypes
 module H = Hashtbl
 
 
-let contexts = CCHContext.ccontexts
-let cdecls = CCHDeclarations.cdeclarations
-
 let join_invs (invs1:int list) (invs2:int list):int list =
   let s = new IntCollections.set_t in
   begin
-    s#addList invs1 ;
-    s#addList invs2 ;
+    s#addList invs1;
+    s#addList invs2;
     List.sort Stdlib.compare s#toList
   end
 
@@ -65,7 +59,8 @@ let join_dependencies (d1:dependencies_t) (d2:dependencies_t) =
   match (d1,d2) with
   | (DStmt, _) -> d2
   | (_, DStmt) -> d1
-  | (DUnreachable _, _) -> d2   (* note: it would be better to keep these explicit *)
+  (* note: it would be better to keep these explicit *)
+  | (DUnreachable _, _) -> d2
   | (_, DUnreachable _) -> d1
   | (DLocal invs1, DLocal invs2) -> DLocal (join_invs invs1 invs2)
   | (DLocal invs1, DReduced (invs2,assumptions))
@@ -96,7 +91,7 @@ let write_xml_dependencies
     | DEnvC (invs,assumptions) ->
      let ids = List.map pod#index_assumption assumptions in
      begin
-       set "invs" (String.concat "," (List.map string_of_int invs)) ;
+       set "invs" (String.concat "," (List.map string_of_int invs));
        set "ids" (String.concat "," (List.map string_of_int ids))
      end
   | DUnreachable domain -> set "domain" domain
@@ -138,10 +133,12 @@ let read_xml_dependencies
        DEnvC (invs,ids)
     | "x" -> DUnreachable (get "domain")
     | s ->
-       raise (CCHFailure (LBLOCK [ STR "Dependency indicator " ; STR s  ;
-                                   STR " not recognized" ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Dependency indicator "; STR s ; STR " not recognized"]))
   with
-    Failure _ ->
+  | Failure _ ->
     raise
       (CCHFailure
          (LBLOCK [
@@ -153,29 +150,29 @@ let read_xml_dependencies
 
 let get_po_type_location (pt:po_type_t) =
   match pt with
-  | PPO (PPOprog (loc,_,_))
-    | PPO (PPOlib (loc,_,_,_,_))
-    | SPO (CallsiteSPO (loc,_,_,_))
-    | SPO (ReturnsiteSPO (loc,_,_,_))
-    | SPO (LocalSPO (loc,_,_)) -> loc
+  | PPO (PPOprog (loc, _, _))
+    | PPO (PPOlib (loc , _, _, _, _))
+    | SPO (CallsiteSPO (loc, _, _, _))
+    | SPO (ReturnsiteSPO (loc, _, _, _))
+    | SPO (LocalSPO (loc, _, _)) -> loc
 
 
 let get_po_type_context (pt:po_type_t) =
   match pt with
-  | PPO (PPOprog (_,ctxt,_))
-    | PPO (PPOlib (_,ctxt,_,_,_))
-    | SPO (CallsiteSPO (_,ctxt,_,_))
-    | SPO (ReturnsiteSPO (_,ctxt,_,_))
-    | SPO (LocalSPO (_,ctxt,_)) -> ctxt
+  | PPO (PPOprog (_, ctxt, _))
+    | PPO (PPOlib (_, ctxt, _, _, _))
+    | SPO (CallsiteSPO (_, ctxt, _, _))
+    | SPO (ReturnsiteSPO (_, ctxt, _, _))
+    | SPO (LocalSPO (_, ctxt, _)) -> ctxt
 
 
 let get_po_type_predicate (pt:po_type_t) =
   match pt with
-  | PPO (PPOprog (_,_,pred))
-    | PPO (PPOlib (_,_,pred,_,_))
-    | SPO (CallsiteSPO (_,_,pred,_))
-    | SPO (ReturnsiteSPO (_,_,pred,_))
-    | SPO (LocalSPO (_,_,pred)) -> pred
+  | PPO (PPOprog (_, _, pred))
+    | PPO (PPOlib (_, _, pred, _, _))
+    | SPO (CallsiteSPO (_, _, pred, _))
+    | SPO (ReturnsiteSPO (_, _, pred, _))
+    | SPO (LocalSPO (_, _, pred)) -> pred
 
 
 class diagnostic_t =
@@ -230,7 +227,7 @@ object (self)
 
   method private get_key_messages =
     H.fold (fun k v acc -> (k,v#toList) :: acc) keymessages []
-    
+
   method arg_messages_to_pretty: pretty_t =
     let arg_messages = self#get_arg_messages in
     let flat_messages = List.map ( fun(_, x) -> x) arg_messages in
@@ -308,7 +305,8 @@ object (self)
     let knode = node#getTaggedChild "kmsgs" in
     begin
       (List.iter (fun n ->
-           let invs = List.map int_of_string (nsplit ',' (n#getAttribute "i")) in
+           let invs =
+             List.map int_of_string (nsplit ',' (n#getAttribute "i")) in
            H.add invarianttable (n#getIntAttribute "a") invs)
          (inode#getTaggedChildren "arg"));
       (List.iter (fun n ->
@@ -328,7 +326,7 @@ object (self)
 
   method toPretty =
     LBLOCK (List.map (fun s -> LBLOCK [STR s; NL]) messages#toList)
-        
+
 
 end
 
@@ -340,7 +338,9 @@ object (self)
 
   val mutable status = Orange
   val mutable dependencies = None
-  val mutable diagnostic = new diagnostic_t   (* information on reason for failure of discharge *)
+
+  (* information on reason for failure of discharge *)
+  val mutable diagnostic = new diagnostic_t
   val mutable explanation = None
   val mutable timestamp = None
 
@@ -348,9 +348,9 @@ object (self)
 
   method set_status s =
     begin
-      status <- s ;
+      status <- s;
       if self#is_closed then diagnostic#clear
-    end                      
+    end
 
   method set_dependencies d = dependencies <- Some d
 
@@ -380,7 +380,8 @@ object (self)
 
   method get_predicate = get_po_type_predicate pt
 
-  method get_explanation = match explanation with Some t -> t | _ -> "none"
+  method get_explanation =
+    match explanation with Some t -> t | _ -> "none"
 
   method get_diagnostic = diagnostic
 
@@ -394,7 +395,8 @@ object (self)
 
   method get_status = status
 
-  method is_ppo = match pt with | PPO _ -> true | _ -> false
+  method is_ppo =
+    match pt with | PPO _ -> true | _ -> false
 
   method write_xml (node:xml_element_int) =
     begin
@@ -443,17 +445,17 @@ object
 
   inherit proof_obligation_t pod (PPO pt) as super
 
-  method is_ppo = true
+  method! is_ppo = true
 
-  method index = pod#index_ppo_type pt
+  method! index = pod#index_ppo_type pt
 
-  method write_xml (node:xml_element_int) =
+  method! write_xml (node:xml_element_int) =
     begin
       super#write_xml node;
       pod#write_xml_ppo_type node pt
     end
 
-  method toPretty =
+  method! toPretty =
     LBLOCK [STR "ppo "; INT (pod#index_ppo_type pt); super#toPretty]
 
 end
@@ -469,17 +471,17 @@ object
 
   inherit proof_obligation_t pod (SPO st) as super
 
-  method index = pod#index_spo_type st
+  method! index = pod#index_spo_type st
 
-  method is_ppo = false
+  method! is_ppo = false
 
-  method write_xml (node:xml_element_int) =
+  method! write_xml (node:xml_element_int) =
     begin
       super#write_xml node;
       pod#write_xml_spo_type node st
     end
 
-  method toPretty =
+  method! toPretty =
     LBLOCK [STR "spo "; INT (pod#index_spo_type st); super#toPretty]
 
 end
@@ -492,17 +494,17 @@ object
 
   inherit proof_obligation_t pod (SPO st) as super
 
-  method index = pod#index_spo_type st
+  method! index = pod#index_spo_type st
 
-  method is_ppo = false
+  method! is_ppo = false
 
-  method write_xml (node:xml_element_int) =
+  method! write_xml (node:xml_element_int) =
     begin
       super#write_xml node;
       pod#write_xml_spo_type node st
     end
 
-  method toPretty =
+  method! toPretty =
     LBLOCK [STR "spo "; INT (pod#index_spo_type st); super#toPretty]
 
 end
@@ -518,17 +520,17 @@ object
 
   inherit proof_obligation_t pod (SPO st) as super
 
-  method index = pod#index_spo_type st
+  method! index = pod#index_spo_type st
 
-  method is_ppo = false
+  method! is_ppo = false
 
-  method  write_xml (node:xml_element_int) =
+  method!  write_xml (node:xml_element_int) =
     begin
       super#write_xml node;
       pod#write_xml_spo_type node st
     end
 
-  method toPretty =
+  method! toPretty =
     LBLOCK [STR "spo "; INT (pod#index_spo_type st); super#toPretty]
 
 end
@@ -544,11 +546,11 @@ let read_xml_proof_obligation
   let get = node#getAttribute in
   let has = node#hasNamedAttribute in
   let getc = node#getTaggedChild in
-  let hasc = node#hasOneTaggedChild in 
+  let hasc = node#hasOneTaggedChild in
   begin
     (if has "s" then
        let status = po_status_mfts#fs (get "s") in
-       po#set_status status) ;
+       po#set_status status);
     (if hasc "e" then
        po#set_explanation ((getc "e")#getAttribute "txt"));
     (if hasc "d" then
@@ -556,7 +558,7 @@ let read_xml_proof_obligation
     (if has "deps" then
        po#set_dependencies (read_xml_dependencies node pod));
     (if has "ts" then
-       po#set_resolution_timestamp (node#getAttribute "ts")) 
+       po#set_resolution_timestamp (node#getAttribute "ts"))
   end
 
 
