@@ -666,10 +666,14 @@ object (self:'a)
             (LBLOCK [STR "to_multiple_lhs not available for ";
                      self#toPretty]))
 
-  method is_immediate = match kind with ARMImmediate _ -> true | _ -> false
+  method is_immediate =
+    match kind with ARMImmediate _ -> true | _ -> false
 
   method is_register =
     match kind with ARMReg _ | ARMWritebackReg _ -> true | _ -> false
+
+  method is_pc_register =
+    match kind with ARMReg ARPC -> true | _ -> false
 
   method is_double_register =
     match kind with ARMDoubleReg _ -> true | _ -> false
@@ -715,7 +719,8 @@ object (self:'a)
         | _ -> t_uint)
     | _ -> t_unknown
 
-  method is_register_list = match kind with ARMRegList _ -> true | _ -> false
+  method is_register_list =
+    match kind with ARMRegList _ -> true | _ -> false
 
   method is_read = match mode with RW | RD -> true | _ -> false
 

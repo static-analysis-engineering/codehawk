@@ -177,6 +177,9 @@ let identify_jumptable
        disassemble_arm_instructions ch (iaddr#add_int 4) 1;
        create_arm_ldrls_jumptable ch instr
      end
+  | Add (_, ACCAlways, rd, rn, _, false)
+       when rd#is_pc_register && rn#is_pc_register ->
+     create_arm_add_pc_jumptable ch instr
   | BranchExchange (ACCAlways, regop) when regop#is_register ->
      create_arm_bx_jumptable ch instr
   | _ -> None
