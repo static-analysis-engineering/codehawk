@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2022-2023  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,6 +40,9 @@ open BCHFunctionData
 open BCHLibTypes
 open BCHSystemInfo
 open BCHSystemSettings
+
+(* bchlibelf *)
+open BCHELFHeader
 
 (* bchlibarm32 *)
 open BCHARMAssemblyBlock
@@ -87,7 +90,7 @@ let get_successors
           (fun a -> [a])
           []
           (get_next_valid_instruction_address va) in
-      
+
       let get_iftxf iaddr =   (* if then x follow *)
         match TR.to_option (get_next_iaddr iaddr) with
         | None -> None
@@ -98,7 +101,7 @@ let get_successors
                (match TR.to_option (get_next_iaddr va2) with
                 | None -> None
                 | Some va3 -> Some (va1, va2, va3))) in
-      
+
       let succ =
         match opcode with
         (* error situation *)
@@ -106,23 +109,23 @@ let get_successors
 
         (* unconditional return instruction *)
         | Pop (ACCAlways, _, rl, _) when rl#includes_pc -> []
-                                                         
+
         (* conditional return in guarded basic block *)
         | Pop (_, _, rl, _) when rl#includes_pc && instr#is_condition_covered ->
            []
-          
+
         (* return via LDM/LDMDB/LDMDA/LDMIB *)
         | LoadMultipleDecrementBefore (_, ACCAlways, _, rl, _)
           | LoadMultipleDecrementAfter (_, ACCAlways, _, rl, _)
           | LoadMultipleIncrementBefore (_, ACCAlways, _, rl, _)
           | LoadMultipleIncrementAfter (_, ACCAlways, _, rl, _)
              when rl#includes_pc -> []
-                                  
+
         (* return via indirect jump on LR *)
         | Branch (ACCAlways, op, _)
           | BranchExchange (ACCAlways, op)
              when op#is_register && op#get_register = ARLR -> []
-                                                            
+
         (* conditional return in guarded basic block *)
         | Branch (_, op, _)
           | BranchExchange (_, op)
@@ -148,12 +151,12 @@ let get_successors
                         && (get_aggregate iaddr)#is_jumptable ->
            let jt = (get_aggregate iaddr)#jumptable in
            jt#default_target :: jt#target_addrs
-                                              
+
         (* Unconditional direct jump *)
         | Branch (ACCAlways, op, _)
           | BranchExchange (ACCAlways, op) when op#is_absolute_address ->
            [op#get_absolute_address]
-          
+
         (* Conditional direct jump *)
         | Branch (_, op, _)
           | BranchExchange (_, op)
@@ -161,7 +164,7 @@ let get_successors
           | CompareBranchNonzero (_, op) when op#is_absolute_address ->
            (* false branch first, true branch second *)
            (next ()) @ [op#get_absolute_address]
-          
+
         (* Thumb-2 IfThen construct:
            va0: ITT c
            va1: if c .. .
@@ -190,27 +193,42 @@ let get_successors
            let _ =
              chlog#add
                "function construction:IfThen"
-               (LBLOCK [STR "Not handled: "; STR xyz; STR " at "; iaddr#toPretty]) in
+               (LBLOCK [
+                    STR "Not handled: "; STR xyz; STR " at "; iaddr#toPretty]) in
            next ()
-          
+
         | TableBranchByte _
           | TableBranchHalfword _
           | LoadRegister _
           | BranchExchange _
+          | Add _
              when instr#is_aggregate_anchor
                   && (get_aggregate iaddr)#is_jumptable ->
            let jt = (get_aggregate iaddr)#jumptable in
            jt#default_target :: jt#target_addrs
-          
+
         (* may or may not be a return *)
-        | LoadRegister (_, dst, _, _, _, _)
-             when dst#is_register && dst#get_register = ARPC -> []
+        | LoadRegister (_, dst, _, _, mem, _)
+             when dst#is_register && dst#get_register = ARPC ->
+           if mem#is_literal_address then
+             let addr = mem#get_literal_address in
+             if elf_header#is_program_address addr then
+               [elf_header#get_program_value addr]
+             else
+               []
+           else
+             []
+
+        | Branch (ACCAlways, op, _)
+          | BranchExchange (ACCAlways, op) when op#is_pc_register ->
+           [iaddr#add_int 4]
 
         | Branch (ACCAlways, op, _)
           | BranchExchange (ACCAlways, op) when op#is_register ->
            let floc = get_floc_by_address faddr instr#get_address in
            let opxpr = op#to_expr floc in
-           let opxpr = floc#inv#rewrite_expr opxpr floc#env#get_variable_comparator in
+           let opxpr =
+             floc#inv#rewrite_expr opxpr floc#env#get_variable_comparator in
            (match opxpr with
             | XConst (IntConst n) ->
                let tgt =
@@ -230,12 +248,12 @@ let get_successors
                  []
                  (numerical_to_doubleword tgt)
             | _ -> [])
-                                                                        
+
         (* no information available, give up *)
         | Branch _ | BranchExchange _ -> []
-                                       
+
         | _ -> next () in
-      
+
       List.map (fun va -> (make_location_by_address faddr va)#ci)
         (List.filter
            (fun va ->
@@ -353,7 +371,7 @@ let construct_arm_assembly_block
         (trerror_record
            (LBLOCK [STR "find_last_instruction: "; va#toPretty]))
         (get_next_instr_address va) in
-    
+
     let floc = get_floc_by_address faddr va in
     let _ = floc#set_instruction_bytes instr#get_instruction_bytes in
     if va#equal wordzero then

@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -47,6 +47,7 @@ module TR = CHTraceResult
 
 
 class jumptable_t
+        ?(indexed_targets: (doubleword_int * int list) list = [])
         ~(end_address: doubleword_int)
         ~(start_address: doubleword_int)
         ~(targets: doubleword_int list)
@@ -55,7 +56,7 @@ object (self)
 
   val end_address = end_address
 
-  val mutable startaddress_valid = true 
+  val mutable startaddress_valid = true
 
   method invalidate_startaddress = startaddress_valid <- false
 
@@ -63,7 +64,7 @@ object (self)
 
   method get_end_address = end_address
 
-  method get_all_targets = 
+  method get_all_targets =
     let tgts = if startaddress_valid then targets else List.tl targets in
     let tgts =
       List.fold_left
@@ -73,9 +74,18 @@ object (self)
     List.map (fun s -> TR.tget_ok (string_to_doubleword s)) tgts
 
   method get_targets (base:doubleword_int) (lb:int) (ub:int) =
-    List.map snd (self#get_indexed_targets base lb ub)
+    if (List.length indexed_targets) > 0 then
+      List.map fst self#indexed_targets
+    else
+      List.map snd (self#get_indexed_targets base lb ub)
 
   method get_length = length
+
+  method indexed_targets: (doubleword_int * int list) list =
+    if (List.length indexed_targets) > 0 then
+      indexed_targets
+    else
+      []
 
   method get_indexed_targets (base:doubleword_int) (tableLb:int) (tableUb:int) =
     let baseOffset =             (* userIndex - tableIndex *)
@@ -122,7 +132,7 @@ object (self)
           []
         end)
       baseOffset
-    
+
   method includes_address (addr: doubleword_int) =
     if start_address#le (addr#add_int 4) && addr#le end_address then
       if addr#lt start_address then
@@ -146,46 +156,76 @@ object (self)
   method toString
            ~(is_function_entry_point:doubleword_int -> bool)
            ~(get_opt_function_name:doubleword_int -> string option):string =
-    let jumpTableString = String.concat "\n" 
-      (List.mapi 
-	 (fun i t -> 
-	   "    "
-           ^ (start_address#add_int (i*4))#to_hex_string
-           ^ "  "
-           ^ t#to_hex_string
-           ^ " ("
-           ^ (string_of_int i)
-           ^ ")"
-           ^ (if is_function_entry_point t then " (F)" else "")
-           ^ (match get_opt_function_name t with
-              | Some s -> "  " ^ s | _ -> "")) targets) in
-    (string_repeat "~" 80)
-    ^ "\n"
-    ^ "Jump table at "
-    ^ start_address#to_hex_string
-    ^ " ("
-    ^ (string_of_int (List.length targets))
-    ^ " targets)"
-    ^ (if startaddress_valid then "" else " (startaddress not included)")
-    ^ "\n"
-    ^ (string_repeat "~" 80)
-    ^ "\n"
-    ^ jumpTableString
-    ^ "\n"
-    ^ (string_repeat "=" 80)
-    ^ "\n"
-      
+    let numtargets =
+      List.fold_left
+        (fun acc (_, l) -> acc + (List.length l)) 0 indexed_targets in
+    if (List.length indexed_targets) > 0 then
+      let jumpTableString =
+        String.concat "\n"
+          (List.map
+             (fun (tgt, idxl) ->
+               "    "
+               ^ tgt#to_hex_string
+               ^ "  ["
+               ^ (String.concat ", " (List.map string_of_int idxl))
+               ^ "]") indexed_targets) in
+      (string_repeat "~" 80)
+      ^ "\n"
+      ^ "Jump table at "
+      ^ start_address#to_hex_string
+      ^ " ("
+      ^ (string_of_int numtargets)
+      ^ " targets)"
+      ^ "\n"
+      ^ "end address: "
+      ^ end_address#to_hex_string
+      ^ "\n"
+      ^ jumpTableString
+      ^ "\n"
+      ^ (string_repeat "~" 80)
+      ^ "\n"
+    else
+      let jumpTableString =
+        String.concat "\n"
+          (List.mapi
+	     (fun i t ->
+	       "    "
+               ^ (start_address#add_int (i*4))#to_hex_string
+               ^ "  "
+               ^ t#to_hex_string
+               ^ " ("
+               ^ (string_of_int i)
+               ^ ")"
+               ^ (if is_function_entry_point t then " (F)" else "")
+               ^ (match get_opt_function_name t with
+                  | Some s -> "  " ^ s | _ -> "")) targets) in
+      (string_repeat "~" 80)
+      ^ "\n"
+      ^ "Jump table at "
+      ^ start_address#to_hex_string
+      ^ " ("
+      ^ (string_of_int (List.length targets))
+      ^ " targets)"
+      ^ (if startaddress_valid then "" else " (startaddress not included)")
+      ^ "\n"
+      ^ (string_repeat "~" 80)
+      ^ "\n"
+      ^ jumpTableString
+      ^ "\n"
+      ^ (string_repeat "=" 80)
+      ^ "\n"
+
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
     let set = node#setAttribute in
     begin
       append (List.map (fun t ->
-	let tNode = xmlElement "tgt" in 
+	let tNode = xmlElement "tgt" in
 	begin tNode#setAttribute "a" t#to_hex_string ; tNode end) targets) ;
       set "start" start_address#to_hex_string ;
       (if startaddress_valid then () else set "startaddress-valid" "no")
     end
-      
+
 end
 
 
@@ -201,7 +241,22 @@ let make_jumptable
   TR.tmap
     ~msg:"make_jumptable"
     (fun length ->
-      new jumptable_t ~end_address ~start_address ~targets ~length)
+      new jumptable_t
+        ~indexed_targets:[] ~end_address ~start_address ~targets ~length)
+    (end_address#subtract_to_int start_address)
+
+
+let make_indexed_jumptable
+      ~(start_address: doubleword_int)
+      ~(end_address: doubleword_int)
+      ~(indexed_targets:(doubleword_int * int list) list)
+      ~(default_target: doubleword_int): jumptable_int TR.traceresult =
+  let targets = List.map fst indexed_targets in
+  TR.tmap
+    ~msg:"make_indexed_jumptable"
+    (fun length ->
+      new jumptable_t
+        ~indexed_targets ~end_address ~start_address ~targets ~length)
     (end_address#subtract_to_int start_address)
 
 
@@ -323,13 +378,13 @@ let find_jumptables_in_section
     []
 
 
-let find_jumptables 
-    ~(is_code_address:doubleword_int -> bool) 
+let find_jumptables
+    ~(is_code_address:doubleword_int -> bool)
     ~(read_only_section_strings:(doubleword_int * string) list) =
-  List.concat 
-    (List.map (fun (base,s) -> find_jumptables_in_section base is_code_address s) 
+  List.concat
+    (List.map (fun (base,s) -> find_jumptables_in_section base is_code_address s)
        read_only_section_strings)
-    
+
 
 let find2_jumptable is_code_address ch len start_address target1 =
   if ch#pos < len-4 then
@@ -357,8 +412,8 @@ let find2_jumptable is_code_address ch len start_address target1 =
   else None
 
 
-let create_jumptable 
-    ~(base:doubleword_int) 
+let create_jumptable
+    ~(base:doubleword_int)
     ~(section_base:doubleword_int)
     ~(is_code_address:doubleword_int -> bool)
     ~(section_string:string) =

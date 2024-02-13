@@ -37,6 +37,7 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHImmediate
 open BCHLibTypes
+open BCHSystemInfo
 
 (* bchlibarm32 *)
 open BCHARMDisassemblyUtils
@@ -5210,7 +5211,7 @@ let parse_t16_01
 let parse_t16_01_1
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (_iaddr: doubleword_int)
+      (iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let r (i: int) (m: arm_operand_mode_t) =
@@ -5257,7 +5258,11 @@ let parse_t16_01_1
   (* 010001110<rm>000  BX - T1 *)
   | 3 when (b 7 7) = 0 ->
      (* BX<c> <Rm> *)
-     BranchExchange (cc, r 0 RD)
+     let regop = r 0 RD in
+     (* let _ =
+       if regop#is_pc_register then
+         system_info#set_arm_thumb_switch (iaddr#add_int 4) "A" in *)
+     BranchExchange (cc, regop)
 
   (* 010001111<rm>000  BLX (register) *)
   | 3 when (b 7 7) = 1 ->

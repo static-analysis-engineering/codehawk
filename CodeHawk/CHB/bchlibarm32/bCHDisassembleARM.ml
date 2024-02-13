@@ -759,54 +759,60 @@ let record_call_targets_arm () =
   arm_assembly_functions#itera
     (fun faddr f ->
       let finfo = get_function_info faddr in
-      begin
-        f#iteri
-          (fun _ ctxtiaddr instr ->
-            match instr#get_opcode with
-            | BranchLink (_, op)
-              | BranchLinkExchange (_, op) ->
-               if finfo#has_call_target ctxtiaddr
-                  && not (finfo#get_call_target ctxtiaddr)#is_unknown then
-                 let loc = ctxt_string_to_location faddr ctxtiaddr in
-                 let floc = get_floc loc in
-                 floc#update_call_target
-               else if op#is_absolute_address then
-                 begin
-                   match get_so_target op#get_absolute_address instr with
-                   | Some tgt ->
-                      finfo#set_call_target ctxtiaddr (mk_so_target tgt)
-                   | _ ->
-                      finfo#set_call_target
-                        ctxtiaddr (mk_app_target op#get_absolute_address)
-                 end
-               else
-                 let iaddr = instr#get_address in
-                 if system_info#has_call_target faddr iaddr then
-                   let calltgt = system_info#get_call_target faddr iaddr in
-                   let ctinfo = mk_call_target_info calltgt in
-                   finfo#set_call_target ctxtiaddr ctinfo
-               else
-                 ()
-            | Branch (_, tgt, _) when
-                   tgt#is_absolute_address
-                   && functions_data#is_function_entry_point
-                        tgt#get_absolute_address ->
-               if finfo#has_call_target ctxtiaddr
-                  && not (finfo#get_call_target ctxtiaddr)#is_unknown then
-                 let loc = ctxt_string_to_location faddr ctxtiaddr in
-                 let floc = get_floc loc in
-                 floc#update_call_target
-               else
-                 begin
-                   match get_so_target tgt#get_absolute_address instr with
-                   | Some tgt ->
-                      finfo#set_call_target ctxtiaddr (mk_so_target tgt)
-                   | _ ->
-                      finfo#set_call_target
-                        ctxtiaddr (mk_app_target tgt#get_absolute_address)
-                 end
-            | _ -> ())
-      end)
+      try
+        begin
+          f#iteri
+            (fun _ ctxtiaddr instr ->
+              match instr#get_opcode with
+              | BranchLink (_, op)
+                | BranchLinkExchange (_, op) ->
+                 if finfo#has_call_target ctxtiaddr
+                    && not (finfo#get_call_target ctxtiaddr)#is_unknown then
+                   let loc = ctxt_string_to_location faddr ctxtiaddr in
+                   let floc = get_floc loc in
+                   floc#update_call_target
+                 else if op#is_absolute_address then
+                   begin
+                     match get_so_target op#get_absolute_address instr with
+                     | Some tgt ->
+                        finfo#set_call_target ctxtiaddr (mk_so_target tgt)
+                     | _ ->
+                        finfo#set_call_target
+                          ctxtiaddr (mk_app_target op#get_absolute_address)
+                   end
+                 else
+                   let iaddr = instr#get_address in
+                   if system_info#has_call_target faddr iaddr then
+                     let calltgt = system_info#get_call_target faddr iaddr in
+                     let ctinfo = mk_call_target_info calltgt in
+                     finfo#set_call_target ctxtiaddr ctinfo
+                   else
+                     ()
+              | Branch (_, tgt, _) when
+                     tgt#is_absolute_address
+                     && functions_data#is_function_entry_point
+                          tgt#get_absolute_address ->
+                 if finfo#has_call_target ctxtiaddr
+                    && not (finfo#get_call_target ctxtiaddr)#is_unknown then
+                   let loc = ctxt_string_to_location faddr ctxtiaddr in
+                   let floc = get_floc loc in
+                   floc#update_call_target
+                 else
+                   begin
+                     match get_so_target tgt#get_absolute_address instr with
+                     | Some tgt ->
+                        finfo#set_call_target ctxtiaddr (mk_so_target tgt)
+                     | _ ->
+                        finfo#set_call_target
+                          ctxtiaddr (mk_app_target tgt#get_absolute_address)
+                   end
+              | _ -> ())
+        end
+      with
+      | BCH_failure p ->
+         ch_error_log#add
+           "record-call-targets-arm"
+           (LBLOCK [STR "Function: "; faddr#toPretty; STR ": "; p]))
 
 (* ---------------------------------------------------------------------
    associate conditional jump instructions with the closest instruction

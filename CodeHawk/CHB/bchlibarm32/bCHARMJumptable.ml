@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,6 +26,7 @@
    ============================================================================= *)
 
 (* chlib *)
+open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -44,6 +45,7 @@ open BCHARMAssemblyInstructions
 open BCHARMOpcodeRecords
 open BCHARMPseudocode
 open BCHARMTypes
+open BCHDisassembleThumbInstruction
 
 
 module H = Hashtbl
@@ -51,7 +53,8 @@ module TR = CHTraceResult
 
 
 class arm_jumptable_t
-        ?(end_address: doubleword_int option=None)
+        ?(db: data_block_int option=None)
+        ~(end_address: doubleword_int)
         ~(start_address: doubleword_int)
         ~(default_target: doubleword_int)
         ~(targets: (doubleword_int * int list) list)
@@ -68,12 +71,16 @@ object (self)
 
   method default_target = default_target
 
+  method has_offset_table =
+    match db with Some _ -> true | _ -> false
+
   method to_jumptable =
     TR.tget_ok
-      (make_jumptable
+      (make_indexed_jumptable
          ~end_address:self#end_address
          ~start_address
-         ~targets:(self#default_target :: self#target_addrs) ())
+         ~indexed_targets:self#indexed_targets
+         ~default_target)
 
   method toCHIF (faddr: doubleword_int) = []
 
@@ -92,9 +99,7 @@ object (self)
              end) self#indexed_targets);
       set "default" self#default_target#to_hex_string;
       set "start" self#start_address#to_hex_string;
-      (match self#end_address with
-       | Some dw -> set "end" dw#to_hex_string
-       | _ -> ())
+      set "end" self#end_address#to_hex_string
     end
 
   method toPretty =
@@ -112,8 +117,15 @@ object (self)
 end
 
 
+(** By default it is assumed that the jumptable internally consists of
+    a list of addresses that make up the targets, and their position in the list
+    indicates the index to which they are applicable.
+
+    The jumptable may also consist of a list of offsets. In this case a datablock
+    is to be created for those offsets and passed with the db argument.*)
 let make_arm_jumptable
-      ?(end_address: doubleword_int option=None)
+      ?(db: data_block_int option=None)
+      ~(end_address: doubleword_int)
       ~(start_address: doubleword_int)
       ~(default_target: doubleword_int)
       ~(targets: (doubleword_int * int) list)
@@ -137,6 +149,7 @@ let make_arm_jumptable
         Stdlib.compare a1#to_int a2#to_int) indexedtargets in
   new arm_jumptable_t
     ~end_address:end_address
+    ~db:db
     ~start_address:start_address
     ~default_target:default_target
     ~targets:indexedtargets
@@ -179,6 +192,21 @@ let adr_reg_test (reg: arm_reg_t) (instr: arm_assembly_instruction_int) =
   | _ -> false
 
 
+(* Return true if [instr] is an ADD instruction with first and second
+   operand equal to [reg1] and third operand equal to [reg2]*)
+let add_reg_test
+      (reg1: arm_reg_t) (reg2: arm_reg_t) (instr: arm_assembly_instruction_int) =
+  match instr#get_opcode with
+  | Add (_, ACCAlways, rd, rn, rm, _) ->
+     rd#is_register
+     && rn#is_register
+     && rm#is_register
+     && rd#get_register = reg1
+     && rn#get_register = reg1
+     && rm#get_register = reg2
+  | _ -> false
+
+
 let addtest (reg: arm_reg_t) (instr: arm_assembly_instruction_int) =
   match instr#get_opcode with
   | Add (_, ACCAlways, rd, rn, _, _) ->
@@ -203,9 +231,58 @@ let ldrtest
   | _ -> false
 
 
+let ldrbtest
+      (basereg: arm_reg_t)
+      (indexreg: arm_reg_t)
+      (instr: arm_assembly_instruction_int) =
+  match instr#get_opcode with
+  | LoadRegisterByte (ACCAlways, rt, rn, rm, _, false) ->
+     rt#is_register
+     && rn#is_register
+     && rm#is_register
+     && rt#get_register = basereg
+     && rn#get_register = basereg
+     && rm#get_register = indexreg
+  | _ -> false
+
+
+let ldrhtest
+      (basereg: arm_reg_t)
+      (indexreg: arm_reg_t)
+      (instr: arm_assembly_instruction_int) =
+  match instr#get_opcode with
+  | LoadRegisterHalfword (ACCAlways, rt, rn, rm, _, false) ->
+     rt#is_register
+     && rn#is_register
+     && rm#is_register
+     && rt#get_register = basereg
+     && rn#get_register = basereg
+     && rm#get_register = indexreg
+  | _ -> false
+
+
+
+let  lsl1test (reg: arm_reg_t) (instr: arm_assembly_instruction_int) =
+  match instr#get_opcode with
+  | LogicalShiftLeft (_, ACCAlways, rd, rn, imm, false) ->
+     rd#is_register
+     && rn#is_register
+     && imm#is_immediate
+     && rd#get_register = reg
+     && rn#get_register = reg
+     && imm#to_numerical#equal numerical_one
+  | _ -> false
+
+
 let bhi_test (instr: arm_assembly_instruction_int) =
   match instr#get_opcode with
   | Branch (ACCUnsignedHigher, _, _) -> true
+  | _ -> false
+
+
+let bcs_test (instr: arm_assembly_instruction_int) =
+  match instr#get_opcode with
+  | Branch (ACCCarrySet, _, _) -> true
   | _ -> false
 
 
@@ -219,7 +296,7 @@ let bhi_test (instr: arm_assembly_instruction_int) =
    [4 bytes] TBB          [PC, R1]    : 3 targets
 
    [2 bytes] CMP          R1, #0x5    : offset -6
-   [4 bytes] BHI.W        0x4acec  
+   [4 bytes] BHI.W        0x4acec
    [4 bytes] TBB          [PC, R1]    : 6 targets
 
    [4 bytes] CMP.W        R9, #0x7    : offset -6
@@ -231,7 +308,7 @@ let bhi_test (instr: arm_assembly_instruction_int) =
    [4 bytes] TBB          [PC, R10]   : 8 targets
 
    TBH patterns (in Thumb-2)
-   
+
    [2 bytes] CMP          R1, #0x4    : offset -4
    [2 bytes] BHI          0x4bed6
    [2 bytes] TBH          [PC, R1]    : 5 targets
@@ -306,10 +383,10 @@ let create_arm_table_branch
                (BCH_failure
                   (LBLOCK [
                        STR "Unexpected opcode in create_arm_table_branch: ";
-                       STR (arm_opcode_to_string opcode)])) in           
+                       STR (arm_opcode_to_string opcode)])) in
         let jt =
           make_arm_jumptable
-            ~end_address:(Some end_address)
+            ~end_address
             ~start_address:jtaddr
             ~default_target:defaulttgt
             ~targets:(List.rev !targets)
@@ -333,7 +410,7 @@ let create_arm_table_branch
 
 
 (* LDR patterns (in Thumb-2)
-   
+
    size is obtained from CMP instruction's immediate value
    table start address is obtained from the ADR instruction
 
@@ -347,7 +424,7 @@ let create_arm_table_branch
    [4 bytes] 0x13c3c4  BHI.W        0x13c93e
    [2 bytes] 0x13c3c8  ADR          R3, 0x13c3d0
    [4 bytes] 0x13c3ca  LDR.W        PC, [R3, R4,LSL #2]
- *)          
+ *)
 let is_ldr_jumptable
       (ldrinstr: arm_assembly_instruction_int):
       (arm_assembly_instruction_int             (* CMP instr *)
@@ -397,7 +474,7 @@ let create_arm_ldr_jumptable
            done in
          let jt:arm_jumptable_int =
            make_arm_jumptable
-             ~end_address:(Some (jtaddr#add_int (4 * (List.length !targets))))
+             ~end_address:(jtaddr#add_int (4 * (List.length !targets)))
              ~start_address:jtaddr
              ~default_target:defaulttgt
              ~targets:(List.rev !targets)
@@ -477,7 +554,7 @@ let create_arm_ldrls_jumptable
            done in
          let jt:arm_jumptable_int =
            make_arm_jumptable
-             ~end_address:(Some (jtaddr#add_int ((List.length !targets) * 4)))
+             ~end_address:(jtaddr#add_int ((List.length !targets) * 4))
              ~start_address:jtaddr
              ~default_target:defaulttgt
              ~targets:(List.rev !targets)
@@ -497,8 +574,251 @@ let create_arm_ldrls_jumptable
       | _ -> None)
 
 
+(* ADD-PC-LDRB patterns (in Thumb-2)
+
+   size is obtained from CMP instruction's immediate value
+   table start address is obtained from the ADR instruction
+
+   [2 bytes] CMP  indexreg, maxcase
+   [2 bytes] BCS  default address
+   [2 bytes] ADR  basereg, start_address
+   [2 bytes] LDRB basereg, [basereg, indexreg]
+   [2 bytes] LSLS basereg, basereg, 1
+   [2 bytes] ADD  PC, PC, basereg
+
+   Example:
+   [2 bytes] 0x40179be8  1b 28  CMP     R0, #0x1b
+   [2 bytes] 0x40179bea  4d d2  BCS     0x40179c88 (default case)
+   [2 bytes] 0x40179bec  01 a3  ADR     R3, 0x40179bf4
+   [2 bytes] 0x40179bee  1b 5c  LDRB    R3, [R3, R0]
+   [2 bytes] 0x40179bf0  5b 00  LSLS    R3, R3, #1
+   [2 bytes] 0x40179bf2  9f 44  ADD     PC, PC, R3
+ *)
+let is_add_pc_b_jumptable
+      (addpcinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int              (* CMP instr *)
+       * arm_assembly_instruction_int            (* BCS instr *)
+       * arm_assembly_instruction_int            (* ADR instr *)
+       * arm_assembly_instruction_int            (* LDRB instr *)
+       * arm_assembly_instruction_int) option =  (* LSLS instr *)
+  match addpcinstr#get_opcode with
+  | Add (_, ACCAlways, rd, rn, baseregop, false)
+       when rd#is_pc_register && rn#is_pc_register && baseregop#is_register ->
+     let addr = addpcinstr#get_address in
+     let basereg = baseregop#get_register in
+     let cmptestf (instr: arm_assembly_instruction_int) =
+       match instr#get_opcode with
+       | Compare (_, rn, imm, _) -> rn#is_register && imm#is_immediate
+       | _ -> false in
+     let optcmpinstr = find_instr cmptestf [(-10)] addr in
+     (match optcmpinstr with
+      | Some cmpinstr ->
+         (match cmpinstr#get_opcode with
+          | Compare (_, indexregop, _, _) ->
+             let indexreg = indexregop#get_register in
+             let adrtestf = adr_reg_test basereg in
+             let ldrbtestf = ldrbtest basereg indexreg in
+             let lsl1testf = lsl1test basereg in
+             let optadrinstr = find_instr adrtestf [(-6)] addr in
+             let optbcsinstr = find_instr bcs_test [(-8)] addr in
+             let optldrbinstr = find_instr ldrbtestf [(-4)] addr in
+             let optlslinstr = find_instr lsl1testf [(-2)] addr in
+             (match (optbcsinstr, optadrinstr, optldrbinstr, optlslinstr) with
+              | (Some bcsinstr, Some adrinstr, Some ldrbinstr, Some lslinstr) ->
+                 Some (cmpinstr, bcsinstr, adrinstr, ldrbinstr, lslinstr)
+              | _ -> None)
+          | _ -> None)
+      | _ -> None)
+  | _ -> None
+
+
+let create_arm_add_pc_b_jumptable
+      (ch: pushback_stream_int)
+      (addpcinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int list * arm_jumptable_int) option =
+  match is_add_pc_b_jumptable addpcinstr with
+  | None -> None
+  | Some (cmpinstr, bcsinstr, adrinstr, ldrbinstr, lslinstr) ->
+     (match (cmpinstr#get_opcode, bcsinstr#get_opcode, adrinstr#get_opcode) with
+      | (Compare (_, indexregop, imm, _),
+         Branch (_, tgtop, _),
+         Adr (_, baseregop, addrop))
+           when tgtop#is_absolute_address && addrop#is_absolute_address ->
+         let iaddr = addpcinstr#get_address in
+         let defaulttgt = tgtop#get_absolute_address in
+         let size = imm#to_numerical#toInt in
+         let jtaddr = addrop#get_absolute_address in
+         let skips = TR.tget_ok (jtaddr#subtract_to_int iaddr) in
+         let skips = skips - 2 in
+         let _ =
+           if skips > 0 then
+             for i = 1 to skips do ignore (ch#read_byte) done in
+         let targets = ref [] in
+         let _ =
+           for i = 0 to (size-1) do
+             let offset = ch#read_byte in
+             targets := (iaddr#add_int (4 + (2 * offset)), i) :: !targets
+           done in
+         let _ = if size mod 2 = 1 then ignore ch#read_byte in
+         let endaddr =
+           if size mod 2 = 1 then
+             jtaddr#add_int (size + 1)
+           else
+             jtaddr#add_int size in
+         let jt:arm_jumptable_int =
+           make_arm_jumptable
+             ~end_address:endaddr
+             ~start_address:jtaddr
+             ~default_target:defaulttgt
+             ~targets:(List.rev !targets)
+             () in
+         let instrs =
+           [cmpinstr; bcsinstr; adrinstr; ldrbinstr; lslinstr; addpcinstr] in
+         begin
+           Some (instrs, jt)
+         end
+      | _ -> None)
+
+
+(* ADD-PC-LDRH patterns (in Thumb-2)
+
+   size is obtained from CMP instruction's immediate value
+   table start address is obtained from the ADR instruction
+
+   [2 bytes] CMP  indexreg, maxcase
+   [2 bytes] BCS  default address
+   [2 bytes] ADR  basereg, start_address
+   [2 bytes] ADDS basereg, basereg, indexreg
+   [2 bytes] LDRH basereg, [basereg, indexreg]
+   [2 bytes] LSLS basereg, basereg, 1
+   [2 bytes] ADD  PC, PC, basereg
+ *)
+let is_add_pc_h_jumptable
+      (addpcinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int               (* CMP instr *)
+       * arm_assembly_instruction_int             (* BCS instr *)
+       * arm_assembly_instruction_int             (* ADR instr *)
+       * arm_assembly_instruction_int             (* ADDS instr *)
+       * arm_assembly_instruction_int             (* LDRH instr *)
+       * arm_assembly_instruction_int) option =   (* LSLS instr *)
+  match addpcinstr#get_opcode with
+  | Add (_, ACCAlways, rd, rn, baseregop, false)
+       when rd#is_pc_register && rn#is_pc_register && baseregop#is_register ->
+     let addr = addpcinstr#get_address in
+     let basereg = baseregop#get_register in
+     let cmptestf (instr: arm_assembly_instruction_int) =
+       match instr#get_opcode with
+       | Compare (_, rn, imm, _) -> rn#is_register && imm#is_immediate
+       | _ -> false in
+     let optcmpinstr = find_instr cmptestf [(-12)] addr in
+     (match optcmpinstr with
+      | Some cmpinstr ->
+         (match cmpinstr#get_opcode with
+          | Compare (_, indexregop, _, _) ->
+             let indexreg = indexregop#get_register in
+             let adrtestf = adr_reg_test basereg in
+             let addtestf = add_reg_test basereg indexreg in
+             let ldrhtest = ldrhtest basereg indexreg in
+             let lsl1testf = lsl1test basereg in
+             let optadrinstr = find_instr adrtestf [(-8)] addr in
+             let optbcsinstr = find_instr bcs_test [(-10)] addr in
+             let optaddinstr = find_instr addtestf [(-6)] addr in
+             let optldrhinstr = find_instr ldrhtest [(-4)] addr in
+             let optlslinstr = find_instr lsl1testf [(-2)] addr in
+             (match
+                (optbcsinstr,
+                 optadrinstr,
+                 optaddinstr,
+                 optldrhinstr,
+                 optlslinstr) with
+              | (Some bcsinstr,
+                 Some adrinstr,
+                 Some addinstr,
+                 Some ldrhinstr,
+                 Some lslinstr) ->
+                 Some
+                   (cmpinstr, bcsinstr, adrinstr, addinstr, ldrhinstr, lslinstr)
+              | _ -> None)
+          | _ -> None)
+      | _ -> None)
+  | _ -> None
+
+
+let create_arm_add_pc_h_jumptable
+      (ch: pushback_stream_int)
+      (addpcinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int list * arm_jumptable_int) option =
+  match is_add_pc_h_jumptable addpcinstr with
+  | None -> None
+  | Some (cmpinstr, bcsinstr, adrinstr, _, ldrhinstr, lslinstr) ->
+     (match (cmpinstr#get_opcode, bcsinstr#get_opcode, adrinstr#get_opcode) with
+      | (Compare (_, indexregop, imm, _),
+         Branch (_, tgtop, _),
+         Adr (_, baseregop, addrop))
+           when tgtop#is_absolute_address && addrop#is_absolute_address ->
+         let iaddr = addpcinstr#get_address in
+         let branchtgt = tgtop#get_absolute_address in
+         let size = imm#to_numerical#toInt in
+         let jtaddr = addrop#get_absolute_address in
+         let bibytes = ch#read_ui16 in
+         let branchinstr =
+           disassemble_thumb_instruction ch branchtgt bibytes in
+         (match branchinstr with
+          | Branch (ACCAlways, defop, _) ->
+             let defaulttgt = defop#get_absolute_address in
+             let skips = TR.tget_ok (jtaddr#subtract_to_int branchtgt) in
+             let skips = skips - 2 in
+             let _ =
+               if skips > 0 then
+                 let _ =
+                   chlog#add
+                     "add-pc-h jumptable"
+                     (LBLOCK [
+                          iaddr#toPretty;
+                          STR "  ";
+                          STR "Skip ";
+                          INT skips;
+                          STR " bytes"]) in
+                 for i = 1 to skips do
+                   let b = ch#read_byte in
+                   chlog#add
+                     "add-pc-h jumptable: skip"
+                     (LBLOCK [iaddr#toPretty; STR "  skip "; INT b])
+                 done in
+             let targets = ref [] in
+             let _ =
+               for i = 0 to (size - 1) do
+                 let offset = ch#read_ui16 in
+                 targets := (iaddr#add_int (4 + (2 * offset)), i) :: !targets
+               done in
+             let endaddr = jtaddr#add_int (2 * size) in
+             let jt:arm_jumptable_int =
+               make_arm_jumptable
+                 ~end_address:endaddr
+                 ~start_address:jtaddr
+                 ~default_target:defaulttgt
+                 ~targets:(List.rev !targets)
+                 () in
+             let instrs =
+               [cmpinstr; bcsinstr; adrinstr; ldrhinstr; lslinstr; addpcinstr] in
+             Some (instrs, jt)
+          | _ -> None)
+      | _ -> None)
+
+
+let create_arm_add_pc_jumptable
+      (ch: pushback_stream_int)
+      (addpcinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int list * arm_jumptable_int) option =
+  match is_add_pc_b_jumptable addpcinstr with
+  | Some _ ->
+     create_arm_add_pc_b_jumptable ch addpcinstr
+  | _ ->
+     create_arm_add_pc_h_jumptable ch addpcinstr
+
+
 (* format of BX-based jumptable (in Thumb-22):
-   
+
    Type 1
    [2 bytes] CMP indexreg, maxcase
    [2 bytes] BHI default_address
@@ -506,7 +826,7 @@ let create_arm_ldrls_jumptable
    [4 bytes] LDR.W indexreg, [basereg, indexreg, LSL#2]
    [2 bytes] ADD basereg, basereg, indexreg
    [2 bytes] BX basereg
-   
+
    Type 2
    [4 bytes] CMP.W indexreg, maxcase
    [4 bytes] BHI.W default_address
@@ -514,7 +834,7 @@ let create_arm_ldrls_jumptable
    [4 bytes] LDR.W tmpreg, [basereg, indexreg, LSL#2]
    [2 bytes] ADDS basereg, basereg, tmpreg
    [2 bytes] BX basereg
-   
+
    Type 3
    [2 bytes] CMP indexreg, maxcase
    [4 bytes] BHI.W default_address
@@ -612,7 +932,7 @@ let create_arm_bx_jumptable
   match is_bx_jumptable bxinstr with
   | None -> None
   | Some (cmpinstr, bhiinstr, adrinstr, ldrinstr, addinstr) ->
-     let addr = bxinstr#get_address in     
+     let addr = bxinstr#get_address in
      let _ =
        assert (
            let cond = bx_instrs_consistent cmpinstr adrinstr ldrinstr addinstr in
@@ -662,7 +982,7 @@ let create_arm_bx_jumptable
        done in
      let jt:arm_jumptable_int =
        make_arm_jumptable
-         ~end_address:(Some (jtaddr#add_int (4 * (List.length !targets))))
+         ~end_address:(jtaddr#add_int (4 * (List.length !targets)))
          ~start_address:jtaddr
          ~default_target:defaulttgt
          ~targets:(List.rev !targets)

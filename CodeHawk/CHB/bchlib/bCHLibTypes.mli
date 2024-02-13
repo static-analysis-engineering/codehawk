@@ -1034,22 +1034,64 @@ end
 
 (** {2 Jump table} *)
 
+(** A jumptable generally represents a switch statement. Its external
+    API exposes its extent (that is, the non-code data items that make up
+    the table), and a list of target addresses together with the index value
+    that activates that target.
+
+    Internally the data of a jump table may be the list of target addresses
+    itself, or it may be a list of 1- (or 2-byte) offsets that are added
+    to a base address.
+*)
 class type jumptable_int =
 object
 
-  (* setters *)
+  (** The start address can be invalidated; sometimes automatic detection
+      identifies the jump instruction as part of the table (this can happed
+      especially in x86.*)
   method invalidate_startaddress: unit
 
-  (* accessors *)
+  (** Returns the address of the first non-code location in the code, or
+      the start address of the table in another read-only section.*)
   method get_start_address: doubleword_int
+
+  (** Returns the address of the first code location after the jump table.*)
   method get_end_address: doubleword_int
+
+  (** Returns the length (in bytes) of the entire table (equal to the
+      difference between the end address and the start address.*)
   method get_length: int
+
+  (** Returns a list of all (unique) target addresses (de-duplicated).*)
   method get_all_targets: doubleword_int list
+
+  (** [get_targets base lb ub] returns the list of targets are invoked
+      with an index value between lowerbound [lb] and upperbound [ub]
+      from base address [base]. (deprecated).*)
   method get_targets: doubleword_int -> int -> int -> doubleword_int list
+
+  (** Returns a list of (target-address, index list) pairs where the indexes
+      denote the values with which the corresponding target address is
+      associated.
+
+      Note. This is currently only supported by the ARM architecture.
+      For all other architectures, the empty list is returned.
+
+      Eventually this method will supercede [get_indexed_targets].
+   *)
+  method indexed_targets: (doubleword_int * int list) list
+
+  (** [get_indexed_targets base lb ub] returns the list of targets with
+      their index for index values between lowerbound [lb] and
+      upperbound [ub] from base address [base]. (deprecated) *)
   method get_indexed_targets:
            doubleword_int -> int -> int -> (int * doubleword_int) list
 
-  (* predicates *)
+  (** [includes_address addr] returns true if [addr] is the address
+      of a location that holds a target address.
+
+      Note that this applies only if the jumptable actually contains a
+      list of addresses, which may not be the case.*)
   method includes_address: doubleword_int -> bool
 
   (* saving *)

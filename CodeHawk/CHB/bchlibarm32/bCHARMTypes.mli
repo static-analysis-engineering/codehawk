@@ -199,6 +199,7 @@ class type arm_operand_int =
     method is_write: bool
     method is_immediate: bool
     method is_register: bool
+    method is_pc_register: bool
     method is_double_register: bool
     method is_extension_register: bool
     method is_double_extension_register: bool
@@ -1481,13 +1482,16 @@ class type arm_jumptable_int =
     method default_target: doubleword_int
     method indexed_targets: (doubleword_int * int list) list
     method start_address: doubleword_int
-    method end_address: doubleword_int option
+    method end_address: doubleword_int
 
     (* conversion *)
     method to_jumptable: jumptable_int
 
     (* translation *)
     method toCHIF: doubleword_int -> cmd_t list
+
+    (* predicates *)
+    method has_offset_table: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
