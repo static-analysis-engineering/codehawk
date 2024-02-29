@@ -226,11 +226,10 @@ let patternrhs_to_string (rhs:patternrhs_t) =
 
 
 let get_arg (args: (fts_parameter_t * xpr_t) list) (n: int) (floc: floc_int) =
-  let cmpv = floc#env#get_variable_comparator in
   try
     let (_, arg) =
       List.find (fun (p, _) -> is_stack_parameter_at_offset p (n * 4)) args in
-    floc#inv#rewrite_expr arg cmpv
+    floc#inv#rewrite_expr arg
   with
   | Not_found ->
     begin
@@ -242,32 +241,27 @@ let get_arg (args: (fts_parameter_t * xpr_t) list) (n: int) (floc: floc_int) =
 
 
 let get_reg_value (reg:cpureg_t) (floc:floc_int) =
-  let cmpv = floc#env#get_variable_comparator in
-  floc#inv#rewrite_expr ((register_op reg 4 RD)#to_expr floc) cmpv
+  floc#inv#rewrite_expr ((register_op reg 4 RD)#to_expr floc)
 
 
 let get_gv_value (gv:doubleword_int) (floc:floc_int) =
-  let cmpv = floc#env#get_variable_comparator in
   let v = floc#env#mk_global_variable gv#to_numerical in
-  floc#inv#rewrite_expr (XVar v) cmpv
+  floc#inv#rewrite_expr (XVar v)
 
 
 let get_reg_derefvalue (reg:cpureg_t) (offset:int) (floc:floc_int) =
-  let cmpv = floc#env#get_variable_comparator in
   let deref = (indirect_register_op reg (mkNumerical offset) 4 RD)#to_expr floc in
-  floc#inv#rewrite_expr deref cmpv
+  floc#inv#rewrite_expr deref
 
 
 let get_x_derefvalue (x:xpr_t) (offset:int) (floc:floc_int) =
-  let cmpv = floc#env#get_variable_comparator in
   let x =
-    floc#inv#rewrite_expr
-      (XOp (XPlus, [x; int_constant_expr offset])) cmpv in
+    floc#inv#rewrite_expr (XOp (XPlus, [x; int_constant_expr offset])) in
   let (memref,memoffset) = floc#decompose_address x in
   if is_constant_offset memoffset then
     let memvar =
       floc#env#mk_memory_variable memref (get_total_constant_offset memoffset) in
-    floc#inv#rewrite_expr (XVar memvar) cmpv
+    floc#inv#rewrite_expr (XVar memvar)
   else
     XVar (floc#env#mk_unknown_memory_variable "x-deref")
 
@@ -299,10 +293,7 @@ let get_reg_deref_lhs (r:cpureg_t) ?(size=4) (offset:int) (floc:floc_int) =
 
 
 let get_x_deref_lhs (x:xpr_t) (offset:int) (floc:floc_int) =
-  let cmpv = floc#env#get_variable_comparator in
-  let x =
-    floc#inv#rewrite_expr
-      (XOp (XPlus, [x; int_constant_expr offset])) cmpv in
+  let x = floc#inv#rewrite_expr (XOp (XPlus, [x; int_constant_expr offset])) in
   let (memref,memoffset) = floc#decompose_address x in
   if is_constant_offset memoffset then
     floc#env#mk_memory_variable memref (get_total_constant_offset memoffset)
@@ -352,7 +343,7 @@ let get_return_value (name:string) (floc:floc_int) =
 
 
 let set_functionpointer (name:string) (floc:floc_int) (xpr:xpr_t) =
-  let x = floc#inv#rewrite_expr xpr (floc#env#get_variable_comparator) in
+  let x = floc#inv#rewrite_expr xpr in
   match x with
   | XConst (IntConst num) ->
      (try

@@ -106,12 +106,11 @@ object (self)
 
   method index_instr (instr:assembly_instruction_int) (floc:floc_int) =
     let rewrite_expr (x: xpr_t):xpr_t =
-      floc#inv#rewrite_expr x floc#env#get_variable_comparator in
+      floc#inv#rewrite_expr x in
     let rewrite_test_expr (csetter: ctxt_iaddress_t) (x: xpr_t): xpr_t =
       let testloc = ctxt_string_to_location floc#fa csetter in
       let testfloc = get_floc testloc in
-      let xpr =
-        testfloc#inv#rewrite_expr x testfloc#env#get_variable_comparator in
+      let xpr = testfloc#inv#rewrite_expr x in
       simplify_xpr xpr in
     let key =
       match instr#get_opcode with
@@ -375,7 +374,7 @@ object (self)
       | Pop (_,op) when op#is_register ->
          let lhs = op#to_variable floc in
          let rhs = (esp_deref RD)#to_expr floc in
-         let rhs = floc#inv#rewrite_expr rhs floc#env#get_variable_comparator in
+         let rhs = floc#inv#rewrite_expr rhs in
          let initVal =
            floc#env#mk_initial_register_value (CPURegister op#get_cpureg) in
          let rhsix = xd#index_xpr rhs in
