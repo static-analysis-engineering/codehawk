@@ -599,6 +599,7 @@ object (self)
          let (alignedaddr, prefix) = db#get_start_address#to_aligned ~up:true 4 in
          let addr = ref alignedaddr in
          let contents = ref [] in
+         let stringend = ref wordzero in
          let make_stream (v: doubleword_int) =
            let bytestring =
              write_hex_bytes_to_bytestring v#to_fixed_length_hex_string_le in
@@ -636,7 +637,8 @@ object (self)
            else
              "" in
          let _ =
-           if prefix > 0 && (String.length s) >= prefix then ch#skip_bytes prefix in
+           if prefix > 0 && (String.length s) >= prefix then
+             ch#skip_bytes prefix in
          try
            begin
              for _i = 0 to (((len - prefix)/4) - 1) do
@@ -653,31 +655,71 @@ object (self)
                    (List.map
                       (fun (a, v) ->
                         let addr = a#to_hex_string in
-                        if H.mem datareftable addr then
+                        if a#lt !stringend then
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  String:<"
+                          ^ (fixed_length_string v#to_hex_string 12)
+                          ^ "> ... (cont'd)"
+                        else if v#equal wordzero then
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  <0x0>"
+                        else if v#equal wordmax then
+                          "  "
+                          ^  (fixed_length_string addr 10)
+                          ^  " <0xffffffff>"
+                        else if H.mem datareftable addr then
                           let datarefs = H.find datareftable addr in
                           "  "
                           ^ (fixed_length_string addr 10)
                           ^ "  "
                           ^ (fixed_length_string v#to_hex_string 12)
-                          ^ (String.concat
-                               ", " (List.map (fun instr -> instr#toString) datarefs))
+                          ^ ("referenced by: "
+                             ^ (String.concat
+                                  ", "
+                                  (List.map
+                                     (fun instr ->
+                                       instr#get_address#to_hex_string) datarefs)))
                         else
-                          match elf_header#get_string_at_address v with
+                          match elf_header#get_string_at_address a with
                           | Some s ->
-                             "  "
-                             ^ (fixed_length_string addr 10)
-                             ^ "  "
-                             ^ (fixed_length_string v#to_hex_string 12)
-                             ^ ": \""
-                             ^ s
-                             ^ "\""
+                             stringend := a#add_int ((String.length s) + 1);
+                             begin
+                               ("  "
+                                ^ (fixed_length_string addr 10)
+                                ^ "  String:<"
+                                ^ (fixed_length_string v#to_hex_string 12)
+                                ^ ">: \""
+                                ^ s
+                                ^ "\"")
+                             end
                           | _ ->
-                             "  "
-                             ^ (fixed_length_string addr 10)
-                             ^ "  "
-                             ^ (fixed_length_string v#to_hex_string 14)
-                             ^ "  "
-                             ^ (opcode_string a v))
+                             if functions_data#is_function_entry_point v then
+                               "  "
+                               ^ (fixed_length_string addr 10)
+                               ^ "  Faddr:<"
+                               ^ v#to_hex_string
+                               ^ ">"
+                             else if elf_header#is_code_address v then
+                               "  "
+                               ^ (fixed_length_string addr 10)
+                               ^ "  Code:<"
+                               ^ v#to_hex_string
+                               ^ ">"
+                             else if elf_header#is_data_address v then
+                               "  "
+                               ^ (fixed_length_string addr 10)
+                               ^ "  Data:<"
+                               ^ v#to_hex_string
+                               ^ ">"
+                             else
+                               "  "
+                               ^ (fixed_length_string addr 10)
+                               ^ "  "
+                               ^ (fixed_length_string v#to_hex_string 14)
+                               ^ "  "
+                               ^ (opcode_string a v))
                       (List.rev !contents)))
               ^ "\n" ^ (string_repeat "=" 80) ^ "\n")
            end
