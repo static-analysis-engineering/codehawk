@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -160,9 +160,9 @@ module TR = CHTraceResult
    Unconditional branch
    --------------------
    11100<--imm11-->  B
-   
 
-   32-bit  
+
+   32-bit
 
    111010000101<rn><rt>1111<-imm8->   LDREX
    111010000100<rn><rt><rd><-imm8->   STREX
@@ -2778,12 +2778,12 @@ let parse_t32_30_0
   let (imm32, _) = thumb_expand_imm_c imm12 0 in
   let imm32 = TR.tget_ok (make_immediate false 4 (mkNumerical imm32)) in
   let const = arm_immediate_op imm32 in
-                            
+
   match (b 25 21) with
 
   (* < 30>i<  0>S<rn>0<i><rd><-imm8->   AND (immediate) - T1 *)
   | 0 ->
-     let rn = arm_register_op (get_arm_reg (b 19 16)) in     
+     let rn = arm_register_op (get_arm_reg (b 19 16)) in
      (* AND{S}<c> <Rd>, <Rn>, #<const> *)
      BitwiseAnd (setflags, cc, rd WR, rn RD, const, true)
 
@@ -2960,7 +2960,7 @@ let parse_t32_30_0
      let rn = mk_arm_reg_bit_sequence_op (get_arm_reg (b 19 16)) lsb widthm1 in
      (* UBFX<c> <Rd>, <Rn>, #<lsb>, #<width> *)
      UnsignedBitFieldExtract (cc, rd WR, rn RD)
-     
+
   | tag ->
      NotRecognized ("t32_30_0:" ^ (string_of_int tag), instr)
 
@@ -3027,7 +3027,7 @@ let parse_t32_branch
      let j2 = b 11 11 in
      let i1 = not_eor j1 s in
      let i2 = not_eor j2 s in
-     let imm32 = 
+     let imm32 =
        (s lsl 24)
        + (i1 lsl 23)
        + (i2 lsl 22)
@@ -3068,7 +3068,7 @@ let parse_t32_branch
       with
       | Invalid_argument s ->
          NotRecognized ("error in BLX (imm, T2): " ^ s, instr))
-     
+
   (* < 30>S<--imm10->11J1J<--imm11-->   BL (immediate) - T1 *)
   | (1, 1) ->
      let s = b 26 26 in
@@ -3101,7 +3101,7 @@ let parse_t32_branch
         ^ "_"
         ^ (string_of_int l),
         instr)
-  
+
 
 let parse_thumb32_30
       ?(in_it: bool = false)
@@ -3765,7 +3765,7 @@ let parse_thumb32_31_1
      let rm = mk_arm_rotated_register_op (get_arm_reg (b 3 0)) rotation in
      (* SXTH.W <Rd>, <Rm>{, <rotation>} *)
      SignedExtendHalfword (cc, rd WR, rm RD, true)
-     
+
   (* < 31>010000S<rn><15><rd>0000<rm>   LSL (register) - T2 *)
   | 0 | 1 when (b 15 12) = 15 && (b 7 4) = 0 ->
      let setflags = (b 20 20) = 1 in
@@ -4945,7 +4945,7 @@ let parse_thumb32_31_15
          ^ "_"
          ^ (string_of_int d), instr)
 
-  
+
 let parse_thumb32_opcode
       ?(in_it: bool = false)
       ?(cc: arm_opcode_cc_t = ACCAlways)
@@ -5017,11 +5017,11 @@ let parse_t16_00
   let imm5 ty =
     let (_, shift_n) = decode_imm_shift ty (b 10 6) in
     let i = TR.tget_ok (make_immediate false 4 (mkNumerical shift_n)) in
-    arm_immediate_op i in       
+    arm_immediate_op i in
   let imm8 () =
     let i = TR.tget_ok (make_immediate false 4 (mkNumerical (b 7 0))) in
     arm_immediate_op i in
-  
+
   match (b 13 11) with
 
   (* 0000000000<r><r>  MOV (register) - T1 *)
@@ -5041,7 +5041,7 @@ let parse_t16_00
      (* LSRS <Rd>, <Rm>, #<imm> (outside IT block) *)
      (* LSR<c> <Rd>, <Rm>, #<imm> (inside IT block) *)
      LogicalShiftRight (not in_it, cc, r 3 WR, r 2 RD, imm5 1, false)
-    
+
   (* 00010<im5><r><r>  ASR (immediate) - T1 *)
   | 2 ->
      (* ASRS <Rd>, <Rm>, #<imm> (outside IT block) *)
@@ -5071,7 +5071,7 @@ let parse_t16_00
      (* SUBS <Rd>, <Rn>, #<imm3> (outside IT block) *)
      (* SUB<c> <Rd>, <Rn>, #<imm3> (inside IT block) *)
      Subtract (not in_it, cc, r 3 WR, r 2 RD, imm3 (), false, false)
-    
+
   (* 00100<r><-imm8->  MOV (immediate) - T1 *)
   | 4 ->
      (* MOVS <Rd>, #<imm8> (outside IT block) *)
@@ -5122,7 +5122,7 @@ let parse_t16_01
      (* EORS <Rdn>, <Rm> (outside IT block) *)
      (* EOR<c>, <Rdn>, <Rm> (inside IT block) *)
      BitwiseExclusiveOr (not in_it, cc, r 1 WR, r 1 RD, r 0 RD, false)
-    
+
   (* 0100000010<r><r>  LSL (register) - T1 *)
   | 2 ->
      (* LSLS <Rdn>, <Rm> (outside IT block) *)
@@ -5204,14 +5204,14 @@ let parse_t16_01
      (* MVNS <Rd>, <Rm> (outside IT block) *)
      (* MVN<c> <Rd>, <Rm> (inside IT block) *)
      BitwiseNot (not in_it, cc, r 1 WR, r 1 RD, false)
-    
+
   | tag -> NotRecognized ("t16_01:" ^ (stri tag) , instr)
 
 
 let parse_t16_01_1
       ?(in_it: bool=false)
       ?(cc: arm_opcode_cc_t=ACCAlways)
-      (iaddr: doubleword_int)
+      (_iaddr: doubleword_int)
       (instr: doubleword_int) =
   let b = instr#get_segval in
   let r (i: int) (m: arm_operand_mode_t) =
@@ -5225,12 +5225,12 @@ let parse_t16_01_1
   let rr (i: int) (m: arm_operand_mode_t) =
     arm_register_op (get_arm_reg i) m in
   match (b 9 8) with
-    
+
   (* 010001001<rm>101  ADD (SP plus register) - T2 *)
   | 0 when (b 7 7) = 1 && (b 2 0) = 5 ->
      (* ADD<c> SP, <Rm> *)
      Add (false, cc, r 13 WR, r 13 RD, r 0 RD, false)
-                            
+
   (* 01000100D<13><r>  ADD (SP plus register) - T1 *)
   | 0 when (b 6 3) = 13 ->
      let d = rr ((8 * (b 7 7)) + (b 2 0)) in
@@ -5240,7 +5240,7 @@ let parse_t16_01_1
   (* 01000100D<rm><r>  ADD (register) - T2 *)
   | 0 ->
      let d = rr ((8 * (b 7 7)) + (b 2 0)) in
-     (* ADD<c> <Rdn>, <Rm> *)     
+     (* ADD<c> <Rdn>, <Rm> *)
      Add (not in_it, cc, d WR, d RD, r 0 RD, false)
 
   (* 01000101N<rm><r>  CMP (register) - T2 *)
@@ -5268,7 +5268,7 @@ let parse_t16_01_1
   | 3 when (b 7 7) = 1 ->
      (* BLX<c> <Rm> *)
      BranchLinkExchange (cc, r 0 RD)
-    
+
   | tag -> NotRecognized ("t16_01_1:" ^ (stri tag), instr)
 
 
@@ -5283,7 +5283,7 @@ let parse_t16_load_store_reg
   let rmreg = reg (b 8 6) in
   let rm = regop rmreg in
   let rnreg = reg (b 5 3) in
-  let rn = regop rnreg in    
+  let rn = regop rnreg in
   let rtreg = reg (b 2 0) in
   let rt = regop rtreg in
   let reg_srt = ARMImmSRT (SRType_LSL, 0) in
@@ -5291,7 +5291,7 @@ let parse_t16_load_store_reg
   let mem ?(size=4) m =
     mk_arm_offset_address_op
       ~size rnreg offset ~isadd:true ~isindex:true ~iswback:false m in
-               
+
   match (b 11 9) with
 
   (* 0101000<r><r><r>  STR (register) - T1 *)
@@ -5351,7 +5351,7 @@ let parse_t16_load_literal
   (* 01001<r><-imm8->    LDR (literal) - T1 *)
   (* LDR<c> <Rt>, <label> *)
   LoadRegister (cc, rt, pc, immop, addrop, false)
-  
+
 
 let parse_t16_load_store_imm
       ?(_in_it: bool=false)
@@ -5363,11 +5363,12 @@ let parse_t16_load_store_imm
   let reg (i: int): arm_reg_t = get_arm_reg i in
   let regop (r: arm_reg_t) = arm_register_op r in
   let rnreg = reg (b 5 3) in
-  let rn = regop rnreg in    
+  let rn = regop rnreg in
   let rtreg = reg (b 2 0) in
   let rt = regop rtreg in
-  let imm =
-    arm_immediate_op (TR.tget_ok (signed_immediate_from_int (2 * (b 10 6)))) in
+  let imm (mult: int) =
+    arm_immediate_op
+      (TR.tget_ok (signed_immediate_from_int (mult * (b 10 6)))) in
   let offset (m:int) = ARMImmOffset (m * (b 10 6)) in
   let mem (mult: int) m =
     mk_arm_offset_address_op
@@ -5376,33 +5377,39 @@ let parse_t16_load_store_imm
   match (b 12 11) with
   (* 10000<imm><r><r>  STRH (immediate) - T1 *)
   | 0 when hw ->
+     let immop = imm 2 in
      (* STRH<c> <Rt>, [<Rn>, #<imm>] *)
-     StoreRegisterHalfword (cc, rt RD, rn RD, imm, mem 2 WR, false)
-    
+     StoreRegisterHalfword (cc, rt RD, rn RD, immop, mem 2 WR, false)
+
   (* 01100<imm><r><r>  STR (immediate) - T1 *)
   | 0 ->
+     let immop = imm 4 in
      (* STR<c> <Rt>, [<Rn>, #<imm>] *)
-     StoreRegister (cc, rt RD, rn RD, imm, mem 4 WR, false)
+     StoreRegister (cc, rt RD, rn RD, immop, mem 4 WR, false)
 
   (* 10001<imm><r><r>  LDRH (immediate) - T1 *)
   | 1 when hw ->
+     let immop = imm 2 in
      (* LDRH<c> <Rt>, [<Rn>, #<imm>] - T1 *)
-     LoadRegisterHalfword (cc, rt WR, rn RD, imm, mem 2 RD, false)
-    
+     LoadRegisterHalfword (cc, rt WR, rn RD, immop, mem 2 RD, false)
+
   (* 01101<imm><r><r>  LDR (immediate) - T1 *)
   | 1 ->
+     let immop = imm 4 in
      (* LDR<c> <Rt>, [<Rn>, #<imm>] *)
-     LoadRegister (cc, rt WR, rn RD, imm, mem 4 RD, false)
+     LoadRegister (cc, rt WR, rn RD, immop, mem 4 RD, false)
 
   (* 01110<imm><r><r>  STRB (immediate) - T1 *)
   | 2 ->
+     let immop = imm 1 in
      (* STRB<c> <Rt>, [<Rn>, #<imm5>] *)
-     StoreRegisterByte (cc, rt RD, rn RD, imm, mem 1 WR, false)
+     StoreRegisterByte (cc, rt RD, rn RD, immop, mem 1 WR, false)
 
   (* 01111<imm><r><r>  LDRB (immediate) - T1*)
   | 3 ->
+     let immop = imm 1 in
      (* LDRB<c> <Rt>, [<Rn>, #<imm5>] *)
-     LoadRegisterByte (cc, rt WR, rn RD, imm, mem 1 RD, false)
+     LoadRegisterByte (cc, rt WR, rn RD, immop, mem 1 RD, false)
 
   | tag -> NotRecognized ("t16_load_store_imm:" ^ (stri tag), instr)
 
@@ -5532,7 +5539,7 @@ let parse_t16_misc7
       ?(cc: arm_opcode_cc_t=ACCAlways)
       (_iaddr: doubleword_int)
       (instr: doubleword_int) =
-  let b = instr#get_segval in  
+  let b = instr#get_segval in
   match (b 8 8) with
 
   (* 10111110<-imm8->  BKPT - T1 *)
@@ -5584,7 +5591,7 @@ let parse_t16_bit_extract
   | 2 ->
      (* UXTH<c> <Rd>, <Rm> *)
      UnsignedExtendHalfword (cc, rd WR, rm RD, false)
-    
+
   (* 1011001011<r><r>  UXTB - T1 *)
   | 3 ->
      (* UXTB<c> <Rd>, <Rm> *)
@@ -5592,7 +5599,7 @@ let parse_t16_bit_extract
 
   | tag ->
      NotRecognized ("t16_bit_extract:" ^ (string_of_int tag), instr)
-  
+
 
 let parse_t16_misc
       ?(in_it: bool=false)
@@ -5666,7 +5673,7 @@ let parse_t16_store_load_multiple
      let regmode = if wback then RW else RD in
      LoadMultipleIncrementAfter (wback, cc, rn regmode, rl WR, mmem RD)
 
-  | _ ->     
+  | _ ->
      NotRecognized ("t16_store_load_multiple", instr)
 
 
@@ -5683,7 +5690,7 @@ let parse_t16_conditional
        arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 7 0))) in
      (* UDF<c> #<imm8> *)
      PermanentlyUndefined (cc, imm8)
-     
+
   (* 11011111<-imm8->  SVC - T1 *)
   | 15 ->
      let imm8 =
@@ -5777,10 +5784,14 @@ let parse_thumb_opcode
       ACCAlways in
   match prefix with
   | 29 | 30 | 31 ->
-     let sndhalfword = ch#read_ui16 in
-     let instr32 = (instrbytes lsl 16) + sndhalfword in
-     let instr32 = TR.tget_ok (int_to_doubleword instr32) in
-     parse_thumb32_opcode ~in_it ~cc ch iaddr instr32
+     if system_info#is_trampoline_wrapper (iaddr#add_int 2) then
+       let _ = chlog#add "skip 4-byte thumb-2 instruction" (iaddr#toPretty) in
+       NoOperation ACCAlways
+     else
+       let sndhalfword = ch#read_ui16 in
+       let instr32 = (instrbytes lsl 16) + sndhalfword in
+       let instr32 = TR.tget_ok (int_to_doubleword instr32) in
+       parse_thumb32_opcode ~in_it ~cc ch iaddr instr32
   | _ ->
      let instr16 = TR.tget_ok (int_to_doubleword instrbytes) in
      parse_thumb16_opcode ~in_it ~cc ch iaddr instr16
