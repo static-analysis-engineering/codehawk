@@ -1787,7 +1787,7 @@ object
   method get_known_initial_values: variable_t list
   method get_init_disequalities: variable_t list (* initial values *)
   method get_init_equalities: variable_t list (* initial values *)
-  method rewrite_expr: xpr_t -> (variable_t -> variable_t -> int) ->  xpr_t
+  method rewrite_expr: xpr_t ->  xpr_t
 
   (* predicates *)
   method is_unreachable: bool
@@ -2682,7 +2682,7 @@ class type interface_dictionary_int =
     method index_struct_field_value: (int * c_struct_constant_t) -> int
     method get_struct_field_value: int -> (int * c_struct_constant_t)
 
-    (** {Save/restore}*)
+    (** {1 Save/restore}*)
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -2910,6 +2910,121 @@ type demangled_name_t = {
   }
 
 
+(** {1 Type inference}
+
+    The type inference performed here is a variation on Retypd as described in:
+
+    Noonan, M., Loginov, A., and Cok, D. (2016). Polymorphic type inference for
+    machine code. In Krintz, C. and Berger, E. D., editors, Proceedings of the
+    37th ACM SIGPLAN Conference on Programming Language Design and
+    Implementation, PLDI 2016, Santa Barbara, CA, USA, June 13-17, 2016,
+    pages 27–41. ACM.
+*)
+
+type type_base_variable_t =
+  | FunctionType of string (** function hex address *)
+  | DataAddressType of string  (** global hex address *)
+  | GlobalVariableType of string (** global hex address *)
+
+
+type type_cap_label_t =
+  | FRegParameter of register_t
+  | FStackParameter of int  (** offset in bytes *)
+  | FLocStackAddress of int
+  (** address on local stackframe that escapes, offset in bytes *)
+
+  | FReturn  (** for now limited to the default return register *)
+  | Load
+  | Store
+  | LeastSignificantByte
+  | LeastSignificantHalfword
+  | OffsetAccess of int * int (** size in bytes, offset in bytes *)
+  | OffsetAccessA of int * int
+  (** array of accesses, element size in bytes, initial offset in bytes *)
+
+
+type type_variable_t = {
+    tv_basevar: type_base_variable_t;
+    tv_capabilities: type_cap_label_t list
+  }
+
+type type_constant_t =
+  | TyAsciiDigit   (** integer in the range [0x30 - 0x39] ('0' - '9')*)
+  | TyAsciiCapsLetter  (** integer in the range [0x41 - 0x5a] ('A' - 'Z') *)
+  | TyAsciiSmallLetter (** integer in the range [0x61 - 0x7a] ('a' - 'z') *)
+  | TyAsciiControl  (** integer in the range [0x1 - 0x1f] *)
+  | TyAsciiPrintable  (** integer in the range [0x20 - 0x7e] *)
+  | TyAscii  (** integer in the range [0x1 - 0x7f] *)
+  | TyExtendedAscii  (** integer in the range [0x1 - 0xfe] *)
+  | TyZero    (** can be either a pointer or an integer *)
+  | TyTInt of ikind_t
+  | TyTFloat of fkind_t
+  | TyTUnknown  (** top in type lattice *)
+
+
+type type_term_t =
+  | TyVariable of type_variable_t
+  | TyConstant of type_constant_t
+
+
+type type_constraint_t =
+  | TyVar of type_term_t
+  | TySub of type_term_t * type_term_t
+  | TyZeroCheck of type_term_t
+
+
+class type type_constraint_dictionary_int =
+  object
+
+    method reset: unit
+
+    method index_type_basevar: type_base_variable_t -> int
+    method get_type_basevar: int -> type_base_variable_t
+
+    method index_type_caplabel: type_cap_label_t -> int
+    method get_type_caplabel: int -> type_cap_label_t
+
+    method index_type_variable: type_variable_t -> int
+    method get_type_variable: int -> type_variable_t
+
+    method index_type_constant: type_constant_t -> int
+    method get_type_constant: int -> type_constant_t
+
+    method index_type_term: type_term_t -> int
+    method get_type_term: int -> type_term_t
+
+    method index_type_constraint: type_constraint_t -> int
+    method get_type_constraint: int -> type_constraint_t
+
+    (** {1 Save/restore} *)
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit
+
+  end
+
+
+
+class type type_constraint_store_int =
+  object
+
+    method add_constraint: type_constraint_t -> unit
+
+    method add_var_constraint: type_variable_t -> unit
+
+    method add_zerocheck_constraint: type_variable_t -> unit
+
+    method add_subtype_constraint: type_variable_t -> type_variable_t -> unit
+
+    method add_vc_subtype_constraint: type_variable_t -> type_constant_t -> unit
+
+    method add_cv_subtype_constraint: type_constant_t -> type_variable_t -> unit
+
+    method toPretty: pretty_t
+
+  end
+
+
 (** {1 Variables} *)
 
 (** {2 Memory references} *)
@@ -2946,7 +3061,7 @@ object ('a)
   (* accessors *)
   method get_base: memory_base_t
   method get_name: string
-  method get_external_base: variable_t
+  method get_external_base: variable_t traceresult
 
   (* predicates *)
   method has_external_base: bool
@@ -2974,13 +3089,13 @@ object
   method mk_unknown_reference: string -> memory_reference_int
 
   (* accessors *)
-  method get_memory_reference: int -> memory_reference_int
+  method get_memory_reference: int -> memory_reference_int traceresult
 
   (* predicates *)
-  method is_unknown_reference: int -> bool
+  method is_unknown_reference: int -> bool traceresult
 
   (* save and restore *)
-  method read_xml: xml_element_int -> unit
+  method initialize: unit
 end
 
 
@@ -3014,8 +3129,8 @@ type assembly_variable_denotation_t =
 
    In general, all auxiliary variable types are constants from the perspective
    of the function. They represent values that are set by the environment, before
-   the function is entered ([InitialRegisterValue] or [InitialMemoryValue]) or during
-   the execution of the function.
+   the function is entered ([InitialRegisterValue] or [InitialMemoryValue]) or
+   during the execution of the function.
 
    External auxiliary variables are a vehicle to pass values across the call
    graph. An external auxiliary variable carries the address of the function
@@ -3084,25 +3199,95 @@ object ('a)
   (* identification *)
   method index: int
 
-  (* comparison *)
+  (** {1 Comparison} *)
+
   method compare: 'a -> int
 
-  (* accessors *)
+  (** {1 Converters} *)
+
+  method to_basevar_reference: memory_reference_int option
+
+  (** {1 Accessors} *)
+
   method get_name: string
   method get_denotation: assembly_variable_denotation_t
-  method get_register: register_t
-  method get_ssa_register_value_register: register_t
-  method get_pointed_to_function_name: string
-  method get_call_site: ctxt_iaddress_t
-  method get_se_argument_descriptor: string
-  method get_frozen_variable: (variable_t * ctxt_iaddress_t * ctxt_iaddress_t)
-  method get_initial_memory_value_variable: variable_t
-  method get_initial_register_value_register: register_t
-  method get_global_sideeffect_target_address: doubleword_int
-  method get_calltarget_value: call_target_t
-  method get_symbolic_value_expr: xpr_t
 
-  (* predicates *)
+  (** Returns the register associated with this register variable.
+
+      Returns [Error] if this variable is not a register variable. *)
+  method get_register: register_t traceresult
+
+  (** Returns the register associated with this ssa-register value.
+
+      Returns [Error] if this variable is not an ssa-register value
+      variable. *)
+  method get_ssa_register_value_register: register_t traceresult
+
+  (** Returns the memory reference associated with this memory variable.
+
+      Returns [Error] if this variable is not a memory variable. *)
+  method get_memory_reference: memory_reference_int traceresult
+
+  (** Returns the memory offset associated with this memory variable.
+
+      Returns [Error] if this variable is not a memory variable. *)
+  method get_memory_offset: memory_offset_t traceresult
+
+  (** Returns the name of the associated function pointer.
+
+      Returns [Error] if this variable is not a function-pointer value. *)
+  method get_pointed_to_function_name: string traceresult
+
+  (** Returns the call site of a function return value or side-effect value.
+
+      Returns [Error] if this variable is not a function return value or
+      side-effect value. *)
+  method get_call_site: ctxt_iaddress_t traceresult
+
+  (** Returns the name of the argument of a side-effect value.
+
+      Returns [Error] if this variable is not a side-effect value. *)
+  method get_se_argument_descriptor: string traceresult
+
+  (** Returns the frozen variable and the test and jump address associated
+      with this variable.
+
+      Returns [Error] if this variable is not a frozen test variable. *)
+  method get_frozen_variable:
+           (variable_t * ctxt_iaddress_t * ctxt_iaddress_t) traceresult
+
+  (** Returns the memory variable associated with this initial-value
+      memory variable.
+
+      Returns [Error] if this variable is not an initial-value memory
+      variable.*)
+  method get_initial_memory_value_variable: variable_t traceresult
+
+  (** Returns the register associated with this initial-value register
+      variable.
+
+      Returns [Error] if this variable is not an initial-value register
+      variable. *)
+  method get_initial_register_value_register: register_t traceresult
+
+  (** Returns the address of the global variable whose value is changed.
+
+      Returns [Error] if this variable is not a global side-effect value. *)
+  method get_global_sideeffect_target_address: doubleword_result
+
+  (** Returns the call target associated with this variable.
+
+      Returns [Error] if this variable is not a call-target value. *)
+  method get_calltarget_value: call_target_t traceresult
+
+  (** Returns the original (fixed-value) expression associated with this
+      symbolic-valiue variable.
+
+      Returns [Error] if this variable is not a symbolic-value variable. *)
+  method get_symbolic_value_expr: xpr_t traceresult
+
+  (** {1 Predicates} *)
+
   method is_auxiliary_variable: bool
   method is_register_variable: bool
   method is_mips_argument_variable: bool
@@ -3134,8 +3319,15 @@ object ('a)
   method is_initial_memory_value: bool
   method is_frozen_test_value: bool
   method is_ssa_register_value: bool
+
+  (** [is_ssa_register_value addr] returns true if this variable is an ssa
+      register value created at instruction address [addr]. *)
   method is_ssa_register_value_at: ctxt_iaddress_t -> bool
+
   method is_bridge_value: bool
+
+  (** [is_bridge_value_at addr] returns true if this variable is a bridge
+      value created at instruction address [addr]. *)
   method is_bridge_value_at: ctxt_iaddress_t -> bool
   method is_return_value: bool
   method is_sideeffect_value: bool
@@ -3147,7 +3339,13 @@ object ('a)
   method is_symbolic_value: bool
   method is_signed_symbolic_value: bool
 
-  method is_in_test_jump_range    : ctxt_iaddress_t -> bool
+  (** [is_in_test_jump_range addr] returns [true] if this variable is a frozen
+      test value and the address is in the range between the test address and
+      the jump address. It returns [false] if this variable is a frozen test
+      value, but the address is not in that range.
+
+      Returns [Error] if this variable is not a frozen test value. *)
+  method is_in_test_jump_range: ctxt_iaddress_t -> bool traceresult
 
   (* printing *)
   method toPretty: pretty_t
@@ -3346,164 +3544,369 @@ object
       stack-frame base; the initial value of other registers or of a
       function return value or memory value returns a basevar reference.
 
-      @raise BCH_failure if [var] is not a constant-value variable.
-   *)
-  method make_memref_from_basevar: variable_t -> memory_reference_int
+      Returns an unknown-basevar memory variable if [var] cannot be used
+      as a basevar.
 
-  (** {1 Variables from CHIF variables}*)
+      Returns [Error] if [var] cannot be found.
+   *)
+  method make_memref_from_basevar: variable_t -> memory_reference_int traceresult
+
+
+  (** {1 Deconstructing variables} *)
+
+  (** {2 Basic} *)
 
   (** [get_variable chifvar] returns the assembly variable corresponding
-      to [chifvar]*)
-  method get_variable: variable_t -> assembly_variable_int
+      to [chifvar].*)
+  method get_variable: variable_t -> assembly_variable_int traceresult
 
   (** [get_variable_by_index index] returns the assembly variable corresponding
       to the chif variable with index [index].*)
-  method get_variable_by_index: int -> assembly_variable_int
+  method get_variable_by_index: int -> assembly_variable_int traceresult
 
-  (** {1 CHIF variable constituents}*)
 
-  (** {2 Address}*)
+  (** {2 Memory variables}
 
-  (** [get_global_variable_address var] returns the global address of
-      variable [var].
+      A memory variable consists of a size, memory reference, and
+      memory offset.
 
-      @raise BCH_failure if [var] is not a global variable (that is, a
-      global base with constant offset).
+      An initial-value memory variable (aka memory variable value) is a not a
+      variable but a symbolic value that indicates the value of a
+      corresponding memory variable at function entry.
+
+      The base of a memory variable can be one of the following:
+      - local stack frame  ([is_stack_variable])
+      - realigned stack frame  ([is_realigned_stack_variable])
+      - allocated stack frame
+      - global   ([is_global_variable])
+      - basevar  ([is_basevar_memory_variable])
+      - unknown base  ([is_unknown_base_memory_variable])
    *)
-  method get_global_variable_address: variable_t -> doubleword_int
 
-  (** {2 Base variable}*)
+  (** Returns [true] only if [var] is a memory variable.
 
-  (** [get_memvar_basevar var] returns the base variable of memory variable
-      [var].
+      Note: returns [false] if [var] is an initial_memory variable (i.e.,
+      memory value variable). *)
+  method is_memory_variable: variable_t -> bool
 
-      @raise BCH_failure if [var] is not a memory variable with a basevar.*)
-  method get_memvar_basevar: variable_t -> variable_t
+  (** Returns [true] if [var] is an initial memory value variable (i.e.,
+      the initial value of a memory variable. *)
+  method is_initial_memory_value: variable_t -> bool
 
-  (** [get_memval_basevar var] returns the base variable of the variable
-      representing the memory variable value [var]
+  (** [get_memvar_reference var] returns the base memory reference of
+      memory-variable [var].
 
-      @raise BCH_failure if [var] is not the initial value of a memory
-      variable with a basevar.*)
-  method get_memval_basevar: variable_t -> variable_t
+      Returns [Error] if the variable is not found or the variable is
+      not a memory variable. *)
+  method get_memvar_reference: variable_t -> memory_reference_int traceresult
+
+  (** [get_memvar_offset var] returns the offset of memory variable [var].
+
+      Returns [Error] if the variable is not found or the variable is
+      not a memory variable. *)
+  method get_memvar_offset: variable_t -> memory_offset_t traceresult
+
+  (** [get_memval_reference var] returns the base memory reference of
+      memory-variable value [var].
+
+      Returns [Error] if the variable is not found or the variable is not
+      a memory variable. *)
+  method get_memval_reference: variable_t -> memory_reference_int traceresult
+
+  (** [get_memval_offset var] returns the offset of the memory variable
+      associated with the initial-value memory variable [var].
+
+      Returns [Error] if the variable is not found or [var] is not
+      an initial-value memory variable. *)
+  method get_memval_offset: variable_t -> memory_offset_t traceresult
 
   (** [get_initial_memory_value_variable var] returns the variable representing
       the memory variable of which [var] is the initial value at function
       entry.
 
-      @raise BCH_failure if [var] is not an initial-memory value variable.*)
-  method get_initial_memory_value_variable: variable_t -> variable_t
-
-  (** {2 Memory reference}*)
-
-  (** [get_memvar_reference var] returns the base memory reference of
-      memory-variable [var].
-
-      @raise BCH_failure is [var] is not a memory variable.*)
-  method get_memvar_reference: variable_t -> memory_reference_int
-
-  (** {2 Memory offset}*)
-
-  (** [get_memvar_offset var] returns the offset of memory variable [var].
-
-      @raise BCH_failure if [var] is not a memory variable.*)
-  method get_memvar_offset: variable_t -> memory_offset_t
-
-  (** [get_memval_offset var] returns the offset of initial-memory variable
-      [var].
-
-      @raise BCH_failure if [var] is not an initial_memory variable.*)
-  method get_memval_offset: variable_t -> memory_offset_t
+      Returns [Error] if the variable is not found or [var] is not an
+      initial-value memory variable. *)
+  method get_initial_memory_value_variable: variable_t -> variable_t traceresult
 
 
-  method get_stack_parameter_index:
-           variable_t -> int option (* assuming 4-byte parameters *)
-  method get_register: variable_t -> register_t
-  method get_initial_register_value_register: variable_t -> register_t
-  method get_ssa_register_value_register: variable_t -> register_t
-  method get_pointed_to_function_name: variable_t -> string
-  method get_calltarget_value: variable_t -> call_target_t
-  method get_call_site: variable_t -> ctxt_iaddress_t
-  method get_se_argument_descriptor: variable_t -> string
-  method get_frozen_variable:
-    variable_t -> (variable_t * ctxt_iaddress_t * ctxt_iaddress_t)
-  method get_global_sideeffect_target_address: variable_t -> doubleword_int
-  method get_symbolic_value_expr: variable_t -> xpr_t
+  (** {2 Memory offsets} *)
 
-  method get_assembly_variables: assembly_variable_int list
-  method get_external_variable_comparator: variable_comparator_t
+  (** Returns [true] if [memoff] is a known numerical value, or it is an index
+      offset with constant-value index variable, idem for sub-offsets.*)
+  method is_fixed_value_offset: memory_offset_t -> bool
 
-  (** {1 Predicates on CHIF variables}*)
+  (** Returns [true] if [var] is a memory variable and its offset is either
+      a constant numerical value or an index offset with fixed value variables. *)
+  method has_fixed_value_offset: variable_t -> bool
 
-  (** {2 Offsets}*)
-
-  (** Returns true if [var] is a memory variable with a constant offset
-      (that is, if it is numerical value or if it is an index offset with
-      a constant-value variable. Idem for sub-offsets).*)
+  (** Returns [true if [var] is a memory variable and its offset is a constant
+      numerical value. *)
   method has_constant_offset: variable_t -> bool
 
-  (** Returns true if [var] is a memory variable with an offset given by a
-      (known) numerical value.*)
-  method has_numerical_offset: variable_t -> bool
+  (** Returns [true] if [var] is a memory variable and its offset is unknown. *)
+  method is_unknown_offset_memory_variable: variable_t -> bool
 
-  (** {2 Global variables}*)
 
-  (** Returns true if [var] is a memory variable with a global base.*)
+  (** {2 Register variables} *)
+
+  (** Returns [true] if [var] is a register variable (of any architecture). *)
+  method is_register_variable: variable_t -> bool
+
+  (** Returns the register associated with [var].
+
+      Returns [Error] if [var] is not a register variable or [var] cannot be
+      found. *)
+  method get_register: variable_t -> register_t traceresult
+
+  (** Returns [true] if [var] is the initial-value variable of a register
+      (of any architecture). *)
+  method is_initial_register_value: variable_t -> bool
+
+  (** Returns the register that is associated with the initial-value
+      variable [var] of the register.
+
+      Returns [Error] if [var] is not an initial register value or if [var]
+      cannot be found. *)
+  method get_initial_register_value_register: variable_t -> register_t traceresult
+
+  (** Returns [true] if [var] is an ssa-register value. *)
+  method is_ssa_register_value: variable_t -> bool
+
+  (** [is_ssa_register_value_at iaddr var] is [true] if [var] is an
+      ssa-register value created at address [iaddr]. *)
+  method is_ssa_register_value_at: ctxt_iaddress_t -> variable_t -> bool
+
+  (** Returns the register that is associated with the ssa-value
+      variable [var] of that register.
+
+      Returns [Error] if [var] is not an ssa-register value or [var]
+      cannot be found. *)
+  method get_ssa_register_value_register: variable_t -> register_t traceresult
+
+  (** Returns [true] if [var] is a register variable of one of the MIPS
+      argument registers (a0, a1, a2, or a3). *)
+  method is_mips_argument_variable: variable_t -> bool
+
+  (** Returns [true] if [var] is the initial-value variable of a MIPS
+      argument register variable. *)
+  method is_initial_mips_argument_value: variable_t -> bool
+
+  (** Returns [true] if [var] is a register variable of one of the ARM
+      argument registers (R0, R1, R2, R3) or double argument registers
+      ((R0, R1), (R2, R3)). *)
+  method is_arm_argument_variable: variable_t -> bool
+
+  (** Returns [true] if [var] is the initial-value variable of an ARM
+      argument register variable. *)
+  method is_initial_arm_argument_value: variable_t -> bool
+
+  (** Returns [true] if [var] is the initial-value variable of the
+      stack pointer (of any architecture) *)
+  method is_initial_stackpointer_value: variable_t -> bool
+
+
+  (** {2 Global variables} *)
+
+  (** Returns [true] if [var] is a memory variable with a global base.*)
   method is_global_variable: variable_t -> bool
 
-  (** Returns true if [var] is a global variable with a numerical offset.*)
+  (** Returns true if [var] is a global variable with a constant offset
+      (i.e., a numerical value). *)
   method has_global_variable_address: variable_t -> bool
 
+  (** [get_global_variable_address var] returns the global address of
+      variable [var].
 
-  method is_stack_parameter_variable: variable_t -> bool  (* memory variable on the stack above the RA *)
+      Returns [Error] if [var] is not a global variable with a constant
+      address. *)
+  method get_global_variable_address: variable_t -> doubleword_result
 
+
+  (** {2 Stack variables} *)
+
+  (** Returns [true] if [var] is a memory variable located on the stack
+      (either on the local stack frame or on the argument part of the stack). *)
+  method is_stack_variable: variable_t -> bool
+
+  (** Returns [true] if [var] is a memory variable located on a realigned
+      portion of the stack (x86 only). *)
   method is_realigned_stack_variable: variable_t -> bool
-  method is_function_initial_value: variable_t -> bool
-  method is_local_variable: variable_t -> bool  (* stack or register variable *)
 
-  method is_register_variable: variable_t -> bool
-  method is_mips_argument_variable: variable_t -> bool
-  method is_arm_argument_variable: variable_t -> bool
-  method is_stack_variable: variable_t -> bool  (* memory variable anywhere on the stack  *)
-  method is_ssa_register_value: variable_t -> bool
-  method is_ssa_register_value_at: ctxt_iaddress_t -> variable_t -> bool
-  method is_initial_register_value: variable_t -> bool
-  method is_initial_mips_argument_value: variable_t -> bool
-  method is_initial_arm_argument_value: variable_t -> bool
-  method is_initial_stackpointer_value: variable_t -> bool
-  method is_initial_memory_value: variable_t -> bool
-  method is_frozen_test_value: variable_t -> bool
-  method is_bridge_value: variable_t -> bool
-  method is_bridge_value_at: ctxt_iaddress_t -> variable_t -> bool
-  method is_in_test_jump_range: ctxt_iaddress_t -> variable_t -> bool
-  method is_return_value: variable_t -> bool
-  method is_sideeffect_value: variable_t -> bool
-  method is_special_variable: variable_t -> bool
-  method is_runtime_constant: variable_t -> bool
-  method is_function_pointer: variable_t -> bool
-  method is_calltarget_value: variable_t -> bool
-  method is_symbolic_value: variable_t -> bool
-  method is_signed_symbolic_value: variable_t -> bool
+  (** Returns [true] if [var] is a memory variable located on the stack
+      with non-negative offset from the initial value of the stack pointer.
 
-  method is_memory_variable: variable_t -> bool
+      Note: The first stack parameter for ARM is at 0.*)
+  method is_stack_parameter_variable: variable_t -> bool
+
+  (** Returns the index of the stack parameter variable [var] assuming
+      4-byte parameters starting at offset 4 (x86 only).
+
+      Returns None if the variable is not a stack parameter variable or if
+      the variable cannot be found. *)
+  method get_stack_parameter_index: variable_t -> (int option)
+
+  (** Returns [true] if [var] is either a register variable or a stack
+      variable (at any offset). *)
+  method is_local_variable: variable_t -> bool
+
+
+  (** {2 External base variable}
+
+      External base variables are memory variables that have a base pointer
+      that is a symbolic value, which can be any function-initial value,
+      that is, the value of a variable upon function entry (e.g., the
+      value of an argument) or the the value of a function return value
+      or side-effect value.
+   *)
+
+  (** Returns [true] if [var] is a memory variable with a base provided
+      by a fixed-value pointer. *)
   method is_basevar_memory_variable: variable_t -> bool
+
+  (** [get_memvar_basevar var] returns the base variable of memory variable
+      [var].
+
+      Returns [Error] if [var] is not a memory variable with a basevar.*)
+  method get_memvar_basevar: variable_t -> variable_t traceresult
+
+  (** Returns [true] if [var] is the initial value of a memory variable
+      with a base provided by a fixed-value pointer. *)
   method is_basevar_memory_value: variable_t -> bool
+
+  (** [get_memval_basevar var] returns the base variable of the variable
+      representing the memory variable value [var]
+
+      Returns [Error] if [var] is not the initial value of a memory
+      variable with a basevar.*)
+  method get_memval_basevar: variable_t -> variable_t traceresult
+
+  (** Returns [true] if [var] is a memory variable with an unknown base
+      pointer. *)
   method is_unknown_base_memory_variable: variable_t -> bool
-  method is_unknown_offset_memory_variable: variable_t -> bool
+
+  (** Returns [true] if [var] is a memory variable with an unknown base
+      pointer or with an unknown offset. *)
   method is_unknown_memory_variable: variable_t -> bool
 
+
+  (** {2 Other symbolic values} *)
+
+  (** {3 Function-call related} *)
+
+  (** Returns [true] if [var] is the return value of a function call. *)
+  method is_return_value: variable_t -> bool
+
+  (** Returns [true] if [var] is a side-effect value of a function call
+      (that is, the variable whose address was passed as an argument to a
+      call). *)
+  method is_sideeffect_value: variable_t -> bool
+
+  (** Returns the address of the call-site of a function-return value or
+      a function side-effect value.
+
+      Returns [Error] if [var] is not a function-return value or
+      a function side-effect value. *)
+  method get_call_site: variable_t -> ctxt_iaddress_t traceresult
+
+  (** Returns the name of the argument associated with the side-effect
+      variable [var].
+
+      Returns [Error] if [var] is not a function side-effect value.*)
+  method get_se_argument_descriptor: variable_t -> string traceresult
+
+  (** Returns [true] if [var] is associated with a call target. *)
+  method is_calltarget_value: variable_t -> bool
+
+  (** Returns the call target associated with call-target variable [var].
+
+      Returns [Error] if [var] is not a call-target variable or if [var]
+      cannot be found. *)
+  method get_calltarget_value: variable_t -> call_target_t traceresult
+
+  (** {3 Function pointer} *)
+
+  (** Returns [true] if [var] represents a function pointer. *)
+  method is_function_pointer: variable_t -> bool
+
+  (** Returns the name of the function pointer associated with [var].
+
+      Returns [Error] if [var] is not a function-pointer variable or if
+      [var] cannot be found. *)
+  method get_pointed_to_function_name: variable_t -> string traceresult
+
+  (** {3 Frozen variables} *)
+
+  (** Returns [true] if [var] is the frozen variable of a variable that
+      appears in a test expression. *)
+  method is_frozen_test_value: variable_t -> bool
+
+  (** Returns the variable, test-address, and jump address associated with
+      the variable frozen for a test expression.
+
+      Returns [Error] if [var] is not a frozen variable, or if [var] cannot
+      be found. *)
+  method get_frozen_variable:
+           variable_t
+           -> (variable_t * ctxt_iaddress_t * ctxt_iaddress_t) traceresult
+
+  (** [is_in_test_jump_range addr var] returns [true] if [var] is a frozen
+      test value and [addr] is in between the instruction address of the
+      test and the instruction address of the user of the test (jump
+      instruction or other predicated instruction.
+
+      Returns [Error] if [var] is not a frozen test value. *)
+  method is_in_test_jump_range:
+           ctxt_iaddress_t -> variable_t -> bool traceresult
+
+  (**  {3 Bridge variables} *)
+
+  (** Returns [true] if [var] is a frozen argument value to a call. *)
+  method is_bridge_value: variable_t -> bool
+
+  (** [is_bridge_value_at addr var] returns [true] if [var] is a frozen
+      argument value to a call at instruction address [addr]. *)
+  method is_bridge_value_at: ctxt_iaddress_t -> variable_t -> bool
+
+  (** {3 Global side effect} *)
+
+  (** Returns [true] if [var] is a global variable whose value is set as
+      a side-effect. *)
   method is_global_sideeffect: variable_t -> bool
 
-  method has_global_address: variable_t -> bool
+  (** Returns the address of the global variable whose value is set as
+      a side-effect.
 
-  (** {1 Predicates on offsets}*)
+      Returns [Error] if [var] does not represent a global address or if
+      [var] cannot be found. *)
+  method get_global_sideeffect_target_address: variable_t -> doubleword_result
 
-  (** Returns true if [offset] is a known numerical value.*)
-  method is_numerical_offset: memory_offset_t -> bool
+  (** {3 Symbolic value} *)
 
-  (** Returns true if [offset] is a known numerical value, or it is an index
-      offset with constant-value index variable, idem for sub-offsets.*)
-  method is_constant_offset: memory_offset_t -> bool
+  (** Returns [true] if [var] encapsulates a fixed-value expression. *)
+  method is_symbolic_value: variable_t -> bool
+
+  (** Returns [true] if [var] encapsulates a signed fixed-value expression. *)
+  method is_signed_symbolic_value: variable_t -> bool
+
+  (** Returns the symbolic (fixed-value) expression represented by [var].
+
+      Returns [Error] if [var] is not a symbolic expression variable or if
+      [var] cannot be found. *)
+  method get_symbolic_value_expr: variable_t -> xpr_t traceresult
+
+  (** {3 Other} *)
+
+  method is_function_initial_value: variable_t -> bool
+
+  method is_special_variable: variable_t -> bool
+
+  method is_runtime_constant: variable_t -> bool
+
+  (** {1 Miscellaneous} *)
+
+  method get_assembly_variables: assembly_variable_int list
+
+  method get_external_variable_comparator: variable_comparator_t
 
 end
 
@@ -3552,13 +3955,39 @@ class type function_environment_int =
 
     method register_virtual_call: variable_t -> function_interface_t -> unit
 
-    (* memory reference / assembly variable constructors *)
+    (** {1 Creating refs/vars} *)
+
+    (** {2 Memory references} *)
+
     method mk_unknown_memory_reference: string -> memory_reference_int
     method mk_global_memory_reference: memory_reference_int
     method mk_local_stack_reference: memory_reference_int
     method mk_realigned_stack_reference: memory_reference_int
-    method mk_base_variable_reference: variable_t -> memory_reference_int
-    method mk_base_sym_reference: symbol_t -> memory_reference_int
+
+    (** [mk_base_variable_reference var] returns a memory reference with
+        base determined by [var].
+
+        In particular, the initial value of a stack-pointer returns a
+        stack-frame base; the initial value of other registers or of a
+        function return value or memory value returns a basevar reference.
+
+        Returns an unknown-basevar memory variable if [var] cannot be used
+        as a basevar.
+
+        Returns [Error] if [var] cannot be found. *)
+    method mk_base_variable_reference:
+             variable_t -> memory_reference_int traceresult
+
+    (** [mk_base_sym_reference sym] returns the memory reference for the
+        variable determined by the index of [sym]
+        (see [mk_base_variable_reference].
+
+        Returns [Error] if the variable corresponding to [var] cannot be
+        found. *)
+    method mk_base_sym_reference:
+             symbol_t -> memory_reference_int traceresult
+
+    (** {2 Register variables} *)
 
     method mk_register_variable: register_t -> variable_t
     method mk_cpu_register_variable: cpureg_t -> variable_t
@@ -3635,11 +4064,298 @@ class type function_environment_int =
     method mk_symbolic_value: xpr_t -> variable_t
     method mk_signed_symbolic_value: xpr_t -> int -> int -> variable_t
 
-    (* accessors *)
     method get_variable_comparator: variable_t -> variable_t -> int
 
+    (** {1 Deconstructing variables} *)
+
+    (** {2 Basic} *)
+
+    (** [get_variable index] returns the chif variable with index [index].
+
+        Returns [Error] if [index] cannot be found. *)
+    method get_variable: int -> variable_t traceresult
+
+    (** {2 Memory variables} *)
+
+    (** Returns [true] only if [var] is a memory variable.
+
+        Note: returns [false] if [var] is an initial_memory variable (i.e.,
+        memory value variable). *)
+    method is_memory_variable: variable_t -> bool
+
+    (** Returns [true] if [var] is an initial memory value variable (i.e.,
+        the initial value of a memory variable. *)
+    method is_initial_memory_value: variable_t -> bool
+
+    (** [get_memory_reference var] returns the memory reference of a memory
+        variable or initial-value memory variable [var].
+
+        Returns [Error] if [var] is not a memory variable or an initial-value
+        memory variable. *)
+    method get_memory_reference: variable_t -> memory_reference_int traceresult
+
+    (** [get_memvar_offset var] returns the offset of memory variable [var].
+
+        Returns [Error] if the variable is not found or the variable is
+        not a memory variable. *)
+    method get_memvar_offset: variable_t -> memory_offset_t traceresult
+
+    (** [get_memval_offset var] returns the offset of the memory variable
+        associated with the initial-value memory variable [var].
+
+        Returns [Error] if the variable is not found or [var] is not
+        an initial-value memory variable. *)
+    method get_memval_offset: variable_t -> memory_offset_t traceresult
+
+    (** [is_unknown_reference index] returns true if [index] is the index
+        of a memory reference with base Unknown.
+
+        Returns [Error] if [index] is not a valid index of a memory reference. *)
+    method is_unknown_reference: int -> bool traceresult
+
+
+    (** {2 Memory offsets} *)
+
+    (** Returns [true if [var] is a memory variable and its offset is a constant
+        numerical value. *)
+    method has_constant_offset: variable_t -> bool
+
+    (** {2 Register variables} *)
+
+    (** Returns [true] if [var] is a register variable (of any architecture). *)
+    method is_register_variable: variable_t -> bool
+
+    (** Returns the register associated with [var].
+
+        Returns [Error] if [var] is not a register variable or [var] cannot be
+        found. *)
+    method get_register: variable_t -> register_t traceresult
+
+    (** Returns [true] if [var] is the initial-value variable of a register
+        (of any architecture). *)
+    method is_initial_register_value: variable_t -> bool
+
+    (** Returns the register that is associated with the initial-value
+        variable [var] of the register.
+
+        Returns [Error] if [var] is not an initial register value or if [var]
+        cannot be found. *)
+    method get_initial_register_value_register:
+             variable_t -> register_t traceresult
+
+    (** Returns [true] if [var] is an ssa-register value. *)
+    method is_ssa_register_value: variable_t -> bool
+
+    (** [is_ssa_register_value_at iaddr var] is [true] if [var] is an
+        ssa-register value created at address [iaddr]. *)
+    method is_ssa_register_value_at: ctxt_iaddress_t -> variable_t -> bool
+
+    (** [get_ssa_register_value_register_variable var] returns the regular
+        register variable corresponding to the register of the ssa-register
+        value.
+
+        Returns [Error] if [var] is not an ssa-register value.*)
+    method get_ssa_register_value_register_variable:
+             variable_t -> variable_t traceresult
+
+    (** Returns [true] if [var] is the initial-value variable of a MIPS
+        argument register variable. *)
+    method is_initial_mips_argument_value: variable_t -> bool
+
+    (** Returns [true] if [var] is the initial-value variable of an ARM
+        argument register variable. *)
+    method is_initial_arm_argument_value: variable_t -> bool
+
+    (** Returns [true] if [var] is the initial-value variable of the
+        stack pointer (of any architecture) *)
+    method is_initial_stackpointer_value : variable_t -> bool
+
+
+    (** {2 Global variables} *)
+
+    (** [is_global_variable var] returns [true] if [var] is a global variable
+        or if [var] is the initial value of a global variable. *)
+    method is_global_variable: variable_t -> bool
+
+    (** Returns true if [var] is a global variable with a constant offset
+        (i.e., a numerical value). *)
+    method has_global_variable_address: variable_t -> bool
+
+    (** [get_global_variable_address var] returns the global address of
+        global variable [var] or of the global variable associated with
+        the initial-value [var]
+
+        Returns [Error] if [var] is not a global variable or the initial
+        value of a global variable. *)
+    method get_global_variable_address: variable_t -> doubleword_result
+
+    (** {2 Stack variables} *)
+
+    (** Returns [true] if [var] is a memory variable located on the stack
+        (either on the local stack frame or on the argument part of the stack). *)
+    method is_stack_variable: variable_t -> bool
+
+    (** Returns [true] if [var] is a memory variable located on the stack
+        with non-negative offset from the initial value of the stack pointer.
+
+        Note: The first stack parameter for ARM is at 0.*)
+    method is_stack_parameter_variable: variable_t -> bool
+
+    (** Returns [true] if [var] is the initial-value variable of a
+        stack-parameter variable. *)
+    method is_stack_parameter_value: variable_t -> bool
+
+    (** Returns the index of the stack parameter variable [var] or of the
+        initial value [var] of the stack parameter variable, assuming 4-byte
+        parameters starting at offset 4.
+
+        Returns None if the variable is not a stack parameter variable or
+        initial value of a stack parameter variable, or if the variable
+        cannot be found.*)
+    method get_stack_parameter_index: variable_t -> int option
+
+    (** Returns [true] if [var] is either a register variable or a stack
+        variable (at any offset). *)
+    method is_local_variable: variable_t -> bool
+
+
+    (** {2 External base variables} *)
+
+    (** Returns [true] if [var] is a memory variable with a base provided
+        by a fixed-value pointer. *)
+    method is_basevar_memory_variable: variable_t -> bool
+
+    (** [get_memvar_basevar var] returns the base variable of memory variable
+        [var].
+
+        Returns [Error] if [var] is not a memory variable with a basevar.*)
+    method get_memvar_basevar: variable_t -> variable_t traceresult
+
+    (** Returns [true] if [var] is the initial value of a memory variable
+        with a base provided by a fixed-value pointer. *)
+
+    method is_basevar_memory_value: variable_t -> bool
+    (** [get_memval_basevar var] returns the base variable of the variable
+        representing the memory variable value [var]
+
+        Returns [Error] if [var] is not the initial value of a memory
+        variable with a basevar.*)
+    method get_memval_basevar: variable_t -> variable_t traceresult
+
+    method get_optreturn_value_capabilities:
+             variable_t -> (ctxt_iaddress_t * type_cap_label_t list)  option
+
+
+    (** {2 Other symbolic values} *)
+
+    (** {3 Function-call related) *)
+
+    (** Returns [true] if [var] is the return value of a function call. *)
+    method is_return_value: variable_t -> bool
+
+    (** Returns [true] if [var] is a side-effect value of a function call
+        (that is, the variable whose address was passed as an argument to a
+        call). *)
+    method is_sideeffect_value: variable_t -> bool
+
+    (** Returns the address of the call-site of a function-return value or
+        a function side-effect value.
+
+        Returns [Error] if [var] is not a function-return value or
+        a function side-effect value. *)
+    method get_call_site: variable_t -> ctxt_iaddress_t traceresult
+
+    (** Returns the name of the argument associated with the side-effect
+        variable [var].
+
+        Returns [Error] if [var] is not a function side-effect value.*)
+    method get_se_argument_descriptor: variable_t -> string traceresult
+
+    (** Returns [true] if [var] is associated with a call target. *)
+    method is_calltarget_value: variable_t -> bool
+
+    (** Returns the call target associated with call-target variable [var].
+
+        Returns [Error] if [var] is not a call-target variable. *)
+    method get_calltarget_value: variable_t -> call_target_t traceresult
+
+    (** {3 Function pointer} *)
+
+    (** Returns [true] if [var] represents a function pointer. *)
+    method is_function_pointer: variable_t -> bool
+
+    (** Returns the name of the function pointer associated with [var].
+
+        Returns [Error] if [var] is not a function-pointer variable. *)
+    method get_pointed_to_function_name: variable_t -> string traceresult
+
+    (** {3 Frozen variables} *)
+
+    (** Returns [true] if [var] is the frozen variable of a variable that
+        appears in a test expression. *)
+    method is_frozen_test_value: variable_t -> bool
+
+    (** Returns the variable, test-address, and jump address associated with
+        the variable frozen for a test expression.
+
+        Returns [Error] if [var] is not a frozen variable, or if [var] cannot
+        be found. *)
     method get_frozen_variable:
-             variable_t -> (variable_t * ctxt_iaddress_t * ctxt_iaddress_t)
+             variable_t
+             -> (variable_t * ctxt_iaddress_t * ctxt_iaddress_t) traceresult
+
+    (** [is_in_test_jump_range addr var] returns [true] if [var] is a frozen
+        test value and [addr] is in between the instruction address of the
+        test and the instruction address of the user of the test (jump
+        instruction or other predicated instruction.
+
+        Returns [Error] if [var] is not a frozen test value. *)
+    method is_in_test_jump_range:
+             variable_t -> ctxt_iaddress_t -> bool traceresult
+
+    (** {3 Bridge variables} *)
+
+    (** Returns [true] if [var] is a frozen argument value to a call. *)
+    method is_bridge_value: variable_t -> bool
+
+    (** [is_bridge_value_at addr var] returns [true] if [var] is a frozen
+        argument value to a call at instruction address [addr]. *)
+    method is_bridge_value_at: ctxt_iaddress_t -> variable_t -> bool
+
+    (** {3 Global side effect} *)
+
+    (** Returns [true] if [var] is a global variable whose value is set as
+        a side-effect. *)
+    method is_global_sideeffect: variable_t -> bool
+
+    (** Returns the address of the global variable whose value is set as
+        a side-effect.
+
+        Returns [Error] if [var] does not represent a global address. *)
+    method get_global_sideeffect_target_address: variable_t -> doubleword_result
+
+    (** {3 Symbolic expressions} *)
+
+    (** Returns [true] if [var] encapsulates a fixed-value expression. *)
+    method is_symbolic_value: variable_t -> bool
+
+    (** Returns [true] if [var] encapsulates a signed fixed-value expression. *)
+    method is_signed_symbolic_value: variable_t -> bool
+
+    (** Returns the symbolic (fixed-value) expression represented by [var].
+
+        Returns [Error] if [var] is not a symbolic expression variable.*)
+    method get_symbolic_value_expr: variable_t -> xpr_t traceresult
+
+    (** {3 Other} *)
+
+    method is_function_initial_value: variable_t -> bool
+
+    method is_initial_value: variable_t -> bool
+
+    method get_init_value_variable: variable_t -> variable_t traceresult
+
+    (** {1 Variable collections} *)
 
     method get_local_stack_variables: variable_t list
     method get_realigned_stack_variables: variable_t list
@@ -3649,35 +4365,21 @@ class type function_environment_int =
     method get_bridge_values_at: ctxt_iaddress_t -> variable_t list
     method get_ssa_values_at: ctxt_iaddress_t -> variable_t list
 
-    method get_variable: int -> variable_t
     method get_variables: variable_t list
     method get_sym_variables: variable_t list
     method get_domain_sym_variables: string -> variable_t list
-    method get_symbolic_num_variable: variable_t -> variable_t
+    method get_symbolic_num_variable: variable_t -> variable_t traceresult
     method get_local_variables: variable_t list
     method get_external_memory_variables: variable_t list
     method get_virtual_target : variable_t -> function_interface_t
-    method get_global_sideeffect_target_address: variable_t -> doubleword_int
 
-    method get_memory_reference: variable_t -> memory_reference_int
-    method get_memvar_basevar: variable_t -> variable_t
-    method get_memval_basevar: variable_t -> variable_t
-    method get_memvar_offset: variable_t -> memory_offset_t
-    method get_memval_offset: variable_t -> memory_offset_t
-    method get_register: variable_t -> register_t
+    method get_var_count: int
+    method get_globalvar_count: int
+    method get_returnvar_count: int
+    method get_sideeffvar_count: int
+
     method get_constant_offsets: variable_t -> numerical_t list option
     method get_total_constant_offset: variable_t -> numerical_t option
-
-    method get_stack_parameter_index: variable_t -> int option
-    method get_ssa_register_value_register_variable: variable_t -> variable_t
-    method get_init_value_variable: variable_t -> variable_t (* memory or register *)
-    method get_initial_register_value_register: variable_t -> register_t
-    method get_pointed_to_function_name: variable_t -> string
-    method get_call_site: variable_t -> ctxt_iaddress_t
-    method get_se_argument_descriptor: variable_t -> string
-    method get_global_variable_address: variable_t -> doubleword_int
-    method get_calltarget_value: variable_t -> call_target_t
-    method get_symbolic_value_expr: variable_t -> xpr_t
 
     method get_argbasevar_with_offsets:
              variable_t -> (variable_t * numerical_t list) option
@@ -3687,18 +4389,10 @@ class type function_environment_int =
     method get_initialized_call_target_value: variable_t -> call_target_t
     method get_initialized_string_value: variable_t -> int -> string
 
-    method get_regarg_deref_val_register: variable_t -> register_t
-    method get_regarg_deref_var_register: variable_t -> register_t
-
     method variables_in_expr: xpr_t -> variable_t list
 
-    method get_var_count: int
-    method get_globalvar_count: int
-    method get_argvar_count: int
-    method get_returnvar_count: int
-    method get_sideeffvar_count: int
+    (** {1 Scope and transactions} *)
 
-    (* scope and transactions *)
     method get_scope: scope_int
     method start_transaction: unit
     method end_transaction: cmd_t list
@@ -3708,69 +4402,21 @@ class type function_environment_int =
     method mk_symbolic_variable: ?domains:string list -> variable_t -> variable_t
 
     (* variable manager predicates *)
-    method has_global_variable_address: variable_t -> bool
+
     method is_unknown_base_memory_variable: variable_t -> bool
     method is_unknown_offset_memory_variable: variable_t -> bool
     method is_unknown_memory_variable: variable_t -> bool
-    method is_global_variable: variable_t -> bool
-    method is_stack_variable: variable_t -> bool
-    method is_local_variable: variable_t -> bool
-    method is_memory_variable: variable_t -> bool
-    method is_basevar_memory_variable: variable_t -> bool
-    method is_basevar_memory_value: variable_t -> bool
-    method has_constant_offset: variable_t -> bool
-    method is_function_initial_value: variable_t -> bool
-    method is_bridge_value: variable_t -> bool
-    method is_bridge_value_at: ctxt_iaddress_t -> variable_t -> bool
-    method is_function_pointer: variable_t -> bool
-    method is_global_sideeffect: variable_t -> bool
-    method is_return_value: variable_t -> bool
-    method is_sideeffect_value: variable_t -> bool
-    method is_frozen_test_value: variable_t -> bool
-    method is_calltarget_value: variable_t -> bool
-    method is_symbolic_value: variable_t -> bool
-    method is_signed_symbolic_value: variable_t -> bool
+
     method is_volatile_variable: variable_t -> bool
 
+    (** {1 Envionment data predicates} *)
 
-    method is_stack_variable: variable_t -> bool  (* memory variable on the stack *)
-    method is_stack_parameter_variable: variable_t -> bool (* stack-variable with positive offset *)
-
-    method is_register_variable: variable_t -> bool
-    method is_ssa_register_value: variable_t -> bool
-    method is_ssa_register_value_at: ctxt_iaddress_t -> variable_t -> bool
-    method is_initial_register_value: variable_t -> bool
-    method is_initial_mips_argument_value: variable_t -> bool
-    method is_initial_arm_argument_value: variable_t -> bool
-    method is_initial_stackpointer_value : variable_t -> bool
-
-    method is_initial_memory_value: variable_t -> bool
-    method is_in_test_jump_range: variable_t -> ctxt_iaddress_t -> bool
-
-    method is_unknown_reference: int -> bool
-
-    (* derived variable manager predicates *)
-    method is_stack_parameter_value: variable_t -> bool  (* initial value of stack-parameter *)
-
-    method is_initial_value: variable_t -> bool   (* memory or register initial value *)
-
-    method is_stackarg_deref_var: variable_t -> bool
-    method is_stackarg_deref_val: variable_t -> bool
-    method is_regarg_deref_var: variable_t -> bool
-    method is_regarg_deref_val: variable_t -> bool
-    method is_arg_deref_var: variable_t -> bool
-    method is_arg_deref_val: variable_t -> bool
-
-    method is_return_value_derivative: variable_t -> bool
-
-    method is_sideeffect_value_derivative: variable_t -> bool
-
-    (* envionment data predicates *)
     method is_virtual_call : variable_t -> bool
     method has_initialized_call_target_value: variable_t -> bool
     method has_initialized_string_value     : variable_t -> int -> bool
 
-    (* printing *)
+    (** {1 Printing} *)
+
     method variable_name_to_string: variable_t -> string
     method variable_name_to_pretty: variable_t -> pretty_t
 
@@ -4312,17 +4958,13 @@ object
   method set_offsettable_target:
     ctxt_iaddress_t -> doubleword_int -> jumptable_int -> data_block_int -> unit
   method set_global_jumptarget: ctxt_iaddress_t -> variable_t -> unit
-  method set_argument_jumptarget: ctxt_iaddress_t -> variable_t -> unit
+
   method set_dll_jumptarget:
            ctxt_iaddress_t -> string -> string -> call_target_info_int -> unit
   method set_so_jumptarget:
            ctxt_iaddress_t -> string -> call_target_info_int -> unit
   method set_unknown_jumptarget : ctxt_iaddress_t -> unit
 
-
-  (* method get_dynlib_stub: call_target_t *)
-
-  (* indirect jump targets *)
   method get_dll_jumptarget: ctxt_iaddress_t -> (string * string)
   method get_jump_target: ctxt_iaddress_t -> jump_target_t
   method get_jumptable_jumps: ctxt_iaddress_t list
@@ -4342,6 +4984,12 @@ object
   method get_dll_jumps_count: int
   method get_indirect_jumps_count: int
 
+  (** Returns the number of call targets registered for this function.*)
+  method get_call_count: int
+
+  (** [get_call_category_count name] returns the number of call targets
+      in the category named [name].*)
+  method get_call_category_count: string -> int
 
   (** {1 Call targets}*)
 
@@ -4365,17 +5013,6 @@ object
       the address of the associated call instruction.*)
   method get_callees_located: (ctxt_iaddress_t * call_target_info_int) list
 
-
-  (** {2 Statistics}*)
-
-  (** Returns the number of call targets registered for this function.*)
-  method get_call_count: int
-
-  (** [get_call_category_count name] returns the number of call targets
-      in the category named [name].*)
-  method get_call_category_count: string -> int
-
-
   (** {1 Save and restore}*)
 
   (** [finfo#write_xml xnode] writes the internal state of the function-info
@@ -4396,7 +5033,6 @@ object
   method saved_registers_to_pretty: pretty_t
   method base_pointers_to_pretty: pretty_t
   method return_values_to_pretty: pretty_t
-
 
 end
 
@@ -4434,14 +5070,6 @@ class type memory_recorder_int =
              -> size:int
              -> vtype:btype_t
              -> xpr:xpr_t
-             -> unit
-
-    method record_call_sideeffect:
-             xpr_t
-             -> xpr_t
-             -> ?size:int option
-             -> ?vtype:btype_t
-             -> unit
              -> unit
 
   end
@@ -4613,7 +5241,12 @@ class type floc_int =
     (* returns the memory reference corresponding to a base and scaled index
        variable plus offset *)
     method get_memory_variable_3:
-             ?size:int -> variable_t -> variable_t -> int -> numerical_t -> variable_t
+             ?size:int
+             -> variable_t
+             -> variable_t
+             -> int
+             -> numerical_t
+             -> variable_t
 
     (* returns the memory reference corresponding to a global base and scaled
        index variable *)
@@ -4638,7 +5271,8 @@ class type floc_int =
 
     (** {2 Predicates on variables}*)
 
-    (* returns true if the given variable evaluates to a constant at this location *)
+    (* returns true if the given variable evaluates to a constant at this
+       location. *)
     method is_constant: variable_t -> bool
 
     (* returns true if the given variable evaluates to a non-trivial interval
@@ -4670,7 +5304,8 @@ class type floc_int =
     (* returns the auxiliary variables used in a test expression *)
     method get_test_variables: (variable_t * variable_t) list
 
-    (* returns true if this instruction has a test expression for a conditional jump *)
+    (* returns true if this instruction has a test expression for a conditional
+       jump. *)
     method has_test_expr: bool
 
     (** {1 Jump targets}*)
@@ -4704,7 +5339,7 @@ class type floc_int =
     (** {1 Function summary}*)
 
     (* evaluates the value of eax at this location and reports it to the function
-     info *)
+       info *)
     method record_return_value: unit
 
     method evaluate_summary_address_term: bterm_t -> variable_t option
@@ -5011,8 +5646,8 @@ object
   method get_successors: doubleword_int -> doubleword_int list
 
   (** [get_arm_thumb_switch addr] returns ['A'] if the architecture switches
-      from thumb to arm at address [addr], returns ['T'] if the architecture switches
-      from arm to thumb at address [addr], or None otherwise.*)
+      from thumb to arm at address [addr], returns ['T'] if the architecture
+      switches from arm to thumb at address [addr], or None otherwise.*)
   method get_arm_thumb_switch: doubleword_int -> string option
 
   method get_argument_constraints:
