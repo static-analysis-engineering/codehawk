@@ -93,8 +93,10 @@ let arm_basic () =
       ("MOVWEQ", "ff100003", "MOVWEQ         R1, #0xff");
       ("MOVWNE", "01000013", "MOVWNE         R0, #1");
       ("MRS",    "00000fe1", "MRS            R0, CPSR");
+      ("MRS_p",  "00304fe1", "MRS            R3, SPSR");
       ("MSR",    "93f021e3", "MSR            CPSR, #0x93");
       ("MSR_r",  "06f021e1", "MSR            CPSR, R6");
+      ("MSR_p",  "03f061e1", "MSR            SPSR, R3");
       ("ORR",    "046087e3", "ORR            R6, R7, #4");
       ("POP",    "f08fbde8", "POP            {R4,R5,R6,R7,R8,R9,R10,R11,PC}");
       ("POPCC",  "108cbd38", "POPCC          {R4,R10,R11,PC}");
