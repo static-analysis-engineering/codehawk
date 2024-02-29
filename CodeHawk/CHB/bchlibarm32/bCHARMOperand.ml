@@ -399,7 +399,7 @@ object (self:'a)
          else
            XVar rvar in
        let addr = XOp (XPlus, [rvarx; memoff]) in
-       floc#inv#rewrite_expr addr env#get_variable_comparator
+       floc#inv#rewrite_expr addr
     | ARMLiteralAddress dw -> num_constant_expr dw#to_numerical
     | _ ->
        begin
@@ -423,7 +423,7 @@ object (self:'a)
            | (ARMImmOffset i, false) -> int_constant_expr (-i)
            | _ -> random_constant_expr in
          let addr = XOp (XPlus, [self#to_address floc; memoff]) in
-         floc#inv#rewrite_expr addr env#get_variable_comparator
+         floc#inv#rewrite_expr addr
     | _ ->
        raise
          (BCH_failure
@@ -474,12 +474,8 @@ object (self:'a)
                   | Some scale ->
                      let ivar = env#mk_arm_register_variable ivar in
                      if scale = 1 then
-                       let rx =
-                         floc#inv#rewrite_expr
-                           (XVar rvar) floc#env#get_variable_comparator in
-                       let ivax =
-                         floc#inv#rewrite_expr
-                           (XVar ivar) floc#env#get_variable_comparator in
+                       let rx = floc#inv#rewrite_expr (XVar rvar) in
+                       let ivax = floc#inv#rewrite_expr (XVar ivar) in
                        let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
                        (match xoffset with
                         | XConst (IntConst n) ->
@@ -511,13 +507,18 @@ object (self:'a)
               [STR "ARMOffsetAddress"; STR "unsupported"; self#toPretty])) in
        let _ =
          if (env#is_unknown_memory_variable var) || var#isTemporary then
-           chlog#add
-             "unknown memory location"
-             (LBLOCK (
-                  [floc#l#toPretty; STR ". "]
-                  @ [List.hd trace]
-                  @ [STR ": "]
-                  @ (List.tl trace))) in
+           if (List.length trace) > 0 then
+             chlog#add
+               "unknown memory location"
+               (LBLOCK (
+                    [floc#l#toPretty; STR ". "]
+                    @ [List.hd trace]
+                    @ [STR ": "]
+                    @ (List.tl trace)))
+           else
+             chlog#add
+               "unknown memory location - no info"
+               (LBLOCK [floc#l#toPretty]) in
        var
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
        env#mk_arm_register_variable r

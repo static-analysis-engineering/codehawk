@@ -1940,6 +1940,14 @@ class type arm_opcode_dictionary_int =
   end
 
 
+class type arm_fn_type_constraints_int =
+  object
+
+    method record_type_constraints: unit
+
+  end
+
+
 class type arm_analysis_results_int =
   object
     method record_results: ?save:bool -> arm_assembly_function_int -> unit

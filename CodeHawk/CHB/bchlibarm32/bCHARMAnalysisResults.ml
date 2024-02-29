@@ -26,6 +26,7 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
@@ -36,12 +37,14 @@ open BCHLibTypes
 open BCHLocation
 open BCHPreFileIO
 open BCHSystemInfo
+open BCHTypeConstraintStore
 
 (* bchlibarm32 *)
 open BCHARMDictionary
 open BCHARMLoopStructure
 open BCHARMTypes
 open BCHFnARMDictionary
+open BCHFnARMTypeConstraints
 
 module H = Hashtbl
 
@@ -194,12 +197,16 @@ class arm_analysis_results_t:arm_analysis_results_int =
 object (self)
 
   val table = H.create 3
+  val typeconstraintstore = mk_type_constraint_store ()
 
   method record_results ?(save=true) (fn:arm_assembly_function_int) =
     let fndata = new fn_analysis_results_t fn in
+    let typeconstraints =
+      mk_arm_fn_type_constraints typeconstraintstore fn in
     begin
       (if save then fndata#save);
       H.add table fn#get_address#to_hex_string fn;
+      typeconstraints#record_type_constraints
     end
 
   method write_xml (node:xml_element_int) =
@@ -217,6 +224,7 @@ object (self)
   method save =
     let node = xmlElement "application-results" in
     begin
+      chlog#add "type constraints" typeconstraintstore#toPretty;
       self#write_xml node;
       save_resultdata_file node
     end

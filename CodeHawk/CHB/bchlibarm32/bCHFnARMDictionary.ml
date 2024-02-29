@@ -64,12 +64,15 @@ open BCHARMPseudocode
 open BCHARMTestSupport
 open BCHARMTypes
 
-module B = Big_int_Z
 module H = Hashtbl
 module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("FnARMDictionary:" ^ tag) msg
+
 
 let ixd = BCHInterfaceDictionary.interface_dictionary
 
@@ -114,8 +117,7 @@ object (self)
     let varinv = floc#varinv in
     let rewrite_expr ?(restrict:int option) (x: xpr_t): xpr_t =
       try
-        let xpr =
-          floc#inv#rewrite_expr x floc#env#get_variable_comparator in
+        let xpr = floc#inv#rewrite_expr x in
         let xpr = simplify_xpr xpr in
         let xpr =
           let vars = variables_in_expr xpr in
@@ -123,15 +125,19 @@ object (self)
           if varssize = 1 then
             let xvar = List.hd vars in
             if floc#env#is_frozen_test_value xvar then
-              let (testvar, testiaddr, _) = floc#env#get_frozen_variable xvar in
-              let testloc = ctxt_string_to_location floc#fa testiaddr in
-              let testfloc = get_floc testloc in
-              let extxprs = testfloc#inv#get_external_exprs testvar in
-              let extxprs =
-                List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
-              (match extxprs with
-               | [] -> xpr
-               | _ -> List.hd extxprs)
+              log_tfold
+                (log_error "index_instr" "invalid test address")
+              ~ok:(fun (testvar, testiaddr, _) ->
+                let testloc = ctxt_string_to_location floc#fa testiaddr in
+                let testfloc = get_floc testloc in
+                let extxprs = testfloc#inv#get_external_exprs testvar in
+                let extxprs =
+                  List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
+                (match extxprs with
+                 | [] -> xpr
+                 | _ -> List.hd extxprs))
+              ~error:(fun _ -> xpr)
+              (floc#env#get_frozen_variable xvar)
             else
               xpr
           else
@@ -156,23 +162,26 @@ object (self)
     let rewrite_test_expr (csetter: ctxt_iaddress_t) (x: xpr_t) =
       let testloc = ctxt_string_to_location floc#fa csetter in
       let testfloc = get_floc testloc in
-      let xpr =
-        testfloc#inv#rewrite_expr x testfloc#env#get_variable_comparator in
+      let xpr = testfloc#inv#rewrite_expr x in
       let xpr =
         let vars = variables_in_expr xpr in
         let varssize = List.length vars in
         if varssize = 1 then
           let xvar = List.hd vars in
           if floc#env#is_frozen_test_value xvar then
-            let (testvar, testiaddr, _) = floc#env#get_frozen_variable xvar in
-            let testloc = ctxt_string_to_location floc#fa testiaddr in
-            let testfloc = get_floc testloc in
-            let extxprs = testfloc#inv#get_external_exprs testvar in
-            let extxprs =
-              List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
-            (match extxprs with
-             | [] -> xpr
-             | _ -> List.hd extxprs)
+            log_tfold
+              (log_error "rewrite_test_expr" "invalid test address")
+              ~ok:(fun (testvar, testiaddr, _) ->
+                let testloc = ctxt_string_to_location floc#fa testiaddr in
+                let testfloc = get_floc testloc in
+                let extxprs = testfloc#inv#get_external_exprs testvar in
+                let extxprs =
+                  List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
+                (match extxprs with
+                 | [] -> xpr
+                 | _ -> List.hd extxprs))
+              ~error:(fun _ -> xpr)
+              (floc#env#get_frozen_variable xvar)
           else
             xpr
         else
@@ -2351,31 +2360,35 @@ let compute_arm_ssa_varintros
   let faddr = finfo#get_address in
   List.iter (fun (loc, vinv) ->
       if finfo#env#is_register_variable vinv#get_variable then
-        let reg = finfo#env#get_register vinv#get_variable in
-        let iaddr = (ctxt_string_to_location faddr loc)#i in
-        let instr = f#get_instruction iaddr in
-        let opcode = instr#get_opcode in
-        let operands = get_arm_operands opcode in
-        if List.exists (fun op ->
-               if (op#get_mode = RD || op#get_mode = RW)
-                  && (op#is_register
-                      || op#is_double_register
-                      || op#is_extension_register) then
-                 let r = op#to_register in
-                 register_equal reg r
-               else
-                 false) operands then
-          let rdefs = vinv#get_reaching_defs in
-          let rlocs = List.map (fun s -> s#getBaseName) rdefs in
-          let rlocs = List.filter (fun s -> not (s = "init")) rlocs in
-          if (List.length rlocs) > 1 then
-            let _ =
-              chlog#add
-                "computed ssa variables"
-                (LBLOCK [
-                     STR loc;
-                     STR ": ";
-                     STR (register_to_string reg);
-                     STR ": ";
-                     pretty_print_list rlocs (fun s -> STR s) "[" ", " "]"]) in
-            system_info#add_computed_join_varintros faddr rlocs reg) vinvs
+        log_tfold
+          (log_error "compute_arm_ssa_varintros" "invalid register")
+          ~ok:(fun reg ->
+            let iaddr = (ctxt_string_to_location faddr loc)#i in
+            let instr = f#get_instruction iaddr in
+            let opcode = instr#get_opcode in
+            let operands = get_arm_operands opcode in
+            if List.exists (fun op ->
+                   if (op#get_mode = RD || op#get_mode = RW)
+                      && (op#is_register
+                          || op#is_double_register
+                          || op#is_extension_register) then
+                     let r = op#to_register in
+                     register_equal reg r
+                   else
+                     false) operands then
+              let rdefs = vinv#get_reaching_defs in
+              let rlocs = List.map (fun s -> s#getBaseName) rdefs in
+              let rlocs = List.filter (fun s -> not (s = "init")) rlocs in
+              if (List.length rlocs) > 1 then
+                let _ =
+                  chlog#add
+                    "computed ssa variables"
+                    (LBLOCK [
+                         STR loc;
+                         STR ": ";
+                         STR (register_to_string reg);
+                         STR ": ";
+                         pretty_print_list rlocs (fun s -> STR s) "[" ", " "]"]) in
+                system_info#add_computed_join_varintros faddr rlocs reg)
+          ~error:(fun _ -> ())
+          (finfo#env#get_register vinv#get_variable)) vinvs

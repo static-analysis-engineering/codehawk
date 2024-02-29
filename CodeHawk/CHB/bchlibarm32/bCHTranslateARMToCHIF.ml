@@ -65,9 +65,11 @@ open BCHARMTestSupport
 open BCHARMTypes
 
 
-module B = Big_int_Z
 module LF = CHOnlineCodeSet.LanguageFactory
 module TR = CHTraceResult
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("TranslateARMToCHIF:" ^ tag) msg
 
 let valueset_domain = "valuesets"
 
@@ -487,12 +489,12 @@ let translate_arm_instruction
   let frozenAsserts =
     List.map (fun (v,fv) -> ASSERT (EQ (v, fv)))
       (finfo#get_test_variables ctxtiaddr) in
-  let rewrite_expr floc x:xpr_t =
-    let xpr = floc#inv#rewrite_expr x floc#env#get_variable_comparator in
+  let rewrite_expr (floc: floc_int) (x:xpr_t): xpr_t =
+    let xpr = floc#inv#rewrite_expr x in
     let rec expand x =
       match x with
       | XVar v when floc#env#is_symbolic_value v ->
-         expand (floc#env#get_symbolic_value_expr v)
+         expand (TR.tget_ok (floc#env#get_symbolic_value_expr v))
       | XOp (op,l) -> XOp (op, List.map expand l)
       | _ -> x in
     simplify_xpr (expand xpr) in
@@ -574,9 +576,8 @@ let translate_arm_instruction
 
   let get_use_high_vars (xprs: xpr_t list): variable_t list =
     let inv = floc#inv in
-    let comparator = floc#env#get_variable_comparator in
     List.fold_left (fun acc x ->
-        let xw = inv#rewrite_expr x comparator in
+        let xw = inv#rewrite_expr x in
         let xs = simplify_xpr xw in
         let vars = floc#env#variables_in_expr xs in
         vars @ acc) [] xprs in
@@ -725,8 +726,7 @@ let translate_arm_instruction
      let xrm = rm#to_expr floc in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let result = XOp (XPlus, [xrn; xrm]) in
-     let result =
-       floc#inv#rewrite_expr result floc#env#get_variable_comparator in
+     let result = floc#inv#rewrite_expr result in
      let result = simplify_xpr result in
      let result =
        match result with
@@ -1182,9 +1182,7 @@ let translate_arm_instruction
 
   | Compare (c, rn, rm, _) ->
      let floc = get_floc loc in
-     let _ =
-       floc#inv#rewrite_expr (rn#to_expr floc)
-         floc#env#get_variable_comparator in
+     let _ = floc#inv#rewrite_expr (rn#to_expr floc) in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
      let xresult = XOp (XMinus, [xrn; xrm]) in
@@ -1810,7 +1808,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let vrd = rd#to_register in
      let xrm = rm#to_expr floc in
-     let xxrm = floc#inv#rewrite_expr xrm floc#env#get_variable_comparator in
+     let xxrm = floc#inv#rewrite_expr xrm in
      let (vrd, cmds) = floc#get_ssa_assign_commands vrd xrm in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [xxrm] in
@@ -2469,7 +2467,7 @@ let translate_arm_instruction
      let (vmem, memcmds) = mem#to_lhs floc in
      let _ = check_storage mem vmem in
      let xrt = rt#to_expr floc in
-     let xrt = floc#inv#rewrite_expr xrt floc#env#get_variable_comparator in
+     let xrt = floc#inv#rewrite_expr xrt in
      let cmds = memcmds @ (floc#get_assign_commands vmem xrt) in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
@@ -3630,26 +3628,30 @@ object (self)
     let reqC = env#request_num_constant in
     let ri = env#mk_initial_register_value (ARMRegister reg) in
     let _ = finfo#add_base_pointer ri in
-    let rbase = env#mk_base_variable_reference ri in
-    let memvar = env#mk_memory_variable rbase (mkNumerical offset) in
-    let cmdasserts cxpr =
-      let (cmds, bxpr) = xpr_to_boolexpr reqN reqC cxpr in
-      cmds @ [ASSERT bxpr] in
-    match (optlb, optub) with
-    | (Some lb, Some ub) when lb = ub ->
-       let cxpr = XOp (XEq, [XVar memvar; int_constant_expr lb]) in
-       cmdasserts cxpr
-    | (Some lb, Some ub) ->
-       let c1xpr = XOp (XGe, [XVar memvar; int_constant_expr lb]) in
-       let c2xpr = XOp (XLe, [XVar memvar; int_constant_expr ub]) in
-       (cmdasserts c1xpr) @ (cmdasserts c2xpr)
-    | (Some lb, _) ->
-       let cxpr = XOp (XGe, [XVar memvar; int_constant_expr lb]) in
-       cmdasserts cxpr
-    | (_, Some ub) ->
-       let cxpr = XOp (XLe, [XVar memvar; int_constant_expr ub]) in
-       cmdasserts cxpr
-    | _ -> []
+    log_tfold
+      (log_error "create_arg_deref_asserts" "invalid base variable")
+      ~ok:(fun rbase ->
+        let memvar = env#mk_memory_variable rbase (mkNumerical offset) in
+        let cmdasserts cxpr =
+          let (cmds, bxpr) = xpr_to_boolexpr reqN reqC cxpr in
+          cmds @ [ASSERT bxpr] in
+        match (optlb, optub) with
+        | (Some lb, Some ub) when lb = ub ->
+           let cxpr = XOp (XEq, [XVar memvar; int_constant_expr lb]) in
+           cmdasserts cxpr
+        | (Some lb, Some ub) ->
+           let c1xpr = XOp (XGe, [XVar memvar; int_constant_expr lb]) in
+           let c2xpr = XOp (XLe, [XVar memvar; int_constant_expr ub]) in
+           (cmdasserts c1xpr) @ (cmdasserts c2xpr)
+        | (Some lb, _) ->
+           let cxpr = XOp (XGe, [XVar memvar; int_constant_expr lb]) in
+           cmdasserts cxpr
+        | (_, Some ub) ->
+           let cxpr = XOp (XLe, [XVar memvar; int_constant_expr ub]) in
+           cmdasserts cxpr
+        | _ -> [])
+      ~error:(fun _ -> [])
+      (env#mk_base_variable_reference ri)
 
   method private create_arg_scalar_asserts
                    (finfo: function_info_int)
@@ -3678,7 +3680,6 @@ object (self)
        let cxpr = XOp (XLe, [XVar var; int_constant_expr ub]) in
        cmdasserts cxpr
     | _ -> []
-
 
   method private create_arg_asserts
                    (finfo: function_info_int)
@@ -3809,9 +3810,13 @@ object (self)
       let symvars =
         List.filter (fun v ->
             if v#getName#getSeqNumber >= 0 then
-              let numvar = finfo#env#get_symbolic_num_variable v in
-              not (finfo#env#is_register_variable numvar
-                   || finfo#env#is_local_variable numvar)
+              log_tfold
+                (log_error "get_exit_cmd" "invalid symbolic variable")
+                ~ok:(fun numvar ->
+                  not (finfo#env#is_register_variable numvar
+                       || finfo#env#is_local_variable numvar))
+                ~error:(fun _ -> false)
+                (finfo#env#get_symbolic_num_variable v)
             else
               false) symvars in
       List.map (fun v ->
