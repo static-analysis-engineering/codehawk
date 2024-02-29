@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -100,6 +100,9 @@ module POAnchorCollections = CHCollections.Make
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("floc:" ^ tag) msg
 
 
 let bcd = BCHBCDictionary.bcdictionary
@@ -201,14 +204,18 @@ object (self)
     List.iter (fun (par, x) ->
         match x with
         | XVar v when self#finfo#env#is_initial_register_value v ->
-           let reg = self#finfo#env#get_initial_register_value_register v in
-           let fty = par.apar_type in
-           (match reg with
-            | MIPSRegister MRa0 -> set_regpar fty MRa0
-            | MIPSRegister MRa1 -> set_regpar fty MRa1
-            | MIPSRegister MRa2 -> set_regpar fty MRa2
-            | MIPSRegister MRa3 -> set_regpar fty MRa3
-            | _ -> ())
+           log_tfold
+             (log_error "elevate_call_arguments" "invalid register")
+             ~ok:(fun reg ->
+               let fty = par.apar_type in
+               (match reg with
+                | MIPSRegister MRa0 -> set_regpar fty MRa0
+                | MIPSRegister MRa1 -> set_regpar fty MRa1
+                | MIPSRegister MRa2 -> set_regpar fty MRa2
+                | MIPSRegister MRa3 -> set_regpar fty MRa3
+                | _ -> ()))
+             ~error:(fun _ -> ())
+             (self#finfo#env#get_initial_register_value_register v)
         | XVar v when self#finfo#env#is_stack_parameter_value v ->
            let indexopt = self#finfo#env#get_stack_parameter_index v in
            (match indexopt with
@@ -231,13 +238,17 @@ object (self)
     match xpr with
     | XConst (IntConst n) -> Some (NumConstant n)
     | XVar v when self#finfo#env#is_initial_register_value v ->
-       let reg = self#finfo#env#get_initial_register_value_register v in
-       let _ =
-         self#finfo#update_summary
-           (self#finfo#get_summary#add_register_parameter_location
-              reg btype 4) in
-       let ftspar = self#finfo#get_summary#get_parameter_for_register reg in
-       Some (ArgValue ftspar)
+       log_tfold
+         (log_error "xpr_to_bterm" "invalid register")
+         ~ok:(fun reg ->
+           let _ =
+             self#finfo#update_summary
+               (self#finfo#get_summary#add_register_parameter_location
+                  reg btype 4) in
+           let ftspar = self#finfo#get_summary#get_parameter_for_register reg in
+           Some (ArgValue ftspar))
+         ~error:(fun _ -> None)
+         (self#finfo#env#get_initial_register_value_register v)
     | XVar v when self#finfo#env#is_stack_parameter_value v ->
        let indexopt = self#finfo#env#get_stack_parameter_index v in
        (match indexopt with
@@ -561,8 +572,7 @@ object (self)
               (trerror_record (STR "get_call_arguments"))
               (get_register_parameter_register p) in
           let rvar = self#env#mk_register_variable reg in
-          let xpr =
-            self#inv#rewrite_expr (XVar rvar) self#env#get_variable_comparator in
+          let xpr = self#inv#rewrite_expr (XVar rvar) in
           (p, xpr)) pars in
     let get_stackargs (pars: fts_parameter_t list):
           (fts_parameter_t * xpr_t) list =
@@ -581,7 +591,7 @@ object (self)
                   memref (s_offset#add (mkNumerical p_offset)))
               (self#f#env#mk_unknown_memory_variable name)
               self#get_singleton_stackpointer_offset in
-          (p, self#inv#rewrite_expr (XVar svar) self#env#get_variable_comparator)
+          (p, self#inv#rewrite_expr (XVar svar))
         ) pars in
     let ctinfo = self#get_call_target in
     let fintf = ctinfo#get_function_interface in
@@ -646,8 +656,12 @@ object (self)
       if inv#is_base_offset_constant var then
 	let (base,offsetConstant) = inv#get_base_offset_constant var in
 	let memoffset = offsetConstant#add offset in
-        let memref = self#env#mk_base_sym_reference base in
-        self#env#mk_memory_variable ~size memref memoffset
+        log_tfold
+          (log_error "get_memory_variable_1" "invalid memref")
+          ~ok:(fun memref ->
+            self#env#mk_memory_variable ~size memref memoffset)
+          ~error:(fun _ -> default ())
+          (self#env#mk_base_sym_reference base)
       else
         default () in
     let get_var_from_address () =
@@ -658,7 +672,7 @@ object (self)
         else
           XVar var in
       let addr = XOp (XPlus, [varx; num_constant_expr offset]) in
-      let address = inv#rewrite_expr addr (self#env#get_variable_comparator) in
+      let address = inv#rewrite_expr addr in
       match address with
       | XConst (IntConst n) ->
          log_tfold_default
@@ -708,7 +722,7 @@ object (self)
                    offset#toPretty]) in
     let addr = XOp (XPlus, [XVar var1; XVar var2]) in
     let addr = XOp (XPlus, [addr; num_constant_expr offset]) in
-    let address = self#inv#rewrite_expr addr (self#env#get_variable_comparator) in
+    let address = self#inv#rewrite_expr addr in
     let (memref, memoffset) = self#decompose_address address in
     if is_constant_offset memoffset then
       self#env#mk_memory_variable ~size memref (get_total_constant_offset memoffset)
@@ -730,18 +744,17 @@ object (self)
       self#env#mk_memory_variable
         (self#env#mk_unknown_memory_reference "memref-1") offset in
     let inv = self#inv in
-    let comparator = self#env#get_variable_comparator in
     let indexExpr =
       if inv#is_constant index then
 	num_constant_expr (inv#get_constant index)
       else
         XVar index in
     let addr = XOp (XPlus, [XVar base; num_constant_expr offset]) in
-    let addr = self#inv#rewrite_expr addr comparator in
+    let addr = self#inv#rewrite_expr addr in
     let addr =
       XOp (XPlus,
            [addr; XOp (XMult, [int_constant_expr scale; indexExpr])]) in
-    let address = self#inv#rewrite_expr addr comparator in
+    let address = self#inv#rewrite_expr addr in
     let (memref, memoffset) = self#decompose_address address in
     if is_constant_offset memoffset then
       if memref#is_global_reference then
@@ -815,7 +828,7 @@ object (self)
   method externalize_expr (tgt_faddr:doubleword_int) (x:xpr_t) = []
 
   method rewrite_variable_to_external (var:variable_t) =
-    self#inv#rewrite_expr (XVar var) (self#env#get_variable_comparator)
+    self#inv#rewrite_expr (XVar var)
 
   method private rewrite_numerical_exp (exp:numerical_exp_t) =
     let rewrite = self#rewrite_variable_to_external in
@@ -1154,13 +1167,17 @@ object (self)
      try
        match optBaseOffset with
        | Some (XVar v, xoffset) ->
-          let memref = self#env#mk_base_variable_reference v in
-          let offset = match xoffset with
-            | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
-            | XOp (XMult, [XConst (IntConst n); XVar v]) ->
-               IndexOffset (v, n#toInt, NoOffset)
-            | _ -> UnknownOffset in
-          (memref, offset)
+          log_tfold
+            (log_error "decompose_address" "invalid memref")
+            ~ok:(fun memref ->
+              let offset = match xoffset with
+                | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
+                | XOp (XMult, [XConst (IntConst n); XVar v]) ->
+                   IndexOffset (v, n#toInt, NoOffset)
+                | _ -> UnknownOffset in
+              (memref, offset))
+            ~error:(fun _ -> default ())
+            (self#env#mk_base_variable_reference v)
        | Some (XConst (IntConst n), xoffset) ->
           let offset = match xoffset with
             | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
@@ -1199,7 +1216,7 @@ object (self)
        end
 
    method get_lhs_from_address (xpr:xpr_t) =
-     let xpr = self#inv#rewrite_expr xpr (self#env#get_variable_comparator) in
+     let xpr = self#inv#rewrite_expr xpr in
      let default () =
        self#env#mk_memory_variable
          (self#env#mk_unknown_memory_reference "lhs-from-address")
@@ -1258,8 +1275,7 @@ object (self)
             (rhs_expr:xpr_t) =
      let reqN () = self#env#mk_num_temp in
      let reqC = self#env#request_num_constant in
-     let testxpr =
-       self#inv#rewrite_expr test_expr self#env#get_variable_comparator in
+     let testxpr = self#inv#rewrite_expr test_expr in
      let ftestxpr = simplify_xpr (XOp (XLNot, [ testxpr ])) in
      let assigncmds = self#get_assign_commands lhs rhs_expr in
      let (tcmds,txpr) = xpr_to_boolexpr reqN reqC testxpr in
@@ -1288,8 +1304,7 @@ object (self)
      ?(vtype=t_unknown)
      (rhs_expr:xpr_t) =
      let rhs_expr = simplify_xpr rhs_expr in
-     let rhs_expr =
-       self#inv#rewrite_expr rhs_expr self#env#get_variable_comparator in
+     let rhs_expr = self#inv#rewrite_expr rhs_expr in
 
      (* if the rhs_expr is a composite symbolic expression, create a
         new variable for it *)
@@ -1316,7 +1331,7 @@ object (self)
             (reg: register_t) ?(vtype=t_unknown) (rhs: xpr_t):
             variable_t * cmd_t list =
      let rhsx = simplify_xpr rhs in
-     let rhsx = self#inv#rewrite_expr rhsx self#env#get_variable_comparator in
+     let rhsx = self#inv#rewrite_expr rhsx in
      let rhsx_assign =
        if self#is_composite_symbolic_value rhsx then
          let sv = self#env#mk_symbolic_value rhsx in
@@ -1471,8 +1486,12 @@ object (self)
 	begin
 	  match optBase with
 	    Some baseVar ->
-	     let memref = self#env#mk_base_variable_reference baseVar in
-	     Some (self#env#mk_memory_variable memref offset)
+             log_tfold
+               (log_error "evaluate_summary_address_term" "invalid memref")
+               ~ok:(fun memref ->
+	         Some (self#env#mk_memory_variable memref offset))
+               ~error:(fun _ -> None)
+               (self#env#mk_base_variable_reference baseVar)
 	  | _ -> None
 	end
      | _ -> None
@@ -1776,8 +1795,12 @@ object (self)
 	        let sizeExpr = simplify_xpr sizeExpr in
 	        let size = match sizeExpr with
 		  | XConst (IntConst n) -> Some n#toInt | _ -> None in
-	        global_system_state#add_reader ~ty ~size
-		  (self#env#get_global_variable_address memVar) self#l
+                log_tfold
+                  (log_error "record_memory_reads" "invalid global address")
+                  ~ok:(fun gaddr ->
+	            global_system_state#add_reader ~ty ~size gaddr self#l)
+                  ~error:(fun _ -> ())
+		  (self#env#get_global_variable_address memVar)
               else
                 ()
 	   | _ -> ()

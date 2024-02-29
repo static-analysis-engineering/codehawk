@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -187,7 +187,7 @@ let rec typ_to_string (t: btype_t) =
   | TArray (tt,Some x, attrs) ->
      (a attrs) ^ (typ_to_string tt) ^ "[" ^ (p2s (exp_to_pretty x)) ^ "]"
   | TArray (tt, None, attrs) -> (a attrs) ^ (typ_to_string tt) ^ "[]"
-  | TFun (tt, optArgs, vararg, attrs) ->
+  | TFun (tt, optArgs, _vararg, attrs) ->
      (a attrs)
      ^ "("
      ^ (typ_to_string tt)
@@ -283,7 +283,7 @@ and cil_exp_to_pretty (x: bexp_t) =
          STR ")@ ";
          INT loc.line;
 	 pretty_print_list el peo "[" ", " "]"]
-  | CnApp (s,el,t) ->
+  | CnApp (s, el, _t) ->
     begin
       match el with
       | [] -> STR s
@@ -327,14 +327,14 @@ and exp_to_pretty (x: bexp_t) =
      LBLOCK [STR "caste ("; pe e; STR ":"; typ_to_pretty t; STR ")"]
   | AddrOf l -> LBLOCK [STR "addrof ("; pl l; STR ")"]
   | StartOf l -> LBLOCK [STR "startof ("; pl l; STR ")"]
-  | FnApp (loc,e,el) ->
+  | FnApp (loc, e, el) ->
      LBLOCK [
          STR "fn(";
          pe e ;
          STR ")@ ";
          INT loc.line;
 	 pretty_print_list el peo "[" ", " "]"]
-  | CnApp (s,el,t) ->
+  | CnApp (s, el, _t) ->
      begin
        match el with
        | [] -> STR s
@@ -382,14 +382,14 @@ and offset_to_pretty (offset: boffset_t) =
 
 let instr_to_pretty (instr: binstr_t) =
   match instr with
-  | Set (lval,x,loc) ->
+  | Set (lval, x, _loc) ->
      LBLOCK [
          STR "assign (";
          lval_to_pretty lval;
          STR ", ";
 	 exp_to_pretty x;
          STR ")"]
-  | Call (optLval,x,args,loc) -> LBLOCK [STR "call"]
+  | Call (_optLval, _x, _args, _loc) -> LBLOCK [STR "call"]
   | VarDecl _ -> LBLOCK[STR "vardecl"]
   | Asm _ -> STR "asm"
 
@@ -432,11 +432,3 @@ let compinfo_to_pretty (cinfo: bcompinfo_t) =
              LBLOCK [STR "  "; fieldinfo_to_pretty fieldinfo; NL])
            cinfo.bcfields);
       STR "};"]
-
-
-let rec boffset_to_pretty (off: boffset_t) =
-  match off with
-  | NoOffset -> STR "no-offset"
-  | Field ((fname, fkey), foff) ->
-     LBLOCK [STR "field("; STR fname; STR ","; INT fkey; STR ")."; boffset_to_pretty foff]
-  | Index (_, eoff) -> LBLOCK [STR "index(_)."; boffset_to_pretty eoff]

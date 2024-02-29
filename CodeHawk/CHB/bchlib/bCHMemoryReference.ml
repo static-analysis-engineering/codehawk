@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,6 +38,7 @@ open CHIntervals
 open CHFileIO
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -56,33 +57,41 @@ module H = Hashtbl
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
+    LBLOCK [
+        STR "(";
+        INT node#getLineNumber;
+        STR ",";
+	INT node#getColumnNumber;
+        STR ") ";
+        msg] in
   begin
-    ch_error_log#add "xml parse error" error_msg ;
+    ch_error_log#add "xml parse error" error_msg;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
 
 
-let memory_base_to_pretty b  =
+let memory_base_to_string (b: memory_base_t): string =
   match b with
-  | BLocalStackFrame -> STR "stack"
-  | BRealignedStackFrame -> STR "realigned"
-  | BAllocatedStackFrame -> STR "allocated-stack"
-  | BGlobal -> STR "global"
-  | BaseVar v -> LBLOCK [ STR "var-" ; STR v#getName#getBaseName ]
-  | BaseUnknown s -> LBLOCK [ STR "unknown-" ; STR s ]
+  | BLocalStackFrame -> "stack"
+  | BRealignedStackFrame -> "realigned"
+  | BAllocatedStackFrame -> "allocated-stack"
+  | BGlobal -> "global"
+  | BaseVar v -> "var-" ^ v#getName#getBaseName
+  | BaseUnknown s -> "unknown-" ^ s
+
+
+let memory_base_to_pretty b = STR (memory_base_to_string b)
 
 
 let rec memory_offset_to_string offset =
   match offset with
   | NoOffset -> ""
-  | ConstantOffset (n,subOffset) -> 
+  | ConstantOffset (n,subOffset) ->
      "[" ^ n#toString ^ "]" ^ (memory_offset_to_string subOffset)
   | FieldOffset ((fname, _), subOffset) ->
      "." ^ fname ^ (memory_offset_to_string subOffset)
-  | IndexOffset (v,size,subOffset) -> 
-    "[" ^ v#getName#getBaseName ^ ":" ^ (string_of_int size) ^ "]" ^ 
+  | IndexOffset (v,size,subOffset) ->
+    "[" ^ v#getName#getBaseName ^ ":" ^ (string_of_int size) ^ "]" ^
       (memory_offset_to_string subOffset)
   | UnknownOffset -> "?offset?"
 
@@ -90,15 +99,45 @@ let rec memory_offset_to_string offset =
 let rec is_unknown_offset offset =
   match offset with
   | UnknownOffset -> true
-  | ConstantOffset (_,suboffset) -> is_unknown_offset suboffset
-  | IndexOffset (_,_,suboffset) -> is_unknown_offset suboffset
+  | ConstantOffset (_, suboffset) -> is_unknown_offset suboffset
+  | IndexOffset (_, _, suboffset) -> is_unknown_offset suboffset
   | _ -> false
+
 
 let rec is_constant_offset offset =
   match offset with
   | NoOffset -> true
   | ConstantOffset (_, suboffset) -> is_constant_offset suboffset
   | _ -> false
+
+
+let rec is_field_offset (offset: memory_offset_t): bool =
+  match offset with
+  | FieldOffset (_, NoOffset) -> true
+  | FieldOffset (_, suboffset) -> is_field_offset suboffset
+  | ConstantOffset (_, suboffset) -> is_field_offset suboffset
+  | IndexOffset (_, _, suboffset) -> is_field_offset suboffset
+  | _ -> false
+
+
+let rec is_index_offset (offset: memory_offset_t): bool =
+  match offset with
+  | IndexOffset (_, _, NoOffset) -> true
+  | IndexOffset (_, _, suboffset) -> is_index_offset suboffset
+  | ConstantOffset (_, suboffset) -> is_index_offset suboffset
+  | FieldOffset (_, suboffset) -> is_index_offset suboffset
+  | _ -> false
+
+
+let get_index_offset_variables (offset: memory_offset_t): variable_t list =
+  let rec aux (o: memory_offset_t) (vlst: variable_t list) =
+    match o with
+    | IndexOffset (v, _, suboffset) -> aux suboffset (v :: vlst)
+    | ConstantOffset (_, suboffset)
+      | FieldOffset (_, suboffset) -> aux suboffset vlst
+    | _ -> vlst in
+  aux offset []
+
 
 let rec get_constant_offsets offset =
   match offset with
@@ -115,10 +154,10 @@ let rec get_constant_offsets offset =
 let get_total_constant_offset offset =
   List.fold_left (fun acc n ->
       acc#add n) numerical_zero (get_constant_offsets offset)
-    
+
 let memory_offset_to_pretty offset = STR (memory_offset_to_string offset)
-                                    
-let constant_offset_to_suffix_string n = 
+
+let constant_offset_to_suffix_string n =
   fixed_length_int_string n#toString 4
 
 let constant_offset_to_neg_suffix_string n =
@@ -168,11 +207,11 @@ let realigned_stack_offset_to_name offset =
   | ConstantOffset (n,NoOffset) when n#leq numerical_zero ->
      "vrr." ^ (constant_offset_to_neg_suffix_string n)
   | _ -> "vrr.[" ^ (memory_offset_to_string offset) ^ "]"
-       
-  
+
+
 class memory_reference_t
     ~(vard:vardictionary_int)
-    ~(index:int) 
+    ~(index:int)
     ~(base:memory_base_t):memory_reference_int =
 object (self:'a)
 
@@ -191,18 +230,16 @@ object (self:'a)
     | BGlobal -> "gv"
     | BaseUnknown s -> "??" ^ s ^ "??"
 
-  method get_external_base =
+  method get_external_base: variable_t traceresult =
     match base with
-    | BaseVar v -> v
+    | BaseVar v -> Ok v
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "get external base. ";
-		 STR " base is not an external base: ";
-		 self#toPretty]))
-	
-  method has_external_base = match base with BaseVar _ -> true | _ -> false
+       Error [
+           "get_external_base: not an external base: "
+           ^ (memory_base_to_string base)]
+
+  method has_external_base =
+    match base with BaseVar _ -> true | _ -> false
 
   method is_stack_reference = match base with
     | BLocalStackFrame | BRealignedStackFrame | BAllocatedStackFrame -> true
@@ -217,8 +254,9 @@ object (self:'a)
     match base with BaseUnknown _ -> true | _ -> false
 
   method toPretty = LBLOCK [ memory_base_to_pretty base ]
-      
+
 end
+
 
 class memory_reference_manager_t
         (vard:vardictionary_int):memory_reference_manager_int =
@@ -226,7 +264,7 @@ object (self)
 
   val table = H.create 3
   val vard = vard
-            
+
   method reset = H.clear table
 
   method private mk_reference (base:memory_base_t) =
@@ -252,22 +290,24 @@ object (self)
 
   method mk_unknown_reference s = self#mk_reference (BaseUnknown s)
 
-  method get_memory_reference (index:int) =
+  method get_memory_reference (index: int): memory_reference_int traceresult =
     if H.mem table index then
-      H.find table index
+      Ok (H.find table index)
     else
-      raise 
-        (BCH_failure (LBLOCK [ STR "memory reference not found: " ; INT index ]))
+      Error [
+          "get_memory_reference_int: index not found: " ^ (string_of_int index)]
 
-  method is_unknown_reference (index:int) = 
-    (self#get_memory_reference index)#is_unknown_reference
-      
-  method read_xml (node: xml_element_int) =
-    List.iter (fun (index,base) ->
+  method is_unknown_reference (index: int): bool traceresult =
+    let memref_r = self#get_memory_reference index in
+    tmap
+      ~msg:"is_unknown_reference"
+      (fun memref -> memref#is_unknown_reference) memref_r
+
+  method initialize =
+    List.iter (fun (index, base) ->
         H.add table index (new memory_reference_t ~vard ~index ~base))
       vard#get_indexed_bases
-      
-end
-  
-let make_memory_reference_manager = new memory_reference_manager_t
 
+end
+
+let make_memory_reference_manager = new memory_reference_manager_t
