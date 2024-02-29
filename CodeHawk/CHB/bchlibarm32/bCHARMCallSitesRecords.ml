@@ -262,7 +262,7 @@ object (self)
         if v#has_returnvalue_compare
            || v#has_returnvalue_move
            || v#has_returnvalue_compute then
-          (s+1, c, n)
+          (s+3, c, n)
         else if (List.length v#post_instrs) = 0 then
           (s, c+1, n)
         else
@@ -281,7 +281,7 @@ object (self)
         else if v#has_returnvalue_compare
                 || v#has_returnvalue_move
                 || v#has_returnvalue_compute then
-          (s, c+1, n)
+          (s, c+3, n)
         else
           (s, c, n+1)) (0, 0, 0) self#callsites
 
@@ -355,7 +355,7 @@ object (self)
     H.fold (fun k _ a ->
         let dw = TR.tget_ok (int_to_doubleword k) in
         let (s, c, n) = self#is_non_returning dw in
-        if (s - c) > (n + 2) then dw :: a else a) table []
+        if (s - c) > 2 * (n + 2) then dw :: a else a) table []
 
   method summary_to_pretty =
     let header =

@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -659,7 +659,11 @@ let parse_data_proc_reg_type
      BranchLinkExchange(c, r3 RD)
 
   (* <cc><0>< 9>0mm00<15>< 0>< 0><rn> *)   (* MSR (register) <spec_reg>, <Rn> *)
-  | 9 when (not setflags) && (b 17 16) = 1 && (ry = 15) && (rz = 0) && (b 7 4) = 0 ->
+  | 9 when (not setflags)
+           && (b 17 16) <= 1
+           && (ry = 15)
+           && (rz = 0)
+           && (b 7 4) = 0 ->
      let rn = r3 RD in
      let spr = arm_special_register_op CPSR WR in
      (* MSR<c> <spec_reg>, <Rn> *)
@@ -721,6 +725,13 @@ let parse_data_proc_reg_type
      (* TEQ<c> <Rn>, <Rm>, <type> <Rs> *)
      TestEquivalence (c, rn, rm)
 
+  (* <cc><0><10>0<15><rd>< 0>0000< 0> *)   (* MRS - A1 (privileged) *)
+  | 10 when not setflags && (rx = 15) && (rz = 0) && (b 7 4) = 0 && (rt = 0) ->
+     let rd = r15 WR in
+     let rs = arm_special_register_op SPSR RD in
+     (* MRS<c> <Rd>, <spec_reg> *)
+     MoveFromSpecialRegister (c, rd, rs, true)
+
   (* <cc><0><10>0<rn><rd>< 0>0101<rm> *)   (* QDADD - A1 *)
   | 10 when not setflags && (rz = 0) && (b 7 4) = 5 ->
      let rd = r15 WR in
@@ -742,6 +753,17 @@ let parse_data_proc_reg_type
      let rm = mk_reg_shift_reg rt (b 6 5) rz RD in
      (* CMP<c> <Rn>, <Rm>, <type> <Rs> *)
      Compare (c, rn, rm, false)
+
+  (* <cc><0><11>0mm00<15>< 0>< 0><rn> *)   (* MSR (register) <spec_reg>, <Rn> *)
+  | 11 when (not setflags)
+           && (b 17 16) <= 1
+           && (ry = 15)
+           && (rz = 0)
+           && (b 7 4) = 0 ->
+     let rn = r3 RD in
+     let spr = arm_special_register_op SPSR WR in
+     (* MSR<c> <spec_reg>, <Rn> *)
+     MoveToSpecialRegister (c, spr, rn, true)
 
   (* <cc><0><11>0<rd>< 0><rm>1000<rn> *)   (* SMULBB - A1 *)
   | 11 when (not setflags) && ry = 0 && (b 7 4) = 8 ->
@@ -1550,7 +1572,49 @@ let parse_block_data_type (instr: doubleword_int) (cond: int) =
         ^ " with register "
         ^ (stri rnval),
        instr)
-     
+
+
+let parse_block_data_type_privileged (instr: doubleword_int) (cond: int) =
+  (* bitval 22 = 1 *)
+  let b = instr#get_segval in
+  let c = get_opcode_cc cond in
+  let rnval = b 19 16 in
+  let rnreg = get_arm_reg rnval in
+  let isstack =  rnval = 13 in
+  let iswback = (b 21 21) = 1 in
+  let rn = arm_register_op rnreg (if iswback then RW else RD) in
+  let rl = get_reglist_from_int 16 (b 15 0) in
+  let b24 = b 24 24 in
+  let b23 = b 23 23 in
+  let b20 = b 20 20 in
+
+  match (b24, b23, b20, isstack) with
+  (* <cc><4>011W0<rn><register-list-> *)    (* STM/STMIA/STMEA - A1 *)
+  | (0, 1, 0, _) ->
+     let rlop = arm_register_list_op rl RD in
+     let mmem = mk_arm_mem_multiple_op rnreg (List.length rl) WR in
+     (* STM<c> <Rn>{!}, <registers>^ (privileged) *)
+     StoreMultipleIncrementAfter (iswback, c, rn, rlop, mmem, false)
+
+  (* <cc><4>011W1<rn><register-list-> *)    (* LDM/LDMIA/LDMFD - A1 *)
+  | (0, 1, 1, _) ->
+     let rlop = arm_register_list_op rl WR in
+     let mmem = mk_arm_mem_multiple_op rnreg (List.length rl) RD in
+     (* LDM<c> <R>{!}, <registers>^ (privileged) *)
+     LoadMultipleIncrementAfter (iswback, c, rn, rlop, mmem)
+
+  | (k, l, m, _) ->
+     NotRecognized
+       ("parse_block_data_type_privileged:"
+        ^ (stri k)
+        ^ "_"
+        ^ (stri l)
+        ^ "_"
+        ^ (stri m)
+        ^ " with register "
+        ^ (stri rnval),
+       instr)
+
 
 let parse_branch_link_type
       (iaddr: doubleword_int)
@@ -2328,7 +2392,7 @@ let parse_misc_7_type
        let vm = arm_extension_register_op XSingle m in
        let dt = VfpFloat 32 in
        (* VNEG<c>.F32 <Sd>, <Sm> *)
-       VectorNegate (c, dt, vd WR, vm RD)     
+       VectorNegate (c, dt, vd WR, vm RD)
 
   (* <cc><7>01D11< 0><vd><5>s11M0<vm> *) (* VABS -A2 *)
   | (1, 3, 1, 0) when (b 19 16) = 0 && (b 11 9) = 5 && (bv 7) = 1 ->
@@ -4712,6 +4776,8 @@ let parse_opcode
     | 3 -> parse_load_store_reg_type instrbytes cond
     | 4 when (instrbytes#get_bitval 22) = 0 ->
        parse_block_data_type instrbytes cond
+    | 4 when (instrbytes#get_bitval 22) = 1 ->
+       parse_block_data_type_privileged instrbytes cond
     | 5 -> parse_branch_link_type iaddr instrbytes cond
     | 6 -> parse_misc_6_type instrbytes cond
     | 7 -> parse_misc_7_type iaddr instrbytes cond

@@ -39,7 +39,6 @@ open BCHFloc
 open BCHFunctionData
 open BCHLibTypes
 open BCHSystemInfo
-open BCHSystemSettings
 
 (* bchlibelf *)
 open BCHELFHeader
@@ -227,8 +226,7 @@ let get_successors
           | BranchExchange (ACCAlways, op) when op#is_register ->
            let floc = get_floc_by_address faddr instr#get_address in
            let opxpr = op#to_expr floc in
-           let opxpr =
-             floc#inv#rewrite_expr opxpr floc#env#get_variable_comparator in
+           let opxpr = floc#inv#rewrite_expr opxpr in
            (match opxpr with
             | XConst (IntConst n) ->
                let tgt =
