@@ -61,8 +61,6 @@ open BCHPowerOperand
 open BCHPowerTypes
 
 
-
-module B = Big_int_Z
 module LF = CHOnlineCodeSet.LanguageFactory
 module TR = CHTraceResult
 
@@ -71,6 +69,9 @@ let valueset_domain = "valuesets"
 
 let _x2p = xpr_formatter#pr_expr
 let _cmd_to_pretty = CHLanguage.command_to_pretty 0
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("TranslatePowerToCHIF:" ^ tag) msg
 
 
 let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
@@ -303,9 +304,8 @@ let translate_pwr_instruction
 
   let get_use_high_vars (xprs: xpr_t list): variable_t list =
     let inv = floc#inv in
-    let comparator = floc#env#get_variable_comparator in
     List.fold_left (fun acc x ->
-        let xw = inv#rewrite_expr x comparator in
+        let xw = inv#rewrite_expr x in
         let xs = simplify_xpr xw in
         let vars = floc#env#variables_in_expr xs in
         vars @ acc) [] xprs in
@@ -510,9 +510,7 @@ let translate_pwr_instruction
 
   | LoadByteZero (_, update, rd, ra, mem) ->
      let rdreg = rd#to_register in
-     let rhs =
-       floc#inv#rewrite_expr (mem#to_expr floc)
-         floc#env#get_variable_comparator in
+     let rhs = floc#inv#rewrite_expr (mem#to_expr floc) in
      let (vrd, cmds) = floc#get_ssa_assign_commands rdreg ~vtype:t_uchar rhs in
      let usevars = get_register_vars [ra] in
      let usehigh = get_use_high_vars [rhs] in
@@ -536,9 +534,7 @@ let translate_pwr_instruction
 
   | LoadHalfwordZero (_, update, rd, ra, mem) ->
      let rdreg = rd#to_register in
-     let rhs =
-       floc#inv#rewrite_expr (mem#to_expr floc)
-         floc#env#get_variable_comparator in
+     let rhs = floc#inv#rewrite_expr (mem#to_expr floc) in
      let (vrd, cmds) = floc#get_ssa_assign_commands rdreg ~vtype:t_short rhs in
      let usevars = get_register_vars [ra] in
      let usehigh = get_use_high_vars [rhs] in
@@ -562,9 +558,7 @@ let translate_pwr_instruction
 
   | LoadWordZero (_, update, rd, ra, mem) ->
      let rdreg = rd#to_register in
-     let rhs =
-       floc#inv#rewrite_expr (mem#to_expr floc)
-         floc#env#get_variable_comparator in
+     let rhs = floc#inv#rewrite_expr (mem#to_expr floc) in
      let (vrd, cmds) = floc#get_ssa_assign_commands rdreg ~vtype:t_uint rhs in
      let usevars = get_register_vars [ra] in
      let usehigh = get_use_high_vars [rhs] in
@@ -938,7 +932,7 @@ object (self)
       let symvars =
         List.filter (fun v ->
             if v#getName#getSeqNumber >= 0 then
-              let numvar = finfo#env#get_symbolic_num_variable v in
+              let numvar = TR.tget_ok (finfo#env#get_symbolic_num_variable v) in
               not (finfo#env#is_register_variable numvar
                    || finfo#env#is_local_variable numvar)
             else
