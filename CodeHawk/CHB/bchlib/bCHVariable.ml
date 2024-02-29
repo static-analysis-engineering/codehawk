@@ -36,6 +36,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -97,7 +98,17 @@ object (self:'a)
   method get_name  =
     let aux den = match den with
       | MemoryVariable (i, size, offset) ->
-         let basename = (memrefmgr#get_memory_reference i)#get_name in
+         let basename =
+           let memref_r = memrefmgr#get_memory_reference i in
+           TR.tfold
+             ~ok:(fun memref -> memref#get_name)
+             ~error:(fun erl ->
+               let _ =
+                 ch_error_log#add
+                   "invalid memory reference"
+                   (STR (String.concat "; " erl)) in
+               "invalid_memref")
+             memref_r in
          (match basename with
           | "var" -> stack_offset_to_name offset
           | "varr" -> realigned_stack_offset_to_name offset
@@ -163,7 +174,25 @@ object (self:'a)
             NL]);
 	newname
       end
-    else name
+    else
+      name
+
+  method to_basevar_reference =
+    match denotation with
+    | AuxiliaryVariable a ->
+       (match a with
+        | InitialRegisterValue (CPURegister Esp, 0)
+          | InitialRegisterValue (MIPSRegister MRsp, 0)
+          | InitialRegisterValue (ARMRegister ARSP, 0)
+          | InitialRegisterValue (PowerGPRegister 1, 0) ->
+          Some memrefmgr#mk_local_stack_reference
+        | InitialRegisterValue (CPURegister Esp, 1)
+          | InitialRegisterValue (MIPSRegister MRsp, 1)
+          | InitialRegisterValue (ARMRegister ARSP, 1)
+          | InitialRegisterValue (PowerGPRegister 1, 1) ->
+           Some memrefmgr#mk_realigned_stack_reference
+        | _ -> None)
+    | _ -> None
 
   method is_function_pointer =
     match denotation with
@@ -175,43 +204,29 @@ object (self:'a)
 
   method get_calltarget_value =
     match denotation with
-    | AuxiliaryVariable (CallTargetValue tgt) -> tgt
+    | AuxiliaryVariable (CallTargetValue tgt) -> Ok tgt
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR self#get_name; STR " is not a calltarget value "]))
+       Error
+         ["get_calltarget_value: " ^ self#get_name ^ " is not a calltarget value"]
 
   method is_global_sideeffect =
     match denotation with
-    | AuxiliaryVariable (SideEffectValue (_,_,isglobal)) -> isglobal
+    | AuxiliaryVariable (SideEffectValue (_, _, isglobal)) -> isglobal
     | _ -> false
 
   method get_global_sideeffect_target_address =
     match denotation with
     | AuxiliaryVariable (SideEffectValue (_, arg, true)) ->
-       TR.tget_ok (string_to_doubleword arg)
+       let addr_r = string_to_doubleword arg in
+       tprop addr_r "get_global_sideeffect_target_address"
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Variable is not a global side effect: ";
-		 self#toPretty]))
+       Error ["get_global_sideeffect_target_address: " ^ self#get_name]
 
   method get_pointed_to_function_name =
     match denotation with
-    | AuxiliaryVariable (FunctionPointer (name,_,_)) -> name
+    | AuxiliaryVariable (FunctionPointer (name, _, _)) -> Ok name
     | _ ->
-      begin
-	ch_error_log#add
-          "assembly variable access"
-	  (LBLOCK [
-               STR "assembly_variable#get_pointed_to_function_name: ";
-	       self#toPretty]);
-	raise
-          (BCH_failure
-             (LBLOCK [
-                  STR "get pointed to function name on "; self#toPretty]))
-      end
+       Error ["get_pointed_to_function_name: " ^ self#get_name]
 
   method is_frozen_test_value =
     match denotation with
@@ -228,49 +243,31 @@ object (self:'a)
     | AuxiliaryVariable (SSARegisterValue (_, a, _, _)) -> a = iaddr
     | _ -> false
 
-  method is_in_test_jump_range (a:ctxt_iaddress_t) =
+  method is_in_test_jump_range (a :ctxt_iaddress_t) =
     match denotation with
-    | AuxiliaryVariable (FrozenTestValue (_,taddr,jaddr)) ->
-       taddr < a && a <= jaddr
+    | AuxiliaryVariable (FrozenTestValue (_, taddr, jaddr)) ->
+       Ok (taddr < a && a <= jaddr)
     | _ ->
-       raise
-         (BCH_failure (LBLOCK [STR "Variable is not a frozen test value"]))
+       Error ["is_in_test_jump_range: " ^ a ^ ", " ^ self#get_name]
 
-  (* the variable associated with the frozen value *)
   method get_frozen_variable =
     match denotation with
     | AuxiliaryVariable (FrozenTestValue (fv, taddr, jaddr)) ->
-       (fv, taddr, jaddr)
+       Ok (fv, taddr, jaddr)
     | _ ->
-      begin
-	ch_error_log#add
-          "assembly variable acess"
-	  (LBLOCK [
-               STR "assembly_variable#get_frozen_variable: "; self#toPretty]);
-	raise
-          (BCH_failure
-	     (LBLOCK [
-                  STR "variable is not a frozen test value: "; self#toPretty]))
-      end
+       Error ["get_frozen_variable: " ^ self#get_name]
 
   method get_call_site =
     match denotation with
     | (AuxiliaryVariable (FunctionReturnValue a))
-    | (AuxiliaryVariable (SideEffectValue (a, _, _))) -> a
+    | (AuxiliaryVariable (SideEffectValue (a, _, _))) -> Ok a
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Variable is not a return value: "; self#toPretty]))
+       Error ["get_call_site: " ^ self#get_name]
 
   method get_se_argument_descriptor =
     match denotation with
-    | (AuxiliaryVariable (SideEffectValue (_,name,_))) -> name
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Variable is not a sideeffect value: "; self#toPretty]))
+    | (AuxiliaryVariable (SideEffectValue (_, name, _))) -> Ok name
+    | _ -> Error ["get_se_argument_descriptor: " ^ self#get_name]
 
   method is_auxiliary_variable =
     match denotation with AuxiliaryVariable _ -> true | _ -> false
@@ -288,8 +285,7 @@ object (self:'a)
     | AuxiliaryVariable (InitialMemoryValue _) -> true | _ -> false
 
   (* a variable with a value determined by the environment of the function that
-     does not change during the execution of the function
-  *)
+     does not change during the execution of the function. *)
   method is_function_initial_value =
     match denotation with
     | AuxiliaryVariable a ->
@@ -309,17 +305,8 @@ object (self:'a)
 
   method get_register =
     match denotation with
-    | RegisterVariable r -> r
-    | _ ->
-      begin
-	ch_error_log#add
-          "assembly variable access"
-	  (LBLOCK [STR "get_register with "; self#toPretty]);
-	raise
-          (BCH_failure
-             (LBLOCK [
-                  STR "variable is not a register variable: "; self#toPretty]))
-      end
+    | RegisterVariable r -> Ok r
+    | _ -> Error ["get_register: " ^ self#get_name]
 
   method is_initial_register_value =
     match denotation with
@@ -348,65 +335,60 @@ object (self:'a)
     | _ -> false
 
   method is_initial_stackpointer_value =
-    self#is_initial_register_value
+    match denotation with
+    | AuxiliaryVariable (InitialRegisterValue (reg, 0)) ->
+       (match reg with
+        | CPURegister Esp  (* x86 *)
+          | MIPSRegister MRsp
+          | ARMRegister ARSP
+          | PowerGPRegister 1  (* power32 *) -> true
+        | _ -> false)
+    | _ -> false
 
   method get_initial_register_value_register =
     match denotation with
-    | AuxiliaryVariable (InitialRegisterValue (CPURegister r, 0)) ->
-       CPURegister r
-    | AuxiliaryVariable (InitialRegisterValue (MIPSRegister r, 0)) ->
-       MIPSRegister r
-    | AuxiliaryVariable (InitialRegisterValue (MIPSSpecialRegister r, 0)) ->
-       MIPSSpecialRegister r
-    | AuxiliaryVariable (InitialRegisterValue (ARMRegister r, 0)) ->
-       ARMRegister r
-    | AuxiliaryVariable (InitialRegisterValue (ARMExtensionRegister r, 0)) ->
-       ARMExtensionRegister r
-    | AuxiliaryVariable (InitialRegisterValue (PowerGPRegister i, 0)) ->
-       PowerGPRegister i
-    | AuxiliaryVariable (InitialRegisterValue (PowerSPRegister r, 0)) ->
-       PowerSPRegister r
+    | AuxiliaryVariable (InitialRegisterValue (CPURegister r as reg, 0)) ->
+       Ok reg
+    | AuxiliaryVariable (InitialRegisterValue (MIPSRegister r as reg, 0)) ->
+       Ok reg
+    | AuxiliaryVariable (InitialRegisterValue (MIPSSpecialRegister r as reg, 0)) ->
+       Ok reg
+    | AuxiliaryVariable (InitialRegisterValue (ARMRegister r as reg, 0)) ->
+       Ok reg
+    | AuxiliaryVariable (InitialRegisterValue (ARMExtensionRegister r as reg, 0)) ->
+       Ok reg
+    | AuxiliaryVariable (InitialRegisterValue (PowerGPRegister i as reg, 0)) ->
+       Ok reg
+    | AuxiliaryVariable (InitialRegisterValue (PowerSPRegister r as reg, 0)) ->
+       Ok reg
     | _ ->
-      begin
-	ch_error_log#add
-          "assembly variable access"
-	  (LBLOCK [
-               STR "get_register_parameter_register with ";
-               self#toPretty]);
-	raise
-          (BCH_failure
-             (LBLOCK [
-                  STR "variable is not a parameter register: ";
-		  self#toPretty]))
-      end
+       Error ["get_initial_register_value_register: " ^ self#get_name]
 
   method get_ssa_register_value_register =
     match denotation with
-    | AuxiliaryVariable (SSARegisterValue (r, _, _, _)) -> r
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "get_ssa_register_value_register: "; self#toPretty]))
+    | AuxiliaryVariable (SSARegisterValue (r, _, _, _)) -> Ok r
+    | _ -> Error ["get_ssa_register_value_register: " ^ self#get_name]
 
   method get_initial_memory_value_variable =
     match denotation with
-    | AuxiliaryVariable (InitialMemoryValue v) -> v
-    | _ ->
-      begin
-	ch_error_log#add
-          "assembly variable access"
-	  (LBLOCK [
-               STR "get_initial_memory_value_variable with "; self#toPretty]);
-	raise
-          (BCH_failure
-	     (LBLOCK [
-                  STR "variable is not an initial memory value: ";
-                  self#toPretty]))
-      end
+    | AuxiliaryVariable (InitialMemoryValue v) -> Ok v
+    | _ -> Error ["get_initial_memory_value_variable: " ^ self#get_name]
 
   method is_memory_variable =
     match denotation with MemoryVariable _ -> true | _ -> false
+
+  method get_memory_reference =
+    match denotation with
+    | MemoryVariable (i, _, _) ->
+       let memref_r = memrefmgr#get_memory_reference i in
+       tprop memref_r ("get_memory_reference")
+    | _ ->
+       Error ["get_memory_reference: " ^ self#get_name]
+
+  method get_memory_offset =
+    match denotation with
+    | MemoryVariable (_, _, o) -> Ok o
+    | _ -> Error ["get_memory_offset: " ^ self#get_name]
 
   method is_register_variable =
     match denotation with RegisterVariable _ -> true | _ -> false
@@ -465,14 +447,9 @@ object (self:'a)
 
   method get_symbolic_value_expr =
     match denotation with
-    | AuxiliaryVariable (SymbolicValue x) -> x
-    | AuxiliaryVariable (SignedSymbolicValue (x, _, _)) -> x
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Variable is not a symbolic value: " ;
-                 self#toPretty]))
+    | AuxiliaryVariable (SymbolicValue x) -> Ok x
+    | AuxiliaryVariable (SignedSymbolicValue (x, _, _)) -> Ok x
+    | _ -> Error ["get_symbolic_value_expr: " ^ self#get_name]
 
   method toPretty = STR self#get_name
 
@@ -496,7 +473,7 @@ object (self)
     | Some xvard ->
        begin
          vard#read_xml xvard;
-         memrefmgr#read_xml xvard;
+         memrefmgr#initialize;
          List.iter
            (fun (index, denotation) ->
              H.add
@@ -531,69 +508,42 @@ object (self)
 
   method get_assembly_variables = H.fold (fun _ v acc -> v::acc) vartable []
 
-  method private get_variable_by_index (index:int) =
+  method get_variable_by_index (index:int) =
     if H.mem vartable index then
-      H.find vartable index
+      Ok (H.find vartable index)
     else
-      raise
-        (BCH_failure
-           (LBLOCK [STR "No variable found with index "; INT index]))
+      Error ["get_variable_by_index: " ^ (string_of_int index)]
 
-  method get_memvar_reference (v:variable_t) =
-    let av = self#get_variable v in
-    if self#is_initial_memory_value v then
-      let iv = self#get_initial_memory_value_variable v in
-      self#get_memvar_reference iv
-    else
-      match av#get_denotation with
-      | MemoryVariable (i, _, _) -> memrefmgr#get_memory_reference i
-      | _ ->
-         raise_var_type_error av (STR "Memory Variable: get_memvar_reference: ")
+  method get_memvar_reference (v: variable_t): memory_reference_int traceresult =
+    tbind
+      ~msg:"varmgr:get_memvar_reference"
+      (fun av -> av#get_memory_reference)
+      (self#get_variable v)
+
+  method get_memval_reference (v: variable_t): memory_reference_int traceresult =
+    let var_r = self#get_initial_memory_value_variable v in
+    tbind
+      ~msg:"varmgr:get_memval_reference"
+      (fun var -> self#get_memvar_reference var)
+      var_r
 
   method get_memvar_offset (v:variable_t) =
-    if self#is_initial_memory_value v then
-      self#get_memval_offset v
-    else if self#has_var v then
-      let av = self#get_variable v in
-      match av#get_denotation with
-      | MemoryVariable (_, _, o) -> o
-      | _ ->
-         raise_var_type_error
-           av
-           (LBLOCK [STR "Memory Variable: get_memvar_offset: "; v#toPretty])
-    else
-      raise (BCH_failure (LBLOCK [STR "Temporary variable: "; v#toPretty]))
+    tbind
+      ~msg:"varmgr:get_memvar_offset"
+      (fun av -> av#get_memory_offset)
+      (self#get_variable v)
 
-  method get_memval_offset (v:variable_t) =
-    if self#has_var v then
-      if self#is_initial_memory_value v then
-        let iv = self#get_initial_memory_value_variable v in
-        self#get_memvar_offset iv
-      else
-        raise
-          (BCH_failure
-             (LBLOCK [
-                  STR "Not an initial memory variable: "; v#toPretty]))
-    else
-      raise (BCH_failure (LBLOCK [STR "Temporary variable: "; v#toPretty]))
-
-  method private get_memaddress_reference (v:variable_t) =
-    let av = self#get_variable v in
-    match av#get_denotation with
-    | AuxiliaryVariable (MemoryAddress (i, _)) ->
-       memrefmgr#get_memory_reference i
-    | _ ->
-       raise_var_type_error av (STR "Memory Address")
+  method get_memval_offset (v: variable_t) =
+    let var_r = self#get_initial_memory_value_variable v in
+    tbind
+      ~msg:"varmgr:get_memval_offset"
+      (fun var -> self#get_memvar_offset var)
+      var_r
 
   method private has_var (v:variable_t) =
     (not v#isTmp) && self#has_index v#getName#getSeqNumber
 
   method private has_sym (s:symbol_t) = self#has_index s#getSeqNumber
-
-  method private has_memvar (v:variable_t) =
-    self#has_var v &&
-      (match (self#get_variable v)#get_denotation with
-       | MemoryVariable _ -> true | _ -> false)
 
   method private has_index (index:int) = H.mem vartable index
 
@@ -603,46 +553,32 @@ object (self)
            (offset:memory_offset_t) =
     self#mk_variable (MemoryVariable (memref#index, size, offset))
 
-  method make_memref_from_basevar (v:variable_t) =
-    if self#has_var v then
-      let av = self#get_variable v in
-      match av#get_denotation with
-      | AuxiliaryVariable a ->
-         (match a with
-          | InitialRegisterValue (CPURegister Esp, 0) ->
-             memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (CPURegister Esp, 1) ->
-             memrefmgr#mk_realigned_stack_reference
-          | InitialRegisterValue (MIPSRegister MRsp, 0) ->
-             memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (MIPSRegister MRsp, 1) ->
-             memrefmgr#mk_realigned_stack_reference
-          | InitialRegisterValue (ARMRegister ARSP, 0) ->
-             memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (ARMRegister ARSP, 1) ->
-             memrefmgr#mk_realigned_stack_reference
-          | InitialRegisterValue (PowerGPRegister 1, 0) ->
-             memrefmgr#mk_local_stack_reference
-          | InitialRegisterValue (PowerGPRegister 1, 1) ->
-             memrefmgr#mk_realigned_stack_reference
-          | InitialRegisterValue (CPURegister _, _)
-            | InitialRegisterValue (MIPSRegister _, _)
-            | InitialRegisterValue (ARMRegister _, _)
-            | InitialRegisterValue (PowerGPRegister _, _)
-            | InitialRegisterValue (PowerSPRegister _, _)
-            | InitialMemoryValue _
-            | FunctionReturnValue _ -> memrefmgr#mk_basevar_reference v
-          | _ ->
-             memrefmgr#mk_unknown_reference ("base:" ^ v#getName#getBaseName))
-      | _ ->
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "unable to use variable as memory base: ";
-                   v#toPretty]))
-    else
-      raise
-        (BCH_failure (LBLOCK [STR "base variable not found: "; v#toPretty ]))
+  method make_memref_from_basevar (v: variable_t) =
+    tbind
+      ~msg:"make_memref_from_basevar_basevar"
+      (fun av ->
+        match av#to_basevar_reference with
+        | Some memref -> Ok memref
+        | _ ->
+           (match av#get_denotation with
+            | AuxiliaryVariable a ->
+               (match a with
+                | InitialRegisterValue (CPURegister _, _)
+                  | InitialRegisterValue (MIPSRegister _, _)
+                  | InitialRegisterValue (ARMRegister _, _)
+                  | InitialRegisterValue (PowerGPRegister _, _)
+                  | InitialRegisterValue (PowerSPRegister _, _)
+                  | InitialMemoryValue _
+                  | FunctionReturnValue _ ->
+                   Ok (memrefmgr#mk_basevar_reference v)
+                | _ ->
+                   Ok (memrefmgr#mk_unknown_reference
+                         ("base_" ^ v#getName#getBaseName)))
+            | _ ->
+               Error [
+                   "varmgr:make_memref_from_basevar: not fixed-value: "
+                   ^ v#getName#getBaseName]))
+      (self#get_variable v)
 
   method make_register_variable (reg:register_t) =
     self#mk_variable (RegisterVariable reg)
@@ -660,7 +596,7 @@ object (self)
     self#mk_variable (AuxiliaryVariable (FrozenTestValue (var, taddr, jaddr)))
 
   method make_bridge_value (address:ctxt_iaddress_t) (argnr:int) =
-    self#mk_variable (AuxiliaryVariable (BridgeVariable (address,argnr)))
+    self#mk_variable (AuxiliaryVariable (BridgeVariable (address, argnr)))
 
   method make_initial_register_value (reg:register_t) (level:int) =
     self#mk_variable (AuxiliaryVariable (InitialRegisterValue (reg, level)))
@@ -692,342 +628,407 @@ object (self)
   method make_field_value (sname:string) (offset:int) (fname:string) =
     self#mk_variable (AuxiliaryVariable (FieldValue (sname,offset,fname)))
 
-  method make_symbolic_value (x:xpr_t) =
+  method make_symbolic_value (x: xpr_t) =
     self#mk_variable (AuxiliaryVariable (SymbolicValue x))
 
   method make_signed_symbolic_value (x: xpr_t) (s0: int) (sx: int) =
     self#mk_variable (AuxiliaryVariable (SignedSymbolicValue (x, s0, sx)))
 
-  method make_special_variable (name:string) =
+  method make_special_variable (name: string) =
     self#mk_variable (AuxiliaryVariable (Special name))
 
   method make_runtime_constant (name:string) =
     self#mk_variable (AuxiliaryVariable (RuntimeConstant name))
 
-  method get_initial_memory_value_variable (v:variable_t) =
-    (self#get_variable v)#get_initial_memory_value_variable
+  method get_initial_memory_value_variable (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_initial_memory_value_variable"
+      (fun av -> av#get_initial_memory_value_variable)
+      (self#get_variable v)
 
-  method has_global_variable_address (v: variable_t): bool =
-    let memref = self#get_memvar_reference v in
-    if memref#is_global_reference then
-      let offset = self#get_memvar_offset v in
-      is_constant_offset offset
-    else
-      false
+  method get_pointed_to_function_name (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_pointed_to_function_name"
+      (fun av -> av#get_pointed_to_function_name)
+      (self#get_variable v)
 
-  method get_global_variable_address (v: variable_t) =
-    let memref = self#get_memvar_reference v in
-    if memref#is_global_reference then
-      let offset = self#get_memvar_offset v in
-      if is_constant_offset offset then
-        let noffset = get_total_constant_offset offset in
-        TR.tget_ok (numerical_to_doubleword noffset)
-      else
-        raise_memref_type_error
-          memref
-          (LBLOCK [
-               STR "Global reference: non-constant offset: ";
-               v#toPretty])
-    else
-      raise_memref_type_error
-        memref
-        (LBLOCK [
-             STR "Global reference: not a global reference: ";
-             v#toPretty])
-
-  method get_pointed_to_function_name (v:variable_t) =
-    (self#get_variable v)#get_pointed_to_function_name
-
-  method get_stack_parameter_index (v:variable_t) =
-    let memref = self#get_memvar_reference v in
-    if memref#is_stack_reference then
-      let offset = self#get_memvar_offset v in
-      if is_constant_offset offset then
-        let four = mkNumerical 4 in
-        let noffset = get_total_constant_offset offset in
-        if noffset#gt numerical_zero
-           && (noffset#modulo four)#equal numerical_zero then
-          Some ((noffset#div (mkNumerical 4))#toInt)
+  method get_stack_parameter_index (v: variable_t) =
+    tfold_default
+      (fun memref ->
+        if memref#is_stack_reference then
+          tfold_default
+            (fun offset ->
+              if is_constant_offset offset then
+                let four = mkNumerical 4 in
+                let noffset = get_total_constant_offset offset in
+                if noffset#gt numerical_zero
+                   && (noffset#modulo four)#equal numerical_zero then
+                  Some ((noffset#div (mkNumerical 4))#toInt)
+                else
+                  None
+              else
+                None)
+            None
+            (self#get_memvar_offset v)
         else
-          None
-      else
-        None
-    else
-      raise_memref_type_error memref (STR "Stack parameter index")
+          None)
+      None
+      (self#get_memvar_reference v)
 
-  method get_register (v: variable_t) =	(self#get_variable v)#get_register
+  method get_register (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_register"
+      (fun av -> av#get_register)
+      (self#get_variable v)
 
-  method get_call_site (v:variable_t) = (self#get_variable v)#get_call_site
+  method get_call_site (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_call_site"
+      (fun av -> av#get_call_site)
+      (self#get_variable v)
 
-  method get_se_argument_descriptor (v:variable_t) =
-    (self#get_variable v)#get_se_argument_descriptor
+  method get_se_argument_descriptor (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_se_argument_descriptor"
+      (fun av -> av#get_se_argument_descriptor)
+      (self#get_variable v)
 
   method get_ssa_register_value_register (v: variable_t) =
-    (self#get_variable v)#get_ssa_register_value_register
+    tbind
+      ~msg:"varmgr:get_ssa_register_value_register"
+      (fun av -> av#get_ssa_register_value_register)
+      (self#get_variable v)
 
-  method get_initial_register_value_register (v:variable_t) =
-    (self#get_variable v)#get_initial_register_value_register
+  method get_initial_register_value_register (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_initial_register_value_register"
+      (fun av -> av#get_initial_register_value_register)
+      (self#get_variable v)
 
-  method get_frozen_variable (v:variable_t) =
-    (self#get_variable v)#get_frozen_variable
+  method get_frozen_variable (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_fozen_variable"
+      (fun av -> av#get_frozen_variable)
+      (self#get_variable v)
 
-  method get_calltarget_value (v:variable_t) =
-    (self#get_variable v)#get_calltarget_value
+  method get_calltarget_value (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_calltarget_value"
+      (fun av -> av#get_calltarget_value)
+      (self#get_variable v)
 
-  method get_symbolic_value_expr (v:variable_t) =
-    (self#get_variable v)#get_symbolic_value_expr
+  method get_symbolic_value_expr (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_symbolic_value_expr"
+      (fun av -> av#get_symbolic_value_expr)
+      (self#get_variable v)
 
-  method has_global_address (v:variable_t) =
+  method has_global_variable_address (v: variable_t) =
     self#is_global_variable v
-    && is_constant_offset (self#get_memvar_offset v)
+    && (tfold_default is_constant_offset false (self#get_memvar_offset v))
 
-  method get_global_sideeffect_target_address (v:variable_t) =
-    (self#get_variable v)#get_global_sideeffect_target_address
+  method get_global_variable_address (v: variable_t) =
+    if self#has_global_variable_address v then
+      tbind
+        ~msg:"varmgr:get_global_variable_address"
+        (fun offset ->
+          let goffset = get_total_constant_offset offset in
+          numerical_to_doubleword goffset)
+        (self#get_memvar_offset v)
+    else
+      Error [
+          "varmgr:get_global_variable_address: not a global variable: "
+          ^ v#getName#getBaseName]
+
+  method get_global_sideeffect_target_address (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_global_sideeffect_target_address"
+      (fun av -> av#get_global_sideeffect_target_address)
+      (self#get_variable v)
+
+  method private compare_memory_vars
+                   (av1: assembly_variable_int) (av2: assembly_variable_int) =
+    let memref1 = TR.tget_ok (av1#get_memory_reference) in
+    let memref2 = TR.tget_ok (av2#get_memory_reference) in
+    match (memref1#get_base, memref2#get_base) with
+    | (BGlobal, _) -> -1
+    | (_, BGlobal) -> 1
+    | (BaseVar _, _) -> -1
+    | (_, BaseVar _) -> 1
+    | (BLocalStackFrame, BLocalStackFrame) -> memref1#compare memref2
+    | (BLocalStackFrame, _) -> -1
+    | (_, BLocalStackFrame) -> 1
+    | (BRealignedStackFrame, _) -> -1
+    | (_, BRealignedStackFrame) -> 1
+    | _ -> memref1#compare memref2
+
+  method private compare_auxiliary_vars
+                   (ix1: int)
+                   (ix2: int)
+                   (cv1: constant_value_variable_t)
+                   (cv2: constant_value_variable_t) =
+    match (cv1, cv2) with
+
+    | (FunctionReturnValue _, FunctionReturnValue _) -> Stdlib.compare ix1 ix2
+    | (FunctionReturnValue _, _) -> -1
+    | (_, FunctionReturnValue _) -> 1
+
+    | (SSARegisterValue _, SSARegisterValue _) -> Stdlib.compare ix1 ix2
+    | (SSARegisterValue _, _) -> -1
+    | (_, SSARegisterValue _) -> 1
+
+    | (SymbolicValue _, SymbolicValue _) -> Stdlib.compare ix1 ix2
+    | (SymbolicValue _, _) -> -1
+    | (_, SymbolicValue _) -> 1
+
+    | (SignedSymbolicValue _, SignedSymbolicValue _) -> Stdlib.compare ix1 ix2
+    | (SignedSymbolicValue _, _) -> -1
+    | (_, SignedSymbolicValue _) -> 1
+
+    | (CallTargetValue _, CallTargetValue _) -> Stdlib.compare ix1 ix2
+    | (CallTargetValue _, _) -> -1
+    | (_, CallTargetValue _) -> 1
+
+    | (InitialRegisterValue _, InitialRegisterValue _) -> Stdlib.compare ix1 ix2
+    | (InitialRegisterValue _, _) -> -1
+    | (_, InitialRegisterValue _) -> 1
+
+    | (InitialMemoryValue _, InitialMemoryValue _) -> Stdlib.compare ix1 ix2
+    | (InitialMemoryValue _, _) -> -1
+    | (_, InitialMemoryValue _) -> 1
+
+    | (FunctionPointer _, FunctionPointer _) -> Stdlib.compare ix1 ix2
+    | (FunctionPointer _, _) -> -1
+    | (_, FunctionPointer _) -> 1
+
+    | (FieldValue _, FieldValue _) -> Stdlib.compare ix1 ix2
+    | (FieldValue _, _) -> -1
+    | (_, FieldValue _) -> 1
+
+    | (SideEffectValue _, SideEffectValue _) -> Stdlib.compare ix1 ix2
+    | (SideEffectValue _, _) -> -1
+    | (_, SideEffectValue _) -> 1
+
+    | _ -> Stdlib.compare ix1 ix2
 
   method get_external_variable_comparator =
-    fun v1 v2 ->
-      if v1#equal v2 then 0 else
-	if v1#isTmp then 1 else if v2#isTmp then -1 else
-	    let var1 = self#get_variable v1 in
-	    let var2 = self#get_variable v2 in
-	    match (var1#get_denotation, var2#get_denotation) with
-            | (AuxiliaryVariable (SymbolicValue _), _) -> -1
-            | (_, AuxiliaryVariable (SymbolicValue _)) -> 1
-            | (AuxiliaryVariable (SignedSymbolicValue _), _) -> -1
-            | (_, AuxiliaryVariable (SignedSymbolicValue _)) -> 1
-	    | (AuxiliaryVariable (CallTargetValue _), _) -> -1
-	    | (_, AuxiliaryVariable (CallTargetValue _)) -> 1
-	    | (AuxiliaryVariable (InitialRegisterValue _), _) -> -1
-	    | (_, AuxiliaryVariable (InitialRegisterValue _)) -> 1
-	    | (AuxiliaryVariable (InitialMemoryValue _), _) -> -1
-	    | (_, AuxiliaryVariable (InitialMemoryValue _)) -> 1
-	    | (AuxiliaryVariable (FunctionPointer _), _) -> -1
-	    | (_, AuxiliaryVariable (FunctionPointer _)) -> 1
-	    | (AuxiliaryVariable (FieldValue _), _) -> -1
-	    | (_, AuxiliaryVariable (FieldValue _)) -> 1
-	    | (MemoryVariable _, _)
-		 when (let memref = self#get_memvar_reference v1 in
-                       match memref#get_base with
-                       | BGlobal -> true | _ -> false) -> -1
-	    | (_, MemoryVariable _)
-		 when (let memref = self#get_memvar_reference v2 in
-                       match memref#get_base with
-                       |BGlobal -> true | _ -> false) -> 1
-	    | (AuxiliaryVariable (SideEffectValue _), _) -> -1
-	    | (_, AuxiliaryVariable (SideEffectValue _)) -> 1
-	    | (AuxiliaryVariable (RuntimeConstant _), _) -> -1
-	    | (_, AuxiliaryVariable (RuntimeConstant _)) -> 1
-	    | (MemoryVariable _, _)
-		 when (let memref =  self#get_memvar_reference v1 in
-                       match memref#get_base with
-		  BGlobal -> true | _ -> false) -> -1
-	    | (_, MemoryVariable _)
-		 when (let memref = self#get_memvar_reference v2 in
-                       match memref#get_base with
-		  BGlobal -> true | _ -> false) -> 1
-	    | (AuxiliaryVariable (FunctionReturnValue _), _) -> -1
-	    | (_, AuxiliaryVariable (FunctionReturnValue _)) -> 1
-            | (AuxiliaryVariable (SSARegisterValue _), _) -> -1
-            | (_, AuxiliaryVariable (SSARegisterValue _)) -> 1
-	    | (MemoryVariable _, MemoryVariable _) ->
-	      begin
-		let memref1 = self#get_memvar_reference v1 in
-		let memref2 = self#get_memvar_reference v2 in
-		match (memref1#get_base, memref2#get_base) with
-		| (BGlobal, _) -> -1
-		| (_, BGlobal) -> 1
-		| (BaseVar _, _) -> -1
-		| (_, BaseVar _) -> 1
-		| (BLocalStackFrame, BLocalStackFrame) -> memref1#compare memref2
-		| (BLocalStackFrame, _) -> -1
-		| (_, BLocalStackFrame) -> 1
-		| (BRealignedStackFrame, _) -> -1
-		| (_, BRealignedStackFrame) -> 1
-		| _ -> memref1#compare memref2
-	      end
-	    | (MemoryVariable _, _) ->
-               let memref = self#get_memvar_reference v1 in
-	       if memref#is_unknown_reference then 1 else -1
-            | (_, MemoryVariable _) ->
-               let memref = self#get_memvar_reference v2 in
-	       if memref#is_unknown_reference then -1 else 1
-	    | (RegisterVariable r1, RegisterVariable r2) ->
-               register_compare r1 r2
-	    | (RegisterVariable _, _) -> -1
-	    | (_, RegisterVariable _) -> 1
-	    | (AuxiliaryVariable (FrozenTestValue _), _) -> -1
-	    | (_, AuxiliaryVariable (FrozenTestValue _)) -> 1
-	    | (AuxiliaryVariable (BridgeVariable _), _) -> -1
-	    | (_, AuxiliaryVariable (BridgeVariable _)) -> 1
-	    | _ -> Stdlib.compare var1#index var2#index
+    fun (v1: variable_t) (v2: variable_t) ->
+    if v1#equal v2 then
+      0
+    else
+      if v1#isTmp then
+        1
+      else if v2#isTmp then
+        -1
+      else
+	let var1 = TR.tget_ok (self#get_variable v1) in
+	let var2 = TR.tget_ok (self#get_variable v2) in
+        match (var1#get_denotation, var2#get_denotation) with
+        | (AuxiliaryVariable a1, AuxiliaryVariable a2) ->
+           self#compare_auxiliary_vars var1#index var2#index a1 a2
+
+        | (MemoryVariable _, MemoryVariable _) ->
+           self#compare_memory_vars var1 var2
+
+        | (RegisterVariable r1, RegisterVariable r2) ->
+           Stdlib.compare var1#index var2#index
+
+        | (AuxiliaryVariable _, _) -> -1
+        | (_, AuxiliaryVariable _) -> 1
+
+	| (MemoryVariable _, _) when self#is_global_variable v1 -> -1
+
+	| (_, MemoryVariable _) when self#is_global_variable v2 -> 1
+
+        | (MemoryVariable _, _) when self#is_basevar_memory_variable v1 -> -1
+
+        | (_, MemoryVariable _) when self#is_basevar_memory_variable v2 -> 1
+
+        | _ -> Stdlib.compare var1#index var2#index
 
   method is_stack_parameter_variable (v:variable_t) =
-    (self#has_var v) && (self#has_memvar v)
-    && (self#get_memvar_reference v)#is_stack_reference
-    && is_constant_offset (self#get_memvar_offset v)
-    && (get_total_constant_offset (self#get_memvar_offset v))#geq numerical_zero
+    (self#is_stack_variable v)
+    && (self#has_constant_offset v)
+    && (tfold_default
+          (fun memoff -> (get_total_constant_offset memoff)#geq numerical_zero)
+          false
+          (self#get_memvar_offset v))
 
   method is_realigned_stack_variable (v:variable_t) =
-    (self#has_var v) && (self#has_memvar v)
-    && (self#get_memvar_reference v)#is_realigned_stack_reference
+    (self#is_memory_variable v)
+    && (tfold_default
+          (fun memref -> memref#is_realigned_stack_reference)
+          false
+          (self#get_memvar_reference v))
 
   method is_function_initial_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_function_initial_value
+    tfold_default
+      (fun av -> av#is_function_initial_value) false (self#get_variable v)
 
   method is_local_variable (v:variable_t) =
-    (self#has_var v) &&
-      ((match (self#get_variable v)#get_denotation with
-        | RegisterVariable _ | CPUFlagVariable _ -> true | _ -> false)
-       ||
-         ((self#has_memvar v) &&
-           (self#get_memvar_reference v)#is_stack_reference))
+    (self#is_register_variable v) || (self#is_stack_variable v)
 
   method is_global_variable (v:variable_t) =
-    (self#has_var v) && (self#has_memvar v)  &&
-      (self#get_memvar_reference v)#is_global_reference
+    (self#is_memory_variable v)
+    && (tfold_default
+          (fun memref -> memref#is_global_reference)
+          false
+          (self#get_memvar_reference v))
 
   method is_register_variable (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_register_variable
+    tfold_default
+      (fun av -> av#is_register_variable) false (self#get_variable v)
 
   method is_mips_argument_variable (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_mips_argument_variable
+    tfold_default
+      (fun av -> av#is_mips_argument_variable) false (self#get_variable v)
 
   method is_arm_argument_variable (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_arm_argument_variable
+    tfold_default
+      (fun av -> av#is_arm_argument_variable) false (self#get_variable v)
 
-  method is_stack_variable (v:variable_t) =
-    (self#has_var v) && (self#has_memvar v) &&
-      (self#get_memvar_reference v)#is_stack_reference
+  method is_stack_variable (v: variable_t) =
+    (self#is_memory_variable v)
+    && (let memref_r = self#get_memvar_reference v in
+        tfold_default (fun memref -> memref#is_stack_reference) false memref_r)
 
-  method is_memory_variable (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_memory_variable
+  method is_memory_variable (v: variable_t) =
+    tfold_default (fun av -> av#is_memory_variable) false (self#get_variable v)
 
-  method is_basevar_memory_variable (v:variable_t) =
-    (self#has_var v) && (self#has_memvar v)
-    && (self#get_memvar_reference v)#has_external_base
+  method is_basevar_memory_variable (v: variable_t) =
+    (self#is_memory_variable v)
+    && (let memref_r = self#get_memvar_reference v in
+        tfold_default (fun memref -> memref#has_external_base) false memref_r)
 
-  method is_basevar_memory_value (v:variable_t) =
+  method is_basevar_memory_value (v: variable_t) =
     (self#is_initial_memory_value v)
-    && self#is_basevar_memory_variable (self#get_initial_memory_value_variable v)
+    && (let var_r = self#get_initial_memory_value_variable v in
+         tfold_default self#is_basevar_memory_variable false var_r)
 
-  method get_memvar_basevar (v:variable_t) =
-    if self#is_basevar_memory_variable v then
-      (self#get_memvar_reference v)#get_external_base
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "variable does not have an external base: " ;
-                v#toPretty ]))
+  method get_memvar_basevar (v: variable_t) =
+    tbind
+      ~msg:"varmgr:get_memvar_basevar"
+      (fun memref -> memref#get_external_base)
+      (self#get_memvar_reference v)
 
   method get_memval_basevar (v:variable_t) =
-    if self#is_basevar_memory_value v then
-      self#get_memvar_basevar (self#get_initial_memory_value_variable v)
-    else
-      raise (BCH_failure
-               (LBLOCK [
-                    STR "variable is not an initial value of a basevar" ;
-                    STR "memory variable";
-                    v#toPretty]))
+    tbind
+      ~msg:"varmgr:get_memval_basevar"
+      (fun var -> self#get_memvar_basevar var)
+      (self#get_initial_memory_value_variable v)
 
-  method is_constant_offset (offset: memory_offset_t) =
-    match offset with
-    | NoOffset -> true
-    | ConstantOffset (_, suboffset) -> self#is_constant_offset suboffset
-    | IndexOffset (v, _, suboffset) ->
-       (self#is_function_initial_value v)
-       && self#is_constant_offset suboffset
-    | _ -> false
+  method is_fixed_value_offset (offset: memory_offset_t) =
+    (is_constant_offset offset)
+    || ((is_index_offset offset)
+        && (List.for_all
+              self#is_function_initial_value
+              (get_index_offset_variables offset)))
 
-  method is_numerical_offset (offset: memory_offset_t) =
-    is_constant_offset offset
-
-  method has_numerical_offset (v: variable_t) =
-    if (self#has_var v) && (self#has_memvar v) then
-      self#is_numerical_offset (self#get_memvar_offset v)
-    else
-      false
+  method has_fixed_value_offset (v: variable_t) =
+    (self#is_memory_variable v)
+    && (tfold_default
+          self#is_fixed_value_offset false (self#get_memvar_offset v))
 
   method has_constant_offset (v: variable_t) =
-    if (self#has_var v) && (self#has_memvar v) then
-      self#is_constant_offset (self#get_memvar_offset v)
-    else
-      false
+    (self#is_memory_variable v)
+    && (tfold_default is_constant_offset false (self#get_memvar_offset v))
 
-  method is_unknown_base_memory_variable (v:variable_t) =
-    (self#has_var v) && (self#has_memvar v) &&
-      (self#get_memvar_reference v)#is_unknown_reference
+  method is_unknown_base_memory_variable (v: variable_t) =
+    (self#is_memory_variable v)
+    && (tfold_default
+          (fun memref -> memref#is_unknown_reference)
+          false
+          (self#get_memvar_reference v))
 
-  method is_unknown_offset_memory_variable (v:variable_t) =
-    (self#has_var v)
-      && (match (self#get_variable v)#get_denotation with
-          | MemoryVariable (_, _, o) -> is_unknown_offset o
-          | _ -> false)
+  method is_unknown_offset_memory_variable (v: variable_t) =
+    (self#is_memory_variable v)
+    && (tfold_default is_unknown_offset false (self#get_memvar_offset v))
 
-  method is_unknown_memory_variable (v:variable_t) =
+  method is_unknown_memory_variable (v: variable_t) =
     (self#is_unknown_base_memory_variable v)
     || (self#is_unknown_offset_memory_variable v)
 
   method is_frozen_test_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_frozen_test_value
+    tfold_default
+      (fun av -> av#is_frozen_test_value) false (self#get_variable v)
 
   method is_ssa_register_value (v: variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_ssa_register_value
+    tfold_default
+      (fun av -> av#is_ssa_register_value) false (self#get_variable v)
 
   method is_ssa_register_value_at (iaddr: ctxt_iaddress_t) (v: variable_t) =
-    (self#has_var v) && ((self#get_variable v)#is_ssa_register_value_at iaddr)
+    tfold_default
+      (fun av -> av#is_ssa_register_value_at iaddr) false (self#get_variable v)
 
-  method is_initial_register_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_initial_register_value
+  method is_initial_register_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_initial_register_value) false (self#get_variable v)
 
-  method is_initial_mips_argument_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_initial_mips_argument_value
+  method is_initial_mips_argument_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_initial_mips_argument_value) false (self#get_variable v)
 
-  method is_initial_arm_argument_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_initial_arm_argument_value
+  method is_initial_arm_argument_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_initial_arm_argument_value) false (self#get_variable v)
 
-  method is_initial_memory_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_initial_memory_value
+  method is_initial_memory_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_initial_memory_value) false (self#get_variable v)
 
-  method is_initial_stackpointer_value (v:variable_t) =
-    (self#has_var v)
-    && (self#get_variable v)#is_initial_stackpointer_value
+  method is_initial_stackpointer_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_initial_stackpointer_value) false (self#get_variable v)
 
-  method is_bridge_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_bridge_value
+  method is_bridge_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_bridge_value) false (self#get_variable v)
 
-  method is_bridge_value_at (a:ctxt_iaddress_t) (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_bridge_value_at a
+  method is_bridge_value_at (a: ctxt_iaddress_t) (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_bridge_value_at a) false (self#get_variable v)
 
-  method is_symbolic_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_symbolic_value
+  method is_symbolic_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_symbolic_value) false (self#get_variable v)
 
-  method is_signed_symbolic_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_signed_symbolic_value
+  method is_signed_symbolic_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_signed_symbolic_value) false (self#get_variable v)
 
-  method is_in_test_jump_range (a:ctxt_iaddress_t) (v:variable_t) =
-    (self#has_var v) &&  (self#get_variable v)#is_in_test_jump_range a
+  method is_in_test_jump_range (a: ctxt_iaddress_t) (v: variable_t) =
+    tbind
+      ~msg:"varmgr:is_in_test_jump_range"
+      (fun av -> av#is_in_test_jump_range a)
+      (self#get_variable v)
 
-  method is_return_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_return_value
+  method is_return_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_return_value) false (self#get_variable v)
 
-  method is_sideeffect_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_sideeffect_value
+  method is_sideeffect_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_sideeffect_value) false (self#get_variable v)
 
-  method is_special_variable (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_special_variable
+  method is_special_variable (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_special_variable) false (self#get_variable v)
 
-  method is_runtime_constant (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_runtime_constant
+  method is_runtime_constant (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_runtime_constant) false (self#get_variable v)
 
-  method is_function_pointer (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_function_pointer
+  method is_function_pointer (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_function_pointer) false (self#get_variable v)
 
-  method is_calltarget_value (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_calltarget_value
+  method is_calltarget_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_calltarget_value) false (self#get_variable v)
 
-  method is_global_sideeffect (v:variable_t) =
-    (self#has_var v) && (self#get_variable v)#is_global_sideeffect
+  method is_global_sideeffect (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_global_sideeffect) false (self#get_variable v)
 
 end
 
