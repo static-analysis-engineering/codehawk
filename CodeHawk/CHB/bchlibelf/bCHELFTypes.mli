@@ -803,6 +803,14 @@ object
   (* predicates *)
   method has_sections: bool
   method is_program_address: doubleword_int -> bool
+
+  (** [is_code_address va] returns [true] if virtual address [va] is an address
+      within an executable section (which may not be an instruction). *)
+  method is_code_address: doubleword_int -> bool
+
+  (** [is_data_address va] returns [true] if virtual address [va] is an address
+      within a program section that is not an executable section. *)
+  method is_data_address: doubleword_int -> bool
   method is_global_offset_table_address: doubleword_int -> bool
   method has_xsubstring: doubleword_int -> int -> bool
   method has_debug_info: bool

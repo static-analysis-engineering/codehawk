@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -516,17 +516,34 @@ object(self)
     let ub = ref wordzero in
     let xsections = self#get_executable_sections in
     begin
-      List.iter (fun (h,_) ->
-          let lba = h#get_addr in
-          let uba = lba#add h#get_size in
-          begin
-            (if lba#lt !lb then lb := lba) ;
-            (if !ub#lt uba then ub := uba)
-          end) xsections ;
+      List.iter (fun (h, _) ->
+          if not (h#get_size#le wordzero) then
+            let lba = h#get_addr in
+            let uba = lba#add h#get_size in
+            begin
+              (if lba#lt !lb then lb := lba);
+              (if !ub#lt uba then ub := uba)
+            end) xsections ;
       system_info#set_elf_is_code_address !lb !ub;
       code_lb <- !lb;
       code_ub <- !ub
     end
+
+  method is_code_address (va: doubleword_int): bool =
+    List.fold_left (fun found (h, _) ->
+        found
+        || (h#get_addr#le va) && va#lt (h#get_addr#add h#get_size))
+      false self#get_executable_sections
+
+  method is_data_address (va: doubleword_int): bool =
+    List.fold_left (fun found (_, h, _) ->
+        found
+        || (h#is_program_section
+            && (not h#is_executable)
+            && (h#get_addr#le va)
+            && (va#lt (h#get_addr#add h#get_size))))
+    false self#get_sections
+
 
   method initialize_jump_tables =
     let xstrings =
