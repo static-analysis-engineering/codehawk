@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,15 +29,11 @@
 
 (* chlib *)
 open CHAtlas
-open CHBounds
 open CHDomain
-open CHIntervals
 open CHNumerical
 open CHNumericalConstraints
 open CHPretty
 open CHLanguage
-open CHSymbolicSets
-open CHValueSets
 open CHUtils
 
 (* chutil *)
@@ -51,18 +47,13 @@ open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHDoubleword
 open BCHLibTypes
-open BCHSystemSettings
-open BCHVariable
-
-(* bchlibx86 *)
-open BCHAssemblyFunctions
 
 (* bchanalyze *)
 open BCHNumericalConstraints
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 module ConstraintCollections = CHCollections.Make
@@ -73,16 +64,9 @@ module ConstraintCollections = CHCollections.Make
    end)
 
 let pr_expr = xpr_formatter#pr_expr
-let x2p = pr_expr
-let expr_compare = syntactic_comparison
 
-
-let tracked_locations = []
-
-
-let track_location loc p =
-  if List.mem loc tracked_locations then
-    chlog#add ("tracked (invariant):" ^ loc) p
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("ExtractInvariants:" ^ tag) msg
 
 
 exception TimeOut of float * int * int
@@ -122,7 +106,7 @@ let extract_external_value_equalities
   let rec expand_symbolic_values x =
     match  x with
     | XVar v when finfo#env#is_symbolic_value v ->
-       expand_symbolic_values (finfo#env#get_symbolic_value_expr v)
+       expand_symbolic_values (TR.tget_ok (finfo#env#get_symbolic_value_expr v))
     | XOp (op,l) -> XOp (op, List.map expand_symbolic_values l)
     | _ -> x in
   let is_external_var = finfo#env#is_function_initial_value in
@@ -261,29 +245,34 @@ let extract_testvar_equalities finfo iaddr domain =
   let vars = domain#observer#getObservedVariables in
   let fvals = List.filter env#is_frozen_test_value vars in
   List.fold_left (fun acc fval ->
-    let (fvar, taddr, jaddr) = env#get_frozen_variable fval in
-    if iaddr = jaddr then
-      let varsout =
-        List.filter (fun v -> not ((fvar#equal v) || (fval#equal v))) vars in
-      let domain = domain#projectOut varsout in
-      let numConstrs =
-        domain#observer#getNumericalConstraints ~variables:None () in
-      match numConstrs with
-      | [] -> acc
-      | _ ->
-         if List.exists (fun nc ->
-                let factors = nc#getFactors in
-                let variables = List.map (fun f -> f#getVariable) factors in
-                List.exists (fun v -> fvar#equal v) variables
-                   && List.exists (fun v -> fval#equal v) variables) numConstrs then
-           begin
-	     finfo#finv#add_test_value_fact iaddr fvar fval taddr jaddr;
-	     fval :: acc
-           end
-         else
-           acc
-    else
-      acc) [] fvals
+      log_tfold
+        (log_error "extract_testvar_equalities" "invalid frozen variable")
+        ~ok:(fun (fvar, taddr, jaddr) ->
+          if iaddr = jaddr then
+            let varsout =
+              List.filter (fun v -> not ((fvar#equal v) || (fval#equal v))) vars in
+            let domain = domain#projectOut varsout in
+            let numConstrs =
+              domain#observer#getNumericalConstraints ~variables:None () in
+            match numConstrs with
+            | [] -> acc
+            | _ ->
+               if List.exists (fun nc ->
+                      let factors = nc#getFactors in
+                      let variables = List.map (fun f -> f#getVariable) factors in
+                      List.exists (fun v -> fvar#equal v) variables
+                      && List.exists
+                           (fun v -> fval#equal v) variables) numConstrs then
+                 begin
+	           finfo#finv#add_test_value_fact iaddr fvar fval taddr jaddr;
+	           fval :: acc
+                 end
+               else
+                 acc
+          else
+            acc)
+        ~error:(fun _ -> acc)
+        (env#get_frozen_variable fval)) [] fvals
 
 
 let extract_ssavar_equalities
@@ -293,20 +282,24 @@ let extract_ssavar_equalities
   let fvals = List.filter env#is_ssa_register_value vars in
   let _ =
     List.iter (fun fval ->
-        let rvar = env#get_ssa_register_value_register_variable fval in
-        let varsout =
-          List.filter (fun v -> not ((fval#equal v) || (rvar#equal v))) vars in
-        let domain = domain#projectOut varsout in
-        let numConstrs =
-          domain#observer#getNumericalConstraints ~variables:None () in
-        match numConstrs with
-        | [] -> ()
-        | _ ->
-           if List.exists (fun nc ->
-                  let factors = nc#getFactors in
-                  let variables = List.map (fun f -> f#getVariable) factors in
-                  List.exists (fun v -> fval#equal v) variables) numConstrs then
-             finfo#finv#add_ssa_value_fact iaddr rvar fval)
+        log_tfold
+          (log_error "extract_ssavar_equalities" "invalid ssa register")
+          ~ok:(fun rvar ->
+            let varsout =
+              List.filter (fun v -> not ((fval#equal v) || (rvar#equal v))) vars in
+            let domain = domain#projectOut varsout in
+            let numConstrs =
+              domain#observer#getNumericalConstraints ~variables:None () in
+            match numConstrs with
+            | [] -> ()
+            | _ ->
+               if List.exists (fun nc ->
+                      let factors = nc#getFactors in
+                      let variables = List.map (fun f -> f#getVariable) factors in
+                      List.exists (fun v -> fval#equal v) variables) numConstrs then
+                 finfo#finv#add_ssa_value_fact iaddr rvar fval)
+          ~error:(fun _ -> ())
+          (env#get_ssa_register_value_register_variable fval))
       fvals in
   fvals
 
@@ -379,42 +372,46 @@ let extract_initvar_equalities finfo iaddr domain flocinv =
   let fvars =
     List.fold_left
       (fun acc fval ->
-        let fvar = env#get_init_value_variable fval in
-        if List.exists (fun v -> v#equal fval) fvalsEq then
-          if init_value_valid fvar fval then
-            fvar :: acc
-          else
-            acc
-        else if List.exists (fun v -> v#equal fval) fvalsNotEq then
-          acc
-        else if List.exists (fun v -> v#equal fvar) domVars then
-          let numcs = get_var_constraints constraintSets fvar fval domVars in
-          match numcs with
-          | [] ->
-             begin
-               add_disequality fvar fval;
-               acc
-             end
-          | [c] when is_equality c fvar fval ->
-	     begin
-               finfo#finv#add_initial_value_fact iaddr fvar fval;
-               fvar :: acc
-             end
-          | [c1; c2] when have_equal_values c1 c2 ->
-	     begin
-               finfo#finv#add_initial_value_fact iaddr fvar fval;
-               fvar :: acc
-             end
-          | _ ->
-             begin
-               add_disequality fvar fval;
-               acc
-             end
-        else
-          begin
-            add_disequality fvar fval;
-            acc
-          end) [] fvals in
+        log_tfold
+          (log_error "extract_initvar_equalities" "invalid initvar")
+          ~ok:(fun fvar ->
+            if List.exists (fun v -> v#equal fval) fvalsEq then
+              if init_value_valid fvar fval then
+                fvar :: acc
+              else
+                acc
+            else if List.exists (fun v -> v#equal fval) fvalsNotEq then
+              acc
+            else if List.exists (fun v -> v#equal fvar) domVars then
+              let numcs = get_var_constraints constraintSets fvar fval domVars in
+              match numcs with
+              | [] ->
+                 begin
+                   add_disequality fvar fval;
+                   acc
+                 end
+              | [c] when is_equality c fvar fval ->
+	         begin
+                   finfo#finv#add_initial_value_fact iaddr fvar fval;
+                   fvar :: acc
+                 end
+              | [c1; c2] when have_equal_values c1 c2 ->
+	         begin
+                   finfo#finv#add_initial_value_fact iaddr fvar fval;
+                   fvar :: acc
+                 end
+              | _ ->
+                 begin
+                   add_disequality fvar fval;
+                   acc
+                 end
+            else
+              begin
+                add_disequality fvar fval;
+                acc
+              end)
+          ~error:(fun _ -> acc)
+          (env#get_init_value_variable fval)) [] fvals in
   let _ = match !disequalities with [] -> () | l -> propagate_disequalities l in
   fvars
 
@@ -425,7 +422,7 @@ let extract_linear_equalities
   let starttime = Unix.gettimeofday () in
   let outside_test_jump_range v k =
     finfo#env#is_frozen_test_value v &&
-      not (finfo#env#is_in_test_jump_range v k) in
+      not (TR.tget_ok (finfo#env#is_in_test_jump_range v k)) in
   let invList = ref [] in
   let _ = H.iter (fun k v -> invList := (k,v) :: !invList) invariants in
   let invList = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !invList in
