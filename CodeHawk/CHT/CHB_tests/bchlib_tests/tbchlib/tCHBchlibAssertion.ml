@@ -7,7 +7,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,6 @@
 
 (* chlib *)
 open CHLanguage
-open CHPretty
 
 (* chutil *)
 open CHTraceResult
@@ -69,7 +68,10 @@ let equal_doubleword =
 let equal_doubleword_result
       ?(msg="") (dw: doubleword_int) (dwr: doubleword_result) =
   if Result.is_error dwr then
-    A.fail (dw#to_hex_string) (String.concat "; " (TR.tget_error dwr)) "error"
+    A.fail
+      (dw#to_hex_string)
+      (String.concat "; " (TR.tget_error dwr))
+      ("error:" ^ msg)
   else
     A.make_equal
       (fun dw1 dw2 -> dw1#equal dw2)
@@ -85,6 +87,7 @@ let equal_doubleword_alignment
   A.make_equal
     (fun (xs, xi) (rd, ri) -> (xs = rd) && (xi = ri))
     (fun (s, i) -> "(" ^ s ^ ", " ^ (string_of_int i) ^ ")")
+    ~msg
     expected
     (rd, revdr)
 
@@ -122,12 +125,19 @@ let equal_assignments
   let varmgr = finfo#env#varmgr in
   let srecvd =
     List.map (fun (v, e) ->
-        let asmvar = varmgr#get_variable v in
-        let pexp =
-          match e with
-          | NUM_VAR nv -> (varmgr#get_variable nv)#toPretty
-          | _ -> numerical_exp_to_pretty e in
-        (p2s asmvar#toPretty, p2s pexp)) received in
+        tfold_default
+          (fun asmvar ->
+            let pexp =
+              match e with
+              | NUM_VAR nv ->
+                 tfold_default
+                   (fun numvar -> numvar#toPretty)
+                   (numerical_exp_to_pretty e)
+                   (varmgr#get_variable nv)
+              | _ -> numerical_exp_to_pretty e in
+            (p2s asmvar#toPretty, p2s pexp))
+          (p2s (numerical_exp_to_pretty e), "error")
+          (varmgr#get_variable v)) received in
   A.make_equal_list
     (fun (xv, xe) (rv, re) -> (xv = rv) && (xe = re))
     (fun (v, e) -> "(" ^ v ^ ", " ^ e ^ ")")
@@ -246,7 +256,7 @@ let equal_function_parameters
   let recvd = List.map convert_param received in
   let btstr (ty: btype_t): string =
     match ty with
-    | TComp (ckey, attrs) ->
+    | TComp _ ->
        let cinfo = get_struct_type_compinfo ty in
        "struct " ^ cinfo.bcname
     | _ -> btype_to_string ty in
