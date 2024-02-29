@@ -26,33 +26,24 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHIntervals
 open CHLanguage
 open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHXmlDocument
 
 (* xprlib *)
 open Xprt
 open XprTypes
-open XprToPretty
-open XprXml
-open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
 open BCHCPURegisters
 open BCHDoubleword
-open BCHFunctionData
 open BCHImmediate
 open BCHLibTypes
 open BCHSystemInfo
-open BCHSystemSettings
-open BCHUserProvidedDirections
-open BCHXmlUtil
 
 (* bchlibelf *)
 open BCHELFHeader
@@ -282,7 +273,7 @@ object (self)
        end
     | PowerIndReg (index, offset) ->
        let rvar = floc#env#mk_pwr_gp_register_variable index in
-       let xvar = floc#inv#rewrite_expr (XVar rvar) floc#env#get_variable_comparator in
+       let xvar = floc#inv#rewrite_expr (XVar rvar) in
        let default () = XVar (self#to_variable floc) in
        (match xvar with
         | XConst (IntConst n) ->
@@ -315,10 +306,9 @@ object (self)
   method to_updated_offset_address (floc: floc_int): xpr_t =
     match kind with
     | PowerIndReg (_, offset) ->
-       let env = floc#f#env in
        let memoff = num_constant_expr offset in
        let addr = XOp (XPlus, [self#to_address floc; memoff]) in
-       floc#inv#rewrite_expr addr env#get_variable_comparator
+       floc#inv#rewrite_expr addr
     | _ ->
        raise
          (BCH_failure
@@ -355,7 +345,7 @@ object (self)
        let memoff = num_constant_expr offset in
        let rvar = env#mk_pwr_gp_register_variable index in
        let addr = XOp (XPlus, [XVar rvar; memoff]) in
-       floc#inv#rewrite_expr addr env#get_variable_comparator
+       floc#inv#rewrite_expr addr
     | _ ->
        raise
          (BCH_failure

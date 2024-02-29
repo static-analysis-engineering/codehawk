@@ -33,6 +33,7 @@ open CHPretty
 
 (* chutil *)
 open CHIndexTable
+open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
 
@@ -63,6 +64,10 @@ module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("FnPowerDictionary:"^ tag) msg
+
 
 let _bd = BCHDictionary.bdictionary
 let ixd = BCHInterfaceDictionary.interface_dictionary
@@ -108,8 +113,7 @@ object (self)
     let varinv = floc#varinv in
     let rewrite_expr ?(restrict:int option) (x: xpr_t): xpr_t =
       try
-        let xpr =
-          floc#inv#rewrite_expr x floc#env#get_variable_comparator in
+        let xpr = floc#inv#rewrite_expr x in
         let xpr = simplify_xpr xpr in
         let xpr =
           let vars = variables_in_expr xpr in
@@ -117,15 +121,19 @@ object (self)
           if varssize = 1 then
             let xvar = List.hd vars in
             if floc#env#is_frozen_test_value xvar then
-              let (testvar, testiaddr, _) = floc#env#get_frozen_variable xvar in
-              let testloc = ctxt_string_to_location floc#fa testiaddr in
-              let testfloc = get_floc testloc in
-              let extxprs = testfloc#inv#get_external_exprs testvar in
-              let extxprs =
-                List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
-              (match extxprs with
-               | [] -> xpr
-               | _ -> List.hd extxprs)
+              log_tfold
+                (log_error "index_instr" "invalid test address")
+              ~ok:(fun (testvar, testiaddr, _) ->
+                let testloc = ctxt_string_to_location floc#fa testiaddr in
+                let testfloc = get_floc testloc in
+                let extxprs = testfloc#inv#get_external_exprs testvar in
+                let extxprs =
+                  List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
+                (match extxprs with
+                 | [] -> xpr
+                 | _ -> List.hd extxprs))
+              ~error:(fun _ -> xpr)
+              (floc#env#get_frozen_variable xvar)
             else
               xpr
           else
@@ -151,23 +159,26 @@ object (self)
     let rewrite_test_expr (csetter: ctxt_iaddress_t) (x: xpr_t) =
       let testloc = ctxt_string_to_location floc#fa csetter in
       let testfloc = get_floc testloc in
-      let xpr =
-        testfloc#inv#rewrite_expr x testfloc#env#get_variable_comparator in
+      let xpr = testfloc#inv#rewrite_expr x in
       let xpr =
         let vars = variables_in_expr xpr in
         let varssize = List.length vars in
         if varssize = 1 then
           let xvar = List.hd vars in
           if floc#env#is_frozen_test_value xvar then
-            let (testvar, testiaddr, _) = floc#env#get_frozen_variable xvar in
-            let testloc = ctxt_string_to_location floc#fa testiaddr in
-            let testfloc = get_floc testloc in
-            let extxprs = testfloc#inv#get_external_exprs testvar in
-            let extxprs =
-              List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
-            (match extxprs with
-             | [] -> xpr
-             | _ -> List.hd extxprs)
+            log_tfold
+              (log_error "rewrite_test_expr" "invalid test address")
+              ~ok:(fun (testvar, testiaddr, _) ->
+                let testloc = ctxt_string_to_location floc#fa testiaddr in
+                let testfloc = get_floc testloc in
+                let extxprs = testfloc#inv#get_external_exprs testvar in
+                let extxprs =
+                  List.map (fun e -> substitute_expr (fun _v -> e) xpr) extxprs in
+                (match extxprs with
+                 | [] -> xpr
+                 | _ -> List.hd extxprs))
+              ~error:(fun _ -> xpr)
+              (floc#env#get_frozen_variable xvar)
           else
             xpr
         else
