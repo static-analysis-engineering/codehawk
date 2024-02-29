@@ -200,12 +200,12 @@ object
 
   inherit [flag_t] mcts_t "flag_t"
 
-  method ts (f: flag_t) =
+  method !ts (f: flag_t) =
     match f with
     | X86Flag _ -> "x"
     | ARMCCFlag _ -> "a"
 
-  method tags = ["a"; "x"]
+  method !tags = ["a"; "x"]
 
 end
 
@@ -217,7 +217,7 @@ object
 
   inherit [register_t] mcts_t "register_t"
 
-  method ts (r:register_t) =
+  method !ts (r:register_t) =
     match r with
     | SegmentRegister _ -> "s"
     | CPURegister _ -> "c"
@@ -241,7 +241,7 @@ object
     | PowerSPRegister _ -> "pwrspr"
     | PowerCRField _ -> "pwrcrf"
 
-  method tags = [
+  method !tags = [
       "a"; "armd"; "armx"; "armxe"; "armxr"; "as"; "c"; "ctr"; "d"; "dbg"; "f";
       "m"; "s"; "x"; "p"; "pfp"; "ps"; "pwrcrf"; "pwrgpr"; "pwrspr"]
 
@@ -254,12 +254,12 @@ object
 
   inherit [pld_position_t] mcts_t "pld_position"
 
-  method ts (p: pld_position_t) =
+  method !ts (p: pld_position_t) =
     match p with
     | FieldPosition _ -> "f"
     | ArrayPosition _ -> "a"
 
-  method tags = ["a"; "f"]
+  method !tags = ["a"; "f"]
 
 end
 
@@ -271,14 +271,14 @@ object
 
   inherit [parameter_location_t] mcts_t "parameter_location"
 
-  method ts (p:parameter_location_t) =
+  method !ts (p:parameter_location_t) =
     match p with
     | StackParameter _ -> "s"
     | RegisterParameter _ -> "r"
     | GlobalParameter _ -> "g"
     | UnknownParameterLocation _ -> "u"
 
-  method tags = ["g"; "r"; "s"; "u"]
+  method !tags = ["g"; "r"; "s"; "u"]
 
 end
 
@@ -291,7 +291,7 @@ object
 
   inherit [ bterm_t ] mcts_t "bterm"
 
-  method ts (t:bterm_t) =
+  method !ts (t:bterm_t) =
     match t with
     | ArgValue _ -> "a"
     | RunTimeValue -> "rt"
@@ -306,7 +306,7 @@ object
     | ArgSizeOf _ -> "as"
     | ArithmeticExpr _ -> "x"
 
-  method tags = ["a"; "aa"; "as"; "b"; "c"; "i"; "n"; "nt"; "r"; "rt"; "s"; "x"]
+  method !tags = ["a"; "aa"; "as"; "b"; "c"; "i"; "n"; "nt"; "r"; "rt"; "s"; "x"]
 
 end
 
@@ -318,7 +318,7 @@ object
 
   inherit [gterm_t] mcts_t "gterm"
 
-  method ts (t: gterm_t) =
+  method !ts (t: gterm_t) =
     match t with
     | GConstant _ -> "c"
     | GReturnValue _ -> "r"
@@ -327,7 +327,7 @@ object
     | GUnknownValue -> "u"
     | GArithmeticExpr _ -> "x"
 
-  method tags = ["a"; "c"; "r"; "s"; "u"; "x"]
+  method !tags = ["a"; "c"; "r"; "s"; "u"; "x"]
 
 end
 
@@ -339,7 +339,7 @@ object
 
   inherit [ function_stub_t ] mcts_t "function_stub"
 
-  method ts (s:function_stub_t) =
+  method !ts (s:function_stub_t) =
     match s with
     | SOFunction _ -> "so"
     | DllFunction _ -> "dll"
@@ -347,7 +347,7 @@ object
     | LinuxSyscallFunction _ -> "sc"
     | PckFunction _ -> "pck"
 
-  method tags = ["dll"; "jni"; "pck"; "so"; "sc"]
+  method !tags = ["dll"; "jni"; "pck"; "so"; "sc"]
 
 end
 
@@ -359,7 +359,7 @@ object
 
   inherit [call_target_t] mcts_t "call_target"
 
-  method ts (c:call_target_t) =
+  method !ts (c:call_target_t) =
     match c with
     | StubTarget _ -> "stub"
     | StaticStubTarget _ -> "sstub"
@@ -371,7 +371,7 @@ object
     | CallbackTableTarget _ -> "cb"
     | UnknownTarget -> "u"
 
-  method tags = ["app"; "cb"; "i"; "inl"; "stub"; "sstub"; "u"; "v"; "wrap"]
+  method !tags = ["app"; "cb"; "i"; "inl"; "stub"; "sstub"; "u"; "v"; "wrap"]
 
 end
 
@@ -382,14 +382,14 @@ object
 
   inherit [c_struct_constant_t] mcts_t "c_struct_constant"
 
-  method ts (c:c_struct_constant_t) =
+  method !ts (c:c_struct_constant_t) =
     match c with
     | FieldValues _ -> "v"
     | FieldConstant _ -> "c"
     | FieldString _ -> "s"
     | FieldCallTarget _ -> "t"
 
-  method tags = ["c"; "s"; "t"; "v"]
+  method !tags = ["c"; "s"; "t"; "v"]
 
 end
 
@@ -402,7 +402,7 @@ object
 
   inherit [xxpredicate_t] mcts_t "xxpredicate_t"
 
-  method ts (p: xxpredicate_t) =
+  method !ts (p: xxpredicate_t) =
     match p with
     | XXAllocationBase _ -> "ab"
     | XXBlockWrite _ -> "bw"
@@ -438,7 +438,7 @@ object
     | XXDisjunction _ -> "dis"
     | XXConditional _ -> "con"
 
-  method tags = [
+  method !tags = [
       "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
       "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
@@ -455,7 +455,7 @@ object
 
   inherit [xpo_predicate_t] mcts_t "xpo_predicate_t"
 
-  method ts (p: xpo_predicate_t) =
+  method !ts (p: xpo_predicate_t) =
     match p with
     | XPOAllocationBase _ -> "ab"
     | XPOBlockWrite _ -> "bw"
@@ -491,7 +491,7 @@ object
     | XPODisjunction _ -> "dis"
     | XPOConditional _ -> "con"
 
-  method tags = [
+  method !tags = [
       "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
       "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
@@ -503,12 +503,121 @@ end
 let xpo_predicate_mcts: xpo_predicate_t mfts_int = new xpo_predicate_mcts_t
 
 
+class type_base_variable_mcts_t: [type_base_variable_t] mfts_int =
+object
+
+  inherit [type_base_variable_t] mcts_t "type_base_variable_t"
+
+  method !ts (v: type_base_variable_t) =
+    match v with
+    | FunctionType _ -> "f"
+    | DataAddressType _ -> "d"
+    | GlobalVariableType _ -> "g"
+
+  method !tags = ["d"; "f"; "g"]
+
+end
+
+let type_base_variable_mcts: type_base_variable_t mfts_int =
+  new type_base_variable_mcts_t
+
+
+class type_cap_label_mcts_t: [type_cap_label_t] mfts_int =
+object
+
+  inherit [type_cap_label_t] mcts_t "type_cap_label_t"
+
+  method !ts (c: type_cap_label_t) =
+    match c with
+    | FRegParameter _ -> "fr"
+    | FStackParameter _ -> "fs"
+    | FLocStackAddress _ -> "sa"
+    | FReturn -> "fx"
+    | Load -> "l"
+    | Store -> "s"
+    | LeastSignificantByte -> "lsb"
+    | LeastSignificantHalfword -> "lsh"
+    | OffsetAccess _ -> "a"
+    | OffsetAccessA _ -> "aa"
+
+  method !tags = ["a"; "aa"; "fr"; "fs"; "fx"; "l"; "lsb"; "lsh"; "s"; "sa"]
+
+end
+
+let type_cap_label_mcts: type_cap_label_t mfts_int =
+  new type_cap_label_mcts_t
+
+
+class type_constant_mcts_t: [type_constant_t] mfts_int =
+object
+
+  inherit [type_constant_t] mcts_t "type_constant_t"
+
+  method !ts (c: type_constant_t) =
+    match c with
+    | TyAsciiDigit -> "ad"
+    | TyAsciiCapsLetter -> "acl"
+    | TyAsciiSmallLetter -> "asl"
+    | TyAsciiControl -> "ac"
+    | TyAsciiPrintable -> "ap"
+    | TyAscii -> "a"
+    | TyExtendedAscii -> "ax"
+    | TyZero -> "z"
+    | TyTInt _ -> "ti"
+    | TyTFloat _ -> "tf"
+    | TyTUnknown -> "u"
+
+  method !tags = [
+      "a"; "ac"; "acl"; "ap"; "asl"; "ax"; "i"; "s"; "ti"; "tf"; "u"; "z"]
+
+end
+
+let type_constant_mcts: type_constant_t mfts_int =
+  new type_constant_mcts_t
+
+
+class type_term_mcts_t: [type_term_t] mfts_int =
+object
+
+  inherit [type_term_t] mcts_t "type_term_t"
+
+  method !ts (t: type_term_t) =
+    match t with
+    | TyVariable _ -> "v"
+    | TyConstant _ -> "c"
+
+  method !tags = ["c"; "v"]
+
+end
+
+let type_term_mcts: type_term_t mfts_int = new type_term_mcts_t
+
+
+class type_constraint_mcts_t: [type_constraint_t] mfts_int =
+object
+
+  inherit [type_constraint_t] mcts_t "type_constraint_t"
+
+  method !ts (c: type_constraint_t) =
+    match c with
+    | TyVar _ -> "v"
+    | TySub _ -> "s"
+    | TyZeroCheck _ -> "z"
+
+  method !tags = ["s"; "v"; "z"]
+
+end
+
+let type_constraint_mcts: type_constraint_t mfts_int =
+  new type_constraint_mcts_t
+
+
 class memory_base_mcts_t:[ memory_base_t ] mfts_int =
 object
 
   inherit [ memory_base_t ] mcts_t "memory_base"
 
-  method ts (b:memory_base_t) =
+  method !ts (b:memory_base_t) =
     match b with
     | BLocalStackFrame -> "l"
     | BRealignedStackFrame -> "r"
@@ -517,7 +626,7 @@ object
     | BaseVar _ -> "v"
     | BaseUnknown _ -> "u"
 
-  method tags = [ "a"; "g"; "l"; "r"; "u"; "v" ]
+  method !tags = [ "a"; "g"; "l"; "r"; "u"; "v" ]
 end
 
 let memory_base_mcts: memory_base_t mfts_int = new memory_base_mcts_t
@@ -527,7 +636,7 @@ object
 
   inherit [ memory_offset_t ] mcts_t "memory_offset"
 
-  method ts (o:memory_offset_t) =
+  method !ts (o:memory_offset_t) =
     match o with
     | NoOffset -> "n"
     | ConstantOffset _ -> "c"
@@ -535,7 +644,7 @@ object
     | IndexOffset _ -> "i"
     | UnknownOffset -> "u"
 
-  method tags = [ "c"; "f"; "i"; "n"; "u" ]
+  method !tags = [ "c"; "f"; "i"; "n"; "u" ]
 end
 
 let memory_offset_mcts: memory_offset_t mfts_int = new memory_offset_mcts_t
@@ -545,14 +654,14 @@ object
 
   inherit [assembly_variable_denotation_t] mcts_t "assembly_variable"
 
-  method ts (v:assembly_variable_denotation_t) =
+  method !ts (v:assembly_variable_denotation_t) =
     match v with
     | MemoryVariable _ -> "m"
     | RegisterVariable _ -> "r"
     | CPUFlagVariable _ -> "f"
     | AuxiliaryVariable _ -> "a"
 
-  method tags = ["a"; "f"; "m"; "r"]
+  method !tags = ["a"; "f"; "m"; "r"]
 
 end
 
@@ -564,7 +673,7 @@ object
 
   inherit [constant_value_variable_t] mcts_t "constant_value_variable"
 
-  method ts (v:constant_value_variable_t) =
+  method !ts (v:constant_value_variable_t) =
     match v with
     | InitialRegisterValue _ -> "ir"
     | InitialMemoryValue _ -> "iv"
@@ -584,7 +693,7 @@ object
     | RuntimeConstant _ -> "rt"
     | ChifTemp -> "chiftemp"
 
-  method tags = [
+  method !tags = [
       "bv"; "chiftemp"; "ct"; "ev"; "fr"; "fp"; "ft"; "fv"; "ir";
       "iv"; "ma"; "rt"; "se" ; "sp"; "sv"; "ssa"; "ssv"]
 
@@ -599,7 +708,7 @@ object
 
   inherit [stack_access_t] mcts_t "stack_access_t"
 
-  method ts (sa: stack_access_t) =
+  method !ts (sa: stack_access_t) =
     match sa with
     | RegisterSpill _ -> "rs"
     | RegisterRestore _ -> "rr"
@@ -608,7 +717,7 @@ object
     | StackBlockRead _ -> "br"
     | StackBlockWrite _ -> "bw"
 
-  method tags = ["br"; "bw"; "rr"; "rs"; "sl"; "ss"]
+  method !tags = ["br"; "bw"; "rr"; "rs"; "sl"; "ss"]
 
 end
 
@@ -621,7 +730,7 @@ object
 
   inherit [ jump_target_t ] mcts_t "jump_target"
 
-  method ts (t:jump_target_t) =
+  method !ts (t:jump_target_t) =
     match t with
     | JumptableTarget _ -> "jt"
     | OffsettableTarget _ -> "ot"
@@ -630,7 +739,7 @@ object
     | SOJumpTarget _ -> "sj"
     | UnknownJumpTarget -> "u"
 
-  method tags = [ "jt" ; "ot" ; "ja" ; "dj" ; "sj" ; "u" ]
+  method !tags = [ "jt" ; "ot" ; "ja" ; "dj" ; "sj" ; "u" ]
 
 end
 
@@ -642,13 +751,13 @@ object
 
   inherit [non_relational_value_t] mcts_t "non_relational_value_t"
 
-  method ts (v:non_relational_value_t) =
+  method !ts (v:non_relational_value_t) =
     match v with
     | FSymbolicExpr _ -> "sx"
     | FIntervalValue _ -> "iv"
     | FBaseOffsetValue _ -> "bv"
 
-  method tags = [ "bv"; "iv"; "sx" ]
+  method !tags = [ "bv"; "iv"; "sx" ]
 end
 
 let non_relational_value_mcts:non_relational_value_t mfts_int =
@@ -660,7 +769,7 @@ object
 
   inherit [invariant_fact_t] mcts_t "invariant_fact_t"
 
-  method ts (t:invariant_fact_t) =
+  method !ts (t:invariant_fact_t) =
     match t with
     | Unreachable _ -> "u"
     | NonRelationalFact _ -> "n"
@@ -670,7 +779,7 @@ object
     | InitialVarDisEquality _ -> "id"
     | TestVarEquality _ -> "te"
 
-  method tags = ["id"; "ie"; "n"; "r"; "sse"; "te"; "u"]
+  method !tags = ["id"; "ie"; "n"; "r"; "sse"; "te"; "u"]
 
 end
 
@@ -682,14 +791,14 @@ object
 
   inherit [var_invariant_fact_t] mcts_t "var_invariant_fact_t"
 
-  method ts (t: var_invariant_fact_t) =
+  method !ts (t: var_invariant_fact_t) =
     match t with
     | ReachingDef _ -> "r"
     | FlagReachingDef _ -> "f"
     | DefUse _ -> "d"
     | DefUseHigh _ -> "h"
 
-  method tags = ["d"; "f"; "h"; "r"]
+  method !tags = ["d"; "f"; "h"; "r"]
 
 end
 
