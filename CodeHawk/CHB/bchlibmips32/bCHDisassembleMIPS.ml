@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -76,6 +76,9 @@ open BCHMIPSTypes
 open BCHMIPSDisassemblyUtils
 
 module TR = CHTraceResult
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("DisassembleMIPS:" ^ tag) msg
 
 
 (* Unsafe call to string_to_doubleword; may raise Invalid_argument *)
@@ -867,7 +870,7 @@ let construct_functions_mips () =
 let set_call_address (floc:floc_int) (op:mips_operand_int) =
   let env = floc#f#env in
   let opExpr = op#to_expr floc in
-  let opExpr = floc#inv#rewrite_expr opExpr env#get_variable_comparator in
+  let opExpr = floc#inv#rewrite_expr opExpr in
   let logerror msg = ch_error_log#add "set call address" msg in
   match opExpr with
   | XConst (IntConst c) ->
@@ -917,78 +920,88 @@ let set_call_address (floc:floc_int) (op:mips_operand_int) =
          ()
 
   | XVar v when env#is_global_variable v ->
-     let gaddr = env#get_global_variable_address v in
-     if elf_header#is_program_address gaddr then
-       let dw = elf_header#get_program_value gaddr in
-       if functions_data#has_function_name dw then
-         let fndata = functions_data#get_function dw in
-         let name = fndata#get_function_name in
-         if fndata#is_library_stub
-            && function_summary_library#has_so_function name then
-             floc#set_call_target (mk_so_target name)
-         else
-           if mips_assembly_functions#has_function_by_address dw then
-             floc#set_call_target (mk_app_target dw)
+     log_tfold
+       (log_error "set_call_target" "invalid global address")
+       ~ok:(fun gaddr ->
+         if elf_header#is_program_address gaddr then
+           let dw = elf_header#get_program_value gaddr in
+           if functions_data#has_function_name dw then
+             let fndata = functions_data#get_function dw in
+             let name = fndata#get_function_name in
+             if fndata#is_library_stub
+                && function_summary_library#has_so_function name then
+               floc#set_call_target (mk_so_target name)
+             else
+               if mips_assembly_functions#has_function_by_address dw then
+                 floc#set_call_target (mk_app_target dw)
+               else
+                 begin
+                   floc#set_call_target (mk_so_target name);
+                   chlog#add "missing library summary" (STR name)
+                 end
            else
-             begin
-               floc#set_call_target (mk_so_target name);
-               chlog#add "missing library summary" (STR name)
-             end
-       else
-         if mips_assembly_functions#has_function_by_address dw then
-           floc#set_call_target (mk_app_target dw)
+             if mips_assembly_functions#has_function_by_address dw then
+               floc#set_call_target (mk_app_target dw)
+             else
+               logerror
+                 (LBLOCK [
+                      STR "reference does not resolve to function address: ";
+                      dw#toPretty])
          else
-           logerror
-             (LBLOCK [
-                  STR "reference does not resolve to function address: ";
-                  dw#toPretty])
-     else
        logerror
-         (LBLOCK [STR "reference is not in program space: "; gaddr#toPretty])
+         (LBLOCK [STR "reference is not in program space: "; gaddr#toPretty]))
+       ~error:(fun _ ->
+         logerror (LBLOCK [STR "global address is invalid"]))
+       (env#get_global_variable_address v)
+
 
   | XOp (XPlus, [XVar v; XConst (IntConst n)]) when env#is_global_variable v ->
-     let gaddr = env#get_global_variable_address v in
-     if elf_header#is_program_address gaddr then
-       let dw = elf_header#get_program_value gaddr in
-       let dwfun = dw#add (TR.tget_ok (numerical_to_doubleword n)) in
-       let _ = chlog#add "resolve gv-expr" (x2p opExpr) in
-       if functions_data#has_function_name dwfun then
-         let name = (functions_data#get_function dwfun)#get_function_name in
-         if function_summary_library#has_so_function name then
-             floc#set_call_target (mk_so_target name)
-         else
-           if mips_assembly_functions#has_function_by_address dwfun then
-             floc#set_call_target (mk_app_target dwfun)
+     log_tfold
+       (log_error "set_call_target" "invalid global address (2)")
+       ~ok:(fun gaddr ->
+         if elf_header#is_program_address gaddr then
+           let dw = elf_header#get_program_value gaddr in
+           let dwfun = dw#add (TR.tget_ok (numerical_to_doubleword n)) in
+           let _ = chlog#add "resolve gv-expr" (x2p opExpr) in
+           if functions_data#has_function_name dwfun then
+             let name = (functions_data#get_function dwfun)#get_function_name in
+             if function_summary_library#has_so_function name then
+               floc#set_call_target (mk_so_target name)
+             else
+               if mips_assembly_functions#has_function_by_address dwfun then
+                 floc#set_call_target (mk_app_target dwfun)
+               else
+                 logerror
+                   (LBLOCK [
+                        STR "Function name not associated with address: ";
+                        STR name])
            else
-             logerror
-               (LBLOCK [
-                    STR "Function name not associated with address: ";
-                    STR name])
-       else
-         if mips_assembly_functions#has_function_by_address dwfun then
-           floc#set_call_target (mk_app_target dwfun)
+             if mips_assembly_functions#has_function_by_address dwfun then
+               floc#set_call_target (mk_app_target dwfun)
+             else
+               begin
+                 ignore (functions_data#add_function dwfun);
+                 floc#set_call_target (mk_app_target dwfun);
+                 chlog#add
+                   "add gv-based function"
+                   (LBLOCK [
+                        STR "Addr expr: ";
+                        x2p opExpr;
+                        STR " resolves to ";
+                        dwfun#toPretty])
+               end
          else
-           begin
-             ignore (functions_data#add_function dwfun);
-             floc#set_call_target (mk_app_target dwfun);
-             chlog#add
-               "add gv-based function"
-               (LBLOCK [
-                    STR "Addr expr: ";
-                    x2p opExpr;
-                    STR " resolves to ";
-                    dwfun#toPretty])
-           end
-     else
-       logerror
-         (LBLOCK [STR "reference is not in program space: "; gaddr#toPretty])
+           logerror
+             (LBLOCK [STR "reference is not in program space: "; gaddr#toPretty]))
+       ~error:(fun _ -> logerror (STR "invalid global address"))
+       (env#get_global_variable_address v)
   | _ ->
      ()
 
 
 let set_syscall_target (floc:floc_int) (op:mips_operand_int) =
   let opval = op#to_expr floc in
-  let tgtindex = floc#inv#rewrite_expr opval floc#env#get_variable_comparator in
+  let tgtindex = floc#inv#rewrite_expr opval in
   match tgtindex with
   | XConst (IntConst n) ->
      floc#set_call_target (mk_syscall_target n#toInt)
@@ -1010,9 +1023,7 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
            let floc = get_floc loc in
            let env = floc#f#env in
            let ra_op = mips_register_op MRra RD in
-           let ra =
-             floc#inv#rewrite_expr
-               (ra_op#to_expr floc) floc#env#get_variable_comparator in
+           let ra = floc#inv#rewrite_expr (ra_op#to_expr floc) in
            begin
              match ra with
              | XVar ra_var ->

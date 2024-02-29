@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,32 +47,16 @@ open Xsimplify
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypeUtil
-open BCHCallTarget
 open BCHCodegraph
 open BCHCPURegisters
-open BCHDoubleword
 open BCHFloc
-open BCHFunctionData
 open BCHFunctionInfo
-open BCHFunctionSummary
 open BCHLibTypes
 open BCHLocation
-open BCHLocationInvariant
-open BCHMemoryReference
 open BCHSpecializations
-open BCHSystemInfo
-open BCHSystemSettings
-open BCHUtilities
-open BCHVariable
 
 (* bchlibmips32 *)
-open BCHMIPSAssemblyBlock
-open BCHMIPSAssemblyFunction
-open BCHMIPSAssemblyFunctions
-open BCHMIPSAssemblyInstruction
-open BCHMIPSAssemblyInstructions
 open BCHMIPSCodePC
-open BCHDisassembleMIPS
 open BCHMIPSCHIFSystem
 open BCHMIPSTypes
 open BCHMIPSOperand
@@ -80,8 +64,15 @@ open BCHMIPSOpcodeRecords
 
 module LF = CHOnlineCodeSet.LanguageFactory
 
+module TR = CHTraceResult
+
 let valueset_domain = "valuesets"
 let x2p = xpr_formatter#pr_expr
+
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("TranslateMIPSToCHIF:" ^ tag) msg
+
 
 let rec pow a = function
   | 0 -> 1
@@ -92,15 +83,6 @@ let rec pow a = function
 
 let get_multiplier (n:numerical_t) =
   int_constant_expr (pow 2 n#toInt)
-
-(* special operation semantics *)
-let op_not         = new symbol_t "bitwise_complement"
-let op_bitwise_or  = new symbol_t "bitwise_or"
-let op_bitwise_and = new symbol_t "bitwise_and"
-let op_bitwise_xor = new symbol_t "bitwise_xor"
-let op_bitwise_sll = new symbol_t "bitwise_sll"
-let op_bitwise_srl = new symbol_t "bitwise_srl"
-let op_bitwise_sra = new symbol_t "bitwise_sra"
 
 
 let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
@@ -160,7 +142,7 @@ let make_tests
     let varssize = List.length vars in
     let get_external_exprs v =
       if jumpfloc#env#is_symbolic_value v then
-        [ jumpfloc#env#get_symbolic_value_expr v ]
+        [TR.tget_ok (jumpfloc#env#get_symbolic_value_expr v)]
       else
         jumpfloc#inv#get_external_exprs v in
     let xprs =
@@ -168,7 +150,7 @@ let make_tests
         let var = List.hd vars in
         let extExprs = get_external_exprs var in
         let extExprs =
-          List.map (fun e -> substitute_expr (fun v -> e) expr) extExprs in
+          List.map (fun e -> substitute_expr (fun _ -> e) expr) extExprs in
         expr :: extExprs
       else if varssize = 2 then
         let varlist = vars in
@@ -182,7 +164,8 @@ let make_tests
                (fun e1 ->
                  List.map
                    (fun e2 ->
-                     substitute_expr (fun w -> if w#equal var1 then e1 else e2) expr)
+                     substitute_expr
+                       (fun w -> if w#equal var1 then e1 else e2) expr)
                    externalexprs2)
                externalexprs1) in
         expr :: xprs
@@ -285,11 +268,11 @@ let translate_mips_instruction
     List.map (fun (v, fv) -> ASSERT (EQ (v, fv)))
       (finfo#get_test_variables ctxtiaddr) in
   let rewrite_expr floc x:xpr_t =
-    let xpr = floc#inv#rewrite_expr x env#get_variable_comparator in
+    let xpr = floc#inv#rewrite_expr x in
     let rec expand x =
       match x with
       | XVar v when env#is_symbolic_value v ->
-         expand (env#get_symbolic_value_expr v)
+         expand (TR.tget_ok (env#get_symbolic_value_expr v))
       | XOp (op, l) -> XOp (op, List.map expand l)
       | _ -> x in
     simplify_xpr (expand xpr) in
@@ -309,9 +292,8 @@ let translate_mips_instruction
 
   let get_use_high_vars (xprs: xpr_t list): variable_t list =
     let inv = floc#inv in
-    let comparator = env#get_variable_comparator in
     List.fold_left (fun acc x ->
-        let xw = inv#rewrite_expr x comparator in
+        let xw = inv#rewrite_expr x in
         let xs = simplify_xpr xw in
         let vars = env#variables_in_expr xs in
         vars @ acc) [] xprs in
@@ -549,14 +531,14 @@ let translate_mips_instruction
      let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
      default defcmds
 
-  | ControlWordFromFP (rt, fs) ->
+  | ControlWordFromFP (rt, _fs) ->
      let rtreg = rt#to_register in
      let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg ~vtype:t_uint () in
      let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
      let cmds = defcmds @ cmds in
      default cmds
 
-  | ControlWordToFP (rt, fs) ->
+  | ControlWordToFP (rt, _fs) ->
      let xrt = rt#to_expr floc in
      let use = get_register_vars [rt] in
      let usehigh = get_use_high_vars [xrt] in
@@ -606,7 +588,7 @@ let translate_mips_instruction
      let cmds = cmdshi @ cmdslo @ defcmds in
      default cmds
 
-  | ExtractBitField (rt, rs, pos, size) ->
+  | ExtractBitField (rt, rs, _pos, _size) ->
      let vtreg = rt#to_register in
      let use = get_register_vars [rs] in
      let xrs = rs#to_expr floc in
@@ -617,140 +599,140 @@ let translate_mips_instruction
      let cmds = cmds @ defcmds in
      default cmds
 
-  | FPAbsfmt (fmt, fd, fs) ->
+  | FPAbsfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPAddfmt (fmt, fd, fs, ft) ->
+  | FPAddfmt (_fmt, fd, _fs, _ft) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPCeilLfmt (fmt, fd, fs) ->
+  | FPCeilLfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPCeilWfmt (fmt, fd, fs) ->
+  | FPCeilWfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPCVTDfmt (fmt, fd, fs) ->
+  | FPCVTDfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPCVTLfmt (fmt, fd, fs) ->
+  | FPCVTLfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPCVTSfmt (fmt, fd, fs) ->
+  | FPCVTSfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPCVTSPfmt (fmt, fd, fs) ->
+  | FPCVTSPfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPCVTWfmt (fmt, fd, fs) ->
+  | FPCVTWfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPDivfmt (fmd, fd, fs, ft) ->
+  | FPDivfmt (_fmt, fd, _fs, _ft) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPFloorLfmt (fmt, fd, fs) ->
+  | FPFloorLfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPFloorWfmt (fmt, fd, fs) ->
+  | FPFloorWfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPMovfmt (fmt, fd, fs) ->
+  | FPMovfmt (_fmt, fd, fs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let rhs = fs#to_expr floc in
      let cmds = floc#get_assign_commands lhs rhs in
      default (lhscmds @ cmds)
 
-  | FPMulfmt (fmt, fd, fs, ft) ->
+  | FPMulfmt (_fmt, fd, _fs, _ft) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPNegfmt (fmt, fd, fs) ->
+  | FPNegfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPRSqrtfmt (fmt, fd, fs) ->
+  | FPRSqrtfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPSqrtfmt (fmt, fd, fs) ->
+  | FPSqrtfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPSubfmt (fmt, fd, fs, ft) ->
+  | FPSubfmt (_fmt, fd, _fs, _ft) ->
      let floc = get_floc loc in
      let (lhs,lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPRoundLfmt (fmt, fd, fs) ->
+  | FPRoundLfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPRoundWfmt (fmt, fd, fs) ->
+  | FPRoundWfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPTruncLfmt (fmt, fd, fs) ->
+  | FPTruncLfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | FPTruncWfmt (fmt, fd, fs) ->
+  | FPTruncWfmt (_fmt, fd, _fs) ->
      let floc = get_floc loc in
      let (lhs, lhscmds) = fd#to_lhs floc in
      let cmds = floc#get_abstract_commands lhs () in
      default (lhscmds @ cmds)
 
-  | InsertBitField (rt, rs, pos, size) ->
+  | InsertBitField (rt, rs, _pos, _size) ->
      let vtreg = rt#to_register in
      let use = get_register_vars [rs] in
      let xrs = rs#to_expr floc in
@@ -867,18 +849,16 @@ let translate_mips_instruction
      let base = mips_register_op addr#get_indirect_register RD in
      let use = get_register_vars [base] in
      let rhs = addr#to_expr floc in
-     let rhs = floc#inv#rewrite_expr rhs floc#env#get_variable_comparator in
+     let rhs = floc#inv#rewrite_expr rhs in
      let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_int rhs in
      let _ =
        match rhs with
        | XVar rhsvar ->
           if env#is_initial_register_value rhsvar then
-            match env#get_initial_register_value_register rhsvar with
+            match TR.tget_ok (env#get_initial_register_value_register rhsvar) with
             | MIPSRegister r when r = rt#get_register ->
                let memaddr = addr#to_address floc in
-               let memaddr =
-                 floc#inv#rewrite_expr
-                   memaddr floc#env#get_variable_comparator in
+               let memaddr = floc#inv#rewrite_expr memaddr in
                finfo#restore_register
                  memaddr floc#cia (MIPSRegister rt#get_register)
             | _ -> ()
@@ -946,7 +926,7 @@ let translate_mips_instruction
      let cmds = cmds @ defcmds in
      default cmds
 
-  | MovF (cc, rd, rs) ->
+  | MovF (_cc, rd, rs) ->
      let rdreg = rd#to_register in
      let use = get_register_vars [rs] in
      let xrs = rs#to_expr floc in
@@ -957,7 +937,7 @@ let translate_mips_instruction
      let cmds = cmds @ defcmds in
      default cmds
 
-  | MovT (cc, rd, rs) ->
+  | MovT (_cc, rd, rs) ->
      let rdreg = rd#to_register in
      let use = get_register_vars [rs] in
      let xrs = rs#to_expr floc in
@@ -1023,14 +1003,14 @@ let translate_mips_instruction
      let cmds = cmds @ defcmds in
      default cmds
 
-  | MoveWordFromFP (rt, fs) ->
+  | MoveWordFromFP (rt, _fs) ->
      let vtreg = rt#to_register in
      let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg () in
      let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
      let cmds = cmds @ defcmds in
      default cmds
 
-  | MoveWordFromHighHalfFP (rt, fs) ->
+  | MoveWordFromHighHalfFP (rt, _fs) ->
      let vtreg = rt#to_register in
      let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg () in
      let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
@@ -1038,7 +1018,7 @@ let translate_mips_instruction
      default cmds
 
   | MoveWordToHighHalfFP (rt, fs) ->
-     let (lhs, lhscmds) = fs#to_lhs floc in
+     let (lhs, _lhscmds) = fs#to_lhs floc in
      let use = get_register_vars [rt] in
      let xrt = rt#to_expr floc in
      let usehigh = get_use_high_vars [xrt] in
@@ -1048,7 +1028,7 @@ let translate_mips_instruction
      default cmds
 
   | MoveWordToFP (rt, fs) ->
-     let (lhs, lhscmds) = fs#to_lhs floc in
+     let (lhs, _lhscmds) = fs#to_lhs floc in
      let use = get_register_vars [rt] in
      let xrt = rt#to_expr floc in
      let usehigh = get_use_high_vars [xrt] in
@@ -1236,7 +1216,7 @@ let translate_mips_instruction
      let defcmds = floc#get_vardef_commands ~use ctxtiaddr in
      default defcmds
 
-  | ReadHardwareRegister (rt, rd) ->
+  | ReadHardwareRegister (rt, _rd) ->
      let rtreg = rt#to_register in
      let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg () in
      let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
@@ -1578,7 +1558,7 @@ let translate_mips_instruction
        default []
 
   (* TODO: add an ASSERT on the condition *)
-  | TrapIfEqualImmediate (rs, imm) ->
+  | TrapIfEqualImmediate (rs, _imm) ->
      let use = get_register_vars [rs] in
      let xrs = rs#to_expr floc in
      let usehigh = get_use_high_vars [xrs] in
@@ -1815,9 +1795,13 @@ object (self)
       let symvars =
         List.filter (fun v ->
             if v#getName#getSeqNumber >= 0 then
-              let numvar = env#get_symbolic_num_variable v in
-              not (env#is_register_variable numvar
-                   || env#is_local_variable numvar)
+              log_tfold
+                (log_error "get_exit_cmd" "invalid symbolic variable")
+                ~ok:(fun numvar ->
+                  not (env#is_register_variable numvar
+                       || env#is_local_variable numvar))
+                ~error:(fun _ -> false)
+                (env#get_symbolic_num_variable v)
             else
               false) symvars in
       List.map (fun v ->

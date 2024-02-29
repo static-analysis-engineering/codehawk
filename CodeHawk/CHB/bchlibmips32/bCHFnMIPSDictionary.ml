@@ -46,38 +46,28 @@ open XprTypes
 open Xsimplify
 
 (* bchlib *)
-open BCHFtsParameter
 open BCHBasicTypes
 open BCHBCTypeUtil
-open BCHByteUtilities
-open BCHConstantDefinitions
-open BCHCPURegisters
-open BCHFloc
-open BCHFunctionInterface
-open BCHFunctionInfo
 open BCHLibTypes
-open BCHLocation
-open BCHPreFileIO
 open BCHSystemInfo
 
 (* bchlibelf *)
 open BCHELFHeader
 
 (* bchlibmips32 *)
-open BCHMIPSAssemblyInstructions
-open BCHMIPSDictionary
 open BCHMIPSDisassemblyUtils
-open BCHMIPSLoopStructure
 open BCHMIPSOperand
-open BCHMIPSOpcodeRecords
 open BCHMIPSTypes
 
-
-
-module B = Big_int_Z
 module H = Hashtbl
 
+module TR = CHTraceResult
+
 let x2p = xpr_formatter#pr_expr
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("FnMIPSDictionary:" ^ tag) msg
+
 
 let bd = BCHDictionary.bdictionary
 let ixd = BCHInterfaceDictionary.interface_dictionary
@@ -94,8 +84,8 @@ let get_multiplier (n:numerical_t) =
 
 
 class mips_opcode_dictionary_t
-        (faddr:doubleword_int)
-        (vard:vardictionary_int):mips_opcode_dictionary_int =
+        (_faddr: doubleword_int)
+        (vard: vardictionary_int):mips_opcode_dictionary_int =
 object (self)
 
   val sp_offset_table = mk_index_table "sp-offset-table"
@@ -116,7 +106,7 @@ object (self)
     sp_offset_table#add key
 
   method get_sp_offset (index:int) =
-    let (tags,args) = sp_offset_table#retrieve index in
+    let (_, args) = sp_offset_table#retrieve index in
     let a = a "sp-offset" args in
     (a 0, xd#get_interval (a 1))
 
@@ -139,16 +129,15 @@ object (self)
           | XVar v
                when floc#env#is_global_variable v
                     && elf_header#is_program_address
-                         (floc#env#get_global_variable_address v) ->
+                         (TR.tget_ok (floc#env#get_global_variable_address v)) ->
              num_constant_expr
                (elf_header#get_program_value
-                  (floc#env#get_global_variable_address v))#to_numerical
+                  (TR.tget_ok (floc#env#get_global_variable_address v)))#to_numerical
           | XVar v when floc#env#is_symbolic_value v ->
-             expand (floc#env#get_symbolic_value_expr v)
+             expand (TR.tget_ok (floc#env#get_symbolic_value_expr v))
           | XOp (op,l) -> XOp (op, List.map expand l)
           | _ -> x in
-        let xpr =
-          floc#inv#rewrite_expr (expand x) floc#env#get_variable_comparator in
+        let xpr = floc#inv#rewrite_expr (expand x) in
         simplify_xpr (expand xpr)
       with IO.No_more_input ->
         begin
@@ -374,7 +363,7 @@ object (self)
              () in
          ([tagstring], args)
 
-      | BranchEqual (rs, rt, offset) ->
+      | BranchEqual (rs, rt, _offset) ->
          let xrs = rs#to_expr floc in
          let xrt = rt#to_expr floc in
          let result = XOp (XEq, [xrs; xrt]) in
@@ -387,7 +376,7 @@ object (self)
              ~xprs:[xrs; xrt; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchEqualLikely (rs, rt, offset) ->
+      | BranchEqualLikely (rs, rt, _offset) ->
          let xrs = rs#to_expr floc in
          let xrt = rt#to_expr floc in
          let result = XOp (XEq, [xrs; xrt]) in
@@ -400,7 +389,7 @@ object (self)
              ~xprs:[xrs; xrt; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchGEZero (rs, offset) ->
+      | BranchGEZero (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XGe, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -411,7 +400,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchGEZeroLikely (rs, offset) ->
+      | BranchGEZeroLikely (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XGe, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -422,7 +411,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchGEZeroLink (rs, offset) ->
+      | BranchGEZeroLink (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XGe, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -433,7 +422,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchGTZero (rs, offset) ->
+      | BranchGTZero (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XGt, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -444,7 +433,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchGTZeroLikely (rs, offset) ->
+      | BranchGTZeroLikely (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XGt, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -455,7 +444,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchLEZero (rs, offset) ->
+      | BranchLEZero (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XLe, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -466,7 +455,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchLEZeroLikely (rs, offset) ->
+      | BranchLEZeroLikely (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XLe, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -477,7 +466,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchLTZero (rs, offset) ->
+      | BranchLTZero (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XLt, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -488,7 +477,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchLTZeroLikely (rs, offset) ->
+      | BranchLTZeroLikely (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XLt, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -499,7 +488,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchLTZeroLink (rs, offset) ->
+      | BranchLTZeroLink (rs, _offset) ->
          let xrs = rs#to_expr floc in
          let result = XOp (XLt, [xrs; zero_constant_expr]) in
          let rresult = rewrite_expr result in
@@ -510,7 +499,7 @@ object (self)
            mk_instrx_data  ~xprs:[xrs; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchNotEqual (rs, rt, offset) ->
+      | BranchNotEqual (rs, rt, _offset) ->
          let xrs = rs#to_expr floc in
          let xrt = rt#to_expr floc in
          let result = XOp (XNe, [xrs; xrt]) in
@@ -523,7 +512,7 @@ object (self)
              ~xprs:[xrs; xrt; result; rresult; negresult] ~rdefs () in
          ([tagstring], args)
 
-      | BranchNotEqualLikely (rs, rt, offset) ->
+      | BranchNotEqualLikely (rs, rt, _offset) ->
          let xrs = rs#to_expr floc in
          let xrt = rt#to_expr floc in
          let result = XOp (XNe, [xrs; xrt]) in
@@ -597,7 +586,7 @@ object (self)
              () in
          ([tagstring], args)
 
-      | ExtractBitField (rt, rs, pos, size) ->
+      | ExtractBitField (rt, rs, _pos, _size) ->
          let vrt = rt#to_variable floc in
          let xrs = rs#to_expr floc in
          let xxrs = rewrite_expr xrs in
@@ -614,7 +603,7 @@ object (self)
              () in
          ([tagstring], args)
 
-      | InsertBitField (rt, rs, pos, size) ->
+      | InsertBitField (rt, rs, _pos, _size) ->
          let vrt = rt#to_variable floc in
          let xrs = rs#to_expr floc in
          let xxrs = rewrite_expr xrs in
@@ -703,22 +692,23 @@ object (self)
                      (List.map (fun (i, dw) -> [i; bd#index_address dw]) tgts)))))
          else if
            (match xrs with
-            | XVar v
-                 when
-                   floc#env#is_initial_register_value v
-                   && (match floc#env#get_initial_register_value_register v with
-                       | MIPSRegister MRra -> true
-                       | _ -> false) -> true
+            | XVar v when floc#env#is_initial_register_value v ->
+               log_tfold
+                 (log_error "JumpRegister" "invalid initial register")
+                 ~ok:(fun ireg ->
+                   match ireg with MIPSRegister MRra -> true | _ -> false)
+                 ~error:(fun _ -> false)
+                 (floc#env#get_initial_register_value_register v)
             | _ -> false) then
-             let v0_op = mips_register_op MRv0 RD in
-             let xv0 = v0_op#to_expr floc in
-             let xxv0 = rewrite_expr xv0 in
-             let rdefs = [get_rdef xv0] @ (get_all_rdefs xxv0) in
-             let (tagstring, args) = mk_instrx_data ~xprs:[xxv0] ~rdefs () in
-             let tags = tagstring :: ["rv"] in
-             (tags, args)
-           else
-             (["a:x"], [xd#index_xpr xxrs])
+           let v0_op = mips_register_op MRv0 RD in
+           let xv0 = v0_op#to_expr floc in
+           let xxv0 = rewrite_expr xv0 in
+           let rdefs = [get_rdef xv0] @ (get_all_rdefs xxv0) in
+           let (tagstring, args) = mk_instrx_data ~xprs:[xxv0] ~rdefs () in
+           let tags = tagstring :: ["rv"] in
+           (tags, args)
+         else
+           (["a:x"], [xd#index_xpr xxrs])
 
       | LoadByte (rt, addr) ->
          let vrt = rt#to_variable floc in
@@ -726,7 +716,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let _ =
@@ -748,7 +739,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let _ =
@@ -770,7 +762,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vft] in
          let useshigh = [get_def_use_high vft] in
          let _ =
@@ -792,7 +785,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let _ =
@@ -814,7 +808,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let _ =
@@ -845,7 +840,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let _ =
@@ -877,7 +873,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let _ =
@@ -899,7 +896,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vft] in
          let useshigh = [get_def_use_high vft] in
          let _ =
@@ -921,7 +919,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let alignment = addr#get_address_alignment in
@@ -949,7 +948,8 @@ object (self)
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
          let rdefs =
-           (get_rdef_memvar vmem) :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
+           (get_rdef_memvar vmem)
+           :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let alignment = addr#get_address_alignment in
@@ -1164,28 +1164,28 @@ object (self)
              () in
          ([tagstring], args)
 
-      | MoveFromCoprocessor0 (rt, rd, _) ->
+      | MoveFromCoprocessor0 (rt, _rd, _) ->
          let vrt = rt#to_variable floc in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let (tagstring, args) = mk_instrx_data ~vars:[vrt] ~uses ~useshigh () in
          ([tagstring], args)
 
-      | MoveToCoprocessor0 (rt, rd, _) ->
+      | MoveToCoprocessor0 (rt, _rd, _) ->
          let xrt = rt#to_expr floc in
          let xxrt = rewrite_expr xrt in
          let rdefs = [get_rdef xrt] @ (get_all_rdefs xxrt) in
          let (tagstring, args) = mk_instrx_data ~xprs:[xrt; xxrt] ~rdefs () in
          ([tagstring], args)
 
-      | MoveFromHighCoprocessor0 (rt, rd, _) ->
+      | MoveFromHighCoprocessor0 (rt, _rd, _) ->
          let vrt = rt#to_variable floc in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
          let (tagstring, args) = mk_instrx_data ~vars:[vrt] ~uses ~useshigh () in
          ([tagstring], args)
 
-      | MoveToHighCoprocessor0 (rt, rd,_) ->
+      | MoveToHighCoprocessor0 (rt, _rd,_) ->
          let xrt = rt#to_expr floc in
          let xxrt = rewrite_expr xrt in
          let rdefs = [get_rdef xrt] @ (get_all_rdefs xxrt) in
@@ -1380,7 +1380,7 @@ object (self)
              () in
          ([tagstring], args)
 
-      | Prefetch (addr, hint) ->
+      | Prefetch (addr, _hint) ->
          let xaddr = addr#to_expr floc in
          let vmem = addr#to_variable floc in
          let rdefs = (get_rdef_memvar vmem) :: (get_all_rdefs xaddr) in
@@ -1391,7 +1391,7 @@ object (self)
            mk_instrx_data ~vars:[vmem] ~xprs:[xaddr] ~rdefs () in
          ([tagstring], args)
 
-      | ReadHardwareRegister (rt, index) ->
+      | ReadHardwareRegister (rt, _index) ->
          let vrt = rt#to_variable floc in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
@@ -1932,7 +1932,7 @@ object (self)
              () in
          ([tagstring], args)
 
-      | TrapIfEqual(cc, rs, rt) ->
+      | TrapIfEqual(_, rs, rt) ->
          let xrs = rs#to_expr floc in
          let xrt = rt#to_expr floc in
          let result = XOp (XEq, [xrs; xrt]) in
