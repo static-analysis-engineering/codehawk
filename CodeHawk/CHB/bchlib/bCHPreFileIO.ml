@@ -50,6 +50,7 @@ open BCHLocationInvariant
 open BCHLocationVarInvariant
 open BCHSystemData
 open BCHSystemSettings
+open BCHTypeConstraintDictionary
 open BCHXmlUtil
 open BCHUtilities
 open BCHVersion
@@ -347,10 +348,6 @@ let get_invs_filename (fname:string) =
   get_function_filename fname "invs.xml"
 
 
-let get_tinvs_filename (fname:string) =
-  get_function_filename fname "tinvs.xml"
-
-
 let get_varinvs_filename (fname: string) =
   get_function_filename fname "varinvs.xml"
 
@@ -391,6 +388,12 @@ let get_interface_dictionary_filename () =
   let fdir = get_analysis_dir () in
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_ixdict.xml")
+
+let get_type_constraint_dictionary_filename () =
+  let exename = get_filename () in
+  let fdir = get_analysis_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_tcdict.xml")
 
 let get_asm_listing_filename () =
   let exename = get_filename () in
@@ -772,7 +775,7 @@ let load_bcdictionary () =
 
 
 let save_interface_dictionary () =
-  let filename =  get_interface_dictionary_filename () in
+  let filename = get_interface_dictionary_filename () in
   let doc = xmlDocument () in
   let root = get_bch_root  "interface-dictionary" in
   let fnode = xmlElement "interface-dictionary" in
@@ -789,6 +792,26 @@ let load_interface_dictionary () =
   let optnode = load_xml_file filename "interface-dictionary" in
   match optnode with
   | Some inode -> interface_dictionary#read_xml inode
+  | _ -> ()
+
+let save_type_constraint_dictionary () =
+  let filename = get_type_constraint_dictionary_filename () in
+  let doc = xmlDocument () in
+  let root = get_bch_root "type-constraint-dictionary" in
+  let fnode = xmlElement "type-constraint-dictionary" in
+  begin
+    type_constraint_dictionary#write_xml fnode;
+    doc#setNode root;
+    root#appendChildren [fnode];
+    file_output#saveFile filename doc#toPretty
+  end
+
+
+let load_type_constraint_dictionary () =
+  let filename = get_type_constraint_dictionary_filename () in
+  let optnode = load_xml_file filename "type-constraint-dictionary" in
+  match optnode with
+  | Some inode -> type_constraint_dictionary#read_xml inode
   | _ -> ()
 
 

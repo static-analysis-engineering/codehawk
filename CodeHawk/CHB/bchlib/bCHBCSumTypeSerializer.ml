@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023  Aarno Labs LLC
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -138,7 +138,7 @@ object
 
   inherit [btype_t] mcts_t "btype_t"
   
-  method ts (t:btype_t) =
+  method !ts (t:btype_t) =
     match t with
     | TVoid _ -> "tvoid"
     | TInt _ -> "tint"
@@ -158,7 +158,7 @@ object
     | TVarArg _ -> "tvararg"
     | TUnknown _ -> "tunknown"
 
-  method tags = [
+  method !tags = [
       "tarray";
       "tbuiltin-va-list";
       "tclass";
@@ -184,12 +184,12 @@ object
 
   inherit [tname_t] mcts_t "tname_t"
 
-  method ts (t: tname_t) =
+  method !ts (t: tname_t) =
     match t with
     | SimpleName _ -> "s"
     | TemplatedName _ -> "t"
 
-  method tags = ["s"; "t"]
+  method !tags = ["s"; "t"]
 
 end
 
@@ -201,7 +201,7 @@ object
 
   inherit [bexp_t] mcts_t "bexp_t"
 
-  method ts (e: bexp_t) =
+  method !ts (e: bexp_t) =
     match e with
     | Const _ -> "const"
     | Lval _ -> "lval"
@@ -222,7 +222,7 @@ object
     | FnApp _ -> "fnapp"
     | CnApp _ -> "cnapp"
 
-  method tags = [
+  method !tags = [
       "addrof";
       "addroflabel";
       "alignof";
@@ -249,7 +249,7 @@ object
 
   inherit [b_attrparam_t] mcts_t "b_attrparam_t"
 
-  method ts (a: b_attrparam_t) =
+  method !ts (a: b_attrparam_t) =
     match a with
     | AInt _ -> "aint"
     | AStr _ -> "astr"
@@ -268,7 +268,7 @@ object
     | AIndex _ -> "aindex"
     | AQuestion _ -> "aquestion"
 
-  method tags = [
+  method !tags = [
       "aaddrof";
       "aalignof";
       "aalignofe";
@@ -296,7 +296,7 @@ object
 
   inherit [bconstant_t] mcts_t "bconstant_t"
 
-  method ts (c: bconstant_t) =
+  method !ts (c: bconstant_t) =
     match c with
     | CInt _ -> "int"
     | CStr _ -> "str"
@@ -305,7 +305,7 @@ object
     | CReal _ -> "real"
     | CEnum _ -> "enum"
 
-  method tags = ["chr"; "enum"; "int"; "real"; "str"; "wstr"]
+  method !tags = ["chr"; "enum"; "int"; "real"; "str"; "wstr"]
                
 end
 
@@ -317,13 +317,13 @@ object
 
   inherit [boffset_t] mcts_t "boffset_t"
 
-  method ts (o: boffset_t) =
+  method !ts (o: boffset_t) =
     match o with
     | NoOffset -> "n"
     | Field _ -> "f"
     | Index _ -> "i"
 
-  method tags = ["f"; "i"; "n"]
+  method !tags = ["f"; "i"; "n"]
                
 end
 
@@ -335,7 +335,7 @@ object
 
   inherit [btypsig_t] mcts_t "btypsig_t"
 
-  method ts (t: btypsig_t) =
+  method !ts (t: btypsig_t) =
     match t with
     | TSArray _ -> "tsarray"
     | TSPtr _ -> "tsptr"
@@ -344,7 +344,7 @@ object
     | TSEnum _ -> "tsenum"
     | TSBase _ -> "tsbase"
 
-  method tags = ["tsarray"; "tsbase"; "tscomp"; "tsenum"; "tsfun"; "tsptr"]
+  method !tags = ["tsarray"; "tsbase"; "tscomp"; "tsenum"; "tsfun"; "tsptr"]
                 
 end
 
@@ -356,14 +356,14 @@ object
 
   inherit [blabel_t] mcts_t "blabel_t"
 
-  method ts (l: blabel_t) =
+  method !ts (l: blabel_t) =
     match l with
     | Label _ -> "label"
     | Case _ -> "case"
     | CaseRange _ -> "caserange"
     | Default _ -> "default"
 
-  method tags = ["case"; "caserange"; "default"; "label"]
+  method !tags = ["case"; "caserange"; "default"; "label"]
                  
 end
 
@@ -375,7 +375,7 @@ object
 
   inherit [bstmtkind_t] mcts_t "bstmtkind_t"
 
-  method ts (s: bstmtkind_t) =
+  method !ts (s: bstmtkind_t) =
     match s with
     | Instr _ -> "instr"
     | Return _ -> "return"
@@ -390,7 +390,7 @@ object
     | TryFinally _ -> "tryfinally"
     | TryExcept _ -> "tryexcept"
 
-  method tags = [
+  method !tags = [
       "block";
       "break";
       "computedgoto";
@@ -414,14 +414,14 @@ object
 
   inherit [binstr_t] mcts_t "binstr_t"
 
-  method ts (i: binstr_t) =
+  method !ts (i: binstr_t) =
     match i with
     | Set _ -> "set"
     | Call _ -> "call"
     | VarDecl _ -> "vardecl"
     | Asm _ -> "asm"
 
-  method tags = ["asm"; "call"; "set"; "vardecl"]
+  method !tags = ["asm"; "call"; "set"; "vardecl"]
              
 end
 

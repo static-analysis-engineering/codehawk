@@ -694,22 +694,7 @@ object (self)
 	| NonRelationalFact (w, FSymbolicExpr x) when w#equal v -> Some x
 	| _ -> None) None (self#get_var_facts v)
 
-  method private get_local v comparator =
-    List.fold_left (fun acc f ->
-      match f#get_fact with
-      | RelationalFact e ->
-	let vars = linear_equality_get_unity_vars e in
-	if List.exists (fun f -> v#equal f) vars then
-	  let vars = List.sort comparator vars in
-	  if (List.hd vars)#equal v then
-	    None   (* variable is highest priority and should not be replaced *)
-	  else
-	    Some (linear_equality_get_expr e v)
-	else
-	  None
-      | _ -> None) None self#get_facts
-
-  method rewrite_expr (x:xpr_t) (comparator:(variable_t -> variable_t -> int)) =
+  method rewrite_expr (x:xpr_t) =
     let subst1 v =
       if self#is_constant v then
         XConst (IntConst (self#get_constant v))

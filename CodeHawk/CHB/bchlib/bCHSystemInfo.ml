@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,15 +50,9 @@ open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
 open CHXmlReader
-open CHUtil
-
-(* xprlib *)
-open XprTypes
-open XprXml
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCFiles
 open BCHBCTypes
 open BCHBCTypeXml
 open BCHByteUtilities
@@ -69,15 +63,11 @@ open BCHCPURegisters
 open BCHCStruct
 open BCHCStructConstant
 open BCHDataBlock
-open BCHDataExportSpec
-open BCHDemangler
 open BCHDoubleword
 open BCHFunctionData
-open BCHInterfaceDictionary
 open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
-open BCHMemoryReference
 open BCHPreFileIO
 open BCHSectionHeadersInfo
 open BCHSpecializations
@@ -88,7 +78,6 @@ open BCHSystemData
 open BCHSystemSettings
 open BCHTypeDefinitions
 open BCHUtilities
-open BCHVariable
 open BCHXmlUtil
 
 module H = Hashtbl
@@ -1920,11 +1909,29 @@ object (self)
   method is_little_endian = little_endian
 
   method set_elf_is_code_address (lb:doubleword_int) (ub:doubleword_int) =
+    let _ =
+      chlog#add
+        "code address extent"
+        (LBLOCK [
+             STR "set-elf-is-code-address: ";
+             STR "lb: ";
+             lb#toPretty;
+             STR "; ub: ";
+             ub#toPretty]) in
     is_code_address <- (fun a -> lb#le a  && a #lt ub)
 
   method set_code_size (s:doubleword_int) =
     let low = image_base#add base_of_code_rva in
     let high = low#add s in
+    let _ =
+      chlog#add
+        "code address extent"
+        (LBLOCK [
+             STR "set-code-size: ";
+             STR "lb: ";
+             low#toPretty;
+             STR "; ub: ";
+             high#toPretty]) in
     begin
       code_size <- s ;
       is_code_address <- (fun a -> low#le a && a#lt high)

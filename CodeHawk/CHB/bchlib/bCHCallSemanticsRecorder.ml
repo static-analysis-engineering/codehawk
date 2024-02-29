@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ open CHNumerical
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 
 (* xprlib *)
 open Xprt
@@ -64,6 +65,8 @@ let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("callsemanticsrecorder:" ^ tag) msg
 
 
 class call_semantics_recorder_t
@@ -153,16 +156,20 @@ object (self)
     | XPOAllocationBase x ->
        (match x with
         | XVar v when self#finfo#env#is_return_value v ->
-           let cia = self#finfo#env#get_call_site v in
-           if self#finfo#has_call_target cia then
-             let ctinfo = self#finfo#get_call_target cia in
-             let name = ctinfo#get_name in
-             if name == "malloc" || name == "strdup" then
-               Discharged ("return value from " ^ name)
-             else
-               Open
-           else
-             Open
+           log_tfold
+             (log_error "simplify_precondition" "invalid call site")
+             ~ok:(fun cia ->
+               if self#finfo#has_call_target cia then
+                 let ctinfo = self#finfo#get_call_target cia in
+                 let name = ctinfo#get_name in
+                 if name == "malloc" || name == "strdup" then
+                   Discharged ("return value from " ^ name)
+                 else
+                   Open
+               else
+                 Open)
+             ~error:(fun _ -> Open)
+             (self#finfo#env#get_call_site v)
         | _ -> Open)
     | _ -> Open
 
@@ -180,7 +187,7 @@ object (self)
        let x = simplify_xpr x in
        (match self#xprxt#xpr_to_bterm t_voidptr x with
         | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = TR.tget_ok (numerical_to_doubleword n) in           
+           let dw = TR.tget_ok (numerical_to_doubleword n) in
            DelegatedGlobal (dw, XXNullTerminated (NumConstant n))
         | Some t -> Delegated (XXNullTerminated t)
         | _ -> Open)
@@ -207,7 +214,7 @@ object (self)
             | Some (NumConstant ns) ->
                DelegatedGlobal
                  (dw, XXBlockWrite(ty, NumConstant n, NumConstant ns))
-            | _ -> Open)          
+            | _ -> Open)
         | Some ptrt ->
            (match self#xprxt#xpr_to_bterm t_int size with
             | Some sizet ->
@@ -222,7 +229,7 @@ object (self)
             | Some (NumConstant ns) ->
                DelegatedGlobal
                  (dw, XXBlockWrite(ty, NumConstant n, NumConstant ns))
-            | _ -> Open)          
+            | _ -> Open)
         | Some ptrt ->
            (match self#xprxt#xpr_to_bterm t_int size with
             | Some sizet ->
@@ -248,7 +255,7 @@ object (self)
           begin
             self#add_po xpo status;
             self#add_gpo dw xxp
-          end          
+          end
        | _ ->
           self#add_po xpo status
 

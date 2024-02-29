@@ -106,6 +106,9 @@ val load_bc_files: unit -> unit
 val save_interface_dictionary: unit -> unit
 val load_interface_dictionary: unit -> unit
 
+val save_type_constraint_dictionary: unit -> unit
+val load_type_constraint_dictionary: unit -> unit
+
 val save_export_function_summary_file: string -> xml_element_int -> unit
 val save_export_data_value_file: string -> xml_element_int -> unit
 val save_export_ordinal_table: xml_element_int -> unit

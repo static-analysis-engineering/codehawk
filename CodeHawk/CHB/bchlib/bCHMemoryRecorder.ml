@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,6 @@ open XprToPretty
 open XprTypes
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHBCTypes
 open BCHBCTypeUtil
 open BCHGlobalState
@@ -47,6 +46,9 @@ open BCHLocation
 
 
 let x2p = xpr_formatter#pr_expr
+
+let log_error (tag: string) (msg: string) =
+  mk_tracelog_spec ~tag:("memoryrecorder:" ^ tag) msg
 
 
 class memory_recorder_t
@@ -72,23 +74,29 @@ object (self)
     match x with
     | XConst (IntConst n) -> GConstant n
     | XVar v when self#env#is_return_value v ->
-       let callSite = self#env#get_call_site v in
-       GReturnValue (ctxt_string_to_location self#faddr callSite)
+       log_tfold
+         (log_error "get_gvalue" "invalid call site")
+         ~ok:(fun callSite ->
+           GReturnValue (ctxt_string_to_location self#faddr callSite))
+         ~error:(fun _ -> GUnknownValue)
+         (self#env#get_call_site v)
     | XVar v when self#env#is_sideeffect_value v ->
-       let callSite = self#env#get_call_site v in
-       let argdescr = self#env#get_se_argument_descriptor v in
-       GSideeffectValue (ctxt_string_to_location self#faddr callSite, argdescr)
+       log_tfold
+         (log_error "get_gvalue" "invalid call site (2)")
+         ~ok: (fun callSite ->
+           log_tfold
+             (log_error "get_gvalue" "invalid se descriptor")
+             ~ok:(fun argdescr ->
+               GSideeffectValue
+                 (ctxt_string_to_location self#faddr callSite, argdescr))
+             ~error:(fun _ -> GUnknownValue)
+             (self#env#get_se_argument_descriptor v))
+         ~error:(fun _ -> GUnknownValue)
+         (self#env#get_call_site v)
     | XVar v when self#env#is_stack_parameter_variable v ->
-       begin
-         try
-	   match self#env#get_stack_parameter_index v with
-	   | Some index -> GArgValue (self#faddr, index, [])
-	   | _ -> GUnknownValue
-         with
-         | BCH_failure p ->
-            raise
-              (BCH_failure (LBLOCK [STR "memory recorder:get_gvalue: "; p]))
-       end
+       (match self#env#get_stack_parameter_index v with
+	| Some index -> GArgValue (self#faddr, index, [])
+	| _ -> GUnknownValue)
     | _ -> GUnknownValue
 
   method record_assignment
@@ -109,22 +117,27 @@ object (self)
                    (vtype: btype_t) =
     if self#env#is_global_variable lhs
        && (self#env#has_global_variable_address lhs) then
-      global_system_state#add_writer
-        ~ty:vtype
-        ~size
-        (self#get_gvalue rhs)
+      log_tfold
+        (log_error "record_assignment_lhs" "invalid global address")
+        ~ok:(fun gaddr ->
+          global_system_state#add_writer
+            ~ty:vtype ~size (self#get_gvalue rhs) gaddr self#loc)
+        ~error:(fun _ -> ())
         (self#env#get_global_variable_address lhs)
-        self#loc
     else if self#env#is_stack_variable lhs then
-      let offset = self#env#get_memvar_offset lhs in
-      match offset with
-      | ConstantOffset (n, NoOffset) ->
-         self#finfo#stackframe#add_store
-           ~offset:n#toInt ~size ~typ:(Some vtype) ~xpr:(Some rhs) lhs iaddr
-      | _ ->
-         chlog#add
-           "stack assignment lhs not recorded"
-           (LBLOCK [self#loc#toPretty; STR ": "; lhs#toPretty])      
+      log_tfold
+        (log_error "record_assignment_lhs" "invalid offset")
+        ~ok:(fun offset ->
+          match offset with
+          | ConstantOffset (n, NoOffset) ->
+             self#finfo#stackframe#add_store
+               ~offset:n#toInt ~size ~typ:(Some vtype) ~xpr:(Some rhs) lhs iaddr
+          | _ ->
+             chlog#add
+               "stack assignment lhs not recorded"
+               (LBLOCK [self#loc#toPretty; STR ": "; lhs#toPretty]))
+        ~error:(fun _ -> ())
+        (self#env#get_memvar_offset lhs)
     else
       chlog#add
         "assignment lhs not recorded"
@@ -136,21 +149,26 @@ object (self)
     List.iter (fun v ->
         if self#env#is_global_variable v
            && (self#env#has_global_variable_address v) then
-          global_system_state#add_reader
-            ~ty:vtype
-            ~size
+          log_tfold
+            (log_error "record_assignment_rhs" "invalid global address")
+            ~ok:(fun gaddr ->
+              global_system_state#add_reader ~ty:vtype ~size gaddr self#loc)
+            ~error:(fun _ -> ())
             (self#env#get_global_variable_address v)
-            self#loc
         else if self#env#is_stack_variable v then
-          let offset = self#env#get_memvar_offset v in
-          match offset with
-          | ConstantOffset (n, NoOffset) ->
-             self#finfo#stackframe#add_load
-               ~offset:n#toInt ~size ~typ:(Some vtype) v iaddr
-          | _ ->
-             chlog#add
-               "stack assignment rhs not recorded"
-               (LBLOCK [self#loc#toPretty; STR ": "; v#toPretty])
+          log_tfold
+            (log_error "record_assignment_rhs" "invalid offset")
+            ~ok:(fun offset ->
+              match offset with
+              | ConstantOffset (n, NoOffset) ->
+                 self#finfo#stackframe#add_load
+                   ~offset:n#toInt ~size ~typ:(Some vtype) v iaddr
+              | _ ->
+                 chlog#add
+                   "stack assignment rhs not recorded"
+                   (LBLOCK [self#loc#toPretty; STR ": "; v#toPretty]))
+            ~error:(fun _ -> ())
+            (self#env#get_memvar_offset v)
         else
           chlog#add
             "assignment rhs not recorded"
@@ -162,21 +180,25 @@ object (self)
            ~(size: int)
            ~(vtype: btype_t) =
     if self#env#is_stack_variable var then
-      let offset = self#env#get_memvar_offset var in
-      match offset with
-      | ConstantOffset (n, NoOffset) ->
-         self#finfo#stackframe#add_load
-           ~offset:n#toInt ~size:(Some size) ~typ:(Some vtype) var iaddr
-      | _ ->
-         chlog#add
-           "stack load not recorded"
-           (LBLOCK [
-                self#loc#toPretty;
-                STR ": ";
-                x2p addr;
-                STR " (";
-                var#toPretty;
-                STR ")"])
+      log_tfold
+        (log_error "record_load" "invalid offset")
+        ~ok:(fun offset ->
+          match offset with
+          | ConstantOffset (n, NoOffset) ->
+             self#finfo#stackframe#add_load
+               ~offset:n#toInt ~size:(Some size) ~typ:(Some vtype) var iaddr
+          | _ ->
+             chlog#add
+               "stack load not recorded"
+               (LBLOCK [
+                    self#loc#toPretty;
+                    STR ": ";
+                    x2p addr;
+                    STR " (";
+                    var#toPretty;
+                    STR ")"]))
+        ~error:(fun _ -> ())
+        (self#env#get_memvar_offset var)
     else
       chlog#add
         "memory load not recorded"
@@ -195,27 +217,31 @@ object (self)
            ~(vtype: btype_t)
            ~(xpr: xpr_t) =
     if self#env#is_stack_variable var then
-      let offset = self#env#get_memvar_offset var in
-      match offset with
-      | ConstantOffset (n, NoOffset) ->
-         self#finfo#stackframe#add_store
-           ~offset:n#toInt
-           ~size:(Some size)
-           ~typ:(Some vtype)
-           ~xpr:(Some xpr)
-           var
-           iaddr
-      | _ ->
-         chlog#add
-           "stack store not recorded"
-           (LBLOCK [
-                self#loc#toPretty;
-                STR ": ";
-                x2p addr;
-                STR " (";
-                var#toPretty;
-                STR "): ";
-                x2p xpr])
+      log_tfold
+        (log_error "record_store" "invalid offset")
+        ~ok:(fun offset ->
+          match offset with
+          | ConstantOffset (n, NoOffset) ->
+             self#finfo#stackframe#add_store
+               ~offset:n#toInt
+               ~size:(Some size)
+               ~typ:(Some vtype)
+               ~xpr:(Some xpr)
+               var
+               iaddr
+          | _ ->
+             chlog#add
+               "stack store not recorded"
+               (LBLOCK [
+                    self#loc#toPretty;
+                    STR ": ";
+                    x2p addr;
+                    STR " (";
+                    var#toPretty;
+                    STR "): ";
+                    x2p xpr]))
+        ~error:(fun _ -> ())
+        (self#env#get_memvar_offset var)
     else
       chlog#add
         "memory store not recorded"
@@ -227,14 +253,6 @@ object (self)
              var#toPretty;
              STR "): ";
              x2p xpr])
-
-  method record_call_sideeffect
-           (addr: xpr_t)
-           (rhs: xpr_t)
-           ?(size=None)
-           ?(vtype=t_unknown)
-           () =
-    ()
 
 end
 

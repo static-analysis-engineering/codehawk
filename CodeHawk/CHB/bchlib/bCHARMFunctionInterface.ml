@@ -544,7 +544,16 @@ let rec get_arm_struct_param_next_state
       (aa_state: arm_argument_state_t)
       (index: int): (fts_parameter_t * arm_argument_state_t) =
   let fields = get_struct_type_fields btype in
-  let fieldstate = push_field_pos aa_state (List.hd fields) in
+  let fieldstate =
+    try
+      push_field_pos aa_state (List.hd fields)
+    with
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Failure in get_arm_struct_param_next_state: List.hd. ";
+                 STR (btype_to_string btype)])) in
   let (naas, paramlocations) =
     List.fold_left
       (fun (aa_state, paramlocs) bfinfo ->
@@ -575,7 +584,8 @@ let arm_vfp_params (funargs: bfunarg_t list): fts_parameter_t list =
             get_long_int_param_next_state size name btype aa_state index
           else if is_float btype then
             get_float_param_next_state size name btype aa_state index
-          else if is_struct_type btype then
+          else if (is_struct_type btype )
+                  && (get_struct_type_compinfo btype).bcstruct then
             get_arm_struct_param_next_state size name btype aa_state index
           else
             raise

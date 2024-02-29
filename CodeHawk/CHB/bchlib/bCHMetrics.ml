@@ -67,7 +67,7 @@ let get_userdata_metrics () =
 let get_vars_metrics (env:function_environment_int) = {
     mvars_count = env#get_var_count ;
     mvars_global = env#get_globalvar_count ;
-    mvars_args = env#get_argvar_count ;
+    mvars_args = 0;
     mvars_return = env#get_returnvar_count ;
     mvars_sideeff = env#get_sideeffvar_count
 }
