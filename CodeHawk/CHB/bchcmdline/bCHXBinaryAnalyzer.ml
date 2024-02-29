@@ -851,6 +851,8 @@ let main () =
         pr_timing [STR "bc files saved"];
         save_interface_dictionary ();
         pr_timing [STR "interface dictionary saved"];
+        save_type_constraint_dictionary ();
+        pr_timing [STR "type constraint dictionary saved"];
         save_bcdictionary ();
         pr_timing [STR "bc dictionary saved"];
         save_bdictionary ();
