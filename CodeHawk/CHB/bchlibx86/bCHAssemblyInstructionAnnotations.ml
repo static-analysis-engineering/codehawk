@@ -190,12 +190,11 @@ let create_annotation_aux (floc:floc_int) =
       | _ -> pr_expr ~partype xpr in
 
   let rewrite_expr_pretty (expr:xpr_t) =
-    let newExpr = floc#inv#rewrite_expr expr env#get_variable_comparator in
+    let newExpr = floc#inv#rewrite_expr expr in
     if syntactically_equal expr newExpr then STR "" else
       LBLOCK [ STR  " = "; pr_expr newExpr ]  in
 
-  let rewrite_expr (expr:xpr_t) =
-    floc#inv#rewrite_expr expr (env#get_variable_comparator) in
+  let rewrite_expr (expr:xpr_t) = floc#inv#rewrite_expr expr in
 
   let packed_operation_annotation
         (floc:floc_int) (name:string) (dst:operand_int) =
@@ -1167,7 +1166,7 @@ let create_annotation_aux (floc:floc_int) =
 
   | Pop (_, op) when op#is_register ->
     let rhs = get_rhs (esp_deref RD) floc in
-    let rhs = floc#inv#rewrite_expr rhs env#get_variable_comparator in
+    let rhs = floc#inv#rewrite_expr rhs in
     let initVal = env#mk_initial_register_value (CPURegister op#get_cpureg) in
     if syntactically_equal rhs (XVar initVal) then
       let pp = LBLOCK [STR "restore "; STR (cpureg_to_string op#get_cpureg)] in

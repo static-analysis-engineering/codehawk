@@ -83,6 +83,9 @@ open BCHX86Opcodes
 
 module TR = CHTraceResult
 
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("Disassemble:" ^ tag) msg
+
 
 let pr_expr = xpr_formatter#pr_expr
 
@@ -862,13 +865,17 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
         get_floc (make_location {loc_faddr = faddr; loc_iaddr = iaddr}) in
       let opExpr = op#to_expr floc in
       let opExpr =
-        floc#inv#rewrite_expr opExpr finfo#env#get_variable_comparator in
+        floc#inv#rewrite_expr opExpr in
       match opExpr with
       | XVar v
            when finfo#env#is_global_variable v
                 && finfo#env#has_constant_offset v ->
-         let gaddr = finfo#env#get_global_variable_address v in
-         pe_sections#get_read_only_initialized_doubleword gaddr
+         log_tfold
+           (log_error "get_absolute_op" "invalid global address")
+           ~ok:(fun gaddr ->
+             pe_sections#get_read_only_initialized_doubleword gaddr)
+           ~error:(fun _ -> None)
+           (finfo#env#get_global_variable_address v)
       | XConst (IntConst c) ->
          begin
 	   try
@@ -939,9 +946,7 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int) =
 	      if finfo#has_jump_target ctxtiaddr then [] else
 	        let floc = get_floc loc in
 	        let tgtexpr = op#to_expr floc in
-	        let tgtexpr =
-                  floc#inv#rewrite_expr tgtexpr
-	            (finfo#env#get_variable_comparator) in
+	        let tgtexpr = floc#inv#rewrite_expr tgtexpr in
 	        begin
 	          match tgtexpr with
 	          | XVar tgtvar when not tgtvar#isTmp ->
@@ -1760,7 +1765,7 @@ let set_call_address (floc:floc_int) (op:operand_int) =
   let env = floc#f#env in
   let variable_to_pretty = env#variable_name_to_pretty in
   let opExpr = op#to_expr floc in
-  let opExpr = floc#inv#rewrite_expr opExpr env#get_variable_comparator in
+  let opExpr = floc#inv#rewrite_expr opExpr in
   let changes_stack_adjustment () =
     if floc#has_call_target
        && floc#get_call_target#is_signature_valid then
@@ -1812,74 +1817,81 @@ let set_call_address (floc:floc_int) (op:operand_int) =
     end
 
   | XVar v when env#is_calltarget_value v ->
-    let tgt = env#get_calltarget_value v in
-    begin
-      (match tgt with
-       | StubTarget (DllFunction (dll,name)) ->
-          floc#set_call_target (mk_dll_target dll name)
-       | AppTarget dw ->
-          floc#set_call_target (mk_app_target dw)
-      | _ -> ());
-      logmsg (call_target_to_pretty tgt);
-      reset ()
-    end
+     log_tfold
+       (log_error "pull_data" "invalid calltarget value")
+    ~ok:(fun tgt ->
+      begin
+        (match tgt with
+         | StubTarget (DllFunction (dll,name)) ->
+            floc#set_call_target (mk_dll_target dll name)
+         | AppTarget dw ->
+            floc#set_call_target (mk_app_target dw)
+         | _ -> ());
+        logmsg (call_target_to_pretty tgt);
+        reset ()
+      end)
+    ~error:(fun _ -> ())
+    (env#get_calltarget_value v)
 
   | XVar v when env#is_global_variable v && env#has_constant_offset v ->
-    let gaddr = env#get_global_variable_address v in
-    begin
-      match pe_sections#get_read_only_initialized_doubleword gaddr with
-      | Some dw ->
-	if (!assembly_instructions)#is_code_address dw then
-	  if assembly_functions#has_function_by_address dw then
-	    begin
-	      logmsg (LBLOCK [STR "application call to "; dw#toPretty]);
-	      floc#set_call_target (mk_app_target dw);
-	      reset ()
-	    end
-	  else
-	    begin
-	      ignore (functions_data#add_function dw);
-              pverbose [STR "add funcion entry point: "; dw#toPretty; NL];
-	      chlog#add "global variable function entry point" dw#toPretty
-	    end
-	else
-	  begin
-	    match pe_sections#get_imported_function gaddr with
-	      Some (dll,name) ->
-		begin
-		  logmsg (LBLOCK [STR "library call to "; STR name]);
-		  floc#set_call_target (mk_dll_target dll name);
-		  reset ();
-		  (* check_nonreturning name floc *)
-		end
-	    | _ ->
-	       chlog#add
-                 "indirect call not resolved"
-		 (LBLOCK [
-                      floc#l#toPretty;
-		      STR "  Indirect call resolves to address outside ";
-                      STR "code section: ";
-		      dw#toPretty])
-	  end
-      | _ ->
-	match pe_sections#get_imported_function gaddr with
-	| Some (dll,name) ->
-	  begin
-	    logmsg (LBLOCK [STR "library call to "; STR name]);
-	    floc#set_call_target (mk_dll_target dll name);
-	    reset ()
-	  end
-	| _ -> pull_data v
-    end
+     log_tfold
+       (log_error "pull_data" "invalid global address")
+       ~ok:(fun gaddr ->
+         match pe_sections#get_read_only_initialized_doubleword gaddr with
+         | Some dw ->
+	    if (!assembly_instructions)#is_code_address dw then
+	      if assembly_functions#has_function_by_address dw then
+	        begin
+	          logmsg (LBLOCK [STR "application call to "; dw#toPretty]);
+	          floc#set_call_target (mk_app_target dw);
+	          reset ()
+	        end
+	      else
+	        begin
+	          ignore (functions_data#add_function dw);
+                  pverbose [STR "add funcion entry point: "; dw#toPretty; NL];
+	          chlog#add "global variable function entry point" dw#toPretty
+	        end
+	    else
+	      begin
+	        match pe_sections#get_imported_function gaddr with
+	          Some (dll,name) ->
+		   begin
+		     logmsg (LBLOCK [STR "library call to "; STR name]);
+		     floc#set_call_target (mk_dll_target dll name);
+		     reset ();
+		     (* check_nonreturning name floc *)
+		   end
+	        | _ ->
+	           chlog#add
+                     "indirect call not resolved"
+		     (LBLOCK [
+                          floc#l#toPretty;
+		          STR "  Indirect call resolves to address outside ";
+                          STR "code section: ";
+		          dw#toPretty])
+              end
+         | _ ->
+            match pe_sections#get_imported_function gaddr with
+            | Some (dll, name) ->
+	       begin
+	         logmsg (LBLOCK [STR "library call to "; STR name]);
+	         floc#set_call_target (mk_dll_target dll name);
+	         reset ()
+	       end
+            | _ -> pull_data v)
+       ~error:(fun _ -> ())
+       (env#get_global_variable_address v)
+
   | XVar v when env#is_virtual_call v ->
      let ctinfo = mk_virtual_target (env#get_virtual_target v) in
-    begin
-      chlog#add
-        "indirect call resolved"
-	(LBLOCK [
-             floc#l#toPretty; STR ": virtual call "; variable_to_pretty v]);
-      floc#set_call_target ctinfo
-    end
+     begin
+       chlog#add
+         "indirect call resolved"
+	 (LBLOCK [
+              floc#l#toPretty; STR ": virtual call "; variable_to_pretty v]);
+       floc#set_call_target ctinfo
+     end
   | XVar v -> pull_data v
   | _ ->
      chlog#add

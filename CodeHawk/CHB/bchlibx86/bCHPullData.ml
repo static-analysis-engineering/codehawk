@@ -66,16 +66,24 @@ module TR = CHTraceResult
 let pr_expr = xpr_formatter#pr_expr
 
 
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("PullData:" ^ tag) msg
+
+
 let get_module_string (floc:floc_int) (xpr:xpr_t) =
   match xpr with
   | XVar v when floc#f#env#is_return_value v ->
     begin
-      let callsite = floc#f#env#get_call_site v in
-      let cFloc = get_floc (ctxt_string_to_location floc#fa callsite) in
-      match cFloc#get_call_args with
-      | [(_, vxpr)]
-      | [(_, vxpr); _; _] -> get_string_reference floc vxpr
-      | _ -> None
+      log_tfold
+        (log_error "get_module_string" "invalid call site")
+        ~ok:(fun callsite ->
+          let cFloc = get_floc (ctxt_string_to_location floc#fa callsite) in
+          match cFloc#get_call_args with
+          | [(_, vxpr)]
+            | [(_, vxpr); _; _] -> get_string_reference floc vxpr
+          | _ -> None)
+        ~error:(fun _ -> None)
+        (floc#f#env#get_call_site v)
     end
   | _ -> None
 
@@ -160,23 +168,19 @@ and get_decodepointer_target (floc:floc_int) =
       | XVar v
            when floc#env#is_global_variable v
                 && floc#env#has_constant_offset v ->
-	 let gaddr = floc#env#get_global_variable_address v in
-	 let results = get_global_call_targets floc gaddr [] in
-	 begin
-	   pverbose [
-               STR "Targets found for decodepointer: ";
-	       pretty_print_list results call_target_to_pretty "[" "," "]"; NL];
-	   results
-	 end
+         log_tfold
+           (log_error "get_decodepointer_target" "invalid global address")
+           ~ok:(fun gaddr -> get_global_call_targets floc gaddr [])
+           ~error:(fun _ -> [])
+           (floc#env#get_global_variable_address v)
       | XVar v when floc#env#is_return_value v ->
-	 let callsite = floc#env#get_call_site v in
-	 let rfloc = get_floc (ctxt_string_to_location floc#fa callsite) in
-	 let _ =
-           pverbose [
-               STR "Get rv call targets with offsets ";
-	       pretty_print_list [] (fun p -> p#toPretty) "[" "," "]";
-               NL] in
-	 get_rv_call_targets floc rfloc []
+         log_tfold
+           (log_error "get_decodepointer_target" "invalid call site")
+           ~ok:(fun callsite ->
+	     let rfloc = get_floc (ctxt_string_to_location floc#fa callsite) in
+	     get_rv_call_targets floc rfloc [])
+           ~error:(fun _ -> [])
+           (floc#env#get_call_site v)
       | _ -> []
     end
   | _ -> []
@@ -188,14 +192,13 @@ and get_encodepointer_target (floc:floc_int): call_target_t list =
     begin
       match ptr with
       | XVar v when floc#env#is_return_value v ->
-	let callsite = floc#env#get_call_site v in
-	let rfloc = get_floc (ctxt_string_to_location floc#fa callsite) in
-	let _ =
-          pverbose [
-              STR "Get rv call targets with offsets ";
-	      pretty_print_list [] (fun p -> p#toPretty) "[" "," "]";
-              NL] in
-	get_rv_call_targets floc rfloc []
+         log_tfold
+           (log_error "get_encodepointer_target" "invalid call site")
+           ~ok:(fun callsite ->
+             let rfloc = get_floc (ctxt_string_to_location floc#fa callsite) in
+	     get_rv_call_targets floc rfloc [])
+           ~error:(fun _ -> [])
+           (floc#env#get_call_site v)
       | _ -> []
     end
   | _ -> []
@@ -264,17 +267,19 @@ and extract_call_target
   let env = finfo#env in
   match x with
   | XVar v when env#is_return_value v ->
-    let callsite = env#get_call_site v in
-    let rfloc = get_floc (ctxt_string_to_location cfloc#fa callsite) in
-    let _ =
-      pverbose [
-          STR "Get rv call targets with offsets ";
-	  pretty_print_list offsets (fun p -> p#toPretty) "[" "," "]";
-          NL] in
-    get_rv_call_targets cfloc rfloc offsets
+     log_tfold
+       (log_error "extract_call_target" "invalid call target")
+     ~ok:(fun callsite ->
+       let rfloc = get_floc (ctxt_string_to_location cfloc#fa callsite) in
+       get_rv_call_targets cfloc rfloc offsets)
+     ~error:(fun _ -> [])
+     (env#get_call_site v)
   | XVar v when env#is_global_variable v && env#has_constant_offset v ->
-    let gaddr = env#get_global_variable_address v in
-    get_global_call_targets cfloc gaddr offsets
+     log_tfold
+       (log_error "extract_call_target" "invalid global address")
+       ~ok:(fun gaddr -> get_global_call_targets cfloc gaddr offsets)
+       ~error:(fun _ -> [])
+       (env#get_global_variable_address v)
   | XVar v when env#is_initial_memory_value v ->
     unpack_memory_variable cfloc finfo v offsets
   | XConst (IntConst num) when is_code_address num ->
@@ -308,10 +313,15 @@ and check_jni_interface_pointer
   let isjavavm v =
     if env#is_global_variable v then
       let gaddr = env#get_global_variable_address v in
-      let types = global_system_state#get_types gaddr in
-      match types with
-      | [TPtr ( TNamed ("JavaVM", _), _)] -> true
-      | _ -> false
+      log_tfold
+        (log_error "check_jni_interface_pointer" "invalid global address")
+        ~ok:(fun gaddr ->
+          let types = global_system_state#get_types gaddr in
+          match types with
+          | [TPtr ( TNamed ("JavaVM", _), _)] -> true
+          | _ -> false)
+        ~error:(fun _ -> false)
+        (env#get_global_variable_address v)
     else
       false in
   match finfo#env#get_argbasevar_with_offsets v with

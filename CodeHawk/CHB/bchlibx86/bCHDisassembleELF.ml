@@ -436,8 +436,7 @@ let get_return_successors (floc:floc_int) =
       begin
 	let stackRhs = (esp_deref RD)#to_variable floc in
 	let dst =
-	  floc#inv#rewrite_expr
-            (XVar stackRhs) floc#env#get_variable_comparator in
+	  floc#inv#rewrite_expr (XVar stackRhs) in
 	match dst with
 	| XConst (IntConst n) ->
 	  let addr = TR.tget_ok (numerical_to_doubleword n) in
