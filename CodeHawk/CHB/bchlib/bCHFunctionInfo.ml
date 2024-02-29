@@ -37,6 +37,7 @@ open CHUtils
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -84,6 +85,11 @@ module TR = CHTraceResult
 let bcd = BCHBCDictionary.bcdictionary
 
 let x2p = xpr_formatter#pr_expr
+
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("finfo:" ^ tag) msg
+
 
 module NumericalCollections = CHCollections.Make
   (struct
@@ -197,30 +203,36 @@ object (self)
       let cstruct = get_pointedto_struct ty in
       let _ = chlog#add "c-struct field names" cstruct#toPretty in
       cstruct#iter (fun fld ->
-          let memref = self#mk_base_variable_reference v in
-          let fldvar =
-            self#mk_memory_variable
-              ~save_name:false
-              memref
-              (mkNumerical fld.fld_offset) in
-          let fldname = vname ^ "->" ^ fld.fld_name in
-          let fldtype = fld.fld_type in
-          let ifldvar = self#mk_initial_memory_value fldvar in
-          let ifldname = fldname ^  "_in" in
-          let _ = chlog#add "set field var" (STR  fldname) in
-          begin
-	    self#set_variable_name fldvar fldname ;
-            self#set_variable_name ifldvar ifldname ;
-	    if is_ptrto_known_struct fldtype then
-	      self#set_pointedto_struct_field_names
-                (level + 1) ifldvar fldname fldtype
-          end)
+          log_tfold
+            (log_error
+               "set_pointed_to_struct_field_names"
+               ("invalid memref for " ^ fld.fld_name))
+            ~ok:(fun memref ->
+              let fldvar =
+                self#mk_memory_variable
+                  ~save_name:false
+                  memref
+                  (mkNumerical fld.fld_offset) in
+              let fldname = vname ^ "->" ^ fld.fld_name in
+              let fldtype = fld.fld_type in
+              let ifldvar = self#mk_initial_memory_value fldvar in
+              let ifldname = fldname ^  "_in" in
+              let _ = chlog#add "set field var" (STR  fldname) in
+              begin
+	        self#set_variable_name fldvar fldname ;
+                self#set_variable_name ifldvar ifldname ;
+	        if is_ptrto_known_struct fldtype then
+	          self#set_pointedto_struct_field_names
+                    (level + 1) ifldvar fldname fldtype
+              end)
+            ~error:(fun _ -> ())
+            (self#mk_base_variable_reference v))
 
   method set_java_native_method_signature (api:java_native_method_api_t) =
     let args = api.jnm_signature#descriptor#arguments in
     let isStatic = api.jnm_static in
     let jthis = if isStatic then "this$obj" else "this$class" in
-    let stackPars = [  (8, jthis, t_voidptr) ; (4, "jni$Env", t_voidptr) ] in
+    let stackPars = [(8, jthis, t_voidptr); (4, "jni$Env", t_voidptr)] in
     let (_,_,stackPars) = List.fold_left (fun (count,off,pars) ty ->
       let name = (get_java_type_name_prefix ty) ^ "_" ^ (string_of_int count) in
       (count+1, off + (get_java_type_length ty),
@@ -232,11 +244,16 @@ object (self)
       begin
 	self#set_variable_name initV name ;
         if offset = 4 then
-	  let jniInterfacePtrRef = self#mk_base_variable_reference initV in
-	  let jniInterfacePtr =
-            self#mk_memory_variable jniInterfacePtrRef numerical_zero in
-	  let jniInterfacePtrIn = self#mk_initial_memory_value jniInterfacePtr in
-	  self#set_variable_name jniInterfacePtrIn "jni$Ifp"
+          log_tfold
+            (log_error "set_java_native_method_signature" "invalid memref")
+            ~ok:(fun memref ->
+	      let jniInterfacePtr =
+                self#mk_memory_variable memref numerical_zero in
+	      let jniInterfacePtrIn =
+                self#mk_initial_memory_value jniInterfacePtr in
+	      self#set_variable_name jniInterfacePtrIn "jni$Ifp")
+            ~error:(fun _ -> ())
+            (self#mk_base_variable_reference initV)
       end ) stackPars
 
   method set_unknown_java_native_method_signature =
@@ -248,11 +265,17 @@ object (self)
       begin
 	self#set_variable_name initV name ;
         if offset = 4 then
-	  let jniInterfacePtrRef = self#mk_base_variable_reference initV in
-	  let jniInterfacePtr =
-            self#mk_memory_variable jniInterfacePtrRef numerical_zero in
-	  let jniInterfacePtrIn = self#mk_initial_memory_value jniInterfacePtr in
-	  self#set_variable_name jniInterfacePtrIn "jni$Ifp"
+          log_tfold
+            (log_error
+               "set_unknown_java_native_method_signature" ("invalid memref"))
+            ~ok:(fun memref ->
+	      let jniInterfacePtr =
+                self#mk_memory_variable memref numerical_zero in
+	      let jniInterfacePtrIn =
+                self#mk_initial_memory_value jniInterfacePtr in
+	      self#set_variable_name jniInterfacePtrIn "jni$Ifp")
+            ~error:(fun _ -> ())
+            (self#mk_base_variable_reference initV)
       end ) stackPars
 
   method set_argument_structconstant par sc =
@@ -265,64 +288,75 @@ object (self)
       begin
 	match sc with
 	| FieldValues l ->
-	  List.iter (fun (offset,ssc) ->
-	      let mref = self#mk_base_variable_reference argvarin in
-	      let mvar = self#mk_memory_variable mref (mkNumerical offset) in
-	      let mvarin = self#mk_initial_memory_value mvar in
-	      match ssc with
-	      | FieldString s ->
-		begin
-		  H.add
-                    initial_string_values
-                    (argvarin#getName#getSeqNumber,offset)
-                    s;
-		  chlog#add
-                    "struct constant string"
-		    (LBLOCK [
-                         faddr#toPretty;
-                         STR ": &";
-                         mvarin#toPretty;
-                         STR " -- ";
-			 STR s])
-		end
-	      | FieldCallTarget tgt ->
-		begin
-		  H.add
-                    initial_call_target_values
-                    mvarin#getName#getSeqNumber
-                    tgt;
-		  chlog#add
-                    "struct constant invariant"
-		    (LBLOCK [
-                         faddr#toPretty;
-                         STR ": ";
-                         mvarin#toPretty;
-                         STR " -- ";
-			 call_target_to_pretty tgt])
-		end
-	      | FieldValues ll ->
-		List.iter (fun (offset,ssc) ->
-		  let mref = self#mk_base_variable_reference mvarin in
-		  let mvar = self#mk_memory_variable mref (mkNumerical offset) in
-		  let mvarin = self#mk_initial_memory_value mvar in
-		  match ssc with
-		  | FieldCallTarget tgt ->
-		    begin
-		      H.add
-                        initial_call_target_values
-                        mvarin#getName#getSeqNumber
-                        tgt;
-		      chlog#add
-                        "struct constant invariant"
-			(LBLOCK [
-                             faddr#toPretty;
-                             STR ": ";
-                             mvarin#toPretty;
-                             STR " -- ";
-			     call_target_to_pretty tgt])
-		    end
-		  | _ -> ()) ll
-	      | _ -> ()) l
+	   List.iter (fun (offset, ssc) ->
+               log_tfold
+                 (log_error "set_argument_structconstant" "invalid memref")
+                 ~ok:(fun mref ->
+	           let mvar = self#mk_memory_variable mref (mkNumerical offset) in
+	           let mvarin = self#mk_initial_memory_value mvar in
+	           match ssc with
+	           | FieldString s ->
+		      begin
+		        H.add
+                          initial_string_values
+                          (argvarin#getName#getSeqNumber,offset)
+                          s;
+		        chlog#add
+                          "struct constant string"
+		          (LBLOCK [
+                               faddr#toPretty;
+                               STR ": &";
+                               mvarin#toPretty;
+                               STR " -- ";
+			       STR s])
+		      end
+	           | FieldCallTarget tgt ->
+		      begin
+		        H.add
+                          initial_call_target_values
+                          mvarin#getName#getSeqNumber
+                          tgt;
+		        chlog#add
+                          "struct constant invariant"
+		          (LBLOCK [
+                               faddr#toPretty;
+                               STR ": ";
+                               mvarin#toPretty;
+                               STR " -- ";
+			       call_target_to_pretty tgt])
+		      end
+	           | FieldValues ll ->
+		      List.iter (fun (offset, ssc) ->
+                          log_tfold
+                            (log_error
+                               "set_argument_structconstant" "invalid memref-2")
+                            ~ok:(fun mref ->
+		              let mvar =
+                                self#mk_memory_variable mref
+                                  (mkNumerical offset) in
+		              let mvarin = self#mk_initial_memory_value mvar in
+		              match ssc with
+		              | FieldCallTarget tgt ->
+		                 begin
+		                   H.add
+                                     initial_call_target_values
+                                     mvarin#getName#getSeqNumber
+                                     tgt;
+		                   chlog#add
+                                     "struct constant invariant"
+			             (LBLOCK [
+                                          faddr#toPretty;
+                                          STR ": ";
+                                          mvarin#toPretty;
+                                          STR " -- ";
+			                  call_target_to_pretty tgt])
+		                 end
+		              | _ -> ())
+                            ~error:(fun _ -> ())
+                            (self#mk_base_variable_reference mvarin)) ll
+	           | _ -> ())
+                 ~error:(fun _ -> ())
+                 (self#mk_base_variable_reference argvarin)) l
 	| _ -> ()
       end
     | _ -> ()
@@ -393,80 +427,116 @@ object (self)
 	     let cls = get_class_from_type ty in
 	     begin
 	       cls#dm_iter (fun dm ->
-	           let memref = self#mk_base_variable_reference basevar in
+                   log_tfold
+                     (log_error
+                        "set_class_member_variable_names" "invalid memref")
+                     ~ok:(fun memref ->
+	               let memberVar =
+                         self#mk_memory_variable
+                           ~save_name:false
+                           memref
+                           (mkNumerical dm.cppdm_offset) in
+	               let memberInitVar = self#mk_initial_memory_value memberVar in
+	               let mName = self#variable_name_to_string basevar in
+	               let name = mName ^ "->" ^ dm.cppdm_name in
+	               self#set_variable_name memberInitVar name)
+                     ~error:(fun _ -> ())
+                     (self#mk_base_variable_reference basevar));
+
+	       cls#vf_iter (fun vf ->
+                   log_tfold
+                     (log_error
+                        "set_class_member_variable_names" "invalid memref (2)")
+                     ~ok:(fun memref ->
+	               let vfptrVar =
+                         self#mk_memory_variable
+                           ~save_name:false
+                           memref
+                           (mkNumerical vf.cppvf_offset) in
+	               let vfptrInitVar =
+                         self#mk_initial_memory_value vfptrVar in
+	               let mName = self#variable_name_to_string basevar in
+	               let vfptrName = mName ^ "->vtableptr" in
+	               let vfsummaries = get_vtable_summaries vf.cppvf_table in
+	               begin
+		         List.iter (fun (vfOffset, summary) ->
+                             log_tfold
+                               (log_error
+                                  "set_class_member_variable_names"
+                                  "invalid memref (3)")
+                               ~ok:(fun vfmemref ->
+		                 let vfVar =
+                                   self#mk_memory_variable
+                                     ~save_name:false
+                                     vfmemref
+                                     (mkNumerical vfOffset) in
+		                 let vfInitVar =
+                                   self#mk_initial_memory_value vfVar in
+		                 self#register_virtual_call vfInitVar summary)
+                               ~error:(fun _ -> ())
+                               (self#mk_base_variable_reference vfptrInitVar))
+                           vfsummaries;
+		         self#set_variable_name vfptrInitVar vfptrName
+	               end)
+                     ~error:(fun _ -> ())
+                     (self#mk_base_variable_reference basevar))
+	     end
+	   else
+	     () in
+         begin
+	   cppClass#dm_iter (fun dm ->
+               log_tfold
+                 (log_error
+                    "set_class_member_variable_names" "invalid memref (4)")
+                 ~ok:(fun memref ->
 	           let memberVar =
                      self#mk_memory_variable
                        ~save_name:false
                        memref
                        (mkNumerical dm.cppdm_offset) in
 	           let memberInitVar = self#mk_initial_memory_value memberVar in
-	           let mName = self#variable_name_to_string basevar in
-	           let name = mName ^ "->" ^ dm.cppdm_name in
-	           self#set_variable_name memberInitVar name );
+	           let name = "this->" ^ dm.cppdm_name in
+	           begin
+	             self#set_variable_name memberInitVar name ;
+	             add_dm_class_members dm.cppdm_type memberInitVar
+	           end)
+                 ~error:(fun _ -> ())
+                 (self#mk_base_variable_reference thisVar));
 
-	       cls#vf_iter (fun vf ->
-	           let memref = self#mk_base_variable_reference basevar in
-	           let vfptrVar =
+	   cppClass#vf_iter (fun vf ->
+               log_tfold
+                 (log_error
+                    "set_class_member_variable_names" "invalid memref (5)")
+	         ~ok:(fun memref ->
+                   let vfptrVar =
                      self#mk_memory_variable
                        ~save_name:false
                        memref
                        (mkNumerical vf.cppvf_offset) in
 	           let vfptrInitVar = self#mk_initial_memory_value vfptrVar in
-	           let mName = self#variable_name_to_string basevar in
-	           let vfptrName = mName ^ "->vtableptr" in
+	           let vfptrVarName = "this->" ^ "vtableptr" in
 	           let vfsummaries = get_vtable_summaries vf.cppvf_table in
 	           begin
-		     List.iter (fun (vfOffset,summary) ->
-		         let vfmemref =
-                           self#mk_base_variable_reference vfptrInitVar in
-		         let vfVar =
-                           self#mk_memory_variable
-                             ~save_name:false
-                             vfmemref
-                             (mkNumerical vfOffset) in
-		         let vfInitVar = self#mk_initial_memory_value vfVar in
-		         self#register_virtual_call vfInitVar summary) vfsummaries ;
-		     self#set_variable_name vfptrInitVar vfptrName
+	             List.iter (fun (vfOffset,summary) ->
+                         log_tfold
+                           (log_error
+                              "set_class_member_variable_names"
+                              "invalid memref (6)")
+	                   ~ok:(fun vfmemref ->
+                             let vfVar =
+                               self#mk_memory_variable
+                                 ~save_name:false
+                                 vfmemref
+                                 (mkNumerical vfOffset) in
+	                     let vfInitVar = self#mk_initial_memory_value vfVar in
+	                     self#register_virtual_call vfInitVar summary)
+                           ~error:(fun _ -> ())
+                           (self#mk_base_variable_reference vfptrInitVar))
+                       vfsummaries;
+	             self#set_variable_name vfptrInitVar vfptrVarName
 	           end)
-	     end
-	   else
-	     () in
-         begin
-	   cppClass#dm_iter (fun dm ->
-	       let memref = self#mk_base_variable_reference thisVar in
-	       let memberVar =
-                 self#mk_memory_variable
-                   ~save_name:false
-                   memref
-                   (mkNumerical dm.cppdm_offset) in
-	       let memberInitVar = self#mk_initial_memory_value memberVar in
-	       let name = "this->" ^ dm.cppdm_name in
-	       begin
-	         self#set_variable_name memberInitVar name ;
-	         add_dm_class_members dm.cppdm_type memberInitVar
-	       end) ;
-	   cppClass#vf_iter (fun vf ->
-	       let memref = self#mk_base_variable_reference thisVar in
-	       let vfptrVar =
-                 self#mk_memory_variable
-                   ~save_name:false
-                   memref
-                   (mkNumerical vf.cppvf_offset) in
-	       let vfptrInitVar = self#mk_initial_memory_value vfptrVar in
-	       let vfptrVarName = "this->" ^ "vtableptr" in
-	       let vfsummaries = get_vtable_summaries vf.cppvf_table in
-	       begin
-	         List.iter (fun (vfOffset,summary) ->
-	             let vfmemref = self#mk_base_variable_reference vfptrInitVar in
-	             let vfVar =
-                       self#mk_memory_variable
-                         ~save_name:false
-                         vfmemref
-                         (mkNumerical vfOffset) in
-	             let vfInitVar = self#mk_initial_memory_value vfVar in
-	             self#register_virtual_call vfInitVar summary) vfsummaries ;
-	         self#set_variable_name vfptrInitVar vfptrVarName
-	       end)
+                 ~error:(fun _ -> ())
+                 (self#mk_base_variable_reference thisVar))
          end
     | _ ->
        ch_error_log#add
@@ -522,17 +592,22 @@ object (self)
   method mk_global_memory_reference =
     varmgr#memrefmgr#mk_global_reference
 
-  method mk_local_stack_reference =
+  method mk_local_stack_reference: memory_reference_int =
       varmgr#memrefmgr#mk_local_stack_reference
 
   method mk_realigned_stack_reference =
       varmgr#memrefmgr#mk_realigned_stack_reference
 
-  method mk_base_variable_reference (v:variable_t) =
+  method mk_base_variable_reference
+           (v: variable_t): memory_reference_int traceresult =
     varmgr#make_memref_from_basevar v
 
-  method mk_base_sym_reference (s:symbol_t) =
-    self#mk_base_variable_reference (self#get_variable s#getSeqNumber)
+  method mk_base_sym_reference
+           (s: symbol_t): memory_reference_int traceresult =
+    tbind
+      ~msg:"env:mk_base_sym_reference"
+      self#mk_base_variable_reference
+      (self#get_variable s#getSeqNumber)
 
   (* --------------------------------------------------- program variables -- *)
 
@@ -591,7 +666,7 @@ object (self)
       symchifvar
     end
 
-  method get_symbolic_num_variable(v: variable_t): variable_t =
+  method get_symbolic_num_variable(v: variable_t): variable_t traceresult =
     self#get_variable v#getName#getSeqNumber
 
   method private has_chifvar index = H.mem chifvars index
@@ -606,19 +681,11 @@ object (self)
     else
       []
 
-  method get_variable (index: int): variable_t =
+  method get_variable (index: int): variable_t traceresult =
     if H.mem chifvars index then
-      H.find chifvars index
+      Ok (H.find chifvars index)
     else
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "Variable not found: ";
-                INT index;
-                STR "; variables: ";
-                pretty_print_list self#get_variables
-                  (fun v -> v#toPretty) " [" "," "]" ]))
-
+      Error ["env#get_variable: index not found: " ^ (string_of_int index)]
 
   (* -------------------------------------------------------- transactions -- *)
 
@@ -687,8 +754,8 @@ object (self)
   method mk_memory_variable
            ?(save_name=true)
            ?(size=4)
-           (memref:memory_reference_int)
-           (offset:numerical_t) =
+           (memref: memory_reference_int)
+           (offset: numerical_t) =
     if memref#is_unknown_reference then
       self#mk_num_temp
     else
@@ -943,20 +1010,24 @@ object (self)
 
   method private probe_global_var_field_values (v:variable_t) (iv:variable_t) =
     if varmgr#has_global_variable_address v then
-      let addr = varmgr#get_global_variable_address v in
-      if has_symbolic_address_name addr then
-        let vname = get_symbolic_address_name addr in
-        let vtype = get_symbolic_address_type addr in
-        let _ = self#set_variable_name v vname in
-        let _ =
-          if is_volatile vtype then
-            chlog#add
-              "volatile type not initialized"
-              (LBLOCK [STR (btype_to_string vtype); STR " "; STR vname])
-          else
-            self#set_variable_name iv (vname ^ "_in") in
-        if is_ptrto_known_struct vtype then
-          self#set_pointedto_struct_field_names 1 iv vname vtype
+      log_tfold
+        (log_error "probe_global_var_field_values" "invalid global address")
+        ~ok:(fun addr ->
+          if has_symbolic_address_name addr then
+            let vname = get_symbolic_address_name addr in
+            let vtype = get_symbolic_address_type addr in
+            let _ = self#set_variable_name v vname in
+            let _ =
+              if is_volatile vtype then
+                chlog#add
+                  "volatile type not initialized"
+                  (LBLOCK [STR (btype_to_string vtype); STR " "; STR vname])
+              else
+                self#set_variable_name iv (vname ^ "_in") in
+            if is_ptrto_known_struct vtype then
+              self#set_pointedto_struct_field_names 1 iv vname vtype)
+        ~error:(fun _ -> ())
+        (varmgr#get_global_variable_address v)
 
   method mk_initial_memory_value (v:variable_t):variable_t =
     if (self#is_memory_variable v) && (self#has_constant_offset v) then
@@ -986,23 +1057,31 @@ object (self)
 
   method private nested_exprs_in_var (v: variable_t): xpr_t list =
     if self#is_symbolic_value v then
-      let x = self#get_symbolic_value_expr v in
-      let _ =
-        chlog#add
-          "nested exprs in var"
-          (LBLOCK [v#toPretty; STR ": "; x2p x]) in
-      [x]
+      log_tfold
+        (log_error "nested_exprs_in_var" "invalid symbolic value")
+        ~ok:(fun x ->
+          let _ =
+            chlog#add
+              "nested exprs in var"
+              (LBLOCK [v#toPretty; STR ": "; x2p x]) in
+          [x])
+        ~error:(fun _ -> [])
+        (self#get_symbolic_value_expr v)
 
     else if self#is_global_variable v then
-      let memoff = self#get_memvar_offset v in
-      match memoff with
-      | ConstantOffset (_, IndexOffset (indexvar, _, _)) ->
-         let _ =
-           chlog#add
-             "nested exprs in var"
-             (LBLOCK [v#toPretty; STR ": "; indexvar#toPretty]) in
-         [XVar indexvar]
-      | _ -> []
+      log_tfold
+        (log_error "nested_exprs_in_var" "invalid offset")
+        ~ok:(fun memoff ->
+          match memoff with
+          | ConstantOffset (_, IndexOffset (indexvar, _, _)) ->
+             let _ =
+               chlog#add
+                 "nested exprs in var"
+                 (LBLOCK [v#toPretty; STR ": "; indexvar#toPretty]) in
+             [XVar indexvar]
+          | _ -> [])
+        ~error:(fun _ -> [])
+        (self#get_memvar_offset v)
     else
       []
 
@@ -1072,10 +1151,10 @@ object (self)
 	     STR s.fintf_name]) in
     H.add virtual_calls v#getName#getSeqNumber s
 
-  method is_virtual_call (v:variable_t) =
+  method is_virtual_call (v: variable_t) =
     H.mem virtual_calls v#getName#getSeqNumber
 
-  method get_virtual_target (v:variable_t) =
+  method get_virtual_target (v: variable_t) =
     try
       H.find virtual_calls v#getName#getSeqNumber
     with
@@ -1084,17 +1163,14 @@ object (self)
         (BCH_failure
            (LBLOCK [STR "No virtual target found for "; v#toPretty]))
 
-  method get_frozen_variable (variable:variable_t) =
-    varmgr#get_frozen_variable variable
+  method get_frozen_variable (v: variable_t) =
+    varmgr#get_frozen_variable v
 
   method private get_register_variables =
     List.filter varmgr#is_register_variable self#get_variables
 
   method private get_function_pointers =
     List.filter varmgr#is_function_pointer self#get_variables
-
-  method private get_side_effect_variables =
-    List.filter self#is_sideeffect_value_derivative self#get_variables
 
   method get_local_variables =
     let is_local v =
@@ -1132,39 +1208,45 @@ object (self)
   method get_realigned_stack_variables =
     List.filter varmgr#is_realigned_stack_variable self#get_variables
 
-  method get_stack_parameter_index (v:variable_t) =
-    try
-      if self#is_initial_memory_value v then
-        let iv = varmgr#get_initial_memory_value_variable v in
-        varmgr#get_stack_parameter_index iv
-      else
-        varmgr#get_stack_parameter_index v
-    with
-    | BCH_failure p ->
-       raise (BCH_failure (LBLOCK [STR "Finfo:get-stack-parameter-index: "; p]))
+  method get_stack_parameter_index (v: variable_t): int option =
+    if self#is_initial_memory_value v then
+      log_tfold
+        (log_error "get_stack_parameter_index" "invalid initial value")
+        ~ok:(fun iv -> varmgr#get_stack_parameter_index iv)
+        ~error:(fun _ -> None)
+        (varmgr#get_initial_memory_value_variable v)
+    else
+      varmgr#get_stack_parameter_index v
 
-  method get_memvar_basevar (v:variable_t) = varmgr#get_memvar_basevar v
+  method get_memvar_basevar (v:variable_t):variable_t traceresult =
+    varmgr#get_memvar_basevar v
 
-  method get_memval_basevar (v:variable_t) = varmgr#get_memval_basevar v
+  method get_memval_basevar (v:variable_t): variable_t traceresult =
+    varmgr#get_memval_basevar v
 
-  method get_memvar_offset (v:variable_t) = varmgr#get_memvar_offset v
+  method get_memvar_offset (v:variable_t): memory_offset_t traceresult =
+    varmgr#get_memvar_offset v
 
-  method get_memval_offset (v:variable_t) = varmgr#get_memval_offset v
+  method get_memval_offset (v:variable_t): memory_offset_t traceresult =
+    varmgr#get_memval_offset v
 
-  method get_constant_offsets (v:variable_t) =
-    let offset =
+  method get_constant_offsets (v: variable_t): numerical_t list option =
+    let offset_r =
       if self#is_initial_memory_value v then
         self#get_memval_offset v
       else if self#is_memory_variable v then
         self#get_memvar_offset v
       else
-        raise
-          (BCH_failure
-             (LBLOCK [STR "Not a memory variable: "; v#toPretty])) in
-    if is_constant_offset offset then
-      Some (get_constant_offsets offset)
-    else
-      None
+        Error ["get_constant_offsets: " ^ v#getName#getBaseName] in
+    log_tfold
+      (log_error "get_constant_offsets" "invalid offset or variable")
+      ~ok:(fun offset ->
+        if is_constant_offset offset then
+          Some (get_constant_offsets offset)
+        else
+          None)
+      ~error:(fun _ -> None)
+      offset_r
 
   method get_total_constant_offset (v:variable_t) =
     match self#get_constant_offsets v with
@@ -1191,9 +1273,6 @@ object (self)
   method get_globalvar_count =
     List.length (List.filter self#is_global_variable self#get_variables)
 
-  method get_argvar_count =
-    List.length (List.filter self#is_arg_deref_var self#get_variables)
-
   method get_returnvar_count =
     List.length (List.filter self#is_return_value self#get_variables)
 
@@ -1203,58 +1282,99 @@ object (self)
   method is_global_variable (v:variable_t) =
     (varmgr#is_global_variable v) ||
       ((varmgr#is_initial_memory_value v) &&
-	  (let iv = varmgr#get_initial_memory_value_variable v in
-	   self#is_global_variable iv))
+         (tfold_default
+            self#is_global_variable
+            false
+	    (varmgr#get_initial_memory_value_variable v)))
 
   method has_global_variable_address (v: variable_t): bool =
     varmgr#has_global_variable_address v
 
-  method get_global_variable_address (v: variable_t): doubleword_int =
+  method get_global_variable_address (v: variable_t): doubleword_result =
     if (varmgr#is_global_variable v) then
       if varmgr#has_global_variable_address v then
         varmgr#get_global_variable_address v
       else
-        let msg =
-          LBLOCK [
-              STR "global variable does not have a numerical offset: ";
-              v#toPretty] in
-        begin
-          ch_error_log#add "function environment" msg;
-          raise (BCH_failure msg)
-        end
+        Error [
+            "env#get_global_variable_address: "
+            ^ "no constant numerical offset: "
+            ^ v#getName#getBaseName]
     else if varmgr#is_initial_memory_value v then
-      let ivar = varmgr#get_initial_memory_value_variable v in
-      if varmgr#has_global_variable_address v then
-        self#get_global_variable_address ivar
-      else
-        let msg =
-          LBLOCK [
-              STR "initial memory value of global variable does not have ";
-              STR "a numerical offset: ";
-              v#toPretty] in
-        begin
-          ch_error_log#add "function environment" msg;
-          raise (BCH_failure msg)
-        end
+      tbind
+        ~msg:("env#get_global_variable_address: invalid initial_memory_value")
+        (fun ivar ->
+          if varmgr#has_global_variable_address ivar then
+            self#get_global_variable_address ivar
+          else
+            Error ["env#get_global_variable_address: not a constant offset"])
+        (varmgr#get_initial_memory_value_variable v)
     else
-      let msg =
-        LBLOCK [
-            STR "variable is not a global variable: "; v#toPretty] in
-      begin
-	ch_error_log#add "function environment" msg;
-	raise (BCH_failure msg)
-      end
+      Error [
+          "env#get_global_variable_address: "
+          ^ "not a global variable or initial-value global variable: "
+          ^ v#getName#getBaseName]
 
   method is_volatile_variable (v: variable_t) =
     if varmgr#has_global_variable_address v then
-      let addr = varmgr#get_global_variable_address v in
-      if has_symbolic_address_name addr then
-        let vtype = get_symbolic_address_type addr in
-        is_volatile vtype
-      else
+      tfold_default
+        (fun addr ->
+          if has_symbolic_address_name addr then
+            let vtype = get_symbolic_address_type addr in
+            is_volatile vtype
+          else
+            false)
         false
+        (varmgr#get_global_variable_address v)
     else
       false
+
+  method get_optreturn_value_capabilities
+           (var: variable_t): (ctxt_iaddress_t * type_cap_label_t list) option =
+
+    let rec aux (v: variable_t) =
+      if self#is_return_value v then
+        tfold_default
+          (fun callsite -> Some (callsite, [])) None (self#get_call_site v)
+      else if self#is_basevar_memory_variable v then
+        tfold_default
+          (fun var ->
+            match self#get_optreturn_value_capabilities var with
+            | Some (callsite, labels) ->
+               tfold_default
+                 (fun offset ->
+                   if is_constant_offset offset then
+                     let num = get_total_constant_offset offset in
+                     Some
+                       (callsite, Load :: (OffsetAccess (4, num#toInt)) :: labels)
+                   else
+                     None)
+                 None
+                 (self#get_memvar_offset v)
+            | _ -> None)
+          None
+          (self#get_memvar_basevar v)
+      else if self#is_basevar_memory_value v then
+        tfold_default
+          (fun var ->
+            match self#get_optreturn_value_capabilities var with
+            | Some (callsite, labels) ->
+               tfold_default
+                 (fun offset ->
+                   if is_constant_offset offset then
+                     let num = get_total_constant_offset offset in
+                     Some
+                       (callsite, Load :: (OffsetAccess (4, num#toInt)) :: labels)
+                   else
+                     None)
+                 None
+                 (self#get_memval_offset v)
+            | _ -> None)
+          None
+          (self#get_memval_basevar v)
+      else
+        None in
+
+    aux var
 
   method is_local_variable = varmgr#is_local_variable
 
@@ -1282,10 +1402,9 @@ object (self)
   method is_unknown_offset_memory_variable =
     varmgr#is_unknown_offset_memory_variable
 
-  method get_memory_reference (v:variable_t) =
+  method get_memory_reference (v:variable_t): memory_reference_int traceresult =
     if self#is_initial_memory_value v then
-      let iv = varmgr#get_initial_memory_value_variable v in
-      varmgr#get_memvar_reference iv
+      varmgr#get_memval_reference v
     else
       varmgr#get_memvar_reference v
 
@@ -1298,80 +1417,37 @@ object (self)
     (varmgr#is_stack_parameter_variable v)
 
   method is_stack_parameter_value (v:variable_t) =
-    ((self#is_initial_memory_value v) &&
-       (let iv = varmgr#get_initial_memory_value_variable v in
-	self#is_stack_parameter_variable iv))
-
-  method is_stackarg_deref_var (v:variable_t) =
-    (self#is_basevar_memory_variable v)
-    && (let base = self#get_memvar_basevar v in
-        (self#is_stackarg_deref_val base)
-        || (self#is_stack_parameter_value base))
-
-  method is_stackarg_deref_val (v:variable_t) =
-    (self#is_basevar_memory_value v)
-    && (let initvar = self#get_init_value_variable v in
-        self#is_stackarg_deref_var initvar)
-
-  method is_regarg_deref_var (v:variable_t) =
-    (self#is_basevar_memory_variable v)
-    && (let base = self#get_memvar_basevar v in
-        (self#is_regarg_deref_val base)
-        || (self#is_initial_register_value base))
-
-  method is_regarg_deref_val (v:variable_t) =
-    (self#is_basevar_memory_value v)
-    && (let initvar = self#get_init_value_variable v in
-        self#is_regarg_deref_var initvar)
-
-  method is_arg_deref_var (v:variable_t) =
-    self#is_stackarg_deref_var v || self#is_regarg_deref_var v
-
-  method is_arg_deref_val (v:variable_t) =
-    self#is_stackarg_deref_val v || self#is_regarg_deref_val v
-
-  method get_regarg_deref_var_register (v:variable_t) =
-    if self#is_regarg_deref_var v then
-      let base = self#get_memvar_basevar v in
-      if self#is_initial_register_value base then
-        self#get_initial_register_value_register base
-      else
-        self#get_regarg_deref_val_register base
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "variable is not a register arg deref variable: ";
-                v#toPretty]))
-
-  method get_regarg_deref_val_register (v:variable_t) =
-    if self#is_regarg_deref_val v then
-      let initvar = self#get_init_value_variable v in
-      self#get_regarg_deref_var_register initvar
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "variable is nnot a register arg deref value: ";
-                v#toPretty]))
+    (self#is_initial_memory_value v)
+    && (tfold_default
+          (fun iv -> self#is_stack_parameter_variable iv)
+          false
+          (varmgr#get_initial_memory_value_variable v))
 
   method private get_argbasevar_with_offsets_aux
                    (v:variable_t) (offsets:numerical_t list) =
     if self#is_initial_memory_value v then
-      let iv = varmgr#get_initial_memory_value_variable v in
-      if self#is_basevar_memory_variable iv then
-        let basevar = self#get_memvar_basevar iv in
-        match self#get_total_constant_offset iv with
-        | Some o ->
-           let newoffsets = o :: offsets in
-          if self#is_stack_parameter_variable basevar ||
-               self#is_initial_register_value basevar then
-            Some (basevar,newoffsets)
+      log_tfold
+        (log_error "get_argbasevar_with_offsets_aux" "invalid memory variable")
+        ~ok:(fun iv ->
+          if self#is_basevar_memory_variable iv then
+            log_tfold
+              (log_error "get_argbasevar_with_offsets_aux" "invalid base var")
+              ~ok:(fun basevar ->
+                match self#get_total_constant_offset iv with
+                | Some o ->
+                   let newoffsets = o :: offsets in
+                   if self#is_stack_parameter_variable basevar ||
+                        self#is_initial_register_value basevar then
+                     Some (basevar, newoffsets)
+                   else
+                     self#get_argbasevar_with_offsets_aux basevar newoffsets
+                | _ -> None)
+              ~error:(fun _ -> None)
+              (self#get_memvar_basevar iv)
           else
-            self#get_argbasevar_with_offsets_aux basevar newoffsets
-        | _ -> None
-      else
-        None
+            None)
+        ~error:(fun _ -> None)
+        (varmgr#get_initial_memory_value_variable v)
     else
       None
 
@@ -1381,19 +1457,27 @@ object (self)
   method private get_globalbasevar_with_offsets_aux
                    (v:variable_t) (offsets:numerical_t list) =
     if self#is_initial_memory_value v then
-      let iv = varmgr#get_initial_memory_value_variable v in
-      if self#is_basevar_memory_variable iv then
-        let basevar = self#get_memvar_basevar iv in
-        match self#get_total_constant_offset iv with
-        | Some o ->
-           let newoffsets = o :: offsets in
-           if self#is_global_variable basevar then
-             Some (basevar, newoffsets)
-           else
-             self#get_globalbasevar_with_offsets_aux basevar newoffsets
-        | _ -> None
-      else
-        None
+      log_tfold
+        (log_error "get_globalbasevar_with_offsets_aux" "invalid memory variable")
+        ~ok:(fun iv ->
+          if self#is_basevar_memory_variable iv then
+            log_tfold
+              (log_error "get_globalbasevar_with_offsets_aux" "invalid basevar")
+              ~ok:(fun basevar ->
+                match self#get_total_constant_offset iv with
+                | Some o ->
+                   let newoffsets = o :: offsets in
+                   if self#is_global_variable basevar then
+                     Some (basevar, newoffsets)
+                   else
+                     self#get_globalbasevar_with_offsets_aux basevar newoffsets
+                | _ -> None)
+              ~error:(fun _ -> None)
+              (self#get_memvar_basevar iv)
+          else
+            None)
+        ~error:(fun _ -> None)
+        (varmgr#get_initial_memory_value_variable v)
     else
       None
 
@@ -1402,25 +1486,7 @@ object (self)
 
   method is_return_value = varmgr#is_return_value
 
-  method is_return_value_derivative (v:variable_t) =
-    (self#is_return_value v) ||
-      ((self#is_initial_memory_value v) &&
-	  (let iv = varmgr#get_initial_memory_value_variable v in
-	   ((self#is_memory_variable iv) &&
-	       (let memref = varmgr#get_memvar_reference iv in
-		memref#has_external_base &&
-		  (self#is_return_value_derivative memref#get_external_base)))))
-
   method is_sideeffect_value = varmgr#is_sideeffect_value
-
-  method is_sideeffect_value_derivative (v:variable_t) =
-    (self#is_sideeffect_value v) ||
-      ((self#is_initial_memory_value v) &&
-	  (let iv = varmgr#get_initial_memory_value_variable v in
-	   ((self#is_memory_variable iv) &&
-	       (let memref = varmgr#get_memvar_reference iv in
-		memref#has_external_base &&
-		  (self#is_sideeffect_value_derivative memref#get_external_base)))))
 
   method is_register_variable = varmgr#is_register_variable
 
@@ -1441,41 +1507,41 @@ object (self)
   method is_initial_value (v:variable_t) =
     self#is_initial_memory_value v || self#is_initial_register_value v
 
-  method get_init_value_variable (v:variable_t) =
+  method get_init_value_variable (v:variable_t): variable_t traceresult =
     if self#is_initial_memory_value v then
       varmgr#get_initial_memory_value_variable v
     else if self#is_initial_register_value v then
-      match self#get_initial_register_value_register v with
-      | CPURegister r -> self#mk_cpu_register_variable r
-      | MIPSRegister r -> self#mk_mips_register_variable r
-      | MIPSSpecialRegister r -> self#mk_mips_special_register_variable r
-      | ARMRegister r -> self#mk_arm_register_variable r
-      | ARMExtensionRegister r -> self#mk_arm_extension_register_variable r
-      | PowerGPRegister i -> self#mk_pwr_gp_register_variable i
-      | PowerSPRegister r -> self#mk_pwr_sp_register_variable r
-      | _ ->
-         let msg =
-           LBLOCK [
-               STR "Variable is not a cpu/mips/arm register: ";
-               v#toPretty] in
-         begin
-           ch_error_log#add "function environment" msg ;
-           raise (BCH_failure msg)
-         end
+      tbind
+        ~msg:("finfo:get_init_value_variable: " ^ v#getName#getBaseName)
+        (fun iv ->
+          match iv with
+          | CPURegister r -> Ok (self#mk_cpu_register_variable r)
+          | MIPSRegister r -> Ok (self#mk_mips_register_variable r)
+          | MIPSSpecialRegister r -> Ok (self#mk_mips_special_register_variable r)
+          | ARMRegister r -> Ok (self#mk_arm_register_variable r)
+          | ARMExtensionRegister r ->
+             Ok (self#mk_arm_extension_register_variable r)
+          | PowerGPRegister i -> Ok (self#mk_pwr_gp_register_variable i)
+          | PowerSPRegister r -> Ok (self#mk_pwr_sp_register_variable r)
+          | _ ->
+             Error [
+                 "finfo:get_init_value_variable: not a cpu/mips/arm/pwr register: "
+                 ^ v#getName#getBaseName])
+        (self#get_initial_register_value_register v)
     else
-      let msg =
-        LBLOCK [
-            STR "Variable is not an initial value variable: ";
-            v#toPretty] in
-      begin
-	ch_error_log#add "function environment" msg ;
-	raise (BCH_failure msg)
-      end
+      Error [
+          "finfo:get_init_value_variable: variable is not an initial value: "
+          ^ v#getName#getBaseName]
 
-  method get_ssa_register_value_register_variable (v: variable_t) =
-    self#mk_register_variable (varmgr#get_ssa_register_value_register v)
+  method get_ssa_register_value_register_variable
+           (v: variable_t): variable_t traceresult =
+    tmap
+      ~msg:"env:get_ssa_register_value_register_variable"
+      self#mk_register_variable
+      (varmgr#get_ssa_register_value_register v)
 
-  method get_initial_register_value_register (v:variable_t) =
+  method get_initial_register_value_register
+           (v:variable_t): register_t traceresult =
     varmgr#get_initial_register_value_register v
 
   method is_frozen_test_value = varmgr#is_frozen_test_value
@@ -1484,21 +1550,14 @@ object (self)
 
   method is_signed_symbolic_value = varmgr#is_signed_symbolic_value
 
-  method get_symbolic_value_expr v =
+  method get_symbolic_value_expr (v: variable_t): xpr_t traceresult =
     if self#is_symbolic_value v then
       varmgr#get_symbolic_value_expr v
     else
-      let msg =
-        LBLOCK [
-            STR "Variable is not a symbolic value expr: ";
-            v#toPretty] in
-      begin
-        ch_error_log#add "function environment" msg ;
-        raise (BCH_failure msg)
-      end
+      Error ["finfo:get_symbolic_value_expr: " ^ v#getName#getBaseName]
 
-  method is_in_test_jump_range (v:variable_t) (a:ctxt_iaddress_t) =
-    (not v#isTmp) && (varmgr#is_in_test_jump_range a v)
+  method is_in_test_jump_range (v: variable_t) (a: ctxt_iaddress_t) =
+    (varmgr#is_in_test_jump_range a v)
 
   method is_unknown_reference = varmgr#memrefmgr#is_unknown_reference
 
@@ -1631,22 +1690,6 @@ object (self)
           result := entry :: !result) cvariable_types in
     !result
 
-    (*
-  method set_dynlib_stub (t:call_target_t) = dynlib_stub <- Some t
-
-  method is_dynlib_stub =
-    match dynlib_stub with Some _ -> true | _ -> false
-
-  method get_dynlib_stub:call_target_t =
-    match dynlib_stub with
-    | Some t -> t
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Function is not known to be dynamic library stub"]))
-     *)
-
   method sideeffects_changed = sideeffects_changed
 
   method call_targets_were_set = call_targets_set
@@ -1717,22 +1760,26 @@ object (self)
   method save_register
            (vmem: variable_t) (iaddr:ctxt_iaddress_t) (reg:register_t) =
     if self#env#is_stack_variable vmem then
-      let offset = self#env#get_memvar_offset vmem in
-      match offset with
-      | ConstantOffset (n, NoOffset) ->
-         self#stackframe#add_register_spill ~offset:n#toInt reg iaddr
-      | _ ->
-         ch_error_log#add
-           "save_register:no offset"
-           (LBLOCK [
-                self#get_address#toPretty;
-                STR " ";
-                STR iaddr;
-                STR ": ";
-                vmem#toPretty;
-                STR " (";
-                STR (register_to_string reg);
-                STR ")"])
+      log_tfold
+        (log_error "save_register" "invalid offset")
+        ~ok:(fun offset ->
+          match offset with
+          | ConstantOffset (n, NoOffset) ->
+             self#stackframe#add_register_spill ~offset:n#toInt reg iaddr
+          | _ ->
+             ch_error_log#add
+               "save_register:no offset"
+               (LBLOCK [
+                    self#get_address#toPretty;
+                    STR " ";
+                    STR iaddr;
+                    STR ": ";
+                    vmem#toPretty;
+                    STR " (";
+                    STR (register_to_string reg);
+                    STR ")"]))
+        ~error:(fun _ -> ())
+        (self#env#get_memvar_offset vmem)
     else
       ch_error_log#add
         "save_register:not a stack variable"
@@ -2151,11 +2198,15 @@ object (self)
            (db:data_block_int) =
     H.replace jump_targets jumpAddr (OffsettableTarget (base, jt, db))
 
-  method set_global_jumptarget (jumpAddr:ctxt_iaddress_t) (v:variable_t) =
+  method set_global_jumptarget (jumpAddr: ctxt_iaddress_t) (v: variable_t) =
     if env#is_global_variable v then
-      let gaddr = env#get_global_variable_address v in
-      H.replace
-        jump_targets jumpAddr (JumpOnTerm (mk_global_parameter_term gaddr))
+      log_tfold
+        (log_error "set_global_jumptarget" "invalid global address")
+        ~ok:(fun gaddr ->
+          H.replace
+            jump_targets jumpAddr (JumpOnTerm (mk_global_parameter_term gaddr)))
+        ~error:(fun _ -> ())
+        (env#get_global_variable_address v)
     else
       raise
         (BCH_failure
@@ -2163,36 +2214,6 @@ object (self)
                 STR "set_global_jumptarget: ";
                 STR "variable is not a global variable: ";
                 v#toPretty]))
-
-  method set_argument_jumptarget (jumpAddr:ctxt_iaddress_t) (v:variable_t) =
-    try
-      if env#is_stackarg_deref_var v then
-        match env#get_stack_parameter_index v with
-        | Some index ->
-           H.replace
-             jump_targets
-             jumpAddr
-             (JumpOnTerm
-                (ArgValue
-                   (mk_indexed_stack_parameter (4 * index) index)))
-        | _ ->
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "set_argument_jumptarget: ";
-                     STR "variable is not a stack parameter: ";
-                     v#toPretty]))
-      else
-        raise
-          (BCH_failure
-             (LBLOCK [
-                  STR "Finfo:set-argument-jumptarget: ";
-                  STR "variable is not a stack parameter: ";
-                  v#toPretty]))
-    with
-    | BCH_failure p ->
-       raise
-         (BCH_failure (LBLOCK [STR "Finfo:set-argument-jumptarget: "; p]))
 
   method set_so_jumptarget
            (jumpAddr:ctxt_iaddress_t) (fname:string) (ctinfo:call_target_info_int) =
@@ -2645,7 +2666,7 @@ let get_jni_calls () =
 let get_vars_metrics (env:function_environment_int) = {
     mvars_count = env#get_var_count;
     mvars_global = env#get_globalvar_count;
-    mvars_args = env#get_argvar_count;
+    mvars_args = 0;
     mvars_return = env#get_returnvar_count;
     mvars_sideeff = env#get_sideeffvar_count
 }
