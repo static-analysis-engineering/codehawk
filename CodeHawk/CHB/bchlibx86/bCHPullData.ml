@@ -312,7 +312,6 @@ and check_jni_interface_pointer
   let isjni n = (n = "jni$Env") || (n = "special_jni$Env") in
   let isjavavm v =
     if env#is_global_variable v then
-      let gaddr = env#get_global_variable_address v in
       log_tfold
         (log_error "check_jni_interface_pointer" "invalid global address")
         ~ok:(fun gaddr ->

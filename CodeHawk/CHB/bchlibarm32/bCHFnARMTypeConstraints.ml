@@ -36,7 +36,7 @@ open CHLogger
 open XprToPretty
 open XprTypes
 open Xsimplify
-   
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHCPURegisters
@@ -47,14 +47,14 @@ open BCHLibTypes
 open BCHLocation
 open BCHSystemInfo
 open BCHTypeConstraintStore
-   
+
 (* bchlibarm *)
 open BCHARMOpcodeRecords
 open BCHARMTypes
 
 module TR = CHTraceResult
 
-let x2p = xpr_formatter#pr_expr          
+let x2p = xpr_formatter#pr_expr
 
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
@@ -102,7 +102,7 @@ object (self)
       match (rewrite_expr x) with
       | XVar v -> floc#f#env#is_return_value v
       | _ -> false in
-    
+
     let get_calltarget_from_callsite (callsite: ctxt_iaddress_t) =
       let siteloc = ctxt_string_to_location faddr callsite in
       let sitefloc = get_floc siteloc in
@@ -116,7 +116,7 @@ object (self)
           | AppTarget dw -> Some dw
           | _ -> None)
       | _ -> None in
-    
+
     let get_calltarget (x: xpr_t) =
       match (rewrite_expr x) with
       | XVar v when floc#env#is_return_value v ->
@@ -140,12 +140,12 @@ object (self)
          ~error:(fun _ -> None)
          (floc#env#get_call_site v)
       | _ -> None in
-      
+
     let get_intvalue_type_constant (x: xpr_t): type_constant_t option =
       match (rewrite_expr x) with
       | XConst (IntConst n) -> mk_intvalue_type_constant n#toInt
       | _ -> None in
-    
+
     let is_zero (x: xpr_t) =
       match (rewrite_expr x) with
       | XConst (IntConst n) -> n#equal numerical_zero
@@ -173,12 +173,7 @@ object (self)
               | Some dw -> Some (dw, caps)
               | _ -> None)
           | _ -> None)
-      | _ -> None in               
-
-    let is_initial_memory_value (x: xpr_t) =
-      match (rewrite_expr x) with
-      | XVar v -> floc#f#env#is_initial_memory_value v
-      | _ -> false in
+      | _ -> None in
 
     let getopt_stackaddress (x: xpr_t): int option =
       match (rewrite_expr x) with
@@ -222,7 +217,6 @@ object (self)
          let loc1 = ctxt_string_to_location faddr iaddr1 in
          let loc2 = ctxt_string_to_location faddr iaddr2 in
          let floc1 = get_floc loc1 in
-         let floc2 = get_floc loc2 in
          let instr1 = fn#get_instruction loc1#i in
          let instr2 = fn#get_instruction loc2#i in
          (match (instr1#get_opcode, instr2#get_opcode) with
@@ -249,16 +243,7 @@ object (self)
               | _ -> ())
           | _ -> ())
       | _ -> () in
-    
-    let get_initial_memory_value_variable (x: xpr_t) =
-      try
-        match (rewrite_expr x) with
-        | XVar v ->
-           Some (floc#f#env#varmgr#get_initial_memory_value_variable v)
-        | _ -> None
-      with
-      | _ -> None in
-    
+
     match instr#get_opcode with
 
     | Branch (c, _, _)
@@ -385,7 +370,7 @@ object (self)
                   ~is_load:true ~size:1
                   ~offset:rm#to_numerical#toInt
              | _ -> ())
-                
+
 
     | LoadRegisterHalfword (_, _, rn, rm, _, _) when rm#is_immediate ->
        let xrn = rn#to_expr floc in
@@ -459,7 +444,7 @@ object (self)
                 let typevar = mk_regparam_typevar faddr reg in
                 store#add_var_constraint typevar
              | _ -> ())
-       
+
     | StoreRegisterHalfword (_, rt, rn, rm, _, _) when rm#is_immediate ->
        let xrn = rn#to_expr floc in
        (match getopt_initial_argument_value xrn with
@@ -501,7 +486,7 @@ object (self)
            end
         | _ -> ())
     | _ -> ()
-                               
+
 
 end
 
