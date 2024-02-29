@@ -55,6 +55,7 @@ MLIS := \
 	bCHARMLoopStructure \
 	bCHTranslateARMToCHIF \
 	bCHARMMetrics \
+	bCHFnARMTypeConstraints \
 	bCHFnARMDictionary \
 	bCHARMAnalysisResults \
 
@@ -88,6 +89,7 @@ SOURCES := \
 	bCHARMLoopStructure \
 	bCHTranslateARMToCHIF \
 	bCHARMMetrics \
+	bCHFnARMTypeConstraints \
 	bCHFnARMDictionary \
 	bCHARMAnalysisResults \
 
