@@ -871,7 +871,7 @@ let associate_condition_code_users () =
       end)
 
 
-let construct_functions_arm () =
+let construct_functions_arm ?(construct_all_functions=false) =
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
   let fns_included = included_functions () in
@@ -892,15 +892,15 @@ let construct_functions_arm () =
           fndata#set_non_returning) nonrfns in
   let _ = pr_timing [STR "non-returning functions set"] in
   let fnentrypoints =
-    if (List.length fns_included) > 0 then
+    if ((List.length fns_included) = 0) || construct_all_functions then
+      functions_data#get_function_entry_points
+    else
       (* Add inlined functions to have these functions constructed before the
          functions that inline these functions are constructed, so the cfgs are
          available for the inlined calls *)
       functions_data#get_inlined_function_entry_points
       @ (List.map
-           (fun faddr -> TR.tget_ok (string_to_doubleword faddr)) fns_included)
-    else
-      functions_data#get_function_entry_points in
+           (fun faddr -> TR.tget_ok (string_to_doubleword faddr)) fns_included) in
   let newfns = ref fnentrypoints in
   let count = ref 0 in
   let addedfns = new DoublewordCollections.set_t in
@@ -957,7 +957,7 @@ let construct_functions_arm () =
     arm_assembly_functions#identify_dataref_datablocks;
     pr_timing [STR "datablocks identified -- first pass"];
 
-    (if (List.length fns_included) = 0 then
+    (if (List.length fns_included) = 0 || construct_all_functions then
       begin
         List.iter (fun faddr ->
             begin
@@ -966,7 +966,8 @@ let construct_functions_arm () =
               pr_interval_timing [STR "functions constructed: "; INT !count] 60.0
             end) arm_assembly_functions#add_functions_by_preamble;
 
-        pr_timing [STR "functions constructed ("; INT !count; STR ") -- second pass"];
+        pr_timing [
+            STR "functions constructed ("; INT !count; STR ") -- second pass"];
         arm_assembly_functions#identify_dataref_datablocks;
         pr_timing [STR "dataref blocks identified"];
       end);

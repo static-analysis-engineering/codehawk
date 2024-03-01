@@ -125,7 +125,7 @@ let thumb_function_setup
       | _ -> ()
     done;
     let _ = set_block_boundaries () in
-    let _ = construct_functions_arm () in
+    let _ = construct_functions_arm ~construct_all_functions:false in
     get_arm_assembly_function faddr
   end
 

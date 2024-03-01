@@ -109,6 +109,7 @@ let savecfgs = ref false
 let save_xml = ref false  (* save disassembly status in xml *)
 let save_asm = ref false
 let set_datablocks = ref false   (* only supported for arm *)
+let construct_all_functions = ref false
 
 let stream_start_address = ref wordzero
 let set_stream_start_address s =
@@ -202,6 +203,9 @@ let speclist =
      "save disassembly status in xml for bulk evaluation");
     ("-save_asm", Arg.Unit (fun () -> save_asm := true),
      "save assembly listing in the analysis directory");
+    ("-construct_all_functions",
+     Arg.Unit (fun () -> construct_all_functions := true),
+     "construct all functions even if analyzing only a few of them");
     ("-set_datablocks", Arg.Unit (fun () -> set_datablocks := true),
      "set data blocks for code not included in any function");
     ("-specialization", Arg.String specializations#activate_specialization,
@@ -537,7 +541,8 @@ let main () =
       let _ = pr_timing [STR "sections disassembled"] in
       let _ = disassembly_summary#record_disassembly_time
                 ((Unix.gettimeofday ()) -. !t) in
-      let _ = construct_functions_arm () in
+      let _ = construct_functions_arm
+                ~construct_all_functions:!construct_all_functions in
       let _ = pr_timing [STR "functions constructed"] in
       let _ = if !set_datablocks then
                 arm_assembly_functions#set_datablocks in
@@ -823,7 +828,8 @@ let main () =
       let analysisstart = Unix.gettimeofday () in
       let _ = disassemble_arm_sections () in
       let _ = pr_timing [STR "elf sections disassembled"] in
-      let _ = construct_functions_arm () in
+      let _ = construct_functions_arm
+                ~construct_all_functions:!construct_all_functions in
       let _ = pr_timing [STR "functions constructed"] in
       let _ = analyze_arm analysisstart in
       let _ = pr_timing [STR "analysis is finished"] in

@@ -40,6 +40,7 @@ open BCHSystemInfo
 open BCHTypeConstraintStore
 
 (* bchlibarm32 *)
+open BCHARMAssemblyFunctions
 open BCHARMDictionary
 open BCHARMLoopStructure
 open BCHARMTypes
@@ -212,19 +213,21 @@ object (self)
   method write_xml (node:xml_element_int) =
     let ffnode = xmlElement "functions" in
     let _ =
-      H.iter (fun faddr fn ->
+      (* H.iter (fun faddr fn -> *)
+      arm_assembly_functions#itera (fun faddr fn ->
           let fnode = xmlElement "fn" in
+          let xfaddr = faddr#to_hex_string in
           begin
-            fnode#setAttribute "fa" faddr;
+            fnode#setAttribute "fa" xfaddr;
             fnode#setAttribute "md5" fn#get_function_md5;
+            fnode#setAttribute "rf" (if H.mem table xfaddr then "Y" else "N");
             ffnode#appendChildren [fnode]
-          end) table in
+          end) (* table *) in
     node#appendChildren [ffnode]
 
   method save =
     let node = xmlElement "application-results" in
     begin
-      chlog#add "type constraints" typeconstraintstore#toPretty;
       self#write_xml node;
       save_resultdata_file node
     end
