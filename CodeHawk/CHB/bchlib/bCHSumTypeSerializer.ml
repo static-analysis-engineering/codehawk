@@ -27,16 +27,11 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHLanguage
-open CHPretty
 
 (* chutil *)
-open CHPrettyUtil
 open CHSumTypeSerializer
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHLibTypes
 
 module H = Hashtbl
@@ -182,11 +177,6 @@ let segment_mfts: segment_t mfts_int =
     "segment_t"
     [ (StackSegment,"ss"); (CodeSegment,"cs"); (DataSegment,"ds");
       (ExtraSegment,"es"); (FSegment,"fs"); (GSegment,"gs") ]
-
-
-let arithmetic_op_mfts: arithmetic_op_t mfts_int =
-  mk_mfts
-    "arithmetic_op" [ (PPlus,"p"); (PMinus,"m"); (PDivide,"d"); (PTimes,"t") ]
 
 
 let arm_extension_reg_type_mfts: arm_extension_reg_type_t mfts_int =
@@ -680,6 +670,7 @@ object
     | FrozenTestValue _ -> "ft"
     | FunctionReturnValue _ -> "fr"
     | SyscallErrorReturnValue _ -> "ev"
+    | AugmentationValue _ -> "av"
     | SSARegisterValue _ -> "ssa"
     | FunctionPointer _ -> "fp"
     | CallTargetValue _ -> "ct"
@@ -694,7 +685,7 @@ object
     | ChifTemp -> "chiftemp"
 
   method !tags = [
-      "bv"; "chiftemp"; "ct"; "ev"; "fr"; "fp"; "ft"; "fv"; "ir";
+      "av"; "bv"; "chiftemp"; "ct"; "ev"; "fr"; "fp"; "ft"; "fv"; "ir";
       "iv"; "ma"; "rt"; "se" ; "sp"; "sv"; "ssa"; "ssv"]
 
 end

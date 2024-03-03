@@ -3163,16 +3163,23 @@ and constant_value_variable_t =
   | SyscallErrorReturnValue of ctxt_iaddress_t
   (** [SyscallErrorReturnValue iaddr]: error return value from system call at
   instruction address [iaddr]*)
+  | AugmentationValue of variable_t * ctxt_iaddress_t * string * string * btype_t
+  (** [AugmentationValue (var, iaddr, desc, suffix, ty): a generic
+      frozen value at address [iaddr] whose purpose can be
+      described by [desc]. The name of the value will be the
+      name of the variable [var] with suffix [suffix]. *)
   | SSARegisterValue of register_t * ctxt_iaddress_t * string option * btype_t
   (** [SSARegisterValue (reg, iaddr, optional name, ty):
-  static single assignment value for assignment to register [reg] at
-  instruction address [iaddr] with the type of the expression that is
-  assigned to it (which can be [t_unknown]).
-  An optional name can be included for display purposes (e.g., for
-  lifting). The responsibility is on the user to ensure appropriate
-  uniqueness. The default name is unique: it is the name of the
-  register followed by the hex address of the assignment.
-  The name has no effect on propagation behavior.*)
+      static single assignment value for assignment to register
+      [reg] at instruction address [iaddr] with the type of the
+      expression that is assigned to it (which can be
+      [t_unknown]).
+      An optional name can be included for display purposes
+      (e.g., for lifting). The responsibility is on the user
+      to ensure appropriate uniqueness. The default name is
+      unique: it is the name of the register followed by the
+      hex address of the assignment.
+      The name has no effect on propagation behavior.*)
   | FunctionPointer of
       string                (* name of function *)
       * string              (* name of creator *)
@@ -4235,6 +4242,7 @@ class type function_environment_int =
         with a base provided by a fixed-value pointer. *)
 
     method is_basevar_memory_value: variable_t -> bool
+
     (** [get_memval_basevar var] returns the base variable of the variable
         representing the memory variable value [var]
 
