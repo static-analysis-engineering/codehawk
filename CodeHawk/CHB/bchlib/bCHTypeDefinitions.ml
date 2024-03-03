@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,9 +33,7 @@ open CHUtils
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
 open CHXmlDocument
-open CHXmlReader
 
 (* bchlib *)
 open BCHBasicTypes
@@ -49,7 +47,6 @@ module H = Hashtbl
 
 
 let bcd = BCHBCDictionary.bcdictionary
-let bd = BCHDictionary.bdictionary
 
 
 let btype_equal (t1: btype_t) (t2: btype_t) =
@@ -58,25 +55,10 @@ let btype_equal (t1: btype_t) (t2: btype_t) =
   i1 = i2
 
 
-let raise_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [
-        STR "(";
-        INT node#getLineNumber;
-        STR ",";
-	INT node#getColumnNumber;
-        STR ") ";
-        msg] in
-  begin
-    ch_error_log#add "xml parse error" error_msg ;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
-
-
 class type_definitions_t: type_definitions_int =
 object (self)
 
-  (* ~~~ builtin types are loaded by default; they are not saved as part of the 
+  (* ~~~ builtin types are loaded by default; they are not saved as part of the
      ~~~ analysis data *)
   val builtin_typeinfos = H.create 3 (* string -> btype_t *)
   val builtin_compinfos = H.create 3 (* string -> btype_t *)
@@ -99,7 +81,7 @@ object (self)
       chlog#add "duplicate builtin enuminfo" (STR name)
     else
       H.add builtin_enuminfos name e
-                       
+
   (* ~~~ types that are added from user data or from library function summaries;
      ~~~ they are saved as part of the analysis data. These type names override
      ~~~ the builtin type names.
@@ -107,7 +89,7 @@ object (self)
   val typeinfos = H.create 3        (* string -> btype_t *)
   val compinfos = H.create 3        (* string -> compinfo_t *)
   val enuminfos = H.create 3        (* string -> enuminfo_t *)
-                   
+
   method add_typeinfo (name:string) (ty:btype_t) =
     if H.mem typeinfos name then
       if btype_equal (H.find typeinfos name) ty then
@@ -146,7 +128,7 @@ object (self)
       H.find typeinfos name
     else if H.mem builtin_typeinfos name then
       H.find builtin_typeinfos name
-    else      
+    else
       raise
         (BCH_failure
            (LBLOCK [STR "No type definition found for "; STR name]))
@@ -168,13 +150,13 @@ object (self)
       raise (BCH_failure (LBLOCK [STR "No enuminfo found for "; STR name]))
 
   (* ~~~ if a request is made for a particular type info (type name), compinfo,
-     ~~~ or enuminfo, for which the corresponding type is not found, the name is 
+     ~~~ or enuminfo, for which the corresponding type is not found, the name is
      ~~~ logged for information *)
   val no_typeinfos = new StringCollections.set_t  (* missing type infos *)
   val no_compinfos = new StringCollections.set_t  (* missing comp infos *)
   val no_enuminfos = new StringCollections.set_t  (* missing enum infos *)
 
-  method has_type (name:string) = 
+  method has_type (name:string) =
     (H.mem typeinfos name || H.mem builtin_typeinfos name)
     || (let _ = no_typeinfos#add name in false)
 
@@ -254,7 +236,7 @@ let handle name = THandle (name,[])
 let named name = TNamed (name,[])
 
 
-let pe_types = [ 
+let pe_types = [
     ("BSTR", TPtr (named "OLECHAR", []));    (* string type in COM framework *)
 
     ("HANDLER_FUNCTION",
@@ -511,7 +493,7 @@ let jni_types = [
   ("jlongArray", t_voidptr) ;
   ("jfloatArray", t_voidptr) ;
   ("jdoubleArray", t_voidptr)
-] 
+]
 
 
 let _ =
@@ -538,6 +520,6 @@ let resolve_type (t: btype_t) =
   match t with
   | TNamed (tname,_) -> if type_definitions#has_type tname then
       type_definitions#get_type tname
-    else 
+    else
       t
   | _ -> t

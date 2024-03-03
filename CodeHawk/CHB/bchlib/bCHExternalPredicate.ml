@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,47 +26,25 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHXmlDocument
-open CHXmlReader
 
 (* xprlib *)
 open XprTypes
 open XprToPretty
 
 (* bchlib *)
-open BCHFtsParameter
 open BCHBasicTypes
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeTransformer
-open BCHBCTypeXml
 open BCHBTerm
 open BCHCStructConstant
 open BCHLibTypes
-open BCHTypeDefinitions
 open BCHUtilities
-open BCHXmlUtil
 
-
-let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [
-        STR "(";
-        INT node#getLineNumber;
-        STR ",";
-	INT node#getColumnNumber;
-        STR ") ";
-        msg] in
-  begin
-    ch_error_log#add "xml parse error" error_msg;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
-       
 
 let rec xxpredicate_compare (p1: xxpredicate_t) (p2: xxpredicate_t): int =
   let btc = bterm_compare in
@@ -236,7 +214,7 @@ let relational_op_to_string = function
   | PGreaterEqual -> " >= "
   | PNotEqual -> " != "
 
-               
+
 let relational_op_to_xml_string = function
   | PEquals -> "eq"
   | PLessThan -> "lt"
@@ -244,7 +222,7 @@ let relational_op_to_xml_string = function
   | PGreaterThan -> "gt"
   | PGreaterEqual -> "geq"
   | PNotEqual -> "neq"
-                                
+
 
 (* ---------------------------------------------------------------- operators *)
 
@@ -272,11 +250,11 @@ let xop_to_relational_op op =
                STR "expr operator ";
                STR (xop_to_string op);
 	       STR " cannot be represented by a relational operator"]))
-               
+
 let is_relational_xop = function
   | XEq | XLt | XLe | XGt | XGe | XNe -> true
   | _ -> false
-                   
+
 
 let is_relational_operator (op:string) =
   match op with
@@ -298,7 +276,7 @@ let get_relational_operator (op:string)  =
 	(LBLOCK [ STR "get_relational_expression: " ; STR op ]) ;
       raise (Internal_error "get_relational_expression")
     end
-           
+
 
 let rec xxpredicate_to_pretty (p: xxpredicate_t) =
   let btp = bterm_to_pretty in

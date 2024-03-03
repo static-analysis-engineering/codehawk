@@ -33,12 +33,10 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
-open CHTraceResult
 open CHUtil
 open CHXmlDocument
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 open BCHStreamWrapper
@@ -269,7 +267,8 @@ let split_jumptable
     List.fold_left (fun (offset, jts) size ->
         let start_address = startaddr#add_int (offset *  4) in
         let targets = list_sub alltargets offset size in
-        let newtable = make_jumptable ~end_address:None ~start_address ~targets () in
+        let newtable =
+          make_jumptable ~end_address:None ~start_address ~targets () in
         TR.tfold
           ~ok:(fun jt -> (offset + size, jt::jts))
           ~error:(fun _ -> (offset + size, jts))

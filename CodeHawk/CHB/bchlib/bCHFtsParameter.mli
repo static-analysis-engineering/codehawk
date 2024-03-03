@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -219,7 +219,6 @@ val fts_parameter_to_pretty: fts_parameter_t -> pretty_t
 
 val fts_parameter_to_string: fts_parameter_t -> string
 
-val parameter_location_to_string: parameter_location_t -> string
 
 (** {1 Xml reading}*)
 

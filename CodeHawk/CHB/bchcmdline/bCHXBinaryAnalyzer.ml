@@ -55,7 +55,6 @@ open BCHSpecializations
 open BCHSystemInfo
 open BCHSystemSettings
 open BCHVersion
-open BCHXmlUtil
 
 (* bchlibpe *)
 open BCHPEHeader
@@ -950,9 +949,9 @@ let main () =
 	exit 1
       end
   with
-  | CHXmlReader.XmlParseError(line,col,p)
-  | XmlReaderError (line,col,p)
-  | XmlDocumentError (line,col,p) ->
+  | CHXmlReader.XmlParseError(line, col, p)
+  | CHXmlReader.XmlReaderError (line, col, p)
+  | XmlDocumentError (line, col, p) ->
     begin
       pr_debug [
           STR "Xml error: ("; INT line; STR ", "; INT col; STR "): "; p; NL];

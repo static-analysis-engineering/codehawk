@@ -26,18 +26,12 @@
    ============================================================================= *)
 
 
-(* bchlib *)
-open BCHLibTypes
-
-
 (* chlib *)
-open CHLanguage
 open CHNumerical
 
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
-open CHTraceResult
 
 (* xprlib *)
 open Xprt
@@ -46,15 +40,12 @@ open XprTypes
 open Xsimplify
 
 (* bchlib *)
-open BCHBasicTypes
-open BCHBCTypes
 open BCHBCTypeUtil
 open BCHBTerm
 open BCHDoubleword
 open BCHExternalPredicate
 open BCHGlobalState
 open BCHLibTypes
-open BCHLocation
 open BCHStrings
 open BCHXPOPredicate
 
@@ -111,7 +102,7 @@ object (self)
            Discharged
              ("non-null constant address: "
               ^ TR.tget_ok (numerical_to_hex_string n))
-        | XOp (XMinus, [XVar v; c]) as addr
+        | XOp (XMinus, [XVar v; _]) as addr
              when self#finfo#env#is_initial_stackpointer_value v ->
            Discharged ("stack-pointer address: " ^ (x2s addr))
         | _ -> Open)
@@ -288,7 +279,7 @@ object (self)
   method record_sideeffect (se: xxpredicate_t) =
     let xpo = xxp_to_xpo_predicate self#termev self#loc se in
     match (se, xpo) with
-    | (XXBlockWrite (_, taddr, tsize),
+    | (XXBlockWrite (_, taddr, _tsize),
        XPOBlockWrite (ty, addr, size)) ->
        (match self#termev#xpr_local_stack_address addr with
         | Some offset ->

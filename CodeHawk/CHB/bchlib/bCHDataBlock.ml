@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -174,7 +174,7 @@ object (self:'a)
 	"GSCookieXOROffset: " ^ gscx ^ "\n" ^
 	"EHCookieOffset   : " ^ ehc ^ "\n" ^
 	"EHCookieXOROffset: " ^ ehcx ^ "\n" in
-    let _ = for i=1 to numRecords do read_record () done in
+    let _ = for _i = 1 to numRecords do read_record () done in
     header ^ (String.concat "\n" (List.rev !records))
 
   method private seh4_to_string =
@@ -184,7 +184,7 @@ object (self:'a)
     let records = ref [] in
     let address = ref start_address in
     begin
-      for i=0 to ((len / 4) - 1) do
+      for _i = 0 to ((len / 4) - 1) do
 	begin
 	  records := (!address, ch#read_doubleword#to_hex_string) :: !records;
 	  address := !address#add_int 4

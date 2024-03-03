@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023  Aarno Labs LLC
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHCommon
 open CHPretty
 
 (* chutil *)
@@ -35,7 +34,6 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCDictionary
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeTransformer
@@ -245,7 +243,7 @@ object (self)
 
 
   method typedefs: (string * btype_t) list =
-    H.fold (fun k (ix, loc) a -> (k, bcd#get_typ ix) :: a) gtypes []
+    H.fold (fun k (ix, _loc) a -> (k, bcd#get_typ ix) :: a) gtypes []
 
   method has_compinfo (key: int) =
     let e1 = H.fold (fun (_, ckey) _ a -> a || key = ckey) gcomptags false in
@@ -323,8 +321,10 @@ object (self)
     let result = ref [] in
     let v2s v = v.bvname ^ ": " ^ (btype_to_string v.bvtype) in
     begin
-      H.iter (fun name (ix, _, _) -> result := (v2s (bcd#get_varinfo ix)) :: !result) gvars;
-            H.iter (fun name (ix, _) -> result := (v2s (bcd#get_varinfo ix)) :: !result) gvardecls;
+      H.iter (fun _name (ix, _, _) ->
+          result := (v2s (bcd#get_varinfo ix)) :: !result) gvars;
+      H.iter (fun _name (ix, _) ->
+          result := (v2s (bcd#get_varinfo ix)) :: !result) gvardecls;
       !result
     end
     

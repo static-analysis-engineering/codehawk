@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,40 +28,14 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
 open CHPretty
 
-(* chutil *)
-open CHLogger
-open CHXmlDocument
-open CHXmlReader
-
-(* xprlib *)
-open Xprt
-open XprXml
-
 (* bchlib *)
-open BCHFtsParameter
-open BCHBTerm
-open BCHDoubleword
 open BCHFunctionInterface
 open BCHFunctionStub
 open BCHLibTypes
 open BCHBTerm
-open BCHUtilities
-open BCHXmlUtil
 
-
-let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
-  begin
-    ch_error_log#add "xml parse error" error_msg ;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
-
-(* ----------------------------------------------------------------- printing *)
 
 let rec call_target_to_pretty (tgt:call_target_t) =
   match tgt with

@@ -48,34 +48,12 @@ open BCHLibTypes
 module H = Hashtbl
 
 
-let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
 
 
-class type saved_register_int =
-object ('a)
-
-  method compare: 'a -> int
-
-  method set_save_address: ctxt_iaddress_t -> unit
-  method add_restore_address : ctxt_iaddress_t -> unit
-
-  method get_register: register_t
-  method get_save_address: ctxt_iaddress_t
-  method get_restore_addresses: ctxt_iaddress_t list
-
-  method has_save_address: bool
-  method has_restore_addresses: bool
-
-  method is_save_or_restore_address: ctxt_iaddress_t -> bool
-
-  method write_xml: xml_element_int -> unit
-  method toPretty: pretty_t
-end
-
-
 class saved_register_t (reg:register_t) =
-object (self:'a)
+object (_self:'a)
+
   val mutable save_address = None
   val restore_addresses = new StringCollections.set_t
 
@@ -100,7 +78,8 @@ object (self:'a)
 
   method get_restore_addresses = restore_addresses#toList
 
-  method has_save_address = match save_address with Some _ -> true | _ -> false
+  method has_save_address =
+    match save_address with Some _ -> true | _ -> false
 
   method has_restore_addresses = not restore_addresses#isEmpty
 
@@ -136,7 +115,7 @@ object (self:'a)
         pRestored]
 
 end
-   
+
 
 class stackframe_t (varmgr: variable_manager_int):stackframe_int =
 object (self)
@@ -261,7 +240,7 @@ object (self)
       self#write_xml_stack_accesses saNode;
       append [srNode; saNode]
     end
-    
+
 
 end
 

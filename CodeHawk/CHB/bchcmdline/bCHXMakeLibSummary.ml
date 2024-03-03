@@ -5,7 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,9 +35,6 @@ open CHPretty
 open CHFileIO
 open CHXmlDocument
 
-(* bchlib *)
-open BCHPreFileIO
-open BCHSystemInfo
 
 let name = ref ""
 let reftoname = ref None
@@ -44,7 +42,7 @@ let libname = ref ""
 let syscall = ref None
 let iox_cat = ref ""
 let ansi_unicode = ref false
-let num_parameters = ref 0
+
 let stdcall = ref false
 let cdecl = ref false
 let sets_errno = ref false

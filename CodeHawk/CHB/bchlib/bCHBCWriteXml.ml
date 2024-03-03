@@ -3,8 +3,8 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2021-2023  Aarno Labs LLC
+
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -69,7 +69,7 @@ let write_xml_string_list (node: xml_element_int) (l: string list) =
 
 let write_xml_exp_list (node: xml_element_int) (l: bexp_t list) =
   node#appendChildren (List.map (fun x ->
-    let eNode = xmlElement "exp" in 
+    let eNode = xmlElement "exp" in
     begin
       bcd#write_xml_exp eNode x;
       eNode
@@ -92,17 +92,17 @@ let rec write_xml_asm_output
   end
 
 
-and write_xml_asm_output_list 
+and write_xml_asm_output_list
 (node:xml_element_int) (l:(string option * string * blval_t) list) =
   node#appendChildren (List.map (fun ao ->
-    let aoNode = xmlElement "asmoutput" in 
+    let aoNode = xmlElement "asmoutput" in
     begin
       write_xml_asm_output aoNode ao;
       aoNode
     end) l)
 
 
-and write_xml_asm_input 
+and write_xml_asm_input
 (node:xml_element_int)
 ((optName, konstraint, x): (string option * string * bexp_t)) =
   let set = node#setAttribute in
@@ -113,10 +113,10 @@ and write_xml_asm_input
   end
 
 
-and write_xml_asm_input_list 
+and write_xml_asm_input_list
 (node: xml_element_int) (l: (string option * string * bexp_t) list) =
   node#appendChildren (List.map (fun ai ->
-    let aiNode = xmlElement "asminput" in 
+    let aiNode = xmlElement "asminput" in
     begin
       write_xml_asm_input aiNode ai;
       aiNode
@@ -137,20 +137,20 @@ and write_xml_label (node: xml_element_int) (label: blabel_t) =
   | Case (x,loc) ->
     begin
       bcd#write_xml_exp node x;
-      bcd#write_xml_location node loc 
+      bcd#write_xml_location node loc
     end
   | CaseRange (xlo,xhi,loc) ->
     begin
       bcd#write_xml_exp ~tag:"iexplo" node xlo;
       bcd#write_xml_exp ~tag:"iexphi" node xhi;
-      bcd#write_xml_location node loc 
+      bcd#write_xml_location node loc
     end
   | Default loc -> bcd#write_xml_location node loc
 
 
 and write_xml_label_list (node: xml_element_int) (l: blabel_t list) =
   node#appendChildren (List.map (fun label ->
-    let lNode = xmlElement "label" in 
+    let lNode = xmlElement "label" in
     begin
       write_xml_label lNode label;
       lNode
@@ -201,13 +201,13 @@ and write_xml_instruction (node: xml_element_int) (instr: binstr_t) =
       add_list "asminputs" asminputs write_xml_asm_input_list;
       add_list "asmoutputs" asmoutputs write_xml_asm_output_list;
       add_list "templates" templates write_xml_string_list;
-      add_list "registerclobbers" registerclobbers write_xml_string_list 
-    end				
+      add_list "registerclobbers" registerclobbers write_xml_string_list
+    end
 
 
 and write_xml_instruction_list (node: xml_element_int) (l: binstr_t list) =
   node#appendChildren (List.map (fun instr ->
-    let iNode = xmlElement "instr" in 
+    let iNode = xmlElement "instr" in
     begin
       write_xml_instruction iNode instr;
       iNode
@@ -220,8 +220,8 @@ and write_xml_stmtkind (node: xml_element_int) (skind: bstmtkind_t) =
   let append = node#appendChildren in
   let _ = set "stag" (stmtkind_mcts#ts skind) in
   match skind with
-  | Instr instrs -> 
-    let iNode = xmlElement "instrs" in 
+  | Instr instrs ->
+    let iNode = xmlElement "instrs" in
     begin
       write_xml_instruction_list iNode instrs;
       append [iNode]
@@ -229,8 +229,8 @@ and write_xml_stmtkind (node: xml_element_int) (skind: bstmtkind_t) =
   | Return (optX, loc) ->
     begin
       bcd#write_xml_location node loc;
-      match optX with 
-      | None -> () 
+      match optX with
+      | None -> ()
       | Some x -> bcd#write_xml_exp node x
     end
   | Goto (stmtid, loc) ->
@@ -241,7 +241,7 @@ and write_xml_stmtkind (node: xml_element_int) (skind: bstmtkind_t) =
   | ComputedGoto (x, loc) ->
     begin
       bcd#write_xml_exp node x;
-      bcd#write_xml_location node loc 
+      bcd#write_xml_location node loc
     end
   | Break loc | Continue loc -> bcd#write_xml_location node loc
   | If (x, thenblock, elseblock, loc) ->
@@ -282,8 +282,8 @@ and write_xml_stmtkind (node: xml_element_int) (skind: bstmtkind_t) =
       write_xml_function_block bNode b;
       append [bNode]
     end
-  (* currently not supported; only used in MSVC *)    
-  | TryFinally _ | TryExcept _ -> () 
+  (* currently not supported; only used in MSVC *)
+  | TryFinally _ | TryExcept _ -> ()
 
 
 and write_xml_statement (node: xml_element_int) (stmt: bstmt_t) =
@@ -300,7 +300,7 @@ and write_xml_statement (node: xml_element_int) (stmt: bstmt_t) =
      | l ->
         let lNode = xmlElement "labels" in
         begin
-          write_xml_label_list lNode stmt.labels;
+          write_xml_label_list lNode l;
           append [lNode]
         end);
     seti "sid" stmt.sid
@@ -309,7 +309,7 @@ and write_xml_statement (node: xml_element_int) (stmt: bstmt_t) =
 
 and write_xml_statement_list (node: xml_element_int) (l: bstmt_t list) =
   node#appendChildren (List.map (fun stmt ->
-    let sNode = xmlElement "stmt" in 
+    let sNode = xmlElement "stmt" in
     begin
       write_xml_statement sNode stmt;
       sNode
@@ -368,7 +368,7 @@ and read_xml_instruction (node: xml_element_int): binstr_t =
      let args = read_xml_exp_list argsnode in
      Call (optlval, bcd#read_xml_exp node, args, bcd#read_xml_location node)
   | "asm" -> Asm ([], [], [], [], [], bcd#read_xml_location node)
-  | s -> raise_tag_error "binstr_t" s instr_mcts#tags       
+  | s -> raise_tag_error "binstr_t" s instr_mcts#tags
 
 
 and read_xml_instruction_list (node: xml_element_int): binstr_t list =
@@ -411,8 +411,8 @@ and read_xml_stmtkind (node: xml_element_int): bstmtkind_t =
   | "block" ->
      Block (read_xml_function_block (getc "block"))
   | s -> raise_tag_error "bstmtkind_t" s stmtkind_mcts#tags
-                                                                       
-  
+
+
 and read_xml_statement (node: xml_element_int): bstmt_t =
   let getc = node#getTaggedChild in
   let geti = node#getIntAttribute in
@@ -460,7 +460,7 @@ let write_xml_function_definition (node: xml_element_int) (f: bcfundec_t) =
   end
 
 
-  
+
 let read_xml_function_definition (node: xml_element_int): bcfundec_t =
   let getc = node#getTaggedChild in
   {
@@ -480,10 +480,10 @@ let write_xml_global_type_definition
 
 
 let write_xml_global_type_definitions (node: xml_element_int) (l: bglobal_t list) =
-  node#appendChildren 
+  node#appendChildren
     (List.map (fun g ->
       match g with
-      | GType (tinfo,loc) -> 
+      | GType (tinfo,loc) ->
 	let gNode = xmlElement "gtype" in
 	begin
           write_xml_global_type_definition gNode tinfo loc;
@@ -494,7 +494,7 @@ let write_xml_global_type_definitions (node: xml_element_int) (l: bglobal_t list
 
 
 let write_xml_global_comptag
-      (node: xml_element_int) (cinfo: bcompinfo_t) (loc: b_location_t) = 
+      (node: xml_element_int) (cinfo: bcompinfo_t) (loc: b_location_t) =
   begin
     bcd#write_xml_compinfo node cinfo;
     bcd#write_xml_location node loc;
@@ -517,7 +517,7 @@ let write_xml_global_comptag_definitions
 
 
 let write_xml_global_comptag_declarations
-      (node: xml_element_int) (l: bglobal_t list) = 
+      (node: xml_element_int) (l: bglobal_t list) =
   node#appendChildren
     (List.map (fun g ->
       match g with
@@ -556,7 +556,7 @@ let write_xml_global_enumtag_definitions
 
 
 let write_xml_global_enumtag_declarations
-      (node: xml_element_int) (l: bglobal_t list) = 
+      (node: xml_element_int) (l: bglobal_t list) =
   node#appendChildren
     (List.map (fun g ->
       match g with
@@ -571,7 +571,7 @@ let write_xml_global_enumtag_declarations
           (fun g -> match g with GEnumTagDecl _ -> true | _ -> false) l))
 
 
-let write_xml_global_var_definition 
+let write_xml_global_var_definition
       (node: xml_element_int)
       (vinfo: bvarinfo_t)
       (iinfo: binitinfo_t)
@@ -583,7 +583,7 @@ let write_xml_global_var_definition
     | None -> ()
     | Some i -> bcd#write_xml_init node i
   end
-  
+
 
 let write_xml_global_var_definitions (node: xml_element_int) (l: bglobal_t list) =
   node#appendChildren
@@ -625,7 +625,7 @@ let write_xml_function_declaration
       (node: xml_element_int) (f: bcfundec_t) (loc: b_location_t) =
   begin
     bcd#write_xml_varinfo node f.bsvar;
-    bcd#write_xml_location node loc 
+    bcd#write_xml_location node loc
   end
 
 
@@ -640,27 +640,30 @@ let write_xml_function_declarations (node: xml_element_int) (l: bglobal_t list) 
           gNode
         end
       | _ -> raise (Invalid_argument "function_declaration_list"))
-       (List.filter (fun g -> match g with GFun _ -> true | _ -> false) l))       
+       (List.filter (fun g -> match g with GFun _ -> true | _ -> false) l))
 
 
-let write_xml_global_asm (node: xml_element_int) (s:string) (loc: b_location_t) =
-  ()
-
-  
-let write_xml_global_asm_list (node: xml_element_int) (l: bglobal_t list) = () 
-
-                                                                          
-let write_xml_global_pragma
-      (node: xml_element_int) (a: b_attribute_t) (loc: b_location_t) = ()
-
-                                                                     
-let write_xml_global_pragma_list (node: xml_element_int) (l: bglobal_t list) = () 
+let _write_xml_global_asm
+      (_node: xml_element_int) (_s:string) (_loc: b_location_t) = ()
 
 
-let write_xml_global_text (node: xml_element_int) (s:string) = ()
+let write_xml_global_asm_list
+      (_node: xml_element_int) (_l: bglobal_t list) = ()
 
 
-let write_xml_global_text_list (node: xml_element_int) (l: bglobal_t list) = ()
+let _write_xml_global_pragma
+      (_node: xml_element_int) (_a: b_attribute_t) (_loc: b_location_t) = ()
+
+
+let write_xml_global_pragma_list
+      (_node: xml_element_int) (_l: bglobal_t list) = ()
+
+
+let _write_xml_global_text (_node: xml_element_int) (_s: string) = ()
+
+
+let write_xml_global_text_list
+      (_node: xml_element_int) (_l: bglobal_t list) = ()
 
 
 let write_xml_bcfile (node: xml_element_int) (f: bcfile_t) (filename: string) =

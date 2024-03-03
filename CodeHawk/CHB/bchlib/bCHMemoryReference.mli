@@ -32,9 +32,6 @@ open CHLanguage
 open CHNumerical
 open CHPretty
 
-(* chutil *)
-open CHXmlDocument
-
 (* bchlib *)
 open BCHLibTypes
 

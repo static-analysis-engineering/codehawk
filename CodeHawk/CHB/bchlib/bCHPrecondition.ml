@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,24 +36,16 @@ open CHLogger
 open CHXmlDocument
 open CHXmlReader
 
-(* xprlib *)
-open XprTypes
-open XprToPretty
-
 (* bchlib *)
 open BCHFtsParameter
-open BCHBasicTypes
 open BCHBCTypePretty
 open BCHBCTypes
-open BCHBCTypeTransformer
 open BCHBCTypeXml
 open BCHBTerm
 open BCHCStructConstant
 open BCHExternalPredicate
 open BCHLibTypes
 open BCHTypeDefinitions
-open BCHUtilities
-open BCHXmlUtil
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -74,7 +66,7 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
 
 let read_xml_par_preconditions
       (node:xml_element_int)
-      (thisf: bterm_t)
+      (_thisf: bterm_t)
       (parameters: fts_parameter_t list): xxpredicate_t list =
   let one = IndexSize (NumConstant numerical_one) in
   let hasc = node#hasOneTaggedChild in
@@ -84,7 +76,8 @@ let read_xml_par_preconditions
   let thispar =
     List.find (fun p -> (get_parameter_name p) = parname) parameters in
   let t = ArgValue thispar in
-  let ty () = match BCHTypeDefinitions.resolve_type (get_parameter_type thispar) with
+  let ty () =
+    match BCHTypeDefinitions.resolve_type (get_parameter_type thispar) with
     | TFun _ -> get_parameter_type thispar
     | TPtr (t, _) -> t
     | THandle (s, _) -> TNamed (s, [])

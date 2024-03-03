@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,15 +31,12 @@
 
 (* chlib *)
 open CHPretty
-open CHUtils
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
 open CHXmlDocument
 
 (* xprlib *)
-open XprToPretty
 open XprTypes
 
 (* bchlib *)
@@ -51,7 +48,6 @@ open BCHBCTypeUtil
 open BCHBCTypeXml
 open BCHDoubleword
 open BCHLibTypes
-open BCHTypeDefinitions
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -61,8 +57,6 @@ let value_table = H.create 3  (* dw#index -> constant definition list *)
 let flag_table = H.create 3
 let address_table = H.create 3  (* to be deleted *)
 let name_table = H.create 3  (* string -> constant definition list *)
-
-let x2p = xpr_formatter#pr_expr
 
 let bcd = BCHBCDictionary.bcdictionary
 
@@ -216,12 +210,13 @@ object (self)
          if H.mem address_table base then
            let constdef = H.find address_table base in
            (match bcfiles#resolve_type constdef.xconst_type with
-            | TArray (ty, optlen, _) ->
+            | TArray (ty, _optlen, _) ->
                let elsize = size_of_btype ty in
                if elsize > 0 then
                  let elindex = dwoffset / elsize in
                  let boffset =
-                   Index (Const (CInt (Int64.of_int elindex, IInt, None)), NoOffset) in
+                   Index
+                     (Const (CInt (Int64.of_int elindex, IInt, None)), NoOffset) in
                  Some (TR.tget_ok (int_to_doubleword base), boffset)
                else
                  None

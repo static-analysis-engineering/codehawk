@@ -41,7 +41,6 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHCPURegisters
 open BCHLibTypes
 open BCHLocation
 open BCHSumTypeSerializer
@@ -194,6 +193,9 @@ object (self)
          (tags @ [a1; a2], [xd#index_variable v])
       | FunctionReturnValue a -> (tags @ [a], [])
       | SyscallErrorReturnValue a -> (tags @ [a], [])
+      | AugmentationValue (v, a, desc, suffix, ty) ->
+         (* Note: description should not include comma's or spaces *)
+         (tags @ [a; desc; suffix], [xd#index_variable v; bcd#index_typ ty])
       | SSARegisterValue (r, a, optname, ty) ->
          let rname = ssa_register_value_name r self#faddr a in
          let ntags =
@@ -228,6 +230,8 @@ object (self)
     | "ft" -> FrozenTestValue (xd#get_variable (a 0), t 1, t 2)
     | "fr" -> FunctionReturnValue (t 1)
     | "ev" -> SyscallErrorReturnValue (t 1)
+    | "av" ->
+       AugmentationValue (xd#get_variable (a 0), t 1, t 2, t 3, bcd#get_typ (a 1))
     | "ssa" ->
        let optname =
          match tags with

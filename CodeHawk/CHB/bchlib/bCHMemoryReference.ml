@@ -29,45 +29,20 @@
 
 (* chlib *)
 open CHPretty
-open CHCommon
 open CHNumerical
 open CHLanguage
-open CHIntervals
 
 (* chutil *)
-open CHFileIO
 open CHLogger
 open CHPrettyUtil
 open CHTraceResult
-open CHXmlDocument
-
-(* xprlib *)
-open Xprt
-open Xsimplify
-open XprXml
 
 (* bchlib *)
 open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
-open BCHXmlUtil
 
 module H = Hashtbl
-
-
-let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [
-        STR "(";
-        INT node#getLineNumber;
-        STR ",";
-	INT node#getColumnNumber;
-        STR ") ";
-        msg] in
-  begin
-    ch_error_log#add "xml parse error" error_msg;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
 
 
 let memory_base_to_string (b: memory_base_t): string =

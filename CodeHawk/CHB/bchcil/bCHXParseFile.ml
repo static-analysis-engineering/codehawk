@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@
 
 (* cil *)
 open GoblintCil
-open Errormsg
 open Frontc
 
 (* chlib *)
@@ -38,8 +37,6 @@ open CHPretty
 
 (* chutil *)
 open CHFileIO
-open CHPrettyUtil
-open CHUtil
 open CHXmlDocument
 
 (* bchlib *)
@@ -81,7 +78,9 @@ let main () =
       let bcfile = cil_file_to_bcfile cilfile in
       let fns =
         List.fold_left (fun a g ->
-            match g with GFun (fdec, loc) -> fdec :: a | _ -> a) [] bcfile.bglobals in
+            match g with
+            | GFun (fdec, _loc) -> fdec :: a
+            | _ -> a) [] bcfile.bglobals in
       let doc = xmlDocument () in
       let root = get_bch_root "bc_file.c" in
       let filenode = xmlElement "c-file" in
@@ -106,7 +105,8 @@ let main () =
   with
   | ParseError s ->
      begin
-       pr_debug [STR "Error when parsing (CIL) "; STR !filename; NL];
+       pr_debug [
+           STR "Error when parsing (CIL) "; STR !filename; STR "; "; STR s; NL];
        exit 1
      end
   | CHFailure p ->

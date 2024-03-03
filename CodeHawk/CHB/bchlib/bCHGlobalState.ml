@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,6 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -36,29 +35,15 @@ open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
 
-(* xprlib *)
-open Xprt
-open XprToPretty
-open XprXml
-
 (* bchlib*)
 open BCHBasicTypes
-open BCHBCDictionary
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
-open BCHCallTarget
 open BCHConstantDefinitions
 open BCHDoubleword
-open BCHFunctionInfo
-open BCHFunctionSummary
-open BCHInterfaceDictionary
 open BCHLibTypes
-open BCHLocation
-open BCHMemoryReference
 open BCHPreFileIO
-open BCHSystemInfo
-open BCHXmlUtil
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -81,9 +66,6 @@ let geta_fail
               STR (node#getAttribute tag)]))
       dw
 
-
-let pr_expr x =	if is_random x then STR "??" else xpr_formatter#pr_expr x
-let four = int_constant_expr 4
 
 let bcd = BCHBCDictionary.bcdictionary
 let id = BCHInterfaceDictionary.interface_dictionary
@@ -168,17 +150,6 @@ let g_arithmetic_op_to_string op =
   | GMinus -> "minus"
   | GTimes -> "times"
   | GDivide -> "divide"
-
-
-let string_to_g_arithmetic_op (s:string) =
-  match s with
-  | "plus" -> GPlus
-  | "minus" -> GMinus
-  | "times" -> GTimes
-  | "divide" -> GDivide
-  | _ ->
-     raise
-       (BCH_failure (LBLOCK [STR "arithmetic g-op not recognized: "; STR s]))
 
 
 let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
@@ -401,10 +372,10 @@ object (self)
            (loc:location_int) =
     let key = (loc#f#to_hex_string, loc#i#to_hex_string) in
     let rec same_offset l1 l2 =
-      match (l1,l2)  with
+      match (l1, l2)  with
       | ([], []) -> true
-      | (h::_, []) -> false
-      | ([], h::_) -> false
+      | (_::_, []) -> false
+      | ([], _::_) -> false
       | (h1::tl1, h2::tl2) -> h1 = h2 && same_offset tl1 tl2 in
     let entry = if H.mem readers key then H.find readers key else [] in
     let entry =

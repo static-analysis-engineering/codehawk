@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,6 @@ open CHFormatStringParser
 open CHLogger
 open CHUtil
 open CHXmlDocument
-open CHXmlReader
 
 (* bchlib *)
 open BCHARMFunctionInterface
@@ -48,29 +47,11 @@ open BCHBCTypeXml
 open BCHCPURegisters
 open BCHDemangler
 open BCHFtsParameter
-open BCHInterfaceDictionary
 open BCHLibTypes
 open BCHSystemSettings
-open BCHUtilities
-open BCHXmlUtil
 
 
 let id = BCHInterfaceDictionary.interface_dictionary
-
-
-let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [
-        STR "(";
-        INT node#getLineNumber;
-        STR ",";
-	INT node#getColumnNumber;
-        STR ") ";
-        msg] in
-  begin
-    ch_error_log#add "xml parse error" error_msg;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
 
 
 let is_stack_parameter (p: fts_parameter_t): bool =
@@ -214,7 +195,7 @@ let get_mips_fts_parameters (fname: string) (locs: parameter_location_t list) =
                let ncr = get_next_mips_arg_reg reg in
                let nmas =
                  match ncr with
-                 | Some r -> {ma_state with mas_next_arg_reg = ncr}
+                 | Some _ -> {ma_state with mas_next_arg_reg = ncr}
                  | _ ->
                     { mas_next_arg_reg = None;
                       mas_next_offset = Some 16
@@ -232,7 +213,7 @@ let get_mips_fts_parameters (fname: string) (locs: parameter_location_t list) =
                let ncr = get_next_mips_arg_reg reg in
                let nmas =
                  match ncr with
-                 | Some r -> {ma_state with mas_next_arg_reg = ncr}
+                 | Some _ -> {ma_state with mas_next_arg_reg = ncr}
                  | _ ->
                     { mas_next_arg_reg = None;
                       mas_next_offset = Some 16
@@ -321,7 +302,7 @@ let get_mips_fts_parameters (fname: string) (locs: parameter_location_t list) =
   params
 
 
-let get_arm_fts_parameters (fname: string) (locs: parameter_location_t list) =
+let get_arm_fts_parameters (_fname: string) (_locs: parameter_location_t list) =
   []
 
 
@@ -397,7 +378,7 @@ let get_fintf_name (fintf: function_interface_t): string =
 
 let get_fintf_fts (fintf: function_interface_t): function_signature_t =
   match fintf.fintf_bctype with
-  | Some bctype -> fintf.fintf_type_signature
+  | Some _bctype -> fintf.fintf_type_signature
   | _ ->
      let params = get_fts_parameters fintf in
      let returntype =
@@ -474,7 +455,7 @@ let convert_xml_fts_parameter_mips (p: fts_parameter_t): fts_parameter_t =
   (* first four arguments are in $a0-$a3, subsequent arguments are
      on the stack, starting at offset 16.*)
   match p.apar_location with
-  | [StackParameter (index, pdef)] when index <= 4 ->
+  | [StackParameter (index, _pdef)] when index <= 4 ->
      let reg =
        (match index with
         | 1 -> MRa0
@@ -493,7 +474,7 @@ let convert_xml_fts_parameter_mips (p: fts_parameter_t): fts_parameter_t =
        ~fmt:p.apar_fmt
        register
        index
-  | [StackParameter (index, pdef)] ->
+  | [StackParameter (index, _pdef)] ->
      let offset = (4 * index) - 4 in
      mk_indexed_stack_parameter
        ~btype:p.apar_type
@@ -522,7 +503,7 @@ let convert_xml_fts_parameter_arm (p: fts_parameter_t): fts_parameter_t =
      below for arbitrary header-provided signatures.
    *)
   match p.apar_location with
-  | [StackParameter (index, pdef)] when index <= 4 ->
+  | [StackParameter (index, _pdef)] when index <= 4 ->
      let btype = p.apar_type in
      let register =
        if is_float btype then
@@ -546,7 +527,7 @@ let convert_xml_fts_parameter_arm (p: fts_parameter_t): fts_parameter_t =
        ~fmt:p.apar_fmt
        register
        index
-  | [StackParameter (index, pdef)] ->
+  | [StackParameter (index, _pdef)] ->
      let offset = 4 * (index - 5) in
      mk_indexed_stack_parameter
        ~btype:p.apar_type
@@ -950,7 +931,7 @@ let mips_params (funargs: bfunarg_t list): fts_parameter_t list =
              let ncr = get_next_mips_arg_reg reg in
              let nmas =
                match ncr with
-               | Some r -> {ma_state with mas_next_arg_reg = ncr}
+               | Some _ -> {ma_state with mas_next_arg_reg = ncr}
                | _ ->
                   { mas_next_arg_reg = None;
                     mas_next_offset = Some 16

@@ -54,7 +54,6 @@ open BCHLibTypes
 open BCHSystemInfo
 open BCHSystemSettings
 open BCHUserProvidedDirections
-open BCHXmlUtil
 
 (* bchlibelf *)
 open BCHELFHeader

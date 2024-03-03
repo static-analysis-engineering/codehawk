@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@
 
 (* chutil *)
 open CHFormatStringParser
-open CHLogger
 open CHUtil
 
 (* bchlib *)
@@ -105,7 +104,7 @@ let pop_pos (state: arm_argument_state_t): arm_argument_state_t =
      raise
        (BCH_failure
           (LBLOCK [STR "pop_pos: Arm argument state with empty position"]))
-  | h :: tl -> {state with aas_next_position = tl}
+  | _ :: tl -> {state with aas_next_position = tl}
 
 
 let update_field_pos (state: arm_argument_state_t) (finfo: bfieldinfo_t) =
@@ -194,7 +193,7 @@ let get_next_sp_reg_naas
           (LBLOCK [
                STR "get_next_sp_reg_naas: inconsistent state: ";
                STR "no floating point slots available"]))
-  | [hd] ->
+  | [_] ->
      { aas with
        aas_next_sp_reg = None;
        aas_next_dp_reg = None;
@@ -204,7 +203,7 @@ let get_next_sp_reg_naas
          | _ -> Some 0);
        aas_fp_slots_available = []
      }
-  | hd1 :: hd2 :: tl ->
+  | _ :: hd2 :: tl ->
      { aas with
        aas_next_sp_reg = Some (mk_arm_sp_reg hd2);
        aas_next_dp_reg =
@@ -222,7 +221,7 @@ let get_next_dp_reg_naas
       (aas: arm_argument_state_t): arm_argument_state_t =
   let slots = aas.aas_fp_slots_available in
   match slots with
-  | [hd1; hd2] ->
+  | [_; _] ->
      { aas with
        aas_next_sp_reg = None;
        aas_next_dp_reg = None;
@@ -232,7 +231,7 @@ let get_next_dp_reg_naas
          | _ -> Some 0);
        aas_fp_slots_available = []
      }
-  | hd1 :: hd2 :: hd3 :: tl when (hd1 mod 2) = 0 ->  (* no backfill slots *)
+  | hd1 :: _ :: hd3 :: tl when (hd1 mod 2) = 0 ->  (* no backfill slots *)
      { aas with
        aas_next_sp_reg = Some (mk_arm_sp_reg hd3);
        aas_next_dp_reg = Some (mk_arm_dp_reg (hd3 / 2));
@@ -242,7 +241,7 @@ let get_next_dp_reg_naas
          | _ -> Some 0);
        aas_fp_slots_available = hd3 :: tl
      }
-  | hd1 :: hd2 :: hd3 :: tl ->   (* hd1 is a backfill slot *)
+  | hd1 :: _ :: _ :: tl ->   (* hd1 is a backfill slot *)
      { aas with
        aas_next_dp_reg =
          (match tl with
@@ -331,7 +330,7 @@ let get_int_paramloc_next_state
      let ncr = get_next_core_reg reg in
      let naas =
        match ncr with
-       | Some r -> {aa_state with aas_next_core_reg = ncr}
+       | Some _ -> {aa_state with aas_next_core_reg = ncr}
        | _ ->
           {aa_state with
             aas_next_core_reg = None; aas_next_offset = Some 0} in
@@ -369,7 +368,7 @@ let get_int_paramlocpart_next_state
          else if roffset + size = 4 then
            let ncr = get_next_core_reg reg in
            (match ncr with
-            | Some r ->
+            | Some _ ->
                {aa_state with
                  aas_next_core_reg = ncr; aas_next_core_reg_byteoffset = 0}
             | _ ->
@@ -423,7 +422,7 @@ let get_int_param_next_state
      let ncr = get_next_core_reg reg in
      let naas =
        match ncr with
-       | Some r -> {aa_state with aas_next_core_reg = ncr}
+       | Some _ -> {aa_state with aas_next_core_reg = ncr}
        | _ ->
           {aa_state with
            aas_next_core_reg = None;
@@ -529,15 +528,15 @@ let rec get_arm_struct_field_locations
 
 
 and get_arm_array_locations
-(size: int)
-(eltype: btype_t)
-(offset: int)
+(_size: int)
+(_eltype: btype_t)
+(_offset: int)
 (aa_state: arm_argument_state_t):
       (parameter_location_t list * arm_argument_state_t) =
   ([], aa_state)
 
 
-let rec get_arm_struct_param_next_state
+let get_arm_struct_param_next_state
       (size: int)
       (name: string)
       (btype: btype_t)
