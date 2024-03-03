@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
    Copyright (c) 2022-2023 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,7 +36,6 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
-open CHTraceResult
 
 (* bchlib *)
 open BCHBasicTypes
@@ -52,15 +51,15 @@ let bii = mkNumerical
 let bii32 = mkNumericalFromInt32
 
 
-class virtual stream_wrapper_t (input: IO.input):stream_wrapper_int =  
+class virtual stream_wrapper_t (input: IO.input):stream_wrapper_int =
 object
-  
+
   method read = IO.read input
   method nread i = Bytes.to_string (IO.nread input i)
   method really_nread i = Bytes.to_string (IO.really_nread input i)
   method input s i j = IO.input input (Bytes.of_string s) i j
   method close_in = IO.close_in input
-    
+
   method read_byte = IO.read_byte input
   method read_signed_byte = IO.read_signed_byte input
   method virtual read_ui16 : int
@@ -72,15 +71,15 @@ object
   method virtual read_double : float
   method read_string = IO.read_string input
   method read_line = IO.read_line input
-    
+
   method virtual read_doubleword : doubleword_int
 end
 
 
-class little_endian_stream_wrapper_t (input:IO.input) =  
+class little_endian_stream_wrapper_t (input:IO.input) =
 object
   inherit stream_wrapper_t input
-    
+
   method read_ui16 = IO.read_ui16 input
   method read_i16 = IO.read_i16 input
   method read_i32 = IO.read_i32 input
@@ -95,26 +94,28 @@ object
 end
 
 
-class big_endian_stream_wrapper_t (input:IO.input) =  
+class big_endian_stream_wrapper_t (input:IO.input) =
 object
   inherit stream_wrapper_t input
-    
+
   method read_ui16 = IO.BigEndian.read_ui16 input
   method read_i16 = IO.BigEndian.read_i16 input
   method read_i32 = IO.BigEndian.read_i32 input
   method read_real_i32 = IO.BigEndian.read_real_i32 input
   method read_i64 = IO.BigEndian.read_i64 input
   method read_double = IO.BigEndian.read_double input
-    
+
   method read_doubleword =
     let l = IO.BigEndian.read_ui16 input in
     let h = IO.BigEndian.read_ui16 input in
     TR.tget_ok (make_doubleword h l)
 end
 
+
 let make_little_endian_stream_wrapper input =
   let p = new little_endian_stream_wrapper_t input in
   (p : little_endian_stream_wrapper_t :> stream_wrapper_int)
+
 
 let make_big_endian_stream_wrapper input =
   let p = (new big_endian_stream_wrapper_t input) in
@@ -124,11 +125,11 @@ let make_big_endian_stream_wrapper input =
 class pushback_stream_t ?(little_endian=true) (s:string):pushback_stream_int =
 object (self)
 
-  val mutable ch = 
+  val mutable ch =
     let input = IO.input_string s in
-    if little_endian then 
-      new little_endian_stream_wrapper_t input 
-    else 
+    if little_endian then
+      new little_endian_stream_wrapper_t input
+    else
       new big_endian_stream_wrapper_t input
   val mutable pos = 0
   val s = s
@@ -146,12 +147,14 @@ object (self)
                  STR "Error in stream_wrapper#sub. pos: ";
                  INT pos;
                  STR "; len: ";
-                 INT len]))
+                 INT len;
+                 STR ": ";
+                 STR m]))
 
-  method skip_bytes n = 
+  method skip_bytes n =
     try
       begin
-	pos <- pos + n ; 
+	pos <- pos + n ;
 	let input = IO.input_string (string_suffix s pos) in
 	if little_endian then
 	  ch <- new little_endian_stream_wrapper_t input
@@ -190,7 +193,7 @@ object (self)
 
   method read_i64 = begin pos <- pos + 8 ; ch#read_i64 end
 
-  method read_string = 
+  method read_string =
     let s = ch#read_string in begin pos <- pos + (String.length s) + 1 ; s end
 
   method read_doubleword = begin pos <- pos + 4 ; ch#read_doubleword end
@@ -212,7 +215,7 @@ object (self)
   method read_imm_signed_doubleword =
     TR.tget_ok (make_immediate true 4 (bii32 self#read_real_i32))
 
-  method read_imm_signed n = 
+  method read_imm_signed n =
     match n with
     | 1 -> self#read_imm_signed_byte
     | 2 -> self#read_imm_signed_word
@@ -225,7 +228,7 @@ object (self)
   method read_imm_unsigned_word =
     TR.tget_ok (make_immediate false 2 (bii self#read_ui16))
 
-  method read_imm_unsigned_doubleword = 
+  method read_imm_unsigned_doubleword =
     let l = self#read_ui16 in
     let h = self#read_ui16 in
     let v = ((bii h)#mult numerical_e16)#add (bii l) in
@@ -293,7 +296,7 @@ object (self)
 	begin
 	  for j=0 to !i-1 do
             (* s.[j] <- Char.chr a.(j) *)
-            Bytes.set s j (Char.chr a.(j)) 
+            Bytes.set s j (Char.chr a.(j))
           done;
 	  (if !i = maxLen - 1 then
 	     chlog#add
@@ -343,7 +346,7 @@ object (self)
 
   method pushback n =
     begin
-      pos <- pos - n ; 
+      pos <- pos - n ;
       let input = IO.input_string (string_suffix s pos) in
       if little_endian then
 	ch <- new little_endian_stream_wrapper_t input

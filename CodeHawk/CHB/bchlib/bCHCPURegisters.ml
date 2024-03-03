@@ -38,7 +38,6 @@ open CHXmlDocument
 open BCHBasicTypes
 open BCHLibTypes
 open BCHUtilities
-open BCHXmlUtil
 
 module H = Hashtbl
 
@@ -51,14 +50,6 @@ let starts_with (s:string) (p:string) =
   else
     (String.sub s 0 plen) = p
 
-let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ;
-             INT node#getColumnNumber ; STR ") " ; msg ] in
-  begin
-    ch_error_log#add "xml parse error" error_msg ;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
 
 let full_reg_of_reg = function
   | Al | Ah | Ax | Eax -> Eax

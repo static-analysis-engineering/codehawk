@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,16 +36,10 @@ open CHIndexTable
 open CHLogger
 open CHXmlDocument
 
-(* xprlib *)
-open XprDictionary
-
 (* bchlib *)
 open BCHBasicTypes
-open BCHDoubleword
 open BCHLibTypes
 open BCHSumTypeSerializer
-
-let bd = BCHDictionary.bdictionary
 
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =

@@ -28,7 +28,6 @@ MLIS := \
 	bCHLibTypes \
 	bCHVersion \
 	bCHXprUtil \
-	bCHXmlUtil \
 	bCHUtilities \
 	bCHSystemSettings \
 	bCHCPURegisters \
@@ -118,7 +117,6 @@ SOURCES := \
 	bCHUtilities \
 	bCHBasicTypes \
 	bCHDoubleword \
-	bCHXmlUtil \
 	bCHSystemSettings \
 	bCHCPURegisters \
 	bCHLocation \

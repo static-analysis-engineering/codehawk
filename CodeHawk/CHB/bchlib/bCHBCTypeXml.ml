@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,6 @@ open CHXmlReader
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCFiles
 open BCHBCSumTypeSerializer
 open BCHBCTypes
 open BCHBCTypeUtil
@@ -150,25 +149,6 @@ let read_xml_summary_struct (node: xml_element_int): bcompinfo_t =
         ((getc "fields")#getTaggedChildren "field");
     bcattr = []
   }
-
-
-let read_xml_int64 (node: xml_element_int): int64 =
-  Int64.of_string (node#getAttribute "intValue")
-
-
-let write_xml_int64_element (node: xml_element_int) (i :int64) =
-  node#setAttribute "intValue" (Int64.to_string i)
-
-
-let read_xml_int64_list (node: xml_element_int): int64 list =
-  List.map read_xml_int64 (node#getTaggedChildren "int")
-
-
-let write_xml_int64_list (node: xml_element_int) (l: int64 list) =
-  node#appendChildren
-    (List.map (fun i ->
-         let inode = xmlElement "int" in
-         begin write_xml_int64_element inode i; inode end) l)
 
 
 let read_xml_restricted_btype (node: xml_element_int): btype_t =

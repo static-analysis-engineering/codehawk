@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,6 @@ open CHXmlDocument
 open CHXmlReader
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeTransformer
@@ -48,7 +47,6 @@ open BCHCPURegisters
 open BCHDoubleword
 open BCHLibTypes
 open BCHUtilities
-open BCHXmlUtil
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -80,14 +78,14 @@ let calling_convention_to_string =
   function StdCall -> "stdcall" | CDecl -> "cdecl"
 
 
-let arg_io_to_string (i:arg_io_t) =
+let _arg_io_to_string (i:arg_io_t) =
   match i with
   | ArgRead -> "r"
   | ArgWrite -> "w"
   | ArgReadWrite -> "rw"
 
 
-let formatstring_type_to_string (t:formatstring_type_t) =
+let _formatstring_type_to_string (t:formatstring_type_t) =
   match t with
   | NoFormat -> "no"
   | PrintFormat -> "print"
@@ -174,7 +172,7 @@ let get_stack_parameter_offset (p: fts_parameter_t): int traceresult =
      Error [
          "get_stack_parameter_offset with location: "
          ^ (parameter_location_to_string loc)]
-  | h::_ -> Error ["get_stack_parameter_offset:multiple locations"]
+  | _::_ -> Error ["get_stack_parameter_offset:multiple locations"]
   | [] -> Error ["get_stack_parameter_offset:no locations"]
 
 
@@ -186,7 +184,7 @@ let get_register_parameter_register
      Error [
          "get_register_parameter_register with location: "
          ^ (parameter_location_to_string loc)]
-  | h::_ -> Error ["get_register_parameter_register:multiple locations"]
+  | _::_ -> Error ["get_register_parameter_register:multiple locations"]
   | [] -> Error ["get_register_parameter_register:no locations"]
 
 

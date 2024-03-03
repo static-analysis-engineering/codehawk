@@ -33,6 +33,7 @@ open CHPretty
 (* chutil *)
 open CHFileIO
 open CHTiming
+open CHUtil
 open CHXmlDocument
 open CHXmlReader
 
@@ -45,7 +46,6 @@ open BCHGlobalState
 open BCHLibTypes
 open BCHPreFileIO
 open BCHSystemInfo
-open BCHXmlUtil
 
 (* bchlibx86 *)
 open BCHAssemblyFunctions

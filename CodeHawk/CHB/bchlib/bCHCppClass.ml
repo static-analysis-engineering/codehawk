@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,10 +41,8 @@ open BCHBCTypes
 open BCHBCTypeXml
 open BCHDoubleword
 open BCHFunctionInterface
-open BCHFunctionSummary
 open BCHLibTypes
 open BCHPreFileIO
-open BCHTypeDefinitions
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -255,7 +253,7 @@ let read_xml_vtable (node:xml_element_int) (cname:string) =
 
 let read_xml_vfpointer (node:xml_element_int) (cname:string) =
   let geti = node#getIntAttribute in
-  let geta n = string_to_doubleword (node#getAttribute "a") in
+  let geta n = string_to_doubleword (n#getAttribute "a") in
   { cppvf_offset = geti "offset";
     cppvf_address = TR.tget_ok (geta node);
     cppvf_table = read_xml_vtable node cname}

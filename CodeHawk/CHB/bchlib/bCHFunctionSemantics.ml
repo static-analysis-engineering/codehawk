@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,32 +31,19 @@
 open CHPretty
 
 (* chutil *)
-open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
 open BCHBCTypes
 open BCHExternalPredicate
 open BCHFunctionInterface
-open BCHInterfaceDictionary
 open BCHPrecondition
 open BCHSideeffect
 open BCHLibTypes
 open BCHPostcondition
-open BCHXmlUtil
 
 
 let id = BCHInterfaceDictionary.interface_dictionary
-
-
-let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ;
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
-  begin
-    ch_error_log#add "xml parse error" error_msg ;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
 
 
 let function_semantics_to_pretty (sem:function_semantics_t) =
@@ -140,7 +127,7 @@ let function_semantics_to_pretty (sem:function_semantics_t) =
 
 let read_xml_io_action
     (node: xml_element_int)
-    (parameters: fts_parameter_t list): io_action_t =
+    (_parameters: fts_parameter_t list): io_action_t =
   let get = node#getAttribute in
   { iox_cat = get "cat";
     iox_desc = get "desc";

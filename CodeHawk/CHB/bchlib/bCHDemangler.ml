@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -208,7 +208,7 @@ let templated_btype_to_name (ty: btype_t) (index: int) =
   (aux ty) ^ "_" ^ (string_of_int index)
 
 
-let demangled_name_to_pretty dm =
+let _demangled_name_to_pretty dm =
   if dm.dm_vftable then STR "vftable"
   else if dm.dm_vbtable then STR "vbtable"
   else
@@ -233,19 +233,31 @@ let demangled_name_to_string dm =
   if dm.dm_vftable then "vftable"
   else if dm.dm_vbtable then "vbtable"
   else
-  let s_acc = if dm.dm_accessibility = "" then "" else (dm.dm_accessibility ^ ": ") in
+    let s_acc =
+      if dm.dm_accessibility = "" then "" else (dm.dm_accessibility ^ ": ") in
   let s_virtual = if dm.dm_virtual then "virtual " else "" in
   let s_static = if dm.dm_static then "static " else "" in
   let s_returntype = match dm.dm_returntype with
       Some t -> (btype_to_string t) ^ " " | _ -> "" in
   let s_calling_convention = dm.dm_calling_convention ^ " " in
   let s_namespace = 
-    String.concat "" (List.map (fun s -> (tname_to_string s) ^ "::") dm.dm_name_space) in
+    String.concat
+      "" (List.map (fun s -> (tname_to_string s) ^ "::") dm.dm_name_space) in
   let s_name = tname_to_string dm.dm_name in
-  let s_parameters = String.concat "," (List.map btype_to_string dm.dm_parameter_types) in
+  let s_parameters =
+    String.concat "," (List.map btype_to_string dm.dm_parameter_types) in
   let s_const = if dm.dm_const then "const" else "" in
-  s_acc ^ s_virtual ^ s_static ^ s_returntype ^ s_calling_convention ^ s_namespace ^
-    s_name ^ "(" ^ s_parameters ^ ")" ^ s_const
+  s_acc
+  ^ s_virtual
+  ^ s_static
+  ^ s_returntype
+  ^ s_calling_convention
+  ^ s_namespace
+  ^ s_name
+  ^ "("
+  ^ s_parameters
+  ^ ")"
+  ^ s_const
     
 
 class cppname_t = 

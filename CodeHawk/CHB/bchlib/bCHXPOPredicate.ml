@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,6 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHXmlDocument
 
 (* xprlib *)
 open Xprt
@@ -39,8 +38,6 @@ open XprTypes
 
 (* bchlib *)
 open BCHBCTypePretty
-open BCHBCTypes
-open BCHBCTypeUtil   
 open BCHBTerm
 open BCHCStructConstant
 open BCHLibTypes
@@ -63,7 +60,7 @@ let rec xxp_to_xpo_predicate
            "unable to convert bterm"
            (LBLOCK [loc#toPretty; STR " "; (bterm_to_pretty t)]) in
        random_constant_expr in
-  
+
   match xxp with
   | XXAllocationBase t -> XPOAllocationBase (btx t)
   | XXBlockWrite (ty, t1, t2) -> XPOBlockWrite (ty, btx t1, btx t2)
@@ -102,8 +99,8 @@ let rec xxp_to_xpo_predicate
      XPOConditional (
          xxp_to_xpo_predicate termev loc x1,
          xxp_to_xpo_predicate termev loc x2)
-                     
-                      
+
+
 let rec xpo_predicate_to_pretty (p: xpo_predicate_t) =
   let default (name: string) (xprs: xpr_t list) =
     LBLOCK [STR name; pretty_print_list xprs x2p "(" ", " ")"] in

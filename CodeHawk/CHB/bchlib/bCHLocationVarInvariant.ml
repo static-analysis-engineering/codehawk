@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022 Aarno Labs LLC
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -128,7 +128,7 @@ object (self: 'a)
 end
 
                       
-let read_xml_var_invariant
+let _read_xml_var_invariant
       (varinvd: varinvdictionary_int)
       (node: xml_element_int): var_invariant_int =
   let index = node#getIntAttribute "index" in
@@ -138,7 +138,7 @@ let read_xml_var_invariant
 
 class location_var_invariant_t
         (varinvd: varinvdictionary_int)
-        (iaddr: string): location_var_invariant_int =
+        (_iaddr: string): location_var_invariant_int =
 object (self)
 
   val varinvd = varinvd

@@ -27,9 +27,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chutil *)
-open CHXmlDocument
-
 (* bchlib *)
 open BCHLibTypes
 
@@ -121,8 +118,6 @@ val register_of_power_cr_register_field: pwr_register_field_t -> register_t
 
 val full_reg_of_reg: cpureg_t -> cpureg_t
 val full_registers: cpureg_t list
-
-val register_compare  : register_t -> register_t -> int
 
 
 (** {1 Construction functions} *)

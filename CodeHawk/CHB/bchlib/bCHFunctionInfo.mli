@@ -28,11 +28,7 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHNumerical
 open CHPretty
-
-(* chutil *)
-open CHXmlDocument
 
 (* bchlib *)
 open BCHLibTypes
@@ -51,6 +47,7 @@ type po_anchor_t =
 | IndirectAccess of bterm_t
 
 val po_anchor_compare: po_anchor_t -> po_anchor_t -> int
+
 val po_anchor_to_pretty: po_anchor_t -> pretty_t
 
 (** [load_function_info ~reload:reload dw] returns the function info associated with

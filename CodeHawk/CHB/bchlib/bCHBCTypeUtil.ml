@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,6 @@
 (* chlib *)
 open CHConstants
 open CHLanguage
-open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -41,10 +40,6 @@ open BCHBasicTypes
 open BCHBCFiles
 open BCHBCTypePretty
 open BCHBCTypes
-
-
-let string_printer = CHPrettyUtil.string_printer
-let p2s = string_printer#print
 
 
 (* ====================================================== common scalar types *)
@@ -103,10 +98,6 @@ let t_enum ?(name_space=[]) name =
 
 let t_class ?(name_space=[]) name =
   BCHBCTypes.TClass (to_tname name, List.map to_tname name_space, [])
-
-
-let t_tclass ?(name_space=[]) name =
-  BCHBCTypes.TClass (name, name_space, [])
 
 
 let t_tcomp ?(name_space=[]) name = TCppComp (name, name_space, [])
@@ -280,7 +271,7 @@ let start_oa = {
   }
 
 
-let oa_to_pretty (oa: offset_accumulator_t) =
+let _oa_to_pretty (oa: offset_accumulator_t) =
   LBLOCK [
       STR "oa_ff: ";
       INT oa.oa_first_free;
@@ -303,7 +294,7 @@ let rec align_of_btype (t: btype_t): int =
      let _ = chlog#add "unknown enum" (LBLOCK [STR "align: "; STR name]) in
      align_of_btype (TInt (IUInt, []))
   | TFloat (fk, _, _) -> align_of_float_fkind fk
-  | TNamed (name, _) -> align_of_btype (bcfiles#resolve_type t)
+  | TNamed (_name, _) -> align_of_btype (bcfiles#resolve_type t)
   | TComp (ckey, _) when bcfiles#has_compinfo ckey ->
      alignof_comp (bcfiles#get_compinfo ckey)
   | TComp (ckey, _) ->
@@ -338,7 +329,7 @@ and size_of_btype (t: btype_t): int =
      let _ = chlog#add "unknown enum" (LBLOCK [STR "size: "; STR name]) in
      size_of_btype (TInt (IUInt, []))
   | TArray (tt, Some len, _) -> size_of_btype_array tt len
-  | TArray (tt, _, _) -> 0
+  | TArray (_, _, _) -> 0
   | TComp (ckey, _) when bcfiles#has_compinfo ckey ->
      size_of_btype_comp (bcfiles#get_compinfo ckey)
   | TComp (ckey, _) ->
@@ -733,7 +724,7 @@ let bexp_compare = exp_compare
 (* ============================================================== abstraction *)
 
 let btype_abstract (btype: btype_t): symbol_t =
-  let rec aux (t: btype_t) (acc: string) =
+  let aux (t: btype_t) (_acc: string) =
     match t with
     | TUnknown [] -> "t_unknown"
     | TUnknown [Attr ("int", [])] -> "t_int"
@@ -754,7 +745,7 @@ let btype_abstract (btype: btype_t): symbol_t =
 
 
 let btype_concretize (abtype: symbol_t): btype_t =
-  let rec aux (s: string) (acc: btype_t option) =
+  let aux (s: string) (_acc: btype_t option) =
     match s with
     | "t_unknown" -> TUnknown []
     | "t_int" -> TUnknown [Attr ("int", [])]
@@ -940,4 +931,4 @@ let struct_offset_field_categories (ty: btype_t): (int * string) list =
                  (LBLOCK [
                       STR "Struct definition has no field layout: ";
                       STR (btype_to_string ty)]))) compinfo.bcfields
-  | rty -> [(0, btype_to_string ty)]
+  | _ -> [(0, btype_to_string ty)]

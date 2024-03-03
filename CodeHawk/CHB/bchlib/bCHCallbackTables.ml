@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,7 +26,6 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -66,8 +65,8 @@ object (self)
     end
 
   method address = address
-                 
-  method values = H.fold (fun k v a -> (k, v) :: a) recordvalues [] 
+
+  method values = H.fold (fun k v a -> (k, v) :: a) recordvalues []
 
   method stringvalue (offset: int) =
     if H.mem recordvalues offset then
@@ -158,7 +157,7 @@ object (self)
                     NL]) self#values)
 
 end
-    
+
 
 class call_back_table_t (cba: string) (ty: btype_t): call_back_table_int =
 object (self)
@@ -284,7 +283,7 @@ object (self)
              r#write_xml rnode;
              rnode
            end) rl)
-       
+
 end
 
 

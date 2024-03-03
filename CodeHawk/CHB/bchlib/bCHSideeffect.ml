@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,21 +36,15 @@ open CHLogger
 open CHXmlDocument
 open CHXmlReader
 
-(* xprlib *)
-open Xprt
-
 (* bchlib *)
 open BCHBCTypePretty
 open BCHBCTypes
-open BCHBCTypeTransformer
 open BCHBCTypeXml
 open BCHBTerm
 open BCHFtsParameter
 open BCHLibTypes
 open BCHPrecondition
 open BCHTypeDefinitions
-open BCHUtilities
-open BCHXmlUtil
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -70,7 +64,7 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
 (* ----------------------------------------------------------------- read xml *)
 
 let read_xml_par_sideeffects
-      (node:xml_element_int) (thisf: bterm_t): xxpredicate_t list =
+      (node:xml_element_int) (_thisf: bterm_t): xxpredicate_t list =
   let getc = node#getTaggedChild in
   let hasc = node#hasOneTaggedChild in
   let one = IndexSize (NumConstant numerical_one) in

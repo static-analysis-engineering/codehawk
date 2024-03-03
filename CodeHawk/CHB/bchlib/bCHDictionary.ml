@@ -33,7 +33,6 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHIndexTable
-open CHPrettyUtil
 open CHStringIndexTable
 open CHXmlDocument
 
@@ -180,7 +179,7 @@ object (self)
 
   method get_flag (index: int) =
     let name = flag_mcts#name in
-    let (tags, args) = flag_table#retrieve index in
+    let (tags, _) = flag_table#retrieve index in
     let t = t name tags in
     match (t 0) with
     | "x" -> X86Flag (eflag_mfts#fs (t 1))
@@ -210,7 +209,7 @@ object (self)
          (tags, [self#index_arm_extension_register xr])
       | ARMDoubleExtensionRegister (r1, r2) ->
          (tags,
-          [self#index_arm_extension_register r2;
+          [self#index_arm_extension_register r1;
            self#index_arm_extension_register r2])
       | ARMExtensionRegisterElement xre ->
          (tags, [self#index_arm_extension_register_element xre])

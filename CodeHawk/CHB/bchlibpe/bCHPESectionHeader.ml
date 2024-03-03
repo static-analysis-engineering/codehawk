@@ -39,13 +39,13 @@ open CHPretty
 
 (* chutil *)
 open CHPrettyUtil
+open CHUtil
 open CHXmlDocument
 
 (* bchlib *)
 open BCHDoubleword
 open BCHLibTypes
 open BCHSystemInfo
-open BCHXmlUtil
 
 (* bchlibpe *)
 open BCHLibPETypes

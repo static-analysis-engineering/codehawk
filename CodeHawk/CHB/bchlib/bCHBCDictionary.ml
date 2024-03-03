@@ -3,8 +3,8 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2021-2023  Aarno Labs LLC
+
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -86,7 +86,7 @@ object (self)
   val compinfo_table = mk_index_table "compinfo-table"
   val enumitem_table = mk_index_table "enumitem-table"
   val enuminfo_table = mk_index_table "enuminfo-table"
-  val typeinfo_table = mk_index_table "typeinfo-table"                     
+  val typeinfo_table = mk_index_table "typeinfo-table"
   val tname_table = mk_index_table "tname-table"
   val tname_list_table = mk_index_table "tname-list-table"
 
@@ -121,7 +121,7 @@ object (self)
         enuminfo_table
       ]
     end
-                       
+
   method index_attrparam (a: b_attrparam_t) =
     let tags = [attrparam_mcts#ts a] in
     let key = match a with
@@ -188,11 +188,11 @@ object (self)
 
   method private get_opti64 (s: string): int64 option =
     match s with "" -> None | _ -> Some (Int64.of_string s)
-         
+
   method index_constant (c: bconstant_t):int =
     let tags = [constant_mcts#ts c] in
     let key = match c with
-      | CInt (i64,ik, opts) ->
+      | CInt (i64,ik, _opts) ->
          (tags @ [Int64.to_string i64; ikind_mfts#ts ik], [])
       | CStr s -> (tags, [self#index_string s])
       | CWStr i64r -> (tags @ (List.map Int64.to_string i64r), [])
@@ -232,7 +232,7 @@ object (self)
 
   method get_opt_lval (index: int): blval_t option =
     if index = -1 then None else Some (self#get_lval index)
-         
+
   method index_lval ((lhost, offset): blval_t):int =
     lval_table#add ([], [self#index_lhost lhost; self#index_offset offset])
 
@@ -247,7 +247,7 @@ object (self)
             (LBLOCK [
                  STR "lval invalid format: ";
                  pretty_print_list args (fun i -> INT i) "[" ";" "]"]))
-    
+
   method index_lhost (h: blhost_t):int =
     let key = match h with
     | Var (vname, vid) -> (["var"; vname], [vid])
@@ -263,7 +263,7 @@ object (self)
     | "var" -> Var (t 1, a 0)
     | "mem" -> Mem (self#get_exp (a 0))
     | s -> raise_tag_error name s ["var"; "mem"]
-    
+
   method index_offset (offset: boffset_t):int =
     let tags = [offset_mcts#ts offset] in
     let key = match offset with
@@ -284,19 +284,19 @@ object (self)
     | "f" -> Field ((t 1, a 0), self#get_offset (a 1))
     | "i" -> Index (self#get_exp (a 0), self#get_offset (a 1))
     | s -> raise_tag_error name s offset_mcts#tags
-    
+
   method private index_opt_exp (x: bexp_t option) =
     match x with Some e -> self#index_exp e| _ -> (-1)
 
   method private get_opt_exp (index:int) =
     if index = -1 then None else Some (self#get_exp index)
-                                                
+
   method private index_opt_exp_list (r: bexp_t option list) =
     List.map self#index_opt_exp r
 
   method private get_opt_exp_list (r:int list) =
     List.map self#get_opt_exp r
-    
+
   method index_exp (exp: bexp_t) =
     let tags = [exp_mcts#ts exp] in
     let key = match exp with
@@ -374,13 +374,13 @@ object (self)
     | "startof" -> StartOf (self#get_lval (a 0))
     | "fnapp" ->
        let loc = { file = (t 1); line = (a 0); byte = (a 1) } in
-       let optexps = self#get_opt_exp_list (suffixa 3) in 
+       let optexps = self#get_opt_exp_list (suffixa 3) in
        FnApp (loc, self#get_exp (a 2), optexps)
     | "cnapp" ->
        let optexps = self#get_opt_exp_list (suffixa 1) in
        CnApp (t 1, optexps, self#get_typ (a 0))
     | s -> raise_tag_error name s exp_mcts#tags
-    
+
   method private index_attribute (a: b_attribute_t) =
     match a with
     | Attr (name, attrparams) ->
@@ -401,7 +401,7 @@ object (self)
       []
     else
       let (_,args) = attributes_table#retrieve index in
-      List.map self#get_attribute args    
+      List.map self#get_attribute args
 
   method private index_funarg ((name, typ, attrs): bfunarg_t) =
     funarg_table#add ([name], [self#index_typ typ; self#index_attributes attrs])
@@ -424,7 +424,7 @@ object (self)
                 pretty_print_list tags (fun s -> STR s) "[" "," "], ";
                 STR "args: ";
                 pretty_print_list args (fun a -> INT a) "[" "," "]"]))
-    
+
   method index_funargs (r: bfunarg_t list) =
     let r =
       List.mapi (fun i (name, typ, attrs) ->
@@ -436,7 +436,7 @@ object (self)
   method get_funargs (index: int): bfunarg_t list =
     let (_,args) = funargs_table#retrieve index in
     List.map self#get_funarg args
-    
+
   method private index_opt_funargs (f: bfunarg_t list option) =
     match f with None -> (-1) | Some r -> self#index_funargs r
 
@@ -548,7 +548,7 @@ object (self)
   method private get_typsig_list_option (index: int): btypsig_t list option =
     if index = (-1) then None else
       Some (self#get_typsig_list index)
-    
+
   method index_typsig (typsig: btypsig_t):int =
     let tags = [ typsig_mcts#ts typsig] in
     (* omit entry for empty attributes *)
@@ -577,7 +577,7 @@ object (self)
     let attrs n =
       if List.length args > n then self#get_attributes (a n) else [] in
     match (t 0) with
-    | "tsarray" -> 
+    | "tsarray" ->
        TSArray (self#get_typsig (a 0), self#get_opti64 (t 1), attrs 1)
     | "tsptr" -> TSPtr (self#get_typsig (a 0), attrs 1)
     | "tscomp" -> TSComp ((a 0) = 1, (t 1), attrs 1)
@@ -617,7 +617,7 @@ object (self)
        CompoundInit
          (self#get_typ (a 0), List.map self#get_offset_init (List.tl args))
     | s -> raise_tag_error name s ["single"; "compound"]
-                                        
+
   method index_offset_init (oi: (boffset_t * binit_t)) =
     let (offset, init) = oi in
     let args = [self#index_offset offset; self#index_init init] in
@@ -627,7 +627,7 @@ object (self)
     let (_, args) = offset_init_table#retrieve index in
     let a = a "offset_init" args in
     (self#get_offset (a 0), self#get_init (a 1))
-    
+
   method index_varinfo (vinfo: bvarinfo_t) =
     let vinit_ix = match vinfo.bvinit with
       | Some i -> self#index_init i
@@ -759,7 +759,7 @@ object (self)
       btname = t 0;
       bttype = self#get_typ (a 0)
     }
-    
+
   method write_xml_attributes
            ?(tag="iattrs") (node: xml_element_int) (attr: b_attributes_t) =
     node#setIntAttribute tag (self#index_attributes attr)
@@ -767,7 +767,7 @@ object (self)
   method read_xml_attributes
            ?(tag="iattrs") (node: xml_element_int): b_attributes_t =
     self#get_attributes (node#getIntAttribute tag)
-       
+
   method write_xml_exp ?(tag="iexp") (node:xml_element_int) (exp: bexp_t) =
     node#setIntAttribute tag (self#index_exp exp)
 
@@ -781,7 +781,7 @@ object (self)
   method read_xml_funarg_list
            ?(tag="ifunargs") (node: xml_element_int): bfunarg_t list =
     self#get_funargs (node#getIntAttribute tag)
-    
+
   method write_xml_lval ?(tag="ilval") (node:xml_element_int) (lval: blval_t) =
     node#setIntAttribute tag (self#index_lval lval)
 
@@ -862,7 +862,7 @@ object (self)
   method read_xml_location
            ?(tag="iloc") (node: xml_element_int): b_location_t =
     self#get_location (node#getIntAttribute tag)
-    
+
   method write_xml (node: xml_element_int) =
     let snode = xmlElement string_table#get_name in
     begin

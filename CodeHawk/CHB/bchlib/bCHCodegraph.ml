@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Arnaud Venet and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,7 +44,7 @@ open BCHLibTypes
 module LF = LanguageFactory
 
 class cmd_list_t (l: (code_int, cfg_int) command_t list):cmd_list_int =
-object (self: _)
+object
 
   val mutable cmds = l
 
@@ -50,7 +52,8 @@ object (self: _)
   method reverse_cmds = cmds <- List.rev cmds
 
   method toPretty = pretty_print_list cmds (command_to_pretty 0) "{" ":" "}"
-end 
+end
+
 
 class code_graph_t:code_graph_int =
 object (self)
@@ -73,7 +76,7 @@ object (self)
   method add_edge (src:symbol_t) (tgt:symbol_t) =
     begin
       self#probe src ;
-      self#probe tgt ; 
+      self#probe tgt ;
       (self#get_out_edges src)#add tgt ;
       (self#get_in_edges tgt)#add src
     end
@@ -128,7 +131,7 @@ object (self)
     match (in_n#get tgt, out_n#get src) with
 	(Some i, Some o) -> begin i#remove src ; o#remove tgt end
       | _ -> ()
-	
+
   method to_cfg (entry:symbol_t) (exit:symbol_t):cfg_int =
     let states = new SymbolCollections.table_t in
     let _ = nodes#iter
@@ -144,14 +147,14 @@ object (self)
 	  (Some entryState, Some exitState) -> (entryState, exitState)
 	| _ ->
 	  begin
-	    ch_error_log#add "invalid argument" 
+	    ch_error_log#add "invalid argument"
 	      (LBLOCK [ STR "code_graph#to_cfg lacks an entry or exit node" ]) ;
 	    raise (Invalid_argument "code_graph#to_cfg")
 	  end in
     let cfg = LF.mkCFG entryState exitState in
     let _ = states#iter (fun _ s -> cfg#addState s) in
     cfg
-      
+
 end
 
 let make_code_graph () = new code_graph_t

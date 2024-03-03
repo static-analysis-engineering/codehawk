@@ -50,8 +50,8 @@ val signed_immediate_from_int: ?size:int -> int -> immediate_result
 
 
 (** [imm0] is a signed immediate with size 4 bytes and value 0.*)
-val imm0 : immediate_int
+val imm0: immediate_int
 
 
 (** [imm1] is a signed immediate with size 4 bytes and value 1.*)
-val imm1 : immediate_int
+val imm1: immediate_int

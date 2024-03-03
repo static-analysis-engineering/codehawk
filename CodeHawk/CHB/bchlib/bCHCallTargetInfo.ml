@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,14 +36,9 @@ open CHXmlDocument
 (* bchlib *)
 open BCHFtsParameter
 open BCHBasicTypes
-open BCHBCTypes
 open BCHBCTypeUtil
 open BCHBTerm
 open BCHCallTarget
-open BCHDoubleword
-open BCHFunctionInterface
-open BCHFunctionSemantics
-open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
 open BCHInterfaceDictionary
 open BCHLibTypes
@@ -235,7 +230,7 @@ object (self)
     match tgt with
     | WrappedTarget (_, _, tt, _) ->
        (match tt with
-        | StubTarget fs | StaticStubTarget (_, fs) -> true
+        | StubTarget _ | StaticStubTarget (_, _) -> true
         | _ -> false)
     | _ -> false
 

@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma and Andrew McGraw
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,19 +27,14 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-
 (* bchlib *)
 open BCHLibTypes
 
+
 val exports_metrics_handler: exports_metrics_t metrics_handler_int
-  
+
 val disassembly_metrics_handler: disassembly_metrics_t metrics_handler_int
-  
+
 val memacc_metrics_handler: memacc_metrics_t metrics_handler_int
 
 val mk_prec_metrics_handler:
@@ -72,4 +67,3 @@ val userdata_metrics_handler: userdata_metrics_t metrics_handler_int
 val ida_data_handler: ida_data_t metrics_handler_int
 
 val file_results_handler: file_results_t metrics_handler_int
-

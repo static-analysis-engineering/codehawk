@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -46,6 +46,8 @@ val e24: int
 val e25: int
 val e31: int
 val e32: int
+val ffff: int
+val ffff_ffff: int
 
 val nume32: numerical_t
 
@@ -110,7 +112,7 @@ val string_to_doubleword: string -> doubleword_result
 (**[numerical_to_doubleword num] converts num to a doubleword.
 
    [num] must be less than [2^32] and greater than or equal [-2^31].
-   Negative numbers are represented by their two's complement 
+   Negative numbers are represented by their two's complement
    representation. If [num] is outside this range, [Error] is
    returned.*)
 val numerical_to_doubleword: numerical_t -> doubleword_result
@@ -120,7 +122,7 @@ val numerical_to_doubleword: numerical_t -> doubleword_result
     representation via a doubleword representation.
 
     [num] must be less than [2^32] and greater than or equal [-2^31].
-    Negative numbers are represented by their two's complement 
+    Negative numbers are represented by their two's complement
     representation. If [num] is out-of-range [Error] is returned.*)
 val numerical_to_hex_string: numerical_t -> string traceresult
 

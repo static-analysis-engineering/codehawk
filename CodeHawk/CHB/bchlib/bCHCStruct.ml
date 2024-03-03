@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,11 +41,8 @@ open BCHBasicTypes
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeXml
-open BCHDoubleword
 open BCHLibTypes
 open BCHPreFileIO
-open BCHTypeDefinitions
-open BCHXmlUtil
 
 module H = Hashtbl
 
@@ -167,24 +164,7 @@ let get_pointedto_struct (ty:btype_t) =
 	       btype_to_pretty ty]))
 
 
-let get_struct (ty:btype_t) =
-  match ty with
-  | TNamed (name,_) -> get_c_struct name
-  | _ ->
-     raise
-       (BCH_failure
-	  (LBLOCK [
-               STR "Type is not a known struct: "; btype_to_pretty ty]))
-
-
 let is_ptrto_known_struct (ty:btype_t) =
   match ty with
   | TPtr (TNamed (name,_),_) -> H.mem cstructs name
   | _ -> false
-
-
-let is_known_struct (ty:btype_t) =
-  match ty with
-  | TNamed (name,_) -> H.mem cstructs name
-  | _ -> false
-

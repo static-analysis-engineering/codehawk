@@ -39,6 +39,7 @@ open CHLogger
 open CHPrettyUtil
 open CHTraceResult
 open CHXmlDocument
+open CHXmlReader
 
 (* xprlib *)
 open Xprt
@@ -75,7 +76,6 @@ open BCHSystemInfo
 open BCHUtilities
 open BCHVariable
 open BCHVariableNames
-open BCHXmlUtil
 open BCHXPODictionary
 
 module H = Hashtbl
@@ -1927,8 +1927,8 @@ object (self)
 	chlog#add "user function summary" (LBLOCK [self#get_address#toPretty])
       end
     with
-    | XmlDocumentError (line,col,p)
-    | XmlReaderError (line,col,p) ->
+    | XmlDocumentError (line, col, p)
+    | XmlReaderError (line, col, p) ->
        let msg =
          LBLOCK [STR "function summary "; self#get_address#toPretty; p] in
 	raise (XmlReaderError (line, col, msg))

@@ -78,7 +78,6 @@ open BCHSystemData
 open BCHSystemSettings
 open BCHTypeDefinitions
 open BCHUtilities
-open BCHXmlUtil
 
 module H = Hashtbl
 module TR = CHTraceResult

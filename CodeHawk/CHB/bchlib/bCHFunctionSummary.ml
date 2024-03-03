@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,40 +28,23 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
-open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHXmlDocument
-
-(* xprlib *)
-open Xprt
-open XprToPretty
 open CHPrettyUtil
+open CHXmlDocument
+open CHXmlReader
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
-open BCHBTerm
-open BCHCallTarget
 open BCHCPURegisters
-open BCHDemangler
-open BCHDoubleword
 open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionSemantics
 open BCHLibTypes
-open BCHPostcondition
-open BCHPrecondition
-open BCHSideeffect
-open BCHSystemSettings
-open BCHTypeDefinitions
-open BCHUtilities
-open BCHXmlUtil
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -76,61 +59,6 @@ let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   begin
     ch_error_log#add "xml parse error" error_msg;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
-
-
-let b3join b1 b2 =
-  match (b1,b2) with
-  | (Yes,_) -> Yes
-  | (No,Yes) -> Yes
-  | (No,Maybe) -> Maybe
-  | (No,No) -> No
-  | (Maybe,Yes) -> Yes
-  | (Maybe,_) -> Maybe
-
-
-let read_xml_bool3 (s:string) =
-  match s with
-  | "yes" | "true" -> Yes
-  | "no" | "false" -> No
-  | _ -> Maybe
-
-
-let bool3_to_string (b:bool3) =
-  match b with
-  | Yes -> "yes"
-  | No -> "no"
-  | Maybe -> "maybe"
-
-
-let make_xml_par_sideeffect (se: xxpredicate_t) (par: fts_parameter_t) =
-  let is_par t = match t with
-    | ArgValue a -> (fts_parameter_compare a par) = 0 | _ -> false in
-  let btype_tgt_compare ty party = match party with
-    | TPtr (t,_) -> (btype_compare ty t) = 0
-    | _ -> false in
-  let is_tsize t =
-    match t with
-    | ArgSizeOf bty -> btype_tgt_compare bty par.apar_type
-    | _ -> false in
-  match se with
-  | XXBlockWrite (_, t, size) when is_par t && is_tsize size ->
-     Some (xmlElement "block-write")
-  | XXModified t when is_par t -> Some (xmlElement "modifies")
-  | XXInvalidated t when is_par t -> Some (xmlElement "invalidates")
-  | _ -> None
-
-
-let write_xml_function_documentation
-      (node:xml_element_int) (doc:function_documentation_t) =
-  let append = node#appendChildren in
-  let write_xml_text (tag: string) (s: string) =
-    if s = "" then () else append [xml_string tag s] in
-  begin
-    write_xml_text "desc" doc.fdoc_desc;
-    write_xml_text "remarks" doc.fdoc_remarks;
-    write_xml_text "caution" doc.fdoc_caution;
-    append [doc.fdoc_xapidoc]
   end
 
 

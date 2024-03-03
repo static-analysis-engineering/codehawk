@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2020 Henny B. Sipma
-   Copyright (c) 2021 Aarno Labs LLC
+
+   Copyright (c) 2020       Henny B. Sipma
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,9 +25,6 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-
-(* chutil *)
-open CHXmlDocument
 
 (* bchlib *)
 open BCHLibTypes
@@ -47,7 +44,7 @@ val mk_jni_target: int -> call_target_info_int
 
 val mk_virtual_target: function_interface_t -> call_target_info_int
 
-val mk_inlined_app_target: doubleword_int -> string -> call_target_info_int  
+val mk_inlined_app_target: doubleword_int -> string -> call_target_info_int
 
 val mk_static_dll_stub_target:
   doubleword_int -> string -> string -> call_target_info_int
@@ -66,5 +63,3 @@ val mk_call_target_info: call_target_t -> call_target_info_int
 
 val update_target_interface:
   call_target_info_int -> function_interface_t -> call_target_info_int
-
-

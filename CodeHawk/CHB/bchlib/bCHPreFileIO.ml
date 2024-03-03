@@ -51,7 +51,6 @@ open BCHLocationVarInvariant
 open BCHSystemData
 open BCHSystemSettings
 open BCHTypeConstraintDictionary
-open BCHXmlUtil
 open BCHUtilities
 open BCHVersion
 
