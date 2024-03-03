@@ -37,6 +37,7 @@ open CHPretty
 open CHLogger
 open CHPrettyUtil
 open CHTraceResult
+open CHUtil
 open CHXmlDocument
 
 (* xprlib *)
@@ -54,7 +55,6 @@ open BCHLibTypes
 open BCHLocation
 open BCHMemoryReference
 open BCHVarDictionary
-open BCHXmlUtil
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -63,24 +63,6 @@ module TR = CHTraceResult
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
-
-
-let raise_var_type_error (v: assembly_variable_int) (msg: pretty_t) =
-  let errormsg =
-    LBLOCK [STR "Expected: "; msg; STR "; Found: "; v#toPretty] in
-  begin
-    ch_error_log#add "var type error" errormsg;
-    raise (BCH_failure errormsg)
-  end
-
-
-let raise_memref_type_error (r: memory_reference_int) (msg: pretty_t) =
-  let errormsg =
-    LBLOCK [STR "Expected: "; msg; STR "; Found: "; r#toPretty] in
-  begin
-    ch_error_log#add "memref type error" errormsg;
-    raise (BCH_failure errormsg)
-  end
 
 
 class assembly_variable_t
@@ -127,6 +109,8 @@ object (self:'a)
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
         | SyscallErrorReturnValue address -> "errval_" ^ address
+        | AugmentationValue (v, _addr, _desc, suffix, _) ->
+           v#getName#getBaseName ^ "_" ^ suffix
         | SSARegisterValue (r, addr, optname, _ty) ->
            (match optname with
             | Some name -> name
@@ -347,19 +331,19 @@ object (self:'a)
 
   method get_initial_register_value_register =
     match denotation with
-    | AuxiliaryVariable (InitialRegisterValue (CPURegister r as reg, 0)) ->
+    | AuxiliaryVariable (InitialRegisterValue (CPURegister _ as reg, 0)) ->
        Ok reg
-    | AuxiliaryVariable (InitialRegisterValue (MIPSRegister r as reg, 0)) ->
+    | AuxiliaryVariable (InitialRegisterValue (MIPSRegister _ as reg, 0)) ->
        Ok reg
-    | AuxiliaryVariable (InitialRegisterValue (MIPSSpecialRegister r as reg, 0)) ->
+    | AuxiliaryVariable (InitialRegisterValue (MIPSSpecialRegister _ as reg, 0)) ->
        Ok reg
-    | AuxiliaryVariable (InitialRegisterValue (ARMRegister r as reg, 0)) ->
+    | AuxiliaryVariable (InitialRegisterValue (ARMRegister _ as reg, 0)) ->
        Ok reg
-    | AuxiliaryVariable (InitialRegisterValue (ARMExtensionRegister r as reg, 0)) ->
+    | AuxiliaryVariable (InitialRegisterValue (ARMExtensionRegister _ as reg, 0)) ->
        Ok reg
-    | AuxiliaryVariable (InitialRegisterValue (PowerGPRegister i as reg, 0)) ->
+    | AuxiliaryVariable (InitialRegisterValue (PowerGPRegister _ as reg, 0)) ->
        Ok reg
-    | AuxiliaryVariable (InitialRegisterValue (PowerSPRegister r as reg, 0)) ->
+    | AuxiliaryVariable (InitialRegisterValue (PowerSPRegister _ as reg, 0)) ->
        Ok reg
     | _ ->
        Error ["get_initial_register_value_register: " ^ self#get_name]
@@ -830,7 +814,7 @@ object (self)
         | (MemoryVariable _, MemoryVariable _) ->
            self#compare_memory_vars var1 var2
 
-        | (RegisterVariable r1, RegisterVariable r2) ->
+        | (RegisterVariable _, RegisterVariable _) ->
            Stdlib.compare var1#index var2#index
 
         | (AuxiliaryVariable _, _) -> -1
