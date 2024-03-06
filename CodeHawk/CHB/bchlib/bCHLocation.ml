@@ -78,15 +78,22 @@ let context_compare (c1:context_t) (c2:context_t) =
   | (_, ConditionContext _) -> -1
   | (BlockContext b1, BlockContext b2) -> b1#compare b2
   | (BlockContext _, _) -> 1
-  |  (_, BlockContext _) -> -1
+  | (_, BlockContext _) -> -1
+  | (PathContext p1, PathContext p2) -> Stdlib.compare p1 p2
+  | (PathContext _, _) -> 1
+  | (_, PathContext _) -> -1
   | (FunctionContext f1, FunctionContext f2) -> fcontext_compare f1 f2
 
 
 let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
   let length = List.length in
-  if (length l1) < (length l2) then -1
-  else if (length l1) > (length l2) then 1
-  else List.fold_right2 (fun e1 e2 a -> if a = 0 then (f e1 e2) else a) l1 l2 0
+  if (length l1) < (length l2) then
+    -1
+  else if (length l1) > (length l2) then
+    1
+  else
+    List.fold_right2 (fun e1 e2 a ->
+        if a = 0 then (f e1 e2) else a) l1 l2 0
 
 
 let context_list_compare (lst1:context_t list) (lst2:context_t list) =
@@ -176,12 +183,12 @@ let decompose_ctxt_string
 
 let has_false_condition_context (ctxt_iaddr: ctxt_iaddress_t): bool =
   let components = nsplit '_' ctxt_iaddr in
-  (List.hd components) = "F@"
+  List.exists (fun s -> s = "F@") components
 
 
 let has_true_condition_context (ctxt_iaddr: ctxt_iaddress_t): bool =
   let components = nsplit '_' ctxt_iaddr in
-  (List.hd components) = "T@"
+  List.exists (fun s -> s = "T@") components
 
 
 let is_iaddress (s:ctxt_iaddress_t) =
@@ -234,6 +241,8 @@ object (self:'a)
                        "F:" ^ h.ctxt_callsite#to_hex_string
                     | BlockContext js ->
                        "B:" ^ js#to_hex_string
+                    | PathContext js ->
+                       "P:" ^ js
                     | ConditionContext true -> "T@"
                     | ConditionContext false -> "F@") ctxt) in
        begin
@@ -247,6 +256,7 @@ object (self:'a)
       | [] -> loc.loc_faddr
       | (FunctionContext h)::_ -> h.ctxt_faddr   (* first ctxt element is the outer context *)
       | (BlockContext _)::tc -> aux tc
+      | (PathContext _)::tc -> aux tc
       | (ConditionContext _)::tc -> aux tc in
     aux ctxt
 
