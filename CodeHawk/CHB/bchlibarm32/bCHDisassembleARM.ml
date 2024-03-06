@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2021-2023  Aarno Labs, LLC
+
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -80,6 +80,10 @@ open BCHDisassembleThumbInstruction
 
 module H = Hashtbl
 module TR = CHTraceResult
+
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("disassemble-arm:" ^ tag) msg
 
 
 module DoublewordCollections = CHCollections.Make (
@@ -517,17 +521,30 @@ let set_block_boundaries () =
            (LBLOCK [STR "set_block_boundaries:set_block_entry: "; a#toPretty]))
         (get_arm_assembly_instruction a) in
     instr#set_block_entry in
-  let get_iftxf iaddr =   (* if then x follow *)
+
+  (* Return (follow-instr-addr, conditional-instructions-addresses) or None
+     if a next address cannot be found.*)
+  let get_iftxf (iaddr: doubleword_int) (ninstr: int):
+        (doubleword_int * doubleword_int list) option =
     let get_next_iaddr = get_next_valid_instruction_address in
-    match TR.to_option (get_next_iaddr iaddr) with
-    | None -> None
-    | Some va1 ->
-       (match TR.to_option (get_next_iaddr va1) with
+    let rec aux
+              (n: int)
+              (iva: doubleword_int)
+              (result: doubleword_int list option) =
+      if n = 0 then
+        result
+      else
+        match result with
         | None -> None
-        | Some va2 ->
-           (match TR.to_option (get_next_iaddr va2) with
+        | Some instrs ->
+           (match TR.to_option (get_next_iaddr iva) with
             | None -> None
-            | Some va3 -> Some (va1, va2, va3))) in
+            | Some va ->
+               aux (n - 1) va (Some (va :: instrs))) in
+    match (aux ninstr iaddr (Some [])) with
+    | Some l when (List.length l) = ninstr ->
+       Some (List.hd l, List.rev (List.tl l))
+    | _ -> None in
 
   let feps = functions_data#get_function_entry_points in
   let datablocks = system_info#get_data_blocks in
@@ -595,36 +612,72 @@ let set_block_boundaries () =
               va2: if   c ...
               va3: next instruction (fall-through)
             *)
-           | IfThen (c, xyz) when xyz = "T" ->
-              (match get_iftxf va with
-               | Some (va1, va2, va3) ->
-                  log_titer
-                    (mk_tracelog_spec
-                       ~tag:"set_block_boundaries"
-                       ("IfThen:" ^ va1#to_hex_string))
-                    (fun instr1 ->
-                      log_titer
-                        (mk_tracelog_spec
-                           ~tag:"set_block_boundaries"
-                           ("IfThen:" ^ va2#to_hex_string))
-                        (fun instr2 ->
-                          begin
-                            (if collect_diagnostics () then
-                               ch_diagnostics_log#add
-                                 "ITT block"
-                                 (LBLOCK [va1#toPretty; STR ", "; va3#toPretty]));
-                            set_block_entry va1;
-                            set_block_entry va3;
-                            instr#set_block_condition;
-                            instr1#set_condition_covered_by va;
-                            instr2#set_condition_covered_by va
-                          end)
-                        (get_arm_assembly_instruction va2))
-                    (get_arm_assembly_instruction va1)
+           | IfThen (c, xyz) when (xyz = "T") || (xyz = "TT") ->
+              let n_instrs = (String.length xyz) + 2 in
+              (match get_iftxf va n_instrs with
+               | Some (followva, conditional_vas)
+                    when (List.length conditional_vas) = (n_instrs - 1) ->
+                  let c_instrs =
+                    List.fold_left (fun optresult va ->
+                        match optresult with
+                        | None -> None
+                        | Some instrs ->
+                           log_tfold
+                             (log_error
+                                "set_block_boundaries:ifthen"
+                                "invalid instruction")
+                             ~ok:(fun instr -> Some (instr :: instrs))
+                             ~error:(fun _ -> None)
+                             (get_arm_assembly_instruction va))
+                      (Some []) conditional_vas in
+                  (match c_instrs with
+                   | Some instrs ->
+                      begin
+                        set_block_entry (List.hd conditional_vas);
+                        set_block_entry followva;
+                        instr#set_block_condition;
+                        List.iter (fun c_instr ->
+                            c_instr#set_condition_covered_by va) instrs;
+                        chlog#add
+                          "IfThen conditional block"
+                          (LBLOCK [
+                               va#toPretty;
+                               STR ": ";
+                               STR xyz;
+                               STR "; true block entry: ";
+                               (List.hd conditional_vas)#toPretty;
+                               STR "; false block entry: ";
+                               followva#toPretty])
+                      end
+                   | _ ->
+                      ch_error_log#add
+                        "set_block_boundaries:IfThen"
+                        (LBLOCK [
+                             va#toPretty; STR ": Error in getting instructions"]))
                | _ ->
                   ch_error_log#add
                     "set_block_boundaries:IfThen"
-                    (LBLOCK [STR "Instructions not found at "; va#toPretty]))
+                    (LBLOCK [
+                         va#toPretty;
+                         STR ": Error in getting instruction addresses"]))
+
+           | IfThen (c, xyz)
+                when (xyz = "")
+                     && (let nextva_r = get_next_valid_instruction_address va in
+                         match TR.to_option nextva_r with
+                         | Some nextva ->
+                            (log_tfold
+                               (log_error
+                                  "set_block_boundaries:ifthen"
+                                  "invalid instruction")
+                               ~ok:(fun instr ->
+                                 match instr#get_opcode with
+                                 | Pop (_, _, rl, _) -> rl#includes_pc
+                                 | _ -> false)
+                               ~error:(fun _ -> false)
+                               (get_arm_assembly_instruction nextva))
+                         | _ -> false) ->
+              instr#set_block_condition
 
            (* make a conditional return a separate block, so that it can be
               contextualized with a ConditionContext *)
@@ -842,7 +895,7 @@ let associate_condition_code_users () =
               ~tag:"associate_condition_code_users"
               ("set:" ^ loc#i#to_hex_string))
            (fun instr ->
-	     disassembly_log#add
+	     chlog#add
                "cc user without setter"
 	       (LBLOCK [loc#toPretty; STR ": " ; instr#toPretty]))
 	   (get_arm_assembly_instruction loc#i)
@@ -932,7 +985,8 @@ let construct_functions_arm ?(construct_all_functions=false) =
                     fndata#set_library_stub;
                     chlog#add
                       "ELF library stub"
-                      (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
+                      (LBLOCK [
+                           faddr#toPretty; STR ": "; STR fndata#get_function_name])
                   end
                 else
                   default ()
@@ -971,6 +1025,8 @@ let construct_functions_arm ?(construct_all_functions=false) =
         arm_assembly_functions#identify_dataref_datablocks;
         pr_timing [STR "dataref blocks identified"];
       end);
+
+    arm_assembly_functions#apply_path_contexts;
 
     record_call_targets_arm ();
     pr_timing [STR "call targets recorded"];

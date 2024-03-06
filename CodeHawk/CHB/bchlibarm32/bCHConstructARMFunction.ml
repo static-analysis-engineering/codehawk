@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -90,16 +90,29 @@ let get_successors
           []
           (get_next_valid_instruction_address va) in
 
-      let get_iftxf iaddr =   (* if then x follow *)
-        match TR.to_option (get_next_iaddr iaddr) with
-        | None -> None
-        | Some va1 ->
-           (match TR.to_option (get_next_iaddr va1) with
+      (* Return (follow-instr-addr, conditional-instructions-addresses) or None
+         if a next address cannot be found.*)
+      let get_iftxf (iaddr: doubleword_int) (ninstr: int):
+            (doubleword_int * doubleword_int list) option =
+        (* if then x follow *)
+        let rec aux
+                  (n: int)
+                  (iva: doubleword_int)
+                  (result: doubleword_int list option) =
+          if n = 0 then
+            result
+          else
+            match result with
             | None -> None
-            | Some va2 ->
-               (match TR.to_option (get_next_iaddr va2) with
+            | Some instrs ->
+               (match TR.to_option (get_next_iaddr iva) with
                 | None -> None
-                | Some va3 -> Some (va1, va2, va3))) in
+                | Some va ->
+                   aux (n - 1) va (Some (va :: instrs))) in
+        match (aux ninstr iaddr (Some [])) with
+        | Some l when (List.length l) = ninstr ->
+           Some (List.hd l, List.rev (List.tl l))
+        | _ -> None in
 
       let succ =
         match opcode with
@@ -170,17 +183,16 @@ let get_successors
            va2: if c ...
            va3: next instruction (fall-through)
          *)
-        | IfThen (_, xyz) when xyz = "T" ->
-           (match get_iftxf iaddr with
-            | Some (va1, _, va3) ->
-               [va3; va1]
-            | None ->
+        | IfThen (_, xyz) when (xyz = "T") || (xyz = "TT") ->
+           let n_instrs = (String.length xyz) + 2 in
+           (match get_iftxf iaddr n_instrs with
+            | Some (followva, conditional_vas) ->
+               [followva; (List.hd conditional_vas)]
+            | _->
                begin
                  ch_error_log#add
-                   "function construction:IfThen"
-                   (LBLOCK [
-                        STR "Dependent instructions not found at: ";
-                        iaddr#toPretty]);
+                   "construct_function: IfThen"
+                   (LBLOCK [iaddr#toPretty; STR ": Error with ITT, ITTT"]);
                  []
                end)
 
@@ -260,13 +272,12 @@ let get_successors
              else
                let loc = make_location_by_address faddr va in
                begin
-                 (if collect_diagnostics () then
-                    ch_diagnostics_log#add
-                      "disassembly"
-                      (LBLOCK [
-                           STR "Successor of ";
-                           loc#toPretty;
-                           STR " is not a valid code address"]));
+                 ch_error_log#add
+                   "disassembly"
+                   (LBLOCK [
+                        STR "Successor of ";
+                        loc#toPretty;
+                        STR " is not a valid code address"]);
                  false
                end) succ))
     []
@@ -345,15 +356,40 @@ let construct_arm_assembly_block
         ~callsite:va
         ~returnsite:returnsite
         ~calltgt:inlinedfn#get_address in
-    let inlinedblocks =
+
+    let handle_fn_with_inlined_return (tcr: arm_assembly_block_int) =
+      let inline_exit = (make_location_by_address faddr returnsite)#ci in
       List.map (fun (b: arm_assembly_block_int) ->
-          let succ =
-            match b#get_successors with
-            | [] -> [(make_location_by_address faddr returnsite)#ci]
-            | l ->
-               List.map (fun s ->
-                   add_ctxt_to_ctxt_string faddr s functioncontext) l in
-          make_ctxt_arm_assembly_block functioncontext b succ) inlinedfn#get_blocks in
+          if b#get_context_string = tcr#get_context_string then
+            make_ctxt_arm_assembly_block functioncontext b [inline_exit]
+          else
+            let succ =
+              match b#get_successors with
+              | [] -> [inline_exit]
+              | l ->
+                 List.map (fun s ->
+                     add_ctxt_to_ctxt_string faddr s functioncontext) l in
+            (make_ctxt_arm_assembly_block functioncontext b succ))
+        inlinedfn#get_blocks in
+
+    let inlinedblocks =
+      match inlinedfn#get_true_conditional_return with
+        | Some tcr -> handle_fn_with_inlined_return tcr
+        | _ ->
+           List.map (fun (b: arm_assembly_block_int) ->
+               let _ =
+                 chlog#add
+                   "inline blocks"
+                   (LBLOCK [STR b#get_context_string]) in
+               let succ =
+                 match b#get_successors with
+                 | [] -> [(make_location_by_address faddr returnsite)#ci]
+                 | l ->
+                    List.map (fun s ->
+                        add_ctxt_to_ctxt_string faddr s functioncontext) l in
+               make_ctxt_arm_assembly_block functioncontext b succ)
+             inlinedfn#get_blocks in
+
     (callsucc#ci, inlinedblocks) in
 
   let rec find_last_instruction (va: doubleword_int) (prev: doubleword_int) =

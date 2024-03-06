@@ -180,6 +180,17 @@ let make_ctxt_arm_assembly_block
     newsucc
 
 
+let make_block_ctxt_arm_assembly_block
+      (newctxt: context_t)
+      (b: arm_assembly_block_int) =
+  make_arm_assembly_block
+    ~ctxt:(newctxt :: b#get_context)
+    b#get_faddr
+    b#get_first_address
+    b#get_last_address
+    b#get_successors
+
+
 let update_arm_assembly_block_successors
       (b: arm_assembly_block_int)
       (s_old: ctxt_iaddress_t)

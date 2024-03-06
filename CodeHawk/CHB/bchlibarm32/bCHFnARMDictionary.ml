@@ -574,16 +574,20 @@ object (self)
          let csetter = floc#f#get_associated_cc_setter floc#cia in
          let tcond = rewrite_test_expr csetter txpr in
          let fcond = rewrite_test_expr csetter fxpr in
-         let instr =
-           fail_tvalue
-             (trerror_record
-                (LBLOCK [STR "Internal error in FnARMDictionary:Branch"]))
-             (get_arm_assembly_instruction
-                (fail_tvalue
-                   (trerror_record
-                      (LBLOCK [STR "FnARMDictionary:Branch: "; STR csetter]))
-                   (string_to_doubleword csetter))) in
-         let bytestr = instr#get_bytes_ashexstring in
+         let bytestr =
+           try
+             let instr =
+               fail_tvalue
+                 (trerror_record
+                    (LBLOCK [STR "Internal error in FnARMDictionary:Branch"]))
+                 (get_arm_assembly_instruction
+                    (fail_tvalue
+                       (trerror_record
+                          (LBLOCK [STR "FnARMDictionary:Branch: "; STR csetter]))
+                       (string_to_doubleword csetter))) in
+             instr#get_bytes_ashexstring
+           with
+           | _ -> "0x0" in
          let rdefs = (get_all_rdefs txpr) @ (get_all_rdefs tcond) in
          let (tagstring, args) =
            mk_instrx_data

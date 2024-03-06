@@ -1787,6 +1787,8 @@ class type arm_assembly_function_int =
     method get_instruction_count: int
     method get_block_count: int
     method get_not_valid_instr_count: int
+    method get_true_conditional_return: arm_assembly_block_int option
+    method get_false_conditional_return: arm_assembly_block_int option
 
     (* iterators *)
     method iter: (arm_assembly_block_int -> unit) -> unit
@@ -1819,6 +1821,8 @@ class type arm_assembly_functions_int =
     method add_function: arm_assembly_function_int -> unit
     method add_functions_by_preamble: doubleword_int list
     method remove_function: doubleword_int -> unit
+    method inline_blocks: unit
+    method apply_path_contexts: unit
 
     method set_datablocks: unit
     method identify_datablocks: unit

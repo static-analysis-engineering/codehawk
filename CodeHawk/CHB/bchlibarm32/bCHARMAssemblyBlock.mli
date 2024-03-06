@@ -60,6 +60,12 @@ val make_ctxt_arm_assembly_block:
   -> arm_assembly_block_int
 
 
+val make_block_ctxt_arm_assembly_block:
+  context_t
+  -> arm_assembly_block_int
+  -> arm_assembly_block_int
+
+
 (** [update_arm_assembly_block_successors block s_old s_new] returns a new
     assembly basic block that is identical to [block] except that successor
     [s_old] is replaced by (possibly multiple) successors [s_new].*)
