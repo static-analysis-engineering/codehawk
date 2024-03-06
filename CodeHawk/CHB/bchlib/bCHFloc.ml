@@ -569,7 +569,7 @@ object (self)
       List.map (fun p ->
           let reg =
             fail_tvalue
-              (trerror_record (STR "get_call_arguments"))
+              (trerror_record (STR "get_call_arguments: get_regargs"))
               (get_register_parameter_register p) in
           let rvar = self#env#mk_register_variable reg in
           let xpr = self#inv#rewrite_expr (XVar rvar) in
@@ -581,11 +581,11 @@ object (self)
           let memref = self#f#env#mk_local_stack_reference in
           let p_offset =
             fail_tvalue
-              (trerror_record (STR "get_call_arguments"))
+              (trerror_record (STR "get_call_arguments: get_stackargs(p-offset)"))
               (get_stack_parameter_offset p) in
           let svar =
             log_tfold_default
-              (mk_tracelog_spec ("get_call_arguments"))
+              (mk_tracelog_spec ("get_call_arguments: get_stackargs(svar)"))
               (fun s_offset ->
                 self#f#env#mk_memory_variable
                   memref (s_offset#add (mkNumerical p_offset)))

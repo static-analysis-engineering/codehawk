@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -72,6 +72,7 @@ object (self)
   val mutable inlined_blocks = []
   val mutable functiontype = t_unknown
   val mutable callsites = 0
+  val mutable pathcontexts = []  (* (ctxt_iaddress_t, ctxt_iaddress_t list) list *)
 
   method set_function_type (ty: btype_t) = functiontype <- ty
 
@@ -92,6 +93,14 @@ object (self)
   method set_library_stub = library_stub <- true
 
   method add_callsite = callsites <- callsites + 1
+
+  method add_path_context (startaddr: string) (sentinels: string list) =
+    pathcontexts <- (startaddr, sentinels) :: pathcontexts
+
+  method get_path_contexts = pathcontexts
+
+  method has_path_contexts =
+    match pathcontexts with [] -> false | _ -> true
 
   method remove_callsite =
     if callsites > 0 then
