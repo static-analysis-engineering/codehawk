@@ -320,6 +320,7 @@ type fcontext_t = {
 type context_t =
   | FunctionContext of fcontext_t
   | BlockContext of doubleword_int
+  | PathContext of string
   | ConditionContext of bool  (* conditional instrs turned into blocks *)
 
 
@@ -1512,6 +1513,11 @@ class type function_data_int =
     method set_class_info: classname:string -> isstatic:bool -> unit
     method add_inlined_block: doubleword_int -> unit
 
+    (** [add_path_context startaddr sentinels] causes path contexts to
+        be created for all successors of the basic block at [startaddr],
+        potentially ended by one of the basic block addresses in [sentinels]. *)
+    method add_path_context: string -> string list -> unit
+
     (** Increments the number of call sites associated with this function. *)
     method add_callsite: unit
 
@@ -1524,12 +1530,14 @@ class type function_data_int =
     method get_function_name: string  (* demangled or combination of all names *)
     method get_inlined_blocks: doubleword_int list
     method get_function_type: btype_t
+    method get_path_contexts: (string * string list) list
 
     (* predicates *)
     method has_function_type: bool
     method has_name: bool
     method has_class_info: bool
     method has_callsites: bool
+    method has_path_contexts: bool
     method is_non_returning: bool
     method is_incomplete: bool
     method is_ida_provided: bool
@@ -3506,6 +3514,20 @@ object
       value from the call at address [addr].*)
   method make_return_value: ctxt_iaddress_t -> assembly_variable_int
 
+  (** [make_augmented_value var iaddr desc suffix ty] returns a variable that
+      represents the value of [var] frozen at address [iaddr] with type [ty].
+      the name of the resulting variable is the name of [var] with suffix
+      _ followed by [suffix]. The intended use of [desc] is for information
+      only, with the restriction that [desc] should not contain any comma's
+      or spaces. *)
+  method make_augmented_value:
+           variable_t
+           -> ctxt_iaddress_t
+           -> string
+           -> string
+           -> btype_t
+           -> assembly_variable_int
+
   (** [make_ssa_register_value r addr ty] returns the variable representing
       the value assigned to register [r] at instruction address [addr] with
       type [ty] (which may be unknown, [t_unknown]).*)
@@ -4055,6 +4077,9 @@ class type function_environment_int =
     method mk_special_variable: string -> variable_t
     method mk_runtime_constant: string -> variable_t
     method mk_return_value: ctxt_iaddress_t -> variable_t
+
+    method mk_trampoline_entry_value: variable_t -> ctxt_iaddress_t -> variable_t
+
     method mk_ssa_register_value:
              ?name:string option
              -> register_t
