@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,6 +35,7 @@ open CHLogger
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHLibTypes
+open BCHLocation
 
 (* bchlibarm32 *)
 open BCHARMAssemblyBlock
@@ -157,6 +158,28 @@ object (self)
   method has_conditional_return =
     List.exists (fun b -> b#has_conditional_return_instr) blocks
 
+  method get_true_conditional_return =
+    try
+      let tc =
+        List.find (fun b ->
+            b#get_instruction_count = 1
+            && (has_true_condition_context b#get_context_string))
+          blocks in
+      Some tc
+    with
+    | _ -> None
+
+  method get_false_conditional_return =
+    try
+      let fc =
+        List.find (fun b ->
+            b#get_instruction_count = 1
+            && (has_false_condition_context b#get_context_string))
+          blocks in
+      Some fc
+    with
+    | _ -> None
+
   method toPretty =
     LBLOCK
       (List.map (fun b ->
@@ -178,7 +201,7 @@ end
    context. The one with true conditional context has no successor, the one
    with the false conditional context has the original successor. The
    semantics of the latter is equal to that of NOP. *)
-let inline_blocks (fn: arm_assembly_function_int) =
+let inline_conditional_blocks (fn: arm_assembly_function_int) =
   let blockreplacements = H.create (2 * fn#get_block_count) in
   let newblocks = H.create (2 * fn#get_block_count) in
   let faddr = fn#get_address in
@@ -186,8 +209,8 @@ let inline_blocks (fn: arm_assembly_function_int) =
     let newsucc =
       List.fold_left (fun acc s ->
           if H.mem blockreplacements s then
-            let (tb, fb) = H.find blockreplacements s in
-            acc @ [tb#get_context_string; fb#get_context_string]
+            let (fb, tb) = H.find blockreplacements s in
+            acc @ [fb#get_context_string; tb#get_context_string]
           else
             acc @ [s]) [] b#get_successors in
     make_arm_assembly_block
@@ -198,14 +221,14 @@ let inline_blocks (fn: arm_assembly_function_int) =
           if b#has_conditional_return_instr then
             let b1 =
               make_ctxt_arm_assembly_block
-                (ConditionContext true) b [] in
+                (ConditionContext false) b b#get_successors in
             let b2 =
               make_ctxt_arm_assembly_block
-                (ConditionContext false) b b#get_successors in
+                (ConditionContext true) b [] in
             H.add blockreplacements b#get_context_string (b1, b2));
       fn#iter (fun b ->
           if H.mem blockreplacements b#get_context_string then
-            let (tblock, fblock) = H.find blockreplacements b#get_context_string in
+            let (fblock, tblock) = H.find blockreplacements b#get_context_string in
             begin
               H.add newblocks tblock#get_context_string tblock;
               H.add newblocks fblock#get_context_string (update_successors fblock)
@@ -232,7 +255,116 @@ let make_arm_assembly_function
         Stdlib.compare b1#get_context_string b2#get_context_string) blocks in
   let fn = new arm_assembly_function_t va blocks successors in
   if fn#has_conditional_return then
-    let (newblocks, newsucc) = inline_blocks fn in
+    let (newblocks, newsucc) = inline_conditional_blocks fn in
     new arm_assembly_function_t va newblocks newsucc
   else
     fn
+
+
+let inline_blocks
+      (baddrs: doubleword_int list)
+      (f: arm_assembly_function_int) =
+  let newblocks = H.create f#get_block_count in  (* ctxt_iaddr -> assemblyblock *)
+  let faddr = f#get_address in
+  let is_to_be_inlined s = List.exists (fun b -> is_same_iaddress b s) baddrs in
+  let rec process_block (baddr:ctxt_iaddress_t) =
+    if H.mem newblocks baddr then
+      ()
+    else
+      let block = f#get_block baddr in
+      begin
+        H.add newblocks baddr block;
+        List.iter
+          (fun s ->
+            if is_to_be_inlined s then
+              let _ = chlog#add "to be inlined" (STR s) in
+              let succblock = f#get_block s in
+              let ctxt = BlockContext block#get_first_address in
+              let newctxtstr = add_ctxt_to_ctxt_string faddr s ctxt in
+              let _ =
+                if H.mem newblocks newctxtstr then
+                  ()
+                else
+                  let newblock =
+                    make_block_ctxt_arm_assembly_block ctxt succblock in
+                    H.add newblocks newctxtstr newblock in
+              let thisnewblock =
+                update_arm_assembly_block_successors block s [newctxtstr] in
+              H.replace newblocks baddr thisnewblock) block#get_successors;
+        List.iter process_block block#get_successors
+      end in
+  let _ = process_block faddr#to_hex_string in
+  let blocks = H.fold (fun _ v a -> v::a) newblocks [] in
+  let succ =
+    H.fold (fun k v a ->
+        (List.map (fun s -> (k, s)) v#get_successors) @ a) newblocks [] in
+  (blocks, succ)
+
+
+let inline_blocks_arm_assembly_function
+      (baddrs: doubleword_int list)
+      (f: arm_assembly_function_int) =
+  let (blocks, successors) = inline_blocks baddrs f in
+  new arm_assembly_function_t f#get_address blocks successors
+
+
+let create_path_contexts
+      (s: ctxt_iaddress_t)
+      (sentinels: ctxt_iaddress_t list)
+      (f: arm_assembly_function_int) =
+  let faddr = f#get_address in
+  let newblocks = H.create f#get_block_count in
+
+  let rec create_path (p: string) (s: ctxt_iaddress_t) =
+    let pblock = f#get_block s in
+    let ctxt = PathContext p in
+    let pctxtaddr = add_ctxt_to_ctxt_string faddr s ctxt in
+    if H.mem newblocks pctxtaddr then
+      pctxtaddr
+    else
+      (* add first to avoid infinite recursion for loop *)
+      let _ = H.add newblocks pctxtaddr pblock in
+      let psucc = pblock#get_successors in
+      let new_succ = List.map (create_path p) psucc in
+      let newblock = make_ctxt_arm_assembly_block ctxt pblock new_succ in
+      begin
+        H.replace newblocks pctxtaddr newblock;
+        pctxtaddr
+      end in
+
+  let rec process_block (baddr: ctxt_iaddress_t) =
+    if H.mem newblocks baddr then
+      ()
+    else
+      let block = f#get_block baddr in
+      let succs = block#get_successors in
+      let new_succs = ref [] in
+      if baddr = s then
+        begin
+          let cntr = ref 1 in
+          List.iter (fun succ ->
+              let new_succ =
+                create_path ("path_" ^ (string_of_int !cntr)) succ in
+              cntr := !cntr + 1;
+              new_succs := new_succ :: !new_succs) succs;
+          let newblock =
+            make_arm_assembly_block
+              ~ctxt:block#get_context
+              block#get_faddr
+              block#get_first_address
+              block#get_last_address
+              (List.rev !new_succs) in
+          H.add newblocks baddr newblock
+        end
+      else
+        begin
+          H.add newblocks baddr block;
+          List.iter process_block succs
+        end in
+
+  let _ = process_block faddr#to_hex_string in
+  let blocks = H.fold (fun _ v a -> v::a) newblocks [] in
+  let succ =
+    H.fold (fun k v a ->
+        (List.map (fun s -> (k, s)) v#get_successors) @ a) newblocks [] in
+  new arm_assembly_function_t faddr blocks succ

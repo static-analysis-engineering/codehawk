@@ -52,6 +52,7 @@ open BCHUtilities
 open BCHELFHeader
 
 (* bchlibarm32 *)
+open BCHARMAssemblyFunction
 open BCHARMAssemblyInstructions
 open BCHARMTypes
 
@@ -221,6 +222,34 @@ object (self)
 
   method remove_function (faddr: doubleword_int) =
     H.remove functions faddr#index
+
+  method inline_blocks =
+    self#iter (fun f ->
+        let fdata = functions_data#get_function f#get_address in
+        if fdata#has_inlined_blocks then
+          begin
+            H.replace
+              functions
+              f#get_address#index
+              (inline_blocks_arm_assembly_function fdata#get_inlined_blocks f);
+            chlog#add
+              "arm assembly function:inline blocks" f#get_address#toPretty
+          end)
+
+  method apply_path_contexts =
+    self#iter (fun f ->
+        let fdata = functions_data#get_function f#get_address in
+        if fdata#has_path_contexts then
+          List.iter (fun (startaddr, sentinels) ->
+              begin
+                H.replace
+                  functions
+                  f#get_address#index
+                  (create_path_contexts startaddr sentinels f);
+                chlog#add
+                  "arm assembly function: create path contexts"
+                  f#get_address#toPretty
+              end) fdata#get_path_contexts)
 
   method get_functions = H.fold (fun _ v a -> v :: a) functions []
 
