@@ -278,6 +278,7 @@ object (self:'a)
 	| InitialRegisterValue _
 	  | InitialMemoryValue _
 	  | FunctionReturnValue _
+          | AugmentationValue _
 	  | CallTargetValue _
 	  | SideEffectValue _
 	  | FieldValue _
@@ -590,6 +591,15 @@ object (self)
 
   method make_return_value (iaddr:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FunctionReturnValue iaddr))
+
+  method make_augmented_value
+           (var: variable_t)
+           (iaddr: ctxt_iaddress_t)
+           (desc: string)
+           (suffix: string)
+           (ty: btype_t): assembly_variable_int =
+    self#mk_variable
+      (AuxiliaryVariable (AugmentationValue (var, iaddr, desc, suffix, ty)))
 
   method make_ssa_register_value
            ?(name: string option=None)

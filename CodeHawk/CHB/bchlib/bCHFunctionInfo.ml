@@ -980,6 +980,10 @@ object (self)
   method mk_return_value (address:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_return_value address)
 
+  method mk_trampoline_entry_value (v: variable_t) (iaddr: ctxt_iaddress_t) =
+    self#mk_variable
+      (varmgr#make_augmented_value v iaddr "trampoline_entry" "t_in" t_unknown)
+
   method mk_ssa_register_value
            ?(name: string option=None)
            (r: register_t)
