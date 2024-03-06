@@ -681,6 +681,16 @@ let translate_arm_instruction
      ((blocklabel, [transaction]) :: nodes, edges, [])
 
   | Branch (_, op, _)
+       when op#is_absolute_address
+            && (system_info#is_trampoline_wrapper op#get_absolute_address) ->
+     let freezecmds =
+       List.map (fun r ->
+           let v = floc#f#env#mk_arm_register_variable r in
+           let trvar = floc#f#env#mk_trampoline_entry_value v floc#cia in
+           ASSERT (EQ (v, trvar))) arm_regular_registers in
+     default freezecmds
+
+  | Branch (_, op, _)
     | BranchExchange (ACCAlways, op) when op#is_absolute_address ->
      default []
 
@@ -1299,11 +1309,6 @@ let translate_arm_instruction
            (trerror_record
               (LBLOCK [STR "Internal error in make_instr_local_tests"]))
            (get_arm_assembly_instruction testaddr) in
-       let _ =
-         if collect_diagnostics () then
-           ch_diagnostics_log#add
-             "IT block with condition"
-             (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
        let (nodes, edges) =
          make_condition
            ~condinstr:instr
@@ -1315,11 +1320,6 @@ let translate_arm_instruction
            ~elseaddr in
        ((blocklabel, [transaction]) :: nodes, edges, [])
      else
-       let _ =
-         if collect_diagnostics () then
-           ch_diagnostics_log#add
-             "IT block without condition"
-             (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
        let thenlabel = make_code_label thenaddr in
        let elselabel = make_code_label elseaddr in
        let nodes = [(blocklabel, [transaction])] in
