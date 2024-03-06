@@ -35,12 +35,10 @@ open CHUtils
 (* chutil *)
 open CHFileIO
 open CHLogger
-open CHPrettyUtil
 
 (* bchlib *)
 open BCHBasicTypes
 open BCHConstantDefinitions
-open BCHFunctionSummary
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHSystemInfo

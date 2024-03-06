@@ -169,7 +169,7 @@ let extract_external_value_equalities
 	else
 	  List.map (fun f -> (k#getCoefficient f, f#getVariable)) factors in
       let constant = if invert_factors then constant else constant#neg in
-      Some (make_scalar_exp factors constant )
+      Some (make_scalar_exp factors constant)
     with
     | BCH_failure p ->
       begin
