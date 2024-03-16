@@ -3,8 +3,10 @@
    Author: Henny Sipma and Andrew McGraw
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -63,26 +65,30 @@ module H = Hashtbl
  * algorithms, databases, crypto, collections, etc.                           *
  * -------------------------------------------------------------------------- *)
 
-let returnvalue_is_popped (mInfo:method_info_int) (pc:int) = false   (* TBD *)                                                           
+let returnvalue_is_popped (_mInfo:method_info_int) (_pc:int) = false   (* TBD *)
+
+
 let can_translate_to_chif (mInfo:method_info_int) =
   let arraystorecount =
     let n = ref 0 in
-    let _ = mInfo#get_bytecode#get_code#iteri (fun _ opc ->
-	        match opc with OpArrayStore _ -> n := !n + 1 | _ -> ()) in !n in
+    let _ =
+      mInfo#get_bytecode#get_code#iteri (fun _ opc ->
+	  match opc with OpArrayStore _ -> n := !n + 1 | _ -> ()) in !n in
   let instrcount = mInfo#get_instruction_count in
   not (instrcount > 4000 && arraystorecount > 1000)
-  
+
+
 let write_xml_method_expr_features
       (node:xml_element_int)
       (d:feature_dictionary_int)
-      (cInfo:class_info_int)
+      (_cInfo:class_info_int)
       (mInfo:method_info_int) =
   let add (pc:int) (fxfeature:fxfeature_t) =
     let fnode = xmlElement "fx" in
     begin
-      d#write_xml_fxfeature fnode fxfeature ;
-      fnode#setIntAttribute "pc" pc ;
-      node#appendChildren [ fnode ]
+      d#write_xml_fxfeature fnode fxfeature;
+      fnode#setIntAttribute "pc" pc;
+      node#appendChildren [fnode]
     end in
   if mInfo#has_bytecode && (can_translate_to_chif mInfo) then
     let _ = chif_system#create_method_stack_layout mInfo in
@@ -90,26 +96,37 @@ let write_xml_method_expr_features
       mInfo#get_bytecode#get_code#iteri
         (fun pc opc ->
           match opc with    (* --- collect assignments --- *)
-          | OpStore _ | OpPutStatic _ | OpIInc _ | OpArrayStore _ | OpPutField _ ->
+          | OpStore _
+            | OpPutStatic _
+            | OpIInc _
+            | OpArrayStore _
+            | OpPutField _ ->
              (try
                 add pc (get_assignment_expr mInfo pc)
               with
               | JCH_failure p ->
                  system_settings#log_error
-                   (LBLOCK  [ mInfo#get_class_method_signature#toPretty ;
-                              STR " at pc = " ; INT pc ; STR ": " ;
-                              opcode_to_pretty opc ; STR ": " ; p ]))
+                   (LBLOCK  [
+                        mInfo#get_class_method_signature#toPretty;
+                        STR " at pc = ";
+                        INT pc;
+                        STR ": ";
+                        opcode_to_pretty opc;
+                        STR ": ";
+                        p]))
           (* --- collect calls --- *)
           | OpInvokeVirtual (_,ms)
             | OpInvokeSpecial (_,ms)
             | OpInvokeStatic (_,ms)
             | OpInvokeInterface (_,ms)
-               when not ms#has_return_value || (returnvalue_is_popped mInfo pc) ->
+               when not ms#has_return_value ||
+                      (returnvalue_is_popped mInfo pc) ->
              add pc (get_procedurecall mInfo pc)
           (* --- collect exceptions raised --- *)
           | OpThrow -> add pc (get_throwable mInfo pc)
           (* --- collect return expressions --- *)
-          | OpReturn t when (not (t = Void)) -> add pc (get_returnexpr mInfo pc)
+          | OpReturn t when (not (t = Void)) ->
+             add pc (get_returnexpr mInfo pc)
           | OpReturn Void -> add pc (FXReturn None)
           | _ ->
              (* --- collect branch conditions --- *)
@@ -119,8 +136,10 @@ let write_xml_method_expr_features
                ())
     with
     | JCH_failure p ->
-       raise (JCH_failure (LBLOCK [ mInfo#get_class_method_signature#toPretty ;
-                                    STR ": " ; p ]))
+       raise
+         (JCH_failure
+            (LBLOCK [
+                 mInfo#get_class_method_signature#toPretty; STR ": "; p]))
 
 
 let write_xml_method_cfg (node:xml_element_int) (mInfo:method_info_int) =
@@ -131,8 +150,8 @@ let write_xml_method_cfg (node:xml_element_int) (mInfo:method_info_int) =
     let bbNode = xmlElement "blocks" in
     let eeNode = xmlElement "edges" in
     let setp node i1 i2 =
-      node#setAttribute "p" (String.concat "," [ string_of_int i1 ;
-                                                 string_of_int i2 ]) in
+      node#setAttribute
+        "p" (String.concat "," [string_of_int i1; string_of_int i2]) in
     begin
       bbNode#appendChildren
         (List.map (fun b ->
@@ -147,22 +166,23 @@ let write_xml_method_cfg (node:xml_element_int) (mInfo:method_info_int) =
                       (List.map (fun l ->
                            let lNode = xmlElement "lvl" in
                            begin
-                             lNode#setIntAttribute "pc" l#getSeqNumber ;
+                             lNode#setIntAttribute "pc" l#getSeqNumber;
                              lNode
-                           end) levels) ;
-                    bNode#appendChildren [ llNode ]
-                  end) ;
-               setp bNode b#get_firstpc b#get_lastpc ;
+                           end) levels);
+                    bNode#appendChildren [llNode]
+                  end);
+               setp bNode b#get_firstpc b#get_lastpc;
                bNode
-             end) blocks) ;
+             end) blocks);
       eeNode#appendChildren
         (List.map (fun (src,tgt) ->
              let eNode = xmlElement "e" in
-             begin setp eNode src tgt ; eNode end) succ) ;
-      cfgnode#appendChildren [ bbNode ; eeNode ] ;
-      node#appendChildren [ cfgnode ]
+             begin setp eNode src tgt; eNode end) succ);
+      cfgnode#appendChildren [bbNode; eeNode];
+      node#appendChildren [cfgnode]
     end
-  
+
+
 let write_xml_method_features
       (node:xml_element_int)
       (d:feature_dictionary_int)
@@ -181,9 +201,12 @@ let write_xml_method_features
          eeNode#appendChildren
            (List.map (fun e ->
                 let eNode = xmlElement "e" in
-                begin d#write_xml_class_name eNode e ; eNode end) exceptions) ;
-         node#appendChildren [ eeNode ]
-       end) ;
+                begin
+                  d#write_xml_class_name eNode e;
+                  eNode
+                end) exceptions);
+         node#appendChildren [eeNode]
+       end);
     (if (List.length etable) > 0  then
        let hhnode = xmlElement "handlers" in
        begin
@@ -192,43 +215,49 @@ let write_xml_method_features
                 let hnode = xmlElement "h" in
                 let seti = hnode#setIntAttribute in
                 begin
-                  seti "spc" h#h_start ;
-                  seti "epc" h#h_end ;
-                  seti "hpc" h#handler ;
+                  seti "spc" h#h_start;
+                  seti "epc" h#h_end;
+                  seti "hpc" h#handler;
                   (match h#catch_type with
                    | Some cn -> d#write_xml_class_name hnode cn
-                   | _ -> ()) ;
+                   | _ -> ());
                   hnode
-                end) etable) ;
-         node#appendChildren [ hhnode ]
-       end) ;
+                end) etable);
+         node#appendChildren [hhnode]
+       end);
     (try
-       write_xml_method_expr_features fnode d cInfo mInfo ;
+       write_xml_method_expr_features fnode d cInfo mInfo;
      with
      | JCH_failure p ->
         begin
           system_settings#log_error
-            (LBLOCK [ STR "Error in translating " ;
-                      mInfo#get_class_method_signature#toPretty ;  STR ": " ; p ]) ;
+            (LBLOCK [
+                 STR "Error in translating ";
+                 mInfo#get_class_method_signature#toPretty;
+                 STR ": ";
+                 p]);
           sety "obsolete" true
-        end) ;
-    node#appendChildren [ fnode ] ;
-    d#write_xml_method_signature node mInfo#get_class_method_signature#method_signature ;
+        end);
+    node#appendChildren [fnode];
+    d#write_xml_method_signature node
+      mInfo#get_class_method_signature#method_signature;
     (if mInfo#has_bytecode then
        begin
-         write_xml_method_cfg node mInfo ;
-         seti "instrs" mInfo#get_instruction_count ;
+         write_xml_method_cfg node mInfo;
+         seti "instrs" mInfo#get_instruction_count;
          seti "bytes" mInfo#get_byte_count
-       end) ;
-    set "name" mInfo#get_method_name ;
-    set "access" (access_to_string mInfo#get_visibility) ;
-    sety "final"  mInfo#is_final ;
-    sety "abstract" mInfo#is_abstract ;
-    sety "static" mInfo#is_static ;
-    sety "native" mInfo#is_native ;          
+       end);
+    set "name" mInfo#get_method_name;
+    set "access" (access_to_string mInfo#get_visibility);
+    sety "final"  mInfo#is_final;
+    sety "abstract" mInfo#is_abstract;
+    sety "static" mInfo#is_static;
+    sety "native" mInfo#is_native;
   end
-           
-let write_xml_class_expr_features (node:xml_element_int) (cInfo:class_info_int) =
+
+
+let write_xml_class_expr_features
+      (node:xml_element_int) (cInfo:class_info_int) =
   let set = node#setAttribute in
   let d = mk_feature_dictionary () in
   let dnode = xmlElement "dictionary" in
@@ -242,11 +271,11 @@ let write_xml_class_expr_features (node:xml_element_int) (cInfo:class_info_int) 
           (List.map (fun cn ->
                let cnnode = xmlElement "cn"  in
                begin
-                 cnnode#setAttribute "name" cn#simple_name ;
-                 cnnode#setAttribute "pkg" cn#package_name ;
+                 cnnode#setAttribute "name" cn#simple_name;
+                 cnnode#setAttribute "pkg" cn#package_name;
                  cnnode
-               end) cns) ;
-        node#appendChildren [ cnode ]
+               end) cns);
+        node#appendChildren [cnode]
       end in
   let add_methodnames tag mss =
     if (List.length mss) > 0 then
@@ -256,11 +285,11 @@ let write_xml_class_expr_features (node:xml_element_int) (cInfo:class_info_int) 
           (List.map (fun ms ->
                let msnode = xmlElement "ms" in
                begin
-                 msnode#setAttribute "name" ms#name ;
-                 msnode#setAttribute "sig" ms#to_signature_string ;
+                 msnode#setAttribute "name" ms#name;
+                 msnode#setAttribute "sig" ms#to_signature_string;
                  msnode
-               end) mss) ;
-        node#appendChildren [ mnode ]
+               end) mss);
+        node#appendChildren [mnode]
       end in
   let mInfos =
     List.fold_left (fun acc ms ->
@@ -274,21 +303,20 @@ let write_xml_class_expr_features (node:xml_element_int) (cInfo:class_info_int) 
         | JCH_failure  _ -> acc) [] methods in
   begin
     (if cInfo#has_super_class then
-       add_classnames "superclass" [ cInfo#get_super_class ]) ;
-    add_classnames "interfaces" cInfo#get_interfaces ;
-    add_methodnames "native-methods" cInfo#get_native_methods_defined ;
-    node#appendChildren [ dnode ] ;
+       add_classnames "superclass" [cInfo#get_super_class]);
+    add_classnames "interfaces" cInfo#get_interfaces;
+    add_methodnames "native-methods" cInfo#get_native_methods_defined;
+    node#appendChildren [dnode];
     mmnode#appendChildren
-      (List.map (fun mInfo -> 
+      (List.map (fun mInfo ->
            let mnode = xmlElement "method" in
            begin
-             write_xml_method_features mnode d cInfo mInfo ;
+             write_xml_method_features mnode d cInfo mInfo;
              mnode
-           end) mInfos) ;
-    node#appendChildren [ mmnode ] ;
-    d#write_xml dnode  ;
-    set "name" cInfo#get_class_name#simple_name ;
-    set "package" cInfo#get_class_name#package_name ;
-    set "md5" cInfo#get_md5_digest 
+           end) mInfos);
+    node#appendChildren [mmnode];
+    d#write_xml dnode ;
+    set "name" cInfo#get_class_name#simple_name;
+    set "package" cInfo#get_class_name#package_name;
+    set "md5" cInfo#get_md5_digest
   end
-    
