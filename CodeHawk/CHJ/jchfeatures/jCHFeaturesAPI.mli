@@ -3,8 +3,10 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -44,25 +46,28 @@ type key_value_pair_t = string * feature_value_t
 
 type feature_values_set_t = string * key_value_pair_t list
 
+
 class type loop_features_int =
 object
-  method get_size : int                       (* number of feature sets *)
+  method get_size: int                       (* number of feature sets *)
   method count_key_value_pairs: int
   method generate_features: unit
   method write_xml: xml_element_int -> unit
 end
 
-(* ------------------------------------------------------------------------- 
-   Features provided:
-   bc : bytecode frequencies (key: opcode, val: freq)
-   bc1: bytecode pair frequencies (key: opcode pair, val: freq)
-   bc2: bytecode triple frequencies (key: opcode triple, val: freq)
-   api-types: types of arguments, return value  (key:type, val: count)
-   op-types: types of operations (key:type, val:count)
-   libcalls: calls to library functions (key:libname, val: freq)
-   sizes: number of loops, instrs, virtual, interface calls (key:name, val:count)
-   attrs: attributes of the method (key:attr-name, val:1 if present)
-   ------------------------------------------------------------------------- *)
+
+(** Features associated with methods.
+
+   {b Features provided}
+   - bc : bytecode frequencies (key: opcode, val: freq)
+   - bc1: bytecode pair frequencies (key: opcode pair, val: freq)
+   - bc2: bytecode triple frequencies (key: opcode triple, val: freq)
+   - api-types: types of arguments, return value  (key:type, val: count)
+   - op-types: types of operations (key:type, val:count)
+   - libcalls: calls to library functions (key:libname, val: freq)
+   - sizes: number of loops, instrs, virtual, interface calls (key:name, val:count)
+   - attrs: attributes of the method (key:attr-name, val:1 if present)
+ *)
 class type method_features_int =
 object
   method get_method_info: method_info_int
@@ -86,16 +91,18 @@ object
   method write_xml: xml_element_int -> unit
 end
 
-(* -------------------------------------------------------------------------
-   Features provided:
-   bc : bytecode frequencies (key: opcode, val: freq)
-   bc1: bytecode pair frequencies (key: opcode pair, val: freq)
-   bc2: bytecode triple frequencies (key: opcode triple, val: freq)
-   types: types of arguments, return value, operations (key:type, val: freq)
-   libcalls: calls to library functions (key:libname, val: count)
-   sizes: number of methods, fields, native-methods, loops (key:name, val:count)
-   attrs: attributes of the class (key:attr-name, val:1 if present)
-   -------------------------------------------------------------------------- *)
+
+(** Features associated with classes.
+
+   {b Features provided}
+   - bc : bytecode frequencies (key: opcode, val: freq)
+   - bc1: bytecode pair frequencies (key: opcode pair, val: freq)
+   - bc2: bytecode triple frequencies (key: opcode triple, val: freq)
+   - types: types of arguments, return value, operations (key:type, val: freq)
+   - libcalls: calls to library functions (key:libname, val: count)
+   - sizes: number of methods, fields, native-methods, loops (key:name, val:count)
+   - attrs: attributes of the class (key:attr-name, val:1 if present)
+ *)
 class type class_features_int =
 object
   method get_class_info: class_info_int
@@ -125,6 +132,7 @@ type fxpr_t =
   | FXNull
   | FXUnknown
 
+
 type fxfeature_t =
   | FXCondition of fxpr_t
   | FXAssignment of fxpr_t * fxpr_t
@@ -132,7 +140,7 @@ type fxfeature_t =
   | FXThrow of fxpr_t
   | FXReturn of fxpr_t option
 
-                     
+
 class type feature_dictionary_int =
   object
     method index_string: string -> int

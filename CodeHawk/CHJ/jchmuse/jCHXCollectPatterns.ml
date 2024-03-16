@@ -60,9 +60,10 @@ let md5 = ref ""
 let jarname = ref ""
 let native_method_count = ref 0
 
+
 let speclist =
   [("-o", Arg.String (fun s -> outputname := s), "name of outputfile");
-   ("-md5", Arg.String (fun s -> md5 := s), "md5 hash of jarfile") ;
+   ("-md5", Arg.String (fun s -> md5 := s), "md5 hash of jarfile");
    ("-maxmatch", Arg.Int (fun i -> maxmatch := i),
     "maximum length of method to be matched");
    ("-maxlog", Arg.Int (fun i -> maxlog := i),
@@ -72,7 +73,9 @@ let usage_msg = "chj_patterns -md5 <md5 of jarfile> -o <outputfile> <jarfile>"
 
 let read_args () = Arg.parse speclist   (fun s -> jarname := s) usage_msg
 
+
 let _ = system_settings#disable_logging_missing_classes
+
 
 let categorize_patterns plist =
   let basicvalues = ref [] in
@@ -109,17 +112,17 @@ let categorize_patterns plist =
     let _ = basicvalues := a :: !basicvalues in
     match a with
     | BcvArrayElement (_,base,index) ->
-       begin add_object_value base ; add_basic_value index end
+       begin add_object_value base; add_basic_value index end
     | BcvThatField (_,_,base) -> add_object_value base
     | BcvArrayLength base -> add_object_value base
     | BcvInstanceOf (_,base) -> add_object_value base
     | BcvBinOpResult (_,a1,a2) ->
-       begin add_basic_value a1 ; add_basic_value a2 end
+       begin add_basic_value a1; add_basic_value a2 end
     | BcvUnOpResult (_,a) -> add_basic_value a
     | BcvQResult (_,aa,fa,ta) ->
        begin
-         List.iter add_value aa ;
-         add_basic_value ta ;
+         List.iter add_value aa;
+         add_basic_value ta;
          add_basic_value fa
        end
     | BcvConvert (_,a1) -> add_basic_value a1
@@ -132,13 +135,13 @@ let categorize_patterns plist =
     | BcoNewArray (_,len) -> add_basic_value len
     | BcoMultiNewArray (_,dims) -> List.iter add_basic_value dims
     | BcoArrayElement (_,base,index) ->
-       begin add_object_value base ; add_basic_value index end
+       begin add_object_value base; add_basic_value index end
     | BcoThatField (_,_,base) -> add_object_value base
     | BcoCheckCast (_,base) -> add_object_value base
     | BcoQResult (_,aa,fa,ta) ->
        begin
-         List.iter add_value aa ;
-         add_object_value ta ;
+         List.iter add_value aa;
+         add_object_value ta;
          add_object_value fa
        end
     | BcoCallRv c -> add_call_result c
@@ -149,7 +152,7 @@ let categorize_patterns plist =
     | BcBasic v -> add_basic_value v
   and add_call_result c =
     begin
-      (match c.bcp_base_object with Some b -> add_object_value b | _ -> ()) ;
+      (match c.bcp_base_object with Some b -> add_object_value b | _ -> ());
       List.iter add_value c.bcp_args
     end
   and add_action a =
@@ -159,14 +162,14 @@ let categorize_patterns plist =
     | BcDropValues vv -> List.iter add_value vv
     | BcPutThisField (_,_,v) -> add_value v
     | BcPutThatField (_,_,b,v) ->
-       begin add_object_value b ; add_value v end
+       begin add_object_value b; add_value v end
     | BcPutStaticField (_,_,v) -> add_value v
     | BcArrayStore (_,b,i,v) ->
-       begin add_object_value b ; add_basic_value i ; add_value v end
+       begin add_object_value b; add_basic_value i; add_value v end
     | BcConditionalAction (_,vl,aa1,aa2) ->
        begin
-         List.iter add_value vl ;
-         List.iter add_action aa1 ;
+         List.iter add_value vl;
+         List.iter add_action aa1;
          List.iter add_action aa2
        end
     | BcWrapCall c -> add_call_result c
@@ -177,30 +180,30 @@ let categorize_patterns plist =
     match p with
     | BcpAction aa -> List.iter add_action aa
     | BcpResult (aa,v) ->
-       begin List.iter add_action aa ; add_value v end
+       begin List.iter add_action aa; add_value v end
     | BcpThrow (aa,v) ->
-       begin List.iter add_action aa ; add_object_value v end
+       begin List.iter add_action aa; add_object_value v end
     | BcpInfiniteLoop aa -> List.iter add_action aa
     | BcpResultExcept (e,aa,v1,v2) ->
        begin
-         add_exception e ;
-         List.iter add_action aa ;
-         add_value v1 ;
+         add_exception e;
+         List.iter add_action aa;
+         add_value v1;
          add_value v2
        end
     | BcpResultExceptThrow (e,aa,v1,v2) ->
        begin
-         add_exception_handled e ;
-         List.iter add_action aa ;
-         add_value v1 ;
+         add_exception_handled e;
+         List.iter add_action aa;
+         add_value v1;
          add_object_value v2
        end
     | BcpActionExcept (e,aa) ->
-       begin add_exception e ; List.iter add_action aa end
+       begin add_exception e; List.iter add_action aa end
     | BcpActionExceptThrow (e,aa,v) ->
        begin
-         add_exception_handled e ;
-         List.iter add_action aa ;
+         add_exception_handled e;
+         List.iter add_action aa;
          add_object_value v
        end
     | _ -> () in
@@ -221,15 +224,17 @@ let categorize_patterns plist =
    get_exceptions_ignored (),
    get_exceptions_handled ())
 
+
 let write_xml_values node values =
   node#appendChildren
     (List.map (fun (k,v) ->
          let n = xmlElement "n" in
          begin
-           n#setAttribute "k" k ;
-           n#setIntAttribute "v" v ;
+           n#setAttribute "k" k;
+           n#setIntAttribute "v" v;
            n
          end) values)
+
 
 let write_xml_method_counts node =
   let lst = ref [] in
@@ -247,13 +252,14 @@ let write_xml_method_counts node =
            let n = xmlElement "n" in
            let seti = n#setIntAttribute in
            begin
-             seti "i" i ;
-             seti "t" t ;
-             seti "p" p ;
+             seti "i" i;
+             seti "t" t;
+             seti "p" p;
              n
-           end) (List.rev !lst)) ;
+           end) (List.rev !lst));
     node#setIntAttribute "patterns" !patterncount
   end
+
 
 let write_xml_unknown_attributes node =
   let lst = get_unknown_attributes () in
@@ -261,10 +267,11 @@ let write_xml_unknown_attributes node =
     (List.map (fun (k,v) ->
          let n = xmlElement "n" in
          begin
-           n#setAttribute "k" k ;
-           n#setIntAttribute "v" v ;
+           n#setAttribute "k" k;
+           n#setIntAttribute "v" v;
            n
          end) lst)
+
 
 let write_xml_packages node =
   let thispackages = get_this_packages () in
@@ -275,15 +282,16 @@ let write_xml_packages node =
     pn#appendChildren (List.map (fun (k,v) ->
         let n = xmlElement "n" in
         begin
-          n#setAttribute "k" k ;
-          n#setIntAttribute "v" v ;
+          n#setAttribute "k" k;
+          n#setIntAttribute "v" v;
           n
         end) l) in
   begin
-    writelist jnode thispackages ;
-    writelist cnode callpackages ;
-    node#appendChildren [ jnode ; cnode ]
+    writelist jnode thispackages;
+    writelist cnode callpackages;
+    node#appendChildren [jnode; cnode]
   end
+
 
 let write_xml_patterns node count patterns =
   let (basicvalues,objectvalues,actions,patterns,xi,xh) =
@@ -300,25 +308,26 @@ let write_xml_patterns node count patterns =
   let cnode = xmlElement "method-counts" in
   let pknode = xmlElement "packages" in
   begin
-    write_xml_values bnode basicvalues ;
-    write_xml_values onode objectvalues ;
-    write_xml_values anode actions ;
-    write_xml_values pnode patterns ;
-    write_xml_values xnode xi ;
-    write_xml_values hnode xh ;
-    write_xml_method_counts cnode ;
-    write_xml_unknown_attributes unode ;
-    write_xml_packages pknode ;
-    cnode#setIntAttribute "total" count ;
+    write_xml_values bnode basicvalues;
+    write_xml_values onode objectvalues;
+    write_xml_values anode actions;
+    write_xml_values pnode patterns;
+    write_xml_values xnode xi;
+    write_xml_values hnode xh;
+    write_xml_method_counts cnode;
+    write_xml_unknown_attributes unode;
+    write_xml_packages pknode;
+    cnode#setIntAttribute "total" count;
     (if !native_method_count > 0 then
-       cnode#setIntAttribute "native" !native_method_count) ;
+       cnode#setIntAttribute "native" !native_method_count);
     (if loopcount > 0 then
-       cnode#setIntAttribute "hasloops" loopcount) ;
+       cnode#setIntAttribute "hasloops" loopcount);
     (if dyncount > 0 then
-       cnode#setIntAttribute "dynamic" dyncount) ;
+       cnode#setIntAttribute "dynamic" dyncount);
     node#appendChildren
-      [ bnode ; onode ; anode ; pnode ; xnode ; hnode ; cnode ; unode ; pknode ]
+      [bnode; onode; anode; pnode; xnode; hnode; cnode; unode; pknode]
   end
+
 
 let save_jar_patterns f count patterns =
   let doc = xmlDocument () in
@@ -326,18 +335,19 @@ let save_jar_patterns f count patterns =
   let filename = !outputname ^ "_px.xml" in
   let node = xmlElement "patterns" in
   begin
-    doc#setNode root ;
-    write_xml_patterns node count patterns ;
-    root#appendChildren [ node ] ;
-    node#setAttribute "md5" !md5 ;
-    node#setAttribute "jarname" (Filename.basename f) ;
+    doc#setNode root;
+    write_xml_patterns node count patterns;
+    root#appendChildren [node];
+    node#setAttribute "md5" !md5;
+    node#setAttribute "jarname" (Filename.basename f);
     file_output#saveFile filename doc#toPretty
   end
+
 
 let process_jar f =
   let _ = app#reset in
   let _ = load_classes_in_jar f in
-  let _ = pr_debug [ STR "Process classes ..." ; NL ] in
+  let _ = pr_debug [STR "Process classes ..."; NL] in
   let _ = process_classes () in
   let (count,patterns) =
     List.fold_left (fun (acc,accp) mInfo ->
@@ -355,7 +365,8 @@ let process_jar f =
   if count > 0 then
     save_jar_patterns f count patterns
   else
-    pr_debug [ STR "No methods with bytecode found" ; NL ]
+    pr_debug [STR "No methods with bytecode found"; NL]
+
 
 let noteworthy_to_pretty () =
   let noteworthy = get_noteworthy () in
@@ -394,9 +405,10 @@ let noteworthy_to_pretty () =
                  INDENT (3, LBLOCK (List.map p mInfos)); NL]) noteworthy);
       NL]
 
+
 let interesting_to_pretty () =
   let interesting = get_interesting () in
-  let p (m:(string * pretty_t)):pretty_t = LBLOCK [ snd m ; NL ] in
+  let p (m:(string * pretty_t)):pretty_t = LBLOCK [snd m; NL] in
   LBLOCK [
       STR "Interesting methods: ";
       NL;
@@ -413,26 +425,27 @@ let interesting_to_pretty () =
 let main () =
   try
     begin
-      read_args () ;
+      read_args ();
       (if !outputname = "" then
          begin
-           pr_debug [ STR "Please specify an outputfilename with -o" ; NL ] ;
+           pr_debug [STR "Please specify an outputfilename with -o"; NL];
            exit 1
-         end) ;
+         end);
       (if !md5 = "" then
          begin
-           pr_debug [ STR "Please specify an md5 with -md5" ; NL ] ;
+           pr_debug [STR "Please specify an md5 with -md5"; NL];
            exit 1
-         end) ;
-      process_jar !jarname ;
+         end);
+      process_jar !jarname;
       file_output#saveFile
         (!outputname ^ ".chlog")
-        (LBLOCK [ noteworthy_to_pretty () ; interesting_to_pretty () ;
-                  chlog#toPretty  ]) ;
+        (LBLOCK [noteworthy_to_pretty (); interesting_to_pretty ();
+                  chlog#toPretty ]);
       (if ch_error_log#size > 0 then
          file_output#saveFile (!outputname ^ ".ch_error_log") ch_error_log#toPretty)
     end
   with
-  | JCH_failure p -> pr_debug [ STR "Failure: " ; p ; NL ]
+  | JCH_failure p -> pr_debug [STR "Failure: "; p; NL]
+
 
 let _ = Printexc.print main ()
