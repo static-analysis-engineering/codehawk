@@ -395,10 +395,6 @@ object (self)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method set_call_target (ctinfo:call_target_info_int) =
-    let _ =
-      chlog#add
-        "set call target"
-        (LBLOCK [STR self#cia; STR " "; STR ctinfo#get_name]) in
     self#f#set_call_target self#cia ctinfo
 
   method has_call_target = self#f#has_call_target self#cia
@@ -599,7 +595,7 @@ object (self)
     let regpars = get_register_parameters fintf in
     let _ =
       chlog#add
-        "call arguments"
+        "floc:get_call_arguments"
         (LBLOCK [
              self#l#toPretty;
              STR "  ";
@@ -637,6 +633,14 @@ object (self)
 	  let argval = self#get_bridge_variable_value p argvar in
 	  (par,argval)) indices
     else
+      let _ =
+        chlog#add
+          "floc:get_call_args"
+          (LBLOCK [
+               self#l#toPretty;
+               STR ": calltarget: ";
+               ctinfo#toPretty;
+               STR "; no arguments found"]) in
       []
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1432,15 +1436,16 @@ object (self)
 
    method private evaluate_fts_argument (p: fts_parameter_t) =
      match p.apar_location with
-     | [StackParameter (index, _)] ->
-       let argvar = self#env#mk_bridge_value self#cia index in
-       self#get_bridge_variable_value index argvar
+     | [StackParameter (offset, _)] ->
+        let index = offset / 4 in
+        let argvar = self#env#mk_bridge_value self#cia index in
+        self#get_bridge_variable_value index argvar
      | [RegisterParameter (r, _)] ->
-       let argvar = self#env#mk_register_variable r in
-       self#rewrite_variable_to_external argvar
+        let argvar = self#env#mk_register_variable r in
+        self#rewrite_variable_to_external argvar
      | [GlobalParameter (a, _)] ->
-       let argvar = self#env#mk_global_variable a#to_numerical in
-       self#rewrite_variable_to_external argvar
+        let argvar = self#env#mk_global_variable a#to_numerical in
+        self#rewrite_variable_to_external argvar
      | _ -> random_constant_expr
 
    method evaluate_summary_term (t:bterm_t) (returnvar:variable_t) =

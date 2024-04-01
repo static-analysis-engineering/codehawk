@@ -47,13 +47,13 @@ open BCHLibTypes
 
     An externally provided [fts] (e.g., via a header or function summary library)
     is generally taken as authorative (binding) and not affected by analysis
-    collected. An externally provided fts is distinguished as such in the
+    results collected. An externally provided fts is distinguished as such in the
     function interface by the [bctype] field, which is the function type
     provided. In all other cases this field is [None].
 
     For an externally provided [fts] the parameter locations in the [fts]
     parameters are constructed upon [fts] input (after parsing the header
-    file or xml function summery) and these locations stay with the [fts]
+    file or xml function summary) and these locations stay with the [fts]
     parameters, that is, they are saved in and reloaded from the saved
     function-info ([finfo]).
 
@@ -123,11 +123,20 @@ val set_function_interface_returntype:
   function_interface_t -> btype_t -> function_interface_t
 
 
+(** [fintf_add_stack_adjustment fintf adj] returns a new function interface
+    identical to [fintf] except for the stackadjustment and calling convention,
+    which are set to [adj] and 'stdcall'. *)
+val fintf_add_stack_adjustment:
+  function_interface_t -> int -> function_interface_t
+
+
 val add_function_register_parameter_location:
   function_interface_t -> register_t -> btype_t -> int -> function_interface_t
 
+
 val add_function_stack_parameter_location:
   function_interface_t -> int -> btype_t -> int -> function_interface_t
+
 
 val add_function_global_parameter_location:
   function_interface_t

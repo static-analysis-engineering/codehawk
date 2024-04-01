@@ -408,17 +408,19 @@ let function_interface_to_prototype_string
     | _ -> fintf.fintf_name in
   let stackPars = List.fold_left (fun a p ->
     match p.apar_location with
-    | [StackParameter (i, _)] -> (i,p.apar_name,p.apar_type)::a
+    | [StackParameter (offset, _)] -> (offset, p.apar_name, p.apar_type)::a
     | _ -> a) [] fts.fts_parameters in
   let stackPars =
-    List.sort (fun (i1,_,_) (i2,_,_) -> Stdlib.compare i1 i2) stackPars in
-  let par_string (_,name,ty) = (btype_to_string ty) ^ " " ^ name in
+    List.sort (fun (off1, _, _) (off2, _, _) ->
+        Stdlib.compare off1 off2) stackPars in
+  let par_string (_, name, ty) = (btype_to_string ty) ^ " " ^ name in
   (btype_to_string fts.fts_returntype)
   ^ " "
   ^ name
   ^ "("
   ^ (String.concat ", " (List.map par_string stackPars))
   ^ ")"
+
 
 let function_interface_to_pretty (fintf: function_interface_t) =
   let fts = fintf.fintf_type_signature in
@@ -455,13 +457,14 @@ let convert_xml_fts_parameter_mips (p: fts_parameter_t): fts_parameter_t =
   (* first four arguments are in $a0-$a3, subsequent arguments are
      on the stack, starting at offset 16.*)
   match p.apar_location with
-  | [StackParameter (index, _pdef)] when index <= 4 ->
+  | [StackParameter (offset, _pdef)] when offset <= 16 ->
+     let index = offset / 4 in
      let reg =
-       (match index with
-        | 1 -> MRa0
-        | 2 -> MRa1
-        | 3 -> MRa2
-        | 4 -> MRa3
+       (match offset with
+        | 4 -> MRa0
+        | 8 -> MRa1
+        | 12 -> MRa2
+        | 16 -> MRa3
         | _ -> raise (BCH_failure (STR "Internal error"))) in
      let register = register_of_mips_register reg in
      mk_indexed_register_parameter
@@ -474,8 +477,8 @@ let convert_xml_fts_parameter_mips (p: fts_parameter_t): fts_parameter_t =
        ~fmt:p.apar_fmt
        register
        index
-  | [StackParameter (index, _pdef)] ->
-     let offset = (4 * index) - 4 in
+  | [StackParameter (offset, _pdef)] ->
+     let index = offset / 4 in
      mk_indexed_stack_parameter
        ~btype:p.apar_type
        ~name:p.apar_name
@@ -872,6 +875,7 @@ let demangled_name_to_function_interface (dm: demangled_name_t) =
     fintf_returntypes = []
   }
 
+
 let default_function_interface
       ?(cc="cdecl")
       ?(adj=0)
@@ -901,6 +905,28 @@ let default_function_interface
     fintf_bctype = bctype;
     fintf_returntypes = returntypes
   }
+
+
+let fintf_add_stack_adjustment (fintf: function_interface_t) (adj: int) =
+  let fts = get_fintf_fts fintf in
+  let fts =
+    if adj > 0 then
+      if get_stack_parameter_count fintf = 0 then
+        let params =
+          List.map
+            (fun i -> mk_indexed_stack_parameter (i * 4) i)
+            (List.init (adj / 4) (fun i -> i + 1)) in
+        {fts with fts_stack_adjustment = Some adj;
+                  fts_calling_convention = "stdcall";
+                  fts_parameters = params}
+      else
+        {fts with fts_stack_adjustment = Some adj;
+                  fts_calling_convention = "stdcall"}
+    else
+      fts in
+  {fintf with fintf_type_signature = fts}
+
+
 
 (* --------------------------------- conversion of external type signature -- *)
 
@@ -959,8 +985,8 @@ let mips_params (funargs: bfunarg_t list): fts_parameter_t list =
 let bfuntype_to_function_interface
       (vname: string) (vtype: btype_t): function_interface_t =
   match vtype with
-  | TFun (returntype, fargs, varargs, _)
-    | TPtr (TFun (returntype, fargs, varargs, _), _) ->
+  | TFun (returntype, fargs, varargs, attrs)
+    | TPtr (TFun (returntype, fargs, varargs, _), attrs) ->
      let params: fts_parameter_t list =
        match fargs with
        | None -> []
@@ -976,15 +1002,37 @@ let bfuntype_to_function_interface
                         STR "function_summary_of_bvarinfo: ";
                         STR arch;
                         STR " not (yet) supported"]))) in
+     let _ =
+       match attrs with
+       | [] -> ()
+       | _ ->
+          chlog#add
+            "function attributes"
+            (LBLOCK [STR vname; STR "; "; STR (attributes_to_string attrs)]) in
      let params =
        List.sort
          (fun p1 p2 -> Stdlib.compare p1.apar_index p2.apar_index)
          params in
-     default_function_interface
-       ~bc_returntype:returntype
-       ~bc_fts_parameters:params
-       ~varargs
-       ~bctype:(Some vtype)
+     if is_stdcall vtype then
+       let _ =
+         chlog#add
+           "stdcall function interface"
+           (LBLOCK [STR vname; STR ": "; STR (btype_to_string vtype)]) in
+       let adj = 4 * (List.length params) in
+       default_function_interface
+         ~bc_returntype:returntype
+         ~bc_fts_parameters:params
+         ~varargs
+         ~adj
+         ~cc:"stdcall"
+         ~bctype:(Some vtype)
+       vname
+     else
+       default_function_interface
+         ~bc_returntype:returntype
+         ~bc_fts_parameters:params
+         ~varargs
+         ~bctype:(Some vtype)
        vname
   | _ ->
      raise

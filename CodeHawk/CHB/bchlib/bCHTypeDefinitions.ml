@@ -383,8 +383,11 @@ let pe_types = [
      TPtr (named "UNKNOWN", []));
 
     ("LPVOID", TPtr (TVoid [], []));
-    ("LPWCH", TPtr (named "wchar_t",[]));
-    ("LPWORD", TPtr (named "WORD",[]));
+    ("LPWCH", TPtr (named "wchar_t", []));
+    ("LPWORD", TPtr (named "WORD", []));
+    ("PCSTR", TPtr (TInt (IChar, []), []));
+    ("PCTSTR", TPtr (named "TCHAR", []));
+    ("PCWSTR", TPtr (named "wchar_t", []));
     ("PDWORD_PTR", TPtr (named "DWORD_PTR", []));
     ("PHANDLE" , TPtr (named "HANDLE", []));
 
@@ -400,8 +403,9 @@ let pe_types = [
 	         ("hDestinationFile", named "HANDLE", []);
 	         ("lpData", named "LPVOID", [])], false, []));
 
-    ("PTSTR", TPtr (named "THAR", []));
+    ("PTSTR", TPtr (named "TCHAR", []));
     ("PVOID", TPtr (TVoid [], []));
+    ("PWSTR", TPtr (named "wchar_t", []));
     ("SC_HANDLE", TPtr (TVoid [],[]));       (* service configuration handle *)
     ("SERVICE_STATUS_HANDLE", handle "SERVICE_STATUS");
 

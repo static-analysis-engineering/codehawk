@@ -57,10 +57,14 @@ let mk_unknown_target () =
   mk_default_target "unknown" UnknownTarget
 
 
-let mk_app_target (a:doubleword_int) =
-  let finfo = get_function_info a in
-  let apsum = finfo#get_summary in
-  mk_function_summary_target apsum (AppTarget a)
+let mk_app_target ?(fintf=None) (a:doubleword_int) =
+  match fintf with
+  | Some fintf ->
+     mk_call_target_info fintf default_function_semantics (AppTarget a)
+  | _ ->
+     let finfo = get_function_info a in
+     let apsum = finfo#get_summary in
+     mk_function_summary_target apsum (AppTarget a)
 
 
 let mk_dll_target (dll:string) (name:string) =

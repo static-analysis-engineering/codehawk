@@ -565,7 +565,7 @@ object (self)
 	let memref = self#mk_local_stack_reference  in
 	let v =
           self#mk_memory_variable
-            ~save_name:false memref (mkNumerical (4*offset)) in
+            ~save_name:false memref (mkNumerical offset) in
         let iv = self#mk_initial_memory_value v in
 	let vname = name ^ "$" ^ (string_of_int offset) in
 	begin
@@ -1736,14 +1736,23 @@ object (self)
   method is_complete = complete
 
   method set_stack_adjustment (a:int option) =
-    let _ =
-      match a with
-      | Some n when n > 0 ->
+    match a with
+    | Some n when n > 0 ->
+       begin
          chlog#add
            "set stack adjustment"
-           (LBLOCK [self#get_address#toPretty; STR ": "; INT n])
-      | _ -> () in
-    stack_adjustment <- a
+           (LBLOCK [self#get_address#toPretty; STR ": "; INT n]);
+         self#update_summary
+           (function_summary_add_stack_adjustment self#get_summary n);
+         stack_adjustment <- a
+       end
+    | Some n when n = 0 -> ()
+    | Some n when n < 0 ->
+       ch_error_log#add
+         "unexpected stack adjustment"
+         (LBLOCK [self#get_address#toPretty; STR ": "; INT n])
+    | _ ->
+       stack_adjustment <- a;
 
   method get_stack_adjustment = stack_adjustment
 
@@ -1829,18 +1838,18 @@ object (self)
                 STR " (";
                 STR (register_to_string reg);
                 STR ")"])
-      | _ ->
-         ch_error_log#add
-           "restore_register:not a stack address"
-           (LBLOCK [
-                self#get_address#toPretty;
-                STR " ";
-                STR iaddr;
-                STR ": ";
-                x2p memaddr;
-                STR " (";
-                STR (register_to_string reg);
-                STR ")"])
+    | _ ->
+       ch_error_log#add
+         "restore_register:not a stack address"
+         (LBLOCK [
+              self#get_address#toPretty;
+              STR " ";
+              STR iaddr;
+              STR ": ";
+              x2p memaddr;
+              STR " (";
+              STR (register_to_string reg);
+              STR ")"])
 
   method saved_registers_to_pretty =
     let p = ref [] in
@@ -2079,11 +2088,7 @@ object (self)
 
   method set_call_target (iaddr:ctxt_iaddress_t) (ctinfo:call_target_info_int) =
     begin
-      call_targets_set <- true ;
-      track_function
-        ~iaddr
-        self#a
-        (LBLOCK [ STR "set call target: " ; ctinfo#toPretty ]);
+      call_targets_set <- true;
       H.replace calltargets iaddr ctinfo
     end
 
@@ -2335,8 +2340,8 @@ object (self)
   method private read_xml_call_targets (node:xml_element_int) =
     List.iter (fun cnode ->
         let a = cnode#getAttribute "a" in
-        H.add calltargets a (read_xml_call_target_info cnode))
-              (node#getTaggedChildren "ctinfo")
+        let ctinfo = read_xml_call_target_info cnode in
+        H.add calltargets a ctinfo) (node#getTaggedChildren "ctinfo")
 
   method private write_xml_constants (node:xml_element_int) =
     let var_to_xml (v,n) =

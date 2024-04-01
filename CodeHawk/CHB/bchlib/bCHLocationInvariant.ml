@@ -757,17 +757,18 @@ object (self)
     List.fold_left (fun acc f ->
       match acc with Some _ -> acc | _ ->
 	match f with
-	| InitialVarEquality (v,w) when w#equal base -> Some numerical_zero
-	| NonRelationalFact (v,FSymbolicExpr x) ->
+	| InitialVarEquality (v, w) when w#equal base -> Some numerical_zero
+	| NonRelationalFact (v, FSymbolicExpr x) ->
 	  begin
 	    match x with
-	    | XVar w when w#equal off -> Some numerical_zero
-	    | XOp (XPlus, [ XVar w; XConst (IntConst n) ])
-	      | XOp (XPlus, [ XConst (IntConst n); XVar w ]) when w#equal base ->
+	    | XVar w when w#equal base -> Some numerical_zero
+	    | XOp (XPlus, [XVar w; XConst (IntConst n)])
+	      | XOp (XPlus, [XConst (IntConst n); XVar w]) when w#equal base ->
                Some n
-	    | XOp (XMinus, [ XVar w ; XConst (IntConst n) ]) when w#equal base ->
+	    | XOp (XMinus, [XVar w; XConst (IntConst n)]) when w#equal base ->
                Some n#neg
-	    | _ -> None
+	    | _ ->
+               None
 	  end
 	| _ -> None) None (self#get_var_facts off)
 

@@ -34,6 +34,9 @@ open CHLanguage
 open BCHBCTypes
 
 
+(** Utility functions to construct, destruct, or examine c-like types.*)
+
+
 (** {1 Common types}*)
 
 (** {2 Base types} *)
@@ -97,9 +100,23 @@ val t_tenum: ?name_space:tname_t list -> tname_t -> btype_t
 
 val t_tclass: ?name_space:tname_t list -> tname_t -> btype_t
 
+
+(** [t_function returntype args] returns a function type with returntype
+    [returntype] and named arguments [args].*)
 val t_function: btype_t -> bfunarg_t list -> btype_t
+
+
+(** [t_signature returntype args] returns a function type with returntype
+    [returntype] and arguments [args] represented as a list of
+    (argument-name, argument-type) pairs.*)
 val t_fsignature: btype_t -> (string * btype_t) list -> btype_t
+
+
 val t_vararg_function: btype_t -> bfunarg_t list -> btype_t
+
+
+(** [t_function_anon ty] returns an anonymous function type with returntype
+    [ty] without arguments (distinct from zero arguments).*)
 val t_function_anon: btype_t -> btype_t        (* arguments not known *)
 
 
@@ -119,6 +136,9 @@ val is_array_type: btype_t -> bool
 val is_pointer_to_struct: btype_t -> bool
 
 val is_volatile: btype_t -> bool
+
+(** Returns true if [ty] is a function type with attribute [stdcall].*)
+val is_stdcall: btype_t -> bool
 
 (** {1 Type resolution}*)
 

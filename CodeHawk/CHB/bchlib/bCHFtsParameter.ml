@@ -38,6 +38,7 @@ open CHXmlDocument
 open CHXmlReader
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeTransformer
@@ -125,10 +126,14 @@ let parameter_location_detail_to_string (d: parameter_location_detail_t) =
 let parameter_location_to_string (loc: parameter_location_t) =
   let ds = parameter_location_detail_to_string in
   match loc with
-  | StackParameter (i, d) -> "s_arg " ^ (string_of_int i) ^ " " ^ (ds d)
-  | RegisterParameter (r, d) -> "r_arg " ^ (register_to_string r) ^ " " ^ (ds d)
-  | GlobalParameter (g, d) -> "g_arg " ^ g#to_hex_string ^ " " ^ (ds d)
-  | UnknownParameterLocation d -> "unknown " ^ (ds d)
+  | StackParameter (offset, d) ->
+     "s_arg " ^ (string_of_int offset) ^ " " ^ (ds d)
+  | RegisterParameter (r, d) ->
+     "r_arg " ^ (register_to_string r) ^ " " ^ (ds d)
+  | GlobalParameter (g, d) ->
+     "g_arg " ^ g#to_hex_string ^ " " ^ (ds d)
+  | UnknownParameterLocation d ->
+     "unknown " ^ (ds d)
 
 
 let fts_parameter_to_pretty (p: fts_parameter_t) =
@@ -167,7 +172,7 @@ let get_parameter_name (p: fts_parameter_t): string = p.apar_name
 
 let get_stack_parameter_offset (p: fts_parameter_t): int traceresult =
   match p.apar_location with
-  | [StackParameter (i, _)] -> Ok i
+  | [StackParameter (offset, _)] -> Ok offset
   | [loc] ->
      Error [
          "get_stack_parameter_offset with location: "
@@ -232,7 +237,8 @@ let parameter_location_compare l1 l2 =
        l1
   | (RegisterParameter _, _) -> -1
   | (_, RegisterParameter _) -> 1
-  | (StackParameter (i1, _), StackParameter (i2, _)) -> Stdlib.compare i1 i2
+  | (StackParameter (off1, _), StackParameter (off2, _)) ->
+     Stdlib.compare off1 off2
   | (StackParameter _, _) -> -1
   | (_, StackParameter _) -> 1
   | (GlobalParameter (dw1, _), GlobalParameter (dw2, _)) -> dw1#compare dw2
@@ -283,6 +289,8 @@ let default_parameter_location_detail ?(ty=t_unknown) (size: int) = {
     pld_position = []
   }
 
+
+(* Representation as found in the function summaries.*)
 let read_xml_parameter_location
       (node:xml_element_int) (btype: btype_t): parameter_location_t =
   let get = node#getAttribute in
@@ -294,7 +302,9 @@ let read_xml_parameter_location
       (STR ("read_xml_parameter_location: " ^ s))
       (string_to_doubleword s) in
   match get "loc" with
-  | "stack" -> StackParameter (geti "nr", pdef)
+  | "stack" ->
+     let stackparamindex = geti "nr" in
+     StackParameter (4 * stackparamindex, pdef)
   | "register" -> RegisterParameter (register_from_string (get "reg"), pdef)
   | "global" -> GlobalParameter (getx (get "dw"), pdef)
   | "unknown" -> UnknownParameterLocation pdef
@@ -305,7 +315,9 @@ let read_xml_parameter_location
 
 
 (* Api parameters are numbered with two attributes:
-   - nr : stack position (times 4, starting at 1)
+   - nr : stack position (expressed as an index on 4-byte stack slots,
+     where nr 1 corresponds to a 4-byte offset, nr 2 corresponds
+     to an 8-byte offset, etc.
    - ix : argument index number
    If ix is missing, it is assumed that the ix is the same as nr
 *)
@@ -354,7 +366,7 @@ let is_stack_parameter (p: fts_parameter_t) =
 
 let is_stack_parameter_at_offset (p: fts_parameter_t) (n: int): bool =
   match p.apar_location with
-  | [StackParameter (i, _)] -> i = n
+  | [StackParameter (offset, _)] -> offset = n
   | _ -> false
 
 
@@ -459,8 +471,15 @@ let mk_indexed_stack_parameter
   let locations =
     match locations with
     | [] ->
-       (* create a single stack location at the given offset *)
-       [mk_stack_parameter_location ~btype ~size offset]
+       if not ((offset mod 4) = 0) then
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "mk_index_stack_parameter: offset not multiple of 4: ";
+                   INT offset]))
+       else
+         (* create a single stack location at the given offset *)
+         [mk_stack_parameter_location ~btype ~size offset]
     | _ -> locations in
   { apar_index = Some index;
     apar_name = if name = "" then "arg_" ^ (string_of_int index) else name;

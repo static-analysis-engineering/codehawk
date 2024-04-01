@@ -344,3 +344,10 @@ let default_summary name =
   let sem = default_function_semantics in
   let doc = default_function_documentation in
   make_function_summary ~fintf ~sem ~doc
+
+
+let function_summary_add_stack_adjustment
+      (fs: function_summary_int) (adj: int): function_summary_int =
+  let fintf = fintf_add_stack_adjustment fs#get_function_interface adj in
+  make_function_summary
+    ~fintf ~sem:fs#get_function_semantics ~doc:fs#get_function_documentation
