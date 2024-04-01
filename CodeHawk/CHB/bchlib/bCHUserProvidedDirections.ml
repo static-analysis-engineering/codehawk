@@ -133,10 +133,11 @@ end
 let user_provided_directions = new user_provided_directions_t
 
 let _ = user_provided_directions#set_dll_ordinal_mappings "COMCTL32.dll"
-  [ (13, "MakeDragList") ;
-    (14, "LBItemFromPt") ;
-    (15, "DrawInsert") ;
-    (17, "InitCommonControls") 
+  [ (13, "MakeDragList");
+    (14, "LBItemFromPt");
+    (15, "DrawInsert");
+    (16, "CreateUpDownControl");
+    (17, "InitCommonControls");
   ]
 
 let _ = user_provided_directions#set_dll_ordinal_mappings "ODBC32.dll"
@@ -514,7 +515,41 @@ let _ = user_provided_directions#set_dll_ordinal_mappings
             (899, "SetExplorerServerMode") ;
             (900, "GetAppIDRoot") ;
             (902, "IsSearchEnabled") 
-  ]
+          ]
+
+(* from: https://www.geoffchappell.com/studies/windows/shell/shlwapi/history/ords471.htm?tx=79-81,
+   https://www.geoffchappell.com/studies/windows/shell/shlwapi/history/ords500.htm?tx=77,80,81
+ *)
+let _ =
+  user_provided_directions#set_dll_ordinal_mappings "SHLWAPI.dll"
+    [(37, "CallWindowProcWrapW");
+     (52, "CreateFileWrapW");
+     (53, "CreateFontIndirectWrapW");
+     (55, "CreateWindowExWrapW");
+     (56, "DefWindowProcWrapW");
+     (59, "DialogBoxParamWrapW");
+     (61, "DrawTextWrapW");
+     (68, "FormatMessageWrapW");
+     (74, "GetDlgItemTextWrapW");
+     (75, "GetFileAttributesWrapW");
+     (91, "GetTextExtentPoint32WrapW");
+     (93, "GetTextMetricsWrapW");
+     (94, "GetWindowLongWrapW");
+     (95, "GetWindowTextWrapW");
+     (102, "LoadCursorWrapW");
+     (107, "LoadStringWrapW");
+     (136, "SendMessageWrapW");
+     (138, "SetDlgItemTextWrapW");
+     (141, "SetWindowLongWrapW");
+     (143, "SetWindowTextWrapW");
+     (215, "SHAnsiToUnicode");   (* no summary *)
+     (217, "SHUnicodeToAnsi");   (* no summary *)
+     (295, "SHSetIniStringW");   (* no summary *)
+     (298, "WritePrivateProfileStringWrapW");
+     (312, "GetPrivateProfileStringWrapW");
+     (340, "MessageBoxWrapW");
+     (437, "IsOS")   (* no summary *)
+    ]
 
 let _ = user_provided_directions#set_dll_ordinal_mappings "WSOCK32.dll"
   [ (2,  "bind") ;

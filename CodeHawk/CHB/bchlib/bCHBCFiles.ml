@@ -74,26 +74,26 @@ object (self)
         | GType (tinfo, loc) ->
            begin
              ignore (bcd#index_typeinfo tinfo);
-             H.add gtypes tinfo.btname (bcd#index_typ tinfo.bttype, i loc)
+             H.replace gtypes tinfo.btname (bcd#index_typ tinfo.bttype, i loc)
            end
         | GCompTag (cinfo, loc) ->
-           H.add
+           H.replace
              gcomptags
              (cinfo.bcname, cinfo.bckey)
              (bcd#index_compinfo cinfo, i loc)
         | GCompTagDecl (cinfo, loc) ->
-           H.add
+           H.replace
              gcomptagdecls
              (cinfo.bcname, cinfo.bckey)
              (bcd#index_compinfo cinfo, i loc)
         | GEnumTag (einfo, loc) ->
-           H.add genumtags einfo.bename (bcd#index_enuminfo einfo, i loc)
+           H.replace genumtags einfo.bename (bcd#index_enuminfo einfo, i loc)
         | GEnumTagDecl (einfo, loc) ->
-           H.add genumtagdecls einfo.bename (bcd#index_enuminfo einfo, i loc)
+           H.replace genumtagdecls einfo.bename (bcd#index_enuminfo einfo, i loc)
         | GVarDecl (vinfo, loc) ->
-           H.add gvardecls vinfo.bvname (bcd#index_varinfo vinfo, i loc)
+           H.replace gvardecls vinfo.bvname (bcd#index_varinfo vinfo, i loc)
         | GVar (vinfo, iinfo, loc) ->
-           H.add gvars
+           H.replace gvars
              vinfo.bvname
              (bcd#index_varinfo vinfo,
               (match iinfo with
@@ -101,7 +101,7 @@ object (self)
                | _ -> (-1)),
               i loc)
         | GFun (fundec, loc) ->
-             H.add gfuns fundec.bsvar.bvname (fundec, bcd#index_location loc);
+             H.replace gfuns fundec.bsvar.bvname (fundec, bcd#index_location loc);
         | _ -> ()) f.bglobals
 
   method update_global (g: bglobal_t) =
@@ -154,7 +154,7 @@ object (self)
                bvparam = 0
              } in
            begin
-             H.add
+             H.replace
                gvars
                vinfo.bvname
                (bcd#index_varinfo vinfo, (-1), bcd#index_location loc);
@@ -167,7 +167,7 @@ object (self)
           bsbody = {battrs = []; bstmts = []}
         } in
       begin
-        H.add gfuns name (fundec, bcd#index_location fundec.bsvar.bvdecl);
+        H.replace gfuns name (fundec, bcd#index_location fundec.bsvar.bvdecl);
         chlog#add
           "add function definition"
           (LBLOCK [STR name; STR ": "; btype_to_pretty ty])

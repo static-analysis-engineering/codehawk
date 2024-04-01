@@ -197,6 +197,17 @@ let is_volatile t =
          | _ -> false) attrs
 
 
+let is_stdcall (t: btype_t) =
+  match t with
+  | TFun (_, _, _, attrs)
+    | TPtr (TFun (_, _, _, _), attrs) ->
+     List.exists (fun a ->
+         match a with
+         | Attr ("stdcall", _) -> true
+         | _ -> false) attrs
+  | _ -> false
+
+
 (* ======================================================= size and alignment *)
 
 let resolve_type (btype: btype_t) = bcfiles#resolve_type btype

@@ -1902,9 +1902,7 @@ class type invdictionary_int =
 (** Location of a parameter of the function.
 
    The {b stack parameter} location indicates the location of the argument
-   relative to the return address, in increments of 4 (that is, stack
-   parameter 1 is located at offset 4, stack parameter 2 is at offset 8,
-   etc.
+   relative to the return address, in number of bytes offset.
 
    All function summaries assume a standard cdecl x86-based function api.
    Hence all function summaries represent parameters as stack-based. For
@@ -1949,10 +1947,14 @@ type parameter_location_detail_t = {
   }
 
 type parameter_location_t =
-| StackParameter of int * parameter_location_detail_t
-| RegisterParameter of register_t * parameter_location_detail_t
-| GlobalParameter of doubleword_int * parameter_location_detail_t
-| UnknownParameterLocation of parameter_location_detail_t
+  | StackParameter of int * parameter_location_detail_t
+  (** [StackParameter(offset, _)] indicates the stack parameter that
+      starts at [offset] bytes above the stackpointer at function
+      entry.*)
+
+  | RegisterParameter of register_t * parameter_location_detail_t
+  | GlobalParameter of doubleword_int * parameter_location_detail_t
+  | UnknownParameterLocation of parameter_location_detail_t
 
 
 (** Type of format string for extracting format modifiers.*)

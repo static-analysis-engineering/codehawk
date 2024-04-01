@@ -70,6 +70,14 @@ val default_function_documentation: function_documentation_t
 val default_summary: string -> function_summary_int
 
 
+(** [function_summary_add_stack_adjustment fsum adj] returns a function summary
+    that is identical to [fsum] except for the stack adjustment and calling
+    convention in the function type signature, which are set to [adj] and
+    'stdcall', respectively.*)
+val function_summary_add_stack_adjustment:
+  function_summary_int -> int -> function_summary_int
+
+
 (** [read_xml_function_summary xnode] constructs a function summary from
     its xml reprsentation in [xnode].*)
 val read_xml_function_summary: xml_element_int -> function_summary_int

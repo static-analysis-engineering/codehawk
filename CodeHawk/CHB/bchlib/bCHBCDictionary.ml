@@ -507,6 +507,7 @@ object (self)
     | "tfloat" ->
        TFloat (fkind_mfts#fs (t 1), frepresentation_mfts#fs (t 2), attrs (a 0))
     | "tptr" -> TPtr (self#get_typ (a 0), attrs (a 1))
+    | "thandle" -> THandle (self#get_string (a 0), attrs (a 1))
     | "tarray" ->
        TArray (self#get_typ (a 0), self#get_opt_exp (a 1), attrs (a 2))
     | "tfun" ->

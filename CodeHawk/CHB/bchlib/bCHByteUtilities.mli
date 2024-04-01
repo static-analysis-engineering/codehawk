@@ -33,7 +33,7 @@ open CHXmlDocument
 (* bchlib *)
 open BCHLibTypes
 
-(** Provides utilities to read and write binary data *)
+(** Utility functions to read and write binary data *)
 
 
 (** [get_aligned_address dw] returns the smallest multiple of 16 greater than

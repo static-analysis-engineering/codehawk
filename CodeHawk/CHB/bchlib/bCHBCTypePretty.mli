@@ -34,6 +34,8 @@ open CHPretty
 open BCHBCTypes
 
 
+val attributes_to_string: b_attributes_t -> string
+
 val location_line_to_string: b_location_t -> string
 
 val storage_to_string: bstorage_t -> string

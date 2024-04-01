@@ -46,6 +46,9 @@ open BCHLibTypes
 val default_parameter_location_detail:
   ?ty:btype_t -> int -> parameter_location_detail_t
 
+
+(** Returns a parameter with name "unknown-fts-parameter", unknown type,
+    unknown parameter location, and without index.*)
 val default_fts_parameter: fts_parameter_t
 
 val mk_field_position: int -> int -> string -> pld_position_t
@@ -63,6 +66,15 @@ val mk_global_parameter:
   -> fts_parameter_t
 
 
+(** [mk_indexed_stack_parameter offset index] returns a parameter with
+    index [index] located at [offset] (in bytes) on the stack. The
+    parameter may be optionally augmented with name, type, description,
+    roles, arg_io ([ArgRead], [ArgReadWrite], or [ArgWrite]), size,
+    formatstring type, and locations (if this parameter spans multiple
+    locations).
+
+    If no locations are specified a parameter with a single stack location
+    is created with stackparameter offset [offset].*)
 val mk_indexed_stack_parameter:
   ?btype:btype_t
   -> ?name:string
@@ -159,6 +171,8 @@ val fts_parameter_equal: fts_parameter_t -> fts_parameter_t -> bool
 
 (** {1 Parameter accessors}*)
 
+
+(** Returns the name and type of the parameter.*)
 val get_parameter_signature: fts_parameter_t -> (string * btype_t)
 
 
@@ -168,9 +182,16 @@ val get_parameter_type: fts_parameter_t -> btype_t
 val get_parameter_name: fts_parameter_t -> string
 
 
+(** Returns the offset of a stack parameter, in bytes, measured from the
+    stack pointer at function entry.
+
+    Returns [Error] if the parameter is not a stack parameter.*)
 val get_stack_parameter_offset: fts_parameter_t -> int traceresult
 
 
+(** Returns the register of a register parameter.
+
+    Returns [Error] if the parameter is not a register parameter.*)
 val get_register_parameter_register: fts_parameter_t -> register_t traceresult
 
 
@@ -184,9 +205,11 @@ val get_fmt_spec_type: argspec_int -> btype_t
 
 val is_global_parameter: fts_parameter_t -> bool
 
+
 (** Returns true if the parameter has a single parameter location, which is
     on the stack.*)
 val is_stack_parameter: fts_parameter_t -> bool
+
 
 (** [is_stack_parameter_at_offset p n] returns true if parameter [p] is a
     stack parameter with offset [n] bytes.*)
@@ -211,8 +234,21 @@ val calling_convention_to_string: calling_convention_t -> string
 
 val pld_position_to_string: pld_position_t -> string
 
+
+(** Returns a string representation of a parameter location detail, which,
+    depending on what information is available, may include:
+    - location slice: {size[<start>, <size>]}
+    - type of the location, if known
+    - position list, in case of field positions or array positions.*)
 val parameter_location_detail_to_string: parameter_location_detail_t -> string
 
+
+(** Returns a string representation of a parameter location as follows:
+    - [StackParameter(offset, d)]: s_arg_<offset>_<detail> where <offset>
+      is the offset (in bytes) relative to the stack pointer at function entry.
+    - [RegisterParameter(r, d)]: r_arg_<register-name>_<detail>
+    - [GlobalParameter(g, d)]: g_arg_<global-address>_<detail>
+    - [UnknownParameterLocation d]: unknown_<detail>*)
 val parameter_location_to_string: parameter_location_t -> string
 
 val fts_parameter_to_pretty: fts_parameter_t -> pretty_t
@@ -223,6 +259,7 @@ val fts_parameter_to_string: fts_parameter_t -> string
 (** {1 Xml reading}*)
 
 val read_xml_roles: xml_element_int -> (string * string) list
+
 
 (** [read_xml_fts_parameter xnode] parses a parameter element from a legacy
     function summary.*)

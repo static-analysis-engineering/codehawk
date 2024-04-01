@@ -683,7 +683,11 @@ let read_xml_symbolic_addresses (node: xml_element_int) =
       let tNode = if hasc "type" then getc "type" else getc "btype" in
       read_xml_type tNode
     else if has "type" then
-      t_named (get "type")
+      let tname = get "type" in
+      if tname = "unknown" then
+        t_unknown
+      else
+        t_named (get "type")
     else
       raise
         (BCH_failure
@@ -697,6 +701,10 @@ let read_xml_symbolic_addresses (node: xml_element_int) =
         let vinfo = bcfiles#get_varinfo symname in
         vinfo.bvtype
       else
+        let _ =
+          chlog#add
+            "no c declaration"
+            (LBLOCK [STR "Name: "; STR symname]) in
         symtype
     else
       symtype in

@@ -63,14 +63,27 @@ let raise_error (node: xml_element_int) (msg: pretty_t) =
    btype enumerations*)
 let get_standard_txt_type (t: string): btype_t option =
   match t with
+  | "BOOL" -> Some (TInt (IBool, []))
+  | "Boolean" -> Some (TInt (IBool, []))
+  | "BSTR" -> Some (TPtr (TInt (IWChar, []), []))
   | "byte" -> Some (TInt (IUChar, []))
+  | "BYTE" -> Some (TInt (IUChar, []))
   | "char" -> Some (TInt (IChar, []))
   | "double" -> Some (TFloat (FDouble, FScalar, []))
+  | "DWORD" -> Some (TInt (IUInt, []))
   | "int" -> Some (TInt (IInt, []))
+  | "Integer" -> Some (TInt (IInt, []))
   | "long" -> Some (TInt (ILong, []))
+  | "LONG" -> Some (TInt (ILong, []))
+  | "OLECHAR" -> Some (TInt (IWChar, []))
+  | "size_t" -> Some (TInt (IUInt, []))
+  | "SIZE_T" -> Some (TInt (IUInt, []))
   | "UINT" -> Some (TInt (IUInt, []))
+  | "unknown" -> Some (TUnknown [])
+  | "UNKNOWN" -> Some (TUnknown [])
   | "void" -> Some (TVoid ([]))
   | "VOID" -> Some (TVoid ([]))
+  | "wchar_t" -> Some (TInt (IWChar, []))
   | _ ->
      let _ = chlog#add "legacy type name" (STR t) in
      None
