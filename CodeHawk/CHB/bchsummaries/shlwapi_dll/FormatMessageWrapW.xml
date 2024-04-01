@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="2024-03-16 13:15:17"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="shlwapi" name="FormatMessageWrapW">
+    <refer-to lib="kernel32" name="FormatMessageW"/>
+  </libfun>
+ </codehawk-binary-analyzer>

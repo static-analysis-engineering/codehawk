@@ -15,7 +15,7 @@
    <api adj="0" cc="cdecl" name="wcscat">
      <returntype><ptr>wchar_t</ptr></returntype>
      <par loc="stack" io="rw" name="dst" nr="1" rep="hex">
-       <type><ptr>wchar_t/></ptr></type>
+       <type><ptr>wchar_t</ptr></type>
        <pre><deref-read-nt/></pre>
        <roles>
           <role rt="ioc:memops" rn="dst-string:concatenate"/>

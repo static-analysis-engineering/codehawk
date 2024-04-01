@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-23 18:12:11"/>
+  <libfun lib="kernel32" name="DeleteAtom">
+    <documentation>
+      <desc>
+	Decrements the reference count of a local string atom. If the atom's
+	reference ount is reduced to zero, DeleteAtom removes the string
+	associated with the atom from the local atom table.
+      </desc>
+      <apidoc>
+        <pt>ATOM DeleteAtom ([in] ATOM nAtom)</pt>
+        <par name="nAtom">The atom to be deleted.</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">nAtom</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="DeleteAtom">
+      <par loc="stack" name="nAtom" nr="1" io="r">
+        <type>ATOM</type>
+      </par>
+      <returntype>ATOM</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

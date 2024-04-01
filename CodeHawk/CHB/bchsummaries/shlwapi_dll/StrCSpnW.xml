@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-21 16:08:15"/>
+  <libfun lib="shlwapi" name="StrCSpnW">
+    <documentation>
+      <desc>
+	Searches a string for the first occurrence of any of a group of
+	characters. The search method is case-sensitive, and the
+	terminating NULL character is included within the search pattern
+	match.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>StrCSpnW(</ll>
+          <ld>[in] PCWSTR pszStr</ld>
+          <ld>[in] PCWSTR pszSet</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszStr">
+	  A pointer to the null-terminated string to be searched.
+	</par>
+        <par name="pszSet">
+	  A pointer to a null-terminated string that contains the characters
+	  to search for.
+	</par>
+        <return>
+          <rc cond="success">
+	    the index of the first occurrence in pszStr of any character from
+	    pszSet, or the length of pszStr if no match is found.
+	  </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="StrCSpnW">
+      <par loc="stack" name="pszStr" nr="1" io="r">
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:search"/>
+	</roles>
+        <type>PCTSTR</type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="pszSet" nr="2" io="r">
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:search"/>
+	</roles>
+        <type>PCTSTR</type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <return/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+	<post>
+	  <math>
+	    <apply>
+	      <leq/>
+	      <return-value/>
+	      <apply>
+		<null-terminator-pos/>
+		<ci>pszStr</ci>
+	      </apply>
+	    </apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

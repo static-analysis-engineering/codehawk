@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-21 15:28:24"/>
+  <libfun lib="shlwapi" name="StrCpyNW">
+    <documentation>
+      <desc>
+	Copies a specified number of characters from the beginning of one
+	string to another.
+      </desc>
+      <remarks>
+	It is recommended not to use this function.
+      </remarks>
+      <apidoc>
+        <pt>
+          <ll>StrCpyNW(</ll>
+          <ld>[out] PWSTR pszDst</ld>
+          <ld>[in] PCWSTR pszSrc</ld>
+          <ld>int cchMax</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszDst">
+	  A pointer to a buffer that, when this funciton returns successfully,
+	  receives the copied string. This buffer must be of sufficient size
+	  to hold the copied characters. The string is not guaranteed to be
+	  null-terminated.
+	</par>
+        <par name="pszSrc">
+	  A pointer to the null-terminated source string.
+	</par>
+        <par name="cchMax">
+	  The number of characters to be copied, including the terminating
+	  null character.
+	</par>
+        <return>
+          <rc cond="success">pointer to pszDst</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="StrCpyNW">
+      <par loc="stack" name="pszDst" nr="1" io="w">
+        <type>PTSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:copy"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszSrc" nr="2" io="r">
+        <type>PCTSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:copy"/>
+	</roles>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="cchMax" nr="3" roles="none" io="r">
+        <type>int</type>
+      </par>
+      <returntype>PTSTR</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="memops" desc="copies a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>TCHAR</type>
+	      <ci>pszSrc</ci>
+	      <ci>cchMax</ci>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>pszDst</ci>
+	      <ci>cchMax</ci>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <eq/>
+	      <return-value/>
+	      <ci>pszDst</ci>
+	    </apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>pszDst</ci>
+	      <ci>cchMax</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

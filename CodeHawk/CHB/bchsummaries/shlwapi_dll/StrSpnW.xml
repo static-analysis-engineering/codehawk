@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-21 15:11:36"/>
+  <libfun lib="shlwapi" name="StrSpnW">
+    <documentation>
+      <desc>
+	Obtains the length of a substring within a string that
+	consists entirely of characters contained in a specified
+	buffer.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>StrSpnW(</ll>
+          <ld>[in] psz</ld>
+          <ld>[in] pszSet</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psz">
+	  A pointer to the null-terminated string that is to be searched.
+	</par>
+        <par name="pszSet">
+	  A pointer to a null-terminated character buffer that contains the
+	  set of characters for which to search.
+	</par>
+        <return>
+          <rc cond="success">
+	    the length, in characters of the matching string or zero if no
+	    match is found.
+	  </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="StrSpnW">
+      <par loc="stack" name="psz" nr="1" io="r">
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:search"/>
+	</roles>
+        <type>PCTSTR</type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="pszSet" nr="2" io="r">
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:search"/>
+	</roles>
+        <type>PCTSTR</type>
+	<pre><deref-read-nt/></pre>	
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <return/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+	<post>
+	  <math>
+	    <apply>
+	      <leq/>
+	      <return-value/>
+	      <apply>
+		<null-terminator-pos/>
+		<ci>psz</ci>
+	      </apply>
+	    </apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-21 17:07:47"/>
+  <libfun lib="shlwapi" name="StrCatW">
+    <documentation>
+      <desc>Appends one string to another.</desc>
+      <remarks>Do not use this function</remarks>
+      <apidoc>
+        <pt>
+          <ll>PWSTR StrCatW(</ll>
+          <ld>[in, out] PWSTR psz1</ld>
+          <ld>[in] PCWSTR psz2</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psz1">
+	  A pointer to a null-terminated string. When this function returns
+	  successfully, this string contains its original content with the
+	  string psz2 appended. This buffer must be large enough to hold
+	  both strings and the terminating null character.
+	</par>
+        <par name="psz2">
+	  A pointer to a null-terminated string to be appended to psz1.
+	</par>
+        <return>
+          <rc cond="success">
+	    a pointer to psz1, which holds the combined strings.
+	  </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="StrCatW">
+      <par loc="stack" name="psz1" nr="1" io="rw">
+        <type>PTSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:concatenate"/>
+	</roles>
+      </par>
+      <par loc="stack" name="psz2" nr="2" io="r">
+        <type>PCTSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:copy"/>
+	</roles>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>PTSTR</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="memops" desc="appends a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>psz1</ci>
+	      <apply>
+		<plus/>
+		<apply><null-terminator-pos/><ci>psz2</ci></apply>
+		<apply><null-terminator-pos/><ci>psz1</ci></apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <eq/>
+	      <return-value/>
+	      <ci>psz1</ci>
+	    </apply>
+	  </math>
+	</post>
+      </postconditions>
+      <null-terminated/>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>psz1</ci>
+	      <apply>
+		<plus/>
+		<apply><null-terminator-pos/><ci>psz2</ci></apply>
+		<apply><null-terminator-pos/><ci>psz1</ci></apply>
+	      </apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

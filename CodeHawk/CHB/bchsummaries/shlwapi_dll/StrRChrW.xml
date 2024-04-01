@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-28 09:20:03"/>
+  <libfun lib="shlwapi" name="StrRChrW">
+    <documentation>
+      <desc>
+	Searches a string for the last occurrence of a specified character.
+	The comparison is case sensitive
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>PCWSTR StrRChrW(</ll>
+          <ld>[in] PCWSTR pszStart</ld>
+          <ld>[in, optional] pszEnd</ld>
+          <ld>WCHAR wMatch</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszStart">
+	  A pointer to the null-terminated string to be searched
+	</par>
+        <par name="pszEnd">
+	  A pointer into the source string that defines the range of the
+	  search. Set pszEnd to NULL to search the entire string.
+	</par>
+        <par name="wMatch">The character to search for</par>
+        <return>
+          <rc cond="success">
+	    pointer to the last occurrence of the character in the string
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="StrRChrW">
+      <par loc="stack" name="pszStart" nr="1" io="r">
+        <type>PCWSTR</type>
+      </par>
+      <par loc="stack" name="pszEnd" nr="2" io="r">
+        <type>PCWSTR</type>
+      </par>
+      <par loc="stack" name="wMatch" nr="3" io="r">
+        <type>WCHAR</type>
+      </par>
+      <returntype>PCWSTR</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

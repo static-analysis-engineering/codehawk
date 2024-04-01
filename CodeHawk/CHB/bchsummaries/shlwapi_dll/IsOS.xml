@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-21 17:33:02"/>
+  <libfun lib="shlwapi" name="IsOS">
+    <documentation>
+      <desc>
+	Checks for specified operating systems and operating system features.
+      </desc>
+      <apidoc>
+        <pt>BOOL IsOS ([in] DWORD dwOS)</pt>
+        <par name="dwOS">
+	  A value that specifies which operating system or operating system
+	  feature to check for
+	</par>
+        <return>
+          <rc cond="success">
+	    nonzero value if the specified operating system or operating system
+	    features is detected
+	  </rc>
+          <rc cond="failure">FALSE</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="IsOS">
+      <par loc="stack" name="dwOS" nr="1" io="r">
+        <type>DWORD</type>
+      </par>
+      <returntype>BOOL</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

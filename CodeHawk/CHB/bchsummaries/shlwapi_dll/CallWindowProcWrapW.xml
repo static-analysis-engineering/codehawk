@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="2024-03-16 12:45:14"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="shlwapi" name="CallWindowProcWrapW">
+    <refer-to lib="user32" name="CallWindowProcW"/>
+  </libfun>
+ </codehawk-binary-analyzer>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-21 13:12:18"/>
+  <libfun lib="shlwapi" name="StrCpyW">
+    <documentation>
+      <desc>Copies one string to another</desc>
+      <remarks>
+	Security warning: Using this function incorrectly can
+	compromise the security of the application.
+      </remarks>
+      <apidoc>
+        <pt>
+          <ll>StrCpyW(</ll>
+          <ld>[out] PWSTR psz1</ld>
+          <ld>[in] PCWSTR psz2</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="psz1">
+	  A pointer to a buffer that, when this function returns
+	  successfully, receives the copied string. This string
+	  is not guaranteed to be null-terminated.
+	</par>
+        <par name="psz2">
+	  A pointer to the null-terminated source string.
+	</par>
+        <return>
+          <rc cond="success">pointer to psz1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="StrCpyW">
+      <par loc="stack" name="psz1" nr="1" io="w">
+        <type>PWSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:copy"/>
+	</roles>
+      </par>
+      <par loc="stack" name="psz2" nr="2" io="r">
+        <type>PCWSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:copy"/>
+	</roles>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>PTSTR</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="memops" desc="copies a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>TCHAR</type>
+	      <ci>psz1</ci>
+	      <apply><null-terminator-pos/><ci>psz2</ci></apply>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<notnull-null/>
+	<post>
+	  <math>
+	    <apply>
+	      <eq/>
+	      <return-value/>
+	      <ci>psz1</ci>
+	    </apply>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>TCHAR</type>
+	      <ci>psz1</ci>
+	      <apply><null-terminator-pos/><ci>psz2</ci></apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
