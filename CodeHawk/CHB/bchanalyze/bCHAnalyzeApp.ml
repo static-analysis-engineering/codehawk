@@ -92,7 +92,7 @@ open BCHTrace
 module TR = CHTraceResult
 
 
-let analyze_all = ref true
+let analyze_all = ref false
 let maxrelationalvarcomplexity = ref 150000.0
 let maxrelationalloopcomplexity = ref 2000
 

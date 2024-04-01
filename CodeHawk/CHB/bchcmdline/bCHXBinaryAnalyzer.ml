@@ -607,35 +607,66 @@ let main () =
       let _ = register_hashed_functions () in
       let starttime = Unix.gettimeofday () in
       let _ = load_bcdictionary () in
+      let _ = pr_timing [STR "bcdictionary loaded"] in
       let _ = load_bdictionary () in
+      let _ = pr_timing [STR "bdictionary loaded"] in
+      let _ = load_bc_files () in
+      let _ = pr_timing [STR "bc files loaded"] in
       let _ = system_info#initialize in
+      let _ = pr_timing [STR "system info initialized"] in
       let _ = load_interface_dictionary () in
+      let _ = pr_timing [STR "interface dictionary loaded"] in
       let _ = load_x86dictionary () in
+      let _ = pr_timing [STR "x86 dictionary loaded"] in
       let _ = global_system_state#initialize in
+      let _ = pr_timing [STR "global system state initialized"] in
       let _ = file_metrics#load_xml in
-      let _ = pverbose [ STR "Load pe files ... " ; NL ] in
+      let _ =
+        pr_timing [
+            STR "file metrics loaded (index ";
+            INT file_metrics#get_index;
+            STR ")"] in
       let _ = load_pe_files () in
+      let _ = pr_timing [STR "pe files loaded"] in
+      let _ =
+        List.iter
+          (fun f -> parse_cil_file ~removeUnused:false f) system_info#ifiles in
+      let _ =
+        if (List.length system_info#ifiles > 0) then
+          pr_timing [STR "c header files parsed"] in
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
-      let _ = pverbose [ STR "Start disassembly ... " ; NL ] in
-      let (success,msg) = disassemble_pe () in
+      let (success, msg) = disassemble_pe () in
+      let _ = pr_timing [STR "pe sections disassembled"] in
       if success then
-	let _ = pverbose [ msg ] in
 	let (success,msg) = construct_functions_pe () in
 	if success then
-	  let _ = pverbose [ msg ] in
+          let _ = pr_timing [STR "functions constructed: "; msg] in
 	  let _ = analyze starttime in
-          let _ = file_metrics#set_disassembly_results (get_disassembly_metrics ()) in
+          let _ = pr_timing [STR "analysis is finished"] in
+          let _ = file_metrics#set_disassembly_results
+                    (get_disassembly_metrics ()) in
 	  begin
-	    save_functions_list ();
-	    save_file_results ();
-	    save_global_state ();
-            x86_analysis_results#save;
-            save_x86dictionary ();
 	    save_system_info ();
+            pr_timing [STR "system info saved"];
+	    save_functions_list ();
+            pr_timing [STR "functions list saved"];
+	    save_file_results ();
+            pr_timing [STR "file results saved"];
+	    save_global_state ();
+            pr_timing [STR "global state saved"];
+            x86_analysis_results#save;
+            pr_timing [STR "x86 analysis results saved"];
+            save_x86dictionary ();
+            pr_timing [STR "x86 dictionary saved"];
+            save_bc_files ();
+            pr_timing [STR "bc files saved"];
             save_interface_dictionary ();
+            pr_timing [STR "interface dictionary saved"];
             save_bcdictionary ();
+            pr_timing [STR "bcdictionary saved"];
             save_bdictionary ();
+            pr_timing [STR "bdictionary saved"];
 	    save_log_files logcmd;
 	    (if !save_asm then
               begin
@@ -650,6 +681,7 @@ let main () =
                   (STR (BCHAssemblyFunctions.assembly_functions#duplicates_to_string));
                 save_log_files !cmd;
 	      end);
+            pr_timing [STR "log files saved"];
             exit 0
 	  end
 	else
