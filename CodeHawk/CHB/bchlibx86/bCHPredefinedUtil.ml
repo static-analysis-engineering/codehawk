@@ -234,8 +234,14 @@ let get_arg (args: (fts_parameter_t * xpr_t) list) (n: int) (floc: floc_int) =
   | Not_found ->
     begin
       ch_error_log#add
-        "get argument"
-	(LBLOCK [floc#l#toPretty; STR ": Unable to get argument "; INT n]);
+        "predefined x86 semantics: get argument"
+	(LBLOCK [
+             floc#l#toPretty;
+             STR ": Unable to get argument ";
+             INT n;
+             STR " (argument count: ";
+             INT (List.length args);
+             STR ")"]);
       random_constant_expr
     end
 

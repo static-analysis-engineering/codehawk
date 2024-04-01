@@ -1300,7 +1300,9 @@ let record_call_targets () =
 	  count := !count + 1;
 	  f#iteri
             (fun _ ctxtiaddr instr ->
-              let iaddr = (ctxt_string_to_location faddr ctxtiaddr)#i in
+              let loc = ctxt_string_to_location faddr ctxtiaddr in
+              let floc = get_floc loc in
+              let iaddr = loc#i in
 	      match instr#get_opcode with
 	      | DirectCall _ | IndirectCall _ ->
 	         if finfo#has_call_target ctxtiaddr
@@ -1317,20 +1319,27 @@ let record_call_targets () =
 		       finfo#set_call_target ctxtiaddr predefined_ctinfo;
 		       finfo#schedule_invariant_reset;
 		       chlog#add
-                         "reset invariants"
-                         (LBLOCK [finfo#a#toPretty; STR ":"; STR ctxtiaddr])
+                         "reset invariants (predefined call semantics)"
+                         (LBLOCK [
+                              floc#l#toPretty;
+                              STR ": appaddr: ";
+                              appaddr#toPretty])
 		     end
 	           else
                      chlog#add
                        "unrecognized predefined call semantics"
                        (LBLOCK [
-                            faddr#toPretty; STR ": ";
+                            floc#l#toPretty;
+                            STR ": ";
                             STR predefined_ctinfo#get_name])
                  else
 		   if system_info#has_call_target faddr iaddr then
                      let calltgt = system_info#get_call_target faddr iaddr in
                      let ctinfo = mk_call_target_info calltgt in
                      finfo#set_call_target ctxtiaddr ctinfo
+                   else if finfo#has_call_target ctxtiaddr
+                           && not (finfo#get_call_target ctxtiaddr)#is_unknown then
+                     floc#update_call_target
                      (* ----- user-provided target -----
 		     match system_info#get_call_target faddr iaddr with
 		     | ("dll",dllname,dllfn) ->
@@ -1779,7 +1788,9 @@ let set_call_address (floc:floc_int) (op:operand_int) =
        || changes_stack_adjustment () then
       begin
 	floc#f#schedule_invariant_reset;
-	chlog#add "reset invariants" (LBLOCK [floc#l#toPretty])
+	chlog#add
+          "reset invariants"
+          (LBLOCK [floc#l#toPretty; STR "(set_call_address)"])
       end in
   let logmsg msg = chlog#add "indirect call resolved"
     (LBLOCK [floc#l#toPretty; STR ": "; msg]) in
@@ -1806,10 +1817,15 @@ let set_call_address (floc:floc_int) (op:operand_int) =
 	begin
 	  (match tgt with
 	   | StubTarget (DllFunction (dll,name)) ->
+              let _ =
+                logmsg (LBLOCK [STR "Stub: "; (call_target_to_pretty tgt)]) in
               floc#set_call_target (mk_dll_target dll name)
 	   | AppTarget dw ->
+              let _ =
+                logmsg (LBLOCK [STR "App: "; (call_target_to_pretty tgt)]) in
               floc#set_call_target (mk_app_target dw)
-	  | _ -> ());
+	   | _ ->
+              logmsg (LBLOCK [STR "Other target: "; (call_target_to_pretty tgt)]));
 	  logmsg (call_target_to_pretty tgt);
 	  reset ()
 	end
@@ -1910,6 +1926,15 @@ let resolve_indirect_calls (f:assembly_function_int) =
            let floc = get_floc loc in
            if (not floc#has_call_target)
               || floc#get_call_target#is_unknown then
+             let _ =
+               chlog#add
+                 "attempt to resolve call"
+                 (LBLOCK [
+                      floc#l#toPretty;
+                      (if floc#get_call_target#is_unknown then
+                         STR " (call target unknown)"
+                       else
+                         STR " (no call target)")]) in
              set_call_address floc op
         | _ -> ()) in
   ()

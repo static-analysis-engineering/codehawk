@@ -36,9 +36,13 @@ open CHLogger
 
 (* xprlib *)
 open Xprt
+open XprToPretty
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypeUtil
+open BCHFtsParameter
+open BCHFunctionInterface
 open BCHLibTypes
 open BCHMakeCallTargetInfo
 
@@ -46,6 +50,9 @@ open BCHMakeCallTargetInfo
 open BCHLibx86Types
 open BCHOperand
 open BCHPredefinedUtil
+
+
+let x2p = xpr_formatter#pr_expr
 
 
 (* Functions that are called at the beginning of many functions to set up
@@ -171,9 +178,9 @@ let get_seh_prolog_chif (handler:doubleword_int) (floc:floc_int) =
     let scopetable = get_arg args 1 floc in
     let size = get_arg args 2 floc in
     let xhandler = num_constant_expr handler#to_numerical in
-    let (esplhs,esplhscmds) = get_reg_lhs Esp floc in
-    let (eaxlhs,eaxlhscmds) = get_reg_lhs Eax floc in
-    let (ebplhs,ebplhscmds) = get_reg_lhs Ebp floc in
+    let (esplhs, esplhscmds) = get_reg_lhs Esp floc in
+    let (eaxlhs, eaxlhscmds) = get_reg_lhs Eax floc in
+    let (ebplhs, ebplhscmds) = get_reg_lhs Ebp floc in
     match size with
     | XConst (IntConst num) ->
       let adj = num#toInt in
@@ -181,21 +188,21 @@ let get_seh_prolog_chif (handler:doubleword_int) (floc:floc_int) =
       let xm1 = int_constant_expr (-1) in
       let x8 = int_constant_expr 8 in
       let x12 = int_constant_expr 12 in
-      let (loca8,lcmdsa8) = get_arg_lhs 8 floc in
-      let (loca4,lcmdsa4) = get_arg_lhs 4 floc in
-      let (loc0,lcmds0) = get_returnaddress_lhs floc in
-      let (loc4,lcmds4) = get_var_lhs 4 floc in
-      let (loc8,lcmds8) = get_var_lhs 8 floc in
-      let (loc16,lcmds16) = get_var_lhs 16 floc in
-      let (_loc8s,lcmds8s) = get_allocavar_lhs 8 adj floc in
-      let (loc12s,lcmds12s) = get_allocavar_lhs 12 adj floc in
-      let (loc16s,lcmds16s) = get_allocavar_lhs 16 adj floc in
-      let (loc20s,lcmds20s) = get_allocavar_lhs 20 adj floc in
+      let (loca8, lcmdsa8) = get_arg_lhs 8 floc in
+      let (loca4, lcmdsa4) = get_arg_lhs 4 floc in
+      let (loc0, lcmds0) = get_returnaddress_lhs floc in
+      let (loc4, lcmds4) = get_var_lhs 4 floc in
+      let (loc8, lcmds8) = get_var_lhs 8 floc in
+      let (loc16, lcmds16) = get_var_lhs 16 floc in
+      let (_loc8s, lcmds8s) = get_allocavar_lhs 8 adj floc in
+      let (loc12s, lcmds12s) = get_allocavar_lhs 12 adj floc in
+      let (loc16s, lcmds16s) = get_allocavar_lhs 16 adj floc in
+      let (loc20s, lcmds20s) = get_allocavar_lhs 20 adj floc in
       let cmdsa8 = floc#get_assign_commands loca8 (XVar ebp) in
       let cmdsa4 = floc#get_assign_commands loca4 xm1 in
       let cmds0 = floc#get_assign_commands loc0 scopetable in
       let cmds4 = floc#get_assign_commands loc4 xhandler in
-      let cmds8 = [ABSTRACT_VARS [loc8] ] in  (* fs:0x0 *)
+      let cmds8 = [ABSTRACT_VARS [loc8]] in  (* fs:0x0 *)
       let cmds16 =
         floc#get_assign_commands loc16 (XOp (XMinus, [XVar esp; adj20])) in
       let cmds12s = floc#get_assign_commands loc12s ebxv in
@@ -232,7 +239,30 @@ let get_seh_prolog_chif (handler:doubleword_int) (floc:floc_int) =
       @ cmdsebp
       @ cmdseax
       @ cmdsesp
-    | _ -> [ floc#get_abstract_cpu_registers_command [Eax; Esp; Ebp]]
+    | _ ->
+       let logmsg =
+         match args with
+         | [] ->
+            let tgt = floc#get_call_target in
+            LBLOCK [STR "calltarget: "; tgt#toPretty; STR " (no arguments)"]
+         | _ ->
+            LBLOCK [
+                STR "arguments: ";
+                pretty_print_list
+                  args
+                  (fun (par, x) ->
+                    LBLOCK [STR (fts_parameter_to_string par); STR ":"; x2p x])
+                  "("
+                  ", "
+                  ")"] in
+       let _ =
+         chlog#add
+           "SEH prolog3"
+           (LBLOCK [
+                STR "Size argument not constant: ";
+                logmsg;
+                STR "; abstracting Eax, Esp, Ebp"]) in
+       [floc#get_abstract_cpu_registers_command [Eax; Esp; Ebp]]
   with
   | BCH_failure p ->
     begin
@@ -264,7 +294,9 @@ object (self)
   method get_parametercount = 2
 
   method! get_call_target (a:doubleword_int) =
-    mk_inlined_app_target a self#get_name
+    let fty = t_fsignature t_void [("scopetable", t_voidptr); ("size", t_int)] in
+    let fintf = bfuntype_to_function_interface self#get_name fty in
+    mk_app_target ~fintf:(Some fintf) a
 
   method! get_description = "sets up exception handling"
 
@@ -486,7 +518,9 @@ object(self)
   method get_parametercount = 1
 
   method! get_call_target (a:doubleword_int) =
-    mk_inlined_app_target a self#get_name
+    let fty = t_fsignature t_void [("size", t_int)] in
+    let fintf = bfuntype_to_function_interface self#get_name fty in
+    mk_app_target ~fintf:(Some fintf) a
 
   method! get_description =
     "sets up exception handling and allocates stack memory"
@@ -534,7 +568,9 @@ object (self)
   method get_parametercount = 1
 
   method! get_call_target (a:doubleword_int) =
-    mk_inlined_app_target a self#get_name
+    let fty = t_fsignature t_void [("size", t_int)] in
+    let fintf = bfuntype_to_function_interface self#get_name fty in
+    mk_app_target ~fintf:(Some fintf) a
 
   method! get_description =
     "sets up exception handling and allocates memory on the stack"
@@ -583,7 +619,9 @@ object (self)
   method get_parametercount = 1
 
   method! get_call_target (a:doubleword_int) =
-    mk_inlined_app_target a self#get_name
+    let fty = t_fsignature t_void [("size", t_int)] in
+    let fintf = bfuntype_to_function_interface self#get_name fty in
+    mk_app_target ~fintf:(Some fintf) a
 
   method! get_description =
     "sets up exception handling and allocates memory on the stack"
@@ -635,7 +673,9 @@ object (self)
   method get_parametercount = 1
 
   method! get_call_target (a:doubleword_int) =
-    mk_inlined_app_target a self#get_name
+    let fty = t_fsignature t_void [("size", t_int)] in
+    let fintf = bfuntype_to_function_interface self#get_name fty in
+    mk_app_target ~fintf:(Some fintf) a
 
   method! get_description =
     "sets up exectpion handling and allocates memory on the stack"

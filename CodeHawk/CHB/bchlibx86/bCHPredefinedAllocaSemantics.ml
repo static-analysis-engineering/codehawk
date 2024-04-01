@@ -148,7 +148,7 @@ object (self)
     let eaxv = get_reg_value Eax floc in
     let cmds1 =
       floc#get_assign_commands esplhs (XOp (XMinus, [XVar esp; eaxv])) in
-    let cmds2 = [ floc#get_abstract_cpu_registers_command [Eax; Ecx]] in
+    let cmds2 = [floc#get_abstract_cpu_registers_command [Eax; Ecx]] in
     esplhscmds @ cmds1 @ cmds2
 
   method get_parametercount = 0
