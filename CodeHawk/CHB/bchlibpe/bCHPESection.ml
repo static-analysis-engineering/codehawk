@@ -450,15 +450,10 @@ object (self)
     (* absolute address *)
     match self#get_initialized_doubleword address with
     | Some dw->
-       let _ =
-         chlog#add
-           "resolve" (LBLOCK [address#toPretty; STR " -> "; dw#toPretty]) in
-	begin
-	  if system_info#has_bound_library_function dw then
-	    Some (system_info#get_bound_library_function dw)
-	  else
-	    self#get_imported_function_by_index dw
-	end
+       if system_info#has_bound_library_function dw then
+	 Some (system_info#get_bound_library_function dw)
+       else
+	 self#get_imported_function_by_index dw
     | _ -> None
 
   method get_initialized_doubleword (address:doubleword_int) =

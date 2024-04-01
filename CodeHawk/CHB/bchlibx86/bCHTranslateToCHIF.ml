@@ -1218,14 +1218,16 @@ let translate_instruction
      let esp = env#mk_cpu_register_variable Esp in
      let (espLhs,espLhsCommands) = (esp_r WR)#to_lhs floc in
      let ebp = env#mk_cpu_register_variable Ebp in
+     let xebp = floc#inv#rewrite_expr (XVar ebp) in
      let (ebpLhs,ebpLhsCommands) = (ebp_r WR)#to_lhs floc in
      let restoredValue = (ebp_deref RD)#to_expr floc in
      let memaddr = (ebp_deref RD)#to_address floc in
+     let memaddr = floc#inv#rewrite_expr memaddr in
      let _ = finfo#restore_register memaddr floc#cia (CPURegister Ebp) in
      let size = int_constant_expr 4 in
      let reqN () = floc#f#env#mk_num_temp in
      let reqC = floc#f#env#request_num_constant in
-     let cmds1 = floc#get_assign_commands espLhs ~size (XVar ebp) in
+     let cmds1 = floc#get_assign_commands espLhs ~size xebp in
      let cmds2 = floc#get_assign_commands ebpLhs ~size restoredValue in
      let (newEspCmds,newEsp) =
        xpr_to_numexpr reqN reqC (XOp (XPlus, [XVar esp; size])) in

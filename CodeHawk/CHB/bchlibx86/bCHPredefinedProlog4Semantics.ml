@@ -39,6 +39,9 @@ open Xprt
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypeUtil
+open BCHFtsParameter
+open BCHFunctionInterface
 open BCHLibTypes
 open BCHMakeCallTargetInfo
 
@@ -211,7 +214,9 @@ object (self)
   method get_parametercount = 2
 
   method! get_call_target (a:doubleword_int) =
-    mk_inlined_app_target a self#get_name
+    let fty = t_fsignature t_void [("size", t_int); ("scopetable", t_voidptr)] in
+    let fintf = bfuntype_to_function_interface self#get_name fty in
+    mk_app_target ~fintf:(Some fintf) a
 
   method! get_description =
     "sets up exception handling and allocate memory on the stack"
