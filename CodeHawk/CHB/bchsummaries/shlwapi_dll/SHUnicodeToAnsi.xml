@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-23 13:05:05"/>
+  <libfun lib="shlwapi" name="SHUnicodeToAnsi">
+    <documentation>
+      <desc>
+	Converts a string from the Unicode code page to the ANSI code page.
+      </desc>
+      <remarks>
+	Using this function incorrectly can compromise the security of the
+	application.
+      </remarks>
+      <apidoc>
+        <pt>
+          <ll>int SHUnicodeToAnsi(</ll>
+          <ld>[in] PCWSTR pwszSrc</ld>
+          <ld>[out] PSTR pszDst</ld>
+          <ld>int cchBuf</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pwszSrc">
+	  A pointer to the null-terminated Unicode string to be converted to ANSI
+	</par>
+        <par name="pszDst">
+	  A pointer to a buffer that, when this function returns successfully,
+	  receives the converted characters. The buffer must be large enough to
+	  contain the number of CHAR characters specified by the cchBuf
+	  parameters, including room for a terminating null character.
+	</par>
+        <par name="cchBuf">
+	  The number of CHAR values that can be contained by the buffer pointed
+	  to by pszDst. The value assigned to parameter must be greater than
+	  zero.
+	</par>
+        <return>
+          <rc cond="success">
+	    The number of CHAR values written to the output buffer, including
+	    the terminating null character.
+	  </rc>
+          <rc cond="failure">0</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="SHUnicodeToAnsi">
+      <par loc="stack" name="pwszSrc" nr="1" io="r">
+        <type>PCWSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:copy"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pszDst" nr="2" io="w">
+        <type>PSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:copy"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cchBuf" nr="3" io="r">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="memops" desc="converts a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>char</type>
+	      <ci>pwszSrc</ci>
+	      <ci>cchBuf</ci>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>char</type>
+	      <ci>pszDst</ci>
+	      <ci>cchBuf</ci>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <geq/>
+	      <ci>cchBuf</ci>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <gt/>
+	      <return-value/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+	<error-post>
+	  <math>
+	    <apply>
+	      <eq/>
+	      <return-value/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</error-post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>char</type>
+	      <ci>pszDst</ci>
+	      <ci>cchBuf</ci>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

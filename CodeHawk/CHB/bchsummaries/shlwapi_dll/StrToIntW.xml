@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-23 22:46:15"/>
+  <libfun lib="shlwapi" name="StrToIntW">
+    <documentation>
+      <desc>
+	Converts a string that represents a decimal value to an integer.
+      </desc>
+      <apidoc>
+        <pt>int StrToIntW ([in] pszSrc)</pt>
+        <par name="pszSrc">
+	  A pointer to the null-terminated string to be converted. A valid
+	  string representing a decimal value contains only the characters
+	  0..9 and must have the following form to be parsed successfully:
+	  (optional white space)(optional sign)(one or more decimal digits)
+	</par>
+        <return>
+          <rc cond="success">
+	    the int value represented by pszSrc.
+	  </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="StrToIntW">
+      <par loc="stack" name="pszSrc" nr="1" io="r">
+        <type>PCTSTR</type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

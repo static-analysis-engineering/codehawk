@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-27 12:39:14"/>
+  <libfun lib="advapi32" name="RegUnLoadKeyA">
+    <documentation>
+      <desc>
+	Unloads the specified registry key and its subkeys from the registry.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>LSTATUS RegUnLoadKeyA(</ll>
+          <ld>[in] HKEY hKey</ld>
+          <ld>[in, optional] LPCSTR lpSubKey</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="hKey">
+	  A handle to the registry key to be unloaded. This parameter can be
+	  a handle returned by a call to RegConnectRegistry function or a
+	  predefined handle.
+	</par>
+        <par name="lpSubKey">
+	  The name of the subkey to be unloaded. The key referred to by the
+	  lpSubKey parameter must have been created using the RegLoadKey
+	  function.
+	</par>
+        <return>
+          <rc cond="success">ERROR_SUCCESS</rc>
+          <rc cond="failure">
+	    nonzero error code defined in WinError.h
+	  </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="8" cc="stdcall" name="RegUnLoadKeyA">
+      <par loc="stack" name="hKey" nr="1" io="r">
+        <type>HKEY</type>
+	<roles>
+	  <role rt="ioc:registry" rn="handle:key"/>
+	</roles>
+      </par>
+      <par loc="stack" name="lpSubKey" nr="2" io="r" rep="hex">
+        <type>LPCSTR</type>
+	<pre><deref-read-null/></pre>
+	<roles>
+	  <role rt="ioc:registry" rn="name:subkey"/>
+	</roles>
+      </par>
+      <returntype>LSTATUS</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="registry" desc="unloads a registry key"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94306</copyright-notice>
+</codehawk-binary-analyzer>

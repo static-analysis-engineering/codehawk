@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-27 23:26:01"/>
+  <libfun lib="comctl32" name="CreateUpDownControl">
+    <documentation>
+      <desc>
+	Creates an up-down control (this function is obsolete. It is a
+	16-bit function and cannot handle 32-bit values for range and
+	position.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>HWND CreateUpDownControl(</ll>
+          <ld>DWORD dwStyle</ld>
+          <ld>int x</ld>
+          <ld>int y</ld>
+          <ld>int cx</ld>
+          <ld>int cy</ld>
+          <ld>HWND hParent</ld>
+          <ld>int nID</ld>
+          <ld>HINSTANCE hInst</ld>
+          <ld>HWND hBuddy</ld>
+          <ld>int nUpper</ld>
+          <ld>int nLower</ld>
+          <ld>int nPos</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="dwStyle">
+	  Window styles for the control. This parameter should include
+	  the WS_CHILD, WS_BORDER, and WS_VISIBLE styles, and it may
+	  include any of the window styles specific to the up-down
+	  control
+	</par>
+        <par name="x">
+	  Horizontal coordinate, in client coordinates, of the upper-left
+	  corner of the control
+	</par>
+        <par name="y">
+	  Vertical coordinate, in client coordinates, of the upper-left
+	  corner of the control
+	</par>
+        <par name="cx">Width, in pixels, of the up-down control</par>
+        <par name="cy">Height, in pixels, of the up-down control</par>
+        <par name="hParent">
+	  Handle to the parent window of the up-down control.
+	</par>
+        <par name="nID">Identifier of the up-down control</par>
+        <par name="hInst">
+	  Handle to the module instance of the application creating the
+	  up-down control.
+	</par>
+        <par name="hBuddy">
+	  Handle to the window associated with the up-down control. If
+	  this parameter is NULL the control has no buddy window.
+	</par>
+        <par name="nUpper">Upper limit (range) of the up-down control</par>
+        <par name="nLower">Lower limit (range) of the up-down control</par>
+        <par name="nPos">Position of the control</par>
+        <return>
+          <rc cond="success">
+	    the window handle to the up-down control
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="48" cc="stdcall" name="CreateUpDownControl">
+      <par loc="stack" name="dwStyle" nr="1" io="r">
+        <type>DWORD</type>
+      </par>
+      <par loc="stack" name="x" nr="2" io="r">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="y" nr="3" io="r">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="cx" nr="4" io="r">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="cy" nr="5" io="r">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="hParent" nr="6">
+        <type>HWND</type>
+      </par>
+      <par loc="stack" name="nID" nr="7">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="hInst" nr="8">
+        <type>HINSTANCE</type>
+      </par>
+      <par loc="stack" name="hBuddy" nr="9">
+        <type>HWND</type>
+      </par>
+      <par loc="stack" name="nUpper" nr="10">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="nLower" nr="11">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="nPos" nr="12">
+        <type>int</type>
+      </par>
+      <returntype>HWND</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94306</copyright-notice>
+</codehawk-binary-analyzer>

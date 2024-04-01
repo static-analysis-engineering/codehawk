@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-23 19:21:16"/>
+  <libfun lib="shlwapi" name="SHAnsiToUnicode">
+    <documentation>
+      <desc>
+	Converts a string from the ANSI code page to the Unicode code page.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>int SHAnsiToUnicode(</ll>
+          <ld>[in] PCSTR pszSrc</ld>
+          <ld>[out] PWSTR wszDst</ld>
+          <ld>int cwchBuf</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pszSrc">
+	  A pointer to a null-terminated ANSI string to be converted to Unicode
+	</par>
+        <par name="pwszDst">
+	  A pointer to a buffer that, when this funciton returns successfully,
+	  receives the string specified by pszSrc, after the ANSI characters
+	  have been converted to Unicode (WCHAR). The buffer must be large
+	  enough to contain the number of Unicode characters specified by the
+	  cwchBuf parameter, including a terminating null character.
+	</par>
+        <par name="cwchBuf">
+	  The number of Unicode characters that can be contained by the
+	  buffer pointed to by pwszDst. This parameter must be greater than
+	  zero.
+	</par>
+        <return>
+          <rc cond="success">
+	    the number of Unicode characters written to pwszDst, including
+	    the null character.
+	  </rc>
+          <rc cond="failure">0</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="12" cc="stdcall" name="SHAnsiToUnicode">
+      <par loc="stack" name="pszSrc" nr="1" io="r">
+        <type>PCSTR</type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:memops" rn="src-string:copy"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pwszDst" nr="2" io="w">
+        <type>PWSTR</type>
+	<roles>
+	  <role rt="ioc:memops" rn="dst-string:copy"/>
+	</roles>
+      </par>
+      <par loc="stack" name="cwchBuf" nr="3">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="memops" desc="converts a string"/>
+      </io-actions>
+      <preconditions>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-read/>
+	      <type>char</type>
+	      <ci>pszSrc</ci>
+	      <ci>cwchBuf</ci>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <deref-write/>
+	      <type>wchar_t</type>
+	      <ci>pwszDst</ci>
+	      <apply>
+		<times/>
+		<ci>cwchBuf</ci>
+		<cn>2</cn>
+	      </apply>
+	    </apply>
+	  </math>
+	</pre>
+	<pre>
+	  <math>
+	    <apply>
+	      <gt/>
+	      <ci>cwchBuf</ci>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</pre>
+      </preconditions>
+      <postconditions>
+	<post>
+	  <math>
+	    <apply>
+	      <gt/>
+	      <return-value/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</post>
+	<post>
+	  <math>
+	    <apply>
+	      <leq/>
+	      <return-value/>
+	      <ci>cwchBuf</ci>
+	    </apply>
+	  </math>
+	</post>
+	<error-post>
+	  <math>
+	    <apply>
+	      <eq/>
+	      <return-value/>
+	      <cn>0</cn>
+	    </apply>
+	  </math>
+	</error-post>
+      </postconditions>
+      <sideeffects>
+	<sideeffect>
+	  <math>
+	    <apply>
+	      <block-write/>
+	      <type>wchar_t</type>
+	      <ci>pwszDst</ci>
+	      <apply>
+		<times/>
+		<ci>cwchBuf</ci>
+		<cn>2</cn>
+	      </apply>
+	    </apply>
+	  </math>
+	</sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

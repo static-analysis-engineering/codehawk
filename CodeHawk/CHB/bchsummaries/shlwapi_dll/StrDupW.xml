@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-22 00:16:52"/>
+  <libfun lib="shlwapi" name="StrDupW">
+    <documentation>
+      <desc>Duplicates a string</desc>
+      <apidoc>
+        <pt>PWSTR StrDupW (PCWSTR pszSrch)</pt>
+        <par name="pszSrch">
+	  A pointer to a constant null-terminated character string.
+	</par>
+        <return>
+          <rc cond="success">
+	    The address of the string that was copied
+	  </rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="4" cc="stdcall" name="StrDupW">
+      <par loc="stack" name="pszSrch" nr="1">
+        <type>PCTSTR</type>
+	<pre><deref-read-nt/></pre>
+      </par>
+      <returntype>PTSTR</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

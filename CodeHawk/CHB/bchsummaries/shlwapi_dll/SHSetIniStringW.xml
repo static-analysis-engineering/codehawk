@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://msdn.microsoft.com/"/>
+  <header date="2024-03-23 14:50:09"/>
+  <libfun lib="shlwapi" name="SHSetIniStringW">
+    <documentation>
+      <desc>
+	Undocumented function.
+	Apparently part of a series of the undocumented Settlment API,
+	see https://www.geoffchappell.com/studies/windows/shell/missing.htm.
+	From usage it can be inferred that the function probably has four
+	parameters. The types and descriptions of the parameters are obtained
+	from context, as they were used by other library functions in the
+	same function.
+      </desc>
+      <apidoc>
+        <pt>
+          <ll>int SHSetIniStringW(</ll>
+          <ld>_In_ LPCTSTR lpAppName</ld>
+          <ld>_In_ LPCTSTR lpKeyName</ld>
+          <ld>_In_ PTSTR pPath</ld>
+          <ld>[unknown] int par4</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="par1">
+	  The name of the section to which the string will be copied. If the
+	  section does not exist, it is created. The name of the section is
+	  case-independent; the string string can be any combination of
+	  uppercase and lowercase letters
+	  (from kernel32/WritePrivateProfileString)
+	</par>
+        <par name="par2">
+	  The name of the key to be associated with a string. If the key does
+	  not exist in the specified section, it is created. If this parameter
+	  is NULL, the entire section, including all entries within the
+	  section, is deleted
+	  (from kernel32/WritePrivateProfileString)
+	</par>
+        <par name="par3">
+	  A pointer to a null-terminated string of maximum length MAX_PATH
+	  that contains the path to search.
+	  (from shlwapi32/PathFindFileName)
+	</par>
+        <par name="par4">unknown </par>
+        <return>
+          <rc cond="success">unknown</rc>
+          <rc cond="failure">unknown</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="16" cc="stdcall" name="SHSetIniStringW">
+      <par loc="stack" name="par1" nr="1">
+        <type>LPCTSTR</type>
+      </par>
+      <par loc="stack" name="par2" nr="2">
+        <type>LPCTSTR</type>
+      </par>
+      <par loc="stack" name="par3" nr="3">
+        <type>PTSTR</type>
+      </par>
+      <par loc="stack" name="par4" nr="4">
+        <type>UNKNOWN</type>
+      </par>
+      <returntype>UNKNOWN</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

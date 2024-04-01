@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <codehawk-binary-analyzer>
+  <header date="2024-03-16 12:57:09"/>
+  <reference href="http://msdn.microsoft.com/"/>
+  <libfun lib="shlwapi" name="CreateWindowExWrapW">
+    <refer-to lib="user32" name="CreateWindowExW"/>
+  </libfun>
+ </codehawk-binary-analyzer>

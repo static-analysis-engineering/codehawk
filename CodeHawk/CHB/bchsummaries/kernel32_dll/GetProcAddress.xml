@@ -54,6 +54,7 @@
     <preconditions/>
     <postconditions>
       <notnull-null/>
+      <!--
      <post>
       <math>
        <apply>
@@ -63,6 +64,7 @@
        </apply>
       </math>
      </post>
+      -->
     </postconditions>
     <sideeffects/>
    </semantics>
