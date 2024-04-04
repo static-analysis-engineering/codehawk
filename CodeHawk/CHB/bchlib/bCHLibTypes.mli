@@ -4080,7 +4080,11 @@ class type function_environment_int =
     method mk_runtime_constant: string -> variable_t
     method mk_return_value: ctxt_iaddress_t -> variable_t
 
-    method mk_trampoline_entry_value: variable_t -> ctxt_iaddress_t -> variable_t
+    (** [mk_trampoline_entry_value var iaddr] returns a variable that
+        encapsulates an augmentation value with description "trampoline_entry"
+        and suffix t_in.*)
+    method mk_trampoline_entry_value:
+             variable_t -> ctxt_iaddress_t -> variable_t
 
     method mk_ssa_register_value:
              ?name:string option

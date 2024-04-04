@@ -531,7 +531,7 @@ object (self)
         let summary = read_xml_function_summary node in
         let _ = self#check_summary_name summary fname in
         begin
-          chlog#add "function summary" (LBLOCK [STR fname]);
+          chlog#add "so function summary from library" (LBLOCK [STR fname]);
           H.add sosummaries fname summary ;
         end
       else

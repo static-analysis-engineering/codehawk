@@ -506,7 +506,8 @@ let convert_xml_fts_parameter_arm (p: fts_parameter_t): fts_parameter_t =
      below for arbitrary header-provided signatures.
    *)
   match p.apar_location with
-  | [StackParameter (index, _pdef)] when index <= 4 ->
+  | [StackParameter (offset, _pdef)] when offset <= 16 ->
+     let index = offset / 4 in
      let btype = p.apar_type in
      let register =
        if is_float btype then
@@ -530,8 +531,9 @@ let convert_xml_fts_parameter_arm (p: fts_parameter_t): fts_parameter_t =
        ~fmt:p.apar_fmt
        register
        index
-  | [StackParameter (index, _pdef)] ->
-     let offset = 4 * (index - 5) in
+  | [StackParameter (stackoffset, _pdef)] ->
+     let offset = stackoffset - 20 in
+     let index = stackoffset / 4 in
      mk_indexed_stack_parameter
        ~btype:p.apar_type
        ~name:p.apar_name
