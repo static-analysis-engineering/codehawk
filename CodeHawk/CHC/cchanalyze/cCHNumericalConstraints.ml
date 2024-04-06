@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,16 +35,15 @@ open CHNumericalConstraints
 open CHPretty
 open CHUtils
 
-(* chutil *)
-open CHLogger
-
 (* cchlib *)
 open CCHUtilities
 
 (* cchanalyze *)
 open CCHAnalysisTypes
 
+
 exception CCHConstraintFailure of int * int * numerical_constraint_t list
+
 
 let list_compare f l1 l2  =
   List.fold_left2 (fun acc x1 x2 -> if acc = 0 then f x1 x2 else acc) 0 l1 l2
@@ -55,7 +54,7 @@ let list_compare f l1 l2  =
     3: compare factors
     4: compare coefficients
 *)
-let numerical_constraint_compare c1 c2 = 
+let numerical_constraint_compare c1 c2 =
   let fcompare f1 f2 = f1#compare f2 in
   let l1 = c1#getConstant#compare c2#getConstant in
   if l1 = 0 then
@@ -78,9 +77,9 @@ let numerical_constraint_compare c1 c2 =
 
 
 module ConstraintCollections = CHCollections.Make
-  (struct 
+  (struct
     type t = numerical_constraint_t
-    let compare = numerical_constraint_compare 
+    let compare = numerical_constraint_compare
     let toPretty n = n#toPretty
    end)
 
@@ -89,9 +88,9 @@ class constraint_set_t:constraint_set_int =
 object (self)
 
   val constraints = new ConstraintCollections.set_t
-  val variables = new VariableCollections.set_t 
+  val variables = new VariableCollections.set_t
 
-  method add c = 
+  method add c =
     begin
       constraints#add c ;
       List.iter (fun f -> variables#add f#getVariable) c#getFactors
@@ -113,20 +112,20 @@ object (self)
 	let dom = dom#projectOut vars in
 	let cs = dom#observer#getNumericalConstraints ~variables:None () in
 	let _ =
-          List.iter (fun c -> 
+          List.iter (fun c ->
 	      begin
                 (List.iter (fun f -> vset#add f#getVariable) c#getFactors);
                 cset#add c
               end) cs in
-	Some {< variables = vset ; constraints = cset >} 
+	Some {< variables = vset ; constraints = cset >}
     else
       Some {< >}
 
-  method private project_out_one (v:variable_t) = 
+  method private project_out_one (v:variable_t) =
     if variables#has v then
       let newSet = new ConstraintCollections.set_t in
       let eliminate (c1:numerical_constraint_t) cs =
-	List.iter (fun (c2:numerical_constraint_t) -> 
+	List.iter (fun (c2:numerical_constraint_t) ->
 	  if c2#getVariables#has v then
 	    let factor = new numerical_factor_t v in
 	    let coeff1 = c1#getCoefficient factor in
@@ -152,8 +151,8 @@ object (self)
 	match l with
 	| [] -> ()
 	| c::tl ->
-	  let _ = if c#getVariables#has v then 
-	      eliminate c tl 
+	  let _ = if c#getVariables#has v then
+	      eliminate c tl
 	    else
 	      newSet#add c in
 	  aux tl in
@@ -168,7 +167,7 @@ object (self)
     else
       {< >}
 
-  method toPretty = 
+  method toPretty =
     LBLOCK [
         STR "variables: (";
         INT variables#size;
@@ -212,13 +211,13 @@ let mk_constraint_set () = new constraint_set_t
 let get_constraint_sets constraints =
   List.fold_left (fun acc c ->
     let cvars = List.map (fun f -> f#getVariable) c#getFactors in
-    let (hasv,nothasv) = List.fold_left (fun (h,n) cs -> 
+    let (hasv,nothasv) = List.fold_left (fun (h,n) cs ->
       if List.exists (fun v -> cs#has v) cvars then
 	(cs::h,n)
       else
 	(h,cs::n)) ([],[]) acc in
     match hasv with
-    | [] -> 
+    | [] ->
       let newset = new constraint_set_t in
       begin newset#add c ; newset :: acc end
     | [ s ] -> begin s#add c ; acc end

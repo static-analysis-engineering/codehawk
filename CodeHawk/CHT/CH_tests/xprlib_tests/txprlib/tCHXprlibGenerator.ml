@@ -35,9 +35,6 @@ open XprTypes
 open CHLanguage
 open CHNumerical
 
-(* xprlib *)
-open XprTypes
-
 module X = Xprt
 
 

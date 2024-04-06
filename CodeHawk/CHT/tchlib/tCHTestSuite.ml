@@ -7,7 +7,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,9 +33,7 @@ open CHCommon
 open CHPretty
 
 (* chutil *)
-open CHFileIO
 open CHPrettyUtil
-open CHXmlDocument
 
 (* tchlib *)
 open TCHTestApi
@@ -100,7 +98,7 @@ let print_result (len:int) (index:int) (name:string) (result:testresult_t) =
          STR bt;
          STR "]";
          NL]
-  | Report (valid, total, uncaught, counterexamples, categories, timeused) ->
+  | Report (valid, total, _uncaught, counterexamples, categories, timeused) ->
      pr_debug [
          fixed_length_pretty ~alignment:StrRight (INT index) 3;
          STR "  ";
@@ -118,7 +116,7 @@ let print_result (len:int) (index:int) (name:string) (result:testresult_t) =
           | l ->
              LBLOCK [
                  STR "    counterexamples: ";
-                 pretty_print_list counterexamples (fun s -> STR s) "" ", " "";
+                 pretty_print_list l (fun s -> STR s) "" ", " "";
                  NL]);
          (match categories with
           | [] -> STR ""
