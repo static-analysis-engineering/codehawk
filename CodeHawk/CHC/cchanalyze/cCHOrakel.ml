@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,10 +28,7 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHAtlas
 open CHLanguage
-open CHNumerical
-open CHSymbolicSets
 open CHPretty
 
 (* chutil *)
@@ -43,41 +40,21 @@ open XprToPretty
 open XprTypes
 
 (* cchlib *)
-open CCHBasicTypes
-open CCHContext
-open CCHFileEnvironment
 open CCHLibTypes
-open CCHTypesCompare
 open CCHTypesToPretty
-open CCHTypesUtil
-open CCHUtilities
 
 (* cchpre *)
-open CCHInvariantFact
 open CCHPreTypes
 
 (* cchanalyze *)
 open CCHAnalysisTypes
-open CCHEnvironment
-open CCHVariable
 
 
 let x2p = xpr_formatter#pr_expr
-  	
-let rec is_zero e = match e with
-  | Const (CInt (i64,_,_)) -> (Int64.compare i64 Int64.zero) = 0
-  | CastE (_, e) -> is_zero e
-  | _ -> false
 
-let rec get_constant_value e = match e with
-  | Const (CInt (i64,_,_)) -> Some (Int64.to_int i64)
-  | CastE (_, e) -> get_constant_value e
-  | _ -> None
 
-let make_constant_value i = Const (CInt (Int64.of_int i, IInt, None))
-    
-class orakel_t 
-  (env:c_environment_int) 
+class orakel_t
+  (env:c_environment_int)
   (invio:invariant_io_int):orakel_int =
 object (self)
 
@@ -100,11 +77,13 @@ object (self)
              | _ -> acc
            else acc) [] invs)
 
-  method get_external_value (context:program_context_int) (xpr:xpr_t):xpr_t option =
+  method get_external_value
+           (context:program_context_int) (xpr:xpr_t):xpr_t option =
     let logmsg () =
-      chlog#add "xpr not externalized"
-                (LBLOCK [ location_to_pretty env#get_current_location ;
-                          STR ": " ; x2p xpr ]) in
+      chlog#add
+        "xpr not externalized"
+        (LBLOCK [
+             location_to_pretty env#get_current_location; STR ": "; x2p xpr]) in
 
     let find_value v =
       List.fold_left (fun acc nrv ->
@@ -150,10 +129,8 @@ object (self)
                     Stdlib.compare (List.length x1) (List.length x2)) l)
        end
     | _ -> []
-  
+
 end
 
 
-let get_function_orakel = new orakel_t 
-  
-  
+let get_function_orakel = new orakel_t

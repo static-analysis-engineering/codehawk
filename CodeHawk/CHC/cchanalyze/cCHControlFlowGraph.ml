@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,10 +27,7 @@
    SOFTWARE.
    ============================================================================= *)
 
-(** Translated unstructured statements to CHIF *)
-
-(* chlib *)
-open CHPretty
+(** Translate unstructured statements to CHIF *)
 
 (* cchlib *)
 open CCHBasicTypes
@@ -50,7 +49,8 @@ let get_gotos (b:block) =
   and aux_list lst gotos =
     List.fold_right (fun s a -> aux s a) lst gotos in
   aux_list b.bstmts []
-    
+
+
 let get_ancestors (id:int) (b:block) =
   let rec aux id stmt ancs =
     if stmt.sid = id then
@@ -84,7 +84,8 @@ let get_ancestors (id:int) (b:block) =
       | _ -> aux_list id tl ancs
   in
   aux_list id b.bstmts []
-    
+
+
 let get_descendants stmt =
   let rec aux s =
     let id = s.sid in
@@ -96,16 +97,16 @@ let get_descendants stmt =
     | Loop (b, _, _, _)
     | Switch (_, b, _, _)
     | Block b -> id :: (aux_list b.bstmts)
-    | _ -> [ id ]
+    | _ -> [id]
   and aux_list lst =
     List.fold_right (fun s a -> (aux s) @ a) lst [] in
   aux stmt
-    
-    
+
+
 class gotos_t (b:block):gotos_int =
-object 
-  
-  val cfg_ids:(int option list) = 
+object
+
+  val cfg_ids:(int option list) =
     let goto_pairs = get_gotos b in
     let ids = ref [] in
     let add_least_common_ancestor (b:block) (src,tgt) =
@@ -120,20 +121,20 @@ object
 	  match_src_tgt src_tl tgt_tl (Some src_hd)
 	| _ -> ids := id :: !ids
       in
-      match_src_tgt src_ancestors tgt_ancestors None in				
+      match_src_tgt src_ancestors tgt_ancestors None in
     begin
-      List.iter (fun g -> add_least_common_ancestor b g) goto_pairs ;
+      List.iter (fun g -> add_least_common_ancestor b g) goto_pairs;
       !ids
-    end		
-      
+    end
+
   method is_goto_function =
     List.exists (fun s -> match s with None -> true | _ -> false) cfg_ids
-      
+
   method is_goto_block stmt =
-    List.exists (fun s -> match s with Some v -> v = stmt.sid | _ -> false) cfg_ids
-      
-      
+    List.exists (fun s ->
+        match s with Some v -> v = stmt.sid | _ -> false) cfg_ids
+
 end
 
-let make_gotos = new gotos_t 
-  
+
+let make_gotos = new gotos_t
