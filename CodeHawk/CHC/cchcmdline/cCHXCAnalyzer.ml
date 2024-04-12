@@ -5,8 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ open CHPretty
 (* chutil *)
 open CHGc
 open CHLogger
+open CHTiming
 open CHXmlDocument
 open CHXmlReader
 
@@ -168,13 +169,17 @@ let main () =
     else if !cmd = "primary" then 
       begin
 	primary_process_file ();
-	save_log_files "primary"
+        pr_timing [STR "primary proof obligations generated"];
+	save_log_files "primary";
+        pr_timing [STR "primary proof obligations log files saved"]
       end
 	  
     else if !cmd = "localinvs" then 
       begin
 	invariants_process_file (List.rev !domains);
-	save_log_files "localinvs"
+        pr_timing [STR "Local invariants generated"];
+	save_log_files "localinvs";
+        pr_timing [STR "Local invariant generation log files saved"]
       end
 
     else if !cmd = "globalinvs" then ()
@@ -182,13 +187,18 @@ let main () =
     else if !cmd = "check" then 
       begin
 	check_process_file ();
-	save_log_files "check"
+        pr_timing [STR "Proof obligations checked"];
+	save_log_files "check";
+        pr_timing [STR "Proof obligation checking log files saved"]
       end
 
     else if !cmd = "generate_and_check" then
       begin
         generate_and_check_process_file (List.rev !domains);
-        save_log_files "gencheck"
+        pr_timing [STR "Invariants generated and proof obligations checked"];
+        save_log_files "gencheck";
+          pr_timing [
+            STR "Invariant generation and proof obligation check log files saved"]
       end
 
     else

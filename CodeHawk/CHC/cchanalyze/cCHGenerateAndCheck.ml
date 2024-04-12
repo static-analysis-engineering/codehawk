@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2020-2022 Henny B. Sipma
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,6 +37,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTiming
 open CHXmlDocument
 open CHXmlReader
 
@@ -61,7 +62,7 @@ open CCHAnalysisTypes
 open CCHEnvironment
 open CCHExpTranslator
 open CCHExtractInvariantFacts
-open CCHFunctionTranslator 
+open CCHFunctionTranslator
 open CCHInvariantStore
 open CCHOperationsProvider
 open CCHOrakel
@@ -153,7 +154,7 @@ let make_invariant_generation_spec t =
       ig_get_function_translator = get_statesets_translator;
       ig_analysis = analyze_statesets;
       ig_invariant_extractor = extract_states
-    }      
+    }
   | "sym_pointersets" -> {
       ig_domain = t;
       ig_get_exp_translator = get_sym_pointersets_exp_translator;
@@ -170,72 +171,112 @@ let make_invariant_generation_spec t =
 let process_function gspecs fname =
   try
     if !function_to_be_analyzed = fname || !function_to_be_analyzed = "" then
+      let _ = pr_timing [STR "analyze function "; STR fname] in
       let fundec = read_function_semantics fname in
       let fdecls = fundec.sdecls in
       let _ = read_proof_files fname fdecls in
       let _ = read_api fname fdecls in
       let varmgr = read_vars fname fdecls in
       let invio = read_invs fname varmgr#vard in
+      let _ = pr_timing [STR "read function semantics and invariants"] in
       let spomanager = proof_scaffolding#get_spo_manager fname in
       let _ = spomanager#create_contract_proof_obligations in
       let proofObligations = proof_scaffolding#get_proof_obligations fname in
       let openpos = List.filter (fun po -> not po#is_closed) proofObligations in
-      let _ = pr_debug [STR "  "; STR fname; STR ": "; NL] in
+      let _ =
+        pr_timing [
+            STR "obtained ";
+            INT (List.length proofObligations);
+            STR " proof obligations; of which ";
+            INT (List.length openpos);
+            STR " open"] in
+
       if (List.length proofObligations) = 0 then
-        let _ = chlog#add "skip analysis (no proof obligations)" (STR fname) in
-        pr_debug [ STR "      no proof obligations: skip analysis"; NL; NL ]
+        let _ =
+          chlog#add "skip analysis (no proof obligations)" (STR fname) in
+        pr_debug [ STR "      no proof obligations: skip analysis"; NL; NL]
       else if (List.length openpos) = 0 then
-        let _ = chlog#add "skip analysis (no open proof obligations)" (STR fname) in
+        let _ =
+          chlog#add "skip analysis (no open proof obligations)" (STR fname) in
         pr_debug [ STR "      no open proof obligations: skip analysis"; NL; NL ]
       else
-      let callcount = proof_scaffolding#get_call_count fname in
-      let _ =
-        List.iter
-          (fun gspec ->
-            if gspec.ig_domain = "sym_pointersets" && callcount > max_callcount then () else
-	    try
-              let starttime = Unix.gettimeofday () in
-	      let env = mk_c_environment fundec varmgr in
-	      let orakel = get_function_orakel env invio in
-	      let expTranslator = gspec.ig_get_exp_translator env orakel in
-	      let opsProvider = get_operations_provider env expTranslator proofObligations 
-	                                                gspec.ig_variable_type in
-	      let functionTranslator = gspec.ig_get_function_translator env orakel opsProvider in
-	      let (optSem,sys) = functionTranslator#translate fundec in
-	      let semantics = match optSem with Some sem -> sem | _ -> default_opsemantics in
-	      let invariants = gspec.ig_analysis env sys semantics in
-              begin
-	        gspec.ig_invariant_extractor env invio invariants;
-                record_postconditions fname env invio;
-                pr_debug [ STR "  ";
-                           STR (Printf.sprintf "%8.2f sec" ((Unix.gettimeofday ()) -. starttime));
-                           STR "  "; STR gspec.ig_domain; NL ]
-              end
-	    with
-	    | CCHFailure p | CHFailure p ->
-               begin
-	         ch_error_log#add
-                   "failure" 
-	           (LBLOCK [ STR "function "; STR fname;
-			     STR " ("; STR gspec.ig_domain; STR "): "; p ]);
-                 raise (CCHFailure
-                          (LBLOCK [ STR "CCHFailure in function "; STR fname;
-			            STR " ("; STR gspec.ig_domain; STR "):"; p ]))
-               end              
-	    | Invalid_argument s ->
-               begin
-	         ch_error_log#add
-                   "invalid argument" 
-	           (LBLOCK [ STR "function "; STR fname;
-                             STR " ("; STR gspec.ig_domain; STR "):"; STR s ]);
-                 raise (CCHFailure
-                          (LBLOCK [ STR "Invalid argument in function "; STR fname;
-			            STR " ("; STR gspec.ig_domain; STR "):"; STR s ]))
-               end
+        let callcount = proof_scaffolding#get_call_count fname in
+        let _ =
+          List.iter
+            (fun gspec ->
+              if gspec.ig_domain = "sym_pointersets"
+                 && callcount > max_callcount
+              then
+                ()
+              else
+	        try
+                  let starttime = Unix.gettimeofday () in
+	          let env = mk_c_environment fundec varmgr in
+	          let orakel = get_function_orakel env invio in
+	          let expTranslator = gspec.ig_get_exp_translator env orakel in
+	          let opsProvider =
+                    get_operations_provider
+                      env expTranslator
+                      proofObligations
+	              gspec.ig_variable_type in
+	          let functionTranslator =
+                    gspec.ig_get_function_translator env orakel opsProvider in
+	          let (optSem, sys) = functionTranslator#translate fundec in
+	          let semantics =
+                    match optSem with
+                    | Some sem -> sem | _ -> default_opsemantics in
+	          let invariants = gspec.ig_analysis env sys semantics in
+                  begin
+	            gspec.ig_invariant_extractor env invio invariants;
+                    record_postconditions fname env invio;
+                  end
+	        with
+	        | CCHFailure p | CHFailure p ->
+                   begin
+	             ch_error_log#add
+                       "failure"
+	               (LBLOCK [
+                            STR "function ";
+                            STR fname;
+			    STR " (";
+                            STR gspec.ig_domain;
+                            STR "): ";
+                            p]);
+                     raise
+                       (CCHFailure
+                          (LBLOCK [
+                               STR "CCHFailure in function ";
+                               STR fname;
+			       STR " (";
+                               STR gspec.ig_domain;
+                               STR "):";
+                               p]))
+                   end
+	        | Invalid_argument s ->
+                   begin
+	             ch_error_log#add
+                       "invalid argument"
+	               (LBLOCK [
+                            STR "function ";
+                            STR fname;
+                            STR " (";
+                            STR gspec.ig_domain;
+                            STR "):";
+                            STR s]);
+                     raise
+                       (CCHFailure
+                          (LBLOCK [
+                               STR "Invalid argument in function ";
+                               STR fname;
+			       STR " (";
+                               STR gspec.ig_domain;
+                               STR "):";
+                               STR s ]))
+                   end
             | Failure s ->
                begin
 	         ch_error_log#add
-                   "failure" 
+                   "failure"
 	           (LBLOCK [ STR "function "; STR fname;
 			     STR " ("; STR gspec.ig_domain; STR "):"; STR s ]);
                  raise (CCHFailure
@@ -255,7 +296,7 @@ let process_function gspecs fname =
 	    | Not_found ->
                begin
 	         ch_error_log#add
-                   "not-found" 
+                   "not-found"
 	           (LBLOCK [ STR "function "; STR fname;
 			     STR " ("; STR gspec.ig_domain; STR ") "  ]);
                  raise (CCHFailure
@@ -265,18 +306,17 @@ let process_function gspecs fname =
       let starttime = Unix.gettimeofday () in
       let fnApi = proof_scaffolding#get_function_api fname in
       let env = mk_c_environment fundec varmgr in
-      let _ = check_proof_obligations env fnApi invio proofObligations in
-      let t2 = Unix.gettimeofday() in
       begin
-        pr_debug [ STR "  "; STR (Printf.sprintf "%8.2f sec" (t2 -. starttime));
-                   STR "  "; STR "check proof obligations"; NL ];
+        check_proof_obligations env fnApi invio proofObligations;
+        pr_timing [STR "checked proof obligations"];
         save_invs fname invio;
+        pr_timing [STR "saved invariants"];
         save_vars fname varmgr;
+        pr_timing [STR "saved variables"];
         save_proof_files fname;
+        pr_timing [STR "saved proof files"];
         save_api fname;
-        pr_debug [ STR "  ";
-                   STR (Printf.sprintf "%8.2f sec" ((Unix.gettimeofday ()) -. t2));
-                   STR "  "; STR "saving function files"; NL ]
+        pr_timing [STR "saved api"]
       end
     else
       ()
@@ -324,24 +364,40 @@ let process_function gspecs fname =
      end
 
 
-let generate_and_check_process_file domains =
+let generate_and_check_process_file (domains: string list) =
   let gspecs = List.map make_invariant_generation_spec domains in
   try
     let _ = read_cfile_dictionary () in
     let cfile = read_cfile () in
+    let _ = pr_timing [STR "read cfile dictionary and cfile"] in
     let _ = fenv#initialize cfile in
+    let _ = pr_timing [STR "Initialized cfile environment"] in
     let _ = read_cfile_context () in
+    let _ = pr_timing [STR "read cfile context"] in
     let _ = read_cfile_predicate_dictionary () in
+    let _ = pr_timing [STR "read predicate dictionary"] in
     let _ = read_cfile_interface_dictionary () in
+    let _ = pr_timing [STR "read interface dictionary"] in
     let _ = read_cfile_assignment_dictionary () in
+    let _ = pr_timing [STR "read assignment dictionary"] in
     let _ = read_cfile_contract () in
     let functions = fenv#get_application_functions in
     let _ = List.iter (fun f -> process_function gspecs f.vname) functions in
+    let _ =
+      pr_timing [
+          STR "processed function specs for ";
+          INT (List.length functions);
+          STR " function(s)"] in
     let _ = save_cfile_assignment_dictionary () in
+    let _ = pr_timing [STR "saved assignment dictionary"] in
     let _ = save_cfile_dictionary () in
+    let _ = pr_timing [STR "saved cfile dictionary"] in
     let _ = save_cfile_context () in
+    let _ = pr_timing [STR "saved cfile context"] in
     let _ = save_cfile_interface_dictionary () in
-    let _ = save_cfile_predicate_dictionary () in    
+    let _ = pr_timing [STR "saved interface dictionary"] in
+    let _ = save_cfile_predicate_dictionary () in
+    let _ = pr_timing [STR "saved predicate dictionary"] in
     ()
   with
   | CHXmlReader.IllFormed ->
@@ -387,4 +443,3 @@ let generate_and_check_process_file domains =
        pr_debug [STR "Failure: "; p; NL];
        ch_error_log#add "failure" p
      end
-                  
