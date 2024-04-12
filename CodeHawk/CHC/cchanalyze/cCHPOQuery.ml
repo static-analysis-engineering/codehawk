@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2023-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,12 +31,12 @@
 open CHLanguage
 open CHNumerical
 open CHPretty
-   
+
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
-   
+
 (* xprlib *)
 open Xprt
 open XprTypes
@@ -51,11 +51,10 @@ open CCHFileContract
 open CCHFileEnvironment
 open CCHFunctionSummary
 open CCHLibTypes
-open CCHSettings
 open CCHTypesToPretty
 open CCHTypesUtil
 open CCHUtilities
-   
+
 (* cchpre *)
 open CCHCheckValid
 open CCHInvariantFact
@@ -63,7 +62,7 @@ open CCHPOPredicate
 open CCHPreTypes
 open CCHProofObligation
 open CCHProofScaffolding
-   
+
 (* cchanalyze *)
 open CCHAnalysisTypes
 open CCHCheckImplication
@@ -75,8 +74,6 @@ let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 let e2s e = p2s (exp_to_pretty e)
 
-let id = CCHInterfaceDictionary.interface_dictionary
-                 
 
 class po_query_t
         (env:c_environment_int)
@@ -92,7 +89,8 @@ object (self)
   val xd = env#get_xpr_dictionary
   val callsitemgr =
     (proof_scaffolding#get_spo_manager env#get_functionname )#get_callsite_manager
-  val numexp_translator = get_num_exp_translator env (get_function_orakel env invio)
+  val numexp_translator =
+    get_num_exp_translator env (get_function_orakel env invio)
 
   method env = env
   method fenv = fenv
@@ -120,7 +118,8 @@ object (self)
     else
       None
 
-  method get_postconditions (v:variable_t) =  self#get_sym_postconditions v#getName
+  method get_postconditions (v:variable_t) =
+    self#get_sym_postconditions v#getName
 
   method get_sym_postconditions (s:symbol_t) =
     if self#env#is_function_return_value_sym s then
@@ -149,7 +148,7 @@ object (self)
 
   method get_sideeffects (v:variable_t) = self#get_sym_sideeffects v#getName
 
-  method get_sym_sideeffects (s:symbol_t) =  
+  method get_sym_sideeffects (s:symbol_t) =
     if self#env#is_function_sideeffect_value_sym s then
       let callee = self#env#get_callsym_callee s in
       match self#get_summary callee.vname with
@@ -167,9 +166,12 @@ object (self)
          else
            []
     else
-      raise (CCHFailure (LBLOCK [ STR "Variable " ; s#toPretty ;
-                                  STR " is not a function side effect value" ]))
-         
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Variable ";
+                s#toPretty;
+                STR " is not a function side effect value"]))
 
   method get_tainted_value_origin (v:variable_t) =
     if self#env#is_tainted_value v then
@@ -179,7 +181,7 @@ object (self)
         let s = "return value from "  ^ callee.vname ^ " may be tainted: " in
         let (pcs,epcs) = self#get_postconditions origin in
         let r =
-          List.fold_left (fun acc (pc,_) ->
+          List.fold_left (fun acc (pc, _) ->
               match acc with
               | Some  _ -> acc
               | _ ->
@@ -189,14 +191,16 @@ object (self)
         match r with
         | Some pc -> (s,callee,pc)
         | _ ->
-           raise (CCHFailure
-                    (LBLOCK [ STR "No taint postcondition found for: " ;
-                              STR callee.vname ]))
+           raise
+             (CCHFailure
+                (LBLOCK [
+                     STR "No taint postcondition found for: ";
+                     STR callee.vname]))
       else
         let s = "side-effect value from " ^ callee.vname ^ " may be tainted: " in
         let sideeffects = self#get_sideeffects origin in
         let r =
-          List.fold_left (fun acc (pc,_) ->
+          List.fold_left (fun acc (pc, _) ->
               match acc with
               | Some _ -> acc
               | _ ->
@@ -205,22 +209,32 @@ object (self)
                    | XTainted _ -> Some pc
                  | _ -> None) None sideeffects in
         match r with
-        | Some pc -> (s,callee,pc)
+        | Some pc -> (s, callee, pc)
         | _ ->
-           raise (CCHFailure (LBLOCK [ STR "No taint side effect found for: " ;
-                                       STR callee.vname ]))
+           raise
+             (CCHFailure
+                (LBLOCK [
+                     STR "No taint side effect found for: ";
+                     STR callee.vname]))
     else
-      raise (CCHFailure (LBLOCK [ STR "Variable is not a tainted value: " ;
-                                  v#toPretty ]))
+      raise
+        (CCHFailure
+             (LBLOCK [STR "Variable is not a tainted value: "; v#toPretty]))
 
   method get_witness (c:xpr_t) (tvar:variable_t) =
     let logmsg c s  b =
       begin
-        chlog#add "value constraint witness"
-                  (LBLOCK [ STR "constraint: " ; x2p c ;
-                            STR "; simplified: " ; x2p s ; 
-                            STR "; var: "  ; tvar#toPretty ;
-                            STR "; bound: " ;  x2p b ]) ;
+        chlog#add
+          "value constraint witness"
+          (LBLOCK [
+               STR "constraint: ";
+               x2p c;
+               STR "; simplified: ";
+               x2p s;
+               STR "; var: " ;
+               tvar#toPretty;
+               STR "; bound: ";
+               x2p b]);
         None
       end in
     let xget_witness c tvar xlb xub =
@@ -241,16 +255,16 @@ object (self)
          xget_witness c tvar xlb xub
       | _ -> None
     else
-      None             
-    
+      None
+
   method private record_proof_result
                    (status:po_status_t)
                    (deps:dependencies_t)
                    (expl:string) =
     begin
-      po#set_status status ;
-      po#set_dependencies deps ;
-      po#set_explanation expl ;
+      po#set_status status;
+      po#set_dependencies deps;
+      po#set_explanation expl;
       po#set_resolution_timestamp (current_time_to_string ())
     end
 
@@ -281,7 +295,7 @@ object (self)
         | NonRelationalFact (v,FInitializedSet l) ->
            begin
              match l with
-             | [ s ] when s#equal entrysym ->
+             | [s] when s#equal entrysym ->
                 self#set_diagnostic ("[" ^ v#getName#getBaseName ^ ":calls]:none")
               | _ ->
                  let lst =
@@ -293,14 +307,17 @@ object (self)
                  self#set_diagnostic ("[" ^ v#getName#getBaseName ^ ":calls]" ^ lst)
             end
          | _ -> ()) callinvs
-                 
 
   method set_vinfo_diagnostic_invariants (vinfo:varinfo) =
     let vinfovalues = self#get_vinfo_offset_values vinfo in
     List.iter (fun (inv,offset) ->
         po#add_diagnostic_msg
-          ("[" ^ vinfo.vname ^ "]: " ^ (p2s (offset_to_pretty offset))
-           ^ ": " ^ (p2s (inv#value_to_pretty)))) vinfovalues
+          ("["
+           ^ vinfo.vname
+           ^ "]: "
+           ^ (p2s (offset_to_pretty offset))
+           ^ ": "
+           ^ (p2s (inv#value_to_pretty)))) vinfovalues
 
   method set_key_diagnostic = po#add_diagnostic_key_msg
 
@@ -319,7 +336,7 @@ object (self)
          let (ppos,spos) = if po#is_ppo then ([po#index],[]) else ([],[po#index]) in
          List.iter (fun a ->
              match a with
-             | LocalAssumption pred  -> ()
+             | LocalAssumption _pred  -> ()
              | GlobalAssumption xpred ->
                 fApi#add_global_assumption ~ppos ~spos xpred
              | PostAssumption (calleevid,xpred) ->
@@ -327,29 +344,38 @@ object (self)
              | ApiAssumption pred ->
                 ignore (fApi#add_api_assumption ~ppos ~spos pred)
              | GlobalApiAssumption pred ->
-                ignore (fApi#add_api_assumption ~isglobal:true ~ppos ~spos pred)) assumptions
+                ignore
+                  (fApi#add_api_assumption ~isglobal:true ~ppos ~spos pred)
+           ) assumptions
       | _ -> () in
     self#record_proof_result Green deps expl
 
   method record_violation_result (deps:dependencies_t) (expl:string) =
     self#record_proof_result Red deps expl
 
-  method delegate_to_api ?(isfile=false) ?(isglobal=false) (pred:po_predicate_t) (invs:int list) =
-    let (ppos,spos) = if po#is_ppo then ([po#index],[]) else ([],[po#index]) in
+  method delegate_to_api
+           ?(isfile=false)
+           ?(isglobal=false)
+           (pred:po_predicate_t)
+           (invs:int list) =
+    let (ppos, spos) =
+      if po#is_ppo then ([po#index],[]) else ([],[po#index]) in
     let apred' = fApi#add_api_assumption ~isfile ~isglobal ~ppos ~spos pred in
     match apred' with
     | Some apred ->
        let deps = DEnvC (invs, [ApiAssumption apred] ) in
-       let expl = "condition " ^ (p2s (po_predicate_to_pretty apred)) ^
-                    " delegated to api" in
+       let expl =
+         "condition "
+         ^ (p2s (po_predicate_to_pretty apred))
+         ^ " delegated to api" in
        begin
-         self#record_proof_result Green deps expl ;
+         self#record_proof_result Green deps expl;
          true
        end
     | _ ->
        begin
          self#set_diagnostic
-           ("condition " ^ (p2s (po_predicate_to_pretty pred)) ^ " not delegated") ;
+           ("condition " ^ (p2s (po_predicate_to_pretty pred)) ^ " not delegated");
          false
        end
 
@@ -371,7 +397,8 @@ object (self)
 
   method get_api_assumptions = fApi#get_api_assumptions
 
-  method add_local_spo (loc:location) (ctxt:program_context_int) (p:po_predicate_t) =
+  method add_local_spo
+           (loc:location) (ctxt:program_context_int) (p:po_predicate_t) =
     let spomanager = proof_scaffolding#get_spo_manager self#fname in
     spomanager#add_local_spo loc ctxt p
 
@@ -395,7 +422,7 @@ object (self)
     let facts = locinvio#get_invariants in
     let vars = List.fold_left (fun acc f ->
         match f#get_fact with
-        | NonRelationalFact (v,i) ->
+        | NonRelationalFact (v, _i) ->
            if env#check_variable_applies_to_po v ~argindex po#is_ppo id then
              if List.exists (fun vv -> v#equal vv) acc then
                acc
@@ -419,28 +446,29 @@ object (self)
     List.sort (fun i1 i2 -> i1#compare_ub i2) (self#get_invariants argindex)
 
   method get_pepr_bounds (argindex:int) =
-    List.fold_left (fun (invs,lbs,ubs) i ->
+    List.fold_left (fun (invs, lbs, ubs) i ->
         match i#pepr_lower_bound with
-        | Some l -> (i::invs,l@lbs,ubs)
+        | Some l -> (i::invs, l @ lbs, ubs)
         | _ ->
            match i#pepr_upper_bound with
            | Some l -> (i::invs,lbs,l@ubs)
            | _ -> (invs,lbs,ubs)) ([],[],[]) (self#get_invariants argindex)
-    
+
   method get_parameter_constraints =
-    let pcs = (invio#get_location_invariant cfgcontext)#get_parameter_constraints in
+    let pcs =
+      (invio#get_location_invariant cfgcontext)#get_parameter_constraints in
     List.fold_left (fun acc pc ->
         match pc#get_fact with
         | ParameterConstraint x -> x :: acc
         | _ -> acc) [] pcs
-     
+
   method get_values (argindex:int) =
     let id = po#index in
     let locinvio = invio#get_location_invariant cfgcontext in
     let facts = locinvio#get_invariants in
     let vars = List.fold_left (fun acc f ->
         match f#get_fact with
-        | NonRelationalFact (v,i) ->
+        | NonRelationalFact (v, _i) ->
            if env#check_variable_applies_to_po v ~argindex po#is_ppo id then
              if List.exists (fun vv -> v#equal vv) acc then
                acc
@@ -452,12 +480,12 @@ object (self)
     let facts = List.concat (List.map locinvio#get_var_invariants vars) in
     List.fold_left (fun acc f ->
         match f#get_fact with
-        | NonRelationalFact (v,i) -> (f#index,i) :: acc
+        | NonRelationalFact (_v, i) -> (f#index, i) :: acc
         | _ -> acc) [] facts
 
   method get_exp_invariants (e:exp):invariant_int list =
     match e with
-    | Lval (Var (vname,vid),NoOffset) when vid > 0 ->
+    | Lval (Var (_vname, vid), NoOffset) when vid > 0 ->
        let vinfo = self#env#get_varinfo vid in
        List.fold_left (fun acc (inv,offset) ->
            match offset with
@@ -469,73 +497,75 @@ object (self)
     match e with
     | Const (CInt _) -> ()
     | _ ->
-       let prefix = if lb then "lb-exp" else if ub then "ub-exp" else "exp" in
+       let prefix =
+         if lb then "lb-exp" else if ub then "ub-exp" else "exp" in
        self#set_diagnostic ("[" ^ prefix ^  ":" ^ (e2s e) ^ "]: " ^ s)
 
   method get_exp_value (e:exp):(int list * xpr_t option) =
     match e with
     | CastE (_, e1) -> self#get_exp_value e1
-    | Const (CInt (i64,_,_)) -> ([], Some (XConst (IntConst (mkNumericalFromInt64 i64))))
-    | Lval (Var (vname,vid),NoOffset) when vid > 0 ->
+    | Const (CInt (i64,_,_)) ->
+       ([], Some (XConst (IntConst (mkNumericalFromInt64 i64))))
+    | Lval (Var (_vname, vid), NoOffset) when vid > 0 ->
        let vinfo = self#env#get_varinfo vid in
        let invariants =
          List.fold_left (fun acc (inv,offset) ->
              match offset with
              | NoOffset -> inv :: acc
              | _ -> acc) [] (self#get_vinfo_offset_values vinfo) in
-       List.fold_left (fun (invs,acc) inv ->
+       List.fold_left (fun (invs, acc) inv ->
            match acc with
-           | Some _ -> (invs,acc)
+           | Some _ -> (invs, acc)
            | _ ->
               match inv#expr with
               | Some x -> (inv#index :: invs, Some x)
-              | _ -> (invs,acc)) ([],None)  invariants
-    | BinOp (op, e1, e2, ty) ->
+              | _ -> (invs, acc)) ([], None)  invariants
+    | BinOp (op, e1, e2, _ty) ->
        begin
          match (self#get_exp_value e1, self#get_exp_value e2) with
          | ((invs1, Some x1), (invs2, Some x2)) ->
-            let x = XOp  (binop_to_xop op, [ x1 ; x2 ])  in
+            let x = XOp  (binop_to_xop op, [x1; x2])  in
             let xsimplified = simplify_xpr x in
             begin
               match xsimplified with
               | XConst XRandom | XConst XUnknownInt ->
                  begin
-                   self#set_exp_diagnostic e (x2s x) ;
+                   self#set_exp_diagnostic e (x2s x);
                    ([],None)
                  end
               | _ ->
                  (invs1 @ invs2, Some xsimplified)
             end
-         | ((_, Some x1),_) ->
+         | ((_, Some x1), _) ->
             begin
-              self#set_exp_diagnostic e1 (x2s x1) ;
-              ([],None)
+              self#set_exp_diagnostic e1 (x2s x1);
+              ([], None)
             end
-         | (_, ([],Some x2)) ->
+         | (_, ([], Some x2)) ->
             begin
-              self#set_exp_diagnostic e2 (x2s x2) ;
-              ([],None)
+              self#set_exp_diagnostic e2 (x2s x2);
+              ([], None)
             end
-         | _ -> ([],None)
+         | _ -> ([], None)
        end
-    | _ -> ([],None)
+    | _ -> ([], None)
 
   method  get_exp_upper_bound_value (e:exp):(int list * xpr_t option) =
     match self#get_exp_value e with
-    | (invs,Some v) -> (invs, Some v)
+    | (invs, Some v) -> (invs, Some v)
     | _ ->
        match e with
        | CastE (_, e1) -> self#get_exp_upper_bound_value e1
-       | Lval (Var (vname,vid),NoOffset) when vid > 0 ->
+       | Lval (Var (_vname, vid), NoOffset) when vid > 0 ->
           let vinfo = self#env#get_varinfo vid in
           let invariants =
-            List.fold_left (fun acc (inv,offset) ->
+            List.fold_left (fun acc (inv, offset) ->
                 match offset with
                 | NoOffset -> inv :: acc
                 | _ -> acc) [] (self#get_vinfo_offset_values vinfo) in
-          List.fold_left (fun (invs,acc) inv ->
+          List.fold_left (fun (invs, acc) inv ->
               match acc with
-              | Some _ -> (invs,acc)
+              | Some _ -> (invs, acc)
               | _ ->
                  match inv#upper_bound_xpr with
                  | Some x -> (inv#index :: invs, Some x)
@@ -544,51 +574,53 @@ object (self)
           begin
             match self#get_exp_upper_bound_value e1 with
             | (invs,Some x) ->
-               let xmin = XOp (XMinus, [ x ; num_constant_expr (mkNumericalFromInt64 i64) ]) in
+               let xmin =
+                 XOp (XMinus, [x; num_constant_expr (mkNumericalFromInt64 i64)]) in
                let xminsimplified = simplify_xpr xmin in
                (invs,Some xminsimplified)
-            | _ -> ([],None)
+            | _ -> ([], None)
           end
-       | BinOp (BAnd, e1, e2, ty) when is_unsigned_integral_type (type_of_exp fenv e1) ->
+       | BinOp (BAnd, e1, e2, _ty)
+            when is_unsigned_integral_type (type_of_exp fenv e1) ->
           self#get_exp_value e2
-       | BinOp (Shiftlt, e1, e2, ty) ->
+       | BinOp (Shiftlt, e1, e2, _ty) ->
           begin
-            match (self#get_exp_upper_bound_value e1, self#get_exp_upper_bound_value e2) with
+            match (self#get_exp_upper_bound_value e1,
+                   self#get_exp_upper_bound_value e2) with
             | ((invs1, Some x1), (invs2, Some x2)) ->
-               let x = XOp (XShiftlt, [ x1 ; x2 ]) in
+               let x = XOp (XShiftlt, [x1; x2]) in
                let xsimplified = simplify_xpr x in
                begin
                  match xsimplified with
                  | XConst XRandom | XConst XUnknownInt ->
                     begin
-                      self#set_exp_diagnostic e (x2s x) ;
-                      ([],None)
+                      self#set_exp_diagnostic e (x2s x);
+                      ([], None)
                     end
                  | _ ->
                     (invs1 @ invs2, Some xsimplified)
                end
-            | ((_,Some x1),_) ->
+            | ((_,Some x1), _) ->
                begin
-                 self#set_exp_diagnostic e1 (x2s x1) ;
-                 ([],None)
+                 self#set_exp_diagnostic e1 (x2s x1);
+                 ([], None)
                end
             | (_,(_,Some x2)) ->
                begin
-                 self#set_exp_diagnostic e2 (x2s x2) ;
-                 ([],None)
+                 self#set_exp_diagnostic e2 (x2s x2);
+                 ([], None)
                end
-            | _ -> ([],None)
+            | _ -> ([], None)
           end
        | _ ->
           match get_num_range self#fenv e with
-          | (_, Some ub) -> ([],Some (num_constant_expr ub))
+          | (_, Some ub) -> ([], Some (num_constant_expr ub))
           | _ -> ([], None)
-         
-         
+
   method get_extended_values (argindex:int) (e:exp):invariant_int list =
     let values = self#get_invariants argindex in
     match e with
-    | Lval (Var (vname,vid),NoOffset) when  vid > 0  ->
+    | Lval (Var (_vname, vid), NoOffset) when vid > 0  ->
        let vinfo = self#env#get_varinfo vid in
        values @
          (List.fold_left (fun acc (inv,offset) ->
@@ -599,18 +631,18 @@ object (self)
 
   method get_ntp_value (e:exp):(invariant_int * numerical_t) option =
     match e with
-    | StartOf (Var (vname,vid),NoOffset)
-      | CastE (_,StartOf (Var (vname,vid),NoOffset)) when vid > 0  ->
+    | StartOf (Var (_vname, vid), NoOffset)
+      | CastE (_, StartOf (Var (_vname,vid), NoOffset)) when vid > 0  ->
        let vinfo = self#env#get_varinfo vid in
        begin
          match vinfo.vtype with
-         | TArray (_,Some (Const (CInt (_,_,_))),_) ->
-            List.fold_left (fun acc (inv,offset) ->
+         | TArray (_, Some (Const (CInt (_, _, _))), _) ->
+            List.fold_left (fun acc (inv, offset) ->
                 match acc with
                 | Some _ -> acc
                 | _ ->
                    match offset with
-                   | Index (Const (CInt (i64,_,_)),NoOffset) ->
+                   | Index (Const (CInt (i64, _, _)), NoOffset) ->
                       let index = mkNumericalFromInt64 i64 in
                       begin
                         match inv#expr with
@@ -625,37 +657,37 @@ object (self)
 
   method get_function_return_value_buffer_size (v:variable_t) =
     let fargs = env#get_callvar_args v in
-    let callee = self#env#get_callvar_callee v in    
+    let callee = self#env#get_callvar_callee v in
     let (pcs,_) = self#get_postconditions v in
-    List.fold_left (fun acc (pc,_) ->
-        let deps = [ PostAssumption (callee.vid,pc) ] in
+    List.fold_left (fun acc (pc, _) ->
+        let deps = [PostAssumption (callee.vid,pc)] in
         match acc with
         | Some _ -> acc
         | _ ->
            match pc with
            | XBuffer (ReturnValue,NumConstant i) ->
               Some (deps,num_constant_expr i)
-           | XBuffer (ReturnValue, ArgValue (ParFormal i,ArgNoOffset)) ->
-              if (List.length  fargs) >= i then
+           | XBuffer (ReturnValue, ArgValue (ParFormal i, ArgNoOffset)) ->
+              if (List.length fargs) >= i then
                 (match List.nth fargs (i-1) with
                  | Some a -> Some (deps,a)
                  | _ -> None)
               else
                 None
            | XBuffer (ReturnValue,
-                         ArithmeticExpr (Mult, ArgValue (ParFormal i1,ArgNoOffset),
-                                         ArgValue (ParFormal i2,ArgNoOffset))) ->
+                      ArithmeticExpr (Mult, ArgValue (ParFormal i1, ArgNoOffset),
+                                      ArgValue (ParFormal i2, ArgNoOffset))) ->
               if (List.length fargs) >= i1 && (List.length fargs) >= i2 then
                 match (List.nth fargs (i1-1), List.nth fargs (i2-1)) with
                 | (Some x1,Some x2) ->
-                   let x = XOp (XMult, [ x1 ; x2 ]) in
+                   let x = XOp (XMult, [x1; x2]) in
                    Some (deps,simplify_xpr x)
                 | _ ->
                    None
               else
                 None
            | _ -> None) None pcs
-         
+
   method private non_relational_value_to_pretty (nrv:non_relational_value_t) =
     match nrv with
     | FRegionSet syms ->
@@ -667,39 +699,46 @@ object (self)
     | [] -> STR "none"
     | _ ->
        let values =
-         List.sort (fun (_,nrv1) (_,nrv2) -> non_relational_value_compare nrv1 nrv2) values in
-       LBLOCK (List.map (fun (_,nrv) ->
-                   LBLOCK [ self#non_relational_value_to_pretty nrv ; STR "; " ]) values)
+         List.sort (fun (_,nrv1) (_,nrv2) ->
+             non_relational_value_compare nrv1 nrv2) values in
+       LBLOCK
+         (List.map (fun (_,nrv) ->
+              LBLOCK [self#non_relational_value_to_pretty nrv; STR "; "]) values)
 
   method invariant_values_to_pretty (invs:invariant_int list) =
-    LBLOCK (List.fold_left (fun acc inv ->
-                match inv#get_fact with
-                | NonRelationalFact (_,nrv) ->
-                   (self#non_relational_value_to_pretty nrv) :: (STR "; ") :: acc
-                | _ -> acc) [] invs)
-           
+    LBLOCK
+      (List.fold_left (fun acc inv ->
+           match inv#get_fact with
+           | NonRelationalFact (_,nrv) ->
+              (self#non_relational_value_to_pretty nrv) :: (STR "; ") :: acc
+           | _ -> acc) [] invs)
+
   method get_vinfo_offset_values (vinfo:varinfo):(invariant_int * offset) list =
     let facts = (invio#get_location_invariant cfgcontext)#get_invariants in
     List.fold_left (fun acc f ->
         match f#get_fact with
-        | NonRelationalFact (v,i) ->
+        | NonRelationalFact (v, _i) ->
            begin
              match env#get_vinfo_offset v vinfo with
-             | Some offset -> (f,offset) :: acc
+             | Some offset -> (f, offset) :: acc
              | _ -> acc
            end
         | _ -> acc) [] facts
 
-  method vinfo_values_to_pretty (values: (int * offset * non_relational_value_t) list) =
+  method vinfo_values_to_pretty
+           (values: (int * offset * non_relational_value_t) list) =
     match values with
     | [] -> STR "none"
     | _ ->
-       LBLOCK (List.map (fun (_,offset,nrv) ->
-                   let poffset = match offset with
-                     | NoOffset -> STR ""
-                     | _ -> LBLOCK [ offset_to_pretty offset ; STR ": " ] in
-                   LBLOCK [ poffset ;
-                            self#non_relational_value_to_pretty nrv ; STR "; " ]) values)
+       LBLOCK
+         (List.map (fun (_,offset,nrv) ->
+              let poffset = match offset with
+                | NoOffset -> STR ""
+                | _ -> LBLOCK [offset_to_pretty offset; STR ": "] in
+              LBLOCK [
+                  poffset;
+                  self#non_relational_value_to_pretty nrv;
+                  STR "; "]) values)
 
   method remove_null_syms (syms:symbol_t list) =
     let memregmgr = env#get_variable_manager#memregmgr in
@@ -707,50 +746,58 @@ object (self)
         let memreg = memregmgr#get_memory_region s#getSeqNumber in
         not memreg#is_null) syms
 
-  method private get_exp_buffer_index_size (e:exp):(string * xpr_t * xpr_t) option =
+  method private get_exp_buffer_index_size
+                   (e:exp):(string * xpr_t * xpr_t) option =
     (* return index size and offset (in terms of elements) *)
     try
       match e with
-      | CastE (_,StartOf (Var (vname,vid),offset))
-        | CastE (_,AddrOf (Var (vname,vid),offset))
-        | StartOf (Var (vname,vid),offset)
-        | AddrOf (Var (vname,vid),offset) when vid > 0 ->
+      | CastE (_, StartOf (Var (vname, vid), offset))
+        | CastE (_, AddrOf (Var (vname, vid), offset))
+        | StartOf (Var (vname, vid), offset)
+        | AddrOf (Var (vname, vid), offset) when vid > 0 ->
          begin
            match (env#get_varinfo vid).vtype with
-           | TArray (_,Some len,_) ->
+           | TArray (_,Some len, _) ->
               begin
                 match offset with
                 | NoOffset ->
                    Some (vname,self#e2x len,zero_constant_expr)
-                | Index (Const (CInt (i64,_,_)),NoOffset) ->
+                | Index (Const (CInt (i64, _, _)), NoOffset) ->
                    let xoffset = num_constant_expr (mkNumericalFromInt64 i64) in
-                   Some (vname,self#e2x len,xoffset)
+                   Some (vname, self#e2x len, xoffset)
                 | _ -> None
               end
            | _ -> None
          end
-      | _ -> None           
+      | _ -> None
     with
     | CCHFailure p ->
-       raise (CCHFailure (LBLOCK [ STR "Error in get_exp_buffer_index_size for " ;
-                                   exp_to_pretty e ; STR ": " ; p ]))
-    
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Error in get_exp_buffer_index_size for ";
+                 exp_to_pretty e;
+                 STR ": ";
+                 p]))
+
 
   method private get_return_value_buffer_size_info
                    (arg:int) (base:variable_t) (invindex:int) (incr:xpr_t) =
     let optargs_to_string args =
-      String.concat "," (List.map (fun a -> match a with Some x -> x2s x | _ -> "_") args) in
+      String.concat
+        "," (List.map (fun a -> match a with Some x -> x2s x | _ -> "_") args) in
     let callee = env#get_callvar_callee base in
     let fargs = env#get_callvar_args base in
-    let _ = self#set_diagnostic_arg arg ("function return value: " ^ callee.vname) in
-    let _ = self#set_diagnostic_arg arg ("function arguments: "
-                                         ^ optargs_to_string fargs) in
-    let (pcs,epcs) = self#get_postconditions base in
-    match  (pcs,epcs) with
+    let _ =
+      self#set_diagnostic_arg arg ("function return value: " ^ callee.vname) in
+    let _ =
+      self#set_diagnostic_arg
+        arg ("function arguments: " ^ optargs_to_string fargs) in
+    let (pcs, epcs) = self#get_postconditions base in
+    match  (pcs, epcs) with
     | ([],_) ->
        begin
-         self#set_diagnostic_arg
-           arg ("no postconditions for " ^ callee.vname) ;
+         self#set_diagnostic_arg arg ("no postconditions for " ^ callee.vname);
          None
        end
     | (_,_) ->      (* TBD: check that only error post is Null *)
@@ -759,71 +806,94 @@ object (self)
            | Some _ -> accp
            | _ ->
               match pc with
-              | XBuffer (ReturnValue,ArgValue (ParFormal i,ArgNoOffset)) ->
-                 let deps = DEnvC ( [ invindex ], [ PostAssumption (callee.vid, pc) ]) in
+              | XBuffer (ReturnValue,ArgValue (ParFormal i, ArgNoOffset)) ->
+                 let deps =
+                   DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
                  if (List.length fargs) >= i then
                    match List.nth fargs (i-1) with
-                   | Some x -> Some (base#getName#getBaseName, x, incr,deps)
+                   | Some x -> Some (base#getName#getBaseName, x, incr, deps)
                    | _ -> None
                  else
                    None
               | XBuffer (ReturnValue,
                          ArithmeticExpr (Mult, ArgValue (ParFormal i1,ArgNoOffset),
                                          ArgValue (ParFormal i2,ArgNoOffset))) ->
-                 let deps = DEnvC ( [ invindex ], [ PostAssumption (callee.vid, pc) ]) in
+                 let deps =
+                   DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
                  if (List.length fargs) >= i1  &&  (List.length fargs) >= i2 then
                    match (List.nth fargs (i1-1), List.nth fargs (i2-1)) with
                    | (Some x1,Some x2) ->
-                      let x =  XOp  (XMult, [ x1 ; x2 ]) in
+                      let x =  XOp  (XMult, [x1; x2]) in
                       Some (base#getName#getBaseName, simplify_xpr x, incr, deps)
                    | _ -> None
                  else
                    None
               | XBuffer (ReturnValue, NumConstant n) ->
-                 let deps = DEnvC ( [ invindex ], [ PostAssumption (callee.vid, pc) ]) in
+                 let deps =
+                   DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
                  Some (base#getName#getBaseName, num_constant_expr n, incr,deps)
               | _ -> None) None pcs
 
   method private get_memaddress_buffer_byte_size_info
                    (arg:int) (base:variable_t) (invindex:int) (incr:xpr_t) =
     let memref = env#get_memory_reference base in
-    let _ = self#set_diagnostic_arg arg ("memory address: " ^ base#getName#getBaseName) in
+    let _ =
+      self#set_diagnostic_arg
+        arg ("memory address: " ^ base#getName#getBaseName) in
     match memref#get_base with
     | CStackAddress stackvar when env#is_local_variable stackvar ->
        let (vinfo,offset) = env#get_local_variable stackvar in
        begin
          match (vinfo.vtype, offset) with
-         | (TArray (t,Some len,_), NoOffset) ->
-            let _ = self#set_diagnostic_arg
-                      arg ("array variable " ^ vinfo.vname ^ " with size "
-                           ^ (x2s (self#e2x len))) in
-            let xsize = XOp (XMult, [ self#e2x len ; size_of_type fenv t ]) in
-            let _ = self#set_diagnostic_arg
-                      arg ("stack variable " ^ vinfo.vname ^ "; size (in bytes): "
-                           ^ (x2s xsize) ^ " and offset " ^ (x2s incr)) in
-            let deps = DLocal [ invindex ] in
+         | (TArray (t,Some len, _), NoOffset) ->
+            let _ =
+              self#set_diagnostic_arg
+                arg
+                ("array variable "
+                 ^ vinfo.vname
+                 ^ " with size "
+                 ^ (x2s (self#e2x len))) in
+            let xsize = XOp (XMult, [self#e2x len; size_of_type fenv t]) in
+            let _ =
+              self#set_diagnostic_arg
+                arg
+                ("stack variable "
+                 ^ vinfo.vname
+                 ^ "; size (in bytes): "
+                 ^ (x2s xsize)
+                 ^ " and offset "
+                 ^ (x2s incr)) in
+            let deps = DLocal [invindex] in
             Some (vinfo.vname, xsize, incr, deps)
          | (ty,NoOffset) ->
             let tsize = size_of_type fenv ty in
-            let _ = self#set_diagnostic_arg
-                      arg ("stack variable with type: " ^ (p2s (typ_to_pretty ty))
-                           ^ " and size: " ^ (x2s tsize)) in
-            let deps = DLocal [ invindex ] in
-            Some  (vinfo.vname,  tsize, zero_constant_expr, deps)
-         | (ty,_) ->
-            let _ = self#set_diagnostic_arg
-                      arg ("stack variable with type: " ^ (p2s (typ_to_pretty ty))
-                           ^ " and offset: " ^ (p2s (offset_to_pretty offset))) in
-            None            
+            let _ =
+              self#set_diagnostic_arg
+                arg
+                ("stack variable with type: "
+                 ^ (p2s (typ_to_pretty ty))
+                 ^ " and size: "
+                 ^ (x2s tsize)) in
+            let deps = DLocal [invindex] in
+            Some (vinfo.vname, tsize, zero_constant_expr, deps)
+         | (ty, _) ->
+            let _ =
+              self#set_diagnostic_arg
+                arg
+                ("stack variable with type: "
+                 ^ (p2s (typ_to_pretty ty))
+                 ^ " and offset: "
+                 ^ (p2s (offset_to_pretty offset))) in
+            None
        end
     | CBaseVar v ->
        begin
-         self#set_diagnostic_arg arg ("basevar: " ^ v#getName#getBaseName) ;
+         self#set_diagnostic_arg arg ("basevar: " ^ v#getName#getBaseName);
          self#xpr_buffer_offset_size arg invindex (XVar v)
        end
     | CGlobalAddress v ->
        begin
-         self#set_diagnostic_arg arg ("global var: " ^ v#getName#getBaseName) ;
+         self#set_diagnostic_arg arg ("global var: " ^ v#getName#getBaseName);
          None
        end
     | _ -> None
@@ -831,13 +901,14 @@ object (self)
   method xpr_buffer_offset_size (arg:int) (invindex:int) (x:xpr_t) =
     match x with
     | XVar base when env#is_memory_address base ->
-       self#get_memaddress_buffer_byte_size_info arg base invindex zero_constant_expr
+       self#get_memaddress_buffer_byte_size_info
+         arg base invindex zero_constant_expr
     | XVar v when env#is_function_return_value v ->
        self#get_return_value_buffer_size_info arg v invindex zero_constant_expr
     | XVar v when self#env#is_initial_global_value v ->
        let gvar = self#env#get_initial_value_variable v in
        self#get_global_variable_buffer invindex gvar
-    | XOp (XPlus, [ XVar base ; incr ]) when env#is_memory_address base ->
+    | XOp (XPlus, [XVar base; incr]) when env#is_memory_address base ->
        self#get_memaddress_buffer_byte_size_info arg base invindex incr
     | _ -> None
 
@@ -853,7 +924,8 @@ object (self)
        if n1#gt n2 then Some x1 else Some x2
     | _ -> None
 
-  method private xprlist_buffer_offset_size (arg:int) (invindex:int) (xlst:xpr_t list) =
+  method private xprlist_buffer_offset_size
+                   (arg:int) (invindex:int) (xlst:xpr_t list) =
     match xlst with
     | [] -> None
     | h::tl ->
@@ -877,18 +949,19 @@ object (self)
                       | _ -> None
                     end
                  | _ -> None) (Some r) tl
-    
-    
+
   (* returns a conservative value of the remaining size in the buffer, that is,
    * a lower bound on the buffer size and an upper bound on the offset *)
   method get_buffer_offset_size
-           (arg:int) (typ:typ) (e:exp):(string * xpr_t * xpr_t * dependencies_t) option =
+           (arg:int)
+           (typ:typ)
+           (e:exp):(string * xpr_t * xpr_t * dependencies_t) option =
     let invs = self#get_invariants arg in
     match self#get_exp_buffer_index_size e with
     | Some (name,indexsize,indexoffset) ->
        let typesize = size_of_type fenv typ in
-       let bytesize = simplify_xpr (XOp (XMult, [ indexsize ; typesize ])) in
-       let byteoffset = simplify_xpr (XOp (XMult, [ indexoffset ; typesize ])) in
+       let bytesize = simplify_xpr (XOp (XMult, [indexsize; typesize])) in
+       let byteoffset = simplify_xpr (XOp (XMult, [indexoffset; typesize])) in
        let deps = DLocal [] in
        Some (name,bytesize,byteoffset,deps)
     | _ ->
@@ -897,7 +970,8 @@ object (self)
            | Some _ -> acc
            | _ ->
               match inv#base_offset_value with
-              | Some (_,XVar base,_,Some ub,_) when env#is_function_return_value base ->
+              | Some (_,XVar base,_,Some ub,_)
+                   when env#is_function_return_value base ->
                  begin
                    match self#get_return_value_buffer_size_info
                            arg base inv#index (num_constant_expr ub) with
@@ -908,7 +982,7 @@ object (self)
                          begin
                            match self#xpr_buffer_offset_size arg inv#index x with
                            | Some r -> Some r
-                           | _ -> 
+                           | _ ->
                               match inv#upper_bound_xpr_alternatives with
                               | None | Some [] -> None
                               | Some l ->
@@ -926,7 +1000,7 @@ object (self)
                     begin
                       match self#xpr_buffer_offset_size arg inv#index x with
                       | Some r -> Some r
-                      | _ -> 
+                      | _ ->
                          match inv#upper_bound_xpr_alternatives with
                          | None | Some [] -> None
                          | Some l ->
@@ -937,7 +1011,6 @@ object (self)
                     | None | Some [] -> None
                     | Some l ->
                        self#xprlist_buffer_offset_size arg inv#index l) None invs
-      
 
   method x2global (x:xpr_t):exp option =
     match x with
@@ -946,12 +1019,13 @@ object (self)
        (try Some (env#get_global_exp v) with
         | CCHFailure p ->
            begin
-             chlog#add "global expression"
-                       (LBLOCK [ STR env#get_functionname ; STR ": " ; p ]) ;
-             self#record_unevaluated x ;
+             chlog#add
+               "global expression"
+               (LBLOCK [STR env#get_functionname; STR ": "; p]);
+             self#record_unevaluated x;
              None
            end)
-    | XOp (op, [ x1 ; x2 ]) ->
+    | XOp (op, [x1; x2]) ->
        begin
          match (self#x2global x1, self#x2global x2) with
          | (Some a1,Some a2) ->
@@ -967,23 +1041,25 @@ object (self)
        end
     | _ ->
        begin
-         self#record_unevaluated x ;
+         self#record_unevaluated x;
          None
        end
 
   method x2api (x:xpr_t):exp option =
     match x with
     | XConst (IntConst n) -> Some (make_constant_exp n)
-    | XVar v when env#is_initial_parameter_value v || env#is_initial_parameter_deref_value v ->
+    | XVar v
+         when env#is_initial_parameter_value v
+              || env#is_initial_parameter_deref_value v ->
        (try Some (env#get_parameter_exp v) with
         | CCHFailure p ->
            begin
              chlog#add "api expression"
-                       (LBLOCK [ STR env#get_functionname ; STR ": " ; p ]) ;
-             self#record_unevaluated x ;
+                       (LBLOCK [STR env#get_functionname; STR ": "; p]);
+             self#record_unevaluated x;
              None
            end)
-    | XOp (op, [ x1 ; x2 ]) ->
+    | XOp (op, [x1; x2]) ->
        begin
          match (self#x2api x1,self#x2api x2) with
          | (Some a1,Some a2) ->
@@ -1012,10 +1088,16 @@ object (self)
               with
               | CCHFailure p ->
                  begin
-                   ch_error_log#add "integer promotion"
-                                    (LBLOCK [ STR self#env#get_functionname ; STR ": " ;
-                                              typ_to_pretty ty1 ; STR ", " ;
-                                              typ_to_pretty ty2 ;  STR ": " ; p ]) ;
+                   ch_error_log#add
+                     "integer promotion"
+                     (LBLOCK [
+                          STR self#env#get_functionname;
+                          STR ": ";
+                          typ_to_pretty ty1;
+                          STR ", ";
+                          typ_to_pretty ty2;
+                          STR ": ";
+                          p]);
                    None
                  end
               | _ -> None
@@ -1034,10 +1116,15 @@ object (self)
     match get_num_value fenv e with
     | Some i -> num_constant_expr i
     | _ ->
-       let _ = chlog#add
-                 "e2x failed"
-                 (LBLOCK [ STR fname ; STR ": " ; INT po#index ;
-                           STR " -- " ; exp_to_pretty e ]) in
+       let _ =
+         chlog#add
+           "e2x failed"
+           (LBLOCK [
+                STR fname;
+                STR ": ";
+                INT po#index;
+                STR " -- ";
+                exp_to_pretty e]) in
        random_constant_expr
 
   method is_memory_base_address (base:variable_t) =
@@ -1054,25 +1141,25 @@ object (self)
                 | _ -> None) None fs.fs_postconditions
       | _ ->
          begin
-           chlog#add "no summary" (STR callee.vname) ;
+           chlog#add "no summary" (STR callee.vname);
            None
          end
     else if env#is_memory_address base then
       let memref = env#get_memory_reference base in
       match memref#get_base with
       | CStackAddress stackvar when env#is_local_variable stackvar ->
-         let (vinfo,offset) = env#get_local_variable stackvar in
+         let (vinfo, offset) = env#get_local_variable stackvar in
          (match offset with
           | NoOffset -> Some ("stackvar:" ^ vinfo.vname)
           | _ -> None)
       | _ ->
          begin
-           chlog#add "memory address - non stack" (STR base#getName#getBaseName) ;
+           chlog#add "memory address - non stack" (STR base#getName#getBaseName);
            None
          end
     else
       begin
-        chlog#add "not a memory address" (STR base#getName#getBaseName) ;
+        chlog#add "not a memory address" (STR base#getName#getBaseName);
         None
       end
 
@@ -1083,18 +1170,22 @@ object (self)
        match self#x2global x with
        | Some _ -> true
        | _ -> false
-            
+
   method get_global_expression (x:xpr_t) =
     match self#x2global x with
     | Some e -> e
     | _ ->
-       raise (CCHFailure (LBLOCK [ STR "Expression " ; x2p x ;
-                                   STR " cannot be converted to a global expression"]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Expression ";
+                 x2p x;
+                 STR " cannot be converted to a global expression"]))
 
   method is_api_expression (x:xpr_t) =
     match simplify_xpr x with
     | XConst _ -> false
-    | XOp (_, [ XConst _ ; XConst _ ]) -> false
+    | XOp (_, [XConst _; XConst _]) -> false
     | _ ->
        match self#x2api x with
        | Some _ -> true
@@ -1104,8 +1195,12 @@ object (self)
     match self#x2api x with
     | Some e -> e
     | _ ->
-       raise (CCHFailure (LBLOCK [ STR "Expression " ; x2p x ;
-                                   STR " cannot be converted to an api expression" ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Expression ";
+                 x2p x;
+                 STR " cannot be converted to an api expression"]))
 
   method is_function_return (x:xpr_t) =
     match self#x2functionreturn x with Some _ -> true | _ -> false
@@ -1114,8 +1209,12 @@ object (self)
     match self#x2functionreturn x with
     | Some e -> e
     | _ ->
-       raise (CCHFailure (LBLOCK [ STR "Expression " ; x2p x ;
-                                   STR " cannot be converted to a post expression" ]))
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Expression ";
+                 x2p x;
+                 STR " cannot be converted to a post expression"]))
 
   method get_num_value (e:exp) = get_num_value fenv e
 
@@ -1137,7 +1236,7 @@ object (self)
               match inv#lower_bound_xpr with
               | Some lb -> Some (lb,[inv#index])
               | _ -> None) None (self#get_invariants_lb arg)
-       
+
   (* return an upper bound xpr *)
   method get_upperbound_xpr (arg:int) (e:exp):(xpr_t * int list) option =
     match get_num_value fenv e with
@@ -1151,7 +1250,6 @@ object (self)
               | Some ub -> Some (ub,[inv#index])
               | _ -> None) None (self#get_invariants_ub arg)
 
-
   (* return an external lower bound exp that can be delegated *)
   method get_elb (e:exp) (v:non_relational_value_t):exp option =
     try
@@ -1160,11 +1258,11 @@ object (self)
       | _ ->
          match v with
          | FSymbolicExpr x -> self#x2api x
-         | FIntervalValue (Some lb,_) -> Some (make_constant_exp lb)
+         | FIntervalValue (Some lb, _) -> Some (make_constant_exp lb)
          | _ -> None
     with
     | Failure _ -> None
-                 
+
   method get_eub (e:exp) (v:non_relational_value_t):exp option =
     try
       match get_num_value fenv e with
@@ -1184,7 +1282,7 @@ object (self)
       | _ ->
          match v with
          | FSymbolicExpr x -> self#x2api x
-         | FIntervalValue (Some lb,Some ub) when lb#equal ub ->
+         | FIntervalValue (Some lb, Some ub) when lb#equal ub ->
             Some (make_constant_exp lb)
          | _ -> None
     with
@@ -1196,7 +1294,8 @@ object (self)
       | CastE (_,ee) -> self#is_command_line_argument ee
       | Lval (Mem (BinOp
                      ((PlusPI | IndexPI),
-                      Lval (Var (_,vid),NoOffset),Const (CInt (i64,_,_)),_)),
+                      Lval (Var (_, vid), NoOffset),
+                      Const (CInt (_i64, _, _)), _)),
               NoOffset) when vid > 0  ->
          fenv#is_formal vid && (self#env#get_varinfo vid).vparam = 2
       | _ -> false
@@ -1205,27 +1304,35 @@ object (self)
     if self#is_command_line_argument e then
       match e with
       | CastE (_,ee) -> self#get_command_line_argument_index ee
-      | Lval (Mem (BinOp ((PlusPI | IndexPI),
-                          Lval (Var (_,vid),NoOffset),Const (CInt (i64,_,_)),_)),NoOffset) ->
+      | Lval (Mem (BinOp
+                     ((PlusPI | IndexPI),
+                      Lval (Var (_, _vid), NoOffset),
+                      Const (CInt (i64, _, _)), _)), NoOffset) ->
          Int64.to_int i64
       | _ ->
-         raise (CCHFailure (LBLOCK [ STR "Internal error in get_command_line_argument_index" ]))
+         raise
+           (CCHFailure
+              (LBLOCK [STR "Internal error in get_command_line_argument_index"]))
     else
-      raise (CCHFailure (LBLOCK [ STR "expression " ; exp_to_pretty e ;
-                                  STR " is not a command-line argument" ]))
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "expression ";
+                exp_to_pretty e;
+                STR " is not a command-line argument"]))
 
   method get_command_line_argument_count =
     if fname = "main" then
       let locinvio = invio#get_location_invariant cfgcontext in
       let argc = fenv#get_formal 1 in
       let argcvar = self#env#mk_program_var argc NoOffset NUM_VAR_TYPE in
-      let facts = List.concat (List.map locinvio#get_var_invariants [ argcvar ]) in
+      let facts = List.concat (List.map locinvio#get_var_invariants [argcvar]) in
       let facts =
         List.fold_left (fun acc f ->
             match f#get_fact with
-            | NonRelationalFact (v,i) -> (f#index,i) :: acc
+            | NonRelationalFact (_v, i) -> (f#index, i) :: acc
             | _ -> acc) [] facts in
-      List.fold_left (fun acc (inv,i) ->
+      List.fold_left (fun acc (inv, i) ->
           match acc with
           | Some _ -> acc
           | _ ->
@@ -1237,15 +1344,16 @@ object (self)
                   with
                     _ ->
                     begin
-                      chlog#add "large value"
-                                (LBLOCK [ STR self#fname ; STR ": " ; lb#toPretty ]) ;
+                      chlog#add
+                        "large value"
+                        (LBLOCK [STR self#fname; STR ": "; lb#toPretty]);
                       None
                     end
-                end                           
+                end
              | _ -> acc) None facts
     else
       None
-       
+
   method check_command_line_argument
            (e:exp)
            (safemsg:int -> int -> string)
@@ -1257,24 +1365,25 @@ object (self)
       | Some (inv,i) ->
          if index < i then
            begin
-             self#record_safe_result (DLocal [inv]) (safemsg index i) ;
+             self#record_safe_result (DLocal [inv]) (safemsg index i);
              true
            end
          else
            begin
-             self#record_violation_result (DLocal [inv]) (vmsg index i) ;
+             self#record_violation_result (DLocal [inv]) (vmsg index i);
              true
            end
       | _ ->
          begin
-           self#set_diagnostic (dmsg index) ;
+           self#set_diagnostic (dmsg index);
            false
          end
     else
       false
 
   method check_implied_by_assumptions (p:po_predicate_t) =
-    let assumptions = List.map (fun a -> a#get_predicate) self#get_api_assumptions in
+    let assumptions =
+      List.map (fun a -> a#get_predicate) self#get_api_assumptions in
     check_implied_by_assumptions env assumptions p
 
   method private get_global_variable_buffer invindex (v:variable_t) =
@@ -1282,24 +1391,24 @@ object (self)
       let (vinfo,offset) = self#env#get_global_variable v in
       match offset with
       | NoOffset ->
-         let predicates = List.map (fun a -> a#get_predicate) self#get_api_assumptions in
+         let predicates =
+           List.map (fun a -> a#get_predicate) self#get_api_assumptions in
          List.fold_left (fun acc (pred:po_predicate_t) ->
              match acc with
              | Some _ -> acc
              | _ ->
                 match pred with
-                | PBuffer (Lval (Var  (gname,gvid),NoOffset), Const (CInt (i64,_,_)))
+                | PBuffer (Lval (Var (gname, gvid), NoOffset),
+                           Const (CInt (i64,_,_)))
                      when gvid = vinfo.vid ->
                    let xsize = num_constant_expr (mkNumericalFromInt64 i64) in
-                   let deps = DEnvC ([ invindex ],[ ApiAssumption pred ]) in
+                   let deps = DEnvC ([invindex],[ApiAssumption pred]) in
                    Some (gname, xsize, zero_constant_expr, deps)
                 | _ -> None) None predicates
       | _ -> None
     else
       None
-    
 
 end
 
 let mk_poq = new po_query_t
-           
