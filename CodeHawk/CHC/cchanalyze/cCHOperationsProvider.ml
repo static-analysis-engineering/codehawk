@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021      Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,7 +36,6 @@ open CHPretty
 open CHLogger
 
 (* xprlib *)
-open Xprt
 open XprToPretty
 open XprUtil
 
@@ -52,19 +51,14 @@ open CCHUtilities
 (* cchpre *)
 open CCHPOPredicate
 open CCHPreTypes
-open CCHProofObligation
 
 (* cchanalyze *)
 open CCHAnalysisTypes
 open CCHCommand
-open CCHEnvironment
-open CCHExpTranslator
 
 module H = Hashtbl
 
 let x2p = xpr_formatter#pr_expr
-
-let fenv = CCHFileEnvironment.file_environment
 
 
 module ProgramContextCollections = CHCollections.Make
@@ -84,19 +78,19 @@ module ExpCollections = CHCollections.Make
 
 
 class checkset_t (isppo:bool) (x:int) (y:int) =
-object (self)
+object
 
-  val mutable triples = [ (isppo,x,y) ]
-    
+  val mutable triples = [(isppo,x,y)]
+
   method add (isppo:bool) (x:int) (y:int) =
     if List.exists (fun (i,a,b) -> i=isppo && a=x && b=y) triples then
       ()
     else
       triples <- List.sort Stdlib.compare ((isppo,x,y) :: triples)
-	
+
   method get = triples
-    
-  method toPretty = 
+
+  method toPretty =
     pretty_print_list
       triples
       (fun (isppo, x, y) ->
@@ -108,15 +102,15 @@ object (self)
             INT y;
             STR ")"])
     "[" ";" "]"
-    
+
 end
-  
-  	
-let add_proof_obligation_to_set 
+
+
+let add_proof_obligation_to_set
       (exps:checkset_t ExpCollections.table_t) (p:proof_obligation_int) =
   if p#is_opaque then () else
     let expsList = collect_indexed_predicate_expressions p#get_predicate in
-    List.iter (fun (seqnr,e) -> 
+    List.iter (fun (seqnr,e) ->
         match exps#get e with
         | Some checkset -> checkset#add p#is_ppo p#index seqnr
         | _ ->
@@ -125,39 +119,39 @@ let add_proof_obligation_to_set
                p#is_ppo p#index seqnr in exps#set e checkset) expsList
 
 
-let add_proof_obligation 
+let add_proof_obligation
     (t:(checkset_t ExpCollections.table_t) ProgramContextCollections.table_t)
     (p:proof_obligation_int) =
   let cfgcontext = p#get_context#project_on_cfg in
   let expSet = match t#get cfgcontext with
     | Some expSet -> expSet
-    | _ -> 
-      let expSet = new ExpCollections.table_t in 
-      begin t#set cfgcontext expSet ; expSet end in
+    | _ ->
+      let expSet = new ExpCollections.table_t in
+      begin t#set cfgcontext expSet; expSet end in
   add_proof_obligation_to_set expSet p
 
 
-class operations_provider_t 
+class operations_provider_t
   (env:c_environment_int)
   (exp_translator:exp_translator_int)
   (proof_obligations:proof_obligation_int list)
   (vtype:variable_type_t):operations_provider_int =
 object (self)
-  
-  val op_contexts = 
+
+  val op_contexts =
     let t = new ProgramContextCollections.table_t in
     let _ = List.iter (fun p -> add_proof_obligation t p) proof_obligations in t
   val fdecls = env#get_fdecls
   val mutable count = 0         (* counting invariant locations *)
-    
+
   method get_cmd_operations (context:program_context_int) =
-    if op_contexts#has context then 
+    if op_contexts#has context then
       let _ = env#start_transaction in
       let cmds = self#make_context_operation context in
       let (tmps,assigns) = env#end_transaction in
       let assigns = List.map make_c_cmd assigns in
       let tlabel = new symbol_t "proof-obligation-expressions" in
-      [ make_transaction tlabel tmps (assigns @ cmds) ]
+      [make_transaction tlabel tmps (assigns @ cmds)]
     else
       []
 
@@ -167,23 +161,23 @@ object (self)
     let (tmps,assigns) = env#end_transaction in
     let assigns = List.map make_c_cmd assigns in
     let tlabel = new symbol_t "return-values" in
-    [ make_transaction tlabel tmps (assigns @ cmds ) ]
-	
+    [make_transaction tlabel tmps (assigns @ cmds )]
+
   method get_c_cmd_operations (context:program_context_int) =
     if op_contexts#has context then
       self#make_context_operation context
     else
       []
-      
+
   method private make_context_operation context =
     let assign_check_value v e =
       match vtype with
-      | NUM_VAR_TYPE -> 
+      | NUM_VAR_TYPE ->
 	let tmpProvider = (fun () -> env#mk_num_temp) in
 	let cstProvider = (fun (n:numerical_t) -> env#mk_num_constant n) in
 	let numExp = exp_translator#translate_exp context e in
 	let (rhsCode,numExp) = xpr2numexpr tmpProvider cstProvider numExp in
-	[ rhsCode ; make_c_cmd (ASSIGN_NUM (v,numExp)) ]
+	[rhsCode; make_c_cmd (ASSIGN_NUM (v,numExp))]
       | SYM_VAR_TYPE ->
          begin
            match e with
@@ -191,23 +185,23 @@ object (self)
              | CastE (_,Lval lval)  ->
               let symvar = exp_translator#translate_lhs context lval in
               if not v#isTmp then
-                [ make_c_cmd (ASSIGN_SYM (v, SYM_VAR symvar)) ]
+                [make_c_cmd (ASSIGN_SYM (v, SYM_VAR symvar))]
               else
-                [ make_c_cmd SKIP ]
+                [make_c_cmd SKIP]
            | _ ->
               match exp_translator#translate_exp context e with
-              | XVar symvar -> [ make_c_cmd (ASSIGN_SYM (v, SYM_VAR symvar)) ]
-              | XConst _ -> [ make_c_cmd SKIP ]
+              | XVar symvar -> [make_c_cmd (ASSIGN_SYM (v, SYM_VAR symvar))]
+              | XConst _ -> [make_c_cmd SKIP]
               | xpr ->
                  begin
                    chlog#add "no symbolic check value assigned"
-                             (LBLOCK [ STR env#get_functionname ; STR ": " ;
-                                       exp_to_pretty e ; STR " --> " ;
-                                       x2p xpr ]) ;
-                   [ make_c_cmd SKIP ]
+                             (LBLOCK [STR env#get_functionname; STR ": ";
+                                       exp_to_pretty e; STR " --> ";
+                                       x2p xpr]);
+                   [make_c_cmd SKIP]
                  end
          end
-      | _ -> [ make_c_cmd SKIP ] in
+      | _ -> [make_c_cmd SKIP] in
     let name = self#mk_invariant_label context in
     let vars = ref [] in
     let code = ref [] in
@@ -252,15 +246,15 @@ object (self)
       let cstProvider = (fun (n:numerical_t) -> env#mk_num_constant n) in
       let numExp = exp_translator#translate_exp context e in
       let (rhsCode,numExp) = xpr2numexpr tmpProvider cstProvider numExp in
-      [ rhsCode ; make_c_cmd (ASSIGN_NUM (v,numExp)) ] in
+      [rhsCode; make_c_cmd (ASSIGN_NUM (v,numExp))] in
     let name = self#mk_invariant_label context in
     let rVar = env#get_return_var in
     let assign = make_c_cmd_block (assign_return_value rVar e) in
-    let args = [ (rVar#getName#getBaseName,rVar,READ) ] in
+    let args = [(rVar#getName#getBaseName,rVar,READ)] in
     let op =
       make_c_cmd (OPERATION {op_name = new symbol_t name; op_args = args}) in
     [assign; op]
-         
+
   method private mk_invariant_label context =
     let _ = count <- count + 1 in
     let ictxt = ccontexts#index_context context in

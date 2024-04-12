@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,17 +28,14 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHAtlas
 open CHCommon
 open CHIntervalsDomainNoArrays
 open CHLanguage
 open CHLinearEqualitiesDomainNoArrays
-open CHNumerical
 open CHPEPRBounds
 open CHPEPRDomainNoArrays
 open CHPEPRTypes
 open CHPretty
-open CHSymbolicSets
 open CHSymbolicSetsDomainNoArrays
 open CHStateSetsDomainNoArrays
 open CHTimedSymbolicSetsDomainNoArrays
@@ -45,43 +44,42 @@ open CHValueSetsDomainNoArrays
 (* chutil *)
 open CHAnalysisSetup
 open CHLogger
+open CHTiming
 
 (* cchlib *)
-open CCHBasicTypes
 open CCHSettings
-open CCHTypesUtil
-open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
-open CCHPreTypes
 open CCHInvariantFact
 
 (* cchanalyze *)
 open CCHAnalysisTypes
-open CCHFunctionTranslator
 open CCHInvariantStore
 
 module H = Hashtbl
 
-exception TimeOut of float
-  
-let timeout_value = 300.0
+
 let start_time = ref 0.0
 let timing_active = ref false
-let start_timer () = begin start_time := Unix.gettimeofday () ; timing_active := true end
+let start_timer () =
+  begin
+    start_time := Unix.gettimeofday ();
+    timing_active := true
+  end
 
-let fenv = CCHFileEnvironment.file_environment
-  
-let analyze_procedure_with_intervals (proc:procedure_int) (system:system_int) 
+
+let analyze_procedure_with_intervals (proc:procedure_int) (system:system_int)
     (semantics:domain_opsemantics_t) =
   let analysis_setup = mk_analysis_setup () in
   begin
-    timing_active := false ;
-    analysis_setup#addDomain intervals_domain (new intervals_domain_no_arrays_t) ;
-    analysis_setup#setOpSemantics (semantics intervals_domain) ;
-    analysis_setup#analyze_procedure system proc 
+    timing_active := false;
+    analysis_setup#addDomain intervals_domain (new intervals_domain_no_arrays_t);
+    analysis_setup#setOpSemantics (semantics intervals_domain);
+    analysis_setup#analyze_procedure system proc;
+    pr_timing [STR "interval analysis completed"]
   end
+
 
 let analyze_procedure_with_pepr
       (proc:procedure_int)
@@ -91,65 +89,79 @@ let analyze_procedure_with_pepr
       (timeout:float) =
   let analysis_setup = mk_analysis_setup () in
   begin
-    timing_active := false ;
+    timing_active := false;
     analysis_setup#addDomain
       pepr_domain (mk_pepr_domain_no_arrays params timeout);
-    analysis_setup#setOpSemantics (semantics pepr_domain) ;
-    analysis_setup#analyze_procedure system proc
+    analysis_setup#setOpSemantics (semantics pepr_domain);
+    analysis_setup#analyze_procedure system proc;
+    pr_timing [STR "pepr analysis completed"]
   end
 
-let analyze_procedure_with_valuesets (proc:procedure_int) (system:system_int) 
+
+let analyze_procedure_with_valuesets (proc:procedure_int) (system:system_int)
     (semantics:domain_opsemantics_t) =
   let analysis_setup = mk_analysis_setup () in
   begin
-    timing_active := false ;
-    analysis_setup#addDomain valueset_domain (new valueset_domain_no_arrays_t) ;
-    analysis_setup#setOpSemantics (semantics valueset_domain) ;
-    analysis_setup#analyze_procedure ~verbose:system_settings#verbose system proc
+    timing_active := false;
+    analysis_setup#addDomain valueset_domain (new valueset_domain_no_arrays_t);
+    analysis_setup#setOpSemantics (semantics valueset_domain);
+    analysis_setup#analyze_procedure system proc;
+    pr_timing [STR "value set analysis completed"]
   end
-    
-let analyze_procedure_with_linear_equalities (proc:procedure_int) (system:system_int)
+
+
+let analyze_procedure_with_linear_equalities
+      (proc:procedure_int) (system:system_int)
     (semantics:domain_opsemantics_t) =
   let analysis_setup = mk_analysis_setup () in
   try
     begin
-      start_timer () ;
-      analysis_setup#addDomain linear_equalities_domain (new linear_equalities_domain_no_arrays_t) ;
-      analysis_setup#setOpSemantics (semantics linear_equalities_domain) ;
-      analysis_setup#analyze_procedure ~verbose:system_settings#verbose system proc 
+      start_timer ();
+      analysis_setup#addDomain
+        linear_equalities_domain (new linear_equalities_domain_no_arrays_t);
+      analysis_setup#setOpSemantics (semantics linear_equalities_domain);
+      analysis_setup#analyze_procedure system proc;
+      pr_timing [STR "linear equality analysis completed"]
     end
   with
-  | TimeOut f -> pr_debug [ STR "Timeout for " ; STR proc#getName#getBaseName ; STR ": " ; 
-			    STR (Printf.sprintf "%4f" f) ; STR " sec" ; NL ]
   | CHFailure p ->
      begin
-       ch_error_log#add "error" (LBLOCK [ STR "Error in linear equalities analysis: " ; p ]) ;
-       raise (CCHFailure (LBLOCK [ STR "Error in linear equalities analysis: " ; p ]))
+       ch_error_log#add
+         "error"
+         (LBLOCK [STR "Error in linear equalities analysis: "; p]);
+       raise
+         (CCHFailure (LBLOCK [STR "Error in linear equalities analysis: "; p]))
      end
-      
+
+
 let analyze_procedure_with_symbolic_sets (proc:procedure_int) (system:system_int)
     (semantics:domain_opsemantics_t) =
   let analysis_setup = mk_analysis_setup () in
   begin
-    timing_active := false ;
-    analysis_setup#addDomain symbolic_sets_domain (new symbolic_sets_domain_no_arrays_t) ;
-    analysis_setup#setOpSemantics (semantics symbolic_sets_domain) ;
-    analysis_setup#analyze_procedure system proc 
+    timing_active := false;
+    analysis_setup#addDomain
+      symbolic_sets_domain (new symbolic_sets_domain_no_arrays_t);
+    analysis_setup#setOpSemantics (semantics symbolic_sets_domain);
+    analysis_setup#analyze_procedure system proc;
+    pr_timing [STR "symbolic sets analysis completed"]
   end
 
-let analyze_procedure_with_statesets (proc:procedure_int) (system:system_int)
-                                     (semantics:domain_opsemantics_t) =
+
+let analyze_procedure_with_statesets
+      (proc:procedure_int) (system:system_int) (semantics:domain_opsemantics_t) =
   let analysis_setup = mk_analysis_setup () in
   let policies =
     [("file",
-      [ ("open", [ (new symbol_t "start", new symbol_t "open") ]) ;
-        ("close", [ (new symbol_t "open", new symbol_t "closed") ]) ;
-        ("read", [ (new symbol_t "open",  new symbol_t "open") ]) ])] in
+      [("open", [(new symbol_t "start", new symbol_t "open")]);
+        ("close", [(new symbol_t "open", new symbol_t "closed")]);
+        ("read", [(new symbol_t "open",  new symbol_t "open")])])] in
   begin
-    analysis_setup#addDomain "state sets" (new state_sets_domain_no_arrays_t policies) ;
-    analysis_setup#setOpSemantics (semantics "state sets") ;
+    analysis_setup#addDomain
+      "state sets" (new state_sets_domain_no_arrays_t policies);
+    analysis_setup#setOpSemantics (semantics "state sets");
     analysis_setup#analyze_procedure system proc
   end
+
 
 let analyze_procedure_with_sym_pointersets
       (proc:procedure_int) (system:system_int)
@@ -157,112 +169,110 @@ let analyze_procedure_with_sym_pointersets
       (timeout:float) =
   let analysis_setup = mk_analysis_setup () in
   begin
-    timing_active := false ;
+    timing_active := false;
     analysis_setup#addDomain
-      sym_pointersets_domain (new timed_symbolic_sets_domain_no_arrays_t timeout) ;
-    analysis_setup#setOpSemantics (semantics sym_pointersets_domain) ;
-    analysis_setup#analyze_procedure system proc
+      sym_pointersets_domain (new timed_symbolic_sets_domain_no_arrays_t timeout);
+    analysis_setup#setOpSemantics (semantics sym_pointersets_domain);
+    analysis_setup#analyze_procedure system proc;
+    pr_timing [STR "symbolic pointerset analysis completed"]
   end
-    
-let analyze_system (system:system_int) (semantics:domain_opsemantics_t) =
+
+
+let analyze_linear_equalities
+      _env (system:system_int) (semantics:domain_opsemantics_t)  =
   begin
-    c_invariants#reset ;
-    List.iter (fun procName ->
-      let proc = system#getProcedure procName in
-      begin
-	analyze_procedure_with_intervals proc system semantics;
-	analyze_procedure_with_linear_equalities proc system semantics
-      end) system#getProcedures ;
-    c_invariants#get_invariants
-  end
-    
-let analyze_linear_equalities env (system:system_int) (semantics:domain_opsemantics_t)  =
-  begin
-    c_invariants#reset ;
+    c_invariants#reset;
     List.iter (fun procName ->
       let proc = system#getProcedure procName in
       begin
 	analyze_procedure_with_linear_equalities proc system semantics
-      end) system#getProcedures ;
+      end) system#getProcedures;
     c_invariants#get_invariants
   end
-    
-let analyze_intervals env (system:system_int) (semantics:domain_opsemantics_t) =
+
+
+let analyze_intervals _env (system:system_int) (semantics:domain_opsemantics_t) =
   begin
-    c_invariants#reset ;
+    c_invariants#reset;
     List.iter (fun procName ->
       let proc = system#getProcedure procName in
       begin
 	analyze_procedure_with_intervals proc system semantics
-      end) system#getProcedures ;
+      end) system#getProcedures;
     c_invariants#get_invariants
   end
+
 
 let analyze_pepr env (system:system_int) (semantics:domain_opsemantics_t) =
   let timeout = 10.0 in
   begin
-    c_invariants#reset ;
+    c_invariants#reset;
     List.iter (fun procName ->
         let proc = system#getProcedure procName in
         let params = mk_pepr_params env#get_parameters in
-        let _ = pr_trace 1 [ STR "parameters: " ; NL ;
-                           INDENT (3, params#toPretty) ; NL ] in
         try
           analyze_procedure_with_pepr proc system semantics params timeout
         with
         | CHDomainFailure (d,p) ->
-           chlog#add ("domain failure of " ^ d)
-                     (LBLOCK [ procName#toPretty ; STR ": " ; p])
+           chlog#add
+             ("domain failure of " ^ d)
+             (LBLOCK [procName#toPretty; STR ": "; p])
         | CHTimeOut d ->
-           chlog#add ("domain timeout of " ^ d)
-                     (LBLOCK [ procName#toPretty ])) system#getProcedures ;
+           chlog#add
+             ("domain timeout of " ^ d)
+             (LBLOCK [procName#toPretty])) system#getProcedures;
     c_invariants#get_invariants
   end
 
-let analyze_valuesets env (system:system_int) (semantics:domain_opsemantics_t)  =
+
+let analyze_valuesets _env (system:system_int) (semantics:domain_opsemantics_t) =
   begin
-    c_invariants#reset ;
+    c_invariants#reset;
     List.iter (fun procName ->
       let proc = system#getProcedure procName in
       begin
 	analyze_procedure_with_valuesets proc system semantics
-      end) system#getProcedures ;
+      end) system#getProcedures;
     c_invariants#get_invariants
   end
-    
-let analyze_symbols env (system:system_int) (semantics:domain_opsemantics_t) =
+
+let analyze_symbols _env (system:system_int) (semantics:domain_opsemantics_t) =
   begin
-    c_invariants#reset ;
+    c_invariants#reset;
     List.iter (fun procName ->
       let proc = system#getProcedure procName in
       begin
 	analyze_procedure_with_symbolic_sets proc system semantics
-      end) system#getProcedures ;
+      end) system#getProcedures;
     c_invariants#get_invariants
   end
 
-let analyze_statesets env (system:system_int) (semantics:domain_opsemantics_t) =
+
+let analyze_statesets _env (system:system_int) (semantics:domain_opsemantics_t) =
   begin
-    c_invariants#reset ;
+    c_invariants#reset;
     List.iter (fun procName ->
         let proc = system#getProcedure procName in
         begin
           analyze_procedure_with_statesets proc system semantics
-        end) system#getProcedures ;
+        end) system#getProcedures;
     c_invariants#get_invariants
   end
 
-let analyze_sym_pointersets env (system:system_int) (semantics:domain_opsemantics_t) =
+
+let analyze_sym_pointersets
+      _env (system:system_int) (semantics:domain_opsemantics_t) =
   let timeout = 30.0 in
   begin
-    c_invariants#reset ;
+    c_invariants#reset;
     List.iter (fun procName ->
         let proc = system#getProcedure procName in
         try
           analyze_procedure_with_sym_pointersets proc system semantics timeout
         with
         |CHTimeOut d ->
-          chlog#add ("domain timeout of " ^ d)
-                    (LBLOCK [ procName#toPretty ])) system#getProcedures ;
+          chlog#add
+            ("domain timeout of " ^ d)
+            (LBLOCK [procName#toPretty])) system#getProcedures;
     c_invariants#get_invariants
   end
