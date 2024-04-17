@@ -28,7 +28,6 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHAtlas
 open CHPretty
 
 (* chutil *)
@@ -36,7 +35,6 @@ open CHGc
 open CHLogger
 open CHTiming
 open CHXmlDocument
-open CHXmlReader
 
 (* cchlib *)
 open CCHFunctionSummary
@@ -122,24 +120,27 @@ let speclist = [
   ("-domains", Arg.String set_domains,
    "domains to be used in invariant generation: " ^
      "[l:lineq; v:valuesets; i:intervals; s:symbolicsets]");
-  ("-cfile", Arg.String system_settings#set_cfilename,
-   "relative filename of c source code file");
+  ("-cfilename", Arg.String system_settings#set_cfilename,
+   "base filename of c source code file without extension");
+  ("-cfilepath", Arg.String system_settings#set_cfilepath,
+   "path relative to project path");
   ("-verbose", Arg.Unit (fun () -> system_settings#set_verbose true),
    "print status on proof obligations and invariants");
-  ("-appname", Arg.String system_settings#set_application_name,
-   "name of the application to report in results files");
+  ("-projectname", Arg.String system_settings#set_projectname,
+   "name of the project (determines name of results directory)");
    ("-nofilter", Arg.Unit (fun () -> system_settings#set_filterabspathfiles false),
     "do not filter out functions in files with absolute path names");
    ("-unreachability", Arg.Unit (fun () -> system_settings#set_use_unreachability),
     "use unreachability as a justification for discharging proof obligations");
    ("-wordsize", Arg.Int system_settings#set_wordsize,
     "set word size (e.g., 16, 32, or 64)");
-   ("-contractpath", Arg.String system_settings#set_contractpath,"path to contract files")
+   ("-contractpath", Arg.String system_settings#set_contractpath,
+    "path to contract files")
 ]  
 
 let usage_msg = "chc_analyze <options> <path to analysis directory>"
 
-let read_args () = Arg.parse speclist system_settings#set_path usage_msg
+let read_args () = Arg.parse speclist system_settings#set_targetpath usage_msg
 
 
 let save_log_files (contenttype:string) =

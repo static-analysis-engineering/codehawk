@@ -38,6 +38,7 @@ open CHPretty
 (* chutil *)
 open CHFileIO
 open CHPrettyUtil
+open CHTiming
 open CHUtil
 open CHXmlDocument
 
@@ -121,11 +122,16 @@ let sanitize_targetfilename name =
 (* Assume '/' directory separator; to be adapted for Windows *)
 let create_directory dir =
   let sys_command s =
-    let _ = Printf.printf "Trying %s\n" s in
+    (* let _ = Printf.printf "Trying %s\n" s in *)
     let e = Sys.command s in
-    Printf.printf "Executing %s (exitvalue: %d)\n" s e in
+    pr_timing [
+        STR "executed sys command ";
+        STR s;
+        STR " (exit value: ";
+        INT e;
+        STR "); ";
+        STR __LOC__] in
   let subs = string_nsplit '/' dir in
-  let _ = pr_debug [pretty_print_list subs (fun s -> STR s) "[" "; " "]"; NL] in
   let directories = List.fold_left (fun a s ->
     match (s,a) with
     | ("",[]) -> ["/"]
@@ -133,12 +139,11 @@ let create_directory dir =
     | (d,[]) -> [d]
     | (d,["/"]) -> ["/" ^ d]
     | (d,h::_) -> (h ^ "/" ^ d) :: a) [] subs in
-  let _ =
-    pr_debug [
-        pretty_print_list
-          (List.rev directories) (fun s -> STR s) "[" "; " "]"; NL] in
   List.iter (fun d ->
-      if Sys.file_exists d then () else sys_command ("mkdir " ^ d))
+      if Sys.file_exists d then
+        ()
+      else
+        sys_command ("mkdir " ^ d))
     (List.rev directories)
 
 
@@ -154,7 +159,16 @@ let get_target_name () =
       String.sub target 1 ((String.length target) - 1)
     else
       target in
-  (target,absoluteTarget)
+  (target, absoluteTarget)
+
+
+let get_target_file_name () =
+  let (target, absoluteTarget) = get_target_name () in
+  let filename = Filename.chop_extension (Filename.basename !filename) in
+  let target = Filename.concat target filename in
+  let absoluteTarget = Filename.concat absoluteTarget filename in
+  let _ = create_directory absoluteTarget in
+  (target, absoluteTarget)
 
 
 let save_cil_xml_file target (f: GoblintCil.file) (xfilename: string) =
@@ -192,30 +206,40 @@ let cil_function_to_file target (f: fundec) (dir: string) =
   let root = get_cch_root target in
   let functionNode = xmlElement "function" in
   let sys_command s =
-    let _ = Printf.printf "Trying %s\n" s in
     let e = Sys.command s in
-    Printf.printf "Executing %s (exitvalue: %d)\n" s e in
+    pr_timing [
+        STR "executed sys command ";
+        STR s;
+        STR " (exit value: ";
+        INT e;
+        STR "); ";
+        STR __LOC__] in
   let _ =
-    if Sys.file_exists dir then () else sys_command ("mkdir " ^ dir) in
-  let basename = Filename.basename !filename in
+    if Sys.file_exists dir then
+      ()
+    else
+      sys_command ("mkdir " ^ dir) in
+  let fndir = Filename.concat dir f.svar.vname in
+  let _ =
+    if Sys.file_exists fndir then
+      ()
+    else
+      sys_command ("mkdir " ^ fndir) in
+  let basename = Filename.chop_extension (Filename.basename !filename) in
   let ffilename =
-    dir
-    ^ "/"
-    ^ (Filename.chop_extension basename)
-    ^ "_"
-    ^ f.svar.vname
-    ^ "_cfun.xml" in
+    Filename.concat
+      fndir (String.concat "_" [basename; f.svar.vname ; "cfun.xml"]) in
   begin
     doc#setNode root;
     write_xml_function_definition functionNode f target;
     root#appendChildren [functionNode];
-    Printf.printf "\nSaving function file: %s\n" ffilename;
-    file_output#saveFile ffilename doc#toPretty
+    file_output#saveFile ffilename doc#toPretty;
+    pr_timing [STR "saved function file: "; STR ffilename]
   end
 
 
 let save_xml_file f =
-    let (target, absoluteTarget) = get_target_name () in
+    let (target, absoluteTarget) = get_target_file_name () in
     let xmlfilename = absoluteTarget ^ "_cfile.xml"  in
     let dictionaryfilename = absoluteTarget ^ "_cdict.xml" in
     let _ = (if !keepUnused then () else RmUnused.removeUnused f) in
@@ -230,28 +254,20 @@ let save_xml_file f =
             not ((String.get fdec.svar.vdecl.file 0) = '/')) fns
       else
         fns in
+    let fnsTarget = Filename.concat (Filename.dirname absoluteTarget) "functions" in
     begin
-      Printf.printf "Saving %d function file(s) ... \n" (List.length fns);
-      List.iter (fun f -> cil_function_to_file target f absoluteTarget) fns;
-      save_cil_xml_file target f xmlfilename;
+      List.iter (fun f -> cil_function_to_file target f fnsTarget) fns;
+      pr_timing [STR "saved "; INT (List.length fns); STR " function(s)"];
+      save_cil_xml_file (Filename.dirname target) f xmlfilename;
       save_dictionary_xml_file target dictionaryfilename;
-      pr_debug [
-          STR " ============================================================== ";
-          NL;
-          STR " Finished parsing ";
-          STR !filename;
-          NL;
-          STR " ============================================================== ";
-          NL;
-          NL]
     end
 
 
 let main () =
   try
       let _ = read_args () in
-      let _ = pr_debug [STR "Parsing "; STR !filename; NL]  in
       let cilfile = Frontc.parse !filename () in
+      let _ = pr_timing [STR "parsed "; STR !filename] in
       save_xml_file cilfile
   with
   | ParseError s ->
