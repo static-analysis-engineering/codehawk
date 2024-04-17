@@ -38,33 +38,47 @@ open CCHUtilities
 class system_settings_t:system_settings_int =
 object
 
+  val mutable projectpath = ""
+  val mutable projectname = ""
+  val mutable cfilepath = ""
+  val mutable cfilename = ""
+  val mutable targetpath = ""
+  val mutable contractpath = ""
+
   val mutable verbose = false
   val mutable filterabspathfiles = true
-  val mutable wordsize = None
+  val mutable wordsize = Some 32
   val mutable use_unreachability = false
-  val mutable path = ""
-  val mutable cfilename = ""
-  val mutable application_name = ""
-  val mutable contractpath = ""
   val mutable analysis_level = ImplementationDefinedBehavior
-  val mutable source_path = ""
 
-  method set_path (p:string) = path <- p
-  method set_cfilename (c:string) = cfilename <- c
-  method set_application_name (n:string) = application_name <- n
+  method set_projectpath (p: string) = projectpath <- p
+  method get_projectpath = projectpath
+
+  method set_projectname (n: string) = projectname <- n
+  method get_projectname = projectname
+
+  method set_cfilepath (p: string) = cfilepath <- p
+  method get_cfilepath = cfilepath
+  method has_cfilepath = cfilepath != ""
+
+  method set_cfilename (n: string) = cfilename <- n
+  method get_cfilename = cfilename
+
+  method set_targetpath (p: string) = targetpath <- p
+  method get_targetpath = targetpath
+
   method set_contractpath (p:string) = contractpath <- p
+  method get_contractpath = contractpath
 
   method set_analysis_level s = analysis_level <- s
 
   method set_verbose (v:bool) = verbose <- v
-  method set_filterabspathfiles (v:bool) = filterabspathfiles <- v
-  method set_wordsize (v:int) = wordsize <- Some v
-  method set_use_unreachability = use_unreachability <- true
 
-  method get_path = path
-  method get_cfilename = cfilename
-  method get_application_name = application_name
-  method get_contractpath = contractpath
+  method set_filterabspathfiles (v:bool) = filterabspathfiles <- v
+
+  method set_wordsize (v:int) = wordsize <- Some v
+
+  method set_use_unreachability = use_unreachability <- true
 
   method get_wordsize =
     match wordsize with

@@ -32,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTiming
 
 (* cchlib *)
 open CCHBasicTypes
@@ -64,11 +65,10 @@ let process_global (g:global) =
 
 
 let process_function (fname:string) =
-  let _ =
-    if system_settings#verbose then
-      pr_debug [STR "Processing function "; STR fname; NL] in
+  let _ = pr_timing [STR "Function "; STR fname; STR " is being processed"] in
   try
     let fundec = read_function_semantics fname in
+    let _ = pr_timing [STR "Function semantics was read"] in
     let fdecls = fundec.sdecls in
     let createppos = true in (* not (file_contract#ignore_function fname) in *)
     begin
@@ -92,14 +92,21 @@ let process_function (fname:string) =
 
 
 let primary_process_file () =
+  let _ = pr_timing [STR "Primary proof obligations are created"] in
   try
     let _ = read_cfile_dictionary () in
+    let _ = pr_timing [STR "Cfile dictionary was read"] in
     let _ = read_cfile_interface_dictionary () in
+    let _ = pr_timing [STR "Cfile interface dictionary was read"] in
     let cfile = read_cfile () in
+    let _ = pr_timing [STR "Cfile was read"] in
     let _ = fenv#initialize cfile in
+    let _ = pr_timing [STR "File environment was initialized"] in
     let _ = cdeclarations#index_location call_sink in
     let functions = fenv#get_application_functions in
+    let _ = pr_timing [STR "Application functions were retrieved"] in
     let _ = read_cfile_contract () in
+    let _ = pr_timing [STR "Cfile contract was read"] in
     begin
       List.iter (fun f -> process_function f.vname) functions;
       List.iter process_global cfile.globals;

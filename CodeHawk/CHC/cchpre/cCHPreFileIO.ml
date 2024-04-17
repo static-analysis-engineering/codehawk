@@ -34,6 +34,7 @@ open CHPretty
 open CHFileIO
 open CHLogger
 open CHPrettyUtil
+open CHTiming
 open CHXmlDocument
 open CHXmlReader
 
@@ -84,9 +85,7 @@ let xml_error filename line column p =
 let create_directory dir =
   let sys_command s =
     let e = Sys.command s in
-    if system_settings#verbose then
-      pr_debug [STR "Executing "; STR s; STR " (exit value: "; INT e; NL]
-    else () in
+    pr_timing [STR "System command "; STR s; STR " was executed"] in
   let subs = nsplit '/' dir in
   let directories = List.fold_left (fun a s ->
     match (s,a) with
@@ -96,140 +95,86 @@ let create_directory dir =
     | (d,["/"]) -> ["/" ^ d]
     | (d,h::_) -> (h ^ "/" ^ d) :: a) [] subs in
   List.iter
-    (fun d -> if Sys.file_exists d then () else sys_command ("mkdir " ^ d))
+    (fun d ->
+      if Sys.file_exists d then
+        ()
+      else
+        sys_command ("mkdir " ^ d))
     (List.rev directories)
 
 
-let get_target_files_name ():string =
-  Filename.concat system_settings#get_path "target_files.xml"
+let get_cchpath () =
+  let tgtpath = system_settings#get_targetpath in
+  Filename.concat tgtpath (system_settings#get_projectname ^ ".cch")
 
 
-let get_cfile_basename ():string =
-  try
-    Filename.concat
-      system_settings#get_path
-      (Filename.chop_extension system_settings#get_cfilename)
-  with
-  | _ ->
-    begin
-      ch_error_log#add
-        "chop extension" (LBLOCK [STR system_settings#get_cfilename]);
-      raise
-        (CCHFailure
-           (LBLOCK [
-                STR "Failed to find file : ";
-                STR (system_settings#get_cfilename)] ))
-    end
+let get_analysisresults_path () =
+  Filename.concat (get_cchpath ()) "a"
 
 
-let get_contractfile_basename ():string =
-  try
-    Filename.concat
-      system_settings#get_contractpath
-      (Filename.chop_extension system_settings#get_cfilename)
-  with
-  | _ ->
-    begin
-      ch_error_log#add
-        "chop extension"
-        (LBLOCK [
-             STR " Failed to find file : ";
-             STR system_settings#get_cfilename]);
-      raise (CCHFailure (STR (system_settings#get_cfilename)))
-    end
+let get_savedsource_path () =
+  Filename.concat (get_cchpath ()) "s"
 
 
-let  get_global_contract_filename ():string =
-  Filename.concat system_settings#get_contractpath "globaldefs.xml"
+let get_cfile_path () =
+  let resultspath = get_analysisresults_path () in
+  let cfilename = system_settings#get_cfilename in
+  if system_settings#has_cfilepath then
+    let cfilepath = system_settings#get_cfilepath in
+    let path = Filename.concat cfilepath cfilename in
+    Filename.concat resultspath path
+  else
+    Filename.concat resultspath cfilename
 
 
-let get_src_directory ():string =
-  try
-    let semantics_dir = (Filename.dirname system_settings#get_path) in
-    (Filename.concat semantics_dir "sourcefiles")
-  with
-  | _ ->
-    begin
-      raise (CCHFailure (STR "get src directory"))
-    end
+let get_cfile_stem () =
+  Filename.concat (get_cfile_path ()) system_settings#get_cfilename
 
 
 let get_logfiles_directory () =
-  try
-    let d = Filename.concat system_settings#get_path "logfiles" in
-    let d =
-      Filename.concat
-        d (Filename.chop_extension system_settings#get_cfilename) in
-    let _ = create_directory d in
-    d
-  with
-  | _ ->
-    begin
-      ch_error_log#add
-        "chop extension"
-        (LBLOCK [
-             STR "get_logfiles_directory";
-             STR ": ";
-             STR system_settings#get_cfilename]);
-      raise (CCHFailure (STR "chop extension"))
-    end
-
-
-let get_xml_summaryresults_name () =
-  Filename.dirname
-    (Filename.dirname (system_settings#get_path)) ^ "/summaryresults.xml"
+  let cfilepath = get_cfile_path () in
+  let logdir = Filename.concat cfilepath "logfiles" in
+  let _ = create_directory logdir in
+  logdir
 
 
 let get_xml_cfile_name () =
-  (get_cfile_basename ()) ^ "_cfile.xml"
+  (get_cfile_stem ()) ^ "_cfile.xml"
 
 
 let _get_xml_gxrefs_name () =
-  (get_cfile_basename ()) ^ "_gxrefs.xml"
+  (get_cfile_stem ()) ^ "_gxrefs.xml"
 
 
 let _get_xml_tables_name () =
-  (get_cfile_basename ()) ^ "_tables.xml"
+  (get_cfile_stem ()) ^ "_tables.xml"
 
 
 let get_xml_dictionary_name () =
-  (get_cfile_basename ()) ^ "_cdict.xml"
+  (get_cfile_stem ()) ^ "_cdict.xml"
 
 
 let get_xml_assignment_dictionary_name () =
-  (get_cfile_basename ()) ^ "_cgl.xml"
+  (get_cfile_stem ()) ^ "_cgl.xml"
 
 
 let get_xml_predicate_dictionary_name () =
-  (get_cfile_basename ()) ^ "_prd.xml"
+  (get_cfile_stem ()) ^ "_prd.xml"
 
 let get_xml_contexts_name () =
-  (get_cfile_basename ()) ^ "_ctxt.xml"
+  (get_cfile_stem ()) ^ "_ctxt.xml"
 
 
 let get_xml_interface_dictionary_name () =
-  (get_cfile_basename ()) ^ "_ixf.xml"
+  (get_cfile_stem ()) ^ "_ixf.xml"
 
 
 let _get_xml_user_assumptions_name () =
-  (get_cfile_basename ()) ^ "_usr.xml"
-
-
-let get_xml_file_contract_name () =
-  (get_contractfile_basename ()) ^ "_c.xml"
+  (get_cfile_stem ()) ^ "_usr.xml"
 
 
 let get_cfilelog_filename (contenttype:string) (logtype:string) =
   Filename.concat (get_logfiles_directory ()) (contenttype ^ "." ^ logtype)
-
-
-let save_cfile_logfile
-      (log:logger_int) (contenttype:string) (logtype:string) =
-  if log#size > 0 then
-    let filename = get_cfilelog_filename contenttype logtype in
-    file_output#saveFile filename log#toPretty
-  else
-    ()
 
 
 let save_logfile (log:logger_int) (contenttype:string) (logtype:string) =
@@ -243,7 +188,7 @@ let append_to_logfile (log:logger_int) (contenttype:string) (logtype:string) =
 
 
 let get_cch_root ():xml_element_int =
-  let appname = system_settings#get_application_name in
+  let appname = system_settings#get_projectname in
   let root = xmlElement "c-analysis" in
   let hNode = xmlElement "header" in
   let aNode = xmlElement "application" in
@@ -401,66 +346,6 @@ let read_cfile_interface_dictionary () =
        raise (CCHFailure (xml_error filename line col p))
 
 
-let read_global_contract () =
-  if system_settings#has_contractpath then
-    let filename = get_global_contract_filename () in
-    if Sys.file_exists filename then
-      try
-        let doc = readXmlDocument filename in
-        let root = doc#getRoot in
-        let node = root#getTaggedChild "global-definitions" in
-        let _ =
-          if node#hasOneTaggedChild "global-assumptions" then
-            let gasnode = node#getTaggedChild "global-assumptions" in
-            global_contract#read_xml gasnode in
-        if node#hasOneTaggedChild "library-function-summaries" then
-          let libnode = node#getTaggedChild "library-function-summaries" in
-          List.iter (fun n ->
-              let name = n#getAttribute "name" in
-              function_summary_library#read_xml_substitute_summary n name)
-            (libnode#getTaggedChildren "function-summary")
-        else
-          ()
-      with
-      | XmlDocumentError (line, col, p)
-        | XmlParseError (line, col, p) ->
-         raise (CCHFailure (xml_error filename line col p))
-
-
-let read_cfile_contract () =
-  if system_settings#has_contractpath then
-    let filename = get_xml_file_contract_name () in
-    let _ = read_global_contract () in
-    if Sys.file_exists filename then
-      try
-        let doc = readXmlDocument filename in
-        let root = doc#getRoot in
-        let node = root#getTaggedChild "cfile" in
-        begin
-          file_contract#reset;
-          file_contract#read_xml node
-        end
-      with
-      | XmlDocumentError (line, col, p)
-        | XmlParseError (line, col, p) ->
-         raise (CCHFailure (xml_error filename line col p))
-
-
-let save_cfile_contract () =
-  if system_settings#has_contractpath then
-    let filename = get_xml_file_contract_name () in
-    let filename = filename  in
-    let doc = xmlDocument () in
-    let root = get_cch_root () in
-    let cNode = xmlElement "cfile" in
-    begin
-      file_contract#write_xmlx cNode;
-      doc#setNode root;
-      root#appendChildren [cNode];
-      file_output#saveFile filename doc#toPretty
-    end
-
-
 let save_cfile_context () =
   let filename = get_xml_contexts_name () in
   let doc = xmlDocument () in
@@ -492,25 +377,13 @@ let read_cfile_context () =
 
 
 let get_function_filename (fname:string) (ext:string) =
-  try
-    let base = get_cfile_basename () in
-    let _ = create_directory base in
-    let cfilename = Filename.chop_extension system_settings#get_cfilename in
-    let cbasename  = Filename.basename cfilename in
-    let name = cbasename ^ "_" ^ fname ^ "_" ^ ext ^ ".xml" in
-    Filename.concat base name
-  with
-  | _ ->
-     begin
-       ch_error_log#add
-         "chop extension"
-         (LBLOCK [
-              STR "Filename: ";
-              STR fname;
-              STR ", for extension " ;
-              STR ext]);
-       raise (CCHFailure (STR "Filename.chop_extension"))
-    end
+  let cfilename = system_settings#get_cfilename in
+  let cfnspath = Filename.concat (get_cfile_path ()) "functions" in
+  let _ = create_directory cfnspath in
+  let cfnpath = Filename.concat cfnspath fname in
+  let _ = create_directory cfnpath in
+  let name = cfilename ^ "_" ^ fname ^ "_" ^ ext ^ ".xml" in
+  Filename.concat cfnpath name
 
 
 let get_semantics_filename (fname:string) =
@@ -847,6 +720,12 @@ let read_invs (fname:string) (vard:vardictionary_int) :invariant_io_int =
   mk_invariant_io optnode vard
 
 
+(* --- Currently not used --- *)
+
+let get_target_files_name ():string = ""
+  (* Currently not used
+  Filename.concat system_settings#get_path "target_files.xml" *)
+
 let read_target_files () =
   let filename = get_target_files_name () in
   if Sys.file_exists filename then
@@ -862,7 +741,142 @@ let read_target_files () =
          (LBLOCK [STR "File "; STR filename; STR " not found"]))
 
 
-let get_cfilename_basename (s:string):string =
+let get_cfile_basename ():string = ""
+                                     (*
+  try
+    Filename.concat
+      system_settings#get_path
+      (Filename.chop_extension system_settings#get_cfilename)
+  with
+  | _ ->
+    begin
+      ch_error_log#add
+        "chop extension" (LBLOCK [STR system_settings#get_cfilename]);
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Failed to find file : ";
+                STR (system_settings#get_cfilename)] ))
+    end
+                                      *)
+
+let get_contractfile_basename ():string =
+  try
+    Filename.concat
+      system_settings#get_contractpath
+      (Filename.chop_extension system_settings#get_cfilename)
+  with
+  | _ ->
+    begin
+      ch_error_log#add
+        "chop extension"
+        (LBLOCK [
+             STR " Failed to find file : ";
+             STR system_settings#get_cfilename]);
+      raise (CCHFailure (STR (system_settings#get_cfilename)))
+    end
+
+
+let  get_global_contract_filename ():string =
+  Filename.concat system_settings#get_contractpath "globaldefs.xml"
+
+
+let get_src_directory ():string = ""
+                                    (*
+  try
+    let semantics_dir = (Filename.dirname system_settings#get_path) in
+    (Filename.concat semantics_dir "sourcefiles")
+  with
+  | _ ->
+    begin
+      raise (CCHFailure (STR "get src directory"))
+    end
+                                     *)
+
+let save_cfile_logfile
+      (log:logger_int) (contenttype:string) (logtype:string) =
+  if log#size > 0 then
+    let filename = get_cfilelog_filename contenttype logtype in
+    file_output#saveFile filename log#toPretty
+  else
+    ()
+
+
+let get_xml_summaryresults_name () = ""
+                                       (*
+  Filename.dirname
+    (Filename.dirname (system_settings#get_path)) ^ "/summaryresults.xml"
+                                        *)
+
+let get_xml_file_contract_name () = ""
+  (* (get_contractfile_basename ()) ^ "_c.xml" *)
+
+
+let read_global_contract () = ()
+                                (*
+  if system_settings#has_contractpath then
+    let filename = get_global_contract_filename () in
+    if Sys.file_exists filename then
+      try
+        let doc = readXmlDocument filename in
+        let root = doc#getRoot in
+        let node = root#getTaggedChild "global-definitions" in
+        let _ =
+          if node#hasOneTaggedChild "global-assumptions" then
+            let gasnode = node#getTaggedChild "global-assumptions" in
+            global_contract#read_xml gasnode in
+        if node#hasOneTaggedChild "library-function-summaries" then
+          let libnode = node#getTaggedChild "library-function-summaries" in
+          List.iter (fun n ->
+              let name = n#getAttribute "name" in
+              function_summary_library#read_xml_substitute_summary n name)
+            (libnode#getTaggedChildren "function-summary")
+        else
+          ()
+      with
+      | XmlDocumentError (line, col, p)
+        | XmlParseError (line, col, p) ->
+         raise (CCHFailure (xml_error filename line col p))
+                                 *)
+
+let read_cfile_contract () = ()
+                               (*
+  if system_settings#has_contractpath then
+    let filename = get_xml_file_contract_name () in
+    let _ = read_global_contract () in
+    if Sys.file_exists filename then
+      try
+        let doc = readXmlDocument filename in
+        let root = doc#getRoot in
+        let node = root#getTaggedChild "cfile" in
+        begin
+          file_contract#reset;
+          file_contract#read_xml node
+        end
+      with
+      | XmlDocumentError (line, col, p)
+        | XmlParseError (line, col, p) ->
+         raise (CCHFailure (xml_error filename line col p))
+                                *)
+
+let save_cfile_contract () = ()
+                               (*
+  if system_settings#has_contractpath then
+    let filename = get_xml_file_contract_name () in
+    let filename = filename  in
+    let doc = xmlDocument () in
+    let root = get_cch_root () in
+    let cNode = xmlElement "cfile" in
+    begin
+      file_contract#write_xmlx cNode;
+      doc#setNode root;
+      root#appendChildren [cNode];
+      file_output#saveFile filename doc#toPretty
+    end
+                                *)
+
+                               (*
+let get_cfilename_basename (s:string):string = ""
   try
     Filename.concat system_settings#get_path (Filename.chop_extension s)
   with
@@ -875,7 +889,7 @@ let get_cfilename_basename (s:string):string =
      end
 
 
-let read_named_cfile_dictionary (s:string) =
+let read_named_cfile_dictionary (s:string) = ()
   let _ = cdictionary#reset in
   let _ = cdeclarations#reset in
   let filename = (get_cfilename_basename s) ^ "_cdict.xml" in
@@ -898,7 +912,7 @@ let read_named_cfile_dictionary (s:string) =
     pr_debug [STR "Dictionary file "; STR filename; STR " not found"; NL]
 
 
-let get_xml_cfile (s:string):file =
+let get_xml_cfile (s:string):file = ()
   let _ = read_named_cfile_dictionary s in
   let filename = (get_cfilename_basename s) ^ "_cfile.xml" in
   try
@@ -910,3 +924,4 @@ let get_xml_cfile (s:string):file =
   | XmlDocumentError (line,col,p)
   | XmlParseError (line,col,p) ->
      raise (CCHFailure (xml_error filename line col p))
+                            *)

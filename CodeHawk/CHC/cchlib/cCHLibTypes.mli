@@ -678,30 +678,85 @@ type analysis_level_t =
                         and value wrap around of unsigned integers (Red, Purple, Blue) *)
 
 
+(** Paths and analysis options*)
 class type system_settings_int =
   object
-    method set_path: string -> unit
+
+    (** {1 Paths}*)
+
+    (** {2 Project path}
+        The project path is the path to the top-level directory of the project.
+        In case of a single file this is the directory in which the c source
+        file resides. In case of a multi-file project this is the directory in
+        which the Makefile resides.*)
+
+    method set_projectpath: string -> unit
+    method get_projectpath: string
+
+    (** {2 Project name}
+        The project name determines the name under which the analysis results
+        are stored.*)
+
+    method set_projectname: string -> unit
+    method get_projectname: string
+
+    (** {2 C File path}
+        The cfile path is the relative path from the project path to the directory
+        in which the source file resides. In case of a single file, the file path
+        is the empty string.*)
+
+    method set_cfilepath: string -> unit
+    method get_cfilepath: string
+    method has_cfilepath: bool
+
+    (** {2 C File name}
+        The cfilename is the base name of the source file without extension.*)
+
     method set_cfilename: string -> unit
-    method set_application_name: string -> unit
-    method set_contractpath: string -> unit
-    method set_verbose: bool -> unit
-    method set_filterabspathfiles: bool -> unit
-    method set_wordsize: int -> unit
-    method set_use_unreachability: unit
-    method set_analysis_level: analysis_level_t -> unit
-
-    method get_path: string
     method get_cfilename: string
-    method get_application_name: string
-    method get_contractpath: string
-    method get_wordsize: int
 
-    method use_unreachability: bool
-    method has_wordsize: bool
-    method verbose: bool
-    method filterabspathfiles: bool
+    (** {2 Target path}
+        The target path is the (absolute) path to the directory in which the
+        parse/analysis results are to be stored.*)
+
+    method set_targetpath: string -> unit
+    method get_targetpath: string
+
+    (** {2 Contract path}
+        The contract path is the (absolute) path to the directory in which
+        contract files reside. This is currently not used and under
+        reconsideration.*)
+    method set_contractpath: string -> unit
+    method get_contractpath: string
     method has_contractpath: bool
+
+    (** {1 Analysis level}
+        Currently supports three levels:
+        - undefined behavior: only check conditions that may lead to undefined
+            behavior
+        - implementation-defined behavior: also check conditions that may arise
+            because of implementation defined behavior
+        - value wrap around: also flag potential value wrap around of unsigned
+            integers.*)
+
+    method set_analysis_level: analysis_level_t -> unit
     method is_undefined_only: bool
     method is_implementation_defined: bool
     method is_value_wrap_around: bool
+
+    (** {1 Other settings*)
+
+    method set_verbose: bool -> unit
+    method verbose: bool
+
+    method set_filterabspathfiles: bool -> unit
+    method filterabspathfiles: bool
+
+    method set_wordsize: int -> unit
+    method get_wordsize: int
+    method has_wordsize: bool
+
+    method set_use_unreachability: unit
+    method use_unreachability: bool
+
   end
