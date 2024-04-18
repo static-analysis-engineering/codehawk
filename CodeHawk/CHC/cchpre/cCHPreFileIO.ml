@@ -99,7 +99,7 @@ let create_directory dir =
       if Sys.file_exists d then
         ()
       else
-        sys_command ("mkdir " ^ d))
+        sys_command (Filename.quote_command "mkdir" [d]))
     (List.rev directories)
 
 

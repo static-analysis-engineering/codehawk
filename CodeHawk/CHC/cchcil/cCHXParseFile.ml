@@ -143,7 +143,7 @@ let create_directory dir =
       if Sys.file_exists d then
         ()
       else
-        sys_command ("mkdir " ^ d))
+        sys_command (Filename.quote_command "mkdir" [d]))
     (List.rev directories)
 
 
@@ -218,13 +218,13 @@ let cil_function_to_file target (f: fundec) (dir: string) =
     if Sys.file_exists dir then
       ()
     else
-      sys_command ("mkdir " ^ dir) in
+      sys_command (Filename.quote_command "mkdir" [dir]) in
   let fndir = Filename.concat dir f.svar.vname in
   let _ =
     if Sys.file_exists fndir then
       ()
     else
-      sys_command ("mkdir " ^ fndir) in
+      sys_command (Filename.quote_command "mkdir" [fndir]) in
   let basename = Filename.chop_extension (Filename.basename !filename) in
   let ffilename =
     Filename.concat
