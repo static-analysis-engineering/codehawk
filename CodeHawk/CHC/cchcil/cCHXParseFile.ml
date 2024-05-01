@@ -39,6 +39,7 @@ open CHPretty
 open CHFileIO
 open CHPrettyUtil
 open CHTiming
+open CHTimingLog
 open CHUtil
 open CHXmlDocument
 
@@ -84,11 +85,11 @@ let read_args () = Arg.parse speclist (fun s -> filename := s) usage_msg
 
 let check_targetdirectory () =
   if !targetdirectory = "" then
-  begin
-    Printf.printf
-      "\n***Warning: Target directory not set; using current directory as target directory\n";
-  targetdirectory := Sys.getcwd ()
-end
+    begin
+      log_warning
+        "Target directory not set: using current directory as target directory";
+      targetdirectory := Sys.getcwd ()
+    end
 
 
 let get_cch_root (filename:string):xml_element_int =
@@ -111,9 +112,10 @@ let sanitize_targetfilename name =
     let pos = String.rindex name '.' in
     let spos1 = String.rindex_from name pos '/' in
     let spos2 = String.rindex_from name (spos1-1) '/' in
-    let newname = (String.sub name 0 (spos2+1)) ^
-      (String.sub name (pos+2) ((String.length name) - (pos+2))) in
-    let _ = Printf.printf "Change %s into %s\n" name newname in
+    let newname =
+      (String.sub name 0 (spos2+1))
+      ^ (String.sub name (pos+2) ((String.length name) - (pos+2))) in
+    let _ = log_info "Change name from %s into %s" name newname in
     newname
   with
     Not_found -> name
@@ -122,15 +124,8 @@ let sanitize_targetfilename name =
 (* Assume '/' directory separator; to be adapted for Windows *)
 let create_directory dir =
   let sys_command s =
-    (* let _ = Printf.printf "Trying %s\n" s in *)
     let e = Sys.command s in
-    pr_timing [
-        STR "executed sys command ";
-        STR s;
-        STR " (exit value: ";
-        INT e;
-        STR "); ";
-        STR __LOC__] in
+    log_info "System command %s (result: %d) [%s:%d]" s e __FILE__ __LINE__ in
   let subs = string_nsplit '/' dir in
   let directories = List.fold_left (fun a s ->
     match (s,a) with
@@ -179,7 +174,7 @@ let save_cil_xml_file target (f: GoblintCil.file) (xfilename: string) =
     doc#setNode root;
     root#appendChildren [fileNode];
     write_xml_cfile fileNode f target;
-    Printf.printf "\nSaving cfile file: %s\n" xfilename;
+    log_info "Saving cfile %s [%s:%d]" xfilename __FILE__ __LINE__;
     file_output#saveFile xfilename doc#toPretty
   end
 
@@ -196,7 +191,7 @@ let save_dictionary_xml_file target (xfilename: string) =
     root#appendChildren [dnode];
     cildictionary#write_xml fileNode;
     cildeclarations#write_xml declsNode;
-    Printf.printf "\nSaving dictionary file: %s\n" xfilename;
+    log_info "Saving dictionary file %s [%s:%d]" xfilename __FILE__ __LINE__;
     file_output#saveFile xfilename doc#toPretty
   end
 
@@ -207,13 +202,7 @@ let cil_function_to_file target (f: fundec) (dir: string) =
   let functionNode = xmlElement "function" in
   let sys_command s =
     let e = Sys.command s in
-    pr_timing [
-        STR "executed sys command ";
-        STR s;
-        STR " (exit value: ";
-        INT e;
-        STR "); ";
-        STR __LOC__] in
+    log_info "System command %s (result: %d) [%s:%d]" s e __FILE__ __LINE__ in
   let _ =
     if Sys.file_exists dir then
       ()
@@ -234,7 +223,7 @@ let cil_function_to_file target (f: fundec) (dir: string) =
     write_xml_function_definition functionNode f target;
     root#appendChildren [functionNode];
     file_output#saveFile ffilename doc#toPretty;
-    pr_timing [STR "saved function file: "; STR ffilename]
+    log_info "Saved function file %s" ffilename
   end
 
 
@@ -257,7 +246,7 @@ let save_xml_file f =
     let fnsTarget = Filename.concat (Filename.dirname absoluteTarget) "functions" in
     begin
       List.iter (fun f -> cil_function_to_file target f fnsTarget) fns;
-      pr_timing [STR "saved "; INT (List.length fns); STR " function(s)"];
+      log_info "Saved %d function(s) [%s:%d]" (List.length fns) __FILE__ __LINE__;
       save_cil_xml_file (Filename.dirname target) f xmlfilename;
       save_dictionary_xml_file target dictionaryfilename;
     end
@@ -265,10 +254,11 @@ let save_xml_file f =
 
 let main () =
   try
-      let _ = read_args () in
-      let cilfile = Frontc.parse !filename () in
-      let _ = pr_timing [STR "parsed "; STR !filename] in
-      save_xml_file cilfile
+    let _ = read_args () in
+    let _ = set_log_level "DEBUG" in
+    let cilfile = Frontc.parse !filename () in
+    let _ = log_info "Parsed %s [%s:%d]" !filename __FILE__ __LINE__ in
+    save_xml_file cilfile
   with
   | ParseError s ->
      begin

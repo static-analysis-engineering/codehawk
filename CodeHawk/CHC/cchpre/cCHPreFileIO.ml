@@ -35,6 +35,7 @@ open CHFileIO
 open CHLogger
 open CHPrettyUtil
 open CHTiming
+open CHTimingLog
 open CHXmlDocument
 open CHXmlReader
 
@@ -85,7 +86,7 @@ let xml_error filename line column p =
 let create_directory dir =
   let sys_command s =
     let e = Sys.command s in
-    pr_timing [STR "System command "; STR s; STR " was executed"] in
+    log_info "System command: %s (result: %d)" s e in
   let subs = nsplit '/' dir in
   let directories = List.fold_left (fun a s ->
     match (s,a) with
@@ -763,8 +764,7 @@ let get_cfile_basename ():string = ""
 let get_contractfile_basename ():string =
   try
     Filename.concat
-      system_settings#get_contractpath
-      (Filename.chop_extension system_settings#get_cfilename)
+      system_settings#get_contractpath system_settings#get_cfilename
   with
   | _ ->
     begin
@@ -808,12 +808,11 @@ let get_xml_summaryresults_name () = ""
     (Filename.dirname (system_settings#get_path)) ^ "/summaryresults.xml"
                                         *)
 
-let get_xml_file_contract_name () = ""
-  (* (get_contractfile_basename ()) ^ "_c.xml" *)
+let get_xml_file_contract_name () =
+  (get_contractfile_basename ()) ^ "_c.xml"
 
 
-let read_global_contract () = ()
-                                (*
+let read_global_contract () =
   if system_settings#has_contractpath then
     let filename = get_global_contract_filename () in
     if Sys.file_exists filename then
@@ -837,14 +836,19 @@ let read_global_contract () = ()
       | XmlDocumentError (line, col, p)
         | XmlParseError (line, col, p) ->
          raise (CCHFailure (xml_error filename line col p))
-                                 *)
 
-let read_cfile_contract () = ()
-                               (*
+
+let read_cfile_contract () =
+  let _ = log_info "read_cfile_contract [%s:%d]" __FILE__ __LINE__ in
   if system_settings#has_contractpath then
+    let _ = log_info "Trying to get the contract filename" in
     let filename = get_xml_file_contract_name () in
+    let _ =
+      log_info
+        "Checking xml contract file %s [%s:%d]" filename __FILE__ __LINE__ in
     let _ = read_global_contract () in
     if Sys.file_exists filename then
+      let _ = log_info "Retrieving contract file %s" filename in
       try
         let doc = readXmlDocument filename in
         let root = doc#getRoot in
@@ -857,7 +861,9 @@ let read_cfile_contract () = ()
       | XmlDocumentError (line, col, p)
         | XmlParseError (line, col, p) ->
          raise (CCHFailure (xml_error filename line col p))
-                                *)
+    else
+      log_info "No contract found [%s:%d]" __FILE__ __LINE__
+
 
 let save_cfile_contract () = ()
                                (*

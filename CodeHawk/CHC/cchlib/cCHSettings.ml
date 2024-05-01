@@ -30,6 +30,9 @@
 (* chlib *)
 open CHPretty
 
+(* chutil *)
+open CHTimingLog
+
 (* cchlib *)
 open CCHLibTypes
 open CCHUtilities
@@ -67,8 +70,12 @@ object
   method set_targetpath (p: string) = targetpath <- p
   method get_targetpath = targetpath
 
-  method set_contractpath (p:string) = contractpath <- p
+  method set_contractpath (p:string) =
+    contractpath <- p
+
   method get_contractpath = contractpath
+
+  method has_contractpath = not (contractpath = "")
 
   method set_analysis_level s = analysis_level <- s
 
@@ -96,7 +103,7 @@ object
   method verbose = verbose
   method filterabspathfiles = filterabspathfiles
   method has_wordsize = match wordsize with Some _ -> true | _ -> false
-  method has_contractpath = not (contractpath = "")
+
 
 end
 
