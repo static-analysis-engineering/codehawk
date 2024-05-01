@@ -32,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTimingLog
 open CHXmlDocument
 
 (* cchlib *)
@@ -168,9 +169,12 @@ object (self)
          raise
            (CCHFailure
               (STR "Error postconditions not supported in function contract")) in
+    let _ = log_info "function contract: read %d postconditions" (List.length post) in
     List.iter (fun (p, _) -> postconditions#add (id#index_xpredicate p)) post
 
   method private write_xml_postconditions (node:xml_element_int) =
+    let _ =
+      log_info "Write xml postconditions: %d" (List.length postconditions#toList) in
     node#appendChildren
       (List.map (fun ipost ->
            let pnode = xmlElement "post" in
@@ -225,6 +229,7 @@ object (self)
   method read_xml (node:xml_element_int) (gvars:string list) =
     let hasc = node#hasOneTaggedChild in
     let getc = node#getTaggedChild in
+    let _ = log_info "function_contract#read_xml" in
     try
       begin
         self#read_xml_parameters (getc "parameters");
@@ -235,6 +240,7 @@ object (self)
         (if hasc "preconditions" then
            self#read_xml_preconditions (getc "preconditions") gvars);
         (if hasc "postconditions" then
+           let _ = log_info "function_contract: read postconditions" in
            self#read_xml_postconditions (getc "postconditions") gvars);
         (if hasc "instrs" then
            self#read_xml_instrs (getc "instrs"))
@@ -454,11 +460,13 @@ object (self)
                 ((node#getTaggedChild "global-variables")#getTaggedChildren "gvar")
 
   method read_xml (node:xml_element_int) =
+    let _ = log_info "file_contract#read_xml" in
     try
       begin
         self#read_xml_global_variables node;
         List.iter (fun n ->
             let name = n#getAttribute "name" in
+            let _ = log_info "file_contract: read function contract %s" name in
             let _ = ch_info_log#add "function contract" (STR name) in
             let ignorefn =
               n#hasNamedAttribute "ignore" && (n#getAttribute "ignore") = "yes" in

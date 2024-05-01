@@ -34,6 +34,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTimingLog
 open CHXmlDocument
 
 (* cchlib *)
@@ -224,6 +225,7 @@ object
     List.map id#get_xpredicate postconditions#toList
 
   method create_contract_proof_obligations =
+    let _ = log_info "create contract postcondition proof obligations" in
     begin
       if file_contract#has_function_contract fname then
         begin
@@ -238,6 +240,8 @@ object
     List.concat (H.fold (fun _ v r -> v#get_spos::r) returnsites [])
 
   method write_xml (node:xml_element_int) =
+    let _ =
+      log_info "write returnsite proof obligations: %d" (H.length returnsites) in
     begin
       node#appendChildren
         (List.map (fun r ->

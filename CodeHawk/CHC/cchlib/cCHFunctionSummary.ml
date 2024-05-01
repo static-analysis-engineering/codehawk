@@ -34,6 +34,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTimingLog
 open CHXmlDocument
 open CHXmlReader
 
@@ -339,7 +340,7 @@ object (self)
       match open_path s with
       | Some p ->
 	 begin
-           pr_debug [STR "Opening "; STR s; NL];
+           log_info "Opening summaries jar %s" s;
            paths <- p :: paths
          end
       | _ -> ()

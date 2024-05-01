@@ -33,7 +33,9 @@ open CHPretty
 (* chutil *)
 open CHGc
 open CHLogger
+open CHPrettyUtil
 open CHTiming
+open CHTimingLog
 open CHXmlDocument
 
 (* cchlib *)
@@ -155,6 +157,8 @@ let main () =
   try
     let _ = read_args () in
     let _ = chlog#set_max_entry_size 1000 in
+    let _ = set_log_level "DEBUG" in
+    let _ = log_info "AIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAI" in
     if !cmd = "version" then
       begin
 	pr_debug [version#toPretty; NL];
@@ -170,17 +174,17 @@ let main () =
     else if !cmd = "primary" then 
       begin
 	primary_process_file ();
-        pr_timing [STR "primary proof obligations generated"];
+        log_info "primary proof obligations generated";
 	save_log_files "primary";
-        pr_timing [STR "primary proof obligations log files saved"]
+        log_info "primary proof obligations log files saved"
       end
 	  
     else if !cmd = "localinvs" then 
       begin
 	invariants_process_file (List.rev !domains);
-        pr_timing [STR "Local invariants generated"];
+        log_info "Local invariants generated";
 	save_log_files "localinvs";
-        pr_timing [STR "Local invariant generation log files saved"]
+        log_info "Local invariant generation log files saved"
       end
 
     else if !cmd = "globalinvs" then ()
@@ -188,18 +192,17 @@ let main () =
     else if !cmd = "check" then 
       begin
 	check_process_file ();
-        pr_timing [STR "Proof obligations checked"];
+        log_info "Proof obligations checked";
 	save_log_files "check";
-        pr_timing [STR "Proof obligation checking log files saved"]
+        log_info "Proof obligation checking log files saved"
       end
 
     else if !cmd = "generate_and_check" then
       begin
         generate_and_check_process_file (List.rev !domains);
-        pr_timing [STR "Invariants generated and proof obligations checked"];
+        log_info "Invariants generated and proof obligations checked";
         save_log_files "gencheck";
-          pr_timing [
-            STR "Invariant generation and proof obligation check log files saved"]
+        log_info "Invariant generation and proof obligation check log files saved"
       end
 
     else

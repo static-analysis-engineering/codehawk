@@ -38,6 +38,7 @@ open CHPretty
 open CHLogger
 open CHPrettyUtil
 open CHTiming
+open CHTimingLog
 open CHXmlDocument
 open CHXmlReader
 
@@ -171,35 +172,23 @@ let make_invariant_generation_spec t =
 let process_function gspecs fname =
   try
     if !function_to_be_analyzed = fname || !function_to_be_analyzed = "" then
-      let _ = pr_timing [STR "analyze function "; STR fname] in
+      let _ = log_info "analyze function %s" fname in
       let fundec = read_function_semantics fname in
       let fdecls = fundec.sdecls in
       let _ = read_proof_files fname fdecls in
       let _ = read_api fname fdecls in
       let varmgr = read_vars fname fdecls in
       let invio = read_invs fname varmgr#vard in
-      let _ = pr_timing [STR "read function semantics and invariants"] in
       let spomanager = proof_scaffolding#get_spo_manager fname in
       let _ = spomanager#create_contract_proof_obligations in
       let proofObligations = proof_scaffolding#get_proof_obligations fname in
       let openpos = List.filter (fun po -> not po#is_closed) proofObligations in
       let _ =
-        pr_timing [
-            STR "obtained ";
-            INT (List.length proofObligations);
-            STR " proof obligations; of which ";
-            INT (List.length openpos);
-            STR " open"] in
-
-      if (List.length proofObligations) = 0 then
-        let _ =
-          chlog#add "skip analysis (no proof obligations)" (STR fname) in
-        pr_debug [ STR "      no proof obligations: skip analysis"; NL; NL]
-      else if (List.length openpos) = 0 then
-        let _ =
-          chlog#add "skip analysis (no open proof obligations)" (STR fname) in
-        pr_debug [ STR "      no open proof obligations: skip analysis"; NL; NL ]
-      else
+        log_info
+          "Obtained %d proof obligation(s) of which %d open"
+          (List.length proofObligations)
+          (List.length openpos) in
+      if (List.length openpos) > 0 then
         let callcount = proof_scaffolding#get_call_count fname in
         let _ =
           List.iter
@@ -210,7 +199,6 @@ let process_function gspecs fname =
                 ()
               else
 	        try
-                  let starttime = Unix.gettimeofday () in
 	          let env = mk_c_environment fundec varmgr in
 	          let orakel = get_function_orakel env invio in
 	          let expTranslator = gspec.ig_get_exp_translator env orakel in
@@ -303,20 +291,15 @@ let process_function gspecs fname =
                           (LBLOCK [ STR "Not found in function "; STR fname;
 			            STR " ("; STR gspec.ig_domain; STR "):" ]))
                end) gspecs in
-      let starttime = Unix.gettimeofday () in
       let fnApi = proof_scaffolding#get_function_api fname in
       let env = mk_c_environment fundec varmgr in
       begin
         check_proof_obligations env fnApi invio proofObligations;
-        pr_timing [STR "checked proof obligations"];
+        log_info "checked proof obligations";
         save_invs fname invio;
-        pr_timing [STR "saved invariants"];
         save_vars fname varmgr;
-        pr_timing [STR "saved variables"];
         save_proof_files fname;
-        pr_timing [STR "saved proof files"];
         save_api fname;
-        pr_timing [STR "saved api"]
       end
     else
       ()
@@ -369,35 +352,22 @@ let generate_and_check_process_file (domains: string list) =
   try
     let _ = read_cfile_dictionary () in
     let cfile = read_cfile () in
-    let _ = pr_timing [STR "read cfile dictionary and cfile"] in
     let _ = fenv#initialize cfile in
-    let _ = pr_timing [STR "Initialized cfile environment"] in
     let _ = read_cfile_context () in
-    let _ = pr_timing [STR "read cfile context"] in
     let _ = read_cfile_predicate_dictionary () in
-    let _ = pr_timing [STR "read predicate dictionary"] in
     let _ = read_cfile_interface_dictionary () in
-    let _ = pr_timing [STR "read interface dictionary"] in
     let _ = read_cfile_assignment_dictionary () in
-    let _ = pr_timing [STR "read assignment dictionary"] in
     let _ = read_cfile_contract () in
+    let _ = log_info "Read file-level xml files" in
     let functions = fenv#get_application_functions in
+    let _ = log_info "Processing %d functions" (List.length functions) in
     let _ = List.iter (fun f -> process_function gspecs f.vname) functions in
-    let _ =
-      pr_timing [
-          STR "processed function specs for ";
-          INT (List.length functions);
-          STR " function(s)"] in
     let _ = save_cfile_assignment_dictionary () in
-    let _ = pr_timing [STR "saved assignment dictionary"] in
     let _ = save_cfile_dictionary () in
-    let _ = pr_timing [STR "saved cfile dictionary"] in
     let _ = save_cfile_context () in
-    let _ = pr_timing [STR "saved cfile context"] in
     let _ = save_cfile_interface_dictionary () in
-    let _ = pr_timing [STR "saved interface dictionary"] in
     let _ = save_cfile_predicate_dictionary () in
-    let _ = pr_timing [STR "saved predicate dictionary"] in
+    let _ = log_info "Saved file-level xml files" in
     ()
   with
   | CHXmlReader.IllFormed ->
