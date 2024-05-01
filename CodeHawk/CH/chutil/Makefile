@@ -13,6 +13,7 @@ OCAMLDEP := ocamldep
 
 MLIS := \
 	cHTraceResult \
+	cHTimingLog \
 	cHPrettyUtil \
 	cHSumTypeSerializer \
 	cHTiming \
@@ -43,6 +44,7 @@ CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
 	cHTraceResult \
+	cHTimingLog \
 	cHPrettyUtil \
 	cHSumTypeSerializer \
 	cHTiming \
