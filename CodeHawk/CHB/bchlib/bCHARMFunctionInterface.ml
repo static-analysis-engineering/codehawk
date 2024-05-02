@@ -577,7 +577,7 @@ let arm_vfp_params (funargs: bfunarg_t list): fts_parameter_t list =
         (* assume no packing at the argument top level *)
         let size = if tysize < 4 then 4 else tysize in
         let (param, new_state) =
-          if (is_int btype || is_pointer btype) && size = 4 then
+          if (is_int btype || is_pointer btype || is_enum btype) && size = 4 then
             get_int_param_next_state size name btype aa_state index
           else if (is_int btype || is_pointer btype) then
             get_long_int_param_next_state size name btype aa_state index

@@ -124,6 +124,7 @@ val t_function_anon: btype_t -> btype_t        (* arguments not known *)
 
 val is_void: btype_t -> bool
 val is_int: btype_t -> bool
+val is_enum: btype_t -> bool
 val is_float: btype_t -> bool
 val is_scalar: btype_t -> bool
 val is_pointer: btype_t -> bool
