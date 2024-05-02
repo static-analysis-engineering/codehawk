@@ -165,6 +165,8 @@ let is_void t = match t with TVoid _ -> true | _ -> false
 
 let is_int t = match t with TInt _ -> true | _ -> false
 
+let is_enum t = match t with TEnum _ -> true | _ -> false
+
 let is_float t = match t with TFloat _ -> true | _ -> false
 
 let is_pointer t = match t with TPtr _ -> true | _ -> false
