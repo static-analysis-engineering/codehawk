@@ -41,6 +41,16 @@ open BCHBCFiles
 open BCHBCTypePretty
 open BCHBCTypes
 
+let string_printer = CHPrettyUtil.string_printer
+let p2s = string_printer#print
+
+(* Teach Printexc how to print our own exceptions *)
+let () =
+  Printexc.register_printer
+    (function
+      | BCH_failure e -> Some (p2s(e))
+      | _ -> None (* for other exceptions *)
+    )
 
 (* ====================================================== common scalar types *)
 
