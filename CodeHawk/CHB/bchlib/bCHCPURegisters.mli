@@ -199,6 +199,7 @@ val mips_temporaries: mips_reg_t list
 val arm_temporaries: arm_reg_t list
 
 val arm_regular_registers: arm_reg_t list
+val arm_regular_registers_no_pc: arm_reg_t list
 val arm_xsingle_extension_registers: arm_extension_register_t list
 val arm_xdouble_extension_registers: arm_extension_register_t list
 

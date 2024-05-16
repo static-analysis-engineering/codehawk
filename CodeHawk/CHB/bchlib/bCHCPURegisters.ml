@@ -257,6 +257,10 @@ let _ =
 let arm_regular_registers = get_sumtype_table_keys armregs_to_string_table
 
 
+let arm_regular_registers_no_pc =
+  List.filter (fun r -> not (r = ARPC)) arm_regular_registers
+
+
 let arm_xsingle_extension_registers =
   List.init 32 (fun i -> {armxr_type = XSingle; armxr_index = i})
 

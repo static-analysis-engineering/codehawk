@@ -227,6 +227,16 @@ object (self:'a)
     | AuxiliaryVariable (SSARegisterValue (_, a, _, _)) -> a = iaddr
     | _ -> false
 
+  method is_augmentation_value =
+    match denotation with
+    | AuxiliaryVariable (AugmentationValue _) -> true
+    | _ -> false
+
+  method is_desc_augmentation_value (desc: string) =
+    match denotation with
+    | AuxiliaryVariable (AugmentationValue (_, _, vdesc, _, _)) -> vdesc = desc
+    | _ -> false
+
   method is_in_test_jump_range (a :ctxt_iaddress_t) =
     match denotation with
     | AuxiliaryVariable (FrozenTestValue (_, taddr, jaddr)) ->
@@ -278,7 +288,7 @@ object (self:'a)
 	| InitialRegisterValue _
 	  | InitialMemoryValue _
 	  | FunctionReturnValue _
-          | AugmentationValue _
+          (* | AugmentationValue _ *)
 	  | CallTargetValue _
 	  | SideEffectValue _
 	  | FieldValue _
@@ -956,6 +966,14 @@ object (self)
   method is_ssa_register_value_at (iaddr: ctxt_iaddress_t) (v: variable_t) =
     tfold_default
       (fun av -> av#is_ssa_register_value_at iaddr) false (self#get_variable v)
+
+  method is_augmentation_value (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_augmentation_value) false (self#get_variable v)
+
+  method is_desc_augmentation_value (desc: string) (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_desc_augmentation_value desc) false (self#get_variable v)
 
   method is_initial_register_value (v: variable_t) =
     tfold_default

@@ -198,6 +198,7 @@ object (self)
   val mutable inlined_functions = []
   val mutable trampoline_payloads = []
   val mutable trampoline_wrappers = []
+  val mutable trampoline_fallthroughaddrs = []
 
   val data_export_specs = H.create 3
 
@@ -366,6 +367,9 @@ object (self)
   method private add_trampoline_wrapper (startaddr: doubleword_int) =
     trampoline_wrappers <- startaddr :: trampoline_wrappers
 
+  method private add_trampoline_fallthroughaddr (addr: doubleword_int) =
+    trampoline_fallthroughaddrs <- addr :: trampoline_fallthroughaddrs
+
   method private add_inlined_block (faddr:doubleword_int) (baddr:doubleword_int) =
     let fd = functions_data#add_function faddr in
     begin
@@ -389,6 +393,10 @@ object (self)
   method is_trampoline_wrapper (a: doubleword_int) =
     List.fold_left (fun acc startaddr ->
         acc || (startaddr#equal a)) false trampoline_wrappers
+
+  method is_trampoline_fallthroughaddr (a: doubleword_int) =
+    List.fold_left (fun acc addr ->
+        acc || (addr#equal a)) false trampoline_fallthroughaddrs
 
   method get_esp_adjustment (faddr:doubleword_int) (iaddr:doubleword_int) =
     if H.mem esp_adjustments_i iaddr#index then
@@ -1325,6 +1333,12 @@ object (self)
          begin
            logmsg "wrapper" wrapperaddr;
            self#add_trampoline_wrapper wrapperaddr
+         end);
+      (if node#hasNamedAttribute "fallthrough-jump" then
+         let fallthroughaddr = geta "fallthrough-jump" in
+         begin
+           logmsg "fallthrough" fallthroughaddr;
+           self#add_trampoline_fallthroughaddr fallthroughaddr
          end)
     end
 
