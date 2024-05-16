@@ -1196,6 +1196,9 @@ object (self)
   method get_ssa_values_at (cia: ctxt_iaddress_t) =
     List.filter (self#is_ssa_register_value_at cia) self#get_variables
 
+  method get_trampoline_entry_values =
+    List.filter self#is_trampoline_entry_value self#get_variables
+
   method get_local_stack_variables =
     let is_local v = varmgr#is_local_variable v && varmgr#is_stack_variable v in
     List.filter is_local self#get_variables
@@ -1497,6 +1500,9 @@ object (self)
   method is_ssa_register_value = varmgr#is_ssa_register_value
 
   method is_ssa_register_value_at = varmgr#is_ssa_register_value_at
+
+  method is_trampoline_entry_value =
+    (varmgr#is_desc_augmentation_value "trampoline_entry")
 
   method is_initial_register_value = varmgr#is_initial_register_value
 

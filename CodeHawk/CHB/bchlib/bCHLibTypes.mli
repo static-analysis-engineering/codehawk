@@ -3341,6 +3341,9 @@ object ('a)
       register value created at instruction address [addr]. *)
   method is_ssa_register_value_at: ctxt_iaddress_t -> bool
 
+  method is_augmentation_value: bool
+  method is_desc_augmentation_value: string -> bool
+
   method is_bridge_value: bool
 
   (** [is_bridge_value_at addr] returns true if this variable is a bridge
@@ -3837,6 +3840,11 @@ object
 
       Returns [Error] if [var] is not a function-return value or
       a function side-effect value. *)
+
+  method is_augmentation_value: variable_t -> bool
+
+  method is_desc_augmentation_value: string -> variable_t -> bool
+
   method get_call_site: variable_t -> ctxt_iaddress_t traceresult
 
   (** Returns the name of the argument associated with the side-effect
@@ -4085,6 +4093,8 @@ class type function_environment_int =
         and suffix t_in.*)
     method mk_trampoline_entry_value:
              variable_t -> ctxt_iaddress_t -> variable_t
+
+    method is_trampoline_entry_value: variable_t -> bool
 
     method mk_ssa_register_value:
              ?name:string option
@@ -4403,6 +4413,7 @@ class type function_environment_int =
     method get_arm_argument_values: variable_t list
     method get_bridge_values_at: ctxt_iaddress_t -> variable_t list
     method get_ssa_values_at: ctxt_iaddress_t -> variable_t list
+    method get_trampoline_entry_values: variable_t list
 
     method get_variables: variable_t list
     method get_sym_variables: variable_t list
@@ -5733,6 +5744,7 @@ object
   method is_inlined_function: doubleword_int -> bool
   method is_trampoline_payload: doubleword_int -> bool
   method is_trampoline_wrapper: doubleword_int -> bool
+  method is_trampoline_fallthroughaddr: doubleword_int -> bool
   method has_variable_intro: doubleword_int -> bool
   method has_variable_intros: bool
 

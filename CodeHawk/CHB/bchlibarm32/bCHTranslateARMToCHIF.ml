@@ -687,8 +687,20 @@ let translate_arm_instruction
        List.map (fun r ->
            let v = floc#f#env#mk_arm_register_variable r in
            let trvar = floc#f#env#mk_trampoline_entry_value v floc#cia in
-           ASSERT (EQ (v, trvar))) arm_regular_registers in
+           ASSERT (EQ (v, trvar))) arm_regular_registers_no_pc in
      default freezecmds
+
+  | Branch _ when (system_info#is_trampoline_fallthroughaddr loc#i) ->
+     let tvars = floc#f#env#get_trampoline_entry_values in
+     let abstractcmd = ABSTRACT_VARS tvars in
+     let _ =
+       chlog#add
+         "abstract trampoline vars"
+         (LBLOCK [
+              loc#i#toPretty;
+              STR ": ";
+              pretty_print_list tvars (fun v -> v#toPretty) "[" ", " "]"]) in
+     default [abstractcmd]
 
   | Branch (_, op, _)
     | BranchExchange (ACCAlways, op) when op#is_absolute_address ->
