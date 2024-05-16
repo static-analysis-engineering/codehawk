@@ -187,10 +187,81 @@ let cc_expr
     | (Compare (ACCAlways, x, y, _), ACCNotEqual) ->
        (XOp (XNe, [v x; v y]), [x; y])
 
+    (* Occasionally the compiler will generate a a carryset condition for
+       a signed integer to obtain a disjunctionof the form (if y is
+       known to be non-negative)
+
+          x >= y || x < 0
+
+       For a signed integer four cases can be considered:
+
+         x        y      x >=u y  (unsigned greater equal)
+       -----------------------------------------------------------
+        >= 0     >= 0    x >= y
+        >= 0     < 0     false (since neg. numbers are larger than pos. numbers)
+        < 0      >= 0    true (idem, reversed)
+        < 0      < 0     x <= y
+
+       This can be written as a disjunction of conjuncts as follows:
+
+          (x >= 0 && y >= 0 && x >= y)
+       || (x >= 0 && y < 0 && false)
+       || (x < 0 && y >= 0 && true)
+       || (x < 0 && y < 0 && x <= y)
+
+       If y is known to be non-negative this can be simplified to
+
+          (x >= 0 && x >= y) || (x < 0)
+
+       which is equivalent to
+
+          x >= y || x < 0
+
+       as desired.
+
+       for unsigned comparison this is still valid since x < 0 is
+       always false.
+     *)
     | (Compare (_, x, y, _), ACCCarrySet) ->
-       (XOp (XGe, [vu x; vu y]), [x; y])
+       (XOp (XLOr, [XOp (XGe, [vu x; vu y]);
+                    XOp (XLt, [vu x; zero_constant_expr])]), [x; y])
+
+    (* Occasionally the compiler will generate a carryclear condition
+       for a signed integer to obtain a conjunction of the form (if y
+       is known to be non-negative)
+
+           x < y && x >= 0
+
+       For a signed integer four cases can be considered:
+
+         x        y      x <u y  (unsigned less than)
+       -----------------------------------------------------------
+        >= 0     >= 0    x < y
+        >= 0     < 0     true (since neg. numbers are larger than pos. numbers)
+        < 0      >= 0    false (idem, reversed)
+        < 0      < 0     x > y
+
+        This can be written as a disjunction of conjuncts as follows:
+
+            (x >= 0 && y >= 0 && x < y)
+        ||  (x >= 0 && y < 0 && true)
+        ||  (x < 0 && y >= 0 && false)
+        ||  (x < 0 && y < 0 && x > y)
+
+        If y is known to be non-negative this can be simplified to
+
+            (x >= 0 && x < y)
+
+        since the second, third, and fourth disjunct simplify to false.
+
+        for unsigned integer comparisons the second, third, and fourth
+        disjunct vacuously simplify to false, and the conjunct x >= 0
+        is vacuously true, so this is a valid representation in that
+        case as well.
+     *)
     | (Compare (_, x, y, _), ACCCarryClear) ->
-       (XOp (XLt, [vu x; vu y]), [x; y])
+       (XOp (XLAnd, [XOp (XLt, [vu x; vu y]);
+                     XOp (XGe, [vu x; zero_constant_expr])]), [x; y])
 
     | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
        (XOp (XGt, [vu x; vu y]), [x; y])
