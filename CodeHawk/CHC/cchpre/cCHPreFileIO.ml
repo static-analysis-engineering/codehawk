@@ -129,7 +129,9 @@ let get_cfile_path () =
 
 
 let get_cfile_stem () =
-  Filename.concat (get_cfile_path ()) system_settings#get_cfilename
+  let filepath = get_cfile_path() in
+  let filename = system_settings#get_cfilename in
+  Filename.concat filepath filename
 
 
 let get_logfiles_directory () =
