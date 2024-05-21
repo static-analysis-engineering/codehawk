@@ -38,7 +38,6 @@ open CHPretty
 (* chutil *)
 open CHFileIO
 open CHPrettyUtil
-open CHTiming
 open CHTimingLog
 open CHUtil
 open CHXmlDocument
