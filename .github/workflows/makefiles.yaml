@@ -83,5 +83,5 @@ jobs:
         mv CodeHawk/CHC/cchcmdline/canalyzer chc/bin/linux/canalyzer
     - name: Run kendra test suite
       run: |
-        PYTHONPATH=$PWD python3 chc/cmdline/kendra/chkc kendra test-sets | tee kendra_output.txt
+        PYTHONPATH=$PWD python3 chc/cmdline/chkc kendra test-sets | tee kendra_output.txt
         diff kendra_output.txt tests/kendra/example_output/test_kendrasets.txt
