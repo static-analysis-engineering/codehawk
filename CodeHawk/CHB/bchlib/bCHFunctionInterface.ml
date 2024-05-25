@@ -321,21 +321,29 @@ let get_fts_parameters (fintf: function_interface_t): fts_parameter_t list =
         are constructed from the parameter locations collected in the
         function interface.
       *)
-     let paramlocs = fintf.fintf_parameter_locations in
-     let paramlocs = List.sort parameter_location_compare paramlocs in
-     let fname = fintf.fintf_name in
-     let params =
-       match system_settings#get_architecture with
-       | "x86" -> get_x86_fts_parameters fname paramlocs
-       | "mips" -> get_mips_fts_parameters fname paramlocs
-       | "arm" -> get_arm_fts_parameters fname paramlocs
-       | arch ->
-          raise
-            (BCH_failure
-               (LBLOCK [
-                    STR "get-fts_parameters: not yet supported for ";
-                    STR arch])) in
-     List.sort fts_parameter_compare params
+     try
+       let paramlocs = fintf.fintf_parameter_locations in
+       let paramlocs = List.sort parameter_location_compare paramlocs in
+       let fname = fintf.fintf_name in
+       let params =
+         match system_settings#get_architecture with
+         | "x86" -> get_x86_fts_parameters fname paramlocs
+         | "mips" -> get_mips_fts_parameters fname paramlocs
+         | "arm" -> get_arm_fts_parameters fname paramlocs
+         | arch ->
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "get-fts_parameters: not yet supported for ";
+                      STR arch])) in
+       List.sort fts_parameter_compare params
+     with
+     | BCH_failure p ->
+        begin
+          ch_error_log#add
+            "get_fts_parameters" (LBLOCK [STR fintf.fintf_name; STR ": "; p]);
+          []
+        end
 
 
 let get_stack_parameters (fintf: function_interface_t): fts_parameter_t list =
