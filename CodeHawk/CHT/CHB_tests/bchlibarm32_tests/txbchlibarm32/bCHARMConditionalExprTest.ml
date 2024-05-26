@@ -61,7 +61,7 @@ open BCHAnalyzeApp
 
 
 let testname = "bCHARMConditionalExprTest"
-let lastupdated = "2024-01-02"
+let lastupdated = "2024-05-25"
 
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
@@ -83,11 +83,15 @@ let bxlr_bxlr = "1eff2fe1000000001eff2fe100000000"
    APSR.Z = IsZeroBit(result)
    APSR.C = carry
    APSR.V = overflow
+
+   Note on cmp-bcc and cmp-bcs: see explanation in bCHARMConditionalExpr.
  *)
 let compare_tests () =
   let tests = [
-      ("cmp-bcc", "0x10ae0", "0x10ae4", "020051e10100003a", 3, "(R1 < R2)");
-      ("cmp-bcs", "0x1d734", "0x1d738", "030052e10100002a", 3, "(R2 >= R3)");
+      ("cmp-bcc", "0x10ae0", "0x10ae4", "020051e10100003a", 3,
+       "((R1 < R2) and (R1 >= 0))");
+      ("cmp-bcs", "0x1d734", "0x1d738", "030052e10100002a", 3,
+       "((R2 >= R3) or (R2 < 0))");
       ("cmp-beq", "0x10184", "0x10188", "000053e30100000a", 3, "(R3 = 0)");
       ("cmp-bge", "0x10418", "0x1041c", "000053e3010000aa", 3, "(R3 >= 0)");
       ("cmp-bgt", "0x10380", "0x10384", "000053e3010000ca", 3, "(R3 > 0)");

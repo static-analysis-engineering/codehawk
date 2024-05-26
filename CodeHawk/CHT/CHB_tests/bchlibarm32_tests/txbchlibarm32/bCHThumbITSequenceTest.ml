@@ -57,7 +57,7 @@ open BCHAnalyzeApp
 
 
 let testname = "bCHThumbITSequenceTest"
-let lastupdated = "2024-01-02"
+let lastupdated = "2024-05-25"
 
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
@@ -124,13 +124,27 @@ let thumb_it_predicates () =
    0xd04  0123      MOVNE   R3, #0x1
    0xd06  0023      MOVEQ   R3  #0x0
    ---------------------------------
+
+   Note on modifications to ite-cmp-cc and ite-cmp-cs:
+   In principle these are condition codes typically applied to unsigned
+   integers. Occasionally these are found to be applied to signed integers
+   to achieve, respectively, the disjunction:
+     x >= y or x < 0
+   or the conjunction
+     x <= y and x >= 0
+   Strictly speaking this can only be done if y >= 0, as explained in
+   bCHARMConditionalExpr.
+   For unsigned integers the additional disjunct or conjunct is vacuous,
+   so does not affect the semantics.
  *)
 let thumb_ite_predicates () =
   let tests = [
       ("ite-cmp-cc-r",
-       "0x11a82", "0x11a84", "854234bf0025012500", "(R5_in >= R0_in)");
+       "0x11a82", "0x11a84", "854234bf0025012500",
+       "((R5_in >= R0_in) or (R5_in < 0))");
       ("ite-cmp-cs-r",
-       "0x11aa0", "0x11aa2", "85422cbf0025012500", "(R5_in < R0_in)");
+       "0x11aa0", "0x11aa2", "85422cbf0025012500",
+       "((R5_in < R0_in) and (R5_in >= 0))");
       ("ite-cmp-ne",
        "0xd00", "0xd02", "002b14bf0123002300", "(R3_in != 0)");
       ("ite-cmp-hi",
