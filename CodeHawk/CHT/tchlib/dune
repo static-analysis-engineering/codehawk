@@ -3,7 +3,3 @@
   (libraries chlib chutil)
   (public_name codehawk.tchlib)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

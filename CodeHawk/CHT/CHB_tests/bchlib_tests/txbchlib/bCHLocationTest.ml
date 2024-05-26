@@ -7,7 +7,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +55,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHLocationTest"
-let lastupdated = "2022-12-09"
+let lastupdated = "2024-05-25"
 
 
 let make_dw (s: string) =
@@ -69,7 +69,7 @@ let rec fc (lst: string list) =
   match lst with
   | [] -> ""
   | [s] -> s
-  | [s1; s2] -> "F:" ^ (c lst)
+  | [_; _] -> "F:" ^ (c lst)
   | s1 :: tl -> "F:" ^ s1 ^ "_" ^ (fc tl)
               
 

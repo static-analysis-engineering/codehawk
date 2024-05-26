@@ -3,7 +3,3 @@
   (libraries bchlib chlib chutil tchlib)
   (public_name codehawk.tbchlib)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs LLC
+
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,34 +26,22 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-open CHNumerical
-
-(* tchblib *)
-open TCHSpecification
-
-(* bchlib *)
-open BCHBasicTypes
-open BCHLibTypes
-
 module TS = TCHTestSuite
 
 module A = TCHAssertion
 module G = TCHGenerator
-module S = TCHSpecification
 
 module BA = TCHBchlibAssertion
 module BG = TCHBchlibGenerator
 module BS = TCHBchlibSpecification
+module S = TCHSpecification
 
 (* bchlib *)
 module TF = BCHStreamWrapper
 module U = BCHByteUtilities
 
 let testname = "bCHStreamWrapper"
-let lastupdated = "2023-02-12"
-         
+let lastupdated = "2024-05-25"
 
 
 let make_stream ?(len=0) (s: string) =
@@ -121,8 +109,3 @@ let () =
     sleb128_tests ();
     TS.exit_file ()
   end
-
-        
-            
-
-  

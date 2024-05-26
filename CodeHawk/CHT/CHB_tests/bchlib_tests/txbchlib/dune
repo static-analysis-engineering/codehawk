@@ -1,7 +1,3 @@
 (tests 
   (names bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest)
   (libraries bchlib chlib chutil tbchlib tchlib))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))
