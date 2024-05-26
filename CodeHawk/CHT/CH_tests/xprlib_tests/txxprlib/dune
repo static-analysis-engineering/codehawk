@@ -1,7 +1,3 @@
 (tests 
   (names xconsequenceTest xsimplifyTest)
   (libraries tchlib txprlib xprlib))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))
