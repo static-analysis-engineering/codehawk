@@ -27,7 +27,7 @@
 
 (* chlib *)
 open CHPretty
-   
+
 (* bchlib *)
 open BCHBCTypePretty
 open BCHCPURegisters
@@ -104,7 +104,7 @@ class type_constraint_store_t: type_constraint_store_int =
 object (self)
 
   val store = H.create 5
-            
+
   method add_constraint (c: type_constraint_t) =
     let index = tcd#index_type_constraint c in
     if H.mem store index then
@@ -139,7 +139,7 @@ object (self)
             (type_constraint_to_string v) :: !constraints) store in
     let constraints = List.sort Stdlib.compare !constraints in
     STR (String.concat "\n" constraints)
-                    
+
 end
 
 
@@ -166,15 +166,15 @@ let mk_intvalue_type_constant (i: int): type_constant_t option =
       Some TyAscii
     else
       Some TyExtendedAscii
-  
+
 
 let mk_data_address_load_typevar
       ?(size = 4) ?(offset = 0) (dw: doubleword_int): type_variable_t =
   let capabilities = [Load; OffsetAccess (size, offset)] in
   let basevar = DataAddressType dw#to_hex_string in
   {tv_basevar = basevar; tv_capabilities = capabilities}
-  
-                                
+
+
 let mk_data_address_store_typevar
       ?(size = 4) ?(offset = 0) (dw: doubleword_int): type_variable_t =
   let capabilities = [Store; OffsetAccess (size, offset)] in
@@ -199,17 +199,19 @@ let mk_function_return_load_typevar
   {tv_basevar = basevar; tv_capabilities = capabilities}
 
 
+(*
 let mk_function_return_caps_typevar
       ?(caps = []) (dw: doubleword_int): type_variable_t =
   {tv_basevar = FunctionType dw#to_hex_string; tv_capabilities = caps}
+ *)
 
-  
+
 let mk_function_return_store_typevar
       ?(size = 4) ?(offset = 0) (dw: doubleword_int): type_variable_t =
   let basevar = FunctionType dw#to_hex_string in
   let capabilities = [FReturn; Store; OffsetAccess (size, offset)] in
   {tv_basevar = basevar; tv_capabilities = capabilities}
-  
+
 
 let mk_regparam_typevar (faddr: doubleword_int) (reg: register_t) =
   let basevar = FunctionType faddr#to_hex_string in
@@ -228,7 +230,7 @@ let mk_regparam_load_array_typevar
   let basevar = FunctionType faddr#to_hex_string in
   let capabilities = [FRegParameter reg; Load; OffsetAccessA (size, offset)] in
   {tv_basevar = basevar; tv_capabilities = capabilities}
-  
+
 
 let mk_regparam_store_typevar
       ?(size = 4) ?(offset = 0) (faddr: doubleword_int) (reg: register_t) =
@@ -242,8 +244,8 @@ let mk_regparam_store_array_typevar
   let basevar = FunctionType faddr#to_hex_string in
   let capabilities = [FRegParameter reg; Store; OffsetAccessA (size, offset)] in
   {tv_basevar = basevar; tv_capabilities = capabilities}
-  
-  
+
+
 let mk_stackaddress_typevar (faddr: doubleword_int) (offset: int) =
   let basevar = FunctionType faddr#to_hex_string in
   let capabilities = [FLocStackAddress offset] in

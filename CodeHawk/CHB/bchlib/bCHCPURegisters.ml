@@ -32,7 +32,6 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
@@ -115,9 +114,6 @@ let _ = List.iter (fun (r,s) ->
 
 let segment_to_string (r:segment_t) =
   get_string_from_table "segregs_to_string_table" segregs_to_string_table r
-
-let segment_from_string (name:string) =
-  get_sumtype_from_table "segregs_from_string_table" segregs_from_string_table name
 
 
 let _ =

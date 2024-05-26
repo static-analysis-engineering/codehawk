@@ -38,8 +38,8 @@ open CHPretty
 open CHFormatStringParser
 open CHLogger
 open CHPrettyUtil
+open CHTimingLog
 open CHTraceResult
-open CHXmlDocument
 
 (* xprlib *)
 open Xprt
@@ -47,7 +47,6 @@ open XprTypes
 open XprToPretty
 open XprUtil
 open Xsimplify
-open XprXml
 
 (* bchlib *)
 open BCHBasicTypes
@@ -56,34 +55,24 @@ open BCHBCTypePretty
 open BCHBCTypeUtil
 open BCHBTerm
 open BCHCallSemanticsRecorder
-open BCHCallTarget
 open BCHCPURegisters
-open BCHDemangler
 open BCHDoubleword
 open BCHExternalPredicate
 open BCHFtsParameter
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionInterface
-open BCHFunctionSummary
-open BCHFunctionSummaryLibrary
 open BCHGlobalState
-open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
 open BCHMakeCallTargetInfo
 open BCHMemoryRecorder
 open BCHMemoryReference
-open BCHPostcondition
-open BCHPrecondition
-open BCHSideeffect
 open BCHStrings
 open BCHSystemInfo
 open BCHSystemSettings
 open BCHTypeDefinitions
 open BCHUtilities
-open BCHVariable
-open BCHVariableNames
 open BCHXprUtil
 
 module H = Hashtbl
@@ -105,73 +94,15 @@ let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("floc:" ^ tag) msg
 
 
-let bcd = BCHBCDictionary.bcdictionary
-
-
-let btype_equal (t1: btype_t) (t2: btype_t) =
-  let i1 = bcd#index_typ t1 in
-  let i2 = bcd#index_typ t2 in
-  i1 = i2
-
-
-(* Split a list into two lists, the first one with n elements,
-   the second list with the remaining (if any) elements *)
-let split_list (n:int) (l:'a list):('a list * 'a list) =
-  let rec loop i p l =
-    if i = n then
-      (List.rev p, l)
-    else loop (i+1) ((List.hd l)::p) (List.tl l) in
-  if (List.length l) <= n then (l, []) else loop 0 [] l
-
-
 let unknown_write_symbol = new symbol_t "unknown write"
 
-let set_interval inode intv =
-  if intv#isTop then () else
-    if intv#isBottom then inode#setAttribute "bot" "yes"
-    else
-      match intv#singleton with
-	Some num -> inode#setAttribute "cst" num#toString
-      | _ ->
-	let low = intv#getMin#getBound in
-	let high = intv#getMax#getBound in
-	let _ = match low with
-	    NUMBER num -> inode#setAttribute "lo" num#toString
-	  | _ -> () in
-	let _ = match high with
-	    NUMBER num -> inode#setAttribute "hi" num#toString
-	  | _ -> () in
-	()
 
 let get_rhs_op_args (exp:numerical_exp_t) =
   match exp with
   | NUM _ -> []
-  | NUM_VAR v -> [ ("rhs", v, READ) ]
+  | NUM_VAR v -> [("rhs", v, READ)]
   | PLUS (v1,v2) | MINUS (v1,v2) | MULT (v1,v2) | DIV (v1,v2) ->
-     [ ("rhs1",v1,READ) ; ("rhs2",v2,READ) ]
-
-
-let get_offset_sign offset =
-  match offset#singleton with
-    Some num ->
-    if num#is_zero then
-      "zero"
-    else
-      if num#gt numerical_zero then "pos" else "neg"
-  | _ -> if offset#isTop then "top"
-    else if offset#isBottom then "bottom"
-    else if offset#isBounded then "bounded"
-    else "halfopen"
-
-
-let compare_ref (m1,o1) (m2,o2) =
-  if m1#is_unknown_reference then 1
-  else if m2#is_unknown_reference then (-1)
-  else 0
-
-
-let select_best_ref (refs:(memory_reference_int * memory_offset_t) list) =
-  List.hd (List.sort compare_ref refs)
+     [("rhs1",v1,READ); ("rhs2",v2,READ)]
 
 
 module ExprCollections = CHCollections.Make (struct
@@ -179,9 +110,6 @@ module ExprCollections = CHCollections.Make (struct
   let compare = Xprt.syntactic_comparison
   let toPretty = x2p
 end)
-
-
-let check_chain_for_address (cfaddr:doubleword_int) (v:variable_t) = false
 
 
 class mips_argument_type_propagator_t
@@ -432,7 +360,7 @@ object (self)
     else
       ()
 
-  method private update_x86_varargs (s: function_interface_t) = None
+  method private update_x86_varargs (_s: function_interface_t) = None
 
   method private update_arm_varargs (fintf: function_interface_t) =
     let args = self#get_call_arguments in
@@ -784,9 +712,9 @@ object (self)
   method get_memory_variable_4 (index:variable_t) (scale:int) (offset:numerical_t) =
     let indexExpr = self#rewrite_variable_to_external index in
     let offsetXpr =
-      simplify_xpr (XOp (XMult, [ int_constant_expr scale ; indexExpr ])) in
+      simplify_xpr (XOp (XMult, [int_constant_expr scale; indexExpr])) in
     let offsetXpr =
-      simplify_xpr (XOp (XPlus, [num_constant_expr offset ; offsetXpr ])) in
+      simplify_xpr (XOp (XPlus, [num_constant_expr offset; offsetXpr])) in
     let default () = self#env#mk_unknown_memory_variable (x2s offsetXpr) in
     match offsetXpr with
     | XConst (IntConst n) when n#geq nume32 ->
@@ -821,15 +749,15 @@ object (self)
            ~iaddr:self#cia self#fa
            (LBLOCK [
                 STR "get_memory_variable_4: ";
-                STR "index: " ; index#toPretty;
-                STR "scale: " ; INT scale;
-                STR "offset: " ; offset#toPretty]);
+                STR "index: "; index#toPretty;
+                STR "scale: "; INT scale;
+                STR "offset: "; offset#toPretty]);
          self#env#mk_unknown_memory_variable (x2s offsetXpr)
        end
 
   (* Creates expressions in the environment of the call target with variables
      wrapped in external variables                                            *)
-  method externalize_expr (tgt_faddr:doubleword_int) (x:xpr_t) = []
+  method externalize_expr (_tgt_faddr:doubleword_int) (_x:xpr_t) = []
 
   method rewrite_variable_to_external (var:variable_t) =
     self#inv#rewrite_expr (XVar var)
@@ -839,10 +767,10 @@ object (self)
     match exp with
     | NUM n -> num_constant_expr n
     | NUM_VAR v -> rewrite v
-    | PLUS (v1,v2) -> simplify_xpr (XOp (XPlus, [ rewrite v1 ; rewrite v2 ]))
-    | MINUS (v1,v2) -> simplify_xpr (XOp (XMinus, [ rewrite v1 ; rewrite v2 ]))
-    | MULT (v1,v2) -> simplify_xpr (XOp (XMult, [ rewrite v1 ; rewrite v2 ]))
-    | DIV (v1,v2) -> simplify_xpr (XOp (XDiv, [ rewrite v1 ; rewrite v2 ]))
+    | PLUS (v1,v2) -> simplify_xpr (XOp (XPlus, [rewrite v1; rewrite v2]))
+    | MINUS (v1,v2) -> simplify_xpr (XOp (XMinus, [rewrite v1; rewrite v2]))
+    | MULT (v1,v2) -> simplify_xpr (XOp (XMult, [rewrite v1; rewrite v2]))
+    | DIV (v1,v2) -> simplify_xpr (XOp (XDiv, [rewrite v1; rewrite v2]))
 
   method has_initial_value = self#inv#var_has_initial_value
 
@@ -962,9 +890,9 @@ object (self)
 	| Some num -> num#toString
 	| _ ->
 	  match (offset#getMin#getBound, offset#getMax#getBound) with
-	    (NUMBER lb, NUMBER ub) -> lb#toString  ^ " ; " ^ ub#toString
-	  | (NUMBER lb, _ ) -> lb#toString ^ " ; oo"
-	  | (_, NUMBER ub ) -> "-oo ; " ^ ub#toString
+	    (NUMBER lb, NUMBER ub) -> lb#toString  ^ "; " ^ ub#toString
+	  | (NUMBER lb, _ ) -> lb#toString ^ "; oo"
+	  | (_, NUMBER ub ) -> "-oo; " ^ ub#toString
 	  | _ -> "?" in
     openB ^ " " ^ offset ^ " " ^ closeB
 
@@ -977,9 +905,9 @@ object (self)
 	  Some num -> num#toString
 	| _ ->
 	  match (offset#getMin#getBound, offset#getMax#getBound) with
-	    (NUMBER lb, NUMBER ub) -> lb#toString  ^ " ; " ^ ub#toString
-	  | (NUMBER lb, _ ) -> lb#toString ^ " ; oo"
-	  | (_, NUMBER ub ) -> "-oo ; " ^ ub#toString
+	    (NUMBER lb, NUMBER ub) -> lb#toString  ^ "; " ^ ub#toString
+	  | (NUMBER lb, _ ) -> lb#toString ^ "; oo"
+	  | (_, NUMBER ub ) -> "-oo; " ^ ub#toString
 	  | _ -> "?" in
     openB ^ " " ^ offset ^ " " ^ closeB
 
@@ -992,9 +920,9 @@ object (self)
 	  Some num -> num#toString
 	| _ ->
 	  match (offset#getMin#getBound, offset#getMax#getBound) with
-	    (NUMBER lb, NUMBER ub) -> lb#toString  ^ " ; " ^ ub#toString
-	  | (NUMBER lb, _ ) -> lb#toString ^ " ; oo"
-	  | (_, NUMBER ub ) -> "-oo ; " ^ ub#toString
+	    (NUMBER lb, NUMBER ub) -> lb#toString  ^ "; " ^ ub#toString
+	  | (NUMBER lb, _ ) -> lb#toString ^ "; oo"
+	  | (_, NUMBER ub ) -> "-oo; " ^ ub#toString
 	  | _ -> "?" in
     openB ^ " " ^ offset ^ " " ^ closeB
 
@@ -1007,9 +935,9 @@ object (self)
 	| Some num -> num#toString
 	| _ ->
 	  match (offset#getMin#getBound, offset#getMax#getBound) with
-	  | (NUMBER lb, NUMBER ub) -> lb#toString  ^ " ; " ^ ub#toString
-	  | (NUMBER lb, _) -> lb#toString ^ " ; oo"
-	  | (_, NUMBER ub) -> "-oo ; " ^ ub#toString
+	  | (NUMBER lb, NUMBER ub) -> lb#toString  ^ "; " ^ ub#toString
+	  | (NUMBER lb, _) -> lb#toString ^ "; oo"
+	  | (_, NUMBER ub) -> "-oo; " ^ ub#toString
 	  | _ -> "?" in
     openB ^ " " ^ offset ^ " " ^ closeB
 
@@ -1057,30 +985,31 @@ object (self)
 
   method has_test_expr = self#f#has_test_expr self#cia
 
-  method get_function_arg_value (argIndex:int) = random_constant_expr
+  method get_function_arg_value (_argIndex: int) = random_constant_expr
 
-  method get_fts_parameter_expr (p: fts_parameter_t) = None
+  method get_fts_parameter_expr (_p: fts_parameter_t) = None
 
   method private get_offset ox =
     let oxs = simplify_xpr ox in
     match oxs with
     | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
     | XVar v -> IndexOffset (v, 1, NoOffset)
-    | XOp (XMult, [ XConst (IntConst n) ; XVar v ]) when n#is_int ->
-      IndexOffset (v, n#toInt, NoOffset)
-    | XOp (XMult, [ XConst (IntConst n) ; XVar v ]) ->
-      let msg = LBLOCK [ self#l#toPretty ; STR ": floc#get_offset: " ; x2p oxs ] in
+    | XOp (XMult, [XConst (IntConst n); XVar v]) when n#is_int ->
+       IndexOffset (v, n#toInt, NoOffset)
+    | XOp (XMult, [XConst (IntConst _); XVar _]) ->
+      let msg = LBLOCK [self#l#toPretty; STR ": floc#get_offset: "; x2p oxs] in
       begin
-	ch_error_log#add "number too large" msg ;
+	ch_error_log#add "number too large" msg;
 	UnknownOffset
       end
-    | XOp (XPlus, [ XConst (IntConst n) ; y ]) ->
-      ConstantOffset (n, self#get_offset y)
+    | XOp (XPlus, [XConst (IntConst n); y]) ->
+       ConstantOffset (n, self#get_offset y)
     | _ ->
-      let msg = (LBLOCK [ STR "offset expr:  " ; x2p oxs ]) in
+      let msg = (LBLOCK [STR "offset expr:  "; x2p oxs]) in
       begin
-	ch_error_log#add "unknown offset expr"
-	  (LBLOCK [ self#l#toPretty ; STR "  " ; msg ]) ;
+	ch_error_log#add
+          "unknown offset expr"
+	  (LBLOCK [self#l#toPretty; STR "  "; msg]);
 	UnknownOffset
       end
 
@@ -1102,7 +1031,7 @@ object (self)
      let vars = vars_as_positive_terms x in
      let knownPointers = List.filter self#f#is_base_pointer vars in
      let optBaseOffset = match knownPointers with
-       | [ base ] ->
+       | [base] ->
           let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
           Some (XVar base, offset)
        | [] ->
@@ -1115,42 +1044,46 @@ object (self)
 	 else
 	   begin
 	     match vars  with
-	     | [ base ] when (self#is_initial_value_variable base) ||
+	     | [base] when (self#is_initial_value_variable base) ||
 		 (is_external_constant base) ->
 	        begin
-		  self#f#add_base_pointer base ;
-		  Some (XVar base, simplify_xpr (XOp (XMinus, [ x ; XVar base ])))
+		  self#f#add_base_pointer base;
+		  Some (XVar base, simplify_xpr (XOp (XMinus, [x; XVar base])))
 	       end
-	     | [ base ] when self#env#is_stack_parameter_variable base &&
+	     | [base] when self#env#is_stack_parameter_variable base &&
 		 self#f#env#has_constant_offset base && self#has_initial_value base ->
 	       let baseInit = self#f#env#mk_initial_memory_value base in
 	       begin
-		 self#f#add_base_pointer baseInit ;
-		 Some (XVar base, simplify_xpr (XOp (XMinus, [ x ; XVar base ])))
+		 self#f#add_base_pointer baseInit;
+		 Some (XVar base, simplify_xpr (XOp (XMinus, [x; XVar base])))
 	       end
-             | [base] -> None
+             | [_] -> None
 	     | [] ->      (* suspicious address below the image base *)
 	       begin
 		 let _ = match x with
 		     (XConst (IntConst num)) ->
 		       if num#equal numerical_zero then
 			 begin
-			   chlog#add "null dereference"
-			     (LBLOCK [self#l#toPretty ]);
+			   chlog#add
+                             "null dereference"
+			     (LBLOCK [self#l#toPretty]);
 			 end
 		       else if num#lt numerical_zero then
 			 begin
-			   chlog#add "negative address"
+			   chlog#add
+                             "negative address"
 			     (LBLOCK [self#l#toPretty; STR ": "; num#toPretty]);
 			 end
 		       else
 			 begin
-			   chlog#add "low address"
+			   chlog#add
+                             "low address"
 			     (LBLOCK [self#l#toPretty; STR ": "; x2p x]);
 			 end
 		   | _ ->
 		     begin
-		       chlog#add "low address"
+		       chlog#add
+                         "low address"
 			 (LBLOCK [self#l#toPretty; STR ": "; x2p x]);
 		     end in
 		 None
@@ -1160,7 +1093,7 @@ object (self)
 	   end
        | ptrs ->
 	 let msg = LBLOCK [
-	   x2p x ;
+	   x2p x;
 	   pretty_print_list ptrs
 	     (fun v -> self#env#variable_name_to_pretty v)  " (" ", " ")"] in
 	 begin
@@ -1195,7 +1128,7 @@ object (self)
           let offset = ConstantOffset (n, offset) in
           let memref = self#env#mk_global_memory_reference in
           (memref, offset)
-       | Some (base, offset) ->  default ()
+       | Some (_base, _offset) ->  default ()
        | _ -> default ()
      with
        Invalid_argument s ->
@@ -1280,15 +1213,15 @@ object (self)
      let reqN () = self#env#mk_num_temp in
      let reqC = self#env#request_num_constant in
      let testxpr = self#inv#rewrite_expr test_expr in
-     let ftestxpr = simplify_xpr (XOp (XLNot, [ testxpr ])) in
+     let ftestxpr = simplify_xpr (XOp (XLNot, [testxpr])) in
      let assigncmds = self#get_assign_commands lhs rhs_expr in
      let (tcmds,txpr) = xpr_to_boolexpr reqN reqC testxpr in
      let (fcmds,fxpr) = xpr_to_boolexpr reqN reqC ftestxpr in
      let asserttcmd = ASSERT txpr in
      let assertfcmd = ASSERT fxpr in
-     let truecmds = tcmds @ [ asserttcmd ] @ assigncmds in
-     let falsecmds = fcmds @ [ assertfcmd ] in
-     [ BRANCH [ LF.mkCode truecmds; LF.mkCode falsecmds ]]
+     let truecmds = tcmds @ [asserttcmd] @ assigncmds in
+     let falsecmds = fcmds @ [assertfcmd] in
+     [BRANCH [LF.mkCode truecmds; LF.mkCode falsecmds]]
 
    method private is_composite_symbolic_value (x: xpr_t): bool =
      let is_external v = self#f#env#is_function_initial_value v in
@@ -1317,6 +1250,41 @@ object (self)
          XVar (self#env#mk_symbolic_value rhs_expr)
        else
          rhs_expr in
+
+     let _ =
+       match size with
+       | XConst XRandom -> ()
+       | XConst (IntConst n) when n#equal (mkNumerical 4) ->
+          ()
+       | XConst (IntConst n) ->
+          chlog#add
+            "assignment size not used"
+            (LBLOCK [
+                 lhs#toPretty;
+                 STR " := ";
+                 x2p rhs_expr;
+                 STR " with size ";
+                 n#toPretty])
+       | _ ->
+          chlog#add
+            "assignment size expression not used"
+            (LBLOCK [
+                 lhs#toPretty;
+                 STR " := ";
+                 x2p rhs_expr;
+                 STR " with size ";
+                 x2p size]) in
+
+     let _ =
+       if not (is_unknown_type vtype) then
+         chlog#add
+           "assignment type not used"
+           (LBLOCK [
+                lhs#toPretty;
+                STR " := ";
+                x2p rhs_expr;
+                STR " with type ";
+                btype_to_pretty vtype]) in
 
      let reqN () = self#env#mk_num_temp in
      let reqC = self#env#request_num_constant in
@@ -1458,7 +1426,7 @@ object (self)
      | ArithmeticExpr (op, t1, t2) ->
        let xpr1 = self#evaluate_summary_term t1 returnvar in
        let xpr2 = self#evaluate_summary_term t2 returnvar in
-       XOp (arithmetic_op_to_xop op, [ xpr1 ; xpr2 ])
+       XOp (arithmetic_op_to_xop op, [xpr1; xpr2])
      | _ -> random_constant_expr
 
    method private evaluate_fts_address_argument (p: fts_parameter_t) =
@@ -1502,7 +1470,15 @@ object (self)
      | _ -> None
 
    method get_abstract_commands
-     (lhs:variable_t) ?(size=random_constant_expr) ?(vtype=t_unknown) () =
+            (lhs:variable_t) ?(size=random_constant_expr) ?(vtype=t_unknown) () =
+     let _ =
+       match (size, vtype) with
+       | (XConst XRandom, TUnknown _) ->
+          ()
+       | _ ->
+          log_debug
+            "Ignoring size: %s and type %s in get_abstract_commands"
+            (x2s size) (btype_to_string vtype) in
      [ABSTRACT_VARS [lhs]]
 
    method get_ssa_abstract_commands
@@ -1538,6 +1514,15 @@ object (self)
             ?(vtype=t_unknown)
             (opname:symbol_t)
             (args:op_arg_t list) =
+     let _ =
+       match (size, vtype, args) with
+       | (XConst XRandom, TUnknown _, []) ->
+          ()
+       | _ ->
+          log_debug
+            "Ignoring size: %s and type %s in operation %s:"
+            (x2s size) (btype_to_string vtype) (p2s opname#toPretty) in
+
      [ABSTRACT_VARS [lhs]]
 
    method private assert_post
@@ -1594,11 +1579,11 @@ object (self)
        let xpr1 = self#evaluate_summary_term t1 returnvar in
        let xpr2 = self#evaluate_summary_term t2 returnvar in
        let xop = relational_op_to_xop op in
-       let xpr = XOp (xop, [ xpr1 ; xpr2 ]) in
+       let xpr = XOp (xop, [xpr1; xpr2]) in
        let (cmds,bxpr) = xpr_to_boolexpr reqN reqC xpr in
        cmds @ [ASSERT bxpr] in
      match post with
-     | XXNewMemory (ReturnValue _, sizeParameter) ->
+     | XXNewMemory (ReturnValue _, _sizeParameter) ->
         [] (* get_new_memory_commands sizeParameter *)
      | XXFunctionPointer (_, ReturnValue nameParameter) ->
         get_function_pointer_commands nameParameter
@@ -1611,10 +1596,10 @@ object (self)
           [] (* was known during translation, or has been established earlier *)
         else
 	  begin
-	    (* ctinfo#set_nonreturning ; *)
+	    (* ctinfo#set_nonreturning; *)
 	    chlog#add
               "function retracing"
-              (LBLOCK [ self#l#toPretty; STR ": "; STR name]);
+              (LBLOCK [self#l#toPretty; STR ": "; STR name]);
 	    raise Request_function_retracing
 	  end
      | _ ->
@@ -1656,7 +1641,7 @@ object (self)
               (fun a ->
 	        if system_info#is_code_address a then
 		  begin
-		    ignore (functions_data#add_function a) ;
+		    ignore (functions_data#add_function a);
 		    chlog#add
                       "function entry point from precondition"
 		      (LBLOCK [self#l#toPretty; STR ": "; a#toPretty])
@@ -1748,7 +1733,7 @@ object (self)
 	      []
 	    end
        end
-     | XXStartsThread (sa,pars) ->
+     | XXStartsThread (sa, _pars) ->
        let _ =
 	 match self#evaluate_summary_term sa self#env#mk_num_temp with
 	 | XConst (IntConst n) ->
@@ -1813,7 +1798,7 @@ object (self)
        | _ -> ()) pres
 
    (* Returns the CHIF code associated with a call (x86) *)
-   method get_call_commands (string_retriever:doubleword_int -> string option) =
+   method get_call_commands (_string_retriever:doubleword_int -> string option) =
      let ctinfo = self#get_call_target in
      let fintf = ctinfo#get_function_interface in
      let fts = fintf.fintf_type_signature in
@@ -1860,24 +1845,24 @@ object (self)
        | Some adj ->
 	 if adj > 0 then
 	   let adj = self#env#request_num_constant (mkNumerical adj) in
-	   [ ASSIGN_NUM (esp, PLUS (esp, adj) ) ]
+	   [ASSIGN_NUM (esp, PLUS (esp, adj) )]
 	 else if adj < 0 then
-	   [ ABSTRACT_VARS [ esp ] ]
+	   [ABSTRACT_VARS [esp]]
 	 else
 	   []
        | _ -> [] in
-   (* | _ -> [ ABSTRACT_VARS [ esp ] ] in *)
+   (* | _ -> [ABSTRACT_VARS [esp]] in *)
      let bridgeVars = self#env#get_bridge_values_at self#cia in
-     let defClobbered = List.map (fun r -> (CPURegister r)) [ Eax ; Ecx ; Edx ] in
+     let defClobbered = List.map (fun r -> (CPURegister r)) [Eax; Ecx; Edx] in
      let regsClobbered = List.fold_left (fun acc reg ->
        List.filter (fun r -> not (r=reg)) acc)
        defClobbered fts.fts_registers_preserved in
      let abstrRegs = List.map self#env#mk_register_variable regsClobbered in
-     [ OPERATION { op_name = opName ; op_args = [] } ;
-       ABSTRACT_VARS abstrRegs ] @
+     [OPERATION { op_name = opName; op_args = [] };
+       ABSTRACT_VARS abstrRegs] @
        (* postAsserts @ *)
-       [ returnAssign ] @ sideEffectAssigns @ espAdjustment @
-         [ ABSTRACT_VARS bridgeVars ]
+       [returnAssign] @ sideEffectAssigns @ espAdjustment @
+         [ABSTRACT_VARS bridgeVars]
 
    method get_mips_syscall_commands =
      let ctinfo = self#get_call_target in
@@ -1893,8 +1878,8 @@ object (self)
        ASSIGN_NUM (v0, NUM_VAR rvar) in
      let defClobbered = List.map (fun r -> (MIPSRegister r)) mips_temporaries in
      let abstrRegs = List.map self#env#mk_register_variable defClobbered in
-     [ OPERATION { op_name = opname ; op_args = [] } ;
-       ABSTRACT_VARS (v1::abstrRegs) ; returnassign ]
+     [OPERATION { op_name = opname; op_args = [] };
+       ABSTRACT_VARS (v1::abstrRegs); returnassign]
 
    method private get_bterm_xpr
                     (t: bterm_t)
@@ -1945,7 +1930,7 @@ object (self)
        self#record_memory_reads self#get_call_target#get_semantics.fsem_pre in
      let defClobbered = List.map (fun r -> (MIPSRegister r)) mips_temporaries in
      let abstrRegs = List.map self#env#mk_register_variable defClobbered in
-     [OPERATION { op_name = opname ; op_args = [] };
+     [OPERATION { op_name = opname; op_args = [] };
       ABSTRACT_VARS (v1::abstrRegs)]
      @ [returnassign]
 
@@ -2023,7 +2008,7 @@ object (self)
 	  offset
 	end in
     match address with
-    | XVar v -> address
+    | XVar _ -> address
     | XOp (XPlus, [XVar v1; XVar v2]) when not (is_external v1) && is_external v2 ->
        XOp (XPlus, [XVar v2; XVar v1])
     | XOp (XPlus, [XVar v; offset])
@@ -2036,7 +2021,7 @@ object (self)
   method is_address (x:xpr_t) =
     match self#normalize_address x with
     | XVar v
-    | XOp (XPlus, [ XVar v ; _ ]) -> self#f#is_base_pointer v
+    | XOp (XPlus, [XVar v; _]) -> self#f#is_base_pointer v
     | _ -> false
 end
 

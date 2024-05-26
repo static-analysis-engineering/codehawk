@@ -485,8 +485,9 @@ let convert_xml_fts_parameter_mips (p: fts_parameter_t): fts_parameter_t =
        ~fmt:p.apar_fmt
        register
        index
-  | [StackParameter (offset, _pdef)] ->
-     let index = offset / 4 in
+  | [StackParameter (stackoffset, _pdef)] ->
+     let index = stackoffset / 4 in
+     let offset = stackoffset - 4 in
      mk_indexed_stack_parameter
        ~btype:p.apar_type
        ~name:p.apar_name
@@ -540,8 +541,8 @@ let convert_xml_fts_parameter_arm (p: fts_parameter_t): fts_parameter_t =
        register
        index
   | [StackParameter (stackoffset, _pdef)] ->
-     let offset = stackoffset - 20 in
      let index = stackoffset / 4 in
+     let offset = stackoffset - 20 in
      mk_indexed_stack_parameter
        ~btype:p.apar_type
        ~name:p.apar_name

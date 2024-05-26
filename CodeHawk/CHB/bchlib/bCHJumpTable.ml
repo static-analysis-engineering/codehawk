@@ -49,7 +49,8 @@ class jumptable_t
         ~(end_address: doubleword_int)
         ~(start_address: doubleword_int)
         ~(targets: doubleword_int list)
-        ~(length: int): jumptable_int =
+        ~(length: int)
+        (): jumptable_int =
 object (self)
 
   val end_address = end_address
@@ -240,7 +241,7 @@ let make_jumptable
     ~msg:"make_jumptable"
     (fun length ->
       new jumptable_t
-        ~indexed_targets:[] ~end_address ~start_address ~targets ~length)
+        ~indexed_targets:[] ~end_address ~start_address ~targets ~length ())
     (end_address#subtract_to_int start_address)
 
 
@@ -249,12 +250,12 @@ let make_indexed_jumptable
       ~(end_address: doubleword_int)
       ~(indexed_targets:(doubleword_int * int list) list)
       ~(default_target: doubleword_int): jumptable_int TR.traceresult =
-  let targets = List.map fst indexed_targets in
+  let targets = (List.map fst indexed_targets) @ [default_target]  in
   TR.tmap
     ~msg:"make_indexed_jumptable"
     (fun length ->
       new jumptable_t
-        ~indexed_targets ~end_address ~start_address ~targets ~length)
+        ~indexed_targets ~end_address ~start_address ~targets ~length ())
     (end_address#subtract_to_int start_address)
 
 

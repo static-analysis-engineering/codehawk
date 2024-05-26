@@ -37,7 +37,6 @@ open CHXmlDocument
 (* xprlib *)
 open Xprt
 open XprTypes
-open XprToPretty
 
 (* bchlib *)
 open BCHBasicTypes

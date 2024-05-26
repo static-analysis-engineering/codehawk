@@ -1141,7 +1141,7 @@ object (self)
              INT (List.length (node#getTaggedChildren "switch"))])
     end
 
-  method private read_xml_fixed_true_conditionals (node:xml_element_int) = ()
+  method private read_xml_fixed_true_conditionals (_node:xml_element_int) = ()
 
   method private read_xml_excluded_jumptables (node:xml_element_int) =
     List.iter (fun n ->
@@ -1974,7 +1974,7 @@ object (self)
           key#toPretty;
           STR ",";
           INT width; STR ")"] in
-    let encs = List.filter (fun (ty, start, size, _, _) ->
+    let encs = List.filter (fun (ty, start, _size, _, _) ->
       ty = "xor" && va#le start && start#lt (va#add_int len)) encodings in
     begin
       List.iter

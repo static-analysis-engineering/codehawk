@@ -370,7 +370,7 @@ end
 let t_bool = t_named "BOOL"
 let t_char = t_named "char"
 let t_double = t_named "double"
-let t_ellipsis = t_named "..."
+(* let t_ellipsis = t_named "..." *)
 let t_float = t_named "float"
 let t_int  = t_named "int"
 let t_int64 = t_named "__int64"
@@ -384,7 +384,7 @@ let t_ulong = t_named "unsigned long"
 let t_ushort = t_named "unsigned short"
 let t_wchar_t = t_named "wchar_t"
 
-let t_pconstchar = t_ptrto (TInt (IChar, [Attr ("const", [])]))
+(* let t_pconstchar = t_ptrto (TInt (IChar, [Attr ("const", [])])) *)
 
 let c_atsign       = 0x0040   (* @ *)
 let c_dollarsign   = 0x0024   (* $ *)
@@ -451,7 +451,7 @@ let complex_type_chars = [ c_A ; c_P ; c_Q ; c_U ; c_V ; c_W ]
 
 let x_access_qualifier_chars = [ c_A ; c_E ; c_I ; c_M ; c_Q ; c_U ]
 let s_access_qualifier_chars = [ c_C ; c_K ; c_S ; c_Y ]
-let const_qualifier_chars    = [ c_A ; c_B ]
+(* let const_qualifier_chars    = [ c_A ; c_B ] *)
 
 let is_type_start_char c = 
   List.mem c (c_zero::c_one::c_two::(basic_type_chars @ complex_type_chars))
@@ -460,7 +460,7 @@ let is_complex_type_char c = List.mem c complex_type_chars
 
 let is_x_access_qualifier_char c = List.mem c x_access_qualifier_chars
 let is_s_access_qualifier_char c = List.mem c s_access_qualifier_chars
-let is_const_qualifier_char c = List.mem c const_qualifier_chars
+(* let is_const_qualifier_char c = List.mem c const_qualifier_chars *)
 
 class demangler_t (s:string) =
 object (self)
