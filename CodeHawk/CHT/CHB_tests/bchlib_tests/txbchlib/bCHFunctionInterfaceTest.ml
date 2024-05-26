@@ -70,7 +70,7 @@ module FI = BCHFunctionInterface
 
 
 let testname = "bCHFunctionInterfaceTest"
-let lastupdated = "2023-12-21"
+let lastupdated = "2024-05-25"
 
 let t_struct_type (cname: string) =
   let cinfo = bcfiles#get_compinfo_by_name cname in
@@ -256,8 +256,7 @@ let read_xml_function_interface_mips () =
       ("memcpy",
        [(1, "dest", TU.t_voidptr, 4, [("r", TU.t_voidptr, "$a0")]);
         (2, "src", TU.t_voidptr, 4, [("r", TU.t_voidptr, "$a1")]);
-        (3, "count", TU.t_named "size_t", 4,
-         [("r", TU.t_named "size_t", "$a2")])]);
+        (3, "count", TU.t_uint, 4, [("r", TU.t_uint, "$a2")])]);
       ("strcpy",
        [(1, "dest", TU.t_charptr, 4, [("r", TU.t_charptr, "$a0")]);
         (2, "src", TU.t_charptr, 4, [("r", TU.t_charptr, "$a1")])])
@@ -266,7 +265,7 @@ let read_xml_function_interface_mips () =
   let summarypath = system_settings#get_summary_paths in
   begin
     TS.new_testsuite
-      (testname ^ "_read_xml_function_interface") lastupdated;
+      (testname ^ "_read_xml_function_interface_mips") lastupdated;
 
     system_settings#set_architecture "mips";
 
@@ -309,8 +308,7 @@ let read_xml_function_interface_arm () =
       ("memcpy",
        [(1, "dest", TU.t_voidptr, 4, [("r", TU.t_voidptr, "R0")]);
         (2, "src", TU.t_voidptr, 4, [("r", TU.t_voidptr, "R1")]);
-        (3, "count", TU.t_named "size_t", 4,
-         [("r", TU.t_named "size_t", "R2")])]);
+        (3, "count", TU.t_uint, 4, [("r", TU.t_uint, "R2")])]);
       ("strcpy",
        [(1, "dest", TU.t_charptr, 4, [("r", TU.t_charptr, "R0")]);
         (2, "src", TU.t_charptr, 4, [("r", TU.t_charptr, "R1")])])
@@ -319,7 +317,7 @@ let read_xml_function_interface_arm () =
   let summarypath = system_settings#get_summary_paths in
   begin
     TS.new_testsuite
-      (testname ^ "_read_xml_function_interface") lastupdated;
+      (testname ^ "_read_xml_function_interface_arm") lastupdated;
 
     system_settings#set_architecture "arm";
 
