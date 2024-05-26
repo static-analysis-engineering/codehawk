@@ -282,10 +282,11 @@ let read_xml_roles (node:xml_element_int) =
       (get "rt", get "rn")) (node#getTaggedChildren "role")
 
 
-let default_parameter_location_detail ?(ty=t_unknown) (size: int) = {
+let default_parameter_location_detail
+      ?(ty=t_unknown) ?(extract=None) (size: int) = {
     pld_type = ty;
     pld_size = size;
-    pld_extract = None;
+    pld_extract = extract;
     pld_position = []
   }
 
@@ -452,7 +453,7 @@ let mk_stack_parameter_location
       ?(size=4)
       ?(extract=None)
       (offset: int): parameter_location_t =
-  let locdetail = default_parameter_location_detail ~ty:btype size in
+  let locdetail = default_parameter_location_detail ~ty:btype ~extract size in
   StackParameter (offset, locdetail)
 
 

@@ -264,6 +264,7 @@ object (self:'a)
 	     self#rawdata_to_string)
         else 
 	  start_address#to_hex_string ^ " - " ^ end_address#to_hex_string in
+      let sOffsettable = if is_offset_table then " (offset table)" else "" in
       let sLength = " (size: " ^ (string_of_int len) ^ " bytes)" in
       "\n"
       ^ (string_repeat "~" 80)
@@ -271,6 +272,7 @@ object (self:'a)
       ^ "Data block"
       ^ sName
       ^ sLength
+      ^ sOffsettable
       ^ "\n"
       ^ (string_repeat "~" 80)
       ^ "\n"
@@ -293,7 +295,7 @@ let make_data_block
         "make_data_block:zero-length data block:"
         ^ start_address#to_hex_string]
   else
-    Ok (new data_block_t start_address end_address name)
+    Ok (new data_block_t ~is_offset_table start_address end_address name)
 
 
 let read_xml_data_block (node:xml_element_int): data_block_int TR.traceresult =

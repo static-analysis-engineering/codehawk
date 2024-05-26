@@ -185,9 +185,8 @@ let realigned_stack_offset_to_name offset =
 
 
 class memory_reference_t
-    ~(vard:vardictionary_int)
-    ~(index:int)
-    ~(base:memory_base_t):memory_reference_int =
+    ~(index: int)
+    ~(base: memory_base_t):memory_reference_int =
 object (self:'a)
 
   method index = index
@@ -247,7 +246,7 @@ object (self)
     if H.mem table index then
       H.find table index
     else
-      let memref = new memory_reference_t ~vard ~index ~base in
+      let memref = new memory_reference_t ~index ~base in
       begin
         H.add table index memref;
         memref
@@ -280,7 +279,7 @@ object (self)
 
   method initialize =
     List.iter (fun (index, base) ->
-        H.add table index (new memory_reference_t ~vard ~index ~base))
+        H.add table index (new memory_reference_t ~index ~base))
       vard#get_indexed_bases
 
 end

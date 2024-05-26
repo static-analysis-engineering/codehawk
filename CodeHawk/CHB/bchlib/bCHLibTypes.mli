@@ -2053,7 +2053,7 @@ type function_signature_t = {
 (** Function interface.
 
     A function interface contains both a binary and a source perspective.
-    The source perspective is reprsented by the type_signature, while the
+    The source perspective is represented by the type_signature, while the
     binary perspective is represented by the parameter_location list,
     which refer to registers, stack locations (and perhaps globals). It
     depends on the situation which perspective is known first.

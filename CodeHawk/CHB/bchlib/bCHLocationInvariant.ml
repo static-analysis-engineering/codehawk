@@ -28,9 +28,7 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHAtlas
 open CHBounds
-open CHCommon
 open CHIntervals
 open CHNumerical
 open CHNumericalConstraints
@@ -42,7 +40,6 @@ open CHUtils
 open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
-open CHXmlReader
 
 (* xpr *)
 open Xprt
@@ -50,23 +47,16 @@ open XprTypes
 open XprToPretty
 open Xsimplify
 open XprUtil
-open XprXml
 
 (* bchlib *)
 open BCHBasicTypes
 open BCHDoubleword
 open BCHInvDictionary
 open BCHLibTypes
-open BCHSystemSettings
-open BCHVariable
 
 module H = Hashtbl
 module TR = CHTraceResult
 
-
-let x2p = xpr_formatter#pr_expr
-let p2s = pretty_to_string
-let x2s x = p2s (x2p x)
 
 let tracked_locations = []
 
@@ -74,15 +64,6 @@ let track_location loc p =
   if List.mem loc tracked_locations then
     chlog#add ("tracked:" ^ loc) p
 
-
-let raise_error (node:xml_element_int) (msg:pretty_t) =
-  let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ;
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
-  begin
-    ch_error_log#add "xml parse error" error_msg ;
-    raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
-  end
 
 let hex_cutoff = mkNumerical 10000  (* above this number print as hex value *)
 
@@ -221,7 +202,7 @@ let linear_equality_to_pretty e =
 let linear_equality_get_vars e = List.map (fun (_, v) -> v) e.leq_factors
 
 
-let linear_equality_get_unity_vars e =
+let _linear_equality_get_unity_vars e =
   List.fold_left (fun acc (c, v) ->
     if c#equal numerical_one || c#neg#equal numerical_one then
       v :: acc
@@ -231,7 +212,7 @@ let linear_equality_get_unity_vars e =
 let is_variable_equality (lineq: linear_equality_t) =
   if lineq.leq_constant#equal numerical_zero then
     match lineq.leq_factors with
-    | [(c1, v1); (c2, v2)] ->
+    | [(c1, _v1); (c2, _v2)] ->
        c1#equal numerical_one && c2#equal (mkNumerical (-1))
     | _ -> false
   else
@@ -252,7 +233,7 @@ let linear_equality_get_expr e v =
     else
       XOp (XMult, [num_constant_expr c; XVar f]) in
   try
-    let (c,f) = List.find (fun (_,f) -> f#equal v) e.leq_factors in
+    let (c, _f) = List.find (fun (_, f) -> f#equal v) e.leq_factors in
     let xfactors = List.filter (fun (_, f) -> not (f#equal v)) e.leq_factors in
     let x =
       if c#equal numerical_one then
@@ -330,11 +311,11 @@ let invariant_fact_to_pretty f =
          STR p#getName#getBaseName; STR ": "; non_relational_value_to_pretty v]
   | RelationalFact e ->
      linear_equality_to_pretty e
-  | InitialVarEquality (v,vi) ->
+  | InitialVarEquality (v, _vi) ->
      LBLOCK [STR "initvar("; v#toPretty; STR ")"]
   | SSAVarEquality (v, ssav) ->
      LBLOCK [STR "ssavar("; v#toPretty; STR", "; ssav#toPretty; STR ")"]
-  | InitialVarDisEquality (v,vi) ->
+  | InitialVarDisEquality (v, _vi) ->
      LBLOCK [STR "initmod("; v#toPretty; STR ")"]
   | TestVarEquality (v, _, taddr, jaddr) ->
      LBLOCK [
@@ -351,9 +332,9 @@ let is_smaller_nrv (f1:non_relational_value_t) (f2:non_relational_value_t) =
   let is_smaller_interval lb1 ub1 lb2  ub2 =
     match (lb1,ub1,lb2,ub2) with
     | (Some lb1, Some ub1, Some lb2, Some ub2) -> lb1#geq lb2 && ub1#leq ub2
-    | (Some lb1, Some ub1, Some lb2, _) -> lb1#geq lb2
-    | (Some lb1, Some ub1, _, Some ub2) -> ub1#leq ub2
-    | (Some lb1, Some ub1, _, _) -> true
+    | (Some lb1, Some _ub1, Some lb2, _) -> lb1#geq lb2
+    | (Some _lb1, Some ub1, _, Some ub2) -> ub1#leq ub2
+    | (Some _lb1, Some _ub1, _, _) -> true
     | _ -> false in
   match (f1,f2) with
   | (FIntervalValue (lb1, ub1), FIntervalValue (lb2, ub2)) ->
@@ -396,7 +377,7 @@ object (self:'a)
 
   method transfer (v: variable_t) =
     match fact with
-    | NonRelationalFact (oldv, nrv) ->
+    | NonRelationalFact (_oldv, nrv) ->
        let newindex = v#getName#getSeqNumber in
        let newfact = NonRelationalFact (v, nrv) in
        {< index = newindex; fact = newfact >}
@@ -491,7 +472,7 @@ object (self:'a)
 end
 
 
-let read_xml_invariant
+let _read_xml_invariant
       (invd:invdictionary_int) (node:xml_element_int):invariant_int =
   let index = node#getIntAttribute "index" in
   let fact = invd#read_xml_invariant_fact node in
@@ -534,7 +515,8 @@ object (self)
         begin
           chlog#add
             "remove initial-value fact"
-            (LBLOCK [STR iaddr; STR ":  "; fvar#toPretty; STR " - "; fval#toPretty]);
+            (LBLOCK [
+                 STR iaddr; STR ":  "; fvar#toPretty; STR " - "; fval#toPretty]);
           H.replace table index newfacts
         end
       else
@@ -560,7 +542,7 @@ object (self)
 	    | [] -> f :: e
 	    | [p] when f#is_smaller p ->
 	      f :: (List.filter (fun p -> not p#is_interval) e)
-	    | [p] -> e
+	    | [_] -> e
 	    | _ ->
                let msg =
                  LBLOCK [
@@ -578,20 +560,20 @@ object (self)
             | [] -> f :: e
             | [p] when f#is_smaller p ->
                f :: (List.filter (fun p -> not p#is_base_offset_value) e)
-            | [p] -> e
+            | [_] -> e
             | _ ->
                let msg =
                  LBLOCK [
                      STR "Multiple base-offset-value  facts: ";
                      pretty_print_list pfacts
-                       (fun p -> p#toPretty) "{" "," "}" ] in
+                       (fun p -> p#toPretty) "{" "," "}"] in
                begin
                  ch_error_log#add "base-offset-value facts" msg;
                  raise (BCH_failure msg)
                end
           else
             match f#get_fact with
-            | SSAVarEquality (regvar, ssavar) ->
+            | SSAVarEquality (regvar, _ssavar) ->
                let sfacts =
                  List.filter
                    (fun p ->
@@ -624,7 +606,7 @@ object (self)
              let v1newfacts =
                List.fold_left (fun a f ->
                    match f#get_fact with
-                   | NonRelationalFact (_, nrv) ->
+                   | NonRelationalFact (_, _nrv) ->
                       let _ =
                         chlog#add
                           "transfer invariant"
@@ -656,7 +638,7 @@ object (self)
         | SSAVarEquality (v, _)
         | InitialVarDisEquality (v, _)
         | TestVarEquality (v, _, _, _) -> add v inv
-      | RelationalFact lineq -> add_relational_equality inv
+      | RelationalFact _ -> add_relational_equality inv
       | _ -> ()
     end
 
@@ -711,7 +693,7 @@ object (self)
     let subst4 v =
       match self#get_external_exprs v with
       | [] -> XVar v
-      | x :: tl -> x in
+      | x :: _tl -> x in
     let subst5 v =
       if self#var_has_ssa_value v then
         XVar (self#get_ssa_value v)
@@ -757,8 +739,8 @@ object (self)
     List.fold_left (fun acc f ->
       match acc with Some _ -> acc | _ ->
 	match f with
-	| InitialVarEquality (v, w) when w#equal base -> Some numerical_zero
-	| NonRelationalFact (v, FSymbolicExpr x) ->
+	| InitialVarEquality (_v, w) when w#equal base -> Some numerical_zero
+	| NonRelationalFact (_v, FSymbolicExpr x) ->
 	  begin
 	    match x with
 	    | XVar w when w#equal base -> Some numerical_zero
@@ -823,7 +805,7 @@ object (self)
 	    && List.exists (fun v -> v1#equal v) vars
 	    && List.exists (fun v -> v2#equal v) vars
 	    && (match coeffs with
-		| [ c1 ; c2 ] ->
+		| [c1; c2] ->
 		   (c1#equal numerical_one && c2#equal numerical_one#neg)
                    || (c1#equal numerical_one#neg && c2#equal numerical_one)
 		| _ -> acc)
@@ -840,7 +822,7 @@ object (self)
             track_location jaddr
               (LBLOCK [STR "testvar: "; invariant_fact_to_pretty f]) in
 	  match f with
-	  | TestVarEquality (tv,_,ta,ja) -> ta = taddr && ja = jaddr
+	  | TestVarEquality (_tv, _, ta, ja) -> ta = taddr && ja = jaddr
 	  | _ -> acc) false (self#get_var_facts v)
 
   method var_has_initial_value (var:variable_t) =
@@ -991,12 +973,14 @@ object (self)
           | Unreachable _ -> true
           | _ -> acc) false self#get
 
-  method var_has_symbolic_expr v =
+  method var_has_symbolic_expr (v: variable_t) =
     List.fold_left (fun acc f ->
-      if acc then acc else
-	match f with
-	| NonRelationalFact (w, FSymbolicExpr _) when v#equal v -> true
-	| _ -> false) false (self#get_var_facts v)
+        if acc then
+          acc
+        else
+	  match f with
+	  | NonRelationalFact (w, FSymbolicExpr _) when v#equal w -> true
+	  | _ -> false) false (self#get_var_facts v)
 
   method write_xml (node:xml_element_int) =
     let invs = List.sort Stdlib.compare (H.fold (fun k _ a -> k::a) facts []) in
@@ -1014,8 +998,8 @@ object (self)
            raise
              (BCH_failure
                 (LBLOCK [
-                     STR "location_invariant:read_xml: int_of_strinngn on ";
-                     STR (node#getAttribute "ifacts") ])) in
+                     STR "location_invariant:read_xml: int_of_string on ";
+                     STR (node#getAttribute "ifacts")])) in
       let facts = List.map invd#get_invariant_fact attr in
       let facts = List.sort invariant_fact_compare facts  in
       List.iter
@@ -1068,11 +1052,13 @@ object (self)
               STR ")";
               NL]) :: acc
       | _ -> acc) [] facts in
-    let nrFacts = List.fold_left (fun acc f ->
-      match f with NonRelationalFact (v,x) -> (v,x) :: acc | _ -> acc) [] facts in
-    let nrFacts = List.sort (fun (v1,_) (v2,_) ->
+    let nrFacts =
+      List.fold_left (fun acc f ->
+          match f with
+          |NonRelationalFact (v,x) -> (v,x) :: acc | _ -> acc) [] facts in
+    let nrFacts = List.sort (fun (v1, _) (v2, _) ->
       Stdlib.compare v2#getName#getBaseName v1#getName#getBaseName) nrFacts in
-    let maxNameLen = List.fold_left (fun acc (v,_) ->
+    let maxNameLen = List.fold_left (fun acc (v, _) ->
       let len = String.length v#getName#getBaseName in
       if len > acc then len else acc) 0 nrFacts in
     let p_null b = if b then STR "(can be null)" else STR "(not null)" in
@@ -1123,9 +1109,6 @@ object (self)
       | _ -> acc) [] facts in
     LBLOCK [pUnr; pInit; LBLOCK pTest; LBLOCK pNrv; NL; LBLOCK pRel]
 end
-
-
-let make_location_invariant = new location_invariant_t
 
 
 let get_bound (b:bound_t) =

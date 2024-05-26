@@ -33,7 +33,6 @@ open CHUtils
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
 open CHUtil
 open CHXmlReader
 open CHXmlDocument
@@ -41,18 +40,12 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCFiles
-open BCHBCTypes
 open BCHBCTypeXml
-open BCHConstantDefinitions
 open BCHDemangler
-open BCHFtsParameter
-open BCHFunctionInterface
-open BCHFunctionSemantics
 open BCHFunctionSummary
 open BCHLibTypes
 open BCHSystemInfo
 open BCHSystemSettings
-open BCHTypeDefinitions
 open BCHUtilities
 
 module H = Hashtbl

@@ -1338,7 +1338,7 @@ object (self)
   method get_optreturn_value_capabilities
            (var: variable_t): (ctxt_iaddress_t * type_cap_label_t list) option =
 
-    let rec aux (v: variable_t) =
+    let aux (v: variable_t) =
       if self#is_return_value v then
         tfold_default
           (fun callsite -> Some (callsite, [])) None (self#get_call_site v)

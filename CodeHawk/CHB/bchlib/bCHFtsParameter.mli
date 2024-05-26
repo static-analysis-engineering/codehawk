@@ -44,7 +44,7 @@ open BCHLibTypes
 (** {1 Parameter constructors}*)
 
 val default_parameter_location_detail:
-  ?ty:btype_t -> int -> parameter_location_detail_t
+  ?ty:btype_t -> ?extract:(int * int) option -> int -> parameter_location_detail_t
 
 
 (** Returns a parameter with name "unknown-fts-parameter", unknown type,

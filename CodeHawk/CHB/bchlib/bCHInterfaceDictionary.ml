@@ -35,20 +35,15 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHIndexTable
-open CHPrettyUtil
-open CHStringIndexTable
 open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCTypes
 open BCHBCTypeUtil
 open BCHDoubleword
-open BCHDictionary
 open BCHLibTypes
 open BCHLocation
 open BCHSumTypeSerializer
-open BCHUtilities
 
 module TR = CHTraceResult
 
@@ -413,7 +408,7 @@ object (self)
 
   method get_function_interface (index: int): function_interface_t =
     let name = "function-interface" in
-    let (tags, args) = function_interface_table#retrieve index in
+    let (_, args) = function_interface_table#retrieve index in
     let a = a name args in
     { fintf_name = bd#get_string (a 0);
       fintf_jni_index = if (a 1) = (-1) then None else Some (a 1);
@@ -437,7 +432,7 @@ object (self)
 
   method get_function_semantics (index: int): function_semantics_t =
     let name = "function-semantics" in
-    let (tags, args) = function_semantics_table#retrieve index in
+    let (_, args) = function_semantics_table#retrieve index in
     let a = a name args in
     { fsem_pre = self#get_xxpredicate_list (a 0);
       fsem_post = self#get_xxpredicate_list (a 1);
