@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
    Copyright (c) 2022-2023 Aarno Labs LLC
@@ -15,10 +15,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,7 +42,7 @@ let simplify = S.simplify_xpr
 
 
 let testname = "xsimplifyTest"
-let lastupdated = "2023-09-22"
+let lastupdated = "2024-05-27"
 
 
 let basic () =
@@ -548,6 +548,19 @@ let reduce_plus () =
         let r = XOp (XMult, [XG.mk_ix 28; u]) in
         XA.equal_xpr
           r (simplify (XOp (XPlus, [XOp (XMult, [a; u]); XOp (XMult, [b; u])]))));
+
+    (* (x << a) + (x << b) -> (x * (2^a + 2^b)) *)
+    TS.add_simple_test
+      ~title: "factor_shift_out"
+      (fun () ->
+        let a = XG.mk_ix 2 in
+        let b = XG.mk_ix 6 in
+        let c = XG.mk_ix 68 in
+        let x = XVar (XG.mk_var "x") in
+        let r = XOp (XMult, [c; x]) in
+        XA.equal_xpr
+          r (simplify
+               (XOp (XPlus, [XOp (XShiftlt, [x; a]); XOp (XShiftlt, [x; b])]))));
 
     TS.launch_tests ()
   end
@@ -1157,7 +1170,24 @@ let reduce_lt () =
   end
 
 
+let reduce_shiftlt () =
+  let x = XVar (XG.mk_var "x") in
+  let a = XG.mk_ix 2 in
+  let b = XG.mk_ix 4 in
+  let c = XG.mk_ix 6 in
+  begin
 
+    TS.new_testsuite (testname ^ "_reduce_shiftlt") lastupdated;
+
+    (* (x << a) << b) -> (x << (a + b)) *)
+    TS.add_simple_test
+      ~title: "shiftlt_plus"
+      (fun () ->
+        let r = XOp (XShiftlt, [x; c]) in
+        XA.equal_xpr r (simplify (XOp (XShiftlt, [XOp (XShiftlt, [x; a]); b]))));
+
+    TS.launch_tests()
+  end
 
 
 let () =
@@ -1172,5 +1202,6 @@ let () =
     reduce_xlsb ();
     reduce_xlsh ();
     reduce_lt ();
+    reduce_shiftlt ();
     TS.exit_file ()
   end
