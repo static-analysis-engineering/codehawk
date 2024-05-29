@@ -288,7 +288,7 @@ object (self:'a)
 	| InitialRegisterValue _
 	  | InitialMemoryValue _
 	  | FunctionReturnValue _
-          (* | AugmentationValue _ *)
+          | AugmentationValue _
 	  | CallTargetValue _
 	  | SideEffectValue _
 	  | FieldValue _
