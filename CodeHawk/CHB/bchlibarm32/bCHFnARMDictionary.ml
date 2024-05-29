@@ -1559,8 +1559,10 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | StoreMultipleIncrementAfter (_, _, base, rl, _, _) ->
+      | StoreMultipleIncrementAfter (wback, c, base, rl, _, _) ->
          let basereg = base#get_register in
+         let baselhs = base#to_variable floc in
+         let baserhs = base#to_expr floc in
          let regcount = rl#get_register_count in
          let rhss = rl#to_multiple_expr floc in
          let rrhss = List.map rewrite_expr rhss in
@@ -1570,15 +1572,27 @@ object (self)
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs = memop#to_variable floc in
                (acc @ [memlhs], off + 4)) ([], 0) rl#get_register_op_list in
-         let xtag =
-           "a:"
-           ^ (string_repeat "v" regcount)
-           ^ (string_repeat "x" regcount)
-           ^ "x" in  (* base expression *)
-         ([xtag],
-          (List.map xd#index_variable memlhss)
-          @ (List.map xd#index_xpr rrhss)
-          @ [xd#index_xpr (base#to_expr floc)])
+         let rdefs = List.map get_rdef (baserhs :: rrhss) in
+         let uses = List.map get_def_use (baselhs :: memlhss) in
+         let useshigh = List.map get_def_use_high (baselhs :: memlhss) in
+         let wbackresults =
+           if wback then
+             let increm = int_constant_expr (4 * regcount) in
+             let baseresult = XOp (XPlus, [baserhs; increm]) in
+             let rbaseresult = rewrite_expr baseresult in
+             [baseresult; rbaseresult]
+           else
+             [baserhs; baserhs] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:(baselhs :: memlhss)
+             ~xprs:((baserhs :: wbackresults) @ rrhss)
+             ~rdefs:rdefs
+             ~uses:uses
+             ~useshigh:useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | StoreMultipleIncrementBefore (_, _, base, rl, _) ->
          let basereg = base#get_register in
