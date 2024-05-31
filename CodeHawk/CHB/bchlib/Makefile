@@ -68,6 +68,7 @@ MLIS := \
 	bCHMemoryReference \
 	bCHFtsParameter \
 	bCHARMFunctionInterface \
+	bCHMIPSFunctionInterface \
 	bCHFunctionInterface \
 	bCHFunctionStub \
 	bCHCallTarget \
@@ -155,6 +156,7 @@ SOURCES := \
 	bCHByteUtilities \
 	bCHFtsParameter \
 	bCHARMFunctionInterface \
+	bCHMIPSFunctionInterface \
 	bCHFunctionInterface \
 	bCHBTerm \
 	bCHFunctionStub \

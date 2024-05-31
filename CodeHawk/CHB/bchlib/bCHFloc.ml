@@ -411,24 +411,9 @@ object (self)
                let fmtstring = string_table#get_string addr in
                let fmtspec = parse_formatstring fmtstring false in
                if fmtspec#has_arguments then
-                 let args = fmtspec#get_arguments in
-                 let pars =
-                   List.mapi
-                     (fun i arg -> convert_fmt_spec_arg (argcount + i) arg) args in
-                 let fts = fintf.fintf_type_signature in
-                 let newpars = fts.fts_parameters @ pars in
-                 let newfts = { fts with fts_parameters = newpars } in
-                 begin
-                   chlog#add
-                     "format args"
-                     (LBLOCK [
-                          self#l#toPretty;
-                          STR ": ";
-                          STR fintf.fintf_name;
-                          STR ": ";
-                          INT (List.length args)]);
-                   Some { fintf with fintf_type_signature = newfts }
-                 end
+                 let fmtargs = fmtspec#get_arguments in
+                 let newfintf = add_format_spec_parameters fintf fmtargs in
+                 Some newfintf
                else
                  None
              else

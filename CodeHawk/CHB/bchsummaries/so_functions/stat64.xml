@@ -36,7 +36,7 @@
       <role rt="ioc:memops" rn="dst-struct:file status information" />
       <role rt="ioc:filesystem" rn="infox:file status"/>
      </roles>
-     <type><ptr>_stat</ptr></type>
+     <type><ptr>stat</ptr></type>
      <pre><deref-write/></pre>
      <sideeffects><block-write/></sideeffects>
     </par>

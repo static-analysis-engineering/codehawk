@@ -872,6 +872,7 @@ object (self)
          let xaddr = rewrite_expr (addr#to_address floc) in
          let vmem = addr#to_variable floc in
          let xmem = rewrite_expr (addr#to_expr floc) in
+         let _ = ignore (get_string_reference floc xmem) in
          let rdefs =
            (get_rdef_memvar vmem)
            :: ((get_all_rdefs xaddr) @ (get_all_rdefs xmem)) in

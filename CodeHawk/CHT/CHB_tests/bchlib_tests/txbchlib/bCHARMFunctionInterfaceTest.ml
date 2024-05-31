@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ open BCHParseCilFile
 
 
 let testname = "bCHARMFunctionInterfaceTest"
-let lastupdated = "2023-12-30"
+let lastupdated = "2024-05-30"
 
 
 module A =TCHAssertion
@@ -47,7 +47,7 @@ module BA = TCHBchlibAssertion
 module TS = TCHTestSuite
 
 
-let get_int_param_next_state_test () =
+let get_arm_int_param_next_state_test () =
   let regtests = [
       ("AR0", AR0, AR0, Some AR1, None);
       ("AR1", AR1, AR1, Some AR2, None);
@@ -63,7 +63,7 @@ let get_int_param_next_state_test () =
           ~title
           (fun () ->
             let aas = {aas_start_state with aas_next_core_reg = Some nxtreg} in
-            let (par, naas) = get_int_param_next_state 4 "name" t_int aas 1 in
+            let (par, naas) = get_arm_int_param_next_state 4 "name" t_int aas 1 in
             let xnaas =
               {aas_start_state with
                 aas_next_core_reg = xnxtreg; aas_next_offset = xnxtoff} in
@@ -76,7 +76,7 @@ let get_int_param_next_state_test () =
         let aas =
           {aas_start_state with
             aas_next_core_reg = None; aas_next_offset = Some 0} in
-        let (par, naas) = get_int_param_next_state 4 "name" t_int aas 1 in
+        let (par, naas) = get_arm_int_param_next_state 4 "name" t_int aas 1 in
         let xnaas = {aas with aas_next_offset = Some 4} in
         BA.equal_arm_argument_state ~expected:xnaas ~received:naas ());
 
@@ -86,7 +86,7 @@ let get_int_param_next_state_test () =
         let aas = {aas_start_state with aas_next_core_reg = None} in
         A.raises
           ~msg:"dead state"
-          (fun () -> get_int_param_next_state 4 "name" t_int aas 1));
+          (fun () -> get_arm_int_param_next_state 4 "name" t_int aas 1));
 
     TS.launch_tests ()
   end
@@ -164,7 +164,7 @@ let get_arm_struct_param_next_state_test () =
 let () =
   begin
     TS.new_testfile testname lastupdated;
-    get_int_param_next_state_test ();
+    get_arm_int_param_next_state_test ();
     get_arm_struct_field_locations_test ();
     get_arm_struct_param_next_state_test ();
     TS.exit_file ()

@@ -55,6 +55,9 @@ open BCHLibTypes
 open BCHLocation
 open BCHSpecializations
 
+(* bchlibelf *)
+open BCHELFHeader
+
 (* bchlibmips32 *)
 open BCHMIPSCodePC
 open BCHMIPSCHIFSystem
@@ -68,7 +71,6 @@ module TR = CHTraceResult
 
 let valueset_domain = "valuesets"
 let x2p = xpr_formatter#pr_expr
-
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("TranslateMIPSToCHIF:" ^ tag) msg
@@ -268,14 +270,22 @@ let translate_mips_instruction
     List.map (fun (v, fv) -> ASSERT (EQ (v, fv)))
       (finfo#get_test_variables ctxtiaddr) in
   let rewrite_expr floc x:xpr_t =
-    let xpr = floc#inv#rewrite_expr x in
     let rec expand x =
       match x with
-      | XVar v when env#is_symbolic_value v ->
-         expand (TR.tget_ok (env#get_symbolic_value_expr v))
-      | XOp (op, l) -> XOp (op, List.map expand l)
+      | XVar v
+           when floc#env#is_global_variable v
+                && elf_header#is_program_address
+                     (TR.tget_ok (floc#env#get_global_variable_address v)) ->
+         num_constant_expr
+           (elf_header#get_program_value
+              (TR.tget_ok (floc#env#get_global_variable_address v)))#to_numerical
+      | XVar v when floc#env#is_symbolic_value v ->
+         expand (TR.tget_ok (floc#env#get_symbolic_value_expr v))
+      | XOp (op,l) -> XOp (op, List.map expand l)
       | _ -> x in
+    let xpr = floc#inv#rewrite_expr (expand x) in
     simplify_xpr (expand xpr) in
+
   let floc = get_floc loc in
   let default newcmds =
     ([],[], cmds @ frozenasserts @ (invop :: newcmds) @ [bwdinvop]) in
@@ -850,6 +860,7 @@ let translate_mips_instruction
      let use = get_register_vars [base] in
      let rhs = addr#to_expr floc in
      let rhs = floc#inv#rewrite_expr rhs in
+     let rhs = rewrite_expr floc rhs in
      let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype:t_int rhs in
      let _ =
        match rhs with
