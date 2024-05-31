@@ -408,7 +408,7 @@ let get_int_paramlocpart_next_state
                     btype_to_pretty btype]))
 
 
-let get_int_param_next_state
+let get_arm_int_param_next_state
       (size: int)
       (name: string)
       (btype: btype_t)
@@ -578,7 +578,7 @@ let arm_vfp_params (funargs: bfunarg_t list): fts_parameter_t list =
         let size = if tysize < 4 then 4 else tysize in
         let (param, new_state) =
           if (is_int btype || is_pointer btype || is_enum btype) && size = 4 then
-            get_int_param_next_state size name btype aa_state index
+            get_arm_int_param_next_state size name btype aa_state index
           else if (is_int btype || is_pointer btype) then
             get_long_int_param_next_state size name btype aa_state index
           else if is_float btype then
@@ -688,7 +688,7 @@ let get_arm_format_spec_parameters
         let name = "vararg_" ^ (string_of_int varargindex) in
         let (param, new_state) =
           match size with
-          | 4 -> get_int_param_next_state size name ftype aas nxtindex
+          | 4 -> get_arm_int_param_next_state size name ftype aas nxtindex
           | 8 -> get_long_int_param_next_state size name ftype aas varargindex
           | _ ->
              raise

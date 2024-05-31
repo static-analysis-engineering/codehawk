@@ -72,7 +72,7 @@ val arm_argument_state_to_string: arm_argument_state_t -> string
 
 
 (** exposed for unit tests only *)
-val get_int_param_next_state:
+val get_arm_int_param_next_state:
   int
   -> string
   -> btype_t

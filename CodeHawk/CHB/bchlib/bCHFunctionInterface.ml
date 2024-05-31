@@ -48,6 +48,7 @@ open BCHCPURegisters
 open BCHDemangler
 open BCHFtsParameter
 open BCHLibTypes
+open BCHMIPSFunctionInterface
 open BCHSystemSettings
 
 
@@ -1072,6 +1073,7 @@ let add_format_spec_parameters
   let fmtpars =
     match system_settings#get_architecture with
     | "arm" -> get_arm_format_spec_parameters pars argspecs
+    | "mips" -> get_mips_format_spec_parameters pars argspecs
     | arch ->
        let _ =
          ch_error_log#add
