@@ -323,10 +323,15 @@ let default_function_documentation = {
 
 let function_summary_of_bvarinfo (vinfo: bvarinfo_t): function_summary_int =
   let fintf = bvarinfo_to_function_interface vinfo in
-  make_function_summary
-    ~fintf
-    ~sem:default_function_semantics
-    ~doc:default_function_documentation
+  let sem = bvarinfo_to_function_semantics vinfo fintf in
+  let _ =
+    chlog#add
+      "function semantics of bvarinfo"
+      (LBLOCK [
+           STR vinfo.bvname;
+           STR ": ";
+           function_semantics_to_pretty sem]) in
+  make_function_summary ~fintf ~sem ~doc:default_function_documentation
 
 
 let read_xml_function_summary (node:xml_element_int) =

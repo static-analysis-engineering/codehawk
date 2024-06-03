@@ -79,6 +79,8 @@ let get_standard_txt_type (t: string): btype_t option =
   | "size_t" -> Some (TInt (IUInt, []))
   | "SIZE_T" -> Some (TInt (IUInt, []))
   | "UINT" -> Some (TInt (IUInt, []))
+  | "uint16_t" -> Some (TInt (IUShort, []))
+  | "uint32_t" -> Some (TInt (IUInt, []))
   | "unknown" -> Some (TUnknown [])
   | "UNKNOWN" -> Some (TUnknown [])
   | "void" -> Some (TVoid ([]))

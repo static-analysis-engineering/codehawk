@@ -79,6 +79,8 @@ val t_refto: btype_t -> btype_t
 val t_ptrto: btype_t -> btype_t
 val t_charptr: btype_t
 
+val ptr_deref: btype_t -> btype_t
+
 
 (** {2 Array types)*)
 

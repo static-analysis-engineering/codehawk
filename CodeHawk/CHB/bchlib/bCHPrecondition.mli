@@ -31,6 +31,7 @@
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 
@@ -58,3 +59,7 @@ val read_xml_precondition:
 
 val read_xml_preconditions:
   xml_element_int -> bterm_t -> fts_parameter_t list -> xxpredicate_t list
+
+
+val make_attribute_preconditions:
+  precondition_attribute_t list -> fts_parameter_t list -> xxpredicate_t list

@@ -45,6 +45,11 @@ val default_function_semantics: function_semantics_t
 val join_semantics:
   function_semantics_t -> function_semantics_t option -> function_semantics_t
 
+
+val bvarinfo_to_function_semantics:
+  bvarinfo_t -> function_interface_t -> function_semantics_t
+
+
 (** {1 Modification}*)
 
 (** [add_function_precondition fsem pre] returns the function semantics that
