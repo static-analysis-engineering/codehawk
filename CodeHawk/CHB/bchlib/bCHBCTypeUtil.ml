@@ -78,6 +78,14 @@ let t_voidptr = TPtr (TVoid [], [])
 let t_refto t = TRef (t,[])
 let t_ptrto t = TPtr (t,[])
 
+let ptr_deref (t: btype_t): btype_t =
+  match t with
+  | TPtr (dty, _) -> dty
+  | _ ->
+     raise
+       (BCH_failure
+          (LBLOCK [STR "Type is not a pointer type"]))
+
 let t_charptr = t_ptrto t_char
 
 let t_array (t: btype_t) (len: int) =

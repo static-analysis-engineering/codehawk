@@ -31,9 +31,11 @@
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBCTypePretty
 open BCHBCTypes
 open BCHExternalPredicate
 open BCHFunctionInterface
@@ -309,4 +311,32 @@ let default_function_semantics = {
     fsem_io_actions = [];
     fsem_throws = [];
     fsem_desc = ""
-}
+  }
+
+
+let bvarinfo_to_function_semantics
+           (vinfo: bvarinfo_t) (fintf: function_interface_t): function_semantics_t =
+  if (List.length vinfo.bvattr) > 0 then
+    let preconditions =
+      let preattrs =
+        List.fold_left (fun acc a ->
+            match a with
+            | Attr ("access", params) ->
+               (match params with
+                | [ACons ("read_only", []); AInt ptr] ->
+                   (APCReadOnly (ptr, None)) :: acc
+                | [ACons ("write_only", []); AInt ptr] ->
+                   (APCWriteOnly (ptr, None)) :: acc
+                | _ -> acc)
+            | _ -> acc) [] vinfo.bvattr in
+      make_attribute_preconditions preattrs (get_fts_parameters fintf) in
+    let _ =
+      chlog#add
+        "bvarinfo attributes"
+        (LBLOCK [
+             STR vinfo.bvname;
+             STR ": ";
+             STR (attributes_to_string vinfo.bvattr)]) in
+    {default_function_semantics with fsem_pre = preconditions}
+  else
+    default_function_semantics

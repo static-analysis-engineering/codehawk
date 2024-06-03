@@ -113,6 +113,67 @@ type fieldlayout_t = int * int
 
 type type_transformer_t = string -> string
 
+(** {1 Types and attributes} *)
+
+(** {2 Precondition attributes}
+
+    Function declarations in C can be decorated with attributes. These attributes
+    are generally used to allow certain compiler optimizations
+    (https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html). Here
+    we use them to communicate preconditions about dynamically linked library
+    functions.
+
+    For many standard libc library functions the analyzer has comprehensive
+    collection of (hand-made) function summaries that include pre- and
+    postconditions, side effects, etc, represented in xml.
+    However, binaries may of course be dynamically linked to a wide variety of
+    other libraries, for which it is not directly feasible to create these
+    summaries (e.g., because suitable binaries are not available for analysis).
+    One possibility is for the user to manually create the xml function summaries
+    for all functions of interest. A more user-friendly means of providing
+    similar information is through function prototypes decorated with suitable
+    attributes, as described here.
+
+    We use the same syntax as presented in
+    (https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html).
+    Currently the following attributes are supported:
+
+    {[
+    (access (access-mode, ref-index))
+    (access (access-mode, ref-index, size-index))
+    (nonnull (ref-indices))
+    ]}
+
+    Access modes currently supported are [read_only] and [write_only]; the
+    [ref-index] is an integer denoting the (1-based) index of the pointer
+    argument being accessed, and [size-index] is an integer denoting the
+    (1-based) index of an argument that provides a maximum size (in bytes)
+    for the memory region accessed.
+
+    As an example, for [memcpy] this would be decorated as:
+
+    {[
+    __attribute__ ((access (read_only, 2, 3)),
+                   (access (write_only, 1, 3)), (nonnull (1, 2)))
+    void* memcpy (void *dst, const void *src, size_t len);
+    ]}
+
+    (Note that the analyzer has a comprehensive function summary for memcpy, so
+    it is only shown here as an example, because of its familiar semantics.)
+
+    A prototype thus decorated will automatically generate a function interface
+    with the function semantics that include the corresponding preconditions
+    (and, in case of write_only, the corresponding side effect) for the given
+    library function, resulting in the appropriate proof obligations at their
+    call sites.
+ *)
+
+type precondition_attribute_t =
+  | APCReadOnly of int * int option (* ref-index, size-index, both 1-based *)
+  | APCWriteOnly of int * int option (* ref-index, size-index, (both 1-based) *)
+  | APCNull of int list
+
+
 and btype_t =
 | TVoid of b_attributes_t
 | TInt of ikind_t * b_attributes_t
@@ -138,7 +199,7 @@ and tname_t =
 
 and bfunarg_t = string * btype_t * b_attributes_t
 
-and b_attribute_t = Attr of string  * b_attrparam_t list
+and b_attribute_t = Attr of string * b_attrparam_t list
 
 and b_attributes_t = b_attribute_t list
 

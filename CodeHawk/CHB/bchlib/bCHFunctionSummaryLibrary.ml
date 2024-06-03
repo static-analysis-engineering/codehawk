@@ -239,6 +239,7 @@ object (self)
         if bcfiles#has_varinfo fname then
           let varinfo = bcfiles#get_varinfo fname in
           let fsum = function_summary_of_bvarinfo varinfo in
+          let _ = chlog#add "summary from function prototype" (STR fname) in
           H.add sosummaries fname fsum
         else
           begin
