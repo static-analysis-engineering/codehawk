@@ -31,13 +31,20 @@
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 
 val read_xml_par_sideeffects: xml_element_int -> bterm_t -> xxpredicate_t list
 
+
 val read_xml_sideeffect:
   xml_element_int -> bterm_t -> fts_parameter_t list -> xxpredicate_t
 
+
 val read_xml_sideeffects:
   xml_element_int -> bterm_t -> fts_parameter_t list -> xxpredicate_t list
+
+
+val make_attribute_sideeffects:
+  precondition_attribute_t list -> fts_parameter_t list -> xxpredicate_t list

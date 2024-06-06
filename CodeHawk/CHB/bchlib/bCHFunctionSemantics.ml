@@ -330,6 +330,17 @@ let bvarinfo_to_function_semantics
                 | _ -> acc)
             | _ -> acc) [] vinfo.bvattr in
       make_attribute_preconditions preattrs (get_fts_parameters fintf) in
+    let sideeffects =
+      let sideattrs =
+        List.fold_left (fun acc a ->
+            match a with
+            | Attr ("access", params) ->
+               (match params with
+                | [ACons ("write_only", []); AInt ptr] ->
+                   (APCWriteOnly (ptr, None)) :: acc
+                | _ -> acc)
+            | _ -> acc) [] vinfo.bvattr in
+      make_attribute_sideeffects sideattrs (get_fts_parameters fintf) in
     let _ =
       chlog#add
         "bvarinfo attributes"
@@ -337,6 +348,7 @@ let bvarinfo_to_function_semantics
              STR vinfo.bvname;
              STR ": ";
              STR (attributes_to_string vinfo.bvattr)]) in
-    {default_function_semantics with fsem_pre = preconditions}
+    {default_function_semantics with
+      fsem_pre = preconditions; fsem_sideeffects = sideeffects}
   else
     default_function_semantics
