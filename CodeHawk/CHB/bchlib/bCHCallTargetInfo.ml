@@ -292,24 +292,26 @@ object (self)
       | (StubTarget (DllFunction _), "dll") -> true
       | (AppTarget _, "app") -> true
       | (StubTarget (JniFunction _), "jni") -> true
-      | (IndirectTarget (Some v,_), "arg") -> is_stack_parameter_term v
-      | (IndirectTarget (Some v,[]), "arg-no-targets") ->
+      | (IndirectTarget (Some v, _), "arg") -> is_stack_parameter_term v
+      | (IndirectTarget (Some v, []), "arg-no-targets") ->
          is_stack_parameter_term v
-      | (IndirectTarget (Some v,_), "global") ->
+      | (IndirectTarget (Some v, _), "global") ->
          is_global_parameter_term v
-      | (IndirectTarget (Some v,[]), "global-no-targets") ->
+      | (IndirectTarget (Some v, []), "global-no-targets") ->
          is_global_parameter_term v
       | (UnknownTarget, "unresolved") -> true
       | (IndirectTarget (_,[]), "unresolved") -> true
-      | (StubTarget (DllFunction (dll,fname)), "dll-no-sum")
-        | (StaticStubTarget (_, DllFunction (dll,fname)), "dll-no-sum") ->
+      | (StubTarget (DllFunction (dll, fname)), "no-sum")
+        | (StaticStubTarget (_, DllFunction (dll, fname)), "no-sum") ->
          not (function_summary_library#has_dll_function dll fname)
-      | (WrappedTarget (_,_,wtgt,_), "dll-no-sum") -> aux wtgt
+      | (StubTarget (SOFunction name), "no-sum") ->
+         not (function_summary_library#has_so_function name)
+      | (WrappedTarget (_, _, wtgt, _), "no-sum") -> aux wtgt
       | (InlinedAppTarget _, "inlined") -> true
-      | (StaticStubTarget (_,DllFunction _), "static-dll") -> true
-      | (StaticStubTarget (_,PckFunction _), "static-lib") -> true
-      | (WrappedTarget (_,_,AppTarget _,_), "app-wrapped") -> true
-      | (WrappedTarget (_,_,StubTarget (DllFunction _),_), "dll-wrapped") -> true
+      | (StaticStubTarget (_, DllFunction _), "static-dll") -> true
+      | (StaticStubTarget (_, PckFunction _), "static-lib") -> true
+      | (WrappedTarget (_, _, AppTarget _,_), "app-wrapped") -> true
+      | (WrappedTarget (_, _, StubTarget (DllFunction _), _), "dll-wrapped") -> true
       |  _ -> false  in
     aux tgt
 

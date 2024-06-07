@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2024 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,62 +40,63 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCFiles
+open BCHConstantDefinitions
 open BCHBCTypeXml
 open BCHDemangler
 open BCHFunctionSummary
 open BCHLibTypes
-open BCHSystemInfo
 open BCHSystemSettings
+open BCHTypeDefinitions
 open BCHUtilities
 
 module H = Hashtbl
 
 
 let summary_directories = [
-  "advapi32_dll" ;
-  "comctl32_dll" ;
-  "comdlg32_dll" ;
-  "crypt32_dll"  ;
-  "dwmapi_dll"   ;
-  "gdi32_dll"    ;
-  "imm32_dll"    ;
-  "iphlpapi_dll" ;
-  "kernel32_dll" ;
-  "mscoree_dll"  ;
-  "msvcrt_dll"   ;
-  "msvfw32_dll"  ; 
-  "mswsock_dll"  ;
-  "netapi32_dll" ;
-  "netdll_dll"   ;
-  "odbc32_dll"   ;
-  "ole32_dll"    ;
-  "oleaut32_dll" ;
-  "oledlg_dll"   ;
-  "opengl32_dll" ;
-  "psapi_dll"    ;
-  "rpcrt4_dll"   ;
-  "secur32_dll"  ;
-  "shell32_dll"  ;
-  "shlwapi_dll"  ;
-  "spoolss_dll"  ;
-  "urlmon_dll"   ;
-  "user32_dll"   ;
-  "userenv_dll"  ;
-  "version_dll"  ;
-  "wininet_dll"  ;
-  "winmm_dll"    ;
-  "winspool_dll" ;
-  "winspool_drv" ;
-  "ws2_32_dll"   ; 
-  "wsock32_dll"  
+  "advapi32_dll";
+  "comctl32_dll";
+  "comdlg32_dll";
+  "crypt32_dll" ;
+  "dwmapi_dll"  ;
+  "gdi32_dll"   ;
+  "imm32_dll"   ;
+  "iphlpapi_dll";
+  "kernel32_dll";
+  "mscoree_dll" ;
+  "msvcrt_dll"  ;
+  "msvfw32_dll" ;
+  "mswsock_dll" ;
+  "netapi32_dll";
+  "netdll_dll"  ;
+  "odbc32_dll"  ;
+  "ole32_dll"   ;
+  "oleaut32_dll";
+  "oledlg_dll"  ;
+  "opengl32_dll";
+  "psapi_dll"   ;
+  "rpcrt4_dll"  ;
+  "secur32_dll" ;
+  "shell32_dll" ;
+  "shlwapi_dll" ;
+  "spoolss_dll" ;
+  "urlmon_dll"  ;
+  "user32_dll"  ;
+  "userenv_dll" ;
+  "version_dll" ;
+  "wininet_dll" ;
+  "winmm_dll"   ;
+  "winspool_dll";
+  "winspool_drv";
+  "ws2_32_dll"  ;
+  "wsock32_dll"
 ]
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
-    LBLOCK [ STR "(" ; INT node#getLineNumber ; STR "," ; 
-	     INT node#getColumnNumber ; STR ") " ; msg ] in
+    LBLOCK [STR "("; INT node#getLineNumber; STR ",";
+	     INT node#getColumnNumber; STR ") "; msg] in
   begin
-    ch_error_log#add "xml parse error" error_msg ;
+    ch_error_log#add "xml parse error" error_msg;
     raise (XmlReaderError (node#getLineNumber, node#getColumnNumber, msg))
   end
 
@@ -114,6 +115,7 @@ object (self)
   val missing_summaries = new StringCollections.table_t     (* indexed by dll *)
   val requested_summaries = new StringCollections.table_t   (* indexed by dll *)
   val requested_so_summaries = new StringCollections.set_t
+  val bc_so_summaries = new StringCollections.set_t
   val missing_so_summaries = new StringCollections.set_t
   val missingjnisummaries = new IntCollections.set_t
   val missingsyscallsummaries = new IntCollections.set_t
@@ -121,15 +123,27 @@ object (self)
   val requestedsyscallsummaries = new IntCollections.set_t
   val dllnames = Hashtbl.create 3  (* records where summaries were taken from *)
   val dlls = new StringCollections.set_t                   (* dlls being used *)
+  val mutable constant_files = []   (* constant enums, and constant values *)
 
-  method has_function_dll (fname:string) = H.mem dllnames fname 
-    
+  method so_import_names: so_import_names_t =
+    { so_requested_summaries = requested_so_summaries#toList;
+      so_summaries = H.fold (fun k _ a -> k :: a) sosummaries [];
+      so_bc_summaries = bc_so_summaries#toList;
+      so_missing_summaries = missing_so_summaries#toList
+    }
+
+  method has_function_dll (fname:string) = H.mem dllnames fname
+
   method get_function_dll (fname:string) =
     if H.mem dllnames fname then
       H.find dllnames fname
     else
-      raise (BCH_failure (LBLOCK [ STR "Function " ; STR fname ; 
-				   STR " does not have an associated dll" ]))
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "Function ";
+                STR fname;
+		STR " does not have an associated dll"]))
 
   method has_dllname (dllname:string) = dlls#has dllname
 
@@ -139,7 +153,7 @@ object (self)
     else
       raise
         (BCH_failure
-           (LBLOCK [ STR "No summary found for jni index " ; INT index ]))
+           (LBLOCK [STR "No summary found for jni index "; INT index]))
 
   method get_syscall_function (index:int) =
     if H.mem syscallsummaries index then
@@ -147,23 +161,28 @@ object (self)
     else
       raise
         (BCH_failure
-           (LBLOCK [ STR "No summary found for syscall index " ; INT index ]))
+           (LBLOCK [STR "No summary found for syscall index "; INT index]))
 
   method get_dll_function (dll:string) (fname:string) =
     let dll = self#get_internal_dll_name dll in
     if H.mem dllsummaries (dll,fname) then
       H.find dllsummaries (dll,fname)
     else
-      raise (BCH_failure 
-	       (LBLOCK [ STR "Function " ; STR fname ; STR " not found in dll " ;
-			 STR dll ]))
+      raise
+        (BCH_failure
+	   (LBLOCK [
+                STR "Function ";
+                STR fname;
+                STR " not found in dll ";
+		STR dll]))
 
   method get_so_function (fname:string) =
     if H.mem sosummaries fname then
       H.find sosummaries fname
     else
-      raise (BCH_failure
-               (LBLOCK [ STR "SO Function " ; STR fname ; STR " not found" ]))
+      raise
+        (BCH_failure
+           (LBLOCK [STR "SO Function "; STR fname; STR " not found"]))
 
   method get_lib_function (pkgs:string list) (fname:string) =
     let pkgs = List.map String.lowercase_ascii pkgs in
@@ -171,29 +190,36 @@ object (self)
     if H.mem libsummaries (pkgs,fname) then
       H.find libsummaries (pkgs,fname)
     else
-      raise (BCH_failure
-	       (LBLOCK [ STR "Function " ; STR fname ; STR " not found in library " ;
-			 STR pkgs ]))
+      raise
+        (BCH_failure
+	   (LBLOCK [
+                STR "Function ";
+                STR fname;
+                STR " not found in library ";
+		STR pkgs]))
 
   method private add_requested_summary (dll:string) (fname:string) =
     let entry = match requested_summaries#get dll with
       | Some entry -> entry
       | _ ->
 	let entry = new StringCollections.set_t in
-	begin requested_summaries#set dll entry ; entry end in
+	begin
+          requested_summaries#set dll entry;
+          entry
+        end in
     entry#add fname
 
   method private add_missing_summary (dll:string) (fname:string) =
     let entry = match missing_summaries#get dll with
     | Some entry -> entry
     | _ -> let entry = new StringCollections.set_t in
-	   begin missing_summaries#set dll entry ; entry end in
+	   begin missing_summaries#set dll entry; entry end in
     entry#add fname
 
   method load_dll_library_function (dll:string) (fname:string) =
     let dll = self#get_internal_dll_name dll in
     let _ = self#add_requested_summary dll fname in
-    if H.mem dllsummaries (dll,fname) || H.mem nosummaries (dll,fname) then
+    if H.mem dllsummaries (dll, fname) || H.mem nosummaries (dll, fname) then
       ()
     else
       let path = system_settings#get_summary_paths in
@@ -212,8 +238,8 @@ object (self)
                  STR dll;
                  STR ")";
 		 STR (self#get_demangled_name fname)]);
-	  self#add_missing_summary dll fname ;
-	  H.add nosummaries (dll,fname) true
+	  self#add_missing_summary dll fname;
+	  H.add nosummaries (dll, fname) true
 	end
 
   method load_so_function (fname: string) =
@@ -224,7 +250,7 @@ object (self)
       let path = system_settings#get_summary_paths in
       let solibraries = system_settings#so_libraries in
       let so_paths = solibraries @ ["so_functions"] in
-      let _ = 
+      let _ =
         List.iter (fun p ->
             let filename = p ^ "/" ^ fname in
             if H.mem sosummaries fname then
@@ -239,8 +265,11 @@ object (self)
         if bcfiles#has_varinfo fname then
           let varinfo = bcfiles#get_varinfo fname in
           let fsum = function_summary_of_bvarinfo varinfo in
-          let _ = chlog#add "summary from function prototype" (STR fname) in
-          H.add sosummaries fname fsum
+          begin
+            chlog#add "summary from function prototype" (STR fname);
+            bc_so_summaries#add fname;
+            H.add sosummaries fname fsum
+          end
         else
           begin
             chlog#add "no so summary" (LBLOCK [STR fname]);
@@ -281,7 +310,7 @@ object (self)
       else
 	begin
 	  chlog#add "no jni summary" (LBLOCK [STR "Jni index: "; INT index]);
-	  missingjnisummaries#add index 
+	  missingjnisummaries#add index
 	end
 
   method private load_syscall_function (index:int) =
@@ -297,21 +326,91 @@ object (self)
         begin
           chlog#add
             "no syscall summary"
-            (LBLOCK [ STR "Syscall index: " ; INT index ]);
+            (LBLOCK [STR "Syscall index: "; INT index]);
           missingsyscallsummaries#add index
         end
-	  
+
+  method read_xml_constant_file (name:string) =
+    try
+      if List.mem name constant_files then () else
+	let _ = constant_files <- name :: constant_files in
+	let filename = "constants/" ^ name in
+	let path = system_settings#get_summary_paths in
+	if has_summary_file path filename then
+	  let cstring = get_summary_file path filename in
+	  let doc = readXmlDocumentString cstring in
+	  let root = doc#getRoot in
+	  if root#hasOneTaggedChild "symbolic-constants" then
+	    let node = root#getTaggedChild "symbolic-constants" in
+	    read_xml_symbolic_constants node
+	  else if root#hasOneTaggedChild "symbolic-flags" then
+	    let node = root#getTaggedChild "symbolic-flags" in
+	    read_xml_symbolic_flags node
+	  else
+	    raise
+              (BCH_failure
+		 (LBLOCK [
+                      STR "Symbolic constant file ";
+                      STR filename;
+		      STR " has neither constants nor flags specified"]))
+	else
+	  chlog#add "symbolic constants" (LBLOCK [STR name; STR " not found"])
+    with
+    | XmlParseError (line,col,p)
+    | XmlReaderError (line,col,p)
+    | XmlDocumentError (line,col,p) ->
+      let msg = LBLOCK [STR name; STR ": "; p] in
+      begin
+	ch_error_log#add "xml error" msg ;
+	raise (XmlDocumentError (line, col, msg))
+      end
+
+  method read_xml_struct_file (name:string) =
+    try
+      let filename = "structs/" ^ name in
+      let path = system_settings#get_summary_paths in
+      if has_summary_file path filename then
+	let cstring = get_summary_file path filename in
+	let doc = readXmlDocumentString cstring in
+	let root = doc#getRoot in
+	let node = root#getTaggedChild "struct" in
+	let cinfo = read_xml_summary_struct node in
+	(* let enums = get_struct_field_enums cinfo in *)
+        let enums = [] in
+	begin
+	  List.iter self#read_xml_constant_file enums;
+	  type_definitions#add_compinfo name cinfo
+	end
+      else
+	ch_error_log#add
+          "initialization"
+	  (LBLOCK [STR "No struct definition found for "; STR name])
+    with
+    | XmlParseError (line, col, p)
+    | XmlReaderError (line, col, p)
+    | XmlDocumentError (line, col, p) ->
+      let msg = LBLOCK [STR name; STR ": "; p] in
+      begin
+	ch_error_log#add "xml error" msg ;
+	raise (XmlDocumentError (line, col, msg))
+      end
+
+  method read_xml_constants_files (node:xml_element_int) =
+    let getcc = node#getTaggedChildren in
+    List.iter (fun n ->
+      let name = n#getAttribute "name" in
+      self#read_xml_constant_file name) (getcc "type")
 
   method private load_summary_dependencies (summary:function_summary_int) =
     let enums = summary#get_enums_referenced in
-    List.iter system_info#read_xml_constant_file enums
+    List.iter self#read_xml_constant_file enums
 
   method private check_name (node:xml_element_int) (fname:string) =
     let name = node#getAttribute "name" in
     if name = fname then () else
-      raise_xml_error node 
-	(LBLOCK [ STR "Name in file " ; STR fname  ; 
-		  STR " does not correspond with name listed: " ; STR name ])
+      raise_xml_error node
+	(LBLOCK [STR "Name in file "; STR fname ;
+		  STR " does not correspond with name listed: "; STR name])
 
   method private check_dll (node:xml_element_int) (dll:string) =
     let lib = String.lowercase_ascii(node#getAttribute "lib") in
@@ -371,7 +470,7 @@ object (self)
 	begin
 	  H.add jnisummaries summary#get_jni_index summary;
 	  chlog#add
-            "jni summary" 
+            "jni summary"
 	    (LBLOCK [
                  STR "Jni index ";
                  INT index;
@@ -450,9 +549,9 @@ object (self)
       let transformer = read_xml_type_transformer rNode in
       let jnisummary = base#modify_types jniname transformer in
       begin
-	chlog#add "jni typed summary" 
+	chlog#add "jni typed summary"
 	  (LBLOCK [STR jniname; STR " for type "; STR typename]);
-	chlog#add "jni summary" 
+	chlog#add "jni summary"
 	  (LBLOCK [STR "Jni index "; INT index; STR ": "; STR jniname]);
 	H.add jnisummaries index jnisummary
       end
@@ -463,8 +562,8 @@ object (self)
              STR prefix;
              STR suffix;
 	     STR " not found"])
-      
-  method private read_dll_function_summary_string 
+
+  method private read_dll_function_summary_string
     (dll:string) (fname:string) (xstring:string) =
     try
       let doc = readXmlDocumentString xstring in
@@ -497,15 +596,15 @@ object (self)
                      STR dll;
                      STR ")";
 		     STR (self#get_demangled_name fname)]);
-	      H.add dllsummaries (dll,fname) summary ;
-	      H.add dllnames dll fname ;
+	      H.add dllsummaries (dll,fname) summary;
+	      H.add dllnames dll fname;
 	      self#load_summary_dependencies summary
 	    end
 	else if root#hasOneTaggedChild "jnifun" then
 	  let node = root#getTaggedChild "jnifun" in
 	  if node#hasNamedAttribute "index" then
 	    let index = node#getIntAttribute "index" in
-	      self#read_jni_function_summary_string index xstring ;
+	      self#read_jni_function_summary_string index xstring;
 	  else ()
     with
     | XmlParseError (line,col,p)
@@ -526,7 +625,7 @@ object (self)
         let _ = self#check_summary_name summary fname in
         begin
           chlog#add "so function summary from library" (LBLOCK [STR fname]);
-          H.add sosummaries fname summary ;
+          H.add sosummaries fname summary;
         end
       else
         ()
@@ -536,8 +635,8 @@ object (self)
     | XmlDocumentError (line,col,p) ->
       let msg = LBLOCK [STR "Error in file "; STR fname; STR ": "; p] in
       raise (XmlDocumentError (line,col,msg))
-      
-			      
+
+
   method private read_aw_summary
                    (node: xml_element_int) (dll: string) (fname: string) =
     let rNode = node#getTaggedChild "refer-to" in
@@ -552,8 +651,8 @@ object (self)
 	chlog#add
           "aw function summary"
 	  (LBLOCK [STR fname; STR " from "; STR rName]);
-	H.add dllsummaries (dll, fname) awsummary ;
-	H.add dllnames dll fname 
+	H.add dllsummaries (dll, fname) awsummary;
+	H.add dllnames dll fname
       end
     else
       raise_xml_error node
@@ -564,7 +663,7 @@ object (self)
              STR dll;
 	     STR " not found"])
 
-  method private check_alternate_name 
+  method private check_alternate_name
     (dll: string) (fname: string) (newdll: string) (newname: string) =
     if dll = newdll && fname = newname then
       raise
@@ -624,7 +723,7 @@ object (self)
     if H.mem dllsummaries (rLib, rName) then
       let alternate = self#get_alternate_summary rNode rLib rName in
       begin
-	H.add dllsummaries (dll,fname) alternate ;
+	H.add dllsummaries (dll,fname) alternate;
 	chlog#add
           "referred summary"
 	  (LBLOCK [
@@ -635,7 +734,7 @@ object (self)
 	       STR " from ";
                STR rLib;
                STR ", ";
-               STR rName]) ;
+               STR rName]);
 	H.add dllnames rLib fname
       end
     else
@@ -665,7 +764,7 @@ object (self)
   method has_dll_function (dll:string) (fname:string) =
     let dll = self#get_internal_dll_name dll in
     begin
-      self#load_dll_library_function dll fname ;
+      self#load_dll_library_function dll fname;
       H.mem dllsummaries (dll,fname)
     end
 
@@ -681,7 +780,7 @@ object (self)
     if H.mem libsummaries index then true else
       if H.mem nolibsummaries index then false else
 	let path = system_settings#get_summary_paths in
-	let pkgname = String.concat "/" pkgs in    
+	let pkgname = String.concat "/" pkgs in
 	let filename = "rtl_lib/" ^ pkgname ^ "/" ^ fname in
 	if has_summary_file path filename then
 	  let xstring = get_summary_file path filename in
@@ -691,12 +790,12 @@ object (self)
 	  end
 	else
 	  begin
-	    H.add nolibsummaries index true ;
+	    H.add nolibsummaries index true;
 	    chlog#add "no lib function summary" (LBLOCK [STR filename]);
 	    false
 	  end
 
-  method has_jni_function (index:int) = 
+  method has_jni_function (index:int) =
     if H.mem jnisummaries index then
       true
     else if missingjnisummaries#has index then
@@ -720,7 +819,7 @@ object (self)
         H.mem syscallsummaries index
       end
 
-  method private read_lib_function_summary_string 
+  method private read_lib_function_summary_string
     (fname:string) (dir:string) (xstring:string) =
     let doc = readXmlDocumentString xstring in
     let root = doc#getRoot in
@@ -738,8 +837,8 @@ object (self)
       ch_error_log#add
         "error in library function"
 	(LBLOCK [STR fname; STR " ("; STR dir; STR ")"])
-	  
-  (* reads all summary files from the jars provided *)	
+
+  (* reads all summary files from the jars provided *)
   method read_summary_files =
     let path = system_settings#get_summary_paths in
     let f fname entry =
@@ -750,21 +849,21 @@ object (self)
       else
 	self#read_dll_function_summary_string dirname basename entry in
     List.iter (fun (_,jar) -> apply_to_xml_jar f (fun _ _ -> ()) jar) path
-      
-  method get_library_functions = 
+
+  method get_library_functions =
     let result = ref [] in
     let _ = H.iter (fun _ v -> result := v :: !result) dllsummaries in
     let _ = H.iter (fun _ v -> result := v :: !result) jnisummaries in
     let _ = H.iter (fun _ v -> result := v :: !result) libsummaries in
     !result
 
-  method write_xml_missing_summaries (node:xml_element_int) = 
+  method write_xml_missing_summaries (node:xml_element_int) =
     self#write_xml_summary_table node missing_summaries
 
   method write_xml_requested_summaries (node:xml_element_int) =
     self#write_xml_summary_table node requested_summaries
 
-  method private write_xml_summary_table 
+  method private write_xml_summary_table
                    (node: xml_element_int)
                    (t: StringCollections.set_t StringCollections.table_t) =
     node#appendChildren
@@ -789,8 +888,8 @@ object (self)
                       nNode#setAttribute "fname" safename;
                       nNode end)
                   names);
-	     dNode#setAttribute "dllname" safedll ;
-	     dNode#setIntAttribute "count" (List.length names) ;
+	     dNode#setAttribute "dllname" safedll;
+	     dNode#setIntAttribute "count" (List.length names);
 	     dNode
            end) t#listOfPairs)
 

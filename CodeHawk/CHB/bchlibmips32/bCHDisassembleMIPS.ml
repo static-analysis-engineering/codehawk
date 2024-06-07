@@ -356,12 +356,18 @@ let set_library_stub_name faddr =
         (constant_string_to_doubleword "0x42f000")#add offset in
       if functions_data#has_function_name addr then
         let fndata = functions_data#add_function faddr in
+        let fnname = (functions_data#get_function addr)#get_function_name in
+        let has_summary = function_summary_library#has_so_function fnname in
         begin
-          fndata#add_name (functions_data#get_function addr)#get_function_name;
+          fndata#add_name fnname;
           fndata#set_library_stub;
           chlog#add
             "ELF library stub"
-            (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
+            (LBLOCK [
+                 faddr#toPretty;
+                 STR ": ";
+                 STR fndata#get_function_name;
+                 STR (if has_summary then "" else " (no summary)")])
         end
       else
         chlog#add "no stub name found" addr#toPretty
@@ -374,12 +380,18 @@ let set_library_stub_name faddr =
           (constant_string_to_doubleword "0x430000")#add offset in
         if functions_data#has_function_name addr then
           let fndata = functions_data#add_function faddr in
+          let fnname = (functions_data#get_function addr)#get_function_name in
+          let has_summary = function_summary_library#has_so_function fnname in
           begin
-            fndata#add_name (functions_data#get_function addr)#get_function_name;
+            fndata#add_name fnname;
             fndata#set_library_stub;
             chlog#add
               "ELF library stub"
-              (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
+              (LBLOCK [
+                   faddr#toPretty;
+                   STR ": ";
+                   STR fndata#get_function_name;
+                   STR (if has_summary then "" else " (no summary)")])
           end
         else
           chlog#add "no stub name found" addr#toPretty
@@ -392,12 +404,18 @@ let set_library_stub_name faddr =
             (constant_string_to_doubleword "0x4a0000")#add offset in
           if functions_data#has_function_name addr then
             let fndata = functions_data#add_function faddr in
+            let fnname = (functions_data#get_function addr)#get_function_name in
+            let has_summary = function_summary_library#has_so_function fnname in
             begin
-              fndata#add_name (functions_data#get_function addr)#get_function_name;
+              fndata#add_name fnname;
               fndata#set_library_stub;
               chlog#add
                 "ELF library stub"
-                (LBLOCK [faddr#toPretty; STR ": "; STR fndata#get_function_name])
+                (LBLOCK [
+                     faddr#toPretty;
+                     STR ": ";
+                     STR fnname;
+                     STR (if has_summary then "" else " (no summary)")])
             end
           else
             chlog#add "no stub name found" addr#toPretty
@@ -771,12 +789,17 @@ let construct_functions f =
           ()
         else if fndata#has_name then
           if is_library_stub faddr then
+            let has_summary =
+              function_summary_library#has_so_function fndata#get_function_name in
             begin
               fndata#set_library_stub;
               chlog#add
                 "ELF library stub"
                 (LBLOCK [
-                     faddr#toPretty; STR ": "; STR fndata#get_function_name])
+                     faddr#toPretty;
+                     STR ": ";
+                     STR fndata#get_function_name;
+                     STR (if has_summary then "" else " (no summary)")])
             end
           else
             default ()

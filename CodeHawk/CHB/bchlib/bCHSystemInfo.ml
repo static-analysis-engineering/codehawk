@@ -44,6 +44,7 @@
 
 (* chlib *)
 open CHPretty
+open CHUtils
 
 (* chutil *)
 open CHLogger
@@ -65,6 +66,7 @@ open BCHCStructConstant
 open BCHDataBlock
 open BCHDoubleword
 open BCHFunctionData
+open BCHFunctionSummaryLibrary
 open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
@@ -164,7 +166,6 @@ object (self)
   val thread_start_functions = H.create 13
   val exported_item_names = H.create 3
   val class_membership = H.create 2
-  val mutable constant_files = []
 
   (* functions loaded via LoadLibrary/GetProcAddress *)
   val lib_functions_loaded = H.create 3
@@ -602,7 +603,6 @@ object (self)
      - load directory_file  (specification of export items, per directory)
      - set_functions_file_path (the invariants and finfos from the previous round)
   *)
-
   method initialize =
     begin
       self#initialize_system_file;
@@ -639,7 +639,6 @@ object (self)
 	ch_error_log#add "xml error in system-info file"  p;
 	raise (XmlDocumentError (line, col, msg))
       end
-
 
   method private initialize_user_directory_data = ()
 
@@ -830,7 +829,7 @@ object (self)
 	 self#read_xml_structconstants (getc "use-struct-constants"));
 
       (if hasc "use-constants" then
-         self#read_xml_constants_files (getc "use-constants"));
+         function_summary_library#read_xml_constants_files (getc "use-constants"));
 
       (if hasc "symbolic-addresses" then
 	 read_xml_symbolic_addresses (getc "symbolic-addresses"));
@@ -1386,7 +1385,7 @@ object (self)
 	    type_definitions#add_typeinfo name ty;
 	    match ty with
 	    | TCppComp (SimpleName cname, [], _) ->
-               self#read_xml_struct_file cname
+               function_summary_library#read_xml_struct_file cname
 	    | _ -> ()
 	  end) (node#getTaggedChildren "type-info")
       else
@@ -1399,78 +1398,6 @@ object (self)
 	ch_error_log#add "xml error in type definitions"  p;
 	raise (XmlDocumentError (line,col,p))
       end
-
-  method read_xml_constant_file (name:string) =
-    try
-      if List.mem name constant_files then () else
-	let _ = constant_files <- name :: constant_files in
-	let filename = "constants/" ^ name in
-	let path = system_settings#get_summary_paths in
-	if has_summary_file path filename then
-	  let cstring = get_summary_file path filename in
-	  let doc = readXmlDocumentString cstring in
-	  let root = doc#getRoot in
-	  if root#hasOneTaggedChild "symbolic-constants" then
-	    let node = root#getTaggedChild "symbolic-constants" in
-	    read_xml_symbolic_constants node
-	  else if root#hasOneTaggedChild "symbolic-flags" then
-	    let node = root#getTaggedChild "symbolic-flags" in
-	    read_xml_symbolic_flags node
-	  else
-	    raise
-              (BCH_failure
-		 (LBLOCK [
-                      STR "Symbolic constant file ";
-                      STR filename;
-		      STR " has neither constants nor flags specified"]))
-	else
-	  chlog#add "symbolic constants" (LBLOCK [STR name; STR " not found"])
-    with
-    | XmlParseError (line,col,p)
-    | XmlReaderError (line,col,p)
-    | XmlDocumentError (line,col,p) ->
-      let msg = LBLOCK [STR name; STR ": "; p] in
-      begin
-	ch_error_log#add "xml error" msg ;
-	raise (XmlDocumentError (line, col, msg))
-      end
-
-  method private read_xml_struct_file (name:string) =
-    try
-      let filename = "structs/" ^ name in
-      let path = system_settings#get_summary_paths in
-      if has_summary_file path filename then
-	let cstring = get_summary_file path filename in
-	let doc = readXmlDocumentString cstring in
-	let root = doc#getRoot in
-	let node = root#getTaggedChild "struct" in
-	let cinfo = read_xml_summary_struct node in
-	(* let enums = get_struct_field_enums cinfo in *)
-        let enums = [] in
-	begin
-	  List.iter self#read_xml_constant_file enums;
-	  type_definitions#add_compinfo name cinfo
-	end
-      else
-	ch_error_log#add
-          "initialization"
-	  (LBLOCK [STR "No struct definition found for "; STR name])
-    with
-    | XmlParseError (line, col, p)
-    | XmlReaderError (line, col, p)
-    | XmlDocumentError (line, col, p) ->
-      let msg = LBLOCK [STR name; STR ": "; p] in
-      begin
-	ch_error_log#add "xml error" msg ;
-	raise (XmlDocumentError (line, col, msg))
-      end
-
-
-  method private read_xml_constants_files (node:xml_element_int) =
-    let getcc = node#getTaggedChildren in
-    List.iter (fun n ->
-      let name = n#getAttribute "name" in
-      self#read_xml_constant_file name) (getcc "type")
 
   method private read_xml_user_function_names (node:xml_element_int) =
     let get n = n#getAttribute in
@@ -1644,7 +1571,9 @@ object (self)
       (if hasc "goto-returns" then
          self#read_xml_goto_returns (getc "goto-returns"));
       (if hasc "variable-introductions" then
-         self#read_xml_variable_introductions (getc "variable-introductions"))
+         self#read_xml_variable_introductions (getc "variable-introductions"));
+      (if hasc "so-imports" then
+         self#read_xml_so_imports (getc "so-imports"));
     end
 
   method get_userdeclared_codesections = userdeclared_codesections#listOfKeys
@@ -1695,7 +1624,6 @@ object (self)
     if has_file then () else
       let _ = pr_debug [ STR "Initialize data blocks " ; NL ] in
       data_blocks#addList (find_seh4_structures read_only_section_strings)
-
 
   method get_jumptables = jumptables
 
@@ -1800,7 +1728,6 @@ object (self)
         d#write_xml dNode;
         dNode
       end) data_blocks#toList)
-
 
   method has_variable_intro (iaddr: doubleword_int) =
     H.mem variable_intros iaddr#index
@@ -2167,6 +2094,73 @@ object (self)
   method private write_xml_struct_tables (node: xml_element_int) =
     structtables#write_xml node
 
+  (* ------------------------------------------------------- so-imports -----
+     SO summary availability is latched here, as the function summary library
+     does not refresh this information as call targets already have been
+     resolved and are not re-evaluated in later runs.
+   *)
+
+  val requested_so_summaries = new StringCollections.set_t
+  val sosummaries = new StringCollections.set_t
+  val bcsummaries = new StringCollections.set_t
+  val missing_so_summaries = new StringCollections.set_t
+
+  method private get_so_import_names =
+    let names = function_summary_library#so_import_names in
+    begin
+      requested_so_summaries#addList names.so_requested_summaries;
+      sosummaries#addList names.so_summaries;
+      bcsummaries#addList names.so_bc_summaries;
+      missing_so_summaries#addList names.so_missing_summaries;
+    end
+
+  method dmso_metrics: dm_so_metrics_t =
+    let _ = self#get_so_import_names in
+    { dmso_requested_summaries = requested_so_summaries#size;
+      dmso_so_summaries = sosummaries#size;
+      dmso_bc_summaries = bcsummaries#size;
+      dmso_missing_summaries = missing_so_summaries#size
+    }
+
+  method private write_xml_so_imports (node: xml_element_int) =
+    let reqNode = xmlElement "requested-summaries" in
+    let soNode = xmlElement "so-summaries" in
+    let bcNode = xmlElement "bc-summaries" in
+    let msNode = xmlElement "missing-summaries" in
+    let writeset (wnode: xml_element_int) (s: StringCollections.set_t) =
+      wnode#appendChildren
+        (List.map (fun name ->
+             let fnNode = xmlElement "fn" in
+             begin
+               fnNode#setAttribute "name" name;
+               fnNode
+             end) s#toList) in
+    begin
+      self#get_so_import_names;
+      writeset reqNode requested_so_summaries;
+      writeset soNode sosummaries;
+      writeset bcNode bcsummaries;
+      writeset msNode missing_so_summaries;
+      node#appendChildren [reqNode; soNode; bcNode; msNode]
+    end
+
+  method private read_xml_so_imports (node: xml_element_int) =
+    let hasc = node#hasOneTaggedChild in
+    let getc = node#getTaggedChild in
+    let readset (wnode: xml_element_int) (s: StringCollections.set_t) =
+      List.iter (fun fnode ->
+          s#add (fnode#getAttribute "name")) (wnode#getTaggedChildren "fn") in
+    begin
+      (if hasc "requested-summaries" then
+         readset (getc "requested-summaries") requested_so_summaries);
+      (if hasc "so-summaries" then
+         readset (getc "so-summaries") sosummaries);
+      (if hasc "bc-summaries" then
+         readset (getc "bc-summaries") bcsummaries);
+      (if hasc "missing-summaries" then
+         readset (getc "missing-summaries") missing_so_summaries)
+    end
+
   method write_xml (node: xml_element_int) =
     let append = node#appendChildren in
     let fNode = xmlElement "functions-data" in
@@ -2179,7 +2173,7 @@ object (self)
     let cbNode = xmlElement "call-back-tables" in
     let stNode = xmlElement "struct-tables" in
     let viNode = xmlElement "variable-introductions" in
-    (* let viNode = xmlElement "variable-introductions" in *)
+    let soNode = xmlElement "so-imports" in
     begin
       functions_data#write_xml fNode;
       self#write_xml_data_blocks dNode;
@@ -2191,8 +2185,10 @@ object (self)
       self#write_xml_struct_tables stNode;
       self#write_xml_variable_introductions viNode;
       string_table#write_xml sNode;
+      self#write_xml_so_imports soNode;
       append [
-          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode; viNode]
+          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode; viNode;
+          soNode]
     end
 
 end

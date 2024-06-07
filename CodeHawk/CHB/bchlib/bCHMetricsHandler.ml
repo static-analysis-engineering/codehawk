@@ -126,6 +126,62 @@ let exports_metrics_handler = new exports_metrics_handler_t
 
 (* -------------------------------------------------- disassembly metrics --- *)
 
+class dm_so_metrics_handler_t: [dm_so_metrics_t] metrics_handler_int =
+object
+
+  inherit [dm_so_metrics_t] metrics_handler_t "dm_so_metrics_t"
+
+  method !init_value = {
+      dmso_requested_summaries = 0;
+      dmso_so_summaries = 0;
+      dmso_bc_summaries = 0;
+      dmso_missing_summaries = 0
+    }
+
+  method !write_xml (node: xml_element_int) (d: dm_so_metrics_t) =
+    let seti tag i = if i = 0 then () else node#setIntAttribute tag i in
+    begin
+      seti "requested" d.dmso_requested_summaries;
+      seti "so_summaries" d.dmso_so_summaries;
+      seti "bc_summaries" d.dmso_bc_summaries;
+      seti "missing" d.dmso_missing_summaries
+    end
+
+  method !read_xml (node: xml_element_int): dm_so_metrics_t =
+    let has = node#hasNamedAttribute in
+    let geti tag = if has tag then node#getIntAttribute tag else 0 in
+    { dmso_requested_summaries = geti "requested";
+      dmso_so_summaries = geti "so_summaries";
+      dmso_bc_summaries = geti "bc_summaries";
+      dmso_missing_summaries = geti "missing"
+    }
+
+  method !toPretty (d: dm_so_metrics_t) =
+    if d.dmso_requested_summaries = 0 then
+      STR ""
+    else
+      let line (tag: string) (count: int) =
+        if count = 0 then
+          STR ""
+        else
+          LBLOCK [
+              STR "  ";
+              STR (fixed_length_string tag 20);
+              STR ": ";
+              INT count; NL] in
+      LBLOCK [
+          STR "  summaries requested : ";
+          INT d.dmso_requested_summaries; NL;
+          (line "so summaries" d.dmso_so_summaries);
+          (line "bc summaries" d.dmso_bc_summaries);
+          (line "missing" d.dmso_missing_summaries)]
+
+end
+
+
+let dm_so_metrics_handler = new dm_so_metrics_handler_t
+
+
 class disassembly_metrics_handler_t: [disassembly_metrics_t] metrics_handler_t =
 object
 
@@ -142,6 +198,7 @@ object
       dm_jumptables = 0;
       dm_datablocks = 0;
       dm_imports = [];
+      dm_so_imports = dm_so_metrics_handler#init_value;
       dm_exports = exports_metrics_handler#init_value
     }
 
@@ -152,6 +209,7 @@ object
     let setf tag f = set tag (Printf.sprintf "%.2f" f) in
     let iiNode = xmlElement "imports" in
     let eNode = xmlElement "exports" in
+    let isoNode = xmlElement "so_imports" in
     begin
       iiNode#appendChildren
         (List.map (fun (name,count,summaries,loaded) ->
@@ -172,7 +230,8 @@ object
 	       iNode
              end) d.dm_imports);
       exports_metrics_handler#write_xml eNode d.dm_exports;
-      append [iiNode; eNode];
+      dm_so_metrics_handler#write_xml isoNode d.dm_so_imports;
+      append [iiNode; isoNode; eNode];
       seti "unknown-instrs" d.dm_unknown_instrs;
       seti "instrs" d.dm_instrs;
       seti "functions" d.dm_functions;
@@ -207,7 +266,12 @@ object
             let cgeti = iNode#getIntAttribute in
             let cgetb tag = (chas tag) && (cget tag) = "yes" in
             (cget "name", cgeti "count", cgeti "summaries",cgetb "loaded"))
-                 (getc "imports")#getChildren;
+          (getc "imports")#getChildren;
+      dm_so_imports =
+        if hasc "so_imports" then
+          dm_so_metrics_handler#read_xml (getc "so_imports")
+        else
+          dm_so_metrics_handler#init_value;
       dm_exports =
         if hasc "exports" then
 	  exports_metrics_handler#read_xml (getc "exports")
@@ -257,6 +321,7 @@ object
         STR "Jumptables           : "; INT d.dm_jumptables; NL;
         STR "Data blocks          : "; INT d.dm_datablocks; NL; NL;
         STR "Imports"; NL; imports_to_pretty d.dm_imports; NL;
+        STR "So imports"; NL; dm_so_metrics_handler#toPretty d.dm_so_imports; NL;
         exports_metrics_handler#toPretty d.dm_exports; NL;
         csv; NL
    ]
@@ -523,6 +588,7 @@ object
   method !init_value = {
       mcalls_count = 0;
       mcalls_dll = 0;
+      mcalls_so = 0;
       mcalls_app = 0;
       mcalls_jni = 0;
       mcalls_arg = 0;
@@ -541,6 +607,7 @@ object
   method !add (d1:calls_metrics_t) (d2:calls_metrics_t) = {
       mcalls_count = d1.mcalls_count + d2.mcalls_count;
       mcalls_dll = d1.mcalls_dll + d2.mcalls_dll;
+      mcalls_so = d1.mcalls_so + d2.mcalls_so;
       mcalls_app = d1.mcalls_app + d2.mcalls_app;
       mcalls_jni = d1.mcalls_jni + d2.mcalls_jni;
       mcalls_arg = d1.mcalls_arg + d2.mcalls_arg;
@@ -561,6 +628,7 @@ object
     begin
       seti "count" c.mcalls_count;
       seti "dll" c.mcalls_dll;
+      seti "so" c.mcalls_so;
       seti "app" c.mcalls_app;
       seti "jni" c.mcalls_jni;
       seti "arg" c.mcalls_arg;
@@ -581,6 +649,7 @@ object
     let geti tag = if has tag then node#getIntAttribute tag else 0 in
     { mcalls_count = geti "count";
       mcalls_dll = geti "dll";
+      mcalls_so = geti "so";
       mcalls_app = geti "app";
       mcalls_jni = geti "jni";
       mcalls_arg = geti "arg";
@@ -610,6 +679,18 @@ object
             NL]
       else
         STR "" in
+    let soEntry =
+      if d.mcalls_so > 0 then
+        LBLOCK [
+            STR "SO calls                  : ";
+            INT d.mcalls_so;
+            (if d.mcalls_nosum > 0 then
+               (LBLOCK [STR " ("; INT d.mcalls_nosum; STR " without summary)"])
+             else
+               STR "");
+            NL]
+      else
+        STR "" in
     let argEntry =
       if d.mcalls_arg > 0 then
         LBLOCK [
@@ -635,7 +716,9 @@ object
       else
         STR "" in
     LBLOCK [
-        STR "Calls                    : "; INT d.mcalls_count; NL; dllEntry;
+        STR "Calls                    : "; INT d.mcalls_count; NL;
+        dllEntry;
+        soEntry;
         (e  "Application calls        : " d.mcalls_app);
         (e  "Jni calls                : " d.mcalls_jni); argEntry; globalEntry;
         (e  "Unresolved indirect calls: " d.mcalls_unr)]

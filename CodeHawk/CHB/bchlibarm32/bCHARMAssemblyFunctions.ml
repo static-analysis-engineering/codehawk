@@ -907,7 +907,8 @@ let get_export_metrics () = exports_metrics_handler#init_value
 
 
 let get_arm_disassembly_metrics () =
-  let (coverage,overlap,alloverlap) = arm_assembly_functions#get_function_coverage in
+  let (coverage, overlap, alloverlap) =
+    arm_assembly_functions#get_function_coverage in
   let instrs = !arm_assembly_instructions#get_num_instructions in
   let imported_imports = [] in
   let loaded_imports = [] in
@@ -923,6 +924,7 @@ let get_arm_disassembly_metrics () =
     dm_jumptables = List.length system_info#get_jumptables;
     dm_datablocks = List.length system_info#get_data_blocks;
     dm_imports = imports;
+    dm_so_imports = system_info#dmso_metrics;
     dm_exports = get_export_metrics()
   }
 
