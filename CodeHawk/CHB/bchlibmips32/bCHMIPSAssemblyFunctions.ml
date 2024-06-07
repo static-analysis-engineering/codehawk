@@ -384,5 +384,6 @@ let get_mips_disassembly_metrics () =
     dm_jumptables = List.length system_info#get_jumptables;
     dm_datablocks = List.length system_info#get_data_blocks;
     dm_imports = imports;
+    dm_so_imports = system_info#dmso_metrics;
     dm_exports = get_export_metrics ()
   }

@@ -92,8 +92,8 @@ MLIS := \
 	bCHCStruct \
 	bCHCppClass \
 	bCHSectionHeadersInfo \
-	bCHSystemInfo \
 	bCHFunctionSummaryLibrary \
+	bCHSystemInfo \
 	bCHXPODictionary \
 	bCHCallTargetInfo \
 	bCHProofObligations \
@@ -180,8 +180,8 @@ SOURCES := \
 	bCHCStruct \
 	bCHCppClass \
 	bCHSectionHeadersInfo \
-	bCHSystemInfo \
 	bCHFunctionSummaryLibrary \
+	bCHSystemInfo \
 	bCHXPODictionary \
 	bCHCallTargetInfo \
 	bCHProofObligations \

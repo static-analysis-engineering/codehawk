@@ -2702,6 +2702,21 @@ class type interface_dictionary_int =
 
 (** {1 Function summary library}*)
 
+(** Data structure for reporting statistics on shared-object library functions *)
+type dm_so_metrics_t = {
+    dmso_requested_summaries: int;
+    dmso_so_summaries: int;
+    dmso_bc_summaries: int;
+    dmso_missing_summaries: int
+  }
+
+
+type so_import_names_t = {
+    so_requested_summaries: string list;
+    so_summaries: string list;
+    so_bc_summaries: string list;
+    so_missing_summaries: string list
+  }
 
 (** The function summary library holds
    - summaries (models) of dll/so functions, and
@@ -2771,36 +2786,134 @@ class type interface_dictionary_int =
 
 *)
 class type function_summary_library_int =
-object
-  (* setters *)
-  method load_dll_library_function: string -> string -> unit
-  method load_so_function: string -> unit
-  method read_summary_files: unit
+  object
 
-  (* accessors *)
-  method get_function_dll: string -> string (* dll from which function was loaded *)
-  method get_dll_function: string -> string -> function_summary_int
-  method get_so_function: string -> function_summary_int
-  method get_lib_function: string list -> string -> function_summary_int
-  method search_for_library_function: string -> string option (* returns dll for function name *)
-  method get_syscall_function: int -> function_summary_int
-  method get_jni_function: int -> function_summary_int
-  method get_library_functions: function_summary_int list
+    (** {1 Load library function summaries} *)
 
-  (* predicates *)
-  method has_function_dll: string -> bool (* true if fname came from a dll *)
-  method has_dllname: string -> bool (* true if a function was loaded from this dll *)
-  method has_dll_function: string -> string -> bool
-  (* tries to locate the summary, true if successful *)
-  method has_so_function: string -> bool
-  method has_lib_function: string list -> string -> bool
-  method has_syscall_function: int -> bool
-  method has_jni_function: int -> bool (* tries to locate the summary, true if
-                                                    successful *)
+    (** [load_dll_library_function dll fname] attempts to load the dll library
+        function summary for the function with name [fname] from named
+        dynamically loaded library [dll]. If the summary is found it is added
+        to the active library and will be applied to all call sites of that
+        function; if there is no function summary for this function, a message
+        is logged to that effect, and no further attempts to obtain the summary
+        will be made.*)
+    method load_dll_library_function: string -> string -> unit
 
-  (* xml *)
-  method write_xml_requested_summaries: xml_element_int -> unit
-  method write_xml_missing_summaries: xml_element_int -> unit
+    (** [load_so_function fname] attempts to load the shared object library
+        function summary for the function with name [fname]. It will first
+        check if a summary is available in the [so_functions] directory. If so,
+        this summary is loaded and applied to all call sites of that function.
+        If no summary is found in [so_functions] it will check if a function
+        prototype for this function has been provided via a header file. If so,
+        the function prototype (possibly decorated with attributes) is converted
+        to a function summary and applied to all call sites. If a summary could
+        not be found in either source, a message is logged to that effect, and
+        no further attempts to obtain the summary will be made.*)
+    method load_so_function: string -> unit
+
+    (** Reads in all summary files from the bchsummaries.jar provided.
+
+        This provides a facility to check the (syntactic) validity of the
+        summaries before they are used in analysis.*)
+    method read_summary_files: unit
+
+    (** {Query and access function summaries} *)
+
+    (** [get_function_dll fname] returns the name of the dll that contains
+        a function by this name
+
+        @raise BCH_failure if [fname] is not an imported function
+     *)
+    method get_function_dll: string -> string
+
+    (** [get_dll_function dll fname] returns the function summary for the dll
+        function [fname] imported from dynamically loaded library [dll]
+
+        @raise BCH_failure if no summary is available for [fname] from [dll].
+     *)
+    method get_dll_function: string -> string -> function_summary_int
+
+    (** [get_so_function fname] returns the function summary for the shared
+        object function [fname].
+
+        @raise BCH_failure if no summary is available for [fname].
+     *)
+    method get_so_function: string -> function_summary_int
+
+    (** [get_lib_function packages fname] attempts a load summary for a
+        C++ function.*)
+    method get_lib_function: string list -> string -> function_summary_int
+
+    (** [search_for_library_function fname] returns the name of the dll that
+        contains [fname] or None if [fname] cannot be found.*)
+    method search_for_library_function: string -> string option
+
+    (** [get_syscall_function index] returns the function summary for the
+        system call with index [index].
+
+        @raise BCH_failure if no summary is available for the system call with
+        index [index].
+     *)
+    method get_syscall_function: int -> function_summary_int
+
+    (** [get_jni_function index] returns the function summary for the Java
+        Native Method with index [index].
+
+        @raise BCH_failure if no summary is available for the JNI function with
+        index [index].
+     *)
+    method get_jni_function: int -> function_summary_int
+
+    (** Returns all dll, jni, and lib (C++) summaries available.*)
+    method get_library_functions: function_summary_int list
+
+    (** {1 Requests} *)
+
+    (** [has_function_dll fname] returns true if [fname] has an associated dll.*)
+    method has_function_dll: string -> bool
+
+    (** [has_dllname dll] returns true if a dll with name [dll] has been
+        imported and a function was loaded from it.*)
+    method has_dllname: string -> bool
+
+    (** [has_dll_function dll fname] checks if a function summary has been
+        loaded for [fname] from dll [dll], or if not, if one is available from
+        the provided summaries. It returns true if a summary was found, false
+        otherwise.*)
+    method has_dll_function: string -> string -> bool
+
+    (** [has_so_function fname] checks if a function summary has been loaded for
+        shared object function [fname], or if not, if one is available from the
+        provided summaries, or from a header file. It returns true if a summary
+        was found, false otherwise.*)
+    method has_so_function: string -> bool
+
+    method has_lib_function: string list -> string -> bool
+
+    method has_syscall_function: int -> bool
+
+    method has_jni_function: int -> bool
+
+    (** {1 Retrieving / saving summaries} *)
+
+    (** {2 Retrieving summaries} *)
+
+    method read_xml_constant_file: string -> unit
+
+    method read_xml_constants_files: xml_element_int -> unit
+
+    method read_xml_struct_file: string -> unit
+
+    (** {2 Saving summaries} *)
+
+    method write_xml_requested_summaries: xml_element_int -> unit
+
+    method write_xml_missing_summaries: xml_element_int -> unit
+
+    (** {1 Statistics} *)
+
+    method so_import_names: so_import_names_t
+
 end
 
 
@@ -5754,10 +5867,12 @@ object
   method is_thumb: doubleword_int -> bool
 
   (* xml *)
-  method read_xml_constant_file    : string -> unit
+  (* method read_xml_constant_file: string -> unit *)
 
   (* saving *)
   method write_xml: xml_element_int -> unit
+
+  method dmso_metrics: dm_so_metrics_t
 
 end
 
@@ -5794,7 +5909,9 @@ type disassembly_metrics_t = {
   dm_jumptables: int;    (* # jumptables identified *)
   dm_datablocks: int;    (* # datablocks provided and identified *)
   dm_imports: (string * int * int * bool) list;
-                         (* number of functions imported per dll, LoadLib *)
+  (* number of functions imported per dll, LoadLib *)
+
+  dm_so_imports: dm_so_metrics_t;
   dm_exports: exports_metrics_t
 }
 
@@ -5838,6 +5955,7 @@ type vars_metrics_t = {
 type calls_metrics_t = {
   mcalls_count: int;
   mcalls_dll: int;
+  mcalls_so: int;            (* calls to so library functions *)
   mcalls_app: int;           (* known application calls *)
   mcalls_jni: int;           (* jni call-backs *)
   mcalls_arg: int;           (* calls on an argument value *)
