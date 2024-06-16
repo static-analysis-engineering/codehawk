@@ -104,8 +104,11 @@ object (self)
   val mutable exclude_debug = false
   val mutable ssa = false
   val mutable collectdata = false
+  val mutable generate_varinvs = true
 
   method set_collect_data = collectdata <- true
+
+  method set_no_varinvs = generate_varinvs <- false
 
   method collect_data = collectdata
 
@@ -185,6 +188,8 @@ object (self)
   method set_ssa = ssa <- true
 
   method use_ssa = ssa
+
+  method generate_varinvs = generate_varinvs
 
   method set_thumb =
     begin
