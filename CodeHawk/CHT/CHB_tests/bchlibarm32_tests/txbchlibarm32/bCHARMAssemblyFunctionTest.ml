@@ -49,7 +49,7 @@ open BCHSystemInfo
 
 
 let testname = "bCHARMAssemblyFunction"
-let lastupdated = "2024-01-02"
+let lastupdated = "2024-06-19"
 
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
@@ -61,10 +61,7 @@ let codemax = make_dw "0x400000"
 let conditional_return () =
   let tests = [
       ("POPEQ", "0x15d5c",
-       "70402de9000050e37080bd087040bde800",
-       [("0x15d5c", "F@_0x15d64");
-        ("0x15d5c", "T@_0x15d64");
-        ("F@_0x15d64", "0x15d68")])
+       "70402de9000050e37080bd087040bde800", [("0x15d5c", "0x15d68")])
     ] in
   begin
     TS.new_testsuite (testname ^ "_conditional_return") lastupdated;
