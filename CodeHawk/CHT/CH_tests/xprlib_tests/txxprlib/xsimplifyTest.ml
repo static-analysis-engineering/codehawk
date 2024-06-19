@@ -7,7 +7,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ let simplify = S.simplify_xpr
 
 
 let testname = "xsimplifyTest"
-let lastupdated = "2024-05-27"
+let lastupdated = "2024-06-19"
 
 
 let basic () =
@@ -1190,6 +1190,69 @@ let reduce_shiftlt () =
   end
 
 
+let reduce_logical_not () =
+  let x = XVar (XG.mk_var "x") in
+  let y = XVar (XG.mk_var "y") in
+  let zero = XG.mk_ix 0 in
+  let a = XG.mk_ix 24 in
+  begin
+
+    TS.new_testsuite (testname ^ "_reduce_logical_not") lastupdated;
+
+    (* (not (x < 0)) -> (x >= 0) *)
+    TS.add_simple_test
+      ~title: "not_ltzero"
+      (fun () ->
+        let r = XOp (XGe, [x; zero]) in
+        let xpr = XOp (XLNot, [XOp (XLt, [x; zero])]) in
+        XA.equal_xpr r (simplify xpr));
+
+    (* (not (x > a)) -> (x <= a) *)
+    TS.add_simple_test
+      ~title: "not_gtc"
+      (fun () ->
+        let r = XOp (XLe, [x; a]) in
+        let xpr = XOp (XLNot, [XOp (XGt, [x; a])]) in
+        XA.equal_xpr r (simplify xpr));
+
+    (* (not (x and y)) -> ((not x) or (not y)) *)
+    TS.add_simple_test
+      ~title: "not_and"
+      (fun () ->
+        let r = XOp (XLOr, [XOp (XLNot, [x]); XOp (XLNot, [y])]) in
+        let xpr = XOp (XLNot, [XOp (XLAnd, [x; y])]) in
+        XA.equal_xpr r (simplify xpr));
+
+    (* (not (x or y)) -> ((not x) and (not y)) *)
+    TS.add_simple_test
+      ~title: "not_or"
+      (fun () ->
+        let r = XOp (XLAnd, [XOp (XLNot, [x]); XOp (XLNot, [y])]) in
+        let xpr = XOp (XLNot, [XOp (XLOr, [x; y])]) in
+        XA.equal_xpr r (simplify xpr));
+
+    (* (not ((x >= 0) and (x < a))) -> (x < 0) or (x >= a) *)
+    TS.add_simple_test
+      ~title: "not_ineq_conj"
+      (fun () ->
+        let r = XOp (XLOr, [XOp (XLt, [x; zero]); XOp (XGe, [x; a])]) in
+        let xpr =
+          XOp (XLNot, [XOp (XLAnd, [XOp (XGe, [x; zero]); XOp (XLt, [x; a])])]) in
+        XA.equal_xpr r (simplify xpr));
+
+    (* (not ((x < 0) or (x >= a))) -> (x >= 0) and (x < a) *)
+    TS.add_simple_test
+      ~title: "not_ineq_disj"
+      (fun () ->
+        let r = XOp (XLAnd, [XOp (XGe, [x; zero]); XOp (XLt, [x; a])]) in
+        let xpr =
+          XOp (XLNot, [XOp (XLOr, [XOp (XLt, [x; zero]); XOp (XGe, [x; a])])]) in
+        XA.equal_xpr r (simplify xpr));
+
+    TS.launch_tests()
+  end
+
+
 let () =
   begin
     TS.new_testfile testname lastupdated;
@@ -1203,5 +1266,6 @@ let () =
     reduce_xlsh ();
     reduce_lt ();
     reduce_shiftlt ();
+    reduce_logical_not ();
     TS.exit_file ()
   end
