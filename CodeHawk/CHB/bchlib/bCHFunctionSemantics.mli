@@ -50,6 +50,12 @@ val bvarinfo_to_function_semantics:
   bvarinfo_t -> function_interface_t -> function_semantics_t
 
 
+(** {1 Conversion} *)
+
+val function_semantics_to_precondition_attributes:
+  function_semantics_t -> precondition_attribute_t list
+
+
 (** {1 Modification}*)
 
 (** [add_function_precondition fsem pre] returns the function semantics that
