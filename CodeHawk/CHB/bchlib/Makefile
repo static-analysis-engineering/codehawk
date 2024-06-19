@@ -41,6 +41,7 @@ MLIS := \
 	bCHBCFunDeclarations \
 	bCHBCWriteXml \
 	bCHBCFiles \
+	bCHBCAttributes \
 	bCHInterfaceDictionary \
 	bCHVarDictionary \
 	bCHInvDictionary \
@@ -130,6 +131,7 @@ SOURCES := \
 	bCHBCFiles \
 	bCHBCTypeUtil \
 	bCHBCTypeXml \
+	bCHBCAttributes \
 	bCHSumTypeSerializer \
 	bCHDictionary \
 	bCHInterfaceDictionary \
