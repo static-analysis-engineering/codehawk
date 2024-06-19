@@ -144,7 +144,7 @@ type type_transformer_t = string -> string
     (nonnull (ref-indices))
     ]}
 
-    Access modes currently supported are [read_only] and [write_only]; the
+    Access modes supported are [read_only], [read_write], and [write_only]; the
     [ref-index] is an integer denoting the (1-based) index of the pointer
     argument being accessed, and [size-index] is an integer denoting the
     (1-based) index of an argument that provides a maximum size (in bytes)
@@ -171,7 +171,8 @@ type type_transformer_t = string -> string
 type precondition_attribute_t =
   | APCReadOnly of int * int option (* ref-index, size-index, both 1-based *)
   | APCWriteOnly of int * int option (* ref-index, size-index, (both 1-based) *)
-  | APCNull of int list
+  | APCReadWrite of int * int option (* ref-index, size-index, (both 1-based) *)
+  | APCNull of int list  (* parameter indices, 1-based *)
 
 
 and btype_t =
