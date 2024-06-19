@@ -1010,22 +1010,31 @@ and reduce_ne m e1 e2 =
 
 and reduce_logical_not m e =
   let default = (m, XOp (XLNot, [e])) in
-  if is_true e then (true, false_constant_expr)
-  else if is_false e then (true, true_constant_expr)
-  else if is_random e then (true, random_constant_expr)
-  else match e with
-  | XOp (XLNot, [e1]) -> (true, e1)
-  | XOp (XLAnd, [ e1 ; e2 ]) ->
-      (true, XOp (XLOr, [ XOp (XLNot, [e1]) ; XOp (XLNot, [e2]) ]))
-  | XOp (XLOr,  [ e1 ; e2 ]) ->
-      (true, XOp (XLAnd, [ XOp (XLNot, [e1]) ; XOp (XLNot, [e2]) ]))
-  | XOp (XGe, [ e1 ; e2 ]) -> (true, XOp (XLt, [ e1 ; e2 ]))
-  | XOp (XGt, [ e1 ; e2 ]) -> (true, XOp (XLe, [ e1 ; e2 ]))
-  | XOp (XLe, [ e1 ; e2 ]) -> (true, XOp (XGt, [ e1 ; e2 ]))
-  | XOp (XLt, [ e1 ; e2 ]) -> (true, XOp (XGe, [ e1 ; e2 ]))
-  | XOp (XEq, [ e1 ; e2 ]) -> (true, XOp (XNe, [ e1 ; e2 ]))
-  | XOp (XNe, [ e1 ; e2 ]) -> (true, XOp (XEq, [ e1 ; e2 ]))
-  | _ -> default
+  if is_true e then
+    (true, false_constant_expr)
+  else if is_false e then
+    (true, true_constant_expr)
+  else if is_random e then
+    (true, random_constant_expr)
+  else
+    match e with
+    | XOp (XLNot, [e1]) -> (true, e1)
+    | XOp (XLAnd, [e1; e2]) ->
+       let (_, sub1) = sim_expr false (XOp (XLNot, [e1])) in
+       let (_, sub2) = sim_expr false (XOp (XLNot, [e2])) in
+       (true, XOp (XLOr, [sub1; sub2]))
+    | XOp (XLOr,  [e1; e2]) ->
+       let (_, sub1) = sim_expr false (XOp (XLNot, [e1])) in
+       let (_, sub2) = sim_expr false (XOp (XLNot, [e2])) in
+       (true, XOp (XLAnd, [sub1; sub2]))
+    | XOp (XGe, [e1; e2]) -> (true, XOp (XLt, [e1; e2]))
+    | XOp (XGt, [e1; e2]) -> (true, XOp (XLe, [e1; e2]))
+    | XOp (XLe, [e1; e2]) -> (true, XOp (XGt, [e1; e2]))
+    | XOp (XLt, [e1; e2]) -> (true, XOp (XGe, [e1; e2]))
+    | XOp (XEq, [e1; e2]) -> (true, XOp (XNe, [e1; e2]))
+    | XOp (XNe, [e1; e2]) -> (true, XOp (XEq, [e1; e2]))
+    | _ -> default
+
 
 and reduce_bor m e1 e2 =
   let default = (m, XOp (XBOr, [e1 ; e2])) in
