@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-06-15 00:25:34"/>
+  <libfun lib="so_functions" name="pthread_create">
+    <documentation>
+      <desc>create a new thread</desc>
+      <apidoc>
+        <pt>
+          <ll>int pthread_create(</ll>
+          <ld>pthread_t *restrict thread</ld>
+          <ld>const pthread_attr_t *restrict attr</ld>
+          <ld>void *(*start_routine)(void*)</ld>
+          <ld>void *restrict arg</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="thread">the new thread</par>
+        <par name="attr">initialized thread attributes</par>
+        <par name="start_routine">function to be executed in the thread</par>
+        <par name="arg">argument to be passed to the thread function</par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">error-number </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="pthread_create">
+      <par loc="stack" name="thread" nr="1">
+        <type><ptr>pthread_t</ptr></type>
+      </par>
+      <par loc="stack" name="attr" nr="2">
+        <type><ptr>pthread_attr_t</ptr></type>
+      </par>
+      <par loc="stack" name="start_routine" nr="3">
+        <type><ptr>function-pointer</ptr></type>
+      </par>
+      <par loc="stack" name="arg" nr="4">
+        <type><ptr>void</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

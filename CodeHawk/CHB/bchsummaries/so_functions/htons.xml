@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-05-31 19:29:31"/>
+  <libfun lib="so_functions" name="htons">
+    <documentation>
+      <desc>converts values between host and network byte order</desc>
+      <apidoc>
+        <pt>uint16_t htons(uint16_6 hostshort)</pt>
+        <par name="hostshort">value in host byte order</par>
+        <return>argument value converted from host ot network byte order</return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="htons">
+      <par loc="stack" name="hostshort" nr="1">
+        <type>uint16_t</type>
+      </par>
+      <returntype>uint16_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
