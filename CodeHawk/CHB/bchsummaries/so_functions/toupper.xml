@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-05-31 19:39:52"/>
+  <libfun lib="so_functions" name="toupper">
+    <documentation>
+      <desc>translates lowercase characters to uppercase</desc>
+      <apidoc>
+        <pt>int toupper (int c)</pt>
+        <par name="c">value to be converted to uppercase</par>
+        <return>
+          <rc cond="success">
+	    the uppercase letter corresponding to the argument passed
+	  </rc>
+          <rc cond="failure">
+	    the argument unchanged
+	  </rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="toupper">
+      <par loc="stack" name="c" nr="1">
+        <type>int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
