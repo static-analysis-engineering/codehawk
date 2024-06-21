@@ -1752,9 +1752,13 @@ class type arm_assembly_block_int =
     (** Return the number of instructions in this basic block.*)
     method get_instruction_count: int
 
+    (** Return the list of indices the successor edges would have taken that
+        exit the function (starting with 1).*)
+    method exit_edges_indices: int list
+
     (* predicates *)
     method includes_instruction_address: doubleword_int -> bool
-    method has_conditional_return_instr: bool
+    method has_conditional_returns: bool
     method is_returning: bool
 
     (* iterators *)
@@ -1788,7 +1792,6 @@ class type arm_assembly_function_int =
     method get_block_count: int
     method get_not_valid_instr_count: int
     method get_true_conditional_return: arm_assembly_block_int option
-    method get_false_conditional_return: arm_assembly_block_int option
 
     (* iterators *)
     method iter: (arm_assembly_block_int -> unit) -> unit

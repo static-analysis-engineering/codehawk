@@ -49,6 +49,7 @@ open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
 open BCHFtsParameter
+open BCHFunctionData
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
@@ -431,13 +432,16 @@ let make_local_condition
 
 
 let make_condition
+      ?(thencode: cmd_t list = [])
+      ?(elsecode: cmd_t list = [])
     ~(condinstr:arm_assembly_instruction_int)
     ~(testinstr:arm_assembly_instruction_int)
     ~(condloc:location_int)
     ~(testloc:location_int)
     ~(blocklabel:symbol_t)
     ~(thenaddr:ctxt_iaddress_t)
-    ~(elseaddr:ctxt_iaddress_t) =
+    ~(elseaddr:ctxt_iaddress_t)
+    () =
   let thenlabel = make_code_label thenaddr in
   let elselabel = make_code_label elseaddr in
   let (frozenVars, tests) =
@@ -451,9 +455,9 @@ let make_condition
 	let transaction = TRANSACTION (nextlabel, LF.mkCode testcode, None) in
 	(nextlabel, [transaction]) in
       let (thentestlabel, thennode) =
-	make_node_and_label thentest thenaddr "then" in
+	make_node_and_label (thencode @ thentest) thenaddr "then" in
       let (elsetestlabel, elsenode) =
-	make_node_and_label elsetest elseaddr "else" in
+	make_node_and_label (elsecode @ elsetest) elseaddr "else" in
       let thenedges =
 	[(blocklabel, thentestlabel); (thentestlabel, thenlabel)] in
       let elseedges =
@@ -582,6 +586,15 @@ let translate_arm_instruction
         let vars = floc#env#variables_in_expr xs in
         vars @ acc) [] xprs in
 
+  let is_maybe_non_returning_call_instr =
+    match instr#get_opcode with
+    | BranchLink (ACCAlways, tgt)
+      | BranchLinkExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
+       let tgtaddr = tgt#get_absolute_address in
+       ((functions_data#is_function_entry_point tgtaddr)
+        && (functions_data#get_function tgtaddr)#is_maybe_non_returning)
+    | _ -> false in
+
   let flagdefs =
     let flags_set = get_arm_flags_set instr#get_opcode in
     List.map (fun f -> finfo#env#mk_flag_variable (ARMCCFlag f)) flags_set in
@@ -658,7 +671,7 @@ let translate_arm_instruction
            ~testloc
            ~blocklabel
            ~thenaddr
-           ~elseaddr in
+           ~elseaddr () in
        ((blocklabel, [transaction]) :: nodes, edges, [])
      else
        let thenlabel = make_code_label thenaddr in
@@ -1040,6 +1053,63 @@ let translate_arm_instruction
    * SelectInstrSet(targetInstrSet);
    * BranchWritePC(targetAddress);
    * ------------------------------------------------------------------------ *)
+  | BranchLink _ when is_maybe_non_returning_call_instr ->
+     let thenaddr = "exit" in
+     let elseaddr = codepc#get_false_branch_successor in
+     let floc = get_floc loc in
+     let vr0 = floc#f#env#mk_arm_register_variable AR0 in
+     let vr1 = floc#f#env#mk_arm_register_variable AR1 in
+     let vr2 = floc#f#env#mk_arm_register_variable AR2 in
+     let vr3 = floc#f#env#mk_arm_register_variable AR3 in
+     let pars = List.map fst floc#get_call_arguments in
+     let args = List.map snd floc#get_call_arguments in
+     let (defs, use, usehigh) =
+       if ((List.length pars) = 1
+           && (is_floating_point_parameter (List.hd pars))) then
+         let s0: arm_extension_register_t =
+           {armxr_type = XSingle; armxr_index = 0} in
+         let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
+         ([s0var], [s0var], [s0var])
+       else if ((List.length pars) = 3
+                && (is_floating_point_parameter (List.hd pars))
+                && (is_floating_point_parameter (List.nth pars 1))
+                && (is_floating_point_parameter (List.nth pars 2))) then
+         let s0: arm_extension_register_t =
+           {armxr_type = XSingle; armxr_index = 0} in
+         let s1: arm_extension_register_t =
+           {armxr_type = XSingle; armxr_index = 1} in
+         let s2: arm_extension_register_t =
+           {armxr_type = XSingle; armxr_index = 2} in
+         let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
+         let s1var = floc#f#env#mk_arm_extension_register_variable s1 in
+         let s2var = floc#f#env#mk_arm_extension_register_variable s2 in
+         ([s0var; s1var; s2var], [s0var; s1var; s2var], [s0var; s1var; s2var])
+       else
+         let usehigh = get_use_high_vars args in
+         let use =
+           match List.length args with
+           | 0 -> []
+           | 1 -> [vr0]
+           | 2 -> [vr0; vr1]
+           | 3 -> [vr0; vr1; vr2]
+           | _ -> [vr0; vr1; vr2; vr3] in
+         ([vr0], use, usehigh) in
+     let callcmds = floc#get_arm_call_commands in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:defs
+         ~clobbers:[vr1; vr2; vr3]
+         ~use:use
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = cmds @ (invop :: callcmds) @ defcmds @ [bwdinvop] @ pcassign in
+     let transaction = package_transaction finfo blocklabel cmds in
+     let thenlabel = make_code_label thenaddr in
+     let elselabel = make_code_label elseaddr in
+     let nodes = [(blocklabel, [transaction])] in
+     let edges = [(blocklabel, _exitlabel); (blocklabel, elselabel)] in
+     (nodes, edges, [])
+
   | BranchLink (c, tgt) when tgt#is_absolute_address ->
      if instr#is_inlined_call then
        default []
@@ -1329,7 +1399,7 @@ let translate_arm_instruction
            ~testloc
            ~blocklabel
            ~thenaddr
-           ~elseaddr in
+           ~elseaddr () in
        ((blocklabel, [transaction]) :: nodes, edges, [])
      else
        let thenlabel = make_code_label thenaddr in
@@ -1969,47 +2039,138 @@ let translate_arm_instruction
   | Pop (c, sp, rl, _) ->
      let floc = get_floc loc in
      let regcount = rl#get_register_count in
-     let sprhs = sp#to_expr floc in
-     let regs = rl#to_multiple_register in
-     let (stackops,_) =
-       List.fold_left
-         (fun (acc, off) reg ->
-           let (splhs, splhscmds) = (sp_r RD)#to_lhs floc in
-           let stackop = arm_sp_deref ~with_offset:off RD in
-           let stackvar = stackop#to_variable floc in
-           let stackrhs = stackop#to_expr floc in
-           let (regvar, cmds1) = floc#get_ssa_assign_commands reg stackrhs in
-           let usehigh = get_use_high_vars [stackrhs] in
-           let defcmds1 =
-             floc#get_vardef_commands
-               ~defs:[regvar; splhs]
-               ~use:[stackvar]
-               ~usehigh:usehigh
-               ctxtiaddr in
-           (acc @ defcmds1 @ cmds1 @ splhscmds, off+4)) ([], 0) regs in
-     let spreg = (sp_r WR)#to_register in
-     let increm = XConst (IntConst (mkNumerical (4 * regcount))) in
-     let (splhs, cmds) =
-       floc#get_ssa_assign_commands spreg (XOp (XPlus, [sprhs; increm])) in
-     let useshigh =
-       let fsig = finfo#get_summary#get_function_signature in
-       let rtype = fsig.fts_returntype in
-       if rl#includes_pc then
-         match rtype with
-         | TVoid _ -> []
-         | _ -> [floc#f#env#mk_arm_register_variable AR0]
+
+     let popcmds () =
+       let sprhs = sp#to_expr floc in
+       let regs = rl#to_multiple_register in
+       let (stackops, _) =
+         List.fold_left
+           (fun (acc, off) reg ->
+             let (splhs, splhscmds) = (sp_r RD)#to_lhs floc in
+             let stackop = arm_sp_deref ~with_offset:off RD in
+             let stackvar = stackop#to_variable floc in
+             let stackrhs = stackop#to_expr floc in
+             let (regvar, cmds1) = floc#get_ssa_assign_commands reg stackrhs in
+             let usehigh = get_use_high_vars [stackrhs] in
+             let defcmds1 =
+               floc#get_vardef_commands
+                 ~defs:[regvar; splhs]
+                 ~use:[stackvar]
+                 ~usehigh:usehigh
+                 ctxtiaddr in
+             (acc @ defcmds1 @ cmds1 @ splhscmds, off+4)) ([], 0) regs in
+       let spreg = (sp_r WR)#to_register in
+       let increm = XConst (IntConst (mkNumerical (4 * regcount))) in
+       let (splhs, popcmds) =
+         floc#get_ssa_assign_commands spreg (XOp (XPlus, [sprhs; increm])) in
+       let useshigh =
+         let fsig = finfo#get_summary#get_function_signature in
+         let rtype = fsig.fts_returntype in
+         if rl#includes_pc then
+           match rtype with
+           | TVoid _ -> []
+           | _ -> [floc#f#env#mk_arm_register_variable AR0]
+         else
+           [] in
+       let popdefcmds =
+         floc#get_vardef_commands
+           ~defs:[splhs]
+           ~use:(get_register_vars [sp])
+           ~usehigh:useshigh
+           ctxtiaddr in
+       stackops @ popdefcmds @ popcmds in
+
+     let ccdefcmds () =
+       if is_cond_conditional c && finfo#has_associated_cc_setter ctxtiaddr then
+         let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+         let testloc = ctxt_string_to_location faddr testiaddr in
+         let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
+         let testinstr =
+           fail_tvalue
+             (trerror_record
+                (LBLOCK [STR "Internal error in make tests"]))
+             (get_arm_assembly_instruction testaddr) in
+         let (_, optxpr, opsused) =
+           make_conditional_predicate
+             ~condinstr: instr
+             ~testinstr: testinstr
+             ~condloc:loc
+             ~testloc in
+         let use = get_register_vars opsused in
+         let usehigh = match optxpr with
+           | Some xpr -> get_use_high_vars [xpr]
+           | _ -> [] in
+         floc#get_vardef_commands ~use ~usehigh ctxtiaddr
        else
          [] in
-     let defcmds =
-       floc#get_vardef_commands
-         ~defs:[splhs]
-         ~use:(get_register_vars [sp])
-         ~usehigh:useshigh
-         ctxtiaddr in
-     let cmds = stackops @ defcmds @ cmds in
-     (match c with
-      | ACCAlways -> default cmds
-      | _ -> make_conditional_commands c cmds)
+
+     if is_cond_conditional c && rl#includes_pc then
+       let ccvardefs = ccdefcmds () in
+
+       let thenaddr =
+         if (List.length codepc#get_block_successors) = 2 then
+           (* this instruction is part of an inlined function; control flow
+              is returned to the main function *)
+           let _ =
+             chlog#add
+               "conditional return in inlined function"
+               (LBLOCK [
+                    floc#l#toPretty;
+                    STR "  ";
+                    STR codepc#get_true_branch_successor]) in
+           codepc#get_true_branch_successor
+         else
+           (* this instruction is a genuine return instruction *)
+           "exit" in
+
+       let elseaddr = codepc#get_false_branch_successor in
+
+       (* collect all previous commands in the block and the invariant anchor
+          and package them together with the vardef commands in a transaction *)
+       let cmds = cmds @ (invop :: ccvardefs) in
+       let transaction = package_transaction finfo blocklabel cmds in
+
+       (* create the branches according to the condition *)
+       if finfo#has_associated_cc_setter ctxtiaddr then
+         let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+         let testloc = ctxt_string_to_location faddr testiaddr in
+         let testaddr = (ctxt_string_to_location faddr testiaddr)#i in
+         let testinstr =
+           fail_tvalue
+             (trerror_record
+                (LBLOCK [STR "Internal error in conditional Pop"]))
+             (get_arm_assembly_instruction testaddr) in
+         let (nodes, edges) =
+           make_condition
+             ~thencode:(popcmds ())
+             ~condinstr:instr
+             ~testinstr:testinstr
+             ~condloc:loc
+             ~testloc
+             ~blocklabel
+             ~thenaddr
+             ~elseaddr () in
+         ((blocklabel, [transaction]) :: nodes, edges, [])
+       else
+         let (poplabel, popnode) =
+           let label = make_code_label ~modifier:"pop" thenaddr in
+           let transaction = TRANSACTION (label, LF.mkCode (popcmds ()), None) in
+           (label, [transaction]) in
+         let thenlabel = make_code_label thenaddr in
+         let elselabel = make_code_label elseaddr in
+         let nodes = [(blocklabel, [transaction]); (poplabel, popnode)] in
+         let edges = [
+             (blocklabel, poplabel);
+             (poplabel, thenlabel);
+             (blocklabel, elselabel)] in
+         (nodes, edges, [])
+
+     else
+       (* regular, unconditional Pop, or conditional pop without pc *)
+       let cmds = popcmds () in
+       (match c with
+        | ACCAlways -> default cmds
+        | _ -> make_conditional_commands c cmds)
 
   | PreloadData _ ->
      default []

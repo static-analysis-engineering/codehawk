@@ -43,6 +43,8 @@ open BCHARMTypes
     last address [laddr], and successors [succ].*)
 val make_arm_assembly_block:
   ?ctxt:context_t list    (* inline context, other function first *)
+  -> ?conditionalreturns:int list
+  (* indices of function returns in addition to successor(s) *)
   -> doubleword_int       (* function address *)
   -> doubleword_int       (* first address of the basic block *)
   -> doubleword_int       (* last address of the basic block *)

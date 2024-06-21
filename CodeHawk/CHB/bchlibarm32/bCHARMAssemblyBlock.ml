@@ -44,6 +44,7 @@ module TR = CHTraceResult
 
 class arm_assembly_block_t
         ?(ctxt=[])
+        ?(conditionalreturns=[])
         (faddr:doubleword_int)                (* inner context function address *)
         (first_address:doubleword_int)        (* address of first instruction *)
         (last_address:doubleword_int)         (* address of last instruction *)
@@ -52,6 +53,7 @@ object (self)
 
   val loc = make_location ~ctxt { loc_faddr = faddr; loc_iaddr = first_address }
   val mutable rev_instrs = []
+  val conditionalreturns = conditionalreturns
 
   method get_location = loc
 
@@ -136,7 +138,12 @@ object (self)
     List.exists
       (fun instr -> va#equal instr#get_address) self#get_instructions
 
-  method has_conditional_return_instr =
+  method has_conditional_returns =
+    (List.length conditionalreturns) > 0
+
+  method exit_edges_indices = conditionalreturns
+
+                                          (*
     match self#get_context with
     | [] ->
        List.exists
@@ -145,7 +152,7 @@ object (self)
            | Pop (_, _, rl, _) ->
               rl#includes_pc && is_opcode_conditional instr#get_opcode
            | _ -> false) self#get_instructions
-    | _ -> false
+    | _ -> false *)
 
   method is_returning =
     match successors with

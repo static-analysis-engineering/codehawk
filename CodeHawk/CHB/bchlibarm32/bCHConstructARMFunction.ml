@@ -81,6 +81,15 @@ let get_successors
           []
           (get_next_valid_instruction_address iaddr) in
 
+      let is_maybe_non_returning_call_instr =
+        match instr#get_opcode with
+        | BranchLink (ACCAlways, tgt)
+          | BranchLinkExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
+           let tgtaddr = tgt#get_absolute_address in
+           ((functions_data#is_function_entry_point tgtaddr)
+            && (functions_data#get_function tgtaddr)#is_maybe_non_returning)
+        | _ -> false in
+
       let next_from (va: doubleword_int) =
         log_tfold_default
           (mk_tracelog_spec
@@ -122,9 +131,15 @@ let get_successors
         (* unconditional return instruction *)
         | Pop (ACCAlways, _, rl, _) when rl#includes_pc -> []
 
-        (* conditional return in guarded basic block *)
-        | Pop (_, _, rl, _) when rl#includes_pc && instr#is_condition_covered ->
-           []
+        (* conditional return instruction *)
+        | Pop (_, _, rl, _) when rl#includes_pc ->
+           (next ()) @ [wordmax]
+
+        (* maybe non-returning call instruction *)
+        | BranchLink _ | BranchLinkExchange _
+             when is_maybe_non_returning_call_instr ->
+           let _ = chlog#add "maybe non returning" (iaddr#toPretty) in
+           (next ()) @ [wordmax]
 
         (* return via LDM/LDMDB/LDMDA/LDMIB *)
         | LoadMultipleDecrementBefore (_, ACCAlways, _, rl, _)
@@ -267,7 +282,13 @@ let get_successors
       List.map (fun va -> (make_location_by_address faddr va)#ci)
         (List.filter
            (fun va ->
-             if !arm_assembly_instructions#is_code_address va then
+             (* wordmax is used to indicate that the successor of a basic
+                block is another basic block in addition to returning from
+                the function (i.e., a conditional return)
+                The value will be filtered out when creating the assembly
+                block *)
+             if !arm_assembly_instructions#is_code_address va
+                || va = wordmax then
                true
              else
                let loc = make_location_by_address faddr va in
@@ -357,38 +378,43 @@ let construct_arm_assembly_block
         ~returnsite:returnsite
         ~calltgt:inlinedfn#get_address in
 
-    let handle_fn_with_inlined_return (tcr: arm_assembly_block_int) =
+    let inlinedblocks =
       let inline_exit = (make_location_by_address faddr returnsite)#ci in
       List.map (fun (b: arm_assembly_block_int) ->
-          if b#get_context_string = tcr#get_context_string then
-            make_ctxt_arm_assembly_block functioncontext b [inline_exit]
-          else
-            let succ =
-              match b#get_successors with
-              | [] -> [inline_exit]
-              | l ->
+          let succ =
+            match b#get_successors with
+            | [] -> [inline_exit]
+            | l ->
+               (* exit edges must be replaced by inline_exits *)
+               if b#has_conditional_returns then
+                 let exitixs = b#exit_edges_indices in
+                 let (_, xix, succ) =
+                   List.fold_left (fun (ix, xix, acc) s ->
+                       match xix with
+                       | [] ->
+                          (ix + 1,
+                           [],
+                           (add_ctxt_to_ctxt_string faddr s functioncontext)
+                           :: acc)
+                       | h :: tl when ix = h ->
+                          (ix + 1,
+                           tl,
+                           inline_exit
+                           :: (add_ctxt_to_ctxt_string faddr s functioncontext)
+                           :: acc)
+                       | _  ->
+                          (ix + 1,
+                           xix,
+                           (add_ctxt_to_ctxt_string faddr s functioncontext)
+                           :: acc))
+                     (1, exitixs, []) l in
+                 (* add exits for remaining exit indices *)
+                 succ @ (List.map (fun _ -> inline_exit) xix)
+               else
                  List.map (fun s ->
                      add_ctxt_to_ctxt_string faddr s functioncontext) l in
-            (make_ctxt_arm_assembly_block functioncontext b succ))
-        inlinedfn#get_blocks in
-
-    let inlinedblocks =
-      match inlinedfn#get_true_conditional_return with
-        | Some tcr -> handle_fn_with_inlined_return tcr
-        | _ ->
-           List.map (fun (b: arm_assembly_block_int) ->
-               let _ =
-                 chlog#add
-                   "inline blocks"
-                   (LBLOCK [STR b#get_context_string]) in
-               let succ =
-                 match b#get_successors with
-                 | [] -> [(make_location_by_address faddr returnsite)#ci]
-                 | l ->
-                    List.map (fun s ->
-                        add_ctxt_to_ctxt_string faddr s functioncontext) l in
-               make_ctxt_arm_assembly_block functioncontext b succ)
-             inlinedfn#get_blocks in
+          make_ctxt_arm_assembly_block functioncontext b succ)
+      inlinedfn#get_blocks in
 
     (callsucc#ci, inlinedblocks) in
 
@@ -498,13 +524,24 @@ let construct_arm_assembly_block
     | Some s -> s
     | _ ->
        match system_info#get_successors lastaddr with
-       | [] ->  get_successors faddr lastaddr
+       | [] -> get_successors faddr lastaddr
        | l ->
           (* user-provided successors to the last instruction *)
           List.map
             (fun loc -> loc#ci)
             (List.map (make_location_by_address faddr) l) in
-  (inlinedblocks, make_arm_assembly_block faddr baddr lastaddr succ, newfnentries#toList)
+  (* There may be multiple successors that are returns; their indices are
+     collected, while the successors themselves are filtered out.*)
+  let (conditionalreturns, index, succ) =
+    List.fold_left (fun (cr, ix, sl) s ->
+        if s = wordmax#to_hex_string then
+          (ix::cr, ix + 1, sl)
+        else
+          (cr, ix + 1, s::sl)) ([], 1, []) succ in
+  let succ = List.rev succ in
+  (inlinedblocks,
+   make_arm_assembly_block ~conditionalreturns faddr baddr lastaddr succ,
+   newfnentries#toList)
 
 
 (* Constructs an assembly function. In the process it may discover a

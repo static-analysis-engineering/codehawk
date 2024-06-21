@@ -25,6 +25,9 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHPretty
+
 (* chutil *)
 open CHLogger
 open CHXmlDocument
@@ -110,6 +113,11 @@ object (self)
          set "role" "trampoline_payload");
       (if system_info#is_trampoline_wrapper b#get_first_address then
          set "role" "trampoline_wrapper");
+      (if b#has_conditional_returns
+       then
+         set
+           "fnexits"
+           (String.concat "," (List.map string_of_int b#exit_edges_indices)));
       set "ba" b#get_context_string;
       set "ea" (make_i_location blockloc b#get_last_address)#ci
     end
@@ -125,6 +133,13 @@ object (self)
         (fun baddr block ->
           let bNode = xmlElement "bl" in
           begin
+            chlog#add
+              "cfg assembly block"
+              (LBLOCK [
+                   STR baddr;
+                   STR ": successors: ";
+                   pretty_print_list block#get_successors
+                     (fun s -> STR s) "[" ", " "]"]);
             self#write_xml_cfg_block bNode block;
             List.iter (fun succ ->
                 let eNode = xmlElement "e" in
