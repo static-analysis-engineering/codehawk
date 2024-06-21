@@ -479,7 +479,7 @@ object (self)
           else if ((is_common_preamble instr#get_instruction_bytes)
                    || (match instr#get_opcode with
                        | Push (_, _, rlist,_)
-                            when List.mem ARLR rlist#get_register_list -> true
+                            when List.mem ARLR rlist#get_register_list -> false
                        | _ -> false)) then
             let fndata = functions_data#add_function a in
             begin

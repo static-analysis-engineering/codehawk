@@ -156,7 +156,7 @@ object (self)
     List.exists (fun b -> b#includes_instruction_address va) blocks
 
   method has_conditional_return =
-    List.exists (fun b -> b#has_conditional_return_instr) blocks
+    List.exists (fun b -> b#has_conditional_returns) blocks
 
   method get_true_conditional_return =
     try
@@ -166,17 +166,6 @@ object (self)
             && (has_true_condition_context b#get_context_string))
           blocks in
       Some tc
-    with
-    | _ -> None
-
-  method get_false_conditional_return =
-    try
-      let fc =
-        List.find (fun b ->
-            b#get_instruction_count = 1
-            && (has_false_condition_context b#get_context_string))
-          blocks in
-      Some fc
     with
     | _ -> None
 
@@ -200,7 +189,7 @@ end
    one with a true conditional context and one with a false conditional
    context. The one with true conditional context has no successor, the one
    with the false conditional context has the original successor. The
-   semantics of the latter is equal to that of NOP. *)
+   semantics of the latter is equal to that of NOP.
 let inline_conditional_blocks (fn: arm_assembly_function_int) =
   let blockreplacements = H.create (2 * fn#get_block_count) in
   let newblocks = H.create (2 * fn#get_block_count) in
@@ -244,7 +233,7 @@ let inline_conditional_blocks (fn: arm_assembly_function_int) =
     H.fold (fun k v a ->
         (List.map (fun s -> (k, s)) v#get_successors) @ a) newblocks [] in
   (blocks, succ)
-
+ *)
 
 let make_arm_assembly_function
       (va:doubleword_int)
@@ -254,13 +243,15 @@ let make_arm_assembly_function
     List.sort (fun b1 b2 ->
         Stdlib.compare b1#get_context_string b2#get_context_string) blocks in
   let fn = new arm_assembly_function_t va blocks successors in
-  if fn#has_conditional_return then
+  (* if fn#has_conditional_return then
     let (newblocks, newsucc) = inline_conditional_blocks fn in
     new arm_assembly_function_t va newblocks newsucc
-  else
+  else *)
     fn
 
 
+(* Note: this function must still be updated for the presence of conditional
+   returns in assembly blocks *)
 let inline_blocks
       (baddrs: doubleword_int list)
       (f: arm_assembly_function_int) =

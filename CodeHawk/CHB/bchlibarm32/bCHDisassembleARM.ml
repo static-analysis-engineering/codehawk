@@ -476,6 +476,17 @@ let is_nr_call_instruction (instr:arm_assembly_instruction_int) =
   | _ -> false
 
 
+let is_maybe_nr_call_instruction (instr: arm_assembly_instruction_int) =
+  match instr#get_opcode with
+  | BranchLink (ACCAlways, tgt)
+    | BranchLinkExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
+     let tgtaddr = tgt#get_absolute_address in
+     ((functions_data#is_function_entry_point tgtaddr)
+      && (functions_data#get_function tgtaddr)#is_maybe_non_returning)
+  | _ -> false
+
+
+
 let collect_function_entry_points () =
   let addresses = new DoublewordCollections.set_t in
   begin
@@ -660,7 +671,7 @@ let set_block_boundaries () =
                     (LBLOCK [
                          va#toPretty;
                          STR ": Error in getting instruction addresses"]))
-
+(*
            | IfThen (c, xyz)
                 when (xyz = "")
                      && (let nextva_r = get_next_valid_instruction_address va in
@@ -677,16 +688,23 @@ let set_block_boundaries () =
                                ~error:(fun _ -> false)
                                (get_arm_assembly_instruction nextva))
                          | _ -> false) ->
-              instr#set_block_condition
+              instr#set_block_condition *)
 
            (* make a conditional return a separate block, so that it can be
-              contextualized with a ConditionContext *)
+              contextualized with a ConditionContext
+
+              The problem  with this approach is that the condition now is
+              in a different block and thus not connected. It is better to
+              treat a conditional return in the same way as a conditional
+              branch.
            | Pop (_, _, rl, _)
                 when rl#includes_pc && is_opcode_conditional instr#get_opcode ->
               set_block_entry va
+            *)
 
            | BranchLink _ | BranchLinkExchange _
-                when is_nr_call_instruction instr ->
+                when is_nr_call_instruction instr
+                     || is_maybe_nr_call_instruction instr ->
               set_block_entry (va#add_int 4)
 
            | _ -> ())
@@ -840,7 +858,7 @@ let record_call_targets_arm () =
                      let ctinfo = mk_call_target_info calltgt in
                      finfo#set_call_target ctxtiaddr ctinfo
                    else
-                     ()
+                     finfo#set_call_target ctxtiaddr (mk_unknown_target ())
               | Branch (_, tgt, _) when
                      tgt#is_absolute_address
                      && functions_data#is_function_entry_point

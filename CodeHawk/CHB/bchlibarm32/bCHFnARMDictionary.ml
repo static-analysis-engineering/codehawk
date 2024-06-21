@@ -196,9 +196,11 @@ object (self)
           raise
             (BCH_failure
                (LBLOCK [STR "Empty tag list in add_instr_condition"])) in
-      let xtag = (List.hd tags) ^ "x" in
-      let tags = xtag :: ((List.tl tags) @ ["ic"]) in
-      let args = args @ [xd#index_xpr x] in
+      let xtag = (List.hd tags) ^ "xx" in
+      let tags = xtag :: ((List.tl tags) @ ["ic"; "icr"]) in
+      let xneg = XOp (XLNot, [x]) in
+      let xneg = simplify_xpr xneg in
+      let args = args @ [xd#index_xpr x; xd#index_xpr xneg] in
       (tags, args) in
 
     let flagrdefs: int list =
