@@ -480,7 +480,7 @@ let translate_arm_instruction
       ~(funloc:location_int)
       ~(codepc:arm_code_pc_int)
       ~(blocklabel:symbol_t)
-      ~(_exitlabel:symbol_t)
+      ~(exitlabel:symbol_t)
       ~(cmds:cmd_t list) =
   let (ctxtiaddr, instr) = codepc#get_next_instruction in
   let faddr = funloc#f in
@@ -696,12 +696,14 @@ let translate_arm_instruction
   | Branch (_, op, _)
        when op#is_absolute_address
             && (system_info#is_trampoline_wrapper op#get_absolute_address) ->
+     (* TODO: restructure augmentation to real variables instead of symbolic
+        values.
      let freezecmds =
        List.map (fun r ->
            let v = floc#f#env#mk_arm_register_variable r in
            let trvar = floc#f#env#mk_trampoline_entry_value v floc#cia in
-           ASSERT (EQ (v, trvar))) arm_regular_registers_no_pc in
-     default freezecmds
+           ASSERT (EQ (v, trvar))) arm_regular_registers_no_pc in *)
+     default [] (* freezecmds *)
 
   | Branch _ when (system_info#is_trampoline_fallthroughaddr loc#i) ->
      let tvars = floc#f#env#get_trampoline_entry_values in
@@ -1054,7 +1056,6 @@ let translate_arm_instruction
    * BranchWritePC(targetAddress);
    * ------------------------------------------------------------------------ *)
   | BranchLink _ when is_maybe_non_returning_call_instr ->
-     let thenaddr = "exit" in
      let elseaddr = codepc#get_false_branch_successor in
      let floc = get_floc loc in
      let vr0 = floc#f#env#mk_arm_register_variable AR0 in
@@ -1104,10 +1105,9 @@ let translate_arm_instruction
          ctxtiaddr in
      let cmds = cmds @ (invop :: callcmds) @ defcmds @ [bwdinvop] @ pcassign in
      let transaction = package_transaction finfo blocklabel cmds in
-     let thenlabel = make_code_label thenaddr in
      let elselabel = make_code_label elseaddr in
      let nodes = [(blocklabel, [transaction])] in
-     let edges = [(blocklabel, _exitlabel); (blocklabel, elselabel)] in
+     let edges = [(blocklabel, exitlabel); (blocklabel, elselabel)] in
      (nodes, edges, [])
 
   | BranchLink (c, tgt) when tgt#is_absolute_address ->
@@ -3741,7 +3741,7 @@ object (self)
       let (nodes,edges,newcmds) =
         try
           translate_arm_instruction
-            ~funloc ~codepc ~blocklabel ~_exitlabel:exitlabel ~cmds
+            ~funloc ~codepc ~blocklabel ~exitlabel ~cmds
         with
         | BCH_failure p ->
            let msg =

@@ -40,7 +40,7 @@ val translate_arm_instruction:
   funloc:location_int
   -> codepc:arm_code_pc_int
   -> blocklabel:symbol_t
-  -> _exitlabel:symbol_t
+  -> exitlabel:symbol_t
   -> cmds:cmd_t list
   -> ((symbol_t
        * (code_t, 'a) command_t list) list
