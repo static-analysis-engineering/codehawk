@@ -42,7 +42,6 @@ open XprTypes
 (* bchlib *)
 open BCHBasicTypes
 open BCHLibTypes
-open BCHLocation
 open BCHSumTypeSerializer
 
 
@@ -193,16 +192,6 @@ object (self)
          (tags @ [a1; a2], [xd#index_variable v])
       | FunctionReturnValue a -> (tags @ [a], [])
       | SyscallErrorReturnValue a -> (tags @ [a], [])
-      | AugmentationValue (v, a, desc, suffix, ty) ->
-         (* Note: description should not include comma's or spaces *)
-         (tags @ [a; desc; suffix], [xd#index_variable v; bcd#index_typ ty])
-      | SSARegisterValue (r, a, optname, ty) ->
-         let rname = ssa_register_value_name r self#faddr a in
-         let ntags =
-           match optname with
-           | Some name -> tags @ [a; rname; name]
-           | _ -> tags @ [a; rname] in
-         (ntags, [bd#index_register r; bcd#index_typ ty])
       | FunctionPointer (s1, s2, a) ->
          (tags @ [a], [bd#index_string s1; bd#index_string s2])
       | CallTargetValue t -> (tags, [id#index_call_target t])
@@ -230,14 +219,6 @@ object (self)
     | "ft" -> FrozenTestValue (xd#get_variable (a 0), t 1, t 2)
     | "fr" -> FunctionReturnValue (t 1)
     | "ev" -> SyscallErrorReturnValue (t 1)
-    | "av" ->
-       AugmentationValue (xd#get_variable (a 0), t 1, t 2, t 3, bcd#get_typ (a 1))
-    | "ssa" ->
-       let optname =
-         match tags with
-         | [_; _; _; name] -> Some name
-         | _ -> None in
-       SSARegisterValue (bd#get_register (a 0), t 1, optname, bcd#get_typ (a 1))
     | "fp" -> FunctionPointer (bd#get_string (a 0), bd#get_string (a 1), t 1)
     | "ct" -> CallTargetValue (id#get_call_target (a 0))
     | "se" -> SideEffectValue (t 1, bd#get_string (a 0), (a 1) = 1)

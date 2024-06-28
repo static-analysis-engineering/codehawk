@@ -196,32 +196,27 @@ object (self)
           ?(uses: int list = [])
           ?(useshigh: int list = [])
           () =
-      let ssavalues = floc#ssa_register_values in
       let varcount = List.length vars in
       let xprcount = List.length xprs in
       let rdefcount = List.length rdefs in
       let defusecount = List.length uses in
       let defusehighcount = List.length useshigh in
-      let ssacount = List.length ssavalues in
       let varstring = string_repeat "v" varcount in
       let xprstring = string_repeat "x" xprcount in
       let rdefstring = string_repeat "r" rdefcount in
       let defusestring = string_repeat "d" defusecount in
       let defusehighstring = string_repeat "h" defusehighcount in
-      let ssastring = string_repeat "c" ssacount in
       let tagstring =
         "a:"
         ^ varstring
         ^ xprstring
         ^ rdefstring
         ^ defusestring
-        ^ defusehighstring
-        ^ ssastring in
+        ^ defusehighstring in
       let varargs = List.map xd#index_variable vars in
       let xprargs = List.map xd#index_xpr xprs in
-      let ssaargs = List.map xd#index_variable ssavalues in
       (tagstring,
-       varargs @ xprargs @ rdefs @ uses @ useshigh @ ssaargs) in
+       varargs @ xprargs @ rdefs @ uses @ useshigh) in
 
     let get_condition_exprs thenxpr elsexpr =
       match restriction with

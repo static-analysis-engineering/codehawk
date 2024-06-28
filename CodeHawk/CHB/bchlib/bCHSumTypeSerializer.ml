@@ -670,8 +670,6 @@ object
     | FrozenTestValue _ -> "ft"
     | FunctionReturnValue _ -> "fr"
     | SyscallErrorReturnValue _ -> "ev"
-    | AugmentationValue _ -> "av"
-    | SSARegisterValue _ -> "ssa"
     | FunctionPointer _ -> "fp"
     | CallTargetValue _ -> "ct"
     | SideEffectValue _ -> "se"
@@ -685,8 +683,8 @@ object
     | ChifTemp -> "chiftemp"
 
   method !tags = [
-      "av"; "bv"; "chiftemp"; "ct"; "ev"; "fr"; "fp"; "ft"; "fv"; "ir";
-      "iv"; "ma"; "rt"; "se" ; "sp"; "sv"; "ssa"; "ssv"]
+      "bv"; "chiftemp"; "ct"; "ev"; "fr"; "fp"; "ft"; "fv"; "ir";
+      "iv"; "ma"; "rt"; "se" ; "sp"; "sv"; "ssv"]
 
 end
 
@@ -766,11 +764,10 @@ object
     | NonRelationalFact _ -> "n"
     | RelationalFact _ -> "r"
     | InitialVarEquality _ -> "ie"
-    | SSAVarEquality _ -> "sse"
     | InitialVarDisEquality _ -> "id"
     | TestVarEquality _ -> "te"
 
-  method !tags = ["id"; "ie"; "n"; "r"; "sse"; "te"; "u"]
+  method !tags = ["id"; "ie"; "n"; "r"; "te"; "u"]
 
 end
 

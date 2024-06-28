@@ -129,8 +129,6 @@ object (self)
       | RelationalFact x -> (tags, [ self#index_linear_equality x ])
       | InitialVarEquality (v, iv) ->
          (tags, [self#xd#index_variable v; self#xd#index_variable iv])
-      | SSAVarEquality (v, ssav) ->
-         (tags, [self#xd#index_variable v; self#xd#index_variable ssav])
       | InitialVarDisEquality (v,iv) ->
          (tags, [ self#xd#index_variable v ; self#xd#index_variable iv ])
       | TestVarEquality (v, tv, iaddr1, iaddr2) ->
@@ -151,9 +149,6 @@ object (self)
     | "r" -> RelationalFact (self#get_linear_equality (a 0))
     | "ie" ->
        InitialVarEquality
-         (self#xd#get_variable (a 0), self#xd#get_variable (a 1))
-    | "sse" ->
-       SSAVarEquality
          (self#xd#get_variable (a 0), self#xd#get_variable (a 1))
     | "id" ->
        InitialVarDisEquality

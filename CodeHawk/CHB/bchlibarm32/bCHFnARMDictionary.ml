@@ -293,21 +293,18 @@ object (self)
       let _ =
         if testsupport#requested_instrx_data then
           testsupport#submit_instrx_data instr#get_address vars xprs in
-      let ssavalues = floc#ssa_register_values in
       let varcount = List.length vars in
       let xprcount = List.length xprs in
       let rdefcount = List.length rdefs in
       let defusecount = List.length uses in
       let defusehighcount = List.length useshigh in
       let flagrdefcount = List.length flagrdefs in
-      let ssacount = List.length ssavalues in
       let varstring = string_repeat "v" varcount in
       let xprstring = string_repeat "x" xprcount in
       let rdefstring = string_repeat "r" rdefcount in
       let defusestring = string_repeat "d" defusecount in
       let defusehighstring = string_repeat "h" defusehighcount in
       let flagrdefstring = string_repeat "f" flagrdefcount in
-      let ssastring = string_repeat "c" ssacount in
       let tagstring =
         "a:"
         ^ varstring
@@ -315,13 +312,11 @@ object (self)
         ^ rdefstring
         ^ defusestring
         ^ defusehighstring
-        ^ flagrdefstring
-        ^ ssastring in
+        ^ flagrdefstring in
       let varargs = List.map xd#index_variable vars in
       let xprargs = List.map xd#index_xpr xprs in
-      let ssaargs = List.map xd#index_variable ssavalues in
       (tagstring,
-       varargs @ xprargs @ rdefs @ uses @ useshigh @ flagrdefs @ ssaargs) in
+       varargs @ xprargs @ rdefs @ uses @ useshigh @ flagrdefs) in
 
     let add_optional_instr_condition
           (tagstring: string)
