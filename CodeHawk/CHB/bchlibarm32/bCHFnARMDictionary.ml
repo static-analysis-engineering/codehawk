@@ -336,8 +336,47 @@ object (self)
          add_instr_condition [tagstring] args tcond
       | _ -> (tagstring :: ["uc"], args) in
 
+    let add_optional_subsumption (tags: string list) =
+      match instr#is_in_aggregate with
+      | Some va -> tags @ ["subsumed"; va#to_hex_string]
+      | _ -> tags in
+
+    let add_subsumption_dependents
+          (agg: arm_instruction_aggregate_int) (tags: string list) =
+      let iaddr = instr#get_address in
+      let deps =
+        List.fold_left (fun acc agginstr ->
+            if iaddr#equal agginstr#get_address then
+              acc
+            else
+              agginstr#get_address#to_hex_string :: acc) [] agg#instrs in
+      tags @ ("subsumes" :: deps) in
+
     let key =
       match instr#get_opcode with
+      | Add _ when instr#is_aggregate_anchor ->
+         let iaddr = instr#get_address in
+         let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
+         if agg#is_jumptable then
+           let jt = agg#jumptable in
+           let indexregop = jt#index_operand in
+           let xrn = indexregop#to_expr floc in
+           let xxrn = rewrite_expr xrn in
+           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
+           let (tagstring, args) =
+             mk_instrx_data
+               ~xprs:[xrn; xxrn]
+               ~rdefs:rdefs
+               () in
+           let tags = tagstring :: ["agg-jt"] in
+           let tags = add_subsumption_dependents agg tags in
+           (tags, args)
+         else
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Aggregate for Add not recognized at "; iaddr#toPretty]))
+
       | Add (_, c, rd, rn, rm, _) ->
          let vrd = rd#to_variable floc in
          let xrn = rn#to_expr floc in
@@ -357,6 +396,7 @@ object (self)
              ~useshigh:[useshigh]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let tags = add_optional_subsumption tags in
          (tags, args)
 
       | AddCarry (_, c, rd, rn, rm, _) ->
@@ -394,6 +434,7 @@ object (self)
              ~useshigh:[useshigh]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let tags = add_optional_subsumption tags in
          (tags, args)
 
       | ArithmeticShiftRight (_, c, rd, rn, rm, _) ->
@@ -566,6 +607,29 @@ object (self)
           (List.map xd#index_xpr args)
           @ [ixd#index_call_target floc#get_call_target#get_target])
 
+      | Branch _ when instr#is_aggregate_anchor ->
+         let iaddr = instr#get_address in
+         let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
+         if agg#is_jumptable then
+           let jt = agg#jumptable in
+           let indexregop = jt#index_operand in
+           let xrn = indexregop#to_expr floc in
+           let xxrn = rewrite_expr xrn in
+           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
+           let (tagstring, args) =
+             mk_instrx_data
+               ~xprs:[xrn; xxrn]
+               ~rdefs:rdefs
+               () in
+           let tags = tagstring :: ["agg-jt"] in
+           let tags = add_subsumption_dependents agg tags in
+           (tags, args)
+         else
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Aggregate branch not recognized at "; iaddr#toPretty]))
+
       | Branch (c, tgt, _)
            when is_cond_conditional c
                 && tgt#is_absolute_address
@@ -597,11 +661,44 @@ object (self)
              ~rdefs:rdefs
              () in
          let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
+         let tags = add_optional_subsumption tags in
          (tags, args)
 
       | Branch (_, tgt, _) ->
          let xtgt = tgt#to_expr floc in
-         (["a:x"], [xd#index_xpr xtgt])
+         let xxtgt = rewrite_expr xtgt in
+         let rdefs = (get_rdef xtgt) :: (get_all_rdefs xxtgt) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[xtgt; xxtgt]
+             ~rdefs
+             () in
+         let tags = add_optional_subsumption [tagstring] in
+         (tags, args)
+
+      | BranchExchange _ when instr#is_aggregate_anchor ->
+         let iaddr = instr#get_address in
+         let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
+         if agg#is_jumptable then
+           let jt = agg#jumptable in
+           let indexregop = jt#index_operand in
+           let xrn = indexregop#to_expr floc in
+           let xxrn = rewrite_expr xrn in
+           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
+           let (tagstring, args) =
+             mk_instrx_data
+               ~xprs:[xrn; xxrn]
+               ~rdefs:rdefs
+               () in
+           let tags = tagstring :: ["agg-jt"] in
+           let tags = add_subsumption_dependents agg tags in
+           (tags, args)
+         else
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Aggregate for BranchExchange not recognized at ";
+                     iaddr#toPretty]))
 
       | BranchExchange (c, tgt)
            when tgt#is_register && tgt#get_register = ARLR ->
@@ -614,9 +711,14 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | BranchExchange (_, tgt) ->
+      | BranchExchange (c, tgt) ->
          let xtgt = tgt#to_expr floc in
-         (["a:x"], [xd#index_xpr xtgt])
+         let xxtgt = rewrite_expr xtgt in
+         let rdefs = (get_rdef xtgt) :: (get_all_rdefs xxtgt) in
+         let (tagstring, args) =
+           mk_instrx_data ~xprs:[xtgt; xxtgt] ~rdefs () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | BranchLink _
         | BranchLinkExchange _
@@ -718,6 +820,7 @@ object (self)
              ~rdefs:rdefs
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let tags = add_optional_subsumption tags in
          (tags, args)
 
       | CompareBranchNonzero (rn, tgt) ->
@@ -947,6 +1050,30 @@ object (self)
           @ (List.map xd#index_xpr memreads)
           @ [xd#index_xpr (base#to_expr floc)])
 
+      | LoadRegister _ when instr#is_aggregate_anchor ->
+         let iaddr = instr#get_address in
+         let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
+         if agg#is_jumptable then
+           let jt = agg#jumptable in
+           let indexregop = jt#index_operand in
+           let xrn = indexregop#to_expr floc in
+           let xxrn = rewrite_expr xrn in
+           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
+           let (tagstring, args) =
+             mk_instrx_data
+               ~xprs:[xrn; xxrn]
+               ~rdefs
+               () in
+           let tags = tagstring :: ["agg-jt"] in
+           let tags = add_subsumption_dependents agg tags in
+           (tags, args)
+         else
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Aggregate loadregister not recognized: ";
+                     iaddr#toPretty]))
+
       | LoadRegister (c, rt, rn, rm, mem, _) ->
          let vrt = rt#to_variable floc in
          let xrn = rn#to_expr floc in
@@ -970,6 +1097,7 @@ object (self)
              ~useshigh:useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let tags = add_optional_subsumption tags in
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
@@ -1001,6 +1129,7 @@ object (self)
              ~useshigh:useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let tags = add_optional_subsumption tags in
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
@@ -1187,6 +1316,7 @@ object (self)
              ~useshigh:[get_def_use_high vrd]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let tags = add_optional_subsumption tags in
          (tags, args)
 
       | LogicalShiftRight (_, c, rd, rn, rm, _) ->
@@ -1823,12 +1953,34 @@ object (self)
          (tags, args)
 
       | TableBranchByte (_, _, rm, _) ->
+         let iaddr = instr#get_address in
          let xrm = rm#to_expr floc in
-         (["a:x"], [xd#index_xpr xrm])
+         let xxrm = rewrite_expr xrm in
+         let rdefs = (get_rdef xrm) :: (get_all_rdefs xxrm) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[xrm; xxrm]
+             ~rdefs
+             () in
+         let tags = tagstring :: ["agg-jt"] in
+         let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
+         let tags = add_subsumption_dependents agg tags in
+         (tags, args)
 
       | TableBranchHalfword (_, _, rm, _) ->
+         let iaddr = instr#get_address in
          let xrm = rm#to_expr floc in
-         (["a:x"], [xd#index_xpr xrm])
+         let xxrm = rewrite_expr xrm in
+         let rdefs = (get_rdef xrm) :: (get_all_rdefs xxrm) in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~xprs:[xrm; xxrm]
+             ~rdefs
+             () in
+         let tags = tagstring :: ["agg-jt"] in
+         let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
+         let tags = add_subsumption_dependents agg tags in
+         (tags, args)
 
       | Test (_, rn, rm, _) ->
          let xrn = rn#to_expr floc in

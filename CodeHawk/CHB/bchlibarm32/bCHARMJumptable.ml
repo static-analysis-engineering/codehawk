@@ -52,12 +52,16 @@ module H = Hashtbl
 module TR = CHTraceResult
 
 
+let armd = BCHARMDictionary.arm_dictionary
+
+
 class arm_jumptable_t
         ?(db: data_block_int option=None)
         ~(end_address: doubleword_int)
         ~(start_address: doubleword_int)
         ~(default_target: doubleword_int)
         ~(targets: (doubleword_int * int list) list)
+        ~(index_operand: arm_operand_int)
         ():arm_jumptable_int =
 object (self)
 
@@ -70,6 +74,8 @@ object (self)
   method indexed_targets = targets
 
   method default_target = default_target
+
+  method index_operand = index_operand
 
   method has_offset_table =
     match db with Some _ -> true | _ -> false
@@ -87,6 +93,7 @@ object (self)
   method write_xml (node: xml_element_int) =
     let append = node#appendChildren in
     let set = node#setAttribute in
+    let seti = node#setIntAttribute in
     begin
       append
         (List.map (fun (tgtaddr, indices) ->
@@ -99,7 +106,8 @@ object (self)
              end) self#indexed_targets);
       set "default" self#default_target#to_hex_string;
       set "start" self#start_address#to_hex_string;
-      set "end" self#end_address#to_hex_string
+      set "end" self#end_address#to_hex_string;
+      seti "indexopix" (armd#index_arm_operand self#index_operand)
     end
 
   method toPretty =
@@ -129,6 +137,7 @@ let make_arm_jumptable
       ~(start_address: doubleword_int)
       ~(default_target: doubleword_int)
       ~(targets: (doubleword_int * int) list)
+      ~(index_operand: arm_operand_int)
       () =
   let tgts = H.create 5 in
   let _ =
@@ -153,6 +162,7 @@ let make_arm_jumptable
     ~start_address:start_address
     ~default_target:default_target
     ~targets:indexedtargets
+    ~index_operand
     ()
 
 
@@ -358,9 +368,9 @@ let create_arm_table_branch
         let size = imm#to_numerical#toInt in
         let jtaddr = addr#add_int 4 in
         let targets = ref [] in
-        let (jtype, end_address) =
+        let (jtype, end_address, indexop) =
           match opcode with
-          | TableBranchByte _ ->
+          | TableBranchByte (_, _, indexop, _) ->
              let size = if size mod 2 = 0 then size + 1 else size in
              let _ =
                for i = 0 to size do
@@ -369,15 +379,15 @@ let create_arm_table_branch
                    let tgt = addr#add_int ((2 * byte) + 4) in
                    targets := (tgt, i) :: !targets
                done in
-             ("tbb", jtaddr#add_int (size + 1))
-          | TableBranchHalfword _ ->
+             ("tbb", jtaddr#add_int (size + 1), indexop)
+          | TableBranchHalfword (_, _, indexop, _) ->
              let _ =
                for i = 0 to size do
                  let hw = ch#read_ui16 in
                  let tgt = addr#add_int ((2 * hw) + 4) in
                  targets := (tgt, i) :: !targets
                done in
-             ("tbh", jtaddr#add_int (2 * (size + 1)))
+             ("tbh", jtaddr#add_int (2 * (size + 1)), indexop)
           | _ ->
              raise
                (BCH_failure
@@ -390,6 +400,7 @@ let create_arm_table_branch
             ~start_address:jtaddr
             ~default_target:defaulttgt
             ~targets:(List.rev !targets)
+            ~index_operand:indexop
             () in
         let instrs = [cmpinstr; bhiinstr; tbinstr] in
         begin
@@ -458,7 +469,7 @@ let create_arm_ldr_jumptable
   | None -> None
   | Some (cmpinstr, bhiinstr, adrinstr) ->
      (match (cmpinstr#get_opcode, bhiinstr#get_opcode, adrinstr#get_opcode) with
-      | (Compare (_, _, imm, _), Branch (_, tgtop, _), Adr (_, _, addrop))
+      | (Compare (_, indexregop, imm, _), Branch (_, tgtop, _), Adr (_, _, addrop))
            when tgtop#is_absolute_address && addrop#is_absolute_address ->
          let iaddr = ldrinstr#get_address in
          let defaulttgt = tgtop#get_absolute_address in
@@ -478,6 +489,7 @@ let create_arm_ldr_jumptable
              ~start_address:jtaddr
              ~default_target:defaulttgt
              ~targets:(List.rev !targets)
+             ~index_operand:indexregop
              () in
          let instrs = [cmpinstr; bhiinstr; adrinstr; ldrinstr] in
          begin
@@ -540,7 +552,7 @@ let create_arm_ldrls_jumptable
   | None -> None
   | Some (cmpinstr, branchinstr) ->
      (match (cmpinstr#get_opcode, branchinstr#get_opcode) with
-      | (Compare (_, _, imm, _), Branch (_, tgtop, _))
+      | (Compare (_, indexregop, imm, _), Branch (_, tgtop, _))
            when tgtop#is_absolute_address ->
          let iaddr = ldrinstr#get_address in
          let defaulttgt = tgtop#get_absolute_address in
@@ -558,6 +570,7 @@ let create_arm_ldrls_jumptable
              ~start_address:jtaddr
              ~default_target:defaulttgt
              ~targets:(List.rev !targets)
+             ~index_operand:indexregop
              () in
          let instrs = [cmpinstr; ldrinstr; branchinstr] in
          begin
@@ -671,6 +684,7 @@ let create_arm_add_pc_b_jumptable
              ~start_address:jtaddr
              ~default_target:defaulttgt
              ~targets:(List.rev !targets)
+             ~index_operand:indexregop
              () in
          let instrs =
            [cmpinstr; bcsinstr; adrinstr; ldrbinstr; lslinstr; addpcinstr] in
@@ -798,6 +812,7 @@ let create_arm_add_pc_h_jumptable
                  ~start_address:jtaddr
                  ~default_target:defaulttgt
                  ~targets:(List.rev !targets)
+                 ~index_operand:indexregop
                  () in
              let instrs =
                [cmpinstr; bcsinstr; adrinstr; ldrhinstr; lslinstr; addpcinstr] in
@@ -938,17 +953,19 @@ let create_arm_bx_jumptable
            let cond = bx_instrs_consistent cmpinstr adrinstr ldrinstr addinstr in
            begin
              (if not cond then
-                pr_debug [
-                    STR "create_arm_bx_jumptable: check assertion at address: ";
-                    addr#toPretty;
-                    NL]);
+                ch_error_log#add
+                  "arm-bx jumptable condition not recognized"
+                  (LBLOCK [
+                       STR "create_arm_bx_jumptable: check assertion at address: ";
+                       addr#toPretty;
+                       NL]));
              cond
            end) in
-     let (defaulttgt, size) =
+     let (defaulttgt, size, indexregop) =
        match (cmpinstr#get_opcode, bhiinstr#get_opcode) with
-       | (Compare (_, _, cmp_imm, _), Branch (_, tgtop, _))
+       | (Compare (_, indexregop, cmp_imm, _), Branch (_, tgtop, _))
             when tgtop#is_absolute_address && cmp_imm#is_immediate ->
-          (tgtop#get_absolute_address, cmp_imm#to_numerical#toInt)
+          (tgtop#get_absolute_address, cmp_imm#to_numerical#toInt, indexregop)
        | _ ->
           raise
             (BCH_failure
@@ -986,6 +1003,7 @@ let create_arm_bx_jumptable
          ~start_address:jtaddr
          ~default_target:defaulttgt
          ~targets:(List.rev !targets)
+         ~index_operand:indexregop
          () in
      let instrs = [
          cmpinstr; bhiinstr; adrinstr; ldrinstr; addinstr; bxinstr] in

@@ -1483,6 +1483,7 @@ class type arm_jumptable_int =
     method indexed_targets: (doubleword_int * int list) list
     method start_address: doubleword_int
     method end_address: doubleword_int
+    method index_operand: arm_operand_int
 
     (* conversion *)
     method to_jumptable: jumptable_int
