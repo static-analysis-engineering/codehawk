@@ -288,9 +288,6 @@ let invariant_fact_compare f1 f2 =
   | (InitialVarEquality (v1, _), InitialVarEquality (v2, _)) -> v1#compare v2
   | (InitialVarEquality _, _) -> -1
   | (_, InitialVarEquality _) -> 1
-  | (SSAVarEquality (v1, _), SSAVarEquality (v2, _)) -> v1#compare v2
-  | (SSAVarEquality _, _) -> -1
-  | (_, SSAVarEquality _) -> 1
   | (InitialVarDisEquality (v1,_), InitialVarDisEquality (v2,_)) -> v1#compare v2
   | (InitialVarDisEquality _,_) -> -1
   | (_,InitialVarDisEquality _) -> 1
@@ -313,8 +310,6 @@ let invariant_fact_to_pretty f =
      linear_equality_to_pretty e
   | InitialVarEquality (v, _vi) ->
      LBLOCK [STR "initvar("; v#toPretty; STR ")"]
-  | SSAVarEquality (v, ssav) ->
-     LBLOCK [STR "ssavar("; v#toPretty; STR", "; ssav#toPretty; STR ")"]
   | InitialVarDisEquality (v, _vi) ->
      LBLOCK [STR "initmod("; v#toPretty; STR ")"]
   | TestVarEquality (v, _, taddr, jaddr) ->
@@ -404,19 +399,6 @@ object (self:'a)
     match fact with
     | NonRelationalFact (_, FSymbolicExpr _) -> true
     | _ -> false
-
-  method is_ssavar_equality =
-    match fact with
-    | SSAVarEquality _ -> true
-    | _ -> false
-
-  method get_ssa_regvar =
-    match fact with
-    | SSAVarEquality (v, _) -> v
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Not an ssavar equality: "; self#toPretty]))
 
   method is_linear_equality =
     match fact with
@@ -572,25 +554,7 @@ object (self)
                  raise (BCH_failure msg)
                end
           else
-            match f#get_fact with
-            | SSAVarEquality (regvar, _ssavar) ->
-               let sfacts =
-                 List.filter
-                   (fun p ->
-                     p#is_ssavar_equality
-                     && p#get_ssa_regvar#getName#getSeqNumber =
-                          regvar#getName#getSeqNumber) e in
-               (match sfacts with
-                | [] -> [f]
-                | _ ->
-                   let sfacts_nof = List.fold_left (fun acc sv ->
-                       if sv#index = f#index then
-                         acc
-                       else
-                         sv :: acc) [] sfacts in
-                   f :: sfacts_nof)
-            | _ ->
-               f :: e
+            f :: e
 	else
 	  [f] in
       H.replace table index entry in
@@ -635,7 +599,6 @@ object (self)
       match inv#get_fact with
       | NonRelationalFact (v, _)
         | InitialVarEquality (v, _)
-        | SSAVarEquality (v, _)
         | InitialVarDisEquality (v, _)
         | TestVarEquality (v, _, _, _) -> add v inv
       | RelationalFact _ -> add_relational_equality inv
@@ -694,17 +657,11 @@ object (self)
       match self#get_external_exprs v with
       | [] -> XVar v
       | x :: _tl -> x in
-    let subst5 v =
-      if self#var_has_ssa_value v then
-        XVar (self#get_ssa_value v)
-      else
-        XVar v in
     let x1 = simplify_xpr (substitute_expr subst1 x) in
     let x2 = simplify_xpr (substitute_expr subst2 x1) in
     let x3 = simplify_xpr (substitute_expr subst3 x2) in
     let x4 = simplify_xpr (substitute_expr subst4 x3) in
-    let x5 = simplify_xpr (substitute_expr subst5 x4) in
-    let result = simplify_xpr (substitute_expr subst3 x5) in
+    let result = simplify_xpr (substitute_expr subst3 x4) in
     result
 
   method get_constant (v:variable_t) =
@@ -847,30 +804,6 @@ object (self)
                  STR "Variable does not have an initial value: ";
 		 var#toPretty]))
 
-  method private var_has_ssa_value (var: variable_t) =
-    List.fold_left (fun acc f ->
-        if acc then acc else
-          match f with
-          | SSAVarEquality (v, _) -> var#equal v
-          | _ -> acc) false (self#get_var_facts var)
-
-  method private get_ssa_value (var: variable_t) =
-    let result =
-      List.fold_left (fun acc f ->
-          match acc with
-          | Some _ -> acc
-          | _ ->
-             match f with
-             | SSAVarEquality (v, ssaval) when v#equal var -> Some ssaval
-             | _ -> acc) None (self#get_var_facts var) in
-    match result with
-    | Some v -> v
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Variable is not equal to an ssa value: "; var#toPretty]))
-
   method get_init_disequalities =
     let result = ref [] in
     let add v = result := v :: !result in
@@ -1002,12 +935,7 @@ object (self)
                      STR (node#getAttribute "ifacts")])) in
       let facts = List.map invd#get_invariant_fact attr in
       let facts = List.sort invariant_fact_compare facts  in
-      List.iter
-        self#add_fact
-        (List.filter (fun f ->
-             match f with
-             | SSAVarEquality _ -> false
-             | _ -> true) facts)
+      List.iter self#add_fact facts
 
   method toPretty = self#toPrettyVar None
 
@@ -1175,10 +1103,6 @@ object (self)
   method add_initial_value_fact
            (iaddr: string) (v: variable_t) (ival: variable_t) =
     self#add iaddr (InitialVarEquality (v, ival))
-
-  method add_ssa_value_fact
-           (iaddr: string) (v: variable_t) (ssaval: variable_t) =
-    self#add iaddr (SSAVarEquality (v, ssaval))
 
   method remove_initial_value_fact
            (iaddr: string) (v: variable_t) (ival: variable_t) =

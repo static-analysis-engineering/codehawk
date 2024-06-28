@@ -222,14 +222,11 @@ let extract_external_value_equalities
 	           ffactors c#getConstant with
 	   | Some fexp ->
 	      let v = pf#getVariable in
-              if finfo#env#is_ssa_register_value v then
-                acc
-              else
-                let fexpx = simplify_xpr (expand_symbolic_values fexp) in
-	        begin
-                  finfo#finv#add_symbolic_expr_fact iaddr v fexpx;
-                  v :: acc
-                end
+              let fexpx = simplify_xpr (expand_symbolic_values fexp) in
+	      begin
+                finfo#finv#add_symbolic_expr_fact iaddr v fexpx;
+                v :: acc
+              end
 	   | _ -> acc
 	 end
       | _ -> acc) [] newConstraints#toList
@@ -275,41 +272,13 @@ let extract_testvar_equalities finfo iaddr domain =
         (env#get_frozen_variable fval)) [] fvals
 
 
-let extract_ssavar_equalities
-      (finfo: function_info_int) (iaddr: string) domain =
-  let env = finfo#env in
-  let vars = domain#observer#getObservedVariables in
-  let fvals = List.filter env#is_ssa_register_value vars in
-  let _ =
-    List.iter (fun fval ->
-        log_tfold
-          (log_error "extract_ssavar_equalities" "invalid ssa register")
-          ~ok:(fun rvar ->
-            let varsout =
-              List.filter (fun v -> not ((fval#equal v) || (rvar#equal v))) vars in
-            let domain = domain#projectOut varsout in
-            let numConstrs =
-              domain#observer#getNumericalConstraints ~variables:None () in
-            match numConstrs with
-            | [] -> ()
-            | _ ->
-               if List.exists (fun nc ->
-                      let factors = nc#getFactors in
-                      let variables = List.map (fun f -> f#getVariable) factors in
-                      List.exists (fun v -> fval#equal v) variables) numConstrs then
-                 finfo#finv#add_ssa_value_fact iaddr rvar fval)
-          ~error:(fun _ -> ())
-          (env#get_ssa_register_value_register_variable fval))
-      fvals in
-  fvals
-
-
 let extract_initvar_equalities finfo iaddr domain flocinv =
   let get_var_constraints constraint_sets v1 v2 domvars =
     let numCs = new ConstraintCollections.set_t in
     let _ = List.iter (fun cs ->
       if cs#has v1 && cs#has v2 then
-	let outvars = List.filter (fun v -> not ((v1#equal v) || (v2#equal v))) domvars in
+	let outvars =
+          List.filter (fun v -> not ((v1#equal v) || (v2#equal v))) domvars in
 	match project_out cs outvars with
 	| Some c -> numCs#addList c#get_constraints
 	| _ -> ()) constraint_sets in
@@ -434,10 +403,9 @@ let extract_linear_equalities
 	let inv = H.find v "karr" in
 	let domain = inv#getDomain "karr" in
 	let vars = domain#observer#getObservedVariables in
-        let ssavars = extract_ssavar_equalities finfo k domain in
 	let outvars =
           List.filter (fun v -> v#isTmp || outside_test_jump_range v k) vars in
-	let domain = domain#projectOut (outvars @ ssavars) in
+	let domain = domain#projectOut outvars in
 	let initVars = extract_initvar_equalities finfo k domain flocinv in
 	let _ = extract_testvar_equalities finfo k domain in
 
@@ -482,9 +450,7 @@ let extract_valuesets
       let knownvars = flocinv#get_known_variables in
       let vars =
         List.filter (fun v ->
-            not (v#isTmp
-                 || List.mem v knownvars
-                 || finfo#env#is_ssa_register_value v)) vars in
+            not (v#isTmp || List.mem v knownvars)) vars in
       List.iter (fun (v:variable_t) ->
 	let valueset = (varObserver v)#toValueSet in
 	if valueset#isTop then () else

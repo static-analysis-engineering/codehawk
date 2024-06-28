@@ -543,7 +543,7 @@ let translate_mips_instruction
 
   | ControlWordFromFP (rt, _fs) ->
      let rtreg = rt#to_register in
-     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg ~vtype:t_uint () in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg () in
      let defcmds = floc#get_vardef_commands ~defs:[vrt] ctxtiaddr in
      let cmds = defcmds @ cmds in
      default cmds
@@ -560,7 +560,7 @@ let translate_mips_instruction
      let use = get_register_vars [rs] in
      let xrs = rs#to_expr floc in
      let usehigh = get_use_high_vars [xrs] in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let defcmds =
        floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
      let cmds = defcmds @ cmds in
@@ -603,7 +603,7 @@ let translate_mips_instruction
      let use = get_register_vars [rs] in
      let xrs = rs#to_expr floc in
      let usehigh = get_use_high_vars [xrs] in
-     let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg ~vtype:t_uint () in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg () in
      let defcmds =
        floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
      let cmds = cmds @ defcmds in
@@ -747,7 +747,7 @@ let translate_mips_instruction
      let use = get_register_vars [rs] in
      let xrs = rs#to_expr floc in
      let usehigh = get_use_high_vars [xrs] in
-     let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg ~vtype:t_uint () in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands vtreg () in
      let defcmds =
        floc#get_vardef_commands ~defs:[vrt] ~use ~usehigh ctxtiaddr in
      let cmds = cmds @ defcmds in
@@ -897,7 +897,7 @@ let translate_mips_instruction
      let rtreg = rt#to_register in
      let base = mips_register_op addr#get_indirect_register RD in
      let use = get_register_vars [base] in
-     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg ~vtype:t_int () in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg  () in
      let defcmds = floc#get_vardef_commands ~defs:[vrt] ~use ctxtiaddr in
      let cmds = cmds @ defcmds in
      default cmds
@@ -906,7 +906,7 @@ let translate_mips_instruction
      let rtreg = rt#to_register in
      let base = mips_register_op addr#get_indirect_register RD in
      let use = get_register_vars [base] in
-     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg ~vtype:t_int () in
+     let (vrt, cmds) = floc#get_ssa_abstract_commands rtreg () in
      let defcmds = floc#get_vardef_commands ~defs:[vrt] ~use ctxtiaddr in
      let cmds = cmds @ defcmds in
      default cmds
@@ -1626,7 +1626,7 @@ let translate_mips_instruction
      let use = get_register_vars [rt] in
      let xrt = rt#to_expr floc in
      let usehigh = get_use_high_vars [xrt] in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let defcmds =
        floc#get_vardef_commands ~defs:[vrd] ~use ~usehigh ctxtiaddr in
      let cmds = cmds @ defcmds in

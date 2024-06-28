@@ -694,30 +694,6 @@ let translate_arm_instruction
      ((blocklabel, [transaction]) :: nodes, edges, [])
 
   | Branch (_, op, _)
-       when op#is_absolute_address
-            && (system_info#is_trampoline_wrapper op#get_absolute_address) ->
-     (* TODO: restructure augmentation to real variables instead of symbolic
-        values.
-     let freezecmds =
-       List.map (fun r ->
-           let v = floc#f#env#mk_arm_register_variable r in
-           let trvar = floc#f#env#mk_trampoline_entry_value v floc#cia in
-           ASSERT (EQ (v, trvar))) arm_regular_registers_no_pc in *)
-     default [] (* freezecmds *)
-
-  | Branch _ when (system_info#is_trampoline_fallthroughaddr loc#i) ->
-     let tvars = floc#f#env#get_trampoline_entry_values in
-     let abstractcmd = ABSTRACT_VARS tvars in
-     let _ =
-       chlog#add
-         "abstract trampoline vars"
-         (LBLOCK [
-              loc#i#toPretty;
-              STR ": ";
-              pretty_print_list tvars (fun v -> v#toPretty) "[" ", " "]"]) in
-     default [abstractcmd]
-
-  | Branch (_, op, _)
     | BranchExchange (ACCAlways, op) when op#is_absolute_address ->
      default []
 
@@ -991,7 +967,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let rhs = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [rhs] in
      let defcmds =
@@ -1010,7 +986,7 @@ let translate_arm_instruction
      let rdreg = rd#to_register in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let defcmds =
@@ -1029,7 +1005,7 @@ let translate_arm_instruction
      let rdreg = rd#to_register in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let defcmds =
@@ -1230,7 +1206,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [xrm] in
      let defcmds =
@@ -1258,7 +1234,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [xrm] in
      let defcmds =
@@ -1312,7 +1288,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_int () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [xrm] in
      let defcmds =
@@ -1785,7 +1761,7 @@ let translate_arm_instruction
              let rhs = floc#env#mk_signed_symbolic_value rhs 16 32 in
              floc#get_ssa_assign_commands rtreg ~vtype (XVar rhs)
            else
-             floc#get_ssa_abstract_commands rtreg ~vtype ()) in
+             floc#get_ssa_abstract_commands rtreg ()) in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrt]
@@ -2235,7 +2211,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [xrm] in
      let defcmds =
@@ -2296,7 +2272,7 @@ let translate_arm_instruction
      let rdreg = rd#to_register in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let defcmds =
@@ -2315,7 +2291,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [xrm] in
      let defcmds =
@@ -2335,7 +2311,7 @@ let translate_arm_instruction
      let rdreg = rd#to_register in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let defcmds =
@@ -2353,7 +2329,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrn = rn#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_int () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rn] in
      let usehigh = get_use_high_vars [xrn] in
      let defcmds =
@@ -2391,7 +2367,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_int () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [xrm] in
      let defcmds =
@@ -2409,7 +2385,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrm = rm#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_int () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rm] in
      let usehigh = get_use_high_vars [xrm] in
      let defcmds =
@@ -2428,7 +2404,7 @@ let translate_arm_instruction
      let rdreg = rd#to_register in
      let xrm = rm#to_expr floc in
      let xrn = rn#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_int () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rm; rn] in
      let usehigh = get_use_high_vars [xrm; xrn] in
      let defcmds =
@@ -2445,7 +2421,7 @@ let translate_arm_instruction
   | SignedMostSignificantWordMultiplyAccumulate (c, rd, rn, rm, ra, _) ->
      let floc = get_floc loc in
      let rdreg = rd#to_register in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_int () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let xrn = rn#to_expr floc in
      let xrm = rm#to_expr floc in
      let xra = ra#to_expr floc in
@@ -2466,8 +2442,8 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let loreg = rdlo#to_register in
      let hireg = rdhi#to_register in
-     let (vlo, cmdslo) = floc#get_ssa_abstract_commands loreg ~vtype:t_int () in
-     let (vhi, cmdshi) = floc#get_ssa_abstract_commands hireg ~vtype:t_int () in
+     let (vlo, cmdslo) = floc#get_ssa_abstract_commands loreg () in
+     let (vhi, cmdshi) = floc#get_ssa_abstract_commands hireg () in
      let defcmds = floc#get_vardef_commands ~defs:[vlo; vhi] ctxtiaddr in
      let cmds = defcmds @ cmdslo @ cmdshi in
      (match c with
@@ -2742,7 +2718,7 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn] in
      let usehigh = get_use_high_vars [xrt] in
-     let (vrd, scmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_int () in
+     let (vrd, scmds) = floc#get_ssa_abstract_commands rdreg () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vmem; vrd]
@@ -2930,7 +2906,7 @@ let translate_arm_instruction
   | UnsignedDivide (c, rd, rn, rm) ->
      let floc = get_floc loc in
      let rdreg = rd#to_register in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rn; rm] in
      let defcmds =
        floc#get_vardef_commands ~defs:[vrd] ~use:usevars ctxtiaddr in
@@ -2942,7 +2918,7 @@ let translate_arm_instruction
   | UnsignedExtendAddByte (c, rd, rn, rm) ->
      let floc = get_floc loc in
      let rdreg = rd#to_register in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uchar () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rn; rm] in
      let defcmds =
        floc#get_vardef_commands ~defs:[vrd] ~use:usevars ctxtiaddr in
@@ -2954,7 +2930,7 @@ let translate_arm_instruction
   | UnsignedExtendAddHalfword (c, rd, rn, rm) ->
      let floc = get_floc loc in
      let rdreg = rd#to_register in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_ushort () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rn; rm] in
      let defcmds =
        floc#get_vardef_commands ~defs:[vrd] ~use:usevars ctxtiaddr in
@@ -3010,8 +2986,8 @@ let translate_arm_instruction
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let vtype = t_unknown_int_size 32 in
-     let (vlo, cmdslo) = floc#get_ssa_abstract_commands rdloreg ~vtype () in
-     let (vhi, cmdshi) = floc#get_ssa_abstract_commands rdhireg ~vtype () in
+     let (vlo, cmdslo) = floc#get_ssa_abstract_commands rdloreg () in
+     let (vhi, cmdshi) = floc#get_ssa_abstract_commands rdhireg () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vlo; vhi]
@@ -3032,8 +3008,8 @@ let translate_arm_instruction
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let vtype = t_unknown_int_size 32 in
-     let (vlo, cmdslo) = floc#get_ssa_abstract_commands rdreglo ~vtype () in
-     let (vhi, cmdshi) = floc#get_ssa_abstract_commands rdreghi ~vtype () in
+     let (vlo, cmdslo) = floc#get_ssa_abstract_commands rdreglo () in
+     let (vhi, cmdshi) = floc#get_ssa_abstract_commands rdreghi () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vlo; vhi]
@@ -3049,7 +3025,7 @@ let translate_arm_instruction
      let floc = get_floc loc in
      let rdreg = rd#to_register in
      let xrn = rn#to_expr floc in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let usevars = get_register_vars [rn] in
      let usehigh = get_use_high_vars [xrn] in
      let defcmds =
@@ -3070,7 +3046,7 @@ let translate_arm_instruction
      let xrm = rm#to_expr floc in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars [xrn; xrm] in
-     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg ~vtype:t_uint () in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrd]
@@ -3089,7 +3065,7 @@ let translate_arm_instruction
      let usevars = get_register_vars [src] in
      let usehigh = get_use_high_vars [xsrc] in
      let vtype = vfp_datatype_to_btype dt in
-     let (vdst, cmds) = floc#get_ssa_abstract_commands dreg ~vtype () in
+     let (vdst, cmds) = floc#get_ssa_abstract_commands dreg () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdst]
@@ -3274,7 +3250,7 @@ let translate_arm_instruction
      let usevars = get_register_vars [dn; dm] in
      let usehigh = get_use_high_vars [xdn; xdm] in
      let vtype = vfp_datatype_to_btype dt in
-     let (vdd, cmds) = floc#get_ssa_abstract_commands ddreg ~vtype () in
+     let (vdd, cmds) = floc#get_ssa_abstract_commands ddreg () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdd]
@@ -3488,7 +3464,7 @@ let translate_arm_instruction
      let usevars = get_register_vars [dst; src1; src2] in
      let usehigh = get_use_high_vars [xsrc0; xsrc1; xsrc2] in
      let vtype = vfp_datatype_to_btype dt in
-     let (vdst, cmds) = floc#get_ssa_abstract_commands dstreg ~vtype () in
+     let (vdst, cmds) = floc#get_ssa_abstract_commands dstreg () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdst]
@@ -3695,7 +3671,7 @@ let translate_arm_instruction
      let usevars = get_register_vars [src1; src2] in
      let usehigh = get_use_high_vars [xsrc1; xsrc2] in
      let vtype = vfp_datatype_to_btype dt in
-     let (vdst, cmds) = floc#get_ssa_abstract_commands dstreg ~vtype () in
+     let (vdst, cmds) = floc#get_ssa_abstract_commands dstreg () in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vdst]

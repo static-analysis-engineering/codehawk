@@ -1745,8 +1745,6 @@ type invariant_fact_t =
   | InitialVarEquality of variable_t * variable_t
   (** variable, initial value: variable is equal to its initial value at
       function entry *)
-  | SSAVarEquality of variable_t * variable_t
-  (** register variable, ssa value: register is equal to its assignment value *)
   | InitialVarDisEquality of variable_t * variable_t
   (** variable, initial value: variable may not be equal to its initial value*)
   | TestVarEquality of variable_t * variable_t * ctxt_iaddress_t * ctxt_iaddress_t
@@ -1762,12 +1760,10 @@ object ('a)
   method get_fact: invariant_fact_t
   method get_variables: variable_t list
   method get_variable_equality_variables: variable_t list
-  method get_ssa_regvar: variable_t
   method is_constant: bool
   method is_interval: bool
   method is_base_offset_value: bool
   method is_symbolic_expr: bool
-  method is_ssavar_equality: bool
   method is_linear_equality: bool
   method is_variable_equality: bool
   method is_smaller: 'a -> bool
@@ -1841,7 +1837,6 @@ object
 
   (* add/remove special-purpose facts *)
   method add_initial_value_fact: string -> variable_t -> variable_t -> unit
-  method add_ssa_value_fact: string -> variable_t -> variable_t -> unit
   method remove_initial_value_fact: string -> variable_t -> variable_t -> unit
   method add_initial_disequality_fact: string -> variable_t -> variable_t -> unit
   method add_test_value_fact   :
@@ -3290,23 +3285,6 @@ and constant_value_variable_t =
   | SyscallErrorReturnValue of ctxt_iaddress_t
   (** [SyscallErrorReturnValue iaddr]: error return value from system call at
   instruction address [iaddr]*)
-  | AugmentationValue of variable_t * ctxt_iaddress_t * string * string * btype_t
-  (** [AugmentationValue (var, iaddr, desc, suffix, ty): a generic
-      frozen value at address [iaddr] whose purpose can be
-      described by [desc]. The name of the value will be the
-      name of the variable [var] with suffix [suffix]. *)
-  | SSARegisterValue of register_t * ctxt_iaddress_t * string option * btype_t
-  (** [SSARegisterValue (reg, iaddr, optional name, ty):
-      static single assignment value for assignment to register
-      [reg] at instruction address [iaddr] with the type of the
-      expression that is assigned to it (which can be
-      [t_unknown]).
-      An optional name can be included for display purposes
-      (e.g., for lifting). The responsibility is on the user
-      to ensure appropriate uniqueness. The default name is
-      unique: it is the name of the register followed by the
-      hex address of the assignment.
-      The name has no effect on propagation behavior.*)
   | FunctionPointer of
       string                (* name of function *)
       * string              (* name of creator *)
@@ -3350,12 +3328,6 @@ object ('a)
 
       Returns [Error] if this variable is not a register variable. *)
   method get_register: register_t traceresult
-
-  (** Returns the register associated with this ssa-register value.
-
-      Returns [Error] if this variable is not an ssa-register value
-      variable. *)
-  method get_ssa_register_value_register: register_t traceresult
 
   (** Returns the memory reference associated with this memory variable.
 
@@ -3452,14 +3424,6 @@ object ('a)
 
   method is_initial_memory_value: bool
   method is_frozen_test_value: bool
-  method is_ssa_register_value: bool
-
-  (** [is_ssa_register_value addr] returns true if this variable is an ssa
-      register value created at instruction address [addr]. *)
-  method is_ssa_register_value_at: ctxt_iaddress_t -> bool
-
-  method is_augmentation_value: bool
-  method is_desc_augmentation_value: string -> bool
 
   method is_bridge_value: bool
 
@@ -3636,30 +3600,6 @@ object
       value from the call at address [addr].*)
   method make_return_value: ctxt_iaddress_t -> assembly_variable_int
 
-  (** [make_augmented_value var iaddr desc suffix ty] returns a variable that
-      represents the value of [var] frozen at address [iaddr] with type [ty].
-      the name of the resulting variable is the name of [var] with suffix
-      _ followed by [suffix]. The intended use of [desc] is for information
-      only, with the restriction that [desc] should not contain any comma's
-      or spaces. *)
-  method make_augmented_value:
-           variable_t
-           -> ctxt_iaddress_t
-           -> string
-           -> string
-           -> btype_t
-           -> assembly_variable_int
-
-  (** [make_ssa_register_value r addr ty] returns the variable representing
-      the value assigned to register [r] at instruction address [addr] with
-      type [ty] (which may be unknown, [t_unknown]).*)
-  method make_ssa_register_value:
-           ?name:string option
-           -> register_t
-           -> ctxt_iaddress_t
-           -> btype_t
-           -> assembly_variable_int
-
   (** [make_symbolic_value x] returns the variable representing the
       value of expression [x], which must be an expression that consists
       entirely of constant-value variables.*)
@@ -3820,20 +3760,6 @@ object
       cannot be found. *)
   method get_initial_register_value_register: variable_t -> register_t traceresult
 
-  (** Returns [true] if [var] is an ssa-register value. *)
-  method is_ssa_register_value: variable_t -> bool
-
-  (** [is_ssa_register_value_at iaddr var] is [true] if [var] is an
-      ssa-register value created at address [iaddr]. *)
-  method is_ssa_register_value_at: ctxt_iaddress_t -> variable_t -> bool
-
-  (** Returns the register that is associated with the ssa-value
-      variable [var] of that register.
-
-      Returns [Error] if [var] is not an ssa-register value or [var]
-      cannot be found. *)
-  method get_ssa_register_value_register: variable_t -> register_t traceresult
-
   (** Returns [true] if [var] is a register variable of one of the MIPS
       argument registers (a0, a1, a2, or a3). *)
   method is_mips_argument_variable: variable_t -> bool
@@ -3957,11 +3883,6 @@ object
 
       Returns [Error] if [var] is not a function-return value or
       a function side-effect value. *)
-
-  method is_augmentation_value: variable_t -> bool
-
-  method is_desc_augmentation_value: string -> variable_t -> bool
-
   method get_call_site: variable_t -> ctxt_iaddress_t traceresult
 
   (** Returns the name of the argument associated with the side-effect
@@ -4205,21 +4126,6 @@ class type function_environment_int =
     method mk_runtime_constant: string -> variable_t
     method mk_return_value: ctxt_iaddress_t -> variable_t
 
-    (** [mk_trampoline_entry_value var iaddr] returns a variable that
-        encapsulates an augmentation value with description "trampoline_entry"
-        and suffix t_in.*)
-    method mk_trampoline_entry_value:
-             variable_t -> ctxt_iaddress_t -> variable_t
-
-    method is_trampoline_entry_value: variable_t -> bool
-
-    method mk_ssa_register_value:
-             ?name:string option
-             -> register_t
-             -> ctxt_iaddress_t
-             -> btype_t
-             -> variable_t
-
     method mk_calltarget_value: call_target_t -> variable_t
     method mk_function_pointer_value:
              string -> string -> ctxt_iaddress_t -> variable_t
@@ -4307,21 +4213,6 @@ class type function_environment_int =
         cannot be found. *)
     method get_initial_register_value_register:
              variable_t -> register_t traceresult
-
-    (** Returns [true] if [var] is an ssa-register value. *)
-    method is_ssa_register_value: variable_t -> bool
-
-    (** [is_ssa_register_value_at iaddr var] is [true] if [var] is an
-        ssa-register value created at address [iaddr]. *)
-    method is_ssa_register_value_at: ctxt_iaddress_t -> variable_t -> bool
-
-    (** [get_ssa_register_value_register_variable var] returns the regular
-        register variable corresponding to the register of the ssa-register
-        value.
-
-        Returns [Error] if [var] is not an ssa-register value.*)
-    method get_ssa_register_value_register_variable:
-             variable_t -> variable_t traceresult
 
     (** Returns [true] if [var] is the initial-value variable of a MIPS
         argument register variable. *)
@@ -4529,8 +4420,6 @@ class type function_environment_int =
     method get_mips_argument_values: variable_t list
     method get_arm_argument_values: variable_t list
     method get_bridge_values_at: ctxt_iaddress_t -> variable_t list
-    method get_ssa_values_at: ctxt_iaddress_t -> variable_t list
-    method get_trampoline_entry_values: variable_t list
 
     method get_variables: variable_t list
     method get_sym_variables: variable_t list
@@ -5365,9 +5254,6 @@ class type floc_int =
 
     (** {1 Variables} *)
 
-    (** Returns a list of ssa register values defined at this location.*)
-    method ssa_register_values: variable_t list
-
     (** {1 Invariants} *)
 
     (** {2 Accessors} *)
@@ -5581,12 +5467,12 @@ class type floc_int =
     method get_abstract_commands:
              variable_t -> ?size:xpr_t -> ?vtype:btype_t -> unit -> cmd_t list
 
-    (** floc#[get_ssa_abstract_commands reg ty ()] creates an ssa-register
+    (** floc#[get_ssa_abstract_commands reg ()] creates an ssa-register
         variable [ssavar] for the current context address and returns a tuple of
         the register-variable and the CHIF commands representing the assignment
         {[ reg := ssavar ]}*)
     method get_ssa_abstract_commands:
-             register_t -> ?vtype:btype_t -> unit -> (variable_t * cmd_t list)
+             register_t -> unit -> (variable_t * cmd_t list)
 
     method get_abstract_cpu_registers_command: cpureg_t list -> cmd_t
 

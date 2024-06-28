@@ -47,12 +47,10 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCTypes
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFunctionStub
 open BCHLibTypes
-open BCHLocation
 open BCHMemoryReference
 open BCHVarDictionary
 
@@ -66,7 +64,6 @@ let x2s x = p2s (x2p x)
 
 
 class assembly_variable_t
-        ~(vard:vardictionary_int)
         ~(memrefmgr:memory_reference_manager_int)
         ~(index:int)
         ~(denotation:assembly_variable_denotation_t):assembly_variable_int =
@@ -109,12 +106,6 @@ object (self:'a)
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
         | SyscallErrorReturnValue address -> "errval_" ^ address
-        | AugmentationValue (v, _addr, _desc, suffix, _) ->
-           v#getName#getBaseName ^ "_" ^ suffix
-        | SSARegisterValue (r, addr, optname, _ty) ->
-           (match optname with
-            | Some name -> name
-            | _ -> ssa_register_value_name r vard#faddr addr)
 	| CallTargetValue tgt ->
 	  (match tgt with
 	  | StubTarget fs -> "stub:" ^ (function_stub_to_string fs)
@@ -217,26 +208,6 @@ object (self:'a)
     | AuxiliaryVariable (FrozenTestValue _) -> true
     | _ -> false
 
-  method is_ssa_register_value =
-    match denotation with
-    | AuxiliaryVariable (SSARegisterValue _) -> true
-    | _ -> false
-
-  method is_ssa_register_value_at (iaddr: ctxt_iaddress_t): bool =
-    match denotation with
-    | AuxiliaryVariable (SSARegisterValue (_, a, _, _)) -> a = iaddr
-    | _ -> false
-
-  method is_augmentation_value =
-    match denotation with
-    | AuxiliaryVariable (AugmentationValue _) -> true
-    | _ -> false
-
-  method is_desc_augmentation_value (desc: string) =
-    match denotation with
-    | AuxiliaryVariable (AugmentationValue (_, _, vdesc, _, _)) -> vdesc = desc
-    | _ -> false
-
   method is_in_test_jump_range (a :ctxt_iaddress_t) =
     match denotation with
     | AuxiliaryVariable (FrozenTestValue (_, taddr, jaddr)) ->
@@ -288,7 +259,6 @@ object (self:'a)
 	| InitialRegisterValue _
 	  | InitialMemoryValue _
 	  | FunctionReturnValue _
-          | AugmentationValue _
 	  | CallTargetValue _
 	  | SideEffectValue _
 	  | FieldValue _
@@ -358,11 +328,6 @@ object (self:'a)
        Ok reg
     | _ ->
        Error ["get_initial_register_value_register: " ^ self#get_name]
-
-  method get_ssa_register_value_register =
-    match denotation with
-    | AuxiliaryVariable (SSARegisterValue (r, _, _, _)) -> Ok r
-    | _ -> Error ["get_ssa_register_value_register: " ^ self#get_name]
 
   method get_initial_memory_value_variable =
     match denotation with
@@ -474,7 +439,7 @@ object (self)
              H.add
                vartable
                index
-               (new assembly_variable_t ~vard ~memrefmgr ~index ~denotation))
+               (new assembly_variable_t ~memrefmgr ~index ~denotation))
            vard#get_indexed_variables
        end
     | _ -> ()
@@ -492,7 +457,7 @@ object (self)
     if  H.mem vartable index then
       H.find vartable index
     else
-      let var = new assembly_variable_t ~vard ~memrefmgr ~index ~denotation in
+      let var = new assembly_variable_t ~memrefmgr ~index ~denotation in
       begin
         H.add vartable index var ;
         var
@@ -602,22 +567,6 @@ object (self)
   method make_return_value (iaddr:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FunctionReturnValue iaddr))
 
-  method make_augmented_value
-           (var: variable_t)
-           (iaddr: ctxt_iaddress_t)
-           (desc: string)
-           (suffix: string)
-           (ty: btype_t): assembly_variable_int =
-    self#mk_variable
-      (AuxiliaryVariable (AugmentationValue (var, iaddr, desc, suffix, ty)))
-
-  method make_ssa_register_value
-           ?(name: string option=None)
-           (reg: register_t)
-           (iaddr: ctxt_iaddress_t)
-           (ty: btype_t) =
-    self#mk_variable (AuxiliaryVariable (SSARegisterValue (reg, iaddr, name, ty)))
-
   method make_function_pointer_value
            (fname:string) (cname:string) (address:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FunctionPointer (fname,cname,address)))
@@ -697,12 +646,6 @@ object (self)
       (fun av -> av#get_se_argument_descriptor)
       (self#get_variable v)
 
-  method get_ssa_register_value_register (v: variable_t) =
-    tbind
-      ~msg:"varmgr:get_ssa_register_value_register"
-      (fun av -> av#get_ssa_register_value_register)
-      (self#get_variable v)
-
   method get_initial_register_value_register (v: variable_t) =
     tbind
       ~msg:"varmgr:get_initial_register_value_register"
@@ -772,17 +715,9 @@ object (self)
                    (cv1: constant_value_variable_t)
                    (cv2: constant_value_variable_t) =
     match (cv1, cv2) with
-    | (AugmentationValue _, AugmentationValue _) -> Stdlib.compare ix1 ix2
-    | (AugmentationValue _, _) -> -1
-    | (_, AugmentationValue _) -> 1
-
     | (FunctionReturnValue _, FunctionReturnValue _) -> Stdlib.compare ix1 ix2
     | (FunctionReturnValue _, _) -> -1
     | (_, FunctionReturnValue _) -> 1
-
-    | (SSARegisterValue _, SSARegisterValue _) -> Stdlib.compare ix1 ix2
-    | (SSARegisterValue _, _) -> -1
-    | (_, SSARegisterValue _) -> 1
 
     | (SymbolicValue _, SymbolicValue _) -> Stdlib.compare ix1 ix2
     | (SymbolicValue _, _) -> -1
@@ -958,22 +893,6 @@ object (self)
   method is_frozen_test_value (v:variable_t) =
     tfold_default
       (fun av -> av#is_frozen_test_value) false (self#get_variable v)
-
-  method is_ssa_register_value (v: variable_t) =
-    tfold_default
-      (fun av -> av#is_ssa_register_value) false (self#get_variable v)
-
-  method is_ssa_register_value_at (iaddr: ctxt_iaddress_t) (v: variable_t) =
-    tfold_default
-      (fun av -> av#is_ssa_register_value_at iaddr) false (self#get_variable v)
-
-  method is_augmentation_value (v: variable_t) =
-    tfold_default
-      (fun av -> av#is_augmentation_value) false (self#get_variable v)
-
-  method is_desc_augmentation_value (desc: string) (v: variable_t) =
-    tfold_default
-      (fun av -> av#is_desc_augmentation_value desc) false (self#get_variable v)
 
   method is_initial_register_value (v: variable_t) =
     tfold_default

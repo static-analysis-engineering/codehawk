@@ -980,17 +980,6 @@ object (self)
   method mk_return_value (address:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_return_value address)
 
-  method mk_trampoline_entry_value (v: variable_t) (iaddr: ctxt_iaddress_t) =
-    self#mk_variable
-      (varmgr#make_augmented_value v iaddr "trampoline_entry" "t_in" t_unknown)
-
-  method mk_ssa_register_value
-           ?(name: string option=None)
-           (r: register_t)
-           (iaddr: ctxt_iaddress_t)
-           (ty: btype_t) =
-    self#mk_variable (varmgr#make_ssa_register_value ~name r iaddr ty)
-
   method mk_function_pointer_value
     (fname:string) (cname:string) (address:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_function_pointer_value fname cname address)
@@ -1192,12 +1181,6 @@ object (self)
 
   method get_bridge_values_at (callsite:ctxt_iaddress_t) =
     List.filter (self#is_bridge_value_at callsite) self#get_variables
-
-  method get_ssa_values_at (cia: ctxt_iaddress_t) =
-    List.filter (self#is_ssa_register_value_at cia) self#get_variables
-
-  method get_trampoline_entry_values =
-    List.filter self#is_trampoline_entry_value self#get_variables
 
   method get_local_stack_variables =
     let is_local v = varmgr#is_local_variable v && varmgr#is_stack_variable v in
@@ -1497,13 +1480,6 @@ object (self)
 
   method is_register_variable = varmgr#is_register_variable
 
-  method is_ssa_register_value = varmgr#is_ssa_register_value
-
-  method is_ssa_register_value_at = varmgr#is_ssa_register_value_at
-
-  method is_trampoline_entry_value =
-    (varmgr#is_desc_augmentation_value "trampoline_entry")
-
   method is_initial_register_value = varmgr#is_initial_register_value
 
   method is_initial_mips_argument_value = varmgr#is_initial_mips_argument_value
@@ -1542,13 +1518,6 @@ object (self)
       Error [
           "finfo:get_init_value_variable: variable is not an initial value: "
           ^ v#getName#getBaseName]
-
-  method get_ssa_register_value_register_variable
-           (v: variable_t): variable_t traceresult =
-    tmap
-      ~msg:"env:get_ssa_register_value_register_variable"
-      self#mk_register_variable
-      (varmgr#get_ssa_register_value_register v)
 
   method get_initial_register_value_register
            (v:variable_t): register_t traceresult =
