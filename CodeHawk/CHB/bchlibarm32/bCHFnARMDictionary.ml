@@ -45,11 +45,13 @@ open XprUtil
 open Xsimplify
 
 (* bchlib *)
-open BCHFtsParameter
 open BCHBasicTypes
+open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
+open BCHFtsParameter
+open BCHFunctionInterface
 open BCHLibTypes
 open BCHLocation
 open BCHSystemInfo
@@ -238,6 +240,12 @@ object (self)
                           rdefs (fun d -> d#toPretty) "[" ", " "]"]) in
              vinv#index
           | _ -> -1)
+      | XOp (_, [XVar v; c]) when is_intconst c ->
+         let symvar = floc#f#env#mk_symbolic_variable v in
+         let varinvs = varinv#get_var_reaching_defs symvar in
+         (match varinvs with
+          | [vinv] -> vinv#index
+          | _ -> -1)
       | _ -> -1 in
 
     let get_all_rdefs (xpr: xpr_t): int list =
@@ -245,7 +253,14 @@ object (self)
       List.fold_left (fun acc v ->
           let symvar = floc#env#mk_symbolic_variable v in
           let varinvs = varinv#get_var_reaching_defs symvar in
-          (List.map (fun vinv -> vinv#index) varinvs) @ acc) [] vars in
+          let newixs =
+            List.fold_left (fun newacc vinv ->
+                let vix = vinv#index in
+                if List.mem vix acc then
+                  newacc
+                else
+                  vix :: newacc) [] varinvs in
+          newixs @ acc) [] vars in
 
     let get_rdef_memvar (v: variable_t): int =
       let symvar = floc#f#env#mk_symbolic_variable v in
@@ -719,34 +734,53 @@ object (self)
         | BranchLinkExchange _
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
-         let pars = List.map fst floc#get_call_arguments in
-         let args = List.map snd floc#get_call_arguments in
-         let args =
-           List.map (fun a -> rewrite_expr ?restrict:(Some 4) a) args in
-         let rdefs = List.concat (List.map get_all_rdefs args) in
-         let regargs =
-           match List.length(args) with
-           | 0 -> []
-           | 1 -> [AR0]
-           | 2 -> [AR0; AR1]
-           | 3 -> [AR0; AR1; AR2]
-           | _ -> [AR0; AR1; AR2; AR3] in
-         let regargs = List.map (fun r -> arm_register_op r RD) regargs in
-         let regrdefs =
-           List.map (
-               fun (r: arm_operand_int) -> get_rdef (r#to_expr floc)) regargs in
+         let callargs = floc#get_call_arguments in
+         let (xprs, xvars, rdefs) =
+           List.fold_left (fun (xprs, xvars, rdefs) (p, x) ->
+               let xvar =
+                 if is_register_parameter p then
+                   let regarg = TR.tget_ok (get_register_parameter_register p) in
+                   let pvar = floc#f#env#mk_register_variable regarg in
+                   XVar pvar
+                 else if is_stack_parameter p then
+                   let p_offset = TR.tget_ok (get_stack_parameter_offset p) in
+                   let sp = (sp_r RD)#to_expr floc in
+                   XOp (XPlus, [sp; int_constant_expr p_offset])
+                 else
+                   raise
+                     (BCH_failure
+                        (LBLOCK [
+                             STR "Parameter type not recognized in BranchLink"])) in
+               let xx = rewrite_expr ?restrict:(Some 4) x in
+               let rdef = get_rdef xvar in
+               (xx :: xprs, xvar :: xvars, rdef :: rdefs)) ([], [], []) callargs in
          let vrd =
-           if ((List.length pars) = 1
-               && (is_floating_point_parameter (List.hd pars))) then
-             (arm_extension_register_op XSingle 0 WR)#to_variable floc
-           else
-             (arm_register_op (get_arm_reg 0) WR)#to_variable floc in
-         let returnval = floc#env#mk_return_value floc#cia in
+           let fintf = floc#get_call_target#get_function_interface in
+           let rtype = get_fts_returntype fintf in
+           let reg =
+             if is_float rtype then
+               let regtype =
+                 if is_float_float rtype then
+                   XSingle
+                 else if is_float_double rtype then
+                   XDouble
+                 else
+                   XQuad in
+               register_of_arm_extension_register
+                 ({armxr_type = regtype; armxr_index = 0})
+             else
+               register_of_arm_register AR0 in
+           floc#f#env#mk_register_variable reg in
+         let xrdefs =
+           List.fold_left (fun acc x ->
+               let rdefs = get_all_rdefs x in
+               let newixs = List.filter (fun ix -> not (List.mem ix acc)) rdefs in
+               acc @ newixs) [] xprs in
          let (tagstring, args) =
            mk_instrx_data
-             ~vars:[returnval]
-             ~xprs:args
-             ~rdefs:(rdefs @ regrdefs)
+             ~vars:[vrd]
+             ~xprs:((List.rev xprs) @ (List.rev xvars))
+             ~rdefs:((List.rev rdefs) @ xrdefs)
              ~uses:[get_def_use vrd]
              ~useshigh:[get_def_use_high vrd]
              () in
@@ -754,7 +788,7 @@ object (self)
            if instr#is_inlined_call then
              tagstring :: ["call"; "inlined"]
            else
-             tagstring :: ["call"] in
+             tagstring :: ["call"; string_of_int (List.length callargs)] in
          let args =
              args @ [ixd#index_call_target floc#get_call_target#get_target] in
          (tags, args)
@@ -1752,13 +1786,21 @@ object (self)
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem] in
          let useshigh = [get_def_use_high vmem] in
+         let (vars, uses, useshigh) =
+           if mem#is_offset_address_writeback then
+             let vrn = rn#to_variable floc in
+             ([vmem; vrn],
+               uses @ [get_def_use vrn],
+               useshigh @ [get_def_use_high vrn])
+           else
+             ([vmem], uses, useshigh) in
          let (tagstring, args) =
            mk_instrx_data
-             ~vars:[vmem]
+             ~vars
              ~xprs:[xrn; xrm; xrt; xxrt; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)

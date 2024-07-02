@@ -128,6 +128,8 @@ val is_void: btype_t -> bool
 val is_int: btype_t -> bool
 val is_enum: btype_t -> bool
 val is_float: btype_t -> bool
+val is_float_float: btype_t -> bool
+val is_float_double: btype_t -> bool
 val is_scalar: btype_t -> bool
 val is_pointer: btype_t -> bool
 val is_unsigned: btype_t -> bool  (* true if unsigned, false if signed or unknown *)
