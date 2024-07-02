@@ -177,6 +177,10 @@ let is_enum t = match t with TEnum _ -> true | _ -> false
 
 let is_float t = match t with TFloat _ -> true | _ -> false
 
+let is_float_float t = match t with TFloat (FFloat, _, _) -> true | _ -> false
+
+let is_float_double t = match t with TFloat (FDouble, _, _) -> true | _ -> false
+
 let is_pointer t = match t with TPtr _ -> true | _ -> false
 
 let is_scalar t = (is_int t) || (is_float t) || (is_pointer t)
