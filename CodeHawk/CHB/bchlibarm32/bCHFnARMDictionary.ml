@@ -362,6 +362,68 @@ object (self)
               agginstr#get_address#to_hex_string :: acc) [] agg#instrs in
       tags @ ("subsumes" :: deps) in
 
+    let callinstr_key (): (string list * int list) =
+      let callargs = floc#get_call_arguments in
+      let (xprs, xvars, rdefs) =
+        List.fold_left (fun (xprs, xvars, rdefs) (p, x) ->
+            let xvar =
+              if is_register_parameter p then
+                let regarg = TR.tget_ok (get_register_parameter_register p) in
+                let pvar = floc#f#env#mk_register_variable regarg in
+                XVar pvar
+              else if is_stack_parameter p then
+                let p_offset = TR.tget_ok (get_stack_parameter_offset p) in
+                let sp = (sp_r RD)#to_expr floc in
+                XOp (XPlus, [sp; int_constant_expr p_offset])
+              else
+                raise
+                  (BCH_failure
+                     (LBLOCK [
+                          floc#l#toPretty;
+                          STR ": Parameter type not recognized in call ";
+                          STR "instruction"])) in
+            let xx = rewrite_expr ?restrict:(Some 4) x in
+            let rdef = get_rdef xvar in
+            (xx :: xprs, xvar :: xvars, rdef :: rdefs)) ([], [], []) callargs in
+      let vrd =
+        let fintf = floc#get_call_target#get_function_interface in
+        let rtype = get_fts_returntype fintf in
+        let reg =
+          if is_float rtype then
+            let regtype =
+              if is_float_float rtype then
+                XSingle
+              else if is_float_double rtype then
+                XDouble
+              else
+                XQuad in
+            register_of_arm_extension_register
+              ({armxr_type = regtype; armxr_index = 0})
+          else
+            register_of_arm_register AR0 in
+        floc#f#env#mk_register_variable reg in
+      let xrdefs =
+        List.fold_left (fun acc x ->
+            let rdefs = get_all_rdefs x in
+            let newixs = List.filter (fun ix -> not (List.mem ix acc)) rdefs in
+            acc @ newixs) [] xprs in
+      let (tagstring, args) =
+        mk_instrx_data
+          ~vars:[vrd]
+          ~xprs:((List.rev xprs) @ (List.rev xvars))
+          ~rdefs:((List.rev rdefs) @ xrdefs)
+          ~uses:[get_def_use vrd]
+          ~useshigh:[get_def_use_high vrd]
+          () in
+      let tags =
+        if instr#is_inlined_call then
+          tagstring :: ["call"; "inlined"]
+        else
+          tagstring :: ["call"; string_of_int (List.length callargs)] in
+      let args =
+        args @ [ixd#index_call_target floc#get_call_target#get_target] in
+      (tags, args) in
+
     let key =
       match instr#get_opcode with
       | Add _ when instr#is_aggregate_anchor ->
@@ -611,11 +673,7 @@ object (self)
 
       | Branch (_, tgt, _)
            when tgt#is_absolute_address && floc#has_call_target ->
-         let args = List.map snd floc#get_call_arguments in
-         let xtag = "a:" ^ (string_repeat "x" (List.length args)) in
-         ([xtag; "call"],
-          (List.map xd#index_xpr args)
-          @ [ixd#index_call_target floc#get_call_target#get_target])
+         callinstr_key ()
 
       | Branch _ when instr#is_aggregate_anchor ->
          let iaddr = instr#get_address in
@@ -734,64 +792,7 @@ object (self)
         | BranchLinkExchange _
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
-         let callargs = floc#get_call_arguments in
-         let (xprs, xvars, rdefs) =
-           List.fold_left (fun (xprs, xvars, rdefs) (p, x) ->
-               let xvar =
-                 if is_register_parameter p then
-                   let regarg = TR.tget_ok (get_register_parameter_register p) in
-                   let pvar = floc#f#env#mk_register_variable regarg in
-                   XVar pvar
-                 else if is_stack_parameter p then
-                   let p_offset = TR.tget_ok (get_stack_parameter_offset p) in
-                   let sp = (sp_r RD)#to_expr floc in
-                   XOp (XPlus, [sp; int_constant_expr p_offset])
-                 else
-                   raise
-                     (BCH_failure
-                        (LBLOCK [
-                             STR "Parameter type not recognized in BranchLink"])) in
-               let xx = rewrite_expr ?restrict:(Some 4) x in
-               let rdef = get_rdef xvar in
-               (xx :: xprs, xvar :: xvars, rdef :: rdefs)) ([], [], []) callargs in
-         let vrd =
-           let fintf = floc#get_call_target#get_function_interface in
-           let rtype = get_fts_returntype fintf in
-           let reg =
-             if is_float rtype then
-               let regtype =
-                 if is_float_float rtype then
-                   XSingle
-                 else if is_float_double rtype then
-                   XDouble
-                 else
-                   XQuad in
-               register_of_arm_extension_register
-                 ({armxr_type = regtype; armxr_index = 0})
-             else
-               register_of_arm_register AR0 in
-           floc#f#env#mk_register_variable reg in
-         let xrdefs =
-           List.fold_left (fun acc x ->
-               let rdefs = get_all_rdefs x in
-               let newixs = List.filter (fun ix -> not (List.mem ix acc)) rdefs in
-               acc @ newixs) [] xprs in
-         let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:((List.rev xprs) @ (List.rev xvars))
-             ~rdefs:((List.rev rdefs) @ xrdefs)
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
-             () in
-         let tags =
-           if instr#is_inlined_call then
-             tagstring :: ["call"; "inlined"]
-           else
-             tagstring :: ["call"; string_of_int (List.length callargs)] in
-         let args =
-             args @ [ixd#index_call_target floc#get_call_target#get_target] in
-         (tags, args)
+         callinstr_key()
 
       | BranchLink (_, tgt)
       | BranchLinkExchange (_, tgt) ->
