@@ -51,6 +51,7 @@ open BCHFloc
 open BCHFtsParameter
 open BCHFunctionData
 open BCHFunctionInfo
+open BCHFunctionInterface
 open BCHLibTypes
 open BCHLocation
 open BCHSystemInfo
@@ -614,11 +615,68 @@ let translate_arm_instruction
              STR "  ";
              STR (arm_opcode_to_string instr#get_opcode)]) in
 
+  let calltgt_cmds (tgt: arm_operand_int): cmd_t list =
+    let callargs = floc#get_call_arguments in
+    let fintf = floc#get_call_target#get_function_interface in
+    let rtype = get_fts_returntype fintf in
+    let returnreg =
+      if is_float rtype then
+        let regtype =
+          if is_float_float rtype then
+            XSingle
+          else if is_float_double rtype then
+            XDouble
+          else
+            XQuad in
+        register_of_arm_extension_register
+          ({armxr_type = regtype; armxr_index = 0})
+      else
+        register_of_arm_register AR0 in
+    let returnvar = floc#f#env#mk_register_variable returnreg in
+    let (usecmds, use) =
+      List.fold_left (fun (acccmds, accuse) (p, x) ->
+          if is_register_parameter p then
+            let regarg = TR.tget_ok (get_register_parameter_register p) in
+            let pvar = floc#f#env#mk_register_variable regarg in
+            (acccmds, pvar :: accuse)
+          else if is_stack_parameter p then
+            let p_offset = TR.tget_ok (get_stack_parameter_offset p) in
+            let stackop = arm_sp_deref ~with_offset:p_offset RD in
+            let (stacklhs, stacklhscmds) = stackop#to_lhs floc in
+            (stacklhscmds @ acccmds, stacklhs :: accuse)
+          else
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      floc#l#toPretty;
+                      STR "  Parameter type not recognized in call translation"])))
+        ([], []) callargs in
+    let usehigh = get_use_high_vars (List.map snd callargs) in
+    let vr1 = floc#f#env#mk_arm_register_variable AR1 in
+    let vr2 = floc#f#env#mk_arm_register_variable AR2 in
+    let vr3 = floc#f#env#mk_arm_register_variable AR3 in
+    let callcmds = floc#get_arm_call_commands in
+    let defcmds =
+      floc#get_vardef_commands
+        ~defs:[returnvar]
+        ~clobbers:[vr1; vr2; vr3]
+        ~use
+        ~usehigh
+        ctxtiaddr in
+    usecmds @ defcmds @ callcmds in
+
   match instr#get_opcode with
 
   | Branch _ | BranchExchange _ when in_jumptable_seq ->
      (* nothing to add to the semantics at this point *)
      default []
+
+  | Branch (c, tgt, _) when floc#has_call_target ->
+     let cmds = calltgt_cmds tgt in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
   | Branch (c, op, _)
     | BranchExchange (c, op) when is_cond_conditional c ->
      let thenaddr =
@@ -1031,150 +1089,23 @@ let translate_arm_instruction
    * SelectInstrSet(targetInstrSet);
    * BranchWritePC(targetAddress);
    * ------------------------------------------------------------------------ *)
-  | BranchLink _ when is_maybe_non_returning_call_instr ->
+  | BranchLink (_c, tgt) when is_maybe_non_returning_call_instr ->
+     (* TODO: incorporate condition *)
      let elseaddr = codepc#get_false_branch_successor in
-     let floc = get_floc loc in
-     let vr0 = floc#f#env#mk_arm_register_variable AR0 in
-     let vr1 = floc#f#env#mk_arm_register_variable AR1 in
-     let vr2 = floc#f#env#mk_arm_register_variable AR2 in
-     let vr3 = floc#f#env#mk_arm_register_variable AR3 in
-     let pars = List.map fst floc#get_call_arguments in
-     let args = List.map snd floc#get_call_arguments in
-     let (defs, use, usehigh) =
-       if ((List.length pars) = 1
-           && (is_floating_point_parameter (List.hd pars))) then
-         let s0: arm_extension_register_t =
-           {armxr_type = XSingle; armxr_index = 0} in
-         let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
-         ([s0var], [s0var], [s0var])
-       else if ((List.length pars) = 3
-                && (is_floating_point_parameter (List.hd pars))
-                && (is_floating_point_parameter (List.nth pars 1))
-                && (is_floating_point_parameter (List.nth pars 2))) then
-         let s0: arm_extension_register_t =
-           {armxr_type = XSingle; armxr_index = 0} in
-         let s1: arm_extension_register_t =
-           {armxr_type = XSingle; armxr_index = 1} in
-         let s2: arm_extension_register_t =
-           {armxr_type = XSingle; armxr_index = 2} in
-         let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
-         let s1var = floc#f#env#mk_arm_extension_register_variable s1 in
-         let s2var = floc#f#env#mk_arm_extension_register_variable s2 in
-         ([s0var; s1var; s2var], [s0var; s1var; s2var], [s0var; s1var; s2var])
-       else
-         let usehigh = get_use_high_vars args in
-         let use =
-           match List.length args with
-           | 0 -> []
-           | 1 -> [vr0]
-           | 2 -> [vr0; vr1]
-           | 3 -> [vr0; vr1; vr2]
-           | _ -> [vr0; vr1; vr2; vr3] in
-         ([vr0], use, usehigh) in
-     let callcmds = floc#get_arm_call_commands in
-     let defcmds =
-       floc#get_vardef_commands
-         ~defs:defs
-         ~clobbers:[vr1; vr2; vr3]
-         ~use:use
-         ~usehigh:usehigh
-         ctxtiaddr in
-     let cmds = cmds @ (invop :: callcmds) @ defcmds @ [bwdinvop] @ pcassign in
+     let callcmds = calltgt_cmds tgt in
+     let cmds = cmds @ (invop :: callcmds) @ [bwdinvop] @ pcassign in
      let transaction = package_transaction finfo blocklabel cmds in
      let elselabel = make_code_label elseaddr in
      let nodes = [(blocklabel, [transaction])] in
      let edges = [(blocklabel, exitlabel); (blocklabel, elselabel)] in
      (nodes, edges, [])
 
-  | BranchLink (c, tgt) when tgt#is_absolute_address ->
+  | BranchLink (c, tgt)
+    | BranchLinkExchange (c, tgt) when tgt#is_absolute_address ->
      if instr#is_inlined_call then
        default []
      else
-     let floc = get_floc loc in
-     let vr0 = floc#f#env#mk_arm_register_variable AR0 in
-     let vr1 = floc#f#env#mk_arm_register_variable AR1 in
-     let vr2 = floc#f#env#mk_arm_register_variable AR2 in
-     let vr3 = floc#f#env#mk_arm_register_variable AR3 in
-     let pars = List.map fst floc#get_call_arguments in
-     let args = List.map snd floc#get_call_arguments in
-     let (defs, use, usehigh) =
-       if ((List.length pars) = 1
-           && (is_floating_point_parameter (List.hd pars))) then
-         let s0: arm_extension_register_t =
-           {armxr_type = XSingle; armxr_index = 0} in
-         let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
-         ([s0var], [s0var], [s0var])
-       else if ((List.length pars) = 3
-                && (is_floating_point_parameter (List.hd pars))
-                && (is_floating_point_parameter (List.nth pars 1))
-                && (is_floating_point_parameter (List.nth pars 2))) then
-         let s0: arm_extension_register_t =
-           {armxr_type = XSingle; armxr_index = 0} in
-         let s1: arm_extension_register_t =
-           {armxr_type = XSingle; armxr_index = 1} in
-         let s2: arm_extension_register_t =
-           {armxr_type = XSingle; armxr_index = 2} in
-         let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
-         let s1var = floc#f#env#mk_arm_extension_register_variable s1 in
-         let s2var = floc#f#env#mk_arm_extension_register_variable s2 in
-         ([s0var; s1var; s2var], [s0var; s1var; s2var], [s0var; s1var; s2var])
-       else
-         let usehigh = get_use_high_vars args in
-         let use =
-           match List.length args with
-           | 0 -> []
-           | 1 -> [vr0]
-           | 2 -> [vr0; vr1]
-           | 3 -> [vr0; vr1; vr2]
-           | _ -> [vr0; vr1; vr2; vr3] in
-         ([vr0], use, usehigh) in
-     let cmds = floc#get_arm_call_commands in
-     let defcmds =
-       floc#get_vardef_commands
-         ~defs:defs
-         ~clobbers:[vr1; vr2; vr3]
-         ~use:use
-         ~usehigh:usehigh
-         ctxtiaddr in
-     let cmds = defcmds @ cmds in
-     (match c with
-      | ACCAlways -> default cmds
-      | _ -> make_conditional_commands c cmds)
-
-  | BranchLinkExchange (c, tgt) when tgt#is_absolute_address ->
-     let floc = get_floc loc in
-     let vr0 = floc#f#env#mk_arm_register_variable AR0 in
-     let vr1 = floc#f#env#mk_arm_register_variable AR1 in
-     let vr2 = floc#f#env#mk_arm_register_variable AR2 in
-     let vr3 = floc#f#env#mk_arm_register_variable AR3 in
-     let pars = List.map fst floc#get_call_arguments in
-     let args = List.map snd floc#get_call_arguments in
-     let (defs, use, usehigh) =
-       if ((List.length pars) = 1
-           && (is_floating_point_parameter (List.hd pars))) then
-         let s0: arm_extension_register_t =
-           {armxr_type = XSingle; armxr_index = 0} in
-         let s0var = floc#f#env#mk_arm_extension_register_variable s0 in
-         ([s0var], [s0var], [s0var])
-       else
-         let usehigh = get_use_high_vars args in
-         let use =
-           match List.length args with
-           | 0 -> []
-           | 1 -> [vr0]
-           | 2 -> [vr0; vr1]
-           | 3 -> [vr0; vr1; vr2]
-           | _ -> [vr0; vr1; vr2; vr3] in
-         ([vr0], use, usehigh) in
-     let cmds = floc#get_arm_call_commands in
-     let defcmds =
-       floc#get_vardef_commands
-         ~defs:defs
-         ~clobbers:[vr1; vr2; vr3]
-         ~use:use
-         ~usehigh:usehigh
-         ctxtiaddr in
-     let cmds = defcmds @ cmds in
+       let cmds = calltgt_cmds tgt in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
