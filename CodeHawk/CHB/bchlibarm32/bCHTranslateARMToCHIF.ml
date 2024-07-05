@@ -3867,19 +3867,13 @@ object (self)
     let freeze_initial_register_value (reg:arm_reg_t) =
       let regVar = env#mk_arm_register_variable reg in
       let initVar = env#mk_initial_register_value (ARMRegister reg) in
-      let _ =
-        ignore(finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
       ASSERT (EQ (regVar, initVar)) in
     let freeze_initial_extension_register_values (reg: arm_extension_register_t) =
       let regVar = env#mk_arm_extension_register_variable reg in
       let initVar = env#mk_initial_register_value (ARMExtensionRegister reg) in
-      let _ =
-        ignore (finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
       ASSERT (EQ (regVar, initVar)) in
     let freeze_external_memory_values (v:variable_t) =
       let initVar = env#mk_initial_memory_value v in
-      let _ =
-        ignore(finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
       ASSERT (EQ (v, initVar)) in
     let rAsserts = List.map freeze_initial_register_value arm_regular_registers in
     let xAsserts =
