@@ -46,6 +46,7 @@ open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypes
 open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHDoubleword
@@ -77,6 +78,7 @@ let log_error (tag: string) (msg: string): tracelogspec_t =
 
 
 let ixd = BCHInterfaceDictionary.interface_dictionary
+let bcd = BCHBCDictionary.bcdictionary
 
 
 class arm_opcode_dictionary_t
@@ -300,6 +302,7 @@ object (self)
 
     let mk_instrx_data
           ?(vars: variable_t list = [])
+          ?(types: btype_t list = [])
           ?(xprs: xpr_t list = [])
           ?(rdefs: int list = [])
           ?(uses: int list = [])
@@ -315,6 +318,7 @@ object (self)
       let defusehighcount = List.length useshigh in
       let flagrdefcount = List.length flagrdefs in
       let varstring = string_repeat "v" varcount in
+      let typestring = string_repeat "t" varcount in
       let xprstring = string_repeat "x" xprcount in
       let rdefstring = string_repeat "r" rdefcount in
       let defusestring = string_repeat "d" defusecount in
@@ -323,6 +327,7 @@ object (self)
       let tagstring =
         "a:"
         ^ varstring
+        ^ typestring
         ^ xprstring
         ^ rdefstring
         ^ defusestring
@@ -330,8 +335,15 @@ object (self)
         ^ flagrdefstring in
       let varargs = List.map xd#index_variable vars in
       let xprargs = List.map xd#index_xpr xprs in
+      let typeargs =
+        let types =
+          if (List.length types) < varcount then
+            List.map (fun _ -> t_unknown) vars
+          else
+            types in
+        List.map bcd#index_typ types in
       (tagstring,
-       varargs @ xprargs @ rdefs @ uses @ useshigh @ flagrdefs) in
+       varargs @ typeargs @ xprargs @ rdefs @ uses @ useshigh @ flagrdefs) in
 
     let add_optional_instr_condition
           (tagstring: string)
@@ -385,7 +397,7 @@ object (self)
             let xx = rewrite_expr ?restrict:(Some 4) x in
             let rdef = get_rdef xvar in
             (xx :: xprs, xvar :: xvars, rdef :: rdefs)) ([], [], []) callargs in
-      let vrd =
+      let (vrd, rtype) =
         let fintf = floc#get_call_target#get_function_interface in
         let rtype = get_fts_returntype fintf in
         let reg =
@@ -401,7 +413,7 @@ object (self)
               ({armxr_type = regtype; armxr_index = 0})
           else
             register_of_arm_register AR0 in
-        floc#f#env#mk_register_variable reg in
+        (floc#f#env#mk_register_variable reg, rtype) in
       let xrdefs =
         List.fold_left (fun acc x ->
             let rdefs = get_all_rdefs x in
@@ -410,6 +422,7 @@ object (self)
       let (tagstring, args) =
         mk_instrx_data
           ~vars:[vrd]
+          ~types:[rtype]
           ~xprs:((List.rev xprs) @ (List.rev xvars))
           ~rdefs:((List.rev rdefs) @ xrdefs)
           ~uses:[get_def_use vrd]
