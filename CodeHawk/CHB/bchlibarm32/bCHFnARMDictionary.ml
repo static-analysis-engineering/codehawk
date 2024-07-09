@@ -1859,7 +1859,7 @@ object (self)
              get_rdef xrt2;
              get_rdef xxrt2] in
          let uses = [get_def_use vmem; get_def_use vmem2] in
-         let useshigh = [get_def_use vmem; get_def_use vmem2] in
+         let useshigh = [get_def_use_high vmem; get_def_use_high vmem2] in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem; vmem2]

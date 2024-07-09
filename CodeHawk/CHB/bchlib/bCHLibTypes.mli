@@ -3047,6 +3047,11 @@ type type_base_variable_t =
   | FunctionType of string (** function hex address *)
   | DataAddressType of string  (** global hex address *)
   | GlobalVariableType of string (** global hex address *)
+  | RegisterLhsType of register_t * string * string
+  (** assignment (function, instruction) hex address *)
+
+  | LocalStackLhsType of int * string * string
+  (** assignment offset in bytes, (function, instruction) hex address *)
 
 
 type type_cap_label_t =
@@ -3080,6 +3085,7 @@ type type_constant_t =
   | TyExtendedAscii  (** integer in the range [0x1 - 0xfe] *)
   | TyZero    (** can be either a pointer or an integer *)
   | TyTInt of ikind_t
+  | TyTStruct of int * string  (** bckey, bcname *)
   | TyTFloat of fkind_t
   | TyTUnknown  (** top in type lattice *)
 
@@ -3398,6 +3404,7 @@ object ('a)
   method is_register_variable: bool
   method is_mips_argument_variable: bool
   method is_arm_argument_variable: bool
+  method is_arm_extension_register_variable: bool
   method is_memory_variable: bool
 
   (** Returns true if this variable is set by the function environment and
@@ -3772,6 +3779,10 @@ object
       argument registers (R0, R1, R2, R3) or double argument registers
       ((R0, R1), (R2, R3)). *)
   method is_arm_argument_variable: variable_t -> bool
+
+  (** Returns [true] if [var] is a register variable of one of the ARM
+      extension registers (e.g., floating point registers). *)
+  method is_arm_extension_register_variable: variable_t -> bool
 
   (** Returns [true] if [var] is the initial-value variable of an ARM
       argument register variable. *)
@@ -4420,6 +4431,7 @@ class type function_environment_int =
     method get_mips_argument_values: variable_t list
     method get_arm_argument_values: variable_t list
     method get_bridge_values_at: ctxt_iaddress_t -> variable_t list
+    method get_selected_variables: (variable_t -> bool) -> variable_t list
 
     method get_variables: variable_t list
     method get_sym_variables: variable_t list
