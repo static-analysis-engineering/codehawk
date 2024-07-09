@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022-2023  Aarno Labs LLC
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -90,10 +90,18 @@ object (self: 'a)
            default()
          end
       | ASSIGN_SYM (x, SYM s) ->
-         begin
-           table'#remove x;
-           default ()
-         end
+         let x_s = self#getValue' x in
+         let x_s' = x_s#delta ([s]) in
+         if x_s'#isBottom || x_s'#isTop then
+           begin
+             table'#remove x;
+             default ()
+           end
+         else
+           begin
+             self#setValue' table' x x_s';
+             default()
+           end
       | _ ->
          default ()
 
@@ -111,8 +119,14 @@ object (self: 'a)
            default ()
          end
       | ASSIGN_SYM (x, SYM s) ->
+         let x_s = self#getValue' x in
+         let x_s' =
+           if x_s#isTop then
+             new symbolic_set_t [s]
+           else
+             x_s#join (new symbolic_set_t [s]) in
          begin
-           self#setValue' table' x (new symbolic_set_t [s]);
+           self#setValue' table' x x_s';
            default ()
          end
       | _ ->
@@ -243,10 +257,14 @@ let analyze_procedure_with_def_use
   let code = LF.mkCode [CODE (new symbol_t "code", proc#getBody)] in
   let init = [("defuse", new def_use_domain_no_arrays_t)] in
   let _ =
-    iterator#runBwd
-      ~domains:["defuse"]
-      ~atlas:(new atlas_t ~sigmas:[] init)
-      (CODE (new symbol_t "code", code)) in
+    try
+      iterator#runBwd
+        ~domains:["defuse"]
+        ~atlas:(new atlas_t ~sigmas:[] init)
+        (CODE (new symbol_t "code", code))
+    with
+    | CHFailure p ->
+       raise (BCH_failure (LBLOCK [STR "Error in analyze def_use: "; p])) in
   ()
 
 

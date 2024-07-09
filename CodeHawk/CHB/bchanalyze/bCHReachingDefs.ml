@@ -243,10 +243,14 @@ let analyze_procedure_with_flag_reaching_defs
   let code = LF.mkCode [CODE (new symbol_t "code", proc#getBody)] in
   let init = [("flagreachingdefs", new reaching_defs_domain_no_arrays_t)] in
   let _ =
-    iterator#runFwd
-      ~domains:["flagreachingdefs"]
-      ~atlas:(new atlas_t ~sigmas:[] init)
-      (CODE (new symbol_t "code", code)) in
+    try
+      iterator#runFwd
+        ~domains:["flagreachingdefs"]
+        ~atlas:(new atlas_t ~sigmas:[] init)
+        (CODE (new symbol_t "code", code))
+    with
+    | CHFailure p ->
+       raise (BCH_failure (LBLOCK [STR "Error analyze_reaching_defs: "; p])) in
   ()
 
 
