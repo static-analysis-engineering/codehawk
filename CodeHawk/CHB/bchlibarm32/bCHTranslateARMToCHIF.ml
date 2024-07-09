@@ -37,6 +37,7 @@ open CHLogger
 (* xprlib *)
 open Xprt
 open XprTypes
+open XprToPretty
 open XprUtil
 open Xsimplify
 
@@ -69,6 +70,8 @@ open BCHARMTypes
 
 module LF = CHOnlineCodeSet.LanguageFactory
 module TR = CHTraceResult
+
+let x2p = xpr_formatter#pr_expr
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("TranslateARMToCHIF:" ^ tag) msg
@@ -584,7 +587,9 @@ let translate_arm_instruction
     List.fold_left (fun acc x ->
         let xw = inv#rewrite_expr x in
         let xs = simplify_xpr xw in
-        let vars = floc#env#variables_in_expr xs in
+        let vars =
+          List.filter (fun v -> not (floc#f#env#is_function_initial_value v))
+            (floc#env#variables_in_expr xs) in
         vars @ acc) [] xprs in
 
   let is_maybe_non_returning_call_instr =
@@ -710,7 +715,7 @@ let translate_arm_instruction
        else
          [] in
      let elseaddr = codepc#get_false_branch_successor in
-     let cmds = cmds @ defcmds @ [invop] in
+     let cmds = cmds @ [invop] @ defcmds @ [bwdinvop] in
      let transaction = package_transaction finfo blocklabel cmds in
      if finfo#has_associated_cc_setter ctxtiaddr then
        let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
@@ -1588,13 +1593,15 @@ let translate_arm_instruction
      let (lhs, cmds) = floc#get_ssa_assign_commands rtreg rhs in
      let cmds = cmds @ updatecmds in
      let usevars = get_register_vars [rn; rm] in
-     let usevars =
+     let (usevars, usehigh) =
        let memvar = mem#to_variable floc in
-       if floc#f#env#is_unknown_memory_variable memvar then
-         usevars
+       if memvar#isTmp || floc#f#env#is_unknown_memory_variable memvar then
+         (* elevate address variables to high-use *)
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (usevars, get_use_high_vars [xrn; xrm])
        else
-         memvar :: usevars in
-     let usehigh = get_use_high_vars [rhs] in
+         (memvar :: usevars, get_use_high_vars [rhs]) in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[lhs]
@@ -3877,11 +3884,13 @@ object (self)
       ASSERT (EQ (v, initVar)) in
     let rAsserts = List.map freeze_initial_register_value arm_regular_registers in
     let xAsserts =
-      (* if system_settings#include_arm_extension_registers then *)
+      let xregsused =
+        env#get_selected_variables env#varmgr#is_arm_extension_register_variable in
+      if (List.length xregsused) > 0 then
         List.map freeze_initial_extension_register_values
           (arm_xsingle_extension_registers @ arm_xdouble_extension_registers)
-      (* else
-        [] *) in
+      else
+        [] in
     let externalMemvars = env#get_external_memory_variables in
     let externalMemvars = List.filter env#has_constant_offset externalMemvars in
     let _ =

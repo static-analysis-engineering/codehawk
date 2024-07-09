@@ -1186,6 +1186,9 @@ object (self)
     let is_local v = varmgr#is_local_variable v && varmgr#is_stack_variable v in
     List.filter is_local self#get_variables
 
+  method get_selected_variables (filter: variable_t -> bool): variable_t list =
+    List.filter filter self#get_variables
+
   method get_parent_stack_variables =
     List.filter varmgr#is_stack_parameter_variable self#get_variables
 

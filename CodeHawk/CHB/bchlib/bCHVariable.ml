@@ -377,6 +377,14 @@ object (self:'a)
         | _ -> false)
     | _ -> false
 
+  method is_arm_extension_register_variable =
+    match denotation with
+    | RegisterVariable reg ->
+       (match reg with
+        | ARMExtensionRegister _ -> true
+        | _ -> false)
+    | _ -> false
+
   method is_special_variable =
     match denotation with
     | AuxiliaryVariable (Special _) -> true | _ -> false
@@ -828,6 +836,10 @@ object (self)
   method is_arm_argument_variable (v:variable_t) =
     tfold_default
       (fun av -> av#is_arm_argument_variable) false (self#get_variable v)
+
+  method is_arm_extension_register_variable (v: variable_t) =
+    tfold_default
+    (fun av -> av#is_arm_extension_register_variable) false (self#get_variable v)
 
   method is_stack_variable (v: variable_t) =
     (self#is_memory_variable v)
