@@ -28,8 +28,13 @@
 (* chlib *)
 open CHPretty
 
+(* chutil *)
+open CHLogger
+
 (* bchlib *)
+open BCHBCFiles
 open BCHBCTypePretty
+open BCHBCTypes
 open BCHCPURegisters
 open BCHLibTypes
 
@@ -41,11 +46,13 @@ let tcd = BCHTypeConstraintDictionary.type_constraint_dictionary
 let type_cap_label_to_string (c: type_cap_label_t) =
   match c with
   | FRegParameter r -> "param_" ^ (register_to_string r)
-  | FStackParameter offset -> "param_off_" ^ (string_of_int offset)
+  | FStackParameter (size, offset) ->
+     "param_" ^ (string_of_int size) ^ "_off_" ^ (string_of_int offset)
   | FLocStackAddress offset -> "stackaddr_" ^ (string_of_int offset)
   | FReturn -> "rtn"
   | Load -> "load"
   | Store -> "store"
+  | Deref -> "deref"
   | LeastSignificantByte -> "lsb"
   | LeastSignificantHalfword -> "lsh"
   | OffsetAccess (size, offset) ->
@@ -62,6 +69,10 @@ let type_base_variable_to_string (v: type_base_variable_t) =
   | FunctionType faddr -> "t_sub_" ^ faddr
   | DataAddressType gaddr -> "t_" ^ gaddr
   | GlobalVariableType gaddr -> "t_gv_" ^ gaddr
+  | RegisterLhsType (reg, faddr, iaddr) ->
+     "t_rlhs_" ^ (register_to_string reg) ^ "_" ^ faddr ^ "_" ^ iaddr
+  | LocalStackLhsType (off, faddr, iaddr) ->
+     "t_lslhs_" ^ (string_of_int off) ^ "_" ^ faddr ^ "_" ^ iaddr
 
 
 let type_variable_to_string (v: type_variable_t) =
@@ -82,6 +93,7 @@ let type_constant_to_string (c: type_constant_t) =
   | TyExtendedAscii -> "t_ascii_x"
   | TyZero -> "t_nil"
   | TyTInt k -> int_type_to_string k
+  | TyTStruct (key, name) -> "t_struct_" ^ name
   | TyTFloat k -> float_type_to_string k
   | TyTUnknown -> "t_top"
 
@@ -97,6 +109,8 @@ let type_constraint_to_string (c: type_constraint_t) =
   | TyVar t -> "VAR " ^ (type_term_to_string t)
   | TySub (t1, t2) ->
      (type_term_to_string t1) ^ " <: " ^ (type_term_to_string t2)
+  | TyGround (t1, t2) ->
+     (type_term_to_string t1) ^ " <:> " ^ (type_term_to_string t2)
   | TyZeroCheck t -> "ZeroCheck(" ^ (type_term_to_string t) ^ ")"
 
 
@@ -115,20 +129,30 @@ object (self)
   method add_var_constraint (tyvar: type_variable_t) =
     self#add_constraint (TyVar (TyVariable tyvar))
 
+  method add_term_constraint (t: type_term_t) =
+    match t with
+    | TyVariable tv -> self#add_var_constraint tv
+    | _ -> ()
+
   method add_zerocheck_constraint (tyvar: type_variable_t) =
-    self#add_constraint (TyZeroCheck (TyVariable tyvar))
+    begin
+      self#add_var_constraint tyvar;
+      self#add_constraint (TyZeroCheck (TyVariable tyvar))
+    end
 
-  method add_subtype_constraint
-           (tyvar1: type_variable_t) (tyvar2: type_variable_t) =
-    self#add_constraint (TySub (TyVariable tyvar1, TyVariable tyvar2))
+  method add_subtype_constraint (t1: type_term_t) (t2: type_term_t) =
+    begin
+      self#add_term_constraint t1;
+      self#add_term_constraint t2;
+      self#add_constraint (TySub (t1, t2))
+    end
 
-  method add_vc_subtype_constraint
-           (tyvar: type_variable_t) (tycst: type_constant_t) =
-    self#add_constraint (TySub (TyVariable tyvar, TyConstant tycst))
-
-  method add_cv_subtype_constraint
-           (tycst: type_constant_t) (tyvar: type_variable_t) =
-    self#add_constraint (TySub (TyConstant tycst, TyVariable tyvar))
+  method add_ground_constraint (t1: type_term_t) (t2: type_term_t) =
+    begin
+      self#add_term_constraint t1;
+      self#add_term_constraint t2;
+      self#add_constraint (TyGround (t1, t2))
+    end
 
   method toPretty =
     let constraints = ref [] in
@@ -168,85 +192,105 @@ let mk_intvalue_type_constant (i: int): type_constant_t option =
       Some TyExtendedAscii
 
 
-let mk_data_address_load_typevar
-      ?(size = 4) ?(offset = 0) (dw: doubleword_int): type_variable_t =
-  let capabilities = [Load; OffsetAccess (size, offset)] in
-  let basevar = DataAddressType dw#to_hex_string in
-  {tv_basevar = basevar; tv_capabilities = capabilities}
+let mk_int_type_constant (ikind: ikind_t): type_constant_t =
+  TyTInt ikind
 
 
-let mk_data_address_store_typevar
-      ?(size = 4) ?(offset = 0) (dw: doubleword_int): type_variable_t =
-  let capabilities = [Store; OffsetAccess (size, offset)] in
-  let basevar = DataAddressType dw#to_hex_string in
-  {tv_basevar = basevar; tv_capabilities = capabilities}
+let mk_float_type_constant (fkind: fkind_t): type_constant_t =
+  TyTFloat fkind
 
 
-let mk_gvar_type_var (dw: doubleword_int): type_variable_t =
-  let basevar = GlobalVariableType dw#to_hex_string in
+let mk_struct_type_constant (key: int) (name: string): type_constant_t =
+  TyTStruct (key, name)
+
+
+let mk_type_basevar (basevar: type_base_variable_t): type_variable_t =
   {tv_basevar = basevar; tv_capabilities = []}
 
 
-let mk_function_return_typevar (dw: doubleword_int): type_variable_t =
-  let basevar = FunctionType dw#to_hex_string in
-  {tv_basevar = basevar; tv_capabilities = [FReturn]}
+let mk_function_typevar (faddr: string): type_variable_t =
+  mk_type_basevar (FunctionType faddr)
 
 
-let mk_function_return_load_typevar
-      ?(size = 4) ?(offset = 0) (dw: doubleword_int): type_variable_t =
-  let basevar = FunctionType dw#to_hex_string in
-  let capabilities = [FReturn; Load; OffsetAccess (size, offset)] in
-  {tv_basevar = basevar; tv_capabilities = capabilities}
+let mk_data_address_typevar (gaddr: string): type_variable_t =
+  mk_type_basevar (DataAddressType gaddr)
 
 
-(*
-let mk_function_return_caps_typevar
-      ?(caps = []) (dw: doubleword_int): type_variable_t =
-  {tv_basevar = FunctionType dw#to_hex_string; tv_capabilities = caps}
- *)
+let mk_global_variable_typevar (gaddr: string): type_variable_t =
+  mk_type_basevar (GlobalVariableType gaddr)
 
 
-let mk_function_return_store_typevar
-      ?(size = 4) ?(offset = 0) (dw: doubleword_int): type_variable_t =
-  let basevar = FunctionType dw#to_hex_string in
-  let capabilities = [FReturn; Store; OffsetAccess (size, offset)] in
-  {tv_basevar = basevar; tv_capabilities = capabilities}
+let mk_reglhs_typevar (reg: register_t) (faddr: string) (iaddr: string)
+    : type_variable_t =
+  mk_type_basevar (RegisterLhsType (reg, faddr, iaddr))
 
 
-let mk_regparam_typevar (faddr: doubleword_int) (reg: register_t) =
-  let basevar = FunctionType faddr#to_hex_string in
-  {tv_basevar = basevar; tv_capabilities = [FRegParameter reg]}
+let mk_localstack_lhs_typevar (off: int) (faddr: string) (iaddr: string)
+    : type_variable_t =
+  mk_type_basevar (LocalStackLhsType (off, faddr, iaddr))
 
 
-let mk_regparam_load_typevar
-      ?(size = 4) ?(offset = 0) (faddr: doubleword_int) (reg: register_t) =
-  let basevar = FunctionType faddr#to_hex_string in
-  let capabilities = [FRegParameter reg; Load; OffsetAccess (size, offset)] in
-  {tv_basevar = basevar; tv_capabilities = capabilities}
+let add_capability (caps: type_cap_label_t list) (tv: type_variable_t)
+    :type_variable_t =
+  {tv with tv_capabilities = tv.tv_capabilities @ caps}
 
 
-let mk_regparam_load_array_typevar
-      ?(size = 4) ?(offset = 0) (faddr: doubleword_int) (reg: register_t) =
-  let basevar = FunctionType faddr#to_hex_string in
-  let capabilities = [FRegParameter reg; Load; OffsetAccessA (size, offset)] in
-  {tv_basevar = basevar; tv_capabilities = capabilities}
+let add_load_capability ?(size = 4) ?(offset = 0) (tv: type_variable_t)
+    :type_variable_t =
+  add_capability [Load; OffsetAccess (size, offset)] tv
 
 
-let mk_regparam_store_typevar
-      ?(size = 4) ?(offset = 0) (faddr: doubleword_int) (reg: register_t) =
-  let basevar = FunctionType faddr#to_hex_string in
-  let capabilities = [FRegParameter reg; Store; OffsetAccess (size, offset)] in
-  {tv_basevar = basevar; tv_capabilities = capabilities}
+let add_store_capability ?(size = 4) ?(offset = 0) (tv: type_variable_t)
+    :type_variable_t =
+  add_capability [Store; OffsetAccess (size, offset)] tv
 
 
-let mk_regparam_store_array_typevar
-      ?(size = 4) ?(offset = 0) (faddr: doubleword_int) (reg: register_t) =
-  let basevar = FunctionType faddr#to_hex_string in
-  let capabilities = [FRegParameter reg; Store; OffsetAccessA (size, offset)] in
-  {tv_basevar = basevar; tv_capabilities = capabilities}
+let add_deref_capability (tv: type_variable_t): type_variable_t =
+  add_capability [Deref] tv
 
 
-let mk_stackaddress_typevar (faddr: doubleword_int) (offset: int) =
-  let basevar = FunctionType faddr#to_hex_string in
-  let capabilities = [FLocStackAddress offset] in
-  {tv_basevar = basevar; tv_capabilities = capabilities}
+let add_return_capability (tv: type_variable_t): type_variable_t =
+  add_capability [FReturn] tv
+
+
+let add_freg_param_capability (register: register_t) (tv: type_variable_t)
+    :type_variable_t =
+  add_capability [FRegParameter register] tv
+
+
+let add_fstack_param_capability ?(size = 4) (offset: int) (tv: type_variable_t)
+    :type_variable_t =
+  add_capability [FStackParameter (size, offset)] tv
+
+
+let add_stack_address_capability (offset: int) (tv: type_variable_t)
+    : type_variable_t =
+  add_capability [FLocStackAddress offset] tv
+
+
+let mk_cty_term (c: type_constant_t): type_term_t = TyConstant c
+
+
+let mk_vty_term (v: type_variable_t): type_term_t = TyVariable v
+
+
+let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
+        : type_constraint_t option =
+  match ty with
+  | TInt (ikind, _) ->
+     Some (TyGround (TyVariable tv, TyConstant (mk_int_type_constant ikind)))
+  | TFloat (fkind, _, _) ->
+     Some (TyGround (TyVariable tv, TyConstant (mk_float_type_constant fkind)))
+  | TComp (key, _) ->
+     let cinfo = bcfiles#get_compinfo key in
+     Some (TyGround (TyVariable tv, TyConstant (TyTStruct (key, cinfo.bcname))))
+  | TPtr (pty, _) ->
+     let ptv = add_deref_capability tv in
+     mk_btype_constraint ptv pty
+  | _ ->
+     begin
+       chlog#add
+         "make btype constraint"
+         (LBLOCK [STR "Not yet supported: "; btype_to_pretty ty]);
+       None
+     end

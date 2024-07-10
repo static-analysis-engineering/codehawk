@@ -503,8 +503,10 @@ object
     | FunctionType _ -> "f"
     | DataAddressType _ -> "d"
     | GlobalVariableType _ -> "g"
+    | RegisterLhsType _ -> "r"
+    | LocalStackLhsType _ -> "s"
 
-  method !tags = ["d"; "f"; "g"]
+  method !tags = ["d"; "f"; "g"; "r"; "s"]
 
 end
 
@@ -525,12 +527,13 @@ object
     | FReturn -> "fx"
     | Load -> "l"
     | Store -> "s"
+    | Deref -> "d"
     | LeastSignificantByte -> "lsb"
     | LeastSignificantHalfword -> "lsh"
     | OffsetAccess _ -> "a"
     | OffsetAccessA _ -> "aa"
 
-  method !tags = ["a"; "aa"; "fr"; "fs"; "fx"; "l"; "lsb"; "lsh"; "s"; "sa"]
+  method !tags = ["a"; "aa"; "d"; "fr"; "fs"; "fx"; "l"; "lsb"; "lsh"; "s"; "sa"]
 
 end
 
@@ -554,11 +557,12 @@ object
     | TyExtendedAscii -> "ax"
     | TyZero -> "z"
     | TyTInt _ -> "ti"
+    | TyTStruct _ -> "ts"
     | TyTFloat _ -> "tf"
     | TyTUnknown -> "u"
 
   method !tags = [
-      "a"; "ac"; "acl"; "ap"; "asl"; "ax"; "i"; "s"; "ti"; "tf"; "u"; "z"]
+      "a"; "ac"; "acl"; "ap"; "asl"; "ax"; "i"; "s"; "ti"; "tf"; "ts"; "u"; "z"]
 
 end
 
@@ -592,6 +596,7 @@ object
     match c with
     | TyVar _ -> "v"
     | TySub _ -> "s"
+    | TyGround _ -> "g"
     | TyZeroCheck _ -> "z"
 
   method !tags = ["s"; "v"; "z"]

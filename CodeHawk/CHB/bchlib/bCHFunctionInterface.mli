@@ -208,3 +208,16 @@ val function_interface_to_pretty: function_interface_t -> pretty_t
 val read_xml_function_interface: xml_element_int -> function_interface_t
 
 val write_xml_function_interface: xml_element_int -> function_interface_t -> unit
+
+
+(** {1 Type constraints} *)
+
+
+(** Adds type constraints obtained by relating the function type type variables
+    with the actual parameter and return type.
+
+    Note: Constraints will only be added if the function type has been externally
+    provided.
+*)
+val record_function_interface_type_constraints:
+      type_constraint_store_int -> string -> function_interface_t -> unit

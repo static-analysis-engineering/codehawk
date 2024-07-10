@@ -3056,13 +3056,14 @@ type type_base_variable_t =
 
 type type_cap_label_t =
   | FRegParameter of register_t
-  | FStackParameter of int  (** offset in bytes *)
+  | FStackParameter of int * int (** size, offset in bytes *)
   | FLocStackAddress of int
   (** address on local stackframe that escapes, offset in bytes *)
 
   | FReturn  (** for now limited to the default return register *)
   | Load
   | Store
+  | Deref   (** Combination of Load and Store *)
   | LeastSignificantByte
   | LeastSignificantHalfword
   | OffsetAccess of int * int (** size in bytes, offset in bytes *)
@@ -3098,6 +3099,7 @@ type type_term_t =
 type type_constraint_t =
   | TyVar of type_term_t
   | TySub of type_term_t * type_term_t
+  | TyGround of type_term_t * type_term_t
   | TyZeroCheck of type_term_t
 
 
@@ -3140,13 +3142,13 @@ class type type_constraint_store_int =
 
     method add_var_constraint: type_variable_t -> unit
 
+    method add_term_constraint: type_term_t -> unit
+
     method add_zerocheck_constraint: type_variable_t -> unit
 
-    method add_subtype_constraint: type_variable_t -> type_variable_t -> unit
+    method add_subtype_constraint: type_term_t -> type_term_t -> unit
 
-    method add_vc_subtype_constraint: type_variable_t -> type_constant_t -> unit
-
-    method add_cv_subtype_constraint: type_constant_t -> type_variable_t -> unit
+    method add_ground_constraint: type_term_t -> type_term_t -> unit
 
     method toPretty: pretty_t
 

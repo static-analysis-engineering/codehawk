@@ -50,6 +50,7 @@ open BCHFtsParameter
 open BCHLibTypes
 open BCHMIPSFunctionInterface
 open BCHSystemSettings
+open BCHTypeConstraintStore
 
 
 let id = BCHInterfaceDictionary.interface_dictionary
@@ -1084,3 +1085,54 @@ let add_format_spec_parameters
   let newpars = fts.fts_parameters @ fmtpars in
   let newfts = {fts with fts_parameters = newpars} in
   {fintf with fintf_type_signature = newfts}
+
+
+let record_function_interface_type_constraints
+      (store: type_constraint_store_int)
+      (faddr: string)
+      (fintf: function_interface_t) =
+  match fintf.fintf_bctype with
+  | None -> ()
+  | Some ftype ->
+     match ftype with
+     | TFun (returntype, fargs, varargs, _) ->
+        let ftypevar = mk_function_typevar faddr in
+        let fretvar = add_return_capability ftypevar in
+        begin
+          (match mk_btype_constraint fretvar returntype with
+           | Some tyc -> store#add_constraint tyc
+           | _ -> ());
+          (match fargs with
+           | None ->
+              chlog#add
+                "function interface type constraints"
+                (LBLOCK [STR faddr; STR ": no arguments found"])
+           | Some args ->
+              let ftsparams = fintf.fintf_type_signature.fts_parameters in
+              if List.length(args) = List.length(ftsparams) then
+                List.iter2 (fun (name, ty, _) ftsparam ->
+                    match ftsparam.apar_location with
+                    | [RegisterParameter (reg, _)] ->
+                       let pvar = add_freg_param_capability reg ftypevar in
+                       (match mk_btype_constraint pvar ty with
+                        | Some tyc -> store#add_constraint tyc
+                        | _ -> ())
+                    | _ ->
+                       chlog#add
+                         "function interface type constraints"
+                         (LBLOCK [
+                              STR faddr;
+                              STR ": ";
+                              STR "not yet supported for ";
+                              fts_parameter_to_pretty ftsparam])) args ftsparams
+              else
+                chlog#add
+                  "function interface type constraints"
+                  (LBLOCK [
+                       STR faddr;
+                       STR ": lengths are not equal: args: ";
+                       INT (List.length args);
+                       STR "; params: ";
+                       INT (List.length ftsparams)]))
+        end
+     | _ -> ()
