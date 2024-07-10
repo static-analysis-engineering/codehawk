@@ -86,17 +86,24 @@ object (self)
       match v with
       | FunctionType s -> (tags @ [s], [])
       | DataAddressType s -> (tags @ [s], [])
-      | GlobalVariableType s -> (tags @ [s], []) in
+      | GlobalVariableType s -> (tags @ [s], [])
+      | RegisterLhsType (r, faddr, iaddr) ->
+         (tags @ [faddr; iaddr], [bd#index_register r])
+      | LocalStackLhsType (off, faddr, iaddr) ->
+         (tags @ [faddr; iaddr], [off]) in
     type_basevar_table#add key
 
   method get_type_basevar (index: int): type_base_variable_t =
     let name = "type_base_variable_t" in
-    let (tags, _) = type_basevar_table#retrieve index in
+    let (tags, args) = type_basevar_table#retrieve index in
     let t = t name tags in
+    let a = a name args in
     match (t 0) with
     | "f" -> FunctionType (t 1)
     | "d" -> DataAddressType (t 1)
     | "g" -> GlobalVariableType (t 1)
+    | "r" -> RegisterLhsType (bd#get_register (a 0), t 1, t 2)
+    | "s" -> LocalStackLhsType (a 0, t 1, t 2)
     | s -> raise_tag_error name s type_base_variable_mcts#tags
 
   method index_type_caplabel (c: type_cap_label_t) =
@@ -104,11 +111,12 @@ object (self)
     let key =
       match c with
       | FRegParameter r -> (tags, [bd#index_register r])
-      | FStackParameter i -> (tags, [i])
-      | FLocStackAddress i -> (tags, [i])
+      | FStackParameter (size, offset) -> (tags, [size; offset])
+      | FLocStackAddress offset -> (tags, [offset])
       | FReturn -> (tags, [])
       | Load -> (tags, [])
       | Store -> (tags, [])
+      | Deref -> (tags, [])
       | LeastSignificantByte -> (tags, [])
       | LeastSignificantHalfword -> (tags, [])
       | OffsetAccess (size, off) -> (tags, [size; off])
@@ -122,11 +130,12 @@ object (self)
     let a = a name args in
     match (t 0) with
     | "fr" -> FRegParameter (bd#get_register (a 0))
-    | "fs" -> FStackParameter (a 0)
+    | "fs" -> FStackParameter (a 0, a 1)
     | "sa" -> FLocStackAddress (a 0)
     | "fx" -> FReturn
     | "l" -> Load
     | "s" -> Store
+    | "d" -> Deref
     | "lsb" -> LeastSignificantByte
     | "lsh" -> LeastSignificantHalfword
     | "a" -> OffsetAccess (a 0, a 1)
@@ -160,14 +169,16 @@ object (self)
       | TyExtendedAscii -> (tags, [])
       | TyZero -> (tags, [])
       | TyTInt k -> (tags @ [ikind_mfts#ts k], [])
+      | TyTStruct (key, name) -> (tags @ [name], [key])
       | TyTFloat k -> (tags @ [fkind_mfts#ts k], [])
       | TyTUnknown -> (tags, []) in
     type_constant_table#add key
 
   method get_type_constant (index: int): type_constant_t =
     let name = "type_constant_t" in
-    let (tags, _) = type_constant_table#retrieve index in
+    let (tags, args) = type_constant_table#retrieve index in
     let t = t name tags in
+    let a = a name args in
     match (t 0) with
     | "ad" -> TyAsciiDigit
     | "acl" -> TyAsciiCapsLetter
@@ -179,6 +190,7 @@ object (self)
     | "z" -> TyZero
     | "ti" -> TyTInt (ikind_mfts#fs (t 1))
     | "tf" -> TyTFloat (fkind_mfts#fs (t 1))
+    | "ts" -> TyTStruct (a 1, t 1)
     | "u" -> TyTUnknown
     | s -> raise_tag_error name s type_constant_mcts#tags
 
@@ -207,6 +219,8 @@ object (self)
       | TyVar v -> (tags, [self#index_type_term v])
       | TySub (t1, t2) ->
          (tags, [self#index_type_term t1; self#index_type_term t2])
+      | TyGround (t1, t2) ->
+         (tags, [self#index_type_term t1; self#index_type_term t2])
       | TyZeroCheck t -> (tags, [self#index_type_term t]) in
     type_constraint_table#add key
 
@@ -217,7 +231,8 @@ object (self)
     let a = a name args in
     match (t 0) with
     | "v" -> TyVar (self#get_type_term (a 0))
-    | "s" -> TySub (self#get_type_term (a 1), self#get_type_term (a 2))
+    | "s" -> TySub (self#get_type_term (a 0), self#get_type_term (a 1))
+    | "g" -> TyGround (self#get_type_term (a 0), self#get_type_term (a 1))
     | "z" -> TyZeroCheck (self#get_type_term (a 0))
     | s -> raise_tag_error name s type_term_mcts#tags
 
