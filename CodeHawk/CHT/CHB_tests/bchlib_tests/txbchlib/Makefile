@@ -53,7 +53,7 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest bCHFunctionInterfaceTest bCHARMFunctionInterfaceTest
+all: make_dirs bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest bCHFunctionInterfaceTest bCHARMFunctionInterfaceTest bCHTypeConstraintStoreTest
 
 doc: 
 
@@ -79,6 +79,10 @@ bCHFunctionInterfaceTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/goblintC
 bCHARMFunctionInterfaceTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHARMFunctionInterfaceTest.cmi cmx/bCHARMFunctionInterfaceTest.cmx
 	$(CAMLLINK) -o bCHARMFunctionInterfaceTest $(OBJECTS) cmx/bCHARMFunctionInterfaceTest.cmx
 
+
+bCHTypeConstraintStoreTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(CHUTIL)/chutil.cmxa $(BCHCIL)/bchcil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(BCHLIBTESTLIB)/tbchlib.cmxa cmi/bCHTypeConstraintStoreTest.cmi cmx/bCHTypeConstraintStoreTest.cmx
+	$(CAMLLINK) -o bCHTypeConstraintStoreTest $(OBJECTS) cmx/bCHTypeConstraintStoreTest.cmx
+
 run: bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest
 	./bCHDoublewordTest
 	./bCHImmediateTest
@@ -86,6 +90,7 @@ run: bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest
 	./bCHStreamWrapperTest
 	./bCHFunctionInterfaceTest
 	./bCHARMFunctionInterfaceTest
+	./bCHTypeConstraintStoreTest
 
 cmi/%.cmi: %.mli
 	$(CAMLC) -o $@ -c -opaque $<
@@ -111,4 +116,5 @@ clean:
 	rm -f bCHImmediateTest
 	rm -f bCHLocationTest
 	rm -f bCHFunctionInterfaceTest
+	rm -f bCHTypeConstraintStoreTest
 	rm -rf doc

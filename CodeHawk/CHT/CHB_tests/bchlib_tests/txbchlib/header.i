@@ -52,3 +52,13 @@ struct struct3_t
 
 
 int f_11(struct struct3_t a);
+
+
+char * f_12(char *p);
+
+struct struct4_t {
+  char *fld1;
+  char *fld2;
+};
+
+char *f_13(struct struct4 *a);
