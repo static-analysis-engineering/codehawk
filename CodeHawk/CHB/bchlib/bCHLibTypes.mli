@@ -3134,6 +3134,27 @@ class type type_constraint_dictionary_int =
   end
 
 
+class type type_constraint_graph_int =
+  object ('a)
+
+    method partition_size: int
+
+    method term_size: int
+
+    method initialize: type_term_t list -> unit
+
+    method add_new_vertex: int -> unit
+
+    method partition: CHUtils.IntCollections.set_t list
+
+    method saturate: 'a
+
+    method add_constraint: type_constraint_t -> 'a
+
+    method toPretty: pretty_t
+
+  end
+
 
 class type type_constraint_store_int =
   object
@@ -3149,6 +3170,23 @@ class type type_constraint_store_int =
     method add_subtype_constraint: type_term_t -> type_term_t -> unit
 
     method add_ground_constraint: type_term_t -> type_term_t -> unit
+
+    method get_function_type_constraints: string -> type_constraint_t list
+
+    method get_reglhs_constraints:
+             register_t -> string -> string -> type_constraint_t list
+
+    method evaluate_reglhs_type:
+             register_t
+             -> string
+             -> string
+             -> (type_variable_t list * type_constant_t list) list
+
+    method resolve_reglhs_type:
+             register_t -> string -> string -> btype_t option
+
+    method resolve_reglhs_types:
+             string -> (register_t * string * btype_t option) list
 
     method toPretty: pretty_t
 

@@ -50,7 +50,7 @@ open BCHFtsParameter
 open BCHLibTypes
 open BCHMIPSFunctionInterface
 open BCHSystemSettings
-open BCHTypeConstraintStore
+open BCHTypeConstraintUtil
 
 
 let id = BCHInterfaceDictionary.interface_dictionary
