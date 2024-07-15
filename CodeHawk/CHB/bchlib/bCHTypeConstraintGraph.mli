@@ -26,15 +26,7 @@
    ============================================================================= *)
 
 (* bchlib *)
-open BCHBCTypes
 open BCHLibTypes
 
-(** System-wide collection of type constraints.*)
 
-(** {1 Constraint store} *)
-
-(** Returns the application-wide store of type constraints.
-
-    All type constraints are collected in this data structure throughout the
-    analysis.*)
-val mk_type_constraint_store: unit -> type_constraint_store_int
+val mk_type_constraint_graph: unit -> type_constraint_graph_int

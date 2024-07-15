@@ -47,6 +47,8 @@ MLIS := \
 	bCHInvDictionary \
 	bCHVarInvDictionary \
 	bCHTypeConstraintDictionary \
+	bCHTypeConstraintUtil \
+	bCHTypeConstraintGraph \
 	bCHTypeConstraintStore \
 	bCHJavaBasicTypes \
 	bCHTypeDefinitions \
@@ -143,6 +145,8 @@ SOURCES := \
 	bCHVarInvDictionary \
 	bCHTypeDefinitions \
 	bCHTypeConstraintDictionary \
+	bCHTypeConstraintUtil \
+	bCHTypeConstraintGraph \
 	bCHTypeConstraintStore \
 	bCHJavaSignatures \
 	bCHVariableNames \

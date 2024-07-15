@@ -190,7 +190,7 @@ object (self)
     | "z" -> TyZero
     | "ti" -> TyTInt (ikind_mfts#fs (t 1))
     | "tf" -> TyTFloat (fkind_mfts#fs (t 1))
-    | "ts" -> TyTStruct (a 1, t 1)
+    | "ts" -> TyTStruct (a 0, t 1)
     | "u" -> TyTUnknown
     | s -> raise_tag_error name s type_constant_mcts#tags
 
