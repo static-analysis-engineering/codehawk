@@ -26,7 +26,6 @@
    ============================================================================= *)
 
 (* bchlib *)
-open BCHBCTypes
 open BCHLibTypes
 
 (** System-wide collection of type constraints.*)

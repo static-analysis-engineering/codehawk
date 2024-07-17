@@ -33,8 +33,6 @@ open CHUtils
 open CHLogger
 
 (* bchlib *)
-open BCHBasicTypes
-open BCHBCFiles
 open BCHBCTypePretty
 open BCHTypeConstraintGraph
 open BCHTypeConstraintUtil
@@ -45,6 +43,7 @@ open BCHLibTypes
 
 module H = Hashtbl
 
+let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
 let tcd = BCHTypeConstraintDictionary.type_constraint_dictionary
 
@@ -230,6 +229,32 @@ object (self)
     else
       []
 
+  method get_stack_lhs_constraints
+           (offset: int) (faddr: string): type_constraint_t list =
+    if H.mem stacklhss faddr then
+      let offsetentry = H.find stacklhss faddr in
+      if H.mem offsetentry offset then
+        let result = ref [] in
+        let iaddrentry = H.find offsetentry offset in
+        let _ =
+          H.iter (fun _ tcs ->
+              result := !result @ (List.map tcd#get_type_constraint tcs))
+            iaddrentry in
+        let _ =
+          chlog#add
+            "stack lhs constraints"
+            (LBLOCK [
+                 INT offset;
+                 STR ": ";
+                 pretty_print_list !result
+                   (fun tc -> STR (type_constraint_to_string tc))
+                   "[" "; " "]"]) in
+        !result
+      else
+        []
+    else
+      []
+
   method evaluate_reglhs_type
            (reg: register_t) (faddr: string) (iaddr: string)
          :(type_variable_t list * type_constant_t list) list =
@@ -257,7 +282,7 @@ object (self)
               let cterms = List.map tcd#index_type_term prefixterms in
               match cterms with
               | [] -> ()
-              | [c] -> ()
+              | [_] -> ()
               | _ ->
                  if List.for_all termset#has cterms then
                    ()
@@ -300,49 +325,227 @@ object (self)
           | _ -> (reglhsvars, tyconsts) :: acc) [] partition
     end
 
+  method evaluate_stack_lhs_type (offset: int) (faddr: string)
+         :(type_variable_t list * type_constant_t list) list =
+    let konstraints = self#get_stack_lhs_constraints offset faddr in
+    let termset = new IntCollections.set_t in
+    let constraintset = new IntCollections.set_t in
+    let _ =
+      List.iter (fun c ->
+          begin
+            termset#addList
+              (List.map tcd#index_type_term (type_constraint_terms c));
+            constraintset#add (tcd#index_type_constraint c)
+          end) konstraints in
+    let changed = ref true in
+    while !changed do
+      begin
+        changed := false;
+        H.iter (fun ixc c ->
+            if constraintset#has ixc then
+              ()
+            else
+              let cterms = type_constraint_terms c in
+              let prefixterms =
+                List.concat (List.map type_term_prefix_closure cterms) in
+              let cterms = List.map tcd#index_type_term prefixterms in
+              match cterms with
+              | [] -> ()
+              | [_] -> ()
+              | _ ->
+                 if List.for_all termset#has cterms then
+                   ()
+                 else if List.exists termset#has cterms then
+                   begin
+                     List.iter termset#add cterms;
+                     constraintset#add ixc;
+                     changed := true
+                   end
+                 else
+                   ()) store
+      end
+    done;
+    let tygraph = mk_type_constraint_graph () in
+    begin
+      tygraph#initialize (List.map tcd#get_type_term termset#toList);
+      let newgraph =
+        constraintset#fold (fun g ixc ->
+            let c = tcd#get_type_constraint ixc in
+            g#add_constraint c) tygraph in
+      let newgraph = newgraph#saturate in
+      let newgraph = newgraph#saturate in
+      let partition = newgraph#partition in
+      List.fold_left (fun acc s ->
+          let terms = List.map tcd#get_type_term s#toList in
+          let stacklhsvars =
+            List.fold_left (fun acc t ->
+                match t with
+                | TyVariable tv when has_stack_lhs_basevar offset faddr t ->
+                   tv :: acc
+                | _ -> acc) [] terms in
+          let tyconsts =
+            List.fold_left (fun acc t ->
+                match t with
+                | TyConstant c -> c :: acc
+                | _ -> acc) [] terms in
+          match (stacklhsvars, tyconsts) with
+          | ([], _) -> acc
+          | (_, []) -> acc
+          | _ -> (stacklhsvars, tyconsts) :: acc) [] partition
+    end
+
+
   method resolve_reglhs_type
            (reg: register_t) (faddr: string) (iaddr: string): btype_t option =
     let evaluation = self#evaluate_reglhs_type reg faddr iaddr in
-    let result =
-      List.fold_left (fun acc (vars, consts) ->
-          match acc with
-          | Some _ -> acc
-          | _ ->
-             match (vars, consts) with
-             | (v :: _, [c]) ->
-                (match v.tv_capabilities with
-                 | [] -> Some (type_constant_to_btype c)
-                 | [Deref | Load | Store] ->
-                    Some (t_ptrto (type_constant_to_btype c))
-                 | _ -> None)
-             | _ -> None) None evaluation in
-    let _ =
-      match result with
-      | Some _ -> ()
-      | _ ->
-         chlog#add
-           ("reglhs resolution not successful:" ^ faddr)
-           (LBLOCK [
-                STR iaddr;
-                STR " - ";
-                STR (register_to_string reg);
-                STR ": ";
-                pretty_print_list
-                  evaluation
-                  (fun (vars, consts) ->
-                    LBLOCK [
-                        STR "vars: ";
-                        pretty_print_list
-                          vars
-                          (fun v -> STR (type_variable_to_string v))
-                          "[" "; " "]";
-                        STR "; consts: ";
-                        pretty_print_list
-                          consts
-                          (fun c -> STR (type_constant_to_string c))
-                          "[" "; " "]";
-                        NL]) "[[" " -- " "]]"]) in
-    result
+    let log_evaluation () =
+      chlog#add
+        ("reglhs resolution was not successfull:" ^ faddr)
+        (LBLOCK [
+             STR iaddr;
+             STR " - ";
+             STR (register_to_string reg);
+             STR ": ";
+             pretty_print_list
+               evaluation
+               (fun (vars, consts) ->
+                 LBLOCK [
+                     STR "vars: ";
+                     pretty_print_list
+                       vars
+                       (fun v -> STR (type_variable_to_string v))
+                       "[" "; " "]";
+                     STR "; consts: ";
+                     pretty_print_list
+                       consts
+                       (fun c -> STR (type_constant_to_string c))
+                       "[" "; " "]";
+                     NL]) "[[" " -- " "]]"]) in
+    let result = new IntCollections.set_t in
+    begin
+      List.iter (fun (vars, consts) ->
+          List.iter (fun v ->
+              List.iter (fun c ->
+                  let optty =
+                    match v.tv_capabilities with
+                    | [] -> Some (type_constant_to_btype c)
+                    | [Deref | Load | Store] ->
+                       Some (t_ptrto (type_constant_to_btype c))
+                    | [OffsetAccessA (size, _)] ->
+                       Some (t_array (type_constant_to_btype c) size)
+                    | _ -> None in
+                  match optty with
+                  | Some ty -> result#add (bcd#index_typ ty)
+                  | _ -> ()) consts) vars) evaluation;
+      if result#isEmpty then
+        begin
+          log_evaluation ();
+          None
+        end
+      else
+        match result#singleton with
+        | Some ixty -> Some (bcd#get_typ ixty)
+        | _ ->
+           let promotion = new IntCollections.set_t in
+           let _ =
+             result#iter (fun ix ->
+                 let ty = bcd#get_typ ix in
+                 if is_int ty then
+                   promotion#add (bcd#index_typ (promote_int ty))
+                 else
+                   promotion#add ix) in
+           match promotion#singleton with
+           | Some ixty -> Some (bcd#get_typ ixty)
+           | _ ->
+              begin
+                log_evaluation ();
+                chlog#add
+                  "multiple distinct types"
+                  (LBLOCK [
+                       STR iaddr;
+                       STR " --- ";
+                       STR (register_to_string reg);
+                       STR "; ";
+                       pretty_print_list
+                         (List.map bcd#get_typ result#toList)
+                         (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
+                None
+              end
+    end
+
+  method resolve_stack_lhs_type
+           (offset: int) (faddr: string): btype_t option =
+    let evaluation = self#evaluate_stack_lhs_type offset faddr in
+    let log_evaluation () =
+      chlog#add
+        ("stacklhs resolution was not successfull:" ^ faddr)
+        (LBLOCK [
+             INT offset;
+             STR ": ";
+             pretty_print_list
+               evaluation
+               (fun (vars, consts) ->
+                 LBLOCK [
+                     STR "vars: ";
+                     pretty_print_list
+                       vars
+                       (fun v -> STR (type_variable_to_string v))
+                       "[" "; " "]";
+                     STR "; consts: ";
+                     pretty_print_list
+                       consts
+                       (fun c -> STR (type_constant_to_string c))
+                       "[" "; " "]";
+                     NL]) "[[" " -- " "]]"]) in
+    let result = new IntCollections.set_t in
+    begin
+      List.iter (fun (vars, consts) ->
+          List.iter (fun v ->
+              List.iter (fun c ->
+                  let optty =
+                    match v.tv_capabilities with
+                    | [] -> Some (type_constant_to_btype c)
+                    | [Deref | Load | Store] ->
+                       Some (t_ptrto (type_constant_to_btype c))
+                    | [OffsetAccessA (size, _)] ->
+                       Some (t_array (type_constant_to_btype c) size)
+                    | _ -> None in
+                  match optty with
+                  | Some ty -> result#add (bcd#index_typ ty)
+                  | _ -> ()) consts) vars) evaluation;
+      if result#isEmpty then
+        begin
+          log_evaluation ();
+          None
+        end
+      else
+        match result#singleton with
+        | Some ixty -> Some (bcd#get_typ ixty)
+        | _ ->
+           let promotion = new IntCollections.set_t in
+           let _ =
+             result#iter (fun ix ->
+                 let ty = bcd#get_typ ix in
+                 if is_int ty then
+                   promotion#add (bcd#index_typ (promote_int ty))
+                 else
+                   promotion#add ix) in
+           match promotion#singleton with
+           | Some ixty -> Some (bcd#get_typ ixty)
+           | _ ->
+              begin
+                log_evaluation ();
+                chlog#add
+                  "multiple distinct types"
+                  (LBLOCK [
+                       INT offset;
+                       STR "; ";
+                       pretty_print_list
+                         (List.map bcd#get_typ result#toList)
+                         (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
+                None
+              end
+    end
 
   method resolve_reglhs_types (faddr: string):
            (register_t * string * btype_t option) list =
@@ -355,6 +558,20 @@ object (self)
             H.iter (fun iaddr _ ->
                 let optty = self#resolve_reglhs_type reg faddr iaddr in
                 result := (reg, iaddr, optty) :: !result) iaddrs) regs
+      else
+        () in
+    !result
+
+  method resolve_local_stack_lhs_types (faddr: string):
+           (int * btype_t option) list =
+    let result = ref [] in
+    let _ =
+      if H.mem stacklhss faddr then
+         let offsets = H.find stacklhss faddr in
+         H.iter (fun offset iaddrs ->
+             H.iter (fun _ _ ->
+                 let optty = self#resolve_stack_lhs_type offset faddr in
+                 result := (offset, optty) :: !result) iaddrs) offsets
       else
         () in
     !result
