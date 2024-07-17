@@ -3176,17 +3176,29 @@ class type type_constraint_store_int =
     method get_reglhs_constraints:
              register_t -> string -> string -> type_constraint_t list
 
+    method get_stack_lhs_constraints:
+             int -> string -> type_constraint_t list
+
     method evaluate_reglhs_type:
              register_t
              -> string
              -> string
              -> (type_variable_t list * type_constant_t list) list
 
+    method evaluate_stack_lhs_type:
+             int
+             -> string
+             -> (type_variable_t list * type_constant_t list) list
+
     method resolve_reglhs_type:
              register_t -> string -> string -> btype_t option
 
+    method resolve_stack_lhs_type: int -> string -> btype_t option
+
     method resolve_reglhs_types:
              string -> (register_t * string * btype_t option) list
+
+    method resolve_local_stack_lhs_types: string -> (int * btype_t option) list
 
     method toPretty: pretty_t
 

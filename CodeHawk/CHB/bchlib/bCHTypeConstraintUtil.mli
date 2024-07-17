@@ -112,6 +112,9 @@ val mk_localstack_lhs_typevar: int -> string -> string -> type_variable_t
 val has_reg_lhs_basevar: register_t -> string -> string -> type_term_t -> bool
 
 
+val has_stack_lhs_basevar: int -> string -> type_term_t -> bool
+
+
 (** {1 Capabilities} *)
 
 val add_capability: type_cap_label_t list -> type_variable_t -> type_variable_t
@@ -162,6 +165,9 @@ val add_load_capability:
 val add_store_capability:
   ?size:int -> ?offset:int -> type_variable_t -> type_variable_t
 
+
+val add_array_access_capability:
+  ?size:int -> ?offset:int -> type_variable_t -> type_variable_t
 
 
 (** Returns a new type variable that adds a capability for dereference, used

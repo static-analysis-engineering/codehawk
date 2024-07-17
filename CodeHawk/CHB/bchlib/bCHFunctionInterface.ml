@@ -590,9 +590,10 @@ let read_xml_function_interface (node:xml_element_int):function_interface_t =
   let rvtype = find ["returntype"; "returnbtype"] t_void in
   let parameters = List.map read_xml_fts_parameter (getcc "par") in
   let parameters = List.map convert_xml_fts_parameter parameters in
-  let bctype =
-    t_fsignature rvtype (List.map get_parameter_signature parameters) in
   let varargs = has "varargs" && ((get "varargs") = "yes") in
+  let bctype =
+    t_fsignature
+      ~is_varargs:varargs rvtype (List.map get_parameter_signature parameters) in
   let cc = get "cc" in
   let stackadj = if cc = "stdcall" || cc = "cdecl" then
       Some (get_stack_adjustment cc (List.length parameters))
@@ -1095,7 +1096,7 @@ let record_function_interface_type_constraints
   | None -> ()
   | Some ftype ->
      match ftype with
-     | TFun (returntype, fargs, varargs, _) ->
+     | TFun (returntype, fargs, _, _) ->
         let ftypevar = mk_function_typevar faddr in
         let fretvar = add_return_capability ftypevar in
         begin
@@ -1110,7 +1111,7 @@ let record_function_interface_type_constraints
            | Some args ->
               let ftsparams = fintf.fintf_type_signature.fts_parameters in
               if List.length(args) = List.length(ftsparams) then
-                List.iter2 (fun (name, ty, _) ftsparam ->
+                List.iter2 (fun (_, ty, _) ftsparam ->
                     match ftsparam.apar_location with
                     | [RegisterParameter (reg, _)] ->
                        let pvar = add_freg_param_capability reg ftypevar in

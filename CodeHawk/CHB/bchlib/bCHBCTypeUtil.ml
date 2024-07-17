@@ -128,13 +128,14 @@ let t_tclass ?(name_space=[]) name =
   BCHBCTypes.TClass (name, name_space, [])
 
 
-let t_function (returntype:btype_t) (args:bfunarg_t list) =
-  TFun (returntype, Some args, false, [])
+let t_function ?(is_varargs=false) (returntype:btype_t) (args:bfunarg_t list) =
+  TFun (returntype, Some args, is_varargs, [])
 
 
-let t_fsignature (returntype: btype_t) (args: (string * btype_t) list) =
+let t_fsignature
+      ?(is_varargs=false) (returntype: btype_t) (args: (string * btype_t) list) =
   let funargs = List.map (fun (name, ty) -> (name, ty, [])) args in
-  t_function returntype funargs
+  t_function ~is_varargs returntype funargs
 
 
 let t_vararg_function (returntype:btype_t) (args:bfunarg_t list) =

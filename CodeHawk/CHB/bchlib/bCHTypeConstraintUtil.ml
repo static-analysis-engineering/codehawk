@@ -27,13 +27,11 @@
 
 (* chlib *)
 open CHPretty
-open CHUtils
 
 (* chutil *)
 open CHLogger
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHBCFiles
 open BCHBCTypePretty
 open BCHBCTypes
@@ -43,7 +41,6 @@ open BCHLibTypes
 
 
 let bd = BCHDictionary.bdictionary
-let tcd = BCHTypeConstraintDictionary.type_constraint_dictionary
 
 
 let type_cap_label_compare (c1: type_cap_label_t) (c2: type_cap_label_t) =
@@ -134,7 +131,7 @@ let type_constant_to_string (c: type_constant_t) =
   | TyExtendedAscii -> "t_ascii_x"
   | TyZero -> "t_nil"
   | TyTInt k -> int_type_to_string k
-  | TyTStruct (key, name) -> "t_struct_" ^ name
+  | TyTStruct (_, name) -> "t_struct_" ^ name
   | TyTFloat k -> float_type_to_string k
   | TyTUnknown -> "t_top"
 
@@ -252,6 +249,11 @@ let add_store_capability ?(size = 4) ?(offset = 0) (tv: type_variable_t)
   add_capability [Store; OffsetAccess (size, offset)] tv
 
 
+let add_array_access_capability ?(size = 1) ?(offset = 0) (tv: type_variable_t)
+    :type_variable_t =
+  add_capability [OffsetAccessA (size, offset)] tv
+
+
 let add_deref_capability (tv: type_variable_t): type_variable_t =
   add_capability [Deref] tv
 
@@ -298,6 +300,16 @@ let has_reg_lhs_basevar
   | _ -> false
 
 
+let has_stack_lhs_basevar
+      (offset: int) (faddr: string) (t: type_term_t): bool =
+  match t with
+  | TyVariable tv ->
+     (match tv.tv_basevar with
+      | LocalStackLhsType (o, f, _) -> offset = o && faddr = f
+      | _ -> false)
+  | _ -> false
+
+
 let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
         : type_constraint_t option =
   match ty with
@@ -311,6 +323,9 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
   | TPtr (pty, _) ->
      let ptv = add_deref_capability tv in
      mk_btype_constraint ptv pty
+  | TArray (elty, _, _) ->
+     let atv = add_array_access_capability tv in
+     mk_btype_constraint atv elty
   | _ ->
      begin
        chlog#add

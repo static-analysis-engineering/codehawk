@@ -105,13 +105,14 @@ val t_tclass: ?name_space:tname_t list -> tname_t -> btype_t
 
 (** [t_function returntype args] returns a function type with returntype
     [returntype] and named arguments [args].*)
-val t_function: btype_t -> bfunarg_t list -> btype_t
+val t_function: ?is_varargs:bool -> btype_t -> bfunarg_t list -> btype_t
 
 
 (** [t_signature returntype args] returns a function type with returntype
     [returntype] and arguments [args] represented as a list of
     (argument-name, argument-type) pairs.*)
-val t_fsignature: btype_t -> (string * btype_t) list -> btype_t
+val t_fsignature:
+  ?is_varargs:bool -> btype_t -> (string * btype_t) list -> btype_t
 
 
 val t_vararg_function: btype_t -> bfunarg_t list -> btype_t
