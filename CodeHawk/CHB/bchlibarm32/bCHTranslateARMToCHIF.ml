@@ -1593,8 +1593,8 @@ let translate_arm_instruction
      let (lhs, cmds) = floc#get_ssa_assign_commands rtreg rhs in
      let cmds = cmds @ updatecmds in
      let usevars = get_register_vars [rn; rm] in
+     let memvar = mem#to_variable floc in
      let (usevars, usehigh) =
-       let memvar = mem#to_variable floc in
        if memvar#isTmp || floc#f#env#is_unknown_memory_variable memvar then
          (* elevate address variables to high-use *)
          let xrn = rn#to_expr floc in
@@ -1609,6 +1609,23 @@ let translate_arm_instruction
          ~usehigh:usehigh
          ctxtiaddr in
      let cmds = defcmds @ cmds in
+     let _ =
+       (* record register restore *)
+       let rhs = rewrite_expr floc rhs in
+       match rhs with
+       | XVar rhsvar ->
+          if floc#f#env#is_initial_register_value rhsvar then
+            let memreg =
+              TR.tget_ok (floc#f#env#get_initial_register_value_register rhsvar) in
+            match memreg with
+            | ARMRegister r when r = rt#get_register ->
+               let memaddr = mem#to_address floc in
+               let memaddr = floc#inv#rewrite_expr memaddr in
+               finfo#restore_register memaddr floc#cia rt#to_register
+            | _ -> ()
+          else
+            ()
+       | _ -> () in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
@@ -1682,6 +1699,25 @@ let translate_arm_instruction
          ~usehigh:usehigh
          ctxtiaddr in
      let cmds = defcmds @ cmds1 @ cmds2 in
+     let _ =
+       (* record register restores *)
+       List.iter (fun ((xrt, xmem): (arm_operand_int * arm_operand_int)) ->
+           let x = rewrite_expr floc (xmem#to_expr floc) in
+           match x with
+           | XVar xvar ->
+              if floc#f#env#is_initial_register_value xvar then
+                let xreg =
+                  TR.tget_ok
+                    (floc#f#env#get_initial_register_value_register xvar) in
+                match xreg with
+                | ARMRegister r when r = xrt#get_register ->
+                   let xmemaddr = xmem#to_address floc in
+                   let xmemaddr = floc#inv#rewrite_expr xmemaddr in
+                   finfo#restore_register xmemaddr floc#cia xrt#to_register
+                | _ -> ()
+              else
+                ()
+           | _ -> ()) [(rt, mem); (rt2, mem2)] in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
@@ -2044,6 +2080,28 @@ let translate_arm_instruction
                  ~use:[stackvar]
                  ~usehigh:usehigh
                  ctxtiaddr in
+             let _ =
+               (* record register restore *)
+               let xrhs = rewrite_expr floc stackrhs in
+               match xrhs with
+               | XVar xvar ->
+                  if floc#f#env#is_initial_register_value xvar then
+                    let xreg =
+                      TR.tget_ok
+                        (floc#f#env#get_initial_register_value_register xvar) in
+                    match (xreg, reg) with
+                    | (ARMRegister r, ARMRegister g) when r = g ->
+                       let xmemaddr = stackop#to_address floc in
+                       let xmemaddr = floc#inv#rewrite_expr xmemaddr in
+                       finfo#restore_register xmemaddr floc#cia reg
+                    | (ARMRegister r, ARMRegister g) when r = ARLR && g = ARPC ->
+                       let xmemaddr = stackop#to_address floc in
+                       let xmemaddr = floc#inv#rewrite_expr xmemaddr in
+                       finfo#restore_register xmemaddr floc#cia xreg
+                    | _ -> ()
+                  else
+                    ()
+               | _ -> () in
              (acc @ defcmds1 @ cmds1 @ splhscmds, off+4)) ([], 0) regs in
        let spreg = (sp_r WR)#to_register in
        let increm = XConst (IntConst (mkNumerical (4 * regcount))) in
@@ -2647,6 +2705,11 @@ let translate_arm_instruction
        else
          [] in
      let cmds = defcmds @ cmds @ updatecmds in
+     let _ =
+       (* record register spill *)
+       let vrt = rt#to_variable floc in
+       if floc#has_initial_value vrt then
+         finfo#save_register vmem floc#cia rt#to_register in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
@@ -2715,6 +2778,16 @@ let translate_arm_instruction
        else
          [] in
      let cmds = memcmds @ mem2cmds @ defcmds @ cmds1 @ cmds2 @ updatecmds in
+     let _ =
+       (* record register spills *)
+       let vrt = rt#to_variable floc in
+       let vrt2 = rt2#to_variable floc in
+       begin
+         (if floc#has_initial_value vrt then
+            finfo#save_register vmem floc#cia rt#to_register);
+         (if floc#has_initial_value vrt2 then
+            finfo#save_register vmem2 floc#cia rt2#to_register)
+       end in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
