@@ -156,6 +156,17 @@ object (self)
 end
 
 
+class arm_expression_externalizer_t
+        (finfo: function_info_int): expression_externalizer_int =
+object
+
+  method finfo = finfo
+
+  method xpr_to_bterm (_: btype_t) (_: xpr_t) = None
+
+end
+
+
 class mips_expression_externalizer_t
         (finfo: function_info_int): expression_externalizer_int =
 object (self)
@@ -199,6 +210,91 @@ object (self)
        (match optt with
         | Some tt -> Some (ArgNullTerminatorPos tt)
         | _ -> None)
+    | _ -> None
+
+end
+
+
+class arm_bterm_evaluator_t
+        (finfo: function_info_int)
+        (callargs: (fts_parameter_t * xpr_t) list): bterm_evaluator_int =
+object (self)
+
+  val finfo = finfo
+  val callargs = callargs
+
+  method finfo = finfo
+
+  method bterm_xpr (t: bterm_t): xpr_t option =
+    match t with
+    | ArgValue par ->
+       List.fold_left (fun acc (cpar, x) ->
+           match acc with
+           | Some _ -> acc
+           | _ ->
+              if (fts_parameter_equal cpar par) then Some x else None)
+         None callargs
+    | NumConstant n -> Some (XConst (IntConst n))
+    | IndexSize t ->
+       (match self#bterm_xpr t with
+        | Some x -> Some (XOp ((Xf "indexsize"), [x]))
+        | _ -> None)
+    | ByteSize t -> self#bterm_xpr t
+    | ArgNullTerminatorPos t ->
+       (match self#bterm_xpr t with
+        | Some x -> Some (XOp ((Xf "ntpos"), [x]))
+        | _ -> None)
+    | _ -> None
+
+  method xpr_local_stack_address (x: xpr_t): int option =
+    match x with
+    | XOp (XMinus, [XVar v; XConst (IntConst n)]) when n#geq numerical_zero ->
+       let sp0 =
+         self#finfo#env#mk_initial_register_value ~level:0 (ARMRegister ARSP) in
+       if v#equal sp0 then
+         Some n#toInt
+       else
+         None
+    | _ -> None
+
+  method bterm_stack_address (t: bterm_t): xpr_t option =
+    match self#bterm_xpr t with
+    | Some (XOp (XMinus, [XVar v; c]) as addr) ->
+       let sp0 =
+         self#finfo#env#mk_initial_register_value ~level:0 (ARMRegister ARSP) in
+       (match c with
+        | XConst (IntConst n) when n#geq numerical_zero ->
+           if v#equal sp0 then
+             Some addr
+           else
+             None
+        | _ -> None)
+    | _ -> None
+
+  method constant_bterm (t: bterm_t): bterm_t option =
+    match t with
+    | NumConstant _ -> Some t
+    | ArgValue par ->
+       List.fold_left (fun acc (cpar, x) ->
+           match acc with
+           | Some _ -> acc
+           | _ ->
+              if (fts_parameter_equal cpar par) then
+                match x with
+                | XConst (IntConst n) -> Some (NumConstant n)
+                | _ -> None
+              else
+                None) None callargs
+    | IndexSize tt ->
+       (match self#constant_bterm tt with
+        | Some subterm -> Some (IndexSize subterm)
+        | _ -> None)
+    | ByteSize tt ->
+       (match self#constant_bterm tt with
+        | Some subterm -> Some (ByteSize subterm)
+        | _ -> None)
+    | ArgSizeOf _ -> Some t
+    | NamedConstant _ -> Some t
     | _ -> None
 
 end
@@ -1700,6 +1796,7 @@ object (self)
    method get_sideeffect_assigns  (sem:function_semantics_t) =
      List.concat (List.map self#get_sideeffect_assign sem.fsem_sideeffects)
 
+   (* Records reads of global memory *)
    method private record_memory_reads (pres:xxpredicate_t list) =
      List.iter (fun pre ->
        match pre with
@@ -1876,7 +1973,13 @@ object (self)
      @ [returnassign]
 
    method get_arm_call_commands =
+     let parargs = self#get_call_arguments in
      let ctinfo = self#get_call_target in
+     let termev = new arm_bterm_evaluator_t self#f parargs in
+     let xprxt = new arm_expression_externalizer_t self#f in
+     let semrecorder =
+       mk_callsemantics_recorder self#l self#f termev xprxt ctinfo in
+     let _ = semrecorder#record_callsemantics in
      let r0 = self#env#mk_arm_register_variable AR0 in
      let opname = new symbol_t ~atts:["CALL"] ctinfo#get_name in
      let returnassign =
@@ -1889,6 +1992,8 @@ object (self)
      let bridgeVars = self#env#get_bridge_values_at self#cia in
      let sideeffect_assigns =
        self#get_sideeffect_assigns self#get_call_target#get_semantics in
+     let _ =
+       self#record_memory_reads self#get_call_target#get_semantics.fsem_pre in
      let defClobbered = List.map (fun r -> (ARMRegister r)) arm_temporaries in
      let abstrRegs = List.map self#env#mk_register_variable defClobbered in
      [OPERATION {op_name = opname; op_args = []};
