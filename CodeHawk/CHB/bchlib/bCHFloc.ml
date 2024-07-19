@@ -1540,10 +1540,14 @@ object (self)
              lst
            else
              lst @ (r::(registers_affected_by r))) [] regs in
-     ABSTRACT_VARS (List.map self#env#mk_cpu_register_variable regs)
+     match regs with
+     | [] -> SKIP
+     | _ -> ABSTRACT_VARS (List.map self#env#mk_cpu_register_variable regs)
 
    method get_abstract_registers_command (regs:register_t list) =
-     ABSTRACT_VARS (List.map self#env#mk_register_variable regs)
+     match regs with
+     | [] -> SKIP
+     | _ -> ABSTRACT_VARS (List.map self#env#mk_register_variable regs)
 
    method get_operation_commands
             (lhs:variable_t)
@@ -1896,11 +1900,16 @@ object (self)
        List.filter (fun r -> not (r=reg)) acc)
        defClobbered fts.fts_registers_preserved in
      let abstrRegs = List.map self#env#mk_register_variable regsClobbered in
-     [OPERATION { op_name = opName; op_args = [] };
-       ABSTRACT_VARS abstrRegs] @
-       (* postAsserts @ *)
-       [returnAssign] @ sideEffectAssigns @ espAdjustment @
-         [ABSTRACT_VARS bridgeVars]
+     [OPERATION { op_name = opName; op_args = [] }]
+     @ (match abstrRegs with
+        | [] -> []
+        | _ -> [ABSTRACT_VARS abstrRegs])
+     @ [returnAssign]
+     @ sideEffectAssigns
+     @ espAdjustment
+     @ (match bridgeVars with
+        | [] -> []
+        | _ -> [ABSTRACT_VARS bridgeVars])
 
    method get_mips_syscall_commands =
      let ctinfo = self#get_call_target in
@@ -1996,11 +2005,15 @@ object (self)
        self#record_memory_reads self#get_call_target#get_semantics.fsem_pre in
      let defClobbered = List.map (fun r -> (ARMRegister r)) arm_temporaries in
      let abstrRegs = List.map self#env#mk_register_variable defClobbered in
-     [OPERATION {op_name = opname; op_args = []};
-      ABSTRACT_VARS abstrRegs;
-      returnassign]
+     [OPERATION {op_name = opname; op_args = []}]
+     @ (match abstrRegs with
+        | [] -> []
+        | _ -> [ABSTRACT_VARS abstrRegs])
+     @ [returnassign]
      @ sideeffect_assigns
-     @ [ABSTRACT_VARS bridgeVars]
+     @ (match bridgeVars with
+        | [] -> []
+        | _ -> [ABSTRACT_VARS bridgeVars])
 
    method get_pwr_call_commands =
      let ctinfo = self#get_call_target in
@@ -2017,10 +2030,14 @@ object (self)
      let defClobbered =
        List.map (fun i -> PowerGPRegister i) [3; 4; 5; 6; 7; 8; 9; 10; 11; 12] in
      let abstrregs = List.map self#env#mk_register_variable defClobbered in
-     [OPERATION {op_name = opname; op_args = []};
-      ABSTRACT_VARS abstrregs;
-      returnassign]
-     @ [ABSTRACT_VARS bridgevars]
+     [OPERATION {op_name = opname; op_args = []}]
+     @ (match abstrregs with
+        | [] -> []
+        | _ -> [ABSTRACT_VARS abstrregs]);
+     @ [returnassign]
+     @ (match bridgevars with
+        | [] -> []
+        | _ -> [ABSTRACT_VARS bridgevars])
 
    method is_constant (var:variable_t) = self#inv#is_constant var
 

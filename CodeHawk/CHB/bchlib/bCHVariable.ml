@@ -65,6 +65,7 @@ let x2s x = p2s (x2p x)
 
 class assembly_variable_t
         ~(memrefmgr:memory_reference_manager_int)
+        ~(vard: vardictionary_int)
         ~(index:int)
         ~(denotation:assembly_variable_denotation_t):assembly_variable_int =
 object (self:'a)
@@ -101,25 +102,25 @@ object (self:'a)
 	  (if level = 0 then "" else "_" ^ (string_of_int level))
 	| InitialMemoryValue v -> v#getName#getBaseName ^ "_in"
 	| FrozenTestValue (fv,taddr,jaddr) ->
-	  fv#getName#getBaseName ^ "_val@_" ^ taddr ^ "_@_" ^ jaddr
+	  fv#getName#getBaseName ^ "_val_" ^ taddr ^ "_amp_" ^ jaddr
 	| FunctionPointer (fname,cname,address) ->
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
         | SyscallErrorReturnValue address -> "errval_" ^ address
 	| CallTargetValue tgt ->
 	  (match tgt with
-	  | StubTarget fs -> "stub:" ^ (function_stub_to_string fs)
+	  | StubTarget fs -> "stub_" ^ (function_stub_to_string fs)
 	  | StaticStubTarget (_dw, fs) ->
-             "staticstub:" ^ (function_stub_to_string fs)
+             "staticstub_" ^ (function_stub_to_string fs)
 	  | AppTarget a -> "tgt_" ^ a#to_hex_string
-	  | _ -> "tgt_?")
+	  | _ -> "tgt_qq_")
 	| SideEffectValue (address,arg,_) -> "se_" ^ address ^ "_" ^ arg
 	| FieldValue (sname,offset,fname) ->
-	   sname ^ "." ^ fname ^ "@" ^ (string_of_int offset)
-        | SymbolicValue x -> "sv__" ^ (x2s x) ^ "__sv"
+	   sname ^ "." ^ fname ^ "_amp_" ^ (string_of_int offset)
+        | SymbolicValue x -> "sv__" ^ (string_of_int (vard#xd#index_xpr x)) ^ "__sv"
         | SignedSymbolicValue (x, s0, sx) ->
            "ssv__"
-           ^ (x2s x)
+           ^ (string_of_int (vard#xd#index_xpr x))
            ^ "_"
            ^ (string_of_int s0)
            ^ "_"
@@ -447,7 +448,7 @@ object (self)
              H.add
                vartable
                index
-               (new assembly_variable_t ~memrefmgr ~index ~denotation))
+               (new assembly_variable_t ~vard ~memrefmgr ~index ~denotation))
            vard#get_indexed_variables
        end
     | _ -> ()
@@ -465,7 +466,7 @@ object (self)
     if  H.mem vartable index then
       H.find vartable index
     else
-      let var = new assembly_variable_t ~memrefmgr ~index ~denotation in
+      let var = new assembly_variable_t ~memrefmgr ~vard ~index ~denotation in
       begin
         H.add vartable index var ;
         var

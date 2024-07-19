@@ -223,7 +223,7 @@ let opsemantics (domain: string) =
     ~(context: CHLanguage.symbol_t CHStack.stack_t)
     ~(operation: CHLanguage.operation_t) ->
   match operation.op_name#getBaseName with
-  | "bwd-invariant" ->
+  | "bwd_invariant" ->
      let _ =
        if stable then
          let iaddr = List.hd (operation.op_name#getAttributes) in

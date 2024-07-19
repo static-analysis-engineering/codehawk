@@ -100,7 +100,7 @@ let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
 
 let get_invariant_label ?(bwd=false) (loc:location_int) =
   if bwd then
-    ctxt_string_to_symbol "bwd-invariant" loc#ci
+    ctxt_string_to_symbol "bwd_invariant" loc#ci
   else
     ctxt_string_to_symbol "invariant" loc#ci
 
@@ -455,7 +455,11 @@ let make_condition
       let make_node_and_label testcode tgtaddr modifier =
 	let src = condloc#i in
 	let nextlabel = make_code_label ~src ~modifier tgtaddr in
-	let testcode = testcode @ [ABSTRACT_VARS frozenVars] in
+	let testcode =
+          testcode
+          @ (match frozenVars with
+             | [] -> []
+             | _ -> [ABSTRACT_VARS frozenVars]) in
 	let transaction = TRANSACTION (nextlabel, LF.mkCode testcode, None) in
 	(nextlabel, [transaction]) in
       let (thentestlabel, thennode) =
@@ -471,8 +475,12 @@ let make_condition
   | _ ->
      let abstractlabel =
        make_code_label ~modifier:"abstract" testloc#ci in
+     let trcode =
+       match frozenVars with
+       | [] -> [SKIP]
+       | _ -> [ABSTRACT_VARS frozenVars] in
      let transaction =
-       TRANSACTION (abstractlabel, LF.mkCode [ABSTRACT_VARS frozenVars], None) in
+       TRANSACTION (abstractlabel, LF.mkCode trcode, None) in
      let edges = [
          (blocklabel, abstractlabel);
          (abstractlabel, thenlabel);
