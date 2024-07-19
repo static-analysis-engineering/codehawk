@@ -64,7 +64,7 @@ let rec memory_offset_to_string offset =
   | ConstantOffset (n,subOffset) ->
      "[" ^ n#toString ^ "]" ^ (memory_offset_to_string subOffset)
   | FieldOffset ((fname, _), subOffset) ->
-     "." ^ fname ^ (memory_offset_to_string subOffset)
+     "_dot_" ^ fname ^ (memory_offset_to_string subOffset)
   | IndexOffset (v,size,subOffset) ->
     "[" ^ v#getName#getBaseName ^ ":" ^ (string_of_int size) ^ "]" ^
       (memory_offset_to_string subOffset)
@@ -141,11 +141,11 @@ let constant_offset_to_neg_suffix_string n =
 let stack_offset_to_name offset =
   match offset with
   | ConstantOffset (n,NoOffset) when n#gt numerical_zero ->
-     "arg." ^ (constant_offset_to_suffix_string n)
+     "arg_" ^ (constant_offset_to_suffix_string n)
   | ConstantOffset (n,NoOffset) when n#lt numerical_zero ->
-     "var." ^ (constant_offset_to_neg_suffix_string n)
+     "var_" ^ (constant_offset_to_neg_suffix_string n)
   | ConstantOffset (n,NoOffset) when n#equal numerical_zero ->
-     "var.0000"
+     "var_0000"
   | _ -> "var.[" ^ (memory_offset_to_string offset) ^ "]"
 
 
