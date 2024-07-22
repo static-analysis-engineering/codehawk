@@ -426,17 +426,20 @@ object (self)
       List.iter (fun (vars, consts) ->
           List.iter (fun v ->
               List.iter (fun c ->
-                  let optty =
-                    match v.tv_capabilities with
-                    | [] -> Some (type_constant_to_btype c)
-                    | [Deref | Load | Store] ->
-                       Some (t_ptrto (type_constant_to_btype c))
-                    | [OffsetAccessA (size, _)] ->
-                       Some (t_array (type_constant_to_btype c) size)
-                    | _ -> None in
-                  match optty with
-                  | Some ty -> result#add (bcd#index_typ ty)
-                  | _ -> ()) consts) vars) evaluation;
+                  match c with
+                  | TyZero -> ()
+                  | _ ->
+                     let optty =
+                       match v.tv_capabilities with
+                       | [] -> Some (type_constant_to_btype c)
+                       | [Deref | Load | Store] ->
+                          Some (t_ptrto (type_constant_to_btype c))
+                       | [OffsetAccessA (size, _)] ->
+                          Some (t_array (type_constant_to_btype c) size)
+                       | _ -> None in
+                     match optty with
+                     | Some ty -> result#add (bcd#index_typ ty)
+                     | _ -> ()) consts) vars) evaluation;
       if result#isEmpty then
         begin
           log_evaluation ();

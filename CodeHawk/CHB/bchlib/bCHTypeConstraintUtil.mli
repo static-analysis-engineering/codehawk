@@ -115,6 +115,9 @@ val has_reg_lhs_basevar: register_t -> string -> string -> type_term_t -> bool
 val has_stack_lhs_basevar: int -> string -> type_term_t -> bool
 
 
+val has_same_function_basevar: type_variable_t -> type_variable_t -> bool
+
+
 (** {1 Capabilities} *)
 
 val add_capability: type_cap_label_t list -> type_variable_t -> type_variable_t

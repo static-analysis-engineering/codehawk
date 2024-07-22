@@ -81,7 +81,7 @@ object (self: 'a)
     let vs = new IntCollections.set_t in
     begin
       vs#add v;
-      H.add vertices v vs
+      H.replace vertices v vs
     end
 
   method private add_edge (src: int) (tgt: int) (cap: type_cap_label_t) =
@@ -141,7 +141,7 @@ object (self: 'a)
                         | TyVariable tvar ->
                            let newcap =
                              match tcd#get_type_caplabel ixcap with
-                             | Load | Store | Deref -> Deref
+                             (* may have to conflate some capabilities *)
                              | cap -> cap in
                            let tvar' = add_capability [newcap] tvar in
                            let newterm = TyVariable tvar' in

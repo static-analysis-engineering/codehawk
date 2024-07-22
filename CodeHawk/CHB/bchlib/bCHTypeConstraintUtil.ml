@@ -310,6 +310,19 @@ let has_stack_lhs_basevar
   | _ -> false
 
 
+let has_same_function_basevar (tv1: type_variable_t) (tv2: type_variable_t) =
+  let get_function (tv: type_variable_t) =
+    match tv.tv_basevar with
+    | FunctionType f -> Some f
+    | DataAddressType _ -> None
+    | GlobalVariableType _ -> None
+    | RegisterLhsType (_, f, _) -> Some f
+    | LocalStackLhsType (_, f, _) -> Some f in
+  match (get_function tv1, get_function tv2) with
+  | (Some f1, Some f2) -> f1 = f2
+  | _ -> false
+
+
 let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
         : type_constraint_t option =
   match ty with
