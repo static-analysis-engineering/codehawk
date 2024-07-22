@@ -33,6 +33,7 @@ open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBCTypes
 open BCHByteUtilities
 open BCHFloc
 open BCHFunctionInfo
@@ -51,6 +52,9 @@ open BCHFnARMDictionary
 open BCHFnARMTypeConstraints
 
 module H = Hashtbl
+
+let bd = BCHDictionary.bdictionary
+let bcd = BCHBCDictionary.bcdictionary
 
 
 class fn_analysis_results_t (fn:arm_assembly_function_int) =
@@ -167,6 +171,7 @@ object (self)
              jtnode
            end) jumptables)
 
+    (*
   method private write_xml_btypes (node: xml_element_int) =
     let btypes = finfo#get_btype_table in
     node#appendChildren
@@ -180,21 +185,59 @@ object (self)
                (String.concat "," (List.map string_of_int bixs));
              btnode
            end) btypes)
+     *)
 
-  method private write_xml (node:xml_element_int) =
+  method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
     let cNode = xmlElement "cfg" in
     let jjNode = xmlElement "jump-tables" in
     let dNode = xmlElement "instr-dictionary" in
     let iiNode = xmlElement "instructions" in
-    let bNode = xmlElement "btypes" in
+    let sfNode = xmlElement "stackframe" in
+    (* let bNode = xmlElement "btypes" in *)
     begin
       self#write_xml_cfg cNode;
       self#write_xml_jumptables jjNode;
       self#write_xml_instructions iiNode;
-      self#write_xml_btypes bNode;
+      finfo#stackframe#write_xml sfNode;
+      (* self#write_xml_btypes bNode; *)
       id#write_xml dNode;
-      append [cNode; dNode; iiNode; bNode; jjNode]
+      append [cNode; dNode; iiNode; jjNode; sfNode]
+    end
+
+  method write_xml_register_types
+           (node: xml_element_int)
+           (regtypes: (register_t * string * btype_t option) list) =
+    let regnode = xmlElement "register-lhs-types" in
+    begin
+      List.iter (fun (reg, iaddr, optty) ->
+          let inode = xmlElement "reglhs" in
+          begin
+            bd#write_xml_register inode reg;
+            inode#setAttribute "iaddr" iaddr;
+            (match optty with
+             | Some ty -> bcd#write_xml_typ inode ty
+             | _ -> ());
+            regnode#appendChildren [inode]
+          end) regtypes;
+      node#appendChildren [regnode]
+    end
+
+  method write_xml_stack_types
+           (node: xml_element_int)
+           (stacktypes: (int * btype_t option) list) =
+    let stacknode = xmlElement "stack-variable-types" in
+    begin
+      List.iter (fun (offset, optty) ->
+          let inode = xmlElement "offset" in
+          begin
+            inode#setIntAttribute "off" offset;
+            (match optty with
+             | Some ty -> bcd#write_xml_typ inode ty
+             | _ -> ());
+            stacknode#appendChildren [inode]
+          end) stacktypes;
+      node#appendChildren [stacknode]
     end
 
   method save =
@@ -217,12 +260,27 @@ object (self)
 
   method record_results ?(save=true) (fn:arm_assembly_function_int) =
     let fndata = new fn_analysis_results_t fn in
+    let vard = (get_function_info fn#get_address)#env#varmgr#vard in
     let typeconstraints =
       mk_arm_fn_type_constraints typeconstraintstore fn in
+    let node = xmlElement "application-results" in
     begin
-      (if save then fndata#save);
+      (if save then
+         let faddr = fn#get_address#to_hex_string in
+         begin
+           fndata#write_xml node;
+           typeconstraints#record_type_constraints;
+           fndata#write_xml_register_types node
+             (typeconstraintstore#resolve_reglhs_types faddr);
+           fndata#write_xml_stack_types node
+             (typeconstraintstore#resolve_local_stack_lhs_types faddr);
+           node#setAttribute "a" faddr;
+           save_app_function_results_file faddr node;
+           save_vars faddr vard
+         end );
+           (* (if save then fndata#save); *)
       H.add table fn#get_address#to_hex_string fn;
-      typeconstraints#record_type_constraints
+      typeconstraints#record_type_constraints;
     end
 
   method write_xml (node:xml_element_int) =
