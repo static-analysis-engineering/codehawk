@@ -600,6 +600,17 @@ let translate_arm_instruction
             (floc#env#variables_in_expr xs) in
         vars @ acc) [] xprs in
 
+  let get_addr_use_high_vars (xprs: xpr_t list): variable_t list =
+    (* Don't apply invariants to the expressions *)
+    let inv = floc#inv in
+    List.fold_left (fun acc x ->
+        let xs = simplify_xpr x in
+        let vars =
+          List.filter (fun v -> not (floc#f#env#is_function_initial_value v))
+            (floc#env#variables_in_expr xs) in
+        vars @ acc) [] xprs in
+
+
   let is_maybe_non_returning_call_instr =
     match instr#get_opcode with
     | BranchLink (ACCAlways, tgt)
@@ -2696,6 +2707,14 @@ let translate_arm_instruction
      let cmds = memcmds @ (floc#get_assign_commands vmem xrt) in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
+     let (usevars, usehigh) =
+       if vmem#isTmp || floc#f#env#is_unknown_memory_variable vmem then
+         (* elevate address variables to high-use *)
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (usevars, get_addr_use_high_vars [xrn; xrm])
+       else
+         (vmem :: usevars, usehigh) in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vmem]
