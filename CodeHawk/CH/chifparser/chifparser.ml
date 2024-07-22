@@ -3,8 +3,10 @@
    Author: A. Cody Schuffelen
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,7 +34,7 @@ open Lexing
 (* chlib *)
 open CHCommon
 open CHLanguage
-open CHOnlineCodeSet   
+open CHOnlineCodeSet
 open CHPretty
 open CHStaticChecker
 
@@ -53,22 +55,20 @@ let parse_file filename =
       staticChecker#checkAll ;
       lib
     end
-      
+
   with
-  | CHFailure s -> 
+  | CHFailure s ->
       (pr_debug [ s ] ; Printf.eprintf "\n" ; raise (CHFailure s))
-  | Parse_failure (line,pos,str) -> 
+  | Parse_failure (line,pos,str) ->
       begin
 	print_endline ("Parsing Failure: Line " ^ string_of_int line
                        ^ ", Character " ^ string_of_int pos ^ ":: " ^ str) ;
 	raise (CHFailure (STR "parse error"))
       end
-  | CHStaticCheck sc -> 
+  | CHStaticCheck sc ->
       (pr_debug [ sc ] ; Printf.eprintf "\n" ; raise (CHFailure (STR "Static checker")))
-  | e -> 
+  | e ->
       begin
-	Printf.eprintf "Unexpected exception : %s \n" (Printexc.to_string e ); 
+	Printf.eprintf "Unexpected exception : %s \n" (Printexc.to_string e );
 	raise (CHFailure (STR "error"))
       end
-
-
