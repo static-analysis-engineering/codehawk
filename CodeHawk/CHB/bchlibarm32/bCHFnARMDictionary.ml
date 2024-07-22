@@ -295,9 +295,11 @@ object (self)
           raise
             (BCH_failure
                (LBLOCK [STR "Empty tag list in add_base_update"])) in
-      let xtag = (List.hd tags) ^ "vx" in
+      let xtag = (List.hd tags) ^ "vxdh" in
+      let uses = [get_def_use v] in
+      let useshigh = [get_def_use_high v] in
       let tags = xtag :: ((List.tl tags) @ ["bu"]) in
-      let args = args @ [xd#index_variable v; xd#index_xpr x] in
+      let args = args @ [xd#index_variable v; xd#index_xpr x] @ uses @ useshigh in
       (tags, args) in
 
     let mk_instrx_data

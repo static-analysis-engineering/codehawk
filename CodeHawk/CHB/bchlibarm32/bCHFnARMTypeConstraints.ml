@@ -28,28 +28,39 @@
 (* chlib *)
 open CHLanguage
 open CHNumerical
+open CHPretty
 
 (* chutil *)
 open CHLogger
 
 (* xprlib *)
+open Xprt
 open XprToPretty
 open XprTypes
+open XprUtil
 open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCFiles
+open BCHBCTypePretty
+open BCHBCTypes
+open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
+open BCHFtsParameter
 open BCHFunctionInfo
+open BCHFunctionInterface
 open BCHLibTypes
 open BCHLocation
 open BCHSystemInfo
 open BCHTypeConstraintStore
+open BCHTypeConstraintUtil
 
 (* bchlibarm *)
 open BCHARMOpcodeRecords
+open BCHARMOperand
 open BCHARMTypes
 
 module TR = CHTraceResult
@@ -66,90 +77,62 @@ class arm_fn_type_constraints_t
         (fn: arm_assembly_function_int): arm_fn_type_constraints_int =
 object (self)
 
-  val faddr = fn#get_address
+  val faddrdw = fn#get_address
+  val faddr = fn#get_address#to_hex_string
   val finfo = get_function_info fn#get_address
   val env = (get_function_info fn#get_address)#env
 
   method record_type_constraints =
-    fn#itera
-      (fun baddr block ->
-        block#itera
-          (fun ctxtiaddr instr ->
-            self#record_instr_type_constraints ctxtiaddr instr))
+    let fintf = finfo#get_summary#get_function_interface in
+    begin
+      record_function_interface_type_constraints store faddr fintf;
+      fn#itera
+        (fun baddr block ->
+          block#itera
+            (fun ctxtiaddr instr ->
+              self#record_instr_type_constraints ctxtiaddr instr))
+    end
 
   method private record_instr_type_constraints
                    (iaddr: ctxt_iaddress_t) (instr: arm_assembly_instruction_int) =
-    let loc = ctxt_string_to_location faddr iaddr in
+    let loc = ctxt_string_to_location faddrdw iaddr in
     let floc = get_floc loc in
     let rewrite_expr (x: xpr_t): xpr_t =
       let x = floc#inv#rewrite_expr x in
       simplify_xpr x in
-    let rewrite_expr_loc (x: xpr_t) (floci: floc_int) =
-      let x = floci#inv#rewrite_expr x in
-      simplify_xpr x in
-    let rewrite_test_expr (csetter: ctxt_iaddress_t) (x: xpr_t) =
-      let testloc = ctxt_string_to_location floc#fa csetter in
-      let testfloc = get_floc testloc in
-      let rec expand x =
-        match x with
-        | XVar v when testfloc#env#is_symbolic_value v ->
-           expand (TR.tget_ok (testfloc#env#get_symbolic_value_expr v))
-        | XOp (op,l) -> XOp (op, List.map expand l)
-        | _ -> x in
-      let xpr = testfloc#inv#rewrite_expr x in
-      simplify_xpr (expand xpr) in
-    let is_return_value (x: xpr_t) =
-      match (rewrite_expr x) with
-      | XVar v -> floc#f#env#is_return_value v
-      | _ -> false in
+    let rdefs_to_pretty (syms: symbol_t list) =
+      pretty_print_list syms (fun s -> s#toPretty) "[" "; " "]" in
 
-    let get_calltarget_from_callsite (callsite: ctxt_iaddress_t) =
-      let siteloc = ctxt_string_to_location faddr callsite in
-      let sitefloc = get_floc siteloc in
-      let instr = fn#get_instruction siteloc#i in
-      match instr#get_opcode with
-      | BranchLink (_, tgt) when tgt#is_absolute_address ->
-         Some tgt#get_absolute_address
-      | BranchLink _ | BranchLinkExchange _ when sitefloc#has_call_target ->
-         let calltarget = sitefloc#get_call_target#get_target in
-         (match calltarget with
-          | AppTarget dw -> Some dw
-          | _ -> None)
-      | _ -> None in
+    let rdef_pairs_to_pretty (pairs: (symbol_t * symbol_t) list) =
+      pretty_print_list
+        pairs
+        (fun (s1, s2) ->
+          LBLOCK [STR "("; s1#toPretty; STR ", "; s2#toPretty; STR ")"])
+        "[" "; " "]" in
 
-    let get_calltarget (x: xpr_t) =
-      match (rewrite_expr x) with
-      | XVar v when floc#env#is_return_value v ->
-         log_tfold
-           (log_error "record_instr_type_constraints" "invalid call site")
-         ~ok:(fun callsite ->
-           let siteloc = ctxt_string_to_location faddr callsite in
-           let sitefloc = get_floc loc in
-           let instr = fn#get_instruction siteloc#i in
-           let _ =
-             chlog#add "callsite instr" instr#toPretty in
-           (match instr#get_opcode with
-            | BranchLink (_, tgt) when tgt#is_absolute_address ->
-               Some tgt#get_absolute_address
-            | BranchLink _ | BranchLinkExchange _ when sitefloc#has_call_target ->
-               let calltarget = sitefloc#get_call_target#get_target in
-               (match calltarget with
-                | AppTarget dw -> Some dw
-                | _ -> None)
-            | _ -> None))
-         ~error:(fun _ -> None)
-         (floc#env#get_call_site v)
-      | _ -> None in
+    let get_intvalue_type_constant ?(signed=true) (i: int): type_constant_t =
+      match mk_intvalue_type_constant i with
+      | Some tc -> tc
+      | _ when signed -> mk_int_type_constant IInt
+      | _ -> mk_int_type_constant IUInt in
 
-    let get_intvalue_type_constant (x: xpr_t): type_constant_t option =
-      match (rewrite_expr x) with
-      | XConst (IntConst n) -> mk_intvalue_type_constant n#toInt
-      | _ -> None in
+    let get_variable_rdefs (v: variable_t): symbol_t list =
+      let symvar = floc#f#env#mk_symbolic_variable v in
+      let varinvs = floc#varinv#get_var_reaching_defs symvar in
+      (match varinvs with
+       | [vinv] -> vinv#get_reaching_defs
+       | _ -> []) in
 
-    let is_zero (x: xpr_t) =
-      match (rewrite_expr x) with
-      | XConst (IntConst n) -> n#equal numerical_zero
-      | _ -> false in
+    let get_variable_defuses (v: variable_t): symbol_t list =
+      let symvar = floc#f#env#mk_symbolic_variable v in
+      let varinvs = floc#varinv#get_var_def_uses symvar in
+      (match varinvs with
+       | [vinv] -> vinv#get_def_uses
+       | _ -> []) in
+
+    let has_exit_use (v: variable_t): bool =
+      let defuses = get_variable_defuses v in
+      List.exists (fun s -> s#getBaseName = "exit") defuses in
 
     let getopt_initial_argument_value (x: xpr_t): (register_t * int) option =
       match (rewrite_expr x) with
@@ -160,19 +143,6 @@ object (self)
          Some
            (TR.tget_ok (floc#f#env#get_initial_register_value_register v),
             n#toInt)
-      | _ -> None in
-
-    let get_optreturn_caps (x: xpr_t):
-          (doubleword_int * type_cap_label_t list) option =
-      match (rewrite_expr x) with
-      | XVar v ->
-         (match floc#f#env#get_optreturn_value_capabilities v with
-          | Some (callsite, caps) ->
-             let optcalltgt = get_calltarget_from_callsite callsite in
-             (match optcalltgt with
-              | Some dw -> Some (dw, caps)
-              | _ -> None)
-          | _ -> None)
       | _ -> None in
 
     let getopt_stackaddress (x: xpr_t): int option =
@@ -194,297 +164,207 @@ object (self)
            (floc#f#env#get_initial_register_value_register v)
       | _ -> None in
 
-    let get_rdef (xpr: xpr_t) =
-      match (rewrite_expr xpr) with
-      | XVar v
-        | XOp (XXlsh, [XVar v])
-        | XOp (XXlsb, [XVar v])
-        | XOp (XXbyte, [_; XVar v])
-        | XOp (XLsr, [XVar v; _])
-        | XOp (XLsl, [XVar v; _]) ->
-         let symvar = floc#f#env#mk_symbolic_variable v in
-         floc#varinv#get_var_reaching_defs symvar
-      | _ -> [] in
-
-    let set_optrdef_type
-          ~(op: arm_operand_int)
-          ~(rdefs: symbol_t list)
-          ~(is_load: bool)
-          ~(size: int)
-          ~(offset: int) =
-      match List.map (fun d -> d#getBaseName) rdefs with
-      | [iaddr1; iaddr2] ->
-         let loc1 = ctxt_string_to_location faddr iaddr1 in
-         let loc2 = ctxt_string_to_location faddr iaddr2 in
-         let floc1 = get_floc loc1 in
-         let instr1 = fn#get_instruction loc1#i in
-         let instr2 = fn#get_instruction loc2#i in
-         (match (instr1#get_opcode, instr2#get_opcode) with
-          | (Add (_, _, rd1, rn1, rm1, _),
-             Add (_, _, rd2, rn2, rm2, _))
-               when rd1#get_register = op#get_register
-                    && rd2#get_register = op#get_register
-                    && rn2#get_register = op#get_register
-                    && rm2#is_immediate
-                    && rm2#to_numerical#toInt = size ->
-             let xrn1 = rn1#to_expr floc1 in
-             let xrm1 = rm1#to_expr floc1 in
-             let res1 = XOp (XPlus, [xrn1; xrm1]) in
-             let rres1 = rewrite_expr_loc res1 floc1 in
-             (match getopt_initial_argument_value rres1 with
-              | Some (reg, off) ->
-                 let offset = offset + off in
-                 let typevar =
-                   if is_load then
-                     mk_regparam_load_array_typevar ~size ~offset faddr reg
-                   else
-                     mk_regparam_store_array_typevar ~size ~offset faddr reg in
-                 store#add_var_constraint typevar
-              | _ -> ())
-          | _ -> ())
-      | _ -> () in
-
     match instr#get_opcode with
 
-    | Branch (c, _, _)
-         when is_cond_conditional c && floc#has_test_expr ->
-       let txpr = floc#get_test_expr in
-       let csetter = floc#f#get_associated_cc_setter floc#cia in
-       let tcond = rewrite_test_expr csetter txpr in
-       (match tcond with
-        | XOp ((XEq | XNe), [x1; x2]) ->
-           let opttypevar =
-             if is_return_value x1 then
-               (match get_calltarget x1 with
-                | Some dw -> Some (mk_function_return_typevar dw)
-                | _ -> None)
-             else
-               match getopt_initial_argument_value x1 with
-               | Some (reg, 0) -> Some (mk_regparam_typevar faddr reg)
-               | _ ->
-                  match get_optreturn_caps x2 with
-                  | Some (dw, caps) ->
-                     Some (mk_function_return_typevar dw)
-                  | _ -> None in
-           (match opttypevar with
-            | Some typevar ->
-               if is_zero x2 then
-                 store#add_zerocheck_constraint typevar
-               else
-                 (match get_intvalue_type_constant x2 with
-                  | Some tycst -> store#add_cv_subtype_constraint tycst typevar
-                  | _ -> store#add_var_constraint typevar)
-            | _ -> ())
-        | _ -> ())
+    | BitwiseNot(_, _, rd, rm, _) when rm#is_immediate ->
+       let rmval = rm#to_numerical#toInt in
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       let intkind = if rmval = 0 then IInt else IUInt in
+       let tyc = mk_int_type_constant intkind in
+       store#add_subtype_constraint (mk_cty_term tyc) (mk_vty_term lhstypevar)
 
-    | BranchLink (_, tgt)
+    | BranchLink _
          when floc#has_call_target && floc#get_call_target#is_signature_valid ->
-       let args = List.map snd floc#get_call_arguments in
-       let args = List.map rewrite_expr args in
-       let regargs =
-         match List.length(args) with
-         | 0 -> []
-         | 1 -> [AR0]
-         | 2 -> [AR0; AR1]
-         | 3 -> [AR0; AR1; AR2]
-         | _ -> [AR0; AR1; AR2; AR3] in
-       let registers = List.map register_of_arm_register regargs in
-       let args =
-         if (List.length args ) > 4 then
-           match args with
-           | a1 :: a2 :: a3 :: a4 :: _ -> [a1; a2; a3; a4]
-           | _ -> args
-         else
-           args in
-       let tgtaddr = tgt#get_absolute_address in
-       List.iter2 (fun par arg ->
-           let typevar2 = mk_regparam_typevar tgtaddr par in
-           match getopt_initial_argument_value arg with
-           | Some (reg, 0) ->
-              let typevar1 = mk_regparam_typevar faddr reg in
-              store#add_subtype_constraint typevar1 typevar2
-           | _ ->
-              if is_return_value arg then
-                (match get_calltarget arg with
-                 | Some dw ->
-                    let typevar1 = mk_function_return_typevar dw in
-                    store#add_subtype_constraint typevar1 typevar2
-                 | _ -> ())
-              else
-                (match get_intvalue_type_constant arg with
-                 | Some tycst ->
-                    store#add_cv_subtype_constraint tycst typevar2
-                 | _ ->
-                    (match getopt_stackaddress arg with
-                     | Some offset ->
-                        let typevar1 = mk_stackaddress_typevar faddr offset in
-                        store#add_subtype_constraint typevar1 typevar2
-                     | _ -> ()))) registers args
-
-    | LoadRegister (_, _, rn, rm, memop, _) when rm#is_immediate ->
-       let xrn = rn#to_expr floc in
-       (match getopt_initial_argument_value xrn with
-        | Some (reg, off) ->
-           let offset = rm#to_numerical#toInt + off in
-           let typevar = mk_regparam_load_typevar ~offset faddr reg in
-           store#add_var_constraint typevar
-        | _ ->
-           if is_return_value xrn then
-             (match get_calltarget xrn with
-              | Some dw ->
-                 let offset = rm#to_numerical#toInt in
-                 let typevar = mk_function_return_load_typevar ~offset dw in
-                 store#add_var_constraint typevar
-              | _ -> ())
-           else if memop#is_literal_address then
-             let addr = memop#get_literal_address in
-             let typevar = mk_data_address_load_typevar addr in
-             store#add_var_constraint typevar
+       let callargs = floc#get_call_arguments in
+       let (rvreg, rtype) =
+         let fintf = floc#get_call_target#get_function_interface in
+         let rtype = get_fts_returntype fintf in
+         let reg =
+           if is_float rtype then
+             let regtype =
+               if is_float_float rtype then
+                 XSingle
+               else if is_float_double rtype then
+                 XDouble
+               else
+                 XQuad in
+             register_of_arm_extension_register
+               ({armxr_type = regtype; armxr_index = 0})
            else
-             ())
+             register_of_arm_register AR0 in
+         (reg, rtype) in
+       begin
+         (* add constraint for return value *)
+         (if not (is_void rtype) then
+            let typevar = mk_reglhs_typevar rvreg faddr iaddr in
+            let opttc = mk_btype_constraint typevar rtype in
+            match opttc with
+            | Some tc -> store#add_constraint  tc
+            | _ -> ());
 
-    | LoadRegisterByte (_, _, rn, rm, _, _) when rm#is_immediate ->
-       let xrn = rn#to_expr floc in
-       (match getopt_initial_argument_value xrn with
-        | Some (reg, off) ->
-           let offset = rm#to_numerical#toInt + off in
-           let typevar = mk_regparam_load_typevar ~size:1 ~offset faddr reg in
-           store#add_var_constraint typevar
-        | _ ->
-           if is_return_value xrn then
-             (match get_calltarget xrn with
-              | Some dw ->
-                 let offset = rm#to_numerical#toInt in
-                 let typevar =
-                   mk_function_return_load_typevar ~size:1 ~offset dw in
-                 store#add_var_constraint typevar
-              | _ -> ())
-           else
-             let rdefinv = get_rdef xrn in
-             match rdefinv with
-             | [vinv] ->
-                let rdefs = vinv#get_reaching_defs in
-                set_optrdef_type
-                  ~op:rn
-                  ~rdefs
-                  ~is_load:true ~size:1
-                  ~offset:rm#to_numerical#toInt
-             | _ -> ())
+         (* add constraints for argument values *)
+         List.iter (fun (p, x) ->
+             if is_register_parameter p then
+               let regarg = TR.tget_ok (get_register_parameter_register p) in
+               let pvar = floc#f#env#mk_register_variable regarg in
+               let rdefs = get_variable_rdefs pvar in
+               let ptype = get_parameter_type p in
+               begin
+                 (if not (is_unknown_type ptype) then
+                    List.iter (fun rdsym ->
+                        let typevar =
+                          mk_reglhs_typevar regarg faddr rdsym#getBaseName in
+                        let opttc = mk_btype_constraint typevar ptype in
+                        match opttc with
+                        | Some tc -> store#add_constraint tc
+                        | _ -> ()) rdefs);
 
+                 (match getopt_stackaddress x with
+                  | None -> ()
+                  | Some offset ->
+                     let lhstypevar =
+                       mk_localstack_lhs_typevar offset faddr iaddr in
+                     if is_pointer ptype then
+                       let eltype = ptr_deref ptype in
+                       let atype = t_array eltype 1 in
+                       let opttc = mk_btype_constraint lhstypevar atype in
+                       match opttc with
+                       | Some tc -> store#add_constraint tc
+                       | _ -> ())
+               end
+           ) callargs
 
-    | LoadRegisterHalfword (_, _, rn, rm, _, _) when rm#is_immediate ->
-       let xrn = rn#to_expr floc in
-       (match getopt_initial_argument_value xrn with
-        | Some (reg, off) ->
-           let offset = rm#to_numerical#toInt + off in
-           let typevar = mk_regparam_load_typevar ~size:2 ~offset faddr reg in
-           store#add_var_constraint typevar
-        | _ ->
-           if is_return_value xrn then
-             (match get_calltarget xrn with
-              | Some dw ->
-                 let offset = rm#to_numerical#toInt in
-                 let typevar =
-                   mk_function_return_load_typevar ~size: 2 ~offset dw in
-                 store#add_var_constraint typevar
-              | _ -> ())
-           else
-             ())
+       end
 
-    | StoreRegister (_, rt, rn, rm, _, _) when rm#is_immediate ->
-       let xrn = rn#to_expr floc in
-       (match getopt_initial_argument_value xrn with
-        | Some (reg, off) ->
-           let offset = rm#to_numerical#toInt + off in
-           let typevar = mk_regparam_store_typevar ~offset faddr reg in
-           let xrt = rt#to_expr floc in
-           (match get_intvalue_type_constant xrt with
-            | Some tycst -> store#add_cv_subtype_constraint tycst typevar
-            | _ -> store#add_var_constraint typevar)
-        | _ ->
-           if is_return_value xrn then
-             (match get_calltarget xrn with
-              | Some dw ->
-                 let offset = rm#to_numerical#toInt in
-                 let typevar = mk_function_return_store_typevar ~offset dw in
-                 let xrt = rt#to_expr floc in
-                 (match get_intvalue_type_constant xrt with
-                  | Some tycst -> store#add_cv_subtype_constraint tycst typevar
-                  | _ -> store#add_var_constraint typevar)
-              | _ -> ())
-           else
-             ())
+    | Compare (_, rn, rm, _) when rm#is_immediate ->
+       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rnreg = rn#to_register in
+       let immval = rm#to_numerical#toInt in
+       if immval = 0 then
+         ()
+       else
+         let _ =
+           chlog#add
+             "type constraints: compare"
+             (LBLOCK [STR iaddr; STR " (immediate): "; rdefs_to_pretty rndefs]) in
+         List.iter (fun rnsym ->
+             let rnaddr = rnsym#getBaseName in
+             let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+             let immtypeconst = get_intvalue_type_constant immval in
+             store#add_subtype_constraint
+               (mk_vty_term rntypevar) (mk_cty_term immtypeconst)) rndefs
 
-    | StoreRegisterByte (_, rt, rn, rm, _, _) when rm#is_immediate ->
-       let xrn = rn#to_expr floc in
-       (match getopt_initial_argument_value xrn with
-        | Some (reg, off) ->
-           let offset = rm#to_numerical#toInt + off in
-           let typevar = mk_regparam_store_typevar ~size:1 ~offset faddr reg in
-           let xrt = rt#to_expr floc in
-           (match get_intvalue_type_constant xrt with
-            | Some tycst -> store#add_cv_subtype_constraint tycst typevar
-            | _ -> store#add_var_constraint typevar)
-        | _ ->
-           if is_return_value xrn then
-             (match get_calltarget xrn with
-              | Some dw ->
-                 let offset = rm#to_numerical#toInt in
-                 let typevar =
-                   mk_function_return_store_typevar ~size:1 ~offset dw in
-                 let xrt = rt#to_expr floc in
-                 (match get_intvalue_type_constant xrt with
-                  | Some tycst -> store#add_cv_subtype_constraint tycst typevar
-                  | _ -> store#add_var_constraint typevar)
-              | _ -> ())
-           else
-             let xrt = rt#to_expr floc in
-             match getopt_initial_argument_value xrt with
-             | Some (reg, 0) ->
-                let typevar = mk_regparam_typevar faddr reg in
-                store#add_var_constraint typevar
-             | _ -> ())
+    | Compare (_, rn, rm, _) when rm#is_register ->
+       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rmdefs = get_variable_rdefs (rm#to_variable floc) in
+       let rnreg = rn#to_register in
+       let rmreg = rm#to_register in
+       let pairs = CHUtil.xproduct rndefs rmdefs in
+       begin
+         chlog#add
+           "type constraints: compare"
+           (LBLOCK [
+                STR iaddr; STR " (register):"; rdef_pairs_to_pretty pairs]);
+         (List.iter (fun (rnsym, rmsym) ->
+              let rnaddr = rnsym#getBaseName in
+              let rmaddr = rmsym#getBaseName in
+              let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+              let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+              store#add_subtype_constraint
+                (mk_vty_term rntypevar) (mk_vty_term rmtypevar)) pairs);
+         (let xrn = rn#to_expr floc in
+          match getopt_initial_argument_value xrn with
+          | Some (reg, _) ->
+             let ftvar = mk_function_typevar faddr in
+             let ftvar = add_freg_param_capability reg ftvar in
+             List.iter (fun rmsym ->
+                 let rmaddr = rmsym#getBaseName in
+                 let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+                 store#add_subtype_constraint
+                   (mk_vty_term ftvar) (mk_vty_term rmtypevar)) rmdefs
+          | _ -> ());
+         (let xrm = rm#to_expr floc in
+          match getopt_initial_argument_value xrm with
+          | Some (reg, _) ->
+             let ftvar = mk_function_typevar faddr in
+             let ftvar = add_freg_param_capability reg ftvar in
+             List.iter (fun rnsym ->
+                 let rnaddr = rnsym#getBaseName in
+                 let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+                 store#add_subtype_constraint
+                   (mk_vty_term ftvar) (mk_vty_term rntypevar)) rndefs
+          | _ -> ())
+       end
 
-    | StoreRegisterHalfword (_, rt, rn, rm, _, _) when rm#is_immediate ->
-       let xrn = rn#to_expr floc in
-       (match getopt_initial_argument_value xrn with
-        | Some (reg, off) ->
-           let offset = rm#to_numerical#toInt + off in
-           let typevar = mk_regparam_store_typevar ~size:2 ~offset faddr reg in
-           let xrt = rt#to_expr floc in
-           (match get_intvalue_type_constant xrt with
-            | Some tycst -> store#add_cv_subtype_constraint tycst typevar
-            | _ -> store#add_var_constraint typevar)
-        | _ ->
-           if is_return_value xrn then
-             (match get_calltarget xrn with
-              | Some dw ->
-                 let offset = rm#to_numerical#toInt in
-                 let typevar =
-                   mk_function_return_store_typevar ~size:2 ~offset dw in
-                 let xrt = rt#to_expr floc in
-                 (match get_intvalue_type_constant xrt with
-                  | Some tycst -> store#add_cv_subtype_constraint tycst typevar
-                  | _ -> store#add_var_constraint typevar)
-              | _ -> ())
-           else
-             ())
+    | LoadRegister (_, rt, rn, rm, memop, _) when rm#is_immediate ->
+       begin
+         (* LDR rt, [rn, rm] :  X_rndef.load <: X_rt *)
+         (let xrdef = get_variable_rdefs (rn#to_variable floc) in
+          let rtreg = rt#to_register in
+          let rnreg = rn#to_register in
+          let offset = rm#to_numerical#toInt in
+          List.iter (fun rdsym ->
+              let ldaddr = rdsym#getBaseName in
+              let rdtypevar = mk_reglhs_typevar rnreg faddr ldaddr in
+              let rdtypevar = add_load_capability ~offset rdtypevar in
+              let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
+              store#add_subtype_constraint
+                (mk_vty_term rdtypevar) (mk_vty_term rttypevar)) xrdef);
 
-    | StoreRegister (_, rt, _, _, mem, _) ->
-       let xaddr = mem#to_address floc in
-       let xrt = rt#to_expr floc in
-       (match xaddr with
-        | XConst (IntConst n) ->
-           let dw = TR.tget_ok (numerical_to_doubleword n) in
-           let typevar = mk_data_address_store_typevar dw in
-           begin
-             store#add_var_constraint typevar;
-             (match get_intvalue_type_constant xrt with
-              | Some tycst ->
-                 store#add_cv_subtype_constraint tycst (mk_gvar_type_var dw)
-              | _ -> ())
-           end
-        | _ -> ())
+       end
+
+    (* Move x, y  ---  x := y  --- Y <: X *)
+    | Move (_, _, rd, rm, _, _) ->
+       let xrm = rm#to_expr floc in
+       let rdreg = rd#to_register in
+       begin
+         (* propagate function argument type *)
+         (match getopt_initial_argument_value xrm with
+          | Some (rmreg, off) when off = 0 ->
+             let rhstypevar = mk_function_typevar faddr in
+             let rhstypevar = add_freg_param_capability rmreg rhstypevar in
+             let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+             store#add_subtype_constraint
+               (mk_vty_term rhstypevar) (mk_vty_term lhstypevar)
+          | _ -> ());
+
+         (* propagate function return type *)
+         (if rd#get_register = AR0 then
+            let regvar = mk_reglhs_typevar rdreg faddr iaddr in
+            if has_exit_use (rd#to_variable floc) then
+              let fvar = mk_function_typevar faddr in
+              let fvar = add_return_capability fvar in
+              store#add_subtype_constraint
+                (mk_vty_term regvar) (mk_vty_term fvar)
+            else
+              ());
+
+         (* use constant-value type *)
+         (if rm#is_immediate then
+            let rmval = rm#to_numerical#toInt in
+            if rmval = 0 then
+              ()
+            else
+              let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+              let tyc = get_intvalue_type_constant rmval in
+              store#add_subtype_constraint
+                (mk_cty_term tyc) (mk_vty_term lhstypevar));
+
+         (* use reaching defs *)
+         (if rm#is_register then
+            let rmreg = rm#to_register in
+            let rmvar = rm#to_variable floc in
+            let rmrdefs = get_variable_rdefs rmvar in
+            let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+            List.iter (fun rmrdef ->
+                let rmaddr = rmrdef#getBaseName in
+                if rmaddr != "init" then
+                  let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+                  store#add_subtype_constraint
+                    (mk_vty_term rmtypevar) (mk_vty_term lhstypevar)) rmrdefs)
+       end
+
     | _ -> ()
 
 

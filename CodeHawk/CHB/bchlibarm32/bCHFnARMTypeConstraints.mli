@@ -32,6 +32,28 @@ open BCHLibTypes
 open BCHARMTypes
 
 
+(** Generation of type constraints from assembly instructions.
+
+    Type constraints are generated based on:
+    - the structure of an instruction (e.g., the base address of a load
+      instruction must be a pointer)
+    - relationships with externally provided types, including:
+      * arguments in calls to library functions with known function signature
+        are matched with parameter types;
+      * return values of calls to library functions with known function
+        signatures are matched with the return type of the library function
+    - values propagated by invariants in a function with a known function
+      signature are matched with the registers to which those values are
+      assigned.
+
+    Information contained in type constraints can flow in two directions:
+    (1) from known type signature information to registers to which parameter
+        values are assigned, to resolve local variable types
+    (2) from known function arguments and instruction inferred types to function
+        signature parameters, to discover function signatures
+ *)
+
+
 val mk_arm_fn_type_constraints:
   type_constraint_store_int
   -> arm_assembly_function_int

@@ -119,6 +119,8 @@ let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
   match e with
   | XOp (XNeg, [e1]) ->
      let (m, s) = sim_expr m e1 in reduce_neg m s
+  | XOp (XBNot, [e1]) ->
+     let (m, s) = sim_expr m e1 in reduce_bitwise_not m s
   | XOp (XLNot, [e1]) ->
      let (m, s) = sim_expr m e1 in reduce_logical_not m s
   | XOp (XXlsb, [e1]) ->
@@ -169,6 +171,15 @@ and reduce_neg (m: bool) (e1: xpr_t): (bool * xpr_t) =
   let default () = (m, XOp (XNeg, [e1])) in
   match e1 with
   | XConst (IntConst num) -> (true, XConst (IntConst num#neg))
+  | _ -> default ()
+
+
+(* Note that for values other than zero the result depends on word size.*)
+and reduce_bitwise_not (m: bool) (e1: xpr_t): (bool * xpr_t) =
+  let default () = (m, XOp (XBNot, [e1])) in
+  match e1 with
+  | XConst (IntConst num) when num#equal numerical_zero ->
+     (true, XConst (IntConst numerical_one#neg))
   | _ -> default ()
 
 
