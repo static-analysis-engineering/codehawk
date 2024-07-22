@@ -3,14 +3,22 @@ CHUTIL = ../chutil
 ZARITHLIB = $(shell ocamlfind query zarith)
 
 OCAMLC := ocamlopt -I $(ZARITHLIB) -I $(CHLIB)/cmi -I $(CHLIB)/cmx -I $(CHUTIL)/cmi
-CAMLLINK := ocamlopt
+CAMLLINK := ocamlopt \
+	-I $(ZARITHLIB) \
+	$(ZARITHLIB)/zarith.cmxa \
+	$(CHLIB)/chlib.cmxa
+
+OCAMLCLINK := ocamlopt
 
 MLLS = lexer.mll
 MLYS = parser.mly 
 LIBMODULES = parseError parser lexer chifparser
 
-chifparser: $(LIBMODULES:%=%.cmx)
-	$(CAMLLINK) -a -o chifparser.cmxa  $(LIBMODULES:%=%.cmx)
+parsechif: $(LIBMODULES:%=%.cmx) main.cmx
+	$(CAMLLINK) -o parsechif  $(LIBMODULES:%=%.cmx) main.cmx
+
+chifparser.cmxa: $(LIBMODULES:%=%.cmx)
+	$(OCAMLCLINK) -a -o chifparser.cmxa  $(LIBMODULES:%=%.cmx)
 
 lib: $(LIBMODULES:%=%.cmx)
 	$(CAMLLINK) -o chifparser unix.cmxa -I $(ZARITHLIB) $(ZARITHLIB)/zarith.cmxa $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(LIBMODULES:%=%.cmx)
@@ -41,7 +49,8 @@ clean:
 	rm -f *.cmx 
 	rm -f *.mli 
 	rm -f *.o
-	rm -f chifparser 
+	rm -f chifparser
+	rm -f *.cmxa
 	rm -f Makefile~
 	rm -f lexer.ml
 	rm -f parser.ml
@@ -49,8 +58,8 @@ clean:
 
 .PHONY : run
 run:
-	./chifparser -file sample.chif
+	./parsechif -file sample.chif
 
 .PHONY : debug
 debug:
-	OCAMLRUNPARAM=p ./chifparser -file sample.chif
+	OCAMLRUNPARAM=p ./parsechif -file sample.chif
