@@ -98,7 +98,7 @@ let make_code_label ?src ?modifier (address:ctxt_iaddress_t) =
 
 let get_invariant_label ?(bwd=false) (loc:location_int) =
   if bwd then
-    ctxt_string_to_symbol "bwd-invariant" loc#ci
+    ctxt_string_to_symbol "bwd_invariant" loc#ci
   else
     ctxt_string_to_symbol "invariant" loc#ci
 

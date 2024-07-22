@@ -42,6 +42,7 @@ open BCHFunctionInterface
 open BCHLibTypes
 open BCHSystemSettings
 open BCHTypeConstraintStore
+open BCHTypeConstraintUtil
 
 (* bchcil *)
 open BCHParseCilFile

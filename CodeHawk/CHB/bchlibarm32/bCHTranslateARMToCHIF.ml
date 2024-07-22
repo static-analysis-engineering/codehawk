@@ -602,14 +602,12 @@ let translate_arm_instruction
 
   let get_addr_use_high_vars (xprs: xpr_t list): variable_t list =
     (* Don't apply invariants to the expressions *)
-    let inv = floc#inv in
     List.fold_left (fun acc x ->
         let xs = simplify_xpr x in
         let vars =
           List.filter (fun v -> not (floc#f#env#is_function_initial_value v))
             (floc#env#variables_in_expr xs) in
         vars @ acc) [] xprs in
-
 
   let is_maybe_non_returning_call_instr =
     match instr#get_opcode with

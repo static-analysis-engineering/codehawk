@@ -213,6 +213,7 @@ object (self:'a)
     match kind with
     | ARMReg r -> r
     | ARMWritebackReg (_, r, _) -> r
+    | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) -> r
     | _ ->
        raise
          (BCH_failure
@@ -303,6 +304,7 @@ object (self:'a)
   method to_register: register_t =
     match kind with
     | ARMReg r -> register_of_arm_register r
+    | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) -> register_of_arm_register r
     | ARMDoubleReg (r1, r2) -> register_of_arm_double_register r1 r2
     | ARMWritebackReg (_, r, _) -> register_of_arm_register r
     | ARMSpecialReg r -> register_of_arm_special_register r
@@ -398,7 +400,8 @@ object (self:'a)
          else
            XVar rvar in
        let addr = XOp (XPlus, [rvarx; memoff]) in
-       floc#inv#rewrite_expr addr
+       (* floc#inv#rewrite_expr addr *)
+       simplify_xpr addr
     | ARMLiteralAddress dw -> num_constant_expr dw#to_numerical
     | _ ->
        begin
@@ -669,7 +672,11 @@ object (self:'a)
     match kind with ARMImmediate _ -> true | _ -> false
 
   method is_register =
-    match kind with ARMReg _ | ARMWritebackReg _ -> true | _ -> false
+    match kind with
+    | ARMReg _
+      | ARMWritebackReg _ -> true
+    | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) -> true
+    | _ -> false
 
   method is_pc_register =
     match kind with ARMReg ARPC -> true | _ -> false
