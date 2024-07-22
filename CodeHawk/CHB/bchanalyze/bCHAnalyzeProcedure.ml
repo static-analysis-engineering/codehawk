@@ -5,8 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2020      Henny B. Sipma
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@
 (* chlib *)
 open CHAtlas
 open CHLanguage
+open CHPretty
 open CHSymbolicSetsDomainNoArrays
 
 (* chutil *)
@@ -56,6 +57,18 @@ object
     H.replace optable domain inv
       
   method get_invariants = invariants
+
+  method toPretty =
+    let result = ref [] in
+    begin
+      H.iter (fun iaddr varinvs ->
+          H.iter (fun var inv ->
+              let p =
+                LBLOCK [
+                    STR iaddr; STR ": "; STR var; STR ": "; inv#toPretty; NL] in
+              result := p :: !result) varinvs) invariants;
+      LBLOCK (List.rev !result)
+    end
     
 end
 
