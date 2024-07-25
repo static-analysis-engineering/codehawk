@@ -1118,3 +1118,14 @@ let arm_reg_deref ?(with_offset=0) (reg: arm_reg_t) (mode:arm_operand_mode_t) =
     let offset = ARMImmOffset (-with_offset) in
     mk_arm_offset_address_op
       reg offset ~isadd:false ~iswback:false ~isindex:false mode
+
+
+let equal_register_lists (op1: arm_operand_int) (op2: arm_operand_int): bool =
+  if not (op1#is_register_list && op2#is_register_list) then
+    false
+  else if op1#get_register_count != op2#get_register_count then
+    false
+  else
+    let rl1 = op1#get_register_list in
+    let rl2 = op2#get_register_list in
+    List.fold_left2 (fun acc r1 r2 -> acc && r1 = r2) true rl1 rl2

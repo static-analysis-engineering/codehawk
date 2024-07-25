@@ -46,13 +46,16 @@ open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCFiles
 open BCHBCTypes
 open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
+open BCHLocation
 open BCHFtsParameter
 open BCHFunctionInterface
+open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHLocation
 open BCHSystemInfo
@@ -163,6 +166,10 @@ object (self)
                   NL];
               raise IO.No_more_input
             end in
+    let rewrite_floc_expr (floc: floc_int) (x:xpr_t) =
+      (* use floc from different location *)
+      let xpr = floc#inv#rewrite_expr x in
+      simplify_xpr xpr in
     let rewrite_test_expr (csetter: ctxt_iaddress_t) (x: xpr_t) =
       let testloc = ctxt_string_to_location floc#fa csetter in
       let testfloc = get_floc testloc in
@@ -309,6 +316,7 @@ object (self)
           ?(rdefs: int list = [])
           ?(uses: int list = [])
           ?(useshigh: int list = [])
+          ?(integers: int list = [])
           () =
       let _ =
         if testsupport#requested_instrx_data then
@@ -319,6 +327,7 @@ object (self)
       let defusecount = List.length uses in
       let defusehighcount = List.length useshigh in
       let flagrdefcount = List.length flagrdefs in
+      let integercount = List.length integers in
       let varstring = string_repeat "v" varcount in
       let typestring = string_repeat "t" varcount in
       let xprstring = string_repeat "x" xprcount in
@@ -326,6 +335,7 @@ object (self)
       let defusestring = string_repeat "d" defusecount in
       let defusehighstring = string_repeat "h" defusehighcount in
       let flagrdefstring = string_repeat "f" flagrdefcount in
+      let integerstring = string_repeat "l" integercount in
       let tagstring =
         "a:"
         ^ varstring
@@ -334,7 +344,8 @@ object (self)
         ^ rdefstring
         ^ defusestring
         ^ defusehighstring
-        ^ flagrdefstring in
+        ^ flagrdefstring
+        ^ integerstring in
       let varargs = List.map xd#index_variable vars in
       let xprargs = List.map xd#index_xpr xprs in
       let typeargs =
@@ -345,7 +356,14 @@ object (self)
             types in
         List.map bcd#index_typ types in
       (tagstring,
-       varargs @ typeargs @ xprargs @ rdefs @ uses @ useshigh @ flagrdefs) in
+       varargs
+       @ typeargs
+       @ xprargs
+       @ rdefs
+       @ uses
+       @ useshigh
+       @ flagrdefs
+       @ integers) in
 
     let add_optional_instr_condition
           (tagstring: string)
@@ -375,6 +393,23 @@ object (self)
             else
               agginstr#get_address#to_hex_string :: acc) [] agg#instrs in
       tags @ ("subsumes" :: deps) in
+
+    let register_function_prototype (name: string) =
+      if function_summary_library#has_so_function name then
+        let fs = function_summary_library#get_so_function name in
+        match fs#get_function_interface.fintf_bctype with
+        | Some fty -> bcfiles#add_fundef name fty
+        | _ ->
+           chlog#add
+             "function prototype registration"
+             (LBLOCK [
+                  STR "Function summary for ";
+                  STR name;
+                  STR " does not have a type"])
+      else
+        chlog#add
+          "function prototype registration"
+          (LBLOCK [STR "No function summary found for "; STR name]) in
 
     let callinstr_key (): (string list * int list) =
       let callargs = floc#get_call_arguments in
@@ -1040,6 +1075,13 @@ object (self)
           (List.map xd#index_variable reglhss)
           @ (List.map xd#index_xpr memreads)
           @ [xd#index_xpr (base#to_expr floc)])
+
+      | LoadMultipleIncrementAfter _ when (Option.is_some instr#is_in_aggregate) ->
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
 
       | LoadMultipleIncrementAfter (wback, c, base, rl, _) ->
          let reglhss = rl#to_multiple_variable floc in
@@ -1736,6 +1778,40 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | StoreMultipleIncrementAfter _ when instr#is_aggregate_anchor ->
+         let iaddr = instr#get_address in
+         let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
+         if agg#is_ldm_stm_sequence then
+           let seq = agg#ldm_stm_sequence in
+           let srcop = seq#srcreg in
+           let dstop = seq#dstreg in
+           let size = seq#registers#get_register_count * 4 in
+           let srcfloc = get_floc (make_i_location floc#l (iaddr#add_int (-4))) in
+           let xsrc = srcop#to_expr srcfloc in
+           let xdst = dstop#to_expr floc in
+           let xxsrc = rewrite_floc_expr srcfloc xsrc in
+           let xxdst = rewrite_expr ?restrict:(Some 4) xdst in
+           let rdefs = [(get_rdef xsrc); (get_rdef xdst)] in
+           let _ =
+             match get_string_reference srcfloc xxsrc with
+             | Some cstr -> register_function_prototype "strcpy"
+             | _ -> register_function_prototype "memcpy" in
+           let (tagstring, args) =
+             mk_instrx_data
+               ~xprs:[xdst; xsrc; xxdst; xxsrc]
+               ~integers:[size]
+               ~rdefs
+               () in
+           let tags = tagstring :: ["agg-ldmstm"] in
+           let tags = add_subsumption_dependents agg tags in
+           (tags, args)
+         else
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Aggregate for StoreMultipleIncrement not recognized at ";
+                     iaddr#toPretty]))
+
       | StoreMultipleIncrementAfter (wback, c, base, rl, _, _) ->
          let basereg = base#get_register in
          let baselhs = base#to_variable floc in
@@ -1904,13 +1980,21 @@ object (self)
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem] in
          let useshigh = [get_def_use_high vmem] in
+         let (vars, uses, useshigh) =
+           if mem#is_offset_address_writeback then
+             let vrn = rn#to_variable floc in
+             ([vmem; vrn],
+               uses @ [get_def_use vrn],
+               useshigh @ [get_def_use_high vrn])
+           else
+             ([vmem], uses, useshigh) in
          let (tagstring, args) =
            mk_instrx_data
-             ~vars:[vmem]
+             ~vars
              ~xprs:[xrn; xrm; xrt; xxrt; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)

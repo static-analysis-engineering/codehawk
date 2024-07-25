@@ -42,6 +42,7 @@ open BCHARMAssemblyInstructions
 open BCHARMJumptable
 open BCHARMTypes
 open BCHDisassembleARMInstruction
+open BCHLoadStoreMultipleSequence
 open BCHThumbITSequence
 
 
@@ -54,6 +55,7 @@ let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
      ^ (string_of_int (List.length jt#target_addrs))
      ^ " target addresses"
   | ThumbITSequence it -> it#toString
+  | LDMSTMSequence s -> s#toString
 
 
 class arm_instruction_aggregate_t
@@ -87,6 +89,11 @@ object (self)
     | ThumbITSequence its -> its
     | _ -> raise (BCH_failure (STR "Not an it sequence"))
 
+  method ldm_stm_sequence =
+    match self#kind with
+    | LDMSTMSequence s -> s
+    | _ -> raise (BCH_failure (STR "Not an ldm-stm sequence"))
+
   method is_jumptable =
     match self#kind with
     | ARMJumptable _ -> true
@@ -95,6 +102,11 @@ object (self)
   method is_it_sequence =
     match self#kind with
     | ThumbITSequence _ -> true
+    | _ -> false
+
+  method is_ldm_stm_sequence =
+    match self#kind with
+    | LDMSTMSequence _ -> true
     | _ -> false
 
   method write_xml (node: xml_element_int) = ()
@@ -148,6 +160,17 @@ let make_it_sequence_aggregate
   make_arm_instruction_aggregate ~kind ~instrs ~entry ~exitinstr ~anchor
 
 
+let make_ldm_stm_sequence_aggregate
+      (ldmstmseq: ldm_stm_sequence_int): arm_instruction_aggregate_int =
+  let kind = LDMSTMSequence ldmstmseq in
+  make_arm_instruction_aggregate
+    ~kind
+    ~instrs:ldmstmseq#instrs
+    ~entry:(List.hd ldmstmseq#instrs)
+    ~exitinstr:(List.hd (List.tl ldmstmseq#instrs))
+    ~anchor:(List.hd (List.tl ldmstmseq#instrs))
+
+
 let disassemble_arm_instructions
       (ch: pushback_stream_int) (iaddr: doubleword_int) (n: int) =
   for i = 1 to n do
@@ -191,7 +214,17 @@ let identify_it_sequence
     match instr#get_opcode with
     | IfThen (c, xyz) when (xyz = "E" || xyz = "") ->
        create_thumb_it_sequence ch instr
-    | _ -> None  
+    | _ -> None
+
+
+let identify_ldmstm_sequence
+      (ch: pushback_stream_int)
+      (instr: arm_assembly_instruction_int): ldm_stm_sequence_int option =
+  match instr#get_opcode with
+  | StoreMultipleIncrementAfter (_, _, _, rl, _, _)
+       when List.length rl#get_register_list > 1 ->
+     create_ldm_stm_sequence ch instr
+  | _ -> None
   
 
 let identify_arm_aggregate
@@ -210,5 +243,10 @@ let identify_arm_aggregate
         let instrs = its#instrs in
         let entry = List.hd instrs in
         let exitinstr = List.hd (List.rev instrs) in
-        Some (make_it_sequence_aggregate ~its ~instrs ~entry ~exitinstr ~anchor:entry)
-     | _ -> None
+        Some (make_it_sequence_aggregate
+                ~its ~instrs ~entry ~exitinstr ~anchor:entry)
+     | _ ->
+        match identify_ldmstm_sequence ch instr with
+        | Some ldmstmseq ->
+           Some (make_ldm_stm_sequence_aggregate ldmstmseq)
+        | _ -> None
