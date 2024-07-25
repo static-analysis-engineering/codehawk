@@ -171,6 +171,7 @@ object (self)
       | TyTInt k -> (tags @ [ikind_mfts#ts k], [])
       | TyTStruct (key, name) -> (tags @ [name], [key])
       | TyTFloat k -> (tags @ [fkind_mfts#ts k], [])
+      | TyBottom -> (tags, [])
       | TyTUnknown -> (tags, []) in
     type_constant_table#add key
 
@@ -191,6 +192,7 @@ object (self)
     | "ti" -> TyTInt (ikind_mfts#fs (t 1))
     | "tf" -> TyTFloat (fkind_mfts#fs (t 1))
     | "ts" -> TyTStruct (a 0, t 1)
+    | "b" -> TyBottom
     | "u" -> TyTUnknown
     | s -> raise_tag_error name s type_constant_mcts#tags
 

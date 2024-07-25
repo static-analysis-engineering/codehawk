@@ -71,6 +71,9 @@ val mk_struct_type_constant: int -> string -> type_constant_t
 val type_constant_to_btype: type_constant_t -> btype_t
 
 
+val type_constant_join: type_constant_t list -> type_constant_t
+
+
 (** {1 Type variables} *)
 
 (** [mk_function_typevar faddr] returns a type variable for the function

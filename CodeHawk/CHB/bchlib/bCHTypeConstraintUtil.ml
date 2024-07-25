@@ -134,6 +134,7 @@ let type_constant_to_string (c: type_constant_t) =
   | TyTStruct (_, name) -> "t_struct_" ^ name
   | TyTFloat k -> float_type_to_string k
   | TyTUnknown -> "t_top"
+  | TyBottom -> "t_bottom"
 
 
 let type_term_to_string (t: type_term_t) =
@@ -184,6 +185,76 @@ let mk_float_type_constant (fkind: fkind_t): type_constant_t =
 
 let mk_struct_type_constant (key: int) (name: string): type_constant_t =
   TyTStruct (key, name)
+
+
+let join_tc_fkind (fk1: fkind_t) (fk2: fkind_t) =
+  match fk1, fk2 with
+  | FComplexLongDouble,
+    (FComplexFloat | FComplexDouble | FComplexLongDouble) ->
+     TyTFloat FComplexLongDouble
+  | FComplexLongDouble, _ -> TyTUnknown
+  | (FComplexFloat | FComplexDouble), FComplexLongDouble ->
+     TyTFloat FComplexLongDouble
+  | _, FComplexLongDouble -> TyTUnknown
+  | FComplexDouble, (FComplexFloat | FComplexDouble) -> TyTFloat FComplexDouble
+  | FComplexFloat, FComplexDouble -> TyTFloat FComplexDouble
+  | FComplexFloat, FComplexFloat -> TyTFloat FComplexFloat
+  | FLongDouble, (FLongDouble | FDouble | FFloat) -> TyTFloat FLongDouble
+  | (FDouble | FFloat), FLongDouble -> TyTFloat FLongDouble
+  | FDouble, (FDouble | FFloat) -> TyTFloat FDouble
+  | FFloat, FDouble -> TyTFloat FDouble
+  | FFloat , FFloat -> TyTFloat FFloat
+  | _, _ -> TyTUnknown
+
+
+let join_tc_ikind (ik1: ikind_t) (ik2: ikind_t) =
+  match ik1, ik2 with
+  | IChar, IChar -> TyTInt IChar
+  | _, IChar -> TyTInt ik1
+  | IChar, _ -> TyTInt ik2
+  | IULongLong, (IULongLong | IULong | IUInt | IUShort | IUChar) ->
+     TyTInt IULongLong
+  | (IULong | IUInt | IUShort | IUChar), IULongLong ->
+     TyTInt IULongLong
+  | IULong, (IULong | IUInt | IUShort | IUChar) -> TyTInt IULong
+  | (IUInt | IUShort | IUChar), IULong -> TyTInt IULong
+  | IUInt, (IUInt | IUShort | IUChar) -> TyTInt IUInt
+  | (IUShort | IUChar), IUInt -> TyTInt IUInt
+  | IUShort, (IUShort | IUChar) -> TyTInt IUShort
+  | IUChar, IUShort -> TyTInt IUShort
+  | IUChar, IUChar -> TyTInt IUChar
+  | ILongLong, (ILongLong | ILong | IInt | IShort | ISChar) -> TyTInt ILongLong
+  | (ILong | IInt | IShort | ISChar), ILongLong -> TyTInt ILongLong
+  | ILong, (ILong | IInt | IShort | ISChar) -> TyTInt ILong
+  | (IInt | IShort | ISChar), ILong -> TyTInt ILong
+  | IInt, (IInt | IShort | ISChar) -> TyTInt IInt
+  | (IShort | ISChar), IInt -> TyTInt IInt
+  | IShort, (IShort | ISChar) -> TyTInt IShort
+  | ISChar, IShort -> TyTInt IShort
+  | ISChar, ISChar -> TyTInt ISChar
+  | _, _ -> TyTUnknown
+
+
+let join_tc (t1: type_constant_t) (t2: type_constant_t): type_constant_t =
+  match t1, t2 with
+  | TyBottom, _ -> t2
+  | _, TyBottom -> t1
+  | TyTUnknown, _ -> TyTUnknown
+  | _, TyTUnknown -> TyTUnknown
+  | TyTStruct (i, _), TyTStruct (j, _) when i=j -> t1
+  | TyTStruct _, _ -> TyTUnknown
+  | _, TyTStruct _ -> TyTUnknown
+  | TyTFloat fk1, TyTFloat fk2 -> join_tc_fkind fk1 fk2
+  | TyTFloat _, _ -> TyTUnknown
+  | _, TyTFloat _ -> TyTUnknown
+  | TyTInt ik1, TyTInt ik2 -> join_tc_ikind ik1 ik2
+  | TyTInt _, _ -> t1
+  | _, TyTInt _ -> t2
+  | _, _ -> TyTInt IChar
+
+
+let type_constant_join (cl: type_constant_t list): type_constant_t =
+  List.fold_left (fun acc c -> join_tc acc c) TyBottom cl
 
 
 let mk_type_basevar (basevar: type_base_variable_t): type_variable_t =
@@ -361,6 +432,7 @@ let type_constant_to_btype (tc: type_constant_t) =
   | TyTInt ikind -> TInt (ikind, [])
   | TyTStruct (key, _) -> get_compinfo_struct_type (bcfiles#get_compinfo key)
   | TyTFloat fkind -> TFloat (fkind, FScalar, [])
+  | TyBottom -> t_unknown
   | TyTUnknown -> t_unknown
 
 

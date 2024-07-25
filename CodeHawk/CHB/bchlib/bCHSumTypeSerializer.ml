@@ -560,9 +560,10 @@ object
     | TyTStruct _ -> "ts"
     | TyTFloat _ -> "tf"
     | TyTUnknown -> "u"
+    | TyBottom -> "b"
 
   method !tags = [
-      "a"; "ac"; "acl"; "ap"; "asl"; "ax"; "i"; "s"; "ti"; "tf"; "ts"; "u"; "z"]
+      "a"; "ac"; "acl"; "ap"; "asl"; "ax"; "b"; "i"; "s"; "ti"; "tf"; "ts"; "u"; "z"]
 
 end
 
