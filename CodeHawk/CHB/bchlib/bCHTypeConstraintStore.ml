@@ -299,11 +299,10 @@ object (self)
     let tygraph = mk_type_constraint_graph () in
     begin
       tygraph#initialize (List.map tcd#get_type_term termset#toList);
-      let newgraph =
-        constraintset#fold (fun g ixc ->
-            let c = tcd#get_type_constraint ixc in
-            g#add_constraint c) tygraph in
-      let newgraph = newgraph#saturate in
+      constraintset#iter (fun ixc ->
+          let c = tcd#get_type_constraint ixc in
+          tygraph#add_constraint c);
+      let newgraph = tygraph#saturate in
       let newgraph = newgraph#saturate in
       let partition = newgraph#partition in
       List.fold_left (fun acc s ->
@@ -368,11 +367,10 @@ object (self)
     let tygraph = mk_type_constraint_graph () in
     begin
       tygraph#initialize (List.map tcd#get_type_term termset#toList);
-      let newgraph =
-        constraintset#fold (fun g ixc ->
-            let c = tcd#get_type_constraint ixc in
-            g#add_constraint c) tygraph in
-      let newgraph = newgraph#saturate in
+      constraintset#iter (fun ixc ->
+          let c = tcd#get_type_constraint ixc in
+          tygraph#add_constraint c);
+      let newgraph = tygraph#saturate in
       let newgraph = newgraph#saturate in
       let partition = newgraph#partition in
       List.fold_left (fun acc s ->
@@ -393,7 +391,6 @@ object (self)
           | (_, []) -> acc
           | _ -> (stacklhsvars, tyconsts) :: acc) [] partition
     end
-
 
   method resolve_reglhs_type
            (reg: register_t) (faddr: string) (iaddr: string): btype_t option =
@@ -424,22 +421,22 @@ object (self)
     let result = new IntCollections.set_t in
     begin
       List.iter (fun (vars, consts) ->
+          let jointy = type_constant_join consts in
           List.iter (fun v ->
-              List.iter (fun c ->
-                  match c with
-                  | TyZero -> ()
-                  | _ ->
-                     let optty =
-                       match v.tv_capabilities with
-                       | [] -> Some (type_constant_to_btype c)
-                       | [Deref | Load | Store] ->
-                          Some (t_ptrto (type_constant_to_btype c))
-                       | [OffsetAccessA (size, _)] ->
-                          Some (t_array (type_constant_to_btype c) size)
-                       | _ -> None in
-                     match optty with
-                     | Some ty -> result#add (bcd#index_typ ty)
-                     | _ -> ()) consts) vars) evaluation;
+              let optty =
+                match jointy with
+                | TyTUnknown -> None
+                | _ ->
+                   match v.tv_capabilities with
+                   | [] -> Some (type_constant_to_btype jointy)
+                   | [Deref | Load | Store] ->
+                      Some (t_ptrto (type_constant_to_btype jointy))
+                   | [OffsetAccessA (size, _)] ->
+                      Some (t_array (type_constant_to_btype jointy) size)
+                   | _ -> None in
+              match optty with
+              | Some ty -> result#add (bcd#index_typ ty)
+              | _ -> ()) vars) evaluation;
       if result#isEmpty then
         begin
           log_evaluation ();
@@ -449,31 +446,20 @@ object (self)
         match result#singleton with
         | Some ixty -> Some (bcd#get_typ ixty)
         | _ ->
-           let promotion = new IntCollections.set_t in
-           let _ =
-             result#iter (fun ix ->
-                 let ty = bcd#get_typ ix in
-                 if is_int ty then
-                   promotion#add (bcd#index_typ (promote_int ty))
-                 else
-                   promotion#add ix) in
-           match promotion#singleton with
-           | Some ixty -> Some (bcd#get_typ ixty)
-           | _ ->
-              begin
-                log_evaluation ();
-                chlog#add
-                  "multiple distinct types"
-                  (LBLOCK [
-                       STR iaddr;
-                       STR " --- ";
-                       STR (register_to_string reg);
-                       STR "; ";
-                       pretty_print_list
-                         (List.map bcd#get_typ result#toList)
-                         (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
-                None
-              end
+           begin
+             log_evaluation ();
+             chlog#add
+               "top type constant in join"
+               (LBLOCK [
+                    STR iaddr;
+                    STR " --- ";
+                    STR (register_to_string reg);
+                    STR ": ";
+                    pretty_print_list
+                      (List.map bcd#get_typ result#toList)
+                      (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
+             None
+           end
     end
 
   method resolve_stack_lhs_type

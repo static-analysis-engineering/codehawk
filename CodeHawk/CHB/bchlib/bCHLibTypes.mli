@@ -3089,6 +3089,7 @@ type type_constant_t =
   | TyTStruct of int * string  (** bckey, bcname *)
   | TyTFloat of fkind_t
   | TyTUnknown  (** top in type lattice *)
+  | TyBottom  (** bottom in type lattice *)
 
 
 type type_term_t =
@@ -3139,17 +3140,17 @@ class type type_constraint_graph_int =
 
     method partition_size: int
 
-    method term_size: int
+    method typevarcount: int
 
     method initialize: type_term_t list -> unit
 
-    method add_new_vertex: int -> unit
+    method add_typevar: int -> unit
 
     method partition: CHUtils.IntCollections.set_t list
 
     method saturate: 'a
 
-    method add_constraint: type_constraint_t -> 'a
+    method add_constraint: type_constraint_t -> unit
 
     method toPretty: pretty_t
 
