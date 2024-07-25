@@ -1500,9 +1500,27 @@ class type arm_jumptable_int =
   end
 
 
+class type ldm_stm_sequence_int =
+  object
+
+    method srcreg: arm_operand_int
+    method dstreg: arm_operand_int
+    method registers: arm_operand_int
+    method instrs: arm_assembly_instruction_int list
+    method anchor: doubleword_int
+
+    method toCHIF: cmd_t list
+
+    method write_xml: xml_element_int -> unit
+    method toString: string
+    method toPretty: pretty_t
+  end
+
+
 type arm_aggregate_kind_t =
   | ARMJumptable of arm_jumptable_int
   | ThumbITSequence of thumb_it_sequence_int
+  | LDMSTMSequence of ldm_stm_sequence_int
 
 
 class type arm_instruction_aggregate_int =
@@ -1515,6 +1533,7 @@ class type arm_instruction_aggregate_int =
     method exitinstr: arm_assembly_instruction_int
     method jumptable: arm_jumptable_int
     method it_sequence: thumb_it_sequence_int
+    method ldm_stm_sequence: ldm_stm_sequence_int
 
     (* translation *)
     method toCHIF: doubleword_int -> cmd_t list
@@ -1522,6 +1541,7 @@ class type arm_instruction_aggregate_int =
     (* predicates *)
     method is_jumptable: bool
     method is_it_sequence: bool
+    method is_ldm_stm_sequence: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit

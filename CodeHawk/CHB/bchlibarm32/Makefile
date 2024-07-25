@@ -48,6 +48,7 @@ MLIS := \
 	bCHARMCHIFSystem \
 	bCHThumbITSequence \
 	bCHARMJumptable \
+	bCHLoadStoreMultipleSequence \
 	bCHARMInstructionAggregate \
 	bCHConstructARMFunction \
 	bCHDisassembleARM \
@@ -82,6 +83,7 @@ SOURCES := \
 	bCHARMCHIFSystem \
 	bCHThumbITSequence \
 	bCHARMJumptable \
+	bCHLoadStoreMultipleSequence \
 	bCHARMInstructionAggregate \
 	bCHConstructARMFunction \
 	bCHDisassembleARM \

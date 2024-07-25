@@ -216,3 +216,6 @@ val arm_reg_deref:
   -> arm_reg_t
   -> arm_operand_mode_t
   -> arm_operand_int
+
+
+val equal_register_lists: arm_operand_int -> arm_operand_int -> bool

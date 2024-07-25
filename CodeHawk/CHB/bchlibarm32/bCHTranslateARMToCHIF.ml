@@ -2843,9 +2843,17 @@ let translate_arm_instruction
      let (vmem, memcmds) = mem#to_lhs floc in
      let _ = check_storage mem vmem in
      let xrt = XOp (XXlsh, [rt#to_expr floc]) in
-     let cmds = floc#get_assign_commands vmem xrt in
+     let cmds = memcmds @ floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
+     let (usevars, usehigh) =
+       if vmem#isTmp || floc#f#env#is_unknown_memory_variable vmem then
+         (* elevate address variables to high-use *)
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (usevars, get_addr_use_high_vars [xrn; xrm])
+       else
+         (vmem :: usevars, usehigh) in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vmem]
@@ -2862,7 +2870,7 @@ let translate_arm_instruction
          defupdatecmds @ucmds
        else
          [] in
-     let cmds = memcmds @ defcmds @ cmds @ updatecmds in
+     let cmds = defcmds @ cmds @ updatecmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
