@@ -106,6 +106,8 @@ object (self)
 
   method private get_fieldoffset_at
                    (c: bcompinfo_t) (offset: int):(boffset_t * int) =
+    (* Note: this function will not resolve the first field (at offset 0)
+       to the lowest scalar field, just to the topmost field at offset 0 *)
     let finfos = c.bcfields in
     let fld0 = List.hd finfos in
     if offset = 0 then
@@ -137,7 +139,7 @@ object (self)
                | Some (foffset, size) ->
                   if offset = foffset then
                     Some (Field ((finfo.bfname, finfo.bfckey), NoOffset), 0)
-                  else if offset > foffset && offset < offset + size then
+                  else if offset > foffset && offset < foffset + size then
                     match bcfiles#resolve_type finfo.bftype with
                     | TComp (ffkey, _) ->
                        let fcompinfo = bcfiles#get_compinfo ffkey in
@@ -182,6 +184,17 @@ object (self)
                if rem = 0 then
                  Some (TR.tget_ok (int_to_doubleword base), offset)
                else
+                 let _ =
+                   chlog#add
+                     "get_structvar_base_offset"
+                     (LBLOCK [
+                          dw#toPretty;
+                          STR "; base: ";
+                          (TR.tget_ok (int_to_doubleword base))#toPretty;
+                          STR "; compinfo: ";
+                          compinfo_to_pretty compinfo;
+                          STR ": remaining offset: ";
+                          INT rem]) in
                  None
             | _ ->
                None)
