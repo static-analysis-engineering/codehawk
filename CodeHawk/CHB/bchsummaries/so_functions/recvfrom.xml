@@ -58,7 +58,7 @@
         <type><ptr>sockaddr</ptr></type>
       </par>
       <par loc="stack" name="address_len" nr="6">
-        <type>socklen_t</type>
+        <type><ptr>socklen_t</ptr></type>
       </par>
       <returntype>ssize_t</returntype>
     </api>
