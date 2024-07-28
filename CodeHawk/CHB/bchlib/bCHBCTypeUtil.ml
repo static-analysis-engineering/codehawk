@@ -233,6 +233,13 @@ let is_stdcall (t: btype_t) =
   | _ -> false
 
 
+let get_element_type (t: btype_t) =
+  match t with
+  | TArray (eltty, _, _) -> eltty
+  | _ ->
+     raise (BCH_failure (LBLOCK [STR "Not an array type"]))
+
+
 (* ======================================================= size and alignment *)
 
 let resolve_type (btype: btype_t) = bcfiles#resolve_type btype
@@ -920,8 +927,64 @@ let get_struct_type_compinfo (ty: btype_t): bcompinfo_t =
           (LBLOCK [STR "Type is not a struct: "; btype_to_pretty ty]))
 
 
-let get_compinfo_struct_type (c: bcompinfo_t): btype_t = TComp (c.bckey, [])
+let get_compinfo_field (c: bcompinfo_t) (fname: string): bfieldinfo_t =
+  try
+    List.find (fun finfo -> finfo.bfname = fname) c.bcfields
+  with
+  | Not_found ->
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "Compinfo ";
+               STR c.bcname;
+               STR " does not have a field ";
+               STR fname]))
 
+
+let rec get_compinfo_scalar_type_at_offset
+          (cinfo: bcompinfo_t) (offset: int): btype_t option =
+  let finfos = cinfo.bcfields in
+  let field0 = List.hd finfos in
+  let field0type = resolve_type field0.bftype in
+  if offset = 0 then
+    if is_struct_type field0type then
+      let subcinfo = get_struct_type_compinfo field0type in
+      get_compinfo_scalar_type_at_offset subcinfo 0
+    else
+      Some field0type
+  else if offset < (size_of_btype field0type) then
+    if is_struct_type field0type then
+      let subcinfo = get_struct_type_compinfo field0type in
+      get_compinfo_scalar_type_at_offset subcinfo offset
+    else
+      None
+  else
+    List.fold_left (fun acc finfo ->
+        match acc with
+        | Some _ -> acc
+        | _ ->
+           match finfo.bfieldlayout with
+           | Some (foffset, size) ->
+              let fieldtype = resolve_type finfo.bftype in
+              if offset = foffset then
+                if is_struct_type fieldtype then
+                  let subcinfo = get_struct_type_compinfo fieldtype in
+                  get_compinfo_scalar_type_at_offset subcinfo 0
+                else
+                  Some fieldtype
+              else if offset > foffset && offset < foffset + size then
+                if is_struct_type fieldtype then
+                  let subcinfo = get_struct_type_compinfo fieldtype in
+                  get_compinfo_scalar_type_at_offset subcinfo (offset - foffset)
+                else
+                  None
+              else
+                None
+           | _ ->
+              None) None finfos
+
+
+let get_compinfo_struct_type (c: bcompinfo_t): btype_t = TComp (c.bckey, [])
 
 
 let get_struct_type_fields (ty: btype_t): bfieldinfo_t list =

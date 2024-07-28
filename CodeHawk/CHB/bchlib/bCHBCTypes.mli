@@ -54,6 +54,10 @@ type ikind_t =
 | INonStandard of bool * int
 (** [local to binary analyzer, not in cil: signed, size in bytes] *)
 
+
+type signedness_t = Signed | Unsigned | SignedNeutral
+
+
 (** Various kinds of floating-point numbers*)
 type fkind_t =
 | FFloat      (** [float] *)
