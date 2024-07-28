@@ -46,6 +46,7 @@ open BCHBCFiles
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
+open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
@@ -57,6 +58,9 @@ open BCHLocation
 open BCHSystemInfo
 open BCHTypeConstraintStore
 open BCHTypeConstraintUtil
+
+(* bchlibelf *)
+open BCHELFHeader
 
 (* bchlibarm *)
 open BCHARMOpcodeRecords
@@ -110,11 +114,22 @@ object (self)
           LBLOCK [STR "("; s1#toPretty; STR ", "; s2#toPretty; STR ")"])
         "[" "; " "]" in
 
-    let get_intvalue_type_constant ?(signed=true) (i: int): type_constant_t =
+    let get_intvalue_type_constant (i: int): type_constant_t =
       match mk_intvalue_type_constant i with
       | Some tc -> tc
-      | _ when signed -> mk_int_type_constant IInt
-      | _ -> mk_int_type_constant IUInt in
+      | _ ->
+         let (sg, si) =
+           if i < 0 then
+             if i > (-128) then (Signed, 8)
+             else if i > (-BCHDoubleword.e15) then (Signed, 16)
+             else if i > (-BCHDoubleword.e31) then (Signed, 32)
+             else (Signed, 64)
+         else
+           if i < 128 then (SignedNeutral, 8)
+           else if i < BCHDoubleword.e15 then (SignedNeutral, 16)
+           else if i < BCHDoubleword.e31 then (SignedNeutral, 32)
+           else (SignedNeutral, 64) in
+         TyTInt (sg, si) in
 
     let get_variable_rdefs (v: variable_t): symbol_t list =
       let symvar = floc#f#env#mk_symbolic_variable v in
@@ -164,18 +179,31 @@ object (self)
            (floc#f#env#get_initial_register_value_register v)
       | _ -> None in
 
+    let getopt_global_address (x: xpr_t): doubleword_int option =
+      match (rewrite_expr x) with
+      | XConst (IntConst num) ->
+         TR.tfold_default
+           (fun dw ->
+             if elf_header#is_code_address dw then None else Some dw)
+           None
+           (numerical_to_doubleword num)
+      | _ ->
+         None in
+
     match instr#get_opcode with
 
     | BitwiseNot(_, _, rd, rm, _) when rm#is_immediate ->
        let rmval = rm#to_numerical#toInt in
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-       let intkind = if rmval = 0 then IInt else IUInt in
-       let tyc = mk_int_type_constant intkind in
+       let tyc = get_intvalue_type_constant rmval in
        store#add_subtype_constraint (mk_cty_term tyc) (mk_vty_term lhstypevar)
 
     | BranchLink _
          when floc#has_call_target && floc#get_call_target#is_signature_valid ->
+       let log_error (msg: string) =
+         mk_tracelog_spec
+           ~tag:"BranchLink type constraints" (iaddr ^ ": " ^ msg) in
        let callargs = floc#get_call_arguments in
        let (rvreg, rtype) =
          let fintf = floc#get_call_target#get_function_interface in
@@ -205,11 +233,11 @@ object (self)
 
          (* add constraints for argument values *)
          List.iter (fun (p, x) ->
+             let ptype = get_parameter_type p in
              if is_register_parameter p then
                let regarg = TR.tget_ok (get_register_parameter_register p) in
                let pvar = floc#f#env#mk_register_variable regarg in
                let rdefs = get_variable_rdefs pvar in
-               let ptype = get_parameter_type p in
                begin
                  (if not (is_unknown_type ptype) then
                     List.iter (fun rdsym ->
@@ -233,6 +261,30 @@ object (self)
                        | Some tc -> store#add_constraint tc
                        | _ -> ())
                end
+
+             else if is_stack_parameter p then
+               (log_tfold_default
+                  (log_error
+                     ("Unable to retrieve stack offset from "
+                      ^ (fts_parameter_to_string p)))
+                  (fun p_offset ->
+                    (log_tfold_default
+                       (log_error "Unable to get current stack pointer offset")
+                       (fun sp_offset ->
+                         let arg_offset =
+                           (sp_offset#add (mkNumerical p_offset))#neg in
+                         let typevar =
+                           mk_localstack_lhs_typevar
+                             arg_offset#toInt faddr iaddr in
+                         let opttc = mk_btype_constraint typevar ptype in
+                         match opttc with
+                         | Some tc -> store#add_constraint tc
+                         | _ -> ())
+                       ()
+                       (floc#get_singleton_stackpointer_offset)))
+                  ()
+                  (get_stack_parameter_offset p))
+
            ) callargs
 
        end
@@ -298,19 +350,64 @@ object (self)
        end
 
     | LoadRegister (_, rt, rn, rm, memop, _) when rm#is_immediate ->
+       let rtreg = rt#to_register in
+       let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
          (* LDR rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdef = get_variable_rdefs (rn#to_variable floc) in
-          let rtreg = rt#to_register in
           let rnreg = rn#to_register in
           let offset = rm#to_numerical#toInt in
           List.iter (fun rdsym ->
               let ldaddr = rdsym#getBaseName in
               let rdtypevar = mk_reglhs_typevar rnreg faddr ldaddr in
               let rdtypevar = add_load_capability ~offset rdtypevar in
-              let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
               store#add_subtype_constraint
                 (mk_vty_term rdtypevar) (mk_vty_term rttypevar)) xrdef);
+
+         (match getopt_global_address (memop#to_address floc) with
+          | Some gaddr ->
+             if is_in_global_structvar gaddr then
+               match (get_structvar_base_offset gaddr) with
+               | Some (_, Field ((fname, fckey), NoOffset)) ->
+                  let compinfo = bcfiles#get_compinfo fckey in
+                  let finfo = get_compinfo_field compinfo fname in
+                  let finfotype = resolve_type finfo.bftype in
+                  let lhstype =
+                    if is_struct_type finfotype then
+                      let subcinfo =
+                        get_struct_type_compinfo finfotype in
+                      get_compinfo_scalar_type_at_offset subcinfo 0
+                    else
+                      Some finfotype in
+                  (match lhstype with
+                   | Some ty ->
+                      let opttc = mk_btype_constraint rttypevar ty in
+                      (match opttc with
+                       | Some tc -> store#add_constraint tc
+                       | _ -> ())
+                   | _ ->
+                      chlog#add
+                        "global struct var type constraint"
+                        (LBLOCK [
+                             STR iaddr;
+                             STR ": ";
+                             STR compinfo.bcname;
+                             STR ": unable to obtain field type"]))
+               | Some (dw, boffset) ->
+                  let _ =
+                    chlog#add
+                      "global struct var type constraint"
+                      (LBLOCK [
+                           STR iaddr;
+                           STR ": ";
+                           dw#toPretty;
+                           STR " with offset ";
+                           offset_to_pretty boffset]) in
+                  ()
+               | _ -> ()
+             else
+               ()
+          | _ -> ())
 
        end
 
@@ -364,6 +461,36 @@ object (self)
                   store#add_subtype_constraint
                     (mk_vty_term rmtypevar) (mk_vty_term lhstypevar)) rmrdefs)
        end
+
+    (* Store x in y  ---  *y := x  --- X <: Y.store *)
+    | StoreRegister (_, rt, rn, rm, memvarop, _) when rm#is_immediate ->
+       let xaddr = memvarop#to_address floc in
+       let xrt = rt#to_expr floc in
+       (match getopt_stackaddress xaddr with
+        | None -> ()
+        | Some offset ->
+           let lhstypevar = mk_localstack_lhs_typevar offset faddr iaddr in
+           begin
+             (* propagate function argument type *)
+             (match getopt_initial_argument_value xrt with
+              | Some (rtreg, off) when off = 0 ->
+                 let rhstypevar = mk_function_typevar faddr in
+                 let rhstypevar = add_freg_param_capability rtreg rhstypevar in
+                 store#add_subtype_constraint
+                   (mk_vty_term rhstypevar) (mk_vty_term lhstypevar)
+              | _ -> ());
+
+             (let rtreg = rt#to_register in
+              let rtvar = rt#to_variable floc in
+              let rtrdefs = get_variable_rdefs rtvar in
+              List.iter (fun rtrdef ->
+                  let rtaddr = rtrdef#getBaseName in
+                  if rtaddr != "init" then
+                    let rttypevar = mk_reglhs_typevar rtreg faddr rtaddr in
+                    store#add_subtype_constraint
+                      (mk_vty_term rttypevar) (mk_vty_term lhstypevar)) rtrdefs)
+           end
+       )
 
     | _ -> ()
 
