@@ -32,6 +32,7 @@ open CHPretty
 open CHLogger
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHBCFiles
 open BCHBCTypePretty
 open BCHBCTypes
@@ -130,7 +131,12 @@ let type_constant_to_string (c: type_constant_t) =
   | TyAscii -> "t_ascii"
   | TyExtendedAscii -> "t_ascii_x"
   | TyZero -> "t_nil"
-  | TyTInt k -> int_type_to_string k
+  | TyTInt (sg, si) ->
+     (match sg with
+      | Signed -> "t_signed"
+      | Unsigned -> "t_unsigned"
+      | SignedNeutral -> "t_signed_neutral")
+       ^ "(" ^ (string_of_int si) ^ ")"
   | TyTStruct (_, name) -> "t_struct_" ^ name
   | TyTFloat k -> float_type_to_string k
   | TyTUnknown -> "t_top"
@@ -175,8 +181,8 @@ let mk_intvalue_type_constant (i: int): type_constant_t option =
       Some TyExtendedAscii
 
 
-let mk_int_type_constant (ikind: ikind_t): type_constant_t =
-  TyTInt ikind
+let mk_int_type_constant (signedness: signedness_t) (size: int): type_constant_t =
+  TyTInt (signedness, size)
 
 
 let mk_float_type_constant (fkind: fkind_t): type_constant_t =
@@ -207,32 +213,20 @@ let join_tc_fkind (fk1: fkind_t) (fk2: fkind_t) =
   | _, _ -> TyTUnknown
 
 
-let join_tc_ikind (ik1: ikind_t) (ik2: ikind_t) =
-  match ik1, ik2 with
-  | IChar, IChar -> TyTInt IChar
-  | _, IChar -> TyTInt ik1
-  | IChar, _ -> TyTInt ik2
-  | IULongLong, (IULongLong | IULong | IUInt | IUShort | IUChar) ->
-     TyTInt IULongLong
-  | (IULong | IUInt | IUShort | IUChar), IULongLong ->
-     TyTInt IULongLong
-  | IULong, (IULong | IUInt | IUShort | IUChar) -> TyTInt IULong
-  | (IUInt | IUShort | IUChar), IULong -> TyTInt IULong
-  | IUInt, (IUInt | IUShort | IUChar) -> TyTInt IUInt
-  | (IUShort | IUChar), IUInt -> TyTInt IUInt
-  | IUShort, (IUShort | IUChar) -> TyTInt IUShort
-  | IUChar, IUShort -> TyTInt IUShort
-  | IUChar, IUChar -> TyTInt IUChar
-  | ILongLong, (ILongLong | ILong | IInt | IShort | ISChar) -> TyTInt ILongLong
-  | (ILong | IInt | IShort | ISChar), ILongLong -> TyTInt ILongLong
-  | ILong, (ILong | IInt | IShort | ISChar) -> TyTInt ILong
-  | (IInt | IShort | ISChar), ILong -> TyTInt ILong
-  | IInt, (IInt | IShort | ISChar) -> TyTInt IInt
-  | (IShort | ISChar), IInt -> TyTInt IInt
-  | IShort, (IShort | ISChar) -> TyTInt IShort
-  | ISChar, IShort -> TyTInt IShort
-  | ISChar, ISChar -> TyTInt ISChar
-  | _, _ -> TyTUnknown
+let join_tc_integer
+      (s1: (signedness_t * int)) (s2: signedness_t * int)
+    : (signedness_t * int) option =
+  match s1, s2 with
+  | (sg1, size1), (sg2, size2) when sg1 = sg2 -> Some (sg1, max size1 size2)
+  | (Signed, size1), (SignedNeutral, size2) when size1 >= size2 ->
+     Some (Signed, size1)
+  | (SignedNeutral, size1), (Signed, size2) when size1 <= size2 ->
+     Some (Signed, size2)
+  | (Unsigned, size1), (SignedNeutral, size2) when size1 >= size2 ->
+     Some (Unsigned, size1)
+  | (SignedNeutral, size1), (Unsigned, size2) when size1 <= size2 ->
+     Some (Unsigned, size2)
+  | _ -> None
 
 
 let join_tc (t1: type_constant_t) (t2: type_constant_t): type_constant_t =
@@ -247,10 +241,13 @@ let join_tc (t1: type_constant_t) (t2: type_constant_t): type_constant_t =
   | TyTFloat fk1, TyTFloat fk2 -> join_tc_fkind fk1 fk2
   | TyTFloat _, _ -> TyTUnknown
   | _, TyTFloat _ -> TyTUnknown
-  | TyTInt ik1, TyTInt ik2 -> join_tc_ikind ik1 ik2
+  | TyTInt (sg1, s1), TyTInt (sg2, s2) ->
+     (match join_tc_integer (sg1, s1) (sg2, s2) with
+      | Some (sg, si) -> TyTInt (sg, si)
+      | _ -> TyTUnknown)
   | TyTInt _, _ -> t1
   | _, TyTInt _ -> t2
-  | _, _ -> TyTInt IChar
+  | _, _ -> TyTInt (SignedNeutral, 8)
 
 
 let type_constant_join (cl: type_constant_t list): type_constant_t =
@@ -394,11 +391,33 @@ let has_same_function_basevar (tv1: type_variable_t) (tv2: type_variable_t) =
   | _ -> false
 
 
+let ikind_to_signedsize (k: ikind_t): (signedness_t * int) =
+  match k with
+  | IChar -> (SignedNeutral, 8)
+  | ISChar -> (Signed, 8)
+  | IUChar -> (Unsigned, 8)
+  | IWChar -> (Unsigned, 16)
+  | IBool -> (Unsigned, 1)
+  | IInt -> (Signed, 32)
+  | IUInt -> (Unsigned, 32)
+  | IShort -> (Signed, 16)
+  | IUShort -> (Unsigned, 16)
+  | ILong -> (Signed, 32)
+  | IULong -> (Unsigned, 32)
+  | ILongLong -> (Signed, 64)
+  | IULongLong -> (Unsigned, 64)
+  | IInt128 -> (Signed, 128)
+  | IUInt128 -> (Unsigned, 128)
+  | INonStandard (true, size) -> (Signed, size)
+  | INonStandard (false, size) -> (Unsigned, size)
+
+
 let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
         : type_constraint_t option =
-  match ty with
+  match (resolve_type ty) with
   | TInt (ikind, _) ->
-     Some (TyGround (TyVariable tv, TyConstant (mk_int_type_constant ikind)))
+     let (signedness, size) = ikind_to_signedsize ikind in
+     Some (TyGround (TyVariable tv, TyConstant (mk_int_type_constant signedness size)))
   | TFloat (fkind, _, _) ->
      Some (TyGround (TyVariable tv, TyConstant (mk_float_type_constant fkind)))
   | TComp (key, _) ->
@@ -410,13 +429,43 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
   | TArray (elty, _, _) ->
      let atv = add_array_access_capability tv in
      mk_btype_constraint atv elty
-  | _ ->
+  | rty ->
      begin
        chlog#add
          "make btype constraint"
-         (LBLOCK [STR "Not yet supported: "; btype_to_pretty ty]);
+         (LBLOCK [
+              STR "Not yet supported: ";
+              btype_to_pretty ty;
+              STR " (";
+              btype_to_pretty rty;
+              STR ")"]);
        None
      end
+
+
+let signedsize_to_ikind (sg: signedness_t) (size: int): ikind_t =
+  match sg, size with
+  | SignedNeutral, 8 -> IChar
+  | (SignedNeutral | Signed), _ ->
+     (match size with
+      | 1 -> IBool
+      | 8 -> ISChar
+      | 16 -> IShort
+      | 32 -> IInt
+      | 64 -> ILongLong
+      | 128 -> IInt128
+      | _ ->
+         raise (BCH_failure (LBLOCK [STR "Invalid wordsize: "; INT size])))
+  | Unsigned, _ ->
+     (match size with
+      | 1 -> IBool
+      | 8 -> IUChar
+      | 16 -> IUShort
+      | 32 -> IUInt
+      | 64 -> IULongLong
+      | 128 -> IUInt128
+      | _ ->
+         raise (BCH_failure (LBLOCK [STR "Invalid wordsize: "; INT size])))
 
 
 let type_constant_to_btype (tc: type_constant_t) =
@@ -429,7 +478,9 @@ let type_constant_to_btype (tc: type_constant_t) =
     | TyAscii
     | TyExtendedAscii -> t_char
   | TyZero -> t_int
-  | TyTInt ikind -> TInt (ikind, [])
+  | TyTInt (signedness, size) ->
+     let ikind = signedsize_to_ikind signedness size in
+     TInt (ikind, [])
   | TyTStruct (key, _) -> get_compinfo_struct_type (bcfiles#get_compinfo key)
   | TyTFloat fkind -> TFloat (fkind, FScalar, [])
   | TyBottom -> t_unknown

@@ -91,6 +91,12 @@ let fkind_mfts: fkind_t mfts_int =
      (FComplexLongDouble, "fcomplexlongdouble")]
 
 
+let signedness_mfts: signedness_t mfts_int =
+  mk_mfts
+    "signedness_t"
+    [(Signed, "s"); (Unsigned, "u"); (SignedNeutral, "n")]
+
+
 let frepresentation_mfts: frepresentation_t mfts_int =
   mk_mfts  "frepresentation" [(FScalar,"s"); (FPacked,"p")]
 

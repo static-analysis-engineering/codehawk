@@ -168,7 +168,7 @@ object (self)
       | TyAscii -> (tags, [])
       | TyExtendedAscii -> (tags, [])
       | TyZero -> (tags, [])
-      | TyTInt k -> (tags @ [ikind_mfts#ts k], [])
+      | TyTInt (sg, si) -> (tags @ [signedness_mfts#ts sg], [si])
       | TyTStruct (key, name) -> (tags @ [name], [key])
       | TyTFloat k -> (tags @ [fkind_mfts#ts k], [])
       | TyBottom -> (tags, [])
@@ -189,7 +189,7 @@ object (self)
     | "a" -> TyAscii
     | "ax" -> TyExtendedAscii
     | "z" -> TyZero
-    | "ti" -> TyTInt (ikind_mfts#fs (t 1))
+    | "ti" -> TyTInt (signedness_mfts#fs (t 1), a 0)
     | "tf" -> TyTFloat (fkind_mfts#fs (t 1))
     | "ts" -> TyTStruct (a 0, t 1)
     | "b" -> TyBottom

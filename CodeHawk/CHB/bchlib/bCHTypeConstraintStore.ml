@@ -33,6 +33,7 @@ open CHUtils
 open CHLogger
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHBCTypePretty
 open BCHTypeConstraintGraph
 open BCHTypeConstraintUtil
@@ -486,6 +487,59 @@ object (self)
                        (fun c -> STR (type_constant_to_string c))
                        "[" "; " "]";
                      NL]) "[[" " -- " "]]"]) in
+    let first_field_struct (s: IntCollections.set_t): btype_t option =
+      (* The type of a data item at a particular stack offset can legally
+         be both a struct and the type of the first field of the struct.
+         If the set contains both a struct array type and the type of the
+         first field of that struct and nothing else, return the struct
+         array type. *)
+      let optstructty =
+        s#fold (fun acc ixty ->
+            match acc with
+            | Some _ -> acc
+            | _ ->
+               let ty = bcd#get_typ ixty in
+               match ty with
+               | TArray (TComp (key, _), _, _) -> Some ty
+               | _ -> None) None in
+      match optstructty with
+      | None -> None
+      | Some (TArray (TComp _ as ty, _, _) as tstructarray) ->
+         let cinfo = get_struct_type_compinfo ty in
+         let finfo0 = List.hd cinfo.bcfields in
+         let ftype = resolve_type finfo0.bftype in
+         let ixftype = bcd#index_typ ftype in
+         let ixctype = bcd#index_typ tstructarray in
+         let _ =
+           chlog#add
+             "first field struct check"
+             (LBLOCK [
+                  INT offset;
+                  STR ": ";
+                  pretty_print_list
+                    s#toList
+                    (fun i -> STR (btype_to_string (bcd#get_typ i)))
+                    "{" "; " "}";
+                  STR ": compinfo: ";
+                  STR cinfo.bcname;
+                  STR ": first field type: ";
+                  STR (btype_to_string ftype)]) in
+         if s#fold (fun acc i -> acc && (i = ixftype || i = ixctype)) true then
+           Some tstructarray
+         else
+           None
+      | _ -> None in
+    let get_promotion (s: IntCollections.set_t): IntCollections.set_t =
+      let prom = new IntCollections.set_t in
+      begin
+        s#iter (fun ix ->
+            let ty = bcd#get_typ ix in
+            if is_int ty then
+              prom#add (bcd#index_typ (promote_int ty))
+            else
+              prom#add ix);
+        prom
+      end in
     let result = new IntCollections.set_t in
     begin
       List.iter (fun (vars, consts) ->
@@ -511,29 +565,24 @@ object (self)
         match result#singleton with
         | Some ixty -> Some (bcd#get_typ ixty)
         | _ ->
-           let promotion = new IntCollections.set_t in
-           let _ =
-             result#iter (fun ix ->
-                 let ty = bcd#get_typ ix in
-                 if is_int ty then
-                   promotion#add (bcd#index_typ (promote_int ty))
-                 else
-                   promotion#add ix) in
-           match promotion#singleton with
+           match (get_promotion result)#singleton with
            | Some ixty -> Some (bcd#get_typ ixty)
            | _ ->
-              begin
-                log_evaluation ();
-                chlog#add
-                  "multiple distinct types"
-                  (LBLOCK [
-                       INT offset;
-                       STR "; ";
-                       pretty_print_list
-                         (List.map bcd#get_typ result#toList)
-                         (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
-                None
-              end
+              match first_field_struct result with
+              | Some ty -> Some ty
+              | _ ->
+                 begin
+                   log_evaluation ();
+                   chlog#add
+                     "multiple distinct types"
+                     (LBLOCK [
+                          INT offset;
+                          STR "; ";
+                          pretty_print_list
+                            (List.map bcd#get_typ result#toList)
+                            (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
+                   None
+                 end
     end
 
   method resolve_reglhs_types (faddr: string):

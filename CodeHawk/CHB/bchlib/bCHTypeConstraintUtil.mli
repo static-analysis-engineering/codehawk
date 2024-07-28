@@ -53,7 +53,7 @@ val mk_intvalue_type_constant: int -> type_constant_t option
 
 
 (** Returns an integer type constant with the size determined by ikind.*)
-val mk_int_type_constant: ikind_t -> type_constant_t
+val mk_int_type_constant: signedness_t -> int -> type_constant_t
 
 
 (** Returns a float type constant with the size determined by fkind.*)

@@ -3076,6 +3076,7 @@ type type_variable_t = {
     tv_capabilities: type_cap_label_t list
   }
 
+
 type type_constant_t =
   | TyAsciiDigit   (** integer in the range [0x30 - 0x39] ('0' - '9')*)
   | TyAsciiCapsLetter  (** integer in the range [0x41 - 0x5a] ('A' - 'Z') *)
@@ -3085,7 +3086,7 @@ type type_constant_t =
   | TyAscii  (** integer in the range [0x1 - 0x7f] *)
   | TyExtendedAscii  (** integer in the range [0x1 - 0xfe] *)
   | TyZero    (** can be either a pointer or an integer *)
-  | TyTInt of ikind_t
+  | TyTInt of signedness_t * int
   | TyTStruct of int * string  (** bckey, bcname *)
   | TyTFloat of fkind_t
   | TyTUnknown  (** top in type lattice *)
