@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-summary-file>
+  <header date="2024-07-29 17:13:12"/>
+  <function-summary name="recvfrom">
+    <parameters>
+      <par name="buffer" nr="2"/>
+      <par name="length" nr="3"/>
+      <par name="address" nr="5"/>
+      <par name="address_len" nr="6"/>
+    </parameters>
+    <preconditions>
+      <pre name="buffersize">
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <ci>buffer</ci>
+	    <apply>
+	      <byte-size/>
+	      <ci>length</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+      <pre name="addresswrite">
+	<math>
+	  <apply>
+	    <deref-write/>
+	    <ci>address</ci>
+	    <apply>
+	      <byte-size/>
+	      <apply>
+		<addressed-value/>
+		<ci>address_len</ci>
+	      </apply>
+	    </apply>
+	  </apply>
+	</math>
+      </pre>
+    </preconditions>
+    <postconditions>
+      <post>
+	<math>
+	  <apply>
+	    <geq/>
+	    <return/>
+	    <cn>0</cn>
+	  </apply>
+	</math>
+      </post>
+      <error-post>
+	<math>
+	  <apply>
+	    <eq/>
+	    <return/>
+	    <cn>-1</cn>
+	  </apply>
+	</math>
+      </error-post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value/>
+	      <ci>buffer</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+      <post>
+	<math>
+	  <apply>
+	    <initialized/>
+	    <apply>
+	      <addressed-value/>
+	      <ci>address_len</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </post>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>buffer</ci>
+	    <ci>length</ci>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>address</ci>
+	    <apply>
+	      <addressed-value/>
+	      <ci>address_len</ci>
+	    </apply>
+	  </apply>
+	</math>
+      </sideeffect>
+    </sideeffects>
+  </function-summary>
+</codehawk-summary-file>

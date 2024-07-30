@@ -343,7 +343,8 @@ object (self)
            log_info "Opening summaries jar %s" s;
            paths <- p :: paths
          end
-      | _ -> ()
+      | _ ->
+         log_info "No paths found in summary jar %s" s
     end
 
   method get_summary (name:string) =
@@ -376,7 +377,19 @@ object (self)
       let msg = LBLOCK [STR name ; STR ": "; p] in
       raise (XmlDocumentError (line,col,msg))
 
-  method has_summary (header:string) (name:string) =
+  method private has_summary_with_stdheader (headers: string list) (name: string) =
+    if H.mem table name then
+      true
+    else
+      match headers with
+      | [] -> false
+      | h :: tl ->
+         if self#has_summary_aux h name then
+           true
+         else
+           self#has_summary_with_stdheader tl name
+
+  method private has_summary_aux (header:string) (name:string) =
     if H.mem table name then true else
       try
 	let filename = header ^ "/" ^ name in
@@ -395,8 +408,8 @@ object (self)
                    INT (List.length summary.fs_error_postconditions)]);
 	    true
 	  end
-	else
-	  false
+        else
+          false
       with
 	XmlDocumentError (line,col,msg) ->
 	begin
@@ -414,6 +427,26 @@ object (self)
                  msg]);
 	  false
 	end
+
+  method has_summary (header: string) (name: string) =
+    if self#has_summary_aux header name then
+      true
+    else
+      (* extension to a partial list of std headers, included because the liftings
+         produced by the binary analyzer often include locally declared library
+         function prototypes, rather than the ones included from the standard headers.
+       *)
+      let stdsummary =
+        self#has_summary_with_stdheader
+          ["in"; "inet"; "socket"; "stdio"; "stdlib"; "string"; ] name in
+      if stdsummary then
+        true
+      else
+        begin
+          log_info "no function summary found for %s" name;
+          chlog#add "function summary not found" (STR name);
+          false
+        end
 
   method has_builtin_summary (name:string) = self#has_summary "builtins" name
 
