@@ -52,7 +52,8 @@ open BCHLibTypes
 val mk_intvalue_type_constant: int -> type_constant_t option
 
 
-(** Returns an integer type constant with the size determined by ikind.*)
+(** [mk_int_type_constant signedness size] returns an integer type constant with
+    the given signedness and size [size] (in bytes). *)
 val mk_int_type_constant: signedness_t -> int -> type_constant_t
 
 

@@ -566,10 +566,10 @@ let analyze_arm_function faddr f count =
            extract_def_use_high finfo bb_invariants#get_invariants
          end);
       finfo#reset_invariants;
-      finfo#save;
       save_function_invariants finfo;
       save_function_var_invariants finfo;
       arm_analysis_results#record_results f;
+      finfo#save;
       save_function_variables finfo;
       file_metrics#record_results
         faddr

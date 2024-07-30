@@ -33,7 +33,6 @@ open CHUtils
 open CHLogger
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHBCTypePretty
 open BCHTypeConstraintGraph
 open BCHTypeConstraintUtil
@@ -500,7 +499,7 @@ object (self)
             | _ ->
                let ty = bcd#get_typ ixty in
                match ty with
-               | TArray (TComp (key, _), _, _) -> Some ty
+               | TArray (TComp _, _, _) -> Some ty
                | _ -> None) None in
       match optstructty with
       | None -> None
