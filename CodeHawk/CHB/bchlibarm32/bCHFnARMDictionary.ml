@@ -1175,6 +1175,9 @@ object (self)
          let useshigh = [get_def_use_high vrt] in
          let xrmem = rewrite_expr xmem in
          let _ = ignore (get_string_reference floc xrmem) in
+         let _ =
+           floc#memrecorder#record_load
+             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -1886,6 +1889,9 @@ object (self)
                useshigh @ [get_def_use_high vrn])
            else
              ([vmem], uses, useshigh) in
+         let _ =
+           floc#memrecorder#record_store
+             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_unknown ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars

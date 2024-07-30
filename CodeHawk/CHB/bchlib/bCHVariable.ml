@@ -35,14 +35,12 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
 open CHTraceResult
 open CHUtil
 open CHXmlDocument
 
 (* xprlib *)
 open XprDictionary
-open XprToPretty
 open XprTypes
 
 (* bchlib *)
@@ -57,11 +55,11 @@ open BCHVarDictionary
 module H = Hashtbl
 module TR = CHTraceResult
 
-
+(*
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
-
+ *)
 
 class assembly_variable_t
         ~(memrefmgr:memory_reference_manager_int)
