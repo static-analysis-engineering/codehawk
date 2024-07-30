@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
    Copyright (c) 2023-2024 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -52,7 +52,7 @@ open CCHPreFileIO
 open CCHCheckValidity
 open CCHGenerateAndCheck
 open CCHGenerateLocalInvariants
-   
+
 
 (* cchcmdline *)
 open CCHVersion
@@ -70,7 +70,7 @@ let cmds = [
     "generate_and_check"]
 
 
-let cmdchoices = String.concat ", " cmds 
+let cmdchoices = String.concat ", " cmds
 
 
 let cmd = ref "version"
@@ -93,7 +93,7 @@ let domains = ref []
 let add_domain d = domains := d :: !domains
 
 
-let set_domains s = 
+let set_domains s =
   String.iter (fun c -> match c with
   | 'l' -> add_domain linear_equalities_domain
   | 'v' -> add_domain valueset_domain
@@ -102,7 +102,7 @@ let set_domains s =
   | 'p' -> add_domain sym_pointersets_domain
   | 'r' -> add_domain pepr_domain
   (* | 'x' -> add_domain "state sets" *)
-  | _ -> 
+  | _ ->
     begin
       pr_debug [
           STR "Some characters were not recognized in the domain specification: ";
@@ -114,7 +114,7 @@ let set_domains s =
 
 let speclist = [
   ("-version", Arg.Unit (fun () -> ()), "show version information and exit");
-  ("-gc", Arg.Unit (fun () -> cmd := "gc"), 
+  ("-gc", Arg.Unit (fun () -> cmd := "gc"),
    "show ocaml garbage collector settings and exit");
   ("-summaries", Arg.String function_summary_library#add_summary_jar,
    "location of jar with library function summaries");
@@ -138,7 +138,7 @@ let speclist = [
     "set word size (e.g., 16, 32, or 64)");
    ("-contractpath", Arg.String system_settings#set_contractpath,
     "path to contract files")
-]  
+]
 
 let usage_msg = "chc_analyze <options> <path to analysis directory>"
 
@@ -155,9 +155,9 @@ let save_log_files (contenttype:string) =
 
 let main () =
   try
+    let _ = set_log_level "DEBUG" in
     let _ = read_args () in
     let _ = chlog#set_max_entry_size 1000 in
-    let _ = set_log_level "DEBUG" in
     let _ = log_info "AIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAI" in
     if !cmd = "version" then
       begin
@@ -171,15 +171,15 @@ let main () =
 	exit 0
       end
 
-    else if !cmd = "primary" then 
+    else if !cmd = "primary" then
       begin
 	primary_process_file ();
         log_info "primary proof obligations generated";
 	save_log_files "primary";
         log_info "primary proof obligations log files saved"
       end
-	  
-    else if !cmd = "localinvs" then 
+
+    else if !cmd = "localinvs" then
       begin
 	invariants_process_file (List.rev !domains);
         log_info "Local invariants generated";
@@ -189,7 +189,7 @@ let main () =
 
     else if !cmd = "globalinvs" then ()
 
-    else if !cmd = "check" then 
+    else if !cmd = "check" then
       begin
 	check_process_file ();
         log_info "Proof obligations checked";
