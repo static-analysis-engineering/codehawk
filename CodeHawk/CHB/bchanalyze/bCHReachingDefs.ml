@@ -180,7 +180,8 @@ end
 let get_vardefuse (op: CHLanguage.operation_t):(variable_t * symbolic_exp_t) =
   match op.op_args with
   | [("dst", v, WRITE)] ->
-     (v, SYM (new symbol_t (List.hd op.op_name#getAttributes)))
+     let atts = if op.op_name#getBaseName = "clobber" then ["clobber"] else [] in
+     (v, SYM (new symbol_t ~atts (List.hd op.op_name#getAttributes)))
   | _ ->
      raise
        (BCH_failure
