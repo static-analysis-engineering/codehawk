@@ -62,6 +62,8 @@ object (self)
 
   method get_name = fintf.fintf_name
 
+  method get_lhsname = fintf.fintf_lhsname
+
   method get_target = tgt
 
   method get_app_address =

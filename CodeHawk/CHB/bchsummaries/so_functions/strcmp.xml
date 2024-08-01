@@ -12,7 +12,7 @@
      <return>indicates the lexicographic relation of string1 to string2</return>
     </apidoc>
    </documentation>
-   <api adj="0" cc="cdecl" name="strcmp">
+   <api adj="0" cc="cdecl" name="strcmp" lhsname="strcmpval">
      <returntype>int</returntype>
     <par loc="stack" io="r" name="string1" nr="1" rep="hex">
       <type><ptr>char</ptr></type>

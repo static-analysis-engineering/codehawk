@@ -431,6 +431,10 @@ object (self)
                    | [] -> Some (type_constant_to_btype jointy)
                    | [Deref | Load | Store] ->
                       Some (t_ptrto (type_constant_to_btype jointy))
+                    | [Load; OffsetAccess _] ->
+                       Some (t_ptrto (type_constant_to_btype jointy))
+                    | [Store; OffsetAccess _] ->
+                       Some (t_ptrto (type_constant_to_btype jointy))
                    | [OffsetAccessA (size, _)] ->
                       Some (t_array (type_constant_to_btype jointy) size)
                    | _ -> None in
@@ -548,6 +552,10 @@ object (self)
                     match v.tv_capabilities with
                     | [] -> Some (type_constant_to_btype c)
                     | [Deref | Load | Store] ->
+                       Some (t_ptrto (type_constant_to_btype c))
+                    | [Load; OffsetAccess _] ->
+                       Some (t_ptrto (type_constant_to_btype c))
+                    | [Store; OffsetAccess _] ->
                        Some (t_ptrto (type_constant_to_btype c))
                     | [OffsetAccessA (size, _)] ->
                        Some (t_array (type_constant_to_btype c) size)

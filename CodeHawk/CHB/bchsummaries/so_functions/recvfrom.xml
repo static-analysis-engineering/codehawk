@@ -41,7 +41,7 @@
         </return>
       </apidoc>
     </documentation>
-    <api adj="0" cc="cdecl" name="recvfrom">
+    <api adj="0" cc="cdecl" name="recvfrom" lhsname="recvdmsglen">
       <par loc="stack" name="socket" nr="1">
         <type>int</type>
       </par>

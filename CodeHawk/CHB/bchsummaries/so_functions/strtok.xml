@@ -23,7 +23,7 @@
      </return>
     </apidoc>
    </documentation>
-   <api adj="0" cc="cdecl" name="strtok">
+   <api adj="0" cc="cdecl" name="strtok" lhsname="nxttoken">
     <par loc="stack" io="r" name="strToken" rep="hex" nr="1">
      <type><ptr>char</ptr></type>
      <pre><deref-read-null-nt/></pre>
