@@ -1913,6 +1913,17 @@ object (self)
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem] in
          let useshigh = [get_def_use_high vmem] in
+         let (vars, uses, useshigh) =
+           if mem#is_offset_address_writeback then
+             let vrn = rn#to_variable floc in
+             ([vmem; vrn],
+               uses @ [get_def_use vrn],
+               useshigh @ [get_def_use_high vrn])
+           else
+             ([vmem], uses, useshigh) in
+         let _ =
+           floc#memrecorder#record_store
+             ~addr:xaddr ~var:vmem ~size:1 ~vtype:t_unknown ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
@@ -1965,6 +1976,9 @@ object (self)
          let rdefs = [get_rdef xrn; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem; get_def_use vrd] in
          let useshigh = [get_def_use vmem; get_def_use vrd] in
+         let _ =
+           floc#memrecorder#record_store
+             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_unknown ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem; vrd]
@@ -1994,6 +2008,9 @@ object (self)
                useshigh @ [get_def_use_high vrn])
            else
              ([vmem], uses, useshigh) in
+         let _ =
+           floc#memrecorder#record_store
+             ~addr:xaddr ~var:vmem ~size:2 ~vtype:t_unknown ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars
@@ -2667,43 +2684,3 @@ end
 
 
 let mk_arm_opcode_dictionary = new arm_opcode_dictionary_t
-
-
-let compute_arm_ssa_varintros
-      (finfo: function_info_int) (f: arm_assembly_function_int) =
-  let vinvs = finfo#fvarinv#get_multiple_reaching_defs in
-  let faddr = finfo#get_address in
-  List.iter (fun (loc, vinv) ->
-      if finfo#env#is_register_variable vinv#get_variable then
-        log_tfold
-          (log_error "compute_arm_ssa_varintros" "invalid register")
-          ~ok:(fun reg ->
-            let iaddr = (ctxt_string_to_location faddr loc)#i in
-            let instr = f#get_instruction iaddr in
-            let opcode = instr#get_opcode in
-            let operands = get_arm_operands opcode in
-            if List.exists (fun op ->
-                   if (op#get_mode = RD || op#get_mode = RW)
-                      && (op#is_register
-                          || op#is_double_register
-                          || op#is_extension_register) then
-                     let r = op#to_register in
-                     register_equal reg r
-                   else
-                     false) operands then
-              let rdefs = vinv#get_reaching_defs in
-              let rlocs = List.map (fun s -> s#getBaseName) rdefs in
-              let rlocs = List.filter (fun s -> not (s = "init")) rlocs in
-              if (List.length rlocs) > 1 then
-                let _ =
-                  chlog#add
-                    "computed ssa variables"
-                    (LBLOCK [
-                         STR loc;
-                         STR ": ";
-                         STR (register_to_string reg);
-                         STR ": ";
-                         pretty_print_list rlocs (fun s -> STR s) "[" ", " "]"]) in
-                system_info#add_computed_join_varintros faddr rlocs reg)
-          ~error:(fun _ -> ())
-          (finfo#env#get_register vinv#get_variable)) vinvs
