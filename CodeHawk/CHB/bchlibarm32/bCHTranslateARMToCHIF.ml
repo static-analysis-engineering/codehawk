@@ -2747,6 +2747,14 @@ let translate_arm_instruction
      let cmds = floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
+     let (usevars, usehigh) =
+       if vmem#isTmp || floc#f#env#is_unknown_memory_variable vmem then
+         (* elevate address variables to high-use *)
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (usevars, get_addr_use_high_vars [xrn; xrm])
+       else
+         (vmem :: usevars, usehigh) in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vmem]

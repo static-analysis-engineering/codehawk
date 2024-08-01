@@ -492,6 +492,24 @@ object (self)
            end
        )
 
+    | StoreRegisterByte (_, rt, rn, rm, memvarop, _) when rm#is_immediate ->
+       let xaddr = memvarop#to_address floc in
+       let xrt = rt#to_expr floc in
+       let rnrdefs = get_variable_rdefs (rn#to_variable floc) in
+       let rnreg = rn#to_register in
+       let offset = rm#to_numerical#toInt in
+       let rtrdefs = get_variable_rdefs (rt#to_variable floc) in
+       let rtreg = rt#to_register in
+       List.iter (fun rndsym ->
+           let straddr = rndsym#getBaseName in
+           let rntypevar = mk_reglhs_typevar rnreg faddr straddr in
+           let rntypevar = add_load_capability ~size:1 ~offset rntypevar in
+           List.iter (fun rtdsym ->
+               let rtdloc = rtdsym#getBaseName in
+               let rttypevar = mk_reglhs_typevar rtreg faddr rtdloc in
+               store#add_subtype_constraint
+                 (mk_vty_term rttypevar) (mk_vty_term rntypevar)) rtrdefs) rnrdefs
+
     | _ -> ()
 
 
