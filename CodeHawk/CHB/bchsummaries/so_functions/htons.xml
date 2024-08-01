@@ -11,7 +11,7 @@
         <return>argument value converted from host ot network byte order</return>
       </apidoc>
     </documentation>
-    <api adj="0" cc="cdecl" name="htons">
+    <api adj="0" cc="cdecl" name="htons" lhsname="htonsval">
       <par loc="stack" name="hostshort" nr="1">
         <type>uint16_t</type>
       </par>

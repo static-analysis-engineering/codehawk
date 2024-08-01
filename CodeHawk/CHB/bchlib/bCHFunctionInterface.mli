@@ -102,6 +102,7 @@ val default_function_interface:
   -> ?varargs:bool
   -> ?locations:parameter_location_t list
   -> ?returntypes: btype_t list
+  -> ?lhsname: string option
   -> string
   -> function_interface_t
 

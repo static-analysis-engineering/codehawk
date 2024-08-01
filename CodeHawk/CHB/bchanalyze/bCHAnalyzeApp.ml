@@ -507,12 +507,6 @@ let analyze_arm_function faddr f count =
          end) in
   let fstarttime = Unix.gettimeofday () in
   let finfo = load_function_info faddr in
-  let _ =
-    if (not system_info#has_variable_intros) && system_settings#use_ssa then
-      begin
-        compute_arm_ssa_varintros finfo f;
-        pr_timing [STR "ssa-varintros computed"]
-      end in
   let islarge =
     system_settings#is_lineq_restricted
       ~blocks:(List.length f#get_blocks)

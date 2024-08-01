@@ -390,7 +390,7 @@ object (self)
     }
 
   method index_function_interface (fintf: function_interface_t) =
-    let tags = [] in
+    let tags = match fintf.fintf_lhsname with Some name -> [name] | _ -> [] in
     let args = [
         bd#index_string fintf.fintf_name;
         (match fintf.fintf_jni_index with Some n -> n | _ -> (-1));
@@ -408,15 +408,17 @@ object (self)
 
   method get_function_interface (index: int): function_interface_t =
     let name = "function-interface" in
-    let (_, args) = function_interface_table#retrieve index in
+    let (tags, args) = function_interface_table#retrieve index in
     let a = a name args in
+    let t = t name tags in
     { fintf_name = bd#get_string (a 0);
       fintf_jni_index = if (a 1) = (-1) then None else Some (a 1);
       fintf_syscall_index = if (a 2) = (-1) then None else Some (a 2);
       fintf_type_signature = self#get_function_signature (a 3);
       fintf_parameter_locations = self#get_parameter_location_list (a 4);
       fintf_returntypes = (if (a 5) = (-1) then [] else [bcd#get_typ (a 5)]);
-      fintf_bctype = if (a 6) = (-1) then None else Some (bcd#get_typ (a 6))
+      fintf_bctype = if (a 6) = (-1) then None else Some (bcd#get_typ (a 6));
+      fintf_lhsname = match tags with [] -> None | _ -> Some (t 0)
     }
 
   method index_function_semantics (fsem: function_semantics_t) =
