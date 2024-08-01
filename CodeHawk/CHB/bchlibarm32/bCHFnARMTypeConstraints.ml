@@ -493,8 +493,6 @@ object (self)
        )
 
     | StoreRegisterByte (_, rt, rn, rm, memvarop, _) when rm#is_immediate ->
-       let xaddr = memvarop#to_address floc in
-       let xrt = rt#to_expr floc in
        let rnrdefs = get_variable_rdefs (rn#to_variable floc) in
        let rnreg = rn#to_register in
        let offset = rm#to_numerical#toInt in
