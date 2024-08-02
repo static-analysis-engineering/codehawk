@@ -214,7 +214,7 @@ and write_xml_stmtkind
       write_xml_instruction_list fdecls iNode instrs;
       append [iNode]
     end
-  | Return (optX, loc) ->
+  | Return (optX, loc, _Xloc) ->
     begin
       decls#write_xml_location node loc;
       match optX with
