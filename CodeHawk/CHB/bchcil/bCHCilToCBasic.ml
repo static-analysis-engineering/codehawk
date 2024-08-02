@@ -334,8 +334,8 @@ and cil_stmtkind_to_bstmtkind (k: GoblintCil.stmtkind): bstmtkind_t =
     match s with Some stmt -> Some (stmt.sid) | _ -> None in
   match k with
   | GoblintCil.Instr l -> Instr (List.map cil_instr_to_binstr l)
-  | GoblintCil.Return (Some e, l) -> Return (Some (ce e), cl l)
-  | GoblintCil.Return (None, l) -> Return (None, cl l)
+  | GoblintCil.Return (Some e, l, _el) -> Return (Some (ce e), cl l)
+  | GoblintCil.Return (None, l, _el) -> Return (None, cl l)
   | GoblintCil.Goto (s, l) -> Goto (!s.sid, cl l)
   | GoblintCil.ComputedGoto (e, l) -> ComputedGoto (ce e, cl l)
   | GoblintCil.Break l -> Break (cl l)
