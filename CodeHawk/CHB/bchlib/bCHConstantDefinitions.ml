@@ -206,7 +206,7 @@ object (self)
       None
 
   method get_arrayvar_base_offset
-           (dw: doubleword_int):(doubleword_int * boffset_t) option =
+           (dw: doubleword_int):(doubleword_int * boffset_t * btype_t) option =
     if self#is_in_arrayvar dw then
       let dwindex = dw#index in
       let optdwoffset =
@@ -223,14 +223,14 @@ object (self)
          if H.mem address_table base then
            let constdef = H.find address_table base in
            (match bcfiles#resolve_type constdef.xconst_type with
-            | TArray (ty, _optlen, _) ->
+            | TArray (ty, _optlen, _) as btype ->
                let elsize = size_of_btype ty in
                if elsize > 0 then
                  let elindex = dwoffset / elsize in
                  let boffset =
                    Index
                      (Const (CInt (Int64.of_int elindex, IInt, None)), NoOffset) in
-                 Some (TR.tget_ok (int_to_doubleword base), boffset)
+                 Some (TR.tget_ok (int_to_doubleword base), boffset, btype)
                else
                  None
             | _ ->

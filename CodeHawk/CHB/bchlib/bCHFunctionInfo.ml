@@ -875,7 +875,7 @@ object (self)
           default ())
     else if is_in_global_arrayvar addr then
       (match get_arrayvar_base_offset addr with
-       | Some (base, off) ->
+       | Some (base, off, _) ->
           let basename = get_symbolic_address_name base in
           let basevar =
             self#mk_variable (varmgr#make_global_variable base#to_numerical) in

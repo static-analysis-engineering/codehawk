@@ -532,17 +532,6 @@ object (self)
          else
            None
       | _ -> None in
-    let get_promotion (s: IntCollections.set_t): IntCollections.set_t =
-      let prom = new IntCollections.set_t in
-      begin
-        s#iter (fun ix ->
-            let ty = bcd#get_typ ix in
-            if is_int ty then
-              prom#add (bcd#index_typ (promote_int ty))
-            else
-              prom#add ix);
-        prom
-      end in
     let result = new IntCollections.set_t in
     begin
       List.iter (fun (vars, consts) ->
@@ -563,33 +552,25 @@ object (self)
                   match optty with
                   | Some ty -> result#add (bcd#index_typ ty)
                   | _ -> ()) consts) vars) evaluation;
-      if result#isEmpty then
-        begin
-          log_evaluation ();
-          None
-        end
-      else
-        match result#singleton with
-        | Some ixty -> Some (bcd#get_typ ixty)
-        | _ ->
-           match (get_promotion result)#singleton with
-           | Some ixty -> Some (bcd#get_typ ixty)
-           | _ ->
-              match first_field_struct result with
-              | Some ty -> Some ty
-              | _ ->
-                 begin
-                   log_evaluation ();
-                   chlog#add
-                     "multiple distinct types"
-                     (LBLOCK [
-                          INT offset;
-                          STR "; ";
-                          pretty_print_list
-                            (List.map bcd#get_typ result#toList)
-                            (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
-                   None
-                 end
+      let btypes = result#fold (fun acc tix -> (bcd#get_typ tix) :: acc) [] in
+      match join_integer_btypes btypes with
+      | Some ty -> Some ty
+      | _ ->
+         match first_field_struct result with
+         | Some ty -> Some ty
+         | _ ->
+            begin
+              log_evaluation ();
+              chlog#add
+                "multiple distinct types"
+                (LBLOCK [
+                     INT offset;
+                     STR "; ";
+                     pretty_print_list
+                       (List.map bcd#get_typ result#toList)
+                       (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
+              None
+            end
     end
 
   method resolve_reglhs_types (faddr: string):

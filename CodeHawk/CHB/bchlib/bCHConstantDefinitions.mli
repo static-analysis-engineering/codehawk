@@ -116,7 +116,8 @@ val get_structvar_base_offset: doubleword_int -> (doubleword_int * boffset_t) op
 
 val is_in_global_arrayvar: doubleword_int -> bool
 
-val get_arrayvar_base_offset: doubleword_int -> (doubleword_int * boffset_t) option
+val get_arrayvar_base_offset:
+  doubleword_int -> (doubleword_int * boffset_t * btype_t) option
 
 
 (** Reads a symbolic address from a userdata xml element and saves it to
