@@ -2752,6 +2752,10 @@ let translate_arm_instruction
          (* elevate address variables to high-use *)
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
+         let _ =
+           chlog#add
+             "record address base and offset registers"
+             (LBLOCK [floc#l#toPretty; STR ": "; x2p xrn; STR ", "; x2p xrm]) in
          (usevars, get_addr_use_high_vars [xrn; xrm])
        else
          (vmem :: usevars, usehigh) in
