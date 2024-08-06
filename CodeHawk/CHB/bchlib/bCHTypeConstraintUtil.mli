@@ -75,6 +75,9 @@ val type_constant_to_btype: type_constant_t -> btype_t
 val type_constant_join: type_constant_t list -> type_constant_t
 
 
+val join_integer_btypes: btype_t list -> btype_t option
+
+
 (** {1 Type variables} *)
 
 (** [mk_function_typevar faddr] returns a type variable for the function

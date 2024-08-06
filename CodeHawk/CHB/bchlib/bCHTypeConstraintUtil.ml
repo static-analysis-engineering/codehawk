@@ -427,7 +427,8 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
      let ptv = add_deref_capability tv in
      mk_btype_constraint ptv pty
   | TArray (elty, _, _) ->
-     let atv = add_array_access_capability tv in
+     let size = size_of_btype elty in
+     let atv = add_array_access_capability ~size tv in
      mk_btype_constraint atv elty
   | rty ->
      begin
@@ -505,3 +506,33 @@ let type_term_prefix_closure (t: type_term_t): type_term_t list =
             let newtv = add_capability [cap] prev in
             (newtv, (TyVariable (newtv)) :: acc)) (tvv, []) tv.tv_capabilities) in
      (TyVariable tvv) :: newterms
+
+
+let join_integer_btypes (btypes: btype_t list): btype_t option =
+  match btypes with
+  | [] -> None
+  | [t] -> Some t
+  | _ ->
+     let t0 = List.hd btypes in
+     match t0 with
+     | TInt (ikind, _) ->
+        let (signedness, size) = ikind_to_signedsize ikind in
+        let tc0 = mk_int_type_constant signedness size in
+        let tc =
+          List.fold_left (fun acc ty ->
+              match acc with
+              | None -> None
+              | Some tc ->
+                 (match ty with
+                  | TInt (ikind, _) ->
+                     let (signedness, size) = ikind_to_signedsize ikind in
+                     let tc' = mk_int_type_constant signedness size in
+                     let tc'' = join_tc tc tc' in
+                     (match tc'' with
+                      | TyTInt _ -> Some tc''
+                      | _ -> None)
+                  | _ -> None)) (Some tc0) btypes in
+        (match tc with
+         | Some tc -> Some (type_constant_to_btype tc)
+         | _ -> None)
+     | _ -> None
