@@ -192,6 +192,39 @@ object (self)
 
     match instr#get_opcode with
 
+    | Add (_, _, rd, rn, rm, _) ->
+       begin
+
+         (if rm#is_immediate && (rm#to_numerical#toInt < 256) then
+            let rdreg = rd#to_register in
+            let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+            let rndefs = get_variable_rdefs (rn#to_variable floc) in
+            let rnreg = rn#to_register in
+            List.iter (fun rnsym ->
+                let rnaddr = rnsym#getBaseName in
+                let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+                store#add_subtype_constraint
+                  (mk_vty_term rntypevar) (mk_vty_term lhstypevar)) rndefs);
+
+         (match getopt_global_address (rn#to_expr floc) with
+          | Some gaddr ->
+             if is_in_global_arrayvar gaddr then
+               (match (get_arrayvar_base_offset gaddr) with
+                | Some _ ->
+                   let rmdefs = get_variable_rdefs (rm#to_variable floc) in
+                   let rmreg = rm#to_register in
+                   List.iter (fun rmsym ->
+                       let rmaddr = rmsym#getBaseName in
+                       let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+                       let tyc = mk_int_type_constant Unsigned 32 in
+                       store#add_subtype_constraint
+                         (mk_vty_term rmtypevar) (mk_cty_term tyc)) rmdefs
+                | _ -> ())
+             else
+               ()
+          | _ -> ())
+       end
+
     | BitwiseNot(_, _, rd, rm, _) when rm#is_immediate ->
        let rmval = rm#to_numerical#toInt in
        let rdreg = rd#to_register in
@@ -407,9 +440,60 @@ object (self)
                | _ -> ()
              else
                ()
-          | _ -> ())
+          | _ -> ());
+
+         (match getopt_global_address (memop#to_expr floc) with
+          | Some gaddr ->
+             if is_in_global_arrayvar gaddr then
+               (match (get_arrayvar_base_offset gaddr) with
+                | Some (base, offset, bty) ->
+                   (match offset with
+                    | Index (Const (CInt (i64, _, _)), NoOffset) ->
+                       let cindex = mkNumericalFromInt64 i64 in
+                       if cindex#equal numerical_zero then
+                         let opttc = mk_btype_constraint rttypevar bty in
+                         (match opttc with
+                          | Some tc -> store#add_constraint tc
+                          | _ -> ())
+                       else
+                         ()
+                    | _ ->
+                       chlog#add
+                         "global array var"
+                         (LBLOCK [
+                              STR iaddr;
+                              STR ": ";
+                              gaddr#toPretty;
+                              STR ", ";
+                              offset_to_pretty offset
+                   ]))
+                | _ -> ())
+          | _ -> ());
+
+         (match getopt_stackaddress (memop#to_address floc) with
+          | None -> ()
+          | Some offset ->
+             let rhstypevar = mk_localstack_lhs_typevar offset faddr iaddr in
+             store#add_subtype_constraint
+               (mk_vty_term rhstypevar) (mk_vty_term rttypevar))
 
        end
+
+    | LogicalShiftLeft (_, _, rd, rn, rm, _) when rm#is_immediate ->
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       let tc = mk_int_type_constant Unsigned 32 in
+       let _ =
+         store#add_subtype_constraint (mk_cty_term tc) (mk_vty_term lhstypevar) in
+       let rnreg = rn#to_register in
+       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+
+       (List.iter (fun rnrdef ->
+            let rnaddr = rnrdef#getBaseName in
+            let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+            let tyc = mk_int_type_constant Unsigned 32 in
+            store#add_subtype_constraint
+              (mk_cty_term tyc) (mk_vty_term rntypevar)) rndefs)
 
     (* Move x, y  ---  x := y  --- Y <: X *)
     | Move (_, _, rd, rm, _, _) ->

@@ -504,6 +504,8 @@ object (self)
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let result = XOp (XPlus, [xrn; xrm]) in
+         let xxrn = rewrite_expr xrn in
+         let xxrm = rewrite_expr xrm in
          let rresult = rewrite_expr ?restrict:(Some 4) result in
          let _ = ignore (get_string_reference floc rresult) in
          let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
@@ -512,7 +514,7 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
+             ~xprs:[xrn; xrm; result; rresult; xxrn; xxrm]
              ~rdefs:rdefs
              ~uses:[uses]
              ~useshigh:[useshigh]
