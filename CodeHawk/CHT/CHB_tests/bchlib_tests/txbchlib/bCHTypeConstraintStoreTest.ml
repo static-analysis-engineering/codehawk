@@ -65,14 +65,14 @@ let get_fintf (f: string): function_interface_t =
 
 let arm_function_signature_type_constraints () =
   let tests = [
-      ("f_1", ["t_sub_0x100.param_R0 <:> int"; "t_sub_0x100.rtn <:> int"]);
-      ("f_2", ["t_sub_0x100.param_R1 <:> int";
-               "t_sub_0x100.param_R0 <:> int";
-               "t_sub_0x100.rtn <:> int"]);
-      ("f_12", ["t_sub_0x100.param_R0.deref <:> char";
-                "t_sub_0x100.rtn.deref <:> char"]);
+      ("f_1", ["t_sub_0x100.param_R0 <:> t_signed(32)"; "t_sub_0x100.rtn <:> t_signed(32)"]);
+      ("f_2", ["t_sub_0x100.param_R1 <:> t_signed(32)";
+               "t_sub_0x100.param_R0 <:> t_signed(32)";
+               "t_sub_0x100.rtn <:> t_signed(32)"]);
+      ("f_12", ["t_sub_0x100.param_R0.deref <:> t_signed_neutral(8)";
+                "t_sub_0x100.rtn.deref <:> t_signed_neutral(8)"]);
       ("f_13", ["t_sub_0x100.param_R0.deref <:> t_struct_struct4";
-                "t_sub_0x100.rtn.deref <:> char"])
+                "t_sub_0x100.rtn.deref <:> t_signed_neutral(8)"])
 
     ] in
   begin
