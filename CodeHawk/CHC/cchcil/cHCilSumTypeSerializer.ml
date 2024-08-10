@@ -194,6 +194,7 @@ object
     | AInt _ -> "aint"
     | AStr _ -> "astr"
     | ACons _ -> "acons"
+    | AAssign _ -> "aassign"
     | ASizeOf _ -> "asizeof"
     | ASizeOfE _ -> "asizeofe"
     | ASizeOfS _ -> "asizeofs"
