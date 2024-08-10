@@ -92,6 +92,8 @@ object (self)
       | AInt i -> (tags, [i])
       | AStr s -> (tags, [self#index_string s])
       | ACons (s,r) -> (tags @ [s], List.map self#index_attrparam r)
+      | AAssign (p1, p2) ->
+         (tags, [self#index_attrparam p1; self#index_attrparam p2])
       | ASizeOf typ -> (tags, [self#index_typ typ])
       | ASizeOfE a -> (tags, [self#index_attrparam a])
       | ASizeOfS s -> (tags, [self#index_typsig s])
