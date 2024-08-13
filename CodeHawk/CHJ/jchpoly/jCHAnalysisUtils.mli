@@ -3,9 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny Sipma
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,8 +38,6 @@ open CHUtils
 (* jchlib *)
 open JCHBasicTypesAPI
 
-(* jchpre *)
-open JCHPreAPI
 
 val set_current_proc_name : symbol_t -> unit
 val get_current_proc_name : unit -> symbol_t
@@ -109,9 +107,9 @@ val has_untranslated_caller : symbol_t -> bool
 val get_slot_interval : logical_stack_slot_int -> interval_t
 
 val is_numeric : JCHProcInfo.jproc_info_t -> variable_t -> bool
-val is_collection : JCHProcInfo.jproc_info_t -> variable_t -> bool 
-val is_array : JCHProcInfo.jproc_info_t -> variable_t -> bool 
-val is_collection_or_array : JCHProcInfo.jproc_info_t -> variable_t -> bool 
+val is_collection : JCHProcInfo.jproc_info_t -> variable_t -> bool
+val is_array : JCHProcInfo.jproc_info_t -> variable_t -> bool
+val is_collection_or_array : JCHProcInfo.jproc_info_t -> variable_t -> bool
 
 val float_to_interval : float -> numerical_t * numerical_t * interval_t
 
@@ -121,10 +119,10 @@ val get_length_vars :
   -> variable_t list
      * variable_t list
      * variable_t CHUtils.VariableCollections.table_t
-  
+
 val include_length_vars :
   JCHProcInfo.jproc_info_t -> variable_t list -> variable_t list
-  
+
 val include_all_length_vars :
   JCHProcInfo.jproc_info_t
   -> variable_t list
@@ -133,4 +131,3 @@ val include_all_length_vars :
   -> variable_t list * variable_t list * int list
 
 val integer_div : interval_t -> interval_t -> interval_t
-
