@@ -95,16 +95,16 @@ type java_basic_type_t =
 
 class type class_name_int =
 object ('a)
-  method compare : 'a -> int
-  method equal   : 'a -> bool
-  method index   : int
-  method name    : string
-  method package : string list
+  method compare: 'a -> int
+  method equal: 'a -> bool
+  method index: int
+  method name: string
+  method package: string list
   method abbreviated_package_name: string
   method package_name: string
-  method simple_name : string
+  method simple_name: string
   method abbreviated_name: string
-  method toPretty    : pretty_t
+  method toPretty: pretty_t
 end
 
 type object_type_t = TClass of class_name_int | TArray of value_type_t
@@ -647,30 +647,32 @@ type opcode_t =
 
 class type opcodes_int =
   object
-    method replace      : int -> opcode_t -> unit
-    method at           : int -> opcode_t
-    method length       : int
-    method instr_count  : int
-    method opcodes      : opcode_t array
+    method replace: int -> opcode_t -> unit
+    method at: int -> opcode_t
+    method length: int
+    method instr_count: int
+    method opcodes: opcode_t array
 
     method offset_to_instrn_array: int array
     method offset_to_from_instrn_arrays: int array * int array
 
-    method iteri        : (int -> opcode_t -> unit) -> unit
-    method next         : int -> int option
-    method previous     : int -> int option
+    method iteri: (int -> opcode_t -> unit) -> unit
+    method next: int -> int option
+    method previous: int -> int option
 
-    method toPretty     : pretty_t
+    method toPretty: pretty_t
   end
+
 
 class type exception_handler_int =
   object
-    method catch_type   : class_name_int option
-    method h_end        : int
-    method h_start      : int
-    method handler      : int
-    method toPretty     : pretty_t
+    method catch_type: class_name_int option
+    method h_end: int
+    method h_start: int
+    method handler: int
+    method toPretty: pretty_t
   end
+
 
 class type bytecode_int =
   object

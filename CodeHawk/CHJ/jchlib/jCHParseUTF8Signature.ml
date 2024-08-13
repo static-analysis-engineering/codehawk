@@ -220,18 +220,14 @@ let read_utf8 getchar =
      end
   | _ -> assert false
 
-let in_range c lower_bound upper_bound = c >= lower_bound && c <= upper_bound
-
-let is_ascii c = in_range 0x01 0x7F
-
 
 module XString = struct
   type t = string
-  let empty = ""
-  let length = String.length
-  let append = ( ^ )
-  let lowercase = String.lowercase_ascii
-  let iter f s =
+  let _empty = ""
+  let _length = String.length
+  let _append = ( ^ )
+  let _lowercase = String.lowercase_ascii
+  let _iter f s =
     let len = String.length s in
     let pos = ref ~-1 in
     let get () =
@@ -242,19 +238,21 @@ module XString = struct
       while true do f (read_utf8 get) done
     with
     | Exit -> ()
-  let of_string s = s
-  let to_utf8 f v x = f v x
+  let _of_string s = s
+  let _to_utf8 f v x = f v x
   let compare = String.compare
 end
 
-let string_equal s1 s2 = (XString.compare s1 s2) = 0
+
+let _string_equal s1 s2 = (XString.compare s1 s2) = 0
+
 
 module XBuffer = struct
-  type string = XString.t
-  type t = Buffer.t
+  type _string = XString.t
+  type _t = Buffer.t
   exception Full
   let create = Buffer.create
-  let add_char = Buffer.add_char
+  let _add_char = Buffer.add_char
   let add_uchar buffer uchar =
     try
       let store c = Buffer.add_char buffer (Char.chr c) in
@@ -282,10 +280,12 @@ module XBuffer = struct
 
   let clear = Buffer.clear
   let contents = Buffer.contents
-  let length = Buffer.length
+  let _length = Buffer.length
 end
 
+
 let c_end_of_input = max_int
+
 
 let raise_utf8_parse_error msg char_la s =
   if char_la = c_end_of_input then
