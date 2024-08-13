@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2005-2020 Kestrel Technology LLC
+
+   Copyright (c) 2005-2020  Kestrel Technology LLC
+   Copyright (c) 2020-2024  Henny B. sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,34 +31,30 @@ open Big_int_Z
 (* chlib *)
 open CHLanguage
 open CHNumerical
-open CHPretty
-
-(* chutil *)
-open CHPrettyUtil
 
 
-let make_variable str vt = 
-  let sym = 
-    match vt with 
-    | SYM_VAR_TYPE -> new symbol_t ~atts:["sym"] str 
+let make_variable str vt =
+  let sym =
+    match vt with
+    | SYM_VAR_TYPE -> new symbol_t ~atts:["sym"] str
     | _ -> new symbol_t ~atts:["num"] str in
   new variable_t sym vt
 
-let exception_var = 
+let exception_var =
   let name = new symbol_t ~atts:["sym"] "exception" in
   new variable_t name SYM_VAR_TYPE
 
-let num_return_var = 
+let num_return_var =
   let name = new symbol_t ~atts:["num"] "return" in
   new variable_t name NUM_VAR_TYPE
 
-let sym_return_var = 
+let sym_return_var =
   let name = new symbol_t ~atts:["sym"] "return" in
   new variable_t name SYM_VAR_TYPE
 
-let exception_var_index = exception_var#getIndex 
-let num_return_var_index = num_return_var#getIndex 
-let sym_return_var_index = sym_return_var#getIndex 
+let exception_var_index = exception_var#getIndex
+let num_return_var_index = num_return_var#getIndex
+let sym_return_var_index = sym_return_var#getIndex
 
 let return_sym = new symbol_t "return"
 let exception_sym = new symbol_t "exception"
@@ -67,21 +64,21 @@ let return_sym_index = return_sym#getIndex
 let exception_sym_index = exception_sym#getIndex
 let throw_sym_index = throw_sym#getIndex
 
-let cN0 = mkNumerical_big (big_int_of_int 0) 
+let cN0 = mkNumerical_big (big_int_of_int 0)
 let cN1 = mkNumerical_big (big_int_of_int 1)
 let cN_1 = mkNumerical_big (big_int_of_int (-1))
-let cN_MAX_CHAR = mkNumerical_big (big_int_of_int 65535) 
+let cN_MAX_CHAR = mkNumerical_big (big_int_of_int 65535)
 let cN_MAX_BYTE = mkNumerical_big (big_int_of_int 127)
 let cN_MIN_BYTE = mkNumerical_big (big_int_of_int (-128))
-let cN_MAX_SHORT = mkNumerical_big (big_int_of_int 32767) 
+let cN_MAX_SHORT = mkNumerical_big (big_int_of_int 32767)
 let cN_MIN_SHORT = mkNumerical_big (big_int_of_int (-32768))
 let cN_MAX_INT = mkNumerical_big (big_int_of_int 2147483647)
 let cN_MIN_INT = mkNumerical_big (big_int_of_int (-2147483648))
 let cN_MAX_LONG = mkNumerical_big (big_int_of_string "9223372036854775807")
 let cN_MIN_LONG = mkNumerical_big (big_int_of_string "-9223372036854775808")
 
-let cN0_var = make_variable "cN0" NUM_VAR_TYPE 
-let cN1_var = make_variable "cN1" NUM_VAR_TYPE 
+let cN0_var = make_variable "cN0" NUM_VAR_TYPE
+let cN1_var = make_variable "cN1" NUM_VAR_TYPE
 let cN_1_var = make_variable "cN-1" NUM_VAR_TYPE
 let cN_MAX_CHAR_var = make_variable "cN_MAX_CHAR" NUM_VAR_TYPE
 let cN_MAX_BYTE_var = make_variable "cN_MAX_BYTE" NUM_VAR_TYPE
@@ -129,4 +126,3 @@ let int_dom_name = "tintervals"
 let lin_dom_name = "karr"
 let poly_dom_name = "poly"
 let lin_eqs_dom_name = "lin_eqs"
-
