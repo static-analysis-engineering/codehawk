@@ -32,7 +32,6 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHTiming
 open CHTimingLog
 
 (* cchlib *)

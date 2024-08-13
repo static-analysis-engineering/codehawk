@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,13 +37,12 @@ open CHXmlDocument
 (* cchlib *)
 open CCHBasicTypes
 open CCHFileEnvironment
-open CCHLibTypes
 open CCHSumTypeSerializer
 open CCHUtilities
 
 module H = Hashtbl
 
-   
+
 let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
 
@@ -136,7 +135,7 @@ object (self)
                  STR "Formal ";
                  INT n;
                  STR " not found in function declarations"]))
-    
+
   method get_locals =
     List.filter
       (fun vinfo -> vinfo.vparam = 0)
@@ -166,7 +165,7 @@ object (self)
                    STR "Global variable with name: ";
                    STR name;
                    STR " not found"]))
-      
+
   method get_varinfo_by_vid (vid:int) =
     if H.mem vidtable vid then
       self#xrep (varinfo_table#retrieve (H.find vidtable vid))
@@ -183,7 +182,7 @@ object (self)
     begin
       H.replace vidtable vinfo.vid index;
       index
-    end              
+    end
 
   method index_varinfo (vinfo:varinfo) =
     varinfo_table#add (self#getrep vinfo)
@@ -204,9 +203,8 @@ object (self)
         (List.map
            (fun (key,index) -> (index,self#xrep key)) varinfo_table#items)
     end
-    
+
 end
 
 
 let mk_cfundeclarations () = new cfundeclarations_t
-    

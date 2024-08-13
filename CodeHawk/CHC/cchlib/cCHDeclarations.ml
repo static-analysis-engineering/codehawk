@@ -41,7 +41,6 @@ open CHXmlDocument
 
 (* cchcil *)
 open CCHBasicTypes
-open CCHDictionary
 open CCHLibTypes
 open CCHSumTypeSerializer
 open CCHUtilities
