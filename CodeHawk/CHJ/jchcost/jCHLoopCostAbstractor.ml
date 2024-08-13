@@ -4,7 +4,8 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2005-2020  Kestrel Technology LLC
+   Copyright (c) 2020-2024  Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,12 +28,10 @@
 
 (* chlib *)
 open CHLanguage
-open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHUtils
-open CHPrettyUtil
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
@@ -106,7 +105,7 @@ let remove_loops
 let reduce_to_loop
       (cost_chif: procedure_int)
       (cvar: variable_t)
-      (bvar: variable_t)
+      (_bvar: variable_t)
       (hpc: int)
       (pcs: int list) : procedure_int =
   let cfg =
