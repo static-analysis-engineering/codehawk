@@ -3,9 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2024 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,8 +38,6 @@ open CHLogger
 (* jchlib *)
 open JCHBasicTypes
 open JCHBasicTypesAPI
-open JCHBytecode
-open JCHTranslateToCHIF
 
 (* jchpre *)
 open JCHPreAPI
@@ -47,13 +45,15 @@ open JCHPreAPI
 module H = Hashtbl
 
 
-let get_stack_top_slot mInfo pc =
+let get_stack_top_slot (mInfo: method_info_int) (pc: int) =
   (mInfo#get_method_stack_layout#get_stack_layout pc)#get_top_slot
 
-let get_stack_top_slots mInfo pc n =
+
+let get_stack_top_slots (mInfo: method_info_int) (pc: int) (n: int) =
   (mInfo#get_method_stack_layout#get_stack_layout pc)#get_top_slots n
 
-let get_cost_registers mInfo =
+
+let get_cost_registers (mInfo: method_info_int) =
   let result = ref [] in
   begin
     (mInfo#bytecode_iteri (fun pc opc ->
@@ -62,21 +62,22 @@ let get_cost_registers mInfo =
 	begin
 	  let slot = get_stack_top_slot mInfo pc in
 	  match slot#get_sources with
-	  | [ opSrc ] ->
+	  | [opSrc] ->
 	    begin
 	      match mInfo#get_opcode opSrc with
-	      | OpGetStatic (cn,fs) 
+	      | OpGetStatic (cn,fs)
 		  when (cn#simple_name = "SingleCounter") && (fs#name = "value") ->
 		result := r :: !result
 	      | _ -> ()
 	    end
 	  | _ -> ()
 	end
-      | _ -> ())) ;
+      | _ -> ()));
     !result
   end
 
-let get_increments mInfo registers firstpc lastpc =
+
+let get_increments (mInfo: method_info_int) registers firstpc lastpc =
   let result = ref [] in
   begin
     (mInfo#bytecode_iteri (fun pc opc ->
@@ -87,7 +88,7 @@ let get_increments mInfo registers firstpc lastpc =
 	  let vslot = List.hd (List.tl slots) in
 	  begin
 	    match vslot#get_sources with
-	    | [ opSrc ] ->
+	    | [opSrc] ->
 	      begin
 		match mInfo#get_opcode opSrc with
 		| OpLoad (Long,r) when List.mem r registers -> ()
@@ -95,8 +96,8 @@ let get_increments mInfo registers firstpc lastpc =
 		    match cslot#get_value with
 		    | LongValueRange (Some low,Some high) when Big_int.eq_big_int low high ->
 		      result := (Big_int.int_of_big_int low) :: !result
-		    | IntValueRange (Some low,Some high) when low = high -> 
-		      result := low :: !result 
+		    | IntValueRange (Some low,Some high) when low = high ->
+		      result := low :: !result
 		    | _ -> ()
 		  else
 		    ()   *)
@@ -104,12 +105,12 @@ let get_increments mInfo registers firstpc lastpc =
 	      end
 	    | _ -> ()
 	  end
-	| _ -> ())) ;
+	| _ -> ()));
     !result
   end
-			  
-	    
-class bc_block_t 
+
+
+class bc_block_t
   (mInfo:method_info_int) (firstpc:int) (lastpc:int) (succ:int list):bc_block_int =
 object
   method get_firstpc = firstpc
@@ -118,18 +119,18 @@ object
 
   method get_successors = succ
 
-  method get_cost = 
+  method get_cost =
     match get_cost_registers mInfo with
     | [] -> 0
-    | l -> 
+    | l ->
       let incrs = get_increments mInfo l firstpc lastpc in
       List.fold_left (fun acc incr -> acc + incr) 0 incrs
 
   method iter (f:int -> opcode_t -> unit) =
-    let pcs = 
+    let pcs =
       let rec aux pc result =
-	if pc = lastpc then 
-	  pc :: result 
+	if pc = lastpc then
+	  pc :: result
 	else
 	  aux (mInfo#get_next_bytecode_offset pc) (pc :: result) in
       List.rev (aux firstpc []) in
@@ -138,6 +139,7 @@ object
 end
 
 let get_node_name i = "pc=" ^ (string_of_int i)
+
 
 class bc_graph_t (succ:(int * int) list):bc_graph_int =
 object
@@ -153,19 +155,23 @@ end
 
 let make_bc_graph (succ:(int * int) list) = new bc_graph_t succ
 
-let get_block_succ code pc =
+
+let get_block_succ (code: opcodes_int) (pc: int) =
   let opc = code#at pc in
   match opc with
-  | OpGoto off -> [ pc + off ]
+  | OpGoto off -> [pc + off]
   | OpIfEq off | OpIfNe off | OpIfLt off | OpIfGe off | OpIfGt off | OpIfLe off
   | OpIfNull off | OpIfNonNull off
   | OpIfCmpEq off | OpIfCmpNe off | OpIfCmpLt off | OpIfCmpGe off | OpIfCmpGt off
   | OpIfCmpLe off | OpIfCmpAEq off | OpIfCmpANe off ->
     begin
       match code#next pc with
-      | Some nextpc -> [ nextpc ; pc + off ]
-      | _ -> raise (JCH_failure (LBLOCK [ STR "Missing next instruction for pc = " ;
-					  INT pc ]))
+      | Some nextpc -> [nextpc; pc + off]
+      | _ ->
+         raise
+           (JCH_failure
+              (LBLOCK [
+                   STR "Missing next instruction for pc = "; INT pc]))
     end
   | OpTableSwitch (default,_,_,a) ->
     (pc + default) :: (Array.fold_left (fun acc i -> (pc + i) :: acc) [] a)
@@ -174,50 +180,74 @@ let get_block_succ code pc =
   | OpReturn _ -> []
   | OpThrow -> []
   | _ -> match code#next pc with
-    | Some i -> [ i ]
+    | Some i -> [i]
     | _ -> []
 
 let get_block_entries (code:opcodes_int) =
   let s = new IntCollections.set_t in
   let addnext i = match code#next i with Some j -> s#add j | _ -> () in
   begin
-    code#iteri (fun pc opc -> 
+    code#iteri (fun pc opc ->
       match opc with
-      | OpGoto off 
-      | OpIfEq off | OpIfNe off | OpIfLt off | OpIfGe off | OpIfGt off | OpIfLe off
-      | OpIfNull off | OpIfNonNull off
-      | OpIfCmpEq off | OpIfCmpNe off | OpIfCmpLt off | OpIfCmpGe off | OpIfCmpGt off
-      | OpIfCmpLe off | OpIfCmpAEq off | OpIfCmpANe off ->
-	begin s#add (pc + off) ; addnext pc end
-      | OpTableSwitch (default,_,_,a) ->
-	let l = ( + default) :: (Array.fold_left (fun acc i -> (pc + i) :: acc) [] a) in
+      | OpGoto off
+        | OpIfEq off
+        | OpIfNe off
+        | OpIfLt off
+        | OpIfGe off
+        | OpIfGt off
+        | OpIfLe off
+        | OpIfNull off
+        | OpIfNonNull off
+        | OpIfCmpEq off
+        | OpIfCmpNe off
+        | OpIfCmpLt off
+        | OpIfCmpGe off
+        | OpIfCmpGt off
+        | OpIfCmpLe off
+        | OpIfCmpAEq off
+        | OpIfCmpANe off ->
+	 begin
+           s#add (pc + off);
+           addnext pc
+         end
+      | OpTableSwitch (default, _, _, a) ->
+	 let l =
+           (pc + default)
+           :: (Array.fold_left (fun acc i -> (pc + i) :: acc) [] a) in
 	s#addList l
-      | OpLookupSwitch (default,l) ->
-	let l = (pc + default) :: (List.fold_left (fun acc (_,i) -> (pc + i) :: acc) [] l) in
+      | OpLookupSwitch (default, l) ->
+	 let l =
+           (pc + default)
+           :: (List.fold_left (fun acc (_,i) -> (pc + i) :: acc) [] l) in
 	s#addList l
       | OpReturn _ -> addnext pc
       | OpThrow -> addnext pc
-      | _ -> ()) ;
+      | _ -> ());
     s
   end
 
-let get_bc_block
-    (mInfo:method_info_int) (code:opcodes_int) (pc:int) (blockentries:IntCollections.set_t) =
-  match code#next pc with
-  | None -> 
-    let succ = get_block_succ code pc in
-    new bc_block_t mInfo pc pc succ
-  | Some nextpc ->
-    let rec findlast (currpc:int) (prevpc:int) =
-      if blockentries#has currpc then prevpc
-      else match code#next currpc with
-      | Some i -> findlast i currpc
-      | _ -> currpc in
-    let lastpc = findlast nextpc pc in
-    let succ = get_block_succ code lastpc in
-    new bc_block_t mInfo pc lastpc succ  
 
-let get_bc_function_basic_blocks (mInfo:method_info_int) =
+let get_bc_block
+      (mInfo: method_info_int)
+      (code: opcodes_int)
+      (pc: int)
+      (blockentries: IntCollections.set_t) =
+  match code#next pc with
+  | None ->
+     let succ = get_block_succ code pc in
+     new bc_block_t mInfo pc pc succ
+  | Some nextpc ->
+     let rec findlast (currpc:int) (prevpc:int) =
+       if blockentries#has currpc then prevpc
+       else match code#next currpc with
+            | Some i -> findlast i currpc
+            | _ -> currpc in
+     let lastpc = findlast nextpc pc in
+     let succ = get_block_succ code lastpc in
+     new bc_block_t mInfo pc lastpc succ
+
+
+let get_bc_function_basic_blocks (mInfo: method_info_int) =
   let code = mInfo#get_bytecode#get_code in
   let blockentries = get_block_entries code in
   let blocks = ref [] in
@@ -229,16 +259,19 @@ let get_bc_function_basic_blocks (mInfo:method_info_int) =
     let block = get_bc_block mInfo code pc blockentries in
     let blocksucc = block#get_successors in
     begin
-      workset#remove pc ;
-      doneset#add pc ;
-      blocks := block :: !blocks ;
-      successors := (List.map (fun succ -> (pc,succ)) blocksucc) @ !successors ;
-      List.iter addtoworkset blocksucc ;
+      workset#remove pc;
+      doneset#add pc;
+      blocks := block :: !blocks;
+      successors := (List.map (fun succ -> (pc,succ)) blocksucc) @ !successors;
+      List.iter addtoworkset blocksucc;
       match workset#choose with Some wpc -> add_block wpc | _ -> ()
     end in
   let _ = add_block 0 in
-  let handlers = List.fold_left (fun acc h ->
-    if List.mem h#handler acc then acc else h#handler :: acc) [] mInfo#get_exception_table in
+  let handlers =
+    List.fold_left (fun acc h ->
+        if List.mem h#handler acc then
+          acc
+        else h#handler :: acc) [] mInfo#get_exception_table in
   let _ = List.iter add_block handlers in
   let blocks =
     List.sort (fun b1 b2 ->
@@ -246,8 +279,8 @@ let get_bc_function_basic_blocks (mInfo:method_info_int) =
   (blocks,!successors)
 
 
-let get_cfg_loop_levels 
-    (mInfo:method_info_int) (blocks:bc_block_int list)(succ:(int * int) list) =
+let get_cfg_loop_levels
+    (_mInfo: method_info_int) (blocks:bc_block_int list)(succ:(int * int) list) =
   let table = H.create 3 in
   let looplevels = H.create 3 in
   let graph = make_bc_graph succ in
@@ -255,10 +288,11 @@ let get_cfg_loop_levels
   let rec get_wto_head wto =
     match wto with
     | [] ->
-      begin
-	ch_error_log#add "invalid argument"
-	  (STR "Encountered empty wto in get_cfg_loop_levels") ;
-	raise (Invalid_argument "record loops")
+       begin
+	 ch_error_log#add
+           "invalid argument"
+	   (STR "Encountered empty wto in get_cfg_loop_levels");
+	 raise (Invalid_argument "record loops")
       end
     | hd::_ -> get_wto_component_head hd
   and get_wto_component_head wtoComponent =
@@ -272,11 +306,11 @@ let get_cfg_loop_levels
     | VERTEX s -> H.add table s#getSeqNumber levels
     | SCC scc -> record_wto scc ((get_wto_head scc) :: levels) in
   begin
-    (match sccs with [] -> () | _ -> record_wto sccs []) ;
+    (match sccs with [] -> () | _ -> record_wto sccs []);
     List.iter (fun b ->
       if H.mem table b#get_firstpc then
 	let levels = H.find table b#get_firstpc in
-	H.add looplevels b#get_firstpc (List.rev levels)) blocks ;
+	H.add looplevels b#get_firstpc (List.rev levels)) blocks;
     looplevels
   end
 

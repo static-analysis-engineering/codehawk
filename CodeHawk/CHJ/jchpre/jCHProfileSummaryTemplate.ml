@@ -5,7 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 open CHFileIO
 open CHXmlDocument
@@ -42,7 +39,6 @@ open JCHJTerm
 (* jchpre *)
 open JCHApplication
 open JCHClassSummary
-open JCHFunctionSummary
 open JCHFunctionSummaryLibrary
 open JCHFunctionSummaryXmlDecoder
 open JCHPreAPI

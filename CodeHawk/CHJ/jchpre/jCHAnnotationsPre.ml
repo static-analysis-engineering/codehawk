@@ -3,8 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2005-2020 Kestrel Technology LLC
+
+   Copyright (c) 2005-2020  Kestrel Technology LLC
+   Copyright (c) 2020-2024  Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,25 +29,22 @@
 (* chlib *)
 open CHPretty
 
-(* chutil *)
-open CHPrettyUtil
-
 (* jchlib *)
 open JCHBasicTypes
 open JCHBasicTypesAPI
-open JCHBytecode
-open JCHDictionary
 
 (* jchpre *)
 open JCHApplication
 open JCHPreAPI
 
+
 let string_printer = CHPrettyUtil.string_printer
 let pp_str p = string_printer#print p
 
+
 let get_varname mInfo varindex pc =
   if mInfo#has_local_variable_name varindex pc then
-    mInfo#get_local_variable_name varindex pc 
+    mInfo#get_local_variable_name varindex pc
   else
     "var" ^ (string_of_int varindex)
 
@@ -58,7 +56,7 @@ let get_stack_top_slots mInfo pc n =
   (mInfo#get_method_stack_layout#get_stack_layout pc)#get_top_slots n
 
 let is_boolean_type slot =
-  match slot#get_type with [ TBasic Bool ] -> true | _ -> false
+  match slot#get_type with [TBasic Bool] -> true | _ -> false
 
 let rec get_static_call_value mInfo pc cn ms =
   match (cn#name, ms#name) with
@@ -68,7 +66,7 @@ let rec get_static_call_value mInfo pc cn ms =
     "isLetter(" ^ (get_slot_value mInfo pc (get_stack_top_slot mInfo pc)) ^ ")"
   | ("java.lang.Character", "valueOf") ->
     "valueOf("^ (get_slot_value mInfo pc (get_stack_top_slot mInfo pc)) ^ ")"
-  | _ -> 
+  | _ ->
     let nArgs = List.length ms#descriptor#arguments in
     let slots = get_stack_top_slots mInfo pc nArgs in
     let argslots = List.rev slots in
@@ -76,10 +74,10 @@ let rec get_static_call_value mInfo pc cn ms =
       let rec aux slots =
 	match slots with
 	| [] -> ""
-	| [ s ] -> get_slot_value mInfo pc s
+	| [s] -> get_slot_value mInfo pc s
 	| s::tl -> (get_slot_value mInfo pc s) ^ "," ^ (aux tl) in
       aux argslots in
-    cn#abbreviated_name ^ "." ^ ms#name ^ "(" ^ argsv ^ ")"	
+    cn#abbreviated_name ^ "." ^ ms#name ^ "(" ^ argsv ^ ")"
 
 and get_dynamic_call_value mInfo pc bmindex ms =
   let nArgs = List.length ms#descriptor#arguments in
@@ -89,7 +87,7 @@ and get_dynamic_call_value mInfo pc bmindex ms =
       let rec aux slots =
 	match slots with
 	| [] -> ""
-	| [ s ] -> get_slot_value mInfo pc s
+	| [s] -> get_slot_value mInfo pc s
 	| s::tl -> (get_slot_value mInfo pc s) ^ "," ^ (aux tl) in
       aux argslots in
     "bootstrapmethod_" ^ (string_of_int bmindex) ^  "." ^ ms#name ^ "(" ^ argsv ^ ")"
@@ -102,35 +100,39 @@ and get_dynamic_call_lambda_value mInfo pc ms lfot lfms =
       let rec aux slots =
 	match slots with
 	| [] -> ""
-	| [ s ] -> get_slot_value mInfo pc s
+	| [s] -> get_slot_value mInfo pc s
 	| s::tl -> (get_slot_value mInfo pc s) ^ "," ^ (aux tl) in
       aux argslots in
-    "lambdafn:" ^ ms#name ^ "(" ^ argsv ^ "):" ^ (pp_str (object_type_to_pretty lfot))
+    "lambdafn:"
+    ^ ms#name
+    ^ "("
+    ^ argsv ^ "):"
+    ^ (pp_str (object_type_to_pretty lfot))
     ^ "." ^ lfms#to_string
-    
+
 
 and get_special_call_value mInfo pc cn ms =
   if ms#name = "<init>" then
     let nArgs = List.length ms#descriptor#arguments in
     let slots = get_stack_top_slots mInfo pc (nArgs + 1) in
-    let args = 
+    let args =
       let rec aux slots =
 	match slots with
 	| [] -> ""
-	| [ s ] -> ""
-	| [ s1 ; s2 ] -> get_slot_value mInfo pc s1
+	| [_] -> ""
+	| [s1; _] -> get_slot_value mInfo pc s1
 	| s::tl -> (get_slot_value mInfo pc s) ^ "," ^ (aux tl) in
       aux slots in
     "new " ^ cn#abbreviated_name ^ "(" ^ args ^ ")"
   else
     let nArgs = List.length ms#descriptor#arguments in
     let slots = get_stack_top_slots mInfo pc (nArgs + 1) in
-    let args = 
+    let args =
       let rec aux slots =
 	match slots with
 	| [] -> ""
-	| [ s ] -> ""
-	| [ s1 ; s2 ] -> get_slot_value mInfo pc s1
+	| [_] -> ""
+	| [s1; _] -> get_slot_value mInfo pc s1
 	| s::tl -> (get_slot_value mInfo pc s) ^ "," ^ (aux tl) in
       aux slots in
     ms#name ^ "(" ^ args ^ ")"
@@ -142,13 +144,13 @@ and get_virtual_call_value mInfo pc ob ms =
     begin
       match (cn#name, ms#name) with
       | ("java.lang.StringBuilder", "append") ->
-	let topslots = get_stack_top_slots mInfo pc 2 in 
+	let topslots = get_stack_top_slots mInfo pc 2 in
 	"append(" ^
 	  (get_slot_value mInfo pc (List.nth topslots 0)) ^ "," ^
 	     (get_slot_value mInfo pc (List.nth topslots 1)) ^ ")"
       | (_,"toString") ->
 	(get_slot_value mInfo pc (get_stack_top_slot mInfo pc)) ^ ".toString()"
-      | _ -> 
+      | _ ->
 	let nArgs = List.length ms#descriptor#arguments in
 	let slots = get_stack_top_slots mInfo pc (nArgs + 1) in
 	let tgtslot = List.hd (List.rev slots) in
@@ -158,14 +160,15 @@ and get_virtual_call_value mInfo pc ob ms =
 	  let rec aux slots =
 	    match slots with
 	    | [] -> ""
-	    | [ s ] -> get_slot_value mInfo pc s
+	    | [s] -> get_slot_value mInfo pc s
 	    | s::tl -> (get_slot_value mInfo pc s) ^ "," ^ (aux tl) in
 	  aux argslots in
-	tgtv ^ "." ^ ms#name ^ "(" ^ argsv ^ ")"	
+	tgtv ^ "." ^ ms#name ^ "(" ^ argsv ^ ")"
     end
   | _ -> "??"
-		     
-and get_interface_call_value mInfo pc cn ms =
+
+
+and get_interface_call_value mInfo pc _cn ms =
   let nArgs = List.length ms#descriptor#arguments in
   let slots = get_stack_top_slots mInfo pc (nArgs + 1) in
   let tgtslot = List.hd (List.rev slots) in
@@ -175,16 +178,17 @@ and get_interface_call_value mInfo pc cn ms =
     let rec aux slots =
       match slots with
       | [] -> ""
-      | [ s ] -> get_slot_value mInfo pc s 
+      | [s] -> get_slot_value mInfo pc s
       | s :: tl -> (get_slot_value mInfo pc s) ^ "," ^ (aux tl) in
     aux argslots in
   tgtv ^ "." ^ ms#name ^ "(" ^ argsv ^ ")"
 
+
 and get_slot_src_value mInfo pc slot =
   let cInfo = app#get_class mInfo#get_class_name in
   match slot#get_sources with
-  | [ opSrc ] when opSrc = -1 -> "exn object"
-  | [ opSrc ] ->
+  | [opSrc] when opSrc = -1 -> "exn object"
+  | [opSrc] ->
     begin
       let tsv () = get_slot_value mInfo opSrc (get_stack_top_slot mInfo opSrc) in
       let ts2v () =
@@ -206,7 +210,7 @@ and get_slot_src_value mInfo pc slot =
       | OpClassConst (TClass cn) -> cn#name
       | OpInstanceOf t ->
 	"(" ^ (tsv ()) ^ " instanceof " ^ (object_type_to_string t) ^")"
-      | OpLoad (_,i) -> get_varname mInfo i pc 
+      | OpLoad (_,i) -> get_varname mInfo i pc
       | OpI2C -> "i2c(" ^ (tsv ()) ^ ")"
       | OpI2L -> "i2l(" ^ (tsv ()) ^ ")"
       | OpI2F -> "i2f(" ^ (tsv ()) ^ ")"
@@ -236,35 +240,37 @@ and get_slot_src_value mInfo pc slot =
       | OpDup -> tsv ()
       | OpDupX1 -> tsv ()
       | OpNew cn -> "new " ^ cn#abbreviated_name
-      | OpNewArray (TBasic ty) -> 
+      | OpNewArray (TBasic ty) ->
 	"new " ^ (java_basic_type_to_string ty) ^ "[" ^	(tsv ()) ^ "]"
-      | OpNewArray (TObject (TClass cn)) -> "new " ^ cn#abbreviated_name  ^ "[" ^ (tsv ()) ^ "]"
-      | OpArrayLength -> "arraylength(" ^ (tsv ()) ^ ")" 
+      | OpNewArray (TObject (TClass cn)) ->
+         "new " ^ cn#abbreviated_name  ^ "[" ^ (tsv ()) ^ "]"
+      | OpArrayLength -> "arraylength(" ^ (tsv ()) ^ ")"
       | OpArrayLoad _ -> let (sv1,sv2) = ts2v () in sv1 ^ "[" ^ sv2 ^ "]"
       | OpCmpL -> let (sv1,sv2) = ts2v() in "cmpl(" ^ sv1 ^ ", " ^ sv2 ^ ")"
       | OpCmpFL -> let (sv1,sv2) = ts2v() in "cmpfl(" ^ sv1 ^ ", " ^ sv2 ^ ")"
       | OpCmpFG -> let (sv1,sv2) = ts2v() in "cmpfg(" ^ sv1 ^ ", " ^ sv2 ^ ")"
       | OpCmpDL -> let (sv1,sv2) = ts2v() in "cmpdl(" ^ sv1 ^ ", " ^ sv2 ^ ")"
       | OpCmpDG -> let (sv1,sv2) = ts2v() in "cmpdg(" ^ sv1 ^ ", " ^ sv2 ^ ")"
-      | OpGetStatic (cn,fs) -> "field(" ^ cn#abbreviated_name ^ "." ^ fs#name ^ ")"
-      | OpGetField (cn,fs) -> (tsv ()) ^ "." ^ fs#name
+      | OpGetStatic (cn, fs) -> "field(" ^ cn#abbreviated_name ^ "." ^ fs#name ^ ")"
+      | OpGetField (_cn, fs) -> (tsv ()) ^ "." ^ fs#name
       | OpInvokeStatic (cn,ms) -> get_static_call_value mInfo opSrc cn ms
       | OpInvokeVirtual (ob,ms) -> get_virtual_call_value mInfo opSrc ob ms
       | OpInvokeSpecial (cn,ms) -> get_special_call_value mInfo opSrc cn ms
       | OpInvokeInterface (cn,ms) -> get_interface_call_value mInfo opSrc cn ms
-      | OpInvokeDynamic (bmindex,ms) when cInfo#returns_lambda_function bmindex ->
-         let (lfot,lfms) = cInfo#get_lambda_function bmindex in
+      | OpInvokeDynamic (bmindex, _ms) when cInfo#returns_lambda_function bmindex ->
+         let (_lfot, lfms) = cInfo#get_lambda_function bmindex in
          "lambdafn:" ^ lfms#name
-      | OpInvokeDynamic (bmindex,ms) ->
+      | OpInvokeDynamic (bmindex, _ms) ->
          "bootstrapmethod_" ^ (string_of_int bmindex) ^ "_invoke_return"
       | _ -> "??" ^ (string_of_int opSrc) ^ "??"
     end
-  | [ opSrc1 ; opSrc2 ] -> "2 sources: " ^ (string_of_int opSrc1) ^ " and " ^
-    (string_of_int opSrc2)
+  | [opSrc1; opSrc2] ->
+     "2 sources: " ^ (string_of_int opSrc1) ^ " and " ^ (string_of_int opSrc2)
   | _ ->  "??" ^ "no-src" ^ "??"
 
+
 and get_slot_value mInfo pc slot =
-(*   if slot#has_value then 
+(*   if slot#has_value then
     match slot#get_value with
     | IntValueRange (Some low,Some high) when low = high -> string_of_int low
     | ObjectValue s -> (try (make_cn s)#abbreviated_name with _ -> s)
@@ -282,21 +288,21 @@ let opcode_annotation (mInfo:method_info_int) (pc:int) (opc:opcode_t) =
     let sv1 = get_slot_value mInfo pc sndslot in
     let sv2 = get_slot_value mInfo pc topslot in
     (sv1,sv2) in
-  let cmps pred offset = 
+  let cmps pred offset =
     let topslots = get_stack_top_slots mInfo pc 2 in
     let topslot = List.nth topslots 0 in
     let sndslot = List.nth topslots 1 in
-    LBLOCK [ STR "if " ; STR (get_slot_value mInfo pc sndslot) ; STR pred ;
-	     STR (get_slot_value mInfo pc topslot) ; STR " then goto " ; 
-	     INT (pc + offset) ] in
+    LBLOCK [STR "if "; STR (get_slot_value mInfo pc sndslot); STR pred;
+	     STR (get_slot_value mInfo pc topslot); STR " then goto ";
+	     INT (pc + offset)] in
   let cmpz pred offset =
     let topslot = get_stack_top_slot mInfo pc in
-    LBLOCK [ STR "if " ; STR (get_slot_value mInfo pc topslot) ; STR pred ; INT 0 ;
-	     STR " then goto " ; INT (pc + offset) ] in
+    LBLOCK [STR "if "; STR (get_slot_value mInfo pc topslot); STR pred; INT 0;
+	     STR " then goto "; INT (pc + offset)] in
   try
     match opc with
-    | OpIInc (v,1) -> LBLOCK [ STR (get_varname mInfo v pc) ; STR "++" ]
-    | OpIInc (v,inc) -> LBLOCK [ STR (get_varname mInfo v pc) ; STR " += " ; INT inc ]
+    | OpIInc (v,1) -> LBLOCK [STR (get_varname mInfo v pc); STR "++"]
+    | OpIInc (v,inc) -> LBLOCK [STR (get_varname mInfo v pc); STR " += "; INT inc]
     | OpIfCmpNe offset | OpIfCmpANe offset -> cmps " != " offset
     | OpIfCmpEq offset | OpIfCmpAEq offset -> cmps " == " offset
     | OpIfCmpLt offset -> cmps " < " offset
@@ -310,59 +316,74 @@ let opcode_annotation (mInfo:method_info_int) (pc:int) (opc:opcode_t) =
     | OpIfGt offset -> cmpz " > " offset
     | OpIfGe offset -> cmpz " >= " offset
     | OpIfNonNull offset ->
-      LBLOCK [ STR "if nonnull(" ; STR (tsv ()) ; STR ") then goto " ; INT (pc + offset) ]
+       LBLOCK [
+           STR "if nonnull("; STR (tsv ()); STR ") then goto "; INT (pc + offset)]
     | OpIfNull offset ->
-      LBLOCK [ STR "if null(" ; STR (tsv ()) ; STR ") then goto " ; INT (pc + offset) ]
-    | OpPutStatic (cn,fs) -> STR (cn#abbreviated_name ^ "." ^ fs#name ^ " := " ^ (tsv ()))
-    | OpPutField (cn,fs) -> 
+       LBLOCK [
+           STR "if null("; STR (tsv ()); STR ") then goto "; INT (pc + offset)]
+    | OpPutStatic (cn,fs) ->
+       STR (cn#abbreviated_name ^ "." ^ fs#name ^ " := " ^ (tsv ()))
+    | OpPutField (_cn, fs) ->
       let (sv1,sv2) = ts2v () in STR (sv1 ^ "." ^ fs#name ^ " := " ^ sv2)
-    | OpInvokeVirtual (ob,ms) -> LBLOCK [ STR (get_virtual_call_value mInfo pc ob ms) ]
-    | OpInvokeSpecial (cn,ms) -> LBLOCK [ STR (get_special_call_value mInfo pc cn ms) ]
-    | OpInvokeStatic (cn,ms) -> LBLOCK [ STR (get_static_call_value mInfo pc cn ms) ]
+    | OpInvokeVirtual (ob,ms) ->
+       LBLOCK [STR (get_virtual_call_value mInfo pc ob ms)]
+    | OpInvokeSpecial (cn,ms) ->
+       LBLOCK [STR (get_special_call_value mInfo pc cn ms)]
+    | OpInvokeStatic (cn,ms) ->
+       LBLOCK [STR (get_static_call_value mInfo pc cn ms)]
     | OpInvokeDynamic (bmindex,ms) when cInfo#returns_lambda_function bmindex ->
        let (lfot,lfms) = cInfo#get_lambda_function bmindex in
-       LBLOCK [ STR (get_dynamic_call_lambda_value mInfo pc ms lfot lfms) ]
+       LBLOCK [STR (get_dynamic_call_lambda_value mInfo pc ms lfot lfms)]
     | OpInvokeDynamic (bmindex,ms) ->
-       LBLOCK [ STR (get_dynamic_call_value mInfo pc bmindex ms) ]
-    | OpStore (_,v) -> 
-      LBLOCK [ STR (get_varname mInfo v (mInfo#get_next_bytecode_offset pc)) ; 
-	       STR  " := " ;
-	       STR (get_slot_value mInfo pc (get_stack_top_slot mInfo pc)) ]
+       LBLOCK [STR (get_dynamic_call_value mInfo pc bmindex ms)]
+    | OpStore (_,v) ->
+       LBLOCK [
+           STR (get_varname mInfo v (mInfo#get_next_bytecode_offset pc));
+	   STR  " := ";
+	   STR (get_slot_value mInfo pc (get_stack_top_slot mInfo pc))]
 (*    | OpPutStatic (cn,fs) ->
-      LBLOCK [ STR "field(" ; STR cn#abbreviated_name ; STR "." ; STR fs#name ; STR ") := " ;
-	       STR (get_slot_value mInfo pc (get_stack_top_slot mInfo pc)) ]  *)
+      LBLOCK [STR "field("; STR cn#abbreviated_name; STR "."; STR fs#name; STR ") := ";
+	       STR (get_slot_value mInfo pc (get_stack_top_slot mInfo pc))]  *)
     | OpTableSwitch (default,_,_,table) ->
-      let tgts = Array.to_list (Array.mapi (fun i v -> (string_of_int (i+1),pc+v)) table) in
+       let tgts =
+         Array.to_list
+           (Array.mapi (fun i v -> (string_of_int (i+1),pc+v)) table) in
       let tgts = ("default",pc+default) :: tgts in
-      pretty_print_list tgts (fun (v,tgt) -> LBLOCK [ STR "(" ; STR v ; STR ":" ; INT tgt ;
-						      STR ")" ]) "[" ", " "]"
+      pretty_print_list
+        tgts (fun (v,tgt) ->
+          LBLOCK [STR "("; STR v; STR ":"; INT tgt; STR ")"]) "[" ", " "]"
     | OpLookupSwitch (default,table) ->
-      let tgts = List.map (fun (l,tgt) -> (Int32.to_string l, pc+tgt)) table in
-      let tgts = ("default",default+pc) :: tgts in
-      pretty_print_list tgts (fun (v,tgt) -> LBLOCK [ STR "(" ; STR v ; STR ":" ; INT tgt ;
-						      STR ")" ]) "[" ", " "]"
-    | _ -> STR ""
+       let tgts = List.map (fun (l,tgt) -> (Int32.to_string l, pc+tgt)) table in
+       let tgts = ("default",default+pc) :: tgts in
+       pretty_print_list
+         tgts (fun (v,tgt) ->
+           LBLOCK [STR "("; STR v; STR ":"; INT tgt; STR ")"]) "[" ", " "]"
+    | _ ->
+       STR ""
   with
-  | JCH_failure p -> LBLOCK [ STR "Error: " ; p ]
- 
+  | JCH_failure p -> LBLOCK [STR "Error: "; p]
+
+
 let is_conditional_jump (mInfo:method_info_int) pc =
   match mInfo#get_opcode pc with
-  | OpIfCmpNe _ | OpIfCmpEq _ | OpIfCmpLt _ | OpIfCmpLe _ 
-  | OpIfCmpAEq _ | OpIfCmpANe _ 
+  | OpIfCmpNe _ | OpIfCmpEq _ | OpIfCmpLt _ | OpIfCmpLe _
+  | OpIfCmpAEq _ | OpIfCmpANe _
   | OpIfCmpGt _ | OpIfCmpGe _ | OpIfEq _ | OpIfNe _
-  | OpIfLt _ | OpIfLe _ | OpIfGt _ | OpIfGe _ 
+  | OpIfLt _ | OpIfLe _ | OpIfGt _ | OpIfGe _
   | OpIfNull _ | OpIfNonNull _ -> true
   | _ -> false
 
-let is_switch_table (mInfo:method_info_int) pc =
+
+let _is_switch_table (mInfo:method_info_int) pc =
   match mInfo#get_opcode pc with
   | OpTableSwitch _ | OpLookupSwitch _ -> true
   | _ -> false
 
+
 let get_cfg_tf_annotations
       ?(subst=fun s -> s)
       (mInfo:method_info_int)
-      (pc:int) = 
+      (pc:int) =
   let cmps t f =
     let topslots = get_stack_top_slots mInfo pc 2 in
     let topslot = List.nth topslots 0 in
@@ -382,7 +403,7 @@ let get_cfg_tf_annotations
       else
 	(sv ^ t ^ "0", sv ^ f ^ "0") in
     match slot#get_sources with
-    | [ opSrc ] ->
+    | [opSrc] ->
       let ts2v () =
 	let topslots = get_stack_top_slots mInfo opSrc 2 in
 	let topslot = List.nth topslots 0 in
@@ -396,12 +417,12 @@ let get_cfg_tf_annotations
 	(match t with
 	| ">=" -> (sv1 ^ " >= " ^ sv2, sv1 ^ " < " ^ sv2)
 	| _ -> default ())
-      | _ -> default()) 
-    | _ -> default () in	
+      | _ -> default())
+    | _ -> default () in
   let isnull t =
     let slot = get_stack_top_slot mInfo pc in
     let sv = get_slot_value mInfo pc slot in
-    if t then 
+    if t then
       ("!" ^ sv, sv)
     else
       (sv, "!" ^ sv) in
@@ -420,11 +441,12 @@ let get_cfg_tf_annotations
   | OpIfGe _ -> cmpz ">=" "<"
   | OpIfNull _ -> isnull true
   | OpIfNonNull _ -> isnull false
-  | _ -> ("true","false")
+  | _ -> ("true", "false")
+
 
 let get_offset (mInfo:method_info_int) pc =
   match mInfo#get_opcode pc with
-  | OpIfCmpNe offset 
+  | OpIfCmpNe offset
   | OpIfCmpEq offset
   | OpIfCmpLt offset
   | OpIfCmpLe offset
@@ -432,30 +454,31 @@ let get_offset (mInfo:method_info_int) pc =
   | OpIfCmpGe offset
   | OpIfEq offset
   | OpIfNe offset
-  | OpIfLt offset 
+  | OpIfLt offset
   | OpIfLe offset
   | OpIfGt offset
-  | OpIfGe offset 
+  | OpIfGe offset
   | OpIfCmpAEq offset
   | OpIfCmpANe offset
   | OpIfNull offset
   | OpIfNonNull offset -> offset
   | _ -> 0
-  
+
+
 let get_assignments mInfo varindex startpc endpc =
-  let pc_leadsto pc = 
+  let pc_leadsto pc =
     let vartable = mInfo#get_local_variable_table in
     let ivartable = List.filter (fun (_,_,_,_,i) -> i = varindex) vartable in
     (List.for_all (fun (s,l,_,_,_) -> pc < s || pc > s+l) ivartable) in
   let pc_inrange pc = (pc >= startpc && pc <= endpc) || pc_leadsto pc in
   let result = ref [] in
-  begin 
+  begin
     (mInfo#bytecode_iteri (fun pc opc ->
-      match opc with 
+      match opc with
       | OpStore (_,i) when varindex = i && pc_inrange pc ->
 	result := (pc,opcode_annotation mInfo pc opc) :: !result
       | OpIInc (i,_) when varindex = i && pc_inrange pc ->
 	result := (pc,opcode_annotation mInfo pc opc) :: !result
-      | _ -> ())) ;
+      | _ -> ()));
     List.rev !result
   end

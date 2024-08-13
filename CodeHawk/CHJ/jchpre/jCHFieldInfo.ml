@@ -3,9 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,6 +36,7 @@ open JCHBasicTypesAPI
 (* jchpre *)
 open JCHPreAPI
 
+
 module ClassMethodSignatureCollections = CHCollections.Make (
   struct
     type t = class_method_signature_int
@@ -43,7 +44,8 @@ module ClassMethodSignatureCollections = CHCollections.Make (
     let toPretty cms = cms#toPretty
   end)
 
-class field_stub_t 
+
+class field_stub_t
   ~(is_static:bool)
   ~(is_final:bool)
   ~(is_not_null:bool)
@@ -82,10 +84,10 @@ object
 
   method get_visibility = visibility
 
-  method get_defining_class = 
+  method get_defining_class =
     match inherited_from with Some icfs -> icfs#class_name | _ -> cfs#class_name
 
-  method get_defining_class_field_signature = 
+  method get_defining_class_field_signature =
     match inherited_from with Some icfs -> icfs | _ -> cfs
 
   method is_static = is_static
@@ -102,15 +104,15 @@ object
 
   method has_value = match field_value with Some _ -> true | _ -> false
 
-  method set_inherited (new_cfs:class_field_signature_int) = 
-    {< cfs = new_cfs ; inherited_from = Some cfs >}
+  method set_inherited (new_cfs:class_field_signature_int) =
+    {< cfs = new_cfs; inherited_from = Some cfs >}
 
   method toPretty = cfs#toPretty
 end
 
 
-class field_info_t 
-  ~(in_stubbed_class:bool) 
+class field_info_t
+  ~(in_stubbed_class:bool)
   ~(field_info_type:field_info_type_t):field_info_int =
 object (self:'a)
 
@@ -127,7 +129,7 @@ object (self:'a)
 
   method add_reading_method cms = reading_methods#add cms
 
-  method set_not_null = begin initialized <- true ; not_null <- true end
+  method set_not_null = begin initialized <- true; not_null <- true end
 
   method set_array_length (n:int) = array_length <- Some n
 
@@ -141,8 +143,8 @@ object (self:'a)
   | ConcreteField f -> f#get_class_signature
   | StubbedField x  -> x#get_class_signature
   | MissingField cfs -> cfs
-    
-  method get_value = 
+
+  method get_value =
     match field_info_type with
     | ConcreteField f ->
        begin match f#get_value with
@@ -164,7 +166,7 @@ object (self:'a)
                  STR " does not have a value ";
 		 STR "(field was not located)"]))
     | StubbedField x -> x#get_value
-      
+
   method get_array_length =
     match array_length with
     | Some n -> n
@@ -205,21 +207,21 @@ object (self:'a)
   | ConcreteField f -> f#is_static
   | StubbedField x  -> x#is_static
   | _ -> false
-    
+
   method is_final = match field_info_type with
   | ConcreteField f -> f#is_final
   | StubbedField x  -> x#is_final
   | _ -> false
 
   method is_constant = match field_info_type with
-  | ConcreteField f -> self#is_static && self#is_final
+  | ConcreteField f -> f#is_static && f#is_final
   | StubbedField x  -> x#is_constant
   | _ -> false
 
   method is_initialized = initialized
 
-  method is_not_null = not_null 
-  || (match field_info_type with 
+  method is_not_null = not_null
+  || (match field_info_type with
       | ConcreteField f ->
          f#is_final
          && f#is_static
@@ -228,7 +230,7 @@ object (self:'a)
              | _ -> false)
       | StubbedField x -> x#is_not_null
       | _ -> false)
-    
+
   method is_private   =
     match self#get_visibility with Private -> true | _ -> false
 
@@ -241,15 +243,19 @@ object (self:'a)
   method is_default_access =
     match self#get_visibility with Default -> true | _ -> false
 
-  method is_accessible_to_stubbed_methods = 
+  method is_accessible_to_stubbed_methods =
     (in_stubbed_class || self#is_stubbed) && not self#is_constant
 
-  method toPretty = 
+  method toPretty =
     let nr_readers = reading_methods#size in
     let nr_writers = writing_methods#size in
     let readers_writers_p =
-      LBLOCK [ STR " (writers: " ; INT nr_writers ; STR " ; readers: " ; 
-	       INT nr_readers ;  STR ")" ] in
+      LBLOCK [
+          STR " (writers: ";
+          INT nr_writers;
+          STR "; readers: ";
+	  INT nr_readers;
+          STR ")"] in
     let is_final_p  = if self#is_final then STR "final " else STR "" in
     let is_static_p = if self#is_static then STR "static " else STR "" in
     let is_constant_p =
@@ -277,7 +283,7 @@ object (self:'a)
         is_default_p;
 	readers_writers_p]
 
-  method get_alternate_text = 
+  method get_alternate_text =
     let cfs = self#get_class_signature#class_field_signature_data in
     let field_str = cfs#class_name#name ^ ":" ^ cfs#field_signature#name in
     let is_final_p  = if self#is_final then "final " else "" in
@@ -302,7 +308,7 @@ object (self:'a)
 end
 
 
-let make_field_info (in_stubbed_class:bool) (field:field_int) = 
+let make_field_info (in_stubbed_class:bool) (field:field_int) =
   new field_info_t
     ~in_stubbed_class:in_stubbed_class ~field_info_type:(ConcreteField field)
 
@@ -311,16 +317,16 @@ let make_missing_field_info (cfs:class_field_signature_int) =
   new field_info_t ~in_stubbed_class:false ~field_info_type:(MissingField cfs)
 
 
-let make_field_stub 
-    ?(is_static=false) 
-    ?(is_final=false) 
-    ?(is_not_null=false) 
-    ?(is_interface_field=false) 
-    ?(is_constant=false) 
+let make_field_stub
+    ?(is_static=false)
+    ?(is_final=false)
+    ?(is_not_null=false)
+    ?(is_interface_field=false)
+    ?(is_constant=false)
     ?(inherited_from=None)
-    ?(visibility=Public) 
-    ?(field_value=None) 
-    (cfs:class_field_signature_int) = 
+    ?(visibility=Public)
+    ?(field_value=None)
+    (cfs:class_field_signature_int) =
   new field_stub_t
     ~is_static
     ~is_final
@@ -333,6 +339,6 @@ let make_field_stub
     ~cfs
 
 
-let make_field_stub_info (field_stub:field_stub_int) = 
+let make_field_stub_info (field_stub:field_stub_int) =
   new field_info_t
     ~in_stubbed_class:true ~field_info_type:(StubbedField field_stub)

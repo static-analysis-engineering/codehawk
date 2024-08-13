@@ -4,7 +4,8 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2005-2020  Kestrel Technology LLC
+   Copyright (c) 2020-2024  Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,13 +32,13 @@ open CHPretty
 (* jchpre *)
 open JCHPreAPI
 
-val system_settings        : system_settings_int
+val system_settings: system_settings_int
 
-val get_verbose : unit -> bool
-val set_verbose : unit -> unit
+val get_verbose: unit -> bool
+val set_verbose: unit -> unit
 
-val get_codehawk_version   : unit -> string
-val get_jdk_jar_version    : unit -> string
+val get_codehawk_version: unit -> string
+val get_jdk_jar_version: unit -> string
 val get_codehawk_build_time: unit -> string
 
 val pverbose: pretty_t list -> unit
