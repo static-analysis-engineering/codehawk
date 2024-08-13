@@ -31,15 +31,11 @@
 open CHCommon
 open CHPretty
 
-(* chutil *)
-open CHLogger
-
 (* jchlib *)
 open JCHBasicTypes
 
 (* jchpre *)
 open JCHApplication
-open JCHCHAUtil
 open JCHNativeMethods
 open JCHSystemSettings
 
