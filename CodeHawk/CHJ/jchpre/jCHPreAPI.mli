@@ -3,8 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2005-2020 Kestrel Technology LLC
+
+   Copyright (c) 2005-2020  Kestrel Technology LLC
+   Copyright (c) 2020-2024  Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,7 +33,7 @@ open CHNumerical
 open CHOnlineCodeSet
 open CHPretty
 open CHUtils
-   
+
 (* chutil *)
 open CHDot
 open CHXmlDocument
@@ -42,7 +43,7 @@ open JCHBasicTypesAPI
 
 (* ============================================================== Code graph === *)
 
-type cmd_t = (code_int, cfg_int) command_t 
+type cmd_t = (code_int, cfg_int) command_t
 
 class type cmd_list_int =
 object
@@ -52,7 +53,7 @@ object
 end
 
 class type code_graph_int =
-object 
+object
   (* setters *)
   method add_node  : symbol_t -> cmd_t list -> unit
   method add_edge  : symbol_t -> symbol_t -> unit
@@ -76,7 +77,7 @@ object
 		  exitcmds:cmd_t list -> unit
 
   method loopcut_transform:
-    node:symbol_t -> xcmds:cmd_t list -> 
+    node:symbol_t -> xcmds:cmd_t list ->
       intrasrcs:symbol_t list -> exittgts:symbol_t list -> unit
 
   method sink_transform:
@@ -113,7 +114,7 @@ object
   method get_summary_classpath: JCHFile.cp_unit_t list
   method get_preanalyzed_classpath: JCHFile.cp_unit_t list
   method get_preanalyzed_directory: string
-  method get_classpath_string : string 
+  method get_classpath_string : string
   method get_classpath_units  : string list
   method get_time_since_start : float
   method get_output_directory : string
@@ -225,7 +226,7 @@ object ('a)
   (* accessors *)
   method get_domains       : (string * atlas_t) list
   method get_domain        : string -> atlas_t
-  
+
   (* predicates *)
   method has_domain : string -> bool
   method is_bottom  : bool
@@ -340,43 +341,44 @@ type class_info_type_t =
 class type class_info_int =
 object
   (* setters *)
-  method add_creator           : class_method_signature_int -> unit
-  method add_subclass          : class_name_int -> unit
+  method add_creator: class_method_signature_int -> unit
+  method add_subclass: class_name_int -> unit
   method add_implementing_class: class_name_int -> unit
-  method set_dispatch          : unit
+  method set_dispatch: unit
 
   (* accessors *)
-  method get_index                 : int
-  method get_class                 : class_info_type_t
-  method get_class_name            : class_name_int
-  method get_super_class           : class_name_int
-  method get_interfaces            : class_name_int list
-  method get_generic_signature     : class_signature_int
-  method get_method                : method_signature_int -> method_int
-  method get_methods_defined       : method_signature_int list
+  method get_index: int
+  method get_class: class_info_type_t
+  method get_class_name: class_name_int
+  method get_super_class: class_name_int
+  method get_interfaces: class_name_int list
+  method get_generic_signature: class_signature_int
+  method get_method: method_signature_int -> method_int
+  method get_methods_defined: method_signature_int list
   method get_native_methods_defined: method_signature_int list
-  method get_field                 : field_signature_int -> field_int
-  method get_field_signature       : string -> field_signature_int
-  method get_fields_defined        : field_signature_int list
-  method get_creators              : class_method_signature_int list
+  method get_field: field_signature_int -> field_int
+  method get_field_signature: string -> field_signature_int
+  method get_fields_defined: field_signature_int list
+  method get_creators: class_method_signature_int list
   method get_wrapped_primitive_type: java_basic_type_t
-  method get_source_origin         : string
-  method get_md5_digest            : string
-  method get_bootstrap_methods     : bootstrap_method_int list
-  method get_bootstrap_method      : int -> bootstrap_method_int
-  method get_lambda_function       : int -> (object_type_t * method_signature_int)
-       
-  method get_instruction_count     : int
-  method get_field_count           : int
-  method get_scalar_object_size    : int   (* does not include objects created in constructors *)
+  method get_source_origin: string
+  method get_md5_digest: string
+  method get_bootstrap_methods: bootstrap_method_int list
+  method get_bootstrap_method: int -> bootstrap_method_int
+  method get_lambda_function: int -> (object_type_t * method_signature_int)
 
-  method get_subclasses             : class_name_int list
-  method get_implementing_classes   : class_name_int list
+  method get_instruction_count: int
+  method get_field_count: int
+  method get_scalar_object_size: int
+  (* does not include objects created in constructors *)
+
+  method get_subclasses: class_name_int list
+  method get_implementing_classes: class_name_int list
   method get_default_implementations: class_name_int list
   method get_interface_default_methods: method_signature_int list
 
   method get_length_accessor: property_accessor_t
-    
+
   method get_version: string
 
   (* predicates *)
@@ -401,7 +403,7 @@ object
   method returns_lambda_function: int -> bool
 
   method has_length: bool
-    
+
   method has_version: bool
 
   (* printing *)
@@ -441,7 +443,8 @@ type bc_basicvalue_t =
   | BcvInstanceOf of object_type_t * bc_objectvalue_t
   | BcvBinOpResult of opcode_t * bc_basicvalue_t * bc_basicvalue_t
   | BcvUnOpResult of opcode_t * bc_basicvalue_t
-  | BcvQResult of opcode_t list * bc_value_t list * bc_basicvalue_t * bc_basicvalue_t  
+  | BcvQResult of
+      opcode_t list * bc_value_t list * bc_basicvalue_t * bc_basicvalue_t
   | BcvConvert of opcode_t * bc_basicvalue_t
   | BcvCallRv of bc_call_t
 
@@ -453,18 +456,19 @@ and bc_objectvalue_t =
   | BcoNewObject of class_name_int * bc_value_t list
   | BcoNewArray of value_type_t * bc_basicvalue_t
   | BcoMultiNewArray of object_type_t * bc_basicvalue_t list
-  | BcoArrayElement of java_basic_type_t * bc_objectvalue_t * bc_basicvalue_t 
+  | BcoArrayElement of java_basic_type_t * bc_objectvalue_t * bc_basicvalue_t
   | BcoThisField of class_name_int * field_signature_int
   | BcoThatField of class_name_int * field_signature_int * bc_objectvalue_t
   | BcoStaticField of class_name_int * field_signature_int
   | BcoCheckCast of object_type_t * bc_objectvalue_t
-  | BcoQResult of opcode_t list * bc_value_t list * bc_objectvalue_t * bc_objectvalue_t  
+  | BcoQResult of
+      opcode_t list * bc_value_t list * bc_objectvalue_t * bc_objectvalue_t
   | BcoCallRv of bc_call_t
 
 and bc_value_t =
   | BcBasic of bc_basicvalue_t
   | BcObject of bc_objectvalue_t
-             
+
 and bc_call_t = {
     bcp_type: string ;              (* virtual, private, interface, static *)
     bcp_base_object: bc_objectvalue_t option ;
@@ -481,10 +485,13 @@ type bc_action_t =
   | BcNewObject of class_name_int * bc_value_t list
   | BcDropValues of bc_value_t list
   | BcPutThisField of class_name_int * field_signature_int * bc_value_t
-  | BcPutThatField of class_name_int * field_signature_int * bc_objectvalue_t * bc_value_t
+  | BcPutThatField of
+      class_name_int * field_signature_int * bc_objectvalue_t * bc_value_t
   | BcPutStaticField of class_name_int * field_signature_int * bc_value_t
-  | BcArrayStore of java_basic_type_t * bc_objectvalue_t * bc_basicvalue_t * bc_value_t
-  | BcConditionalAction of opcode_t list * bc_value_t list * bc_action_t list * bc_action_t list
+  | BcArrayStore of
+      java_basic_type_t * bc_objectvalue_t * bc_basicvalue_t * bc_value_t
+  | BcConditionalAction of
+      opcode_t list * bc_value_t list * bc_action_t list * bc_action_t list
   | BcWrapCall of bc_call_t
   | BcThrow of bc_objectvalue_t
 
@@ -509,7 +516,7 @@ type bc_pattern_t =
   | BcpActionExceptThrow of class_name_int * bc_action_t list * bc_objectvalue_t
   | BcpInfiniteLoop of bc_action_t list
   | BcpIllegalSeq of string * opcode_t list
-  
+
 type precondition_predicate_t =
 | PreRelationalExpr of relational_expr_t
 | PreNull of jterm_t
@@ -527,7 +534,7 @@ type postcondition_predicate_t =
 | PostEmptyCollection
 | PostSameCollection of jterm_t
 | PostWrapped of jterm_t
-| PostUnwrapped 
+| PostUnwrapped
 | PostValidString of string
 | PostObjectClass of class_name_int         (* return value is an instance of class *)
 
@@ -559,7 +566,7 @@ type taint_element_t =
   | TRefEqual of jterm_t * jterm_t
   | TDefPut of jterm_t
   | TRemove of jterm_t
-    
+
 class type taint_int =
 object ('a)
   (* setters *)
@@ -595,7 +602,7 @@ object
   method write_xml : xml_element_int -> method_signature_int -> unit
   method toPretty: pretty_t
 end
-	
+
 class type exception_info_int =
 object
   (* accessors *)
@@ -603,15 +610,15 @@ object
   method get_safety_condition: precondition_predicate_t list
   method get_error_condition : precondition_predicate_t list
   method get_description     : string
-    
+
   (* predicates *)
   method has_safety_condition: bool
   method has_error_condition : bool
   method has_description     : bool
-    
+
   (* xml *)
   method write_xml           : xml_element_int -> method_signature_int -> unit
-    
+
   (* printing *)
   method toPretty            : pretty_t
 end
@@ -682,7 +689,7 @@ type method_info_type_t =
    finally block (one object for each handler block).
 
    Upon initial creation of the method an instance of exception_handlers_int
-   is created but no handler_block_int instances are created yet. 
+   is created but no handler_block_int instances are created yet.
 
    To create handler_block_int objects call JCHExceptionTable.set_handler_blocks ();
    this will compute the extent of each catch/finally block by performing a
@@ -692,7 +699,7 @@ class type handler_block_int =
 object
   (* accessors *)
   method get_start_pc     : int    (* returns the first instruction of this handler block *)
-  method get_end_pc       : int    (* returns the last instruction of this handler block 
+  method get_end_pc       : int    (* returns the last instruction of this handler block
                                       Note: this is the highest pc in the handler block,
                                       but not necessarily the last instruction to be
                                       executed, or it may not be executed at all if
@@ -720,7 +727,7 @@ object
 end
 
 (* convenenience object that manages creation and access of the handler blocks
-   of a method. There is one of these objects for each method. 
+   of a method. There is one of these objects for each method.
 
    To create handler_block_int objects call JCHExceptionTable.set_handler_blocks ();
    this will compute the extent of each catch/finally block by performing a
@@ -740,7 +747,7 @@ object
   (* returns a list of handler pc's of catch blocks that could catch an exception thrown by
      the given pc, in order of encounter; returns the empty list if the pc is not in a try
      block with associated catch blocks *)
-  method get_exn_handlers   : int -> (int * class_name_int) list 
+  method get_exn_handlers   : int -> (int * class_name_int) list
   (* returns the pc of the finally handler that would be executed if the instruction at the
      given pc throws an exception. Throws an exception if the given pc is not within a try
      block associated with a finally block. Call has_finally_handler to check if the pc is
@@ -749,7 +756,7 @@ object
 
   (* returns a list of all handler blocks in this method *)
   method get_handler_blocks      : handler_block_int list
-  (* returns a list of all handler pc's that catch an exception, together with 
+  (* returns a list of all handler pc's that catch an exception, together with
      exception caught *)
   method get_all_exn_handlers    : (int * class_name_int) list
   (* returns a list of handler pc's of finally blocks *)
@@ -786,7 +793,7 @@ object ('a)
   method set_analysis_exclusions   : analysis_type_t list -> unit
   method add_argument_assumption   : relational_expr_t -> unit
   method set_saved_method_stack_layout: bcdictionary_int -> xml_element_int -> unit
-    
+
   (* accessors *)
   method get_index                 : int
   method get_class_name            : class_name_int
@@ -878,8 +885,8 @@ object ('a)
   method has_line_number         : int -> bool
   method is_handler_pc           : int -> bool
   method has_line_number_table   : bool
-  method has_local_variable_table: bool 
-  method has_local_variable_type_table: bool 
+  method has_local_variable_table: bool
+  method has_local_variable_type_table: bool
   method has_local_variable_type : int -> int -> bool
   method has_local_variable_name : int -> int -> bool
   method has_method_stack_layout : bool
@@ -931,7 +938,7 @@ class type function_summary_library_int =
 object
   (* setters *)
   method add_class_summary:
-           ((class_name_int * class_summary_int) * 
+           ((class_name_int * class_summary_int) *
 	      (class_field_signature_int * field_stub_int) list *
 		(class_method_signature_int * loop_info_t list * function_summary_int) list) -> unit
   method exclude_class      : string -> unit
@@ -1018,7 +1025,7 @@ type pc_converter_t = int -> int
 
 (* ============ InstructionInfo ============================================ *)
 
-class type method_target_int = 
+class type method_target_int =
 object ('a)
   method clone                 : 'a
 
@@ -1029,12 +1036,12 @@ object ('a)
 
   (* accessors *)
   method get_all_targets       : method_info_int list  (* all regular targets, no indirect targets *)
-  method get_valid_targets     : method_info_int list  (* only concrete and stubbed targets *) 
+  method get_valid_targets     : method_info_int list  (* only concrete and stubbed targets *)
   method get_indirect_targets  : method_info_int list
   method get_stubs             : function_summary_int list
   method get_procs             : symbol_t list
   method get_reason_for_top    : pretty_t
-    
+
   (* predicates *)
   method is_top                : bool
 
@@ -1071,11 +1078,11 @@ object ('a)
   method has_declared_object_type: bool
 
   method is_method_call          : bool
-  method is_method_call_static   : bool  
+  method is_method_call_static   : bool
   method is_method_call_special  : bool
   method is_method_call_virtual  : bool
   method is_method_call_interface: bool
-  
+
   method is_field_access: bool
   method is_field_write : bool
   method is_field_read  : bool
@@ -1113,19 +1120,19 @@ type  taint_origin_type_t =
 
 type tainted_variable_data_t = {
     tvar: variable_t ;
-    untrusted: taint_origin_type_t list 
+    untrusted: taint_origin_type_t list
 (*    unknown: taint_origin_type_t list*)
   }
 
 type taint_node_type_t =
   | TN_FIELD of int (* cfsix *)
-  (* Only the static fields have a node associated with them. The taint of 
+  (* Only the static fields have a node associated with them. The taint of
      non-static field info is incorporated in the taint of the object *)
   | TN_VAR of (int * variable_t * int)      (* cmsix * var * pc_in_scope *)
   | TN_VAR_EQ of (int * variable_t * variable_t * symbol_t list)
   (* x = y from if conditions on switch tables and the states where this holds *)
   | TN_CALL of (int * int * int * int * variable_t option * variable_t list)
-  (* call-index * pc * caller * target * return * args *) 
+  (* call-index * pc * caller * target * return * args *)
   | TN_UNKNOWN_CALL of (int * int * int * variable_t option * variable_t list)
 (* call-index * pc * caller * target * return * args *)
   | TN_CONDITIONAL of int * int (* cmsix, pc of conditional *)
@@ -1241,7 +1248,7 @@ class type taint_node_int =
     method add_field_untrusted_origins : int -> taint_origin_set_int -> bool
     method add_size_untrusted_origins : taint_origin_set_int -> bool
     method add_untrusted_origins : taint_origin_set_int -> bool
-    method compare : 'a -> int 
+    method compare : 'a -> int
     method get_call_vars : CHLanguage.variable_t list
     method get_call_pc : int
     method get_field_inds : int list
@@ -1258,7 +1265,7 @@ class type taint_node_int =
     method is_conditional : bool
     method is_const_var : bool
     method is_field : bool
-    method is_immutable : bool 
+    method is_immutable : bool
     method is_immutable_var : bool
     method is_loop_counter_var : bool
     method is_obj_field : bool
@@ -1337,7 +1344,7 @@ object
   method iter_classes   : (class_info_int -> unit) -> unit
   method iter_methods   : (method_info_int -> unit) -> unit
   method iter_fields    : (field_info_int -> unit) -> unit
-    
+
   (* predicates *)
   method has_class      : class_name_int -> bool
   method has_method     : class_method_signature_int -> bool
@@ -1347,7 +1354,7 @@ object
   method is_interface     : class_name_int -> bool
   method is_abstract_class: class_name_int -> bool
   method is_descendant    : class_name_int -> class_name_int -> bool (* is c1 a descendant of c2 *)
-  method implements_interface: class_info_int-> class_name_int -> bool 
+  method implements_interface: class_info_int-> class_name_int -> bool
 
   method is_application_class : class_name_int -> bool
   method is_application_method: class_method_signature_int -> bool
@@ -1379,7 +1386,7 @@ type call_targets_t =
   | ConstrainedVirtualTargets of string * int list              (* cnix list *)
   | VirtualTargets of int list                                  (* cnix list *)
   | EmptyTarget of bool * class_name_int * method_signature_int
-                 
+
 class type method_signature_implementations_int =
 object
 
@@ -1387,7 +1394,7 @@ object
   method initialize                   : unit
   method get_ms_index                 : string -> string -> int
   method get_implementations          : method_signature_int -> class_name_int list
-  method get_interface_implementations: 
+  method get_interface_implementations:
     class_name_int -> method_signature_int -> class_name_int list
   method write_xml                     : xml_element_int -> unit
 
@@ -1407,7 +1414,7 @@ class type cgdictionary_int =
 class type callgraph_base_int =
 object
   method build_graph   : unit
-  method get_callees   : int -> class_method_signature_int list    
+  method get_callees   : int -> class_method_signature_int list
   method get_pc_callees: int -> int -> class_method_signature_int list
   method bottomup_iter : (method_info_int -> unit) -> unit
   method read_xml      : xml_element_int -> unit
@@ -1444,34 +1451,37 @@ end
 class type chif_system_int =
 object
   (* actions *)
-  method new_system      : string -> unit
-  method translate       : ?default_exn:bool -> string -> unit 
+  method new_system: string -> unit
+  method translate: ?default_exn:bool -> string -> unit
   method translate_method: string -> ?assert_types:bool -> method_info_int -> unit
   method create_method_stack_layout: method_info_int -> unit
 
   (* services *)
-  method make_code : class_method_signature_int -> (code_int, cfg_int) command_t list -> code_t
+  method make_code:
+           class_method_signature_int
+           -> (code_int, cfg_int) command_t list
+           -> code_t
 
   (* accessors *)
-  method get_system           : string -> system_int
-  method get_systems          : system_int list
-  method get_system_names     : string list
-  method get_procedure        : string -> symbol_t -> procedure_int
-  method get_procedure_by_cms : string -> class_method_signature_int -> procedure_int
-  method get_method_translation_failures : class_method_signature_int list
+  method get_system: string -> system_int
+  method get_systems: system_int list
+  method get_system_names: string list
+  method get_procedure: string -> symbol_t -> procedure_int
+  method get_procedure_by_cms: string -> class_method_signature_int -> procedure_int
+  method get_method_translation_failures: class_method_signature_int list
   method get_method_stack_layout: method_info_int -> method_stack_layout_int
 
   (* predicates *)
-  method has_system           : string -> bool
-  method has_procedure        : string -> symbol_t -> bool
-  method has_procedure_by_cms : string -> class_method_signature_int -> bool
+  method has_system: string -> bool
+  method has_procedure: string -> symbol_t -> bool
+  method has_procedure_by_cms: string -> class_method_signature_int -> bool
   method has_method_stack_layout: class_method_signature_int -> bool
   method has_method_translation_failed: class_method_signature_int -> bool
 
   (* printing *)
-  method procedure_to_dot      : string -> symbol_t -> dot_graph_int option
-  method procedure_to_pretty   : string -> symbol_t -> pretty_t
-  method toPretty              : string -> pretty_t
+  method procedure_to_dot: string -> symbol_t -> dot_graph_int option
+  method procedure_to_pretty: string -> symbol_t -> pretty_t
+  method toPretty: string -> pretty_t
   method stack_layout_to_pretty: method_info_int -> pretty_t
 end
 
@@ -1485,7 +1495,7 @@ object
   method write_xml     : xml_element_int -> unit
   method read_xml      : xml_element_int -> unit
 end
-  
+
 class type tainted_variable_int =
 object ('a)
   method index         : int
@@ -1513,7 +1523,7 @@ object
 
   (* setters *)
   method set_method_invariants: int -> (int * relational_expr_t list) list -> unit
-  method set_method_taint_origins: 
+  method set_method_taint_origins:
     int -> (int * (variable_t * taint_origin_set_int) list) list -> unit
   method set_method_return_origins: int -> taint_origin_set_int option -> unit
   method set_method_loops     : int -> loop_info_t list -> unit

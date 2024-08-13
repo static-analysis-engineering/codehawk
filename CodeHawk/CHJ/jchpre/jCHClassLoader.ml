@@ -3,8 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2005-2020 Kestrel Technology LLC
+
+   Copyright (c) 2005-2020  Kestrel Technology LLC
+   Copyright (c) 2020-2024  Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,7 +35,6 @@ open CHLogger
 (* jchlib *)
 open JCHBasicTypes
 open JCHBasicTypesAPI
-open JCHBytecode
 open JCHDictionary
 open JCHFile
 open JCHRawClass
@@ -43,7 +43,6 @@ open JCHRawClass
 open JCHApplication
 open JCHBytecodeLocation
 open JCHCHAUtil
-open JCHCallgraphBase
 open JCHClassAnalysis
 open JCHClassInfo
 open JCHFunctionSummary
@@ -52,7 +51,6 @@ open JCHFunctionSummaryXmlDecoder
 open JCHInstructionInfo
 open JCHMethodImplementations
 open JCHPreAPI
-open JCHPreFileIO
 open JCHSystemSettings
 
 module H = Hashtbl
@@ -70,9 +68,9 @@ let get_summary_classpath () =
   match !summary_classpath with
   | None ->
     let cp = system_settings#get_summary_classpath in
-    begin summary_classpath := Some cp ; cp end	
+    begin summary_classpath := Some cp; cp end
   | Some cp -> cp
-    
+
 let rec add_class_dependency ?(src="unknown") (cn:class_name_int) =
   if app#has_class cn then
     ()
@@ -94,18 +92,20 @@ let rec add_class_dependency ?(src="unknown") (cn:class_name_int) =
               let methodsummary = function_summary_library#get_method_summary cms in
               let taintelements = methodsummary#get_taint_elements in
               let deps =
-                List.concat (List.map get_taint_element_class_dependencies taintelements) in
+                List.concat
+                  (List.map get_taint_element_class_dependencies taintelements) in
               deps @ acc
             else
               acc) [] classSummary#get_methods in
       List.iter (add_class_dependency ~src:depsrc) (dependents @ methoddependencies)
     else
       begin
-	app#add_missing_class cn ;
+	app#add_missing_class cn;
 	(if system_settings#is_logging_missing_classes_enabled then
-           chlog#add "missing class" (LBLOCK [ STR src ;  STR ": " ; cn#toPretty ]))
+           chlog#add "missing class" (LBLOCK [STR src;  STR ": "; cn#toPretty]))
       end
-	
+
+
 let add_summary cms summary =
   if summary#is_inherited then
     if summary#has_defining_method then
@@ -114,10 +114,11 @@ let add_summary cms summary =
 	app#add_method_link cms dcms
       else if function_summary_library#has_method_summary dcms then
 	begin
-	  app#add_stub (function_summary_library#get_method_summary dcms) ;
-	  app#add_method_link cms dcms ;
-          chlog#add "add summary method link"
-                    (LBLOCK [ cms#toPretty ;  STR " -> " ; dcms#toPretty ])
+	  app#add_stub (function_summary_library#get_method_summary dcms);
+	  app#add_method_link cms dcms;
+          chlog#add
+            "add summary method link"
+            (LBLOCK [cms#toPretty;  STR " -> "; dcms#toPretty])
 	end
       else (* no defining method *)
 	app#add_missing_method cms
@@ -125,7 +126,8 @@ let add_summary cms summary =
       app#add_missing_method cms
   else (* summary is not inherited *)
     app#add_stub (function_summary_library#get_method_summary cms)
-  
+
+
 let add_field_summary cfs summary =
   if summary#is_inherited then
     let dcfs = summary#get_defining_class_field_signature in
@@ -133,13 +135,14 @@ let add_field_summary cfs summary =
       app#add_field_link cfs dcfs
     else if function_summary_library#has_field_summary dcfs then
       begin
-        app#add_field_stub (function_summary_library#get_field_summary dcfs) ;
+        app#add_field_stub (function_summary_library#get_field_summary dcfs);
         app#add_field_link cfs dcfs
       end
     else
       app#add_missing_field cfs
   else
     app#add_field_stub (function_summary_library#get_field_summary cfs)
+
 
 let get_inherited_method (cms:class_method_signature_int) =
   let cn = cms#class_name in
@@ -170,9 +173,12 @@ let get_inherited_method (cms:class_method_signature_int) =
     JCH_failure p ->
     begin
       ch_error_log#add
-        "get-inherited-method" (LBLOCK [ cms#toPretty ; STR ": " ; p ]) ;
-      raise (JCH_failure (LBLOCK [ STR "get_inherited_method " ; cms#toPretty; STR ": " ; p ]))
+        "get-inherited-method" (LBLOCK [cms#toPretty; STR ": "; p]);
+      raise
+        (JCH_failure
+           (LBLOCK [STR "get_inherited_method "; cms#toPretty; STR ": "; p]))
     end
+
 
 let get_inherited_field (cfs:class_field_signature_int) =
   let cn = cfs#class_name in
@@ -203,13 +209,15 @@ let get_inherited_field (cfs:class_field_signature_int) =
     JCH_failure p ->
     begin
       ch_error_log#add
-        "get-inherited-field" (LBLOCK [ cfs#toPretty ; STR ": " ; p ]) ;
-      raise (JCH_failure (LBLOCK [ STR "get_inherited_field " ;
-                                   cfs#toPretty ; STR ": " ; p ]))
+        "get-inherited-field" (LBLOCK [cfs#toPretty; STR ": "; p]);
+      raise
+        (JCH_failure
+           (LBLOCK [STR "get_inherited_field "; cfs#toPretty; STR ": "; p]))
     end
-	
+
+
 let add_method_dependency (cms:class_method_signature_int) =
-  let cn = cms#class_name in 
+  let cn = cms#class_name in
   let _ = add_class_dependency ~src:"method dependency" cn in
   if app#has_method cms then () else
     if function_summary_library#has_method_summary cms then
@@ -218,16 +226,19 @@ let add_method_dependency (cms:class_method_signature_int) =
     else
       match get_inherited_method cms with
       | Some dcms ->
-         let _ = chlog#add "add method link"
-                           (LBLOCK [ cms#toPretty ; STR " -> " ; dcms#toPretty ]) in
+         let _ =
+           chlog#add
+             "add method link"
+             (LBLOCK [cms#toPretty; STR " -> "; dcms#toPretty]) in
          app#add_method_link cms dcms
       | _ ->
          begin
-	   app#add_missing_method cms ;
+	   app#add_missing_method cms;
            (if system_settings#is_logging_missing_classes_enabled then
               chlog#add "missing method" cms#toPretty)
          end
-	
+
+
 let add_field_dependency (cfs:class_field_signature_int) =
   if app#has_field cfs then () else
     if function_summary_library#has_field_summary cfs then
@@ -237,10 +248,11 @@ let add_field_dependency (cfs:class_field_signature_int) =
          | Some dcfs -> app#add_field_link cfs dcfs
          | _ ->
             begin
-              app#add_missing_field cfs ;
+              app#add_missing_field cfs;
               chlog#add "missing field" cfs#toPretty
             end
-	
+
+
 let scan_method (mInfo:method_info_int) =
   let cms = mInfo#get_class_method_signature in
   let startupClasses = List.map make_cn startup_classes in
@@ -248,7 +260,8 @@ let scan_method (mInfo:method_info_int) =
   let methodsReferenced = get_methods_referenced mInfo in
   let fieldsReferenced = get_fields_referenced mInfo in
   let _ = List.iter (add_class_dependency ~src:"startup class") startupClasses in
-  let _ = List.iter (add_class_dependency ~src:"class referenced") classesReferenced in
+  let _ =
+    List.iter (add_class_dependency ~src:"class referenced") classesReferenced in
   let _ = List.iter add_method_dependency methodsReferenced in
   let _ = List.iter add_field_dependency fieldsReferenced in
   let add_field_link i opc cn fs =
@@ -258,7 +271,7 @@ let scan_method (mInfo:method_info_int) =
     let cfs = make_cfs cn fs in
     let finfo = app#get_field cfs in
     begin
-      iInfo#set_field_target finfo ;
+      iInfo#set_field_target finfo;
       match opc with
       | OpGetStatic _ | OpGetField _ -> finfo#add_reading_method cms
       | OpPutStatic _ | OpPutField _ -> finfo#add_writing_method cms
@@ -277,9 +290,10 @@ let get_virtual_targets cn ms =
   if app#has_class cn then
     let cInfo = app#get_class cn in
     if cInfo#is_final && cInfo#defines_method ms then
-      [ cn ]
+      [cn]
     else
-      let implementations = method_signature_implementations#get_implementations ms in
+      let implementations =
+        method_signature_implementations#get_implementations ms in
       try
       let result = new ClassNameCollections.set_t in
       let _ = List.iter (fun cntgt ->
@@ -290,61 +304,86 @@ let get_virtual_targets cn ms =
 	  let tgtcms = make_cms cntgt ms in
 	  let _ = add_method_dependency tgtcms in
 	  let tgtmInfo = app#get_method tgtcms in
-	  result#add tgtmInfo#get_class_name 
+	  result#add tgtmInfo#get_class_name
 	else
 	  ()
       ) (cn :: implementations) in
       let result = result#toList in
       let _ = match result with
-	| [] -> chlog#add "virtual targets" 
-	  (LBLOCK [ STR "No targets for " ; ms#toPretty ; STR " on " ;
-		    cn#toPretty ; NL ;
-                    STR "  candidates: " ;
-                    pretty_print_list implementations (fun cn -> cn#toPretty) "" "," "" ])
+	| [] ->
+           chlog#add
+             "virtual targets"
+	     (LBLOCK [
+                  STR "No targets for ";
+                  ms#toPretty;
+                  STR " on ";
+		  cn#toPretty;
+                  NL;
+                  STR "  candidates: ";
+                  pretty_print_list
+                    implementations (fun cn -> cn#toPretty) "" "," ""])
 	| _ -> () in
       result
       with
       | JCH_failure p ->
-         raise (JCH_failure (LBLOCK [ STR "Error in get_virtual_targets with " ;
-                                      cn#toPretty ; STR "." ; ms#toPretty ; STR ": " ; p ; NL ;
-                                      STR "  candidates: " ;
-                                      pretty_print_list implementations (fun cn -> cn#toPretty) "" "," "" ]))
-                                      
+         raise
+           (JCH_failure
+              (LBLOCK [
+                   STR "Error in get_virtual_targets with ";
+                   cn#toPretty;
+                   STR ".";
+                   ms#toPretty;
+                   STR ": ";
+                   p;
+                   NL;
+                   STR "  candidates: ";
+                   pretty_print_list
+                     implementations (fun cn -> cn#toPretty) "" "," ""]))
+
   else
     []
   with
   | JCH_failure p ->
-     raise (JCH_failure (LBLOCK [ STR "Error in get_virtual_targets with " ;
-                                  cn#toPretty ; STR "." ; ms#toPretty ;
-                                  STR ": " ; p ]))
+     raise
+       (JCH_failure
+          (LBLOCK [
+               STR "Error in get_virtual_targets with ";
+               cn#toPretty;
+               STR ".";
+               ms#toPretty;
+               STR ": ";
+               p]))
+
 
 let get_interface_targets cn ms =
   if app#has_class cn then
-    let implementations = 
+    let implementations =
       try
-	app#get_implementing_classes cn 
+	app#get_implementing_classes cn
       with
 	JCH_failure p ->
 	  begin
-	    ch_error_log#add "interface error" p ;
+	    ch_error_log#add "interface error" p;
 	    []
 	  end in
     let result = new ClassNameCollections.set_t in
-    let _ = List.iter (fun tgtcInfo ->
-                if tgtcInfo#defines_method ms then
-                  let cntgt = tgtcInfo#get_class_name in
-                  let tgtcms = make_cms cntgt ms in
-                  let _ = add_method_dependency tgtcms in
-                  let tgtmInfo = app#get_method tgtcms in
-                  result#add tgtmInfo#get_class_name) implementations in
+    let _ =
+      List.iter (fun tgtcInfo ->
+          if tgtcInfo#defines_method ms then
+            let cntgt = tgtcInfo#get_class_name in
+            let tgtcms = make_cms cntgt ms in
+            let _ = add_method_dependency tgtcms in
+            let tgtmInfo = app#get_method tgtcms in
+            result#add tgtmInfo#get_class_name) implementations in
     let result = result#toList in
     match result with
-      | [] -> 
-	let _ = 
-	  chlog#add "interface targets" 
-	    (LBLOCK [ STR "No targets for " ; ms#toPretty ; STR " on " ; 
-		      cn#toPretty ]) in
-	let defaults = 
+      | [] ->
+	let _ =
+	  chlog#add
+            "interface targets"
+	    (LBLOCK [
+                 STR "No targets for "; ms#toPretty; STR " on "; cn#toPretty]) in
+	let defaults =
 	  let cInfo = app#get_class cn in
 	  cInfo#get_default_implementations in
 	begin
@@ -353,26 +392,30 @@ let get_interface_targets cn ms =
 	    let cms = make_cms cn ms in
 	    if function_summary_library#has_method_summary cms then
 	      let _ = chlog#add "use interface summary" cms#toPretty in
-	      [ cn ]
+	      [cn]
 	    else
 	      []
 	  | l ->
 	    let cms = make_cms cn ms in
 	    let _ = List.iter (add_class_dependency ~src:"interface target") l in
-	    let _ = chlog#add "use default implementations"
-	      (LBLOCK [ STR "use " ;
-			pretty_print_list l (fun cn -> cn#toPretty) "[" ", " "]" ;
-			STR " for " ; cms#toPretty ]) in
+	    let _ =
+              chlog#add
+                "use default implementations"
+	        (LBLOCK [
+                     STR "use ";
+		     pretty_print_list l (fun cn -> cn#toPretty) "[" ", " "]";
+		     STR " for ";
+                     cms#toPretty]) in
 	    l
 	end
       | l -> l
   else
     []
 
-let get_dynamic_targets _ _ = []
 
 let set_method_method_targets (mInfo:method_info_int) =
-  let (_,class_result,type_result) = analyze_method_for_classes_and_types mInfo in
+  let (_, class_result, type_result) =
+    analyze_method_for_classes_and_types mInfo in
   let get_static_target cn ms =
     let _ = method_signature_implementations#register_signature ms in
     let tgtcms = make_cms cn ms in
@@ -380,10 +423,18 @@ let set_method_method_targets (mInfo:method_info_int) =
     (app#get_method tgtcms)#get_class_name in
   let create_targets i opc ms targets =
     let _ = method_signature_implementations#register_signature ms in
-    let _ = match targets with
-      | [] -> ch_error_log#add "no targets"
-	(LBLOCK [ STR "No targets found for " ; ms#toPretty ; STR " in " ;
-		  mInfo#get_class_method_signature#toPretty ; STR " at pc = " ; INT i ] )
+    let _ =
+      match targets with
+      | [] ->
+         ch_error_log#add
+           "no targets"
+	   (LBLOCK [
+                STR "No targets found for ";
+                ms#toPretty;
+                STR " in ";
+		mInfo#get_class_method_signature#toPretty;
+                STR " at pc = ";
+                INT i] )
       | _ -> () in
     let targets =
       if H.mem class_result i then
@@ -405,60 +456,70 @@ let set_method_method_targets (mInfo:method_info_int) =
     let _ = app#add_instruction iInfo in
     List.iter (fun tgt ->
       let tgtcms = make_cms tgt ms in
-      let _ = if  app#has_method tgtcms then () else add_method_dependency tgtcms in	  
+      let _ = if app#has_method tgtcms then () else add_method_dependency tgtcms in
       let callee = app#get_method tgtcms in
-      begin 
-	mInfo#add_callee callee#get_class_method_signature ;
-	iInfo#add_method_target callee ;
+      begin
+	mInfo#add_callee callee#get_class_method_signature;
+	iInfo#add_method_target callee;
 	callee#add_caller mInfo#get_class_method_signature
       end) targets in
   mInfo#bytecode_iteri (fun i opc ->
     match opc with
-    | OpInvokeStatic (cn,ms) -> create_targets i opc ms [(get_static_target cn ms)]
-    | OpInvokeSpecial (cn,ms) -> create_targets i opc ms [ (get_static_target cn ms) ]
-    | OpInvokeVirtual (TClass cn,ms) -> create_targets i opc ms (get_virtual_targets cn ms)
-    | OpInvokeInterface (cn,ms) -> create_targets i opc ms (get_interface_targets cn ms)
+    | OpInvokeStatic (cn, ms) ->
+       create_targets i opc ms [(get_static_target cn ms)]
+    | OpInvokeSpecial (cn, ms) ->
+       create_targets i opc ms [(get_static_target cn ms)]
+    | OpInvokeVirtual (TClass cn, ms) ->
+       create_targets i opc ms (get_virtual_targets cn ms)
+    | OpInvokeInterface (cn, ms) ->
+       create_targets i opc ms (get_interface_targets cn ms)
     | OpInvokeVirtual (_,ms) ->
-       create_targets i opc ms [ (get_static_target (make_cn "java.lang.Object") ms) ]
-    | OpInvokeDynamic (mindex,ms) ->
+       create_targets i opc ms [(get_static_target (make_cn "java.lang.Object") ms)]
+    | OpInvokeDynamic _ ->
        let loc = get_bytecode_location mInfo#get_index i in
        let iInfo = make_instruction_info loc opc in
        app#add_instruction iInfo
     | _ -> ())
 
+
 let set_method_targets () =
   app#iter_classes (fun cInfo ->
-    if cInfo#is_stubbed then () else
-      List.iter (fun ms ->
-	let cms = make_cms cInfo#get_class_name ms in
-	if app#has_method cms then
-	  let mInfo = app#get_method cms in
-	  set_method_method_targets mInfo) cInfo#get_methods_defined)			
-    
+      if cInfo#is_stubbed then
+        ()
+      else
+        List.iter (fun ms ->
+	    let cms = make_cms cInfo#get_class_name ms in
+	    if app#has_method cms then
+	      let mInfo = app#get_method cms in
+	      set_method_method_targets mInfo) cInfo#get_methods_defined)
+
+
 let load_class (c:java_class_or_interface_int) =
   let coDependents = get_class_codependents c in
   let methods = List.filter (fun m -> m#is_concrete) c#get_methods in
   let fields = c#get_fields in
   begin
-    List.iter (fun d -> if app#has_class d then () else app#add_missing_class d) coDependents ;
-    app#add_class c ;
-    List.iter app#add_method methods ;
-    List.iter app#add_field fields ;
-    List.iter scan_method app#get_methods ;
+    List.iter (fun d ->
+        if app#has_class d then () else app#add_missing_class d) coDependents;
+    app#add_class c;
+    List.iter app#add_method methods;
+    List.iter app#add_field fields;
+    List.iter scan_method app#get_methods;
   end
+
 
 let rec load_class_and_dependents (cn:class_name_int) =
   if app#has_class cn then () else
     let cp = system_settings#get_classpath in
     let c = get_class cp cn in
     let classes = c :: (List.map (get_class cp) c#get_interfaces) in
-    let load_super c = 
+    let load_super c =
       match c#get_super_class with
       | Some sc -> load_class_and_dependents sc | _ -> () in
     begin
-      List.iter app#add_class classes ;
-      List.iter load_super classes ;
-      List.iter load_class_and_dependents c#get_interfaces 
+      List.iter app#add_class classes;
+      List.iter load_super classes;
+      List.iter load_class_and_dependents c#get_interfaces
     end
 
 
@@ -467,15 +528,15 @@ let process_classes () =
     app#iter_classes (fun cInfo ->
         begin
           List.iter (fun ms ->
-	      app#add_method (cInfo#get_method ms)) cInfo#get_methods_defined ;
+	      app#add_method (cInfo#get_method ms)) cInfo#get_methods_defined;
           List.iter (fun fs ->
 	      app#add_field (cInfo#get_field fs)) cInfo#get_fields_defined
-        end) ;
+        end);
     app#iter_classes (fun cInfo ->
         begin
           (if cInfo#has_super_class then
-             add_class_dependency ~src:"superclass" cInfo#get_super_class) ;
-          List.iter add_class_dependency cInfo#get_interfaces ;
+             add_class_dependency ~src:"superclass" cInfo#get_super_class);
+          List.iter add_class_dependency cInfo#get_interfaces;
           (if cInfo#is_stubbed then () else
 	     begin
 	       List.iter (fun ms ->
@@ -485,15 +546,17 @@ let process_classes () =
 		     begin
 		       List.iter
                          (add_class_dependency ~src:"classes referenced")
-                         (get_classes_referenced mInfo) ;
+                         (get_classes_referenced mInfo);
 		       scan_method mInfo
-		     end) cInfo#get_methods_defined ;
+		     end) cInfo#get_methods_defined;
 	     end )
         end)
   end
-(* ---------------------------------------------------------------------------------------
+
+
+(* -----------------------------------------------------------------------------
    Loads and parses all class files in the jar and adds them to app
-   --------------------------------------------------------------------------------------- *)
+   ----------------------------------------------------------------------------- *)
 let load_classes_in_jar ?(xcludes=[]) (jar:string) =
   let classesLoaded = ref [] in
   try
@@ -507,44 +570,51 @@ let load_classes_in_jar ?(xcludes=[]) (jar:string) =
               try
 	        let javaclass = JCHRaw2IF.low2high_class c in
 	        begin
-		  app#add_class javaclass ;
-		  classesLoaded := javaclass#get_name :: !classesLoaded ;
+		  app#add_class javaclass;
+		  classesLoaded := javaclass#get_name :: !classesLoaded;
 	        end
               with
               | IO.No_more_input ->
                  ch_error_log#add "no more input" c.rc_name#toPretty
               | JCH_failure p ->
-                 ch_error_log#add "error in class file"
-                                  (LBLOCK [ c.rc_name#toPretty ; STR ": " ; p ]))
-	    (fun _ _ -> ()) jar ;
+                 ch_error_log#add
+                   "error in class file"
+                   (LBLOCK [c.rc_name#toPretty; STR ": "; p]))
+	    (fun _ _ -> ()) jar;
 	  JCHFile.close_class_path classpath
 	end
       with
-      | JCH_failure p -> 
+      | JCH_failure p ->
 	begin
-	  ch_error_log#add "failure" (LBLOCK [ STR "Failure. " ; STR jar ; STR ": " ; p ]) ;
-	  JCHFile.close_class_path classpath ;
-	end) ;
+	  ch_error_log#add
+            "failure" (LBLOCK [STR "Failure. "; STR jar; STR ": "; p]);
+	  JCHFile.close_class_path classpath;
+	end);
       !classesLoaded
     end
   with
   | Zip.Error (name, a, s) ->
     begin
-      system_settings#log_error (LBLOCK [ STR "Zip.Error. " ;
-					  STR jar ; STR ": " ; STR name ; 
-					  STR "; " ; STR a ; STR "; " ; STR s ]) ;
+      system_settings#log_error
+        (LBLOCK [
+             STR "Zip.Error. ";
+	     STR jar; STR ": ";
+             STR name;
+	     STR "; ";
+             STR a;
+             STR "; ";
+             STR s]);
       []
     end
   | Sys_error s ->
     begin
-      system_settings#log_error (LBLOCK [ STR "Sys_error. " ; STR jar ; STR ": " ; STR s ]) ;
+      system_settings#log_error
+        (LBLOCK [STR "Sys_error. "; STR jar; STR ": "; STR s]);
       []
     end
   | IO.No_more_input ->
      begin
-       pr_debug [ STR "No more input in load_classes_in_jar " ; STR jar ; NL ] ;
-       ch_error_log#add "no more input" (STR jar) ;
+       pr_debug [STR "No more input in load_classes_in_jar "; STR jar; NL];
+       ch_error_log#add "no more input" (STR jar);
        !classesLoaded
      end
-    
-

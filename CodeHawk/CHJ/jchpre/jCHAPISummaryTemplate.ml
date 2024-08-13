@@ -3,9 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2024 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -51,11 +51,12 @@ open JCHTemplateUtil
 
 
 let ccNode =
-  xml_string 
+  xml_string
     "copyright-notice"
-    "Copyright 2020-2021, Henny Sipma, Palo Alto, CA 94306"
+    "Copyright 2020-2024, Henny Sipma, Palo Alto, CA 94306"
 
 let summary_classpath = ref None
+
 
 let write_xmlx_field (node:xml_element_int) (cfs:class_field_signature_int) =
   let fInfo = app#get_field cfs in
@@ -64,28 +65,30 @@ let write_xmlx_field (node:xml_element_int) (cfs:class_field_signature_int) =
   let sety key v = if v then set key "yes" else () in
   let sNode = xmlElement "signature" in
   begin
-    write_xmlx_value_type sNode cfs#field_signature#descriptor ;
-    append [ sNode ] ;
+    write_xmlx_value_type sNode cfs#field_signature#descriptor;
+    append [sNode];
     (if fInfo#has_value then
 	let vNode = xmlElement "value" in
 	begin
-	  write_xmlx_constant_value vNode fInfo#get_value ;
-	  append [ vNode ]
-	end) ;
-    sety "static" fInfo#is_static ;
-    sety "final" fInfo#is_final ;
-    sety "not-null" fInfo#is_not_null ;
-    set "access" (access_to_string fInfo#get_visibility) ;
-    set "name" cfs#field_signature#name ;
+	  write_xmlx_constant_value vNode fInfo#get_value;
+	  append [vNode]
+	end);
+    sety "static" fInfo#is_static;
+    sety "final" fInfo#is_final;
+    sety "not-null" fInfo#is_not_null;
+    set "access" (access_to_string fInfo#get_visibility);
+    set "name" cfs#field_signature#name;
     node#setNameString ("field:"^ cfs#field_signature#name)
   end
+
 
 let get_summary_classpath () =
   match !summary_classpath with
   | None ->
     let cp = system_settings#get_summary_classpath in
-    begin summary_classpath := Some cp ; cp end	
+    begin summary_classpath := Some cp; cp end
   | Some cp -> cp
+
 
 let load_class_library_summary cn =
   try
@@ -97,8 +100,9 @@ let load_class_library_summary cn =
     else
       ()
   with
-  | JCHFile.No_class_found s ->
-     raise (JCH_failure (LBLOCK [ STR "No class found: " ; cn#toPretty ]))
+  | JCHFile.No_class_found _ ->
+     raise (JCH_failure (LBLOCK [STR "No class found: "; cn#toPretty]))
+
 
 let write_xml_method_summary (node:xml_element_int) (mInfo:method_info_int) =
   let cms = mInfo#get_class_method_signature in
@@ -116,7 +120,7 @@ let write_xml_method_summary (node:xml_element_int) (mInfo:method_info_int) =
       match summary with
       | Some s -> s#get_taint#write_xml tnode ms
       | _ -> () in
-    append [ tnode ] in
+    append [tnode] in
   (* ----------------------------------------------- postconditions *)
   let _ =
     match summary  with
@@ -133,8 +137,8 @@ let write_xml_method_summary (node:xml_element_int) (mInfo:method_info_int) =
                  (fun p ->
                    let tag = if p#is_error then "error-post" else "post" in
                    let pnode = xmlElement tag in
-                   begin p#write_xml pnode ms ; pnode end) postconditions) ;
-            append [ ppNode ]
+                   begin p#write_xml pnode ms; pnode end) postconditions);
+            append [ppNode]
           end in
   (* --------------------------------------------------------- side effects *)
   let _ =
@@ -151,10 +155,10 @@ let write_xml_method_summary (node:xml_element_int) (mInfo:method_info_int) =
               (List.map
                  (fun s ->
                    let sNode = xmlElement "side-effect" in
-                   begin write_xml_sideeffect sNode s ms ; sNode end) sideeffects) ;
-            append [ ssNode ]
+                   begin write_xml_sideeffect sNode s ms; sNode end) sideeffects);
+            append [ssNode]
           end in
-    
+
   (* --------------------------------------------------------- sinks *)
   let _ =
     let sinks =
@@ -171,8 +175,8 @@ let write_xml_method_summary (node:xml_element_int) (mInfo:method_info_int) =
              (List.map (fun s ->
                   let snode = xmlElement "sink" in
                   begin
-                    s#write_xml snode ms ;
-                    snode#setAttribute "type" "string" ;
+                    s#write_xml snode ms;
+                    snode#setAttribute "type" "string";
                     snode
                   end) sl) in
          let _ =
@@ -180,14 +184,15 @@ let write_xml_method_summary (node:xml_element_int) (mInfo:method_info_int) =
              (List.map (fun s ->
                   let snode = xmlElement "sink" in
                   begin
-                    s#write_xml snode ms ;
-                    snode#setAttribute "type" "resource" ;
+                    s#write_xml snode ms;
+                    snode#setAttribute "type" "resource";
                     snode
                   end) rl) in
-         append [ ssnode ] in
+         append [ssnode] in
     () in
   match summary with None -> false | _ -> true
-          
+
+
 let get_exceptions mInfo =
   let cms = mInfo#get_class_method_signature in
   if function_summary_library#has_method_summary  cms then
@@ -202,16 +207,20 @@ let get_exceptions mInfo =
   else
     List.map make_exception_info mInfo#get_exceptions
 
+
 let write_xml_exceptions
-      (node:xml_element_int) (ms:method_signature_int) (einfos:exception_info_int list) =
+      (node:xml_element_int)
+      (ms:method_signature_int)
+      (einfos:exception_info_int list) =
   node#appendChildren
     (List.map (fun einfo ->
          if einfo#has_safety_condition then
            let eNode = xmlElement "c-throws" in
-           begin einfo#write_xml eNode ms ; eNode end
+           begin einfo#write_xml eNode ms; eNode end
          else
            xml_string "throws" einfo#get_exception#name) einfos)
-  
+
+
 let write_xmlx_method
       (node:xml_element_int) (cms:class_method_signature_int) =
   let append = node#appendChildren in
@@ -224,35 +233,36 @@ let write_xmlx_method
   let _ =
     let sNode = xmlElement "signature" in
     let _ = cms#method_signature#write_xmlx sNode in
-    append [ sNode ] in
+    append [sNode] in
   (* ---------------------------------------------------- exceptions *)
   let _ =
     let exceptions = get_exceptions mInfo in
     let eeNode = xmlElement "exceptions" in
     let _ = write_xml_exceptions eeNode ms exceptions in
-    append [ eeNode ]  in
+    append [eeNode]  in
   (* ------------------------------------------------------  summary *)
   let fromsummary =
     let fNode = xmlElement "summary" in
     let fromsummary = write_xml_method_summary fNode mInfo in
     begin
-      append [ fNode ] ;
+      append [fNode];
       fromsummary
     end in
   (* ---------------------------------------------------- attributes *)
   let _ =
     begin
-      set "name" cms#name ;
-      sety "final" mInfo#is_final ;
-      sety "abstract" mInfo#is_abstract ;
-      sety "static" mInfo#is_static ;
-      sety "bridge" mInfo#is_bridge ;
-      sety "native" mInfo#is_native ;
-      set "access" (access_to_string mInfo#get_visibility) ;
-      (if not fromsummary then set "valid" "no") ;
+      set "name" cms#name;
+      sety "final" mInfo#is_final;
+      sety "abstract" mInfo#is_abstract;
+      sety "static" mInfo#is_static;
+      sety "bridge" mInfo#is_bridge;
+      sety "native" mInfo#is_native;
+      set "access" (access_to_string mInfo#get_visibility);
+      (if not fromsummary then set "valid" "no");
     end in
   ()
-  
+
+
 let write_xmlx_constructor
       (node:xml_element_int)  (cms:class_method_signature_int) =
   let append = node#appendChildren in
@@ -261,33 +271,34 @@ let write_xmlx_constructor
   let ms = cms#method_signature in
   let _ =
     let argtypes =
-      List.map value_type_to_string
-               cms#method_signature#method_signature_data#descriptor#arguments in
+      List.map
+        value_type_to_string
+        cms#method_signature#method_signature_data#descriptor#arguments in
     let nameString = "(" ^ (String.concat "," argtypes) ^ ")" in
     node#setNameString nameString in
   (* ---------------------------------------------------- signature *)
   let _ =
     let sNode = xmlElement "signature" in
     let _ = cms#method_signature#write_xmlx sNode in
-    append [ sNode ] in
+    append [sNode] in
   (* ---------------------------------------------------- exceptions *)
   let _ =
     let exceptions = get_exceptions mInfo in
     let eeNode = xmlElement "exceptions" in
     let _ = write_xml_exceptions eeNode ms exceptions in
-    append [ eeNode ]  in
+    append [eeNode]  in
   (* ------------------------------------------------------  summary *)
   let fromsummary =
     let fNode = xmlElement "summary" in
     let fromsummary = write_xml_method_summary fNode mInfo in
     begin
-      append [ fNode ] ;
+      append [fNode];
       fromsummary
     end in
   (* ---------------------------------------------------- attributes *)
   let _ =
     begin
-      set "access" (access_to_string mInfo#get_visibility) ;
+      set "access" (access_to_string mInfo#get_visibility);
       (if not fromsummary then set "valid" "no")
     end in
   ()
@@ -305,36 +316,36 @@ let write_xmlx_interface_method
   let _ =
     let sNode = xmlElement "signature" in
     let _ = cms#method_signature#write_xmlx sNode in
-    append [ sNode ] in
+    append [sNode] in
   (* ---------------------------------------------------- exceptions *)
   let _ =
     let exceptions = get_exceptions mInfo in
     let eeNode = xmlElement "exceptions" in
     let _ = write_xml_exceptions eeNode ms exceptions in
-    append [ eeNode ]  in
+    append [eeNode]  in
   (* ------------------------------------------------------  summary *)
   let fromsummary =
     let fNode = xmlElement "summary" in
     let fromsummary = write_xml_method_summary fNode mInfo in
     begin
-      append [ fNode ] ;
+      append [fNode];
       fromsummary
     end in
   (* ---------------------------------------------------- attributes *)
   let _ =
     begin
-      set "name" cms#name ;
-      sety "final" mInfo#is_final ;
-      sety "abstract" mInfo#is_abstract ;
-      sety "static" mInfo#is_static ;
-      sety "bridge" mInfo#is_bridge ;
-      sety "native" mInfo#is_native ;
-      set "access" (access_to_string mInfo#get_visibility) ;
+      set "name" cms#name;
+      sety "final" mInfo#is_final;
+      sety "abstract" mInfo#is_abstract;
+      sety "static" mInfo#is_static;
+      sety "bridge" mInfo#is_bridge;
+      sety "native" mInfo#is_native;
+      set "access" (access_to_string mInfo#get_visibility);
       (if not fromsummary then  set "valid" "no")
     end in
   ()
 
-  
+
 let write_xml_summary_class
       (node:xml_element_int) (cInfo:class_info_int) =
   let cn = cInfo#get_class_name in
@@ -346,7 +357,7 @@ let write_xml_summary_class
     let iiNode = xmlElement "interfaces" in
     let interfaces = app#get_all_interfaces cn in
     let hasSuperClass =
-      cInfo#has_super_class && 
+      cInfo#has_super_class &&
         (not (cInfo#get_super_class#name = "java.lang.Object")) in
     let  _ =
       iiNode#appendChildren
@@ -354,8 +365,8 @@ let write_xml_summary_class
              xml_string "implements" i#name) interfaces) in
     let _ =
       if hasSuperClass then
-        append [ xml_string "superclass" cInfo#get_super_class#name ] in
-    append [ iiNode ] in
+        append [xml_string "superclass" cInfo#get_super_class#name] in
+    append [iiNode] in
 
   (* ----------------------------------------------- class properties *)
   let _ =
@@ -372,10 +383,10 @@ let write_xml_summary_class
              (List.map (fun p ->
                   let pNode = xmlElement "cprop" in
                   begin
-                    write_xml_class_property pNode p ;
+                    write_xml_class_property pNode p;
                     pNode
                   end) cprops) in
-         append [ ppNode ] in
+         append [ppNode] in
 
   (* --------------------------------------------------------- fields *)
   let _ =
@@ -386,12 +397,16 @@ let write_xml_summary_class
         List.map (fun fs -> make_cfs cn fs) cInfo#get_fields_defined
       with
       | JCHFile.No_class_found s ->
-         raise (JCH_failure
-                  (LBLOCK [ STR "get fields defined: " ; cn#toPretty ;
-                            STR "; No class found:  " ; STR s ])) in
+         raise
+           (JCH_failure
+              (LBLOCK [
+                   STR "get fields defined: ";
+                   cn#toPretty;
+                   STR "; No class found:  ";
+                   STR s])) in
     let cfss =
       List.filter (fun cfs ->
-          let _ = 
+          let _ =
             if app#has_field cfs then
               ()
             else
@@ -404,13 +419,16 @@ let write_xml_summary_class
         ffNode#appendChildren
           (List.map (fun cfs ->
                let fNode = xmlElement "field" in
-               begin write_xmlx_field fNode cfs ; fNode end) cfss) ;
+               begin write_xmlx_field fNode cfs; fNode end) cfss);
         ffNode#appendChildren
           (List.map (fun (fs,cn) ->
                let fNode = xmlElement "field" in
-               begin write_xmlx_inherited_field fNode fs cn ; fNode end) cfssInherited)
+               begin
+                 write_xmlx_inherited_field fNode fs cn;
+                 fNode
+               end) cfssInherited)
       end in
-    append [ ffNode ] in
+    append [ffNode] in
   (* --------------------------------------------------- constructors *)
   let _ =
     let xxNode = xmlElement "constructors" in
@@ -429,11 +447,11 @@ let write_xml_summary_class
         (List.map (fun cms ->
              let mNode = xmlElement "constructor"  in
              begin
-               write_xmlx_constructor mNode cms ;
+               write_xmlx_constructor mNode cms;
                mNode
              end) cmss) in
-    append [ xxNode ] in   
-  
+    append [xxNode] in
+
   (* -------------------------------------------------------- methods *)
   let _ =
     let mmNode = xmlElement "methods" in
@@ -441,7 +459,7 @@ let write_xml_summary_class
     let cmss = List.map (make_cms cn) cInfo#get_methods_defined in
     let cmss =                    (* exclude class/object constructors *)
       List.filter (fun c ->
-          not (List.mem c#name [ "<clinit>" ; "<init>" ])) cmss in
+          not (List.mem c#name ["<clinit>"; "<init>"])) cmss in
     let cmss =                (* only include public/protected methods *)
       List.filter (fun cms ->
           let _ =
@@ -462,27 +480,30 @@ let write_xml_summary_class
           (List.map (fun cms ->
                let mNode = xmlElement "method" in
                begin
-                 write_xmlx_method mNode cms ;
+                 write_xmlx_method mNode cms;
                  mNode
-               end) cmss) ;
+               end) cmss);
         mmNode#appendChildren
           (List.map (fun (ms,cn) ->
                let mNode = xmlElement "method" in
-               begin write_xmlx_inherited_method mNode ms cn ; mNode end) cmssInherited)
+               begin
+                 write_xmlx_inherited_method mNode ms cn;
+                 mNode
+               end) cmssInherited)
       end in
-    append [ mmNode ] in
-  
+    append [mmNode] in
+
   (* ----------------------------------------------------- attributes *)
   let _ =
     begin
-      set "name" cn#simple_name ;
-      set "package" cn#package_name ;
-      sety "final" cInfo#is_final ;
-      sety "abstract" cInfo#is_abstract 
+      set "name" cn#simple_name;
+      set "package" cn#package_name;
+      sety "final" cInfo#is_final;
+      sety "abstract" cInfo#is_abstract
     end in
   ()
-  
-  
+
+
 let write_xml_summary_interface
       (node:xml_element_int) (cInfo:class_info_int) =
   let append = node#appendChildren in
@@ -496,8 +517,8 @@ let write_xml_summary_interface
       ssNode#appendChildren
         (List.map (fun cni ->
              xml_string "superinterface" cni#name) interfaces) in
-    append [ ssNode ] in
-    
+    append [ssNode] in
+
   (* ----------------------------------------------- class properties *)
   let _ =
     if function_summary_library#has_class_summary cn then
@@ -512,11 +533,11 @@ let write_xml_summary_interface
              (List.map (fun p ->
                   let pNode = xmlElement "cprop" in
                   begin
-                    write_xml_class_property pNode p ;
+                    write_xml_class_property pNode p;
                     pNode
                   end) cprops) in
-         append [ ppNode ] in
-  
+         append [ppNode] in
+
   (* --------------------------------------------------------- fields *)
   let _ =
     let ffNode = xmlElement "fields" in
@@ -526,12 +547,16 @@ let write_xml_summary_interface
         List.map (fun fs -> make_cfs cn fs) cInfo#get_fields_defined
       with
       | JCHFile.No_class_found s ->
-         raise (JCH_failure
-                  (LBLOCK [ STR "get fields defined: " ; cn#toPretty ;
-                            STR "; No class found:  " ; STR s ])) in
+         raise
+           (JCH_failure
+              (LBLOCK [
+                   STR "get fields defined: ";
+                   cn#toPretty;
+                   STR "; No class found:  ";
+                   STR s])) in
     let cfss =
       List.filter (fun cfs ->
-          let _ = 
+          let _ =
             if app#has_field cfs then
               ()
             else
@@ -542,9 +567,12 @@ let write_xml_summary_interface
       ffNode#appendChildren
         (List.map (fun cfs ->
              let fNode = xmlElement "field" in
-             begin write_xmlx_field fNode cfs ; fNode end) cfss) in
-    append [ ffNode ] in
-  
+             begin
+               write_xmlx_field fNode cfs;
+               fNode
+             end) cfss) in
+    append [ffNode] in
+
   (* -------------------------------------------------------- methods *)
   let _ =
     let mmNode = xmlElement "methods" in
@@ -552,7 +580,7 @@ let write_xml_summary_interface
     let cmss = List.map (make_cms cn) cInfo#get_methods_defined in
     let cmss =
       List.filter (fun  c ->
-          not (List.mem c#name [ "<clinit>" ; "<init>" ])) cmss in
+          not (List.mem c#name ["<clinit>"; "<init>"])) cmss in
     let cmss = List.sort (fun c1 c2 -> Stdlib.compare c1#name c2#name) cmss in
     let _ =
       List.iter (fun cms ->
@@ -562,18 +590,18 @@ let write_xml_summary_interface
       mmNode#appendChildren
         (List.map (fun cms ->
              let mNode = xmlElement "method" in
-             begin write_xmlx_interface_method mNode cms ; mNode end) cmss) in
-    append [ mmNode ] in
+             begin write_xmlx_interface_method mNode cms; mNode end) cmss) in
+    append [mmNode] in
 
   (* ----------------------------------------------------- attributes *)
   let _ =
     begin
-      set "name" cn#simple_name ;
-      set "package" cn#package_name ;
+      set "name" cn#simple_name;
+      set "package" cn#package_name;
     end in
   ()
-  
-  
+
+
 let save_xml_class_or_interface_summary (cn:class_name_int) =
   let _ = load_class_library_summary cn in
   let cInfo = app#get_class cn in
@@ -582,11 +610,11 @@ let save_xml_class_or_interface_summary (cn:class_name_int) =
   let doc = xmlDocument () in
   let root = get_jch_root tag in
   begin
-    doc#setNode root ;
-    root#appendChildren [ node ; ccNode ] ;
+    doc#setNode root;
+    root#appendChildren [node; ccNode];
     (if cInfo#is_interface then
        write_xml_summary_interface node cInfo
      else
-       write_xml_summary_class node cInfo) ;
+       write_xml_summary_class node cInfo);
     file_output#saveFile (cn#simple_name ^ ".xml") doc#toPretty
   end

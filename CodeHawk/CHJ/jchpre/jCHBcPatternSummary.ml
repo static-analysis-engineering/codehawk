@@ -3,8 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2005-2020 Kestrel Technology LLC
+
+   Copyright (c) 2005-2020  Kestrel Technology LLC
+   Copyright (c) 2020-2024  Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -43,6 +44,7 @@ open JCHPreAPI
 module H = Hashtbl
 
 let patterns = H.create 3
+
 let add_pattern (cmsix:int) (p:bc_pattern_t) = H.replace patterns cmsix p
 
 let get_pattern (cmsix:int) =
@@ -50,6 +52,7 @@ let get_pattern (cmsix:int) =
     Some (H.find patterns cmsix)
   else
     None
+
 
 let opcode_to_arithmetic_op (opc:opcode_t):arithmetic_op_t option =
   match opc with
@@ -59,17 +62,20 @@ let opcode_to_arithmetic_op (opc:opcode_t):arithmetic_op_t option =
   | OpDiv _ -> Some JDivide
   | _ -> None
 
-let resolve_call mInfo c =
+
+let resolve_call (_mInfo: method_info_int) (c: bc_call_t) =
   match c.bcp_base_type with
   | TClass cn ->
      begin
        match c.bcp_type with
-       | "static" | "special" -> [ (make_cms cn c.bcp_ms)#index ]
+       | "static" | "special" -> [(make_cms cn c.bcp_ms)#index]
        | _ -> []
      end
   | _ -> []
 
-let rec mk_basic_value_jterm (mInfo:method_info_int) (v:bc_basicvalue_t):jterm_t option =
+
+let rec mk_basic_value_jterm
+          (mInfo: method_info_int) (v: bc_basicvalue_t): jterm_t option =
   let cms = mInfo#get_class_method_signature in
   match v with
   | BcvArg i -> Some (JLocalVar i)
@@ -85,8 +91,9 @@ let rec mk_basic_value_jterm (mInfo:method_info_int) (v:bc_basicvalue_t):jterm_t
           Some (JObjectFieldValue (cms#index,i,cn#index,fs#name))
        | _ ->
           begin
-            chlog#add "basic-value jterm: that field"
-                      (LBLOCK [ cms#toPretty ; STR ": " ; bc_object_value_to_pretty obj ]) ;
+            chlog#add
+              "basic-value jterm: that field"
+              (LBLOCK [cms#toPretty; STR ": "; bc_object_value_to_pretty obj]);
             None
           end
      end
@@ -97,8 +104,9 @@ let rec mk_basic_value_jterm (mInfo:method_info_int) (v:bc_basicvalue_t):jterm_t
        | Some t -> Some (JSize t)
        | _ ->
           begin
-            chlog#add "basic-value jterm: arraylength"
-                      (LBLOCK [ cms#toPretty ; STR ": " ; bc_object_value_to_pretty obj ]) ;
+            chlog#add
+              "basic-value jterm: arraylength"
+              (LBLOCK [cms#toPretty; STR ": "; bc_object_value_to_pretty obj]);
             None
           end
      end
@@ -111,71 +119,81 @@ let rec mk_basic_value_jterm (mInfo:method_info_int) (v:bc_basicvalue_t):jterm_t
      end
   | _ ->
      begin
-       chlog#add "basic-value jterm"
-                 (LBLOCK [ cms#toPretty; STR ": " ; bc_basic_value_to_pretty v ]) ;
+       chlog#add
+         "basic-value jterm"
+         (LBLOCK [cms#toPretty; STR ": "; bc_basic_value_to_pretty v]);
        None
      end
-  
-and mk_object_value_jterm (mInfo:method_info_int) (v:bc_objectvalue_t):jterm_t option =
+
+
+and mk_object_value_jterm
+   (mInfo: method_info_int) (v: bc_objectvalue_t): jterm_t option =
   let cms = mInfo#get_class_method_signature in
   match v with
   | BcoArg i -> Some (JLocalVar i)
   | _ ->
      begin
-       chlog#add "object-value jterm"
-                 (LBLOCK [ cms#toPretty; STR ": " ; bc_object_value_to_pretty v ]) ;
+       chlog#add
+         "object-value jterm"
+         (LBLOCK [cms#toPretty; STR ": "; bc_object_value_to_pretty v]);
        None
      end
 
-and mk_value_jterm (mInfo:method_info_int) (v:bc_value_t):jterm_t option =
+
+and _mk_value_jterm (mInfo:method_info_int) (v:bc_value_t):jterm_t option =
   match v with
   | BcBasic bv -> mk_basic_value_jterm mInfo bv
   | BcObject ov -> mk_object_value_jterm mInfo ov
-                         
+
+
 let mk_basic_value_postconditions (mInfo:method_info_int) (v:bc_basicvalue_t) =
   let rvalue = match mk_basic_value_jterm mInfo v with
     | Some t -> PostRelationalExpr (JEquals, JLocalVar (-1), t)
     | _ -> PostTrue in
-  let post = [ make_postcondition false rvalue ] in
+  let post = [make_postcondition false rvalue] in
   List.filter (fun p -> not (p#get_predicate = PostTrue)) post
+
 
 let mk_object_value_postconditions (mInfo:method_info_int) (v:bc_objectvalue_t) =
   let rvalue = match mk_object_value_jterm mInfo v with
     | Some t -> PostRelationalExpr (JEquals, JLocalVar (-1), t)
     | _ -> PostTrue in
-  let post = [ make_postcondition false rvalue ] in
+  let post = [make_postcondition false rvalue] in
   List.filter (fun p -> not (p#get_predicate = PostTrue)) post
-  
-     
+
 
 let mk_value_postconditions (mInfo:method_info_int) (v:bc_value_t) =
   match v with
   | BcBasic bv -> mk_basic_value_postconditions mInfo bv
   | BcObject ov -> mk_object_value_postconditions mInfo ov
 
-let mk_error_value_postconditions (mInfo:method_info_int) (v:bc_value_t) = []
+
+let mk_error_value_postconditions (_mInfo: method_info_int) (_v: bc_value_t) = []
+
 
 let mk_pattern_postconditions
       (mInfo:method_info_int) (p:bc_pattern_t):postcondition_int list =
   match p with
   | BcpNop | BcpNopX | BcpAction _ | BcpThrow _
     | BcpActionExcept _ | BcpActionExceptThrow _ | BcpIllegalSeq _ -> []
-  | BcpInfiniteLoop _ -> [ make_postcondition false PostFalse ]
+  | BcpInfiniteLoop _ -> [make_postcondition false PostFalse]
   | BcpResult (_, v) -> mk_value_postconditions mInfo v
   | BcpResultExcept (_,_,v1,v2) ->
      (mk_value_postconditions mInfo v1) @ (mk_error_value_postconditions mInfo v2)
   | BcpResultExceptThrow (_,_,v,_) -> mk_value_postconditions mInfo v
 
-(* --------------------------------------------------------------------------------- taint *)
+(* ------------------------------------------------------------------------ taint *)
 
 let rec mk_bc_basic_value_taint_source mInfo v =
   let cms = mInfo#get_class_method_signature in
-  let logmsg p = LBLOCK [ cms#toPretty ; NL ; INDENT (8,p) ] in
+  let logmsg p = LBLOCK [cms#toPretty; NL; INDENT (8,p)] in
   match v with
-  | BcvIntConst _ | BcvLongConst _ | BcvByteConst _ | BcvShortConst _ -> Some ([],[])
+  | BcvIntConst _ | BcvLongConst _ | BcvByteConst _ | BcvShortConst _ ->
+     Some ([],[])
   | BcvDoubleConst _ | BcvFloatConst _ -> Some ([],[])
-  | BcvThisField (cn,fs) -> Some  ([],[ JObjectFieldValue (cms#index,0,cn#index,fs#name) ])
-  | BcvArg n -> Some ([],[ JLocalVar n ])
+  | BcvThisField (cn,fs) ->
+     Some  ([],[JObjectFieldValue (cms#index,0,cn#index,fs#name)])
+  | BcvArg n -> Some ([],[JLocalVar n])
   | BcvConvert (_,v) -> mk_bc_basic_value_taint_source mInfo v
   | BcvUnOpResult (_,v) -> mk_bc_basic_value_taint_source mInfo v
   | BcvBinOpResult (_,v1,v2) ->
@@ -187,13 +205,14 @@ let rec mk_bc_basic_value_taint_source mInfo v =
        | _ -> None
      end
   | BcvQResult (_,testvals,rv1,rv2) ->
-     let (valid,tv) = List.fold_left (fun (v,acc) bv ->
-                          if v then
-                            match mk_bc_value_taint_source mInfo bv with
-                            | Some (tv,_) -> (true,tv@acc)
-                            | _ -> (false,acc)
-                          else
-                            (false,acc)) (true,[]) testvals in
+     let (valid,tv) =
+       List.fold_left (fun (v,acc) bv ->
+           if v then
+             match mk_bc_value_taint_source mInfo bv with
+             | Some (tv,_) -> (true,tv@acc)
+             | _ -> (false,acc)
+           else
+             (false,acc)) (true,[]) testvals in
      if valid then
        let t1 = mk_bc_basic_value_taint_source mInfo rv1 in
        let t2 = mk_bc_basic_value_taint_source mInfo rv2 in
@@ -203,20 +222,22 @@ let rec mk_bc_basic_value_taint_source mInfo v =
          | _ -> None
        end
      else
-       None 
+       None
   | _ ->
      begin
-       chlog#add "basic value taint source" (logmsg (bc_basic_value_to_pretty v)) ;
+       chlog#add "basic value taint source" (logmsg (bc_basic_value_to_pretty v));
        None
      end
 
+
 and mk_bc_object_value_taint_source mInfo v =
   let cms = mInfo#get_class_method_signature in
-  let logmsg p = LBLOCK [ cms#toPretty ; NL ; INDENT (8,p) ] in
+  let logmsg p = LBLOCK [cms#toPretty; NL; INDENT (8,p)] in
   match v with
   | BcoNull | BcoClassConst _ | BcoStringConst _ -> Some ([],[])
-  | BcoThisField (cn,fs) -> Some  ([],[ JObjectFieldValue (cms#index,0,cn#index,fs#name) ])
-  | BcoArg n -> Some ([],[ JLocalVar n ])
+  | BcoThisField (cn,fs) ->
+     Some  ([],[JObjectFieldValue (cms#index,0,cn#index,fs#name)])
+  | BcoArg n -> Some ([],[JLocalVar n])
   | BcoCheckCast (_,v) -> mk_bc_object_value_taint_source mInfo v
   | BcoCallRv c ->
      let callvalues =
@@ -232,27 +253,32 @@ and mk_bc_object_value_taint_source mInfo v =
              begin
                chlog#add
                  "object call taint source"
-                 (logmsg (bc_object_value_to_pretty v)) ;
+                 (logmsg (bc_object_value_to_pretty v));
                None
              end
           | l ->
              begin
                chlog#add
                  "resolved object call"
-                 (logmsg (pretty_print_list l (fun i -> (retrieve_cms i)#toPretty) "[" "," "]")) ;
+                 (logmsg
+                    (pretty_print_list
+                       l (fun i -> (retrieve_cms i)#toPretty) "[" "," "]"));
                None
              end
      end
   | _ ->
      begin
-       chlog#add "object value taint source" (logmsg (bc_object_value_to_pretty v)) ;
+       chlog#add
+         "object value taint source" (logmsg (bc_object_value_to_pretty v));
        None
      end
+
 
 and mk_bc_value_taint_source mInfo v:(taint_element_t list * jterm_t list) option =
   match v with
   | BcBasic bv -> mk_bc_basic_value_taint_source mInfo bv
   | BcObject ov -> mk_bc_object_value_taint_source mInfo ov
+
 
 and mk_bc_value_list_taint_source mInfo vl =
   let (v,acc) =
@@ -265,14 +291,17 @@ and mk_bc_value_list_taint_source mInfo vl =
           (false, (tl,srcs))) (true,([],[])) vl in
   if v then Some acc else None
 
-and mk_action_taintflow (mInfo:method_info_int) (a:bc_action_t):taint_element_t list option =
+
+and mk_action_taintflow
+  (mInfo:method_info_int) (a:bc_action_t):taint_element_t list option =
   let cms = mInfo#get_class_method_signature in
-  let logmsg p = LBLOCK [ cms#toPretty ; NL ; INDENT (8,p) ] in
+  let logmsg p = LBLOCK [cms#toPretty; NL; INDENT (8,p)] in
   match a with
   | BcNop | BcNopX | BcInitObject | BcInitSuper -> Some []
-  | BcNewObject (cn,args) ->
+  | BcNewObject (_cn, args) ->
      let tlists = List.map (mk_bc_value_taint_source mInfo) args in
-     if List.for_all (fun t -> match t with Some ([],[]) -> true | _ -> false) tlists then
+     if List.for_all (fun t ->
+            match t with Some ([],[]) -> true | _ -> false) tlists then
        Some []
      else
        None
@@ -285,7 +314,7 @@ and mk_action_taintflow (mInfo:method_info_int) (a:bc_action_t):taint_element_t 
           Some ((List.map (fun src -> TTransfer (src,dst)) l) @ taintelems)
        | _ ->
           begin
-            chlog#add "action putfield taintflow" (logmsg (bc_value_to_pretty v)) ;
+            chlog#add "action putfield taintflow" (logmsg (bc_value_to_pretty v));
             None
           end
      end
@@ -301,14 +330,14 @@ and mk_action_taintflow (mInfo:method_info_int) (a:bc_action_t):taint_element_t 
      if valid then Some actiontaint else None
   | _ ->
      begin
-       chlog#add "action taintflow" (logmsg (bc_action_to_pretty a)) ;
+       chlog#add "action taintflow" (logmsg (bc_action_to_pretty a));
        None
      end
 
-                                    
+
 let mk_pattern_taintflow (mInfo:method_info_int) (p:bc_pattern_t):taint_int option =
   let cms = mInfo#get_class_method_signature in
-  let logmsg p = LBLOCK [ cms#toPretty ; NL ; INDENT (8,p) ] in
+  let logmsg p = LBLOCK [cms#toPretty; NL; INDENT (8,p)] in
   match p with
   | BcpNop | BcpNopX -> Some (make_taint [])
   | BcpResult (l,v) ->
@@ -324,13 +353,14 @@ let mk_pattern_taintflow (mInfo:method_info_int) (p:bc_pattern_t):taint_int opti
                 else
                   (false,acc)) (true,[]) l in
           if valid then
-            let rvtransfers = List.map (fun t -> TTransfer (t, JLocalVar (-1))) rv in
+            let rvtransfers =
+              List.map (fun t -> TTransfer (t, JLocalVar (-1))) rv in
             Some (make_taint (transfers @ rvtransfers @ taintelems))
           else
             None
        | _ ->
           begin
-            chlog#add "return value" (logmsg (bc_value_to_pretty v)) ;
+            chlog#add "return value" (logmsg (bc_value_to_pretty v));
             None
           end
      end
@@ -349,8 +379,8 @@ let mk_pattern_taintflow (mInfo:method_info_int) (p:bc_pattern_t):taint_int opti
        None
   | _ ->
      begin
-       chlog#add "pattern taint flow"
-                 (LBLOCK [ cms#toPretty ; STR ": " ; NL ;
-                           INDENT (8,bc_pattern_to_pretty p) ]) ;
+       chlog#add
+         "pattern taint flow"
+         (LBLOCK [cms#toPretty; STR ": "; NL; INDENT (8,bc_pattern_to_pretty p)]);
        None
      end

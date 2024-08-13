@@ -3,8 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2005-2020 Kestrel Technology LLC
+
+   Copyright (c) 2005-2020  Kestrel Technology LLC
+   Copyright (c) 2020-2024  Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,7 +29,6 @@
 open Unix
 
 (* chlib *)
-open CHNumerical
 open CHPretty
 open CHUtils
 
@@ -47,37 +47,45 @@ open JCHFile
 (* jchpre *)
 open JCHPreAPI
 
+
 (* Convert standard Unix time representation to a string *)
-let time_to_string (f:float):string = 
+let time_to_string (f:float):string =
   let tm = Unix.localtime f in
-  let sp ip = if ip < 10 then LBLOCK [ STR "0" ; INT ip ] else INT ip in
-  let p = LBLOCK [ sp (tm.tm_mon + 1) ; STR "/" ; sp tm.tm_mday ; 
-		   STR "/" ; sp (tm.tm_year + 1900) ;
-		   STR " " ; sp tm.tm_hour ; 
-		   STR ":" ; sp tm.tm_min ; 
-		   STR ":" ; sp tm.tm_sec ] in
+  let sp ip = if ip < 10 then LBLOCK [STR "0"; INT ip] else INT ip in
+  let p =
+    LBLOCK [
+        sp (tm.tm_mon + 1); STR "/"; sp tm.tm_mday;
+	STR "/"; sp (tm.tm_year + 1900);
+	STR " "; sp tm.tm_hour;
+	STR ":"; sp tm.tm_min;
+	STR ":"; sp tm.tm_sec] in
     string_printer#print p
 
 let jdk_jar_version = ref "unknown"
 let get_jdk_jar_version () = !jdk_jar_version
 
+
 let codehawk_version = ref "3.03"
 let codehawk_build_time = time_to_string (Unix.gettimeofday ())
 
+
 let get_codehawk_version () = !codehawk_version
 let get_codehawk_build_time () = codehawk_build_time
+
 
 let verbose = ref false
 let set_verbose () = verbose := true
 let get_verbose () = !verbose
 
+
 let record_jdk_jar_version s =
   let class_path = class_path s in
   match class_path with
-    [ JarFile (_, jar) ] -> 
+    [JarFile (_, jar)] ->
       begin
 	try
-	  let versionDoc = Zip.read_entry jar (Zip.find_entry jar "jdk_jar_version.xml") in
+	  let versionDoc =
+            Zip.read_entry jar (Zip.find_entry jar "jdk_jar_version.xml") in
 	  let doc = readXmlDocumentString versionDoc in
 	  let root = doc#getRoot in
 	  if root#hasOneTaggedChild "header" then
@@ -86,55 +94,60 @@ let record_jdk_jar_version s =
 	    let numFiles = xheader#getIntAttribute "files" in
 	    let jdkJarDate = xheader#getAttribute "date" in
 	    begin
-	      jdk_jar_version := version ;
+	      jdk_jar_version := version;
 	      chlog#add
                 "jdk summaries"
-                (LBLOCK [ STR "Jdk summaries: " ; INT numFiles ; STR " files. " ; 
-			  STR "Created: " ; STR jdkJarDate ])
+                (LBLOCK [
+                     STR "Jdk summaries: ";
+                     INT numFiles;
+                     STR " files. ";
+		     STR "Created: ";
+                     STR jdkJarDate])
 	    end
 	  else
 	    ch_error_log#add
               "jdk summaries"
-              (LBLOCK [ STR "Invalid jdk_jar_version.xml file "])
+              (LBLOCK [STR "Invalid jdk_jar_version.xml file "])
 	with _ ->
 	  begin
 	    ch_error_log#add
               "jdk summaries"
-              (LBLOCK [ STR "jdk.jar does not contain jdk_jar_version.xml" ]) ;
+              (LBLOCK [STR "jdk.jar does not contain jdk_jar_version.xml"]);
 	  end
       end
-  | _ -> 
+  | _ ->
      ch_error_log#add
        "jdk summaries"
-       (LBLOCK [ STR "Invalid class path to function summaries" ])
-      
-      
-let jdk_jars = [ 
-  "alt-rt.jar" ;
-  "charsets.jar" ;
-  "deploy.jar" ;
-  "dnsns.jar" ;
-  "dt.jar" ;
-  "javafx-doclet.jar" ;
-  "javafx-mx.jar" ;
-  "javaws.jar" ;
-  "jce.jar" ;
-  "jconsole.jar" ;
-  "jfr.jar" ;
-  "jfxrt.jar" ;
-  "jsse.jar" ;
-  "localedata.jar" ;
-  "management-agent.jar" ;
-  "plugin.jar" ;
-  "resources.jar" ;
-  "rt.jar" ;
-  "sa-jdi.jar" ;
-  "sunec.jar" ;
-  "sunjce_provider.jar" ;
-  "sunpkcs11.jar" ;
-  "tools.jar" ;
-  "zipfs.jar" ]
-  
+       (LBLOCK [STR "Invalid class path to function summaries"])
+
+
+let jdk_jars = [
+  "alt-rt.jar";
+  "charsets.jar";
+  "deploy.jar";
+  "dnsns.jar";
+  "dt.jar";
+  "javafx-doclet.jar";
+  "javafx-mx.jar";
+  "javaws.jar";
+  "jce.jar";
+  "jconsole.jar";
+  "jfr.jar";
+  "jfxrt.jar";
+  "jsse.jar";
+  "localedata.jar";
+  "management-agent.jar";
+  "plugin.jar";
+  "resources.jar";
+  "rt.jar";
+  "sa-jdi.jar";
+  "sunec.jar";
+  "sunjce_provider.jar";
+  "sunpkcs11.jar";
+  "tools.jar";
+  "zipfs.jar"]
+
+
 class system_settings_t:system_settings_int =
 object (self)
 
@@ -153,14 +166,15 @@ object (self)
   val mutable results_dir = "."
   val excludedclasses = new IntCollections.set_t
   val mutable max_instructions = -1
-  val mutable package_excludes = []   (* classes with this package prefix are not loaded *)
+  val mutable package_excludes = []
+  (* classes with this package prefix are not loaded *)
 
   method set_logfile (name:string) = logfile <- Some name
 
   method disable_logging_missing_classes = log_missing_classes <- false
 
   method is_logging_missing_classes_enabled = log_missing_classes
-                                   
+
   method add_pkg_exclude s =
     package_excludes <- (string_replace '.' "/" s) :: package_excludes
 
@@ -171,9 +185,11 @@ object (self)
     output_directory <- name
 
   method set_results_directory (name:string) =
-    let _ = if not (Sys.file_exists name) then
-	raise (JCH_failure 
-		 (LBLOCK [ STR "Results directory " ; STR name ; STR " not found" ])) in
+    let _ =
+      if not (Sys.file_exists name) then
+	raise
+          (JCH_failure
+	     (LBLOCK [STR "Results directory "; STR name; STR " not found"])) in
     results_dir <- name
 
   method set_excluded_classes (cnixs:int list) = excludedclasses#addList cnixs
@@ -200,7 +216,8 @@ object (self)
     match logfile with
     | Some name ->
        (try
-         let msg = LBLOCK [ STR (current_time_to_string ()) ; NL ; INDENT (2, p) ; NL ] in
+          let msg =
+            LBLOCK [STR (current_time_to_string ()); NL; INDENT (2, p); NL] in
          file_output#appendToFile name msg
        with
          _ ->
@@ -215,38 +232,42 @@ object (self)
 
   method get_time_since_start = ((Unix.gettimeofday ()) -. start_time)
 
-  method add_classpath_unit s = 
+  method add_classpath_unit s =
     if s = "" || s = " " then () else
       if not (Sys.file_exists s) then
 	begin
-	  pr_debug [ STR " ****** Warning: " ; STR s ; 
-		     STR " not found ******************************* " ; NL ]  ;
-	  ch_error_log#add "classpath" (LBLOCK [ STR "Classpath unit " ; STR s ;
-						 STR " not found" ])
+	  pr_debug [
+              STR " ****** Warning: "; STR s;
+	      STR " not found ******************************* "; NL] ;
+	  ch_error_log#add
+            "classpath"
+            (LBLOCK [STR "Classpath unit "; STR s; STR " not found"])
 	end
       else
 	classpath_units <- s :: classpath_units
 
-  method add_summary_classpath_unit s = 
-    if s = "" || s = " " then () else 
+  method add_summary_classpath_unit s =
+    if s = "" || s = " " then () else
       if not (Sys.file_exists s) then
-	pr_debug [ STR " ****** Warning: " ; STR s ; 
-		   STR " not found ******************************* " ; NL ] 
+	pr_debug [
+            STR " ****** Warning: "; STR s;
+	    STR " not found ******************************* "; NL]
       else
 	let _ = record_jdk_jar_version s in
 	summary_classpath_units <- s :: summary_classpath_units
 
-  method add_preanalyzed_classpath_unit s = 
-    if s = "" || s = " " then () else 
+  method add_preanalyzed_classpath_unit s =
+    if s = "" || s = " " then () else
       if not (Sys.file_exists s) then
 	begin
-	  pr_debug [ STR " ****** Warning: " ; STR s ; 
-		     STR " not found ******************************* " ; NL ] ;
+	  pr_debug [
+              STR " ****** Warning: "; STR s;
+	      STR " not found ******************************* "; NL];
 	  preanalyzed_dir <- Filename.dirname s
 	end
       else
 	begin
-	  preanalyzed_classpath_units <- s :: preanalyzed_classpath_units ;
+	  preanalyzed_classpath_units <- s :: preanalyzed_classpath_units;
 	  preanalyzed_dir <- Filename.dirname s
 	end
 
@@ -259,18 +280,21 @@ object (self)
       [] -> ""
     | l -> String.concat ":" l
 
-  method get_classpath = 
+  method get_classpath =
     match classpath with
     | Some cp -> cp
     | _ ->
       let sys_classpath = try Sys.getenv "CLASSPATH" with Not_found -> "" in
-      let _ = pr_debug [ STR "classpath: " ; STR self#get_classpath_string ; NL ] in
-      let cp = JCHFile.class_path (self#get_classpath_string ^ ":" ^ sys_classpath) in
-      begin classpath <- Some cp ; cp  end
-	
+      let _ =
+        pr_debug [STR "classpath: "; STR self#get_classpath_string; NL] in
+      let cp =
+        JCHFile.class_path (self#get_classpath_string ^ ":" ^ sys_classpath) in
+      begin classpath <- Some cp; cp  end
+
 
   method get_summary_classpath =
-    let summaryString = match summary_classpath_units with [] -> "" | l -> String.concat ":" l in
+    let summaryString =
+      match summary_classpath_units with [] -> "" | l -> String.concat ":" l in
     JCHFile.class_path summaryString
 
   method get_preanalyzed_classpath =
@@ -284,11 +308,13 @@ object (self)
   method is_jdk_jar (name:string) = List.mem (Filename.basename name) jdk_jars
 
   method to_pretty =
-    let classpath_p = pretty_print_list classpath_units (fun s -> LBLOCK [ STR s ; NL ]) "" "" "" in
-    LBLOCK [  STR "Classpath" ; NL ; INDENT (5, classpath_p) ; NL ]
+    let classpath_p =
+      pretty_print_list classpath_units (fun s -> LBLOCK [STR s; NL]) "" "" "" in
+    LBLOCK [ STR "Classpath"; NL; INDENT (5, classpath_p); NL]
 
 end
 
-let system_settings = new system_settings_t
-let pverbose l = if system_settings#is_verbose then pr_debug l else ()
 
+let system_settings = new system_settings_t
+
+let pverbose l = if system_settings#is_verbose then pr_debug l else ()
