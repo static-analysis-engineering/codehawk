@@ -30,9 +30,6 @@
 (* chlib *)
 open CHPretty
 
-(* chutil *)
-open CHTimingLog
-
 (* cchlib *)
 open CCHLibTypes
 open CCHUtilities

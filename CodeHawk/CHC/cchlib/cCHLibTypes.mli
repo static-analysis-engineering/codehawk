@@ -28,7 +28,6 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
 open CHNumerical
 open CHPretty
 
@@ -48,45 +47,45 @@ open CCHBasicTypes
  *)
 
 type machine_sizes_t = {
-  sizeof_short : xpr_t ;
-  sizeof_int   : xpr_t ;
+  sizeof_short : xpr_t;
+  sizeof_int   : xpr_t;
 
-  sizeof_bool  : xpr_t ;
-  sizeof_long  : xpr_t ;
+  sizeof_bool  : xpr_t;
+  sizeof_long  : xpr_t;
 
-  sizeof_longlong : xpr_t ;
-  sizeof_ptr      : xpr_t ;
-  sizeof_enum     : xpr_t ;
-  sizeof_float    : xpr_t ;
-  sizeof_double   : xpr_t ;
+  sizeof_longlong : xpr_t;
+  sizeof_ptr      : xpr_t;
+  sizeof_enum     : xpr_t;
+  sizeof_float    : xpr_t;
+  sizeof_double   : xpr_t;
 
-  sizeof_longdouble  : xpr_t ;
-  sizeof_void        : xpr_t ;
-  sizeof_fun         : xpr_t ;
+  sizeof_longdouble  : xpr_t;
+  sizeof_void        : xpr_t;
+  sizeof_fun         : xpr_t;
 
-  alignof_short  : xpr_t ;
-  alignof_int    : xpr_t ;
-  alignof_bool   : xpr_t ;
-  alignof_long   : xpr_t ;
+  alignof_short  : xpr_t;
+  alignof_int    : xpr_t;
+  alignof_bool   : xpr_t;
+  alignof_long   : xpr_t;
 
-  alignof_longlong  : xpr_t ;
-  alignof_ptr       : xpr_t ;
-  alignof_enum      : xpr_t ;
-  alignof_float     : xpr_t ;
+  alignof_longlong  : xpr_t;
+  alignof_ptr       : xpr_t;
+  alignof_enum      : xpr_t;
+  alignof_float     : xpr_t;
 
-  alignof_double    : xpr_t ;
-  alignof_longdouble: xpr_t ;
-  alignof_str       : xpr_t ;
-  alignof_fun       : xpr_t ;
-  alignof_aligned   : xpr_t ;
+  alignof_double    : xpr_t;
+  alignof_longdouble: xpr_t;
+  alignof_str       : xpr_t;
+  alignof_fun       : xpr_t;
+  alignof_aligned   : xpr_t;
 }
 
 type max_sizes_t = {
-  sizeof_int  : int ;
-  sizeof_float: int ;
-  sizeof_void : int ;
-  sizeof_ptr  : int ;
-  sizeof_fun  : int ;
+  sizeof_int  : int;
+  sizeof_float: int;
+  sizeof_void : int;
+  sizeof_ptr  : int;
+  sizeof_fun  : int;
   sizeof_enum : int
   }
 
@@ -510,18 +509,18 @@ type annotated_xpredicate_t = (xpredicate_t * summary_annotation_t)
 
 (* data structure condition *)
 type ds_condition_t = {
-    dsc_name: string ;
-    dsc_ckey : int ;
+    dsc_name: string;
+    dsc_ckey : int;
     dsc_fields : xpredicate_t list
   }
 
 type function_summary_t = {
-    fs_fname : string ;
+    fs_fname : string;
     fs_domainref: (string * string) option; (* specialized reasoning domain *)
-    fs_params : (string * int) list ;
-    fs_preconditions: annotated_xpredicate_t list ;
-    fs_postconditions: annotated_xpredicate_t list ;
-    fs_error_postconditions: annotated_xpredicate_t list ;
+    fs_params : (string * int) list;
+    fs_preconditions: annotated_xpredicate_t list;
+    fs_postconditions: annotated_xpredicate_t list;
+    fs_error_postconditions: annotated_xpredicate_t list;
     fs_sideeffects: annotated_xpredicate_t list
   }
 
@@ -601,8 +600,8 @@ type contract_instr_t =
   SetVar of int * s_term_t * s_term_t        (* line, lhs, rhs *)
 
 type contract_note_t = {
-    cn_tag: string ;
-    cn_prq: string ;
+    cn_tag: string;
+    cn_prq: string;
     cn_txt: string
   }
 
@@ -630,13 +629,13 @@ class type function_contract_int =
   end
 
 type contract_global_var_t = {
-    cgv_name: string ;
-    cgv_value: int option ;
-    cgv_lb: int option ;
-    cgv_ub: int option ;
-    cgv_static: bool ;
-    cgv_const: bool ;
-    cgv_notnull: bool ;
+    cgv_name: string;
+    cgv_value: int option;
+    cgv_lb: int option;
+    cgv_ub: int option;
+    cgv_static: bool;
+    cgv_const: bool;
+    cgv_notnull: bool;
     cgv_initialized_fields: string list
   }
 
@@ -671,11 +670,16 @@ class type global_contract_int =
 
 
 type analysis_level_t =
-  | UndefinedBehavior               (* only indicate undefined behavior (Red) *)
-  | ImplementationDefinedBehavior   (* indicate undefined behavior and implementation
-                                       defined behavior (Red,Purple) (default) *)
-  | ValueWrapAround  (* indicate undefined behavior, implementation-defined behavior,
-                        and value wrap around of unsigned integers (Red, Purple, Blue) *)
+  | UndefinedBehavior
+  (** only indicate undefined behavior (Red) *)
+
+  | ImplementationDefinedBehavior
+  (** indicate undefined behavior and implementation defined behavior
+      (Red,Purple) (default) *)
+
+  | ValueWrapAround
+  (** indicate undefined behavior, implementation-defined behavior, and value
+      wrap around of unsigned integers (Red, Purple, Blue) *)
 
 
 (** Paths and analysis options*)

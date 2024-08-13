@@ -182,4 +182,5 @@ val save_cfile_logfile: logger_int -> string -> string -> unit
 val get_xml_summaryresults_name: unit -> string
 val read_cfile_contract: unit -> unit
 val save_cfile_contract: unit -> unit
-                                   (* val get_xml_cfile: string -> file *)
+val get_savedsource_path: unit -> string
+val get_cfile_basename: unit -> string

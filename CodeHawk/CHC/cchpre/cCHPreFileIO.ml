@@ -34,7 +34,6 @@ open CHPretty
 open CHFileIO
 open CHLogger
 open CHPrettyUtil
-open CHTiming
 open CHTimingLog
 open CHXmlDocument
 open CHXmlReader
@@ -745,23 +744,7 @@ let read_target_files () =
 
 
 let get_cfile_basename ():string = ""
-                                     (*
-  try
-    Filename.concat
-      system_settings#get_path
-      (Filename.chop_extension system_settings#get_cfilename)
-  with
-  | _ ->
-    begin
-      ch_error_log#add
-        "chop extension" (LBLOCK [STR system_settings#get_cfilename]);
-      raise
-        (CCHFailure
-           (LBLOCK [
-                STR "Failed to find file : ";
-                STR (system_settings#get_cfilename)] ))
-    end
-                                      *)
+
 
 let get_contractfile_basename ():string =
   try
@@ -784,16 +767,7 @@ let  get_global_contract_filename ():string =
 
 
 let get_src_directory ():string = ""
-                                    (*
-  try
-    let semantics_dir = (Filename.dirname system_settings#get_path) in
-    (Filename.concat semantics_dir "sourcefiles")
-  with
-  | _ ->
-    begin
-      raise (CCHFailure (STR "get src directory"))
-    end
-                                     *)
+
 
 let save_cfile_logfile
       (log:logger_int) (contenttype:string) (logtype:string) =
@@ -805,10 +779,7 @@ let save_cfile_logfile
 
 
 let get_xml_summaryresults_name () = ""
-                                       (*
-  Filename.dirname
-    (Filename.dirname (system_settings#get_path)) ^ "/summaryresults.xml"
-                                        *)
+
 
 let get_xml_file_contract_name () =
   (get_contractfile_basename ()) ^ "_c.xml"
