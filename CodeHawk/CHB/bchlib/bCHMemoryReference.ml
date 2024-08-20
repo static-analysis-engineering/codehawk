@@ -277,6 +277,12 @@ object (self)
       ~msg:"is_unknown_reference"
       (fun memref -> memref#is_unknown_reference) memref_r
 
+  method is_global_reference (index: int): bool traceresult =
+    let memref_r = self#get_memory_reference index in
+    tmap
+      ~msg:"is_global_reference"
+      (fun memref -> memref#is_global_reference) memref_r
+
   method initialize =
     List.iter (fun (index, base) ->
         H.add table index (new memory_reference_t ~index ~base))

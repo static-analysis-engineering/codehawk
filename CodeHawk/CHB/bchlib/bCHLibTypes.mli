@@ -3276,6 +3276,7 @@ object
 
   (* predicates *)
   method is_unknown_reference: int -> bool traceresult
+  method is_global_reference: int -> bool traceresult
 
   (* save and restore *)
   method initialize: unit
@@ -3326,12 +3327,22 @@ type assembly_variable_denotation_t =
    External auxiliary variables can be used as the base variable for memory
    references
 
+   An auxiliary variable can also be a known memory address that is associated
+   with a name and possibly type. This form of constant-value variable is used
+   to preserve the identity of the memory address, to prevent that other offsets
+   are being added to the numeric address, thereby obscuring the meaning of the
+   address. This is particularly useful when intermediate expressions may
+   lead to an address that is outside the bounds of the structured variable
+   denoted by the name.
+
 *)
 and constant_value_variable_t =
-  | InitialRegisterValue of register_t * int (** value of register variable
-  at function entry *)
-  | InitialMemoryValue of variable_t  (** value of memory variable at function
-  entry *)
+  | InitialRegisterValue of register_t * int
+  (** value of register variable at function entry *)
+
+  | InitialMemoryValue of variable_t
+  (** value of memory variable at function entry *)
+
   | FrozenTestValue of
       variable_t            (* variable being frozen *)
       * ctxt_iaddress_t     (* address of test instruction *)
@@ -3340,28 +3351,44 @@ and constant_value_variable_t =
   [var] at the address [t_iaddr] where it participates in a test expression
   that is used as a predicate for a conditional jump instruction (or other
   condition instruction) at address [j_iaddr]*)
+
   | FunctionReturnValue  of ctxt_iaddress_t
   (** [FunctionReturnValue iaddr]: return value from call at instruction
-  address [iaddr]*)
+      address [iaddr]*)
+
   | SyscallErrorReturnValue of ctxt_iaddress_t
   (** [SyscallErrorReturnValue iaddr]: error return value from system call at
-  instruction address [iaddr]*)
+      instruction address [iaddr]*)
+
   | FunctionPointer of
       string                (* name of function *)
       * string              (* name of creator *)
       * ctxt_iaddress_t     (* address of creation *)
+
   | CallTargetValue of call_target_t
+
   | SideEffectValue of
       ctxt_iaddress_t       (* callsite *)
       * string              (* argument description *)
       * bool                (* is-global address *)
-  | MemoryAddress of int * memory_offset_t   (* memory reference index *)
+  (** [SideEffectValue (iaddr, name, is_global) represents the value
+  assigned by the callee at call site [iaddr] to the argument with
+  name [name].*)
+
+  | MemoryAddress of int * memory_offset_t * string option
+  (** [MemoryAddress (memrefix, offset, optname) represents a memory
+  address with external meaning (e.g., a global arrray) *)
+
   | BridgeVariable of ctxt_iaddress_t * int      (* call site, argument index *)
+
   | FieldValue of string * int * string     (* struct name, offset, fieldname *)
+
   | SymbolicValue of xpr_t
   (** expression that consists entirely of symbolic constants *)
+
   | SignedSymbolicValue of xpr_t * int * int
   (** sign-extended symbolic value with the original size and new size in bits*)
+
   | Special of string
   | RuntimeConstant of string
   | ChifTemp
@@ -3399,6 +3426,8 @@ object ('a)
 
       Returns [Error] if this variable is not a memory variable. *)
   method get_memory_offset: memory_offset_t traceresult
+
+  method get_memory_address_meminfo: (int * memory_offset_t * string option)
 
   (** Returns the name of the associated function pointer.
 
@@ -3461,6 +3490,7 @@ object ('a)
   method is_arm_argument_variable: bool
   method is_arm_extension_register_variable: bool
   method is_memory_variable: bool
+  method is_memory_address_variable: bool
 
   (** Returns true if this variable is set by the function environment and
       does not change during the execution of the function.
@@ -3627,6 +3657,9 @@ object
            -> numerical_t
            -> assembly_variable_int
 
+  method make_global_memory_address:
+           ?optname:string option -> numerical_t -> assembly_variable_int
+
   (** {2 Auxiliary variables}*)
 
   (** [make_frozen_test_value var taddr jaddr] returns a frozen test value
@@ -3780,6 +3813,14 @@ object
       Returns [Error] if the variable is not found or [var] is not an
       initial-value memory variable. *)
   method get_initial_memory_value_variable: variable_t -> variable_t traceresult
+
+
+  (** {2 Memory addressses} *)
+
+  method is_memory_address_variable: variable_t -> bool
+
+  method get_memory_address_meminfo:
+           variable_t -> (int * memory_offset_t * string option)
 
 
   (** {2 Memory offsets} *)
@@ -4132,6 +4173,8 @@ class type function_environment_int =
 
     (** {2 Register variables} *)
 
+    (** {3 x86} *)
+
     method mk_register_variable: register_t -> variable_t
     method mk_cpu_register_variable: cpureg_t -> variable_t
     method mk_fpu_register_variable: int -> variable_t
@@ -4141,9 +4184,13 @@ class type function_environment_int =
     method mk_debug_register_variable: int -> variable_t
     method mk_double_register_variable: cpureg_t -> cpureg_t -> variable_t
 
+    (** {3 mips} *)
+
     method mk_mips_register_variable: mips_reg_t -> variable_t
     method mk_mips_special_register_variable: mips_special_reg_t -> variable_t
     method mk_mips_fp_register_variable: int -> variable_t
+
+    (** {3 arm} *)
 
     method mk_arm_register_variable: arm_reg_t -> variable_t
     method mk_arm_extension_register_variable:
@@ -4156,18 +4203,21 @@ class type function_environment_int =
     method mk_arm_double_extension_register_variable:
              arm_extension_register_t -> arm_extension_register_t -> variable_t
 
+    (** {3 power} *)
+
     method mk_pwr_gp_register_variable: int -> variable_t
     method mk_pwr_sp_register_variable: pwr_special_reg_t -> variable_t
     method mk_pwr_register_field_variable: pwr_register_field_t -> variable_t
 
+    (** {2 Memory variables} *)
+
     method mk_global_variable:
              ?size:int -> ?offset:memory_offset_t -> numerical_t -> variable_t
 
-    method mk_initial_register_value: ?level:int -> register_t -> variable_t
-    method mk_initial_memory_value: variable_t -> variable_t
+    method mk_global_memory_address:
+             ?optname: string option -> numerical_t -> variable_t
 
-    method mk_flag_variable: flag_t -> variable_t
-    method mk_bridge_value: ctxt_iaddress_t -> int -> variable_t
+    method mk_initial_memory_value: variable_t -> variable_t
 
     method mk_memory_variable:
              ?save_name:bool
@@ -4186,6 +4236,22 @@ class type function_environment_int =
              -> memory_offset_t
              -> variable_t
     method mk_unknown_memory_variable: string -> variable_t
+
+    method mk_memory_address_deref_variable:
+             ?size: int -> ?offset: int -> variable_t -> variable_t
+
+    (** {2 Memory address variables} *)
+
+    method mk_global_memory_address:
+             ?optname: string option -> numerical_t -> variable_t
+
+    (** {2 Other variables} *)
+
+    method mk_initial_register_value: ?level:int -> register_t -> variable_t
+
+    method mk_flag_variable: flag_t -> variable_t
+    method mk_bridge_value: ctxt_iaddress_t -> int -> variable_t
+
     method mk_frozen_test_value:
              variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t -> variable_t
     method mk_special_variable: string -> variable_t
@@ -4249,6 +4315,13 @@ class type function_environment_int =
 
         Returns [Error] if [index] is not a valid index of a memory reference. *)
     method is_unknown_reference: int -> bool traceresult
+
+
+    (** {2 Memory address variables} *)
+
+    (** [is_memory_address_variable v] returns true if [v] is a constant-value
+        variable for a memory address.*)
+    method is_memory_address_variable: variable_t -> bool
 
 
     (** {2 Memory offsets} *)

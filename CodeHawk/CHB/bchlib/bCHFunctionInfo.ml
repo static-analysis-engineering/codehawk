@@ -785,6 +785,24 @@ object (self)
       let avar = varmgr#make_memory_variable memref ~size offset in
       self#mk_variable avar
 
+  method mk_memory_address_deref_variable
+           ?(size=4)
+           ?(offset=0)
+           (var: variable_t): variable_t =
+    if self#is_memory_address_variable var then
+      let (memrefix, memoffset, optname) = varmgr#get_memory_address_meminfo var in
+      let memref = TR.tget_ok (varmgr#memrefmgr#get_memory_reference memrefix) in
+      let v = self#mk_index_offset_memory_variable memref memoffset in
+      let _ =
+        match optname with
+        | Some name -> self#set_variable_name v name
+        | _ -> () in
+      v
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [STR "Not a memory address variable"; var#toPretty]))
+
   method mk_index_offset_global_memory_variable
            ?(elementsize=4)
            (base: numerical_t)
@@ -910,6 +928,9 @@ object (self)
           default ())
     else
       default ()
+
+  method mk_global_memory_address ?(optname = None) (n: numerical_t) =
+    self#mk_variable (varmgr#make_global_memory_address ~optname n)
 
   method mk_register_variable (register:register_t) =
     self#mk_variable (varmgr#make_register_variable register)
@@ -1394,6 +1415,8 @@ object (self)
   method is_basevar_memory_variable = varmgr#is_basevar_memory_variable
 
   method is_basevar_memory_value = varmgr#is_basevar_memory_value
+
+  method is_memory_address_variable = varmgr#is_memory_address_variable
 
   method is_calltarget_value = varmgr#is_calltarget_value
 

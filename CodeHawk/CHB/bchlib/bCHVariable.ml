@@ -45,6 +45,8 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypeUtil
+open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFunctionStub
@@ -128,11 +130,19 @@ object (self:'a)
 	  "arg_" ^ (string_of_int n) ^ "_for_call_at_" ^ address
 	| Special s -> "special_" ^ s
   	| RuntimeConstant s -> "rtc_" ^ s
-        | MemoryAddress (i, offset) ->
-           "memaddr_"
-           ^ (string_of_int i)
-           ^ "_"
-           ^ (memory_offset_to_string offset)
+        | MemoryAddress (i, offset, opts) ->
+           (match opts with
+            | Some s ->
+               let memty = get_symbolic_address_type_by_name s in
+               if is_array_type memty then
+                 s
+               else
+                 "addr_" ^ s
+            | _ ->
+               "memaddr_"
+               ^ (string_of_int i)
+               ^ "_"
+               ^ (memory_offset_to_string offset))
 	| ChifTemp -> "temp" in
     let name = aux denotation in
     if has_control_characters name then
@@ -202,6 +212,15 @@ object (self:'a)
     | _ ->
        Error ["get_pointed_to_function_name: " ^ self#get_name]
 
+  method get_memory_address_meminfo =
+    match denotation with
+    | AuxiliaryVariable (MemoryAddress (memrefix, memoffset, optname)) ->
+       (memrefix, memoffset, optname)
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Not a memory address variable: "; self#toPretty]))
+
   method is_frozen_test_value =
     match denotation with
     | AuxiliaryVariable (FrozenTestValue _) -> true
@@ -262,6 +281,7 @@ object (self:'a)
 	  | SideEffectValue _
 	  | FieldValue _
           | SymbolicValue _
+          | MemoryAddress _
           | SignedSymbolicValue _ -> true
 	| _ -> false
       end
@@ -335,6 +355,11 @@ object (self:'a)
 
   method is_memory_variable =
     match denotation with MemoryVariable _ -> true | _ -> false
+
+  method is_memory_address_variable =
+    match denotation with
+    | (AuxiliaryVariable (MemoryAddress _)) -> true
+    | _ -> false
 
   method get_memory_reference =
     match denotation with
@@ -557,6 +582,12 @@ object (self)
     let offset = ConstantOffset (n, offset) in
     let memref = memrefmgr#mk_global_reference in
     self#make_memory_variable ~size memref offset
+
+  method make_global_memory_address ?(optname=None) (n: numerical_t) =
+    let memref = memrefmgr#mk_global_reference in
+    let offset = ConstantOffset (n, NoOffset) in
+    self#mk_variable
+      (AuxiliaryVariable (MemoryAddress (memref#index, offset, optname)))
 
   method make_frozen_test_value
            (var:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
@@ -847,6 +878,19 @@ object (self)
 
   method is_memory_variable (v: variable_t) =
     tfold_default (fun av -> av#is_memory_variable) false (self#get_variable v)
+
+  method is_memory_address_variable (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_memory_address_variable) false (self#get_variable v)
+
+  method get_memory_address_meminfo (v: variable_t) =
+    if self#is_memory_address_variable v then
+      let avar = TR.tget_ok (self#get_variable v) in
+      avar#get_memory_address_meminfo
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [STR "Not a memory address variable: "; v#toPretty]))
 
   method is_basevar_memory_variable (v: variable_t) =
     (self#is_memory_variable v)
