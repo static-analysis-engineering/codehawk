@@ -696,6 +696,8 @@ object (self)
                default ())
            (default ())
            (numerical_to_doubleword n)
+      | XVar v when self#f#env#is_memory_address_variable v ->
+         self#f#env#mk_memory_address_deref_variable v
       | _ ->
          let (memref, memoffset) = self#decompose_address  address in
          if is_constant_offset memoffset then

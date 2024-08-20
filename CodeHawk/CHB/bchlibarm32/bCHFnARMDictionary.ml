@@ -506,7 +506,11 @@ object (self)
          let result = XOp (XPlus, [xrn; xrm]) in
          let xxrn = rewrite_expr xrn in
          let xxrm = rewrite_expr xrm in
-         let rresult = rewrite_expr ?restrict:(Some 4) result in
+         let rresult =
+           match xxrn with
+           | XVar v when floc#f#env#is_memory_address_variable v ->
+              XOp (XPlus, [xxrn; xxrm])
+           | _ -> rewrite_expr ?restrict:(Some 4) result in
          let _ = ignore (get_string_reference floc rresult) in
          let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
          let uses = get_def_use vrd in

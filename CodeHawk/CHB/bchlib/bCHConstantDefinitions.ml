@@ -305,6 +305,15 @@ object (self)
            (LBLOCK [
                 STR "No symbolic address found for name: "; STR name]))
 
+  method get_symbolic_address_type_by_name (name: string): btype_t =
+    if H.mem addrname_table name then
+      (H.find addrname_table name).xconst_type
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "No symbolic address found for name: "; STR name]))
+
   method get_untyped_symbolic_address_names: string list =
     H.fold (fun k v a ->
         if is_unknown_type v.xconst_type then k::a else a) addrname_table []
@@ -385,6 +394,10 @@ let has_symbolic_address (name: string): bool =
 
 let get_symbolic_address (name: string): doubleword_int =
   symbolic_addresses#get_symbolic_address name
+
+
+let get_symbolic_address_type_by_name (name: string): btype_t =
+  symbolic_addresses#get_symbolic_address_type_by_name name
 
 
 let get_untyped_symbolic_address_names (): string list =

@@ -819,8 +819,8 @@ let translate_arm_instruction
      let xrm = rm#to_expr floc in
      let usehigh = get_use_high_vars [xrn; xrm] in
      let result = XOp (XPlus, [xrn; xrm]) in
-     let result = floc#inv#rewrite_expr result in
-     let result = simplify_xpr result in
+     (* let result = floc#inv#rewrite_expr result in
+     let result = simplify_xpr result in *)
      let result =
        match result with
        | XConst (IntConst n) when n#geq numerical_e32 ->
@@ -1861,6 +1861,35 @@ let translate_arm_instruction
          ~usehigh:usehigh
          ctxtiaddr in
      let cmds = defcmds @ cmds @ updatecmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | LogicalShiftLeft (_, c, rd, rn, rm, _) when rm#is_small_immediate ->
+     let floc = get_floc loc in
+     let vrd = rd#to_register in
+     let xrn = rn#to_expr floc in
+     let xxrn = rewrite_expr floc xrn in
+     let m = rm#to_numerical#toInt in
+     let factor = match m with
+       | 0 -> 1
+       | 1 -> 2
+       | 2 -> 4
+       | 3 -> 8
+       | 4 -> 16
+       | _ -> 1 in  (* not reachable by small immediate *)
+     let usevars = get_register_vars [rn] in
+     let usehigh = get_use_high_vars [xxrn] in
+     let result = XOp (XMult, [xxrn; int_constant_expr factor]) in
+     let (vrd, cmds) = floc#get_ssa_assign_commands vrd ~vtype:t_uint result in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vrd]
+         ~use:usevars
+         ~usehigh:usehigh
+         ~flagdefs:flagdefs
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)

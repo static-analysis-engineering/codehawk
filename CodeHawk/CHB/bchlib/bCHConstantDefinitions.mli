@@ -81,6 +81,9 @@ val has_symbolic_address: string -> bool
 val get_symbolic_address: string -> doubleword_int
 
 
+val get_symbolic_address_type_by_name: string -> btype_t
+
+
 (** Returns a list of names that are associated with an address without
     associated type.*)
 val get_untyped_symbolic_address_names: unit -> string list

@@ -198,6 +198,7 @@ class type arm_operand_int =
     method is_read: bool
     method is_write: bool
     method is_immediate: bool
+    method is_small_immediate: bool
     method is_register: bool
     method is_pc_register: bool
     method is_double_register: bool

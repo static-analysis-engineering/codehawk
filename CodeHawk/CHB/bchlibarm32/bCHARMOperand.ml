@@ -46,6 +46,7 @@ open Xsimplify
 open BCHBasicTypes
 open BCHBCTypes
 open BCHBCTypeUtil
+open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFunctionData
@@ -482,6 +483,9 @@ object (self:'a)
                         | XConst (IntConst n) ->
                            (floc#env#mk_global_variable ~size n,
                             [STR "ARMShiftedIndexOffset"; STR "explicit"])
+                        | XVar v when floc#f#env#is_memory_address_variable v ->
+                           (floc#f#env#mk_memory_address_deref_variable v,
+                            [STR "ARMShiftedIndexOffset"; STR "memory address"])
                         | _ ->
                            (env#mk_unknown_memory_variable "operand",
                             [STR "ARMShiftedIndexOffset";
@@ -555,7 +559,17 @@ object (self:'a)
     match kind with
     | ARMImmediate imm ->
        let imm = if unsigned then imm#to_unsigned else imm in
-       num_constant_expr imm#to_numerical
+       (match imm#to_doubleword with
+        | Some dw ->
+           if has_symbolic_address_name dw then
+             let name = get_symbolic_address_name dw in
+             let var =
+               floc#f#env#mk_global_memory_address
+                 ~optname:(Some name) imm#to_numerical in
+             XVar var
+           else
+             num_constant_expr imm#to_numerical
+        | _ -> num_constant_expr imm#to_numerical)
     | ARMFPConstant _ -> XConst XRandom
     | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
     | ARMDoubleReg _ -> XVar (self#to_variable floc)
@@ -568,7 +582,15 @@ object (self:'a)
        num_constant_expr a#to_numerical
     | ARMLiteralAddress a ->
        if elf_header#is_program_address a then
-         num_constant_expr (elf_header#get_program_value a)#to_numerical
+         let dw = elf_header#get_program_value a in
+         if has_symbolic_address_name dw then
+           let name = get_symbolic_address_name dw in
+           let var =
+             floc#f#env#mk_global_memory_address
+               ~optname:(Some name) dw#to_numerical in
+           XVar var
+         else
+           num_constant_expr (elf_header#get_program_value a)#to_numerical
        else
          begin
            ch_error_log#add
@@ -670,6 +692,16 @@ object (self:'a)
 
   method is_immediate =
     match kind with ARMImmediate _ -> true | _ -> false
+
+  method is_small_immediate =
+    match kind with
+    | ARMImmediate imm ->
+       let num = self#to_numerical in
+       (try
+          num#toInt >= 0 && num#toInt < 5
+        with
+        | _ -> false)
+    | _ -> false
 
   method is_register =
     match kind with
