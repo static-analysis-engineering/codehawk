@@ -546,7 +546,7 @@ object (self)
                        Some (t_ptrto (type_constant_to_btype c))
                     | [Store; OffsetAccess _] ->
                        Some (t_ptrto (type_constant_to_btype c))
-                    | [OffsetAccessA (size, _)] ->
+                    | [OffsetAccessA (_size, _)] ->
                        Some (t_array (type_constant_to_btype c) 1)
                     | _ -> None in
                   match optty with

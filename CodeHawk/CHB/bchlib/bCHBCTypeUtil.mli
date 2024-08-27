@@ -226,11 +226,14 @@ val get_struct_type_compinfo: btype_t -> bcompinfo_t
 
 val get_struct_type_fields: btype_t -> bfieldinfo_t list
 
+val get_struct_field_at_offset: bcompinfo_t -> int -> (bfieldinfo_t * int) option
+
 val get_compinfo_struct_type: bcompinfo_t -> btype_t
 
 val get_compinfo_field: bcompinfo_t -> string -> bfieldinfo_t
 
 val get_compinfo_scalar_type_at_offset: bcompinfo_t -> int -> btype_t option
+
 
 (** {2 Fieldinfos}*)
 

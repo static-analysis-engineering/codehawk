@@ -148,3 +148,8 @@ val read_xml_symbolic_flags: xml_element_int -> unit
     narrowed to a particular type [ty].*)
 val has_constant_value: ?ty:btype_t option -> string -> bool
 val get_constant_value: ?ty:btype_t option -> string -> doubleword_int
+
+
+(** {1 Access for unit tests} *)
+
+val add_address: constant_definition_t -> unit

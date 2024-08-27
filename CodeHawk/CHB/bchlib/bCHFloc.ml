@@ -1069,29 +1069,51 @@ object (self)
 
   method get_fts_parameter_expr (_p: fts_parameter_t) = None
 
-  method private get_offset ox =
-    let oxs = simplify_xpr ox in
-    match oxs with
-    | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
-    | XVar v -> IndexOffset (v, 1, NoOffset)
-    | XOp (XMult, [XConst (IntConst n); XVar v]) when n#is_int ->
-       IndexOffset (v, n#toInt, NoOffset)
-    | XOp (XMult, [XConst (IntConst _); XVar _]) ->
-      let msg = LBLOCK [self#l#toPretty; STR ": floc#get_offset: "; x2p oxs] in
-      begin
-	ch_error_log#add "number too large" msg;
-	UnknownOffset
-      end
-    | XOp (XPlus, [XConst (IntConst n); y]) ->
-       ConstantOffset (n, self#get_offset y)
-    | _ ->
-      let msg = (LBLOCK [STR "offset expr:  "; x2p oxs]) in
-      begin
-	ch_error_log#add
-          "unknown offset expr"
-	  (LBLOCK [self#l#toPretty; STR "  "; msg]);
-	UnknownOffset
-      end
+  method decompose_array_address
+           (x: xpr_t): (memory_reference_int * memory_offset_t) option =
+    let _ = chlog#add "decompose_array_address" (LBLOCK [STR "xpr: "; x2p x]) in
+    let vars = vars_as_positive_terms x in
+    let memaddrs = List.filter self#f#env#is_memory_address_variable vars in
+    let optbase =
+      match memaddrs with
+      | [base] ->
+         let (_, _, _, optty) =
+           self#f#env#varmgr#get_memory_address_meminfo base in
+         let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
+         Some (XVar base, offset, optty)
+      | _ ->
+         None in
+    match optbase with
+    | None -> None
+    | Some (_, _, None) -> None
+    | Some (XVar base, xoffset, Some ty) ->
+       let _ =
+         chlog#add
+           "decompose_array_address" (LBLOCK [STR "xoffset: "; x2p xoffset]) in
+       let eltty = get_element_type ty in
+       let elttysize = size_of_btype eltty in
+       let optmemref = TR.to_option (self#env#mk_base_variable_reference base) in
+       let optindex = get_array_index_offset xoffset elttysize in
+       let memoffset =
+         match optindex with
+         | None ->
+            let _ =
+              chlog#add
+                "decompose_array_address"
+                (LBLOCK [
+                     STR "Unable to get array index offset for ";
+                     x2p xoffset;
+                     STR " with size ";
+                     INT elttysize]) in
+            UnknownOffset
+         | Some (indexxpr, rem) ->
+            let remoffset = mk_maximal_memory_offset rem eltty in
+            ArrayIndexOffset (indexxpr, remoffset) in
+       (match (optmemref, memoffset) with
+        | (_, UnknownOffset) -> None
+        | (Some memref, memoffset) -> Some (memref, memoffset)
+        | _ -> None)
+    | _ -> None
 
 
   (* the objective is to extract a base pointer and an offset expression

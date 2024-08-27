@@ -117,6 +117,7 @@ object (self)
         | BAllocatedStackFrame
         | BGlobal -> (tags, [])
       | BaseVar v -> (tags, [xd#index_variable v])
+      | BaseArray (v, t) -> (tags, [xd#index_variable v; bcd#index_typ t])
       | BaseUnknown s -> (tags, [bd#index_string s]) in
     memory_base_table#add key
 
@@ -131,6 +132,7 @@ object (self)
     | "a" -> BAllocatedStackFrame
     | "g" -> BGlobal
     | "v" -> BaseVar (xd#get_variable (a 0))
+    | "b" -> BaseArray (xd#get_variable (a 0), bcd#get_typ (a 1))
     | "u" -> BaseUnknown (bd#get_string (a 0))
     | s -> raise_tag_error name s memory_base_mcts#tags
 
@@ -144,6 +146,8 @@ object (self)
          (tags @ [fname], [fkey; self#index_memory_offset m])
       | IndexOffset (v,i,m) ->
          (tags, [xd#index_variable v; i; self#index_memory_offset m])
+      | ArrayIndexOffset (x, m) ->
+         (tags, [xd#index_xpr x; self#index_memory_offset m])
       | UnknownOffset -> (tags,[]) in
     memory_offset_table#add key
 
@@ -159,6 +163,7 @@ object (self)
     | "f" -> FieldOffset ((t 1, a 0), self#get_memory_offset (a 1))
     | "i" ->
        IndexOffset (xd#get_variable (a 0), a 1, self#get_memory_offset (a 2))
+    | "a" -> ArrayIndexOffset (xd#get_xpr (a 0), self#get_memory_offset (a 1))
     | "u" -> UnknownOffset
     | s -> raise_tag_error name s memory_offset_mcts#tags
 
@@ -197,11 +202,12 @@ object (self)
       | CallTargetValue t -> (tags, [id#index_call_target t])
       | SideEffectValue  (a, name, isglobal) ->
          (tags @  [a ], [bd#index_string name; (if isglobal then 1 else 0)])
-      | MemoryAddress (i, o, opts) ->
+      | MemoryAddress (i, o, opts, optty) ->
          (tags,
           [i;
            self#index_memory_offset o;
-           match opts with None -> -1 | Some s -> bd#index_string s])
+           (match opts with None -> -1 | Some s -> bd#index_string s);
+           match optty with None -> -1 | Some ty -> bcd#index_typ ty])
       | BridgeVariable (a,i) -> (tags @ [a], [i])
       | FieldValue (sname,offset,fname) ->
          (tags, [bd#index_string sname; offset; bd#index_string fname])
@@ -230,7 +236,8 @@ object (self)
        MemoryAddress (
            (a 0),
            self#get_memory_offset (a 1),
-           if (a 2) = -1 then None else Some (bd#get_string (a 2)))
+           (if (a 2) = -1 then None else Some (bd#get_string (a 2))),
+           (if (a 3) = -1 then None else Some (bcd#get_typ (a 3))))
     | "bv" -> BridgeVariable (t 1, a 0)
     | "fv" -> FieldValue (bd#get_string (a 0), a 1, bd#get_string  (a 2))
     | "sv" -> SymbolicValue (xd#get_xpr (a 0))
