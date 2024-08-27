@@ -1,9 +1,15 @@
 # tests generated
 
+CHB_tests/bchlib_tests/txbchlib/bCHARMFunctionInterfaceTest
 CHB_tests/bchlib_tests/txbchlib/bCHDoublewordTest
+CHB_tests/bchlib_tests/txbchlib/bCHFlocTest
+CHB_tests/bchlib_tests/txbchlib/bCHFunctionInterfaceTest
 CHB_tests/bchlib_tests/txbchlib/bCHImmediateTest
 CHB_tests/bchlib_tests/txbchlib/bCHLocationTest
+CHB_tests/bchlib_tests/txbchlib/bCHMemoryReferenceTest
 CHB_tests/bchlib_tests/txbchlib/bCHStreamWrapperTest
+CHB_tests/bchlib_tests/txbchlib/bCHTypeConstraintStoreTest
+CHB_tests/bchlib_tests/txbchlib/bCHXprUtilTest
 CHB_tests/bchlibelf_tests/txbchlibelf/bCHELFDebugAbbrevSectionTest
 CHB_tests/bchlibelf_tests/txbchlibelf/bCHELFDebugLocSectionTest
 CHB_tests/bchlibelf_tests/txbchlibelf/bCHDwarfTest
