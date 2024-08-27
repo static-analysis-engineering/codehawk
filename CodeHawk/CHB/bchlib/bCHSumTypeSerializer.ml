@@ -620,12 +620,14 @@ object
     | BAllocatedStackFrame -> "a"
     | BGlobal -> "g"
     | BaseVar _ -> "v"
+    | BaseArray _ -> "b"
     | BaseUnknown _ -> "u"
 
-  method !tags = [ "a"; "g"; "l"; "r"; "u"; "v" ]
+  method !tags = ["a"; "b"; "g"; "l"; "r"; "u"; "v"]
 end
 
 let memory_base_mcts: memory_base_t mfts_int = new memory_base_mcts_t
+
 
 class memory_offset_mcts_t: [ memory_offset_t ] mfts_int =
 object
@@ -638,12 +640,14 @@ object
     | ConstantOffset _ -> "c"
     | FieldOffset _ -> "f"
     | IndexOffset _ -> "i"
+    | ArrayIndexOffset _ -> "a"
     | UnknownOffset -> "u"
 
-  method !tags = [ "c"; "f"; "i"; "n"; "u" ]
+  method !tags = ["a"; "c"; "f"; "i"; "n"; "u"]
 end
 
 let memory_offset_mcts: memory_offset_t mfts_int = new memory_offset_mcts_t
+
 
 class assembly_variable_denotation_mcts_t:[assembly_variable_denotation_t] mfts_int =
 object

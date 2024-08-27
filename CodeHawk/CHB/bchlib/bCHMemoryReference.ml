@@ -37,12 +37,24 @@ open CHLogger
 open CHPrettyUtil
 open CHTraceResult
 
+(* xprlib *)
+open Xprt
+open XprToPretty
+
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
+open BCHBCTypes
+open BCHBCTypeUtil
 open BCHDoubleword
 open BCHLibTypes
 
 module H = Hashtbl
+
+
+let x2p = xpr_formatter#pr_expr
+let p2s = pretty_to_string
+let x2s x = p2s (x2p x)
 
 
 let memory_base_to_string (b: memory_base_t): string =
@@ -52,6 +64,7 @@ let memory_base_to_string (b: memory_base_t): string =
   | BAllocatedStackFrame -> "allocated-stack"
   | BGlobal -> "global"
   | BaseVar v -> "var-" ^ v#getName#getBaseName
+  | BaseArray (v, _) -> "array-" ^ v#getName#getBaseName
   | BaseUnknown s -> "unknown-" ^ s
 
 
@@ -64,11 +77,94 @@ let rec memory_offset_to_string offset =
   | ConstantOffset (n,subOffset) ->
      "[" ^ n#toString ^ "]" ^ (memory_offset_to_string subOffset)
   | FieldOffset ((fname, _), subOffset) ->
-     "_dot_" ^ fname ^ (memory_offset_to_string subOffset)
+     "." ^ fname ^ (memory_offset_to_string subOffset)
   | IndexOffset (v,size,subOffset) ->
     "[" ^ v#getName#getBaseName ^ ":" ^ (string_of_int size) ^ "]" ^
       (memory_offset_to_string subOffset)
+  | ArrayIndexOffset (x, subOffset) ->
+     "[" ^ (x2s x) ^  "]" ^ (memory_offset_to_string subOffset)
   | UnknownOffset -> "?offset?"
+
+
+let rec memory_offset_compare (o1: memory_offset_t) (o2: memory_offset_t) =
+  match (o1, o2) with
+  | (NoOffset, NoOffset) -> 0
+  | (NoOffset, _) -> -1
+  | (_, NoOffset) -> 1
+  | (ConstantOffset (n1, so1), ConstantOffset (n2, so2)) ->
+     let l1 = n1#compare n2 in
+     if l1 = 0 then
+       memory_offset_compare so1 so2
+     else
+       l1
+  | (ConstantOffset _, _) -> -1
+  | (_, ConstantOffset _) -> 1
+  | (FieldOffset ((name1, key1), so1), FieldOffset ((name2, key2), so2)) ->
+     let l1 = Stdlib.compare name1 name2 in
+     if l1 = 0 then
+       let l2 = Stdlib.compare key1 key2 in
+       if l2 = 0 then
+         memory_offset_compare so1 so2
+       else
+         l2
+     else
+       l1
+  | (FieldOffset _, _) -> -1
+  | (_, FieldOffset _) -> 1
+  | (IndexOffset (v1, size1, so1), IndexOffset (v2, size2, so2)) ->
+     let l1 = v1#compare v2 in
+     if l1 = 0 then
+       let l2 = Stdlib.compare size1 size2 in
+       if l2 = 0 then
+         memory_offset_compare so1 so2
+       else
+         l2
+     else
+       l1
+  | (IndexOffset _, _) -> -1
+  | (_, IndexOffset _) -> 1
+  | (ArrayIndexOffset (x1, so1), ArrayIndexOffset (x2, so2)) ->
+     let l1 = syntactic_comparison x1 x2 in
+     if l1 = 0 then
+       memory_offset_compare so1 so2
+     else
+       l1
+  | (ArrayIndexOffset _, _) -> -1
+  | (_, ArrayIndexOffset _) -> 1
+  | (UnknownOffset, UnknownOffset) -> 0
+
+
+
+let rec mk_maximal_memory_offset (n: numerical_t) (ty: btype_t): memory_offset_t =
+  if is_struct_type ty then
+    let compinfo = get_struct_type_compinfo ty in
+    let optfinfo = get_struct_field_at_offset compinfo n#toInt in
+    match optfinfo with
+    | Some (finfo, rem) ->
+       let fielduse = (finfo.bfname, compinfo.bckey) in
+       if rem = 0 && is_scalar finfo.bftype then
+         FieldOffset (fielduse, NoOffset)
+       else
+         let remoffset =
+           mk_maximal_memory_offset (mkNumerical rem) finfo.bftype in
+         FieldOffset (fielduse, remoffset)
+    | _ ->
+       UnknownOffset
+  else if is_array_type ty then
+    ConstantOffset (n, NoOffset)
+  else if n#equal numerical_zero then
+    NoOffset
+  else
+    begin
+      ch_error_log#add
+        "mk maximal memory offset"
+        (LBLOCK [
+             STR "Unexpected offset found for ";
+             btype_to_pretty ty;
+             STR " with offset ";
+             n#toPretty]);
+      UnknownOffset
+    end
 
 
 let rec is_unknown_offset offset =
@@ -198,6 +294,7 @@ object (self:'a)
   method get_name =
     match base with
     | BaseVar v -> v#getName#getBaseName
+    | BaseArray (v, _) -> v#getName#getBaseName
     | BLocalStackFrame -> "var"
     | BRealignedStackFrame -> "varr"
     | BAllocatedStackFrame -> "vara"
@@ -261,6 +358,9 @@ object (self)
   method mk_global_reference = self#mk_reference BGlobal
 
   method mk_basevar_reference v = self#mk_reference (BaseVar v)
+
+  method mk_base_array_reference (v: variable_t) (t: btype_t) =
+    self#mk_reference (BaseArray (v, t))
 
   method mk_unknown_reference s = self#mk_reference (BaseUnknown s)
 

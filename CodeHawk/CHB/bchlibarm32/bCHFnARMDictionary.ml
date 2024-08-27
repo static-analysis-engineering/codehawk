@@ -506,18 +506,22 @@ object (self)
          let result = XOp (XPlus, [xrn; xrm]) in
          let xxrn = rewrite_expr xrn in
          let xxrm = rewrite_expr xrm in
-         let rresult =
-           match xxrn with
-           | XVar v when floc#f#env#is_memory_address_variable v ->
-              XOp (XPlus, [xxrn; xxrm])
-           | _ -> rewrite_expr ?restrict:(Some 4) result in
+         let rresult = rewrite_expr ?restrict:(Some 4) result in
          let _ = ignore (get_string_reference floc rresult) in
          let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
          let uses = get_def_use vrd in
          let useshigh = get_def_use_high vrd in
+         let optmemvar = floc#decompose_array_address rresult in
+         let vars =
+           match optmemvar with
+           | Some (memref, memoff) ->
+              let memvar =
+                floc#f#env#mk_index_offset_memory_variable memref memoff in
+              [vrd; memvar]
+           | _ -> [vrd] in
          let (tagstring, args) =
            mk_instrx_data
-             ~vars:[vrd]
+             ~vars
              ~xprs:[xrn; xrm; result; rresult; xxrn; xxrm]
              ~rdefs:rdefs
              ~uses:[uses]

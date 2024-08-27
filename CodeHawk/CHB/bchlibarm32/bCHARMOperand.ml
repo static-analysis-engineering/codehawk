@@ -585,9 +585,10 @@ object (self:'a)
          let dw = elf_header#get_program_value a in
          if has_symbolic_address_name dw then
            let name = get_symbolic_address_name dw in
+           let ty = get_symbolic_address_type_by_name name in
            let var =
              floc#f#env#mk_global_memory_address
-               ~optname:(Some name) dw#to_numerical in
+               ~optname:(Some name) ~opttype:(Some ty) dw#to_numerical in
            XVar var
          else
            num_constant_expr (elf_header#get_program_value a)#to_numerical

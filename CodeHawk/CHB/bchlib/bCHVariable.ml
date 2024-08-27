@@ -46,7 +46,6 @@ open XprTypes
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypeUtil
-open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFunctionStub
@@ -130,10 +129,9 @@ object (self:'a)
 	  "arg_" ^ (string_of_int n) ^ "_for_call_at_" ^ address
 	| Special s -> "special_" ^ s
   	| RuntimeConstant s -> "rtc_" ^ s
-        | MemoryAddress (i, offset, opts) ->
-           (match opts with
-            | Some s ->
-               let memty = get_symbolic_address_type_by_name s in
+        | MemoryAddress (i, offset, opts, optty) ->
+           (match (opts, optty) with
+            | (Some s, Some memty) ->
                if is_array_type memty then
                  s
                else
@@ -214,8 +212,8 @@ object (self:'a)
 
   method get_memory_address_meminfo =
     match denotation with
-    | AuxiliaryVariable (MemoryAddress (memrefix, memoffset, optname)) ->
-       (memrefix, memoffset, optname)
+    | AuxiliaryVariable (MemoryAddress (memrefix, memoffset, optname, optty)) ->
+       (memrefix, memoffset, optname, optty)
     | _ ->
        raise
          (BCH_failure
@@ -563,6 +561,8 @@ object (self)
                   | InitialMemoryValue _
                   | FunctionReturnValue _ ->
                    Ok (memrefmgr#mk_basevar_reference v)
+                | MemoryAddress (_, _, _, Some ty) when is_array_type ty ->
+                   Ok (memrefmgr#mk_base_array_reference v ty)
                 | _ ->
                    Ok (memrefmgr#mk_unknown_reference
                          ("base_" ^ v#getName#getBaseName)))
@@ -583,11 +583,12 @@ object (self)
     let memref = memrefmgr#mk_global_reference in
     self#make_memory_variable ~size memref offset
 
-  method make_global_memory_address ?(optname=None) (n: numerical_t) =
+  method make_global_memory_address
+           ?(optname=None) ?(opttype=None) (n: numerical_t) =
     let memref = memrefmgr#mk_global_reference in
     let offset = ConstantOffset (n, NoOffset) in
     self#mk_variable
-      (AuxiliaryVariable (MemoryAddress (memref#index, offset, optname)))
+      (AuxiliaryVariable (MemoryAddress (memref#index, offset, optname, opttype)))
 
   method make_frozen_test_value
            (var:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =

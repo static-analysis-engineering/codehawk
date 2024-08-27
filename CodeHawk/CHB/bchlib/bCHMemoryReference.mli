@@ -33,6 +33,7 @@ open CHNumerical
 open CHPretty
 
 (* bchlib *)
+open BCHBCTypes
 open BCHLibTypes
 
 
@@ -49,6 +50,16 @@ val stack_offset_to_name: memory_offset_t -> string
 val realigned_stack_offset_to_name:memory_offset_t -> string
 
 val global_offset_to_name: int -> memory_offset_t -> string
+
+
+(** {1 Comparison} *)
+
+val memory_offset_compare: memory_offset_t -> memory_offset_t -> int
+
+
+(** {1 Offset constructors} *)
+
+val mk_maximal_memory_offset: numerical_t -> btype_t -> memory_offset_t
 
 
 (** {1 Offset predicates} *)

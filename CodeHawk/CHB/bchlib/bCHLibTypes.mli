@@ -3218,8 +3218,13 @@ type memory_base_t =
 | BRealignedStackFrame (** local stack frame after realignment *)
 | BAllocatedStackFrame (** extended stack frame from alloca *)
 | BGlobal  (** global data *)
-| BaseVar of variable_t  (** base provided by an externally controlled variable,
-e.g., argument to the function, or return value from malloc *)
+| BaseVar of variable_t
+(** base provided by an externally controlled variable,
+    e.g., argument to the function, or return value from malloc *)
+
+| BaseArray of variable_t * btype_t
+(** base provided by a typed array address *)
+
 | BaseUnknown of string  (** address without interpretation *)
 
 
@@ -3228,7 +3233,8 @@ type memory_offset_t =
   | NoOffset
   | ConstantOffset of numerical_t * memory_offset_t
   | FieldOffset of fielduse_t * memory_offset_t
-  | IndexOffset of variable_t * int * memory_offset_t
+  | IndexOffset of variable_t * int * memory_offset_t  (* deprecated *)
+  | ArrayIndexOffset of xpr_t * memory_offset_t  (* scaled by element type size *)
   | UnknownOffset
 
 
@@ -3269,6 +3275,7 @@ object
   method mk_allocated_stack_reference: memory_reference_int
   method mk_realigned_stack_reference: memory_reference_int
   method mk_basevar_reference: variable_t -> memory_reference_int
+  method mk_base_array_reference: variable_t -> btype_t -> memory_reference_int
   method mk_unknown_reference: string -> memory_reference_int
 
   (* accessors *)
@@ -3375,8 +3382,8 @@ and constant_value_variable_t =
   assigned by the callee at call site [iaddr] to the argument with
   name [name].*)
 
-  | MemoryAddress of int * memory_offset_t * string option
-  (** [MemoryAddress (memrefix, offset, optname) represents a memory
+  | MemoryAddress of int * memory_offset_t * string option * btype_t option
+  (** [MemoryAddress (memrefix, offset, optname, opttype) represents a memory
   address with external meaning (e.g., a global arrray) *)
 
   | BridgeVariable of ctxt_iaddress_t * int      (* call site, argument index *)
@@ -3427,7 +3434,8 @@ object ('a)
       Returns [Error] if this variable is not a memory variable. *)
   method get_memory_offset: memory_offset_t traceresult
 
-  method get_memory_address_meminfo: (int * memory_offset_t * string option)
+  method get_memory_address_meminfo:
+           (int * memory_offset_t * string option * btype_t option)
 
   (** Returns the name of the associated function pointer.
 
@@ -3658,7 +3666,10 @@ object
            -> assembly_variable_int
 
   method make_global_memory_address:
-           ?optname:string option -> numerical_t -> assembly_variable_int
+           ?optname:string option
+           -> ?opttype:btype_t option
+           -> numerical_t
+           -> assembly_variable_int
 
   (** {2 Auxiliary variables}*)
 
@@ -3820,7 +3831,7 @@ object
   method is_memory_address_variable: variable_t -> bool
 
   method get_memory_address_meminfo:
-           variable_t -> (int * memory_offset_t * string option)
+           variable_t -> (int * memory_offset_t * string option * btype_t option)
 
 
   (** {2 Memory offsets} *)
@@ -4215,7 +4226,10 @@ class type function_environment_int =
              ?size:int -> ?offset:memory_offset_t -> numerical_t -> variable_t
 
     method mk_global_memory_address:
-             ?optname: string option -> numerical_t -> variable_t
+             ?optname: string option
+             -> ?opttype: btype_t option
+             -> numerical_t
+             -> variable_t
 
     method mk_initial_memory_value: variable_t -> variable_t
 
@@ -4243,7 +4257,10 @@ class type function_environment_int =
     (** {2 Memory address variables} *)
 
     method mk_global_memory_address:
-             ?optname: string option -> numerical_t -> variable_t
+             ?optname: string option
+             -> ?opttype: btype_t option
+             -> numerical_t
+             -> variable_t
 
     (** {2 Other variables} *)
 
@@ -5448,6 +5465,9 @@ class type floc_int =
 
     (* returns the memory reference that corresponds to the address expression *)
     method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
+
+    method decompose_array_address:
+             xpr_t -> (memory_reference_int * memory_offset_t) option
 
     (* returns the variable associated with the address expression *)
     method get_lhs_from_address: xpr_t -> variable_t
