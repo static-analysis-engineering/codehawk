@@ -62,7 +62,7 @@ open BCHAnalyzeApp
 
 
 let testname = "bCHTranslateARMToCHIFTest"
-let lastupdated = "2024-01-02"
+let lastupdated = "2024-08-27"
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
 
@@ -73,31 +73,31 @@ let codemax = make_dw "0x400000"
 let translate_store () =
   let tests = [
       ("PUSHLR", "0x1b960", "04e02de500",
-       [("var.0004", "LR_in"); ("SP", "sv__(SP_in - 4)__sv")]);
+       [("var_0004", "LR_in"); ("SP", "sv__5__sv")]);
       ("PUSHR0_3", "0x19470", "0f002de900",
-       [("var.0016", "R0_in");
-        ("var.0012", "R1_in");
-        ("var.0008", "R2_in");
-        ("var.0004", "R3_in");
-        ("SP", "sv__(SP_in - 16)__sv")]);
+       [("var_0016", "R0_in");
+        ("var_0012", "R1_in");
+        ("var_0008", "R2_in");
+        ("var_0004", "R3_in");
+        ("SP", "sv__3__sv")]);
       ("STM", "0x3f7b8", "10128de800",
-       [("var.0000", "R4_in"); ("arg.0004", "R9_in"); ("arg.0008", "R12_in")]);
+       [("var_0000", "R4_in"); ("arg_0004", "R9_in"); ("arg_0008", "R12_in")]);
       ("STMIB", "0x3ba4c", "10408de900",
-       [("arg.0004", "R4_in"); ("arg.0008", "LR_in")]);
-      ("STR", "0x1b4bc", "08608de500", [("arg.0008", "R6_in")]);
+       [("arg_0004", "R4_in"); ("arg_0008", "LR_in")]);
+      ("STR", "0x1b4bc", "08608de500", [("arg_0008", "R6_in")]);
       ("STRBwb", "0x10208", "015062e500",
-       [("R2_in[-1]", "sv__(lsb R5_in)__sv"); ("R2", "sv__(R2_in - 1)__sv")]);
+       [("R2_in[-1]", "sv__13__sv"); ("R2", "sv__3__sv")]);
       ("STRwb", "0x10568", "08402de500",
-       [("var.0008", "R4_in"); ("SP", "sv__(SP_in - 8)__sv")]);
+       [("var_0008", "R4_in"); ("SP", "sv__3__sv")]);
       ("STRDwb1", "0x1b4bc", "f0416de100",
-       [("var.0016", "R4_in");
-        ("var.0012", "R5_in");
-        ("SP", "sv__(SP_in - 16)__sv")]);
+       [("var_0016", "R4_in");
+        ("var_0012", "R5_in");
+        ("SP", "sv__15__sv")]);
       ("STRDwb2", "0x10ab8", "fc406de100",
-       [("var.0012", "R4_in");
-        ("var.0008", "R5_in");
-        ("SP", "sv__(SP_in - 12)__sv")]);
-      ("STRH", "0x1b4bc", "b031cde100", [("arg.0016", "sv__(lsh R3_in)__sv")])
+       [("var_0012", "R4_in");
+        ("var_0008", "R5_in");
+        ("SP", "sv__3__sv")]);
+      ("STRH", "0x1b4bc", "b031cde100", [("arg_0016", "sv__25__sv")])
     ] in
   begin
     TS.new_testsuite (testname ^ "_translate_store") lastupdated;
