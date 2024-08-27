@@ -7,7 +7,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,9 +30,13 @@
 
 (* chlib *)
 open CHLanguage
+open CHNumerical
 
 (* chutil *)
 open CHTraceResult
+
+(* xprlib *)
+open XprTypes
 
 (* bchlib *)
 open BCHARMFunctionInterface
@@ -71,6 +75,30 @@ val equal_string_imm_result_hexstring:
 
 val equal_string_imm_result_string:
   ?msg:string -> string -> immediate_result -> unit
+
+
+val equal_array_index_offset:
+  ?msg:string
+  -> expected:(xpr_t * numerical_t) option
+  -> received:(xpr_t * numerical_t) option
+  -> unit
+  -> unit
+
+
+val equal_memory_offset:
+  ?msg:string
+  -> expected: memory_offset_t
+  -> received: memory_offset_t
+  -> unit
+  -> unit
+
+
+val equal_opt_meminfo:
+  ?msg:string
+  -> expected:(memory_reference_int * memory_offset_t) option
+  -> received:(memory_reference_int * memory_offset_t) option
+  -> unit
+  -> unit
 
 
 val equal_assignments:

@@ -30,9 +30,13 @@
 
 (* chlib *)
 open CHLanguage
+open CHNumerical
 
 (* chutil *)
 open CHTraceResult
+
+(* xprlib *)
+open XprTypes
 
 (* bchlib *)
 open BCHARMFunctionInterface
@@ -42,6 +46,7 @@ open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHFtsParameter
 open BCHLibTypes
+open BCHMemoryReference
 
 module A = TCHAssertion
 
@@ -57,8 +62,9 @@ let e31 = e15 * e16
 let e32 = e16 * e16
 
 
-let string_printer = CHPrettyUtil.string_printer
-let p2s = string_printer#print
+let p2s = CHPrettyUtil.string_printer#print
+let x2p = XprToPretty.xpr_formatter#pr_expr
+let x2s x = p2s (x2p x)
 
 
 let equal_doubleword =
@@ -115,6 +121,73 @@ let equal_string_imm_result_string
     A.fail ("expected:" ^ expected) (String.concat "; " (TR.tget_error immr)) msg
   else
     A.equal_string expected (TR.tget_ok immr)#to_string
+
+
+let equal_array_index_offset
+      ?(msg="")
+      ~(expected: (xpr_t * numerical_t) option)
+      ~(received: (xpr_t * numerical_t) option)
+      () =
+  let pri (x, n) = "(" ^ (x2s x) ^ ", " ^ n#toString ^ ")" in
+  match (expected, received) with
+  | (None, None) -> ()
+  | (Some x, None) ->
+     A.fail_msg ("Expected Some " ^ (pri x) ^ ", but received None")
+  | (None, Some x) ->
+     A.fail_msg ("Expected None, but received Some " ^ (pri x))
+  | (Some x1, Some x2) ->
+     A.make_equal
+       (fun (x1, n1) (x2, n2) -> ((x2s x1) = (x2s x2)) && n1#equal n2)
+       (fun (x, n) -> "(" ^ (x2s x) ^ ", " ^ n#toString ^ ")")
+       ~msg
+       x1
+       x2
+
+
+let equal_memory_offset
+      ?(msg="")
+      ~(expected: memory_offset_t)
+      ~(received: memory_offset_t)
+      () =
+  match (expected, received) with
+  | (UnknownOffset, UnknownOffset) -> ()
+  | (m, UnknownOffset) ->
+     A.fail_msg
+       ("Expected a known offset " ^ (memory_offset_to_string m)
+        ^ ", but received UnknownOffset")
+  | (UnknownOffset, m) ->
+     A.fail_msg
+       ("Expected UnknownOffset but received " ^ (memory_offset_to_string m))
+  | _ ->
+     A.make_equal
+       (fun m1 m2 -> (memory_offset_compare m1 m2) = 0)
+       memory_offset_to_string
+       ~msg
+       expected
+       received
+
+
+let equal_opt_meminfo
+      ?(msg="")
+      ~(expected: (memory_reference_int * memory_offset_t) option)
+      ~(received: (memory_reference_int * memory_offset_t) option)
+      () =
+  let pri (m, o) =
+    "(" ^ (p2s m#toPretty) ^ ", " ^ (memory_offset_to_string o) ^ ")" in
+  match (expected, received) with
+  | (None, None) -> ()
+  | (Some x, None) ->
+     A.fail_msg ("Expected Some " ^ (pri x) ^ ", but received None")
+  | (None, Some x) ->
+     A.fail_msg ("Expected None, but received Some " ^ (pri x))
+  | (Some x1, Some x2) ->
+     A.make_equal
+       (fun (m1, o1) (m2, o2) ->
+         (m1#compare m2) = 0 && (memory_offset_compare o1 o2) = 0)
+       pri
+       ~msg
+       x1
+       x2
 
 
 let equal_assignments
