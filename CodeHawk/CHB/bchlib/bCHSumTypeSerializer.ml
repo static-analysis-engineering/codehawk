@@ -621,9 +621,10 @@ object
     | BGlobal -> "g"
     | BaseVar _ -> "v"
     | BaseArray _ -> "b"
+    | BaseStruct _ -> "s"
     | BaseUnknown _ -> "u"
 
-  method !tags = ["a"; "b"; "g"; "l"; "r"; "u"; "v"]
+  method !tags = ["a"; "b"; "g"; "l"; "r"; "s"; "u"; "v"]
 end
 
 let memory_base_mcts: memory_base_t mfts_int = new memory_base_mcts_t

@@ -85,6 +85,7 @@ module TR = CHTraceResult
 let bcd = BCHBCDictionary.bcdictionary
 
 let x2p = xpr_formatter#pr_expr
+let p2s = pretty_to_string
 
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
@@ -687,6 +688,10 @@ object (self)
     else
       Error ["env#get_variable: index not found: " ^ (string_of_int index)]
 
+  method get_variable_type (var: variable_t): btype_t option =
+    varmgr#get_variable_type var
+
+
   (* -------------------------------------------------------- transactions -- *)
 
   val mutable in_transaction = false
@@ -788,26 +793,25 @@ object (self)
   method mk_memory_address_deref_variable
            ?(size=4)
            ?(offset=0)
-           (var: variable_t): variable_t =
-    if offset = 0 then
-      if self#is_memory_address_variable var then
-        let (memrefix, memoffset, optname, _optty) =
-          varmgr#get_memory_address_meminfo var in
-        let memref = TR.tget_ok (varmgr#memrefmgr#get_memory_reference memrefix) in
-        let v = self#mk_index_offset_memory_variable ~size memref memoffset in
-        let _ =
-          match optname with
-          | Some name -> self#set_variable_name v name
-          | _ -> () in
-        v
-      else
-        raise
-          (BCH_failure
-             (LBLOCK [STR "Not a memory address variable"; var#toPretty]))
+           (var: variable_t): variable_t traceresult =
+    if self#is_memory_address_variable var then
+      let memref_r = varmgr#make_memref_from_basevar var in
+      let optty = tfold_default (fun memref -> memref#get_type) None memref_r in
+      match optty with
+      | None ->
+         Error ["Unknown type for memory address variable: " ^ (p2s var#toPretty)]
+      | Some ty when is_struct_type ty ->
+         let memoffset = mk_maximal_memory_offset (mkNumerical offset) ty in
+         tmap
+           (fun memref ->
+             self#mk_index_offset_memory_variable ~size memref memoffset)
+           memref_r
+      | Some ty ->
+         Error [
+             "mk_memory_address_deref_variable: type is not a struct type: "
+             ^ (p2s var#toPretty) ^ " (" ^ (btype_to_string ty) ^ ")"]
     else
-      raise
-        (BCH_failure
-           (LBLOCK [STR "Nonstandard size or offset not yet supported"]))
+      Error ["Not a memory address variable: " ^ (p2s var#toPretty)]
 
   method mk_index_offset_global_memory_variable
            ?(elementsize=4)

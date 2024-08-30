@@ -83,6 +83,11 @@ val is_index_offset: memory_offset_t -> bool
 val is_unknown_offset: memory_offset_t -> bool
 
 
+(** {1 Offset constructors} *)
+
+val add_offset: memory_offset_t -> memory_offset_t -> memory_offset_t
+
+
 (** {1 Offset deconstructors} *)
 
 (** Returns a list of numerical offset and suboffsets.

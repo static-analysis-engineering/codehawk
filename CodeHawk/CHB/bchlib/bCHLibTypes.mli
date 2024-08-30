@@ -3212,18 +3212,34 @@ class type type_constraint_store_int =
 
 (** {2 Memory references} *)
 
-(** Memory reference base: a base address for a logical region of memory.*)
+(** Memory reference base: a base address for a logical region of memory.
+
+    Note that the difference between [BaseVar v] on the one hand and
+    [BaseArray (v, t)] and [BaseStruct (v, t)] on the other hand is that the
+    variable [v] referenced in [BaseVar] refers to a variable that is a
+    pointer, that is, its value is the address of the base, while the
+    variable [v] in [BaseArray] and [BaseStruct] is a symbolic representation
+    of the address itself, that is, there is no associated variable in the
+    code. The latter two are applicable to global or stack-allocated arrays
+    and structs that can be referenced directly via their address without
+    intervention of any variables, while the former requires, e.g., a return
+    variable to hold the address.
+*)
 type memory_base_t =
 | BLocalStackFrame  (** local stack frame *)
 | BRealignedStackFrame (** local stack frame after realignment *)
 | BAllocatedStackFrame (** extended stack frame from alloca *)
 | BGlobal  (** global data *)
+
 | BaseVar of variable_t
 (** base provided by an externally controlled variable,
     e.g., argument to the function, or return value from malloc *)
 
 | BaseArray of variable_t * btype_t
 (** base provided by a typed array address *)
+
+| BaseStruct of variable_t * btype_t
+(** base provided by a typed struct address *)
 
 | BaseUnknown of string  (** address without interpretation *)
 
@@ -3232,10 +3248,21 @@ type memory_base_t =
 type memory_offset_t =
   | NoOffset
   | ConstantOffset of numerical_t * memory_offset_t
+  (** typically used when the type of the variable is not known*)
+
   | FieldOffset of fielduse_t * memory_offset_t
+  (** offset in a struct variable with [(fieldname, struct key)] *)
+
   | IndexOffset of variable_t * int * memory_offset_t  (* deprecated *)
-  | ArrayIndexOffset of xpr_t * memory_offset_t  (* scaled by element type size *)
+  (** deprecated, superceded by ArrayIndexOffset *)
+
+  | ArrayIndexOffset of xpr_t * memory_offset_t
+  (** index expression is scaled by the size of the array element (assumes
+      that the type of the variable is known). The index expression must
+      consist solely of constants or constant-value variables.*)
+
   | UnknownOffset
+  (** used if none of the above apply *)
 
 
 (** Memory reference wrapper. *)
@@ -3247,19 +3274,50 @@ object ('a)
   (* comparison *)
   method compare: 'a -> int
 
-  (* accessors *)
+  (** {1 Accessors} *)
+
   method get_base: memory_base_t
   method get_name: string
+  method get_type: btype_t option
+
+  (** Returns the pointer variable that points to the base of this memory
+      reference.
+
+      Returns [Error] if this memory reference does not have a [Basevar] base.*)
   method get_external_base: variable_t traceresult
 
-  (* predicates *)
+  (** Returns the memory address variable and type of the base address of this
+      memory reference.
+
+      Returns [Error] if this memory reference does not have a [BaseArray] base.*)
+  method get_array_base: (variable_t * btype_t) traceresult
+
+  (** Returns the memory address variable and type of the base address of this
+      memory reference.
+
+      Returns [Error] if this memory reference does not have a [BaseStruct] base.*)
+  method get_struct_base: (variable_t * btype_t) traceresult
+
+  (** {1 Predicates} *)
+
+  (** Returns [true] if this reference has a [BaseVar] (pointer variable) base.*)
   method has_external_base: bool
+
+  (** Returns [true] if this reference has a [BaseArray] (array address) base.*)
+  method has_array_base: bool
+
+  (** Returns [true] if this reference has a [BaseStruct] (struct address) base.*)
+  method has_struct_base: bool
+
+  (** Returns [true] if this reference has a local stack frame base.*)
   method is_stack_reference: bool
+
   method is_realigned_stack_reference: bool
   method is_global_reference: bool
   method is_unknown_reference: bool
 
-  (* printing *)
+  (** {1 Printing} *)
+
   method toPretty : pretty_t
 end
 
@@ -3267,8 +3325,10 @@ end
 (** Principal access points for creating and retrieving memory references.*)
 class type memory_reference_manager_int =
 object
-  (* reset *)
+
   method reset: unit
+
+  (** {1 Creating Memory references} *)
 
   method mk_local_stack_reference: memory_reference_int
   method mk_global_reference: memory_reference_int
@@ -3276,16 +3336,21 @@ object
   method mk_realigned_stack_reference: memory_reference_int
   method mk_basevar_reference: variable_t -> memory_reference_int
   method mk_base_array_reference: variable_t -> btype_t -> memory_reference_int
+  method mk_base_struct_reference: variable_t -> btype_t -> memory_reference_int
   method mk_unknown_reference: string -> memory_reference_int
 
-  (* accessors *)
-  method get_memory_reference: int -> memory_reference_int traceresult
+  (** {1 Accessors} *)
 
-  (* predicates *)
+  method get_memory_reference: int -> memory_reference_int traceresult
+  method get_memory_reference_type: int -> btype_t option
+
+  (** {1 Predicates} *)
+
   method is_unknown_reference: int -> bool traceresult
   method is_global_reference: int -> bool traceresult
 
-  (* save and restore *)
+  (** {1 Initialization} *)
+
   method initialize: unit
 end
 
@@ -3417,6 +3482,7 @@ object ('a)
   (** {1 Accessors} *)
 
   method get_name: string
+  method get_type: btype_t option
   method get_denotation: assembly_variable_denotation_t
 
   (** Returns the register associated with this register variable.
@@ -3434,8 +3500,11 @@ object ('a)
       Returns [Error] if this variable is not a memory variable. *)
   method get_memory_offset: memory_offset_t traceresult
 
+  (** Returns the information associated with a memory address variable:
+      (memory reference index, memory offset, optional name, and optional
+      type of the memory region located at the address).*)
   method get_memory_address_meminfo:
-           (int * memory_offset_t * string option * btype_t option)
+           (int * memory_offset_t * string option * btype_t option) traceresult
 
   (** Returns the name of the associated function pointer.
 
@@ -3665,13 +3734,18 @@ object
            -> numerical_t
            -> assembly_variable_int
 
+  (** {2 Auxiliary variables}*)
+
+  (** [make_global_memory_address name type offset] returns a memory address
+      value variable with [Global] base and offset [offset] (the global address)
+      with an optional name and type of the global memory region at that
+      address.*)
   method make_global_memory_address:
            ?optname:string option
            -> ?opttype:btype_t option
            -> numerical_t
            -> assembly_variable_int
 
-  (** {2 Auxiliary variables}*)
 
   (** [make_frozen_test_value var taddr jaddr] returns a frozen test value
       for the variable [var] at test address [taddr] that is part of an
@@ -3740,11 +3814,14 @@ object
       In particular, the initial value of a stack-pointer returns a
       stack-frame base; the initial value of other registers or of a
       function return value or memory value returns a basevar reference.
+      A memory address value returns either a base-array or a base-struct
+      reference depending on the type provided by the memory address value.
 
       Returns an unknown-basevar memory variable if [var] cannot be used
-      as a basevar.
+      as a basevar, or if a memory address value does not have a type.
 
-      Returns [Error] if [var] cannot be found.
+      Returns [Error] if [var] cannot be found or if [var] is not a suitable
+      constant-value variable.
    *)
   method make_memref_from_basevar: variable_t -> memory_reference_int traceresult
 
@@ -3760,6 +3837,11 @@ object
   (** [get_variable_by_index index] returns the assembly variable corresponding
       to the chif variable with index [index].*)
   method get_variable_by_index: int -> assembly_variable_int traceresult
+
+  (** [get_variable_type chifvar] returns the type of the corresponding
+      assembly variable if the type can be determined without context.
+      Otherwise it returns [None]. *)
+  method get_variable_type: variable_t -> btype_t option
 
 
   (** {2 Memory variables}
@@ -3777,6 +3859,8 @@ object
       - allocated stack frame
       - global   ([is_global_variable])
       - basevar  ([is_basevar_memory_variable])
+      - basearray
+      - basestruct
       - unknown base  ([is_unknown_base_memory_variable])
    *)
 
@@ -3830,8 +3914,13 @@ object
 
   method is_memory_address_variable: variable_t -> bool
 
+  (** Returns the information associated with a memory address value:
+      (memory reference index, memory offset, optional name, optional type).
+
+      Returns [Error] if the variable is not a memory address value.*)
   method get_memory_address_meminfo:
-           variable_t -> (int * memory_offset_t * string option * btype_t option)
+           variable_t
+           -> (int * memory_offset_t * string option * btype_t option) traceresult
 
 
   (** {2 Memory offsets} *)
@@ -4165,6 +4254,8 @@ class type function_environment_int =
         In particular, the initial value of a stack-pointer returns a
         stack-frame base; the initial value of other registers or of a
         function return value or memory value returns a basevar reference.
+        A memory-address value returns a base-array or base-struct
+        reference, depending on the type of the memory-address value.
 
         Returns an unknown-basevar memory variable if [var] cannot be used
         as a basevar.
@@ -4252,7 +4343,7 @@ class type function_environment_int =
     method mk_unknown_memory_variable: string -> variable_t
 
     method mk_memory_address_deref_variable:
-             ?size: int -> ?offset: int -> variable_t -> variable_t
+             ?size: int -> ?offset: int -> variable_t -> variable_t traceresult
 
     (** {2 Memory address variables} *)
 
@@ -4294,6 +4385,8 @@ class type function_environment_int =
 
         Returns [Error] if [index] cannot be found. *)
     method get_variable: int -> variable_t traceresult
+
+    method get_variable_type: variable_t -> btype_t option
 
     (** {2 Memory variables} *)
 
@@ -5466,7 +5559,7 @@ class type floc_int =
     (* returns the memory reference that corresponds to the address expression *)
     method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
 
-    method decompose_array_address:
+    method decompose_memvar_address:
              xpr_t -> (memory_reference_int * memory_offset_t) option
 
     (* returns the variable associated with the address expression *)

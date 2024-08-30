@@ -686,8 +686,8 @@ object (self)
       match address with
       | XConst (IntConst n) ->
          log_tfold_default
-           (mk_tracelog_spec
-              ~tag:"get_memory_variable_1"
+           (log_error
+              "get_memory_variable_1"
               (self#cia ^ ": constant: " ^ n#toString))
            (fun base ->
              if system_info#get_image_base#le base then
@@ -697,9 +697,24 @@ object (self)
            (default ())
            (numerical_to_doubleword n)
       | XVar v when self#f#env#is_memory_address_variable v ->
-         self#f#env#mk_memory_address_deref_variable v
+         log_tfold_default
+           (log_error
+              "get_memory_variable_1"
+              (self#cia ^ ": memory address variable: " ^ (p2s var#toPretty)))
+           (fun v -> v)
+           (default ())
+           (self#env#mk_memory_address_deref_variable v)
+      | XOp (XPlus, [XVar v; XConst (IntConst n)])
+           when self#f#env#is_memory_address_variable v ->
+         log_tfold_default
+           (log_error
+              "get_memory_variable_1"
+              (self#cia ^ ": memory address variable: " ^ (p2s var#toPretty)))
+           (fun v -> v)
+           (default ())
+           (self#env#mk_memory_address_deref_variable ~offset:n#toInt v)
       | _ ->
-         let (memref, memoffset) = self#decompose_address  address in
+         let (memref, memoffset) = self#decompose_address address in
          if is_constant_offset memoffset then
            let memvar =
              if memref#is_global_reference then
@@ -1069,7 +1084,7 @@ object (self)
 
   method get_fts_parameter_expr (_p: fts_parameter_t) = None
 
-  method decompose_array_address
+  method decompose_memvar_address
            (x: xpr_t): (memory_reference_int * memory_offset_t) option =
     let _ = chlog#add "decompose_array_address" (LBLOCK [STR "xpr: "; x2p x]) in
     let vars = vars_as_positive_terms x in
@@ -1078,7 +1093,7 @@ object (self)
       match memaddrs with
       | [base] ->
          let (_, _, _, optty) =
-           self#f#env#varmgr#get_memory_address_meminfo base in
+           TR.tget_ok (self#f#env#varmgr#get_memory_address_meminfo base) in
          let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
          Some (XVar base, offset, optty)
       | _ ->
@@ -1086,7 +1101,7 @@ object (self)
     match optbase with
     | None -> None
     | Some (_, _, None) -> None
-    | Some (XVar base, xoffset, Some ty) ->
+    | Some (XVar base, xoffset, Some ty) when is_array_type ty ->
        let _ =
          chlog#add
            "decompose_array_address" (LBLOCK [STR "xoffset: "; x2p xoffset]) in
@@ -1112,6 +1127,25 @@ object (self)
        (match (optmemref, memoffset) with
         | (_, UnknownOffset) -> None
         | (Some memref, memoffset) -> Some (memref, memoffset)
+        | _ ->
+           None)
+    | Some (XVar base, xoffset, Some ty) when is_struct_type ty ->
+       let _ =
+         chlog#add
+           "decompose_struct_address" (LBLOCK [STR "xoffset: "; x2p xoffset]) in
+       let optmemref = TR.to_option (self#env#mk_base_variable_reference base) in
+       let cinfo = get_struct_type_compinfo ty in
+       (match xoffset with
+        | XConst (IntConst n) ->
+           let optfinfo = get_struct_field_at_offset cinfo n#toInt in
+           (match optfinfo with
+            | None -> None
+            | Some (finfo, rem) when rem = 0 ->
+               let memoffset = FieldOffset ((finfo.bfname, cinfo.bckey), NoOffset) in
+               (match optmemref with
+                | Some memref -> Some (memref, memoffset)
+                | _ -> None)
+            | _ -> None)
         | _ -> None)
     | _ -> None
 
