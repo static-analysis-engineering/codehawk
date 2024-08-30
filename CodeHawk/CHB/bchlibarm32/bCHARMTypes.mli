@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2023 Aarno Labs, LLC
+   Copyright (c) 2021-2024 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -191,7 +191,7 @@ class type arm_operand_int =
     method to_multiple_expr: floc_int -> xpr_t list
     method to_lhs: floc_int -> variable_t * cmd_t list
     method to_multiple_lhs: floc_int -> variable_t list * cmd_t list
-    method to_updated_offset_address: floc_int -> xpr_t
+    method to_updated_offset_address: floc_int -> (int * xpr_t) traceresult
     method to_btype: btype_t
 
     (* predicate *)

@@ -75,6 +75,7 @@ module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("FnARMDictionary:" ^ tag) msg
@@ -296,13 +297,14 @@ object (self)
           (tags: string list)
           (args: int list)
           (v: variable_t)
+          (inc: int)
           (x: xpr_t): (string list) * (int list) =
       let _ =
         if (List.length tags) = 0 then
           raise
             (BCH_failure
                (LBLOCK [STR "Empty tag list in add_base_update"])) in
-      let xtag = (List.hd tags) ^ "vtxdh" in
+      let xtag = (List.hd tags) ^ "vtlxdh" in
       let uses = [get_def_use v] in
       let useshigh = [get_def_use_high v] in
       let tags = xtag :: ((List.tl tags) @ ["bu"]) in
@@ -310,6 +312,7 @@ object (self)
         args
         @ [xd#index_variable v;
            bcd#index_typ t_unknown;
+           inc;
            xd#index_xpr x]
         @ uses @ useshigh in
       (tags, args) in
@@ -1213,8 +1216,12 @@ object (self)
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
-             let xaddr = mem#to_updated_offset_address floc in
-             add_base_update tags args vrn xaddr
+             let addr_r = mem#to_updated_offset_address floc in
+             log_tfold_default
+               (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDR"))
+               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
+               (tags, args)
+               addr_r
            else
              (tags, args) in
          (tags, args)
@@ -1245,8 +1252,13 @@ object (self)
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
-             let xaddr = mem#to_updated_offset_address floc in
-             add_base_update tags args vrn xaddr
+             let addr_r = mem#to_updated_offset_address floc in
+             log_tfold_default
+               (log_error
+                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRB"))
+               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
+               (tags, args)
+               addr_r
            else
              (tags, args) in
          (tags, args)
@@ -1283,8 +1295,13 @@ object (self)
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
-             let xaddr = mem#to_updated_offset_address floc in
-             add_base_update tags args vrn xaddr
+             let addr_r = mem#to_updated_offset_address floc in
+             log_tfold_default
+               (log_error
+                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRB"))
+               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
+               (tags, args)
+               addr_r
            else
              (tags, args) in
          (tags, args)
@@ -1315,8 +1332,13 @@ object (self)
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
-             let xaddr = mem#to_updated_offset_address floc in
-             add_base_update tags args vrn xaddr
+             let addr_r = mem#to_updated_offset_address floc in
+             log_tfold_default
+               (log_error
+                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDREX"))
+               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
+               (tags, args)
+               addr_r
            else
              (tags, args) in
          (tags, args)
@@ -1346,8 +1368,13 @@ object (self)
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
-             let xaddr = mem#to_updated_offset_address floc in
-             add_base_update tags args vrn xaddr
+             let addr_r = mem#to_updated_offset_address floc in
+             log_tfold_default
+               (log_error
+                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRH"))
+               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
+               (tags, args)
+               addr_r
            else
              (tags, args) in
          (tags, args)
@@ -1377,8 +1404,13 @@ object (self)
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
-             let xaddr = mem#to_updated_offset_address floc in
-             add_base_update tags args vrn xaddr
+             let addr_r = mem#to_updated_offset_address floc in
+             log_tfold_default
+               (log_error
+                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRSB"))
+               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
+               (tags, args)
+               addr_r
            else
              (tags, args) in
          (tags, args)
@@ -1406,8 +1438,13 @@ object (self)
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn = rn#to_variable floc in
-             let xaddr = mem#to_updated_offset_address floc in
-             add_base_update tags args vrn xaddr
+             let addr_r = mem#to_updated_offset_address floc in
+             log_tfold_default
+               (log_error
+                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRSH"))
+               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
+               (tags, args)
+               addr_r
            else
              (tags, args) in
          (tags, args)

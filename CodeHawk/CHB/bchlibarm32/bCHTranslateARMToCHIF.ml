@@ -72,6 +72,7 @@ module LF = CHOnlineCodeSet.LanguageFactory
 module TR = CHTraceResult
 
 let x2p = xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("TranslateARMToCHIF:" ^ tag) msg
@@ -1599,12 +1600,17 @@ let translate_arm_instruction
      let rtreg = rt#to_register in
      let updatecmds =
        if mem#is_offset_address_writeback then
-         let addr = mem#to_updated_offset_address floc in
-         let basereg = rn#to_register in
-         let (baselhs, ucmds) =
-           floc#get_ssa_assign_commands basereg ~vtype:t_voidptr addr in
-         let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
-         defupdatecmds @ ucmds
+         let addr_r = mem#to_updated_offset_address floc in
+         log_tfold_default
+           (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDR"))
+           (fun (_, addr) ->
+             let basereg = rn#to_register in
+             let (baselhs, ucmds) =
+               floc#get_ssa_assign_commands basereg ~vtype:t_voidptr addr in
+             let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
+             defupdatecmds @ ucmds)
+           []
+           addr_r
        else
          [] in
      let (lhs, cmds) = floc#get_ssa_assign_commands rtreg rhs in
@@ -1657,12 +1663,17 @@ let translate_arm_instruction
      let rtreg = rt#to_register in
      let updatecmds =
        if mem#is_offset_address_writeback then
-         let addr = mem#to_updated_offset_address floc in
-         let basereg = rn#to_register in
-         let (baselhs, ucmds) =
-           floc#get_ssa_assign_commands basereg ~vtype:t_voidptr addr in
-         let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
-         defupdatecmds @ ucmds
+         let addr_r = mem#to_updated_offset_address floc in
+         log_tfold_default
+           (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRB"))
+         (fun (_, addr) ->
+           let basereg = rn#to_register in
+           let (baselhs, ucmds) =
+             floc#get_ssa_assign_commands basereg ~vtype:t_voidptr addr in
+           let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
+           defupdatecmds @ ucmds)
+         []
+         addr_r
        else
          [] in
      let vtype = t_uchar in
@@ -1846,12 +1857,17 @@ let translate_arm_instruction
      let usehigh = get_use_high_vars [rhs] in
      let updatecmds =
        if mem#is_offset_address_writeback then
-         let addr = mem#to_updated_offset_address floc in
-         let basereg = rn#to_register in
-         let (baselhs, ucmds) =
-           floc#get_ssa_assign_commands basereg ~vtype:t_voidptr addr in
-         let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
-         defupdatecmds @ ucmds
+         let addr_r = mem#to_updated_offset_address floc in
+         log_tfold_default
+           (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRSB"))
+           (fun (_, addr) ->
+             let basereg = rn#to_register in
+             let (baselhs, ucmds) =
+               floc#get_ssa_assign_commands basereg ~vtype:t_voidptr addr in
+             let defupdatecmds = floc#get_vardef_commands ~defs:[baselhs] ctxtiaddr in
+             defupdatecmds @ ucmds)
+           []
+           addr_r
        else
          [] in
      let defcmds =
@@ -2750,12 +2766,17 @@ let translate_arm_instruction
          ctxtiaddr in
      let updatecmds =
        if mem#is_offset_address_writeback then
-         let addr = mem#to_updated_offset_address floc in
-         let rnreg = rn#to_register in
-         let (vrn, ucmds) =
-           floc#get_ssa_assign_commands rnreg ~vtype:t_voidptr addr in
-         let defupdatecmds = floc#get_vardef_commands ~defs:[vrn] ctxtiaddr in
-         defupdatecmds @ucmds
+         let addr_r = mem#to_updated_offset_address floc in
+         log_tfold_default
+           (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": STR"))
+           (fun (_, addr) ->
+             let rnreg = rn#to_register in
+             let (vrn, ucmds) =
+               floc#get_ssa_assign_commands rnreg ~vtype:t_voidptr addr in
+             let defupdatecmds = floc#get_vardef_commands ~defs:[vrn] ctxtiaddr in
+             defupdatecmds @ucmds)
+           []
+           addr_r
        else
          [] in
      let cmds = defcmds @ cmds @ updatecmds in
@@ -2796,12 +2817,17 @@ let translate_arm_instruction
          ctxtiaddr in
      let updatecmds =
        if mem#is_offset_address_writeback then
-         let addr = mem#to_updated_offset_address floc in
-         let rnreg = rn#to_register in
-         let (vrn, ucmds) =
-           floc#get_ssa_assign_commands rnreg ~vtype:t_voidptr addr in
-         let defupdatecmds = floc#get_vardef_commands ~defs:[vrn] ctxtiaddr in
-         defupdatecmds @ucmds
+         let addr_r = mem#to_updated_offset_address floc in
+         log_tfold_default
+           (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": STRB"))
+           (fun (_, addr) ->
+             let rnreg = rn#to_register in
+             let (vrn, ucmds) =
+               floc#get_ssa_assign_commands rnreg ~vtype:t_voidptr addr in
+             let defupdatecmds = floc#get_vardef_commands ~defs:[vrn] ctxtiaddr in
+             defupdatecmds @ucmds)
+           []
+           addr_r
        else
          [] in
      let cmds = memcmds @ defcmds @ cmds @ updatecmds in
@@ -2835,12 +2861,17 @@ let translate_arm_instruction
      let defcmds = floc#get_vardef_commands ~defs:[vmem; vmem2] ctxtiaddr in
      let updatecmds =
        if mem#is_offset_address_writeback then
-         let addr = mem#to_updated_offset_address floc in
-         let rnreg = rn#to_register in
-         let (vrn, ucmds) =
-           floc#get_ssa_assign_commands rnreg ~vtype:t_voidptr addr in
-         let defupdatecmds = floc#get_vardef_commands ~defs:[vrn] ctxtiaddr in
-         defupdatecmds @ ucmds
+         let addr_r = mem#to_updated_offset_address floc in
+         log_tfold_default
+           (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": STRD"))
+           (fun (_, addr) ->
+             let rnreg = rn#to_register in
+             let (vrn, ucmds) =
+               floc#get_ssa_assign_commands rnreg ~vtype:t_voidptr addr in
+             let defupdatecmds = floc#get_vardef_commands ~defs:[vrn] ctxtiaddr in
+             defupdatecmds @ ucmds)
+           []
+           addr_r
        else
          [] in
      let cmds = memcmds @ mem2cmds @ defcmds @ cmds1 @ cmds2 @ updatecmds in
@@ -2903,12 +2934,17 @@ let translate_arm_instruction
          ctxtiaddr in
      let updatecmds =
        if mem#is_offset_address_writeback then
-         let addr = mem#to_updated_offset_address floc in
-         let rnreg = rn#to_register in
-         let (vrn, ucmds) =
-           floc#get_ssa_assign_commands rnreg ~vtype:t_voidptr addr in
-         let defupdatecmds = floc#get_vardef_commands ~defs:[vrn] ctxtiaddr in
-         defupdatecmds @ucmds
+         let addr_r = mem#to_updated_offset_address floc in
+         log_tfold_default
+           (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": STRH"))
+           (fun (_, addr) ->
+             let rnreg = rn#to_register in
+             let (vrn, ucmds) =
+               floc#get_ssa_assign_commands rnreg ~vtype:t_voidptr addr in
+             let defupdatecmds = floc#get_vardef_commands ~defs:[vrn] ctxtiaddr in
+             defupdatecmds @ucmds)
+           []
+           addr_r
        else
          [] in
      let cmds = defcmds @ cmds @ updatecmds in
