@@ -419,25 +419,31 @@ object (self:'a)
          random_constant_expr
        end
 
-  method to_updated_offset_address (floc: floc_int): xpr_t =
+  method to_updated_offset_address (floc: floc_int): (int * xpr_t) TR.traceresult =
     match kind with
     | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, _) ->
        if isindex then
-         self#to_address floc
+         Ok (0, self#to_address floc)
        else
-         let memoff =
+         let optinc =
            match (offset, isadd) with
-           | (ARMImmOffset i, true) -> int_constant_expr i
-           | (ARMImmOffset i, false) -> int_constant_expr (-i)
-           | _ -> random_constant_expr in
-         let addr = XOp (XPlus, [self#to_address floc; memoff]) in
-         floc#inv#rewrite_expr addr
+           | (ARMImmOffset i, true) -> Some i
+           | (ARMImmOffset i, false) -> Some (-i)
+           | _ -> None in
+         (match optinc with
+          | None ->
+             Error [
+                 "to_updated_offset_address: offset type "
+                 ^ (arm_memory_offset_to_string offset)
+                 ^ "not covered for offset address update"]
+          | Some inc ->
+             let addr =
+               XOp (XPlus, [self#to_address floc; int_constant_expr inc]) in
+             Ok (inc, floc#inv#rewrite_expr addr))
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Operand is not an arm-offset-address: ";
-                 self#toPretty]))
+       Error [
+           "to_updated_offset_address: not applicable to operand kind: "
+           ^ (p2s self#toPretty)]
 
   method to_variable (floc:floc_int): variable_t =
     let env = floc#f#env in
