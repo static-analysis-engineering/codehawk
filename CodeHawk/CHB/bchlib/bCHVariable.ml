@@ -179,7 +179,7 @@ object (self:'a)
     let aux den = match den with
       | MemoryVariable (i, size, NoOffset) ->
          self#get_memref_type i size
-      | MemoryVariable (i, size, (FieldOffset _ as offset)) ->
+      | MemoryVariable (_, size, (FieldOffset _ as offset)) ->
          self#get_memref_field_type size offset
       | MemoryVariable _ -> None
       | RegisterVariable _ -> None
@@ -187,7 +187,7 @@ object (self:'a)
       | AuxiliaryVariable a ->
          match a with
          | InitialRegisterValue _ -> None
-         | InitialMemoryValue v -> None
+         | InitialMemoryValue _ -> None
          | FrozenTestValue _ -> None
          | FunctionPointer _ -> None
          | FunctionReturnValue _ -> None
