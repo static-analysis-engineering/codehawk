@@ -33,6 +33,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHPrettyUtil
 open CHXmlDocument
 
 (* xprlib *)
@@ -68,6 +69,11 @@ module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
+let p2s = pretty_to_string
+
+
+let log_error (tag: string) (msg: string): tracelogspec_t =
+  mk_tracelog_spec ~tag:("arm_operand:" ^ tag) msg
 
 
 let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
@@ -484,8 +490,19 @@ object (self:'a)
                            (floc#env#mk_global_variable ~size n,
                             [STR "ARMShiftedIndexOffset"; STR "explicit"])
                         | XVar v when floc#f#env#is_memory_address_variable v ->
-                           (floc#f#env#mk_memory_address_deref_variable v,
-                            [STR "ARMShiftedIndexOffset"; STR "memory address"])
+                           log_tfold_default
+                             (log_error "ARMShiftedIndexOffset" (p2s v#toPretty))
+                             (fun v ->
+                               (v, [STR "ARMShiftedIndexOffset";
+                                    v#toPretty]))
+                             (env#mk_unknown_memory_variable "operand",
+                              [STR "ARMShiftedIndexOffset";
+                               self#toPretty;
+                               STR "; rx: ";
+                               x2p rx;
+                               STR ": ivax: ";
+                               x2p ivax])
+                             (floc#f#env#mk_memory_address_deref_variable v)
                         | _ ->
                            (env#mk_unknown_memory_variable "operand",
                             [STR "ARMShiftedIndexOffset";
@@ -586,10 +603,13 @@ object (self:'a)
          if has_symbolic_address_name dw then
            let name = get_symbolic_address_name dw in
            let ty = get_symbolic_address_type_by_name name in
-           let var =
-             floc#f#env#mk_global_memory_address
-               ~optname:(Some name) ~opttype:(Some ty) dw#to_numerical in
-           XVar var
+           if is_struct_type ty || is_array_type ty then
+             let var =
+               floc#f#env#mk_global_memory_address
+                 ~optname:(Some name) ~opttype:(Some ty) dw#to_numerical in
+             XVar var
+           else
+             num_constant_expr (elf_header#get_program_value a)#to_numerical
          else
            num_constant_expr (elf_header#get_program_value a)#to_numerical
        else

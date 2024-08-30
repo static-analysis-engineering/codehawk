@@ -65,6 +65,7 @@ let memory_base_to_string (b: memory_base_t): string =
   | BGlobal -> "global"
   | BaseVar v -> "var-" ^ v#getName#getBaseName
   | BaseArray (v, _) -> "array-" ^ v#getName#getBaseName
+  | BaseStruct (v, _) -> "struct-" ^ v#getName#getBaseName
   | BaseUnknown s -> "unknown-" ^ s
 
 
@@ -222,6 +223,18 @@ let rec get_constant_offsets offset =
                STR (memory_offset_to_string offset);
                STR " is not constant"]))
 
+
+let rec add_offset
+      (offset1: memory_offset_t) (offset2: memory_offset_t): memory_offset_t =
+  match offset1 with
+  | NoOffset -> offset2
+  | ConstantOffset (n, o) -> ConstantOffset(n, add_offset o offset2)
+  | FieldOffset (f, o) -> FieldOffset (f, add_offset o offset2)
+  | IndexOffset (v, i, o) -> IndexOffset (v, i, add_offset o offset2)
+  | ArrayIndexOffset (x, o) -> ArrayIndexOffset (x, add_offset o offset2)
+  | UnknownOffset -> UnknownOffset
+
+
 let get_total_constant_offset offset =
   List.fold_left (fun acc n ->
       acc#add n) numerical_zero (get_constant_offsets offset)
@@ -295,11 +308,18 @@ object (self:'a)
     match base with
     | BaseVar v -> v#getName#getBaseName
     | BaseArray (v, _) -> v#getName#getBaseName
+    | BaseStruct (v, _) -> v#getName#getBaseName
     | BLocalStackFrame -> "var"
     | BRealignedStackFrame -> "varr"
     | BAllocatedStackFrame -> "vara"
     | BGlobal -> "gv"
     | BaseUnknown s -> "??" ^ s ^ "??"
+
+  method get_type: btype_t option =
+    match base with
+    | BaseArray (_, ty) -> Some ty
+    | BaseStruct (_, ty) -> Some ty
+    | _ -> None
 
   method get_external_base: variable_t traceresult =
     match base with
@@ -309,8 +329,30 @@ object (self:'a)
            "get_external_base: not an external base: "
            ^ (memory_base_to_string base)]
 
+  method get_array_base: (variable_t * btype_t) traceresult =
+    match base with
+    | BaseArray (v, t) -> Ok (v, t)
+    | _ ->
+       Error [
+           "get_array_base: not an array base: "
+           ^ (memory_base_to_string base)]
+
+  method get_struct_base: (variable_t * btype_t) traceresult =
+    match base with
+    | BaseStruct (v, t) -> Ok (v, t)
+    | _ ->
+       Error [
+           "get_struct_base: not a struct base: "
+           ^ (memory_base_to_string base)]
+
   method has_external_base =
     match base with BaseVar _ -> true | _ -> false
+
+  method has_array_base =
+    match base with BaseArray _ -> true | _ -> false
+
+  method has_struct_base =
+    match base with BaseStruct _ -> true | _ -> false
 
   method is_stack_reference = match base with
     | BLocalStackFrame | BRealignedStackFrame | BAllocatedStackFrame -> true
@@ -362,6 +404,9 @@ object (self)
   method mk_base_array_reference (v: variable_t) (t: btype_t) =
     self#mk_reference (BaseArray (v, t))
 
+  method mk_base_struct_reference (v: variable_t) (t: btype_t) =
+    self#mk_reference (BaseStruct (v, t))
+
   method mk_unknown_reference s = self#mk_reference (BaseUnknown s)
 
   method get_memory_reference (index: int): memory_reference_int traceresult =
@@ -370,6 +415,12 @@ object (self)
     else
       Error [
           "get_memory_reference_int: index not found: " ^ (string_of_int index)]
+
+  method get_memory_reference_type (index: int): btype_t option =
+    tfold_default
+      (fun memref -> memref#get_type)
+      None
+      (self#get_memory_reference index)
 
   method is_unknown_reference (index: int): bool traceresult =
     let memref_r = self#get_memory_reference index in

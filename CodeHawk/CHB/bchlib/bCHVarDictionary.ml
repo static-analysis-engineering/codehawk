@@ -118,6 +118,7 @@ object (self)
         | BGlobal -> (tags, [])
       | BaseVar v -> (tags, [xd#index_variable v])
       | BaseArray (v, t) -> (tags, [xd#index_variable v; bcd#index_typ t])
+      | BaseStruct (v, t) -> (tags, [xd#index_variable v; bcd#index_typ t])
       | BaseUnknown s -> (tags, [bd#index_string s]) in
     memory_base_table#add key
 
@@ -133,6 +134,7 @@ object (self)
     | "g" -> BGlobal
     | "v" -> BaseVar (xd#get_variable (a 0))
     | "b" -> BaseArray (xd#get_variable (a 0), bcd#get_typ (a 1))
+    | "s" -> BaseStruct (xd#get_variable (a 0), bcd#get_typ (a 1))
     | "u" -> BaseUnknown (bd#get_string (a 0))
     | s -> raise_tag_error name s memory_base_mcts#tags
 

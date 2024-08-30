@@ -928,6 +928,10 @@ let get_struct_type_compinfo (ty: btype_t): bcompinfo_t =
           (LBLOCK [STR "Type is not a struct: "; btype_to_pretty ty]))
 
 
+let get_compinfo_by_key (ckey: int): bcompinfo_t =
+  bcfiles#get_compinfo ckey
+
+
 let get_compinfo_field (c: bcompinfo_t) (fname: string): bfieldinfo_t =
   try
     List.find (fun finfo -> finfo.bfname = fname) c.bcfields

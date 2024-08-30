@@ -302,11 +302,16 @@ object (self)
           raise
             (BCH_failure
                (LBLOCK [STR "Empty tag list in add_base_update"])) in
-      let xtag = (List.hd tags) ^ "vxdh" in
+      let xtag = (List.hd tags) ^ "vtxdh" in
       let uses = [get_def_use v] in
       let useshigh = [get_def_use_high v] in
       let tags = xtag :: ((List.tl tags) @ ["bu"]) in
-      let args = args @ [xd#index_variable v; xd#index_xpr x] @ uses @ useshigh in
+      let args =
+        args
+        @ [xd#index_variable v;
+           bcd#index_typ t_unknown;
+           xd#index_xpr x]
+        @ uses @ useshigh in
       (tags, args) in
 
     let mk_instrx_data
@@ -432,6 +437,13 @@ object (self)
                           STR ": Parameter type not recognized in call ";
                           STR "instruction"])) in
             let xx = rewrite_expr ?restrict:(Some 4) x in
+            let xx =
+              let optmemvar = floc#decompose_memvar_address xx in
+              match optmemvar with
+              | Some (memref, memoff) ->
+                 XOp ((Xf "addressofvar"),
+                      [XVar (floc#f#env#mk_index_offset_memory_variable memref memoff)])
+              | _ -> xx in
             let rdef = get_rdef xvar in
             (xx :: xprs, xvar :: xvars, rdef :: rdefs)) ([], [], []) callargs in
       let (vrd, rtype) =
@@ -511,17 +523,17 @@ object (self)
          let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
          let uses = get_def_use vrd in
          let useshigh = get_def_use_high vrd in
-         let optmemvar = floc#decompose_array_address rresult in
-         let vars =
+         let optmemvar = floc#decompose_memvar_address rresult in
+         let rresult =
            match optmemvar with
            | Some (memref, memoff) ->
               let memvar =
                 floc#f#env#mk_index_offset_memory_variable memref memoff in
-              [vrd; memvar]
-           | _ -> [vrd] in
+              XOp ((Xf "addressofvar"), [XVar memvar])
+           | _ -> rresult in
          let (tagstring, args) =
            mk_instrx_data
-             ~vars
+             ~vars:[vrd]
              ~xprs:[xrn; xrm; result; rresult; xxrn; xxrm]
              ~rdefs:rdefs
              ~uses:[uses]
@@ -1804,6 +1816,14 @@ object (self)
            let xdst = dstop#to_expr floc in
            let xxsrc = rewrite_floc_expr srcfloc xsrc in
            let xxdst = rewrite_expr ?restrict:(Some 4) xdst in
+           let xxdst =
+             let optmemvar = floc#decompose_memvar_address xxdst in
+             match optmemvar with
+             | Some (memref, memoff) ->
+                let memvar =
+                  floc#f#env#mk_index_offset_memory_variable memref memoff in
+                XOp ((Xf "addressofvar"), [XVar memvar])
+             | _ -> xxdst in
            let rdefs = [(get_rdef xsrc); (get_rdef xdst)] in
            let _ =
              match get_string_reference srcfloc xxsrc with

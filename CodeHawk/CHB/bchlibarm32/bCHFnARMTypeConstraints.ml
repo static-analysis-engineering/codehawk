@@ -397,6 +397,19 @@ object (self)
               store#add_subtype_constraint
                 (mk_vty_term rdtypevar) (mk_vty_term rttypevar)) xrdef);
 
+         (match rewrite_expr (memop#to_expr floc) with
+          | XVar v ->
+             (match floc#f#env#get_variable_type v with
+              | Some ty ->
+                 let opttc = mk_btype_constraint rttypevar ty in
+                 (match opttc with
+                  | Some tc -> store#add_constraint tc
+                  | _ -> ())
+              | _ -> ())
+          | _ -> ());
+
+         (* if the address to load from is the address of a global struct field,
+            assign the type of that field to the destination register. *)
          (match getopt_global_address (memop#to_address floc) with
           | Some gaddr ->
              if is_in_global_structvar gaddr then
@@ -442,6 +455,8 @@ object (self)
                ()
           | _ -> ());
 
+         (* if the value loaded is the start address of a global array,
+            assign that array type to the destination register. *)
          (match getopt_global_address (memop#to_expr floc) with
           | Some gaddr ->
              if is_in_global_arrayvar gaddr then

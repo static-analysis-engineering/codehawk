@@ -45,6 +45,8 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
+open BCHBCTypes
 open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHDoubleword
@@ -132,7 +134,7 @@ object (self:'a)
         | MemoryAddress (i, offset, opts, optty) ->
            (match (opts, optty) with
             | (Some s, Some memty) ->
-               if is_array_type memty then
+               if is_array_type memty || is_struct_type memty then
                  s
                else
                  "addr_" ^ s
@@ -158,6 +160,49 @@ object (self:'a)
       end
     else
       name
+
+  method private get_memref_type (index: int) (_size: int): btype_t option =
+    memrefmgr#get_memory_reference_type index
+
+  method private get_memref_field_type (size: int) (offset: memory_offset_t):
+                   btype_t option =
+    match offset with
+    | FieldOffset ((fname, ckey), NoOffset) ->
+       let compinfo = get_compinfo_by_key ckey in
+       let finfo = get_compinfo_field compinfo fname in
+       Some finfo.bftype
+    | FieldOffset (_, (FieldOffset _ as suboffset)) ->
+       self#get_memref_field_type size suboffset
+    | _ -> None
+
+  method get_type =
+    let aux den = match den with
+      | MemoryVariable (i, size, NoOffset) ->
+         self#get_memref_type i size
+      | MemoryVariable (i, size, (FieldOffset _ as offset)) ->
+         self#get_memref_field_type size offset
+      | MemoryVariable _ -> None
+      | RegisterVariable _ -> None
+      | CPUFlagVariable _ -> None
+      | AuxiliaryVariable a ->
+         match a with
+         | InitialRegisterValue _ -> None
+         | InitialMemoryValue v -> None
+         | FrozenTestValue _ -> None
+         | FunctionPointer _ -> None
+         | FunctionReturnValue _ -> None
+         | SyscallErrorReturnValue _ -> None
+         | CallTargetValue _ -> None
+         | SideEffectValue _ -> None
+         | FieldValue _ -> None
+         | SymbolicValue _ -> None
+         | SignedSymbolicValue _ -> None
+         | BridgeVariable _ -> None
+         | Special _ -> None
+         | RuntimeConstant _ -> None
+         | MemoryAddress (_, _, _, optty) -> optty
+         | ChifTemp -> None in
+    aux denotation
 
   method to_basevar_reference =
     match denotation with
@@ -210,14 +255,14 @@ object (self:'a)
     | _ ->
        Error ["get_pointed_to_function_name: " ^ self#get_name]
 
-  method get_memory_address_meminfo =
+  method get_memory_address_meminfo:
+    (int * memory_offset_t * string option * btype_t option) traceresult =
     match denotation with
     | AuxiliaryVariable (MemoryAddress (memrefix, memoffset, optname, optty)) ->
-       (memrefix, memoffset, optname, optty)
+       Ok (memrefix, memoffset, optname, optty)
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Not a memory address variable: "; self#toPretty]))
+       Error ["get_memory_address_meminfo: variable is not a memory address: "
+              ^ (self#get_name)]
 
   method is_frozen_test_value =
     match denotation with
@@ -498,11 +543,17 @@ object (self)
 
   method get_assembly_variables = H.fold (fun _ v acc -> v::acc) vartable []
 
-  method get_variable_by_index (index:int) =
+  method get_variable_by_index (index:int): assembly_variable_int traceresult =
     if H.mem vartable index then
       Ok (H.find vartable index)
     else
       Error ["get_variable_by_index: " ^ (string_of_int index)]
+
+  method get_variable_type (v: variable_t): btype_t option =
+    tfold_default
+      (fun var -> var#get_type)
+      None
+      (self#get_variable v)
 
   method get_memvar_reference (v: variable_t): memory_reference_int traceresult =
     tbind
@@ -511,24 +562,22 @@ object (self)
       (self#get_variable v)
 
   method get_memval_reference (v: variable_t): memory_reference_int traceresult =
-    let var_r = self#get_initial_memory_value_variable v in
     tbind
       ~msg:"varmgr:get_memval_reference"
       (fun var -> self#get_memvar_reference var)
-      var_r
+      (self#get_initial_memory_value_variable v)
 
-  method get_memvar_offset (v:variable_t) =
+  method get_memvar_offset (v:variable_t): memory_offset_t traceresult =
     tbind
       ~msg:"varmgr:get_memvar_offset"
       (fun av -> av#get_memory_offset)
       (self#get_variable v)
 
-  method get_memval_offset (v: variable_t) =
-    let var_r = self#get_initial_memory_value_variable v in
+  method get_memval_offset (v: variable_t): memory_offset_t traceresult =
     tbind
       ~msg:"varmgr:get_memval_offset"
       (fun var -> self#get_memvar_offset var)
-      var_r
+      (self#get_initial_memory_value_variable v)
 
   method private has_var (v:variable_t) =
     (not v#isTmp) && self#has_index v#getName#getSeqNumber
@@ -540,10 +589,11 @@ object (self)
   method make_memory_variable
            ?(size=4)
            (memref:memory_reference_int)
-           (offset:memory_offset_t) =
+           (offset:memory_offset_t): assembly_variable_int =
     self#mk_variable (MemoryVariable (memref#index, size, offset))
 
-  method make_memref_from_basevar (v: variable_t) =
+  method make_memref_from_basevar
+           (v: variable_t): memory_reference_int traceresult =
     tbind
       ~msg:"make_memref_from_basevar_basevar"
       (fun av ->
@@ -563,6 +613,18 @@ object (self)
                    Ok (memrefmgr#mk_basevar_reference v)
                 | MemoryAddress (_, _, _, Some ty) when is_array_type ty ->
                    Ok (memrefmgr#mk_base_array_reference v ty)
+                | MemoryAddress (_, _, _, Some ty) when is_struct_type ty ->
+                   Ok (memrefmgr#mk_base_struct_reference v ty)
+                | MemoryAddress (_, _, _, Some ty) ->
+                   Error [
+                       "varmgr:make_memref_from_basevar: memory address that is "
+                       ^ "not an array or struct: "
+                       ^ v#getName#getBaseName
+                       ^ " (" ^ (btype_to_string ty) ^ ")"]
+                | MemoryAddress (_, _, _, None) ->
+                   Error [
+                       "varmgr:make_memref_from_basevar: memory address without "
+                       ^ "type: " ^ v#getName#getBaseName]
                 | _ ->
                    Ok (memrefmgr#mk_unknown_reference
                          ("base_" ^ v#getName#getBaseName)))
