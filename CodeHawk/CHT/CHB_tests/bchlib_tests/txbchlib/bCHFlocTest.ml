@@ -68,7 +68,7 @@ let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 
 
-let decompose_array_address_test () =
+let decompose_memvar_address_test () =
   let faddr = "0x1d6bfc" in
   let iaddr = "0x1d6cbc" in
   let gvaddr = "0x5e1e1c" in
@@ -78,7 +78,7 @@ let decompose_array_address_test () =
   let gvname = "x44_array" in
   begin
     TS.new_testsuite
-      (testname ^ "_decompose_array_address_test") lastupdated;
+      (testname ^ "_decompose_memvar_address_test") lastupdated;
 
     parse_cil_file ~removeUnused:false "decompose_array_address.i";
     ignore (functions_data#add_function dwfaddr);
@@ -93,7 +93,7 @@ let decompose_array_address_test () =
           else
             raise
               (Invalid_argument "Error in arraysym");
-        xconst_desc = "decompose_array_address";
+        xconst_desc = "decompose_memvar_address";
         xconst_is_addr = true
       } in
     let _ = add_address arraysym in
@@ -115,7 +115,7 @@ let decompose_array_address_test () =
         let xpr = XOp (XPlus, [XVar basevar; int_constant_expr 68]) in
         let xpsuboffset = FieldOffset (("field0", compinfo.bckey), NoOffset) in
         let xpmemoffset = ArrayIndexOffset(int_constant_expr 1, xpsuboffset) in
-        let optmeminfo = floc#decompose_array_address xpr in
+        let optmeminfo = floc#decompose_memvar_address xpr in
         XBA.equal_opt_meminfo
           ~expected: (Some (memref, xpmemoffset))
           ~received: optmeminfo
@@ -127,7 +127,7 @@ let decompose_array_address_test () =
         let xpr = XOp (XPlus, [XVar basevar; int_constant_expr 72]) in
         let xpsuboffset = FieldOffset (("field4", compinfo.bckey), NoOffset) in
         let xpmemoffset = ArrayIndexOffset(int_constant_expr 1, xpsuboffset) in
-        let optmeminfo = floc#decompose_array_address xpr in
+        let optmeminfo = floc#decompose_memvar_address xpr in
         XBA.equal_opt_meminfo
           ~expected: (Some (memref, xpmemoffset))
           ~received: optmeminfo
@@ -141,7 +141,7 @@ let decompose_array_address_test () =
                        XOp (XMult, [int_constant_expr 68; XVar indexvar])]) in
         let xpsuboffset = FieldOffset (("field0", compinfo.bckey), NoOffset) in
         let xpmemoffset = ArrayIndexOffset(XVar indexvar, xpsuboffset) in
-        let optmeminfo = floc#decompose_array_address xpr in
+        let optmeminfo = floc#decompose_memvar_address xpr in
         XBA.equal_opt_meminfo
           ~expected: (Some (memref, xpmemoffset))
           ~received: optmeminfo
@@ -155,7 +155,7 @@ let decompose_array_address_test () =
         let xpr = XOp (XPlus, [XVar basevar; subxpr]) in
         let xpsuboffset = FieldOffset (("field0", compinfo.bckey), NoOffset) in
         let xpmemoffset = ArrayIndexOffset(indexxpr1, xpsuboffset) in
-        let optmeminfo = floc#decompose_array_address xpr in
+        let optmeminfo = floc#decompose_memvar_address xpr in
         XBA.equal_opt_meminfo
           ~expected: (Some (memref, xpmemoffset))
           ~received: optmeminfo
@@ -169,7 +169,7 @@ let decompose_array_address_test () =
         let xpr = XOp (XPlus, [XVar basevar; subxpr]) in
         let xpsuboffset = FieldOffset (("field4", compinfo.bckey), NoOffset) in
         let xpmemoffset = ArrayIndexOffset(indexxpr1, xpsuboffset) in
-        let optmeminfo = floc#decompose_array_address xpr in
+        let optmeminfo = floc#decompose_memvar_address xpr in
         XBA.equal_opt_meminfo
           ~expected: (Some (memref, xpmemoffset))
           ~received: optmeminfo
@@ -184,7 +184,7 @@ let decompose_array_address_test () =
         let xpsuboffset = ConstantOffset (numerical_zero, NoOffset) in
         let xpsuboffset = FieldOffset (("buffer", compinfo.bckey), xpsuboffset) in
         let xpmemoffset = ArrayIndexOffset(indexxpr1, xpsuboffset) in
-        let optmeminfo = floc#decompose_array_address xpr in
+        let optmeminfo = floc#decompose_memvar_address xpr in
         XBA.equal_opt_meminfo
           ~expected: (Some (memref, xpmemoffset))
           ~received: optmeminfo
@@ -202,7 +202,7 @@ let decompose_array_address_test () =
         let xpr = XOp (XMinus, [xpr; int_constant_expr 64]) in
         let xpsuboffset = FieldOffset (("field4", compinfo.bckey), NoOffset) in
         let xpmemoffset = ArrayIndexOffset(indexxpr1, xpsuboffset) in
-        let optmeminfo = floc#decompose_array_address xpr in
+        let optmeminfo = floc#decompose_memvar_address xpr in
         XBA.equal_opt_meminfo
           ~expected: (Some (memref, xpmemoffset))
           ~received: optmeminfo
@@ -215,6 +215,6 @@ let decompose_array_address_test () =
 let () =
   begin
     TS.new_testfile testname lastupdated;
-    decompose_array_address_test ();
+    decompose_memvar_address_test ();
     TS.exit_file ()
   end
