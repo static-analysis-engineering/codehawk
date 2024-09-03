@@ -3,9 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny Sipma
+   Copyright (c) 2020-2024 Henny Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -60,16 +60,16 @@ val get_return_var: procedure_int -> variable_t option
 val get_num_return_var: procedure_int -> variable_t option
 
 val add_cmds :
-  cms:class_method_signature_int 
+  cms:class_method_signature_int
   -> init_cmds:(code_int, cfg_int) command_t list
   -> final_cmds:(code_int, cfg_int) command_t list
   -> code:code_int -> code_int
 
 val get_CFG : procedure_int -> cfg_int
 
-val get_arg_var : string -> 
+val get_arg_var : string ->
   (string * variable_t * arg_mode_t) list -> variable_t
-val get_arg_var_opt : string -> 
+val get_arg_var_opt : string ->
   (string * variable_t * arg_mode_t) list -> variable_t option
 
 val get_read_vars: ('a * 'b * arg_mode_t) list -> 'b list
@@ -96,8 +96,8 @@ val is_not_jdk_method: symbol_t -> bool
 
 val start_profiling_time: int -> unit
 val stop_profiling_time: int -> unit
-val report_profiling_times: unit -> unit 
-val report_profiling_times_no_reset: unit -> unit 
+val report_profiling_times: unit -> unit
+val report_profiling_times_no_reset: unit -> unit
 
 val print_warning_message: pretty_t -> unit
 val print_exception_message: pretty_t -> unit

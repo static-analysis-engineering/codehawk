@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,13 +38,13 @@ open CHLogger
 open JCHBasicTypesAPI
 
 (* jchpre *)
-open JCHPreAPI 
+open JCHPreAPI
 
 val set_dbg_on : unit -> unit
 val is_dbg_on : unit -> bool
 val pr__debug : pretty_t list -> unit
 
-val op_args_to_pretty : 
+val op_args_to_pretty :
   (string * < toPretty : pretty_t; .. > * arg_mode_t) list -> pretty_t
 
 val operation_to_pretty : operation_t -> pretty_t
@@ -75,71 +76,71 @@ val dot_name : symbol_t -> string
 
 val pp_var_table : (int * int * string * value_type_t * int) list option -> pretty_t
 
-val pp_pc_table : < toPretty : pretty_t; .. > IntCollections.table_t -> 
+val pp_pc_table : < toPretty : pretty_t; .. > IntCollections.table_t ->
   pretty_t
 
 val pp_procpc_table :
-  < toPretty : pretty_t; .. > IntCollections.table_t SymbolCollections.table_t -> 
+  < toPretty : pretty_t; .. > IntCollections.table_t SymbolCollections.table_t ->
   pretty_t
 
 
 class pretty_int_t :
-  int -> 
+  int ->
   object
       method int : int
       method toPretty : pretty_t
   end
 
 class pretty_string_t :
-  string -> 
+  string ->
   object
       method str : string
       method toPretty : pretty_t
   end
 
-class pretty_var_list_t : 
-  variable_t list -> 
+class pretty_var_list_t :
+  variable_t list ->
   object
     method vars : variable_t list
     method toPretty : pretty_t
   end
 
 class pretty_op_t :
-  operation_t -> 
+  operation_t ->
   object
     method op : operation_t
     method toPretty : pretty_t
-  end 
+  end
 
 
 val string_of_pretty : pretty_t list -> string
 
 val string_of_sym : symbol_t -> string
 
-val pp_var_table_pred : 
+val pp_var_table_pred :
   < toPretty : pretty_t ; ..>  VariableCollections.table_t
                           -> (variable_t -> bool)
                           -> pretty_t
-    
+
 val pp_assoc_list_vars : (variable_t * variable_t) list -> pretty_t
-  
+
 val pp_assoc_list_ints : (int * int) list -> pretty_t
-  
+
 val pp_assoc_list_var_int : (variable_t * int) list -> pretty_t
 
 val read_int_to_var_set :
   string -> VariableCollections.set_t IntCollections.table_t
-  
+
 val read_int_to_int_set :
   string -> IntCollections.set_t IntCollections.table_t
-  
+
 val read_int_to_var_to_var :
   string -> variable_t VariableCollections.table_t IntCollections.table_t
-  
+
 val read_int_to_string_set :
   string -> StringCollections.set_t IntCollections.table_t
 
-val jch_stats_log : logger_int 
+val jch_stats_log : logger_int
 
 val jterm_to_string : jterm_t -> string
 val relational_expr_to_string : relational_expr_t -> string

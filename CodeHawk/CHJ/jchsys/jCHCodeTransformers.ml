@@ -28,12 +28,7 @@
 
 (* chlib *)
 open CHLanguage
-open CHNumerical
 open CHPretty
-open CHUtils
-
-(* chutil *)
-open CHPrettyUtil
 
 (* jchlib *)
 open JCHBasicTypes
@@ -253,7 +248,7 @@ class skip_and_code_remover_t =
   object (self: _)
     inherit code_transformer_t as super
 
-    method transformCode (code:code_int) =
+    method !transformCode (code:code_int) =
       super#transformCode code ;
       code#removeSkips
 

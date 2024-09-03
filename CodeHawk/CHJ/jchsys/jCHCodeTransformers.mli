@@ -45,3 +45,5 @@ class variable_transformer_t :
   end
 
 val remove_skips_code_p : procedure_int -> unit
+
+val remove_skips_code: system_int -> unit
