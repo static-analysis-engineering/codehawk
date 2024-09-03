@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2024 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,8 +30,6 @@
 open CHLanguage
 open CHPretty
 
-(* jchpre *)
-open JCHPreAPI
 
 val dbg : bool ref
 
@@ -47,9 +46,9 @@ val mk_eq_node :
   -> variable_t
   -> CHUtils.SymbolCollections.set_t
   -> taint_node_int
-  
+
 val mk_field_node: field_info_int -> taint_node_int
-  
+
 val mk_call_node :
   int
   -> int
@@ -58,7 +57,7 @@ val mk_call_node :
   -> variable_t option
   -> variable_t list
   -> taint_node_int
-  
+
 val mk_unknown_call_node :
   int
   -> int
@@ -88,7 +87,7 @@ module TaintNodeCollections :
     module ObjectMap :
         sig
           type key = taint_node_int
-          type 'a t 
+          type 'a t
           val empty : 'a t
           val is_empty : 'a t -> bool
           val mem : key -> 'a t -> bool
@@ -120,7 +119,7 @@ module TaintNodeCollections :
     module ObjectSet :
         sig
           type elt = taint_node_int
-          type t 
+          type t
           val empty : t
           val is_empty : t -> bool
           val mem : elt -> t -> bool
@@ -214,12 +213,11 @@ module TaintNodeCollections :
     end
 
 val print_dictionary : unit -> unit
-  
+
 val taint_node_set_to_pretty: TaintNodeCollections.set_t -> pretty_t
-  
+
 val taint_node_table_to_pretty:
   TaintNodeCollections.set_t TaintNodeCollections.table_t -> pretty_t
-  
+
 val save_taint_trail:
   TaintNodeCollections.set_t TaintNodeCollections.table_t -> int -> unit
-
