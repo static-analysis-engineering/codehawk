@@ -49,6 +49,8 @@ val get_interesting: unit -> (string * (string * pretty_t) list) list
 val get_call_packages: unit -> (string * int) list
 val get_this_packages: unit -> (string * int) list
 
+val pattern_size: bc_pattern_t -> int
+
 val get_pattern:
   ?maxlog:int
   -> ?maxmatch:int
