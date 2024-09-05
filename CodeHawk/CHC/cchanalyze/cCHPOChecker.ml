@@ -1,10 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,43 +28,25 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
-open CHNumerical
 open CHPretty
-open CHSymbolicSets
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
-open CHXmlDocument
-
-(* xprlib *)
-open Xprt
-open XprToPretty
-open Xsimplify
 
 (* cchlib *)
 open CCHBasicTypes
-open CCHFileEnvironment
-open CCHFunctionSummary
-open CCHLibTypes
 open CCHSettings
 open CCHTypesCompare
 open CCHTypesToPretty
-open CCHTypesUtil
 open CCHUtilities
 
 (* cchpre *)
 open CCHCheckValid
-open CCHFunctionAPI
-open CCHInvariantFact
 open CCHPOPredicate
 open CCHPreTypes
-open CCHProofObligation
 
 (* cchanalyze *)
 open CCHAnalysisTypes
-open CCHEnvironment
 open CCHPOCheckBuffer
 open CCHPOCheckCast
 open CCHPOCheckControlledResource
@@ -112,67 +96,19 @@ module ExpCollections = CHCollections.Make
     let toPretty = exp_to_pretty
   end)
 
-let fenv = CCHFileEnvironment.file_environment
-
-let stri = string_of_int
-let p2s = pretty_to_string
-let x2p = xpr_formatter#pr_expr
-let x2s x = p2s (x2p x)
-
-let dom_i = intervals_domain
-let dom_le = linear_equalities_domain
-let dom_vs = valueset_domain
-let dom_s = symbolic_sets_domain
-
 let make_record p m evtxt status =
   begin
-    p#set_status status ;
-    p#set_explanation evtxt ;
-    p#set_dependencies m ;
+    p#set_status status;
+    p#set_explanation evtxt;
+    p#set_dependencies m;
     true
   end
-  
-let make_safe p m evidence = make_record p m evidence Green
-                           
-let make_violation p m evidence = make_record p m evidence Red
-                                
-let make_warning p m evidence s = make_record p m evidence Green
-                                
+
+
 let make_unreachable p domain =
   let _ = chlog#add "unreachable" (STR domain) in
   make_record p (DUnreachable domain) "unreachable" Grey
 
-let rec strip_cast e = match e with CastE (_, ee) -> strip_cast ee | _ -> e
-
-let return_value_s name loc = "return value from " ^ name ^ " at " ^ (stri loc.line)
-
-let is_assigned_from_field sym =
-  let name = sym#getBaseName in
-  ((String.length name) > 8) && (String.sub name 0 8) = "assigned" &&
-      (match sym#getAttributes with "field"::_ -> true | _ -> false)
-
-let is_assigned_from_global sym =
-  let name = sym#getBaseName in
-  ((String.length name) > 8) && (String.sub name 0 8) = "assigned" &&
-      (match sym#getAttributes with "global"::_ -> true | _ -> false)
-
-let is_assigned_from_return_value sym =
-  let name = sym#getBaseName in
-  ((String.length name) > 8) && (String.sub name 0 8) = "assigned" &&
-      (match sym#getAttributes with "return-value"::_ -> true | _ -> false)
-
-let is_assigned_from_external sym =
-  is_assigned_from_field sym || is_assigned_from_global sym || is_assigned_from_return_value sym
-
-
-let get_assignment_origins sym = 
-  match sym#getAttributes with
-  | [ "field" ; fname ; fid ] -> "field " ^  fname ^ " (key: " ^ fid ^ ")"
-  | [ "global" ; vname ; _ ] -> "global variable " ^ vname 
-  | [ "return-value" ; fname ] -> "return value from " ^ fname
-  | _ -> raise (CCHFailure
-                  (LBLOCK [ STR "symbol has no assignment origins: " ; 
-			    sym#toPretty ]))
 
 class type po_checker_int =
 object
@@ -186,16 +122,16 @@ class po_checker_t
         (fApi:function_api_int)
         (invIO:invariant_io_int)
         (p:proof_obligation_int):po_checker_int =
-object (self)
+object
 
   val fdecls = env#get_fdecls
   val context = p#get_context
 
-  method private has_post_allocation_base fv = false 
+  method private has_post_allocation_base _ = false
 
-  method private has_post_global_mem fv = false
-                                        
-  method private check_pointer_cast (tfrom:typ) (tto:typ) (e:exp) = false
+  method private has_post_global_mem _ = false
+
+  method private check_pointer_cast (_tfrom:typ) (_tto:typ) (_e:exp) = false
 
   method get_result:bool =
     let poq = mk_poq env fApi invIO p in
@@ -240,7 +176,7 @@ object (self)
        check_unsigned_to_signed_cast poq kfrom kto e
     | PUnsignedToUnsignedCast (kfrom,kto,e) ->
        check_unsigned_to_unsigned_cast poq kfrom kto e
-    | PPointerCast (tfrom,tto,e) -> check_pointer_cast poq tfrom tto e      
+    | PPointerCast (tfrom,tto,e) -> check_pointer_cast poq tfrom tto e
     | PUpperBound (t,e) -> check_upper_bound poq t e
     | PValidMem e -> check_valid_mem poq e
     | PValueConstraint e -> check_value_constraint poq e
@@ -252,57 +188,67 @@ end
 
 
 let is_unreachable facts =
-  List.fold_left (fun acc f -> match acc with Some _ -> acc | _ -> f#is_unreachable) 
+  List.fold_left (fun acc f ->
+      match acc with Some _ -> acc | _ -> f#is_unreachable)
     None facts
 
-let check_file_assumptions fenv file_assumptions p = false
-                                                   
-let lift_global_predicate fenv fnApi id exps p =  false
-                                                
-let lift_gac_ds_predicate fenv fnApi id p = false
+let _check_file_assumptions _fenv _file_assumptions _p = false
 
-(* Check if the proof obligation is 
+let _lift_global_predicate _fenv _fnApi _id _exps _p =  false
+
+let _lift_gac_ds_predicate _fenv _fnApi _id _p = false
+
+
+(* Check if the proof obligation is
    - statement-valid (valid with information local to the statement only)
    - function-valid (valid relative to function invariants)
    - api-valid (valid relative to one or more api-assumptions )
 *)
-let check_proof_obligations 
+let check_proof_obligations
       (env:c_environment_int)
       (fApi:function_api_int)
       (invIO:invariant_io_int)
       (proofObligations:proof_obligation_int list) =
   List.iter (fun p ->
       let msg s =
-        LBLOCK [ STR "Failure " ; s ; STR " for " ;
-                 STR (if p#is_ppo then "ppo " else "spo ") ;
-                 INT p#index ; STR ": " ;
-                 po_predicate_to_pretty p#get_predicate ] in
+        LBLOCK [
+            STR "Failure ";
+            s;
+            STR " for ";
+            STR (if p#is_ppo then "ppo " else "spo ");
+            INT p#index;
+            STR ": ";
+            po_predicate_to_pretty p#get_predicate] in
       let default () =
         (* check for statement validity *)
         try
           begin
-            check_ppo_validity env#get_functionname env#get_fdecls p ;
+            check_ppo_validity env#get_functionname env#get_fdecls p;
             if p#is_closed then
               ()
-            else if (new po_checker_t env fApi invIO p)#get_result
-            then
+            else if (new po_checker_t env fApi invIO p)#get_result then
               ()
           end
         with
-        | CCHFailure s -> raise (CCHFailure (msg s))           
+        | CCHFailure s -> raise (CCHFailure (msg s))
         | Failure s -> raise (CCHFailure (msg (STR s))) in
-    
+
       match is_unreachable
-              (invIO#get_location_invariant p#get_context#project_on_cfg)#get_invariants with
+              (invIO#get_location_invariant
+                 p#get_context#project_on_cfg)#get_invariants with
       | Some domain ->
          if system_settings#use_unreachability then
            ignore ((make_unreachable p domain))
          else
            begin
-	     chlog#add "unreachable"
-	               (LBLOCK [ location_to_pretty p#get_location ; STR " (domain: " ;
-                                 STR domain ; STR ")" ]) ;
+	     chlog#add
+               "unreachable"
+	       (LBLOCK [
+                    location_to_pretty p#get_location;
+                    STR " (domain: ";
+                    STR domain;
+                    STR ")"]);
              default ()
            end
-      | _ -> default () ) proofObligations
-  
+      | _ ->
+         default ()) proofObligations
