@@ -34,6 +34,13 @@ open CCHPreTypes
 open CCHAnalysisTypes
 
 
+(** [check_proof_obligations c_env fApi invio pos] checks for every
+    proof obligation in [pos] whether it is:
+    - statement-valid (valid with information local to the statement only)
+    - function-valid (valid relative to function invariants, as provided by
+       [invio])
+    - api-valid (valid relative to one or more api assumptions provided by [fApi])
+ *)
 val check_proof_obligations:
   c_environment_int
   -> function_api_int

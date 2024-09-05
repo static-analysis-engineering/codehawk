@@ -381,7 +381,7 @@ class type invariant_list_query_int =
   end
 
 
-(** Primary object that keeps track of invariants and can be queries *)
+(** Primary object that keeps track of invariants and can be queried *)
 class type po_query_int =
   object
     method env: c_environment_int
