@@ -183,6 +183,12 @@ object (self)
   method private xpr1_implies_existential_violation invindices x1 x2 =
     match x1 with
     | XVar v -> self#var1_implies_existential_violation invindices v x2
+    | XOp (XPlus, [XVar v; xincr]) ->
+       let xincr = simplify_xpr (XOp (XPlus, [x2; xincr])) in
+       self#var1_implies_existential_violation invindices v xincr
+    | XOp (XMinus, [XVar v; xdecr]) ->
+       let xincr = simplify_xpr (XOp (XMinus, [x2; xdecr])) in
+       self#var1_implies_existential_violation invindices v xincr
     | _ -> None
 
   method private xprlist_implies_existential_violation invindices xl x2 =
