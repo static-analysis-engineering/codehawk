@@ -33,6 +33,9 @@ open CHLanguage
 open CHNumerical
 open CHPretty
 
+(* chutil *)
+open CHLogger
+
 (* xprlib *)
 open Xprt
 open XprTypes
@@ -157,16 +160,16 @@ object (self)
        else
          env#mk_program_var vinfo eoffset NUM_VAR_TYPE
     | (Var _, _) -> env#mk_temp NUM_VAR_TYPE
-    | (Mem e,offset) ->
+    | (Mem e, offset) ->
        match self#translate_exp context e with
        | XVar v when env#is_memory_address v ->
-          let (memref,moffset) = env#get_memory_address v in
+          let (memref, moffset) = env#get_memory_address v in
           env#mk_memory_variable
             memref#index (add_offset moffset offset) NUM_VAR_TYPE
        | XVar v when env#is_initial_value v ->
           let memref =
             env#get_variable_manager#memrefmgr#mk_external_reference
-              v (type_of_lval fdecls lval) in
+              v (type_of_exp fdecls e) in
           env#mk_memory_variable memref#index offset NUM_VAR_TYPE
        | XVar _ -> env#mk_temp NUM_VAR_TYPE
        | _ -> env#mk_temp NUM_VAR_TYPE
@@ -193,7 +196,8 @@ object (self)
        begin
          match memxpr with
          | XVar v when env#is_initial_value v || env#is_function_return_value v ->
-            let memref = vmgr#memrefmgr#mk_external_reference v ftype in
+            let memtype = type_of_exp fdecls e in
+            let memref = vmgr#memrefmgr#mk_external_reference v memtype in
             XVar (env#mk_memory_address_value memref#index offset)
          | XVar v when env#is_memory_address v ->
             let (memref, moffset) = env#get_memory_address v in
@@ -435,7 +439,8 @@ object (self)
        begin
          match memxpr with
          | XVar v when env#is_initial_value v || env#is_function_return_value v ->
-            let memref = vmgr#memrefmgr#mk_external_reference v ftype in
+            let memtype = type_of_exp fdecls e in
+            let memref = vmgr#memrefmgr#mk_external_reference v memtype in
             XVar (env#mk_memory_address_value memref#index offset)
          | XVar v when env#is_memory_address v -> XVar v
          | _ ->
@@ -693,7 +698,8 @@ object (self)
        begin
          match memxpr with
          | XVar v when env#is_initial_value v || env#is_function_return_value v ->
-            let memref = vmgr#memrefmgr#mk_external_reference v ftype in
+            let memtype = type_of_exp fdecls e in
+            let memref = vmgr#memrefmgr#mk_external_reference v memtype in
             XVar (env#mk_memory_address_value memref#index offset)
          | XVar v when env#is_memory_address v -> XVar v
          | _ ->
@@ -765,7 +771,7 @@ object (self)
        | XVar v when env#is_initial_value v ->
           let memref =
             env#get_variable_manager#memrefmgr#mk_external_reference
-              v (type_of_lval fdecls lval) in
+              v (type_of_exp fdecls e) in
           env#mk_memory_variable memref#index offset SYM_VAR_TYPE
        | _ ->
           env#mk_temp SYM_VAR_TYPE

@@ -81,11 +81,26 @@ object (self)
         let assign =
 	  if chifVar#isTmp then
             let memoryvars = env#get_memory_variables in
+            let _ =
+              chlog#add
+                "abstract memory variables"
+                (LBLOCK [
+                     pretty_print_list
+                       memoryvars (fun v -> v#toPretty) "" ", " ""]) in
             CCMD (ABSTRACT_VARS memoryvars)
 	  else if env#has_constant_offset chifVar then
 	    make_c_cmd (ASSIGN_NUM (chifVar, numExp))
           else
             let memoryvars = env#get_memory_variables_with_base chifVar in
+            let _ =
+              chlog#add
+                "abstract memory variables with base"
+                (LBLOCK [
+                     STR "base: ";
+                     chifVar#toPretty;
+                     STR "; ";
+                     pretty_print_list
+                       memoryvars (fun v -> v#toPretty) "[" ", " "]"]) in
             CCMD (ABSTRACT_VARS memoryvars) in
         [rhsCode; assign]
       with

@@ -420,24 +420,52 @@ object (self)
     let id = po#index in
     let locinvio = invio#get_location_invariant cfgcontext in
     let facts = locinvio#get_invariants in
-    let vars = List.fold_left (fun acc f ->
-        match f#get_fact with
-        | NonRelationalFact (v, _i) ->
-           if env#check_variable_applies_to_po v ~argindex po#is_ppo id then
-             if List.exists (fun vv -> v#equal vv) acc then
-               acc
-             else
-               v :: acc
-           else
-             acc
-        | _ -> acc) [] facts in
-    List.fold_left (fun acc v ->
-        let invs = locinvio#get_var_invariants v in
-        List.fold_left (fun acc1 inv ->
-            if List.exists (fun inv' -> inv#index = inv'#index) acc1 then
-              acc1
-            else
-              inv :: acc1) acc invs) [] vars
+    match facts with
+    | [] ->
+       begin
+         self#set_diagnostic
+           ("no invariant facts in proof obligation context");
+         []
+       end
+    | _ ->
+       let vars =
+         List.fold_left (fun acc f ->
+             match f#get_fact with
+             | NonRelationalFact (v, _i) ->
+                if env#check_variable_applies_to_po v ~argindex po#is_ppo id then
+                  if List.exists (fun vv -> v#equal vv) acc then
+                    acc
+                  else
+                    v :: acc
+                else
+                  acc
+             | _ -> acc) [] facts in
+       match vars with
+       | [] ->
+          begin
+            self#set_diagnostic
+              ("no invariants found on variables that apply to proof obligation");
+            []
+          end
+       | _ ->
+          let invs =
+            List.fold_left (fun acc v ->
+                let invs = locinvio#get_var_invariants v in
+                List.fold_left (fun acc1 inv ->
+                    if List.exists (fun inv' -> inv#index = inv'#index) acc1 then
+                      acc1
+                    else
+                      inv :: acc1) acc invs) [] vars in
+          match invs with
+          | [] ->
+             begin
+               self#set_diagnostic
+                 ("none of the variables has associated invariants: "
+                  ^ (p2s
+                       (pretty_print_list vars (fun v -> v#toPretty) "[" "," "]")));
+               []
+             end
+          | _ -> invs
 
   method get_invariants_lb (argindex:int) =
     List.sort (fun i1 i2 -> i1#compare_lb i2) (self#get_invariants argindex)

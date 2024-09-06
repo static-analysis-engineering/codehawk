@@ -522,7 +522,7 @@ object(self)
 
   method get_memory_variables_with_base (v:variable_t) =
     let memvars = self#get_memory_variables in
-    if self#is_memory_address v then
+    if self#is_memory_address v || self#is_memory_variable v then
       let memref = self#get_memory_reference v in
       List.filter (fun mv ->
           memref#index = (self#get_memory_reference mv)#index) memvars

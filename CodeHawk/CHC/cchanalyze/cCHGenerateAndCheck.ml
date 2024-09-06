@@ -31,30 +31,20 @@
 open CHAtlas
 open CHCommon
 open CHLanguage
-open CHPEPRDictionary
 open CHPretty
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
-open CHTiming
 open CHTimingLog
-open CHXmlDocument
-open CHXmlReader
 
 (* cchlib *)
 open CCHBasicTypes
-open CCHContext
-open CCHFileEnvironment
 open CCHSettings
 open CCHUtilities
 
 (* cchpre *)
-open CCHCallsite
-open CCHPPO
 open CCHPreFileIO
 open CCHPreTypes
-open CCHProofObligation
 open CCHProofScaffolding
 
 (* cchanalyze *)
@@ -75,7 +65,6 @@ module H = Hashtbl
 
 let fenv = CCHFileEnvironment.file_environment
 
-let prr p l = fixed_length_pretty ~alignment:StrRight p l
 let function_to_be_analyzed = ref ""
 
 let max_callcount = 100
@@ -210,6 +199,7 @@ let process_function gspecs fname =
 	          let functionTranslator =
                     gspec.ig_get_function_translator env orakel opsProvider in
 	          let (optSem, sys) = functionTranslator#translate fundec in
+                  (* let _ = pr_debug [sys#toPretty] in *)
 	          let semantics =
                     match optSem with
                     | Some sem -> sem | _ -> default_opsemantics in
