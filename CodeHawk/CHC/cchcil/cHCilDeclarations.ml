@@ -30,9 +30,14 @@
 (* cil *)
 open GoblintCil
 
+(* chlib *)
+open CHCommon
+
 (* chutil *)
 open CHIndexTable
 open CHStringIndexTable
+open CHTimingLog
+open CHTraceResult
 open CHXmlDocument
 
 (* chcil *)
@@ -60,6 +65,7 @@ object (self)
   val location_table = mk_index_table "location-table"
   val string_table = mk_string_index_table "filename-table"
   val mutable tables = []
+  val mutable cfilename = ""
 
   initializer
     tables <- [
@@ -73,6 +79,8 @@ object (self)
       enumitem_table ;
       enuminfo_table
     ]
+
+  method set_filename s = cfilename <- s
 
   method index_init_opt (iinfo: init option) =
     match  iinfo with
@@ -100,26 +108,60 @@ object (self)
       | Some i -> [self#index_init i]
       | _ -> [] in
     let tags = [vinfo.vname; storage_mfts#ts vinfo.vstorage] in
-    let args =
-      [vinfo.vid;
-       cd#index_typ vinfo.vtype;
-       cd#index_attributes vinfo.vattr;
-       ibool vinfo.vglob;
-       ibool vinfo.vinline;
-       self#index_location vinfo.vdecl;
-       ibool vinfo.vaddrof;
-       0] @ vinit_ix in
-    varinfo_table#add (tags,args)
+    let locix_r = self#index_location vinfo.vdecl in
+    match locix_r with
+    | Ok locix ->
+       let args =
+         [vinfo.vid;
+          cd#index_typ vinfo.vtype;
+          cd#index_attributes vinfo.vattr;
+          ibool vinfo.vglob;
+          ibool vinfo.vinline;
+          locix;
+          ibool vinfo.vaddrof;
+          0] @ vinit_ix in
+       varinfo_table#add (tags,args)
+    | Error e ->
+       begin
+         log_error
+             "index_varinfo: %s; %s"
+             vinfo.vname
+             (String.concat ", " e);
+         raise
+           (CHFailure
+              (LBLOCK [
+                   STR "index_varinfo: ";
+                   STR vinfo.vname;
+                   STR "; ";
+                   STR (String.concat ", " e)]))
+       end
 
   method index_fieldinfo (finfo: fieldinfo) =
     let tags = [finfo.fname] in
-    let args =
-      [finfo.fcomp.ckey;
-       cd#index_typ finfo.ftype;
-       (match finfo.fbitfield with Some b -> b | _ -> -1);
-       cd#index_attributes finfo.fattr;
-       self#index_location finfo.floc] in
-    fieldinfo_table#add (tags, args)
+    let locix_r = self#index_location finfo.floc in
+    match locix_r with
+    | Ok locix ->
+       let args =
+         [finfo.fcomp.ckey;
+          cd#index_typ finfo.ftype;
+          (match finfo.fbitfield with Some b -> b | _ -> -1);
+          cd#index_attributes finfo.fattr;
+          locix
+         ] in
+       fieldinfo_table#add (tags, args)
+    | Error e ->
+       begin
+         log_error
+           "index fieldinfo: %s %s"
+           finfo.fname
+           (String.concat ", " e);
+         raise
+           (CHFailure
+              (LBLOCK [
+                   STR "index fieldinfo: ";
+                   STR finfo.fname;
+                   STR (String.concat ", " e)]))
+       end
 
   method index_compinfo (cinfo: compinfo) =
     let tags = [cinfo.cname] in
@@ -131,10 +173,26 @@ object (self)
     compinfo_table#add (tags, args)
 
   method index_enumitem (eitem: enumitem) =
-    let (name,exp,loc) = eitem in
+    let (name, exp, loc) = eitem in
     let tags = [name] in
-    let args = [cd#index_exp exp; self#index_location loc] in
-    enumitem_table#add (tags, args)
+    let locix_r = self#index_location loc in
+    match locix_r with
+    | Ok locix ->
+       let args = [cd#index_exp exp; locix] in
+       enumitem_table#add (tags, args)
+    | Error e ->
+       begin
+         log_error
+           "index enumitem: %s %s"
+           name
+           (String.concat ", " e);
+         raise
+           (CHFailure
+              (LBLOCK [
+                   STR "index enumitem: ";
+                   STR name;
+                   STR (String.concat ", " e)]))
+       end
 
   method index_enuminfo (einfo: enuminfo) =
     let tags = [einfo.ename; ikind_mfts#ts einfo.ekind] in
@@ -148,16 +206,20 @@ object (self)
     let args = [cd#index_typ tinfo.ttype] in
     typeinfo_table#add (tags,args)
 
-  method index_location (loc: location) =
+  method index_location (loc: location): int traceresult =
     if loc.byte = -1 && loc.line = -1 then
-      (-1)
+      Ok (-1)
     else
-      let filename =
-        get_location_filename !CHCilFileUtil.project_path_prefix "" loc.file in
-      let args = [self#index_filename filename; loc.byte; loc.line] in
-      location_table#add ([],args)
+      let filename_r =
+        get_location_filename
+          !CHCilFileUtil.project_path_prefix cfilename loc.file in
+      tmap
+        (fun filename ->
+          let args = [self#index_filename filename; loc.byte; loc.line] in
+          location_table#add ([], args))
+        filename_r
 
-  method index_filename (f:string) = string_table#add f
+  method index_filename (f: string) = string_table#add f
 
   method write_xml_varinfo
            ?(tag="ivinfo") (node: xml_element_int) (vinfo: varinfo) =
@@ -188,7 +250,13 @@ object (self)
 
   method write_xml_location
            ?(tag="iloc") (node: xml_element_int) (loc: location) =
-    node#setIntAttribute tag (self#index_location loc)
+    let locix_r = self#index_location loc in
+    match locix_r with
+    | Ok locix -> node#setIntAttribute tag locix
+    | Error e ->
+       raise
+         (CHFailure
+            (LBLOCK [STR "write_xml_location: "; STR (String.concat ", " e)]))
 
   method write_xml (node: xml_element_int) =
     let snode = xmlElement string_table#get_name in

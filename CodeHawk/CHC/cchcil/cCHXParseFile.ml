@@ -255,6 +255,7 @@ let main () =
   try
     let _ = read_args () in
     let _ = set_log_level "DEBUG" in
+    let _ = cildeclarations#set_filename !filename in
     let cilfile = Frontc.parse !filename () in
     let _ = log_info "Parsed %s [%s:%d]" !filename __FILE__ __LINE__ in
     save_xml_file cilfile

@@ -1,6 +1,6 @@
 (library
   (name cchcil)
-  (libraries chutil goblint-cil)
+  (libraries chlib chutil goblint-cil)
   (modules :standard \ cCHXParseFile)
   (public_name codehawk.cchcil)
   (wrapped false))

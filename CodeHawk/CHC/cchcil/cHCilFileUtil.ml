@@ -29,6 +29,7 @@
 
 (* chutil *)
 open CHFileIO
+open CHTraceResult
 
 
 let project_path_prefix = ref ""
@@ -36,32 +37,49 @@ let project_path_prefix = ref ""
 
 (* the location filename is either a filename with an absolute path or a
    a filename with a path relative to the project path (project_path_prefix) *)
-let get_location_filename project_path_prefix locpath locfile =
-  let has_project_path_prefix name =
+let get_location_filename
+      (project_path_prefix: string)
+      (locpath: string)
+      (locfile: string): string traceresult =
+
+  let msg_names () =
+    "(get_location_filename: "
+    ^ project_path_prefix ^ ", " ^ locpath ^ ", " ^ locfile ^ ")" in
+
+  let has_project_path_prefix (name: string): bool =
     let pre_len = String.length project_path_prefix in
     if String.length name > pre_len then
       let fsub = String.sub name 0 pre_len in
       fsub = project_path_prefix
     else
       false in
-  let add_preprocessor_path path name =
-    let path_len = String.length path in
-    if  path_len > 2 then
-      (String.sub path 0 (path_len - 1)) ^ name
+
+  let substitute_prefix (name: string): string =
+    let pre_len = (String.length project_path_prefix) + 1 in
+    if (String.length name) > pre_len then
+      String.sub name pre_len ((String.length name) - pre_len)
     else
       name in
-  let substitute_prefix name =
-    let pre_len = (String.length project_path_prefix) + 1 in
-    String.sub name pre_len ((String.length name) - pre_len)  in
-  let get_filename path file =
-    if path = "" then file else
+
+  let get_filename (path: string) (file: string): string traceresult =
+    if path = "" then
+      Ok file
+    else if (String.length file > 2) && (String.sub file 0 2) = "./" then
+      let len = String.length file in
+      Ok (Filename.concat path (String.sub file 2 (len - 2)))
+    else
       let absoluteName =
         if Filename.is_relative file then
-          add_preprocessor_path path file
+          Filename.concat path file
         else
           file in
       if has_project_path_prefix absoluteName then
-	normalize_path (substitute_prefix absoluteName)
+        tprop
+	  (normalize_path (substitute_prefix absoluteName))
+          (msg_names ())
       else
-	normalize_path absoluteName in
-  get_filename (normalize_path locpath) (normalize_path locfile)
+        tprop
+	  (normalize_path absoluteName)
+          (msg_names ()) in
+
+  get_filename (Filename.dirname locpath) locfile
