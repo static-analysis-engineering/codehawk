@@ -67,6 +67,6 @@ val read_xml_exp_option_list: ?tag:string -> xml_element_int -> exp option list
 
 val read_xml_cfile: xml_element_int -> file
 
-val read_xml_instruction: xml_element_int -> instr
+val read_xml_instruction: xml_element_int -> instr option
 
 val read_xml_function_definition: xml_element_int -> fundec

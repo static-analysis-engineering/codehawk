@@ -108,6 +108,7 @@ let byte_size_of_int (m:machine_sizes_t) (ik:ikind) : xpr_t =
   | IShort | IUShort -> m.sizeof_short
   | ILong | IULong -> m.sizeof_long
   | ILongLong | IULongLong -> m.sizeof_longlong
+  | IInt128 | IUInt128 -> m.sizeof_int128
 
 
 let alignof_int (m:machine_sizes_t) (ik:ikind) : xpr_t =
@@ -118,6 +119,7 @@ let alignof_int (m:machine_sizes_t) (ik:ikind) : xpr_t =
   | IShort | IUShort -> m.alignof_short
   | ILong | IULong -> m.alignof_long
   | ILongLong | IULongLong -> m.alignof_longlong
+  | IInt128 | IUInt128 -> m.alignof_int128
 
 
 let byte_size_of_float (m:machine_sizes_t) (fk:fkind) : xpr_t =
@@ -125,6 +127,9 @@ let byte_size_of_float (m:machine_sizes_t) (fk:fkind) : xpr_t =
   | FFloat -> m.sizeof_float
   | FDouble -> m.sizeof_double
   | FLongDouble -> m.sizeof_longdouble
+  | FComplexFloat -> m.sizeof_complex_float
+  | FComplexDouble -> m.sizeof_complex_double
+  | FComplexLongDouble -> m.sizeof_complex_longdouble
 
 
 let alignof_float (m:machine_sizes_t) (fk:fkind) : xpr_t =
@@ -132,6 +137,9 @@ let alignof_float (m:machine_sizes_t) (fk:fkind) : xpr_t =
   | FFloat -> m.alignof_float
   | FDouble -> m.alignof_double
   | FLongDouble -> m.alignof_longdouble
+  | FComplexFloat -> m.alignof_complex_float
+  | FComplexDouble -> m.alignof_complex_double
+  | FComplexLongDouble -> m.alignof_complex_longdouble
 
 
 (* ignoring alignment attributes *)

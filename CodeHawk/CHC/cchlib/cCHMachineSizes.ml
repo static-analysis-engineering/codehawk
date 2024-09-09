@@ -108,6 +108,7 @@ let ic2 = int_constant_expr 2
 let ic4 = int_constant_expr 4
 let ic8 = int_constant_expr 8
 let ic16 = int_constant_expr 16
+let ic32 = int_constant_expr 32
 
 
 let symbolic_sizes = {
@@ -115,6 +116,7 @@ let symbolic_sizes = {
   sizeof_int    = mkvar "sizeof_int";
   sizeof_bool   = mkvar "sizeof_bool";
   sizeof_long   = mkvar "sizeof_long";
+  sizeof_int128 = mkvar "sizeof_int128";
 
   sizeof_longlong = mkvar "sizeof_longlong";
   sizeof_ptr      = mkvar "sizeof_ptr";
@@ -123,6 +125,10 @@ let symbolic_sizes = {
   sizeof_double   = mkvar "sizeof_double";
 
   sizeof_longdouble = mkvar "sizeof_longdouble";
+  sizeof_complex_float = mkvar "sizeof_complex_float";
+  sizeof_complex_double = mkvar "sizeof_complex_double";
+  sizeof_complex_longdouble = mkvar "sizeof_complex_longdouble";
+
   sizeof_void       = mkvar "sizeof_void";
   sizeof_fun        = mkvar "sizeof_fun";
 
@@ -130,6 +136,7 @@ let symbolic_sizes = {
   alignof_int       = mkvar "alignof_int";
   alignof_bool      = mkvar "alignof_bool";
   alignof_long      = mkvar "alignof_long";
+  alignof_int128    = mkvar "alignof_int128";
 
   alignof_longlong  = mkvar "alignof_longlong";
   alignof_ptr       = mkvar "alignof_ptr";
@@ -138,25 +145,34 @@ let symbolic_sizes = {
 
   alignof_double     = mkvar "alignof_double";
   alignof_longdouble = mkvar "alignof_longdouble";
+  alignof_complex_float = mkvar "alignof_complex_float";
+  alignof_complex_double = mkvar "alignof_complex_double";
+  alignof_complex_longdouble = mkvar "alignof_complex_longdouble";
+
   alignof_str        = mkvar "alignof_str";
   alignof_fun        = mkvar "alignof_fun";
   alignof_aligned    = mkvar "alignof_aligned"
   }
 
 
-let linux_64_machine_sizes = {           (* sizes in bytes for linux server, from cil output *)
+(* sizes in bytes for linux server, from cil output *)
+let linux_64_machine_sizes = {
     sizeof_short  = ic2;
     sizeof_int    = ic4;
     sizeof_bool   = ic1;
     sizeof_long   = ic8;
+    sizeof_int128 = ic16;
 
     sizeof_longlong = ic8;
     sizeof_ptr      = ic8;
     sizeof_enum     = ic4;
     sizeof_float    = ic4;
     sizeof_double   = ic8;
-
     sizeof_longdouble = ic16;
+    sizeof_complex_float = ic8;
+    sizeof_complex_double = ic16;
+    sizeof_complex_longdouble = ic32;
+
     sizeof_void       = ic1;
     sizeof_fun        = ic1;
 
@@ -164,33 +180,42 @@ let linux_64_machine_sizes = {           (* sizes in bytes for linux server, fro
     alignof_int    = ic4;
     alignof_bool   = ic1;
     alignof_long   = ic8;
+    alignof_int128 = ic16;
 
     alignof_longlong = ic8;
     alignof_ptr      = ic8;
     alignof_enum     = ic4;
     alignof_float    = ic4;
-
     alignof_double     = ic8;
     alignof_longdouble = ic16;
+    alignof_complex_float = ic8;
+    alignof_complex_double = ic16;
+    alignof_complex_longdouble = ic32;
+
     alignof_str        = ic1;
     alignof_fun        = ic1;
     alignof_aligned    = ic16
   }
 
 
-let linux_32_machine_sizes = { (* sizes in bytes for linux 32 bits, derived from 64 bits *)
+(* sizes in bytes for linux 32 bits, derived from 64 bits *)
+let linux_32_machine_sizes = {
     sizeof_short  = ic2;
     sizeof_int    = ic4;
     sizeof_bool   = ic1;
     sizeof_long   = ic4;
+    sizeof_int128 = ic16;
 
     sizeof_longlong = ic8;
     sizeof_ptr      = ic4;
     sizeof_enum     = ic4;
     sizeof_float    = ic4;
     sizeof_double   = ic8;
-
     sizeof_longdouble = ic8;
+    sizeof_complex_float = ic8;
+    sizeof_complex_double = ic16;
+    sizeof_complex_longdouble = ic16;
+
     sizeof_void       = ic1;
     sizeof_fun        = ic1;
 
@@ -198,14 +223,18 @@ let linux_32_machine_sizes = { (* sizes in bytes for linux 32 bits, derived from
     alignof_int    = ic4;
     alignof_bool   = ic1;
     alignof_long   = ic4;
+    alignof_int128 = ic16;
 
     alignof_longlong = ic8;
     alignof_ptr      = ic4;
     alignof_enum     = ic4;
     alignof_float    = ic4;
-
     alignof_double     = ic8;
     alignof_longdouble = ic8;
+    alignof_complex_float = ic8;
+    alignof_complex_double = ic16;
+    alignof_complex_longdouble = ic16;
+
     alignof_str        = ic1;
     alignof_fun        = ic1;
     alignof_aligned    = ic8
@@ -217,14 +246,18 @@ let linux_16_machine_sizes = {
     sizeof_int    = ic2;
     sizeof_bool   = ic1;
     sizeof_long   = ic4;
+    sizeof_int128 = ic16;
 
     sizeof_longlong = ic4;
     sizeof_ptr      = ic2;
     sizeof_enum     = ic2;
     sizeof_float    = ic2;
     sizeof_double   = ic4;
-
     sizeof_longdouble = ic4;
+    sizeof_complex_float = ic4;
+    sizeof_complex_double = ic8;
+    sizeof_complex_longdouble = ic8;
+
     sizeof_void       = ic1;
     sizeof_fun        = ic1;
 
@@ -232,14 +265,18 @@ let linux_16_machine_sizes = {
     alignof_int    = ic2;
     alignof_bool   = ic1;
     alignof_long   = ic4;
+    alignof_int128 = ic16;
 
     alignof_longlong = ic4;
     alignof_ptr      = ic2;
     alignof_enum     = ic2;
     alignof_float    = ic2;
-
     alignof_double     = ic4;
     alignof_longdouble = ic4;
+    alignof_complex_float = ic4;
+    alignof_complex_double = ic8;
+    alignof_complex_longdouble = ic8;
+
     alignof_str        = ic1;
     alignof_fun        = ic1;
     alignof_aligned    = ic4

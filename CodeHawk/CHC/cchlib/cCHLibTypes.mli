@@ -54,12 +54,18 @@ type machine_sizes_t = {
   sizeof_long  : xpr_t;
 
   sizeof_longlong : xpr_t;
+  sizeof_int128   : xpr_t;
+
   sizeof_ptr      : xpr_t;
   sizeof_enum     : xpr_t;
   sizeof_float    : xpr_t;
   sizeof_double   : xpr_t;
 
   sizeof_longdouble  : xpr_t;
+  sizeof_complex_float: xpr_t;
+  sizeof_complex_double: xpr_t;
+  sizeof_complex_longdouble: xpr_t;
+
   sizeof_void        : xpr_t;
   sizeof_fun         : xpr_t;
 
@@ -69,12 +75,18 @@ type machine_sizes_t = {
   alignof_long   : xpr_t;
 
   alignof_longlong  : xpr_t;
+  alignof_int128    : xpr_t;
+
   alignof_ptr       : xpr_t;
   alignof_enum      : xpr_t;
   alignof_float     : xpr_t;
 
   alignof_double    : xpr_t;
   alignof_longdouble: xpr_t;
+  alignof_complex_float: xpr_t;
+  alignof_complex_double: xpr_t;
+  alignof_complex_longdouble: xpr_t;
+
   alignof_str       : xpr_t;
   alignof_fun       : xpr_t;
   alignof_aligned   : xpr_t;

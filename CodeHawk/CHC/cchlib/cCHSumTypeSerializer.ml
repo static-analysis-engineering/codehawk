@@ -56,13 +56,21 @@ let ikind_mfts: ikind mfts_int =
      (ILong, "ilong");
      (IULong, "iulong");
      (ILongLong, "ilonglong");
-     (IULongLong, "iulonglong")]
+     (IULongLong, "iulonglong");
+     (IInt128, "int128_t");
+     (IUInt128, "uint128_t")
+    ]
 
 
 let fkind_mfts: fkind mfts_int =
   mk_mfts
     "fkind"
-    [(FFloat, "float"); (FDouble, "fdouble"); (FLongDouble, "flongdouble")]
+    [(FFloat, "float");
+     (FDouble, "fdouble");
+     (FLongDouble, "flongdouble");
+     (FComplexFloat, "fcomplexfloat");
+     (FComplexDouble, "fcomplexdouble");
+     (FComplexLongDouble, "fcomplexlongdouble")]
 
 
 let unop_mfts: unop mfts_int =
@@ -324,8 +332,9 @@ object
     | Set _ -> "set"
     | Call _ -> "call"
     | Asm _ -> "asm"
+    | VarDecl _ -> "vardecl"
 
-  method! tags = ["asm"; "call"; "set"]
+  method! tags = ["asm"; "call"; "set"; "vardecl"]
 
 end
 

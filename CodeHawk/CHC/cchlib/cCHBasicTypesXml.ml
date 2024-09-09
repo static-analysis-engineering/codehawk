@@ -32,6 +32,7 @@ open CHLanguage
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 open CHXmlDocument
 
@@ -241,28 +242,34 @@ let read_xml_asm_input_list (node:xml_element_int) : asm_input_t list =
   List.map read_xml_asm_input (node#getTaggedChildren "asminput")
 
 
-let read_xml_instruction (node:xml_element_int) : instr =
+let read_xml_instruction (node:xml_element_int) : instr option =
   let hasc = node#hasOneTaggedChild in
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
   let read_list tag reader = if hasc tag then reader (getc tag) else [] in
   match get "itag" with
   | "set" ->
-     Set (cd#read_xml_lval node,
-          cd#read_xml_exp node,
-          cdecls#read_xml_location node)
+     Some (
+         Set (cd#read_xml_lval node,
+              cd#read_xml_exp node,
+              cdecls#read_xml_location node))
   | "call" ->
-     Call (cd#read_xml_lval_opt node,
-           cd#read_xml_exp node,
-	   read_xml_exp_list (getc "args"),
-           cdecls#read_xml_location node)
+     Some (
+         Call (cd#read_xml_lval_opt node,
+               cd#read_xml_exp node,
+	       read_xml_exp_list (getc "args"),
+               cdecls#read_xml_location node))
   | "asm" ->
-     Asm (cd#read_xml_attributes node,
-	  read_list "templates" read_xml_string_index_list,
-	  read_list "asmoutputs" read_xml_asm_output_list,
-	  read_list "asminputs" read_xml_asm_input_list,
-	  read_list "registerclobbers" read_xml_string_index_list,
-	  cdecls#read_xml_location node)
+     Some (
+         Asm (cd#read_xml_attributes node,
+	      read_list "templates" read_xml_string_index_list,
+	      read_list "asmoutputs" read_xml_asm_output_list,
+	      read_list "asminputs" read_xml_asm_input_list,
+	      read_list "registerclobbers" read_xml_string_index_list,
+	      cdecls#read_xml_location node))
+
+  | "vardecl" -> None
+
   | s -> raise (Invalid_enumeration ("instruction", s))
 
 
@@ -286,7 +293,16 @@ let read_xml_label_list (node:xml_element_int) : label list =
 
 
 let read_xml_instruction_list (node:xml_element_int) : instr list =
-  List.map read_xml_instruction (node#getTaggedChildren "instr")
+  let revinstrs =
+    List.fold_left
+      (fun acc n ->
+        match read_xml_instruction n with
+        | Some instr -> instr :: acc
+        | _ ->
+           let _ =
+             chlog#add "ignoring vardecl instruction" (STR "No vardecl") in
+           acc) [] (node#getTaggedChildren "instr") in
+  List.rev revinstrs
 
 
 let rec read_xml_function_block (node:xml_element_int) : block =

@@ -71,6 +71,8 @@ let int_type_to_string (k:ikind) =
   | IULong -> "unsigned long"
   | ILongLong -> "long long"
   | IULongLong -> "unsigned long long"
+  | IInt128 -> "int128_t"
+  | IUInt128 -> "uint128_t"
 
 
 let unop_to_print_string (op:unop) =
@@ -111,6 +113,9 @@ let float_type_to_string (k:fkind) =
   | FFloat -> "float"
   | FDouble -> "double"
   | FLongDouble -> "long double"
+  | FComplexFloat -> "complex float"
+  | FComplexDouble -> "complex double"
+  | FComplexLongDouble -> "complex long double"
 
 
 let cil_constant_to_string (c:constant) =
@@ -311,6 +316,7 @@ let instr_to_pretty (instr:instr) =
          STR "assign ("; lval_to_pretty lval; STR ", "; exp_to_pretty x; STR ")"]
   | Call (_optLval, _x, _args, _loc) -> LBLOCK [STR "call"]
   | Asm _ -> STR "asm"
+  | VarDecl (vinfo, loc) -> LBLOCK [STR "vardecl ("; STR vinfo.vname; STR ")"]
 
 
 let enuminfo_to_pretty (einfo:enuminfo) = STR einfo.ename
