@@ -33,6 +33,8 @@ open CHPretty
 
 (* chutil *)
 open CHPrettyUtil
+open CHTraceResult
+
 
 exception CHIOFailure of string
 
@@ -242,7 +244,7 @@ let absolute_name (s: string): string =
     s
 
 
-let rec normalize_path (s: string): string =
+let rec normalize_path (s: string): string traceresult =
   let has_directory_dot s =
     (String.contains s '.')
     && (let dotindex = String.index s '.' in
@@ -252,7 +254,7 @@ let rec normalize_path (s: string): string =
             || ((slashindex - dotindex = 2) && String.get s (dotindex+1) = '.'))) in
   let len = String.length s in
   if len <= 1 then
-    s
+    Ok s
   else
     if has_directory_dot s then
       let dotindex = String.index s '.' in
@@ -268,16 +270,16 @@ let rec normalize_path (s: string): string =
             normalize_path (String.concat "" [s1; s2])
           else if slsindex > 0 then
             normalize_path (String.sub s (dotindex + 3) (len - (dotindex + 3)))
-          else    (* no second slash found *)
-            raise (CHFailure (LBLOCK [STR "Error in normalize_path: "; STR s]))
+          else  (* no second slash found *)
+            Error ["normalize_path: " ^ s ^ "; expected second slash"]
         else      (* no first slash found *)
-          raise (CHFailure (LBLOCK [STR "Error in normalize_path: "; STR s]))
+          Error ["normalize_path: " ^ s ^ "; expected a slash"]
       else        (* just one dot *)
         if dotindex + 1 < len && String.get s (dotindex+1) = '/' then
           let s1 = String.sub s 0 dotindex in
           let s2 = String.sub s (dotindex + 2) (len - (dotindex + 2)) in
           normalize_path (String.concat "" [s1; s2])
         else
-          raise (CHFailure (LBLOCK [STR "Error in normalize_path: "; STR s]))
+          Error ["normalize_path: " ^ s ^ "; multiple dots"]
     else   (* no dots *)
-      s
+      Ok s

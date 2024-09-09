@@ -3,7 +3,7 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny B. Sipma
    Copyright (c) 2022-2024 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,6 +29,10 @@
 
 (* chlib *)
 open CHPretty
+
+(* chutil *)
+open CHTraceResult
+
 
 exception CHIOFailure of string
 
@@ -48,12 +52,13 @@ val relativize_filename: string -> string -> string
 (* returns the filename relative to the given directory;
    if the filename is absolute, but not in a subdirectory
    of the given directory the function fails *)
-  
+
+
 val absolute_name: string -> string
 (* add the current working directory to the filename *)
 
-val normalize_path: string -> string
+
+val normalize_path: string -> string traceresult
 (* remove . and .. from path names; if the filename
    is relative the function fails if removing .. would result
    in a parent directory of the path *)
-  
