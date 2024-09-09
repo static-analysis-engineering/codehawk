@@ -457,6 +457,8 @@ let get_integer_promotion (ty1:typ) (ty2:typ) =
            | (IInt, IULong) | (IULong, IInt) -> IULong
            | (ILong, IUInt) | (IUInt, ILong) -> ILong
            | (ILongLong, IUInt) | (IUInt, ILongLong) -> ILongLong
+           | (IUInt128, _) | (_, IUInt128) -> IUInt128
+           | (IInt128, _) | (_, IInt128) -> IInt128
            | _ ->
               raise
                 (CCHFailure
@@ -595,6 +597,8 @@ let get_safe_upperbound (kind:ikind) =
       | ILongLong -> maxval (mn ms.sizeof_longlong) true
       | IULong -> maxval (mn ms.sizeof_long) false
       | IULongLong -> maxval (mn ms.sizeof_longlong) false
+      | IUInt128 -> maxval (mn ms.sizeof_int128) false
+      | IInt128 -> maxval (mn ms.sizeof_int128) true
       | _ ->
          raise
            (CCHFailure (STR "Unexpected condition in get_safe_upperbound")) in
@@ -635,6 +639,7 @@ let get_safe_lowerbound (kind:ikind) =
       | IShort -> minval (mn ms.sizeof_short)
       | ILong -> minval (mn ms.sizeof_long)
       | ILongLong -> minval (mn ms.sizeof_longlong)
+      | IInt128 -> minval (mn ms.sizeof_int128)
       | _ ->
          raise
            (CCHFailure (STR "Unexpcted condition in get_safe_lowerbound")) in
@@ -644,8 +649,8 @@ let get_safe_lowerbound (kind:ikind) =
     | IUChar -> numerical_zero
     | IInt | IShort -> md kind
     | IUInt | IUShort -> numerical_zero
-    | ILong | ILongLong -> md kind
-    | IULong | IULongLong -> numerical_zero
+    | ILong | ILongLong | IInt128 -> md kind
+    | IULong | IULongLong | IUInt128 -> numerical_zero
   with
   | CHFailure p ->
      begin
@@ -692,6 +697,7 @@ let get_safe_bit_width (kind:ikind) =
   | IInt | IUInt -> mn ms.sizeof_int
   | ILong | IULong -> mn ms.sizeof_long
   | ILongLong | IULongLong -> mn ms.sizeof_longlong
+  | IInt128 | IUInt128 -> mn ms.sizeof_int128
 
 
 let get_required_minimum_bit_width (n:int) =
@@ -737,7 +743,22 @@ let is_safe_int_cast (fromi:ikind) (toi:ikind)	=
   | (IUShort, IUInt)
   | (IUShort, IULong)
   | (IUShort, IULongLong)
-  | (IULong, IULongLong)  -> true
+  | (IULong, IULongLong) -> true
+  | (IUInt128, IUInt128) -> true
+  | (IUInt128, _) -> false
+  | (IInt128, IUInt128) -> false
+  | (IUChar, IUInt128)
+    | (IUShort, IUInt128)
+    | (IUInt, IUInt128)
+    | (IULong, IUInt128)
+    | (IULongLong, IUInt128) -> true
+  | (IChar, IInt128)
+    | (ISChar, IInt128)
+    | (IShort, IInt128)
+    | (IInt, IInt128)
+    | (ILong, IInt128)
+    | (ILongLong, IInt128)
+    | (IInt128, IInt128) -> true
   | _ -> false
 
 
@@ -830,10 +851,15 @@ let rec size_of_align (fdecls:cfundeclarations_int) (t:typ) =
   | TInt (ILong, _)
   | TInt (IULong, _) -> symbolic_sizes.alignof_long
   | TInt (ILongLong, _)
-  | TInt (IULongLong, _) -> symbolic_sizes.alignof_longlong
+    | TInt (IULongLong, _) -> symbolic_sizes.alignof_longlong
+  | TInt (IInt128, _)
+    | TInt (IUInt128, _) -> symbolic_sizes.alignof_int128
   | TFloat (FFloat, _) -> symbolic_sizes.alignof_float
   | TFloat (FDouble, _) -> symbolic_sizes.alignof_double
   | TFloat (FLongDouble, _) -> symbolic_sizes.alignof_longdouble
+  | TFloat (FComplexFloat, _) -> symbolic_sizes.alignof_complex_float
+  | TFloat (FComplexDouble, _) -> symbolic_sizes.alignof_complex_double
+  | TFloat (FComplexLongDouble, _) -> symbolic_sizes.alignof_complex_longdouble
   | TVoid _ -> random_constant_expr
   | TPtr _ -> symbolic_sizes.alignof_ptr
   | TArray (et, Some _len, _) -> size_of_align fdecls et
@@ -889,10 +915,15 @@ and size_of_type (fdecls:cfundeclarations_int) (t:typ) =
   | TInt (ILong, _)
   | TInt (IULong, _) -> machine_sizes.sizeof_long
   | TInt (ILongLong, _)
-  | TInt (IULongLong, _) -> machine_sizes.sizeof_longlong
+    | TInt (IULongLong, _) -> machine_sizes.sizeof_longlong
+  | TInt (IInt128, _)
+    | TInt (IUInt128, _) -> machine_sizes.sizeof_int128
   | TFloat (FFloat, _) -> machine_sizes.sizeof_float
   | TFloat (FDouble, _) -> machine_sizes.sizeof_double
   | TFloat (FLongDouble, _) -> machine_sizes.sizeof_longdouble
+  | TFloat (FComplexFloat, _) -> machine_sizes.sizeof_complex_float
+  | TFloat (FComplexDouble, _) -> machine_sizes.sizeof_complex_double
+  | TFloat (FComplexLongDouble, _) -> machine_sizes.sizeof_complex_longdouble
   | TVoid _ -> machine_sizes.sizeof_void
   | TPtr _ -> machine_sizes.sizeof_ptr
   | TArray (et,Some len,_) ->

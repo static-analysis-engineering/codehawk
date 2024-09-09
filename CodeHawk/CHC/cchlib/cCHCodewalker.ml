@@ -105,7 +105,8 @@ object (self:_)
 	List.iter (fun e -> self#walk_exp e) l;
 	self#walk_location loc
       end
-    | Asm (_,_,_,_,_,loc) -> self#walk_location loc
+    | Asm (_, _, _, _, _, loc) -> self#walk_location loc
+    | VarDecl (_, loc) -> self#walk_location loc
 
   method walk_lval (l:lval) =
     begin

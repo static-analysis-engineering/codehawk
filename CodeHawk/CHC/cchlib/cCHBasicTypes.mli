@@ -49,12 +49,19 @@ type ikind =
 | ILongLong   (** [long long] (or [_int64] on Microsoft Visual C) *)
 | IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft
                   Visual C) *)
+| IInt128     (** added by Goblint-Cil *)
+| IUInt128    (** added by Goblint-Cil *)
+
 
 (** Various kinds of floating-point numbers*)
 type fkind =
 | FFloat      (** [float] *)
 | FDouble     (** [double] *)
 | FLongDouble (** [long double] *)
+| FComplexFloat
+| FComplexDouble
+| FComplexLongDouble
+
 
 type storage =
 | NoStorage
@@ -260,7 +267,14 @@ and asm_input_t = string option * string * exp (* name, constraint, exp *)
 and instr =
 | Set of lval * exp * location
 | Call of lval option * exp * exp list * location
-| Asm of attributes * int list * asm_output_t list * asm_input_t list * int list * location
+| VarDecl of varinfo * location
+| Asm of
+    attributes
+    * int list
+    * asm_output_t list
+    * asm_input_t list
+    * int list
+    * location
 
 and location = {
   line : int ;
