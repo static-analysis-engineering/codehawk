@@ -446,17 +446,17 @@ object (self)
   method private translate_basic_block_cmd (instr:instr) context:c_cmd_t =
     let ops = ops_provider#get_c_cmd_operations context in
     match instr with
-    | Set (lhs,rhs,loc) ->
+    | Set (lhs, rhs, loc) ->
       begin
 	env#set_current_location loc;
 	make_c_cmd_block
-          (ops @ (assignment_translator#translate context loc lhs rhs ))
+          (ops @ (assignment_translator#translate context loc lhs rhs))
       end
     | Call (ret, f, args, loc) ->
       begin
 	env#set_current_location loc;
 	make_c_cmd_block
-          (ops @ (call_translator#translate context loc ret f args ))
+          (ops @ (call_translator#translate context loc ret f args))
       end
     | Asm (_, templates, asmoutputs, asminputs, _, loc) ->
        let asmcode = String.concat ";" (List.map cd#get_string templates) in
@@ -484,6 +484,16 @@ object (self)
          env#set_current_location loc;
          make_c_cmd_block (ops @ [op] @ asmoutputs @ asminputs)
        end
+    | VarDecl (vinfo, loc) ->
+       let op =
+         make_c_cmd
+           (OPERATION
+              {op_name = new symbol_t ("VLA: " ^ vinfo.vname); op_args = []}) in
+       begin
+         env#set_current_location loc;
+         make_c_cmd_block (ops @ [op])
+       end
+
 
 end
 

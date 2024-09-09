@@ -1306,6 +1306,12 @@ and create_po_instr env (context:program_context_int) (i:instr) =
        List.iter (fun (_, _, exp) ->
            create_po_exp ~deref:true env context#add_rhs exp loc) asminputs;
      end
+  | VarDecl (vinfo, _) ->
+     chlog#add
+       "instruction primary proof obligation"
+       (LBLOCK [
+            STR "No suppoert yet for VLA (variable length arrays: ";
+            STR vinfo.vname])
 
 (* require valid lower and upper bound for global variables that are pointers,
    so these properties can be assumed when these variables are used; idem for
