@@ -331,10 +331,10 @@ and write_xml_function_definition
   begin
     decls#write_xml_varinfo varNode f.svar;
     List.iteri (fun i v -> ignore (fdecls#index_formal v (i+1))) f.sformals;
-    List.iter (fun v -> ignore (fdecls#index_local v))  f.slocals;
+    List.iter (fun v -> ignore (fdecls#index_local v)) f.slocals;
     fdecls#write_xml dNode;
     write_xml_function_block fdecls bNode f.sbody;
-    append [varNode; dNode; bNode] ;
+    append [varNode; dNode; bNode];
     set "filename" filename
   end
 

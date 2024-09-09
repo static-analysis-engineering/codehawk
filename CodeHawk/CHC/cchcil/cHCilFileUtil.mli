@@ -27,10 +27,12 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHTraceResult
 
 val project_path_prefix: string ref
 
 
 (** the location filename is either a filename with an absolute path or a
     a filename with a path relative to the project path (project_path_prefix) *)
-val get_location_filename: string -> string -> string -> string
+val get_location_filename: string -> string -> string -> string traceresult

@@ -30,8 +30,13 @@
 (* cil *)
 open GoblintCil
 
+(* chlib *)
+open CHCommon
+open CHPretty
+
 (* chutil *)
 open CHIndexTable
+open CHTimingLog
 open CHXmlDocument
 
 (* chcil *)
@@ -55,16 +60,32 @@ object (self)
 
   method private getrep (vinfo: varinfo) (formalseqnr: int) =
     let tags = [vinfo.vname; storage_mfts#ts vinfo.vstorage] in
-    let args =
-      [vinfo.vid;
-       cd#index_typ vinfo.vtype;
-       cd#index_attributes vinfo.vattr;
-       ibool vinfo.vglob;
-       ibool vinfo.vinline;
-       cdecls#index_location vinfo.vdecl;
-       ibool vinfo.vaddrof;
-       formalseqnr] in
-    (tags, args)
+    let locix_r = cdecls#index_location vinfo.vdecl in
+    match locix_r with
+    | Ok locix ->
+       let args =
+         [vinfo.vid;
+          cd#index_typ vinfo.vtype;
+          cd#index_attributes vinfo.vattr;
+          ibool vinfo.vglob;
+          ibool vinfo.vinline;
+          locix;
+          ibool vinfo.vaddrof;
+          formalseqnr] in
+       (tags, args)
+    | Error e ->
+       begin
+         log_error
+           "cilfundeclarations.getrep: %s; %s"
+           vinfo.vname
+           (String.concat ", " e);
+         raise
+           (CHFailure
+              (LBLOCK [
+                   STR "cilfundeclarations: getrep: ";
+                   STR vinfo.vname;
+                   STR (String.concat ", " e)]))
+       end
 
   method index_formal (vinfo: varinfo) (seqnr: int) =
     local_varinfo_table#add (self#getrep vinfo seqnr)

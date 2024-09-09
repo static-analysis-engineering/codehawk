@@ -31,6 +31,7 @@
 open GoblintCil
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 type funarg = string * typ * attributes
@@ -69,6 +70,8 @@ class type cildictionary_int =
 class type cildeclarations_int =
   object
 
+    method set_filename: string -> unit
+
     method index_typeinfo: typeinfo -> int
     method index_varinfo: varinfo -> int
     method index_init_opt: init option -> int
@@ -78,7 +81,7 @@ class type cildeclarations_int =
     method index_compinfo: compinfo -> int
     method index_enumitem: enumitem -> int
     method index_enuminfo: enuminfo -> int
-    method index_location: location -> int
+    method index_location: location -> int traceresult
     method index_filename: string -> int
 
     method write_xml_typeinfo: ?tag:string -> xml_element_int -> typeinfo -> unit

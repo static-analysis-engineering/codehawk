@@ -60,7 +60,7 @@ cchcil.cmxa: $(CMIS) $(OBJECTS) $(CHLIB)/chlib.cmxa $(CIL)/goblintCil.cmxa $(EXT
 
 
 cmi/%.cmi: %.mli make_dirs
-	$(CAMLC) -o $@ -c $<
+	$(CAMLC) -o $@ -c -opaque $<
 
 cmx/%.cmx: %.ml make_dirs
 	$(CAMLC) -o $@ -c $<
