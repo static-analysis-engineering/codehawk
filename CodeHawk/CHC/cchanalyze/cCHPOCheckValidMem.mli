@@ -34,4 +34,23 @@ open CCHBasicTypes
 open CCHAnalysisTypes
 
 
+(** [check_valid_mem poq exp] returns [true] if expression [exp] is guaranteed to
+    point to a memory region that is valid (i.e., has not been freed). Evidence
+    of validity is saved separately. Similarly, if the condition cannot be
+    proven valid, an attempt is made to construct diagnostics on what information
+    is outstanding for a successful proof, which is also saved separately.
+
+    The IH (Inductive Hypothesis) guarantees that any region pointed to by an
+    argument is valid memory at function entry point (checked at the time of the
+    call). Similarly, any region pointed to by a return value from a callee is
+    valid memory at the pointer where the pointer value is received. For any
+    other address locations received from outside, the proof obligation should
+    be delegated.
+
+    If the application does not contain any calls to free at all (indicated by
+    global_free) the valid-mem obligation is vacuously valid.
+
+    Any region pointed to can potentially be freed by any calls that are made
+    after the address is received, which is the reason for checking the effect
+    of any calls made since receiving the pointer value. *)
 val check_valid_mem: po_query_int -> exp -> bool

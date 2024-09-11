@@ -34,4 +34,20 @@ open CCHBasicTypes
 open CCHAnalysisTypes
 
 
+(** [check_initialized poq lval] returns true if the invariants supplied by
+    [poq] imply the initialization of [lval].
+
+    An lval is guaranteed to be initialized if
+    - it is passed as an argument to a function (that is, it is the responsibility
+      of the caller when passing a value, that that value is properly initialized,
+      as the receiving function has no ways of checking this), or
+    - if it has been assigned within the function, or
+    - if the expression is the dereferencing of the address of a variable, and the
+      variable is initialized, or
+    - if the lval contains an embedded null dereference; null dereference is
+      checked for separately.
+
+    The requirement for an initialized value is lifted to the api if the lval is
+    an element of a struct pointed to be a parameter value.
+ *)
 val check_initialized: po_query_int -> lval -> bool

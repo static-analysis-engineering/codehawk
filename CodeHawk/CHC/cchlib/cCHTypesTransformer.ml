@@ -256,7 +256,7 @@ object (self)
          List.iter self#walk_arg el
        end
     | Asm _ -> ()
-    | VarDecl (vinfo, _) -> ()
+    | VarDecl (_vinfo, _) -> ()
 
 
   method walk_rhs (_e:exp) = ()

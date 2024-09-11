@@ -33,9 +33,6 @@ open CHLanguage
 open CHNumerical
 open CHPretty
 
-(* chutil *)
-open CHLogger
-
 (* xprlib *)
 open Xprt
 open XprTypes

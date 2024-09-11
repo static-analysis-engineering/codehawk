@@ -316,7 +316,7 @@ let instr_to_pretty (instr:instr) =
          STR "assign ("; lval_to_pretty lval; STR ", "; exp_to_pretty x; STR ")"]
   | Call (_optLval, _x, _args, _loc) -> LBLOCK [STR "call"]
   | Asm _ -> STR "asm"
-  | VarDecl (vinfo, loc) -> LBLOCK [STR "vardecl ("; STR vinfo.vname; STR ")"]
+  | VarDecl (vinfo, _loc) -> LBLOCK [STR "vardecl ("; STR vinfo.vname; STR ")"]
 
 
 let enuminfo_to_pretty (einfo:enuminfo) = STR einfo.ename
