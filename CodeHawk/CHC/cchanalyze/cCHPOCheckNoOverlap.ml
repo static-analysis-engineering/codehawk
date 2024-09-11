@@ -29,20 +29,17 @@
 
 (* chlib *)
 open CHLanguage
-open CHPretty
 
 (* chutil *)
 open CHPrettyUtil
 
 (* xprlib *)
 open XprTypes
-open XprToPretty
 
 (* cchlib *)
 open CCHBasicTypes
 open CCHLibTypes
 open CCHTypesToPretty
-open CCHUtilities
 
 (* cchpre *)
 open CCHMemoryBase
@@ -53,61 +50,14 @@ open CCHProofObligation
 open CCHAnalysisTypes
 
 
-let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
-let x2s x = p2s (x2p x)
 let e2s e = p2s (exp_to_pretty e)
-
-
-let rec get_stack_address e =
-  match e with
-  | AddrOf (Var (vname,vid),_)
-  | StartOf (Var (vname,vid),_) -> Some (vname,vid)
-  | CastE (_, ee) -> get_stack_address ee
-  | _ -> None
-
-
-let rec get_string_literal e =
-  match e with
-  | Const (CStr s) -> Some s
-  | CastE (_, ee) -> get_string_literal ee
-  | _ -> None
-
-let is_string_literal e =
-  match get_string_literal e with Some _ -> true | _ -> false
-
-
-let get_heap_address (_poq:po_query_int) (_arg:int) (_inv:invariant_int) = None
-
-
-let get_api_address (poq: po_query_int) (_arg: int) (inv: invariant_int) =
-  match inv#expr with
-  | Some x when poq#is_api_expression x ->
-     let e = poq#get_api_expression x in
-     Some ("function argument: " ^ (e2s e))
-  | _ ->
-     match inv#get_fact with
-     | NonRelationalFact (_,FRegionSet _) ->
-        let syms = inv#get_regions in
-        let memregmgr = poq#env#get_variable_manager#memregmgr in
-        let get_api_sym s =
-          let memreg = memregmgr#get_memory_region s#getSeqNumber in
-          match memreg#get_memory_base with
-          | CBaseVar v when poq#is_api_expression (XVar v) -> Some v
-          | _ -> None in
-        let is_api_sym s = match get_api_sym s with Some _ -> true | _ -> false in
-        if List.for_all is_api_sym syms then
-          Some ("function arguments: "
-                ^ String.concat ";" (List.map (fun s -> s#getBaseName) syms))
-        else
-          None
-     | _ -> None
 
 
 class no_overlap_checker_t
         (poq: po_query_int)
-        (e1: exp)
-        (e2: exp)
+        (_e1: exp)
+        (_e2: exp)
         (invs1: invariant_int list)
         (invs2: invariant_int list) =
 object (self)
@@ -167,7 +117,7 @@ object (self)
       let _ = poq#set_diagnostic_arg arg (self#memref_to_string memref) in
       match memref#get_base with
       | CStackAddress stackvar ->
-         let (vinfo,offset) = poq#env#get_local_variable stackvar in
+         let (vinfo, _offset) = poq#env#get_local_variable stackvar in
          let deps = DLocal  [invindex] in
          let msg = "local stack variable: " ^ vinfo.vname in
          Some (deps, msg)
@@ -197,7 +147,7 @@ object (self)
     else
       None
 
-  method private is_global_value (arg: int) (v: variable_t) (invindex: int) =
+  method private is_global_value (_arg: int) (v: variable_t) (invindex: int) =
     if poq#is_global_expression (XVar v) then
       let xglobal = poq#get_global_expression (XVar v) in
       let deps = DLocal [invindex] in

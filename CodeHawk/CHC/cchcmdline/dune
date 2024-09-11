@@ -11,7 +11,3 @@
   (modules cCHXCAnalyzer cCHVersion)
   (package exes)
   (public_name canalyzer))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

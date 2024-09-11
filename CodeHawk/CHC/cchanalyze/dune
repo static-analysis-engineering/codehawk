@@ -4,7 +4,3 @@
   (modules_without_implementation cCHCommon)
   (public_name codehawk.cchanalyze)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))
