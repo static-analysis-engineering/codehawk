@@ -44,11 +44,9 @@ open CHValueSetsDomainNoArrays
 (* chutil *)
 open CHAnalysisSetup
 open CHLogger
-open CHTiming
 open CHTimingLog
 
 (* cchlib *)
-open CCHSettings
 open CCHUtilities
 
 (* cchpre *)

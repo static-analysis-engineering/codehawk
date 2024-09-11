@@ -33,8 +33,6 @@ open CHPretty
 (* chutil *)
 open CHGc
 open CHLogger
-open CHPrettyUtil
-open CHTiming
 open CHTimingLog
 open CHXmlDocument
 
@@ -237,7 +235,7 @@ let main () =
   | Invalid_argument s ->
      begin
        ch_error_log#add
-         "final failure" (LBLOCK [STR "Invalid argument: "; STR s ]);
+         "final failure" (LBLOCK [STR "Invalid argument: "; STR s]);
        save_log_files "failure";
        pr_debug [STR "Error: "; STR s; NL];
        exit 1

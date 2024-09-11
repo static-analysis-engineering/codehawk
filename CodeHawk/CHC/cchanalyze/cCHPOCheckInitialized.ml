@@ -154,51 +154,52 @@ object (self)
   method private check_safe_functionpointer (vinfo: varinfo) =
     let vinfovalues = poq#get_vinfo_offset_values vinfo in
     let _ = poq#set_diagnostic ("function pointer: " ^ vinfo.vname)  in
-    List.fold_left (fun acc (inv,offset) ->
-        match offset with
-        | NoOffset ->
-           begin
-             match inv#expr with
-             | Some (XVar v) when poq#env#is_memory_address v ->
-                let (memref,offset) = poq#env#get_memory_address v in
-                let _ =
-                  poq#set_diagnostic_arg
-                    1
-                    ("memory address: "
-                     ^ (self#memaddr_to_string memref offset)) in
-                begin
-                  match memref#get_base with
-                  | CGlobalAddress v ->
-                     let (gvinfo,gvoffset) = poq#env#get_global_variable v in
-                     let deps = DLocal [inv#index] in
-                     let msg =
-                       "variable "
-                       ^ vinfo.vname
-                       ^ " is initialized with function pointer "
-                       ^ gvinfo.vname in
-                     begin
-                       poq#record_safe_result deps msg;
-                       true
-                     end
-                  | _ -> false
-                end
-             | Some x ->
-                begin
-                  poq#set_diagnostic  ("deref expr: " ^ (x2s x));
-                  false
-                end
-             | _ -> false
-           end
-        | _ ->
-           begin
-             poq#set_diagnostic
-               ("offset: "
-                ^ (p2s (offset_to_pretty offset))
-                ^ "; invariant: "
-                ^ (p2s inv#value_to_pretty)
-                ^ ")");
-             false
-           end) false vinfovalues
+    List.fold_left (fun acc (inv, offset) ->
+        acc ||
+          match offset with
+          | NoOffset ->
+             begin
+               match inv#expr with
+               | Some (XVar v) when poq#env#is_memory_address v ->
+                  let (memref,offset) = poq#env#get_memory_address v in
+                  let _ =
+                    poq#set_diagnostic_arg
+                      1
+                      ("memory address: "
+                       ^ (self#memaddr_to_string memref offset)) in
+                  begin
+                    match memref#get_base with
+                    | CGlobalAddress v ->
+                       let (gvinfo, _gvoffset) = poq#env#get_global_variable v in
+                       let deps = DLocal [inv#index] in
+                       let msg =
+                         "variable "
+                         ^ vinfo.vname
+                         ^ " is initialized with function pointer "
+                         ^ gvinfo.vname in
+                       begin
+                         poq#record_safe_result deps msg;
+                         true
+                       end
+                    | _ -> false
+                  end
+               | Some x ->
+                  begin
+                    poq#set_diagnostic ("deref expr: " ^ (x2s x));
+                    false
+                  end
+               | _ -> false
+             end
+          | _ ->
+             begin
+               poq#set_diagnostic
+                 ("offset: "
+                  ^ (p2s (offset_to_pretty offset))
+                  ^ "; invariant: "
+                  ^ (p2s inv#value_to_pretty)
+                  ^ ")");
+               false
+             end) false vinfovalues
 
   method private basevar_implies_deref_offset_safe
                    (invindex: int) (v: variable_t) (memoffset: offset) =
@@ -254,11 +255,11 @@ object (self)
                        when (offset_compare
                                (s_offset_to_offset tgttype soff) memoffset) = 0 ->
                      let deps =
-                       DEnvC ([invindex],[PostAssumption (callee.vid, pc)]) in
+                       DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
                      let rec offset_s o = match o with
                        | NoOffset -> ""
                        | Field ((fname, _), oo) -> "." ^ fname ^ (offset_s oo)
-                       | Index (e, oo) -> "[.]" ^ (offset_s oo) in
+                       | Index (_e, oo) -> "[.]" ^ (offset_s oo) in
                      let offsetstring o =
                        let s = offset_s o in
                        if (String.length s) > 0 then
@@ -344,7 +345,7 @@ object (self)
 
   method private vinv_implies_deref_offset_safe
                    (inv: invariant_int) (memoffset: offset) =
-    let rec is_field_offset offset =
+    let is_field_offset offset =
       match offset with
       | NoOffset -> true
       | Field (_,NoOffset) -> true
@@ -395,10 +396,10 @@ object (self)
 
   method private check_safe_deref (memlval: lval) (memoffset: offset) =
     match (memlval, memoffset) with
-    | ((Var (vname,vid),NoOffset), NoOffset)
+    | ((Var (_vname, vid), NoOffset), NoOffset)
          when self#is_function_pointer memlval && vid > 0 ->
        self#check_safe_functionpointer (poq#env#get_varinfo vid)
-    | ((Var (vname, vid), NoOffset), _) when vid > 0 ->
+    | ((Var (_vname, vid), NoOffset), _) when vid > 0 ->
        let vinfo = poq#env#get_varinfo vid in
        let vinfovalues = poq#get_vinfo_offset_values vinfo in
        let _ = poq#set_vinfo_diagnostic_invariants vinfo in
@@ -542,7 +543,7 @@ object (self)
                    (invindex: int) (lval: lval) (memoffset: offset) =
     match memoffset with
     | Field ((fname,fid),
-             Index (Lval (Var (vname,vid),NoOffset),
+             Index (Lval (Var (_vname, vid), NoOffset),
                     (( NoOffset | Field (_, NoOffset)) as suboff))) when vid > 0 ->
        let vinfo = poq#env#get_varinfo vid in
        let vinfovalues = poq#get_vinfo_offset_values vinfo in
@@ -557,7 +558,7 @@ object (self)
            ^ (p2s (po_predicate_to_pretty pred))
            ^ " to the api" in
          (deps, msg) in
-       List.fold_left (fun acc (inv, offset) ->
+       List.fold_left (fun acc (inv, _offset) ->
            match acc with
            | Some _ -> acc
            | _ ->
@@ -612,7 +613,7 @@ object (self)
 
   method private check_lval_deref_delegation (memlval: lval) (memoffset: offset) =
     match memlval with
-    | (Var (vname,vid), NoOffset) when vid > 0 ->
+    | (Var (_vname, vid), NoOffset) when vid > 0 ->
        let vinfo  = poq#env#get_varinfo vid in
        let vinfovalues = poq#get_vinfo_offset_values vinfo in
        List.fold_left (fun  acc (inv, offset) ->
@@ -634,12 +635,12 @@ object (self)
 
   method  private check_lval_delegation =
     match lval with
-    | (Mem  (Lval memlval), memoffset) ->
+    | (Mem (Lval memlval), memoffset) ->
        self#check_lval_deref_delegation memlval memoffset
     | (Mem
          (BinOp
             (_,
-             Lval (Var (vname, vid), NoOffset),
+             Lval (Var (_vname, vid), NoOffset),
              Const (CInt (i64,_,_)), _) as e), NoOffset) when vid > 0  ->
        let vinfo = poq#env#get_varinfo vid in
        begin

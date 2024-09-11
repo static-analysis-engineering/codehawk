@@ -206,7 +206,7 @@ object (self)
                   begin
                     match memref#get_base with
                     | CStackAddress svar ->
-                       let (vinfo,offset) = poq#env#get_local_variable svar in
+                       let (vinfo, _offset) = poq#env#get_local_variable svar in
                        let deps = DLocal [inv#index] in
                        let msg = "address of stack variable: " ^ vinfo.vname in
                        Some (deps, msg)
@@ -227,7 +227,7 @@ object (self)
                      begin
                        match memref#get_base with
                        | CGlobalAddress gvar ->
-                          let (vinfo,offset) = poq#env#get_global_variable gvar in
+                          let (vinfo, _offset) = poq#env#get_global_variable gvar in
                           let deps = DLocal [inv#index] in
                           let msg = "address of global variable: " ^ vinfo.vname in
                           Some (deps, msg)
@@ -341,14 +341,14 @@ object (self)
 
   (* ----------------------- violation -------------------------------------- *)
 
-  method private xpr_implies_violation (invindex: int) (x:xpr_t) =
+  method private xpr_implies_violation (_invindex: int) (x:xpr_t) =
     let _ = poq#set_diagnostic_arg 1 ("UB: " ^ (x2s x)) in
     None
 
   method private base_offset_implies_open_ended_violation
                    (invindex: int) (v: variable_t) =
     match self#var_implies_safe invindex v with
-    | Some (deps, msg) ->
+    | Some (_deps, msg) ->
        let deps = DLocal [invindex] in
        let msg = "possibly some offset from valid base address: " ^ msg in
        Some (deps, msg)

@@ -11,7 +11,3 @@
   (modules cCHXParseFile)
   (package exes)
   (public_name parseFile))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A -w @33))))
