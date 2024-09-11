@@ -3,7 +3,3 @@
   (libraries cchlib chlib chutil xprlib)
   (public_name codehawk.cchpre)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

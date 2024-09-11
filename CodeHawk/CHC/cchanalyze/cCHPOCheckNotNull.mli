@@ -34,4 +34,20 @@ open CCHBasicTypes
 open CCHAnalysisTypes
 
 
+(** [check_not_null poq exp] returns true if the expression [exp] is guaranteed
+    to be not null, as implied by the invariants supplied by [poq].
+
+    An address is guaranteed to be not null if
+    - it is explicitly checked non-null within the function, or
+    - it is the result of pointer arithmetic (by IH (inductive hypothesis)), or
+    - it is a nonzero offset from a base address
+
+    The requirement for a non-null memory address is lifted to the function api
+    if it is equal to the initial value of a struct value pointed to be a
+    parameter (an assumption is automatically generated).
+
+    The requirement for a non-null memory address is delegated to the postcondition
+    of a function if it is the return value of that function (a postcondition
+    request is emitted).
+ *)
 val check_not_null: po_query_int -> exp -> bool
