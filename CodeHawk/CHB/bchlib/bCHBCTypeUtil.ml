@@ -949,27 +949,31 @@ let get_compinfo_field (c: bcompinfo_t) (fname: string): bfieldinfo_t =
 let get_struct_field_at_offset
       (cinfo: bcompinfo_t) (offset: int): (bfieldinfo_t * int) option =
   let finfos = cinfo.bcfields in
-  let field0 = List.hd finfos in
-  if offset = 0 then
-    Some (field0, 0)
+  (* Some struct types may be incomplete and not have any fields at all *)
+  if (List.length finfos) = 0 then
+    None
   else
-    let field0type = resolve_type field0.bftype in
-    if offset < size_of_btype field0type then
-      Some (field0, offset)
+    let field0 = List.hd finfos in
+    if offset = 0 then
+      Some (field0, 0)
     else
-      List.fold_left (fun acc finfo ->
-          match acc with
-          | Some _ -> acc
-          | _ ->
-             match finfo.bfieldlayout with
-             | Some (foffset, size) ->
-                if offset = foffset then
-                  Some (finfo, 0)
-                else if offset > foffset && offset < foffset + size then
-                  Some (finfo, offset - foffset)
-                else
-                  None
-             | _ -> None) None finfos
+      let field0type = resolve_type field0.bftype in
+      if offset < size_of_btype field0type then
+        Some (field0, offset)
+      else
+        List.fold_left (fun acc finfo ->
+            match acc with
+            | Some _ -> acc
+            | _ ->
+               match finfo.bfieldlayout with
+               | Some (foffset, size) ->
+                  if offset = foffset then
+                    Some (finfo, 0)
+                  else if offset > foffset && offset < foffset + size then
+                    Some (finfo, offset - foffset)
+                  else
+                    None
+               | _ -> None) None finfos
 
 
 let rec get_compinfo_scalar_type_at_offset
