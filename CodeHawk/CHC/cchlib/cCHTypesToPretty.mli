@@ -63,3 +63,7 @@ val enuminfo_to_pretty: enuminfo -> pretty_t
 val compinfo_to_pretty: compinfo -> pretty_t
 
 val varinfo_to_pretty: varinfo -> pretty_t
+
+val attribute_to_string: attribute -> string
+
+val attrparam_to_string: attrparam -> string

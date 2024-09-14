@@ -214,6 +214,7 @@ object
       "aalignof";
       "aalignofe";
       "aalignofs";
+      "aassign";
       "abinop";
       "acons";
       "adot";

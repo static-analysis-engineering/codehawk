@@ -38,6 +38,7 @@ open CHTimingLog
 open CCHBasicTypes
 open CCHBasicUtil
 open CCHDeclarations
+open CCHFileContract
 open CCHSettings
 open CCHUtilities
 
@@ -102,6 +103,7 @@ let primary_process_file () =
     let _ =
       log_info "Cfile initialized with %d functions" (List.length functions) in
     let _ = read_cfile_contract () in
+    let _ = file_contract#collect_file_attributes in
     let _ = log_info "Cfile contract read" in
 
     begin

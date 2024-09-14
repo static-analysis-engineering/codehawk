@@ -49,6 +49,7 @@ MLIS := \
 	cCHInterfaceDictionary \
 	cCHExternalPredicate \
 	cCHFunctionSummary \
+	cCHCAttributes \
 	cCHFileContract \
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
@@ -75,6 +76,7 @@ SOURCES := \
 	cCHInterfaceDictionary \
 	cCHExternalPredicate \
 	cCHFunctionSummary \
+	cCHCAttributes \
 	cCHFileContract \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))

@@ -39,6 +39,7 @@ open CHTimingLog
 
 (* cchlib *)
 open CCHBasicTypes
+open CCHFileContract
 open CCHSettings
 open CCHUtilities
 
@@ -348,6 +349,7 @@ let generate_and_check_process_file (domains: string list) =
     let _ = read_cfile_interface_dictionary () in
     let _ = read_cfile_assignment_dictionary () in
     let _ = read_cfile_contract () in
+    let _ = file_contract#collect_file_attributes in
     let _ = log_info "Read file-level xml files" in
     let functions = fenv#get_application_functions in
     let _ = log_info "Processing %d functions" (List.length functions) in

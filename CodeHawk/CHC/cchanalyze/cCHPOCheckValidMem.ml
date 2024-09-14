@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
    Copyright (c) 2024      Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,13 +31,13 @@
 open CHLanguage
 open CHNumerical
 open CHPretty
-   
+
 (* chutil *)
 open CHPrettyUtil
-   
+
 (* xprlib *)
 open XprTypes
-   
+
 (* cchlib *)
 open CCHBasicTypes
 open CCHFileContract
@@ -49,7 +49,7 @@ open CCHMemoryBase
 open CCHPOPredicate
 open CCHPreTypes
 open CCHProofObligation
-   
+
 (* cchanalyze *)
 open CCHAnalysisTypes
 
@@ -59,10 +59,10 @@ let e2s e = p2s (exp_to_pretty e)
 let cd = CCHDictionary.cdictionary
 
 (* -----------------------------------------------------------------------------
- * The IH guarantees that any region pointed to by an argument is valid memory 
- * at function entry point (checked at the time of the call. Similarly any 
+ * The IH guarantees that any region pointed to by an argument is valid memory
+ * at function entry point (checked at the time of the call). Similarly any
  * region pointed to by a return value from a callee is valid memory at the
- * point where the pointer value is received. For any other address 
+ * point where the pointer value is received. For any other address
  * locations received from outside the proof obligation should be delegated.
  * If the application does not contain any calls to free at all (indicated by
  * global_free) the valid-mem obligation is vacuously valid.
@@ -105,7 +105,7 @@ object (self)
   method private memref_to_string memref =
     "memory base: " ^ (p2s (memory_base_to_pretty memref#get_base))
 
-                
+
   (* ----------------------------- safe ------------------------------------- *)
 
   method get_calls (v: variable_t) =
@@ -237,7 +237,7 @@ object (self)
          end
       | _::tl ->
          let exps = List.map cd#get_exp (List.map int_of_string tl) in
-         let preds = 
+         let preds =
            List.map (fun e ->
                let pred = PDistinctRegion (e,v#getName#getSeqNumber) in
                begin
@@ -257,7 +257,7 @@ object (self)
            ^ (p2s v#toPretty) ^ " is not a fixed value");
         None
       end
-    
+
   method private call_preserves_validity (v: variable_t) (sym: symbol_t) =
     let sideeffects = poq#get_sym_sideeffects sym in
     let callee = poq#env#get_callsym_callee sym in
@@ -270,7 +270,7 @@ object (self)
       let msg = callee.vname ^ " preserves all memory" in
       Some (deps, msg)
     else if List.exists (fun (se, _) ->
-                match se  with
+                match se with
                 | XPreservesAllMemoryX _ -> true
                 | _ -> false) sideeffects then
       let xexps = sym#getAttributes in
@@ -445,7 +445,7 @@ object (self)
             self#check_regions_safe inv
          | _ -> None in
     r
-    
+
   method check_safe =
     self#global_free
     || (match invs with
@@ -480,7 +480,7 @@ object (self)
                            end
                         | _ -> false) false einvs
                | _ -> false))
-    
+
   (* ----------------------- violation -------------------------------------- *)
   method check_violation = false
   (* ----------------------- delegation ------------------------------------- *)
@@ -524,7 +524,7 @@ object (self)
          | Some x -> self#xpr_implies_delegation inv#index x
          | _ -> None in
     r
-    
+
   method check_delegation =
     match invs with
     | [] -> false
@@ -538,8 +538,8 @@ object (self)
                   true
                 end
              | _ -> false) false invs
-                  
-             
+
+
 end
 
 
