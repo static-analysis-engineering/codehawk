@@ -138,6 +138,7 @@ and attrparam =
 | AAddrOf of attrparam
 | AIndex of attrparam * attrparam
 | AQuestion of attrparam * attrparam * attrparam
+| AAssign of attrparam * attrparam
 
 and compinfo = {
   cstruct: bool ;

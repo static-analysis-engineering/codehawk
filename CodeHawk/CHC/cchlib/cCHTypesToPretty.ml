@@ -159,6 +159,83 @@ let rec typ_to_string (t:typ) =
 and typ_to_pretty (t:typ) = STR (typ_to_string t)
 
 
+and attribute_to_string (attr: attribute) =
+  match attr with
+  | Attr (attrname, []) ->
+     "__attribute__ ((__" ^ attrname ^ "__))"
+  | Attr (attrname, attrparams) ->
+     "__attribute__ ((__" ^ attrname ^ "__,"
+     ^ (String.concat
+          ", "
+          (List.map attrparam_to_string attrparams))
+     ^ "__))"
+
+
+and attrparam_to_string (attrparam: attrparam) =
+  match attrparam with
+  | AInt i -> string_of_int i
+  | AStr s -> s
+  | ACons (s, []) -> "__" ^ s ^ "__"
+  | ACons (s, params) ->
+     "__"
+     ^ s
+     ^ "__("
+     ^ (String.concat ", " (List.map attrparam_to_string params)) ^ ")"
+  | ASizeOf t -> "__sizeof__(" ^ (typ_to_string t) ^ ")"
+  | ASizeOfE p -> "__sizeofE__(" ^ (attrparam_to_string p) ^ ")"
+  | ASizeOfS ts -> "__sizeofS__(" ^ (typsig_to_string ts) ^ ")"
+  | AAlignOf t -> "__alignof__(" ^ (typ_to_string t) ^ ")"
+  | AAlignOfE p -> "__alignofE__(" ^ (attrparam_to_string p) ^ ")"
+  | AAlignOfS ts -> "__alignofS__(" ^ (typsig_to_string ts) ^ ")"
+  | AUnOp (unop, p) ->
+     (unop_to_print_string unop) ^ " " ^ (attrparam_to_string p)
+  | ABinOp (binop, p1, p2) ->
+     (attrparam_to_string p1)
+     ^ " "
+     ^ (binop_to_print_string binop)
+     ^ " "
+     ^ (attrparam_to_string p2)
+  | ADot (p, s) -> (attrparam_to_string p) ^ "." ^ s
+  | AStar p -> "*" ^ (attrparam_to_string p)
+  | AAddrOf p -> "&" ^ (attrparam_to_string p)
+  | AIndex (p1, p2) ->
+     (attrparam_to_string p1) ^ "[" ^ (attrparam_to_string p2) ^ "]"
+  | AQuestion (p1, p2, p3) ->
+     (attrparam_to_string p1)
+     ^ " ? "
+     ^ (attrparam_to_string p2)
+     ^ " : "
+     ^ (attrparam_to_string p3)
+  | AAssign (p1, p2) ->
+     (attrparam_to_string p1) ^ " = " ^ (attrparam_to_string p2)
+
+
+and typsig_to_string (ts: typsig) =
+  let s_attrs (attrs: attribute list) =
+      match attrs with
+      | [] -> ""
+      | _ ->
+         " " ^ (String.concat " " (List.map attribute_to_string attrs)) in
+  match ts with
+  | TSArray (tts, Some i64, attrs) ->
+     (typsig_to_string tts) ^ "[" ^ (Int64.to_string i64) ^ "]" ^ (s_attrs attrs)
+  | TSArray (tts, None, attrs) ->
+     (typsig_to_string tts) ^ "[]" ^ (s_attrs attrs)
+  | TSPtr (tts, attrs) ->
+     "( " ^ (typsig_to_string tts) ^ " *)" ^ (s_attrs attrs)
+  | TSComp (is_struct, name, attrs) ->
+     (if is_struct then "struct " else "union ") ^ name ^ (s_attrs attrs)
+  | TSFun (rts, Some tslist, _is_vararg, attrs) ->
+     (typsig_to_string rts)
+     ^ " ("
+     ^ (String.concat ", " (List.map typsig_to_string tslist))
+     ^ (s_attrs attrs)
+  | TSFun (rts, None, _is_vararg, attrs) ->
+     (typsig_to_string rts) ^ "(?)" ^ (s_attrs attrs)
+  | TSEnum (name, attrs) -> "enum " ^ name ^ (s_attrs attrs)
+  | TSBase t -> typ_to_string t
+
+
 and cil_exp_to_pretty (x:exp) =
   let pe = cil_exp_to_pretty in
   let pl = cil_lval_to_pretty in

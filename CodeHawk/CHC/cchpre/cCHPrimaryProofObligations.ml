@@ -1051,6 +1051,9 @@ and get_precondition_po_predicates
 
     | XNull s -> let (p, a, i) = geta s in addx i (p @ [PNull a])
 
+    | XNullTerminated s ->
+       let (p, a, i) = geta s in addx i (p @ [PNullTerminated a])
+
     | XControlledResource (r,s) ->
        let (p, a, i) = geta s in addx i (p  @ [PControlledResource (r, a)])
 
@@ -1395,6 +1398,18 @@ and create_po_call env
           env context (function_summary_library#get_summary vname) el loc;
         spomanager#add_direct_call
           loc context ~header:("lib:"^header) (env#get_varinfo_by_vid vid) el
+      end
+    else if file_contract#has_function_contract vname then
+      let fncontract = file_contract#get_function_contract vname in
+      let xpreds = fncontract#get_preconditions in
+      begin
+        List.iter (fun xpred ->
+            let ctxpl =
+              get_precondition_po_predicates env xpred el context loc in
+            List.iter (fun (ctxt, p) ->
+                add_lib_proof_obligation p loc ctxt vname xpred) ctxpl) xpreds;
+        spomanager#add_direct_call
+          loc context (env#get_varinfo_by_vid vid) el
       end
     else
       begin

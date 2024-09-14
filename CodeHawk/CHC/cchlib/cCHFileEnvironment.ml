@@ -32,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTimingLog
 
 (* cchlib *)
 open CCHBasicTypes
@@ -121,9 +122,10 @@ object (self)
       List.iter (fun g ->
           match g with
           | GVarDecl (vinfo, _) when vinfo.vstorage = Extern ->
+             let _ = log_info "add vardecl for %s" vinfo.vname in
              begin
                match vinfo.vtype with
-               | TFun _ -> H.add externalFns vinfo.vname vinfo
+               | TFun _ -> H.add externalFns vinfo.vname vinfo;
                | _ -> ()
              end
           | _ -> ()) f.globals;
@@ -131,6 +133,9 @@ object (self)
 
   method get_application_functions =
     H.fold (fun _ v r -> v :: r) applicationFns []
+
+  method get_external_functions =
+    H.fold (fun _ v r -> v :: r) externalFns []
 
   method is_application_function (vid:int) = H.mem applicationFns vid
 

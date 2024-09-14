@@ -204,9 +204,11 @@ object
     | AAddrOf _ -> "aaddrof"
     | AIndex _ -> "aindex"
     | AQuestion _ -> "aquestion"
+    | AAssign _ -> "aassign"
 
   method! tags = [
-      "aaddrof"; "aalignof"; "aalignofe"; "aalignofs"; "abinop";
+      "aaddrof"; "aalignof"; "aalignofe"; "aalignofs"; "aassign";
+      "abinop";
       "acons"; "adot"; "aindex"; "aint"; "aquestion"; "asizeof";
       "asizeofe"; "asizeofs"; "astar"; "astr"; "aunop"]
 

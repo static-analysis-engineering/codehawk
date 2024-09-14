@@ -32,11 +32,15 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHPrettyUtil
 open CHTimingLog
 open CHXmlDocument
 
 (* cchlib *)
+open CCHCAttributes
+open CCHBasicTypes
 open CCHExternalPredicate
+open CCHFileEnvironment
 open CCHFunctionSummary
 open CCHLibTypes
 open CCHUtilities
@@ -45,6 +49,8 @@ module H = Hashtbl
 
 
 let id = CCHInterfaceDictionary.interface_dictionary
+
+let p2s = pretty_to_string
 
 
 let read_xml_instr_list (node:xml_element_int) params lvars =
@@ -71,10 +77,43 @@ object (self)
     List.iteri (fun i name -> H.add params name i) parameters
 
   method add_postcondition (pc:xpredicate_t) =
-    postconditions#add (id#index_xpredicate pc)
+    let ix = id#index_xpredicate pc in
+    if postconditions#has ix then
+      ()
+    else
+      begin
+        log_info
+          "add postcondition %s to %s function contract"
+          (p2s (xpredicate_to_pretty pc))
+          name;
+        postconditions#add ix
+      end
 
   method add_precondition (pre:xpredicate_t) =
-    preconditions#add (id#index_xpredicate pre)
+    let ix = id#index_xpredicate pre in
+    if preconditions#has ix then
+      ()
+    else
+      begin
+        log_info
+          "add precondition %s to %s function contract"
+          (p2s (xpredicate_to_pretty pre))
+          name;
+        preconditions#add ix
+      end
+
+  method add_sideeffect (s: xpredicate_t) =
+    let ix = id#index_xpredicate s in
+    if sideeffects#has ix then
+      ()
+    else
+      begin
+        log_info
+          "add side effect %s to %s function contract"
+          (p2s (xpredicate_to_pretty s))
+          name;
+        sideeffects#add ix
+      end
 
   method get_name = name
 
@@ -372,6 +411,31 @@ object (self)
             else
               self#add_global_variable gvname) gvars in
       fncontract#add_precondition pre
+    else
+      log_warning
+        "No function contract for %s; unable to add precondition %s"
+        fname
+        (p2s (xpredicate_to_pretty pre))
+
+  method add_postcondition (fname: string) (post: xpredicate_t) =
+    if H.mem functioncontracts fname then
+      let fncontract = H.find functioncontracts fname in
+      fncontract#add_postcondition post
+    else
+      log_warning
+        "No function contract for %s; unable to add postcondition %s"
+        fname
+        (p2s (xpredicate_to_pretty post))
+
+  method add_sideeffect (fname: string) (s: xpredicate_t) =
+    if H.mem functioncontracts fname then
+      let fncontract = H.find functioncontracts fname in
+      fncontract#add_sideeffect s
+    else
+      log_warning
+        "No function contract for %s; unable to add side effect %s"
+        fname
+        (p2s (xpredicate_to_pretty s))
 
   method get_function_contract (name:string) =
     if H.mem functioncontracts name then
@@ -489,6 +553,48 @@ object (self)
          ch_error_log#add "file contract" (STR "unknown error");
          raise (CCHFailure (STR "File contract: unknown error"))
        end
+
+  method private add_function_attribute_conditions
+                   (vinfo: varinfo) (attr: attribute) =
+    let (xpre, xpost, xside) =
+      convert_attribute_to_function_conditions vinfo.vname attr in
+    begin
+      List.iter (self#add_precondition vinfo.vname) xpre;
+      List.iter (self#add_postcondition vinfo.vname) xpost;
+      List.iter (self#add_sideeffect vinfo.vname) xside
+    end
+
+  method private get_function_attributes (xfun: varinfo) =
+    let _ = log_info "get_function_attributes for %s" xfun.vname in
+    match xfun.vtype with
+    | TFun (_returntype, fargs, _varargs, attrs)
+      | TPtr (TFun (_returntype, fargs, _varargs, attrs), _) ->
+       let pars =
+         match fargs with
+         | Some plist -> List.map (fun (name, _, _) -> name) plist
+         | _ -> [] in
+       begin
+         (match attrs with
+          | [] -> ()
+          | _ ->
+             begin
+               self#add_function_contract xfun.vname pars;
+               List.iter (self#add_function_attribute_conditions xfun) attrs
+             end);
+         (match xfun.vattr with
+          | [] -> ()
+          | attrs ->
+             begin
+               self#add_function_contract xfun.vname pars;
+               List.iter (self#add_function_attribute_conditions xfun) attrs
+             end)
+       end
+    | _ ->
+       ()
+
+  method collect_file_attributes =
+    let xfuns = file_environment#get_external_functions in
+    List.iter self#get_function_attributes xfuns;
 
   method private write_xml_global_variables (node:xml_element_int) =
     let gvars =

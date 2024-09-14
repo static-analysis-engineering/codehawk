@@ -127,17 +127,23 @@ object (self)
       match self#get_summary callee.vname with
       | Some fs -> (fs.fs_postconditions, fs.fs_error_postconditions)
       | _ ->
-         let callcontext = env#get_callsym_context s in
-         if proof_scaffolding#has_direct_callsite fname callcontext then
-           let directcallsite =
-             proof_scaffolding#get_direct_callsite fname callcontext in
-           (directcallsite#get_postassumes, [])
-         else if proof_scaffolding#has_indirect_callsite fname callcontext then
-           let indirectcallsite =
-             proof_scaffolding#get_indirect_callsite fname callcontext in
-           (indirectcallsite#get_postassumes, [])
+         if file_contract#has_function_contract callee.vname then
+           let pcs =
+             (file_contract#get_function_contract callee.vname)#get_postconditions in
+           let pcs = List.map (fun pc -> (pc, NoAnnotation)) pcs in
+           (pcs, [])
          else
-           ([], [])
+           let callcontext = env#get_callsym_context s in
+           if proof_scaffolding#has_direct_callsite fname callcontext then
+             let directcallsite =
+               proof_scaffolding#get_direct_callsite fname callcontext in
+             (directcallsite#get_postassumes, [])
+           else if proof_scaffolding#has_indirect_callsite fname callcontext then
+             let indirectcallsite =
+               proof_scaffolding#get_indirect_callsite fname callcontext in
+             (indirectcallsite#get_postassumes, [])
+           else
+             ([], [])
     else
       raise
         (CCHFailure
@@ -154,17 +160,22 @@ object (self)
       match self#get_summary callee.vname with
       | Some fs -> fs.fs_sideeffects
       | _ ->
-         let callcontext = env#get_callsym_context s in
-         if proof_scaffolding#has_direct_callsite fname callcontext then
-           let directcallsite =
-             proof_scaffolding#get_direct_callsite fname callcontext in
-           directcallsite#get_postassumes
-         else if proof_scaffolding#has_indirect_callsite fname callcontext then
-           let indirectcallsite =
-             proof_scaffolding#get_indirect_callsite fname callcontext in
-           indirectcallsite#get_postassumes
+         if file_contract#has_function_contract callee.vname then
+           let l =
+             (file_contract#get_function_contract callee.vname)#get_sideeffects in
+           List.map (fun x -> (x, ExternalCondition callee.vname)) l
          else
-           []
+           let callcontext = env#get_callsym_context s in
+           if proof_scaffolding#has_direct_callsite fname callcontext then
+             let directcallsite =
+               proof_scaffolding#get_direct_callsite fname callcontext in
+             directcallsite#get_postassumes
+           else if proof_scaffolding#has_indirect_callsite fname callcontext then
+             let indirectcallsite =
+               proof_scaffolding#get_indirect_callsite fname callcontext in
+             indirectcallsite#get_postassumes
+           else
+             []
     else
       raise
         (CCHFailure

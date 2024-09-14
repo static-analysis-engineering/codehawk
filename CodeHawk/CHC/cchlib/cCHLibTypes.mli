@@ -401,6 +401,7 @@ class type file_environment_int =
     method get_type_unrolled: typ -> typ
     method get_external_header: string -> string
     method get_application_functions: varinfo list
+    method get_external_functions: varinfo list
 
     method get_machine_sizes: machine_sizes_t
 
@@ -460,51 +461,130 @@ type s_term_t =
   | RuntimeValue
   | ChoiceValue of s_term_t option * s_term_t option (* free to choose between bounds *)
 
-type xpredicate_t =      (* predicate used in representation of external conditions *)
-  | XAllocationBase of s_term_t         (* term points to start of allocated region that can be freed *)
-  | XControlledResource of string * s_term_t   (* term is not/must not be tainted *)
-  | XBlockWrite of s_term_t * s_term_t  (* unstructured write of bytes to pointed adress with given length *)
-  | XBuffer of s_term_t * s_term_t  (* term points to a memory region with at least t2 bytes after pointer *)
-  | XConfined of s_term_t               (* pointer expression is out of scope without leaking references *)
-  | XConstTerm of s_term_t              (* pointed to term is not modified *)
-  | XFormattedInput of s_term_t         (* term corresponds to argument that provides the format string *)
-  | XFalse                              (* always false, used as post condition *)
-  | XFreed of s_term_t                  (* term pointed to is freed *)
-  | XFunctional                         (* function has no observable side effects *)
-  | XInitialized of s_term_t            (* lval denoted is initialized *)
-  | XInitializedRange of s_term_t * s_term_t  (* term pointed to is initialized for t2 length *)
-  | XInputFormatString of s_term_t      (* term points to scanf format string *)
-  | XInvalidated of s_term_t            (* term pointed to may not be valid any more *)
+(** predicate used in representation of external conditions *)
+type xpredicate_t =
+  | XAllocationBase of s_term_t
+  (** term points to start of allocated region that can be freed *)
+
+  | XControlledResource of string * s_term_t
+  (** term is not/must not be tainted *)
+
+  | XBlockWrite of s_term_t * s_term_t
+  (** unstructured write of bytes to pointed adress with given length (used as
+      a side effect) *)
+
+  | XBuffer of s_term_t * s_term_t
+  (** [XBuffer (t1, t2)]: [t1] points to a memory region with at least [t2]
+      bytes after pointer *)
+
+  | XConfined of s_term_t
+  (** pointer expression is out of scope without leaking references *)
+
+  | XConstTerm of s_term_t
+  (** pointed to term is not modified *)
+
+  | XFormattedInput of s_term_t
+  (** term corresponds to argument that provides the format string *)
+
+  | XFalse
+  (** always false, used as post condition *)
+
+  | XFreed of s_term_t
+  (** term pointed to is freed *)
+
+  | XFunctional
+  (** function has no observable side effects *)
+
+  | XInitialized of s_term_t
+  (** lval denoted is initialized *)
+
+  | XInitializedRange of s_term_t * s_term_t
+  (** term pointed to is initialized for t2 length *)
+
+  | XInputFormatString of s_term_t
+  (** term points to scanf format string *)
+
+  | XInvalidated of s_term_t
+  (** term pointed to may not be valid any more *)
+
   | XNewMemory of s_term_t
-  (* term points to newly allocated memory (since the start of the function), stack or heap *)
-  | XStackAddress of s_term_t           (* term points to stack memory *)
-  | XHeapAddress of s_term_t            (* term points to heap memory *)
-  | XGlobalAddress of s_term_t          (* term points to global memory *)
-  | XNoOverlap of s_term_t * s_term_t   (* the two pointed-to memory regions do not overlap *)
-  | XNotNull of s_term_t                (* term is not null *)
-  | XNull of s_term_t                   (* term is null *)
-  | XNotZero of s_term_t                (* term is not zero *)
-  | XNonNegative of s_term_t            (* term is not negative  *)
-  | XNullTerminated of s_term_t         (* term pointed to is null-terminated *)
-  | XOutputFormatString of s_term_t     (* term points to printf format string *)
-  | XPreservesAllMemory                 (* function does not free any external memory *)
-  | XPreservesAllMemoryX of s_term_t list (* function does not free any external memory except given terms *)
-  | XPreservesMemory of s_term_t        (* function does not free pointed to memory *)
-  | XPreservesValue of s_term_t         (* function does not modify the value of s_term *)
-  | XPreservesNullTermination           (* function does not strip null-terminating bytes *)
-  | XPreservesValidity of s_term_t      (* validity of pointed to resource is maintained *)
+  (** term points to newly allocated memory (since the start of the function),
+      stack or heap *)
+
+  | XStackAddress of s_term_t
+  (** term points to stack memory *)
+
+  | XHeapAddress of s_term_t
+  (** term points to heap memory *)
+
+  | XGlobalAddress of s_term_t
+  (** term points to global memory *)
+
+  | XNoOverlap of s_term_t * s_term_t
+  (** the two pointed-to memory regions do not overlap *)
+
+  | XNotNull of s_term_t
+  (** term is not null *)
+
+  | XNull of s_term_t
+  (** term is null *)
+
+  | XNotZero of s_term_t
+  (** term is not zero *)
+
+  | XNonNegative of s_term_t
+  (** term is not negative  *)
+
+  | XNullTerminated of s_term_t
+  (** term pointed to is null-terminated *)
+
+  | XOutputFormatString of s_term_t
+  (** term points to printf format string *)
+
+  | XPreservesAllMemory
+  (** function does not free any external memory *)
+
+  | XPreservesAllMemoryX of s_term_t list
+  (** function does not free any external memory except given terms *)
+
+  | XPreservesMemory of s_term_t
+  (** function does not free pointed to memory *)
+
+  | XPreservesValue of s_term_t
+  (** function does not modify the value of s_term *)
+
+  | XPreservesNullTermination
+  (** function does not strip null-terminating bytes *)
+
+  | XPreservesValidity of s_term_t
+  (** validity of pointed to resource is maintained *)
+
   | XRelationalExpr of binop * s_term_t * s_term_t
-  | XRepositioned of s_term_t           (* term pointed to my be freed and reassigned *)
-  | XRevBuffer of s_term_t * s_term_t   (* term points to memory region with at least t2 bytes before pointer *)
+
+  | XRepositioned of s_term_t
+  (** term pointed to my be freed and reassigned *)
+
+  | XRevBuffer of s_term_t * s_term_t
+  (** term points to memory region with at least t2 bytes before pointer *)
+
   | XTainted of s_term_t * s_term_t option * s_term_t option
-         (* value of term is externally controlled with optional lower and upper bound *)
-  | XUniquePointer of s_term_t          (* pointer reference is the only one *)
-  | XValidMem of s_term_t               (* pointed-to memory has not been freed (at time of delivery) *)
-(* policy-related predicates *)
-  | XPolicyPre of s_term_t * string * string list  (* the term has to be in one of the given states *)
+  (** value of term is externally controlled with optional lower and upper bound *)
+
+  | XUniquePointer of s_term_t
+  (** pointer reference is the only one *)
+
+  | XValidMem of s_term_t
+  (** pointed-to memory has not been freed (at time of delivery) *)
+
+  | XPolicyPre of s_term_t * string * string list
+  (** the term has to be in one of the given states *)
+
   | XPolicyValue of s_term_t * string * string option
-  (* the term is a newly created policy value and optionally makes a first transition *)
-  | XPolicyTransition of s_term_t * string * string (* the term transitions according to a named transition
+  (** the term is a newly created policy value and optionally makes a first
+      transition *)
+
+  | XPolicyTransition of s_term_t * string * string
+(** the term transitions according to a named transition
                                                        in the policy *)
 
 type postrequest_t = int * xpredicate_t  (* fvid of callee *)
@@ -621,6 +701,7 @@ class type function_contract_int =
   object
     method add_postcondition: xpredicate_t -> unit
     method add_precondition: xpredicate_t -> unit
+    method add_sideeffect: xpredicate_t -> unit
     method get_name: string
     method get_postcondition_ixs: int list           (* xpredicate indices *)
     method get_precondition_ixs: int list            (* xpredicate indices *)
@@ -657,6 +738,9 @@ class type file_contract_int =
     method reset: unit
     method add_function_contract: string -> string list -> unit
     method add_precondition: string -> xpredicate_t -> unit
+    method add_postcondition: string -> xpredicate_t -> unit
+    method add_sideeffect: string -> xpredicate_t -> unit
+    method collect_file_attributes: unit
     method get_global_variables: contract_global_var_t list
     method get_function_contract: string -> function_contract_int
     method get_gv_lower_bound: string -> int option
