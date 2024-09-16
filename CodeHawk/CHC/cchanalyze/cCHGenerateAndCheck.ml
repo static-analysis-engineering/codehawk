@@ -162,7 +162,7 @@ let make_invariant_generation_spec t =
 let process_function gspecs fname =
   try
     if !function_to_be_analyzed = fname || !function_to_be_analyzed = "" then
-      let _ = log_info "analyze function %s" fname in
+      let _ = log_info "analyze function %s [%s:%d]" fname __FILE__ __LINE__ in
       let fundec = read_function_semantics fname in
       let fdecls = fundec.sdecls in
       let _ = read_proof_files fname fdecls in
@@ -175,9 +175,10 @@ let process_function gspecs fname =
       let openpos = List.filter (fun po -> not po#is_closed) proofObligations in
       let _ =
         log_info
-          "Obtained %d proof obligation(s) of which %d open"
+          "Obtained %d proof obligation(s) of which %d open [%s:%d]"
           (List.length proofObligations)
-          (List.length openpos) in
+          (List.length openpos)
+          __FILE__ __LINE__ in
       if (List.length openpos) > 0 then
         let callcount = proof_scaffolding#get_call_count fname in
         let _ =
@@ -286,7 +287,7 @@ let process_function gspecs fname =
       let env = mk_c_environment fundec varmgr in
       begin
         check_proof_obligations env fnApi invio proofObligations;
-        log_info "checked proof obligations";
+        log_info "checked proof obligations [%s:%d]" __FILE__ __LINE__;
         save_invs fname invio;
         save_vars fname varmgr;
         save_proof_files fname;
@@ -350,16 +351,18 @@ let generate_and_check_process_file (domains: string list) =
     let _ = read_cfile_assignment_dictionary () in
     let _ = read_cfile_contract () in
     let _ = file_contract#collect_file_attributes in
-    let _ = log_info "Read file-level xml files" in
+    let _ = log_info "Read file-level xml files [%s:%d]" __FILE__ __LINE__ in
     let functions = fenv#get_application_functions in
-    let _ = log_info "Processing %d functions" (List.length functions) in
+    let _ =
+      log_info "Processing %d functions [%s:%d]"
+        (List.length functions) __FILE__ __LINE__ in
     let _ = List.iter (fun f -> process_function gspecs f.vname) functions in
     let _ = save_cfile_assignment_dictionary () in
     let _ = save_cfile_dictionary () in
     let _ = save_cfile_context () in
     let _ = save_cfile_interface_dictionary () in
     let _ = save_cfile_predicate_dictionary () in
-    let _ = log_info "Saved file-level xml files" in
+    let _ = log_info "Saved file-level xml files [%s:%d]" __FILE__ __LINE__ in
     ()
   with
   | CHXmlReader.IllFormed ->

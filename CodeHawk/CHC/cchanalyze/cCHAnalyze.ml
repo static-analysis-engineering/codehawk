@@ -76,7 +76,7 @@ let analyze_procedure_with_intervals (proc:procedure_int) (system:system_int)
     analysis_setup#addDomain intervals_domain (new intervals_domain_no_arrays_t);
     analysis_setup#setOpSemantics (semantics intervals_domain);
     analysis_setup#analyze_procedure system proc;
-    log_info "Interval analysis completed"
+    log_info "Interval analysis completed [%s:%d]" __FILE__ __LINE__
   end
 
 
@@ -93,7 +93,7 @@ let analyze_procedure_with_pepr
       pepr_domain (mk_pepr_domain_no_arrays params timeout);
     analysis_setup#setOpSemantics (semantics pepr_domain);
     analysis_setup#analyze_procedure system proc;
-    log_info "Pepr analysis completed"
+    log_info "Pepr analysis completed [%s:%d]" __FILE__ __LINE__
   end
 
 
@@ -105,7 +105,7 @@ let analyze_procedure_with_valuesets (proc:procedure_int) (system:system_int)
     analysis_setup#addDomain valueset_domain (new valueset_domain_no_arrays_t);
     analysis_setup#setOpSemantics (semantics valueset_domain);
     analysis_setup#analyze_procedure system proc;
-    log_info "Value set analysis completed"
+    log_info "Value set analysis completed [%s:%d]" __FILE__ __LINE__
   end
 
 
@@ -120,7 +120,7 @@ let analyze_procedure_with_linear_equalities
         linear_equalities_domain (new linear_equalities_domain_no_arrays_t);
       analysis_setup#setOpSemantics (semantics linear_equalities_domain);
       analysis_setup#analyze_procedure system proc;
-      log_info "Linear equality analysis completed"
+      log_info "Linear equality analysis completed [%s:%d]" __FILE__ __LINE__
     end
   with
   | CHFailure p ->
@@ -142,7 +142,7 @@ let analyze_procedure_with_symbolic_sets (proc:procedure_int) (system:system_int
       symbolic_sets_domain (new symbolic_sets_domain_no_arrays_t);
     analysis_setup#setOpSemantics (semantics symbolic_sets_domain);
     analysis_setup#analyze_procedure system proc;
-    log_info "symbolic sets analysis completed"
+    log_info "symbolic sets analysis completed [%s:%d]" __FILE__ __LINE__
   end
 
 
@@ -173,7 +173,7 @@ let analyze_procedure_with_sym_pointersets
       sym_pointersets_domain (new timed_symbolic_sets_domain_no_arrays_t timeout);
     analysis_setup#setOpSemantics (semantics sym_pointersets_domain);
     analysis_setup#analyze_procedure system proc;
-    log_info "symbolic pointerset analysis completed"
+    log_info "symbolic pointerset analysis completed [%s:%d]" __FILE__ __LINE__
   end
 
 

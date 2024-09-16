@@ -172,17 +172,19 @@ let main () =
     else if !cmd = "primary" then
       begin
 	primary_process_file ();
-        log_info "primary proof obligations generated";
+        log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;
 	save_log_files "primary";
-        log_info "primary proof obligations log files saved"
+        log_info
+          "primary proof obligations log files saved [%s:%d]" __FILE__ __LINE__
       end
 
     else if !cmd = "localinvs" then
       begin
 	invariants_process_file (List.rev !domains);
-        log_info "Local invariants generated";
+        log_info "Local invariants generated [%s:%d]" __FILE__ __LINE__;
 	save_log_files "localinvs";
-        log_info "Local invariant generation log files saved"
+        log_info
+          "Local invariant generation log files saved [%s:%d]" __FILE__ __LINE__
       end
 
     else if !cmd = "globalinvs" then ()
@@ -190,17 +192,22 @@ let main () =
     else if !cmd = "check" then
       begin
 	check_process_file ();
-        log_info "Proof obligations checked";
+        log_info "Proof obligations checked [%s:%d" __FILE__ __LINE__;
 	save_log_files "check";
-        log_info "Proof obligation checking log files saved"
+        log_info
+          "Proof obligation checking log files saved [%s:%d]" __FILE__ __LINE__
       end
 
     else if !cmd = "generate_and_check" then
       begin
         generate_and_check_process_file (List.rev !domains);
-        log_info "Invariants generated and proof obligations checked";
+        log_info
+          "Invariants generated and proof obligations checked [%s:%d]"
+          __FILE__ __LINE__;
         save_log_files "gencheck";
-        log_info "Invariant generation and proof obligation check log files saved"
+        log_info
+          "Invariant generation and proof obligation check log files saved [%s:%d]"
+          __FILE__ __LINE__
       end
 
     else

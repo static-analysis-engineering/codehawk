@@ -62,9 +62,11 @@ let convert_attribute_to_function_conditions
         | _  ->
            begin
              log_info
-               "attribute conversion for %s: attribute parameters %s not recognized"
+               ("attribute conversion for %s: attribute parameters %s not "
+                ^^ "recognized [%s:%d]")
                name
-               (String.concat ", " (List.map attrparam_to_string attrparams));
+               (String.concat ", " (List.map attrparam_to_string attrparams))
+               __FILE__ __LINE__;
              ([], [])
            end) in
        
@@ -83,9 +85,11 @@ let convert_attribute_to_function_conditions
         | _ ->
            begin
              log_info
-               "attribute conversion for %s: attribute parameters %s not recognized"
+               ("attribute conversion for %s: attribute parameters %s not "
+                ^^ "recognized [%s:%d]")
                name
-               (String.concat ", " (List.map attrparam_to_string attrparams));
+               (String.concat ", " (List.map attrparam_to_string attrparams))
+               __FILE__ __LINE__;
              []
            end) in
      (pre, [], [])
@@ -102,9 +106,11 @@ let convert_attribute_to_function_conditions
         | _ ->
            begin
              log_info
-               "attribute conversion for %s: attribute parameters %s not recognized"
+               ("attribute conversion for %s: attribute parameters %s not "
+                  ^^ "recognized [%s:%d]")
                name
-               (String.concat ", " (List.map attrparam_to_string attrparams));
+               (String.concat ", " (List.map attrparam_to_string attrparams))
+               __FILE__ __LINE__;
              []
            end) in
      ([], post, [])
@@ -118,9 +124,10 @@ let convert_attribute_to_function_conditions
               begin
                 log_info
                   ("attribute conversion for %s: parameter %s not recognized "
-                   ^^ "(excluded)")
+                   ^^ "(excluded) [%s:%d]")
                   name
-                  (attrparam_to_string attrparam);
+                  (attrparam_to_string attrparam)
+                  __FILE__ __LINE__;
                 acc
               end) [] attrparams in
      (pre, [], [])
@@ -137,9 +144,10 @@ let convert_attribute_to_function_conditions
               begin
                 log_info
                   ("attribute conversion for %s: parameter %s not recognized "
-                   ^^ "(excluded)")
+                   ^^ "(excluded) [%s:%d]")
                   name
-                  (attrparam_to_string attrparam);
+                  (attrparam_to_string attrparam)
+                  __FILE__ __LINE__;
                 acc
               end) [] attrparams in
      (pre, [], [])
@@ -165,9 +173,10 @@ let convert_attribute_to_function_conditions
               begin
                 log_info
                   ("attribute conversion for %s: parameter %s not recognized "
-                   ^^ "(excluded)")
+                   ^^ "(excluded) [%s:%d]")
                   name
-                  (attrparam_to_string attrparam);
+                  (attrparam_to_string attrparam)
+                  __FILE__ __LINE__;
                 acc
               end) [] attrparams in
      ([], [], se)
@@ -188,8 +197,10 @@ let attribute_update_globalvar_contract
   | Attr ("chkc_not_null", []) -> gvarc#set_not_null
   | Attr (s, attrparams) ->
      log_info
-       "global variable attribute %s for %s with %d parameters not recognized"
+       ("global variable attribute %s for %s with %d parameters not "
+        ^^ "recognized [%s:%d]")
        s
        gvarc#get_name
        (List.length attrparams)
+       __FILE__ __LINE__
               

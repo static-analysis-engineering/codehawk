@@ -124,9 +124,10 @@ object (self)
     | Error e ->
        begin
          log_error
-             "index_varinfo: %s; %s"
+             "index_varinfo: %s; %s [%s:%d]"
              vinfo.vname
-             (String.concat ", " e);
+             (String.concat ", " e)
+             __FILE__ __LINE__;
          raise
            (CHFailure
               (LBLOCK [
@@ -152,9 +153,10 @@ object (self)
     | Error e ->
        begin
          log_error
-           "index fieldinfo: %s %s"
+           "index fieldinfo: %s %s [%s:%d]"
            finfo.fname
-           (String.concat ", " e);
+           (String.concat ", " e)
+           __FILE__ __LINE__;
          raise
            (CHFailure
               (LBLOCK [
@@ -183,9 +185,10 @@ object (self)
     | Error e ->
        begin
          log_error
-           "index enumitem: %s %s"
+           "index enumitem: %s %s [%s:%d]"
            name
-           (String.concat ", " e);
+           (String.concat ", " e)
+           __FILE__ __LINE__;
          raise
            (CHFailure
               (LBLOCK [

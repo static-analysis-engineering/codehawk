@@ -170,9 +170,10 @@ object (self)
     else
       begin
         log_info
-          "add postcondition %s to %s function contract"
+          "add postcondition %s to %s function contract [%s:%d]"
           (p2s (xpredicate_to_pretty pc))
-          name;
+          name
+          __FILE__ __LINE__;
         postconditions#add ix
       end
 
@@ -183,9 +184,10 @@ object (self)
     else
       begin
         log_info
-          "add precondition %s to %s function contract"
+          "add precondition %s to %s function contract [%s:%d]"
           (p2s (xpredicate_to_pretty pre))
-          name;
+          name
+          __FILE__ __LINE__;
         preconditions#add ix
       end
 
@@ -196,9 +198,10 @@ object (self)
     else
       begin
         log_info
-          "add side effect %s to %s function contract"
+          "add side effect %s to %s function contract [%s:%d]"
           (p2s (xpredicate_to_pretty s))
-          name;
+          name
+          __FILE__ __LINE__;
         sideeffects#add ix
       end
 
@@ -296,12 +299,17 @@ object (self)
            (CCHFailure
               (STR "Error postconditions not supported in function contract")) in
     let _ =
-      log_info "function contract: read %d postconditions" (List.length post) in
+      log_info "function contract: read %d postconditions [%s:%d]"
+        (List.length post)
+        __FILE__ __LINE__ in
     List.iter (fun (p, _) -> postconditions#add (id#index_xpredicate p)) post
 
   method private write_xml_postconditions (node:xml_element_int) =
     let _ =
-      log_info "Write xml postconditions: %d" (List.length postconditions#toList) in
+      log_info
+        "Write xml postconditions: %d [%s:%d]"
+        (List.length postconditions#toList)
+        __FILE__ __LINE__ in
     node#appendChildren
       (List.map (fun ipost ->
            let pnode = xmlElement "post" in
@@ -356,7 +364,7 @@ object (self)
   method read_xml (node:xml_element_int) (gvars:string list) =
     let hasc = node#hasOneTaggedChild in
     let getc = node#getTaggedChild in
-    let _ = log_info "function_contract#read_xml" in
+    let _ = log_info "function_contract#read_xml [%s:%d]" __FILE__ __LINE__ in
     try
       begin
         self#read_xml_parameters (getc "parameters");
@@ -367,7 +375,6 @@ object (self)
         (if hasc "preconditions" then
            self#read_xml_preconditions (getc "preconditions") gvars);
         (if hasc "postconditions" then
-           let _ = log_info "function_contract: read postconditions" in
            self#read_xml_postconditions (getc "postconditions") gvars);
         (if hasc "instrs" then
            self#read_xml_instrs (getc "instrs"))
@@ -511,9 +518,10 @@ object (self)
       fncontract#add_precondition pre
     else
       log_warning
-        "No function contract for %s; unable to add precondition %s"
+        "No function contract for %s; unable to add precondition %s [%s:%d]"
         fname
         (p2s (xpredicate_to_pretty pre))
+        __FILE__ __LINE__
 
   method add_postcondition (fname: string) (post: xpredicate_t) =
     if H.mem functioncontracts fname then
@@ -521,9 +529,10 @@ object (self)
       fncontract#add_postcondition post
     else
       log_warning
-        "No function contract for %s; unable to add postcondition %s"
+        "No function contract for %s; unable to add postcondition %s [%s:%d]"
         fname
         (p2s (xpredicate_to_pretty post))
+        __FILE__ __LINE__
 
   method add_sideeffect (fname: string) (s: xpredicate_t) =
     if H.mem functioncontracts fname then
@@ -531,9 +540,10 @@ object (self)
       fncontract#add_sideeffect s
     else
       log_warning
-        "No function contract for %s; unable to add side effect %s"
+        "No function contract for %s; unable to add side effect %s [%s:%d]"
         fname
         (p2s (xpredicate_to_pretty s))
+        __FILE__ __LINE__
 
   method get_function_contract (name:string) =
     if H.mem functioncontracts name then
@@ -581,18 +591,24 @@ object (self)
       ()
 
   method read_xml (node:xml_element_int) =
-    let _ = log_info "file_contract#read_xml" in
+    let _ = log_info "file_contract#read_xml [%s:%d]" __FILE__ __LINE__ in
     try
       begin
         self#read_xml_global_variables node;
         List.iter (fun n ->
             let name = n#getAttribute "name" in
-            let _ = log_info "file_contract: read function contract %s" name in
+            let _ =
+              log_info
+                "file_contract: read function contract %s [%s:%d]"
+                name __FILE__ __LINE__ in
             let _ = ch_info_log#add "function contract" (STR name) in
             let ignorefn =
               n#hasNamedAttribute "ignore" && (n#getAttribute "ignore") = "yes" in
             let c = new function_contract_t ignorefn name in
             begin
+              c#read_xml
+                n
+                (List.map (fun gvc -> gvc#get_name) self#get_globalvar_contracts);
               H.add functioncontracts name c
             end) ((node#getTaggedChild "functions")#getTaggedChildren "function")
       end
@@ -611,7 +627,6 @@ object (self)
        end
 
   method private get_globalvar_attributes (gvar: varinfo) =
-    let _ = log_info "get_globalvar_attributes for %s" gvar.vname in
     match gvar.vattr with
     | [] -> ()
     | attrs ->
@@ -629,7 +644,9 @@ object (self)
     end
 
   method private get_function_attributes (xfun: varinfo) =
-    let _ = log_info "get_function_attributes for %s" xfun.vname in
+    let _ =
+      log_info "get_function_attributes for %s [%s:%d]"
+        xfun.vname __FILE__ __LINE__ in
     match xfun.vtype with
     | TFun (_returntype, fargs, _varargs, attrs)
       | TPtr (TFun (_returntype, fargs, _varargs, attrs), _) ->
