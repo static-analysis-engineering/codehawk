@@ -122,7 +122,9 @@ object (self)
       List.iter (fun g ->
           match g with
           | GVarDecl (vinfo, _) when vinfo.vstorage = Extern ->
-             let _ = log_info "add vardecl for %s" vinfo.vname in
+             let _ =
+               log_info
+                 "add vardecl for %s [%s:%d]" vinfo.vname __FILE__ __LINE__ in
              begin
                match vinfo.vtype with
                | TFun _ -> H.add externalFns vinfo.vname vinfo;

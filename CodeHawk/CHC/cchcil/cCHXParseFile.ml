@@ -86,7 +86,9 @@ let check_targetdirectory () =
   if !targetdirectory = "" then
     begin
       log_warning
-        "Target directory not set: using current directory as target directory";
+        ("Target directory not set: using current directory as target "
+         ^^ "directory [%s:%d]")
+        __FILE__ __LINE__;
       targetdirectory := Sys.getcwd ()
     end
 
@@ -114,7 +116,9 @@ let sanitize_targetfilename name =
     let newname =
       (String.sub name 0 (spos2+1))
       ^ (String.sub name (pos+2) ((String.length name) - (pos+2))) in
-    let _ = log_info "Change name from %s into %s" name newname in
+    let _ =
+      log_info "Change name from %s into %s [%s:%d]"
+        name newname __FILE__ __LINE__ in
     newname
   with
     Not_found -> name
@@ -222,7 +226,7 @@ let cil_function_to_file target (f: fundec) (dir: string) =
     write_xml_function_definition functionNode f target;
     root#appendChildren [functionNode];
     file_output#saveFile ffilename doc#toPretty;
-    log_info "Saved function file %s" ffilename
+    log_info "Saved function file %s [%s:%d]" ffilename __FILE__ __LINE__
   end
 
 

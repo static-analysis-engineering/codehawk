@@ -66,10 +66,9 @@ let process_global (g:global) =
 
 
 let process_function (fname:string) =
-  let _ = log_info "Process function %s" fname in
+  let _ = log_info "Process function %s [%s:%d]" fname __FILE__ __LINE__ in
   try
     let fundec = read_function_semantics fname in
-    let _ = log_info "Function semantics read" in
     let fdecls = fundec.sdecls in
     let createppos = true in (* not (file_contract#ignore_function fname) in *)
     begin
@@ -101,11 +100,12 @@ let primary_process_file () =
     let _ = cdeclarations#index_location call_sink in
     let functions = fenv#get_application_functions in
     let _ =
-      log_info "Cfile initialized with %d functions" (List.length functions) in
+      log_info
+        "Cfile initialized with %d functions [%s:%d]"
+        (List.length functions)
+        __FILE__ __LINE__ in
     let _ = read_cfile_contract () in
     let _ = file_contract#collect_file_attributes in
-    let _ = log_info "Cfile contract read" in
-
     begin
       List.iter (fun f -> process_function f.vname) functions;
       List.iter process_global cfile.globals;

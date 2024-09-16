@@ -96,6 +96,7 @@ object (self)
     | XTainted _ -> ()
     | _ ->
        begin
+         log_info "add postcondition %d [%s:%d]" index __FILE__ __LINE__;
          (if H.mem spos index then
             ()
           else
@@ -225,7 +226,10 @@ object
     List.map id#get_xpredicate postconditions#toList
 
   method create_contract_proof_obligations =
-    let _ = log_info "create contract postcondition proof obligations" in
+    let _ =
+      log_info
+        "create contract postcondition proof obligations [%s:%d]"
+        __FILE__ __LINE__ in
     begin
       if file_contract#has_function_contract fname then
         begin
@@ -241,7 +245,10 @@ object
 
   method write_xml (node:xml_element_int) =
     let _ =
-      log_info "write returnsite proof obligations: %d" (H.length returnsites) in
+      log_info
+        "write returnsite proof obligations: %d [%s:%d]"
+        (H.length returnsites)
+        __FILE__ __LINE__ in
     begin
       node#appendChildren
         (List.map (fun r ->

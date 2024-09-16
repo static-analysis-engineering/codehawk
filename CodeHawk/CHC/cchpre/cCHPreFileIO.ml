@@ -85,7 +85,8 @@ let xml_error filename line column p =
 let create_directory dir =
   let sys_command s =
     let e = Sys.command s in
-    log_info "System command: %s (result: %d)" s e in
+    log_info
+      "System command: %s (result: %d) [%s:%d]" s e __FILE__ __LINE__ in
   let subs = nsplit '/' dir in
   let directories = List.fold_left (fun a s ->
     match (s,a) with
@@ -814,14 +815,18 @@ let read_global_contract () =
 let read_cfile_contract () =
   let _ = log_info "read_cfile_contract [%s:%d]" __FILE__ __LINE__ in
   if system_settings#has_contractpath then
-    let _ = log_info "Trying to get the contract filename" in
+    let _ =
+      log_info "Trying to get the contract filename [%s:%d]" __FILE__ __LINE__ in
     let filename = get_xml_file_contract_name () in
     let _ =
       log_info
         "Checking xml contract file %s [%s:%d]" filename __FILE__ __LINE__ in
     let _ = read_global_contract () in
     if Sys.file_exists filename then
-      let _ = log_info "Retrieving contract file %s" filename in
+      let _ =
+        log_info
+          "Retrieving contract file %s [%s:%d]"
+          filename __FILE__ __LINE__ in
       try
         let doc = readXmlDocument filename in
         let root = doc#getRoot in
