@@ -58,6 +58,93 @@ let read_xml_instr_list (node:xml_element_int) params lvars =
     (fun n -> read_xml_instr n ~lvars params) (node#getTaggedChildren "instr")
 
 
+class globalvar_contract_t (name: string): globalvar_contract_int =
+object (self)
+
+  val name = name
+  val mutable lb: int option = None
+  val mutable ub: int option = None
+  val mutable value: int option = None
+  val mutable static: bool = false
+  val mutable constant: bool = false
+  val mutable not_null: bool = false
+  val mutable initialized_fields: string list = []
+
+  method set_lower_bound (lbv: int) = lb <- Some lbv
+
+  method set_upper_bound (ubv: int) = ub <- Some ubv
+
+  method set_value (v: int) = value <- Some v
+
+  method set_static = static <- true
+
+  method set_const = constant <-true
+
+  method set_not_null = not_null <- true
+
+  method add_initialized_field (s: string) =
+    initialized_fields <- s :: initialized_fields
+
+  method get_name = name
+
+  method get_lower_bound = lb
+
+  method get_upper_bound = ub
+
+  method get_value = value
+
+  method is_static = static
+
+  method is_const = constant
+
+  method is_not_null = not_null
+
+  method has_lower_bound = match lb with Some _ -> true | _ -> false
+
+  method has_upper_bound = match ub with Some _ -> true | _ -> false
+
+  method read_xml (node: xml_element_int) =
+    let get = node#getAttribute in
+    let geti = node#getIntAttribute in
+    let has = node#hasNamedAttribute in
+    begin
+      (if has "value" then self#set_value (geti "value"));
+      (if has "lb" then self#set_lower_bound (geti "lb"));
+      (if has "ub" then self#set_upper_bound (geti "ub"));
+      (if has "static" && (get "static") = "yes" then self#set_static);
+      (if has "const" && (get "const") = "yes" then self#set_const);
+      (if has "notnull" && (get "notnull") = "yes" then self#set_not_null);
+      (if has "finit" then self#add_initialized_field (get "finit"))
+    end
+
+  method write_xml (node: xml_element_int) =
+    let set = node#setAttribute in
+    let seti = node#setIntAttribute in
+    begin
+      set "name" self#get_name;
+      (if self#is_static then set "static" "yes");
+      (if self#is_const then set "const" "yes");
+      (if self#is_not_null then set "notnull" "yes");
+      (match self#get_lower_bound with Some lb -> seti "lb" lb | _ -> ());
+      (match self#get_upper_bound with Some ub -> seti "ub" ub | _ -> ());
+      (match self#get_value with Some v -> seti "value" v | _ -> ());
+    end
+
+  method toPretty =
+    LBLOCK [
+        STR name;
+        (match self#get_lower_bound with
+         | Some lb -> LBLOCK [STR "; lb: "; INT lb] | _ -> STR "");
+        (match self#get_upper_bound with
+         | Some ub -> LBLOCK [STR "; ub: "; INT ub] | _ -> STR "");
+        (if self#is_static then STR "; static" else STR "");
+        (if self#is_const then STR "; const" else STR "");
+        (if self#is_not_null then STR "; not-null" else STR "")
+      ]
+
+end
+
+
 class function_contract_t
         ?(parameters=[])
         (ignorefn:bool)
@@ -208,7 +295,8 @@ object (self)
          raise
            (CCHFailure
               (STR "Error postconditions not supported in function contract")) in
-    let _ = log_info "function contract: read %d postconditions" (List.length post) in
+    let _ =
+      log_info "function contract: read %d postconditions" (List.length post) in
     List.iter (fun (p, _) -> postconditions#add (id#index_xpredicate p)) post
 
   method private write_xml_postconditions (node:xml_element_int) =
@@ -382,12 +470,12 @@ end
 class file_contract_t:file_contract_int =
 object (self)
 
-  val mutable globalvars = []
+  val globalvars = H.create 3   (* name -> globalvar_contraint_int *)
   val functioncontracts = H.create 3   (* name -> function_contract_int *)
 
   method reset =
     begin
-      globalvars <- [];
+      H.clear globalvars;
       H.clear functioncontracts
     end
 
@@ -400,16 +488,26 @@ object (self)
       let fn = new function_contract_t ~parameters false name in
       H.add functioncontracts name fn
 
+  method add_globalvar_contract (name: string): globalvar_contract_int =
+    if H.mem globalvars name then
+      H.find globalvars name
+    else
+      let gv = new globalvar_contract_t name in
+      begin
+        H.add globalvars name gv;
+        gv
+      end
+
   method add_precondition (fname:string) (pre:xpredicate_t) =
     if H.mem functioncontracts fname then
       let fncontract = H.find functioncontracts fname in
-      let gvars = get_xpredicate_global_variables pre in
+      (* let gvars = get_xpredicate_global_variables pre in
       let _ =
         List.iter (fun gvname ->
             if self#has_global_variable gvname then
               ()
             else
-              self#add_global_variable gvname) gvars in
+              self#add_global_variable gvname) gvars in *)
       fncontract#add_precondition pre
     else
       log_warning
@@ -445,83 +543,42 @@ object (self)
         (CCHFailure
            (LBLOCK [STR "Function contract for "; STR name; STR " not found"]))
 
+  method get_globalvar_contract (name: string) =
+    if H.mem globalvars name then
+      H.find globalvars name
+    else
+      raise
+        (CCHFailure
+           (LBLOCK [STR "Global var contract for "; STR name; STR " not found"]))
+
   method private get_function_contracts =
     H.fold (fun _ v a -> v::a) functioncontracts []
 
-  method get_global_variables = globalvars
-
-  method private has_global_variable (vname:string) =
-    List.exists (fun gv -> gv.cgv_name = vname) globalvars
-
-  method private get_global_variable (vname:string) =
-    try
-      List.find (fun gv -> gv.cgv_name = vname) globalvars
-    with
-    | Not_found ->
-       raise
-         (CCHFailure
-            (LBLOCK [
-                 STR "contract global variable ";
-                 STR vname;
-                 STR " not  found"]))
-
-  method gv_is_not_null (vname:string) =
-    (self#has_global_variable vname)
-    && (self#get_global_variable vname).cgv_notnull
-
-  method gv_field_is_initialized (vname:string) (fname:string) =
-    (self#has_global_variable vname)
-    && (let gvar = List.find (fun gv -> gv.cgv_name = vname) globalvars in
-        (List.mem fname gvar.cgv_initialized_fields)
-        || (List.mem "all-fields" gvar.cgv_initialized_fields))
-
-  method get_gv_lower_bound (vname:string) =
-    if self#has_global_variable vname then
-      (self#get_global_variable vname).cgv_lb
-    else
-      None
-
-  method get_gv_upper_bound (vname:string) =
-    if self#has_global_variable vname then
-      (self#get_global_variable vname).cgv_ub
-    else
-      None
+  method get_globalvar_contracts =
+    H.fold (fun _ v a -> v::a) globalvars []
 
   method has_function_contract (name:string) = H.mem functioncontracts name
+
+  method has_globalvar_contract (name: string) = H.mem globalvars name
 
   method ignore_function (name:string) =
     H.mem functioncontracts name && (H.find functioncontracts name)#ignore_function
 
-  method private add_global_variable (name:string) =
-    let gv = {
-        cgv_name = name;
-        cgv_value = None;
-        cgv_lb = None;
-        cgv_ub = None;
-        cgv_static = false;
-        cgv_const = false;
-        cgv_notnull = false;
-        cgv_initialized_fields = [] } in
-    globalvars <- gv :: globalvars
-
-  method private read_xml_global_variables (node:xml_element_int) =
+  method private read_xml_global_variables (node: xml_element_int) =
     if node#hasOneTaggedChild "global-variables" then
+      let xgvars =
+        (node#getTaggedChild "global-variables")#getTaggedChildren "gvar" in
       List.iter (fun n ->
-          let get = n#getAttribute in
-          let geti = n#getIntAttribute in
-          let has = n#hasNamedAttribute in
-          let gv = {
-              cgv_name = get "name";
-              cgv_value = if has "value" then Some (geti "value") else None;
-              cgv_lb = if has "lb" then Some (geti "lb") else None;
-              cgv_ub = if has "ub" then Some (geti "ub") else None;
-              cgv_static = has "static" && (get "static" = "yes");
-              cgv_const = has "const" && (get "const" = "yes");
-              cgv_notnull = has "notnull" && (get "notnull" = "yes");
-              cgv_initialized_fields = if has "finit" then [(get "finit")] else []
-            } in
-          globalvars <- gv :: globalvars)
-                ((node#getTaggedChild "global-variables")#getTaggedChildren "gvar")
+          let name = n#getAttribute "name" in
+          if H.mem globalvars name then
+            ch_error_log#add
+              "read_xml_global_variables"
+              (LBLOCK [STR "Duplicate encountered for "; STR name])
+          else
+            let gvarcontract = self#add_globalvar_contract name in
+            gvarcontract#read_xml n) xgvars
+    else
+      ()
 
   method read_xml (node:xml_element_int) =
     let _ = log_info "file_contract#read_xml" in
@@ -536,7 +593,6 @@ object (self)
               n#hasNamedAttribute "ignore" && (n#getAttribute "ignore") = "yes" in
             let c = new function_contract_t ignorefn name in
             begin
-              c#read_xml n (List.map (fun gv -> gv.cgv_name) globalvars);
               H.add functioncontracts name c
             end) ((node#getTaggedChild "functions")#getTaggedChildren "function")
       end
@@ -553,6 +609,14 @@ object (self)
          ch_error_log#add "file contract" (STR "unknown error");
          raise (CCHFailure (STR "File contract: unknown error"))
        end
+
+  method private get_globalvar_attributes (gvar: varinfo) =
+    let _ = log_info "get_globalvar_attributes for %s" gvar.vname in
+    match gvar.vattr with
+    | [] -> ()
+    | attrs ->
+       let gvarcontract = self#add_globalvar_contract gvar.vname in
+       List.iter (attribute_update_globalvar_contract gvarcontract) attrs
 
   method private add_function_attribute_conditions
                    (vinfo: varinfo) (attr: attribute) =
@@ -594,27 +658,20 @@ object (self)
 
   method collect_file_attributes =
     let xfuns = file_environment#get_external_functions in
-    List.iter self#get_function_attributes xfuns;
+    let gvars = file_environment#get_globalvars in
+    begin
+      List.iter self#get_function_attributes xfuns;
+      List.iter self#get_globalvar_attributes gvars
+    end
 
   method private write_xml_global_variables (node:xml_element_int) =
-    let gvars =
-      List.sort (fun g1 g2 ->
-          Stdlib.compare g1.cgv_name g2.cgv_name) globalvars in
     node#appendChildren
-      (List.map (fun gv ->
+      (List.map (fun gvarc ->
            let gnode = xmlElement "gvar" in
-           let set = gnode#setAttribute in
-           let seti = gnode#setIntAttribute in
            begin
-             set "name" gv.cgv_name;
-             (match gv.cgv_value with Some n -> seti "value" n | _ -> ());
-             (match gv.cgv_lb with Some n -> seti "lb" n | _ -> ());
-             (match gv.cgv_ub with Some n -> seti "ub" n | _ -> ());
-             (if gv.cgv_static then set "static" "yes");
-             (if gv.cgv_const then set "const" "yes");
-             (if gv.cgv_notnull then set "notnull" "yes");
+             gvarc#write_xml gnode;
              gnode
-           end) gvars)
+           end) (self#get_globalvar_contracts))
 
   method private write_xml_function_contracts (node:xml_element_int) =
     let fncontracts =

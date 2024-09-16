@@ -434,7 +434,8 @@ object (self)
     match facts with
     | [] ->
        begin
-         self#set_diagnostic
+         self#set_diagnostic_arg
+           argindex
            ("no invariant facts in proof obligation context");
          []
        end
@@ -454,8 +455,9 @@ object (self)
        match vars with
        | [] ->
           begin
-            self#set_diagnostic
-              ("no invariants found on variables that apply to proof obligation");
+            self#set_diagnostic_arg
+              argindex
+              "no corresponding variables with non-relational facts";
             []
           end
        | _ ->
@@ -470,7 +472,8 @@ object (self)
           match invs with
           | [] ->
              begin
-               self#set_diagnostic
+               self#set_diagnostic_arg
+                 argindex
                  ("none of the variables has associated invariants: "
                   ^ (p2s
                        (pretty_print_list vars (fun v -> v#toPretty) "[" "," "]")));
@@ -1258,10 +1261,18 @@ object (self)
   method get_num_value (e:exp) = get_num_value fenv e
 
   method get_gv_lowerbound (name:string):int option =
-    file_contract#get_gv_lower_bound name
+    if file_contract#has_globalvar_contract name then
+      let gvar = file_contract#get_globalvar_contract name in
+      gvar#get_lower_bound
+    else
+      None
 
   method get_gv_upperbound (name:string):int option =
-    file_contract#get_gv_upper_bound name
+    if file_contract#has_globalvar_contract name then
+      let gvar = file_contract#get_globalvar_contract name in
+      gvar#get_upper_bound
+    else
+      None
 
   (* return a lower bound xpr *)
   method get_lowerbound_xpr (arg:int) (e:exp):(xpr_t * int list) option =
