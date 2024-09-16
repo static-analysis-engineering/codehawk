@@ -45,7 +45,6 @@ open CCHBasicTypes
 open CCHContext
 open CCHFileContract
 open CCHFileEnvironment
-open CCHLibTypes
 open CCHTypesTransformer
 open CCHTypesUtil
 
@@ -113,17 +112,17 @@ object (self)
         | _ -> acc) [] formals
 
   method private assert_global_values globals =
-    let contractgvars = file_contract#get_global_variables in
+    let contractgvars = file_contract#get_globalvar_contracts in
     let table = H.create 3 in
     let tmpProvider = (fun () -> env#mk_num_temp) in
     let cstProvider = (fun (n:numerical_t) -> env#mk_num_constant n) in
-    let _ = List.iter (fun gv -> H.add table gv.cgv_name gv) contractgvars in
+    let _ = List.iter (fun gv -> H.add table gv#get_name gv) contractgvars in
     let _ = env#start_transaction in
     let ccmds =
       List.fold_left (fun acc (vname, _, _, vInit) ->
           if H.mem table vname then
             let gcvar = H.find table vname in
-            match gcvar.cgv_value with
+            match gcvar#get_value with
             | Some i ->
                let x = XOp (XEq, [XVar vInit ; int_constant_expr i]) in
                let (code,bExp) = xpr2boolexpr tmpProvider cstProvider x in
@@ -142,10 +141,10 @@ object (self)
     let globalvars =
       List.map f.sdecls#get_varinfo_by_vid (get_block_variables f.sbody) in
     let globalvars = List.filter (fun vinfo -> vinfo.vglob) globalvars in
-    let contractglobals = file_contract#get_global_variables in
+    let contractglobals = file_contract#get_globalvar_contracts in
     let contractglobals =
       List.map (fun v ->
-          file_environment#get_globalvar_by_name v.cgv_name) contractglobals in
+          file_environment#get_globalvar_by_name v#get_name) contractglobals in
     let globalvars =
       List.fold_left (fun acc v ->
           if List.exists (fun vv ->
@@ -276,10 +275,10 @@ let get_valueset_preamble (env:c_environment_int) fundec =
     List.map (fun v ->
         (false,env#mk_formal_ptr_base_variable v NUM_VAR_TYPE)) pointerFormals in
   let contractglobals =
-    List.filter (fun v -> v.cgv_notnull) file_contract#get_global_variables in
+    List.filter (fun v -> v#is_not_null) file_contract#get_globalvar_contracts in
   let contractglobals =
     List.map (fun v ->
-        file_environment#get_globalvar_by_name v.cgv_name) contractglobals in
+        file_environment#get_globalvar_by_name v#get_name) contractglobals in
   let contractglobals =
     List.map (fun v ->
         (true,env#mk_program_var v NoOffset NUM_VAR_TYPE)) contractglobals in

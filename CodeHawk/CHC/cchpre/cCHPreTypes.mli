@@ -1156,9 +1156,9 @@ class type returnsite_int =
   object
 
     method add_postcondition: xpredicate_t -> unit
-    method add_preservation_condition: contract_global_var_t -> unit
+    method add_preservation_condition: globalvar_contract_int -> unit
     method add_inequality_condition:
-             contract_global_var_t -> binop -> int -> unit
+             globalvar_contract_int -> binop -> int -> unit
 
     method get_exp: exp
     method get_context: program_context_int

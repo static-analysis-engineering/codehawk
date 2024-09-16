@@ -102,44 +102,44 @@ object (self)
             H.add spos index [(create_pc_spos pod index loc ctxt exp)])
        end
 
-  method add_preservation_condition (gv:contract_global_var_t) =
-    let gvar = file_environment#get_globalvar_by_name gv.cgv_name in
-    let gexp = Lval (Var (gvar.vname, gvar.vid),NoOffset) in
+  method add_preservation_condition (gv: globalvar_contract_int) =
+    let gvar = file_environment#get_globalvar_by_name gv#get_name in
+    let gexp = Lval (Var (gvar.vname, gvar.vid), NoOffset) in
     let pred = PValuePreserved gexp in
     let xpred =
-      XPreservesValue (ArgValue (ParGlobal gv.cgv_name,ArgNoOffset)) in
+      XPreservesValue (ArgValue (ParGlobal gv#get_name,ArgNoOffset)) in
     let xpredix = id#index_xpredicate xpred in
     if H.mem spos xpredix then
       ()
     else
-      let spotype = ReturnsiteSPO (loc,ctxt,pred,xpred) in
+      let spotype = ReturnsiteSPO (loc, ctxt, pred, xpred) in
       H.add spos xpredix [(mk_returnsite_spo pod spotype)]
 
-  method add_notnull_condition (gv:contract_global_var_t) =
-    let gvar = file_environment#get_globalvar_by_name gv.cgv_name in
-    let gexp = Lval (Var (gvar.vname, gvar.vid),NoOffset) in
+  method add_notnull_condition (gv: globalvar_contract_int) =
+    let gvar = file_environment#get_globalvar_by_name gv#get_name in
+    let gexp = Lval (Var (gvar.vname, gvar.vid), NoOffset) in
     let pred = PNotNull gexp in
-    let xpred = XNotNull (ArgValue (ParGlobal gv.cgv_name,ArgNoOffset)) in
+    let xpred = XNotNull (ArgValue (ParGlobal gv#get_name,ArgNoOffset)) in
     let xpredix = id#index_xpredicate xpred in
-    let spotype = ReturnsiteSPO (loc,ctxt,pred,xpred) in
+    let spotype = ReturnsiteSPO (loc, ctxt, pred, xpred) in
     if H.mem spos xpredix then
       ()
     else
       H.add spos xpredix [(mk_returnsite_spo pod spotype)]
 
   method add_inequality_condition
-           (gv:contract_global_var_t) (op:binop) (lb:int) =
-    let gvar = file_environment#get_globalvar_by_name gv.cgv_name in
-    let gexp = Lval (Var (gvar.vname, gvar.vid),NoOffset) in
-    let lbexp = Const (CInt (Int64.of_int lb,IInt, None)) in
-    let pred = PValueConstraint (BinOp (op, gexp, lbexp,TInt (IInt,[]))) in
+           (gv: globalvar_contract_int) (op: binop) (lb: int) =
+    let gvar = file_environment#get_globalvar_by_name gv#get_name in
+    let gexp = Lval (Var (gvar.vname, gvar.vid), NoOffset) in
+    let lbexp = Const (CInt (Int64.of_int lb, IInt, None)) in
+    let pred = PValueConstraint (BinOp (op, gexp, lbexp, TInt (IInt, []))) in
     let xpred =
       XRelationalExpr
         (op,
-         ArgValue (ParGlobal gv.cgv_name,ArgNoOffset),
+         ArgValue (ParGlobal gv#get_name,ArgNoOffset),
          NumConstant (mkNumerical lb)) in
     let xpredix = id#index_xpredicate xpred in
-    let spotype = ReturnsiteSPO (loc,ctxt,pred,xpred) in
+    let spotype = ReturnsiteSPO (loc, ctxt, pred, xpred) in
     if H.mem spos xpredix then
       ()
     else

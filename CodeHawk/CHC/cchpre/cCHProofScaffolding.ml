@@ -82,7 +82,7 @@ object (self)
   method retrieve_contract_preconditions
            (fdecls:cfundeclarations_int) (fname:string) =
     let fApi = self#get_function_api fname in
-    let gvars = file_contract#get_global_variables in
+    let gvars = file_contract#get_globalvar_contracts in
     begin
       (if file_contract#has_function_contract fname then
          let preconditions =
@@ -90,37 +90,44 @@ object (self)
          List.iter (fApi#add_contract_precondition fdecls) preconditions);
       (List.iter (fun gvar ->
            begin
-             (if gvar.cgv_const then
-                match gvar.cgv_value with
+             (if gvar#is_const then
+                match gvar#get_value with
                 | Some v ->
                    let v = mkNumerical v in
                    let xpred =
                      XRelationalExpr (
-                         Eq, ArgValue (ParGlobal gvar.cgv_name,ArgNoOffset),
+                         Eq, ArgValue (ParGlobal gvar#get_name,ArgNoOffset),
                          NumConstant v) in
                    let xpredix = id#index_xpredicate xpred in
                    fApi#add_contract_precondition fdecls xpredix
                | _ -> ());
-             (match gvar.cgv_lb with
+             (match gvar#get_lower_bound with
               | Some lb ->
                  let lb = mkNumerical lb in
                  let xpred =
                    XRelationalExpr (
-                       Le, ArgValue (ParGlobal gvar.cgv_name,ArgNoOffset),
+                       Ge, ArgValue (ParGlobal gvar#get_name,ArgNoOffset),
                        NumConstant lb) in
                  let xpredix = id#index_xpredicate xpred in
                  fApi#add_contract_precondition fdecls xpredix
               | _ -> ());
-             (match gvar.cgv_ub with
+             (match gvar#get_upper_bound with
               | Some ub ->
                  let ub = mkNumerical ub in
                  let xpred =
                    XRelationalExpr (
-                       Ge, ArgValue (ParGlobal gvar.cgv_name,ArgNoOffset),
+                       Le, ArgValue (ParGlobal gvar#get_name, ArgNoOffset),
                        NumConstant ub) in
                  let xpredix = id#index_xpredicate xpred in
                  fApi#add_contract_precondition fdecls xpredix
-              | _ -> ())
+              | _ -> ());
+             (if gvar#is_not_null then
+                let xpred =
+                  XNotNull (ArgValue (ParGlobal gvar#get_name, ArgNoOffset)) in
+                let xpredix = id#index_xpredicate xpred in
+                fApi#add_contract_precondition fdecls xpredix
+              else
+                ())
            end) gvars)
     end
 

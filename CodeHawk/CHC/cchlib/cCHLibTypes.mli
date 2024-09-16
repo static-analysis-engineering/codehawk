@@ -713,7 +713,7 @@ class type function_contract_int =
     method get_tagged_notes: string -> contract_note_t list
     method get_instrs: int -> contract_instr_t list
     method read_xml: xml_element_int -> string list -> unit
-    method ignore_function: bool    (* function stated to originate from header file *)
+    method ignore_function: bool (* function stated to originate from header file *)
     method has_instrs: int -> bool
     method write_xmlx: xml_element_int -> unit
     method postconditions_to_pretty: pretty_t
@@ -721,34 +721,50 @@ class type function_contract_int =
     method toPretty: pretty_t
   end
 
-type contract_global_var_t = {
-    cgv_name: string;
-    cgv_value: int option;
-    cgv_lb: int option;
-    cgv_ub: int option;
-    cgv_static: bool;
-    cgv_const: bool;
-    cgv_notnull: bool;
-    cgv_initialized_fields: string list
-  }
+
+class type globalvar_contract_int =
+  object
+    method set_lower_bound: int -> unit
+    method set_upper_bound: int -> unit
+    method set_value: int -> unit
+    method set_static: unit
+    method set_const: unit
+    method set_not_null: unit
+    method add_initialized_field: string -> unit
+
+    method get_name: string
+    method get_lower_bound: int option
+    method get_upper_bound: int option
+    method get_value: int option
+    method is_static: bool
+    method is_const: bool
+    method is_not_null: bool
+
+    method has_lower_bound: bool
+    method has_upper_bound: bool
+
+    method read_xml: xml_element_int -> unit
+    method write_xml: xml_element_int -> unit
+
+    method toPretty: pretty_t
+  end
 
 
 class type file_contract_int =
   object
     method reset: unit
     method add_function_contract: string -> string list -> unit
+    method add_globalvar_contract: string -> globalvar_contract_int
     method add_precondition: string -> xpredicate_t -> unit
     method add_postcondition: string -> xpredicate_t -> unit
     method add_sideeffect: string -> xpredicate_t -> unit
     method collect_file_attributes: unit
-    method get_global_variables: contract_global_var_t list
     method get_function_contract: string -> function_contract_int
-    method get_gv_lower_bound: string -> int option
-    method get_gv_upper_bound: string -> int option
+    method get_globalvar_contract: string -> globalvar_contract_int
+    method get_globalvar_contracts: globalvar_contract_int list
     method has_function_contract: string -> bool
+    method has_globalvar_contract: string -> bool
     method ignore_function: string -> bool
-    method gv_is_not_null: string -> bool
-    method gv_field_is_initialized: string -> string -> bool
     method read_xml: xml_element_int -> unit
     method write_xmlx: xml_element_int -> unit
     method toPretty: pretty_t
