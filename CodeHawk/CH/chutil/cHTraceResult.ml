@@ -48,11 +48,25 @@ let tmap ?(msg="") (f: 'a -> 'c) (r: 'a traceresult) =
   | Error e -> Error (msg :: e)
 
 
+let tmap2
+      ?(msg1="")
+      ?(msg2="")
+      (f: 'a -> 'b  -> 'c)
+      (r1: 'a traceresult)
+      (r2: 'b traceresult): 'c traceresult =
+  match r1, r2 with
+  | Ok v1, Ok v2 -> Ok (f v1 v2)
+  | Error e1, Ok _ -> Error (msg1 :: e1)
+  | Ok _, Error e2 -> Error (msg2 :: e2)
+  | Error e1, Error e2 -> Error (msg1 :: msg2 :: (e1 @ e2))
+
+
 let tbind ?(msg="") (f: 'a -> 'c traceresult) (r: 'a traceresult) =
   match r with
   | Ok v -> f v
   | Error e when msg = "" -> Error e
   | Error e -> Error (msg :: e)
+
 
 let tfold ~(ok:'a -> 'c) ~(error:string list -> 'c) (r: 'a traceresult): 'c =
   match r with
@@ -94,6 +108,19 @@ let tfold_list_default
       match r with
       | Ok v -> ok acc v
       | Error _ -> err acc) initacc rl
+
+
+let tfold_list_fail
+      (ok: 'c -> 'a -> 'c)
+      (initacc: 'c traceresult)
+      (rl: ('a traceresult) list): 'c traceresult =
+  List.fold_left (fun acc r ->
+      match acc with
+      | Error e -> Error e
+      | Ok accv ->
+         match r with
+         | Error e -> Error e
+         | Ok v -> Ok (ok accv v)) initacc rl
 
 
 let to_bool (f: 'a -> bool) (r: 'a traceresult) =
