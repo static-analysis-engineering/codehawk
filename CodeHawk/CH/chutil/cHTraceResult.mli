@@ -53,6 +53,18 @@ val tvalue: 'a traceresult -> default:'a -> 'a
 val tmap: ?msg:string -> ('a -> 'c) -> ('a traceresult) -> 'c traceresult
 
 
+(** [tmap2 f r1 r2] is [Ok (f v1 v2)] if [r1] is [Ok v1] and [r2] is [Ok v2];
+    otherwise it returns an [Error] appending the messages corresponding to
+    the error value as appropriate.*)
+val tmap2:
+  ?msg1: string
+  -> ?msg2: string
+  -> ('a -> 'b -> 'c)
+  -> 'a traceresult
+  -> 'b traceresult
+  -> 'c traceresult
+
+
 (** [tfold ~ok ~error r] is [ok v] if [r] is [Ok v] and [error e] if [r] is
     [Error e].*)
 val tfold: ok:('a -> 'c) -> error:(string list -> 'c) -> 'a traceresult -> 'c
@@ -84,13 +96,20 @@ val tfold_list: ok:('c -> 'a -> 'c) -> 'c -> ('a traceresult) list -> 'c
 
 
 (** [tfold_list_default ~ok ~err init rl] folds [Ok] values left to right,
-    startint from [init], using a default accumulator [err] for [Error]
+    starting from [init], using a default accumulator [err] for [Error]
     values.
 
     This function differs from [tfold_list] in that it enables making the
     presence of error values visible in the final result.*)
 val tfold_list_default:
   ok:('c -> 'a -> 'c) -> err:('c -> 'c) -> 'c -> ('a traceresult) list -> 'c
+
+
+(** [tfold_list_fail f init rl] folds [Ok] values left to right starting
+    from [init], failing on the first value in [rl] that has an error value.
+ *)
+val tfold_list_fail:
+  ('c -> 'a -> 'c) -> 'c traceresult -> ('a traceresult) list -> 'c traceresult
 
 
 (** [to_bool f r] is [f v] if [r] is [Ok v] and [false] otherwise.*)
