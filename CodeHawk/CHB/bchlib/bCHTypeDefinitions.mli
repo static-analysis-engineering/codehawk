@@ -27,6 +27,8 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHTraceResult
 
 (* bchlib *)
 open BCHBCTypes
@@ -35,6 +37,6 @@ open BCHLibTypes
 
 val type_definitions: type_definitions_int
 
-val get_size_of_type: btype_t -> int option
+val get_size_of_type: btype_t -> int traceresult
 
-val resolve_type: btype_t -> btype_t
+val resolve_type: btype_t -> btype_t traceresult

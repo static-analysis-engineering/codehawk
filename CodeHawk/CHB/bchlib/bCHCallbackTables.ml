@@ -163,53 +163,86 @@ class call_back_table_t (cba: string) (ty: btype_t): call_back_table_int =
 object (self)
 
   val address = cba
-  val recordtype = bcfiles#resolve_type ty
+  val recordtype =
+    match bcfiles#resolve_type ty with
+    | Error e ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Problem with type resolution: ";
+                 STR (String.concat "; " e)]))
+    | Ok ty -> ty
   val records = H.create 7
   val fieldnames =
     let table = H.create 3 in
     let recty = bcfiles#resolve_type ty in
-    let _ =
-      match recty with
-      | TFun _ | TPtr (TFun _, _) ->
-         H.add table 0 ("cbp_" ^ cba)
-      | TPtr (TComp (ckey, _), _) ->
-         let compinfo = bcfiles#get_compinfo ckey in
-         List.iteri (fun i fld ->
-             H.add table (i * 4) fld.bfname) compinfo.bcfields
-      | _ ->
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "Unexpected type in creating callback table: ";
-                   btype_to_pretty recty])) in
-    table
+    match recty with
+    | Error e ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Problem with type resolution: ";
+                 STR (String.concat ": " e)]))
+    | Ok recty ->
+       let _ =
+         match recty with
+         | TFun _ | TPtr (TFun _, _) ->
+            H.add table 0 ("cbp_" ^ cba)
+         | TPtr (TComp (ckey, _), _) ->
+            let compinfo = bcfiles#get_compinfo ckey in
+            List.iteri (fun i fld ->
+                H.add table (i * 4) fld.bfname) compinfo.bcfields
+         | _ ->
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "Unexpected type in creating callback table: ";
+                      btype_to_pretty recty])) in
+       table
 
   val offsettypes =
     let table = H.create 3 in
     let recty = bcfiles#resolve_type ty in
-    let _ =
-      match recty with
-      | TFun _ -> H.add table 0 ty
-      | TPtr (TFun (rty, args, b, attr), _) ->
-         H.add table 0 (TFun (rty, args, b, attr))
-      | TPtr (TComp (ckey, _), _) ->
-         let compinfo = bcfiles#get_compinfo ckey in
-         List.iteri (fun i fld ->
-             let offset = i * 4 in
-             match fld.bftype with
-             | TFun _ -> H.add table offset fld.bftype
-             | TPtr (TFun (rty, args, b, attr), _) ->
-                H.add table offset (TFun (rty, args, b, attr))
-             | _ ->
-                H.add table offset (bcfiles#resolve_type fld.bftype))
-           compinfo.bcfields
-      | _ ->
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "Unexpected type in creating callback record: ";
-                   btype_to_pretty recty])) in
-    table
+    match recty with
+    | Error e ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Problem with type resoution: ";
+                 STR (String.concat "; " e)]))
+    | Ok recty ->
+       let _ =
+         match recty with
+         | TFun _ -> H.add table 0 ty
+         | TPtr (TFun (rty, args, b, attr), _) ->
+            H.add table 0 (TFun (rty, args, b, attr))
+         | TPtr (TComp (ckey, _), _) ->
+            let compinfo = bcfiles#get_compinfo ckey in
+            List.iteri (fun i fld ->
+                let offset = i * 4 in
+                match fld.bftype with
+                | TFun _ -> H.add table offset fld.bftype
+                | TPtr (TFun (rty, args, b, attr), _) ->
+                   H.add table offset (TFun (rty, args, b, attr))
+                | _ ->
+                   let fldtype = bcfiles#resolve_type fld.bftype in
+                   match fldtype with
+                   | Error e ->
+                      raise
+                        (BCH_failure
+                           (LBLOCK [
+                                STR "Problem with type resolution: ";
+                                STR (String.concat "; " e)]))
+                   | Ok fldtype ->
+                      H.add table offset fldtype)
+              compinfo.bcfields
+         | _ ->
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "Unexpected type in creating callback record: ";
+                      btype_to_pretty recty])) in
+       table
 
   method add_record
            (recaddr: string)

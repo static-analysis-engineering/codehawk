@@ -418,27 +418,30 @@ object (self)
                   let compinfo = bcfiles#get_compinfo fckey in
                   let finfo = get_compinfo_field compinfo fname in
                   let finfotype = resolve_type finfo.bftype in
-                  let lhstype =
-                    if is_struct_type finfotype then
-                      let subcinfo =
-                        get_struct_type_compinfo finfotype in
-                      get_compinfo_scalar_type_at_offset subcinfo 0
-                    else
-                      Some finfotype in
-                  (match lhstype with
-                   | Some ty ->
-                      let opttc = mk_btype_constraint rttypevar ty in
-                      (match opttc with
-                       | Some tc -> store#add_constraint tc
-                       | _ -> ())
-                   | _ ->
-                      chlog#add
-                        "global struct var type constraint"
-                        (LBLOCK [
-                             STR iaddr;
-                             STR ": ";
-                             STR compinfo.bcname;
-                             STR ": unable to obtain field type"]))
+                  (match finfotype with
+                   | Error e -> ()
+                   | Ok finfotype ->
+                      let lhstype =
+                        if is_struct_type finfotype then
+                          let subcinfo =
+                            get_struct_type_compinfo finfotype in
+                          get_compinfo_scalar_type_at_offset subcinfo 0
+                        else
+                          Some finfotype in
+                      (match lhstype with
+                       | Some ty ->
+                          let opttc = mk_btype_constraint rttypevar ty in
+                          (match opttc with
+                           | Some tc -> store#add_constraint tc
+                           | _ -> ())
+                       | _ ->
+                          chlog#add
+                            "global struct var type constraint"
+                            (LBLOCK [
+                                 STR iaddr;
+                                 STR ": ";
+                                 STR compinfo.bcname;
+                                 STR ": unable to obtain field type"])))
                | Some (dw, boffset) ->
                   let _ =
                     chlog#add

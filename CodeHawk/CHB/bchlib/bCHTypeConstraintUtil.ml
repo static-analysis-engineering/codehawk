@@ -30,6 +30,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTimingLog
 
 (* bchlib *)
 open BCHBasicTypes
@@ -317,7 +318,7 @@ let add_store_capability ?(size = 4) ?(offset = 0) (tv: type_variable_t)
   add_capability [Store; OffsetAccess (size, offset)] tv
 
 
-let add_array_access_capability ?(size = 1) ?(offset = 0) (tv: type_variable_t)
+let add_array_access_capability ?(offset = 0) (size: int) (tv: type_variable_t)
     :type_variable_t =
   add_capability [OffsetAccessA (size, offset)] tv
 
@@ -415,33 +416,47 @@ let ikind_to_signedsize (k: ikind_t): (signedness_t * int) =
 let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
         : type_constraint_t option =
   match (resolve_type ty) with
-  | TInt (ikind, _) ->
-     let (signedness, size) = ikind_to_signedsize ikind in
-     Some (TyGround (TyVariable tv, TyConstant (mk_int_type_constant signedness size)))
-  | TFloat (fkind, _, _) ->
-     Some (TyGround (TyVariable tv, TyConstant (mk_float_type_constant fkind)))
-  | TComp (key, _) ->
-     let cinfo = bcfiles#get_compinfo key in
-     Some (TyGround (TyVariable tv, TyConstant (TyTStruct (key, cinfo.bcname))))
-  | TPtr (pty, _) ->
-     let ptv = add_deref_capability tv in
-     mk_btype_constraint ptv pty
-  | TArray (elty, _, _) ->
-     let size = size_of_btype elty in
-     let atv = add_array_access_capability ~size tv in
-     mk_btype_constraint atv elty
-  | rty ->
-     begin
-       chlog#add
-         "make btype constraint"
-         (LBLOCK [
-              STR "Not yet supported: ";
-              btype_to_pretty ty;
-              STR " (";
-              btype_to_pretty rty;
-              STR ")"]);
-       None
-     end
+  | Error _ -> None
+  | Ok ty ->
+     match ty with
+     | TInt (ikind, _) ->
+        let (signedness, size) = ikind_to_signedsize ikind in
+        Some (TyGround
+                (TyVariable tv, TyConstant (mk_int_type_constant signedness size)))
+     | TFloat (fkind, _, _) ->
+        Some (TyGround (TyVariable tv, TyConstant (mk_float_type_constant fkind)))
+     | TComp (key, _) ->
+        let cinfo = bcfiles#get_compinfo key in
+        Some (TyGround (TyVariable tv, TyConstant (TyTStruct (key, cinfo.bcname))))
+     | TPtr (pty, _) ->
+        let ptv = add_deref_capability tv in
+        mk_btype_constraint ptv pty
+     | TArray (elty, _, _) ->
+        let size_r = size_of_btype elty in
+        (match size_r with
+         | Ok size ->
+            let atv = add_array_access_capability size tv in
+            mk_btype_constraint atv elty
+         | Error e ->
+            begin
+              log_warning
+                "Unable to create array access capability (no size): %s [%s:%d]"
+                (String.concat "; " e)
+                __FILE__ __LINE__;
+              None
+            end)
+     | rty ->
+        begin
+          chlog#add
+            "make btype constraint"
+            (LBLOCK [
+                 STR "Not yet supported: ";
+                 btype_to_pretty ty;
+                 STR " (";
+                 btype_to_pretty rty;
+                 STR ")"]);
+          None
+        end
 
 
 let signedsize_to_ikind (sg: signedness_t) (size: int): ikind_t =

@@ -145,45 +145,69 @@ class struct_table_t (addr: string) (ty: btype_t): struct_table_int =
 object (self)
 
   val address = addr
-  val recordtype = bcfiles#resolve_type ty
+  val recordtype =
+    match bcfiles#resolve_type ty with
+    | Ok ty -> ty
+    | Error e ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Problem with type resolution of record type in struct table: ";
+                 STR (String.concat "; " e)]))
   val records = H.create 7
   val fieldnames =
     let table = H.create 3 in
     let recty = bcfiles#resolve_type ty in
     let _ =
       match recty with
-      | TPtr (TComp (ckey, _), _) ->
-         let compinfo = bcfiles#get_compinfo ckey in
-         List.iter (fun fld ->
-             match fld.bfieldlayout with
-             | Some (offset, _) ->
-                if H.mem table offset then
-                  raise
-                    (BCH_failure
-                       (LBLOCK [
-                            STR "Found multiple offsets of ";
-                            INT offset;
-                            STR " in struct type ";
-                            STR (btype_to_string recty)]))
-                else
-                  H.add table offset fld.bfname
-             | _ ->
-                raise
-                  (BCH_failure
-                     (LBLOCK [
-                          STR "Struct type without field layout: ";
-                          STR (btype_to_string recty)]))) compinfo.bcfields
-      | _ ->
+      | Error e ->
          raise
            (BCH_failure
               (LBLOCK [
-                   STR "Unexpected type in creating struct table record: ";
-                   btype_to_pretty recty])) in
+                   STR "Problem with type resolution in struct table: ";
+                   STR (String.concat "; " e)]))
+      | Ok recty ->
+         match recty with
+         | TPtr (TComp (ckey, _), _) ->
+            let compinfo = bcfiles#get_compinfo ckey in
+            List.iter (fun fld ->
+                match fld.bfieldlayout with
+                | Some (offset, _) ->
+                   if H.mem table offset then
+                     raise
+                       (BCH_failure
+                          (LBLOCK [
+                               STR "Found multiple offsets of ";
+                               INT offset;
+                               STR " in struct type ";
+                               STR (btype_to_string recty)]))
+                   else
+                     H.add table offset fld.bfname
+                | _ ->
+                   raise
+                     (BCH_failure
+                        (LBLOCK [
+                             STR "Struct type without field layout: ";
+                             STR (btype_to_string recty)]))) compinfo.bcfields
+         | _ ->
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR "Unexpected type in creating struct table record: ";
+                      btype_to_pretty recty])) in
     table
 
   val offsettypes =
     let table = H.create 3 in
-    let recty = bcfiles#resolve_type ty in
+    let recty =
+      match bcfiles#resolve_type ty with
+      | Ok ty -> ty
+      | Error e ->
+         raise
+           (BCH_failure
+              (LBLOCK [
+                   STR "Problem with type resolution of record type: ";
+                   STR (String.concat "; " e)])) in
     let _ =
       match recty with
       | TPtr (TComp (ckey, _), _) ->

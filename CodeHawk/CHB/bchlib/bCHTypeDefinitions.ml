@@ -33,10 +33,12 @@ open CHUtils
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCFiles
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
@@ -514,16 +516,21 @@ let get_size_of_type_definition (s: string) =
   | _ -> None
 
 
-let get_size_of_type (t: btype_t) =
+let get_size_of_type (t: btype_t): int traceresult =
   match t with
-  | TNamed (s,_) -> get_size_of_type_definition s
-  | _ -> Some (size_of_btype t)
+  | TNamed (s, _) ->
+     (match get_size_of_type_definition s with
+      | Some i -> Ok i
+      | _ -> size_of_btype t)
+  | _ -> size_of_btype t
 
 
-let resolve_type (t: btype_t) =
+let resolve_type (t: btype_t): btype_t traceresult =
   match t with
-  | TNamed (tname,_) -> if type_definitions#has_type tname then
-      type_definitions#get_type tname
+  | TNamed (tname, _) ->
+     if type_definitions#has_type tname then
+       Ok (type_definitions#get_type tname)
     else
-      t
-  | _ -> t
+      bcfiles#resolve_type t
+  | _ ->
+     bcfiles#resolve_type t

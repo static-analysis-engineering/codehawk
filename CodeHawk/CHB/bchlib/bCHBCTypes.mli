@@ -28,6 +28,7 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 
@@ -575,7 +576,7 @@ class type bcfiles_int =
     (** {1 Services}*)
 
     (** Resolves a btype to its basic form, i.e., it expands all typedefs.*)
-    method resolve_type: btype_t -> btype_t
+    method resolve_type: btype_t -> btype_t traceresult
 
     (** {1 Access}*)
 

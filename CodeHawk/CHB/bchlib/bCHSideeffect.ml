@@ -88,16 +88,21 @@ let read_xml_par_sideeffects
   let t = ArgValue par in
   let ty () =
     let t = match BCHTypeDefinitions.resolve_type par.apar_type with
-      | TFun _ -> par.apar_type
-      | TPtr (t,_) -> t
-      | THandle (s,_) -> TNamed (s,[])
+      | Ok (TFun _) -> par.apar_type
+      | Ok (TPtr (t,_)) -> t
+      | Ok (THandle (s,_)) -> TNamed (s, [])
       | _ ->
-	raise_xml_error node
-	  (LBLOCK [
-               STR "Expected pointer type for ";
-               STR par.apar_name;
-	       STR ", but found ";
-               btype_to_pretty par.apar_type]) in
+         match par.apar_type with
+         | TFun _ -> par.apar_type
+         | TPtr (t, _) -> t
+         | THandle (s, _) -> TNamed (s, [])
+         | _ ->
+	    raise_xml_error node
+	      (LBLOCK [
+                   STR "Expected pointer type for ";
+                   STR par.apar_name;
+	           STR ", but found ";
+                   btype_to_pretty par.apar_type]) in
     match t with
     | TNamed (name,_) when type_definitions#has_type name ->
        type_definitions#get_type name

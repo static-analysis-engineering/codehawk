@@ -80,16 +80,21 @@ let read_xml_par_preconditions
   let t = ArgValue thispar in
   let ty () =
     match BCHTypeDefinitions.resolve_type (get_parameter_type thispar) with
-    | TFun _ -> get_parameter_type thispar
-    | TPtr (t, _) -> t
-    | THandle (s, _) -> TNamed (s, [])
+    | Ok (TFun _) -> get_parameter_type thispar
+    | Ok (TPtr (t, _)) -> t
+    | Ok (THandle (s, _)) -> TNamed (s, [])
     | _ ->
-      raise_xml_error node
-	(LBLOCK [
-             STR "Pre: Expected pointer type for ";
-             STR (get_parameter_name thispar);
-	     STR ", but found ";
-             btype_to_pretty (get_parameter_type thispar)]) in
+       match get_parameter_type thispar with
+       | TFun _ -> get_parameter_type thispar
+       | TPtr (t, _) -> t
+       | THandle (s, _) -> TNamed (s, [])
+       | _ ->
+          raise_xml_error node
+	    (LBLOCK [
+                 STR "Pre: Expected pointer type for ";
+                 STR (get_parameter_name thispar);
+	         STR ", but found ";
+                 btype_to_pretty (get_parameter_type thispar)]) in
   let getsize n typ =
     let has = n#hasNamedAttribute in
     let geti = n#getIntAttribute in
@@ -98,7 +103,7 @@ let read_xml_par_preconditions
     else if has "indexsize" then
       IndexSize (NumConstant (mkNumerical (geti "indexsize")))
     else match get_size_of_type typ with
-    | Some i -> NumConstant (mkNumerical i)
+    | Ok i -> NumConstant (mkNumerical i)
     | _ -> one in
   let aux node =
     match node#getTag with

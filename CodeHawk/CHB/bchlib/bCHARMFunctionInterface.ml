@@ -27,6 +27,7 @@
 
 (* chutil *)
 open CHFormatStringParser
+open CHTraceResult
 open CHUtil
 
 (* bchlib *)
@@ -497,34 +498,42 @@ let rec get_arm_struct_field_locations
           (parameter_location_t list * arm_argument_state_t) =
   let fieldstate = aa_state in
   let bftype = resolve_type (get_struct_field_type bfinfo) in
-  let (bfsize, bfoffset) =
-    match (get_struct_field_size bfinfo,
-           get_struct_field_offset bfinfo) with
-    | (Some s, Some o) -> (s, o)
-    | _ ->
+  match bftype with
+  | Error e ->
+     raise
+       (BCH_failure
+          (LBLOCK [
+               STR "Problem with type resolution: ";
+               STR (String.concat "; " e)]))
+  | Ok bftype ->
+     let (bfsize, bfoffset) =
+       match (get_struct_field_size bfinfo,
+              get_struct_field_offset bfinfo) with
+       | (Some s, Some o) -> (s, o)
+       | _ ->
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "get_arm_struct_field_locations: ";
+                    STR "no layout provided: ";
+                    fieldinfo_to_pretty bfinfo])) in
+     if (is_int bftype || is_pointer bftype) && bfsize = 4 then
+       let (loc, naas) =
+         get_int_paramloc_next_state bfsize bftype fieldstate in
+       ([loc], naas)
+     else if is_int bftype && bfsize < 4 then
+       let (loc, naas) =
+         get_int_paramlocpart_next_state bfsize bftype bfoffset fieldstate in
+       ([loc], naas)
+     else if is_array_type bftype then
+       get_arm_array_locations bfsize bftype bfoffset fieldstate
+     else
        raise
          (BCH_failure
             (LBLOCK [
                  STR "get_arm_struct_field_locations: ";
-                 STR "no layout provided: ";
-                 fieldinfo_to_pretty bfinfo])) in
-  if (is_int bftype || is_pointer bftype) && bfsize = 4 then
-    let (loc, naas) =
-      get_int_paramloc_next_state bfsize bftype fieldstate in
-    ([loc], naas)
-  else if is_int bftype && bfsize < 4 then
-    let (loc, naas) =
-      get_int_paramlocpart_next_state bfsize bftype bfoffset fieldstate in
-    ([loc], naas)
-  else if is_array_type bftype then
-    get_arm_array_locations bfsize bftype bfoffset fieldstate
-  else
-    raise
-      (BCH_failure
-         (LBLOCK [
-              STR "get_arm_struct_field_locations: ";
-              STR "not yet implemented: ";
-              btype_to_pretty bftype]))
+                 STR "not yet implemented: ";
+                 btype_to_pretty bftype]))
 
 
 and get_arm_array_locations
@@ -572,27 +581,36 @@ let arm_vfp_params (funargs: bfunarg_t list): fts_parameter_t list =
   let (_, _, params) =
     List.fold_left
       (fun (index, aa_state, params) (name, btype, _) ->
-        let btype = resolve_type btype in
-        let tysize = size_of_btype btype in
-        (* assume no packing at the argument top level *)
-        let size = if tysize < 4 then 4 else tysize in
-        let (param, new_state) =
-          if (is_int btype || is_pointer btype || is_enum btype) && size = 4 then
-            get_arm_int_param_next_state size name btype aa_state index
-          else if (is_int btype || is_pointer btype) then
-            get_long_int_param_next_state size name btype aa_state index
-          else if is_float btype then
-            get_float_param_next_state size name btype aa_state index
-          else if (is_struct_type btype )
-                  && (get_struct_type_compinfo btype).bcstruct then
-            get_arm_struct_param_next_state size name btype aa_state index
-          else
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "vfp_params: Not yet implemented; ";
-                      btype_to_pretty btype])) in
-        (index + 1, new_state, param :: params))
+        let btype_r = resolve_type btype in
+        let tysize_r = tbind size_of_btype btype_r in
+        match btype_r, tysize_r with
+        | Error e, _
+          | _, Error e ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Problem with type resolution: ";
+                     STR (String.concat "; " e)]))
+        | Ok btype, Ok tysize ->
+           (* assume no packing at the argument top level *)
+           let size = if tysize < 4 then 4 else tysize in
+           let (param, new_state) =
+             if (is_int btype || is_pointer btype || is_enum btype) && size = 4 then
+               get_arm_int_param_next_state size name btype aa_state index
+             else if (is_int btype || is_pointer btype) then
+               get_long_int_param_next_state size name btype aa_state index
+             else if is_float btype then
+               get_float_param_next_state size name btype aa_state index
+             else if (is_struct_type btype )
+                     && (get_struct_type_compinfo btype).bcstruct then
+               get_arm_struct_param_next_state size name btype aa_state index
+             else
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "vfp_params: Not yet implemented; ";
+                         btype_to_pretty btype])) in
+           (index + 1, new_state, param :: params))
       (1, aas_start_state, []) funargs in
   params
 
@@ -684,17 +702,22 @@ let get_arm_format_spec_parameters
             promote_int ftype
           else
             ftype in
-        let size = size_of_btype ftype in
+        let size_r = size_of_btype ftype in
         let name = "vararg_" ^ (string_of_int varargindex) in
         let (param, new_state) =
-          match size with
-          | 4 -> get_arm_int_param_next_state size name ftype aas nxtindex
-          | 8 -> get_long_int_param_next_state size name ftype aas varargindex
-          | _ ->
+          match size_r with
+          | Ok 4 -> get_arm_int_param_next_state 4 name ftype aas nxtindex
+          | Ok 8 -> get_long_int_param_next_state 8 name ftype aas varargindex
+          | Ok size ->
              raise
                (BCH_failure
                   (LBLOCK [
-                       STR "Var-arg size: "; INT size; STR " not supported"])) in
+                       STR "Var-arg size: "; INT size; STR " not supported"]))
+          | Error e ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Error in var-args: "; STR (String.concat "; " e)])) in
         (new_state, param :: accpars, varargindex + 1, nxtindex + 1))
       (fmtaas, [], 1, nextindex) argspecs in
   pars

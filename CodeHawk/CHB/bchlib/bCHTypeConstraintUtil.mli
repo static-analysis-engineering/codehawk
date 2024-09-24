@@ -177,7 +177,7 @@ val add_store_capability:
 
 
 val add_array_access_capability:
-  ?size:int -> ?offset:int -> type_variable_t -> type_variable_t
+  ?offset:int -> int -> type_variable_t -> type_variable_t
 
 
 (** Returns a new type variable that adds a capability for dereference, used
