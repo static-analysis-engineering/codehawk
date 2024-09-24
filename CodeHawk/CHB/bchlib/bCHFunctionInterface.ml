@@ -858,18 +858,30 @@ let demangled_name_to_function_interface (dm: demangled_name_t) =
     | _ -> None in
   let returntype =
     match dm.dm_returntype with Some t -> t | _ -> t_void in
-  let locdetail ty = default_parameter_location_detail ~ty (size_of_btype ty) in
-  let make_parameter index ty = {
-      apar_index = None;
-    apar_name = templated_btype_to_name ty (index + 1) ;
-    apar_type = ty ;
-    apar_desc = "" ;
-    apar_roles = [] ;
-    apar_io = ArgReadWrite ;
-    apar_location = [StackParameter (index + 1, locdetail ty)];
-    apar_size = size_of_btype ty;
-    apar_fmt = NoFormat
-    } in
+  let make_parameter index ty =
+    let typsize_r = size_of_btype ty in
+    match typsize_r with
+    | Error e ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Type resolution problem for ";
+                 STR (btype_to_string ty);
+                 STR ": ";
+                 STR (String.concat "; " e)]))
+    | Ok typsize ->
+       let locdetail = default_parameter_location_detail ~ty typsize in
+       {
+         apar_index = None;
+         apar_name = templated_btype_to_name ty (index + 1) ;
+         apar_type = ty ;
+         apar_desc = "" ;
+         apar_roles = [] ;
+         apar_io = ArgReadWrite ;
+         apar_location = [StackParameter (index + 1, locdetail)];
+         apar_size = typsize;
+         apar_fmt = NoFormat
+       } in
   let fts =
     { fts_parameters = List.mapi make_parameter dm.dm_parameter_types;
       fts_varargs = false;   (* TBD: to be investigated *)
@@ -952,10 +964,20 @@ let x86_cdecl_params (funargs: bfunarg_t list): fts_parameter_t list =
   let (_, _, params) =
     List.fold_left
       (fun (index, offset, params) (name, btype, _) ->
-        let tysize = size_of_btype btype in
-        let size = if tysize < 4 then 4 else tysize in
-        let par: fts_parameter_t =
-          mk_indexed_stack_parameter ~btype ~name ~size offset index in
+        let tysize_r = size_of_btype btype in
+        match tysize_r with
+        | Error e ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Unable to obtain size of type ";
+                     STR (btype_to_string btype);
+                     STR ": ";
+                     STR (String.concat "; " e)]))
+        | Ok tysize ->
+           let size = if tysize < 4 then 4 else tysize in
+           let par: fts_parameter_t =
+             mk_indexed_stack_parameter ~btype ~name ~size offset index in
            (index + 1, offset + size, par :: params)) (1, 4, []) funargs in
   params
 
@@ -964,38 +986,48 @@ let mips_params (funargs: bfunarg_t list): fts_parameter_t list =
   let (_, _, params) =
     List.fold_left
       (fun (index, ma_state, params) (name, btype, _) ->
-        let tysize = size_of_btype btype in
-        let size = if tysize < 4 then 4 else tysize in
-        let (param, nmas) =
-          match ma_state.mas_next_arg_reg with
-          | Some reg ->
-             let register = register_of_mips_register reg in
-             let par: fts_parameter_t =
-               mk_indexed_register_parameter ~btype ~name ~size register index in
-             let ncr = get_next_mips_arg_reg reg in
-             let nmas =
-               match ncr with
-               | Some _ -> {ma_state with mas_next_arg_reg = ncr}
-               | _ ->
-                  { mas_next_arg_reg = None;
-                    mas_next_offset = Some 16
-                  } in
-             (par, nmas)
-          | _ ->
-             (match ma_state.mas_next_offset with
-              | Some offset ->
-                 let par: fts_parameter_t =
-                   mk_indexed_stack_parameter ~btype ~name ~size offset index in
-                 let nmas =
-                   {ma_state with mas_next_offset = Some (offset + size)} in
-                 (par, nmas)
-              | _ ->
-                 raise
-                   (BCH_failure
-                      (LBLOCK [
-                           STR "mips_params: inconsistent state: ";
-                           STR " both next core register and stackoffset ";
-                           STR "are None"]))) in
+        let tysize_r = size_of_btype btype in
+        match tysize_r with
+        | Error e ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Unable to obtain size of type ";
+                     STR (btype_to_string btype);
+                     STR ": ";
+                     STR (String.concat "; " e)]))
+        | Ok tysize ->
+           let size = if tysize < 4 then 4 else tysize in
+           let (param, nmas) =
+             match ma_state.mas_next_arg_reg with
+             | Some reg ->
+                let register = register_of_mips_register reg in
+                let par: fts_parameter_t =
+                  mk_indexed_register_parameter ~btype ~name ~size register index in
+                let ncr = get_next_mips_arg_reg reg in
+                let nmas =
+                  match ncr with
+                  | Some _ -> {ma_state with mas_next_arg_reg = ncr}
+                  | _ ->
+                     { mas_next_arg_reg = None;
+                       mas_next_offset = Some 16
+                     } in
+                (par, nmas)
+             | _ ->
+                (match ma_state.mas_next_offset with
+                 | Some offset ->
+                    let par: fts_parameter_t =
+                      mk_indexed_stack_parameter ~btype ~name ~size offset index in
+                    let nmas =
+                      {ma_state with mas_next_offset = Some (offset + size)} in
+                    (par, nmas)
+                 | _ ->
+                    raise
+                      (BCH_failure
+                         (LBLOCK [
+                              STR "mips_params: inconsistent state: ";
+                              STR " both next core register and stackoffset ";
+                              STR "are None"]))) in
         (index + 1, nmas, param :: params)) (1, mas_start_state, []) funargs in
   params
 

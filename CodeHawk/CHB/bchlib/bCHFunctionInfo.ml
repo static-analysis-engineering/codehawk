@@ -881,22 +881,25 @@ object (self)
               let cinfo = bcfiles#get_compinfo fckey in
               let finfo = get_compinfo_field cinfo fname  in
               let finfotype = resolve_type finfo.bftype in
-              let foffset =
-                if is_struct_type finfotype then
-                  let subcinfo = get_struct_type_compinfo finfotype in
-                  let subfield0 = List.hd subcinfo.bcfields in
-                  let suboffset =
-                    FieldOffset ((subfield0.bfname, subfield0.bfckey), NoOffset) in
-                  FieldOffset ((fname, fckey), suboffset)
-                else
-                  FieldOffset ((fname, fckey), NoOffset) in
-              let var =
-                self#mk_variable
-                  (varmgr#make_global_variable
-                     ~offset:foffset base#to_numerical) in
-              let vname = basename ^ (memory_offset_to_string foffset) in
-              let _ = self#set_variable_name var vname in
-              var
+              (match finfotype with
+              | Error _ -> default ()
+              | Ok finfotype ->
+                 let foffset =
+                   if is_struct_type finfotype then
+                     let subcinfo = get_struct_type_compinfo finfotype in
+                     let subfield0 = List.hd subcinfo.bcfields in
+                     let suboffset =
+                       FieldOffset ((subfield0.bfname, subfield0.bfckey), NoOffset) in
+                     FieldOffset ((fname, fckey), suboffset)
+                   else
+                     FieldOffset ((fname, fckey), NoOffset) in
+                 let var =
+                   self#mk_variable
+                     (varmgr#make_global_variable
+                        ~offset:foffset base#to_numerical) in
+                 let vname = basename ^ (memory_offset_to_string foffset) in
+                 let _ = self#set_variable_name var vname in
+                 var)
            | _ ->
               default ())
        | _ ->

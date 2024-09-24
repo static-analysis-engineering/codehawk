@@ -34,6 +34,8 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
+open CHTimingLog
 
 (* bchlib *)
 open BCHBasicTypes
@@ -329,21 +331,31 @@ let add_trailing (numBytes: int) (roundto: int): int =
   (numBytes + roundto - 1) land (lnot (roundto - 1))
 
 
-let rec align_of_btype (t: btype_t): int =
+let rec align_of_btype (t: btype_t): int traceresult =
   match t with
-  | TInt (k, _) -> align_of_int_ikind k
+  | TInt (k, _) -> Ok (align_of_int_ikind k)
   | TEnum (name, _) when bcfiles#has_enuminfo name ->
      align_of_btype (TInt ((bcfiles#get_enuminfo name).bekind, []))
   | TEnum (name, _) ->
      let _ = chlog#add "unknown enum" (LBLOCK [STR "align: "; STR name]) in
      align_of_btype (TInt (IUInt, []))
-  | TFloat (fk, _, _) -> align_of_float_fkind fk
-  | TNamed (_name, _) -> align_of_btype (bcfiles#resolve_type t)
+  | TFloat (fk, _, _) -> Ok (align_of_float_fkind fk)
+  | TNamed (_name, _) ->
+     tbind
+       ~msg:"align_of_btype"
+       align_of_btype
+       (bcfiles#resolve_type t)
   | TComp (ckey, _) when bcfiles#has_compinfo ckey ->
      alignof_comp (bcfiles#get_compinfo ckey)
   | TComp (ckey, _) ->
-     let _ = chlog#add "unknown compinfo" (LBLOCK [STR "align: "; INT ckey]) in
-     align_of_btype (TInt (IUInt, []))
+     begin
+       log_error
+         "Struct key without definition: %d [%s:%d]"
+         ckey
+         __FILE__ __LINE__;
+       chlog#add "unknown compinfo" (LBLOCK [STR "align: "; INT ckey]);
+       Error ["Struct key without definition " ^ (btype_to_string t)]
+     end
   | TArray (tt, _, _) -> align_of_btype tt
   | TPtr _
     | TRef _
@@ -353,32 +365,65 @@ let rec align_of_btype (t: btype_t): int =
     | TClass _
     | TBuiltin_va_list _
     | TVarArg _
-    | TUnknown _ -> 4   (* all systems are 32-bit for now *)
-  | TVoid _ -> raise (BCH_failure (LBLOCK [STR "Alignof error: tvoid"]))
-  | TFun _ -> raise (BCH_failure (LBLOCK [STR "Alignof error: tfun"]))
+    | TUnknown _ -> Ok 4   (* all systems are 32-bit for now *)
+  | TVoid _ -> Error ["Unable to determine alignment for void"]
+  | TFun _ ->
+     Error ["Unable to determine alignment of function: "
+            ^ (btype_to_string t)]
 
 
-and alignof_comp (comp: bcompinfo_t): int =
+and alignof_comp (comp: bcompinfo_t): int traceresult =
   let aligns = List.map (fun finfo -> align_of_btype finfo.bftype) comp.bcfields in
-  List.fold_left (fun mx a -> if a > mx then a else mx) 0 aligns
+  tfold_list_fail (fun mx a -> if a > mx then a else mx) (Ok 0) aligns
 
 
-and size_of_btype (t: btype_t): int =
+and size_of_btype (t: btype_t): int traceresult =
   match t with
-  | TInt (ik, _) -> size_of_int_ikind ik
-  | TFloat (fk, _, _) -> size_of_float_fkind fk
+  | TInt (ik, _) -> Ok (size_of_int_ikind ik)
+  | TFloat (fk, _, _) -> Ok (size_of_float_fkind fk)
   | TEnum (name, _) when bcfiles#has_enuminfo name ->
      size_of_btype (TInt ((bcfiles#get_enuminfo name).bekind, []))
   | TEnum (name, _) ->
-     let _ = chlog#add "unknown enum" (LBLOCK [STR "size: "; STR name]) in
-     size_of_btype (TInt (IUInt, []))
+     begin
+       log_error
+         "Unable to resolve enum info for %s (assuming unsigned int) [%s:%d]"
+         name
+         __FILE__ __LINE__;
+       chlog#add "unknown enum" (LBLOCK [STR "size: "; STR name]);
+       size_of_btype (TInt (IUInt, []))
+     end
   | TArray (tt, Some len, _) -> size_of_btype_array tt len
-  | TArray (_, _, _) -> 0
+  | TArray (_, _, _) ->
+     Error ["Unable to determine size of array without length: "
+            ^ (btype_to_string t)]
   | TComp (ckey, _) when bcfiles#has_compinfo ckey ->
      size_of_btype_comp (bcfiles#get_compinfo ckey)
   | TComp (ckey, _) ->
-     let _ = chlog#add "unknown compinfo" (LBLOCK [STR "size: "; INT ckey]) in 0
-  | TNamed _ -> size_of_btype (bcfiles#resolve_type t)
+     begin
+       log_error
+         "Struct key without definition: %d [%s:%d]"
+         ckey
+         __FILE__ __LINE__;
+       chlog#add "unknown compinfo" (LBLOCK [STR "size: "; INT ckey]);
+       Error ["Struct key without definition: " ^ (btype_to_string t)]
+     end
+  | TNamed (name, _) ->
+     tbind
+       ~msg:("size_of_btype: " ^ name)
+       size_of_btype
+       (bcfiles#resolve_type t)
+       (*
+     let t_r = bcfiles#resolve_type t in
+     (match t_r with
+      | Ok v -> size_of_btype v
+      | Error e ->
+         begin
+           log_error
+             "type resolution problem (default type size: 4): %s [%s:%d]"
+             (String.concat "; " e)
+             __FILE__ __LINE__;
+           4
+         end) *)
   | TPtr _
     | TVoid _
     | TRef _
@@ -388,56 +433,71 @@ and size_of_btype (t: btype_t): int =
     | TClass _
     | TBuiltin_va_list _
     | TVarArg _
-    | TUnknown _ -> 4   (* all systems are 32-bit for now *)
+    | TUnknown _ -> Ok 4   (* all systems are 32-bit for now *)
   (* | TVoid _ -> raise (BCH_failure (LBLOCK [STR "Type size error: tvoid"])) *)
-  | TFun _ -> raise (BCH_failure (LBLOCK [STR "Type size error: tfun"]))
+  | TFun _ ->
+     Error ["unable to get size of function type: " ^ (btype_to_string t)]
 
 
-and size_of_btype_array (t: btype_t) (len: bexp_t) =
-  let rec getlen e =
+and size_of_btype_array (t: btype_t) (len: bexp_t): int traceresult =
+  let rec getlen (e: bexp_t): int traceresult =
     match e with
-    | Const (CInt (i64, _, _)) -> Int64.to_int i64
-    | BinOp (PlusA, e1, e2, _) -> (getlen e1) + (getlen e2)
-    | BinOp (MinusA, e1, e2, _) -> (getlen e1) - (getlen e2)
+    | Const (CInt (i64, _, _)) -> Ok (Int64.to_int i64)
+    | BinOp (PlusA, e1, e2, _) ->
+       tmap2
+         (fun v1 v2 -> v1 + v2)
+         (getlen e1)
+         (getlen e2)
+    | BinOp (MinusA, e1, e2, _) ->
+       tmap2
+         (fun v1 v2 -> v1 - v2)
+         (getlen e1)
+         (getlen e2)
     | SizeOf t -> size_of_btype t
     | _ ->
-       let _ =
-         ch_diagnostics_log#add
-           "array size expression" (STR (exp_to_string e)) in 0 in
+       Error ["Unable to evaluate array size expressing: " ^ (exp_to_string e)] in
+
   let arraylen = getlen len in
   let elementsize = size_of_btype t in
-  let elementsize = add_trailing elementsize (align_of_btype t) in
-  arraylen * elementsize
+  let elementsize =
+    tmap2 (fun s a -> add_trailing s a) elementsize (align_of_btype t) in
+  tmap2 (fun v1 v2 -> v1 * v2) arraylen elementsize
 
 
-and size_of_btype_comp (comp: bcompinfo_t): int =
+and size_of_btype_comp (comp: bcompinfo_t): int traceresult =
   if comp.bcstruct then
     let lastoff =
-      List.fold_left (fun acc finfo ->
-          offset_of_field_acc ~finfo ~acc) start_oa comp.bcfields in
+      List.fold_left (fun acc_r finfo ->
+          tbind (fun acc -> offset_of_field_acc ~finfo ~acc) acc_r)
+        (Ok start_oa) comp.bcfields in
     let size =
-      add_trailing lastoff.oa_first_free (align_of_btype (TComp (comp.bckey, []))) in
+      tmap2 (fun o a -> add_trailing o.oa_first_free a)
+        lastoff (align_of_btype (TComp (comp.bckey, []))) in
     size
   else    (* union *)
+    let fieldsizes =
+      List.map (fun finfo -> size_of_btype finfo.bftype) comp.bcfields in
     let size =
-      List.fold_left (fun mx finfo ->
-          let fsize = size_of_btype finfo.bftype in
-          if fsize > mx then
-            fsize
-          else
-            mx) 0 comp.bcfields in
+      tfold_list_fail (fun mx a -> if a > mx then a else mx) (Ok 0) fieldsizes in
     size
 
 
-and offset_of_field_acc ~(finfo: bfieldinfo_t) ~(acc: offset_accumulator_t) =
+and offset_of_field_acc
+~(finfo: bfieldinfo_t)
+~(acc: offset_accumulator_t): offset_accumulator_t traceresult =
   let ftype = bcfiles#resolve_type finfo.bftype in
-  let falign = align_of_btype ftype in
-  let fsize = size_of_btype ftype in
-  let newstart = add_trailing acc.oa_first_free falign in
-  {oa_first_free = newstart + fsize;
-   oa_last_field_start = newstart;
-   oa_last_field_width = fsize
-  }
+  let falign = tbind align_of_btype ftype in
+  let fsize = tbind size_of_btype ftype in
+  let newstart =
+    tmap2 (fun o a -> add_trailing o a) (Ok acc.oa_first_free) falign in
+  tmap2
+    (fun newstart fsize ->
+      {oa_first_free = newstart + fsize;
+       oa_last_field_start = newstart;
+       oa_last_field_width = fsize
+    })
+    newstart
+    fsize
 
 (* =============================================================== comparison *)
 
@@ -882,21 +942,59 @@ let layout_fields (comp: bcompinfo_t): bcompinfo_t =
     comp
   else
     if comp.bcstruct then
-      let (_, newfields) =
-        List.fold_left (fun (acc, fields) finfo ->
-            let fieldoffset = offset_of_field_acc ~finfo ~acc in
-            let fieldlayout =
-              Some (fieldoffset.oa_last_field_start,
-                    fieldoffset.oa_last_field_width) in
-            (fieldoffset, {finfo with bfieldlayout = fieldlayout} :: fields))
-          (start_oa, []) comp.bcfields in
-      {comp with bcfields = List.rev newfields}
+      let (acc_r, newfields) =
+        List.fold_left (fun (acc_r, fields) finfo ->
+            match acc_r with
+            | Error e -> (Error e, [])
+            | Ok acc ->
+               let fieldoffset_r = offset_of_field_acc ~finfo ~acc in
+               let fieldlayout_r =
+                 tmap
+                   (fun fieldoffset ->
+                     Some (fieldoffset.oa_last_field_start,
+                           fieldoffset.oa_last_field_width))
+                   fieldoffset_r in
+               match fieldoffset_r, fieldlayout_r with
+               | Ok fieldoffset, Ok fieldlayout ->
+                  (Ok fieldoffset,
+                   {finfo with bfieldlayout = fieldlayout} :: fields)
+               | Error e, _
+                 | _, Error e -> (Error e, [])) ((Ok start_oa), []) comp.bcfields in
+      match acc_r with
+      | Ok _ -> {comp with bcfields = List.rev newfields}
+      | Error e ->
+         begin
+           log_error
+             "Unable to layout fields for struct %s: %s [%s:%d]"
+             comp.bcname
+             (String.concat ", " e)
+             __FILE__ __LINE__;
+           comp
+         end
     else   (* union *)
-      let newfields =
-        List.map (fun finfo ->
-            let fieldlayout = Some (0, size_of_btype finfo.bftype) in
-            {finfo with bfieldlayout = fieldlayout}) comp.bcfields in
-      {comp with bcfields = newfields}
+      let newfields_r =
+        List.fold_left (fun acc_r finfo ->
+            match acc_r with
+            | Error e -> Error e
+            | Ok acc ->
+               let fieldlayout_r =
+                 tmap (fun s -> Some (0, s)) (size_of_btype finfo.bftype) in
+               match fieldlayout_r with
+               | Ok fieldlayout ->
+                  Ok (({finfo with bfieldlayout = fieldlayout}) :: acc)
+               | Error e -> Error e)
+          (Ok []) comp.bcfields in
+      match newfields_r with
+      | Ok newfields -> {comp with bcfields = newfields}
+      | Error e ->
+         begin
+           log_error
+             "Unable to layout fields for union %s: %s [%s:%d]"
+             comp.bcname
+             (String.concat "; " e)
+             __FILE__ __LINE__;
+           comp
+         end
 
 
 let get_struct_field_name (bfinfo: bfieldinfo_t): string = bfinfo.bfname
@@ -921,11 +1019,19 @@ let get_struct_field_size (bfinfo: bfieldinfo_t): int option =
 
 let get_struct_type_compinfo (ty: btype_t): bcompinfo_t =
   match bcfiles#resolve_type ty with
-  | TComp (ckey, _) -> bcfiles#get_compinfo ckey
-  | _ ->
+  | Ok ty ->
+     (match ty with
+      | TComp (ckey, _) -> bcfiles#get_compinfo ckey
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Type is not a struct: "; btype_to_pretty ty])))
+  | Error e ->
      raise
        (BCH_failure
-          (LBLOCK [STR "Type is not a struct: "; btype_to_pretty ty]))
+          (LBLOCK [
+               STR "Problem with type resolution in obtaining struct: ";
+               STR (String.concat "; " e)]))
 
 
 let get_compinfo_by_key (ckey: int): bcompinfo_t =
@@ -957,66 +1063,101 @@ let get_struct_field_at_offset
     if offset = 0 then
       Some (field0, 0)
     else
-      let field0type = resolve_type field0.bftype in
-      if offset < size_of_btype field0type then
-        Some (field0, offset)
-      else
-        List.fold_left (fun acc finfo ->
-            match acc with
-            | Some _ -> acc
-            | _ ->
-               match finfo.bfieldlayout with
-               | Some (foffset, size) ->
-                  if offset = foffset then
-                    Some (finfo, 0)
-                  else if offset > foffset && offset < foffset + size then
-                    Some (finfo, offset - foffset)
-                  else
-                    None
-               | _ -> None) None finfos
+      let field0type_r = resolve_type field0.bftype in
+      let field0size_r = tbind size_of_btype field0type_r in
+      match field0size_r with
+      | Ok field0size ->
+         if offset < field0size then
+           Some (field0, offset)
+         else
+           List.fold_left (fun acc finfo ->
+               match acc with
+               | Some _ -> acc
+               | _ ->
+                  match finfo.bfieldlayout with
+                  | Some (foffset, size) ->
+                     if offset = foffset then
+                       Some (finfo, 0)
+                     else if offset > foffset && offset < foffset + size then
+                       Some (finfo, offset - foffset)
+                     else
+                       None
+                  | _ -> None) None finfos
+      | Error e ->
+         begin
+           log_error
+             "Unable to obtain struct field at offset for %s: %s [%s:%d]"
+             cinfo.bcname
+             (String.concat "; " e)
+             __FILE__ __LINE__;
+           None
+         end
 
 
 let rec get_compinfo_scalar_type_at_offset
           (cinfo: bcompinfo_t) (offset: int): btype_t option =
   let finfos = cinfo.bcfields in
   let field0 = List.hd finfos in
-  let field0type = resolve_type field0.bftype in
-  if offset = 0 then
-    if is_struct_type field0type then
-      let subcinfo = get_struct_type_compinfo field0type in
-      get_compinfo_scalar_type_at_offset subcinfo 0
-    else
-      Some field0type
-  else if offset < (size_of_btype field0type) then
-    if is_struct_type field0type then
-      let subcinfo = get_struct_type_compinfo field0type in
-      get_compinfo_scalar_type_at_offset subcinfo offset
-    else
-      None
-  else
-    List.fold_left (fun acc finfo ->
-        match acc with
-        | Some _ -> acc
-        | _ ->
-           match finfo.bfieldlayout with
-           | Some (foffset, size) ->
-              let fieldtype = resolve_type finfo.bftype in
-              if offset = foffset then
-                if is_struct_type fieldtype then
-                  let subcinfo = get_struct_type_compinfo fieldtype in
-                  get_compinfo_scalar_type_at_offset subcinfo 0
-                else
-                  Some fieldtype
-              else if offset > foffset && offset < foffset + size then
-                if is_struct_type fieldtype then
-                  let subcinfo = get_struct_type_compinfo fieldtype in
-                  get_compinfo_scalar_type_at_offset subcinfo (offset - foffset)
-                else
-                  None
-              else
-                None
+  let field0type_r = resolve_type field0.bftype in
+  let field0size_r = tbind size_of_btype field0type_r in
+  match field0type_r, field0size_r with
+  | Error e, _
+    | _, Error e ->
+     begin
+       log_error
+         "Unable to get struct scalar type at offset for %s: %s [%s:%d]"
+         cinfo.bcname
+         (String.concat "; " e)
+         __FILE__ __LINE__;
+       None
+     end
+  | Ok field0type, Ok field0size ->
+     if offset = 0 then
+       if is_struct_type field0type then
+         let subcinfo = get_struct_type_compinfo field0type in
+         get_compinfo_scalar_type_at_offset subcinfo 0
+       else
+         Some field0type
+     else if offset < field0size then
+       if is_struct_type field0type then
+         let subcinfo = get_struct_type_compinfo field0type in
+         get_compinfo_scalar_type_at_offset subcinfo offset
+       else
+         None
+     else
+       List.fold_left (fun acc finfo ->
+           match acc with
+           | Some _ -> acc
            | _ ->
-              None) None finfos
+              match finfo.bfieldlayout with
+              | Some (foffset, size) ->
+                 let fieldtype = resolve_type finfo.bftype in
+                 (match fieldtype with
+                 | Error e ->
+                    begin
+                      log_error
+                        "Problem with type resolution: %s [%s:%d]"
+                        (String.concat "; " e)
+                        __FILE__ __LINE__;
+                      None
+                    end
+                 | Ok fieldtype ->
+                    if offset = foffset then
+                      if is_struct_type fieldtype then
+                        let subcinfo = get_struct_type_compinfo fieldtype in
+                        get_compinfo_scalar_type_at_offset subcinfo 0
+                      else
+                        Some fieldtype
+                    else if offset > foffset && offset < foffset + size then
+                      if is_struct_type fieldtype then
+                        let subcinfo = get_struct_type_compinfo fieldtype in
+                        get_compinfo_scalar_type_at_offset subcinfo (offset - foffset)
+                      else
+                        None
+                    else
+                      None)
+              | _ ->
+                 None) None finfos
 
 
 let get_compinfo_struct_type (c: bcompinfo_t): btype_t = TComp (c.bckey, [])
@@ -1033,36 +1174,42 @@ let get_struct_type_fields (ty: btype_t): bfieldinfo_t list =
 
 let struct_field_categories (ty: btype_t): string list =
   match bcfiles#resolve_type ty with
-  | TPtr (TPtr (TComp (ckey, _), _), _)
-  | TPtr (TComp (ckey, _), _) ->
-     let compinfo = bcfiles#get_compinfo ckey in
-     List.map (fun f ->
-         match f.bftype with
-         | TInt _ -> "value"
-         | TPtr (TInt _, _) -> "string"
-         | TPtr (TFun _, _) -> "address"
-         | _ -> "unknown") compinfo.bcfields
+  | Error e -> e
+  | Ok ty ->
+     match ty with
+     | TPtr (TPtr (TComp (ckey, _), _), _)
+       | TPtr (TComp (ckey, _), _) ->
+        let compinfo = bcfiles#get_compinfo ckey in
+        List.map (fun f ->
+            match f.bftype with
+            | TInt _ -> "value"
+            | TPtr (TInt _, _) -> "string"
+            | TPtr (TFun _, _) -> "address"
+            | _ -> "unknown") compinfo.bcfields
 
-  | rty -> [btype_to_string ty; btype_to_string rty]
+     | rty -> [btype_to_string ty; btype_to_string rty]
 
 
 let struct_offset_field_categories (ty: btype_t): (int * string) list =
   match bcfiles#resolve_type ty with
-  | TPtr (TPtr (TComp (ckey, _), _), _)
-    | TPtr (TComp (ckey, _), _) ->
-     let compinfo = bcfiles#get_compinfo ckey in
-     List.map (fun f ->
-         match f.bfieldlayout with
-         | Some (offset, _) ->
-            (match f.bftype with
-             | TInt _ -> (offset, "value")
-             | TPtr (TInt _, _) -> (offset, "string-address")
-             | TArray (TInt _, _, _) -> (offset, "string")
-             | _ -> (offset, "unknown"))
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "Struct definition has no field layout: ";
-                      STR (btype_to_string ty)]))) compinfo.bcfields
-  | _ -> [(0, btype_to_string ty)]
+  | Error e -> List.map (fun s -> (0, s)) e
+  | Ok ty ->
+     match ty with
+     | TPtr (TPtr (TComp (ckey, _), _), _)
+       | TPtr (TComp (ckey, _), _) ->
+        let compinfo = bcfiles#get_compinfo ckey in
+        List.map (fun f ->
+            match f.bfieldlayout with
+            | Some (offset, _) ->
+               (match f.bftype with
+                | TInt _ -> (offset, "value")
+                | TPtr (TInt _, _) -> (offset, "string-address")
+                | TArray (TInt _, _, _) -> (offset, "string")
+                | _ -> (offset, "unknown"))
+            | _ ->
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Struct definition has no field layout: ";
+                         STR (btype_to_string ty)]))) compinfo.bcfields
+     | _ -> [(0, btype_to_string ty)]

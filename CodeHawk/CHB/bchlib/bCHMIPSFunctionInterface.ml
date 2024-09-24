@@ -131,16 +131,22 @@ let get_mips_format_spec_parameters
   let (_, pars, _, _) =
     List.fold_left (fun (mas, accpars, varargindex, nxtindex) argspec ->
         let ftype = get_fmt_spec_type argspec in
-        let size = size_of_btype ftype in
+        let size_r = size_of_btype ftype in
         let name = "vararg_" ^ (string_of_int varargindex) in
         let (param, new_state) =
-          match size with
-          | 4 -> get_mips_int_param_next_state size name ftype mas nxtindex
-          | _ ->
+          match size_r with
+          | Ok 4 -> get_mips_int_param_next_state 4 name ftype mas nxtindex
+          | Ok size ->
              raise
                (BCH_failure
                   (LBLOCK [
-                       STR "Var-arg size: "; INT size; STR " not supported"])) in
+                       STR "Var-arg size: "; INT size; STR " not supported"]))
+          | Error e ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Error in mips_format_spec_parameters: ";
+                       STR (String.concat "; " e)])) in
         (new_state, param :: accpars, varargindex + 1, nxtindex + 1))
       (fmtmas, [], 1, nextindex) argspecs in
   pars

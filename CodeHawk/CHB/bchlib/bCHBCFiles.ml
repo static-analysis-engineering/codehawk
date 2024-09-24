@@ -30,6 +30,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
@@ -204,8 +205,8 @@ object (self)
         (BCH_failure
            (LBLOCK [STR "No typedef found with name "; STR name]))
 
-  method resolve_type (ty: btype_t): btype_t =
-    let rec aux (t: btype_t) =
+  method resolve_type (ty: btype_t): btype_t traceresult =
+    let rec aux (t: btype_t): btype_t traceresult =
       match t with
       | TVoid _
         | TInt _
@@ -218,25 +219,40 @@ object (self)
         | TClass _
         | TBuiltin_va_list _
         | TVarArg _
-        | TUnknown _ -> t
-      | TPtr (tt, a) -> TPtr (aux tt, a)
-      | TRef (tt, a) -> TRef (aux tt, a)
-      | TArray (tt, e, a) -> TArray (aux tt, e, a)
-      | TFun (tt, fs, b, a) -> TFun (aux tt, auxfs fs, b, a)
+        | TUnknown _ -> Ok t
+      | TPtr (tt, a) -> tmap (fun v -> TPtr (v, a)) (aux tt)
+      | TRef (tt, a) -> tmap (fun v -> TRef (v, a)) (aux tt)
+      | TArray (tt, e, a) -> tmap (fun v -> TArray (v, e, a)) (aux tt)
+      | TFun (tt, fs, b, a) ->
+         let auxtt_r = aux tt in
+         let auxfs_r = auxfs fs in
+         (match auxtt_r, auxfs_r with
+          | Ok v1, Ok v2 -> Ok (TFun (v1, v2, b, a))
+          | Error e1, Ok _ -> Error e1
+          | Ok _, Error e2 -> Error e2
+          | Error e1, Error e2 -> Error (e1 @ e2))
       | TNamed (name, a) when self#has_typedef name ->
          aux (add_attributes (self#get_typedef name) a)
       | TNamed (name, _) ->
-         begin
-           ch_diagnostics_log#add
-             "unknown typedef"
-             (LBLOCK [STR "Named type "; STR name; STR " not defined"]);
-           t
-         end
+         Error ["resolve_type: type name not found: " ^ name]
 
-    and auxfs (fs: bfunarg_t list option): bfunarg_t list option =
+    and auxfs (fs: bfunarg_t list option): bfunarg_t list option traceresult =
       match fs with
-      | None -> None
-      | Some l -> Some (List.map (fun (s, t, a) -> (s, aux t, a)) l)
+      | None -> Ok None
+      | Some l ->
+         let fs_r = List.map (fun (s, t, a) -> (s, aux t, a)) l in
+         let fs_r =
+           List.fold_left (fun acc (s, t_r, a) ->
+               match acc with
+               | Error _ -> acc
+               | Ok accv ->
+                  (match t_r with
+                   | Error e -> Error e
+                   | Ok v -> Ok ((s, v, a) :: accv))) (Ok []) fs_r in
+         match fs_r with
+         | Ok v -> Ok (Some v)
+         | Error e -> Error e
+                        (* Some (List.map (fun (s, t, a) -> (s, aux t, a)) l) *)
 
     in
     aux ty

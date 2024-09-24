@@ -34,6 +34,8 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTimingLog
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -105,59 +107,90 @@ object (self)
             acc) globalarrayvars false
 
   method private get_fieldoffset_at
-                   (c: bcompinfo_t) (offset: int):(boffset_t * int) =
+                   (c: bcompinfo_t) (offset: int):(boffset_t * int) traceresult =
     (* Note: this function will not resolve the first field (at offset 0)
        to the lowest scalar field, just to the topmost field at offset 0 *)
     let finfos = c.bcfields in
     let fld0 = List.hd finfos in
-    if offset = 0 then
-      (Field ((fld0.bfname, fld0.bfckey), NoOffset), 0)
-    else if offset < (size_of_btype fld0.bftype) then
-      (* offset is within the first field *)
-      match bcfiles#resolve_type fld0.bftype with
-      | TComp (ffkey, _) ->
-         let fcompinfo = bcfiles#get_compinfo ffkey in
-         let (bboffset, rem) =
-           self#get_fieldoffset_at fcompinfo offset in
-         (Field ((fld0.bfname, fld0.bfckey), bboffset), rem)
-      | ty when is_scalar ty && (size_of_btype ty) = offset ->
-         (Field ((fld0.bfname, fld0.bfckey), NoOffset), 0)
-      | _ ->
-         let _ =
-           chlog#add
-             "get_fieldoffset_at"
-             (LBLOCK
-                [STR "compinfo: "; STR c.bcname; STR "; offset: "; INT offset]) in
-         (Field ((fld0.bfname, fld0.bfckey), NoOffset), offset)
-    else
-      let optfield =
-        List.fold_left (fun acc finfo ->
-            match acc with
-            | Some _ -> acc
-            | _ ->
-               match finfo.bfieldlayout with
-               | Some (foffset, size) ->
-                  if offset = foffset then
-                    Some (Field ((finfo.bfname, finfo.bfckey), NoOffset), 0)
-                  else if offset > foffset && offset < foffset + size then
-                    match bcfiles#resolve_type finfo.bftype with
-                    | TComp (ffkey, _) ->
-                       let fcompinfo = bcfiles#get_compinfo ffkey in
-                       let (bboffset, rem) =
-                         self#get_fieldoffset_at fcompinfo (offset - foffset) in
-                       Some (Field ((finfo.bfname, finfo.bfckey), bboffset), rem)
-                    | ty when is_scalar ty && (size_of_btype ty) = offset ->
-                       Some (Field ((finfo.bfname, finfo.bfckey), NoOffset), 0)
-                    | _ ->
-                       Some (Field ((finfo.bfname, finfo.bfckey), NoOffset),
-                             offset - foffset)
-                  else
-                    acc
-               | _ ->
-                  acc) None (List.tl finfos) in
-      match optfield with
-      | Some (offset, rem) -> (offset, rem)
-      | _ -> (NoOffset, offset)
+    let fld0type_r = bcfiles#resolve_type fld0.bftype in
+    let fld0size_r = tbind size_of_btype fld0type_r in
+    match fld0type_r, fld0size_r with
+    | Error e, _
+      | _, Error e -> Error e
+
+    | Ok fld0type, Ok fld0size ->
+       if offset = 0 then
+         Ok ((Field ((fld0.bfname, fld0.bfckey), NoOffset), 0))
+       else if offset < fld0size then
+         (* offset is within the first field *)
+         match fld0type with
+         | TComp (ffkey, _) ->
+            let fcompinfo = bcfiles#get_compinfo ffkey in
+            (match self#get_fieldoffset_at fcompinfo offset with
+             | Error e -> Error e
+             | Ok (bboffset, rem) ->
+                Ok ((Field ((fld0.bfname, fld0.bfckey), bboffset), rem)))
+         | ty when is_scalar ty && fld0size = offset ->
+            Ok ((Field ((fld0.bfname, fld0.bfckey), NoOffset), 0))
+         | _ ->
+            begin
+              log_warning
+                "Unable to determine field offset for %s at %d [%s:%d]"
+                c.bcname
+                offset
+                __FILE__ __LINE__;
+              Error [
+                  "get_fieldoffset_at for "
+                  ^ c.bcname
+                  ^ " at "
+                  ^ (string_of_int offset)]
+            end
+       else
+         let optfield_r =
+           List.fold_left (fun acc_r finfo ->
+               match acc_r with
+               | Error e -> Error e
+               | Ok acc ->
+                  match acc with
+                  | Some _ -> Ok acc
+                  | _ ->
+                     let fldtype_r = bcfiles#resolve_type finfo.bftype in
+                     let fldsize_r = tbind size_of_btype fldtype_r in
+                     match fldtype_r, fldsize_r with
+                     | Error e, _
+                       | _, Error e -> Error e
+                     | Ok fldtype, Ok fldsize ->
+                        match finfo.bfieldlayout with
+                        | Some (foffset, size) ->
+                           if offset = foffset then
+                             Ok (Some (Field
+                                         ((finfo.bfname, finfo.bfckey), NoOffset),
+                                       0))
+                           else if offset > foffset && offset < foffset + size then
+                             match fldtype with
+                             | TComp (ffkey, _) ->
+                                let fcompinfo = bcfiles#get_compinfo ffkey in
+                                (match self#get_fieldoffset_at
+                                         fcompinfo (offset - foffset) with
+                                 | Error e -> Error e
+                                 | Ok (bboffset, rem) ->
+                                    Ok (Some (Field
+                                            ((finfo.bfname, finfo.bfckey),
+                                             bboffset), rem)))
+                             | ty when is_scalar ty && fldsize = offset ->
+                                Ok (Some (Field
+                                        ((finfo.bfname, finfo.bfckey), NoOffset), 0))
+                             | _ ->
+                                Ok (Some (Field
+                                            ((finfo.bfname, finfo.bfckey), NoOffset),
+                                          offset - foffset))
+                           else
+                             Ok acc
+                        | _ -> Ok acc) (Ok None) (List.tl finfos) in
+         match optfield_r with
+         | Error e -> Error e
+         | Ok (Some (offset, rem)) -> Ok (offset, rem)
+         | _ -> Ok (NoOffset, offset)
 
 
   method get_structvar_base_offset
@@ -178,26 +211,39 @@ object (self)
          if H.mem address_table base then
            let constdef = H.find address_table base in
            (match bcfiles#resolve_type constdef.xconst_type with
-            | TComp (key, _) ->
-               let compinfo = bcfiles#get_compinfo key in
-               let (offset, rem) = self#get_fieldoffset_at compinfo dwoffset in
-               if rem = 0 then
-                 Some (TR.tget_ok (int_to_doubleword base), offset)
-               else
-                 let _ =
-                   chlog#add
-                     "get_structvar_base_offset"
-                     (LBLOCK [
-                          dw#toPretty;
-                          STR "; base: ";
-                          (TR.tget_ok (int_to_doubleword base))#toPretty;
-                          STR "; compinfo: ";
-                          compinfo_to_pretty compinfo;
-                          STR ": remaining offset: ";
-                          INT rem]) in
-                 None
-            | _ ->
-               None)
+            | Error _ -> None
+            | Ok ty ->
+               (match ty with
+                | TComp (key, _) ->
+                   let compinfo = bcfiles#get_compinfo key in
+                   (match self#get_fieldoffset_at compinfo dwoffset with
+                   | Error e ->
+                      begin
+                        log_warning
+                          "Unable to obtain structvar offset for %s: %s [%s:%d]"
+                          dw#to_hex_string
+                          (String.concat "; " e)
+                          __FILE__ __LINE__;
+                        None
+                      end
+                   | Ok (offset, rem) ->
+                      if rem = 0 then
+                        Some (TR.tget_ok (int_to_doubleword base), offset)
+                      else
+                        let _ =
+                          chlog#add
+                            "get_structvar_base_offset"
+                            (LBLOCK [
+                                 dw#toPretty;
+                                 STR "; base: ";
+                                 (TR.tget_ok (int_to_doubleword base))#toPretty;
+                                 STR "; compinfo: ";
+                                 compinfo_to_pretty compinfo;
+                                 STR ": remaining offset: ";
+                                 INT rem]) in
+                        None)
+                | _ ->
+                   None))
          else
            None
       | _ ->
@@ -223,18 +269,26 @@ object (self)
          if H.mem address_table base then
            let constdef = H.find address_table base in
            (match bcfiles#resolve_type constdef.xconst_type with
-            | TArray (ty, _optlen, _) as btype ->
-               let elsize = size_of_btype ty in
-               if elsize > 0 then
-                 let elindex = dwoffset / elsize in
-                 let boffset =
-                   Index
-                     (Const (CInt (Int64.of_int elindex, IInt, None)), NoOffset) in
-                 Some (TR.tget_ok (int_to_doubleword base), boffset, btype)
-               else
-                 None
-            | _ ->
-               None)
+            | Error _ -> None
+            | Ok ty ->
+               (match ty with
+                | TArray (ty, _optlen, _) as btype ->
+                   let elsize_r = size_of_btype ty in
+                   (match elsize_r with
+                    | Error _ -> None
+                    | Ok elsize ->
+                      if elsize > 0 then
+                        let elindex = dwoffset / elsize in
+                        let boffset =
+                          Index
+                            (Const
+                               (CInt
+                                  (Int64.of_int elindex, IInt, None)), NoOffset) in
+                        Some (TR.tget_ok (int_to_doubleword base), boffset, btype)
+                      else
+                        None)
+                | _ ->
+                   None))
          else
            None
       | _ -> None
@@ -243,52 +297,61 @@ object (self)
 
   method private update_structured_var (a: constant_definition_t) =
     match bcfiles#resolve_type a.xconst_type with
-    | TComp (key, _) as ty ->
-       let compinfo = bcfiles#get_compinfo key in
-       let size = size_of_btype ty in
-       begin
-         H.replace globalstructvars a.xconst_value#index size;
-         chlog#add
-           "set global structvar size"
-           (LBLOCK [
-                STR a.xconst_name;
-                STR "; ";
-                STR a.xconst_value#to_hex_string;
-                STR ". ";
-                STR compinfo.bcname;
-                STR ": ";
-                INT size])
-       end
-    | TArray (ty, optlen, _) ->
-       (match optlen with
-        | Some (Const (CInt (i64, _, _))) ->
-           let arraylen = Int64.to_int i64 in
-           let elsize = size_of_btype ty in
-           let arraysize = arraylen * elsize in
-           begin
-             H.replace globalarrayvars a.xconst_value#index arraysize;
-             chlog#add
-               "set global arrayvar size"
-               (LBLOCK [
-                    STR a.xconst_name;
-                    STR "; ";
-                    STR a.xconst_value#to_hex_string;
-                    STR ". ";
-                    STR "length: ";
-                    INT arraylen;
-                    STR "; size: ";
-                    INT arraysize])
-           end
-        | _ ->
-           chlog#add
-             "global array without length"
-             (LBLOCK [
-                  STR a.xconst_name;
-                  STR "; ";
-                  STR a.xconst_value#to_hex_string;
-                  STR "."]))
-    | _ ->
-       ()
+    | Error _ -> ()
+    | Ok ty ->
+       match ty with
+       | TComp (key, _) as ty ->
+          let compinfo = bcfiles#get_compinfo key in
+          let size_r = size_of_btype ty in
+          (match size_r with
+          | Error _ -> ()
+          | Ok size ->
+             begin
+               H.replace globalstructvars a.xconst_value#index size;
+               chlog#add
+                 "set global structvar size"
+                 (LBLOCK [
+                      STR a.xconst_name;
+                      STR "; ";
+                      STR a.xconst_value#to_hex_string;
+                      STR ". ";
+                      STR compinfo.bcname;
+                   STR ": ";
+                   INT size])
+             end)
+       | TArray (ty, optlen, _) ->
+          (match optlen with
+           | Some (Const (CInt (i64, _, _))) ->
+              let arraylen = Int64.to_int i64 in
+              let elsize_r = size_of_btype ty in
+              let arraysize_r = tmap (fun v -> arraylen * v) elsize_r in
+              (match arraysize_r with
+              | Error _ -> ()
+              | Ok arraysize ->
+                 begin
+                   H.replace globalarrayvars a.xconst_value#index arraysize;
+                   chlog#add
+                     "set global arrayvar size"
+                     (LBLOCK [
+                          STR a.xconst_name;
+                          STR "; ";
+                          STR a.xconst_value#to_hex_string;
+                          STR ". ";
+                          STR "length: ";
+                          INT arraylen;
+                          STR "; size: ";
+                          INT arraysize])
+                 end)
+           | _ ->
+              chlog#add
+                "global array without length"
+                (LBLOCK [
+                     STR a.xconst_name;
+                     STR "; ";
+                     STR a.xconst_value#to_hex_string;
+                     STR "."]))
+       | _ ->
+          ()
 
   method has_symbolic_address_name (v: doubleword_int) =
     H.mem address_table v#index

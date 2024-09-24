@@ -30,6 +30,9 @@
 (* chlib *)
 open CHLanguage
 
+(* chutil *)
+open CHTraceResult
+
 (* bchlib *)
 open BCHBCTypes
 
@@ -148,7 +151,7 @@ val is_stdcall: btype_t -> bool
 
 (** {1 Type resolution}*)
 
-val resolve_type: btype_t -> btype_t
+val resolve_type: btype_t -> btype_t traceresult
 
 (** {1 Type properties}*)
 
@@ -158,7 +161,7 @@ val align_of_int_ikind: ikind_t -> int
 
 val align_of_float_fkind: fkind_t -> int
 
-val align_of_btype: btype_t -> int
+val align_of_btype: btype_t -> int traceresult
 
 
 (** {2 Size}*)
@@ -167,9 +170,19 @@ val size_of_int_ikind: ikind_t -> int
 
 val size_of_float_fkind: fkind_t -> int
 
-val size_of_btype: btype_t -> int
+(** [size_of_btype ty] returns the size (in bytes) of type [ty].
 
-val size_of_btype_comp: bcompinfo_t -> int
+    An error value is returned if the size cannot be determined. This may
+    be caused by, for exampe, type definitions not being available, or struct
+    definitions being opaque, or an array without length.*)
+val size_of_btype: btype_t -> int traceresult
+
+(** [size_of_btype_comp cinfo] returns the size (in bytes) of the struct
+    [cinfo].
+
+    An error value is returned if the size cannot be determined, because,
+    e.g., the struct is opaque or some of the field types cannot be resolved.*)
+val size_of_btype_comp: bcompinfo_t -> int traceresult
 
 (** {2 Scalar kind}*)
 
