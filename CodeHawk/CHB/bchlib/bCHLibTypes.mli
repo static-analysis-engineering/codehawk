@@ -3162,6 +3162,8 @@ class type type_constraint_graph_int =
 class type type_constraint_store_int =
   object
 
+    method reset: unit
+
     method add_constraint: type_constraint_t -> unit
 
     method add_var_constraint: type_variable_t -> unit
