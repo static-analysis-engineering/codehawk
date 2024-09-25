@@ -538,7 +538,6 @@ let analyze_arm_function faddr f count =
            analyze_procedure_with_reaching_defs proc arm_chif_system#get_arm_system;
            analyze_procedure_with_flag_reaching_defs
              proc arm_chif_system#get_arm_system;
-           (*  disable for now; must analysis to be changed into may analysis
            (if islarge then
               chlog#add "skip def-use" (faddr#toPretty)
             else
@@ -548,7 +547,6 @@ let analyze_arm_function faddr f count =
             else
               analyze_procedure_with_def_use_high
                 proc arm_chif_system#get_arm_system)
-            *)
          end);
       extract_ranges finfo bb_invariants#get_invariants;
       extract_linear_equalities finfo bb_invariants#get_invariants;
