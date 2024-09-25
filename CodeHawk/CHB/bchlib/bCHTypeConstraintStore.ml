@@ -70,6 +70,15 @@ object (self)
   (* constraints that involve a global variable *)
   val gvartypes = H.create 5
 
+  method reset =
+    begin
+      H.clear store;
+      H.clear functiontypes;
+      H.clear reglhss;
+      H.clear stacklhss;
+      H.clear gvartypes
+    end
+
   method add_constraint (c: type_constraint_t) =
     let index = tcd#index_type_constraint c in
     (* index the constraint *)

@@ -619,4 +619,7 @@ end
 let  mk_arm_fn_type_constraints
        (store: type_constraint_store_int)
        (fn: arm_assembly_function_int): arm_fn_type_constraints_int =
-  new arm_fn_type_constraints_t store fn
+  begin
+    store#reset;
+    new arm_fn_type_constraints_t store fn
+  end
