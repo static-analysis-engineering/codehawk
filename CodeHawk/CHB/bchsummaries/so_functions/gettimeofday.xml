@@ -22,7 +22,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="gettimeofday">
       <par loc="stack" name="tp" nr="1">
-        <type><ptr>timeval</ptr></type>
+        <type><ptr>ch_timeval</ptr></type>
 	<pre><deref-write/></pre>
       </par>
       <par loc="stack" name="tzp" nr="2">
