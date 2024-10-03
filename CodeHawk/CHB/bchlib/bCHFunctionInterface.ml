@@ -620,8 +620,7 @@ let read_xml_function_interface (node:xml_element_int):function_interface_t =
     fintf_type_signature = fts;
     fintf_bctype = Some bctype;
     fintf_parameter_locations = [];
-    fintf_returntypes = [];
-    fintf_lhsname = if has "lhsname" then Some (get "lhsname") else None
+    fintf_returntypes = []
   }
 
 
@@ -899,8 +898,7 @@ let demangled_name_to_function_interface (dm: demangled_name_t) =
     fintf_type_signature = fts;
     fintf_parameter_locations = [];
     fintf_bctype = None;
-    fintf_returntypes = [];
-    fintf_lhsname = None
+    fintf_returntypes = []
   }
 
 
@@ -913,7 +911,6 @@ let default_function_interface
       ?(varargs=false)
       ?(locations=[])
       ?(returntypes=[])
-      ?(lhsname=None)
       (name:string): function_interface_t =
   let fts = {
       fts_parameters = bc_fts_parameters;
@@ -932,8 +929,7 @@ let default_function_interface
     fintf_type_signature = fts;
     fintf_parameter_locations = locations;
     fintf_bctype = bctype;
-    fintf_returntypes = returntypes;
-    fintf_lhsname = lhsname
+    fintf_returntypes = returntypes
   }
 
 

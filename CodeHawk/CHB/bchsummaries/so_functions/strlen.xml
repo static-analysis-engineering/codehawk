@@ -11,7 +11,7 @@
      <return>number of characters in str excluding the null terminator byte</return>
     </apidoc>
    </documentation>
-   <api adj="0" cc="cdecl" name="strlen" lhsname="strlen">
+   <api adj="0" cc="cdecl" name="strlen">
      <returntype>size_t</returntype>
      <par loc="stack" io="r" name="str" nr="1" rep="hex">
       <type><ptr>char</ptr></type>

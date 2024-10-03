@@ -2093,8 +2093,7 @@ type function_interface_t = {
     fintf_type_signature: function_signature_t;
     fintf_parameter_locations: parameter_location_t list;
     fintf_returntypes: btype_t list;
-    fintf_bctype: btype_t option;
-    fintf_lhsname: string option
+    fintf_bctype: btype_t option
   }
 
 
@@ -4737,7 +4736,6 @@ class type call_target_info_int =
     (* accessors *)
     method get_target: call_target_t
     method get_name: string
-    method get_lhsname: string option
     method get_app_address: doubleword_int
     method get_application_target: doubleword_int
     method get_wrapped_app_address: doubleword_int

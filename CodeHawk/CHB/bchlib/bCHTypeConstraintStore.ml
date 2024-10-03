@@ -523,8 +523,8 @@ object (self)
          (match ftype with
          | Error _ -> None
          | Ok ftype ->
-            let ixftype = bcd#index_typ ftype in
-            let ixctype = bcd#index_typ ty in
+            let _ixftype = bcd#index_typ ftype in
+            let _ixctype = bcd#index_typ ty in
             let _ =
               chlog#add
                 "first field struct check"
@@ -568,7 +568,7 @@ object (self)
                       STR cinfo.bcname;
                       STR ": first field type: ";
                       STR (btype_to_string ftype)]) in
-             if s#fold (fun acc i -> acc & (i = ixftype || i = ixctype)) true then
+             if s#fold (fun acc i -> acc && (i = ixftype || i = ixctype)) true then
                Some ftype
              else
                None)

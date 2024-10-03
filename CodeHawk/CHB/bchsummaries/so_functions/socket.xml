@@ -31,7 +31,7 @@
         </return>
       </apidoc>
     </documentation>
-    <api adj="0" cc="cdecl" name="socket" lhsname="socketfd">
+    <api adj="0" cc="cdecl" name="socket">
       <par loc="stack" name="domain" nr="1">
         <type>int</type>
       </par>
