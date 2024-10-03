@@ -225,6 +225,22 @@ object (self)
           | _ -> ())
        end
 
+    | ArithmeticShiftRight (_, _, rd, rn, rm, _) when rm#is_immediate ->
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       let tc = mk_int_type_constant Signed 32 in
+       let _ =
+         store#add_subtype_constraint (mk_cty_term tc) (mk_vty_term lhstypevar) in
+       let rnreg = rn#to_register in
+       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+
+       (List.iter (fun rnrdef ->
+            let rnaddr = rnrdef#getBaseName in
+            let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+            let tyc = mk_int_type_constant Signed 32 in
+            store#add_subtype_constraint
+              (mk_cty_term tyc) (mk_vty_term rntypevar)) rndefs)
+
     | BitwiseNot(_, _, rd, rm, _) when rm#is_immediate ->
        let rmval = rm#to_numerical#toInt in
        let rdreg = rd#to_register in
