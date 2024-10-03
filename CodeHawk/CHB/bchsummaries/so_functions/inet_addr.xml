@@ -14,7 +14,7 @@
         </return>
       </apidoc>
     </documentation>
-    <api adj="0" cc="cdecl" name="inet_addr" lhsname="inetaddr">
+    <api adj="0" cc="cdecl" name="inet_addr">
       <par loc="stack" name="cp" nr="1">
         <type><ptr>char</ptr></type>
 	<pre><deref-read-nt/></pre>

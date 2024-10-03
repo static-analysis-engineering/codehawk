@@ -11,7 +11,7 @@
      <return>int value produced by interpreting the input characters as an int</return>
     </apidoc>
    </documentation>
-   <api adj="0" cc="cdecl" name="atoi" lhsname="intval">
+   <api adj="0" cc="cdecl" name="atoi">
     <returntype>int</returntype>
     <par loc="stack" name="str" rep="hex" nr="1">
       <type><ptr>char</ptr></type>

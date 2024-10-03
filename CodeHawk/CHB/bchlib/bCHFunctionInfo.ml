@@ -2014,8 +2014,7 @@ object (self)
         fintf_type_signature = fts;
         fintf_bctype = None;
         fintf_parameter_locations = [];
-        fintf_returntypes = [];
-        fintf_lhsname = None
+        fintf_returntypes = []
       } in
     let fsem = default_function_semantics in
     let fdoc = default_function_documentation in
@@ -2363,9 +2362,6 @@ object (self)
            begin
              v#write_xml ctnode;
              ctnode#setAttribute "a" k;
-             (match v#get_lhsname with
-              | Some name -> ctnode#setAttribute "lhs" name
-              | _ -> ());
              ctnode
            end) calltargets)
 
