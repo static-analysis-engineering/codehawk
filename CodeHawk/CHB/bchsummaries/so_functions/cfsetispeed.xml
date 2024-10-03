@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-09-30 13:40:42"/>
+  <libfun lib="so-functions" name="cfsetispeed">
+    <documentation>
+      <desc>set input baud rate</desc>
+      <apidoc>
+        <pt>
+          <ll>int cfsetispeed(</ll>
+          <ld>struct termios *termios_p</ld>
+          <ld>speed_t speed</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="termios_p">pointer to termios struct</par>
+        <par name="speed">input baud rate</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="cfsetispeed">
+      <par loc="stack" name="termios_p" nr="1">
+        <type><ptr>ch_termios</ptr></type>
+      </par>
+      <par loc="stack" name="speed" nr="2">
+        <type>speed_t</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

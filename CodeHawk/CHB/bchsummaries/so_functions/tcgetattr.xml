@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-09-28 19:23:18"/>
+  <libfun lib="so-functions" name="tcgetattr">
+    <documentation>
+      <desc>get the parameters associated with the terminal</desc>
+      <apidoc>
+        <pt>
+          <ll>int tcgetattr(</ll>
+          <ld>int fildes</ld>
+          <ld>struct termios *termios_p</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="fildes">terminal referred to by fildes</par>
+        <par name="termios_p">termios structure</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="tcgetattr">
+      <par loc="stack" name="fildes" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="termios_p" nr="2">
+        <type><ptr>ch_termios</ptr></type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

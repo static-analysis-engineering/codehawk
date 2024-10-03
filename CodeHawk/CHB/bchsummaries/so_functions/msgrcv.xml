@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-09-28 18:41:28"/>
+  <libfun lib="so-functions" name="msgrcv">
+    <documentation>
+      <desc>XSI message receive operation</desc>
+      <apidoc>
+        <pt>
+          <ll>msgrcv(</ll>
+          <ld>msgid</ld>
+          <ld>msgp</ld>
+          <ld>msgsz</ld>
+          <ld>msgtyp</ld>
+          <ld>msgflg</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="msgid">message queue id</par>
+        <par name="msgp">buffer to place the message (mtype; mtext)</par>
+        <par name="msgsz">size, in bytes, of mtext</par>
+        <par name="msgtyp">type of message</par>
+        <par name="msgflg">action to be taken</par>
+        <return>
+          <rc cond="success">
+	    number of bytes placed in mtext
+	  </rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="msgrcv">
+      <par loc="stack" name="msgid" nr="1">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="msgp" nr="2">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="stack" name="msgsz" nr="3">
+        <type>size_t</type>
+      </par>
+      <par loc="stack" name="msgtyp" nr="4">
+        <type>long</type>
+      </par>
+      <par loc="stack" name="msgflg" nr="5">
+        <type>int</type>
+      </par>
+      <returntype>ssize_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
