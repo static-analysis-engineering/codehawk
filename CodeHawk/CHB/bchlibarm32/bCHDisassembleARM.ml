@@ -877,6 +877,24 @@ let record_call_targets_arm () =
                         finfo#set_call_target
                           ctxtiaddr (mk_app_target tgt#get_absolute_address)
                    end
+              | Branch _
+                | BranchExchange _
+                   when system_info#has_call_target faddr instr#get_address ->
+                 let calltgt = system_info#get_call_target faddr instr#get_address in
+                 let ctinfo = mk_call_target_info calltgt in
+                 let _ =
+                   chlog#add
+                     "call-back table target"
+                     (LBLOCK [
+                          STR "(";
+                          faddr#toPretty;
+                          STR ", ";
+                          STR ctxtiaddr;
+                          STR "): ";
+                          ctinfo#toPretty
+                        ]) in
+                 finfo#set_call_target ctxtiaddr ctinfo
+
               | _ -> ())
         end
       with
