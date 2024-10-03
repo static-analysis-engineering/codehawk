@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -143,6 +143,8 @@ object (self)
 
   method is_function = self#get_st_type = 2
 
+  method is_data_object = self#get_st_type = 1
+
   method has_address_value = not (st_value#equal wordzero)
 
   method write_xml (node:xml_element_int) =
@@ -240,6 +242,21 @@ object (self)
               v in
           (functions_data#add_function addr)#add_name e#get_name) entries
 
+  method set_data_object_names =
+    H.iter (fun _ e ->
+        if e#is_data_object && e#has_address_value && e#has_name then
+          let cdef = {
+              xconst_name = e#get_name;
+              xconst_value = e#get_st_value;
+              xconst_type = BCHBCTypeUtil.t_unknown;
+              xconst_desc = "symbol-table";
+              xconst_is_addr = true;
+            } in
+          BCHConstantDefinitions.add_address cdef
+        else
+          ()
+      ) entries
+
   method set_mapping_symbols =
     let symbols = H.create 13 in
     let _ =
@@ -310,6 +327,9 @@ object (self)
       raise
         (BCH_failure
            (LBLOCK [STR "Symbol with index "; INT index; STR " not found"]))
+
+  method has_symbol (index: int) =
+    H.mem entries index
 
   method write_xml_symbols (node:xml_element_int) =
     let table = mk_num_record_table "symbol-table" in

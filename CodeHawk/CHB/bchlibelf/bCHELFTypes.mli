@@ -259,6 +259,7 @@ class type elf_symbol_table_entry_int =
     method has_address_value: bool
     method has_name: bool
     method is_function: bool
+    method is_data_object: bool
     method to_rep_record: string list * int list
     method write_xml: xml_element_int -> unit
   end
@@ -270,12 +271,14 @@ class type elf_symbol_table_int =
     method set_symbol_names: elf_string_table_int -> unit
     method set_function_entry_points: unit
     method set_function_names: unit
+    method set_data_object_names: unit
     method set_mapping_symbols: unit
     method get_xstring: string
     method get_size: int
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
     method get_symbol: int -> elf_symbol_table_entry_int
+    method has_symbol: int -> bool
     method get_string_reference: doubleword_int -> string option
     method includes_VA: doubleword_int -> bool
     method write_xml: xml_element_int -> unit
