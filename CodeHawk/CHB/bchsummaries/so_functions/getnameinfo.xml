@@ -30,7 +30,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="getnameinfo">
       <par loc="stack" name="sa" nr="1">
-        <type><ptr>sockaddr</ptr></type>
+        <type><ptr>ch_sockaddr</ptr></type>
       </par>
       <par loc="stack" name="salen" nr="2">
         <type>socklen_t</type>
@@ -56,7 +56,7 @@
 	  <math>
 	    <apply>
 	      <deref-read/>
-	      <type>sockaddr</type>
+	      <type>ch_sockaddr</type>
 	      <ci>sa</ci>
 	      <ci>salen</ci>
 	    </apply>

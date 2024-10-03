@@ -53,7 +53,7 @@
         <type>int</type>
       </par>
       <par loc="stack" name="dest_addr" nr="5">
-        <type><ptr>sockaddr</ptr></type>
+        <type><ptr>ch_sockaddr</ptr></type>
       </par>
       <par loc="stack" name="dest_len" nr="6">
         <type>socklen_t</type>
@@ -77,7 +77,7 @@
 	  <math>
 	    <apply>
 	      <deref-read/>
-	      <type>sockaddr</type>
+	      <type>ch_sockaddr</type>
 	      <ci>dest_addr</ci>
 	      <ci>dest_len</ci>
 	    </apply>
