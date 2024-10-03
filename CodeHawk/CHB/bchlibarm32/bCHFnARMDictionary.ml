@@ -54,11 +54,15 @@ open BCHDoubleword
 open BCHFloc
 open BCHLocation
 open BCHFtsParameter
+open BCHFunctionData
 open BCHFunctionInterface
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHLocation
 open BCHSystemInfo
+
+(* bchlibelf *)
+open BCHELFHeader
 
 (* bchlibarm32 *)
 open BCHARMAssemblyInstructions
@@ -419,8 +423,32 @@ object (self)
           "function prototype registration"
           (LBLOCK [STR "No function summary found for "; STR name]) in
 
+    let check_for_functionptr_args callargs =
+      List.iter (fun (p, x) ->
+          let ptype = get_parameter_type p in
+          if is_function_type ptype then
+            match x with
+            | XConst (IntConst n) ->
+               (match numerical_to_doubleword n with
+                | Error _ -> ()
+                | Ok dw ->
+                   if elf_header#is_code_address dw then
+                     begin
+                       ignore (functions_data#add_function dw);
+                       chlog#add
+                         "add function entry point"
+                         (LBLOCK [
+                              floc#l#toPretty;
+                              STR ": function addr: ";
+                              dw#toPretty])
+                     end)
+            | _ -> ()
+          else
+            ()) callargs in
+
     let callinstr_key (): (string list * int list) =
       let callargs = floc#get_call_arguments in
+      let _ = check_for_functionptr_args callargs in
       let (xprs, xvars, rdefs) =
         List.fold_left (fun (xprs, xvars, rdefs) (p, x) ->
             let xvar =
@@ -746,8 +774,8 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | Branch (_, tgt, _)
-           when tgt#is_absolute_address && floc#has_call_target ->
+      | Branch _
+        | BranchExchange _ when floc#has_call_target ->
          callinstr_key ()
 
       | Branch _ when instr#is_aggregate_anchor ->
