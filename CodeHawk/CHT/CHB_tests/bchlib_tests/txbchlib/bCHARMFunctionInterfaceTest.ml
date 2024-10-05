@@ -139,7 +139,7 @@ let get_arm_struct_param_next_state_test () =
           (fun () ->
             let cinfo = bcfiles#get_compinfo_by_name title in
             let btype = get_compinfo_struct_type cinfo in
-            let size = size_of_btype btype in
+            let size = CHTraceResult.tget_ok (size_of_btype btype) in
             let (param, naas) =
               get_arm_struct_param_next_state
                 size "arg_1" btype aas_start_state 1 in
