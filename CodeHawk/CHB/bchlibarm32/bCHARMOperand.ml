@@ -406,6 +406,8 @@ object (self:'a)
            XOp (XMult, [XOp (XDiv, [XVar rvar; alignx]); alignx])
          else
            XVar rvar in
+       (* memory addresses are not rewritten to preserve the structure of the
+          data accessed (in case of an non-optimizing compiler) *)
        let addr = XOp (XPlus, [rvarx; memoff]) in
        (* floc#inv#rewrite_expr addr *)
        simplify_xpr addr
@@ -509,6 +511,26 @@ object (self:'a)
                                STR ": ivax: ";
                                x2p ivax])
                              (floc#f#env#mk_memory_address_deref_variable v)
+                        | XOp (XPlus, [XVar basevar; XVar memoffset]) ->
+                           let optmemvaraddr = floc#decompose_memvar_address xoffset in
+                           (match optmemvaraddr with
+                            | Some (memref, memoffset)
+                                 when BCHMemoryReference.is_constant_offset memoffset ->
+                               (env#mk_index_offset_memory_variable memref memoffset,
+                                [STR "ARMShiftedIndexOffset (decomposed)";
+                                 self#toPretty;
+                                 STR "; memref: ";
+                                 memref#toPretty;
+                                 STR "; memoffset: ";
+                                 BCHMemoryReference.memory_offset_to_pretty memoffset])
+                            | _ ->
+                               (env#mk_unknown_memory_variable "operand",
+                                [STR "ARMShiftedIndexOffset (sum)";
+                                 self#toPretty;
+                                 STR "; basevar: ";
+                                 basevar#toPretty;
+                                 STR "; memoffset: ";
+                                 memoffset#toPretty]))
                         | _ ->
                            (env#mk_unknown_memory_variable "operand",
                             [STR "ARMShiftedIndexOffset";

@@ -513,6 +513,22 @@ object (self)
 
        end
 
+    | LoadRegisterHalfword (_, rt, rn, rm, memop, _) when rm#is_immediate ->
+       let rtreg = rt#to_register in
+       let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
+       begin
+         (* LDRH rt, [rn, rm] :  X_rndef.load <: X_rt *)
+         (let xrdef = get_variable_rdefs (rn#to_variable floc) in
+          let rnreg = rn#to_register in
+          let offset = rm#to_numerical#toInt in
+          List.iter (fun rdsym ->
+              let ldaddr = rdsym#getBaseName in
+              let rdtypevar = mk_reglhs_typevar rnreg faddr ldaddr in
+              let rdtypevar = add_load_capability ~offset rdtypevar in
+              store#add_subtype_constraint
+                (mk_vty_term rdtypevar) (mk_vty_term rttypevar)) xrdef);
+       end
+
     | LogicalShiftLeft (_, _, rd, rn, rm, _) when rm#is_immediate ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in

@@ -1680,13 +1680,15 @@ let translate_arm_instruction
      let (lhs, cmds) = floc#get_ssa_assign_commands rtreg ~vtype rhs in
      let cmds = cmds @ updatecmds in
      let usevars = get_register_vars [rn; rm] in
-     let usevars =
-       let memvar = mem#to_variable floc in
-       if floc#f#env#is_unknown_memory_variable memvar then
-         usevars
+     let memvar = mem#to_variable floc in
+     let (usevars, usehigh) =
+       if memvar#isTmp || floc#f#env#is_unknown_memory_variable memvar then
+         (* elevate address variables to high-use *)
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (usevars, get_use_high_vars [xrn; xrm])
        else
-         memvar :: usevars in
-     let usehigh = get_use_high_vars [rhs] in
+         (memvar :: usevars, get_use_high_vars [rhs]) in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[lhs]
@@ -1782,12 +1784,15 @@ let translate_arm_instruction
      let vtype = t_ushort in
      let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype rhs in
      let usevars = get_register_vars [rn; rm] in
-     let usevars =
-       if floc#f#env#is_unknown_memory_variable memvar then
-         usevars
+     let memvar = mem#to_variable floc in
+     let (usevars, usehigh) =
+       if memvar#isTmp || floc#f#env#is_unknown_memory_variable memvar then
+         (* elevate address variables to high-use *)
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         (usevars, get_use_high_vars [xrn; xrm])
        else
-         memvar :: usevars in
-     let usehigh = get_use_high_vars [rhs] in
+         (memvar :: usevars, get_use_high_vars [rhs]) in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrt]
@@ -2747,7 +2752,27 @@ let translate_arm_instruction
      let _ = check_storage mem vmem in
      let xrt = rt#to_expr floc in
      let xrt = floc#inv#rewrite_expr xrt in
-     let cmds = memcmds @ (floc#get_assign_commands vmem xrt) in
+     let cmds =
+       if vmem#isTmp || floc#f#env#is_unknown_memory_variable vmem then
+         let xrn = rewrite_expr floc (rn#to_expr floc) in
+         let xrm = rewrite_expr floc (rm#to_expr floc) in
+         begin
+           ch_error_log#add
+             "assignment to unknown memory"
+             (LBLOCK [
+                  floc#l#toPretty;
+                  STR " STR [";
+                  rn#toPretty;
+                  STR ", ";
+                  rm#toPretty;
+                  STR "]; base: ";
+                  x2p xrn;
+                  STR ", offset: ";
+                  x2p xrm]);
+           []
+         end
+       else
+         floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
      let (usevars, usehigh) =
@@ -2779,7 +2804,7 @@ let translate_arm_instruction
            addr_r
        else
          [] in
-     let cmds = defcmds @ cmds @ updatecmds in
+     let cmds = memcmds @ defcmds @ cmds @ updatecmds in
      let _ =
        (* record register spill *)
        let vrt = rt#to_variable floc in
@@ -2794,7 +2819,27 @@ let translate_arm_instruction
      let (vmem, memcmds) = mem#to_lhs floc in
      let _ = check_storage mem vmem in
      let xrt = XOp (XXlsb, [rt#to_expr floc]) in
-     let cmds = floc#get_assign_commands vmem xrt in
+     let cmds =
+       if vmem#isTmp || floc#f#env#is_unknown_memory_variable vmem then
+         let xrn = rewrite_expr floc (rn#to_expr floc) in
+         let xrm = rewrite_expr floc (rm#to_expr floc) in
+         begin
+           ch_error_log#add
+             "assignment to unknown memory"
+             (LBLOCK [
+                  floc#l#toPretty;
+                  STR " STRB [";
+                  rn#toPretty;
+                  STR ", ";
+                  rm#toPretty;
+                  STR "]; base: ";
+                  x2p xrn;
+                  STR ", offset: ";
+                  x2p xrm]);
+           []
+         end
+       else
+         floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
      let (usevars, usehigh) =
@@ -2895,9 +2940,31 @@ let translate_arm_instruction
      let _ = check_storage mem vmem in
      let rdreg = rd#to_register in
      let xrt = rt#to_expr floc in
-     let cmds = floc#get_assign_commands vmem xrt in
+     let cmds =
+       if vmem#isTmp || floc#f#env#is_unknown_memory_variable vmem then
+         let xrn = rewrite_expr floc (rn#to_expr floc) in
+         begin
+           ch_error_log#add
+             "assignment to unknown memory"
+             (LBLOCK [
+                  floc#l#toPretty;
+                  STR " STREX [";
+                  rn#toPretty;
+                  STR "]; base: ";
+                  x2p xrn]);
+           []
+         end
+       else
+         floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn] in
      let usehigh = get_use_high_vars [xrt] in
+     let (usevars, usehigh) =
+       if vmem#isTmp || floc#f#env#is_unknown_memory_variable vmem then
+         (* elevate address variables to high-use *)
+         let xrn = rn#to_expr floc in
+         (usevars, get_addr_use_high_vars [xrn])
+       else
+         (vmem :: usevars, usehigh) in
      let (vrd, scmds) = floc#get_ssa_abstract_commands rdreg () in
      let defcmds =
        floc#get_vardef_commands
@@ -2915,7 +2982,27 @@ let translate_arm_instruction
      let (vmem, memcmds) = mem#to_lhs floc in
      let _ = check_storage mem vmem in
      let xrt = XOp (XXlsh, [rt#to_expr floc]) in
-     let cmds = memcmds @ floc#get_assign_commands vmem xrt in
+     let cmds =
+       if vmem#isTmp || floc#f#env#is_unknown_memory_variable vmem then
+         let xrn = rewrite_expr floc (rn#to_expr floc) in
+         let xrm = rewrite_expr floc (rm#to_expr floc) in
+         begin
+           ch_error_log#add
+             "assignment to unknown memory"
+             (LBLOCK [
+                  floc#l#toPretty;
+                  STR " STRH [";
+                  rn#toPretty;
+                  STR ", ";
+                  rm#toPretty;
+                  STR "]; base: ";
+                  x2p xrn;
+                  STR ", offset: ";
+                  x2p xrm]);
+           []
+         end
+       else
+         floc#get_assign_commands vmem xrt in
      let usevars = get_register_vars [rt; rn; rm] in
      let usehigh = get_use_high_vars [xrt] in
      let (usevars, usehigh) =
@@ -2947,7 +3034,7 @@ let translate_arm_instruction
            addr_r
        else
          [] in
-     let cmds = defcmds @ cmds @ updatecmds in
+     let cmds = memcmds @ defcmds @ cmds @ updatecmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
