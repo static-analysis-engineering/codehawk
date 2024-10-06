@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,13 +29,11 @@
 open CHPretty
 
 (* bchlib *)
-open BCHDoubleword
 open BCHLibTypes
 
 (* bchlibelf *)
 open BCHDwarfTypes
 open BCHDwarfUtils
-open BCHELFTypes
 
 
 (*
@@ -130,7 +128,7 @@ let decode_variable_die
   let tag = abbrev.dabb_tag in
   let values =
     decode_debug_attribute_values
-      ~get_string ~attrspecs:abbrev.dabb_attr_specs ~base ch in
+      ~get_string ~get_loclist ~attrspecs:abbrev.dabb_attr_specs ~base ch in
   {
     dwie_abbrev = abbrevindex;
     dwie_tag = tag;
@@ -163,7 +161,7 @@ let decode_compilation_unit
       (ch: pushback_stream_int) =
 
 
-  let rec decode_debug_info_entry ?(first=false) (pcbase: doubleword_int) =
+  let rec decode_debug_info_entry ?(first=false) (_pcbase: doubleword_int) =
     let abbrevindex = ch#read_dwarf_leb128 in
     if abbrevindex = 0 then
       let _ = pr_debug [STR "-------------------------------------"; NL] in
@@ -199,8 +197,8 @@ let decode_compilation_unit
                                              STR (dwarf_attr_value_to_string v);
                                              NL]) "" "" ""; NL] in
     let pcbase =
-      if first && List.exists (fun (t, v) -> t = DW_AT_low_pc) values then
-        let (_, v) = List.find (fun (t, v) -> t = DW_AT_low_pc) values in
+      if first && List.exists (fun (t, _v) -> t = DW_AT_low_pc) values then
+        let (_, v) = List.find (fun (t, _v) -> t = DW_AT_low_pc) values in
         match v with
         | DW_ATV_FORM_data4 dw -> dw
         | _ -> base

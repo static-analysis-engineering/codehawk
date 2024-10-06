@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs, LLC
+
+   Copyright (c) 2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -137,27 +137,27 @@ let get_dw_op_record (dwop: dwarf_operation_t): 'a dw_operation_record_t =
     }
   | DW_OP_call_frame_cfa -> no_op_rec "call_frame_cfa"
   | DW_OP_stack_value -> no_op_rec "stack_value"
-  | DW_OP_GNU_implicit_pointer (name, dboffset, sloffset) -> {
+  | DW_OP_GNU_implicit_pointer (_name, dboffset, sloffset) -> {
       mnemonic = "DW_OP_GNU_implicit_pointer";
       operands = [dboffset; sloffset];
       dw_asm = (fun f -> f#ops "DW_OP_GNU_implicit_pointer" [dboffset; sloffset])
     }
-  | DW_OP_GNU_entry_value (i, x) -> {
+  | DW_OP_GNU_entry_value (i, _x) -> {
       mnemonic = "DW_OP_GNU_entry_value";
       operands = [];
       dw_asm = (fun f -> f#no_op_int "DW_OP_GNU_entry_value" i)
     }
-  | DW_OP_GNU_regval_type (dw, op1, op2) -> {
+  | DW_OP_GNU_regval_type (_dw, op1, op2) -> {
      mnemonic = "DW_OP_GNU_regval_type";
      operands = [op1; op2];
      dw_asm = (fun f -> f#ops "DW_OP_GNU_regval_type" [op1; op2])
     }
-  | DW_OP_GNU_convert (dw, op) -> {
+  | DW_OP_GNU_convert (_dw, op) -> {
       mnemonic = "DW_OP_GNU_convert";
       operands = [op];
       dw_asm = (fun f -> f#ops "DW_OP_GNU_convert" [op])
     }
-  | DW_OP_GNU_parameter_ref (dw, op) -> {
+  | DW_OP_GNU_parameter_ref (_dw, op) -> {
       mnemonic = "DW_OP_GNU_parameter";
       operands = [op];
       dw_asm = (fun f -> f#ops "DW_OP_GNU_parameter" [op])
@@ -167,10 +167,10 @@ let get_dw_op_record (dwop: dwarf_operation_t): 'a dw_operation_record_t =
       operands = [];
       dw_asm = (fun f -> f#no_op_int "DW_OP_unknown" i)
     }
-                     
-                           
+
+
 class string_formatter_t (width:int): [string] dw_operation_formatter_int =
-object (self)
+object
 
   method ops (s: string) (ops: dwarf_operand_t list) =
     let s = fixed_length_string s width in
@@ -187,6 +187,14 @@ object (self)
   method no_ops (s: string) = s
 
 end
+
+
+let mk_string_formatter (width: int) = new string_formatter_t width
+
+let dwarf_operand_list_to_string
+      (width: int) (s: string) (ops: dwarf_operand_t list) =
+  let formatter = mk_string_formatter width in
+  formatter#ops s ops
 
 
 let get_dw_op_name (op: dwarf_operation_t) = (get_dw_op_record op).mnemonic

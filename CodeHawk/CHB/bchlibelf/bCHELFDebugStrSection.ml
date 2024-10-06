@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ class elf_debug_str_section_t
         (s: string) (vaddr: doubleword_int):elf_debug_str_section_int =
 object (self)
 
-  inherit elf_raw_section_t s vaddr as super
+  inherit elf_raw_section_t s vaddr
 
   val entries = H.create 3
 

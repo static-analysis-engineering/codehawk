@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,6 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
-open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
@@ -43,8 +42,6 @@ open BCHStreamWrapper
 open BCHSystemInfo
 
 (* bchlibelf *)
-open BCHDwarfUtils
-open BCHELFDictionary
 open BCHELFSection
 open BCHELFTypes
 
@@ -52,16 +49,8 @@ module H = Hashtbl
 module TR = CHTraceResult
 
 
-let fail_traceresult (msg: string) (r: 'a traceresult): 'a =
-  if Result.is_ok r then
-    TR.tget_ok r
-  else
-    fail_tvalue
-      (trerror_record (LBLOCK [STR "BCHELFDebugARangesSection: "; STR msg])) r
-
-
 class elf_debug_aranges_entry_t =
-object (self)
+object
 
   val mutable unit_length = wordzero
   val mutable version = 0
@@ -173,11 +162,11 @@ end
 
 
 class elf_debug_aranges_section_t (s:string):elf_debug_aranges_section_int =
-object (self)
+object
 
   val mutable entries = H.create 5
 
-  inherit elf_raw_section_t s wordzero as super
+  inherit elf_raw_section_t s wordzero
 
   method read =
     try
@@ -211,14 +200,14 @@ object (self)
       (fun index -> TR.tget_ok (index_to_doubleword index))
       (List.sort Stdlib.compare cunits)
 
-  method toPretty =
+  method !toPretty =
     let cunits = H.fold (fun _ v a -> v::a) entries [] in
     LBLOCK (List.map (fun e -> LBLOCK [e#toPretty; NL]) cunits)
 
 end
 
 
-let mk_elf_debug_aranges_section (s:string) (h:elf_section_header_int) =
+let mk_elf_debug_aranges_section (s: string) (_h: elf_section_header_int) =
   let section = new elf_debug_aranges_section_t s in
   begin
     section#read;

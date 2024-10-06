@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,11 +31,9 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
-open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHByteUtilities
 open BCHDoubleword
 open BCHLibTypes
@@ -44,20 +42,11 @@ open BCHSystemInfo
 
 (* bchlibelf *)
 open BCHDwarfTypes
-open BCHELFDictionary
 open BCHELFSection
 open BCHELFTypes
 
 module H = Hashtbl
 module TR = CHTraceResult
-
-
-let fail_traceresult (msg: string) (r: 'a traceresult): 'a =
-  if Result.is_ok r then
-    TR.tget_ok r
-  else
-    fail_tvalue
-      (trerror_record (LBLOCK [STR "BCHELFDebugInfoSection: "; STR msg])) r
 
 
 class elf_debug_compilation_unit_header_t =
@@ -128,9 +117,9 @@ end
 
 
 class elf_debug_info_section_t (s:string):elf_debug_info_section_int =
-object (self)
+object
 
-  inherit elf_raw_section_t s wordzero as super
+  inherit elf_raw_section_t s wordzero
 
   method compilation_unit_stream (offset: doubleword_int) =
     let index = offset#index in
@@ -178,7 +167,7 @@ object (self)
 end
 
 
-let mk_elf_debug_info_section (s:string) (h:elf_section_header_int) =
+let mk_elf_debug_info_section (s:string) (_h: elf_section_header_int) =
   new elf_debug_info_section_t s
 
 

@@ -33,7 +33,6 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHNumRecordTable
-open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
@@ -42,7 +41,6 @@ open BCHByteUtilities
 open BCHDataBlock
 open BCHDoubleword
 open BCHFunctionData
-open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHStreamWrapper
 open BCHSystemInfo
@@ -177,11 +175,11 @@ class elf_symbol_table_t
         (s:string)
         (entrysize:int)
         (vaddr:doubleword_int):elf_symbol_table_int =
-object (self)
+object
 
   val entries = H.create 3
 
-  inherit elf_raw_section_t s vaddr as super
+  inherit elf_raw_section_t s vaddr
 
   method read =
     try

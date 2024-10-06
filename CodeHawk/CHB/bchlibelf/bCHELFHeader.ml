@@ -40,7 +40,6 @@
 (* chlib *)
 open CHNumerical
 open CHPretty
-open CHUtils
 
 (* chutil *)
 open CHFileIO
@@ -54,13 +53,11 @@ open BCHBasicTypes
 open BCHBCFiles
 open BCHBCTypes
 open BCHBCTypeUtil
-open BCHByteUtilities
 open BCHCallbackTables
 open BCHDoubleword
 open BCHLibTypes
 open BCHPreFileIO
 open BCHSectionHeadersInfo
-open BCHStreamWrapper
 open BCHStructTables
 open BCHSystemInfo
 open BCHSystemSettings
@@ -92,6 +89,7 @@ module H = Hashtbl
 module TR = CHTraceResult
 
 
+(*
 type object_file_type =
   | NoFileType
   | RelocatableFile
@@ -100,6 +98,7 @@ type object_file_type =
   | CoreFile
   | OSSpecificFile of int
   | ProcessorSpecificFile of int
+ *)
 
 type elf_symbol_type =
   | NoSymbolType
@@ -444,7 +443,7 @@ object(self)
          pr_debug [STR "File is an object file, not an executable!"; NL]);
 
       self#read_program_headers;
-      H.iter (fun k v -> pr_debug [v#toPretty; NL]) program_header_table;
+      H.iter (fun _ v -> pr_debug [v#toPretty; NL]) program_header_table;
 
       (if elf_file_header#get_section_header_table_entry_num = 0 then
          if H.length (program_header_table) > 0 then
@@ -494,8 +493,10 @@ object(self)
 
   method get_relocation (dw:doubleword_int) =
     let relocationsections =
-      List.filter (fun (index,sh,_) -> sh#is_relocation_table) self#get_sections in
-    List.fold_left (fun result (_,_,s) ->
+      List.filter
+        (fun (_index, sh, _) -> sh#is_relocation_table)
+        self#get_sections in
+    List.fold_left (fun result (_, _, s) ->
         match result with
         | Some _ -> result
         | _ ->
@@ -809,7 +810,7 @@ object(self)
                  a#toPretty ]))
 
   method get_containing_section (a:doubleword_int) =
-    H.fold (fun k v result ->
+    H.fold (fun k _ result ->
         match result with
         | Some _ -> result
         | _ ->
@@ -821,7 +822,7 @@ object(self)
 
   method get_program_value (a:doubleword_int) =
     let section =
-      H.fold (fun k v result ->
+      H.fold (fun k _ result ->
           match result with
           | Some _ -> result
           | _ ->
@@ -839,7 +840,7 @@ object(self)
                  STR " is not included in a program section"]))
 
   method is_program_address (a:doubleword_int) =
-    H.fold (fun k v result ->
+    H.fold (fun k _ result ->
         result
         || match self#get_section k with
            | ElfProgramSection s -> s#includes_VA a
@@ -847,7 +848,7 @@ object(self)
 
   method get_global_offset_table_value (a: doubleword_int) =
     let section =
-      H.fold (fun k v result ->
+      H.fold (fun k _ result ->
           match result with
           | Some _ -> result
           | _ ->
@@ -865,7 +866,7 @@ object(self)
                  STR " is not included in the global offset table"]))
 
   method is_global_offset_table_address (a: doubleword_int) =
-    H.fold (fun k v result ->
+    H.fold (fun k _ result ->
         result
         || match self#get_section k with
            | ElfProgramSection s -> s#is_got && s#includes_VA a
@@ -1531,7 +1532,7 @@ let print_debug_files () =
   begin
     pr_debug [STR "Print Debug Files"; NL];
     if elf_header#has_sections then
-      List.iter (fun (index, header, s) ->
+      List.iter (fun (_index, _header, s) ->
           match s with
           | ElfDebugARangesSection a ->
              pr_debug [a#toPretty; NL; NL]

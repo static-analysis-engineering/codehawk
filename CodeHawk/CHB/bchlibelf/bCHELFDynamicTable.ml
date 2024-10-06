@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,6 @@ open BCHStreamWrapper
 open BCHSystemInfo
 
 (* bchlibelf *)
-open BCHELFDictionary
 open BCHELFSection
 open BCHELFTypes
 open BCHELFUtil
@@ -139,11 +138,11 @@ end
 class elf_dynamic_table_t
         (s:string)
         (vaddr:doubleword_int):elf_dynamic_table_int =
-object (self)
+object
 
   val mutable entries = []
 
-  inherit elf_raw_section_t s vaddr as super
+  inherit elf_raw_section_t s vaddr
 
   method read =
     try
@@ -178,7 +177,8 @@ object (self)
 end
 
 
-let mk_elf_dynamic_table s h vaddr =
+let mk_elf_dynamic_table
+      (s: string) (_h: elf_section_header_int) (vaddr: doubleword_int) =
   let table = new elf_dynamic_table_t s vaddr in
   begin
     table#read ;
