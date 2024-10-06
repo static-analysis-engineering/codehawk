@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022-2023  Aarno Labs, LLC
+   Copyright (c) 2022-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -109,9 +109,9 @@ object (self)
     | LDMSTMSequence _ -> true
     | _ -> false
 
-  method write_xml (node: xml_element_int) = ()
+  method write_xml (_node: xml_element_int) = ()
 
-  method toCHIF (faddr: doubleword_int) = []
+  method toCHIF (_faddr: doubleword_int) = []
 
   method toPretty =
     LBLOCK [
@@ -173,7 +173,7 @@ let make_ldm_stm_sequence_aggregate
 
 let disassemble_arm_instructions
       (ch: pushback_stream_int) (iaddr: doubleword_int) (n: int) =
-  for i = 1 to n do
+  for _i = 1 to n do
     let instrbytes = ch#read_doubleword in
     let opcode = disassemble_arm_instruction ch iaddr instrbytes in
     let pos = ch#pos in
@@ -212,7 +212,7 @@ let identify_it_sequence
       (ch: pushback_stream_int)
       (instr: arm_assembly_instruction_int): thumb_it_sequence_int option =
     match instr#get_opcode with
-    | IfThen (c, xyz) when (xyz = "E" || xyz = "") ->
+    | IfThen (_c, xyz) when (xyz = "E" || xyz = "") ->
        create_thumb_it_sequence ch instr
     | _ -> None
 

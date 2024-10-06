@@ -33,7 +33,6 @@ open BCHLibTypes
 
 (* bchlibarm32 *)
 open BCHARMTypes
-open BCHARMAssemblyInstruction
 
 
 (** Holds an array of all of the assembly instructions, made available

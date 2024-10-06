@@ -301,7 +301,7 @@ let inline_blocks_arm_assembly_function
 
 let create_path_contexts
       (s: ctxt_iaddress_t)
-      (sentinels: ctxt_iaddress_t list)
+      (_sentinels: ctxt_iaddress_t list)
       (f: arm_assembly_function_int) =
   let faddr = f#get_address in
   let newblocks = H.create f#get_block_count in

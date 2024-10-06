@@ -35,7 +35,6 @@ open BCHLocation
 
 (* bchlibarm32 *)
 open BCHARMAssemblyInstructions
-open BCHARMOpcodeRecords
 open BCHARMTypes
 
 

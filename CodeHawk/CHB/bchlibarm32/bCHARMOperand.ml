@@ -26,7 +26,6 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHIntervals
 open CHLanguage
 open CHNumerical
 open CHPretty
@@ -34,13 +33,11 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
-open CHXmlDocument
 
 (* xprlib *)
 open Xprt
 open XprTypes
 open XprToPretty
-open XprXml
 open Xsimplify
 
 (* bchlib *)
@@ -50,12 +47,8 @@ open BCHBCTypeUtil
 open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
-open BCHFunctionData
 open BCHImmediate
 open BCHLibTypes
-open BCHSystemInfo
-open BCHSystemSettings
-open BCHUserProvidedDirections
 
 (* bchlibelf *)
 open BCHELFHeader
@@ -162,7 +155,7 @@ let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
       "#" ^ (string_of_int off) in
   match offset with
   | ARMImmOffset off -> p_off off
-  | ARMIndexOffset (r, off) -> (armreg_to_string r)
+  | ARMIndexOffset (r, off) -> (armreg_to_string r) ^ "," ^ (p_off off)
   | ARMShiftedIndexOffset (r, rs, off) ->
      match rs with
      | ARMImmSRT (SRType_LSL, 0) -> (armreg_to_string r)
@@ -346,7 +339,7 @@ object (self:'a)
 
   method to_address (floc: floc_int): xpr_t =
     match kind with
-    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, _) ->
+    | ARMOffsetAddress (r, align, offset, isadd, _iswback, isindex, _) ->
        let env = floc#f#env in
        let memoff =
          if isindex then
@@ -423,7 +416,7 @@ object (self:'a)
 
   method to_updated_offset_address (floc: floc_int): (int * xpr_t) TR.traceresult =
     match kind with
-    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, _) ->
+    | ARMOffsetAddress (_r, _align, offset, isadd, _iswback, isindex, _) ->
        if isindex then
          Ok (0, self#to_address floc)
        else
@@ -460,7 +453,7 @@ object (self:'a)
     | ARMSpecialReg r -> env#mk_arm_special_register_variable r
     | ARMLiteralAddress dw ->
        floc#env#mk_global_variable dw#to_numerical
-    | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, size) ->
+    | ARMOffsetAddress (r, align, offset, isadd, _iswback, _isindex, size) ->
        let (var, trace) =
          (match offset with
           | ARMImmOffset _ ->
@@ -618,7 +611,7 @@ object (self:'a)
     | ARMFPConstant _ -> XConst XRandom
     | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
     | ARMDoubleReg _ -> XVar (self#to_variable floc)
-    | ARMSpecialReg r -> XVar (self#to_variable floc)
+    | ARMSpecialReg _ -> XVar (self#to_variable floc)
     | ARMExtensionReg _ -> XVar (self#to_variable floc)
     | ARMDoubleExtensionReg _ -> XVar (self#to_variable floc)
     | ARMExtensionRegElement _ -> XConst XRandom
@@ -699,10 +692,10 @@ object (self:'a)
 
   method to_multiple_expr (floc:floc_int): xpr_t list =
     match kind with
-    | ARMRegList rl ->
+    | ARMRegList _ ->
        let rlops = self#get_register_op_list in
        List.map (fun (op: 'a) -> op#to_expr floc) rlops
-    | ARMExtensionRegList rl ->
+    | ARMExtensionRegList _ ->
        let rlops = self#get_extension_register_op_list in
        List.map (fun (op: 'a) -> op#to_expr floc) rlops
     | _ ->
@@ -744,7 +737,7 @@ object (self:'a)
 
   method is_small_immediate =
     match kind with
-    | ARMImmediate imm ->
+    | ARMImmediate _ ->
        let num = self#to_numerical in
        (try
           num#toInt >= 0 && num#toInt < 5
@@ -756,7 +749,7 @@ object (self:'a)
     match kind with
     | ARMReg _
       | ARMWritebackReg _ -> true
-    | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) -> true
+    | ARMShiftedReg (_, ARMImmSRT (SRType_LSL, 0)) -> true
     | _ -> false
 
   method is_pc_register =
@@ -877,10 +870,10 @@ object (self:'a)
       | ARMFPConstant x -> "#" ^ (Printf.sprintf "%.1f" x)
       | ARMAbsolute addr -> addr#to_hex_string
       | ARMLiteralAddress addr -> addr#to_hex_string
-      | ARMMemMultiple (r, align, n, size) ->
+      | ARMMemMultiple (r, align, n, _size) ->
          let alignment = if align = 0 then "" else ":" ^ (string_of_int align) in
          (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">" ^ alignment
-      | ARMOffsetAddress (reg, align, offset, isadd, iswback, isindex, size) ->
+      | ARMOffsetAddress (reg, _align, offset, isadd, iswback, isindex, _size) ->
          let poffset = arm_memory_offset_to_string offset in
          let poffset = if isadd then poffset else "-" ^ poffset in
          let pre_offset = if poffset = "" then "" else "," ^ poffset in

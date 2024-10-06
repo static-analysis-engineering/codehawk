@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,14 +30,10 @@ open CHPretty
 
 (* chutil *)
 open CHPrettyUtil
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHCPURegisters
-open BCHFunctionData
 open BCHLibTypes
-open BCHSystemInfo
 
 (* bchlibarm32 *)
 open BCHARMOperand
@@ -84,6 +80,7 @@ let get_cond_flags_used (c: arm_opcode_cc_t): arm_cc_flag_t list =
   | ACCAlways -> []
   | ACCUnconditional -> []
 
+
 let is_cond_conditional (c: arm_opcode_cc_t): bool =
   match c with
   | ACCAlways
@@ -102,7 +99,7 @@ class type ['a] opcode_formatter_int =
              ?thumbw: bool
              -> ?dt: vfp_datatype_t
              -> ?dt2: vfp_datatype_t
-             -> ?writeback: bool
+             -> ?writeback: bool           (* set condition codes *)
              -> ?preops: string
              -> ?postops: string
              -> string
@@ -112,6 +109,7 @@ class type ['a] opcode_formatter_int =
     method no_ops: string -> 'a
   end
 
+
 type 'a opcode_record_t = {
     mnemonic: string;
     operands: arm_operand_int list;
@@ -119,6 +117,7 @@ type 'a opcode_record_t = {
     flags_set: arm_cc_flag_t list;
     ida_asm: 'a opcode_formatter_int -> 'a
   }
+
 
 let get_record (opc:arm_opcode_t): 'a opcode_record_t =
   match opc with
@@ -178,7 +177,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "ASR" ~writeback:s c [rd; rn; rm])
     }
-  | BitFieldClear (c, rd, lsb, width, msb) ->
+  | BitFieldClear (c, rd, lsb, width, _msb) ->
      let postops = ", " ^ (string_of_int lsb) ^ ", " ^ (string_of_int width) in
      { mnemonic = "BFC";
        operands = [rd];
@@ -186,7 +185,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~postops "BFC" c [rd])
      }
-  | BitFieldInsert (c, rd, rn, lsb, width, msb) ->
+  | BitFieldInsert (c, rd, rn, lsb, width, _msb) ->
      let postops = ", #" ^ (string_of_int lsb) ^ ", #" ^ (string_of_int width) in
      { mnemonic = "BFI";
        operands = [rd; rn];
@@ -348,21 +347,21 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#ops mnemonic [])
      }
-  | FLoadMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
+  | FLoadMultipleIncrementAfter (_wb, c, rn, rl, _mem) -> {
       mnemonic = "FLDMIAX";
       operands = [rn; rl];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "FLDMIAX" c [rn; rl])
     }
-  | FStoreMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
+  | FStoreMultipleIncrementAfter (_wb, c, rn, rl, _mem) -> {
       mnemonic = "FSTMIAX";
       operands = [rn; rl];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "FSTMIAX" c [rn; rl])
     }
-  | LoadCoprocessor (islong, ista2, c, coproc, crd, src, option) ->
+  | LoadCoprocessor (islong, ista2, c, coproc, crd, src, _option) ->
      let mnemonic =
        match (islong, ista2) with
        | (false, false) -> "LDC"
@@ -378,28 +377,28 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~preops mnemonic c [src]);
      }
-  | LoadMultipleDecrementAfter (wb, c, rn, rl, mem) -> {
+  | LoadMultipleDecrementAfter (_wb, c, rn, rl, mem) -> {
       mnemonic = "LDMDA";
       operands = [rn; rl; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDMDA" c [ rn; rl ])
     }
-  | LoadMultipleDecrementBefore (wb, c, rn, rl, mem) -> {
+  | LoadMultipleDecrementBefore (_wb, c, rn, rl, mem) -> {
       mnemonic = "LDMDB";
       operands = [rn; rl; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDMDB" c [rn; rl])
     }
-  | LoadMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
+  | LoadMultipleIncrementAfter (_wb, c, rn, rl, mem) -> {
       mnemonic = "LDM";
       operands = [rn; rl; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDM" c [ rn; rl ])
     }
-  | LoadMultipleIncrementBefore (wb, c, rn, rl, mem) -> {
+  | LoadMultipleIncrementBefore (_wb, c, rn, rl, mem) -> {
       mnemonic = "LDMIB";
       operands = [rn; rl; mem];
       flags_set = [];
@@ -443,14 +442,14 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
     }
   | LoadRegisterSignedByte (c, rt, rn, rm, mem, tw) -> {
       mnemonic = "LDRSB";
-      operands = [rt; rn; mem];
+      operands = [rt; rn; rm; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRSB" c [rt; mem])
     }
   | LoadRegisterSignedHalfword (c, rt, rn, rm, mem, tw) -> {
       mnemonic = "LDRSH";
-      operands = [rt; rn; mem];
+      operands = [rt; rn; rm; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRSH" c [rt; mem])
@@ -870,7 +869,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULWT" c [rd; rn; rm])
     }
-  | StoreCoprocessor (islong, ista2, c, coproc, crd, dst, option) ->
+  | StoreCoprocessor (islong, ista2, c, coproc, crd, dst, _option) ->
      let mnemonic =
        match (islong, ista2) with
        | (false, false) -> "STC"
@@ -886,30 +885,30 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~preops mnemonic c [dst])
      }
-  | StoreMultipleDecrementAfter (wb, c, rn, rl, mem) -> {
+  | StoreMultipleDecrementAfter (_wb, c, rn, rl, mem) -> {
       mnemonic = "STMDA";
-      operands = [rn; rl];
+      operands = [rn; rl; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STMDA" c [rn; rl])
     }
-  | StoreMultipleDecrementBefore (wb, c, rn, rl, mem) -> {
+  | StoreMultipleDecrementBefore (_wb, c, rn, rl, mem) -> {
       mnemonic = "STMDB";
-      operands = [rn; rl];
+      operands = [rn; rl; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STMDB" c [rn; rl])
     }
-  | StoreMultipleIncrementAfter (wb, c, rn, rl, mem, tw) -> {
+  | StoreMultipleIncrementAfter (_wb, c, rn, rl, mem, tw) -> {
       mnemonic = "STM";
-      operands = [rn; rl];
+      operands = [rn; rl; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STM" c [rn; rl])
     }
-  | StoreMultipleIncrementBefore (wb, c, rn, rl, mem) -> {
+  | StoreMultipleIncrementBefore (_wb, c, rn, rl, mem) -> {
       mnemonic = "STMIB";
-      operands = [rn; rl];
+      operands = [rn; rl; mem];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STMIB" c [rn; rl])
@@ -1206,7 +1205,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VDIV" c [dst; src1; src2])
     }
-  | VectorDuplicate (c, dt, regs, elements, dst, src) -> {
+  | VectorDuplicate (c, dt, _regs, _elements, dst, src) -> {
       mnemonic = "VDUP";
       operands = [dst; src];
       flags_set = [];
@@ -1228,21 +1227,21 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VFMA" c [dst; src1; src2])
     }
-  | VectorLoadFour (wb, c, dt, rl, rn, mem, rm) -> {
+  | VectorLoadFour (_wb, c, dt, rl, rn, mem, rm) -> {
       mnemonic = "VLD4";
       operands = [rl; rn; mem; rm];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VLD4" c [rl; mem])
     }
-  | VectorLoadMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
+  | VectorLoadMultipleIncrementAfter (_wb, c, rn, rl, _mem) -> {
       mnemonic = "VLDM";
       operands = [rn; rl];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VLDM" c [rn; rl])
     }
-  | VectorLoadOne (wb, c, dt, rl, rn, mem, rm) -> {
+  | VectorLoadOne (_wb, c, dt, rl, rn, mem, rm) -> {
       mnemonic = "VLD1";
       operands = [rl; rn; mem; rm];
       flags_set = [];
@@ -1479,35 +1478,35 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VSTR" c [src; mem])
     }
-  | VectorStoreMultipleDecrementBefore (wb, c, rn, rl, mem) -> {
+  | VectorStoreMultipleDecrementBefore (_wb, c, rn, rl, _mem) -> {
       mnemonic = "VSTMDB";
       operands = [rn; rl];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VSTMDB" c [rn; rl])
     }
-  | VectorStoreMultipleIncrementAfter (wb, c, rn, rl, mem) -> {
+  | VectorStoreMultipleIncrementAfter (_wb, c, rn, rl, _mem) -> {
       mnemonic = "VSTM";
       operands = [rn; rl];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VSTM" c [rn; rl])
     }
-  | VectorStoreFour (wb, c, dt, rl, rn, mem, rm) -> {
+  | VectorStoreFour (_wb, c, dt, rl, rn, mem, rm) -> {
       mnemonic = "VST4";
       operands = [rl; rn; mem; rm];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VST4" c [rl; mem])
     }
-  | VectorStoreOne (wb, c, dt, rl, rn, mem, rm) -> {
+  | VectorStoreOne (_wb, c, dt, rl, rn, mem, rm) -> {
       mnemonic = "VST1";
       operands = [rl; rn; mem; rm];
       flags_set = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VST1" c [rl; mem])
     }
-  | VectorStoreTwo (wb, c, dt, rl, rn, mem, rm) -> {
+  | VectorStoreTwo (_wb, c, dt, rl, rn, mem, rm) -> {
       mnemonic = "VST2";
       operands = [rl; rn; mem; rm];
       flags_set = [];
@@ -1610,7 +1609,7 @@ object (self)
            ?(thumbw: bool=false)
            ?(dt: vfp_datatype_t=VfpNone)
            ?(dt2: vfp_datatype_t=VfpNone)
-           ?(writeback: bool=false)
+           ?(writeback: bool=false)      (* set condition codes *)
            ?(preops: string="")
            ?(postops: string="")
            (s:string)

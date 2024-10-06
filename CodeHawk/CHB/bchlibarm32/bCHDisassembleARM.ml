@@ -26,30 +26,20 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHLogger
 open CHTiming
 
-(* xprlib *)
-open Xprt
-open XprToPretty
-open XprTypes
-open Xsimplify
-
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
-open BCHDataBlock
 open BCHDoubleword
 open BCHFloc
-open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionSummaryLibrary
-open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
 open BCHMakeCallTargetInfo
@@ -63,14 +53,11 @@ open BCHELFHeader
 open BCHELFTypes
 
 (* bchlibarm32 *)
-open BCHARMAssemblyBlock
-open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
 open BCHARMCallSitesRecords
 open BCHARMInstructionAggregate
-open BCHARMJumptable
 open BCHARMPseudocode
 open BCHARMOpcodeRecords
 open BCHARMTypes
@@ -92,9 +79,6 @@ module DoublewordCollections = CHCollections.Make (
     let compare d1 d2 = d1#compare d2
     let toPretty d = d#toPretty
   end)
-
-
-let x2p = xpr_formatter#pr_expr
 
 
 let disassemble_arm_section
@@ -144,7 +128,13 @@ let disassemble_arm_section
                begin
                  ch_error_log#add
                    "disassembly:skip data_block"
-                   (LBLOCK [STR "pos: "; INT pos; STR "; dblen: "; INT dblen]);
+                   (LBLOCK [
+                        STR "pos: ";
+                        INT pos;
+                        STR "; dblen: ";
+                        INT dblen;
+                        STR ": ";
+                        p]);
                  ""
                end in
           begin
@@ -452,7 +442,7 @@ let set_library_stub_name faddr =
     chlog#add "presumed library stub not a program address" faddr#toPretty
 
 
-let get_so_target (tgtaddr:doubleword_int) (instr:arm_assembly_instruction_int) =
+let get_so_target (tgtaddr:doubleword_int) (_instr:arm_assembly_instruction_int) =
   if functions_data#has_function_name tgtaddr then
     let fndata = functions_data#get_function tgtaddr in
     if fndata#is_library_stub then
@@ -491,7 +481,7 @@ let collect_function_entry_points () =
   let addresses = new DoublewordCollections.set_t in
   begin
     !arm_assembly_instructions#itera
-      (fun va instr ->
+      (fun _va instr ->
         match instr#get_opcode with
         | BranchLink (_,op)
           | BranchLinkExchange (_,op) when op#is_absolute_address ->
@@ -506,7 +496,7 @@ let collect_function_entry_points () =
 
 let collect_call_targets () =
   !arm_assembly_instructions#itera
-    (fun va instr ->
+    (fun _va instr ->
       match instr#get_opcode with
       | BranchLink (_, op)
         | BranchLinkExchange (_, op) when op#is_absolute_address ->
@@ -592,7 +582,7 @@ let set_block_boundaries () =
         try
           List.iter set_block_entry jt#get_all_targets
         with
-        | BCH_failure p ->
+        | BCH_failure _ ->
            ch_error_log#add
              "disassembly"
              (LBLOCK [
@@ -623,7 +613,7 @@ let set_block_boundaries () =
               va2: if   c ...
               va3: next instruction (fall-through)
             *)
-           | IfThen (c, xyz) when (xyz = "T") || (xyz = "TT") ->
+           | IfThen (_c, xyz) when (xyz = "T") || (xyz = "TT") ->
               let n_instrs = (String.length xyz) + 2 in
               (match get_iftxf va n_instrs with
                | Some (followva, conditional_vas)
@@ -792,7 +782,7 @@ let check_function_validity (fn: arm_assembly_function_int): bool =
 (* Returns a list of newly discovered function entry points (obtained from
    tail calls) *)
 let construct_assembly_function
-      ?(check=false) (count:int) (faddr:doubleword_int): doubleword_int list =
+      ?(check=false) (_count:int) (faddr:doubleword_int): doubleword_int list =
       try
         let newfns =
           if !arm_assembly_instructions#is_code_address faddr then
@@ -921,7 +911,7 @@ let associate_condition_code_users () =
     (* remove the conditional instruction itself *)
     let revInstrs: arm_assembly_instruction_int list =
       match revInstrs with
-      | h::tl -> tl
+      | _::tl -> tl
       | [] -> [] in
     let rec set l =
       match l with
@@ -960,7 +950,7 @@ let associate_condition_code_users () =
       end)
 
 
-let construct_functions_arm ?(construct_all_functions=false) =
+let construct_functions_arm ?(construct_all_functions=false) () =
   let _ =
     system_info#initialize_function_entry_points collect_function_entry_points in
   let fns_included = included_functions () in

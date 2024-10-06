@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023  Aarno Labs LLC
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,13 +36,10 @@ open CHLogger
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHDoubleword
 open BCHLibTypes
 open BCHLocation
 
 (* bchlibarm32 *)
-open BCHARMAssemblyBlock
-open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
 open BCHARMCHIFSystem
 open BCHARMTypes
@@ -110,7 +107,7 @@ let record_arm_loop_levels (faddr:doubleword_int) =
   let sccs = get_strongly_connected_components proc in
   begin
     (match sccs with [] -> () | _ -> record_wto sccs []) ;
-    f#itera (fun baddr block ->
+    f#itera (fun baddr _block ->
       if H.mem table baddr then
 	let levels = H.find table baddr in
 	add_loop_levels baddr (List.rev levels))

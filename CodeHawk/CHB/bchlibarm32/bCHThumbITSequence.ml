@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,7 +34,6 @@ open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHLibTypes
 
 (* bchlibarm32 *)
@@ -68,7 +67,7 @@ object (self)
 
   method toCHIF = []
 
-  method write_xml (node: xml_element_int) = ()
+  method write_xml (_node: xml_element_int) = ()
 
   method toString =
     thumb_it_sequence_kind_to_string self#kind
@@ -185,18 +184,19 @@ let create_thumb_it_sequence
       (itinstr: arm_assembly_instruction_int): thumb_it_sequence_int option =
   let itiaddr0 = itinstr#get_address in
   match itinstr#get_opcode with
-  | IfThen (c, xyz) when xyz = "E" ->
-     let itiaddr1 = itiaddr0#add_int 2 in  (* There is only one IT encoding: T1: 2 bytes *)
+  | IfThen (_c, xyz) when xyz = "E" ->
+     (* There is only one IT encoding: T1: 2 bytes *)
+     let itiaddr1 = itiaddr0#add_int 2 in
      let (instr1, instrlen1) = disassemble_instruction itiaddr1 ch in
      let itiaddr2 = itiaddr1#add_int instrlen1 in
-     let (instr2, instrlen2) = disassemble_instruction itiaddr2 ch in
+     let (instr2, _instrlen2) = disassemble_instruction itiaddr2 ch in
      (match is_ite_predicate_assignment instr1#get_opcode instr2#get_opcode with
       | Some (inv, op) ->
          Some
            (make_thumb_it_sequence
               (ITPredicateAssignment (inv, op)) [itinstr; instr1; instr2] itiaddr0)
       | _ -> None)
-  | IfThen (c, xyz) when xyz = "" ->
+  | IfThen (_c, xyz) when xyz = "" ->
      let itiaddr1 = itiaddr0#add_int 2 in
      let (instr1, _) = disassemble_instruction itiaddr1 ch in
      (match is_it_predicate_assignment instr1#get_opcode itiaddr0 with
