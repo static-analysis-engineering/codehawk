@@ -1,11 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020      Henny Sipma
+   Copyright (c) 2020-2023 Henny Sipma
+   Copyright (c) 2024      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,32 +27,24 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHLanguage
-open CHPretty
-
 (* chutil *)
-open CHPrettyUtil
 open CHSumTypeSerializer
-
-(* bchlib *)
-open BCHBasicTypes
-open BCHLibTypes
 
 (* bchlibmips32 *)
 open BCHMIPSTypes
 
+
 let mips_fp_format_mfts: mips_fp_format_t mfts_int =
   mk_mfts "mips_format_t"
-          [ (FPSingle,"f"); (FPDouble,"d"); (FPFixedWord,"w"); (FPFixedLong,"l");
-            (FPPair,"p") ]
+          [(FPSingle,"f"); (FPDouble,"d"); (FPFixedWord,"w"); (FPFixedLong,"l");
+            (FPPair,"p")]
 
-class mips_instr_format_mcts_t: [ mips_instr_format_t ] mfts_int =
+class mips_instr_format_mcts_t: [mips_instr_format_t] mfts_int =
 object
 
-  inherit [ mips_instr_format_t ] mcts_t "mips_instr_format_t"
+  inherit [mips_instr_format_t] mcts_t "mips_instr_format_t"
 
-  method ts (f:mips_instr_format_t) =
+  method !ts (f:mips_instr_format_t) =
     match f with
     | SyscallType _ -> "sc"
     | RSyncType _ -> "rs"
@@ -68,20 +61,22 @@ object
     | FPICCType _ -> "fpicc"
     | FormatUnknown _ -> "unknown"
 
-  method tags =
-    [ "r" ; "i" ; "j" ; "fpmc" ; "fpmc" ; "fpr" ; "fpri" ;  "fpc" ; "fpicc" ;
-      "r2" ; "r3"; "rb"; "rs"; "unknown" ]
+  method !tags =
+    ["r"; "i"; "j"; "fpmc"; "fpmc"; "fpr"; "fpri";  "fpc"; "fpicc";
+      "r2"; "r3"; "rb"; "rs"; "unknown"]
 
 end
 
-let mips_instr_format_mcts:mips_instr_format_t mfts_int = new mips_instr_format_mcts_t
+let mips_instr_format_mcts:mips_instr_format_t mfts_int =
+  new mips_instr_format_mcts_t
 
-class mips_opkind_mcts_t: [ mips_operand_kind_t ] mfts_int =
+
+class mips_opkind_mcts_t: [mips_operand_kind_t] mfts_int =
 object
 
-  inherit [ mips_operand_kind_t ] mcts_t "mips_operand_kind_t"
+  inherit [mips_operand_kind_t] mcts_t "mips_operand_kind_t"
 
-  method ts (k:mips_operand_kind_t) =
+  method !ts (k:mips_operand_kind_t) =
     match k with
     | MIPSReg _ -> "r"
     | MIPSSpecialReg _ -> "s"
@@ -90,8 +85,9 @@ object
     | MIPSAbsolute _ -> "a"
     | MIPSImmediate _ -> "m"
 
-  method tags = [ "a" ; "f" ; "i" ; "m" ; "r" ; "s" ]
+  method !tags = ["a"; "f"; "i"; "m"; "r"; "s"]
 
 end
+
 
 let mips_opkind_mcts:mips_operand_kind_t mfts_int = new mips_opkind_mcts_t

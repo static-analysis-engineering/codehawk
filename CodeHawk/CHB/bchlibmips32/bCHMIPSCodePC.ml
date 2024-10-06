@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,7 +37,6 @@ open CHPrettyUtil
 (* bchlib *)
 open BCHBasicTypes
 open BCHFloc
-open BCHLibTypes
 open BCHLocation
 
 (* bchlibmips32 *)
@@ -46,6 +45,7 @@ open BCHMIPSDictionary
 open BCHMIPSDisassemblyUtils
 open BCHMIPSOpcodeRecords
 open BCHMIPSTypes
+
 
 class mips_code_pc_t (block:mips_assembly_block_int):mips_code_pc_int =
 object (self)
@@ -60,7 +60,7 @@ object (self)
 
   method get_next_instruction =
     match instruction_list with
-    | [] -> 
+    | [] ->
        let msg =
          LBLOCK [
              block#get_first_address#toPretty;
@@ -132,21 +132,22 @@ object (self)
          instruction_list <- instr1 :: tl_instrs;
          (ctxtiaddr,instr2)
        end
-    | l ->
+    | _ ->
        begin
          chlog#add
            "delay slot"
            (LBLOCK [
                 instr1#get_address#toPretty;
                 STR "  ";
-                fixed_length_pretty (STR (mips_opcode_to_string instr1#get_opcode)) 32;
+                fixed_length_pretty
+                  (STR (mips_opcode_to_string instr1#get_opcode)) 32;
                 STR "; ";
-                STR (mips_opcode_to_string instr2#get_opcode) ]);
+                STR (mips_opcode_to_string instr2#get_opcode)]);
          indelayslot <- true;
          instruction_list <- instr1::tl_instrs;
-         (ctxtiaddr,instr2)
+         (ctxtiaddr, instr2)
        end
-        
+
 
   method get_block_successors = block#get_successors
 
@@ -178,7 +179,7 @@ object (self)
     match block#get_successors with
     | [false_branch; _] -> false_branch
     | _ ->
-      let msg = 
+      let msg =
 	LBLOCK [
             block#get_first_address#toPretty;
             NL;
@@ -194,7 +195,7 @@ object (self)
     match block#get_successors with
     | [ _ ; true_branch ] -> true_branch
     | _ ->
-      let msg = 
+      let msg =
 	LBLOCK [
             block#get_first_address#toPretty;
             NL;

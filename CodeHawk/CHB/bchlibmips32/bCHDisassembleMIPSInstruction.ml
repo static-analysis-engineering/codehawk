@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,21 +33,12 @@ open CHNumerical
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
 
 (* bchlib *)
-open BCHBasicTypes
-open BCHCPURegisters
-open BCHDoubleword
-open BCHImmediate
 open BCHLibTypes
-open BCHStreamWrapper
-open BCHSystemInfo
-open BCHSystemSettings
 
 (* bchlibmips32 *)
 open BCHMIPSDisassemblyUtils
-open BCHMIPSOpcodeRecords
 open BCHMIPSOperand
 open BCHMIPSTypes
 
@@ -173,7 +164,7 @@ let parse_J_opcode
 
 let parse_R_opcode
       (instr: doubleword_int)
-      (opc: int)
+      (_opc: int)
       (rrs: int)
       (rrt: int)
       (rrd: int)
@@ -228,11 +219,11 @@ let parse_R_opcode
 
 let parse_R2_opcode
       (instr: doubleword_int)
-      (opc: int)
+      (_opc: int)
       (rrs: int)
       (rrt: int)
       (rrd: int)
-      (samt: int)
+      (_samt: int)
       (fnct: int) =
   let rs = select_mips_reg rrs in
   let rt = select_mips_reg rrt in
@@ -252,7 +243,7 @@ let parse_R2_opcode
 
 let parse_R3_opcode
       (instr: doubleword_int)
-      (opc: int)
+      (_opc: int)
       (rrs: int)
       (rrt: int)
       (rrd: int)
@@ -277,12 +268,12 @@ let parse_R3_opcode
 
 let parse_FPMC_opcode
       (instr: doubleword_int)
-      (opc: int)
+      (_opc: int)
       (rrs: int)
       (cc: int)
       (tf: int)
       (rrd: int)
-      (ffd: int)
+      (_ffd: int)
       (funct: int) =
   let rs = select_mips_reg rrs in
   let rd = select_mips_reg rrd in
@@ -298,7 +289,7 @@ let parse_FPMC_opcode
 
 let parse_FPRI_opcode
       (instr: doubleword_int)
-      (opc: int)
+      (_opc: int)
       (sub: int)
       (rrt: int)
       (fs: int)
@@ -351,7 +342,7 @@ let parse_FPRI_opcode
 
 let parse_FPR_opcode
       (instr: doubleword_int)
-      (opc: int)
+      (_opc: int)
       (fmt: int)
       (ft: int)
       (fs: int)
@@ -388,8 +379,8 @@ let parse_FPR_opcode
 let parse_FPICC_opcode
       (instr: doubleword_int)
       (iaddr: doubleword_int)
-      (opc: int)
-      (sub: int)
+      (_opc: int)
+      (_sub: int)
       (cc: int)
       (nd: int)
       (tf: int)
@@ -439,7 +430,7 @@ let parse_opcode
        parse_R2_opcode instrbytes opc rs rt rd sa fn
     | R3Type (opc, rs, rt, rd, sa, fn) ->
        parse_R3_opcode instrbytes opc rs rt rd sa fn
-    | FPMCType (opc, rs, cc, nd, tf, rd, fd, funct) ->
+    | FPMCType (opc, rs, cc, _nd, tf, rd, fd, funct) ->
        parse_FPMC_opcode instrbytes opc rs cc tf rd fd funct
     | FPRIType (opc, sub, rt, fs, imm) ->
        parse_FPRI_opcode instrbytes opc sub rt fs imm
@@ -447,9 +438,9 @@ let parse_opcode
        parse_FPR_opcode instrbytes opc fmt ft fs fd funct
     | FPICCType (opc, sub, cc, nd, tf, offset) ->
        parse_FPICC_opcode instrbytes iaddr opc sub cc nd tf offset
-    | FPCompareType (opc, fmt, ft, fs, cc, cond) ->
+    | FPCompareType (_opc, fmt, ft, fs, cc, cond) ->
        parse_FPCompare_opcode fmt ft fs cc cond
-    | FormatUnknown(opc, otherbits) ->
+    | FormatUnknown(_opc, _otherbits) ->
        NotRecognized ("parse_opcode:format_unknown", instrbytes) in
   opcode
 

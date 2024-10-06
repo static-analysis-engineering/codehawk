@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -979,7 +979,8 @@ class type mips_opcode_dictionary_int =
 
     method get_sp_offset: int -> (int * interval_t)
 
-    method write_xml_sp_offset: ?tag:string -> xml_element_int -> int * interval_t -> unit
+    method write_xml_sp_offset:
+             ?tag:string -> xml_element_int -> int * interval_t -> unit
     method write_xml_instr:
              ?tag:string
              -> xml_element_int
