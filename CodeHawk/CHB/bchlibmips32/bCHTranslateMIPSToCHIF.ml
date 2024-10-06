@@ -233,7 +233,8 @@ let make_condition
       ~(restriction:block_restriction_t option) =
   let thensucclabel = make_code_label theniaddr in
   let elsesucclabel = make_code_label elseiaddr in
-  let (frozenvars,thentest,elsetest) = make_tests ~testloc ~jumploc ~testexpr ~restriction in
+  let (frozenvars,thentest,elsetest) =
+    make_tests ~testloc ~jumploc ~testexpr ~restriction in
   let make_node_and_label testcode tgtaddr modifier =
     let src = jumploc#i in
     let nextlabel = make_code_label ~src ~modifier tgtaddr in
@@ -254,8 +255,6 @@ let make_condition
 let translate_mips_instruction
       ~(funloc:location_int)
       ~(codepc:mips_code_pc_int)
-      ~(blocklabel:symbol_t)
-      ~(exitlabel:symbol_t)
       ~(cmds:cmd_t list) =                         (* commands carried over *)
   let (ctxtiaddr,instr) = codepc#get_next_instruction in
   let faddr = funloc#f in
@@ -1676,7 +1675,7 @@ object (self)
     let rec aux cmds =
       let (nodes, edges, newcmds) =
         try
-          translate_mips_instruction ~funloc ~codepc ~blocklabel ~exitlabel ~cmds
+          translate_mips_instruction ~funloc ~codepc ~cmds
         with
         | BCH_failure p ->
            let msg = LBLOCK [funloc#toPretty; STR ", "; blocklabel#toPretty; p] in

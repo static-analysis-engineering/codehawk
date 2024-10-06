@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,17 +32,11 @@ open CHPretty
 
 (* chutil *)
 open CHPrettyUtil
-open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHCPURegisters
-open BCHFunctionData
-open BCHLibTypes
-open BCHSystemInfo
 
 (* bchlibmips32 *)
-open BCHMIPSOperand
 open BCHMIPSTypes
    
 
@@ -66,7 +60,7 @@ let mips_fp_predicate_to_string p =
   | 7 -> "ule"
   | _ ->
      raise (BCH_failure
-              (LBLOCK [ STR "FP predicate code " ; INT p ; STR " not recognized" ]))
+              (LBLOCK [STR "FP predicate code "; INT p; STR " not recognized"]))
    
 
 class type ['a]  opcode_formatter_int =
@@ -102,16 +96,16 @@ let get_record (opc:mips_opcode_t) =
       ida_asm = (fun f -> f#ops "blezl" [src; target])
     }
   | BranchLTZero (src, target) -> {
-      mnemonic = "bltz" ;
+      mnemonic = "bltz";
       operands = [src; target];
-      delay_slot = true ;
+      delay_slot = true;
       ida_asm = (fun f -> f#ops "bltz" [src; target])
     }
   | BranchLTZeroLikely (src,target) -> {
-      mnemonic   = "bltzl" ;
-      operands   = [ src ; target ] ;
-      delay_slot  = true ;
-      ida_asm  = (fun f -> f#ops "bltzl" [ src ; target ])
+      mnemonic   = "bltzl";
+      operands   = [src; target];
+      delay_slot  = true;
+      ida_asm  = (fun f -> f#ops "bltzl" [src; target])
     }
   | BranchGEZero (src, target) ->  {
       mnemonic = "bgez";
@@ -120,19 +114,19 @@ let get_record (opc:mips_opcode_t) =
       ida_asm = (fun f -> f#ops "bgez" [src; target])
     }
   | BranchGEZeroLikely (src,target) ->  {
-      mnemonic   = "bgezl" ;
-      operands   = [ src ; target ] ;
-      delay_slot = true ;
-      ida_asm    = (fun f -> f#ops "bgezl" [ src ; target ])
+      mnemonic   = "bgezl";
+      operands   = [src; target];
+      delay_slot = true;
+      ida_asm    = (fun f -> f#ops "bgezl" [src; target])
     }
   | BranchGTZero (src, target) ->  {
-      mnemonic = "bgtz" ;
+      mnemonic = "bgtz";
       operands = [src; target];
       delay_slot = true;
       ida_asm = (fun f -> f#ops "bgtz" [src; target])
     }
   | BranchGTZeroLikely  (src, target) -> {
-      mnemonic = "bgtzl" ;
+      mnemonic = "bgtzl";
       operands = [src; target];
       delay_slot = true;
       ida_asm = (fun f -> f#ops "bgtzl" [src; target])
@@ -146,7 +140,7 @@ let get_record (opc:mips_opcode_t) =
   | BranchGEZeroLink (src, target) -> {
       mnemonic = "bgezal";
       operands = [src; target];
-      delay_slot = true ;
+      delay_slot = true;
       ida_asm = (fun f -> f#ops "bgezal" [src; target])
     }
 
@@ -166,10 +160,10 @@ let get_record (opc:mips_opcode_t) =
    *   I+1 : PC <- PC + target_offset
    * --------------------------------------------------------------------------- *)
   | Branch target -> {
-      mnemonic   = "b" ;
-      operands   = [ target ] ;
-      delay_slot = true ;
-      ida_asm    = (fun f -> f#ops "b" [ target ])
+      mnemonic   = "b";
+      operands   = [target];
+      delay_slot = true;
+      ida_asm    = (fun f -> f#ops "b" [target])
     }
 
   (* ---------------------------------------------------------------------------
@@ -196,10 +190,10 @@ let get_record (opc:mips_opcode_t) =
    *   I+1 : PC <- PC + target_offset
    * --------------------------------------------------------------------------- *)
   | BranchLink target -> {
-      mnemonic   = "bal" ;
-      operands   = [ target ] ;
-      delay_slot = true ;
-      ida_asm    = (fun f -> f#ops "bal" [ target ])
+      mnemonic   = "bal";
+      operands   = [target];
+      delay_slot = true;
+      ida_asm    = (fun f -> f#ops "bal" [target])
     }
 
   (* ---------------------------------------------------------------------------
@@ -220,7 +214,7 @@ let get_record (opc:mips_opcode_t) =
    *           PC <- PC + target_offset
    * --------------------------------------------------------------------------- *)
   | BranchEqual (src1, src2, target) -> {
-      mnemonic = "beq" ;
+      mnemonic = "beq";
       operands = [src1; src2; target];
       delay_slot = true;
       ida_asm = (fun f -> f#ops "beq" [src1; src2; target])
@@ -246,9 +240,9 @@ let get_record (opc:mips_opcode_t) =
                                    
   (* ----------------------------------------------- I-type arithmetic/logic  *)
   | AddImmediate (dest, src, imm) -> {
-      mnemonic = "addi" ;
+      mnemonic = "addi";
       operands = [dest; src; imm];
-      delay_slot = false ;
+      delay_slot = false;
       ida_asm = (fun f -> f#ops "addi" [dest; src; imm])
     }
                                  
@@ -271,10 +265,10 @@ let get_record (opc:mips_opcode_t) =
    * arithmetic.
    * --------------------------------------------------------------------------- *)
   | AddImmediateUnsigned (dest,src,imm) -> {
-      mnemonic   = "addiu" ;
-      operands   = [ dest ; src ; imm ] ;
-      delay_slot = false ;
-      ida_asm    =  (fun f -> f#ops "addiu" [ dest ; src ; imm ])
+      mnemonic   = "addiu";
+      operands   = [dest; src; imm];
+      delay_slot = false;
+      ida_asm    =  (fun f -> f#ops "addiu" [dest; src; imm])
     }
 
   (* ---------------------------------------------------------------------------
@@ -294,10 +288,10 @@ let get_record (opc:mips_opcode_t) =
    *      GPR[rt] <- 0
    * --------------------------------------------------------------------------- *)       
   | SetLTImmediate (rt,rs,imm) -> {
-      mnemonic   = "slti" ;
-      operands   = [ rt ; rs ; imm ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "slti" [ rt ; rs ; imm ])
+      mnemonic   = "slti";
+      operands   = [rt; rs; imm];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "slti" [rt; rs; imm])
     }
 
   (* ---------------------------------------------------------------------------
@@ -321,10 +315,10 @@ let get_record (opc:mips_opcode_t) =
    *      GPR[rt] <- 0
    * --------------------------------------------------------------------------- *)
   | SetLTImmediateUnsigned (dest,src,imm) -> {
-      mnemonic   = "sltiu" ;
-      operands   = [ dest ; src ; imm ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "sltiu" [ dest ; src ; imm ])
+      mnemonic   = "sltiu";
+      operands   = [dest; src; imm];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "sltiu" [dest; src; imm])
     }
 
   (* ---------------------------------------------------------------------------
@@ -339,10 +333,10 @@ let get_record (opc:mips_opcode_t) =
    *   GPR[rt] <- GPR[rs] and zero_extend(immediate)
    * --------------------------------------------------------------------------- *)
   | AndImmediate (dest,src,imm) -> {
-      mnemonic   = "andi" ;
-      operands   = [ dest ; src ; imm ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "andi" [ dest ; src ; imm ])
+      mnemonic   = "andi";
+      operands   = [dest; src; imm];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "andi" [dest; src; imm])
     }
 
   (* ---------------------------------------------------------------------------
@@ -357,10 +351,10 @@ let get_record (opc:mips_opcode_t) =
    *   GPR[rt] <- GPR[rs] or zero_extend(immediate)
    * --------------------------------------------------------------------------- *)
   | OrImmediate (dest,src,imm) -> {
-      mnemonic   = "ori" ;
-      operands   = [ dest ; src ; imm ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "ori" [ dest ; src ; imm ])
+      mnemonic   = "ori";
+      operands   = [dest; src; imm];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "ori" [dest; src; imm])
     }
 
   (* ---------------------------------------------------------------------------
@@ -375,10 +369,10 @@ let get_record (opc:mips_opcode_t) =
    *   GPR[rt] <- GPR[rs] xor zero_extend(immediate)
    * --------------------------------------------------------------------------- *)
   | XorImmediate (dest,src,imm) -> {
-     mnemonic    = "xori" ;
-     operands    = [ dest ; src ; imm ] ;
-     delay_slot  = false ;
-     ida_asm     = (fun f -> f#ops "xori" [ dest ; src ; imm ])
+     mnemonic    = "xori";
+     operands    = [dest; src; imm];
+     delay_slot  = false;
+     ida_asm     = (fun f -> f#ops "xori" [dest; src; imm])
     }
 
   (* --------------------------------------------------------- I-type: memory *)
@@ -395,9 +389,9 @@ let get_record (opc:mips_opcode_t) =
    *   GPR[rt] <- GPR[rs] + sign_extend(immediate << 16)
    * --------------------------------------------------------------------------- *)
   | AddUpperImmediate (dest, src, imm) -> {
-      mnemonic   = "aui"  ;
+      mnemonic   = "aui" ;
       operands   = [dest; src; imm];
-      delay_slot = false ;
+      delay_slot = false;
       ida_asm    = (fun f -> f#ops "aui" [dest; src; imm])
     }
 
@@ -415,10 +409,10 @@ let get_record (opc:mips_opcode_t) =
    *   In Release 6, LUI is an assembly idiom of AUI with rs=0.
    * --------------------------------------------------------------------------- *)
   | LoadUpperImmediate (dest,imm) -> {
-      mnemonic   = "lui" ;
-      operands   = [ dest ; imm ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "lui" [ dest ; imm ])
+      mnemonic   = "lui";
+      operands   = [dest; imm];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "lui" [dest; imm])
     }
 
   (* ---------------------------------------------------------------------------
@@ -437,10 +431,10 @@ let get_record (opc:mips_opcode_t) =
    *   GPR[rt] <- sign_extend(memword[7+8*byte..8*byte])
    * --------------------------------------------------------------------------- *)
    | LoadByte (dest,src) -> {
-      mnemonic   = "lb" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "lb" [ dest ; src ])
+      mnemonic   = "lb";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "lb" [dest; src])
      }
 
   (* ---------------------------------------------------------------------------
@@ -459,17 +453,17 @@ let get_record (opc:mips_opcode_t) =
    *   GPR[rt] <- sign_extend(memword[15+8*byte..8*byte])
    * --------------------------------------------------------------------------- *)
   | LoadHalfWord (dest,src) -> {
-      mnemonic   = "lh" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "lh" [ dest ; src ])
+      mnemonic   = "lh";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "lh" [dest; src])
     }
 
   | LoadWordLeft (dest,src) -> {
-      mnemonic   = "lwl" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    =  (fun f -> f#ops "lwl" [ dest ; src ])
+      mnemonic   = "lwl";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    =  (fun f -> f#ops "lwl" [dest; src])
     }
   (* ------------------------------------------------------------------------
    * Format: LW rt, offset(base)
@@ -481,10 +475,10 @@ let get_record (opc:mips_opcode_t) =
    * added to the contents of GPR base to form the effective address.
    * ------------------------------------------------------------------------ *)
   | LoadWord (dest,src) -> {
-      mnemonic   = "lw" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "lw" [ dest ; src ])
+      mnemonic   = "lw";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "lw" [dest; src])
     }
   (* ------------------------------------------------------------------------
    * Format: LL rt, offset(base)
@@ -517,22 +511,22 @@ let get_record (opc:mips_opcode_t) =
       ida_asm =  (fun f -> f#ops "ll" [dest; src])
     }
   | LoadByteUnsigned (dest,src) -> {
-      mnemonic   = "lbu" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "lbu"  [ dest ; src ])
+      mnemonic   = "lbu";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "lbu"  [dest; src])
     }
   | LoadHalfWordUnsigned (dest,src) -> {
-      mnemonic   = "lhu" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "lhu" [ dest ; src ])
+      mnemonic   = "lhu";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "lhu" [dest; src])
     }
   | LoadWordRight (dest,src) -> {
-      mnemonic   = "lwr" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "lwr" [ dest ; src ])
+      mnemonic   = "lwr";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "lwr" [dest; src])
     }
 
   (* ------------------------------------------------------------------------
@@ -544,34 +538,34 @@ let get_record (opc:mips_opcode_t) =
    * is added to the contents of GPR base to form the effective address.
    * ------------------------------------------------------------------------ *)
   | StoreByte (dest,src) -> {
-      mnemonic   = "sb" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "sb" [ src ; dest ])
+      mnemonic   = "sb";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "sb" [src; dest])
     }
   | StoreHalfWord (dest,src) ->  {
-      mnemonic   = "sh" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "sh"  [ src ; dest ])
+      mnemonic   = "sh";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "sh"  [src; dest])
     }
   | StoreWordLeft (dest,src) -> {
-      mnemonic   = "swl" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "swl" [ src ; dest ])
+      mnemonic   = "swl";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "swl" [src; dest])
     }
   | StoreWordRight (dest,src) -> {
-      mnemonic   = "swr" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "swr" [ src ; dest ])
+      mnemonic   = "swr";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "swr" [src; dest])
     }
   | StoreWord (dest,src) -> {
-      mnemonic   = "sw" ;
-      operands   = [ dest ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "sw" [ src ; dest ])
+      mnemonic   = "sw";
+      operands   = [dest; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "sw" [src; dest])
     }
   (* ------------------------------------------------------------------------
    * Format: SC rt, offset(base)
@@ -596,9 +590,9 @@ let get_record (opc:mips_opcode_t) =
    * into GPR rt.
    * ------------------------------------------------------------------------ *)
   | StoreConditionalWord (dest, src) -> {
-      mnemonic = "sc" ;
+      mnemonic = "sc";
       operands = [dest; src];
-      delay_slot = false ;
+      delay_slot = false;
       ida_asm = (fun f -> f#ops "sc" [src; dest])
     }
   (* ------------------------------------------------------------------------
@@ -612,7 +606,7 @@ let get_record (opc:mips_opcode_t) =
    * base to form the effective address.
    * ------------------------------------------------------------------------ *)
   | LoadWordFP (dest, src) -> {
-      mnemonic = "lwc1" ;
+      mnemonic = "lwc1";
       operands = [dest; src];
       delay_slot = false;
       ida_asm = (fun f -> f#ops "lwc1" [dest; src])
@@ -620,7 +614,7 @@ let get_record (opc:mips_opcode_t) =
   | LoadDoublewordToFP (dest, src) -> {
       mnemonic = "ldc1";
       operands = [dest; src];
-      delay_slot = false ;
+      delay_slot = false;
       ida_asm = (fun f -> f#ops "ldc1" [dest; src])
     }
   (* ------------------------------------------------------------------------
@@ -632,15 +626,15 @@ let get_record (opc:mips_opcode_t) =
    * added to the contents of GPR base to form the effective address.
    * ------------------------------------------------------------------------ *)
   | StoreWordFromFP (dest, src) -> {
-      mnemonic = "swc1" ;
+      mnemonic = "swc1";
       operands = [dest; src];
-      delay_slot = false ;
+      delay_slot = false;
       ida_asm = (fun f -> f#ops "swc1" [src; dest])
     }
   | StoreDoublewordFromFP (dest, src) -> {
-      mnemonic = "sdc1" ;
+      mnemonic = "sdc1";
       operands = [dest; src];
-      delay_slot = false ;
+      delay_slot = false;
       ida_asm = (fun f -> f#ops "sdc1" [src; dest])
     }
 
@@ -741,16 +735,16 @@ let get_record (opc:mips_opcode_t) =
    *   I+1: I+1: PC <- PC[GPRLEN-1..28] || instr_index || 00
    * ------------------------------------------------------------------------ *)
   | Jump target -> {
-      mnemonic = "j" ;
+      mnemonic = "j";
       operands = [target];
       delay_slot = true;
       ida_asm = (fun f -> f#ops "j" [target])
     }
   | JumpLink target -> {
-      mnemonic   = "jal" ;
-      operands   = [ target ] ;
-      delay_slot = true ;
-      ida_asm    = (fun f -> f#ops "jal" [ target ])
+      mnemonic   = "jal";
+      operands   = [target];
+      delay_slot = true;
+      ida_asm    = (fun f -> f#ops "jal" [target])
     }
   (* --------------------------------------------------------- R-type: binary *)
   | ShiftLeftLogical (dest, src, samt) -> {
@@ -760,13 +754,13 @@ let get_record (opc:mips_opcode_t) =
       ida_asm = (fun f -> f#ops "sll" [dest; src; samt])
     }
   | ShiftRightLogical (dest, src, samt) -> {
-      mnemonic = "srl" ;
+      mnemonic = "srl";
       operands = [dest; src; samt];
       delay_slot = false;
       ida_asm = (fun f -> f#ops "srl" [dest; src; samt])
     }
   | ShiftRightArithmetic (dest, src, samt) -> {
-      mnemonic = "sra" ;
+      mnemonic = "sra";
       operands = [dest; src; samt];
       delay_slot = false;
       ida_asm = (fun f -> f#ops "sra" [dest; src; samt])
@@ -785,19 +779,19 @@ let get_record (opc:mips_opcode_t) =
    *   GPR[rd] <- temp
    * --------------------------------------------------------------------------- *)
   | ShiftLeftLogicalVariable (rd, rt, rs) -> {
-      mnemonic = "sllv" ;
+      mnemonic = "sllv";
       operands = [rd; rt; rs];
       delay_slot = false;
       ida_asm = (fun f -> f#ops "sllv" [rd; rt; rs])
     }
   | ShiftRightLogicalVariable (rd, rt, rs) -> {
-      mnemonic = "srlv" ;
+      mnemonic = "srlv";
       operands = [rd; rt; rs];
       delay_slot = false;
       ida_asm = (fun f -> f#ops "srlv" [rd; rt; rs])
     }
   | ShiftRightArithmeticVariable (rd, rt, rs) -> {
-      mnemonic = "srav" ;
+      mnemonic = "srav";
       operands = [rd; rt; rs];
       delay_slot = false;
       ida_asm = (fun f -> f#ops "srav" [rd; rt; rs])
@@ -805,7 +799,7 @@ let get_record (opc:mips_opcode_t) =
   | JumpRegister target -> {
       mnemonic = "jr";
       operands = [target];
-      delay_slot = true ;
+      delay_slot = true;
       ida_asm = (fun f -> f#ops "jr" [target])
     }
   | JumpLinkRegister (returnaddr, target) -> {
@@ -848,7 +842,7 @@ let get_record (opc:mips_opcode_t) =
   | MoveToHi (hi, rs) -> {
       mnemonic = "mthi";
       operands = [hi; rs];
-      delay_slot = false ;
+      delay_slot = false;
       ida_asm = (fun f -> f#ops "mthi" [rs])
     }
   | MoveFromLo (rd, lo) -> {
@@ -886,10 +880,10 @@ let get_record (opc:mips_opcode_t) =
    * are placed into GPR rd.
    * --------------------------------------------------------------------------- *)
   | MoveConditionalZero (rd, rs, rt) -> {
-      mnemonic = "movz" ;
-      operands = [ rd ; rs ; rt ] ;
-      delay_slot = false ;
-      ida_asm = (fun f -> f#ops "movz" [ rd ; rs ; rt ])
+      mnemonic = "movz";
+      operands = [rd; rs; rt];
+      delay_slot = false;
+      ida_asm = (fun f -> f#ops "movz" [rd; rs; rt])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1022,7 +1016,7 @@ let get_record (opc:mips_opcode_t) =
       ida_asm = (fun f -> f#ops "divu" [rs; rt])
     }
   | Add (dest, src1, src2) -> {
-      mnemonic = "add" ;
+      mnemonic = "add";
       operands = [dest; src1; src2];
       delay_slot = false;
       ida_asm = (fun f -> f#ops "add" [dest; src1; src2])
@@ -1036,7 +1030,7 @@ let get_record (opc:mips_opcode_t) =
   | Subtract (dest, src1, src2) -> {
       mnemonic = "sub";
       operands = [dest; src1; src2];
-      delay_slot = false ;
+      delay_slot = false;
       ida_asm = (fun f -> f#ops "sub" [dest; src1; src2])
     }
   | SubtractUnsigned (dest, src1, src2) -> {
@@ -1123,11 +1117,11 @@ let get_record (opc:mips_opcode_t) =
       ida_asm = (fun f -> f#ops "sltu" [rd; rs; rt])
     }
 
-  | Break code ->
+  | Break _code ->
      { mnemonic   = "break";
-       operands   = [ ];
+       operands   = [];
        delay_slot = false;
-       ida_asm    = (fun f -> f#ops "break" [ ])
+       ida_asm    = (fun f -> f#ops "break" [])
      }
 
   | Sync stype ->
@@ -1152,9 +1146,9 @@ let get_record (opc:mips_opcode_t) =
   | Syscall code ->
      let m = "syscall " ^ (string_of_int code) in
      { mnemonic   = m;
-       operands   = [ ];
+       operands   = [];
        delay_slot = false;
-       ida_asm    = (fun f -> f#ops m [ ])
+       ida_asm    = (fun f -> f#ops m [])
      }
 
   (* ---------------------------------------------------------------------------
@@ -1172,7 +1166,7 @@ let get_record (opc:mips_opcode_t) =
    *   if GPR[rs] = GPR[rt] then
    *      SignalException(Trap)
    * --------------------------------------------------------------------------- *)
-  | TrapIfEqual (code, rs, rt) -> {
+  | TrapIfEqual (_code, rs, rt) -> {
       mnemonic = "teq";
       operands = [rs; rt];
       delay_slot = false;
@@ -1216,9 +1210,9 @@ let get_record (opc:mips_opcode_t) =
    *   HI <- UNPREDICTABLE
    * --------------------------------------------------------------------------- *)
   | MultiplyWordToGPR (rd, rs, rt) -> {
-      mnemonic = "mul" ;
+      mnemonic = "mul";
       operands = [rd; rs; rt];
-      delay_slot = false ;
+      delay_slot = false;
       ida_asm = (fun f -> f#ops "mul" [rd; rs; rt])
     }
 
@@ -1251,7 +1245,7 @@ let get_record (opc:mips_opcode_t) =
    *   temp <- 0[32-(msbd+1)] || GPR[rs][msbd+lsb..lsb]
    *   GPR[rt] <- temp
    * ------------------------------------------------------------------------ *)
-  | ExtractBitField (dst, src, pos, size) -> {
+  | ExtractBitField (dst, src, _pos, _size) -> {
       mnemonic = "ext";
       operands = [dst; src];
       delay_slot = false;
@@ -1283,7 +1277,7 @@ let get_record (opc:mips_opcode_t) =
    *   endif
    *   GPR[rt] <- 0[31-(msb+1)] || GPR[rs][msb-lsb..0] || GPR[rt][lsb-1..0]
    * ------------------------------------------------------------------------ *)
-  | InsertBitField (dst, src, pos, size) -> {
+  | InsertBitField (dst, src, _pos, _size) -> {
       mnemonic = "ins";
       operands = [dst; src];
       delay_slot = false;
@@ -1387,19 +1381,19 @@ let get_record (opc:mips_opcode_t) =
   | FPAddfmt (fmt,fd,fs,ft) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "add." ^ fmtstr in
-     { mnemonic  = mnemonic ;
-       operands  = [ fd ; fs ; ft ] ;
-       delay_slot = false ;
-       ida_asm   = (fun f -> f#ops mnemonic  [ fd ; fs ; ft ])
+     { mnemonic  = mnemonic;
+       operands  = [fd; fs; ft];
+       delay_slot = false;
+       ida_asm   = (fun f -> f#ops mnemonic  [fd; fs; ft])
      }
 
   | FPSubfmt (fmt,fd,fs,ft) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "sub." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ fd ; fs ; ft ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ fd ; fs ; ft ])
+     { mnemonic   = mnemonic;
+       operands   = [fd; fs; ft];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [fd; fs; ft])
      }
      
   (* ---------------------------------------------------------------------------
@@ -1420,26 +1414,26 @@ let get_record (opc:mips_opcode_t) =
   | FPMulfmt (fmt,fd,fs,ft) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "mul." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ fd ; fs ; ft ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ fd ; fs ; ft ])
+     { mnemonic   = mnemonic;
+       operands   = [fd; fs; ft];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [fd; fs; ft])
      }
   | FPDivfmt (fmt, dst, src1, src2) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "div." ^ fmtstr in
-     { mnemonic = mnemonic ;
-       operands = [dst; src1; src2] ;
-       delay_slot = false ;
+     { mnemonic = mnemonic;
+       operands = [dst; src1; src2];
+       delay_slot = false;
        ida_asm = (fun f -> f#ops mnemonic [dst; src1; src2])
      }
   | FPSqrtfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "sqrt." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   (* ---------------------------------------------------------------------------
    * Format: ABS.S fd, fs
@@ -1459,10 +1453,10 @@ let get_record (opc:mips_opcode_t) =
   | FPAbsfmt (fmt,fd,fs) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "abs." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ fd ; fs ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ fd ; fs ])
+     { mnemonic   = mnemonic;
+       operands   = [fd; fs];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [fd; fs])
      }
      
   (* ---------------------------------------------------------------------------
@@ -1483,134 +1477,134 @@ let get_record (opc:mips_opcode_t) =
   | FPMovfmt (fmt,fd,fs) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "mov." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ fd ; fs ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ fd ; fs ])
+     { mnemonic   = mnemonic;
+       operands   = [fd; fs];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [fd; fs])
      }
   | FPNegfmt (fmt,dst,src)  ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "neg." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPRoundLfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "round.l." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPTruncLfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "trunc.l." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPCeilLfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "ceil.l."  ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   =  [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   =  [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPFloorLfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "floor.l." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPRoundWfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "round.w." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
 
   | FPTruncWfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "trunc.w." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPCeilWfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "ceil.w." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
 
   | FPFloorWfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "floor.w." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPRSqrtfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "rsqrt." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
 
   | FPCVTSfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "cvt.s." ^ fmtstr  in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
 
   | FPCVTDfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "cvt.d." ^ fmtstr  in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPCVTWfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "cvt.w." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPCVTLfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "cvt.l." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   | FPCVTSPfmt (fmt,dst,src) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let mnemonic = "cvt.sp." ^ fmtstr in
-     { mnemonic   = mnemonic ;
-       operands   = [ dst ; src ] ;
-       delay_slot = false ;
-       ida_asm    = (fun f -> f#ops mnemonic [ dst ; src ])
+     { mnemonic   = mnemonic;
+       operands   = [dst; src];
+       delay_slot = false;
+       ida_asm    = (fun f -> f#ops mnemonic [dst; src])
      }
   (* ---------------------------------------------------------- FPRIType  --- *)
 
@@ -1666,7 +1660,7 @@ let get_record (opc:mips_opcode_t) =
    * --------------------------------------------------------------------------- *)
   | MoveFromHighCoprocessor0 (rt, rd, sel) -> {
       mnemonic   = "mfhc0";
-      operands   = [ rt; rd ];
+      operands   = [rt; rd];
       delay_slot = false;
       ida_asm    = (fun f -> f#int_ops "mfhc0" [rt; rd] [sel])
     }
@@ -1685,7 +1679,7 @@ let get_record (opc:mips_opcode_t) =
    * --------------------------------------------------------------------------- *)
   | MoveToHighCoprocessor0 (rt, rd, sel) -> {
       mnemonic   = "mthc0";
-      operands   = [ rt; rd ];
+      operands   = [rt; rd];
       delay_slot = false;
       ida_asm    = (fun f -> f#int_ops "mthc0" [rt; rd] [sel])
     }
@@ -1701,10 +1695,10 @@ let get_record (opc:mips_opcode_t) =
    *   GPR[rt] <- data
    * --------------------------------------------------------------------------- *)
   | MoveWordFromFP (rt,fs) -> {
-      mnemonic   = "mfc1" ;
-      operands   = [ rt ; fs ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "mfc1" [ rt ; fs ])
+      mnemonic   = "mfc1";
+      operands   = [rt; fs];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "mfc1" [rt; fs])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1719,9 +1713,9 @@ let get_record (opc:mips_opcode_t) =
    * --------------------------------------------------------------------------- *)
   | MoveWordFromHighHalfFP (rt,fs) -> {
       mnemonic   = "mfhc1";
-      operands   = [ rt; fs ];
+      operands   = [rt; fs];
       delay_slot = false;
-      ida_asm    = (fun f -> f#ops "mfhc1" [ rt; fs])
+      ida_asm    = (fun f -> f#ops "mfhc1" [rt; fs])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1737,9 +1731,9 @@ let get_record (opc:mips_opcode_t) =
    * --------------------------------------------------------------------------- *)
   | MoveWordToHighHalfFP (rt,fs) -> {
       mnemonic   = "mthc1";
-      operands   = [ rt; fs ];
+      operands   = [rt; fs];
       delay_slot = false;
-      ida_asm    = (fun f -> f#ops "mthc1" [ rt; fs ])
+      ida_asm    = (fun f -> f#ops "mthc1" [rt; fs])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1753,10 +1747,10 @@ let get_record (opc:mips_opcode_t) =
    *   StoreFPR(fs, UNINTERPRETED_WORD, data)
    * --------------------------------------------------------------------------- *)
   | MoveWordToFP (rt, fs) -> {
-      mnemonic = "mtc1" ;
-      operands = [rt ; fs] ;
-      delay_slot = false ;
-      ida_asm = (fun f -> f#ops "mtc1" [ rt ; fs ])
+      mnemonic = "mtc1";
+      operands = [rt; fs];
+      delay_slot = false;
+      ida_asm = (fun f -> f#ops "mtc1" [rt; fs])
     }
 
   (* ---------------------------------------------------------------------------
@@ -1766,16 +1760,16 @@ let get_record (opc:mips_opcode_t) =
    * Copy the 32-bit word from FP (coprocessor 1) control register fs into GPR rt.
    * --------------------------------------------------------------------------- *)
   | ControlWordFromFP (rt,fs) -> {
-      mnemonic   = "cfc1" ;
-      operands   = [ rt ; fs ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "cfc1" [ rt ; fs ])
+      mnemonic   = "cfc1";
+      operands   = [rt; fs];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "cfc1" [rt; fs])
     }
   | ControlWordToFP (src,dst)  -> {
-      mnemonic   = "ctc1" ;
-      operands   = [ src ; dst ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "ctc1"  [ src; dst ])
+      mnemonic   = "ctc1";
+      operands   = [src; dst];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "ctc1"  [src; dst])
     }
 
   (* -----------------------------------------------------------FPICCType --- *)
@@ -1801,27 +1795,27 @@ let get_record (opc:mips_opcode_t) =
    *        endif
    * ------------------------------------------------------------------------ *)
   | BranchFPFalse (cc,offset) -> {
-      mnemonic    = "bc1f" ;
-      operands    = [ offset ] ;
-      delay_slot  = true ;
-      ida_asm     = (fun f -> f#cc_ops "bc1f" cc [ offset ]) ;
+      mnemonic    = "bc1f";
+      operands    = [offset];
+      delay_slot  = true;
+      ida_asm     = (fun f -> f#cc_ops "bc1f" cc [offset]);
     }
 
   | BranchFPTrue (cc,offset) -> {
-      mnemonic    = "bc1t" ;
-      operands    = [ offset ] ;
-      delay_slot  = true ;
-      ida_asm     = (fun f -> f#cc_ops "bc1t" cc [ offset ]) ;
+      mnemonic    = "bc1t";
+      operands    = [offset];
+      delay_slot  = true;
+      ida_asm     = (fun f -> f#cc_ops "bc1t" cc [offset]);
     }
 
   (* ------------------------------------------------------ FPCompareType --- *)
-  | FPCompare (fmt, cc, pred, excn, src1, src2) ->
+  | FPCompare (fmt, _cc, pred, _excn, src1, src2) ->
      let fmtstr = mips_fp_format_to_string fmt in
      let predstr = mips_fp_predicate_to_string pred in
      let mnemonic = "c."  ^ predstr ^ "." ^ fmtstr in
-     { mnemonic = mnemonic ;
-       operands = [src1; src2] ;
-       delay_slot = false ;
+     { mnemonic = mnemonic;
+       operands = [src1; src2];
+       delay_slot = false;
        ida_asm = (fun f -> f#ops mnemonic [src1; src2])
      }
 
@@ -1844,29 +1838,29 @@ let get_record (opc:mips_opcode_t) =
   (* ---------------------------------------------------- Pseudo instructions *)
 
   | Move (dst,src) -> {
-      mnemonic   = "move" ;
-      operands   = [ dst ; src ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "move" [ dst ; src ])
+      mnemonic   = "move";
+      operands   = [dst; src];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "move" [dst; src])
     }
 
   | LoadImmediate (dst,imm) -> {
-      mnemonic   = "li" ;
-      operands   = [ dst ; imm ] ;
-      delay_slot = false ;
-      ida_asm    = (fun f -> f#ops "li" [ dst ; imm ])
+      mnemonic   = "li";
+      operands   = [dst; imm];
+      delay_slot = false;
+      ida_asm    = (fun f -> f#ops "li" [dst; imm])
     }
                                     
   | NoOperation  -> {
-      mnemonic   = "nop" ;
-      operands   = [] ;
-      delay_slot = false ;
+      mnemonic   = "nop";
+      operands   = [];
+      delay_slot = false;
       ida_asm    = (fun f -> f#no_ops "<nop>")
     }
   | Halt -> {
-      mnemonic   = "hlt" ;
-      operands   = [] ;
-      delay_slot = true ;
+      mnemonic   = "hlt";
+      operands   = [];
+      delay_slot = true;
       ida_asm    = (fun f -> f#no_ops "<hlt>")
     }
   | OpcodeUnpredictable s -> {
@@ -1882,9 +1876,9 @@ let get_record (opc:mips_opcode_t) =
       ida_asm = (fun f -> f#no_ops ("unknown " ^ name ^ "; " ^ dw#to_hex_string))
     }
   | _  ->  {
-      mnemonic   = "generic" ;
-      operands   = [] ;
-      delay_slot = false ;
+      mnemonic   = "generic";
+      operands   = [];
+      delay_slot = false;
       ida_asm    = (fun f -> f#no_ops "generic")
     }
 
@@ -1906,7 +1900,8 @@ object (self)
       self#ops s operands
     else
       let s = (fixed_length_string s (width+1)) ^ (string_of_int cc) in
-      let ops = String.concat "" (List.map (fun op -> ", " ^ op#toString) operands) in
+      let ops =
+        String.concat "" (List.map (fun op -> ", " ^ op#toString) operands) in
       s ^ ops
 
   method int_ops s operands intoperands =

@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,32 +28,20 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHIntervals
 open CHLanguage
 open CHNumerical
 open CHPretty
 
-(* chutil *)
-open CHLogger
-open CHXmlDocument
-
 (* xprlib *)
 open Xprt
 open XprTypes
-open XprToPretty
-open XprXml
-open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
 open BCHCPURegisters
 open BCHDoubleword
-open BCHFunctionData
 open BCHImmediate
 open BCHLibTypes
-open BCHSystemInfo
-open BCHSystemSettings
-open BCHUserProvidedDirections
 
 (* bchlibelf *)
 open BCHELFHeader

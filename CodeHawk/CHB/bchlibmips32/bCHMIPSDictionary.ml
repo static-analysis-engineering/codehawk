@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,18 +27,12 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 open CHIndexTable
-open CHLogger
 open CHStringIndexTable
 open CHXmlDocument
 
 (* bchlib *)
-open BCHBasicTypes
-open BCHLibTypes
 open BCHSumTypeSerializer
 
 (* bchlibmips32 *)
@@ -49,17 +43,6 @@ open BCHMIPSSumTypeSerializer
 
 
 let bd = BCHDictionary.bdictionary
-
-
-let raise_tag_error (name:string) (tag:string) (accepted:string list) =
-  let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
-  begin
-    ch_error_log#add "serialization tag" msg ;
-    raise (BCH_failure msg)
-  end
 
 
 class mips_dictionary_t:mips_dictionary_int =
@@ -78,62 +61,63 @@ object (self)
       mips_opkind_table;
       mips_operand_table;
       mips_opcode_table;
-      mips_instr_format_table 
-    ]
+      mips_instr_format_table
+   ]
 
   method index_mips_instr_format (f:mips_instr_format_t) =
-    let tags = [ mips_instr_format_mcts#ts f ] in
+    let tags = [mips_instr_format_mcts#ts f] in
     let key = match f with
       | SyscallType code ->
-         (tags, [ code ])
+         (tags, [code])
       | RBreakType (opc,code,fnct) ->
-         (tags, [ opc; code; fnct ])
+         (tags, [opc; code; fnct])
       | RSyncType (opc,code,stype,fnct) ->
-         (tags, [ opc; code; stype; fnct ])
+         (tags, [opc; code; stype; fnct])
       | RType (opc,rs,rt,rd,shamt,funct) ->
-         (tags, [ opc; rs; rt; rd; shamt; funct ])
+         (tags, [opc; rs; rt; rd; shamt; funct])
       | R2Type (opc,rs,rt,rd,shamt,funct) ->
-         (tags, [ opc; rs; rt; rd; shamt; funct ])
+         (tags, [opc; rs; rt; rd; shamt; funct])
       | R3Type (opc,rs,rt,rd,shamt,funct) ->
-         (tags, [ opc; rs; rt; rd; shamt; funct ])
-      | IType (opc,rs,rt,imm) -> (tags, [ opc; rs; rt; imm ])
-      | JType (opc,addr) -> (tags, [ opc; addr ])
-      | FPMCType (opc,rs,cc,nd,tf,rd,fd,funct) ->
-         (tags, [ opc; rs; cc; tf; rd; funct ])
+         (tags, [opc; rs; rt; rd; shamt; funct])
+      | IType (opc,rs,rt,imm) -> (tags, [opc; rs; rt; imm])
+      | JType (opc,addr) -> (tags, [opc; addr])
+      | FPMCType (opc, rs, cc, _nd, tf, rd, _fd, funct) ->
+         (tags, [opc; rs; cc; tf; rd; funct])
       | FPRType (opc,fmt,ft,fs,fd,funct) ->
-         (tags, [ opc; fmt; ft; fs; fd; funct ])
+         (tags, [opc; fmt; ft; fs; fd; funct])
       | FPRIType (opc,sub,rt,fs,imm) ->
-         (tags, [ opc; sub; rt; fs; imm ])
+         (tags, [opc; sub; rt; fs; imm])
       | FPCompareType (opc, fmt, ft, fs, cc, funct) ->
          (tags, [opc; fmt; ft; fs; cc; funct])
       | FPICCType (opc,sub,cc,nd,tf,offset) ->
-         (tags, [ opc; sub; cc; nd; tf; offset ])
+         (tags, [opc; sub; cc; nd; tf; offset])
       | FormatUnknown (opc,otherbits) ->
-         (tags, [ opc; otherbits ]) in
+         (tags, [opc; otherbits]) in
     mips_instr_format_table#add key
 
   method index_mips_opkind (k:mips_operand_kind_t) =
-    let tags =[ mips_opkind_mcts#ts k ] in
+    let tags =[mips_opkind_mcts#ts k] in
     let key =  match k with
-      | MIPSReg r -> (tags @ [ mips_reg_mfts#ts r ],[])
-      | MIPSSpecialReg r -> (tags @ [ mips_special_reg_mfts#ts r ],[])
-      | MIPSFPReg r -> (tags,[ r ])
-      | MIPSIndReg (r,offset) -> (tags @ [ mips_reg_mfts#ts r ; offset#toString ],[])
-      | MIPSAbsolute a -> (tags,[ bd#index_address a ])
-      | MIPSImmediate i -> (tags @ [ i#to_numerical#toString ],[]) in
+      | MIPSReg r -> (tags @ [mips_reg_mfts#ts r],[])
+      | MIPSSpecialReg r -> (tags @ [mips_special_reg_mfts#ts r], [])
+      | MIPSFPReg r -> (tags,[r])
+      | MIPSIndReg (r,offset) ->
+         (tags @ [mips_reg_mfts#ts r; offset#toString],[])
+      | MIPSAbsolute a -> (tags,[bd#index_address a])
+      | MIPSImmediate i -> (tags @ [i#to_numerical#toString], []) in
     mips_opkind_table#add key
 
   method index_mips_operand (op:mips_operand_int) =
-    let key = ([ mips_operand_mode_to_string op#get_mode ],
-               [ self#index_mips_opkind op#get_kind ]) in
+    let key = ([mips_operand_mode_to_string op#get_mode],
+               [self#index_mips_opkind op#get_kind]) in
     mips_operand_table#add key
 
   method index_mips_opcode (opc:mips_opcode_t) =
     let oi = self#index_mips_operand in
-    let tags = [ get_mips_opcode_name opc ] in
+    let tags = [get_mips_opcode_name opc] in
     let key = match opc with
-      | Break i -> (tags, [ i ])
-      | Syscall i -> (tags, [ i ])
+      | Break i -> (tags, [i])
+      | Syscall i -> (tags, [i])
       | Sync i -> (tags, [i])
       (* no operands *)
       | NoOperation
@@ -146,13 +130,13 @@ object (self)
         | JumpLink op
         | JumpRegister op
         | Branch op
-        -> (tags,[ oi op ])
+        -> (tags,[oi op])
       | ReadHardwareRegister (op,index)
         -> (tags, [oi op; index])
       (* 2 operands *)
       | ExtractBitField (op1,op2,pos,size)
         | InsertBitField (op1,op2,pos,size) ->
-         (tags, [ oi op1; oi op2; pos; size])
+         (tags, [oi op1; oi op2; pos; size])
       | BranchLTZero (op1,op2)
         | BranchLTZeroLikely (op1,op2)
         | BranchLEZero (op1,op2)
@@ -241,18 +225,18 @@ object (self)
         | MultiplyAddUnsignedWord (op1,op2,op3,op4)
         | DivideWord (op1,op2,op3,op4)
         | DivideUnsignedWord (op1,op2,op3,op4)
-        -> (tags,[ oi op1 ; oi op2 ; oi op3 ; oi op4 ])
+        -> (tags,[oi op1; oi op2; oi op3; oi op4])
       (* cc, 1 operand *)
       | BranchFPFalse (cc,op)
         | BranchFPTrue (cc,op)
         | BranchFPFalseLikely (cc,op)
         | BranchFPTrueLikely (cc,op)
-      ->  (tags, [ cc ; oi op ])
+      ->  (tags, [cc; oi op])
       (* cc, 2 operands *)
       | MovF (cc,op1,op2)
         | MovT (cc,op1,op2)
         | TrapIfEqual (cc, op1, op2)
-        -> (tags, [ cc; oi op1 ; oi op2 ])
+        -> (tags, [cc; oi op1; oi op2])
       (* fmt, 2 operands  *)
       | FPSqrtfmt (fmt,op1,op2)
         | FPAbsfmt (fmt,op1,op2)
@@ -272,7 +256,7 @@ object (self)
         | FPCVTWfmt (fmt,op1,op2)
         | FPCVTLfmt (fmt,op1,op2)
         | FPCVTSPfmt (fmt,op1,op2)
-      -> (tags @ [ mips_fp_format_mfts#ts fmt ],[ oi op1 ; oi op2 ])
+      -> (tags @ [mips_fp_format_mfts#ts fmt],[oi op1; oi op2])
       (* fmt,  3 operands *)
       | FPAddfmt (fmt, op1, op2, op3)
         | FPSubfmt (fmt,op1,op2,op3)
@@ -284,14 +268,14 @@ object (self)
         -> (tags @ [mips_fp_format_mfts#ts fmt],
             [cc; cond; exc; oi op1; oi op2])
       (* misc, others *)
-      | MoveFromCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])
-      | MoveToCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])
-      | MoveFromHighCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])
-      | MoveToHighCoprocessor0 (op1,op2,i) -> (tags, [ oi op1; oi op2; i ])
-      | MoveWordFromCoprocessor2 (op, i1, i2) -> (tags, [ oi op; i1; i2 ])
-      | MoveWordToCoprocessor2 (op, i1, i2) -> (tags, [ oi op; i1; i2 ])
-      | MoveWordFromHighHalfCoprocessor2 (op, i1, i2) -> (tags, [ oi op; i1; i2 ])
-      | Prefetch (op,hint) -> (tags, [ hint; oi op ])
+      | MoveFromCoprocessor0 (op1,op2,i) -> (tags, [oi op1; oi op2; i])
+      | MoveToCoprocessor0 (op1,op2,i) -> (tags, [oi op1; oi op2; i])
+      | MoveFromHighCoprocessor0 (op1,op2,i) -> (tags, [oi op1; oi op2; i])
+      | MoveToHighCoprocessor0 (op1,op2,i) -> (tags, [oi op1; oi op2; i])
+      | MoveWordFromCoprocessor2 (op, i1, i2) -> (tags, [oi op; i1; i2])
+      | MoveWordToCoprocessor2 (op, i1, i2) -> (tags, [oi op; i1; i2])
+      | MoveWordFromHighHalfCoprocessor2 (op, i1, i2) -> (tags, [oi op; i1; i2])
+      | Prefetch (op,hint) -> (tags, [hint; oi op])
       | NotRecognized (name, dw) -> (tags @ [name; dw#to_hex_string], [])
       | OpcodeUnpredictable s -> (tags, [bd#index_string s])
     in
@@ -302,25 +286,26 @@ object (self)
   method write_xml_mips_bytestring ?(tag="ibt") (node:xml_element_int) (s:string) =
     node#setIntAttribute tag (self#index_mips_bytestring s)
 
-  method write_xml_mips_opcode ?(tag="iopc") (node:xml_element_int) (opc:mips_opcode_t) =
+  method write_xml_mips_opcode
+           ?(tag="iopc") (node:xml_element_int) (opc:mips_opcode_t) =
     node#setIntAttribute tag (self#index_mips_opcode opc)
-      
+
   method write_xml (node:xml_element_int) =
     let bnode = xmlElement mips_bytestring_table#get_name in
     begin
-      mips_bytestring_table#write_xml bnode ;
-      node#appendChildren [ bnode ] ;
+      mips_bytestring_table#write_xml bnode;
+      node#appendChildren [bnode];
       node#appendChildren
         (List.map
            (fun t ->
              let tnode = xmlElement t#get_name in
-             begin t#write_xml tnode ; tnode end) tables)
+             begin t#write_xml tnode; tnode end) tables)
     end
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
     begin
-      mips_bytestring_table#read_xml (getc mips_bytestring_table#get_name) ;
+      mips_bytestring_table#read_xml (getc mips_bytestring_table#get_name);
       List.iter (fun t -> t#read_xml (getc t#get_name)) tables
     end
 

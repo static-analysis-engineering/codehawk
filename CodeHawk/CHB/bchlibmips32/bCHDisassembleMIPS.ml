@@ -28,17 +28,14 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHNumerical
 open CHPretty
 
 (* chutil *)
 open CHLogger
 
 (* xprlib *)
-open Xprt
 open XprToPretty
 open XprTypes
-open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
@@ -46,22 +43,18 @@ open BCHByteUtilities
 open BCHDataBlock
 open BCHDoubleword
 open BCHFloc
-open BCHFunctionInterface
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionSummaryLibrary
-open BCHJumpTable
 open BCHLibTypes
 open BCHLocation
 open BCHMakeCallTargetInfo
 open BCHStreamWrapper
 open BCHSystemInfo
 open BCHSystemSettings
-open BCHUtilities
 
 (* bchlibelf *)
 open BCHELFHeader
-open BCHELFTypes
 
 (* bchlibmips32 *)
 open BCHMIPSAssemblyBlock
@@ -427,10 +420,11 @@ let set_library_stub_name faddr =
     chlog#add "faddr is not a program address" faddr#toPretty
 
 
-let extract_so_symbol (opcodes:mips_opcode_t list) = None    (* TBD *)
+let extract_so_symbol (_opcodes:mips_opcode_t list) = None    (* TBD *)
 
 
-let get_so_target (tgtaddr:doubleword_int) (instr:mips_assembly_instruction_int) =
+let get_so_target
+      (tgtaddr:doubleword_int) (_instr:mips_assembly_instruction_int) =
   if functions_data#has_function_name tgtaddr then
     let fndata = functions_data#get_function tgtaddr in
     if fndata#is_library_stub then
@@ -459,7 +453,7 @@ let collect_function_entry_points () =
   begin
     addresses#addList functions_data#get_function_entry_points;
     !mips_assembly_instructions#itera
-     (fun va instr ->
+     (fun _va instr ->
        match instr#get_opcode with
        | BranchLTZeroLink (_,tgt)
          | BranchGEZeroLink (_,tgt)
@@ -554,10 +548,12 @@ let set_block_boundaries () =
   end
 
 
+(*
 let is_so_jump_target (target_address:doubleword_int) =
   match elf_header#get_relocation target_address with
   | Some _ -> true
   | _ -> false
+ *)
 
 
 let get_successors (faddr:doubleword_int) (iaddr:doubleword_int)  =
@@ -749,7 +745,7 @@ let trace_function (faddr:doubleword_int) =
   make_mips_assembly_function faddr blocklist successors
 
 
-let construct_mips_assembly_function (count:int) (faddr:doubleword_int) =
+let construct_mips_assembly_function (_count: int) (faddr: doubleword_int) =
   try
     let _ = pverbose [STR "  trace function "; faddr#toPretty; NL] in
     let fn = trace_function faddr in
@@ -842,7 +838,7 @@ let record_call_targets () =
                           finfo#set_call_target
                             ctxtiaddr (mk_app_target op#get_absolute_address)
                    end
-              | JumpLinkRegister (ra, op) ->
+              | JumpLinkRegister (_ra, _op) ->
                  let iaddr = (ctxt_string_to_location faddr ctxtiaddr)#i in
                  if finfo#has_call_target ctxtiaddr then
                    let loc = ctxt_string_to_location faddr ctxtiaddr in
@@ -1037,7 +1033,7 @@ let resolve_indirect_mips_calls (f:mips_assembly_function_int) =
       (fun faddr ctxtiaddr instr ->
         let loc = ctxt_string_to_location faddr ctxtiaddr in
         match instr#get_opcode with
-        | JumpLinkRegister (ra, tgt) ->
+        | JumpLinkRegister (_ra, tgt) ->
            let floc = get_floc loc in
            if (floc#has_call_target && floc#get_call_target#is_unknown)
               || not floc#has_call_target then

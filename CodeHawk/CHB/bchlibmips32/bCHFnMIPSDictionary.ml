@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -132,7 +132,8 @@ object (self)
                          (TR.tget_ok (floc#env#get_global_variable_address v)) ->
              num_constant_expr
                (elf_header#get_program_value
-                  (TR.tget_ok (floc#env#get_global_variable_address v)))#to_numerical
+                  (TR.tget_ok
+                     (floc#env#get_global_variable_address v)))#to_numerical
           | XVar v when floc#env#is_symbolic_value v ->
              expand (TR.tget_ok (floc#env#get_symbolic_value_expr v))
           | XOp (op,l) -> XOp (op, List.map expand l)

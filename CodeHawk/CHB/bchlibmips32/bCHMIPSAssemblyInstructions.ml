@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -39,35 +39,27 @@ open CHXmlDocument
 open BCHBasicTypes
 open BCHByteUtilities
 open BCHDoubleword
-open BCHFunctionInterface
 open BCHFunctionData
-open BCHFunctionSummary
 open BCHLibTypes
-open BCHSystemInfo
 
 (* bchlibmips32 *)
 open BCHMIPSAssemblyInstruction
 open BCHMIPSTypes
-open BCHMIPSOpcodeRecords
 
 module TR = CHTraceResult
 
-(* --------------------------------------------------------------------------------
+(* ---------------------------------------------------------------------------
  * Note:
  * It is assumed that all instructions are at 4-byte boundaries. Address indices
  * are obtained by dividing the actual address by 4. Unlike x86 there are no
  * instructions in the instruction array at unaligned addresses.
- * -------------------------------------------------------------------------------- *)
+ * ---------------------------------------------------------------------------- *)
 
 
 let numArrays = 1000
 let arrayLength = 100000
 
 let initialized_length = ref 0
-
-
-let mips_instructions =
-  ref (Array.make 1 (make_mips_assembly_instruction wordzero OpInvalid ""))
 
 
 let mips_instructions = 
@@ -133,6 +125,7 @@ let get_instruction (index: int): mips_assembly_instruction_result =
     Error ["get_instruction:" ^ (string_of_int index)]
 
 
+(*
 let fold_instructions (f:'a -> mips_assembly_instruction_int -> 'a) (init:'a) =
   Array.fold_left (fun a arr ->
     Array.fold_left (fun a1 opc -> f a1 opc) a arr) init mips_instructions
@@ -140,7 +133,7 @@ let fold_instructions (f:'a -> mips_assembly_instruction_int -> 'a) (init:'a) =
 
 let iter_instructions (f: mips_assembly_instruction_int -> unit) =
   Array.iter (fun arr -> Array.iter f arr) mips_instructions
-
+ *)
 
 let iteri_instructions (f: int -> mips_assembly_instruction_int -> unit) =
   Array.iteri (fun i arr -> 
@@ -286,14 +279,14 @@ object (self)
         let _ =
           if instr#is_block_entry then
             begin
-              bnode := xmlElement "b" ;
-              (!bnode)#setAttribute "ba" va#to_hex_string ;
-              node#appendChildren [ !bnode ]
+              bnode := xmlElement "b";
+              (!bnode)#setAttribute "ba" va#to_hex_string;
+              node#appendChildren [!bnode]
             end in
         let inode = xmlElement "i" in
         begin
           instr#write_xml inode;
-          (!bnode)#appendChildren [ inode ]
+          (!bnode)#appendChildren [inode]
         end)
 
   method toString ?(filter = fun _ -> true) () =
@@ -305,13 +298,18 @@ object (self)
 	let names = (functions_data#get_function va)#get_names in
 	let fLine = match names with
 	  | [] -> ""
-	  | [ name ] -> "\nfunction: " ^ name ^ "\n" ^
-	    (functions_data#get_function va)#get_function_name
-	  | _ -> "\nfunctions:\n" ^ 
-	    (String.concat "\n" (List.map (fun n -> "    " ^ n) names)) ^ "\n" ^
-	    (functions_data#get_function va)#get_function_name in
-	let line = "\n" ^ (string_repeat "~" 80) ^ fLine ^ "\n" ^
-	  (string_repeat "~" 80) in
+	  | [name] ->
+             "\nfunction: "
+             ^ name
+             ^ "\n"
+             ^ (functions_data#get_function va)#get_function_name
+	  | _ ->
+             "\nfunctions:\n"
+             ^ (String.concat "\n" (List.map (fun n -> "    " ^ n) names))
+             ^ "\n"
+             ^ (functions_data#get_function va)#get_function_name in
+	let line =
+          "\n" ^ (string_repeat "~" 80) ^ fLine ^ "\n" ^ (string_repeat "~" 80) in
 	stringList := line :: !stringList in      
     begin
       self#itera
@@ -334,7 +332,7 @@ object (self)
               if len <= 16 then
                 let s = Bytes.make 16 ' ' in
                 begin
-                  Bytes.blit (Bytes.of_string spacedstring) 0 s 0 len ;
+                  Bytes.blit (Bytes.of_string spacedstring) 0 s 0 len;
                   Bytes.to_string s
                 end
               else
@@ -351,13 +349,21 @@ object (self)
             | _ ->
 	       let _ =
                  if !firstNew then 
-		   begin stringList := "\n" :: !stringList ; firstNew := false end in
+		   begin
+                     stringList := "\n" :: !stringList;
+                     firstNew := false
+                   end in
                let _ = add_function_names va in
-               let line = (Bytes.to_string statusString) ^ va#to_hex_string ^ "  "
-                          ^ bytestring ^ "  " ^ instr#toString in
+               let line =
+                 (Bytes.to_string statusString)
+                 ^ va#to_hex_string
+                 ^ "  "
+                 ^ bytestring
+                 ^ "  "
+                 ^ instr#toString in
                stringList := line :: !stringList
           else
-            firstNew := true) ;
+            firstNew := true);
       String.concat "\n" (List.rev !stringList)
     end
          

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,26 +27,12 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHIntervals
-open CHPretty
-
 (* chutil *)
-open CHIndexTable
-open CHLogger
 open CHXmlDocument
 
-(* xprlib *)
-open Xprt
-open XprTypes
-
 (* bchlib *)
-open BCHFtsParameter
-open BCHBasicTypes
 open BCHByteUtilities
-open BCHConstantDefinitions
 open BCHFloc
-open BCHFunctionInterface
 open BCHFunctionInfo
 open BCHLibTypes
 open BCHLocation
@@ -54,13 +40,10 @@ open BCHPreFileIO
 open BCHSpecializations
 
 (* bchlibmips32 *)
-open BCHMIPSDisassemblyUtils
 open BCHFnMIPSDictionary
 open BCHMIPSTypes
 open BCHMIPSLoopStructure
-open BCHMIPSOperand
 open BCHMIPSDictionary
-open BCHMIPSOpcodeRecords
 
 module H = Hashtbl
 
@@ -89,9 +72,9 @@ object (self)
     let floc = get_floc loc in
     let espoffset = floc#get_stackpointer_offset "mips" in
     begin
-      mips_dictionary#write_xml_mips_opcode node instr#get_opcode ;
+      mips_dictionary#write_xml_mips_opcode node instr#get_opcode;
       id#write_xml_instr node instr floc restriction;
-      id#write_xml_sp_offset node espoffset ;
+      id#write_xml_sp_offset node espoffset;
       mips_dictionary#write_xml_mips_bytestring
         node (byte_string_to_printed_string instr#get_instruction_bytes)
     end
@@ -112,11 +95,11 @@ object (self)
           block#itera  (fun ctxtiaddr instr ->
               let iNode = xmlElement "i" in
               begin
-                self#write_xml_instruction iNode ctxtiaddr instr restriction ;
-                bNode#appendChildren [ iNode ] ;
+                self#write_xml_instruction iNode ctxtiaddr instr restriction;
+                bNode#appendChildren [iNode];
                 iNode#setAttribute "ia" ctxtiaddr
               end);
-          node#appendChildren [ bNode ] ;
+          node#appendChildren [bNode];
           bNode#setAttribute "ba" baddr
         end)
 
@@ -131,12 +114,12 @@ object (self)
         (List.map (fun a ->
 	     let lNode = xmlElement "lv" in              (* level *)
 	     begin
-	       lNode#setAttribute "a" a ;
+	       lNode#setAttribute "a" a;
 	       lNode
-	     end) looplevels) ;
-      node#appendChildren [ llNode ] ;
-      set "ba" b#get_context_string ;
-      set "ea" (make_i_location blockloc b#get_last_address)#ci ;
+	     end) looplevels);
+      node#appendChildren [llNode];
+      set "ba" b#get_context_string;
+      set "ea" (make_i_location blockloc b#get_last_address)#ci;
     end
 
   method private write_xml_cfg (node:xml_element_int) =
@@ -159,7 +142,7 @@ object (self)
 	      edges := eNode :: !edges
 	    end) block#get_successors;
 	  nodes := bNode :: !nodes
-	end) ;
+	end);
       bbNode#appendChildren (List.rev !nodes);
       eeNode#appendChildren (List.rev !edges);
       node#appendChildren [bbNode; eeNode]
