@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023 Aarno Labs, LLC
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,20 +25,12 @@
    SOFTWARE.
    ============================================================================= *)
 
-
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 open CHIndexTable
-open CHLogger
 open CHStringIndexTable
 open CHXmlDocument
 
 (* bchlib *)
-open BCHBasicTypes
-open BCHCPURegisters
-open BCHLibTypes
 open BCHSumTypeSerializer
 
 (* bchlibarm32 *)
@@ -49,15 +41,6 @@ open BCHARMTypes
 
 let bd = BCHDictionary.bdictionary
 
-let raise_tag_error (name:string) (tag:string) (accepted:string list) =
-  let msg =
-    LBLOCK [ STR "Type " ; STR name ; STR " tag: " ; STR tag ;
-             STR " not recognized. Accepted tags: " ;
-             pretty_print_list accepted (fun s -> STR s) "" ", " "" ] in
-  begin
-    ch_error_log#add "serialization tag" msg ;
-    raise (BCH_failure msg)
-  end
 
 class arm_dictionary_t:arm_dictionary_int =
 object (self)

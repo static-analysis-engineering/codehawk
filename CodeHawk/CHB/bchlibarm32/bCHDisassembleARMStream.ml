@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022-2023  Aarno Labs LLC
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,16 +34,12 @@ open CHLogger
 (* bchlib *)
 open BCHBasicTypes
 open BCHDoubleword
-open BCHFloc
 open BCHLibTypes
-open BCHLocation
 open BCHStreamWrapper
 open BCHSystemInfo
 open BCHSystemSettings
 
 (* bchlibarm32 *)
-open BCHARMAssemblyBlock
-open BCHARMAssemblyFunction
 open BCHARMAssemblyFunctions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
@@ -136,7 +132,7 @@ let set_block_boundaries () =
     instr#set_block_entry in
   begin
     !arm_assembly_instructions#itera
-      (fun va instr ->
+      (fun _va instr ->
         match instr#get_opcode with
         | Branch (_, op, _) ->
            if op#is_absolute_address then

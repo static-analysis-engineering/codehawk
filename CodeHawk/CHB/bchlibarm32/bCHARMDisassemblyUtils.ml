@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023  Aarno Labs, LLC
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,14 +33,12 @@
  *)
 
 (* chlib *)
-open CHLanguage
 open CHPretty
 
 (* chutil *)
 open CHLogger
 
 (* xprlib *)
-open Xprt
 open XprTypes
 
 (* bchlib *)
@@ -48,14 +46,11 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 open BCHStrings
-open BCHSystemSettings
 
 (* bchlibelf *)
 open BCHELFHeader
 
 (* bchlibarm32 *)
-open BCHARMOpcodeRecords
-open BCHARMOperand
 open BCHARMPseudocode
 open BCHARMTypes
 
@@ -67,20 +62,17 @@ let e7   = 128
 let e8   = 256
 let e15  = e7 * e8
 let e16  = e8 * e8
-let e31 = e16 * e15
-let e32 = e16 * e16
+let _e31 = e16 * e15
+let _e32 = e16 * e16
 
 
-let rec pow2 n =
+let rec _pow2 n =
   match n with
   | 0 -> 1
   | 1 -> 2
   | n -> 
-    let b = pow2 (n / 2) in
+    let b = _pow2 (n / 2) in
     b * b * (if n mod 2 = 0 then 1 else 2)
-
-
-let stri = string_of_int
 
 
 let get_interrupt_flags (n: int): interrupt_flags_t =

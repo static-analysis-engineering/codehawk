@@ -638,7 +638,7 @@ let translate_arm_instruction
              STR "  ";
              STR (arm_opcode_to_string instr#get_opcode)]) in
 
-  let calltgt_cmds (tgt: arm_operand_int): cmd_t list =
+  let calltgt_cmds (_tgt: arm_operand_int): cmd_t list =
     let callargs = floc#get_call_arguments in
     let fintf = floc#get_call_target#get_function_interface in
     let rtype = get_fts_returntype fintf in
@@ -657,7 +657,7 @@ let translate_arm_instruction
         register_of_arm_register AR0 in
     let returnvar = floc#f#env#mk_register_variable returnreg in
     let (usecmds, use) =
-      List.fold_left (fun (acccmds, accuse) (p, x) ->
+      List.fold_left (fun (acccmds, accuse) (p, _x) ->
           if is_register_parameter p then
             let regarg = TR.tget_ok (get_register_parameter_register p) in
             let pvar = floc#f#env#mk_register_variable regarg in
@@ -1784,7 +1784,6 @@ let translate_arm_instruction
      let vtype = t_ushort in
      let (vrt, cmds) = floc#get_ssa_assign_commands rtreg ~vtype rhs in
      let usevars = get_register_vars [rn; rm] in
-     let memvar = mem#to_variable floc in
      let (usevars, usehigh) =
        if memvar#isTmp || floc#f#env#is_unknown_memory_variable memvar then
          (* elevate address variables to high-use *)
@@ -3336,7 +3335,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VectorAbsolute (c, dt, dst, src) ->
+  | VectorAbsolute (c, _dt, dst, src) ->
      let floc = get_floc loc in
      let dreg = dst#to_register in
      let xsrc = src#to_expr floc in
@@ -3520,7 +3519,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VDivide (c, dt, dd, dn, dm) ->
+  | VDivide (c, _dt, dd, dn, dm) ->
      let floc = get_floc loc in
      let ddreg = dd#to_register in
      let xdn = dn#to_expr floc in
@@ -3733,7 +3732,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VectorMultiplySubtract (c, dt, dst, src1, src2) ->
+  | VectorMultiplySubtract (c, _dt, dst, src1, src2) ->
      let floc = get_floc loc in
      let dstreg = dst#to_register in
      let xsrc0 = dst#to_expr floc in
@@ -3941,7 +3940,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | VectorSubtract (c, dt, dst, src1, src2) ->
+  | VectorSubtract (c, _dt, dst, src1, src2) ->
      let floc = get_floc loc in
      let dstreg = dst#to_register in
      let xsrc1 = src1#to_expr floc in

@@ -25,14 +25,8 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
 (* bchlib *)
 open BCHLibTypes
-
-(* bchlibarm32 *)
-open BCHARMTypes
 
 
 val disassemble_arm_section: doubleword_int -> string -> unit
@@ -66,4 +60,4 @@ val associate_condition_code_users: unit -> unit
     commandline with [fns_included]. By default only those functions
     are constructed. If [construct_all_functions] is [true] then
     functions for all function entry points are constructed.*)
-val construct_functions_arm: ?construct_all_functions:bool -> unit
+val construct_functions_arm: ?construct_all_functions:bool -> unit -> unit

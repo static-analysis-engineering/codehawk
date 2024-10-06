@@ -26,16 +26,10 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHPretty
 open CHNumerical
-open CHLanguage
 
 (* chutil *)
 open CHTraceResult
-open CHXmlDocument
-
-(* xprlib *)
-open Xprt
 
 (* bchlib *)
 open BCHBCTypes

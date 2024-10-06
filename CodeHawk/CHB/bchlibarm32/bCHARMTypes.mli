@@ -1450,13 +1450,13 @@ type arm_assembly_instruction_result = arm_assembly_instruction_int traceresult
 
 
 type thumb_it_sequence_kind_t =
+  | ITPredicateAssignment of bool * arm_operand_int
   (** in [inverse, dstop], [inverse] indicates whether the predicate itself
       or its inverse is to be assigned; [dstop] is the destination operand
       for the predicate assignment.
 
       The destination operand [dstop] is assumed to be a register.
    *)
-  | ITPredicateAssignment of bool * arm_operand_int
 
 
 class type thumb_it_sequence_int =

@@ -38,7 +38,6 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHJumpTable
 open BCHLibTypes
-open BCHSystemInfo
 
 (* bchlibarm32 *)
 open BCHARMAssemblyInstructions
@@ -88,7 +87,7 @@ object (self)
          ~indexed_targets:self#indexed_targets
          ~default_target)
 
-  method toCHIF (faddr: doubleword_int) = []
+  method toCHIF (_faddr: doubleword_int) = []
 
   method write_xml (node: xml_element_int) =
     let append = node#appendChildren in
@@ -524,7 +523,7 @@ let is_ldrls_jumptable
       (arm_assembly_instruction_int              (* CMP instr *)
        * arm_assembly_instruction_int) option =  (* B instr *)
   match ldrinstr#get_opcode with
-  | LoadRegister (ACCNotUnsignedHigher, dst, baseregop, indexregop, _, false)
+  | LoadRegister (ACCNotUnsignedHigher, dst, _baseregop, indexregop, _, false)
        when dst#get_register = ARPC && indexregop#is_register ->
      let indexreg = indexregop#get_register in
      let cmptestf = cmp_reg_imm_test indexreg in
@@ -655,7 +654,7 @@ let create_arm_add_pc_b_jumptable
      (match (cmpinstr#get_opcode, bcsinstr#get_opcode, adrinstr#get_opcode) with
       | (Compare (_, indexregop, imm, _),
          Branch (_, tgtop, _),
-         Adr (_, baseregop, addrop))
+         Adr (_, _baseregop, addrop))
            when tgtop#is_absolute_address && addrop#is_absolute_address ->
          let iaddr = addpcinstr#get_address in
          let defaulttgt = tgtop#get_absolute_address in
@@ -665,7 +664,7 @@ let create_arm_add_pc_b_jumptable
          let skips = skips - 2 in
          let _ =
            if skips > 0 then
-             for i = 1 to skips do ignore (ch#read_byte) done in
+             for _i = 1 to skips do ignore (ch#read_byte) done in
          let targets = ref [] in
          let _ =
            for i = 0 to (size-1) do
@@ -768,7 +767,7 @@ let create_arm_add_pc_h_jumptable
      (match (cmpinstr#get_opcode, bcsinstr#get_opcode, adrinstr#get_opcode) with
       | (Compare (_, indexregop, imm, _),
          Branch (_, tgtop, _),
-         Adr (_, baseregop, addrop))
+         Adr (_, _baseregop, addrop))
            when tgtop#is_absolute_address && addrop#is_absolute_address ->
          let iaddr = addpcinstr#get_address in
          let branchtgt = tgtop#get_absolute_address in
@@ -793,7 +792,7 @@ let create_arm_add_pc_h_jumptable
                           STR "Skip ";
                           INT skips;
                           STR " bytes"]) in
-                 for i = 1 to skips do
+                 for _i = 1 to skips do
                    let b = ch#read_byte in
                    chlog#add
                      "add-pc-h jumptable: skip"
@@ -875,7 +874,7 @@ let is_bx_jumptable
      (match optaddinstr with
       | Some addinstr ->
          (match addinstr#get_opcode with
-          | Add (_, _, rd, rn, rm, _) ->
+          | Add (_, _, _rd, _rn, rm, _) ->
              let tmpreg = rm#get_register in
              let ldrtestf = ldrtest tmpreg basereg in
              let optldrinstr = find_instr ldrtestf [(-6)] addr in

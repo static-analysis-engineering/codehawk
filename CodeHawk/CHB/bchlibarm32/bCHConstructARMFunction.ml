@@ -532,7 +532,7 @@ let construct_arm_assembly_block
             (List.map (make_location_by_address faddr) l) in
   (* There may be multiple successors that are returns; their indices are
      collected, while the successors themselves are filtered out.*)
-  let (conditionalreturns, index, succ) =
+  let (conditionalreturns, _index, succ) =
     List.fold_left (fun (cr, ix, sl) s ->
         if s = wordmax#to_hex_string then
           (ix::cr, ix + 1, sl)

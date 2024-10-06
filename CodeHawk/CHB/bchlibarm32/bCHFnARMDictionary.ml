@@ -52,14 +52,12 @@ open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
-open BCHLocation
 open BCHFtsParameter
 open BCHFunctionData
 open BCHFunctionInterface
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHLocation
-open BCHSystemInfo
 
 (* bchlibelf *)
 open BCHELFHeader
@@ -70,7 +68,6 @@ open BCHARMConditionalExpr
 open BCHARMDisassemblyUtils
 open BCHARMOperand
 open BCHARMOpcodeRecords
-open BCHARMPseudocode
 open BCHARMTestSupport
 open BCHARMTypes
 
@@ -1892,7 +1889,7 @@ object (self)
            let rdefs = [(get_rdef xsrc); (get_rdef xdst)] in
            let _ =
              match get_string_reference srcfloc xxsrc with
-             | Some cstr -> register_function_prototype "strcpy"
+             | Some _ -> register_function_prototype "strcpy"
              | _ -> register_function_prototype "memcpy" in
            let (tagstring, args) =
              mk_instrx_data
@@ -2021,7 +2018,7 @@ object (self)
              ~addr:xaddr ~var:vmem ~size:1 ~vtype:t_unknown ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
-             ~vars:[vmem]
+             ~vars
              ~xprs:[xrn; xrm; xrt; xxrt; xaddr]
              ~rdefs:rdefs
              ~uses:uses

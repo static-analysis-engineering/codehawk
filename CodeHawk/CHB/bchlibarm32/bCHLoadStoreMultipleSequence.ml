@@ -26,7 +26,6 @@
    ============================================================================= *)
 
 (* chutil *)
-open CHLogger
 open CHPretty
 open CHXmlDocument
 
@@ -63,7 +62,7 @@ object (self)
 
   method toCHIF = []
 
-  method write_xml (node: xml_element_int) = ()
+  method write_xml (_node: xml_element_int) = ()
 
   method toString =
     "ldmstmcopy("
@@ -90,7 +89,7 @@ let make_ldm_stm_sequence
 
 
 let create_ldm_stm_sequence
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (stminstr: arm_assembly_instruction_int): ldm_stm_sequence_int option =
   let stmaddr = stminstr#get_address in
   match stminstr#get_opcode with

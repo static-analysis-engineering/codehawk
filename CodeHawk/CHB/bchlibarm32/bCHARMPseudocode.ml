@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023 Aarno Labs, LLC
+   Copyright (c) 2021-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,6 @@ open CHPrettyUtil
 open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
-open BCHSystemSettings
    
 (* bchlibarm32 *)
 open BCHARMTypes
@@ -308,7 +307,7 @@ let do_LSR_C (x:int) (shift:int) =
  *   return result
  * --------------------------------------
  *)
-let do_LSR (x:int) (shift:int) =
+let _do_LSR (x:int) (shift:int) =
   if shift >= 0 then
     if shift == 0 then
       x
@@ -357,7 +356,7 @@ let do_ASR_C (width:int) (x:int) (shift:int) =
  *   return result
  * --------------------------------------
  *)
-let do_ASR (width:int) (x:int) (shift:int) =
+let _do_ASR (width:int) (x:int) (shift:int) =
   if shift >= 0 then
     if shift == 0 then
       x
@@ -405,7 +404,7 @@ let do_ROR_C (width:int) (x:int) (shift:int) =
  *   return result
  * --------------------------------------
  *)
-let do_ROR (width:int) (x:int) (shift:int) =
+let _do_ROR (width:int) (x:int) (shift:int) =
   if shift == 0 then
     x
   else
@@ -437,7 +436,7 @@ let do_RRX_C (width:int) (x:int) (carry_in:int) =
  *   (result,-) = RRX_C(x, carry_in)
  *   return result
  *)
-let do_RRX (width:int) (x:int) (carry_in:int) =
+let _do_RRX (width:int) (x:int) (carry_in:int) =
   let (result,_) = do_RRX_C width x carry_in in
   result
 
@@ -551,7 +550,8 @@ let do_shift_c (width:int) (x:int) (srt:shift_rotate_type_t) (amount:int) (carry
       | SRType_ROR -> do_ROR_C width x amount
       | SRType_RRX -> do_RRX_C width x carry_in
 
-let do_shift (width:int) (x:int) (srt:shift_rotate_type_t) (amount:int) (carry_in:int) =
+let _do_shift
+      (width:int) (x:int) (srt:shift_rotate_type_t) (amount:int) (carry_in:int) =
   let (result,_) = do_shift_c width x srt amount carry_in in
   result
 
@@ -653,7 +653,7 @@ let replicate (x: string) (n: int): string =
   string_repeat x n
 
 
-let replicate_int (x: int) (xlen) (cnt: int): string =
+let _replicate_int (x: int) (xlen) (cnt: int): string =
   replicate (to_bit_string x xlen) cnt
 
 

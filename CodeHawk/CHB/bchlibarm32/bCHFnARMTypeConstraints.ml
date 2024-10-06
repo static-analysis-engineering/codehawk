@@ -34,14 +34,10 @@ open CHPretty
 open CHLogger
 
 (* xprlib *)
-open Xprt
-open XprToPretty
 open XprTypes
-open XprUtil
 open Xsimplify
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHBCFiles
 open BCHBCTypePretty
 open BCHBCTypes
@@ -55,21 +51,15 @@ open BCHFunctionInfo
 open BCHFunctionInterface
 open BCHLibTypes
 open BCHLocation
-open BCHSystemInfo
-open BCHTypeConstraintStore
 open BCHTypeConstraintUtil
 
 (* bchlibelf *)
 open BCHELFHeader
 
 (* bchlibarm *)
-open BCHARMOpcodeRecords
-open BCHARMOperand
 open BCHARMTypes
 
 module TR = CHTraceResult
-
-let x2p = xpr_formatter#pr_expr
 
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
@@ -91,7 +81,7 @@ object (self)
     begin
       record_function_interface_type_constraints store faddr fintf;
       fn#itera
-        (fun baddr block ->
+        (fun _baddr block ->
           block#itera
             (fun ctxtiaddr instr ->
               self#record_instr_type_constraints ctxtiaddr instr))
@@ -435,7 +425,7 @@ object (self)
                   let finfo = get_compinfo_field compinfo fname in
                   let finfotype = resolve_type finfo.bftype in
                   (match finfotype with
-                   | Error e -> ()
+                   | Error _ -> ()
                    | Ok finfotype ->
                       let lhstype =
                         if is_struct_type finfotype then
@@ -480,7 +470,7 @@ object (self)
           | Some gaddr ->
              if is_in_global_arrayvar gaddr then
                (match (get_arrayvar_base_offset gaddr) with
-                | Some (base, offset, bty) ->
+                | Some (_, offset, bty) ->
                    (match offset with
                     | Index (Const (CInt (i64, _, _)), NoOffset) ->
                        let cindex = mkNumericalFromInt64 i64 in
@@ -513,7 +503,7 @@ object (self)
 
        end
 
-    | LoadRegisterHalfword (_, rt, rn, rm, memop, _) when rm#is_immediate ->
+    | LoadRegisterHalfword (_, rt, rn, rm, _memop, _) when rm#is_immediate ->
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
@@ -597,7 +587,7 @@ object (self)
        end
 
     (* Store x in y  ---  *y := x  --- X <: Y.store *)
-    | StoreRegister (_, rt, rn, rm, memvarop, _) when rm#is_immediate ->
+    | StoreRegister (_, rt, _rn, rm, memvarop, _) when rm#is_immediate ->
        let xaddr = memvarop#to_address floc in
        let xrt = rt#to_expr floc in
        (match getopt_stackaddress xaddr with
@@ -626,7 +616,7 @@ object (self)
            end
        )
 
-    | StoreRegisterByte (_, rt, rn, rm, memvarop, _) when rm#is_immediate ->
+    | StoreRegisterByte (_, rt, rn, rm, _memvarop, _) when rm#is_immediate ->
        let rnrdefs = get_variable_rdefs (rn#to_variable floc) in
        let rnreg = rn#to_register in
        let offset = rm#to_numerical#toInt in
