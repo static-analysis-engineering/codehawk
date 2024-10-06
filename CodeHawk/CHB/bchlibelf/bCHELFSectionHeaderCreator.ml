@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,6 @@ open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 open BCHSectionHeadersInfo
-open BCHSystemInfo
 open BCHSystemSettings
 
 (* bchlibelf *)
@@ -112,9 +111,6 @@ let assumption_violation (p:pretty_t) =
     ch_error_log#add "section header creation" msg;
     raise (BCH_failure msg)
   end
-
-
-let warning (p:pretty_t) = chlog#add "section header creation" p
 
 
 class section_header_creator_t

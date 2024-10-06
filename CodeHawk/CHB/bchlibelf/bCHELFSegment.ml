@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022      Aarno Labs LLC
+   Copyright (c) 2022-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -115,8 +115,6 @@ object (self)
 
 end
 
-
-let mk_elf_raw_segment = new elf_raw_segment_t
 
 let read_xml_elf_raw_segment (node:xml_element_int) =
   let s = read_xml_raw_data (node#getTaggedChild "hex-data") in

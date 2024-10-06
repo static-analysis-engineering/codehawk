@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,6 @@ open BCHLibTypes
 
 (* bchlibelf *)
 open BCHDwarfTypes
-open BCHELFTypes
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -531,9 +530,9 @@ let rec dwarf_operation_to_string (opc: dwarf_operation_t) =
      "DW_OP_GNU_regval_type: " ^ (op2s op1) ^ " " ^ (op_with_base_2s base op2)
   | DW_OP_GNU_entry_value (_, x) ->
      "DW_OP_GNU_entry_value: " ^ (dwarf_expr_to_string x)
-  | DW_OP_GNU_implicit_pointer (section, op1, op2) ->
+  | DW_OP_GNU_implicit_pointer (_section, op1, op2) ->
      "DW_OP_GNU_implicit_pointer: <" ^ (op2s op1) ^ "> " ^ (op2s op2)
-  | DW_OP_GNU_parameter_ref (base, op) ->
+  | DW_OP_GNU_parameter_ref (_base, op) ->
      "DW_OP_GNU_parameter_ref: <" ^ (op2s op) ^ ">"
   | DW_OP_unknown x -> "unknown-dwarf-operation:" ^ (string_of_int x)
 
@@ -641,7 +640,7 @@ let get_dw_attribute_value
       (attr: dwarf_attr_type_t)
       (atvs: (dwarf_attr_type_t * dwarf_attr_value_t) list) =
   if has_dw_attribute attr atvs then
-    snd (List.find (fun (a, v) -> a = attr) atvs)
+    snd (List.find (fun (a, _v) -> a = attr) atvs)
   else
     raise
       (Invalid_argument

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -150,11 +150,11 @@ class elf_relocation_table_t
         (s:string)
         (entrysize:int)
         (vaddr:doubleword_int):elf_relocation_table_int =
-object (self)
+object
 
   val mutable entries = []
 
-  inherit elf_raw_section_t s vaddr as super
+  inherit elf_raw_section_t s vaddr
 
   method read =
     try

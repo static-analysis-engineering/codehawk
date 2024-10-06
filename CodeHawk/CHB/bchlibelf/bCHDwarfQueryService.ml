@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ module TR = CHTraceResult
 class debug_abbrev_table_t
         (offset: doubleword_int)
         (d_entries: debug_abbrev_table_entry_t list): debug_abbrev_table_int =
-object (self)
+object
 
   val entries =
     let table = H.create (List.length d_entries) in
@@ -173,7 +173,7 @@ object (self)
 
   method initialize (debugsections: (int * string * elf_section_t) list) =
     begin
-      List.iter (fun (index, name, section) ->
+      List.iter (fun (_index, name, section) ->
           H.add sections name section) debugsections;
       (if self#has_debug_info then
          let headers =

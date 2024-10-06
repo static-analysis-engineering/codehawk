@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2024 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -45,7 +45,6 @@ open BCHStreamWrapper
 open BCHSystemInfo
 
 (* bchlibelf *)
-open BCHELFDictionary
 open BCHELFSegment
 open BCHELFTypes
 open BCHELFUtil
@@ -87,18 +86,18 @@ object (self)
         d_tag <- ch#read_doubleword;
 
         (* 4, 4, Value/Address -------------------------------------------------
-           d_val These Elf32_Word objects represent integer values with various 
+           d_val These Elf32_Word objects represent integer values with various
                   interpretations.
-           d_ptr  These Elf32_Addr objects represent program virtual addresses. 
-                  As mentioned previously, a file’s virtual addresses might not 
-                  match the memory virtual addresses during execution. When 
-                  interpreting addresses contained in the dynamic structure, 
-                  the dynamic linker com- putes actual addresses, based on the 
-                  original file value and the memory base address. For consistency, 
-                  files do not contain relocation entries to ‘‘correct’’ addresses 
+           d_ptr  These Elf32_Addr objects represent program virtual addresses.
+                  As mentioned previously, a file’s virtual addresses might not
+                  match the memory virtual addresses during execution. When
+                  interpreting addresses contained in the dynamic structure,
+                  the dynamic linker com- putes actual addresses, based on the
+                  original file value and the memory base address. For consistency,
+                  files do not contain relocation entries to ‘‘correct’’ addresses
                   in the dynamic structure.
             ------------------------------------------------------------------- *)
-        d_un <- ch#read_num_signed_doubleword 
+        d_un <- ch#read_num_signed_doubleword
       end
     with
     | IO.No_more_input ->
@@ -210,7 +209,7 @@ object (self)
       self#get_d_ptr
     else
       raise_dynamic_entry_error self#get_tag_name d_un (STR "get_string_table")
-    
+
   method is_string_table_size =
     match self#get_tag with DT_StrSz -> true | _ -> false
 
@@ -346,11 +345,11 @@ end
 class elf_dynamic_segment_t
         (s:string)
         (vaddr:doubleword_int):elf_dynamic_segment_int =
-object (self)
+object
 
   val mutable entries = []
 
-  inherit elf_raw_segment_t s vaddr as super
+  inherit elf_raw_segment_t s vaddr
 
   method read =
     (* Dynamic table is terminated by a DT_NULL entry *)
@@ -365,8 +364,8 @@ object (self)
         while !c < n && (not !lastentry) do
           let entry = new elf_dynamic_segment_entry_t !c in
           begin
-            entry#read ch ;
-            c :=  !c + 1 ;
+            entry#read ch;
+            c :=  !c + 1;
             entries <- entry :: entries;
             lastentry := entry#is_null
           end
@@ -375,7 +374,7 @@ object (self)
     with
     | IO.No_more_input ->
        ch_error_log#add "no more input"
-         (LBLOCK [ STR "Unable to read the dynamic segment" ])
+         (LBLOCK [STR "Unable to read the dynamic segment"])
 
   method has_jmprel_address =
     List.exists (fun e -> e#is_plt_relocation_table) entries
@@ -387,7 +386,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_JMPREL not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_JMPREL not found in Dynamic Segment"]))
 
   method has_jmprel_size =
     List.exists (fun e -> e#is_plt_relocation_table_size) entries
@@ -399,7 +398,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_PLTRELSZ not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_PLTRELSZ not found in Dynamic Segment"]))
 
   method has_reltab_address =
     List.exists (fun e -> e#is_relocation_table) entries
@@ -411,7 +410,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_RELA not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_RELA not found in Dynamic Segment"]))
 
   method has_reltab_size =
     List.exists (fun e -> e#is_relocation_table_size) entries
@@ -423,7 +422,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_RELASZ not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_RELASZ not found in Dynamic Segment"]))
 
   method has_reltab_ent =
     List.exists (fun e -> e#is_relocation_table_entry) entries
@@ -435,7 +434,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR  "DT_RELAENT not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR  "DT_RELAENT not found in Dynamic Segment"]))
 
   method has_hash_address = List.exists (fun e -> e#is_hash_table) entries
 
@@ -445,7 +444,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_HASH not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_HASH not found in Dynamic Segment"]))
 
   method has_symtab_address = List.exists (fun e -> e#is_symbol_table) entries
 
@@ -455,7 +454,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_SYMTAB not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_SYMTAB not found in Dynamic Segment"]))
 
   method has_strtab_address = List.exists (fun e -> e#is_string_table) entries
 
@@ -465,7 +464,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_STRTAB not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_STRTAB not found in Dynamic Segment"]))
 
   method has_init_address = List.exists (fun e -> e#is_init) entries
 
@@ -475,7 +474,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_INIT not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_INIT not found in Dynamic Segment"]))
 
   method has_fini_address = List.exists (fun e -> e#is_fini) entries
 
@@ -485,7 +484,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_FINI not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_FINI not found in Dynamic Segment"]))
 
   method has_rld_map_address = List.exists (fun e -> e#is_rld_map) entries
 
@@ -495,7 +494,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_MIPS_RLD_MAP not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_MIPS_RLD_MAP not found in Dynamic Segment"]))
 
   method has_got_address = List.exists (fun e -> e#is_got) entries
 
@@ -505,7 +504,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_PLTGOT not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_PLTGOT not found in Dynamic Segment"]))
 
   method has_gnu_symbol_version_table =
     List.exists (fun e -> e#is_gnu_symbol_version_table) entries
@@ -517,7 +516,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_VERSYM not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_VERSYM not found in Dynamic Segment"]))
 
   method has_gnu_symbol_version_reqts =
     List.exists (fun e -> e#is_gnu_symbol_version_reqts) entries
@@ -529,7 +528,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_VERNEED not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_VERNEED not found in Dynamic Segment"]))
 
   method has_gnu_symbol_version_reqts_no =
     List.exists (fun e -> e#is_gnu_symbol_version_reqts) entries
@@ -541,7 +540,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_VERNEEDNUM not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_VERNEEDNUM not found in Dynamic Segment"]))
 
   method has_syment = List.exists (fun e -> e#is_syment) entries
 
@@ -551,7 +550,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_SYMENT not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_SYMENT not found in Dynamic Segment"]))
 
   method has_symtabno = List.exists (fun e -> e#is_symtabno) entries
 
@@ -561,7 +560,7 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_SYMTABNO not found in Dynamic Segment" ]))
+         (BCH_failure (LBLOCK [STR "DT_SYMTABNO not found in Dynamic Segment"]))
 
   method has_string_table_size =
     List.exists (fun e -> e#is_string_table_size) entries
@@ -573,22 +572,25 @@ object (self)
     with
     | Not_found ->
        raise
-         (BCH_failure (LBLOCK [ STR "DT_STRSZ not found in Dynamic Segment" ]))    
+         (BCH_failure (LBLOCK [STR "DT_STRSZ not found in Dynamic Segment"]))
 
   method write_xml_entries (node:xml_element_int) =
     let table = mk_num_record_table "dynamic-table" in
     begin
-      List.iter (fun e -> table#add e#id e#to_rep_record) entries ;
+      List.iter (fun e -> table#add e#id e#to_rep_record) entries;
       table#write_xml node
     end
 
-  method toPretty =
-    LBLOCK (List.map (fun e -> LBLOCK [ e#toPretty ; NL ]) entries)
+  method !toPretty =
+    LBLOCK (List.map (fun e -> LBLOCK [e#toPretty; NL]) entries)
 
 end
 
 
-let mk_elf_dynamic_segment s h vaddr =
+let mk_elf_dynamic_segment
+      (s: string)
+      (_h: elf_program_header_int)
+      (vaddr: doubleword_int): elf_dynamic_segment_int =
   let table = new elf_dynamic_segment_t s vaddr in
   begin
     table#read;
@@ -601,6 +603,6 @@ let read_xml_elf_dynamic_segment (node:xml_element_int) =
   let vaddr = TR.tget_ok (string_to_doubleword (node#getAttribute "vaddr")) in
   let table = new elf_dynamic_segment_t s vaddr in
   begin
-    table#read ;
+    table#read;
     table
   end
