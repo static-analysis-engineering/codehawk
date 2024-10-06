@@ -42,7 +42,6 @@ open XprToPretty
 (* bchlib *)
 open BCHBCTypes
 open BCHBCTypePretty
-open BCHCallTarget
 open BCHDemangler
 open BCHDoubleword
 open BCHFloc

@@ -40,7 +40,6 @@ open Xprt
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypeUtil
-open BCHFtsParameter
 open BCHFunctionInterface
 open BCHLibTypes
 open BCHMakeCallTargetInfo

@@ -3,7 +3,3 @@
   (libraries bchlib chlib chutil goblint-cil)
   (public_name codehawk.bchcil)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

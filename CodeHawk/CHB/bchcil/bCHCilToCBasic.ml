@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2023  Aarno Labs LLC
+   Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -145,7 +145,8 @@ and cil_attrparam_to_b_attrparam (a: GoblintCil.attrparam): b_attrparam_t =
   | GoblintCil.ADot (p, s) -> ADot (cp p, s)
   | GoblintCil.AStar p -> AStar (cp p)
   | GoblintCil.AAddrOf p -> AAddrOf (cp p)
-  | GoblintCil.AIndex (p1, p2) -> AIndex (cp p1, cp p2)
+  | GoblintCil.AAssign (p1, p2) -> AIndex (cp p1, cp p2)
+  | GoblintCil.AIndex (p1, p2) -> AAssign (cp p1, cp p2)
   | GoblintCil.AQuestion (p1, p2, p3) -> AQuestion (cp p1, cp p2, cp p3)
 
 

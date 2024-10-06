@@ -557,7 +557,7 @@ let translate_instruction
         @ cmds5
         @ cmds6)
 
-  | IndirectCall op ->
+  | IndirectCall _ ->
      let string_retriever = FFU.get_string_reference in
      default ((get_floc loc)#get_call_commands string_retriever)
 

@@ -271,6 +271,7 @@ object
     | ADot _ -> "adot"
     | AStar _ -> "astar"
     | AAddrOf _ -> "aaddrof"
+    | AAssign _ -> "aassign"
     | AIndex _ -> "aindex"
     | AQuestion _ -> "aquestion"
 
