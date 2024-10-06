@@ -142,8 +142,10 @@ object (self)
       | ADot (a,s) -> (tags @ [s], [self#index_attrparam a])
       | AStar a -> (tags, [self#index_attrparam a])
       | AAddrOf a -> (tags, [self#index_attrparam a])
+      | AAssign (a1, a2) ->
+         (tags, [self#index_attrparam a1; self#index_attrparam a2])
       | AIndex (a1,a2) ->
-         (tags, [self#index_attrparam a1; self#index_attrparam a2 ])
+         (tags, [self#index_attrparam a1; self#index_attrparam a2])
       | AQuestion (a1, a2, a3) ->
          (tags,
           [self#index_attrparam a1;
@@ -175,6 +177,7 @@ object (self)
     | "adot" -> ADot (self#get_attrparam (a 0), (t 1))
     | "astar" -> AStar (self#get_attrparam (a 0))
     | "aaddrof" -> AAddrOf (self#get_attrparam (a 0))
+    | "aassign" -> AAssign (self#get_attrparam (a 0), self#get_attrparam (a 1))
     | "aindex" -> AIndex (self#get_attrparam (a 0), self#get_attrparam (a 1))
     | "aquestion" ->
        AQuestion

@@ -224,6 +224,7 @@ and b_attrparam_t =
 | ADot of b_attrparam_t * string
 | AStar of b_attrparam_t
 | AAddrOf of b_attrparam_t
+| AAssign of b_attrparam_t * b_attrparam_t
 | AIndex of b_attrparam_t * b_attrparam_t
 | AQuestion of b_attrparam_t * b_attrparam_t * b_attrparam_t
 
