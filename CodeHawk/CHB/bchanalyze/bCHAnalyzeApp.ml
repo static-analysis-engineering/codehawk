@@ -41,7 +41,6 @@ open BCHDoubleword
 open BCHLibTypes
 open BCHFunctionInfo
 open BCHMetrics
-open BCHSystemInfo
 open BCHSystemSettings
 
 (* bchlibx86 *)
@@ -68,7 +67,6 @@ open BCHARMAssemblyFunctions
 open BCHARMCHIFSystem
 open BCHARMLoopStructure
 open BCHARMMetrics
-open BCHFnARMDictionary
 open BCHTranslateARMToCHIF
 
 (* bchlibpower32 *)
@@ -83,7 +81,6 @@ open BCHTranslatePowerToCHIF
 open BCHAnalyzeProcedure
 open BCHDefUse
 open BCHDefUseHigh
-open BCHDesignation
 open BCHExtractInvariants
 open BCHFileIO
 open BCHReachingDefs
@@ -534,7 +531,6 @@ let analyze_arm_function faddr f count =
       analyze_procedure_with_valuesets proc arm_chif_system#get_arm_system;
       (if system_settings#generate_varinvs then
          begin
-           analyze_procedure_with_designations proc arm_chif_system#get_arm_system;
            analyze_procedure_with_reaching_defs proc arm_chif_system#get_arm_system;
            analyze_procedure_with_flag_reaching_defs
              proc arm_chif_system#get_arm_system;
@@ -553,7 +549,6 @@ let analyze_arm_function faddr f count =
       extract_valuesets finfo bb_invariants#get_invariants;
       (if system_settings#generate_varinvs then
          begin
-           extract_designations finfo bb_invariants#get_invariants;
            extract_reaching_defs finfo bb_invariants#get_invariants;
            extract_flag_reaching_defs finfo bb_invariants#get_invariants;
            extract_def_use finfo bb_invariants#get_invariants;

@@ -25,20 +25,12 @@
    SOFTWARE.
    ============================================================================= *)
 
-
-(* chlib *)
-open CHPretty
-
 (* chutil *)
 open CHIndexTable
-open CHLogger
 open CHStringIndexTable
 open CHXmlDocument
 
 (* bchlib *)
-open BCHBasicTypes
-open BCHCPURegisters
-open BCHLibTypes
 open BCHSumTypeSerializer
 
 (* bchlibpower32 *)

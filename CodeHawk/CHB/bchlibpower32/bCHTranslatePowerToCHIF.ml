@@ -70,7 +70,7 @@ let valueset_domain = "valuesets"
 let _x2p = xpr_formatter#pr_expr
 let _cmd_to_pretty = CHLanguage.command_to_pretty 0
 
-let log_error (tag: string) (msg: string): tracelogspec_t =
+let _log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("TranslatePowerToCHIF:" ^ tag) msg
 
 
@@ -261,7 +261,6 @@ let translate_pwr_instruction
       ~(funloc: location_int)
       ~(codepc: pwr_code_pc_int)
       ~(blocklabel: symbol_t)
-      ~(exitlabel: symbol_t)
       ~(cmds: cmd_t list) =
   let (ctxtiaddr, instr) = codepc#get_next_instruction in
   let faddr = funloc#f in
@@ -810,7 +809,7 @@ object (self)
       let (nodes, edges, newcmds) =
         try
           translate_pwr_instruction
-            ~funloc ~codepc ~blocklabel ~exitlabel ~cmds
+            ~funloc ~codepc ~blocklabel ~cmds
         with
         | BCH_failure p ->
            let msg =

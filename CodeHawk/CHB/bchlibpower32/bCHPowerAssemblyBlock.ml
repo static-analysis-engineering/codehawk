@@ -28,9 +28,6 @@
 (* chlib *)
 open CHPretty
 
-(* chutil *)
-open CHPrettyUtil
-
 (* bchlib *)
 open BCHBasicTypes
 open BCHLibTypes

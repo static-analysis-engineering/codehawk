@@ -3,7 +3,3 @@
   (libraries bchlib bchlibelf chlib chutil extlib xprlib)
   (public_name codehawk.bchlibpower32)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

@@ -46,7 +46,3 @@
   (modules bCHXMakeStructDefinition)
   (package exes)
   (public_name chx86_make_structdef))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

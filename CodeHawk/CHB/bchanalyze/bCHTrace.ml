@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2024 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,16 +29,7 @@
 
 (* chlib *)
 open CHLanguage
-open CHNumerical
 open CHPretty
-open CHUtils
-
-(* chutil *)
-open CHDot
-open CHFileIO
-open CHLogger
-open CHPrettyUtil
-open CHXmlDocument
 
 (* xprlib *)
 open Xprt
@@ -50,26 +41,15 @@ open BCHBasicTypes
 open BCHBCTypeUtil
 open BCHDoubleword
 open BCHFunctionInfo
-open BCHFloc
 open BCHFunctionData
 open BCHLibTypes
-open BCHLocation
-open BCHLocationInvariant
 open BCHMemoryReference
-open BCHPreFileIO
 open BCHSystemInfo
-open BCHSystemSettings
-   
+
 (* bchlibx86 *)
-open BCHAssemblyFunction
 open BCHAssemblyFunctions
 open BCHAssemblyInstructionAnnotations
-open BCHAssemblyInstructions
-open BCHDisassemble
-open BCHFunctionSummaryLibrary
 open BCHLibx86Types
-open BCHTranslateToCHIF
-open BCHX86Opcodes
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -79,19 +59,19 @@ let get_fname (faddr:doubleword_int) =
   if functions_data#has_function_name faddr then
     (functions_data#get_function faddr)#get_function_name
   else
-    faddr#to_hex_string 
+    faddr#to_hex_string
 
 
-let get_xarg_indices (finfo:function_info_int) (x:xpr_t) = []
+let get_xarg_indices (_finfo:function_info_int) (_x:xpr_t) = []
 
 
-let var_is_referenced (finfo:function_info_int) (x:xpr_t) (v:variable_t) =
+let var_is_referenced (_finfo:function_info_int) (x:xpr_t) (_v:variable_t) =
   let vars = variables_in_expr x in
-  let rec aux (xv:variable_t) = false in
+  let aux (_xv:variable_t) = false in
   List.exists aux vars
 
 
-let se_address_is_referenced 
+let se_address_is_referenced
     (finfo:function_info_int) (floc:floc_int) (x:xpr_t) (v:variable_t) =
   if floc#is_address x then
     let (memref,memoffset) = floc#decompose_address x in
@@ -102,7 +82,7 @@ let se_address_is_referenced
       var_is_referenced finfo memx v
     else
       false
-  else 
+  else
     false
 
 
@@ -111,7 +91,7 @@ let get_callers (faddr:doubleword_int) =
   let _ =
     assembly_functions#itera
       (fun _ f ->
-        f#iter_calls (fun iaddr floc ->
+        f#iter_calls (fun _iaddr floc ->
             if floc#has_call_target
                && floc#get_call_target#is_app_call
                && floc#get_call_target#get_app_address#equal faddr then
@@ -136,13 +116,13 @@ let get_callees (faddr:doubleword_int) =
 let get_app_callees (faddr:doubleword_int):doubleword_int list =
   List.fold_left (fun acc floc ->
     if floc#has_call_target && floc#get_call_target#is_app_call then
-      floc#get_call_target#get_app_address :: acc 
+      floc#get_call_target#get_app_address :: acc
     else
       acc) [] (get_callees faddr)
 
 
 let record_fpcallback_arguments (f:assembly_function_int) =
-  let is_code_address n = 
+  let is_code_address n =
     try
       system_info#is_code_address
         (TR.tget_ok (numerical_to_doubleword n))
@@ -160,7 +140,7 @@ let record_fpcallback_arguments (f:assembly_function_int) =
 	  | _ -> ()) floc#get_call_args)
 
 
-let rec trace_fwd faddr op =
+let rec _trace_fwd faddr op =
   let fname =
     if functions_data#has_function_name faddr then
       (functions_data#get_function faddr)#get_function_name
@@ -168,7 +148,9 @@ let rec trace_fwd faddr op =
       faddr#to_hex_string in
   let finfo = get_function_info faddr in
   let callees = get_callees faddr in
-  let _ = pr_debug [ STR "--> Trace " ; STR fname ; STR " with operand " ; INT op ; NL ] in
+  let _ =
+    pr_debug [
+        STR "--> Trace "; STR fname; STR " with operand "; INT op; NL] in
   List.iter (fun callee ->
       if callee#has_call_target && callee#get_call_target#is_signature_valid then
         let call_args = callee#get_call_args in
@@ -178,23 +160,24 @@ let rec trace_fwd faddr op =
 	       let argIndices = get_xarg_indices finfo e in
 	       if List.mem op argIndices then
 	         begin
-	           pr_debug [ STR "    " ; callee#l#toPretty ; STR ": " ; 
-			      (create_annotation callee)#toPretty ; NL ] ;
-	           if callee#has_call_target && callee#get_call_target#is_app_call then
+	           pr_debug [STR "    "; callee#l#toPretty; STR ": ";
+			      (create_annotation callee)#toPretty; NL];
+	           if callee#has_call_target
+                      && callee#get_call_target#is_app_call then
 		     let target = callee#get_call_target#get_app_address in
-		     trace_fwd target par  
+		     _trace_fwd target par
 	         end
 	    | _ -> ()) call_args
       else
         ()) callees
 
 
-let rec trace_bwd floc op =
+let rec _trace_bwd floc op =
   let fname = get_fname floc#l#f in
   let finfo = floc#f in
   let iann = create_annotation floc in
-  let default () = pr_debug [ STR "  " ; iann#toPretty ;  STR " in " ; 
-			      STR fname ; NL ] in
+  let default () =
+    pr_debug [STR "  "; iann#toPretty;  STR " in "; STR fname; NL] in
   if floc#has_call_target && floc#get_call_target#is_signature_valid then
     let (_,e) = List.nth floc#get_call_args (op-1) in
     let argIndices = get_xarg_indices finfo e in
@@ -202,19 +185,23 @@ let rec trace_bwd floc op =
     | [] -> default ()
     | _ ->
       let _ = default () in
-      let _ = pr_debug [ STR "Argument indices: " ; 
-		 pretty_print_list argIndices (fun n -> INT n) "[" "," "]" ; NL ] in
+      let _ =
+        pr_debug [
+            STR "Argument indices: ";
+	    pretty_print_list argIndices (fun n -> INT n) "[" "," "]"; NL] in
       let callers = get_callers floc#l#f in
-      List.iter (fun c -> List.iter (fun arg -> trace_bwd c arg) argIndices) callers
-  else default ()
+      List.iter
+        (fun c -> List.iter (fun arg -> _trace_bwd c arg) argIndices) callers
+  else
+    default ()
 
 
-let get_lib_calls (libfun:string) =
+let _get_lib_calls (libfun:string) =
   let flocs = ref [] in
   try
-    let _ = assembly_functions#itera (fun faddr f ->
+    let _ = assembly_functions#itera (fun _faddr f ->
       f#iter_calls (fun _ floc ->
-	if floc#has_call_target && floc#get_call_target#is_dll_call then 
+	if floc#has_call_target && floc#get_call_target#is_dll_call then
 	  let fname = floc#get_call_target#get_name in
 	  if fname = libfun then
 	    flocs := floc :: !flocs
@@ -227,15 +214,16 @@ let get_lib_calls (libfun:string) =
 	else ())) in
     !flocs
   with
-    BCH_failure p -> 
+    BCH_failure p ->
       begin
 	pr_debug [STR "Error in get_lib_calls: "; p; NL];
 	!flocs
       end
 
-let get_jni_calls () =
+
+let _get_jni_calls () =
   let flocs = ref [] in
-  let _ = assembly_functions#itera (fun faddr f ->
+  let _ = assembly_functions#itera (fun _faddr f ->
     f#iter_calls (fun _ floc ->
       if floc#has_call_target && floc#get_call_target#is_jni_call then
 	flocs := floc :: !flocs
@@ -244,17 +232,17 @@ let get_jni_calls () =
   !flocs
 
 
-let get_unresolved_calls () =
+let _get_unresolved_calls () =
   let flocs = H.create 5 in
   let sym_printer = (fun s -> STR s#getBaseName) in
-  let get_name faddr = 
+  let get_name faddr =
     let faddr = TR.tget_ok (string_to_doubleword faddr) in
     if functions_data#has_function_name faddr then
       (functions_data#get_function faddr)#get_function_name
     else
       faddr#to_hex_string in
-  let _ = assembly_functions#itera (fun faddr f ->
-    f#iter_calls (fun _ floc -> ())) in
+  let _ = assembly_functions#itera (fun _faddr f ->
+    f#iter_calls (fun _ _floc -> ())) in
   let fns = ref [] in
   let _ = H.iter (fun k v -> fns := (k,v) :: !fns) flocs in
   let fns = List.sort (fun (f1,_) (f2,_) -> Stdlib.compare f2 f1) !fns in
@@ -274,4 +262,3 @@ let get_unresolved_calls () =
         let p = LBLOCK [STR (get_name faddr); NL; INDENT (3, LBLOCK !ppp); NL] in
         pp := p :: !pp) fns in
   LBLOCK !pp
-

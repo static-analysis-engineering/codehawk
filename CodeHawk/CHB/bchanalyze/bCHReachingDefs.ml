@@ -28,14 +28,11 @@
 (* chlib *)
 open CHAtlas
 open CHCommon
-open CHDomain
 open CHIterator
 open CHLanguage
 open CHNonRelationalDomainNoArrays
 open CHNonRelationalDomainValues
-open CHOnlineCodeSet
 open CHSymbolicSets
-open CHSymbolicSetsDomainNoArrays
 open CHPretty
 
 (* chutil *)
@@ -48,6 +45,7 @@ open BCHLibTypes
 (* bchanalyze *)
 open BCHAnalyzeProcedure
 
+[@@@warning "-27"]
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
@@ -75,7 +73,7 @@ object (self: 'a)
   method private setValue' t v x =
     self#setValue t v (new non_relational_domain_value_t (SYM_SET_VAL x))
 
-  method special cmd args = {< >}
+  method special _cmd _args = {< >}
 
   method private importValue v =
     new non_relational_domain_value_t (SYM_SET_VAL (v#toSymbolicSet))
@@ -127,7 +125,7 @@ object (self: 'a)
       | _ ->
 	 default ()
 
-  method analyzeOperation
+  method !analyzeOperation
            ~(domain_name: string)
            ~(fwd_direction: bool)
            ~(operation: operation_t):'a =
@@ -148,7 +146,11 @@ object (self: 'a)
       | _ ->
          raise
            (BCH_failure
-              (LBLOCK [STR "Error in reachingdefs:analyzeOperation"])) in
+              (LBLOCK [
+                   STR "Error in reachingdefs:analyzeOperation. ";
+                   STR "Domain name: ";
+                   STR domain_name
+           ])) in
     match name with
     | "def" | "clobber" ->
        if fwd_direction then

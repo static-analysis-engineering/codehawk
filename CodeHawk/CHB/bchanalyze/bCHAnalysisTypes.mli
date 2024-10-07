@@ -29,19 +29,9 @@
 
 (* chlib *)
 open CHAtlas
-open CHIntervals
 open CHLanguage
 open CHNumericalConstraints
 open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-
-(* bchlib *)
-open BCHLibTypes
-
-(* bchlibx86 *)
-open BCHLibx86Types
 
 
 class type constraint_set_int =
