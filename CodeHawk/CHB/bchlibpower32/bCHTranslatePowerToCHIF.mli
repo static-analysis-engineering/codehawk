@@ -40,7 +40,6 @@ val translate_pwr_instruction:
   funloc:location_int
   -> codepc:pwr_code_pc_int
   -> blocklabel:symbol_t
-  -> exitlabel:symbol_t
   -> cmds:cmd_t list
   -> ((symbol_t
        * (code_t, 'a) command_t list) list

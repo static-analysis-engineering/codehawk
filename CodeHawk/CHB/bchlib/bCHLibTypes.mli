@@ -5753,10 +5753,6 @@ class type floc_int =
              -> string
              -> cmd_t list
 
-    method get_set_btype_commands: variable_t -> btype_t -> cmd_t list
-
-    method get_propagate_btype_commands: variable_t -> variable_t -> cmd_t list
-
     (** {1 Printing}*)
 
     method stackpointer_offset_to_string: string -> string

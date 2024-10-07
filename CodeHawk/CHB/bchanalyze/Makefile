@@ -43,8 +43,6 @@ MLIS := \
 	bCHReachingDefs \
 	bCHDefUse \
 	bCHDefUseHigh \
-	bCHTypeConstantsDomainNoArrays \
-	bCHDesignation \
 	bCHFileIO \
 	bCHTrace \
 	bCHAnalyzeApp \
@@ -60,8 +58,6 @@ SOURCES := \
 	bCHReachingDefs \
 	bCHDefUse \
 	bCHDefUseHigh \
-	bCHTypeConstantsDomainNoArrays \
-	bCHDesignation \
 	bCHFileIO \
 	bCHTrace \
 	bCHAnalyzeApp \

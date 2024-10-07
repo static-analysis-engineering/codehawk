@@ -3,7 +3,3 @@
   (libraries bchlib bchlibarm32 bchlibmips32 bchlibpe bchlibpower32 bchlibx86 chlib chutil extlib xprlib)
   (public_name codehawk.bchanalyze)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

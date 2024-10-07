@@ -155,6 +155,7 @@ let arm_memory_offset_to_string (offset:arm_memory_offset_t) =
       "#" ^ (string_of_int off) in
   match offset with
   | ARMImmOffset off -> p_off off
+  | ARMIndexOffset (r, off) when off = 0 -> (armreg_to_string r)
   | ARMIndexOffset (r, off) -> (armreg_to_string r) ^ "," ^ (p_off off)
   | ARMShiftedIndexOffset (r, rs, off) ->
      match rs with

@@ -25,15 +25,6 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHNumerical
-
-(* bchlib *)
-open BCHLibTypes
-
-(* bchlibpower32 *)
-open BCHPowerTypes
-
 
 (* 5 bit value with 1 added *)
 val oim5: int -> int

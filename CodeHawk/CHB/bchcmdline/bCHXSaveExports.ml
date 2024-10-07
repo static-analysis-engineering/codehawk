@@ -95,10 +95,18 @@ let disassemble () =
       let numSections = List.length l in
       let _ =
 	if numSections > 1 then
-	  pr_debug [STR "Disassembling "; INT numSections; STR " executable sections"; NL] in
+	  pr_debug [
+              STR "Disassembling ";
+              INT numSections;
+              STR " executable sections";
+              NL] in
       let size = disassemble_sections codeSectionHeaders in
-      pr_debug [STR "Disassembled "; INT size; STR " bytes into ";
-		 INT !assembly_instructions#get_num_instructions; STR " instructions"; NL]
+      pr_debug [
+          STR "Disassembled ";
+          INT size;
+          STR " bytes into ";
+	  INT !assembly_instructions#get_num_instructions;
+          STR " instructions"; NL]
     with
     | Invocation_error s -> pr_debug [STR "Failure in disassembly: "; STR s]
     | BCH_failure p -> pr_debug [STR "Failure in disassembly: "; p; NL]
@@ -108,12 +116,16 @@ let construct_functions () =
     begin
       construct_functions ();
       decorate_functions ();
-      pr_debug [STR "Constructed "; INT (List.length assembly_functions#get_functions);
-		 STR " functions"; NL]
+      pr_debug [
+          STR "Constructed ";
+          INT (List.length assembly_functions#get_functions);
+	  STR " functions"; NL]
     end
   with
-  | Invocation_error s -> pr_debug [STR "Failure in construct functions: "; STR s; NL]
-  | BCH_failure p -> pr_debug [STR "Failure in constructing functions: "; p; NL]
+  | Invocation_error s ->
+     pr_debug [STR "Failure in construct functions: "; STR s; NL]
+  | BCH_failure p ->
+     pr_debug [STR "Failure in constructing functions: "; p; NL]
 
 
 let save_library_function_reference
@@ -149,9 +161,15 @@ let save_function_exports (dir:string) =
       try
 	let finfo = load_function_info a in
 	let fnames = (* system_info#get_exported_function_names a*) [] in
-	let _ = pverbose [STR a#to_hex_string; STR "  "; INT (List.length fnames );
-			   STR " names"; NL] in
-	let fnames = List.filter (fun name -> not (is_java_native_method name)) fnames in
+	let _ =
+          pverbose [
+              STR a#to_hex_string;
+              STR "  ";
+              INT (List.length fnames );
+	      STR " names";
+              NL] in
+	let fnames =
+          List.filter (fun name -> not (is_java_native_method name)) fnames in
 	match fnames with
 	| [] -> ()
 	| _ ->
@@ -171,7 +189,8 @@ let save_function_exports (dir:string) =
 	    | _ ->
 	      List.iter (fun fname ->
 		let node = xmlElement "libfun" in
-		let _ = pverbose [STR "  "; pri !sum_count; STR "  "; STR fname; NL] in
+		let _ =
+                  pverbose [STR "  "; pri !sum_count; STR "  "; STR fname; NL] in
 		begin
 		  sum_count := !sum_count + 1;
 		  (finfo#get_summary)#write_xml node;
@@ -181,12 +200,19 @@ let save_function_exports (dir:string) =
       with _ ->
 	pr_debug [STR "Failure exporting functions for "; a#toPretty; NL]
     ) exportedFunctions;
-    pr_debug [STR "Exported    : "; INT !sum_count; STR " functions"; NL;
-	       STR "Not exported: "; INT !nosum_count; STR " functions"; NL]
+    pr_debug [
+        STR "Exported    : ";
+        INT !sum_count;
+        STR " functions";
+        NL;
+	STR "Not exported: ";
+        INT !nosum_count;
+        STR " functions";
+        NL]
   end
 
 
-let save_data_exports (dir:string) =
+let save_data_exports (_dir: string) =
   let exportedDataItems = pe_sections#get_exported_data_values in
   begin
     List.iter (fun a ->
@@ -198,8 +224,12 @@ let save_data_exports (dir:string) =
 	  let exportVal = make_data_export_value spec a exvalues in
 	  let node = xmlElement "data-value" in
 	  let _ = pverbose [STR "  "; STR name; NL] in
-	  let _ = pverbose [STR "Constructing data value for "; STR name; NL;
-			     INDENT (3,data_export_spec_to_pretty spec); NL] in
+	  let _ =
+            pverbose [
+                STR "Constructing data value for ";
+                STR name;
+                NL;
+		INDENT (3,data_export_spec_to_pretty spec); NL] in
 	  let _ = pverbose [pretty_print_list exvalues (fun (i,a) ->
 	      LBLOCK [STR "("; INT i; STR ", "; STR a; STR ")"; NL]) "" "" ""] in
 	  begin
@@ -219,7 +249,7 @@ let save_exports (dir:string) =
 
 let has_export_functions () =
   let exportedFunctions = pe_sections#get_exported_functions in
-  List.fold_left (fun acc a ->
+  List.fold_left (fun acc _a ->
     if acc then acc else
       let fnames = (* system_info#get_exported_function_names a *) [] in
       let fnames =
@@ -231,7 +261,7 @@ let has_exported_data_values () =
   match pe_sections#get_exported_data_values with [] -> false | _ -> true
 
 
-let save_ordinal_table (dir:string) =
+let save_ordinal_table (_dir: string) =
   if pe_sections#has_export_directory_table then
     let node = xmlElement "export-ordinal-table" in
     let exports = pe_sections#get_export_directory_table in

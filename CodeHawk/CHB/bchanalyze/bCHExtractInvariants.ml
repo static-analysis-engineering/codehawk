@@ -42,7 +42,6 @@ open CHLogger
 (* xpr *)
 open Xprt
 open XprTypes
-open XprToPretty
 open Xsimplify
 
 (* bchlib *)
@@ -63,17 +62,15 @@ module ConstraintCollections = CHCollections.Make
     let toPretty n = n#toPretty
    end)
 
-let pr_expr = xpr_formatter#pr_expr
-
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("ExtractInvariants:" ^ tag) msg
 
-
+(*
 exception TimeOut of float * int * int
 
 let timeout_value = ref 120.0
 let set_timeout_value t = timeout_value := (float t)
-
+ *)
 
 let extract_ranges
     (finfo:function_info_int)
@@ -101,8 +98,8 @@ let extract_external_value_equalities
     (finfo:function_info_int)
     (iaddr:string)
     (domain:domain_int)
-    (flocinv:location_invariant_int)
-    starttime =
+    (_flocinv:location_invariant_int)
+    _starttime =
   let rec expand_symbolic_values x =
     match  x with
     | XVar v when finfo#env#is_symbolic_value v ->
@@ -134,7 +131,7 @@ let extract_external_value_equalities
 	  begin
 	    (match project_out cs (List.rev_append vdone tl) with
 	    | Some c -> newConstraints#addList c#get_constraints
-	    | _ -> ()) ;
+	    | _ -> ());
 	    aux (v::vdone) tl
 	  end in
       aux [] localVars) constraintSets in
@@ -156,7 +153,7 @@ let extract_external_value_equalities
 	    else
               XOp (XMult, [num_constant_expr c#abs; XVar v]) in
 	let op = if c#gt numerical_zero then XPlus else XMinus in
-	XOp (op, [x ; t])) (num_constant_expr constant) l in
+	XOp (op, [x; t])) (num_constant_expr constant) l in
 
   let get_frozen_exp
         (k: numerical_constraint_t)
@@ -179,13 +176,13 @@ let extract_external_value_equalities
                STR ": ";
                k#toPretty;
                STR " - ";
-               p]) ;
+               p]);
 	None
       end in
 
   List.fold_left (fun acc (c:numerical_constraint_t) ->
     match c#getFactors with
-    | [ f ] ->
+    | [f] ->
       let v = f#getVariable in
       if (c#getCoefficient f)#equal numerical_one
          || (c#getCoefficient f)#equal numerical_one#neg then
@@ -210,7 +207,7 @@ let extract_external_value_equalities
               (f::pf,ff)) ([],[]) l in
       match (pfactors,ffactors) with
       | ([], _) -> acc
-      | ([pf], ff :: _) when
+      | ([pf], _ff :: _) when
 	  let pc = c#getCoefficient pf in
 	  pc#equal numerical_one || pc#neg#equal numerical_one ->
 	 begin
@@ -283,18 +280,18 @@ let extract_initvar_equalities finfo iaddr domain flocinv =
 	| Some c -> numCs#addList c#get_constraints
 	| _ -> ()) constraint_sets in
     numCs#toList in
-  let is_equality c v1 v2 =
+  let is_equality c _v1 _v2 =
     c#getConstant#equal numerical_zero &&
       (let factors = c#getFactors in
        match factors with
-       | [ f1 ; f2 ] ->
+       | [f1; f2] ->
 	 let c1 = c#getCoefficient f1 in
 	 let c2 = c#getCoefficient f2 in
 	 c1#neg#equal c2 && (c1#equal numerical_one || c2#equal numerical_one)
        | _ -> false) in
   let have_equal_values c1 c2 =
-    match (c1#getFactors,c2#getFactors) with
-    | ([ f1 ],[ f2 ]) -> c1#getConstant#equal c2#getConstant
+    match (c1#getFactors, c2#getFactors) with
+    | ([_f1], [_f2]) -> c1#getConstant#equal c2#getConstant
     | _ -> false in
   let env = finfo#env in
   let domVars = domain#observer#getObservedVariables in
@@ -336,7 +333,7 @@ let extract_initvar_equalities finfo iaddr domain flocinv =
     else
       true in
 
-  let propagate_disequalities l = () in
+  let propagate_disequalities _l = () in
 
   let fvars =
     List.fold_left
@@ -395,7 +392,7 @@ let extract_linear_equalities
   let invList = ref [] in
   let _ = H.iter (fun k v -> invList := (k,v) :: !invList) invariants in
   let invList = List.sort (fun (k1,_) (k2,_) -> Stdlib.compare k1 k2) !invList in
-  try
+  (* try *)
     List.iter (fun (k, v) ->
       if H.mem v "karr" then
 	let flocinv = finfo#finv#get_location_invariant k in
@@ -423,6 +420,7 @@ let extract_linear_equalities
           extract_external_value_equalities finfo k domain flocinv starttime in
 	let domain = domain#projectOut extVars in
 	extract_relational_facts finfo k domain) invList
+  (*
   with
     TimeOut (timeUsed,nVars,nExternalVars) ->
     pr_debug [
@@ -435,6 +433,7 @@ let extract_linear_equalities
         INT nExternalVars;
 	STR " external vars)";
         NL]
+   *)
 
 
 let extract_valuesets

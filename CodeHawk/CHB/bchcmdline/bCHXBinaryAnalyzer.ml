@@ -543,7 +543,7 @@ let main () =
       let _ = disassembly_summary#record_disassembly_time
                 ((Unix.gettimeofday ()) -. !t) in
       let _ = construct_functions_arm
-                ~construct_all_functions:!construct_all_functions in
+                ~construct_all_functions:!construct_all_functions () in
       let _ = arm_assembly_functions#inline_blocks in
       let _ = pr_timing [STR "functions constructed"] in
       let _ = if !set_datablocks then
@@ -863,7 +863,7 @@ let main () =
       let _ = disassemble_arm_sections () in
       let _ = pr_timing [STR "elf sections disassembled"] in
       let _ = construct_functions_arm
-                ~construct_all_functions:!construct_all_functions in
+                ~construct_all_functions:!construct_all_functions () in
       let _ = arm_assembly_functions#inline_blocks in
       let _ = pr_timing [STR "functions constructed"] in
       let _ = analyze_arm analysisstart in

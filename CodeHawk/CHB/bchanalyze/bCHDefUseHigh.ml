@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,14 +28,11 @@
 (* chlib *)
 open CHAtlas
 open CHCommon
-open CHDomain
 open CHIterator
 open CHLanguage
 open CHNonRelationalDomainNoArrays
 open CHNonRelationalDomainValues
-open CHOnlineCodeSet
 open CHSymbolicSets
-open CHSymbolicSetsDomainNoArrays
 open CHPretty
 
 (* bchlib *)
@@ -45,6 +42,7 @@ open BCHLibTypes
 (* bchanalyze *)
 open BCHAnalyzeProcedure
 
+[@@@warning "-27"]
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
@@ -72,7 +70,7 @@ object (self: 'a)
   method private setValue' t v x =
     self#setValue t v (new non_relational_domain_value_t (SYM_SET_VAL x))
 
-  method special cmd args = {< >}
+  method special _cmd _args = {< >}
 
   method private importValue v =
     new non_relational_domain_value_t (SYM_SET_VAL (v#toSymbolicSet))
@@ -133,7 +131,7 @@ object (self: 'a)
       | _ ->
          default ()
 
-  method analyzeOperation
+  method !analyzeOperation
            ~(domain_name: string)
            ~(fwd_direction: bool)
            ~(operation: operation_t):'a =
@@ -147,7 +145,7 @@ object (self: 'a)
              self#abstractVariables table' [v]) operation.op_args;
          default ()
        end
-         
+
     | "use_high" ->
        let (v, sym) =
          match operation.op_args with
@@ -158,7 +156,11 @@ object (self: 'a)
          | _ ->
             raise
               (BCH_failure
-                 (LBLOCK [STR "Error in defusehigh:analyzeOperation"])) in
+                 (LBLOCK [
+                      STR "Error in defusehigh:analyzeOperation. ";
+                      STR "Domain name: ";
+                      STR domain_name
+              ])) in
        let symbols = (self#getValue' v)#getSymbols in
        (match symbols with
         | TOP ->
@@ -186,11 +188,11 @@ object (self: 'a)
                self#setValue' table' v newsyms;
                default ()
              end)
-         
+
     | _ ->
        default ()
 
-end          
+end
 
 
 let get_vardefuse (op: CHLanguage.operation_t):(variable_t * symbolic_exp_t) =
@@ -203,13 +205,13 @@ let get_vardefuse (op: CHLanguage.operation_t):(variable_t * symbolic_exp_t) =
           (LBLOCK [STR "Error in get_vardefuse"]))
 
 
-let symbolic_exp_to_pretty (s: symbolic_exp_t) =
+let _symbolic_exp_to_pretty (s: symbolic_exp_t) =
   match s with
   | SYM sym -> sym#toPretty
   | SYM_VAR v -> v#toPretty
 
 
-let get_opvar (op: operation_t) =
+let _get_opvar (op: operation_t) =
   match op.op_args with
   | [(_, v, _)] -> v#toPretty
   | _ -> STR "?"
@@ -230,7 +232,7 @@ let opsemantics (domain: string) =
          bb_invariants#add_invariant iaddr domain invariant in
      invariant
   | "def" | "clobber" ->
-     let (v, sym) = get_vardefuse operation in
+     let (v, _sym) = get_vardefuse operation in
      if fwd_direction then
        invariant#analyzeFwd (ABSTRACT_VARS [v])
      else
@@ -241,7 +243,7 @@ let opsemantics (domain: string) =
        invariant#analyzeFwd (ASSIGN_SYM (v, sym))
      else
        invariant#analyzeBwd (ASSIGN_SYM (v, sym))
-  | s ->
+  | _ ->
      invariant
 
 

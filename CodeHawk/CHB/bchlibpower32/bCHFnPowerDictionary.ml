@@ -58,7 +58,6 @@ open BCHPowerOperand
 open BCHPowerTypes
 
 
-module B = Big_int_Z
 module H = Hashtbl
 module TR = CHTraceResult
 

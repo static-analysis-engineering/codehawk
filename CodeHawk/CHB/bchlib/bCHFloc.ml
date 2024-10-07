@@ -1505,20 +1505,6 @@ object (self)
      let flagdefops = mk_ops ["flagreachingdefs"] flagdef_op_name flagdefs in
      useops @ usehighops @ defops @ clobberops @ flagdefops
 
-   method get_set_btype_commands (v: variable_t) (t: btype_t): cmd_t list =
-     let abtype = btype_abstract t in
-     let op_name = new symbol_t ~atts:[abtype#getBaseName] "btype-set" in
-     let op_args = [("type", v, WRITE)] in
-     let op = {op_name = op_name; op_args = op_args} in
-     [OPERATION op]
-
-   method get_propagate_btype_commands
-            (vdst: variable_t) (vsrc: variable_t): cmd_t list =
-     let op_name = new symbol_t "btype-prop" in
-     let op_args = [("dst", vdst, WRITE); ("src", vsrc, READ)] in
-     let op = {op_name = op_name; op_args = op_args} in
-     [OPERATION op]
-
    method private evaluate_fts_argument (p: fts_parameter_t) =
      match p.apar_location with
      | [StackParameter (offset, _)] ->
