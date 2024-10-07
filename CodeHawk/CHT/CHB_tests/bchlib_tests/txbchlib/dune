@@ -1,3 +1,14 @@
-(tests 
-  (names bCHDoublewordTest bCHImmediateTest bCHLocationTest bCHStreamWrapperTest)
-  (libraries bchlib chlib chutil tbchlib tchlib))
+(tests
+  (names
+	bCHDoublewordTest
+	bCHImmediateTest
+	bCHLocationTest
+	bCHStreamWrapperTest
+	bCHXprUtilTest
+	bCHMemoryReferenceTest
+	bCHFunctionInterfaceTest
+	bCHARMFunctionInterfaceTest
+	bCHTypeConstraintStoreTest
+	bCHFlocTest)
+  (deps header.i decompose_array_address.i)
+  (libraries bchcil bchlib xprlib chlib chutil tbchlib tchlib txprlib))

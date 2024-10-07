@@ -28,19 +28,12 @@
 
 (* chlib *)
 open CHNumerical
-open CHPretty
-
-(* chutil *)
-open CHLogger
-open CHPrettyUtil
 
 (* xprlib *)
 open Xprt
-open XprToPretty
 open XprTypes
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHBCFiles
 open BCHBCTypes
 open BCHConstantDefinitions
@@ -49,7 +42,6 @@ open BCHFloc
 open BCHFunctionData
 open BCHFunctionInfo
 open BCHLibTypes
-open BCHMemoryReference
 
 (* bchcil *)
 open BCHParseCilFile
@@ -61,11 +53,6 @@ module XBA = TCHBchlibAssertion
 
 let testname = "bCHFlocTest"
 let lastupdated = "2024-08-20"
-
-
-let x2p = xpr_formatter#pr_expr
-let p2s = pretty_to_string
-let x2s x = p2s (x2p x)
 
 
 let decompose_memvar_address_test () =

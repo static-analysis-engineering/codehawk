@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2022      Aarno Labs LLC
+
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,19 +26,8 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-open CHXmlReader
-
 (* bchlib *)
-open BCHBasicTypes
 open BCHLibTypes
-
-(* bchlibmips32 *)
-open BCHMIPSTypes
 
 (* tchlib *)
 module TS = TCHTestSuite
@@ -64,7 +53,6 @@ module TR = CHTraceResult
 let testname = "bCHAssembleMIPSInstructionTest"
 let lastupdated = "2022-12-18"
 
-let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
 
 let make_stream ?(len=0) (s: string) =
   let bytestring = U.write_hex_bytes_to_bytestring s in
@@ -127,8 +115,8 @@ let mips_assemble_sw_be () =
 
     TS.launch_tests ()
   end
-  
-  
+
+
 
 let () =
   begin

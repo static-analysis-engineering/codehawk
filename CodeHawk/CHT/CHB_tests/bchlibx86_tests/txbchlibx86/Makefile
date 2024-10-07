@@ -119,4 +119,5 @@ clean:
 	rm -f *.mli~
 	rm -f Makefile~
 	rm -f bCHDisassembleInstructionTest
+	rm -f bCHDisassembleXOTest
 	rm -rf doc

@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,21 +26,8 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-open CHXmlReader
-
-(* bchlib *)
-open BCHBasicTypes
-open BCHLibTypes
-
 (* bchlibelf *)
-open BCHDwarfUtils
 open BCHELFDebugAbbrevSection
-open BCHELFTypes
 open BCHELFSectionHeader
 
 (* tchlib *)

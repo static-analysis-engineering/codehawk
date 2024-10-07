@@ -25,6 +25,7 @@ _build/
 *.mli~
 *.sh~
 *.yaml~
+*.i~
 .gitignore~
 
 # binary analyzer executables
