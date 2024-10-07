@@ -100,4 +100,5 @@ clean:
 	rm -f *.mli~
 	rm -f Makefile~
 	rm -f bCHDisassembleVLEInstructionTest
+	rm -f bCHDisassemblePowerInstructionTest
 	rm -rf doc

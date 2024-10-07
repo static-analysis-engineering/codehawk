@@ -1,7 +1,3 @@
 (tests 
   (names bCHAssembleMIPSInstructionTest bCHDisassembleMIPSInstructionTest)
   (libraries bchlib bchlibmips32 chlib chutil tchlib))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

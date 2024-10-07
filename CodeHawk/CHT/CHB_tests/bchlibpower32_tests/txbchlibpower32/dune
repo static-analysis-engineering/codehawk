@@ -1,7 +1,3 @@
 (tests 
   (names bCHDisassemblePowerInstructionTest bCHDisassembleVLEInstructionTest)
   (libraries bchlib bchlibpower32 chlib chutil tchlib))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

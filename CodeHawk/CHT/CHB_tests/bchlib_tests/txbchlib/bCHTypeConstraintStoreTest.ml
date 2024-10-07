@@ -36,8 +36,6 @@ open CHPretty
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCFiles
-open BCHBCTypePretty
-open BCHCPURegisters
 open BCHFunctionInterface
 open BCHLibTypes
 open BCHSystemSettings

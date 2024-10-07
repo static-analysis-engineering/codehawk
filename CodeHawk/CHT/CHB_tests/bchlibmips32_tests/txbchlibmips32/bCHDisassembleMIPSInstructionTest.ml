@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+
+   Copyright (c) 2022-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,20 +25,6 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-open CHXmlReader
-
-(* bchlib *)
-open BCHBasicTypes
-open BCHLibTypes
-
-(* bchlibmips32 *)
-open BCHMIPSTypes
 
 (* tchlib *)
 module TS = TCHTestSuite
@@ -66,7 +52,7 @@ let lastupdated = "2023-03-10"
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
 
-let missing_I_opcodes = [
+let _missing_I_opcodes = [
     "ldc1";
     "ll";
     "lwc1";
@@ -79,26 +65,26 @@ let missing_I_opcodes = [
     "swc1"
   ]
 
-let missing_I_opcode_branches = [
+let _missing_I_opcode_branches = [
     "bgezal";
-    "bltzal";    
+    "bltzal";
     "teqi";
     "blezl";
   ]
 
-let missing_R_opcode = [
+let _missing_R_opcode = [
     "add",
     "mthi",
     "mtlo",
     "sub"
   ]
 
-let missing_R2_opcode = [
+let _missing_R2_opcode = [
     "madd";
     "maddu"
   ]
 
-let missing_R3_opcode = [
+let _missing_R3_opcode = [
     "ext";
     "ins";
     "rdhwr";
@@ -257,7 +243,7 @@ let mips_R_opcode_be () =
 
     TS.launch_tests ()
   end
- 
+
 
 let mips_R2_opcode_be () =
   let tests = [
@@ -313,9 +299,9 @@ let mips_test_code_be () =
       ("sw-ra",    "0x40516c", "afbf0010", "sw       $ra, 0x10($sp)");
       ("lw-t9",    "0x494d98", "8f9983e0", "lw       $t9, -0x7c20($gp)");
       ("jalr-t9",  "0x40518c", "0320f809", "jalr     $ra, $t9");
-      ("nop",      "0x405178", "00000000", "<nop>");      
+      ("nop",      "0x405178", "00000000", "<nop>");
       ("lw-ra",    "0x4052d4", "8fbf0010", "lw       $ra, 0x10($sp)");
-      ("jr-ra",    "0x4051c0", "03e00008", "jr       $ra");      
+      ("jr-ra",    "0x4051c0", "03e00008", "jr       $ra");
       ("sp-inc-4", "0x45ff34", "27bd0014", "addiu    $sp, $sp, 0x14");
       ("move-a3",  "0x494db4", "00063821", "move     $a3, $a2");
       ("move-a2",  "0x494db8", "00053021", "move     $a2, $a1");
@@ -338,9 +324,7 @@ let mips_test_code_be () =
 
     TS.launch_tests ()
   end
-  
-  
-  
+
 
 let () =
   begin

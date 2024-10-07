@@ -1,7 +1,3 @@
 (tests 
   (names bCHDwarfTest bCHELFDebugAbbrevSectionTest bCHELFDebugLocSectionTest)
   (libraries bchlib bchlibelf chlib chutil tbchlibelf tchlib))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

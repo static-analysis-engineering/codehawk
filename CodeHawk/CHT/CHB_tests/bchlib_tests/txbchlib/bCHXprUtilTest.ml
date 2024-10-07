@@ -28,14 +28,8 @@
 
 (* chlib *)
 open CHNumerical
-open CHPretty
-
-(* chutil *)
-open CHPrettyUtil
 
 (* xprlib *)
-open Xprt
-open XprToPretty
 open XprTypes
 open Xsimplify
 

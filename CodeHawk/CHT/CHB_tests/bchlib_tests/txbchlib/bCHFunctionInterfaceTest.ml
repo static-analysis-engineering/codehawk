@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,10 +35,6 @@
 
 (* chlib *)
 open CHPretty
-open CHNumerical
-
-(* tchblib *)
-open TCHSpecification
 
 (* bchlib *)
 open BCHBasicTypes
@@ -181,7 +177,7 @@ let function_signature_of_bvarinfo_arm () =
               else
                 raise
                   (BCH_failure (LBLOCK [STR title; STR " not found"])) in
-            let (xresult, fintf, tsig) =
+            let (xresult, _fintf, tsig) =
               try
                 let xresult = List.map BU.convert_fts_parameter_input result in
                 let fintf = FI.bvarinfo_to_function_interface bvinfo in

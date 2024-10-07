@@ -29,16 +29,8 @@
 (* chlib *)
 open CHPretty
 
-(* chutil *)
-open CHXmlDocument
-open CHXmlReader
-
 (* bchlib *)
 open BCHBasicTypes
-open BCHLibTypes
-
-(* bchlibpower32 *)
-open BCHPowerTypes
 
 (* tchlib *)
 module TS = TCHTestSuite

@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,17 +26,8 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-open CHXmlReader
-
 (* bchlib *)
-open BCHBasicTypes
 open BCHDoubleword
-open BCHLibTypes
 open BCHStreamWrapper
 
 (* bchlibelf *)
@@ -44,7 +35,6 @@ open BCHDwarf
 open BCHDwarfTypes
 open BCHDwarfUtils
 open BCHELFDebugAbbrevSection
-open BCHELFTypes
 open BCHELFSectionHeader
 
 (* tchlib *)
@@ -169,7 +159,7 @@ let decode_variable_die_test () =
             let sh = mk_elf_section_header () in
             let section = mk_elf_debug_abbrev_section astring sh in
             let abbreventry = section#get_abbrev_entry in
-            let fabbrev = fun (i: int) -> abbreventry in
+            let fabbrev = fun (_i: int) -> abbreventry in
             let chi = make_pushback_stream ~little_endian:true istring in
             let base = TR.tget_ok (string_to_doubleword base) in
             let var =

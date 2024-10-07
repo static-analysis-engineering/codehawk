@@ -58,12 +58,12 @@ let get_arm_int_param_next_state_test () =
     TS.new_testsuite
       (testname ^ "_get_int_paramloc_next_test") lastupdated;
 
-    List.iter (fun (title, nxtreg, xlocreg, xnxtreg, xnxtoff) ->
+    List.iter (fun (title, nxtreg, _xlocreg, xnxtreg, xnxtoff) ->
         TS.add_simple_test
           ~title
           (fun () ->
             let aas = {aas_start_state with aas_next_core_reg = Some nxtreg} in
-            let (par, naas) = get_arm_int_param_next_state 4 "name" t_int aas 1 in
+            let (_par, naas) = get_arm_int_param_next_state 4 "name" t_int aas 1 in
             let xnaas =
               {aas_start_state with
                 aas_next_core_reg = xnxtreg; aas_next_offset = xnxtoff} in
@@ -76,7 +76,7 @@ let get_arm_int_param_next_state_test () =
         let aas =
           {aas_start_state with
             aas_next_core_reg = None; aas_next_offset = Some 0} in
-        let (par, naas) = get_arm_int_param_next_state 4 "name" t_int aas 1 in
+        let (_par, naas) = get_arm_int_param_next_state 4 "name" t_int aas 1 in
         let xnaas = {aas with aas_next_offset = Some 4} in
         BA.equal_arm_argument_state ~expected:xnaas ~received:naas ());
 
@@ -105,14 +105,14 @@ let get_arm_struct_field_locations_test () =
 
     parse_cil_file ~removeUnused:false "header.i";
 
-    List.iter (fun (title, locations) ->
+    List.iter (fun (title, _locations) ->
         TS.add_simple_test
           ~title
           (fun () ->
             let cinfo = bcfiles#get_compinfo_by_name title in
             let finfo = List.hd cinfo.bcfields in
             let aas = push_field_pos aas_start_state finfo in
-            let (locs, naas) = get_arm_struct_field_locations finfo aas in
+            let (locs, _naas) = get_arm_struct_field_locations finfo aas in
             let xlocs = [
                 mk_register_parameter_location
                   ~position:[mk_field_position cinfo.bckey 0 (get_struct_field_name finfo)]
@@ -140,7 +140,7 @@ let get_arm_struct_param_next_state_test () =
             let cinfo = bcfiles#get_compinfo_by_name title in
             let btype = get_compinfo_struct_type cinfo in
             let size = CHTraceResult.tget_ok (size_of_btype btype) in
-            let (param, naas) =
+            let (param, _naas) =
               get_arm_struct_param_next_state
                 size "arg_1" btype aas_start_state 1 in
             let xlocs =

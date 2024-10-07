@@ -1,11 +1,11 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework 
+   CodeHawk Unit Testing Framework
    Author: Henny Sipma
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2023  Aarno Labs LLC
+
+   Copyright (c) 2023-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,21 +26,8 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHXmlDocument
-open CHXmlReader
-
-(* bchlib *)
-open BCHBasicTypes
-open BCHLibTypes
-
 (* bchlibelf *)
-open BCHDwarfUtils
 open BCHELFDebugLocSection
-open BCHELFTypes
 open BCHELFSectionHeader
 
 (* tchlib *)
@@ -142,11 +129,12 @@ let debug_location_list_test () =
           ~title
           (fun () ->
             let bytes = bytes ^ "000000000000000000" in
-            let bytestring = U.write_hex_bytes_to_bytestring bytes in            
+            let bytestring = U.write_hex_bytes_to_bytestring bytes in
             let sectionheader = mk_elf_section_header () in
             let section = mk_elf_debug_loc_section bytestring sectionheader in
             let loclist = section#get_location_list in
-            EA.equal_debug_location_list result loclist ())) tests;
+            EA.equal_debug_location_list
+              ~expected:result ~received:loclist ())) tests;
 
     TS.launch_tests ()
   end
@@ -158,4 +146,3 @@ let () =
     debug_location_list_test ();
     TS.exit_file ()
   end
-  
