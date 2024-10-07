@@ -200,3 +200,7 @@ let dwarf_operand_list_to_string
 let get_dw_op_name (op: dwarf_operation_t) = (get_dw_op_record op).mnemonic
 
 let get_dw_op_operands (op: dwarf_operation_t) = (get_dw_op_record op).operands
+
+let dwarf_operation_to_string (op: dwarf_operation_t): string =
+  let default () = (get_dw_op_record op).dw_asm (mk_string_formatter 80) in
+  default ()

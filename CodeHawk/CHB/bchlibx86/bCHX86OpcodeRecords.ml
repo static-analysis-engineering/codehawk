@@ -4504,6 +4504,8 @@ let get_opcode_long_name (opc:opcode_t) = (get_record opc).long_name
 
 let get_opcode_group (opc:opcode_t) = (get_record opc).group_name
 
+let get_opcode_docref (opc: opcode_t): string = (get_record opc).docref
+
 
 let is_conditional_instruction (opc:opcode_t) =
   let cflags = (get_record opc).flags_used in
@@ -4513,6 +4515,11 @@ let is_conditional_instruction (opc:opcode_t) =
 
 let opcode_to_string (opc:opcode_t) =
   let default () = (get_record opc).intel_asm string_formatter in
+  default ()
+
+
+let opcode_to_att_string (opc: opcode_t) =
+  let default () = (get_record opc).att_asm string_formatter in
   default ()
 
 
