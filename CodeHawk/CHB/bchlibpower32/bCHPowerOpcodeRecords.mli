@@ -40,3 +40,5 @@ val pwr_opcode_name: pwr_opcode_t -> string
 val get_pwr_crfs_set: pwr_opcode_t -> pwr_register_field_t list
 
 val get_pwr_crfs_used: pwr_opcode_t -> pwr_register_field_t list
+
+val get_pwr_operands: pwr_opcode_t -> pwr_operand_int list

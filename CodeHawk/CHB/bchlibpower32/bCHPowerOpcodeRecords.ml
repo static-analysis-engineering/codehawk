@@ -2186,3 +2186,7 @@ let get_pwr_crfs_set (opc: pwr_opcode_t): pwr_register_field_t list =
 
 let get_pwr_crfs_used (opc: pwr_opcode_t): pwr_register_field_t list =
   (get_record opc).crfs_used
+
+
+let get_pwr_operands (opc: pwr_opcode_t): pwr_operand_int list =
+  (get_record opc).operands

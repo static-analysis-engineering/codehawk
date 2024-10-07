@@ -56,11 +56,15 @@ val get_flags_used: opcode_t -> eflag_t list
 
 val opcode_to_string: opcode_t -> string
 
+val opcode_to_att_string: opcode_t -> string
+
 val get_opcode_name: opcode_t -> string
 
 val get_opcode_long_name: opcode_t -> string
 
 val get_opcode_group: opcode_t -> string
+
+val get_opcode_docref: opcode_t -> string
 
 val is_conditional_instruction: opcode_t -> bool
 

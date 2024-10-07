@@ -34,3 +34,5 @@ val dwarf_operand_list_to_string: int -> string -> dwarf_operand_t list -> strin
 val get_dw_op_name: dwarf_operation_t -> string
 
 val get_dw_op_operands: dwarf_operation_t -> dwarf_operand_t list
+
+val dwarf_operation_to_string: dwarf_operation_t -> string
