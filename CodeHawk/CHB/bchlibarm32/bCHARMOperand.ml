@@ -666,6 +666,13 @@ object (self:'a)
        XOp
          (XLsl,
           [XVar (env#mk_arm_register_variable r); int_constant_expr n])
+    | ARMShiftedReg (r, ARMRegSRT (SRType_LSL, sr)) ->
+       let env = floc#f#env in
+       let shiftv =
+         XOp (XBAnd,
+              [XVar (env#mk_arm_register_variable sr);
+               int_constant_expr 7]) in
+       XOp (XLsl, [XVar (env#mk_arm_register_variable r); shiftv])
     | ARMShiftedReg _ ->
        let _ =
          chlog#add
