@@ -1243,7 +1243,8 @@ object (self)
              let vrn = rn#to_variable floc in
              let addr_r = mem#to_updated_offset_address floc in
              log_tfold_default
-               (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDR"))
+               (log_error
+                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDR"))
                (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
                (tags, args)
                addr_r
@@ -1518,7 +1519,11 @@ object (self)
              ("a:" :: ["subsumed"; ctxtva], [])
           | _ -> (["a:"], []))
 
-      | Move(_, c, rd, rm, _, _) ->
+      | Move (_, _, rd, rm, _, _)
+           when rm#is_register && rd#get_register = rm#get_register ->
+         (["nop"], [])
+
+      | Move (_, c, rd, rm, _, _) ->
          let vrd = rd#to_variable floc in
          let xrm = rm#to_expr floc in
          let result = rewrite_expr ?restrict:(Some 4) xrm in

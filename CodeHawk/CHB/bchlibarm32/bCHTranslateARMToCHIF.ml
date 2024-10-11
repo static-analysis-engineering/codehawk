@@ -1142,7 +1142,7 @@ let translate_arm_instruction
      let vr3 = floc#f#env#mk_arm_register_variable AR3 in
      let (defs, use, usehigh) =
        let use = [vr0; vr1; vr2; vr3] in
-       ([vr0], use, []) in
+       ([vr0], use, use) in
      let cmds = floc#get_arm_call_commands in
      let defcmds =
        floc#get_vardef_commands
@@ -1972,6 +1972,11 @@ let translate_arm_instruction
          ch_diagnostics_log#add
            "instr part of aggregate"
            (LBLOCK [(get_floc loc)#l#toPretty; STR ": "; instr#toPretty]) in
+     default []
+
+  (* Preempt spurious reaching definitions by vacuous assignment *)
+  | Move (_, _, rd, rm, _, _)
+       when rm#is_register && rd#get_register = rm#get_register ->
      default []
 
   | Move (_, c, rd, rm, _, _) ->
