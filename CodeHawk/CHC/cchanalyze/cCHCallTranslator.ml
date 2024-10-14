@@ -299,6 +299,15 @@ object (self)
            let rvar = exp_translator#translate_lhs context lval in
            if rvar#isTmp then
              let memoryvars = env#get_memory_variables in
+             let _ =
+               chlog#add
+                 "abstract memory variables (call lhs)"
+                 (LBLOCK [
+                      STR "callee: ";
+                      STR fname;
+                      STR "; ";
+                      pretty_print_list
+                        memoryvars (fun v -> v#toPretty) "" ", " ""]) in
              [make_c_cmd (ABSTRACT_VARS memoryvars)]
            else
              let ty = fenv#get_type_unrolled (env#get_variable_type rvar) in
@@ -307,9 +316,25 @@ object (self)
                 (* problem: rvar is not a registered memory variable, so env will
                    return all memory variables, which will all be abstracted,
                    causing loss of precision *)
-                let memoryvars = env#get_memory_variables_with_base rvar in
+                let optbasevar =
+                  self#get_external_post_value postconditions fnargs in
+                let memoryvars =
+                  match optbasevar with
+                  | Some (XVar v) -> env#get_memory_variables_with_base v
+                  | _ -> env#get_memory_variables_with_base rvar in
                 let fieldcode = make_c_cmd (ABSTRACT_VARS memoryvars) in
-                let (rcode,rval) =
+                let _ =
+                  chlog#add
+                    "abstract memory variables with base (call lhs)"
+                    (LBLOCK [
+                         STR "callee: ";
+                         STR fname;
+                         STR "; base: ";
+                         rvar#toPretty;
+                         STR "; ";
+                         pretty_print_list
+                           memoryvars (fun v -> v#toPretty) "[" ", " "]"]) in
+                let (rcode, rval) =
                   self#get_arg_post_value postconditions fnargs frVar returntype in
                 let assign = make_c_cmd (ASSIGN_NUM (rvar, rval)) in
                 let postassert =
@@ -397,16 +422,34 @@ object (self)
                    (_f:exp)
                    (_args:exp list) = []
 
+  method private get_external_post_value
+                   (postconditions:
+                      annotated_xpredicate_t list * annotated_xpredicate_t list)
+                   (_args: xpr_t list): xpr_t option =
+    let get_external_pc_value (acc: xpr_t option) ((pc, _): annotated_xpredicate_t) =
+      match acc with
+      | Some _ -> acc
+      | _ ->
+         match pc with
+         | XExternalStateValue (ReturnValue, ExternalState name) ->
+            let lhs = env#mk_external_state_variable name NUM_VAR_TYPE in
+            orakel#get_external_state_value context lhs
+         | _ -> acc in
+    match postconditions with
+    | ([], _) -> None
+    | (pl, _) -> List.fold_left get_external_pc_value None pl
+
   method private get_arg_post_value
-                   (postconditions:annotated_xpredicate_t list * annotated_xpredicate_t list)
+                   (postconditions:
+                      annotated_xpredicate_t list * annotated_xpredicate_t list)
                    (args:xpr_t list)
                    (returnvalue:variable_t)
                    (returntype:typ) =
     let rval =
       match postconditions with
-      | (l,[])
+      | (l, [])
         | (l, [(XNull _, _)]) ->
-         List.fold_left (fun acc (pc,_) ->
+         List.fold_left (fun acc (pc, _) ->
              match acc with
              | Some _ -> acc
              | _ ->
@@ -440,7 +483,7 @@ object (self)
           let basevar = env#mk_base_address_value returnvalue NoOffset t in
           (make_c_cmd SKIP, NUM_VAR basevar)
        | _ ->
-          (make_c_cmd SKIP, NUM_VAR  returnvalue)
+          (make_c_cmd SKIP, NUM_VAR returnvalue)
 
   method private get_post_assert
                    (postconditions:annotated_xpredicate_t list * annotated_xpredicate_t list)
@@ -472,7 +515,8 @@ object (self)
       | XRelationalExpr (op,ArgValue(ParFormal n,ArgNoOffset),ReturnValue) ->
          let arg = List.nth args (n-1) in
          get_assert (XOp (binop_to_xop op, [arg; XVar rvar]))
-      | XRelationalExpr (Lt, ReturnValue, ByteSize(ArgValue(ParFormal n, ArgNoOffset))) ->
+      | XRelationalExpr (Lt, ReturnValue,
+                         ByteSize(ArgValue(ParFormal n, ArgNoOffset))) ->
          let arg = List.nth args (n-1) in
          let msg =
            LBLOCK [
@@ -603,6 +647,21 @@ object (self)
                     | _ ->
                        [] in
                   assign :: subassigns
+
+             | XInitializesExternalState (ExternalState name,
+                                          ArgValue (ParFormal n, ArgNoOffset)) ->
+                let arg = List.nth fnargs (n - 1) in
+                let assigns =
+                  match arg with
+                  | CastE (_, Const (CInt (i64, _, _)))
+                       when (Int64.compare i64 Int64.zero) = 0 -> []
+                  | _ ->
+                     let xarg = exp_translator#translate_exp context arg in
+                     let lhs = env#mk_external_state_variable name NUM_VAR_TYPE in
+                     match xarg with
+                     | XVar v -> [make_c_cmd (ASSIGN_NUM (lhs, NUM_VAR v))]
+                     | _ -> [] in
+                assigns
 
              | XFormattedInput (ArgValue (ParFormal n,ArgNoOffset)) ->
                 let (assignments,_) =
@@ -780,7 +839,8 @@ object (self)
                  p]))
 
   method private get_arg_post_value
-                   (postconditions:annotated_xpredicate_t list * annotated_xpredicate_t list)
+                   (postconditions:
+                      annotated_xpredicate_t list * annotated_xpredicate_t list)
                    (args:xpr_t list)
                    (returnvalue:variable_t)
                    (returntype:typ) =
@@ -825,7 +885,8 @@ object (self)
           (make_c_cmd SKIP, NUM_VAR  returnvalue)
 
   method private get_post_assert
-                   (postconditions:annotated_xpredicate_t list * annotated_xpredicate_t list)
+                   (postconditions:
+                      annotated_xpredicate_t list * annotated_xpredicate_t list)
                    (fname:string)
                    (_fvid:int)
                    (rvar:variable_t)
@@ -854,7 +915,9 @@ object (self)
       | XRelationalExpr (op,ArgValue(ParFormal n,ArgNoOffset),ReturnValue) ->
          let arg = List.nth args (n-1) in
          get_assert (XOp (binop_to_xop op, [arg; XVar rvar]))
-      | XRelationalExpr (Lt,ReturnValue, ByteSize(ArgValue(ParFormal n,ArgNoOffset))) ->
+      | XRelationalExpr (Lt,
+                         ReturnValue,
+                         ByteSize(ArgValue(ParFormal n,ArgNoOffset))) ->
          let arg = List.nth args (n-1) in
          let msg =
            LBLOCK [
@@ -1409,7 +1472,7 @@ object (self)
       match f with
       | Lval (Var (fname,fvid), NoOffset) ->          (* direct call *)
          let fnargs = List.map (exp_translator#translate_exp ctxt) args in
-         let sideeffects = self#get_sideeffects fname fvid args in
+         let sideeffects = self#get_sideeffects fname loc fvid args in
          let callop =
            make_c_cmd
              (OPERATION
@@ -1526,6 +1589,14 @@ object (self)
                   | XVar v -> Some (SYM_VAR v)
                   | _ -> acc
                 end
+             (* | XExternalStateValue (ReturnValue, ExternalState name) ->
+                let lhs = env#mk_external_state_variable name SYM_VAR_TYPE in
+                let regions = orakel#get_regions context (XVar lhs) in
+                let basevars =
+                  List.map (fun r ->
+                      let memreg = memregmgr#get_memory_region r#getSeqNumber in
+                      memreg#get_memory_base) regions in
+                acc *)
              | _ -> acc) None summary.fs_postconditions in
 
     let with_null_branch cmd =
@@ -1578,6 +1649,7 @@ object (self)
 
   method private get_sideeffects
                    (fname:string)
+                   (_loc: location)
                    (_fvid:int)
                    (args:exp list) =
     let sideeffects = get_sideeffects env#get_functionname (Some fname) context in
@@ -1636,6 +1708,25 @@ object (self)
                     | _ ->
                        [] in
                   cancel :: subcancels
+             | XInitializesExternalState (ExternalState name,
+                                          ArgValue (ParFormal n, ArgNoOffset)) ->
+                let arg = List.nth args (n - 1) in
+                let effects =
+                  match arg with
+                  | CastE (_, Const (CInt (i64, _, _)))
+                       when (Int64.compare i64 Int64.zero) = 0 -> []
+                  | _ ->
+                     let xarg = exp_translator#translate_exp context arg in
+                     let lhs = env#mk_external_state_variable name SYM_VAR_TYPE in
+                     (match xarg with
+                      | XVar v ->
+                         let sym = memregmgr#mk_stack_region_sym v in
+                         [make_c_cmd (ASSIGN_SYM (lhs, SYM sym))]
+                      | XConst (SymSet [s]) ->
+                         [make_c_cmd (ASSIGN_SYM (lhs, SYM s))]
+                      | _ -> []) in
+                effects
+
              | _ -> []) sideeffects) in
          seeffects
 end

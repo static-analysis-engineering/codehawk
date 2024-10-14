@@ -303,6 +303,7 @@ object
     match v with
     | LocalVariable _ -> "lv"
     | GlobalVariable _ -> "gv"
+    | ExternalStateVariable _ -> "es"
     | MemoryVariable _ -> "mv"
     | MemoryRegionVariable _ -> "mrv"
     | ReturnVariable _ -> "rv"
@@ -311,7 +312,7 @@ object
     | AuxiliaryVariable _ -> "av"
     | AugmentationVariable _ -> "xv"
 
-  method! tags = ["av"; "cv"; "fv"; "gv"; "lv"; "mrv"; "mv"; "rv"; "xv"]
+  method! tags = ["av"; "cv"; "es"; "fv"; "gv"; "lv"; "mrv"; "mv"; "rv"; "xv"]
 
 end
 

@@ -61,7 +61,20 @@ object (self)
   method private get_invariant (context:program_context_int) =
     invio#get_location_invariant context
 
-  method private get_expressions (context:program_context_int) (var:variable_t) =
+  method get_external_state_value
+           (context: program_context_int) (var: variable_t): xpr_t option =
+    let facts = self#get_expressions context var in
+    List.fold_left (fun acc nrv ->
+        match acc with
+        | Some _ -> acc
+        | _ ->
+           match nrv with
+           | FSymbolicExpr x -> Some x
+           | _ -> acc) None facts
+
+  method private get_expressions
+                   (context:program_context_int)
+                   (var:variable_t): non_relational_value_t list =
     let cmp i1 i2 =
       match (i1#const_value,i2#const_value) with
       | (Some _, Some _) -> 0

@@ -102,6 +102,7 @@ object
            (bool * int * int) list -> typ -> variable_type_t -> variable_t
   method mk_augmentation_variable:
            string -> string -> int -> variable_type_t -> variable_t
+  method mk_external_state_variable: string -> variable_type_t -> variable_t
   method mk_memory_variable: int -> offset -> variable_type_t -> variable_t
   method mk_stack_memory_variable:
            varinfo -> offset -> typ -> variable_type_t -> variable_t
@@ -274,6 +275,10 @@ class type orakel_int =
 object
 
   method get_external_value : program_context_int -> xpr_t -> xpr_t option
+
+  method get_external_state_value:
+           program_context_int -> variable_t -> xpr_t option
+
   method get_regions: program_context_int -> xpr_t -> symbol_t list
 
 end

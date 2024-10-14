@@ -388,6 +388,7 @@ object
     match s with
     | ArgValue _ -> "av"
     | LocalVariable _ -> "lv"
+    | ExternalState _ -> "es"
     | ReturnValue -> "rv"
     | NamedConstant _ -> "nc"
     | NumConstant _ -> "ic"
@@ -403,7 +404,7 @@ object
     | ChoiceValue _ -> "cv"
 
   method! tags = [
-      "aa"; "at"; "av"; "ax"; "bs"; "cv"; "fs"; "ic"; "is"; "lv";
+      "aa"; "at"; "av"; "ax"; "bs"; "cv"; "es"; "fs"; "ic"; "is"; "lv";
       "nc"; "rg"; "rt"; "rv"; "st"]
 
 end
@@ -424,6 +425,7 @@ object
     | XConfined _ -> "cf"
     | XConstTerm _ -> "c"
     | XControlledResource _ -> "cr"
+    | XExternalStateValue _ -> "esv"
     | XFormattedInput _ -> "fi"
     | XFalse -> "f"
     | XFreed _ -> "fr"
@@ -432,6 +434,7 @@ object
     | XHeapAddress _ -> "ha"
     | XInitialized _ -> "i"
     | XInitializedRange _ -> "ir"
+    | XInitializesExternalState _ -> "ies"
     | XInputFormatString _ -> "ifs"
     | XInvalidated _ -> "iv"
     | XNewMemory _ -> "nm"
@@ -460,8 +463,8 @@ object
     | XPolicyTransition _ -> "pox"
 
   method! tags = [
-      "ab"; "b"; "bw"; "c"; "cf"; "cr"; "f"; "fi"; "fn"; "fr"; "ga";
-      "ha"; "i"; "ifs"; "ir"; "iv"; "nm"; "nn"; "no"; "nz"; "nng";
+      "ab"; "b"; "bw"; "c"; "cf"; "cr"; "esv"; "f"; "fi"; "fn"; "fr"; "ga";
+      "ha"; "i"; "ies"; "ifs"; "ir"; "iv"; "nm"; "nn"; "no"; "nz"; "nng";
       "nt"; "null"; "ofs"; "pop"; "pov"; "pox";  "pr"; "prm";
       "prmx"; "prn"; "prv"; "pv"; "rb"; "rep"; "sa"; "tt"; "up";
       "vm"; "x"]

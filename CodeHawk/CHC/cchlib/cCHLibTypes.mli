@@ -447,6 +447,7 @@ type s_offset_t =
 type s_term_t =
   | ArgValue of api_parameter_t *  s_offset_t
   | LocalVariable of string
+  | ExternalState of string
   | ReturnValue
   | NamedConstant of string
   | NumConstant of numerical_t
@@ -500,6 +501,12 @@ type xpredicate_t =
 
   | XInitializedRange of s_term_t * s_term_t
   (** term pointed to is initialized for t2 length *)
+
+  | XInitializesExternalState of s_term_t * s_term_t
+  (** term t2 initializes the external state denoted by t1 *)
+
+  | XExternalStateValue of s_term_t * s_term_t
+  (** term t1 has the same value as the external state denoted by t2 *)
 
   | XInputFormatString of s_term_t
   (** term points to scanf format string *)
@@ -562,7 +569,7 @@ type xpredicate_t =
   | XRelationalExpr of binop * s_term_t * s_term_t
 
   | XRepositioned of s_term_t
-  (** term pointed to my be freed and reassigned *)
+  (** term pointed to may be freed and reassigned *)
 
   | XRevBuffer of s_term_t * s_term_t
   (** term points to memory region with at least t2 bytes before pointer *)

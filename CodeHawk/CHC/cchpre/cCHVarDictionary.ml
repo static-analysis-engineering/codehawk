@@ -263,25 +263,27 @@ object (self)
     let tags = [c_variable_denotation_mcts#ts v] in
     let key =
       match v with
-      | LocalVariable (vinfo,o) ->
+      | LocalVariable (vinfo, o) ->
          let args = [vinfo.vid; cd#index_offset o] in
          (tags,args)
-      | GlobalVariable (vinfo,o) ->
+      | GlobalVariable (vinfo, o) ->
          let args = [vinfo.vid; cd#index_offset o] in
-         (tags,args)
-      | MemoryVariable (i,o) -> (tags, [i; cd#index_offset o])
+         (tags, args)
+      | ExternalStateVariable s -> (tags @ [s], [])
+      | MemoryVariable (i, o) -> (tags, [i; cd#index_offset o])
       | MemoryRegionVariable i -> (tags, [i])
-      | ReturnVariable t -> (tags,[cd#index_typ t])
-      | FieldVariable ((fname,ckey)) -> (tags @ [fname],[ckey])
-      | CheckVariable (l,t) ->
+      | ReturnVariable t -> (tags, [cd#index_typ t])
+      | FieldVariable ((fname, ckey)) -> (tags @ [fname], [ckey])
+      | CheckVariable (l, t) ->
          let args =
            [cd#index_typ t] @
              (List.concat
-                (List.map (fun (isppo,id,iexp) -> [ibool isppo; id; iexp ]) l)) in
+                (List.map
+                   (fun (isppo, id, iexp) -> [ibool isppo; id; iexp ]) l)) in
          (tags, args)
-      | AuxiliaryVariable c -> (tags,[self#index_constant_value_variable c])
+      | AuxiliaryVariable c -> (tags, [self#index_constant_value_variable c])
       | AugmentationVariable (name, purpose, index) ->
-         (tags @ [name; purpose],[index]) in
+         (tags @ [name; purpose], [index]) in
     c_variable_denotation_table#add key
 
   method get_c_variable_denotation (index:int):c_variable_denotation_t =
@@ -294,6 +296,7 @@ object (self)
        LocalVariable (fdecls#get_varinfo_by_vid (a 0),cd#get_offset (a 1))
     | "gv" ->
        GlobalVariable (fdecls#get_varinfo_by_vid (a 0), cd#get_offset (a 1))
+    | "es" -> ExternalStateVariable (t 1)
     | "mv" -> MemoryVariable (a 0, cd#get_offset (a 1))
     | "mrv" -> MemoryRegionVariable (a 0)
     | "rv" -> ReturnVariable (cd#get_typ (a 0))

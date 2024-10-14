@@ -277,6 +277,21 @@ type c_variable_denotation_t =
   | GlobalVariable of varinfo * offset
   (** global variable *)
 
+  | ExternalStateVariable of string
+  (** variable in an external library that holds state, but is only accessible
+      to the application via functions in that library according to a fixed
+      protocol.
+
+      Example:
+      libc/strtok: libc maintains a pointer to the current position in the string
+      to be tokenized upon the first call to strtok with a string argument.
+      Subsequent calls pass NULL as first argument to have libc advance the pointer
+      through the string. The return value of strtok is guaranteed to be a pointer
+      within the same string or NULL, however this fact cannot be obtained from
+      the strtok call itself, because the pointer to the string is no longer
+      present as argument. Therefore it must be obtained from elsewhere.
+   *)
+
   | MemoryVariable of int * offset
   (** variable identified by memory reference index *)
 
@@ -402,6 +417,8 @@ object
   method mk_return_variable: typ -> c_variable_int
 
   method mk_augmentation_variable: string -> string -> int -> c_variable_int
+
+  method mk_external_state_variable: string -> c_variable_int
 
   method mk_check_variable: (bool * int * int) list -> typ -> c_variable_int
 

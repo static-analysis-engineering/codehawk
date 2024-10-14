@@ -566,6 +566,7 @@ object (self)
   method private integrate_fact (inv:invariant_int) =
     match inv#get_fact with
     | NonRelationalFact (v, _) ->
+       let _ = chlog#add "integrate fact" (LBLOCK [v#toPretty; STR "; "; inv#toPretty]) in
        let vindex = v#getName#getSeqNumber in
        let entry =
          if H.mem table vindex then
