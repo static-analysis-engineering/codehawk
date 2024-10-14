@@ -44,6 +44,15 @@
 	  </apply>
 	</math>
       </post>
+      <post>
+	<math>
+	  <apply>
+	    <external-state-value/>
+	    <return/>
+	    <ci>es__strtok</ci>
+	  </apply>
+	</math>
+      </post>
       <error-post uad="a null pointer is returned if no there are no tokens">
 	<math>
 	  <apply>
@@ -58,6 +67,15 @@
 	<math>
 	  <apply>
 	    <functional/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <initializes-external-state/>
+	    <ci>es__strtok</ci>
+	    <ci>s1</ci>
 	  </apply>
 	</math>
       </sideeffect>

@@ -190,6 +190,7 @@ let xpredicate_tag p =
   | XBuffer _ -> "buffer"
   | XConstTerm _ -> "const"
   | XControlledResource _ -> "controlled-resource"
+  | XExternalStateValue _ -> "esv"
   | XFalse -> "false"
   | XFormattedInput _  -> "fomatted-input"
   | XFreed _ -> "freed"
@@ -198,6 +199,7 @@ let xpredicate_tag p =
   | XHeapAddress _ -> "heap-address"
   | XInitialized _ -> "initialized"
   | XInitializedRange _ -> "initialized-range"
+  | XInitializesExternalState _ -> "initializes-external-state"
   | XInvalidated _ -> "invalidated"
   | XInputFormatString _ -> "input-formatstring"
   | XNewMemory _ -> "new-memory"
@@ -279,12 +281,14 @@ object (self)
     | XBuffer (t1,t2) -> begin wt 1 t1; wt 2 t2 end
     | XConfined t -> wt 1 t
     | XConstTerm t -> wt 1 t
+    | XExternalStateValue (t1, t2) -> begin wt 1 t1; wt 2 t2 end
     | XFormattedInput t -> wt 1 t
     | XFalse -> ()
     | XFreed t -> wt 1 t
     | XFunctional ->  ()
     | XInitialized t -> wt 1  t
-    | XInitializedRange (t1,t2) -> begin wt 1 t1; wt 2 t2 end
+    | XInitializedRange (t1, t2) -> begin wt 1 t1; wt 2 t2 end
+    | XInitializesExternalState (t1, t2) -> begin wt 1 t1; wt 2 t2 end
     | XInputFormatString t -> wt 1 t
     | XInvalidated t -> wt 1 t
     | XNewMemory t -> wt 1 t
@@ -377,6 +381,7 @@ let rec s_term_to_pretty s =
      LBLOCK [STR "arg_"; INT i; s_offset_to_pretty soff]
   | ArgValue (ParGlobal s, soff) -> LBLOCK [STR s; s_offset_to_pretty soff]
   | LocalVariable name -> LBLOCK [STR "var_"; STR name]
+  | ExternalState name -> LBLOCK [STR "es_"; STR name]
   | ReturnValue -> STR "return-value"
   | NamedConstant s -> LBLOCK [STR "constant_"; STR s]
   | NumConstant n -> n#toPretty
@@ -423,6 +428,13 @@ let xpredicate_to_pretty p =
   | XConstTerm t -> namet "const" t
   | XControlledResource (r,t) ->
      LBLOCK [STR "controlled-resource:"; STR  r; STR "("; sp t; STR ")"]
+  | XExternalStateValue (term, state) ->
+     LBLOCK [
+         STR "external-state-value";
+         sp term;
+         STR ", equals ";
+         sp state;
+         STR ")"]
   | XFalse -> STR "false"
   | XFormattedInput t -> namet "formatted-input" t
   | XFreed t -> namet "freed" t
@@ -436,6 +448,13 @@ let xpredicate_to_pretty p =
          sp ptr;
          STR ", len:";
          sp len;
+         STR ")"]
+  | XInitializesExternalState (state, arg) ->
+     LBLOCK [
+         STR "initializes-external-range";
+         sp state;
+         STR ", with: ";
+         sp arg;
          STR ")"]
   | XInputFormatString t -> namet "input-format-string" t
   | XInvalidated t -> namet "invalidated" t
@@ -575,12 +594,14 @@ let get_xpredicate_terms (pred:xpredicate_t) =
     | XPolicyPre (t,_,_)
     | XPolicyValue (t,_,_)
     | XPolicyTransition (t,_,_) -> [t]
-  | XBuffer (t1,t2)
-    | XBlockWrite (t1,t2)
-    | XInitializedRange(t1,t2)
-    | XNoOverlap (t1,t2)
-    | XRelationalExpr (_,t1,t2)
-    | XRevBuffer (t1,t2) ->  [t1; t2]
+  | XBuffer (t1, t2)
+    | XBlockWrite (t1, t2)
+    | XExternalStateValue (t1, t2)
+    | XInitializedRange (t1, t2)
+    | XInitializesExternalState (t1, t2)
+    | XNoOverlap (t1, t2)
+    | XRelationalExpr (_, t1, t2)
+    | XRevBuffer (t1, t2) ->  [t1; t2]
   | XPreservesAllMemoryX l ->  l
   | XTainted (t,optlb,optub) ->
      match (optlb,optub) with
@@ -655,6 +676,7 @@ let rec s_term_to_dfs_string (t:s_term_t) =
   match t with
   | ArgValue (p,soff) -> String.concat "," [tag; par p; tofs soff]
   | LocalVariable  s -> tag ^ "," ^ s
+  | ExternalState s -> tag ^ "," ^ s
   | ReturnValue -> tag
   | NamedConstant s -> tag ^ "," ^ s
   | NumConstant n -> tag ^ "," ^ n#toString
@@ -712,11 +734,13 @@ let xpredicate_to_dfs_string (p:xpredicate_t) =
      tag ^ "," ^ (tdfs t) ^ "," ^ pname ^ "," ^ tname
   | XPolicyTransition (t,pname,ptrans) ->
      tag ^ "," ^ (tdfs t) ^ pname ^ "," ^ ptrans
-  | XInitializedRange (t1,t2)
-    | XBlockWrite (t1,t2)
-    | XNoOverlap (t1,t2)
-    | XBuffer (t1,t2)
-    | XRevBuffer (t1,t2) -> tag ^ "," ^ (tdfs t1) ^ "," ^ (tdfs t2)
+  | XInitializedRange (t1, t2)
+    | XExternalStateValue (t1, t2)
+    | XInitializesExternalState (t1, t2)
+    | XBlockWrite (t1, t2)
+    | XNoOverlap (t1, t2)
+    | XBuffer (t1, t2)
+    | XRevBuffer (t1, t2) -> tag ^ "," ^ (tdfs t1) ^ "," ^ (tdfs t2)
   | XPreservesAllMemoryX l -> String.concat "," (tag::(List.map tdfs l))
   | XRelationalExpr (op,t1,t2) ->
      String.concat "," [tag; (optag op); (tdfs t1); (tdfs t2)]
@@ -805,6 +829,10 @@ let rec read_xml_term
       ArgValue (ParGlobal name,ArgNoOffset)
     else if has_lvar name then
       LocalVariable name
+    else if (String.length name) > 4 &&(String.sub name 0 4) = "es__" then
+      (* the prefix ee__ was chosen because other separating characters, like
+         ':' or '#' cause problems when used as element names in xml *)
+      ExternalState name
     else
       get_macro_value name
   | "cn" -> get_constant node#getText
@@ -1013,17 +1041,39 @@ let read_xml_xpredicate
 	   match op with
            | "initialized-range" | "initializes-range" ->
               [XInitializedRange(t1,t2)]
-	   | "no-overlap" -> [XNoOverlap (t1,t2)]
-           | "block-write" -> [XBlockWrite (t1,t2)]
-           | "buffer" -> [XBuffer(t1,t2)]
-           | "rev-buffer" -> [XRevBuffer (t1,t2)]
-	   | "deref-read" -> [XInitializedRange(t1,t2); XNotNull t1]
-	   | "deref-read-null" -> [XInitializedRange (t1,t2)]
-	   | "deref-write" -> [XBuffer(t1,t2); XNotNull t1]
+           | "initializes-external-state" ->
+              let _ =
+                match t1 with
+                | ExternalState _ -> ()
+                | _ ->
+                   raise_error
+                     node
+                     (LBLOCK [
+                       STR "expected external state for t1 but received ";
+                       s_term_to_pretty t1]) in
+              [XInitializesExternalState (t1, t2)]
+           | "external-state-value" ->
+              let _ =
+                match t2 with
+                | ExternalState _ -> ()
+                | _ ->
+                   raise_error
+                     node
+                     (LBLOCK [
+                          STR "expected external state for t2 by received ";
+                          s_term_to_pretty t2]) in
+              [XExternalStateValue (t1, t2)]
+	   | "no-overlap" -> [XNoOverlap (t1, t2)]
+           | "block-write" -> [XBlockWrite (t1, t2)]
+           | "buffer" -> [XBuffer(t1, t2)]
+           | "rev-buffer" -> [XRevBuffer (t1, t2)]
+	   | "deref-read" -> [XInitializedRange(t1, t2); XNotNull t1]
+	   | "deref-read-null" -> [XInitializedRange (t1, t2)]
+	   | "deref-write" -> [XBuffer(t1, t2); XNotNull t1]
 	   | "deref-write-null" -> [XBuffer (t1,t2)]
            | "preserves-all-memory-x" -> [XPreservesAllMemoryX [t1; t2]]
 	   | _ ->
-              [XRelationalExpr (binop_from_mathml_string op,t1,t2)]
+              [XRelationalExpr (binop_from_mathml_string op,t1, t2)]
          end
       | _ ->
          match op with
@@ -1121,6 +1171,7 @@ let s_term_to_xmlx (params:(string * int) list) (t:s_term_t) =
     match t with
     | ArgValue (p,o) -> api_parameter_to_xmlx params p o
     | LocalVariable s -> xml_string "ci" s
+    | ExternalState s -> xml_string "ci" s
     | ReturnValue -> xmlElement "return"
     | NamedConstant s -> xml_string "ci" s
     | NumConstant n -> xml_string "cn" n#toString

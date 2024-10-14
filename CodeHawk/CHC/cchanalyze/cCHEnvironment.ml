@@ -274,6 +274,10 @@ object(self)
     let cVal = vmgr#mk_check_variable l vtyp in
     self#add_chifvar cVal vtype
 
+  method mk_external_state_variable (name: string) (vt: variable_type_t) =
+    let cvar = vmgr#mk_external_state_variable name in
+    self#add_chifvar cvar vt
+
   method mk_augmentation_variable
            (name:string) (purpose:string) (index:int) (vt:variable_type_t) =
     let cVal = vmgr#mk_augmentation_variable name purpose index in

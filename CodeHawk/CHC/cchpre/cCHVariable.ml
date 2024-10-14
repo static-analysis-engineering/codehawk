@@ -119,6 +119,9 @@ let _c_variable_denotation_compare v1 v2 =
      if l0 = 0 then offset_compare o1 o2 else l0
   | (GlobalVariable _, _) -> -1
   | (_, GlobalVariable _) -> 1
+  | (ExternalStateVariable s1, ExternalStateVariable s2) -> Stdlib.compare s1 s2
+  | (ExternalStateVariable _, _) -> -1
+  | (_, ExternalStateVariable _) -> 1
   | (MemoryVariable (i1, o1), MemoryVariable (i2, o2)) ->
      let l0 = Stdlib.compare i1 i2 in
      if l0 = 0 then offset_compare o1 o2 else l0
@@ -226,6 +229,7 @@ let c_variable_denotation_to_pretty v =
   | LocalVariable (vinfo,offset)
     | GlobalVariable (vinfo,offset) ->
      LBLOCK [STR vinfo.vname; offset_to_pretty offset]
+  | ExternalStateVariable s -> STR s
   | MemoryVariable (i,offset) ->
      LBLOCK [STR "memvar-"; INT i; offset_to_pretty offset]
   | MemoryRegionVariable i ->
@@ -280,6 +284,7 @@ object (self:'a)
       | LocalVariable (vinfo, offset)
         | GlobalVariable (vinfo, offset) ->
          type_of_offset fdecls vinfo.vtype offset
+      | ExternalStateVariable _ -> TVoid []
       | MemoryVariable (i, offset) ->
          type_of_offset fdecls (memrefmgr#get_memory_reference i)#get_type offset
       | MemoryRegionVariable _ -> TVoid []
@@ -587,6 +592,9 @@ object (self)
 
   method mk_augmentation_variable name purpose index =
     self#mk_variable (AugmentationVariable (name, purpose, index))
+
+  method mk_external_state_variable (name: string): c_variable_t =
+    self#mk_variable (ExternalStateVariable name)
 
   method mk_initial_value (v:variable_t) (typ:typ) =
     self#mk_variable (AuxiliaryVariable (InitialValue (v, typ)))

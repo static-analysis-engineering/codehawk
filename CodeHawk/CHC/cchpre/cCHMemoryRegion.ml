@@ -160,10 +160,10 @@ object (self)
         region
       end
 
-  method mk_base_region memory_base =
-    self#mk_memory_region memory_base
+  method mk_base_region (b: memory_base_t): memory_region_int =
+    self#mk_memory_region b
 
-  method mk_null i =
+  method mk_null (i: int) =
     self#mk_memory_region (CNull i)
 
   method mk_string_region (s:string) =
@@ -182,10 +182,10 @@ object (self)
     let s = if s = "" then "none" else s in
     self#mk_memory_region (CUninterpreted s)
 
-  method private mk_sym r =
+  method private mk_sym (r: memory_region_int): symbol_t =
     new symbol_t ~seqnr:r#index (pr2s r#toPretty)
 
-  method mk_base_region_sym b =
+  method mk_base_region_sym (b: memory_base_t) =
     self#mk_sym (self#mk_base_region b)
 
   method mk_null_sym i =
