@@ -295,6 +295,10 @@ let cc_expr
     | (CompareNegative (ACCAlways, x, y), ACCUnsignedHigher) ->
        (XOp (XGt, [XOp (XPlus, [vu x; vu y]); max32_constant_expr]), [x; y])
 
+    | (CompareNegative (ACCAlways, x, y), ACCCarryClear) ->
+       (XOp (XLOr, [XOp (XLt, [XOp (XPlus, [v x; v y]); zero_constant_expr]);
+                    XOp (XGe, [v x; zero_constant_expr])]), [x; y])
+
     (* --------------------------------------------------------- Subtract --- *)
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCEqual) ->
