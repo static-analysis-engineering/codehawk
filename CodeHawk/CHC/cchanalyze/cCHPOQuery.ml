@@ -92,21 +92,33 @@ object (self)
   val numexp_translator =
     get_num_exp_translator env (get_function_orakel env invio)
 
-  method env = env
-  method fenv = fenv
-  method fname = fname
+  method env: c_environment_int = env
 
-  method get_proof_obligation = po
+  method fenv: cfundeclarations_int = fenv
 
-  method get_function_library_calls = fApi#get_library_calls
+  method fname: string = fname
 
-  method get_function_direct_callsites = callsitemgr#get_direct_callsites
+  method get_proof_obligation: proof_obligation_int = po
 
-  method get_function_indirect_callsites = callsitemgr#get_indirect_callsites
+  method get_api_assumptions: api_assumption_int list =
+    fApi#get_api_assumptions
 
-  method get_external_value e = numexp_translator#translate_exp context e
+  method private get_ppos_spos: (int list * int list) =
+    if po#is_ppo then ([po#index], []) else ([], [po#index])
 
-  method get_summary (fname:string) =
+  method get_function_library_calls: (string * string) list =
+    fApi#get_library_calls
+
+  method get_function_direct_callsites: direct_callsite_int list =
+    callsitemgr#get_direct_callsites
+
+  method get_function_indirect_callsites: indirect_callsite_int list =
+    callsitemgr#get_indirect_callsites
+
+  method get_external_value (e: exp): xpr_t =
+    numexp_translator#translate_exp context e
+
+  method get_summary (fname:string): function_summary_t option =
     if file_environment#has_external_header fname then
       let header = file_environment#get_external_header fname in
       if function_summary_library#has_summary header fname then
@@ -118,10 +130,12 @@ object (self)
     else
       None
 
-  method get_postconditions (v:variable_t) =
+  method get_postconditions (v:variable_t)
+         :(annotated_xpredicate_t list * annotated_xpredicate_t list) =
     self#get_sym_postconditions v#getName
 
-  method get_sym_postconditions (s:symbol_t) =
+  method get_sym_postconditions (s:symbol_t)
+         :(annotated_xpredicate_t list * annotated_xpredicate_t list) =
     if self#env#is_function_return_value_sym s then
       let callee = self#env#get_callsym_callee s in
       match self#get_summary callee.vname with
@@ -152,9 +166,10 @@ object (self)
                 s#toPretty;
                 STR " is not a function return value"]))
 
-  method get_sideeffects (v:variable_t) = self#get_sym_sideeffects v#getName
+  method get_sideeffects (v: variable_t): annotated_xpredicate_t list =
+    self#get_sym_sideeffects v#getName
 
-  method get_sym_sideeffects (s:symbol_t) =
+  method get_sym_sideeffects (s: symbol_t): annotated_xpredicate_t list =
     if self#env#is_function_sideeffect_value_sym s then
       let callee = self#env#get_callsym_callee s in
       match self#get_summary callee.vname with
@@ -184,13 +199,13 @@ object (self)
                 s#toPretty;
                 STR " is not a function side effect value"]))
 
-  method get_tainted_value_origin (v:variable_t) =
+  method get_tainted_value_origin (v: variable_t): string * varinfo * xpredicate_t =
     if self#env#is_tainted_value v then
       let origin = self#env#get_tainted_value_origin v in
       let callee = self#env#get_callvar_callee origin in
       if self#env#is_function_return_value origin then
         let s = "return value from "  ^ callee.vname ^ " may be tainted: " in
-        let (pcs,epcs) = self#get_postconditions origin in
+        let (pcs, epcs) = self#get_postconditions origin in
         let r =
           List.fold_left (fun acc (pc, _) ->
               match acc with
@@ -198,9 +213,9 @@ object (self)
               | _ ->
                  match pc with
                  | XTainted _ ->  Some pc
-                 | _ -> None) None (pcs@epcs) in
+                 | _ -> None) None (pcs @ epcs) in
         match r with
-        | Some pc -> (s,callee,pc)
+        | Some pc -> (s, callee, pc)
         | _ ->
            raise
              (CCHFailure
@@ -279,18 +294,33 @@ object (self)
       po#set_resolution_timestamp (current_time_to_string ())
     end
 
-  method set_diagnostic = po#add_diagnostic_msg
+  method set_diagnostic (msg: string) = po#add_diagnostic_msg msg
 
-  method set_ref_diagnostic (name:string) =
-    match self#get_summary name with
+  method set_key_diagnostic (key: string) (msg: string) =
+    po#add_diagnostic_key_msg key msg
+
+  method set_ref_diagnostic (fname: string) =
+    match self#get_summary fname with
     | Some s ->
        begin
          match s.fs_domainref with
-         | Some (ref,desc) ->
-            po#add_diagnostic_key_msg ("DomainRef:" ^ ref ^ ":" ^ name)  desc
+         | Some (ref, desc) ->
+            po#add_diagnostic_key_msg ("DomainRef:" ^ ref ^ ":" ^ fname) desc
          | _ -> ()
        end
     | _ -> ()
+
+  method set_diagnostic_arg (index: int) (txt: string) =
+    let txt = "[" ^ (string_of_int) index ^ "]:" ^ txt in
+    po#add_diagnostic_arg_msg index txt
+
+  method set_exp_diagnostic ?(lb=false) ?(ub=false) (e:exp) (s:string) =
+    match e with
+    | Const (CInt _) -> ()
+    | _ ->
+       let prefix =
+         if lb then "lb-exp" else if ub then "ub-exp" else "exp" in
+       self#set_diagnostic ("[" ^ prefix ^  ":" ^ (e2s e) ^ "]: " ^ s)
 
   method set_diagnostic_invariants (index:int) =
     let invs = List.map (fun inv -> inv#index) (self#get_invariants index) in
@@ -298,7 +328,7 @@ object (self)
     | [] -> ()
     | _ -> po#set_diagnostic_invariants index invs
 
-  method set_diagnostic_call_invariants  =
+  method set_diagnostic_call_invariants =
     let callinvs = self#get_call_invariants in
     let entrysym = env#get_p_entry_sym in
     List.iter (fun inv ->
@@ -321,7 +351,7 @@ object (self)
 
   method set_vinfo_diagnostic_invariants (vinfo:varinfo) =
     let vinfovalues = self#get_vinfo_offset_values vinfo in
-    List.iter (fun (inv,offset) ->
+    List.iter (fun (inv, offset) ->
         po#add_diagnostic_msg
           ("["
            ^ vinfo.vname
@@ -330,12 +360,6 @@ object (self)
            ^ ": "
            ^ (p2s (inv#value_to_pretty)))) vinfovalues
 
-  method set_key_diagnostic = po#add_diagnostic_key_msg
-
-  method set_diagnostic_arg index txt =
-    let txt = "[" ^ (string_of_int) index ^ "]:" ^ txt in
-    po#add_diagnostic_arg_msg index txt
-
   method is_formal = fenv#is_formal
 
   method private record_unevaluated (x:xpr_t) =
@@ -343,8 +367,8 @@ object (self)
 
   method record_safe_result (deps:dependencies_t) (expl:string) =
     let _ = match deps with
-      | DEnvC (_,assumptions) ->
-         let (ppos,spos) = if po#is_ppo then ([po#index],[]) else ([],[po#index]) in
+      | DEnvC (_, assumptions) ->
+         let (ppos, spos) = self#get_ppos_spos in
          List.iter (fun a ->
              match a with
              | LocalAssumption _pred  -> ()
@@ -368,9 +392,8 @@ object (self)
            ?(isfile=false)
            ?(isglobal=false)
            (pred:po_predicate_t)
-           (invs:int list) =
-    let (ppos, spos) =
-      if po#is_ppo then ([po#index],[]) else ([],[po#index]) in
+           (invs:int list): bool =
+    let (ppos, spos) = self#get_ppos_spos in
     let apred' = fApi#add_api_assumption ~isfile ~isglobal ~ppos ~spos pred in
     match apred' with
     | Some apred ->
@@ -391,13 +414,13 @@ object (self)
        end
 
   method mk_global_request (p:xpredicate_t)  =
-    let (ppos,spos) = if po#is_ppo then ([po#index], []) else ([], [po#index]) in
+    let (ppos, spos) = self#get_ppos_spos in
     let _ = fApi#add_global_assumption_request ~ppos ~spos p in
     let expl = "submitted global request for " ^ (p2s (xpredicate_to_pretty p)) in
     self#set_diagnostic expl;
 
   method mk_postcondition_request (pc:xpredicate_t) (callee:varinfo) =
-    let (ppos, spos) = if po#is_ppo then ([po#index], []) else ([], [po#index]) in
+    let (ppos, spos) = self#get_ppos_spos in
     let _ = fApi#add_postcondition_request ~ppos ~spos callee.vid pc in
     let expl =
       "submitted postrequest for condition "
@@ -406,28 +429,26 @@ object (self)
       ^ callee.vname in
     self#set_diagnostic expl
 
-  method get_api_assumptions = fApi#get_api_assumptions
-
   method add_local_spo
            (loc:location) (ctxt:program_context_int) (p:po_predicate_t) =
     let spomanager = proof_scaffolding#get_spo_manager self#fname in
     spomanager#add_local_spo loc ctxt p
 
-  method get_canonical_fnvar_index (v:variable_t) =
+  method get_canonical_fnvar_index (v: variable_t): int =
     if env#is_function_sideeffect_value v || env#is_function_return_value v then
       env#get_variable_manager#get_canonical_fnvar_index v#getName#getSeqNumber
     else
       v#getName#getSeqNumber
 
-  method get_call_invariants =
+  method get_call_invariants: invariant_int list =
     let locinvio = invio#get_location_invariant cfgcontext in
     let invs = locinvio#get_invariants in
     List.fold_left (fun acc inv ->
         match inv#get_fact with
-        | NonRelationalFact (v,_) when env#is_call_var v -> inv :: acc
+        | NonRelationalFact (v, _) when env#is_call_var v -> inv :: acc
         | _ -> acc) [] invs
 
-  method get_invariants (argindex:int) =
+  method get_invariants (argindex: int): invariant_int list =
     let id = po#index in
     let locinvio = invio#get_location_invariant cfgcontext in
     let facts = locinvio#get_invariants in
@@ -481,22 +502,23 @@ object (self)
              end
           | _ -> invs
 
-  method get_invariants_lb (argindex:int) =
+  method get_invariants_lb (argindex: int): invariant_int list =
     List.sort (fun i1 i2 -> i1#compare_lb i2) (self#get_invariants argindex)
 
-  method get_invariants_ub (argindex:int) =
+  method get_invariants_ub (argindex: int): invariant_int list =
     List.sort (fun i1 i2 -> i1#compare_ub i2) (self#get_invariants argindex)
 
-  method get_pepr_bounds (argindex:int) =
+  method get_pepr_bounds
+           (argindex: int): (invariant_int list * xpr_t list list * xpr_t list list) =
     List.fold_left (fun (invs, lbs, ubs) i ->
         match i#pepr_lower_bound with
         | Some l -> (i::invs, l @ lbs, ubs)
         | _ ->
            match i#pepr_upper_bound with
-           | Some l -> (i::invs,lbs,l@ubs)
-           | _ -> (invs,lbs,ubs)) ([],[],[]) (self#get_invariants argindex)
+           | Some l -> (i::invs, lbs, l@ubs)
+           | _ -> (invs, lbs, ubs)) ([], [], []) (self#get_invariants argindex)
 
-  method get_parameter_constraints =
+  method get_parameter_constraints: xpr_t list =
     let pcs =
       (invio#get_location_invariant cfgcontext)#get_parameter_constraints in
     List.fold_left (fun acc pc ->
@@ -504,7 +526,7 @@ object (self)
         | ParameterConstraint x -> x :: acc
         | _ -> acc) [] pcs
 
-  method get_values (argindex:int) =
+  method get_values (argindex: int): (int * non_relational_value_t) list =
     let id = po#index in
     let locinvio = invio#get_location_invariant cfgcontext in
     let facts = locinvio#get_invariants in
@@ -525,23 +547,15 @@ object (self)
         | NonRelationalFact (_v, i) -> (f#index, i) :: acc
         | _ -> acc) [] facts
 
-  method get_exp_invariants (e:exp):invariant_int list =
+  method get_exp_invariants (e: exp): invariant_int list =
     match e with
     | Lval (Var (_vname, vid), NoOffset) when vid > 0 ->
        let vinfo = self#env#get_varinfo vid in
-       List.fold_left (fun acc (inv,offset) ->
+       List.fold_left (fun acc (inv, offset) ->
            match offset with
            | NoOffset -> inv :: acc
            | _ -> acc) [] (self#get_vinfo_offset_values vinfo)
     | _ -> []
-
-  method set_exp_diagnostic ?(lb=false) ?(ub=false) (e:exp) (s:string) =
-    match e with
-    | Const (CInt _) -> ()
-    | _ ->
-       let prefix =
-         if lb then "lb-exp" else if ub then "ub-exp" else "exp" in
-       self#set_diagnostic ("[" ^ prefix ^  ":" ^ (e2s e) ^ "]: " ^ s)
 
   method get_exp_value (e:exp):(int list * xpr_t option) =
     match e with
@@ -659,13 +673,13 @@ object (self)
           | (_, Some ub) -> ([], Some (num_constant_expr ub))
           | _ -> ([], None)
 
-  method get_extended_values (argindex:int) (e:exp):invariant_int list =
+  method get_extended_values (argindex: int) (e: exp): invariant_int list =
     let values = self#get_invariants argindex in
     match e with
     | Lval (Var (_vname, vid), NoOffset) when vid > 0  ->
        let vinfo = self#env#get_varinfo vid in
        values @
-         (List.fold_left (fun acc (inv,offset) ->
+         (List.fold_left (fun acc (inv, offset) ->
               match offset with
               | NoOffset -> inv :: acc
               | _ -> acc) [] (self#get_vinfo_offset_values vinfo))
@@ -697,22 +711,23 @@ object (self)
        end
     | _ -> None
 
-  method get_function_return_value_buffer_size (v:variable_t) =
+  method get_function_return_value_buffer_size
+           (v: variable_t): (assumption_type_t list * xpr_t) option =
     let fargs = env#get_callvar_args v in
     let callee = self#env#get_callvar_callee v in
-    let (pcs,_) = self#get_postconditions v in
+    let (pcs, _) = self#get_postconditions v in
     List.fold_left (fun acc (pc, _) ->
-        let deps = [PostAssumption (callee.vid,pc)] in
+        let deps = [PostAssumption (callee.vid, pc)] in
         match acc with
         | Some _ -> acc
         | _ ->
            match pc with
-           | XBuffer (ReturnValue,NumConstant i) ->
+           | XBuffer (ReturnValue, NumConstant i) ->
               Some (deps,num_constant_expr i)
            | XBuffer (ReturnValue, ArgValue (ParFormal i, ArgNoOffset)) ->
               if (List.length fargs) >= i then
                 (match List.nth fargs (i-1) with
-                 | Some a -> Some (deps,a)
+                 | Some a -> Some (deps, a)
                  | _ -> None)
               else
                 None
@@ -877,7 +892,10 @@ object (self)
               | _ -> None) None pcs
 
   method private get_memaddress_buffer_byte_size_info
-                   (arg:int) (base:variable_t) (invindex:int) (incr:xpr_t) =
+                   (arg: int)
+                   (base: variable_t)
+                   (invindex: int)
+                   (incr: xpr_t): (string * xpr_t * xpr_t * dependencies_t) option =
     let memref = env#get_memory_reference base in
     let _ =
       self#set_diagnostic_arg
@@ -940,7 +958,10 @@ object (self)
        end
     | _ -> None
 
-  method xpr_buffer_offset_size (arg:int) (invindex:int) (x:xpr_t) =
+  method xpr_buffer_offset_size
+           (arg: int)
+           (invindex: int)
+           (x: xpr_t): (string * xpr_t * xpr_t * dependencies_t) option =
     match x with
     | XVar base when env#is_memory_address base ->
        self#get_memaddress_buffer_byte_size_info
@@ -1096,15 +1117,16 @@ object (self)
        (try Some (env#get_parameter_exp v) with
         | CCHFailure p ->
            begin
-             chlog#add "api expression"
-                       (LBLOCK [STR env#get_functionname; STR ": "; p]);
+             chlog#add
+               "api expression"
+               (LBLOCK [STR env#get_functionname; STR ": "; p]);
              self#record_unevaluated x;
              None
            end)
     | XOp (op, [x1; x2]) ->
        begin
-         match (self#x2api x1,self#x2api x2) with
-         | (Some a1,Some a2) ->
+         match (self#x2api x1, self#x2api x2) with
+         | (Some a1, Some a2) ->
             let ty1 = type_of_exp fenv a1 in
             let ty2 = type_of_exp fenv a2 in
             begin
@@ -1258,7 +1280,7 @@ object (self)
                  x2p x;
                  STR " cannot be converted to a post expression"]))
 
-  method get_num_value (e:exp) = get_num_value fenv e
+  method get_num_value (e:exp): numerical_t option = get_num_value fenv e
 
   method get_gv_lowerbound (name:string):int option =
     if file_contract#has_globalvar_contract name then
@@ -1353,7 +1375,7 @@ object (self)
   method get_command_line_argument_index (e:exp) =
     if self#is_command_line_argument e then
       match e with
-      | CastE (_,ee) -> self#get_command_line_argument_index ee
+      | CastE (_, ee) -> self#get_command_line_argument_index ee
       | Lval (Mem (BinOp
                      ((PlusPI | IndexPI),
                       Lval (Var (_, _vid), NoOffset),
@@ -1371,7 +1393,7 @@ object (self)
                 exp_to_pretty e;
                 STR " is not a command-line argument"]))
 
-  method get_command_line_argument_count =
+  method get_command_line_argument_count: (int * int) option =
     if fname = "main" then
       let locinvio = invio#get_location_invariant cfgcontext in
       let argc = fenv#get_formal 1 in
@@ -1408,11 +1430,11 @@ object (self)
            (e:exp)
            (safemsg:int -> int -> string)
            (vmsg:int -> int -> string)
-           (dmsg:int -> string) =
+           (dmsg:int -> string): bool =
     if self#is_command_line_argument e then
       let index = self#get_command_line_argument_index e in
       match self#get_command_line_argument_count with
-      | Some (inv,i) ->
+      | Some (inv, i) ->
          if index < i then
            begin
              self#record_safe_result (DLocal [inv]) (safemsg index i);
