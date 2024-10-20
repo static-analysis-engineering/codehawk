@@ -71,6 +71,7 @@ object (self)
   (* guarantee postconditions of this function *)
   val postcondition_guarantees = H.create 3
 
+  (* library calls made by this function: (header, function name) -> count *)
   val library_calls = H.create 3
 
   val missing_summaries = new StringCollections.set_t
@@ -93,12 +94,12 @@ object (self)
   method add_contract_condition_failure (name:string) (desc:string) =
     contractcondition_failures <- (name,desc) :: contractcondition_failures
 
-  method add_library_call header fname =
+  method add_library_call (header: string) (fname: string) =
     let entry =
-      if H.mem library_calls (header,fname) then
-        H.find library_calls (header,fname)
+      if H.mem library_calls (header, fname) then
+        H.find library_calls (header, fname)
       else 0 in
-    H.replace library_calls (header,fname) (entry + 1)
+    H.replace library_calls (header, fname) (entry + 1)
 
   method add_missing_summary name = missing_summaries#add name
 
