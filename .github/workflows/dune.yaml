@@ -16,7 +16,7 @@ jobs:
           - "5.1.1"
     steps:
     - uses: actions/checkout@v1
-    - uses: ocaml/setup-ocaml@v2
+    - uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: ${{ matrix.ocaml-compiler }}
     - name: Install dependencies
