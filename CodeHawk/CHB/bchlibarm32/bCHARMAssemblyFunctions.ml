@@ -628,7 +628,7 @@ object (self)
                        if functions_data#is_function_entry_point tgtaddr then
                          let fndata = functions_data#get_function tgtaddr in
                          let remaining = fndata#remove_callsite in
-                         if remaining = 0 then
+                         if remaining = 0 && not fndata#is_user_provided then
                            begin
                              functions_data#remove_function tgtaddr;
                              self#remove_function tgtaddr;
@@ -748,10 +748,11 @@ object (self)
                     | BranchLink (_, op)
                       | BranchLinkExchange (_, op) when op#is_absolute_address ->
                        let tgtaddr = op#get_absolute_address in
-                       if functions_data#is_function_entry_point tgtaddr && !notcode then
+                       if functions_data#is_function_entry_point tgtaddr
+                          && !notcode then
                          let fndata = functions_data#get_function tgtaddr in
                          let remaining = fndata#remove_callsite in
-                         if remaining = 0 then
+                         if remaining = 0 && not fndata#is_user_provided then
                            begin
                              functions_data#remove_function tgtaddr;
                              self#remove_function tgtaddr;
