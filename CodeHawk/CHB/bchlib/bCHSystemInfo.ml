@@ -984,9 +984,12 @@ object (self)
   method private read_xml_user_function_entry_points (node:xml_element_int) =
     List.iter (fun n ->
         let fa = geta_fail "read_xml_user_function_entry_points" n "a" in
-        if functions_data#is_function_entry_point fa then () else
-          ignore (functions_data#add_function fa))
-      (node#getTaggedChildren "fe")
+        let fndata =
+          if functions_data#is_function_entry_point fa then
+            functions_data#get_function fa
+          else
+            functions_data#add_function fa in
+        fndata#set_user_provided) (node#getTaggedChildren "fe")
 
   method private read_xml_call_target(node: xml_element_int): call_target_t =
     let get = node#getAttribute in

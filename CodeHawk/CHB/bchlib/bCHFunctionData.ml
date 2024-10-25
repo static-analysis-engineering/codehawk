@@ -223,21 +223,21 @@ object (self)
       H.clear nametable
     end
 
-  method add_function (fa:doubleword_int) =
+  method add_function (fa:doubleword_int): function_data_int =
     let ix = fa#index in
     if H.mem table ix then
       H.find table ix
     else
       let fe = new function_data_t fa in
       begin
-        H.add table ix fe ;
+        H.add table ix fe;
         fe
       end
 
   method remove_function (fa: doubleword_int) =
     H.remove table fa#index
 
-  method get_function (fa: doubleword_int) =
+  method get_function (fa: doubleword_int): function_data_int =
     if self#is_function_entry_point fa then
       H.find table fa#index
     else
@@ -249,12 +249,13 @@ object (self)
   method has_function (fa: doubleword_int) =
     self#is_function_entry_point fa
 
-  method get_functions = H.fold (fun _ v a -> v::a) table []
+  method get_functions: function_data_int list =
+    H.fold (fun _ v a -> v::a) table []
 
-  method get_inlined_function_entry_points =
+  method get_inlined_function_entry_points: doubleword_int list =
     self#retrieve_addresses (fun f -> f#is_inlined)
 
-  method get_function_entry_points =
+  method get_function_entry_points: doubleword_int list =
     let inlinedfns = self#get_inlined_function_entry_points in
     let otherfns = self#retrieve_addresses (fun f -> not f#is_inlined) in
     (* List inlined functions before other functions, so they are guaranteed
@@ -262,7 +263,7 @@ object (self)
        being constructed.*)
     inlinedfns @ otherfns
 
-  method get_library_stubs =
+  method get_library_stubs: doubleword_int list =
     self#retrieve_addresses (fun f -> f#is_library_stub)
 
   method is_function_entry_point (fa:doubleword_int) = H.mem table fa#index
