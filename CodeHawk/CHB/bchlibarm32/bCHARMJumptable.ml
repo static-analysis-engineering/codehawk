@@ -586,6 +586,74 @@ let create_arm_ldrls_jumptable
       | _ -> None)
 
 
+(* ADDLS pattern (in ARM)
+
+   [4 bytes] CMP    indexreg, maxcase
+   [4 bytes] ADDLS  PC, PC, indexreg, LSL#2
+   [4 bytes] B      default case
+   [4 bytes] B      case 0
+   [...]     B
+   [4 bytes] B      case maxcase
+ *)
+let is_addls_pc_jumptable
+      (addpcinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int               (* CMP instr *)
+       * arm_assembly_instruction_int) option =   (* ADDLS instr *)
+  match addpcinstr#get_opcode with
+  | Add (_, ACCNotUnsignedHigher, rd, rn, baseregop, false)
+       when rd#is_pc_register
+            && rn#is_pc_register
+            && baseregop#is_shifted_register ->
+     let addr = addpcinstr#get_address in
+     let cmptestf (instr: arm_assembly_instruction_int) =
+       match instr#get_opcode with
+       | Compare (_, rn, imm, _) -> rn#is_register && imm#is_immediate
+       | _ -> false in
+     let optcmpinstr = find_instr cmptestf [(-4)] addr in
+     (match optcmpinstr with
+      | Some cmpinstr ->
+         (match cmpinstr#get_opcode with
+          | Compare (_, indexregop, _, _) ->
+             let indexreg = indexregop#get_register in
+             (match baseregop#get_kind with
+              | ARMShiftedReg (basereg, ARMImmSRT (SRType_LSL, 2)) ->
+                 if basereg = indexreg then
+                   Some (cmpinstr, addpcinstr)
+                 else
+                   None
+              | _ -> None)
+          | _ -> None)
+      | _ -> None)
+  | _ -> None
+
+
+let create_addls_pc_jumptable
+      (ch: pushback_stream_int)
+      (addpcinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int list * arm_jumptable_int) option =
+  match is_addls_pc_jumptable addpcinstr with
+  | None -> None
+  | Some (cmpinstr, addlspcinstr) ->
+     match cmpinstr#get_opcode with
+     | Compare (_, index_operand, imm, _) ->
+        let maxcase = imm#to_numerical#toInt in
+        let iaddr = addlspcinstr#get_address in
+        let default_target = iaddr#add_int 4 in
+        let start_address = default_target in
+        let end_address = default_target in
+        let targets =
+          List.init (maxcase + 1) (fun i -> (iaddr#add_int (8 + (4 * i)), i)) in
+        let jt =
+          make_arm_jumptable
+            ~end_address
+            ~start_address
+            ~default_target
+            ~targets
+            ~index_operand () in
+        Some ([cmpinstr; addlspcinstr], jt)
+     | _ -> None
+
+
 (* ADD-PC-LDRB patterns (in Thumb-2)
 
    size is obtained from CMP instruction's immediate value

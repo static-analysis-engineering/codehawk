@@ -472,6 +472,15 @@ let construct_arm_assembly_block
       (* aggregate is linear unit *)
       find_last_instruction (nextva ()) va
 
+    else if Option.is_some instr#is_in_aggregate
+            && instr#is_aggregate_exit
+            && (match instr#get_opcode with
+                | Add (_, ACCNotUnsignedHigher, _, _, _, _) -> true
+                | _ -> false) then
+      (* the ADDLS aggregate must be forced to appear at the end of a block
+         to ensure successors are connected.*)
+      (None, va, [])
+
     else if has_next_instr va then
       (* continue tracing the block *)
       find_last_instruction (nextva ()) va

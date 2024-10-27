@@ -760,6 +760,11 @@ object (self:'a)
     | ARMShiftedReg (_, ARMImmSRT (SRType_LSL, 0)) -> true
     | _ -> false
 
+  method is_shifted_register =
+    match kind with
+    | ARMShiftedReg _ -> true
+    | _ -> false
+
   method is_pc_register =
     match kind with ARMReg ARPC -> true | _ -> false
 

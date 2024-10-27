@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2022-2024  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -117,7 +117,9 @@ object (self)
     LBLOCK [
         STR "Aggregate of ";
         INT (List.length self#instrs);
-        STR " instructions: ";
+        STR " with anchor ";
+        self#anchor#toPretty;
+        STR " and instructions: ";
         STR (arm_aggregate_kind_to_string self#kind)]
 
 end
@@ -203,6 +205,9 @@ let identify_jumptable
   | Add (_, ACCAlways, rd, rn, _, false)
        when rd#is_pc_register && rn#is_pc_register ->
      create_arm_add_pc_jumptable ch instr
+  | Add (_, ACCNotUnsignedHigher, rd, rn, _, false)
+       when rd#is_pc_register && rn#is_pc_register ->
+     create_addls_pc_jumptable ch instr
   | BranchExchange (ACCAlways, regop) when regop#is_register ->
      create_arm_bx_jumptable ch instr
   | _ -> None
@@ -225,7 +230,7 @@ let identify_ldmstm_sequence
        when List.length rl#get_register_list > 1 ->
      create_ldm_stm_sequence ch instr
   | _ -> None
-  
+
 
 let identify_arm_aggregate
       (ch: pushback_stream_int)

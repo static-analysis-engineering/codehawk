@@ -62,6 +62,15 @@ val create_arm_ldrls_jumptable:
   -> (arm_assembly_instruction_int list * arm_jumptable_int) option
 
 
+(** [create_addls_pc_jumptable ch instr] creates a jump table targeted by an
+    ADDLS instruction [instr] by processing the associated list of branch
+    instructions from stream [ch] (ARM pattern).*)
+val create_addls_pc_jumptable:
+  pushback_stream_int
+  -> arm_assembly_instruction_int
+  -> (arm_assembly_instruction_int list * arm_jumptable_int) option
+
+
 (** [create_arm_add_pc_jumptable ch instr] creates a jump table targeted by
     an ADD PC, PC, _ instruction [instr] by processing  the associated list of
     (byte-sized or halfword-sized) offsets from stream [ch] (Thumb-2 pattern).*)
