@@ -196,20 +196,3 @@ val symbol_to_ctxt_string: symbol_t -> ctxt_iaddress_t
 
 val ctxt_string_to_symbol:
   string -> ?atts:string list -> ctxt_iaddress_t -> symbol_t
-
-
-(** [ssa_register_value_reg name faddr iaddr] returns a name for the
-    variable created as part of an ssa register assignment or abstraction
-    to the register [reg] at address [iaddr] in function [faddr].
-
-    Note: the case where [iaddr] has a context may produce a name that
-    is not a valid variable name in C.*)
-val ssa_register_value_name:
-  register_t -> doubleword_int -> ctxt_iaddress_t -> string
-
-
-(** [ssa_register_value_join_name name faddr] returns a name that may be
-    used for multiple ssa variables that can be colocated to the same variable
-    location.*)
-val ssa_register_value_join_name:
-  register_t -> doubleword_int -> ctxt_iaddress_t list -> string

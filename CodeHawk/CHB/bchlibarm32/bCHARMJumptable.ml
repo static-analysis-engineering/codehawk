@@ -628,7 +628,7 @@ let is_addls_pc_jumptable
 
 
 let create_addls_pc_jumptable
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (addpcinstr: arm_assembly_instruction_int):
       (arm_assembly_instruction_int list * arm_jumptable_int) option =
   match is_addls_pc_jumptable addpcinstr with

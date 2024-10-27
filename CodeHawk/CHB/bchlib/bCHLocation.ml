@@ -33,10 +33,8 @@ open CHLanguage
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHCPURegisters
 open BCHDoubleword
 open BCHLibTypes
-open BCHSystemSettings
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -327,93 +325,3 @@ let symbol_to_ctxt_string (s:symbol_t) =
 
 let ctxt_string_to_symbol (name:string) ?(atts=[]) (s:ctxt_iaddress_t) =
   new symbol_t ~atts:(s::atts) name
-
-
-class ssa_register_store_t =
-object
-
-  (* names of regular ssa variables *)
-  val store = H.create 3
-  val nextindex = H.create 3
-
-  (* names of introduced ssa variables for joins *)
-  val jstore = H.create 3
-  val jnextindex = H.create 3
-
-  method get_name
-           (name: string)
-           (faddr: doubleword_int)
-           (iaddr: ctxt_iaddress_t): string =
-    let key = faddr#to_hex_string ^ "_" ^ iaddr ^ "_" ^ name in
-    if H.mem store key then
-      H.find store key
-    else
-      let idwr = string_to_doubleword iaddr in
-      let alignment = system_settings#get_instruction_alignment in
-      let vname =
-        TR.tfold_default
-          (fun idw ->
-            let offsetr = idw#subtract_to_int faddr in
-            TR.tfold_default
-              (fun offset -> name ^ "_" ^ (string_of_int (offset / alignment)))
-              (name ^ "_" ^ iaddr)
-              offsetr)
-          (name ^ "_" ^ iaddr)
-          idwr in
-      begin
-        H.add store key vname;
-        vname
-      end
-
-  method get_join_name
-           (name: string)
-           (faddr: doubleword_int)
-           (iaddrs: ctxt_iaddress_t list): string =
-    let key = faddr#to_hex_string ^ "_" ^ name ^ (String.concat "_" iaddrs) in
-    if H.mem jstore key then
-      H.find jstore key
-    else
-      let alignment = system_settings#get_instruction_alignment in
-      let idws_r = List.map string_to_doubleword iaddrs in
-      let offsets_r =
-        List.map
-          (fun idw_r ->
-            TR.tbind
-              (fun idw ->
-                let offset_r = idw#subtract_to_int faddr in
-                TR.tbind
-                  (fun offset ->
-                    Ok (string_of_int (offset / alignment)))
-                  offset_r)
-              idw_r) idws_r in
-      let vname =
-        TR.tfold_list_default
-          ~ok:(fun acc offset -> acc ^ "_" ^ offset)
-          ~err:(fun acc -> acc ^ "_XXX")
-          name
-          offsets_r in
-      begin
-        H.add jstore key vname;
-        vname
-      end
-
-end
-
-
-let store = new ssa_register_store_t
-
-
-let ssa_register_value_name
-      (reg: register_t)
-      (faddr: doubleword_int)
-      (iaddr: ctxt_iaddress_t): string =
-  let name = "v" ^ (register_to_string reg) in
-  store#get_name name faddr iaddr
-
-
-let ssa_register_value_join_name
-      (reg: register_t)
-      (faddr: doubleword_int)
-      (iaddrs: ctxt_iaddress_t list): string =
-  let name = "vv" ^ register_to_string reg in
-  store#get_join_name name faddr iaddrs
