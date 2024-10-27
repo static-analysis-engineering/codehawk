@@ -61,7 +61,7 @@ open BCHARMInstructionAggregate
 
 
 let testname = "bCHARMJumptableTest"
-let lastupdated = "2024-01-02"
+let lastupdated = "2024-10-24"
 
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
@@ -136,6 +136,7 @@ let jt_setup_arm hexbase bytes: arm_jumptable_int TR.traceresult =
       let instrlen = currentpos - prevpos in
       let instrbytes = String.sub bytestring prevpos instrlen in
       let instr = add_instruction prevpos iaddr opcode instrbytes in
+      (* let _ = CHPretty.pr_debug [instr#toPretty; NL; NL] in *)
       let optagg = identify_arm_aggregate ch instr in
       match optagg with
       | Some agg -> aggregate := Some agg
@@ -144,7 +145,9 @@ let jt_setup_arm hexbase bytes: arm_jumptable_int TR.traceresult =
     match !aggregate with
     | Some agg ->
        (match agg#kind with
-          | ARMJumptable jt -> Ok jt
+        | ARMJumptable jt ->
+           (* let _ = CHPretty.pr_debug [jt#toPretty; NL; NL] in *)
+           Ok jt
           | _ -> Error ["other aggregate found"])
     | _ ->
        Error ["no aggregate found:" ^ (string_of_int ch#pos)]
@@ -292,6 +295,60 @@ let ldrls_jumptable () =
   end
 
 
+(*
+    0xa0132664  05 00 55 e3       CMP          R5, #5
+    0xa0132668  05 f1 8f 90       ADDLS        PC, PC, R5,LSL#2
+    0xa013266c  20 00 00 ea       B            0xa01326f4
+  B 0xa0132670  04 00 00 ea       B            0xa0132688
+  B 0xa0132674  09 00 00 ea       B            0xa01326a0
+  B 0xa0132678  0e 00 00 ea       B            0xa01326b8
+  B 0xa013267c  13 00 00 ea       B            0xa01326d0
+  B 0xa0132680  18 00 00 ea       B            0xa01326e8
+  B 0xa0132684  19 00 00 ea       B            0xa01326f0
+ *)
+let addls_pc_jumptable () =
+  let tests = [
+      ("addls", "0xa0132664", "0xa013266c",
+       "050055e305f18f90200000ea040000ea090000ea0e0000ea130000ea180000ea190000ea",
+       [("0xa0132670", [0]);
+        ("0xa0132674", [1]);
+        ("0xa0132678", [2]);
+        ("0xa013267c", [3]);
+        ("0xa0132680", [4]);
+        ("0xa0132684", [5])])
+    ] in
+  begin
+    TS.new_testsuite (testname ^ "_ldrls_jumptable") lastupdated;
+
+    system_info#set_elf_is_code_address wordzero codemax;
+    ARMU.arm_instructions_setup (make_dw "0xa0132000") 0x10000;
+    List.iter (fun (title, hexbase, expecteddefault, bytes, expectedtargets) ->
+        let jtresult = jt_setup_arm hexbase bytes in
+
+        TS.add_simple_test
+          ~title:(title ^ "-targets")
+          (fun () ->
+            match jtresult with
+            | Ok jt ->
+               ARMA.equal_jumptable_targets
+                 ~msg:"" ~expected:expectedtargets ~received:jt ()
+            | Error e ->
+               A.fail_msg (String.concat "; " e));
+
+        TS.add_simple_test
+          ~title:(title ^ "-default")
+          (fun () ->
+            match jtresult with
+            | Ok jt ->
+               A.equal_string expecteddefault jt#default_target#to_hex_string
+            | Error e ->
+               A.fail_msg (String.concat "; " e))
+      ) tests;
+
+    TS.launch_tests ()
+  end
+
+
 let bx_table_branch () =
   let tests = [
       ("bx-w", "0x6c0d0", "0x6c080",
@@ -350,6 +407,7 @@ let () =
     tb_table_branch ();
     ldr_table_branch ();
     ldrls_jumptable ();
+    addls_pc_jumptable ();
     bx_table_branch ();
     TS.exit_file ()
   end

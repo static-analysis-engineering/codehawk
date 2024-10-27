@@ -382,17 +382,18 @@ object (self)
     let saddr = jumptable#get_start_address in
     let eaddr = jumptable#get_end_address in
     let len = saddr#value - eaddr#value in
-    let startinstr =
-      make_arm_assembly_instruction
-        saddr true (NotCode (Some (JumpTable jumptable))) "" in
-    begin
-      set_instruction saddr startinstr;
-      for i = 1 to (len - 1) do
-        let va = saddr#add_int i in
-        set_instruction
-          va (make_arm_assembly_instruction va true (NotCode None) "")
-      done
-    end
+    if len > 0 then
+      let startinstr =
+        make_arm_assembly_instruction
+          saddr true (NotCode (Some (JumpTable jumptable))) "" in
+      begin
+        set_instruction saddr startinstr;
+        for i = 1 to (len - 1) do
+          let va = saddr#add_int i in
+          set_instruction
+            va (make_arm_assembly_instruction va true (NotCode None) "")
+        done
+      end
 
   method get_next_valid_instruction_address
            (va: doubleword_int): doubleword_int TR.traceresult =

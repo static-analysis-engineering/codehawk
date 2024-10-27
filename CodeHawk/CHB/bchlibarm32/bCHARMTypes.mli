@@ -200,6 +200,7 @@ class type arm_operand_int =
     method is_immediate: bool
     method is_small_immediate: bool
     method is_register: bool
+    method is_shifted_register: bool
     method is_pc_register: bool
     method is_double_register: bool
     method is_extension_register: bool
