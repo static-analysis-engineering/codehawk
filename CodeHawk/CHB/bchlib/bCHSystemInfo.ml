@@ -60,7 +60,6 @@ open BCHByteUtilities
 open BCHCallbackTables
 open BCHConstantDefinitions
 open BCHCppClass
-open BCHCPURegisters
 open BCHCStruct
 open BCHCStructConstant
 open BCHDataBlock
@@ -69,7 +68,6 @@ open BCHFunctionData
 open BCHFunctionSummaryLibrary
 open BCHJumpTable
 open BCHLibTypes
-open BCHLocation
 open BCHPreFileIO
 open BCHSectionHeadersInfo
 open BCHSpecializations
@@ -1440,26 +1438,6 @@ object (self)
              INT (H.length variable_intros);
              STR " variable introductions"])
     end
-
-  method add_computed_join_varintros
-           (faddr: doubleword_int)
-           (iaddrs: ctxt_iaddress_t list)
-           (reg: register_t) =
-    let name = ssa_register_value_join_name reg faddr iaddrs in
-    List.iter (fun iaddr ->
-        if is_iaddress iaddr then
-          let loc = ctxt_string_to_location faddr iaddr in
-          let iaddr = loc#i in
-          let _ =
-            chlog#add
-              "add computed join variable"
-              (LBLOCK [
-                   loc#toPretty;
-                   STR " ";
-                   STR (register_to_string reg);
-                   STR ": ";
-                   STR name]) in
-          H.replace variable_intros iaddr#index name) iaddrs
 
   method private write_xml_variable_introductions (node: xml_element_int) =
     let vintros = H.fold (fun k v a -> (k, v)::a) variable_intros [] in

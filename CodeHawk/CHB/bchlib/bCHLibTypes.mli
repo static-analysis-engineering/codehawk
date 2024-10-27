@@ -5888,16 +5888,6 @@ object
   method add_goto_return: doubleword_int -> doubleword_int -> unit
   method set_virtual_function_table: doubleword_int -> unit
 
-  (** [add_computed_varintros faddr iaddrs name] adds the name to be used for
-      the instructions at locations [iaddrs] in function [faddr] for
-      ssa-assignments and ssa-abstractions.
-
-      These names will be added as an optional, introduced name in addition to
-      the regular ssa name.
-   *)
-  method add_computed_join_varintros:
-           doubleword_int -> ctxt_iaddress_t list -> register_t -> unit
-
   (** [set_arm_thumb_switch addr arch] records a switch from arm to thumb at
       address [addr] if [arch] is ['T'] and a switch from thumb to arm if [arch]
       is ['A'].*)
