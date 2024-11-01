@@ -381,7 +381,7 @@ object (self)
   method private set_jumptable (jumptable: jumptable_int) =
     let saddr = jumptable#get_start_address in
     let eaddr = jumptable#get_end_address in
-    let len = saddr#value - eaddr#value in
+    let len = eaddr#value - saddr#value in
     if len > 0 then
       let startinstr =
         make_arm_assembly_instruction

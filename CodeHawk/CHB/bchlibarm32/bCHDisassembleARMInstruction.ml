@@ -1045,7 +1045,8 @@ let parse_data_proc_imm_type
      let rd = r15 WR in
      let imm32 = arm_expand_imm (b 11 8) (b 7 0) in
      (try
-        let imm = mk_arm_absolute_target_op iaddr imm32 RD in
+        let base = iaddr#add_int 8 in
+        let imm = mk_arm_absolute_target_op base imm32 RD in
         (* ADR<c> <Rd>, <label> *)
         Adr (c, rd, imm)
       with
