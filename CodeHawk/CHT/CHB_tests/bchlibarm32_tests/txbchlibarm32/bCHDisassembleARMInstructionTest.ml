@@ -48,7 +48,7 @@ open BCHDisassembleARMInstruction
 
 
 let testname = "bCHDisassembleARMInstructionTest"
-let lastupdated = "2024-01-02"
+let lastupdated = "2024-10-31"
 
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
@@ -163,6 +163,8 @@ let arm_basic () =
 
 let arm_pc_relative () =
   let tests = [
+      ("ADR-A1", "0xa01021d8", "80104fe2", "ADR            R1, 0xa0102160");
+      ("ADR-A2", "0xa0354fc4", "14108fe2", "ADR            R1, 0xa0354fe0");
       ("B",    "0x116f8", "060000ea", "B              0x11718");
       ("BCS",  "0x118d4", "9d00002a", "BCS            0x11b50");
       ("BEQ",  "0x10764", "f5ffff0a", "BEQ            0x10740");
