@@ -299,6 +299,11 @@ let cc_expr
        (XOp (XLOr, [XOp (XLt, [XOp (XPlus, [v x; v y]); zero_constant_expr]);
                     XOp (XGe, [v x; zero_constant_expr])]), [x; y])
 
+    (* ------------------------------------------------------------- Move --- *)
+
+    | (Move (true, ACCAlways, _, y, _, _), ACCNotEqual) ->
+       (XOp (XNe, [v y; zero_constant_expr]), [y])
+
     (* --------------------------------------------------------- Subtract --- *)
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCEqual) ->
