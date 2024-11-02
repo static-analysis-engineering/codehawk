@@ -61,7 +61,7 @@ open BCHAnalyzeApp
 
 
 let testname = "bCHARMConditionalExprTest"
-let lastupdated = "2024-05-25"
+let lastupdated = "2024-10-31"
 
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
@@ -183,6 +183,41 @@ let compare_negative_tests () =
   end
 
 
+let move_tests () =
+  let tests = [
+      ("move-bne", "0x100b0", "0x100b4", "0500b0e1bcffff1a", 3, "(R5 != 0)")
+    ] in
+  begin
+    TS.new_testsuite (testname ^ "_subtract_tests") lastupdated;
+
+    system_info#set_elf_is_code_address wordzero codemax;
+    ARMU.arm_instructions_setup (make_dw "0x100b0") 0x10000;
+    List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
+
+        TS.add_simple_test
+          ~title
+          (fun () ->
+            let _ = functions_data#reset in
+            let _ = arm_assembly_functions#reset in
+            let faddr = make_dw cfaddr in
+            let bytes = bytes ^ bxlr_bxlr in
+            let fn = ARMU.arm_function_setup faddr bytes in
+            (* let _ = CHPretty.pr_debug [fn#toPretty; NL] in *)
+            let _ =
+              for _i = 1 to iterations do
+                analyze_arm_function faddr fn 0
+              done in
+            let _ = testsupport#request_arm_conditional_expr in
+            let _ = translate_arm_assembly_function fn in
+            let (_, _, optxpr) =
+              TR.tget_ok (testsupport#retrieve_arm_conditional_expr ccaddr) in
+            ARMA.equal_arm_conditional_expr
+              ~expected:expectedcond ~received:optxpr ())
+      ) tests;
+
+    TS.launch_tests ()
+  end
+
 
 (** Subtract subtracts the second argument from the first, writes the result to the
     destination and optionally updates the condition flags.
@@ -293,6 +328,7 @@ let () =
     TS.new_testfile testname lastupdated;
     compare_tests ();
     compare_negative_tests ();
+    move_tests ();
     subtract_tests ();
     test_tests ();
     TS.exit_file()
