@@ -691,7 +691,13 @@ object (self)
               (self#cia ^ ": constant: " ^ n#toString))
            (fun base ->
              if system_info#get_image_base#le base then
-               self#env#mk_global_variable ~size n
+               log_tfold_default
+                 (log_error
+                    "get_memory_variable_1"
+                    (self#cia ^ " : constant: " ^ n#toString))
+                 (fun v -> v)
+                 (default ())
+                 (self#env#mk_global_variable ~size n)
              else
                default ())
            (default ())
@@ -718,7 +724,13 @@ object (self)
          if is_constant_offset memoffset then
            let memvar =
              if memref#is_global_reference then
-               self#env#mk_global_variable (get_total_constant_offset memoffset)
+               log_tfold_default
+                 (log_error
+                    "get_memory_variable_1"
+                    (self#cia))
+                 (fun v -> v)
+                 (default ())
+                 (self#env#mk_global_variable (get_total_constant_offset memoffset))
              else
                self#env#mk_memory_variable
                  memref (get_total_constant_offset memoffset) in
@@ -785,7 +797,13 @@ object (self)
     let (memref, memoffset) = self#decompose_address address in
     if is_constant_offset memoffset then
       if memref#is_global_reference then
-        self#env#mk_global_variable (get_total_constant_offset memoffset)
+        log_tfold_default
+          (log_error
+             "get_memory_variable_3"
+             (self#cia ^ ": memoffset: " ^ (memory_offset_to_string memoffset)))
+          (fun v -> v)
+          (default ())
+          (self#env#mk_global_variable (get_total_constant_offset memoffset))
       else
         self#env#mk_memory_variable
           ~size memref (get_total_constant_offset memoffset)
@@ -794,7 +812,25 @@ object (self)
       | IndexOffset _ ->
          self#env#mk_index_offset_memory_variable memref memoffset
       | ConstantOffset (n, IndexOffset (v, s, o)) ->
-         self#env#mk_index_offset_global_memory_variable n (IndexOffset (v, s, o))
+         let n = n#modulo (mkNumerical BCHDoubleword.e32) in
+         log_tfold_default
+           (mk_tracelog_spec
+              ~tag:"get_memory_variable_3"
+              (self#cia
+               ^ ": constant: "
+               ^ n#toString
+               ^ "; index-expr: "
+               ^ "; offset: "
+               ^ offset#toString
+               ^ (x2s indexExpr)
+               ^ "; addr: "
+               ^ (x2s addr)
+               ^ "; memoffset: "
+               ^ (memory_offset_to_string memoffset)))
+           (fun v -> v)
+           (default ())
+           (self#env#mk_index_offset_global_memory_variable
+              n (IndexOffset (v, s, o)))
       | _ ->
          default ()
 
@@ -820,7 +856,13 @@ object (self)
             (self#cia ^ ": constant: " ^ n#toString))
          (fun base ->
            if system_info#get_image_base#le base then
-             self#env#mk_global_variable n
+             log_tfold_default
+               (log_error
+                  "get_memory_variable_4"
+                  (self#cia ^ "; constant: " ^ n#toString))
+               (fun v -> v)
+               (default ())
+               (self#env#mk_global_variable n)
            else
              default ())
          (default ())
@@ -833,7 +875,13 @@ object (self)
             (self#cia ^ ": constant: " ^ n#toString))
          (fun base ->
            if system_info#get_image_base#le base then
-             self#env#mk_global_variable n
+             log_tfold_default
+               (log_error
+                  "get_memory_variable_4"
+                  (self#cia ^ ": constant: " ^ n#toString))
+               (fun v -> v)
+               (default ())
+               (self#env#mk_global_variable n)
            else
              default ())
          (default ())
@@ -1313,7 +1361,13 @@ object (self)
              (self#cia ^ ": constant: " ^ n#toString))
           (fun base ->
             if system_info#get_image_base#le base then
-	      self#env#mk_global_variable n
+              log_tfold_default
+                (log_error
+                   "get_lhs_from_address"
+                   (self#cia ^ ": constant: " ^ n#toString))
+                (fun v -> v)
+                (default ())
+	        (self#env#mk_global_variable n)
             else
               default ())
           (default ())
@@ -1516,7 +1570,18 @@ object (self)
         self#rewrite_variable_to_external argvar
      | [GlobalParameter (a, _)] ->
         let argvar = self#env#mk_global_variable a#to_numerical in
-        self#rewrite_variable_to_external argvar
+        (match argvar with
+         | Error e ->
+            raise
+              (BCH_failure
+                 (LBLOCK [
+                      STR self#cia;
+                      STR "; evaluate fts argument: ";
+                      a#toPretty;
+                      STR ": ";
+                      STR (String.concat "; " e)]))
+         | Ok argvar ->
+            self#rewrite_variable_to_external argvar)
      | _ -> random_constant_expr
 
    method evaluate_summary_term (t:bterm_t) (returnvar:variable_t) =
@@ -1552,7 +1617,13 @@ object (self)
              (self#cia ^ ": constant: " ^ num#toString))
           (fun base ->
             if system_info#get_image_base#le base then
-	      Some (self#env#mk_global_variable num)
+              log_tfold_default
+                (log_error
+                   "evaluate_summary_address_term"
+                   (self#cia ^ ": constant: " ^ num#toString))
+                (fun v -> Some v)
+                None
+	        (self#env#mk_global_variable num)
             else
               None)
           None

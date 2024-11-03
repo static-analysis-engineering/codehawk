@@ -463,7 +463,8 @@ object (self)
       List.concat
         (List.map (fun offset ->
              let v =
-               floc#env#mk_global_variable (gv#add_int offset)#to_numerical in
+               TR.tget_ok
+                 (floc#env#mk_global_variable (gv#add_int offset)#to_numerical) in
              floc#get_assign_commands v arg)
            [0; 4; 8; 16]) in
     let cmds2 = floc#get_assign_commands lhs arg in
@@ -658,9 +659,9 @@ object (self)
     let arg1 = get_patternrhs_value rhs1 floc in
     let eaxv = get_reg_value Eax floc in
     let ebpv = get_reg_value Ebp floc in
-    let gv1 = env#mk_global_variable (gv#add_int 4)#to_numerical in
-    let gv2 = env#mk_global_variable (gv#add_int 8)#to_numerical in
-    let gv3 = env#mk_global_variable (gv#add_int 12)#to_numerical in
+    let gv1 = TR.tget_ok (env#mk_global_variable (gv#add_int 4)#to_numerical) in
+    let gv2 = TR.tget_ok (env#mk_global_variable (gv#add_int 8)#to_numerical) in
+    let gv3 = TR.tget_ok (env#mk_global_variable (gv#add_int 12)#to_numerical) in
     let cmds1 = floc#get_assign_commands gv1 arg1 in
     let cmds2 = floc#get_assign_commands gv2 eaxv in
     let cmds3 = floc#get_assign_commands gv3 ebpv in

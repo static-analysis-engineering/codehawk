@@ -453,7 +453,15 @@ object (self:'a)
        env#mk_arm_double_extension_register_variable r1 r2
     | ARMSpecialReg r -> env#mk_arm_special_register_variable r
     | ARMLiteralAddress dw ->
-       floc#env#mk_global_variable dw#to_numerical
+       (match floc#env#mk_global_variable dw#to_numerical with
+        | Error e ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     floc#l#toPretty;
+                     STR ": to-variable";
+                     STR (String.concat "; " e)]))
+        | Ok v -> v)
     | ARMOffsetAddress (r, align, offset, isadd, _iswback, _isindex, size) ->
        let (var, trace) =
          (match offset with
@@ -489,8 +497,17 @@ object (self:'a)
                        let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
                        (match xoffset with
                         | XConst (IntConst n) ->
-                           (floc#env#mk_global_variable ~size n,
-                            [STR "ARMShiftedIndexOffset"; STR "explicit"])
+                           let v =
+                             (match floc#env#mk_global_variable ~size n with
+                              | Error e ->
+                                 raise
+                                   (BCH_failure
+                                      (LBLOCK [
+                                           floc#l#toPretty;
+                                           STR ": to-variable";
+                                           STR (String.concat "; " e)]))
+                              | Ok v -> v) in
+                           (v, [STR "ARMShiftedIndexOffset"; STR "explicit"])
                         | XVar v when floc#f#env#is_memory_address_variable v ->
                            log_tfold_default
                              (log_error "ARMShiftedIndexOffset" (p2s v#toPretty))

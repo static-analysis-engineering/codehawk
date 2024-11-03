@@ -44,6 +44,8 @@ open BCHLibx86Types
 open BCHOperand
 open BCHPredefinedUtil
 
+module TR = CHTraceResult
+
 
 (* Functions that set the value of a variable
 
@@ -301,7 +303,7 @@ object (self)
   method get_name = "__set_gv_" ^ gv#to_hex_string
 
   method! get_annotation (floc:floc_int) =
-    let v = floc#env#mk_global_variable gv#to_numerical in
+    let v = TR.tget_ok (floc#env#mk_global_variable gv#to_numerical) in
     let args = floc#get_call_args in
     let xrhs = get_patternrhs_value ~args rhs floc in
     LBLOCK [v#toPretty; STR " := "; xpr_to_pretty floc xrhs]

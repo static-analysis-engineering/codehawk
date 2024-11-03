@@ -47,6 +47,7 @@ open BCHPredefinedUtil
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
+module TR = CHTraceResult
 
 (* -------------------------------------------------------------------------------
    System::AStrCmp
@@ -950,7 +951,7 @@ object (self)
 
   method! get_commands (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    let vgv = floc#env#mk_global_variable gv#to_numerical in
+    let vgv = TR.tget_ok (floc#env#mk_global_variable gv#to_numerical) in
     floc#get_assign_commands vgv eaxv
 
   method get_parametercount = 0
@@ -1818,7 +1819,7 @@ object (self)
     let eaxv = get_reg_value Eax floc in
     let (eaxdlhs,eaxdlhscmds) = get_reg_deref_lhs Eax 0 floc in
     let gval = get_gv_value gv floc in
-    let gvar = floc#env#mk_global_variable gv#to_numerical in
+    let gvar = TR.tget_ok (floc#env#mk_global_variable gv#to_numerical) in
     let cmds1 = floc#get_assign_commands eaxdlhs gval in
     let cmds2 = floc#get_assign_commands gvar eaxv in
     let cmds3 = [floc#get_abstract_cpu_registers_command [Edx]] in

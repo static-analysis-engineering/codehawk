@@ -252,7 +252,18 @@ let get_reg_value (reg:cpureg_t) (floc:floc_int) =
 
 let get_gv_value (gv:doubleword_int) (floc:floc_int) =
   let v = floc#env#mk_global_variable gv#to_numerical in
-  floc#inv#rewrite_expr (XVar v)
+  match v with
+  | Error e ->
+     raise
+       (BCH_failure
+          (LBLOCK [
+               floc#l#toPretty;
+               STR "; get_gv_value: ";
+               gv#toPretty;
+               STR "; ";
+               STR (String.concat "; " e)]))
+  | Ok v ->
+     floc#inv#rewrite_expr (XVar v)
 
 
 let get_reg_derefvalue (reg:cpureg_t) (offset:int) (floc:floc_int) =

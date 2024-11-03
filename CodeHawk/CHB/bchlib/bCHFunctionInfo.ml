@@ -816,131 +816,140 @@ object (self)
   method mk_index_offset_global_memory_variable
            ?(elementsize=4)
            (base: numerical_t)
-           (offset: memory_offset_t): variable_t =
+           (offset: memory_offset_t): variable_t traceresult =
     let _ = self#mk_global_variable base in
-    let addr = TR.tget_ok (numerical_to_doubleword base) in
-    let var =
-      self#mk_index_offset_memory_variable
-        ~size:elementsize
-        self#mk_global_memory_reference (ConstantOffset (base, offset)) in
-    let _ =
-      if has_symbolic_address_name addr then
-        let ivar = self#mk_variable (varmgr#make_initial_memory_value var) in
-        let sname = get_symbolic_address_name addr in
-        let iname =
-          match offset with
-          | IndexOffset (v, _, NoOffset) ->
-             if variable_names#has v#getName#getSeqNumber then
-               let ivname = variable_names#get v#getName#getSeqNumber in
-               "[" ^ ivname ^ "]"
-             else
-               memory_offset_to_string offset
-          | _ -> memory_offset_to_string offset in
-        let vname = sname ^ iname in
-        begin
-          self#set_variable_name var vname;
-          self#set_variable_name ivar (vname ^ "_in")
-        end in
-    var
+    let addr_r = numerical_to_doubleword base in
+    match addr_r with
+    | Error e -> Error ("mk_index_offset_global_memory_variable" :: e)
+    | Ok addr ->
+       let var =
+         self#mk_index_offset_memory_variable
+           ~size:elementsize
+           self#mk_global_memory_reference (ConstantOffset (base, offset)) in
+       let _ =
+         if has_symbolic_address_name addr then
+           let ivar = self#mk_variable (varmgr#make_initial_memory_value var) in
+           let sname = get_symbolic_address_name addr in
+           let iname =
+             match offset with
+             | IndexOffset (v, _, NoOffset) ->
+                if variable_names#has v#getName#getSeqNumber then
+                  let ivname = variable_names#get v#getName#getSeqNumber in
+                  "[" ^ ivname ^ "]"
+                else
+                  memory_offset_to_string offset
+             | _ -> memory_offset_to_string offset in
+           let vname = sname ^ iname in
+           begin
+             self#set_variable_name var vname;
+             self#set_variable_name ivar (vname ^ "_in")
+           end in
+       Ok var
 
-  method mk_global_variable ?(size=4) ?(offset=NoOffset) (base: numerical_t) =
-    let addr = TR.tget_ok (numerical_to_doubleword base) in
-    let name: string option =
-      if has_symbolic_address_name addr then
-        let vname = get_symbolic_address_name addr in
-        let vtype = get_symbolic_address_type addr in
-        begin
-          chlog#add
-            "make named global variable"
-            (LBLOCK [
-                 addr#toPretty;
-                 STR ": ";
-                 STR vname;
-                 STR " with type ";
-                 STR (btype_to_string vtype)]);
-          Some vname
-        end
-      else
-        None in
-    let default () =
-      let var =
-        self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
-      begin
-        (match name with
-         | Some vname -> self#set_variable_name var vname
-         | _ -> ());
-        var
-      end in
+  method mk_global_variable
+           ?(size=4)
+           ?(offset=NoOffset)
+           (base: numerical_t): variable_t traceresult =
+    match numerical_to_doubleword base with
+    | Error e -> Error ("finfo.mk_global_variable" :: e)
+    | Ok addr ->
+       let name: string option =
+         if has_symbolic_address_name addr then
+           let vname = get_symbolic_address_name addr in
+           let vtype = get_symbolic_address_type addr in
+           begin
+             chlog#add
+               "make named global variable"
+               (LBLOCK [
+                    addr#toPretty;
+                    STR ": ";
+                    STR vname;
+                    STR " with type ";
+                    STR (btype_to_string vtype)]);
+             Some vname
+           end
+         else
+           None in
+       let default () =
+         let var =
+           self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
+         begin
+           (match name with
+            | Some vname -> self#set_variable_name var vname
+            | _ -> ());
+           Ok var
+         end in
 
-    if is_in_global_structvar addr then
-      (match get_structvar_base_offset addr with
-       | Some (base, off) ->
-          let basename = get_symbolic_address_name base in
-          (match off with
-           | Field ((fname, fckey), NoOffset) ->
-              let cinfo = bcfiles#get_compinfo fckey in
-              let finfo = get_compinfo_field cinfo fname  in
-              let finfotype = resolve_type finfo.bftype in
-              (match finfotype with
-              | Error _ -> default ()
-              | Ok finfotype ->
-                 let foffset =
-                   if is_struct_type finfotype then
-                     let subcinfo = get_struct_type_compinfo finfotype in
-                     let subfield0 = List.hd subcinfo.bcfields in
-                     let suboffset =
-                       FieldOffset ((subfield0.bfname, subfield0.bfckey), NoOffset) in
-                     FieldOffset ((fname, fckey), suboffset)
-                   else
-                     FieldOffset ((fname, fckey), NoOffset) in
+       if is_in_global_structvar addr then
+         (match get_structvar_base_offset addr with
+          | Some (base, off) ->
+             let basename = get_symbolic_address_name base in
+             (match off with
+              | Field ((fname, fckey), NoOffset) ->
+                 let cinfo = bcfiles#get_compinfo fckey in
+                 let finfo = get_compinfo_field cinfo fname  in
+                 let finfotype = resolve_type finfo.bftype in
+                 (match finfotype with
+                  | Error _ -> default ()
+                  | Ok finfotype ->
+                     let foffset =
+                       if is_struct_type finfotype then
+                         let subcinfo = get_struct_type_compinfo finfotype in
+                         let subfield0 = List.hd subcinfo.bcfields in
+                         let suboffset =
+                           FieldOffset
+                             ((subfield0.bfname, subfield0.bfckey), NoOffset) in
+                         FieldOffset ((fname, fckey), suboffset)
+                       else
+                         FieldOffset ((fname, fckey), NoOffset) in
+                     let var =
+                       self#mk_variable
+                         (varmgr#make_global_variable
+                            ~offset:foffset base#to_numerical) in
+                     let vname = basename ^ (memory_offset_to_string foffset) in
+                     let _ = self#set_variable_name var vname in
+                     Ok var)
+              | _ ->
+                 default ())
+          | _ ->
+             default ())
+       else if is_in_global_arrayvar addr then
+         (match get_arrayvar_base_offset addr with
+          | Some (base, off, _) ->
+             let basename = get_symbolic_address_name base in
+             let basevar =
+               self#mk_variable (varmgr#make_global_variable base#to_numerical) in
+             let _ = self#set_variable_name basevar basename in
+             (match off with
+              | Index (Const (CInt (i64, _, _)), _) ->
+                 let cindex = mkNumericalFromInt64 i64 in
+                 let ioffset = ConstantOffset (cindex, NoOffset) in
                  let var =
                    self#mk_variable
                      (varmgr#make_global_variable
-                        ~offset:foffset base#to_numerical) in
-                 let vname = basename ^ (memory_offset_to_string foffset) in
+                        ~offset:ioffset base#to_numerical) in
+                 let ivar =
+                   self#mk_initial_memory_value var in
+                 let vname = basename ^ (memory_offset_to_string ioffset) in
+                 let ivname = vname ^ "_in" in
                  let _ = self#set_variable_name var vname in
-                 var)
-           | _ ->
-              default ())
-       | _ ->
-          default ())
-    else if is_in_global_arrayvar addr then
-      (match get_arrayvar_base_offset addr with
-       | Some (base, off, _) ->
-          let basename = get_symbolic_address_name base in
-          let basevar =
-            self#mk_variable (varmgr#make_global_variable base#to_numerical) in
-          let _ = self#set_variable_name basevar basename in
-          (match off with
-           | Index (Const (CInt (i64, _, _)), _) ->
-              let cindex = mkNumericalFromInt64 i64 in
-              let ioffset = ConstantOffset (cindex, NoOffset) in
-              let var =
-                self#mk_variable
-                  (varmgr#make_global_variable
-                     ~offset:ioffset base#to_numerical) in
-              let ivar =
-                self#mk_initial_memory_value var in
-              let vname = basename ^ (memory_offset_to_string ioffset) in
-              let ivname = vname ^ "_in" in
-              let _ = self#set_variable_name var vname in
-              let _ = self#set_variable_name ivar ivname in
-              let _ =
-                chlog#add
-                  "array element variable"
-                  (LBLOCK [
-                       addr#toPretty;
-                       STR ": ";
-                       var#toPretty;
-                       STR ": ";
-                       STR vname]) in
-              var
-           | _ ->
+                 let _ = self#set_variable_name ivar ivname in
+                 let _ =
+                   chlog#add
+                     "array element variable"
+                     (LBLOCK [
+                          addr#toPretty;
+                          STR ": ";
+                          var#toPretty;
+                          STR ": ";
+                          STR vname]) in
+                 Ok var
+              | _ ->
+                 default ())
+          | _ ->
              default ())
-       | _ ->
-          default ())
-    else
-      default ()
+       else
+         default ()
 
   method mk_global_memory_address
            ?(optname = None) ?(opttype=None) (n: numerical_t) =
