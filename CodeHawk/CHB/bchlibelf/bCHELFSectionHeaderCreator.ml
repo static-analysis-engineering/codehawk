@@ -752,6 +752,10 @@ object (self)
    * - addr: DT_FINI
    * - offset: DT_FINI - ph#get_vaddr
    * - size: ?
+   *
+   * If no other information is present the size of the .fini section is
+   * assumed to be 0x4c (to be kept consistent with the starting address
+   * of the .rodata section).
    *)
   method private create_fini_header =
     let sectionname = ".fini" in
@@ -766,7 +770,7 @@ object (self)
         if ud_has_size sectionname then
           ud_get_size sectionname
         else
-          s2d "0x54" in
+          s2d "0x4c" in
       let addralign = s2d "0x4" in
       begin
         sh#set_fields
@@ -777,9 +781,12 @@ object (self)
       pr_debug [STR "Assumption violation: DT_FINI not present"; NL; NL]
 
   (* inputs: from program header, type PT_Load (1)
-   * - addr: DT_FINI + 0x50
+   * - addr: DT_FINI + 0x4c
    * - offset: addr - ph#get_vaddr
-   * - size: PT_Load(end) - DT_FINI - 0x50
+   * - size: PT_Load(end) - DT_FINI - 0x4c
+   *
+   * If no other information is present the size of the .fini section is
+   * assumed to be 0x4c.
    *)
   method private create_rodata_header =
     let sectionname = ".rodata" in
