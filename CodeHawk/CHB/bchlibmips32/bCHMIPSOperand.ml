@@ -131,7 +131,16 @@ object (self:'a)
     | MIPSIndReg (r, offset) ->
        let rvar = env#mk_mips_register_variable r in
        floc#get_memory_variable_1 rvar offset
-    | MIPSAbsolute a -> env#mk_global_variable a#to_numerical
+    | MIPSAbsolute a ->
+       (match env#mk_global_variable a#to_numerical with
+        | Error e ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     floc#l#toPretty;
+                     STR ": to-variable: ";
+                     STR (String.concat "; " e)]))
+        | Ok v -> v)
     | MIPSImmediate imm ->
        raise
          (BCH_failure

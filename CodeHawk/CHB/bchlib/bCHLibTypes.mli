@@ -4315,7 +4315,9 @@ class type function_environment_int =
     (** {2 Memory variables} *)
 
     method mk_global_variable:
-             ?size:int -> ?offset:memory_offset_t -> numerical_t -> variable_t
+             ?size:int
+             -> ?offset:memory_offset_t
+             -> numerical_t -> variable_t traceresult
 
     method mk_global_memory_address:
              ?optname: string option
@@ -4340,7 +4342,7 @@ class type function_environment_int =
              ?elementsize:int
              -> numerical_t
              -> memory_offset_t
-             -> variable_t
+             -> variable_t traceresult
     method mk_unknown_memory_variable: string -> variable_t
 
     method mk_memory_address_deref_variable:

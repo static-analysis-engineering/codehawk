@@ -375,8 +375,24 @@ object (self:'a)
     | MmReg regIndex -> env#mk_mmx_register_variable regIndex
     | XmmReg regIndex -> env#mk_xmm_register_variable regIndex
     | DoubleReg (reg1,reg2) -> env#mk_double_register_variable reg1 reg2
-    | Absolute address -> env#mk_global_variable address#to_numerical
-    | FarAbsolute (_, addr) -> env#mk_global_variable addr#to_numerical
+    | Absolute address ->
+       (match env#mk_global_variable address#to_numerical with
+        | Error e ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Absolute address to-variable: ";
+                     STR (String.concat "; " e)]))
+        | Ok var -> var)
+    | FarAbsolute (_, addr) ->
+       (match env#mk_global_variable addr#to_numerical with
+        | Error e ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "FarAbsolute address to-variable: ";
+                     STR (String.concat "; " e)]))
+        | Ok var -> var)
     | ScaledIndReg (Some cpureg, None, 1, offset)
     | ScaledIndReg (None, Some cpureg, 1, offset)
     | IndReg (cpureg, offset) ->
