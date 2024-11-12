@@ -183,10 +183,12 @@ let compare_negative_tests () =
   end
 
 
+(* move-bne-x should ideally produce: R5 != -1 *)
 let move_tests () =
   let tests = [
       ("move-bne", "0x100b0", "0x100b4", "0500b0e1bcffff1a", 3, "(R5 != 0)");
-      ("move-bne-x", "0x100b0", "0x100bc", "0050a0e30500b0e1015045e2bcffff1a", 8, "(R5 != -1")
+      ("move-bne-x", "0x100b0", "0x100bc", "0050a0e30500b0e1015045e2bcffff1a", 8,
+       "(R5_val_0x100b4_amp_0x100bc != 0)")
     ] in
   begin
     TS.new_testsuite (testname ^ "_subtract_tests") lastupdated;
