@@ -850,6 +850,7 @@ object (self)
            ?(size=4)
            ?(offset=NoOffset)
            (base: numerical_t): variable_t traceresult =
+    let base = base#modulo (mkNumerical BCHDoubleword.e32) in
     match numerical_to_doubleword base with
     | Error e -> Error ("finfo.mk_global_variable" :: e)
     | Ok addr ->
