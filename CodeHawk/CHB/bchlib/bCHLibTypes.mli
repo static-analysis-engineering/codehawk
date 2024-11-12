@@ -3564,6 +3564,7 @@ object ('a)
 
   method is_auxiliary_variable: bool
   method is_register_variable: bool
+  method is_stackpointer_variable: bool
   method is_mips_argument_variable: bool
   method is_arm_argument_variable: bool
   method is_arm_extension_register_variable: bool
@@ -3948,6 +3949,10 @@ object
 
   (** Returns [true] if [var] is a register variable (of any architecture). *)
   method is_register_variable: variable_t -> bool
+
+  (** Returns [true] if [var] is a register used as a stackpointer (in the
+      current architecture). *)
+  method is_stackpointer_variable: variable_t -> bool
 
   (** Returns the register associated with [var].
 
@@ -4451,6 +4456,10 @@ class type function_environment_int =
 
     (** Returns [true] if [var] is a register variable (of any architecture). *)
     method is_register_variable: variable_t -> bool
+
+    (** Returns [true] if [var] is a register variable that used by the current
+        architecture as a stackpointer. *)
+    method is_stackpointer_variable: variable_t -> bool
 
     (** Returns the register associated with [var].
 
