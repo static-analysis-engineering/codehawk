@@ -420,6 +420,11 @@ object (self:'a)
   method is_register_variable =
     match denotation with RegisterVariable _ -> true | _ -> false
 
+  method is_stackpointer_variable =
+    match denotation with
+    | RegisterVariable r -> BCHCPURegisters.is_stackpointer_register r
+    | _ -> false
+
   method is_mips_argument_variable =
     match denotation with
     | RegisterVariable reg ->
@@ -926,6 +931,10 @@ object (self)
   method is_register_variable (v:variable_t) =
     tfold_default
       (fun av -> av#is_register_variable) false (self#get_variable v)
+
+  method is_stackpointer_variable (v: variable_t) =
+    tfold_default
+      (fun av -> av#is_stackpointer_variable) false (self#get_variable v)
 
   method is_mips_argument_variable (v:variable_t) =
     tfold_default

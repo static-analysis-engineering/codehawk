@@ -1545,6 +1545,8 @@ object (self)
 
   method is_register_variable = varmgr#is_register_variable
 
+  method is_stackpointer_variable = varmgr#is_stackpointer_variable
+
   method is_initial_register_value = varmgr#is_initial_register_value
 
   method is_initial_mips_argument_value = varmgr#is_initial_mips_argument_value
