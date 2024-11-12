@@ -573,6 +573,11 @@ object (self)
       (fun av -> av#get_memory_offset)
       (self#get_variable v)
 
+  method has_variable_index_offset (v: variable_t): bool =
+    match self#get_memvar_offset v with
+    | Ok (IndexOffset (v, _, _)) -> self#is_register_variable v
+    | _ -> false
+
   method get_memval_offset (v: variable_t): memory_offset_t traceresult =
     tbind
       ~msg:"varmgr:get_memval_offset"

@@ -591,14 +591,33 @@ let translate_arm_instruction
              rvar :: rsvar :: acc
           | _ -> acc) [] ops in
 
-  let get_use_high_vars (xprs: xpr_t list): variable_t list =
+  let get_use_high_vars ?(is_pop=false) (xprs: xpr_t list): variable_t list =
     let inv = floc#inv in
     List.fold_left (fun acc x ->
         let xw = inv#rewrite_expr x in
         let xs = simplify_xpr xw in
+        let disvars = inv#get_init_disequalities in
+        let is_disvar v = List.exists (fun vv -> v#equal vv) disvars in
+        let xprvars = floc#env#variables_in_expr xs in
         let vars =
-          List.filter (fun v -> not (floc#f#env#is_function_initial_value v))
-            (floc#env#variables_in_expr xs) in
+          if List.exists is_disvar xprvars && not is_pop then
+            let _ =
+              chlog#add
+                "get_use_high_vars:basic"
+                (LBLOCK [
+                     floc#l#toPretty;
+                     STR "  ";
+                     x2p xs;
+                     STR " ==> ";
+                     x2p x;
+                     pretty_print_list
+                       (floc#env#variables_in_expr x)
+                       (fun v -> v#toPretty)
+                       " [" "; " "]"]) in
+            floc#env#variables_in_expr x
+          else
+            List.filter (fun v -> not (floc#f#env#is_function_initial_value v))
+              xprvars in
         vars @ acc) [] xprs in
 
   let get_addr_use_high_vars (xprs: xpr_t list): variable_t list =
@@ -1618,7 +1637,9 @@ let translate_arm_instruction
      let usevars = get_register_vars [rn; rm] in
      let memvar = mem#to_variable floc in
      let (usevars, usehigh) =
-       if memvar#isTmp || floc#f#env#is_unknown_memory_variable memvar then
+       if memvar#isTmp
+          || floc#f#env#is_unknown_memory_variable memvar
+          || floc#f#env#has_variable_index_offset memvar then
          (* elevate address variables to high-use *)
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
@@ -2144,7 +2165,7 @@ let translate_arm_instruction
              let stackvar = stackop#to_variable floc in
              let stackrhs = stackop#to_expr floc in
              let (regvar, cmds1) = floc#get_ssa_assign_commands reg stackrhs in
-             let usehigh = get_use_high_vars [stackrhs] in
+             let usehigh = get_use_high_vars ~is_pop:true [stackrhs] in
              let defcmds1 =
                floc#get_vardef_commands
                  ~defs:[regvar; splhs]
@@ -2585,6 +2606,44 @@ let translate_arm_instruction
      let (vhi, cmdshi) = floc#get_ssa_abstract_commands hireg () in
      let defcmds = floc#get_vardef_commands ~defs:[vlo; vhi] ctxtiaddr in
      let cmds = defcmds @ cmdslo @ cmdshi in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | SignedMultiplyWordB (c, rd, rn, rm) ->
+     let floc = get_floc loc in
+     let rdreg = rd#to_register in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
+     let xrn = rn#to_expr floc in
+     let xrm = rm#to_expr floc in
+     let usevars = get_register_vars [rn; rm] in
+     let usehigh = get_use_high_vars [xrn; xrm] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vrd]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | SignedMultiplyWordT (c, rd, rn, rm) ->
+     let floc = get_floc loc in
+     let rdreg = rd#to_register in
+     let (vrd, cmds) = floc#get_ssa_abstract_commands rdreg () in
+     let xrn = rn#to_expr floc in
+     let xrm = rm#to_expr floc in
+     let usevars = get_register_vars [rn; rm] in
+     let usehigh = get_use_high_vars [xrn; xrm] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vrd]
+         ~use:usevars
+         ~usehigh:usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)

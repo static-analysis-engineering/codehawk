@@ -3888,6 +3888,8 @@ object
       not a memory variable. *)
   method get_memvar_offset: variable_t -> memory_offset_t traceresult
 
+  method has_variable_index_offset: variable_t -> bool
+
   (** [get_memval_reference var] returns the base memory reference of
       memory-variable value [var].
 
@@ -4428,6 +4430,8 @@ class type function_environment_int =
 
         Returns [Error] if [index] is not a valid index of a memory reference. *)
     method is_unknown_reference: int -> bool traceresult
+
+    method has_variable_index_offset: variable_t -> bool
 
 
     (** {2 Memory address variables} *)
