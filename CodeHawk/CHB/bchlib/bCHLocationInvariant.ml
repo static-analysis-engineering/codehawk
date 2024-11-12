@@ -804,7 +804,7 @@ object (self)
                  STR "Variable does not have an initial value: ";
 		 var#toPretty]))
 
-  method get_init_disequalities =
+  method get_init_disequalities: variable_t list =
     let result = ref [] in
     let add v = result := v :: !result in
     let _ = H.iter (fun _ facts ->
@@ -813,7 +813,7 @@ object (self)
 	facts) table in
     !result
 
-  method get_init_equalities =
+  method get_init_equalities: variable_t list =
     let result = ref [] in
     let add v = result := v :: !result in
     let _ = H.iter (fun _ facts ->

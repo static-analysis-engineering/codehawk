@@ -1828,6 +1828,52 @@ object (self)
            xd#index_xpr result;
            xd#index_xpr rresult])
 
+      | SignedMultiplyWordB (c, rd, rn, rm) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let xe16 = int_constant_expr BCHDoubleword.e16 in
+         let result = XOp (XMult, [xrn; XOp (XMod, [xrm; xe16])]) in
+         let xxrn = rewrite_expr xrn in
+         let xxrm = rewrite_expr xrm in
+         let rresult = rewrite_expr ?restrict:(Some 4) result in
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let uses = [get_def_use vrd] in
+         let useshigh = [get_def_use_high vrd] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrn; xrm; result; rresult; xxrn; xxrm]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | SignedMultiplyWordT (c, rd, rn, rm) ->
+         let vrd = rd#to_variable floc in
+         let xrn = rn#to_expr floc in
+         let xrm = rm#to_expr floc in
+         let xe16 = int_constant_expr BCHDoubleword.e16 in
+         let result = XOp (XMult, [xrn; XOp (XShiftrt, [xrm; xe16])]) in
+         let xxrn = rewrite_expr xrn in
+         let xxrm = rewrite_expr xrm in
+         let rresult = rewrite_expr ?restrict:(Some 4) result in
+         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let uses = [get_def_use vrd] in
+         let useshigh = [get_def_use_high vrd] in
+         let (tagstring, args) =
+           mk_instrx_data
+             ~vars:[vrd]
+             ~xprs:[xrn; xrm; result; rresult; xxrn; xxrm]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
       | StoreMultipleDecrementBefore (wback, c, base, rl, _) ->
          let basereg = base#get_register in
          let regcount = rl#get_register_count in

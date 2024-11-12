@@ -1277,6 +1277,9 @@ object (self)
   method get_memvar_offset (v:variable_t): memory_offset_t traceresult =
     varmgr#get_memvar_offset v
 
+  method has_variable_index_offset (v: variable_t): bool =
+    varmgr#has_variable_index_offset v
+
   method get_memval_offset (v:variable_t): memory_offset_t traceresult =
     varmgr#get_memval_offset v
 
