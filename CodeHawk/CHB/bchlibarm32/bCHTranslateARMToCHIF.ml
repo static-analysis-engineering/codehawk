@@ -599,7 +599,9 @@ let translate_arm_instruction
         let disvars = inv#get_init_disequalities in
         let disvars =
           List.filter
-            (fun v -> not (floc#f#env#is_initial_stackpointer_value v)) disvars in
+            (fun v ->
+              not ((floc#f#env#is_initial_stackpointer_value v)
+                   || (floc#f#env#is_initial_register_value v))) disvars in
         let is_disvar v = List.exists (fun vv -> v#equal vv) disvars in
         let xprvars = floc#env#variables_in_expr xs in
         let vars =
