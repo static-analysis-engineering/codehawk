@@ -571,6 +571,8 @@ object(self)
             let cbv =
               if pv#equal wordzero then
                 CBValue numerical_zero
+              else if pv#equal wordnegone then
+                CBValue (mkNumerical (-1))
               else
                 match s with
                 | "address" -> CBAddress pv#to_hex_string
@@ -583,7 +585,7 @@ object(self)
             cbvalues := ((i * 4), cbv) :: !cbvalues) fieldkinds;
         (if List.for_all (fun (_, v) ->
                 match v with
-                | CBValue n -> n#equal numerical_zero
+                | CBValue n -> n#equal numerical_zero || n#equal (mkNumerical (-1))
                 | _ -> false) !cbvalues then
            nullrecord := true
          else
