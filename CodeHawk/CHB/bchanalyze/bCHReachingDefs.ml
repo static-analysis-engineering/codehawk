@@ -260,25 +260,28 @@ let analyze_procedure_with_flag_reaching_defs
 let extract_reaching_defs
       (finfo: function_info_int)
       (invariants: (string, (string, atlas_t) H.t) H.t) =
-  H.iter (fun k v ->
-      if H.mem v "reachingdefs" then
-        let inv = H.find v "reachingdefs" in
-        let domain = inv#getDomain "reachingdefs" in
-        let varObserver = domain#observer#getNonRelationalVariableObserver in
-        let vars = domain#observer#getObservedVariables in
-        List.iter (fun (v: variable_t) ->
-            let reachingdefs = (varObserver v)#toSymbolicSet in
-            if reachingdefs#isTop then
-              ()
-            else
-              match reachingdefs#getSymbols with
-              | SET symbols ->
-                 let symbols =
-                   List.sort (fun s1 s2 ->
-                       Stdlib.compare
-                         s1#getBaseName s2#getBaseName) symbols#toList in
-                 finfo#fvarinv#add_reaching_def k v symbols
-              | _ -> ()) vars) invariants
+  begin
+    H.iter (fun k v ->
+        if H.mem v "reachingdefs" then
+          let inv = H.find v "reachingdefs" in
+          let domain = inv#getDomain "reachingdefs" in
+          let varObserver = domain#observer#getNonRelationalVariableObserver in
+          let vars = domain#observer#getObservedVariables in
+          List.iter (fun (v: variable_t) ->
+              let reachingdefs = (varObserver v)#toSymbolicSet in
+              if reachingdefs#isTop then
+                ()
+              else
+                match reachingdefs#getSymbols with
+                | SET symbols ->
+                   let symbols =
+                     List.sort (fun s1 s2 ->
+                         Stdlib.compare
+                           s1#getBaseName s2#getBaseName) symbols#toList in
+                   finfo#add_reaching_def k v symbols;
+                | _ -> ()) vars) invariants;
+    finfo#fvarinv#collect_use_facts
+  end
 
 
 let extract_flag_reaching_defs

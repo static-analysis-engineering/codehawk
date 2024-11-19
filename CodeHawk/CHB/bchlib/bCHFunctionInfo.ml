@@ -1750,6 +1750,50 @@ object (self)
 
   method fvarinv = varinvio
 
+  val uselocs = H.create 5
+  val usehighlocs = H.create 5
+
+  method add_reaching_def
+           (iaddr: string) (v: variable_t) (deflocs: symbol_t list) =
+    begin
+      self#fvarinv#add_reaching_def iaddr v deflocs;
+      List.iter (fun s ->
+          if (List.length s#getAttributes) = 0 then
+            let defloc = s#getBaseName in
+            begin
+              (if self#is_use_loc v iaddr then
+                 self#fvarinv#add_use_loc defloc v iaddr);
+              (if self#is_use_high_loc v iaddr then
+                 self#fvarinv#add_use_high_loc defloc v iaddr)
+            end) deflocs
+    end
+
+  method add_use_loc (v: variable_t) (iaddr: string) =
+    let varix = v#getName#getSeqNumber in
+    let entry =
+      if H.mem uselocs varix then
+        H.find uselocs varix
+      else
+        [] in
+    H.replace uselocs varix (iaddr :: entry)
+
+  method add_use_high_loc (v: variable_t) (iaddr: string) =
+    let varix = v#getName#getSeqNumber in
+    let entry =
+      if H.mem usehighlocs varix then
+        H.find usehighlocs varix
+      else
+        [] in
+    H.replace usehighlocs varix (iaddr :: entry)
+
+  method is_use_loc (v: variable_t) (iaddr: string) =
+    let varix = v#getName#getSeqNumber in
+    (H.mem uselocs varix) && (List.mem iaddr (H.find uselocs varix))
+
+  method is_use_high_loc (v: variable_t) (iaddr: string) =
+    let varix = v#getName#getSeqNumber in
+    (H.mem usehighlocs varix) && (List.mem iaddr (H.find usehighlocs varix))
+
   method iinv (iaddr: ctxt_iaddress_t): location_invariant_int =
     invio#get_location_invariant iaddr
 
