@@ -128,7 +128,8 @@ let rec get_num_value env e =
       | (PlusA, Some v1, Some v2) -> Some (v1#add v2)
       | (MinusA, Some v1, Some v2) -> Some (v1#sub v2)
       | (Mult, Some v1, Some v2) -> Some (v1#mult v2)
-      | (Div, Some v1, Some v2) -> Some (v1#div v2)
+      | (Div, Some v1, Some v2) when not (v2#equal numerical_zero) ->
+         Some (v1#div v2)
       | (Mod, Some _, Some _) -> None
       (* TODO: add some code for mod Some (v1 mod v2) *)
       | _ -> None
