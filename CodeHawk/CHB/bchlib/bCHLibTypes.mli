@@ -1656,6 +1656,9 @@ class type location_var_invariant_int =
   object
     method reset: unit
     method add_fact: var_invariant_fact_t -> unit
+    method add_use_loc: variable_t -> string -> unit
+    method add_use_high_loc: variable_t -> string -> unit
+    method collect_use_facts: unit
 
     (* accessors *)
     method get_var_facts: variable_t -> var_invariant_int list
@@ -1683,6 +1686,10 @@ class type var_invariant_io_int =
     method add_flag_reaching_def: string -> variable_t -> symbol_t list -> unit
     method add_def_use: string -> variable_t -> symbol_t list -> unit
     method add_def_use_high: string -> variable_t -> symbol_t list -> unit
+
+    method add_use_loc: string -> variable_t -> string -> unit
+    method add_use_high_loc: string -> variable_t -> string -> unit
+    method collect_use_facts: unit
 
     (* accessors *)
     method get_location_var_invariant: string -> location_var_invariant_int
@@ -4970,6 +4977,16 @@ object
   (** [finfo#ivarinv idadr] returns the variable invariant at instruction address
       [iaddr].*)
   method ivarinv: ctxt_iaddress_t -> location_var_invariant_int
+
+  method add_reaching_def: string -> variable_t -> symbol_t list -> unit
+
+  method add_use_loc: variable_t -> string -> unit
+
+  method add_use_high_loc: variable_t -> string -> unit
+
+  method is_use_loc: variable_t -> string -> bool
+
+  method is_use_high_loc: variable_t -> string -> bool
 
   (** {2 Invariant reset}
 

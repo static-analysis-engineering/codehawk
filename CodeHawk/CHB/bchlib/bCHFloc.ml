@@ -1557,6 +1557,8 @@ object (self)
      let useops = mk_ops ["defuse"] use_op_name use in
      let usehighops = mk_ops ["defusehigh"] usehigh_op_name usehigh in
      let flagdefops = mk_ops ["flagreachingdefs"] flagdef_op_name flagdefs in
+     let _ = List.iter (fun v -> self#f#add_use_loc v iaddr) use in
+     let _ = List.iter (fun v -> self#f#add_use_high_loc v iaddr) usehigh in
      useops @ usehighops @ defops @ clobberops @ flagdefops
 
    method private evaluate_fts_argument (p: fts_parameter_t) =

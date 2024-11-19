@@ -145,10 +145,15 @@ object (self)
   val table = H.create 5  (* facts indexed by variable seq number *)
   val facts = H.create 3  (* var_invariant_fact index -> var_invariant_int *)
 
+  val uselocs = H.create 5 (* var-ix -> (var, use locations) *)
+  val usehighlocs = H.create 5  (* var-ix -> (var, use-high locations) *)
+
   method reset =
     begin
       H.clear table;
       H.clear facts;
+      H.clear uselocs;
+      H.clear usehighlocs;
     end
 
   method add_fact (fact: var_invariant_fact_t) =
@@ -163,6 +168,37 @@ object (self)
         H.add facts index inv;
         H.replace table varindex (fact :: entry)
       end
+
+  method private add_loc table (v: variable_t) (useloc: string) =
+    let varix = v#getName#getSeqNumber in
+    let (_, entry) =
+      if H.mem table varix then
+        H.find table varix
+      else
+        let locset = new SymbolCollections.set_t in
+        begin
+          H.add table varix (v, locset);
+          (v, locset)
+        end in
+    entry#add (new symbol_t useloc)
+
+  method add_use_loc (var: variable_t) (useloc: string) =
+    self#add_loc uselocs var useloc
+
+  method add_use_high_loc (var: variable_t) (useloc: string) =
+    self#add_loc usehighlocs var useloc
+
+  method collect_use_facts =
+    begin
+      H.iter
+        (fun _ (var, locs) ->
+          let locs = List.sort Stdlib.compare locs#toList in
+          self#add_fact (DefUse (var, locs))) uselocs;
+      H.iter
+        (fun _ (var, locs) ->
+          let locs = List.sort Stdlib.compare locs#toList in
+          self#add_fact (DefUseHigh (var,locs))) usehighlocs
+    end
 
   method get_var_facts (var: variable_t): var_invariant_int list =
     List.filter (fun f -> f#get_variable#equal var) self#get_facts
@@ -232,9 +268,18 @@ object (self)
   method private add (iaddr: string) (fact: var_invariant_fact_t) =
     (self#get_location_var_invariant iaddr)#add_fact fact
 
+  method collect_use_facts =
+    invariants#iter (fun _ v -> v#collect_use_facts)
+
   method add_reaching_def
            (iaddr: string) (var: variable_t) (locs: symbol_t list) =
     self#add iaddr (ReachingDef (var, locs))
+
+  method add_use_loc (defloc: string) (v: variable_t) (useloc: string) =
+    (self#get_location_var_invariant defloc)#add_use_loc v useloc
+
+  method add_use_high_loc (defloc: string) (v: variable_t) (useloc: string) =
+    (self#get_location_var_invariant defloc)#add_use_high_loc v useloc
 
   method add_flag_reaching_def
            (iaddr: string) (var: variable_t) (locs: symbol_t list) =
