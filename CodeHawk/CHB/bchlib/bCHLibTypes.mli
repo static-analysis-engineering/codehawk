@@ -1504,7 +1504,6 @@ class type function_data_int =
     (* setters *)
     method set_function_type: btype_t -> unit
     method set_non_returning: unit
-    method set_maybe_non_returning: unit
     method add_name: string -> unit
     method set_ida_provided: unit
     method set_user_provided: unit
@@ -1542,7 +1541,6 @@ class type function_data_int =
     method has_callsites: bool
     method has_path_contexts: bool
     method is_non_returning: bool
-    method is_maybe_non_returning: bool
     method is_incomplete: bool
     method is_ida_provided: bool
     method is_user_provided: bool

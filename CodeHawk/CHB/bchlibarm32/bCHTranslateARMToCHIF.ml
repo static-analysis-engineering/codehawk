@@ -634,15 +634,6 @@ let translate_arm_instruction
             (floc#env#variables_in_expr xs) in
         vars @ acc) [] xprs in
 
-  let is_maybe_non_returning_call_instr =
-    match instr#get_opcode with
-    | BranchLink (ACCAlways, tgt)
-      | BranchLinkExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
-       let tgtaddr = tgt#get_absolute_address in
-       ((functions_data#is_function_entry_point tgtaddr)
-        && (functions_data#get_function tgtaddr)#is_maybe_non_returning)
-    | _ -> false in
-
   let flagdefs =
     let flags_set = get_arm_flags_set instr#get_opcode in
     List.map (fun f -> finfo#env#mk_flag_variable (ARMCCFlag f)) flags_set in
@@ -1136,17 +1127,6 @@ let translate_arm_instruction
    * SelectInstrSet(targetInstrSet);
    * BranchWritePC(targetAddress);
    * ------------------------------------------------------------------------ *)
-  | BranchLink (_c, tgt) when is_maybe_non_returning_call_instr ->
-     (* TODO: incorporate condition *)
-     let elseaddr = codepc#get_false_branch_successor in
-     let callcmds = calltgt_cmds tgt in
-     let cmds = cmds @ (invop :: callcmds) @ [bwdinvop] @ pcassign in
-     let transaction = package_transaction finfo blocklabel cmds in
-     let elselabel = make_code_label elseaddr in
-     let nodes = [(blocklabel, [transaction])] in
-     let edges = [(blocklabel, exitlabel); (blocklabel, elselabel)] in
-     (nodes, edges, [])
-
   | BranchLink (c, tgt)
     | BranchLinkExchange (c, tgt) when tgt#is_absolute_address ->
      if instr#is_inlined_call then

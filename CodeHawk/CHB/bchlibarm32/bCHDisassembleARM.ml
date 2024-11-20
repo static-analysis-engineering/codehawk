@@ -466,17 +466,6 @@ let is_nr_call_instruction (instr:arm_assembly_instruction_int) =
   | _ -> false
 
 
-let is_maybe_nr_call_instruction (instr: arm_assembly_instruction_int) =
-  match instr#get_opcode with
-  | BranchLink (ACCAlways, tgt)
-    | BranchLinkExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
-     let tgtaddr = tgt#get_absolute_address in
-     ((functions_data#is_function_entry_point tgtaddr)
-      && (functions_data#get_function tgtaddr)#is_maybe_non_returning)
-  | _ -> false
-
-
-
 let collect_function_entry_points () =
   let addresses = new DoublewordCollections.set_t in
   begin
@@ -693,8 +682,7 @@ let set_block_boundaries () =
             *)
 
            | BranchLink _ | BranchLinkExchange _
-                when is_nr_call_instruction instr
-                     || is_maybe_nr_call_instruction instr ->
+                when is_nr_call_instruction instr ->
               set_block_entry (va#add_int 4)
 
            | _ -> ())

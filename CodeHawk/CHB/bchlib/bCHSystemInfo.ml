@@ -192,7 +192,6 @@ object (self)
   val mutable user_call_targets = 0
   val mutable user_structs = 0
   val mutable user_nonreturning = 0
-  val mutable user_maybe_nonreturning = 0
   val mutable user_classes = 0
   val mutable encodings = []
   val mutable inlined_functions = []
@@ -700,13 +699,6 @@ object (self)
 	   self#read_xml_user_nonreturning_functions nrnode;
 	   user_nonreturning <- List.length nrnode#getChildren
 	 end);
-
-      (if hasc "maybe-non-returning-functions" then
-         let mnrnode = getc "maybe-non-returning-functions" in
-         begin
-           self#read_xml_user_maybe_nonreturning_functions mnrnode;
-           user_maybe_nonreturning <- List.length mnrnode#getChildren
-         end);
 
       (if hasc "non-returning-calls" then
 	 let nrnode = getc "non-returning-calls" in
@@ -1464,22 +1456,6 @@ object (self)
         let _ =
           chlog#add "user-declared non-returning function" (geta n)#toPretty in
         fd#set_non_returning) (getcc "nr")
-
-  method private read_xml_user_maybe_nonreturning_functions
-                   (node:xml_element_int) =
-    let geta n =
-      fail_tvalue
-        (trerror_record
-           (LBLOCK [
-                STR "read_xml_user_maybe_nonreturning_functions: ";
-                STR (n#getAttribute "a")]))
-        (string_to_doubleword (n#getAttribute "a")) in
-    let getcc = node#getTaggedChildren in
-    List.iter (fun n ->
-        let fd = functions_data#add_function (geta n) in
-        let _ =
-          chlog#add "user-declared non-returning function" (geta n)#toPretty in
-        fd#set_maybe_non_returning) (getcc "mnr")
 
   method private read_xml_nonreturning_calls (node:xml_element_int) =
     let geta n tag = geta_fail "read_xml_nonreturning_functions" n tag in
