@@ -50,7 +50,6 @@ open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
 open BCHFtsParameter
-open BCHFunctionData
 open BCHFunctionInfo
 open BCHFunctionInterface
 open BCHLibTypes
@@ -493,7 +492,6 @@ let translate_arm_instruction
       ~(funloc:location_int)
       ~(codepc:arm_code_pc_int)
       ~(blocklabel:symbol_t)
-      ~(exitlabel:symbol_t)
       ~(cmds:cmd_t list) =
   let (ctxtiaddr, instr) = codepc#get_next_instruction in
   let faddr = funloc#f in
@@ -4042,8 +4040,7 @@ object (self)
     let rec aux cmds =
       let (nodes,edges,newcmds) =
         try
-          translate_arm_instruction
-            ~funloc ~codepc ~blocklabel ~exitlabel ~cmds
+          translate_arm_instruction ~funloc ~codepc ~blocklabel ~cmds
         with
         | BCH_failure p ->
            let msg =
