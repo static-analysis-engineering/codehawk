@@ -41,8 +41,6 @@ MLIS := \
 	bCHExtractInvariants \
 	bCHAnalyzeProcedure \
 	bCHReachingDefs \
-	bCHDefUse \
-	bCHDefUseHigh \
 	bCHFileIO \
 	bCHTrace \
 	bCHAnalyzeApp \
@@ -56,8 +54,6 @@ SOURCES := \
 	bCHExtractInvariants \
 	bCHAnalyzeProcedure \
 	bCHReachingDefs \
-	bCHDefUse \
-	bCHDefUseHigh \
 	bCHFileIO \
 	bCHTrace \
 	bCHAnalyzeApp \

@@ -79,8 +79,6 @@ open BCHTranslatePowerToCHIF
 
 (* bchanalyze *)
 open BCHAnalyzeProcedure
-open BCHDefUse
-open BCHDefUseHigh
 open BCHExtractInvariants
 open BCHFileIO
 open BCHReachingDefs
@@ -356,24 +354,16 @@ let analyze_mips_function faddr f count =
        else
          pr_debug [STR " ... and valuesets"]);
       (if system_settings#generate_varinvs then
-         begin
-           analyze_procedure_with_reaching_defs
-             proc mips_chif_system#get_mips_system;
-           analyze_procedure_with_def_use proc mips_chif_system#get_mips_system;
-           analyze_procedure_with_def_use_high proc
-             mips_chif_system#get_mips_system
-         end);
+         analyze_procedure_with_reaching_defs
+           proc mips_chif_system#get_mips_system);
 
       (if !dointervals then extract_ranges finfo bb_invariants#get_invariants);
       (if !dorelational then
          extract_linear_equalities finfo bb_invariants#get_invariants);
       (if !dovaluesets then extract_valuesets finfo bb_invariants#get_invariants);
       (if system_settings#generate_varinvs then
-         begin
-           extract_reaching_defs finfo bb_invariants#get_invariants;
-           extract_def_use finfo bb_invariants#get_invariants;
-           extract_def_use_high finfo bb_invariants#get_invariants
-         end);
+         extract_reaching_defs finfo bb_invariants#get_invariants);
+
       (try
          resolve_indirect_mips_calls f
        with IO.No_more_input ->
@@ -533,16 +523,7 @@ let analyze_arm_function faddr f count =
          begin
            analyze_procedure_with_reaching_defs proc arm_chif_system#get_arm_system;
            analyze_procedure_with_flag_reaching_defs
-             proc arm_chif_system#get_arm_system;
-           (if islarge then
-              chlog#add "skip def-use" (faddr#toPretty)
-            else
-              analyze_procedure_with_def_use proc arm_chif_system#get_arm_system);
-           (if islarge then
-              chlog#add "skip def-use-high" (faddr#toPretty)
-            else
-              analyze_procedure_with_def_use_high
-                proc arm_chif_system#get_arm_system)
+             proc arm_chif_system#get_arm_system
          end);
       extract_ranges finfo bb_invariants#get_invariants;
       extract_linear_equalities finfo bb_invariants#get_invariants;
@@ -550,9 +531,7 @@ let analyze_arm_function faddr f count =
       (if system_settings#generate_varinvs then
          begin
            extract_reaching_defs finfo bb_invariants#get_invariants;
-           extract_flag_reaching_defs finfo bb_invariants#get_invariants;
-           extract_def_use finfo bb_invariants#get_invariants;
-           extract_def_use_high finfo bb_invariants#get_invariants
+           extract_flag_reaching_defs finfo bb_invariants#get_invariants
          end);
       finfo#reset_invariants;
       save_function_invariants finfo;
@@ -660,14 +639,10 @@ let analyze_pwr_function
       analyze_procedure_with_linear_equalities proc pwr_chif_system#get_pwr_system;
       analyze_procedure_with_valuesets proc pwr_chif_system#get_pwr_system;
       analyze_procedure_with_reaching_defs proc pwr_chif_system#get_pwr_system;
-      analyze_procedure_with_def_use proc pwr_chif_system#get_pwr_system;
-      analyze_procedure_with_def_use_high proc pwr_chif_system#get_pwr_system;
       extract_ranges finfo bb_invariants#get_invariants;
       extract_reaching_defs finfo bb_invariants#get_invariants;
       extract_linear_equalities finfo bb_invariants#get_invariants;
       extract_valuesets finfo bb_invariants#get_invariants;
-      extract_def_use finfo bb_invariants#get_invariants;
-      extract_def_use_high finfo bb_invariants#get_invariants;
       finfo#reset_invariants;
       finfo#save;
       save_function_invariants finfo;
