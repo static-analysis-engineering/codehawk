@@ -1608,7 +1608,34 @@ end
 
 (** {1 Invariants}*)
 
-(** {2 Variable invariants} *)
+(** {2 Variable invariants}
+
+    Variable invariants are symbolic invariants including:
+    - reaching definitions
+    - flag reaching definitions (for architectures with processor flags)
+    - def-use relationships
+    - def-use-high relationships
+
+    The reaching definitions are the traditional relationships between a
+    variable use and all locations where that variable may have been defined.
+
+    The def-use relationships are the traditional relationships between
+    a variable definition and all locations where that variable may be used.
+
+    The def-use-high relationships are similar to the def-use relationships,
+    but are only computed for variables that would appear in a source-code
+    lifting.
+
+    The reaching definitions are computed directly by forward abstract
+    interpretation in a symbolic domain with the hooks embedded in the same
+    CHIF representation that is used for the regular (value) invariant
+    generation.
+
+    The def-use and def-use-high relationships (normally computed by backward
+    analysis) are instead derived directly from the reaching definitions by
+    recording the uses (and high-uses) in the functioninfo and using these to
+    filter out the reverse relationships of the reaching definitions.
+*)
 
 (** Pairing of a variable with a set of locations represented by symbols.*)
 type vardefuse_t = variable_t * symbol_t list
@@ -1624,7 +1651,7 @@ type var_invariant_fact_t =
   (** list of locations where a high-level variable is used *)
 
 
-(** Single variable invariant at a particular location.*)
+(** Single variable invariant at a particular location (immutable).*)
 class type var_invariant_int =
   object ('a)
     method index: int
@@ -1649,7 +1676,15 @@ class type var_invariant_int =
   end
 
 
-(** All variable invariants at a particular location.*)
+(** All variable invariants at a particular location.
+
+    Mutable class that collects variable invariants at a particular location
+    (instruction address) in the code. Reaching defs are added as complete
+    facts, def-use facts are constructed one use-location at the time, as they
+    are retrieved from the reaching def facts. The collect_use_facts method
+    is called to package up these def-use facts when all reaching defs have
+    been processed.
+*)
 class type location_var_invariant_int =
   object
     method reset: unit
