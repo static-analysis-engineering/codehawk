@@ -61,7 +61,6 @@ object (self)
 
   val mutable names = []
   val mutable non_returning = false
-  val mutable maybe_non_returning = false
   val mutable incomplete = false
   val mutable ida_provided = false
   val mutable user_provided = false
@@ -78,8 +77,6 @@ object (self)
   method set_function_type (ty: btype_t) = functiontype <- ty
 
   method set_non_returning = non_returning <- true
-
-  method set_maybe_non_returning = maybe_non_returning <- true
 
   method set_inlined = inlined <- true
 
@@ -170,8 +167,6 @@ object (self)
   method has_name = (List.length names) > 0
 
   method is_non_returning = non_returning
-
-  method is_maybe_non_returning = maybe_non_returning
 
   method is_incomplete = incomplete
 

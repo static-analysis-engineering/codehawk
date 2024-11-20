@@ -81,15 +81,6 @@ let get_successors
           []
           (get_next_valid_instruction_address iaddr) in
 
-      let is_maybe_non_returning_call_instr =
-        match instr#get_opcode with
-        | BranchLink (ACCAlways, tgt)
-          | BranchLinkExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
-           let tgtaddr = tgt#get_absolute_address in
-           ((functions_data#is_function_entry_point tgtaddr)
-            && (functions_data#get_function tgtaddr)#is_maybe_non_returning)
-        | _ -> false in
-
       let next_from (va: doubleword_int) =
         log_tfold_default
           (mk_tracelog_spec
@@ -133,12 +124,6 @@ let get_successors
 
         (* conditional return instruction *)
         | Pop (_, _, rl, _) when rl#includes_pc ->
-           (next ()) @ [wordmax]
-
-        (* maybe non-returning call instruction *)
-        | BranchLink _ | BranchLinkExchange _
-             when is_maybe_non_returning_call_instr ->
-           let _ = chlog#add "maybe non returning" (iaddr#toPretty) in
            (next ()) @ [wordmax]
 
         (* return via LDM/LDMDB/LDMDA/LDMIB *)
