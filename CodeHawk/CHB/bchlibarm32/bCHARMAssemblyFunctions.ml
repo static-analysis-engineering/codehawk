@@ -915,6 +915,12 @@ let get_arm_disassembly_metrics () =
   let loaded_imports = [] in
   let imports = imported_imports @ loaded_imports in
   let numunknown = !arm_assembly_instructions#get_num_unknown_instructions in
+  let jumptables =
+    List.fold_left (fun acc (va, _) ->
+        if arm_assembly_functions#includes_instruction_address va then
+          acc + 1
+        else
+          acc) 0 !arm_assembly_instructions#get_jumptables in
   { dm_unknown_instrs = numunknown;
     dm_instrs = instrs;
     dm_functions = arm_assembly_functions#get_num_functions;
@@ -922,7 +928,7 @@ let get_arm_disassembly_metrics () =
     dm_pcoverage = 100.0 *. (float_of_int coverage) /. (float_of_int instrs) ;
     dm_overlap = overlap;
     dm_alloverlap = alloverlap;
-    dm_jumptables = List.length system_info#get_jumptables;
+    dm_jumptables = jumptables;
     dm_datablocks = List.length system_info#get_data_blocks;
     dm_imports = imports;
     dm_so_imports = system_info#dmso_metrics;

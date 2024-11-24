@@ -37,6 +37,7 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
+open BCHConstantDefinitions
 open BCHDataBlock
 open BCHDoubleword
 open BCHFunctionData
@@ -701,6 +702,15 @@ object (self)
                                ^ (fixed_length_string addr 10)
                                ^ "  Faddr:<"
                                ^ v#to_hex_string
+                               ^ ">"
+                             else if has_symbolic_address_name v then
+                               let name = get_symbolic_address_name v in
+                               "  "
+                               ^ (fixed_length_string addr 10)
+                               ^ "  Sym:<"
+                               ^ v#to_hex_string
+                               ^ ":"
+                               ^ name
                                ^ ">"
                              else if elf_header#is_code_address v then
                                "  "

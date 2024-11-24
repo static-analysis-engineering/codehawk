@@ -1813,6 +1813,7 @@ class type arm_assembly_function_int =
     method get_function_md5: string
     method get_instruction_count: int
     method get_block_count: int
+    method get_jumptable_count: int
     method get_not_valid_instr_count: int
     method get_true_conditional_return: arm_assembly_block_int option
 

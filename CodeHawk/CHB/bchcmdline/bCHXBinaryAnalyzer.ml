@@ -107,6 +107,7 @@ let export_directory = ref ""
 let savecfgs = ref false
 let save_xml = ref false  (* save disassembly status in xml *)
 let save_asm = ref false
+let save_asm_cfg_info = ref false  (* save functions list with cfg info in xml *)
 let set_datablocks = ref false   (* only supported for arm *)
 let construct_all_functions = ref false
 
@@ -204,6 +205,8 @@ let speclist =
      "save disassembly status in xml for bulk evaluation");
     ("-save_asm", Arg.Unit (fun () -> save_asm := true),
      "save assembly listing in the analysis directory");
+    ("-save_asm_cfg_info", Arg.Unit (fun () -> save_asm_cfg_info := true),
+     "save list of functions with cfg info to xml file (may be slow)");
     ("-construct_all_functions",
      Arg.Unit (fun () -> construct_all_functions := true),
      "construct all functions even if analyzing only a few of them");
@@ -588,6 +591,11 @@ let main () =
               (get_duplicate_coverage_filename ())
               (STR (BCHARMAssemblyFunctions.arm_assembly_functions#duplicates_to_string));
             pr_timing [STR "duplicates listing saved"];
+            (if !save_asm_cfg_info then
+               begin
+                 save_arm_functions_list ();
+                 pr_timing [STR "function cfg info saved"]
+               end);
             save_system_info ();
             pr_timing [STR "system_info saved"];
             save_arm_dictionary ();
