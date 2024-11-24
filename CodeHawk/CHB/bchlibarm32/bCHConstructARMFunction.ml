@@ -254,13 +254,22 @@ let get_successors
                    if !arm_assembly_instructions#is_code_address addr then
                      [addr]
                    else
-                     [])
+                     let floc = get_floc_by_address faddr instr#get_address in
+                     begin
+                       floc#f#set_unknown_jumptarget instr#get_address#to_hexstring;
+                       []
+                     end)
                  []
                  (numerical_to_doubleword tgt)
             | _ -> [])
 
         (* no information available, give up *)
-        | Branch _ | BranchExchange _ -> []
+        | Branch _ | BranchExchange _ ->
+           let floc = get_floc_by_address faddr instr#get_address in
+           begin
+             floc#f#set_unknown_jumptarget instr#get_address#to_hex_string;
+             []
+           end
 
         | _ -> next () in
 

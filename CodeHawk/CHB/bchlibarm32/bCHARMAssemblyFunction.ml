@@ -106,6 +106,8 @@ object (self)
 
   method get_block_count = List.length blocks
 
+  method get_jumptable_count = List.length self#get_jumptables
+
   method get_not_valid_instr_count =
     let c = ref 0 in
     let _ =

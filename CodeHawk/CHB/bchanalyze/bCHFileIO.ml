@@ -59,6 +59,7 @@ open BCHMIPSDictionary
 (* bchlibarm32 *)
 open BCHARMAssemblyInstructions
 open BCHARMDictionary
+open BCHARMLoopStructure
 
 (* bchlibpower32 *)
 open BCHPowerAssemblyInstructions
@@ -92,6 +93,7 @@ let get_bch_root (info:string):xml_element_int =
   end
 
 
+(* applies to x86 only *)
 let save_functions_list () =
   let filename = get_functions_filename () in
   let doc = xmlDocument () in
@@ -123,6 +125,67 @@ let save_functions_list () =
     root#appendChildren [ffNode];
     file_output#saveFile filename doc#toPretty
   end
+
+
+let save_arm_functions_list () =
+  let filename = get_functions_filename () in
+  let doc = xmlDocument () in
+  let root  = get_bch_root "functions" in
+  let ffNode = xmlElement "functions" in
+  let subnodes = ref [] in
+  begin
+    BCHARMAssemblyFunctions.arm_assembly_functions#itera (fun faddr f ->
+        let fNode = xmlElement "fn" in
+        let jtc = f#get_jumptable_count in
+        let (translation, lc, ld, ujc) =
+          try
+            begin
+              BCHTranslateARMToCHIF.translate_arm_assembly_function f;
+              record_arm_loop_levels faddr;
+              ("ok",
+               get_arm_loop_count_from_table f,
+               get_arm_loop_depth_from_table f,
+               (-1))
+            end
+          with
+          | BCH_failure p ->
+             let finfo = BCHFunctionInfo.get_function_info faddr in
+             let ujc = finfo#get_unknown_jumps_count in
+             (CHPrettyUtil.pretty_to_string p, (-1), (-1), ujc) in
+        let set = fNode#setAttribute in
+        let seti = fNode#setIntAttribute in
+        let setx t x = set t x#to_hex_string in
+        begin
+	  (if functions_data#has_function_name faddr then
+	     let name = (functions_data#get_function faddr)#get_function_name in
+             let name =
+               if has_control_characters name then
+                 "__xx__" ^ (hex_string name)
+               else
+                 name in
+	     set "name" name);
+	  setx "va" faddr;
+	  seti "ic" f#get_instruction_count;
+	  seti "bc" f#get_block_count;
+          (if jtc > 0 then seti "jtc" jtc);
+          (if translation = "ok" then
+             begin
+               (if lc > 0 then seti "lc" lc);
+               (if ld > 0 then seti "ld" ld);
+             end
+           else
+             begin
+               set "tr" "x";
+               seti "ujc" ujc
+             end);
+          subnodes := fNode :: !subnodes
+        end);
+    ffNode#appendChildren !subnodes;
+    doc#setNode root;
+    root#appendChildren [ffNode];
+    file_output#saveFile filename doc#toPretty
+  end
+
 
 
 let save_global_state () =

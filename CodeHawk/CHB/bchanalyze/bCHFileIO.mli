@@ -36,8 +36,12 @@ open BCHLibTypes
 (* bchlibx86 *)
 open BCHLibx86Types
 
-
+(** save function cfg info (x86 only) *)
 val save_functions_list: unit -> unit
+
+(** save function cfg info for arm functions *)
+val save_arm_functions_list: unit -> unit
+
 val save_global_state: unit -> unit
 val save_system_info: unit -> unit
 val save_resultmetrics: xml_element_int -> unit
