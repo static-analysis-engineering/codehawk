@@ -558,12 +558,15 @@ object(self)
     system_info#initialize_jumptables system_info#is_code_address xstrings
 
   method private extract_call_back_table
+                   ?(len=None)
                    (callbacktable: call_back_table_int)
                    (va: doubleword_int)
                    (fieldkinds: string list) =
     let nullrecord = ref false in
+    let count = ref 0 in
+    let bound = match len with Some len -> len | _ -> BCHDoubleword.e15 in
     let currva = ref va in
-    while not !nullrecord do
+    while not !nullrecord  && (!count < bound) do
       let cbvalues = ref [] in
       begin
         List.iteri (fun i s ->
@@ -582,7 +585,8 @@ object(self)
                     | _ -> CBTag "**unknown**")
                 | "value" -> CBValue (mkNumerical pv#to_int)
                 | _ -> CBValue numerical_zero in
-            cbvalues := ((i * 4), cbv) :: !cbvalues) fieldkinds;
+              cbvalues := ((i * 4), cbv) :: !cbvalues) fieldkinds;
+        count := !count + 1;
         (if List.for_all (fun (_, v) ->
                 match v with
                 | CBValue n -> n#equal numerical_zero || n#equal (mkNumerical (-1))
@@ -649,7 +653,12 @@ object(self)
             let fieldkinds = struct_field_categories varinfo.bvtype in
             let callbacktable = callbacktables#new_table addr varinfo.bvtype in
             let va = TR.tget_ok (string_to_doubleword addr) in
-            self#extract_call_back_table callbacktable va fieldkinds
+            if is_array_type varinfo.bvtype then
+              let len = get_array_length varinfo.bvtype in
+              self#extract_call_back_table
+                ~len:(TR.to_option len) callbacktable va fieldkinds
+            else
+              self#extract_call_back_table callbacktable va fieldkinds
           else
             chlog#add
               "call-back-table-variable"

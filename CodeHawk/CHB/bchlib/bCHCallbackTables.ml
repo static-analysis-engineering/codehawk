@@ -192,12 +192,21 @@ object (self)
             let compinfo = bcfiles#get_compinfo ckey in
             List.iteri (fun i fld ->
                 H.add table (i * 4) fld.bfname) compinfo.bcfields
+         | TArray (TComp (ckey, _), _, _) ->
+            let compinfo = bcfiles#get_compinfo ckey in
+            List.iteri (fun i fld ->
+                H.add table (i * 4) fld.bfname) compinfo.bcfields
+         | TArray ((TFun _ | TPtr (TFun _, _)), _, _) ->
+            H.add table 0 ("cbp_" ^ cba)
          | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "Unexpected type in creating callback table: ";
-                      btype_to_pretty recty])) in
+            let msg =
+              LBLOCK [
+                  STR "Unexpected type in creating callback table: ";
+                  btype_to_pretty recty] in
+            begin
+              ch_error_log#add "call-back-table problem" msg;
+              raise (BCH_failure msg)
+            end in
        table
 
   val offsettypes =
@@ -214,9 +223,12 @@ object (self)
        let _ =
          match recty with
          | TFun _ -> H.add table 0 ty
-         | TPtr (TFun (rty, args, b, attr), _) ->
+         | TPtr (TFun (rty, args, b, attr), _)
+           | TArray (TFun (rty, args, b, attr), _, _)
+           | TArray (TPtr (TFun (rty, args, b, attr), _), _, _) ->
             H.add table 0 (TFun (rty, args, b, attr))
-         | TPtr (TComp (ckey, _), _) ->
+         | TArray (TComp (ckey, _), _, _)
+           | TPtr (TComp (ckey, _), _) ->
             let compinfo = bcfiles#get_compinfo ckey in
             List.iteri (fun i fld ->
                 let offset = i * 4 in
