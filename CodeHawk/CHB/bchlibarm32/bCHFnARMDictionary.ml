@@ -785,6 +785,39 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | BranchExchange (_, tgt) when instr#is_aggregate_anchor ->
+         let iaddr = instr#get_address in
+         let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
+         if agg#is_jumptable then
+           let jt = agg#jumptable in
+           let indexregop = jt#index_operand in
+           let xrn = indexregop#to_expr floc in
+           let xxrn = rewrite_expr xrn in
+           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
+           let (tagstring, args) =
+             mk_instrx_data
+               ~xprs:[xrn; xxrn]
+               ~rdefs:rdefs
+               () in
+           let tags = tagstring :: ["agg-jt"] in
+           let tags = add_subsumption_dependents agg tags in
+           (tags, args)
+         else if agg#is_bx_call then
+           let (tags, args) = callinstr_key() in
+           let xtgt = tgt#to_expr floc in
+           let xxtgt = rewrite_expr xtgt in
+           let rdefs = (get_rdef xtgt) :: (get_all_rdefs xxtgt) in
+           let (tags, args) =
+             add_bx_call_defs ~xprs:[xtgt; xxtgt] ~rdefs tags args in
+           let tags = add_subsumption_dependents agg tags in
+           (tags, args)
+         else
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Aggregate for BranchExchange not recognized at ";
+                     iaddr#toPretty]))
+
       | Branch _
         | BranchExchange _ when floc#has_call_target ->
          callinstr_key ()
@@ -857,42 +890,6 @@ object (self)
              () in
          let tags = add_optional_subsumption [tagstring] in
          (tags, args)
-
-      | BranchExchange (_, tgt) when instr#is_aggregate_anchor ->
-         let iaddr = instr#get_address in
-         let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
-         if agg#is_jumptable then
-           let jt = agg#jumptable in
-           let indexregop = jt#index_operand in
-           let xrn = indexregop#to_expr floc in
-           let xxrn = rewrite_expr xrn in
-           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
-           let (tagstring, args) =
-             mk_instrx_data
-               ~xprs:[xrn; xxrn]
-               ~rdefs:rdefs
-               () in
-           let tags = tagstring :: ["agg-jt"] in
-           let tags = add_subsumption_dependents agg tags in
-           (tags, args)
-         else if agg#is_bx_call then
-           let (tags, args) = callinstr_key() in
-           let xtgt = tgt#to_expr floc in
-           let xxtgt = rewrite_expr xtgt in
-           let rdefs = (get_rdef xtgt) :: (get_all_rdefs xxtgt) in
-           let (tags, args) =
-             add_bx_call_defs ~xprs:[xtgt; xxtgt] ~rdefs tags args in
-           (* let (tagstring, args) =
-             mk_instrx_data ~xprs:[xtgt; xxtgt] ~rdefs () in
-           let tags = tagstring :: ["agg-bxcall"] in *)
-           let tags = add_subsumption_dependents agg tags in
-           (tags, args)
-         else
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     STR "Aggregate for BranchExchange not recognized at ";
-                     iaddr#toPretty]))
 
       | BranchExchange (c, tgt)
            when tgt#is_register && tgt#get_register = ARLR ->
