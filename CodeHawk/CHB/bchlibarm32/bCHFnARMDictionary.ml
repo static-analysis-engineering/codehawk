@@ -403,6 +403,20 @@ object (self)
               agginstr#get_address#to_hex_string :: acc) [] agg#instrs in
       tags @ ("subsumes" :: deps) in
 
+    let add_bx_call_defs
+          ?(xprs: xpr_t list = [])
+          ?(rdefs: int list = [])
+          (tags: string list)
+          (args: int list): (string list * int list) =
+      let tagstring = List.hd tags in
+      let xprcount = List.length xprs in
+      let rdefcount = List.length rdefs in
+      let tagstring = tagstring ^ (string_repeat "x" xprcount) in
+      let tagstring = tagstring ^ (string_repeat "r" rdefcount) in
+      let args = args @ (List.map xd#index_xpr xprs) @ rdefs in
+      let tags = (tagstring :: (List.tl tags)) @ ["bx-call"] in
+      (tags, args) in
+
     let register_function_prototype (name: string) =
       if function_summary_library#has_so_function name then
         let fs = function_summary_library#get_so_function name in
@@ -844,7 +858,7 @@ object (self)
          let tags = add_optional_subsumption [tagstring] in
          (tags, args)
 
-      | BranchExchange _ when instr#is_aggregate_anchor ->
+      | BranchExchange (_, tgt) when instr#is_aggregate_anchor ->
          let iaddr = instr#get_address in
          let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
          if agg#is_jumptable then
@@ -859,6 +873,18 @@ object (self)
                ~rdefs:rdefs
                () in
            let tags = tagstring :: ["agg-jt"] in
+           let tags = add_subsumption_dependents agg tags in
+           (tags, args)
+         else if agg#is_bx_call then
+           let (tags, args) = callinstr_key() in
+           let xtgt = tgt#to_expr floc in
+           let xxtgt = rewrite_expr xtgt in
+           let rdefs = (get_rdef xtgt) :: (get_all_rdefs xxtgt) in
+           let (tags, args) =
+             add_bx_call_defs ~xprs:[xtgt; xxtgt] ~rdefs tags args in
+           (* let (tagstring, args) =
+             mk_instrx_data ~xprs:[xtgt; xxtgt] ~rdefs () in
+           let tags = tagstring :: ["agg-bxcall"] in *)
            let tags = add_subsumption_dependents agg tags in
            (tags, args)
          else

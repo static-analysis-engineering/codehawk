@@ -719,7 +719,8 @@ let set_block_boundaries () =
           | Branch _ | BranchExchange _ ->
              (* Don't break up TBB/TBH and other jumptable sequences *)
              (match instr#is_in_aggregate with
-              | Some dw -> not (get_aggregate dw)#is_jumptable
+              | Some dw when (get_aggregate dw)#is_jumptable -> false
+              | Some dw when (get_aggregate dw)#is_bx_call -> false
               | _ -> true)
           | CompareBranchZero _ | CompareBranchNonzero _ -> true
           | LoadRegister (_, dst, _, _, _, _)
