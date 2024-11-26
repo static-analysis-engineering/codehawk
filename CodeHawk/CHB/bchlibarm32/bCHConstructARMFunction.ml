@@ -256,7 +256,8 @@ let get_successors
                    else
                      let floc = get_floc_by_address faddr instr#get_address in
                      begin
-                       floc#f#set_unknown_jumptarget instr#get_address#to_hexstring;
+                       floc#f#set_unknown_jumptarget
+                         instr#get_address#to_hex_string;
                        []
                      end)
                  []

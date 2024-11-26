@@ -56,6 +56,7 @@ let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
      ^ " target addresses"
   | ThumbITSequence it -> it#toString
   | LDMSTMSequence s -> s#toString
+  | BXCall (_, i2) -> "BXCall at " ^ i2#get_address#to_hex_string
 
 
 class arm_instruction_aggregate_t
@@ -107,6 +108,11 @@ object (self)
   method is_ldm_stm_sequence =
     match self#kind with
     | LDMSTMSequence _ -> true
+    | _ -> false
+
+  method is_bx_call =
+    match self#kind with
+    | BXCall _ -> true
     | _ -> false
 
   method write_xml (_node: xml_element_int) = ()
@@ -173,6 +179,18 @@ let make_ldm_stm_sequence_aggregate
     ~anchor:(List.hd (List.tl ldmstmseq#instrs))
 
 
+let make_bx_call_aggregate
+      (movinstr: arm_assembly_instruction_int)
+      (bxinstr: arm_assembly_instruction_int): arm_instruction_aggregate_int =
+  let kind = BXCall (movinstr, bxinstr) in
+  make_arm_instruction_aggregate
+    ~kind
+    ~instrs:[movinstr; bxinstr]
+    ~entry:movinstr
+    ~exitinstr:bxinstr
+    ~anchor:bxinstr
+
+
 let disassemble_arm_instructions
       (ch: pushback_stream_int) (iaddr: doubleword_int) (n: int) =
   for _i = 1 to n do
@@ -232,6 +250,52 @@ let identify_ldmstm_sequence
   | _ -> None
 
 
+(* format of BX-Call (in ARM)
+
+   An indirect jump combined with a MOV of the PC into the LR converts
+   into an indirect call (because PC holds the instruction-address + 8)
+
+   MOV LR, PC
+   BX Rx
+ *)
+let identify_bx_call
+      (ch: pushback_stream_int)
+      (instr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int * arm_assembly_instruction_int) option =
+  let disassemble (iaddr: doubleword_int) =
+    let instrpos = ch#pos in
+    let bytes = ch#read_doubleword in
+    let opcode =
+      try
+        disassemble_arm_instruction ch iaddr bytes
+      with
+      | _ ->
+         let _ =
+           chlog#add
+             "bx-call disassemble-instruction"
+             (LBLOCK [iaddr#toPretty]) in
+         OpInvalid in
+    let instrbytes = ch#sub instrpos 4 in
+    let instr = make_arm_assembly_instruction iaddr true opcode instrbytes in
+    begin
+      set_arm_assembly_instruction instr;
+      instr
+    end in
+  match instr#get_opcode with
+  | Move (_, ACCAlways, dst, src, _, _)
+       when src#is_register
+            && dst#get_register = ARLR
+            && src#get_register = ARPC ->
+     begin
+       let bxinstr = disassemble (instr#get_address#add_int 4) in
+       match bxinstr#get_opcode with
+       | BranchExchange (ACCAlways, op) when op#is_register ->
+          Some (instr, bxinstr)
+       | _ -> None
+     end
+  | _ -> None
+
+
 let identify_arm_aggregate
       (ch: pushback_stream_int)
       (instr: arm_assembly_instruction_int):
@@ -254,4 +318,8 @@ let identify_arm_aggregate
         match identify_ldmstm_sequence ch instr with
         | Some ldmstmseq ->
            Some (make_ldm_stm_sequence_aggregate ldmstmseq)
-        | _ -> None
+        | _ ->
+           match identify_bx_call ch instr with
+           | Some (movinstr, bxinstr) ->
+              Some (make_bx_call_aggregate movinstr bxinstr)
+           | _ -> None
