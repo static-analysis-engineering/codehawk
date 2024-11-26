@@ -243,6 +243,19 @@ let get_element_type (t: btype_t) =
      raise (BCH_failure (LBLOCK [STR "Not an array type"]))
 
 
+let get_array_length (t: btype_t): int traceresult =
+  match t with
+  | TArray (_, Some len, _) ->
+     (match len with
+      | Const (CInt (i64, _, _)) -> Ok (Int64.to_int i64)
+      | _ ->
+         Error ["Array does not have a constant length: " ^ (exp_to_string len)])
+  | TArray _ ->
+     Error ["Array does not have a length"]
+  | _ ->
+     Error ["get_array_length: not an array: " ^ (btype_to_string t)]
+
+
 (* ======================================================= size and alignment *)
 
 let resolve_type (btype: btype_t) = bcfiles#resolve_type btype
@@ -1177,6 +1190,7 @@ let struct_field_categories (ty: btype_t): string list =
   | Error e -> e
   | Ok ty ->
      match ty with
+     | TArray (TComp (ckey, _), _, _)
      | TPtr (TPtr (TComp (ckey, _), _), _)
        | TPtr (TComp (ckey, _), _) ->
         let compinfo = bcfiles#get_compinfo ckey in
@@ -1186,6 +1200,8 @@ let struct_field_categories (ty: btype_t): string list =
             | TPtr (TInt _, _) -> "string"
             | TPtr (TFun _, _) -> "address"
             | _ -> "unknown") compinfo.bcfields
+
+     | TArray ((TFun _ | TPtr (TFun _, _)), _, _) -> ["address"]
 
      | rty -> [btype_to_string ty; btype_to_string rty]
 

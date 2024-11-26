@@ -170,6 +170,12 @@ val size_of_int_ikind: ikind_t -> int
 
 val size_of_float_fkind: fkind_t -> int
 
+(** [get_array_length ty] returns the length (number of elements) of an array.
+
+    An error value is returned if the array does not have a constant length, or
+    does not have a length at all, of if the type is not an array. *)
+val get_array_length: btype_t -> int traceresult
+
 (** [size_of_btype ty] returns the size (in bytes) of type [ty].
 
     An error value is returned if the size cannot be determined. This may
