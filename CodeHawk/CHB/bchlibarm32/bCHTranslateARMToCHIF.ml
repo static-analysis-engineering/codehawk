@@ -643,13 +643,14 @@ let translate_arm_instruction
     | Some dw -> (get_aggregate dw)#is_jumptable
     | _ -> false in
   let check_storage (_op: arm_operand_int) (v: variable_t) =
-    if (floc#env#is_unknown_memory_variable v) || v#isTemporary then
-      ch_error_log#add
-        "unknown storage location"
-        (LBLOCK [
-             floc#l#toPretty;
-             STR "  ";
-             STR (arm_opcode_to_string instr#get_opcode)]) in
+    if BCHSystemSettings.system_settings#collect_data then
+      if (floc#env#is_unknown_memory_variable v) || v#isTemporary then
+        ch_error_log#add
+          "unknown storage location"
+          (LBLOCK [
+               floc#l#toPretty;
+               STR "  ";
+               STR (arm_opcode_to_string instr#get_opcode)]) in
 
   let calltgt_cmds (_tgt: arm_operand_int): cmd_t list =
     let callargs = floc#get_call_arguments in
@@ -2803,18 +2804,19 @@ let translate_arm_instruction
          let xrn = rewrite_expr floc (rn#to_expr floc) in
          let xrm = rewrite_expr floc (rm#to_expr floc) in
          begin
-           ch_error_log#add
-             "assignment to unknown memory"
-             (LBLOCK [
-                  floc#l#toPretty;
-                  STR " STR [";
-                  rn#toPretty;
-                  STR ", ";
-                  rm#toPretty;
-                  STR "]; base: ";
-                  x2p xrn;
-                  STR ", offset: ";
-                  x2p xrm]);
+           (if BCHSystemSettings.system_settings#collect_data then
+              ch_error_log#add
+                "assignment to unknown memory"
+                (LBLOCK [
+                     floc#l#toPretty;
+                     STR " STR [";
+                     rn#toPretty;
+                     STR ", ";
+                     rm#toPretty;
+                     STR "]; base: ";
+                     x2p xrn;
+                     STR ", offset: ";
+                     x2p xrm]));
            []
          end
        else
@@ -2870,18 +2872,19 @@ let translate_arm_instruction
          let xrn = rewrite_expr floc (rn#to_expr floc) in
          let xrm = rewrite_expr floc (rm#to_expr floc) in
          begin
-           ch_error_log#add
-             "assignment to unknown memory"
-             (LBLOCK [
-                  floc#l#toPretty;
-                  STR " STRB [";
-                  rn#toPretty;
-                  STR ", ";
-                  rm#toPretty;
-                  STR "]; base: ";
-                  x2p xrn;
-                  STR ", offset: ";
-                  x2p xrm]);
+           (if BCHSystemSettings.system_settings#collect_data then
+              ch_error_log#add
+                "assignment to unknown memory"
+                (LBLOCK [
+                     floc#l#toPretty;
+                     STR " STRB [";
+                     rn#toPretty;
+                     STR ", ";
+                     rm#toPretty;
+                     STR "]; base: ";
+                     x2p xrn;
+                     STR ", offset: ";
+                     x2p xrm]));
            []
          end
        else
@@ -3033,18 +3036,19 @@ let translate_arm_instruction
          let xrn = rewrite_expr floc (rn#to_expr floc) in
          let xrm = rewrite_expr floc (rm#to_expr floc) in
          begin
-           ch_error_log#add
-             "assignment to unknown memory"
-             (LBLOCK [
-                  floc#l#toPretty;
-                  STR " STRH [";
-                  rn#toPretty;
-                  STR ", ";
-                  rm#toPretty;
-                  STR "]; base: ";
-                  x2p xrn;
-                  STR ", offset: ";
-                  x2p xrm]);
+           (if BCHSystemSettings.system_settings#collect_data then
+              ch_error_log#add
+                "assignment to unknown memory"
+                (LBLOCK [
+                     floc#l#toPretty;
+                     STR " STRH [";
+                     rn#toPretty;
+                     STR ", ";
+                     rm#toPretty;
+                     STR "]; base: ";
+                     x2p xrn;
+                     STR ", offset: ";
+                     x2p xrm]));
            []
          end
        else
@@ -3069,7 +3073,8 @@ let translate_arm_instruction
        if mem#is_offset_address_writeback then
          let addr_r = mem#to_updated_offset_address floc in
          log_tfold_default
-           (log_error "invalid write-back address" ((p2s floc#l#toPretty) ^ ": STRH"))
+           (log_error
+              "invalid write-back address" ((p2s floc#l#toPretty) ^ ": STRH"))
            (fun (_, addr) ->
              let rnreg = rn#to_register in
              let (vrn, ucmds) =
