@@ -56,7 +56,6 @@ open BCHELFTypes
 open BCHARMAssemblyFunctions
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
-open BCHARMCallSitesRecords
 open BCHARMInstructionAggregate
 open BCHARMPseudocode
 open BCHARMOpcodeRecords
@@ -453,6 +452,18 @@ let get_so_target (tgtaddr:doubleword_int) (_instr:arm_assembly_instruction_int)
       None
   else
     None
+
+
+let register_non_returning_functions () =
+  List.map (fun fndata ->
+      if fndata#is_non_returning then
+        ()
+      else if fndata#has_name then
+        let fname = fndata#get_function_name in
+        if function_summary_library#has_so_function fname then
+          let fsum = function_summary_library#get_so_function fname in
+          if fsum#is_nonreturning then
+            fndata#set_non_returning) functions_data#get_functions
 
 
 (* can be used before functions have been constructed *)
@@ -947,9 +958,11 @@ let construct_functions_arm ?(construct_all_functions=false) () =
     List.iter
       (fun dw -> ignore (functions_data#add_function dw))
       (List.map (fun s -> TR.tget_ok (string_to_doubleword s)) fns_included) in
+  let _ = register_non_returning_functions () in
   let _ = collect_call_targets () in
   let _ = set_block_boundaries () in
   let _ = pr_timing [STR "block boundaries set"] in
+  (* Disabled for now; it generates too many spurious non-returning functions.
   let _ = !arm_assembly_instructions#collect_callsites in
   let _ = pr_timing [STR "callsites collected"] in
   let _ =
@@ -958,7 +971,7 @@ let construct_functions_arm ?(construct_all_functions=false) () =
         if functions_data#is_function_entry_point faddr then
           let fndata = functions_data#get_function faddr in
           fndata#set_non_returning) nonrfns in
-  let _ = pr_timing [STR "non-returning functions set"] in
+  let _ = pr_timing [STR "non-returning functions set"] in *)
   let fnentrypoints =
     if ((List.length fns_included) = 0) || construct_all_functions then
       functions_data#get_function_entry_points
