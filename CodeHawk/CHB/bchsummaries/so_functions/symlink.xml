@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-11-27 14:54:16"/>
+  <libfun lib="so_functions" name="symlink">
+    <documentation>
+      <desc>makes a symbolic link</desc>
+      <apidoc>
+        <pt>
+          <ll>int symlink(</ll>
+          <ld>const char *path1</ld>
+          <ld>const char *path2</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="path1">string contained in the symbolic link</par>
+        <par name="path2">name of the symbolic link created</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="symlink">
+      <par loc="stack" name="path1" io="r" rep="hex" nr="1">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	</roles>
+      </par>
+      <par loc="stack" name="path2" io="r" rep="hex" nr="2">
+        <type><ptr>char</ptr></type>
+	<pre><deref-read-nt/></pre>
+	<roles>
+	  <role rt="ioc:filesystem" rn="name:file"/>
+	</roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="filesystem" desc="makes a symbolic link"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

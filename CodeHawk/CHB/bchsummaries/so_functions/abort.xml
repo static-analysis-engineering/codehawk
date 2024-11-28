@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-11-27 13:01:38"/>
+  <libfun lib="so_functions" name="abort">
+    <documentation>
+      <desc>generates an abnormal process abort</desc>
+      <apidoc>
+        <pt>void abort (void)</pt>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="abort">
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+       <io-action cat="process"
+		  desc="terminates the process abnormally">
+       </io-action>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <non-returning/>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
