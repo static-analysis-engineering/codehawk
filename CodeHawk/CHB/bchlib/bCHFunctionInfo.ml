@@ -2651,27 +2651,50 @@ let load_finfo_userdata (finfo: function_info_int) (faddr: doubleword_int) =
   | Some node ->
      finfo#read_xml_user_summary node
   | _ ->
-     let fname =
-       if functions_data#has_function_name faddr then
-         (functions_data#get_function faddr)#get_function_name
+     if functions_data#has_function_name faddr then
+       let fname = (functions_data#get_function faddr)#get_function_name in
+       if bcfiles#has_varinfo fname then
+         let vinfo = bcfiles#get_varinfo fname in
+         let bcsum = function_summary_of_bvarinfo vinfo in
+         begin
+           finfo#set_bc_summary bcsum;
+           chlog#add
+             "bc-function-summary"
+             (LBLOCK [
+                  STR fname;
+                  STR ": ";
+                  function_interface_to_pretty bcsum#get_function_interface])
+         end
        else
+         ()
+     else
+       let fname =
          let hexfaddr = faddr#to_hex_string in
          let lenfaddr = String.length hexfaddr in
          "sub_" ^ (String.sub (faddr#to_hex_string) 2 (lenfaddr - 2)) in
-     if bcfiles#has_varinfo fname then
-       let vinfo = bcfiles#get_varinfo fname in
-       let bcsum = function_summary_of_bvarinfo vinfo in
-       begin
-         finfo#set_bc_summary bcsum;
-         chlog#add
-           "bc-function-summary"
-           (LBLOCK [
-                STR fname;
-                STR ": ";
-                function_interface_to_pretty bcsum#get_function_interface])
-       end
-     else
-       ()
+       if bcfiles#has_varinfo ~prefix:true fname then
+         let vinfo = bcfiles#get_varinfo ~prefix:true fname in
+         let bcsum = function_summary_of_bvarinfo vinfo in
+         begin
+           (if not (vinfo.bvname = fname) then
+              if functions_data#has_function faddr then
+                let fndata = functions_data#get_function faddr in
+                begin
+                  fndata#add_name vinfo.bvname;
+                  chlog#add
+                    "bc-function-summary (update name)"
+                    (LBLOCK [STR vinfo.bvname; STR " from "; STR fname])
+                end);
+           finfo#set_bc_summary bcsum;
+           chlog#add
+             "bc-function-summary"
+             (LBLOCK [
+                  STR vinfo.bvname;
+                  STR ": ";
+                  function_interface_to_pretty bcsum#get_function_interface])
+         end
+       else
+         ()
 
 
 let load_function_info ?(reload=false) (faddr:doubleword_int) =
