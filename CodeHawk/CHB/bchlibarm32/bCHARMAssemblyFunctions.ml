@@ -537,7 +537,6 @@ object (self)
     dark ^ "\n\n" ^ functionstats
 
   method private collect_data_references =
-    let _ = pverbose [STR (timing ()); STR "collect data references ..."; NL] in
     let livetable = self#get_live_instructions in
     let filter = (fun i -> H.mem livetable i#get_address#index) in
     let table = H.create 11 in
@@ -570,6 +569,28 @@ object (self)
                else
                  ch_error_log#add
                    "LDR (literal) from non-code-address"
+                   (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
+            | Adr (_, dst, adr)
+                 when adr#is_absolute_address
+                      && not (functions_data#is_in_function_stub va) ->
+               let a = adr#get_absolute_address in
+               let nextva = va#add_int 4 in
+               if elf_header#is_program_address a then
+                 (match get_arm_assembly_instruction nextva with
+                  | Ok nxtinstr ->
+                     (match nxtinstr#get_opcode with
+                      | LoadMultipleIncrementAfter (_, _, src, rl, _)
+                           when dst#get_register = src#get_register ->
+                         for i = 0 to rl#get_register_count do
+                           add (a#add_int (4 * i)) nxtinstr
+                         done
+                      | _ ->
+                         add a instr)
+                  | _ ->
+                     add a instr)
+               else
+                 ch_error_log#add
+                   "ADR with non-code address"
                    (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
             | VLoadRegister (_, vd, _, mem) when mem#is_pc_relative_address ->
                let pcoffset = if instr#is_arm32 then 8 else 4 in

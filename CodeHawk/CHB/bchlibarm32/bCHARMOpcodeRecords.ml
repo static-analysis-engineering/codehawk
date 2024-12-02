@@ -1665,7 +1665,22 @@ let is_opcode_conditional (opc: arm_opcode_t): bool =
 let arm_opcode_to_string ?(width=12) (opc:arm_opcode_t) =
   let formatter = new string_formatter_t width in
   let default () = (get_record opc).ida_asm formatter in
-  default ()
+  let fnsdata = BCHFunctionData.functions_data in
+  match opc with
+  | BranchLink (ACCAlways, tgt) when tgt#is_absolute_address ->
+     let tgtaddr = tgt#get_absolute_address in
+     if fnsdata#has_function_name tgtaddr then
+       let name = (fnsdata#get_function tgtaddr)#get_function_name in
+       (fixed_length_string "BL" width)
+       ^ " <"
+       ^ tgtaddr#to_hex_string
+       ^ ":"
+       ^ name
+       ^ ">"
+     else
+       default()
+  | _ ->
+     default ()
 
 
 let get_operands_written (opc:arm_opcode_t) =

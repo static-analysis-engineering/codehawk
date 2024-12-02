@@ -37,7 +37,6 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
-open BCHConstantDefinitions
 open BCHDataBlock
 open BCHDoubleword
 open BCHFunctionData
@@ -264,7 +263,7 @@ let get_instruction (addr: doubleword_int): arm_assembly_instruction_result =
          ^ ": "
          ^ (pretty_to_string p)]
 
-(* Return the addresses of valid instructions in the given address range 
+(* Return the addresses of valid instructions in the given address range
    (inclusive) *)
 let get_range_instruction_addrs
       (startaddr: doubleword_int) (endaddr: doubleword_int): doubleword_int list =
@@ -586,6 +585,7 @@ object (self)
     let firstNew = ref true in
     let datareftable = H.create (List.length datarefs) in
     let _ = List.iter (fun (a, refs) -> H.add datareftable a refs) datarefs in
+    let memorymap = BCHGlobalMemoryMap.global_memory_map in
     let not_code_to_string nc =
       match nc with
       | JumpTable jt ->
@@ -657,6 +657,19 @@ object (self)
                    (List.map
                       (fun (a, v) ->
                         let addr = a#to_hex_string in
+                        let datarefstr =
+                          if H.mem datareftable addr then
+                            let datarefs = H.find datareftable addr in
+                            "  "
+                            ^ "(refs: "
+                            ^ (String.concat
+                                 ", "
+                                 (List.map
+                                    (fun instr ->
+                                      instr#get_address#to_hex_string) datarefs))
+                            ^ ")"
+                          else
+                            "" in
                         if a#lt !stringend then
                           "  "
                           ^ (fixed_length_string addr 10)
@@ -671,66 +684,89 @@ object (self)
                           "  "
                           ^  (fixed_length_string addr 10)
                           ^  " <0xffffffff>"
-                        else if H.mem datareftable addr then
-                          let datarefs = H.find datareftable addr in
+                        else if functions_data#is_function_entry_point v then
+                          let name =
+                            if functions_data#has_function_name v then
+                              let fndata = functions_data#get_function v in
+                              ":" ^ fndata#get_function_name
+                            else
+                              "" in
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  Faddr:<"
+                          ^ v#to_hex_string
+                          ^ name
+                          ^ ">"
+                          ^ datarefstr
+                        else if memorymap#has_elf_symbol v then
+                          let name = memorymap#get_elf_symbol v in
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  Sym:<"
+                          ^ v#to_hex_string
+                          ^ ":"
+                          ^ name
+                          ^ ">"
+                          ^ datarefstr
+                        else if elf_header#is_code_address v then
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  Code:<"
+                          ^ v#to_hex_string
+                          ^ ">"
+                          ^ datarefstr
+                        else if elf_header#is_data_address v then
+                          let s =
+                            match elf_header#get_string_at_address v with
+                            | Some s ->
+                               let len = String.length s in
+                               if len < 50 then
+                                 ":\"" ^ s ^ "\""
+                               else
+                                 ":\"" ^ (String.sub s 0 50) ^ "...\""
+                            | _ -> "" in
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  Data:<"
+                          ^ v#to_hex_string
+                          ^ s
+                          ^ ">"
+                          ^ datarefstr
+                        else if elf_header#is_uninitialized_data_address v then
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  Bss:<"
+                          ^ v#to_hex_string
+                          ^ ">"
+                          ^ datarefstr
+                        else if Option.is_some
+                                  (elf_header#get_string_at_address a) then
+                          let s =
+                            Option.get (elf_header#get_string_at_address a) in
+                          begin
+                            ("  "
+                             ^ (fixed_length_string addr 10)
+                             ^ "  String:<"
+                             ^ (fixed_length_string v#to_hex_string 12)
+                             ^ ">: \""
+                             ^ s
+                             ^ "\"")
+                            ^ datarefstr
+                          end
+                        else if (String.length datarefstr) > 0 then
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  Value<"
+                          ^ v#to_hex_string
+                          ^ ">"
+                          ^ datarefstr
+                        else
                           "  "
                           ^ (fixed_length_string addr 10)
                           ^ "  "
-                          ^ (fixed_length_string v#to_hex_string 12)
-                          ^ ("referenced by: "
-                             ^ (String.concat
-                                  ", "
-                                  (List.map
-                                     (fun instr ->
-                                       instr#get_address#to_hex_string) datarefs)))
-                        else
-                          match elf_header#get_string_at_address a with
-                          | Some s ->
-                             stringend := a#add_int ((String.length s) + 1);
-                             begin
-                               ("  "
-                                ^ (fixed_length_string addr 10)
-                                ^ "  String:<"
-                                ^ (fixed_length_string v#to_hex_string 12)
-                                ^ ">: \""
-                                ^ s
-                                ^ "\"")
-                             end
-                          | _ ->
-                             if functions_data#is_function_entry_point v then
-                               "  "
-                               ^ (fixed_length_string addr 10)
-                               ^ "  Faddr:<"
-                               ^ v#to_hex_string
-                               ^ ">"
-                             else if has_symbolic_address_name v then
-                               let name = get_symbolic_address_name v in
-                               "  "
-                               ^ (fixed_length_string addr 10)
-                               ^ "  Sym:<"
-                               ^ v#to_hex_string
-                               ^ ":"
-                               ^ name
-                               ^ ">"
-                             else if elf_header#is_code_address v then
-                               "  "
-                               ^ (fixed_length_string addr 10)
-                               ^ "  Code:<"
-                               ^ v#to_hex_string
-                               ^ ">"
-                             else if elf_header#is_data_address v then
-                               "  "
-                               ^ (fixed_length_string addr 10)
-                               ^ "  Data:<"
-                               ^ v#to_hex_string
-                               ^ ">"
-                             else
-                               "  "
-                               ^ (fixed_length_string addr 10)
-                               ^ "  "
-                               ^ (fixed_length_string v#to_hex_string 14)
-                               ^ "  "
-                               ^ (opcode_string a v))
+                          ^ (fixed_length_string v#to_hex_string 14)
+                          ^ "  "
+                          ^ (opcode_string a v))
                       (List.rev !contents)))
               ^ "\n" ^ (string_repeat "=" 80) ^ "\n")
            end
