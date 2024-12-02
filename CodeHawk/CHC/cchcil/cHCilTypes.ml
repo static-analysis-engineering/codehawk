@@ -35,7 +35,7 @@ open CHTraceResult
 open CHXmlDocument
 
 type funarg = string * typ * attributes
-type enumitem = string * exp * location
+type enumitem = string * attributes * exp * location
             
 class type cildictionary_int =
   object

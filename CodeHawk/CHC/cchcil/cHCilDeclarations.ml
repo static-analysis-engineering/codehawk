@@ -175,12 +175,12 @@ object (self)
     compinfo_table#add (tags, args)
 
   method index_enumitem (eitem: enumitem) =
-    let (name, exp, loc) = eitem in
+    let (name, attrs, exp, loc) = eitem in
     let tags = [name] in
     let locix_r = self#index_location loc in
     match locix_r with
     | Ok locix ->
-       let args = [cd#index_exp exp; locix] in
+       let args = [cd#index_exp exp; locix; cd#index_attributes attrs] in
        enumitem_table#add (tags, args)
     | Error e ->
        begin

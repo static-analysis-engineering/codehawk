@@ -186,7 +186,7 @@ class type cdictionary_int =
 
 (** {1 Declarations} *)
 
-type enumitem = string * exp * location
+type enumitem = string * attributes * exp * location
 
 class type cdeclarations_int =
   object
