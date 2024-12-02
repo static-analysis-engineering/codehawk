@@ -237,17 +237,20 @@ object (self)
       cattr = cd#get_attributes (a 2);
       cfields = List.map self#get_fieldinfo (get_list_suffix args 3) }
 
-  method index_enumitem (eitem:enumitem) =
-    let (name,exp,loc) = eitem in
+  method index_enumitem (eitem: enumitem) =
+    let (name, attrs, exp, loc) = eitem in
     let tags = [name] in
-    let args = [cd#index_exp exp; self#index_location loc] in
-    enumitem_table#add (tags,args)
+    let args = [
+        cd#index_exp exp;
+        self#index_location loc;
+        cd#index_attributes attrs] in
+    enumitem_table#add (tags, args)
 
   method get_enumitem (index:int):enumitem =
     let (tags,args) = enumitem_table#retrieve index in
     let t = t "enumitem" tags in
     let a = a "enumitem" args in
-    (t 0, cd#get_exp (a 0), self#get_location (a 1))
+    (t 0, cd#get_attributes (a 2), cd#get_exp (a 0), self#get_location (a 1))
 
   method index_enuminfo (einfo:enuminfo) =
     let tags = [einfo.ename; ikind_mfts#ts einfo.ekind] in

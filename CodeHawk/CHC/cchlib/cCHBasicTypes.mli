@@ -157,7 +157,7 @@ and fieldinfo = {
   floc     : location
 }
 
-and eitem = string * exp * location
+and eitem = string * attributes * exp * location
 
 and enuminfo = {
   ename    : string ;

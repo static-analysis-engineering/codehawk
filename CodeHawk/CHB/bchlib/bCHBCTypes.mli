@@ -246,7 +246,7 @@ and bfieldinfo_t = {
   bfieldlayout: fieldlayout_t option
 }
 
-and beitem_t = string * bexp_t * b_location_t
+and beitem_t = string * b_attributes_t * bexp_t * b_location_t
 
 and benuminfo_t = {
   bename: string;

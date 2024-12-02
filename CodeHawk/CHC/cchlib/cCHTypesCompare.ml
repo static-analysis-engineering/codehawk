@@ -310,9 +310,9 @@ and exp_compare (e1:exp) (e2:exp) =
       l0
 
 
-and eitem_compare (eitem1:eitem) (eitem2:eitem) =
-  let (iname1,iexp1,_) = eitem1 in
-  let (iname2,iexp2,_) = eitem2 in
+and eitem_compare (eitem1: eitem) (eitem2: eitem) =
+  let (iname1,_, iexp1, _) = eitem1 in
+  let (iname2,_, iexp2, _) = eitem2 in
   let l0 = Stdlib.compare iname1 iname2 in
   if l0 = 0 then
     exp_compare iexp1 iexp2

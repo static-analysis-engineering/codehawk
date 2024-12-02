@@ -159,7 +159,7 @@ let get_typ_attributes (t:typ) =
 
 let is_enum_constant (ename:string) (exp:exp) =
   let einfo = fenv#get_enum ename in
-  let eexps = List.map (fun (_,e,_) -> e) einfo.eitems in
+  let eexps = List.map (fun (_, _, e, _) -> e) einfo.eitems in
   List.exists (fun e -> (exp_compare e exp) = 0) eexps
 
 
@@ -537,9 +537,9 @@ let const_fits_kind (c:constant) (target_ik:ikind) =
   | _ -> false
 
 
-let enum_fits_kind (ename:string) (target_ik:ikind) =
+let enum_fits_kind (ename: string) (target_ik:ikind) =
   let einfo = fenv#get_enum ename in
-  List.for_all (fun (_, e, _) ->
+  List.for_all (fun (_, _, e, _) ->
       match e with
       | Const c -> const_fits_kind c target_ik
       | _ -> false) einfo.eitems

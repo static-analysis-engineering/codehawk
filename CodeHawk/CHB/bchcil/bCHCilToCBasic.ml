@@ -200,9 +200,16 @@ and cil_fieldinfo_to_bfieldinfo (f: GoblintCil.fieldinfo): bfieldinfo_t = {
   }
 
 
-and cil_eitem_to_beitem (i: (string * GoblintCil.exp * GoblintCil.location)): beitem_t =
-  let (ename, eexp, eloc) = i in
-  (ename, cil_exp_to_bexp eexp, cil_location_to_b_location eloc)
+and cil_eitem_to_beitem
+(i: (string
+     * GoblintCil.attributes
+     * GoblintCil.exp
+     * GoblintCil.location)): beitem_t =
+  let (ename, attrs, eexp, eloc) = i in
+  (ename,
+   cil_attributes_to_b_attributes attrs,
+   cil_exp_to_bexp eexp,
+   cil_location_to_b_location eloc)
 
 
 and cil_enuminfo_to_benuminfo (e: GoblintCil.enuminfo): benuminfo_t = {
