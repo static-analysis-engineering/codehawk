@@ -765,6 +765,7 @@ object
   method is_symbol_table: bool
   method is_relocation_table: bool
   method is_program_section: bool
+  method is_uninitialized_data_section: bool
   method is_pwr_vle: bool
 
   method is_debug_info: bool
@@ -814,6 +815,8 @@ object
   (** [is_data_address va] returns [true] if virtual address [va] is an address
       within a program section that is not an executable section. *)
   method is_data_address: doubleword_int -> bool
+
+  method is_uninitialized_data_address: doubleword_int -> bool
   method is_global_offset_table_address: doubleword_int -> bool
   method has_xsubstring: doubleword_int -> int -> bool
   method has_debug_info: bool

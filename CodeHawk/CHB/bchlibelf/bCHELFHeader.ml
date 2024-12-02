@@ -543,8 +543,16 @@ object(self)
             && (not h#is_executable)
             && (h#get_addr#le va)
             && (va#lt (h#get_addr#add h#get_size))))
-    false self#get_sections
+      false self#get_sections
 
+  method is_uninitialized_data_address (va: doubleword_int): bool =
+    List.fold_left (fun found (_, h, _) ->
+        found
+        || (h#is_uninitialized_data_section
+            && (not h#is_executable)
+            && (h#get_addr#le va)
+            && (va#lt (h#get_addr#add h#get_size))))
+      false self#get_sections
 
   method initialize_jump_tables =
     let xstrings =

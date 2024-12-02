@@ -60,6 +60,7 @@ MLIS := \
 	bCHFunctionData \
 	bCHSystemData \
 	bCHConstantDefinitions \
+	bCHGlobalMemoryMap \
 	bCHStructTables \
 	bCHCallbackTables \
 	bCHImmediate \
@@ -153,6 +154,7 @@ SOURCES := \
 	bCHCodegraph \
 	bCHSystemData \
 	bCHConstantDefinitions \
+	bCHGlobalMemoryMap \
 	bCHStructTables \
 	bCHCallbackTables \
 	bCHImmediate \

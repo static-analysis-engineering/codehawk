@@ -32,36 +32,22 @@ open Frontc
 (* chlib *)
 open CHPretty
 
-(* chutil *)
-open CHLogger
-
 (* bchlib *)
 open BCHBCFiles
 open BCHBCTypes
-open BCHBCTypePretty
 open BCHBCTypeUtil
 open BCHCilToCBasic
-open BCHConstantDefinitions
 
 
 let update_symbolic_address_types () =
-  let globalvarnames = get_untyped_symbolic_address_names () in
-  begin
-    List.iter (fun name ->
-        if bcfiles#has_varinfo name then
-          let vinfo = bcfiles#get_varinfo name in
-          begin
-            update_symbolic_address_btype name vinfo.bvtype;
-            chlog#add
-              "symbolic address: update with vinfo"
-              (LBLOCK [STR name; STR ": "; STR (btype_to_string vinfo.bvtype)])
-          end
-        else
-          chlog#add "symbolic address: no update" (STR name)) globalvarnames;
-    chlog#add
-      "symbolic address updates"
-      (LBLOCK [STR "Names: "; STR (String.concat ", " globalvarnames)])
-  end
+  let gfunnames = bcfiles#get_gfun_names in
+  let varinfos = bcfiles#get_varinfos in
+  List.iter
+    (fun vinfo ->
+      if List.mem vinfo.bvname gfunnames then
+        ()
+      else
+        BCHGlobalMemoryMap.update_global_location_type vinfo) varinfos
 
 
 let parse_cil_file ?(computeCFG=true) ?(removeUnused=true) (filename: string) =

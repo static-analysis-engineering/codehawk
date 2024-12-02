@@ -58,7 +58,6 @@ open BCHBCTypes
 open BCHBCTypeXml
 open BCHByteUtilities
 open BCHCallbackTables
-open BCHConstantDefinitions
 open BCHCppClass
 open BCHCStruct
 open BCHCStructConstant
@@ -830,7 +829,7 @@ object (self)
          function_summary_library#read_xml_constants_files (getc "use-constants"));
 
       (if hasc "symbolic-addresses" then
-	 read_xml_symbolic_addresses (getc "symbolic-addresses"));
+	 BCHGlobalMemoryMap.read_xml_symbolic_addresses (getc "symbolic-addresses"));
 
       (if hasc "variable-introductions" then
          self#read_xml_variable_introductions (getc "variable-introductions"));

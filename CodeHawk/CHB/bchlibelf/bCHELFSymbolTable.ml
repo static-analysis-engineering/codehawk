@@ -243,14 +243,10 @@ object
   method set_data_object_names =
     H.iter (fun _ e ->
         if e#is_data_object && e#has_address_value && e#has_name then
-          let cdef = {
-              xconst_name = e#get_name;
-              xconst_value = e#get_st_value;
-              xconst_type = BCHBCTypeUtil.t_unknown;
-              xconst_desc = "symbol-table";
-              xconst_is_addr = true;
-            } in
-          BCHConstantDefinitions.add_address cdef
+          BCHGlobalMemoryMap.global_memory_map#add_location
+            ~name:(Some e#get_name)
+            ~desc:(Some "symbol-table")
+            e#get_st_value
         else
           ()
       ) entries

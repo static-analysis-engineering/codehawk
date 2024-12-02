@@ -429,7 +429,63 @@ type flag_definition_t = {
   xflag_pos: int;    (* lowest order bit is zero *)
   xflag_desc: string;
   xflag_type: btype_t
-}
+  }
+
+
+type globalvalue_t =
+  | GConstantString of string
+  | GScalarValue of doubleword_int
+
+
+type global_location_rec_t = {
+    gloc_name: string;
+    gloc_address: doubleword_int;
+    gloc_btype: btype_t;
+    gloc_size: int option;
+    gloc_is_readonly: bool;
+    gloc_is_initialized: bool;
+    gloc_initialvalue: globalvalue_t option;
+    gloc_desc: string option;
+  }
+
+
+class type global_location_int =
+  object
+    method grec: global_location_rec_t
+    method name: string
+    method address: doubleword_int
+    method btype: btype_t
+    method size: int option
+    method is_readonly: bool
+    method is_initialized: bool
+    method initialvalue: globalvalue_t option
+    method desc: string option
+
+    method has_elf_symbol: bool
+  end
+
+
+class type global_memory_map_int =
+  object
+    method add_location:
+             ?name:string option
+             -> ?desc:string option
+             -> ?is_readonly: bool
+             -> ?is_initialized: bool
+             -> ?btype: btype_t
+             -> ?initialvalue: globalvalue_t option
+             -> ?size: int option
+             -> doubleword_int
+             -> unit
+
+    method update_named_location: string -> bvarinfo_t -> unit
+
+    method has_name: string -> bool
+
+    method has_elf_symbol: doubleword_int -> bool
+
+    method get_elf_symbol: doubleword_int -> string
+  end
 
 
 class type type_definitions_int =
@@ -1574,6 +1630,7 @@ class type functions_data_int =
 
     (* predicates *)
     method is_function_entry_point: doubleword_int -> bool
+    method is_in_function_stub: ?size:int -> doubleword_int -> bool
     method has_function_name: doubleword_int -> bool
     method has_function_by_name: string -> doubleword_int option
     method has_function: doubleword_int -> bool

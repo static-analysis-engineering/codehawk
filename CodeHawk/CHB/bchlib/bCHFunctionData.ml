@@ -261,6 +261,10 @@ object (self)
   method get_library_stubs: doubleword_int list =
     self#retrieve_addresses (fun f -> f#is_library_stub)
 
+  method is_in_function_stub ?(size=3) (va: doubleword_int): bool =
+    let libstubs = self#get_library_stubs in
+    List.exists (fun s -> s#le va && va#lt(s#add_int (size * 4))) libstubs
+
   method is_function_entry_point (fa:doubleword_int) = H.mem table fa#index
 
   method has_function_name (fa:doubleword_int) =

@@ -594,6 +594,9 @@ class type bcfiles_int =
         @raise BCH_failure if no varinfo exists with name [name].*)
     method get_varinfo: ?prefix:bool -> string -> bvarinfo_t
 
+    (** Returns all global varinfos (including functions) *)
+    method get_varinfos: bvarinfo_t list
+
     (** [has_varinfo name] returns true if there exists either a defined or
         declared variable with name [name]. Note that this includes function
         names.*)

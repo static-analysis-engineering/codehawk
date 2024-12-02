@@ -70,6 +70,7 @@ object (self)
 
   method add_bcfile (f: bcfile_t) =
     let i = bcd#index_location in
+    begin
     List.iter (fun g ->
         match g with
         | GType (tinfo, loc) ->
@@ -92,8 +93,10 @@ object (self)
         | GEnumTagDecl (einfo, loc) ->
            H.replace genumtagdecls einfo.bename (bcd#index_enuminfo einfo, i loc)
         | GVarDecl (vinfo, loc) ->
+           let _ = chlog#add "bcfiles:add gvardecl" (STR vinfo.bvname) in
            H.replace gvardecls vinfo.bvname (bcd#index_varinfo vinfo, i loc)
         | GVar (vinfo, iinfo, loc) ->
+           let _ = chlog#add "bcfiles:add gvar" (STR vinfo.bvname) in
            H.replace gvars
              vinfo.bvname
              (bcd#index_varinfo vinfo,
@@ -102,8 +105,20 @@ object (self)
                | _ -> (-1)),
               i loc)
         | GFun (fundec, loc) ->
+           let _ = chlog#add "bcfiles:add gfun" (STR fundec.bsvar.bvname) in
              H.replace gfuns fundec.bsvar.bvname (fundec, bcd#index_location loc);
-        | _ -> ()) f.bglobals
+        | _ -> ()) f.bglobals;
+    chlog#add
+      "bcfiles:add_bcfile"
+      (LBLOCK [
+           STR "gvars: ";
+           INT (H.length gvars);
+           STR "; gvardecls: ";
+           INT (H.length gvardecls);
+           STR "; gfuns: ";
+           INT (H.length gfuns)
+         ])
+    end
 
   method update_global (g: bglobal_t) =
     let i = bcd#index_location in
@@ -369,6 +384,16 @@ object (self)
       raise
         (BCH_failure
            (LBLOCK [STR "No varinfo found with name "; STR name]))
+
+  method get_varinfos =
+    let result = ref [] in
+    begin
+      H.iter (fun _ (ix, _, _) ->
+          result := (bcd#get_varinfo ix) :: !result) gvars;
+      H.iter (fun _ (ix, _) ->
+          result := (bcd#get_varinfo ix) :: !result) gvardecls;
+      !result
+    end
 
   method list_varinfos =
     let result = ref [] in

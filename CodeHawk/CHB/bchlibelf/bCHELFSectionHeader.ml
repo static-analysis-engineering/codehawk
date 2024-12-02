@@ -379,6 +379,9 @@ object (self)
   method is_relocation_table =
     match self#get_section_type with SHT_Rel -> true | _ -> false
 
+  method is_uninitialized_data_section =
+    match self#get_section_type with SHT_NoBits -> true | _ -> false
+
   method is_program_section =
     match self#get_section_type with SHT_ProgBits -> true | _ -> false
 
