@@ -720,16 +720,17 @@ object (self)
     }
 
   method index_enumitem (eitem: beitem_t) =
-    let (name, exp, loc) = eitem in
+    let (name, attrs, exp, loc) = eitem in
     let tags = [name] in
-    let args = [self#index_exp exp; self#index_location loc] in
+    let args =
+      [self#index_exp exp; self#index_location loc; self#index_attributes attrs] in
     enumitem_table#add (tags, args)
 
   method get_enumitem (index: int): beitem_t =
     let (tags, args) = enumitem_table#retrieve index in
     let t = t "beitem_t" tags in
     let a = a "beitem_t" args in
-    (t 0, self#get_exp (a 0), self#get_location (a 1))
+    (t 0, self#get_attributes (a 2), self#get_exp (a 0), self#get_location (a 1))
 
   method index_enuminfo (einfo: benuminfo_t) =
     let tags = [einfo.bename; ikind_mfts#ts einfo.bekind] in
