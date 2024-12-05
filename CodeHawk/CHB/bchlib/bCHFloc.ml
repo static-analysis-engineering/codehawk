@@ -2127,6 +2127,10 @@ object (self)
            self#env#set_variable_name rvar name in
        ASSIGN_NUM (r0, NUM_VAR rvar) in
      let bridgeVars = self#env#get_bridge_values_at self#cia in
+     let abstractglobals =
+       let globals =
+         List.filter self#env#is_global_variable self#env#get_variables in
+       [ABSTRACT_VARS globals] in
      let sideeffect_assigns =
        self#get_sideeffect_assigns self#get_call_target#get_semantics in
      let _ =
@@ -2139,6 +2143,7 @@ object (self)
         | _ -> [ABSTRACT_VARS abstrRegs])
      @ [returnassign]
      @ sideeffect_assigns
+     @ abstractglobals
      @ (match bridgeVars with
         | [] -> []
         | _ -> [ABSTRACT_VARS bridgeVars])
