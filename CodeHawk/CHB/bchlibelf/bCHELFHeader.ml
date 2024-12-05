@@ -545,6 +545,15 @@ object(self)
             && (va#lt (h#get_addr#add h#get_size))))
       false self#get_sections
 
+  method is_readonly_address (va: doubleword_int): bool =
+    List.fold_left (fun found (_, h, _) ->
+        found
+        || (h#is_program_section)
+           && (h#is_readonly || h#is_executable)
+           && (h#get_addr#le va)
+           && (va#lt (h#get_addr#add h#get_size)))
+      false self#get_sections
+
   method is_uninitialized_data_address (va: doubleword_int): bool =
     List.fold_left (fun found (_, h, _) ->
         found

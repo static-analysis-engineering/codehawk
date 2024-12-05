@@ -370,6 +370,8 @@ object (self)
 
   method is_executable = sh_flags#is_nth_bit_set 2
 
+  method is_readonly = not (sh_flags#is_nth_bit_set 0)
+
   method is_string_table =
     match self#get_section_type with SHT_StrTab -> true | _ -> false
 
