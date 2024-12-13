@@ -1523,6 +1523,14 @@ type arm_aggregate_kind_t =
   | ARMJumptable of arm_jumptable_int
   | ThumbITSequence of thumb_it_sequence_int
   | LDMSTMSequence of ldm_stm_sequence_int
+  | PseudoLDRSH of
+      arm_assembly_instruction_int
+      * arm_assembly_instruction_int
+      * arm_assembly_instruction_int
+  | PseudoLDRSB of
+      arm_assembly_instruction_int
+      * arm_assembly_instruction_int
+      * arm_assembly_instruction_int
   | BXCall of arm_assembly_instruction_int * arm_assembly_instruction_int
 
 
@@ -1546,6 +1554,8 @@ class type arm_instruction_aggregate_int =
     method is_it_sequence: bool
     method is_ldm_stm_sequence: bool
     method is_bx_call: bool
+    method is_pseudo_ldrsh: bool
+    method is_pseudo_ldrsb: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit

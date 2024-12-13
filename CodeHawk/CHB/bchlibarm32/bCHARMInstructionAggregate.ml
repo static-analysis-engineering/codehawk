@@ -46,6 +46,9 @@ open BCHLoadStoreMultipleSequence
 open BCHThumbITSequence
 
 
+module TR = CHTraceResult
+
+
 let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
   match k with
   | ARMJumptable jt ->
@@ -56,6 +59,8 @@ let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
      ^ " target addresses"
   | ThumbITSequence it -> it#toString
   | LDMSTMSequence s -> s#toString
+  | PseudoLDRSB (i1, _, _) -> "Pseudo LDRSB at " ^ i1#get_address#to_hex_string
+  | PseudoLDRSH (i1, _, _) -> "Pseudo LDRSH at " ^ i1#get_address#to_hex_string
   | BXCall (_, i2) -> "BXCall at " ^ i2#get_address#to_hex_string
 
 
@@ -113,6 +118,16 @@ object (self)
   method is_bx_call =
     match self#kind with
     | BXCall _ -> true
+    | _ -> false
+
+  method is_pseudo_ldrsh =
+    match self#kind with
+    | PseudoLDRSH _ -> true
+    | _ -> false
+
+  method is_pseudo_ldrsb =
+    match self#kind with
+    | PseudoLDRSH _ -> true
     | _ -> false
 
   method write_xml (_node: xml_element_int) = ()
@@ -189,6 +204,32 @@ let make_bx_call_aggregate
     ~entry:movinstr
     ~exitinstr:bxinstr
     ~anchor:bxinstr
+
+
+let make_pseudo_ldrsh_aggregate
+      (ldrhinstr: arm_assembly_instruction_int)
+      (lslinstr: arm_assembly_instruction_int)
+      (asrinstr: arm_assembly_instruction_int): arm_instruction_aggregate_int =
+  let kind = PseudoLDRSH (ldrhinstr, lslinstr, asrinstr) in
+  make_arm_instruction_aggregate
+    ~kind
+    ~instrs:[ldrhinstr; lslinstr; asrinstr]
+    ~entry:ldrhinstr
+    ~exitinstr:asrinstr
+    ~anchor:asrinstr
+
+
+let make_pseudo_ldrsb_aggregate
+      (ldrbinstr: arm_assembly_instruction_int)
+      (lslinstr: arm_assembly_instruction_int)
+      (asrinstr: arm_assembly_instruction_int): arm_instruction_aggregate_int =
+  let kind = PseudoLDRSB (ldrbinstr, lslinstr, asrinstr) in
+  make_arm_instruction_aggregate
+    ~kind
+    ~instrs:[ldrbinstr; lslinstr; asrinstr]
+    ~entry:ldrbinstr
+    ~exitinstr:asrinstr
+    ~anchor:asrinstr
 
 
 let disassemble_arm_instructions
@@ -296,30 +337,153 @@ let identify_bx_call
   | _ -> None
 
 
+(* format of pseudo LDRSH (in ARM)
+
+   An LDRH combined with LSL 16, ASR 16 converts into (effectively) an
+   LDRSH:
+
+   LDRH Rx, mem
+   LSL  Rx, Rx, #0x10
+   ASR  Rx, Rx, #0x10
+ *)
+let identify_pseudo_ldrsh
+      (ch: pushback_stream_int)
+      (instr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int
+       * arm_assembly_instruction_int
+       * arm_assembly_instruction_int) option =
+  let sixteen = CHNumerical.mkNumerical 16 in
+  match instr#get_opcode with
+  | ArithmeticShiftRight (_, ACCAlways, rd, rs, imm, _)
+       when imm#is_immediate
+            && imm#to_numerical#equal sixteen
+            && (rd#get_register = rs#get_register) ->
+     let addr = instr#get_address in
+     let lslinstr_r = get_arm_assembly_instruction (addr#add_int (-4)) in
+     let ldrhinstr_r = get_arm_assembly_instruction (addr#add_int (-8)) in
+     (match (TR.to_option lslinstr_r, TR.to_option ldrhinstr_r) with
+      | (Some lslinstr, Some ldrhinstr) ->
+         if
+           (match lslinstr#get_opcode with
+            | LogicalShiftLeft (_, ACCAlways, rd1, rs1, imm, _)
+                 when imm#is_immediate
+                      && imm#to_numerical#equal sixteen
+                      && (rd1#get_register = rd#get_register)
+                      && (rs1#get_register = rd#get_register) -> true
+            | _ -> false)
+           && (match ldrhinstr#get_opcode with
+               | LoadRegisterHalfword (ACCAlways, rd2, _, _, _, _)
+                    when rd2#get_register = rd#get_register -> true
+               | _ -> false)
+         then
+           Some (TR.tget_ok ldrhinstr_r, TR.tget_ok lslinstr_r, instr)
+         else
+           None
+      | _ -> None)
+  | _ -> None
+
+
+(* format of pseudo LDRSB (in ARM)
+
+   An LDRH combined with LSL 16, ASR 16 converts into (effectively) an
+   LDRSH:
+
+   LDRB Rx, mem
+   LSL  Rx, Rx, #0x18
+   ASR  Rx, Rx, #0x18
+ *)
+let identify_pseudo_ldrsb
+      (ch: pushback_stream_int)
+      (instr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int
+       * arm_assembly_instruction_int
+       * arm_assembly_instruction_int) option =
+  let twentyfour = CHNumerical.mkNumerical 24 in
+  match instr#get_opcode with
+  | ArithmeticShiftRight (_, ACCAlways, rd, rs, imm, _)
+       when imm#is_immediate
+            && imm#to_numerical#equal twentyfour
+            && (rd#get_register = rs#get_register) ->
+     let addr = instr#get_address in
+     let lslinstr_r = get_arm_assembly_instruction (addr#add_int (-4)) in
+     let ldrbinstr_r = get_arm_assembly_instruction (addr#add_int (-8)) in
+     (match (TR.to_option lslinstr_r, TR.to_option ldrbinstr_r) with
+      | (Some lslinstr, Some ldrbinstr) ->
+         if
+           (match lslinstr#get_opcode with
+            | LogicalShiftLeft (_, ACCAlways, rd1, rs1, imm, _)
+                 when imm#is_immediate
+                      && imm#to_numerical#equal twentyfour
+                      && (rd1#get_register = rd#get_register)
+                      && (rs1#get_register = rd#get_register) -> true
+            | _ -> false)
+           && (match ldrbinstr#get_opcode with
+               | LoadRegisterByte (ACCAlways, rd2, _, _, _, _)
+                    when rd2#get_register = rd#get_register -> true
+               | _ -> false)
+         then
+           Some (TR.tget_ok ldrbinstr_r, TR.tget_ok lslinstr_r, instr)
+         else
+           None
+      | _ -> None)
+  | _ -> None
+
+
+
 let identify_arm_aggregate
       (ch: pushback_stream_int)
       (instr: arm_assembly_instruction_int):
       arm_instruction_aggregate_int option =
-  match identify_jumptable ch instr with
-  | Some (instrs, jt) ->
-     let anchor = List.nth instrs ((List.length instrs) - 1) in
-     let entry = List.hd instrs in
-     let exitinstr = anchor in
-     Some (make_arm_jumptable_aggregate ~jt ~instrs ~entry ~exitinstr ~anchor)
-  | _ ->
-     match identify_it_sequence ch instr with
-     | Some its ->
-        let instrs = its#instrs in
-        let entry = List.hd instrs in
-        let exitinstr = List.hd (List.rev instrs) in
-        Some (make_it_sequence_aggregate
-                ~its ~instrs ~entry ~exitinstr ~anchor:entry)
-     | _ ->
-        match identify_ldmstm_sequence ch instr with
-        | Some ldmstmseq ->
-           Some (make_ldm_stm_sequence_aggregate ldmstmseq)
-        | _ ->
-           match identify_bx_call ch instr with
-           | Some (movinstr, bxinstr) ->
-              Some (make_bx_call_aggregate movinstr bxinstr)
-           | _ -> None
+  let result =
+    match identify_jumptable ch instr with
+    | Some (instrs, jt) ->
+       let anchor = List.nth instrs ((List.length instrs) - 1) in
+       let entry = List.hd instrs in
+       let exitinstr = anchor in
+       Some (make_arm_jumptable_aggregate ~jt ~instrs ~entry ~exitinstr ~anchor)
+    | _ -> None in
+  let result =
+    match result with
+    | Some _ -> result
+    | _ ->
+       match identify_it_sequence ch instr with
+       | Some its ->
+          let instrs = its#instrs in
+          let entry = List.hd instrs in
+          let exitinstr = List.hd (List.rev instrs) in
+          Some (make_it_sequence_aggregate
+                  ~its ~instrs ~entry ~exitinstr ~anchor:entry)
+       | _ -> None in
+  let result =
+    match result with
+    | Some _ -> result
+    | _ ->
+       match identify_ldmstm_sequence ch instr with
+       | Some ldmstmseq ->
+          Some (make_ldm_stm_sequence_aggregate ldmstmseq)
+       | _ -> None in
+  let result =
+    match result with
+    | Some _ -> result
+    | _ ->
+       match identify_bx_call ch instr with
+       | Some (movinstr, bxinstr) ->
+          Some (make_bx_call_aggregate movinstr bxinstr)
+       | _ -> None in
+  let result =
+    match result with
+    | Some _ -> result
+    | _ ->
+       match identify_pseudo_ldrsh ch instr with
+       | Some (ldrhinstr, lslinstr, asrinstr) ->
+          Some (make_pseudo_ldrsh_aggregate ldrhinstr lslinstr asrinstr)
+       | _ -> None in
+  let result =
+    match result with
+    | Some _ -> result
+    | _ ->
+       match identify_pseudo_ldrsb ch instr with
+       | Some (ldrbinstr, lslinstr, asrinstr) ->
+          Some (make_pseudo_ldrsb_aggregate ldrbinstr lslinstr asrinstr)
+       | _ -> None in
+  result

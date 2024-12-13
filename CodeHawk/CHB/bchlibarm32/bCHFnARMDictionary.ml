@@ -643,6 +643,7 @@ object (self)
              ~useshigh:[get_def_use_high vrd]
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let tags = add_optional_subsumption tags in
          (tags, args)
 
       | BitFieldClear (c, rd, _, _, _) ->
@@ -1310,6 +1311,11 @@ object (self)
                addr_r
            else
              (tags, args) in
+         let tags =
+           match instr#is_in_aggregate with
+           | Some dw when (get_aggregate dw)#is_pseudo_ldrsb ->
+              add_subsumption_dependents (get_aggregate dw) tags
+           | _ -> tags in
          (tags, args)
 
       | LoadRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
@@ -1426,6 +1432,11 @@ object (self)
                addr_r
            else
              (tags, args) in
+         let tags =
+           match instr#is_in_aggregate with
+           | Some dw when (get_aggregate dw)#is_pseudo_ldrsh ->
+              add_subsumption_dependents (get_aggregate dw) tags
+           | _ -> tags in
          (tags, args)
 
       | LoadRegisterSignedByte (c, rt, rn, rm, mem, _) ->

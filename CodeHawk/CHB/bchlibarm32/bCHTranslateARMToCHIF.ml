@@ -899,6 +899,14 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
+  | ArithmeticShiftRight _
+       when (match instr#is_in_aggregate with
+             | Some dw ->
+                let agg = get_aggregate dw in
+                agg#is_pseudo_ldrsh || agg#is_pseudo_ldrsb
+             | _ -> false) ->
+     default []
+
   | ArithmeticShiftRight(_, c, rd, rn, rm, _) ->
      let floc = get_floc loc in
      let rdreg = rd#to_register in
@@ -1889,6 +1897,14 @@ let translate_arm_instruction
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
+
+  | LogicalShiftLeft _
+       when (match instr#is_in_aggregate with
+             | Some dw ->
+                let agg = get_aggregate dw in
+                agg#is_pseudo_ldrsh || agg#is_pseudo_ldrsb
+             | _ -> false) ->
+     default []
 
   | LogicalShiftLeft (_, c, rd, rn, rm, _) when rm#is_small_immediate ->
      let floc = get_floc loc in
