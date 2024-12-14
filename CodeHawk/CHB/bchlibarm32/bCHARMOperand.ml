@@ -44,7 +44,6 @@ open Xsimplify
 open BCHBasicTypes
 open BCHBCTypes
 open BCHBCTypeUtil
-open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
 open BCHImmediate
@@ -63,6 +62,8 @@ module TR = CHTraceResult
 
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
+
+let memmap = BCHGlobalMemoryMap.global_memory_map
 
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
@@ -617,8 +618,8 @@ object (self:'a)
        let imm = if unsigned then imm#to_unsigned else imm in
        (match imm#to_doubleword with
         | Some dw ->
-           if has_symbolic_address_name dw then
-             let name = get_symbolic_address_name dw in
+           if memmap#has_location dw then
+             let name = memmap#get_location_name dw in
              let var =
                floc#f#env#mk_global_memory_address
                  ~optname:(Some name) imm#to_numerical in
@@ -637,11 +638,11 @@ object (self:'a)
     | ARMAbsolute a when elf_header#is_program_address a ->
        num_constant_expr a#to_numerical
     | ARMLiteralAddress a ->
-       if elf_header#is_program_address a then
+       if elf_header#is_readonly_address a then
          let dw = elf_header#get_program_value a in
-         if has_symbolic_address_name dw then
-           let name = get_symbolic_address_name dw in
-           let ty = get_symbolic_address_type_by_name name in
+         if memmap#has_location dw then
+           let name = memmap#get_location_name dw in
+           let ty = memmap#get_location_type dw in
            if is_struct_type ty || is_array_type ty then
              let var =
                floc#f#env#mk_global_memory_address

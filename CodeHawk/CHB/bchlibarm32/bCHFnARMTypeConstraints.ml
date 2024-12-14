@@ -42,7 +42,6 @@ open BCHBCFiles
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
-open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
@@ -228,8 +227,8 @@ object (self)
 
          (match getopt_global_address (rn#to_expr floc) with
           | Some gaddr ->
-             if is_in_global_arrayvar gaddr then
-               (match (get_arrayvar_base_offset gaddr) with
+             if BCHConstantDefinitions.is_in_global_arrayvar gaddr then
+               (match (BCHConstantDefinitions.get_arrayvar_base_offset gaddr) with
                 | Some _ ->
                    let rmdefs = get_variable_rdefs (rm#to_variable floc) in
                    let rmreg = rm#to_register in
@@ -544,8 +543,8 @@ object (self)
             assign the type of that field to the destination register. *)
          (match getopt_global_address (memop#to_address floc) with
           | Some gaddr ->
-             if is_in_global_structvar gaddr then
-               match (get_structvar_base_offset gaddr) with
+             if BCHConstantDefinitions.is_in_global_structvar gaddr then
+               match (BCHConstantDefinitions.get_structvar_base_offset gaddr) with
                | Some (_, Field ((fname, fckey), NoOffset)) ->
                   let compinfo = bcfiles#get_compinfo fckey in
                   let finfo = get_compinfo_field compinfo fname in
@@ -598,8 +597,8 @@ object (self)
             assign that array type to the destination register. *)
          (match getopt_global_address (memop#to_expr floc) with
           | Some gaddr ->
-             if is_in_global_arrayvar gaddr then
-               (match (get_arrayvar_base_offset gaddr) with
+             if BCHConstantDefinitions.is_in_global_arrayvar gaddr then
+               (match (BCHConstantDefinitions.get_arrayvar_base_offset gaddr) with
                 | Some (_, offset, bty) ->
                    (match offset with
                     | Index (Const (CInt (i64, _, _)), NoOffset) ->

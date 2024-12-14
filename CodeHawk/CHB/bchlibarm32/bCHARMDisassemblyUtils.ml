@@ -139,6 +139,28 @@ let get_it_condition_list (firstcond:int) (mask:int) =
   thencc::xyz
 
 
+let get_inverse_cc (cc: arm_opcode_cc_t): arm_opcode_cc_t option =
+  match cc with
+  | ACCEqual -> Some ACCNotEqual
+  | ACCNotEqual -> Some ACCEqual
+  | ACCCarrySet -> Some ACCCarryClear
+  | ACCCarryClear -> Some ACCCarrySet
+  | ACCNegative -> Some ACCNonNegative
+  | ACCNonNegative -> Some ACCNegative
+  | ACCOverflow -> Some ACCNoOverflow
+  | ACCNoOverflow -> Some ACCOverflow
+  | ACCUnsignedHigher -> Some ACCNotUnsignedHigher
+  | ACCNotUnsignedHigher -> Some ACCUnsignedHigher
+  | ACCSignedGE -> Some ACCSignedLT
+  | ACCSignedLT -> Some ACCSignedGE
+  | ACCSignedGT -> Some ACCSignedLE
+  | ACCSignedLE -> Some ACCSignedGT
+  | _ -> None
+
+
+let has_inverse_cc (cc: arm_opcode_cc_t): bool =  Option.is_some (get_inverse_cc cc)
+
+
 let get_string_reference (floc:floc_int) (xpr:xpr_t) =
   try
     match xpr with

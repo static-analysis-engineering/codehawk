@@ -1546,6 +1546,56 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | Move _ when instr#is_aggregate_anchor ->
+         let finfo = floc#f in
+         let ctxtiaddr = floc#l#ci in
+         if finfo#has_associated_cc_setter ctxtiaddr then
+           let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+           let testloc = ctxt_string_to_location faddr testiaddr in
+           let testaddr = testloc#i in
+           let testinstr =
+             fail_tvalue
+               (trerror_record
+                  (LBLOCK [
+                       STR "FnDictionary: predicate assignment"; floc#ia#toPretty]))
+               (get_arm_assembly_instruction testaddr) in
+           let agg = get_aggregate floc#ia in
+           (match agg#kind with
+            | ARMPredicateAssignment (inverse, dstop) ->
+               let (_, optpredicate, _) =
+                 arm_conditional_expr
+                   ~condopc:instr#get_opcode
+                   ~testopc:testinstr#get_opcode
+                   ~condloc:floc#l
+                   ~testloc:testloc in
+               let (tags, args) =
+                 (match optpredicate with
+                  | Some p ->
+                     let p = if inverse then XOp (XLNot, [p]) else p in
+                     let lhs = dstop#to_variable floc in
+                     let rdefs = get_all_rdefs p in
+                     let xp = rewrite_expr p in
+                     let (tagstring, args) =
+                       mk_instrx_data
+                         ~vars:[lhs]
+                         ~xprs:[p; xp]
+                         ~rdefs
+                         ~uses:[get_def_use lhs]
+                         ~useshigh:[get_def_use_high lhs]
+                         () in
+                     ([tagstring], args)
+                  | _ ->
+                     ([], [])) in
+               let dependents =
+                 List.map (fun d ->
+                     (make_i_location floc#l d#get_address)#ci) agg#instrs in
+               let tags = tags @ ["subsumes"] @ dependents in
+               (tags, args)
+            | _ ->
+               ([], []))
+         else
+           ([], [])
+
       | Move _ when (Option.is_some instr#is_in_aggregate) ->
          (match instr#is_in_aggregate with
           | Some va ->

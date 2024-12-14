@@ -642,6 +642,12 @@ let translate_arm_instruction
     match instr#is_in_aggregate with
     | Some dw -> (get_aggregate dw)#is_jumptable
     | _ -> false in
+  let is_part_of_pseudo_instr () =
+    match instr#is_in_aggregate with
+    | Some dw ->
+       let agg = get_aggregate dw in
+       agg#is_pseudo_ldrsh || agg#is_pseudo_ldrsb
+    | _ -> false in
   let check_storage (_op: arm_operand_int) (v: variable_t) =
     if BCHSystemSettings.system_settings#collect_data then
       if (floc#env#is_unknown_memory_variable v) || v#isTemporary then
@@ -899,12 +905,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | ArithmeticShiftRight _
-       when (match instr#is_in_aggregate with
-             | Some dw ->
-                let agg = get_aggregate dw in
-                agg#is_pseudo_ldrsh || agg#is_pseudo_ldrsb
-             | _ -> false) ->
+  | ArithmeticShiftRight _ when is_part_of_pseudo_instr () ->
      default []
 
   | ArithmeticShiftRight(_, c, rd, rn, rm, _) ->
@@ -1898,12 +1899,7 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | LogicalShiftLeft _
-       when (match instr#is_in_aggregate with
-             | Some dw ->
-                let agg = get_aggregate dw in
-                agg#is_pseudo_ldrsh || agg#is_pseudo_ldrsb
-             | _ -> false) ->
+  | LogicalShiftLeft _ when is_part_of_pseudo_instr () ->
      default []
 
   | LogicalShiftLeft (_, c, rd, rn, rm, _) when rm#is_small_immediate ->
@@ -1987,6 +1983,53 @@ let translate_arm_instruction
    *    APSR.N = result<31>;
    *    APSR.Z = IsZeroBit(result);
    * ------------------------------------------------------------------------ *)
+  | Move _ when instr#is_aggregate_anchor ->
+     let floc = get_floc loc in
+     if finfo#has_associated_cc_setter ctxtiaddr then
+       let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+       let testloc = ctxt_string_to_location faddr testiaddr in
+       let testaddr = testloc#i in
+       let testinstr =
+         fail_tvalue
+           (trerror_record
+              (LBLOCK [STR "Translate MOV predicate assignment"; STR ctxtiaddr]))
+           (get_arm_assembly_instruction testaddr) in
+       let movagg = get_aggregate loc#i in
+       (match movagg#kind with
+        | ARMPredicateAssignment (inverse, dstop) ->
+           let (_, optpredicate, _) =
+             make_conditional_predicate
+               ~condinstr:instr
+               ~testinstr:testinstr
+               ~condloc:loc
+               ~testloc:testloc in
+           let cmds =
+             match optpredicate with
+             | Some p ->
+                let p = if inverse then XOp (XLNot, [p]) else p in
+                let rdreg = dstop#to_register in
+                let (lhs, cmds) = floc#get_ssa_assign_commands rdreg p in
+                let usevars = vars_in_expr_list [p] in
+                let usehigh = get_use_high_vars [p] in
+                let defcmds =
+                  floc#get_vardef_commands
+                    ~defs:[lhs]
+                    ~use:usevars
+                    ~usehigh
+                    ~flagdefs
+                    ctxtiaddr in
+                defcmds @ cmds
+             | _ ->
+                [] in
+           default cmds
+        | _ -> default [])
+     else
+       let _ =
+         chlog#add
+           "predicate assignment aggregate without predicate"
+           (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
+       default []
+
   | Move _ when Option.is_some instr#is_in_aggregate ->
      let _ =
        if collect_diagnostics () then

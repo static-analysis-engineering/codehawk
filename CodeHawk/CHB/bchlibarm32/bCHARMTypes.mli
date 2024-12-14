@@ -1531,6 +1531,7 @@ type arm_aggregate_kind_t =
       arm_assembly_instruction_int
       * arm_assembly_instruction_int
       * arm_assembly_instruction_int
+  | ARMPredicateAssignment of bool * arm_operand_int
   | BXCall of arm_assembly_instruction_int * arm_assembly_instruction_int
 
 
@@ -1556,6 +1557,7 @@ class type arm_instruction_aggregate_int =
     method is_bx_call: bool
     method is_pseudo_ldrsh: bool
     method is_pseudo_ldrsb: bool
+    method is_predicate_assign: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit

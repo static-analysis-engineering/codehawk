@@ -26,6 +26,7 @@
    ============================================================================= *)
 
 (* chlib *)
+open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -39,6 +40,7 @@ open BCHLibTypes
 (* bchlibarm32 *)
 open BCHARMAssemblyInstruction
 open BCHARMAssemblyInstructions
+open BCHARMDisassemblyUtils
 open BCHARMJumptable
 open BCHARMTypes
 open BCHDisassembleARMInstruction
@@ -61,6 +63,9 @@ let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
   | LDMSTMSequence s -> s#toString
   | PseudoLDRSB (i1, _, _) -> "Pseudo LDRSB at " ^ i1#get_address#to_hex_string
   | PseudoLDRSH (i1, _, _) -> "Pseudo LDRSH at " ^ i1#get_address#to_hex_string
+  | ARMPredicateAssignment (inverse, op) ->
+     let inv = if inverse then " (inverse)" else "" in
+     "predicate assignment to " ^ op#toString ^ inv
   | BXCall (_, i2) -> "BXCall at " ^ i2#get_address#to_hex_string
 
 
@@ -128,6 +133,11 @@ object (self)
   method is_pseudo_ldrsb =
     match self#kind with
     | PseudoLDRSH _ -> true
+    | _ -> false
+
+  method is_predicate_assign =
+    match self#kind with
+    | ARMPredicateAssignment _ -> true
     | _ -> false
 
   method write_xml (_node: xml_element_int) = ()
@@ -230,6 +240,20 @@ let make_pseudo_ldrsb_aggregate
     ~entry:ldrbinstr
     ~exitinstr:asrinstr
     ~anchor:asrinstr
+
+
+let make_predassign_aggregate
+      (inverse: bool)
+      (mov1: arm_assembly_instruction_int)
+      (mov2: arm_assembly_instruction_int)
+      (dstop: arm_operand_int): arm_instruction_aggregate_int =
+  let kind = ARMPredicateAssignment (inverse, dstop) in
+  make_arm_instruction_aggregate
+    ~kind
+    ~instrs:[mov1; mov2]
+    ~entry:mov1
+    ~exitinstr:mov2
+    ~anchor:mov2
 
 
 let disassemble_arm_instructions
@@ -393,7 +417,7 @@ let identify_pseudo_ldrsh
    ASR  Rx, Rx, #0x18
  *)
 let identify_pseudo_ldrsb
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (instr: arm_assembly_instruction_int):
       (arm_assembly_instruction_int
        * arm_assembly_instruction_int
@@ -422,12 +446,50 @@ let identify_pseudo_ldrsb
                     when rd2#get_register = rd#get_register -> true
                | _ -> false)
          then
-           Some (TR.tget_ok ldrbinstr_r, TR.tget_ok lslinstr_r, instr)
+           Some (ldrbinstr, lslinstr, instr)
          else
            None
       | _ -> None)
   | _ -> None
 
+
+(* format of predicate assignment (in ARM): assigns the result of a test as a
+   0/1 value to a register
+
+   MOVNE  Rx, #0
+   MOVEQ  Rx, #1
+ *)
+let identify_predicate_assignment
+      (_ch: pushback_stream_int)
+      (instr: arm_assembly_instruction_int):
+      (bool
+       * arm_assembly_instruction_int
+       * arm_assembly_instruction_int
+       * arm_operand_int) option =
+  let is_zero imm = imm#to_numerical#equal numerical_zero in
+  let is_one imm = imm#to_numerical#equal numerical_one in
+  let is_zero_or_one imm = (is_zero imm) || (is_one imm) in
+  match instr#get_opcode with
+  | Move (false, c2, rd, imm2, _, _)
+       when imm2#is_immediate && (is_zero_or_one imm2) && (has_inverse_cc c2) ->
+     let rdreg = rd#get_register in
+     let addr = instr#get_address in
+     let movinstr_r = get_arm_assembly_instruction (addr#add_int (-4)) in
+     (match TR.to_option movinstr_r with
+      | Some movinstr ->
+         (match movinstr#get_opcode with
+          | Move (false, c1, rd, imm1, _, _)
+               when imm1#is_immediate
+                  && (is_zero_or_one imm1)
+                  && (rd#get_register = rdreg)
+                  && (not (imm1#to_numerical#equal imm2#to_numerical))
+                  && (has_inverse_cc c1)
+                  && ((Option.get (get_inverse_cc c1)) = c2) ->
+             let inverse = is_zero imm2 in
+             Some (inverse, movinstr, instr, rd)
+          | _ -> None)
+      | _ -> None)
+  | _ -> None
 
 
 let identify_arm_aggregate
@@ -485,5 +547,13 @@ let identify_arm_aggregate
        match identify_pseudo_ldrsb ch instr with
        | Some (ldrbinstr, lslinstr, asrinstr) ->
           Some (make_pseudo_ldrsb_aggregate ldrbinstr lslinstr asrinstr)
+       | _ -> None in
+  let result =
+    match result with
+    | Some _ -> result
+    | _ ->
+       match identify_predicate_assignment ch instr with
+       | Some (inverse, mov1, mov2, dstop) ->
+          Some (make_predassign_aggregate inverse mov1 mov2 dstop)
        | _ -> None in
   result
