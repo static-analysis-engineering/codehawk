@@ -136,6 +136,7 @@ val is_float_float: btype_t -> bool
 val is_float_double: btype_t -> bool
 val is_scalar: btype_t -> bool
 val is_pointer: btype_t -> bool
+val is_void_pointer: btype_t -> bool
 val is_unsigned: btype_t -> bool  (* true if unsigned, false if signed or unknown *)
 val is_function_type: btype_t -> bool
 val is_unknown_type: btype_t -> bool

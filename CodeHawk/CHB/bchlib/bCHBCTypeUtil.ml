@@ -187,6 +187,8 @@ let is_float_double t = match t with TFloat (FDouble, _, _) -> true | _ -> false
 
 let is_pointer t = match t with TPtr _ -> true | _ -> false
 
+let is_void_pointer t = match t with TPtr (TVoid _, _) -> true | _ -> false
+
 let is_scalar t = (is_int t) || (is_float t) || (is_pointer t)
 
 let is_pointer_to_struct t = match t with TPtr (TComp _,_) -> true | _ -> false
