@@ -530,6 +530,21 @@ object(self)
       code_ub <- !ub
     end
 
+  method set_global_data_sections_extent =
+    List.iter (fun (_, h, _) ->
+        if (h#is_program_section || (h#get_section_name = ".bss"))
+           && (not h#is_executable)
+           && (not
+                 (List.mem
+                    h#get_section_name
+                    [".comment"; ".eh_frame"; ".got"; ".interp"; ".jcr"])) then
+          BCHGlobalMemoryMap.global_memory_map#set_section
+            ~readonly:h#is_readonly
+            ~initialized:(not h#is_uninitialized_data_section)
+            h#get_section_name
+            h#get_addr
+            h#get_size) self#get_sections
+
   method is_code_address (va: doubleword_int): bool =
     List.fold_left (fun found (h, _) ->
         found
@@ -1582,6 +1597,7 @@ let load_elf_files () =
           pr_timing [STR "jump tables initialized"];
           elf_header#initialize_call_back_tables;
           elf_header#initialize_struct_tables;
+          elf_header#set_global_data_sections_extent;
         end
       with
       | CHXmlReader.XmlParseError(line,col,p) ->
@@ -1612,6 +1628,7 @@ let read_elf_file (filename: string) (xsize: int) =
       elf_header#initialize_jump_tables;
       elf_header#initialize_call_back_tables;
       elf_header#initialize_struct_tables;
+      elf_header#set_global_data_sections_extent;
       (true,
        LBLOCK [
            STR "File: ";

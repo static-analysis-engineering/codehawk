@@ -460,8 +460,8 @@ object (self)
     let callinstr_key (): (string list * int list) =
       let callargs = floc#get_call_arguments in
       let _ = check_for_functionptr_args callargs in
-      let (xprs, xvars, rdefs) =
-        List.fold_left (fun (xprs, xvars, rdefs) (p, x) ->
+      let (xprs, xvars, rdefs, _) =
+        List.fold_left (fun (xprs, xvars, rdefs, index) (p, x) ->
             let xvar =
               if is_register_parameter p then
                 let regarg = TR.tget_ok (get_register_parameter_register p) in
@@ -479,6 +479,7 @@ object (self)
                           STR ": Parameter type not recognized in call ";
                           STR "instruction"])) in
             let xx = rewrite_expr ?restrict:(Some 4) x in
+            let _ = floc#memrecorder#record_argument xx index in
             let xx =
               let optmemvar = floc#decompose_memvar_address xx in
               match optmemvar with
@@ -487,7 +488,8 @@ object (self)
                       [XVar (floc#f#env#mk_index_offset_memory_variable memref memoff)])
               | _ -> xx in
             let rdef = get_rdef xvar in
-            (xx :: xprs, xvar :: xvars, rdef :: rdefs)) ([], [], []) callargs in
+            (xx :: xprs, xvar :: xvars, rdef :: rdefs, index + 1))
+          ([], [], [], 1) callargs in
       let (vrd, rtype) =
         let fintf = floc#get_call_target#get_function_interface in
         let rtype = get_fts_returntype fintf in
@@ -1247,11 +1249,16 @@ object (self)
            @ (get_all_rdefs xmem) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
+         let xxaddr = rewrite_expr xaddr in
          let xrmem = rewrite_expr xmem in
          let _ = ignore (get_string_reference floc xrmem) in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_unknown in
+             ~signed:false
+             ~addr:xxaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -1284,11 +1291,19 @@ object (self)
          let vmem = mem#to_variable floc in
          let xmem = XOp (XXlsb, [mem#to_expr floc]) in
          let xrmem = rewrite_expr xmem in
+         let xxaddr = rewrite_expr xaddr in
          let rdefs =
            [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
            @ (get_all_rdefs xmem) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
+         let _ =
+           floc#memrecorder#record_load
+             ~signed:false
+             ~addr:xxaddr
+             ~var:vmem
+             ~size:1
+             ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -1375,6 +1390,13 @@ object (self)
          let useshigh = [get_def_use_high vrt] in
          let xrmem = rewrite_expr xmem in
          let _ = ignore (get_string_reference floc xrmem) in
+         let _ =
+           floc#memrecorder#record_load
+             ~signed:false
+             ~addr:xaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -1406,11 +1428,19 @@ object (self)
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
+         let xxaddr = rewrite_expr xaddr in
          let rdefs =
            [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
            @ (get_all_rdefs xmem) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
+         let _ =
+           floc#memrecorder#record_load
+             ~signed:false
+             ~addr:xxaddr
+             ~var:vmem
+             ~size:2
+             ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -1447,11 +1477,19 @@ object (self)
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
+         let xxaddr = rewrite_expr xaddr in
          let rdefs =
            [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
            @ (get_all_rdefs xmem) in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
+         let _ =
+           floc#memrecorder#record_load
+             ~signed:true
+             ~addr:xxaddr
+             ~var:vmem
+             ~size:1
+             ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -1483,9 +1521,17 @@ object (self)
          let vmem = mem#to_variable floc in
          let xmem = mem#to_expr floc in
          let xrmem = rewrite_expr xmem in
+         let xxaddr = rewrite_expr xaddr in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
          let uses = [get_def_use vrt] in
          let useshigh = [get_def_use_high vrt] in
+         let _ =
+           floc#memrecorder#record_load
+             ~signed:true
+             ~addr:xxaddr
+             ~var:vmem
+             ~size:2
+             ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -2105,6 +2151,7 @@ object (self)
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let xxrt = rewrite_expr xrt in
+         let xxaddr = rewrite_expr xaddr in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem] in
          let useshigh = [get_def_use_high vmem] in
@@ -2118,7 +2165,11 @@ object (self)
              ([vmem], uses, useshigh) in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_unknown ~xpr:xxrt in
+             ~addr:xxaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_unknown
+             ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars
@@ -2137,6 +2188,7 @@ object (self)
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let xxrt = rewrite_expr xrt in
+         let xxaddr = rewrite_expr xaddr in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem] in
          let useshigh = [get_def_use_high vmem] in
@@ -2150,7 +2202,11 @@ object (self)
              ([vmem], uses, useshigh) in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:1 ~vtype:t_unknown ~xpr:xxrt in
+             ~addr:xxaddr
+             ~var:vmem
+             ~size:1
+             ~vtype:t_unknown
+             ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars
@@ -2200,12 +2256,17 @@ object (self)
          let xrt = rt#to_expr floc in
          let xrn = rn#to_expr floc in
          let xxrt = rewrite_expr xrt in
+         let xxaddr = rewrite_expr xaddr in
          let rdefs = [get_rdef xrn; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem; get_def_use vrd] in
          let useshigh = [get_def_use vmem; get_def_use vrd] in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_unknown ~xpr:xxrt in
+             ~addr:xxaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_unknown
+             ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem; vrd]
@@ -2224,6 +2285,7 @@ object (self)
          let xrn = rn#to_expr floc in
          let xrm = rm#to_expr floc in
          let xxrt = rewrite_expr xrt in
+         let xxaddr = rewrite_expr xaddr in
          let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
          let uses = [get_def_use vmem] in
          let useshigh = [get_def_use_high vmem] in
@@ -2237,7 +2299,11 @@ object (self)
              ([vmem], uses, useshigh) in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:2 ~vtype:t_unknown ~xpr:xxrt in
+             ~addr:xxaddr
+             ~var:vmem
+             ~size:2
+             ~vtype:t_unknown
+             ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars

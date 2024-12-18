@@ -293,6 +293,24 @@ let realigned_stack_offset_to_name offset =
   | _ -> "vrr.[" ^ (memory_offset_to_string offset) ^ "]"
 
 
+let rec boffset_to_memory_offset
+          (boffset: boffset_t): memory_offset_t traceresult =
+  match boffset with
+  | BCHBCTypes.NoOffset -> Ok BCHLibTypes.NoOffset
+  | Field (fuse, suboffset) ->
+     tmap
+       (fun o -> FieldOffset (fuse, o))
+       (boffset_to_memory_offset suboffset)
+  | Index (Const (CInt (i64, _, _)), suboffset) ->
+     tmap
+       (fun o ->
+         let x = num_constant_expr (mkNumericalFromInt64 i64) in
+         ArrayIndexOffset (x, o))
+       (boffset_to_memory_offset suboffset)
+  | Index (bexp, _) ->
+     Error ["Unable to convert array index expression " ^ (exp_to_string bexp)]
+
+
 class memory_reference_t
     ~(index: int)
     ~(base: memory_base_t):memory_reference_int =

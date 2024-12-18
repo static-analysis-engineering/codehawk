@@ -109,6 +109,8 @@ module DoublewordCollections = CHCollections.Make
 
 let id = BCHInterfaceDictionary.interface_dictionary
 
+let memmap = BCHGlobalMemoryMap.global_memory_map
+
 
 type po_anchor_t =                      (* proof obligation anchor *)
 | DirectAccess
@@ -850,7 +852,23 @@ object (self)
            ?(size=4)
            ?(offset=NoOffset)
            (base: numerical_t): variable_t traceresult =
-    let base = base#modulo (mkNumerical BCHDoubleword.e32) in
+    let dwbase =
+      fail_tfold
+        (trerror_record
+           (LBLOCK [
+                STR "Converting ";
+                base#toPretty;
+                STR " in finfo.mk_global_variable in function ";
+                faddr#toPretty]))
+        (fun b -> b)
+        (numerical_to_doubleword (base#modulo (mkNumerical BCHDoubleword.e32))) in
+    let default (gloc: global_location_int) =
+      let var =
+        self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
+      let _ = self#set_variable_name var gloc#name in
+      Ok var in
+
+    (*
     match numerical_to_doubleword base with
     | Error e -> Error ("finfo.mk_global_variable" :: e)
     | Ok addr ->
@@ -880,6 +898,29 @@ object (self)
             | _ -> ());
            Ok var
          end in
+     *)
+    match memmap#containing_location dwbase with
+    | Some gloc ->
+       tfold
+         ~ok:(fun memoffset ->
+           let var =
+             self#mk_variable
+               (varmgr#make_global_variable
+                  ~offset:memoffset gloc#address#to_numerical) in
+           let _ = self#set_variable_name var gloc#name in
+           Ok var)
+         ~error:(fun sl ->
+           begin
+             chlog#add
+               "fenv#mk_global_variable: Error"
+               (LBLOCK [faddr#toPretty; STR ": "; STR (String.concat "; " sl)]);
+             default gloc
+           end)
+         (gloc#address_memory_offset dwbase)
+    | _ ->
+       Ok (self#mk_variable (varmgr#make_global_variable ~size ~offset base))
+      (*
+               |
 
        if is_in_global_structvar addr then
          (match get_structvar_base_offset addr with
@@ -951,6 +992,7 @@ object (self)
              default ())
        else
          default ()
+       *)
 
   method mk_global_memory_address
            ?(optname = None) ?(opttype=None) (n: numerical_t) =
@@ -2010,7 +2052,13 @@ object (self)
   method set_bc_summary (fs: function_summary_int) =
     begin
       appsummary <- fs;
-      env#set_argument_names fs#get_function_interface
+      env#set_argument_names fs#get_function_interface;
+      chlog#add
+        "set-bc-summary"
+        (LBLOCK [
+             function_interface_to_pretty fs#get_function_interface;
+             STR " with function signature ";
+             STR (btype_to_string fs#get_function_interface.fintf_type_signature.fts_returntype)])
     end
 
   method read_xml_user_summary (node:xml_element_int) =

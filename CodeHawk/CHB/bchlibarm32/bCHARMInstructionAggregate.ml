@@ -150,7 +150,7 @@ object (self)
         INT (List.length self#instrs);
         STR " with anchor ";
         self#anchor#toPretty;
-        STR " and instructions: ";
+        STR ": ";
         STR (arm_aggregate_kind_to_string self#kind)]
 
 end
@@ -371,7 +371,7 @@ let identify_bx_call
    ASR  Rx, Rx, #0x10
  *)
 let identify_pseudo_ldrsh
-      (ch: pushback_stream_int)
+      (_ch: pushback_stream_int)
       (instr: arm_assembly_instruction_int):
       (arm_assembly_instruction_int
        * arm_assembly_instruction_int

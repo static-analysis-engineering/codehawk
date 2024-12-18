@@ -808,6 +808,31 @@ object (self)
                 end) rmrdefs)
        end
 
+    | Pop (_, _, rl, _) when rl#includes_pc ->
+       let fsig = finfo#get_summary#get_function_interface.fintf_type_signature in
+       let _ =
+         chlog#add
+           "POP-function-signature"
+           (LBLOCK [STR (btype_to_string fsig.fts_returntype)]) in
+       let rtype = fsig.fts_returntype in
+       (match rtype with
+        | TVoid _ -> ()
+        | _ ->
+           let reg = register_of_arm_register AR0 in
+           let typevar = mk_reglhs_typevar reg faddr iaddr in
+           let opttc = mk_btype_constraint typevar rtype in
+           match opttc with
+           | Some tc ->
+              begin
+                log_type_constraint "POP-rv" tc;
+                store#add_constraint tc
+              end
+           | _ ->
+              begin
+                log_no_type_constraint "POP-rv" rtype;
+                ()
+              end)
+
     | Push _
       | Pop _ ->
        (* no type information gained *)

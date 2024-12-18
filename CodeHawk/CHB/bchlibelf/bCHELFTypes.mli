@@ -788,6 +788,7 @@ object
 
   method read: unit
   method set_code_extent: unit
+  method set_global_data_sections_extent: unit
   method initialize_jump_tables: unit
   method initialize_call_back_tables: unit
   method initialize_struct_tables: unit

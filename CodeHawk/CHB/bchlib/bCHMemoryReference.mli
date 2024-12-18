@@ -107,6 +107,10 @@ val get_total_constant_offset: memory_offset_t -> numerical_t
 val get_index_offset_variables: memory_offset_t -> variable_t list
 
 
+val boffset_to_memory_offset:
+  BCHBCTypes.boffset_t -> memory_offset_t CHTraceResult.traceresult
+
+
 (** {1 Memory reference manager} *)
 
 val make_memory_reference_manager:

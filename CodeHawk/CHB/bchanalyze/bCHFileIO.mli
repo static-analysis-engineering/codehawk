@@ -43,6 +43,7 @@ val save_functions_list: unit -> unit
 val save_arm_functions_list: unit -> unit
 
 val save_global_state: unit -> unit
+val save_global_memory_map: unit -> unit
 val save_system_info: unit -> unit
 val save_resultmetrics: xml_element_int -> unit
 val save_disassembly_status: unit -> unit

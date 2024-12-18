@@ -602,6 +602,8 @@ let main () =
             pr_timing [STR "system_info saved"];
             save_arm_dictionary ();
             pr_timing [STR "dictionary saved"];
+            save_global_memory_map ();
+            pr_timing [STR "global-locations saved"];
             save_interface_dictionary ();
             pr_timing [STR "interface dictionary saved"];
             save_bcdictionary ();
@@ -898,6 +900,8 @@ let main () =
         (* save_arm_assembly_instructions (); *)
         save_arm_dictionary ();
         pr_timing [STR "arm dictionary saved"];
+        save_global_memory_map ();
+        pr_timing [STR "global-locations saved"];
         save_bc_files ();
         pr_timing [STR "bc files saved"];
         save_interface_dictionary ();

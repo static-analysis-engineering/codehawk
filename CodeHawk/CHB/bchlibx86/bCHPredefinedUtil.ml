@@ -45,7 +45,6 @@ open Xsimplify
 open BCHBasicTypes
 open BCHBCTypeUtil
 open BCHByteUtilities
-open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFtsParameter
@@ -211,7 +210,7 @@ let pr_argument_expr
   | Some s -> STR ("\"" ^ s ^ "\"")
   | _ ->
      let x = simplify_xpr xpr in
-     match get_xpr_symbolic_name ~typespec x with
+     match BCHConstantDefinitions.get_xpr_symbolic_name ~typespec x with
      | Some name -> STR name
      | _ -> xpr_to_pretty floc x
 

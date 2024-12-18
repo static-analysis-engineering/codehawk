@@ -599,22 +599,10 @@ object (self)
     let fintf = ctinfo#get_function_interface in
     let stackpars = get_stack_parameters fintf in
     let regpars = get_register_parameters fintf in
-    let _ =
-      chlog#add
-        "floc:get_call_arguments"
-        (LBLOCK [
-             self#l#toPretty;
-             STR "  ";
-             STR ctinfo#get_name;
-             STR ": ";
-             INT (List.length stackpars);
-             STR " stackparameters; ";
-             INT (List.length regpars);
-             STR " register parameters"]) in
-
     List.concat [(get_regargs regpars); (get_stackargs stackpars)]
 
   method get_call_args =
+    (* used in x86 only *)
     let ctinfo = self#get_call_target in
     if ctinfo#is_wrapped_app_call then
       self#get_wrapped_call_args

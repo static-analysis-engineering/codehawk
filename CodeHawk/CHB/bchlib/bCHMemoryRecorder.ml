@@ -40,12 +40,16 @@ open XprTypes
 (* bchlib *)
 open BCHBCTypes
 open BCHBCTypeUtil
+open BCHDoubleword
 open BCHGlobalState
 open BCHLibTypes
 open BCHLocation
 
 
 let x2p = xpr_formatter#pr_expr
+
+let mmap = BCHGlobalMemoryMap.global_memory_map
+
 
 let log_error (tag: string) (msg: string) =
   mk_tracelog_spec ~tag:("memoryrecorder:" ^ tag) msg
@@ -98,6 +102,17 @@ object (self)
 	| Some index -> GArgValue (self#faddr, index, [])
 	| _ -> GUnknownValue)
     | _ -> GUnknownValue
+
+  method record_argument
+           ?(btype = t_unknown)
+           (argvalue: xpr_t)
+           (argindex: int) =
+    match argvalue with
+    | XConst (IntConst n)
+         when mmap#is_global_data_address (numerical_mod_to_doubleword n) ->
+       mmap#add_gaddr_argument
+         self#faddr iaddr (numerical_mod_to_doubleword n) argindex btype
+    | _ -> ()
 
   method record_assignment
            (lhs: variable_t)
@@ -175,6 +190,7 @@ object (self)
             (LBLOCK [self#loc#toPretty; STR ": "; v#toPretty])) vars
 
   method record_load
+           ~(signed: bool)
            ~(addr: xpr_t)
            ~(var: variable_t)
            ~(size: int)
@@ -200,15 +216,21 @@ object (self)
         ~error:(fun _ -> ())
         (self#env#get_memvar_offset var)
     else
-      chlog#add
-        "memory load not recorded"
-        (LBLOCK [
-             self#loc#toPretty;
-             STR "; ";
-             x2p addr;
-             STR " (";
-             var#toPretty;
-             STR ")"])
+      match addr with
+      | XConst (IntConst n)
+           when mmap#is_global_data_address (numerical_mod_to_doubleword n) ->
+         mmap#add_gload
+           self#faddr iaddr (numerical_mod_to_doubleword n) size signed
+      | _ ->
+         chlog#add
+           "memory load not recorded"
+           (LBLOCK [
+                self#loc#toPretty;
+                STR "; ";
+                x2p addr;
+                STR " (";
+                var#toPretty;
+                STR ")"])
 
   method record_store
            ~(addr: xpr_t)
@@ -243,16 +265,26 @@ object (self)
         ~error:(fun _ -> ())
         (self#env#get_memvar_offset var)
     else
-      chlog#add
-        "memory store not recorded"
-        (LBLOCK [
-             self#loc#toPretty;
-             STR ": ";
-             x2p addr;
-             STR " (";
-             var#toPretty;
-             STR "): ";
-             x2p xpr])
+      match addr with
+      | XConst (IntConst n)
+           when mmap#is_global_data_address (numerical_mod_to_doubleword n) ->
+         let optvalue =
+           match xpr with
+           | XConst (IntConst n) -> Some n
+           | _ -> None in
+         mmap#add_gstore
+           self#faddr iaddr (numerical_mod_to_doubleword n) size optvalue
+      | _ ->
+         chlog#add
+           "memory store not recorded"
+           (LBLOCK [
+                self#loc#toPretty;
+                STR ": ";
+                x2p addr;
+                STR " (";
+                var#toPretty;
+                STR "): ";
+                x2p xpr])
 
 end
 

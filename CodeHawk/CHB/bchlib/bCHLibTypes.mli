@@ -432,62 +432,6 @@ type flag_definition_t = {
   }
 
 
-type globalvalue_t =
-  | GConstantString of string
-  | GScalarValue of doubleword_int
-
-
-type global_location_rec_t = {
-    gloc_name: string;
-    gloc_address: doubleword_int;
-    gloc_btype: btype_t;
-    gloc_size: int option;
-    gloc_is_readonly: bool;
-    gloc_is_initialized: bool;
-    gloc_initialvalue: globalvalue_t option;
-    gloc_desc: string option;
-  }
-
-
-class type global_location_int =
-  object
-    method grec: global_location_rec_t
-    method name: string
-    method address: doubleword_int
-    method btype: btype_t
-    method size: int option
-    method is_readonly: bool
-    method is_initialized: bool
-    method initialvalue: globalvalue_t option
-    method desc: string option
-
-    method has_elf_symbol: bool
-  end
-
-
-class type global_memory_map_int =
-  object
-    method add_location:
-             ?name:string option
-             -> ?desc:string option
-             -> ?is_readonly: bool
-             -> ?is_initialized: bool
-             -> ?btype: btype_t
-             -> ?initialvalue: globalvalue_t option
-             -> ?size: int option
-             -> doubleword_int
-             -> unit
-
-    method update_named_location: string -> bvarinfo_t -> unit
-
-    method has_name: string -> bool
-
-    method has_elf_symbol: doubleword_int -> bool
-
-    method get_elf_symbol: doubleword_int -> string
-  end
-
-
 class type type_definitions_int =
   object
     method add_builtin_typeinfo: string -> btype_t -> unit
@@ -4300,6 +4244,134 @@ object
 end
 
 
+type globalvalue_t =
+  | GConstantString of string
+  | GScalarValue of doubleword_int
+
+
+type global_location_ref_t =
+  | GLoad of doubleword_int * ctxt_iaddress_t * doubleword_int * int * bool
+  (** function address of load instruction, instructions address of load
+      instruction, load address, size of load, signed *)
+
+  | GStore of
+      doubleword_int * ctxt_iaddress_t * doubleword_int * int * numerical_t option
+  (** function address of store instruction, instruction address of store
+      instruction, store address, size of store, optional numerical value
+      assigned *)
+
+  | GAddressArgument of
+      doubleword_int * ctxt_iaddress_t * int * doubleword_int * btype_t
+(** function address of call instruction, instruction address of call
+    instruction, argument index, address passed as argument, type of argument *)
+
+
+type global_location_rec_t = {
+    gloc_name: string;
+    gloc_address: doubleword_int;
+    gloc_btype: btype_t;
+    gloc_size: int option;
+    gloc_is_readonly: bool;
+    gloc_is_initialized: bool;
+    gloc_initialvalue: globalvalue_t option;
+    gloc_desc: string option;
+    gloc_section: string option;
+  }
+
+
+class type global_location_int =
+  object
+    method grec: global_location_rec_t
+    method name: string
+    method address: doubleword_int
+    method btype: btype_t
+    method size: int option
+    method is_readonly: bool
+    method is_initialized: bool
+    method is_struct: bool
+    method is_array: bool
+    method initialvalue: globalvalue_t option
+    method desc: string option
+    method contains_address: doubleword_int -> bool
+
+    method address_offset: doubleword_int -> int traceresult
+    method address_memory_offset: doubleword_int -> memory_offset_t traceresult
+
+    method has_elf_symbol: bool
+
+    method write_xml: xml_element_int -> unit
+  end
+
+
+class type global_memory_map_int =
+  object
+
+    method set_section:
+             readonly:bool
+             -> initialized:bool
+             -> string
+             -> doubleword_int
+             -> doubleword_int
+             -> unit
+
+    method add_location:
+             ?name:string option
+             -> ?desc:string option
+             -> ?btype: btype_t
+             -> ?initialvalue: globalvalue_t option
+             -> ?size: int option
+             -> doubleword_int
+             -> unit
+
+    method add_gload:
+             doubleword_int
+             -> ctxt_iaddress_t
+             -> doubleword_int
+             -> int
+             -> bool
+             -> unit
+
+    method add_gstore:
+             doubleword_int
+             -> ctxt_iaddress_t
+             -> doubleword_int
+             -> int
+             -> numerical_t option
+             -> unit
+
+    method add_gaddr_argument:
+             doubleword_int
+             -> ctxt_iaddress_t
+             -> doubleword_int
+             -> int
+             -> btype_t
+             -> unit
+
+    method update_named_location: string -> bvarinfo_t -> unit
+
+    method has_location: doubleword_int -> bool
+
+    method get_location: doubleword_int -> global_location_int
+
+    method containing_location: doubleword_int -> global_location_int option
+
+    method get_location_name: doubleword_int -> string
+
+    method get_location_type: doubleword_int -> btype_t
+
+    method has_location_with_name: string -> bool
+
+    method is_global_data_address: doubleword_int -> bool
+
+    method has_elf_symbol: doubleword_int -> bool
+
+    method get_elf_symbol: doubleword_int -> string
+
+    method write_xml: xml_element_int -> unit
+  end
+
+
+
 (* =========================================================== Function info === *)
 
 
@@ -5486,8 +5558,11 @@ class type memory_recorder_int =
              -> unit
              -> unit
 
+    method record_argument: ?btype:btype_t -> xpr_t -> int -> unit
+
     method record_load:
-             addr:xpr_t
+             signed:bool
+             -> addr:xpr_t
              -> var:variable_t
              -> size:int
              -> vtype:btype_t

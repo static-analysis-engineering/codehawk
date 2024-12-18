@@ -40,7 +40,6 @@ open CHXmlDocument
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCFiles
-open BCHConstantDefinitions
 open BCHBCTypeXml
 open BCHDemangler
 open BCHFunctionSummary
@@ -342,10 +341,10 @@ object (self)
 	  let root = doc#getRoot in
 	  if root#hasOneTaggedChild "symbolic-constants" then
 	    let node = root#getTaggedChild "symbolic-constants" in
-	    read_xml_symbolic_constants node
+	    BCHConstantDefinitions.read_xml_symbolic_constants node
 	  else if root#hasOneTaggedChild "symbolic-flags" then
 	    let node = root#getTaggedChild "symbolic-flags" in
-	    read_xml_symbolic_flags node
+	    BCHConstantDefinitions.read_xml_symbolic_flags node
 	  else
 	    raise
               (BCH_failure

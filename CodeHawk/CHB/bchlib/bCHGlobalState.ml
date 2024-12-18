@@ -40,7 +40,6 @@ open BCHBasicTypes
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
-open BCHConstantDefinitions
 open BCHDoubleword
 open BCHLibTypes
 open BCHPreFileIO
@@ -623,8 +622,9 @@ object (self)
       let vNode = xmlElement "gvar" in
       begin
 	vNode#setAttribute "a" dw#to_hex_string;
-	(if has_symbolic_address_name dw then
-	    vNode#setAttribute "name" (get_symbolic_address_name dw));
+	(if BCHConstantDefinitions.has_symbolic_address_name dw then
+	   vNode#setAttribute
+             "name" (BCHConstantDefinitions.get_symbolic_address_name dw));
 	v#write_xml vNode;
 	vNode
       end) global_variables#listOfPairs)

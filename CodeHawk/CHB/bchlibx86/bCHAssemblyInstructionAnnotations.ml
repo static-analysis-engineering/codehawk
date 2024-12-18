@@ -47,7 +47,6 @@ open Xsimplify
 open BCHBasicTypes
 open BCHBCTypeUtil
 open BCHCallTarget
-open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDemangler
 open BCHDoubleword
@@ -132,7 +131,7 @@ let create_annotation_aux (floc:floc_int) =
   let xpr_formatter = make_xpr_formatter sym_printer variable_to_pretty in
   let pr_expr ?(typespec=None) ?(partype=t_unknown) x =
     let x = simplify_xpr x in
-    match get_xpr_symbolic_name ~typespec x with
+    match BCHConstantDefinitions.get_xpr_symbolic_name ~typespec x with
     | Some name -> STR name
     | _ ->
       if is_unsigned partype then
@@ -173,7 +172,7 @@ let create_annotation_aux (floc:floc_int) =
   let pr_sum_argument_expr
         (ct: call_target_info_int) (p: fts_parameter_t) (xpr: xpr_t) =
     let typespec = ct#get_enum_type p in
-    match get_xpr_symbolic_name ~typespec xpr with
+    match BCHConstantDefinitions.get_xpr_symbolic_name ~typespec xpr with
     | Some name -> STR name
     | _ -> pr_argument_expr ~typespec p  xpr in
   let lhs_to_pretty (_lhs_op:operand_int) (var:variable_t) =
@@ -275,7 +274,7 @@ let create_annotation_aux (floc:floc_int) =
       let rhs_pp = match get_string_reference floc rhs with
 	| Some s -> STR s
 	| _ ->
-	  match get_xpr_symbolic_name rhs with
+	  match BCHConstantDefinitions.get_xpr_symbolic_name rhs with
 	  | Some name -> STR name
 	  | _ -> rhs_to_pretty ~partype:param.apar_type rhs in
       make_annotation FunctionArgument
@@ -1109,7 +1108,7 @@ let create_annotation_aux (floc:floc_int) =
 	let rhs_pp = match get_string_reference floc rhs with
 	  | Some s -> STR s
 	  | _ ->
-	    match get_xpr_symbolic_name rhs with
+	    match BCHConstantDefinitions.get_xpr_symbolic_name rhs with
 	    | Some name -> STR name
 	    | _ -> rhs_to_pretty ~partype:param.apar_type rhs in
 	let pp =

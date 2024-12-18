@@ -38,7 +38,6 @@ open CHLogger
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHConstantDefinitions
 open BCHFunctionSummaryLibrary
 open BCHLibTypes
 open BCHSystemInfo
@@ -126,7 +125,7 @@ let print_statistics () =
 	STR "Type definitions: "; NL; type_definitions#toPretty; NL;
         STR "IO action categories: "; INT (List.length pActions); NL;
         STR "Parameter roles     : "; INT nParamRoles; NL;
-	constant_statistics_to_pretty ();  NL]
+	BCHConstantDefinitions.constant_statistics_to_pretty ();  NL]
   end
 
 let main () =

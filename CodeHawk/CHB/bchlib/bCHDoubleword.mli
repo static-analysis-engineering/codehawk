@@ -109,13 +109,18 @@ val big_int_to_doubleword: big_int -> doubleword_result
 val string_to_doubleword: string -> doubleword_result
 
 
-(**[numerical_to_doubleword num] converts num to a doubleword.
+(**[numerical_to_doubleword num] converts [num] to a doubleword.
 
    [num] must be less than [2^32] and greater than or equal [-2^31].
    Negative numbers are represented by their two's complement
    representation. If [num] is outside this range, [Error] is
    returned.*)
 val numerical_to_doubleword: numerical_t -> doubleword_result
+
+
+(** [numerical_mod_to_doubleword num] converts [num] to a a doubleword.
+    [num] will be forced within the range [0..2^32-1] using wraparound.*)
+val numerical_mod_to_doubleword: numerical_t -> doubleword_int
 
 
 (** [numerical_to_hex_string num] converts num to a hexadecimal string

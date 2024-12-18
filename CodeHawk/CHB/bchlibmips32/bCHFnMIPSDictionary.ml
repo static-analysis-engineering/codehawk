@@ -718,7 +718,11 @@ object (self)
          let useshigh = [get_def_use_high vrt] in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:1 ~vtype:t_char in
+             ~signed:true
+             ~addr:xaddr
+             ~var:vmem
+             ~size:1
+             ~vtype:t_char in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -741,7 +745,11 @@ object (self)
          let useshigh = [get_def_use_high vrt] in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:1 ~vtype:t_uchar in
+             ~signed:false
+             ~addr:xaddr
+             ~var:vmem
+             ~size:1
+             ~vtype:t_uchar in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -764,7 +772,11 @@ object (self)
          let useshigh = [get_def_use_high vft] in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:8 ~vtype:t_double in
+             ~signed:false
+             ~addr:xaddr
+             ~var:vmem
+             ~size:8
+             ~vtype:t_double in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vft; vmem]
@@ -787,7 +799,11 @@ object (self)
          let useshigh = [get_def_use_high vrt] in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:2 ~vtype:t_short in
+             ~signed:true
+             ~addr:xaddr
+             ~var:vmem
+             ~size:2
+             ~vtype:t_short in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -810,7 +826,11 @@ object (self)
          let useshigh = [get_def_use_high vrt] in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:2 ~vtype:t_ushort in
+             ~signed:false
+             ~addr:xaddr
+             ~var:vmem
+             ~size:2
+             ~vtype:t_ushort in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -842,7 +862,11 @@ object (self)
          let useshigh = [get_def_use_high vrt] in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_int in
+             ~signed:false
+             ~addr:xaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_int in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -876,7 +900,11 @@ object (self)
          let useshigh = [get_def_use_high vrt] in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_int in
+             ~signed:true
+             ~addr:xaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_int in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -899,7 +927,11 @@ object (self)
          let useshigh = [get_def_use_high vft] in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_float in
+             ~signed:false
+             ~addr:xaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_float in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vft; vmem]
@@ -928,7 +960,11 @@ object (self)
              4 - alignment in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size ~vtype:t_unknown in
+             ~signed:false
+             ~addr:xaddr
+             ~var:vmem
+             ~size
+             ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -957,7 +993,11 @@ object (self)
              alignment + 1 in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size ~vtype:t_unknown in
+             ~signed:false
+             ~addr:xaddr
+             ~var:vmem
+             ~size
+             ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrt; vmem]
@@ -1383,7 +1423,11 @@ object (self)
          let rdefs = (get_rdef_memvar vmem) :: (get_all_rdefs xaddr) in
          let _ =
            floc#memrecorder#record_load
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_unknown in
+             ~signed:false
+             ~addr:xaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data ~vars:[vmem] ~xprs:[xaddr] ~rdefs () in
          ([tagstring], args)
@@ -1654,7 +1698,10 @@ object (self)
          let useshigh = [get_def_use_high vmem] in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:1 ~vtype:t_char ~xpr:xxrt in
+             ~addr:xaddr
+             ~var:vmem
+             ~size:1
+             ~vtype:t_char ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
@@ -1678,7 +1725,10 @@ object (self)
          let useshigh = [get_def_use_high vmem] in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:2 ~vtype:t_short ~xpr:xxrt in
+             ~addr:xaddr
+             ~var:vmem
+             ~size:2
+             ~vtype:t_short ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
@@ -1702,7 +1752,11 @@ object (self)
          let useshigh = [get_def_use_high vmem] in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_int ~xpr:xxrt in
+             ~addr:xaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_int
+             ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
@@ -1726,7 +1780,11 @@ object (self)
          let useshigh = [get_def_use_high vmem] in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_float ~xpr:xxft in
+             ~addr:xaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_float
+             ~xpr:xxft in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
@@ -1750,7 +1808,11 @@ object (self)
          let useshigh = [get_def_use_high vmem] in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:8 ~vtype:t_double ~xpr:xxft in
+             ~addr:xaddr
+             ~var:vmem
+             ~size:8
+             ~vtype:t_double
+             ~xpr:xxft in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
@@ -1774,7 +1836,11 @@ object (self)
          let useshigh = [get_def_use_high vmem] in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size:4 ~vtype:t_int ~xpr:xxrt in
+             ~addr:xaddr
+             ~var:vmem
+             ~size:4
+             ~vtype:t_int
+             ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
@@ -1804,7 +1870,10 @@ object (self)
              4 - alignment in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size ~vtype:t_unknown ~xpr:xxrt in
+             ~addr:xaddr
+             ~var:vmem ~size
+             ~vtype:t_unknown
+             ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]
@@ -1834,7 +1903,11 @@ object (self)
              alignment + 1 in
          let _ =
            floc#memrecorder#record_store
-             ~addr:xaddr ~var:vmem ~size ~vtype:t_unknown ~xpr:xxrt in
+             ~addr:xaddr
+             ~var:vmem
+             ~size
+             ~vtype:t_unknown
+             ~xpr:xxrt in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vmem]

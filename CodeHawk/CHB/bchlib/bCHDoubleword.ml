@@ -488,6 +488,11 @@ let numerical_to_doubleword (num:numerical_t): doubleword_result =
     "numerical_to_doubleword"
 
 
+let numerical_mod_to_doubleword (num: numerical_t): doubleword_int =
+  let num = num#modulo numerical_e32 in
+  TR.tget_ok (numerical_to_doubleword num)
+
+
 let dw_index_to_int (index:dw_index_t) = index
 
 
