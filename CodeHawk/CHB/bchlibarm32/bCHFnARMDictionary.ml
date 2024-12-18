@@ -491,6 +491,7 @@ object (self)
       let (vrd, rtype) =
         let fintf = floc#get_call_target#get_function_interface in
         let rtype = get_fts_returntype fintf in
+        let rtype = if is_void_pointer rtype then t_ptrto t_uchar else rtype in
         let reg =
           if is_float rtype then
             let regtype =
