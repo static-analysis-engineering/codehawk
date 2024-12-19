@@ -293,9 +293,7 @@ object (self)
               | [] -> ()
               | [_] -> ()
               | _ ->
-                 if List.for_all termset#has cterms then
-                   ()
-                 else if List.exists termset#has cterms then
+                 if List.exists termset#has cterms then
                    begin
                      List.iter termset#add cterms;
                      constraintset#add ixc;
