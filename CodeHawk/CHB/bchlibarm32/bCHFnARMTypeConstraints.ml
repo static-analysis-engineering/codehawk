@@ -42,7 +42,6 @@ open BCHBCFiles
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
-open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDoubleword
 open BCHFloc
@@ -209,6 +208,7 @@ object (self)
     match instr#get_opcode with
 
     | Add (_, _, rd, rn, rm, _) ->
+       let xrn = rn#to_expr floc in
        begin
 
          (if rm#is_immediate && (rm#to_numerical#toInt < 256) then
@@ -228,8 +228,8 @@ object (self)
 
          (match getopt_global_address (rn#to_expr floc) with
           | Some gaddr ->
-             if is_in_global_arrayvar gaddr then
-               (match (get_arrayvar_base_offset gaddr) with
+             if BCHConstantDefinitions.is_in_global_arrayvar gaddr then
+               (match (BCHConstantDefinitions.get_arrayvar_base_offset gaddr) with
                 | Some _ ->
                    let rmdefs = get_variable_rdefs (rm#to_variable floc) in
                    let rmreg = rm#to_register in
@@ -246,6 +246,20 @@ object (self)
                 | _ -> ())
              else
                ()
+          | _ -> ());
+
+         (match getopt_initial_argument_value xrn with
+          | Some (reg, _) ->
+             let ftvar = mk_function_typevar faddr in
+             let ftvar = add_freg_param_capability reg ftvar in
+             let rdreg = rd#to_register in
+             let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+             let fttypeterm = mk_vty_term ftvar in
+             let lhstypeterm = mk_vty_term lhstypevar in
+             begin
+               log_subtype_constraint "ADD-lhs-init" fttypeterm lhstypeterm;
+               store#add_subtype_constraint fttypeterm lhstypeterm
+             end
           | _ -> ())
        end
 
@@ -312,6 +326,25 @@ object (self)
           end)
 
        end
+
+    | BitwiseOr (_, _, rd, rn, _, _) ->
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rnreg = rn#to_register in
+       begin
+
+         List.iter (fun rnsym ->
+             let rnaddr = rnsym#getBaseName in
+             let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+             let rntypeterm = mk_vty_term rntypevar in
+             let lhstypeterm = mk_vty_term lhstypevar in
+             begin
+               log_subtype_constraint "AND-rdef-1" rntypeterm lhstypeterm;
+               store#add_subtype_constraint rntypeterm lhstypeterm
+             end) rndefs
+       end
+
 
     | Branch _ ->
        (* no type information gained *)
@@ -545,8 +578,8 @@ object (self)
             assign the type of that field to the destination register. *)
          (match getopt_global_address (memop#to_address floc) with
           | Some gaddr ->
-             if is_in_global_structvar gaddr then
-               match (get_structvar_base_offset gaddr) with
+             if BCHConstantDefinitions.is_in_global_structvar gaddr then
+               match (BCHConstantDefinitions.get_structvar_base_offset gaddr) with
                | Some (_, Field ((fname, fckey), NoOffset)) ->
                   let compinfo = bcfiles#get_compinfo fckey in
                   let finfo = get_compinfo_field compinfo fname in
@@ -599,8 +632,8 @@ object (self)
             assign that array type to the destination register. *)
          (match getopt_global_address (memop#to_expr floc) with
           | Some gaddr ->
-             if is_in_global_arrayvar gaddr then
-               (match (get_arrayvar_base_offset gaddr) with
+             if BCHConstantDefinitions.is_in_global_arrayvar gaddr then
+               (match (BCHConstantDefinitions.get_arrayvar_base_offset gaddr) with
                 | Some (_, offset, bty) ->
                    (match offset with
                     | Index (Const (CInt (i64, _, _)), NoOffset) ->
@@ -659,7 +692,17 @@ object (self)
               begin
                 log_subtype_constraint "LDRB-imm-off" rdtypeterm rttypeterm;
                 store#add_subtype_constraint rdtypeterm rttypeterm
-              end) xrdefs)
+              end) xrdefs);
+
+         (* LDRB rt, ...  : X_rt <: integer type *)
+         (let tc = mk_int_type_constant Unsigned 8 in
+          let tctypeterm = mk_cty_term tc in
+          let rttypeterm = mk_vty_term rttypevar in
+          begin
+            log_subtype_constraint "LDRB-lhs-byte" tctypeterm rttypeterm;
+            store#add_subtype_constraint tctypeterm rttypeterm
+          end)
+
        end
 
     | LoadRegisterByte (_, rt, _, _, _, _) ->
@@ -742,6 +785,33 @@ object (self)
               store#add_subtype_constraint tctypeterm rntypeterm
             end) rndefs)
 
+    | LogicalShiftRight (_, _, rd, rn, rm, _) when rm#is_immediate ->
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       let rnreg = rn#to_register in
+       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+
+       (* LSR results in an unsigned integer *)
+       (let tc = mk_int_type_constant Unsigned 32 in
+        let tcterm = mk_cty_term tc in
+        let lhstypeterm = mk_vty_term lhstypevar in
+        begin
+          log_subtype_constraint "LSR-lhs" tcterm lhstypeterm;
+          store#add_subtype_constraint tcterm lhstypeterm
+        end);
+
+       (* LSR is applied to an unsigned integer *)
+       (List.iter (fun rnrdef ->
+            let rnaddr = rnrdef#getBaseName in
+            let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+            let tyc = mk_int_type_constant Unsigned 32 in
+            let tctypeterm = mk_cty_term tyc in
+            let rntypeterm = mk_vty_term rntypevar in
+            begin
+              log_subtype_constraint "LSR-rhs" tctypeterm rntypeterm;
+              store#add_subtype_constraint tctypeterm rntypeterm
+            end) rndefs)
+
     | Move (_, _, rd, rm, _, _) when rm#is_immediate ->
        let rmval = rm#to_numerical#toInt in
        (* 0 provides no information about the type *)
@@ -809,6 +879,31 @@ object (self)
                   store#add_subtype_constraint rmtypeterm lhstypeterm
                 end) rmrdefs)
        end
+
+    | Pop (_, _, rl, _) when rl#includes_pc ->
+       let fsig = finfo#get_summary#get_function_interface.fintf_type_signature in
+       let _ =
+         chlog#add
+           "POP-function-signature"
+           (LBLOCK [STR (btype_to_string fsig.fts_returntype)]) in
+       let rtype = fsig.fts_returntype in
+       (match rtype with
+        | TVoid _ -> ()
+        | _ ->
+           let reg = register_of_arm_register AR0 in
+           let typevar = mk_reglhs_typevar reg faddr iaddr in
+           let opttc = mk_btype_constraint typevar rtype in
+           match opttc with
+           | Some tc ->
+              begin
+                log_type_constraint "POP-rv" tc;
+                store#add_constraint tc
+              end
+           | _ ->
+              begin
+                log_no_type_constraint "POP-rv" rtype;
+                ()
+              end)
 
     | Push _
       | Pop _ ->
