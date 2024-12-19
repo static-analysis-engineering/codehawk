@@ -894,7 +894,12 @@ object (self)
            self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
          begin
            (match name with
-            | Some vname -> self#set_variable_name var vname
+            | Some vname ->
+               let ivar = self#mk_variable (varmgr#make_initial_memory_value var) in
+               begin
+                 self#set_variable_name var vname;
+                 self#set_variable_name ivar (vname ^ "_in")
+               end
             | _ -> ());
            Ok var
          end in

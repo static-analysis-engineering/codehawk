@@ -208,6 +208,7 @@ object (self)
     match instr#get_opcode with
 
     | Add (_, _, rd, rn, rm, _) ->
+       let xrn = rn#to_expr floc in
        begin
 
          (if rm#is_immediate && (rm#to_numerical#toInt < 256) then
@@ -245,6 +246,20 @@ object (self)
                 | _ -> ())
              else
                ()
+          | _ -> ());
+
+         (match getopt_initial_argument_value xrn with
+          | Some (reg, _) ->
+             let ftvar = mk_function_typevar faddr in
+             let ftvar = add_freg_param_capability reg ftvar in
+             let rdreg = rd#to_register in
+             let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+             let fttypeterm = mk_vty_term ftvar in
+             let lhstypeterm = mk_vty_term lhstypevar in
+             begin
+               log_subtype_constraint "ADD-lhs-init" fttypeterm lhstypeterm;
+               store#add_subtype_constraint fttypeterm lhstypeterm
+             end
           | _ -> ())
        end
 
@@ -311,6 +326,25 @@ object (self)
           end)
 
        end
+
+    | BitwiseOr (_, _, rd, rn, _, _) ->
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rnreg = rn#to_register in
+       begin
+
+         List.iter (fun rnsym ->
+             let rnaddr = rnsym#getBaseName in
+             let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+             let rntypeterm = mk_vty_term rntypevar in
+             let lhstypeterm = mk_vty_term lhstypevar in
+             begin
+               log_subtype_constraint "AND-rdef-1" rntypeterm lhstypeterm;
+               store#add_subtype_constraint rntypeterm lhstypeterm
+             end) rndefs
+       end
+
 
     | Branch _ ->
        (* no type information gained *)
@@ -658,7 +692,17 @@ object (self)
               begin
                 log_subtype_constraint "LDRB-imm-off" rdtypeterm rttypeterm;
                 store#add_subtype_constraint rdtypeterm rttypeterm
-              end) xrdefs)
+              end) xrdefs);
+
+         (* LDRB rt, ...  : X_rt <: integer type *)
+         (let tc = mk_int_type_constant Unsigned 8 in
+          let tctypeterm = mk_cty_term tc in
+          let rttypeterm = mk_vty_term rttypevar in
+          begin
+            log_subtype_constraint "LDRB-lhs-byte" tctypeterm rttypeterm;
+            store#add_subtype_constraint tctypeterm rttypeterm
+          end)
+
        end
 
     | LoadRegisterByte (_, rt, _, _, _, _) ->
@@ -738,6 +782,33 @@ object (self)
             let rntypeterm = mk_vty_term rntypevar in
             begin
               log_subtype_constraint "LSL-rhs" tctypeterm rntypeterm;
+              store#add_subtype_constraint tctypeterm rntypeterm
+            end) rndefs)
+
+    | LogicalShiftRight (_, _, rd, rn, rm, _) when rm#is_immediate ->
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       let rnreg = rn#to_register in
+       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+
+       (* LSR results in an unsigned integer *)
+       (let tc = mk_int_type_constant Unsigned 32 in
+        let tcterm = mk_cty_term tc in
+        let lhstypeterm = mk_vty_term lhstypevar in
+        begin
+          log_subtype_constraint "LSR-lhs" tcterm lhstypeterm;
+          store#add_subtype_constraint tcterm lhstypeterm
+        end);
+
+       (* LSR is applied to an unsigned integer *)
+       (List.iter (fun rnrdef ->
+            let rnaddr = rnrdef#getBaseName in
+            let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+            let tyc = mk_int_type_constant Unsigned 32 in
+            let tctypeterm = mk_cty_term tyc in
+            let rntypeterm = mk_vty_term rntypevar in
+            begin
+              log_subtype_constraint "LSR-rhs" tctypeterm rntypeterm;
               store#add_subtype_constraint tctypeterm rntypeterm
             end) rndefs)
 
