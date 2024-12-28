@@ -4259,8 +4259,14 @@ object (self)
       let initVar = env#mk_initial_register_value (ARMExtensionRegister reg) in
       ASSERT (EQ (regVar, initVar)) in
     let freeze_external_memory_values (v:variable_t) =
-      let initVar = env#mk_initial_memory_value v in
-      ASSERT (EQ (v, initVar)) in
+      TR.tfold
+        ~ok:(fun initVar -> ASSERT (EQ (v, initVar)))
+        ~error:(fun e ->
+          begin
+            log_error_result __FILE__ __LINE__ e;
+            SKIP
+          end)
+        (env#mk_initial_memory_value v) in
     let rAsserts = List.map freeze_initial_register_value arm_regular_registers in
     let xAsserts =
       let xregsused =

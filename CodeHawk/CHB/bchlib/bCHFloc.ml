@@ -781,9 +781,11 @@ object (self)
         self#env#mk_memory_variable
           ~size memref (get_total_constant_offset memoffset)
     else
+      default ()
+        (*
       match memoffset with
       | IndexOffset _ ->
-         self#env#mk_index_offset_memory_variable memref memoffset
+         self#env#mk_offset_memory_variable memref memoffset
       | ConstantOffset (n, IndexOffset (v, s, o)) ->
          let n = n#modulo (mkNumerical BCHDoubleword.e32) in
          log_tfold_default
@@ -806,7 +808,7 @@ object (self)
               n (IndexOffset (v, s, o)))
       | _ ->
          default ()
-
+         *)
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (None,indexreg, scale, offset)
@@ -1154,13 +1156,21 @@ object (self)
 		  self#f#add_base_pointer base;
 		  Some (XVar base, simplify_xpr (XOp (XMinus, [x; XVar base])))
 	       end
-	     | [base] when self#env#is_stack_parameter_variable base &&
-		 self#f#env#has_constant_offset base && self#has_initial_value base ->
-	       let baseInit = self#f#env#mk_initial_memory_value base in
-	       begin
-		 self#f#add_base_pointer baseInit;
-		 Some (XVar base, simplify_xpr (XOp (XMinus, [x; XVar base])))
-	       end
+	     | [base] when self#env#is_stack_parameter_variable base
+		             && self#f#env#has_constant_offset base
+                             && self#has_initial_value base ->
+                TR.tfold
+                  ~ok:(fun baseInit ->
+	            begin
+		      self#f#add_base_pointer baseInit;
+		      Some (XVar base, simplify_xpr (XOp (XMinus, [x; XVar base])))
+	            end)
+                  ~error:(fun e ->
+                    begin
+                      log_error_result ~tag:"decompose_address" __FILE__ __LINE__ e;
+                      None
+                    end)
+                  (self#f#env#mk_initial_memory_value base)
              | [_] -> None
 	     | [] ->      (* suspicious address below the image base *)
 	       begin

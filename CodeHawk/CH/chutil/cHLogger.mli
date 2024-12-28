@@ -112,3 +112,11 @@ val log_tfold:
     [e] is logged according [tls].*)
 val log_tfold_default:
   tracelogspec_t -> ('a -> 'c) -> 'c -> 'a traceresult -> 'c
+
+
+(** [log_error_result msg tag filename linenumber error] writes an entry to
+    [ch_error_log] with a tag that combines [tag], [filename], and [linenumber].
+    The entry is the concatenation of [msg] and the list of error messages
+    making up [error].*)
+val log_error_result:
+  ?msg:string -> ?tag:string -> string -> int -> string list -> unit

@@ -375,7 +375,12 @@ object (self)
              when n#equal CHNumerical.numerical_zero
                   && Option.is_none tgtsize
                   && is_unknown_type tgtbtype ->
-           Ok BCHLibTypes.NoOffset
+           Ok NoOffset
+        | XConst (IntConst n)
+             when n#equal CHNumerical.numerical_zero && (not self#is_typed) ->
+           Ok NoOffset
+        | XConst (IntConst n) when not self#is_typed ->
+           Ok (ConstantOffset (n, NoOffset))
         | _ ->
            let tgtbtype = if is_unknown_type tgtbtype then None else Some tgtbtype in
            if self#is_struct then

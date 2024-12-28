@@ -4453,9 +4453,16 @@ class type function_environment_int =
 
     (** {2 Memory references} *)
 
+    (** To be deprecated. *)
     method mk_unknown_memory_reference: string -> memory_reference_int
+
+    (** Returns global base reference (address zero). *)
     method mk_global_memory_reference: memory_reference_int
+
+    (** Returns local stack base reference. *)
     method mk_local_stack_reference: memory_reference_int
+
+    (** Returns a base reference for a realigned stack pointer. *)
     method mk_realigned_stack_reference: memory_reference_int
 
     (** [mk_base_variable_reference var] returns a memory reference with
@@ -4467,10 +4474,8 @@ class type function_environment_int =
         A memory-address value returns a base-array or base-struct
         reference, depending on the type of the memory-address value.
 
-        Returns an unknown-basevar memory variable if [var] cannot be used
-        as a basevar.
-
-        Returns [Error] if [var] cannot be found. *)
+        Returns [Error] if [var] cannot be found, or if [var] cannot be
+        used as a basevar. *)
     method mk_base_variable_reference:
              variable_t -> memory_reference_int traceresult
 
@@ -4523,6 +4528,19 @@ class type function_environment_int =
 
     (** {2 Memory variables} *)
 
+    (** [mk_global_variable offset] attempts to find a containing global
+        location for [offset]. If successful a memory offset will be computed
+        for that offset relative to the address of the containing location
+        and the type of that location.
+
+        If no containing location can be found for [offset] a new global
+        location is created in the global memory map and a global variable
+        is returned for that address without offset.
+
+        If the global location found is untyped and there is a non-zero offset,
+        a global variable with a constant offset is returned. Note that a
+        constant offset cannot be used for lifting.
+     *)
     method mk_global_variable:
              ?size:int
              -> ?btype:btype_t
@@ -4532,24 +4550,38 @@ class type function_environment_int =
     method mk_gloc_variable:
              global_location_int -> memory_offset_t -> variable_t
 
-    method mk_initial_memory_value: variable_t -> variable_t
+    method mk_initial_memory_value: variable_t -> variable_t traceresult
 
+    (** [mk_memory_variable memref offset] returns a memory variable with
+        [memref] as basis and a constant (numerical) offset.
+
+        If [memref] is an unknown base a temp variable is returned.
+     *)
     method mk_memory_variable:
              ?save_name:bool
              -> ?size:int
              -> memory_reference_int
              -> numerical_t
              -> variable_t
-    method mk_index_offset_memory_variable:
+
+    (** [mk_offset_memory_variable memref memoff] returns a memory variable
+        with [memref] as basis and a generic memory offset.
+
+        If [memref] is an unknown base a temp variable is returned
+    method mk_offset_memory_variable:
              ?size:int
              -> memory_reference_int
              -> memory_offset_t
              -> variable_t
+     *)
+   (*
     method mk_index_offset_global_memory_variable:
              ?elementsize:int
              -> numerical_t
              -> memory_offset_t
-             -> variable_t traceresult
+             -> variable_t traceresult *)
+
+    (** To be deprecated. *)
     method mk_unknown_memory_variable: string -> variable_t
 
     (** {2 Other variables} *)

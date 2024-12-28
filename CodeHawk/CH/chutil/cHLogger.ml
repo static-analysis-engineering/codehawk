@@ -226,3 +226,16 @@ let log_tfold_default
        log_tracelog_error logspec e;
        d
      end
+
+
+let log_error_result
+      ?(msg="")
+      ?(tag="")
+      (filename: string)
+      (linenumber: int)
+      (error: string list) =
+  let tag = if tag = "" then tag else tag ^ ":" in
+  let msg = if msg = "" then msg else msg ^ ": " in
+  ch_error_log#add
+    (tag ^ filename ^ (string_of_int linenumber))
+    (LBLOCK [STR msg; STR (String.concat "; " error)])
