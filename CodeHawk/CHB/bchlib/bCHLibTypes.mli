@@ -4041,7 +4041,7 @@ object
 
       Returns None if the variable is not a stack parameter variable or if
       the variable cannot be found. *)
-  method get_stack_parameter_index: variable_t -> (int option)
+  method get_stack_parameter_index: variable_t -> int option
 
   (** Returns [true] if [var] is either a register variable or a stack
       variable (at any offset). *)

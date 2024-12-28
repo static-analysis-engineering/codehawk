@@ -433,7 +433,7 @@ object (self)
       Ok (H.find table index)
     else
       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-             ^ "Index not found: " ^ (string_of_int index)]
+             ^ "Memory reference index not found: " ^ (string_of_int index)]
 
   method get_memory_reference_type (index: int): btype_t option =
     tfold_default
