@@ -54,6 +54,12 @@ val e32: int
 
 val equal_doubleword: ?msg:string -> doubleword_int -> doubleword_int -> unit
 
+val equal_numerical:
+  ?msg:string
+  -> expected:numerical_t
+  -> received:numerical_t
+  -> unit
+  -> unit
 
 val equal_doubleword_result:
   ?msg:string -> doubleword_int -> doubleword_result -> unit
@@ -79,8 +85,8 @@ val equal_string_imm_result_string:
 
 val equal_array_index_offset:
   ?msg:string
-  -> expected:(xpr_t * numerical_t) option
-  -> received:(xpr_t * numerical_t) option
+  -> expected:(xpr_t * xpr_t) option
+  -> received:(xpr_t * xpr_t) option
   -> unit
   -> unit
 
@@ -97,6 +103,14 @@ val equal_opt_meminfo:
   ?msg:string
   -> expected:(memory_reference_int * memory_offset_t) option
   -> received:(memory_reference_int * memory_offset_t) option
+  -> unit
+  -> unit
+
+
+val equal_opt_variable:
+  ?msg:string
+  -> expected:(variable_t) option
+  -> received:(variable_t) option
   -> unit
   -> unit
 
