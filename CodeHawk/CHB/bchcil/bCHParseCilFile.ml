@@ -32,6 +32,9 @@ open Frontc
 (* chlib *)
 open CHPretty
 
+(* chutil *)
+open CHLogger
+
 (* bchlib *)
 open BCHBCFiles
 open BCHBCTypes
@@ -47,7 +50,13 @@ let update_symbolic_address_types () =
       if List.mem vinfo.bvname gfunnames then
         ()
       else
-        BCHGlobalMemoryMap.update_global_location_type vinfo) varinfos
+        match BCHGlobalMemoryMap.update_global_location_type vinfo with
+        | Error e ->
+           ch_error_log#add
+             "update-global-location-type"
+             (LBLOCK [
+                  STR "varinfo: "; STR vinfo.bvname; STR (String.concat "; " e)])
+        | _ -> ()) varinfos
 
 
 let parse_cil_file ?(computeCFG=true) ?(removeUnused=true) (filename: string) =
