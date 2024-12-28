@@ -255,9 +255,12 @@ class type elf_symbol_table_entry_int =
     method get_st_type: int
     method get_st_name: doubleword_int
     method get_st_value: doubleword_int
+    method get_st_size: doubleword_int
     method get_value: doubleword_int
+    method get_size: int option
     method has_address_value: bool
     method has_name: bool
+    method has_size: bool
     method is_function: bool
     method is_data_object: bool
     method to_rep_record: string list * int list

@@ -135,6 +135,8 @@ object (self)
 
   method get_st_type = st_info land 15
 
+  method get_st_size = st_size
+
   method get_st_value = st_value
 
   method get_value = st_value
@@ -144,6 +146,11 @@ object (self)
   method is_data_object = self#get_st_type = 1
 
   method has_address_value = not (st_value#equal wordzero)
+
+  method has_size = not (st_size#equal wordzero)
+
+  method get_size: int option =
+    if self#has_size then Some st_size#to_int else None
 
   method write_xml (node:xml_element_int) =
     let set = node#setAttribute in
@@ -243,10 +250,15 @@ object
   method set_data_object_names =
     H.iter (fun _ e ->
         if e#is_data_object && e#has_address_value && e#has_name then
-          BCHGlobalMemoryMap.global_memory_map#add_location
-            ~name:(Some e#get_name)
-            ~desc:(Some "symbol-table")
-            e#get_st_value
+          match (BCHGlobalMemoryMap.global_memory_map#add_location
+                   ~name:(Some e#get_name)
+                   ~desc:(Some "symbol-table")
+                   ~size:e#get_size
+                   e#get_st_value) with
+          | Error e ->
+             ch_error_log#add
+               "ELF: set_data_object_names" (STR (String.concat "; " e))
+          | _ -> ()
         else
           ()
       ) entries
