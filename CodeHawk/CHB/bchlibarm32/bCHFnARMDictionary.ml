@@ -104,8 +104,8 @@ object (self)
     ]
 
   method index_sp_offset (o:(int * interval_t)) =
-    let (level,offset) = o in
-    let key = ([],[level; xd#index_interval offset]) in
+    let (level, offset) = o in
+    let key = ([], [level; xd#index_interval offset]) in
     sp_offset_table#add key
 
   method get_sp_offset (index:int) =
@@ -478,15 +478,19 @@ object (self)
                           floc#l#toPretty;
                           STR ": Parameter type not recognized in call ";
                           STR "instruction"])) in
+            let ptype = get_parameter_type p in
             let xx = rewrite_expr ?restrict:(Some 4) x in
-            let _ = floc#memrecorder#record_argument xx index in
             let xx =
-              let optmemvar = floc#decompose_memvar_address xx in
-              match optmemvar with
-              | Some (memref, memoff) ->
-                 XOp ((Xf "addressofvar"),
-                      [XVar (floc#f#env#mk_index_offset_memory_variable memref memoff)])
-              | _ -> xx in
+              if is_pointer ptype then
+                let _ = floc#memrecorder#record_argument xx index in
+                let xx =
+                  TR.tfold_default
+                    (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
+                    xx
+                    (floc#get_var_at_address ~btype:ptype xx) in
+                xx
+              else
+                xx in
             let rdef = get_rdef xvar in
             (xx :: xprs, xvar :: xvars, rdef :: rdefs, index + 1))
           ([], [], [], 1) callargs in
@@ -568,14 +572,11 @@ object (self)
          let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
          let uses = get_def_use vrd in
          let useshigh = get_def_use_high vrd in
-         let optmemvar = floc#decompose_memvar_address rresult in
          let rresult =
-           match optmemvar with
-           | Some (memref, memoff) ->
-              let memvar =
-                floc#f#env#mk_index_offset_memory_variable memref memoff in
-              XOp ((Xf "addressofvar"), [XVar memvar])
-           | _ -> rresult in
+           TR.tfold_default
+             (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
+             rresult
+             (floc#get_var_at_address rresult) in
          let (tagstring, args) =
            mk_instrx_data
              ~vars:[vrd]
@@ -2061,13 +2062,10 @@ object (self)
            let xxsrc = rewrite_floc_expr srcfloc xsrc in
            let xxdst = rewrite_expr ?restrict:(Some 4) xdst in
            let xxdst =
-             let optmemvar = floc#decompose_memvar_address xxdst in
-             match optmemvar with
-             | Some (memref, memoff) ->
-                let memvar =
-                  floc#f#env#mk_index_offset_memory_variable memref memoff in
-                XOp ((Xf "addressofvar"), [XVar memvar])
-             | _ -> xxdst in
+             TR.tfold_default
+               (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
+               xxdst
+               (floc#get_var_at_address xxdst) in
            let rdefs = [(get_rdef xsrc); (get_rdef xdst)] in
            let _ =
              match get_string_reference srcfloc xxsrc with

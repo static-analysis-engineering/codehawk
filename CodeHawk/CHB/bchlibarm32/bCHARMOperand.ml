@@ -63,12 +63,6 @@ module TR = CHTraceResult
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 
-let memmap = BCHGlobalMemoryMap.global_memory_map
-
-
-let log_error (tag: string) (msg: string): tracelogspec_t =
-  mk_tracelog_spec ~tag:("arm_operand:" ^ tag) msg
-
 
 let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
 
@@ -509,20 +503,7 @@ object (self:'a)
                                            STR (String.concat "; " e)]))
                               | Ok v -> v) in
                            (v, [STR "ARMShiftedIndexOffset"; STR "explicit"])
-                        | XVar v when floc#f#env#is_memory_address_variable v ->
-                           log_tfold_default
-                             (log_error "ARMShiftedIndexOffset" (p2s v#toPretty))
-                             (fun v ->
-                               (v, [STR "ARMShiftedIndexOffset";
-                                    v#toPretty]))
-                             (env#mk_unknown_memory_variable "operand",
-                              [STR "ARMShiftedIndexOffset";
-                               self#toPretty;
-                               STR "; rx: ";
-                               x2p rx;
-                               STR ": ivax: ";
-                               x2p ivax])
-                             (floc#f#env#mk_memory_address_deref_variable v)
+                           (*
                         | XOp (XPlus, [XVar basevar; XVar memoffset]) ->
                            let optmemvaraddr = floc#decompose_memvar_address xoffset in
                            (match optmemvaraddr with
@@ -542,7 +523,7 @@ object (self:'a)
                                  STR "; basevar: ";
                                  basevar#toPretty;
                                  STR "; memoffset: ";
-                                 memoffset#toPretty]))
+                                 memoffset#toPretty])) *)
                         | _ ->
                            (env#mk_unknown_memory_variable "operand",
                             [STR "ARMShiftedIndexOffset";
@@ -616,17 +597,7 @@ object (self:'a)
     match kind with
     | ARMImmediate imm ->
        let imm = if unsigned then imm#to_unsigned else imm in
-       (match imm#to_doubleword with
-        | Some dw ->
-           if memmap#has_location dw then
-             let name = memmap#get_location_name dw in
-             let var =
-               floc#f#env#mk_global_memory_address
-                 ~optname:(Some name) imm#to_numerical in
-             XVar var
-           else
-             num_constant_expr imm#to_numerical
-        | _ -> num_constant_expr imm#to_numerical)
+       num_constant_expr imm#to_numerical
     | ARMFPConstant _ -> XConst XRandom
     | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
     | ARMDoubleReg _ -> XVar (self#to_variable floc)
@@ -639,19 +610,7 @@ object (self:'a)
        num_constant_expr a#to_numerical
     | ARMLiteralAddress a ->
        if elf_header#is_readonly_address a then
-         let dw = elf_header#get_program_value a in
-         if memmap#has_location dw then
-           let name = memmap#get_location_name dw in
-           let ty = memmap#get_location_type dw in
-           if is_struct_type ty || is_array_type ty then
-             let var =
-               floc#f#env#mk_global_memory_address
-                 ~optname:(Some name) ~opttype:(Some ty) dw#to_numerical in
-             XVar var
-           else
-             num_constant_expr (elf_header#get_program_value a)#to_numerical
-         else
-           num_constant_expr (elf_header#get_program_value a)#to_numerical
+         num_constant_expr (elf_header#get_program_value a)#to_numerical
        else
          begin
            ch_error_log#add
