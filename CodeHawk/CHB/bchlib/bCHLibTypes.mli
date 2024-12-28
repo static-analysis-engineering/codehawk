@@ -3260,7 +3260,7 @@ class type type_constraint_store_int =
     [BaseArray (v, t)] and [BaseStruct (v, t)] on the other hand is that the
     variable [v] referenced in [BaseVar] refers to a variable that is a
     pointer, that is, its value is the address of the base, while the
-    variable [v] in [BaseArray] and [BaseStruct] is a symbolic representation
+    expression [x] in [BaseArray] and [BaseStruct] is a symbolic representation
     of the address itself, that is, there is no associated variable in the
     code. The latter two are applicable to global or stack-allocated arrays
     and structs that can be referenced directly via their address without
@@ -3277,10 +3277,10 @@ type memory_base_t =
 (** base provided by an externally controlled variable,
     e.g., argument to the function, or return value from malloc *)
 
-| BaseArray of variable_t * btype_t
+| BaseArray of xpr_t * btype_t
 (** base provided by a typed array address *)
 
-| BaseStruct of variable_t * btype_t
+| BaseStruct of xpr_t * btype_t
 (** base provided by a typed struct address *)
 
 | BaseUnknown of string  (** address without interpretation *)
@@ -3290,7 +3290,10 @@ type memory_base_t =
 type memory_offset_t =
   | NoOffset
   | ConstantOffset of numerical_t * memory_offset_t
-  (** typically used when the type of the variable is not known*)
+  (** typically used when the type of the variable is not known, or for
+      global offsets (the absolute address of a global variable), or for
+      stack offsets (the difference between the stack pointer and the value
+      of the stack pointer at function entry *)
 
   | FieldOffset of fielduse_t * memory_offset_t
   (** offset in a struct variable with [(fieldname, struct key)] *)
@@ -3332,13 +3335,13 @@ object ('a)
       memory reference.
 
       Returns [Error] if this memory reference does not have a [BaseArray] base.*)
-  method get_array_base: (variable_t * btype_t) traceresult
+  method get_array_base: (xpr_t * btype_t) traceresult
 
   (** Returns the memory address variable and type of the base address of this
       memory reference.
 
       Returns [Error] if this memory reference does not have a [BaseStruct] base.*)
-  method get_struct_base: (variable_t * btype_t) traceresult
+  method get_struct_base: (xpr_t * btype_t) traceresult
 
   (** {1 Predicates} *)
 
@@ -3377,8 +3380,8 @@ object
   method mk_allocated_stack_reference: memory_reference_int
   method mk_realigned_stack_reference: memory_reference_int
   method mk_basevar_reference: variable_t -> memory_reference_int
-  method mk_base_array_reference: variable_t -> btype_t -> memory_reference_int
-  method mk_base_struct_reference: variable_t -> btype_t -> memory_reference_int
+  method mk_base_array_reference: xpr_t -> btype_t -> memory_reference_int
+  method mk_base_struct_reference: xpr_t -> btype_t -> memory_reference_int
   method mk_unknown_reference: string -> memory_reference_int
 
   (** {1 Accessors} *)

@@ -117,8 +117,8 @@ object (self)
         | BAllocatedStackFrame
         | BGlobal -> (tags, [])
       | BaseVar v -> (tags, [xd#index_variable v])
-      | BaseArray (v, t) -> (tags, [xd#index_variable v; bcd#index_typ t])
-      | BaseStruct (v, t) -> (tags, [xd#index_variable v; bcd#index_typ t])
+      | BaseArray (x, t) -> (tags, [xd#index_xpr x; bcd#index_typ t])
+      | BaseStruct (x, t) -> (tags, [xd#index_xpr x; bcd#index_typ t])
       | BaseUnknown s -> (tags, [bd#index_string s]) in
     memory_base_table#add key
 
@@ -133,8 +133,8 @@ object (self)
     | "a" -> BAllocatedStackFrame
     | "g" -> BGlobal
     | "v" -> BaseVar (xd#get_variable (a 0))
-    | "b" -> BaseArray (xd#get_variable (a 0), bcd#get_typ (a 1))
-    | "s" -> BaseStruct (xd#get_variable (a 0), bcd#get_typ (a 1))
+    | "b" -> BaseArray (xd#get_xpr (a 0), bcd#get_typ (a 1))
+    | "s" -> BaseStruct (xd#get_xpr (a 0), bcd#get_typ (a 1))
     | "u" -> BaseUnknown (bd#get_string (a 0))
     | s -> raise_tag_error name s memory_base_mcts#tags
 

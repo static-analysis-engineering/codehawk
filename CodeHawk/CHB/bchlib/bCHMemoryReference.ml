@@ -39,6 +39,7 @@ open CHTraceResult
 
 (* xprlib *)
 open Xprt
+open XprTypes
 open XprToPretty
 
 (* bchlib *)
@@ -64,8 +65,8 @@ let memory_base_to_string (b: memory_base_t): string =
   | BAllocatedStackFrame -> "allocated-stack"
   | BGlobal -> "global"
   | BaseVar v -> "var-" ^ v#getName#getBaseName
-  | BaseArray (v, _) -> "array-" ^ v#getName#getBaseName
-  | BaseStruct (v, _) -> "struct-" ^ v#getName#getBaseName
+  | BaseArray (x, _) -> "array-" ^ (x2s x)
+  | BaseStruct (x, _) -> "struct-" ^ (x2s x)
   | BaseUnknown s -> "unknown-" ^ s
 
 
@@ -322,11 +323,11 @@ object (self:'a)
 
   method get_base = base
 
-  method get_name =
+  method get_name: string =
     match base with
     | BaseVar v -> v#getName#getBaseName
-    | BaseArray (v, _) -> v#getName#getBaseName
-    | BaseStruct (v, _) -> v#getName#getBaseName
+    | BaseArray (x, _) -> (x2s x)
+    | BaseStruct (x, _) -> (x2s x)
     | BLocalStackFrame -> "var"
     | BRealignedStackFrame -> "varr"
     | BAllocatedStackFrame -> "vara"
@@ -343,25 +344,25 @@ object (self:'a)
     match base with
     | BaseVar v -> Ok v
     | _ ->
-       Error [
-           "get_external_base: not an external base: "
-           ^ (memory_base_to_string base)]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Not an external base: "
+              ^ (memory_base_to_string base)]
 
-  method get_array_base: (variable_t * btype_t) traceresult =
+  method get_array_base: (xpr_t * btype_t) traceresult =
     match base with
-    | BaseArray (v, t) -> Ok (v, t)
+    | BaseArray (x, t) -> Ok (x, t)
     | _ ->
-       Error [
-           "get_array_base: not an array base: "
-           ^ (memory_base_to_string base)]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Not an array base: "
+              ^ (memory_base_to_string base)]
 
-  method get_struct_base: (variable_t * btype_t) traceresult =
+  method get_struct_base: (xpr_t * btype_t) traceresult =
     match base with
-    | BaseStruct (v, t) -> Ok (v, t)
+    | BaseStruct (x, t) -> Ok (x, t)
     | _ ->
-       Error [
-           "get_struct_base: not a struct base: "
-           ^ (memory_base_to_string base)]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Not a struct base: "
+              ^ (memory_base_to_string base)]
 
   method has_external_base =
     match base with BaseVar _ -> true | _ -> false
@@ -384,7 +385,7 @@ object (self:'a)
   method is_unknown_reference =
     match base with BaseUnknown _ -> true | _ -> false
 
-  method toPretty = LBLOCK [ memory_base_to_pretty base ]
+  method toPretty = LBLOCK [memory_base_to_pretty base]
 
 end
 
@@ -419,11 +420,11 @@ object (self)
 
   method mk_basevar_reference v = self#mk_reference (BaseVar v)
 
-  method mk_base_array_reference (v: variable_t) (t: btype_t) =
-    self#mk_reference (BaseArray (v, t))
+  method mk_base_array_reference (x: xpr_t) (t: btype_t) =
+    self#mk_reference (BaseArray (x, t))
 
-  method mk_base_struct_reference (v: variable_t) (t: btype_t) =
-    self#mk_reference (BaseStruct (v, t))
+  method mk_base_struct_reference (x: xpr_t) (t: btype_t) =
+    self#mk_reference (BaseStruct (x, t))
 
   method mk_unknown_reference s = self#mk_reference (BaseUnknown s)
 
@@ -431,8 +432,8 @@ object (self)
     if H.mem table index then
       Ok (H.find table index)
     else
-      Error [
-          "get_memory_reference_int: index not found: " ^ (string_of_int index)]
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "Index not found: " ^ (string_of_int index)]
 
   method get_memory_reference_type (index: int): btype_t option =
     tfold_default
@@ -443,13 +444,13 @@ object (self)
   method is_unknown_reference (index: int): bool traceresult =
     let memref_r = self#get_memory_reference index in
     tmap
-      ~msg:"is_unknown_reference"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
       (fun memref -> memref#is_unknown_reference) memref_r
 
   method is_global_reference (index: int): bool traceresult =
     let memref_r = self#get_memory_reference index in
     tmap
-      ~msg:"is_global_reference"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
       (fun memref -> memref#is_global_reference) memref_r
 
   method initialize =

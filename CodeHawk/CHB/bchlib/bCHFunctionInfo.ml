@@ -1569,7 +1569,7 @@ object (self)
   val constant_table = new VariableCollections.table_t          (* constants *)
   val calltargets = H.create 5                               (* call-targets *)
 
-  val mutable base_pointers = new VariableCollections.set_t (* base-pointers *)
+  val base_pointers = new VariableCollections.set_t         (* base-pointers *)
   val mutable stack_adjustment = None                    (* stack-adjustment *)
   val saved_registers = H.create 3            (* saved-registers -- not read *)
 
@@ -2161,8 +2161,6 @@ object (self)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
   method add_base_pointer (var:variable_t) =
-    let _ = track_function
-              self#a (LBLOCK [ STR "add base pointer: " ; var#toPretty ]) in
     base_pointers#add var
 
   method get_base_pointers = base_pointers#toList
