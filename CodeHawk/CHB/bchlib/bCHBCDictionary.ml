@@ -432,8 +432,8 @@ object (self)
     let r =
       List.mapi (fun i (name, typ, attrs) ->
           let name =
-            if name = "" then "$par$" ^ (string_of_int (i+1)) else name in
-          (name,typ,attrs)) r in
+            if name = "" then "x" ^ (string_of_int (i+1)) else name in
+          (name, typ, attrs)) r in
     funargs_table#add ([], List.map self#index_funarg r)
 
   method get_funargs (index: int): bfunarg_t list =

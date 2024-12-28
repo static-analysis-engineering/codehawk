@@ -684,7 +684,6 @@ object
     | FunctionPointer _ -> "fp"
     | CallTargetValue _ -> "ct"
     | SideEffectValue _ -> "se"
-    | MemoryAddress  _ -> "ma"
     | BridgeVariable _ -> "bv"
     | FieldValue _ -> "fv"
     | SymbolicValue _ -> "sv"
@@ -695,7 +694,7 @@ object
 
   method !tags = [
       "bv"; "chiftemp"; "ct"; "ev"; "fr"; "fp"; "ft"; "fv"; "ir";
-      "iv"; "ma"; "rt"; "se" ; "sp"; "sv"; "ssv"]
+      "iv"; "rt"; "se" ; "sp"; "sv"; "ssv"]
 
 end
 

@@ -295,3 +295,10 @@ val struct_field_categories: btype_t -> string list
     If [ty] is not a struct it returns the regular string representation of
     [ty] with offset 0.*)
 val struct_offset_field_categories: btype_t -> (int * string) list
+
+
+(** {1 Bexpressions} *)
+
+(** {2 Constants} *)
+
+val bexp_intconstant: ?ikind:ikind_t -> int -> bexp_t

@@ -44,4 +44,5 @@ val global_location_rec_to_pretty: global_location_rec_t -> pretty_t
 val read_xml_symbolic_addresses: xml_element_int -> unit
 
 
-val update_global_location_type: bvarinfo_t -> unit
+val update_global_location_type:
+  bvarinfo_t -> global_location_int CHTraceResult.traceresult

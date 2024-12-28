@@ -204,12 +204,6 @@ object (self)
       | CallTargetValue t -> (tags, [id#index_call_target t])
       | SideEffectValue  (a, name, isglobal) ->
          (tags @  [a ], [bd#index_string name; (if isglobal then 1 else 0)])
-      | MemoryAddress (i, o, opts, optty) ->
-         (tags,
-          [i;
-           self#index_memory_offset o;
-           (match opts with None -> -1 | Some s -> bd#index_string s);
-           match optty with None -> -1 | Some ty -> bcd#index_typ ty])
       | BridgeVariable (a,i) -> (tags @ [a], [i])
       | FieldValue (sname,offset,fname) ->
          (tags, [bd#index_string sname; offset; bd#index_string fname])
@@ -234,12 +228,6 @@ object (self)
     | "fp" -> FunctionPointer (bd#get_string (a 0), bd#get_string (a 1), t 1)
     | "ct" -> CallTargetValue (id#get_call_target (a 0))
     | "se" -> SideEffectValue (t 1, bd#get_string (a 0), (a 1) = 1)
-    | "ma" ->
-       MemoryAddress (
-           (a 0),
-           self#get_memory_offset (a 1),
-           (if (a 2) = -1 then None else Some (bd#get_string (a 2))),
-           (if (a 3) = -1 then None else Some (bcd#get_typ (a 3))))
     | "bv" -> BridgeVariable (t 1, a 0)
     | "fv" -> FieldValue (bd#get_string (a 0), a 1, bd#get_string  (a 2))
     | "sv" -> SymbolicValue (xd#get_xpr (a 0))

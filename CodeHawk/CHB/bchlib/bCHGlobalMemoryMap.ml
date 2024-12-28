@@ -33,6 +33,10 @@ open CHLogger
 open CHTraceResult
 open CHXmlDocument
 
+(* xprlib *)
+open Xprt
+open XprTypes
+
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypePretty
@@ -44,6 +48,9 @@ open BCHLibTypes
 module H = Hashtbl
 module TR = CHTraceResult
 
+let x2p = XprToPretty.xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
 
 let bcd = BCHBCDictionary.bcdictionary
 
@@ -56,30 +63,44 @@ let globalvalue_to_pretty (gv: globalvalue_t): pretty_t =
 
 let _global_location_ref_to_pretty (gref: global_location_ref_t): pretty_t =
   match gref with
-  | GLoad (_, iaddr, gaddr, size, signed) ->
+  | GLoad (gaddr, iaddr, gxpr, size, signed) ->
      LBLOCK [
          STR "load: ";
+         gaddr#toPretty; STR ", ";
          STR iaddr; STR "  ";
-         gaddr#toPretty;
+         x2p gxpr;
          STR "  ";
          INT size;
          (if signed then STR " (signed)" else STR "")
        ]
-  | GStore (_, iaddr, gaddr, size, _optvalue) ->
+  | GStore (gaddr, iaddr, gxpr, size, _optvalue) ->
      LBLOCK [
-         STR "store: "; STR iaddr; STR "  "; gaddr#toPretty; STR "  "; INT size]
-  | GAddressArgument (_, iaddr, argindex, gaddr, btype) ->
+         STR "store: ";
+         gaddr#toPretty; STR ", ";
+         STR iaddr;
+         STR "  ";
+         x2p gxpr;
+         STR "  ";
+         INT size]
+  | GAddressArgument (gaddr, iaddr, argindex, gxpr, btype, memoff) ->
      LBLOCK [
          STR "addr-arg: ";
+         gaddr#toPretty; STR ", ";
          STR iaddr;
          STR " (";
          INT argindex;
          STR ") ";
-         gaddr#toPretty;
+         x2p gxpr;
          (if is_unknown_type btype then
             STR ""
           else
-            LBLOCK [STR "  "; STR (btype_to_string btype)])
+            LBLOCK [STR "  "; STR (btype_to_string btype)]);
+         (match memoff with
+          | Some NoOffset -> STR ""
+          | Some memoff ->
+             LBLOCK [
+                 STR " ("; BCHMemoryReference.memory_offset_to_pretty memoff; STR ")"]
+          | _ -> STR "")
        ]
 
 
@@ -123,6 +144,8 @@ object (self)
     | Ok (TArray _) -> true
     | _ -> false
 
+  method is_typed: bool = not (btype_equal self#btype t_unknown)
+
   method size: int option = grec.gloc_size
 
   method is_readonly: bool = grec.gloc_is_readonly
@@ -137,121 +160,233 @@ object (self)
            && addr#index < (self#address#index + s)
         | _ -> false)
 
-  method address_offset (addr: doubleword_int): int traceresult =
-    if self#contains_address addr then
-      if self#address#equal addr then
-        Ok 0
-      else
-        Ok (addr#index - self#address#index)
-    else
-      Error [
-          "memmap#address_offset: address "
-          ^ addr#to_hex_string
-          ^ " not known to be part this location ("
-          ^ self#address#to_hex_string
-          ^ ":"
-          ^ self#name
-          ^ ")"]
-
-  method private get_fieldoffset_at
-                   (c: bcompinfo_t)
-                   (offset: int): (boffset_t * int) traceresult =
-    let finfos = c.bcfields in
-    let fld0 = List.hd finfos in
-    let fld0type_r = resolve_type fld0.bftype in
-    let fld0size_r = tbind size_of_btype fld0type_r in
-    match fld0type_r, fld0size_r with
-    | Error e, _
-      | _, Error e -> Error e
-    | Ok fld0type, Ok fld0size ->
-       if offset = 0 then
-         Ok ((Field ((fld0.bfname, fld0.bfckey), NoOffset), 0))
-       else if offset < fld0size then
-         (* offset is within the first field *)
-         if is_struct_type fld0type then
-           let cinfo = get_struct_type_compinfo fld0type in
-           tbind
-             ~msg:("memmap:get_fieldoffset_at with offset " ^ (string_of_int offset))
-             (fun (boffset, rem) ->
-               Ok (Field ((fld0.bfname, fld0.bfckey), boffset), rem))
-             (self#get_fieldoffset_at cinfo offset)
-         else
-           Error ["non-struct first field not yet implemented"]
-       else
-         let optfield_r =
-           List.fold_left (fun acc_r finfo ->
-               match acc_r with
-               | Error e -> Error e
-               | Ok (Some _) -> acc_r
-               | Ok _ ->
-                  let fldtype_r = resolve_type finfo.bftype in
-                  let fldsize_r = tbind size_of_btype fldtype_r in
-                  match fldtype_r, fldsize_r with
-                  | Error e, _ | _, Error e -> Error e
-                  | Ok fldtype, Ok _fldsize ->
-                     match finfo.bfieldlayout with
-                     | Some (foff, sz) ->
-                        if offset = foff then
-                          Ok (Some (Field ((finfo.bfname, finfo.bfckey), NoOffset), 0))
-                        else if offset > foff && offset < foff + sz then
-                          match fldtype with
-                          | TComp (ffkey, _) ->
-                             let fcinfo = BCHBCFiles.bcfiles#get_compinfo ffkey in
-                             (match self#get_fieldoffset_at fcinfo (offset - foff) with
-                              | Error e -> Error e
-                              | Ok (bboff, rem) ->
-                                 Ok (Some (Field
-                                             ((finfo.bfname, finfo.bfckey),
-                                              bboff), rem)))
-                          | _ ->
-                             Ok (Some (Field
-                                         ((finfo.bfname, finfo.bfckey), NoOffset),
-                                       offset - foff))
-                        else
-                          Ok None
-                     | _ -> Ok None) (Ok None) (List.tl finfos) in
-         match optfield_r with
-         | Error e -> Error e
-         | Ok (Some (offset, rem)) -> Ok (offset, rem)
-         | _ -> Ok (NoOffset, offset)
-
-  method private structvar_memory_offset (offset: int): memory_offset_t traceresult =
-    if self#is_struct then
-      let compinfo = get_struct_type_compinfo self#btype in
-      tbind
-        ~msg:"memmap:structvar_memory_offset"
-        (fun (boffset, rem) ->
-          if rem = 0 then
-            BCHMemoryReference.boffset_to_memory_offset boffset
-          else
-            Error [
-                "memmap:structvar_memory_offset: remainder: "
-                ^ (string_of_int rem)])
-        (self#get_fieldoffset_at compinfo offset)
-    else
-      Error [
-          "memmap:structvar_memory_offset: type is not know to be a struct: "
-          ^ (btype_to_string self#btype)]
-
-  method private arrayvar_memory_offset (_offset: int): memory_offset_t traceresult =
-    Error ["not yet implemented"]
-
-  method address_memory_offset (addr: doubleword_int): memory_offset_t traceresult =
-    tbind
-      ~msg:"memmap:address_memory_offset"
-      (fun offset ->
-        if offset = 0 then
-          Ok BCHLibTypes.NoOffset
-        else if self#is_struct then
-          self#structvar_memory_offset offset
-        else if self#is_array then
-          self#arrayvar_memory_offset offset
+  method address_offset (xpr: xpr_t): xpr_t traceresult =
+    (* xpr = cterm + remainder
+       addroffset = cterm - gaddr
+       xpr = addroffset + gaddr + remainder
+       xproffset = xpr - gaddr = addroffset + remainder *)
+    let cterm = BCHXprUtil.largest_constant_term xpr in
+    let remainder = XOp (XMinus, [xpr; num_constant_expr cterm]) in
+    let remainder = Xsimplify.simplify_xpr remainder in
+    let addr = numerical_mod_to_doubleword cterm in
+    let addroffset_r =
+      if self#contains_address addr then
+        if self#address#equal addr then
+          Ok 0
         else
-          Error [
-              "memmap:address_memory_offset: type "
-              ^ (btype_to_string self#btype)
-              ^ " is not known to be a struct or array"])
-      (self#address_offset addr)
+          Ok (addr#index - self#address#index)
+      else
+        Error [
+            __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+            ^ "largest constant term: "
+            ^ addr#to_hex_string
+            ^ " not known to be part of this location ("
+            ^ self#address#to_hex_string
+            ^ ":"
+            ^ self#name
+            ^ ")"] in
+    tmap
+      (fun offset ->
+        Xsimplify.simplify_xpr (XOp (XPlus, [remainder; int_constant_expr offset])))
+      (addroffset_r)
+
+  method private get_field_memory_offset_at
+                   ~(tgtsize: int option)
+                   ~(tgtbtype: btype_t option)
+                   (c: bcompinfo_t)
+                   (xoffset: xpr_t): memory_offset_t traceresult =
+    let check_tgttype_compliance (t: btype_t) (s: int) =
+      match tgtsize, tgtbtype with
+      | None, None -> true
+      | Some size, None -> size = s
+      | None, Some ty -> btype_equal ty t
+      | Some size, Some ty -> size = s && btype_equal ty t in
+    let compliance_failure (t: btype_t) (s: int) =
+      let size_discrepancy size s =
+         "size discrepancy between tgtsize: "
+         ^ (string_of_int size)
+         ^ " and field size: "
+         ^ (string_of_int s) in
+      let type_discrepancy ty t =
+         "type discrepancy between tgttype: "
+         ^ (btype_to_string ty)
+         ^ " and field type: "
+         ^ (btype_to_string t) in
+      match tgtsize, tgtbtype with
+      | Some size, Some ty when (size != s) && (not (btype_equal ty t)) ->
+         (size_discrepancy size s) ^ " and " ^ (type_discrepancy ty t)
+      | Some size, _ when size != s -> size_discrepancy size s
+      | _, Some ty when not (btype_equal ty t) -> type_discrepancy ty t
+      | _ -> "" in
+    match xoffset with
+    | XConst (IntConst n) ->
+       let offset = n#toInt in
+       let finfos = c.bcfields in
+       let optfield_r =
+         List.fold_left (fun acc_r finfo ->
+             match acc_r with
+             (* Error has been detected earlier *)
+             | Error e -> Error e
+             (* Result has already been determined *)
+             | Ok (Some _) -> acc_r
+             (* Still looking for a result *)
+             | Ok _ ->
+                match finfo.bfieldlayout with
+                | None ->
+                   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                          ^ "No field layout for field " ^ finfo.bfname]
+                | Some (foff, sz) ->
+                   if offset < foff then
+                     Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                            ^ "Skipped over field: "
+                            ^ (string_of_int offset)]
+                   else if offset >= (foff + sz) then
+                     Ok None
+                   else
+                     let offset = offset - foff in
+                     tbind
+                       (fun fldtype ->
+                         if offset = 0
+                            && (is_scalar fldtype)
+                            && (check_tgttype_compliance fldtype sz) then
+                           Ok (Some (FieldOffset
+                                       ((finfo.bfname, finfo.bfckey), NoOffset)))
+                         else
+                           if offset = 0 && is_scalar fldtype then
+                             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                    ^ "Scalar type or size is not consistent: "
+                                    ^ (compliance_failure fldtype sz)]
+                           else if is_struct_type fldtype then
+                             tmap
+                               (fun suboff ->
+                                 Some (FieldOffset
+                                         ((finfo.bfname, finfo.bfckey), suboff)))
+                               (self#structvar_memory_offset
+                                  ~tgtsize ~tgtbtype fldtype (int_constant_expr offset))
+                           else if is_array_type fldtype then
+                             tmap
+                               (fun suboff ->
+                                 Some (FieldOffset
+                                         ((finfo.bfname, finfo.bfckey), suboff)))
+                               (self#arrayvar_memory_offset
+                                  ~tgtsize ~tgtbtype fldtype (int_constant_expr offset))
+                           else
+                             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                    ^ "Nonzero offset: " ^ (string_of_int offset)
+                                    ^ " with unstructured field type: "
+                                    ^ (btype_to_string fldtype)])
+                       (resolve_type finfo.bftype)) (Ok None) finfos in
+       (match optfield_r with
+        | Error e -> Error e
+        | Ok (Some offset) -> Ok offset
+        | Ok None ->
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "Unable to find field at offset " ^ (string_of_int offset)])
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+              ^ "Unable to determine field for xoffset: " ^ (x2s xoffset)]
+
+  method private structvar_memory_offset
+                   ~(tgtsize: int option)
+                   ~(tgtbtype: btype_t option)
+                   (btype: btype_t)
+                   (xoffset: xpr_t): memory_offset_t traceresult =
+    match xoffset with
+    | XConst (IntConst n) when
+           n#equal CHNumerical.numerical_zero
+           && Option.is_none tgtsize
+           && Option.is_none tgtbtype ->
+       Ok NoOffset
+    | XConst (IntConst _) ->
+       if is_struct_type btype then
+         let compinfo = get_struct_type_compinfo btype in
+         (self#get_field_memory_offset_at ~tgtsize ~tgtbtype compinfo xoffset)
+       else
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                ^ " xoffset: " ^ (x2s xoffset)
+                ^ "; btype: " ^ (btype_to_string btype)]
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                ^ " xoffset: " ^ (x2s xoffset)
+                ^ "; btype: " ^ (btype_to_string btype)]
+
+  method private arrayvar_memory_offset
+                   ~(tgtsize: int option)
+                   ~(tgtbtype: btype_t option)
+                   (btype: btype_t)
+                   (xoffset: xpr_t): memory_offset_t traceresult =
+    let iszero x =
+      match x with
+      | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
+      | _ -> false in
+    match xoffset with
+    | XConst (IntConst n) when
+           n#equal CHNumerical.numerical_zero
+           && Option.is_none tgtsize
+           && Option.is_none tgtbtype ->
+       Ok NoOffset
+    | _ ->
+       if is_array_type btype then
+         let eltty = get_element_type btype in
+         tbind
+           (fun elsize ->
+             let optindex = BCHXprUtil.get_array_index_offset xoffset elsize in
+             match optindex with
+             | None ->
+                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                       ^ "Unable to extract index from " ^ (x2s xoffset)]
+             | Some (indexxpr, xrem) when
+                    iszero xrem
+                    && Option.is_none tgtsize
+                    && Option.is_none tgtbtype ->
+                Ok (ArrayIndexOffset (indexxpr, NoOffset))
+             | Some (indexxpr, rem) ->
+                if is_struct_type eltty then
+                  tbind
+                    (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
+                    (self#structvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
+                else if is_array_type eltty then
+                 tbind
+                   (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
+                   (self#arrayvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
+                else if is_scalar eltty then
+                  let x2index = XOp (XDiv, [rem; int_constant_expr elsize]) in
+                  let x2index = Xsimplify.simplify_xpr x2index in
+                  Ok (ArrayIndexOffset (x2index, NoOffset))
+                else
+                  Error[__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                        ^ "xoffset: " ^ (x2s xoffset)
+                        ^ "; btype: " ^ (btype_to_string btype)])
+           (size_of_btype eltty)
+       else
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                ^ "xoffset: " ^ (x2s xoffset)
+                ^ "; btype: " ^ (btype_to_string btype)]
+
+  method address_memory_offset
+           ?(tgtsize=None)
+           ?(tgtbtype=t_unknown)
+           (xpr: xpr_t): memory_offset_t traceresult =
+    tbind
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+      (fun xoffset ->
+        match xoffset with
+        | XConst (IntConst n)
+             when n#equal CHNumerical.numerical_zero
+                  && Option.is_none tgtsize
+                  && is_unknown_type tgtbtype ->
+           Ok BCHLibTypes.NoOffset
+        | _ ->
+           let tgtbtype = if is_unknown_type tgtbtype then None else Some tgtbtype in
+           if self#is_struct then
+             self#structvar_memory_offset ~tgtsize ~tgtbtype self#btype xoffset
+           else if self#is_array then
+               self#arrayvar_memory_offset ~tgtsize ~tgtbtype self#btype xoffset
+           else
+             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                    ^ (btype_to_string self#btype)
+                    ^ " is not known to be a struct or array"])
+      (self#address_offset xpr)
 
   method initialvalue: globalvalue_t option = grec.gloc_initialvalue
 
@@ -277,10 +412,10 @@ end
 class global_memory_map_t: global_memory_map_int =
 object (self)
 
-  val locations = H.create 51        (* ix -> gloc *)
-  val locreferences = H.create 51    (* ix -> gref list *)
-  val namedlocations = H.create 51   (* name -> ix *)
-  val orphanreferences = H.create 51 (* ix -> gref list *)
+  val locations = H.create 51             (* gaddr#ix -> gloc *)
+  val locreferences = H.create 51         (* faddr#ix -> gref list *)
+  val namedlocations = H.create 51        (* name -> ix *)
+  val unconnectedreferences = H.create 51 (* faddr#ix -> gref list *)
   val sections = H.create 5
 
   method set_section
@@ -318,7 +453,7 @@ object (self)
            ?(btype = t_unknown)
            ?(initialvalue = None)
            ?(size = None)
-           (address: doubleword_int) =
+           (address: doubleword_int): global_location_int TR.traceresult =
     if H.mem locations address#index then
       begin
         ch_error_log#add
@@ -327,106 +462,157 @@ object (self)
                STR "Global location at address ";
                address#toPretty;
                STR " already exists"]);
-        ()
+        Ok (H.find locations address#index)
       end
     else
-      let gname =
-        match name with
-        | Some name -> name
-        | _ -> "gv_" ^ address#to_hex_string in
-      let is_readonly = self#is_readonly address in
-      let is_initialized = self#is_initialized address in
-      let section = self#get_section_name address in
-      let grec = {
-          gloc_name = gname;
-          gloc_address = address;
-          gloc_is_readonly = is_readonly;
-          gloc_is_initialized = is_initialized;
-          gloc_section = section;
-          gloc_btype = btype;
-          gloc_initialvalue = initialvalue;
-          gloc_size = size;
-          gloc_desc = desc
-        } in
-      let gloc = new global_location_t grec in
-      begin
-        H.add locations address#index gloc;
-        H.add namedlocations gname address#index;
-        chlog#add
-          "global-memory-map:add-location"
-          (LBLOCK [
-               address#toPretty;
-               STR ": ";
-               STR gname;
-               STR ":";
-               STR (btype_to_string btype);
-               STR "; ";
-               (match size with
-                | Some s -> LBLOCK [STR " (size: "; INT s; STR ")"]
-                | _ -> STR "");
-               (match section with
-                | Some name -> LBLOCK [STR " ("; STR name; STR ")"]
-                | _ -> STR "");
-               (if is_readonly then STR " (RO) " else STR "");
-               (if is_initialized then STR " (IV) " else STR "");
-               (match desc with
-                | Some desc -> LBLOCK [STR " ("; STR desc; STR ")"]
-                | _ -> STR "")
-          ])
-      end
+      match self#containing_location address with
+      | Some gloc ->
+         let msg =
+           "Global location at address "
+           ^ address#to_hex_string
+           ^ " overlaps with "
+           ^ gloc#name
+           ^ " ("
+           ^ gloc#address#to_hex_string
+           ^ (match gloc#size with
+              | Some s -> ", size: " ^ (string_of_int s)
+              | _ -> "")
+           ^ ")" in
+         begin
+           ch_error_log#add "overlapping global location" (STR msg);
+           Error [msg]
+         end
+      | _ ->
+         let gname =
+           match name with
+           | Some name -> name
+           | _ -> "gv_" ^ address#to_hex_string in
+         let is_readonly = self#is_readonly address in
+         let is_initialized = self#is_initialized address in
+         let section = self#get_section_name address in
+         let grec = {
+             gloc_name = gname;
+             gloc_address = address;
+             gloc_is_readonly = is_readonly;
+             gloc_is_initialized = is_initialized;
+             gloc_section = section;
+             gloc_btype = btype;
+             gloc_initialvalue = initialvalue;
+             gloc_size = size;
+             gloc_desc = desc
+           } in
+         let gloc = new global_location_t grec in
+         begin
+           H.add locations address#index gloc;
+           H.add namedlocations gname address#index;
+           chlog#add
+             "global-memory-map:add-location"
+             (LBLOCK [
+                  address#toPretty;
+                  STR ": ";
+                  STR gname;
+                  STR ":";
+                  STR (btype_to_string btype);
+                  STR "; ";
+                  (match size with
+                   | Some s -> LBLOCK [STR " (size: "; INT s; STR ")"]
+                   | _ -> STR "");
+                  (match section with
+                   | Some name -> LBLOCK [STR " ("; STR name; STR ")"]
+                   | _ -> STR "");
+                  (if is_readonly then STR " (RO) " else STR "");
+                  (if is_initialized then STR " (IV) " else STR "");
+                  (match desc with
+                   | Some desc -> LBLOCK [STR " ("; STR desc; STR ")"]
+                   | _ -> STR "")
+             ]);
+           Ok gloc
+         end
 
   method private add_global_ref
-                   (addr: doubleword_int) (gref: global_location_ref_t) =
+                   (faddr: doubleword_int) (gref: global_location_ref_t) =
     let entry =
-      if H.mem locreferences addr#index then
-        H.find locreferences addr#index
+      if H.mem locreferences faddr#index then
+        H.find locreferences faddr#index
       else
         [] in
-    H.replace locreferences addr#index (gref :: entry)
+    H.replace locreferences faddr#index (gref :: entry)
 
-  method private add_orphan_ref
-                   (addr: doubleword_int) (gref: global_location_ref_t) =
+  method private add_unconnected_ref
+                   (faddr: doubleword_int) (gref: global_location_ref_t) =
     let entry =
-      if H.mem orphanreferences addr#index then
-        H.find orphanreferences addr#index
+      if H.mem unconnectedreferences faddr#index then
+        H.find unconnectedreferences faddr#index
       else
         [] in
-    H.replace orphanreferences addr#index (gref :: entry)
+    H.replace unconnectedreferences faddr#index (gref :: entry)
 
   method add_gload
            (faddr: doubleword_int)
            (iaddr: ctxt_iaddress_t)
-           (gaddr: doubleword_int)
+           (gxpr: xpr_t)
            (size: int)
            (signed: bool) =
-    let gload = GLoad (faddr, iaddr, gaddr, size, signed) in
-    match self#containing_location gaddr with
-    | Some gloc -> self#add_global_ref gloc#address gload
-    | _ -> self#add_orphan_ref gaddr gload
+    match self#xpr_containing_location gxpr with
+    | Some gloc ->
+       let gload = GLoad (gloc#address, iaddr, gxpr, size, signed) in
+       self#add_global_ref faddr gload
+    | _ ->
+       (match gxpr with
+        | XConst (IntConst n) ->
+           let gaddr = numerical_mod_to_doubleword n in
+           let gload = GLoad (gaddr, iaddr, gxpr, size, signed) in
+           self#add_unconnected_ref faddr gload
+        | _ ->
+           ())
 
   method add_gstore
            (faddr: doubleword_int)
            (iaddr: ctxt_iaddress_t)
-           (gaddr: doubleword_int)
+           (gxpr: xpr_t)
            (size: int)
            (optvalue: CHNumerical.numerical_t option) =
-    let gstore = GStore (faddr, iaddr, gaddr, size, optvalue) in
-    match self#containing_location gaddr with
-    | Some gloc -> self#add_global_ref gloc#address gstore
-    | _ -> self#add_orphan_ref gaddr gstore
+    match self#xpr_containing_location gxpr with
+    | Some gloc ->
+       let gstore = GStore (gloc#address, iaddr, gxpr, size, optvalue) in
+       self#add_global_ref faddr gstore
+    | _ ->
+       (match gxpr with
+        | XConst (IntConst n) ->
+           let gaddr = numerical_mod_to_doubleword n in
+           let gstore = GStore (gaddr, iaddr, gxpr, size, optvalue) in
+           self#add_unconnected_ref faddr gstore
+        | _ -> ())
 
   method add_gaddr_argument
            (faddr: doubleword_int)
            (iaddr: ctxt_iaddress_t)
-           (gaddr: doubleword_int)
+           (gxpr: xpr_t)
            (argindex: int)
            (btype: btype_t) =
-    let garg = GAddressArgument (faddr, iaddr, argindex, gaddr, btype) in
-    match self#containing_location gaddr with
-    | Some gloc -> self#add_global_ref gloc#address garg
-    | _ -> self#add_orphan_ref gaddr garg
+    match self#xpr_containing_location gxpr with
+    | Some gloc ->
+       let memoff = TR.to_option (gloc#address_memory_offset gxpr) in
+       let garg =
+         GAddressArgument (gloc#address, iaddr, argindex, gxpr, btype, memoff) in
+       begin
+         self#add_global_ref faddr garg;
+         Some gloc
+       end
+    | _ ->
+       (match gxpr with
+        | XConst (IntConst n) ->
+           let gaddr = numerical_mod_to_doubleword n in
+           let garg =
+             GAddressArgument (gaddr, iaddr, argindex, gxpr, btype, Some NoOffset) in
+           begin
+             self#add_unconnected_ref faddr garg;
+             None
+           end
+        | _ -> None)
 
-  method update_named_location (name: string) (vinfo: bvarinfo_t) =
+  method update_named_location
+           (name: string) (vinfo: bvarinfo_t): global_location_int traceresult =
     if self#has_location_with_name name then
       let ix = H.find namedlocations name in
       let grec = (H.find locations ix)#grec in
@@ -450,15 +636,12 @@ object (self)
                (match size with
                 | Some s -> LBLOCK [STR " (size: "; INT s; STR ")"]
                 | _ -> STR "")
-          ])
+          ]);
+        Ok newgloc
       end
     else
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "No location found with name ";
-                STR name;
-                STR " in global memory map"]))
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "No location found with name " ^ name ^ " in global memory map"]
 
   method has_location_with_name (name: string) = H.mem namedlocations name
 
@@ -469,7 +652,12 @@ object (self)
         match acc with
         | Some _ -> acc
         | _ -> if gloc#contains_address addr then Some gloc else None)
-    locations None
+      locations None
+
+  method xpr_containing_location (xpr: xpr_t): global_location_int option =
+    let cterm = BCHXprUtil.largest_constant_term xpr in
+    let addr = numerical_mod_to_doubleword cterm in
+    self#containing_location addr
 
   method get_location (addr: doubleword_int): global_location_int =
     if self#has_location addr then
@@ -508,53 +696,89 @@ object (self)
                 STR " does not have an elf symbol"]))
 
   method private write_xml_gref
-                   (node: xml_element_int) (ix: int) (gref: global_location_ref_t) =
-    let gloca = TR.tget_ok (index_to_doubleword ix) in
+                   (vard: vardictionary_int)
+                   (node: xml_element_int)
+                   (gref: global_location_ref_t) =
+    let xd = vard#xd in
     let set = node#setAttribute in
     let seti = node#setIntAttribute in
     let set_size (s: int) = seti "s" s in
-    let set_gaddr (a: doubleword_int) =
-      if a#equal gloca then () else set "a" a#to_hex_string in
-    let set_faddr (a: doubleword_int) = set "f" a#to_hex_string in
+    let set_gxpr (xpr: xpr_t) = seti "xix" (xd#index_xpr xpr) in
+    let set_gaddr (a: doubleword_int) = set "g" a#to_hex_string in
     let set_iaddr (a: ctxt_iaddress_t) = set "i" a in
     let set_btype (t: btype_t) =
       if is_known_type t then seti "tix" (bcd#index_typ t) else () in
+    let set_memoff (o: memory_offset_t option) =
+      match o with
+      | Some off -> seti "mix" (vard#index_memory_offset off)
+      | _ -> () in
     match gref with
-    | GLoad (faddr, iaddr, gaddr, size, signed) ->
+    | GLoad (gaddr, iaddr, gxpr, size, signed) ->
        begin
          set "t" "L";
-         set_faddr faddr;
          set_gaddr gaddr;
+         set_gxpr gxpr;
          set_iaddr iaddr;
          set_size size;
          (if signed then set "sg" "yes")
        end
-    | GStore (faddr, iaddr, gaddr, size, optvalue) ->
+    | GStore (gaddr, iaddr, gxpr, size, optvalue) ->
        begin
          set "t" "S";
-         set_faddr faddr;
          set_gaddr gaddr;
+         set_gxpr gxpr;
          set_iaddr iaddr;
          set_size size;
          (match optvalue with
           | Some n -> set "v" n#toString
           | _ -> ())
        end
-    | GAddressArgument (faddr, iaddr, argindex, gaddr, btype) ->
+    | GAddressArgument (gaddr, iaddr, argindex, gxpr, btype, memoff) ->
        begin
          set "t" "CA";
-         set_faddr faddr;
-         seti "aix" argindex;
          set_gaddr gaddr;
+         seti "aix" argindex;
+         set_gxpr gxpr;
          set_iaddr iaddr;
          set_btype btype;
+         set_memoff memoff
        end
+
+  method write_xml_references
+           (faddr: doubleword_int) (vard: vardictionary_int) (node: xml_element_int) =
+    let xlocrefs = xmlElement "location-references" in
+    let xunconnected = xmlElement "unconnected-references" in
+    let locrefs =
+      if H.mem locreferences faddr#index then
+        H.find locreferences faddr#index
+      else
+        [] in
+    let unconnectedrefs =
+      if H.mem unconnectedreferences faddr#index then
+        H.find unconnectedreferences faddr#index
+      else
+        [] in
+    begin
+      List.iter (fun gref ->
+          let vnode = xmlElement "gref" in
+          begin
+            self#write_xml_gref vard vnode gref;
+            xlocrefs#appendChildren [vnode]
+          end) locrefs;
+      List.iter (fun gref ->
+          let vnode = xmlElement "gref" in
+          begin
+            self#write_xml_gref vard vnode gref;
+            xunconnected#appendChildren [vnode]
+          end) unconnectedrefs;
+      node#appendChildren [xlocrefs; xunconnected]
+    end
 
   method write_xml (node: xml_element_int) =
     let secnode = xmlElement "sections" in
     let locnode = xmlElement "locations" in
-    let orphannode = xmlElement "no-locations" in
     begin
+      (* record sections *)
       H.iter (fun ix (name, size, ro, init) ->
           let vnode = xmlElement "sec" in
           begin
@@ -566,36 +790,17 @@ object (self)
             (if init then vnode#setAttribute "init" "yes");
             secnode#appendChildren [vnode]
           end) sections;
-      H.iter (fun ix gloc ->
+
+      (* record locations *)
+      H.iter (fun _ gloc ->
           let vnode = xmlElement "gloc" in
           begin
             vnode#setAttribute "a" gloc#address#to_hex_string;
             vnode#setAttribute "name" gloc#name;
             gloc#write_xml vnode;
-            (if H.mem locreferences ix then
-               let locrefs = H.find locreferences ix in
-               (List.iter (fun gref ->
-                    let grefnode = xmlElement "gref" in
-                    begin
-                      self#write_xml_gref grefnode ix gref;
-                      vnode#appendChildren [grefnode]
-                    end) locrefs));
             locnode#appendChildren [vnode]
           end) locations;
-      H.iter (fun ix greflist ->
-          let vnode = xmlElement "orphan-loc" in
-          begin
-            vnode#setAttribute
-              "a" (TR.tget_ok (index_to_doubleword ix))#to_hex_string;
-            List.iter (fun gref ->
-                let grefnode = xmlElement "gref" in
-                begin
-                  self#write_xml_gref grefnode ix gref;
-                  vnode#appendChildren [grefnode]
-                end) greflist;
-            orphannode#appendChildren [vnode]
-          end) orphanreferences;
-      node#appendChildren [secnode; locnode; orphannode]
+      node#appendChildren [secnode; locnode]
     end
 
 end
@@ -614,15 +819,21 @@ let read_xml_symbolic_addresses (node: xml_element_int) =
       (string_to_doubleword tx) in
   let name = Some (get "name") in
   let address = getx "a" in
-  global_memory_map#add_location ~name ~desc:(Some "userdata") address
+  ignore (global_memory_map#add_location ~name ~desc:(Some "userdata") address)
 
 
 let read_xml_symbolic_addresses (node: xml_element_int) =
   List.iter read_xml_symbolic_addresses (node#getTaggedChildren "syma")
 
 
-let update_global_location_type (vinfo: bvarinfo_t) =
+let update_global_location_type
+      (vinfo: bvarinfo_t): global_location_int traceresult =
   let name = vinfo.bvname in
+  let mkerror file line =
+    let msg =
+      file ^ ":" ^ (string_of_int line) ^ ": "
+      ^"global location not updated for " ^ name in
+    Error [msg] in
   if global_memory_map#has_location_with_name name then
     global_memory_map#update_named_location name vinfo
   else if String.length name > 3 && (String.sub name 0 3) = "gv_" then
@@ -631,30 +842,20 @@ let update_global_location_type (vinfo: bvarinfo_t) =
       let eindex = String.index_from name (index + 1) '_' in
       let hex = String.sub name (index + 1) ((eindex - index) - 1) in
       let hex = "0x" ^ hex in
-      match (string_to_doubleword hex) with
-      | Error e ->
-         raise
-           (BCH_failure
-              (LBLOCK [
-                   STR "Address: ";
-                   STR hex;
-                   STR " in global variable name ";
-                   STR name;
-                   STR " not recognized: ";
-                   STR (String.concat "; " e)
-           ]))
-      | Ok dw ->
-         global_memory_map#add_location
-           ~name:(Some name)
-           ~desc:(Some "header file")
-           ~btype: vinfo.bvtype
-           ~size:(TR.to_option (size_of_btype vinfo.bvtype))
-           dw
+      let msg =
+        __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+        ^ "Address " ^ hex ^ " in global variable " ^ name ^ " not recognized" in
+      TR.tbind
+        ~msg
+        (fun dw ->
+          global_memory_map#add_location
+            ~name:(Some name)
+            ~desc:(Some "header file")
+            ~btype: vinfo.bvtype
+            ~size:(TR.to_option (size_of_btype vinfo.bvtype))
+            dw)
+        (string_to_doubleword hex)
     else
-      chlog#add
-        "global location not updated"
-        (LBLOCK [STR vinfo.bvname; STR ": "; STR (btype_to_string vinfo.bvtype)])
+      mkerror __FILE__ __LINE__
   else
-      chlog#add
-        "global location not updated"
-        (LBLOCK [STR vinfo.bvname; STR ": "; STR (btype_to_string vinfo.bvtype)])
+    mkerror __FILE__ __LINE__

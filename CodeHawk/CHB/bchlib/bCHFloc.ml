@@ -93,6 +93,8 @@ let x2s x = p2s (x2p x)
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("floc:" ^ tag) msg
 
+let memmap = BCHGlobalMemoryMap.global_memory_map
+
 
 let unknown_write_symbol = new symbol_t "unknown write"
 
@@ -690,23 +692,6 @@ object (self)
                default ())
            (default ())
            (numerical_to_doubleword n)
-      | XVar v when self#f#env#is_memory_address_variable v ->
-         log_tfold_default
-           (log_error
-              "get_memory_variable_1"
-              (self#cia ^ ": memory address variable: " ^ (p2s var#toPretty)))
-           (fun v -> v)
-           (default ())
-           (self#env#mk_memory_address_deref_variable v)
-      | XOp (XPlus, [XVar v; XConst (IntConst n)])
-           when self#f#env#is_memory_address_variable v ->
-         log_tfold_default
-           (log_error
-              "get_memory_variable_1"
-              (self#cia ^ ": memory address variable: " ^ (p2s var#toPretty)))
-           (fun v -> v)
-           (default ())
-           (self#env#mk_memory_address_deref_variable ~offset:n#toInt v)
       | _ ->
          let (memref, memoffset) = self#decompose_address address in
          if is_constant_offset memoffset then
@@ -1120,82 +1105,18 @@ object (self)
 
   method get_fts_parameter_expr (_p: fts_parameter_t) = None
 
-  method decompose_memvar_address
-           (x: xpr_t): (memory_reference_int * memory_offset_t) option =
-    let _ = chlog#add "decompose_array_address" (LBLOCK [STR "xpr: "; x2p x]) in
-    let vars = vars_as_positive_terms x in
-    let memaddrs = List.filter self#f#env#is_memory_address_variable vars in
-    let optbase =
-      match memaddrs with
-      | [base] ->
-         let (_, _, _, optty) =
-           TR.tget_ok (self#f#env#varmgr#get_memory_address_meminfo base) in
-         let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
-         Some (XVar base, offset, optty)
-      | _ ->
-         None in
-    match optbase with
-    | None -> None
-    | Some (_, _, None) -> None
-    | Some (XVar base, xoffset, Some ty) when is_array_type ty ->
-       let _ =
-         chlog#add
-           "decompose_array_address" (LBLOCK [STR "xoffset: "; x2p xoffset]) in
-       let eltty = get_element_type ty in
-       let elttysize_r = size_of_btype eltty in
-       (match elttysize_r with
-        | Error e ->
-           begin
-             CHTimingLog.log_error
-               "Unable to obtain array element size for %s: %s [%s:%d]"
-               (x2s (XVar base))
-               (String.concat "; " e)
-               __FILE__ __LINE__;
-             None
-           end
-        | Ok elttysize ->
-           let optmemref = TR.to_option (self#env#mk_base_variable_reference base) in
-           let optindex = get_array_index_offset xoffset elttysize in
-           let memoffset =
-             match optindex with
-             | None ->
-                let _ =
-                  chlog#add
-                    "decompose_array_address"
-                    (LBLOCK [
-                         STR "Unable to get array index offset for ";
-                         x2p xoffset;
-                         STR " with size ";
-                         INT elttysize]) in
-                UnknownOffset
-             | Some (indexxpr, rem) ->
-                let remoffset = mk_maximal_memory_offset rem eltty in
-                ArrayIndexOffset (indexxpr, remoffset) in
-           (match (optmemref, memoffset) with
-            | (_, UnknownOffset) -> None
-            | (Some memref, memoffset) -> Some (memref, memoffset)
-            | _ ->
-               None))
-    | Some (XVar base, xoffset, Some ty) when is_struct_type ty ->
-       let _ =
-         chlog#add
-           "decompose_struct_address" (LBLOCK [STR "xoffset: "; x2p xoffset]) in
-       let optmemref = TR.to_option (self#env#mk_base_variable_reference base) in
-       let cinfo = get_struct_type_compinfo ty in
-       (match xoffset with
-        | XConst (IntConst n) ->
-           let optfinfo = get_struct_field_at_offset cinfo n#toInt in
-           (match optfinfo with
-            | None -> None
-            | Some (finfo, rem) when rem = 0 ->
-               let memoffset = FieldOffset ((finfo.bfname, cinfo.bckey), NoOffset) in
-               (match optmemref with
-                | Some memref -> Some (memref, memoffset)
-                | _ -> None)
-            | _ -> None)
-        | _ -> None)
-    | _ -> None
-
+  method get_var_at_address
+           ?(size=None)
+           ?(btype=t_unknown)
+           (addrvalue: xpr_t): variable_t traceresult =
+    match memmap#xpr_containing_location addrvalue with
+    | Some gloc ->
+       (TR.tmap
+          (fun offset -> self#f#env#mk_gloc_variable gloc offset)
+          (gloc#address_memory_offset ~tgtsize:size ~tgtbtype:btype addrvalue))
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Unable to create global variable for " ^ (x2s addrvalue)]
 
   (* the objective is to extract a base pointer and an offset expression
    * first check whether the expression contains any variables that are known

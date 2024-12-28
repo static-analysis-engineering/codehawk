@@ -325,7 +325,7 @@ type context_t =
 
 
 (** ctxt_iaddress_t spec:
-   [{
+   {[
    i  ( [], { faddr,iaddr } ) = iaddr
    i  ( [ F{ fa,cs,rs } ], { faddr,iaddr }) = iaddr
    i  ( [ B{ js } ], { faddr,iaddr }) = iaddr
@@ -344,7 +344,7 @@ type context_t =
    ci ( [ B{ js1 }, B{ js2 } ], { faddr,iaddr }) = B:js1_B:js2_iaddr
    ci ( [ C{true}], {faddr, iaddr}) = T_iaddr
    ci ( [ C{false}], {faddr, iaddr}) = F_iaddr
-   }]
+   ]}
  *)
 type ctxt_iaddress_t = string
 
@@ -3440,15 +3440,6 @@ type assembly_variable_denotation_t =
    - HeapBase pointers
    External auxiliary variables can be used as the base variable for memory
    references
-
-   An auxiliary variable can also be a known memory address that is associated
-   with a name and possibly type. This form of constant-value variable is used
-   to preserve the identity of the memory address, to prevent that other offsets
-   are being added to the numeric address, thereby obscuring the meaning of the
-   address. This is particularly useful when intermediate expressions may
-   lead to an address that is outside the bounds of the structured variable
-   denoted by the name.
-
 *)
 and constant_value_variable_t =
   | InitialRegisterValue of register_t * int
@@ -3488,10 +3479,6 @@ and constant_value_variable_t =
   (** [SideEffectValue (iaddr, name, is_global) represents the value
   assigned by the callee at call site [iaddr] to the argument with
   name [name].*)
-
-  | MemoryAddress of int * memory_offset_t * string option * btype_t option
-  (** [MemoryAddress (memrefix, offset, optname, opttype) represents a memory
-  address with external meaning (e.g., a global arrray) *)
 
   | BridgeVariable of ctxt_iaddress_t * int      (* call site, argument index *)
 
@@ -3541,12 +3528,6 @@ object ('a)
 
       Returns [Error] if this variable is not a memory variable. *)
   method get_memory_offset: memory_offset_t traceresult
-
-  (** Returns the information associated with a memory address variable:
-      (memory reference index, memory offset, optional name, and optional
-      type of the memory region located at the address).*)
-  method get_memory_address_meminfo:
-           (int * memory_offset_t * string option * btype_t option) traceresult
 
   (** Returns the name of the associated function pointer.
 
@@ -3610,7 +3591,6 @@ object ('a)
   method is_arm_argument_variable: bool
   method is_arm_extension_register_variable: bool
   method is_memory_variable: bool
-  method is_memory_address_variable: bool
 
   (** Returns true if this variable is set by the function environment and
       does not change during the execution of the function.
@@ -3769,6 +3749,11 @@ object
            memory_offset_t ->
            assembly_variable_int
 
+  method add_memvar_offset:
+           variable_t
+           -> memory_offset_t
+           -> assembly_variable_int traceresult
+
   (** [make_global_variable ?size ?offset address] returns the global variable
       with address [address] and optional offset [offset].*)
   method make_global_variable:
@@ -3777,18 +3762,8 @@ object
            -> numerical_t
            -> assembly_variable_int
 
+
   (** {2 Auxiliary variables}*)
-
-  (** [make_global_memory_address name type offset] returns a memory address
-      value variable with [Global] base and offset [offset] (the global address)
-      with an optional name and type of the global memory region at that
-      address.*)
-  method make_global_memory_address:
-           ?optname:string option
-           -> ?opttype:btype_t option
-           -> numerical_t
-           -> assembly_variable_int
-
 
   (** [make_frozen_test_value var taddr jaddr] returns a frozen test value
       for the variable [var] at test address [taddr] that is part of an
@@ -3953,19 +3928,6 @@ object
       Returns [Error] if the variable is not found or [var] is not an
       initial-value memory variable. *)
   method get_initial_memory_value_variable: variable_t -> variable_t traceresult
-
-
-  (** {2 Memory addressses} *)
-
-  method is_memory_address_variable: variable_t -> bool
-
-  (** Returns the information associated with a memory address value:
-      (memory reference index, memory offset, optional name, optional type).
-
-      Returns [Error] if the variable is not a memory address value.*)
-  method get_memory_address_meminfo:
-           variable_t
-           -> (int * memory_offset_t * string option * btype_t option) traceresult
 
 
   (** {2 Memory offsets} *)
@@ -4243,27 +4205,35 @@ object
 
 end
 
+(** {1 Global Memory Map} *)
 
 type globalvalue_t =
   | GConstantString of string
   | GScalarValue of doubleword_int
 
 
+(** Reference to a global location*)
 type global_location_ref_t =
-  | GLoad of doubleword_int * ctxt_iaddress_t * doubleword_int * int * bool
-  (** function address of load instruction, instructions address of load
+  | GLoad of doubleword_int * ctxt_iaddress_t * xpr_t * int * bool
+  (** address of global location, instructions address of load
       instruction, load address, size of load, signed *)
 
   | GStore of
-      doubleword_int * ctxt_iaddress_t * doubleword_int * int * numerical_t option
-  (** function address of store instruction, instruction address of store
+      doubleword_int * ctxt_iaddress_t * xpr_t * int * numerical_t option
+  (** address of global location, instruction address of store
       instruction, store address, size of store, optional numerical value
       assigned *)
 
   | GAddressArgument of
-      doubleword_int * ctxt_iaddress_t * int * doubleword_int * btype_t
-(** function address of call instruction, instruction address of call
-    instruction, argument index, address passed as argument, type of argument *)
+      doubleword_int
+      * ctxt_iaddress_t
+      * int
+      * xpr_t
+      * btype_t
+      * memory_offset_t option
+    (** address of global location, instruction address of call
+        instruction, index of argument (1-based), value of address argument,
+        type of address argument, offset of address argument.*)
 
 
 type global_location_rec_t = {
@@ -4279,6 +4249,8 @@ type global_location_rec_t = {
   }
 
 
+(** Representation of a global location that provides access to size and type
+    (immutable). *)
 class type global_location_int =
   object
     method grec: global_location_rec_t
@@ -4288,14 +4260,61 @@ class type global_location_int =
     method size: int option
     method is_readonly: bool
     method is_initialized: bool
+    method is_typed: bool
     method is_struct: bool
     method is_array: bool
     method initialvalue: globalvalue_t option
     method desc: string option
     method contains_address: doubleword_int -> bool
 
-    method address_offset: doubleword_int -> int traceresult
-    method address_memory_offset: doubleword_int -> memory_offset_t traceresult
+    (** [address_offset addr] returns the difference between [addr] and the
+        base address of the location. If [addr] is an expression that contains
+        symbolic values, the global address is taken as the largest constant
+        term in the expression.
+
+        If [addr] is not contained within the location (that is, if [addr] is
+        less than the base address or larger than or equal to the base address
+        plus the size of the location) an Error is returned.
+     *)
+    method address_offset: xpr_t -> xpr_t traceresult
+
+    (** [address_memory_offset size btype addr] returns the symbolic offset
+        that corresponds to the location of [addr] within the location. An
+        optional [size] or [btype] can be provided to resolve potential
+        ambiguities in the offset at a given offset. For example, address
+        difference 0 in the struct
+
+        {[
+        struct s {
+           char a[10];
+           ....
+        };
+        ]}
+
+        may have either one of the following three distinct offsets:
+
+        {[
+        (1) NoOffset
+        (2) FieldOffset ((a, _), NoOffset)
+        (3) FieldOffset ((a, _), ArrayIndexOffset (0, NoOffset)
+        ]}
+
+        By default the minimal offset (1) is returned. Offset (2) can be
+        forced by either passing in [size=10] or [btype=TArray..]. Offset
+        (3) can be forced by either passing in [size=1] or [btype=TInt...].
+
+        An Error is returned if either
+        - [addr] is not contained within the location, or
+        - [addr] is greater than the base address of the location and the
+          location is not typed, or
+        - [addr] does nor correspond to a legitimate offset, or
+        - the provided type or size cannot be matched to any offset.
+     *)
+    method address_memory_offset:
+             ?tgtsize:int option
+             -> ?tgtbtype:btype_t
+             -> xpr_t
+             -> memory_offset_t traceresult
 
     method has_elf_symbol: bool
 
@@ -4303,6 +4322,9 @@ class type global_location_int =
   end
 
 
+(** Container for global locations in the system in the data sections,
+    including initialized and uninitialized (.bss) data, but typically
+    excluding data contained within the .text section.*)
 class type global_memory_map_int =
   object
 
@@ -4321,12 +4343,12 @@ class type global_memory_map_int =
              -> ?initialvalue: globalvalue_t option
              -> ?size: int option
              -> doubleword_int
-             -> unit
+             -> global_location_int traceresult
 
     method add_gload:
              doubleword_int
              -> ctxt_iaddress_t
-             -> doubleword_int
+             -> xpr_t
              -> int
              -> bool
              -> unit
@@ -4334,7 +4356,7 @@ class type global_memory_map_int =
     method add_gstore:
              doubleword_int
              -> ctxt_iaddress_t
-             -> doubleword_int
+             -> xpr_t
              -> int
              -> numerical_t option
              -> unit
@@ -4342,18 +4364,21 @@ class type global_memory_map_int =
     method add_gaddr_argument:
              doubleword_int
              -> ctxt_iaddress_t
-             -> doubleword_int
+             -> xpr_t
              -> int
              -> btype_t
-             -> unit
+             -> global_location_int option
 
-    method update_named_location: string -> bvarinfo_t -> unit
+    method update_named_location:
+             string -> bvarinfo_t -> global_location_int traceresult
 
     method has_location: doubleword_int -> bool
 
     method get_location: doubleword_int -> global_location_int
 
     method containing_location: doubleword_int -> global_location_int option
+
+    method xpr_containing_location: xpr_t -> global_location_int option
 
     method get_location_name: doubleword_int -> string
 
@@ -4368,6 +4393,9 @@ class type global_memory_map_int =
     method get_elf_symbol: doubleword_int -> string
 
     method write_xml: xml_element_int -> unit
+
+    method write_xml_references:
+             doubleword_int -> vardictionary_int -> xml_element_int -> unit
   end
 
 
@@ -4375,6 +4403,7 @@ class type global_memory_map_int =
 (* =========================================================== Function info === *)
 
 
+(** @Deprecated Currenly used only for x86 *)
 class type argument_values_int =
 object
   method add_argument_values : variable_t -> xpr_t list -> unit
@@ -4384,6 +4413,7 @@ object
   method toPretty            : pretty_t
 end
 
+(** {1 Functions} *)
 
 (** {2 Function symbol table} *)
 
@@ -4492,14 +4522,12 @@ class type function_environment_int =
 
     method mk_global_variable:
              ?size:int
-             -> ?offset:memory_offset_t
-             -> numerical_t -> variable_t traceresult
-
-    method mk_global_memory_address:
-             ?optname: string option
-             -> ?opttype: btype_t option
+             -> ?btype:btype_t
              -> numerical_t
-             -> variable_t
+             -> variable_t traceresult
+
+    method mk_gloc_variable:
+             global_location_int -> memory_offset_t -> variable_t
 
     method mk_initial_memory_value: variable_t -> variable_t
 
@@ -4520,17 +4548,6 @@ class type function_environment_int =
              -> memory_offset_t
              -> variable_t traceresult
     method mk_unknown_memory_variable: string -> variable_t
-
-    method mk_memory_address_deref_variable:
-             ?size: int -> ?offset: int -> variable_t -> variable_t traceresult
-
-    (** {2 Memory address variables} *)
-
-    method mk_global_memory_address:
-             ?optname: string option
-             -> ?opttype: btype_t option
-             -> numerical_t
-             -> variable_t
 
     (** {2 Other variables} *)
 
@@ -4608,18 +4625,15 @@ class type function_environment_int =
     method has_variable_index_offset: variable_t -> bool
 
 
-    (** {2 Memory address variables} *)
-
-    (** [is_memory_address_variable v] returns true if [v] is a constant-value
-        variable for a memory address.*)
-    method is_memory_address_variable: variable_t -> bool
-
-
     (** {2 Memory offsets} *)
 
     (** Returns [true if [var] is a memory variable and its offset is a constant
         numerical value. *)
     method has_constant_offset: variable_t -> bool
+
+
+    method add_memory_offset:
+             variable_t -> memory_offset_t -> variable_t traceresult
 
     (** {2 Register variables} *)
 
@@ -4977,7 +4991,6 @@ class type call_target_info_int =
 
   end
 
-(** {1 Functions} *)
 
 (** {2 Function-info} *)
 
@@ -5012,6 +5025,7 @@ class type stackframe_int =
              -> variable_t
              -> ctxt_iaddress_t
              -> unit
+
     method add_store:
              offset:int
              -> size:int option
@@ -5540,7 +5554,6 @@ end
 
 (** {2 Floc} *)
 
-
 (** Records stack, global, or heap memory accesses performed by a
     particular instruction *)
 class type memory_recorder_int =
@@ -5558,7 +5571,11 @@ class type memory_recorder_int =
              -> unit
              -> unit
 
-    method record_argument: ?btype:btype_t -> xpr_t -> int -> unit
+    method record_argument:
+             ?btype:btype_t
+             -> xpr_t
+             -> int
+             -> global_location_int option
 
     method record_load:
              signed:bool
@@ -5756,9 +5773,6 @@ class type floc_int =
     (* returns the memory reference that corresponds to the address expression *)
     method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
 
-    method decompose_memvar_address:
-             xpr_t -> (memory_reference_int * memory_offset_t) option
-
     (* returns the variable associated with the address expression *)
     method get_lhs_from_address: xpr_t -> variable_t
 
@@ -5772,6 +5786,12 @@ class type floc_int =
     method get_stackpointer_offset: string -> int * interval_t
 
     method get_singleton_stackpointer_offset: numerical_t traceresult
+
+    method get_var_at_address:
+             ?size:int option       (** size of the argument, in bytes *)
+             -> ?btype:btype_t      (** type of argument *)
+             -> xpr_t               (** address value *)
+             -> variable_t traceresult
 
     (** {2 Predicates on variables}*)
 

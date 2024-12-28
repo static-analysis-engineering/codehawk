@@ -106,13 +106,13 @@ object (self)
   method record_argument
            ?(btype = t_unknown)
            (argvalue: xpr_t)
-           (argindex: int) =
+           (argindex: int): global_location_int option =
     match argvalue with
     | XConst (IntConst n)
          when mmap#is_global_data_address (numerical_mod_to_doubleword n) ->
-       mmap#add_gaddr_argument
-         self#faddr iaddr (numerical_mod_to_doubleword n) argindex btype
-    | _ -> ()
+       mmap#add_gaddr_argument self#faddr iaddr argvalue argindex btype
+    | _ ->
+       None
 
   method record_assignment
            (lhs: variable_t)
@@ -219,8 +219,7 @@ object (self)
       match addr with
       | XConst (IntConst n)
            when mmap#is_global_data_address (numerical_mod_to_doubleword n) ->
-         mmap#add_gload
-           self#faddr iaddr (numerical_mod_to_doubleword n) size signed
+         mmap#add_gload self#faddr iaddr addr size signed
       | _ ->
          chlog#add
            "memory load not recorded"
@@ -272,8 +271,7 @@ object (self)
            match xpr with
            | XConst (IntConst n) -> Some n
            | _ -> None in
-         mmap#add_gstore
-           self#faddr iaddr (numerical_mod_to_doubleword n) size optvalue
+         mmap#add_gstore self#faddr iaddr addr size optvalue
       | _ ->
          chlog#add
            "memory store not recorded"

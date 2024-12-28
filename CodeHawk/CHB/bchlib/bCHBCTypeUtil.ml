@@ -1231,3 +1231,8 @@ let struct_offset_field_categories (ty: btype_t): (int * string) list =
                          STR "Struct definition has no field layout: ";
                          STR (btype_to_string ty)]))) compinfo.bcfields
      | _ -> [(0, btype_to_string ty)]
+
+
+let bexp_intconstant ?(ikind=IInt) (n: int) =
+  let i64 = Int64.of_int n in
+  Const (CInt (i64, ikind, None))

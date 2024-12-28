@@ -85,7 +85,7 @@ module TR = CHTraceResult
 let bcd = BCHBCDictionary.bcdictionary
 
 let x2p = xpr_formatter#pr_expr
-let p2s = pretty_to_string
+let p2s = CHPrettyUtil.pretty_to_string
 
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
@@ -782,6 +782,17 @@ object (self)
         | _ -> () in
       v
 
+  method add_memory_offset
+           (v:variable_t)
+           (memoff: memory_offset_t): variable_t traceresult =
+    if self#is_memory_variable v then
+      tmap
+        (fun av -> self#mk_variable av)
+        (varmgr#add_memvar_offset v memoff)
+    else
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "variable " ^ (p2s v#toPretty) ^ " is not a memory variable"]
+
   method mk_index_offset_memory_variable
            ?(size=4)
            (memref: memory_reference_int)
@@ -791,29 +802,6 @@ object (self)
     else
       let avar = varmgr#make_memory_variable memref ~size offset in
       self#mk_variable avar
-
-  method mk_memory_address_deref_variable
-           ?(size=4)
-           ?(offset=0)
-           (var: variable_t): variable_t traceresult =
-    if self#is_memory_address_variable var then
-      let memref_r = varmgr#make_memref_from_basevar var in
-      let optty = tfold_default (fun memref -> memref#get_type) None memref_r in
-      match optty with
-      | None ->
-         Error ["Unknown type for memory address variable: " ^ (p2s var#toPretty)]
-      | Some ty when is_struct_type ty ->
-         let memoffset = mk_maximal_memory_offset (mkNumerical offset) ty in
-         tmap
-           (fun memref ->
-             self#mk_index_offset_memory_variable ~size memref memoffset)
-           memref_r
-      | Some ty ->
-         Error [
-             "mk_memory_address_deref_variable: type is not a struct type: "
-             ^ (p2s var#toPretty) ^ " (" ^ (btype_to_string ty) ^ ")"]
-    else
-      Error ["Not a memory address variable: " ^ (p2s var#toPretty)]
 
   method mk_index_offset_global_memory_variable
            ?(elementsize=4)
@@ -848,160 +836,64 @@ object (self)
            end in
        Ok var
 
+  method mk_gloc_variable
+           (gloc: global_location_int) (offset: memory_offset_t): variable_t =
+    let numgaddr = gloc#address#to_numerical in
+    let gvar = self#mk_variable (varmgr#make_global_variable numgaddr) in
+    let ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
+    begin
+      self#set_variable_name gvar gloc#name;
+      self#set_variable_name ivar (gloc#name ^ "_in");
+      match offset with
+      | NoOffset -> gvar
+      | _ ->
+         let gvar = varmgr#make_global_variable ~offset numgaddr in
+         let gvar = self#mk_variable gvar in
+         let ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
+         let name = gloc#name ^ (memory_offset_to_string offset) in
+         begin
+           self#set_variable_name gvar name;
+           self#set_variable_name ivar (name ^ "_in");
+           gvar
+         end
+    end
+
   method mk_global_variable
            ?(size=4)
-           ?(offset=NoOffset)
+           ?(btype=t_unknown)
            (base: numerical_t): variable_t traceresult =
-    let dwbase =
-      fail_tfold
-        (trerror_record
-           (LBLOCK [
-                STR "Converting ";
-                base#toPretty;
-                STR " in finfo.mk_global_variable in function ";
-                faddr#toPretty]))
-        (fun b -> b)
-        (numerical_to_doubleword (base#modulo (mkNumerical BCHDoubleword.e32))) in
-    let default (gloc: global_location_int) =
-      let var =
-        self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
-      let _ = self#set_variable_name var gloc#name in
-      Ok var in
-
-    (*
-    match numerical_to_doubleword base with
-    | Error e -> Error ("finfo.mk_global_variable" :: e)
-    | Ok addr ->
-       let name: string option =
-         if has_symbolic_address_name addr then
-           let vname = get_symbolic_address_name addr in
-           let vtype = get_symbolic_address_type addr in
-           begin
-             chlog#add
-               "make named global variable"
-               (LBLOCK [
-                    addr#toPretty;
-                    STR ": ";
-                    STR vname;
-                    STR " with type ";
-                    STR (btype_to_string vtype)]);
-             Some vname
-           end
-         else
-           None in
-       let default () =
-         let var =
-           self#mk_variable (varmgr#make_global_variable ~size ~offset base) in
-         begin
-           (match name with
-            | Some vname ->
-               let ivar = self#mk_variable (varmgr#make_initial_memory_value var) in
-               begin
-                 self#set_variable_name var vname;
-                 self#set_variable_name ivar (vname ^ "_in")
-               end
-            | _ -> ());
-           Ok var
-         end in
-     *)
-    match memmap#containing_location dwbase with
+    let dw = numerical_mod_to_doubleword base in
+    match memmap#containing_location dw with
     | Some gloc ->
-       tfold
-         ~ok:(fun memoffset ->
-           let var =
-             self#mk_variable
-               (varmgr#make_global_variable
-                  ~offset:memoffset gloc#address#to_numerical) in
-           let _ = self#set_variable_name var gloc#name in
-           Ok var)
-         ~error:(fun sl ->
-           begin
-             chlog#add
-               "fenv#mk_global_variable: Error"
-               (LBLOCK [faddr#toPretty; STR ": "; STR (String.concat "; " sl)]);
-             default gloc
-           end)
-         (gloc#address_memory_offset dwbase)
-    | _ ->
-       Ok (self#mk_variable (varmgr#make_global_variable ~size ~offset base))
-      (*
-               |
-
-       if is_in_global_structvar addr then
-         (match get_structvar_base_offset addr with
-          | Some (base, off) ->
-             let basename = get_symbolic_address_name base in
-             (match off with
-              | Field ((fname, fckey), NoOffset) ->
-                 let cinfo = bcfiles#get_compinfo fckey in
-                 let finfo = get_compinfo_field cinfo fname  in
-                 let finfotype = resolve_type finfo.bftype in
-                 (match finfotype with
-                  | Error _ -> default ()
-                  | Ok finfotype ->
-                     let foffset =
-                       if is_struct_type finfotype then
-                         let subcinfo = get_struct_type_compinfo finfotype in
-                         let subfield0 = List.hd subcinfo.bcfields in
-                         let suboffset =
-                           FieldOffset
-                             ((subfield0.bfname, subfield0.bfckey), NoOffset) in
-                         FieldOffset ((fname, fckey), suboffset)
-                       else
-                         FieldOffset ((fname, fckey), NoOffset) in
-                     let var =
-                       self#mk_variable
-                         (varmgr#make_global_variable
-                            ~offset:foffset base#to_numerical) in
-                     let vname = basename ^ (memory_offset_to_string foffset) in
-                     let _ = self#set_variable_name var vname in
-                     Ok var)
-              | _ ->
-                 default ())
-          | _ ->
-             default ())
-       else if is_in_global_arrayvar addr then
-         (match get_arrayvar_base_offset addr with
-          | Some (base, off, _) ->
-             let basename = get_symbolic_address_name base in
-             let basevar =
-               self#mk_variable (varmgr#make_global_variable base#to_numerical) in
-             let _ = self#set_variable_name basevar basename in
-             (match off with
-              | Index (Const (CInt (i64, _, _)), _) ->
-                 let cindex = mkNumericalFromInt64 i64 in
-                 let ioffset = ConstantOffset (cindex, NoOffset) in
-                 let var =
-                   self#mk_variable
-                     (varmgr#make_global_variable
-                        ~offset:ioffset base#to_numerical) in
-                 let ivar =
-                   self#mk_initial_memory_value var in
-                 let vname = basename ^ (memory_offset_to_string ioffset) in
-                 let ivname = vname ^ "_in" in
-                 let _ = self#set_variable_name var vname in
-                 let _ = self#set_variable_name ivar ivname in
-                 let _ =
-                   chlog#add
-                     "array element variable"
-                     (LBLOCK [
-                          addr#toPretty;
-                          STR ": ";
-                          var#toPretty;
-                          STR ": ";
-                          STR vname]) in
-                 Ok var
-              | _ ->
-                 default ())
-          | _ ->
-             default ())
+       let gvar =
+         self#mk_variable
+           (self#varmgr#make_global_variable gloc#address#to_numerical) in
+       let ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
+       if dw#equal gloc#address then
+         begin
+           self#set_variable_name gvar gloc#name;
+           self#set_variable_name ivar (gloc#name ^ "_in");
+           Ok gvar
+         end
        else
-         default ()
-       *)
-
-  method mk_global_memory_address
-           ?(optname = None) ?(opttype=None) (n: numerical_t) =
-    self#mk_variable (varmgr#make_global_memory_address ~optname ~opttype n)
+         tmap
+           ~msg:"finfo.mk_global_variable"
+           (fun offset ->
+             let gvar =
+               self#mk_variable
+                 (self#varmgr#make_global_variable
+                    ~size ~offset gloc#address#to_numerical) in
+             let ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
+             let name = gloc#name ^ (memory_offset_to_string offset) in
+             begin
+               self#set_variable_name gvar name;
+               self#set_variable_name ivar (name ^ "_in");
+               gvar
+             end)
+           (gloc#address_memory_offset ~tgtbtype:btype (num_constant_expr base))
+    | _ ->
+       let _ = memmap#add_location ~size:(Some size) ~btype dw in
+       Ok (self#mk_variable (self#varmgr#make_global_variable dw#to_numerical))
 
   method mk_register_variable (register:register_t) =
     self#mk_variable (varmgr#make_register_variable register)
@@ -1489,8 +1381,6 @@ object (self)
   method is_basevar_memory_variable = varmgr#is_basevar_memory_variable
 
   method is_basevar_memory_value = varmgr#is_basevar_memory_value
-
-  method is_memory_address_variable = varmgr#is_memory_address_variable
 
   method is_calltarget_value = varmgr#is_calltarget_value
 
