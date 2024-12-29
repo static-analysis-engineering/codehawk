@@ -613,7 +613,7 @@ object (self)
   method make_memref_from_basevar
            (v: variable_t): memory_reference_int traceresult =
     tbind
-      ~msg:"make_memref_from_basevar_basevar"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
       (fun av ->
         match av#to_basevar_reference with
         | Some memref -> Ok memref

@@ -5757,10 +5757,33 @@ class type floc_int =
 
     (** {2 Resolve memory variable}*)
 
+    (** [get_memory_variable_numoffset var num] returns the variable that
+        corresponds to the address expression [var + num].
+
+        This method is convenient for indirect memory accesses expressed by
+        a register base and immediate offset.
+
+        This method should eventually replace [get_memory_variable_1]
+     *)
+    method get_memory_variable_numoffset:
+             ?align:int
+             -> ?size:int
+             -> variable_t
+             -> numerical_t
+             -> variable_t traceresult
+
     (* returns the memory reference corresponding to the address in
-       variable plus offset *)
+       variable plus offset.
+
+       Deprecated. Should eventually be replaced by
+       [get_memory_variable_numoffset].
+     *)
     method get_memory_variable_1:
-           ?align:int -> ?size:int -> variable_t -> numerical_t -> variable_t
+             ?align:int
+             -> ?size:int
+             -> variable_t
+             -> numerical_t
+             -> variable_t
 
     (* returns the memory reference corresponding to a base and index
        variable plus offset *)
@@ -5781,7 +5804,20 @@ class type floc_int =
        index variable *)
     method get_memory_variable_4: variable_t -> int -> numerical_t -> variable_t
 
-    (* returns the memory reference that corresponds to the address expression *)
+    (* [decompose_memaddr addr] attempts to separate the terms of [addr] into
+       a base (global, stack, or base variable) and an offset.
+
+       This method should eventually replace the method [decompose_address].
+     *)
+    method decompose_memaddr:
+             xpr_t
+             -> (memory_reference_int traceresult * memory_offset_t traceresult)
+
+    (* returns the memory reference and offset that corresponds to the address
+       expression.
+
+       Deprecated. Should eventually be replaced by [decompose_memaddr]
+     *)
     method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
 
     (* returns the variable associated with the address expression *)
