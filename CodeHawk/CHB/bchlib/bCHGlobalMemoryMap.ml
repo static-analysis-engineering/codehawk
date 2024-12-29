@@ -458,7 +458,7 @@ object (self)
            ?(btype = t_unknown)
            ?(initialvalue = None)
            ?(size = None)
-           (address: doubleword_int): global_location_int TR.traceresult =
+           (address: doubleword_int): global_location_int traceresult =
     if H.mem locations address#index then
       begin
         ch_error_log#add

@@ -692,7 +692,7 @@ object (self)
   method make_runtime_constant (name:string) =
     self#mk_variable (AuxiliaryVariable (RuntimeConstant name))
 
-  method get_initial_memory_value_variable (v: variable_t) =
+  method get_initial_memory_value_variable (v: variable_t): variable_t traceresult =
     tbind
       ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_initial_memory_value_variable)

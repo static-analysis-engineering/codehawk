@@ -1427,6 +1427,7 @@ object (self)
        if self#is_composite_symbolic_value rhsx then
          let sv = self#env#mk_symbolic_value rhsx in
          begin
+           (*
            (match vtype with
             | TUnknown _ -> ()
             | _ ->
@@ -1440,7 +1441,7 @@ object (self)
                         STR ": ";
                         STR (btype_to_string vtype)]);
                  self#f#set_btype sv vtype
-               end);
+               end); *)
            XVar sv
          end
        else

@@ -4491,9 +4491,12 @@ class type function_environment_int =
 
     (** {2 Register variables} *)
 
-    (** {3 x86} *)
+    (** {3 Generic} *)
 
     method mk_register_variable: register_t -> variable_t
+
+    (** {3 x86} *)
+
     method mk_cpu_register_variable: cpureg_t -> variable_t
     method mk_fpu_register_variable: int -> variable_t
     method mk_mmx_register_variable: int -> variable_t
@@ -5353,34 +5356,6 @@ object
       restored from the stack at stacklocation [memaddr] by the instruction at
       address [iaddr].*)
   method restore_register: xpr_t -> ctxt_iaddress_t -> register_t -> unit
-
-
-  (** {2 Auxvar types}
-
-      The types set and retrieved are inferred variable types for constant-value
-      variables. Inferences are based on their appearance in certain instructions
-      or operations performed on them. Throughout the analysis different aspects
-      may be revealed, and a list of these is maintained.*)
-
-  (** [finfo#set_btype v ty] records type [ty] for variable [v].*)
-  method set_btype: variable_t -> btype_t -> unit
-
-  (** [finfo#has_btype v] returns true if at least one type has been recorded for
-      variable [v].*)
-  method has_btype: variable_t -> bool
-
-  (** [finfo#get_btype v] returns the join of all types that have been recorded
-      for variable [v]. If no types were recorded [t_unknown] is returned.*)
-  method get_btype: variable_t -> btype_t
-
-  (** [finfo#get_btypes v] returns all types that have been recorded for
-      variable [v]. If no types were recorded the empty list is returned.*)
-  method get_btypes: variable_t -> btype_t list
-
-  (** Returns a list of indexed variable type records, where each entry
-      represents (index of variable, index of joined type, indices of all
-      types).*)
-  method get_btype_table: (int * int * int list) list
 
 
   (** {1 Function summaries}

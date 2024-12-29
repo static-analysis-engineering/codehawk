@@ -81,8 +81,6 @@ module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
 module TR = CHTraceResult
 
-let bcd = BCHBCDictionary.bcdictionary
-
 let x2p = xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
 
@@ -651,7 +649,9 @@ object (self)
     end
 
   method get_symbolic_num_variable(v: variable_t): variable_t traceresult =
-    self#get_variable v#getName#getSeqNumber
+    tprop
+      (self#get_variable v#getName#getSeqNumber)
+      (__FILE__ ^ ":" ^ (string_of_int __LINE__))
 
   method private has_chifvar index = H.mem chifvars index
 
@@ -868,7 +868,7 @@ object (self)
          end
        else
          tmap
-           ~msg:"finfo.mk_global_variable"
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
            (fun offset ->
              let gvar =
                self#mk_variable
@@ -1551,7 +1551,7 @@ object (self)
   val test_expressions = H.create 3                      (* test-expressions *)
   val test_variables = H.create 3                          (* test-variables *)
 
-  val cvariable_types = H.create 3      (* types of constant-value variables *)
+  (* val cvariable_types = H.create 3 *)     (* types of constant-value variables *)
 
   (* ------------------------------------------------------------------------- *)
 
@@ -1604,48 +1604,6 @@ object (self)
                 STR ia;
                 STR " in function ";
                 faddr#toPretty]))
-
-  method set_btype (v: variable_t) (ty: btype_t) =
-    let vix = v#getName#getSeqNumber in
-    let bix = bcd#index_typ ty in
-    let entry: int list =
-      if H.mem cvariable_types vix then
-        H.find cvariable_types vix
-      else
-        [] in
-    if List.mem bix entry then
-      ()
-    else
-      H.replace cvariable_types vix (bix :: entry)
-
-  method has_btype (v: variable_t): bool =
-    let vix = v#getName#getSeqNumber in
-    H.mem cvariable_types vix
-
-  method get_btype (v: variable_t): btype_t =
-    let vix = v#getName#getSeqNumber in
-    if H.mem cvariable_types vix then
-      let btypes = List.map bcd#get_typ (H.find cvariable_types vix) in
-      btype_join btypes
-    else
-      TUnknown []
-
-  method get_btypes (v: variable_t): btype_t list =
-    let vix = v#getName#getSeqNumber in
-    if H.mem cvariable_types vix then
-      List.map bcd#get_typ (H.find cvariable_types vix)
-    else
-      []
-
-  method get_btype_table: (int * int * int list) list =
-    let result = ref [] in
-    let _ =
-      H.iter (fun vix bixs ->
-          let btypes = List.map bcd#get_typ bixs in
-          let jbtype = btype_join btypes in
-          let entry = (vix, bcd#index_typ jbtype, bixs) in
-          result := entry :: !result) cvariable_types in
-    !result
 
   method sideeffects_changed = sideeffects_changed
 
