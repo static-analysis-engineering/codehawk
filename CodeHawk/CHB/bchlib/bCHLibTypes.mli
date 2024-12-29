@@ -4037,7 +4037,8 @@ object
   method is_stack_parameter_variable: variable_t -> bool
 
   (** Returns the index of the stack parameter variable [var] assuming
-      4-byte parameters starting at offset 4 (x86 only).
+      4-byte parameters starting at offset 4 (x86 only). The variable may
+      either be a stack memory variable or a stack initial memory value.
 
       Returns None if the variable is not a stack parameter variable or if
       the variable cannot be found. *)
@@ -4908,6 +4909,12 @@ class type function_environment_int =
 
     method is_initial_value: variable_t -> bool
 
+    (** [get_init_value_variable var] returns the original variable for which
+        [var] is the initial value.
+
+        If [var] is not an initial memory or initial register value an Error is
+        returned.
+     *)
     method get_init_value_variable: variable_t -> variable_t traceresult
 
     (** {1 Variable collections} *)

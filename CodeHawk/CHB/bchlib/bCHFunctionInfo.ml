@@ -1113,7 +1113,9 @@ object (self)
         (BCH_failure
            (LBLOCK [STR "No virtual target found for "; v#toPretty]))
 
-  method get_frozen_variable (v: variable_t) =
+  method get_frozen_variable
+           (v: variable_t):
+           (variable_t * ctxt_iaddress_t * ctxt_iaddress_t) traceresult =
     varmgr#get_frozen_variable v
 
   method private get_register_variables =
@@ -1160,10 +1162,13 @@ object (self)
 
   method get_stack_parameter_index (v: variable_t): int option =
     if self#is_initial_memory_value v then
-      log_tfold
-        (log_error "get_stack_parameter_index" "invalid initial value")
+      TR.tfold
         ~ok:(fun iv -> varmgr#get_stack_parameter_index iv)
-        ~error:(fun _ -> None)
+        ~error:(fun e ->
+          begin
+            log_error_result __FILE__ __LINE__ e;
+            None
+          end)
         (varmgr#get_initial_memory_value_variable v)
     else
       varmgr#get_stack_parameter_index v
@@ -1190,15 +1195,17 @@ object (self)
       else if self#is_memory_variable v then
         self#get_memvar_offset v
       else
-        Error ["get_constant_offsets: " ^ v#getName#getBaseName] in
-    log_tfold
-      (log_error "get_constant_offsets" "invalid offset or variable")
+        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+               ^ "Not a memory variable or initial memory value: "
+               ^ v#getName#getBaseName] in
+    TR.tfold
       ~ok:(fun offset ->
         if is_constant_offset offset then
           Some (get_constant_offsets offset)
         else
           None)
-      ~error:(fun _ -> None)
+      ~error:(fun e ->
+        begin log_error_result __FILE__ __LINE__ e; None end)
       offset_r
 
   method get_total_constant_offset (v:variable_t) =
@@ -1206,18 +1213,23 @@ object (self)
     | Some l -> Some (List.fold_left (fun acc n -> acc#add n) numerical_zero l)
     | _ -> None
 
-  method get_calltarget_value = varmgr#get_calltarget_value
+  method get_calltarget_value (v: variable_t): call_target_t traceresult =
+    varmgr#get_calltarget_value v
 
-  method get_register = varmgr#get_register
+  method get_register (v: variable_t): register_t traceresult =
+    varmgr#get_register v
 
-  method get_pointed_to_function_name = varmgr#get_pointed_to_function_name
+  method get_pointed_to_function_name (v: variable_t): string traceresult =
+    varmgr#get_pointed_to_function_name v
 
-  method get_call_site = varmgr#get_call_site
+  method get_call_site (v: variable_t): ctxt_iaddress_t traceresult =
+    varmgr#get_call_site v
 
-  method get_se_argument_descriptor = varmgr#get_se_argument_descriptor
+  method get_se_argument_descriptor (v: variable_t): string traceresult =
+    varmgr#get_se_argument_descriptor v
 
-  method get_global_sideeffect_target_address =
-    varmgr#get_global_sideeffect_target_address
+  method get_global_sideeffect_target_address (v: variable_t): doubleword_result =
+    varmgr#get_global_sideeffect_target_address v
 
   method is_global_sideeffect = varmgr#is_global_sideeffect
 
@@ -1248,24 +1260,24 @@ object (self)
       if varmgr#has_global_variable_address v then
         varmgr#get_global_variable_address v
       else
-        Error [
-            "env#get_global_variable_address: "
-            ^ "no constant numerical offset: "
-            ^ v#getName#getBaseName]
+        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+               ^ "No constant numerical offset: "
+               ^ v#getName#getBaseName]
     else if varmgr#is_initial_memory_value v then
       tbind
-        ~msg:("env#get_global_variable_address: invalid initial_memory_value")
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
         (fun ivar ->
           if varmgr#has_global_variable_address ivar then
             self#get_global_variable_address ivar
           else
-            Error ["env#get_global_variable_address: not a constant offset"])
+            Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                   ^ "Not a constant offset: "
+                   ^ v#getName#getBaseName])
         (varmgr#get_initial_memory_value_variable v)
     else
-      Error [
-          "env#get_global_variable_address: "
-          ^ "not a global variable or initial-value global variable: "
-          ^ v#getName#getBaseName]
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "Not a global variable or initial-value global variable: "
+             ^ v#getName#getBaseName]
 
   method is_volatile_variable (v: variable_t) =
     if varmgr#has_global_variable_address v then
@@ -1463,7 +1475,7 @@ object (self)
       varmgr#get_initial_memory_value_variable v
     else if self#is_initial_register_value v then
       tbind
-        ~msg:("finfo:get_init_value_variable: " ^ v#getName#getBaseName)
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ v#getName#getBaseName)
         (fun iv ->
           match iv with
           | CPURegister r -> Ok (self#mk_cpu_register_variable r)
@@ -1475,14 +1487,14 @@ object (self)
           | PowerGPRegister i -> Ok (self#mk_pwr_gp_register_variable i)
           | PowerSPRegister r -> Ok (self#mk_pwr_sp_register_variable r)
           | _ ->
-             Error [
-                 "finfo:get_init_value_variable: not a cpu/mips/arm/pwr register: "
-                 ^ v#getName#getBaseName])
+             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ "Not a cpu/mips/arm/pwr initial register value: "
+                    ^ v#getName#getBaseName])
         (self#get_initial_register_value_register v)
     else
-      Error [
-          "finfo:get_init_value_variable: variable is not an initial value: "
-          ^ v#getName#getBaseName]
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "Variable is not an initial value: "
+             ^ v#getName#getBaseName]
 
   method get_initial_register_value_register
            (v:variable_t): register_t traceresult =
@@ -1498,7 +1510,8 @@ object (self)
     if self#is_symbolic_value v then
       varmgr#get_symbolic_value_expr v
     else
-      Error ["finfo:get_symbolic_value_expr: " ^ v#getName#getBaseName]
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "Not a symbolic value expr: " ^ v#getName#getBaseName]
 
   method is_in_test_jump_range (v: variable_t) (a: ctxt_iaddress_t) =
     (varmgr#is_in_test_jump_range a v)
