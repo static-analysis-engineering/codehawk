@@ -59,7 +59,6 @@ open BCHConstantDefinitions
 open BCHCppClass
 open BCHCStruct
 open BCHDoubleword
-open BCHExternalPredicate
 open BCHFtsParameter
 open BCHFunctionInterface
 open BCHFunctionData
@@ -1561,8 +1560,7 @@ object (self)
 
   val instrbytes = H.create 5
   val jump_targets = H.create 5                           (* to be saved *)
-  val return_values = H.create 3
-  val sideeffects = H.create 3  (* iaddr -> sideeffect-ix *)
+
   val mutable nonreturning = false
   val mutable user_summary = None     (* to be deprecated *)
   val mutable appsummary =
@@ -1818,47 +1816,6 @@ object (self)
        LBLOCK [ STR "Saved Registers" ; NL ; STR (string_repeat "~" 80) ; NL ;
                 LBLOCK l ; NL ;
 		STR (string_repeat "~" 80) ; NL]
-
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * record return values                                                    *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-
-  method record_return_value (iaddr:ctxt_iaddress_t) (x:xpr_t) =
-    H.replace return_values iaddr x
-
-  method get_return_values = H.fold (fun _ x a -> x :: a) return_values []
-
-  method return_values_to_pretty =
-    let p = ref [] in
-    let _ = H.iter (fun iaddr x ->
-      let pp = LBLOCK [ STR iaddr ; STR ": " ; pr_expr x ; NL ] in
-      p := pp :: !p ) return_values in
-    LBLOCK [ STR "Return values: (" ; INT (H.length return_values) ; STR ")" ; NL ;
-	     INDENT (3, LBLOCK !p) ; NL ]
-
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * record side effects                                                     *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-
-  method record_sideeffect (iaddr: ctxt_iaddress_t) (s: xxpredicate_t) =
-    let index = id#index_xxpredicate s in
-    if H.mem sideeffects iaddr then
-      let prev_ix = H.find sideeffects iaddr in
-      if index = prev_ix then
-        ()
-      else
-        begin
-          H.replace sideeffects iaddr index;
-          sideeffects_changed <- true
-        end
-    else
-      begin
-        H.add sideeffects iaddr index;
-        sideeffects_changed <- true;
-        chlog#add
-          "sideeffects changed"
-          (LBLOCK [self#a#toPretty; STR ": "; xxpredicate_to_pretty s])
-      end
 
   method set_nonreturning =
     if nonreturning then () else

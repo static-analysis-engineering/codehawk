@@ -5274,13 +5274,6 @@ object
   (** Declares that this function is non-returning.*)
   method set_nonreturning: unit
 
-  (** [finfo#record_return_value iaddr xpr] records that the function
-      returns value [xpr] at return instruction [iaddr].*)
-  method record_return_value: ctxt_iaddress_t -> xpr_t -> unit
-
-  (** Returns the function return values recorded for this function.*)
-  method get_return_values: xpr_t list
-
 
   (* method set_dynlib_stub: call_target_t -> unit *)
 
@@ -5391,18 +5384,6 @@ object
 
       Note: it does not set the app summary with this signature.*)
   method set_unknown_java_native_method_signature: unit
-
-
-  (** {2 Side effects}*)
-
-  (** [finfo#record_sideeffect iaddr se] records side effect [se] (i.e.,
-      an effect that is observable outside of the function, such as writing
-      through a pointer provided as argument) at instruction address [iaddr].
-
-      This method is currently called only when an assignment is performed
-      with a left-hand-side that is an external memory reference.
-   *)
-  method record_sideeffect: ctxt_iaddress_t -> xxpredicate_t -> unit
 
 
   (** {1 Condition codes}
@@ -5577,7 +5558,7 @@ object
   method summary_to_pretty: pretty_t
   method saved_registers_to_pretty: pretty_t
   method base_pointers_to_pretty: pretty_t
-  method return_values_to_pretty: pretty_t
+                                    (* method return_values_to_pretty: pretty_t *)
 
 end
 
@@ -5891,10 +5872,6 @@ class type floc_int =
     method get_call_arguments: (fts_parameter_t * xpr_t) list
 
     (** {1 Function summary}*)
-
-    (* evaluates the value of eax at this location and reports it to the function
-       info *)
-    method record_return_value: unit
 
     method evaluate_summary_address_term: bterm_t -> variable_t option
 

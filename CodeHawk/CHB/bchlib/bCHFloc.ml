@@ -406,12 +406,12 @@ object (self)
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                                           return values *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-
+(*
   method record_return_value =
     let eax = self#env#mk_cpu_register_variable Eax in
     let returnExpr = self#rewrite_variable_to_external eax in
     self#f#record_return_value self#cia returnExpr
-
+ *)
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                                            call targets *

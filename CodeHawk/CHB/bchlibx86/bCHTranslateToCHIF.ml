@@ -2000,8 +2000,6 @@ let translate_instruction
 
   (* different control flow *)
   | RepzRet | Ret _ | BndRet _ ->
-     let floc = get_floc loc in
-     let _ = floc#record_return_value in
      let transaction =
        package_transaction finfo block_label (commands @ [invariantOperation]) in
      let nodes = [(block_label, [transaction])] in
