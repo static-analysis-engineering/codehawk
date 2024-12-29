@@ -4547,9 +4547,23 @@ class type function_environment_int =
              -> numerical_t
              -> variable_t traceresult
 
+    (** [mk_gloc_variable gloc memoff] creates a global variable for an existing
+        global location [gloc] with memory offset [memoff].
+
+        It also sets the name of the global variable and the name of the global
+        variable with offset according to the name of the global location [gloc]
+     *)
     method mk_gloc_variable:
              global_location_int -> memory_offset_t -> variable_t
 
+    (** [mk_initial_memory_value var] returns an auxiliary variable that
+        represents the initial value of [var] at function entry.
+
+        If [var] is a global struct variable, it also creates initial values
+        for the struct fields.
+
+        If [var] is not an external memory variable an error is returned.
+     *)
     method mk_initial_memory_value: variable_t -> variable_t traceresult
 
     (** [mk_memory_variable memref offset] returns a memory variable with
@@ -4567,13 +4581,14 @@ class type function_environment_int =
     (** [mk_offset_memory_variable memref memoff] returns a memory variable
         with [memref] as basis and a generic memory offset.
 
-        If [memref] is an unknown base a temp variable is returned
+        @raise [BCH_failure] if [memref] is an unknown memory reference.
+
+        Note: eventually unknown memory references should be eliminated. *)
     method mk_offset_memory_variable:
              ?size:int
              -> memory_reference_int
              -> memory_offset_t
              -> variable_t
-     *)
    (*
     method mk_index_offset_global_memory_variable:
              ?elementsize:int
@@ -4926,7 +4941,6 @@ class type function_environment_int =
     method get_globalbasevar_with_offsets:
              variable_t -> (variable_t * numerical_t list) option
 
-    method get_initialized_call_target_value: variable_t -> call_target_t
     method get_initialized_string_value: variable_t -> int -> string
 
     method variables_in_expr: xpr_t -> variable_t list
@@ -4952,7 +4966,6 @@ class type function_environment_int =
     (** {1 Envionment data predicates} *)
 
     method is_virtual_call : variable_t -> bool
-    method has_initialized_call_target_value: variable_t -> bool
     method has_initialized_string_value     : variable_t -> int -> bool
 
     (** {1 Printing} *)

@@ -53,7 +53,6 @@ open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
 open BCHBTerm
-open BCHCallTarget
 open BCHCallTargetInfo
 open BCHCPURegisters
 open BCHConstantDefinitions
@@ -171,7 +170,6 @@ object (self)
 
   val scope = LF.mkScope ()
   val virtual_calls = H.create 3
-  val initial_call_target_values = H.create 3
   val initial_string_values = H.create 3
 
   initializer
@@ -313,51 +311,6 @@ object (self)
                                STR " -- ";
 			       STR s])
 		      end
-	           | FieldCallTarget tgt ->
-		      begin
-		        H.add
-                          initial_call_target_values
-                          mvarin#getName#getSeqNumber
-                          tgt;
-		        chlog#add
-                          "struct constant invariant"
-		          (LBLOCK [
-                               faddr#toPretty;
-                               STR ": ";
-                               mvarin#toPretty;
-                               STR " -- ";
-			       call_target_to_pretty tgt])
-		      end
-	           | FieldValues ll ->
-		      List.iter (fun (offset, ssc) ->
-                          log_tfold
-                            (log_error
-                               "set_argument_structconstant" "invalid memref-2")
-                            ~ok:(fun mref ->
-		              let mvar =
-                                self#mk_memory_variable mref
-                                  (mkNumerical offset) in
-		              let mvarin =
-                                TR.tget_ok (self#mk_initial_memory_value mvar) in
-		              match ssc with
-		              | FieldCallTarget tgt ->
-		                 begin
-		                   H.add
-                                     initial_call_target_values
-                                     mvarin#getName#getSeqNumber
-                                     tgt;
-		                   chlog#add
-                                     "struct constant invariant"
-			             (LBLOCK [
-                                          faddr#toPretty;
-                                          STR ": ";
-                                          mvarin#toPretty;
-                                          STR " -- ";
-			                  call_target_to_pretty tgt])
-		                 end
-		              | _ -> ())
-                            ~error:(fun _ -> ())
-                            (self#mk_base_variable_reference mvarin)) ll
 	           | _ -> ())
                  ~error:(fun _ -> ())
                  (self#mk_base_variable_reference argvarin)) l
@@ -787,13 +740,17 @@ object (self)
     self#mk_variable
       (varmgr#make_memory_variable (self#mk_unknown_memory_reference s) NoOffset)
 
+  (* Eventually this function should be replaced with mk_offset_memory_variable *)
   method mk_memory_variable
            ?(save_name=true)
            ?(size=4)
            (memref: memory_reference_int)
            (offset: numerical_t) =
     if memref#is_unknown_reference then
-      self#mk_num_temp
+      begin
+        log_error_result __FILE__ __LINE__ ["unknown memory reference: tmp created"];
+        self#mk_num_temp
+      end
     else
       let optName = match memref#get_base with
         | BaseVar v when variable_names#has v#getName#getSeqNumber ->
@@ -821,17 +778,19 @@ object (self)
     else
       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
              ^ "variable " ^ (p2s v#toPretty) ^ " is not a memory variable"]
-(*
+
   method mk_offset_memory_variable
            ?(size=4)
            (memref: memory_reference_int)
            (offset: memory_offset_t): variable_t =
     if memref#is_unknown_reference then
-      self#mk_num_temp
+      raise
+        (BCH_failure
+           (LBLOCK [STR "Unknown memory reference in mk_offset_memory_variable"]))
     else
       let avar = varmgr#make_memory_variable memref ~size offset in
       self#mk_variable avar
- *)
+
 
       (*
   method mk_index_offset_global_memory_variable
@@ -1047,7 +1006,7 @@ object (self)
                 self#set_variable_name iv (vname ^ "_in") in
             if is_ptrto_known_struct vtype then
               self#set_pointedto_struct_field_names 1 iv vname vtype)
-        ~error:(fun _ -> ())
+        ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
         (varmgr#get_global_variable_address v)
 
   method mk_initial_memory_value (v:variable_t):variable_t traceresult =
@@ -1070,38 +1029,32 @@ object (self)
 
   method private nested_exprs_in_var (v: variable_t): xpr_t list =
     if self#is_symbolic_value v then
-      log_tfold
-        (log_error "nested_exprs_in_var" "invalid symbolic value")
-        ~ok:(fun x ->
-          let _ =
-            chlog#add
-              "nested exprs in var"
-              (LBLOCK [v#toPretty; STR ": "; x2p x]) in
-          [x])
-        ~error:(fun _ -> [])
+      TR.tfold
+        ~ok:(fun x -> [x])
+        ~error:(fun e ->
+          begin
+            log_error_result
+              ~msg:("invalid symbolic value: " ^ v#getName#getBaseName)
+              __FILE__ __LINE__ e;
+            []
+          end)
         (self#get_symbolic_value_expr v)
 
-    else if self#is_global_variable v then
-      log_tfold
-        (log_error "nested_exprs_in_var" "invalid offset")
+    else if self#is_memory_variable v then
+      TR.tfold
         ~ok:(fun memoff ->
-          match memoff with
-          | ConstantOffset (_, IndexOffset (indexvar, _, _)) ->
-             let _ =
-               chlog#add
-                 "nested exprs in var"
-                 (LBLOCK [v#toPretty; STR ": "; indexvar#toPretty]) in
-             [XVar indexvar]
-          | _ -> [])
-        ~error:(fun _ -> [])
+          List.map (fun v -> XVar v) (get_index_offset_variables memoff))
+        ~error:(fun e ->
+          begin
+            log_error_result __FILE__ __LINE__ e;
+            []
+          end)
         (self#get_memvar_offset v)
     else
       []
 
   method variables_in_expr (expr: xpr_t): variable_t list =
-
     let s = new VariableCollections.set_t in
-
     let rec vs x =
       match x with
       | XVar v ->
@@ -1118,24 +1071,8 @@ object (self)
       s#toList
     end
 
-  method has_initialized_call_target_value (v:variable_t) =
-    H.mem initial_call_target_values v#getName#getSeqNumber
-
-  method get_initialized_call_target_value (v:variable_t) =
-    let index = v#getName#getSeqNumber in
-    if H.mem initial_call_target_values index then
-      H.find initial_call_target_values index
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "initialized call target value not found for ";
-		v#toPretty;
-                STR " in ";
-                faddr#toPretty]))
-
   method has_initialized_string_value (v:variable_t) (offset:int) =
-    H.mem initial_string_values (v#getName#getSeqNumber,offset)
+    H.mem initial_string_values (v#getName#getSeqNumber, offset)
 
   method get_initialized_string_value (v:variable_t) (offset:int) =
     let index = v#getName#getSeqNumber in

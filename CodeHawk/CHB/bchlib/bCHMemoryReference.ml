@@ -206,6 +206,8 @@ let get_index_offset_variables (offset: memory_offset_t): variable_t list =
   let rec aux (o: memory_offset_t) (vlst: variable_t list) =
     match o with
     | IndexOffset (v, _, suboffset) -> aux suboffset (v :: vlst)
+    | ArrayIndexOffset (x, suboffset) ->
+       aux suboffset ((Xprt.variables_in_expr x) @ vlst)
     | ConstantOffset (_, suboffset)
       | FieldOffset (_, suboffset) -> aux suboffset vlst
     | _ -> vlst in
