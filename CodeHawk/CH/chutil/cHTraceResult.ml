@@ -61,6 +61,25 @@ let tmap2
   | Error e1, Error e2 -> Error (msg1 :: msg2 :: (e1 @ e2))
 
 
+let tmap3
+      ?(msg1="")
+      ?(msg2="")
+      ?(msg3="")
+      (f: 'a -> 'b -> 'c -> 'd)
+      (r1: 'a traceresult)
+      (r2: 'b traceresult)
+      (r3: 'c traceresult): 'd traceresult =
+  match r1, r2, r3 with
+  | Ok v1, Ok v2, Ok v3 -> Ok (f v1 v2 v3)
+  | Error e1, Ok _, Ok _ -> Error (msg1 :: e1)
+  | Ok _, Error e2, Ok _ -> Error (msg2 :: e2)
+  | Ok _, Ok _, Error e3 -> Error (msg3 :: e3)
+  | Error e1, Error e2, Ok _ -> Error (msg1 :: msg2 :: (e1 @ e2))
+  | Error e1, Ok _, Error e3 -> Error (msg1 :: msg3 :: (e1 @ e3))
+  | Ok _, Error e2, Error e3 -> Error (msg2 :: msg3 :: (e2 @ e3))
+  | Error e1, Error e2, Error e3 -> Error (msg1 :: msg2 :: msg3 :: (e1 @ e2 @ e3))
+
+
 let tbind ?(msg="") (f: 'a -> 'c traceresult) (r: 'a traceresult) =
   match r with
   | Ok v -> f v

@@ -5785,10 +5785,25 @@ class type floc_int =
              -> numerical_t
              -> variable_t
 
+    method get_memory_variable_varoffset:
+             ?size:int
+             -> variable_t
+             -> variable_t
+             -> numerical_t
+             -> variable_t traceresult
+
     (* returns the memory reference corresponding to a base and index
        variable plus offset *)
     method get_memory_variable_2:
              ?size:int -> variable_t -> variable_t -> numerical_t -> variable_t
+
+    method get_memory_variable_scaledoffset:
+             ?size:int
+             -> variable_t
+             -> variable_t
+             -> int
+             -> numerical_t
+             -> variable_t traceresult
 
     (* returns the memory reference corresponding to a base and scaled index
        variable plus offset *)
@@ -5940,7 +5955,7 @@ class type floc_int =
 
     (** {2 Assignments} *)
 
-    (** [floc#get_assign_commands var ~size ~vtype xpr] returns the CHIF commands
+    (** [get_assign_commands var ~size ~vtype xpr] returns the CHIF commands
         representing the assignment [var := xpr].
 
         If [size] is not None and the left-hand side [var] is externally observable
@@ -5949,6 +5964,8 @@ class type floc_int =
 
         If [vtype] is known type facts are added for both [var] and [xpr] for this
         instruction.
+
+        Deprecated. To be replaced with [get_assign_commands_r].
      *)
     method get_assign_commands:
              variable_t
@@ -5957,13 +5974,31 @@ class type floc_int =
              -> xpr_t
              -> cmd_t list
 
-    (** [floc#get_ssa_assign_commands reg ~vtype xpr] creates an ssa-register
+    (** [get_assign_commands_r var xpr] returns the CHIF commands representing
+        the assignment [var := xpr].
+
+        If [size] of [var] (in bytes) is different from the default value 4,
+        the value of [xpr] is restricted to the given width if the value is a
+        numerical constant.*)
+    method get_assign_commands_r:
+             ?signed:bool
+             -> ?size:int
+             -> variable_t traceresult
+             -> xpr_t traceresult
+             -> cmd_t list
+
+
+    (** [get_ssa_assign_commands reg ~vtype xpr] creates an ssa-register
         variable [ssavar] for the current context address and returns
         a tuple of the register-variable, and the CHIF commands representing
         the assignment and assert-equal:
         {[ reg := xpr
            assert (reg = ssavar)
-        ]} *)
+        ]}
+
+        Deprecated. All ssa variables have been moved to the python front end.
+        To be replaced with [get_assign_commands_r].
+     *)
     method get_ssa_assign_commands:
              register_t
              -> ?vtype:btype_t
@@ -5977,6 +6012,8 @@ class type floc_int =
 
     (** {2 Variable abstraction}*)
 
+    method get_abstract_commands_r: variable_t traceresult -> cmd_t list
+
     (* returns the CHIF code associated with an abstraction of variables *)
     method get_abstract_commands:
              variable_t -> ?size:xpr_t -> ?vtype:btype_t -> unit -> cmd_t list
@@ -5984,7 +6021,10 @@ class type floc_int =
     (** floc#[get_ssa_abstract_commands reg ()] creates an ssa-register
         variable [ssavar] for the current context address and returns a tuple of
         the register-variable and the CHIF commands representing the assignment
-        {[ reg := ssavar ]}*)
+        {[ reg := ssavar ]}
+
+        Deprecated. To be replaced with [get_abstract_commands_r]
+     *)
     method get_ssa_abstract_commands:
              register_t -> unit -> (variable_t * cmd_t list)
 

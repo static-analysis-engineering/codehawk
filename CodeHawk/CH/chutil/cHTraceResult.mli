@@ -65,6 +65,20 @@ val tmap2:
   -> 'c traceresult
 
 
+(** [tmap3 f r1 r2 r3] is [Ok (f v1 v2 v3)] if [r1] is [Ok v1] and [r2] is
+    [Ok v2] and [r3] is [Ok v3]; otherwise it returns an [Error] appending
+    the messages corresponding to the error value as appropriate.*)
+val tmap3:
+  ?msg1:string
+  -> ?msg2:string
+  -> ?msg3:string
+  -> ('a -> 'b -> 'c -> 'd)
+  -> 'a traceresult
+  -> 'b traceresult
+  -> 'c traceresult
+  -> 'd traceresult
+
+
 (** [tfold ~ok ~error r] is [ok v] if [r] is [Ok v] and [error e] if [r] is
     [Error e].*)
 val tfold: ok:('a -> 'c) -> error:(string list -> 'c) -> 'a traceresult -> 'c

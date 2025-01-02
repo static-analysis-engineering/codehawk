@@ -766,6 +766,31 @@ object (self)
    * resolve and save ScaledReg (cpureg1, cpureg2, 1, offset)   (memrefs2)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
+  method get_memory_variable_varoffset
+           ?(size=4) (var1: variable_t) (var2: variable_t) (offset: numerical_t):
+           variable_t traceresult =
+    let addr = XOp (XPlus, [XVar var1; XVar var2]) in
+    let addr = XOp (XPlus, [addr; num_constant_expr offset]) in
+    let address = simplify_xpr (self#inv#rewrite_expr addr) in
+    let (memref_r, memoff_r) = self#decompose_memaddr address in
+    tbind
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+      (fun memref ->
+        if memref#is_global_reference then
+          tbind
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
+            (fun memoff ->
+              self#env#mk_global_variable ~size (get_total_constant_offset memoff))
+            memoff_r
+        else
+          tmap
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+            (fun memoff ->
+              (self#env#mk_memory_variable
+                 memref (get_total_constant_offset memoff)))
+            memoff_r)
+      memref_r
+
   method get_memory_variable_2
            ?(size=4) (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
     let _ = track_function
@@ -791,6 +816,42 @@ object (self)
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (cpureg1, cpureg2, s, offset)  (memrefs3)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+
+  method get_memory_variable_scaledoffset
+           ?(size=4)
+           (base: variable_t)
+           (index: variable_t)
+           (scale: int)
+           (offset: numerical_t): variable_t traceresult =
+    let indexexpr =
+      if self#inv#is_constant index then
+        num_constant_expr (self#inv#get_constant index)
+      else
+        XVar index in
+    let addr = XOp (XPlus, [XVar base; num_constant_expr offset]) in
+    let addr = self#inv#rewrite_expr addr in
+    let addr =
+      XOp (XPlus,
+           [addr; XOp (XMult, [int_constant_expr scale; indexexpr])]) in
+    let address = simplify_xpr (self#inv#rewrite_expr addr) in
+    let (memref_r, memoff_r) = self#decompose_memaddr address in
+    tbind
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+      (fun memref ->
+        if memref#is_global_reference then
+          tbind
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
+            (fun memoff ->
+              self#env#mk_global_variable ~size (get_total_constant_offset memoff))
+            memoff_r
+        else
+          tmap
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+            (fun memoff ->
+              (self#env#mk_memory_variable
+                 memref (get_total_constant_offset memoff)))
+            memoff_r)
+      memref_r
 
   method get_memory_variable_3
            ?(size=4)
@@ -1528,6 +1589,65 @@ object (self)
      (List.length vars) > 0
      && List.for_all is_fixed_type (variables_in_expr x)
 
+   method get_assign_commands_r
+            ?(signed=false)
+            ?(size=4)
+            (lhs_r: variable_t traceresult)
+            (rhs_r: xpr_t traceresult): cmd_t list =
+     if Result.is_error lhs_r then
+       let (cmds, op_args) =
+         TR.tfold
+           ~ok:(fun rhs ->
+             let reqN () = self#env#mk_num_temp in
+             let reqC = self#env#request_num_constant in
+             let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
+             (rhscmds, get_rhs_op_args rhs_c))
+           ~error:(fun e ->
+             begin
+               log_error_result
+                 ~tag:("assignment lhs unknown")
+                 ~msg:(p2s self#l#toPretty)
+                 __FILE__ __LINE__ e;
+               ([], [])
+             end)
+           rhs_r in
+       cmds @ [OPERATION ({op_name = unknown_write_symbol; op_args = op_args})]
+
+     else if Result.is_error rhs_r then
+       let lhs = TR.tget_ok lhs_r in
+       [ABSTRACT_VARS [lhs]]
+
+     else
+       let lhs = TR.tget_ok lhs_r in
+       let rhs = TR.tget_ok rhs_r in
+       let rhs = simplify_xpr (self#inv#rewrite_expr rhs) in
+       let rhs =
+         if not signed then
+           match rhs with
+           | XConst (IntConst n) ->
+              let n =
+                match size with
+                | 1 -> n#modulo numerical_e8
+                | 2 -> n#modulo numerical_e16
+                | 4 -> n#modulo numerical_e32
+                | _ -> n in
+              num_constant_expr n
+           | _ -> rhs
+         else
+           rhs in
+
+       let rhs =
+         (* if rhs is a composite symbolic expression, create a new variable
+            for it *)
+         if self#is_composite_symbolic_value rhs then
+           XVar (self#env#mk_symbolic_value rhs)
+         else
+           rhs in
+       let reqN () = self#env#mk_num_temp in
+       let reqC = self#env#request_num_constant in
+       let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
+       rhscmds @ [ASSIGN_NUM (lhs, rhs_c)]
+
    (* Note: recording of loads and stores is performed by the different
       architectures directly in FnXXXDictionary.*)
    method get_assign_commands
@@ -1752,6 +1872,18 @@ object (self)
             "Ignoring size: %s and type %s in get_abstract_commands"
             (x2s size) (btype_to_string vtype) in
      [ABSTRACT_VARS [lhs]]
+
+   method get_abstract_commands_r (lhs_r: variable_t traceresult): cmd_t list =
+     TR.tfold
+       ~ok:(fun lhs -> [ABSTRACT_VARS [lhs]])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"lhs not abstracted" ~msg:(p2s self#l#toPretty)
+             __FILE__ __LINE__ e;
+           []
+         end)
+       lhs_r
 
    method get_ssa_abstract_commands (reg: register_t) () =
      let regvar = self#env#mk_register_variable reg in
