@@ -184,13 +184,13 @@ class type arm_operand_int =
     method to_numerical: numerical_t
     method to_register: register_t
     method to_multiple_register: register_t list
-    method to_address: floc_int -> xpr_t
-    method to_variable: floc_int -> variable_t
-    method to_multiple_variable: floc_int -> variable_t list
-    method to_expr: ?unsigned:bool -> floc_int -> xpr_t
-    method to_multiple_expr: floc_int -> xpr_t list
-    method to_lhs: floc_int -> variable_t * cmd_t list
-    method to_multiple_lhs: floc_int -> variable_t list * cmd_t list
+    method to_address: floc_int -> xpr_t traceresult
+    method to_variable: floc_int -> variable_t traceresult
+    method to_multiple_variable: floc_int -> (variable_t list) traceresult
+    method to_expr: ?unsigned:bool -> floc_int -> xpr_t traceresult
+    method to_multiple_expr: floc_int -> (xpr_t list) traceresult
+    method to_lhs: floc_int -> (variable_t * cmd_t list) traceresult
+    method to_multiple_lhs: floc_int -> (variable_t list * cmd_t list) traceresult
     method to_updated_offset_address: floc_int -> (int * xpr_t) traceresult
     method to_btype: btype_t
 

@@ -33,11 +33,11 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 
 (* xprlib *)
 open Xprt
 open XprTypes
-open XprToPretty
 open Xsimplify
 
 (* bchlib *)
@@ -60,7 +60,7 @@ open BCHARMTypes
 module TR = CHTraceResult
 
 
-let x2p = xpr_formatter#pr_expr
+(* let x2p = XprToPretty.xpr_formatter#pr_expr *)
 let p2s = pretty_to_string
 
 
@@ -333,61 +333,56 @@ object (self:'a)
          (BCH_failure
             (LBLOCK [STR "Operand is not an immediate value: " ; self#toPretty]))
 
-  method to_address (floc: floc_int): xpr_t =
+  method to_address (floc: floc_int): xpr_t traceresult =
     match kind with
     | ARMOffsetAddress (r, align, offset, isadd, _iswback, isindex, _) ->
        let env = floc#f#env in
-       let memoff =
+       let xoffset_r =
          if isindex then
            match (offset, isadd) with
-           | (ARMImmOffset i, true) -> int_constant_expr i
-           | (ARMImmOffset i, false) -> int_constant_expr (-i)
+           | (ARMImmOffset i, true) -> Ok (int_constant_expr i)
+           | (ARMImmOffset i, false) -> Ok (int_constant_expr (-i))
            | (ARMIndexOffset (indexreg, indexoffset), true) ->
               let indexvar = env#mk_arm_register_variable indexreg in
-              XOp (XPlus, [XVar indexvar; int_constant_expr indexoffset])
+              Ok (XOp (XPlus, [XVar indexvar; int_constant_expr indexoffset]))
            | (ARMShiftedIndexOffset (indexreg, srt, indexoffset), true) ->
               let indexvar = env#mk_arm_register_variable indexreg in
               let xoffset = int_constant_expr indexoffset in
               (match srt with
-               | ARMImmSRT (_, 0)-> XOp (XPlus, [XVar indexvar; xoffset])
+               | ARMImmSRT (_, 0)-> Ok (XOp (XPlus, [XVar indexvar; xoffset]))
                | ARMImmSRT (SRType_LSL, 2) ->
                   let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 4]) in
-                  XOp (XPlus, [shifted; xoffset])
+                  Ok (XOp (XPlus, [shifted; xoffset]))
                | ARMImmSRT (SRType_ASR, 1) ->
                   let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 2]) in
-                  XOp (XPlus, [shifted; xoffset])
+                  Ok (XOp (XPlus, [shifted; xoffset]))
                | ARMImmSRT (SRType_ASR, 2) ->
                   let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 4]) in
-                  XOp (XPlus, [shifted; xoffset])
+                  Ok (XOp (XPlus, [shifted; xoffset]))
                | ARMImmSRT (SRType_ASR, 3) ->
                   let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 8]) in
-                  XOp (XPlus, [shifted; xoffset])
+                  Ok (XOp (XPlus, [shifted; xoffset]))
                | ARMRegSRT (SRType_LSL, srtreg) ->
                   let shiftvar = env#mk_arm_register_variable srtreg in
                   let shifted = XOp (XLsl, [XVar indexvar; XVar shiftvar]) in
-                  XOp (XPlus, [shifted; xoffset])
+                  Ok (XOp (XPlus, [shifted; xoffset]))
                | ARMRegSRT (SRType_ASR, srtreg) ->
                   let shiftvar = env#mk_arm_register_variable srtreg in
                   let shifted = XOp (XAsr, [XVar indexvar; XVar shiftvar]) in
-                  XOp (XPlus, [shifted; xoffset])
+                  Ok (XOp (XPlus, [shifted; xoffset]))
                | _ ->
-                  begin
-                    (if collect_diagnostics () then
-                       ch_diagnostics_log#add
-                         "operand#to_address"
-                         (LBLOCK [STR "ARMShiftedIndexOffset: "; self#toPretty]));
-                    random_constant_expr
-                  end)
+                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                         ^ "register shift: "
+                         ^ (register_shift_to_string srt)
+                         ^ " not yet supported"])
            | _ ->
-              begin
-                (if collect_diagnostics () then
-                   ch_diagnostics_log#add
-                     "operand#to_address"
-                     (LBLOCK [STR "memoff: "; self#toPretty]));
-                random_constant_expr
-              end
+              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                     ^ "arm memory offset: "
+                     ^ (arm_memory_offset_to_string offset)
+                     ^ " not yet supported with isadd: "
+                     ^ (if isadd then "true" else "false")]
          else
-           zero_constant_expr in
+           Ok zero_constant_expr in
        let rvar = env#mk_arm_register_variable r in
        let rvarx =
          if align > 1 then
@@ -396,25 +391,25 @@ object (self:'a)
          else
            XVar rvar in
        (* memory addresses are not rewritten to preserve the structure of the
-          data accessed (in case of an non-optimizing compiler) *)
-       let addr = XOp (XPlus, [rvarx; memoff]) in
-       (* floc#inv#rewrite_expr addr *)
-       simplify_xpr addr
-    | ARMLiteralAddress dw -> num_constant_expr dw#to_numerical
-    | _ ->
-       begin
-         (if collect_diagnostics () then
-            ch_diagnostics_log#add
-              "operand#to_address"
-              (LBLOCK [STR "Other address: "; self#toPretty]));
-         random_constant_expr
-       end
+          data accessed (in case of a non-optimizing compiler) *)
+       TR.tmap
+         (fun memoff -> simplify_xpr (XOp (XPlus, [rvarx; memoff])))
+         xoffset_r
 
-  method to_updated_offset_address (floc: floc_int): (int * xpr_t) TR.traceresult =
+    | ARMLiteralAddress dw -> Ok (num_constant_expr dw#to_numerical)
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Address for " ^ (p2s self#toPretty)
+              ^ " not yet supported"]
+
+  method to_updated_offset_address (floc: floc_int): (int * xpr_t) traceresult =
     match kind with
     | ARMOffsetAddress (_r, _align, offset, isadd, _iswback, isindex, _) ->
        if isindex then
-         Ok (0, self#to_address floc)
+         TR.tmap
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           (fun addr -> (0, addr))
+           (self#to_address floc)
        else
          let optinc =
            match (offset, isadd) with
@@ -423,161 +418,113 @@ object (self:'a)
            | _ -> None in
          (match optinc with
           | None ->
-             Error [
-                 "to_updated_offset_address: offset type "
-                 ^ (arm_memory_offset_to_string offset)
-                 ^ "not covered for offset address update"]
+             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ "offset type "
+                    ^ (arm_memory_offset_to_string offset)
+                    ^ "not covered for offset address update"]
           | Some inc ->
-             let addr =
-               XOp (XPlus, [self#to_address floc; int_constant_expr inc]) in
-             Ok (inc, floc#inv#rewrite_expr addr))
+             TR.tmap
+               ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+               (fun addr ->
+                 let a = XOp (XPlus, [addr; int_constant_expr inc]) in
+                 (inc, floc#inv#rewrite_expr a))
+               (self#to_address floc))
     | _ ->
-       Error [
-           "to_updated_offset_address: not applicable to operand kind: "
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+           ^ "Not applicable to operand kind: "
            ^ (p2s self#toPretty)]
 
-  method to_variable (floc:floc_int): variable_t =
+  method to_variable (floc:floc_int): variable_t traceresult =
     let env = floc#f#env in
     match kind with
     | ARMReg r | ARMWritebackReg (_, r, _) ->
-       env#mk_arm_register_variable r
+       Ok (env#mk_arm_register_variable r)
     | ARMDoubleReg (r1, r2) ->
-       env#mk_arm_double_register_variable r1 r2
-    | ARMExtensionReg r -> env#mk_arm_extension_register_variable r
+       Ok (env#mk_arm_double_register_variable r1 r2)
+    | ARMExtensionReg r ->
+       Ok (env#mk_arm_extension_register_variable r)
     | ARMDoubleExtensionReg (r1, r2) ->
-       env#mk_arm_double_extension_register_variable r1 r2
-    | ARMSpecialReg r -> env#mk_arm_special_register_variable r
+       Ok (env#mk_arm_double_extension_register_variable r1 r2)
+    | ARMSpecialReg r ->
+       Ok (env#mk_arm_special_register_variable r)
     | ARMLiteralAddress dw ->
-       (match floc#env#mk_global_variable dw#to_numerical with
-        | Error e ->
-           raise
-             (BCH_failure
-                (LBLOCK [
-                     floc#l#toPretty;
-                     STR ": to-variable";
-                     STR (String.concat "; " e)]))
-        | Ok v -> v)
+       TR.tprop
+         (floc#env#mk_global_variable dw#to_numerical)
+         (__FILE__ ^ ":" ^ (string_of_int __LINE__))
     | ARMOffsetAddress (r, align, offset, isadd, _iswback, _isindex, size) ->
-       let (var, trace) =
-         (match offset with
-          | ARMImmOffset _ ->
-             let rvar = env#mk_arm_register_variable r in
-             let memoff =
-               match (offset,isadd) with
-               | (ARMImmOffset i, true) -> mkNumerical i
-               | (ARMImmOffset i, false) -> (mkNumerical i)#neg
-               | _ ->
-                  raise
-                    (BCH_failure
-                       (LBLOCK [
-                            STR "to_variable: offset not implemented: ";
-                            self#toPretty])) in
-             (floc#get_memory_variable_1 ~size ~align rvar memoff,
-              [STR "ARMImmOffset"; STR "memory-variable-1"])
-          | ARMShiftedIndexOffset _ ->
-             let rvar = env#mk_arm_register_variable r in
-             (match (offset, isadd) with
-              | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
-                 let optscale =
-                   match srt with
-                   | ARMImmSRT (SRType_LSL, 2) -> Some 4
-                   | ARMImmSRT (SRType_LSL, 0) -> Some 1
-                   | _ -> None in
-                 (match optscale with
-                  | Some scale ->
-                     let ivar = env#mk_arm_register_variable ivar in
-                     if scale = 1 then
-                       let rx = floc#inv#rewrite_expr (XVar rvar) in
-                       let ivax = floc#inv#rewrite_expr (XVar ivar) in
-                       let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
-                       (match xoffset with
-                        | XConst (IntConst n) ->
-                           let v =
-                             (match floc#env#mk_global_variable ~size n with
-                              | Error e ->
-                                 raise
-                                   (BCH_failure
-                                      (LBLOCK [
-                                           floc#l#toPretty;
-                                           STR ": to-variable";
-                                           STR (String.concat "; " e)]))
-                              | Ok v -> v) in
-                           (v, [STR "ARMShiftedIndexOffset"; STR "explicit"])
-                           (*
-                        | XOp (XPlus, [XVar basevar; XVar memoffset]) ->
-                           let optmemvaraddr = floc#decompose_memvar_address xoffset in
-                           (match optmemvaraddr with
-                            | Some (memref, memoffset)
-                                 when BCHMemoryReference.is_constant_offset memoffset ->
-                               (env#mk_index_offset_memory_variable memref memoffset,
-                                [STR "ARMShiftedIndexOffset (decomposed)";
-                                 self#toPretty;
-                                 STR "; memref: ";
-                                 memref#toPretty;
-                                 STR "; memoffset: ";
-                                 BCHMemoryReference.memory_offset_to_pretty memoffset])
-                            | _ ->
-                               (env#mk_unknown_memory_variable "operand",
-                                [STR "ARMShiftedIndexOffset (sum)";
-                                 self#toPretty;
-                                 STR "; basevar: ";
-                                 basevar#toPretty;
-                                 STR "; memoffset: ";
-                                 memoffset#toPretty])) *)
-                        | _ ->
-                           (env#mk_unknown_memory_variable "operand",
-                            [STR "ARMShiftedIndexOffset";
-                             self#toPretty;
-                             STR "; rx: ";
-                             x2p rx;
-                             STR ": ivax: ";
-                             x2p ivax]))
-                     else
-                       (floc#get_memory_variable_3
-                          ~size rvar ivar scale (mkNumerical i),
-                        [STR "ARMShiftedIndexOffset";
-                         self#toPretty;
-                         STR ": ";
-                         STR "memory-variable-3"])
-                  | _ ->
-                     (env#mk_unknown_memory_variable "operand",
-                      [STR "ARMShiftedIndexOffset"; STR "no scale"; self#toPretty]))
-              | _ ->
-                 (env#mk_unknown_memory_variable "operand",
-                  [STR "ARMShiftedIndexOffset"; STR "unsupported"; self#toPretty]))
-          | _ ->
-             (env#mk_unknown_memory_variable "operand",
-              [STR "ARMOffsetAddress"; STR "unsupported"; self#toPretty])) in
-       let _ =
-         if (env#is_unknown_memory_variable var) || var#isTemporary then
-           if (List.length trace) > 0 then
-             chlog#add
-               "unknown memory location"
-               (LBLOCK (
-                    [floc#l#toPretty; STR ". "]
-                    @ [List.hd trace]
-                    @ [STR ": "]
-                    @ (List.tl trace)))
-           else
-             chlog#add
-               "unknown memory location - no info"
-               (LBLOCK [floc#l#toPretty]) in
-       var
-    | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
-       env#mk_arm_register_variable r
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Operand:to_variable not yet implemented for: ";
-                 self#toPretty]))
+       (match offset with
+        | ARMImmOffset _ ->
+           let rvar = env#mk_arm_register_variable r in
+           let numoffset_r =
+             match (offset, isadd) with
+             | (ARMImmOffset i, true) -> Ok (mkNumerical i)
+             | (ARMImmOffset i, false) -> Ok (mkNumerical i)#neg
+             | _ ->
+                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                       ^ "Immediate offset not yet implemented for offset "
+                       ^ (arm_memory_offset_to_string offset)] in
+           TR.tbind
+             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+             (fun memoff ->
+               floc#get_memory_variable_numoffset ~size ~align rvar memoff)
+             numoffset_r
 
-  method to_multiple_variable (floc:floc_int): variable_t list =
+        | ARMShiftedIndexOffset _ ->
+           let rvar = env#mk_arm_register_variable r in
+           (match (offset, isadd) with
+            | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
+               let optscale =
+                 match srt with
+                 | ARMImmSRT (SRType_LSL, 2) -> Some 4
+                 | ARMImmSRT (SRType_LSL, 0) -> Some 1
+                 | _ -> None in
+               (match optscale with
+                | Some scale ->
+                   let ivar = env#mk_arm_register_variable ivar in
+                   if scale = 1 then
+                     let rx = floc#inv#rewrite_expr (XVar rvar) in
+                     let ivax = floc#inv#rewrite_expr (XVar ivar) in
+                     let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
+                     (match xoffset with
+                      | XConst (IntConst n) ->
+                         floc#env#mk_global_variable ~size n
+                      | _ ->
+                         floc#get_memory_variable_varoffset
+                           ~size rvar ivar (mkNumerical i))
+                   else
+                     floc#get_memory_variable_scaledoffset
+                       ~size rvar ivar scale (mkNumerical i)
+                | _ ->
+                   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                          ^ "Scaled memory offset with register shift "
+                          ^ (register_shift_to_string srt)
+                          ^ " not yet supported"])
+            | _ ->
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "Shifted Index Offset with isadd: false: "
+                      ^ (p2s self#toPretty)
+                      ^ " not yet supported"])
+
+        | _ ->
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "Index Offset address: " ^ (p2s self#toPretty)
+                  ^ " not yet supported"])
+
+    | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
+       Ok (env#mk_arm_register_variable r)
+
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "ARMOffsetAddress: " ^ (p2s self#toPretty)
+              ^ " not yet supported"]
+
+  method to_multiple_variable (floc:floc_int): (variable_t list) traceresult =
     let env = floc#f#env in
     match kind with
-    | ARMRegList rl -> List.map env#mk_arm_register_variable rl
+    | ARMRegList rl ->
+       Ok (List.map env#mk_arm_register_variable rl)
     | ARMExtensionRegList rl ->
-       List.map env#mk_arm_extension_register_variable rl
+      Ok ( List.map env#mk_arm_extension_register_variable rl)
     | ARMMemMultiple (r, _, n, size) ->
        let rvar = env#mk_arm_register_variable r in
        let rec loop i l =
@@ -586,136 +533,149 @@ object (self:'a)
          else
            let offset = mkNumerical ((i - 1) * size) in
            loop (i - 1) ((floc#get_memory_variable_1 rvar offset) :: l) in
-       loop n []
+       Ok (loop n [])
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "to-multiple-variable not applicable: ";
-                     self#toPretty]))
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Not applicable to " ^ (p2s self#toPretty)]
 
-  method to_expr ?(unsigned=false) (floc:floc_int): xpr_t =
+  method to_expr ?(unsigned=false) (floc:floc_int): xpr_t traceresult =
     match kind with
     | ARMImmediate imm ->
        let imm = if unsigned then imm#to_unsigned else imm in
-       num_constant_expr imm#to_numerical
-    | ARMFPConstant _ -> XConst XRandom
-    | ARMReg _ | ARMWritebackReg _ -> XVar (self#to_variable floc)
-    | ARMDoubleReg _ -> XVar (self#to_variable floc)
-    | ARMSpecialReg _ -> XVar (self#to_variable floc)
-    | ARMExtensionReg _ -> XVar (self#to_variable floc)
-    | ARMDoubleExtensionReg _ -> XVar (self#to_variable floc)
-    | ARMExtensionRegElement _ -> XConst XRandom
-    | ARMOffsetAddress _ -> XVar (self#to_variable floc)
+       Ok (num_constant_expr imm#to_numerical)
+    | ARMFPConstant _ ->
+       Ok (XConst XRandom)
+    | ARMReg _ | ARMWritebackReg _ ->
+       TR.tmap (fun v -> XVar v) (self#to_variable floc)
+    | ARMDoubleReg _ ->
+       TR.tmap (fun v -> XVar v) (self#to_variable floc)
+    | ARMSpecialReg _ ->
+       TR.tmap (fun v -> XVar v) (self#to_variable floc)
+    | ARMExtensionReg _ ->
+       TR.tmap (fun v -> XVar v) (self#to_variable floc)
+    | ARMDoubleExtensionReg _ ->
+       TR.tmap (fun v -> XVar v) (self#to_variable floc)
+    | ARMExtensionRegElement _ ->
+       Ok (XConst XRandom)
+    | ARMOffsetAddress _ ->
+       TR.tmap (fun v -> XVar v) (self#to_variable floc)
     | ARMAbsolute a when elf_header#is_program_address a ->
-       num_constant_expr a#to_numerical
+       Ok (num_constant_expr a#to_numerical)
     | ARMLiteralAddress a ->
        if elf_header#is_readonly_address a then
-         num_constant_expr (elf_header#get_program_value a)#to_numerical
+         Ok (num_constant_expr (elf_header#get_program_value a)#to_numerical)
        else
-         begin
-           ch_error_log#add
-             "literal address not found"
-             (LBLOCK [floc#l#toPretty; STR ": "; a#toPretty]);
-           XConst (XRandom)
-         end
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "Literal (read-only) address not found: "
+                ^ (p2s a#toPretty)]
     | ARMAbsolute a ->
-       begin
-         ch_error_log#add
-           "absolute address"
-           (LBLOCK [STR "Address "; a#toPretty; STR " not found"]);
-         num_constant_expr a#to_numerical
-       end
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Absolute address " ^ (p2s a#toPretty) ^ " not found"]
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
-       let env = floc#f#env in
-       XVar (env#mk_arm_register_variable r)
+       Ok (XVar (floc#env#mk_arm_register_variable r))
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSR, n)) ->
-       let env = floc#f#env in
-       XOp
-         (XLsr,
-          [XVar (env#mk_arm_register_variable r); int_constant_expr n])
+       let vreg = floc#env#mk_arm_register_variable r in
+       Ok (XOp (XLsr, [XVar vreg; int_constant_expr n]))
     | ARMShiftedReg (r, ARMImmSRT (SRType_ASR, n)) ->
-       let env = floc#f#env in
-       XOp
-         (XAsr,
-          [XVar (env#mk_arm_register_variable r); int_constant_expr n])
+       let vreg = floc#env#mk_arm_register_variable r in
+       Ok (XOp (XAsr, [XVar vreg; int_constant_expr n]))
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, n)) ->
-       let env = floc#f#env in
-       XOp
-         (XLsl,
-          [XVar (env#mk_arm_register_variable r); int_constant_expr n])
+       let vreg = floc#env#mk_arm_register_variable r in
+       Ok (XOp (XLsl, [XVar vreg; int_constant_expr n]))
     | ARMShiftedReg (r, ARMRegSRT (SRType_LSL, sr)) ->
-       let env = floc#f#env in
-       let shiftv =
-         XOp (XBAnd,
-              [XVar (env#mk_arm_register_variable sr);
-               int_constant_expr 7]) in
-       XOp (XLsl, [XVar (env#mk_arm_register_variable r); shiftv])
-    | ARMShiftedReg _ ->
-       let _ =
-         chlog#add
-           "shifted-reg unknown"
-           (LBLOCK [self#toPretty]) in
-       XConst (XRandom)
+       let vsreg = floc#env#mk_arm_register_variable sr in
+       let vreg = floc#env#mk_arm_register_variable r in
+       let shiftv = XOp (XBAnd, [XVar vsreg; int_constant_expr 7]) in
+       Ok (XOp (XLsl, [XVar vreg; shiftv]))
+    | ARMShiftedReg (_, srt) ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Shifted reg: " ^ (register_shift_to_string srt)
+              ^ " not yet supported"]
     | ARMRegBitSequence (r, lsb, widthm1) ->
-       let regvar = XVar (floc#env#mk_arm_register_variable r) in
+       let xreg = XVar (floc#env#mk_arm_register_variable r) in
        (match (lsb, widthm1) with
         | (8, 7) ->
-           XOp (XXbyte, [int_constant_expr 1; regvar])
+           Ok (XOp (XXbyte, [int_constant_expr 1; xreg]))
         | _ ->
            let mask = Int.shift_left 1 (widthm1+1) in
            if lsb = 0 then
-             XOp (XBAnd, [regvar; int_constant_expr mask])
+             Ok (XOp (XBAnd, [xreg; int_constant_expr mask]))
            else
-             let shiftedreg = XOp (XLsr, [regvar; int_constant_expr lsb]) in
-             XOp (XBAnd, [shiftedreg; int_constant_expr mask]))
+             let shiftedreg = XOp (XLsr, [xreg; int_constant_expr lsb]) in
+             Ok (XOp (XBAnd, [shiftedreg; int_constant_expr mask])))
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Operand:to_expr not yet implemented for: ";
-                 self#toPretty]))
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Operand: " ^ (p2s self#toPretty)
+              ^ " not yet supported"]
 
-  method to_multiple_expr (floc:floc_int): xpr_t list =
+  method to_multiple_expr (floc:floc_int): (xpr_t list) traceresult =
     match kind with
     | ARMRegList _ ->
        let rlops = self#get_register_op_list in
-       List.map (fun (op: 'a) -> op#to_expr floc) rlops
+       let (oklist, errorlist) =
+         List.fold_left
+           (fun (oklist, errorlist) (op: 'a) ->
+             match op#to_expr floc with
+             | Ok v -> (v :: oklist, errorlist)
+             | Error e -> (oklist, e @ errorlist)) ([], []) rlops in
+       if (List.length rlops) = (List.length oklist) then
+         Ok (List.rev oklist)
+       else
+         Error ((__FILE__ ^ ":" ^ (string_of_int __LINE__)) :: errorlist)
+
     | ARMExtensionRegList _ ->
        let rlops = self#get_extension_register_op_list in
-       List.map (fun (op: 'a) -> op#to_expr floc) rlops
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "to-multiple-expr not applicable: ";
-                 self#toPretty]))
+       let (oklist, errorlist) =
+         List.fold_left
+           (fun (oklist, errorlist) (op: 'a) ->
+             match op#to_expr floc with
+             | Ok v -> (v :: oklist, errorlist)
+             | Error e -> (oklist, e @ errorlist)) ([], []) rlops in
+       if (List.length rlops) = (List.length oklist) then
+         Ok (List.rev oklist)
+       else
+         Error ((__FILE__ ^ ":" ^ (string_of_int __LINE__)) :: errorlist)
 
-  method to_lhs (floc:floc_int) =
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Operand cannot produce multiple expressions: "
+              ^ (p2s self#toPretty)]
+
+  method to_lhs (floc:floc_int): (variable_t * cmd_t list) traceresult =
     match kind with
     | ARMImmediate _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Immediate cannot be a lhs: ";
-                     self#toPretty]))
-    | ARMReg _ | ARMWritebackReg _ -> (self#to_variable floc, [])
-    | ARMDoubleReg _ -> (self#to_variable floc, [])
-    | ARMExtensionReg _ -> (self#to_variable floc, [])
-    | ARMDoubleExtensionReg _ -> (self#to_variable floc, [])
-    | ARMOffsetAddress _ -> (self#to_variable floc, [])
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Lhs not implemented for "; self#toPretty]))
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Immediate cannot be a lhs: "
+              ^ (p2s self#toPretty)]
 
-  method to_multiple_lhs (floc: floc_int) =
+    | ARMReg _
+      | ARMWritebackReg _ ->
+       TR.tmap (fun v -> (v, [])) (self#to_variable floc)
+    | ARMDoubleReg _ ->
+       TR.tmap (fun v -> (v, [])) (self#to_variable floc)
+    | ARMExtensionReg _ ->
+       TR.tmap (fun v -> (v, [])) (self#to_variable floc)
+    | ARMDoubleExtensionReg _ ->
+       TR.tmap (fun v -> (v, [])) (self#to_variable floc)
+    | ARMOffsetAddress _ ->
+       TR.tmap (fun v -> (v, [])) (self#to_variable floc)
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Lhs not implemented for " ^ (p2s self#toPretty)]
+
+  method to_multiple_lhs (floc: floc_int):
+           (variable_t list * cmd_t list) traceresult =
     match kind with
     | ARMRegList _
-      | ARMMemMultiple _ -> (self#to_multiple_variable floc, [])
+      | ARMMemMultiple _ ->
+       TR.tmap
+         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         (fun vlist -> (vlist, []))
+         (self#to_multiple_variable floc)
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "to_multiple_lhs not available for ";
-                     self#toPretty]))
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Not an operand kind with multiple lhs: "
+              ^ (p2s self#toPretty)]
 
   method is_immediate =
     match kind with ARMImmediate _ -> true | _ -> false

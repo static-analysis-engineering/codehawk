@@ -35,6 +35,8 @@ open BCHARMLoopStructure
 open BCHARMOpcodeRecords
 open BCHARMTypes
 
+module TR = CHTraceResult
+
 
 let get_arm_op_metrics (f:arm_assembly_function_int) (finfo:function_info_int) =
   let faddr = f#get_address in
@@ -50,13 +52,18 @@ let get_arm_op_metrics (f:arm_assembly_function_int) (finfo:function_info_int) =
   let is_loc_unknown floc (op: arm_operand_int) =
     match op#get_kind with
     | ARMMemMultiple _ ->
-       let (vlist, _) = op#to_multiple_lhs floc in
-       (match vlist with
-        | v::_ -> v#isTmp || (finfo#env#is_unknown_memory_variable v)
-        | _ -> true)
+       TR.tfold_default
+         (fun (vlist, _) ->
+          match vlist with
+          | v::_ -> v#isTmp || (finfo#env#is_unknown_memory_variable v)
+          | _ -> true)
+         true
+         (op#to_multiple_lhs floc)
     | ARMOffsetAddress _ ->
-       let (v, _) = op#to_lhs floc in
-       v#isTmp || (finfo#env#is_unknown_memory_variable v)
+       TR.tfold_default
+         (fun (v, _) -> v#isTmp || (finfo#env#is_unknown_memory_variable v))
+         true
+         (op#to_lhs floc)
     | _ -> false in
   let add_read floc (op: arm_operand_int) =
     if is_memory_op op then
