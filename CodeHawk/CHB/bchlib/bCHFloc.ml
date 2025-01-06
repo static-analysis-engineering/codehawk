@@ -1723,21 +1723,18 @@ object (self)
        if self#is_composite_symbolic_value rhsx then
          let sv = self#env#mk_symbolic_value rhsx in
          begin
-           (*
            (match vtype with
             | TUnknown _ -> ()
             | _ ->
-               begin
-                 chlog#add
-                   "set constant-value variable type"
-                   (LBLOCK [
-                        STR self#cia;
-                        STR ": ";
-                        sv#toPretty;
-                        STR ": ";
-                        STR (btype_to_string vtype)]);
-                 self#f#set_btype sv vtype
-               end); *)
+               chlog#add
+                 "set constant-value variable type"
+                 (LBLOCK [
+                      STR self#cia;
+                      STR ": ";
+                      sv#toPretty;
+                      STR ": ";
+                      STR (btype_to_string vtype)]));
+           (* self#f#set_btype sv vtype *)
            XVar sv
          end
        else

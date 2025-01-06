@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 
 (* xprlib *)
 open XprTypes
@@ -126,6 +127,9 @@ object (self)
        | [vinv] -> vinv#get_reaching_defs
        | _ -> []) in
 
+    let get_variable_rdefs_r (v_r: variable_t traceresult): symbol_t list =
+      TR.tfold_default get_variable_rdefs [] v_r in
+
     let get_variable_defuses (v: variable_t): symbol_t list =
       let symvar = floc#f#env#mk_symbolic_variable v in
       let varinvs = floc#varinv#get_var_def_uses symvar in
@@ -137,6 +141,9 @@ object (self)
       let defuses = get_variable_defuses v in
       List.exists (fun s -> s#getBaseName = "exit") defuses in
 
+    let has_exit_use_r (v_r: variable_t traceresult): bool =
+      TR.tfold_default has_exit_use false v_r in
+
     let getopt_initial_argument_value (x: xpr_t): (register_t * int) option =
       match (rewrite_expr x) with
       | XVar v when floc#f#env#is_initial_arm_argument_value v ->
@@ -147,6 +154,10 @@ object (self)
            (TR.tget_ok (floc#f#env#get_initial_register_value_register v),
             n#toInt)
       | _ -> None in
+
+    let getopt_initial_argument_value_r
+          (x_r: xpr_t traceresult): (register_t * int) option =
+      TR.tfold_default getopt_initial_argument_value None x_r in
 
     let getopt_stackaddress (x: xpr_t): int option =
       match (rewrite_expr x) with
@@ -167,6 +178,9 @@ object (self)
            (floc#f#env#get_initial_register_value_register v)
       | _ -> None in
 
+    let getopt_stackaddress_r (x_r: xpr_t traceresult): int option =
+      TR.tfold_default getopt_stackaddress None x_r in
+
     let getopt_global_address (x: xpr_t): doubleword_int option =
       match (rewrite_expr x) with
       | XConst (IntConst num) ->
@@ -177,6 +191,9 @@ object (self)
            (numerical_to_doubleword num)
       | _ ->
          None in
+
+    let getopt_global_address_r (x_r: xpr_t traceresult): doubleword_int option =
+      TR.tfold_default getopt_global_address None x_r in
 
     let log_subtype_constraint
           (kind: string) (ty1: type_term_t) (ty2: type_term_t) =
@@ -208,13 +225,13 @@ object (self)
     match instr#get_opcode with
 
     | Add (_, _, rd, rn, rm, _) ->
-       let xrn = rn#to_expr floc in
+       let xrn_r = rn#to_expr floc in
        begin
 
          (if rm#is_immediate && (rm#to_numerical#toInt < 256) then
             let rdreg = rd#to_register in
             let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-            let rndefs = get_variable_rdefs (rn#to_variable floc) in
+            let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
             let rnreg = rn#to_register in
             List.iter (fun rnsym ->
                 let rnaddr = rnsym#getBaseName in
@@ -226,12 +243,12 @@ object (self)
                   store#add_subtype_constraint rntypeterm lhstypeterm
                 end) rndefs);
 
-         (match getopt_global_address (rn#to_expr floc) with
+         (match getopt_global_address_r (rn#to_expr floc) with
           | Some gaddr ->
              if BCHConstantDefinitions.is_in_global_arrayvar gaddr then
                (match (BCHConstantDefinitions.get_arrayvar_base_offset gaddr) with
                 | Some _ ->
-                   let rmdefs = get_variable_rdefs (rm#to_variable floc) in
+                   let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
                    let rmreg = rm#to_register in
                    List.iter (fun rmsym ->
                        let rmaddr = rmsym#getBaseName in
@@ -248,7 +265,7 @@ object (self)
                ()
           | _ -> ());
 
-         (match getopt_initial_argument_value xrn with
+         (match getopt_initial_argument_value_r xrn_r with
           | Some (reg, _) ->
              let ftvar = mk_function_typevar faddr in
              let ftvar = add_freg_param_capability reg ftvar in
@@ -267,7 +284,7 @@ object (self)
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rnreg = rn#to_register in
-       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        begin
 
          (* ASR results in a signed integer *)
@@ -295,7 +312,7 @@ object (self)
     | BitwiseAnd (_, _, rd, rn, _, _) ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        let rnreg = rn#to_register in
        begin
 
@@ -330,7 +347,7 @@ object (self)
     | BitwiseOr (_, _, rd, rn, _, _) ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        let rnreg = rn#to_register in
        begin
 
@@ -344,7 +361,6 @@ object (self)
                store#add_subtype_constraint rntypeterm lhstypeterm
              end) rndefs
        end
-
 
     | Branch _ ->
        (* no type information gained *)
@@ -466,7 +482,7 @@ object (self)
        end
 
     | Compare (_, rn, rm, _) when rm#is_immediate ->
-       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        let rnreg = rn#to_register in
        let immval = rm#to_numerical#toInt in
        if immval = 0 then
@@ -484,8 +500,8 @@ object (self)
              end) rndefs
 
     | Compare (_, rn, rm, _) when rm#is_register ->
-       let rndefs = get_variable_rdefs (rn#to_variable floc) in
-       let rmdefs = get_variable_rdefs (rm#to_variable floc) in
+       let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
+       let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
        let rnreg = rn#to_register in
        let rmreg = rm#to_register in
        let pairs = CHUtil.xproduct rndefs rmdefs in
@@ -506,8 +522,8 @@ object (self)
                 store#add_subtype_constraint rntypeterm rmtypeterm
               end) pairs);
 
-         (let xrn = rn#to_expr floc in
-          match getopt_initial_argument_value xrn with
+         (let xrn_r = rn#to_expr floc in
+          match getopt_initial_argument_value_r xrn_r with
           | Some (reg, _) ->
              let ftvar = mk_function_typevar faddr in
              let ftvar = add_freg_param_capability reg ftvar in
@@ -522,8 +538,8 @@ object (self)
                  end) rmdefs
           | _ -> ());
 
-         (let xrm = rm#to_expr floc in
-          match getopt_initial_argument_value xrm with
+         (let xrm_r = rm#to_expr floc in
+          match getopt_initial_argument_value_r xrm_r with
           | Some (reg, _) ->
              let ftvar = mk_function_typevar faddr in
              let ftvar = add_freg_param_capability reg ftvar in
@@ -545,7 +561,7 @@ object (self)
        begin
 
          (* LDR rt, [rn, rm] :  X_rndef.load <: X_rt *)
-         (let xrdef = get_variable_rdefs (rn#to_variable floc) in
+         (let xrdef = get_variable_rdefs_r (rn#to_variable floc) in
           let rnreg = rn#to_register in
           let offset = rm#to_numerical#toInt in
           List.iter (fun rdsym ->
@@ -559,8 +575,9 @@ object (self)
                 store#add_subtype_constraint rdtypeterm rttypeterm
               end) xrdef);
 
-         (match rewrite_expr (memop#to_expr floc) with
-          | XVar v ->
+         (match TR.tmap rewrite_expr (memop#to_expr floc) with
+          | Error _ -> ()
+          | Ok (XVar v) ->
              (match floc#f#env#get_variable_type v with
               | Some ty ->
                  let opttc = mk_btype_constraint rttypevar ty in
@@ -576,7 +593,7 @@ object (self)
 
          (* if the address to load from is the address of a global struct field,
             assign the type of that field to the destination register. *)
-         (match getopt_global_address (memop#to_address floc) with
+         (match getopt_global_address_r (memop#to_address floc) with
           | Some gaddr ->
              if BCHConstantDefinitions.is_in_global_structvar gaddr then
                match (BCHConstantDefinitions.get_structvar_base_offset gaddr) with
@@ -630,7 +647,7 @@ object (self)
 
          (* if the value loaded is the start address of a global array,
             assign that array type to the destination register. *)
-         (match getopt_global_address (memop#to_expr floc) with
+         (match getopt_global_address_r (memop#to_expr floc) with
           | Some gaddr ->
              if BCHConstantDefinitions.is_in_global_arrayvar gaddr then
                (match (BCHConstantDefinitions.get_arrayvar_base_offset gaddr) with
@@ -662,7 +679,7 @@ object (self)
                 | _ -> ())
           | _ -> ());
 
-         (match getopt_stackaddress (memop#to_address floc) with
+         (match getopt_stackaddress_r (memop#to_address floc) with
           | None -> ()
           | Some offset ->
              let rhstypevar = mk_localstack_lhs_typevar offset faddr iaddr in
@@ -680,7 +697,7 @@ object (self)
        begin
 
          (* LDRB rt, [rn, rm] :  X_rndef.load <: X_rt *)
-         (let xrdefs = get_variable_rdefs (rn#to_variable floc) in
+         (let xrdefs = get_variable_rdefs_r (rn#to_variable floc) in
           let rnreg = rn#to_register in
           let offset = rm#to_numerical#toInt in
           List.iter (fun rdsym ->
@@ -727,7 +744,7 @@ object (self)
        begin
 
          (* LDRH rt, [rn, rm] :  X_rndef.load <: X_rt *)
-         (let xrdef = get_variable_rdefs (rn#to_variable floc) in
+         (let xrdef = get_variable_rdefs_r (rn#to_variable floc) in
           let rnreg = rn#to_register in
           let offset = rm#to_numerical#toInt in
           List.iter (fun rdsym ->
@@ -762,7 +779,7 @@ object (self)
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rnreg = rn#to_register in
-       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
 
        (* LSL results in an unsigned integer *)
        (let tc = mk_int_type_constant Unsigned 32 in
@@ -789,7 +806,7 @@ object (self)
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rnreg = rn#to_register in
-       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
 
        (* LSR results in an unsigned integer *)
        (let tc = mk_int_type_constant Unsigned 32 in
@@ -834,11 +851,11 @@ object (self)
 
     (* Move x, y  ---  x := y  --- Y <: X *)
     | Move (_, _, rd, rm, _, _) when rm#is_register ->
-       let xrm = rm#to_expr floc in
+       let xrm_r = rm#to_expr floc in
        let rdreg = rd#to_register in
        begin
          (* propagate function argument type *)
-         (match getopt_initial_argument_value xrm with
+         (match getopt_initial_argument_value_r xrm_r with
           | Some (rmreg, off) when off = 0 ->
              let rhstypevar = mk_function_typevar faddr in
              let rhstypevar = add_freg_param_capability rmreg rhstypevar in
@@ -852,7 +869,7 @@ object (self)
           | _ -> ());
 
          (* propagate function return type *)
-         (if rd#get_register = AR0 && (has_exit_use (rd#to_variable floc)) then
+         (if rd#get_register = AR0 && (has_exit_use_r (rd#to_variable floc)) then
             let regvar = mk_reglhs_typevar rdreg faddr iaddr in
             let fvar = mk_function_typevar faddr in
             let fvar = add_return_capability fvar in
@@ -865,8 +882,8 @@ object (self)
 
          (* use reaching defs *)
          (let rmreg = rm#to_register in
-          let rmvar = rm#to_variable floc in
-          let rmrdefs = get_variable_rdefs rmvar in
+          let rmvar_r = rm#to_variable floc in
+          let rmrdefs = get_variable_rdefs_r rmvar_r in
           let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
           List.iter (fun rmrdef ->
               let rmaddr = rmrdef#getBaseName in
@@ -912,15 +929,15 @@ object (self)
 
     (* Store x in y  ---  *y := x  --- X <: Y.store *)
     | StoreRegister (_, rt, _rn, rm, memvarop, _) when rm#is_immediate ->
-       let xaddr = memvarop#to_address floc in
-       let xrt = rt#to_expr floc in
-       (match getopt_stackaddress xaddr with
+       let xaddr_r = memvarop#to_address floc in
+       let xrt_r = rt#to_expr floc in
+       (match getopt_stackaddress_r xaddr_r with
         | None -> ()
         | Some offset ->
            let lhstypevar = mk_localstack_lhs_typevar offset faddr iaddr in
            begin
              (* propagate function argument type *)
-             (match getopt_initial_argument_value xrt with
+             (match getopt_initial_argument_value_r xrt_r with
               | Some (rtreg, off) when off = 0 ->
                  let rhstypevar = mk_function_typevar faddr in
                  let rhstypevar = add_freg_param_capability rtreg rhstypevar in
@@ -934,8 +951,8 @@ object (self)
 
              (* propagate src register type from rdefs *)
              (let rtreg = rt#to_register in
-              let rtvar = rt#to_variable floc in
-              let rtrdefs = get_variable_rdefs rtvar in
+              let rtvar_r = rt#to_variable floc in
+              let rtrdefs = get_variable_rdefs_r rtvar_r in
               List.iter (fun rtrdef ->
                   let rtaddr = rtrdef#getBaseName in
                   if rtaddr != "init" then
@@ -950,10 +967,10 @@ object (self)
        )
 
     | StoreRegisterByte (_, rt, rn, rm, _memvarop, _) when rm#is_immediate ->
-       let rnrdefs = get_variable_rdefs (rn#to_variable floc) in
+       let rnrdefs = get_variable_rdefs_r (rn#to_variable floc) in
        let rnreg = rn#to_register in
        let offset = rm#to_numerical#toInt in
-       let rtrdefs = get_variable_rdefs (rt#to_variable floc) in
+       let rtrdefs = get_variable_rdefs_r (rt#to_variable floc) in
        let rtreg = rt#to_register in
        begin
 
@@ -1003,7 +1020,7 @@ object (self)
     | Subtract (_, _, rd, rn, _, _, _) ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-       let rndefs = get_variable_rdefs (rn#to_variable floc) in
+       let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        let rnreg = rn#to_register in
        begin
 
