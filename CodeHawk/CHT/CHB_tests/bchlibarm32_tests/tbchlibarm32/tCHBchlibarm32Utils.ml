@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -130,6 +130,7 @@ let thumb_function_setup
   end
 
 
+(* To be updated to properly deal with the xpr_t traceresult *)
 let get_instrxdata_xprs (faddr: doubleword_int) (iaddr: doubleword_int) =
   let _ = testsupport#request_instrx_data in
   let finfo = get_function_info faddr in
@@ -145,7 +146,7 @@ let get_instrxdata_xprs (faddr: doubleword_int) (iaddr: doubleword_int) =
             ignore (id#index_instr instr floc))) in
   let (_, xprs) =
     TR.tget_ok (testsupport#retrieve_instrx_data iaddr#to_hex_string) in
-  xprs
+  List.map TR.tget_ok xprs
 
 
 let get_instrxdata_tags (faddr: doubleword_int) (iaddr: doubleword_int) =

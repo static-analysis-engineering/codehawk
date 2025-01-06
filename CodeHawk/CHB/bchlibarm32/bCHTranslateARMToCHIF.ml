@@ -2444,38 +2444,40 @@ let translate_arm_instruction
   | Push (c, sp, rl, _) ->
      let regcount = rl#get_register_count in
      let sprhs_r = sp#to_expr floc in
-     let (stackops,_) =
-       TR.tfold
-         ~ok:(fun rhsvars ->
-           List.fold_left
-             (fun (acc, off) rhsvar ->
-               (* let (splhs,splhscmds) = (sp_r RD)#to_lhs floc in *)
-               let stackop = arm_sp_deref ~with_offset:off WR in
-               TR.tfold
-                 ~ok:(fun (stacklhs, stacklhscmds) ->
-                   let rhsexpr = rewrite_expr floc (XVar rhsvar) in
-                   let cmds1 = floc#get_assign_commands stacklhs rhsexpr in
-                   let usehigh = get_use_high_vars [rhsexpr] in
-                   let defcmds1 =
-                     floc#get_vardef_commands
-                       ~defs:[stacklhs]
-                       ~use:[rhsvar]
-                       ~usehigh
-                       ctxtiaddr in
-                   (acc @ stacklhscmds @ defcmds1 @ cmds1, off+4))
-                 ~error:(fun e ->
-                   begin
-                     log_error_result __FILE__ __LINE__ e;
-                     (acc, off+4)
-                   end)
-                 (stackop#to_lhs floc))
-             ([], (-(4*regcount))) rhsvars)
-         ~error:(fun e ->
-           begin
-             log_error_result __FILE__ __LINE__ e;
-             ([], 0)
-           end)
-         (rl#to_multiple_variable floc) in
+     let rhsvars_rl = rl#to_multiple_variable floc in
+     let (stackops, _) =
+       List.fold_left
+         (fun (acc, off) rhsvar_r ->
+           let cmds =
+             TR.tfold
+               ~ok:(fun rhsvar ->
+                 let stackop = arm_sp_deref ~with_offset:off WR in
+                 TR.tfold
+                   ~ok:(fun (stacklhs, stacklhscmds) ->
+                     let rhsexpr = rewrite_expr floc (XVar rhsvar) in
+                     let cmds1 = floc#get_assign_commands stacklhs rhsexpr in
+                     let usehigh = get_use_high_vars [rhsexpr] in
+                     let defcmds1 =
+                       floc#get_vardef_commands
+                         ~defs:[stacklhs]
+                         ~use:[rhsvar]
+                         ~usehigh
+                         ctxtiaddr in
+                   stacklhscmds @ defcmds1 @ cmds1)
+                   ~error:(fun e ->
+                     begin
+                       log_error_result __FILE__ __LINE__ e;
+                       []
+                     end)
+                   (stackop#to_lhs floc))
+               ~error:(fun e ->
+                 begin
+                   log_error_result __FILE__ __LINE__ e;
+                   []
+                 end)
+               rhsvar_r in
+           (acc @ cmds, off + 4)) ([], (- (4 * regcount))) rhsvars_rl in
+
      let splhs = floc#env#mk_register_variable (sp_r WR)#to_register in
      let decrem = XConst (IntConst (mkNumerical(4 * regcount))) in
      let sprhs_r = TR.tmap (fun sprhs -> XOp (XMinus, [sprhs; decrem])) sprhs_r in
@@ -2721,14 +2723,23 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
-  | SignedMultiplyLong (_, c, rdlo, rdhi, _, _) ->
+  | SignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
      let vlo = floc#env#mk_register_variable rdlo#to_register in
      let vhi = floc#env#mk_register_variable rdhi#to_register in
      let lhslo_r = TR.tmap fst (rdlo#to_lhs floc) in
      let lhshi_r = TR.tmap fst (rdhi#to_lhs floc) in
+     let xrn_r = rn#to_expr floc in
+     let xrm_r = rm#to_expr floc in
      let cmdslo = floc#get_abstract_commands_r lhslo_r in
      let cmdshi = floc#get_abstract_commands_r lhshi_r in
-     let defcmds = floc#get_vardef_commands ~defs:[vlo; vhi] ctxtiaddr in
+     let usevars = get_register_vars [rn; rm] in
+     let usehigh = get_use_high_vars_r [xrn_r; xrm_r] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vlo; vhi]
+         ~use:usevars
+         ~usehigh
+         ctxtiaddr in
      let cmds = defcmds @ cmdslo @ cmdshi in
      (match c with
       | ACCAlways -> default cmds
@@ -2790,30 +2801,41 @@ let translate_arm_instruction
   | StoreMultipleIncrementAfter (wback, c, base, rl, _, _) ->
      let basereg = base#get_register in
      let regcount = rl#get_register_count in
-     let rhsexprs_r = rl#to_multiple_expr floc in
-     let rhsexprs_r = TR.tmap (List.map (rewrite_expr floc)) rhsexprs_r in
+     let rhsvars_rl = rl#to_multiple_variable floc in
      let (memassigns, _) =
-       TR.tfold
-         ~ok:(fun (rhsexprs: xpr_t list) ->
-           List.fold_left
-             (fun (acc, off) rhsexpr ->
-               let memop = arm_reg_deref ~with_offset:off basereg WR in
-               TR.tfold
-                 ~ok:(fun (memlhs, memlhscmds) ->
-                   let cmds1 = floc#get_assign_commands memlhs rhsexpr in
-                   let defcmds1 =
-                     floc#get_vardef_commands ~defs:[memlhs] ctxtiaddr in
-                   (acc @ memlhscmds @ defcmds1 @ cmds1, off + 4))
-                 ~error:(fun e ->
-                   begin log_error_result __FILE__ __LINE__ e; ([], 0) end)
-                 (memop#to_lhs floc)) ([], 0) rhsexprs)
-         ~error:(fun e ->
-           begin
-             log_error_result __FILE__ __LINE__ e;
-             ([], 0)
-           end)
-         rhsexprs_r in
-    let wbackassign =
+       List.fold_left
+         (fun (acc, off) rhsvar_r ->
+           let cmds =
+             TR.tfold
+               ~ok:(fun rhsvar ->
+                 let memop = arm_reg_deref ~with_offset:off basereg WR in
+                 TR.tfold
+                   ~ok:(fun (memlhs, memlhscmds) ->
+                     let rhsexpr = rewrite_expr floc (XVar rhsvar) in
+                     let cmds1 = floc#get_assign_commands memlhs rhsexpr in
+                     let usehigh = get_use_high_vars [rhsexpr] in
+                     let defcmds1 =
+                       floc#get_vardef_commands
+                         ~defs:[memlhs]
+                         ~use:[rhsvar]
+                         ~usehigh
+                         ctxtiaddr in
+                     memlhscmds @ defcmds1 @ cmds1)
+                   ~error:(fun e ->
+                     begin
+                       log_error_result __FILE__ __LINE__ e;
+                       []
+                     end)
+                   (memop#to_lhs floc))
+               ~error:(fun e ->
+                 begin
+                   log_error_result __FILE__ __LINE__ e;
+                   []
+                 end)
+               rhsvar_r in
+           (acc @ cmds, off + 4)) ([], 0) rhsvars_rl in
+
+     let wbackassign =
        if wback then
          let lhs = floc#env#mk_register_variable base#to_register in
          let rhs_r = base#to_expr floc in
@@ -2848,29 +2870,40 @@ let translate_arm_instruction
   | StoreMultipleIncrementBefore (wback, c, base, rl, _) ->
      let basereg = base#get_register in
      let regcount = rl#get_register_count in
-     let rhsexprs_r = rl#to_multiple_expr floc in
-     let rhsexprs_r = TR.tmap (List.map (rewrite_expr floc)) rhsexprs_r in
+     let rhsvars_rl = rl#to_multiple_variable floc in
      let (memassigns, _) =
-       TR.tfold
-         ~ok:(fun rhsexprs ->
-           List.fold_left
-             (fun (acc, off) rhsexpr ->
-               let memop = arm_reg_deref ~with_offset:off basereg WR in
-               TR.tfold
-                 ~ok:(fun (memlhs, memlhscmds) ->
-                   let cmds1 = floc#get_assign_commands memlhs rhsexpr in
-                   let defcmds1 =
-                     floc#get_vardef_commands ~defs:[memlhs] ctxtiaddr in
-                   (acc @ memlhscmds @ defcmds1 @ cmds1, off + 4))
-                 ~error:(fun e ->
-                   begin log_error_result __FILE__ __LINE__ e; ([], 4) end)
-                 (memop#to_lhs floc)) ([], 4) rhsexprs)
-         ~error:(fun e ->
-           begin
-             log_error_result __FILE__ __LINE__ e;
-             ([], 4)
-           end)
-         rhsexprs_r in
+       List.fold_left
+         (fun (acc, off) rhsvar_r ->
+           let cmds =
+             TR.tfold
+               ~ok:(fun rhsvar ->
+                 let memop = arm_reg_deref ~with_offset:off basereg WR in
+                 TR.tfold
+                   ~ok:(fun (memlhs, memlhscmds) ->
+                     let rhsexpr = rewrite_expr floc (XVar rhsvar) in
+                     let cmds1 = floc#get_assign_commands memlhs rhsexpr in
+                     let usehigh = get_use_high_vars [rhsexpr] in
+                     let defcmds1 =
+                       floc#get_vardef_commands
+                         ~defs:[memlhs]
+                         ~use:[rhsvar]
+                         ~usehigh
+                         ctxtiaddr in
+                     memlhscmds @ defcmds1 @ cmds1)
+                   ~error:(fun e ->
+                     begin
+                       log_error_result __FILE__ __LINE__ e;
+                       []
+                     end)
+                   (memop#to_lhs floc))
+               ~error:(fun e ->
+                 begin
+                   log_error_result __FILE__ __LINE__ e;
+                   []
+                 end)
+               rhsvar_r in
+           (acc @ cmds, off + 4)) ([], 4) rhsvars_rl in
+
      let wbackassign =
        if wback then
          let lhs = floc#env#mk_register_variable base#to_register in
@@ -2905,32 +2938,40 @@ let translate_arm_instruction
   | StoreMultipleDecrementBefore (wback, c, base, rl, _) ->
      let basereg = base#get_register in
      let regcount = rl#get_register_count in
-     let rhsexprs_r = rl#to_multiple_expr floc in
-     let rhsexprs_r = TR.tmap (List.map (rewrite_expr floc)) rhsexprs_r in
+     let rhsvars_rl = rl#to_multiple_variable floc in
      let (memassigns, _) =
-       TR.tfold
-         ~ok:(fun rhsexprs ->
-           List.fold_left
-             (fun (acc, off) rhsexpr ->
-              let memop = arm_reg_deref ~with_offset:off basereg WR in
-              TR.tfold
-                ~ok:(fun (memlhs, memlhscmds) ->
-                  let cmds1 = floc#get_assign_commands memlhs rhsexpr in
-                  let defcmds1 =
-                    floc#get_vardef_commands ~defs:[memlhs] ctxtiaddr in
-                  (acc @ memlhscmds @ defcmds1 @ cmds1, off + 4))
-                ~error:(fun e ->
-                  begin
-                    log_error_result __FILE__ __LINE__ e;
-                    ([], -(4 * regcount))
-                  end)
-                (memop#to_lhs floc)) ([], -(4 * regcount)) rhsexprs)
-         ~error:(fun e ->
-           begin
-             log_error_result __FILE__ __LINE__ e;
-             ([], -(4 * regcount))
-           end)
-         rhsexprs_r in
+       List.fold_left
+         (fun (acc, off) rhsvar_r ->
+           let cmds =
+             TR.tfold
+               ~ok:(fun rhsvar ->
+                 let memop = arm_reg_deref ~with_offset:off basereg WR in
+                 TR.tfold
+                   ~ok:(fun (memlhs, memlhscmds) ->
+                     let rhsexpr = rewrite_expr floc (XVar rhsvar) in
+                     let cmds1 = floc#get_assign_commands memlhs rhsexpr in
+                     let usehigh = get_use_high_vars [rhsexpr] in
+                     let defcmds1 =
+                       floc#get_vardef_commands
+                         ~defs:[memlhs]
+                         ~use:[rhsvar]
+                         ~usehigh
+                         ctxtiaddr in
+                     memlhscmds @ defcmds1 @ cmds1)
+                   ~error:(fun e ->
+                     begin
+                       log_error_result __FILE__ __LINE__ e;
+                       []
+                     end)
+                   (memop#to_lhs floc))
+               ~error:(fun e ->
+                 begin
+                   log_error_result __FILE__ __LINE__ e;
+                   []
+                 end)
+               rhsvar_r in
+           (acc @ cmds, off + 4)) ([], - (4 * regcount)) rhsvars_rl in
+
      let wbackassign =
        if wback then
          let lhs = floc#env#mk_register_variable base#to_register in
@@ -2966,32 +3007,40 @@ let translate_arm_instruction
   | StoreMultipleDecrementAfter (wback, c, base, rl, _) ->
      let basereg = base#get_register in
      let regcount = rl#get_register_count in
-     let rhsexprs_r = rl#to_multiple_expr floc in
-     let rhsexprs_r = TR.tmap (List.map (rewrite_expr floc)) rhsexprs_r in
+     let rhsvars_rl = rl#to_multiple_variable floc in
      let (memassigns, _) =
-       TR.tfold
-         ~ok:(fun rhsexprs ->
-           List.fold_left
-             (fun (acc, off) rhsexpr ->
-              let memop = arm_reg_deref ~with_offset:off basereg WR in
-              TR.tfold
-                ~ok:(fun (memlhs, memlhscmds) ->
-                  let cmds1 = floc#get_assign_commands memlhs rhsexpr in
-                  let defcmds1 =
-                    floc#get_vardef_commands ~defs:[memlhs] ctxtiaddr in
-                  (acc @ memlhscmds @ defcmds1 @ cmds1, off + 4))
-                ~error:(fun e ->
-                  begin
-                    log_error_result __FILE__ __LINE__ e;
-                    ([], -(4 * regcount))
-                  end)
-                (memop#to_lhs floc)) ([], -(4 * regcount) + 4) rhsexprs)
-         ~error:(fun e ->
-           begin
-             log_error_result __FILE__ __LINE__ e;
-             ([], -(4 * regcount) + 4)
-           end)
-         rhsexprs_r in
+       List.fold_left
+         (fun (acc, off) rhsvar_r ->
+           let cmds =
+             TR.tfold
+               ~ok:(fun rhsvar ->
+                 let memop = arm_reg_deref ~with_offset:off basereg WR in
+                 TR.tfold
+                   ~ok:(fun (memlhs, memlhscmds) ->
+                     let rhsexpr = rewrite_expr floc (XVar rhsvar) in
+                     let cmds1 = floc#get_assign_commands memlhs rhsexpr in
+                     let usehigh = get_use_high_vars [rhsexpr] in
+                     let defcmds1 =
+                       floc#get_vardef_commands
+                         ~defs:[memlhs]
+                         ~use:[rhsvar]
+                         ~usehigh
+                         ctxtiaddr in
+                     memlhscmds @ defcmds1 @ cmds1)
+                   ~error:(fun e ->
+                     begin
+                       log_error_result __FILE__ __LINE__ e;
+                       []
+                     end)
+                   (memop#to_lhs floc))
+               ~error:(fun e ->
+                 begin
+                   log_error_result __FILE__ __LINE__ e;
+                   []
+                 end)
+               rhsvar_r in
+           (acc @ cmds, off + 4)) ([], 4 - (4 * regcount)) rhsvars_rl in
+
      let wbackassign =
        if wback then
          let lhs = floc#env#mk_register_variable base#to_register in
@@ -3368,6 +3417,28 @@ let translate_arm_instruction
   | TableBranchHalfword _ ->
      default cmds
 
+  | Test (c, rn, rm, _) ->
+     let xrn_r = rn#to_expr floc in
+     let xrm_r = rm#to_expr floc in
+     let usevars = get_register_vars [rn; rm] in
+     let usehigh = get_use_high_vars_r [xrn_r; xrm_r] in
+     let defcmds =
+       floc#get_vardef_commands ~use:usevars ~usehigh ~flagdefs ctxtiaddr in
+     (match c with
+      | ACCAlways -> default defcmds
+      | _ -> make_conditional_commands c defcmds)
+
+  | TestEquivalence (c, rn, rm) ->
+     let xrn_r = rn#to_expr floc in
+     let xrm_r = rm#to_expr floc in
+     let usevars = get_register_vars [rn; rm] in
+     let usehigh = get_use_high_vars_r [xrn_r; xrm_r] in
+     let defcmds =
+       floc#get_vardef_commands ~use:usevars ~usehigh ~flagdefs ctxtiaddr in
+     (match c with
+      | ACCAlways -> default defcmds
+      | _ -> make_conditional_commands c defcmds)
+
   | UnsignedAdd8 (c, rd, rn, rm) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
      let lhs_r = TR.tmap fst (rd#to_lhs floc) in
@@ -3479,10 +3550,12 @@ let translate_arm_instruction
      let lhshi_r = TR.tmap fst (rdhi#to_lhs floc) in
      let xrn_r = rn#to_expr floc in
      let xrm_r = rm#to_expr floc in
+     let xrdlo_r = rdlo#to_expr floc in
+     let xrdhi_r = rdhi#to_expr floc in
      let cmdslo = floc#get_abstract_commands_r lhslo_r in
      let cmdshi = floc#get_abstract_commands_r lhshi_r in
-     let usevars = get_register_vars [rn; rm] in
-     let usehigh = get_use_high_vars_r [xrn_r; xrm_r] in
+     let usevars = get_register_vars [rn; rm; rdlo; rdhi] in
+     let usehigh = get_use_high_vars_r [xrn_r; xrm_r; xrdlo_r; xrdhi_r] in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrlo; vrhi] ~use:usevars ~usehigh ctxtiaddr in
@@ -4049,37 +4122,41 @@ let translate_arm_instruction
      let regsize =
        if rl#is_double_extension_register_list then 8 else 4 in
      let sprhs_r = sp#to_expr floc in
+     let rhsvars_rl = rl#to_multiple_variable floc in
      let (stackops, _) =
-       TR.tfold
-         ~ok:(fun rhsvars ->
-           List.fold_left
-             (fun (acc, off) rhsvar ->
-               let stackop = arm_sp_deref ~with_offset:off WR in
-               TR.tfold
-               ~ok:(fun (stacklhs, stacklhscmds) ->
-                 let rhsexpr = rewrite_expr floc (XVar rhsvar) in
-                 let cmds1 = floc#get_assign_commands stacklhs rhsexpr in
-                 let usehigh = get_use_high_vars [rhsexpr] in
-                 let defcmds1 =
-                   floc#get_vardef_commands
-                     ~defs:[stacklhs]
-                     ~use:[rhsvar]
-                     ~usehigh
-                     ctxtiaddr in
-                 (acc @ stacklhscmds @ defcmds1 @ cmds1, off + regsize))
+       List.fold_left
+         (fun (acc, off) rhsvar_r ->
+           let cmds =
+             TR.tfold
+               ~ok:(fun rhsvar ->
+                 let stackop = arm_sp_deref ~with_offset:off WR in
+                 TR.tfold
+                   ~ok:(fun (stacklhs, stacklhscmds) ->
+                     let rhsexpr = rewrite_expr floc (XVar rhsvar) in
+                     let cmds1 = floc#get_assign_commands stacklhs rhsexpr in
+                     let usehigh = get_use_high_vars [rhsexpr] in
+                     let defcmds1 =
+                       floc#get_vardef_commands
+                         ~defs:[stacklhs]
+                         ~use:[rhsvar]
+                         ~usehigh
+                         ctxtiaddr in
+                   stacklhscmds @ defcmds1 @ cmds1)
+                   ~error:(fun e ->
+                     begin
+                       log_error_result __FILE__ __LINE__ e;
+                       []
+                     end)
+                   (stackop#to_lhs floc))
                ~error:(fun e ->
                  begin
                    log_error_result __FILE__ __LINE__ e;
-                   (acc, off + regsize)
+                   []
                  end)
-               (stackop#to_lhs floc))
-             ([], (- (regsize * regcount))) rhsvars)
-         ~error:(fun e ->
-           begin
-             log_error_result __FILE__ __LINE__ e;
-             ([], 0)
-           end)
-         (rl#to_multiple_variable floc) in
+               rhsvar_r in
+           (acc @ cmds, off + regsize))
+         ([], (- (regsize * regcount))) rhsvars_rl in
+
      let splhs = floc#env#mk_register_variable (sp_r WR)#to_register in
      let decrem = XConst (IntConst (mkNumerical (regsize * regcount))) in
      let sprhs_r = TR.tmap (fun sprhs -> XOp (XMinus, [sprhs; decrem])) sprhs_r in

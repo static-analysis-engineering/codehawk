@@ -518,13 +518,13 @@ object (self:'a)
               ^ "ARMOffsetAddress: " ^ (p2s self#toPretty)
               ^ " not yet supported"]
 
-  method to_multiple_variable (floc:floc_int): (variable_t list) traceresult =
+  method to_multiple_variable (floc:floc_int): (variable_t traceresult list) =
     let env = floc#f#env in
     match kind with
     | ARMRegList rl ->
-       Ok (List.map env#mk_arm_register_variable rl)
+       List.map (fun r -> Ok (env#mk_arm_register_variable r)) rl
     | ARMExtensionRegList rl ->
-      Ok ( List.map env#mk_arm_extension_register_variable rl)
+      List.map (fun r -> Ok (env#mk_arm_extension_register_variable r)) rl
     | ARMMemMultiple (r, _, n, size) ->
        let rvar = env#mk_arm_register_variable r in
        let rec loop i l =
@@ -532,11 +532,11 @@ object (self:'a)
            l
          else
            let offset = mkNumerical ((i - 1) * size) in
-           loop (i - 1) ((floc#get_memory_variable_1 rvar offset) :: l) in
-       Ok (loop n [])
+           loop (i - 1) ((floc#get_memory_variable_numoffset rvar offset) :: l) in
+       (loop n [])
     | _ ->
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "Not applicable to " ^ (p2s self#toPretty)]
+       [Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+               ^ "Not applicable to " ^ (p2s self#toPretty)]]
 
   method to_expr ?(unsigned=false) (floc:floc_int): xpr_t traceresult =
     match kind with
@@ -608,38 +608,20 @@ object (self:'a)
               ^ "Operand: " ^ (p2s self#toPretty)
               ^ " not yet supported"]
 
-  method to_multiple_expr (floc:floc_int): (xpr_t list) traceresult =
+  method to_multiple_expr (floc:floc_int): (xpr_t traceresult list) =
     match kind with
     | ARMRegList _ ->
        let rlops = self#get_register_op_list in
-       let (oklist, errorlist) =
-         List.fold_left
-           (fun (oklist, errorlist) (op: 'a) ->
-             match op#to_expr floc with
-             | Ok v -> (v :: oklist, errorlist)
-             | Error e -> (oklist, e @ errorlist)) ([], []) rlops in
-       if (List.length rlops) = (List.length oklist) then
-         Ok (List.rev oklist)
-       else
-         Error ((__FILE__ ^ ":" ^ (string_of_int __LINE__)) :: errorlist)
+       List.map (fun (op:'a) -> op#to_expr floc) rlops
 
     | ARMExtensionRegList _ ->
        let rlops = self#get_extension_register_op_list in
-       let (oklist, errorlist) =
-         List.fold_left
-           (fun (oklist, errorlist) (op: 'a) ->
-             match op#to_expr floc with
-             | Ok v -> (v :: oklist, errorlist)
-             | Error e -> (oklist, e @ errorlist)) ([], []) rlops in
-       if (List.length rlops) = (List.length oklist) then
-         Ok (List.rev oklist)
-       else
-         Error ((__FILE__ ^ ":" ^ (string_of_int __LINE__)) :: errorlist)
+       List.map (fun (op:'a) -> op#to_expr floc) rlops
 
     | _ ->
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "Operand cannot produce multiple expressions: "
-              ^ (p2s self#toPretty)]
+       [Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+               ^ "Operand cannot produce multiple expressions: "
+               ^ (p2s self#toPretty)]]
 
   method to_lhs (floc:floc_int): (variable_t * cmd_t list) traceresult =
     match kind with
@@ -664,18 +646,16 @@ object (self:'a)
               ^ "Lhs not implemented for " ^ (p2s self#toPretty)]
 
   method to_multiple_lhs (floc: floc_int):
-           (variable_t list * cmd_t list) traceresult =
+           (variable_t traceresult list * cmd_t list) =
     match kind with
     | ARMRegList _
       | ARMMemMultiple _ ->
-       TR.tmap
-         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-         (fun vlist -> (vlist, []))
-         (self#to_multiple_variable floc)
+       let rlops = self#get_register_op_list in
+       (List.map (fun (op:'a) -> op#to_variable floc) rlops, [])
     | _ ->
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "Not an operand kind with multiple lhs: "
-              ^ (p2s self#toPretty)]
+       ([Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "Not an operand kind with multiple lhs: "
+                ^ (p2s self#toPretty)]], [])
 
   method is_immediate =
     match kind with ARMImmediate _ -> true | _ -> false

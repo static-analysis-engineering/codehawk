@@ -186,11 +186,11 @@ class type arm_operand_int =
     method to_multiple_register: register_t list
     method to_address: floc_int -> xpr_t traceresult
     method to_variable: floc_int -> variable_t traceresult
-    method to_multiple_variable: floc_int -> (variable_t list) traceresult
+    method to_multiple_variable: floc_int -> variable_t traceresult list
     method to_expr: ?unsigned:bool -> floc_int -> xpr_t traceresult
-    method to_multiple_expr: floc_int -> (xpr_t list) traceresult
+    method to_multiple_expr: floc_int -> xpr_t traceresult list
     method to_lhs: floc_int -> (variable_t * cmd_t list) traceresult
-    method to_multiple_lhs: floc_int -> (variable_t list * cmd_t list) traceresult
+    method to_multiple_lhs: floc_int -> (variable_t traceresult list) * cmd_t list
     method to_updated_offset_address: floc_int -> (int * xpr_t) traceresult
     method to_btype: btype_t
 
@@ -2023,9 +2023,12 @@ class type testsupport_int =
     method request_instrx_data: unit
     method requested_instrx_data: bool
     method submit_instrx_data:
-             doubleword_int -> variable_t list -> xpr_t list -> unit
+             doubleword_int
+             -> variable_t traceresult list
+             -> xpr_t traceresult list -> unit
     method retrieve_instrx_data:
-             string -> (variable_t list * xpr_t list) traceresult
+             string
+             -> (variable_t traceresult list * xpr_t traceresult list) traceresult
 
     (** {1 Instrx tags}
         Instrx tags submitted is identified by the address of the instruction.

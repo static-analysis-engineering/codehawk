@@ -5596,12 +5596,28 @@ class type memory_recorder_int =
              -> vtype:btype_t
              -> unit
 
+    method record_load_r:
+             signed:bool
+             -> addr_r:xpr_t traceresult
+             -> var_r:variable_t traceresult
+             -> size:int
+             -> vtype:btype_t
+             -> unit
+
     method record_store:
              addr:xpr_t
              -> var:variable_t
              -> size:int
              -> vtype:btype_t
              -> xpr:xpr_t
+             -> unit
+
+    method record_store_r:
+             addr_r:xpr_t traceresult
+             -> var_r:variable_t traceresult
+             -> size:int
+             -> vtype:btype_t
+             -> xpr_r:xpr_t traceresult
              -> unit
 
   end

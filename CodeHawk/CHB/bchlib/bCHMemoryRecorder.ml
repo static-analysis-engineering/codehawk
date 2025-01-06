@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ open CHLanguage
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 
 (* xprlib *)
 open Xprt
@@ -45,8 +46,11 @@ open BCHGlobalState
 open BCHLibTypes
 open BCHLocation
 
+module TR = CHTraceResult
+
 
 let x2p = xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
 
 let mmap = BCHGlobalMemoryMap.global_memory_map
 
@@ -231,6 +235,42 @@ object (self)
                 var#toPretty;
                 STR ")"])
 
+  method record_load_r
+           ~(signed: bool)
+           ~(addr_r: xpr_t traceresult)
+           ~(var_r: variable_t traceresult)
+           ~(size: int)
+           ~(vtype: btype_t) =
+    TR.tfold
+      ~ok:(fun var ->
+        if self#env#is_stack_variable var then
+          TR.tfold
+            ~ok:(fun offset ->
+              match offset with
+              | ConstantOffset (n, NoOffset) ->
+                 self#finfo#stackframe#add_load
+                   ~offset:n#toInt ~size:(Some size) ~typ:(Some vtype) var iaddr
+              | _ ->
+                 log_error_result __FILE__ __LINE__
+                   ["memrecorder:stack"; p2s self#loc#toPretty])
+            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+            (self#env#get_memvar_offset var)
+        else
+          TR.tfold
+            ~ok:(fun addr ->
+              match addr with
+              | XConst (IntConst n)
+                   when mmap#is_global_data_address
+                          (numerical_mod_to_doubleword n) ->
+                 mmap#add_gload self#faddr iaddr addr size signed
+              | _ ->
+                 log_error_result __FILE__ __LINE__
+                   ["memrecorder:global"; p2s self#loc#toPretty])
+            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+            addr_r)
+      ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+      var_r
+
   method record_store
            ~(addr: xpr_t)
            ~(var: variable_t)
@@ -283,6 +323,56 @@ object (self)
                 var#toPretty;
                 STR "): ";
                 x2p xpr])
+
+  method record_store_r
+           ~(addr_r: xpr_t traceresult)
+           ~(var_r: variable_t traceresult)
+           ~(size: int)
+           ~(vtype: btype_t)
+           ~(xpr_r: xpr_t traceresult) =
+    TR.tfold
+      ~ok:(fun var ->
+        if self#env#is_stack_variable var then
+          TR.tfold
+            ~ok:(fun offset ->
+              match offset with
+              | ConstantOffset (n, NoOffset) ->
+                 self#finfo#stackframe#add_store
+                   ~offset:n#toInt
+                   ~size:(Some size)
+                   ~typ:(Some vtype)
+                   ~xpr:(TR.tfold_default (fun x -> Some x) None xpr_r)
+                   var
+                   iaddr
+              | _ ->
+                 log_error_result __FILE__ __LINE__
+                   ["memrecorder:stack"; p2s self#loc#toPretty])
+            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+            (self#env#get_memvar_offset var)
+        else
+          TR.tfold
+            ~ok:(fun addr ->
+              match addr with
+              | XConst (IntConst n)
+                   when mmap#is_global_data_address
+                          (numerical_mod_to_doubleword n) ->
+                 let optvalue =
+                   TR.tfold_default
+                     (fun xpr ->
+                       match xpr with
+                       | XConst (IntConst n) -> Some n
+                       | _ -> None)
+                     None
+                     xpr_r in
+                 mmap#add_gstore self#faddr iaddr addr size optvalue
+              | _ ->
+                 log_error_result __FILE__ __LINE__
+                   ["memrecorder:global"; p2s self#loc#toPretty])
+            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+            addr_r)
+      ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+      var_r
+
 
 end
 

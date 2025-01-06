@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024  Aarno Labs LLC
+   Copyright (c) 2021-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ open CHPretty
 open CHIndexTable
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -124,6 +125,13 @@ object (self)
            (instr:arm_assembly_instruction_int)
            (floc:floc_int) =
     let varinv = floc#varinv in
+    let e16_c = int_constant_expr e16 in
+    let e32_c = int_constant_expr e32 in
+    let log_dc_error_result (file: string) (line: int) (e: string list) =
+      if BCHSystemSettings.system_settings#collect_data then
+        log_error_result ~msg:(p2s floc#l#toPretty) file line e
+      else
+        () in
     let rewrite_expr ?(restrict:int option) (x: xpr_t): xpr_t =
       try
         let xpr = floc#inv#rewrite_expr x in
@@ -259,6 +267,9 @@ object (self)
           | _ -> -1)
       | _ -> -1 in
 
+    let get_rdef_r (x_r: xpr_t traceresult): int =
+      TR.tfold_default get_rdef (-1) x_r in
+
     let get_all_rdefs (xpr: xpr_t): int list =
       let vars = floc#env#variables_in_expr xpr in
       List.fold_left (fun acc v ->
@@ -273,12 +284,18 @@ object (self)
                   vix :: newacc) [] varinvs in
           newixs @ acc) [] vars in
 
+    let get_all_rdefs_r (x_r: xpr_t traceresult): int list =
+      TR.tfold_default get_all_rdefs [] x_r in
+
     let get_rdef_memvar (v: variable_t): int =
       let symvar = floc#f#env#mk_symbolic_variable v in
       let varinvs = varinv#get_var_reaching_defs symvar in
       match varinvs with
       | [vinv] -> vinv#index
       | _ -> -1 in
+
+    let get_rdef_memvar_r (v_r: variable_t traceresult): int =
+      TR.tfold_default get_rdef_memvar (-1) v_r in
 
     let get_def_use (v: variable_t): int =
       let symvar = floc#f#env#mk_symbolic_variable v in
@@ -287,12 +304,18 @@ object (self)
       | [vinv] -> vinv#index
       | _ -> -1 in
 
+    let get_def_use_r (v_r: variable_t traceresult): int =
+      TR.tfold_default get_def_use (-1) v_r in
+
     let get_def_use_high (v: variable_t): int =
       let symvar = floc#f#env#mk_symbolic_variable v in
       let varinvs = varinv#get_var_def_uses_high symvar in
       match varinvs with
       | [vinv] -> vinv#index
       | _ -> -1 in
+
+    let get_def_use_high_r (v_r: variable_t traceresult): int =
+      TR.tfold_default get_def_use_high (-1) v_r in
 
     let add_base_update
           (tags: string list)
@@ -318,6 +341,20 @@ object (self)
         @ uses @ useshigh in
       (tags, args) in
 
+    let index_variable (v_r: variable_t traceresult): int =
+      TR.tfold
+        ~ok:xd#index_variable
+        ~error:(fun e ->
+          begin log_dc_error_result __FILE__ __LINE__ e; -2 end)
+        v_r in
+
+    let index_xpr (x_r: xpr_t traceresult): int =
+      TR.tfold
+        ~ok:xd#index_xpr
+        ~error:(fun e ->
+          begin log_dc_error_result __FILE__ __LINE__ e; -2 end)
+        x_r in
+
     let mk_instrx_data
           ?(vars: variable_t list = [])
           ?(types: btype_t list = [])
@@ -327,9 +364,11 @@ object (self)
           ?(useshigh: int list = [])
           ?(integers: int list = [])
           () =
+      (*
       let _ =
         if testsupport#requested_instrx_data then
           testsupport#submit_instrx_data instr#get_address vars xprs in
+       *)
       let varcount = List.length vars in
       let xprcount = List.length xprs in
       let rdefcount = List.length rdefs in
@@ -374,6 +413,62 @@ object (self)
        @ flagrdefs
        @ integers) in
 
+    let mk_instrx_data_r
+          ?(vars_r: variable_t traceresult list = [])
+          ?(types: btype_t list = [])
+          ?(xprs_r: xpr_t traceresult list = [])
+          ?(rdefs: int list = [])
+          ?(uses: int list = [])
+          ?(useshigh: int list = [])
+          ?(integers: int list = [])
+          () =
+      let _ =
+        if testsupport#requested_instrx_data then
+          testsupport#submit_instrx_data instr#get_address vars_r xprs_r in
+      let varcount = List.length vars_r in
+      let xprcount = List.length xprs_r in
+      let rdefcount = List.length rdefs in
+      let defusecount = List.length uses in
+      let defusehighcount = List.length useshigh in
+      let flagrdefcount = List.length flagrdefs in
+      let integercount = List.length integers in
+      let varstring = string_repeat "v" varcount in
+      let typestring = string_repeat "t" varcount in
+      let xprstring = string_repeat "x" xprcount in
+      let rdefstring = string_repeat "r" rdefcount in
+      let defusestring = string_repeat "d" defusecount in
+      let defusehighstring = string_repeat "h" defusehighcount in
+      let flagrdefstring = string_repeat "f" flagrdefcount in
+      let integerstring = string_repeat "l" integercount in
+      let tagstring =
+        "a:"
+        ^ varstring
+        ^ typestring
+        ^ xprstring
+        ^ rdefstring
+        ^ defusestring
+        ^ defusehighstring
+        ^ flagrdefstring
+        ^ integerstring in
+      let varargs = List.map index_variable vars_r in
+      let xprargs = List.map index_xpr xprs_r in
+      let typeargs =
+        let types =
+          if (List.length types) < varcount then
+            List.map (fun _ -> t_unknown) vars_r
+          else
+            types in
+        List.map bcd#index_typ types in
+      (tagstring,
+       varargs
+       @ typeargs
+       @ xprargs
+       @ rdefs
+       @ uses
+       @ useshigh
+       @ flagrdefs
+       @ integers) in
+
     let add_optional_instr_condition
           (tagstring: string)
           (args: int list)
@@ -403,17 +498,17 @@ object (self)
               agginstr#get_address#to_hex_string :: acc) [] agg#instrs in
       tags @ ("subsumes" :: deps) in
 
-    let add_bx_call_defs
-          ?(xprs: xpr_t list = [])
+    let add_bx_call_defs_r
+          ?(xprs_r: xpr_t traceresult list = [])
           ?(rdefs: int list = [])
           (tags: string list)
           (args: int list): (string list * int list) =
       let tagstring = List.hd tags in
-      let xprcount = List.length xprs in
+      let xprcount = List.length xprs_r in
       let rdefcount = List.length rdefs in
       let tagstring = tagstring ^ (string_repeat "x" xprcount) in
       let tagstring = tagstring ^ (string_repeat "r" rdefcount) in
-      let args = args @ (List.map xd#index_xpr xprs) @ rdefs in
+      let args = args @ (List.map index_xpr xprs_r) @ rdefs in
       let tags = (tagstring :: (List.tl tags)) @ ["bx-call"] in
       (tags, args) in
 
@@ -462,22 +557,20 @@ object (self)
       let _ = check_for_functionptr_args callargs in
       let (xprs, xvars, rdefs, _) =
         List.fold_left (fun (xprs, xvars, rdefs, index) (p, x) ->
-            let xvar =
+            let xvar_r =
               if is_register_parameter p then
                 let regarg = TR.tget_ok (get_register_parameter_register p) in
                 let pvar = floc#f#env#mk_register_variable regarg in
-                XVar pvar
+                Ok (XVar pvar)
               else if is_stack_parameter p then
-                let p_offset = TR.tget_ok (get_stack_parameter_offset p) in
-                let sp = (sp_r RD)#to_expr floc in
-                XOp (XPlus, [sp; int_constant_expr p_offset])
+                let p_offset_r = get_stack_parameter_offset p in
+                let sp_r = (sp_r RD)#to_expr floc in
+                TR.tmap2 (fun p_offset sp ->
+                    XOp (XPlus, [sp; int_constant_expr p_offset]))
+                  p_offset_r sp_r
               else
-                raise
-                  (BCH_failure
-                     (LBLOCK [
-                          floc#l#toPretty;
-                          STR ": Parameter type not recognized in call ";
-                          STR "instruction"])) in
+                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                       ^ "Parameter type not recognized in call instruction"] in
             let ptype = get_parameter_type p in
             let xx = rewrite_expr ?restrict:(Some 4) x in
             let xx =
@@ -491,8 +584,8 @@ object (self)
                 xx
               else
                 xx in
-            let rdef = get_rdef xvar in
-            (xx :: xprs, xvar :: xvars, rdef :: rdefs, index + 1))
+            let rdef = get_rdef_r xvar_r in
+            (xx :: xprs, xvar_r :: xvars, rdef :: rdefs, index + 1))
           ([], [], [], 1) callargs in
       let (vrd, rtype) =
         let fintf = floc#get_call_target#get_function_interface in
@@ -518,10 +611,10 @@ object (self)
             let newixs = List.filter (fun ix -> not (List.mem ix acc)) rdefs in
             acc @ newixs) [] xprs in
       let (tagstring, args) =
-        mk_instrx_data
-          ~vars:[vrd]
+        mk_instrx_data_r
+          ~vars_r:[Ok vrd]
           ~types:[rtype]
-          ~xprs:((List.rev xprs) @ (List.rev xvars))
+          ~xprs_r:((List.rev (List.map (fun x -> Ok x) xprs)) @ (List.rev xvars))
           ~rdefs:((List.rev rdefs) @ xrdefs)
           ~uses:[get_def_use vrd]
           ~useshigh:[get_def_use_high vrd]
@@ -543,12 +636,12 @@ object (self)
          if agg#is_jumptable then
            let jt = agg#jumptable in
            let indexregop = jt#index_operand in
-           let xrn = indexregop#to_expr floc in
-           let xxrn = rewrite_expr xrn in
-           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
+           let xrn_r = indexregop#to_expr floc in
+           let xxrn_r = TR.tmap rewrite_expr xrn_r in
+           let rdefs = (get_rdef_r xrn_r) :: (get_all_rdefs_r xxrn_r) in
            let (tagstring, args) =
-             mk_instrx_data
-               ~xprs:[xrn; xxrn]
+             mk_instrx_data_r
+               ~xprs_r:[xrn_r; xxrn_r]
                ~rdefs:rdefs
                () in
            let tags = tagstring :: ["agg-jt"] in
@@ -561,26 +654,33 @@ object (self)
                      STR "Aggregate for Add not recognized at "; iaddr#toPretty]))
 
       | Add (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XPlus, [xrn; xrm]) in
-         let xxrn = rewrite_expr xrn in
-         let xxrm = rewrite_expr xrm in
-         let rresult = rewrite_expr ?restrict:(Some 4) result in
-         let _ = ignore (get_string_reference floc rresult) in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
-         let uses = get_def_use vrd in
-         let useshigh = get_def_use_high vrd in
-         let rresult =
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XPlus, [xrn; xrm])) xrn_r xrm_r in
+         let xxrn_r = TR.tmap rewrite_expr xrn_r in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rresult_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) result_r in
+         let _ =
            TR.tfold_default
-             (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
-             rresult
-             (floc#get_var_at_address rresult) in
+             (fun r -> ignore (get_string_reference floc r)) () rresult_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = get_def_use_r vrd_r in
+         let useshigh = get_def_use_high_r vrd_r in
+         let rresult_r =
+           TR.tmap
+             (fun rresult ->
+               TR.tfold_default
+                 (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
+                 rresult
+                 (floc#get_var_at_address rresult))
+             rresult_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult; xxrn; xxrm]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r; xxrn_r; xxrm_r]
              ~rdefs:rdefs
              ~uses:[uses]
              ~useshigh:[useshigh]
@@ -590,19 +690,22 @@ object (self)
          (tags, args)
 
       | AddCarry (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XPlus, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let _ = ignore (get_string_reference floc rresult) in
-         let rdefs = [get_rdef xrn; get_rdef xrm] in
-         let uses = get_def_use vrd in
-         let useshigh = get_def_use_high vrd in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XPlus, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let _ =
+           TR.tfold_default
+             (fun r -> ignore (get_string_reference floc r)) () rresult_r in
+         let rdefs = [get_rdef_r xrn_r; get_rdef_r xrm_r] in
+         let uses = get_def_use_r vrd_r in
+         let useshigh = get_def_use_high_r vrd_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
              ~rdefs:rdefs
              ~uses:[uses]
              ~useshigh:[useshigh]
@@ -611,15 +714,17 @@ object (self)
          (tags, args)
 
       | Adr (c, rd, imm) ->
-         let vrd = rd#to_variable floc in
-         let ximm = imm#to_expr floc in
-         let _ = ignore (get_string_reference floc ximm) in
-         let uses = get_def_use vrd in
-         let useshigh = get_def_use_high vrd in
+         let vrd_r = rd#to_variable floc in
+         let ximm_r = imm#to_expr floc in
+         let _ =
+           TR.tfold_default
+             (fun x -> ignore (get_string_reference floc x)) () ximm_r in
+         let uses = get_def_use_r vrd_r in
+         let useshigh = get_def_use_high_r vrd_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[ximm]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[ximm_r]
              ~uses:[uses]
              ~useshigh:[useshigh]
              () in
@@ -628,164 +733,201 @@ object (self)
          (tags, args)
 
       | ArithmeticShiftRight (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result =
-           match xrm with
-           | XConst (IntConst n) when n#toInt = 2 ->
-              XOp (XDiv, [xrn; XConst (IntConst (mkNumerical 4))])
-           | _ -> XOp (XAsr, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2
+             (fun xrn xrm ->
+               match xrm with
+               | XConst (IntConst n) when n#toInt = 2 ->
+                  XOp (XDiv, [xrn; XConst (IntConst (mkNumerical 4))])
+               | _ -> XOp (XAsr, [xrn; xrm]))
+             xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let tags = add_optional_subsumption tags in
          (tags, args)
 
       | BitFieldClear (c, rd, _, _, _) ->
-         let vrd = rd#to_variable floc in
-         let xrd = rd#to_expr floc in
-         let rdefs = [get_rdef xrd] in
+         let vrd_r = rd#to_variable floc in
+         let xrd_r = rd#to_expr floc in
+         let rdefs = [get_rdef_r xrd_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrd]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrd_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitFieldInsert (c, rd, rn, _, _, _) ->
-         let vrd = rd#to_variable floc in
-         let xrd = rd#to_expr floc in
-         let xrn = rn#to_expr floc in
-         let rdefs = [get_rdef xrd; get_rdef xrn] in
+         let vrd_r = rd#to_variable floc in
+         let xrd_r = rd#to_expr floc in
+         let xrn_r = rn#to_expr floc in
+         let rdefs = [get_rdef_r xrd_r; get_rdef_r xrn_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrd; xrn]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrd_r; xrn_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseAnd (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XBAnd, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XBAnd, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseBitClear (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XBAnd, [xrn; XOp (XBNot, [xrm])]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2
+             (fun xrn xrm -> XOp (XBAnd, [xrn; XOp (XBNot, [xrm])]))
+             xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseExclusiveOr (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XBXor, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XBXor, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseNot (_, c, rd, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XBNot, [xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r = TR.tmap (fun xrm -> XOp (XBNot, [xrm])) xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs = [get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseOr (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XBOr, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XBOr, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
-         let _ = ignore (get_string_reference floc rresult) in
+         let _ =
+           TR.tfold_default
+             (fun r -> ignore (get_string_reference floc r)) () rresult_r  in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BitwiseOrNot (_, c, rd, rn, rm) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xrmn = XOp (XBNot, [xrm]) in
-         let result = XOp (XBOr, [xrn; xrmn]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xrmn_r = TR.tmap (fun xrm -> XOp (XBNot, [xrm])) xrm_r in
+         let result_r =
+           TR.tmap2
+             (fun xrn xrmn -> XOp (XBOr, [xrn; xrmn])) xrn_r xrmn_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; xrmn; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; xrmn_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
@@ -796,24 +938,24 @@ object (self)
          if agg#is_jumptable then
            let jt = agg#jumptable in
            let indexregop = jt#index_operand in
-           let xrn = indexregop#to_expr floc in
-           let xxrn = rewrite_expr xrn in
-           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
+           let xrn_r = indexregop#to_expr floc in
+           let xxrn_r = TR.tmap rewrite_expr xrn_r in
+           let rdefs = (get_rdef_r xrn_r) :: (get_all_rdefs_r xxrn_r) in
            let (tagstring, args) =
-             mk_instrx_data
-               ~xprs:[xrn; xxrn]
-               ~rdefs:rdefs
+             mk_instrx_data_r
+               ~xprs_r:[xrn_r; xxrn_r]
+               ~rdefs
                () in
            let tags = tagstring :: ["agg-jt"] in
            let tags = add_subsumption_dependents agg tags in
            (tags, args)
          else if agg#is_bx_call then
            let (tags, args) = callinstr_key() in
-           let xtgt = tgt#to_expr floc in
-           let xxtgt = rewrite_expr xtgt in
-           let rdefs = (get_rdef xtgt) :: (get_all_rdefs xxtgt) in
+           let xtgt_r = tgt#to_expr floc in
+           let xxtgt_r = TR.tmap rewrite_expr xtgt_r in
+           let rdefs = (get_rdef_r xtgt_r) :: (get_all_rdefs_r xxtgt_r) in
            let (tags, args) =
-             add_bx_call_defs ~xprs:[xtgt; xxtgt] ~rdefs tags args in
+             add_bx_call_defs_r ~xprs_r:[xtgt_r; xxtgt_r] ~rdefs tags args in
            let tags = add_subsumption_dependents agg tags in
            (tags, args)
          else
@@ -833,13 +975,13 @@ object (self)
          if agg#is_jumptable then
            let jt = agg#jumptable in
            let indexregop = jt#index_operand in
-           let xrn = indexregop#to_expr floc in
-           let xxrn = rewrite_expr xrn in
-           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
+           let xrn_r = indexregop#to_expr floc in
+           let xxrn_r = TR.tmap rewrite_expr xrn_r in
+           let rdefs = (get_rdef_r xrn_r) :: (get_all_rdefs_r xxrn_r) in
            let (tagstring, args) =
-             mk_instrx_data
-               ~xprs:[xrn; xxrn]
-               ~rdefs:rdefs
+             mk_instrx_data_r
+               ~xprs_r:[xrn_r; xxrn_r]
+               ~rdefs
                () in
            let tags = tagstring :: ["agg-jt"] in
            let tags = add_subsumption_dependents agg tags in
@@ -854,7 +996,7 @@ object (self)
            when is_cond_conditional c
                 && tgt#is_absolute_address
                 && floc#has_test_expr ->
-         let xtgt = tgt#to_expr floc in
+         let xtgt_r = tgt#to_expr floc in
          let txpr = floc#get_test_expr in
          let fxpr = simplify_xpr (XOp (XLNot, [txpr])) in
          let csetter = floc#f#get_associated_cc_setter floc#cia in
@@ -876,43 +1018,40 @@ object (self)
            | _ -> "0x0" in
          let rdefs = (get_all_rdefs txpr) @ (get_all_rdefs tcond) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~xprs:[txpr; fxpr; tcond; fcond; xtgt]
-             ~rdefs:rdefs
+           mk_instrx_data_r
+             ~xprs_r:[Ok txpr; Ok fxpr; Ok tcond; Ok fcond; xtgt_r]
+             ~rdefs
              () in
          let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
          let tags = add_optional_subsumption tags in
          (tags, args)
 
       | Branch (_, tgt, _) ->
-         let xtgt = tgt#to_expr floc in
-         let xxtgt = rewrite_expr xtgt in
-         let rdefs = (get_rdef xtgt) :: (get_all_rdefs xxtgt) in
+         let xtgt_r = tgt#to_expr floc in
+         let xxtgt_r = TR.tmap rewrite_expr xtgt_r in
+         let rdefs = (get_rdef_r xtgt_r) :: (get_all_rdefs_r xxtgt_r) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~xprs:[xtgt; xxtgt]
-             ~rdefs
-             () in
+           mk_instrx_data_r ~xprs_r:[xtgt_r; xxtgt_r] ~rdefs () in
          let tags = add_optional_subsumption [tagstring] in
          (tags, args)
 
       | BranchExchange (c, tgt)
            when tgt#is_register && tgt#get_register = ARLR ->
          let r0_op = arm_register_op AR0 RD in
-         let xr0 = r0_op#to_expr floc in
-         let xxr0 = rewrite_expr xr0 in
-         let rdefs = [get_rdef xr0] @ (get_all_rdefs xxr0) in
+         let xr0_r = r0_op#to_expr floc in
+         let xxr0_r = TR.tmap rewrite_expr xr0_r in
+         let rdefs = [get_rdef_r xr0_r] @ (get_all_rdefs_r xxr0_r) in
          let (tagstring, args) =
-           mk_instrx_data ~xprs:[xr0; xxr0] ~rdefs:rdefs () in
+           mk_instrx_data_r ~xprs_r:[xr0_r; xxr0_r] ~rdefs:rdefs () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | BranchExchange (c, tgt) ->
-         let xtgt = tgt#to_expr floc in
-         let xxtgt = rewrite_expr xtgt in
-         let rdefs = (get_rdef xtgt) :: (get_all_rdefs xxtgt) in
+         let xtgt_r = tgt#to_expr floc in
+         let xxtgt_r = TR.tmap rewrite_expr xtgt_r in
+         let rdefs = (get_rdef_r xtgt_r) :: (get_all_rdefs_r xxtgt_r) in
          let (tagstring, args) =
-           mk_instrx_data ~xprs:[xtgt; xxtgt] ~rdefs () in
+           mk_instrx_data_r ~xprs_r:[xtgt_r; xxtgt_r] ~rdefs () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
@@ -920,125 +1059,135 @@ object (self)
         | BranchLinkExchange _
            when floc#has_call_target
                 && floc#get_call_target#is_signature_valid ->
-         callinstr_key()
+         callinstr_key ()
 
-      | BranchLink (_, tgt)
-      | BranchLinkExchange (_, tgt) ->
-         let xtgt = tgt#to_expr floc in
+      | BranchLink (c, tgt)
+        | BranchLinkExchange (c, tgt) ->
+         let xtgt_r = tgt#to_expr floc in
+         let xxtgt_r = TR.tmap rewrite_expr xtgt_r in
          let args =
            List.map (fun r -> arm_register_op r RD) [AR0; AR1; AR2; AR3] in
-         let argxprs =
+         let argxprs_r =
            List.map (fun (a: arm_operand_int) -> a#to_expr floc) args in
-         let rdef = get_rdef xtgt in
-         let rargxprs = List.map rewrite_expr argxprs in
-         (["a:xxxxxr"],
-          ((xd#index_xpr xtgt) :: (List.map xd#index_xpr rargxprs)) @ [rdef])
+         let rdefs = (get_rdef_r xtgt_r) :: (get_all_rdefs_r xxtgt_r)  in
+         let (tagstring, args) =
+           mk_instrx_data_r ~xprs_r:(xxtgt_r :: argxprs_r) ~rdefs () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | ByteReverseWord(c, rd, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrm = rm#to_expr floc in
-         let xrmm = rewrite_expr xrm in
-         let rdefs = [get_rdef xrm] @ (get_all_rdefs xrmm) in
+         let vrd_r = rd#to_variable floc in
+         let xrm_r = rm#to_expr floc in
+         let xrmm_r = TR.tmap rewrite_expr xrm_r in
+         let rdefs = [get_rdef_r xrm_r] @ (get_all_rdefs_r xrmm_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrm; xrmm]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrm_r; xrmm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | ByteReversePackedHalfword (c, rd, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrm = rm#to_expr floc in
-         let xrmm = rewrite_expr xrm in
-         let rdefs = [get_rdef xrm] @ (get_all_rdefs xrmm) in
+         let vrd_r = rd#to_variable floc in
+         let xrm_r = rm#to_expr floc in
+         let xrmm_r = TR.tmap rewrite_expr xrm_r in
+         let rdefs = [get_rdef_r xrm_r] @ (get_all_rdefs_r xrmm_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrm; xrmm]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrm_r; xrmm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | Compare (c, rn, rm, _) ->
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xresult = XOp (XMinus, [xrn; xrm]) in
-         let xresult = rewrite_expr xresult in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs xresult) in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xresult_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
+         let xresult_r = TR.tmap rewrite_expr xresult_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r xresult_r) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~xprs:[xrn; xrm; xresult]
-             ~rdefs:rdefs
-             () in
+           mk_instrx_data_r ~xprs_r:[xrn_r; xrm_r; xresult_r] ~rdefs () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let tags = add_optional_subsumption tags in
          (tags, args)
 
       | CompareBranchNonzero (rn, tgt) ->
-         let xrn = rn#to_expr floc in
-         let xtgt = tgt#to_expr floc in
-         let txpr = XOp (XNe, [xrn; int_constant_expr 0]) in
-         let fxpr = XOp (XEq, [xrn; int_constant_expr 0]) in
-         let tcond = rewrite_expr txpr in
-         let fcond = rewrite_expr fxpr in
-         let rdefs = [get_rdef xrn] @ (get_all_rdefs tcond) in
+         let xrn_r = rn#to_expr floc in
+         let xtgt_r = tgt#to_expr floc in
+         let txpr_r =
+           TR.tmap (fun xrn -> XOp (XNe, [xrn; zero_constant_expr])) xrn_r in
+         let fxpr_r =
+           TR.tmap (fun xrn -> XOp (XEq, [xrn; zero_constant_expr])) xrn_r in
+         let tcond_r = TR.tmap rewrite_expr txpr_r in
+         let fcond_r = TR.tmap rewrite_expr fxpr_r in
+         let rdefs = [get_rdef_r xrn_r] @ (get_all_rdefs_r tcond_r) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~xprs:[xrn; txpr; fxpr; tcond; fcond; xtgt]
-             ~rdefs:rdefs
+           mk_instrx_data_r
+             ~xprs_r:[xrn_r; txpr_r; fxpr_r; tcond_r; fcond_r; xtgt_r]
+             ~rdefs
              () in
          let (tags, args) = (tagstring :: ["TF"], args) in
          (tags, args)
 
       | CompareBranchZero (rn, tgt) ->
-         let xrn = rn#to_expr floc in
-         let xtgt = tgt#to_expr floc in
-         let txpr = XOp (XEq, [xrn; int_constant_expr 0]) in
-         let fxpr = XOp (XNe, [xrn; int_constant_expr 0]) in
-         let tcond = rewrite_expr txpr in
-         let fcond = rewrite_expr fxpr in
-         let rdefs = [get_rdef xrn] @ (get_all_rdefs tcond) in
+         let xrn_r = rn#to_expr floc in
+         let xtgt_r = tgt#to_expr floc in
+         let txpr_r =
+           TR.tmap (fun xrn -> XOp (XEq, [xrn; zero_constant_expr])) xrn_r in
+         let fxpr_r =
+           TR.tmap (fun xrn -> XOp (XNe, [xrn; zero_constant_expr])) xrn_r in
+         let tcond_r = TR.tmap rewrite_expr txpr_r in
+         let fcond_r = TR.tmap rewrite_expr fxpr_r in
+         let rdefs = [get_rdef_r xrn_r] @ (get_all_rdefs_r tcond_r) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~xprs:[xrn; txpr; fxpr; tcond; fcond; xtgt]
-             ~rdefs:rdefs
+           mk_instrx_data_r
+             ~xprs_r:[xrn_r; txpr_r; fxpr_r; tcond_r; fcond_r; xtgt_r]
+             ~rdefs
              () in
          let (tags, args) = (tagstring :: ["TF"], args) in
          (tags, args)
 
       | CompareNegative (c, rn, rm) ->
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xresult = XOp (XPlus, [xrn; xrm]) in
-         let xresult = rewrite_expr xresult in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs xresult) in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xresult_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XPlus, [xrn; xrm])) xrn_r xrm_r in
+         let xresult_r = TR.tmap rewrite_expr xresult_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r xresult_r) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~xprs:[xrn; xrm; xresult]
-             ~rdefs:rdefs
-             () in
+           mk_instrx_data_r ~xprs_r:[xrn_r; xrm_r; xresult_r] ~rdefs () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | CountLeadingZeros (c, rd, rm) ->
-         let vrd = rd#to_variable floc in
-         let xrm = rm#to_expr floc in
-         let xxrm = rewrite_expr xrm in
-         let rdefs = [get_rdef xrm] @ (get_all_rdefs xxrm) in
+         let vrd_r = rd#to_variable floc in
+         let xrm_r = rm#to_expr floc in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rdefs = [get_rdef_r xrm_r] @ (get_all_rdefs_r xxrm_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrm; xxrm]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrm_r; xxrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
@@ -1068,16 +1217,18 @@ object (self)
                  (match optpredicate with
                   | Some p ->
                      let p = if inverse then XOp (XLNot, [p]) else p in
-                     let lhs = dstop#to_variable floc in
+                     let lhs_r = dstop#to_variable floc in
                      let rdefs = get_all_rdefs p in
                      let xp = rewrite_expr p in
+                     let uses = [get_def_use_r lhs_r] in
+                     let useshigh = [get_def_use_high_r lhs_r] in
                      let (tagstring, args) =
-                       mk_instrx_data
-                         ~vars:[lhs]
-                         ~xprs:[p; xp]
-                         ~rdefs:rdefs
-                         ~uses:[get_def_use lhs]
-                         ~useshigh:[get_def_use_high lhs]
+                       mk_instrx_data_r
+                         ~vars_r:[lhs_r]
+                         ~xprs_r:[Ok p; Ok xp]
+                         ~rdefs
+                         ~uses
+                         ~useshigh
                          () in
                      ([tagstring], args)
                   | _ ->
@@ -1114,106 +1265,149 @@ object (self)
 
       | IfThen _  -> ([], [])
 
-      | LoadMultipleDecrementAfter (_, _, base, rl, _) ->
-         let reglhss = rl#to_multiple_variable floc in
+      | LoadMultipleDecrementAfter (wback, c, base, rl, _) ->
+         let reglhs_rl = rl#to_multiple_variable floc in
          let basereg = base#get_register in
+         let baselhs_r = base#to_variable floc in
+         let baserhs_r = base#to_expr floc in
          let regcount = rl#get_register_count in
-         let (memreads, _) =
+         let (memreads_r, _) =
            List.fold_left
-             (fun (acc, off) _reglhs ->
-               let memop = arm_reg_deref ~with_offset:off basereg RD in
-               let memrhs = memop#to_expr floc in
-               (acc @ [memrhs], off + 4)) ([], 4 -(4 * regcount)) reglhss in
-         let xtag =
-           "a:"
-           ^ (string_repeat "v" regcount)
-           ^ (string_repeat "x" regcount)
-           ^ "x" in    (* base expression *)
-         ([xtag],
-          (List.map xd#index_variable reglhss)
-          @ (List.map xd#index_xpr memreads)
-          @ [xd#index_xpr (base#to_expr floc)])
-
-      | LoadMultipleDecrementBefore (_, _, base, rl, _) ->
-         let reglhss = rl#to_multiple_variable floc in
-         let basereg = base#get_register in
-         let regcount = rl#get_register_count in
-         let (memreads, _) =
-           List.fold_left
-             (fun (acc, off) _reglhs ->
-               let memop = arm_reg_deref ~with_offset:off basereg RD in
-               let memrhs = memop#to_expr floc in
-               (acc @ [memrhs], off + 4)) ([], -(4 * regcount)) reglhss in
-         let xtag =
-           "a:"
-           ^ (string_repeat "v" regcount)
-           ^ (string_repeat "x" regcount)
-           ^ "x" in    (* base expression *)
-         ([xtag],
-          (List.map xd#index_variable reglhss)
-          @ (List.map xd#index_xpr memreads)
-          @ [xd#index_xpr (base#to_expr floc)])
-
-      | LoadMultipleIncrementAfter _ when (Option.is_some instr#is_in_aggregate) ->
-         (match instr#is_in_aggregate with
-          | Some va ->
-             let ctxtva = (make_i_location floc#l va)#ci in
-             ("a:" :: ["subsumed"; ctxtva], [])
-          | _ -> (["a:"], []))
-
-      | LoadMultipleIncrementAfter (wback, c, base, rl, _) ->
-         let reglhss = rl#to_multiple_variable floc in
-         let basereg = base#get_register in
-         let baselhs = base#to_variable floc in
-         let baserhs = base#to_expr floc in
-         let regcount = rl#get_register_count in
-         let (memreads, _) =
-           List.fold_left
-             (fun (acc, off) _reglhs ->
-               let memop = arm_reg_deref ~with_offset:off basereg RD in
-               let memrhs = memop#to_expr floc in
-               (acc @ [memrhs], off + 4)) ([], 0) reglhss in
-         let rdefs = List.map get_rdef (baserhs :: memreads) in
-         let uses = List.map get_def_use_high (baselhs :: reglhss) in
-         let useshigh = List.map get_def_use_high (baselhs :: reglhss) in
-         let wbackresults =
+               (fun (acc, off) _reglhs ->
+                 let memop = arm_reg_deref ~with_offset:off basereg RD in
+                 let memrhs_r = memop#to_expr floc in
+                 (acc @ [memrhs_r], off + 4)) ([], 4 -(4 * regcount)) reglhs_rl in
+         let rdefs = List.map get_rdef_r (baserhs_r :: memreads_r) in
+         let uses = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
+         let wbackresults_r =
            if wback then
-             let increm = int_constant_expr (4 * regcount) in
-             let baseresult = XOp (XPlus, [baserhs; increm]) in
-             let rbaseresult = rewrite_expr baseresult in
-             [baseresult; rbaseresult]
+             let decrem = int_constant_expr (4 * regcount) in
+             let baseresult_r =
+               TR.tmap
+                 (fun baserhs -> XOp (XMinus, [baserhs; decrem])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             [baseresult_r; rbaseresult_r]
            else
-             [baserhs; baserhs] in
+             [baserhs_r; baserhs_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:(baselhs :: reglhss)
-             ~xprs:((baserhs :: wbackresults) @ memreads)
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:(baselhs_r :: reglhs_rl)
+             ~xprs_r:((baserhs_r :: wbackresults_r) @ memreads_r)
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | LoadMultipleIncrementBefore (_, _, base, rl, _) ->
-         let reglhss = rl#to_multiple_variable floc in
+      | LoadMultipleDecrementBefore (wback, c, base, rl, _) ->
+         let reglhs_rl = rl#to_multiple_variable floc in
          let basereg = base#get_register in
+         let baselhs_r = base#to_variable floc in
+         let baserhs_r = base#to_expr floc in
          let regcount = rl#get_register_count in
-         let (memreads, _) =
+         let (memreads_r, _) =
            List.fold_left
              (fun (acc, off) _reglhs ->
                let memop = arm_reg_deref ~with_offset:off basereg RD in
-               let memrhs = memop#to_expr floc in
-               (acc @ [memrhs], off + 4)) ([], 4) reglhss in
-         let xtag =
-           "a:"
-           ^ (string_repeat "v" regcount)
-           ^ (string_repeat "x" regcount)
-           ^ "x" in    (* base expression *)
-         ([xtag],
-          (List.map xd#index_variable reglhss)
-          @ (List.map xd#index_xpr memreads)
-          @ [xd#index_xpr (base#to_expr floc)])
+               let memrhs_r = memop#to_expr floc in
+               (acc @ [memrhs_r], off + 4)) ([], -(4 * regcount)) reglhs_rl in
+         let rdefs = List.map get_rdef_r (baserhs_r :: memreads_r) in
+         let uses = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
+         let wbackresults_r =
+           if wback then
+             let decrem = int_constant_expr (4 * regcount) in
+             let baseresult_r =
+               TR.tmap
+                 (fun baserhs -> XOp (XMinus, [baserhs; decrem])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             [baseresult_r; rbaseresult_r]
+           else
+             [baserhs_r; baserhs_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:(baselhs_r :: reglhs_rl)
+             ~xprs_r:((baserhs_r :: wbackresults_r) @ memreads_r)
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | LoadMultipleIncrementAfter (wback, c, base, rl, _) ->
+         let reglhs_rl = rl#to_multiple_variable floc in
+         let basereg = base#get_register in
+         let baselhs_r = base#to_variable floc in
+         let baserhs_r = base#to_expr floc in
+         let regcount = rl#get_register_count in
+         let (memreads_r, _) =
+           List.fold_left
+             (fun (acc, off) _reglhs ->
+               let memop = arm_reg_deref ~with_offset:off basereg RD in
+               let memrhs_r = memop#to_expr floc in
+               (acc @ [memrhs_r], off + 4)) ([], 0) reglhs_rl in
+         let rdefs = List.map get_rdef_r (baserhs_r :: memreads_r) in
+         let uses = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
+         let wbackresults_r =
+           if wback then
+             let increm = int_constant_expr (4 * regcount) in
+             let baseresult_r =
+               TR.tmap
+                 (fun baserhs -> XOp (XPlus, [baserhs; increm])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             [baseresult_r; rbaseresult_r]
+           else
+             [baserhs_r; baserhs_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:(baselhs_r :: reglhs_rl)
+             ~xprs_r:((baserhs_r :: wbackresults_r) @ memreads_r)
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+           (tags, args)
+
+      | LoadMultipleIncrementBefore (wback, c, base, rl, _) ->
+         let reglhs_rl = rl#to_multiple_variable floc in
+         let basereg = base#get_register in
+         let baselhs_r = base#to_variable floc in
+         let baserhs_r = base#to_expr floc in
+         let regcount = rl#get_register_count in
+         let (memreads_r, _) =
+           List.fold_left
+             (fun (acc, off) _reglhs ->
+               let memop = arm_reg_deref ~with_offset:off basereg RD in
+               let memrhs_r = memop#to_expr floc in
+               (acc @ [memrhs_r], off + 4)) ([], 4) reglhs_rl in
+         let rdefs = List.map get_rdef_r (baserhs_r :: memreads_r) in
+         let uses = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
+         let wbackresults_r =
+           if wback then
+             let increm = int_constant_expr (4 * regcount) in
+             let baseresult_r =
+               TR.tmap
+                 (fun baserhs -> XOp (XPlus, [baserhs; increm])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             [baseresult_r; rbaseresult_r]
+           else
+             [baserhs_r; baserhs_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:(baselhs_r :: reglhs_rl)
+             ~xprs_r:((baserhs_r :: wbackresults_r) @ memreads_r)
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | LoadRegister _ when instr#is_aggregate_anchor ->
          let iaddr = instr#get_address in
@@ -1221,14 +1415,11 @@ object (self)
          if agg#is_jumptable then
            let jt = agg#jumptable in
            let indexregop = jt#index_operand in
-           let xrn = indexregop#to_expr floc in
-           let xxrn = rewrite_expr xrn in
-           let rdefs = (get_rdef xrn) :: (get_all_rdefs xxrn) in
+           let xrn_r = indexregop#to_expr floc in
+           let xxrn_r = TR.tmap rewrite_expr xrn_r in
+           let rdefs = (get_rdef_r xrn_r) :: (get_all_rdefs_r xxrn_r) in
            let (tagstring, args) =
-             mk_instrx_data
-               ~xprs:[xrn; xxrn]
-               ~rdefs
-               () in
+             mk_instrx_data_r ~xprs_r:[xrn_r; xxrn_r] ~rdefs () in
            let tags = tagstring :: ["agg-jt"] in
            let tags = add_subsumption_dependents agg tags in
            (tags, args)
@@ -1240,92 +1431,112 @@ object (self)
                      iaddr#toPretty]))
 
       | LoadRegister (c, rt, rn, rm, mem, _) ->
-         let vrt = rt#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xaddr = mem#to_address floc in
-         let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
+         let vrt_r = rt#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xaddr_r = mem#to_address floc in
+         let vmem_r = mem#to_variable floc in
+         let xmem_r = mem#to_expr floc in
          let rdefs =
-           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
-           @ (get_all_rdefs xmem) in
-         let uses = [get_def_use vrt] in
-         let useshigh = [get_def_use_high vrt] in
-         let xxaddr = rewrite_expr xaddr in
-         let xrmem = rewrite_expr xmem in
-         let _ = ignore (get_string_reference floc xrmem) in
+           [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_memvar_r vmem_r]
+           @ (get_all_rdefs_r xmem_r) in
+         let uses = [get_def_use_r vrt_r] in
+         let useshigh = [get_def_use_high_r vrt_r] in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
          let _ =
-           floc#memrecorder#record_load
+           TR.tfold_default
+             (fun xrmem -> ignore (get_string_reference floc xrmem)) () xrmem_r in
+         let _ =
+           floc#memrecorder#record_load_r
              ~signed:false
-             ~addr:xxaddr
-             ~var:vmem
+             ~addr_r:xxaddr_r
+             ~var_r:vmem_r
              ~size:4
              ~vtype:t_unknown in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrt_r; vmem_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let tags = add_optional_subsumption tags in
          let (tags, args) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             let addr_r = mem#to_updated_offset_address floc in
-             log_tfold_default
-               (log_error
-                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDR"))
-               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
-               (tags, args)
-               addr_r
+             TR.tfold
+               ~ok:(fun vrn ->
+                 TR.tfold
+                   ~ok:(fun (inc, xaddr) ->
+                     add_base_update tags args vrn inc xaddr)
+                   ~error:(fun e ->
+                     begin
+                       log_dc_error_result __FILE__ __LINE__ e;
+                       (tags, args)
+                     end)
+                   (mem#to_updated_offset_address floc))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (rn#to_variable floc)
            else
              (tags, args) in
          (tags, args)
 
       | LoadRegisterByte (c, rt, rn, rm, mem, _) ->
-         let vrt = rt#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xaddr = mem#to_address floc in
-         let vmem = mem#to_variable floc in
-         let xmem = XOp (XXlsb, [mem#to_expr floc]) in
-         let xrmem = rewrite_expr xmem in
-         let xxaddr = rewrite_expr xaddr in
+         let vrt_r = rt#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xaddr_r = mem#to_address floc in
+         let vmem_r= mem#to_variable floc in
+         let xmem_r = mem#to_expr floc in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
          let rdefs =
-           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
-           @ (get_all_rdefs xmem) in
-         let uses = [get_def_use vrt] in
-         let useshigh = [get_def_use_high vrt] in
+           [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_memvar_r vmem_r]
+           @ (get_all_rdefs_r xmem_r) in
+         let uses = [get_def_use_r vrt_r] in
+         let useshigh = [get_def_use_high_r vrt_r] in
          let _ =
-           floc#memrecorder#record_load
+           floc#memrecorder#record_load_r
              ~signed:false
-             ~addr:xxaddr
-             ~var:vmem
+             ~addr_r:xxaddr_r
+             ~var_r:vmem_r
              ~size:1
              ~vtype:t_unknown in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrt_r; vmem_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let tags = add_optional_subsumption tags in
          let (tags, args) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             let addr_r = mem#to_updated_offset_address floc in
-             log_tfold_default
-               (log_error
-                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRB"))
-               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
-               (tags, args)
-               addr_r
+             TR.tfold
+               ~ok:(fun vrn ->
+                 TR.tfold
+                   ~ok:(fun (inc, xaddr) ->
+                     add_base_update tags args vrn inc xaddr)
+                   ~error:(fun e ->
+                     begin
+                       log_dc_error_result __FILE__ __LINE__ e;
+                       (tags, args)
+                     end)
+                   (mem#to_updated_offset_address floc))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (rn#to_variable floc)
            else
              (tags, args) in
          let tags =
@@ -1336,132 +1547,176 @@ object (self)
          (tags, args)
 
       | LoadRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
-         let vrt = rt#to_variable floc in
-         let vrt2 = rt2#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let vmem = mem#to_variable floc in
-         let vmem2 = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
-         let xrmem = rewrite_expr xmem in
-         let xmem2 = mem2#to_expr floc in
-         let xrmem2 = rewrite_expr xmem2 in
-         let xaddr1 = mem#to_address floc in
-         let xaddr2 = mem#to_address floc in
+         let vrt_r = rt#to_variable floc in
+         let vrt2_r = rt2#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let vmem_r = mem#to_variable floc in
+         let vmem2_r = mem#to_variable floc in
+         let xmem_r = mem#to_expr floc in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let xmem2_r = mem2#to_expr floc in
+         let xrmem2_r = TR.tmap rewrite_expr xmem2_r in
+         let xaddr1_r = mem#to_address floc in
+         let xaddr2_r = mem#to_address floc in
          let rdefs = [
-             get_rdef xrn;
-             get_rdef xrm;
-             get_rdef_memvar vmem;
-             get_rdef_memvar vmem2] in
-         let uses = [get_def_use vrt; get_def_use vrt2] in
-         let useshigh = [get_def_use_high vrt; get_def_use_high vrt2] in
+             get_rdef_r xrn_r;
+             get_rdef_r xrm_r;
+             get_rdef_memvar_r vmem_r;
+             get_rdef_memvar_r vmem2_r] in
+         let uses = [get_def_use_r vrt_r; get_def_use_r vrt2_r] in
+         let useshigh = [get_def_use_high_r vrt_r; get_def_use_high_r vrt2_r] in
+         let _ =
+           floc#memrecorder#record_load_r
+             ~signed:false
+             ~addr_r:xaddr1_r
+             ~var_r:vmem_r
+             ~size:4
+             ~vtype:t_unknown in
+         let _ =
+           floc#memrecorder#record_load_r
+             ~signed:false
+             ~addr_r:xaddr2_r
+             ~var_r:vmem2_r
+             ~size:4
+             ~vtype:t_unknown in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrt; vrt2; vmem; vmem2]
-             ~xprs:[xrn; xrm; xmem; xrmem; xmem2; xrmem2; xaddr1; xaddr2]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrt_r; vrt2_r; vmem_r; vmem2_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xmem2_r;
+                      xrmem2_r; xaddr1_r; xaddr2_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             let addr_r = mem#to_updated_offset_address floc in
-             log_tfold_default
-               (log_error
-                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRB"))
-               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
-               (tags, args)
-               addr_r
+             TR.tfold
+               ~ok:(fun vrn ->
+                 TR.tfold
+                   ~ok:(fun (inc, xaddr) ->
+                     add_base_update tags args vrn inc xaddr)
+                   ~error:(fun e ->
+                     begin
+                       log_dc_error_result __FILE__ __LINE__ e;
+                       (tags, args)
+                     end)
+                   (mem#to_updated_offset_address floc))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (rn#to_variable floc)
            else
              (tags, args) in
          (tags, args)
 
       | LoadRegisterExclusive (c, rt, rn, rm, mem) ->
-         let vrt = rt#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xaddr = mem#to_address floc in
-         let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
+         let vrt_r = rt#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xaddr_r = mem#to_address floc in
+         let vmem_r = mem#to_variable floc in
+         let xmem_r = mem#to_expr floc in
          let rdefs =
-           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
-           @ (get_all_rdefs xmem) in
-         let uses = [get_def_use vrt] in
-         let useshigh = [get_def_use_high vrt] in
-         let xrmem = rewrite_expr xmem in
-         let _ = ignore (get_string_reference floc xrmem) in
+           [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_memvar_r vmem_r]
+           @ (get_all_rdefs_r xmem_r) in
+         let uses = [get_def_use_r vrt_r] in
+         let useshigh = [get_def_use_high_r vrt_r] in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
          let _ =
-           floc#memrecorder#record_load
+           TR.tfold_default
+             (fun xrmem -> ignore (get_string_reference floc xrmem)) () xrmem_r in
+         let _ =
+           floc#memrecorder#record_load_r
              ~signed:false
-             ~addr:xaddr
-             ~var:vmem
+             ~addr_r:xaddr_r
+             ~var_r:vmem_r
              ~size:4
              ~vtype:t_unknown in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrt_r; vmem_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             let addr_r = mem#to_updated_offset_address floc in
-             log_tfold_default
-               (log_error
-                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDREX"))
-               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
-               (tags, args)
-               addr_r
+             TR.tfold
+               ~ok:(fun vrn ->
+                 TR.tfold
+                   ~ok:(fun (inc, xaddr) ->
+                     add_base_update tags args vrn inc xaddr)
+                   ~error:(fun e ->
+                     begin
+                       log_dc_error_result __FILE__ __LINE__ e;
+                       (tags, args)
+                     end)
+                   (mem#to_updated_offset_address floc))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (rn#to_variable floc)
            else
              (tags, args) in
          (tags, args)
 
       | LoadRegisterHalfword (c, rt, rn, rm, mem, _) ->
-         let vrt = rt#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xaddr = mem#to_address floc in
-         let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
-         let xrmem = rewrite_expr xmem in
-         let xxaddr = rewrite_expr xaddr in
+         let vrt_r = rt#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xaddr_r = mem#to_address floc in
+         let vmem_r = mem#to_variable floc in
+         let xmem_r = mem#to_expr floc in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
          let rdefs =
-           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
-           @ (get_all_rdefs xmem) in
-         let uses = [get_def_use vrt] in
-         let useshigh = [get_def_use_high vrt] in
+           [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_memvar_r vmem_r]
+           @ (get_all_rdefs_r xmem_r) in
+         let uses = [get_def_use_r vrt_r] in
+         let useshigh = [get_def_use_high_r vrt_r] in
          let _ =
-           floc#memrecorder#record_load
+           floc#memrecorder#record_load_r
              ~signed:false
-             ~addr:xxaddr
-             ~var:vmem
+             ~addr_r:xxaddr_r
+             ~var_r:vmem_r
              ~size:2
              ~vtype:t_unknown in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrt_r; vmem_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             let addr_r = mem#to_updated_offset_address floc in
-             log_tfold_default
-               (log_error
-                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRH"))
-               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
-               (tags, args)
-               addr_r
+             TR.tfold
+               ~ok:(fun vrn ->
+                 TR.tfold
+                   ~ok:(fun (inc, xaddr) ->
+                     add_base_update tags args vrn inc xaddr)
+                   ~error:(fun e ->
+                     begin
+                       log_dc_error_result __FILE__ __LINE__ e;
+                       (tags, args)
+                     end)
+                   (mem#to_updated_offset_address floc))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (rn#to_variable floc)
            else
              (tags, args) in
          let tags =
@@ -1472,124 +1727,151 @@ object (self)
          (tags, args)
 
       | LoadRegisterSignedByte (c, rt, rn, rm, mem, _) ->
-         let vrt = rt#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xaddr = mem#to_address floc in
-         let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
-         let xrmem = rewrite_expr xmem in
-         let xxaddr = rewrite_expr xaddr in
+         let vrt_r = rt#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xaddr_r = mem#to_address floc in
+         let vmem_r= mem#to_variable floc in
+         let xmem_r = mem#to_expr floc in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
          let rdefs =
-           [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem]
-           @ (get_all_rdefs xmem) in
-         let uses = [get_def_use vrt] in
-         let useshigh = [get_def_use_high vrt] in
+           [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_memvar_r vmem_r]
+           @ (get_all_rdefs_r xmem_r) in
+         let uses = [get_def_use_r vrt_r] in
+         let useshigh = [get_def_use_high_r vrt_r] in
          let _ =
-           floc#memrecorder#record_load
+           floc#memrecorder#record_load_r
              ~signed:true
-             ~addr:xxaddr
-             ~var:vmem
+             ~addr_r:xxaddr_r
+             ~var_r:vmem_r
              ~size:1
              ~vtype:t_unknown in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrt_r; vmem_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             let addr_r = mem#to_updated_offset_address floc in
-             log_tfold_default
-               (log_error
-                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRSB"))
-               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
-               (tags, args)
-               addr_r
+             TR.tfold
+               ~ok:(fun vrn ->
+                 TR.tfold
+                   ~ok:(fun (inc, xaddr) ->
+                     add_base_update tags args vrn inc xaddr)
+                   ~error:(fun e ->
+                     begin
+                       log_dc_error_result __FILE__ __LINE__ e;
+                       (tags, args)
+                     end)
+                   (mem#to_updated_offset_address floc))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (rn#to_variable floc)
            else
              (tags, args) in
          (tags, args)
 
       | LoadRegisterSignedHalfword (c, rt, rn, rm, mem, _) ->
-         let vrt = rt#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xaddr = mem#to_address floc in
-         let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
-         let xrmem = rewrite_expr xmem in
-         let xxaddr = rewrite_expr xaddr in
-         let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef_memvar vmem] in
-         let uses = [get_def_use vrt] in
-         let useshigh = [get_def_use_high vrt] in
+         let vrt_r = rt#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xaddr_r = mem#to_address floc in
+         let vmem_r = mem#to_variable floc in
+         let xmem_r = mem#to_expr floc in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_memvar_r vmem_r] in
+         let uses = [get_def_use_r vrt_r] in
+         let useshigh = [get_def_use_high_r vrt_r] in
          let _ =
-           floc#memrecorder#record_load
+           floc#memrecorder#record_load_r
              ~signed:true
-             ~addr:xxaddr
-             ~var:vmem
+             ~addr_r:xxaddr_r
+             ~var_r:vmem_r
              ~size:2
              ~vtype:t_unknown in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrm; xmem; xrmem; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrt_r; vmem_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             let addr_r = mem#to_updated_offset_address floc in
-             log_tfold_default
-               (log_error
-                  "invalid write-back address" ((p2s floc#l#toPretty) ^ ": LDRSH"))
-               (fun (inc, xaddr) -> add_base_update tags args vrn inc xaddr)
-               (tags, args)
-               addr_r
+             TR.tfold
+               ~ok:(fun vrn ->
+                 TR.tfold
+                   ~ok:(fun (inc, xaddr) ->
+                     add_base_update tags args vrn inc xaddr)
+                   ~error:(fun e ->
+                     begin
+                       log_dc_error_result __FILE__ __LINE__ e;
+                       (tags, args)
+                     end)
+                   (mem#to_updated_offset_address floc))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (rn#to_variable floc)
            else
              (tags, args) in
          (tags, args)
 
       | LogicalShiftLeft (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XLsl, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XLsl, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let tags = add_optional_subsumption tags in
          (tags, args)
 
       | LogicalShiftRight (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XLsr, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XLsr, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
@@ -1620,16 +1902,16 @@ object (self)
                  (match optpredicate with
                   | Some p ->
                      let p = if inverse then XOp (XLNot, [p]) else p in
-                     let lhs = dstop#to_variable floc in
+                     let lhs_r = dstop#to_variable floc in
                      let rdefs = get_all_rdefs p in
                      let xp = rewrite_expr p in
                      let (tagstring, args) =
-                       mk_instrx_data
-                         ~vars:[lhs]
-                         ~xprs:[p; xp]
+                       mk_instrx_data_r
+                         ~vars_r:[lhs_r]
+                         ~xprs_r:[Ok p; Ok xp]
                          ~rdefs
-                         ~uses:[get_def_use lhs]
-                         ~useshigh:[get_def_use_high lhs]
+                         ~uses:[get_def_use_r lhs_r]
+                         ~useshigh:[get_def_use_high_r lhs_r]
                          () in
                      ([tagstring], args)
                   | _ ->
@@ -1656,326 +1938,476 @@ object (self)
          (["nop"], [])
 
       | Move (_, c, rd, rm, _, _) ->
-         let vrd = rd#to_variable floc in
-         let xrm = rm#to_expr floc in
-         let result = rewrite_expr ?restrict:(Some 4) xrm in
-         let rdefs = (get_rdef xrm) :: (get_all_rdefs result) in
-         let _ = ignore (get_string_reference floc result) in
+         let vrd_r = rd#to_variable floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) xrm_r in
+         let rdefs = (get_rdef_r xrm_r) :: (get_all_rdefs_r result_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let _ =
+           TR.tfold_default
+             (fun result -> ignore (get_string_reference floc result))
+             () result_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrm; result]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrm_r; result_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | MoveRegisterCoprocessor (_, _, _, dst, _, _, _) ->
-         let vdst = dst#to_variable floc in
-         (["a:v"], [xd#index_variable vdst])
+      | MoveRegisterCoprocessor (c, _, _, rt, _, _, _) ->
+         let vrt_r = rt#to_variable floc in
+         let (tagstring, args) = mk_instrx_data_r ~vars_r:[vrt_r] () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | MoveToCoprocessor (_, _, _, rt, _, _, _) ->
-         let src = rt#to_expr floc in
-         let rsrc = rewrite_expr src in
-         (["a:xx"], [xd#index_xpr src; xd#index_xpr rsrc])
+      | MoveToCoprocessor (c, _, _, rt, _, _, _) ->
+         let xrt_r = rt#to_expr floc in
+         let xxrt_r = TR.tmap rewrite_expr xrt_r in
+         let (tagstring, args) = mk_instrx_data_r ~xprs_r:[xrt_r; xxrt_r] () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | MoveTop (c, rd, imm) ->
-         let vrd = rd#to_variable floc in
-         let ximm = imm#to_expr floc in
-         let xrd = rd#to_expr floc in
-         let ximm16 = XOp (XMult, [ximm; int_constant_expr e16]) in
-         let xrdm16 = XOp (XXlsh, [xrd]) in
-         let result = XOp (XPlus, [xrdm16; ximm16]) in
-         let rresult = rewrite_expr result in
-         let _ = ignore (get_string_reference floc rresult) in
-         let rdefs = [get_rdef xrd] in
-         let uses = get_def_use vrd in
-         let useshigh = get_def_use_high vrd in
+         let vrd_r = rd#to_variable floc in
+         let ximm_r = imm#to_expr floc in
+         let xrd_r = rd#to_expr floc in
+         let ximm16_r =
+           TR.tmap (fun ximm -> XOp (XMult, [ximm; e16_c])) ximm_r in
+         let xrdm16_r = TR.tmap (fun xrd -> XOp (XXlsh, [xrd])) xrd_r in
+         let result_r =
+           TR.tmap2
+             (fun xrdm16 ximm16 -> XOp (XPlus, [xrdm16; ximm16]))
+             xrdm16_r ximm16_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let _ =
+           TR.tfold_default
+             (fun r -> ignore (get_string_reference floc r)) () rresult_r in
+         let rdefs = [get_rdef_r xrd_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[ximm; xrd; xrdm16; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[uses]
-             ~useshigh:[useshigh]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[ximm_r; xrd_r; xrdm16_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | MoveTwoRegisterCoprocessor (_, _, _, rt, rt2, _) ->
-         let v1 = rt#to_variable floc in
-         let v2 = rt2#to_variable floc in
-         (["a:vv"], [xd#index_variable v1; xd#index_variable v2])
+      | MoveTwoRegisterCoprocessor (c, _, _, rt, rt2, _) ->
+         let vrt1_r = rt#to_variable floc in
+         let vrt2_r = rt2#to_variable floc in
+         let (tagstring, args) = mk_instrx_data_r ~vars_r:[vrt1_r; vrt2_r] () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | Multiply(_, c, rd, rn, rm) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XMult, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | MultiplyAccumulate (_, _, rd, rn, rm, ra) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xra = ra#to_expr floc in
-         let xprd = XOp (XMult, [xrn; xrm]) in
-         let xrprd = rewrite_expr xprd in
-         let xrhs = XOp (XPlus, [xprd; xra]) in
-         let xrrhs = rewrite_expr xrhs in
-         (["a:vxxxxxxx"],
-          [xd#index_variable vrd;
-           xd#index_xpr xrn;
-           xd#index_xpr xrm;
-           xd#index_xpr xra;
-           xd#index_xpr xprd;
-           xd#index_xpr xrprd;
-           xd#index_xpr xrhs;
-           xd#index_xpr xrrhs])
+      | MultiplyAccumulate (_, c, rd, rn, rm, ra) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xra_r = ra#to_expr floc in
+         let xprd_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
+         let xrprd_r = TR.tmap rewrite_expr xprd_r in
+         let xrhs_r =
+           TR.tmap2 (fun xprd xra -> XOp (XPlus, [xprd; xra])) xprd_r xra_r in
+         let xrrhs_r = TR.tmap rewrite_expr xrhs_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_r xra_r]
+           @ (get_all_rdefs_r xrrhs_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; xra_r; xprd_r; xrprd_r; xrhs_r; xrrhs_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | MultiplySubtract (_, rd, rn, rm, ra) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xra = ra#to_expr floc in
-         let xprod = XOp (XMult, [xrn; xrm]) in
-         let xxprod = rewrite_expr xprod in
-         let xdiff = XOp (XMinus, [xra; xprod]) in
-         let xxdiff = rewrite_expr xdiff in
-         (["a:vxxxxxxx"],
-          [xd#index_variable vrd;
-           xd#index_xpr xrn;
-           xd#index_xpr xrm;
-           xd#index_xpr xra;
-           xd#index_xpr xprod;
-           xd#index_xpr xxprod;
-           xd#index_xpr xdiff;
-           xd#index_xpr xxdiff])
+      | MultiplySubtract (c, rd, rn, rm, ra) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xra_r = ra#to_expr floc in
+         let xprod_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
+         let xxprod_r = TR.tmap rewrite_expr xprod_r in
+         let xdiff_r =
+           TR.tmap2 (fun xra xprod -> XOp (XMinus, [xra; xprod])) xra_r xprod_r in
+         let xxdiff_r = TR.tmap rewrite_expr xdiff_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_r xra_r]
+           @ (get_all_rdefs_r xxdiff_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; xra_r; xprod_r; xxprod_r; xdiff_r; xxdiff_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | Pop (c, sp, rl, _) ->
-         let splhs = sp#to_variable floc in
-         let sprhs = sp#to_expr floc in
+         let splhs_r = sp#to_variable floc in
+         let sprhs_r = sp#to_expr floc in
          let regcount = rl#get_register_count in
-         let spresult = XOp (XPlus, [sprhs; int_constant_expr (regcount * 4)]) in
-         let rspresult = rewrite_expr spresult in
-         let lhsvars =
+         let spresult_r =
+           TR.tmap
+             (fun sprhs -> XOp (XPlus, [sprhs; int_constant_expr (regcount * 4)]))
+             sprhs_r in
+         let rspresult_r = TR.tmap rewrite_expr spresult_r in
+         let lhsvars_r =
            List.map (fun (op: arm_operand_int) ->
                op#to_variable floc) rl#get_register_op_list in
          let rhsops =
            List.map (fun offset ->
                arm_sp_deref ~with_offset:offset RD)
              (List.init rl#get_register_count (fun i -> 4 * i)) in
-         let rhsexprs =
+         let rhsexprs_r =
            List.map (fun (x: arm_operand_int) -> x#to_expr floc) rhsops in
-         let xaddrs =
+         let xaddrs_r =
            List.init
              rl#get_register_count
              (fun i ->
-               let xaddr = XOp (XPlus, [sprhs; int_constant_expr (i * 4)]) in
-               rewrite_expr xaddr) in
-         let rrhsexprs = List.map rewrite_expr rhsexprs in
-         let (r0rdefs, xr0) =
+               let xaddr_r =
+                 TR.tmap
+                   (fun sprhs -> XOp (XPlus, [sprhs; int_constant_expr (i * 4)]))
+                   sprhs_r in
+               TR.tmap rewrite_expr xaddr_r) in
+         let rrhsexprs_r = List.map (TR.tmap rewrite_expr) rhsexprs_r in
+         let (r0rdefs, xr0_r) =
            if rl#includes_pc then
              let r0_op = arm_register_op AR0 RD in
-             let xr0 = r0_op#to_expr floc in
-             let xxr0 = rewrite_expr xr0 in
-             ([get_rdef xr0] @ (get_all_rdefs xxr0), Some xxr0)
+             let xr0_r = r0_op#to_expr floc in
+             let xxr0_r = TR.tmap rewrite_expr xr0_r in
+             ([get_rdef_r xr0_r] @ (get_all_rdefs_r xxr0_r), Some xxr0_r)
            else
              ([], None) in
-         let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
-         let uses = List.map get_def_use (splhs :: lhsvars) in
-         let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
-         let xprs =
-           (sprhs :: spresult :: rspresult :: rrhsexprs)
-           @ xaddrs
-           @ (match xr0 with Some x -> [x] | _ -> []) in
+         let rdefs = List.map get_rdef_r (sprhs_r :: rhsexprs_r) in
+         let uses = List.map get_def_use_r (splhs_r :: lhsvars_r) in
+         let useshigh = List.map get_def_use_high_r (splhs_r :: lhsvars_r) in
+         let xprs_r =
+           (sprhs_r :: spresult_r :: rspresult_r :: rrhsexprs_r)
+           @ xaddrs_r
+           @ (match xr0_r with Some x_r -> [x_r] | _ -> []) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:(splhs :: lhsvars)
-             ~xprs
+           mk_instrx_data_r
+             ~vars_r:(splhs_r :: lhsvars_r)
+             ~xprs_r
              ~rdefs:(rdefs @ r0rdefs)
-             ~uses:uses
-             ~useshigh:useshigh
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | PreloadData (_, _, base, mem) ->
-         let xbase = base#to_expr floc in
-         let xmem = mem#to_expr floc in
-         (["a:xx"], [xd#index_xpr xbase; xd#index_xpr xmem])
+      | PreloadData (_, c, base, mem) ->
+         let xbase_r = base#to_expr floc in
+         let xmem_r = mem#to_expr floc in
+         let (tagstring, args) = mk_instrx_data_r ~xprs_r:[xbase_r; xmem_r] () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | Push (c, sp, rl, _) ->
-         let splhs = sp#to_variable floc in
-         let sprhs = sp#to_expr floc in
-         let rhsexprs =
+         let splhs_r = sp#to_variable floc in
+         let sprhs_r = sp#to_expr floc in
+         let rhsexprs_rl =
            List.map (fun (op: arm_operand_int) ->
                op#to_expr floc) rl#get_register_op_list in
-         let rrhsexprs = List.map rewrite_expr rhsexprs in
-         let regcount = List.length rhsexprs in
+         let rrhsexprs_rl = List.map (TR.tmap rewrite_expr) rhsexprs_rl in
+         let regcount = rl#get_register_count in
          let lhsops =
            List.map (fun offset ->
                arm_sp_deref ~with_offset:offset WR)
-             (List.init
-                rl#get_register_count (fun i -> ((-4*regcount) + (4*i)))) in
-         let lhsvars = List.map (fun v -> v#to_variable floc) lhsops in
-         let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
-         let uses = List.map get_def_use (splhs :: lhsvars) in
-         let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
-         let spresult = XOp (XMinus, [sprhs; int_constant_expr (regcount * 4)]) in
-         let rspresult = rewrite_expr spresult in
+             (List.init regcount (fun i -> ((- (4 * regcount)) + (4 * i)))) in
+         let lhsvars_rl = List.map (fun v -> v#to_variable floc) lhsops in
+         let rdefs = List.map get_rdef_r (sprhs_r :: rhsexprs_rl) in
+         let uses = List.map get_def_use_r (splhs_r :: lhsvars_rl) in
+         let useshigh = List.map get_def_use_high_r (splhs_r :: lhsvars_rl) in
+         let spresult_r =
+           TR.tmap
+             (fun sprhs ->
+               XOp (XMinus, [sprhs; int_constant_expr (regcount * 4)]))
+             sprhs_r in
+         let rspresult_r = TR.tmap rewrite_expr spresult_r in
          let xaddrs =
            List.init
-             rl#get_register_count
+             regcount
              (fun i ->
-               let xaddr = XOp (XPlus, [rspresult; int_constant_expr (i * 4)]) in
-               rewrite_expr xaddr) in
+               let xaddr_r =
+                 TR.tmap
+                   (fun rspresult ->
+                     XOp (XPlus, [rspresult; int_constant_expr (i * 4)]))
+                   rspresult_r in
+               TR.tmap rewrite_expr xaddr_r) in
+         let xprs_r =
+           (sprhs_r :: spresult_r :: rspresult_r :: rrhsexprs_rl) @ xaddrs in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:(splhs :: lhsvars)
-             ~xprs:((sprhs :: spresult :: rspresult :: rrhsexprs) @ xaddrs)
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:(splhs_r :: lhsvars_rl)
+             ~xprs_r
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | ReverseSubtract (_, c, rd, rn, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XMinus, [xrm; xrn]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
-         let uses = [get_def_use vrd] in
-         let useshigh = [get_def_use_high vrd] in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrm; xrn])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | SignedBitFieldExtract (_, rd, rn) ->
-         let lhs = rd#to_variable floc in
-         let rhs = rn#to_expr floc in
-         let rrhs = rewrite_expr rhs in
-         (["a:vxx"],
-          [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr rrhs])
+      | SelectBytes (c, rd, rn, rm) ->
+         let lhs_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xxrn_r = TR.tmap rewrite_expr xrn_r in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rdefs = [get_rdef_r xrn_r; get_rdef_r xrm_r] in
+         let uses = [get_def_use_r lhs_r] in
+         let useshigh = [get_def_use_high_r lhs_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[lhs_r]
+             ~xprs_r:[xrn_r; xrm_r; xxrn_r; xxrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | SelectBytes (_, rd, rn, rm) ->
-         let lhs = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         (["a:vxx"],
-          [xd#index_variable lhs; xd#index_xpr xrn; xd#index_xpr xrm])
+      | SignedBitFieldExtract (c, rd, rn) ->
+         let lhs_r = rd#to_variable floc in
+         let rhs_r = rn#to_expr floc in
+         let rrhs_r = TR.tmap rewrite_expr rhs_r in
+         let rdefs = [get_rdef_r rhs_r] in
+         let uses = [get_def_use_r lhs_r] in
+         let useshigh = [get_def_use_high_r lhs_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[lhs_r]
+             ~xprs_r:[rhs_r; rrhs_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | SignedDivide (_, rd, rn, rm) ->
-         let lhs = rd#to_variable floc in
-         let rhs1 = rn#to_expr floc in
-         let rhs2 = rm#to_expr floc in
-         let result = XOp (XDiv, [rhs1; rhs2]) in
-         let rresult = rewrite_expr result in
-         (["a:vxxxx"],
-          [xd#index_variable lhs;
-           xd#index_xpr rhs1;
-           xd#index_xpr rhs2;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+      | SignedDivide (c, rd, rn, rm) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XDiv, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | SignedExtendByte (_, rd, rm, _) ->
-         let lhs = rd#to_variable floc in
-         let rhs = rm#to_expr floc in
-         let xrhs = rewrite_expr rhs in
-         (["a:vxx"], [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr xrhs])
+      | SignedExtendByte (c, rd, rm, _) ->
+         let vrd_r = rd#to_variable floc in
+         let xrm_r = rm#to_expr floc in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rdefs = (get_rdef_r xrm_r) :: (get_all_rdefs_r xxrm_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrm_r; xxrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | SignedExtendHalfword (_, rd, rm, _) ->
-         let lhs = rd#to_variable floc in
-         let rhs = rm#to_expr floc in
-         let xrhs = rewrite_expr rhs in
-         (["a:vxx"], [xd#index_variable lhs; xd#index_xpr rhs; xd#index_xpr xrhs])
+      | SignedExtendHalfword (c, rd, rm, _) ->
+         let vrd_r = rd#to_variable floc in
+         let xrm_r = rm#to_expr floc in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rdefs = (get_rdef_r xrm_r) :: (get_all_rdefs_r xxrm_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrm_r; xxrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | SignedMostSignificantWordMultiply (_, rd, rn, rm, _) ->
-         let lhs = rd#to_variable floc in
-         let rhs1 = rn#to_expr floc in
-         let rhs2 = rm#to_expr floc in
-         let result = XOp (XMult, [rhs1; rhs2]) in
-         let result = XOp (XDiv, [result; int_constant_expr e32]) in
-         let rresult = rewrite_expr result in
-         (["a:vxxxx"],
-          [xd#index_variable lhs;
-           xd#index_xpr rhs1;
-           xd#index_xpr rhs2;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+      | SignedMostSignificantWordMultiply (c, rd, rn, rm, _) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
+         let result_r =
+           TR.tmap (fun r -> XOp (XDiv, [r; e32_c])) result_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | SignedMostSignificantWordMultiplyAccumulate (_, rd, rn, rm, ra, _) ->
-         let lhs = rd#to_variable floc in
-         let lhsra = ra#to_variable floc in
-         let rhsra = ra#to_expr floc in
-         let rhs1 = rn#to_expr floc in
-         let rhs2 = rm#to_expr floc in
-         let result = XOp (XMult, [rhs1; rhs2]) in
-         let result = XOp (XDiv, [result; int_constant_expr e32]) in
-         let rresult = rewrite_expr result in
-         (["a:vvxxxxx"],
-          [xd#index_variable lhs;
-           xd#index_variable lhsra;
-           xd#index_xpr rhs1;
-           xd#index_xpr rhs2;
-           xd#index_xpr rhsra;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+      | SignedMostSignificantWordMultiplyAccumulate (c, rd, rn, rm, ra, _) ->
+         let vrd_r = rd#to_variable floc in
+         let xra_r = ra#to_expr floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
+         let xra32_r = TR.tmap (fun xra -> XOp (XMult, [xra; e32_c])) xra_r in
+         let result_r =
+           TR.tmap2 (fun r a -> XOp (XPlus, [r; a])) result_r xra32_r in
+         let result_r = TR.tmap (fun r -> XOp (XDiv, [r; e32_c])) result_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xra_r; get_rdef_r xrn_r; get_rdef_r xrm_r]
+           @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; xra_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | SignedMultiplyLong (_, _, rdlo, rdhi, rn, rm) ->
-         let lhslo = rdlo#to_variable floc in
-         let lhshi = rdhi#to_variable floc in
-         let rhs1 = rn#to_expr floc in
-         let rhs2 = rm#to_expr floc in
-         let result = XOp (XMult, [rhs1; rhs2]) in
-         let rresult = rewrite_expr result in
-         (["a:vvxxxx"],
-          [xd#index_variable lhslo;
-           xd#index_variable lhshi;
-           xd#index_xpr rhs1;
-           xd#index_xpr rhs2;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+      | SignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
+         let vlo_r = rdlo#to_variable floc in
+         let vhi_r = rdhi#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
+         let result_r = TR.tmap rewrite_expr result_r in
+         let loresult_r = TR.tmap (fun r -> XOp (XMod, [r; e32_c])) result_r in
+         let hiresult_r = TR.tmap (fun r -> XOp (XDiv, [r; e32_c])) result_r in
+         let loresultr_r = TR.tmap rewrite_expr loresult_r in
+         let hiresultr_r = TR.tmap rewrite_expr hiresult_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r result_r) in
+         let uses = [get_def_use_r vlo_r; get_def_use_r vhi_r] in
+         let useshigh = [get_def_use_high_r vlo_r; get_def_use_high_r vhi_r] in
+         let xprs_r =
+           [xrn_r; xrm_r; loresult_r; hiresult_r; loresultr_r; hiresultr_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vlo_r; vhi_r]
+             ~xprs_r
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | SignedMultiplyWordB (c, rd, rn, rm) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xe16 = int_constant_expr BCHDoubleword.e16 in
-         let result = XOp (XMult, [xrn; XOp (XMod, [xrm; xe16])]) in
-         let xxrn = rewrite_expr xrn in
-         let xxrm = rewrite_expr xrm in
-         let rresult = rewrite_expr ?restrict:(Some 4) result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
-         let uses = [get_def_use vrd] in
-         let useshigh = [get_def_use_high vrd] in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2
+             (fun xrn xrm -> XOp (XMult, [xrn; XOp (XMod, [xrm; e16_c])]))
+             xrn_r xrm_r in
+         let xxrn_r = TR.tmap rewrite_expr xrn_r in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rresult_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult; xxrn; xxrm]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r; xxrn_r; xxrm_r]
              ~rdefs
              ~uses
              ~useshigh
@@ -1984,21 +2416,61 @@ object (self)
          (tags, args)
 
       | SignedMultiplyWordT (c, rd, rn, rm) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xe16 = int_constant_expr BCHDoubleword.e16 in
-         let result = XOp (XMult, [xrn; XOp (XShiftrt, [xrm; xe16])]) in
-         let xxrn = rewrite_expr xrn in
-         let xxrm = rewrite_expr xrm in
-         let rresult = rewrite_expr ?restrict:(Some 4) result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
-         let uses = [get_def_use vrd] in
-         let useshigh = [get_def_use_high vrd] in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2
+             (fun xrn xrm -> XOp (XMult, [xrn; XOp (XShiftrt, [xrm; e16_c])]))
+             xrn_r xrm_r in
+         let xxrn_r = TR.tmap rewrite_expr xrn_r in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rresult_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult; xxrn; xxrm]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r; xxrn_r; xxrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | StoreMultipleDecrementAfter (wback, c, base, rl, _) ->
+         let basereg = base#get_register in
+         let baselhs_r = base#to_variable floc in
+         let baserhs_r = base#to_expr floc in
+         let regcount = rl#get_register_count in
+         let rhss_rl = rl#to_multiple_expr floc in
+         let rrhss_rl = List.map (TR.tmap rewrite_expr) rhss_rl in
+         let (memlhss_rl, _) =
+           List.fold_left
+             (fun (acc, off) _reg ->
+               let memop = arm_reg_deref ~with_offset:off basereg WR in
+               let memlhs_r = memop#to_variable floc in
+               (acc @ [memlhs_r], off + 4))
+             ([], 4 - (4 * regcount)) rl#get_register_op_list in
+         let rdefs = List.map get_rdef_r (baserhs_r :: rrhss_rl) in
+         let uses = List.map get_def_use_r (baselhs_r :: memlhss_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: memlhss_rl) in
+         let wbackresults_r =
+           if wback then
+             let decrem = int_constant_expr (4 * regcount) in
+             let baseresult_r =
+               TR.tmap (fun baserhs -> XOp (XMinus, [baserhs; decrem])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             [baseresult_r; rbaseresult_r]
+           else
+             [baserhs_r; baserhs_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:(baselhs_r :: memlhss_rl)
+             ~xprs_r:((baserhs_r :: wbackresults_r) @ rrhss_rl)
              ~rdefs
              ~uses
              ~useshigh
@@ -2008,42 +2480,37 @@ object (self)
 
       | StoreMultipleDecrementBefore (wback, c, base, rl, _) ->
          let basereg = base#get_register in
+         let baselhs_r = base#to_variable floc in
+         let baserhs_r = base#to_expr floc in
          let regcount = rl#get_register_count in
-         let baselhs = base#to_variable floc in
-         let baserhs = base#to_expr floc in
-         let rhss = rl#to_multiple_expr floc in
-         let rrhss = List.map rewrite_expr rhss in
-         let (memlhss, _) =
+         let rhss_rl = rl#to_multiple_expr floc in
+         let rrhss_rl = List.map (TR.tmap rewrite_expr) rhss_rl in
+         let (memlhss_rl, _) =
            List.fold_left
              (fun (acc, off) _reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
-               let memlhs = memop#to_variable floc in
-               let memop1 = arm_reg_deref ~with_offset:(off+1) basereg WR in
-               let memlhs1 = memop1#to_variable floc in
-               let memop2 = arm_reg_deref ~with_offset:(off+2) basereg WR in
-               let memlhs2 = memop2#to_variable floc in
-               let memop3 = arm_reg_deref ~with_offset:(off+3) basereg WR in
-               let memlhs3 = memop3#to_variable floc in
-               (acc @ [memlhs; memlhs1; memlhs2; memlhs3], off + 4))
-             ([], -(4 * regcount)) rl#get_register_op_list in
-         let rdefs = List.map get_rdef (baserhs :: rhss) in
-         let uses = List.map get_def_use_high (baselhs :: memlhss) in
-         let useshigh = List.map get_def_use_high (baselhs :: memlhss) in
-         let wbackresults =
+               let memlhs_r = memop#to_variable floc in
+               (acc @ [memlhs_r], off + 4))
+             ([], - (4 * regcount)) rl#get_register_op_list in
+         let rdefs = List.map get_rdef_r (baserhs_r :: rrhss_rl) in
+         let uses = List.map get_def_use_r (baselhs_r :: memlhss_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: memlhss_rl) in
+         let wbackresults_r =
            if wback then
              let decrem = int_constant_expr (4 * regcount) in
-             let baseresult = XOp (XMinus, [baserhs; decrem]) in
-             let rbaseresult = rewrite_expr baseresult in
-             [baseresult; rbaseresult]
+             let baseresult_r =
+               TR.tmap (fun baserhs -> XOp (XMinus, [baserhs; decrem])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             [baseresult_r; rbaseresult_r]
            else
-             [baserhs; baserhs] in
+             [baserhs_r; baserhs_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:(baselhs :: memlhss)
-             ~xprs:((baserhs :: wbackresults) @ rhss @ rrhss)
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:(baselhs_r :: memlhss_rl)
+             ~xprs_r:((baserhs_r :: wbackresults_r) @ rrhss_rl)
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
@@ -2057,23 +2524,26 @@ object (self)
            let dstop = seq#dstreg in
            let size = seq#registers#get_register_count * 4 in
            let srcfloc = get_floc (make_i_location floc#l (iaddr#add_int (-4))) in
-           let xsrc = srcop#to_expr srcfloc in
-           let xdst = dstop#to_expr floc in
-           let xxsrc = rewrite_floc_expr srcfloc xsrc in
-           let xxdst = rewrite_expr ?restrict:(Some 4) xdst in
-           let xxdst =
-             TR.tfold_default
+           let xsrc_r = srcop#to_expr srcfloc in
+           let xdst_r = dstop#to_expr floc in
+           let xxsrc_r = TR.tmap (rewrite_floc_expr srcfloc) xsrc_r in
+           let xxdst_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) xdst_r in
+           let xxdst_r =
+             TR.tmap
                (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
-               xxdst
-               (floc#get_var_at_address xxdst) in
-           let rdefs = [(get_rdef xsrc); (get_rdef xdst)] in
+               (TR.tbind (fun x -> floc#get_var_at_address x) xxdst_r) in
+           let rdefs = [(get_rdef_r xsrc_r); (get_rdef_r xdst_r)] in
            let _ =
-             match get_string_reference srcfloc xxsrc with
-             | Some _ -> register_function_prototype "strcpy"
-             | _ -> register_function_prototype "memcpy" in
+             TR.tfold_default
+               (fun xxsrc ->
+                 match get_string_reference srcfloc xxsrc with
+                 | Some _ -> register_function_prototype "strcpy"
+                 | _ -> register_function_prototype "memcpy")
+               ()
+               xxsrc_r in
            let (tagstring, args) =
-             mk_instrx_data
-               ~xprs:[xdst; xsrc; xxdst; xxsrc]
+             mk_instrx_data_r
+               ~xprs_r:[xdst_r; xsrc_r; xxdst_r; xxsrc_r]
                ~integers:[size]
                ~rdefs
                () in
@@ -2089,90 +2559,110 @@ object (self)
 
       | StoreMultipleIncrementAfter (wback, c, base, rl, _, _) ->
          let basereg = base#get_register in
-         let baselhs = base#to_variable floc in
-         let baserhs = base#to_expr floc in
+         let baselhs_r = base#to_variable floc in
+         let baserhs_r = base#to_expr floc in
          let regcount = rl#get_register_count in
-         let rhss = rl#to_multiple_expr floc in
-         let rrhss = List.map rewrite_expr rhss in
-         let (memlhss, _) =
+         let rhss_rl = rl#to_multiple_expr floc in
+         let rrhss_rl = List.map (TR.tmap rewrite_expr) rhss_rl in
+         let (memlhss_rl, _) =
            List.fold_left
              (fun (acc, off) _reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
-               let memlhs = memop#to_variable floc in
-               (acc @ [memlhs], off + 4)) ([], 0) rl#get_register_op_list in
-         let rdefs = List.map get_rdef (baserhs :: rrhss) in
-         let uses = List.map get_def_use (baselhs :: memlhss) in
-         let useshigh = List.map get_def_use_high (baselhs :: memlhss) in
-         let wbackresults =
+               let memlhs_r = memop#to_variable floc in
+               (acc @ [memlhs_r], off + 4)) ([], 0) rl#get_register_op_list in
+         let rdefs = List.map get_rdef_r (baserhs_r :: rrhss_rl) in
+         let uses = List.map get_def_use_r (baselhs_r :: memlhss_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: memlhss_rl) in
+         let wbackresults_r =
            if wback then
              let increm = int_constant_expr (4 * regcount) in
-             let baseresult = XOp (XPlus, [baserhs; increm]) in
-             let rbaseresult = rewrite_expr baseresult in
-             [baseresult; rbaseresult]
+             let baseresult_r =
+               TR.tmap (fun baserhs -> XOp (XPlus, [baserhs; increm])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             [baseresult_r; rbaseresult_r]
            else
-             [baserhs; baserhs] in
+             [baserhs_r; baserhs_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:(baselhs :: memlhss)
-             ~xprs:((baserhs :: wbackresults) @ rrhss)
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:(baselhs_r :: memlhss_rl)
+             ~xprs_r:((baserhs_r :: wbackresults_r) @ rrhss_rl)
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | StoreMultipleIncrementBefore (_, _, base, rl, _) ->
+      | StoreMultipleIncrementBefore (wback, c, base, rl, _) ->
          let basereg = base#get_register in
+         let baselhs_r = base#to_variable floc in
+         let baserhs_r = base#to_expr floc in
          let regcount = rl#get_register_count in
-         let rhss = rl#to_multiple_expr floc in
-         let rrhss = List.map rewrite_expr rhss in
-         let (memlhss, _) =
+         let rhss_rl = rl#to_multiple_expr floc in
+         let rrhss_rl = List.map (TR.tmap rewrite_expr) rhss_rl in
+         let (memlhss_rl, _) =
            List.fold_left
              (fun (acc, off) _reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
-               let memlhs = memop#to_variable floc in
-               (acc @ [memlhs], off + 4)) ([], 4) rl#get_register_op_list in
-         let xtag =
-           "a:"
-           ^ (string_repeat "v" regcount)
-           ^ (string_repeat "x" regcount)
-           ^ "x" in  (* base expression *)
-         ([xtag],
-          (List.map xd#index_variable memlhss)
-          @ (List.map xd#index_xpr rrhss)
-          @ [xd#index_xpr (base#to_expr floc)])
+               let memlhs_r = memop#to_variable floc in
+               (acc @ [memlhs_r], off + 4)) ([], 4) rl#get_register_op_list in
+         let rdefs = List.map get_rdef_r (baserhs_r :: rrhss_rl) in
+         let uses = List.map get_def_use_r (baselhs_r :: memlhss_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: memlhss_rl) in
+         let wbackresults_r =
+           if wback then
+             let increm = int_constant_expr (4 * regcount) in
+             let baseresult_r =
+               TR.tmap (fun baserhs -> XOp (XPlus, [baserhs; increm])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             [baseresult_r; rbaseresult_r]
+           else
+             [baserhs_r; baserhs_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:(baselhs_r :: memlhss_rl)
+             ~xprs_r:((baserhs_r :: wbackresults_r) @ rrhss_rl)
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | StoreRegister (c, rt, rn, rm, mem, _) ->
-         let vmem = mem#to_variable floc in
-         let xaddr = mem#to_address floc in
-         let xrt = rt#to_expr floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xxrt = rewrite_expr xrt in
-         let xxaddr = rewrite_expr xaddr in
-         let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
-         let uses = [get_def_use vmem] in
-         let useshigh = [get_def_use_high vmem] in
-         let (vars, uses, useshigh) =
+         let vmem_r = mem#to_variable floc in
+         let xaddr_r = mem#to_address floc in
+         let xrt_r = rt#to_expr floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xxrt_r = TR.tmap rewrite_expr xrt_r in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let rdefs =
+           [get_rdef_r xrn_r;
+            get_rdef_r xrm_r;
+            get_rdef_r xrt_r;
+            get_rdef_r xxrt_r] in
+         let uses = [get_def_use_r vmem_r] in
+         let useshigh = [get_def_use_high_r vmem_r] in
+         let (vars_r, uses, useshigh) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             ([vmem; vrn],
-               uses @ [get_def_use vrn],
-               useshigh @ [get_def_use_high vrn])
+             let vrn_r = rn#to_variable floc in
+             ([vmem_r; vrn_r],
+               uses @ [get_def_use_r vrn_r],
+               useshigh @ [get_def_use_high_r vrn_r])
            else
-             ([vmem], uses, useshigh) in
+             ([vmem_r], uses, useshigh) in
          let _ =
-           floc#memrecorder#record_store
-             ~addr:xxaddr
-             ~var:vmem
+           floc#memrecorder#record_store_r
+             ~addr_r:xxaddr_r
+             ~var_r:vmem_r
              ~size:4
              ~vtype:t_unknown
-             ~xpr:xxrt in
+             ~xpr_r:xxrt_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars
-             ~xprs:[xrn; xrm; xrt; xxrt; xaddr]
+           mk_instrx_data_r
+             ~vars_r
+             ~xprs_r:[xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r]
              ~rdefs
              ~uses
              ~useshigh
@@ -2181,132 +2671,158 @@ object (self)
          (tags, args)
 
       | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
-         let vmem = mem#to_variable floc in
-         let xaddr = mem#to_address floc in
-         let xrt = XOp (XXlsb, [rt#to_expr floc]) in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xxrt = rewrite_expr xrt in
-         let xxaddr = rewrite_expr xaddr in
-         let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
-         let uses = [get_def_use vmem] in
-         let useshigh = [get_def_use_high vmem] in
-         let (vars, uses, useshigh) =
+         let vmem_r = mem#to_variable floc in
+         let xaddr_r = mem#to_address floc in
+         let xrt_r = rt#to_expr floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xxrt_r = TR.tmap rewrite_expr xrt_r in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let rdefs =
+           [get_rdef_r xrn_r;
+            get_rdef_r xrm_r;
+            get_rdef_r xrt_r;
+            get_rdef_r xxrt_r] in
+         let uses = [get_def_use_r vmem_r] in
+         let useshigh = [get_def_use_high_r vmem_r] in
+         let (vars_r, uses, useshigh) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             ([vmem; vrn],
-               uses @ [get_def_use vrn],
-               useshigh @ [get_def_use_high vrn])
+             let vrn_r = rn#to_variable floc in
+             ([vmem_r; vrn_r],
+               uses @ [get_def_use_r vrn_r],
+               useshigh @ [get_def_use_high_r vrn_r])
            else
-             ([vmem], uses, useshigh) in
+             ([vmem_r], uses, useshigh) in
          let _ =
-           floc#memrecorder#record_store
-             ~addr:xxaddr
-             ~var:vmem
+           floc#memrecorder#record_store_r
+             ~addr_r:xxaddr_r
+             ~var_r:vmem_r
              ~size:1
              ~vtype:t_unknown
-             ~xpr:xxrt in
+             ~xpr_r:xxrt_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars
-             ~xprs:[xrn; xrm; xrt; xxrt; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r
+             ~xprs_r:[xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
-         let vmem = mem#to_variable floc in
-         let vmem2 = mem2#to_variable floc in
-         let xaddr1 = mem#to_address floc in
-         let xaddr2 = mem2#to_address floc in
-         let xrt = rt#to_expr floc in
-         let xxrt = rewrite_expr xrt in
-         let xrt2 = rt2#to_expr floc in
-         let xxrt2 = rewrite_expr xrt2 in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
+         let vmem_r = mem#to_variable floc in
+         let vmem2_r = mem2#to_variable floc in
+         let xaddr1_r = mem#to_address floc in
+         let xaddr2_r = mem2#to_address floc in
+         let xrt_r = rt#to_expr floc in
+         let xxrt_r = TR.tmap rewrite_expr xrt_r in
+         let xrt2_r = rt2#to_expr floc in
+         let xxrt2_r = TR.tmap rewrite_expr xrt2_r in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let uses = [get_def_use_r vmem_r; get_def_use_r vmem2_r] in
+         let useshigh = [get_def_use_high_r vmem_r; get_def_use_high_r vmem2_r] in
+         let (vars_r, uses, useshigh) =
+           if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
+             ([vmem_r; vmem2_r; vrn_r],
+              uses @ [get_def_use_r vrn_r],
+              useshigh @ [get_def_use_high_r vrn_r])
+           else
+             ([vmem_r; vmem2_r], uses, useshigh) in
+         let _ =
+           floc#memrecorder#record_store_r
+             ~addr_r:xaddr1_r
+             ~var_r:vmem_r
+             ~size:4
+             ~vtype:t_unknown
+             ~xpr_r:xxrt_r in
+         let _ =
+           floc#memrecorder#record_store_r
+             ~addr_r:xaddr2_r
+             ~var_r:vmem2_r
+             ~size:4
+             ~vtype:t_unknown
+             ~xpr_r:xxrt2_r in
+         let xprs_r =
+           [xrn_r; xrm_r; xrt_r; xxrt_r; xrt2_r; xxrt2_r; xaddr1_r; xaddr2_r] in
          let rdefs = [
-             get_rdef xrn;
-             get_rdef xrm;
-             get_rdef xrt;
-             get_rdef xxrt;
-             get_rdef xrt2;
-             get_rdef xxrt2] in
-         let uses = [get_def_use vmem; get_def_use vmem2] in
-         let useshigh = [get_def_use_high vmem; get_def_use_high vmem2] in
+             get_rdef_r xrn_r;
+             get_rdef_r xrm_r;
+             get_rdef_r xrt_r;
+             get_rdef_r xxrt_r;
+             get_rdef_r xrt2_r;
+             get_rdef_r xxrt2_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vmem; vmem2]
-             ~xprs:[xrn; xrm; xrt; xxrt; xrt2; xxrt2; xaddr1; xaddr2]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
-             () in
+           mk_instrx_data_r ~vars_r ~xprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
-         let vmem = mem#to_variable floc in
-         let xaddr = mem#to_address floc in
-         let vrd = rd#to_variable floc in
-         let xrt = rt#to_expr floc in
-         let xrn = rn#to_expr floc in
-         let xxrt = rewrite_expr xrt in
-         let xxaddr = rewrite_expr xaddr in
-         let rdefs = [get_rdef xrn; get_rdef xrt; get_rdef xxrt] in
-         let uses = [get_def_use vmem; get_def_use vrd] in
-         let useshigh = [get_def_use vmem; get_def_use vrd] in
+         let vmem_r = mem#to_variable floc in
+         let xaddr_r = mem#to_address floc in
+         let vrd_r = rd#to_variable floc in
+         let xrt_r = rt#to_expr floc in
+         let xrn_r = rn#to_expr floc in
+         let xxrt_r = TR.tmap rewrite_expr xrt_r in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let rdefs = [get_rdef_r xrn_r; get_rdef_r xrt_r; get_rdef_r xxrt_r] in
+         let uses = [get_def_use_r vmem_r; get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_r vmem_r; get_def_use_r vrd_r] in
          let _ =
-           floc#memrecorder#record_store
-             ~addr:xxaddr
-             ~var:vmem
+           floc#memrecorder#record_store_r
+             ~addr_r:xxaddr_r
+             ~var_r:vmem_r
              ~size:4
              ~vtype:t_unknown
-             ~xpr:xxrt in
+             ~xpr_r:xxrt_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vmem; vrd]
-             ~xprs:[xrn; xrt; xxrt; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vmem_r; vrd_r]
+             ~xprs_r:[xrn_r; xrt_r; xxrt_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | StoreRegisterHalfword (c, rt, rn, rm, mem, _) ->
-         let vmem = mem#to_variable floc in
-         let xaddr = mem#to_address floc in
-         let xrt = XOp (XXlsh, [rt#to_expr floc]) in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let xxrt = rewrite_expr xrt in
-         let xxaddr = rewrite_expr xaddr in
-         let rdefs = [get_rdef xrn; get_rdef xrm; get_rdef xrt; get_rdef xxrt] in
-         let uses = [get_def_use vmem] in
-         let useshigh = [get_def_use_high vmem] in
-         let (vars, uses, useshigh) =
+         let vmem_r = mem#to_variable floc in
+         let xaddr_r = mem#to_address floc in
+         let xrt_r = rt#to_expr floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xxrt_r = TR.tmap rewrite_expr xrt_r in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let rdefs =
+           [get_rdef_r xrn_r;
+            get_rdef_r xrm_r;
+            get_rdef_r xrt_r;
+            get_rdef_r xxrt_r] in
+         let uses = [get_def_use_r vmem_r] in
+         let useshigh = [get_def_use_high_r vmem_r] in
+         let (vars_r, uses, useshigh) =
            if mem#is_offset_address_writeback then
-             let vrn = rn#to_variable floc in
-             ([vmem; vrn],
-               uses @ [get_def_use vrn],
-               useshigh @ [get_def_use_high vrn])
+             let vrn_r = rn#to_variable floc in
+             ([vmem_r; vrn_r],
+               uses @ [get_def_use_r vrn_r],
+               useshigh @ [get_def_use_high_r vrn_r])
            else
-             ([vmem], uses, useshigh) in
+             ([vmem_r], uses, useshigh) in
          let _ =
-           floc#memrecorder#record_store
-             ~addr:xxaddr
-             ~var:vmem
+           floc#memrecorder#record_store_r
+             ~addr_r:xxaddr_r
+             ~var_r:vmem_r
              ~size:2
              ~vtype:t_unknown
-             ~xpr:xxrt in
+             ~xpr_r:xxrt_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars
-             ~xprs:[xrn; xrm; xrt; xxrt; xaddr]
+           mk_instrx_data_r
+             ~vars_r
+             ~xprs_r:[xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r]
              ~rdefs
              ~uses
              ~useshigh
@@ -2315,105 +2831,120 @@ object (self)
          (tags, args)
 
       | Subtract (_, c, rd, rn, rm, _, _) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XMinus, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
-         let uses = get_def_use vrd in
-         let usehigh = get_def_use_high vrd in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[uses]
-             ~useshigh:[usehigh]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | SubtractCarry (_, _, rd, rn, rm, _) ->
-         let lhs = rd#to_variable floc in
-         let rhs1 = rn#to_expr floc in
-         let rhs2 = rm#to_expr floc in
-         let result = XOp (XMinus, [rhs1; rhs2]) in
-         let rresult = rewrite_expr result in
-         (["a:vxxxx"],
-          [xd#index_variable lhs;
-           xd#index_xpr rhs1;
-           xd#index_xpr rhs2;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+      | SubtractCarry (_, c, rd, rn, rm, _) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | SupervisorCall (_, _) ->
+      | SupervisorCall (c, _) ->
          let r7 = arm_register_op AR7 RD in
-         let xr7 = r7#to_expr floc in
-         (["a:x"], [xd#index_xpr xr7])
+         let xr7_r = r7#to_expr floc in
+         let rdefs = [get_rdef_r xr7_r] in
+         let (tagstring, args) = mk_instrx_data_r ~xprs_r:[xr7_r] ~rdefs () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | Swap (c, rt, rt2, rn, mem) ->
-         let vrt = rt#to_variable floc in
-         let vmem = mem#to_variable floc in
-         let xaddr = mem#to_address floc in
-         let xrt2 = rt2#to_expr floc in
-         let xxrt2 = rewrite_expr xrt2 in
-         let xrn = rn#to_expr floc in
-         let xmem = mem#to_expr floc in
+         let vrt_r = rt#to_variable floc in
+         let vmem_r = mem#to_variable floc in
+         let xaddr_r = mem#to_address floc in
+         let xrt2_r = rt2#to_expr floc in
+         let xxrt2_r = TR.tmap rewrite_expr xrt2_r in
+         let xrn_r = rn#to_expr floc in
+         let xmem_r = mem#to_expr floc in
          let rdefs =
-           [get_rdef xrt2; get_rdef xrn; get_rdef_memvar vmem]
-           @ (get_all_rdefs xmem) in
-         let uses = [get_def_use vrt] in
-         let useshigh = [get_def_use_high vrt] in
-         let xrmem = rewrite_expr xmem in
-         let _ = ignore (get_string_reference floc xrmem) in
+           [get_rdef_r xrt2_r; get_rdef_r xrn_r; get_rdef_memvar_r vmem_r]
+           @ (get_all_rdefs_r xmem_r) in
+         let uses = [get_def_use_r vrt_r] in
+         let useshigh = [get_def_use_high_r vrt_r] in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let _ =
+           TR.tfold_default
+             (fun xrmem -> ignore (get_string_reference floc xrmem)) () xrmem_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrt2; xxrt2; xmem; xrmem; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrt_r; vmem_r]
+             ~xprs_r:[xrn_r; xrt2_r; xxrt2_r; xmem_r; xrmem_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | SwapByte (c, rt, rt2, rn, mem) ->
-         let vrt = rt#to_variable floc in
-         let vmem = mem#to_variable floc in
-         let xaddr = mem#to_address floc in
-         let xrt2 = rt2#to_expr floc in
-         let xxrt2 = rewrite_expr xrt2 in
-         let xrn = rn#to_expr floc in
-         let xmem = mem#to_expr floc in
+         let vrt_r = rt#to_variable floc in
+         let vmem_r = mem#to_variable floc in
+         let xaddr_r = mem#to_address floc in
+         let xrt2_r = rt2#to_expr floc in
+         let xxrt2_r = TR.tmap rewrite_expr xrt2_r in
+         let xrn_r = rn#to_expr floc in
+         let xmem_r = mem#to_expr floc in
          let rdefs =
-           [get_rdef xrt2; get_rdef xrn; get_rdef_memvar vmem]
-           @ (get_all_rdefs xmem) in
-         let uses = [get_def_use vrt] in
-         let useshigh = [get_def_use_high vrt] in
-         let xrmem = rewrite_expr xmem in
-         let _ = ignore (get_string_reference floc xrmem) in
+           [get_rdef_r xrt2_r; get_rdef_r xrn_r; get_rdef_memvar_r vmem_r]
+           @ (get_all_rdefs_r xmem_r) in
+         let uses = [get_def_use_r vrt_r] in
+         let useshigh = [get_def_use_high_r vrt_r] in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let _ =
+           TR.tfold_default
+             (fun xrmem -> ignore (get_string_reference floc xrmem)) () xrmem_r in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrt; vmem]
-             ~xprs:[xrn; xrt2; xxrt2; xmem; xrmem; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vrt_r; vmem_r]
+             ~xprs_r:[xrn_r; xrt2_r; xxrt2_r; xmem_r; xrmem_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | TableBranchByte (_, _, rm, _) ->
          let iaddr = instr#get_address in
-         let xrm = rm#to_expr floc in
-         let xxrm = rewrite_expr xrm in
-         let rdefs = (get_rdef xrm) :: (get_all_rdefs xxrm) in
+         let xrm_r = rm#to_expr floc in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rdefs = (get_rdef_r xrm_r) :: (get_all_rdefs_r xxrm_r) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~xprs:[xrm; xxrm]
-             ~rdefs
-             () in
+           mk_instrx_data_r ~xprs_r:[xrm_r; xxrm_r] ~rdefs () in
          let tags = tagstring :: ["agg-jt"] in
          let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
          let tags = add_subsumption_dependents agg tags in
@@ -2421,422 +2952,548 @@ object (self)
 
       | TableBranchHalfword (_, _, rm, _) ->
          let iaddr = instr#get_address in
-         let xrm = rm#to_expr floc in
-         let xxrm = rewrite_expr xrm in
-         let rdefs = (get_rdef xrm) :: (get_all_rdefs xxrm) in
+         let xrm_r = rm#to_expr floc in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rdefs = (get_rdef_r xrm_r) :: (get_all_rdefs_r xxrm_r) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~xprs:[xrm; xxrm]
-             ~rdefs
-             () in
+           mk_instrx_data_r ~xprs_r:[xrm_r; xxrm_r] ~rdefs () in
          let tags = tagstring :: ["agg-jt"] in
          let agg = (!arm_assembly_instructions)#get_aggregate iaddr in
          let tags = add_subsumption_dependents agg tags in
          (tags, args)
 
-      | Test (_, rn, rm, _) ->
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         (["a:xx"], [xd#index_xpr xrn; xd#index_xpr xrm])
-
-      | UnsignedDivide (_, rd, rn, rm) ->
-         let lhs = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         (["a:vxx"],
-          [xd#index_variable lhs; xd#index_xpr xrn; xd#index_xpr xrm])
-
-      | UnsignedAdd8 (_, rd, rn, rm) ->
-         let lhs = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         (["a:vxx"],
-          [xd#index_variable lhs; xd#index_xpr xrn; xd#index_xpr xrm])
-
-      | UnsignedBitFieldExtract (c, rd, rn) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xxrn = rewrite_expr xrn in
-         let rdefs = [get_rdef xrn] @ (get_all_rdefs xxrn) in
+      | Test (c, rn, rm, _) ->
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XBAnd, [xrn; xrm])) xrn_r xrm_r in
+         let rdefs = (get_rdef_r xrm_r) :: (get_all_rdefs_r result_r) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xxrn]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
-             () in
-         let (tags, args) =
-           match c with
-           | ACCAlways -> ([tagstring], args)
-           | c when is_cond_conditional c && floc#has_test_expr ->
-              let tcond = rewrite_expr floc#get_test_expr in
-              add_instr_condition [tagstring] args tcond
-           | _ -> (tagstring :: ["uc"], args) in
+           mk_instrx_data_r ~xprs_r:[xrm_r; xrn_r; result_r] ~rdefs () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | UnsignedExtendAddByte (_, rd, rn, rm) ->
-         let lhs = rd#to_variable floc in
-         let rhs1 = rn#to_expr floc in
-         let rhs2 = rm#to_expr floc in
-         (["a:vxx"],
-          [xd#index_variable lhs; xd#index_xpr rhs1; xd#index_xpr rhs2])
+      | TestEquivalence (c, rn, rm) ->
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XBXor, [xrn; xrm])) xrn_r xrm_r in
+         let rdefs = (get_rdef_r xrm_r) :: (get_all_rdefs_r result_r) in
+         let (tagstring, args) =
+           mk_instrx_data_r ~xprs_r:[xrm_r; xrn_r; result_r] ~rdefs () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
-      | UnsignedExtendAddHalfword (_, rd, rn, rm) ->
-         let lhs = rd#to_variable floc in
-         let rhs1 = rn#to_expr floc in
-         let rhs2 = rm#to_expr floc in
-         (["a:vxx"],
-          [xd#index_variable lhs; xd#index_xpr rhs1; xd#index_xpr rhs2])
+      | UnsignedAdd8 (c, rd, rn, rm) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let rdefs = [get_rdef_r xrm_r; get_rdef_r xrn_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | UnsignedBitFieldExtract (c, rd, rn) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xxrn_r = TR.tmap rewrite_expr xrn_r in
+         let rdefs = [get_rdef_r xrn_r] @ (get_all_rdefs_r xxrn_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xxrn_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | UnsignedDivide (c, rd, rn, rm) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let rdefs = [get_rdef_r xrn_r; get_rdef_r xrm_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | UnsignedExtendAddByte (c, rd, rn, rm) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let rdefs = [get_rdef_r xrn_r; get_rdef_r xrm_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | UnsignedExtendAddHalfword (c, rd, rn, rm) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let rdefs = [get_rdef_r xrn_r; get_rdef_r xrm_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | UnsignedExtendByte (c, rd, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrm = XOp (XXlsb, [rm#to_expr floc]) in
-         let result = xrm in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r = TR.tmap (fun xrm -> XOp (XXlsb, [xrm])) xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs = [get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | UnsignedExtendHalfword (c, rd, rm, _) ->
-         let vrd = rd#to_variable floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XXlsh, [xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vrd_r = rd#to_variable floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r = TR.tmap (fun xrm -> XOp (XXlsh, [xrm])) xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs = [get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | UnsignedMultiplyAccumulateLong (_, _, rdlo, rdhi, rn, rm) ->
-         let lhslo = rdlo#to_variable floc in
-         let lhshi = rdhi#to_variable floc in
-         let rhs1 = rn#to_expr floc in
-         let rhs2 = rm#to_expr floc in
-         let result = XOp (XMult, [rhs1; rhs2]) in
-         let rresult = rewrite_expr result in
-         (["a:vvxxxx"],
-          [xd#index_variable lhslo;
-           xd#index_variable lhshi;
-           xd#index_xpr rhs1;
-           xd#index_xpr rhs2;
-           xd#index_xpr result;
-           xd#index_xpr rresult])
+      | UnsignedMultiplyAccumulateLong (_, c, rdlo, rdhi, rn, rm) ->
+         let vlo_r = rdlo#to_variable floc in
+         let vhi_r = rdhi#to_variable floc in
+         let xlo_r = rdlo#to_expr floc in
+         let xhi_r = rdhi#to_expr floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let acc_r = TR.tmap (fun xhi -> XOp (XMult, [xhi; e32_c])) xhi_r in
+         let acc_r =
+           TR.tmap2 (fun acc xlo -> XOp (XPlus, [acc; xlo])) acc_r xlo_r in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
+         let result_r =
+           TR.tmap2 (fun result acc -> XOp (XPlus, [result; acc])) result_r acc_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_r xlo_r; get_rdef_r xhi_r]
+           @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vlo_r; get_def_use_r vhi_r] in
+         let useshigh = [get_def_use_high_r vlo_r; get_def_use_high_r vhi_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vlo_r; vhi_r]
+             ~xprs_r:[xrn_r; xrm_r; xlo_r; xhi_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | UnsignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
-         let vlo = rdlo#to_variable floc in
-         let vhi = rdhi#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let result = XOp (XMult, [xrn; xrm]) in
-         let rresult = rewrite_expr result in
-         let rdefs = [get_rdef xrn; get_rdef xrm] @ (get_all_rdefs rresult) in
+         let vlo_r = rdlo#to_variable floc in
+         let vhi_r = rdhi#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let result_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vlo_r; get_def_use_r vhi_r] in
+         let useshigh = [get_def_use_high_r vlo_r; get_def_use_high_r vhi_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vlo; vhi]
-             ~xprs:[xrn; xrm; result; rresult]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vlo; get_def_use vhi]
-             ~useshigh:[get_def_use_high vlo; get_def_use_high vhi]
+           mk_instrx_data_r
+             ~vars_r:[vlo_r; vhi_r]
+             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | UnsignedSaturate (c, rd, imm, rn) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let ximm = imm#to_expr floc in
-         let rdefs = [get_rdef xrn] in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let ximm_r = imm#to_expr floc in
+         let rdefs = [get_rdef_r xrn_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[ximm; xrn]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[ximm_r; xrn_r]
              ~rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | UnsignedSaturatingSubtract8 (c, rd, rn, rm) ->
-         let vrd = rd#to_variable floc in
-         let xrn = rn#to_expr floc in
-         let xrm = rm#to_expr floc in
-         let rdefs = [get_rdef xrn; get_rdef xrm] in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let rdefs = [get_rdef_r xrn_r; get_rdef_r xrm_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vrd]
-             ~xprs:[xrn; xrm]
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r]
              ~rdefs
-             ~uses:[get_def_use vrd]
-             ~useshigh:[get_def_use_high vrd]
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorAbsolute (c, _, dst, src) ->
-         let vdst = dst#to_variable floc in
-         let xsrc = src#to_expr floc in
-         let rxsrc = rewrite_expr xsrc in
-         let rdefs = [get_rdef xsrc] in
+         let vdst_r = dst#to_variable floc in
+         let xsrc_r = src#to_expr floc in
+         let rxsrc_r = TR.tmap rewrite_expr xsrc_r in
+         let rdefs = [get_rdef_r xsrc_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst]
-             ~xprs:[xsrc; rxsrc]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst]
-             ~useshigh:[get_def_use_high vdst]
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc_r; rxsrc_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VCompare (_, c, _, fdst, src1, src2) ->
-         let v_fpscr = fdst#to_variable floc in
-         let xsrc1 = src1#to_expr floc in
-         let xsrc2 = src2#to_expr floc in
-         let rxsrc1 = rewrite_expr xsrc1 in
-         let rxsrc2 = rewrite_expr xsrc2 in
-         let rdefs = [get_rdef xsrc1; get_rdef xsrc2] in
+         let v_fpscr_r = fdst#to_variable floc in
+         let xsrc1_r = src1#to_expr floc in
+         let xsrc2_r = src2#to_expr floc in
+         let rxsrc1_r = TR.tmap rewrite_expr xsrc1_r in
+         let rxsrc2_r = TR.tmap rewrite_expr xsrc2_r in
+         let rdefs = [get_rdef_r xsrc1_r; get_rdef_r xsrc2_r] in
+         let uses = [get_def_use_r v_fpscr_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~xprs:[xsrc1; xsrc2; rxsrc1; rxsrc2]
-             ~rdefs:rdefs
-             ~uses:[get_def_use v_fpscr]
+           mk_instrx_data_r
+             ~vars_r:[v_fpscr_r]
+             ~xprs_r:[xsrc1_r; xsrc2_r; rxsrc1_r; rxsrc2_r]
+             ~rdefs
+             ~uses
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorConvert (_, _, c, _, _, dst, src, _) ->
-         let vdst = dst#to_variable floc in
-         let xsrc = src#to_expr floc in
-         let rxsrc = rewrite_expr xsrc in
-         let rdefs = [get_rdef xsrc] in
+         let vdst_r = dst#to_variable floc in
+         let xsrc_r = src#to_expr floc in
+         let rxsrc_r = TR.tmap rewrite_expr xsrc_r in
+         let rdefs = [get_rdef_r xsrc_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst]
-             ~xprs:[xsrc; rxsrc]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst]
-             ~useshigh:[get_def_use_high vdst]
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc_r; rxsrc_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VDivide (c, _, dst, src1, src2) ->
-         let vdst = dst#to_variable floc in
-         let xsrc1 = src1#to_expr floc in
-         let xsrc2 = src2#to_expr floc in
-         let rxsrc1 = rewrite_expr xsrc1 in
-         let rxsrc2 = rewrite_expr xsrc2 in
-         let rdefs = [get_rdef xsrc1; get_rdef xsrc2] in
+         let vdst_r = dst#to_variable floc in
+         let xsrc1_r = src1#to_expr floc in
+         let xsrc2_r = src2#to_expr floc in
+         let rxsrc1_r = TR.tmap rewrite_expr xsrc1_r in
+         let rxsrc2_r = TR.tmap rewrite_expr xsrc2_r in
+         let rdefs = [get_rdef_r xsrc1_r; get_rdef_r xsrc2_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst]
-             ~xprs:[xsrc1; xsrc2; rxsrc1; rxsrc2]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst]
-             ~useshigh:[get_def_use_high vdst]
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc1_r; xsrc2_r; rxsrc1_r; rxsrc2_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | VectorDuplicate (_, _, _, _, _, src) ->
-         let src = src#to_expr floc in
-         let rsrc = rewrite_expr src in
-         (["a:xx"], [xd#index_xpr src; xd#index_xpr rsrc])
+      | VectorDuplicate (c, _, _, _, dst, src) ->
+         let vdst_r = dst#to_variable floc in
+         let src_r = src#to_expr floc in
+         let rsrc_r = TR.tmap rewrite_expr src_r in
+         let rdefs = (get_rdef_r rsrc_r) :: (get_all_rdefs_r rsrc_r) in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[src_r; rsrc_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | VLoadRegister (c, vd, base, mem) ->
-         let vvd = vd#to_variable floc in
-         let xbase = base#to_expr floc in
-         let xaddr = mem#to_address floc in
-         let vmem = mem#to_variable floc in
-         let xmem = mem#to_expr floc in
-         let rxbase = rewrite_expr xbase in
-         let rxmem = rewrite_expr xmem in
-         let rdefs = [get_rdef_memvar vmem; get_rdef xmem] @ (get_all_rdefs rxmem) in
-         let uses = [get_def_use_high vvd] in
-         let useshigh = [get_def_use_high vvd] in
+         let vvd_r = vd#to_variable floc in
+         let xbase_r = base#to_expr floc in
+         let xaddr_r = mem#to_address floc in
+         let vmem_r = mem#to_variable floc in
+         let xmem_r = mem#to_expr floc in
+         let rxbase_r = TR.tmap rewrite_expr xbase_r in
+         let rxmem_r = TR.tmap rewrite_expr xmem_r in
+         let rdefs =
+           [get_rdef_memvar_r vmem_r; get_rdef_r xmem_r]
+           @ (get_all_rdefs_r rxmem_r) in
+         let uses = [get_def_use_high_r vvd_r] in
+         let useshigh = [get_def_use_high_r vvd_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vvd; vmem]
-             ~xprs:[xmem; rxmem; xbase; rxbase; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vvd_r; vmem_r]
+             ~xprs_r:[xmem_r; rxmem_r; xbase_r; rxbase_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorMoveDS (c, _, dst, src) ->
-         let vdst = dst#to_variable floc in
-         let xsrc = src#to_expr floc in
-         let rxsrc = rewrite_expr xsrc in
-         let rdefs = [get_rdef xsrc] in
+         let vdst_r = dst#to_variable floc in
+         let xsrc_r = src#to_expr floc in
+         let rxsrc_r = TR.tmap rewrite_expr xsrc_r in
+         let rdefs = [get_rdef_r xsrc_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst]
-             ~xprs:[xsrc; rxsrc]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst]
-             ~useshigh:[get_def_use_high vdst]
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc_r; rxsrc_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorMoveDDSS (c, _, dst1, dst2, ddst, src1, src2, ssrc) ->
-         let vdst1 = dst1#to_variable floc in
-         let vdst2 = dst2#to_variable floc in
-         let vddst = ddst#to_variable floc in
-         let xsrc1 = src1#to_expr floc in
-         let xsrc2 = src2#to_expr floc in
-         let xssrc = ssrc#to_expr floc in
-         let rxsrc1 = rewrite_expr xsrc1 in
-         let rxsrc2 = rewrite_expr xsrc2 in
-         let rxssrc = rewrite_expr xssrc in
-         let rdefs = [get_rdef xsrc1; get_rdef xsrc2; get_rdef xssrc] in
+         let vdst1_r = dst1#to_variable floc in
+         let vdst2_r = dst2#to_variable floc in
+         let vddst_r = ddst#to_variable floc in
+         let xsrc1_r = src1#to_expr floc in
+         let xsrc2_r = src2#to_expr floc in
+         let xssrc_r = ssrc#to_expr floc in
+         let rxsrc1_r = TR.tmap rewrite_expr xsrc1_r in
+         let rxsrc2_r = TR.tmap rewrite_expr xsrc2_r in
+         let rxssrc_r = TR.tmap rewrite_expr xssrc_r in
+         let rdefs =
+           [get_rdef_r xsrc1_r; get_rdef_r xsrc2_r; get_rdef_r xssrc_r] in
+         let uses =
+           [get_def_use_r vdst1_r; get_def_use_r vdst2_r; get_def_use_r vddst_r] in
+         let useshigh = [
+             get_def_use_high_r vdst1_r;
+             get_def_use_high_r vdst2_r;
+             get_def_use_high_r vddst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst1; vdst2; vddst]
-             ~xprs:[xsrc1; xsrc2; xssrc; rxsrc1; rxsrc2; rxssrc]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst1; get_def_use vdst2; get_def_use vddst]
-             ~useshigh:[
-               get_def_use_high vdst1;
-               get_def_use_high vdst2;
-               get_def_use_high vddst]
+           mk_instrx_data_r
+             ~vars_r:[vdst1_r; vdst2_r; vddst_r]
+             ~xprs_r:[xsrc1_r; xsrc2_r; xssrc_r; rxsrc1_r; rxsrc2_r; rxssrc_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorMoveDSS (c, _, dst, src1, src2, ssrc) ->
-         let vdst = dst#to_variable floc in
-         let xsrc1 = src1#to_expr floc in
-         let xsrc2 = src2#to_expr floc in
-         let xssrc = ssrc#to_expr floc in
-         let rxsrc1 = rewrite_expr xsrc1 in
-         let rxsrc2 = rewrite_expr xsrc2 in
-         let rxssrc = rewrite_expr xssrc in
-         let rdefs = [get_rdef xsrc1; get_rdef xsrc2; get_rdef xssrc] in
+         let vdst_r = dst#to_variable floc in
+         let xsrc1_r = src1#to_expr floc in
+         let xsrc2_r = src2#to_expr floc in
+         let xssrc_r = ssrc#to_expr floc in
+         let rxsrc1_r = TR.tmap rewrite_expr xsrc1_r in
+         let rxsrc2_r = TR.tmap rewrite_expr xsrc2_r in
+         let rxssrc_r = TR.tmap rewrite_expr xssrc_r in
+         let rdefs =
+           [get_rdef_r xsrc1_r; get_rdef_r xsrc2_r; get_rdef_r xssrc_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst]
-             ~xprs:[xsrc1; xsrc2; xssrc; rxsrc1; rxsrc2; rxssrc]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst]
-             ~useshigh:[get_def_use_high vdst]
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc1_r; xsrc2_r; xssrc_r; rxsrc1_r; rxsrc2_r; rxssrc_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorMoveDDS (c, _, dst1, dst2, ddst, src) ->
-         let vdst1 = dst1#to_variable floc in
-         let vdst2 = dst2#to_variable floc in
-         let vddst = ddst#to_variable floc in
-         let xsrc = src#to_expr floc in
-         let rxsrc = rewrite_expr xsrc in
-         let rdefs = [get_rdef xsrc] in
+         let vdst1_r = dst1#to_variable floc in
+         let vdst2_r = dst2#to_variable floc in
+         let vddst_r = ddst#to_variable floc in
+         let xsrc_r = src#to_expr floc in
+         let rxsrc_r = TR.tmap rewrite_expr xsrc_r in
+         let rdefs = [get_rdef_r xsrc_r] in
+         let uses =
+           [get_def_use_r vdst1_r; get_def_use_r vdst2_r; get_def_use_r vddst_r] in
+         let useshigh = [
+               get_def_use_high_r vdst1_r;
+               get_def_use_high_r vdst2_r;
+               get_def_use_high_r vddst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst1; vdst2; vddst]
-             ~xprs:[xsrc; rxsrc]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst1; get_def_use vdst2; get_def_use vddst]
-             ~useshigh:[
-               get_def_use_high vdst1;
-               get_def_use_high vdst2;
-               get_def_use_high vddst]
+           mk_instrx_data_r
+             ~vars_r:[vdst1_r; vdst2_r; vddst_r]
+             ~xprs_r:[xsrc_r; rxsrc_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VMoveRegisterStatus (c, dst, src) ->
-         let vdst = dst#to_variable floc in
-         let xsrc = src#to_expr floc in
-         let rdefs = [get_rdef xsrc] in
+         let vdst_r = dst#to_variable floc in
+         let xsrc_r = src#to_expr floc in
+         let rdefs = [get_rdef_r xsrc_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst]
-             ~xprs:[xsrc]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst]
-             ~useshigh:[get_def_use_high vdst]
-             () in
+           mk_instrx_data_r
+             ~vars_r:[vdst_r] ~xprs_r:[xsrc_r] ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
-      | VMoveToSystemRegister (_, _, src) ->
-         let xsrc = src#to_expr floc in
-         (["a:x"], [xd#index_xpr xsrc])
+      | VMoveToSystemRegister (c, _, src) ->
+         let xsrc_r = src#to_expr floc in
+         let rdefs = [get_rdef_r xsrc_r] in
+         let (tagstring, args) = mk_instrx_data_r ~xprs_r:[xsrc_r] ~rdefs () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
 
       | VectorMultiplySubtract (c, _, dst, src1, src2) ->
-         let vdst = dst#to_variable floc in
-         let xdst = dst#to_expr floc in
-         let rxdst = rewrite_expr xdst in
-         let xsrc1 = src1#to_expr floc in
-         let rxsrc1 = rewrite_expr xsrc1 in
-         let xsrc2 = src2#to_expr floc in
-         let rxsrc2 = rewrite_expr xsrc2 in
-         let rdefs = [get_rdef xsrc1; get_rdef xsrc2; get_rdef xdst] in
+         let vdst_r = dst#to_variable floc in
+         let xdst_r = dst#to_expr floc in
+         let rxdst_r = TR.tmap rewrite_expr xdst_r in
+         let xsrc1_r = src1#to_expr floc in
+         let rxsrc1_r = TR.tmap rewrite_expr xsrc1_r in
+         let xsrc2_r = src2#to_expr floc in
+         let rxsrc2_r = TR.tmap rewrite_expr xsrc2_r in
+         let rdefs = [get_rdef_r xsrc1_r; get_rdef_r xsrc2_r; get_rdef_r xdst_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst]
-             ~xprs:[xsrc1; xsrc2; xdst; rxsrc1; rxsrc2; rxdst]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst]
-             ~useshigh:[get_def_use_high vdst]
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc1_r; xsrc2_r; xdst_r; rxsrc1_r; rxsrc2_r; rxdst_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorPop (c, sp, rl, _) ->
-         let splhs = sp#to_variable floc in
-         let sprhs = sp#to_expr floc in
+         let splhs_r = sp#to_variable floc in
+         let sprhs_r = sp#to_expr floc in
          let regcount = rl#get_register_count in
          let regsize =
            if rl#is_double_extension_register_list then 8 else 4 in
-         let spresult =
-           XOp (XPlus, [sprhs; int_constant_expr (regcount * regsize)]) in
-         let rspresult = rewrite_expr spresult in
-         let lhsvars =
+         let spresult_r =
+           TR.tmap
+             (fun sprhs ->
+               XOp (XPlus, [sprhs; int_constant_expr (regcount * regsize)]))
+             sprhs_r in
+         let rspresult_r = TR.tmap rewrite_expr spresult_r in
+         let lhsvars_rl =
            List.map (fun (op: arm_operand_int) ->
                op#to_variable floc) rl#get_extension_register_op_list in
          let rhsops =
            List.map (fun offset ->
                arm_sp_deref ~with_offset:offset RD)
              (List.init rl#get_register_count (fun i -> regsize * i)) in
-         let rhsexprs =
+         let rhsexprs_rl =
            List.map (fun (x: arm_operand_int) -> x#to_expr floc) rhsops in
-         let xaddrs =
+         let xaddrs_rl =
            List.init
              regcount
              (fun i ->
-               let xaddr =
-                 XOp (XPlus, [sprhs; int_constant_expr (i * regsize)]) in
-               rewrite_expr xaddr) in
-         let rrhsexprs = List.map rewrite_expr rhsexprs in
-         let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
-         let uses = List.map get_def_use (splhs :: lhsvars) in
-         let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
-         let xprs = (sprhs :: spresult :: rspresult :: rrhsexprs) @ xaddrs in
+               let xaddr_r =
+                 TR.tmap
+                   (fun sprhs ->
+                     XOp (XPlus, [sprhs; int_constant_expr (i * regsize)]))
+                   sprhs_r in
+               TR.tmap rewrite_expr xaddr_r) in
+         let rrhsexprs_rl = List.map (TR.tmap rewrite_expr) rhsexprs_rl in
+         let rdefs = List.map get_rdef_r (sprhs_r :: rhsexprs_rl) in
+         let uses = List.map get_def_use_r (splhs_r :: lhsvars_rl) in
+         let useshigh = List.map get_def_use_high_r (splhs_r :: lhsvars_rl) in
+         let xprs_r =
+           (sprhs_r :: spresult_r :: rspresult_r :: rrhsexprs_rl) @ xaddrs_rl in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:(splhs :: lhsvars)
-             ~xprs
+           mk_instrx_data_r
+             ~vars_r:(splhs_r :: lhsvars_rl)
+             ~xprs_r
              ~rdefs
              ~uses
              ~useshigh
@@ -2845,38 +3502,45 @@ object (self)
          (tags, args)
 
       | VectorPush (c, sp, rl, _) ->
-         let splhs = sp#to_variable floc in
-         let sprhs = sp#to_expr floc in
-         let rhsexprs =
+         let splhs_r = sp#to_variable floc in
+         let sprhs_r = sp#to_expr floc in
+         let rhsexprs_rl =
            List.map (fun (op: arm_operand_int) ->
                op#to_expr floc) rl#get_extension_register_op_list in
-         let rrhsexprs = List.map rewrite_expr rhsexprs in
-         let regcount = List.length rhsexprs in
-         let regsize =
-           if rl#is_double_extension_register_list then 8 else 4 in
+         let rrhsexprs_rl = List.map (TR.tmap rewrite_expr) rhsexprs_rl in
+         let regcount = List.length rhsexprs_rl in
+         let regsize = if rl#is_double_extension_register_list then 8 else 4 in
          let lhsops =
            List.map (fun offset ->
                arm_sp_deref ~with_offset:offset WR)
              (List.init
                 regcount (fun i -> ((- regsize * regcount) + (regsize * i)))) in
-         let lhsvars = List.map (fun v -> v#to_variable floc) lhsops in
-         let rdefs = List.map get_rdef (sprhs :: rhsexprs) in
-         let uses = List.map get_def_use (splhs :: lhsvars) in
-         let useshigh = List.map get_def_use_high (splhs :: lhsvars) in
-         let spresult =
-           XOp (XMinus, [sprhs; int_constant_expr (regcount * regsize)]) in
-         let rspresult = rewrite_expr spresult in
-         let xaddrs =
+         let lhsvars_rl = List.map (fun v -> v#to_variable floc) lhsops in
+         let rdefs = List.map get_rdef_r (sprhs_r :: rhsexprs_rl) in
+         let uses = List.map get_def_use_r (splhs_r :: lhsvars_rl) in
+         let useshigh = List.map get_def_use_high_r (splhs_r :: lhsvars_rl) in
+         let spresult_r =
+           TR.tmap
+             (fun sprhs ->
+               XOp (XMinus, [sprhs; int_constant_expr (regcount * regsize)]))
+             sprhs_r in
+         let rspresult_r = TR.tmap rewrite_expr spresult_r in
+         let xaddrs_rl =
            List.init
              regcount
              (fun i ->
-               let xaddr =
-                 XOp (XPlus, [rspresult; int_constant_expr (i * regsize)]) in
-               rewrite_expr xaddr) in
+               let xaddr_r =
+                 TR.tmap
+                   (fun rspresult ->
+                     XOp (XPlus, [rspresult; int_constant_expr (i * regsize)]))
+                   rspresult_r in
+               TR.tmap rewrite_expr xaddr_r) in
+         let xprs_r =
+           ((sprhs_r :: spresult_r :: rspresult_r :: rrhsexprs_rl) @ xaddrs_rl) in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:(splhs :: lhsvars)
-             ~xprs:((sprhs :: spresult :: rspresult :: rrhsexprs) @ xaddrs)
+           mk_instrx_data_r
+             ~vars_r:(splhs_r :: lhsvars_rl)
+             ~xprs_r
              ~rdefs
              ~uses
              ~useshigh
@@ -2885,42 +3549,44 @@ object (self)
          (tags, args)
 
       | VStoreRegister (c, src, base, mem) ->
-         let vmem = mem#to_variable floc in
-         let xaddr = mem#to_address floc in
-         let xsrc = src#to_expr floc in
-         let xbase = base#to_expr floc in
-         let rxsrc = rewrite_expr xsrc in
-         let rxbase = rewrite_expr xbase in
-         let rdefs = [get_rdef xsrc; get_rdef xbase] in
-         let uses = [get_def_use vmem] in
-         let useshigh = [get_def_use_high vmem] in
+         let vmem_r = mem#to_variable floc in
+         let xaddr_r = mem#to_address floc in
+         let xsrc_r = src#to_expr floc in
+         let xbase_r = base#to_expr floc in
+         let rxsrc_r = TR.tmap rewrite_expr xsrc_r in
+         let rxbase_r = TR.tmap rewrite_expr xbase_r in
+         let rdefs = [get_rdef_r xsrc_r; get_rdef_r xbase_r] in
+         let uses = [get_def_use_r vmem_r] in
+         let useshigh = [get_def_use_high_r vmem_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vmem]
-             ~xprs:[xsrc; rxsrc; xbase; rxbase; xaddr]
-             ~rdefs:rdefs
-             ~uses:uses
-             ~useshigh:useshigh
+           mk_instrx_data_r
+             ~vars_r:[vmem_r]
+             ~xprs_r:[xsrc_r; rxsrc_r; xbase_r; rxbase_r; xaddr_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
       | VectorSubtract (c, _, dst, src1, src2) ->
-         let vdst = dst#to_variable floc in
-         let xdst = dst#to_expr floc in
-         let rxdst = rewrite_expr xdst in
-         let xsrc1 = src1#to_expr floc in
-         let rxsrc1 = rewrite_expr xsrc1 in
-         let xsrc2 = src2#to_expr floc in
-         let rxsrc2 = rewrite_expr xsrc2 in
-         let rdefs = [get_rdef xsrc1; get_rdef xsrc2] in
+         let vdst_r = dst#to_variable floc in
+         let xdst_r = dst#to_expr floc in
+         let rxdst_r = TR.tmap rewrite_expr xdst_r in
+         let xsrc1_r = src1#to_expr floc in
+         let rxsrc1_r = TR.tmap rewrite_expr xsrc1_r in
+         let xsrc2_r = src2#to_expr floc in
+         let rxsrc2_r = TR.tmap rewrite_expr xsrc2_r in
+         let rdefs = [get_rdef_r xsrc1_r; get_rdef_r xsrc2_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
          let (tagstring, args) =
-           mk_instrx_data
-             ~vars:[vdst]
-             ~xprs:[xsrc1; xsrc2; xdst; rxsrc1; rxsrc2; rxdst]
-             ~rdefs:rdefs
-             ~uses:[get_def_use vdst]
-             ~useshigh:[get_def_use_high vdst]
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc1_r; xsrc2_r; xdst_r; rxsrc1_r; rxsrc2_r; rxdst_r]
+             ~rdefs
+             ~uses
+             ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
