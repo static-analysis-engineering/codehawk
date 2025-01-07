@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -209,7 +209,16 @@ object
 
 
   method read =
-    let input = system_info#get_file_input (TR.tget_ok (int_to_doubleword 16)) in
+    let input_r = system_info#get_file_input (TR.tget_ok (int_to_doubleword 16)) in
+    match input_r with
+    | Error e ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                 STR "Unable to read elf file header from binary: ";
+                 STR (String.concat "; " e)]))
+    | Ok input ->
     begin
       (* 16, 2  --------------------------------------------------------------
 	 Specifies the object file type.
@@ -429,8 +438,16 @@ object(self)
   method get_program_entry_point = elf_file_header#get_program_entry_point
 
   method read =
-    let fileString = system_info#get_file_string wordzero in
-    let input = IO.input_string fileString in
+    let fileString_r = system_info#get_file_string wordzero in
+    let input =
+      match fileString_r with
+      | Ok s -> IO.input_string s
+      | Error e ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                       STR "Unable to read elf header: ";
+                       STR (String.concat "; " e)])) in
     begin
       e_ident <- Bytes.to_string (IO.really_nread input 16);
       self#check_elf;
@@ -1163,7 +1180,7 @@ object(self)
       end
     done
 
-  method private add_new_user_defined_section_headers =
+  method add_new_user_defined_section_headers =
     (*  let shnum = elf_file_header#get_section_header_table_entry_num in *)
     let shnum = H.length section_header_table in
     try
@@ -1202,17 +1219,30 @@ object(self)
     else
       if H.mem section_header_table index then
 	let sh = H.find section_header_table index in
-	let xString =
+	let xString_r =
           if sh#get_size#equal wordzero then
-            ""
+            Ok ""
           else
 	    system_info#get_file_string ~hexSize:sh#get_size sh#get_offset in
-	let section = make_elf_section sh xString in
+        let section =
+          match xString_r with
+          | Ok s -> make_elf_section sh s
+          | Error e ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                       STR "Unable to read section with index ";
+                       INT index;
+                       STR ": ";
+                       STR (String.concat "; " e)])) in
 	H.add section_table index section
       else
 	raise
           (BCH_failure
-             (LBLOCK [STR "No section header found for "; INT index]))
+             (LBLOCK [
+                  STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                  STR "No section header found for "; INT index]))
 
   method private add_segment (index:int) =
     if H.mem segment_table index then
@@ -1220,17 +1250,30 @@ object(self)
     else
       if H.mem program_header_table index then
         let ph = H.find program_header_table index  in
-        let xString =
+        let xString_r =
           if ph#get_file_size#equal wordzero then
-            ""
+            Ok ""
           else
             system_info#get_file_string ~hexSize:ph#get_file_size ph#get_offset in
-        let segment = make_elf_segment ph xString in
+        let segment =
+          match xString_r with
+          | Ok s -> make_elf_segment ph s
+          | Error e ->
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                       STR "Unable to read segment with index ";
+                       INT index;
+                       STR ": ";
+                       STR (String.concat "; " e)])) in
         H.add segment_table index segment
       else
         raise
           (BCH_failure
-             (LBLOCK [STR "No segment header found for index "; INT index]))
+             (LBLOCK [
+                  STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                  STR "No segment header found for index "; INT index]))
 
   method private write_xml_program_headers (node:xml_element_int) =
     let headers = ref [] in

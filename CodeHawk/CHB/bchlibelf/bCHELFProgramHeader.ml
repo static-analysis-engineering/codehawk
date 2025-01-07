@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2024 Aarno Labs LLC
+   Copyright (c) 2022-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,11 +34,10 @@ open CHPretty
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBasicTypes
+open BCHDoubleword
 open BCHLibTypes
 open BCHSystemInfo
-
-(* bchlibx86 *)
-open BCHDoubleword
 
 (* bchlibelf *)
 open BCHELFTypes
@@ -60,9 +59,21 @@ object (self)
   val mutable p_align = wordzero
 
   method read (offset:doubleword_int) (size:int) =
-    let input =
+    let input_r =
       system_info#get_file_input
         ~hexSize:(TR.tget_ok (int_to_doubleword size)) offset in
+    match input_r with
+    | Error e ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                 STR "Unable to read elf program header at offset ";
+                 offset#toPretty;
+                 STR ": ";
+                 STR (String.concat "; " e)]))
+    | Ok input ->
+
     begin
       (* 0, 4, p_type --------------------------------------------------------
 	 Tells what kind of segment this array element describes or how to
@@ -80,21 +91,21 @@ object (self)
 	                 table appear in ascending order, sorted on the p_vaddr
                          member
 	 PT_DYNAMIC   2  array element specifies dynamic linking information
-	 PT_INTERP    3  array element specifies the location and size of a 
+	 PT_INTERP    3  array element specifies the location and size of a
                          null-terminated path name to invoke as an interpreter.
 	                 This segment type is meaningful only for executable
-                         files (though it may occur for shared objects); it 
+                         files (though it may occur for shared objects); it
                          may not occur more than once in a file. If it is
                          present, it must precede any loadable segment entry.
-	 PT_NOTE      4  array element specifies the location and size of 
+	 PT_NOTE      4  array element specifies the location and size of
                          auxiliary information
 	 PT_SHLIB     5  this segment type is reserved but has unspecified
                          semantics. Programs that contain an array element of
 	                 this type do not conform to the ABI
 	 PT_PHDR      6  array element, if present, specifies the location and
 	                 size of the program header table itself, both in the
-                         file and in the memory image of the program. This 
-                         segment may not occur more than once in a file. 
+                         file and in the memory image of the program. This
+                         segment may not occur more than once in a file.
                          Moreover, it may occur only if the program header table
                          is part of the memory image of the program. If it is
                          present, it must precede any loadable segment entry.
@@ -104,12 +115,12 @@ object (self)
 	 PT_LOOS - PT_HIOS values in this inclusive range are reserved for
                            operating system-specific semantics.
 	 PT_LOPROC - PT_HIPROC values in this inclusive range are reserved for
-                               processor-specific semantics. 
+                               processor-specific semantics.
 	 --------------------------------------------------------------------- *)
       p_type <- input#read_doubleword ;
 
       (* 4, 4, p_offset ------------------------------------------------------
-	 Gives the offset from the beginning of the file at which the first 
+	 Gives the offset from the beginning of the file at which the first
 	 byte of the segment resides
 	 --------------------------------------------------------------------- *)
       p_offset <- input#read_doubleword ;
@@ -125,7 +136,7 @@ object (self)
 	 reserved for the segment's physical address.
 	 Because System V ignores physical address for application programs,
 	 this member has unspecified contents for executable files and shared
-	 objects 
+	 objects
 	 --------------------------------------------------------------------- *)
       p_paddr <- input#read_doubleword ;
 
@@ -150,7 +161,7 @@ object (self)
 
       (* 28, 4, p_align ------------------------------------------------------
 	 Loadable process segments must have congruent values for p_vaddr and
-	 p_offset, modulo the page size. This member gives the value to which 
+	 p_offset, modulo the page size. This member gives the value to which
 	 the segments are aligned in memory and in the file. Values 0 and 1 mean
 	 no alignment is required. Otherwise, p_align should be a positive,
 	 integral power of 2, and p_vaddr should equal p_offset, modulo p_align
@@ -161,7 +172,7 @@ object (self)
   method get_type = p_type
 
   method set_type (t: doubleword_int) = p_type <- t
-  
+
   method get_offset = p_offset
 
   method get_vaddr = p_vaddr
@@ -196,7 +207,7 @@ object (self)
       setx "p_filesz" p_filesz;
       setx "p_memsz" p_memsz;
       setx "p_flags" p_flags;
-      setx "p_align" p_align 
+      setx "p_align" p_align
     end
 
   method read_xml (node:xml_element_int) =

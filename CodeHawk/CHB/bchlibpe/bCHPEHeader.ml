@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -914,8 +914,16 @@ object (self)
   method get_section_headers =
     H.fold (fun _ v a -> v::a) section_headers []
 
-  method read  =
-    let exeString = system_info#get_file_string wordzero in
+  method read =
+    let exeString =
+      match system_info#get_file_string wordzero with
+      | Ok s -> s
+      | Error e ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                       STR "Error in reading binary file: ";
+                       STR (String.concat "; " e)])) in
     let ch = make_pushback_stream exeString in
     begin
       ch#skip_bytes 0x3c;   (* file offset to the PE signature is at address 0x3c *)
@@ -969,23 +977,25 @@ object (self)
 
   method private set_SE_handlers = ()
 
-  method private load_section sectionHeader =
-    try
-      let fileOffset = sectionHeader#get_pointer_to_raw_data in
-      let rawSize = sectionHeader#get_size_of_raw_data in
-      let exeString = system_info#get_file_string ~hexSize:rawSize fileOffset in
-      pe_sections#add_section sectionHeader exeString
-    with
-    | BCH_failure p ->
+  method private load_section (sectionHeader: pe_section_header_int) =
+    let fileOffset = sectionHeader#get_pointer_to_raw_data in
+    let rawSize = sectionHeader#get_size_of_raw_data in
+    let exeString_r = system_info#get_file_string ~hexSize:rawSize fileOffset in
+    match exeString_r with
+    | Ok s -> pe_sections#add_section sectionHeader s
+    | Error e ->
        raise
          (BCH_failure
             (LBLOCK [
-                 STR "load-section: rawsize: ";
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                 STR "Unable to load PE section ";
+                 STR sectionHeader#get_name;
+                 STR " with raw size: ";
                  sectionHeader#get_size_of_raw_data#toPretty;
-                 STR "; offset: ";
+                 STR " and offset: ";
                  sectionHeader#get_pointer_to_raw_data#toPretty;
                  STR ": ";
-                 p]))
+                 STR (String.concat "; " e)]))
 
   method private read_sections =
     List.iter (fun h ->
@@ -998,18 +1008,18 @@ object (self)
     else
       let fileOffset = coff_file_header#get_pointer_to_symbol_table in
       let nSymbols = coff_file_header#get_number_of_symbols in
-      try
-        let exeString = system_info#get_file_string fileOffset in
-        pe_symboltable#read fileOffset nSymbols exeString
-      with
-      | BCH_failure p ->
+      let exeString_r = system_info#get_file_string fileOffset in
+      match exeString_r with
+      | Ok s -> pe_symboltable#read fileOffset nSymbols s
+      | Error e ->
          ch_error_log#add
            "read symbol table"
            (LBLOCK [
-                STR "read-symboltable: fileOffset: ";
+                STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                STR "Unable to read PE symbol table at offset: ";
                 fileOffset#toPretty;
                 STR  ": ";
-                p])
+                STR (String.concat "; " e)])
 
   method coff_file_header_to_pretty = coff_file_header#toPretty
 

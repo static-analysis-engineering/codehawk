@@ -6232,9 +6232,29 @@ object
   method get_preamble_cutoff: int
   method get_filename: string
   method get_xfilesize: int
-  method get_file_string: ?hexSize:doubleword_int -> doubleword_int -> string
+
+  (** [get_file_string size offset] returns the segment from the input binary
+      that starts at file offset [offset] of length [size]. If [size] is zero
+      the remainder of the file is returned starting at [offset].
+
+      An error is returned if [offset] is larger than the size of the binary
+      or if [offset + size] is more than 10 bytes beyond the end of the file
+      (if it is less than 10 bytes beyond the end of the file, the remainder
+      is padded with zero's to make up the requested length).
+   *)
+  method get_file_string:
+           ?hexSize:doubleword_int -> doubleword_int -> string traceresult
+
+  (** [get_file_input size offset] returns a wrapper around a segment from
+      the input binary to facilitate reading different types from the string.
+
+      Errors returned are the same as for [get_file_string].
+   *)
   method get_file_input:
-           ?hexSize:doubleword_int -> doubleword_int ->  stream_wrapper_int
+           ?hexSize:doubleword_int
+           -> doubleword_int
+           -> stream_wrapper_int traceresult
+
   method get_image_base: doubleword_int
   method get_base_of_code_rva: doubleword_int    (* relative virtual address *)
   method get_address_of_entry_point: doubleword_int
@@ -6314,6 +6334,7 @@ object
 
   (* xml *)
   (* method read_xml_constant_file: string -> unit *)
+  method read_xml_user_data: xml_element_int -> unit
 
   (* saving *)
   method write_xml: xml_element_int -> unit

@@ -795,9 +795,13 @@ object
   method initialize_jump_tables: unit
   method initialize_call_back_tables: unit
   method initialize_struct_tables: unit
+  method add_new_user_defined_section_headers: unit (* only for unit tests *)
 
   (* accessors *)
+
+  (** Returns the entry point as specified in the elf file header.*)
   method get_program_entry_point: doubleword_int
+
   method get_sections: (int * elf_section_header_int * elf_section_t) list
   method get_program_segments: (int * elf_program_header_int * elf_segment_t) list
   method get_executable_sections: (elf_section_header_int * string) list
