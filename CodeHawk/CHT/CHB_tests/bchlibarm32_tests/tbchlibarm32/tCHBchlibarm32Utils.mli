@@ -26,6 +26,9 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHTraceResult
+
 (* xprlib *)
 open XprTypes
 
@@ -48,7 +51,8 @@ val arm_function_setup: doubleword_int -> string -> arm_assembly_function_int
 val thumb_function_setup: doubleword_int -> string -> arm_assembly_function_int
 
 
-val get_instrxdata_xprs: doubleword_int -> doubleword_int -> xpr_t list
+val get_instrxdata_xprs:
+  doubleword_int -> doubleword_int -> xpr_t traceresult list
 
 
 val get_instrxdata_tags: doubleword_int -> doubleword_int -> string list

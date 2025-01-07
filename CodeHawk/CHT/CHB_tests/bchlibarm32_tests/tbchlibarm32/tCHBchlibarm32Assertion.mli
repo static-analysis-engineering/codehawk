@@ -26,6 +26,9 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHTraceResult
+
 (* xprlib *)
 open XprTypes
 
@@ -68,7 +71,7 @@ val equal_arm_conditional_expr:
 val equal_instrxdata_conditionxprs:
   ?msg: string
   -> expected:string
-  -> received:xpr_t list
+  -> received:xpr_t traceresult list
   -> index:int
   -> unit
   -> unit

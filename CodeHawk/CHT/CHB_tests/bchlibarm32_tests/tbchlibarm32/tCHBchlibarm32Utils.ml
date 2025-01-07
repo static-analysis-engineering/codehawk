@@ -26,6 +26,12 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chutil *)
+open CHTraceResult
+
+(* xprlib *)
+open XprTypes
+
 (* bchlib *)
 open BCHByteUtilities
 open BCHDoubleword
@@ -130,8 +136,9 @@ let thumb_function_setup
   end
 
 
-(* To be updated to properly deal with the xpr_t traceresult *)
-let get_instrxdata_xprs (faddr: doubleword_int) (iaddr: doubleword_int) =
+let get_instrxdata_xprs
+      (faddr: doubleword_int)
+      (iaddr: doubleword_int): xpr_t traceresult list =
   let _ = testsupport#request_instrx_data in
   let finfo = get_function_info faddr in
   let fn = get_arm_assembly_function faddr in
@@ -146,7 +153,7 @@ let get_instrxdata_xprs (faddr: doubleword_int) (iaddr: doubleword_int) =
             ignore (id#index_instr instr floc))) in
   let (_, xprs) =
     TR.tget_ok (testsupport#retrieve_instrx_data iaddr#to_hex_string) in
-  List.map TR.tget_ok xprs
+  xprs
 
 
 let get_instrxdata_tags (faddr: doubleword_int) (iaddr: doubleword_int) =
