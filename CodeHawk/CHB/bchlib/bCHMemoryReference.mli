@@ -32,6 +32,9 @@ open CHLanguage
 open CHNumerical
 open CHPretty
 
+(* chutil *)
+open CHTraceResult
+
 (* bchlib *)
 open BCHBCTypes
 open BCHLibTypes
@@ -92,14 +95,14 @@ val add_offset: memory_offset_t -> memory_offset_t -> memory_offset_t
 
 (** Returns a list of numerical offset and suboffsets.
 
-    @raise [BCH_failure} if [memoff] is not a constant_offset. *)
-val get_constant_offsets: memory_offset_t -> numerical_t list
+    Returns an Error if [memoff] is not a constant_offset. *)
+val get_constant_offsets: memory_offset_t -> numerical_t list traceresult
 
 
 (** Returns the sum of all numerical offsets in [memoff].
 
-    @raise [BCH_failure] if [memoff] is not a constant offset. *)
-val get_total_constant_offset: memory_offset_t -> numerical_t
+    Returns an Error if not all offsets are constant. *)
+val get_total_constant_offset: memory_offset_t -> numerical_t traceresult
 
 
 (** Returns the list of index variables in [memoff] (including suboffsets.

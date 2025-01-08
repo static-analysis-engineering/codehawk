@@ -51,6 +51,7 @@ open BCHDoubleword
 open BCHLibTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
@@ -214,17 +215,25 @@ let get_index_offset_variables (offset: memory_offset_t): variable_t list =
   aux offset []
 
 
-let rec get_constant_offsets offset =
+let rec get_constant_offsets
+          (offset: memory_offset_t): numerical_t list traceresult =
   match offset with
-  | NoOffset -> [ numerical_zero ]
-  | ConstantOffset (n, suboffset) -> n :: (get_constant_offsets suboffset)
+  | NoOffset -> Ok [numerical_zero]
+  | ConstantOffset (n, suboffset) ->
+     TR.tmap (fun subo -> n :: subo) (get_constant_offsets suboffset)
   | _ ->
+     Error [
+         __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+         ^ "Offset is not constant: "
+         ^ (memory_offset_to_string offset)]
+       (*
      raise
        (BCH_failure
           (LBLOCK [
+               STR __FILE__; STR ":"; INT __LINE__; STR ": ";
                STR "offset ";
                STR (memory_offset_to_string offset);
-               STR " is not constant"]))
+               STR " is not constant"])) *)
 
 
 let rec add_offset
@@ -238,9 +247,11 @@ let rec add_offset
   | UnknownOffset -> UnknownOffset
 
 
-let get_total_constant_offset offset =
-  List.fold_left (fun acc n ->
-      acc#add n) numerical_zero (get_constant_offsets offset)
+let get_total_constant_offset (offset: memory_offset_t): numerical_t traceresult =
+  TR.tmap
+    ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+    (fun nl -> List.fold_left (fun acc n -> acc#add n) numerical_zero nl)
+    (get_constant_offsets offset)
 
 let memory_offset_to_pretty offset = STR (memory_offset_to_string offset)
 

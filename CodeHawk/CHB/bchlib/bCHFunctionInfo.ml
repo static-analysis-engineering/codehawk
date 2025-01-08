@@ -175,6 +175,15 @@ object (self)
 
   method get_variable_comparator = varmgr#get_external_variable_comparator
 
+  method private log_dc_error_result (line: int) (e: string list) =
+    if BCHSystemSettings.system_settings#collect_data then
+      self#log_error_result line e
+    else
+      ()
+
+  method private log_error_result (line: int) (e: string list) =
+    log_error_result ~msg:(faddr#to_hex_string ^ ":env") __FILE__ line e
+
   (* ------------------------------------------------------ variable names -- *)
 
   val variable_names = make_variable_names ()
@@ -1187,7 +1196,7 @@ object (self)
   method get_memval_offset (v:variable_t): memory_offset_t traceresult =
     varmgr#get_memval_offset v
 
-  method get_constant_offsets (v: variable_t): numerical_t list option =
+  method get_constant_offsets (v: variable_t): numerical_t list traceresult =
     let offset_r =
       if self#is_initial_memory_value v then
         self#get_memval_offset v
@@ -1197,20 +1206,22 @@ object (self)
         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                ^ "Not a memory variable or initial memory value: "
                ^ v#getName#getBaseName] in
-    TR.tfold
-      ~ok:(fun offset ->
+    TR.tbind
+      (fun offset ->
         if is_constant_offset offset then
-          Some (get_constant_offsets offset)
+          get_constant_offsets offset
         else
-          None)
-      ~error:(fun e ->
-        begin log_error_result __FILE__ __LINE__ e; None end)
+          Error [
+              __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable does not have constant offset: "
+              ^ (p2s v#toPretty)])
       offset_r
 
-  method get_total_constant_offset (v:variable_t) =
-    match self#get_constant_offsets v with
-    | Some l -> Some (List.fold_left (fun acc n -> acc#add n) numerical_zero l)
-    | _ -> None
+  method get_total_constant_offset (v:variable_t): numerical_t traceresult =
+    TR.tmap
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+      (List.fold_left (fun acc n -> acc#add n) numerical_zero)
+      (self#get_constant_offsets v)
 
   method get_calltarget_value (v: variable_t): call_target_t traceresult =
     varmgr#get_calltarget_value v
@@ -1295,46 +1306,50 @@ object (self)
   method get_optreturn_value_capabilities
            (var: variable_t): (ctxt_iaddress_t * type_cap_label_t list) option =
 
+    let memvar_caps (v: variable_t) =
+      match self#get_optreturn_value_capabilities v with
+      | Some (callsite, labels) ->
+         tfold_default
+           (fun offset ->
+             if is_constant_offset offset then
+               tfold_default
+                 (fun num ->
+                   Some (callsite,
+                         Load :: (OffsetAccess (4, num#toInt)) :: labels))
+                 None
+                 (get_total_constant_offset offset)
+             else
+               None)
+           None
+           (self#get_memvar_offset v)
+      | _ -> None in
+
+    let memval_caps (v: variable_t) =
+      match self#get_optreturn_value_capabilities v with
+      | Some (callsite, labels) ->
+         tfold_default
+           (fun offset ->
+             if is_constant_offset offset then
+               tfold_default
+                 (fun num ->
+                   Some (callsite,
+                         Load :: (OffsetAccess (4, num#toInt)) :: labels))
+                 None
+                 (get_total_constant_offset offset)
+             else
+               None)
+           None
+           (self#get_memval_offset v)
+      | _ -> None in
+
     let aux (v: variable_t) =
       if self#is_return_value v then
         tfold_default
           (fun callsite -> Some (callsite, [])) None (self#get_call_site v)
       else if self#is_basevar_memory_variable v then
-        tfold_default
-          (fun var ->
-            match self#get_optreturn_value_capabilities var with
-            | Some (callsite, labels) ->
-               tfold_default
-                 (fun offset ->
-                   if is_constant_offset offset then
-                     let num = get_total_constant_offset offset in
-                     Some
-                       (callsite, Load :: (OffsetAccess (4, num#toInt)) :: labels)
-                   else
-                     None)
-                 None
-                 (self#get_memvar_offset v)
-            | _ -> None)
-          None
-          (self#get_memvar_basevar v)
+        tfold_default memvar_caps None (self#get_memvar_basevar v)
       else if self#is_basevar_memory_value v then
-        tfold_default
-          (fun var ->
-            match self#get_optreturn_value_capabilities var with
-            | Some (callsite, labels) ->
-               tfold_default
-                 (fun offset ->
-                   if is_constant_offset offset then
-                     let num = get_total_constant_offset offset in
-                     Some
-                       (callsite, Load :: (OffsetAccess (4, num#toInt)) :: labels)
-                   else
-                     None)
-                 None
-                 (self#get_memval_offset v)
-            | _ -> None)
-          None
-          (self#get_memval_basevar v)
+        tfold_default memval_caps None (self#get_memval_basevar v)
       else
         None in
 
@@ -1388,64 +1403,74 @@ object (self)
           (varmgr#get_initial_memory_value_variable v))
 
   method private get_argbasevar_with_offsets_aux
-                   (v:variable_t) (offsets:numerical_t list) =
+                   (v:variable_t)
+                   (offsets:numerical_t list):
+                   (variable_t * numerical_t list) option =
     if self#is_initial_memory_value v then
-      log_tfold
-        (log_error "get_argbasevar_with_offsets_aux" "invalid memory variable")
+      TR.tfold
         ~ok:(fun iv ->
           if self#is_basevar_memory_variable iv then
-            log_tfold
-              (log_error "get_argbasevar_with_offsets_aux" "invalid base var")
+            TR.tfold
               ~ok:(fun basevar ->
-                match self#get_total_constant_offset iv with
-                | Some o ->
-                   let newoffsets = o :: offsets in
-                   if self#is_stack_parameter_variable basevar ||
-                        self#is_initial_register_value basevar then
-                     Some (basevar, newoffsets)
-                   else
-                     self#get_argbasevar_with_offsets_aux basevar newoffsets
-                | _ -> None)
-              ~error:(fun _ -> None)
+                TR.tfold
+                  ~ok:(fun o ->
+                    let newoffsets = o :: offsets in
+                    if self#is_stack_parameter_variable basevar ||
+                         self#is_initial_register_value basevar then
+                      Some (basevar, newoffsets)
+                    else
+                      self#get_argbasevar_with_offsets_aux basevar newoffsets)
+                  ~error:(fun e ->
+                    begin self#log_dc_error_result __LINE__ e; None end)
+                  (self#get_total_constant_offset iv))
+              ~error:(fun e ->
+                begin self#log_dc_error_result __LINE__ e; None end)
               (self#get_memvar_basevar iv)
           else
             None)
-        ~error:(fun _ -> None)
+        ~error:(fun e ->
+          begin self#log_dc_error_result __LINE__ e; None end)
         (varmgr#get_initial_memory_value_variable v)
     else
       None
 
-  method get_argbasevar_with_offsets (v:variable_t) =
+  method get_argbasevar_with_offsets
+           (v:variable_t): (variable_t * numerical_t list) option =
     self#get_argbasevar_with_offsets_aux v []
 
   method private get_globalbasevar_with_offsets_aux
-                   (v:variable_t) (offsets:numerical_t list) =
+                   (v:variable_t)
+                   (offsets:numerical_t list):
+                   (variable_t * numerical_t list) option =
     if self#is_initial_memory_value v then
-      log_tfold
-        (log_error "get_globalbasevar_with_offsets_aux" "invalid memory variable")
+      TR.tfold
         ~ok:(fun iv ->
           if self#is_basevar_memory_variable iv then
-            log_tfold
-              (log_error "get_globalbasevar_with_offsets_aux" "invalid basevar")
+            TR.tfold
               ~ok:(fun basevar ->
-                match self#get_total_constant_offset iv with
-                | Some o ->
-                   let newoffsets = o :: offsets in
-                   if self#is_global_variable basevar then
-                     Some (basevar, newoffsets)
-                   else
-                     self#get_globalbasevar_with_offsets_aux basevar newoffsets
-                | _ -> None)
-              ~error:(fun _ -> None)
+                TR.tfold
+                  ~ok:(fun o ->
+                    let newoffsets = o :: offsets in
+                    if self#is_global_variable basevar then
+                      Some (basevar, newoffsets)
+                    else
+                      self#get_globalbasevar_with_offsets_aux basevar newoffsets)
+                  ~error:(fun e ->
+                    begin self#log_dc_error_result __LINE__ e; None end)
+                  (self#get_total_constant_offset iv))
+              ~error:(fun e->
+                begin self#log_dc_error_result __LINE__ e; None end)
               (self#get_memvar_basevar iv)
           else
             None)
-        ~error:(fun _ -> None)
+        ~error:(fun e ->
+          begin self#log_dc_error_result __LINE__ e; None end)
         (varmgr#get_initial_memory_value_variable v)
     else
       None
 
-  method get_globalbasevar_with_offsets (v:variable_t) =
+  method get_globalbasevar_with_offsets
+           (v:variable_t): (variable_t * numerical_t list) option =
     self#get_globalbasevar_with_offsets_aux v []
 
   method is_return_value = varmgr#is_return_value
@@ -1474,7 +1499,8 @@ object (self)
       varmgr#get_initial_memory_value_variable v
     else if self#is_initial_register_value v then
       tbind
-        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ v#getName#getBaseName)
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ v#getName#getBaseName)
         (fun iv ->
           match iv with
           | CPURegister r -> Ok (self#mk_cpu_register_variable r)
@@ -1581,6 +1607,15 @@ object (self)
     mk_proofobligations faddr (mk_xpodictionary varmgr#vard#xd)
 
   (* ------------------------------------------------------------------------- *)
+
+  method private log_dc_error_result (line: int) (e: string list) =
+    if BCHSystemSettings.system_settings#collect_data then
+      self#log_error_result line e
+    else
+      ()
+
+  method private log_error_result (line: int) (e: string list) =
+    log_error_result ~msg:self#a#to_hex_string __FILE__ line e
 
   method stackframe = stackframe
 

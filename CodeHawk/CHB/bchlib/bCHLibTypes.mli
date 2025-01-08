@@ -4943,11 +4943,22 @@ class type function_environment_int =
     method get_returnvar_count: int
     method get_sideeffvar_count: int
 
-    method get_constant_offsets: variable_t -> numerical_t list option
-    method get_total_constant_offset: variable_t -> numerical_t option
+    method get_constant_offsets: variable_t -> numerical_t list traceresult
+    method get_total_constant_offset: variable_t -> numerical_t traceresult
 
+    (** [get_argbasevar_with_offsets v] returns a decomposition of [v] into
+        a base variable and a list of (constant) numerical offsets.
+
+       Returns None if [v] is not a memory variable with an argument base or if
+       [v] does not have constant offsets.*)
     method get_argbasevar_with_offsets:
              variable_t -> (variable_t * numerical_t list) option
+
+    (** [get_globalbasevar_with_offsets v] returns a decomposition of [v] into
+        a base variable a list of (constant) numerical offsets.
+
+        Returns None if [v] is not a memory variable with a global base or if [v]
+        does not have constant offsets.*)
     method get_globalbasevar_with_offsets:
              variable_t -> (variable_t * numerical_t list) option
 

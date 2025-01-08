@@ -670,24 +670,27 @@ object (self)
                   ^ ")"]
       | _ ->
          let (memref_r, memoffset_r) = self#decompose_memaddr address in
-         tbind
+         TR.tbind
            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
            (fun memref ->
              if memref#is_global_reference then
-               tbind
-                 ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
+               TR.tbind
+                 ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__)
+                       ^ ": memref:global")
                  (fun memoff ->
-                   self#env#mk_global_variable (get_total_constant_offset memoff))
+                   TR.tbind
+                     self#env#mk_global_variable
+                     (get_total_constant_offset memoff))
                  memoffset_r
              else
-               tmap
+               TR.tbind
                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                  (fun memoff ->
-                   (self#env#mk_memory_variable
-                      memref (get_total_constant_offset memoff)))
+                   TR.tmap
+                     (self#env#mk_memory_variable memref)
+                     (get_total_constant_offset memoff))
                  memoffset_r)
            memref_r
-
 
   method get_memory_variable_1
            ?(align=1)    (* alignment of var value *)
@@ -749,10 +752,14 @@ object (self)
                     (self#cia))
                  (fun v -> v)
                  (default ())
-                 (self#env#mk_global_variable (get_total_constant_offset memoffset))
+                 (TR.tbind
+                    self#env#mk_global_variable
+                    (get_total_constant_offset memoffset))
              else
-               self#env#mk_memory_variable
-                 memref (get_total_constant_offset memoffset) in
+               (TR.tfold_default
+                  (self#env#mk_memory_variable memref)
+                  (default ())
+                  (get_total_constant_offset memoffset)) in
            memvar
          else
            default () in
@@ -773,45 +780,44 @@ object (self)
     let addr = XOp (XPlus, [addr; num_constant_expr offset]) in
     let address = simplify_xpr (self#inv#rewrite_expr addr) in
     let (memref_r, memoff_r) = self#decompose_memaddr address in
-    tbind
+    TR.tbind
       ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
       (fun memref ->
         if memref#is_global_reference then
-          tbind
+          TR.tbind
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
             (fun memoff ->
-              self#env#mk_global_variable ~size (get_total_constant_offset memoff))
+              TR.tbind
+                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                (self#env#mk_global_variable ~size)
+                (get_total_constant_offset memoff))
             memoff_r
         else
-          tmap
+          TR.tbind
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
             (fun memoff ->
-              (self#env#mk_memory_variable
-                 memref (get_total_constant_offset memoff)))
+              TR.tmap
+                (self#env#mk_memory_variable memref)
+                (get_total_constant_offset memoff))
             memoff_r)
       memref_r
 
   method get_memory_variable_2
            ?(size=4) (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
-    let _ = track_function
-              ~iaddr:self#cia self#fa
-              (LBLOCK [
-                   STR "get_memory_variable_2: ";
-                   STR "var1: ";
-                   var1#toPretty;
-                   STR "; var2: ";
-                   var2#toPretty;
-                   STR "; offset: ";
-                   offset#toPretty]) in
+    let default () =
+      self#env#mk_memory_variable
+        (self#env#mk_unknown_memory_reference "memref-2") numerical_zero in
     let addr = XOp (XPlus, [XVar var1; XVar var2]) in
     let addr = XOp (XPlus, [addr; num_constant_expr offset]) in
     let address = self#inv#rewrite_expr addr in
     let (memref, memoffset) = self#decompose_address address in
     if is_constant_offset memoffset then
-      self#env#mk_memory_variable ~size memref (get_total_constant_offset memoffset)
+      TR.tfold_default
+        (self#env#mk_memory_variable ~size memref)
+        (default ())
+        (get_total_constant_offset memoffset)
     else
-      self#env#mk_memory_variable
-        (self#env#mk_unknown_memory_reference "memref-2") numerical_zero
+      default ()
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (cpureg1, cpureg2, s, offset)  (memrefs3)
@@ -835,21 +841,24 @@ object (self)
            [addr; XOp (XMult, [int_constant_expr scale; indexexpr])]) in
     let address = simplify_xpr (self#inv#rewrite_expr addr) in
     let (memref_r, memoff_r) = self#decompose_memaddr address in
-    tbind
+    TR.tbind
       ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
       (fun memref ->
         if memref#is_global_reference then
-          tbind
+          TR.tbind
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
             (fun memoff ->
-              self#env#mk_global_variable ~size (get_total_constant_offset memoff))
+              TR.tbind
+                (self#env#mk_global_variable ~size)
+                (get_total_constant_offset memoff))
             memoff_r
         else
-          tmap
+          TR.tbind
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
             (fun memoff ->
-              (self#env#mk_memory_variable
-                 memref (get_total_constant_offset memoff)))
+              TR.tmap
+                (self#env#mk_memory_variable memref)
+                (get_total_constant_offset memoff))
             memoff_r)
       memref_r
 
@@ -861,7 +870,7 @@ object (self)
            (offset:numerical_t) =
     let default () =
       self#env#mk_memory_variable
-        (self#env#mk_unknown_memory_reference "memref-1") offset in
+        (self#env#mk_unknown_memory_reference "memref-3") offset in
     let inv = self#inv in
     let indexExpr =
       if inv#is_constant index then
@@ -883,10 +892,14 @@ object (self)
              (self#cia ^ ": memoffset: " ^ (memory_offset_to_string memoffset)))
           (fun v -> v)
           (default ())
-          (self#env#mk_global_variable (get_total_constant_offset memoffset))
+          (TR.tbind
+             self#env#mk_global_variable
+             (get_total_constant_offset memoffset))
       else
-        self#env#mk_memory_variable
-          ~size memref (get_total_constant_offset memoffset)
+        TR.tfold_default
+          (self#env#mk_memory_variable ~size memref)
+          (default ())
+          (get_total_constant_offset memoffset)
     else
       default ()
         (*

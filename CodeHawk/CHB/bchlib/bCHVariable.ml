@@ -705,26 +705,29 @@ object (self)
       (self#get_variable v)
 
   method get_stack_parameter_index (v: variable_t): int option =
-    tfold_default
-      (fun memref ->
+    tfold
+      ~ok:(fun memref ->
         if memref#is_stack_reference then
-          tfold_default
-            (fun offset ->
+          tfold
+            ~ok:(fun offset ->
               if is_constant_offset offset then
-                let four = mkNumerical 4 in
-                let noffset = get_total_constant_offset offset in
-                if noffset#gt numerical_zero
-                   && (noffset#modulo four)#equal numerical_zero then
-                  Some ((noffset#div (mkNumerical 4))#toInt)
-                else
-                  None
+                tfold
+                  ~ok:(fun numoffset ->
+                    let four = mkNumerical 4 in
+                    if numoffset#gt numerical_zero
+                       && (numoffset#modulo four)#equal numerical_zero then
+                      Some ((numoffset#div four)#toInt)
+                    else
+                      None)
+                  ~error:(fun _ -> None)
+                  (get_total_constant_offset offset)
               else
                 None)
-            None
+            ~error:(fun _ -> None)
             (self#get_memvar_offset v)
         else
           None)
-      None
+      ~error:(fun _ -> None)
       (self#get_memvar_reference v)
 
   method get_register (v: variable_t): register_t traceresult =
@@ -773,13 +776,12 @@ object (self)
     self#is_global_variable v
     && (tfold_default is_constant_offset false (self#get_memvar_offset v))
 
-  method get_global_variable_address (v: variable_t) =
+  method get_global_variable_address (v: variable_t): doubleword_result =
     if self#has_global_variable_address v then
       tbind
-        ~msg:"varmgr:get_global_variable_address"
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
         (fun offset ->
-          let goffset = get_total_constant_offset offset in
-          numerical_to_doubleword goffset)
+          tbind numerical_to_doubleword (get_total_constant_offset offset))
         (self#get_memvar_offset v)
     else
       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
@@ -888,12 +890,11 @@ object (self)
         | _ -> Stdlib.compare var1#index var2#index
 
   method is_stack_parameter_variable (v:variable_t) =
-    (self#is_stack_variable v)
-    && (self#has_constant_offset v)
-    && (tfold_default
-          (fun memoff -> (get_total_constant_offset memoff)#geq numerical_zero)
-          false
-          (self#get_memvar_offset v))
+    if (self#is_stack_variable v) && (self#has_constant_offset v) then
+      let memoff_r = tbind get_total_constant_offset (self#get_memvar_offset v) in
+      tfold_default (fun memoff -> memoff#geq numerical_zero) false memoff_r
+    else
+      false
 
   method is_realigned_stack_variable (v:variable_t) =
     (self#is_memory_variable v)

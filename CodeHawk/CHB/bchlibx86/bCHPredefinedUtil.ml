@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -186,14 +186,18 @@ let xpr_to_strpretty (floc:floc_int) (x:xpr_t) =
 	   LBLOCK [STR "ds:"; (TR.tget_ok (numerical_to_doubleword n))#toPretty]
         | _ ->
 	   if floc#is_address x then
-	     let (memref,memoffset) = floc#decompose_address x in
+	     let (memref, memoffset) = floc#decompose_address x in
 	     if is_constant_offset memoffset then
-               let offset = get_total_constant_offset memoffset in
-	       LBLOCK [
-                   STR "&";
-		   xpr_to_pretty
-                     floc
-                     (XVar (floc#env#mk_memory_variable memref offset ))]
+               (* let offset_r = get_total_constant_offset memoffset in *)
+               TR.tfold_default
+                 (fun offset ->
+	           LBLOCK [
+                       STR "&";
+		       xpr_to_pretty
+                         floc
+                         (XVar (floc#env#mk_memory_variable memref offset))])
+                 (default ())
+                 (get_total_constant_offset memoffset)
 	     else if memref#is_unknown_reference then
 	       default ()
 	     else
@@ -276,7 +280,10 @@ let get_x_derefvalue (x:xpr_t) (offset:int) (floc:floc_int) =
   let (memref,memoffset) = floc#decompose_address x in
   if is_constant_offset memoffset then
     let memvar =
-      floc#env#mk_memory_variable memref (get_total_constant_offset memoffset) in
+      TR.tfold_default
+        (fun offset -> floc#env#mk_memory_variable memref offset)
+        (floc#env#mk_unknown_memory_variable "x-deref")
+        (get_total_constant_offset memoffset) in
     floc#inv#rewrite_expr (XVar memvar)
   else
     XVar (floc#env#mk_unknown_memory_variable "x-deref")
@@ -312,7 +319,10 @@ let get_x_deref_lhs (x:xpr_t) (offset:int) (floc:floc_int) =
   let x = floc#inv#rewrite_expr (XOp (XPlus, [x; int_constant_expr offset])) in
   let (memref,memoffset) = floc#decompose_address x in
   if is_constant_offset memoffset then
-    floc#env#mk_memory_variable memref (get_total_constant_offset memoffset)
+    TR.tfold_default
+      (fun offset -> floc#env#mk_memory_variable memref offset)
+      (floc#env#mk_unknown_memory_variable "x-deref-lhs")
+      (get_total_constant_offset memoffset)
   else
     floc#env#mk_unknown_memory_variable "x-deref-lhs"
 

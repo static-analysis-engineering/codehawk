@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -157,12 +157,15 @@ let create_annotation_aux (floc:floc_int) =
 	LBLOCK [STR "ds:"; (TR.tget_ok (numerical_to_doubleword n))#toPretty]
       | _ ->
 	if floc#is_address xpr then
-	  let (memref,memoffset) = floc#decompose_address xpr in
+	  let (memref, memoffset) = floc#decompose_address xpr in
 	  if is_constant_offset memoffset then
-            let offset = get_total_constant_offset memoffset in
-	    LBLOCK [
-                STR "&";
-                variable_to_pretty (env#mk_memory_variable memref offset)]
+            TR.tfold_default
+              (fun offset ->
+	        LBLOCK [
+                    STR "&";
+                    variable_to_pretty (env#mk_memory_variable memref offset)])
+              (pr_expr xpr)
+              (get_total_constant_offset memoffset)
 	  else if memref#is_unknown_reference then
 	    pr_expr xpr
 	  else

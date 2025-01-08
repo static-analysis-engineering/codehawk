@@ -231,8 +231,10 @@ object (self:'a)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [STR "Operand is not a register list: ";
-                     self#toPretty]))
+            (LBLOCK [
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                 STR "Operand is not a register list: ";
+                 self#toPretty]))
 
   method get_register_list =
     match kind with
@@ -240,8 +242,10 @@ object (self:'a)
     | _ ->
        raise
          (BCH_failure
-            (LBLOCK [STR "Operand is not a register list: ";
-                     self#toPretty]))
+            (LBLOCK [
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                 STR "Operand is not a register list: ";
+                 self#toPretty]))
 
   method get_register_op_list: 'a list =
     match kind with
@@ -251,7 +255,9 @@ object (self:'a)
        raise
          (BCH_failure
             (LBLOCK [
-                 STR "Operand is not a register list: "; self#toPretty]))
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                 STR "Operand is not a register list: ";
+                 self#toPretty]))
 
   method get_extension_register_op_list: 'a list =
     match kind with
@@ -648,10 +654,14 @@ object (self:'a)
   method to_multiple_lhs (floc: floc_int):
            (variable_t traceresult list * cmd_t list) =
     match kind with
-    | ARMRegList _
-      | ARMMemMultiple _ ->
+    | ARMRegList _ ->
        let rlops = self#get_register_op_list in
        (List.map (fun (op:'a) -> op#to_variable floc) rlops, [])
+
+    | ARMExtensionRegList _ ->
+       let rlops = self#get_extension_register_op_list in
+       (List.map (fun (op:'a) -> op#to_variable floc) rlops, [])
+
     | _ ->
        ([Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                 ^ "Not an operand kind with multiple lhs: "

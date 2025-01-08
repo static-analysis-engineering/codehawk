@@ -3611,12 +3611,14 @@ object (self)
     with
     | BCH_failure p ->
        let msg =
-         LBLOCK [STR "Error in writing xml instruction: ";
-                 floc#l#i#toPretty;
-                 STR "  ";
-                 instr#toPretty;
-                 STR ": ";
-                 p] in
+         LBLOCK [
+             STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+             STR "Error in writing xml instruction: ";
+             floc#l#i#toPretty;
+             STR "  ";
+             instr#toPretty;
+             STR ": ";
+             p] in
        raise (BCH_failure msg)
 
   method write_xml (node:xml_element_int) =
