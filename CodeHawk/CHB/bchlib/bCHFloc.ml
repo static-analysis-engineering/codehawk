@@ -1237,8 +1237,12 @@ object (self)
           (fun offset -> self#f#env#mk_gloc_variable gloc offset)
           (gloc#address_memory_offset ~tgtsize:size ~tgtbtype:btype addrvalue))
     | _ ->
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "Unable to create global variable for " ^ (x2s addrvalue)]
+       let (memref_r, memoff_r) = self#decompose_memaddr addrvalue in
+       TR.tmap2
+         ~msg1:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         (fun memref memoff ->
+           self#f#env#mk_offset_memory_variable memref memoff)
+         memref_r memoff_r
 
   method decompose_memaddr (x: xpr_t):
            (memory_reference_int traceresult * memory_offset_t traceresult) =

@@ -217,8 +217,11 @@ object (self)
           raise
             (BCH_failure
                (LBLOCK [STR "Empty tag list in add_instr_condition"])) in
+      let argslen = List.length args in
       let xtag = (List.hd tags) ^ "xx" in
-      let tags = xtag :: ((List.tl tags) @ ["ic"; "icr"]) in
+      let ictag = "ic:" ^ (string_of_int argslen) in
+      let icrtag = "icr:" ^ (string_of_int (argslen + 1)) in
+      let tags = xtag :: ((List.tl tags) @ [ictag; icrtag]) in
       let xneg = XOp (XLNot, [x]) in
       let xneg = simplify_xpr xneg in
       let args = args @ [xd#index_xpr x; xd#index_xpr xneg] in
@@ -317,30 +320,6 @@ object (self)
     let get_def_use_high_r (v_r: variable_t traceresult): int =
       TR.tfold_default get_def_use_high (-1) v_r in
 
-    let add_base_update
-          (tags: string list)
-          (args: int list)
-          (v: variable_t)
-          (inc: int)
-          (x: xpr_t): (string list) * (int list) =
-      let _ =
-        if (List.length tags) = 0 then
-          raise
-            (BCH_failure
-               (LBLOCK [STR "Empty tag list in add_base_update"])) in
-      let xtag = (List.hd tags) ^ "vtlxdh" in
-      let uses = [get_def_use v] in
-      let useshigh = [get_def_use_high v] in
-      let tags = xtag :: ((List.tl tags) @ ["bu"]) in
-      let args =
-        args
-        @ [xd#index_variable v;
-           bcd#index_typ t_unknown;
-           inc;
-           xd#index_xpr x]
-        @ uses @ useshigh in
-      (tags, args) in
-
     let index_variable (v_r: variable_t traceresult): int =
       TR.tfold
         ~ok:xd#index_variable
@@ -354,6 +333,55 @@ object (self)
         ~error:(fun e ->
           begin log_dc_error_result __FILE__ __LINE__ e; -2 end)
         x_r in
+
+    let add_base_update
+          (tags: string list)
+          (args: int list)
+          (v: variable_t traceresult)
+          (inc: int)
+          (x: xpr_t traceresult): (string list) * (int list) =
+      let _ =
+        if (List.length tags) = 0 then
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                    STR "Empty tag list"])) in
+      let xtag = (List.hd tags) ^ "vtlxdh" in
+      let uses = [get_def_use_r v] in
+      let useshigh = [get_def_use_high_r v] in
+      let argslen = List.length args in
+      let vbutag = "vbu:" ^ (string_of_int argslen) in
+      let xbutag = "xbu:" ^ (string_of_int (argslen + 3)) in
+      let tags = xtag :: ((List.tl tags) @ [vbutag; xbutag]) in
+      let args =
+        args
+        @ [index_variable v;
+           bcd#index_typ t_unknown;
+           inc;
+           index_xpr x]
+        @ uses @ useshigh in
+      (tags, args) in
+
+    let add_return_value
+          (tags: string list)
+          (args: int list)
+          (rv: xpr_t traceresult)
+          (rrv: xpr_t traceresult): (string list) * (int list) =
+      let _ =
+        if (List.length tags) = 0 then
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                    STR "Empty tag list"])) in
+      let rdefs = [get_rdef_r rv] @ (get_all_rdefs_r rrv) in
+      let xtag = (List.hd tags) ^ "xx" ^ (string_repeat "r" (List.length rdefs)) in
+      let argslen = List.length args in
+      let returntag = "return:" ^ (string_of_int argslen) in
+      let tags = xtag :: ((List.tl tags) @ [returntag]) in
+      let args = args @ [index_xpr rv; index_xpr rrv] @ rdefs in
+      (tags, args)in
 
     let mk_instrx_data
           ?(vars: variable_t list = [])
@@ -441,7 +469,7 @@ object (self)
       let flagrdefstring = string_repeat "f" flagrdefcount in
       let integerstring = string_repeat "l" integercount in
       let tagstring =
-        "a:"
+        "ar:"
         ^ varstring
         ^ typestring
         ^ xprstring
@@ -482,7 +510,7 @@ object (self)
          add_instr_condition [tagstring] args tcond
       | _ -> (tagstring :: ["uc"], args) in
 
-    let add_optional_subsumption (tags: string list) =
+    let add_optional_subsumption (tags: string list): string list =
       match instr#is_in_aggregate with
       | Some va -> tags @ ["subsumed"; va#to_hex_string]
       | _ -> tags in
@@ -576,12 +604,16 @@ object (self)
             let xx =
               if is_pointer ptype then
                 let _ = floc#memrecorder#record_argument xx index in
-                let xx =
-                  TR.tfold_default
-                    (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
-                    xx
-                    (floc#get_var_at_address ~btype:ptype xx) in
-                xx
+                match get_string_reference floc xx with
+                | Some _ -> xx
+                | _ ->
+                   match xx with
+                   | XVar v -> xx
+                   | _ ->
+                      TR.tfold_default
+                        (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
+                        xx
+                        (floc#get_var_at_address ~btype:ptype xx)
               else
                 xx in
             let rdef = get_rdef_r xvar_r in
@@ -623,7 +655,8 @@ object (self)
         if instr#is_inlined_call then
           tagstring :: ["call"; "inlined"]
         else
-          tagstring :: ["call"; string_of_int (List.length callargs)] in
+          tagstring
+          :: ["call"; "argcount:" ^ (string_of_int (List.length callargs))] in
       let args =
         args @ [ixd#index_call_target floc#get_call_target#get_target] in
       (tags, args) in
@@ -669,6 +702,7 @@ object (self)
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = get_def_use_r vrd_r in
          let useshigh = get_def_use_high_r vrd_r in
+         (*
          let rresult_r =
            TR.tmap
              (fun rresult ->
@@ -677,6 +711,7 @@ object (self)
                  rresult
                  (floc#get_var_at_address rresult))
              rresult_r in
+          *)
          let (tagstring, args) =
            mk_instrx_data_r
              ~vars_r:[vrd_r]
@@ -1040,10 +1075,9 @@ object (self)
          let r0_op = arm_register_op AR0 RD in
          let xr0_r = r0_op#to_expr floc in
          let xxr0_r = TR.tmap rewrite_expr xr0_r in
-         let rdefs = [get_rdef_r xr0_r] @ (get_all_rdefs_r xxr0_r) in
-         let (tagstring, args) =
-           mk_instrx_data_r ~xprs_r:[xr0_r; xxr0_r] ~rdefs:rdefs () in
+         let (tagstring, args) = mk_instrx_data_r () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let (tags, args) = add_return_value tags args xr0_r xxr0_r in
          (tags, args)
 
       | BranchExchange (c, tgt) ->
@@ -1116,11 +1150,11 @@ object (self)
          let xrm_r = rm#to_expr floc in
          let xresult_r =
            TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
-         let xresult_r = TR.tmap rewrite_expr xresult_r in
+         let result_r = TR.tmap rewrite_expr xresult_r in
          let rdefs =
-           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r xresult_r) in
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r result_r) in
          let (tagstring, args) =
-           mk_instrx_data_r ~xprs_r:[xrn_r; xrm_r; xresult_r] ~rdefs () in
+           mk_instrx_data_r ~xprs_r:[xrn_r; xrm_r; result_r] ~rdefs () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let tags = add_optional_subsumption tags in
          (tags, args)
@@ -1338,40 +1372,50 @@ object (self)
          (tags, args)
 
       | LoadMultipleIncrementAfter (wback, c, base, rl, _) ->
-         let reglhs_rl = rl#to_multiple_variable floc in
+         let lhsvars_rl = rl#to_multiple_variable floc in
          let basereg = base#get_register in
          let baselhs_r = base#to_variable floc in
          let baserhs_r = base#to_expr floc in
          let regcount = rl#get_register_count in
-         let (memreads_r, _) =
+         let (rhsexprs_r, _) =
            List.fold_left
-             (fun (acc, off) _reglhs ->
+             (fun (acc, off) _lhsvar ->
                let memop = arm_reg_deref ~with_offset:off basereg RD in
                let memrhs_r = memop#to_expr floc in
-               (acc @ [memrhs_r], off + 4)) ([], 0) reglhs_rl in
-         let rdefs = List.map get_rdef_r (baserhs_r :: memreads_r) in
-         let uses = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
-         let useshigh = List.map get_def_use_high_r (baselhs_r :: reglhs_rl) in
-         let wbackresults_r =
-           if wback then
-             let increm = int_constant_expr (4 * regcount) in
-             let baseresult_r =
-               TR.tmap
-                 (fun baserhs -> XOp (XPlus, [baserhs; increm])) baserhs_r in
-             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
-             [baseresult_r; rbaseresult_r]
-           else
-             [baserhs_r; baserhs_r] in
+               (acc @ [memrhs_r], off + 4)) ([], 0) lhsvars_rl in
+         let xaddrs_r =
+           List.init
+             rl#get_register_count
+             (fun i ->
+               let xaddr_r =
+                 TR.tmap
+                   (fun baserhs -> XOp (XPlus, [baserhs; int_constant_expr (i + 4)]))
+                   baserhs_r in
+               TR.tmap rewrite_expr xaddr_r) in
+         let rdefs = List.map get_rdef_r (baserhs_r :: rhsexprs_r) in
+         let uses = List.map get_def_use_high_r (baselhs_r :: lhsvars_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: lhsvars_rl) in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:(baselhs_r :: reglhs_rl)
-             ~xprs_r:((baserhs_r :: wbackresults_r) @ memreads_r)
+             ~vars_r:(baselhs_r :: lhsvars_rl)
+             ~xprs_r:(baserhs_r :: (rhsexprs_r @ xaddrs_r))
              ~rdefs
              ~uses
              ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
-           (tags, args)
+         let tags = add_optional_subsumption tags in
+         let (tags, args) =
+           if wback then
+             let inc = 4 * regcount in
+             let xinc = int_constant_expr inc in
+             let baseresult_r =
+               TR.tmap (fun baserhs -> XOp (XPlus, [baserhs; xinc])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             add_base_update tags args baselhs_r inc rbaseresult_r
+           else
+             (tags, args) in
+         (tags, args)
 
       | LoadMultipleIncrementBefore (wback, c, base, rl, _) ->
          let reglhs_rl = rl#to_multiple_variable floc in
@@ -1466,23 +1510,16 @@ object (self)
          let tags = add_optional_subsumption tags in
          let (tags, args) =
            if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
              TR.tfold
-               ~ok:(fun vrn ->
-                 TR.tfold
-                   ~ok:(fun (inc, xaddr) ->
-                     add_base_update tags args vrn inc xaddr)
-                   ~error:(fun e ->
-                     begin
-                       log_dc_error_result __FILE__ __LINE__ e;
-                       (tags, args)
-                     end)
-                   (mem#to_updated_offset_address floc))
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
                ~error:(fun e ->
                  begin
                    log_dc_error_result __FILE__ __LINE__ e;
                    (tags, args)
                  end)
-               (rn#to_variable floc)
+               (mem#to_updated_offset_address floc)
            else
              (tags, args) in
          (tags, args)
@@ -1492,7 +1529,7 @@ object (self)
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let xaddr_r = mem#to_address floc in
-         let vmem_r= mem#to_variable floc in
+         let vmem_r = mem#to_variable floc in
          let xmem_r = mem#to_expr floc in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
@@ -1520,23 +1557,16 @@ object (self)
          let tags = add_optional_subsumption tags in
          let (tags, args) =
            if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
              TR.tfold
-               ~ok:(fun vrn ->
-                 TR.tfold
-                   ~ok:(fun (inc, xaddr) ->
-                     add_base_update tags args vrn inc xaddr)
-                   ~error:(fun e ->
-                     begin
-                       log_dc_error_result __FILE__ __LINE__ e;
-                       (tags, args)
-                     end)
-                   (mem#to_updated_offset_address floc))
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
                ~error:(fun e ->
                  begin
                    log_dc_error_result __FILE__ __LINE__ e;
                    (tags, args)
                  end)
-               (rn#to_variable floc)
+               (mem#to_updated_offset_address floc)
            else
              (tags, args) in
          let tags =
@@ -1592,23 +1622,16 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
              TR.tfold
-               ~ok:(fun vrn ->
-                 TR.tfold
-                   ~ok:(fun (inc, xaddr) ->
-                     add_base_update tags args vrn inc xaddr)
-                   ~error:(fun e ->
-                     begin
-                       log_dc_error_result __FILE__ __LINE__ e;
-                       (tags, args)
-                     end)
-                   (mem#to_updated_offset_address floc))
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
                ~error:(fun e ->
                  begin
                    log_dc_error_result __FILE__ __LINE__ e;
                    (tags, args)
                  end)
-               (rn#to_variable floc)
+               (mem#to_updated_offset_address floc)
            else
              (tags, args) in
          (tags, args)
@@ -1647,23 +1670,16 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
              TR.tfold
-               ~ok:(fun vrn ->
-                 TR.tfold
-                   ~ok:(fun (inc, xaddr) ->
-                     add_base_update tags args vrn inc xaddr)
-                   ~error:(fun e ->
-                     begin
-                       log_dc_error_result __FILE__ __LINE__ e;
-                       (tags, args)
-                     end)
-                   (mem#to_updated_offset_address floc))
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
                ~error:(fun e ->
                  begin
                    log_dc_error_result __FILE__ __LINE__ e;
                    (tags, args)
                  end)
-               (rn#to_variable floc)
+               (mem#to_updated_offset_address floc)
            else
              (tags, args) in
          (tags, args)
@@ -1700,23 +1716,16 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
              TR.tfold
-               ~ok:(fun vrn ->
-                 TR.tfold
-                   ~ok:(fun (inc, xaddr) ->
-                     add_base_update tags args vrn inc xaddr)
-                   ~error:(fun e ->
-                     begin
-                       log_dc_error_result __FILE__ __LINE__ e;
-                       (tags, args)
-                     end)
-                   (mem#to_updated_offset_address floc))
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
                ~error:(fun e ->
                  begin
                    log_dc_error_result __FILE__ __LINE__ e;
                    (tags, args)
                  end)
-               (rn#to_variable floc)
+               (mem#to_updated_offset_address floc)
            else
              (tags, args) in
          let tags =
@@ -1758,23 +1767,16 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
              TR.tfold
-               ~ok:(fun vrn ->
-                 TR.tfold
-                   ~ok:(fun (inc, xaddr) ->
-                     add_base_update tags args vrn inc xaddr)
-                   ~error:(fun e ->
-                     begin
-                       log_dc_error_result __FILE__ __LINE__ e;
-                       (tags, args)
-                     end)
-                   (mem#to_updated_offset_address floc))
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
                ~error:(fun e ->
                  begin
                    log_dc_error_result __FILE__ __LINE__ e;
                    (tags, args)
                  end)
-               (rn#to_variable floc)
+               (mem#to_updated_offset_address floc)
            else
              (tags, args) in
          (tags, args)
@@ -1810,23 +1812,16 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
              TR.tfold
-               ~ok:(fun vrn ->
-                 TR.tfold
-                   ~ok:(fun (inc, xaddr) ->
-                     add_base_update tags args vrn inc xaddr)
-                   ~error:(fun e ->
-                     begin
-                       log_dc_error_result __FILE__ __LINE__ e;
-                       (tags, args)
-                     end)
-                   (mem#to_updated_offset_address floc))
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
                ~error:(fun e ->
                  begin
                    log_dc_error_result __FILE__ __LINE__ e;
                    (tags, args)
                  end)
-               (rn#to_variable floc)
+               (mem#to_updated_offset_address floc)
            else
              (tags, args) in
          (tags, args)
@@ -2112,30 +2107,28 @@ object (self)
                    sprhs_r in
                TR.tmap rewrite_expr xaddr_r) in
          let rrhsexprs_r = List.map (TR.tmap rewrite_expr) rhsexprs_r in
-         let (r0rdefs, xr0_r) =
-           if rl#includes_pc then
-             let r0_op = arm_register_op AR0 RD in
-             let xr0_r = r0_op#to_expr floc in
-             let xxr0_r = TR.tmap rewrite_expr xr0_r in
-             ([get_rdef_r xr0_r] @ (get_all_rdefs_r xxr0_r), Some xxr0_r)
-           else
-             ([], None) in
          let rdefs = List.map get_rdef_r (sprhs_r :: rhsexprs_r) in
          let uses = List.map get_def_use_r (splhs_r :: lhsvars_r) in
          let useshigh = List.map get_def_use_high_r (splhs_r :: lhsvars_r) in
          let xprs_r =
-           (sprhs_r :: spresult_r :: rspresult_r :: rrhsexprs_r)
-           @ xaddrs_r
-           @ (match xr0_r with Some x_r -> [x_r] | _ -> []) in
+           (sprhs_r :: spresult_r :: rspresult_r :: rrhsexprs_r) @ xaddrs_r in
          let (tagstring, args) =
            mk_instrx_data_r
              ~vars_r:(splhs_r :: lhsvars_r)
              ~xprs_r
-             ~rdefs:(rdefs @ r0rdefs)
+             ~rdefs
              ~uses
              ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let (tags, args) =
+           if rl#includes_pc then
+             let r0_op = arm_register_op AR0 RD in
+             let xr0_r = r0_op#to_expr floc in
+             let xxr0_r = TR.tmap rewrite_expr xr0_r in
+             add_return_value tags args xr0_r xxr0_r
+           else
+             (tags, args) in
          (tags, args)
 
       | PreloadData (_, c, base, mem) ->
@@ -2644,14 +2637,8 @@ object (self)
             get_rdef_r xxrt_r] in
          let uses = [get_def_use_r vmem_r] in
          let useshigh = [get_def_use_high_r vmem_r] in
-         let (vars_r, uses, useshigh) =
-           if mem#is_offset_address_writeback then
-             let vrn_r = rn#to_variable floc in
-             ([vmem_r; vrn_r],
-               uses @ [get_def_use_r vrn_r],
-               useshigh @ [get_def_use_high_r vrn_r])
-           else
-             ([vmem_r], uses, useshigh) in
+         let xprs_r = [xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r] in
+         let vars_r = [vmem_r] in
          let _ =
            floc#memrecorder#record_store_r
              ~addr_r:xxaddr_r
@@ -2660,14 +2647,22 @@ object (self)
              ~vtype:t_unknown
              ~xpr_r:xxrt_r in
          let (tagstring, args) =
-           mk_instrx_data_r
-             ~vars_r
-             ~xprs_r:[xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r]
-             ~rdefs
-             ~uses
-             ~useshigh
-             () in
+           mk_instrx_data_r ~vars_r ~xprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
+             TR.tfold
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (mem#to_updated_offset_address floc)
+           else
+             (tags, args) in
          (tags, args)
 
       | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
@@ -2685,14 +2680,6 @@ object (self)
             get_rdef_r xxrt_r] in
          let uses = [get_def_use_r vmem_r] in
          let useshigh = [get_def_use_high_r vmem_r] in
-         let (vars_r, uses, useshigh) =
-           if mem#is_offset_address_writeback then
-             let vrn_r = rn#to_variable floc in
-             ([vmem_r; vrn_r],
-               uses @ [get_def_use_r vrn_r],
-               useshigh @ [get_def_use_high_r vrn_r])
-           else
-             ([vmem_r], uses, useshigh) in
          let _ =
            floc#memrecorder#record_store_r
              ~addr_r:xxaddr_r
@@ -2702,13 +2689,27 @@ object (self)
              ~xpr_r:xxrt_r in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r
+             ~vars_r:[vmem_r]
              ~xprs_r:[xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r]
              ~rdefs
              ~uses
              ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+                  let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
+             TR.tfold
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (mem#to_updated_offset_address floc)
+           else
+             (tags, args) in
          (tags, args)
 
       | StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
@@ -2722,16 +2723,11 @@ object (self)
          let xxrt2_r = TR.tmap rewrite_expr xrt2_r in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
+         let xprs_r =
+           [xrn_r; xrm_r; xrt_r; xxrt_r; xrt2_r; xxrt2_r; xaddr1_r; xaddr2_r] in
+         let vars_r = [vmem_r; vmem2_r] in
          let uses = [get_def_use_r vmem_r; get_def_use_r vmem2_r] in
          let useshigh = [get_def_use_high_r vmem_r; get_def_use_high_r vmem2_r] in
-         let (vars_r, uses, useshigh) =
-           if mem#is_offset_address_writeback then
-             let vrn_r = rn#to_variable floc in
-             ([vmem_r; vmem2_r; vrn_r],
-              uses @ [get_def_use_r vrn_r],
-              useshigh @ [get_def_use_high_r vrn_r])
-           else
-             ([vmem_r; vmem2_r], uses, useshigh) in
          let _ =
            floc#memrecorder#record_store_r
              ~addr_r:xaddr1_r
@@ -2746,8 +2742,6 @@ object (self)
              ~size:4
              ~vtype:t_unknown
              ~xpr_r:xxrt2_r in
-         let xprs_r =
-           [xrn_r; xrm_r; xrt_r; xxrt_r; xrt2_r; xxrt2_r; xaddr1_r; xaddr2_r] in
          let rdefs = [
              get_rdef_r xrn_r;
              get_rdef_r xrm_r;
@@ -2758,6 +2752,20 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data_r ~vars_r ~xprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
+             TR.tfold
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (mem#to_updated_offset_address floc)
+           else
+             (tags, args) in
          (tags, args)
 
       | StoreRegisterExclusive (c, rd, rt, rn, mem) ->
@@ -2804,14 +2812,6 @@ object (self)
             get_rdef_r xxrt_r] in
          let uses = [get_def_use_r vmem_r] in
          let useshigh = [get_def_use_high_r vmem_r] in
-         let (vars_r, uses, useshigh) =
-           if mem#is_offset_address_writeback then
-             let vrn_r = rn#to_variable floc in
-             ([vmem_r; vrn_r],
-               uses @ [get_def_use_r vrn_r],
-               useshigh @ [get_def_use_high_r vrn_r])
-           else
-             ([vmem_r], uses, useshigh) in
          let _ =
            floc#memrecorder#record_store_r
              ~addr_r:xxaddr_r
@@ -2821,13 +2821,27 @@ object (self)
              ~xpr_r:xxrt_r in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r
+             ~vars_r:[vmem_r]
              ~xprs_r:[xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r]
              ~rdefs
              ~uses
              ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let (tags, args) =
+           if mem#is_offset_address_writeback then
+             let vrn_r = rn#to_variable floc in
+             TR.tfold
+               ~ok:(fun (inc, xaddr) ->
+                 add_base_update tags args vrn_r inc (Ok xaddr))
+               ~error:(fun e ->
+                 begin
+                   log_dc_error_result __FILE__ __LINE__ e;
+                   (tags, args)
+                 end)
+               (mem#to_updated_offset_address floc)
+           else
+             (tags, args) in
          (tags, args)
 
       | Subtract (_, c, rd, rn, rm, _, _) ->
