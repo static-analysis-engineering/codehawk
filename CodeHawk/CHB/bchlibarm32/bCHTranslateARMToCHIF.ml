@@ -543,6 +543,11 @@ let translate_arm_instruction
      instruction.
    *)
   let floc = get_floc loc in
+  let log_dc_error_result (file: string) (line: int) (e: string list) =
+    if BCHSystemSettings.system_settings#collect_data then
+      log_error_result ~msg:(p2s floc#l#toPretty) file line e
+    else
+      () in
   let pcv = TR.tget_ok ((pc_r RD)#to_variable floc) in
   let iaddr8 =
     if instr#is_arm32 then
@@ -2466,13 +2471,13 @@ let translate_arm_instruction
                    stacklhscmds @ defcmds1 @ cmds1)
                    ~error:(fun e ->
                      begin
-                       log_error_result __FILE__ __LINE__ e;
+                       log_dc_error_result __FILE__ __LINE__ e;
                        []
                      end)
                    (stackop#to_lhs floc))
                ~error:(fun e ->
                  begin
-                   log_error_result __FILE__ __LINE__ e;
+                   log_dc_error_result __FILE__ __LINE__ e;
                    []
                  end)
                rhsvar_r in
@@ -2823,13 +2828,13 @@ let translate_arm_instruction
                      memlhscmds @ defcmds1 @ cmds1)
                    ~error:(fun e ->
                      begin
-                       log_error_result __FILE__ __LINE__ e;
+                       log_dc_error_result __FILE__ __LINE__ e;
                        []
                      end)
                    (memop#to_lhs floc))
                ~error:(fun e ->
                  begin
-                   log_error_result __FILE__ __LINE__ e;
+                   log_dc_error_result __FILE__ __LINE__ e;
                    []
                  end)
                rhsvar_r in
@@ -2892,13 +2897,13 @@ let translate_arm_instruction
                      memlhscmds @ defcmds1 @ cmds1)
                    ~error:(fun e ->
                      begin
-                       log_error_result __FILE__ __LINE__ e;
+                       log_dc_error_result __FILE__ __LINE__ e;
                        []
                      end)
                    (memop#to_lhs floc))
                ~error:(fun e ->
                  begin
-                   log_error_result __FILE__ __LINE__ e;
+                   log_dc_error_result __FILE__ __LINE__ e;
                    []
                  end)
                rhsvar_r in
@@ -2960,13 +2965,13 @@ let translate_arm_instruction
                      memlhscmds @ defcmds1 @ cmds1)
                    ~error:(fun e ->
                      begin
-                       log_error_result __FILE__ __LINE__ e;
+                       log_dc_error_result __FILE__ __LINE__ e;
                        []
                      end)
                    (memop#to_lhs floc))
                ~error:(fun e ->
                  begin
-                   log_error_result __FILE__ __LINE__ e;
+                   log_dc_error_result __FILE__ __LINE__ e;
                    []
                  end)
                rhsvar_r in
@@ -3029,13 +3034,13 @@ let translate_arm_instruction
                      memlhscmds @ defcmds1 @ cmds1)
                    ~error:(fun e ->
                      begin
-                       log_error_result __FILE__ __LINE__ e;
+                       log_dc_error_result __FILE__ __LINE__ e;
                        []
                      end)
                    (memop#to_lhs floc))
                ~error:(fun e ->
                  begin
-                   log_error_result __FILE__ __LINE__ e;
+                   log_dc_error_result __FILE__ __LINE__ e;
                    []
                  end)
                rhsvar_r in
@@ -3075,7 +3080,7 @@ let translate_arm_instruction
            let usehigh = get_addr_use_high_vars_r [xrn_r; xrm_r] in
            let defcmds = floc#get_vardef_commands ~usehigh ctxtiaddr in
            begin
-             log_error_result __FILE__ __LINE__ e;
+             log_dc_error_result __FILE__ __LINE__ e;
              defcmds
            end)
          (mem#to_lhs floc) in
@@ -3095,9 +3100,10 @@ let translate_arm_instruction
        if floc#has_initial_value vrt then
          TR.tfold
            ~ok:(fun memlhs ->
-             finfo#save_register memlhs floc#cia rt#to_register)
+             if finfo#env#is_stack_variable memlhs then
+               finfo#save_register memlhs floc#cia rt#to_register)
            ~error:(fun e ->
-             begin log_error_result __FILE__ __LINE__ e; () end)
+             begin log_dc_error_result __FILE__ __LINE__ e; () end)
            (mem#to_variable floc) in
      (match c with
       | ACCAlways -> default cmds
@@ -3121,7 +3127,7 @@ let translate_arm_instruction
            let usehigh = get_addr_use_high_vars_r [xrn_r; xrm_r] in
            let defcmds = floc#get_vardef_commands ~usehigh ctxtiaddr in
            begin
-             log_error_result __FILE__ __LINE__ e;
+             log_dc_error_result __FILE__ __LINE__ e;
              defcmds
            end)
          (mem#to_lhs floc) in
@@ -3170,7 +3176,7 @@ let translate_arm_instruction
            let usehigh = get_addr_use_high_vars_r [xrn_r; xrm_r] in
            let defcmds = floc#get_vardef_commands ~usehigh ctxtiaddr in
            begin
-             log_error_result __FILE__ __LINE__ e;
+             log_dc_error_result __FILE__ __LINE__ e;
              defcmds
            end)
          (mem#to_lhs floc) in
@@ -3181,7 +3187,7 @@ let translate_arm_instruction
            let defcmds = floc#get_vardef_commands ~defs:[memlhs] ctxtiaddr in
            memcmds @ cmds @ defcmds)
          ~error:(fun e ->
-           begin log_error_result __FILE__ __LINE__ e; [] end)
+           begin log_dc_error_result __FILE__ __LINE__ e; [] end)
          (mem2#to_lhs floc) in
      let updatecmds =
        if mem#is_offset_address_writeback then
@@ -3203,14 +3209,14 @@ let translate_arm_instruction
               ~ok:(fun memlhs ->
                 finfo#save_register memlhs floc#cia rt#to_register)
               ~error:(fun e ->
-                begin log_error_result __FILE__ __LINE__ e; () end)
+                begin log_dc_error_result __FILE__ __LINE__ e; () end)
               (mem#to_variable floc));
          (if floc#has_initial_value vrt2 then
             TR.tfold
               ~ok:(fun memlhs ->
                 finfo#save_register memlhs floc#cia rt2#to_register)
               ~error:(fun e ->
-                begin log_error_result __FILE__ __LINE__ e; () end)
+                begin log_dc_error_result __FILE__ __LINE__ e; () end)
               (mem2#to_variable floc))
        end in
      (match c with
@@ -3237,7 +3243,7 @@ let translate_arm_instruction
            let usehigh = get_addr_use_high_vars_r [xrn_r] in
            let defcmds = floc#get_vardef_commands ~usehigh ctxtiaddr in
            begin
-             log_error_result __FILE__ __LINE__ e;
+             log_dc_error_result __FILE__ __LINE__ e;
              defcmds
            end)
          (mem#to_lhs floc) in
@@ -3264,7 +3270,7 @@ let translate_arm_instruction
            let usehigh = get_addr_use_high_vars_r [xrn_r; xrm_r] in
            let defcmds = floc#get_vardef_commands ~usehigh ctxtiaddr in
            begin
-             log_error_result __FILE__ __LINE__ e;
+             log_dc_error_result __FILE__ __LINE__ e;
              defcmds
            end)
          (mem#to_lhs floc) in
@@ -3354,7 +3360,7 @@ let translate_arm_instruction
            let usehigh = get_use_high_vars_r [xrt2_r] in
            let defs = floc#get_vardef_commands ~usehigh ctxtiaddr in
            begin
-             log_error_result __FILE__ __LINE__ e;
+             log_dc_error_result __FILE__ __LINE__ e;
              defs
            end)
        (mem#to_lhs floc) in
@@ -3394,7 +3400,7 @@ let translate_arm_instruction
            let usehigh = get_use_high_vars_r [xrt2_r] in
            let defs = floc#get_vardef_commands ~usehigh ctxtiaddr in
            begin
-             log_error_result __FILE__ __LINE__ e;
+             log_dc_error_result __FILE__ __LINE__ e;
              defs
            end)
        (mem#to_lhs floc) in
@@ -3909,7 +3915,7 @@ let translate_arm_instruction
          ~error:(fun e ->
            let usehigh = get_use_high_vars_r [xrn_r] in
            begin
-             log_error_result __FILE__ __LINE__ e;
+             log_dc_error_result __FILE__ __LINE__ e;
              usehigh
            end)
          rhs_r in
@@ -4144,13 +4150,13 @@ let translate_arm_instruction
                    stacklhscmds @ defcmds1 @ cmds1)
                    ~error:(fun e ->
                      begin
-                       log_error_result __FILE__ __LINE__ e;
+                       log_dc_error_result __FILE__ __LINE__ e;
                        []
                      end)
                    (stackop#to_lhs floc))
                ~error:(fun e ->
                  begin
-                   log_error_result __FILE__ __LINE__ e;
+                   log_dc_error_result __FILE__ __LINE__ e;
                    []
                  end)
                rhsvar_r in
@@ -4232,7 +4238,7 @@ let translate_arm_instruction
            let usehigh = get_use_high_vars_r [xrn_r] in
            let defcmds = floc#get_vardef_commands ~usehigh ctxtiaddr in
            begin
-             log_error_result __FILE__ __LINE__ e;
+             log_dc_error_result __FILE__ __LINE__ e;
              defcmds
            end)
          (mem#to_lhs floc) in
@@ -4260,22 +4266,22 @@ let translate_arm_instruction
 
   | NotRecognized (desc, dw) ->
      begin
-       ch_error_log#add
-         "instruction not recognized"
-         (LBLOCK [dw#toPretty; STR ": "; STR desc]);
+       log_error_result
+         ~msg:"instruction not recognized"
+         __FILE__ __LINE__
+         [(p2s floc#l#toPretty);
+          (p2s dw#toPretty) ^ ":" ^ desc];
        default []
      end
 
   | instr ->
-     let _ =
-       chlog#add
-         "no semantics"
-         (LBLOCK [
-              loc#toPretty;
-              STR ": ";
-              STR (arm_opcode_to_string instr)]) in
-     default []
-
+     begin
+       log_error_result
+         ~msg:"no instruction semantics"
+         __FILE__ __LINE__
+         [(p2s floc#l#toPretty); (arm_opcode_to_string instr)];
+       default []
+     end
 
 class arm_assembly_function_translator_t (f:arm_assembly_function_int) =
 object (self)

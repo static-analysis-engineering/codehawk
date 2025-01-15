@@ -51,6 +51,7 @@ module TR = CHTraceResult
 
 let x2p = xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
 
 let mmap = BCHGlobalMemoryMap.global_memory_map
 
@@ -263,9 +264,15 @@ object (self)
                    when mmap#is_global_data_address
                           (numerical_mod_to_doubleword n) ->
                  mmap#add_gload self#faddr iaddr addr size signed
+              | XConst (IntConst n) ->
+                 log_result __FILE__ __LINE__
+                   ["memrecorder:literal load not recorded";
+                    p2s self#loc#toPretty;
+                    p2s (numerical_mod_to_doubleword n)#toPretty]
               | _ ->
-                 log_error_result __FILE__ __LINE__
-                   ["memrecorder:global"; p2s self#loc#toPretty])
+                 log_result __FILE__ __LINE__
+                   ["memrecorder:load not recorded";
+                    p2s self#loc#toPretty; (x2s addr)])
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             addr_r)
       ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
@@ -367,7 +374,8 @@ object (self)
                  mmap#add_gstore self#faddr iaddr addr size optvalue
               | _ ->
                  log_error_result __FILE__ __LINE__
-                   ["memrecorder:global"; p2s self#loc#toPretty])
+                   ["memrecorder: store not recorded";
+                    p2s self#loc#toPretty; (x2s addr)])
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             addr_r)
       ~error:(fun e -> log_error_result __FILE__ __LINE__ e)

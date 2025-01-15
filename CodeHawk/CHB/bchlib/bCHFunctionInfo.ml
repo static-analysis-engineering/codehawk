@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -82,6 +82,7 @@ module TR = CHTraceResult
 
 let x2p = xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
 
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
@@ -1761,38 +1762,32 @@ object (self)
   method save_register
            (vmem: variable_t) (iaddr:ctxt_iaddress_t) (reg:register_t) =
     if self#env#is_stack_variable vmem then
-      log_tfold
-        (log_error "save_register" "invalid offset")
+      TR.tfold
         ~ok:(fun offset ->
           match offset with
           | ConstantOffset (n, NoOffset) ->
              self#stackframe#add_register_spill ~offset:n#toInt reg iaddr
           | _ ->
-             ch_error_log#add
-               "save_register:no offset"
-               (LBLOCK [
-                    self#get_address#toPretty;
-                    STR " ";
-                    STR iaddr;
-                    STR ": ";
-                    vmem#toPretty;
-                    STR " (";
-                    STR (register_to_string reg);
-                    STR ")"]))
-        ~error:(fun _ -> ())
+             log_error_result
+               ~msg:"save_register:not a constant offset"
+               __FILE__ __LINE__
+               ["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ "): ";
+                (p2s vmem#toPretty) ^ " with " ^ (register_to_string reg)
+                ^ " and offset " ^ (memory_offset_to_string offset)])
+        ~error:(fun e ->
+          log_error_result
+            ~msg:"save_register"
+            __FILE__ __LINE__
+            (["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ "): ";
+              (p2s vmem#toPretty) ^ " with " ^ (register_to_string reg)] @ e))
         (self#env#get_memvar_offset vmem)
     else
-      ch_error_log#add
-        "save_register:not a stack variable"
-        (LBLOCK [
-             self#get_address#toPretty;
-             STR " ";
-             STR iaddr;
-             STR ": ";
-             vmem#toPretty;
-             STR " (";
-             STR (register_to_string reg);
-             STR ")"])
+      log_error_result
+        ~msg:"save register:not a stack variable"
+        __FILE__ __LINE__
+        ["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ "): ";
+         "not a stack variable: "
+         ^ (p2s vmem#toPretty) ^ " with " ^ (register_to_string reg)]
 
   method restore_register
            (memaddr: xpr_t) (iaddr:ctxt_iaddress_t) (reg:register_t) =
@@ -1803,54 +1798,30 @@ object (self)
          | XConst (IntConst n) ->
             self#stackframe#add_register_restore ~offset:n#neg#toInt reg iaddr
          | _ ->
-            ch_error_log#add
-              "restore_register:no offset"
-              (LBLOCK [
-                   self#get_address#toPretty;
-                   STR " ";
-                   STR iaddr;
-                   STR ": ";
-                   x2p memaddr;
-                   STR " (";
-                   STR (register_to_string reg);
-                   STR ")"])
+            log_error_result
+              ~msg:"restore register:not a constant offset"
+              __FILE__ __LINE__
+              ["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ ")";
+               (x2s memaddr)]
        else
-         ch_error_log#add
-           "restore_register:not an initial value"
-           (LBLOCK [
-                self#get_address#toPretty;
-                STR " ";
-                STR iaddr;
-                STR ": ";
-                x2p memaddr;
-                STR " (";
-                STR (register_to_string reg);
-                STR ")"])
+         ()
     | _ ->
-       ch_error_log#add
-         "restore_register:not a stack address"
-         (LBLOCK [
-              self#get_address#toPretty;
-              STR " ";
-              STR iaddr;
-              STR ": ";
-              x2p memaddr;
-              STR " (";
-              STR (register_to_string reg);
-              STR ")"])
+       ()
 
   method saved_registers_to_pretty =
     let p = ref [] in
     let _ =
-      H.iter (fun _ s -> p := (LBLOCK [ s#toPretty ; NL ]) :: !p) saved_registers in
+      H.iter (fun _ s -> p := (LBLOCK [s#toPretty; NL]) :: !p) saved_registers in
     match !p with
       [] ->
-      LBLOCK [ STR (string_repeat "~" 80) ; NL ; STR "No saved registers" ; NL ;
-	       STR (string_repeat "~" 80) ; NL ]
+       LBLOCK [
+           STR (string_repeat "~" 80); NL; STR "No saved registers"; NL;
+	   STR (string_repeat "~" 80); NL]
     | l ->
-       LBLOCK [ STR "Saved Registers" ; NL ; STR (string_repeat "~" 80) ; NL ;
-                LBLOCK l ; NL ;
-		STR (string_repeat "~" 80) ; NL]
+       LBLOCK [
+           STR "Saved Registers"; NL; STR (string_repeat "~" 80); NL;
+           LBLOCK l; NL;
+	   STR (string_repeat "~" 80); NL]
 
   method set_nonreturning =
     if nonreturning then () else
@@ -1877,7 +1848,8 @@ object (self)
         (LBLOCK [
              function_interface_to_pretty fs#get_function_interface;
              STR " with function signature ";
-             STR (btype_to_string fs#get_function_interface.fintf_type_signature.fts_returntype)])
+             STR (btype_to_string
+                    fs#get_function_interface.fintf_type_signature.fts_returntype)])
     end
 
   method read_xml_user_summary (node:xml_element_int) =

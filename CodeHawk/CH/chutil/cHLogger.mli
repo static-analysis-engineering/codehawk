@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny B. Sipma
-   Copyright (c) 2022-2024 Aarno Labs LLC
+   Copyright (c) 2022-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -119,4 +119,12 @@ val log_tfold_default:
     The entry is the concatenation of [msg] and the list of error messages
     making up [error].*)
 val log_error_result:
+  ?msg:string -> ?tag:string -> string -> int -> string list -> unit
+
+
+(** [log_result msg tag filename linenumber error] writes an entry to
+    [chlog] with a tag that combines [tag], [filename], and [linenumber].
+    The entry is the concatenation of [msg] and the list of error messages
+    making up [error].*)
+val log_result:
   ?msg:string -> ?tag:string -> string -> int -> string list -> unit

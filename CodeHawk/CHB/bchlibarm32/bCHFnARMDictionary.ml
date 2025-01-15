@@ -608,7 +608,7 @@ object (self)
                 | Some _ -> xx
                 | _ ->
                    match xx with
-                   | XVar v -> xx
+                   | XVar _ -> xx
                    | _ ->
                       TR.tfold_default
                         (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))

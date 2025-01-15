@@ -1,10 +1,10 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
-   Copyright (c) 2021-2024  Aarno Labs, LLC
+
+   Copyright (c) 2021-2025  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,6 +39,7 @@ open CHPretty
 open CHLogger
 
 (* xprlib *)
+open XprToPretty
 open XprTypes
 
 (* bchlib *)
@@ -56,6 +57,10 @@ open BCHARMTypes
 
 module TR = CHTraceResult
 
+let x2p = xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
+
 
 (* commonly used constant values *)
 let e7   = 128
@@ -70,7 +75,7 @@ let rec _pow2 n =
   match n with
   | 0 -> 1
   | 1 -> 2
-  | n -> 
+  | n ->
     let b = _pow2 (n / 2) in
     b * b * (if n mod 2 = 0 then 1 else 2)
 
@@ -158,44 +163,46 @@ let get_inverse_cc (cc: arm_opcode_cc_t): arm_opcode_cc_t option =
   | _ -> None
 
 
-let has_inverse_cc (cc: arm_opcode_cc_t): bool =  Option.is_some (get_inverse_cc cc)
+let has_inverse_cc (cc: arm_opcode_cc_t): bool =
+  Option.is_some (get_inverse_cc cc)
 
 
 let get_string_reference (floc:floc_int) (xpr:xpr_t) =
   try
     match xpr with
     | XConst (IntConst num) ->
-       log_tfold_default
-         (mk_tracelog_spec
-            ~tag:"get_string_reference"
-            (floc#cia ^": constant: " ^ num#toString))
-         (fun address ->
+       TR.tfold
+         ~ok:(fun address ->
            begin
 	     match elf_header#get_string_at_address address with
 	     | Some str ->
 	        begin
 	          string_table#add_xref address str floc#fa floc#cia;
-                  (if collect_diagnostics () then
-                     ch_diagnostics_log#add
-                       "add string" (LBLOCK [floc#l#toPretty; STR "; "; STR str]));
 	          Some str
 	        end
 	     | _ ->
-                begin
-                  (if collect_diagnostics () then
-                     ch_diagnostics_log#add
-                       "no string found"
-                       (LBLOCK [floc#l#toPretty; STR ": "; address#toPretty]));
-                  None
-                end
+                None
            end)
-         None
+         ~error:(fun e ->
+           begin
+             log_error_result
+               ~msg:"get_string_reference"
+               __FILE__ __LINE__ ([(p2s floc#l#toPretty) ^ ": " ^ (x2s xpr)] @ e);
+             None
+           end)
          (numerical_to_doubleword num)
     | XOp (XPlus, [XVar v; XConst (IntConst num)]) ->
       if floc#env#has_initialized_string_value v num#toInt then
 	Some (floc#env#get_initialized_string_value v num#toInt)
       else
 	None
-    | _ -> None
+    | _ ->
+       None
   with
-  | _ -> None
+  | _ ->
+     begin
+       log_error_result
+         ~msg:"get_string_reference"
+         __FILE__ __LINE__ [(p2s floc#l#toPretty) ^ ": " ^ (x2s xpr)];
+       None
+     end

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1261,13 +1261,17 @@ object (self)
              Ok (IndexOffset (v, n#toInt, NoOffset))
           | _ ->
              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                    ^ "Offset not recognized: " ^ (x2s offset)]) in
+                    ^ "Offset from base "
+                    ^ (x2s (XVar base))
+                    ^ " not recognized: " ^ (x2s offset)]) in
        (memref_r, memoff_r)
 
     (* no known pointers, have to find a base *)
     | [] ->
        let maxC = largest_constant_term x in
-       if maxC#gt system_info#get_image_base#to_numerical then
+       let maxCdw = TR.tvalue (numerical_to_doubleword maxC) ~default:wordzero in
+       (* if maxC#gt system_info#get_image_base#to_numerical then *)
+       if system_info#is_code_address maxCdw then
          (* global base *)
          let memref_r = Ok self#env#mk_global_memory_reference in
          let offset = simplify_xpr (XOp (XMinus, [x; num_constant_expr maxC])) in
@@ -1282,7 +1286,10 @@ object (self)
               Ok (IndexOffset (v, n#toInt, NoOffset))
            | _ ->
               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                     ^ "Offset not recognized: " ^ (x2s offset)] in
+                     ^ (p2s self#l#toPretty) ^ ": "
+                     ^ "Offset from global base "
+                     ^ maxC#toString
+                     ^ " not recognized: " ^ (x2s offset)] in
          let memoff_r =
            tmap
              (fun gmemoff -> ConstantOffset (maxC, gmemoff))
@@ -1304,7 +1311,10 @@ object (self)
                   Ok (IndexOffset (v, n#toInt, NoOffset))
               | _ ->
                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                        ^ "Offset not recognized: " ^ (x2s offset)] in
+                        ^ (p2s self#l#toPretty) ^ ": "
+                        ^ "Offset from base "
+                        ^ (x2s (XVar base))
+                        ^ " not recognized: " ^ (x2s offset)] in
              (memref_r, memoff_r)
 
           | [base] when (self#env#is_stack_parameter_variable base)
@@ -1330,13 +1340,17 @@ object (self)
                       Ok (IndexOffset (v, n#toInt, NoOffset))
                    | _ ->
                       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                             ^ "Offset not recognized: " ^ (x2s offset)])
+                             ^ (p2s self#l#toPretty) ^ ": "
+                             ^ "Offset from base "
+                             ^ (x2s (XVar base))
+                             ^ " not recognized: " ^ (x2s offset)])
                  base_r in
              (memref_r, memoff_r)
 
           | [v] ->
              let memref_r =
                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ (p2s self#l#toPretty) ^ ": "
                       ^ "No candidate base pointers. Only variable found: "
                       ^ (p2s v#toPretty)] in
              let memoff_r =
@@ -1346,6 +1360,7 @@ object (self)
           | [] ->
              let memref_r =
                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ (p2s self#l#toPretty) ^ ": "
                       ^ "No candidate pointers. Left with maxC: "
                       ^ maxC#toString] in
              let memoff_r =
@@ -1356,6 +1371,7 @@ object (self)
           | _ ->
              let memref_r =
                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ (p2s self#l#toPretty) ^ ": "
                       ^ "Multiple variables: "
                       ^ (String.concat "; "
                            (List.map (fun v -> p2s v#toPretty) vars))] in
@@ -1367,6 +1383,7 @@ object (self)
     | _ ->
        let memref_r =
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ (p2s self#l#toPretty) ^ ": "
                 ^ "Multiple known pointers: "
                 ^ (String.concat "; "
                      (List.map (fun v -> p2s v#toPretty) knownpointers))] in

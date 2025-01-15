@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -237,5 +237,18 @@ let log_error_result
   let tag = if tag = "" then tag else tag ^ ":" in
   let msg = if msg = "" then msg else msg ^ ": " in
   ch_error_log#add
+    (tag ^ filename ^ ":" ^ (string_of_int linenumber))
+    (LBLOCK [STR msg; STR (String.concat "; " error)])
+
+
+let log_result
+      ?(msg="")
+      ?(tag="")
+      (filename: string)
+      (linenumber: int)
+      (error: string list) =
+  let tag = if tag = "" then tag else tag ^ ":" in
+  let msg = if msg = "" then msg else msg ^ ":" in
+  chlog#add
     (tag ^ filename ^ ":" ^ (string_of_int linenumber))
     (LBLOCK [STR msg; STR (String.concat "; " error)])
