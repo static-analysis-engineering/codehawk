@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-20245 Aarno Labs LLC
+   Copyright (c) 2022-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -85,8 +85,7 @@ let translate_store () =
       ("STMIB", "0x3ba4c", "10408de900",
        [("arg_0004", "R4_in"); ("arg_0008", "LR_in")]);
       ("STR", "0x1b4bc", "08608de500", [("arg_0008", "R6_in")]);
-      ("STRBwb", "0x10208", "015062e500",
-       [("R2_in[-1]", "R5_in"); ("R2", "sv__3__sv")]);
+      ("STRBwb", "0x10208", "015062e500", [("R2", "sv__3__sv")]);
       ("STRwb", "0x10568", "08402de500",
        [("var_0008", "R4_in"); ("SP", "sv__3__sv")]);
       ("STRDwb1", "0x1b4bc", "f0416de100",
