@@ -1271,7 +1271,8 @@ object (self)
        let maxC = largest_constant_term x in
        let maxCdw = TR.tvalue (numerical_to_doubleword maxC) ~default:wordzero in
        (* if maxC#gt system_info#get_image_base#to_numerical then *)
-       if system_info#is_code_address maxCdw then
+       if system_info#is_code_address maxCdw
+          || memmap#is_global_data_address maxCdw then
          (* global base *)
          let memref_r = Ok self#env#mk_global_memory_reference in
          let offset = simplify_xpr (XOp (XMinus, [x; num_constant_expr maxC])) in

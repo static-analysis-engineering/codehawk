@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024  Aarno Labs, LLC
+   Copyright (c) 2021-2025  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -475,12 +475,31 @@ object (self:'a)
                floc#get_memory_variable_numoffset ~size ~align rvar memoff)
              numoffset_r
 
+        | ARMIndexOffset (ri, i) ->
+           let rvar = env#mk_arm_register_variable r in
+           let ivar = env#mk_arm_register_variable ri in
+           if isadd then
+             let rx = floc#inv#rewrite_expr (XVar rvar) in
+             let ivax = floc#inv#rewrite_expr (XVar ivar) in
+             let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
+             (match (xoffset, i) with
+              | (XConst (IntConst n), 0) ->
+                 floc#env#mk_global_variable ~size n
+              | _ ->
+                 floc#get_memory_variable_varoffset
+                   ~size rvar ivar (mkNumerical i))
+           else
+             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ "Index offset with is_add false not yet supported: "
+                    ^ (p2s self#toPretty)]
+
         | ARMShiftedIndexOffset _ ->
            let rvar = env#mk_arm_register_variable r in
            (match (offset, isadd) with
             | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
                let optscale =
                  match srt with
+                 | ARMImmSRT (SRType LSL, 3) -> Some 8
                  | ARMImmSRT (SRType_LSL, 2) -> Some 4
                  | ARMImmSRT (SRType_LSL, 0) -> Some 1
                  | _ -> None in
@@ -491,8 +510,8 @@ object (self:'a)
                      let rx = floc#inv#rewrite_expr (XVar rvar) in
                      let ivax = floc#inv#rewrite_expr (XVar ivar) in
                      let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
-                     (match xoffset with
-                      | XConst (IntConst n) ->
+                     (match (xoffset, i) with
+                      | (XConst (IntConst n), 0) ->
                          floc#env#mk_global_variable ~size n
                       | _ ->
                          floc#get_memory_variable_varoffset
@@ -509,12 +528,7 @@ object (self:'a)
                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                       ^ "Shifted Index Offset with isadd: false: "
                       ^ (p2s self#toPretty)
-                      ^ " not yet supported"])
-
-        | _ ->
-           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                  ^ "Index Offset address: " ^ (p2s self#toPretty)
-                  ^ " not yet supported"])
+                      ^ " not yet supported"]))
 
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
        Ok (env#mk_arm_register_variable r)

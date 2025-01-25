@@ -341,7 +341,8 @@ object (self)
                     && Option.is_none tgtbtype ->
                 Ok (ArrayIndexOffset (indexxpr, NoOffset))
              | Some (indexxpr, rem) ->
-                if is_struct_type eltty then
+                if (TR.tfold_default is_struct_type false (resolve_type eltty)) then
+                  let eltty = TR.tvalue (resolve_type eltty) ~default:t_unknown in
                   tbind
                     (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
                     (self#structvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
@@ -356,7 +357,8 @@ object (self)
                 else
                   Error[__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
                         ^ "xoffset: " ^ (x2s xoffset)
-                        ^ "; btype: " ^ (btype_to_string btype)])
+                        ^ "; btype: " ^ (btype_to_string btype)
+                        ^ "; elementtype: " ^ (btype_to_string eltty)])
            (size_of_btype eltty)
        else
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
@@ -382,11 +384,14 @@ object (self)
         | XConst (IntConst n) when not self#is_typed ->
            Ok (ConstantOffset (n, NoOffset))
         | _ ->
-           let tgtbtype = if is_unknown_type tgtbtype then None else Some tgtbtype in
+           let tgtbtype =
+             if is_unknown_type tgtbtype then None else Some tgtbtype in
            if self#is_struct then
-             self#structvar_memory_offset ~tgtsize ~tgtbtype self#btype xoffset
+             let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+             self#structvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
            else if self#is_array then
-               self#arrayvar_memory_offset ~tgtsize ~tgtbtype self#btype xoffset
+             let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+             self#arrayvar_memory_offset ~tgtsize ~tgtbtype self#btype xoffset
            else
              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
                     ^ (btype_to_string self#btype)
@@ -429,6 +434,16 @@ object (self)
            (name: string)
            (addr: doubleword_int)
            (size: doubleword_int) =
+    let _ =
+      chlog#add
+        "globalmemorymap:set_section"
+        (LBLOCK [
+             STR name;
+             STR ": @";
+             addr#toPretty;
+             STR " (";
+             size#toPretty;
+             STR " bytes)"]) in
     H.add sections addr#value (name, size#value, readonly, initialized)
 
   method private is_initialized (addr: doubleword_int): bool =

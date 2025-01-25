@@ -536,7 +536,12 @@ object (self)
       let rdefcount = List.length rdefs in
       let tagstring = tagstring ^ (string_repeat "x" xprcount) in
       let tagstring = tagstring ^ (string_repeat "r" rdefcount) in
-      let args = args @ (List.map index_xpr xprs_r) @ rdefs in
+      (* move the call target index (into the interface dictionary) to the
+         end of args list, so it is not interpreted as an expression *)
+      let args_calltgt_ix = List.hd (List.rev args) in
+      let args_proper = List.rev (List.tl (List.rev args)) in
+      let args = args_proper @ (List.map index_xpr xprs_r) @ rdefs in
+      let args = args @ [args_calltgt_ix] in
       let tags = (tagstring :: (List.tl tags)) @ ["bx-call"] in
       (tags, args) in
 
@@ -601,6 +606,7 @@ object (self)
                        ^ "Parameter type not recognized in call instruction"] in
             let ptype = get_parameter_type p in
             let xx = rewrite_expr ?restrict:(Some 4) x in
+            (*
             let xx =
               if is_pointer ptype then
                 let _ = floc#memrecorder#record_argument xx index in
@@ -616,6 +622,7 @@ object (self)
                         (floc#get_var_at_address ~btype:ptype xx)
               else
                 xx in
+             *)
             let rdef = get_rdef_r xvar_r in
             (xx :: xprs, xvar_r :: xvars, rdef :: rdefs, index + 1))
           ([], [], [], 1) callargs in

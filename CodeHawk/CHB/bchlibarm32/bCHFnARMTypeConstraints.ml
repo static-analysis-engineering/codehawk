@@ -927,6 +927,37 @@ object (self)
        (* no type information gained *)
        ()
 
+    | SignedMultiplyLong (_, _, rdlo, rdhi, rn, rm) ->
+       let rdloreg = rdlo#to_register in
+       let lhslotypevar = mk_reglhs_typevar rdloreg faddr iaddr in
+       let rdhireg = rdhi#to_register in
+       let lhshitypevar = mk_reglhs_typevar rdhireg faddr iaddr in
+       let rnreg = rn#to_register in
+       let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
+       let rmreg = rm#to_register in
+       let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
+
+       let tc = mk_int_type_constant Signed 32 in
+       let tctypeterm = mk_cty_term tc in
+       let lhslotypeterm = mk_vty_term lhslotypevar in
+       let lhshitypeterm = mk_vty_term lhshitypevar in
+       begin
+         store#add_subtype_constraint tctypeterm lhslotypeterm;
+         store#add_subtype_constraint tctypeterm lhshitypeterm;
+
+         (List.iter (fun rnrdef ->
+              let rnaddr = rnrdef#getBaseName in
+              let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+              let rntypeterm = mk_vty_term rntypevar in
+              store#add_subtype_constraint tctypeterm rntypeterm) rndefs);
+
+         (List.iter (fun rmrdef ->
+              let rmaddr = rmrdef#getBaseName in
+              let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+              let rmtypeterm = mk_vty_term rmtypevar in
+              store#add_subtype_constraint tctypeterm rmtypeterm) rmdefs)
+       end
+
     (* Store x in y  ---  *y := x  --- X <: Y.store *)
     | StoreRegister (_, rt, _rn, rm, memvarop, _) when rm#is_immediate ->
        let xaddr_r = memvarop#to_address floc in

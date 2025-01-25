@@ -528,7 +528,7 @@ let is_ldrls_jumptable
      let indexreg = indexregop#get_register in
      let cmptestf = cmp_reg_imm_test indexreg in
      let addr = ldrinstr#get_address in
-     let optcmpinstr = find_instr cmptestf [(-4)] addr in
+     let optcmpinstr = find_instr cmptestf [(-4); (-16)] addr in
      (match optcmpinstr with
       | Some cmpinstr ->
          let branchtestf instr =
