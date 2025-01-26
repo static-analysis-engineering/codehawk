@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -290,7 +290,8 @@ let construct_pwr_assembly_function
     List.iter (fun a -> if doneset#has a then () else workset#add a) l in
   let set_block_entry (baddr: doubleword_int) =
     TR.titer
-      (fun instr -> instr#set_block_entry)
+      ~ok:(fun instr -> instr#set_block_entry)
+      ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
       (get_pwr_assembly_instruction baddr) in
   let blocks = ref [] in
   let rec add_block (baddr: doubleword_int) =

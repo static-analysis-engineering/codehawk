@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -105,7 +105,13 @@ let tprop (r: 'a traceresult) (msg: string): 'a traceresult =
   | Error e -> Error (msg :: e)
 
 
-let titer (f: 'a -> unit) (r: 'a traceresult) =
+let titer ~(ok:'a -> unit) ~(error: string list -> unit) (r: 'a traceresult) =
+  match r with
+  | Ok v -> ok v
+  | Error e -> error e
+
+
+let titer_default (f: 'a -> unit) (r: 'a traceresult) =
   match r with
   | Ok v -> f v
   | Error _ -> ()

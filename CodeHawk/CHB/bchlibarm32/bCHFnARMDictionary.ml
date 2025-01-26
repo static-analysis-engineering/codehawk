@@ -604,7 +604,6 @@ object (self)
               else
                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                        ^ "Parameter type not recognized in call instruction"] in
-            let ptype = get_parameter_type p in
             let xx = rewrite_expr ?restrict:(Some 4) x in
             (*
             let xx =

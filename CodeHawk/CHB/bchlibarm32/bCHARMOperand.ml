@@ -499,7 +499,7 @@ object (self:'a)
             | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
                let optscale =
                  match srt with
-                 | ARMImmSRT (SRType LSL, 3) -> Some 8
+                 | ARMImmSRT (SRType_LSL, 3) -> Some 8
                  | ARMImmSRT (SRType_LSL, 2) -> Some 4
                  | ARMImmSRT (SRType_LSL, 0) -> Some 1
                  | _ -> None in

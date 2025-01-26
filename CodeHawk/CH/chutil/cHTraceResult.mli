@@ -100,8 +100,13 @@ val tbind:
   ?msg:string -> ('a -> 'c traceresult) -> ('a traceresult) -> 'c traceresult
 
 
-(** [titer f r] is [f v] if [r] is [Ok v] and [()] otherwise.*)
-val titer: ('a -> unit) -> ('a traceresult) -> unit
+(** [titer ~ok ~error r] is [ok v] if [r] is [Ok v] and [error e] if [r] is
+    [Error e].*)
+val titer: ok:('a -> unit) -> error:(string list -> unit) -> ('a traceresult) -> unit
+
+
+(** [titer_default f r] is [f v] if [r] is [Ok v] and [()] otherwise.*)
+val titer_default: ('a -> unit) -> 'a traceresult -> unit
 
 
 (** [tfold_list ~ok init rl] folds [Ok] values left to right, starting from
