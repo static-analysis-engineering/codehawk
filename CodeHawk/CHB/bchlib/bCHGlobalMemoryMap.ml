@@ -391,7 +391,7 @@ object (self)
              self#structvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
            else if self#is_array then
              let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
-             self#arrayvar_memory_offset ~tgtsize ~tgtbtype self#btype xoffset
+             self#arrayvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
            else
              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
                     ^ (btype_to_string self#btype)

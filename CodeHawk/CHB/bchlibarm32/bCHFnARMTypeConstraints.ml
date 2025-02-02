@@ -76,6 +76,7 @@ object (self)
   val faddr = fn#get_address#to_hex_string
   val finfo = get_function_info fn#get_address
   val env = (get_function_info fn#get_address)#env
+  val fndata = BCHFunctionData.functions_data#get_function fn#get_address
 
   method record_type_constraints =
     let fintf = finfo#get_summary#get_function_interface in
@@ -95,6 +96,19 @@ object (self)
     let rewrite_expr (x: xpr_t): xpr_t =
       let x = floc#inv#rewrite_expr x in
       simplify_xpr x in
+
+    let get_regvar_type_annotation (): btype_t option =
+      if fndata#has_regvar_type_annotation loc#i then
+        TR.tfold
+          ~ok:(fun t -> Some t)
+          ~error:(fun e ->
+            begin
+              log_error_result __FILE__ __LINE__ e;
+              None
+            end)
+          (fndata#get_regvar_type_annotation loc#i)
+      else
+        None in
 
     let rdef_pairs_to_pretty (pairs: (symbol_t * symbol_t) list) =
       pretty_print_list
@@ -559,6 +573,18 @@ object (self)
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
+
+         (match get_regvar_type_annotation () with
+          | Some t ->
+             let opttc = mk_btype_constraint rttypevar t in
+             (match opttc with
+              | Some tc ->
+                 begin
+                   log_type_constraint "LDR-rvintro" tc;
+                   store#add_constraint tc
+                 end
+              | _ -> ())
+          | _ -> ());
 
          (* LDR rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdef = get_variable_rdefs_r (rn#to_variable floc) in

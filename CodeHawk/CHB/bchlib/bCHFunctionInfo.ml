@@ -976,6 +976,10 @@ object (self)
   method mk_return_value (address:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_return_value address)
 
+  method mk_typecast_value
+           (iaddr: ctxt_iaddress_t) (name: string) (ty: btype_t) (reg: register_t) =
+    self#mk_variable (varmgr#make_typecast_value iaddr name ty reg)
+
   method mk_function_pointer_value
     (fname:string) (cname:string) (address:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_function_pointer_value fname cname address)
@@ -1646,6 +1650,8 @@ object (self)
   method get_address = faddr
 
   method a = faddr
+
+  method get_function_data = functions_data#get_function self#get_address
 
   method env = env
 

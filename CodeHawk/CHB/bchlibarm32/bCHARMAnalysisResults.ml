@@ -219,7 +219,13 @@ object (self)
             bd#write_xml_register inode reg;
             inode#setAttribute "iaddr" iaddr;
             (match optty with
-             | Some ty -> bcd#write_xml_typ inode ty
+             | Some ty ->
+                begin
+                  log_result __FILE__ __LINE__
+                    ["reglhs: " ^ iaddr ^ ": " ^
+                       (BCHBCTypePretty.btype_to_string ty)];
+                  bcd#write_xml_typ inode ty
+                end
              | _ -> ());
             regnode#appendChildren [inode]
           end) regtypes;

@@ -847,8 +847,6 @@ let main () =
       let _ = pr_timing [STR "bdictionary loaded"] in
       let _ = load_bc_files () in
       let _ = pr_timing [STR "bc files loaded"] in
-      let _ = system_info#initialize in
-      let _ = pr_timing [STR "system info initialized"] in
       let _ = load_interface_dictionary () in
       let _ = pr_timing [STR "interface dictionary loaded"] in
       let _ = load_arm_dictionary () in
@@ -869,6 +867,8 @@ let main () =
       let _ =
         if (List.length system_info#ifiles > 0) then
           pr_timing [STR "c header files parsed"] in
+      let _ = system_info#initialize in
+      let _ = pr_timing [STR "system info initialized"] in
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let analysisstart = Unix.gettimeofday () in

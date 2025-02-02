@@ -639,13 +639,45 @@ object (self)
            (var: variable_t)
            (numoffset: numerical_t): variable_t traceresult =
     let inv = self#inv in
+    let mk_memvar memref_r memoffset_r =
+      TR.tbind
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+        (fun memref ->
+          if memref#is_global_reference then
+            TR.tbind
+              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__)
+                    ^ ": memref:global")
+              (fun memoff ->
+                TR.tbind
+                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                  self#env#mk_global_variable
+                     (get_total_constant_offset memoff))
+              memoffset_r
+          else
+            TR.tmap
+              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+              (fun memoff ->
+                (self#env#mk_offset_memory_variable memref memoff))
+              memoffset_r)
+        memref_r in
+
     if inv#is_base_offset_constant var then
       let (base, offset) = inv#get_base_offset_constant var in
       let memoffset = numoffset#add offset in
-      TR.tmap
-        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-        (fun memref -> self#env#mk_memory_variable ~size memref memoffset)
-        (self#env#mk_base_sym_reference base)
+      let memref_r = self#env#mk_base_sym_reference base in
+      let memoff_r =
+        TR.tbind
+          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+          (fun basevar ->
+            let optbasetype = self#env#get_variable_type basevar in
+            let basetype =
+              match optbasetype with
+              | Some t when is_pointer t -> ptr_deref t
+              | _ -> t_unknown in
+            address_memory_offset basetype (num_constant_expr memoffset))
+          (self#env#get_variable base#getSeqNumber) in
+      mk_memvar memref_r memoff_r
+
     else
       let varx =
         if align > 1 then
@@ -670,27 +702,7 @@ object (self)
                   ^ ")"]
       | _ ->
          let (memref_r, memoffset_r) = self#decompose_memaddr address in
-         TR.tbind
-           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-           (fun memref ->
-             if memref#is_global_reference then
-               TR.tbind
-                 ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__)
-                       ^ ": memref:global")
-                 (fun memoff ->
-                   TR.tbind
-                     self#env#mk_global_variable
-                     (get_total_constant_offset memoff))
-                 memoffset_r
-             else
-               TR.tbind
-                 ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-                 (fun memoff ->
-                   TR.tmap
-                     (self#env#mk_memory_variable memref)
-                     (get_total_constant_offset memoff))
-                 memoffset_r)
-           memref_r
+         mk_memvar memref_r memoffset_r
 
   method get_memory_variable_1
            ?(align=1)    (* alignment of var value *)
@@ -753,6 +765,7 @@ object (self)
                  (fun v -> v)
                  (default ())
                  (TR.tbind
+                    ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                     self#env#mk_global_variable
                     (get_total_constant_offset memoffset))
              else
@@ -797,6 +810,7 @@ object (self)
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
             (fun memoff ->
               TR.tmap
+                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                 (self#env#mk_memory_variable memref)
                 (get_total_constant_offset memoff))
             memoff_r)
@@ -849,6 +863,7 @@ object (self)
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
             (fun memoff ->
               TR.tbind
+                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                 (self#env#mk_global_variable ~size)
                 (get_total_constant_offset memoff))
             memoff_r
@@ -857,6 +872,7 @@ object (self)
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
             (fun memoff ->
               TR.tmap
+                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                 (self#env#mk_memory_variable memref)
                 (get_total_constant_offset memoff))
             memoff_r)
@@ -893,6 +909,7 @@ object (self)
           (fun v -> v)
           (default ())
           (TR.tbind
+             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
              self#env#mk_global_variable
              (get_total_constant_offset memoffset))
       else
@@ -1254,7 +1271,10 @@ object (self)
     | [base] ->
        let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
        let memref_r = self#env#mk_base_variable_reference base in
-       let memoff_r =
+       let vartype = self#f#env#get_variable_type base in
+       let vartype = match vartype with None -> t_unknown | Some t -> t in
+       let memoff_r = address_memory_offset vartype offset in
+       (*
          (match offset with
           | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
           | XOp (XMult, [XConst (IntConst n); XVar v]) ->
@@ -1263,7 +1283,7 @@ object (self)
              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                     ^ "Offset from base "
                     ^ (x2s (XVar base))
-                    ^ " not recognized: " ^ (x2s offset)]) in
+                    ^ " not recognized: " ^ (x2s offset)]) in *)
        (memref_r, memoff_r)
 
     (* no known pointers, have to find a base *)
@@ -1681,7 +1701,31 @@ object (self)
        let reqN () = self#env#mk_num_temp in
        let reqC = self#env#request_num_constant in
        let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
-       rhscmds @ [ASSIGN_NUM (lhs, rhs_c)]
+       let cmds = rhscmds @ [ASSIGN_NUM (lhs, rhs_c)] in
+       let fndata = self#f#get_function_data in
+       match fndata#get_regvar_intro self#ia with
+       | Some rvi when rvi.rvi_cast && Option.is_some rvi.rvi_vartype ->
+          TR.tfold
+            ~ok:(fun reg ->
+              let ty = Option.get rvi.rvi_vartype in
+              let tcvar =
+                self#f#env#mk_typecast_value self#cia rvi.rvi_name ty reg in
+              begin
+                log_result __FILE__ __LINE__
+                  ["Create typecast var for "
+                   ^ (register_to_string reg)
+                   ^ " at "
+                   ^ self#cia];
+                cmds @ [ASSIGN_NUM (lhs, NUM_VAR tcvar)]
+              end)
+            ~error:(fun e ->
+              begin
+                log_error_result __FILE__ __LINE__
+                  ("expected a register variable" :: e);
+                cmds
+              end)
+            (self#f#env#get_register lhs)
+       | _ -> cmds
 
    (* Note: recording of loads and stores is performed by the different
       architectures directly in FnXXXDictionary.*)

@@ -259,6 +259,7 @@ object (self)
     with
     | Not_found ->
        let msg = [
+           STR (__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": ");
            STR "Unable to find function with index: ";
            dw_index_to_pretty index] in
        begin
@@ -272,11 +273,13 @@ object (self)
     with
     | BCH_failure _ ->
        let msg = [
+           STR (__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": ");
            STR "Unable to find function with address: ";
            faddr#toPretty] in
        begin
          pr_debug (msg @ [NL]);
-         pr_debug [STR "Number of functions present: "; INT (H.length functions); NL];
+         pr_debug [
+             STR "Number of functions present: "; INT (H.length functions); NL];
          raise (BCH_failure (LBLOCK msg))
        end
 
@@ -414,8 +417,8 @@ object (self)
 
   method add_functions_by_preamble =
     let instrtable = self#get_live_instructions in
-    let preambles = H.create 3 in
-    let preamble_instrs = H.create 3 in
+    let preambles = H.create 3 in     (* instr-bytes -> count *)
+    let preamble_instrs = H.create 3 in   (* instr-bytes -> instruction *)
     let _ =   (* collect preambles of regular functions *)
       self#itera (fun faddr f ->
           let instr = f#get_instruction faddr in
@@ -457,8 +460,18 @@ object (self)
         else
           10 in
       let preamble_cutoff = self#get_num_functions / preamble_cutoff_factor in
+      let _ =
+        chlog#add
+          "initialization"
+          (LBLOCK [STR "preamble cutoff: "; INT preamble_cutoff]) in
       H.fold (fun k v a ->
           if v >= preamble_cutoff then k :: a else a) preambles [] in
+    let _ =
+      List.iter
+        (fun p ->
+          chlog#add
+            "common preamble" (LBLOCK [(H.find preamble_instrs p)#toPretty]))
+        commonpreambles in
     let is_common_preamble bytes =
       List.fold_left (fun a p -> a || p = bytes) false commonpreambles in
     let fnsAdded = ref [] in

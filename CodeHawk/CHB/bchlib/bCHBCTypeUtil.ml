@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -147,6 +147,48 @@ let t_vararg_function (returntype:btype_t) (args:bfunarg_t list) =
 
 let t_function_anon (returntype:btype_t) =
   TFun (returntype, None, false, [])
+
+(* =========================================================== string -> type *)
+
+let convert_string_to_type (name: string): btype_t traceresult =
+  match name with
+  | "char" -> Ok (TInt (IChar, []))
+  | "signed char" -> Ok (TInt (ISChar, []))
+  | "unsigned char" -> Ok (TInt (IUChar, []))
+  | "wchar_t" -> Ok (TInt (IWChar, []))
+  | "bool" -> Ok (TInt (IBool, []))
+  | "int" -> Ok (TInt (IInt, []))
+  | "unsigned int" -> Ok (TInt (IUInt, []))
+  | "short" -> Ok (TInt (IShort, []))
+  | "unsigned short" -> Ok (TInt (IUShort, []))
+  | "long" -> Ok (TInt (ILong, []))
+  | "unsigned long" -> Ok (TInt (IULong, []))
+  | "long long" -> Ok (TInt (ILongLong, []))
+  | "unsigned long long" -> Ok (TInt (IULongLong, []))
+  | "int8_t" -> Ok (TInt (ISChar, []))
+  | "uint8_t" -> Ok (TInt (IUChar, []))
+  | "int16_t" -> Ok (TInt (IShort, []))
+  | "uint16_t" -> Ok (TInt (IUShort, []))
+  | "int32_t" -> Ok (TInt (IInt, []))
+  | "uint32_t" -> Ok (TInt (IUInt, []))
+  | "int64_t" -> Ok (TInt (ILongLong, []))
+  | "uint64_t" -> Ok (TInt (IULongLong, []))
+  | "int128_t" -> Ok (TInt (IInt128, []))
+  | "uint128_t" -> Ok (TInt (IUInt128, []))
+  | "float" -> Ok (TFloat (FFloat, FScalar, []))
+  | "double" -> Ok (TFloat (FDouble, FScalar, []))
+  | "long double" -> Ok (TFloat (FLongDouble, FScalar, []))
+  | "complex" -> Ok (TFloat (FComplexFloat, FScalar, []))
+  | "double complex" -> Ok (TFloat (FComplexDouble, FScalar, []))
+  | "long double complex" -> Ok (TFloat (FComplexLongDouble, FScalar, []))
+  | "void" -> Ok (TVoid [])
+  | _ ->
+     if bcfiles#has_typedef name then
+       Ok (bcfiles#get_typedef name)
+     else
+       Error [
+           __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+         ^ "unable to convert type name " ^ name]
 
 (* =============================================================== attributes *)
 
@@ -1107,6 +1149,17 @@ let get_struct_field_at_offset
              __FILE__ __LINE__;
            None
          end
+
+
+let is_sub_struct (ckey1: int) (ckey2: int) =
+  let cinfo2 = get_compinfo_by_key ckey2 in
+  let field0 = get_struct_field_at_offset cinfo2 0 in
+  match field0 with
+  | Some (bfinfo, 0) ->
+     (match bfinfo.bftype with
+      | TComp (i, _) -> ckey1 = i
+      | _ -> false)
+  | _ -> false
 
 
 let rec get_compinfo_scalar_type_at_offset

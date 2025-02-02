@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -124,6 +124,17 @@ val t_vararg_function: btype_t -> bfunarg_t list -> btype_t
 (** [t_function_anon ty] returns an anonymous function type with returntype
     [ty] without arguments (distinct from zero arguments).*)
 val t_function_anon: btype_t -> btype_t        (* arguments not known *)
+
+
+(** {1 Types from strings} *)
+
+(** [convert_string_to_type name] attempts to convert [name] into a [btype_t].
+    Valid names include the standard names for the integer and float types,
+    as well as typedef names.
+
+    If [name] is not a standard type name or typedef name, an Error is returned.
+ *)
+val convert_string_to_type: string -> btype_t traceresult
 
 
 (** {1 Type predicates}*)
@@ -255,6 +266,10 @@ val get_compinfo_field: bcompinfo_t -> string -> bfieldinfo_t
 val get_compinfo_scalar_type_at_offset: bcompinfo_t -> int -> btype_t option
 
 val get_compinfo_by_key: int -> bcompinfo_t
+
+(** [is_sub_struct ckey1 ckey2] returns [true] if the first field (at offset 0)
+    of the struct with key [ckey2] is a struct with key [ckey1].*)
+val is_sub_struct: int -> int -> bool
 
 
 (** {2 Fieldinfos}*)

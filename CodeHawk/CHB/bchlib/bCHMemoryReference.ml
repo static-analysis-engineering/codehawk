@@ -170,6 +170,218 @@ let rec mk_maximal_memory_offset (n: numerical_t) (ty: btype_t): memory_offset_t
     end
 
 
+let rec address_memory_offset
+          ?(tgtsize=None)
+          ?(tgtbtype=t_unknown)
+          (basetype: btype_t)
+          (xoffset: xpr_t): memory_offset_t traceresult =
+  let rbasetype = TR.tvalue (resolve_type basetype) ~default:t_unknown in
+  match xoffset with
+  | XConst (IntConst n)
+       when n#equal CHNumerical.numerical_zero
+            && Option.is_none tgtsize
+            && is_unknown_type tgtbtype -> Ok NoOffset
+  | XConst (IntConst n)
+       when n#equal CHNumerical.numerical_zero && is_unknown_type rbasetype ->
+     Ok NoOffset
+  | XConst (IntConst n) when is_unknown_type rbasetype ->
+     Ok (ConstantOffset (n, NoOffset))
+  | _ ->
+     let tgtbtype =
+       if is_unknown_type tgtbtype then None else Some tgtbtype in
+     if is_struct_type rbasetype then
+       structvar_memory_offset ~tgtsize ~tgtbtype rbasetype xoffset
+     else if is_array_type rbasetype then
+       arrayvar_memory_offset ~tgtsize ~tgtbtype rbasetype xoffset
+     else
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ (btype_to_string basetype)
+              ^ " (" ^ (btype_to_string rbasetype) ^ ")"
+              ^ " is not known to be a struct or array"]
+
+and structvar_memory_offset
+~(tgtsize: int option)
+~(tgtbtype: btype_t option)
+(btype: btype_t)
+(xoffset: xpr_t): memory_offset_t traceresult =
+  match xoffset with
+  | XConst (IntConst n) when
+         n#equal CHNumerical.numerical_zero
+         && Option.is_none tgtsize
+         && Option.is_none tgtbtype ->
+     Ok NoOffset
+  | XConst (IntConst _) ->
+     if is_struct_type btype then
+       let compinfo = get_struct_type_compinfo btype in
+       (get_field_memory_offset_at ~tgtsize ~tgtbtype compinfo xoffset)
+     else
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+              ^ " xoffset: " ^ (x2s xoffset)
+              ^ "; btype: " ^ (btype_to_string btype)]
+  | _ ->
+     Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+            ^ " xoffset: " ^ (x2s xoffset)
+            ^ "; btype: " ^ (btype_to_string btype)]
+
+and arrayvar_memory_offset
+~(tgtsize: int option)
+~(tgtbtype: btype_t option)
+(btype: btype_t)
+(xoffset: xpr_t): memory_offset_t traceresult =
+  let iszero x =
+    match x with
+    | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
+    | _ -> false in
+
+  match xoffset with
+  | XConst (IntConst n) when
+         n#equal CHNumerical.numerical_zero
+         && Option.is_none tgtsize
+         && Option.is_none tgtbtype ->
+     Ok NoOffset
+  | _ ->
+     if is_array_type btype then
+       let eltty = get_element_type btype in
+       TR.tbind
+         (fun elsize ->
+           let optindex = BCHXprUtil.get_array_index_offset xoffset elsize in
+           match optindex with
+           | None ->
+              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                     ^ "Unable to extract index from " ^ (x2s xoffset)]
+           | Some (indexxpr, xrem) when
+                  iszero xrem
+                  && Option.is_none tgtsize
+                  && Option.is_none tgtbtype ->
+              Ok (ArrayIndexOffset (indexxpr, NoOffset))
+           | Some (indexxpr, rem) ->
+              if (TR.tfold_default is_struct_type false (resolve_type eltty)) then
+                let eltty = TR.tvalue (resolve_type eltty) ~default:t_unknown in
+                TR.tbind
+                  (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
+                  (structvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
+              else if is_array_type eltty then
+                TR.tbind
+                  (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
+                  (arrayvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
+              else if is_scalar eltty then
+                let x2index = XOp (XDiv, [rem; int_constant_expr elsize]) in
+                let x2index = Xsimplify.simplify_xpr x2index in
+                Ok (ArrayIndexOffset (x2index, NoOffset))
+              else
+                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                       ^ "xoffset: " ^ (x2s xoffset)
+                       ^ "; btype: " ^ (btype_to_string btype)
+                       ^ "; elementtype: " ^ (btype_to_string eltty)])
+         (size_of_btype eltty)
+     else
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+              ^ " xoffset: " ^ (x2s xoffset)
+              ^ "; btype: " ^ (btype_to_string btype)]
+
+
+and get_field_memory_offset_at
+~(tgtsize: int option)
+~(tgtbtype: btype_t option)
+(c: bcompinfo_t)
+(xoffset: xpr_t): memory_offset_t traceresult =
+  let check_tgttype_compliance (t: btype_t) (s: int) =
+    match tgtsize, tgtbtype with
+    | None, None -> true
+    | Some size, None -> size = s
+    | None, Some ty -> btype_equal ty t
+    | Some size, Some ty -> size = s && btype_equal ty t in
+
+  let compliance_failure (t: btype_t) (s: int) =
+    let size_discrepancy size s =
+      "size discrepancy between tgtsize: "
+      ^ (string_of_int size)
+      ^ " and field size: "
+      ^ (string_of_int s) in
+    let type_discrepancy ty t =
+      "type discrepancy between tgttype: "
+      ^ (btype_to_string ty)
+      ^ " and field type: "
+      ^ (btype_to_string t) in
+    match tgtsize, tgtbtype with
+    | Some size, Some ty when (size != s) && (not (btype_equal ty t)) ->
+       (size_discrepancy size s) ^ " and " ^ (type_discrepancy ty t)
+    | Some size, _ when size != s -> size_discrepancy size s
+    | _, Some ty when not (btype_equal ty t) -> type_discrepancy ty t
+    | _ -> "" in
+
+  match xoffset with
+  | XConst (IntConst n) ->
+     let offset = n#toInt in
+     let finfos = c.bcfields in
+     let optfield_r =
+       List.fold_left (fun acc_r finfo ->
+           match acc_r with
+           | Error e -> Error e
+           | Ok (Some _) -> acc_r
+           | Ok _ ->
+              match finfo.bfieldlayout with
+              | None ->
+                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                        ^ "No field layout for field " ^ finfo.bfname]
+              | Some (foff, sz) ->
+                 if offset < foff then
+                   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                          ^ "Skipped over field: "
+                          ^ (string_of_int offset)]
+                 else if offset > (foff + sz) then
+                   Ok None
+                 else
+                   let offset = offset - foff in
+                   TR.tbind
+                     (fun fldtype ->
+                       if offset = 0
+                          && (is_scalar fldtype)
+                          && (check_tgttype_compliance fldtype sz) then
+                         Ok (Some (FieldOffset
+                                     ((finfo.bfname, finfo.bfckey), NoOffset)))
+                       else
+                         if offset = 0 && is_scalar fldtype then
+                           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                  ^ "Scalar type or size is not consistent: "
+                                  ^ (compliance_failure fldtype sz)]
+                         else if is_struct_type fldtype then
+                           TR.tmap
+                             (fun suboff ->
+                               Some (FieldOffset
+                                       ((finfo.bfname, finfo.bfckey), suboff)))
+                             (structvar_memory_offset
+                                ~tgtsize
+                                ~tgtbtype
+                                fldtype
+                                (int_constant_expr offset))
+                         else if is_array_type fldtype then
+                           TR.tmap
+                             (fun suboff ->
+                               Some (FieldOffset
+                                       ((finfo.bfname, finfo.bfckey), suboff)))
+                             (arrayvar_memory_offset
+                                ~tgtsize
+                                ~tgtbtype
+                                fldtype
+                                (int_constant_expr offset))
+                         else
+                           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                  ^ "Nonzero offset: " ^ (string_of_int offset)
+                                  ^ " with unstructured field type: "
+                                  ^ (btype_to_string fldtype)])
+                     (resolve_type finfo.bftype)) (Ok None) finfos in
+     (match optfield_r with
+      | Error e -> Error e
+      | Ok (Some offset) -> Ok offset
+      | Ok None ->
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "Unable to find field at offset " ^ (string_of_int offset)])
+  | _ ->
+  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+         ^ "Unable to determine field for xoffset: " ^ (x2s xoffset)]
+
+
 let rec is_unknown_offset offset =
   match offset with
   | UnknownOffset -> true

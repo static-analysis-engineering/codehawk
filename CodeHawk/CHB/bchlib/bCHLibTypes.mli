@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1497,6 +1497,24 @@ end
 
 (** {1 Function data} *)
 
+type regvar_intro_t = {
+    rvi_iaddr: doubleword_int;
+    rvi_name: string;
+    rvi_vartype: btype_t option;
+    rvi_cast: bool
+  }
+
+type stackvar_intro_t = {
+    svi_offset: int;
+    svi_name: string;
+    svi_vartype: btype_t option
+  }
+
+
+type function_annotation_t = {
+    regvarintros: regvar_intro_t list;
+    stackvarintros: stackvar_intro_t list
+  }
 
 class type function_data_int =
   object
@@ -1513,6 +1531,7 @@ class type function_data_int =
     method set_library_stub: unit
     method set_by_preamble: unit
     method set_class_info: classname:string -> isstatic:bool -> unit
+    method set_function_annotation: function_annotation_t -> unit
     method add_inlined_block: doubleword_int -> unit
 
     (** [add_path_context startaddr sentinels] causes path contexts to
@@ -1530,6 +1549,9 @@ class type function_data_int =
     (* accessors *)
     method get_names: string list  (* raw names *)
     method get_function_name: string  (* demangled or combination of all names *)
+    method get_function_annotation: function_annotation_t option
+    method get_regvar_type_annotation: doubleword_int -> btype_t traceresult
+    method get_regvar_intro: doubleword_int -> regvar_intro_t option
     method get_inlined_blocks: doubleword_int list
     method get_function_type: btype_t
     method get_path_contexts: (string * string list) list
@@ -1537,6 +1559,9 @@ class type function_data_int =
     (* predicates *)
     method has_function_type: bool
     method has_name: bool
+    method has_function_annotation: bool
+    method has_regvar_type_annotation: doubleword_int -> bool
+    method has_regvar_type_cast: doubleword_int -> bool
     method has_class_info: bool
     method has_callsites: bool
     method has_path_contexts: bool
@@ -3464,6 +3489,10 @@ and constant_value_variable_t =
   (** [FunctionReturnValue iaddr]: return value from call at instruction
       address [iaddr]*)
 
+  | TypeCastValue of ctxt_iaddress_t * string * btype_t * register_t
+  (** [TypeCastValue iaddr name ty reg]: a register value that takes the value
+      from [reg] and interprets it as type [ty]; the value gets name [name].*)
+
   | SyscallErrorReturnValue of ctxt_iaddress_t
   (** [SyscallErrorReturnValue iaddr]: error return value from system call at
       instruction address [iaddr]*)
@@ -3800,6 +3829,15 @@ object
   (** [make_return_value addr] returns the variable representing the return
       value from the call at address [addr].*)
   method make_return_value: ctxt_iaddress_t -> assembly_variable_int
+
+  (** [make_typecast_value addr name ty reg] returns the variable with name
+      [name] representing the value of register [reg] cast to type [ty].*)
+  method make_typecast_value:
+           ctxt_iaddress_t
+           -> string
+           -> btype_t
+           -> register_t
+           -> assembly_variable_int
 
   (** [make_symbolic_value x] returns the variable representing the
       value of expression [x], which must be an expression that consists
@@ -4615,6 +4653,8 @@ class type function_environment_int =
     method mk_special_variable: string -> variable_t
     method mk_runtime_constant: string -> variable_t
     method mk_return_value: ctxt_iaddress_t -> variable_t
+    method mk_typecast_value:
+             ctxt_iaddress_t -> string -> btype_t -> register_t -> variable_t
 
     method mk_calltarget_value: call_target_t -> variable_t
     method mk_function_pointer_value:
@@ -5188,6 +5228,9 @@ object
 
   (** Returns the address of the function.*)
   method get_address: doubleword_int
+
+  (** Returns the known data about this function.*)
+  method get_function_data: function_data_int
 
   (** Returns the name of the function.*)
   method get_name: string

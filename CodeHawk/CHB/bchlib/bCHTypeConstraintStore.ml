@@ -267,6 +267,8 @@ object (self)
   method evaluate_reglhs_type
            (reg: register_t) (faddr: string) (iaddr: string)
          :(type_variable_t list * type_constant_t list) list =
+    let logresults = iaddr = "0xffffffff" in
+    let p2s = CHPrettyUtil.pretty_to_string in
     let konstraints = self#get_reglhs_constraints reg faddr iaddr in
     let termset = new IntCollections.set_t in
     let constraintset = new IntCollections.set_t in
@@ -304,27 +306,60 @@ object (self)
       end
     done;
     let tygraph = mk_type_constraint_graph () in
+    let _ =
+      if logresults then
+        log_result __FILE__ __LINE__ ["DEBUG: " ^ (p2s tygraph#toPretty)] in
     begin
       tygraph#initialize (List.map tcd#get_type_term termset#toList);
       constraintset#iter (fun ixc ->
           let c = tcd#get_type_constraint ixc in
           tygraph#add_constraint c);
       let newgraph = tygraph#saturate in
+      let _ =
+        if logresults then
+          log_result __FILE__ __LINE__ ["DEBUG: " ^ (p2s newgraph#toPretty)] in
       let newgraph = newgraph#saturate in
+      let _ =
+        if logresults then
+          log_result __FILE__ __LINE__ ["DEBUG: " ^ (p2s newgraph#toPretty)] in
       let partition = newgraph#partition in
+      let _ =
+        if logresults then
+          log_result __FILE__ __LINE__ ["DEBUG: " ^
+                                          (p2s
+                                             (pretty_print_list
+                                                partition (fun p -> p#toPretty)
+                                                "[ " "; " "]"))] in
       List.fold_left (fun acc s ->
           let terms = List.map tcd#get_type_term s#toList in
+          let _ =
+            if logresults then
+              log_result __FILE__ __LINE__
+                ["terms: " ^
+                   (String.concat "; " (List.map type_term_to_string terms))] in
           let reglhsvars =
             List.fold_left (fun acc t ->
                 match t with
                 | TyVariable tv when has_reg_lhs_basevar reg faddr iaddr t ->
                    tv :: acc
                 | _ -> acc) [] terms in
+          let _ =
+            if logresults then
+              log_result __FILE__ __LINE__
+                ["vars: " ^
+                   (String.concat "; "
+                      (List.map type_variable_to_string reglhsvars))] in
           let tyconsts =
             List.fold_left (fun acc t ->
                 match t with
                 | TyConstant c -> c :: acc
                 | _ -> acc) [] terms in
+          let _ =
+            if logresults then
+              log_result __FILE__ __LINE__
+                ["consts: " ^
+                   (String.concat "; "
+                      (List.map type_constant_to_string tyconsts))] in
           match (reglhsvars, tyconsts) with
           | ([], _) -> acc
           | (_, []) -> acc
@@ -402,6 +437,8 @@ object (self)
   method resolve_reglhs_type
            (reg: register_t) (faddr: string) (iaddr: string): btype_t option =
     let evaluation = self#evaluate_reglhs_type reg faddr iaddr in
+    let logresults = iaddr = "0xffffffff" in
+    let p2s = CHPrettyUtil.pretty_to_string in
     let log_evaluation () =
       chlog#add
         ("reglhs resolution was not successfull:" ^ faddr)
@@ -429,6 +466,10 @@ object (self)
     begin
       List.iter (fun (vars, consts) ->
           let jointy = type_constant_join consts in
+          let _ =
+            if logresults then
+              log_result __FILE__ __LINE__
+                ["jointy: " ^ (type_constant_to_string jointy)] in
           List.iter (fun v ->
               let optty =
                 match jointy with
@@ -438,11 +479,11 @@ object (self)
                    | [] -> Some (type_constant_to_btype jointy)
                    | [Deref | Load | Store] ->
                       Some (t_ptrto (type_constant_to_btype jointy))
-                    | [Load; OffsetAccess _] ->
+                    | [Load; OffsetAccess (_, 0)] ->
                        Some (t_ptrto (type_constant_to_btype jointy))
-                    | [Store; OffsetAccess _] ->
+                    | [Store; OffsetAccess (_, 0)] ->
                        Some (t_ptrto (type_constant_to_btype jointy))
-                   | [OffsetAccessA (size, _)] ->
+                   | [OffsetAccessA (size, 0)] ->
                       Some (t_array (type_constant_to_btype jointy) size)
                    | _ -> None in
               match optty with

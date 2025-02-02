@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2024 Aarno Labs LLC
+   Copyright (c) 2022-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,9 @@ open CHPretty
 
 (* chutil *)
 open CHTraceResult
+
+(* xprlib *)
+open XprTypes
 
 (* bchlib *)
 open BCHBCTypes
@@ -64,6 +67,15 @@ val memory_offset_compare: memory_offset_t -> memory_offset_t -> int
 
 val mk_maximal_memory_offset: numerical_t -> btype_t -> memory_offset_t
 
+val add_offset: memory_offset_t -> memory_offset_t -> memory_offset_t
+
+val address_memory_offset:
+  ?tgtsize: int option
+  -> ?tgtbtype: btype_t
+  -> btype_t
+  -> xpr_t
+  -> memory_offset_t traceresult
+
 
 (** {1 Offset predicates} *)
 
@@ -84,11 +96,6 @@ val is_index_offset: memory_offset_t -> bool
 (** Returns [true] if [memoff] itself or one of its suboffsets is an unknown
     offset. *)
 val is_unknown_offset: memory_offset_t -> bool
-
-
-(** {1 Offset constructors} *)
-
-val add_offset: memory_offset_t -> memory_offset_t -> memory_offset_t
 
 
 (** {1 Offset deconstructors} *)

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -107,6 +107,8 @@ object (self:'a)
 	| FunctionPointer (fname,cname,address) ->
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
+        | TypeCastValue  (iaddr, name, ty, reg) ->
+           "typecast_" ^ name ^ "_" ^ iaddr ^ "_" ^ (register_to_string reg)
         | SyscallErrorReturnValue address -> "errval_" ^ address
 	| CallTargetValue tgt ->
 	  (match tgt with
@@ -179,6 +181,7 @@ object (self:'a)
          | FrozenTestValue _ -> None
          | FunctionPointer _ -> None
          | FunctionReturnValue _ -> None
+         | TypeCastValue (_, _, ty, _) -> Some ty
          | SyscallErrorReturnValue _ -> None
          | CallTargetValue _ -> None
          | SideEffectValue _ -> None
@@ -307,6 +310,7 @@ object (self:'a)
 	| InitialRegisterValue _
 	  | InitialMemoryValue _
 	  | FunctionReturnValue _
+          | TypeCastValue _
 	  | CallTargetValue _
 	  | SideEffectValue _
 	  | FieldValue _
@@ -627,7 +631,8 @@ object (self)
                   | InitialRegisterValue (PowerGPRegister _, _)
                   | InitialRegisterValue (PowerSPRegister _, _)
                   | InitialMemoryValue _
-                  | FunctionReturnValue _ ->
+                  | FunctionReturnValue _
+                  | TypeCastValue _ ->
                    Ok (memrefmgr#mk_basevar_reference v)
                 | _ ->
                    Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
@@ -665,6 +670,10 @@ object (self)
 
   method make_return_value (iaddr:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FunctionReturnValue iaddr))
+
+  method make_typecast_value
+           (iaddr: ctxt_iaddress_t) (name: string) (ty: btype_t) (reg: register_t) =
+    self#mk_variable (AuxiliaryVariable (TypeCastValue (iaddr,name, ty, reg)))
 
   method make_function_pointer_value
            (fname:string) (cname:string) (address:ctxt_iaddress_t) =

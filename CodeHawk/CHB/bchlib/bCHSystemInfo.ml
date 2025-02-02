@@ -832,6 +832,10 @@ object (self)
       (if hasc "symbolic-addresses" then
 	 BCHGlobalMemoryMap.read_xml_symbolic_addresses (getc "symbolic-addresses"));
 
+      (if hasc "function-annotations" then
+         BCHFunctionData.read_xml_function_annotations
+           (getc "function-annotations"));
+
       (if hasc "variable-introductions" then
          self#read_xml_variable_introductions (getc "variable-introductions"));
 
