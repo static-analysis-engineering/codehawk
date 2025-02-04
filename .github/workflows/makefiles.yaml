@@ -24,7 +24,7 @@ jobs:
     - name: Prepare tar file for upload
       run: tar -cvf artifacts.tar CodeHawk/CHB/bchcmdline/chx86_analyze CodeHawk/CHC/cchcil/parseFile CodeHawk/CHC/cchcmdline/canalyzer
     - name: Upload artifacts tar file
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: artifacts-${{ matrix.ocaml-compiler }}
         path: artifacts.tar
@@ -45,7 +45,7 @@ jobs:
     - name: Delete submitted prebuilts
       run: rm -f chb/bin/binaries/linux/chx86_analyze
     - name: Download artifacts tar
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: artifacts-${{ matrix.ocaml-compiler }}
     - name: Extract artifacts
@@ -73,7 +73,7 @@ jobs:
         rm -f chc/bin/linux/parseFile
         rm -f chc/bin/linux/canalyzer
     - name: Download artifacts tar
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: artifacts-${{ matrix.ocaml-compiler }}
     - name: Extract artifacts
