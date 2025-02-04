@@ -6217,6 +6217,7 @@ object
 
   (* initialization *)
   method initialize: unit
+  method initialize_function_annotations: unit
   method initialize_jumptables:
            (doubleword_int -> bool) -> (doubleword_int * string) list -> unit
   method initialize_datablocks: (doubleword_int * string) list -> unit
@@ -6347,7 +6348,6 @@ object
   method get_user_struct_count: int
   method get_user_nonreturning_count: int
   method get_user_class_count: int
-  method get_variable_intro_name: doubleword_int -> string
 
   (* predicates *)
   method is_little_endian: bool
@@ -6378,8 +6378,6 @@ object
   method is_trampoline_payload: doubleword_int -> bool
   method is_trampoline_wrapper: doubleword_int -> bool
   method is_trampoline_fallthroughaddr: doubleword_int -> bool
-  method has_variable_intro: doubleword_int -> bool
-  method has_variable_intros: bool
 
   (** [is_thumb addr] returns true if the architecture includes (arm) thumb
       instructions and the virtual address [addr] is in a code section that

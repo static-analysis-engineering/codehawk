@@ -94,7 +94,10 @@ object (self:'a)
           | "var" -> stack_offset_to_name offset
           | "varr" -> realigned_stack_offset_to_name offset
           | "gv" -> global_offset_to_name size offset
-          | _ -> basename ^ (memory_offset_to_string offset))
+          | _ ->
+             (match offset with
+              | NoOffset -> "__pderef_" ^ basename ^ "_"
+              | _ -> basename ^ (memory_offset_to_string offset)))
       | RegisterVariable reg -> register_to_string reg
       | CPUFlagVariable flag -> flag_to_string flag
       | AuxiliaryVariable a ->
@@ -107,7 +110,7 @@ object (self:'a)
 	| FunctionPointer (fname,cname,address) ->
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
-        | TypeCastValue  (iaddr, name, ty, reg) ->
+        | TypeCastValue  (iaddr, name, _, reg) ->
            "typecast_" ^ name ^ "_" ^ iaddr ^ "_" ^ (register_to_string reg)
         | SyscallErrorReturnValue address -> "errval_" ^ address
 	| CallTargetValue tgt ->
@@ -593,6 +596,10 @@ object (self)
   method has_variable_index_offset (v: variable_t): bool =
     match self#get_memvar_offset v with
     | Ok (IndexOffset (v, _, _)) -> self#is_register_variable v
+    | Ok (ArrayIndexOffset (x, _)) ->
+       (match x with
+        | XConst (IntConst _) -> false
+        | _ -> true)
     | _ -> false
 
   method get_memval_offset (v: variable_t): memory_offset_t traceresult =

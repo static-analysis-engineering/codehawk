@@ -481,6 +481,7 @@ let stack_offset_to_name offset =
      "var_" ^ (constant_offset_to_neg_suffix_string n)
   | ConstantOffset (n,NoOffset) when n#equal numerical_zero ->
      "var_0000"
+  | NoOffset -> "var_0000"
   | _ -> "var.[" ^ (memory_offset_to_string offset) ^ "]"
 
 

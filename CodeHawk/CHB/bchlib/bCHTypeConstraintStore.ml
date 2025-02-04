@@ -438,7 +438,6 @@ object (self)
            (reg: register_t) (faddr: string) (iaddr: string): btype_t option =
     let evaluation = self#evaluate_reglhs_type reg faddr iaddr in
     let logresults = iaddr = "0xffffffff" in
-    let p2s = CHPrettyUtil.pretty_to_string in
     let log_evaluation () =
       chlog#add
         ("reglhs resolution was not successfull:" ^ faddr)

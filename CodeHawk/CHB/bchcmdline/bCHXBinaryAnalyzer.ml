@@ -861,14 +861,21 @@ let main () =
             STR ")"] in
       let _ = load_elf_files () in
       let _ = pr_timing [STR "elf files loaded"] in
+
+      (* symbolic addresses in userdata should be loaded before the header
+         files are parsed. *)
+      let _ = system_info#initialize in
+      let _ = pr_timing [STR "system info initialized"] in
       let _ =
         List.iter
           (fun f -> parse_cil_file ~removeUnused:false f) system_info#ifiles in
       let _ =
         if (List.length system_info#ifiles > 0) then
           pr_timing [STR "c header files parsed"] in
-      let _ = system_info#initialize in
-      let _ = pr_timing [STR "system info initialized"] in
+      (* function annotations in userdata should be loaded after the header
+         files are parsed, so types in the function annotations can be resolved.*)
+      let _ = system_info#initialize_function_annotations in
+
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let analysisstart = Unix.gettimeofday () in

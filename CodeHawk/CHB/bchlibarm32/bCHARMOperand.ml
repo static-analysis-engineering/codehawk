@@ -318,6 +318,7 @@ object (self:'a)
        raise
          (BCH_failure
             (LBLOCK [
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
                  STR "Operand cannot be converted to a generic register: ";
                  self#toPretty]))
 

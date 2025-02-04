@@ -115,6 +115,9 @@ let get_array_index_offset (xpr: xpr_t) (size: int): (xpr_t * xpr_t) option =
        Some (num_constant_expr quo, num_constant_expr rem)
     | XOp (XMult, [XConst (IntConst n); XVar v]) when n#equal numsize ->
        Some (XVar v, xzero)
+    | XOp (XMult, [XConst (IntConst n); XOp ((XXlsh | XXlsb), [XVar v])])
+         when n#equal numsize ->
+       Some (XVar v, xzero)
     | XOp (XPlus, [XOp (XMult, [XConst (IntConst n1); XVar v]);
                    XConst (IntConst n2)]) when n1#equal numsize ->
        if n2#equal numerical_zero then

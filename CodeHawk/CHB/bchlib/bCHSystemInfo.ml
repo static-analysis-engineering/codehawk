@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -155,7 +155,6 @@ object (self)
   val initialized_memory = H.create 3
 
   val function_call_targets = H.create 13  (* (faddr, iaddr) -> call_target_t *)
-  val variable_intros = H.create 13 (* iaddr#index -> name *)
 
   val esp_adjustments = H.create 3      (* indexed with faddr, iaddr *)
   val esp_adjustments_i = H.create 3    (* indexed with iaddr *)
@@ -611,6 +610,18 @@ object (self)
       set_functions_file_path ()
     end
 
+  method initialize_function_annotations =
+    match load_userdata_system_file () with
+    | Some node ->
+       let getc = node#getTaggedChild in
+       let hasc = node#hasOneTaggedChild in
+       begin
+         (if hasc "function-annotations" then
+            BCHFunctionData.read_xml_function_annotations
+              (getc "function-annotations"))
+       end
+    | _ -> ()
+
   method private initialize_system_file  =
     try
       match load_system_file () with
@@ -831,13 +842,6 @@ object (self)
 
       (if hasc "symbolic-addresses" then
 	 BCHGlobalMemoryMap.read_xml_symbolic_addresses (getc "symbolic-addresses"));
-
-      (if hasc "function-annotations" then
-         BCHFunctionData.read_xml_function_annotations
-           (getc "function-annotations"));
-
-      (if hasc "variable-introductions" then
-         self#read_xml_variable_introductions (getc "variable-introductions"));
 
       (if hasc "userdeclared-codesections" then
 	 self#read_xml_userdeclared_codesections
@@ -1413,39 +1417,6 @@ object (self)
       let name = get n "n" in
       (functions_data#add_function fa)#add_name name) (getcc "fn")
 
-  method private read_xml_variable_introductions (node: xml_element_int) =
-    let geta n =
-      fail_tvalue
-        (trerror_record
-           (LBLOCK [
-                STR "read_xml_variable_introductions";
-                STR (n#getAttribute "ia")]))
-        (string_to_doubleword (n#getAttribute "ia")) in
-    let getcc = node#getTaggedChildren in
-    begin
-      List.iter (fun n ->
-          let iaddr = geta n in
-          let name = n#getAttribute "name" in
-          H.add variable_intros iaddr#index name) (getcc "vintro");
-      chlog#add
-        "initialization"
-        (LBLOCK [
-             STR "system-info: read ";
-             INT (H.length variable_intros);
-             STR " variable introductions"])
-    end
-
-  method private write_xml_variable_introductions (node: xml_element_int) =
-    let vintros = H.fold (fun k v a -> (k, v)::a) variable_intros [] in
-    List.iter (fun (dwindex, name) ->
-        let vnode = xmlElement "vintro" in
-        begin
-          vnode#setAttribute
-            "ia" (TR.tget_ok (int_to_doubleword dwindex))#to_hex_string;
-          vnode#setAttribute "name" name;
-          node#appendChildren [vnode];
-        end) vintros
-
   method private read_xml_user_nonreturning_functions (node:xml_element_int) =
     let geta n =
       fail_tvalue
@@ -1555,8 +1526,6 @@ object (self)
 	  self#read_xml_thread_start_functions (getc "thread-start-functions")) ;
       (if hasc "goto-returns" then
          self#read_xml_goto_returns (getc "goto-returns"));
-      (if hasc "variable-introductions" then
-         self#read_xml_variable_introductions (getc "variable-introductions"));
       (if hasc "so-imports" then
          self#read_xml_so_imports (getc "so-imports"));
     end
@@ -1713,19 +1682,6 @@ object (self)
         d#write_xml dNode;
         dNode
       end) data_blocks#toList)
-
-  method has_variable_intro (iaddr: doubleword_int) =
-    H.mem variable_intros iaddr#index
-
-  method has_variable_intros: bool = (H.length variable_intros) > 0
-
-  method get_variable_intro_name (iaddr: doubleword_int): string =
-    if self#has_variable_intro iaddr then
-      H.find variable_intros iaddr#index
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [STR "No variable intro found for address "; iaddr#toPretty]))
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                            stage 2: function entry points *
@@ -2152,7 +2108,6 @@ object (self)
     let gNode = xmlElement "goto-returns" in
     let cbNode = xmlElement "call-back-tables" in
     let stNode = xmlElement "struct-tables" in
-    let viNode = xmlElement "variable-introductions" in
     let soNode = xmlElement "so-imports" in
     begin
       functions_data#write_xml fNode;
@@ -2163,11 +2118,10 @@ object (self)
       self#write_xml_goto_returns gNode;
       self#write_xml_call_back_tables cbNode;
       self#write_xml_struct_tables stNode;
-      self#write_xml_variable_introductions viNode;
       string_table#write_xml sNode;
       self#write_xml_so_imports soNode;
       append [
-          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode; viNode;
+          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode;
           soNode]
     end
 

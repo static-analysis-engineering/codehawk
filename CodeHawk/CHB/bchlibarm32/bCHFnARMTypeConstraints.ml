@@ -1094,6 +1094,52 @@ object (self)
              end) rndefs
        end
 
+    | UnsignedBitFieldExtract (_, rd, rn) ->
+       let rdreg = rd#to_register in
+       (match rn#get_kind with
+        | ARMRegBitSequence (r, _, _) ->
+           let rnreg = register_of_arm_register r in
+           let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
+           begin
+             (List.iter (fun rnrdef ->
+                  let rnaddr = rnrdef#getBaseName in
+                  let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+                  let tyc = mk_int_type_constant Unsigned 32 in
+                  let tctypeterm = mk_cty_term tyc in
+                  let rntypeterm = mk_vty_term rntypevar in
+                  begin
+                    log_subtype_constraint "UBFX-rhs" tctypeterm rntypeterm;
+                    store#add_subtype_constraint tctypeterm rntypeterm
+                  end) rndefs)
+           end
+        | _ -> ())
+
+    | UnsignedExtendHalfword (_, rd, rm, _) ->
+       let rdreg = rd#to_register in
+       let rdtypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       begin
+         (match get_regvar_type_annotation () with
+          | Some t ->
+             let opttc = mk_btype_constraint rdtypevar t in
+             (match opttc with
+              | Some tc ->
+                 begin
+                   log_type_constraint "UXTH-rvintro" tc;
+                   store#add_constraint tc
+                 end
+              | _ ->
+                 let opttc = mk_btype_constraint rdtypevar t_short in
+                 (match opttc with
+                  | Some tc -> store#add_constraint tc
+                  | _ -> ())
+             )
+          | _ ->
+             let opttc = mk_btype_constraint rdtypevar t_short in
+             (match opttc with
+              | Some tc -> store#add_constraint tc
+              | _ -> ()));
+       end
+
     | opc ->
        chlog#add
          "type constraints not yet implemented"

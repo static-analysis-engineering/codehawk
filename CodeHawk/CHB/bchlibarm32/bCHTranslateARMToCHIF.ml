@@ -608,6 +608,8 @@ let translate_arm_instruction
              let rvar = floc#env#mk_arm_register_variable r in
              let rsvar = floc#env#mk_arm_register_variable rs in
              rvar :: rsvar :: acc
+          | ARMRegBitSequence (r, _, _) ->
+             (floc#env#mk_arm_register_variable r) :: acc
           | _ -> acc) [] ops in
 
   let get_use_high_vars ?(is_pop=false) (xprs: xpr_t list): variable_t list =

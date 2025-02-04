@@ -859,6 +859,8 @@ object (self)
       ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
       (fun memref ->
         if memref#is_global_reference then
+          self#get_var_at_address ~size:(Some size) address
+      (*
           TR.tbind
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
             (fun memoff ->
@@ -866,7 +868,7 @@ object (self)
                 ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                 (self#env#mk_global_variable ~size)
                 (get_total_constant_offset memoff))
-            memoff_r
+            memoff_r *)
         else
           TR.tbind
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))

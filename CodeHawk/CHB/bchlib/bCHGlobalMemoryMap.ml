@@ -351,9 +351,14 @@ object (self)
                    (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
                    (self#arrayvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
                 else if is_scalar eltty then
-                  let x2index = XOp (XDiv, [rem; int_constant_expr elsize]) in
-                  let x2index = Xsimplify.simplify_xpr x2index in
-                  Ok (ArrayIndexOffset (x2index, NoOffset))
+                  if iszero rem then
+                    Ok (ArrayIndexOffset (indexxpr, NoOffset))
+                  else
+                    let suboff =
+                      let x2index = XOp (XDiv, [rem; int_constant_expr elsize]) in
+                      let x2index = Xsimplify.simplify_xpr x2index in
+                      ArrayIndexOffset (x2index, NoOffset) in
+                    Ok (ArrayIndexOffset (indexxpr, suboff))
                 else
                   Error[__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
                         ^ "xoffset: " ^ (x2s xoffset)
