@@ -1094,8 +1094,7 @@ object (self)
              end) rndefs
        end
 
-    | UnsignedBitFieldExtract (_, rd, rn) ->
-       let rdreg = rd#to_register in
+    | UnsignedBitFieldExtract (_, _, rn) ->
        (match rn#get_kind with
         | ARMRegBitSequence (r, _, _) ->
            let rnreg = register_of_arm_register r in
@@ -1114,7 +1113,7 @@ object (self)
            end
         | _ -> ())
 
-    | UnsignedExtendHalfword (_, rd, rm, _) ->
+    | UnsignedExtendHalfword (_, rd, _, _) ->
        let rdreg = rd#to_register in
        let rdtypevar = mk_reglhs_typevar rdreg faddr iaddr in
        begin
