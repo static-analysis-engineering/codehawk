@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,7 @@ open CHUtils
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 open CHXmlReader
 
@@ -58,7 +59,6 @@ open BCHBCTypes
 open BCHBCTypeXml
 open BCHByteUtilities
 open BCHCallbackTables
-open BCHConstantDefinitions
 open BCHCppClass
 open BCHCStruct
 open BCHCStructConstant
@@ -155,7 +155,6 @@ object (self)
   val initialized_memory = H.create 3
 
   val function_call_targets = H.create 13  (* (faddr, iaddr) -> call_target_t *)
-  val variable_intros = H.create 13 (* iaddr#index -> name *)
 
   val esp_adjustments = H.create 3      (* indexed with faddr, iaddr *)
   val esp_adjustments_i = H.create 3    (* indexed with iaddr *)
@@ -611,6 +610,18 @@ object (self)
       set_functions_file_path ()
     end
 
+  method initialize_function_annotations =
+    match load_userdata_system_file () with
+    | Some node ->
+       let getc = node#getTaggedChild in
+       let hasc = node#hasOneTaggedChild in
+       begin
+         (if hasc "function-annotations" then
+            BCHFunctionData.read_xml_function_annotations
+              (getc "function-annotations"))
+       end
+    | _ -> ()
+
   method private initialize_system_file  =
     try
       match load_system_file () with
@@ -674,7 +685,7 @@ object (self)
       end
     | _ -> ()
 
-  method private read_xml_user_data (node:xml_element_int) =
+  method read_xml_user_data (node:xml_element_int) =
     let get = node#getAttribute in
     let has = node#hasNamedAttribute in
     let getc = node#getTaggedChild in
@@ -830,10 +841,7 @@ object (self)
          function_summary_library#read_xml_constants_files (getc "use-constants"));
 
       (if hasc "symbolic-addresses" then
-	 read_xml_symbolic_addresses (getc "symbolic-addresses"));
-
-      (if hasc "variable-introductions" then
-         self#read_xml_variable_introductions (getc "variable-introductions"));
+	 BCHGlobalMemoryMap.read_xml_symbolic_addresses (getc "symbolic-addresses"));
 
       (if hasc "userdeclared-codesections" then
 	 self#read_xml_userdeclared_codesections
@@ -1409,39 +1417,6 @@ object (self)
       let name = get n "n" in
       (functions_data#add_function fa)#add_name name) (getcc "fn")
 
-  method private read_xml_variable_introductions (node: xml_element_int) =
-    let geta n =
-      fail_tvalue
-        (trerror_record
-           (LBLOCK [
-                STR "read_xml_variable_introductions";
-                STR (n#getAttribute "ia")]))
-        (string_to_doubleword (n#getAttribute "ia")) in
-    let getcc = node#getTaggedChildren in
-    begin
-      List.iter (fun n ->
-          let iaddr = geta n in
-          let name = n#getAttribute "name" in
-          H.add variable_intros iaddr#index name) (getcc "vintro");
-      chlog#add
-        "initialization"
-        (LBLOCK [
-             STR "system-info: read ";
-             INT (H.length variable_intros);
-             STR " variable introductions"])
-    end
-
-  method private write_xml_variable_introductions (node: xml_element_int) =
-    let vintros = H.fold (fun k v a -> (k, v)::a) variable_intros [] in
-    List.iter (fun (dwindex, name) ->
-        let vnode = xmlElement "vintro" in
-        begin
-          vnode#setAttribute
-            "ia" (TR.tget_ok (int_to_doubleword dwindex))#to_hex_string;
-          vnode#setAttribute "name" name;
-          node#appendChildren [vnode];
-        end) vintros
-
   method private read_xml_user_nonreturning_functions (node:xml_element_int) =
     let geta n =
       fail_tvalue
@@ -1551,8 +1526,6 @@ object (self)
 	  self#read_xml_thread_start_functions (getc "thread-start-functions")) ;
       (if hasc "goto-returns" then
          self#read_xml_goto_returns (getc "goto-returns"));
-      (if hasc "variable-introductions" then
-         self#read_xml_variable_introductions (getc "variable-introductions"));
       (if hasc "so-imports" then
          self#read_xml_so_imports (getc "so-imports"));
     end
@@ -1710,19 +1683,6 @@ object (self)
         dNode
       end) data_blocks#toList)
 
-  method has_variable_intro (iaddr: doubleword_int) =
-    H.mem variable_intros iaddr#index
-
-  method has_variable_intros: bool = (H.length variable_intros) > 0
-
-  method get_variable_intro_name (iaddr: doubleword_int): string =
-    if self#has_variable_intro iaddr then
-      H.find variable_intros iaddr#index
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [STR "No variable intro found for address "; iaddr#toPretty]))
-
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                            stage 2: function entry points *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
@@ -1865,9 +1825,14 @@ object (self)
 
   method get_size = String.length !file_as_string
 
-  method get_file_input ?(hexSize=wordzero) (hexOffset:doubleword_int) =
-    let fString = self#get_file_string ~hexSize hexOffset in
-    file_stream_wrapper_function (IO.input_string fString)
+  method get_file_input
+           ?(hexSize=wordzero)
+           (hexOffset:doubleword_int): stream_wrapper_int traceresult =
+    let fString_r = self#get_file_string ~hexSize hexOffset in
+    TR.tmap
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+      (fun s -> file_stream_wrapper_function (IO.input_string s))
+      fString_r
 
   method private get_encodings (va:doubleword_int) (len:int) =
     let encoding_to_pretty (ty, va, size, key, width) =
@@ -1895,30 +1860,19 @@ object (self)
     | [] -> s
     | encodings -> decode_string s va encodings
 
-  method get_file_string ?(hexSize=wordzero) (hexOffset:doubleword_int) =
+  method get_file_string
+           ?(hexSize=wordzero) (hexOffset:doubleword_int): string traceresult =
     let offset = hexOffset#to_int in
     let size = hexSize#to_int in
     let len = String.length !file_as_string in
     if size > 0 then
       if offset > len then
-	let hexLen =
-          fail_tvalue
-            (trerror_record
-               (LBLOCK [
-                    STR "system_info:get_file_string:hexLen: "; INT len]))
-          (int_to_doubleword len) in
-	begin
-	  ch_error_log#add
-            "invalid argument"
-	    (LBLOCK [
-                 STR "Unable to return input at offset ";
-                 hexOffset#toPretty;
-		 STR " -- file size = ";
-                 hexLen#toPretty ]);
-	  raise
-            (Invalid_argument
-               "assembly_xreference_t#get_exe_string_at_offset")
-	end
+        Error [
+            __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+            ^ "Unable to return input at offset "
+            ^ (string_of_int size)
+            ^ "; file size is "
+            ^ (string_of_int len)]
       else
 	if offset + size > len then
 	  let sizeAvailable = len - offset in
@@ -1935,18 +1889,19 @@ object (self)
                      STR " and filling up the rest with zeroes"]);
               if len > offset then
                 let missing = Bytes.make (size - sizeAvailable) (Char.chr 0) in
-	        String.concat
-                  ""
-                  [string_suffix !file_as_string offset;
-                   Bytes.to_string missing]
+	        Ok (String.concat
+                      ""
+                      [string_suffix !file_as_string offset;
+                       Bytes.to_string missing])
               else
-                raise (BCH_failure
-                         (LBLOCK [
-                              STR "get-file-string (error case): ";
-                              STR "String.suffix: Length: ";
-                              INT len;
-                              STR "; offset: ";
-                              INT offset]))
+                Error [
+                    __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ "Unable to return input of size "
+                    ^ (string_of_int size)
+                    ^ " at offset "
+                    ^ (string_of_int offset)
+                    ^ "; sum exceeds file size of "
+                    ^ (string_of_int len)]
 	    end
           else
             begin
@@ -1958,29 +1913,29 @@ object (self)
                      STR "only returning ";
                      INT sizeAvailable]);
               if len > offset then
-                string_suffix !file_as_string offset
+                Ok (string_suffix !file_as_string offset)
               else
-                raise (BCH_failure
-                         (LBLOCK [
-                              STR "get-file-string (error case): ";
-                              STR "String.suffix: Length: ";
-                              INT len;
-                              STR "; offset: ";
-                              INT offset]))
+                Error [
+                    __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ "Unable to return input of size "
+                    ^ (string_of_int size)
+                    ^ " at offset "
+                    ^ (string_of_int offset)
+                    ^ "; sum exceeds file size of "
+                    ^ (string_of_int len)]
             end
 	else
-	  String.sub !file_as_string offset size
+	  Ok (String.sub !file_as_string offset size)
     else
       if len > offset then
-        string_suffix !file_as_string offset
+        Ok (string_suffix !file_as_string offset)
       else
-        raise
-          (BCH_failure
-             (LBLOCK [
-                  STR "get-file-string: String.suffix: Length: ";
-                  INT len;
-                  STR "; offset: ";
-                  INT offset]))
+        Error [
+            __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+            ^ "Unable to return file input suffix. Offset "
+            ^ (string_of_int offset)
+            ^ " exceeds file size "
+            ^ (string_of_int offset)]
 
   method set_image_base (a:doubleword_int) =
     begin image_base <- a ; system_data#set_image_base a end
@@ -2153,7 +2108,6 @@ object (self)
     let gNode = xmlElement "goto-returns" in
     let cbNode = xmlElement "call-back-tables" in
     let stNode = xmlElement "struct-tables" in
-    let viNode = xmlElement "variable-introductions" in
     let soNode = xmlElement "so-imports" in
     begin
       functions_data#write_xml fNode;
@@ -2164,11 +2118,10 @@ object (self)
       self#write_xml_goto_returns gNode;
       self#write_xml_call_back_tables cbNode;
       self#write_xml_struct_tables stNode;
-      self#write_xml_variable_introductions viNode;
       string_table#write_xml sNode;
       self#write_xml_so_imports soNode;
       append [
-          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode; viNode;
+          fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode;
           soNode]
     end
 

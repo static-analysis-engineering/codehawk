@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,6 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
 open BCHCPURegisters
@@ -60,9 +59,10 @@ module TR = CHTraceResult
 
 (*
 let x2p = xpr_formatter#pr_expr
-let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
  *)
+
+let p2s = CHPrettyUtil.pretty_to_string
 
 class assembly_variable_t
         ~(memrefmgr:memory_reference_manager_int)
@@ -94,7 +94,10 @@ object (self:'a)
           | "var" -> stack_offset_to_name offset
           | "varr" -> realigned_stack_offset_to_name offset
           | "gv" -> global_offset_to_name size offset
-          | _ -> basename ^ (memory_offset_to_string offset))
+          | _ ->
+             (match offset with
+              | NoOffset -> "__pderef_" ^ basename ^ "_"
+              | _ -> basename ^ (memory_offset_to_string offset)))
       | RegisterVariable reg -> register_to_string reg
       | CPUFlagVariable flag -> flag_to_string flag
       | AuxiliaryVariable a ->
@@ -107,6 +110,8 @@ object (self:'a)
 	| FunctionPointer (fname,cname,address) ->
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
+        | TypeCastValue  (iaddr, name, _, reg) ->
+           "typecast_" ^ name ^ "_" ^ iaddr ^ "_" ^ (register_to_string reg)
         | SyscallErrorReturnValue address -> "errval_" ^ address
 	| CallTargetValue tgt ->
 	  (match tgt with
@@ -131,18 +136,6 @@ object (self:'a)
 	  "arg_" ^ (string_of_int n) ^ "_for_call_at_" ^ address
 	| Special s -> "special_" ^ s
   	| RuntimeConstant s -> "rtc_" ^ s
-        | MemoryAddress (i, offset, opts, optty) ->
-           (match (opts, optty) with
-            | (Some s, Some memty) ->
-               if is_array_type memty || is_struct_type memty then
-                 s
-               else
-                 "addr_" ^ s
-            | _ ->
-               "memaddr_"
-               ^ (string_of_int i)
-               ^ "_"
-               ^ (memory_offset_to_string offset))
 	| ChifTemp -> "temp" in
     let name = aux denotation in
     if has_control_characters name then
@@ -175,7 +168,7 @@ object (self:'a)
        self#get_memref_field_type size suboffset
     | _ -> None
 
-  method get_type =
+  method get_type: btype_t option =
     let aux den = match den with
       | MemoryVariable (i, size, NoOffset) ->
          self#get_memref_type i size
@@ -191,6 +184,7 @@ object (self:'a)
          | FrozenTestValue _ -> None
          | FunctionPointer _ -> None
          | FunctionReturnValue _ -> None
+         | TypeCastValue (_, _, ty, _) -> Some ty
          | SyscallErrorReturnValue _ -> None
          | CallTargetValue _ -> None
          | SideEffectValue _ -> None
@@ -200,11 +194,10 @@ object (self:'a)
          | BridgeVariable _ -> None
          | Special _ -> None
          | RuntimeConstant _ -> None
-         | MemoryAddress (_, _, _, optty) -> optty
          | ChifTemp -> None in
     aux denotation
 
-  method to_basevar_reference =
+  method to_basevar_reference: memory_reference_int option =
     match denotation with
     | AuxiliaryVariable a ->
        (match a with
@@ -229,71 +222,71 @@ object (self:'a)
     match denotation with
     | AuxiliaryVariable (CallTargetValue _) -> true | _ -> false
 
-  method get_calltarget_value =
+  method get_calltarget_value: call_target_t traceresult =
     match denotation with
     | AuxiliaryVariable (CallTargetValue tgt) -> Ok tgt
     | _ ->
-       Error
-         ["get_calltarget_value: " ^ self#get_name ^ " is not a calltarget value"]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable " ^ self#get_name ^ " is not a calltarget value"]
 
   method is_global_sideeffect =
     match denotation with
     | AuxiliaryVariable (SideEffectValue (_, _, isglobal)) -> isglobal
     | _ -> false
 
-  method get_global_sideeffect_target_address =
+  method get_global_sideeffect_target_address: doubleword_result =
     match denotation with
     | AuxiliaryVariable (SideEffectValue (_, arg, true)) ->
        let addr_r = string_to_doubleword arg in
-       tprop addr_r "get_global_sideeffect_target_address"
+       tprop addr_r (__FILE__ ^ ":" ^ (string_of_int __LINE__))
     | _ ->
-       Error ["get_global_sideeffect_target_address: " ^ self#get_name]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not a global sideeffect value: "
+              ^ self#get_name]
 
-  method get_pointed_to_function_name =
+  method get_pointed_to_function_name: string traceresult =
     match denotation with
     | AuxiliaryVariable (FunctionPointer (name, _, _)) -> Ok name
     | _ ->
-       Error ["get_pointed_to_function_name: " ^ self#get_name]
-
-  method get_memory_address_meminfo:
-    (int * memory_offset_t * string option * btype_t option) traceresult =
-    match denotation with
-    | AuxiliaryVariable (MemoryAddress (memrefix, memoffset, optname, optty)) ->
-       Ok (memrefix, memoffset, optname, optty)
-    | _ ->
-       Error ["get_memory_address_meminfo: variable is not a memory address: "
-              ^ (self#get_name)]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not a function pointer: " ^ self#get_name]
 
   method is_frozen_test_value =
     match denotation with
     | AuxiliaryVariable (FrozenTestValue _) -> true
     | _ -> false
 
-  method is_in_test_jump_range (a :ctxt_iaddress_t) =
+  method is_in_test_jump_range (a :ctxt_iaddress_t): bool traceresult =
     match denotation with
     | AuxiliaryVariable (FrozenTestValue (_, taddr, jaddr)) ->
        Ok (taddr < a && a <= jaddr)
     | _ ->
-       Error ["is_in_test_jump_range: " ^ a ^ ", " ^ self#get_name]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not a frozen test value: " ^ a ^ ", " ^ self#get_name]
 
-  method get_frozen_variable =
+  method get_frozen_variable:
+           (variable_t * ctxt_iaddress_t * ctxt_iaddress_t) traceresult =
     match denotation with
     | AuxiliaryVariable (FrozenTestValue (fv, taddr, jaddr)) ->
        Ok (fv, taddr, jaddr)
     | _ ->
-       Error ["get_frozen_variable: " ^ self#get_name]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not a frozen test value: " ^ self#get_name]
 
-  method get_call_site =
+  method get_call_site: ctxt_iaddress_t traceresult =
     match denotation with
     | (AuxiliaryVariable (FunctionReturnValue a))
     | (AuxiliaryVariable (SideEffectValue (a, _, _))) -> Ok a
     | _ ->
-       Error ["get_call_site: " ^ self#get_name]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not a function return value or sideeffect value: "
+              ^ self#get_name]
 
-  method get_se_argument_descriptor =
+  method get_se_argument_descriptor: string traceresult =
     match denotation with
     | (AuxiliaryVariable (SideEffectValue (_, name, _))) -> Ok name
-    | _ -> Error ["get_se_argument_descriptor: " ^ self#get_name]
+    | _ -> Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "Variable is not a sideeffect value: " ^ self#get_name]
 
   method is_auxiliary_variable =
     match denotation with AuxiliaryVariable _ -> true | _ -> false
@@ -320,20 +313,22 @@ object (self:'a)
 	| InitialRegisterValue _
 	  | InitialMemoryValue _
 	  | FunctionReturnValue _
+          | TypeCastValue _
 	  | CallTargetValue _
 	  | SideEffectValue _
 	  | FieldValue _
           | SymbolicValue _
-          | MemoryAddress _
           | SignedSymbolicValue _ -> true
 	| _ -> false
       end
     | _ -> false
 
-  method get_register =
+  method get_register: register_t traceresult =
     match denotation with
     | RegisterVariable r -> Ok r
-    | _ -> Error ["get_register: " ^ self#get_name]
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not a register: " ^ self#get_name]
 
   method is_initial_register_value =
     match denotation with
@@ -372,7 +367,7 @@ object (self:'a)
         | _ -> false)
     | _ -> false
 
-  method get_initial_register_value_register =
+  method get_initial_register_value_register: register_t traceresult =
     match denotation with
     | AuxiliaryVariable (InitialRegisterValue (CPURegister _ as reg, 0)) ->
        Ok reg
@@ -389,33 +384,34 @@ object (self:'a)
     | AuxiliaryVariable (InitialRegisterValue (PowerSPRegister _ as reg, 0)) ->
        Ok reg
     | _ ->
-       Error ["get_initial_register_value_register: " ^ self#get_name]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not an initial register value: " ^ self#get_name]
 
-  method get_initial_memory_value_variable =
+  method get_initial_memory_value_variable: variable_t traceresult =
     match denotation with
     | AuxiliaryVariable (InitialMemoryValue v) -> Ok v
-    | _ -> Error ["get_initial_memory_value_variable: " ^ self#get_name]
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not an initial memory value: " ^ self#get_name]
 
   method is_memory_variable =
     match denotation with MemoryVariable _ -> true | _ -> false
 
-  method is_memory_address_variable =
-    match denotation with
-    | (AuxiliaryVariable (MemoryAddress _)) -> true
-    | _ -> false
-
-  method get_memory_reference =
+  method get_memory_reference: memory_reference_int traceresult =
     match denotation with
     | MemoryVariable (i, _, _) ->
        let memref_r = memrefmgr#get_memory_reference i in
-       tprop memref_r ("get_memory_reference")
+       tprop memref_r (__FILE__ ^ ":" ^ (string_of_int __LINE__))
     | _ ->
-       Error ["get_memory_reference: " ^ self#get_name]
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not a memory variable: " ^ self#get_name]
 
-  method get_memory_offset =
+  method get_memory_offset: memory_offset_t traceresult =
     match denotation with
     | MemoryVariable (_, _, o) -> Ok o
-    | _ -> Error ["get_memory_offset: " ^ self#get_name]
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not a memory variable: " ^ self#get_name]
 
   method is_register_variable =
     match denotation with RegisterVariable _ -> true | _ -> false
@@ -485,11 +481,13 @@ object (self:'a)
     | AuxiliaryVariable (SignedSymbolicValue _) -> true
     | _ -> false
 
-  method get_symbolic_value_expr =
+  method get_symbolic_value_expr: xpr_t traceresult =
     match denotation with
     | AuxiliaryVariable (SymbolicValue x) -> Ok x
     | AuxiliaryVariable (SignedSymbolicValue (x, _, _)) -> Ok x
-    | _ -> Error ["get_symbolic_value_expr: " ^ self#get_name]
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Variable is not a symbolic value: " ^ self#get_name]
 
   method toPretty = STR self#get_name
 
@@ -539,11 +537,11 @@ object (self)
     else
       let var = new assembly_variable_t ~memrefmgr ~vard ~index ~denotation in
       begin
-        H.add vartable index var ;
+        H.add vartable index var;
         var
       end
 
-  method get_variable (v:variable_t) =
+  method get_variable (v:variable_t): assembly_variable_int traceresult =
     self#get_variable_by_index v#getName#getSeqNumber
 
   method get_assembly_variables = H.fold (fun _ v acc -> v::acc) vartable []
@@ -552,7 +550,8 @@ object (self)
     if H.mem vartable index then
       Ok (H.find vartable index)
     else
-      Error ["get_variable_by_index: " ^ (string_of_int index)]
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ (string_of_int index)]
 
   method get_variable_type (v: variable_t): btype_t option =
     tfold_default
@@ -562,30 +561,50 @@ object (self)
 
   method get_memvar_reference (v: variable_t): memory_reference_int traceresult =
     tbind
-      ~msg:"varmgr:get_memvar_reference"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_memory_reference)
       (self#get_variable v)
 
   method get_memval_reference (v: variable_t): memory_reference_int traceresult =
     tbind
-      ~msg:"varmgr:get_memval_reference"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun var -> self#get_memvar_reference var)
       (self#get_initial_memory_value_variable v)
 
   method get_memvar_offset (v:variable_t): memory_offset_t traceresult =
     tbind
-      ~msg:"varmgr:get_memvar_offset"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_memory_offset)
       (self#get_variable v)
+
+  method add_memvar_offset
+           (v: variable_t)
+           (memoff: memory_offset_t): assembly_variable_int traceresult =
+    tbind
+      (fun memvarref ->
+        tbind
+          (fun memvaroff ->
+            if is_unknown_offset memvaroff then
+              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                     ^ "Variable " ^ (p2s v#toPretty) ^ " has unknown offset"]
+            else
+              let newoff = add_offset memvaroff memoff in
+              Ok (self#make_memory_variable memvarref newoff))
+          (self#get_memvar_offset v))
+      (self#get_memvar_reference v)
 
   method has_variable_index_offset (v: variable_t): bool =
     match self#get_memvar_offset v with
     | Ok (IndexOffset (v, _, _)) -> self#is_register_variable v
+    | Ok (ArrayIndexOffset (x, _)) ->
+       (match x with
+        | XConst (IntConst _) -> false
+        | _ -> true)
     | _ -> false
 
   method get_memval_offset (v: variable_t): memory_offset_t traceresult =
     tbind
-      ~msg:"varmgr:get_memval_offset"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun var -> self#get_memvar_offset var)
       (self#get_initial_memory_value_variable v)
 
@@ -605,7 +624,7 @@ object (self)
   method make_memref_from_basevar
            (v: variable_t): memory_reference_int traceresult =
     tbind
-      ~msg:"make_memref_from_basevar_basevar"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
       (fun av ->
         match av#to_basevar_reference with
         | Some memref -> Ok memref
@@ -619,48 +638,29 @@ object (self)
                   | InitialRegisterValue (PowerGPRegister _, _)
                   | InitialRegisterValue (PowerSPRegister _, _)
                   | InitialMemoryValue _
-                  | FunctionReturnValue _ ->
+                  | FunctionReturnValue _
+                  | TypeCastValue _ ->
                    Ok (memrefmgr#mk_basevar_reference v)
-                | MemoryAddress (_, _, _, Some ty) when is_array_type ty ->
-                   Ok (memrefmgr#mk_base_array_reference v ty)
-                | MemoryAddress (_, _, _, Some ty) when is_struct_type ty ->
-                   Ok (memrefmgr#mk_base_struct_reference v ty)
-                | MemoryAddress (_, _, _, Some ty) ->
-                   Error [
-                       "varmgr:make_memref_from_basevar: memory address that is "
-                       ^ "not an array or struct: "
-                       ^ v#getName#getBaseName
-                       ^ " (" ^ (btype_to_string ty) ^ ")"]
-                | MemoryAddress (_, _, _, None) ->
-                   Error [
-                       "varmgr:make_memref_from_basevar: memory address without "
-                       ^ "type: " ^ v#getName#getBaseName]
                 | _ ->
-                   Ok (memrefmgr#mk_unknown_reference
-                         ("base_" ^ v#getName#getBaseName)))
+                   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                          ^ "Unable to make memref basevar from auxiliary variable: "
+                          ^ v#getName#getBaseName])
             | _ ->
-               Error [
-                   "varmgr:make_memref_from_basevar: not fixed-value: "
-                   ^ v#getName#getBaseName]))
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "Unable to make memref basevar from variable: "
+                      ^ v#getName#getBaseName]))
       (self#get_variable v)
 
-  method make_register_variable (reg:register_t) =
+  method make_register_variable (reg:register_t): assembly_variable_int =
     self#mk_variable (RegisterVariable reg)
 
-  method make_flag_variable (flag: flag_t) =
+  method make_flag_variable (flag: flag_t): assembly_variable_int =
     self#mk_variable (CPUFlagVariable flag)
 
   method make_global_variable ?(size=4) ?(offset=NoOffset) (n:numerical_t) =
     let offset = ConstantOffset (n, offset) in
     let memref = memrefmgr#mk_global_reference in
     self#make_memory_variable ~size memref offset
-
-  method make_global_memory_address
-           ?(optname=None) ?(opttype=None) (n: numerical_t) =
-    let memref = memrefmgr#mk_global_reference in
-    let offset = ConstantOffset (n, NoOffset) in
-    self#mk_variable
-      (AuxiliaryVariable (MemoryAddress (memref#index, offset, optname, opttype)))
 
   method make_frozen_test_value
            (var:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
@@ -677,6 +677,10 @@ object (self)
 
   method make_return_value (iaddr:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FunctionReturnValue iaddr))
+
+  method make_typecast_value
+           (iaddr: ctxt_iaddress_t) (name: string) (ty: btype_t) (reg: register_t) =
+    self#mk_variable (AuxiliaryVariable (TypeCastValue (iaddr,name, ty, reg)))
 
   method make_function_pointer_value
            (fname:string) (cname:string) (address:ctxt_iaddress_t) =
@@ -704,80 +708,83 @@ object (self)
   method make_runtime_constant (name:string) =
     self#mk_variable (AuxiliaryVariable (RuntimeConstant name))
 
-  method get_initial_memory_value_variable (v: variable_t) =
+  method get_initial_memory_value_variable (v: variable_t): variable_t traceresult =
     tbind
-      ~msg:"varmgr:get_initial_memory_value_variable"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_initial_memory_value_variable)
       (self#get_variable v)
 
   method get_pointed_to_function_name (v: variable_t) =
     tbind
-      ~msg:"varmgr:get_pointed_to_function_name"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_pointed_to_function_name)
       (self#get_variable v)
 
-  method get_stack_parameter_index (v: variable_t) =
-    tfold_default
-      (fun memref ->
+  method get_stack_parameter_index (v: variable_t): int option =
+    tfold
+      ~ok:(fun memref ->
         if memref#is_stack_reference then
-          tfold_default
-            (fun offset ->
+          tfold
+            ~ok:(fun offset ->
               if is_constant_offset offset then
-                let four = mkNumerical 4 in
-                let noffset = get_total_constant_offset offset in
-                if noffset#gt numerical_zero
-                   && (noffset#modulo four)#equal numerical_zero then
-                  Some ((noffset#div (mkNumerical 4))#toInt)
-                else
-                  None
+                tfold
+                  ~ok:(fun numoffset ->
+                    let four = mkNumerical 4 in
+                    if numoffset#gt numerical_zero
+                       && (numoffset#modulo four)#equal numerical_zero then
+                      Some ((numoffset#div four)#toInt)
+                    else
+                      None)
+                  ~error:(fun _ -> None)
+                  (get_total_constant_offset offset)
               else
                 None)
-            None
+            ~error:(fun _ -> None)
             (self#get_memvar_offset v)
         else
           None)
-      None
+      ~error:(fun _ -> None)
       (self#get_memvar_reference v)
 
-  method get_register (v: variable_t) =
+  method get_register (v: variable_t): register_t traceresult =
     tbind
-      ~msg:"varmgr:get_register"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_register)
       (self#get_variable v)
 
   method get_call_site (v: variable_t) =
     tbind
-      ~msg:"varmgr:get_call_site"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_call_site)
       (self#get_variable v)
 
   method get_se_argument_descriptor (v: variable_t) =
     tbind
-      ~msg:"varmgr:get_se_argument_descriptor"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_se_argument_descriptor)
       (self#get_variable v)
 
   method get_initial_register_value_register (v: variable_t) =
     tbind
-      ~msg:"varmgr:get_initial_register_value_register"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_initial_register_value_register)
       (self#get_variable v)
 
   method get_frozen_variable (v: variable_t) =
     tbind
-      ~msg:"varmgr:get_fozen_variable"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_frozen_variable)
       (self#get_variable v)
 
   method get_calltarget_value (v: variable_t) =
     tbind
-      ~msg:"varmgr:get_calltarget_value"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_calltarget_value)
       (self#get_variable v)
 
   method get_symbolic_value_expr (v: variable_t) =
     tbind
-      ~msg:"varmgr:get_symbolic_value_expr"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_symbolic_value_expr)
       (self#get_variable v)
 
@@ -785,22 +792,21 @@ object (self)
     self#is_global_variable v
     && (tfold_default is_constant_offset false (self#get_memvar_offset v))
 
-  method get_global_variable_address (v: variable_t) =
+  method get_global_variable_address (v: variable_t): doubleword_result =
     if self#has_global_variable_address v then
       tbind
-        ~msg:"varmgr:get_global_variable_address"
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
         (fun offset ->
-          let goffset = get_total_constant_offset offset in
-          numerical_to_doubleword goffset)
+          tbind numerical_to_doubleword (get_total_constant_offset offset))
         (self#get_memvar_offset v)
     else
-      Error [
-          "varmgr:get_global_variable_address: not a global variable: "
-          ^ v#getName#getBaseName]
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "Variable is not a global variable: "
+             ^ v#getName#getBaseName]
 
   method get_global_sideeffect_target_address (v: variable_t) =
     tbind
-      ~msg:"varmgr:get_global_sideeffect_target_address"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
       (fun av -> av#get_global_sideeffect_target_address)
       (self#get_variable v)
 
@@ -900,12 +906,11 @@ object (self)
         | _ -> Stdlib.compare var1#index var2#index
 
   method is_stack_parameter_variable (v:variable_t) =
-    (self#is_stack_variable v)
-    && (self#has_constant_offset v)
-    && (tfold_default
-          (fun memoff -> (get_total_constant_offset memoff)#geq numerical_zero)
-          false
-          (self#get_memvar_offset v))
+    if (self#is_stack_variable v) && (self#has_constant_offset v) then
+      let memoff_r = tbind get_total_constant_offset (self#get_memvar_offset v) in
+      tfold_default (fun memoff -> memoff#geq numerical_zero) false memoff_r
+    else
+      false
 
   method is_realigned_stack_variable (v:variable_t) =
     (self#is_memory_variable v)
@@ -956,19 +961,6 @@ object (self)
   method is_memory_variable (v: variable_t) =
     tfold_default (fun av -> av#is_memory_variable) false (self#get_variable v)
 
-  method is_memory_address_variable (v: variable_t) =
-    tfold_default
-      (fun av -> av#is_memory_address_variable) false (self#get_variable v)
-
-  method get_memory_address_meminfo (v: variable_t) =
-    if self#is_memory_address_variable v then
-      let avar = TR.tget_ok (self#get_variable v) in
-      avar#get_memory_address_meminfo
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [STR "Not a memory address variable: "; v#toPretty]))
-
   method is_basevar_memory_variable (v: variable_t) =
     (self#is_memory_variable v)
     && (let memref_r = self#get_memvar_reference v in
@@ -979,15 +971,15 @@ object (self)
     && (let var_r = self#get_initial_memory_value_variable v in
          tfold_default self#is_basevar_memory_variable false var_r)
 
-  method get_memvar_basevar (v: variable_t) =
+  method get_memvar_basevar (v: variable_t): variable_t traceresult =
     tbind
-      ~msg:"varmgr:get_memvar_basevar"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
       (fun memref -> memref#get_external_base)
       (self#get_memvar_reference v)
 
-  method get_memval_basevar (v:variable_t) =
+  method get_memval_basevar (v:variable_t): variable_t traceresult =
     tbind
-      ~msg:"varmgr:get_memval_basevar"
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
       (fun var -> self#get_memvar_basevar var)
       (self#get_initial_memory_value_variable v)
 

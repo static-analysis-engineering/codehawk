@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-11-27 15:38:17"/>
+  <libfun lib="so_functions" name="sem_init">
+    <documentation>
+      <desc>initializes an unnamed semaphore</desc>
+      <apidoc>
+        <pt>
+          <ll>int sem_init(</ll>
+          <ld>sem_t *sem</ld>
+          <ld>int pshared</ld>
+          <ld>unsigned int value</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="sem">semaphore to be initialized</par>
+        <par name="pshared">to be shared between processes if non-zero</par>
+        <par name="value">initial value for the semaphore</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="sem_init">
+      <par loc="stack" name="sem" rep="hex" nr="1">
+	<pre><not-null/></pre>
+        <type><ptr>int</ptr></type>
+	<roles>
+	  <role rt="ioc:process" rn="semaphore"/>
+	</roles>
+      </par>
+      <par loc="stack" name="pshared" nr="2">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="value" nr="3">
+        <type>unsigned int</type>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="process" desc="initializes an unnamed semaphore"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

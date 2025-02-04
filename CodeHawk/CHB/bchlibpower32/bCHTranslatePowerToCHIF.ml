@@ -869,10 +869,17 @@ object (self)
           (finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initvar) in
       ASSERT (EQ (regvar, initvar)) in
     let freeze_external_memory_values (v: variable_t) =
-      let initVar = env#mk_initial_memory_value v in
-      let _ =
-        ignore (finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
-      ASSERT (EQ (v, initVar)) in
+      TR.tfold
+        ~ok:(fun initVar ->
+          let _ =
+            ignore (finfo#env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
+          ASSERT (EQ (v, initVar)))
+        ~error:(fun e ->
+          begin
+            log_error_result __FILE__ __LINE__ e;
+            SKIP
+          end)
+      (env#mk_initial_memory_value v) in
     let gprAsserts =
       List.map freeze_initial_gp_register_value (List.init 32 (fun i -> i)) in
     let sprAsserts =

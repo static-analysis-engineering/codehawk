@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -92,6 +92,8 @@ let x2s x = p2s (x2p x)
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("floc:" ^ tag) msg
+
+let memmap = BCHGlobalMemoryMap.global_memory_map
 
 
 let unknown_write_symbol = new symbol_t "unknown write"
@@ -402,16 +404,6 @@ object (self)
   method memrecorder = mk_memory_recorder self#f self#cia
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   *                                                           return values *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-
-  method record_return_value =
-    let eax = self#env#mk_cpu_register_variable Eax in
-    let returnExpr = self#rewrite_variable_to_external eax in
-    self#f#record_return_value self#cia returnExpr
-
-
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                                            call targets *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
@@ -599,22 +591,10 @@ object (self)
     let fintf = ctinfo#get_function_interface in
     let stackpars = get_stack_parameters fintf in
     let regpars = get_register_parameters fintf in
-    let _ =
-      chlog#add
-        "floc:get_call_arguments"
-        (LBLOCK [
-             self#l#toPretty;
-             STR "  ";
-             STR ctinfo#get_name;
-             STR ": ";
-             INT (List.length stackpars);
-             STR " stackparameters; ";
-             INT (List.length regpars);
-             STR " register parameters"]) in
-
     List.concat [(get_regargs regpars); (get_stackargs stackpars)]
 
   method get_call_args =
+    (* used in x86 only *)
     let ctinfo = self#get_call_target in
     if ctinfo#is_wrapped_app_call then
       self#get_wrapped_call_args
@@ -653,11 +633,82 @@ object (self)
    * resolve and save IndReg (cpureg, offset)   (memrefs1)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
+  method get_memory_variable_numoffset
+           ?(align=1)
+           ?(size=4)
+           (var: variable_t)
+           (numoffset: numerical_t): variable_t traceresult =
+    let inv = self#inv in
+    let mk_memvar memref_r memoffset_r =
+      TR.tbind
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+        (fun memref ->
+          if memref#is_global_reference then
+            TR.tbind
+              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__)
+                    ^ ": memref:global")
+              (fun memoff ->
+                TR.tbind
+                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                  self#env#mk_global_variable
+                     (get_total_constant_offset memoff))
+              memoffset_r
+          else
+            TR.tmap
+              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+              (fun memoff ->
+                (self#env#mk_offset_memory_variable memref memoff))
+              memoffset_r)
+        memref_r in
+
+    if inv#is_base_offset_constant var then
+      let (base, offset) = inv#get_base_offset_constant var in
+      let memoffset = numoffset#add offset in
+      let memref_r = self#env#mk_base_sym_reference base in
+      let memoff_r =
+        TR.tbind
+          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+          (fun basevar ->
+            let optbasetype = self#env#get_variable_type basevar in
+            let basetype =
+              match optbasetype with
+              | Some t when is_pointer t -> ptr_deref t
+              | _ -> t_unknown in
+            address_memory_offset basetype (num_constant_expr memoffset))
+          (self#env#get_variable base#getSeqNumber) in
+      mk_memvar memref_r memoff_r
+
+    else
+      let varx =
+        if align > 1 then
+          let alignx = int_constant_expr align in
+          XOp (XMult, [XOp (XDiv, [XVar var; alignx]); alignx])
+        else
+          XVar var in
+      let addr = XOp (XPlus, [varx; num_constant_expr numoffset]) in
+      let address = inv#rewrite_expr addr in
+      match address with
+      | XConst (IntConst n) ->
+         let dw = numerical_mod_to_doubleword n in
+         if system_info#get_image_base#le dw then
+           tprop
+             (self#env#mk_global_variable ~size n)
+             (__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
+         else
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "Unable to convert constant value " ^ n#toString
+                  ^ "to a valid program address (should be greater than "
+                  ^ system_info#get_image_base#to_hex_string
+                  ^ ")"]
+      | _ ->
+         let (memref_r, memoffset_r) = self#decompose_memaddr address in
+         mk_memvar memref_r memoffset_r
+
   method get_memory_variable_1
            ?(align=1)    (* alignment of var value *)
            ?(size=4)
            (var:variable_t)
-           (offset:numerical_t) =
+           (offset:numerical_t): variable_t =
     let default () =
       self#env#mk_memory_variable
         (self#env#mk_unknown_memory_reference "memref-1") offset in
@@ -702,23 +753,6 @@ object (self)
                default ())
            (default ())
            (numerical_to_doubleword n)
-      | XVar v when self#f#env#is_memory_address_variable v ->
-         log_tfold_default
-           (log_error
-              "get_memory_variable_1"
-              (self#cia ^ ": memory address variable: " ^ (p2s var#toPretty)))
-           (fun v -> v)
-           (default ())
-           (self#env#mk_memory_address_deref_variable v)
-      | XOp (XPlus, [XVar v; XConst (IntConst n)])
-           when self#f#env#is_memory_address_variable v ->
-         log_tfold_default
-           (log_error
-              "get_memory_variable_1"
-              (self#cia ^ ": memory address variable: " ^ (p2s var#toPretty)))
-           (fun v -> v)
-           (default ())
-           (self#env#mk_memory_address_deref_variable ~offset:n#toInt v)
       | _ ->
          let (memref, memoffset) = self#decompose_address address in
          if is_constant_offset memoffset then
@@ -730,10 +764,15 @@ object (self)
                     (self#cia))
                  (fun v -> v)
                  (default ())
-                 (self#env#mk_global_variable (get_total_constant_offset memoffset))
+                 (TR.tbind
+                    ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                    self#env#mk_global_variable
+                    (get_total_constant_offset memoffset))
              else
-               self#env#mk_memory_variable
-                 memref (get_total_constant_offset memoffset) in
+               (TR.tfold_default
+                  (self#env#mk_memory_variable memref)
+                  (default ())
+                  (get_total_constant_offset memoffset)) in
            memvar
          else
            default () in
@@ -747,31 +786,99 @@ object (self)
    * resolve and save ScaledReg (cpureg1, cpureg2, 1, offset)   (memrefs2)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
 
+  method get_memory_variable_varoffset
+           ?(size=4) (var1: variable_t) (var2: variable_t) (offset: numerical_t):
+           variable_t traceresult =
+    let addr = XOp (XPlus, [XVar var1; XVar var2]) in
+    let addr = XOp (XPlus, [addr; num_constant_expr offset]) in
+    let address = simplify_xpr (self#inv#rewrite_expr addr) in
+    let (memref_r, memoff_r) = self#decompose_memaddr address in
+    TR.tbind
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+      (fun memref ->
+        if memref#is_global_reference then
+          TR.tbind
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
+            (fun memoff ->
+              TR.tbind
+                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                (self#env#mk_global_variable ~size)
+                (get_total_constant_offset memoff))
+            memoff_r
+        else
+          TR.tbind
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+            (fun memoff ->
+              TR.tmap
+                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                (self#env#mk_memory_variable memref)
+                (get_total_constant_offset memoff))
+            memoff_r)
+      memref_r
+
   method get_memory_variable_2
            ?(size=4) (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
-    let _ = track_function
-              ~iaddr:self#cia self#fa
-              (LBLOCK [
-                   STR "get_memory_variable_2: ";
-                   STR "var1: ";
-                   var1#toPretty;
-                   STR "; var2: ";
-                   var2#toPretty;
-                   STR "; offset: ";
-                   offset#toPretty]) in
+    let default () =
+      self#env#mk_memory_variable
+        (self#env#mk_unknown_memory_reference "memref-2") numerical_zero in
     let addr = XOp (XPlus, [XVar var1; XVar var2]) in
     let addr = XOp (XPlus, [addr; num_constant_expr offset]) in
     let address = self#inv#rewrite_expr addr in
     let (memref, memoffset) = self#decompose_address address in
     if is_constant_offset memoffset then
-      self#env#mk_memory_variable ~size memref (get_total_constant_offset memoffset)
+      TR.tfold_default
+        (self#env#mk_memory_variable ~size memref)
+        (default ())
+        (get_total_constant_offset memoffset)
     else
-      self#env#mk_memory_variable
-        (self#env#mk_unknown_memory_reference "memref-2") numerical_zero
+      default ()
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (cpureg1, cpureg2, s, offset)  (memrefs3)
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
+
+  method get_memory_variable_scaledoffset
+           ?(size=4)
+           (base: variable_t)
+           (index: variable_t)
+           (scale: int)
+           (offset: numerical_t): variable_t traceresult =
+    let indexexpr =
+      if self#inv#is_constant index then
+        num_constant_expr (self#inv#get_constant index)
+      else
+        XVar index in
+    let addr = XOp (XPlus, [XVar base; num_constant_expr offset]) in
+    let addr = self#inv#rewrite_expr addr in
+    let addr =
+      XOp (XPlus,
+           [addr; XOp (XMult, [int_constant_expr scale; indexexpr])]) in
+    let address = simplify_xpr (self#inv#rewrite_expr addr) in
+    let (memref_r, memoff_r) = self#decompose_memaddr address in
+    TR.tbind
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+      (fun memref ->
+        if memref#is_global_reference then
+          self#get_var_at_address ~size:(Some size) address
+      (*
+          TR.tbind
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
+            (fun memoff ->
+              TR.tbind
+                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                (self#env#mk_global_variable ~size)
+                (get_total_constant_offset memoff))
+            memoff_r *)
+        else
+          TR.tbind
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+            (fun memoff ->
+              TR.tmap
+                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                (self#env#mk_memory_variable memref)
+                (get_total_constant_offset memoff))
+            memoff_r)
+      memref_r
 
   method get_memory_variable_3
            ?(size=4)
@@ -781,7 +888,7 @@ object (self)
            (offset:numerical_t) =
     let default () =
       self#env#mk_memory_variable
-        (self#env#mk_unknown_memory_reference "memref-1") offset in
+        (self#env#mk_unknown_memory_reference "memref-3") offset in
     let inv = self#inv in
     let indexExpr =
       if inv#is_constant index then
@@ -803,14 +910,21 @@ object (self)
              (self#cia ^ ": memoffset: " ^ (memory_offset_to_string memoffset)))
           (fun v -> v)
           (default ())
-          (self#env#mk_global_variable (get_total_constant_offset memoffset))
+          (TR.tbind
+             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+             self#env#mk_global_variable
+             (get_total_constant_offset memoffset))
       else
-        self#env#mk_memory_variable
-          ~size memref (get_total_constant_offset memoffset)
+        TR.tfold_default
+          (self#env#mk_memory_variable ~size memref)
+          (default ())
+          (get_total_constant_offset memoffset)
     else
+      default ()
+        (*
       match memoffset with
       | IndexOffset _ ->
-         self#env#mk_index_offset_memory_variable memref memoffset
+         self#env#mk_offset_memory_variable memref memoffset
       | ConstantOffset (n, IndexOffset (v, s, o)) ->
          let n = n#modulo (mkNumerical BCHDoubleword.e32) in
          log_tfold_default
@@ -833,7 +947,7 @@ object (self)
               n (IndexOffset (v, s, o)))
       | _ ->
          default ()
-
+         *)
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (None,indexreg, scale, offset)
@@ -1132,82 +1246,173 @@ object (self)
 
   method get_fts_parameter_expr (_p: fts_parameter_t) = None
 
-  method decompose_memvar_address
-           (x: xpr_t): (memory_reference_int * memory_offset_t) option =
-    let _ = chlog#add "decompose_array_address" (LBLOCK [STR "xpr: "; x2p x]) in
-    let vars = vars_as_positive_terms x in
-    let memaddrs = List.filter self#f#env#is_memory_address_variable vars in
-    let optbase =
-      match memaddrs with
-      | [base] ->
-         let (_, _, _, optty) =
-           TR.tget_ok (self#f#env#varmgr#get_memory_address_meminfo base) in
-         let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
-         Some (XVar base, offset, optty)
-      | _ ->
-         None in
-    match optbase with
-    | None -> None
-    | Some (_, _, None) -> None
-    | Some (XVar base, xoffset, Some ty) when is_array_type ty ->
-       let _ =
-         chlog#add
-           "decompose_array_address" (LBLOCK [STR "xoffset: "; x2p xoffset]) in
-       let eltty = get_element_type ty in
-       let elttysize_r = size_of_btype eltty in
-       (match elttysize_r with
-        | Error e ->
-           begin
-             CHTimingLog.log_error
-               "Unable to obtain array element size for %s: %s [%s:%d]"
-               (x2s (XVar base))
-               (String.concat "; " e)
-               __FILE__ __LINE__;
-             None
-           end
-        | Ok elttysize ->
-           let optmemref = TR.to_option (self#env#mk_base_variable_reference base) in
-           let optindex = get_array_index_offset xoffset elttysize in
-           let memoffset =
-             match optindex with
-             | None ->
-                let _ =
-                  chlog#add
-                    "decompose_array_address"
-                    (LBLOCK [
-                         STR "Unable to get array index offset for ";
-                         x2p xoffset;
-                         STR " with size ";
-                         INT elttysize]) in
-                UnknownOffset
-             | Some (indexxpr, rem) ->
-                let remoffset = mk_maximal_memory_offset rem eltty in
-                ArrayIndexOffset (indexxpr, remoffset) in
-           (match (optmemref, memoffset) with
-            | (_, UnknownOffset) -> None
-            | (Some memref, memoffset) -> Some (memref, memoffset)
-            | _ ->
-               None))
-    | Some (XVar base, xoffset, Some ty) when is_struct_type ty ->
-       let _ =
-         chlog#add
-           "decompose_struct_address" (LBLOCK [STR "xoffset: "; x2p xoffset]) in
-       let optmemref = TR.to_option (self#env#mk_base_variable_reference base) in
-       let cinfo = get_struct_type_compinfo ty in
-       (match xoffset with
-        | XConst (IntConst n) ->
-           let optfinfo = get_struct_field_at_offset cinfo n#toInt in
-           (match optfinfo with
-            | None -> None
-            | Some (finfo, rem) when rem = 0 ->
-               let memoffset = FieldOffset ((finfo.bfname, cinfo.bckey), NoOffset) in
-               (match optmemref with
-                | Some memref -> Some (memref, memoffset)
-                | _ -> None)
-            | _ -> None)
-        | _ -> None)
-    | _ -> None
+  method get_var_at_address
+           ?(size=None)
+           ?(btype=t_unknown)
+           (addrvalue: xpr_t): variable_t traceresult =
+    match memmap#xpr_containing_location addrvalue with
+    | Some gloc ->
+       (TR.tmap
+          (fun offset -> self#f#env#mk_gloc_variable gloc offset)
+          (gloc#address_memory_offset ~tgtsize:size ~tgtbtype:btype addrvalue))
+    | _ ->
+       let (memref_r, memoff_r) = self#decompose_memaddr addrvalue in
+       TR.tmap2
+         ~msg1:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         (fun memref memoff ->
+           self#f#env#mk_offset_memory_variable memref memoff)
+         memref_r memoff_r
 
+  method decompose_memaddr (x: xpr_t):
+           (memory_reference_int traceresult * memory_offset_t traceresult) =
+    let is_external (v: variable_t) = self#env#is_function_initial_value v in
+    let vars = vars_as_positive_terms x in
+    let knownpointers = List.filter self#f#is_base_pointer vars in
+    match knownpointers with
+    (* one known pointer, must be the base *)
+    | [base] ->
+       let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
+       let memref_r = self#env#mk_base_variable_reference base in
+       let vartype = self#f#env#get_variable_type base in
+       let vartype = match vartype with None -> t_unknown | Some t -> t in
+       let memoff_r = address_memory_offset vartype offset in
+       (*
+         (match offset with
+          | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
+          | XOp (XMult, [XConst (IntConst n); XVar v]) ->
+             Ok (IndexOffset (v, n#toInt, NoOffset))
+          | _ ->
+             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ "Offset from base "
+                    ^ (x2s (XVar base))
+                    ^ " not recognized: " ^ (x2s offset)]) in *)
+       (memref_r, memoff_r)
+
+    (* no known pointers, have to find a base *)
+    | [] ->
+       let maxC = largest_constant_term x in
+       let maxCdw = TR.tvalue (numerical_to_doubleword maxC) ~default:wordzero in
+       (* if maxC#gt system_info#get_image_base#to_numerical then *)
+       if system_info#is_code_address maxCdw
+          || memmap#is_global_data_address maxCdw then
+         (* global base *)
+         let memref_r = Ok self#env#mk_global_memory_reference in
+         let offset = simplify_xpr (XOp (XMinus, [x; num_constant_expr maxC])) in
+         let gmemoff_r =
+           match offset with
+           | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
+           | XOp (XMult, [XConst (IntConst n); XVar v]) ->
+              Ok (IndexOffset (v, n#toInt, NoOffset))
+           | XOp (XMult, [XConst (IntConst n); x])
+                when self#is_composite_symbolic_value x ->
+              let v = self#env#mk_symbolic_value x in
+              Ok (IndexOffset (v, n#toInt, NoOffset))
+           | _ ->
+              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                     ^ (p2s self#l#toPretty) ^ ": "
+                     ^ "Offset from global base "
+                     ^ maxC#toString
+                     ^ " not recognized: " ^ (x2s offset)] in
+         let memoff_r =
+           tmap
+             (fun gmemoff -> ConstantOffset (maxC, gmemoff))
+             gmemoff_r in
+         (memref_r, memoff_r)
+
+       else
+         (* find a candidate base pointer *)
+         (match vars with
+          | [base] when (self#is_initial_value_variable base)
+                        || (is_external base) ->
+             let _ = self#f#add_base_pointer base in
+             let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
+             let memref_r = self#env#mk_base_variable_reference base in
+             let memoff_r =
+               match offset with
+               | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
+               | XOp (XMult, [XConst (IntConst n); XVar v]) ->
+                  Ok (IndexOffset (v, n#toInt, NoOffset))
+              | _ ->
+                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                        ^ (p2s self#l#toPretty) ^ ": "
+                        ^ "Offset from base "
+                        ^ (x2s (XVar base))
+                        ^ " not recognized: " ^ (x2s offset)] in
+             (memref_r, memoff_r)
+
+          | [base] when (self#env#is_stack_parameter_variable base)
+                        && (self#f#env#has_constant_offset base)
+                        && (self#has_initial_value base) ->
+             let base_r =
+               TR.tmap
+                 (fun baseInit ->
+                   let _ = self#f#add_base_pointer baseInit in
+                   baseInit)
+                 (self#f#env#mk_initial_memory_value base) in
+             let memref_r =
+               TR.tbind
+                 (fun base -> self#env#mk_base_variable_reference base)
+                 base_r in
+             let memoff_r =
+               TR.tbind
+                 (fun base ->
+                   let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
+                   match offset with
+                   | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
+                   | XOp (XMult, [XConst (IntConst n); XVar v]) ->
+                      Ok (IndexOffset (v, n#toInt, NoOffset))
+                   | _ ->
+                      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                             ^ (p2s self#l#toPretty) ^ ": "
+                             ^ "Offset from base "
+                             ^ (x2s (XVar base))
+                             ^ " not recognized: " ^ (x2s offset)])
+                 base_r in
+             (memref_r, memoff_r)
+
+          | [v] ->
+             let memref_r =
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ (p2s self#l#toPretty) ^ ": "
+                      ^ "No candidate base pointers. Only variable found: "
+                      ^ (p2s v#toPretty)] in
+             let memoff_r =
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__)] in
+             (memref_r, memoff_r)
+
+          | [] ->
+             let memref_r =
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ (p2s self#l#toPretty) ^ ": "
+                      ^ "No candidate pointers. Left with maxC: "
+                      ^ maxC#toString] in
+             let memoff_r =
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__)] in
+             (memref_r, memoff_r)
+
+          (* multiple variables *)
+          | _ ->
+             let memref_r =
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ (p2s self#l#toPretty) ^ ": "
+                      ^ "Multiple variables: "
+                      ^ (String.concat "; "
+                           (List.map (fun v -> p2s v#toPretty) vars))] in
+             let memoff_r =
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__)] in
+             (memref_r, memoff_r))
+
+    (* multiple known pointers *)
+    | _ ->
+       let memref_r =
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ (p2s self#l#toPretty) ^ ": "
+                ^ "Multiple known pointers: "
+                ^ (String.concat "; "
+                     (List.map (fun v -> p2s v#toPretty) knownpointers))] in
+       let memoff_r =
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__)] in
+       (memref_r, memoff_r)
 
   (* the objective is to extract a base pointer and an offset expression
    * first check whether the expression contains any variables that are known
@@ -1245,13 +1450,21 @@ object (self)
 		  self#f#add_base_pointer base;
 		  Some (XVar base, simplify_xpr (XOp (XMinus, [x; XVar base])))
 	       end
-	     | [base] when self#env#is_stack_parameter_variable base &&
-		 self#f#env#has_constant_offset base && self#has_initial_value base ->
-	       let baseInit = self#f#env#mk_initial_memory_value base in
-	       begin
-		 self#f#add_base_pointer baseInit;
-		 Some (XVar base, simplify_xpr (XOp (XMinus, [x; XVar base])))
-	       end
+	     | [base] when self#env#is_stack_parameter_variable base
+		             && self#f#env#has_constant_offset base
+                             && self#has_initial_value base ->
+                TR.tfold
+                  ~ok:(fun baseInit ->
+	            begin
+		      self#f#add_base_pointer baseInit;
+		      Some (XVar base, simplify_xpr (XOp (XMinus, [x; XVar base])))
+	            end)
+                  ~error:(fun e ->
+                    begin
+                      log_error_result ~tag:"decompose_address" __FILE__ __LINE__ e;
+                      None
+                    end)
+                  (self#f#env#mk_initial_memory_value base)
              | [_] -> None
 	     | [] ->      (* suspicious address below the image base *)
 	       begin
@@ -1433,6 +1646,89 @@ object (self)
      (List.length vars) > 0
      && List.for_all is_fixed_type (variables_in_expr x)
 
+   method get_assign_commands_r
+            ?(signed=false)
+            ?(size=4)
+            (lhs_r: variable_t traceresult)
+            (rhs_r: xpr_t traceresult): cmd_t list =
+     if Result.is_error lhs_r then
+       let (cmds, op_args) =
+         TR.tfold
+           ~ok:(fun rhs ->
+             let reqN () = self#env#mk_num_temp in
+             let reqC = self#env#request_num_constant in
+             let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
+             (rhscmds, get_rhs_op_args rhs_c))
+           ~error:(fun e ->
+             begin
+               log_error_result
+                 ~tag:("assignment lhs unknown")
+                 ~msg:(p2s self#l#toPretty)
+                 __FILE__ __LINE__ e;
+               ([], [])
+             end)
+           rhs_r in
+       cmds @ [OPERATION ({op_name = unknown_write_symbol; op_args = op_args})]
+
+     else if Result.is_error rhs_r then
+       let lhs = TR.tget_ok lhs_r in
+       [ABSTRACT_VARS [lhs]]
+
+     else
+       let lhs = TR.tget_ok lhs_r in
+       let rhs = TR.tget_ok rhs_r in
+       let rhs = simplify_xpr (self#inv#rewrite_expr rhs) in
+       let rhs =
+         if not signed then
+           match rhs with
+           | XConst (IntConst n) ->
+              let n =
+                match size with
+                | 1 -> n#modulo numerical_e8
+                | 2 -> n#modulo numerical_e16
+                | 4 -> n#modulo numerical_e32
+                | _ -> n in
+              num_constant_expr n
+           | _ -> rhs
+         else
+           rhs in
+
+       let rhs =
+         (* if rhs is a composite symbolic expression, create a new variable
+            for it *)
+         if self#is_composite_symbolic_value rhs then
+           XVar (self#env#mk_symbolic_value rhs)
+         else
+           rhs in
+       let reqN () = self#env#mk_num_temp in
+       let reqC = self#env#request_num_constant in
+       let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
+       let cmds = rhscmds @ [ASSIGN_NUM (lhs, rhs_c)] in
+       let fndata = self#f#get_function_data in
+       match fndata#get_regvar_intro self#ia with
+       | Some rvi when rvi.rvi_cast && Option.is_some rvi.rvi_vartype ->
+          TR.tfold
+            ~ok:(fun reg ->
+              let ty = Option.get rvi.rvi_vartype in
+              let tcvar =
+                self#f#env#mk_typecast_value self#cia rvi.rvi_name ty reg in
+              begin
+                log_result __FILE__ __LINE__
+                  ["Create typecast var for "
+                   ^ (register_to_string reg)
+                   ^ " at "
+                   ^ self#cia];
+                cmds @ [ASSIGN_NUM (lhs, NUM_VAR tcvar)]
+              end)
+            ~error:(fun e ->
+              begin
+                log_error_result __FILE__ __LINE__
+                  ("expected a register variable" :: e);
+                cmds
+              end)
+            (self#f#env#get_register lhs)
+       | _ -> cmds
+
    (* Note: recording of loads and stores is performed by the different
       architectures directly in FnXXXDictionary.*)
    method get_assign_commands
@@ -1511,17 +1807,15 @@ object (self)
            (match vtype with
             | TUnknown _ -> ()
             | _ ->
-               begin
-                 chlog#add
-                   "set constant-value variable type"
-                   (LBLOCK [
-                        STR self#cia;
-                        STR ": ";
-                        sv#toPretty;
-                        STR ": ";
-                        STR (btype_to_string vtype)]);
-                 self#f#set_btype sv vtype
-               end);
+               chlog#add
+                 "set constant-value variable type"
+                 (LBLOCK [
+                      STR self#cia;
+                      STR ": ";
+                      sv#toPretty;
+                      STR ": ";
+                      STR (btype_to_string vtype)]));
+           (* self#f#set_btype sv vtype *)
            XVar sv
          end
        else
@@ -1656,6 +1950,18 @@ object (self)
             "Ignoring size: %s and type %s in get_abstract_commands"
             (x2s size) (btype_to_string vtype) in
      [ABSTRACT_VARS [lhs]]
+
+   method get_abstract_commands_r (lhs_r: variable_t traceresult): cmd_t list =
+     TR.tfold
+       ~ok:(fun lhs -> [ABSTRACT_VARS [lhs]])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"lhs not abstracted" ~msg:(p2s self#l#toPretty)
+             __FILE__ __LINE__ e;
+           []
+         end)
+       lhs_r
 
    method get_ssa_abstract_commands (reg: register_t) () =
      let regvar = self#env#mk_register_variable reg in
@@ -2127,6 +2433,10 @@ object (self)
            self#env#set_variable_name rvar name in
        ASSIGN_NUM (r0, NUM_VAR rvar) in
      let bridgeVars = self#env#get_bridge_values_at self#cia in
+     let abstractglobals =
+       let globals =
+         List.filter self#env#is_global_variable self#env#get_variables in
+       [ABSTRACT_VARS globals] in
      let sideeffect_assigns =
        self#get_sideeffect_assigns self#get_call_target#get_semantics in
      let _ =
@@ -2139,6 +2449,7 @@ object (self)
         | _ -> [ABSTRACT_VARS abstrRegs])
      @ [returnassign]
      @ sideeffect_assigns
+     @ abstractglobals
      @ (match bridgeVars with
         | [] -> []
         | _ -> [ABSTRACT_VARS bridgeVars])

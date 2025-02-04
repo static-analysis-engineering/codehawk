@@ -1738,10 +1738,17 @@ object (self)
         ignore (env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
       ASSERT (EQ (regVar, initVar)) in
     let freeze_external_memory_values (v:variable_t) =
-      let initVar = env#mk_initial_memory_value v in
-      let _ =
-        ignore (env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
-      ASSERT (EQ (v, initVar)) in
+      TR.tfold
+        ~ok:(fun initVar ->
+          let _ =
+            ignore (env#mk_symbolic_variable ~domains:["reachingdefs"] initVar) in
+          ASSERT (EQ (v, initVar)))
+        ~error:(fun e ->
+          begin
+            log_error_result __FILE__ __LINE__ e;
+            SKIP
+          end)
+        (env#mk_initial_memory_value v) in
     let t9Assign =
       let t9Var = env#mk_mips_register_variable MRt9 in
       let reqN () = env#mk_num_temp in

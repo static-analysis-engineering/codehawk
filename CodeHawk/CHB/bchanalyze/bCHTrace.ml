@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -76,10 +76,13 @@ let se_address_is_referenced
   if floc#is_address x then
     let (memref,memoffset) = floc#decompose_address x in
     if is_constant_offset memoffset then
-      let memv =
-        finfo#env#mk_memory_variable memref (get_total_constant_offset memoffset) in
-      let memx = floc#rewrite_variable_to_external memv in
-      var_is_referenced finfo memx v
+      TR.tfold_default
+        (fun offset ->
+          let memv = finfo#env#mk_memory_variable memref offset in
+          let memx = floc#rewrite_variable_to_external memv in
+          var_is_referenced finfo memx v)
+        false
+        (get_total_constant_offset memoffset)
     else
       false
   else

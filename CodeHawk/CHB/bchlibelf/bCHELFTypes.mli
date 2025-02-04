@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2024 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,11 +31,11 @@
    References used:
 
    The standard /usr/include/elf.h in Arch Linux
-   The latest draft of the System V Application Binary Interface: 
+   The latest draft of the System V Application Binary Interface:
    http://www.sco.com/developers/gabi/latest/contents.html
-   March 19, 1997 draft copy of the Intel Supplement to the System V 
+   March 19, 1997 draft copy of the Intel Supplement to the System V
    Application Binary Interface
-   ----------------------------------------------------------------------------- *) 
+   ----------------------------------------------------------------------------- *)
 
 (* chlib *)
 open CHNumerical
@@ -51,47 +51,47 @@ open BCHLibTypes
 open BCHDwarfTypes
 
 
-type elf_section_header_type_t = 
-  | SHT_NullSection 
+type elf_section_header_type_t =
+  | SHT_NullSection
   | SHT_ProgBits
-  | SHT_SymTab 
-  | SHT_StrTab 
-  | SHT_Rela 
-  | SHT_Hash 
-  | SHT_Dynamic 
-  | SHT_Note 
-  | SHT_NoBits 
-  | SHT_Rel 
-  | SHT_ShLib 
-  | SHT_DynSym 
-  | SHT_InitArray 
+  | SHT_SymTab
+  | SHT_StrTab
+  | SHT_Rela
+  | SHT_Hash
+  | SHT_Dynamic
+  | SHT_Note
+  | SHT_NoBits
+  | SHT_Rel
+  | SHT_ShLib
+  | SHT_DynSym
+  | SHT_InitArray
   | SHT_FiniArray
-  | SHT_PreinitArray 
-  | SHT_Group 
+  | SHT_PreinitArray
+  | SHT_Group
   | SHT_SymTabShndx
   | SHT_GNU_verdef
   | SHT_GNU_verneed
   | SHT_GNU_versym
   | SHT_MIPS_RegInfo
-  | SHT_OSSection of doubleword_int 
-  | SHT_ProcSection of doubleword_int 
-  | SHT_UserSection of doubleword_int 
+  | SHT_OSSection of doubleword_int
+  | SHT_ProcSection of doubleword_int
+  | SHT_UserSection of doubleword_int
   | SHT_UnknownType of doubleword_int
-                     
+
 type elf_program_header_type_t =
-  | PT_Null 
-  | PT_Load 
-  | PT_Dynamic 
-  | PT_Interpreter 
-  | PT_Note 
-  | PT_Reference 
+  | PT_Null
+  | PT_Load
+  | PT_Dynamic
+  | PT_Interpreter
+  | PT_Note
+  | PT_Reference
   | PT_ThreadLocalStorage
   | PT_RegInfo
-  | PT_OSSpecific of doubleword_int 
+  | PT_OSSpecific of doubleword_int
   | PT_ProcSpecific of doubleword_int
 
 type elf_dynamic_tag_value_t = DTV_d_val | DTV_d_ptr | DTV_d_none
-                     
+
 type elf_dynamic_tag_t =
   | DT_Null
   | DT_Needed
@@ -205,7 +205,7 @@ class type elf_dictionary_int =
     method read_xml: xml_element_int -> unit
     method toPretty: pretty_t
   end
-         
+
 class type elf_raw_section_int =
   object
     method get_size: int
@@ -248,16 +248,19 @@ class type elf_string_table_int =
 class type elf_symbol_table_entry_int =
   object
     method id: int
-    method read: pushback_stream_int -> unit         
+    method read: pushback_stream_int -> unit
     method set_name: string -> unit
     method get_name: string
     method get_st_binding: int
     method get_st_type: int
     method get_st_name: doubleword_int
     method get_st_value: doubleword_int
+    method get_st_size: doubleword_int
     method get_value: doubleword_int
+    method get_size: int option
     method has_address_value: bool
     method has_name: bool
+    method has_size: bool
     method is_function: bool
     method is_data_object: bool
     method to_rep_record: string list * int list
@@ -761,10 +764,12 @@ object
 
   (* predicates *)
   method is_executable: bool
+  method is_readonly: bool
   method is_string_table: bool
   method is_symbol_table: bool
   method is_relocation_table: bool
   method is_program_section: bool
+  method is_uninitialized_data_section: bool
   method is_pwr_vle: bool
 
   method is_debug_info: bool
@@ -786,12 +791,17 @@ object
 
   method read: unit
   method set_code_extent: unit
+  method set_global_data_sections_extent: unit
   method initialize_jump_tables: unit
   method initialize_call_back_tables: unit
   method initialize_struct_tables: unit
+  method add_new_user_defined_section_headers: unit (* only for unit tests *)
 
   (* accessors *)
+
+  (** Returns the entry point as specified in the elf file header.*)
   method get_program_entry_point: doubleword_int
+
   method get_sections: (int * elf_section_header_int * elf_section_t) list
   method get_program_segments: (int * elf_program_header_int * elf_segment_t) list
   method get_executable_sections: (elf_section_header_int * string) list
@@ -814,6 +824,13 @@ object
   (** [is_data_address va] returns [true] if virtual address [va] is an address
       within a program section that is not an executable section. *)
   method is_data_address: doubleword_int -> bool
+
+  (** [read_readonly_address va] returns [true] if virtual address [va] is an
+      address within a program section that is not writeable (it may be
+      executable). *)
+  method is_readonly_address: doubleword_int -> bool
+
+  method is_uninitialized_data_address: doubleword_int -> bool
   method is_global_offset_table_address: doubleword_int -> bool
   method has_xsubstring: doubleword_int -> int -> bool
   method has_debug_info: bool

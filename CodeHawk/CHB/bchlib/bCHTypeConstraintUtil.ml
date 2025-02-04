@@ -237,6 +237,8 @@ let join_tc (t1: type_constant_t) (t2: type_constant_t): type_constant_t =
   | TyTUnknown, _ -> TyTUnknown
   | _, TyTUnknown -> TyTUnknown
   | TyTStruct (i, _), TyTStruct (j, _) when i=j -> t1
+  | TyTStruct (i, _), TyTStruct (j, _) when is_sub_struct i j -> t2
+  | TyTStruct (i, _), TyTStruct (j, _) when is_sub_struct j i -> t1
   | TyTStruct _, _ -> TyTUnknown
   | _, TyTStruct _ -> TyTUnknown
   | TyTFloat fk1, TyTFloat fk2 -> join_tc_fkind fk1 fk2
@@ -416,7 +418,11 @@ let ikind_to_signedsize (k: ikind_t): (signedness_t * int) =
 let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
         : type_constraint_t option =
   match (resolve_type ty) with
-  | Error _ -> None
+  | Error e ->
+     begin
+       log_error_result __FILE__ __LINE__ e;
+       None
+     end
   | Ok ty ->
      match ty with
      | TInt (ikind, _) ->
@@ -447,14 +453,11 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
             end)
      | rty ->
         begin
-          chlog#add
-            "make btype constraint"
-            (LBLOCK [
-                 STR "Not yet supported: ";
-                 btype_to_pretty ty;
-                 STR " (";
-                 btype_to_pretty rty;
-                 STR ")"]);
+          log_result
+            __FILE__ __LINE__
+            ["make btype constraint not yet supported for "
+             ^ (btype_to_string ty)
+             ^ " (" ^ (btype_to_string rty) ^ ")"];
           None
         end
 

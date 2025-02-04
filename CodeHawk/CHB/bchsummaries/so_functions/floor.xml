@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-11-27 15:24:01"/>
+  <libfun lib="so_functions" name="floor">
+    <documentation>
+      <desc>floor function</desc>
+      <apidoc>
+        <pt>double floor (double x)</pt>
+        <par name="x">argument to floor function</par>
+        <return>
+          <rc cond="success">floor x</rc>
+          <rc cond="failure">NaN</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="floor">
+      <par loc="stack" name="x" nr="1">
+        <type>double</type>
+      </par>
+      <returntype>double</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

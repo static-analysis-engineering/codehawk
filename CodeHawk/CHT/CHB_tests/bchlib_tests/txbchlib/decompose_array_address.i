@@ -19,4 +19,4 @@ struct x44_struct_t {
   int msg;
 };
 
-struct x44_struct_t x44_array[64];
+struct x44_struct_t gv_5e1e1c_x44_array[64];

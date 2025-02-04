@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs, LLC
+   Copyright (c) 2023-2025  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,9 @@
 (* chlib *)
 open CHLanguage
 
+(* chutil *)
+open CHTraceResult
+
 (* xprlib *)
 open XprTypes
 
@@ -41,7 +44,7 @@ open BCHARMTypes
 module H = Hashtbl
 
 type testdatatype_t =
-  | Tst_instrx_data of variable_t list * xpr_t list
+  | Tst_instrx_data of variable_t traceresult list * xpr_t traceresult list
   | Tst_instrx_tags of string list
   | Tst_chif_conditionxprs of
       arm_assembly_instruction_int * arm_assembly_instruction_int * xpr_t list
@@ -74,8 +77,8 @@ object
 
   method submit_instrx_data
            (iaddr: doubleword_int)
-           (vars: variable_t list)
-           (xprs: xpr_t list) =
+           (vars: variable_t traceresult list)
+           (xprs: xpr_t traceresult list) =
     if H.mem testdata "instrx_data" then
       H.add
         (H.find testdata "instrx_data")

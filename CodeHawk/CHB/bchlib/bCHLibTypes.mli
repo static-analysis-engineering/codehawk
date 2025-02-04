@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -325,7 +325,7 @@ type context_t =
 
 
 (** ctxt_iaddress_t spec:
-   [{
+   {[
    i  ( [], { faddr,iaddr } ) = iaddr
    i  ( [ F{ fa,cs,rs } ], { faddr,iaddr }) = iaddr
    i  ( [ B{ js } ], { faddr,iaddr }) = iaddr
@@ -344,7 +344,7 @@ type context_t =
    ci ( [ B{ js1 }, B{ js2 } ], { faddr,iaddr }) = B:js1_B:js2_iaddr
    ci ( [ C{true}], {faddr, iaddr}) = T_iaddr
    ci ( [ C{false}], {faddr, iaddr}) = F_iaddr
-   }]
+   ]}
  *)
 type ctxt_iaddress_t = string
 
@@ -429,7 +429,7 @@ type flag_definition_t = {
   xflag_pos: int;    (* lowest order bit is zero *)
   xflag_desc: string;
   xflag_type: btype_t
-}
+  }
 
 
 class type type_definitions_int =
@@ -1497,6 +1497,24 @@ end
 
 (** {1 Function data} *)
 
+type regvar_intro_t = {
+    rvi_iaddr: doubleword_int;
+    rvi_name: string;
+    rvi_vartype: btype_t option;
+    rvi_cast: bool
+  }
+
+type stackvar_intro_t = {
+    svi_offset: int;
+    svi_name: string;
+    svi_vartype: btype_t option
+  }
+
+
+type function_annotation_t = {
+    regvarintros: regvar_intro_t list;
+    stackvarintros: stackvar_intro_t list
+  }
 
 class type function_data_int =
   object
@@ -1513,6 +1531,7 @@ class type function_data_int =
     method set_library_stub: unit
     method set_by_preamble: unit
     method set_class_info: classname:string -> isstatic:bool -> unit
+    method set_function_annotation: function_annotation_t -> unit
     method add_inlined_block: doubleword_int -> unit
 
     (** [add_path_context startaddr sentinels] causes path contexts to
@@ -1530,6 +1549,9 @@ class type function_data_int =
     (* accessors *)
     method get_names: string list  (* raw names *)
     method get_function_name: string  (* demangled or combination of all names *)
+    method get_function_annotation: function_annotation_t option
+    method get_regvar_type_annotation: doubleword_int -> btype_t traceresult
+    method get_regvar_intro: doubleword_int -> regvar_intro_t option
     method get_inlined_blocks: doubleword_int list
     method get_function_type: btype_t
     method get_path_contexts: (string * string list) list
@@ -1537,6 +1559,9 @@ class type function_data_int =
     (* predicates *)
     method has_function_type: bool
     method has_name: bool
+    method has_function_annotation: bool
+    method has_regvar_type_annotation: doubleword_int -> bool
+    method has_regvar_type_cast: doubleword_int -> bool
     method has_class_info: bool
     method has_callsites: bool
     method has_path_contexts: bool
@@ -1574,6 +1599,7 @@ class type functions_data_int =
 
     (* predicates *)
     method is_function_entry_point: doubleword_int -> bool
+    method is_in_function_stub: ?size:int -> doubleword_int -> bool
     method has_function_name: doubleword_int -> bool
     method has_function_by_name: string -> doubleword_int option
     method has_function: doubleword_int -> bool
@@ -3259,7 +3285,7 @@ class type type_constraint_store_int =
     [BaseArray (v, t)] and [BaseStruct (v, t)] on the other hand is that the
     variable [v] referenced in [BaseVar] refers to a variable that is a
     pointer, that is, its value is the address of the base, while the
-    variable [v] in [BaseArray] and [BaseStruct] is a symbolic representation
+    expression [x] in [BaseArray] and [BaseStruct] is a symbolic representation
     of the address itself, that is, there is no associated variable in the
     code. The latter two are applicable to global or stack-allocated arrays
     and structs that can be referenced directly via their address without
@@ -3276,10 +3302,10 @@ type memory_base_t =
 (** base provided by an externally controlled variable,
     e.g., argument to the function, or return value from malloc *)
 
-| BaseArray of variable_t * btype_t
+| BaseArray of xpr_t * btype_t
 (** base provided by a typed array address *)
 
-| BaseStruct of variable_t * btype_t
+| BaseStruct of xpr_t * btype_t
 (** base provided by a typed struct address *)
 
 | BaseUnknown of string  (** address without interpretation *)
@@ -3289,7 +3315,10 @@ type memory_base_t =
 type memory_offset_t =
   | NoOffset
   | ConstantOffset of numerical_t * memory_offset_t
-  (** typically used when the type of the variable is not known*)
+  (** typically used when the type of the variable is not known, or for
+      global offsets (the absolute address of a global variable), or for
+      stack offsets (the difference between the stack pointer and the value
+      of the stack pointer at function entry *)
 
   | FieldOffset of fielduse_t * memory_offset_t
   (** offset in a struct variable with [(fieldname, struct key)] *)
@@ -3331,13 +3360,13 @@ object ('a)
       memory reference.
 
       Returns [Error] if this memory reference does not have a [BaseArray] base.*)
-  method get_array_base: (variable_t * btype_t) traceresult
+  method get_array_base: (xpr_t * btype_t) traceresult
 
   (** Returns the memory address variable and type of the base address of this
       memory reference.
 
       Returns [Error] if this memory reference does not have a [BaseStruct] base.*)
-  method get_struct_base: (variable_t * btype_t) traceresult
+  method get_struct_base: (xpr_t * btype_t) traceresult
 
   (** {1 Predicates} *)
 
@@ -3376,8 +3405,8 @@ object
   method mk_allocated_stack_reference: memory_reference_int
   method mk_realigned_stack_reference: memory_reference_int
   method mk_basevar_reference: variable_t -> memory_reference_int
-  method mk_base_array_reference: variable_t -> btype_t -> memory_reference_int
-  method mk_base_struct_reference: variable_t -> btype_t -> memory_reference_int
+  method mk_base_array_reference: xpr_t -> btype_t -> memory_reference_int
+  method mk_base_struct_reference: xpr_t -> btype_t -> memory_reference_int
   method mk_unknown_reference: string -> memory_reference_int
 
   (** {1 Accessors} *)
@@ -3439,15 +3468,6 @@ type assembly_variable_denotation_t =
    - HeapBase pointers
    External auxiliary variables can be used as the base variable for memory
    references
-
-   An auxiliary variable can also be a known memory address that is associated
-   with a name and possibly type. This form of constant-value variable is used
-   to preserve the identity of the memory address, to prevent that other offsets
-   are being added to the numeric address, thereby obscuring the meaning of the
-   address. This is particularly useful when intermediate expressions may
-   lead to an address that is outside the bounds of the structured variable
-   denoted by the name.
-
 *)
 and constant_value_variable_t =
   | InitialRegisterValue of register_t * int
@@ -3469,6 +3489,10 @@ and constant_value_variable_t =
   (** [FunctionReturnValue iaddr]: return value from call at instruction
       address [iaddr]*)
 
+  | TypeCastValue of ctxt_iaddress_t * string * btype_t * register_t
+  (** [TypeCastValue iaddr name ty reg]: a register value that takes the value
+      from [reg] and interprets it as type [ty]; the value gets name [name].*)
+
   | SyscallErrorReturnValue of ctxt_iaddress_t
   (** [SyscallErrorReturnValue iaddr]: error return value from system call at
       instruction address [iaddr]*)
@@ -3487,10 +3511,6 @@ and constant_value_variable_t =
   (** [SideEffectValue (iaddr, name, is_global) represents the value
   assigned by the callee at call site [iaddr] to the argument with
   name [name].*)
-
-  | MemoryAddress of int * memory_offset_t * string option * btype_t option
-  (** [MemoryAddress (memrefix, offset, optname, opttype) represents a memory
-  address with external meaning (e.g., a global arrray) *)
 
   | BridgeVariable of ctxt_iaddress_t * int      (* call site, argument index *)
 
@@ -3540,12 +3560,6 @@ object ('a)
 
       Returns [Error] if this variable is not a memory variable. *)
   method get_memory_offset: memory_offset_t traceresult
-
-  (** Returns the information associated with a memory address variable:
-      (memory reference index, memory offset, optional name, and optional
-      type of the memory region located at the address).*)
-  method get_memory_address_meminfo:
-           (int * memory_offset_t * string option * btype_t option) traceresult
 
   (** Returns the name of the associated function pointer.
 
@@ -3609,7 +3623,6 @@ object ('a)
   method is_arm_argument_variable: bool
   method is_arm_extension_register_variable: bool
   method is_memory_variable: bool
-  method is_memory_address_variable: bool
 
   (** Returns true if this variable is set by the function environment and
       does not change during the execution of the function.
@@ -3768,6 +3781,11 @@ object
            memory_offset_t ->
            assembly_variable_int
 
+  method add_memvar_offset:
+           variable_t
+           -> memory_offset_t
+           -> assembly_variable_int traceresult
+
   (** [make_global_variable ?size ?offset address] returns the global variable
       with address [address] and optional offset [offset].*)
   method make_global_variable:
@@ -3776,18 +3794,8 @@ object
            -> numerical_t
            -> assembly_variable_int
 
+
   (** {2 Auxiliary variables}*)
-
-  (** [make_global_memory_address name type offset] returns a memory address
-      value variable with [Global] base and offset [offset] (the global address)
-      with an optional name and type of the global memory region at that
-      address.*)
-  method make_global_memory_address:
-           ?optname:string option
-           -> ?opttype:btype_t option
-           -> numerical_t
-           -> assembly_variable_int
-
 
   (** [make_frozen_test_value var taddr jaddr] returns a frozen test value
       for the variable [var] at test address [taddr] that is part of an
@@ -3821,6 +3829,15 @@ object
   (** [make_return_value addr] returns the variable representing the return
       value from the call at address [addr].*)
   method make_return_value: ctxt_iaddress_t -> assembly_variable_int
+
+  (** [make_typecast_value addr name ty reg] returns the variable with name
+      [name] representing the value of register [reg] cast to type [ty].*)
+  method make_typecast_value:
+           ctxt_iaddress_t
+           -> string
+           -> btype_t
+           -> register_t
+           -> assembly_variable_int
 
   (** [make_symbolic_value x] returns the variable representing the
       value of expression [x], which must be an expression that consists
@@ -3954,19 +3971,6 @@ object
   method get_initial_memory_value_variable: variable_t -> variable_t traceresult
 
 
-  (** {2 Memory addressses} *)
-
-  method is_memory_address_variable: variable_t -> bool
-
-  (** Returns the information associated with a memory address value:
-      (memory reference index, memory offset, optional name, optional type).
-
-      Returns [Error] if the variable is not a memory address value.*)
-  method get_memory_address_meminfo:
-           variable_t
-           -> (int * memory_offset_t * string option * btype_t option) traceresult
-
-
   (** {2 Memory offsets} *)
 
   (** Returns [true] if [memoff] is a known numerical value, or it is an index
@@ -4071,11 +4075,12 @@ object
   method is_stack_parameter_variable: variable_t -> bool
 
   (** Returns the index of the stack parameter variable [var] assuming
-      4-byte parameters starting at offset 4 (x86 only).
+      4-byte parameters starting at offset 4 (x86 only). The variable may
+      either be a stack memory variable or a stack initial memory value.
 
       Returns None if the variable is not a stack parameter variable or if
       the variable cannot be found. *)
-  method get_stack_parameter_index: variable_t -> (int option)
+  method get_stack_parameter_index: variable_t -> int option
 
   (** Returns [true] if [var] is either a register variable or a stack
       variable (at any offset). *)
@@ -4242,10 +4247,205 @@ object
 
 end
 
+(** {1 Global Memory Map} *)
+
+type globalvalue_t =
+  | GConstantString of string
+  | GScalarValue of doubleword_int
+
+
+(** Reference to a global location*)
+type global_location_ref_t =
+  | GLoad of doubleword_int * ctxt_iaddress_t * xpr_t * int * bool
+  (** address of global location, instructions address of load
+      instruction, load address, size of load, signed *)
+
+  | GStore of
+      doubleword_int * ctxt_iaddress_t * xpr_t * int * numerical_t option
+  (** address of global location, instruction address of store
+      instruction, store address, size of store, optional numerical value
+      assigned *)
+
+  | GAddressArgument of
+      doubleword_int
+      * ctxt_iaddress_t
+      * int
+      * xpr_t
+      * btype_t
+      * memory_offset_t option
+    (** address of global location, instruction address of call
+        instruction, index of argument (1-based), value of address argument,
+        type of address argument, offset of address argument.*)
+
+
+type global_location_rec_t = {
+    gloc_name: string;
+    gloc_address: doubleword_int;
+    gloc_btype: btype_t;
+    gloc_size: int option;
+    gloc_is_readonly: bool;
+    gloc_is_initialized: bool;
+    gloc_initialvalue: globalvalue_t option;
+    gloc_desc: string option;
+    gloc_section: string option;
+  }
+
+
+(** Representation of a global location that provides access to size and type
+    (immutable). *)
+class type global_location_int =
+  object
+    method grec: global_location_rec_t
+    method name: string
+    method address: doubleword_int
+    method btype: btype_t
+    method size: int option
+    method is_readonly: bool
+    method is_initialized: bool
+    method is_typed: bool
+    method is_struct: bool
+    method is_array: bool
+    method initialvalue: globalvalue_t option
+    method desc: string option
+    method contains_address: doubleword_int -> bool
+
+    (** [address_offset addr] returns the difference between [addr] and the
+        base address of the location. If [addr] is an expression that contains
+        symbolic values, the global address is taken as the largest constant
+        term in the expression.
+
+        If [addr] is not contained within the location (that is, if [addr] is
+        less than the base address or larger than or equal to the base address
+        plus the size of the location) an Error is returned.
+     *)
+    method address_offset: xpr_t -> xpr_t traceresult
+
+    (** [address_memory_offset size btype addr] returns the symbolic offset
+        that corresponds to the location of [addr] within the location. An
+        optional [size] or [btype] can be provided to resolve potential
+        ambiguities in the offset at a given offset. For example, address
+        difference 0 in the struct
+
+        {[
+        struct s {
+           char a[10];
+           ....
+        };
+        ]}
+
+        may have either one of the following three distinct offsets:
+
+        {[
+        (1) NoOffset
+        (2) FieldOffset ((a, _), NoOffset)
+        (3) FieldOffset ((a, _), ArrayIndexOffset (0, NoOffset)
+        ]}
+
+        By default the minimal offset (1) is returned. Offset (2) can be
+        forced by either passing in [size=10] or [btype=TArray..]. Offset
+        (3) can be forced by either passing in [size=1] or [btype=TInt...].
+
+        An Error is returned if either
+        - [addr] is not contained within the location, or
+        - [addr] is greater than the base address of the location and the
+          location is not typed, or
+        - [addr] does nor correspond to a legitimate offset, or
+        - the provided type or size cannot be matched to any offset.
+     *)
+    method address_memory_offset:
+             ?tgtsize:int option
+             -> ?tgtbtype:btype_t
+             -> xpr_t
+             -> memory_offset_t traceresult
+
+    method has_elf_symbol: bool
+
+    method write_xml: xml_element_int -> unit
+  end
+
+
+(** Container for global locations in the system in the data sections,
+    including initialized and uninitialized (.bss) data, but typically
+    excluding data contained within the .text section.*)
+class type global_memory_map_int =
+  object
+
+    method set_section:
+             readonly:bool
+             -> initialized:bool
+             -> string
+             -> doubleword_int
+             -> doubleword_int
+             -> unit
+
+    method add_location:
+             ?name:string option
+             -> ?desc:string option
+             -> ?btype: btype_t
+             -> ?initialvalue: globalvalue_t option
+             -> ?size: int option
+             -> doubleword_int
+             -> global_location_int traceresult
+
+    method add_gload:
+             doubleword_int
+             -> ctxt_iaddress_t
+             -> xpr_t
+             -> int
+             -> bool
+             -> unit
+
+    method add_gstore:
+             doubleword_int
+             -> ctxt_iaddress_t
+             -> xpr_t
+             -> int
+             -> numerical_t option
+             -> unit
+
+    method add_gaddr_argument:
+             doubleword_int
+             -> ctxt_iaddress_t
+             -> xpr_t
+             -> int
+             -> btype_t
+             -> global_location_int option
+
+    method update_named_location:
+             string -> bvarinfo_t -> global_location_int traceresult
+
+    method has_location: doubleword_int -> bool
+
+    method get_location: doubleword_int -> global_location_int
+
+    method containing_location: doubleword_int -> global_location_int option
+
+    method xpr_containing_location: xpr_t -> global_location_int option
+
+    method get_location_name: doubleword_int -> string
+
+    method get_location_type: doubleword_int -> btype_t
+
+    method has_location_with_name: string -> bool
+
+    method is_global_data_address: doubleword_int -> bool
+
+    method has_elf_symbol: doubleword_int -> bool
+
+    method get_elf_symbol: doubleword_int -> string
+
+    method write_xml: xml_element_int -> unit
+
+    method write_xml_references:
+             doubleword_int -> vardictionary_int -> xml_element_int -> unit
+  end
+
+
 
 (* =========================================================== Function info === *)
 
 
+(** @Deprecated Currenly used only for x86 *)
 class type argument_values_int =
 object
   method add_argument_values : variable_t -> xpr_t list -> unit
@@ -4255,6 +4455,7 @@ object
   method toPretty            : pretty_t
 end
 
+(** {1 Functions} *)
 
 (** {2 Function symbol table} *)
 
@@ -4291,9 +4492,16 @@ class type function_environment_int =
 
     (** {2 Memory references} *)
 
+    (** To be deprecated. *)
     method mk_unknown_memory_reference: string -> memory_reference_int
+
+    (** Returns global base reference (address zero). *)
     method mk_global_memory_reference: memory_reference_int
+
+    (** Returns local stack base reference. *)
     method mk_local_stack_reference: memory_reference_int
+
+    (** Returns a base reference for a realigned stack pointer. *)
     method mk_realigned_stack_reference: memory_reference_int
 
     (** [mk_base_variable_reference var] returns a memory reference with
@@ -4305,10 +4513,8 @@ class type function_environment_int =
         A memory-address value returns a base-array or base-struct
         reference, depending on the type of the memory-address value.
 
-        Returns an unknown-basevar memory variable if [var] cannot be used
-        as a basevar.
-
-        Returns [Error] if [var] cannot be found. *)
+        Returns [Error] if [var] cannot be found, or if [var] cannot be
+        used as a basevar. *)
     method mk_base_variable_reference:
              variable_t -> memory_reference_int traceresult
 
@@ -4323,9 +4529,12 @@ class type function_environment_int =
 
     (** {2 Register variables} *)
 
-    (** {3 x86} *)
+    (** {3 Generic} *)
 
     method mk_register_variable: register_t -> variable_t
+
+    (** {3 x86} *)
+
     method mk_cpu_register_variable: cpureg_t -> variable_t
     method mk_fpu_register_variable: int -> variable_t
     method mk_mmx_register_variable: int -> variable_t
@@ -4361,47 +4570,76 @@ class type function_environment_int =
 
     (** {2 Memory variables} *)
 
+    (** [mk_global_variable offset] attempts to find a containing global
+        location for [offset]. If successful a memory offset will be computed
+        for that offset relative to the address of the containing location
+        and the type of that location.
+
+        If no containing location can be found for [offset] a new global
+        location is created in the global memory map and a global variable
+        is returned for that address without offset.
+
+        If the global location found is untyped and there is a non-zero offset,
+        a global variable with a constant offset is returned. Note that a
+        constant offset cannot be used for lifting.
+     *)
     method mk_global_variable:
              ?size:int
-             -> ?offset:memory_offset_t
-             -> numerical_t -> variable_t traceresult
-
-    method mk_global_memory_address:
-             ?optname: string option
-             -> ?opttype: btype_t option
+             -> ?btype:btype_t
              -> numerical_t
-             -> variable_t
+             -> variable_t traceresult
 
-    method mk_initial_memory_value: variable_t -> variable_t
+    (** [mk_gloc_variable gloc memoff] creates a global variable for an existing
+        global location [gloc] with memory offset [memoff].
 
+        It also sets the name of the global variable and the name of the global
+        variable with offset according to the name of the global location [gloc]
+     *)
+    method mk_gloc_variable:
+             global_location_int -> memory_offset_t -> variable_t
+
+    (** [mk_initial_memory_value var] returns an auxiliary variable that
+        represents the initial value of [var] at function entry.
+
+        If [var] is a global struct variable, it also creates initial values
+        for the struct fields.
+
+        If [var] is not an external memory variable an error is returned.
+     *)
+    method mk_initial_memory_value: variable_t -> variable_t traceresult
+
+    (** [mk_memory_variable memref offset] returns a memory variable with
+        [memref] as basis and a constant (numerical) offset.
+
+        If [memref] is an unknown base a temp variable is returned.
+     *)
     method mk_memory_variable:
              ?save_name:bool
              -> ?size:int
              -> memory_reference_int
              -> numerical_t
              -> variable_t
-    method mk_index_offset_memory_variable:
+
+    (** [mk_offset_memory_variable memref memoff] returns a memory variable
+        with [memref] as basis and a generic memory offset.
+
+        @raise [BCH_failure] if [memref] is an unknown memory reference.
+
+        Note: eventually unknown memory references should be eliminated. *)
+    method mk_offset_memory_variable:
              ?size:int
              -> memory_reference_int
              -> memory_offset_t
              -> variable_t
+   (*
     method mk_index_offset_global_memory_variable:
              ?elementsize:int
              -> numerical_t
              -> memory_offset_t
-             -> variable_t traceresult
+             -> variable_t traceresult *)
+
+    (** To be deprecated. *)
     method mk_unknown_memory_variable: string -> variable_t
-
-    method mk_memory_address_deref_variable:
-             ?size: int -> ?offset: int -> variable_t -> variable_t traceresult
-
-    (** {2 Memory address variables} *)
-
-    method mk_global_memory_address:
-             ?optname: string option
-             -> ?opttype: btype_t option
-             -> numerical_t
-             -> variable_t
 
     (** {2 Other variables} *)
 
@@ -4415,6 +4653,8 @@ class type function_environment_int =
     method mk_special_variable: string -> variable_t
     method mk_runtime_constant: string -> variable_t
     method mk_return_value: ctxt_iaddress_t -> variable_t
+    method mk_typecast_value:
+             ctxt_iaddress_t -> string -> btype_t -> register_t -> variable_t
 
     method mk_calltarget_value: call_target_t -> variable_t
     method mk_function_pointer_value:
@@ -4479,18 +4719,15 @@ class type function_environment_int =
     method has_variable_index_offset: variable_t -> bool
 
 
-    (** {2 Memory address variables} *)
-
-    (** [is_memory_address_variable v] returns true if [v] is a constant-value
-        variable for a memory address.*)
-    method is_memory_address_variable: variable_t -> bool
-
-
     (** {2 Memory offsets} *)
 
     (** Returns [true if [var] is a memory variable and its offset is a constant
         numerical value. *)
     method has_constant_offset: variable_t -> bool
+
+
+    method add_memory_offset:
+             variable_t -> memory_offset_t -> variable_t traceresult
 
     (** {2 Register variables} *)
 
@@ -4715,6 +4952,12 @@ class type function_environment_int =
 
     method is_initial_value: variable_t -> bool
 
+    (** [get_init_value_variable var] returns the original variable for which
+        [var] is the initial value.
+
+        If [var] is not an initial memory or initial register value an Error is
+        returned.
+     *)
     method get_init_value_variable: variable_t -> variable_t traceresult
 
     (** {1 Variable collections} *)
@@ -4740,15 +4983,25 @@ class type function_environment_int =
     method get_returnvar_count: int
     method get_sideeffvar_count: int
 
-    method get_constant_offsets: variable_t -> numerical_t list option
-    method get_total_constant_offset: variable_t -> numerical_t option
+    method get_constant_offsets: variable_t -> numerical_t list traceresult
+    method get_total_constant_offset: variable_t -> numerical_t traceresult
 
+    (** [get_argbasevar_with_offsets v] returns a decomposition of [v] into
+        a base variable and a list of (constant) numerical offsets.
+
+       Returns None if [v] is not a memory variable with an argument base or if
+       [v] does not have constant offsets.*)
     method get_argbasevar_with_offsets:
              variable_t -> (variable_t * numerical_t list) option
+
+    (** [get_globalbasevar_with_offsets v] returns a decomposition of [v] into
+        a base variable a list of (constant) numerical offsets.
+
+        Returns None if [v] is not a memory variable with a global base or if [v]
+        does not have constant offsets.*)
     method get_globalbasevar_with_offsets:
              variable_t -> (variable_t * numerical_t list) option
 
-    method get_initialized_call_target_value: variable_t -> call_target_t
     method get_initialized_string_value: variable_t -> int -> string
 
     method variables_in_expr: xpr_t -> variable_t list
@@ -4774,7 +5027,6 @@ class type function_environment_int =
     (** {1 Envionment data predicates} *)
 
     method is_virtual_call : variable_t -> bool
-    method has_initialized_call_target_value: variable_t -> bool
     method has_initialized_string_value     : variable_t -> int -> bool
 
     (** {1 Printing} *)
@@ -4848,7 +5100,6 @@ class type call_target_info_int =
 
   end
 
-(** {1 Functions} *)
 
 (** {2 Function-info} *)
 
@@ -4883,6 +5134,7 @@ class type stackframe_int =
              -> variable_t
              -> ctxt_iaddress_t
              -> unit
+
     method add_store:
              offset:int
              -> size:int option
@@ -4976,6 +5228,9 @@ object
 
   (** Returns the address of the function.*)
   method get_address: doubleword_int
+
+  (** Returns the known data about this function.*)
+  method get_function_data: function_data_int
 
   (** Returns the name of the function.*)
   method get_name: string
@@ -5073,13 +5328,6 @@ object
   (** Declares that this function is non-returning.*)
   method set_nonreturning: unit
 
-  (** [finfo#record_return_value iaddr xpr] records that the function
-      returns value [xpr] at return instruction [iaddr].*)
-  method record_return_value: ctxt_iaddress_t -> xpr_t -> unit
-
-  (** Returns the function return values recorded for this function.*)
-  method get_return_values: xpr_t list
-
 
   (* method set_dynlib_stub: call_target_t -> unit *)
 
@@ -5157,34 +5405,6 @@ object
   method restore_register: xpr_t -> ctxt_iaddress_t -> register_t -> unit
 
 
-  (** {2 Auxvar types}
-
-      The types set and retrieved are inferred variable types for constant-value
-      variables. Inferences are based on their appearance in certain instructions
-      or operations performed on them. Throughout the analysis different aspects
-      may be revealed, and a list of these is maintained.*)
-
-  (** [finfo#set_btype v ty] records type [ty] for variable [v].*)
-  method set_btype: variable_t -> btype_t -> unit
-
-  (** [finfo#has_btype v] returns true if at least one type has been recorded for
-      variable [v].*)
-  method has_btype: variable_t -> bool
-
-  (** [finfo#get_btype v] returns the join of all types that have been recorded
-      for variable [v]. If no types were recorded [t_unknown] is returned.*)
-  method get_btype: variable_t -> btype_t
-
-  (** [finfo#get_btypes v] returns all types that have been recorded for
-      variable [v]. If no types were recorded the empty list is returned.*)
-  method get_btypes: variable_t -> btype_t list
-
-  (** Returns a list of indexed variable type records, where each entry
-      represents (index of variable, index of joined type, indices of all
-      types).*)
-  method get_btype_table: (int * int * int list) list
-
-
   (** {1 Function summaries}
       Information registered to create a function summary for the application
       function represented by this function_info (possibly including global
@@ -5218,18 +5438,6 @@ object
 
       Note: it does not set the app summary with this signature.*)
   method set_unknown_java_native_method_signature: unit
-
-
-  (** {2 Side effects}*)
-
-  (** [finfo#record_sideeffect iaddr se] records side effect [se] (i.e.,
-      an effect that is observable outside of the function, such as writing
-      through a pointer provided as argument) at instruction address [iaddr].
-
-      This method is currently called only when an assignment is performed
-      with a left-hand-side that is an external memory reference.
-   *)
-  method record_sideeffect: ctxt_iaddress_t -> xxpredicate_t -> unit
 
 
   (** {1 Condition codes}
@@ -5404,13 +5612,12 @@ object
   method summary_to_pretty: pretty_t
   method saved_registers_to_pretty: pretty_t
   method base_pointers_to_pretty: pretty_t
-  method return_values_to_pretty: pretty_t
+                                    (* method return_values_to_pretty: pretty_t *)
 
 end
 
 
 (** {2 Floc} *)
-
 
 (** Records stack, global, or heap memory accesses performed by a
     particular instruction *)
@@ -5429,9 +5636,24 @@ class type memory_recorder_int =
              -> unit
              -> unit
 
+    method record_argument:
+             ?btype:btype_t
+             -> xpr_t
+             -> int
+             -> global_location_int option
+
     method record_load:
-             addr:xpr_t
+             signed:bool
+             -> addr:xpr_t
              -> var:variable_t
+             -> size:int
+             -> vtype:btype_t
+             -> unit
+
+    method record_load_r:
+             signed:bool
+             -> addr_r:xpr_t traceresult
+             -> var_r:variable_t traceresult
              -> size:int
              -> vtype:btype_t
              -> unit
@@ -5442,6 +5664,14 @@ class type memory_recorder_int =
              -> size:int
              -> vtype:btype_t
              -> xpr:xpr_t
+             -> unit
+
+    method record_store_r:
+             addr_r:xpr_t traceresult
+             -> var_r:variable_t traceresult
+             -> size:int
+             -> vtype:btype_t
+             -> xpr_r:xpr_t traceresult
              -> unit
 
   end
@@ -5597,15 +5827,53 @@ class type floc_int =
 
     (** {2 Resolve memory variable}*)
 
+    (** [get_memory_variable_numoffset var num] returns the variable that
+        corresponds to the address expression [var + num].
+
+        This method is convenient for indirect memory accesses expressed by
+        a register base and immediate offset.
+
+        This method should eventually replace [get_memory_variable_1]
+     *)
+    method get_memory_variable_numoffset:
+             ?align:int
+             -> ?size:int
+             -> variable_t
+             -> numerical_t
+             -> variable_t traceresult
+
     (* returns the memory reference corresponding to the address in
-       variable plus offset *)
+       variable plus offset.
+
+       Deprecated. Should eventually be replaced by
+       [get_memory_variable_numoffset].
+     *)
     method get_memory_variable_1:
-           ?align:int -> ?size:int -> variable_t -> numerical_t -> variable_t
+             ?align:int
+             -> ?size:int
+             -> variable_t
+             -> numerical_t
+             -> variable_t
+
+    method get_memory_variable_varoffset:
+             ?size:int
+             -> variable_t
+             -> variable_t
+             -> numerical_t
+             -> variable_t traceresult
 
     (* returns the memory reference corresponding to a base and index
        variable plus offset *)
     method get_memory_variable_2:
              ?size:int -> variable_t -> variable_t -> numerical_t -> variable_t
+
+    method get_memory_variable_scaledoffset:
+             ?size:int
+             -> variable_t
+             -> variable_t
+             -> int
+             -> numerical_t
+             -> variable_t traceresult
 
     (* returns the memory reference corresponding to a base and scaled index
        variable plus offset *)
@@ -5621,11 +5889,21 @@ class type floc_int =
        index variable *)
     method get_memory_variable_4: variable_t -> int -> numerical_t -> variable_t
 
-    (* returns the memory reference that corresponds to the address expression *)
-    method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
+    (* [decompose_memaddr addr] attempts to separate the terms of [addr] into
+       a base (global, stack, or base variable) and an offset.
 
-    method decompose_memvar_address:
-             xpr_t -> (memory_reference_int * memory_offset_t) option
+       This method should eventually replace the method [decompose_address].
+     *)
+    method decompose_memaddr:
+             xpr_t
+             -> (memory_reference_int traceresult * memory_offset_t traceresult)
+
+    (* returns the memory reference and offset that corresponds to the address
+       expression.
+
+       Deprecated. Should eventually be replaced by [decompose_memaddr]
+     *)
+    method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
 
     (* returns the variable associated with the address expression *)
     method get_lhs_from_address: xpr_t -> variable_t
@@ -5640,6 +5918,12 @@ class type floc_int =
     method get_stackpointer_offset: string -> int * interval_t
 
     method get_singleton_stackpointer_offset: numerical_t traceresult
+
+    method get_var_at_address:
+             ?size:int option       (** size of the argument, in bytes *)
+             -> ?btype:btype_t      (** type of argument *)
+             -> xpr_t               (** address value *)
+             -> variable_t traceresult
 
     (** {2 Predicates on variables}*)
 
@@ -5710,10 +5994,6 @@ class type floc_int =
 
     (** {1 Function summary}*)
 
-    (* evaluates the value of eax at this location and reports it to the function
-       info *)
-    method record_return_value: unit
-
     method evaluate_summary_address_term: bterm_t -> variable_t option
 
     method evaluate_summary_term: bterm_t -> variable_t -> xpr_t
@@ -5745,7 +6025,7 @@ class type floc_int =
 
     (** {2 Assignments} *)
 
-    (** [floc#get_assign_commands var ~size ~vtype xpr] returns the CHIF commands
+    (** [get_assign_commands var ~size ~vtype xpr] returns the CHIF commands
         representing the assignment [var := xpr].
 
         If [size] is not None and the left-hand side [var] is externally observable
@@ -5754,6 +6034,8 @@ class type floc_int =
 
         If [vtype] is known type facts are added for both [var] and [xpr] for this
         instruction.
+
+        Deprecated. To be replaced with [get_assign_commands_r].
      *)
     method get_assign_commands:
              variable_t
@@ -5762,13 +6044,31 @@ class type floc_int =
              -> xpr_t
              -> cmd_t list
 
-    (** [floc#get_ssa_assign_commands reg ~vtype xpr] creates an ssa-register
+    (** [get_assign_commands_r var xpr] returns the CHIF commands representing
+        the assignment [var := xpr].
+
+        If [size] of [var] (in bytes) is different from the default value 4,
+        the value of [xpr] is restricted to the given width if the value is a
+        numerical constant.*)
+    method get_assign_commands_r:
+             ?signed:bool
+             -> ?size:int
+             -> variable_t traceresult
+             -> xpr_t traceresult
+             -> cmd_t list
+
+
+    (** [get_ssa_assign_commands reg ~vtype xpr] creates an ssa-register
         variable [ssavar] for the current context address and returns
         a tuple of the register-variable, and the CHIF commands representing
         the assignment and assert-equal:
         {[ reg := xpr
            assert (reg = ssavar)
-        ]} *)
+        ]}
+
+        Deprecated. All ssa variables have been moved to the python front end.
+        To be replaced with [get_assign_commands_r].
+     *)
     method get_ssa_assign_commands:
              register_t
              -> ?vtype:btype_t
@@ -5782,6 +6082,8 @@ class type floc_int =
 
     (** {2 Variable abstraction}*)
 
+    method get_abstract_commands_r: variable_t traceresult -> cmd_t list
+
     (* returns the CHIF code associated with an abstraction of variables *)
     method get_abstract_commands:
              variable_t -> ?size:xpr_t -> ?vtype:btype_t -> unit -> cmd_t list
@@ -5789,7 +6091,10 @@ class type floc_int =
     (** floc#[get_ssa_abstract_commands reg ()] creates an ssa-register
         variable [ssavar] for the current context address and returns a tuple of
         the register-variable and the CHIF commands representing the assignment
-        {[ reg := ssavar ]}*)
+        {[ reg := ssavar ]}
+
+        Deprecated. To be replaced with [get_abstract_commands_r]
+     *)
     method get_ssa_abstract_commands:
              register_t -> unit -> (variable_t * cmd_t list)
 
@@ -5912,6 +6217,7 @@ object
 
   (* initialization *)
   method initialize: unit
+  method initialize_function_annotations: unit
   method initialize_jumptables:
            (doubleword_int -> bool) -> (doubleword_int * string) list -> unit
   method initialize_datablocks: (doubleword_int * string) list -> unit
@@ -5981,9 +6287,29 @@ object
   method get_preamble_cutoff: int
   method get_filename: string
   method get_xfilesize: int
-  method get_file_string: ?hexSize:doubleword_int -> doubleword_int -> string
+
+  (** [get_file_string size offset] returns the segment from the input binary
+      that starts at file offset [offset] of length [size]. If [size] is zero
+      the remainder of the file is returned starting at [offset].
+
+      An error is returned if [offset] is larger than the size of the binary
+      or if [offset + size] is more than 10 bytes beyond the end of the file
+      (if it is less than 10 bytes beyond the end of the file, the remainder
+      is padded with zero's to make up the requested length).
+   *)
+  method get_file_string:
+           ?hexSize:doubleword_int -> doubleword_int -> string traceresult
+
+  (** [get_file_input size offset] returns a wrapper around a segment from
+      the input binary to facilitate reading different types from the string.
+
+      Errors returned are the same as for [get_file_string].
+   *)
   method get_file_input:
-           ?hexSize:doubleword_int -> doubleword_int ->  stream_wrapper_int
+           ?hexSize:doubleword_int
+           -> doubleword_int
+           -> stream_wrapper_int traceresult
+
   method get_image_base: doubleword_int
   method get_base_of_code_rva: doubleword_int    (* relative virtual address *)
   method get_address_of_entry_point: doubleword_int
@@ -6022,7 +6348,6 @@ object
   method get_user_struct_count: int
   method get_user_nonreturning_count: int
   method get_user_class_count: int
-  method get_variable_intro_name: doubleword_int -> string
 
   (* predicates *)
   method is_little_endian: bool
@@ -6053,8 +6378,6 @@ object
   method is_trampoline_payload: doubleword_int -> bool
   method is_trampoline_wrapper: doubleword_int -> bool
   method is_trampoline_fallthroughaddr: doubleword_int -> bool
-  method has_variable_intro: doubleword_int -> bool
-  method has_variable_intros: bool
 
   (** [is_thumb addr] returns true if the architecture includes (arm) thumb
       instructions and the virtual address [addr] is in a code section that
@@ -6063,6 +6386,7 @@ object
 
   (* xml *)
   (* method read_xml_constant_file: string -> unit *)
+  method read_xml_user_data: xml_element_int -> unit
 
   (* saving *)
   method write_xml: xml_element_int -> unit

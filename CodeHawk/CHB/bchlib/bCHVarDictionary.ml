@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -117,8 +117,8 @@ object (self)
         | BAllocatedStackFrame
         | BGlobal -> (tags, [])
       | BaseVar v -> (tags, [xd#index_variable v])
-      | BaseArray (v, t) -> (tags, [xd#index_variable v; bcd#index_typ t])
-      | BaseStruct (v, t) -> (tags, [xd#index_variable v; bcd#index_typ t])
+      | BaseArray (x, t) -> (tags, [xd#index_xpr x; bcd#index_typ t])
+      | BaseStruct (x, t) -> (tags, [xd#index_xpr x; bcd#index_typ t])
       | BaseUnknown s -> (tags, [bd#index_string s]) in
     memory_base_table#add key
 
@@ -133,8 +133,8 @@ object (self)
     | "a" -> BAllocatedStackFrame
     | "g" -> BGlobal
     | "v" -> BaseVar (xd#get_variable (a 0))
-    | "b" -> BaseArray (xd#get_variable (a 0), bcd#get_typ (a 1))
-    | "s" -> BaseStruct (xd#get_variable (a 0), bcd#get_typ (a 1))
+    | "b" -> BaseArray (xd#get_xpr (a 0), bcd#get_typ (a 1))
+    | "s" -> BaseStruct (xd#get_xpr (a 0), bcd#get_typ (a 1))
     | "u" -> BaseUnknown (bd#get_string (a 0))
     | s -> raise_tag_error name s memory_base_mcts#tags
 
@@ -198,18 +198,14 @@ object (self)
       | FrozenTestValue (v, a1, a2) ->
          (tags @ [a1; a2], [xd#index_variable v])
       | FunctionReturnValue a -> (tags @ [a], [])
+      | TypeCastValue (iaddr, name, ty, reg) ->
+         (tags @ [iaddr; name], [bcd#index_typ ty; bd#index_register reg])
       | SyscallErrorReturnValue a -> (tags @ [a], [])
       | FunctionPointer (s1, s2, a) ->
          (tags @ [a], [bd#index_string s1; bd#index_string s2])
       | CallTargetValue t -> (tags, [id#index_call_target t])
       | SideEffectValue  (a, name, isglobal) ->
          (tags @  [a ], [bd#index_string name; (if isglobal then 1 else 0)])
-      | MemoryAddress (i, o, opts, optty) ->
-         (tags,
-          [i;
-           self#index_memory_offset o;
-           (match opts with None -> -1 | Some s -> bd#index_string s);
-           match optty with None -> -1 | Some ty -> bcd#index_typ ty])
       | BridgeVariable (a,i) -> (tags @ [a], [i])
       | FieldValue (sname,offset,fname) ->
          (tags, [bd#index_string sname; offset; bd#index_string fname])
@@ -230,16 +226,11 @@ object (self)
     | "iv" -> InitialMemoryValue (xd#get_variable (a 0))
     | "ft" -> FrozenTestValue (xd#get_variable (a 0), t 1, t 2)
     | "fr" -> FunctionReturnValue (t 1)
+    | "tc" -> TypeCastValue (t 1, t 2, bcd#get_typ (a 0), bd#get_register (a 1))
     | "ev" -> SyscallErrorReturnValue (t 1)
     | "fp" -> FunctionPointer (bd#get_string (a 0), bd#get_string (a 1), t 1)
     | "ct" -> CallTargetValue (id#get_call_target (a 0))
     | "se" -> SideEffectValue (t 1, bd#get_string (a 0), (a 1) = 1)
-    | "ma" ->
-       MemoryAddress (
-           (a 0),
-           self#get_memory_offset (a 1),
-           (if (a 2) = -1 then None else Some (bd#get_string (a 2))),
-           (if (a 3) = -1 then None else Some (bcd#get_typ (a 3))))
     | "bv" -> BridgeVariable (t 1, a 0)
     | "fv" -> FieldValue (bd#get_string (a 0), a 1, bd#get_string  (a 2))
     | "sv" -> SymbolicValue (xd#get_xpr (a 0))

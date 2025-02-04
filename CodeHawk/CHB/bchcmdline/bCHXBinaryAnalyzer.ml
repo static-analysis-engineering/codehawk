@@ -537,7 +537,9 @@ let main () =
       let t = ref (Unix.gettimeofday ()) in
       let _ = load_elf_files () in
       let _ = pr_timing [STR "elf files loaded"] in
-      let _ = List.iter parse_cil_file system_info#ifiles in
+      let _ =
+        List.iter (fun f ->
+            parse_cil_file ~removeUnused:false f) system_info#ifiles in
       let _ =
         if (List.length system_info#ifiles) > 0 then
           pr_timing [STR "c header files loaded"] in
@@ -600,6 +602,8 @@ let main () =
             pr_timing [STR "system_info saved"];
             save_arm_dictionary ();
             pr_timing [STR "dictionary saved"];
+            save_global_memory_map ();
+            pr_timing [STR "global-locations saved"];
             save_interface_dictionary ();
             pr_timing [STR "interface dictionary saved"];
             save_bcdictionary ();
@@ -843,8 +847,6 @@ let main () =
       let _ = pr_timing [STR "bdictionary loaded"] in
       let _ = load_bc_files () in
       let _ = pr_timing [STR "bc files loaded"] in
-      let _ = system_info#initialize in
-      let _ = pr_timing [STR "system info initialized"] in
       let _ = load_interface_dictionary () in
       let _ = pr_timing [STR "interface dictionary loaded"] in
       let _ = load_arm_dictionary () in
@@ -859,12 +861,21 @@ let main () =
             STR ")"] in
       let _ = load_elf_files () in
       let _ = pr_timing [STR "elf files loaded"] in
+
+      (* symbolic addresses in userdata should be loaded before the header
+         files are parsed. *)
+      let _ = system_info#initialize in
+      let _ = pr_timing [STR "system info initialized"] in
       let _ =
         List.iter
           (fun f -> parse_cil_file ~removeUnused:false f) system_info#ifiles in
       let _ =
         if (List.length system_info#ifiles > 0) then
           pr_timing [STR "c header files parsed"] in
+      (* function annotations in userdata should be loaded after the header
+         files are parsed, so types in the function annotations can be resolved.*)
+      let _ = system_info#initialize_function_annotations in
+
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
       let analysisstart = Unix.gettimeofday () in
@@ -896,6 +907,8 @@ let main () =
         (* save_arm_assembly_instructions (); *)
         save_arm_dictionary ();
         pr_timing [STR "arm dictionary saved"];
+        save_global_memory_map ();
+        pr_timing [STR "global-locations saved"];
         save_bc_files ();
         pr_timing [STR "bc files saved"];
         save_interface_dictionary ();

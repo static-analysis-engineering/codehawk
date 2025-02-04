@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,6 @@ open CHNumerical
 (* bchlib *)
 open BCHBCFiles
 open BCHBCTypes
-open BCHConstantDefinitions
 open BCHDoubleword
 open BCHFunctionData
 open BCHLibTypes
@@ -49,7 +48,7 @@ module XBA = TCHBchlibAssertion
 
 
 let testname = "bCHMemoryReferenceTest"
-let lastupdated = "2024-08-21"
+let lastupdated = "2025-01-06"
 
 
 let mk_maximal_memory_offset_test () =
@@ -58,21 +57,6 @@ let mk_maximal_memory_offset_test () =
     parse_cil_file ~removeUnused:false "decompose_array_address.i";
     ignore
        (functions_data#add_function (TR.tget_ok (string_to_doubleword "0x1d6bfc")));
-
-    let arraysym = {
-        xconst_name = "x44_array";
-        xconst_value = TR.tget_ok (string_to_doubleword "0x5e1e1c");
-        xconst_type =
-          if bcfiles#has_varinfo "x44_array" then
-            let vinfo = bcfiles#get_varinfo "x44_array" in
-            vinfo.bvtype
-          else
-            raise
-              (Invalid_argument "Error in arraysym");
-        xconst_desc = "decompose_array_address";
-        xconst_is_addr = true
-      } in
-    let _ = add_address arraysym in
     let compinfo = bcfiles#get_compinfo_by_name "x44_struct_t" in
     let structty = TComp (compinfo.bckey, []) in
 

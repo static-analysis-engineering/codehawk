@@ -259,6 +259,7 @@ object (self)
     with
     | Not_found ->
        let msg = [
+           STR (__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": ");
            STR "Unable to find function with index: ";
            dw_index_to_pretty index] in
        begin
@@ -272,11 +273,13 @@ object (self)
     with
     | BCH_failure _ ->
        let msg = [
+           STR (__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": ");
            STR "Unable to find function with address: ";
            faddr#toPretty] in
        begin
          pr_debug (msg @ [NL]);
-         pr_debug [STR "Number of functions present: "; INT (H.length functions); NL];
+         pr_debug [
+             STR "Number of functions present: "; INT (H.length functions); NL];
          raise (BCH_failure (LBLOCK msg))
        end
 
@@ -414,8 +417,8 @@ object (self)
 
   method add_functions_by_preamble =
     let instrtable = self#get_live_instructions in
-    let preambles = H.create 3 in
-    let preamble_instrs = H.create 3 in
+    let preambles = H.create 3 in     (* instr-bytes -> count *)
+    let preamble_instrs = H.create 3 in   (* instr-bytes -> instruction *)
     let _ =   (* collect preambles of regular functions *)
       self#itera (fun faddr f ->
           let instr = f#get_instruction faddr in
@@ -457,8 +460,18 @@ object (self)
         else
           10 in
       let preamble_cutoff = self#get_num_functions / preamble_cutoff_factor in
+      let _ =
+        chlog#add
+          "initialization"
+          (LBLOCK [STR "preamble cutoff: "; INT preamble_cutoff]) in
       H.fold (fun k v a ->
           if v >= preamble_cutoff then k :: a else a) preambles [] in
+    let _ =
+      List.iter
+        (fun p ->
+          chlog#add
+            "common preamble" (LBLOCK [(H.find preamble_instrs p)#toPretty]))
+        commonpreambles in
     let is_common_preamble bytes =
       List.fold_left (fun a p -> a || p = bytes) false commonpreambles in
     let fnsAdded = ref [] in
@@ -537,7 +550,6 @@ object (self)
     dark ^ "\n\n" ^ functionstats
 
   method private collect_data_references =
-    let _ = pverbose [STR (timing ()); STR "collect data references ..."; NL] in
     let livetable = self#get_live_instructions in
     let filter = (fun i -> H.mem livetable i#get_address#index) in
     let table = H.create 11 in
@@ -570,6 +582,28 @@ object (self)
                else
                  ch_error_log#add
                    "LDR (literal) from non-code-address"
+                   (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
+            | Adr (_, dst, adr)
+                 when adr#is_absolute_address
+                      && not (functions_data#is_in_function_stub va) ->
+               let a = adr#get_absolute_address in
+               let nextva = va#add_int 4 in
+               if elf_header#is_program_address a then
+                 (match get_arm_assembly_instruction nextva with
+                  | Ok nxtinstr ->
+                     (match nxtinstr#get_opcode with
+                      | LoadMultipleIncrementAfter (_, _, src, rl, _)
+                           when dst#get_register = src#get_register ->
+                         for i = 0 to rl#get_register_count do
+                           add (a#add_int (4 * i)) nxtinstr
+                         done
+                      | _ ->
+                         add a instr)
+                  | _ ->
+                     add a instr)
+               else
+                 ch_error_log#add
+                   "ADR with non-code address"
                    (LBLOCK [va#toPretty; STR " refers to "; a#toPretty])
             | VLoadRegister (_, vd, _, mem) when mem#is_pc_relative_address ->
                let pcoffset = if instr#is_arm32 then 8 else 4 in

@@ -364,6 +364,12 @@ let get_global_state_filename () =
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_global_state.xml")
 
+let get_global_memory_map_filename () =
+  let exename = get_filename () in
+  let fdir = get_analysis_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_global_locations.xml")
+
 let get_system_info_filename () =
   let exename = get_filename () in
   let fdir = get_analysis_dir () in

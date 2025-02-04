@@ -42,17 +42,18 @@ open Xsimplify
 let x2p = xpr_formatter#pr_expr
 
 
-(* returns the largest constant term in the given expression, taking sign into account *)
-let rec largest_constant_term (x:xpr_t) =
+(* returns the largest constant term in the given expression, taking sign
+   into account. If no constant terms are present zero is returned. *)
+let rec largest_constant_term (x:xpr_t): numerical_t =
   match x with
-    XConst (IntConst n) -> n
-  | XOp (XPlus, [ x1 ; x2 ]) ->
+  | XConst (IntConst n) -> n
+  | XOp (XPlus, [x1; x2]) ->
     let c1 = largest_constant_term x1 in
     let c2 = largest_constant_term x2 in
     if c1#gt c2 then c1 else c2
-  | XOp (XMinus, [ x1 ; x2 ]) ->
+  | XOp (XMinus, [x1; x2]) ->
     let c1 = largest_constant_term x1 in
-    let c2 = largest_constant_term (XOp (XNeg, [ x2 ])) in
+    let c2 = largest_constant_term (XOp (XNeg, [x2])) in
     if c1#gt c2 then c1 else c2
   | _ -> numerical_zero
 
@@ -101,39 +102,46 @@ let rec vars_as_positive_terms (x:xpr_t) =
   | _ -> []
 
 
-let get_array_index_offset (xpr: xpr_t) (size: int): (xpr_t * numerical_t) option =
+let get_array_index_offset (xpr: xpr_t) (size: int): (xpr_t * xpr_t) option =
   let xpr = simplify_xpr xpr in
+  let xzero = int_constant_expr 0 in
   if size = 1 then
-    Some (xpr, numerical_zero)
+    Some (xpr, xzero)
   else
     let numsize = mkNumerical size in
     match xpr with
     | XConst (IntConst n) ->
        let (quo, rem) = n#quomod (mkNumerical size) in
-       Some (num_constant_expr quo, rem)
+       Some (num_constant_expr quo, num_constant_expr rem)
     | XOp (XMult, [XConst (IntConst n); XVar v]) when n#equal numsize ->
-       Some (XVar v, numerical_zero)
+       Some (XVar v, xzero)
+    | XOp (XMult, [XConst (IntConst n); XOp ((XXlsh | XXlsb), [XVar v])])
+         when n#equal numsize ->
+       Some (XVar v, xzero)
     | XOp (XPlus, [XOp (XMult, [XConst (IntConst n1); XVar v]);
                    XConst (IntConst n2)]) when n1#equal numsize ->
        if n2#equal numerical_zero then
-         Some (XVar v, numerical_zero)
+         Some (XVar v, xzero)
        else
          let (quo, rem) = n2#quomod numsize in
+         let xrem = num_constant_expr rem in
          if quo#equal numerical_zero then
-           Some (XVar v, rem)
+           Some (XVar v, xrem)
          else
-           Some (XOp (XPlus, [XVar v; num_constant_expr quo]), rem)
+           Some (XOp (XPlus, [XVar v; num_constant_expr quo]), xrem)
     | XOp (XMinus, [XOp (XMult, [XConst (IntConst n1); XVar v]);
                     XConst (IntConst n2)]) when n1#equal numsize ->
        if n2#equal numerical_zero then
-         Some (XVar v, numerical_zero)
+         Some (XVar v, xzero)
        else
          let (quo, rem) = n2#neg#quomod numsize in
+         let xrem = num_constant_expr rem in
          if quo#equal numerical_zero then
-           Some (XVar v, rem)
+           Some (XVar v, xrem)
          else
            if quo#lt numerical_zero then
-             Some (XOp (XMinus, [XVar v; num_constant_expr quo#neg]), rem)
+             Some (XOp (XMinus, [XVar v; num_constant_expr quo#neg]), xrem)
            else
-             Some (XOp (XPlus, [XVar v; num_constant_expr quo]), rem)
-    | _ -> None
+             Some (XOp (XPlus, [XVar v; num_constant_expr quo]), xrem)
+    | _ ->
+       None

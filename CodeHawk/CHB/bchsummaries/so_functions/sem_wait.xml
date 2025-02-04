@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-11-27 15:45:12"/>
+  <libfun lib="so_functions" name="sem_wait">
+    <documentation>
+      <desc>locks a semaphore</desc>
+      <apidoc>
+        <pt>int sem_wait (int *sem)</pt>
+        <par name="sem">semaphore to be locked</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="sem_wait">
+      <par loc="stack" name="sem" nr="1">
+        <type><ptr>int</ptr></type>
+	<pre><not-null/></pre>
+	<roles>
+	  <role rt="ioc:process" rn="semaphore"/>
+	</roles>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+	<io-action cat="process" desc="locks a semaphore"/>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<zero-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

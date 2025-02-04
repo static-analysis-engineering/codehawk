@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: A. Cody Schuffelen and Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,6 +34,7 @@ open CHPretty
 open CHXmlDocument
 
 (* bchlib *)
+open BCHBasicTypes
 open BCHDoubleword
 open BCHLibTypes
 open BCHSystemInfo
@@ -87,12 +88,26 @@ object (self)
     end
 
   method read (offset:doubleword_int) (size:int) =
-    let input =
+    let input_r =
       system_info#get_file_input
         ~hexSize:(TR.tget_ok (int_to_doubleword size)) offset in
+    match input_r with
+    | Error e ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                 STR "Unable to read section header at offset ";
+                 offset#toPretty;
+                 STR " with size ";
+                 INT size;
+                 STR ": ";
+                 STR (String.concat "; " e)]))
+    | Ok input ->
+
     begin
       (* 0, 4, sh_name -------------------------------------------------------
-	 Specifies the name of the section. Its value is an index into the 
+	 Specifies the name of the section. Its value is an index into the
 	 section header string table section, giving the location of a null-
 	 terminated string
 	 --------------------------------------------------------------------- *)
@@ -102,14 +117,14 @@ object (self)
 	 Categorizes the section's contents and semantics.
 	 SHT_NULL                0  section header is inactive; it does not have
 	                            an associated section
-	 SHT_PROGBITS            1  section holds information defined by the 
+	 SHT_PROGBITS            1  section holds information defined by the
                                     program, whose format and meaning are
                                     determined solely by the program
          SHT_SYMTAB              2  section holds a symbol table. An object file
                                     may have only one section of each type.
                                     Typically, SHT_SYMTAB provides symbols for
                                     link editing, though it may also be used for
-                                    dynamic linking. 
+                                    dynamic linking.
          SHT_STRTAB              3  section holds a string table. An object file
                                     may have multiple string tables
          SHT_RELA                4  section holds relocation entries with explicit
@@ -118,7 +133,7 @@ object (self)
                                     multiple relation sections
          SHT_HASH                5  section holds a symbol has table. Currently, an
                                     object file may have only one hash table.
-         SHT_DYNAMIC             6  section holds information for dynamic linking. 
+         SHT_DYNAMIC             6  section holds information for dynamic linking.
                                     Currently, an object file may have only one
                                     dynamic section.
          SHT_NOTE                7  section holds information that marks the file
@@ -129,26 +144,26 @@ object (self)
                                     sh_offset member contains the conceptual file
                                     offset
          SHT_REL                 9  section holds relocation entries without explicit
-                                    addends. An object file may have multiple 
+                                    addends. An object file may have multiple
                                     relocation sections
          SHT_SHLIB              10  section type is reserved but has unspecified
                                     semantics
          SHT_DYNSYM             11  see SHT_SYMTAB
-         SHT_INIT_ARRAY         14  section contains an array of pointers to 
+         SHT_INIT_ARRAY         14  section contains an array of pointers to
                                     initialization functions. Each pointer in the
-                                    array is taken as a parameterless procedure 
+                                    array is taken as a parameterless procedure
                                     with a void return
          SHT_FINI_ARRAY         15  section contains an array of pointers to
                                     termination function. Each pointer in the array
 	                            is taken as a parameterless procedures with
                                     a void return
-         SHT_PREINIT_ARRAY      16  section contains an array of pointers to 
+         SHT_PREINIT_ARRAY      16  section contains an array of pointers to
                                     functions that are invoked before all other
                                     initialization function. Each pointer is taken
                                     as a parameterless procedure with a void return.
          SHT_GROUP              17  section defines a section group. A section group
                                     is a set of sections that are related and that
-                                    must be treated specially by the linker. 
+                                    must be treated specially by the linker.
                                     Sections of this type may appear only in relocatable
                                     objects (objects with the ELF header e_type
                                     member set to ET_REL). The section header table
@@ -170,7 +185,7 @@ object (self)
                                     actual section header index; otherwise, the entry
                                     must be SHN_UNDEF (0)
          SHT_LOOS       0x60000000  values SHT_LOOS through SHT_HIOS are reserved for
-         SHT_HIOS       0x6fffffff  operating system semantics  
+         SHT_HIOS       0x6fffffff  operating system semantics
 	 SHT_LOPROC     0x70000000  values SHT_LOPROC through SHT_HIPROC are reserved
          SHT_HIPROC     0x7fffffff  for processor-specific semantics
          SHT_LOUSER     0x80000000  specifies the lower bound of the range of indexes
@@ -182,35 +197,35 @@ object (self)
 
       (* 8, 4, sh_flags ------------------------------------------------------
 	 1-bit flags that describe miscellaneous attributes.
-	 SHF_WRITE             0x1  section contains data that should be writable 
+	 SHF_WRITE             0x1  section contains data that should be writable
                                     during process execution
          SHF_ALLOC             0x2  section occupies memory during process exeuction
          SHF_EXECINSTR         0x4  section contains executable machine instructions
          SHF_MERGE            0x10  the data in the setion may be merged to eliminate
                                     duplication. Unless the SHF_STRINGS flag is also
-                                    set, the data elements in the section are of a 
+                                    set, the data elements in the section are of a
                                     uniform size. The size of each element is specified
                                     in the section header's sh_entsize field. If the
                                     SHF_STRINGS flag is also set, the data elements
                                     consist of null-terminated character strings.
                                     The size of each character is specified in the
                                     section header's sh_entsize field.
-            
+
                                     Each element in the section is compared against
                                     other elements in sections with the same name,
                                     type and flags. Elements that would have identical
                                     values at program run-time may be merged. Relocations
-                                    referencing elements of such sections must be 
+                                    referencing elements of such sections must be
                                     resolved to the merged locations of the referenced
                                     values. Note that any relocatable values, including
                                     values that would result in run-time relocations,
                                     must be analyzed to determine whether the run-time
                                     values would actually be identical. An ABI-conforming
                                     object file may not depend on specific elements
-                                    being merged, and an ABI-conforming link editor 
+                                    being merged, and an ABI-conforming link editor
                                     may choose not to merge specific elements.
            SHF_STRINGS        0x20  the data elements in the section consist of
-                                    null-terminated character strings. The size of 
+                                    null-terminated character strings. The size of
                                     each character is specified in the section header's
                                     sh_entsize field.
            SHF_INFO_LINK      0x40  the sh_info field of this section header holds a
@@ -228,7 +243,7 @@ object (self)
                                     to avoid incorrect behavior. If this section has
                                     either an sh_type value or contains sh_flags bits
                                     in the OS-specific ranges for those fields, and a
-                                    link editor processing this section does not 
+                                    link editor processing this section does not
                                     recognize those values, then the link editor should
                                     reject the object file containing this section with
                                     an error.
@@ -252,8 +267,8 @@ object (self)
                                     before relocations can be applied. Each decompressed
                                     section specifies the algorithm independently. It
                                     is permissible for different sections in a given
-                                    ELF object to employ different compression 
-                                    algorithms. 
+                                    ELF object to employ different compression
+                                    algorithms.
                                     Compressed sections begin with a compression header
                                     structure that identifies the compression algorithm.
           SHF_PPC_VLE   0x10000000  marks ELF sections containing powerpc VLE
@@ -263,7 +278,7 @@ object (self)
 
       (* 12, 4, sh_addr ------------------------------------------------------
 	 If the section will appear in the memory image of a process, this member
-         gives the address at which the section's first byte should reside. 
+         gives the address at which the section's first byte should reside.
 	 Otherwise, the member contains 0.
 	 --------------------------------------------------------------------- *)
       sh_addr <- input#read_doubleword ;
@@ -283,10 +298,10 @@ object (self)
       sh_size <- input#read_doubleword ;
 
       (* 24, 4, sh_link ------------------------------------------------------
-	 Section header table index link, whose interpretation depends on the 
+	 Section header table index link, whose interpretation depends on the
 	 section type.
 	 sh_type           sh_link
-	 SHT_DYNAMIC       section header index of the string table used by 
+	 SHT_DYNAMIC       section header index of the string table used by
                            entries in the section
 	 SHT_HASH          section header index of the symbol table to which the
                            hash table applies
@@ -322,7 +337,7 @@ object (self)
       sh_info <- input#read_doubleword ;
 
       (* 32, 4, sh_addralign -------------------------------------------------
-	 Some sections have address alignment constraints. For example, if a 
+	 Some sections have address alignment constraints. For example, if a
 	 section holds a doubleword, the system must ensure doubleword alignment
 	 for the entire section. The value of sh_addr must be congruent to 0,
 	 modulo the value of sh_addralign. Currently, only 0 and positive
@@ -337,14 +352,14 @@ object (self)
 	 The member contains 0 if the section does not hold a table of fixed-size
 	 entries.
 	 --------------------------------------------------------------------- *)
-      sh_entsize <- input#read_doubleword 
+      sh_entsize <- input#read_doubleword
     end
 
   method set_name s = name <- s
 
   method set_link d = sh_link <- d
 
-  method get_name = sh_name 
+  method get_name = sh_name
 
   method get_type = sh_type
 
@@ -370,6 +385,8 @@ object (self)
 
   method is_executable = sh_flags#is_nth_bit_set 2
 
+  method is_readonly = not (sh_flags#is_nth_bit_set 0)
+
   method is_string_table =
     match self#get_section_type with SHT_StrTab -> true | _ -> false
 
@@ -378,6 +395,9 @@ object (self)
 
   method is_relocation_table =
     match self#get_section_type with SHT_Rel -> true | _ -> false
+
+  method is_uninitialized_data_section =
+    match self#get_section_type with SHT_NoBits -> true | _ -> false
 
   method is_program_section =
     match self#get_section_type with SHT_ProgBits -> true | _ -> false

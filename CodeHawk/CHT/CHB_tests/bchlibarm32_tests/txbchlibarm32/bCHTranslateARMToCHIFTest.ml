@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,7 @@ open BCHAnalyzeApp
 
 
 let testname = "bCHTranslateARMToCHIFTest"
-let lastupdated = "2024-08-27"
+let lastupdated = "2025-01-06"
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
 
@@ -85,8 +85,7 @@ let translate_store () =
       ("STMIB", "0x3ba4c", "10408de900",
        [("arg_0004", "R4_in"); ("arg_0008", "LR_in")]);
       ("STR", "0x1b4bc", "08608de500", [("arg_0008", "R6_in")]);
-      ("STRBwb", "0x10208", "015062e500",
-       [("R2_in[-1]", "sv__13__sv"); ("R2", "sv__3__sv")]);
+      ("STRBwb", "0x10208", "015062e500", [("R2", "sv__3__sv")]);
       ("STRwb", "0x10568", "08402de500",
        [("var_0008", "R4_in"); ("SP", "sv__3__sv")]);
       ("STRDwb1", "0x1b4bc", "f0416de100",
@@ -97,7 +96,7 @@ let translate_store () =
        [("var_0012", "R4_in");
         ("var_0008", "R5_in");
         ("SP", "sv__3__sv")]);
-      ("STRH", "0x1b4bc", "b031cde100", [("arg_0016", "sv__25__sv")])
+      ("STRH", "0x1b4bc", "b031cde100", [("arg_0016", "R3_in")])
     ] in
   begin
     TS.new_testsuite (testname ^ "_translate_store") lastupdated;
@@ -146,7 +145,7 @@ let thumb_chif_conditionxprs () =
        "0x4f12",
        "44f6251393f87094b9f1910ff94602d8a9f6e1594847a9f6e769484700",
        3,
-       "((lsb gvb_0x4d95_in) <= 145)")
+       "(gv_0x4d95_in <= 145)")
     ] in
   begin
     TS.new_testsuite (testname ^ "_thumb_chif_conditionxprs") lastupdated;
@@ -200,13 +199,14 @@ let thumb_instrxdata_conditionxprs () =
        "0x4f12",
        "44f6251393f87094b9f1910ff94602d8a9f6e1594847a9f6e769484700",
        3,
-       "((lsb gvb_0x4d95_in) <= 145)")
+       "(gv_0x4d95_in <= 145)")
     ] in
   begin
     TS.new_testsuite (testname ^ "_thumb_instrxdata_conditionxprs") lastupdated;
 
     system_info#set_elf_is_code_address wordzero codemax;
     ARMU.arm_instructions_setup (make_dw "0x4000") 0x10000;
+
     List.iter (fun (title, cfaddr, ccaddr, bytes, iterations, expectedcond) ->
 
         TS.add_simple_test

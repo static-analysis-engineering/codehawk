@@ -28,6 +28,7 @@
 
 (* chutil *)
 open CHPrettyUtil
+open CHTraceResult
 
 (* xprlib *)
 open XprToPretty
@@ -37,6 +38,7 @@ open XprTypes
 open BCHARMTypes
 
 module A = TCHAssertion
+module TR = CHTraceResult
 
 
 let x2s x = pretty_to_string (xpr_formatter#pr_expr x)
@@ -105,16 +107,21 @@ let equal_arm_conditional_expr
 let equal_instrxdata_conditionxprs
       ?(msg="")
       ~(expected: string)
-      ~(received: xpr_t list)
+      ~(received: xpr_t traceresult list)
       ~(index: int)
       () =
+  let xtr2s (x_r: xpr_t traceresult): string =
+    TR.tfold
+      ~ok:x2s
+      ~error:(fun e -> String.concat "; " e)
+      x_r in
   match received with
   | [] -> A.fail expected "empty list" msg
   | _ when (List.length received) > index ->
-     A.equal_string ~msg expected (x2s (List.nth received index))
+     A.equal_string ~msg expected (xtr2s (List.nth received index))
   | _ ->
      let receivedlen = string_of_int (List.length received) in
-     let xprs = String.concat ", " (List.map x2s received) in
+     let xprs = String.concat ", " (List.map xtr2s received) in
      A.fail
        expected
        ("Index: "

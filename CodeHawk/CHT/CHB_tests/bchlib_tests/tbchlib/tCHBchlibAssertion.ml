@@ -71,6 +71,19 @@ let equal_doubleword =
   A.make_equal (fun dw1 dw2 -> dw1#equal dw2) (fun dw -> dw#to_hex_string)
 
 
+let equal_numerical
+      ?(msg="")
+      ~(expected: numerical_t)
+      ~(received: numerical_t)
+      () =
+  A.make_equal
+    (fun num1 num2 -> num1#equal num2)
+    (fun num -> num#toString)
+    ~msg
+    expected
+    received
+
+
 let equal_doubleword_result
       ?(msg="") (dw: doubleword_int) (dwr: doubleword_result) =
   if Result.is_error dwr then
@@ -125,10 +138,10 @@ let equal_string_imm_result_string
 
 let equal_array_index_offset
       ?(msg="")
-      ~(expected: (xpr_t * numerical_t) option)
-      ~(received: (xpr_t * numerical_t) option)
+      ~(expected: (xpr_t * xpr_t) option)
+      ~(received: (xpr_t * xpr_t) option)
       () =
-  let pri (x, n) = "(" ^ (x2s x) ^ ", " ^ n#toString ^ ")" in
+  let pri (x, r) = "(" ^ (x2s x) ^ ", " ^ (x2s r) ^ ")" in
   match (expected, received) with
   | (None, None) -> ()
   | (Some x, None) ->
@@ -137,8 +150,9 @@ let equal_array_index_offset
      A.fail_msg ("Expected None, but received Some " ^ (pri x))
   | (Some x1, Some x2) ->
      A.make_equal
-       (fun (x1, n1) (x2, n2) -> ((x2s x1) = (x2s x2)) && n1#equal n2)
-       (fun (x, n) -> "(" ^ (x2s x) ^ ", " ^ n#toString ^ ")")
+       (fun (x1, r1) (x2, r2) ->
+         ((x2s x1) = (x2s x2)) && Xprt.syntactically_equal r1 r2)
+       (fun (x, r) -> "(" ^ (x2s x) ^ ", " ^ (x2s r) ^ ")")
        ~msg
        x1
        x2
@@ -188,6 +202,22 @@ let equal_opt_meminfo
        ~msg
        x1
        x2
+
+
+let equal_opt_variable
+      ?(msg="")
+      ~(expected:(variable_t) option)
+      ~(received:(variable_t) option)
+      () =
+  let pri v = "(" ^ (p2s v#toPretty) ^ ")" in
+  match expected, received with
+  | None, None -> ()
+  | Some v, None ->
+     A.fail_msg ("Expected Some " ^ (pri v) ^ ", but received None")
+  | None, Some v ->
+     A.fail_msg ("Expected None, but received Some " ^ (pri v))
+  | Some v1, Some v2 ->
+     A.make_equal (fun v1 v2 -> v1#equal v2) pri ~msg v1 v2
 
 
 let equal_assignments
