@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,12 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
+
+(* chutil *)
+open CHTraceResult
+
+(* xprlib *)
+open XprTypes
 
 (* bchlib *)
 open BCHByteUtilities
@@ -130,7 +136,9 @@ let thumb_function_setup
   end
 
 
-let get_instrxdata_xprs (faddr: doubleword_int) (iaddr: doubleword_int) =
+let get_instrxdata_xprs
+      (faddr: doubleword_int)
+      (iaddr: doubleword_int): xpr_t traceresult list =
   let _ = testsupport#request_instrx_data in
   let finfo = get_function_info faddr in
   let fn = get_arm_assembly_function faddr in

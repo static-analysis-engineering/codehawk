@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2024-11-26 16:08:17"/>
+  <libfun lib="so_functions" name="pthread_exit">
+    <documentation>
+      <desc>thread termination</desc>
+      <apidoc>
+        <pt>void pthread_exit (void *value_ptr)</pt>
+        <par name="value_ptr">
+	  value made available to any successful join with the terminating
+	  thread
+	</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="pthread_exit">
+      <par loc="stack" name="value_ptr" nr="1">
+        <type><ptr>void</ptr></type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions>
+       <io-action cat="process"
+		  desc="terminates the thread immediately">
+       </io-action>
+      </io-actions>
+      <preconditions/>
+      <postconditions>
+	<post>
+	  <math>
+	    <non-returning/>
+	  </math>
+	</post>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

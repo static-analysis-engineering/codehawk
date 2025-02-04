@@ -42,11 +42,32 @@ module TS = TCHTestSuite
 module X = BCHXprUtil
 
 let testname = "bCHXprUtilTest"
-let lastupdated = "2024-08-21"
+let lastupdated = "2024-12-25"
+
+
+let largest_constant_term_test () =
+  (* let xv = XVar (XG.mk_var "v") in *)
+  begin
+
+    TS.new_testsuite (testname ^ "_largest_constant_term_test") lastupdated;
+
+    (* n -> n *)
+    TS.add_simple_test
+      ~title:"constant"
+      (fun () ->
+        XBA.equal_numerical
+          ~expected:(mkNumerical 0x500000)
+          ~received:(X.largest_constant_term (Xprt.int_constant_expr 0x500000))
+          ());
+
+    TS.launch_tests()
+  end
 
 
 let array_index_offset_test () =
   let xv = XVar (XG.mk_var "v") in
+  let xzero = Xprt.int_constant_expr 0 in
+  let xone = Xprt.int_constant_expr 1 in
   begin
 
     TS.new_testsuite (testname ^ "_array_index_offset_test") lastupdated;
@@ -56,7 +77,7 @@ let array_index_offset_test () =
       ~title:"constant"
       (fun () ->
         XBA.equal_array_index_offset
-          ~expected: (Some ((XG.mk_ix 12), numerical_zero))
+          ~expected: (Some ((XG.mk_ix 12), xzero))
           ~received: (X.get_array_index_offset (XG.mk_ix 12) 1)
           ());
 
@@ -65,7 +86,7 @@ let array_index_offset_test () =
       ~title:"variable"
       (fun () ->
         XBA.equal_array_index_offset
-          ~expected: (Some (xv, numerical_zero))
+          ~expected: (Some (xv, xzero))
           ~received: (X.get_array_index_offset xv 1)
           ());
 
@@ -75,7 +96,7 @@ let array_index_offset_test () =
       (fun () ->
         let x = XOp (XMult, [XG.mk_ix 12; XVar (XG.mk_var "v")]) in
         XBA.equal_array_index_offset
-          ~expected: (Some (x, numerical_zero))
+          ~expected: (Some (x, xzero))
           ~received: (X.get_array_index_offset x 1)
           ());
 
@@ -84,16 +105,16 @@ let array_index_offset_test () =
       ~title:"constant-ds"
       (fun () ->
         XBA.equal_array_index_offset
-          ~expected: (Some ((XG.mk_ix 6), numerical_zero))
+          ~expected: (Some ((XG.mk_ix 6), xzero))
           ~received: (X.get_array_index_offset (XG.mk_ix 12) 2)
           ());
 
-    (* 12, 2 -> (6, 0) *)
+    (* 13, 2 -> (6, 1) *)
     TS.add_simple_test
       ~title:"constant-ds-rem"
       (fun () ->
         XBA.equal_array_index_offset
-          ~expected: (Some ((XG.mk_ix 6), numerical_one))
+          ~expected: (Some ((XG.mk_ix 6), xone))
           ~received: (X.get_array_index_offset (XG.mk_ix 13) 2)
           ());
 
@@ -103,7 +124,7 @@ let array_index_offset_test () =
       (fun () ->
         let x = XOp (XMult, [XG.mk_ix 2; xv]) in
         XBA.equal_array_index_offset
-          ~expected: (Some (xv, numerical_zero))
+          ~expected: (Some (xv, xzero))
           ~received: (X.get_array_index_offset x 2)
           ());
 
@@ -113,7 +134,7 @@ let array_index_offset_test () =
       (fun () ->
         let x = XOp (XPlus, [XOp (XMult, [XG.mk_ix 2; xv]); XG.mk_ix 1]) in
         XBA.equal_array_index_offset
-          ~expected: (Some (xv, numerical_one))
+          ~expected: (Some (xv, xone))
           ~received: (X.get_array_index_offset x 2)
           ());
 
@@ -123,7 +144,7 @@ let array_index_offset_test () =
       (fun () ->
         let x = XOp (XPlus, [XOp (XMult, [XG.mk_ix 2; xv]); XG.mk_ix 5]) in
         XBA.equal_array_index_offset
-          ~expected: (Some (XOp (XPlus, [xv; XG.mk_ix 2]), numerical_one))
+          ~expected: (Some (XOp (XPlus, [xv; XG.mk_ix 2]), xone))
           ~received: (X.get_array_index_offset x 2)
           ());
 
@@ -143,7 +164,7 @@ let array_index_offset_test () =
       (fun () ->
         let x = XOp (XMinus, [XOp (XMult, [XG.mk_ix 2; xv]); XG.mk_ix 3]) in
         XBA.equal_array_index_offset
-          ~expected: (Some (XOp (XMinus, [xv; XG.mk_ix 2]), numerical_one))
+          ~expected: (Some (XOp (XMinus, [xv; XG.mk_ix 2]), xone))
           ~received: (X.get_array_index_offset x 2)
           ());
 
@@ -153,7 +174,7 @@ let array_index_offset_test () =
       (fun () ->
         let x = XOp (XMinus, [XOp (XMult, [XG.mk_ix 68; xv]); XG.mk_ix 68]) in
         XBA.equal_array_index_offset
-          ~expected: (Some (XOp (XMinus, [xv; XG.mk_ix 1]), numerical_zero))
+          ~expected: (Some (XOp (XMinus, [xv; XG.mk_ix 1]), xzero))
           ~received: (X.get_array_index_offset x 68)
           ());
 
@@ -163,7 +184,7 @@ let array_index_offset_test () =
       (fun () ->
         let x = XOp (XMinus, [XOp (XMult, [XG.mk_ix 68; xv]); XG.mk_ix 60]) in
         XBA.equal_array_index_offset
-          ~expected: (Some (XOp (XMinus, [xv; XG.mk_ix 1]), mkNumerical 8))
+          ~expected: (Some (XOp (XMinus, [xv; XG.mk_ix 1]), Xprt.int_constant_expr 8))
           ~received: (X.get_array_index_offset x 68)
           ());
 
@@ -179,7 +200,7 @@ let array_index_offset_test () =
         let x5 = XOp (XMinus, [x4; xdata]) in
         let x = simplify_xpr x5 in
         XBA.equal_array_index_offset
-          ~expected: (Some (XOp (XMinus, [xv; XG.mk_ix 1]), mkNumerical 4))
+          ~expected: (Some (XOp (XMinus, [xv; XG.mk_ix 1]), Xprt.int_constant_expr 4))
           ~received: (X.get_array_index_offset x 68)
           ());
 
@@ -191,6 +212,7 @@ let array_index_offset_test () =
 let () =
   begin
     TS.new_testfile testname lastupdated;
+    largest_constant_term_test ();
     array_index_offset_test ();
     TS.exit_file ()
   end

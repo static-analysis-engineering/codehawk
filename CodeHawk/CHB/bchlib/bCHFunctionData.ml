@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,12 +34,14 @@ open CHPretty
 open CHIndexTable
 open CHLogger
 open CHNumRecordTable
+open CHTraceResult
 open CHUtil
 open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
 open BCHBCTypes
+open BCHBCTypePretty
 open BCHBCTypeUtil
 open BCHDemangler
 open BCHDoubleword
@@ -56,9 +58,33 @@ let sanitize_function_name (s: string) =
   string_replace '.' "_" s
 
 
+let regvar_intro_to_string (rvi: regvar_intro_t) =
+  let ptype =
+    match rvi.rvi_vartype with
+    | Some t ->
+       let iscast = if rvi.rvi_cast then ", cast" else "" in
+       " (" ^ (btype_to_string t) ^ iscast ^ ")"
+    | _ -> "" in
+  rvi.rvi_iaddr#to_hex_string ^ ": " ^ rvi.rvi_name ^ ptype
+
+
+let stackvar_intro_to_string (svi: stackvar_intro_t) =
+  let ptype =
+    match svi.svi_vartype with
+    | Some t -> " (" ^ (btype_to_string t) ^ ")"
+    | _ -> "" in
+  (string_of_int svi.svi_offset) ^ ": " ^ svi.svi_name ^ ptype
+
+
+let function_annotation_to_string (a: function_annotation_t) =
+  (String.concat "\n" (List.map regvar_intro_to_string a.regvarintros))
+  ^ (String.concat "\n" (List.map stackvar_intro_to_string a.stackvarintros))
+
+
 class function_data_t (fa:doubleword_int) =
 object (self)
 
+  val faddr = fa
   val mutable names = []
   val mutable non_returning = false
   val mutable incomplete = false
@@ -67,6 +93,7 @@ object (self)
   val mutable by_preamble = false
   val mutable virtual_function = false
   val mutable classinfo = None
+  val mutable functionannotation: function_annotation_t option = None
   val mutable inlined = false
   val mutable library_stub = false
   val mutable inlined_blocks = []
@@ -122,6 +149,77 @@ object (self)
 
   method set_class_info ~(classname:string) ~(isstatic:bool) =
     classinfo <- Some (classname,isstatic)
+
+  method set_function_annotation (a: function_annotation_t) =
+    begin
+      functionannotation <- Some a;
+      chlog#add
+        "function annotation"
+        (LBLOCK [faddr#toPretty; NL; STR (function_annotation_to_string a)])
+    end
+
+  method has_function_annotation: bool =
+    match functionannotation with Some _ -> true | _ -> false
+
+  method get_function_annotation: function_annotation_t option =
+    functionannotation
+
+  method get_regvar_intro (iaddr: doubleword_int): regvar_intro_t option =
+    match self#get_function_annotation with
+    | Some a ->
+       List.fold_left (fun acc rvi ->
+           match acc with
+           | Some _ -> acc
+           | _ -> if rvi.rvi_iaddr#equal iaddr then Some rvi else None)
+         None a.regvarintros
+    | _ -> None
+
+  method has_regvar_type_annotation (iaddr: doubleword_int): bool =
+    match self#get_function_annotation with
+    | Some a ->
+       List.exists
+         (fun rvi -> rvi.rvi_iaddr#equal iaddr && Option.is_some rvi.rvi_vartype)
+         a.regvarintros
+    | _ -> false
+
+  method has_regvar_type_cast (iaddr: doubleword_int): bool =
+    match self#get_function_annotation with
+    | Some a ->
+       List.exists
+         (fun rvi -> rvi.rvi_iaddr#equal iaddr && rvi.rvi_cast) a.regvarintros
+    | _ -> false
+
+  method get_regvar_type_annotation (iaddr: doubleword_int): btype_t traceresult =
+    let opttype =
+      match self#get_function_annotation with
+      | None ->
+         Some
+           (Error [
+                __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "Function " ^ faddr#to_hex_string ^ " does not have annotations"])
+      | Some a ->
+         List.fold_left
+           (fun acc rvi ->
+             match acc with
+             | Some _ -> acc
+             | _ ->
+                if rvi.rvi_iaddr#equal iaddr then
+                  match rvi.rvi_vartype with
+                  | Some t -> Some (Ok t)
+                  | _ ->
+                     Some (Error [
+                               __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                               ^ "Register var annotation at "
+                               ^ iaddr#to_hex_string
+                               ^ " does not have a type"])
+                else
+                  acc) None a.regvarintros in
+    match opttype with
+    | Some r -> r
+    | None ->
+       Error [
+           __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+           ^ "No register var annotation found at " ^ iaddr#to_hex_string]
 
   method add_inlined_block (baddr:doubleword_int) =
     inlined_blocks <- baddr :: inlined_blocks
@@ -261,6 +359,10 @@ object (self)
   method get_library_stubs: doubleword_int list =
     self#retrieve_addresses (fun f -> f#is_library_stub)
 
+  method is_in_function_stub ?(size=3) (va: doubleword_int): bool =
+    let libstubs = self#get_library_stubs in
+    List.exists (fun s -> s#le va && va#lt(s#add_int (size * 4))) libstubs
+
   method is_function_entry_point (fa:doubleword_int) = H.mem table fa#index
 
   method has_function_name (fa:doubleword_int) =
@@ -353,5 +455,136 @@ end
 
 
 let functions_data = new functions_data_t
-    
-    
+
+
+let read_xml_regvar_intro (node: xml_element_int): regvar_intro_t traceresult =
+  let get = node#getAttribute in
+  let has = node#hasNamedAttribute in
+  if not (has "name") then
+    Error ["register var intro without name"]
+  else if not (has "iaddr") then
+    Error ["register var intro without instruction address"]
+  else
+    TR.tbind
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+      (fun dw ->
+        let rvi_iaddr = dw in
+        let rvi_name = get "name" in
+        let (rvi_vartype, rvi_cast) =
+          if has "typename" then
+            let iscast = (has "cast") && ((get "cast") = "yes") in
+            let typename = get "typename" in
+            TR.tfold
+              ~ok:(fun btype ->
+                if has "ptrto" && (get "ptrto") = "yes" then
+                  (Some (t_ptrto btype), iscast)
+                else
+                  (Some btype, iscast))
+              ~error:(fun e ->
+                begin
+                  log_error_result __FILE__ __LINE__ e;
+                  (None, false)
+                end)
+              (convert_string_to_type typename)
+          else
+            (None, false) in
+        Ok {rvi_iaddr = rvi_iaddr;
+            rvi_name = rvi_name;
+            rvi_cast = rvi_cast;
+            rvi_vartype = rvi_vartype})
+      (string_to_doubleword (get "iaddr"))
+
+
+let read_xml_stackvar_intro (node: xml_element_int): stackvar_intro_t traceresult =
+  let get = node#getAttribute in
+  let geti = node#getIntAttribute in
+  let has = node#hasNamedAttribute in
+  if not (has "offset") then
+    Error ["stackvar intro without offset"]
+  else if not (has "name") then
+    Error ["stackvar intro without name"]
+  else
+    let svi_offset = geti "offset" in
+    let svi_name = get "name" in
+    let svi_vartype =
+      if has "typename" then
+        let typename = get "typename" in
+        TR.tfold
+          ~ok:(fun btype ->
+            if has "ptrto" && (get "ptrto") = "yes" then
+              Some (t_ptrto btype)
+            else if has "arraysize" then
+              let arraysize = geti "arraysize" in
+              Some (t_array btype arraysize)
+            else
+              Some btype)
+          ~error:(fun e ->
+            begin
+              log_error_result __FILE__ __LINE__ e;
+              None
+            end)
+          (convert_string_to_type typename)
+      else
+        None in
+    Ok {svi_offset = svi_offset;
+        svi_name = svi_name;
+        svi_vartype = svi_vartype}
+
+
+let read_xml_function_annotation (node: xml_element_int) =
+  let get = node#getAttribute in
+  let getc = node#getTaggedChild in
+  let hasc = node#hasOneTaggedChild in
+  let faddr = get "faddr" in
+  TR.titer
+    ~ok:(fun dw ->
+      if functions_data#has_function dw then
+        let fndata = functions_data#get_function dw in
+        let stackvintros =
+          if hasc "stackvar-intros" then
+            let svintros = getc "stackvar-intros" in
+            List.fold_left
+              (fun acc n ->
+                TR.tfold
+                  ~ok:(fun svi -> svi :: acc)
+                  ~error:(fun e ->
+                    begin
+                      log_error_result __FILE__ __LINE__ e;
+                      acc
+                    end)
+                  (read_xml_stackvar_intro n))
+              []
+              (svintros#getTaggedChildren "vintro")
+          else
+            [] in
+        let regvintros =
+          if hasc "regvar-intros" then
+            let rvintros = getc "regvar-intros" in
+            List.fold_left
+              (fun acc n ->
+                TR.tfold
+                  ~ok:(fun rvi -> rvi :: acc)
+                  ~error:(fun e ->
+                    begin
+                      log_error_result __FILE__ __LINE__ e;
+                      acc
+                    end)
+                  (read_xml_regvar_intro n))
+              []
+              (rvintros#getTaggedChildren "vintro")
+          else
+            [] in
+        fndata#set_function_annotation
+          {regvarintros = regvintros; stackvarintros = stackvintros}
+      else
+        log_error_result
+          ~tag:"function annotation faddr not found"
+          __FILE__ __LINE__
+          ["Function annotation address: " ^ faddr ^ " not known"])
+    ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+    (string_to_doubleword faddr)
+
+
+let read_xml_function_annotations (node: xml_element_int) =
+  List.iter
+    read_xml_function_annotation (node#getTaggedChildren "function-annotation")

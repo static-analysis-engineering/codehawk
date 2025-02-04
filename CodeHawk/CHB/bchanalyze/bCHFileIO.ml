@@ -200,6 +200,19 @@ let save_global_state () =
     file_output#saveFile filename doc#toPretty
   end
 
+
+let save_global_memory_map () =
+  let filename = get_global_memory_map_filename () in
+  let doc = xmlDocument () in
+  let root = get_bch_root "global-locations" in
+  let gNode = xmlElement "global-locations" in
+  begin
+    BCHGlobalMemoryMap.global_memory_map#write_xml gNode;
+    doc#setNode root;
+    root#appendChildren [gNode];
+    file_output#saveFile filename doc#toPretty
+  end
+
 let save_system_info () =
   let filename = get_system_info_filename () in
   let doc = xmlDocument () in

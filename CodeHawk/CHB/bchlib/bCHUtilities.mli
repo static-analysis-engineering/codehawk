@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -71,9 +71,7 @@ val timing: unit -> string
 exception No_file_found of string
 
 val initialize_activity_log: string -> unit
-val initialize_results_log : string -> unit
 val log_activity: pretty_t -> unit
-val log_result  : pretty_t -> unit
 
 val translation_log: logger_int
 val disassembly_log: logger_int

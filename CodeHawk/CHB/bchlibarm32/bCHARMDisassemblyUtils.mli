@@ -39,4 +39,8 @@ val get_interrupt_flags: int -> interrupt_flags_t
 
 val get_it_condition_list: int -> int -> (string * arm_opcode_cc_t) list
 
+val get_inverse_cc: arm_opcode_cc_t -> arm_opcode_cc_t option
+
+val has_inverse_cc: arm_opcode_cc_t -> bool
+
 val get_string_reference: floc_int -> xpr_t -> string option

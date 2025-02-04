@@ -55,6 +55,7 @@ module H = Hashtbl
 
 let bd = BCHDictionary.bdictionary
 let bcd = BCHBCDictionary.bcdictionary
+let mmap = BCHGlobalMemoryMap.global_memory_map
 
 
 class fn_analysis_results_t (fn:arm_assembly_function_int) =
@@ -194,15 +195,17 @@ object (self)
     let dNode = xmlElement "instr-dictionary" in
     let iiNode = xmlElement "instructions" in
     let sfNode = xmlElement "stackframe" in
+    let grNode = xmlElement "global-references" in
     (* let bNode = xmlElement "btypes" in *)
     begin
       self#write_xml_cfg cNode;
       self#write_xml_jumptables jjNode;
       self#write_xml_instructions iiNode;
       finfo#stackframe#write_xml sfNode;
+      mmap#write_xml_references faddr vard grNode;
       (* self#write_xml_btypes bNode; *)
       id#write_xml dNode;
-      append [cNode; dNode; iiNode; jjNode; sfNode]
+      append [cNode; dNode; iiNode; jjNode; sfNode; grNode]
     end
 
   method write_xml_register_types
@@ -216,7 +219,13 @@ object (self)
             bd#write_xml_register inode reg;
             inode#setAttribute "iaddr" iaddr;
             (match optty with
-             | Some ty -> bcd#write_xml_typ inode ty
+             | Some ty ->
+                begin
+                  log_result __FILE__ __LINE__
+                    ["reglhs: " ^ iaddr ^ ": " ^
+                       (BCHBCTypePretty.btype_to_string ty)];
+                  bcd#write_xml_typ inode ty
+                end
              | _ -> ());
             regnode#appendChildren [inode]
           end) regtypes;

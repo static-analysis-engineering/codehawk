@@ -35,6 +35,8 @@ open CHNumerical
 open XprTypes
 
 
+(** returns the largest constant term in the given expression, taking into
+    account the sign. *)
 val largest_constant_term : xpr_t -> numerical_t
 
 val normalize_offset_expr: xpr_t -> xpr_t
@@ -52,4 +54,4 @@ val vars_as_positive_terms: xpr_t -> variable_t list
     the remaining offset is constant (e.g., to be converted into one or
     more levels of field offsets.
 *)
-val get_array_index_offset: xpr_t -> int -> (xpr_t * numerical_t) option
+val get_array_index_offset: xpr_t -> int -> (xpr_t * xpr_t) option

@@ -70,6 +70,7 @@ object (self)
 
   method add_bcfile (f: bcfile_t) =
     let i = bcd#index_location in
+    begin
     List.iter (fun g ->
         match g with
         | GType (tinfo, loc) ->
@@ -92,8 +93,10 @@ object (self)
         | GEnumTagDecl (einfo, loc) ->
            H.replace genumtagdecls einfo.bename (bcd#index_enuminfo einfo, i loc)
         | GVarDecl (vinfo, loc) ->
+           let _ = chlog#add "bcfiles:add gvardecl" (STR vinfo.bvname) in
            H.replace gvardecls vinfo.bvname (bcd#index_varinfo vinfo, i loc)
         | GVar (vinfo, iinfo, loc) ->
+           let _ = chlog#add "bcfiles:add gvar" (STR vinfo.bvname) in
            H.replace gvars
              vinfo.bvname
              (bcd#index_varinfo vinfo,
@@ -102,8 +105,20 @@ object (self)
                | _ -> (-1)),
               i loc)
         | GFun (fundec, loc) ->
+           let _ = chlog#add "bcfiles:add gfun" (STR fundec.bsvar.bvname) in
              H.replace gfuns fundec.bsvar.bvname (fundec, bcd#index_location loc);
-        | _ -> ()) f.bglobals
+        | _ -> ()) f.bglobals;
+    chlog#add
+      "bcfiles:add_bcfile"
+      (LBLOCK [
+           STR "gvars: ";
+           INT (H.length gvars);
+           STR "; gvardecls: ";
+           INT (H.length gvardecls);
+           STR "; gfuns: ";
+           INT (H.length gfuns)
+         ])
+    end
 
   method update_global (g: bglobal_t) =
     let i = bcd#index_location in
@@ -316,10 +331,40 @@ object (self)
         (BCH_failure
            (LBLOCK [STR "No enuminfo found with name "; STR name]))
 
-  method has_varinfo (name: string) =
-    (H.mem gvars name) || (H.mem gvardecls name)
+  method private get_prefixed_name (name: string): bvarinfo_t option =
+    let declnames = H.fold (fun k _ a -> k :: a) gvardecls [] in
+    let gvarnames = H.fold (fun k _ a -> k :: a) gvars [] in
+    let namelen = String.length name in
+    let result =
+      List.fold_left (fun result n ->
+          match result with
+          | Some _ -> result
+          | _ ->
+             if String.length n > namelen && (String.sub n 0 namelen) = name then
+               let (ix, _) = H.find gvardecls n in
+               Some ix
+             else
+               None) None declnames in
+    let result =
+      List.fold_left (fun result n ->
+          match result with
+          | Some _ -> result
+          | _ ->
+             if String.length n > namelen && (String.sub n 0 namelen) = name then
+               let (ix, _, _) = H.find gvars n in
+               Some ix
+             else
+               None) result gvarnames in
+    match result with
+    | Some ix -> Some (bcd#get_varinfo ix)
+    | _ -> None
 
-  method get_varinfo (name: string) =
+  method has_varinfo ?(prefix=false) (name: string) =
+    (H.mem gvars name)
+    || (H.mem gvardecls name)
+    || (prefix && (Option.is_some (self#get_prefixed_name name)))
+
+  method get_varinfo ?(prefix=false) (name: string): bvarinfo_t =
     if self#has_varinfo name then
       let ix =
         if H.mem gvars name then
@@ -328,10 +373,27 @@ object (self)
           let (ix, _) = H.find gvardecls name in ix
       in
       bcd#get_varinfo ix
+    else if prefix then
+      match self#get_prefixed_name name with
+      | Some vinfo -> vinfo
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR "No varinfo found with prefixed name "; STR name]))
     else
       raise
         (BCH_failure
            (LBLOCK [STR "No varinfo found with name "; STR name]))
+
+  method get_varinfos =
+    let result = ref [] in
+    begin
+      H.iter (fun _ (ix, _, _) ->
+          result := (bcd#get_varinfo ix) :: !result) gvars;
+      H.iter (fun _ (ix, _) ->
+          result := (bcd#get_varinfo ix) :: !result) gvardecls;
+      !result
+    end
 
   method list_varinfos =
     let result = ref [] in

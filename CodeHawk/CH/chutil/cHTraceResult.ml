@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +61,25 @@ let tmap2
   | Error e1, Error e2 -> Error (msg1 :: msg2 :: (e1 @ e2))
 
 
+let tmap3
+      ?(msg1="")
+      ?(msg2="")
+      ?(msg3="")
+      (f: 'a -> 'b -> 'c -> 'd)
+      (r1: 'a traceresult)
+      (r2: 'b traceresult)
+      (r3: 'c traceresult): 'd traceresult =
+  match r1, r2, r3 with
+  | Ok v1, Ok v2, Ok v3 -> Ok (f v1 v2 v3)
+  | Error e1, Ok _, Ok _ -> Error (msg1 :: e1)
+  | Ok _, Error e2, Ok _ -> Error (msg2 :: e2)
+  | Ok _, Ok _, Error e3 -> Error (msg3 :: e3)
+  | Error e1, Error e2, Ok _ -> Error (msg1 :: msg2 :: (e1 @ e2))
+  | Error e1, Ok _, Error e3 -> Error (msg1 :: msg3 :: (e1 @ e3))
+  | Ok _, Error e2, Error e3 -> Error (msg2 :: msg3 :: (e2 @ e3))
+  | Error e1, Error e2, Error e3 -> Error (msg1 :: msg2 :: msg3 :: (e1 @ e2 @ e3))
+
+
 let tbind ?(msg="") (f: 'a -> 'c traceresult) (r: 'a traceresult) =
   match r with
   | Ok v -> f v
@@ -86,7 +105,13 @@ let tprop (r: 'a traceresult) (msg: string): 'a traceresult =
   | Error e -> Error (msg :: e)
 
 
-let titer (f: 'a -> unit) (r: 'a traceresult) =
+let titer ~(ok:'a -> unit) ~(error: string list -> unit) (r: 'a traceresult) =
+  match r with
+  | Ok v -> ok v
+  | Error e -> error e
+
+
+let titer_default (f: 'a -> unit) (r: 'a traceresult) =
   match r with
   | Ok v -> f v
   | Error _ -> ()

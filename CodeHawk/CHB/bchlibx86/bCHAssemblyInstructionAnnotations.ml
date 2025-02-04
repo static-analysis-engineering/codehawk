@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,6 @@ open Xsimplify
 open BCHBasicTypes
 open BCHBCTypeUtil
 open BCHCallTarget
-open BCHConstantDefinitions
 open BCHCPURegisters
 open BCHDemangler
 open BCHDoubleword
@@ -132,7 +131,7 @@ let create_annotation_aux (floc:floc_int) =
   let xpr_formatter = make_xpr_formatter sym_printer variable_to_pretty in
   let pr_expr ?(typespec=None) ?(partype=t_unknown) x =
     let x = simplify_xpr x in
-    match get_xpr_symbolic_name ~typespec x with
+    match BCHConstantDefinitions.get_xpr_symbolic_name ~typespec x with
     | Some name -> STR name
     | _ ->
       if is_unsigned partype then
@@ -158,12 +157,15 @@ let create_annotation_aux (floc:floc_int) =
 	LBLOCK [STR "ds:"; (TR.tget_ok (numerical_to_doubleword n))#toPretty]
       | _ ->
 	if floc#is_address xpr then
-	  let (memref,memoffset) = floc#decompose_address xpr in
+	  let (memref, memoffset) = floc#decompose_address xpr in
 	  if is_constant_offset memoffset then
-            let offset = get_total_constant_offset memoffset in
-	    LBLOCK [
-                STR "&";
-                variable_to_pretty (env#mk_memory_variable memref offset)]
+            TR.tfold_default
+              (fun offset ->
+	        LBLOCK [
+                    STR "&";
+                    variable_to_pretty (env#mk_memory_variable memref offset)])
+              (pr_expr xpr)
+              (get_total_constant_offset memoffset)
 	  else if memref#is_unknown_reference then
 	    pr_expr xpr
 	  else
@@ -173,7 +175,7 @@ let create_annotation_aux (floc:floc_int) =
   let pr_sum_argument_expr
         (ct: call_target_info_int) (p: fts_parameter_t) (xpr: xpr_t) =
     let typespec = ct#get_enum_type p in
-    match get_xpr_symbolic_name ~typespec xpr with
+    match BCHConstantDefinitions.get_xpr_symbolic_name ~typespec xpr with
     | Some name -> STR name
     | _ -> pr_argument_expr ~typespec p  xpr in
   let lhs_to_pretty (_lhs_op:operand_int) (var:variable_t) =
@@ -275,7 +277,7 @@ let create_annotation_aux (floc:floc_int) =
       let rhs_pp = match get_string_reference floc rhs with
 	| Some s -> STR s
 	| _ ->
-	  match get_xpr_symbolic_name rhs with
+	  match BCHConstantDefinitions.get_xpr_symbolic_name rhs with
 	  | Some name -> STR name
 	  | _ -> rhs_to_pretty ~partype:param.apar_type rhs in
       make_annotation FunctionArgument
@@ -1109,7 +1111,7 @@ let create_annotation_aux (floc:floc_int) =
 	let rhs_pp = match get_string_reference floc rhs with
 	  | Some s -> STR s
 	  | _ ->
-	    match get_xpr_symbolic_name rhs with
+	    match BCHConstantDefinitions.get_xpr_symbolic_name rhs with
 	    | Some name -> STR name
 	    | _ -> rhs_to_pretty ~partype:param.apar_type rhs in
 	let pp =

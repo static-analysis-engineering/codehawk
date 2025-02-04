@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyrigth (c) 2021-2024 Aarno Labs LLC
+   Copyrigth (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -680,11 +680,11 @@ object
     | InitialMemoryValue _ -> "iv"
     | FrozenTestValue _ -> "ft"
     | FunctionReturnValue _ -> "fr"
+    | TypeCastValue _ -> "tc"
     | SyscallErrorReturnValue _ -> "ev"
     | FunctionPointer _ -> "fp"
     | CallTargetValue _ -> "ct"
     | SideEffectValue _ -> "se"
-    | MemoryAddress  _ -> "ma"
     | BridgeVariable _ -> "bv"
     | FieldValue _ -> "fv"
     | SymbolicValue _ -> "sv"
@@ -695,7 +695,7 @@ object
 
   method !tags = [
       "bv"; "chiftemp"; "ct"; "ev"; "fr"; "fp"; "ft"; "fv"; "ir";
-      "iv"; "ma"; "rt"; "se" ; "sp"; "sv"; "ssv"]
+      "iv"; "rt"; "se" ; "sp"; "sv"; "ssv"; "tc"]
 
 end
 

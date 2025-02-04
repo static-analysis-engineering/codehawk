@@ -32,7 +32,7 @@
         <type><ptr>pthread_attr_t</ptr></type>
       </par>
       <par loc="stack" name="start_routine" nr="3">
-        <type><ptr>function-pointer</ptr></type>
+        <type><ptr>pthread_start_routine</ptr></type>
       </par>
       <par loc="stack" name="arg" nr="4">
         <type><ptr>void</ptr></type>

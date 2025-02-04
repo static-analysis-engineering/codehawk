@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -585,8 +585,10 @@ let get_successors (faddr:doubleword_int) (iaddr:doubleword_int)  =
 let trace_block (faddr:doubleword_int) (baddr:doubleword_int) =
 
   let set_block_entry (va: doubleword_int) =
-    TR.titer (fun instr ->
-        instr#set_block_entry) (get_mips_assembly_instruction va) in
+    TR.titer
+      ~ok:(fun instr -> instr#set_block_entry)
+      ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+      (get_mips_assembly_instruction va) in
 
   let get_instr iaddr = get_mips_assembly_instruction iaddr in
 
@@ -717,7 +719,8 @@ let trace_function (faddr:doubleword_int) =
   let doneSet = new DoublewordCollections.set_t in
   let set_block_entry (baddr: doubleword_int) =
     TR.titer
-      (fun instr -> instr#set_block_entry)
+      ~ok:(fun instr -> instr#set_block_entry)
+      ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
       (get_mips_assembly_instruction baddr) in
   let get_iaddr s = (ctxt_string_to_location faddr s)#i in
   let add_to_workset l =

@@ -56,6 +56,7 @@ val get_pwr_assembly_instructions_filename: unit -> string
 
 val get_functions_filename: unit -> string
 val get_global_state_filename: unit -> string
+val get_global_memory_map_filename: unit -> string
 val get_system_info_filename: unit -> string
 val get_jni_calls_filename: unit -> string
 val get_resultmetrics_filename: unit -> string   (* analysis round statistics *)

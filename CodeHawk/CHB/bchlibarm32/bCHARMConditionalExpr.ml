@@ -49,6 +49,8 @@ open BCHLibTypes
 open BCHARMTypes
 open BCHARMOpcodeRecords
 
+module TR = CHTraceResult
+
 
 (* Conditional execution: conditions
 
@@ -110,56 +112,63 @@ let freeze_variables
       (add:variable_t -> variable_t -> unit)
       (testloc:location_int)
       (condloc:location_int)
-      (op:arm_operand_int)  =
+      (op:arm_operand_int): xpr_t =
   let testfloc = get_floc testloc in
   let condfloc = get_floc condloc in
   let env = testfloc#f#env in
-  let opXpr = op#to_expr ~unsigned testfloc in
   let frozenVars = new VariableCollections.table_t in
-  let vars = (variables_in_expr opXpr) in
-  let varsKnown = ref true in
-  let _ =
-    List.iter (
-        fun v ->
-        if v#isTmp then
-          varsKnown := false
-        else if env#is_function_initial_value v then
-          ()
-        else if env#is_local_variable v then
-          let _ =
-            track_location
-              testloc#ci
-              (LBLOCK [
-                   v#toPretty; NL;
-                   testfloc#inv#toPretty; NL;
-                   condfloc#inv#toPretty]) in
-          if condfloc#inv#test_var_is_equal v testloc#ci condloc#ci then
-            let _ =
-              track_location
-                condloc#ci
-                (LBLOCK [
-                     v#toPretty; NL;
-                     STR " test_var_is_equal"]) in
-            ()
-          else
-            let fv = env#mk_frozen_test_value v testloc#ci condloc#ci in
-            frozenVars#set v fv
-        else if env#is_unknown_memory_variable v then
-          varsKnown := false) vars in
-  let subst v =
-    if frozenVars#has v then
-      match testfloc#inv#get_external_exprs v with
-      | x::_ -> x
-      | _ -> XVar (Option.get (frozenVars#get v))
-    else
-      XVar v in
-  if !varsKnown then
-    begin
-      List.iter (fun (v, fv) -> add v fv) frozenVars#listOfPairs ;
-      substitute_expr subst opXpr
-    end
-  else
-    random_constant_expr
+  TR.tfold
+    ~error:(fun e ->
+      begin
+        log_error_result __FILE__ __LINE__ e;
+        random_constant_expr
+      end)
+    ~ok:(fun opXpr ->
+      let vars = (variables_in_expr opXpr) in
+      let varsKnown = ref true in
+      let _ =
+        List.iter (
+            fun v ->
+            if v#isTmp then
+              varsKnown := false
+            else if env#is_function_initial_value v then
+              ()
+            else if env#is_local_variable v then
+              let _ =
+                track_location
+                  testloc#ci
+                  (LBLOCK [
+                       v#toPretty; NL;
+                       testfloc#inv#toPretty; NL;
+                       condfloc#inv#toPretty]) in
+              if condfloc#inv#test_var_is_equal v testloc#ci condloc#ci then
+                let _ =
+                  track_location
+                    condloc#ci
+                    (LBLOCK [
+                         v#toPretty; NL;
+                         STR " test_var_is_equal"]) in
+                ()
+              else
+                let fv = env#mk_frozen_test_value v testloc#ci condloc#ci in
+                frozenVars#set v fv
+            else if env#is_unknown_memory_variable v then
+              varsKnown := false) vars in
+      let subst v =
+        if frozenVars#has v then
+          match testfloc#inv#get_external_exprs v with
+          | x::_ -> x
+          | _ -> XVar (Option.get (frozenVars#get v))
+        else
+          XVar v in
+      if !varsKnown then
+        begin
+          List.iter (fun (v, fv) -> add v fv) frozenVars#listOfPairs ;
+          substitute_expr subst opXpr
+        end
+      else
+        random_constant_expr)
+    (op#to_expr ~unsigned testfloc)
 
 
 let cc_expr
