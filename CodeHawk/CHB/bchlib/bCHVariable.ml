@@ -832,6 +832,10 @@ object (self)
                    (cv1: constant_value_variable_t)
                    (cv2: constant_value_variable_t) =
     match (cv1, cv2) with
+    | (TypeCastValue _, TypeCastValue _) -> Stdlib.compare ix1 ix2
+    | (TypeCastValue _, _) -> -1
+    | (_, TypeCastValue _) -> 1
+
     | (FunctionReturnValue _, FunctionReturnValue _) -> Stdlib.compare ix1 ix2
     | (FunctionReturnValue _, _) -> -1
     | (_, FunctionReturnValue _) -> 1
