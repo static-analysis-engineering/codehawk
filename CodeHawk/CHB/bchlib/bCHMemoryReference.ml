@@ -329,7 +329,7 @@ and get_field_memory_offset_at
                    Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                           ^ "Skipped over field: "
                           ^ (string_of_int offset)]
-                 else if offset > (foff + sz) then
+                 else if offset >= (foff + sz) then
                    Ok None
                  else
                    let offset = offset - foff in
@@ -369,7 +369,9 @@ and get_field_memory_offset_at
                            Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                                   ^ "Nonzero offset: " ^ (string_of_int offset)
                                   ^ " with unstructured field type: "
-                                  ^ (btype_to_string fldtype)])
+                                  ^ (btype_to_string fldtype)
+                                  ^ " for field "
+                                  ^ finfo.bfname])
                      (resolve_type finfo.bftype)) (Ok None) finfos in
      (match optfield_r with
       | Error e -> Error e
