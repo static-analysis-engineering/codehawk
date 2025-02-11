@@ -174,7 +174,10 @@ object (self:'a)
          self#get_memref_type i size
       | MemoryVariable (_, size, (FieldOffset _ as offset)) ->
          self#get_memref_field_type size offset
-      | MemoryVariable _ -> None
+      | MemoryVariable (_, size, (ConstantOffset (_, (FieldOffset _ as offset)))) ->
+         self#get_memref_field_type size offset
+      | MemoryVariable _ ->
+         None
       | RegisterVariable _ -> None
       | CPUFlagVariable _ -> None
       | AuxiliaryVariable a ->

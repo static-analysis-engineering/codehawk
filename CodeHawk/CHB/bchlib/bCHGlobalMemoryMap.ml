@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024 Aarno Labs LLC
+   Copyright (c) 2024-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -370,37 +370,41 @@ object (self)
                 ^ "xoffset: " ^ (x2s xoffset)
                 ^ "; btype: " ^ (btype_to_string btype)]
 
+  method address_offset_memory_offset
+           ?(tgtsize=None)
+           ?(tgtbtype=t_unknown)
+           (xoffset: xpr_t): memory_offset_t traceresult =
+    match xoffset with
+    | XConst (IntConst n)
+         when n#equal CHNumerical.numerical_zero
+              && Option.is_none tgtsize
+              && is_unknown_type tgtbtype ->
+       Ok NoOffset
+    | XConst (IntConst n)
+         when n#equal CHNumerical.numerical_zero && (not self#is_typed) ->
+       Ok NoOffset
+    | XConst (IntConst n) when not self#is_typed ->
+       Ok (ConstantOffset (n, NoOffset))
+    | _ ->
+       let tgtbtype =
+         if is_unknown_type tgtbtype then None else Some tgtbtype in
+       if self#is_struct then
+         let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+         self#structvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
+       else if self#is_array then
+         let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+         self#arrayvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
+       else
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                ^ (btype_to_string self#btype)
+                ^ " is not known to be a struct or array"]
+
   method address_memory_offset
            ?(tgtsize=None)
            ?(tgtbtype=t_unknown)
            (xpr: xpr_t): memory_offset_t traceresult =
-    tbind
-      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-      (fun xoffset ->
-        match xoffset with
-        | XConst (IntConst n)
-             when n#equal CHNumerical.numerical_zero
-                  && Option.is_none tgtsize
-                  && is_unknown_type tgtbtype ->
-           Ok NoOffset
-        | XConst (IntConst n)
-             when n#equal CHNumerical.numerical_zero && (not self#is_typed) ->
-           Ok NoOffset
-        | XConst (IntConst n) when not self#is_typed ->
-           Ok (ConstantOffset (n, NoOffset))
-        | _ ->
-           let tgtbtype =
-             if is_unknown_type tgtbtype then None else Some tgtbtype in
-           if self#is_struct then
-             let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
-             self#structvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
-           else if self#is_array then
-             let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
-             self#arrayvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
-           else
-             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
-                    ^ (btype_to_string self#btype)
-                    ^ " is not known to be a struct or array"])
+    TR.tbind
+      (self#address_offset_memory_offset ~tgtsize ~tgtbtype)
       (self#address_offset xpr)
 
   method initialvalue: globalvalue_t option = grec.gloc_initialvalue

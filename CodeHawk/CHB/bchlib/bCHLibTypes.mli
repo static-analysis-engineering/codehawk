@@ -2385,6 +2385,8 @@ object ('a)
 
   method get_parameter_for_register: register_t -> fts_parameter_t
 
+  method has_parameter_for_register: register_t -> bool
+
   method get_parameter_at_stack_offset: int -> fts_parameter_t
 
   method get_returntype: btype_t
@@ -4231,6 +4233,7 @@ object
       [var] cannot be found. *)
   method get_symbolic_value_expr: variable_t -> xpr_t traceresult
 
+
   (** {3 Other} *)
 
   method is_function_initial_value: variable_t -> bool
@@ -4353,6 +4356,12 @@ class type global_location_int =
         - the provided type or size cannot be matched to any offset.
      *)
     method address_memory_offset:
+             ?tgtsize:int option
+             -> ?tgtbtype:btype_t
+             -> xpr_t
+             -> memory_offset_t traceresult
+
+    method address_offset_memory_offset:
              ?tgtsize:int option
              -> ?tgtbtype:btype_t
              -> xpr_t
@@ -4945,6 +4954,11 @@ class type function_environment_int =
 
         Returns [Error] if [var] is not a symbolic expression variable.*)
     method get_symbolic_value_expr: variable_t -> xpr_t traceresult
+
+    method is_addressof_symbolic_value: variable_t -> bool
+
+    method get_addressof_symbolic_expr: variable_t -> xpr_t traceresult
+
 
     (** {3 Other} *)
 
@@ -5924,6 +5938,8 @@ class type floc_int =
              -> ?btype:btype_t      (** type of argument *)
              -> xpr_t               (** address value *)
              -> variable_t traceresult
+
+    method get_xpr_type: xpr_t -> btype_t option
 
     (** {2 Predicates on variables}*)
 
