@@ -267,6 +267,7 @@ let substitute_expr (subst:substitution_t) (expr:xpr_t) =
   let rec aux exp =
     match exp with
     | XVar v -> subst v
+    | XOp ((Xf "addressofvar"), _) -> exp
     | XOp (op,l) -> XOp (op, List.map (fun e -> aux e) l)
     | XAttr (s, e) -> XAttr (s, aux e)
     | _ -> exp

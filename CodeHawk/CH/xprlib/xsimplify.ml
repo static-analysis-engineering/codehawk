@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ exception XSimplificationProblem of CHPretty.pretty_t
 
 
 let xpr_to_pretty e = xpr_printer#pr_expr e
+let x2p = xpr_to_pretty
 
 
 type e_struct_t =
@@ -237,6 +238,18 @@ and reduce_plus (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
   else
     match (e1, e2) with
 
+    (* (&y + x) ==> no further simplification *)
+    | (XOp ((Xf "addressofvar"), [_]), _) ->
+      (false, XOp (XPlus, [e1; e2]))
+
+    (* (x + &y) ==> (&y + x) *)
+    | (_, XOp ((Xf "addressofvar"), [_])) ->
+       (true, XOp (XPlus, [e2; e1]))
+
+    (* ((&x + y) + z) ==> (&x + (y + z)) *)
+    | (XOp (XPlus, [XOp ((Xf "addressofvar"), [x]); y]), z) ->
+       (true, XOp (XPlus, [XOp ((Xf "addressofvar"), [x]); XOp (XPlus, [y; z])]))
+
     (* x + (y-x) ~> y *)
     | (x, XOp (XMinus, [y; z])) when syntactically_equal x z ->
        (true, y)
@@ -262,7 +275,6 @@ and reduce_plus (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
     | (XOp (XLsl, [x; XConst (IntConst a)]),
        XOp (XLsl, [y; XConst (IntConst b)])) when syntactically_equal x y ->
        rs XMult [x; XOp (XPlus, [pwr2 a; pwr2 b])]
-
 
     | _ ->
        match (get_struct e1, get_struct e2) with
@@ -363,6 +375,13 @@ and reduce_minus (m: bool) (e1: xpr_t) (e2: xpr_t) =
     (true, random_constant_expr)
   else
     match (e1, e2) with
+
+    (* ((&x + y) - z) ==> (&x + (y - z)) *)
+    | (XOp (XPlus, [XOp ((Xf "addressofvar"), [x]); y]), _) ->
+       let _ = pr_debug [STR "  DEBUG: reduce_minus: ";
+                         STR "e1: "; x2p e1; STR "; e2: "; x2p e2; NL] in
+       rs XPlus [XOp ((Xf "addressofvar"), [x]); XOp (XMinus, [y; e2])]
+
     (* (x << 3) - x)  -->  (7 * x) *)
     | (XOp (XLsl, [ee1; XConst (IntConst n)]), ee3)
          when syntactically_equal ee1 ee3 && n#equal (mkNumerical 3) ->
@@ -412,6 +431,7 @@ and reduce_minus (m: bool) (e1: xpr_t) (e2: xpr_t) =
 
     | _ ->
        match (get_struct e1, get_struct e2) with
+
        | (SConst a, SConst b) ->                                     (* a - b *)
 	  (true, ne (a#sub b))
 
