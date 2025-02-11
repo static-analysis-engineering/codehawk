@@ -1648,6 +1648,7 @@ let translate_arm_instruction
   | LoadRegister (c, rt, rn, rm, mem, _) ->
      let lhs_r = TR.tmap fst (rt#to_lhs floc) in
      let rhs_r = mem#to_expr floc in
+     let rhs_r = TR.tmap floc#inv#rewrite_expr rhs_r in
      let vrd = floc#env#mk_register_variable rt#to_register in
      let updatecmds =
        if mem#is_offset_address_writeback then
