@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,9 @@
 (* chlib *)
 open CHLanguage
 open CHNumerical
-open CHPretty
+
+(* chutil *)
+open CHLogger
 
 (* xprlib *)
 open Xprt
@@ -40,6 +42,8 @@ open Xsimplify
 
 
 let x2p = xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
+let x2s (x: xpr_t) = p2s (x2p x)
 
 
 (* returns the largest constant term in the given expression, taking sign
@@ -87,7 +91,10 @@ let normalize_scaled_ivar_expr (xpr: xpr_t) (ivar: variable_t): xpr_t option =
        Some x
     | _ ->
        let _ =
-         pr_debug [STR "DEBUG: expression not rewritten: "; x2p x; NL] in
+         log_error_result
+           ~tag:"normalize-scaled-ivar-expr"
+           __FILE__ __LINE__
+           [(x2s x) ^ " with ivar " ^ (p2s ivar#toPretty)] in
        None
   in
   aux xpr
@@ -97,7 +104,8 @@ let normalize_scaled_ivar_expr (xpr: xpr_t) (ivar: variable_t): xpr_t option =
 let rec vars_as_positive_terms (x:xpr_t) =
   match x with
     XVar v -> [ v ]
-  | XOp (XPlus, [ x1 ; x2 ]) -> (vars_as_positive_terms x1) @ (vars_as_positive_terms x2)
+  | XOp (XPlus, [ x1 ; x2 ]) ->
+     (vars_as_positive_terms x1) @ (vars_as_positive_terms x2)
   | XOp (XMinus, [ x1 ; _ ]) -> vars_as_positive_terms x1
   | _ -> []
 

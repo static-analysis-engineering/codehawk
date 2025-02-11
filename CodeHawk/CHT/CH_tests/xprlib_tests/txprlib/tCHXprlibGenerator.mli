@@ -7,7 +7,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny B. Sipma
-   Copyright (c) 2022-2024 Aarno Labs LLC
+   Copyright (c) 2022-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -53,3 +53,5 @@ val mk_neg: xpr_t -> xpr_t
 val mk_var: string -> variable_t
 
 val mk_vars: string -> int -> variable_t list
+
+val mk_addressof: string -> xpr_t

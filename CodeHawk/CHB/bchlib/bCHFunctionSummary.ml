@@ -146,6 +146,10 @@ object (self:'a)
          (BCH_failure
             (LBLOCK [STR "Internal error: get_parameter_for_register"]))
 
+  method has_parameter_for_register (reg: register_t): bool =
+    Option.is_some
+      (get_register_parameter_for_register self#get_function_interface reg)
+
   method get_parameter_at_stack_offset (offset: int): fts_parameter_t =
     let spar = get_stack_parameter_at_offset self#get_function_interface offset in
     match spar with

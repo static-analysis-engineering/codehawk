@@ -1536,6 +1536,37 @@ object (self)
 
   method is_signed_symbolic_value = varmgr#is_signed_symbolic_value
 
+  method is_addressof_symbolic_value (v: variable_t) =
+    if self#is_symbolic_value v then
+      let symx_r = self#get_symbolic_value_expr v in
+      TR.tfold_default
+        (fun symx ->
+          match symx with
+          | XOp ((Xf "addressofvar"), _) -> true
+          | _ -> false)
+        false
+        symx_r
+    else
+      false
+
+  method get_addressof_symbolic_expr (v: variable_t): xpr_t traceresult =
+    if self#is_addressof_symbolic_value v then
+      let symx_r = self#get_symbolic_value_expr v in
+      TR.tbind
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+        (fun symx ->
+          match symx with
+          | XOp ((Xf "addressofvar"), [x]) -> Ok x
+          | _ ->
+             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ "Not an addressofvar symbolic expression: "
+                    ^ (x2s symx)])
+        symx_r
+    else
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "Not a symbolic-value expression: "
+             ^ (p2s v#toPretty)]
+
   method get_symbolic_value_expr (v: variable_t): xpr_t traceresult =
     if self#is_symbolic_value v then
       varmgr#get_symbolic_value_expr v

@@ -605,7 +605,7 @@ object (self)
                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                        ^ "Parameter type not recognized in call instruction"] in
             let xx = rewrite_expr ?restrict:(Some 4) x in
-            (*
+            let ptype = get_parameter_type p in
             let xx =
               if is_pointer ptype then
                 let _ = floc#memrecorder#record_argument xx index in
@@ -618,10 +618,9 @@ object (self)
                       TR.tfold_default
                         (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
                         xx
-                        (floc#get_var_at_address ~btype:ptype xx)
+                        (floc#get_var_at_address ~btype:(ptr_deref ptype) xx)
               else
                 xx in
-             *)
             let rdef = get_rdef_r xvar_r in
             (xx :: xprs, xvar_r :: xvars, rdef :: rdefs, index + 1))
           ([], [], [], 1) callargs in
@@ -2530,7 +2529,7 @@ object (self)
            let xxdst_r =
              TR.tmap
                (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
-               (TR.tbind (fun x -> floc#get_var_at_address x) xxdst_r) in
+               (TR.tbind floc#get_var_at_address xxdst_r) in
            let rdefs = [(get_rdef_r xsrc_r); (get_rdef_r xdst_r)] in
            let _ =
              TR.tfold_default
@@ -2636,6 +2635,7 @@ object (self)
          let xrm_r = rm#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let lhsvar_r = TR.tbind floc#get_var_at_address xxaddr_r in
          let rdefs =
            [get_rdef_r xrn_r;
             get_rdef_r xrm_r;
@@ -2644,7 +2644,7 @@ object (self)
          let uses = [get_def_use_r vmem_r] in
          let useshigh = [get_def_use_high_r vmem_r] in
          let xprs_r = [xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r] in
-         let vars_r = [vmem_r] in
+         let vars_r = [vmem_r; lhsvar_r] in
          let _ =
            floc#memrecorder#record_store_r
              ~addr_r:xxaddr_r
@@ -2679,6 +2679,8 @@ object (self)
          let xrm_r = rm#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let lhsvar_r =
+           TR.tbind (floc#get_var_at_address ~size:(Some 1)) xxaddr_r in
          let rdefs =
            [get_rdef_r xrn_r;
             get_rdef_r xrm_r;
@@ -2695,7 +2697,7 @@ object (self)
              ~xpr_r:xxrt_r in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[vmem_r]
+             ~vars_r:[vmem_r; lhsvar_r]
              ~xprs_r:[xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r]
              ~rdefs
              ~uses

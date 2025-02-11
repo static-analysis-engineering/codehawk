@@ -69,6 +69,14 @@ val mk_maximal_memory_offset: numerical_t -> btype_t -> memory_offset_t
 
 val add_offset: memory_offset_t -> memory_offset_t -> memory_offset_t
 
+
+(** [address_memory_offset tgtsize tgttype ty offset] returns the symbolic offset
+    that corresponds with the numerical offset [offset] for a base variable with
+    type [ty]. The optional arguments [tgtsize] and [tgttype] can be used to
+    disambiguate between for example an entire struct or only its first field.
+
+    An error is returned if the the symbolic offset cannot be constructed.
+ *)
 val address_memory_offset:
   ?tgtsize: int option
   -> ?tgtbtype: btype_t

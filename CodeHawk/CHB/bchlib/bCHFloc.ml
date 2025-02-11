@@ -651,7 +651,7 @@ object (self)
                 TR.tbind
                   ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                   self#env#mk_global_variable
-                     (get_total_constant_offset memoff))
+                  (get_total_constant_offset memoff))
               memoffset_r
           else
             TR.tmap
@@ -661,7 +661,36 @@ object (self)
               memoffset_r)
         memref_r in
 
-    if inv#is_base_offset_constant var then
+    if self#f#env#is_addressof_symbolic_value var then
+      let xaofv_r = self#f#env#get_addressof_symbolic_expr var in
+      let memvar_r =
+        TR.tbind
+          (fun xaofv ->
+            match xaofv with
+            | XOp ((Xf "addressofvar"), [XVar v]) -> Ok v
+            | _ ->
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "Expression is not an addressofvar expression: "
+                      ^ (x2s xaofv)])
+          xaofv_r in
+      let memoff_r =
+        TR.tbind
+          (fun memvar ->
+            let memtype = self#get_variable_type memvar in
+            let memtype =
+              match memtype with
+              | Some t -> t
+              | _ -> t_unknown in
+            address_memory_offset memtype (num_constant_expr numoffset))
+          memvar_r in
+      TR.tbind
+        (fun memvar ->
+          TR.tbind
+            (fun memoff -> self#f#env#add_memory_offset memvar memoff)
+            memoff_r)
+        memvar_r
+
+    else if inv#is_base_offset_constant var then
       let (base, offset) = inv#get_base_offset_constant var in
       let memoffset = numoffset#add offset in
       let memref_r = self#env#mk_base_sym_reference base in
@@ -686,7 +715,7 @@ object (self)
         else
           XVar var in
       let addr = XOp (XPlus, [varx; num_constant_expr numoffset]) in
-      let address = inv#rewrite_expr addr in
+      let address = simplify_xpr (inv#rewrite_expr addr) in
       match address with
       | XConst (IntConst n) ->
          let dw = numerical_mod_to_doubleword n in
@@ -701,8 +730,7 @@ object (self)
                   ^ system_info#get_image_base#to_hex_string
                   ^ ")"]
       | _ ->
-         let (memref_r, memoffset_r) = self#decompose_memaddr address in
-         mk_memvar memref_r memoffset_r
+         self#get_var_at_address ~size:(Some size) address
 
   method get_memory_variable_1
            ?(align=1)    (* alignment of var value *)
@@ -1246,22 +1274,72 @@ object (self)
 
   method get_fts_parameter_expr (_p: fts_parameter_t) = None
 
+  method private normalize_addrvalue (x: xpr_t): xpr_t =
+    simplify_xpr x
+
   method get_var_at_address
            ?(size=None)
            ?(btype=t_unknown)
            (addrvalue: xpr_t): variable_t traceresult =
-    match memmap#xpr_containing_location addrvalue with
-    | Some gloc ->
-       (TR.tmap
-          (fun offset -> self#f#env#mk_gloc_variable gloc offset)
-          (gloc#address_memory_offset ~tgtsize:size ~tgtbtype:btype addrvalue))
+    match self#normalize_addrvalue addrvalue with
+    | XOp ((Xf "addressofvar"), [XVar v]) -> Ok v
+    | XOp (XPlus, [XOp ((Xf "addressofvar"), [XVar v]); xoff])
+         when self#f#env#is_global_variable v ->
+       let gvaddr_r = self#f#env#get_global_variable_address v in
+       TR.tbind
+         (fun gvaddr ->
+           if memmap#has_location gvaddr then
+             let gloc = memmap#get_location gvaddr in
+             TR.tmap
+               (fun offset -> self#f#env#mk_gloc_variable gloc offset)
+               (gloc#address_offset_memory_offset
+                  ~tgtsize:size ~tgtbtype:btype xoff)
+           else
+             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ (p2s self#l#toPretty)
+                    ^ ": "
+                    ^ "Global location at address "
+                    ^ gvaddr#to_hex_string
+                    ^ " not found"])
+         gvaddr_r
     | _ ->
-       let (memref_r, memoff_r) = self#decompose_memaddr addrvalue in
-       TR.tmap2
-         ~msg1:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-         (fun memref memoff ->
-           self#f#env#mk_offset_memory_variable memref memoff)
-         memref_r memoff_r
+       match memmap#xpr_containing_location addrvalue with
+       | Some gloc ->
+          (TR.tmap
+             (fun offset -> self#f#env#mk_gloc_variable gloc offset)
+             (gloc#address_memory_offset ~tgtsize:size ~tgtbtype:btype addrvalue))
+       | _ ->
+          let (memref_r, memoff_r) = self#decompose_memaddr addrvalue in
+          TR.tmap2
+            ~msg1:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+            (fun memref memoff ->
+              self#f#env#mk_offset_memory_variable memref memoff)
+            memref_r memoff_r
+
+  method private get_variable_type (v: variable_t): btype_t option =
+    if self#f#env#is_initial_register_value v then
+      let reg_r = self#f#env#get_initial_register_value_register v in
+      let param_r =
+        TR.tbind
+          (fun reg ->
+            if self#f#get_summary#has_parameter_for_register reg then
+              Ok (self#f#get_summary#get_parameter_for_register reg)
+            else
+              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                     ^ (p2s v#toPretty)
+                     ^ " does not have an associated parameter"])
+          reg_r in
+      TR.tfold_default
+        (fun param -> Some param.apar_type)
+        (self#env#get_variable_type v)
+        param_r
+    else
+      self#env#get_variable_type v
+
+  method get_xpr_type (x: xpr_t): btype_t option =
+    match x with
+    | XVar v -> self#get_variable_type v
+    | _ -> None
 
   method decompose_memaddr (x: xpr_t):
            (memory_reference_int traceresult * memory_offset_t traceresult) =
@@ -1273,7 +1351,7 @@ object (self)
     | [base] ->
        let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
        let memref_r = self#env#mk_base_variable_reference base in
-       let vartype = self#f#env#get_variable_type base in
+       let vartype = self#get_variable_type base in
        let vartype = match vartype with None -> t_unknown | Some t -> t in
        let memoff_r = address_memory_offset vartype offset in
        (*
@@ -1310,6 +1388,7 @@ object (self)
            | _ ->
               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                      ^ (p2s self#l#toPretty) ^ ": "
+                     ^ "decompose_memaddr: " ^ (x2s x) ^ ": "
                      ^ "Offset from global base "
                      ^ maxC#toString
                      ^ " not recognized: " ^ (x2s offset)] in
@@ -1335,6 +1414,7 @@ object (self)
               | _ ->
                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                         ^ (p2s self#l#toPretty) ^ ": "
+                        ^ "decompose_memaddr: " ^ (x2s x) ^ ": "
                         ^ "Offset from base "
                         ^ (x2s (XVar base))
                         ^ " not recognized: " ^ (x2s offset)] in
@@ -1364,6 +1444,7 @@ object (self)
                    | _ ->
                       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                              ^ (p2s self#l#toPretty) ^ ": "
+                             ^ "decompose_memaddr: " ^ (x2s x) ^ ": "
                              ^ "Offset from base "
                              ^ (x2s (XVar base))
                              ^ " not recognized: " ^ (x2s offset)])
@@ -1384,6 +1465,7 @@ object (self)
              let memref_r =
                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                       ^ (p2s self#l#toPretty) ^ ": "
+                      ^ "decompose_memaddr: " ^ (x2s x) ^ ": "
                       ^ "No candidate pointers. Left with maxC: "
                       ^ maxC#toString] in
              let memoff_r =
@@ -1395,6 +1477,7 @@ object (self)
              let memref_r =
                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                       ^ (p2s self#l#toPretty) ^ ": "
+                      ^ "decompose_memaddr: " ^ (x2s x) ^ ": "
                       ^ "Multiple variables: "
                       ^ (String.concat "; "
                            (List.map (fun v -> p2s v#toPretty) vars))] in
@@ -1407,6 +1490,7 @@ object (self)
        let memref_r =
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                 ^ (p2s self#l#toPretty) ^ ": "
+                ^ "decompose_memaddr: " ^ (x2s x) ^ ": "
                 ^ "Multiple known pointers: "
                 ^ (String.concat "; "
                      (List.map (fun v -> p2s v#toPretty) knownpointers))] in
@@ -1638,13 +1722,16 @@ object (self)
      [BRANCH [LF.mkCode truecmds; LF.mkCode falsecmds]]
 
    method private is_composite_symbolic_value (x: xpr_t): bool =
-     let is_external v = self#f#env#is_function_initial_value v in
-     let is_fixed_type v =
-       (is_external v)
-       || (self#f#env#is_symbolic_value v) in
-     let vars = variables_in_expr x in
-     (List.length vars) > 0
-     && List.for_all is_fixed_type (variables_in_expr x)
+     match x with
+     | XOp ((Xf "addressofvar"), [XVar _]) -> true
+     | _ ->
+        let is_external v = self#f#env#is_function_initial_value v in
+        let is_fixed_type v =
+          (is_external v)
+          || (self#f#env#is_symbolic_value v) in
+        let vars = variables_in_expr x in
+        (List.length vars) > 0
+        && List.for_all is_fixed_type (variables_in_expr x)
 
    method get_assign_commands_r
             ?(signed=false)
@@ -1692,6 +1779,26 @@ object (self)
            | _ -> rhs
          else
            rhs in
+
+       let rhs =
+         (* if rhs is the address of a global variable create an address-of
+            expression for that global variable. *)
+         match rhs with
+         | XConst (IntConst n) ->
+            let dw = numerical_mod_to_doubleword n in
+            if memmap#has_location dw then
+              TR.tfold
+                ~ok:(fun gv -> XOp ((Xf "addressofvar"), [XVar gv]))
+                ~error:(fun e ->
+                  begin
+                    log_result
+                      ~tag:"assign global variable address" __FILE__ __LINE__ e;
+                    rhs
+                  end)
+                (self#f#env#mk_global_variable n)
+            else
+              rhs
+         | _ -> rhs in
 
        let rhs =
          (* if rhs is a composite symbolic expression, create a new variable

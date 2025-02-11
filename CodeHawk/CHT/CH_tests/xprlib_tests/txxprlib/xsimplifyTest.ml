@@ -7,7 +7,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2024 Aarno Labs LLC
+   Copyright (c) 2022-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ let simplify = S.simplify_xpr
 
 
 let testname = "xsimplifyTest"
-let lastupdated = "2024-06-19"
+let lastupdated = "2025-02-07"
 
 
 let basic () =
@@ -561,6 +561,61 @@ let reduce_plus () =
         XA.equal_xpr
           r (simplify
                (XOp (XPlus, [XOp (XShiftlt, [x; a]); XOp (XShiftlt, [x; b])]))));
+
+    (* (xbase + a) ==> (xbase + a) *)
+    TS.add_simple_test
+      ~title: "base_no_move"
+      (fun () ->
+        let a = XG.mk_ix 2 in
+        let v = XG.mk_var "x" in
+        let x = XOp (XPlus, [XOp ((Xf "addressofvar"), [XVar v]); a]) in
+        XA.equal_xpr x (simplify x));
+
+    (* (a + xbase) -> (xbase + a) *)
+    TS.add_simple_test
+      ~title: "base_move"
+      (fun () ->
+        let a = XG.mk_ix 2 in
+        let aofv = XG.mk_addressof "v" in
+        let r = XOp (XPlus, [aofv; a]) in
+        let x = XOp (XPlus, [a; aofv]) in
+        XA.equal_xpr r (simplify x));
+
+    (* (a + xbase) - b ==> xbase + (a - b) *)
+    TS.add_simple_test
+      ~title: "base_move_out"
+      (fun () ->
+        let a = XVar (XG.mk_var "x") in
+        let b = XVar (XG.mk_var "y") in
+        let aofv = XG.mk_addressof "v" in
+        let x = XOp (XMinus, [XOp (XPlus, [a; aofv]); b]) in
+        let r = XOp (XPlus, [aofv; XOp (XMinus, [a; b])]) in
+        XA.equal_xpr r (simplify x));
+
+    (* (xbase + ((x * y) - z)) => unchanged *)
+    TS.add_simple_test
+      ~title: "base_index_expr"
+      (fun () ->
+        let x = XVar (XG.mk_var "x") in
+        let y = XVar (XG.mk_var "y") in
+        let z = XG.mk_ix 2 in
+        let aofv = XG.mk_addressof "v" in
+        let p = XOp (XMult, [x; y]) in
+        let xx = XOp (XPlus, [aofv; XOp (XMinus, [p; z])]) in
+        XA.equal_xpr xx (simplify xx));
+
+    (* ((xbase + y) + z) ==> (xbase + (y + z)) *)
+    TS.add_simple_test
+      ~title:"base_p_move_out"
+      (fun () ->
+        let aofv = XG.mk_addressof "v" in
+        let y = XVar (XG.mk_var "y") in
+        let z = XVar (XG.mk_var "z") in
+        let x = XOp (XPlus, [XOp (XPlus, [aofv; y]); z]) in
+        let r = XOp (XPlus, [aofv; XOp (XPlus, [y; z])]) in
+        XA.equal_xpr r (simplify x));
+
+    (* ((addressofvar (gv_0x5e1e1c) + ((68 * R0_in[4]_in) - 68)) + 40)     *)
 
     TS.launch_tests ()
   end
