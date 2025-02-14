@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -165,8 +165,7 @@ object (self)
           ^ codeEnd#to_hex_string]
 
   method private at_index (index: int): mips_assembly_instruction_result =
-    TR.tmap
-      ~msg:"at_index"
+    TR.tbind
       (fun instr ->
         if instr#get_address#equal wordzero then
           let newInstr =
@@ -174,10 +173,15 @@ object (self)
               (codeBase#add_int index) NoOperation "" in
           begin
             set_instruction index newInstr;
-            newInstr
+            Ok newInstr
           end
+        else if instr#is_invalid then
+          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                 ^ "Instruction at address "
+                 ^ instr#get_address#to_hex_string
+                 ^ " is invalid"]
         else
-          instr)
+          Ok instr)
       (get_instruction index)
 
   method set_instruction
@@ -203,15 +207,9 @@ object (self)
   method private set_not_code_block (db:data_block_int) =
     let startaddr = db#get_start_address in
     let endaddr = db#get_end_address in
-    log_tfold
-      (mk_tracelog_spec
-         ~tag:"disassembly"
-         ("set_not_code_block:startaddr:" ^ startaddr#to_hex_string))
+    TR.tfold
       ~ok:(fun startindex ->
-        log_tfold
-          (mk_tracelog_spec
-             ~tag:"disassembly"
-             ("set_not_code_block:endaddr:" ^ endaddr#to_hex_string))
+        TR.tfold
           ~ok:(fun endindex ->
             let startinstr =
               make_mips_assembly_instruction
@@ -229,9 +227,15 @@ object (self)
                    "not code (data block)"
                    (LBLOCK [startaddr#toPretty; STR " - "; endaddr#toPretty]))
             end)
-          ~error:(fun _ -> ())
+          ~error:(fun e ->
+            log_error_result
+              ~tag:"disassembly" __FILE__ __LINE__
+              (("endaddr: " ^ endaddr#to_hex_string) :: e))
           (self#indexresult endaddr))
-      ~error:(fun _ -> ())
+      ~error:(fun e ->
+        log_error_result
+          ~tag:"disassembly" __FILE__ __LINE__
+          (("startaddr: " ^ startaddr#to_hex_string) :: e))
       (self#indexresult startaddr)
 
   method get_code_addresses_rev ?(low=codeBase) ?(high=wordmax) () =
@@ -329,7 +333,9 @@ object (self)
             let spacedstring = byte_string_to_spaced_string instrbytes in
             let len = String.length spacedstring in
             let bytestring =
-              if len <= 16 then
+              if len = 0 then
+                "<empty>"
+              else if len <= 16 then
                 let s = Bytes.make 16 ' ' in
                 begin
                   Bytes.blit (Bytes.of_string spacedstring) 0 s 0 len;
@@ -341,11 +347,7 @@ object (self)
             | NotCode None -> ()
             | NotCode (Some (DataBlock db)) ->
                stringList := db#toString :: !stringList
-            | OpInvalid ->
-               let line = (Bytes.to_string statusString) ^ va#to_hex_string ^ "  "
-                          ^ bytestring ^ "  "  ^ "**invalid**" in
-               stringList := line ::  !stringList
-                        
+            | OpInvalid -> ()
             | _ ->
 	       let _ =
                  if !firstNew then 
@@ -375,7 +377,8 @@ end
 let mips_assembly_instructions = ref (new mips_assembly_instructions_t 1 wordzero)
 
 
-let get_mips_assembly_instruction (va: doubleword_int) =
+let get_mips_assembly_instruction
+      (va: doubleword_int): mips_assembly_instruction_result =
   !mips_assembly_instructions#get_instruction va
 
 
