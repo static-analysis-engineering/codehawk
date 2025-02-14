@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -683,8 +683,10 @@ class type mips_dictionary_int =
     method index_mips_bytestring: string -> int
     method index_mips_instr_format: mips_instr_format_t -> int
 
-    method write_xml_mips_bytestring: ?tag:string -> xml_element_int -> string -> unit
-    method write_xml_mips_opcode: ?tag:string -> xml_element_int -> mips_opcode_t -> unit
+    method write_xml_mips_bytestring:
+             ?tag:string -> xml_element_int -> string -> unit
+    method write_xml_mips_opcode:
+             ?tag:string -> xml_element_int -> mips_opcode_t -> unit
 
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -702,14 +704,15 @@ object
 
   (* accessors *)
   method get_address: doubleword_int
-  method get_opcode : mips_opcode_t
+  method get_opcode: mips_opcode_t
   method get_instruction_bytes: string
   method get_bytes_ashexstring: string
 
   (* predicates *)
-  method is_block_entry : bool
-  method is_delay_slot  : bool
+  method is_block_entry: bool
+  method is_delay_slot: bool
   method is_inlined_call: bool
+  method is_invalid: bool
 
   (* i/o *)
   method write_xml: xml_element_int -> unit
@@ -871,7 +874,10 @@ class type mips_assembly_function_int =
     method iter: (mips_assembly_block_int -> unit) -> unit
     method itera: (ctxt_iaddress_t -> mips_assembly_block_int -> unit) -> unit
     method iteri:
-             (doubleword_int -> ctxt_iaddress_t -> mips_assembly_instruction_int -> unit)
+             (doubleword_int
+              -> ctxt_iaddress_t
+              -> mips_assembly_instruction_int
+              -> unit)
              -> unit
 
     method populate_callgraph: callgraph_int -> unit
@@ -907,8 +913,10 @@ class type mips_assembly_functions_int =
     (* iterators *)
     method iter: (mips_assembly_function_int -> unit) -> unit
     method itera: (doubleword_int -> mips_assembly_function_int -> unit) -> unit
-    method bottom_up_itera: (doubleword_int -> mips_assembly_function_int -> unit) -> unit
-    method top_down_itera: (doubleword_int -> mips_assembly_function_int -> unit) -> unit
+    method bottom_up_itera:
+             (doubleword_int -> mips_assembly_function_int -> unit) -> unit
+    method top_down_itera:
+             (doubleword_int -> mips_assembly_function_int -> unit) -> unit
 
     (* predicates *)
     method has_function_by_address: doubleword_int -> bool
@@ -994,6 +1002,7 @@ class type mips_opcode_dictionary_int =
 
     method toPretty: pretty_t
   end
+
 
 class type mips_analysis_results_int =
   object

@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -78,6 +78,7 @@ object (self)
 	raise
           (BCH_failure
              (LBLOCK [
+                  STR __FILE__; STR ":"; INT __LINE__; STR ": ";
                   STR "No assembly block found at ";
                   STR bctxt;
                   STR " in function ";
@@ -92,7 +93,12 @@ object (self)
     with
     | Not_found ->
        let msg =
-         LBLOCK [STR "assembly_function#get_instruction: "; iaddr#toPretty]  in
+         LBLOCK [
+             STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+             STR "assembly_function#get_instruction: ";
+             iaddr#toPretty;
+             STR " in function ";
+             faddr#toPretty]  in
        begin
          ch_error_log#add "invocation error" msg;
          raise (BCH_failure msg)
