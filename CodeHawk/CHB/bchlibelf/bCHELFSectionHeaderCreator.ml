@@ -105,12 +105,17 @@ let ud_get_offset (sectionname: string) =
          (LBLOCK [STR "No offset found for "; STR sectionname]))
 
 
-let assumption_violation (p:pretty_t) =
-  let msg = LBLOCK [STR "Section header creation assumption violation: "; p] in
-  begin
-    ch_error_log#add "section header creation" msg;
-    raise (BCH_failure msg)
-  end
+let assumption_violation
+      (line: int) (s: elf_dynamic_segment_int) (p:pretty_t) =
+    let msg =
+      LBLOCK [STR "bCHELFSectionHeaderCreator:"; INT line; STR ": ";
+              STR "Assumption violation: "; p] in
+    begin
+      ch_error_log#add
+        "section header creation"
+        (LBLOCK [msg; NL; STR "Dynamic table: "; NL; s#toPretty;NL]);
+      raise (BCH_failure msg)
+    end
 
 
 class section_header_creator_t
@@ -162,23 +167,31 @@ object (self)
 
   method private get_offset_2 (vaddr:doubleword_int): doubleword_int =
     match loadsegments with
-    | [] -> raise (BCH_failure (LBLOCK [ STR "No load segments found" ]))
-    | [ (_,_,_) ] ->
-       assumption_violation (STR "Only one load segment found" )
+    | [] ->
+       assumption_violation
+         __LINE__ dynamicsegment (LBLOCK [ STR "No load segments found" ])
+    | [ (_, _, _) ] ->
+       assumption_violation
+         __LINE__
+         dynamicsegment
+         (STR "Only one load segment found")
     | (_,_,_)::(_,ph,_)::_  ->
        let base2 = ph#get_vaddr in
        let offset2 = ph#get_offset in
-       let basediff =
-         fail_tvalue
-           (trerror_record
-              (LBLOCK [
-                   STR "BCHELFSectionHeaderCreator#get_offset_2: ";
-                   STR "vaddr: ";
-                   vaddr#toPretty;
-                   STR "; base2: ";
-                   base2#toPretty]))
-           (vaddr#subtract base2) in
-       basediff#add offset2
+       TR.tfold
+         ~ok:(fun basediff -> basediff#add offset2)
+         ~error:(fun e ->
+           assumption_violation
+             __LINE__
+             dynamicsegment
+             (LBLOCK [
+                  STR "Base2 address: ";
+                  base2#toPretty;
+                  STR " cannot be subtracted from vaddr: ";
+                  vaddr#toPretty;
+                  STR ": ";
+                  STR (String.concat "; " e)]))
+         (vaddr#subtract base2)
 
   method private has_interp_program_header =
     List.exists
@@ -196,8 +209,10 @@ object (self)
             | _ -> false) phdrs in ph
     with
     | Not_found ->
-       raise
-         (BCH_failure (LBLOCK [ STR "PT_INTERP program header not found" ]))
+       assumption_violation
+         __LINE__
+         dynamicsegment
+         (LBLOCK [STR "PT_INTERP program header not found"])
 
   method private get_dynamic_program_header =
     try
@@ -208,7 +223,10 @@ object (self)
             | _ -> false) phdrs in ph
     with
     | Not_found ->
-       assumption_violation (STR "PT_DYNAMIC program header not found")
+       assumption_violation
+         __LINE__
+         dynamicsegment
+         (STR "PT_DYNAMIC program header not found")
 
   method private has_reginfo_program_header =
     List.exists (fun (_,ph,_) ->
@@ -225,8 +243,10 @@ object (self)
             | _ -> false) phdrs in ph
     with
     | Not_found ->
-       raise
-         (BCH_failure (LBLOCK  [ STR "PT_REGINFO program header not found" ]))
+       assumption_violation
+         __LINE__
+         dynamicsegment
+         (LBLOCK [STR "PT_REGINFO program header not found"])
 
   method get_section_headers =
     List.mapi
@@ -383,7 +403,7 @@ object (self)
       let offset = self#get_offset_1 vaddr in
       let trsize = symtabaddr#subtract vaddr in
       if Result.is_error trsize then
-        assumption_violation  (STR "DT_SYMTAB < DT_HASH")
+        assumption_violation __LINE__ dynamicsegment (STR "DT_SYMTAB < DT_HASH")
       else
         let size = TR.tget_ok trsize in
         let entsize = s2d "0x4" in
@@ -395,6 +415,8 @@ object (self)
         end
     else
       assumption_violation
+        __LINE__
+        dynamicsegment
         (STR "DT_HASH or DT_SYMTAB not present, or DT_HASH is zero")
 
   (* inputs: from dynamic table, program header, type PT_Load (1)
@@ -422,14 +444,10 @@ object (self)
         else if ud_has_size sectionname then
           ud_get_size sectionname
         else
-          begin
-            chlog#add "dynamic table" (dynamicsegment#toPretty);
-            assumption_violation
-              (LBLOCK [
-                   STR "Unable to determine size of dynamic symbol table";
-                   NL;
-                   dynamicsegment#toPretty])
-          end in
+          assumption_violation
+            __LINE__
+            dynamicsegment
+            (LBLOCK [STR "Unable to determine size of dynamic symbol table"]) in
       let sh = mk_elf_section_header () in
       let stype = s2d "0xb" in
       let flags = s2d "0x2" in
@@ -491,7 +509,15 @@ object (self)
       let addr = vaddr in
       let offset = self#get_offset_1 vaddr in
       let size =
-        TR.tget_ok (numerical_to_doubleword dynamicsegment#get_string_table_size) in
+        TR.tfold
+          ~ok:Fun.id
+          ~error:(fun e ->
+            assumption_violation
+              __LINE__
+              dynamicsegment
+              (LBLOCK [STR "Illegal size of string table: ";
+                       STR (String.concat "; " e)]))
+          (numerical_to_doubleword dynamicsegment#get_string_table_size) in
       let addralign = s2d "0x1" in
       begin
         sh#set_fields
@@ -693,7 +719,7 @@ object (self)
         section_headers <- sh :: section_headers
       end
     else
-      assumption_violation (STR "DT_INIT not present")
+      assumption_violation __LINE__ dynamicsegment (STR "DT_INIT not present")
 
   (* inputs: from elf file header, program header, type PT_Load (1)
    * - addr: fh#get_program_entry_point ?
@@ -726,18 +752,22 @@ object (self)
           let finiaddr = dynamicsegment#get_fini_address in
           let finidiff = finiaddr#subtract vaddr in
           if Result.is_error finidiff then
-            assumption_violation (STR "DT_FINI < program entry point")
+            assumption_violation
+              __LINE__ dynamicsegment (STR "DT_FINI < program entry point")
           else
             TR.tget_ok finidiff
         else if dynamicsegment#has_init_address then
           let initaddress = dynamicsegment#get_init_address in
           let initdiff = initaddress#subtract vaddr in
           if Result.is_error initdiff then
-            assumption_violation (STR "DT_INIT < program entry point")
+            assumption_violation
+              __LINE__ dynamicsegment (STR "DT_INIT < program entry point")
           else
             TR.tget_ok initdiff
         else
           assumption_violation
+            __LINE__
+            dynamicsegment
             (LBLOCK [
                  STR "DT_INIT and DT_FINI not present; ";
                  STR "please provide size of .text section in fixup data"]) in
@@ -806,17 +836,21 @@ object (self)
           let vaddr = finiaddr#add finisize in
           let phenddiff = phend#subtract finiaddr in
           if Result.is_error phenddiff then
-            assumption_violation (STR "PT_Load(end) < finiaddr")
+            assumption_violation
+              __LINE__ dynamicsegment (STR "PT_Load(end) < finiaddr")
           else
             let trsize = (TR.tget_ok phenddiff)#subtract finisize in
             if Result.is_error trsize then
-              assumption_violation (STR "PT_Load(end) < finiaddr")
+              assumption_violation
+                __LINE__ dynamicsegment (STR "PT_Load(end) < finiaddr")
             else
               let size = TR.tget_ok trsize in
               (vaddr, size)
         else
           begin
             assumption_violation
+              __LINE__
+              dynamicsegment
               (LBLOCK [
                    STR "No addr/size information for .rodata; ";
                    STR "please supply in fixup data"])
@@ -976,7 +1010,8 @@ object (self)
       let offset = self#get_offset_2 vaddr in
       let trsize = rldmapaddr#subtract vaddr in
       if Result.is_error trsize then
-        assumption_violation  (STR "DT_MIPS_RLD_MAP < data header address")
+        assumption_violation
+          __LINE__ dynamicsegment (STR "DT_MIPS_RLD_MAP < data header address")
       else
         let size = TR.tget_ok trsize in
         let addralign = s2d "0x4" in
@@ -1050,7 +1085,7 @@ object (self)
       let offset = self#get_offset_2 vaddr in
       let trsize = (ph#get_vaddr#add ph#get_file_size)#subtract vaddr in
       if Result.is_error trsize then
-        assumption_violation (STR "filesize < vaddr" )
+        assumption_violation __LINE__ dynamicsegment (STR "filesize < vaddr")
       else
         let size = TR.tget_ok trsize in
         let addralign = s2d "0x4" in
