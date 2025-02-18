@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,17 +38,17 @@ open JCHBasicTypesAPI
 (* jchpre *)
 open JCHPreAPI
 
-val get_constants : 
-  JCHProcInfo.jproc_info_t -> (int * numerical_t) list 
+val get_constants :
+  JCHProcInfo.jproc_info_t -> (int * numerical_t) list
 
 val mk_var_to_index : variable_t list -> (int * int) list
 
 val pp_var_to_index : (int * int) list -> pretty_t
 
-val interval_to_summary_post_predicates : 
+val interval_to_summary_post_predicates :
   int -> interval_t -> interval_t -> postcondition_predicate_t list
 
-val interval_to_summary_post_predicates2 : 
+val interval_to_summary_post_predicates2 :
   is_loc:bool
   -> is_lc:bool
   -> is_length:bool
@@ -58,10 +59,10 @@ val interval_to_summary_post_predicates2 :
   -> interval:interval_t
   -> postcondition_predicate_t list
 
-val excluded_vals_to_summary_pre_predicates : 
+val excluded_vals_to_summary_pre_predicates :
   int -> numerical_t list -> precondition_predicate_t list
 
-val excluded_vals_to_summary_post_predicates : 
+val excluded_vals_to_summary_post_predicates :
   int -> numerical_t list -> postcondition_predicate_t list
 
 val equality_to_summary_post_predicate : int -> int -> postcondition_predicate_t
@@ -70,7 +71,7 @@ val has_return_pre_predicate : precondition_predicate_t -> bool
 
 val pre_to_post_predicate :
   precondition_predicate_t -> postcondition_predicate_t
-  
+
 val post_predicate_to_relational_expr :
   postcondition_predicate_t -> relational_expr_t
 

@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,12 +33,12 @@ open CHIntervals
 open CHLanguage
 open CHPretty
 
-   
-class interval_array_t : 
-  int -> 
+
+class interval_array_t :
+  int ->
   object ('a)
     method augment : int -> int -> interval_t -> 'a
-    method get_arrays : interval_t array array 
+    method get_arrays : interval_t array array
     method clone : 'a
     method copy : 'a
     method copy_set : int -> interval_t -> 'a
@@ -45,9 +46,9 @@ class interval_array_t :
     method get : int -> interval_t
     method get_type_interval : int -> interval_t
     method get_singletons : (int * big_int) list
-    method get_singletons_that_changed : 'a -> 
-      (int * interval_t) list * (int * interval_t) list 
-    method is_discrete : int -> bool 
+    method get_singletons_that_changed : 'a ->
+      (int * interval_t) list * (int * interval_t) list
+    method is_discrete : int -> bool
     method iteri :  (int -> interval_t -> unit) -> unit
     method join' : int -> 'a -> 'a
     method join : 'a -> 'a
@@ -75,7 +76,8 @@ class interval_array_t :
 
   end
 
-val make_top_intervals : int -> interval_array_t 
-val make_from_types : JCHProcInfo.jproc_info_t -> variable_t list -> interval_array_t 
+val make_top_intervals : int -> interval_array_t
+val make_from_types :
+  JCHProcInfo.jproc_info_t -> variable_t list -> interval_array_t
 
 val dbg : bool ref
