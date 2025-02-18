@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2024 Henny B. Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -217,7 +217,7 @@ class variable_transformer_t =
       |	INSERT _
       |	DELETE _
       | ASSIGN_TABLE _ ->
-	  pr_debug [STR "command not supported "; command_to_pretty 0 cmd] ;
+	  pr_debug [STR "command not supported "; command_to_pretty 0 cmd];
 	  raise (JCH_failure
 		   (LBLOCK [STR "command not supported ";
 			     command_to_pretty 0 cmd]))
@@ -249,20 +249,20 @@ class skip_and_code_remover_t =
     inherit code_transformer_t as super
 
     method !transformCode (code:code_int) =
-      super#transformCode code ;
+      super#transformCode code;
       code#removeSkips
 
     method !transformCmd
              (cmd:(code_int, cfg_int) command_t):(code_int, cfg_int) command_t =
       match cmd with
       |	CODE (s, code) ->
-	  self#transformCode code ;
+	  self#transformCode code;
 	  if code#length = 0 then
 	    SKIP
 	  else
 	    CODE (s, code)
       |	TRANSACTION (s, code, None) ->
-	  self#transformCode code ;
+	  self#transformCode code;
 	  if code#length = 0 then
 	    SKIP
 	  else

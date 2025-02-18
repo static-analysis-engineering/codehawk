@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,22 +29,22 @@
 (* chlib *)
 open CHLanguage
 open CHNumerical
-open CHPretty   
+open CHPretty
 open CHUtils
 
 val does_not_need_to_be_analyzed : symbol_t -> procedure_int -> bool
 
 val mk_state : state_int -> code_int -> state_int
 
-val get_vars_in_code : 
+val get_vars_in_code :
   symbol_t
   -> code_int
   -> VariableCollections.set_t
      * VariableCollections.set_t
      * VariableCollections.set_t
-  
-val get_vars_in_cmd : 
-  symbol_t 
+
+val get_vars_in_cmd :
+  symbol_t
   -> (code_int, cfg_int) command_t
   -> VariableCollections.set_t
      * VariableCollections.set_t
@@ -67,7 +68,7 @@ class vv_stacks_t :
   object ('a)
     method get : variable_t -> variable_t pretty_stack_t option
     method get_top : variable_t -> variable_t
-    method get_tops : variable_t VariableCollections.table_t 
+    method get_tops : variable_t VariableCollections.table_t
     method increase_assignments :
       variable_t -> unit
     method num_assignments : JCHPrintUtils.pretty_int_t VariableCollections.table_t
@@ -85,7 +86,7 @@ class alias_sets_t :
     method change_representative : variable_t VariableCollections.table_t -> unit
     method find_aliased_locals : (variable_t * variable_t) list
     method get_representative : variable_t -> variable_t option
-    method get_representatives : variable_t VariableCollections.table_t 
+    method get_representatives : variable_t VariableCollections.table_t
     method toPretty : pretty_t
   end
 

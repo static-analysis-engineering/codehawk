@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,15 +39,15 @@ val collect_var_info :
   -> method_int
   -> SymbolCollections.set_t VariableCollections.table_t
      * SymbolCollections.set_t VariableCollections.table_t
-     * SymbolCollections.set_t VariableCollections.table_t 
-     * IntCollections.set_t VariableCollections.table_t 
+     * SymbolCollections.set_t VariableCollections.table_t
+     * IntCollections.set_t VariableCollections.table_t
      * VariableCollections.set_t VariableCollections.table_t
      * JCHPrintUtils.pretty_var_list_t VariableCollections.table_t
-     * variable_t IntCollections.table_t 
+     * variable_t IntCollections.table_t
      * (int * operation_t list) list
-     * SymbolCollections.set_t VariableCollections.table_t VariableCollections.table_t 
-     * SymbolCollections.set_t VariableCollections.table_t VariableCollections.table_t 
+     * SymbolCollections.set_t VariableCollections.table_t VariableCollections.table_t
+     * SymbolCollections.set_t VariableCollections.table_t VariableCollections.table_t
      * numerical_t VariableCollections.table_t
-     * IntCollections.set_t VariableCollections.table_t 
-     * IntCollections.set_t VariableCollections.table_t 
+     * IntCollections.set_t VariableCollections.table_t
+     * IntCollections.set_t VariableCollections.table_t
      * variable_t IntCollections.table_t IntCollections.table_t

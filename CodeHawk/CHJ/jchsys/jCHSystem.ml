@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2024 Henny Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -142,7 +142,6 @@ class jsystem_t =
             system proc_name ;
 	  let jproc_info =
 	    JCHProcInfo.make_jproc_info
-              ~chif:new_system
               ~proc_name
               ~proc:tr_proc
               ~wto:proc_wto
@@ -159,7 +158,6 @@ class jsystem_t =
             tr_proc jproc_info#get_jvar_infos ;
 	  let jproc_info =
 	    JCHProcInfo.make_jproc_info
-              ~chif:new_system
               ~proc_name
               ~proc:tr_proc
               ~wto:proc_wto
