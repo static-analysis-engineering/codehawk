@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2024 Henny B. Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,8 @@ object (self: _)
   val proc_to_index = H.create (List.length all_procs)
 
   (* array of index -> proc_name *)
-  val procs = ref (Array.make 0 (Array.make 0 (Array.make 0 (new symbol_t "no_proc"))))
+  val procs =
+    ref (Array.make 0 (Array.make 0 (Array.make 0 (new symbol_t "no_proc"))))
 
   (* proc index -> scc representative index *)
   val node_to_rep = ref (Array.make 0 (Array.make 0 (Array.make 0 (-1))))
@@ -96,18 +97,18 @@ object (self: _)
 
     (* Releases all the structures that are not needed after initialization *)
     method clean_up =
-      in_loop := new SymbolCollections.set_t ;
+      in_loop := new SymbolCollections.set_t;
       node_edges :=
-        (Array.make 0 (Array.make 0 (Array.make 0 (new IntCollections.set_t)))) ;
+        (Array.make 0 (Array.make 0 (Array.make 0 (new IntCollections.set_t))));
       node_rev_edges :=
         (Array.make 0 (Array.make 0 (Array.make 0 (new IntCollections.set_t))))
 
     (* Makes proc_to_index *)
     method private set_proc_to_index =
       let size = List.length all_procs in
-      last_index := pred size ;
-      self#set_dimensions size ;
-      procs := self#make_arrays_sym ;
+      last_index := pred size;
+      self#set_dimensions size;
+      procs := self#make_arrays_sym;
       let count = ref (-1) in
       let index1 = ref 0 in
       let index2 = ref 0 in
@@ -115,20 +116,20 @@ object (self: _)
       let set_index (proc_name:symbol_t) =
 	if not (not_analyzed#has proc_name#getSeqNumber) then
 	  begin
-	    incr count ;
-	    incr index3 ;
+	    incr count;
+	    incr index3;
 	    if !index3 = array_size then
 	      begin
-		index3 := 0 ;
-		incr index2 ;
+		index3 := 0;
+		incr index2;
 		if !index2 = array_size then
 		  begin
-		    index2 := 0 ;
+		    index2 := 0;
 		    incr index1
 		  end
-	      end ;
-	    !procs.(!index1).(!index2).(!index3) <- proc_name ;
-	    H.add proc_to_index proc_name#getSeqNumber !count ;
+	      end;
+	    !procs.(!index1).(!index2).(!index3) <- proc_name;
+	    H.add proc_to_index proc_name#getSeqNumber !count;
 	  end  in
       List.iter set_index all_procs
 
@@ -145,12 +146,12 @@ object (self: _)
 	  else
 	    raise
               (JCH_failure
-                 (LBLOCK [ STR "procname index for " ; proc_name#toPretty ;
+                 (LBLOCK [ STR "procname index for "; proc_name#toPretty;
 			   STR " not found int JCHCallGraph.get_index" ]))
 	else
 	  raise
             (JCH_failure
-               (LBLOCK [ STR "procname index for " ; proc_name#toPretty ;
+               (LBLOCK [ STR "procname index for "; proc_name#toPretty;
 			 STR " not found int JCHCallGraph.get_index" ]))
 
 
@@ -173,8 +174,8 @@ object (self: _)
               (succ index1, index2, array_size)
 	  else
             (succ index1, succ index2, index3) in
-      dim1 := d1 ;
-      dim2 := d2 ;
+      dim1 := d1;
+      dim2 := d2;
       dim3 := d3
 
     method private make_arrays_int =
@@ -234,21 +235,21 @@ object (self: _)
       for i = 0 to !dim1 - 2 do
 	for j = 0 to pred array_size do
 	  for k = 0 to pred array_size do
-	    incr node ;
+	    incr node;
 	    f i j k !node
 	  done
 	done
-      done ;
+      done;
       let pred_dim1 = pred !dim1 in
       for j = 0 to !dim2 - 2 do
 	for k = 0 to pred array_size do
-	  incr node ;
+	  incr node;
 	  f pred_dim1 j k !node
 	done
-      done ;
+      done;
       let pred_dim2 = pred !dim2 in
       for k = 0 to !dim3 - 1 do
-	incr node ;
+	incr node;
 	f pred_dim1 pred_dim2 k !node
       done
 
@@ -271,7 +272,7 @@ object (self: _)
     method private get_rep (node_index:int) =
       let path_nodes = new IntCollections.set_t in
       let rec go_up (n:int) =
-	path_nodes#add n ;
+	path_nodes#add n;
 	let up_n = self#get_rep_ n in
 	if up_n = n then n
 	else go_up up_n in
@@ -286,14 +287,14 @@ object (self: _)
 
     method private add_node_edge source_index target_index =
       let set = self#get_value !node_edges source_index in
-      set#add target_index ;
+      set#add target_index;
       let set = self#get_value !node_rev_edges target_index in
       set#add source_index
 
     method private find_node_sccs visited (start_node: int) =
       let on_path = new IntCollections.set_t in
       let path  = Stack.create () in
-      Stack.push (start_node, None) path ;
+      Stack.push (start_node, None) path;
       while not (Stack.is_empty path) do
 	match Stack.pop path with
 	| (node, None) ->
@@ -307,11 +308,11 @@ object (self: _)
 		  let rec unroll () =
 		    let (n, nexts_opt) = Stack.top path in
 		    let nexts = Option.get nexts_opt in
-		    on_path#remove n ;
+		    on_path#remove n;
 		    if not (n = rep) then
 		      begin
 			let _ = Stack.pop path in
-			all_nexts#addSet nexts ;
+			all_nexts#addSet nexts;
 			self#change_rep rep n;
 			unroll ()
 		      end
@@ -323,7 +324,7 @@ object (self: _)
 		end
 	      else if was_not_visited then
 		begin
-		  visited.(index1).(index2).(index3) <- 1 ;
+		  visited.(index1).(index2).(index3) <- 1;
 		  let nexts = self#get_value !node_edges node in
 		  Stack.push (node, Some nexts#clone) path
 		end
@@ -331,7 +332,7 @@ object (self: _)
 	| (node, Some nexts) ->
 	    if nexts#isEmpty then
 	      begin
-		on_path#remove node ;
+		on_path#remove node;
 		if Stack.is_empty path then
                   ()
 		else
@@ -340,9 +341,9 @@ object (self: _)
 	    else
 	      begin
 		let node' = Option.get nexts#choose in
-		nexts#remove node' ;
-		Stack.push (node, Some nexts) path ;
-		on_path#add node ;
+		nexts#remove node';
+		Stack.push (node, Some nexts) path;
+		on_path#add node;
 		Stack.push (node', None) path
 	      end
       done
@@ -370,7 +371,7 @@ object (self: _)
 	  let r = self#get_rep_ n in
 	  if r <> rep then
 	    begin
-	      next_reps#add r ;
+	      next_reps#add r;
 	      let prevs = self#get_value !rep_rev_edges r in
 	      prevs#add rep
 	    end in
@@ -388,7 +389,7 @@ object (self: _)
 	    else
               rev_edges.(i).(j).(k) <- !rep_rev_edges.(i).(j).(k)#clone
 	  end in
-      self#iter_on_array find ;
+      self#iter_on_array find;
       (starts, rev_edges)
 
     method private mk_bottom_up_list =
@@ -398,34 +399,34 @@ object (self: _)
        let add_to_sorted_procs rep =
 	 let node_indices = self#get_value !rep_to_nodes rep in
 	 let procs = List.map self#get_proc node_indices#toList in
-	 if List.length procs > 1 then !in_loop#addList procs ;
+	 if List.length procs > 1 then !in_loop#addList procs;
 	 sorted_procs := List.rev_append procs !sorted_procs in
 
        let rec work () =
 	 match !starts with
 	 | t :: rest_starts ->
-	     starts := rest_starts ;
-	     add_to_sorted_procs t ;
+	     starts := rest_starts;
+	     add_to_sorted_procs t;
 	     let nexts = self#get_value !rep_edges t in
 	     let remove_from_prev n =
 	       let set = self#get_value rev_edges n in
-	       set#remove t ;
+	       set#remove t;
 	       if set#isEmpty then starts := n :: !starts in
-	     nexts#iter remove_from_prev ;
+	     nexts#iter remove_from_prev;
 	     work ()
 	 | _ -> () in
-       work () ;
+       work ();
       (!sorted_procs, !in_loop)
 
     method initialize =
 
-      self#set_proc_to_index ;
-      node_to_rep := self#make_arrays_int ;
-      rep_to_nodes := self#make_arrays_set ;
-      node_edges := self#make_arrays_set ;
-      node_rev_edges := self#make_arrays_set ;
-      rep_edges := self#make_arrays_set ;
-      rep_rev_edges := self#make_arrays_set ;
+      self#set_proc_to_index;
+      node_to_rep := self#make_arrays_int;
+      rep_to_nodes := self#make_arrays_set;
+      node_edges := self#make_arrays_set;
+      node_rev_edges := self#make_arrays_set;
+      rep_edges := self#make_arrays_set;
+      rep_rev_edges := self#make_arrays_set;
 
       (* Copy the call graph in node_edges in node_rev_edges *)
       let add_edge (source, target) =
@@ -436,14 +437,14 @@ object (self: _)
 	  let source_index = self#get_index source in
 	  let target_index = self#get_index target in
 	  self#add_node_edge source_index target_index in
-      List.iter add_edge edges ;
+      List.iter add_edge edges;
 
       (* Make the graph between the sccs / nodes that are not part of a loop *)
       (* Initially each node is its own representatives *)
-      self#iter_on_array (fun i j k node -> !node_to_rep.(i).(j).(k) <- node) ;
-      self#find_sccs ;
-      self#make_rep_to_nodes ;
-      self#make_rep_graph ;
+      self#iter_on_array (fun i j k node -> !node_to_rep.(i).(j).(k) <- node);
+      self#find_sccs;
+      self#make_rep_to_nodes;
+      self#make_rep_graph;
 
       self#mk_bottom_up_list
 
@@ -464,9 +465,9 @@ object (self: _)
 		let index = self#get_index proc_name in
 		reps_that_access#add (self#get_rep index)
 	      with _ -> () in   (* in case the method does not need to be analyzed *)
-	    List.iter add_rep proc_names ;
+	    List.iter add_rep proc_names;
 	  end in
-      List.iter add_field_info field_infos ;
+      List.iter add_field_info field_infos;
       let rec work reps =
 	match reps with
 	| rep_index :: rest_reps ->
@@ -474,7 +475,7 @@ object (self: _)
              work rest_reps
 	    else
 	      begin
-		reps_that_access_static_fields#add rep_index ;
+		reps_that_access_static_fields#add rep_index;
 		let prev_reps = self#get_value !rep_rev_edges rep_index in
 		let prev_reps = prev_reps#toList in
 		let new_reps =
@@ -483,7 +484,7 @@ object (self: _)
 		work (new_reps @ rest_reps)
 	      end
 	| _ -> () in
-      work reps_that_access#toList ;
+      work reps_that_access#toList;
 
     method accesses_static_field (proc_name:symbol_t) =
       let index = self#get_index proc_name in
@@ -504,15 +505,15 @@ object (self: _)
 	    let next_reps = self#get_value !rep_edges rep in
 	    let nexts =
               List.filter (fun r -> not (on_the_list#has r)) next_reps#toList in
-	    on_the_list#addList nexts ;
-	    on_the_list_now#remove rep ;
-	    on_the_list_now#addList nexts ;
+	    on_the_list#addList nexts;
+	    on_the_list_now#remove rep;
+	    on_the_list_now#addList nexts;
 	    let nodes = (self#get_value !rep_to_nodes rep)#toList in
 	    descendants :=
-              List.rev_append (List.map self#get_proc nodes) !descendants ;
+              List.rev_append (List.map self#get_proc nodes) !descendants;
 	    add_desc (List.rev_append nexts rest_reps)
 	| _ -> () in
-      add_desc reps#toList ;
+      add_desc reps#toList;
       !descendants
 
     method get_unsynchronized_descendants (proc_names:symbol_t list) =
@@ -536,15 +537,15 @@ object (self: _)
               List.filter (fun r ->
                   not (on_the_list#has r)) next_reps#toList in
 	    let not_synch_nexts = List.filter is_not_synch nexts in
-	    on_the_list#addList nexts ;
+	    on_the_list#addList nexts;
 	    let nodes = (self#get_value !rep_to_nodes rep)#toList in
 	    let not_synch_nodes = List.filter is_not_synch_proc nodes in
 	    descendants :=
               List.rev_append
-                (List.map self#get_proc not_synch_nodes) !descendants ;
+                (List.map self#get_proc not_synch_nodes) !descendants;
 	    add_desc (List.rev_append not_synch_nexts rest_reps)
 	| _ -> () in
-      add_desc reps#toList ;
+      add_desc reps#toList;
       !descendants
 
     method get_ancestors (proc_name:symbol_t) =
@@ -561,81 +562,81 @@ object (self: _)
 	    let prevs =
               List.filter (fun r ->
                   not (on_the_list#has r)) prev_reps#toList in
-	    on_the_list#addList prevs ;
-	    on_the_list_now#remove rep ;
-	    on_the_list_now#addList prevs ;
+	    on_the_list#addList prevs;
+	    on_the_list_now#remove rep;
+	    on_the_list_now#addList prevs;
 	    let nodes = (self#get_value !rep_to_nodes rep)#toList in
 	    ancestors :=
-              List.rev_append (List.map self#get_proc nodes) !ancestors ;
+              List.rev_append (List.map self#get_proc nodes) !ancestors;
 	    add_ancestors (List.rev_append prevs rest_reps)
 	| _ -> () in
-      add_ancestors reps#toList ;
+      add_ancestors reps#toList;
       !ancestors
 
     method is_recursive proc_name =
       recursive_methods#has proc_name
 
     method private pr__debug_array3_int a =
-      pr__debug [STR "[|"; NL] ;
+      pr__debug [STR "[|"; NL];
       let count = ref (-1) in
       (try
 	for i = 0 to !last_index do
 	  for j = 0 to pred array_size do
 	    for k = 0 to pred array_size do
-	      incr count ;
-	      pr__debug [INT !count ; STR " -> "; INT a.(i).(j).(k); NL] ;
+	      incr count;
+	      pr__debug [INT !count; STR " -> "; INT a.(i).(j).(k); NL];
 	      if !count = !last_index then raise Exit
 	    done
 	  done
-	done ;
-      with _ -> () ) ;
+	done;
+      with _ -> () );
       pr__debug [STR "|]"; NL]
 
     method private pr__debug_array3_set a =
-      pr__debug [STR "[|"; NL] ;
+      pr__debug [STR "[|"; NL];
       let count = ref (-1) in
       (try
 	for i = 0 to !last_index do
 	  for j = 0 to pred array_size do
 	    for k = 0 to pred array_size do
-	      incr count ;
+	      incr count;
 	      let set = a.(i).(j).(k) in
 	      if not set#isEmpty then
-                pr__debug [INT !count ; STR " -> "; set#toPretty; NL] ;
+                pr__debug [INT !count; STR " -> "; set#toPretty; NL];
 	      if !count = !last_index then raise Exit
 	    done
 	  done
 	done
-      with _ -> () ) ;
+      with _ -> () );
       pr__debug [STR "|]"; NL]
 
     method private pr__debug_array3 a =
-      pr__debug [STR "[|"; NL] ;
+      pr__debug [STR "[|"; NL];
       let count = ref (-1) in
       (try
 	for i = 0 to !last_index do
 	  for j = 0 to pred array_size do
 	    for k = 0 to pred array_size do
-	      incr count ;
-	      pr__debug [INT !count ; STR " -> "; a.(i).(j).(k)#toPretty; NL] ;
+	      incr count;
+	      pr__debug [INT !count; STR " -> "; a.(i).(j).(k)#toPretty; NL];
 	      if !count = !last_index then raise Exit
 	    done
 	  done
 	done
-      with _ -> () ) ;
+      with _ -> () );
       pr__debug [STR "|]"; NL]
 
     method pr__debug : unit =
-      pr__debug [STR "call graph: "; NL; STR "index_to_proc: "; NL] ;
-      self#pr__debug_array3 !procs ;
-      pr__debug [STR "node_to_rep: "; NL] ;
-      self#pr__debug_array3_int !node_to_rep ;
-      pr__debug [STR "rep_to_nodes: "; NL] ;
-      self#pr__debug_array3_set !rep_to_nodes ;
-      pr__debug [STR "rep_edges: "; NL] ;
-      self#pr__debug_array3_set !rep_edges ;
+      pr__debug [STR "call graph: "; NL; STR "index_to_proc: "; NL];
+      self#pr__debug_array3 !procs;
+      pr__debug [STR "node_to_rep: "; NL];
+      self#pr__debug_array3_int !node_to_rep;
+      pr__debug [STR "rep_to_nodes: "; NL];
+      self#pr__debug_array3_set !rep_to_nodes;
+      pr__debug [STR "rep_edges: "; NL];
+      self#pr__debug_array3_set !rep_edges;
       pr__debug [STR "in_loop: "; NL; !in_loop#toPretty; NL];
-      pr__debug [STR "recursive_methods: "; NL; recursive_methods#toPretty; NL] ;
+      pr__debug [STR "recursive_methods: "; NL; recursive_methods#toPretty; NL];
 
     method toPretty =
       LBLOCK [STR "call graph: "; NL;
@@ -671,26 +672,26 @@ class call_graph_manager_t all_procs not_analyzed edges =
 
       if !no_temp_files then
 	begin
-	  bottom_up_list := list ;
-	  top_down_list := List.rev list ;
+	  bottom_up_list := list;
+	  top_down_list := List.rev list;
 	  in_loop_list := in_loop
 	end
       else
 	begin
 	  let bottom_up_channel = open_out bottom_up_file in
-	  Marshal.to_channel bottom_up_channel list [Marshal.Closures] ;
-	  close_out bottom_up_channel ;
+	  Marshal.to_channel bottom_up_channel list [Marshal.Closures];
+	  close_out bottom_up_channel;
 
 	  let top_down_channel = open_out top_down_file in
-	  Marshal.to_channel top_down_channel (List.rev list) [Marshal.Closures] ;
-	  close_out top_down_channel ;
+	  Marshal.to_channel top_down_channel (List.rev list) [Marshal.Closures];
+	  close_out top_down_channel;
 
 	  let in_loop_channel = open_out in_loop_file in
-	  Marshal.to_channel in_loop_channel in_loop [Marshal.Closures] ;
-	  close_out in_loop_channel ;
-	end ;
+	  Marshal.to_channel in_loop_channel in_loop [Marshal.Closures];
+	  close_out in_loop_channel;
+	end;
 
-      call_graph#find_methods_that_access_static_fields ;
+      call_graph#find_methods_that_access_static_fields;
       call_graph#clean_up
 
     method get_top_down_list =
@@ -700,11 +701,11 @@ class call_graph_manager_t all_procs not_analyzed edges =
 	  let top_down_channel = open_in top_down_file in
 	  let top_down_list:symbol_t list =
             Marshal.from_channel top_down_channel in
-	  close_in top_down_channel ;
+	  close_in top_down_channel;
 	  let in_loop_channel = open_in in_loop_file in
 	  let in_loop:SymbolCollections.set_t =
             Marshal.from_channel in_loop_channel in
-	  close_in in_loop_channel ;
+	  close_in in_loop_channel;
 	  (top_down_list, in_loop)
 	end
 
@@ -715,11 +716,11 @@ class call_graph_manager_t all_procs not_analyzed edges =
 	  let bottom_up_channel = open_in bottom_up_file in
 	  let bottom_up_list:symbol_t list =
             Marshal.from_channel bottom_up_channel in
-	  close_in bottom_up_channel ;
+	  close_in bottom_up_channel;
 	  let in_loop_channel = open_in in_loop_file in
 	  let in_loop:SymbolCollections.set_t =
             Marshal.from_channel in_loop_channel in
-	  close_in in_loop_channel ;
+	  close_in in_loop_channel;
 	  (bottom_up_list, in_loop)
 	end
 

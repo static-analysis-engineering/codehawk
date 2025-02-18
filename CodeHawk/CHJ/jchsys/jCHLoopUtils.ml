@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2024 Henny B. Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ open JCHPrintUtils
 
 module H = Hashtbl
 
-let dbg = ref false
+
 let wto_index = ref (-1)
 
 
@@ -75,7 +75,7 @@ class wto_info_t
     (* list of outer loops from the inner one to the outer one *)
     val outer_loops : 'a list ref = ref []
     val index =
-      incr wto_index ;
+      incr wto_index;
       !wto_index
     val var_name = new symbol_t ~seqnr: !wto_index "lc"
     val var =
@@ -114,16 +114,16 @@ class wto_info_t
       else
 	begin
 	  let (epc, fpc, lpc, pcs, lpc') = self#get_entry_first_last in
-	  entry_pc := epc ;
-	  first_pc := fpc ;
-	  last_pc := lpc ;
-	  entry_incoming_pcs := pcs ;
+	  entry_pc := epc;
+	  first_pc := fpc;
+	  last_pc := lpc;
+	  entry_incoming_pcs := pcs;
 	  last_in_entry_state := lpc';
 	  self#set_inloop_calls();
 	  let method_info =
             app#get_method (retrieve_cms proc#getName#getSeqNumber) in
 	  let exception_handlers = method_info#get_exception_handlers in
-	  all_catch_blocks := exception_handlers#get_handler_blocks ;
+	  all_catch_blocks := exception_handlers#get_handler_blocks;
 	  catch_block_starts := self#find_catch_blocks_that_contain  !first_pc
 	end
 
@@ -205,13 +205,13 @@ class wto_info_t
 	      else last in
 	    if !entry then
 	      begin
-		entry_pc := Option.get st_first_opt ;
-		entry := false ;
-		entry_incoming_sts := state#getIncomingEdges ;
+		entry_pc := Option.get st_first_opt;
+		entry := false;
+		entry_incoming_sts := state#getIncomingEdges;
 		last_in_entry_state := st_last
-	      end ;
+	      end;
 	    if is_entry_incoming_st st_name then
-	      entry_incoming_pcs := st_last :: !entry_incoming_pcs ;
+	      entry_incoming_pcs := st_last :: !entry_incoming_pcs;
 	    get_pcs_rec (new_first, new_last) rest_ws
 	| [] -> (first_opt, last) in
       let (first_opt, last) = get_pcs_rec (None, -1) [wto] in
@@ -276,7 +276,7 @@ class wto_info_t
 	  for i = 0 to pred (Array.length table) do
 	    if table.(i) = offset then
 	      found := true
-	  done ;
+	  done;
 	  if !found then 2 else 0
 	end
       |	OpLookupSwitch (_, pairs) ->
@@ -294,7 +294,7 @@ class wto_info_t
       let check (pc: int) (opc:opcode_t) =
 	if in_loop pc then
 	  begin
-	    loop_pcs := (pc,opc) :: !loop_pcs ;
+	    loop_pcs := (pc,opc) :: !loop_pcs;
 	    match opc with
 	    | OpInvokeStatic (cn,ms)
 	    | OpInvokeVirtual (TClass cn,ms)
@@ -303,20 +303,20 @@ class wto_info_t
                call_pcs := (cn#index,ms#index,pc) :: !call_pcs
 	    | _ -> ()
 	  end in
-      opcodes#iteri check ;
+      opcodes#iteri check;
       instr_count := List.length !loop_pcs
 
     method get_loop_info () =
       let get_pc_range w = (w#get_first_pc, w#get_last_pc) in
-      { li_first_pc = !first_pc ;
-	li_entry_pc = !entry_pc ;
-	li_last_pc = !last_pc ;
-	li_instr_count = !instr_count ;
-	li_cond_pcs = cond_pcs ;
-	li_inner_loops = List.map get_pc_range !inner_loops ;
-	li_outer_loops = List.map get_pc_range !outer_loops ;
-	li_max_iterations = !max_iterations ;
-	li_pc_invariants = [] ;
+      { li_first_pc = !first_pc;
+	li_entry_pc = !entry_pc;
+	li_last_pc = !last_pc;
+	li_instr_count = !instr_count;
+	li_cond_pcs = cond_pcs;
+	li_inner_loops = List.map get_pc_range !inner_loops;
+	li_outer_loops = List.map get_pc_range !outer_loops;
+	li_max_iterations = !max_iterations;
+	li_pc_invariants = [];
 	li_calls = !call_pcs;
       }
 
@@ -346,10 +346,10 @@ class wto_info_t
                   pp_list_int !catch_block_starts] in
       LBLOCK [STR "wto "; name#toPretty; STR " from "; proc#getName#toPretty; NL;
 		 INDENT (5, LBLOCK [STR " index: "; INT index; NL;
-				     pp_p; pp_ch; NL;
-				     pp_w; NL;
-				     pp_cb ; NL;
-				     INDENT (5, LBLOCK [pp_c conds; pp_ec]); NL])]
+				    pp_p; pp_ch; NL;
+				    pp_w; NL;
+				    pp_cb; NL;
+				    INDENT (5, LBLOCK [pp_c conds; pp_ec]); NL])]
 
   end
 
@@ -404,10 +404,10 @@ let get_first_states_out (cfg:cfg_int) (wto: wto_t)  =
       List.find has_opp_name cfg#getStates
     with
     | Not_found ->
-	pr__debug [STR "state "; STR opp_name; STR " not found in JCHLoopUtils" ] ;
+	pr__debug [STR "state "; STR opp_name; STR " not found in JCHLoopUtils" ];
 	raise
           (JCH_failure
-             (LBLOCK [ STR "state " ; STR opp_name ;
+             (LBLOCK [ STR "state "; STR opp_name;
                        STR " not found in JCHLoopUtils" ])) in
   let get_succ_out (s:symbol_t) =
     let state = cfg#getState s in
@@ -433,7 +433,7 @@ let find_scc_prev_states
       if not (states#has p) then
         all_other_states := p :: !all_other_states in
     List.iter add_prev prev_states in
-  states#iter add ;
+  states#iter add;
   !all_other_states
 
 (* Finds other conditions the exit is under *)
@@ -453,7 +453,7 @@ let find_prev_conds
     match !work_states with
     | s :: rest_states ->
 	begin
-	  work_states := rest_states ;
+	  work_states := rest_states;
 	  let add_previous in_scc p =
 	    let p_name = p#getBaseName in
 	    (if p_name = wtoHead_name then
@@ -464,7 +464,7 @@ let find_prev_conds
 	      begin
 		covered_states#add p_name;
 		if is_conditional p then
-                  all_conds#add p ;
+                  all_conds#add p;
 		if in_scc then
                   ()
 		else
@@ -474,14 +474,14 @@ let find_prev_conds
 	    match H.find_opt state_to_scc_states s with
 	    | Some scc_states ->
                 let prevs = find_scc_prev_states cfg scc_states in
-		scc_states#iter (add_previous true) ;
+		scc_states#iter (add_previous true);
 		prevs
 	    | _ -> [] in
-          List.iter (add_previous false) ps ;
+          List.iter (add_previous false) ps;
 	  find_prev_states ();
 	end
     | [] -> () in
-  find_prev_states () ;
+  find_prev_states ();
   all_conds#toList
 
 let add_all_wto_states (ws: wto_component_t list) =
@@ -492,10 +492,10 @@ let add_all_wto_states (ws: wto_component_t list) =
 	states#add s;
 	add rest_ws
     | (SCC ws') :: rest_ws ->
-	add ws' ;
+	add ws';
 	add rest_ws
     | _ -> () in
-  add ws ;
+  add ws;
   states
 
 let make_state_to_scc_states (wto: wto_component_t) =
@@ -536,7 +536,7 @@ let make_wto_info
         ~proc
         ~cfg
         ~proc_wto in
-  wto_info#set_outer_loops outer_loops ;
+  wto_info#set_outer_loops outer_loops;
   wto_info
 
 
@@ -561,18 +561,18 @@ let get_sccs_proc procedure (proc_name: symbol_t) =
 	  match loops with
 	  | loop :: _rest_loops -> loop#add_inner_loop wto_info
 	  | _ -> () in
-	wto_infos := wto_info :: !wto_infos ;
+	wto_infos := wto_info :: !wto_infos;
 	let new_depth = succ depth in
 	(if new_depth > !max_depth then
           max_depth := new_depth
         else
-          ()) ;
-	addSCCs inner_ws (wto_info :: loops) new_depth ;
+          ());
+	addSCCs inner_ws (wto_info :: loops) new_depth;
 	addSCCs rest_ws loops depth
     | (VERTEX _) :: rest_ws ->
 	addSCCs rest_ws loops depth
     | [] ->  () in
-  addSCCs wto [] 0 ;
+  addSCCs wto [] 0;
   (List.rev !wto_infos, wto, !max_depth)
 
 
@@ -585,18 +585,18 @@ let get_loop_infos (mInfo:method_info_int) =
     with
     | JCH_failure p ->
 	begin
-	  pr_debug [ STR "Failure in translating " ;
-		     mInfo#get_class_method_signature#toPretty ;
-		     STR ": " ; p ; NL ] ;
-	  [ { li_first_pc = (-1) ;
-	      li_entry_pc = (-1) ;
-	      li_last_pc = (-1) ;
-	      li_instr_count = (-1) ;
-	      li_cond_pcs = [] ;
-	      li_inner_loops = [] ;
-	      li_outer_loops = [] ;
-	      li_max_iterations = [] ;
-	      li_pc_invariants = [] ;
+	  pr_debug [ STR "Failure in translating ";
+		     mInfo#get_class_method_signature#toPretty;
+		     STR ": "; p; NL ];
+	  [ { li_first_pc = (-1);
+	      li_entry_pc = (-1);
+	      li_last_pc = (-1);
+	      li_instr_count = (-1);
+	      li_cond_pcs = [];
+	      li_inner_loops = [];
+	      li_outer_loops = [];
+	      li_max_iterations = [];
+	      li_pc_invariants = [];
 	      li_calls = []
 	    } ]
 	end

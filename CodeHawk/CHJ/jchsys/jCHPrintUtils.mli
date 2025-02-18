@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2024 Henny B. Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -74,7 +74,8 @@ val proc_list_pp : symbol_t list -> pretty_t
 
 val dot_name : symbol_t -> string
 
-val pp_var_table : (int * int * string * value_type_t * int) list option -> pretty_t
+val pp_var_table :
+  (int * int * string * value_type_t * int) list option -> pretty_t
 
 val pp_pc_table : < toPretty : pretty_t; .. > IntCollections.table_t ->
   pretty_t
@@ -145,4 +146,5 @@ val jch_stats_log : logger_int
 val jterm_to_string : jterm_t -> string
 val relational_expr_to_string : relational_expr_t -> string
 
-val pr__debug_large_table : ('a -> unit) -> < listOfPairs : (int * 'a) list; .. > -> unit
+val pr__debug_large_table :
+  ('a -> unit) -> < listOfPairs : (int * 'a) list; .. > -> unit

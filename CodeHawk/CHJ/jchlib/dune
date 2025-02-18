@@ -3,7 +3,3 @@
   (libraries chlib chutil extlib str zarith zip)
   (public_name codehawk.jchlib)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

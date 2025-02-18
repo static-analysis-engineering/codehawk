@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyrigth (c) 2020-2024 Henny B. Sipma
+   Copyrigth (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -62,13 +62,13 @@ let op_args_to_pretty op_args : pretty_t =
     | WRITE -> "WRITE"
     | _ -> "READ_WRITE" in
   let pp_arg (s,v,am) : pretty_t =
-    LBLOCK [ STR ("("^s^" , ") ; v#toPretty ;
-	     STR " , "; STR (arg_mode_to_string am) ;
+    LBLOCK [STR ("("^s^" , "); v#toPretty;
+	     STR " , "; STR (arg_mode_to_string am);
 	     STR " )"; NL] in
   pretty_print_list op_args pp_arg "" "" ""
 
 let operation_to_pretty op =
-  LBLOCK [ STR "operation " ; op.op_name#toPretty ;NL;
+  LBLOCK [STR "operation "; op.op_name#toPretty;NL;
 	   STR "op_args: "; NL; op_args_to_pretty op.op_args;
 	   STR "end op_args"; NL]
 
@@ -94,7 +94,8 @@ let postcond_preds_to_pretty preds =
   pretty_print_list preds postcond_pred_to_pretty "{" "\n" " }"
 
 let precond_preds_to_pretty preds =
-  pretty_print_list preds JCHFunctionSummary.precondition_predicate_to_pretty "{" "\n" " }"
+  pretty_print_list
+    preds JCHFunctionSummary.precondition_predicate_to_pretty "{" "\n" " }"
 
 let side_effects_to_pretty preds =
   pretty_print_list preds JCHFunctionSummary.sideeffect_to_pretty "{" "\n" " }"
@@ -118,8 +119,10 @@ let proc_table_pp (table: _ SymbolCollections.table_t) =
 (* print table proc -> set or table that prints only if they are not empty *)
 let proc_ltable_pp (table: _ SymbolCollections.table_t) =
   let add a k v =
-    if v#size = 0 then a
-    else [proc_name_pp k; STR " -> "; NL; INDENT (5, v#toPretty); NL] @ a in
+    if v#size = 0 then
+      a
+    else
+      [proc_name_pp k; STR " -> "; NL; INDENT (5, v#toPretty); NL] @ a in
   let elts = table#fold add [] in
   LBLOCK [STR "{"; NL; INDENT (2, LBLOCK elts); STR "}"]
 
@@ -149,8 +152,11 @@ let pp_pc_table pc_table =
     [STR "{";
      LBLOCK (
          List.map
-	   (fun pc -> LBLOCK [STR "pc = "; INT pc; STR " -> "; NL;
-			      INDENT (5, (Option.get (pc_table#get pc))#toPretty); NL])
+	   (fun pc ->
+             LBLOCK [STR "pc = ";
+                     INT pc;
+                     STR " -> "; NL;
+		     INDENT (5, (Option.get (pc_table#get pc))#toPretty); NL])
 	   (List.rev (pc_table#listOfKeys)));
      NL; STR "}"]
 
@@ -161,10 +167,14 @@ let pp_procpc_table sym_table =
     [STR "{";
      LBLOCK (
          List.map
-	   (fun proc -> LBLOCK [proc#toPretty; STR ":"; NL;
-				INDENT (2, pp_pc_table (Option.get (sym_table#get proc))); NL])
+	   (fun proc ->
+             LBLOCK [
+                 proc#toPretty;
+                 STR ":"; NL;
+		 INDENT (2, pp_pc_table (Option.get (sym_table#get proc))); NL])
 	   sym_table#listOfKeys);
      NL; STR "}"]
+
 
 class pretty_int_t i =
   object
@@ -203,7 +213,9 @@ let proc_name_str proc_name =
   let pp = (retrieve_cms proc_name#getSeqNumber)#toPretty in
   string_of_pretty [pp]
 
-let pp_var_table_pred (table: <toPretty : pretty_t; ..> VariableCollections.table_t) pred : pretty_t =
+let pp_var_table_pred
+      (table: <toPretty: pretty_t; ..> VariableCollections.table_t)
+      pred: pretty_t =
   let sorted_vars =
     let vars = List.filter pred (table#listOfKeys) in
     let compare (v1: variable_t) (v2: variable_t) =
@@ -211,20 +223,20 @@ let pp_var_table_pred (table: <toPretty : pretty_t; ..> VariableCollections.tabl
     List.sort compare vars in
   let mk_pp k =
     let vl = Option.get (table#get k) in
-    LBLOCK [k#toPretty ;  STR " -> "; vl#toPretty; NL] in
+    LBLOCK [k#toPretty;  STR " -> "; vl#toPretty; NL] in
   LBLOCK (List.map mk_pp sorted_vars)
 
 let pp_assoc_list_vars ls =
   let pp_pair (v1, v2) =
-    LBLOCK [ STR "("; v1#toPretty; STR ", "; v2#toPretty; STR ")"] in
+    LBLOCK [STR "("; v1#toPretty; STR ", "; v2#toPretty; STR ")"] in
   pretty_print_list ls pp_pair "{" ", " "}"
 
 let pp_assoc_list_ints ls =
-  let pp_pair (i1, i2) = LBLOCK [ STR "("; INT i1; STR ", "; INT i2; STR ")"] in
+  let pp_pair (i1, i2) = LBLOCK [STR "("; INT i1; STR ", "; INT i2; STR ")"] in
   pretty_print_list ls pp_pair "{" ", " "}"
 
 let pp_assoc_list_var_int ls =
-  let pp_pair (k, i) = LBLOCK [ STR "("; k#toPretty; STR ", "; INT i; STR ")"] in
+  let pp_pair (k, i) = LBLOCK [STR "("; k#toPretty; STR ", "; INT i; STR ")"] in
   pretty_print_list ls pp_pair "{" ", " "}"
 
 
@@ -237,8 +249,8 @@ let read_int_to_var_set file_name =
     let (proc_name, list) (* : int * variable_t list *) =
       Marshal.from_channel in_channel in
     proc_to_set#set proc_name (VariableCollections.set_of_list list)
-  done ;
-  close_in in_channel ;
+  done;
+  close_in in_channel;
   proc_to_set
 
 (* Reads from file name a table int -> int set *)
@@ -250,8 +262,8 @@ let read_int_to_int_set file_name =
     let (proc_name, list) (* : int * int list *) =
       Marshal.from_channel in_channel in
     proc_to_set#set proc_name (IntCollections.set_of_list list)
-  done ;
-  close_in in_channel ;
+  done;
+  close_in in_channel;
   proc_to_set
 
 (* Reads from file name a table int -> (table variable_t -> variable_t) *)
@@ -264,10 +276,10 @@ let read_int_to_var_to_var file_name =
       Marshal.from_channel in_channel in
     let table = new VariableCollections.table_t in
     let add_pair (v1, v2) = table#set v1 v2 in
-    List.iter add_pair list ;
+    List.iter add_pair list;
     proc_to_set#set proc_name table
-  done ;
-  close_in in_channel ;
+  done;
+  close_in in_channel;
   proc_to_set
 
 (* Reads from file name a table int -> string set *)
@@ -279,8 +291,8 @@ let read_int_to_string_set file_name =
     let (proc_name, list) (* : int * string list *) =
       Marshal.from_channel in_channel in
     proc_to_set#set proc_name (StringCollections.set_of_list list)
-  done ;
-  close_in in_channel ;
+  done;
+  close_in in_channel;
   proc_to_set
 
 let jch_stats_log = CHLogger.mk_logger ()
@@ -316,7 +328,10 @@ let rec jterm_to_string jterm =
   | JSize t -> "size (" ^ (jterm_to_string t) ^ ")"
   | JPower (t,n) -> "pow (" ^ (jterm_to_string t) ^ ", " ^ (string_of_int n) ^ ")"
   | JUninterpreted (name,terms) ->
-     "un:" ^ name ^ " (" ^ (String.concat "," (List.map jterm_to_string terms)) ^ ")"
+     "un:"
+     ^ name
+     ^ " (" ^ (String.concat "," (List.map jterm_to_string terms))
+     ^ ")"
   | JArithmeticExpr (op, t1, t2) ->
      (jterm_to_string t1) ^ (arithmetic_op_to_string op) ^ (jterm_to_string t2)
   | jterm -> JCHJTerm.jterm_to_string jterm
@@ -325,7 +340,7 @@ let relational_expr_to_string (op, t1, t2) =
   (jterm_to_string t1) ^ (relational_op_to_string op) ^ (jterm_to_string t2)
 
 let pr__debug_large_table pp table =
-  pr__debug [STR "{"; NL] ;
+  pr__debug [STR "{"; NL];
   List.iter (fun (k, v) ->
       pr__debug [INT k; STR " -> "]; pp v; pr__debug[NL]) table#listOfPairs;
   pr__debug [STR "}"; NL]
