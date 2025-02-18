@@ -3,9 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,12 +40,14 @@ class taint_graph_t :
   -> call_nodes:JCHTNode.TaintNodeCollections.set_t
   -> calls:JCHTNode.TaintNodeCollections.set_t
   -> var_nodes:JCHTNode.TaintNodeCollections.set_t
-  -> edges:JCHTNode.TaintNodeCollections.set_t JCHTNode.TaintNodeCollections.table_t
-  -> rev_edges:JCHTNode.TaintNodeCollections.set_t JCHTNode.TaintNodeCollections.table_t
+  -> edges:
+       JCHTNode.TaintNodeCollections.set_t JCHTNode.TaintNodeCollections.table_t
+  -> rev_edges:
+       JCHTNode.TaintNodeCollections.set_t JCHTNode.TaintNodeCollections.table_t
   -> sources:JCHTNode.TaintNodeCollections.set_t
   ->  object ('a)
       method add_edge:taint_node_int -> taint_node_int -> unit
-      method equal : 'a -> bool 
+      method equal : 'a -> bool
       method get_arg_nodes:taint_node_int list
       method get_call_nodes : JCHTNode.TaintNodeCollections.set_t
       method get_calls : JCHTNode.TaintNodeCollections.set_t
@@ -60,20 +62,20 @@ class taint_graph_t :
       method get_rev_edges :
           JCHTNode.TaintNodeCollections.set_t JCHTNode.TaintNodeCollections.table_t
       method get_sig_nodes:taint_node_int list
-      method leq : 'a -> bool 
+      method leq : 'a -> bool
       method toPretty:pretty_t
     end
 
-val make_tgraph : JCHProcInfo.jproc_info_t -> taint_graph_t 
+val make_tgraph : JCHProcInfo.jproc_info_t -> taint_graph_t
 
 val mk_empty_tgraph:symbol_t -> taint_graph_t
 
 val add_edges_to_big_graph:(taint_node_int * taint_node_int) list -> unit
-val connect_to_big_graph : taint_graph_t -> unit 
+val connect_to_big_graph : taint_graph_t -> unit
 val taint_big_graph:taint_node_int list -> taint_node_int list -> unit
 
-val restrict_big_graph_to_proc : 
-  symbol_t 
+val restrict_big_graph_to_proc :
+  symbol_t
   -> JCHTNode.TaintNodeCollections.set_t JCHTNode.TaintNodeCollections.table_t
 
-val dbg : bool ref 
+val dbg : bool ref

@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,7 +41,7 @@ open JCHPreAPI
 val set_local_vars : variable_t list -> unit
 
 class poly_interval_array_t :
-  (int * CHNumerical.numerical_t) list -> 
+  (int * CHNumerical.numerical_t) list ->
   variable_t list ->
     object ('a)
       method add_empty_collection : variable_t -> 'a
@@ -50,32 +51,32 @@ class poly_interval_array_t :
       method add_val_to_collection :
                bool -> variable_t -> variable_t -> interval_t -> 'a
       method add_vars : JCHProcInfo.jproc_info_t -> variable_t list -> 'a
-           
+
       method affine_increment :
                variable_t
                -> big_int
                -> 'a * variable_t option * variable_t option
-           
-      method affine_image : 
+
+      method affine_image :
                variable_t option
                -> variable_t * big_int
                -> (variable_t * big_int) list
                -> big_int
                -> 'a * variable_t option * variable_t option
-           
+
       method affine_preimage :
                variable_t * big_int
                -> (variable_t * big_int) list
                -> big_int
                -> 'a
-           
-      method affine_subst : 
+
+      method affine_subst :
                variable_t
                -> variable_t option
                -> big_int
                -> big_int
                -> 'a * variable_t option * variable_t option
-           
+
       method array_load : variable_t -> variable_t -> 'a
       method assert_eq : variable_t -> variable_t -> 'a
       method assert_geq : variable_t -> variable_t -> 'a
@@ -85,9 +86,9 @@ class poly_interval_array_t :
       method can_be_0 : variable_t -> bool
       method change_vars :
                symbol_t -> symbol_t -> variable_t list -> variable_t list -> 'a
-           
+
       method check_type : variable_t -> 'a
-      method clone : 'a 
+      method clone : 'a
       method copy_info : variable_t -> interval_t -> numerical_t list -> 'a
       method copy_num_info : variable_t -> variable_t -> 'a
       method div :
@@ -96,7 +97,7 @@ class poly_interval_array_t :
                -> variable_t
                -> variable_t
                -> 'a * variable_t option * variable_t option * variable_t option
-           
+
       method down_cast_float : variable_t -> variable_t -> 'a * bool
       method drop_all : 'a
       method drop_poly : 'a
@@ -105,7 +106,7 @@ class poly_interval_array_t :
       method get_best_interval : IntCollections.ObjectSet.elt -> interval_t
       method get_call : JCHProcInfo.jproc_info_t -> variable_t list -> 'a
       method get_const_val : variable_t -> big_int
-      method get_const_val_n : variable_t -> numerical_t 
+      method get_const_val_n : variable_t -> numerical_t
       method get_excluded_vals : variable_t -> numerical_t list
       method get_extra_infos : JCHNumericInfo.numeric_info_t
       method get_field :
@@ -114,17 +115,17 @@ class poly_interval_array_t :
                -> interval_t list
                -> variable_t
                -> 'a
-           
+
       method get_index : variable_t -> int
       method get_interval : variable_t -> interval_t
       method get_interval_array : JCHIntervalArray.interval_array_t
       method set_join : variable_t -> variable_t -> variable_t -> 'a
       method set_type_intervals:
                JCHProcInfo.jproc_info_t -> variable_t list -> 'a
-           
+
       method set_type_intervals_and_restrict:
                JCHProcInfo.jproc_info_t -> variable_t list -> 'a
-           
+
       method get_poly : JCHPoly.poly_t
       method get_poly_vars : variable_t list
       method get_var_to_const : (int * numerical_t) list
@@ -133,10 +134,10 @@ class poly_interval_array_t :
       method has_var : variable_t -> bool
       method init_assumptions : JCHProcInfo.jproc_info_t -> 'a
       method is_bottom : bool
-      method is_const : variable_t -> bool 
+      method is_const : variable_t -> bool
       method is_top : bool
       method join : 'a -> 'a
-      method join_with_old : 'a -> 'a -> 'a 
+      method join_with_old : 'a -> 'a -> 'a
       method leq : 'a -> bool
       method log_and : variable_t -> variable_t -> variable_t -> 'a
       method log_or : variable_t -> variable_t -> variable_t -> 'a
@@ -152,7 +153,7 @@ class poly_interval_array_t :
                -> variable_t list
                -> variable_t list
                -> 'a
-           
+
       method mk_empty : (int * numerical_t) list -> variable_t list -> 'a
       method move_simple_ineqs : 'a
       method mult :
@@ -160,7 +161,7 @@ class poly_interval_array_t :
                -> variable_t
                -> variable_t
                -> 'a * variable_t option * variable_t option * bool
-           
+
       method new_array : variable_t -> variable_t list -> 'a
       method project_out : variable_t list -> 'a
       method project_out_array : variable_t -> 'a
@@ -171,7 +172,7 @@ class poly_interval_array_t :
                -> variable_t
                -> variable_t
                -> 'a * variable_t option
-           
+
       method remove : variable_t list -> 'a
       method remove_duplicates : 'a
       method remove_field : variable_t -> field_info_int -> 'a
@@ -183,7 +184,7 @@ class poly_interval_array_t :
       method set_interval : variable_t -> interval_t -> 'a
       method set_interval_array : JCHIntervalArray.interval_array_t -> 'a
       method set_fields : variable_t -> field_info_int list -> 'a
-      method set_poly : JCHPoly.poly_t -> 'a 
+      method set_poly : JCHPoly.poly_t -> 'a
       method shr :  variable_t -> variable_t -> 'a
       method simple_join : 'a -> 'a
       method simple_widening : 'a ->  'a
@@ -193,7 +194,7 @@ class poly_interval_array_t :
                bool
                -> JCHProcInfo.jproc_info_t
                -> (variable_t * variable_t) list
-               -> variable_t list 
+               -> variable_t list
 	-> postcondition_predicate_t list
       method to_postconditions2 :
                JCHProcInfo.jproc_info_t -> postcondition_predicate_t list
@@ -203,7 +204,7 @@ class poly_interval_array_t :
     end
 
 val bottom_poly_interval_array : poly_interval_array_t
-val top_poly_interval_array : 
+val top_poly_interval_array :
   (int * numerical_t) list
   -> variable_t list
   -> poly_interval_array_t
@@ -212,5 +213,3 @@ val bottom_poly_int_array : poly_interval_array_t
 val top_poly_int_array : poly_interval_array_t
 
 val dbg : bool ref
-
-

@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,15 +33,13 @@ open CHIntervals
 open CHLanguage
 open CHPretty
 
-(* jchpre *)
-open JCHPreAPI
 
 class poly_t :
  object ('a)
    method add_constraints : JCHLinearConstraint.linear_constraint_t list -> 'a
    method add_constrs_from_interval : int -> interval_t -> 'a
    method add_mult_constr:
-            int -> int -> int -> int option -> big_int option -> bool -> 'a 
+            int -> int -> int -> int option -> big_int option -> bool -> 'a
    method affine_increment :  int -> big_int -> 'a
    method affine_image:
             int -> big_int -> (int * big_int) list -> big_int -> interval_t -> 'a
@@ -51,7 +50,7 @@ class poly_t :
    method copy : 'a
    method copy_other_col_constrs : int -> int -> 'a
    method equal : 'a -> bool
-   method get_constraints : JCHLinearConstraint.linear_constraint_t list 
+   method get_constraints : JCHLinearConstraint.linear_constraint_t list
    method get_eq_matrix : big_int array array
    method get_ineq_matrix : big_int array array
    method get_index_map : (int * int) list
@@ -87,21 +86,20 @@ class poly_t :
    method restrict_number_vars : 'a * bool
    method toPretty : pretty_t
    method to_string : string
-   method to_pretty : variable_t list -> pretty_t 
+   method to_pretty : variable_t list -> pretty_t
    method widening : 'a -> 'a
  end
 
 val bottom_poly : poly_t
 val top_poly : poly_t
 val top_poly_large : int list -> poly_t
-  
+
 val mk_poly_from_constraints :
   bool -> JCHLinearConstraint.linear_constraint_t list -> poly_t
-  
+
 val move_simple_ineqs_to_intervals :
   poly_t
   -> JCHIntervalArray.interval_array_t
   -> poly_t * JCHIntervalArray.interval_array_t
 
 val dbg : bool ref
-

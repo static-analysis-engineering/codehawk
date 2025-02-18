@@ -3,7 +3,3 @@
   (libraries chlib chutil jchlib jchpre jchsys zarith)
   (public_name codehawk.jchpoly)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))
