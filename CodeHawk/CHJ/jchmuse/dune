@@ -25,7 +25,3 @@
   (modules jCHXCollectPatterns)
   (package exes)
   (public_name chj_patterns))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

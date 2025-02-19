@@ -5,6 +5,7 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,10 +42,11 @@ object (self)
   method get_date = date
 
   method toPretty =
-    LBLOCK [ STR (string_repeat "=" 80) ; NL ;
-	     STR "* CodeHawk Java Analyzer (STAC). Version " ; STR self#get_version ; NL ;
-	     STR "* Date: " ; STR self#get_date ; NL ;
-	     STR (string_repeat "=" 80) ; NL ]
+    LBLOCK [
+        STR (string_repeat "=" 80) ; NL ;
+	STR "* CodeHawk Java Analyzer (STAC). Version " ; STR self#get_version ; NL ;
+	STR "* Date: " ; STR self#get_date ; NL ;
+	STR (string_repeat "=" 80) ; NL ]
 end
 
 let version = new version_info_t
