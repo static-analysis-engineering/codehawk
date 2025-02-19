@@ -3,9 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,24 +34,20 @@ open CHNonRelationalDomainValues
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
-open CHXmlDocument
 
 (* jchlib *)
 open JCHBasicTypes
 open JCHBasicTypesAPI
 open JCHDictionary
-open JCHJTerm
 
 (* jchpre *)
 open JCHCostBoundsModel
 open JCHPreAPI
 open JCHUserData
-open JCHXmlUtil
 
 (* jchsys *)
 open JCHPrintUtils
-  
+
 (* jchcost *)
 open JCHCostBounds
 
@@ -70,13 +66,13 @@ let issinkvar (name:string) =
 
 let get_sink_edge (s:symbol_t) =
   match s#getAttributes with
-  | [ decpc ; predpc ; "exit" ] ->
+  | [decpc; predpc; "exit"] ->
      (int_of_string decpc, int_of_string predpc, (-1))
-  | [ decpc ; predpc ; obspc ] ->
+  | [decpc; predpc; obspc] ->
      (int_of_string decpc, int_of_string predpc, int_of_string obspc)
-  | _ -> raise (JCH_failure (LBLOCK [ STR "Invalid sink name: " ; s#toPretty ] ))
+  | _ -> raise (JCH_failure (LBLOCK [STR "Invalid sink name: "; s#toPretty] ))
 
-let get_bounds (v:non_relational_domain_value_t) : cost_bounds_t = 
+let get_bounds (v:non_relational_domain_value_t) : cost_bounds_t =
   match v#getValue with
   | EXTERNAL_VALUE b -> b
   | TOP_VAL -> top_cost_bounds
@@ -113,30 +109,31 @@ let adjustbounds cmsix costmodel bv lh =
 
 let getloopsinkvalues cmsix v costmodel loopstructure (pc:int):cost_bounds_t =
   let loopheads = loopstructure#get_pc_loopheads pc in
-  let add acc lh = 
+  let add acc lh =
     let loopexitvalue = getloopexitvalue v lh in
     let xvalue = adjustbounds cmsix costmodel loopexitvalue lh in
     add_cost_bounds acc xvalue in
   List.fold_left add (cost_bounds_from_num numerical_zero) loopheads
 
-let get_sinks cmsix costmodel loopstructure =
+let _get_sinks cmsix costmodel loopstructure =
   H.iter (fun (decpc,predpc,obspc) inv ->
     let domain = inv#getDomain "cost_bounds" in
     if domain#isBottom then
-      pr__debug [ INT decpc ; STR " - " ; INT obspc ; STR ": bottom" ; NL ]
+      pr__debug [INT decpc; STR " - "; INT obspc; STR ": bottom"; NL]
     else
       let vars = domain#observer#getObservedVariables in
       let varObserver = domain#observer#getNonRelationalVariableObserver in
       let svars = List.filter (fun v -> issinkvar v#getName#getBaseName) vars in
       List.iter (fun v ->
-	let loopxinv = getloopsinkvalues cmsix v costmodel loopstructure obspc in 
+	let loopxinv = getloopsinkvalues cmsix v costmodel loopstructure obspc in
 	let tgtinv = get_bounds (varObserver v) in
 	let inv = add_cost_bounds tgtinv loopxinv in
         begin
-          costmodel#set_sidechannelcost cmsix decpc predpc obspc inv ;
-	  pr__debug [ STR "Sink " ; v#toPretty ; STR ": " ;
-		     INT decpc ; STR " - " ; INT obspc ; STR ": " ;
-		     inv#toPretty ; NL ]
+          costmodel#set_sidechannelcost cmsix decpc predpc obspc inv;
+	  pr__debug [
+              STR "Sink "; v#toPretty; STR ": ";
+	      INT decpc; STR " - "; INT obspc; STR ": ";
+	      inv#toPretty; NL]
         end) svars) sinkinvariants
 
 
@@ -146,7 +143,7 @@ let get_methodexit_bounds () =
   let varObserver = domain#observer#getNonRelationalVariableObserver in
   let cvars = List.filter (fun v -> v#getName#getBaseName = "costvar") vars in
   match cvars with
-  | [ cvar ] ->
+  | [cvar] ->
       let cost = get_bounds (varObserver cvar) in
       if !dbg then
         pr__debug [
@@ -167,29 +164,29 @@ let get_methodexit_bounds () =
 
 
 let default_opsemantics
-      domain
+      _domain
       cmsix
       hpc_opt:CHIterator.op_semantics_t =
-  fun ~invariant ~stable ~fwd_direction ~context ~operation ->
+  fun ~invariant ~stable ~fwd_direction ~context:_ ~operation ->
     match operation.op_name#getBaseName with
     | "invariant" ->
-	if stable then 
+	if stable then
 	  begin
 	    match operation.op_name#getAttributes with
-	    | [ "methodexit" ] ->
+	    | ["methodexit"] ->
 	       if !dbg then
-                 pr__debug [STR "op methodexit"; NL; invariant#toPretty; NL] ;
+                 pr__debug [STR "op methodexit"; NL; invariant#toPretty; NL];
 	       if invariant#isBottom then
                  (* the method does not ever reach the exit *)
 		 begin
 		    let cvar = JCHCostUtils.get_cost_var () in
 		    let set_to_inf_op =
-		      {op_name = new symbol_t ~atts:["0"] "set_to_inf" ;
+		      {op_name = new symbol_t ~atts:["0"] "set_to_inf";
 			op_args = [("dst", cvar, WRITE)] } in
 
 		    let invariant =
                       invariant#mkEmpty#analyzeFwd (OPERATION set_to_inf_op) in
-		    H.add invariants ("methodexit",(-1)) invariant ;
+		    H.add invariants ("methodexit",(-1)) invariant;
 		    chlog#add
                       "methods that do not reach exit"
 		      (LBLOCK [STR "m_"; INT cmsix; STR ": ";
@@ -199,22 +196,22 @@ let default_opsemantics
 		  (* substitute out sym_lp and sym_call, and simplify the cost *)
 		  let cvar = JCHCostUtils.get_cost_var () in
 		    let subst_op =
-		      {op_name = new symbol_t ~atts:[] "subst_at_exit" ;
+		      {op_name = new symbol_t ~atts:[] "subst_at_exit";
 			op_args = [("dst", cvar, WRITE)] } in
 		  let invariant = invariant#clone#analyzeFwd (OPERATION subst_op) in
 		  H.add invariants ("methodexit",(-1)) invariant
-	    | [ "loopexit" ; pc ] ->
-		if !dbg then pr__debug [STR "op loopexit"; NL] ;
-		H.add invariants ("loopexit", int_of_string pc) invariant 
+	    | ["loopexit"; pc] ->
+		if !dbg then pr__debug [STR "op loopexit"; NL];
+		H.add invariants ("loopexit", int_of_string pc) invariant
 	    | _ -> ()
-	  end ;
+	  end;
 	invariant
     | "sink" ->
 	if stable then
 	  begin
 	    let sinkid = get_sink_edge operation.op_name in
 	    H.add sinkinvariants sinkid invariant
-	  end ;
+	  end;
 	invariant
     | "add_loop_cost" ->
 	let is_other_loop =
@@ -228,7 +225,7 @@ let default_opsemantics
 	else invariant
     | "block_cost" ->
 	let pc = int_of_string (List.hd operation.op_name#getAttributes) in
-	JCHCostBounds.set_instr_pc pc ;
+	JCHCostBounds.set_instr_pc pc;
 	invariant#analyzeFwd (OPERATION operation)
     | "set_to_0"
     | "add_block_cost" -> invariant#analyzeFwd (OPERATION operation)
@@ -244,8 +241,8 @@ let analyze_procedure_with_cost_bounds
       (proc: procedure_int) (system:system_int) =
   if !dbg then
     pr__debug [STR "analyze_procedure_with_cost_bounds "; INT cmsix; STR " ";
-               proc#toPretty; NL] ;
-  JCHCostBoundsDomainNoArrays.current_proc_is_loop := Option.is_some hpc_opt ;
+               proc#toPretty; NL];
+  JCHCostBoundsDomainNoArrays.current_proc_is_loop := Option.is_some hpc_opt;
   let analysis_setup = CHAnalysisSetup.mk_analysis_setup () in
   let get_loop_cost_user pc =
     if userdata#has_loopbound cmsix pc then
@@ -262,9 +259,9 @@ let analyze_procedure_with_cost_bounds
            ~get_loop_cost
            ~get_loop_cost_user
            ~get_block_cost
-           ~record_final_cost) ;
-    analysis_setup#setOpSemantics (default_opsemantics "cost_bounds" cmsix hpc_opt) ;
-    analysis_setup#analyze_procedure ~do_loop_counters:false system proc 
+           ~record_final_cost);
+    analysis_setup#setOpSemantics (default_opsemantics "cost_bounds" cmsix hpc_opt);
+    analysis_setup#analyze_procedure ~do_loop_counters:false system proc
   end
 
 let analyze_bounds_cost (costmodel:costmodel_t) (mInfo:method_info_int) =
@@ -274,10 +271,10 @@ let analyze_bounds_cost (costmodel:costmodel_t) (mInfo:method_info_int) =
       let _ = H.clear sinkinvariants in
       let cms = mInfo#get_class_method_signature in
       let cmsix = cms#index in
-      JCHCostBoundsDomainNoArrays.dbg := !dbg;  
-      JCHCostBoundsModel.dbg := !dbg ; 
+      JCHCostBoundsDomainNoArrays.dbg := !dbg;
+      JCHCostBoundsModel.dbg := !dbg;
       pr__debug [NL; NL; NL; NL; STR "analyze_cost_bounds ";
-                 INT cmsix; STR " "; mInfo#get_class_method_signature#toPretty; NL] ;
+                 INT cmsix; STR " "; mInfo#get_class_method_signature#toPretty; NL];
       if !dbg then
         pr__debug [STR "bytecode: "; NL; mInfo#get_bytecode#toPretty; NL];
       JCHCostBounds.set_cmsix cmsix;
@@ -290,14 +287,14 @@ let analyze_bounds_cost (costmodel:costmodel_t) (mInfo:method_info_int) =
 	  let (p, lps) = costabstractor#to_chifproc in
 	  let res = (Some p, List.map (fun lp -> Some lp) lps, "") in
 	  res
-	with JCHCostUtils.JCH_cost_out_of_time str -> (None, [], str) in 
+	with JCHCostUtils.JCH_cost_out_of_time str -> (None, [], str) in
       let analyze_proc hpc_opt p_opt =
-	let cost = 
+	let cost =
 	  match p_opt with
 	  | Some p ->
 	      begin
 		let csystem = LF.mkSystem (new symbol_t "costmodel") in
-		csystem#addProcedure p ;
+		csystem#addProcedure p;
 		try
 		  analyze_procedure_with_cost_bounds
                     cmsix
@@ -307,7 +304,7 @@ let analyze_bounds_cost (costmodel:costmodel_t) (mInfo:method_info_int) =
                     (costmodel#add_to_coststore_final cmsix)
                     userdata
                     p
-                    csystem ;
+                    csystem;
 		  get_methodexit_bounds ()
 		with JCHCostUtils.JCH_cost_out_of_time str ->
 		  begin
@@ -316,9 +313,9 @@ let analyze_bounds_cost (costmodel:costmodel_t) (mInfo:method_info_int) =
 		      (LBLOCK [STR "m_"; INT cmsix; STR ": ";
                                (JCHDictionary.retrieve_cms cmsix)#toPretty]);
 		    pr_debug [STR str; NL];
-		    let jterm = 
+		    let jterm =
 		      match hpc_opt with
-		      | Some hpc -> 
+		      | Some hpc ->
 			 JSymbolicConstant
                            ((TBasic Int),
                             (Some (mkNumerical 100)),
@@ -350,19 +347,19 @@ let analyze_bounds_cost (costmodel:costmodel_t) (mInfo:method_info_int) =
 	      end in
 	match hpc_opt with
 	| Some hpc ->
-	    pr__debug [ NL; STR "loop@"; INT hpc; STR " cost: "; NL; 
-			cost#toPretty] ; 
+	    pr__debug [NL; STR "loop@"; INT hpc; STR " cost: "; NL;
+			cost#toPretty];
 	    costmodel#set_loop_cost cmsix hpc cost
 	| _ ->
-	    pr__debug [ NL; STR "method cost for "; 
-			mInfo#get_class_method_signature#toPretty ; 
-			STR " (" ; INT cmsix ; STR ") is " ; NL ;
-			cost#toPretty] ; 
+	    pr__debug [NL; STR "method cost for ";
+		       mInfo#get_class_method_signature#toPretty;
+		       STR " ("; INT cmsix; STR ") is "; NL;
+		       cost#toPretty];
 	    costmodel#set_methodcost cmsix cost in
       List.iter (fun pair_opt ->
 	match pair_opt with
 	| Some (hpc, loop_proc) -> analyze_proc (Some hpc) (Some loop_proc)
-	| None -> analyze_proc None proc_opt) loop_procs ;
+	| None -> analyze_proc None proc_opt) loop_procs;
       analyze_proc None proc_opt
     end
 
@@ -379,8 +376,7 @@ let create_bounds_cost_model use_symbolic_defaults =
     JCHCallgraphBase.callgraph_base#bottomup_iter
       (fun m -> if m#has_bytecode then analyze_bounds_cost costmodel m);
     JCHCostUtils.record_not_pos_jterms ();
-    costmodel#print_cost_stores () ;
-    List.iter costmodel#save_xml_class JCHApplication.app#get_classes ;
+    costmodel#print_cost_stores ();
+    List.iter costmodel#save_xml_class JCHApplication.app#get_classes;
     List.iter costmodel#save_xml_atlas_class JCHApplication.app#get_classes
   end
-

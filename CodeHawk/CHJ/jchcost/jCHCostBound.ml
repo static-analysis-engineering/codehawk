@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -49,13 +50,13 @@ open JCHCostUtils
 
 let dbg = ref false
 
-(* cost <= (sum terms) + const / div  or  cost => (sum terms) + const / div 
+(* cost <= (sum terms) + const / div  or  cost => (sum terms) + const / div
  * each term is of the form coeff x jterm1 ^ n1 x jterm ^ n2 x ...
  * div is pos *)
-   
+
 let max_small_coeff = mkNumerical 100
 let max_small_div = mkNumerical 100
-    
+
 class cost_bound_t
         (is_lb: bool)
         (terms: numerical_t JTermTableCollections.table_t)
@@ -96,7 +97,7 @@ object (self : 'a)
       comp_div
 
   method is_const =
-    !terms#size = 0     
+    !terms#size = 0
 
   method is_pos_const =
     !terms#size = 0 && !const#geq numerical_zero
@@ -108,21 +109,21 @@ object (self : 'a)
     !terms#size = 0 && not (!const#equal numerical_zero)
 
   method has_negative_coefficient =
-    List.exists (fun (t,n) -> n#lt numerical_zero) !terms#listOfPairs
+    List.exists (fun (_, n) -> n#lt numerical_zero) !terms#listOfPairs
 
   method has_pos_jterms =
     List.for_all is_pos_jterm self#get_jterms#toList
 
   (* assume that the coeffs are pos *)
   method is_small =
-    if !const#leq max_small_coeff then 
+    if !const#leq max_small_coeff then
       List.for_all (fun n -> n#leq max_small_coeff) !terms#listOfValues
     else
       false
 
   method number_terms = !terms#size
 
-  method private change_is_lb (a: 'a) = 
+  method private change_is_lb (a: 'a) =
     {< is_lb = not a#is_lb;
       terms = ref a#get_terms;
       const = ref a#get_const;
@@ -132,14 +133,18 @@ object (self : 'a)
       (index_map: (int * numerical_t JTermCollections.table_t) list)
       (t: numerical_t JTermCollections.table_t) =
     try
-      fst (List.find
-	     (fun (_, j) -> (compare_tables jterm_compare compare_num) t j = 0) index_map)
+      fst
+        (List.find
+	   (fun (_, j) ->
+             (compare_tables jterm_compare compare_num) t j = 0) index_map)
     with
     | Not_found ->
-       raise (JCH_failure
-		(LBLOCK [ STR "term " ; t#toPretty; 
-			  STR " not found in JCHCostBounds.cost_bound_t find_index" ]))
-      
+       raise
+         (JCH_failure
+	    (LBLOCK [
+                 STR "term " ; t#toPretty;
+		 STR " not found in JCHCostBounds.cost_bound_t find_index"]))
+
   method get_jterms =
     let set = new JTermCollections.set_t in
     let add_prod table = set#addList table#listOfKeys in
@@ -149,7 +154,7 @@ object (self : 'a)
     end
 
   method equal (a: 'a) =
-    if !div#equal a#get_div && !const#equal a#get_const then 
+    if !div#equal a#get_div && !const#equal a#get_const then
       begin
 	let prods =
           JTermTableCollections.set_of_list
@@ -165,17 +170,17 @@ object (self : 'a)
       false
 
   method private augment (bound: 'a) (num: numerical_t) =
-    {< is_lb = bound#is_lb;    
+    {< is_lb = bound#is_lb;
       terms = ref (bound#get_terms#map (fun t -> t#mult num));
       const = ref (bound#get_const#mult num) ;
-      div = ref (bound#get_div#mult num) >} 
+      div = ref (bound#get_div#mult num) >}
 
   method make_opposite =
     {< is_lb = not is_lb >}
 
   method private add_same_div (b1: 'a) (b2: 'a) =
     let new_terms = b1#get_terms#clone in
-    let add_pair t num = 
+    let add_pair t num =
       match new_terms#get t with
       | Some n ->
 	  let new_num = n#add num in
@@ -189,7 +194,7 @@ object (self : 'a)
         const = ref (b1#get_const#add b2#get_const) ;
         div = ref b1#get_div >}
     end
-    
+
   method add (a: 'a) =
     if self#is_zero_const then a
     else if a#is_zero_const then
@@ -197,16 +202,16 @@ object (self : 'a)
     else if is_lb != a#is_lb then
       begin
 	pr_debug [STR "adding a lower bound and an upper bound in " ;
-                  STR "JCHCostBounds.cost_bound_t add"]; 
+                  STR "JCHCostBounds.cost_bound_t add"];
 	raise (JCH_failure
 		 (LBLOCK [STR "adding a lower bound and an upper bound " ;
                           STR "in JCHCostBounds.cost_bound_t add"]))
       end
-    else 
+    else
       let lcm = !div#lcm a#get_div in
       let bound = self#augment self (lcm#div !div) in
       let abound = self#augment a (lcm#div a#get_div) in
-      self#add_same_div bound abound 
+      self#add_same_div bound abound
 
   method neg =
     {< is_lb = not is_lb;
@@ -217,7 +222,7 @@ object (self : 'a)
     self#add (a#neg)
 
 (* We assume that we multiply two positive cost bounds
- * mult is also used when multiplying two cost_bound_t that are viewed as just 
+ * mult is also used when multiplying two cost_bound_t that are viewed as just
  * expressions not bounds, for instance in bound_from_jterm *)
   method mult (a: 'a) =
     let mult_prods (t1: numerical_t JTermCollections.table_t)
@@ -254,13 +259,13 @@ object (self : 'a)
       List.iter add_terms pairs ;
       List.iter add_terms pairs1;
       List.iter add_terms pairs2;
-      
+
       self#simplify_coeffs
         {< terms = ref new_terms ;
 	   const = ref (!const#mult a#get_const);
 	   div = ref (!div#mult a#get_div)>}
     end
-    
+
   (* assume a is a pos const *)
   method div (a: 'a) =
     if not a#is_const then
@@ -269,7 +274,7 @@ object (self : 'a)
       let aconst = a#get_const in
       if aconst#equal numerical_zero then
         raise (JCH_failure (STR "division by 0"))
-      else 
+      else
 	let adiv = a#get_div in
 	self#simplify_coeffs
 	  {< terms = ref (!terms#clone#map (fun n -> n#mult adiv));
@@ -300,24 +305,24 @@ object (self : 'a)
   method make_small_div =
     if !div#leq max_small_div then
       self
-    else if self#has_pos_jterms then 
+    else if self#has_pos_jterms then
       begin
 	let nrs = !const :: !terms#listOfValues in
 	let min = ref !div in
 	let check_nr n =
-	  if not (n#equal numerical_zero) then 
+	  if not (n#equal numerical_zero) then
 	    let nabs = n#abs in
 	    if nabs#lt !min then min := nabs in
 	List.iter check_nr nrs ;
 	let changed = ref (!min != !div) in
 	let change down n =
-	  let new_n =    
+	  let new_n =
 	    let md = n#modulo !min in
 	    let n' = (n#sub md)#div !min in
 	    if down || md#equal numerical_zero then n'
 	    else n'#add numerical_one in
-	    new_n in 
-	let res =  
+	    new_n in
+	let res =
 	  {< terms = ref (!terms#map (change is_lb));
 	    const = ref (change is_lb !const) ;
 	    div = ref (change (not is_lb) !div)  >} in
@@ -332,7 +337,7 @@ object (self : 'a)
               (LBLOCK [STR (pretty_to_string pp)]) ;
 	    pr__debug [STR "cost loss of precision "; pp] ;
 	  end ;
-	res 
+	res
       end
     else
       begin
@@ -341,7 +346,7 @@ object (self : 'a)
                      NL; self#toPretty; NL ]);
         self
       end
-	
+
   method private mk_constant (is_lb:bool) (n:numerical_t) =
     self#make_cost_bound
       is_lb (new JTermTableCollections.table_t) n numerical_one
@@ -381,7 +386,7 @@ object (self : 'a)
     else
       begin
 	let res = ref bound in
-	for i = 2 to int_p do
+	for _i = 2 to int_p do
 	  res := !res#mult bound
 	done ;
 	!res
@@ -391,7 +396,7 @@ object (self : 'a)
                    (is_lb:bool)
                    ((jterm, power):jterm_t * numerical_t)
                    (map: (jterm_t * 'a) list)
-                   (is_jterm_to_keep:(jterm_t -> bool)): 'a = 
+                   (is_jterm_to_keep:(jterm_t -> bool)): 'a =
     if is_jterm_to_keep jterm then
       let t = new JTermCollections.table_t in
       let table = new JTermTableCollections.table_t in
@@ -407,7 +412,7 @@ object (self : 'a)
       try (* not in the map *)
 	let new_bound =
           snd (List.find (fun (j, _) -> jterm_compare j jterm = 0) map) in
-	self#power new_bound power 
+	self#power new_bound power
       with
       | _ ->
          begin
@@ -416,16 +421,16 @@ object (self : 'a)
 	 end
 
   method private subst_term
-                   (is_lb:bool) 
+                   (is_lb:bool)
                    ((prod, num):numerical_t JTermCollections.table_t * numerical_t)
                    (map:(jterm_t * 'a) list)
                    (is_jterm_to_keep:(jterm_t -> bool)): 'a =
     let bound =
-      ref {< is_lb = is_lb; 
+      ref {< is_lb = is_lb;
 	     terms = ref (new JTermTableCollections.table_t);
 	     const = ref num;
 	     div = ref numerical_one >} in
-    let mult_by_power (jterm, power) = 
+    let mult_by_power (jterm, power) =
       bound :=
         !bound#mult
          (self#subst_power is_lb (jterm, power) map is_jterm_to_keep) in
@@ -433,7 +438,7 @@ object (self : 'a)
       List.iter mult_by_power prod#listOfPairs ;
       !bound
     end
-      
+
   method private subst_
                    (a: 'a)
                    (map: (jterm_t * 'a) list)
@@ -449,7 +454,7 @@ object (self : 'a)
     self#make_cost_bound
       sum#is_lb sum#get_terms sum#get_const (sum#get_div#mult !div)
 
-  method has_only_jterms_to_keep (is_jterm_to_keep: jterm_t -> bool) = 
+  method has_only_jterms_to_keep (is_jterm_to_keep: jterm_t -> bool) =
     let is_good table =
       List.for_all is_jterm_to_keep table#listOfKeys in
     List.for_all is_good !terms#listOfKeys
@@ -484,7 +489,7 @@ object (self : 'a)
     let new_terms = new JTermTableCollections.table_t in
     let diff = new JTermTableCollections.table_t in
     let adiff = new JTermTableCollections.table_t in
-    
+
     let set prod (n: numerical_t) (m: numerical_t) =
       let n = n#mult mult in
       let m = m#mult amult in
@@ -494,7 +499,7 @@ object (self : 'a)
 	else if n#lt m then
 	  begin
 	    if n#gt numerical_zero then new_terms#set prod n ;
-	    adiff#set prod (m#sub n) 
+	    adiff#set prod (m#sub n)
 	  end
 	else
 	  begin
@@ -514,16 +519,16 @@ object (self : 'a)
 	    new_terms#set prod m;
 	    diff#set prod (m#sub n)
 	  end in
-    
+
     let prods =
       JTermTableCollections.set_of_list
         (!terms#listOfKeys @ a#get_terms#listOfKeys) in
-    
+
     let get_coeff
           (prod: numerical_t JTermCollections.table_t)
-          (ts: numerical_t JTermTableCollections.table_t) = 
+          (ts: numerical_t JTermTableCollections.table_t) =
       match ts#get prod with Some n -> n | None -> numerical_zero in
-    
+
     let add_prod prod =
       let c = get_coeff prod !terms in
       let ac = get_coeff prod a#get_terms in
@@ -544,14 +549,14 @@ object (self : 'a)
 	new_const :=
           !new_const#add (Option.get diff_cost_bound#find_const_lb_no_div) ;
 	new_aconst :=
-          !new_aconst#add (Option.get adiff_cost_bound#find_const_lb_no_div) ;	    
+          !new_aconst#add (Option.get adiff_cost_bound#find_const_lb_no_div) ;
       end
     else
       begin
 	new_const :=
           !new_const#sub (Option.get diff_cost_bound#find_const_lb_no_div) ;
 	new_aconst :=
-          !new_aconst#sub (Option.get adiff_cost_bound#find_const_lb_no_div) ;	    	
+          !new_aconst#sub (Option.get adiff_cost_bound#find_const_lb_no_div) ;
       end ;
 
     let new_const =
@@ -568,11 +573,11 @@ object (self : 'a)
     let new_const =
       if new_const#lt numerical_zero then numerical_zero else new_const in
 
-    let bound =     
+    let bound =
       {< terms = ref new_terms;
 	const = ref new_const;
 	div = ref new_div >} in
-    self#simplify_coeffs bound 
+    self#simplify_coeffs bound
 
   method has_pos_coeffs =
     List.for_all (fun n -> n#geq numerical_zero) !terms#listOfValues
@@ -598,9 +603,9 @@ object (self : 'a)
                    ((prod, coeff):numerical_t JTermCollections.table_t * numerical_t) : numerical_t =
     let find_lb_jterm jterm =
       match jterm with
-      | JConstant i 
+      | JConstant i
       | JSymbolicConstant (_, Some i, _, _) -> i
-      | JSize t -> numerical_zero
+      | JSize _ -> numerical_zero
       | _ ->
 	  begin
 	    match JCHNumericAnalysis.get_pos_field_interval jterm with
@@ -610,32 +615,32 @@ object (self : 'a)
                  (JCH_failure
                     (LBLOCK [
                          STR "find_const_lb expected pos symbolic const, pos field, or size " ;
-                         jterm_to_pretty jterm; NL])) 
+                         jterm_to_pretty jterm; NL]))
 	  end in
-	  
-	  
+
+
     let find_lb_power ((jterm, n): jterm_t * numerical_t) =
       let lb = find_lb_jterm jterm in
       let res = ref numerical_one in
-      for i = 1 to n#toInt do
+      for _i = 1 to n#toInt do
 	res := !res#mult lb ;
       done;
       !res in
-      
+
     let res = ref coeff in
     let mult_power p =
       res := !res#mult (find_lb_power p) in
     List.iter mult_power prod#listOfPairs ;
-    !res 
+    !res
 
   method find_const_lb_no_div =
-    let find_lb_sum () = 
+    let find_lb_sum () =
       let res = ref !const in
       let add_term t =
 	res := !res#add (self#find_const_lb_term t) in
       List.iter add_term !terms#listOfPairs ;
       !res in
-	
+
     if self#has_pos_jterms && self#has_pos_coeffs then
       try
 	Some (find_lb_sum ())
@@ -652,7 +657,7 @@ object (self : 'a)
   method is_local_var_linear =
     let is_linear (term, coeff) =
       let ps = term#listOfPairs in
-      if (List.length ps) == 1 then 
+      if (List.length ps) == 1 then
 	let (jt, power) = List.hd ps in
 	power#equal numerical_one || not (is_local_var true jt)
       else
@@ -688,12 +693,12 @@ object (self : 'a)
     let cnst = if is_lb then !const#neg#getNum else !const#getNum in
     new JCHLinearConstraint.linear_constraint_t false ps cnst
 
-  method to_jterm = 
+  method to_jterm =
     let prod_to_jterm t =
       let rec power_to_jterm power j n =
 	if n = 0 then power
 	else power_to_jterm (JArithmeticExpr (JTimes, power, j)) j (pred n) in
-      let rec func pairs = 
+      let rec func pairs =
 	match pairs with
 	| [(j, n)] -> power_to_jterm j j (pred n#toInt)
 	| (j, n) :: rest_pairs ->
@@ -701,10 +706,10 @@ object (self : 'a)
 			     func rest_pairs)
 	| _ -> raise (JCHBasicTypes.JCH_failure (STR "empty product")) in
       func t#listOfPairs in
-	  
+
     let add_pair s (t, num) =
       if num#equal numerical_one then
-	JArithmeticExpr (JPlus, s, prod_to_jterm t) 
+	JArithmeticExpr (JPlus, s, prod_to_jterm t)
       else
 	JArithmeticExpr
           (JPlus, s, JArithmeticExpr (JTimes, JConstant num, prod_to_jterm t)) in
@@ -716,7 +721,7 @@ object (self : 'a)
     jtdictionary#write_xml_jterm node self#to_jterm
 
   method toPretty =
-    self#to_pretty_small 
+    self#to_pretty_small
 
   method to_string =
     let rel_str = if is_lb then " >= " else " <= " in
@@ -731,7 +736,7 @@ object (self : 'a)
     let first = ref true in
     let pp_sign = if is_lb then STR ">= " else STR "<= " in
     let pp_jterm jterm =
-      let rec pp_str jt = 
+      let rec pp_str jt =
 	match jt with
         (* TBA: JPower(t,n), JUninterpreted (name,terms) ?? *)
 	| JLocalVar (-1) -> "return"
@@ -746,7 +751,7 @@ object (self : 'a)
 	| JLoopCounter i -> "loop-counter@pc_" ^ (string_of_int i)
 	| JStaticFieldValue (cnix,name) ->
 	    ((JCHDictionary.retrieve_cn cnix)#name ^ "." ^ name)
-	| JObjectFieldValue (cmsix,varix,cnix,name) ->
+	| JObjectFieldValue (cmsix, _varix, _cnix, name) ->
 	    ((JCHDictionary.retrieve_cms cmsix)#name ^ ":var" ^ "." ^ name)
 	| JConstant i -> i#toString
 	| JBoolConstant b -> if b then "true" else "false"
@@ -756,14 +761,17 @@ object (self : 'a)
 	| JUninterpreted (str, js) ->
 	    let add_j (first, pp) j =
 	      (false,
-               if first then pp ^ (jterm_to_string j) else pp ^ ", "^(jterm_to_string j)) in
-	    (snd (List.fold_left add_j (true, str ^ "(") js)) ^ ")" 
+               if first then
+                 pp ^ (jterm_to_string j)
+               else
+                 pp ^ ", "^(jterm_to_string j)) in
+	    (snd (List.fold_left add_j (true, str ^ "(") js)) ^ ")"
 	| _ ->
            raise
              (JCH_failure (STR "unacceptable term in cost_bound_t")) in
       STR (pp_str jterm) in
     let pp_n n = n#toPretty in
-    let terms_const :  ((jterm_t * numerical_t) list * numerical_t) list = 
+    let terms_const :  ((jterm_t * numerical_t) list * numerical_t) list =
       (List.map
          (fun (t, n) -> (t#listOfPairs, n)) !terms#listOfPairs) @ [([], !const)] in
     let pp_product
@@ -771,13 +779,13 @@ object (self : 'a)
           ((jterm, n): jterm_t * numerical_t):pretty_t list =
       if n#equal numerical_one then pp @ [STR "("; pp_jterm jterm; STR ")"]
       else pp @ [STR "("; pp_jterm jterm; STR ")^"; n#toPretty] in
-    let rec pp_terms pp (t, n) =
+    let pp_terms pp (t, n) =
       let pp_coeff c =
 	if t = [] then [pp_n c]
 	else if n#equal numerical_one then []
 	else [pp_n c; STR " x "] in
       if n#equal numerical_zero && t = [] then pp
-      else if n#geq numerical_zero then 
+      else if n#geq numerical_zero then
 	begin
 	  if !first then
 	    begin
@@ -796,7 +804,7 @@ object (self : 'a)
 	    end
 	  else List.fold_left pp_product (pp @ [STR " - "] @ (pp_coeff n_abs)) t
 	end in
-    let pp_sum = 
+    let pp_sum =
       if self#is_const then
         LBLOCK [pp_sign; pp_n !const]
       else
@@ -804,18 +812,18 @@ object (self : 'a)
     if !div#equal numerical_one then
       pp_sum
     else
-      LBLOCK [STR "("; pp_sum; STR ") / "; !div#toPretty] 
-	
+      LBLOCK [STR "("; pp_sum; STR ") / "; !div#toPretty]
+
   method to_evx : external_value_exchange_format_t  =
     let is_lb_evx = EVX_STRING (if is_lb then "true" else "false") in
     let div_evx = EVX_STRING !div#toString in
     let pair_to_evx (table, num) =
-      let power_to_evx (j, n) =
+      let power_to_evx (j, _n) =
 	EVX_LIST [EVX_STRING (jterm_to_string j);
 		  EVX_STRING num#toString] in
       let powers_evx = EVX_LIST (List.map power_to_evx table#listOfPairs) in
       EVX_LIST [EVX_STRING num#toString; powers_evx] in
-      
+
     let pairs_evx = EVX_LIST (List.map pair_to_evx !terms#listOfPairs) in
     let const_evx = EVX_STRING !const#toString in
     EVX_LIST [is_lb_evx; pairs_evx; const_evx; div_evx]
@@ -823,7 +831,7 @@ end
 
 let cost_bound_from_num is_lb n =
   new cost_bound_t is_lb (new JTermTableCollections.table_t) n numerical_one
-    
+
 let bounds_from_linear_constraint
       index_map (constr: JCHLinearConstraint.linear_constraint_t) =
   let (ps, cnst) = constr#get_pairs_const in
@@ -852,7 +860,7 @@ let bounds_from_linear_constraint
       [new cost_bound_t true terms const neg_div;
 	new cost_bound_t false terms const neg_div]
     else
-      [new cost_bound_t false terms const neg_div] 
+      [new cost_bound_t false terms const neg_div]
 
 let rec bound_from_jterm is_lb jterm : cost_bound_t =
   match jterm with
@@ -869,7 +877,7 @@ let rec bound_from_jterm is_lb jterm : cost_bound_t =
   | JAuxiliaryVar _
   | JLocalVar _
   | JLoopCounter _
-  | JStaticFieldValue _ 
+  | JStaticFieldValue _
   | JObjectFieldValue _
   | JSize _
   | JUninterpreted _ ->
@@ -881,17 +889,17 @@ let rec bound_from_jterm is_lb jterm : cost_bound_t =
   | JPower (j, n) ->
       if n < 0 then
 	raise (JCH_failure
-                 (LBLOCK [STR "bound_from_jterm encountered negative power"; NL])) 
-      else 
+                 (LBLOCK [STR "bound_from_jterm encountered negative power"; NL]))
+      else
 	begin
 	  let c = bound_from_jterm is_lb j in
-	  c#power c (mkNumerical n) 
+	  c#power c (mkNumerical n)
 	end
   | JArithmeticExpr (JTimes, j1, j2) ->
       let c1 = bound_from_jterm is_lb j1 in
       let c2 = bound_from_jterm is_lb j2 in
       c1#mult c2
-  | JArithmeticExpr (JDivide, j1, j2) -> 
+  | JArithmeticExpr (JDivide, j1, j2) ->
       let c1 = bound_from_jterm is_lb j1 in
       let c2 = bound_from_jterm is_lb j2 in
       c1#div c2
@@ -902,7 +910,7 @@ let rec bound_from_jterm is_lb jterm : cost_bound_t =
   | JArithmeticExpr (JMinus, j1, j2) ->
       let c1 = bound_from_jterm is_lb j1 in
       let c2 = bound_from_jterm (not is_lb) j2 in
-      c1#sub c2      
+      c1#sub c2
   | _ -> raise Exit
 
 let cost_bound_to_string (cbound:cost_bound_t):string =
@@ -910,7 +918,7 @@ let cost_bound_to_string (cbound:cost_bound_t):string =
 	| false -> "Sym"
 	| true -> cbound#get_const#toString
 
-module CostBoundCollections = CHCollections.Make 
+module CostBoundCollections = CHCollections.Make
     (struct
       type t = cost_bound_t
       let compare b1 b2 = b1#compare b2

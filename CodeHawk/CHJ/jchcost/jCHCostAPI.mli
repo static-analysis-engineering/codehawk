@@ -3,8 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -62,7 +63,7 @@ class type sidechannelcheck_int =
 
 class type costmodel_int =
 object
-  
+
   (* utility *)
   method mk_bottom: 'a
   method mk_top   : 'a
@@ -88,7 +89,7 @@ object
   (* xml *)
   method write_xml_cost: xml_element_int -> 'a -> unit
   method save_xml_class: class_info_int -> unit
-  method save_xml_atlas_class: class_info_int -> unit       
+  method save_xml_atlas_class: class_info_int -> unit
   method read_xml_cost: xml_element_int -> unit
   method read_xml_class: class_info_int -> unit
 

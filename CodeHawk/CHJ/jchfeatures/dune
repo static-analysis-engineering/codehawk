@@ -3,7 +3,3 @@
   (libraries chlib chutil extlib jchlib jchpre)
   (public_name codehawk.jchfeatures)
   (wrapped false))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))

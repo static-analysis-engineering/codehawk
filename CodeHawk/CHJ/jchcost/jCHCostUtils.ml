@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,30 +27,26 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHLanguage
 open CHNumerical
-open CHPretty  
+open CHPretty
 open CHUtils
 
 (* chutil *)
 open CHLogger
-open CHPrettyUtil
 
 (* jchlib *)
 open JCHBasicTypes
 open JCHBasicTypesAPI
 open JCHJTerm
 
-(* jchsys *)
-open JCHPrintUtils
 
 let max_num = mkNumerical 100000
-let margin_num = mkNumerical 10 
+let margin_num = mkNumerical 10
 let max_int_num = mkNumerical 2147483647
-let max_long_num = mkNumericalFromString "9223372036854775807" 
+let max_long_num = mkNumericalFromString "9223372036854775807"
 let sym_max_int =
   JSymbolicConstant
-    (TBasic Long, Some max_int_num, Some max_int_num, "max_int") 
+    (TBasic Long, Some max_int_num, Some max_int_num, "max_int")
 let sym_max_long =
   JSymbolicConstant
     (TBasic Long, Some max_long_num, Some max_long_num, "max_long")
@@ -111,13 +108,13 @@ let rec is_sym_lc_or_call_term (jterm:jterm_t) =
 	s = "call_" || s = "lc_m_"
       else
         false
-  | _ -> false 
+  | _ -> false
 
 let rec is_local_var (check_length:bool) (jterm:jterm_t) =
   match jterm with
   | JLocalVar _ -> true
-  | JSize jt -> if check_length then is_local_var true jt else false 
-  | _ -> false 
+  | JSize jt -> if check_length then is_local_var true jt else false
+  | _ -> false
 
 let cost_var = ref None
 let set_cost_var v = cost_var := Some v
@@ -125,7 +122,7 @@ let get_cost_var () = Option.get !cost_var
 
 let compare_num (n1:numerical_t) (n2:numerical_t) =
   n1#compare n2
-    
+
 let compare_tables
       (compare_keys:('a -> 'a -> int))
       (compare_elements:('b -> 'c -> int))
@@ -148,7 +145,7 @@ let compare_tables
     | [] -> 0 in
   comp sorted_keys
 
-module JTermCollections = CHCollections.Make 
+module JTermCollections = CHCollections.Make
     (struct
       type t = jterm_t
       let compare j1 j2 = jterm_compare j1 j2
@@ -162,19 +159,19 @@ module JTermTableCollections = CHCollections.Make
       let toPretty t = t#toPretty
     end)
 
-let is_length (jterm:jterm_t) = 
+let is_length (jterm:jterm_t) =
   match jterm with
   | JSize _ -> true
   | _ -> false
 
 let is_field (jterm:jterm_t) =
   match jterm with
-  | JStaticFieldValue _ 
+  | JStaticFieldValue _
   | JObjectFieldValue _ -> true
   | _ -> false
 
 let not_pos_jterms = new IntCollections.table_t
-                   
+
 let add_not_pos_jterm (cmix:int) (jterm:jterm_t) =
   let key = if is_field jterm then (-1) else cmix in
   match not_pos_jterms#get key with
@@ -191,7 +188,7 @@ let record_not_pos_jterms () =
        (LBLOCK[STR "fields "; set#toPretty; NL])
   | _ -> ()) ;
   let record_set (key, set) =
-    if key != (-1) then 
+    if key != (-1) then
       chlog#add
         "not known to be positive "
         (LBLOCK[STR "method "; INT key; set#toPretty; NL]) in
@@ -199,7 +196,7 @@ let record_not_pos_jterms () =
 
 let is_const (jt:jterm_t) =
   match jt with
-  | JConstant n -> true
+  | JConstant _ -> true
   | _ -> false
 
 let is_large_const (jt:jterm_t) =
@@ -207,13 +204,13 @@ let is_large_const (jt:jterm_t) =
   | JConstant n when n#gt max_num -> true
   | _ -> false
 
-let is_pos_jterm (jt:jterm_t) = 	
+let is_pos_jterm (jt:jterm_t) =
   match jt with
-  | JConstant n 
+  | JConstant n
   | JSymbolicConstant (_, Some n, _, _) ->
-      n#geq numerical_zero 
+      n#geq numerical_zero
   | JSize _ -> true
-  | _ -> JCHNumericAnalysis.is_pos_field jt 
+  | _ -> JCHNumericAnalysis.is_pos_field jt
 
 let pp_list_jterm (jts:jterm_t list) =
   pretty_print_list jts jterm_to_pretty "{" "; " "}"
@@ -225,9 +222,9 @@ let rec no_local_vars (jterm:jterm_t) =
   | _ -> true
 
 let no_calls_or_lcs (lcs_to_keep:JTermCollections.set_t) (jterm:jterm_t) =
-  match jterm with 
+  match jterm with
   | JSymbolicConstant _ ->
-      if is_sym_call jterm then false 
+      if is_sym_call jterm then false
       else if is_sym_lc jterm then
 	if lcs_to_keep#has jterm then false
 	else true
@@ -236,12 +233,12 @@ let no_calls_or_lcs (lcs_to_keep:JTermCollections.set_t) (jterm:jterm_t) =
 
 let no_cost_calls_or_lcs
       (lcs_to_keep:JTermCollections.set_t) (jterm:jterm_t) =
-  match jterm with 
+  match jterm with
   | JSymbolicConstant _ ->
      if is_sym_cost jterm then
        false
      else if is_sym_call jterm then
-       false 
+       false
       else if is_sym_lc jterm then
        if lcs_to_keep#has jterm then
          false
@@ -253,9 +250,9 @@ let no_cost_calls_or_lcs
 
 let no_loop_costs (jterm:jterm_t) =
   not (is_sym_lp jterm)
-    
-let remove_pc (jterm:jterm_t) =
-  match jterm with 
+
+let _remove_pc (jterm:jterm_t) =
+  match jterm with
   | JSymbolicConstant (t, lb, ub, name) ->
       if (String.length name) > 5 && (String.sub name 0 5) = "call_" then
 	begin
@@ -269,11 +266,11 @@ let remove_pc (jterm:jterm_t) =
 
 let max_cost_analysis_time = ref 1.
 let set_max_cost_analysis_time m = max_cost_analysis_time := m
-    
+
 exception JCH_cost_out_of_time of string
-                                
+
 let cost_time_limit = ref 1.
-let start_cost_analysis () =  
+let start_cost_analysis () =
   cost_time_limit := Sys.time () +. !max_cost_analysis_time
 
 let check_cost_analysis_time (str:string) =
@@ -282,5 +279,3 @@ let check_cost_analysis_time (str:string) =
       let str = "reached cost analysis time limit " ^ str in
       raise (JCH_cost_out_of_time str)
     end
-
-
