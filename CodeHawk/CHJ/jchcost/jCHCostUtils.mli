@@ -3,8 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -12,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -44,7 +45,7 @@ val sym_max_long: jterm_t
 
 val make_sym_lc :
   int -> int -> numerical_t -> numerical_t option -> jterm_t
-  
+
 val is_sym_lc: jterm_t -> bool
 val make_sym_lp: int -> int -> numerical_t -> jterm_t
 val is_sym_lp: jterm_t -> bool
@@ -55,10 +56,10 @@ val make_sym_cost : int list -> numerical_t -> int -> jterm_t
 
 val set_cost_var : variable_t -> unit
 val get_cost_var : unit -> variable_t
-  
+
 val compare_num : numerical_t -> numerical_t -> int
-    
-val compare_tables : 
+
+val compare_tables :
     ('a -> 'a -> int)
     -> ('b -> 'c -> int)
     -> < get: 'a -> 'b option; keys: < union : 'd -> < toList : 'a list; .. >; .. >; .. >
@@ -170,8 +171,8 @@ module JTermTableCollections :
 val is_length: jterm_t -> bool
 val is_field: jterm_t -> bool
 val is_sym_lc_or_call_term: jterm_t -> bool
-val is_local_var: bool -> jterm_t -> bool 
-    
+val is_local_var: bool -> jterm_t -> bool
+
 val add_not_pos_jterm: int -> jterm_t -> unit
 val record_not_pos_jterms : unit -> unit
 val is_pos_jterm: jterm_t -> bool

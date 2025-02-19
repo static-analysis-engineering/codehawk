@@ -3,9 +3,9 @@
    Author: Henny Sipma and Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2021 Henny Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,17 +27,15 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHIntervals
-open CHLanguage
 open CHNumerical
 open CHPretty
 open CHUtils
 
 (* chutil *)
-open CHLogger 
+open CHLogger
 open CHLoopStructure
-open CHPrettyUtil 
-open CHXmlDocument 
+open CHPrettyUtil
+open CHXmlDocument
 
 (* jchlib *)
 open JCHBasicTypes
@@ -50,19 +48,13 @@ open JCHJTerm
 (* jchpre *)
 open JCHApplication
 open JCHCallgraphBase
-open JCHCodegraph
-open JCHFunctionSummary
-open JCHFunctionSummaryLibrary
 open JCHPreAPI
 open JCHPreFileIO
-open JCHStackSlotValue
-open JCHSystemSettings
 open JCHUserData
 
 open JCHPrintUtils
-  
+
 (* jchcost *)
-open JCHCostAPI
 open JCHOpcodeCosts
 open JCHCostUtils
 open JCHCostBound
@@ -73,7 +65,7 @@ module LF = CHOnlineCodeSet.LanguageFactory
 module Q = Queue
 
 let dbg = ref false
-    
+
 let use_symbolic_defaults = ref false
 let set_symbolic_defaults b = use_symbolic_defaults := b
 
@@ -81,16 +73,16 @@ let default_function_lbound = cost_bound_from_num true (mkNumerical 100)
 let default_function_ubound = cost_bound_from_num false (mkNumerical 100)
 
 let default_funcall_cost name =
-  let range = 
-    if !use_symbolic_defaults then 
+  let range =
+    if !use_symbolic_defaults then
       JSymbolicConstant ((TBasic Int),(Some (mkNumerical 100)), None, name)
     else
       (JConstant (mkNumerical 100)) in
-  mk_jterm_jterm_range range 
+  mk_jterm_jterm_range range
 
 let default_libcall_cost name =
-    let range = 
-      if !use_symbolic_defaults then 
+    let range =
+      if !use_symbolic_defaults then
 	JSymbolicConstant ((TBasic Int), (Some (mkNumerical 100)), None, name)
       else
         (JConstant (mkNumerical 100)) in
@@ -117,8 +109,8 @@ let get_precanned_time_cost (cms:class_method_signature_int) =
   else
     raise (JCH_failure (LBLOCK [ STR "Method " ; cms#toPretty ;
                                  STR " does not have a precanned cost" ]))
-  
-      
+
+
 class timecost_diagnostics_t =
 object (self)
 
@@ -173,7 +165,7 @@ object (self)
           set "s" cms#class_method_signature_string ;
           n
         end) l
-             
+
   method private write_xml_missing (node:xml_element_int) =
     let l = H.fold (fun k v a -> (k,v) :: a) missingcost [] in
     let l = List.sort Stdlib.compare l in
@@ -234,7 +226,7 @@ let save_timecost_diagnostics () =
     timecost_diagnostics#write_xml node ;
     save_timecost_diagnostics node
   end
-  
+
 
 class sidechannelcheck_t (cmsix:int) (decisionpc:int) (observationpc:int) =
 
@@ -264,7 +256,7 @@ object (self:_)
     let lst = ref [] in
     let _ = H.iter (fun k v -> lst := (k,v) :: !lst) costs in
     List.sort (fun (pc1,_) (pc2,_) -> Stdlib.compare pc1 pc2) !lst
-    
+
 
   method set_path_cost (predecessorpc:int) (cost: cost_bounds_t) =
     H.replace costs predecessorpc cost
@@ -293,7 +285,7 @@ object (self:_)
 
   method toPretty =
     let pairs = ref [] in
-    let _ = H.iter (fun k v -> pairs := (k,v):: !pairs) costs in              
+    let _ = H.iter (fun k v -> pairs := (k,v):: !pairs) costs in
     LBLOCK [ STR "decision-pc   : " ; INT decisionpc ;
              STR "observation-pc: " ; INT observationpc ;
              pretty_print_list
@@ -301,10 +293,10 @@ object (self:_)
                  LBLOCK [ INT k ; STR ": " ; v#toPretty ; NL ]) "" "" "" ;
              NL ]
 end
-                    
+
 module IntListCollections = CHCollections.Make
     (struct
-      type t = int list 
+      type t = int list
       let compare is1 is2 =
 	let rec comp is1 is2 =
 	  match (is1, is2) with
@@ -323,16 +315,16 @@ object (self:_)
 
   val methodcoststore = H.create 3
   (* (int, cost_bounds_t) H.t *)
-                      
+
   val blockcoststore = H.create 3
   (* (int, (int, cost_bounds_t) H.t) H.t ; only used for reporting *)
-                     
+
   val loopstructures = H.create 3
   (* (int, loop_structure_int) H.t *)
-                     
+
   val loopcoststore = H.create 3
   (* (int, (int, cost_bounds_t) H.t) H.t; cmsix -> looop head -> cost of loop *)
-                    
+
   val sidechannelchecks =
     (* (int, ((int, int), sidechannelcheck_t) H.t) H.t *)
     let t = H.create 3 in
@@ -359,7 +351,7 @@ object (self:_)
   method add_to_coststore_final cmsix cost =
     coststore_final#set [cmsix] cost
 
-  method write_xml_cost ?(tag="ibcost") (node:xml_element_int) (b:cost_bounds_t) = 
+  method write_xml_cost ?(tag="ibcost") (node:xml_element_int) (b:cost_bounds_t) =
     write_xml_bounds ~tag b node
 
   method read_xml_cost ?(tag="ibcost") (node:xml_element_int) =
@@ -418,7 +410,7 @@ object (self:_)
 
   method get_loop_cost (cmsix:int) (pc:int) : cost_bounds_t =
     let t = H.find loopcoststore cmsix in
-    H.find t pc 
+    H.find t pc
 
   method get_block_cost (cmsix: int) (pc: int) : cost_bounds_t =
     let t = H.find blockcoststore cmsix in
@@ -430,7 +422,7 @@ object (self:_)
     if !dbg then
       pr__debug [STR "compute_blockcost "; INT firstpc; STR " ";
                  INT lastpc; NL] ;
-    let res = 
+    let res =
       let cms = retrieve_cms cmsix in
       let mInfo = app#get_method cms in
       let cost =
@@ -439,44 +431,44 @@ object (self:_)
 	    let code = mInfo#get_bytecode#get_code in
 	    let cost: cost_bounds_t ref =
 	      ref (self#get_instr_cost cmsix firstpc (code#at firstpc)) in
-            
+
 	    (if !dbg then
                pr__debug [STR "compbute_blockcost cost = "; !cost#toPretty; NL]) ;
-            
+
 	    let i = ref firstpc in
 	    while !i < lastpc do
 	      match code#next !i with
 	      | Some j ->
-                 
+
 	         (if !dbg then
                     pr__debug [STR "add instr cost at "; INT j; NL]) ;
-                 
+
 	         let opcode = code#at j in
 	         i := j ;
 	         cost := add_cost_bounds !cost (self#get_instr_cost cmsix j opcode);
 	         JCHCostUtils.check_cost_analysis_time
                    (" while computing block costs for " ^ (string_of_int cmsix)) ;
-                 
+
 	         (if !dbg then
                     pr__debug [STR "after add_cost,  cost = "; !cost#toPretty; NL]) ;
-                 
+
 	      | _ -> ()
 	    done ;
 	    !cost
 	  end
         else
 	  self#mk_bottom in
-      
+
       begin
         self#set_block_cost cmsix firstpc cost ;
         cost
       end in
-    
+
     (if !dbg then
        pr__debug [STR "compute_blockcost "; INT firstpc; STR " ";
                   INT lastpc; STR " res = "; res#toPretty; NL]) ;
-    res 
-	   
+    res
+
   method compute_block_cost
            (cmsix:int) (firstpc:int) (lastpc:int): cost_bounds_t =
     if userdata#has_blockcost cmsix firstpc then
@@ -487,27 +479,27 @@ object (self:_)
   method private get_opcode_cost (opcode:opcode_t):jterm_range_int =
     mk_intconstant_jterm_range (mkNumerical (get_opcode_cost opcode))
 
-  (* cost_bound are bounds for the cost of a call as a function of callee 
+  (* cost_bound are bounds for the cost of a call as a function of callee
    * arguments, fields, and symbolic constants.
-   * This method uses the default_map and the argument bounds from the 
-   * numeric analysis to find a bound that depends on the parameters of 
+   * This method uses the default_map and the argument bounds from the
+   * numeric analysis to find a bound that depends on the parameters of
    * the caller function, fields, and symbolic constants *)
   method private change_methodcall_cost
                    (cost_bounds: cost_bounds_t)
                    (caller_cmsix: int)
                    (pc: int)
                    (default_map: (int * int) list): cost_bounds_t =
-    
+
     (if !dbg then
        pr__debug [STR "change_methodcall_cost ";
                   INT caller_cmsix; STR " ";
                   INT pc; NL; STR "   ";
                   cost_bounds#toPretty; NL;
                   pp_assoc_list_ints default_map; NL]) ;
-    
+
     let (arg_lbounds, arg_ubounds) =
       JCHNumericAnalysis.get_method_arg_bounds caller_cmsix pc in
-    
+
     (if !dbg then
        begin
          pr__debug [STR "JCHNumericAnalysis "; INT caller_cmsix; STR"@";
@@ -522,20 +514,20 @@ object (self:_)
                    arg_ubounds
        end) ;
 
-    (* make the constants close to max_int max_long into 
+    (* make the constants close to max_int max_long into
      * max_int(max_long) + or i small integer *)
     let max_int_lb = max_int_num#sub margin_num in
     let max_int_ub = max_int_num#add margin_num in
-    
+
     let max_long_lb = max_int_num#sub margin_num in
     let max_long_ub = max_int_num#add margin_num in
 
     let change_bounds b =
       match b with
-      | JConstant i when i#geq max_int_lb && i#leq max_int_ub -> 
+      | JConstant i when i#geq max_int_lb && i#leq max_int_ub ->
 	  let diff = i#sub max_int_num in
 	  JArithmeticExpr (JPlus, sym_max_int, JConstant diff)
-      | JConstant i when i#geq max_long_lb && i#leq max_long_ub -> 
+      | JConstant i when i#geq max_long_lb && i#leq max_long_ub ->
 	  let diff = i#sub max_long_num in
 	  JArithmeticExpr (JPlus, sym_max_long, JConstant diff)
       | _ -> b in
@@ -559,7 +551,7 @@ object (self:_)
     (* add default costs for size (args) *)
     let add_size_default is_lb bounds jt =
       match jt with
-      | JSize _ -> 
+      | JSize _ ->
 	  if (List.exists (fun (jt', _) -> jterm_compare jt' jt = 0) bounds) then
             bounds
 	  else
@@ -579,7 +571,7 @@ object (self:_)
 	pr__debug [NL; STR "after default values, arg_lbounds: "; NL];
 	List.iter (fun (jt, ls) ->
             pr__debug [jterm_to_pretty jt; STR ": "; pp_list_jterm ls; NL])
-                  arg_lbounds; 
+                  arg_lbounds;
 	pr__debug [STR "after default values, arg_ubounds: "; NL];
 	List.iter (fun (jt, ls) ->
             pr__debug [jterm_to_pretty jt; STR ": "; pp_list_jterm ls; NL])
@@ -592,7 +584,7 @@ object (self:_)
     let arg_lbounds =
       let ls = ref [] in
       let add_jterm jterm =
-        
+
 	(if !dbg then
            pr__debug [NL; STR "JCHCostBoundsModel.add_jterm ";
                       jterm_to_pretty jterm; NL]) ;
@@ -600,7 +592,7 @@ object (self:_)
 	  try
 	    let res =
               snd (List.find (fun (jt, _) -> compare jt jterm = 0) arg_lbounds) in
-            
+
 	    (if !dbg then
                pr__debug [STR "found in arg_lbounds "; NL]) ;
 	    res
@@ -645,7 +637,7 @@ object (self:_)
             pr__debug [jterm_to_pretty jt; STR ": "; pp_list_jterm ls; NL]) arg_ubounds
       end ;
 
-    (* use default values if there are no argument bounds and if there are no 
+    (* use default values if there are no argument bounds and if there are no
      * default values use the default function bounds *)
     let (cost_bounds, arg_lbounds, arg_ubounds) =
       let (lbs, ubs, inf_lb, inf_ub) = get_bounds cost_bounds in
@@ -661,9 +653,9 @@ object (self:_)
 	    chlog#add
               "cost loss of precision"
               (LBLOCK [STR (pretty_to_string pp)]) ;
-            
+
 	    pr__debug [STR "cost loss of precision "; pp] ;
-	    
+
 	    (new cost_bounds_t
                  ~bottom:cost_bounds#isBottom
                  ~simplify:false
@@ -682,14 +674,14 @@ object (self:_)
             (retrieve_cms caller_cmsix)#class_method_signature_string in
 	  let pp =
             LBLOCK [ STR method_name; STR " @ "; INT pc;
-                     STR " method call with problematic lower bounds "; NL; 
+                     STR " method call with problematic lower bounds "; NL;
 		     STR "          lower bounds ";
                      pretty_print_list
                        lbs#toList (fun b -> STR b#to_string) "{" "; " "}"; NL] in
 	  chlog#add "cost loss of precision" (LBLOCK [STR (pretty_to_string pp)]) ;
-          
+
 	  pr__debug [STR "cost loss of precision "; pp] ;
-	  
+
 	  (new cost_bounds_t
                ~bottom:cost_bounds#isBottom
                ~simplify:false
@@ -703,23 +695,23 @@ object (self:_)
 	  begin
 	    if !dbg then
               pr__debug [STR "there are lower bounds but no upper bounds"; NL] ;
-	    
-	    let const = 
+
+	    let const =
 	      let lb_n = find_const_lb true cost_bounds in
 	      let ub_n = find_const_lb false cost_bounds in
 	      if lb_n#gt ub_n then lb_n else ub_n in
 	    let const_ub = cost_bound_from_num false (const#add (mkNumerical 100)) in
-	    
+
 	    let method_name =
               (retrieve_cms caller_cmsix)#class_method_signature_string in
 	    let pp =
               LBLOCK [ STR method_name; STR " @ "; INT pc;
-                       STR " method call with problematic upper bounds "; NL; 
+                       STR " method call with problematic upper bounds "; NL;
 		       STR "          upper bounds ";
                        pretty_print_list
                          ubs#toList (fun b -> STR b#to_string) "{" "; " "}"; NL] in
 	    chlog#add "cost loss of precision" (LBLOCK [STR (pretty_to_string pp)]) ;
-            
+
 	    pr__debug [STR "cost loss of precision "; pp] ;
 
 	    (new cost_bounds_t
@@ -749,12 +741,12 @@ object (self:_)
 
 
     let mk_local_var is_lb (var_jterm, bounds) =
-      
+
       (if !dbg then
         pr__debug [STR "mk_local_var "; pp_bool is_lb; STR " ";
                    jterm_to_pretty var_jterm; NL; STR "     ";
                    (JTermCollections.set_of_list bounds)#toPretty; NL]);
-      
+
       (var_jterm, List.map (JCHCostBound.bound_from_jterm is_lb) bounds) in
     let (arg_lbounds, arg_ubounds) =
       (List.map (mk_local_var true) arg_lbounds,
@@ -764,7 +756,7 @@ object (self:_)
       begin
 	pr__debug [STR "after mk_local_var, arg_lbounds: "; NL];
 	List.iter (fun (jt, cs) ->
-            pr__debug [jterm_to_pretty jt; STR ": "; pp_list cs; NL]) arg_lbounds; 
+            pr__debug [jterm_to_pretty jt; STR ": "; pp_list cs; NL]) arg_lbounds;
 	pr__debug [STR "after mk_local_var, arg_ubounds: "; NL];
 	List.iter (fun (jt, cs) ->
             pr__debug [jterm_to_pretty jt; STR ": "; pp_list cs; NL]) arg_ubounds
@@ -772,7 +764,7 @@ object (self:_)
 
     let new_cost_bounds =
       JCHCostBounds.subst_local_vars pc cost_bounds arg_lbounds arg_ubounds in
-    
+
     (if !dbg then
        pr__debug [ STR "changel_methodcall_cost res = ";
                    new_cost_bounds#toPretty; NL]);
@@ -788,17 +780,17 @@ object (self:_)
         get_precanned_time_cost callee
       else
         summary#get_time_cost in
-    
+
     (if !dbg then
        pr__debug [STR "library method summary cost = "; cost#toPretty; NL]) ;
-    
-    let (is_top, cost) = 
+
+    let (is_top, cost) =
       if cost#is_top then
-        
+
         begin
 	  (if !dbg then
              pr__debug [STR "summary cost is top"; NL]);
-          
+
           timecost_diagnostics#record_missing callee ;
           (true, default_libcall_cost ("libcall_default_Top"))
         end
@@ -809,26 +801,26 @@ object (self:_)
           (false, cost)
 	end in
     (is_top, cost_bounds_from_jterm_range cost,[])
-      
-  method private get_methodcall_cost 
+
+  method private get_methodcall_cost
       (caller:class_method_signature_int)
       (pc:int)
       (callee:class_method_signature_int) : cost_bounds_t =
-    
+
     (if !dbg then
        pr_debug [STR "get_methodcall_cost "; INT caller#index; STR " ";
                  INT pc; STR " "; INT callee#index; NL;
 		 caller#toPretty; NL;
 		 callee#toPretty; NL]);
-    
+
     let res =
-      let change method_cost default_map = 
+      let change method_cost default_map =
         let new_cost =
           self#change_methodcall_cost method_cost caller#index pc default_map in
-        
+
         (if !dbg then
            pr__debug [STR "change new_cost = "; new_cost#toPretty; NL]) ;
-        
+
         if new_cost#isBottom then
           new_cost
         else if new_cost#isTop then
@@ -845,25 +837,25 @@ object (self:_)
                          STR ": ";callee#toPretty]);
 	    new_cost
 	  end in
-      
+
       if userdata#has_methodcost callee#index then
 	begin
 	  let method_cost = userdata#get_methodcost callee#index in
-          
+
 	  (if !dbg then
             pr__debug [STR "get_methodcall_cost: user data method_cost ";
                        method_cost#toPretty; NL]) ;
-          
+
 	  change (cost_bounds_from_jterm_range method_cost) []
 	end
       else if H.mem methodcoststore callee#index then
 	begin
 	  let method_cost = H.find methodcoststore callee#index in
-          
+
 	  (if !dbg then
             pr__debug [STR "get_methodcall_cost: analyzed method_cost "; NL;
                        method_cost#toPretty; NL]);
-          
+
 	  change method_cost []
 	end
       else if (app#has_method callee && (app#get_method callee)#is_stubbed) then
@@ -872,55 +864,55 @@ object (self:_)
           let mInfo = app#get_method caller in
 	  let (is_top, cost, default_map) =
             self#get_library_method_timecost mInfo pc callee summary in
-          
+
 	  let _ =
             if !dbg then
               pr__debug [STR "get_methodcall_cost: summary method_cost: "; NL;
                          cost#toPretty; NL] in
-          
+
 	  if is_top then
             cost
 	  else
             change cost default_map
-	end 
+	end
       else
 	begin
           let cost =
             cost_bounds_from_jterm_range
               (default_funcall_cost "funcall_default_no_summary") in
-          
+
           pr__debug [STR "get_methodcall_cost: default_functioncall_cost (no method summary) for ";
                      INT caller#index; STR " "; INT pc; STR " "; INT callee#index; NL;
 		     caller#toPretty; NL;
-		     callee#toPretty; NL]; 
-          
+		     callee#toPretty; NL];
+
           chlog#add
             "default function call cost"
             (LBLOCK [ caller#toPretty ; STR " @pc:" ; INT pc ; STR " - " ;
                       callee#toPretty ; STR ": " ; cost#toPretty ]) ;
           cost
         end in
-    
+
     (if !dbg then
        pr__debug [STR "  get_methodcall_cost res = "; res#toPretty; NL]) ;
-    
-    res 
+
+    res
 
 
   method private get_instr_cost
                    (cmsix:int) (pc:int) (opcode:opcode_t): cost_bounds_t =
-    
+
     (if !dbg then
       pr__debug [STR "_______________________"; NL;
                  STR "get_instr_time_cost "; INT pc; NL]) ;
-    
-    let res =  
+
+    let res =
       if userdata#has_instructioncost cmsix pc then
         begin
-          
+
 	  (if !dbg then
              pr_debug [STR "userdata#has_instructioncost "; NL]) ;
-          
+
 	  let cost = userdata#get_instructioncost cmsix pc in
 	  cost_bounds_from_jterm_range cost
         end
@@ -931,50 +923,50 @@ object (self:_)
             | OpInvokeSpecial _
             | OpInvokeStatic _
             | OpInvokeInterface _  ->
-	     let cost_callee = 
+	     let cost_callee =
 	       let caller = retrieve_cms cmsix in
 	       let callees =
                  match userdata#get_callees cmsix pc with
                  | [] -> callgraph_base#get_pc_callees cmsix pc
                  | l -> l in
-               
+
 	       (if !dbg then
                   pr__debug [STR "callees "; pp_list callees; NL]) ;
-               
+
 	      if (List.length callees) = 0 then
 		begin
 		  let cms = retrieve_cms cmsix in
-                  
+
 		  (if !dbg then
                      pr__debug [STR "no callees at pc = "; INT pc ;
-                                STR " "; cms#toPretty ; STR ": " ; 
+                                STR " "; cms#toPretty ; STR ": " ;
 			        opcode_to_pretty opcode; NL]) ;
-                  
+
 		  chlog#add
                     "no callees"
-		    (LBLOCK [ STR "pc = " ; INT pc ; STR " "; cms#toPretty ; STR ": " ; 
+		    (LBLOCK [ STR "pc = " ; INT pc ; STR " "; cms#toPretty ; STR ": " ;
 			      opcode_to_pretty opcode ] );
 		  cost_bounds_from_jterm_range
 		    (default_funcall_cost
                        ("default_funcall_no_callees_"))
    		end
-	      else 
+	      else
 		begin
 		  let sorted_inds =
                     List.sort compare (List.map (fun c -> c#index) callees) in
-                  
+
 		  (if (List.length sorted_inds)
                      > (IntCollections.set_of_list sorted_inds)#size then
-                    
+
 		    pr__debug [STR "found duplicate callees: "; NL; pp_list callees; NL]) ;
-                  
-		  let call_cost = 
+
+		  let call_cost =
 		    begin
 		      let add_cost acc callee =
-                        
+
 			(if !dbg then
                            pr__debug [NL; STR "add_cost "; callee#toPretty; NL]) ;
-                        
+
 			if acc#isTop then
                           top_cost_bounds
 			else
@@ -987,12 +979,12 @@ object (self:_)
                         List.fold_left add_cost self#mk_bottom callees in
 		      call_cost
 		    end in
-                  
+
 		  let const_lb = find_const_lb true call_cost in
-		  
+
 		  (if !dbg then
                      pr__debug [STR "call_cost = "; call_cost#toPretty; NL]) ;
-                  
+
 		  if is_const_range call_cost then
                     call_cost
 		  else
@@ -1006,7 +998,7 @@ object (self:_)
 			end
 		      else
 			begin
-			  let lb = 
+			  let lb =
 			    let const_lb = find_const_lb true call_cost in
 			    if const_lb#lt numerical_zero then numerical_zero
 			    else const_lb in
@@ -1015,31 +1007,31 @@ object (self:_)
                             add_pos_jterm_final pc sym_cost call_cost in
 			  coststore_final#set sorted_inds call_cost_final ;
 			  bounds_from_jterms false [sym_cost] [sym_cost]
-			end 
+			end
 		    end
 		end in
 	     let cost_op =
                cost_bounds_from_jterm_range (self#get_opcode_cost opcode) in
 	     add_cost_bounds cost_op cost_callee
 	  | _ ->
-	     cost_bounds_from_jterm_range (self#get_opcode_cost opcode) 
+	     cost_bounds_from_jterm_range (self#get_opcode_cost opcode)
         end in
-    
+
     (if !dbg then
        pr__debug [STR "get_instr_cost res = "; res#toPretty; NL]) ;
-    
+
     res
-    
+
   method print_cost_stores () =
-    pr__debug [NL; NL; STR "final costs: "; NL; coststore_final#toPretty; NL] 
-      
+    pr__debug [NL; NL; STR "final costs: "; NL; coststore_final#toPretty; NL]
+
   method save_xml_class (cInfo:class_info_int) =
     if cInfo#is_stubbed || cInfo#is_missing then
       ()
     else
       let _ =
         pr_debug [ STR " -- " ; cInfo#get_class_name#toPretty ; NL ] in
-      
+
       let cn = cInfo#get_class_name in
       let node = xmlElement "class" in
       begin
@@ -1048,7 +1040,7 @@ object (self:_)
 	node#setAttribute "package" cn#package_name ;
 	save_xml_cost_analysis_results cn node "class"
       end
-      
+
   method save_xml_atlas_class (cInfo:class_info_int) =
     if cInfo#is_stubbed || cInfo#is_missing then
       ()
@@ -1062,7 +1054,7 @@ object (self:_)
         set "package" cn#package_name ;
         save_xml_atlas_cost_analysis_results cn node "class"
       end
-      
+
   method private write_xml_method_cost_results node cms =
     let mInfo = app#get_method cms in
     let cmsix = cms#index in
@@ -1095,7 +1087,7 @@ object (self:_)
 	 if not (hpcs = []) then
 	   begin
 	     let lsNode = xmlElement "loops" in
-	     let get_cost_one_iteration hpc = 
+	     let get_cost_one_iteration hpc =
 	       H.find mcost hpc in
 	     let get_max_iterations hpc =
                if userdata#has_loopbound cmsix hpc then
@@ -1106,7 +1098,7 @@ object (self:_)
 	         let (lbs_jterms, ubs_jterms) =
                    JCHNumericAnalysis.get_iteration_bounds cmsix hpc in
 	         bounds_from_jterms false lbs_jterms ubs_jterms in
-	     
+
 	     let add_loop hpc =
 	       let lNode = xmlElement "loop" in
 	       lNode#setIntAttribute "hpc" hpc;
@@ -1116,7 +1108,7 @@ object (self:_)
 	     lsNode#appendChildren (List.map add_loop hpcs) ;
 	     node#appendChildren [lsNode]
 	   end) ;
-      
+
       (if H.mem sidechannelchecks cmsix then
          let ssNode = xmlElement "sidechannel-checks" in
          let mchecks = H.find sidechannelchecks cmsix in
@@ -1135,8 +1127,8 @@ object (self:_)
       node#setIntAttribute "cmsix" cmsix ;
       (if mInfo#is_abstract then node#setAttribute "abstract" "yes") ;
     end
-    
-  method private write_xml_class_cost_results node cInfo = 
+
+  method private write_xml_class_cost_results node cInfo =
     let mmNode = xmlElement "methods" in
     begin
       mmNode#appendChildren
@@ -1149,13 +1141,13 @@ object (self:_)
              end) cInfo#get_methods_defined) ;
       node#appendChildren [ mmNode ]
     end
-    
+
   method private write_xml_atlas_cost
                    (node:xml_element_int)
                    (ms:method_signature_int)
                    (b:cost_bounds_t) =
     write_xml_atlas_bounds node ms b
-    
+
   method private write_xml_atlas_method_cost_results
                    (node:xml_element_int) (cms:class_method_signature_int) =
     let set = node#setAttribute in
@@ -1204,13 +1196,13 @@ object (self:_)
                  bNodes )
            | false -> pr_debug [ STR "No blocks" ; NL ])
       | false -> pr_debug [ STR "No blocks node" ; NL ] ) ;
-    
+
     (if node#hasNamedAttribute "imcost" then
        let mCost = self#read_xml_cost ~tag:"imcost" node in
        (self#set_methodcost cms mCost) ) ;
     end
-    
-  method private read_xml_class_cost_results node (cInfo:class_info_int) =
+
+  method private read_xml_class_cost_results node (_cInfo:class_info_int) =
     let mmNode = node#getTaggedChild "methods" in
     let mNodes = mmNode#getTaggedChildren "method" in
     (List.iter self#read_xml_method_cost_results mNodes)
@@ -1228,4 +1220,3 @@ object (self:_)
           self#read_xml_class_cost_results node cInfo
         end
 end
-  

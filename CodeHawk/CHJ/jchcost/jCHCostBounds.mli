@@ -3,9 +3,9 @@
    Author: Anca Browne
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -84,20 +84,20 @@ val get_bounds:
   -> CostBoundCollections.set_t
      * CostBoundCollections.set_t
      * bool
-     * bool 
+     * bool
 
-val add_cost_bounds : cost_bounds_t -> cost_bounds_t -> cost_bounds_t 
-    
+val add_cost_bounds : cost_bounds_t -> cost_bounds_t -> cost_bounds_t
+
 val mult_cost_bounds : cost_bounds_t -> cost_bounds_t -> cost_bounds_t
 
 val div_cost_bounds : cost_bounds_t -> cost_bounds_t -> cost_bounds_t
 
 val write_xml_bounds: ?tag:string -> cost_bounds_t -> xml_element_int -> unit
-  
+
 val write_xml_atlas_bounds:
   xml_element_int -> method_signature_int -> cost_bounds_t -> unit
 
-val bounds_from_jterms : 
+val bounds_from_jterms :
     bool -> jterm_t list -> jterm_t list -> cost_bounds_t
 
 val read_xml_bounds : ?tag:string -> xml_element_int -> cost_bounds_t
@@ -112,12 +112,12 @@ val subst_pos_bounds_final : int -> cost_bounds_t -> cost_bounds_t
 
 val subst_local_vars :
   int
-  -> cost_bounds_t 
+  -> cost_bounds_t
   -> (jterm_t * cost_bound_t list) list
   -> (jterm_t * cost_bound_t list) list -> cost_bounds_t
 
 val add_pos_jterm : int -> jterm_t -> cost_bounds_t -> unit
-  
+
 val add_pos_jterm_final : int -> jterm_t -> cost_bounds_t -> cost_bounds_t
 
 val get_jterms : cost_bounds_t -> jterm_t list
