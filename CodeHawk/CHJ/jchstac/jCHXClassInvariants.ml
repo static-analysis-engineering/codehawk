@@ -3,9 +3,9 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -13,10 +13,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,7 +37,6 @@ open CHUtil
 
 (* jchlib *)
 open JCHBasicTypes
-open JCHBasicTypesAPI
 open JCHDictionary
 open JCHFile
 open JCHJTerm
@@ -47,12 +46,8 @@ open JCHRawClass
 open JCHApplication
 open JCHClassLoader
 open JCHIFSystem
-open JCHFunctionSummary
-open JCHPreFileIO
 open JCHSystemSettings
 
-(* jchsys *)
-open JCHLoopUtils
 
 module H = Hashtbl
 
@@ -71,7 +66,7 @@ let is_file f =
   with Unix.Unix_error (Unix.ENOENT, _,_) -> false
 
 
-let usage_msg = 
+let usage_msg =
   "-----------------------------------------------------------------------\n" ^
   "CodeHawk Java Analyzer: Invariant generator for individual classes\n\n" ^
   "Invoke with: \n" ^
@@ -82,7 +77,7 @@ let usage_msg =
   "  chj_class_invariants -summaries jdk.jar MyClass.class\n" ^
   "  chj_class_invariants -summaries jdk.jar -classpath myjar.jar org.mydomain.MyClass\n" ^
   "-----------------------------------------------------------------------\n"
-  
+
 let read_args () = Arg.parse speclist   (fun s -> classname := s) usage_msg
 
 let has_invariants invs =
@@ -99,14 +94,14 @@ let report_invariants cInfo =
     if !methodname = "" || ms#name = !methodname then
       let msig = sanitize ms#to_signature_string in
       let msname = sanitize ms#name in
-      let fname = 
+      let fname =
 	if H.mem mnames msname then
-	  cname ^ "_" ^ msname ^ "_" ^ msig 
+	  cname ^ "_" ^ msname ^ "_" ^ msig
 	else
 	  begin H.add mnames msname true ; cname ^ "_" ^ msname end in
       let fInvs = fname ^ "_invs.txt" in
       let fBc = fname ^ "_bc.txt" in
-      
+
       let cms = make_cms cInfo#get_class_name ms in
       let mInfo = app#get_method cms in
 (*      let jproc = JCHSystem.jsystem#get_jproc_info_seq_no mInfo#get_index in *)
@@ -118,22 +113,22 @@ let report_invariants cInfo =
 	    List.iter (fun (pc,invs) ->
 	      match invs with
 	      | [] -> ()
-	      | _ -> 
+	      | _ ->
 		let pinvs = List.map relational_expr_to_pretty invs in
-		ppInvs := 
-		  LBLOCK ([ fixed_length_pretty ~alignment:StrRight (INT pc) 5 ; STR "  " ; 
-			    pretty_print_list pinvs (fun p -> LBLOCK [ INDENT (3,p) ; NL ]) 
+		ppInvs :=
+		  LBLOCK ([ fixed_length_pretty ~alignment:StrRight (INT pc) 5 ; STR "  " ;
+			    pretty_print_list pinvs (fun p -> LBLOCK [ INDENT (3,p) ; NL ])
 			      "" "       " "" ; NL ]) :: !ppInvs)
 	      invs
 	 else
 	    ppInvs := LBLOCK ([ STR "  --- No invariants generated --- " ; NL ]) :: !ppInvs) ;
-	pr_debug [ STR "Saving invariants and bytecode for " ; cms#toPretty ; 
+	pr_debug [ STR "Saving invariants and bytecode for " ; cms#toPretty ;
 		   STR " in " ; STR fInvs ; STR " and " ; STR fBc ; NL ] ;
 	file_output#saveFile fInvs (LBLOCK (List.rev !ppInvs)) ;
-	file_output#saveFile fBc mInfo#bytecode_to_pretty 
+	file_output#saveFile fBc mInfo#bytecode_to_pretty
       end)
     cInfo#get_methods_defined
-    
+
 let load () =
   if Filename.check_suffix !classname "class" then
     if is_file !classname then

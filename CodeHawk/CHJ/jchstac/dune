@@ -25,7 +25,3 @@
   (modules jCHXTemplate)
   (package exes)
   (public_name chj_usertemplate))
-
-(env
-  (dev
-    (flags (:standard -warn-error -A))))
