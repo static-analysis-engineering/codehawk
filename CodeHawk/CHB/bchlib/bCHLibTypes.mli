@@ -1507,7 +1507,8 @@ type regvar_intro_t = {
 type stackvar_intro_t = {
     svi_offset: int;
     svi_name: string;
-    svi_vartype: btype_t option
+    svi_vartype: btype_t option;
+    svi_cast: bool
   }
 
 
@@ -1551,7 +1552,9 @@ class type function_data_int =
     method get_function_name: string  (* demangled or combination of all names *)
     method get_function_annotation: function_annotation_t option
     method get_regvar_type_annotation: doubleword_int -> btype_t traceresult
+    method get_stackvar_type_annotation: int -> btype_t traceresult
     method get_regvar_intro: doubleword_int -> regvar_intro_t option
+    method get_stackvar_intro: int -> stackvar_intro_t option
     method get_inlined_blocks: doubleword_int list
     method get_function_type: btype_t
     method get_path_contexts: (string * string list) list
@@ -1562,6 +1565,8 @@ class type function_data_int =
     method has_function_annotation: bool
     method has_regvar_type_annotation: doubleword_int -> bool
     method has_regvar_type_cast: doubleword_int -> bool
+    method has_stackvar_type_annotation: int -> bool
+    method has_stackvar_type_cast: int -> bool
     method has_class_info: bool
     method has_callsites: bool
     method has_path_contexts: bool
@@ -4629,6 +4634,13 @@ class type function_environment_int =
              -> numerical_t
              -> variable_t
 
+    (** [mk_basevar_memory_variable offset] returns a memory variable with
+        [basevar] as base variable and offset [offset].
+
+        If [basevar] is not a valid base variable an error is returned.*)
+    method mk_basevar_memory_variable:
+             ?size:int -> variable_t -> memory_offset_t -> variable_t traceresult
+
     (** [mk_offset_memory_variable memref memoff] returns a memory variable
         with [memref] as basis and a generic memory offset.
 
@@ -5918,6 +5930,14 @@ class type floc_int =
        Deprecated. Should eventually be replaced by [decompose_memaddr]
      *)
     method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
+
+    method convert_value_offsets:
+             ?size:int option -> variable_t -> variable_t traceresult
+
+    method convert_variable_offsets:
+             ?size:int option -> variable_t -> variable_t traceresult
+
+    method convert_xpr_offsets: ?size:int option -> xpr_t -> xpr_t traceresult
 
     (* returns the variable associated with the address expression *)
     method get_lhs_from_address: xpr_t -> variable_t
