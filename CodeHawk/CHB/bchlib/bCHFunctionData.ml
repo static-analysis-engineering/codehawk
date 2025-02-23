@@ -78,6 +78,7 @@ let stackvar_intro_to_string (svi: stackvar_intro_t) =
 
 let function_annotation_to_string (a: function_annotation_t) =
   (String.concat "\n" (List.map regvar_intro_to_string a.regvarintros))
+  ^ "\n"
   ^ (String.concat "\n" (List.map stackvar_intro_to_string a.stackvarintros))
 
 
@@ -174,6 +175,16 @@ object (self)
          None a.regvarintros
     | _ -> None
 
+  method get_stackvar_intro (offset: int): stackvar_intro_t option =
+    match self#get_function_annotation with
+    | Some a ->
+       List.fold_left (fun acc svi ->
+           match acc with
+           | Some _ -> acc
+           | _ -> if svi.svi_offset = offset then Some svi else None)
+         None a.stackvarintros
+    | _ -> None
+
   method has_regvar_type_annotation (iaddr: doubleword_int): bool =
     match self#get_function_annotation with
     | Some a ->
@@ -182,11 +193,26 @@ object (self)
          a.regvarintros
     | _ -> false
 
+  method has_stackvar_type_annotation (offset: int): bool =
+    match self#get_function_annotation with
+    | Some a ->
+       List.exists
+         (fun svi -> svi.svi_offset = offset && Option.is_some svi.svi_vartype)
+         a.stackvarintros
+    | _ -> false
+
   method has_regvar_type_cast (iaddr: doubleword_int): bool =
     match self#get_function_annotation with
     | Some a ->
        List.exists
          (fun rvi -> rvi.rvi_iaddr#equal iaddr && rvi.rvi_cast) a.regvarintros
+    | _ -> false
+
+  method has_stackvar_type_cast (offset: int): bool =
+    match self#get_function_annotation with
+    | Some a ->
+       List.exists
+         (fun svi -> svi.svi_offset = offset && svi.svi_cast) a.stackvarintros
     | _ -> false
 
   method get_regvar_type_annotation (iaddr: doubleword_int): btype_t traceresult =
@@ -220,6 +246,39 @@ object (self)
        Error [
            __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
            ^ "No register var annotation found at " ^ iaddr#to_hex_string]
+
+  method get_stackvar_type_annotation (offset: int): btype_t traceresult =
+    let opttype =
+      match self#get_function_annotation with
+      | None ->
+         Some
+           (Error [
+                __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "Function " ^ faddr#to_hex_string ^ " does not have annotations"])
+      | Some a ->
+         List.fold_left
+           (fun acc svi ->
+             match acc with
+             | Some _ -> acc
+             | _ ->
+                if svi.svi_offset = offset then
+                  match svi.svi_vartype with
+                  | Some t -> Some (Ok t)
+                  | _ ->
+                     Some
+                       (Error [
+                            __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                            ^ "Stack var annotation at offset "
+                            ^ (string_of_int offset)
+                            ^ " does not have a type"])
+                else
+                  acc) None a.stackvarintros in
+    match opttype with
+    | Some r -> r
+    | None ->
+       Error [
+           __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+           ^ "No stackvar annotation found at offset " ^ (string_of_int offset)]
 
   method add_inlined_block (baddr:doubleword_int) =
     inlined_blocks <- baddr :: inlined_blocks
@@ -504,31 +563,33 @@ let read_xml_stackvar_intro (node: xml_element_int): stackvar_intro_t traceresul
   else if not (has "name") then
     Error ["stackvar intro without name"]
   else
-    let svi_offset = geti "offset" in
+    let svi_offset = (-(geti "offset")) in
     let svi_name = get "name" in
-    let svi_vartype =
+    let (svi_vartype, svi_cast) =
       if has "typename" then
         let typename = get "typename" in
+        let iscast = (has "cast") && ((get "cast") = "yes") in
         TR.tfold
           ~ok:(fun btype ->
             if has "ptrto" && (get "ptrto") = "yes" then
-              Some (t_ptrto btype)
+              (Some (t_ptrto btype), iscast)
             else if has "arraysize" then
               let arraysize = geti "arraysize" in
-              Some (t_array btype arraysize)
+              (Some (t_array btype arraysize), iscast)
             else
-              Some btype)
+              (Some btype, iscast))
           ~error:(fun e ->
             begin
               log_error_result __FILE__ __LINE__ e;
-              None
+              (None, false)
             end)
           (convert_string_to_type typename)
       else
-        None in
+        (None, false) in
     Ok {svi_offset = svi_offset;
         svi_name = svi_name;
-        svi_vartype = svi_vartype}
+        svi_vartype = svi_vartype;
+        svi_cast = svi_cast}
 
 
 let read_xml_function_annotation (node: xml_element_int) =
