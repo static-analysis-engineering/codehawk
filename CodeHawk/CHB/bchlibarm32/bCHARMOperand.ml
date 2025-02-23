@@ -458,18 +458,21 @@ object (self:'a)
        TR.tprop
          (floc#env#mk_global_variable dw#to_numerical)
          (__FILE__ ^ ":" ^ (string_of_int __LINE__))
-    | ARMOffsetAddress (r, align, offset, isadd, _iswback, _isindex, size) ->
+    | ARMOffsetAddress (r, align, offset, isadd, _iswback, isindex, size) ->
        (match offset with
         | ARMImmOffset _ ->
            let rvar = env#mk_arm_register_variable r in
            let numoffset_r =
-             match (offset, isadd) with
-             | (ARMImmOffset i, true) -> Ok (mkNumerical i)
-             | (ARMImmOffset i, false) -> Ok (mkNumerical i)#neg
-             | _ ->
-                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                       ^ "Immediate offset not yet implemented for offset "
-                       ^ (arm_memory_offset_to_string offset)] in
+             if isindex then
+               match (offset, isadd) with
+               | (ARMImmOffset i, true) -> Ok (mkNumerical i)
+               | (ARMImmOffset i, false) -> Ok (mkNumerical i)#neg
+               | _ ->
+                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                         ^ "Immediate offset not yet implemented for offset "
+                         ^ (arm_memory_offset_to_string offset)]
+             else
+               Ok numerical_zero in
            TR.tbind
              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
              (fun memoff ->
@@ -1131,22 +1134,22 @@ let arm_sp_deref ?(with_offset=0) (mode:arm_operand_mode_t) =
   if with_offset >= 0 then
     let offset = ARMImmOffset with_offset in
     mk_arm_offset_address_op
-      ARSP offset ~isadd:true ~iswback:false ~isindex:false mode
+      ARSP offset ~isadd:true ~iswback:false ~isindex:true mode
   else
     let offset = ARMImmOffset (-with_offset) in
     mk_arm_offset_address_op
-      ARSP offset ~isadd:false ~iswback:false ~isindex:false mode
+      ARSP offset ~isadd:false ~iswback:false ~isindex:true mode
 
 
 let arm_reg_deref ?(with_offset=0) (reg: arm_reg_t) (mode:arm_operand_mode_t) =
   if with_offset >= 0 then
     let offset = ARMImmOffset with_offset in
     mk_arm_offset_address_op
-      reg offset ~isadd:true ~iswback:false ~isindex:false mode
+      reg offset ~isadd:true ~iswback:false ~isindex:true mode
   else
     let offset = ARMImmOffset (-with_offset) in
     mk_arm_offset_address_op
-      reg offset ~isadd:false ~iswback:false ~isindex:false mode
+      reg offset ~isadd:false ~iswback:false ~isindex:true mode
 
 
 let equal_register_lists (op1: arm_operand_int) (op2: arm_operand_int): bool =
