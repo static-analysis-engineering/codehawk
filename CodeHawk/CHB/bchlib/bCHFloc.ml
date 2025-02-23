@@ -676,7 +676,7 @@ object (self)
       let memoff_r =
         TR.tbind
           (fun memvar ->
-            let memtype = self#get_variable_type memvar in
+            let memtype = self#env#get_variable_type memvar in
             let memtype =
               match memtype with
               | Some t -> t
@@ -703,7 +703,8 @@ object (self)
               match optbasetype with
               | Some t when is_pointer t -> ptr_deref t
               | _ -> t_unknown in
-            address_memory_offset basetype (num_constant_expr memoffset))
+            address_memory_offset basetype
+              ~tgtsize:(Some size) (num_constant_expr memoffset))
           (self#env#get_variable base#getSeqNumber) in
       mk_memvar memref_r memoff_r
 
@@ -1319,22 +1320,138 @@ object (self)
   method private get_variable_type (v: variable_t): btype_t option =
     if self#f#env#is_initial_register_value v then
       let reg_r = self#f#env#get_initial_register_value_register v in
-      let param_r =
-        TR.tbind
-          (fun reg ->
-            if self#f#get_summary#has_parameter_for_register reg then
-              Ok (self#f#get_summary#get_parameter_for_register reg)
-            else
-              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                     ^ (p2s v#toPretty)
-                     ^ " does not have an associated parameter"])
-          reg_r in
       TR.tfold_default
-        (fun param -> Some param.apar_type)
-        (self#env#get_variable_type v)
-        param_r
+        (fun reg ->
+          if self#f#get_summary#has_parameter_for_register reg then
+            let param = self#f#get_summary#get_parameter_for_register reg in
+            Some param.apar_type
+          else
+            self#env#get_variable_type v)
+        None
+        reg_r
+    else if self#env#is_initial_memory_value v then
+      let memvar_r = self#env#get_init_value_variable v in
+      TR.tfold
+        ~ok:self#get_variable_type
+        ~error:(fun e ->
+          begin log_error_result __FILE__ __LINE__ e; None end)
+        memvar_r
     else
       self#env#get_variable_type v
+
+  method convert_variable_offsets
+           ?(size=None) (v: variable_t): variable_t traceresult =
+    if self#env#is_basevar_memory_variable v then
+      let basevar_r = self#env#get_memvar_basevar v in
+      let offset_r = self#env#get_memvar_offset v in
+      let cbasevar_r = TR.tbind self#convert_value_offsets basevar_r in
+      let basetype_r = TR.tmap self#get_variable_type cbasevar_r in
+      let tgttype_r =
+        TR.tbind
+          (fun basetype ->
+            match basetype with
+            | Some (TPtr (t, _)) -> Ok t
+            | Some t ->
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "Type " ^ (btype_to_string t)
+                      ^ " is not a pointer"]
+            | _ ->
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "No type for variable "
+                      ^ (p2s v#toPretty)
+                      ^ "with basevar "
+                      ^ (p2s (TR.tget_ok cbasevar_r)#toPretty)]) basetype_r in
+      let coffset_r =
+        TR.tbind
+          (fun offset ->
+            match offset with
+            | ConstantOffset (n, NoOffset) ->
+               TR.tbind
+                 (fun tgttype ->
+                   address_memory_offset
+                     ~tgtsize:size tgttype (num_constant_expr n)) tgttype_r
+            | _ -> Ok offset) offset_r in
+      TR.tbind
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
+        (fun cbasevar ->
+          TR.tbind
+            (fun coffset ->
+              self#env#mk_basevar_memory_variable cbasevar coffset
+            ) coffset_r)
+        cbasevar_r
+    else
+      Ok v
+
+  method convert_value_offsets
+           ?(size=None) (v: variable_t): variable_t traceresult =
+    if self#env#is_basevar_memory_value v then
+      let basevar_r = self#env#get_memval_basevar v in
+      let offset_r = self#env#get_memval_offset v in
+      let cbasevar_r = TR.tbind self#convert_value_offsets basevar_r in
+      let basetype_r = TR.tmap self#get_variable_type cbasevar_r in
+      let tgttype_r =
+        TR.tbind
+          (fun basetype ->
+            match basetype with
+            | Some (TPtr (t, _)) -> Ok t
+            | Some t ->
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "Type " ^ (btype_to_string t)
+                      ^ " is not a pointer"]
+            | _ ->
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "No type for variable "
+                      ^ (p2s v#toPretty)
+                      ^ "with basevar "
+                      ^ (p2s (TR.tget_ok cbasevar_r)#toPretty)]) basetype_r in
+      let coffset_r =
+        TR.tbind
+          (fun offset ->
+            match offset with
+            | NoOffset ->
+               TR.tbind
+                 (fun tgttype ->
+                   address_memory_offset
+                     ~tgtsize:size tgttype (int_constant_expr 0)) tgttype_r
+            | ConstantOffset (n, NoOffset) ->
+               TR.tbind
+                 (fun tgttype ->
+                   address_memory_offset
+                     ~tgtsize:size tgttype (num_constant_expr n)) tgttype_r
+            | _ -> Ok offset) offset_r in
+      TR.tbind
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
+        (fun cbasevar ->
+          TR.tbind
+            (fun coffset ->
+              let memvar_r =
+                self#env#mk_basevar_memory_variable cbasevar coffset in
+              TR.tbind self#env#mk_initial_memory_value memvar_r
+            ) coffset_r)
+        cbasevar_r
+    else
+      Ok v
+
+  method convert_xpr_offsets ?(size=None) (x: xpr_t): xpr_t traceresult =
+    let rec aux exp =
+      match exp with
+      | XVar v when self#env#is_basevar_memory_value v ->
+         TR.tmap
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           (fun v -> XVar v) (self#convert_value_offsets ~size v)
+      | XVar v when self#env#is_basevar_memory_variable v ->
+         TR.tmap
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           (fun v -> XVar v) (self#convert_variable_offsets ~size v)
+      | XOp ((Xf "addressofvar"), [XVar v]) ->
+         TR.tmap
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           (fun v -> XVar v) (self#convert_variable_offsets ~size v)
+      | XOp (op, [xx]) -> TR.tmap (fun x -> XOp (op, [x])) (aux xx)
+      | XOp (op, [x1; x2]) ->
+         TR.tmap2 (fun x1 x2 -> XOp (op, [x1; x2])) (aux x1) (aux x2)
+      | _ -> Ok exp in
+    aux x
 
   method get_xpr_type (x: xpr_t): btype_t option =
     match x with
@@ -1351,9 +1468,12 @@ object (self)
     | [base] ->
        let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
        let memref_r = self#env#mk_base_variable_reference base in
-       let vartype = self#get_variable_type base in
+       let vartype = self#env#get_variable_type base in
        let vartype = match vartype with None -> t_unknown | Some t -> t in
-       let memoff_r = address_memory_offset vartype offset in
+       let rvartype = TR.tvalue (resolve_type vartype) ~default:t_unknown in
+       let basetype =
+         if is_pointer rvartype then ptr_deref rvartype else t_unknown in
+       let memoff_r = address_memory_offset basetype offset in
        (*
          (match offset with
           | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))

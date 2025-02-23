@@ -97,7 +97,8 @@ object (self:'a)
           | _ ->
              (match offset with
               | NoOffset -> "__pderef_" ^ basename ^ "_"
-              | _ -> basename ^ (memory_offset_to_string offset)))
+              | ConstantOffset _ -> basename ^ (memory_offset_to_string offset)
+              | _ -> "__pderef_" ^ basename ^ (memory_offset_to_string offset)))
       | RegisterVariable reg -> register_to_string reg
       | CPUFlagVariable flag -> flag_to_string flag
       | AuxiliaryVariable a ->
@@ -1004,7 +1005,10 @@ object (self)
 
   method has_constant_offset (v: variable_t) =
     (self#is_memory_variable v)
-    && (tfold_default is_constant_offset false (self#get_memvar_offset v))
+    && (tfold_default
+          (fun off -> is_constant_offset off || is_field_offset off)
+          false
+          (self#get_memvar_offset v))
 
   method is_unknown_base_memory_variable (v: variable_t) =
     (self#is_memory_variable v)

@@ -800,6 +800,14 @@ object (self)
       let avar = varmgr#make_memory_variable memref ~size offset in
       self#mk_variable avar
 
+  method mk_basevar_memory_variable
+           ?(size=4)
+           (basevar: variable_t)
+           (offset: memory_offset_t): variable_t traceresult =
+    let memref_r = self#mk_base_variable_reference basevar in
+    TR.tmap
+      (fun memref -> self#mk_offset_memory_variable ~size memref offset)
+      memref_r
 
       (*
   method mk_index_offset_global_memory_variable
