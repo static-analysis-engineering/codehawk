@@ -110,6 +110,19 @@ object (self)
       else
         None in
 
+    let get_stackvar_type_annotation (offset: int): btype_t option =
+      if fndata#has_stackvar_type_annotation offset then
+        TR.tfold
+          ~ok:(fun t -> Some t)
+          ~error:(fun e ->
+            begin
+              log_error_result __FILE__ __LINE__ e;
+              None
+            end)
+          (fndata#get_stackvar_type_annotation offset)
+      else
+        None in
+
     let rdef_pairs_to_pretty (pairs: (symbol_t * symbol_t) list) =
       pretty_print_list
         pairs
@@ -241,6 +254,20 @@ object (self)
     | Add (_, _, rd, rn, rm, _) ->
        let xrn_r = rn#to_expr floc in
        begin
+
+         (match get_regvar_type_annotation () with
+          | Some t ->
+            let rdreg = rd#to_register in
+            let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+            let opttc = mk_btype_constraint lhstypevar t in
+            (match opttc with
+             | Some tc ->
+                begin
+                  log_type_constraint "ADD-rvintro" tc;
+                  store#add_constraint tc
+                end
+             | _ -> ())
+          | _ -> ());
 
          (if rm#is_immediate && (rm#to_numerical#toInt < 256) then
             let rdreg = rd#to_register in
@@ -483,17 +510,28 @@ object (self)
                 | Some offset ->
                    let lhstypevar =
                      mk_localstack_lhs_typevar offset faddr iaddr in
-                   if is_pointer ptype then
-                     let eltype = ptr_deref ptype in
-                     let atype = t_array eltype 1 in
-                     let opttc = mk_btype_constraint lhstypevar atype in
-                     match opttc with
-                     | Some tc ->
-                        begin
-                          log_type_constraint "BL-reg-arg" tc;
-                          store#add_constraint tc
-                        end
-                     | _ -> ())
+                   match get_stackvar_type_annotation offset with
+                   | Some t ->
+                      let opttc = mk_btype_constraint lhstypevar t in
+                      (match opttc with
+                       | Some tc ->
+                          begin
+                            log_type_constraint "BL-stack-vintro" tc;
+                            store#add_constraint tc
+                          end
+                       | _ -> ())
+                   | _ ->
+                      if is_pointer ptype then
+                        let eltype = ptr_deref ptype in
+                        let atype = t_array eltype 1 in
+                        let opttc = mk_btype_constraint lhstypevar atype in
+                        match opttc with
+                        | Some tc ->
+                           begin
+                             log_type_constraint "BL-reg-arg" tc;
+                             store#add_constraint tc
+                           end
+                        | _ -> ())
              end
            ) callargs
 
@@ -787,10 +825,28 @@ object (self)
 
        end
 
-    | LoadRegisterHalfword (_, rt, rn, rm, _, _) when rm#is_immediate ->
+    | LoadRegisterHalfword (_, rt, rn, rm, memop, _) when rm#is_immediate ->
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
+
+         (* loaded type may be known *)
+         (let xmem_r = memop#to_expr floc in
+          let xrmem_r =
+            TR.tmap (fun x -> simplify_xpr (floc#inv#rewrite_expr x)) xmem_r in
+          let xtype_r = TR.tmap floc#get_xpr_type xrmem_r in
+          let xtype_opt = TR.tvalue xtype_r ~default:None in
+          match xtype_opt with
+          | Some t ->
+             let opttc = mk_btype_constraint rttypevar t in
+             (match opttc with
+              | Some tc ->
+                 begin
+                   log_type_constraint "LDRH-var" tc;
+                   store#add_constraint tc
+                 end
+              | _ -> ())
+          | _ -> ());
 
          (* LDRH rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdef = get_variable_rdefs_r (rn#to_variable floc) in
