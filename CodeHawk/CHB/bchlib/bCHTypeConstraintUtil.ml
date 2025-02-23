@@ -437,6 +437,10 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
      | TPtr (pty, _) ->
         let ptv = add_deref_capability tv in
         mk_btype_constraint ptv pty
+     | TArray (elty, Some (Const (CInt (i64, _, _))), _) ->
+        let size = Int64.to_int i64 in
+        let atv = add_array_access_capability size tv in
+        mk_btype_constraint atv elty
      | TArray (elty, _, _) ->
         let size_r = size_of_btype elty in
         (match size_r with

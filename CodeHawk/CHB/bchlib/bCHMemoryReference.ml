@@ -186,6 +186,15 @@ let rec address_memory_offset
      Ok NoOffset
   | XConst (IntConst n) when is_unknown_type rbasetype ->
      Ok (ConstantOffset (n, NoOffset))
+  | XConst (IntConst n) ->
+     let tgtbtype =
+       if is_unknown_type tgtbtype then None else Some tgtbtype in
+     if is_struct_type rbasetype then
+       structvar_memory_offset ~tgtsize ~tgtbtype rbasetype xoffset
+     else if is_array_type rbasetype then
+       arrayvar_memory_offset ~tgtsize ~tgtbtype rbasetype xoffset
+     else
+       Ok (ConstantOffset (n, NoOffset))
   | _ ->
      let tgtbtype =
        if is_unknown_type tgtbtype then None else Some tgtbtype in
@@ -195,9 +204,7 @@ let rec address_memory_offset
        arrayvar_memory_offset ~tgtsize ~tgtbtype rbasetype xoffset
      else
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ (btype_to_string basetype)
-              ^ " (" ^ (btype_to_string rbasetype) ^ ")"
-              ^ " is not known to be a struct or array"]
+              ^ "Offset " ^ (x2s xoffset) ^ " not yet supported"]
 
 and structvar_memory_offset
 ~(tgtsize: int option)
