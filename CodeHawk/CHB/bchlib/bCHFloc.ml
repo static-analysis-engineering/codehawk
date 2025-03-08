@@ -718,6 +718,9 @@ object (self)
       let addr = XOp (XPlus, [varx; num_constant_expr numoffset]) in
       let address = simplify_xpr (inv#rewrite_expr addr) in
       match address with
+      | XConst (IntConst n) when n#equal CHNumerical.numerical_zero ->
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "Address is zero"]
       | XConst (IntConst n) ->
          let dw = numerical_mod_to_doubleword n in
          if system_info#get_image_base#le dw then
@@ -1904,7 +1907,7 @@ object (self)
          (* if rhs is the address of a global variable create an address-of
             expression for that global variable. *)
          match rhs with
-         | XConst (IntConst n) ->
+         | XConst (IntConst n) when n#gt CHNumerical.numerical_zero ->
             let dw = numerical_mod_to_doubleword n in
             if memmap#has_location dw then
               TR.tfold
@@ -2091,7 +2094,7 @@ object (self)
      | [RegisterParameter (r, _)] ->
         let argvar = self#env#mk_register_variable r in
         self#rewrite_variable_to_external argvar
-     | [GlobalParameter (a, _)] ->
+     | [GlobalParameter (a, _)] when not (a#equal wordzero) ->
         let argvar = self#env#mk_global_variable a#to_numerical in
         (match argvar with
          | Error e ->
@@ -2133,7 +2136,7 @@ object (self)
    method evaluate_summary_address_term (t:bterm_t) =
      match t with
      | ArgValue p -> self#evaluate_fts_address_argument p
-     | NumConstant num ->
+     | NumConstant num when num#gt CHNumerical.numerical_zero ->
         log_tfold_default
           (mk_tracelog_spec
              ~tag:"evaluate_summary_address_term"
@@ -2151,7 +2154,7 @@ object (self)
               None)
           None
           (numerical_to_doubleword num)
-     | ArgAddressedValue (subT,NumConstant offset) ->
+     | ArgAddressedValue (subT, NumConstant offset) ->
 	let optBase = self#evaluate_summary_address_term subT in
 	begin
 	  match optBase with

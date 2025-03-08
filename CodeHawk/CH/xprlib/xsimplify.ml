@@ -45,7 +45,7 @@ exception XSimplificationProblem of CHPretty.pretty_t
 
 
 let xpr_to_pretty e = xpr_printer#pr_expr e
-let x2p = xpr_to_pretty
+(* let x2p = xpr_to_pretty *)
 
 
 type e_struct_t =
@@ -378,8 +378,6 @@ and reduce_minus (m: bool) (e1: xpr_t) (e2: xpr_t) =
 
     (* ((&x + y) - z) ==> (&x + (y - z)) *)
     | (XOp (XPlus, [XOp ((Xf "addressofvar"), [x]); y]), _) ->
-       let _ = pr_debug [STR "  DEBUG: reduce_minus: ";
-                         STR "e1: "; x2p e1; STR "; e2: "; x2p e2; NL] in
        rs XPlus [XOp ((Xf "addressofvar"), [x]); XOp (XMinus, [y; e2])]
 
     (* (x << 3) - x)  -->  (7 * x) *)
