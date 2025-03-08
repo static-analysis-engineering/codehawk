@@ -2664,7 +2664,7 @@ object (self)
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
-         let xxrt_r = TR.tbind floc#convert_xpr_offsets xxrt_r in
+         let xxrtc_r = TR.tbind floc#convert_xpr_offsets xxrt_r in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
          let lhsvar_r = TR.tbind floc#get_var_at_address xxaddr_r in
          let rdefs =
@@ -2674,7 +2674,7 @@ object (self)
             get_rdef_r xxrt_r] in
          let uses = [get_def_use_r vmem_r] in
          let useshigh = [get_def_use_high_r vmem_r] in
-         let xprs_r = [xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r] in
+         let xprs_r = [xrn_r; xrm_r; xrt_r; xxrt_r; xxrtc_r; xaddr_r] in
          let vars_r = [vmem_r; lhsvar_r] in
          let _ =
            floc#memrecorder#record_store_r

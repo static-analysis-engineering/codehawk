@@ -487,6 +487,9 @@ object (self:'a)
              let ivax = floc#inv#rewrite_expr (XVar ivar) in
              let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
              (match (xoffset, i) with
+              | (XConst (IntConst n), 0) when n#equal CHNumerical.numerical_zero ->
+                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                        ^ "Illegal address (zero) for ARMOffsetAddress"]
               | (XConst (IntConst n), 0) ->
                  floc#env#mk_global_variable ~size n
               | _ ->

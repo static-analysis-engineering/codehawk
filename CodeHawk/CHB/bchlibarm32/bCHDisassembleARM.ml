@@ -163,7 +163,7 @@ let disassemble_arm_section
            INT sectionsize]) in
   try
     begin
-      while ch#pos + 2 < sectionsize do   (* <= causes problems at section end *)
+      while ch#pos < sectionsize do   (* <= causes problems at section end *)
         let prevPos = ch#pos in
         let iaddr = sectionbase#add_int ch#pos in
         let _ =

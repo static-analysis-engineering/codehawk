@@ -556,60 +556,64 @@ object (self)
       | None -> None
       | Some (TArray (TComp _ as ty, _, _) as tstructarray) ->
          let cinfo = get_struct_type_compinfo ty in
-         let finfo0 = List.hd cinfo.bcfields in
-         let ftype = resolve_type finfo0.bftype in
-         (match ftype with
-         | Error _ -> None
-         | Ok ftype ->
-            let _ixftype = bcd#index_typ ftype in
-            let _ixctype = bcd#index_typ ty in
-            let _ =
-              chlog#add
-                "first field struct check"
-                (LBLOCK [
-                     INT offset;
-                     STR ": ";
-                     pretty_print_list
-                       s#toList
-                       (fun i -> STR (btype_to_string (bcd#get_typ i)))
-                       "{" "; " "}";
-                     STR ": compinfo: ";
-                     STR cinfo.bcname;
-                     STR ": first field type: ";
-                     STR (btype_to_string ftype)]) in
-            (* TBD: restore this check in a better way
-            if s#fold (fun acc i -> acc && (i = ixftype || i = ixctype)) true then
-              Some tstructarray
+         (match cinfo.bcfields with
+          | [] -> None
+          | finfo0::_ ->
+             let ftype = resolve_type finfo0.bftype in
+             (match ftype with
+              | Error _ -> None
+              | Ok ftype ->
+                 let _ixftype = bcd#index_typ ftype in
+                 let _ixctype = bcd#index_typ ty in
+                 let _ =
+                   chlog#add
+                     "first field struct check"
+                     (LBLOCK [
+                          INT offset;
+                          STR ": ";
+                          pretty_print_list
+                            s#toList
+                            (fun i -> STR (btype_to_string (bcd#get_typ i)))
+                            "{" "; " "}";
+                          STR ": compinfo: ";
+                          STR cinfo.bcname;
+                          STR ": first field type: ";
+                          STR (btype_to_string ftype)]) in
+                 (* TBD: restore this check in a better way
+            if s#fold (fun acc i -> acc && (i = ixftype ||       i = ixctype)) true then
+            Some tstructarray
             else
-              None)*)
-            Some tstructarray)
+            None)*)
+                 Some tstructarray))
       | Some (TComp _ as ty) ->
          let cinfo = get_struct_type_compinfo ty in
-         let finfo0 = List.hd cinfo.bcfields in
-         let ftype = resolve_type finfo0.bftype in
-         (match ftype with
-          | Error _ -> None
-          | Ok ftype ->
-             let ixftype = bcd#index_typ ftype in
-             let ixctype = bcd#index_typ ty in
-             let _ =
-               chlog#add
-                 "first field struct check (TComp case)"
-                 (LBLOCK [
-                      INT offset;
-                      STR ": ";
-                      pretty_print_list
-                        s#toList
-                        (fun i -> STR (btype_to_string (bcd#get_typ i)))
-                        "{" "; " "}";
-                      STR ": compinfo: ";
-                      STR cinfo.bcname;
-                      STR ": first field type: ";
-                      STR (btype_to_string ftype)]) in
-             if s#fold (fun acc i -> acc && (i = ixftype || i = ixctype)) true then
-               Some ftype
-             else
-               None)
+         (match cinfo.bcfields with
+          | [] -> None
+          | finfo0::_ ->
+             let ftype = resolve_type finfo0.bftype in
+             (match ftype with
+              | Error _ -> None
+              | Ok ftype ->
+                 let ixftype = bcd#index_typ ftype in
+                 let ixctype = bcd#index_typ ty in
+                 let _ =
+                   chlog#add
+                     "first field struct check (TComp case)"
+                     (LBLOCK [
+                          INT offset;
+                          STR ": ";
+                          pretty_print_list
+                            s#toList
+                            (fun i -> STR (btype_to_string (bcd#get_typ i)))
+                            "{" "; " "}";
+                          STR ": compinfo: ";
+                          STR cinfo.bcname;
+                          STR ": first field type: ";
+                          STR (btype_to_string ftype)]) in
+                 if s#fold (fun acc i -> acc && (i = ixftype || i = ixctype)) true then
+                   Some ftype
+                 else
+                   None))
       | _ -> None in
     let result = new IntCollections.set_t in
     begin

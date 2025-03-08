@@ -483,7 +483,10 @@ object (self)
            ?(initialvalue = None)
            ?(size = None)
            (address: doubleword_int): global_location_int traceresult =
-    if H.mem locations address#index then
+    if address#lt (TR.tget_ok (BCHDoubleword.int_to_doubleword 20)) then
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "Illegal global address: " ^ address#to_hex_string]
+    else if H.mem locations address#index then
       begin
         ch_error_log#add
           "duplicate global location"

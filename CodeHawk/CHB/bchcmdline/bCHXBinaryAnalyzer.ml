@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -604,6 +604,8 @@ let main () =
             pr_timing [STR "dictionary saved"];
             save_global_memory_map ();
             pr_timing [STR "global-locations saved"];
+            arm_analysis_results#save;
+            pr_timing [STR "analysis results saved"];
             save_interface_dictionary ();
             pr_timing [STR "interface dictionary saved"];
             save_bcdictionary ();
