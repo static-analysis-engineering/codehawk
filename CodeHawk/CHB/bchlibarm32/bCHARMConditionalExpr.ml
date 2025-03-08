@@ -313,6 +313,11 @@ let cc_expr
     | (Move (true, ACCAlways, _, y, _, _), ACCNotEqual) ->
        (XOp (XNe, [v y; zero_constant_expr]), [y])
 
+    (* ------------------------------------------------- Reverse Subtract --- *)
+
+    | (ReverseSubtract (true, ACCAlways, _, x, y, _), ACCNonNegative) ->
+       (XOp (XGe, [XOp (XMinus, [v y; v x]); zero_constant_expr]), [x; y])
+
     (* --------------------------------------------------------- Subtract --- *)
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCEqual) ->
