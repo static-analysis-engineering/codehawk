@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -89,6 +89,15 @@ let has_control_characters (s: string): bool =
         if (code < 32)  || (code > 126) then
           found := true) s in
   !found
+
+
+let startswith (s: string) (substr: string): bool =
+  let lens = String.length s in
+  let lensub = String.length substr in
+  if lens < lensub then
+    false
+  else
+    (String.sub s 0 lensub) = substr
 
 
 let hex_string (s: string): string =
