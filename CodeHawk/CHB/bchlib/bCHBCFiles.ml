@@ -93,8 +93,14 @@ object (self)
         | GEnumTagDecl (einfo, loc) ->
            H.replace genumtagdecls einfo.bename (bcd#index_enuminfo einfo, i loc)
         | GVarDecl (vinfo, loc) ->
-           let _ = chlog#add "bcfiles:add gvardecl" (STR vinfo.bvname) in
-           H.replace gvardecls vinfo.bvname (bcd#index_varinfo vinfo, i loc)
+           if (CHUtil.startswith vinfo.bvname "__builtin_"
+               || CHUtil.startswith vinfo.bvname "__atomic_"
+               || CHUtil.startswith vinfo.bvname "__sync_")
+           then
+             ()
+           else
+             let _ = chlog#add "bcfiles:add gvardecl" (STR vinfo.bvname) in
+             H.replace gvardecls vinfo.bvname (bcd#index_varinfo vinfo, i loc)
         | GVar (vinfo, iinfo, loc) ->
            let _ = chlog#add "bcfiles:add gvar" (STR vinfo.bvname) in
            H.replace gvars
