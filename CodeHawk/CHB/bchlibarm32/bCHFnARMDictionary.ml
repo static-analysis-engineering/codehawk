@@ -2756,6 +2756,8 @@ object (self)
          let vmem2_r = mem2#to_variable floc in
          let xaddr1_r = mem#to_address floc in
          let xaddr2_r = mem2#to_address floc in
+         let xaddr1_r = TR.tmap rewrite_expr xaddr1_r in
+         let xaddr2_r = TR.tmap rewrite_expr xaddr2_r in
          let xrt_r = rt#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
          let xrt2_r = rt2#to_expr floc in
