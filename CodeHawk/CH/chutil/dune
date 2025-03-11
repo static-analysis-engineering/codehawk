@@ -1,5 +1,5 @@
 (library
   (name chutil)
-  (libraries chlib extlib zarith)
+  (libraries chlib extlib unix zarith)
   (public_name codehawk.chutil)
   (wrapped false))

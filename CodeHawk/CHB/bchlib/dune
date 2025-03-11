@@ -1,6 +1,6 @@
 (library
   (name bchlib)
-  (libraries chlib chutil extlib xprlib zarith zip)
+  (libraries chlib chutil extlib unix xprlib zarith zip)
   (modules_without_implementation bCHJavaBasicTypes)
   (public_name codehawk.bchlib)
   (wrapped false))

@@ -1,5 +1,5 @@
 (library
   (name bchlibmips32)
-  (libraries bchlib bchlibelf chlib chutil extlib xprlib)
+  (libraries bchlib bchlibelf chlib chutil extlib str xprlib)
   (public_name codehawk.bchlibmips32)
   (wrapped false))

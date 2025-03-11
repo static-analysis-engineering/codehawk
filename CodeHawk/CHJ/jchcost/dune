@@ -1,5 +1,5 @@
 (library
   (name jchcost)
-  (libraries chlib chutil jchlib jchpoly jchpre jchsys zarith)
+  (libraries chlib chutil jchlib jchpoly jchpre jchsys str unix zarith)
   (public_name codehawk.jchcost)
   (wrapped false))

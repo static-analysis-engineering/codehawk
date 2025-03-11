@@ -1,5 +1,5 @@
 (library
   (name bchlibx86)
-  (libraries bchlib bchlibpe bchlibelf chlib chutil extlib xprlib zarith)
+  (libraries bchlib bchlibpe bchlibelf chlib chutil extlib str unix xprlib zarith)
   (public_name codehawk.bchlibx86)
   (wrapped false))

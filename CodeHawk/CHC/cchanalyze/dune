@@ -1,6 +1,6 @@
 (library
   (name cchanalyze)
-  (libraries cchlib cchpre chlib chutil xprlib zarith)
+  (libraries cchlib cchpre chlib chutil unix xprlib zarith)
   (modules_without_implementation cCHCommon)
   (public_name codehawk.cchanalyze)
   (wrapped false))
