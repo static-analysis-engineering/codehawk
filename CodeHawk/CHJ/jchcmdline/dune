@@ -28,7 +28,7 @@
 
 (executable
   (name jCHXNativeMethodSignatures)
-  (libraries chlib chutil jchlib jchpre)
+  (libraries chlib chutil jchlib jchpre unix)
   (modules jCHXNativeMethodSignatures)
   (package exes)
   (public_name chj_native))

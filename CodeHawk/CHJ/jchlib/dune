@@ -1,5 +1,5 @@
 (library
   (name jchlib)
-  (libraries chlib chutil extlib str zarith zip)
+  (libraries chlib chutil extlib str unix zarith zip)
   (public_name codehawk.jchlib)
   (wrapped false))

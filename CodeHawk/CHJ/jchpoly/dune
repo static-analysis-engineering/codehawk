@@ -1,5 +1,5 @@
 (library
   (name jchpoly)
-  (libraries chlib chutil jchlib jchpre jchsys zarith)
+  (libraries chlib chutil jchlib jchpre jchsys str unix zarith)
   (public_name codehawk.jchpoly)
   (wrapped false))

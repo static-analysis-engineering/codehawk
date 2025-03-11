@@ -1,5 +1,5 @@
 (library
   (name jchpre)
-  (libraries chlib chutil extlib jchlib zip)
+  (libraries chlib chutil extlib jchlib str unix zip)
   (public_name codehawk.jchpre)
   (wrapped false))
