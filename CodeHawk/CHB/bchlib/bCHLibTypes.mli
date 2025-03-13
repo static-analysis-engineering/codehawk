@@ -5959,7 +5959,7 @@ class type floc_int =
              -> xpr_t               (** address value *)
              -> variable_t traceresult
 
-    method get_xpr_type: xpr_t -> btype_t option
+    method get_xpr_type: xpr_t -> btype_t traceresult
 
     (** {2 Predicates on variables}*)
 
