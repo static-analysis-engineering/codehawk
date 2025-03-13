@@ -204,7 +204,9 @@ let rec address_memory_offset
        arrayvar_memory_offset ~tgtsize ~tgtbtype rbasetype xoffset
      else
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "Offset " ^ (x2s xoffset) ^ " not yet supported"]
+              ^ "Offset " ^ (x2s xoffset) ^ " with base type "
+              ^ (btype_to_string rbasetype)
+              ^ " not yet supported"]
 
 and structvar_memory_offset
 ~(tgtsize: int option)
@@ -226,9 +228,15 @@ and structvar_memory_offset
               ^ " xoffset: " ^ (x2s xoffset)
               ^ "; btype: " ^ (btype_to_string btype)]
   | _ ->
-     Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
-            ^ " xoffset: " ^ (x2s xoffset)
-            ^ "; btype: " ^ (btype_to_string btype)]
+     if is_struct_type btype then
+       let compinfo = get_struct_type_compinfo btype in
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "xoffset: " ^ (x2s xoffset)
+              ^ "; type: struct " ^ compinfo.bcname]
+     else
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "xoffset: " ^ (x2s xoffset)
+              ^ "; btype: " ^ (btype_to_string btype)]
 
 and arrayvar_memory_offset
 ~(tgtsize: int option)
@@ -250,6 +258,7 @@ and arrayvar_memory_offset
      if is_array_type btype then
        let eltty = get_element_type btype in
        TR.tbind
+       ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
          (fun elsize ->
            let optindex = BCHXprUtil.get_array_index_offset xoffset elsize in
            match optindex with
@@ -265,10 +274,12 @@ and arrayvar_memory_offset
               if (TR.tfold_default is_struct_type false (resolve_type eltty)) then
                 let eltty = TR.tvalue (resolve_type eltty) ~default:t_unknown in
                 TR.tbind
+                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                   (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
                   (structvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
               else if is_array_type eltty then
                 TR.tbind
+                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                   (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
                   (arrayvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
               else if is_scalar eltty then
@@ -341,6 +352,7 @@ and get_field_memory_offset_at
                  else
                    let offset = offset - foff in
                    TR.tbind
+                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                      (fun fldtype ->
                        if offset = 0
                           && (is_scalar fldtype)
@@ -354,6 +366,7 @@ and get_field_memory_offset_at
                                   ^ (compliance_failure fldtype sz)]
                          else if is_struct_type fldtype then
                            TR.tmap
+                             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                              (fun suboff ->
                                Some (FieldOffset
                                        ((finfo.bfname, finfo.bfckey), suboff)))
@@ -364,6 +377,7 @@ and get_field_memory_offset_at
                                 (int_constant_expr offset))
                          else if is_array_type fldtype then
                            TR.tmap
+                             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                              (fun suboff ->
                                Some (FieldOffset
                                        ((finfo.bfname, finfo.bfckey), suboff)))

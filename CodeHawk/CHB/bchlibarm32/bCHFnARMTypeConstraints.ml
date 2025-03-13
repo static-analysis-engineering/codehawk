@@ -633,19 +633,19 @@ object (self)
          (let xmem_r = memop#to_expr floc in
           let xrmem_r =
             TR.tmap (fun x -> simplify_xpr (floc#inv#rewrite_expr x)) xmem_r in
-          let xtype_r = TR.tmap floc#get_xpr_type xrmem_r in
-          let xtype_opt = TR.tvalue xtype_r ~default:None in
-          match xtype_opt with
-          | Some t ->
-             let opttc = mk_btype_constraint rttypevar t in
-             (match opttc with
-              | Some tc ->
-                 begin
-                   log_type_constraint "LDR-var" tc;
-                   store#add_constraint tc
-                 end
-              | _ -> ())
-          | _ -> ());
+          let xtype_r = TR.tbind floc#get_xpr_type xrmem_r in
+          TR.titer
+            ~ok:(fun t ->
+              let opttc = mk_btype_constraint rttypevar t in
+              (match opttc with
+               | Some tc ->
+                  begin
+                    log_type_constraint "LDR-var" tc;
+                    store#add_constraint tc
+                  end
+               | _ -> ()))
+            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+            xtype_r);
 
          (* LDR rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdef = get_variable_rdefs_r (rn#to_variable floc) in
@@ -834,19 +834,19 @@ object (self)
          (let xmem_r = memop#to_expr floc in
           let xrmem_r =
             TR.tmap (fun x -> simplify_xpr (floc#inv#rewrite_expr x)) xmem_r in
-          let xtype_r = TR.tmap floc#get_xpr_type xrmem_r in
-          let xtype_opt = TR.tvalue xtype_r ~default:None in
-          match xtype_opt with
-          | Some t ->
-             let opttc = mk_btype_constraint rttypevar t in
-             (match opttc with
-              | Some tc ->
-                 begin
-                   log_type_constraint "LDRH-var" tc;
-                   store#add_constraint tc
-                 end
-              | _ -> ())
-          | _ -> ());
+          let xtype_r = TR.tbind floc#get_xpr_type xrmem_r in
+          TR.titer
+            ~ok:(fun t ->
+              let opttc = mk_btype_constraint rttypevar t in
+              (match opttc with
+               | Some tc ->
+                  begin
+                    log_type_constraint "LDRH-var" tc;
+                    store#add_constraint tc
+                  end
+               | _ -> ()))
+            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+            xtype_r);
 
          (* LDRH rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdef = get_variable_rdefs_r (rn#to_variable floc) in
