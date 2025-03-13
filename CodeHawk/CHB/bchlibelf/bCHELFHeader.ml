@@ -551,6 +551,7 @@ object(self)
     List.iter (fun (_, h, _) ->
         if (h#is_program_section || (h#get_section_name = ".bss"))
            && (not h#is_executable)
+           && (not (CHUtil.startswith h#get_section_name ".debug_"))
            && (not
                  (List.mem
                     h#get_section_name
