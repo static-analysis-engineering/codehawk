@@ -958,7 +958,22 @@ object (self)
     | Move (_, _, rd, rm, _, _) when rm#is_register ->
        let xrm_r = rm#to_expr floc in
        let rdreg = rd#to_register in
+       let rdtypevar = mk_reglhs_typevar rdreg faddr iaddr in
        begin
+
+         (* variable introduction for lhs with type *)
+         (match get_regvar_type_annotation () with
+          | Some t ->
+             let opttc = mk_btype_constraint rdtypevar t in
+             (match opttc with
+              | Some tc ->
+                 begin
+                   log_type_constraint "MOV-rvintro" tc;
+                   store#add_constraint tc
+                 end
+              | _ -> ())
+          | _ -> ());
+
          (* propagate function argument type *)
          (match getopt_initial_argument_value_r xrm_r with
           | Some (rmreg, off) when off = 0 ->
@@ -1014,18 +1029,36 @@ object (self)
         | _ ->
            let reg = register_of_arm_register AR0 in
            let typevar = mk_reglhs_typevar reg faddr iaddr in
-           let opttc = mk_btype_constraint typevar rtype in
-           match opttc with
-           | Some tc ->
-              begin
-                log_type_constraint "POP-rv" tc;
-                store#add_constraint tc
-              end
-           | _ ->
-              begin
-                log_no_type_constraint "POP-rv" rtype;
-                ()
-              end)
+
+           begin
+             (* use function return type *)
+             (let opttc = mk_btype_constraint typevar rtype in
+              match opttc with
+              | Some tc ->
+                 begin
+                   log_type_constraint "POP-rv" tc;
+                   store#add_constraint tc
+                 end
+              | _ ->
+                 begin
+                   log_no_type_constraint "POP-rv" rtype;
+                   ()
+                 end);
+
+             (* propagate via reaching defs *)
+             (let r0var = floc#env#mk_arm_register_variable AR0 in
+              let r0defs = get_variable_rdefs r0var in
+              List.iter (fun r0def ->
+                  let r0addr = r0def#getBaseName in
+                  if r0addr != "init" then
+                    let r0typevar = mk_reglhs_typevar reg faddr r0addr in
+                    let r0typeterm = mk_vty_term r0typevar in
+                    let lhstypeterm = mk_vty_term typevar in
+                    begin
+                      log_subtype_constraint "POP-R0-rdef" r0typeterm lhstypeterm;
+                      store#add_subtype_constraint r0typeterm lhstypeterm
+                    end) r0defs)
+             end)
 
     | Push _
       | Pop _ ->
@@ -1105,7 +1138,22 @@ object (self)
                       begin
                         log_subtype_constraint "STR-imm-off" rttypeterm lhstypeterm;
                         store#add_subtype_constraint rttypeterm lhstypeterm
-                      end) rtrdefs)
+                      end) rtrdefs);
+
+                 (* import type from stackvar-introductions *)
+                 (match get_stackvar_type_annotation offset with
+                  | None -> ()
+                  | Some t ->
+                     let lhstypevar =
+                       mk_localstack_lhs_typevar offset faddr iaddr in
+                     let opttc = mk_btype_constraint lhstypevar t in
+                     (match opttc with
+                      | Some tc ->
+                         begin
+                           log_type_constraint "STR-stack-vintro" tc;
+                           store#add_constraint tc
+                         end
+                      | _ -> ()))
              end);
 
          (List.iter (fun rndsym ->
