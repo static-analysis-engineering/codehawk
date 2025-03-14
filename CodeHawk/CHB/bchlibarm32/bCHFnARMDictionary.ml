@@ -2658,7 +2658,8 @@ object (self)
       | StoreRegister (c, rt, rn, rm, mem, _) ->
          let vmem_r = mem#to_variable floc in
          let vmem_r =
-           TR.tbind (floc#convert_variable_offsets ~size:(Some 4)) vmem_r in
+           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 4)) vmem_r in
+           if Result.is_ok r then r else vmem_r in
          let xaddr_r = mem#to_address floc in
          let xrt_r = rt#to_expr floc in
          let xrn_r = rn#to_expr floc in
@@ -2704,6 +2705,9 @@ object (self)
 
       | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
          let vmem_r = mem#to_variable floc in
+         let vmem_r =
+           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 1)) vmem_r in
+           if Result.is_ok r then r else vmem_r in
          let xaddr_r = mem#to_address floc in
          let xrt_r = rt#to_expr floc in
          let xrn_r = rn#to_expr floc in
@@ -2840,7 +2844,9 @@ object (self)
 
       | StoreRegisterHalfword (c, rt, rn, rm, mem, _) ->
          let vmem_r = mem#to_variable floc in
-         let vmem_r = TR.tbind floc#convert_variable_offsets vmem_r in
+         let vmem_r =
+           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 2)) vmem_r in
+           if Result.is_ok r then r else vmem_r in
          let xaddr_r = mem#to_address floc in
          let xrt_r = rt#to_expr floc in
          let xrn_r = rn#to_expr floc in
