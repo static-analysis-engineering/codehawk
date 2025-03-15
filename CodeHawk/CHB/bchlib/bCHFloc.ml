@@ -1404,6 +1404,21 @@ object (self)
                         ^ " not yet handled"])
             memoff_r)
         basevar_type_r
+    else if self#f#env#is_return_value v then
+      let callsite_r = self#f#env#get_call_site v in
+      TR.tbind
+        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+        (fun callsite ->
+          let loc = ctxt_string_to_location self#fa callsite in
+          let fndata = functions_data#get_function self#fa in
+          if fndata#has_regvar_type_annotation loc#i then
+            fndata#get_regvar_type_annotation loc#i
+          else
+            Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                   ^ "type of callsite return value " ^ (x2s (XVar v))
+                   ^ " at address " ^ loc#i#to_hex_string
+                   ^ " not yet handled"])
+        callsite_r
     else
       let ty = self#env#get_variable_type v in
       match ty with

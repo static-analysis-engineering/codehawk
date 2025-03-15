@@ -407,7 +407,7 @@ object (self)
        (* no type information gained *)
        ()
 
-    | BranchLink _
+    | BranchLink _ | BranchLinkExchange _
          when floc#has_call_target && floc#get_call_target#is_signature_valid ->
        let log_error (msg: string) =
          mk_tracelog_spec
@@ -435,18 +435,33 @@ object (self)
          (* add constraint for return value *)
          (if not (is_void rtype) then
             let typevar = mk_reglhs_typevar rvreg faddr iaddr in
-            let opttc = mk_btype_constraint typevar rtype in
-            match opttc with
-            | Some tc ->
-               begin
-                 log_type_constraint "BL-rv" tc;
-                 store#add_constraint tc
-               end
+            match get_regvar_type_annotation () with
+            | Some t ->
+               let opttc = mk_btype_constraint typevar t in
+               (match opttc with
+                | Some tc ->
+                   begin
+                     log_type_constraint "BL-rv-intro" tc;
+                     store#add_constraint tc
+                   end
+                | _ ->
+                   begin
+                     log_no_type_constraint "BL-rv-intro" t;
+                     ()
+                   end)
             | _ ->
-               begin
-                 log_no_type_constraint "BL-rv" rtype;
-                 ()
-               end);
+               let opttc = mk_btype_constraint typevar rtype in
+               match opttc with
+               | Some tc ->
+                  begin
+                    log_type_constraint "BL-rv" tc;
+                    store#add_constraint tc
+                  end
+               | _ ->
+                  begin
+                    log_no_type_constraint "BL-rv" rtype;
+                    ()
+                  end);
 
          (* add constraints for argument values *)
          List.iter (fun (p, x) ->
