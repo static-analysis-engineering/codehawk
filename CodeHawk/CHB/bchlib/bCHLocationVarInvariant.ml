@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -197,11 +197,13 @@ object (self)
       H.iter
         (fun _ (var, locs) ->
           let locs = List.sort Stdlib.compare locs#toList in
-          self#add_fact (DefUseHigh (var,locs))) usehighlocs
+          self#add_fact (DefUseHigh (var, locs))) usehighlocs
     end
 
   method get_var_facts (var: variable_t): var_invariant_int list =
-    List.filter (fun f -> f#get_variable#equal var) self#get_facts
+    let varix = var#getName#getSeqNumber in
+    List.filter (fun f ->
+        f#get_variable#getName#getSeqNumber = varix) self#get_facts
 
   method get_var_reaching_defs (var: variable_t): var_invariant_int list =
     List.filter (fun f -> f#is_reaching_def) (self#get_var_facts var)
