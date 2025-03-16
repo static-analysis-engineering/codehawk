@@ -144,6 +144,7 @@ object (self)
            if i < 128 then (SignedNeutral, 8)
            else if i < BCHDoubleword.e15 then (SignedNeutral, 16)
            else if i < BCHDoubleword.e31 then (SignedNeutral, 32)
+           else if i = 0xffffffff then (Signed, 32)
            else (SignedNeutral, 64) in
          TyTInt (sg, si) in
 
