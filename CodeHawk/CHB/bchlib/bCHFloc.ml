@@ -699,17 +699,23 @@ object (self)
       let memoffset = numoffset#add offset in
       let memref_r = self#env#mk_base_sym_reference base in
       let memoff_r =
+        address_memory_offset
+          t_unknown ~tgtsize:(Some size) (num_constant_expr memoffset) in
+      (*
+        To keep representation unifor (i.e., to avoid aliasing) the creation
+        of variable representation against the type of the variable must be
+        delayed until reporting time.
         TR.tbind
           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
           (fun basevar ->
             let optbasetype = self#env#get_variable_type basevar in
-            let basetype =
+            let basetype = t_unknown in
               match optbasetype with
               | Some t when is_pointer t -> ptr_deref t
               | _ -> t_unknown in
-            address_memory_offset basetype
+            address_memory_offset t_unknown
               ~tgtsize:(Some size) (num_constant_expr memoffset))
-          (self#env#get_variable base#getSeqNumber) in
+          (self#env#get_variable base#getSeqNumber) in *)
       mk_memvar memref_r memoff_r
 
     else
@@ -1527,9 +1533,16 @@ object (self)
            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
            (fun v -> XVar v) (self#convert_variable_offsets ~size v)
       | XOp ((Xf "addressofvar"), [XVar v]) ->
+         let newx_r =
+           TR.tmap
+             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+             (fun v -> XVar v) (self#convert_variable_offsets ~size v) in
          TR.tmap
-           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-           (fun v -> XVar v) (self#convert_variable_offsets ~size v)
+           (fun newx ->
+             match newx with
+             | XVar v -> XOp ((Xf "addressofvar"), [(XVar v)])
+             | _ -> exp)
+           newx_r
       | XOp (op, [xx]) -> TR.tmap (fun x -> XOp (op, [x])) (aux xx)
       | XOp (op, [x1; x2]) ->
          TR.tmap2 (fun x1 x2 -> XOp (op, [x1; x2])) (aux x1) (aux x2)
@@ -1550,12 +1563,15 @@ object (self)
     let knownpointers = List.filter self#f#is_base_pointer vars in
     match knownpointers with
     (* one known pointer, must be the base *)
-    | [base] when self#f#env#is_initial_stackpointer_value base ->
+    | [base] (* when self#f#env#is_initial_stackpointer_value base *) ->
        let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
        let memref_r = self#env#mk_base_variable_reference base in
        let memoff_r = address_memory_offset t_unknown offset in
        (memref_r, memoff_r)
 
+       (* resolving to type-based representations at this point may give
+          rise to aliasing; for example __ptr_deref_R[0]_in.field_4 may be aliased
+          with R[0]_in[4]_in
     | [base] ->
        let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
        let memref_r = self#env#mk_base_variable_reference base in
@@ -1582,6 +1598,7 @@ object (self)
                  ^ "base pointer: " ^ (x2s (XVar base)))
            (fun basetype -> address_memory_offset basetype offset)
            basetype_r in
+        *)
 
        (*
          (match offset with
@@ -1593,7 +1610,7 @@ object (self)
                     ^ "Offset from base "
                     ^ (x2s (XVar base))
                     ^ " not recognized: " ^ (x2s offset)]) in *)
-       (memref_r, memoff_r)
+    (* (memref_r, memoff_r) *)
 
     (* no known pointers, have to find a base *)
     | [] ->
