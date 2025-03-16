@@ -2757,7 +2757,13 @@ object (self)
 
       | StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
          let vmem_r = mem#to_variable floc in
+         let vmem_r =
+           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 4)) vmem_r in
+           if Result.is_ok r then r else vmem_r in
          let vmem2_r = mem2#to_variable floc in
+         let vmem2_r =
+           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 4)) vmem2_r in
+           if Result.is_ok r then r else vmem2_r in
          let xaddr1_r = mem#to_address floc in
          let xaddr2_r = mem2#to_address floc in
          let xaddr1_r = TR.tmap rewrite_expr xaddr1_r in
