@@ -2631,6 +2631,11 @@ object (self)
              (fun (acc, off) _reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs_r = memop#to_variable floc in
+               let memlhs_r =
+                 let r =
+                   TR.tbind
+                     (floc#convert_variable_offsets ~size:(Some 4)) memlhs_r in
+                 if Result.is_ok r then r else memlhs_r in
                (acc @ [memlhs_r], off + 4)) ([], 4) rl#get_register_op_list in
          let rdefs = List.map get_rdef_r (baserhs_r :: rrhss_rl) in
          let uses = List.map get_def_use_r (baselhs_r :: memlhss_rl) in
