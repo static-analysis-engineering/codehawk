@@ -18,8 +18,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: ocaml/setup-ocaml@v2
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 4.12.1
       - name: Install dependencies with opam
@@ -34,7 +34,7 @@ jobs:
             echo "::warning title=Invalid file permissions automatically fixed::$line"
           done
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./CodeHawk/_build/default/_doc/_html
 
@@ -47,4 +47,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
