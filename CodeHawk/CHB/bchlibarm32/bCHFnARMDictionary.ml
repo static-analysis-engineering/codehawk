@@ -648,7 +648,6 @@ object (self)
                         (floc#get_var_at_address ~btype:(ptr_deref ptype) xx)
               else
                 xx in
-            let xx = TR.tvalue (floc#convert_xpr_offsets xx) ~default:xx in
             let rdef = get_rdef_r xvar_r in
             (xx :: xprs, xvar_r :: xvars, rdef :: rdefs, index + 1))
           ([], [], [], 1) callargs in
@@ -739,16 +738,6 @@ object (self)
            match get_regvar_type_annotation () with
            | Some t -> t
            | _ -> t_unknown in
-         (*
-         let rresult_r =
-           TR.tmap
-             (fun rresult ->
-               TR.tfold_default
-                 (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
-                 rresult
-                 (floc#get_var_at_address rresult))
-             rresult_r in
-          *)
          let (tagstring, args) =
            mk_instrx_data_r
              ~vars_r:[vrd_r]
@@ -1075,26 +1064,19 @@ object (self)
          let csetter = floc#f#get_associated_cc_setter floc#cia in
          let tcond = rewrite_test_expr csetter txpr in
          let fcond = rewrite_test_expr csetter fxpr in
-         let tcond_r = floc#convert_xpr_offsets ~size:(Some 4) tcond in
-         let fcond_r = floc#convert_xpr_offsets ~size:(Some 4) fcond in
+         let csetter_addr_r = string_to_doubleword csetter in
+         let csetter_instr_r =
+           TR.tbind get_arm_assembly_instruction csetter_addr_r in
          let bytestr =
-           try
-             let instr =
-               fail_tvalue
-                 (trerror_record
-                    (LBLOCK [STR "Internal error in FnARMDictionary:Branch"]))
-                 (get_arm_assembly_instruction
-                    (fail_tvalue
-                       (trerror_record
-                          (LBLOCK [STR "FnARMDictionary:Branch: "; STR csetter]))
-                       (string_to_doubleword csetter))) in
-             instr#get_bytes_ashexstring
-           with
-           | _ -> "0x0" in
+           TR.tfold
+             ~ok:(fun instr -> instr#get_bytes_ashexstring)
+             ~error:(fun e ->
+               begin log_error_result __FILE__ __LINE__ e; "0x0" end)
+             csetter_instr_r in
          let rdefs = (get_all_rdefs txpr) @ (get_all_rdefs tcond) in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~xprs_r:[Ok txpr; Ok fxpr; tcond_r; fcond_r; xtgt_r]
+             ~xprs_r:[Ok txpr; Ok fxpr; Ok tcond; Ok fcond; xtgt_r]
              ~rdefs
              () in
          let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
@@ -1191,8 +1173,6 @@ object (self)
          let xresult_r =
            TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
          let result_r = TR.tmap rewrite_expr xresult_r in
-         let result_r =
-           TR.tbind (floc#convert_xpr_offsets ~size:(Some 4)) result_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r result_r) in
          let (tagstring, args) =
@@ -1530,8 +1510,6 @@ object (self)
          let useshigh = [get_def_use_high_r vrt_r] in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
-         let xrmem_r =
-           TR.tbind (floc#convert_xpr_offsets ~size:(Some 4)) xrmem_r in
          let _ =
            TR.tfold_default
              (fun xrmem -> ignore (get_string_reference floc xrmem)) () xrmem_r in
@@ -1736,7 +1714,6 @@ object (self)
          let vmem_r = mem#to_variable floc in
          let xmem_r = mem#to_expr floc in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
-         let xrmem_r = TR.tbind floc#convert_xpr_offsets xrmem_r in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_memvar_r vmem_r]
@@ -2566,10 +2543,6 @@ object (self)
            let xdst_r = dstop#to_expr floc in
            let xxsrc_r = TR.tmap (rewrite_floc_expr srcfloc) xsrc_r in
            let xxdst_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) xdst_r in
-           let xxdst_r =
-             TR.tmap
-               (fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
-               (TR.tbind floc#get_var_at_address xxdst_r) in
            let rdefs = [(get_rdef_r xsrc_r); (get_rdef_r xdst_r)] in
            let _ =
              TR.tfold_default
@@ -2643,11 +2616,6 @@ object (self)
              (fun (acc, off) _reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs_r = memop#to_variable floc in
-               let memlhs_r =
-                 let r =
-                   TR.tbind
-                     (floc#convert_variable_offsets ~size:(Some 4)) memlhs_r in
-                 if Result.is_ok r then r else memlhs_r in
                (acc @ [memlhs_r], off + 4)) ([], 4) rl#get_register_op_list in
          let rdefs = List.map get_rdef_r (baserhs_r :: rrhss_rl) in
          let uses = List.map get_def_use_r (baselhs_r :: memlhss_rl) in
@@ -2674,17 +2642,12 @@ object (self)
 
       | StoreRegister (c, rt, rn, rm, mem, _) ->
          let vmem_r = mem#to_variable floc in
-         let vmem_r =
-           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 4)) vmem_r in
-           if Result.is_ok r then r else vmem_r in
          let xaddr_r = mem#to_address floc in
          let xrt_r = rt#to_expr floc in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
-         let xxrtc_r = TR.tbind floc#convert_xpr_offsets xxrt_r in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let lhsvar_r = TR.tbind floc#get_var_at_address xxaddr_r in
          let rdefs =
            [get_rdef_r xrn_r;
             get_rdef_r xrm_r;
@@ -2692,8 +2655,8 @@ object (self)
             get_rdef_r xxrt_r] in
          let uses = [get_def_use_r vmem_r] in
          let useshigh = [get_def_use_high_r vmem_r] in
-         let xprs_r = [xrn_r; xrm_r; xrt_r; xxrt_r; xxrtc_r; xaddr_r] in
-         let vars_r = [vmem_r; lhsvar_r] in
+         let xprs_r = [xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r] in
+         let vars_r = [vmem_r] in
          let _ =
            floc#memrecorder#record_store_r
              ~addr_r:xxaddr_r
@@ -2722,17 +2685,12 @@ object (self)
 
       | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
          let vmem_r = mem#to_variable floc in
-         let vmem_r =
-           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 1)) vmem_r in
-           if Result.is_ok r then r else vmem_r in
          let xaddr_r = mem#to_address floc in
          let xrt_r = rt#to_expr floc in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let lhsvar_r =
-           TR.tbind (floc#get_var_at_address ~size:(Some 1)) xxaddr_r in
          let rdefs =
            [get_rdef_r xrn_r;
             get_rdef_r xrm_r;
@@ -2749,7 +2707,7 @@ object (self)
              ~xpr_r:xxrt_r in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[vmem_r; lhsvar_r]
+             ~vars_r:[vmem_r]
              ~xprs_r:[xrn_r; xrm_r; xrt_r; xxrt_r; xaddr_r]
              ~rdefs
              ~uses
@@ -2774,13 +2732,7 @@ object (self)
 
       | StoreRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
          let vmem_r = mem#to_variable floc in
-         let vmem_r =
-           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 4)) vmem_r in
-           if Result.is_ok r then r else vmem_r in
          let vmem2_r = mem2#to_variable floc in
-         let vmem2_r =
-           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 4)) vmem2_r in
-           if Result.is_ok r then r else vmem2_r in
          let xaddr1_r = mem#to_address floc in
          let xaddr2_r = mem2#to_address floc in
          let xaddr1_r = TR.tmap rewrite_expr xaddr1_r in
@@ -2867,15 +2819,11 @@ object (self)
 
       | StoreRegisterHalfword (c, rt, rn, rm, mem, _) ->
          let vmem_r = mem#to_variable floc in
-         let vmem_r =
-           let r = TR.tbind (floc#convert_variable_offsets ~size:(Some 2)) vmem_r in
-           if Result.is_ok r then r else vmem_r in
          let xaddr_r = mem#to_address floc in
          let xrt_r = rt#to_expr floc in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
-         let xxrt_r = TR.tbind floc#convert_xpr_offsets xxrt_r in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
          let rdefs =
            [get_rdef_r xrn_r;
