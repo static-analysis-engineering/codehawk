@@ -458,8 +458,10 @@ object (self)
 
     let mk_instrx_data_r
           ?(vars_r: variable_t traceresult list = [])
+          ?(cvars_r: variable_t traceresult list = [])
           ?(types: btype_t list = [])
           ?(xprs_r: xpr_t traceresult list = [])
+          ?(cxprs_r: xpr_t traceresult list = [])
           ?(rdefs: int list = [])
           ?(uses: int list = [])
           ?(useshigh: int list = [])
@@ -469,15 +471,19 @@ object (self)
         if testsupport#requested_instrx_data then
           testsupport#submit_instrx_data instr#get_address vars_r xprs_r in
       let varcount = List.length vars_r in
+      let cvarcount = List.length cvars_r in
       let xprcount = List.length xprs_r in
+      let cxprcount = List.length cxprs_r in
       let rdefcount = List.length rdefs in
       let defusecount = List.length uses in
       let defusehighcount = List.length useshigh in
       let flagrdefcount = List.length flagrdefs in
       let integercount = List.length integers in
       let varstring = string_repeat "v" varcount in
+      let cvarstring = string_repeat "w" cvarcount in
       let typestring = string_repeat "t" varcount in
       let xprstring = string_repeat "x" xprcount in
+      let cxprstring = string_repeat "c" cxprcount in
       let rdefstring = string_repeat "r" rdefcount in
       let defusestring = string_repeat "d" defusecount in
       let defusehighstring = string_repeat "h" defusehighcount in
@@ -486,15 +492,19 @@ object (self)
       let tagstring =
         "ar:"
         ^ varstring
+        ^ cvarstring
         ^ typestring
         ^ xprstring
+        ^ cxprstring
         ^ rdefstring
         ^ defusestring
         ^ defusehighstring
         ^ flagrdefstring
         ^ integerstring in
       let varargs = List.map index_variable vars_r in
+      let cvarargs = List.map index_variable cvars_r in
       let xprargs = List.map index_xpr xprs_r in
+      let cxprargs = List.map index_xpr cxprs_r in
       let typeargs =
         let types =
           if (List.length types) < varcount then
@@ -504,8 +514,10 @@ object (self)
         List.map bcd#index_typ types in
       (tagstring,
        varargs
+       @ cvarargs
        @ typeargs
        @ xprargs
+       @ cxprargs
        @ rdefs
        @ uses
        @ useshigh
