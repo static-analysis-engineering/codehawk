@@ -3,7 +3,7 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
    Copyright (c) 2021-2025 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,9 +27,9 @@
    SOFTWARE.
    ============================================================================= *)
 
-(** Facility to record problems during a run of the analyzer. 
+(** Facility to record problems during a run of the analyzer.
 
-    Typical use is to catch an exception, record the type of exception thrown 
+    Typical use is to catch an exception, record the type of exception thrown
     with additional data in the logger:
 
     chlog#add "Invalid_Argument" <reason for invalid argument>
@@ -110,17 +110,17 @@ object
 	  tags_discontinued <- tag :: tags_discontinued;
 	  H.replace store tag ((STR "DISCONTINUED") :: entry)
 	end
-      else  
+      else
 	H.replace store tag (msg :: entry)
 
   method reset = H.clear store
 
   method size = H.fold (fun _ v a -> a + (List.length v)) store 0
 
-  method tagsize (tag:string) = 
+  method tagsize (tag:string) =
     if H.mem store tag then List.length (H.find store tag) else 0
 
-  method toPretty = 
+  method toPretty =
     let tags = ref [] in
     let _ = H.iter (fun k _ -> tags := (k, H.find order k) :: !tags) store in
     let tags = List.sort (fun (_, i1) (_, i2) -> Stdlib.compare i2 i1) !tags in
@@ -151,8 +151,8 @@ object
            STR ""); LBLOCK !pp; NL]
 
 end
-      
-    
+
+
 let mk_logger () = new logger_t
 
 let chlog = new logger_t
@@ -252,3 +252,17 @@ let log_result
   chlog#add
     (tag ^ filename ^ ":" ^ (string_of_int linenumber))
     (LBLOCK [STR msg; STR (String.concat "; " error)])
+
+
+let log_diagnostics_result
+      ?(msg="")
+      ?(tag="")
+      (filename: string)
+      (linenumber: int)
+      (msgs: string list) =
+  if collect_diagnostics () then
+    let tag = if tag = "" then tag else tag ^ ":" in
+    let msg = if msg = "" then msg else msg ^ ":" in
+    ch_diagnostics_log#add
+      (tag ^ filename ^ ":" ^ (string_of_int linenumber))
+      (LBLOCK [STR msg; STR (String.concat "; " msgs)])
