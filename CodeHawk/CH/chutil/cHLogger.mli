@@ -128,3 +128,12 @@ val log_error_result:
     making up [error].*)
 val log_result:
   ?msg:string -> ?tag:string -> string -> int -> string list -> unit
+
+
+(** [log_diagnostics_result msg tag filename linenumber error] writes an entry to
+    [ch_diagnostics_log] with a tag that combines [tag], [filename], and
+    [linenumber].
+    The entry is the concatenation of [msg] and the list of error messages
+    making up [error].*)
+val log_diagnostics_result:
+  ?msg:string -> ?tag:string -> string -> int -> string list -> unit
