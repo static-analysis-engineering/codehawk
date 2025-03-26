@@ -150,6 +150,8 @@ object (self)
          (tags, [xd#index_variable v; i; self#index_memory_offset m])
       | ArrayIndexOffset (x, m) ->
          (tags, [xd#index_xpr x; self#index_memory_offset m])
+      | BasePtrArrayIndexOffset (x, m) ->
+         (tags, [xd#index_xpr x; self#index_memory_offset m])
       | UnknownOffset -> (tags,[]) in
     memory_offset_table#add key
 
@@ -166,6 +168,7 @@ object (self)
     | "i" ->
        IndexOffset (xd#get_variable (a 0), a 1, self#get_memory_offset (a 2))
     | "a" -> ArrayIndexOffset (xd#get_xpr (a 0), self#get_memory_offset (a 1))
+    | "p" -> BasePtrArrayIndexOffset (xd#get_xpr (a 0), self#get_memory_offset (a 1))
     | "u" -> UnknownOffset
     | s -> raise_tag_error name s memory_offset_mcts#tags
 
