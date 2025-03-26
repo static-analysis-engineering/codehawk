@@ -86,6 +86,8 @@ let rec memory_offset_to_string offset =
       (memory_offset_to_string subOffset)
   | ArrayIndexOffset (x, subOffset) ->
      "[" ^ (x2s x) ^  "]" ^ (memory_offset_to_string subOffset)
+  | BasePtrArrayIndexOffset (x, subOffset) ->
+     "[<[" ^ (x2s x) ^ "]>]" ^ (memory_offset_to_string subOffset)
   | UnknownOffset -> "?offset?"
 
 
@@ -134,6 +136,14 @@ let rec memory_offset_compare (o1: memory_offset_t) (o2: memory_offset_t) =
        l1
   | (ArrayIndexOffset _, _) -> -1
   | (_, ArrayIndexOffset _) -> 1
+  | (BasePtrArrayIndexOffset (x1, so1), BasePtrArrayIndexOffset (x2, so2)) ->
+     let l1 = syntactic_comparison x1 x2 in
+     if l1 = 0 then
+       memory_offset_compare so1 so2
+     else
+       l1
+  | (BasePtrArrayIndexOffset _, _) -> -1
+  | (_, BasePtrArrayIndexOffset _) -> 1
   | (UnknownOffset, UnknownOffset) -> 0
 
 
@@ -155,8 +165,8 @@ let rec mk_maximal_memory_offset (n: numerical_t) (ty: btype_t): memory_offset_t
        UnknownOffset
   else if is_array_type ty then
     ConstantOffset (n, NoOffset)
-  else if n#equal numerical_zero then
-    NoOffset
+  (* else if n#equal numerical_zero then
+    NoOffset *)
   else
     begin
       ch_error_log#add
@@ -175,15 +185,12 @@ let rec address_memory_offset
           ?(tgtbtype=t_unknown)
           (basetype: btype_t)
           (xoffset: xpr_t): memory_offset_t traceresult =
+  let iszero x =
+    match x with
+    | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
+    | _ -> false in
   let rbasetype = TR.tvalue (resolve_type basetype) ~default:t_unknown in
   match xoffset with
-  | XConst (IntConst n)
-       when n#equal CHNumerical.numerical_zero
-            && Option.is_none tgtsize
-            && is_unknown_type tgtbtype -> Ok NoOffset
-  | XConst (IntConst n)
-       when n#equal CHNumerical.numerical_zero && is_unknown_type rbasetype ->
-     Ok NoOffset
   | XConst (IntConst n) when is_unknown_type rbasetype ->
      Ok (ConstantOffset (n, NoOffset))
   | XConst (IntConst n) ->
@@ -203,10 +210,22 @@ let rec address_memory_offset
      else if is_array_type rbasetype then
        arrayvar_memory_offset ~tgtsize ~tgtbtype rbasetype xoffset
      else
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "Offset " ^ (x2s xoffset) ^ " with base type "
-              ^ (btype_to_string rbasetype)
-              ^ " not yet supported"]
+       let tsize_r = size_of_btype rbasetype in
+       TR.tbind
+         (fun tsize ->
+           let optindex = BCHXprUtil.get_array_index_offset xoffset tsize in
+           match optindex with
+           | None ->
+              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                     ^ "Unable to extract index from " ^ (x2s xoffset)]
+           | Some (indexxpr, xrem) when iszero xrem ->
+              Ok (BasePtrArrayIndexOffset (indexxpr, NoOffset))
+           | _ ->
+              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                     ^ "Nonzero suboffset encountered when extracting index "
+                     ^ "from " ^ (x2s xoffset) ^ " with base type "
+                     ^ (btype_to_string rbasetype)])
+         tsize_r
 
 and structvar_memory_offset
 ~(tgtsize: int option)
@@ -214,11 +233,6 @@ and structvar_memory_offset
 (btype: btype_t)
 (xoffset: xpr_t): memory_offset_t traceresult =
   match xoffset with
-  | XConst (IntConst n) when
-         n#equal CHNumerical.numerical_zero
-         && Option.is_none tgtsize
-         && Option.is_none tgtbtype ->
-     Ok NoOffset
   | XConst (IntConst _) ->
      if is_struct_type btype then
        let compinfo = get_struct_type_compinfo btype in
@@ -248,54 +262,47 @@ and arrayvar_memory_offset
     | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
     | _ -> false in
 
-  match xoffset with
-  | XConst (IntConst n) when
-         n#equal CHNumerical.numerical_zero
-         && Option.is_none tgtsize
-         && Option.is_none tgtbtype ->
-     Ok NoOffset
-  | _ ->
-     if is_array_type btype then
-       let eltty = get_element_type btype in
-       TR.tbind
-       ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-         (fun elsize ->
-           let optindex = BCHXprUtil.get_array_index_offset xoffset elsize in
-           match optindex with
-           | None ->
-              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                     ^ "Unable to extract index from " ^ (x2s xoffset)]
-           | Some (indexxpr, xrem) when
-                  iszero xrem
-                  && Option.is_none tgtsize
-                  && Option.is_none tgtbtype ->
-              Ok (ArrayIndexOffset (indexxpr, NoOffset))
-           | Some (indexxpr, rem) ->
-              if (TR.tfold_default is_struct_type false (resolve_type eltty)) then
-                let eltty = TR.tvalue (resolve_type eltty) ~default:t_unknown in
-                TR.tbind
-                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-                  (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
-                  (structvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
-              else if is_array_type eltty then
-                TR.tbind
-                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-                  (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
-                  (arrayvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
-              else if is_scalar eltty then
-                let x2index = XOp (XDiv, [rem; int_constant_expr elsize]) in
-                let x2index = Xsimplify.simplify_xpr x2index in
-                Ok (ArrayIndexOffset (x2index, NoOffset))
-              else
-                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                       ^ "xoffset: " ^ (x2s xoffset)
-                       ^ "; btype: " ^ (btype_to_string btype)
-                       ^ "; elementtype: " ^ (btype_to_string eltty)])
-         (size_of_btype eltty)
-     else
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
-              ^ " xoffset: " ^ (x2s xoffset)
-              ^ "; btype: " ^ (btype_to_string btype)]
+  if is_array_type btype then
+    let eltty = get_element_type btype in
+    TR.tbind
+      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+      (fun elsize ->
+        let optindex = BCHXprUtil.get_array_index_offset xoffset elsize in
+        match optindex with
+        | None ->
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "Unable to extract index from " ^ (x2s xoffset)]
+        | Some (indexxpr, xrem) when
+               iszero xrem
+               && Option.is_none tgtsize
+               && Option.is_none tgtbtype ->
+           Ok (ArrayIndexOffset (indexxpr, NoOffset))
+        | Some (indexxpr, rem) ->
+           if (TR.tfold_default is_struct_type false (resolve_type eltty)) then
+             let eltty = TR.tvalue (resolve_type eltty) ~default:t_unknown in
+             TR.tbind
+               ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+               (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
+               (structvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
+           else if is_array_type eltty then
+             TR.tbind
+               ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+               (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
+               (arrayvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
+           else if is_scalar eltty then
+             let x2index = XOp (XDiv, [rem; int_constant_expr elsize]) in
+             let x2index = Xsimplify.simplify_xpr x2index in
+             Ok (ArrayIndexOffset (x2index, NoOffset))
+           else
+             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ "xoffset: " ^ (x2s xoffset)
+                    ^ "; btype: " ^ (btype_to_string btype)
+                    ^ "; elementtype: " ^ (btype_to_string eltty)])
+      (size_of_btype eltty)
+  else
+    Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+           ^ " xoffset: " ^ (x2s xoffset)
+           ^ "; btype: " ^ (btype_to_string btype)]
 
 
 and get_field_memory_offset_at
@@ -461,14 +468,6 @@ let rec get_constant_offsets
          __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
          ^ "Offset is not constant: "
          ^ (memory_offset_to_string offset)]
-       (*
-     raise
-       (BCH_failure
-          (LBLOCK [
-               STR __FILE__; STR ":"; INT __LINE__; STR ": ";
-               STR "offset ";
-               STR (memory_offset_to_string offset);
-               STR " is not constant"])) *)
 
 
 let rec add_offset
@@ -479,6 +478,8 @@ let rec add_offset
   | FieldOffset (f, o) -> FieldOffset (f, add_offset o offset2)
   | IndexOffset (v, i, o) -> IndexOffset (v, i, add_offset o offset2)
   | ArrayIndexOffset (x, o) -> ArrayIndexOffset (x, add_offset o offset2)
+  | BasePtrArrayIndexOffset (x, o) ->
+     BasePtrArrayIndexOffset (x, add_offset o offset2)
   | UnknownOffset -> UnknownOffset
 
 

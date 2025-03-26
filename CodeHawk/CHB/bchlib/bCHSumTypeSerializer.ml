@@ -642,9 +642,10 @@ object
     | FieldOffset _ -> "f"
     | IndexOffset _ -> "i"
     | ArrayIndexOffset _ -> "a"
+    | BasePtrArrayIndexOffset _ -> "p"
     | UnknownOffset -> "u"
 
-  method !tags = ["a"; "c"; "f"; "i"; "n"; "u"]
+  method !tags = ["a"; "c"; "f"; "i"; "n"; "p"; "u"]
 end
 
 let memory_offset_mcts: memory_offset_t mfts_int = new memory_offset_mcts_t

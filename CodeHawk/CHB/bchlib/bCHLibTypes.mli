@@ -3338,6 +3338,15 @@ type memory_offset_t =
       that the type of the variable is known). The index expression must
       consist solely of constants or constant-value variables.*)
 
+  | BasePtrArrayIndexOffset of xpr_t * memory_offset_t
+  (** index expression is scaled by the size of the target type of the base
+      pointer (assumes the target type of the base pointer is known. This
+      case is distinct from the ArrayIndexOffset in that the pointer variable
+      must be dereferenced first to access the element, while in the case of
+      an array the access is immediate. In CIL these two types of array accesses
+      have different representation.
+   *)
+
   | UnknownOffset
   (** used if none of the above apply *)
 
@@ -5930,6 +5939,24 @@ class type floc_int =
        Deprecated. Should eventually be replaced by [decompose_memaddr]
      *)
     method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
+
+    method convert_xpr_to_c_expr:
+             ?size:int option -> ?xtype:btype_t option -> xpr_t -> xpr_t traceresult
+
+    method convert_addr_to_c_pointed_to_expr:
+             ?size:int option -> ?xtype:btype_t option -> xpr_t -> xpr_t traceresult
+
+    method convert_var_to_c_variable:
+             ?size:int option
+             -> ?vtype:btype_t option
+             -> variable_t
+             -> variable_t traceresult
+
+    method convert_addr_to_c_pointed_to_variable:
+             ?size:int option
+             -> ?vtype:btype_t option
+             -> xpr_t
+             -> variable_t traceresult
 
     method convert_value_offsets:
              ?size:int option -> variable_t -> variable_t traceresult

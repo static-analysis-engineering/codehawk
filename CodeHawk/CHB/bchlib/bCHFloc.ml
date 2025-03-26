@@ -90,6 +90,17 @@ let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 
+let opt_size_to_string (s: int option) =
+  match s with
+  | Some i -> "size:" ^ (string_of_int i)
+  | _ -> "size:None"
+
+let opt_type_to_string (t: btype_t option) =
+  match t with
+  | Some t -> "btype:" ^ (btype_to_string t)
+  | _ -> "btype:None"
+
+
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("floc:" ^ tag) msg
 
@@ -661,61 +672,11 @@ object (self)
               memoffset_r)
         memref_r in
 
-    if self#f#env#is_addressof_symbolic_value var then
-      let xaofv_r = self#f#env#get_addressof_symbolic_expr var in
-      let memvar_r =
-        TR.tbind
-          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                ^ "var: " ^ (x2s (XVar var)))
-          (fun xaofv ->
-            match xaofv with
-            | XOp ((Xf "addressofvar"), [XVar v]) -> Ok v
-            | _ ->
-               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                      ^ "Expression is not an addressofvar expression: "
-                      ^ (x2s xaofv)])
-          xaofv_r in
-      let memoff_r =
-        TR.tbind
-          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-          (fun memvar ->
-            let memtype = self#env#get_variable_type memvar in
-            let memtype =
-              match memtype with
-              | Some t -> t
-              | _ -> t_unknown in
-            address_memory_offset memtype (num_constant_expr numoffset))
-          memvar_r in
-      TR.tbind
-        ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-        (fun memvar ->
-          TR.tbind
-            (fun memoff -> self#f#env#add_memory_offset memvar memoff)
-            memoff_r)
-        memvar_r
-
-    else if inv#is_base_offset_constant var then
+    if inv#is_base_offset_constant var then
       let (base, offset) = inv#get_base_offset_constant var in
       let memoffset = numoffset#add offset in
       let memref_r = self#env#mk_base_sym_reference base in
-      let memoff_r =
-        address_memory_offset
-          t_unknown ~tgtsize:(Some size) (num_constant_expr memoffset) in
-      (*
-        To keep representation unifor (i.e., to avoid aliasing) the creation
-        of variable representation against the type of the variable must be
-        delayed until reporting time.
-        TR.tbind
-          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-          (fun basevar ->
-            let optbasetype = self#env#get_variable_type basevar in
-            let basetype = t_unknown in
-              match optbasetype with
-              | Some t when is_pointer t -> ptr_deref t
-              | _ -> t_unknown in
-            address_memory_offset t_unknown
-              ~tgtsize:(Some size) (num_constant_expr memoffset))
-          (self#env#get_variable base#getSeqNumber) in *)
+      let memoff_r = Ok (ConstantOffset (memoffset, NoOffset)) in
       mk_memvar memref_r memoff_r
 
     else
@@ -902,15 +863,6 @@ object (self)
       (fun memref ->
         if memref#is_global_reference then
           self#get_var_at_address ~size:(Some size) address
-      (*
-          TR.tbind
-            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
-            (fun memoff ->
-              TR.tbind
-                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-                (self#env#mk_global_variable ~size)
-                (get_total_constant_offset memoff))
-            memoff_r *)
         else
           TR.tbind
             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
@@ -963,33 +915,6 @@ object (self)
           (get_total_constant_offset memoffset)
     else
       default ()
-        (*
-      match memoffset with
-      | IndexOffset _ ->
-         self#env#mk_offset_memory_variable memref memoffset
-      | ConstantOffset (n, IndexOffset (v, s, o)) ->
-         let n = n#modulo (mkNumerical BCHDoubleword.e32) in
-         log_tfold_default
-           (mk_tracelog_spec
-              ~tag:"get_memory_variable_3"
-              (self#cia
-               ^ ": constant: "
-               ^ n#toString
-               ^ "; index-expr: "
-               ^ "; offset: "
-               ^ offset#toString
-               ^ (x2s indexExpr)
-               ^ "; addr: "
-               ^ (x2s addr)
-               ^ "; memoffset: "
-               ^ (memory_offset_to_string memoffset)))
-           (fun v -> v)
-           (default ())
-           (self#env#mk_index_offset_global_memory_variable
-              n (IndexOffset (v, s, o)))
-      | _ ->
-         default ()
-         *)
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    * resolve and save ScaledReg (None,indexreg, scale, offset)
@@ -1404,6 +1329,10 @@ object (self)
                                ^ (btype_to_string basevartype)
                                ^ " not yet handled"])
                    symmemoff_r
+              | FieldOffset ((fname, ckey), NoOffset) ->
+                 let cinfo = get_compinfo_by_key ckey in
+                 let finfo = get_compinfo_field cinfo fname in
+                 Ok finfo.bftype
               | _ ->
                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                         ^ "memoff: " ^ (memory_offset_to_string memoff)
@@ -1432,6 +1361,169 @@ object (self)
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                 ^ "variable: " ^ (x2s (XVar v))]
       | Some t -> Ok t
+
+  method convert_xpr_to_c_expr
+           ?(size=None) ?(xtype=None) (x: xpr_t): xpr_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"convert_xpr_to_c_expr"
+        __FILE__ __LINE__
+        [(opt_size_to_string size) ^ "; "
+         ^ (opt_type_to_string xtype) ^ "; "
+         ^ "x: " ^ (x2s x)] in
+    match xtype with
+    | None -> self#convert_xpr_offsets ~size x
+    | Some t ->
+       match x with
+       | XConst (IntConst n)
+            when n#equal (mkNumerical 0xffffffff) && is_int t ->
+          Ok (int_constant_expr (-1))
+       | _ -> self#convert_xpr_offsets ~size x
+
+  method convert_addr_to_c_pointed_to_expr
+           ?(size=None) ?(xtype=None) (a: xpr_t): xpr_t traceresult =
+    let vars = vars_as_positive_terms a in
+    let knownpointers =
+      List.filter (fun v ->
+          (self#f#is_base_pointer v)
+          || (TR.tfold_default is_pointer false (self#get_variable_type v))
+        ) vars in
+    match knownpointers with
+    (* one known pointer, must be the base *)
+    | [base] when self#f#env#is_initial_stackpointer_value base ->
+       let offset = simplify_xpr (XOp (XMinus, [a; XVar base])) in
+       let memref_r = self#env#mk_base_variable_reference base in
+       let memoff_r =
+         match offset with
+         | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
+         | _ ->
+            Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                   ^ "base: " ^ (p2s base#toPretty)
+                   ^ "; offset expr: " ^ (x2s offset)] in
+       let var_r =
+         TR.tmap2
+           ~msg1:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           ~msg2:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           (fun memref memoff ->
+             self#env#mk_offset_memory_variable memref memoff)
+           memref_r memoff_r in
+       TR.tmap (fun v -> XVar v) var_r
+
+    | [base] ->
+       let offset = simplify_xpr (XOp (XMinus, [a; XVar base])) in
+       let memref_r = self#env#mk_base_variable_reference base in
+       let vartype_r = self#get_variable_type base in
+       let rvartype_r =
+         TR.tbind
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           resolve_type
+           vartype_r in
+       let basetype_r =
+         TR.tbind
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           (fun t ->
+             if is_pointer t then
+               Ok (ptr_deref t)
+             else
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "x: " ^ (x2s a) ^ "; base: " ^ (x2s (XVar base))
+                      ^ "; offset: " ^ (x2s offset)])
+           rvartype_r in
+       let memoff_r =
+         TR.tbind
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                 ^ "base pointer: " ^ (x2s (XVar base)))
+           (fun basetype -> address_memory_offset basetype offset)
+           basetype_r in
+       let var_r =
+         TR.tmap2
+           ~msg1:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           ~msg2:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           (fun memref memoff ->
+             self#env#mk_offset_memory_variable memref memoff)
+           memref_r memoff_r in
+       TR.tmap (fun v -> XVar v) var_r
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ (opt_size_to_string size) ^ "; "
+              ^ (opt_type_to_string xtype) ^ "; "
+              ^ "addr: " ^ (x2s a)
+              ^ ": Not yet handled"]
+
+  method convert_var_to_c_variable
+           ?(size=None) ?(vtype=None) (v: variable_t): variable_t traceresult =
+    match vtype with
+    | None -> self#convert_variable_offsets ~size v
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ (opt_size_to_string size) ^ "; "
+              ^ (opt_type_to_string vtype) ^ "; "
+              ^ "v: " ^ (p2s v#toPretty)
+              ^ ": Not yet implemented"]
+
+  method convert_addr_to_c_pointed_to_variable
+           ?(size=None) ?(vtype=None) (a: xpr_t): variable_t traceresult =
+    let vars = vars_as_positive_terms a in
+    let knownpointers = List.filter self#f#is_base_pointer vars in
+    match knownpointers with
+    (* one known pointer, must be the base *)
+    | [base] when self#f#env#is_initial_stackpointer_value base ->
+       let offset = simplify_xpr (XOp (XMinus, [a; XVar base])) in
+       let memref_r = self#env#mk_base_variable_reference base in
+       let memoff_r =
+         match offset with
+         | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
+         | _ ->
+            Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                   ^ "base: " ^ (p2s base#toPretty)
+                   ^ "; offset expr: " ^ (x2s offset)] in
+       TR.tmap2
+         ~msg1:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         ~msg2:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         (fun memref memoff ->
+           self#env#mk_offset_memory_variable memref memoff)
+         memref_r memoff_r
+
+    | [base] ->
+       let offset = simplify_xpr (XOp (XMinus, [a; XVar base])) in
+       let memref_r = self#env#mk_base_variable_reference base in
+       let vartype_r = self#get_variable_type base in
+       let rvartype_r =
+         TR.tbind
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           resolve_type
+           vartype_r in
+       let basetype_r =
+         TR.tbind
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           (fun t ->
+             if is_pointer t then
+               Ok (ptr_deref t)
+             else
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "x: " ^ (x2s a) ^ "; base: " ^ (x2s (XVar base))
+                      ^ "; offset: " ^ (x2s offset)])
+           rvartype_r in
+       let memoff_r =
+         TR.tbind
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                 ^ "base pointer: " ^ (x2s (XVar base)))
+           (fun basetype -> address_memory_offset basetype offset)
+           basetype_r in
+       TR.tmap2
+         ~msg1:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         ~msg2:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         (fun memref memoff ->
+           self#env#mk_offset_memory_variable memref memoff)
+         memref_r memoff_r
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ (opt_size_to_string size) ^ "; "
+              ^ (opt_type_to_string vtype) ^ "; "
+              ^ "addr: " ^ (x2s a)
+              ^ ": Not yet handled"]
+
 
   method convert_variable_offsets
            ?(size=None) (v: variable_t): variable_t traceresult =
@@ -1478,7 +1570,11 @@ object (self)
     if self#env#is_basevar_memory_value v then
       let basevar_r = self#env#get_memval_basevar v in
       let offset_r = self#env#get_memval_offset v in
-      let cbasevar_r = TR.tbind self#convert_value_offsets basevar_r in
+      let cbasevar_r =
+        TR.tbind
+          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+          self#convert_value_offsets
+          basevar_r in
       let basetype_r = TR.tbind self#get_variable_type cbasevar_r in
       let tgttype_r =
         TR.tbind
@@ -1486,6 +1582,11 @@ object (self)
           (fun basetype ->
             match basetype with
             | TPtr (t, _) -> Ok t
+            | TComp (key, _) ->
+               let cinfo = get_compinfo_by_key key in
+               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "Target type is a struct: " ^ cinfo.bcname
+                      ^ ". A pointer was expected"]
             | t ->
                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                       ^ "Type " ^ (btype_to_string t)
@@ -1512,6 +1613,8 @@ object (self)
         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
         (fun cbasevar ->
           TR.tbind
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "cbasevar: " ^ (p2s cbasevar#toPretty))
             (fun coffset ->
               let memvar_r =
                 self#env#mk_basevar_memory_variable cbasevar coffset in
@@ -1526,7 +1629,8 @@ object (self)
       match exp with
       | XVar v when self#env#is_basevar_memory_value v ->
          TR.tmap
-           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                 ^ (p2s v#toPretty))
            (fun v -> XVar v) (self#convert_value_offsets ~size v)
       | XVar v when self#env#is_basevar_memory_variable v ->
          TR.tmap
@@ -1566,51 +1670,15 @@ object (self)
     | [base] (* when self#f#env#is_initial_stackpointer_value base *) ->
        let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
        let memref_r = self#env#mk_base_variable_reference base in
-       let memoff_r = address_memory_offset t_unknown offset in
-       (memref_r, memoff_r)
-
-       (* resolving to type-based representations at this point may give
-          rise to aliasing; for example __ptr_deref_R[0]_in.field_4 may be aliased
-          with R[0]_in[4]_in
-    | [base] ->
-       let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
-       let memref_r = self#env#mk_base_variable_reference base in
-       let vartype_r = self#get_variable_type base in
-       let rvartype_r =
-         TR.tbind
-           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-           resolve_type
-           vartype_r in
-       let basetype_r =
-         TR.tbind
-           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-           (fun t ->
-             if is_pointer t then
-               Ok (ptr_deref t)
-             else
-               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                      ^ "x: " ^ (x2s x) ^ "; base: " ^ (x2s (XVar base))
-                      ^ "; offset: " ^ (x2s offset)])
-           rvartype_r in
+       (* let memoff_r = address_memory_offset t_unknown offset in *)
        let memoff_r =
-         TR.tbind
-           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                 ^ "base pointer: " ^ (x2s (XVar base)))
-           (fun basetype -> address_memory_offset basetype offset)
-           basetype_r in
-        *)
-
-       (*
-         (match offset with
-          | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
-          | XOp (XMult, [XConst (IntConst n); XVar v]) ->
-             Ok (IndexOffset (v, n#toInt, NoOffset))
-          | _ ->
-             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                    ^ "Offset from base "
-                    ^ (x2s (XVar base))
-                    ^ " not recognized: " ^ (x2s offset)]) in *)
-    (* (memref_r, memoff_r) *)
+         match offset with
+         | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
+         | _ ->
+            Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                   ^ "base: " ^ (p2s base#toPretty)
+                   ^ "; offset expr: " ^ (x2s offset)] in
+       (memref_r, memoff_r)
 
     (* no known pointers, have to find a base *)
     | [] ->
