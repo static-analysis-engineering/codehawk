@@ -91,7 +91,7 @@ let translate_store () =
       ("STRDwb1", "0x1b4bc", "f0416de100",
        [("var_0016", "R4_in");
         ("var_0012", "R5_in");
-        ("SP", "sv__15__sv")]);
+        ("SP", "sv__23__sv")]);
       ("STRDwb2", "0x10ab8", "fc406de100",
        [("var_0012", "R4_in");
         ("var_0008", "R5_in");

@@ -74,6 +74,7 @@ module TR = CHTraceResult
 let x2p = xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
 let x2s x = p2s (x2p x)
+let x_r2s x_r = TR.tfold_default x2s "error-value" x_r
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("TranslateARMToCHIF:" ^ tag) msg
@@ -2256,7 +2257,13 @@ let translate_arm_instruction
   | Pop (c, sp, rl, _) ->
      let floc = get_floc loc in
      let regcount = rl#get_register_count in
-
+     let is_restore_temporary (r: register_t) =
+       if rl#includes_pc then
+         match r with
+         | ARMRegister armreg -> List.mem armreg arm_temporaries
+         | _ -> false
+       else
+         false in
      let popcmds (): cmd_t list =
        let sprhs_r = sp#to_expr floc in
        let regs = rl#to_multiple_register in
@@ -2271,7 +2278,21 @@ let translate_arm_instruction
              let cmds1 = floc#get_assign_commands_r (Ok reglhs) stackrhs_r in
              let usevars =
                TR.tfold_default (fun stackvar -> [stackvar]) [] stackvar_r in
-             let usehigh = get_use_high_vars_r ~is_pop:true [stackrhs_r] in
+             let usehigh =
+               if is_restore_temporary reg then
+                 let _ =
+                   chlog#add
+                     "register restore of temporary"
+                     (LBLOCK [
+                          floc#l#toPretty;
+                          STR ": ";
+                          STR (register_to_string reg);
+                          STR " := ";
+                          STR (x_r2s (TR.tmap (rewrite_expr floc) stackrhs_r))
+                     ]) in
+                 []
+               else
+                 get_use_high_vars_r ~is_pop:true [stackrhs_r] in
              let defcmds1 =
                floc#get_vardef_commands
                  ~defs:[reglhs; splhs]

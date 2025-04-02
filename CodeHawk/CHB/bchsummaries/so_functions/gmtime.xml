@@ -24,7 +24,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="gmtime">
-     <returntype><ptr>gmtime</ptr></returntype>
+     <returntype><ptr>ch_tm</ptr></returntype>
      <par loc="stack" io="r" name="timer" nr="1">
      <roles>
        <role rt="ioc:memops" rn="src-bytes:time_t" />
