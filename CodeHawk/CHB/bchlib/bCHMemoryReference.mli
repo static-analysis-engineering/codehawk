@@ -101,6 +101,9 @@ val is_field_offset: memory_offset_t -> bool
 val is_index_offset: memory_offset_t -> bool
 
 
+val is_base_ptr_array_index_offset: memory_offset_t -> bool
+
+
 (** Returns [true] if [memoff] itself or one of its suboffsets is an unknown
     offset. *)
 val is_unknown_offset: memory_offset_t -> bool

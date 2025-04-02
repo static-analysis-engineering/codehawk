@@ -192,6 +192,11 @@ let rec address_memory_offset
   let rbasetype = TR.tvalue (resolve_type basetype) ~default:t_unknown in
   match xoffset with
   | XConst (IntConst n) when is_unknown_type rbasetype ->
+     let _ =
+       log_diagnostics_result
+         ~msg:"address-memory-offset:unknown basetype"
+         __FILE__ __LINE__
+         ["xoffset: " ^ n#toString] in
      Ok (ConstantOffset (n, NoOffset))
   | XConst (IntConst n) ->
      let tgtbtype =
@@ -201,7 +206,14 @@ let rec address_memory_offset
      else if is_array_type rbasetype then
        arrayvar_memory_offset ~tgtsize ~tgtbtype rbasetype xoffset
      else
-       Ok (ConstantOffset (n, NoOffset))
+       let _ =
+         log_diagnostics_result
+           ~msg:"address-memory-offset:scalar basetype"
+           __FILE__ __LINE__
+           ["base type: " ^ (btype_to_string rbasetype)
+            ^ "; xoffset: " ^ n#toString] in
+       (* Ok (ConstantOffset (n, NoOffset)) *)
+       Ok (BasePtrArrayIndexOffset (num_constant_expr n, NoOffset))
   | _ ->
      let tgtbtype =
        if is_unknown_type tgtbtype then None else Some tgtbtype in
@@ -433,6 +445,12 @@ let rec is_field_offset (offset: memory_offset_t): bool =
   | FieldOffset (_, suboffset) -> is_field_offset suboffset
   | ConstantOffset (_, suboffset) -> is_field_offset suboffset
   | IndexOffset (_, _, suboffset) -> is_field_offset suboffset
+  | _ -> false
+
+
+let is_base_ptr_array_index_offset (offset: memory_offset_t): bool =
+  match offset with
+  | BasePtrArrayIndexOffset (_, suboffset) -> is_constant_offset suboffset
   | _ -> false
 
 

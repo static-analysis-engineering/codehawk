@@ -1006,7 +1006,10 @@ object (self)
   method has_constant_offset (v: variable_t) =
     (self#is_memory_variable v)
     && (tfold_default
-          (fun off -> is_constant_offset off || is_field_offset off)
+          (fun off ->
+            (is_constant_offset off)
+            || (is_field_offset off)
+            || (is_base_ptr_array_index_offset off))
           false
           (self#get_memvar_offset v))
 

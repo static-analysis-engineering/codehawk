@@ -1563,6 +1563,12 @@ object (self)
             ) coffset_r)
         cbasevar_r
     else
+      let _ =
+        log_diagnostics_result
+          ~msg:(p2s self#l#toPretty)
+          ~tag:"convert-variable-offsets:default"
+          __FILE__ __LINE__
+          [(p2s v#toPretty)] in
       Ok v
 
   method convert_value_offsets
@@ -1573,7 +1579,7 @@ object (self)
       let cbasevar_r =
         TR.tbind
           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-          self#convert_value_offsets
+          (self#convert_value_offsets ~size)
           basevar_r in
       let basetype_r = TR.tbind self#get_variable_type cbasevar_r in
       let tgttype_r =
@@ -1597,6 +1603,12 @@ object (self)
           (fun offset ->
             match offset with
             | NoOffset ->
+               let _ =
+                 log_diagnostics_result
+                   ~msg:(p2s self#l#toPretty)
+                   ~tag:"convert-value-offsets:NoOffset"
+                   __FILE__ __LINE__
+                   ["v: " ^ (p2s v#toPretty)] in
                TR.tbind
                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                  (fun tgttype ->
@@ -1618,10 +1630,20 @@ object (self)
             (fun coffset ->
               let memvar_r =
                 self#env#mk_basevar_memory_variable cbasevar coffset in
-              TR.tbind self#env#mk_initial_memory_value memvar_r
+              TR.tbind
+                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                      ^ "cbasevar: " ^ (p2s cbasevar#toPretty)
+                      ^ "; coffset: " ^ (memory_offset_to_string coffset))
+                self#env#mk_initial_memory_value memvar_r
             ) coffset_r)
         cbasevar_r
     else
+      let _ =
+        log_diagnostics_result
+          ~msg:(p2s self#l#toPretty)
+          ~tag:"convert-value-offsets:default"
+          __FILE__ __LINE__
+          ["v: " ^ (p2s v#toPretty)] in
       Ok v
 
   method convert_xpr_offsets ?(size=None) (x: xpr_t): xpr_t traceresult =
@@ -1650,7 +1672,14 @@ object (self)
       | XOp (op, [xx]) -> TR.tmap (fun x -> XOp (op, [x])) (aux xx)
       | XOp (op, [x1; x2]) ->
          TR.tmap2 (fun x1 x2 -> XOp (op, [x1; x2])) (aux x1) (aux x2)
-      | _ -> Ok exp in
+      | _ ->
+         let _ =
+           log_diagnostics_result
+             ~msg:(p2s self#l#toPretty)
+             ~tag:"convert-xpr-offsets:default"
+             __FILE__ __LINE__
+             ["x: " ^ (x2s x) ^ "; exp: " ^ (x2s exp)] in
+         Ok exp in
     aux x
 
   method get_xpr_type (x: xpr_t): btype_t traceresult =
