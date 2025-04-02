@@ -288,7 +288,7 @@ let cc_expr
        (XOp (XGt, [v x; v y]), [x; y])
 
     | (LogicalShiftLeft (true, ACCAlways, _, x, y, _), ACCNonNegative) ->
-      (XOp (XGe, [XOp (XLsl, [vu x; vu y]); zero_constant_expr]), [x; y])
+       (XOp (XGe, [XOp (XLsl, [vu x; vu y]); zero_constant_expr]), [x; y])
 
     (* ------------------------------------------------- Compare-negative --- *)
 
@@ -310,8 +310,11 @@ let cc_expr
 
     (* ------------------------------------------------------------- Move --- *)
 
-    | (Move (true, ACCAlways, _, y, _, _), ACCNotEqual) ->
-       (XOp (XNe, [v y; zero_constant_expr]), [y])
+    | (Move (true, ACCAlways, _, x, _, _), ACCEqual) ->
+       (XOp (XEq, [v x; zero_constant_expr]), [x])
+
+    | (Move (true, ACCAlways, _, x, _, _), ACCNotEqual) ->
+       (XOp (XNe, [v x; zero_constant_expr]), [x])
 
     (* ------------------------------------------------- Reverse Subtract --- *)
 
@@ -343,6 +346,9 @@ let cc_expr
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCNegative) ->
        (XOp (XLt, [XOp (XMinus, [v x; v y]); zero_constant_expr]), [x; y])
+
+    | (Subtract (true, ACCAlways, _, x, y, _, _), ACCNonNegative) ->
+       (XOp (XGe, [XOp (XMinus, [v x; v y]); zero_constant_expr]), [x; y])
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCNotEqual) ->
        (XOp (XNe, [XOp (XMinus, [v x; v y]); zero_constant_expr]), [x; y])
