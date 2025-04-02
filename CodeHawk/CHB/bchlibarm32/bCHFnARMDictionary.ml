@@ -78,6 +78,8 @@ module TR = CHTraceResult
 
 let x2p = xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
+let x_r2s x_r = TR.tfold_default x2s "error-value" x_r
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("FnARMDictionary:" ^ tag) msg
@@ -362,19 +364,23 @@ object (self)
                (LBLOCK [
                     STR __FILE__; STR ":"; INT __LINE__; STR ": ";
                     STR "Empty tag list"])) in
-      let xtag = (List.hd tags) ^ "vtlxdh" in
+      let xtag = (List.hd tags) ^ "vtlxcdh" in
       let uses = [get_def_use_r v] in
       let useshigh = [get_def_use_high_r v] in
       let argslen = List.length args in
       let vbutag = "vbu:" ^ (string_of_int argslen) in
       let xbutag = "xbu:" ^ (string_of_int (argslen + 3)) in
-      let tags = xtag :: ((List.tl tags) @ [vbutag; xbutag]) in
+      let cbutag = "cbu:" ^ (string_of_int (argslen + 4)) in
+      let tags = xtag :: ((List.tl tags) @ [vbutag; xbutag; cbutag]) in
+      let xx = TR.tmap rewrite_expr x in
+      let cx = TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xx in
       let args =
         args
         @ [index_variable v;
            bcd#index_typ t_unknown;
            inc;
-           index_xpr x]
+           index_xpr x;
+           index_xpr cx]
         @ uses @ useshigh in
       (tags, args) in
 
@@ -894,18 +900,18 @@ object (self)
              (fun xrn xrm -> XOp (XBAnd, [xrn; XOp (XBNot, [xrm])]))
              xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
+         let cresult_r =
+           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
          let useshigh = [get_def_use_high_r vrd_r] in
+         let vars_r = [vrd_r] in
+         let xprs_r = [xrn_r; xrm_r; result_r; rresult_r] in
+         let cxprs_r = [cresult_r] in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[vrd_r]
-             ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
-             ~rdefs
-             ~uses
-             ~useshigh
-             () in
+             ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
@@ -935,17 +941,17 @@ object (self)
          let xrm_r = rm#to_expr floc in
          let result_r = TR.tmap (fun xrm -> XOp (XBNot, [xrm])) xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
+         let cresult_r =
+           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
          let rdefs = [get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
          let useshigh = [get_def_use_high_r vrd_r] in
+         let vars_r = [vrd_r] in
+         let xprs_r = [xrm_r; result_r; rresult_r] in
+         let cxprs_r = [cresult_r] in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[vrd_r]
-             ~xprs_r:[xrm_r; result_r; rresult_r]
-             ~rdefs
-             ~uses
-             ~useshigh
-             () in
+             ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
@@ -1066,6 +1072,8 @@ object (self)
          let csetter = floc#f#get_associated_cc_setter floc#cia in
          let tcond = rewrite_test_expr csetter txpr in
          let fcond = rewrite_test_expr csetter fxpr in
+         let ctcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) tcond in
+         let cfcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) fcond in
          let csetter_addr_r = string_to_doubleword csetter in
          let csetter_instr_r =
            TR.tbind get_arm_assembly_instruction csetter_addr_r in
@@ -1076,12 +1084,23 @@ object (self)
                begin log_error_result __FILE__ __LINE__ e; "0x0" end)
              csetter_instr_r in
          let rdefs = (get_all_rdefs txpr) @ (get_all_rdefs tcond) in
-         let (tagstring, args) =
-           mk_instrx_data_r
-             ~xprs_r:[Ok txpr; Ok fxpr; Ok tcond; Ok fcond; xtgt_r]
-             ~rdefs
-             () in
+         let xprs_r = [Ok txpr; Ok fxpr; Ok tcond; Ok fcond; xtgt_r] in
+         let cxprs_r = [ctcond_r; cfcond_r] in
+         let (tagstring, args) = mk_instrx_data_r ~xprs_r ~cxprs_r ~rdefs () in
          let (tags, args) = (tagstring :: ["TF"; csetter; bytestr], args) in
+         let tags = add_optional_subsumption tags in
+         (tags, args)
+
+      (* conditional branch without test expression *)
+      | Branch (c, tgt, _)
+           when is_cond_conditional c
+                && tgt#is_absolute_address ->
+         let xtgt_r = tgt#to_expr floc in
+         let xxtgt_r = TR.tmap rewrite_expr xtgt_r in
+         let xprs_r = [xtgt_r; xxtgt_r] in
+         let rdefs = (get_rdef_r xtgt_r) :: (get_all_rdefs_r xxtgt_r) in
+         let (tagstring, args) = mk_instrx_data_r ~xprs_r ~rdefs () in
+         let (tags, args) = (tagstring :: ["TF:no-x"], args) in
          let tags = add_optional_subsumption tags in
          (tags, args)
 
@@ -1176,10 +1195,14 @@ object (self)
          let xresult_r =
            TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
          let result_r = TR.tmap rewrite_expr xresult_r in
+         let cresult_r =
+           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) result_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r result_r) in
+         let xprs_r = [xrn_r; xrm_r; xresult_r; result_r] in
+         let cxprs_r = [cresult_r] in
          let (tagstring, args) =
-           mk_instrx_data_r ~xprs_r:[xrn_r; xrm_r; result_r] ~rdefs () in
+           mk_instrx_data_r ~xprs_r ~cxprs_r ~rdefs () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let tags = add_optional_subsumption tags in
          (tags, args)
@@ -1528,6 +1551,12 @@ object (self)
            if Result.is_ok cxrmem_r then
              cxrmem_r
            else
+             let _ =
+               log_diagnostics_result
+                 ~msg:(p2s floc#l#toPretty)
+                 ~tag:"LDR:fall-back address conversion"
+                 __FILE__ __LINE__
+                 ["xxaddr: " ^ (x_r2s xxaddr_r)] in
              TR.tbind floc#convert_addr_to_c_pointed_to_expr xxaddr_r in
          let _ =
            TR.tfold_default
@@ -1733,13 +1762,21 @@ object (self)
          let xaddr_r = mem#to_address floc in
          let vmem_r = mem#to_variable floc in
          let xmem_r = mem#to_expr floc in
-         let xrmem_r = TR.tmap rewrite_expr xmem_r in
-         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_memvar_r vmem_r]
            @ (get_all_rdefs_r xmem_r) in
          let uses = [get_def_use_r vrt_r] in
          let useshigh = [get_def_use_high_r vrt_r] in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let cxrmem_r =
+           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 2)) xrmem_r in
+         let cxrmem_r =
+           if Result.is_ok cxrmem_r then
+             cxrmem_r
+           else
+             TR.tbind floc#convert_addr_to_c_pointed_to_expr xxaddr_r in
          let _ =
            floc#memrecorder#record_load_r
              ~signed:false
@@ -1749,8 +1786,9 @@ object (self)
              ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[vrt_r; vmem_r]
-             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r]
+             ~vars_r:[vrt_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r; xxaddr_r]
+             ~cxprs_r:[cxrmem_r; cxaddr_r]
              ~rdefs
              ~uses
              ~useshigh

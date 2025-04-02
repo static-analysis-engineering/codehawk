@@ -181,6 +181,8 @@ and reduce_bitwise_not (m: bool) (e1: xpr_t): (bool * xpr_t) =
   match e1 with
   | XConst (IntConst num) when num#equal numerical_zero ->
      (true, XConst (IntConst numerical_one#neg))
+  | XConst (IntConst num) when num#equal numerical_one ->
+     (true, XConst (IntConst (mkNumerical 2)#neg))
   | _ -> default ()
 
 

@@ -614,6 +614,10 @@ object (self:'a)
        let vreg = floc#env#mk_arm_register_variable r in
        let shiftv = XOp (XBAnd, [XVar vsreg; int_constant_expr 7]) in
        Ok (XOp (XLsl, [XVar vreg; shiftv]))
+    | ARMShiftedReg (r, ARMRegSRT (SRType_LSR, sr)) ->
+       let vsreg = floc#env#mk_arm_register_variable sr in
+       let vreg = floc#env#mk_arm_register_variable r in
+       Ok (XOp (XLsr, [XVar vreg; XVar vsreg]))
     | ARMShiftedReg (_, srt) ->
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
               ^ "Shifted reg: " ^ (register_shift_to_string srt)
