@@ -212,8 +212,12 @@ let rec address_memory_offset
            __FILE__ __LINE__
            ["base type: " ^ (btype_to_string rbasetype)
             ^ "; xoffset: " ^ n#toString] in
-       (* Ok (ConstantOffset (n, NoOffset)) *)
-       Ok (BasePtrArrayIndexOffset (num_constant_expr n, NoOffset))
+       TR.tmap
+         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         (fun size ->
+           let scaledoffset = n#div (mkNumerical size) in
+           BasePtrArrayIndexOffset (num_constant_expr scaledoffset, NoOffset))
+         (size_of_btype rbasetype)
   | _ ->
      let tgtbtype =
        if is_unknown_type tgtbtype then None else Some tgtbtype in
@@ -231,7 +235,15 @@ let rec address_memory_offset
               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                      ^ "Unable to extract index from " ^ (x2s xoffset)]
            | Some (indexxpr, xrem) when iszero xrem ->
-              Ok (BasePtrArrayIndexOffset (indexxpr, NoOffset))
+              let _ =
+                log_diagnostics_result
+                  ~msg:"address-memory-offset:scalar basetype"
+                  __FILE__ __LINE__
+                  ["base type: " ^ (btype_to_string rbasetype)
+                   ^ "; xoffset: " ^ (x2s xoffset)] in
+              let scaledoffset = XOp (XDiv, [indexxpr; int_constant_expr tsize]) in
+              let scaledoffset = Xsimplify.simplify_xpr scaledoffset in
+              Ok (BasePtrArrayIndexOffset (scaledoffset, NoOffset))
            | _ ->
               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                      ^ "Nonzero suboffset encountered when extracting index "

@@ -227,6 +227,10 @@ let join_tc_integer
      Some (Unsigned, size1)
   | (SignedNeutral, size1), (Unsigned, size2) when size1 <= size2 ->
      Some (Unsigned, size2)
+  | (Signed, size1), (Unsigned, size2) when size1 > size2 ->
+     Some (Signed, size1)
+  | (Unsigned, size1), (Signed, size2) when size1 < size2 ->
+     Some (Signed, size2)
   | _ -> None
 
 
