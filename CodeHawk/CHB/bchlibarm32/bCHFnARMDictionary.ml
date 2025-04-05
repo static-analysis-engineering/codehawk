@@ -1602,13 +1602,28 @@ object (self)
          let xaddr_r = mem#to_address floc in
          let vmem_r = mem#to_variable floc in
          let xmem_r = mem#to_expr floc in
-         let xrmem_r = TR.tmap rewrite_expr xmem_r in
-         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_memvar_r vmem_r]
            @ (get_all_rdefs_r xmem_r) in
          let uses = [get_def_use_r vrt_r] in
          let useshigh = [get_def_use_high_r vrt_r] in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let cxrmem_r =
+           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 1)) xrmem_r in
+         let cxrmem_r =
+           if Result.is_ok cxrmem_r then
+             cxrmem_r
+           else
+             let _ =
+               log_diagnostics_result
+                 ~msg:(p2s floc#l#toPretty)
+                 ~tag:"LDRB:fall-back address conversion"
+                 __FILE__ __LINE__
+                 ["xxaddr: " ^ (x_r2s xxaddr_r)] in
+             TR.tbind
+               (floc#convert_addr_to_c_pointed_to_expr ~size:(Some 1)) xxaddr_r in
          let _ =
            floc#memrecorder#record_load_r
              ~signed:false
@@ -1618,8 +1633,9 @@ object (self)
              ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[vrt_r; vmem_r]
-             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r]
+             ~vars_r:[vrt_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r; xxaddr_r]
+             ~cxprs_r: [cxrmem_r; cxaddr_r]
              ~rdefs
              ~uses
              ~useshigh

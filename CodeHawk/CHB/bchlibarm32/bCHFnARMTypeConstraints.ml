@@ -62,6 +62,8 @@ open BCHARMTypes
 
 module TR = CHTraceResult
 
+let p2s = CHPrettyUtil.pretty_to_string
+
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("FnARMTypeConstraints:" ^ tag) msg
@@ -224,31 +226,34 @@ object (self)
       TR.tfold_default getopt_global_address None x_r in
 
     let log_subtype_constraint
-          (kind: string) (ty1: type_term_t) (ty2: type_term_t) =
-      let tag = "add " ^ kind ^ " subtype constraint" in
-      chlog#add
-        tag
-        (LBLOCK [
-             floc#l#toPretty;
-             STR ": ";
-             STR (type_term_to_string ty1);
-             STR " <: ";
-             STR (type_term_to_string ty2)
-        ]) in
+          (linenumber: int)
+          (kind: string)
+          (ty1: type_term_t)
+          (ty2: type_term_t) =
+      log_diagnostics_result
+        ~tag:(kind ^ " subtype constraint")
+        __FILE__
+        linenumber
+        [(p2s floc#l#toPretty) ^ ": "
+         ^ (type_term_to_string ty1)
+         ^ " <: "
+         ^ (type_term_to_string ty2)] in
 
-    let log_type_constraint (kind: string) (tc: type_constraint_t) =
-      let tag = "add " ^ kind ^ " type constraint" in
-      chlog#add
-        tag
-        (LBLOCK [
-             floc#l#toPretty; STR ": "; STR (type_constraint_to_string tc)
-        ]) in
+    let log_type_constraint
+          (linenumber: int) (kind: string) (tc: type_constraint_t) =
+      log_diagnostics_result
+        ~tag:(kind ^ " type constraint")
+        __FILE__
+        linenumber
+        [(p2s floc#l#toPretty) ^ ": " ^ (type_constraint_to_string tc)] in
 
-    let log_no_type_constraint (kind: string) (ty: btype_t) =
-      let tag = "type resolution unsuccessful for " ^ kind in
-      chlog#add
-        tag
-        (LBLOCK [floc#l#toPretty; STR ": "; STR (btype_to_string ty)]) in
+    let log_no_type_constraint
+          (linenumber: int) (kind: string) (ty: btype_t) =
+      log_diagnostics_result
+        ~tag:("type resolution unsuccessful for " ^ kind)
+        __FILE__
+        linenumber
+        [(p2s floc#l#toPretty) ^ ": " ^ (btype_to_string ty)] in
 
     match instr#get_opcode with
 
@@ -264,7 +269,7 @@ object (self)
             (match opttc with
              | Some tc ->
                 begin
-                  log_type_constraint "ADD-rvintro" tc;
+                  log_type_constraint __LINE__ "ADD-rvintro" tc;
                   store#add_constraint tc
                 end
              | _ -> ())
@@ -281,7 +286,7 @@ object (self)
                 let rntypeterm = mk_vty_term rntypevar in
                 let lhstypeterm = mk_vty_term lhstypevar in
                 begin
-                  log_subtype_constraint "ADD-imm" rntypeterm lhstypeterm;
+                  log_subtype_constraint __LINE__ "ADD-imm" rntypeterm lhstypeterm;
                   store#add_subtype_constraint rntypeterm lhstypeterm
                 end) rndefs);
 
@@ -299,7 +304,8 @@ object (self)
                        let rmtypeterm = mk_vty_term rmtypevar in
                        let ctypeterm = mk_cty_term tyc in
                        begin
-                         log_subtype_constraint "ADD-global" rmtypeterm ctypeterm;
+                         log_subtype_constraint
+                           __LINE__ "ADD-global" rmtypeterm ctypeterm;
                          store#add_subtype_constraint rmtypeterm ctypeterm
                        end) rmdefs
                 | _ -> ())
@@ -316,7 +322,8 @@ object (self)
              let fttypeterm = mk_vty_term ftvar in
              let lhstypeterm = mk_vty_term lhstypevar in
              begin
-               log_subtype_constraint "ADD-lhs-init" fttypeterm lhstypeterm;
+               log_subtype_constraint
+                 __LINE__ "ADD-lhs-init" fttypeterm lhstypeterm;
                store#add_subtype_constraint fttypeterm lhstypeterm
              end
           | _ -> ())
@@ -334,7 +341,7 @@ object (self)
           let tctypeterm = mk_cty_term tc in
           let lhstypeterm = mk_vty_term lhstypevar in
           begin
-            log_subtype_constraint "ASR-lhs" tctypeterm lhstypeterm;
+            log_subtype_constraint __LINE__ "ASR-lhs" tctypeterm lhstypeterm;
             store#add_subtype_constraint tctypeterm lhstypeterm
           end);
 
@@ -346,7 +353,7 @@ object (self)
               let tctypeterm = mk_cty_term tyc in
               let rntypeterm = mk_vty_term rntypevar in
               begin
-                log_subtype_constraint "ASR-rhs" tctypeterm rntypeterm;
+                log_subtype_constraint __LINE__ "ASR-rhs" tctypeterm rntypeterm;
                 store#add_subtype_constraint tctypeterm rntypeterm
               end) rndefs)
        end
@@ -364,7 +371,7 @@ object (self)
              let rntypeterm = mk_vty_term rntypevar in
              let lhstypeterm = mk_vty_term lhstypevar in
              begin
-               log_subtype_constraint "AND-rdef-1" rntypeterm lhstypeterm;
+               log_subtype_constraint __LINE__ "AND-rdef-1" rntypeterm lhstypeterm;
                store#add_subtype_constraint rntypeterm lhstypeterm
              end) rndefs
        end
@@ -380,7 +387,7 @@ object (self)
          (let tctypeterm = mk_cty_term tyc in
           let lhstypeterm = mk_vty_term lhstypevar in
           begin
-            log_subtype_constraint "MVN" tctypeterm lhstypeterm;
+            log_subtype_constraint __LINE__ "MVN" tctypeterm lhstypeterm;
             store#add_subtype_constraint tctypeterm lhstypeterm
           end)
 
@@ -399,7 +406,7 @@ object (self)
              let rntypeterm = mk_vty_term rntypevar in
              let lhstypeterm = mk_vty_term lhstypevar in
              begin
-               log_subtype_constraint "AND-rdef-1" rntypeterm lhstypeterm;
+               log_subtype_constraint __LINE__ "AND-rdef-1" rntypeterm lhstypeterm;
                store#add_subtype_constraint rntypeterm lhstypeterm
              end) rndefs
        end
@@ -442,12 +449,12 @@ object (self)
                (match opttc with
                 | Some tc ->
                    begin
-                     log_type_constraint "BL-rv-intro" tc;
+                     log_type_constraint __LINE__ "BL-rv-intro" tc;
                      store#add_constraint tc
                    end
                 | _ ->
                    begin
-                     log_no_type_constraint "BL-rv-intro" t;
+                     log_no_type_constraint __LINE__ "BL-rv-intro" t;
                      ()
                    end)
             | _ ->
@@ -455,12 +462,12 @@ object (self)
                match opttc with
                | Some tc ->
                   begin
-                    log_type_constraint "BL-rv" tc;
+                    log_type_constraint __LINE__ "BL-rv" tc;
                     store#add_constraint tc
                   end
                | _ ->
                   begin
-                    log_no_type_constraint "BL-rv" rtype;
+                    log_no_type_constraint __LINE__ "BL-rv" rtype;
                     ()
                   end);
 
@@ -480,12 +487,12 @@ object (self)
                         match opttc with
                         | Some tc ->
                            begin
-                             log_type_constraint "BL-reg-arg" tc;
+                             log_type_constraint __LINE__ "BL-reg-arg" tc;
                              store#add_constraint tc
                            end
                         | _ ->
                            begin
-                             log_no_type_constraint "BL-reg-arg" ptype;
+                             log_no_type_constraint __LINE__ "BL-reg-arg" ptype;
                              ()
                            end) rdefs
                   else
@@ -509,7 +516,7 @@ object (self)
                             match opttc with
                             | Some tc ->
                                begin
-                                 log_type_constraint "BL-stack-arg" tc;
+                                 log_type_constraint __LINE__ "BL-stack-arg" tc;
                                  store#add_constraint tc
                                end
                             | _ -> ())
@@ -532,7 +539,7 @@ object (self)
                       (match opttc with
                        | Some tc ->
                           begin
-                            log_type_constraint "BL-stack-vintro" tc;
+                            log_type_constraint __LINE__ "BL-stack-vintro" tc;
                             store#add_constraint tc
                           end
                        | _ -> ())
@@ -544,7 +551,7 @@ object (self)
                         match opttc with
                         | Some tc ->
                            begin
-                             log_type_constraint "BL-reg-arg" tc;
+                             log_type_constraint __LINE__ "BL-reg-arg" tc;
                              store#add_constraint tc
                            end
                         | _ -> ())
@@ -567,7 +574,7 @@ object (self)
              let rntypeterm = mk_vty_term rntypevar in
              let immtypeterm = mk_cty_term immtypeconst in
              begin
-               log_subtype_constraint "CMP-imm" rntypeterm immtypeterm;
+               log_subtype_constraint __LINE__ "CMP-imm" rntypeterm immtypeterm;
                store#add_subtype_constraint rntypeterm immtypeterm
              end) rndefs
 
@@ -590,7 +597,7 @@ object (self)
               let rntypeterm = mk_vty_term rntypevar in
               let rmtypeterm = mk_vty_term rmtypevar in
               begin
-                log_subtype_constraint "CMP-reg" rntypeterm rmtypeterm;
+                log_subtype_constraint __LINE__ "CMP-reg" rntypeterm rmtypeterm;
                 store#add_subtype_constraint rntypeterm rmtypeterm
               end) pairs);
 
@@ -605,7 +612,7 @@ object (self)
                  let ftterm = mk_vty_term ftvar in
                  let rmtypeterm = mk_vty_term rmtypevar in
                  begin
-                   log_subtype_constraint "CMP-reg-init" ftterm rmtypeterm;
+                   log_subtype_constraint __LINE__ "CMP-reg-init" ftterm rmtypeterm;
                    store#add_subtype_constraint ftterm rmtypeterm
                  end) rmdefs
           | _ -> ());
@@ -621,7 +628,7 @@ object (self)
                  let ftterm = mk_vty_term ftvar in
                  let rntypeterm = mk_vty_term rntypevar in
                  begin
-                   log_subtype_constraint "CMP-reg-init" ftterm rntypeterm;
+                   log_subtype_constraint __LINE__ "CMP-reg-init" ftterm rntypeterm;
                    store#add_subtype_constraint ftterm rntypeterm
                  end) rndefs
           | _ -> ())
@@ -639,7 +646,7 @@ object (self)
              (match opttc with
               | Some tc ->
                  begin
-                   log_type_constraint "LDR-rvintro" tc;
+                   log_type_constraint __LINE__ "LDR-rvintro" tc;
                    store#add_constraint tc
                  end
               | _ -> ())
@@ -656,7 +663,7 @@ object (self)
               (match opttc with
                | Some tc ->
                   begin
-                    log_type_constraint "LDR-var" tc;
+                    log_type_constraint __LINE__ "LDR-var" tc;
                     store#add_constraint tc
                   end
                | _ -> ()))
@@ -674,7 +681,7 @@ object (self)
               let rdtypeterm = mk_vty_term rdtypevar in
               let rttypeterm = mk_vty_term rttypevar in
               begin
-                log_subtype_constraint "LDR-imm-off" rdtypeterm rttypeterm;
+                log_subtype_constraint __LINE__ "LDR-imm-off" rdtypeterm rttypeterm;
                 store#add_subtype_constraint rdtypeterm rttypeterm
               end) xrdef);
 
@@ -687,7 +694,7 @@ object (self)
                  (match opttc with
                   | Some tc ->
                      begin
-                       log_type_constraint "LDR-memop" tc;
+                       log_type_constraint __LINE__ "LDR-memop" tc;
                        store#add_constraint tc
                      end
                   | _ -> ())
@@ -720,7 +727,7 @@ object (self)
                           (match opttc with
                            | Some tc ->
                               begin
-                                log_type_constraint "LDR-struct-field" tc;
+                                log_type_constraint __LINE__ "LDR-struct-field" tc;
                                 store#add_constraint tc
                               end
                            | _ -> ())
@@ -763,7 +770,7 @@ object (self)
                          (match opttc with
                           | Some tc ->
                              begin
-                               log_type_constraint "LDR-array" tc;
+                               log_type_constraint __LINE__ "LDR-array" tc;
                                store#add_constraint tc
                              end
                           | _ -> ())
@@ -789,7 +796,8 @@ object (self)
              let rhstypeterm = mk_vty_term rhstypevar in
              let rttypeterm = mk_vty_term rttypevar in
              begin
-               log_subtype_constraint "LDR-stack-addr" rhstypeterm rttypeterm;
+               log_subtype_constraint
+                 __LINE__ "LDR-stack-addr" rhstypeterm rttypeterm;
                store#add_subtype_constraint rhstypeterm rttypeterm
              end)
        end
@@ -798,6 +806,20 @@ object (self)
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
+
+         (match get_regvar_type_annotation () with
+          | Some t ->
+            let rtreg = rt#to_register in
+            let lhstypevar = mk_reglhs_typevar rtreg faddr iaddr in
+            let opttc = mk_btype_constraint lhstypevar t in
+            (match opttc with
+             | Some tc ->
+                begin
+                  log_type_constraint __LINE__ "LDRB-rvintro" tc;
+                  store#add_constraint tc
+                end
+             | _ -> ())
+          | _ -> ());
 
          (* LDRB rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdefs = get_variable_rdefs_r (rn#to_variable floc) in
@@ -810,7 +832,7 @@ object (self)
               let rdtypeterm = mk_vty_term rdtypevar in
               let rttypeterm = mk_vty_term rttypevar in
               begin
-                log_subtype_constraint "LDRB-imm-off" rdtypeterm rttypeterm;
+                log_subtype_constraint __LINE__ "LDRB-imm-off" rdtypeterm rttypeterm;
                 store#add_subtype_constraint rdtypeterm rttypeterm
               end) xrdefs);
 
@@ -819,7 +841,7 @@ object (self)
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
           begin
-            log_subtype_constraint "LDRB-lhs-byte" tctypeterm rttypeterm;
+            log_subtype_constraint __LINE__ "LDRB-lhs-byte" tctypeterm rttypeterm;
             store#add_subtype_constraint tctypeterm rttypeterm
           end)
 
@@ -835,7 +857,7 @@ object (self)
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
           begin
-            log_subtype_constraint "LDRB-lhs-byte" tctypeterm rttypeterm;
+            log_subtype_constraint __LINE__ "LDRB-lhs-byte" tctypeterm rttypeterm;
             store#add_subtype_constraint tctypeterm rttypeterm
           end)
 
@@ -857,7 +879,7 @@ object (self)
               (match opttc with
                | Some tc ->
                   begin
-                    log_type_constraint "LDRH-var" tc;
+                    log_type_constraint __LINE__ "LDRH-var" tc;
                     store#add_constraint tc
                   end
                | _ -> ()))
@@ -875,7 +897,7 @@ object (self)
               let rdtypeterm = mk_vty_term rdtypevar in
               let rttypeterm = mk_vty_term rttypevar in
               begin
-                log_subtype_constraint "LDRH-imm-off" rdtypeterm rttypeterm;
+                log_subtype_constraint __LINE__ "LDRH-imm-off" rdtypeterm rttypeterm;
                 store#add_subtype_constraint rdtypeterm rttypeterm
               end) xrdef)
        end
@@ -890,7 +912,7 @@ object (self)
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
           begin
-            log_subtype_constraint "LDRB-lhs-byte" tctypeterm rttypeterm;
+            log_subtype_constraint __LINE__ "LDRB-lhs-byte" tctypeterm rttypeterm;
             store#add_subtype_constraint tctypeterm rttypeterm
           end)
 
@@ -907,7 +929,7 @@ object (self)
         let tcterm = mk_cty_term tc in
         let lhstypeterm = mk_vty_term lhstypevar in
         begin
-          log_subtype_constraint "LSL-lhs" tcterm lhstypeterm;
+          log_subtype_constraint __LINE__ "LSL-lhs" tcterm lhstypeterm;
           store#add_subtype_constraint tcterm lhstypeterm
         end);
 
@@ -919,7 +941,7 @@ object (self)
             let tctypeterm = mk_cty_term tyc in
             let rntypeterm = mk_vty_term rntypevar in
             begin
-              log_subtype_constraint "LSL-rhs" tctypeterm rntypeterm;
+              log_subtype_constraint __LINE__ "LSL-rhs" tctypeterm rntypeterm;
               store#add_subtype_constraint tctypeterm rntypeterm
             end) rndefs)
 
@@ -934,7 +956,7 @@ object (self)
         let tcterm = mk_cty_term tc in
         let lhstypeterm = mk_vty_term lhstypevar in
         begin
-          log_subtype_constraint "LSR-lhs" tcterm lhstypeterm;
+          log_subtype_constraint __LINE__ "LSR-lhs" tcterm lhstypeterm;
           store#add_subtype_constraint tcterm lhstypeterm
         end);
 
@@ -946,7 +968,7 @@ object (self)
             let tctypeterm = mk_cty_term tyc in
             let rntypeterm = mk_vty_term rntypevar in
             begin
-              log_subtype_constraint "LSR-rhs" tctypeterm rntypeterm;
+              log_subtype_constraint __LINE__ "LSR-rhs" tctypeterm rntypeterm;
               store#add_subtype_constraint tctypeterm rntypeterm
             end) rndefs)
 
@@ -962,7 +984,7 @@ object (self)
          let lhstypeterm = mk_vty_term lhstypevar in
          let tctypeterm = mk_cty_term tyc in
          begin
-           log_subtype_constraint "MOV-imm" tctypeterm lhstypeterm;
+           log_subtype_constraint __LINE__ "MOV-imm" tctypeterm lhstypeterm;
            store#add_subtype_constraint tctypeterm lhstypeterm
          end
 
@@ -984,7 +1006,7 @@ object (self)
              (match opttc with
               | Some tc ->
                  begin
-                   log_type_constraint "MOV-rvintro" tc;
+                   log_type_constraint __LINE__ "MOV-rvintro" tc;
                    store#add_constraint tc
                  end
               | _ -> ())
@@ -999,7 +1021,8 @@ object (self)
              let rhstypeterm = mk_vty_term rhstypevar in
              let lhstypeterm = mk_vty_term lhstypevar in
              begin
-               log_subtype_constraint "MOV-reg-init" rhstypeterm lhstypeterm;
+               log_subtype_constraint
+                 __LINE__ "MOV-reg-init" rhstypeterm lhstypeterm;
                store#add_subtype_constraint rhstypeterm lhstypeterm
              end
           | _ -> ());
@@ -1012,7 +1035,7 @@ object (self)
             let regterm = mk_vty_term regvar in
             let fterm = mk_vty_term fvar in
             begin
-              log_subtype_constraint "MOV-freturn" regterm fterm;
+              log_subtype_constraint __LINE__ "MOV-freturn" regterm fterm;
               store#add_subtype_constraint regterm fterm
             end);
 
@@ -1028,7 +1051,7 @@ object (self)
                 let rmtypeterm = mk_vty_term rmtypevar in
                 let lhstypeterm = mk_vty_term lhstypevar in
                 begin
-                  log_subtype_constraint "MOV-reg" rmtypeterm lhstypeterm;
+                  log_subtype_constraint __LINE__ "MOV-reg" rmtypeterm lhstypeterm;
                   store#add_subtype_constraint rmtypeterm lhstypeterm
                 end) rmrdefs)
        end
@@ -1052,12 +1075,12 @@ object (self)
               match opttc with
               | Some tc ->
                  begin
-                   log_type_constraint "POP-rv" tc;
+                   log_type_constraint __LINE__ "POP-rv" tc;
                    store#add_constraint tc
                  end
               | _ ->
                  begin
-                   log_no_type_constraint "POP-rv" rtype;
+                   log_no_type_constraint __LINE__ "POP-rv" rtype;
                    ()
                  end);
 
@@ -1071,7 +1094,8 @@ object (self)
                     let r0typeterm = mk_vty_term r0typevar in
                     let lhstypeterm = mk_vty_term typevar in
                     begin
-                      log_subtype_constraint "POP-R0-rdef" r0typeterm lhstypeterm;
+                      log_subtype_constraint
+                        __LINE__ "POP-R0-rdef" r0typeterm lhstypeterm;
                       store#add_subtype_constraint r0typeterm lhstypeterm
                     end) r0defs)
              end)
@@ -1136,7 +1160,8 @@ object (self)
                    let rhstypeterm = mk_vty_term rhstypevar in
                    let lhstypeterm = mk_vty_term lhstypevar in
                    begin
-                     log_subtype_constraint "STR-funarg" rhstypeterm lhstypeterm;
+                     log_subtype_constraint
+                       __LINE__ "STR-funarg" rhstypeterm lhstypeterm;
                      store#add_subtype_constraint rhstypeterm lhstypeterm
                    end
                 | _ -> ());
@@ -1152,7 +1177,8 @@ object (self)
                       let rttypeterm = mk_vty_term rttypevar in
                       let lhstypeterm = mk_vty_term lhstypevar in
                       begin
-                        log_subtype_constraint "STR-imm-off" rttypeterm lhstypeterm;
+                        log_subtype_constraint
+                          __LINE__ "STR-imm-off" rttypeterm lhstypeterm;
                         store#add_subtype_constraint rttypeterm lhstypeterm
                       end) rtrdefs);
 
@@ -1166,7 +1192,7 @@ object (self)
                      (match opttc with
                       | Some tc ->
                          begin
-                           log_type_constraint "STR-stack-vintro" tc;
+                           log_type_constraint __LINE__ "STR-stack-vintro" tc;
                            store#add_constraint tc
                          end
                       | _ -> ()))
@@ -1182,7 +1208,8 @@ object (self)
                   let rttypeterm = mk_vty_term rttypevar in
                   let rntypeterm = mk_vty_term rntypevar in
                   begin
-                    log_subtype_constraint "STR-imm-off" rttypeterm rntypeterm;
+                    log_subtype_constraint
+                      __LINE__ "STR-imm-off" rttypeterm rntypeterm;
                     store#add_subtype_constraint rttypeterm rntypeterm
                   end) rtrdefs) rnrdefs)
        end
@@ -1202,7 +1229,7 @@ object (self)
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
           begin
-            log_subtype_constraint "STRB-rhs-byte" tctypeterm rttypeterm;
+            log_subtype_constraint __LINE__ "STRB-rhs-byte" tctypeterm rttypeterm;
             store#add_subtype_constraint tctypeterm rttypeterm
           end);
 
@@ -1216,7 +1243,8 @@ object (self)
                   let rttypeterm = mk_vty_term rttypevar in
                   let rntypeterm = mk_vty_term rntypevar in
                   begin
-                    log_subtype_constraint "STRB-imm-off" rttypeterm rntypeterm;
+                    log_subtype_constraint
+                      __LINE__"STRB-imm-off" rttypeterm rntypeterm;
                     store#add_subtype_constraint rttypeterm rntypeterm
                   end) rtrdefs) rnrdefs)
 
@@ -1232,7 +1260,7 @@ object (self)
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
           begin
-            log_subtype_constraint "STRB-rhs-byte" tctypeterm rttypeterm;
+            log_subtype_constraint __LINE__ "STRB-rhs-byte" tctypeterm rttypeterm;
             store#add_subtype_constraint tctypeterm rttypeterm
           end)
 
@@ -1253,7 +1281,7 @@ object (self)
              let rntypeterm = mk_vty_term rntypevar in
              let lhstypeterm = mk_vty_term lhstypevar in
              begin
-               log_subtype_constraint "SUB-rdef-1" rntypeterm lhstypeterm;
+               log_subtype_constraint __LINE__ "SUB-rdef-1" rntypeterm lhstypeterm;
                store#add_subtype_constraint rntypeterm lhstypeterm
              end) rndefs
        end
@@ -1271,7 +1299,7 @@ object (self)
                   let tctypeterm = mk_cty_term tyc in
                   let rntypeterm = mk_vty_term rntypevar in
                   begin
-                    log_subtype_constraint "UBFX-rhs" tctypeterm rntypeterm;
+                    log_subtype_constraint __LINE__ "UBFX-rhs" tctypeterm rntypeterm;
                     store#add_subtype_constraint tctypeterm rntypeterm
                   end) rndefs)
            end
@@ -1287,7 +1315,7 @@ object (self)
              (match opttc with
               | Some tc ->
                  begin
-                   log_type_constraint "UXTH-rvintro" tc;
+                   log_type_constraint __LINE__ "UXTH-rvintro" tc;
                    store#add_constraint tc
                  end
               | _ ->
