@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -285,11 +285,18 @@ object
               ~tag:"disassembly"
               "elf_symbol_table#set_mapping_symbols make_db")
            (fun db ->
+             let p_dbsize =
+               TR.tfold
+                 ~ok:string_of_int
+                 ~error:(fun e -> "[Error: " ^ (String.concat "; " e) ^ "]")
+                 (addr#subtract_to_int addr_d) in
              begin
-               (if collect_diagnostics () then
-                  ch_diagnostics_log#add
-                    "data block from symbol table"
-                    (LBLOCK [addr_d#toPretty; STR " - "; addr#toPretty]));
+               (log_diagnostics_result
+                  ~tag:"set mapping symbols:data block from symbol table"
+                  __FILE__ __LINE__
+                  ["start: " ^ addr_d#to_hex_string
+                   ^ "; end: " ^ addr#to_hex_string
+                   ^ "; size: " ^ p_dbsize]);
                system_info#add_data_block db;
                indata := None
              end)
@@ -324,7 +331,9 @@ object
                 end);
              make_db addr
            end
-        | _ -> ()) symbols
+        | _ ->
+           let addr = TR.tget_ok (index_to_doubleword addrix) in
+           make_db addr) symbols
 
   method get_symbol (index:int) =
     if H.mem entries index then
