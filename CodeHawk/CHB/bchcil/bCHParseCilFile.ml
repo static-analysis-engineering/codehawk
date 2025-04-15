@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024  Aarno Labs LLC
+   Copyright (c) 2021-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -52,10 +52,10 @@ let update_symbolic_address_types () =
       else
         match BCHGlobalMemoryMap.update_global_location_type vinfo with
         | Error e ->
-           ch_error_log#add
-             "update-global-location-type"
-             (LBLOCK [
-                  STR "varinfo: "; STR vinfo.bvname; STR (String.concat "; " e)])
+           log_diagnostics_result
+             ~tag:"update global location type"
+             __FILE__ __LINE__
+             ["varinfo: " ^ vinfo.bvname ^ (String.concat "; " e)]
         | _ -> ()) varinfos
 
 

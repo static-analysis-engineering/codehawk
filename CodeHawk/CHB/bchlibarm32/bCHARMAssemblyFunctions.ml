@@ -703,14 +703,12 @@ object (self)
                       end in
                  let _ = db#set_data_string datastring in
                  begin
-                   chlog#add
-                     "add data block"
-                     (LBLOCK [
-                          db#get_start_address#toPretty;
-                          STR " - ";
-                          db#get_end_address#toPretty;
-                          STR ": ";
-                          STR db#get_name]);
+                   (log_diagnostics_result
+                      ~tag:"add data block"
+                      __FILE__ __LINE__
+                      [db#get_start_address#to_hex_string ^ " - "
+                       ^ db#get_end_address#to_hex_string ^ ": "
+                       ^ db#get_name]);
                    system_info#add_data_block db;
                    inBlock := false;
                    count := !count + 1;
