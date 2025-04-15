@@ -1332,10 +1332,10 @@ object (self)
        end
 
     | opc ->
-       chlog#add
-         "type constraints not yet implemented"
-         (LBLOCK [floc#l#toPretty; STR ": "; STR (arm_opcode_to_string opc)])
-
+       log_diagnostics_result
+         ~tag:"type constraints not yet implemented"
+         __FILE__ __LINE__
+         [(p2s floc#l#toPretty) ^ ": " ^ (arm_opcode_to_string opc)]
 
 end
 

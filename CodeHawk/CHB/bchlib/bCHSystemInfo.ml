@@ -1647,15 +1647,12 @@ object (self)
   method add_data_block (db:data_block_int) =
     begin
       data_blocks#add db;
-      (if collect_diagnostics () then
-         chlog#add
-           "add data block"
-	   (LBLOCK [
-                db#get_start_address#toPretty;
-                STR " - ";
-	        db#get_end_address#toPretty;
-                STR ": ";
-                STR db#get_name]))
+      log_diagnostics_result
+        ~tag:"add data block"
+        __FILE__ __LINE__
+        [db#get_start_address#to_hex_string ^ " - "
+         ^ db#get_end_address#to_hex_string ^ ": "
+         ^ db#get_name]
     end
 
   method get_data_blocks = data_blocks#toList

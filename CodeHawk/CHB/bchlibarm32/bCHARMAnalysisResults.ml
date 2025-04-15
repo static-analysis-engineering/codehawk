@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024  Aarno Labs LLC
+   Copyright (c) 2021-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,6 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-
-(* chlib *)
-open CHPretty
 
 (* chutil *)
 open CHLogger
@@ -138,13 +135,11 @@ object (self)
         (fun baddr block ->
           let bNode = xmlElement "bl" in
           begin
-            chlog#add
-              "cfg assembly block"
-              (LBLOCK [
-                   STR baddr;
-                   STR ": successors: ";
-                   pretty_print_list block#get_successors
-                     (fun s -> STR s) "[" ", " "]"]);
+            log_diagnostics_result
+              ~tag:"cfg assembly block successors"
+              __FILE__ __LINE__
+              [baddr ^ ": ["
+               ^ (String.concat ", " block#get_successors) ^ "]"];
             self#write_xml_cfg_block bNode block;
             List.iter (fun succ ->
                 let eNode = xmlElement "e" in

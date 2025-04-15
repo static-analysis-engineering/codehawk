@@ -1148,8 +1148,21 @@ let record_function_interface_type_constraints
                     | [RegisterParameter (reg, _)] ->
                        let pvar = add_freg_param_capability reg ftypevar in
                        (match mk_btype_constraint pvar ty with
-                        | Some tyc -> store#add_constraint tyc
-                        | _ -> ())
+                        | Some tyc ->
+                           let _ =
+                             log_diagnostics_result
+                               ~tag:("function-interface type constraint")
+                               __FILE__ __LINE__
+                               [faddr ^ ": " ^ (type_constraint_to_string tyc)] in
+                           store#add_constraint tyc
+                        | _ ->
+                           chlog#add
+                             "function interface type constraints"
+                             (LBLOCK [
+                                  STR faddr;
+                                  STR ": ";
+                                  STR "unable to make type constraint for ";
+                                  STR (type_variable_to_string pvar)]))
                     | _ ->
                        chlog#add
                          "function interface type constraints"

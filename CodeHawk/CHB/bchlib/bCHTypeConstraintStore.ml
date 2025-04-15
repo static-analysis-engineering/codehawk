@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,8 @@ module H = Hashtbl
 let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
 let tcd = BCHTypeConstraintDictionary.type_constraint_dictionary
+
+let p2s = CHPrettyUtil.pretty_to_string
 
 
 class type_constraint_store_t: type_constraint_store_int =
@@ -250,14 +252,12 @@ object (self)
               result := !result @ (List.map tcd#get_type_constraint tcs))
             iaddrentry in
         let _ =
-          chlog#add
-            "stack lhs constraints"
-            (LBLOCK [
-                 INT offset;
-                 STR ": ";
-                 pretty_print_list !result
-                   (fun tc -> STR (type_constraint_to_string tc))
-                   "[" "; " "]"]) in
+          log_diagnostics_result
+            ~tag:("stack lhs constraints for " ^ faddr)
+            __FILE__ __LINE__
+            [(string_of_int offset) ^ ": ["
+             ^ (String.concat "; " (List.map type_constraint_to_string !result))
+             ^ "]"] in
         !result
       else
         []
@@ -439,28 +439,25 @@ object (self)
     let evaluation = self#evaluate_reglhs_type reg faddr iaddr in
     let logresults = iaddr = "0xffffffff" in
     let log_evaluation () =
-      chlog#add
-        ("reglhs resolution was not successfull:" ^ faddr)
-        (LBLOCK [
-             STR iaddr;
-             STR " - ";
-             STR (register_to_string reg);
-             STR ": ";
-             pretty_print_list
-               evaluation
-               (fun (vars, consts) ->
-                 LBLOCK [
-                     STR "vars: ";
-                     pretty_print_list
-                       vars
-                       (fun v -> STR (type_variable_to_string v))
-                       "[" "; " "]";
-                     STR "; consts: ";
-                     pretty_print_list
-                       consts
-                       (fun c -> STR (type_constant_to_string c))
-                       "[" "; " "]";
-                     NL]) "[[" " -- " "]]"]) in
+      log_diagnostics_result
+        ~tag:("reglhs resolution not successfull for " ^ faddr)
+        __FILE__ __LINE__
+        [iaddr ^ " - " ^ (register_to_string reg) ^ ": "
+         ^ (p2s (pretty_print_list
+                   evaluation
+                   (fun (vars, consts) ->
+                     LBLOCK [
+                         STR "vars: ";
+                         pretty_print_list
+                           vars
+                           (fun v -> STR (type_variable_to_string v))
+                           "[" "; " "]";
+                         STR "; consts: ";
+                         pretty_print_list
+                           consts
+                           (fun c -> STR (type_constant_to_string c))
+                           "[" "; " "]";
+                         NL]) "[[" " -- " "]]"))] in
     let result = new IntCollections.set_t in
     begin
       List.iter (fun (vars, consts) ->
@@ -499,16 +496,13 @@ object (self)
         | _ ->
            begin
              log_evaluation ();
-             chlog#add
-               "top type constant in join"
-               (LBLOCK [
-                    STR iaddr;
-                    STR " --- ";
-                    STR (register_to_string reg);
-                    STR ": ";
-                    pretty_print_list
-                      (List.map bcd#get_typ result#toList)
-                      (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
+             log_diagnostics_result
+               ~tag:("top type constant in join for " ^ faddr)
+               __FILE__ __LINE__
+               [iaddr ^ " -- " ^ (register_to_string reg) ^ ": "
+                ^ (p2s (pretty_print_list
+                          (List.map bcd#get_typ result#toList)
+                          (fun ty -> STR (btype_to_string ty)) "[" "; " "]"))];
              None
            end
     end
@@ -517,26 +511,25 @@ object (self)
            (offset: int) (faddr: string): btype_t option =
     let evaluation = self#evaluate_stack_lhs_type offset faddr in
     let log_evaluation () =
-      chlog#add
-        ("stacklhs resolution was not successfull:" ^ faddr)
-        (LBLOCK [
-             INT offset;
-             STR ": ";
-             pretty_print_list
-               evaluation
-               (fun (vars, consts) ->
-                 LBLOCK [
-                     STR "vars: ";
-                     pretty_print_list
-                       vars
-                       (fun v -> STR (type_variable_to_string v))
-                       "[" "; " "]";
-                     STR "; consts: ";
-                     pretty_print_list
-                       consts
-                       (fun c -> STR (type_constant_to_string c))
-                       "[" "; " "]";
-                     NL]) "[[" " -- " "]]"]) in
+      log_diagnostics_result
+        ~tag:("stacklhs resolution was not successful for " ^ faddr)
+        __FILE__ __LINE__
+        [(string_of_int offset) ^ ": "
+         ^ (p2s (pretty_print_list
+                   evaluation
+                   (fun (vars, consts) ->
+                     LBLOCK [
+                         STR "vars: ";
+                         pretty_print_list
+                           vars
+                           (fun v -> STR (type_variable_to_string v))
+                           "[" "; " "]";
+                         STR "; consts: ";
+                         pretty_print_list
+                           consts
+                           (fun c -> STR (type_constant_to_string c))
+                           "[" "; " "]";
+                         NL]) "[[" " -- " "]]"))] in
     let first_field_struct (s: IntCollections.set_t): btype_t option =
       (* The type of a data item at a particular stack offset can legally
          be both a struct and the type of the first field of the struct.
@@ -566,19 +559,16 @@ object (self)
                  let _ixftype = bcd#index_typ ftype in
                  let _ixctype = bcd#index_typ ty in
                  let _ =
-                   chlog#add
-                     "first field struct check"
-                     (LBLOCK [
-                          INT offset;
-                          STR ": ";
-                          pretty_print_list
-                            s#toList
-                            (fun i -> STR (btype_to_string (bcd#get_typ i)))
-                            "{" "; " "}";
-                          STR ": compinfo: ";
-                          STR cinfo.bcname;
-                          STR ": first field type: ";
-                          STR (btype_to_string ftype)]) in
+                   log_diagnostics_result
+                     ~tag:"first field struct check"
+                     __FILE__ __LINE__
+                     [(string_of_int offset) ^ ": "
+                      ^ (p2s (pretty_print_list
+                                s#toList
+                                (fun i -> STR (btype_to_string (bcd#get_typ i)))
+                                "{" "; " "}"))
+                      ^ ": compinfo: " ^ cinfo.bcname
+                      ^ ": first field type: " ^ (btype_to_string ftype)] in
                  (* TBD: restore this check in a better way
             if s#fold (fun acc i -> acc && (i = ixftype ||       i = ixctype)) true then
             Some tstructarray
@@ -597,20 +587,18 @@ object (self)
                  let ixftype = bcd#index_typ ftype in
                  let ixctype = bcd#index_typ ty in
                  let _ =
-                   chlog#add
-                     "first field struct check (TComp case)"
-                     (LBLOCK [
-                          INT offset;
-                          STR ": ";
-                          pretty_print_list
-                            s#toList
-                            (fun i -> STR (btype_to_string (bcd#get_typ i)))
-                            "{" "; " "}";
-                          STR ": compinfo: ";
-                          STR cinfo.bcname;
-                          STR ": first field type: ";
-                          STR (btype_to_string ftype)]) in
-                 if s#fold (fun acc i -> acc && (i = ixftype || i = ixctype)) true then
+                   log_diagnostics_result
+                     ~tag:"first field struct check (TComp case)"
+                     __FILE__ __LINE__
+                     [(string_of_int offset) ^ ": "
+                      ^ (p2s (pretty_print_list
+                                s#toList
+                                (fun i -> STR (btype_to_string (bcd#get_typ i)))
+                                "{" "; " "}"))
+                      ^ ": compinfo: " ^ cinfo.bcname
+                      ^ ": first field type: " ^ (btype_to_string ftype)] in
+                 if s#fold
+                      (fun acc i -> acc && (i = ixftype || i = ixctype)) true then
                    Some ftype
                  else
                    None))
@@ -644,14 +632,13 @@ object (self)
          | _ ->
             begin
               log_evaluation ();
-              chlog#add
-                "multiple distinct types"
-                (LBLOCK [
-                     INT offset;
-                     STR "; ";
-                     pretty_print_list
-                       (List.map bcd#get_typ result#toList)
-                       (fun ty -> STR (btype_to_string ty)) "[" "; " "]"]);
+              log_diagnostics_result
+                ~tag:("multiple distinct types for " ^ faddr)
+                __FILE__ __LINE__
+                [(string_of_int offset) ^ ": "
+                 ^ (p2s (pretty_print_list
+                           (List.map bcd#get_typ result#toList)
+                           (fun ty -> STR (btype_to_string ty)) "[" "; " "]"))];
               None
             end
     end
