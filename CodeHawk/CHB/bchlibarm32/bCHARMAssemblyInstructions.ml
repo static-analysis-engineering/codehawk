@@ -26,6 +26,7 @@
    ============================================================================= *)
 
 (* chlib *)
+open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -34,8 +35,13 @@ open CHPrettyUtil
 open CHTraceResult
 open CHXmlDocument
 
+(* xprlib *)
+open Xprt
+open XprTypes
+
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHByteUtilities
 open BCHDataBlock
 open BCHDoubleword
@@ -61,6 +67,9 @@ open BCHDisassembleThumbInstruction
 module H = Hashtbl
 module TR = CHTraceResult
 
+let x2p = XprToPretty.xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
 
 let numArrays = 1000
 let arrayLength = 100000
@@ -676,6 +685,67 @@ object (self)
                           ^ "  String:<"
                           ^ (fixed_length_string v#to_hex_string 12)
                           ^ "> ... (cont'd)"
+
+                        else if Option.is_some (memorymap#containing_location a) then
+                          match memorymap#containing_location a with
+                          | None -> ""
+                          | Some gloc ->
+                             let xprv = num_constant_expr a#to_numerical in
+                             let offset_r = gloc#address_offset xprv in
+                             TR.tfold_default
+                               (fun offset ->
+                                 match offset with
+                                 | XConst (IntConst n) when n#equal numerical_zero ->
+                                    "  "
+                                    ^ (fixed_length_string addr 10)
+                                    ^ "  Global variable:<"
+                                    ^ gloc#name
+                                    ^ ": "
+                                    ^ (btype_to_string gloc#btype)
+                                    ^ ">"
+                                    ^ "\n  "
+                                    ^ (fixed_length_string addr 10)
+                                    ^ "    GV:<"
+                                    ^ gloc#name
+                                    ^ ":0  >: "
+                                    ^ v#to_hex_string
+                                 | XConst (IntConst n) ->
+                                    "  "
+                                    ^ (fixed_length_string addr 10)
+                                    ^ "    GV:<"
+                                    ^ gloc#name
+                                    ^ ":"
+                                    ^ (fixed_length_string n#toString 3)
+                                    ^ ">: "
+                                    ^ v#to_hex_string
+                                 | _ ->
+                                    "  "
+                                    ^ (fixed_length_string addr 10)
+                                    ^ "    GV:<"
+                                    ^ gloc#name
+                                    ^ ":"
+                                    ^ (x2s offset)
+                                    ^ ">: "
+                                    ^ v#to_hex_string)
+                               ("  "
+                                ^ (fixed_length_string addr 10)
+                                ^ "   GV:<"
+                                ^ gloc#name
+                                ^ ":?>: "
+                                ^ v#to_hex_string)
+                               offset_r
+
+                        else if memorymap#has_elf_symbol v then
+                          let name = memorymap#get_elf_symbol v in
+                          "  "
+                          ^ (fixed_length_string addr 10)
+                          ^ "  Sym:<"
+                          ^ v#to_hex_string
+                          ^ ":"
+                          ^ name
+                          ^ ">"
+                          ^ datarefstr
+
                         else if v#equal wordzero then
                           "  "
                           ^ (fixed_length_string addr 10)
@@ -684,6 +754,7 @@ object (self)
                           "  "
                           ^  (fixed_length_string addr 10)
                           ^  " <0xffffffff>"
+
                         else if functions_data#is_function_entry_point v then
                           let name =
                             if functions_data#has_function_name v then
@@ -698,16 +769,7 @@ object (self)
                           ^ name
                           ^ ">"
                           ^ datarefstr
-                        else if memorymap#has_elf_symbol v then
-                          let name = memorymap#get_elf_symbol v in
-                          "  "
-                          ^ (fixed_length_string addr 10)
-                          ^ "  Sym:<"
-                          ^ v#to_hex_string
-                          ^ ":"
-                          ^ name
-                          ^ ">"
-                          ^ datarefstr
+
                         else if elf_header#is_code_address v then
                           "  "
                           ^ (fixed_length_string addr 10)
