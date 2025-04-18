@@ -54,6 +54,8 @@ open BCHNumericalConstraints
 module H = Hashtbl
 module TR = CHTraceResult
 
+let p2s = CHPrettyUtil.pretty_to_string
+
 
 module ConstraintCollections = CHCollections.Make
   (struct
@@ -442,17 +444,19 @@ let extract_valuesets
   H.iter (fun k v ->
     if H.mem v "valuesets" then
       let inv = H.find v "valuesets" in
-      let flocinv = finfo#finv#get_location_invariant k in
       let domain = inv#getDomain "valuesets" in
       let varObserver = domain#observer#getNonRelationalVariableObserver in
       let vars = domain#observer#getObservedVariables in
-      let knownvars = flocinv#get_known_variables in
-      let vars =
-        List.filter (fun v ->
-            not (v#isTmp || List.mem v knownvars)) vars in
+      let vars = List.filter (fun v -> not v#isTmp) vars in
       List.iter (fun (v:variable_t) ->
 	let valueset = (varObserver v)#toValueSet in
-	if valueset#isTop then () else
+	if valueset#isTop then
+          let _ =
+            log_diagnostics_result
+              ~tag:"value-sets: top"
+              __FILE__ __LINE__ [k ^ ": " ^ (p2s v#toPretty)] in
+          ()
+        else
 	  if valueset#removeZeroOffset#isSingleBase then
 	    let (base,offset) = valueset#removeZeroOffset#getSingleBase in
 	    let canbenull:bool = valueset#includesZero in

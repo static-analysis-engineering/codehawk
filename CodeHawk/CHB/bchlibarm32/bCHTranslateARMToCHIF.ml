@@ -2345,7 +2345,10 @@ let translate_arm_instruction
          if rl#includes_pc then
            match rtype with
            | TVoid _ -> []
-           | _ -> [floc#f#env#mk_arm_register_variable AR0]
+           | _ ->
+              let r0_op = arm_register_op AR0 RD in
+              let xr0 = r0_op#to_expr floc in
+              get_use_high_vars_r [xr0]
          else
            [] in
        let popdefcmds =
