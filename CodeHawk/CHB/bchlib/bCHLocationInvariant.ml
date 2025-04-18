@@ -58,8 +58,12 @@ module H = Hashtbl
 module TR = CHTraceResult
 
 
-(* let x2p = XprToPretty.xpr_formatter#pr_expr *)
+let x2p = XprToPretty.xpr_formatter#pr_expr
 let tracked_locations = []
+
+let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
+
 
 let track_location loc p =
   if List.mem loc tracked_locations then
@@ -1068,6 +1072,11 @@ object (self)
     (self#get_location_invariant iaddr)#add_fact fact
 
   method add_symbolic_expr_fact (iaddr:string) (v:variable_t) (x:xpr_t) =
+    let _ =
+      log_diagnostics_result
+        ~tag:("add symbolic-expr fact for " ^ iaddr)
+        __FILE__ __LINE__
+        [(p2s v#toPretty) ^ ": " ^ (x2s x)] in
     self#add iaddr (NonRelationalFact (v,FSymbolicExpr x))
 
   method set_unreachable (iaddr:string) (domain:string) =
@@ -1091,6 +1100,13 @@ object (self)
            (base:symbol_t)
            (i:interval_t)
            (canbenull:bool) =
+    let _ =
+      log_diagnostics_result
+        ~tag:("add valueset fact for " ^ iaddr)
+        __FILE__ __LINE__
+        [(p2s v#toPretty) ^ ": "
+         ^ "base: " ^ (p2s base#toPretty)
+         ^ "; offset: " ^ (p2s i#toPretty)] in
     let fact =
       if i#isBottom then
 	Unreachable "valuesets"

@@ -195,10 +195,16 @@ object (self)
                    ~(tgtbtype: btype_t option)
                    (c: bcompinfo_t)
                    (xoffset: xpr_t): memory_offset_t traceresult =
+    let is_void_tgtbtype =
+      match tgtbtype with
+      | Some (TVoid _) -> true
+      | _ -> false in
     let check_tgttype_compliance (t: btype_t) (s: int) =
       match tgtsize, tgtbtype with
       | None, None -> true
       | Some size, None -> size = s
+      | Some size, Some (TVoid _) -> size = s
+      | None, Some (TVoid _) -> true
       | None, Some ty -> btype_equal ty t
       | Some size, Some ty -> size = s && btype_equal ty t in
     let compliance_failure (t: btype_t) (s: int) =
@@ -246,7 +252,10 @@ object (self)
                      let offset = offset - foff in
                      tbind
                        (fun fldtype ->
-                         if offset = 0
+                         if offset = 0 && is_void_tgtbtype then
+                           Ok (Some (FieldOffset
+                                       ((finfo.bfname, finfo.bfckey), NoOffset)))
+                         else if offset = 0
                             && (is_scalar fldtype)
                             && (check_tgttype_compliance fldtype sz) then
                            Ok (Some (FieldOffset
@@ -305,6 +314,47 @@ object (self)
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
                 ^ " xoffset: " ^ (x2s xoffset)
                 ^ "; btype: " ^ (btype_to_string btype)]
+    | XOp (XPlus, [XOp (XMult, [XConst (IntConst n); XVar v]);
+                   XConst (IntConst m)]) when is_struct_type btype ->
+       let compinfo = get_struct_type_compinfo btype in
+       let fldoffset = XConst (IntConst m) in
+       let memoffset_r =
+         self#get_field_memory_offset_at
+           ~tgtsize:None ~tgtbtype:None compinfo fldoffset in
+       TR.tbind
+         (fun memoffset ->
+           match memoffset with
+           | FieldOffset ((fname, fckey), NoOffset) ->
+              let fcinfo = get_compinfo_by_key fckey in
+              let field = get_compinfo_field fcinfo fname in
+              let fieldtype = field.bftype in
+              if is_array_type fieldtype then
+                let eltype = get_element_type fieldtype in
+                let elsize_r = size_of_btype eltype in
+                TR.tbind
+                  (fun elsize ->
+                    if elsize = n#toInt then
+                      let aoffset = ArrayIndexOffset (XVar v, NoOffset) in
+                      let moffset =
+                        BCHMemoryReference.add_offset memoffset aoffset in
+                      Ok moffset
+                    else
+                      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                             ^ "field: " ^ fname
+                             ^ "; fieldtype: " ^ (btype_to_string fieldtype)
+                             ^ "; elementsize: " ^ (string_of_int elsize)
+                             ^ "; expected: " ^ n#toString])
+                  elsize_r
+              else
+                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                       ^ "not an array type"]
+           | _ ->
+              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                     ^ "fldoffset: " ^ (x2s fldoffset)
+                     ^ "; memoffset: "
+                     ^ (BCHMemoryReference.memory_offset_to_string memoffset)])
+         memoffset_r
+
     | _ ->
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
                 ^ " xoffset: " ^ (x2s xoffset)
