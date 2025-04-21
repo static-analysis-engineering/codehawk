@@ -494,17 +494,42 @@ object (self)
         match result#singleton with
         | Some ixty -> Some (bcd#get_typ ixty)
         | _ ->
-           begin
-             log_evaluation ();
-             log_diagnostics_result
-               ~tag:("top type constant in join for " ^ faddr)
-               __FILE__ __LINE__
-               [iaddr ^ " -- " ^ (register_to_string reg) ^ ": "
-                ^ (p2s (pretty_print_list
-                          (List.map bcd#get_typ result#toList)
-                          (fun ty -> STR (btype_to_string ty)) "[" "; " "]"))];
-             None
-           end
+           match result#toList with
+           | [ixty1; ixty2] ->
+              (match (bcd#get_typ ixty1), (bcd#get_typ ixty2) with
+               | TPtr (tty1, _), TPtr (tty2, _)
+                    when is_struct_type tty1 && is_scalar tty2 ->
+                  Some (bcd#get_typ ixty1)
+               | TPtr (tty1, _), TPtr (tty2, _)
+                    when is_struct_type tty2 && is_scalar tty1 ->
+                  Some (bcd#get_typ ixty2)
+               | _ ->
+                  begin
+                    log_evaluation ();
+                    log_diagnostics_result
+                      ~tag:("top type constant in join for " ^ faddr)
+                      __FILE__ __LINE__
+                      [iaddr ^ " -- " ^ (register_to_string reg) ^ ": "
+                       ^ (p2s (pretty_print_list
+                                 (List.map bcd#get_typ result#toList)
+                                 (fun ty -> STR (btype_to_string ty))
+                                 "[" "; " "]"))];
+                    None
+                  end)
+           | _ ->
+              begin
+                log_evaluation ();
+                log_diagnostics_result
+                  ~tag:("top type constant in join for " ^ faddr)
+                  __FILE__ __LINE__
+                  [iaddr ^ " -- " ^ (register_to_string reg) ^ ": "
+                   ^ (p2s (pretty_print_list
+                             (List.map bcd#get_typ result#toList)
+                             (fun ty -> STR (btype_to_string ty))
+                             "[" "; " "]"))];
+                None
+              end
+
     end
 
   method resolve_stack_lhs_type

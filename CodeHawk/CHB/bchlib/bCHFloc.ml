@@ -1389,6 +1389,14 @@ object (self)
           (self#f#is_base_pointer v)
           || (TR.tfold_default is_pointer false (self#get_variable_type v))
         ) vars in
+    let _ =
+      log_diagnostics_result
+        ~tag:"convert_addr_to_c_pointed_to_expr"
+        __FILE__ __LINE__
+        [(p2s self#l#toPretty);
+         "known pointers: ";
+         (p2s (pretty_print_list knownpointers
+                 (fun v -> v#toPretty) "[" ", " "]"))] in
     match knownpointers with
     (* one known pointer, must be the base *)
     | [base] when self#f#env#is_initial_stackpointer_value base ->
