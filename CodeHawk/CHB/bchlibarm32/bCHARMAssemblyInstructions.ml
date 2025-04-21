@@ -67,10 +67,11 @@ open BCHDisassembleThumbInstruction
 module H = Hashtbl
 module TR = CHTraceResult
 
+          (*
 let x2p = XprToPretty.xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
 let x2s x = p2s (x2p x)
-
+           *)
 let numArrays = 1000
 let arrayLength = 100000
 
@@ -594,7 +595,102 @@ object (self)
     let firstNew = ref true in
     let datareftable = H.create (List.length datarefs) in
     let _ = List.iter (fun (a, refs) -> H.add datareftable a refs) datarefs in
+    let datarefstr (a: doubleword_int): string =
+      if H.mem datareftable a#to_hex_string then
+        let datarefs = H.find datareftable a#to_hex_string in
+        "  (refs: "
+        ^ (String.concat
+             ", " (List.map (fun instr -> instr#get_address#to_hex_string) datarefs))
+        ^ ")"
+      else
+        "" in
     let memorymap = BCHGlobalMemoryMap.global_memory_map in
+    let get_memory_offset (gloc: global_location_int) (offset: xpr_t) =
+      TR.tfold
+        ~ok:(fun memoffset ->
+          "  (" ^ (BCHMemoryReference.memory_offset_to_string memoffset) ^ ")"
+          ^ "")
+        ~error:(fun e ->
+          begin
+            log_diagnostics_result __FILE__ __LINE__ e;
+            ""
+          end)
+        (gloc#address_memory_offset ~tgtsize:(Some 4) offset) in
+    let render_gloc (a: doubleword_int) (v: doubleword_int): string =
+      let addrprefix = "  " ^ (fixed_length_string a#to_hex_string 10) in
+      let p_value =
+        if v#equal wordzero then
+          "<0x0>"
+        else if v#equal wordmax then
+          "<0xffffffff>"
+        else if functions_data#is_function_entry_point v then
+          let name =
+            if functions_data#has_function_name v then
+              let fndata = functions_data#get_function v in
+              ":" ^ fndata#get_function_name
+            else
+              "" in
+          "FAddr:<"
+          ^ v#to_hex_string
+          ^ name
+          ^ ">"
+        else if elf_header#is_code_address v then
+          "Code:<"
+          ^ v#to_hex_string
+          ^ ">"
+        else if elf_header#is_data_address v then
+          let s =
+            match elf_header#get_string_at_address v with
+            | Some s ->
+               let len = String.length s in
+               if len < 50 then
+                 ":\"" ^ s ^ "\""
+               else
+                 ":\"" ^ (String.sub s 0 50) ^ "...\""
+            | _ -> "" in
+          "  Data:<"
+          ^ v#to_hex_string
+          ^ s
+          ^ ">"
+        else
+          v#to_hex_string in
+      match memorymap#containing_location a with
+      | None -> ""            (* should not be reachable *)
+      | Some gloc ->
+         let xprv = num_constant_expr a#to_numerical in
+         TR.tfold_default
+           (fun offset ->
+             let p_memoff = get_memory_offset gloc xprv in
+             match offset with
+             | XConst (IntConst n) when n#equal numerical_zero ->
+                addrprefix
+                ^ "\n  Global variable:<"
+                ^ gloc#name
+                ^ ": "
+                ^ (btype_to_string gloc#btype)
+                ^ ">\n"
+                ^ addrprefix
+                ^ "    GV:<"
+                ^ gloc#name
+                ^ ":0  >: "
+                ^ p_value
+                ^ p_memoff
+                ^ (datarefstr a)
+             | XConst (IntConst n) ->
+                addrprefix
+                ^ "    GV:<"
+                ^ gloc#name
+                ^ ":"
+                ^ (fixed_length_string n#toString 3)
+                ^ ">: "
+                ^ p_value
+                ^ p_memoff
+                ^ (datarefstr a)
+             | _ -> ""      (* should not be reachable *)
+           )
+           (addrprefix ^ "  GV:<" ^ gloc#name ^ ":?>:" ^ p_value)
+           (gloc#address_offset xprv) in
+
     let not_code_to_string nc =
       match nc with
       | JumpTable jt ->
@@ -665,20 +761,10 @@ object (self)
                    "\n"
                    (List.map
                       (fun (a, v) ->
+                        let addrprefix =
+                          "  " ^ (fixed_length_string a#to_hex_string 10) in
                         let addr = a#to_hex_string in
-                        let datarefstr =
-                          if H.mem datareftable addr then
-                            let datarefs = H.find datareftable addr in
-                            "  "
-                            ^ "(refs: "
-                            ^ (String.concat
-                                 ", "
-                                 (List.map
-                                    (fun instr ->
-                                      instr#get_address#to_hex_string) datarefs))
-                            ^ ")"
-                          else
-                            "" in
+                        let pdatarefstr = datarefstr a in
                         if a#lt !stringend then
                           "  "
                           ^ (fixed_length_string addr 10)
@@ -687,73 +773,22 @@ object (self)
                           ^ "> ... (cont'd)"
 
                         else if Option.is_some (memorymap#containing_location a) then
-                          match memorymap#containing_location a with
-                          | None -> ""
-                          | Some gloc ->
-                             let xprv = num_constant_expr a#to_numerical in
-                             let offset_r = gloc#address_offset xprv in
-                             TR.tfold_default
-                               (fun offset ->
-                                 match offset with
-                                 | XConst (IntConst n) when n#equal numerical_zero ->
-                                    "  "
-                                    ^ (fixed_length_string addr 10)
-                                    ^ "  Global variable:<"
-                                    ^ gloc#name
-                                    ^ ": "
-                                    ^ (btype_to_string gloc#btype)
-                                    ^ ">"
-                                    ^ "\n  "
-                                    ^ (fixed_length_string addr 10)
-                                    ^ "    GV:<"
-                                    ^ gloc#name
-                                    ^ ":0  >: "
-                                    ^ v#to_hex_string
-                                 | XConst (IntConst n) ->
-                                    "  "
-                                    ^ (fixed_length_string addr 10)
-                                    ^ "    GV:<"
-                                    ^ gloc#name
-                                    ^ ":"
-                                    ^ (fixed_length_string n#toString 3)
-                                    ^ ">: "
-                                    ^ v#to_hex_string
-                                 | _ ->
-                                    "  "
-                                    ^ (fixed_length_string addr 10)
-                                    ^ "    GV:<"
-                                    ^ gloc#name
-                                    ^ ":"
-                                    ^ (x2s offset)
-                                    ^ ">: "
-                                    ^ v#to_hex_string)
-                               ("  "
-                                ^ (fixed_length_string addr 10)
-                                ^ "   GV:<"
-                                ^ gloc#name
-                                ^ ":?>: "
-                                ^ v#to_hex_string)
-                               offset_r
+                          render_gloc a v
 
                         else if memorymap#has_elf_symbol v then
                           let name = memorymap#get_elf_symbol v in
-                          "  "
-                          ^ (fixed_length_string addr 10)
+                          addrprefix
                           ^ "  Sym:<"
                           ^ v#to_hex_string
                           ^ ":"
                           ^ name
                           ^ ">"
-                          ^ datarefstr
+                          ^ pdatarefstr
 
                         else if v#equal wordzero then
-                          "  "
-                          ^ (fixed_length_string addr 10)
-                          ^ "  <0x0>"
+                          addrprefix ^ "  <0x0>"
                         else if v#equal wordmax then
-                          "  "
-                          ^  (fixed_length_string addr 10)
-                          ^  " <0xffffffff>"
+                          addrprefix ^  " <0xffffffff>"
 
                         else if functions_data#is_function_entry_point v then
                           let name =
@@ -762,21 +797,30 @@ object (self)
                               ":" ^ fndata#get_function_name
                             else
                               "" in
-                          "  "
-                          ^ (fixed_length_string addr 10)
+                          addrprefix
                           ^ "  Faddr:<"
                           ^ v#to_hex_string
                           ^ name
                           ^ ">"
-                          ^ datarefstr
+                          ^ pdatarefstr
+
+                        else if memorymap#has_location v then
+                          let gloc = memorymap#get_location v in
+                          addrprefix
+                          ^ "  GVAddr:<"
+                          ^ v#to_hex_string
+                          ^ ":"
+                          ^ gloc#name
+                          ^ ">"
+                          ^ pdatarefstr
 
                         else if elf_header#is_code_address v then
-                          "  "
-                          ^ (fixed_length_string addr 10)
+                          addrprefix
                           ^ "  Code:<"
                           ^ v#to_hex_string
                           ^ ">"
-                          ^ datarefstr
+                          ^ (datarefstr a)
+
                         else if elf_header#is_data_address v then
                           let s =
                             match elf_header#get_string_at_address v with
@@ -787,44 +831,40 @@ object (self)
                                else
                                  ":\"" ^ (String.sub s 0 50) ^ "...\""
                             | _ -> "" in
-                          "  "
-                          ^ (fixed_length_string addr 10)
+                          addrprefix
                           ^ "  Data:<"
                           ^ v#to_hex_string
                           ^ s
                           ^ ">"
-                          ^ datarefstr
+                          ^ pdatarefstr
+
                         else if elf_header#is_uninitialized_data_address v then
-                          "  "
-                          ^ (fixed_length_string addr 10)
+                          addrprefix
                           ^ "  Bss:<"
                           ^ v#to_hex_string
                           ^ ">"
-                          ^ datarefstr
+                          ^ (datarefstr a)
                         else if Option.is_some
                                   (elf_header#get_string_at_address a) then
                           let s =
                             Option.get (elf_header#get_string_at_address a) in
                           begin
-                            ("  "
-                             ^ (fixed_length_string addr 10)
+                            (addrprefix
                              ^ "  String:<"
                              ^ (fixed_length_string v#to_hex_string 12)
                              ^ ">: \""
                              ^ s
                              ^ "\"")
-                            ^ datarefstr
+                            ^ pdatarefstr
                           end
-                        else if (String.length datarefstr) > 0 then
-                          "  "
-                          ^ (fixed_length_string addr 10)
+                        else if (String.length (datarefstr a)) > 0 then
+                          addrprefix
                           ^ "  Value<"
                           ^ v#to_hex_string
                           ^ ">"
-                          ^ datarefstr
+                          ^ pdatarefstr
                         else
-                          "  "
-                          ^ (fixed_length_string addr 10)
+                          addrprefix
                           ^ "  "
                           ^ (fixed_length_string v#to_hex_string 14)
                           ^ "  "
