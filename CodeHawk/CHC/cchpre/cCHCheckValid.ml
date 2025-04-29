@@ -1510,6 +1510,11 @@ let check_ppo_validity
        | _ -> ()
      end
 
+  | PPtrUpperBound (_, _, e, _) when is_program_name e ->
+     make
+       ("validity of pointer to program name is guaranteed by the "
+        ^ "operating system")
+
   | PPtrUpperBound (_, _, e, _) when is_null_pointer e ->
      make ("not-null of first argument is checked separately")
 
@@ -2062,6 +2067,11 @@ let check_ppo_validity
   | PInitialized (Mem e, NoOffset) when is_constant_string e ->
      make ("constant string is guaranteed to have at least one character")
 
+  | PInitializedRange (e, _) when is_program_name e ->
+     make
+       ("validity of pointer to program name is guaranteed by the "
+        ^ "operating system")
+
   | PInitializedRange (e, _) when is_null_pointer e ->
      make "null pointer does have any range, so this is trivially valid"
 
@@ -2149,6 +2159,11 @@ let check_ppo_validity
 
   | PNullTerminated (Const (CWStr _))
     | PNullTerminated (CastE (_, Const (CWStr _))) -> make "wide string literal"
+
+  | PNullTerminated e when is_program_name e ->
+     make
+       ("validity of pointer to program name is guaranteed by the "
+        ^ "operating system")
 
   | PNullTerminated e when is_null_pointer e ->
     make "null pointer is not subject to null-termination"
