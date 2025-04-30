@@ -76,43 +76,6 @@ object (self)
 
   (* ----------------------------- safe ------------------------------------- *)
 
-  method private command_line_argument =
-    if poq#is_command_line_argument e then
-      let index = poq#get_command_line_argument_index e in
-      match poq#get_command_line_argument_count with
-      | Some (inv, i) ->
-         if index < i then
-           begin
-             poq#record_safe_result
-               (DLocal [inv])
-               ("command-line argument "
-                ^ (string_of_int index)
-                ^ " is guaranteed not null for argument count "
-                ^ (string_of_int i));
-             true
-           end
-         else
-           begin
-             poq#record_violation_result
-               (DLocal [inv])
-               ("command-line argument "
-                ^ (string_of_int index)
-                ^ " is not included in argument count of "
-                ^ (string_of_int i));
-             true
-           end
-      | _ ->
-         begin
-           poq#set_diagnostic
-             ("no invariant found for argument count; "
-                ^ "unable to validate access of "
-                ^ "command-line argument "
-                ^ (string_of_int index));
-           false
-         end
-    else
-      false
-
   method private global_expression_safe (invindex: int) (x: xpr_t) =
     let pred = PNotNull (poq#get_global_expression x) in
     match poq#check_implied_by_assumptions pred with
@@ -314,7 +277,21 @@ object (self)
     r
 
   method check_safe =
-    self#command_line_argument
+    let safemsg = fun index arg_count -> ("command-line argument"
+                                          ^ (string_of_int index)
+                                          ^ " is guaranteed not null"
+                                          ^ " for argument count "
+                                          ^ (string_of_int arg_count)) in
+    let vmsg = fun index arg_count -> ("command-line argument "
+                                       ^ (string_of_int index)
+                                       ^ " is not included in argument count of "
+                                       ^ (string_of_int arg_count)) in
+    let dmsg = fun index -> ("no invariant found for argument count; "
+                             ^ "unable to validate not-null of "
+                             ^ "command-line argument "
+                             ^ (string_of_int index)) in
+
+    poq#check_command_line_argument e safemsg vmsg dmsg
     || (List.fold_left (fun acc inv ->
             acc ||
               match self#inv_implies_safe inv with
