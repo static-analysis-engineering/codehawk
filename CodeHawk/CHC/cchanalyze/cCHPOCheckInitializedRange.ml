@@ -320,6 +320,20 @@ object (self)
     | _ -> None
 
   method check_safe =
+    let safemsg = fun index arg_count -> ("command-line argument"
+                                          ^ (string_of_int index)
+                                          ^ " is guaranteed initialized for argument count "
+                                          ^ (string_of_int arg_count)) in
+    let vmsg = fun index arg_count -> ("command-line argument "
+                                       ^ (string_of_int index)
+                                       ^ " is not included in argument count of "
+                                       ^ (string_of_int arg_count)) in
+    let dmsg = fun index -> ("no invariant found for argument count; "
+                             ^ "unable to validate initialization of "
+                             ^ "command-line argument "
+                             ^ (string_of_int index)) in
+
+    poq#check_command_line_argument e1 safemsg vmsg dmsg ||
     match self#unsigned_length_conflict with
     | Some _ -> false
     | _ ->

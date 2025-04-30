@@ -230,6 +230,21 @@ object (self)
     r
 
   method check_safe =
+    let safemsg = fun index arg_count -> ("command-line argument"
+                                          ^ (string_of_int index)
+                                          ^ " is guaranteed to be in scope"
+                                          ^ " for argument count "
+                                          ^ (string_of_int arg_count)) in
+    let vmsg = fun index arg_count -> ("command-line argument "
+                                       ^ (string_of_int index)
+                                       ^ " is not included in argument count of "
+                                       ^ (string_of_int arg_count)) in
+    let dmsg = fun index -> ("no invariant found for argument count; "
+                             ^ "unable to validate scope of "
+                             ^ "command-line argument "
+                             ^ (string_of_int index)) in
+
+    poq#check_command_line_argument e safemsg vmsg dmsg ||
     match invs with
     | [] ->
        begin
