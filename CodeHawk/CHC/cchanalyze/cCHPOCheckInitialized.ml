@@ -71,19 +71,37 @@ class initialized_checker_t
         (poq:po_query_int) (lval:lval) (invs:invariant_int list)  =
 object (self)
 
+  method private check_program_name =
+    if poq#is_command_line_argument (Lval lval) then
+      let index = poq#get_command_line_argument_index (Lval lval) in
+      if index == 0 then
+        begin
+          (* first index into argv is always safe, it is the program name *)
+          poq#record_safe_result
+            (DLocal [])
+            ("command-line argument "
+             ^ (string_of_int index)
+             ^ " is guaranteed initialized by the operating system");
+          true
+        end
+      else
+        false
+    else
+      false
+
   method private check_command_line_argument =
     if poq#is_command_line_argument (Lval lval) then
       let index = poq#get_command_line_argument_index (Lval lval) in
       match poq#get_command_line_argument_count with
-      | Some (inv,i) ->
-         if index < i then
+      | Some (inv, arg_count) ->
+         if index < arg_count then
            begin
              poq#record_safe_result
                (DLocal [inv])
                ("command-line argument "
                 ^ (string_of_int index)
                 ^ " is guaranteed initialized for argument count "
-                ^ (string_of_int i));
+                ^ (string_of_int arg_count));
              true
            end
          else
@@ -93,7 +111,7 @@ object (self)
                ("command-line argument "
                 ^ (string_of_int index)
                 ^ " is not included in argument count of "
-                ^ (string_of_int i));
+                ^ (string_of_int arg_count));
              true
            end
       | _ ->
@@ -654,7 +672,10 @@ object (self)
     | _ -> false
 
   method check_delegation =
-    self#check_invs_delegation || self#check_lval_delegation
+    if self#check_program_name then
+      false
+    else
+      self#check_invs_delegation || self#check_lval_delegation
 
 end
 
