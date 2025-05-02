@@ -616,6 +616,7 @@ object (self)
             ""
           end)
         (gloc#address_memory_offset ~tgtsize:(Some 4) offset) in
+    let vm1 (v: doubleword_int) = TR.to_option (v#subtract_int 1) in
     let render_gloc (a: doubleword_int) (v: doubleword_int): string =
       let addrprefix = "  " ^ (fixed_length_string a#to_hex_string 10) in
       let p_value =
@@ -634,9 +635,40 @@ object (self)
           ^ v#to_hex_string
           ^ name
           ^ ">"
+        else if (Option.is_some (vm1 v))
+                && functions_data#is_function_entry_point (Option.get (vm1 v)) then
+          let fentry = Option.get (vm1 v) in
+          let name =
+            if functions_data#has_function_name fentry then
+              let fndata = functions_data#get_function fentry in
+              ":" ^ fndata#get_function_name
+            else
+              "" in
+          "Faddr:<"
+          ^ v#to_hex_string
+          ^ name
+          ^ "(T)>"
+        else if memorymap#has_location v then
+          let gloc = memorymap#get_location v in
+          "GVAddr:<"
+          ^ v#to_hex_string
+          ^ ":"
+          ^ gloc#name
+          ^ ">"
+
         else if elf_header#is_code_address v then
+          let s =
+            match elf_header#get_string_at_address v with
+            | Some s ->
+               let len = String.length s in
+               if len < 50 then
+                 ":\"" ^ s ^ "\""
+               else
+                 ":\"" ^ (String.sub s 0 50) ^ "...\""
+            | _ -> "" in
           "Code:<"
           ^ v#to_hex_string
+          ^ s
           ^ ">"
         else if elf_header#is_data_address v then
           let s =
@@ -648,7 +680,7 @@ object (self)
                else
                  ":\"" ^ (String.sub s 0 50) ^ "...\""
             | _ -> "" in
-          "  Data:<"
+          "Data:<"
           ^ v#to_hex_string
           ^ s
           ^ ">"
@@ -664,7 +696,9 @@ object (self)
              match offset with
              | XConst (IntConst n) when n#equal numerical_zero ->
                 addrprefix
-                ^ "\n  Global variable:<"
+                ^ "\n"
+                ^ addrprefix
+                ^ "  Global variable:<"
                 ^ gloc#name
                 ^ ": "
                 ^ (btype_to_string gloc#btype)
@@ -743,6 +777,13 @@ object (self)
              "  " ^ (fixed_length_string !addr#to_hex_string 10) ^ "  align\n"
            else
              "" in
+         let render_string (s: string): string =
+           let len = String.length s in
+           if len <= 40 then
+             s
+           else
+             (String.sub s 0 40) ^ "... (length: " ^ (string_of_int len) ^ ")" in
+
          let _ =
            if prefix > 0 && (String.length s) >= prefix then
              ch#skip_bytes prefix in
@@ -754,6 +795,7 @@ object (self)
                  addr := !addr#add_int 4
                end
              done;
+             let addrstr_end = ref wordzero in
              ("\n" ^ (string_repeat "~" 80) ^ "\nData block (size: "
               ^ (string_of_int len) ^ " bytes)\n\n"
               ^ pprefix
@@ -769,6 +811,12 @@ object (self)
                           "  "
                           ^ (fixed_length_string addr 10)
                           ^ "  String:<"
+                          ^ (fixed_length_string v#to_hex_string 12)
+                          ^ "> ... (cont'd)"
+
+                        else if a#lt !addrstr_end then
+                          addrprefix
+                          ^ "  <String:<"
                           ^ (fixed_length_string v#to_hex_string 12)
                           ^ "> ... (cont'd)"
 
@@ -804,6 +852,24 @@ object (self)
                           ^ ">"
                           ^ pdatarefstr
 
+                              (* handle thumb function addresses (+1) *)
+                        else if (Option.is_some (vm1 v))
+                                && functions_data#is_function_entry_point
+                                     (Option.get (vm1 v)) then
+                          let fentry = Option.get (vm1 v) in
+                          let name =
+                            if functions_data#has_function_name fentry then
+                              let fndata = functions_data#get_function fentry in
+                              ":" ^ fndata#get_function_name
+                            else
+                              "" in
+                          addrprefix
+                          ^ "  Faddr:<"
+                          ^ v#to_hex_string
+                          ^ name
+                          ^ "(T)>"
+                          ^ pdatarefstr
+
                         else if memorymap#has_location v then
                           let gloc = memorymap#get_location v in
                           addrprefix
@@ -815,9 +881,20 @@ object (self)
                           ^ pdatarefstr
 
                         else if elf_header#is_code_address v then
+                          let s =
+                            match elf_header#get_string_at_address v with
+                            | Some s ->
+                               let len = String.length s in
+                               if len < 50 then
+                                 ":\"" ^ s ^ "\""
+                               else
+                                 ":\"" ^ (String.sub s 0 50) ^ "...\""
+                            | _ -> "" in
+
                           addrprefix
                           ^ "  Code:<"
                           ^ v#to_hex_string
+                          ^ s
                           ^ ">"
                           ^ (datarefstr a)
 
@@ -848,12 +925,15 @@ object (self)
                                   (elf_header#get_string_at_address a) then
                           let s =
                             Option.get (elf_header#get_string_at_address a) in
+                          let slen = String.length s in
+                          let slen = if slen > 40 then 40 else slen in
+                          let _ = addrstr_end := a#add_int slen in
                           begin
                             (addrprefix
                              ^ "  String:<"
                              ^ (fixed_length_string v#to_hex_string 12)
                              ^ ">: \""
-                             ^ s
+                             ^ (render_string s)
                              ^ "\"")
                             ^ pdatarefstr
                           end
