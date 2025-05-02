@@ -11,6 +11,9 @@
 # ocamlbuild working directory
 _build/
 
+# local opam switch
+_opam/
+
 # ocamlbuild targets
 *.byte
 *.native
