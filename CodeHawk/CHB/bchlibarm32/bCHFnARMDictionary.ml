@@ -1479,11 +1479,60 @@ object (self)
          (tags, args)
 
       | LoadMultipleIncrementBefore (wback, c, base, rl, _) ->
-         let reglhs_rl = rl#to_multiple_variable floc in
+         let lhsvars_rl = rl#to_multiple_variable floc in
          let basereg = base#get_register in
          let baselhs_r = base#to_variable floc in
          let baserhs_r = base#to_expr floc in
          let regcount = rl#get_register_count in
+         let (memrhss_r, rmemrhss_r, cmemrhss_r, _) =
+           List.fold_left
+             (fun (mems, rmems, cmems, off) _lhsvar ->
+               let memop = arm_reg_deref ~with_offset:off basereg RD in
+               let memrhs_r = memop#to_expr floc in
+               let rmemrhs_r = TR.tmap rewrite_expr memrhs_r in
+               let cmemrhs_r =
+                 TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rmemrhs_r in
+               (mems @ [memrhs_r],
+                rmems @ [rmemrhs_r],
+                cmems @ [cmemrhs_r],
+                off + 4)) ([], [], [], 4) lhsvars_rl in
+         let xaddrs_r =
+           List.init
+             rl#get_register_count
+             (fun i ->
+               let xaddr_r =
+                 TR.tmap
+                   (fun baserhs ->
+                     XOp (XPlus, [baserhs; int_constant_expr (i + 4)]))
+                   baserhs_r in
+               TR.tmap rewrite_expr xaddr_r) in
+         let cxaddrs_r =
+           List.map (fun xaddr_r ->
+               TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xaddr_r)
+             xaddrs_r in
+         let rdefs = List.map get_rdef_r (baserhs_r :: memrhss_r) in
+         let uses = List.map get_def_use_high_r (baselhs_r :: lhsvars_rl) in
+         let useshigh = List.map get_def_use_high_r (baselhs_r :: lhsvars_rl) in
+         let vars_r = baselhs_r :: lhsvars_rl in
+         let xprs_r = baserhs_r :: (memrhss_r @ rmemrhss_r @ xaddrs_r) in
+         let cxprs_r = cmemrhss_r @ cxaddrs_r in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         let tags = add_optional_subsumption tags in
+         let (tags, args) =
+           if wback then
+             let inc = 4 * regcount in
+             let xinc = int_constant_expr inc in
+             let baseresult_r =
+               TR.tmap (fun baserhs -> XOp (XPlus, [baserhs; xinc])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             add_base_update tags args baselhs_r inc rbaseresult_r
+           else
+             (tags, args) in
+         (tags, args)
+         (*
          let (memreads_r, _) =
            List.fold_left
              (fun (acc, off) _reglhs ->
@@ -1513,6 +1562,7 @@ object (self)
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
+          *)
 
       | LoadRegister _ when instr#is_aggregate_anchor ->
          let iaddr = instr#get_address in
