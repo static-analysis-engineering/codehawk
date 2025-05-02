@@ -2346,9 +2346,24 @@ let translate_arm_instruction
            match rtype with
            | TVoid _ -> []
            | _ ->
+              (* Return variables need to be treated somewhat differently
+                 than other 'initial-value' variables, because in the
+                 lifting to C code they get assigned to, while other
+                 'initial-value' variables always have their values
+                 and thus are by default not included in the use-high
+                 variables. *)
               let r0_op = arm_register_op AR0 RD in
-              let xr0 = r0_op#to_expr floc in
-              get_use_high_vars_r [xr0]
+              let xr0_r = r0_op#to_expr floc in
+              TR.tfold_default
+                (fun xr0 ->
+                  let xxr0 = floc#inv#rewrite_expr xr0 in
+                  match xxr0 with
+                  | XVar v when floc#env#is_return_value v ->
+                     [floc#f#env#mk_arm_register_variable AR0]
+                  | _ ->
+                     get_use_high_vars_r ~is_pop:true [xr0_r])
+                (get_use_high_vars_r ~is_pop:true [xr0_r])
+                xr0_r
          else
            [] in
        let popdefcmds =
