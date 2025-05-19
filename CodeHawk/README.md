@@ -1,31 +1,51 @@
-# Building with make
+# Install Dependencies
 
-## System Requirements
-
-Building codehawk requires the following applications and libraries:
-
-- Objective Caml (version 4.09 or higher)
-- The Findlib / ocamlfind library manager
-- The Zlib C library, version 1.1.3 or up
-- The Zarith library
-- goblint-cil, version 2.0.6
-
-The CodeHawk Tool Suite contains three analyzers that can all be built
-individually. All three analyzers have an optional gui that can be built
-separately (and that requires additional dependencies to be installed).
-The gui is current out-of-date and will require additional work to revive.
-
-
-### Install Dependencies:
-
-These commands should work for Ubuntu 22.04+:
+<details>
+<summary>Ubuntu 22.04+ and Debian 11+</summary>
 
 ```
 sudo apt update -y
 sudo apt install --no-install-recommends \
-                     build-essential opam unzip openjdk-21-jdk \
+                     git ca-certificates \
+                     build-essential opam unzip default-jdk \
                      pkg-config m4 zlib1g-dev libgmp-dev bubblewrap -y
+```
+</details>
 
+<details>
+<summary>Fedora</summary>
+
+```
+sudo yum install awk diffutils git gmp-devel opam \
+    perl-ExtUtils-MakeMaker perl-FindBin perl-Pod-Html zlib-devel -y
+```
+</details>
+
+
+<details>
+<summary>Arch Linux</summary>
+
+```
+sudo pacman -Syu base-devel git opam
+```
+</details>
+
+<details>
+<summary>macOS</summary>
+
+```
+brew install opam
+```
+</details>
+
+# Build CodeHawk
+
+Note that on Ubuntu 24.04 you must also pass `--disable-sandboxing` to `opam init`,
+or create an AppArmor profile with `userns` permissions. This is also required
+if you are running in `docker` without `--privileged`.
+[Yes, this is a mess!](https://github.com/containers/bubblewrap/issues/505#issuecomment-2093203129)
+
+```
 opam init --bare
 
 git clone https://github.com/static-analysis-engineering/codehawk.git
@@ -40,7 +60,3 @@ dune build @install
 The Makefiles in the repository are to help CodeHawk's developers
 debug circular module dependencies, they are not intended for users.
 
-Dependencies for other OS flavors:
-- Arch Linux [untested]: `sudo pacman -Syu opam`
-- Fedora [untested]: `sudo yum install opam diffutils zlib-devel -y`
-- macOS [untested]: `brew install opam`
