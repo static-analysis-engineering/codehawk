@@ -1,173 +1,62 @@
-# Building with make
+# Install Dependencies
 
-## System Requirements
-
-Building codehawk requires the following applications and libraries:
-
-- Objective Caml (version 4.09 or higher)
-- The Findlib / ocamlfind library manager
-- The Zlib C library, version 1.1.3 or up
-- The Zarith library
-
-The CodeHawk Tool Suite contains three analyzers that can all be built
-individually. All three analyzers have an optional gui that can be built
-separately (and that requires additional dependencies to be installed).
-
-
-### Install dependencies: Ubuntu 16.04 or later (without gui)
+<details>
+<summary>Ubuntu 22.04+ and Debian 11+</summary>
 
 ```
 sudo apt update -y
-sudo apt install software-properties-common pkg-config m4 zlib1g-dev libgmp-dev -y
-sudo add-apt-repository ppa:avsm/ppa -y
-sudo apt update -y
-sudo apt install opam
-git clone https://github.com/static-analysis-engineering/codehawk.git
-opam init --bare --no-setup --disable-sandboxing
-opam switch create codehawk-4.12.1 4.12.1 --no-switch
-eval $(opam env --switch=codehawk-4.12.1 --set-switch)
-opam install ocamlfind zarith camlzip extlib goblint-cil
-cd codehawk/CodeHawk
+sudo apt install --no-install-recommends \
+                     git ca-certificates \
+                     build-essential opam unzip default-jdk \
+                     pkg-config m4 zlib1g-dev libgmp-dev bubblewrap -y
 ```
+</details>
 
-Depending on which analyzer you want to build:
-- **Binary:** `./make_binary_analyzer.sh`
-  - analyzer binary: CHB/bchcmdline/chx86_analyze
-- **C:** `./make_c_analyzer.sh`
-  - parser binary: CHC/cchcil/parseFile
-  - analyzer binary: CHC/cchcmdline/canalyzer
-- **Java:** `./make_java_analyzer.sh`
-  - analyzer binary: CHJ/jchstac/chj_initialize
-- **all:** `./full_make_no_gui.sh`
-  - analyzer/parser binaries: all of the above
-
-
-### Install dependencies and build: Ubuntu 16.04 or later (including gui)
+<details>
+<summary>Fedora</summary>
 
 ```
-sudo apt update -y
-sudo apt install software-properties-common pkg-config m4 zlib1g-dev libgmp-dev liblablgtk2-ocaml-dev liblablgtksourceview2-ocaml-dev -y
-sudo add-apt-repository ppa:avsm/ppa -y
-sudo apt update -y
-sudo apt install opam
-git clone https://github.com/static-analysis-engineering/codehawk.git
-opam init --bare --no-setup --disable-sandboxing
-opam switch create codehawk-4.12.1 4.12.1 --no-switch
-eval $(opam env --switch=codehawk-4.12.1 --set-switch)
-opam install ocamlfind zarith camlzip extlib lablgtk lablgtk-extras goblint-cil
-cd codehawk/CodeHawk
-./full_make.sh
+sudo yum install awk diffutils git gmp-devel opam \
+    perl-ExtUtils-MakeMaker perl-FindBin perl-Pod-Html zlib-devel -y
 ```
+</details>
 
-# Building with shake
 
-### High-level process:
-
-1. Install dependencies
-2. Install the shake build system
-3. Install ocaml
-4. Build CodeHawk
-
-The top-level dependencies needed to build CodeHawk are zlib for compression, the shake build
-system, and the ocaml package manager (opam). In addition to the commands below, use the `opam`
-setup above to get the dependencies.
-
-### Generic Unix
-
-Other dependencies: `pkg-config`, `m4`
+<details>
+<summary>Arch Linux</summary>
 
 ```
-sudo apt update -y
-sudo apt install curl -y
-curl -sSL https://get.haskellstack.org/ | sh
-sh <(curl -sL https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh)
-stack install shake
-git clone https://github.com/static-analysis-engineering/codehawk.git
-cd codehawk/CodeHawk
-stack runghc Shakefile.hs
+sudo pacman -Syu base-devel git opam
 ```
+</details>
 
-### Arch Linux
-
-```
-sudo pacman -Syu opam haskell-shake lablgtk2
-git clone https://github.com/static-analysis-engineering/codehawk.git
-cd codehawk/CodeHawk
-shake
-```
-
-### Fedora
-
-```
-sudo yum install opam shake ghc-compiler ghc-shake-devel diffutils zlib-devel ocaml-lablgtk-devel -y
-git clone https://github.com/static-analysis-engineering/codehawk.git
-cd codehawk/CodeHawk
-shake
-```
-
-### Homebrew
+<details>
+<summary>macOS</summary>
 
 ```
 brew install opam
-brew install cabal-install
-brew install lablgtk
-cabal update
-cabal install --lib shake
-cabal install --lib unordered-containers
+```
+</details>
+
+# Build CodeHawk
+
+Note that on Ubuntu 24.04 you must also pass `--disable-sandboxing` to `opam init`,
+or create an AppArmor profile with `userns` permissions. This is also required
+if you are running in `docker` without `--privileged`.
+[Yes, this is a mess!](https://github.com/containers/bubblewrap/issues/505#issuecomment-2093203129)
+
+```
+opam init --bare
+
 git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
-~/.cabal/bin/shake
+opam switch create . 5.2.0
+eval $(opam env)
+opam install dune ocamlfind zarith camlzip extlib goblint-cil.2.0.6
+
+dune build @install
 ```
 
-### MacPorts
+The Makefiles in the repository are to help CodeHawk's developers
+debug circular module dependencies, they are not intended for users.
 
-```
-sudo port install opam
-sudo port install hs-cabal-install
-sudo port install lablgtk2
-cabal update
-cabal install --lib shake
-cabal install --lib unordered-containers
-git clone https://github.com/static-analysis-engineering/codehawk.git
-cd codehawk/CodeHawk
-~/.cabal/bin/shake
-```
-
-### Ubuntu 19.04 or later, Debian Buster or later
-
-```
-sudo apt update -y
-sudo apt install cabal-install pkg-config m4 zlib1g-dev opam liblablgtk2-ocaml-dev liblablgtksourceview2-ocaml-dev -y
-cabal update
-cabal install shake
-git clone https://github.com/static-analysis-engineering/codehawk.git
-cd codehawk/CodeHawk
-~/.cabal/bin/shake
-```
-
-### Ubuntu 16.04 or later
-
-```
-sudo apt update -y
-sudo apt install software-properties-common cabal-install pkg-config m4 zlib1g-dev liblablgtk2-ocaml-dev liblablgtksourceview2-ocaml-dev -y
-sudo add-apt-repository ppa:avsm/ppa -y
-sudo apt update -y
-sudo apt install opam
-cabal update
-cabal install shake
-git clone https://github.com/static-analysis-engineering/codehawk.git
-cd codehawk/CodeHawk
-~/.cabal/bin/shake
-```
-
-### Manually configured opam
-
-Before the final "shake" command in one of the above instructions:
-
-```
-opam init --bare --no-setup --disable-sandboxing
-opam switch create codehawk-4.12.1 4.09.0 --no-switch
-eval $(opam env --switch=codehawk-4.12.1 --set-switch)
-opam install ocamlfind zarith camlzip extlib lablgtk lablgtk-extras
-/path/to/shake
-```
