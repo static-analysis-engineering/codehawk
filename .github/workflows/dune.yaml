@@ -21,7 +21,7 @@ jobs:
         ocaml-compiler: ${{ matrix.ocaml-compiler }}
     - name: Install dependencies
       run: |
-        opam install extlib camlzip zarith ocamlbuild odoc goblint-cil
+        opam install extlib camlzip zarith ocamlbuild odoc goblint-cil.2.0.6
     - name: Build executables
       run: eval $(opam env) && cd CodeHawk && dune build @install
     - name: Build documentation
