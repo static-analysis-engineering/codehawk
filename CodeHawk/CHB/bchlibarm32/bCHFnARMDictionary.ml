@@ -2377,16 +2377,16 @@ object (self)
          (tags, args)
 
       | SignedBitFieldExtract (c, rd, rn) ->
-         let lhs_r = rd#to_variable floc in
-         let rhs_r = rn#to_expr floc in
-         let rrhs_r = TR.tmap rewrite_expr rhs_r in
-         let rdefs = [get_rdef_r rhs_r] in
-         let uses = [get_def_use_r lhs_r] in
-         let useshigh = [get_def_use_high_r lhs_r] in
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xxrn_r = TR.tmap rewrite_expr xrn_r in
+         let rdefs = [get_rdef_r xrn_r] in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[lhs_r]
-             ~xprs_r:[rhs_r; rrhs_r]
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xxrn_r]
              ~rdefs
              ~uses
              ~useshigh
