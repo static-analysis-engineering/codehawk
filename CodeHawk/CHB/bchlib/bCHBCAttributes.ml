@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,40 @@ let gcc_attributes_to_precondition_attributes
       | _ -> acc) [] attrs
 
 
+let gcc_attributes_to_srcmapinfo
+      (attrs: b_attributes_t): srcmapinfo_t option =
+  let optsrcloc =
+    List.fold_left (fun acc a ->
+        match acc with
+        | Some _ -> acc
+        | _ ->
+           match a with
+           | Attr ("chkc_srcloc", params) ->
+              (match params with
+               | [AStr filename; AInt linenumber] ->
+                  Some {srcloc_filename=filename;
+                        srcloc_linenumber=linenumber;
+                        srcloc_notes=[]}
+               | _ -> None)
+           | _ -> None) None attrs in
+  match optsrcloc with
+  | Some srcloc ->
+     let binloc =
+       List.fold_left (fun acc a ->
+           match acc with
+           | Some _ -> acc
+           | _ ->
+              match a with
+              | Attr ("chkx_binloc", params) ->
+                 (match params with
+                  | [AStr address] -> Some address
+                  | _ -> None)
+              | _ -> None) None attrs in
+     Some {srcmap_srcloc = srcloc; srcmap_binloc = binloc}
+  | _ -> None
+
+
+
 let precondition_attributes_t_to_gcc_attributes
       (preattrs: precondition_attribute_t list): b_attributes_t =
   let get_params (refindex: int) (optsizeindex: int option) =
@@ -67,8 +101,3 @@ let precondition_attributes_t_to_gcc_attributes
       | APCReadWrite (refindex, optsizeindex) ->
          (get_access "read_write" (get_params refindex optsizeindex)) :: acc
       | _ -> acc) [] preattrs
-
-                                                                           
-
-
-                                     

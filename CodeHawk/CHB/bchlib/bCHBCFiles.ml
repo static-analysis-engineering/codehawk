@@ -3,7 +3,7 @@
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2021-2024  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,10 +12,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -60,6 +60,9 @@ object (self)
   val gvardecls = H.create 3   (* bvname -> (varinfo.ix, loc.ix) *)
   val gvars = H.create 3   (* idem *)
   val gfuns = H.create 3   (* bsvar.bvname -> (fundec, loc.ix) *)
+  val vinfo_srcmap = H.create 3
+  (* varinfo.ix -> (ix(filename), linenr, binloc, [ix(notes)]) *)
+
   val mutable varinfo_vid_counter = 10000
 
   method private get_varinfo_id =
@@ -70,6 +73,24 @@ object (self)
 
   method add_bcfile (f: bcfile_t) =
     let i = bcd#index_location in
+
+    let add_srcmapinfo (vinfo: bvarinfo_t) =
+      match BCHBCAttributes.gcc_attributes_to_srcmapinfo vinfo.bvattr with
+      | Some srcmap ->
+         let vix = bcd#index_varinfo vinfo in
+         if H.mem vinfo_srcmap vix then
+           ()
+         else
+           let srcloc = srcmap.srcmap_srcloc in
+           let ixfilename = bcd#index_string srcloc.srcloc_filename in
+           let linenumber = srcloc.srcloc_linenumber in
+           let ixnotes = List.map bcd#index_string srcloc.srcloc_notes in
+           let binloc =
+             match srcmap.srcmap_binloc with
+             | Some s -> s
+             | _ -> "none" in
+           H.add vinfo_srcmap vix (ixfilename, linenumber, binloc, ixnotes)
+      | _ -> () in
     begin
     List.iter (fun g ->
         match g with
@@ -100,8 +121,10 @@ object (self)
              ()
            else
              let _ = chlog#add "bcfiles:add gvardecl" (STR vinfo.bvname) in
+             let _ = add_srcmapinfo vinfo in
              H.replace gvardecls vinfo.bvname (bcd#index_varinfo vinfo, i loc)
         | GVar (vinfo, iinfo, loc) ->
+           let _ = add_srcmapinfo vinfo in
            let _ = chlog#add "bcfiles:add gvar" (STR vinfo.bvname) in
            H.replace gvars
              vinfo.bvname
@@ -112,7 +135,7 @@ object (self)
               i loc)
         | GFun (fundec, loc) ->
            let _ = chlog#add "bcfiles:add gfun" (STR fundec.bsvar.bvname) in
-             H.replace gfuns fundec.bsvar.bvname (fundec, bcd#index_location loc);
+           H.replace gfuns fundec.bsvar.bvname (fundec, bcd#index_location loc);
         | _ -> ()) f.bglobals;
     chlog#add
       "bcfiles:add_bcfile"
@@ -411,7 +434,7 @@ object (self)
           result := (v2s (bcd#get_varinfo ix)) :: !result) gvardecls;
       !result
     end
-    
+
   method has_gfun (name: string) = H.mem gfuns name
 
   method get_gfun (name: string) =
@@ -495,7 +518,7 @@ object (self)
         match cn#getIntListAttribute "ixs" with
         | [cix; locix] -> H.add gcomptags (name, ckey) (cix, locix)
         | _ -> ()) (getcc "cid")
-    
+
   method private write_xml_genums (node: xml_element_int) =
     let genums = H.fold (fun k v a -> (k, v)::a) genumtags [] in
     node#appendChildren
@@ -533,7 +556,7 @@ object (self)
         match en#getIntListAttribute "ixs" with
         | [eix; locix] -> H.add genumtagdecls name (eix, locix)
         | _ -> ()) (getcc "eid")
-    
+
   method private write_xml_gvars (node: xml_element_int) =
     let gvarinfos = H.fold (fun k v a -> (k, v)::a) gvars [] in
     node#appendChildren
@@ -591,7 +614,29 @@ object (self)
         let locix = gn#getIntAttribute "locix" in
         let fundec = read_xml_function_definition gn in
         H.add gfuns name (fundec, locix)) (getcc "gfun")
-    
+
+  method private write_xml_srcmap (node: xml_element_int) =
+    let srcmapentries = H.fold (fun k v a -> (k, v)::a) vinfo_srcmap [] in
+    node#appendChildren
+      (List.map (fun (vix, (ixfn, lnr, binloc, _ixnotes)) ->
+           let snode = xmlElement "srcloc" in
+           begin
+             snode#setIntAttribute "vix" vix;
+             snode#setIntAttribute "ixfn" ixfn;
+             snode#setIntAttribute "lnr" lnr;
+             snode#setAttribute "binloc" binloc;
+             snode
+           end) srcmapentries)
+
+  method private read_xml_srcmap (node: xml_element_int) =
+    let getcc = node#getTaggedChildren in
+    List.iter (fun gs ->
+        let vix = gs#getIntAttribute "vix" in
+        let ixfn = gs#getIntAttribute "ixfn" in
+        let lnr = gs#getIntAttribute "lnr" in
+        let binloc = gs#getAttribute "binloc" in
+        H.add vinfo_srcmap vix (ixfn, lnr, binloc, [])) (getcc "srcloc")
+
   method write_xml (node: xml_element_int) =
     let tnode = xmlElement "typeinfos" in
     let cnode = xmlElement "compinfos" in
@@ -601,6 +646,7 @@ object (self)
     let vnode = xmlElement "varinfos" in
     let vdnode = xmlElement "varinfodecls" in
     let gfunnode = xmlElement "gfuns" in
+    let srcmapnode = xmlElement "srcmap" in
     begin
       self#write_xml_gtypes tnode;
       self#write_xml_gcomps cnode;
@@ -610,8 +656,9 @@ object (self)
       self#write_xml_gvars vnode;
       self#write_xml_gvardecls vdnode;
       self#write_xml_gfuns gfunnode;
+      self#write_xml_srcmap srcmapnode;
       node#appendChildren[
-          tnode; cnode; cdnode; enode; ednode; vnode; vdnode; gfunnode]
+          tnode; cnode; cdnode; enode; ednode; vnode; vdnode; gfunnode; srcmapnode]
     end
 
   method read_xml (node: xml_element_int) =
@@ -624,9 +671,10 @@ object (self)
       self#read_xml_genumdecls (getc "enuminfodecls");
       self#read_xml_gvars (getc "varinfos");
       self#read_xml_gvardecls (getc "varinfodecls");
-      self#read_xml_gfuns (getc "gfuns")
+      self#read_xml_gfuns (getc "gfuns");
+      self#read_xml_srcmap (getc "srcmap")
     end
- 
+
 end
 
 

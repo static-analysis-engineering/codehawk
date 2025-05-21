@@ -31,6 +31,9 @@ open BCHBCTypes
 val gcc_attributes_to_precondition_attributes:
   b_attributes_t -> precondition_attribute_t list
 
+val gcc_attributes_to_srcmapinfo:
+  b_attributes_t -> srcmapinfo_t option
+
 
 val precondition_attributes_t_to_gcc_attributes:
   precondition_attribute_t list -> b_attributes_t
