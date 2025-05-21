@@ -558,6 +558,7 @@ let main () =
       let _ = disassembly_summary#set_disassembly_metrics
                 (get_arm_disassembly_metrics ()) in
       let _ = pr_debug [NL; NL; disassembly_summary#toPretty; NL] in
+      let _ = save_bc_files () in
       (*
       let _ =
         pr_debug [

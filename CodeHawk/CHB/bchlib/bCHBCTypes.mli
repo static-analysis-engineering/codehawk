@@ -419,6 +419,19 @@ type bcfile_t = {
   }
 
 
+type srclocinfo_t = {
+    srcloc_filename: string;
+    srcloc_linenumber: int;
+    srcloc_notes: string list
+  }
+
+
+type srcmapinfo_t = {
+    srcmap_srcloc: srclocinfo_t;
+    srcmap_binloc: string option
+  }
+
+
 class type bcdictionary_int =
   object
 
