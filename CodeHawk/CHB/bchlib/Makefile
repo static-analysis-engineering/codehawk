@@ -23,6 +23,7 @@ OCAMLDEP := ocamldep
 
 MLIS := \
 	bCHBCTypes \
+	bCHBCAttributes \
 	bCHBCSumTypeSerializer \
 	bCHBCTypeTransformer \
 	bCHLibTypes \
@@ -41,7 +42,6 @@ MLIS := \
 	bCHBCFunDeclarations \
 	bCHBCWriteXml \
 	bCHBCFiles \
-	bCHBCAttributes \
 	bCHInterfaceDictionary \
 	bCHVarDictionary \
 	bCHInvDictionary \
@@ -131,10 +131,10 @@ SOURCES := \
 	bCHBCDictionary \
 	bCHBCFunDeclarations \
 	bCHBCWriteXml \
+	bCHBCAttributes \
 	bCHBCFiles \
 	bCHBCTypeUtil \
 	bCHBCTypeXml \
-	bCHBCAttributes \
 	bCHSumTypeSerializer \
 	bCHDictionary \
 	bCHInterfaceDictionary \
