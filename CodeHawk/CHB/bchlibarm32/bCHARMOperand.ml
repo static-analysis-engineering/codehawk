@@ -357,8 +357,20 @@ object (self:'a)
               let xoffset = int_constant_expr indexoffset in
               (match srt with
                | ARMImmSRT (_, 0)-> Ok (XOp (XPlus, [XVar indexvar; xoffset]))
+               | ARMImmSRT (SRType_LSL, 1) ->
+                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 2]) in
+                  Ok (XOp (XPlus, [shifted; xoffset]))
                | ARMImmSRT (SRType_LSL, 2) ->
                   let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 4]) in
+                  Ok (XOp (XPlus, [shifted; xoffset]))
+               | ARMImmSRT (SRType_LSL, 3) ->
+                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 8]) in
+                  Ok (XOp (XPlus, [shifted; xoffset]))
+               | ARMImmSRT (SRType_LSL, 4) ->
+                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 16]) in
+                  Ok (XOp (XPlus, [shifted; xoffset]))
+               | ARMImmSRT (SRType_LSL, 5) ->
+                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 32]) in
                   Ok (XOp (XPlus, [shifted; xoffset]))
                | ARMImmSRT (SRType_ASR, 1) ->
                   let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 2]) in
@@ -368,6 +380,9 @@ object (self:'a)
                   Ok (XOp (XPlus, [shifted; xoffset]))
                | ARMImmSRT (SRType_ASR, 3) ->
                   let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 8]) in
+                  Ok (XOp (XPlus, [shifted; xoffset]))
+               | ARMImmSRT (SRType_ASR, 4) ->
+                  let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 16]) in
                   Ok (XOp (XPlus, [shifted; xoffset]))
                | ARMRegSRT (SRType_LSL, srtreg) ->
                   let shiftvar = env#mk_arm_register_variable srtreg in
