@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ open CCHLibTypes
     option is for the user to construct these summaries in xml and supply them
     to the analyzer as an additional set of summaries. While this may be the
     preferred option if the library in question is a frequently used one (e.g.,
-    opensll), but in most cases, writing function summaries in xml is not
+    openssl), but in most cases, writing function summaries in xml is not
     attractive.
 
     Another, more convenient, option is to annotate the function signatures
@@ -189,7 +189,7 @@ open CCHLibTypes
 
 (** {3 nonnull}
 
-    The [nonnull] attribute can be used to a function to indicate that one or
+    The [nonnull] attribute can be used for a function to indicate that one or
     more pointer arguments to the function must not be null.
 
     Example:
@@ -214,7 +214,7 @@ open CCHLibTypes
 (** {3 null_terminated_string_arg}
 
     The [null_terminated_string_arg] can be used to indicate that one or more
-    pointer arguments must, if not null, point to null-terminated string.
+    pointer arguments must, if not null, point to a null-terminated string.
 
     Example:
 
@@ -223,7 +223,7 @@ open CCHLibTypes
         __attribute__((__null_terminated_string_arg (2)));
     ]}
 
-    This attribute will generate [XNullTerminated] preconditions on the funtion
+    This attribute will generate [XNullTerminated] preconditions on the function
     for all arguments included.
  *)
 
@@ -233,7 +233,7 @@ open CCHLibTypes
     on the program state except for the value they return. It differs from
     the [const] attribute in that it may read values from the program state
     and so successive calls to the function with the same argument may,
-    unlike to functions with the [const] attribute, have different return
+    unlike functions with the [const] attribute, have different return
     values.
 
     This attribute will generate the [XPreservesAllMemory] and
