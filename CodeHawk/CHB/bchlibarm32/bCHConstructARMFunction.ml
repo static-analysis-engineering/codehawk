@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -125,6 +125,20 @@ let get_successors
         (* conditional return instruction *)
         | Pop (_, _, rl, _) when rl#includes_pc ->
            (next ()) @ [wordmax]
+
+        | Adr (ACCAlways, dst, src)
+             when dst#is_pc_register && dst#is_absolute_address ->
+           if src#get_absolute_address#equal iaddr then
+             []
+           else
+             [src#get_absolute_address]
+
+        | Adr (_, dst, src)
+             when dst#is_pc_register && dst#is_absolute_address ->
+           if src#get_absolute_address#equal iaddr then
+             (next ())
+           else
+             (next ()) @ [src#get_absolute_address]
 
         (* return via LDM/LDMDB/LDMDA/LDMIB *)
         | LoadMultipleDecrementBefore (_, ACCAlways, _, rl, _)
