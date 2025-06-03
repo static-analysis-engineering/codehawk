@@ -696,6 +696,13 @@ let set_block_boundaries () =
                 when is_nr_call_instruction instr ->
               set_block_entry (va#add_int 4)
 
+           | Adr (_, dst, src) when dst#is_pc_register ->
+              begin
+                set_block_entry (va#add_int 4);
+                if src#is_absolute_address then
+                  set_block_entry src#get_absolute_address
+              end
+
            | _ -> ())
         with
         | BCH_failure p ->
