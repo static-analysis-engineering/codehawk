@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024  Aarno Labs, LLC
+   Copyright (c) 2021-2025  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1667,11 +1667,14 @@ let arm_opcode_to_string ?(width=12) (opc:arm_opcode_t) =
   let default () = (get_record opc).ida_asm formatter in
   let fnsdata = BCHFunctionData.functions_data in
   match opc with
-  | BranchLink (ACCAlways, tgt) when tgt#is_absolute_address ->
+  | BranchLink (ACCAlways, tgt)
+    | BranchLinkExchange (ACCAlways, tgt)
+    | BranchLinkExchange (ACCUnconditional, tgt) when tgt#is_absolute_address ->
      let tgtaddr = tgt#get_absolute_address in
      if fnsdata#has_function_name tgtaddr then
        let name = (fnsdata#get_function tgtaddr)#get_function_name in
-       (fixed_length_string "BL" width)
+       let popc = match opc with BranchLink _ -> "BL" | _ -> "BLX" in
+       (fixed_length_string popc width)
        ^ " <"
        ^ tgtaddr#to_hex_string
        ^ ":"
