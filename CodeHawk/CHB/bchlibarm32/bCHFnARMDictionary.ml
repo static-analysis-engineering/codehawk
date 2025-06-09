@@ -144,6 +144,14 @@ object (self)
       else
         None in
 
+    let is_tail_call (): bool =
+      match instr#get_opcode with
+      | Branch (ACCAlways, tgt, _)
+        | BranchExchange (ACCAlways, tgt) when tgt#is_absolute_address ->
+         let tgtaddr = tgt#get_absolute_address in
+         functions_data#is_function_entry_point tgtaddr
+      | _ -> false in
+
     let log_dc_error_result (file: string) (line: int) (e: string list) =
       if BCHSystemSettings.system_settings#collect_data then
         log_error_result ~msg:(p2s floc#l#toPretty) file line e
@@ -397,7 +405,11 @@ object (self)
                (LBLOCK [
                     STR __FILE__; STR ":"; INT __LINE__; STR ": ";
                     STR "Empty tag list"])) in
-      let rdefs = [get_rdef_r rv] @ (get_all_rdefs_r rrv) in
+      let rdefs =
+        if is_tail_call () then
+          []
+        else
+          [get_rdef_r rv] @ (get_all_rdefs_r rrv) in
       let xtag = (List.hd tags) ^ "xxc" ^ (string_repeat "r" (List.length rdefs)) in
       let argslen = List.length args in
       let returntag = "return:" ^ (string_of_int argslen) in
@@ -704,7 +716,18 @@ object (self)
         else
           tagstring
           :: ["call"; "argcount:" ^ (string_of_int (List.length callargs))] in
+      let (tags, args) =
+        if is_tail_call () then
+          (* we cannot use R0 here, because its invariant value at this point
+             will be the value at the start of the instruction, which is the
+             value of the first argument *)
+          let rvar = floc#env#mk_return_value floc#cia in
+          let xr0_r = Ok (XVar rvar) in
+          add_return_value tags args xr0_r xr0_r xr0_r
+        else
+          (tags, args) in
       let args =
+        (* the call-target should always stay in last position *)
         args @ [ixd#index_call_target floc#get_call_target#get_target] in
       (tags, args) in
 
