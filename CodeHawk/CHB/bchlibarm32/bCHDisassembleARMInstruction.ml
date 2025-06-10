@@ -1703,6 +1703,18 @@ let parse_misc_6_type (instr: doubleword_int) (cond: int) =
      (* VMOV<c> <Dm>, <Rt>, <Rt2> *)
      VectorMoveDDS (c, VfpNone, rt WR, rt2 WR, rtd WR, dm RD)
 
+  (* FLDMIAX{<c>}{<q>}>Rn>{!},<dreglist> *)
+  (* <cc><6>01001DW1<rn><vd>1011<-imm7>1 *)
+  | (1, 1, 11) when (bv 22) = 0 && (bv 0) = 1 ->
+     let d = prefix_bit (bv 22) (b 15 12) in
+     let rnreg = get_arm_reg (b 19 16) in
+     let rn = arm_register_op rnreg in
+     let regs = (b 7 1) in
+     let rl = arm_extension_register_list_op XDouble d regs in
+     let mem = mk_arm_mem_multiple_op ~size:8 rnreg regs in
+     (* FLXMIAX<c>, <list> *)
+     FLoadMultipleIncrementAfter (false, c, rn RD, rl WR, mem RD)
+
   (* <cc><6>01D11<13><vd><10><-imm8-> *)   (* VPOP - A2 *)
   | (1, 3, 10) when (b 19 16) = 13 ->
      let d = postfix_bit (bv 22) (b 15 12) in
