@@ -197,6 +197,10 @@ let arm_pc_relative () =
 
 let arm_vector () =
   let tests = [
+      ("FLDMIAX",                     "210b90ec",
+       "FLDMIAX        R0, {D0,D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15}");
+      ("FSTMIAX",                     "210b80ec",
+       "FSTMIAX        R0, {D0,D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15}");
       ("VDUP.32",                     "474cfcf3", "VDUP.32        Q10, D7[1]");
       ("VDUP.32-scalar",              "622cfcf3", "VDUP.32        Q9, D18[1]");
       ("VEOR-Q",                      "746106f3", "VEOR           Q3, Q3, Q10");
