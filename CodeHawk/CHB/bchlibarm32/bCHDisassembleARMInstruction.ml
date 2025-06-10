@@ -1836,6 +1836,23 @@ let parse_misc_6_type (instr: doubleword_int) (cond: int) =
      (* FSTMIAX<c> <Rn>, <list> *)
      FStoreMultipleIncrementAfter (false, c, rn RD, rl RD, mem WR)
 
+  (* <cc><6>01D10<rn><cd><cp><-imm8-> *)   (* STCL - A1 *)
+  | (1, 2, 1) ->
+      let isindex = (bv 24) = 1 in
+      let isadd = (bv 23) = 1 in
+      let iswback = (bv 21) = 1 in
+      let islong = (bv 22) = 1 in
+      let crd = b 15 12 in
+      let coproc = b 11 8 in
+      let imm32 = 4 * (b 7 0) in
+      let offset = ARMImmOffset imm32 in
+      let rnreg = get_arm_reg (b 19 16) in
+      let mem =
+        mk_arm_offset_address_op
+          ~align:4 rnreg offset ~isadd ~isindex ~iswback in
+      (* STC{L}<c> <coproc>, <CRd>, [<Rn>, #+/-<imm>]{!} *)
+      StoreCoprocessor (islong, false, c, coproc, crd, mem WR, None)
+
   (* <cc><6>01D00<rn><vd><11><-imm8-> *)   (* VSTM - A1-wb *)
   | (1, 2, 11) when (bv 0) = 0 ->
      let d = prefix_bit (bv 22) (b 15 12) in
@@ -4749,6 +4766,27 @@ let parse_cond15 (instr: doubleword_int) (iaddr: doubleword_int) =
      let tgtop = arm_absolute_op tgt RD in
      (* BLX <label> *)
      BranchLinkExchange(cc, tgtop)
+
+  (* <15>110PUDW0<rn><cd><cp><-imm8-> *)(* STC2{L}<c> <coproc>,<CRd>,[<Rn>, #+/-imm] *)
+  | (25, (2 | 3), 1, 0, 0) ->
+      let isindex = (bv 24) = 1 in
+      let isadd = (bv 23) = 1 in
+      let iswback = (bv 21) = 1 in
+      let islong = (bv 22) = 1 in
+      let crd = b 15 12 in
+      let coproc = b 11 8 in
+      let imm32 = 4 * (b 7 0) in
+      let offset = ARMImmOffset imm32 in
+      let rnreg = get_arm_reg (b 19 16) in
+      let mem =
+        mk_arm_offset_address_op
+          ~align:4 rnreg offset ~isadd ~isindex ~iswback in
+      if (bv 20) = 0 then
+        (* STC{L}<c> <coproc>, <CRd>, [<Rn>, #+/-<imm>]{!} *)
+        StoreCoprocessor (islong, true, cc, coproc, crd, mem WR, None)
+      else
+        (* LDC{L}<c> <coproc>, <CRd>, [<Rn>, #+-<imm>}{!} *)
+        LoadCoprocessor (islong, true, cc, coproc, crd, mem RD, None)
 
   | (x, y, z, q, v) ->
      NotRecognized (

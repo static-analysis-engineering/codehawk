@@ -828,10 +828,10 @@ let parse_thumb32_29_2
           ~align:4 rnreg offset ~isadd ~isindex ~iswback in
       if (bv 20) = 0 then
         (* STC{L}<c> <coproc>, <CRd>, [<Rn>, #+/-<imm>]{!} *)
-        StoreCoprocessor (islong, false, cc, coproc, crd, mem WR, None)
+        StoreCoprocessor (islong, true, cc, coproc, crd, mem WR, None)
       else
         (* LDC{L}<c> <coproc>, <CRd>, [<Rn>, #+-<imm>}{!} *)
-        LoadCoprocessor (islong, false, cc, coproc, crd, mem RD, None)
+        LoadCoprocessor (islong, true, cc, coproc, crd, mem RD, None)
   else
     let selector = b 24 23 in
     let isz = b 21 20 in
