@@ -1284,61 +1284,77 @@ object (self)
     else if self#env#is_memory_variable v then
       let memref_r = self#env#get_memory_reference v in
       let memoff_r = self#env#get_memvar_offset v in
-      let basevar_r =
-        TR.tbind
-          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-          (fun memref ->
-            match memref#get_base with
-            | BaseVar v -> Ok v
-            | b ->
-               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                      ^ "memory-base: " ^ (p2s (memory_base_to_pretty b))])
-          memref_r in
-      let basevar_type_r =
-        TR.tbind
-          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-          self#get_variable_type
-          basevar_r in
       TR.tbind
         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-        (fun basevartype ->
-          TR.tbind
-            (fun memoff ->
-              match memoff with
-              | NoOffset when is_pointer basevartype ->
-                 Ok (ptr_deref basevartype)
-              | ConstantOffset (n, NoOffset) when is_pointer basevartype ->
-                 let symmemoff_r =
-                   address_memory_offset
-                     (ptr_deref basevartype) (num_constant_expr n) in
+        (fun memref ->
+          match memref#get_base with
+          | BGlobal ->
+             (match memoff_r with
+              | Ok (ConstantOffset (num, NoOffset)) ->
+                 let gvaddr = numerical_mod_to_doubleword num in
+                 if memmap#has_location gvaddr then
+                   let gloc = memmap#get_location gvaddr in
+                   Ok (gloc#btype)
+                 else
+                   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                          ^ "no global location found for address "
+                          ^ gvaddr#to_hex_string]
+              | _ ->
+                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                        ^ "not a constant offset"])
+          | _ ->
+             let basevar_r =
+               match memref#get_base with
+               | BaseVar v -> Ok v
+               | b ->
+                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                         ^ "memory-base: " ^ (p2s (memory_base_to_pretty b))] in
+             let basevar_type_r =
+               TR.tbind
+                 ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                 self#get_variable_type
+                 basevar_r in
+             TR.tbind
+               ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+               (fun basevartype ->
                  TR.tbind
-                   ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                         ^ "basevar type: " ^ (btype_to_string basevartype)
-                         ^ "; offset: " ^ n#toString)
-                   (fun off ->
-                     match off with
+                   (fun memoff ->
+                     match memoff with
+                     | NoOffset when is_pointer basevartype ->
+                        Ok (ptr_deref basevartype)
+                     | ConstantOffset (n, NoOffset) when is_pointer basevartype ->
+                        let symmemoff_r =
+                          address_memory_offset
+                            (ptr_deref basevartype) (num_constant_expr n) in
+                        TR.tbind
+                          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                ^ "basevar type: " ^ (btype_to_string basevartype)
+                                ^ "; offset: " ^ n#toString)
+                          (fun off ->
+                            match off with
+                            | FieldOffset ((fname, ckey), NoOffset) ->
+                               let cinfo = get_compinfo_by_key ckey in
+                               let finfo = get_compinfo_field cinfo fname in
+                               Ok finfo.bftype
+                            | _ ->
+                               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                      ^ "symbolic offset: "
+                                      ^ (memory_offset_to_string off)
+                                      ^ " with basevar type: "
+                                      ^ (btype_to_string basevartype)
+                                      ^ " not yet handled"])
+                          symmemoff_r
                      | FieldOffset ((fname, ckey), NoOffset) ->
                         let cinfo = get_compinfo_by_key ckey in
                         let finfo = get_compinfo_field cinfo fname in
                         Ok finfo.bftype
                      | _ ->
                         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                               ^ "symbolic offset: "
-                               ^ (memory_offset_to_string off)
-                               ^ " with basevar type: "
-                               ^ (btype_to_string basevartype)
+                               ^ "memoff: " ^ (memory_offset_to_string memoff)
                                ^ " not yet handled"])
-                   symmemoff_r
-              | FieldOffset ((fname, ckey), NoOffset) ->
-                 let cinfo = get_compinfo_by_key ckey in
-                 let finfo = get_compinfo_field cinfo fname in
-                 Ok finfo.bftype
-              | _ ->
-                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                        ^ "memoff: " ^ (memory_offset_to_string memoff)
-                        ^ " not yet handled"])
-            memoff_r)
-        basevar_type_r
+                   memoff_r)
+               basevar_type_r)
+      memref_r
     else if self#f#env#is_return_value v then
       let callsite_r = self#f#env#get_call_site v in
       TR.tbind
