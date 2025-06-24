@@ -233,24 +233,6 @@ object (self)
         else
           xpr in
       simplify_xpr xpr in
-    let add_instr_condition
-          (tags: string list)
-          (args: int list)
-          (x: xpr_t): (string list) * (int list) =
-      let _ =
-        if (List.length tags) = 0 then
-          raise
-            (BCH_failure
-               (LBLOCK [STR "Empty tag list in add_instr_condition"])) in
-      let argslen = List.length args in
-      let xtag = (List.hd tags) ^ "xx" in
-      let ictag = "ic:" ^ (string_of_int argslen) in
-      let icrtag = "icr:" ^ (string_of_int (argslen + 1)) in
-      let tags = xtag :: ((List.tl tags) @ [ictag; icrtag]) in
-      let xneg = XOp (XLNot, [x]) in
-      let xneg = simplify_xpr xneg in
-      let args = args @ [xd#index_xpr x; xd#index_xpr xneg] in
-      (tags, args) in
 
     let flagrdefs: int list =
       let flags_used = get_arm_flags_used instr#get_opcode in
@@ -552,8 +534,29 @@ object (self)
       | _ when instr#is_condition_covered -> ([tagstring], args)
       | c when is_cond_conditional c && floc#has_test_expr ->
          let csetter = floc#f#get_associated_cc_setter floc#cia in
-         let tcond = rewrite_test_expr csetter floc#get_test_expr in
-         add_instr_condition [tagstring] args tcond
+         let txpr = floc#get_test_expr in
+         let fxpr = simplify_xpr (XOp (XLNot, [txpr])) in
+         let tcond = rewrite_test_expr csetter txpr in
+         let fcond = rewrite_test_expr csetter fxpr in
+         let ctcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) tcond in
+         let cfcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) fcond in
+         let rdefs = (get_all_rdefs txpr) @ (get_all_rdefs tcond) in
+         let argslen = List.length args in
+         let xtag = "xxcc" ^ (string_repeat "r" (List.length rdefs)) in
+         let xtag = tagstring ^ xtag in
+         let newargs = [
+             index_xpr (Ok tcond);
+             index_xpr (Ok fcond);
+             index_xpr ctcond_r;
+             index_xpr cfcond_r
+           ] @ rdefs in
+         let ictag = "ic:" ^ (string_of_int argslen) in
+         let icrtag = "icr:" ^ (string_of_int (argslen + 1)) in
+         let icctag = "icc:" ^ (string_of_int (argslen + 2)) in
+         let iccrtag = "iccr:" ^ (string_of_int (argslen + 3)) in
+         let tags = xtag :: [ictag; icrtag; icctag; iccrtag] in
+         let args = args @ newargs in
+         (tags, args)
       | _ -> (tagstring :: ["uc"], args) in
 
     let add_optional_subsumption (tags: string list): string list =
