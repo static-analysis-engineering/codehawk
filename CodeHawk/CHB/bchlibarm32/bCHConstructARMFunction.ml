@@ -163,7 +163,7 @@ let get_successors
         | Branch (_, op, _)
           | BranchExchange (_, op)
              when op#is_register && op#get_register = ARLR ->
-           (next ())
+           (next ()) @ [wordmax]
 
         (* return via Move *)
         | Move (_, ACCAlways, dst, src, _, _)
