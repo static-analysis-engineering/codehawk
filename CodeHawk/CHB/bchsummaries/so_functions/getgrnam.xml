@@ -21,7 +21,7 @@
         <type><ptr>char</ptr></type>
 	<pre><deref-read-nt/></pre>
       </par>
-      <returntype><ptr>group</ptr></returntype>
+      <returntype><ptr>ch_group</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>

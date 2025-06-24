@@ -18,7 +18,7 @@
       <par loc="stack" name="gid" nr="1">
         <type>gid_t</type>
       </par>
-      <returntype><ptr>group</ptr></returntype>
+      <returntype><ptr>ch_group</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>

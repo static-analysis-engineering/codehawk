@@ -19,7 +19,7 @@
         <type><ptr>char</ptr></type>
 	<pre><deref-read/></pre>
       </par>
-      <returntype><ptr>passwd</ptr></returntype>
+      <returntype><ptr>ch_passwd</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>
