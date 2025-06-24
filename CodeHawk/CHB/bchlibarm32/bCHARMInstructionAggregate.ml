@@ -149,6 +149,8 @@ object (self)
         STR "Aggregate of ";
         INT (List.length self#instrs);
         STR " with anchor ";
+        self#anchor#get_address#toPretty;
+        STR " ";
         self#anchor#toPretty;
         STR ": ";
         STR (arm_aggregate_kind_to_string self#kind)]
