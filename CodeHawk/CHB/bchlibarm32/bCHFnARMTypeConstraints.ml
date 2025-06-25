@@ -393,6 +393,23 @@ object (self)
 
        end
 
+    | BitwiseNot (_, _, rd, rm, _) ->
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
+       let rmreg = rm#to_register in
+       begin
+         List.iter (fun rmsym ->
+             let rmaddr = rmsym#getBaseName in
+             let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+             let rmtypeterm = mk_vty_term rmtypevar in
+             let lhstypeterm = mk_vty_term lhstypevar in
+             begin
+               log_subtype_constraint __LINE__ "MVN-rdef" rmtypeterm lhstypeterm;
+               store#add_subtype_constraint rmtypeterm lhstypeterm
+             end) rmdefs
+       end
+
     | BitwiseOr (_, _, rd, rn, _, _) ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in

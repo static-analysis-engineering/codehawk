@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024  Aarno Labs, LLC
+   Copyright (c) 2021-2025  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -87,8 +87,16 @@ object (self)
 
   method is_in_aggregate = in_aggregate
 
+  method has_opcode_condition =
+    BCHARMOpcodeRecords.is_opcode_conditional opcode
+
+  method get_opcode_condition =
+    BCHARMOpcodeRecords.get_arm_opcode_condition opcode
+
+  (* applies only to Thumb IT instruction *)
   method set_block_condition = blockcondition <- true
 
+  (* applies only to Thumb IT instruction *)
   method is_block_condition = blockcondition
 
   method set_condition_covered_by (iaddr: doubleword_int) =

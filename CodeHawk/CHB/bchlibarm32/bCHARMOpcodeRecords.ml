@@ -198,7 +198,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [ rd; rn; imm ];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "AND" c [rd; rn; imm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw "AND" ~writeback:s c [rd; rn; imm])
     }
   | BitwiseBitClear (s, c, rd, rn, rm, tw) -> {
       mnemonic = "BIC";
