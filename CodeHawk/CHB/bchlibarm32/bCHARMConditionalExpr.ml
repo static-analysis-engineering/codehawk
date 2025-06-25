@@ -94,6 +94,20 @@ module TR = CHTraceResult
       CMP x, 0 GE            (x >= 0 & x < e31)                (N = 0, V = 0)
 
                HI            (x > y)   (C = 1 and Z = 0)
+
+
+   CMN x, y:
+   ---------
+       (result, carry, overflow) = AddWithCarry(x, y, 0)
+       N = result<31>    signed(x + y) < 0
+       Z = result == 0   x + y = 0 , mod(x + y) = e32
+       C = carry         unsigned(x + y) >= e32
+       V = overflow      signed(x + y) >= e31 \/ signed(x + y) <= -e31
+
+    setter     condition    predicate (on unsigned)
+    CMN x, 1   LE           x < 0
+    CMN x, 1   GT           x >= 0
+
  *)
 
 let x2p = xpr_formatter#pr_expr
@@ -178,6 +192,9 @@ let cc_expr
       (testopc: arm_opcode_t)
       (cc: arm_opcode_cc_t): (bool * xpr_t option * arm_operand_int list) =
   let found = ref true in
+  let is_one (x: xpr_t) =
+    match x with
+    | XConst (IntConst n) -> n#equal CHNumerical.numerical_one | _ -> false in
   let (expr, opsused) =
     match (testopc, cc) with
 
@@ -188,6 +205,9 @@ let cc_expr
 
     | (BitwiseAnd (true, ACCAlways, _, x, y, _), ACCEqual) ->
        (XOp (XEq, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr]), [x; y])
+
+    | (BitwiseAnd (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
+       (XOp (XNe, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr]), [x; y])
 
     (* ---------------------------------------------------------- Compare --- *)
 
@@ -303,6 +323,12 @@ let cc_expr
 
     | (CompareNegative (ACCAlways, x, y), ACCUnsignedHigher) ->
        (XOp (XGt, [XOp (XPlus, [vu x; vu y]); max32_constant_expr]), [x; y])
+
+    | (CompareNegative (ACCAlways, x, y), ACCSignedGT) when (is_one (v y)) ->
+       (XOp (XGe, [v x; zero_constant_expr]), [x; y])
+
+    | (CompareNegative (ACCAlways, x, y), ACCSignedLE) when (is_one (v y)) ->
+       (XOp (XLt, [v x; zero_constant_expr]), [x; y])
 
     | (CompareNegative (ACCAlways, x, y), ACCCarryClear) ->
        (XOp (XLOr, [XOp (XLt, [XOp (XPlus, [v x; v y]); zero_constant_expr]);
