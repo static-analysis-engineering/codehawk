@@ -1423,6 +1423,7 @@ class type arm_assembly_instruction_int =
     method get_instruction_bytes: string
     method get_bytes_ashexstring: string
     method get_non_code_block: not_code_t
+    method get_opcode_condition: arm_opcode_cc_t option
     method condition_covered_by: doubleword_int
 
     (* predicates *)
@@ -1438,6 +1439,7 @@ class type arm_assembly_instruction_int =
     method is_aggregate_entry: bool
     method is_aggregate_exit: bool
     method is_aggregate_anchor: bool
+    method has_opcode_condition: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit

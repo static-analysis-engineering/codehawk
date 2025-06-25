@@ -72,12 +72,32 @@ object (self)
     let loc = ctxt_string_to_location faddr ctxtiaddr in
     let floc = get_floc loc in
     let espoffset = floc#get_stackpointer_offset "arm" in
+    let has_control_flow =
+      instr#has_opcode_condition
+      && (match instr#get_opcode with
+          | Branch _ | BranchExchange _ -> false
+          | _ -> true)
+      && (Option.is_none instr#is_in_aggregate) in
     begin
       arm_dictionary#write_xml_arm_opcode node instr#get_opcode;
       id#write_xml_instr node instr floc;
       id#write_xml_sp_offset node espoffset;
       arm_dictionary#write_xml_arm_bytestring
-        node (byte_string_to_printed_string instr#get_instruction_bytes)
+        node (byte_string_to_printed_string instr#get_instruction_bytes);
+      (if has_control_flow then
+         let optcc = instr#get_opcode_condition in
+         match optcc with
+         | Some cc ->
+            let pcc = BCHARMOpcodeRecords.get_cond_mnemonic_extension cc in
+            let _ = node#setAttribute "brcc" pcc in
+            if floc#has_test_expr then
+              let csetter = floc#f#get_associated_cc_setter floc#cia in
+              node#setAttribute "brsetter" csetter
+            else
+              ()
+         | _ -> ()
+       else
+         ())
     end
 
   method private write_xml_instructions (node:xml_element_int) =
