@@ -70,7 +70,7 @@ val fixed_length_int_string: string -> int -> string
 (** [string_suffix s n] returns the suffix of [s] that starts at the n'th
     character of [s] (zero-based).
 
-    @raise Invalid_argument if [n] is larger than the length of [s]
+    raise Invalid_argument if [n] is larger than the length of [s]
  *)
 val string_suffix: string -> int -> string
 

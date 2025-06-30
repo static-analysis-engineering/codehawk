@@ -111,7 +111,7 @@ object ('a)
       doubleword with value the nearest value less than or equal to the value of
       [dw] that is a multiple of [n], and [d] the difference [dw - dw'].
 
-      @raises Invalid_argument if [n <= 0]. *)
+      raise Invalid_argument if [n <= 0]. *)
   method to_aligned: ?up:bool -> int -> ('a * int)
 
   (* conversion *)
@@ -131,7 +131,7 @@ object ('a)
 
   (** Returns a date-time string by converting [dw#value] to a Unix.tm structure.
 
-      @raise Invalid_argument if the intermediate Unix.tm structure is invalid.*)
+      raise Invalid_argument if the intermediate Unix.tm structure is invalid.*)
   method to_time_date_string: string
 
   (** Returns a string representing a list of four characters if all four
@@ -168,7 +168,7 @@ object ('a)
   (** Returns a standard hexadecimal notation of [dw#value] (without
       leading zeroes).
 
-      Example: [dw(0)#to_hex_string] returns "0x0"; dw(255)#to_hex_string]
+      Example: [dw(0)#to_hex_string] returns "0x0"; [dw(255)#to_hex_string]
       returns "0xff".*)
   method to_hex_string: string
 
@@ -190,7 +190,7 @@ object ('a)
       returns Error.*)
   method subtract: 'a  -> 'a traceresult
 
-  (** [dw#subtract i] returns dw(dw#value - i)] if [dw#value] is greater
+  (** [dw#subtract i] returns [dw(dw#value - i)] if [dw#value] is greater
       than or equal to [i], otherwise returns Error.*)
   method subtract_int: int -> 'a traceresult
 
@@ -1205,9 +1205,9 @@ class type struct_tables_int =
 
     and associated userdata (in json):
     {[
-	"call-back-tables": {
-	   "0x4a5c30": "cgi_setobject_table"
-	}
+    "call-back-tables": {
+       "0x4a5c30": "cgi_setobject_table"
+    }
     ]}
 
     The call-back table addresses provided by the user-data are read in by
@@ -1229,12 +1229,12 @@ class type struct_tables_int =
 
     For example:
     {[
-	"call-targets": [
-	   {"ia": "0x40d5dc",
-	    "fa": "0x40d510",
-	    "tgts": [{"cba": "0x4a5c30:8"}]
-	   }
-         ]
+    "call-targets": [
+      {"ia": "0x40d5dc",
+      "fa": "0x40d510",
+      "tgts": [{"cba": "0x4a5c30:8"}]
+      }
+    ]
     ]}
     identifies the location of the indirect call instruction by its
     instruction address (ia) in function (fa), and indicates that the
@@ -1264,17 +1264,17 @@ class type call_back_table_record_int =
 
     (** [cbtr#stringvalue n] returns the string value ([CBTag]) at offset [n].
 
-    @raise BCH_failure if the field at offset [n] is not a [CBTag] value.*)
+    raise BCH_failure if the field at offset [n] is not a [CBTag] value.*)
     method stringvalue: int -> string
 
     (** [cbtr#intvalue n] returns the numerical value ([CBValue]) at offset [n].
 
-    @raise BCH_failure if the field at offset [n] is not a [CBValue] value.*)
+    raise BCH_failure if the field at offset [n] is not a [CBValue] value .*)
     method intvalue: int -> numerical_t
 
     (** [cbtr#addrvalue n] returns the address value ([CBAddress]) at offset [n].
 
-    @raise BCH_failure if the field at offset [n] is not a [CBAddress] value.*)
+    raise BCH_failure if the field at offset [n] is not a [CBAddress] value.*)
     method addrvalue: int -> string   (* address at offset *)
 
     (** [cbtr#write_xml xnode] writes the field values and offset to [xnode].*)
@@ -1308,12 +1308,12 @@ class type call_back_table_int =
 
     (** [cbt#type_at_offset n] returns the type of the field at offset [n].
 
-    @raise BCH_failure if there is no field at offset [n].*)
+    raise BCH_failure if there is no field at offset [n].*)
     method type_at_offset: int -> btype_t
 
     (** [cbt#fieldname_at_offset n] returns the name of the field at offset [n].
 
-    @raise BCH_failure if there is no field at offset [n].*)
+    raise BCH_failure if there is no field at offset [n].*)
     method fieldname_at_offset: int -> string
 
     (** Returns a list of field-offset, field-type pairs containing all fields.*)
@@ -1357,7 +1357,7 @@ class type call_back_tables_int =
     (** [cbts#get_table addr] returns the call-back table with base address
         [addr].
 
-    @raise BCH_failure if no call-back table is present at [addr].*)
+    raise BCH_failure if no call-back table is present at [addr].*)
     method get_table: string -> call_back_table_int
 
     (** [cbts#has_table addr] returns true if there is a call-back table with
@@ -2201,14 +2201,20 @@ type function_stub_t =
 
 (** Identification of a call target in a call instruction.*)
 type call_target_t =
-  | StubTarget of function_stub_t (** call to dynamically linked function
-  external to the executable *)
-  | StaticStubTarget of doubleword_int * function_stub_t (** call to a statically
-  linked library function, with its address in the executable *)
-  | AppTarget of doubleword_int (** call to application function with the given address
-  in the executable *)
-  | InlinedAppTarget of doubleword_int * string (** [InlinedAppTarget (dw, name) is
-  call to an inlined application function with address [dw] and name [name] *)
+  | StubTarget of function_stub_t
+  (** call to dynamically linked function external to the executable *)
+
+  | StaticStubTarget of doubleword_int * function_stub_t
+  (** call to a statically linked library function, with its address in
+      the executable *)
+
+  | AppTarget of doubleword_int
+  (** call to application function with the given address in the executable *)
+
+  | InlinedAppTarget of doubleword_int * string
+  (** [InlinedAppTarget (dw, name)] is
+      call to an inlined application function with address [dw] and name [name] *)
+
   | WrappedTarget of
       doubleword_int
       * function_interface_t
@@ -2218,18 +2224,22 @@ type call_target_t =
         is a thin wrapper for a call to another function with address [a] and api
         [fapi], (inner) call target [tgt], with [map] a map of the parameters of
         the inner function mapped to the values given to the outer call.*)
-  | VirtualTarget of function_interface_t (** call to a virtual function with a
-  known type signature *)
+
+  | VirtualTarget of function_interface_t
+  (** call to a virtual function with a known type signature *)
+
   | IndirectTarget of bterm_t option * call_target_t list
-  (** [IndirectTarget (t, tgts) is a call to a target expressed by
+  (** [IndirectTarget (t, tgts)] is a call to a target expressed by
       term [t] (if known, must be expressible by values
       external to the function, e.g., a global variable or
       a function argument, or a return value) and a list of
       concreate call targets.*)
+
   | CallbackTableTarget of doubleword_int * int
   (** [CallbackTableTarget (dw, index)]
       is an indirect call where the
       target is in a table of pointers *)
+
   | UnknownTarget (** indirect call to an unknown target *)
 
 
@@ -2889,26 +2899,26 @@ class type function_summary_library_int =
         summaries before they are used in analysis.*)
     method read_summary_files: unit
 
-    (** {Query and access function summaries} *)
+    (** {1 Query and access function summaries} *)
 
     (** [get_function_dll fname] returns the name of the dll that contains
         a function by this name
 
-        @raise BCH_failure if [fname] is not an imported function
+        raise BCH_failure if [fname] is not an imported function
      *)
     method get_function_dll: string -> string
 
     (** [get_dll_function dll fname] returns the function summary for the dll
         function [fname] imported from dynamically loaded library [dll]
 
-        @raise BCH_failure if no summary is available for [fname] from [dll].
+        raise BCH_failure if no summary is available for [fname] from [dll].
      *)
     method get_dll_function: string -> string -> function_summary_int
 
     (** [get_so_function fname] returns the function summary for the shared
         object function [fname].
 
-        @raise BCH_failure if no summary is available for [fname].
+        raise BCH_failure if no summary is available for [fname].
      *)
     method get_so_function: string -> function_summary_int
 
@@ -2923,7 +2933,7 @@ class type function_summary_library_int =
     (** [get_syscall_function index] returns the function summary for the
         system call with index [index].
 
-        @raise BCH_failure if no summary is available for the system call with
+        raise BCH_failure if no summary is available for the system call with
         index [index].
      *)
     method get_syscall_function: int -> function_summary_int
@@ -2931,7 +2941,7 @@ class type function_summary_library_int =
     (** [get_jni_function index] returns the function summary for the Java
         Native Method with index [index].
 
-        @raise BCH_failure if no summary is available for the JNI function with
+        raise BCH_failure if no summary is available for the JNI function with
         index [index].
      *)
     method get_jni_function: int -> function_summary_int
@@ -3524,7 +3534,7 @@ and constant_value_variable_t =
       ctxt_iaddress_t       (* callsite *)
       * string              (* argument description *)
       * bool                (* is-global address *)
-  (** [SideEffectValue (iaddr, name, is_global) represents the value
+  (** [SideEffectValue (iaddr, name, is_global)] represents the value
   assigned by the callee at call site [iaddr] to the argument with
   name [name].*)
 
@@ -3839,7 +3849,7 @@ object
   method make_initial_register_value: register_t -> int -> assembly_variable_int
 
   (** [make_initial_memory_value var] returns the variable representing the
-      initial value of memory variable [var] at function entry.]*)
+      initial value of memory variable [var] at function entry.*)
   method make_initial_memory_value  : variable_t -> assembly_variable_int
 
   (** [make_return_value addr] returns the variable representing the return
@@ -3997,7 +4007,7 @@ object
       a constant numerical value or an index offset with fixed value variables. *)
   method has_fixed_value_offset: variable_t -> bool
 
-  (** Returns [true if [var] is a memory variable and its offset is a constant
+  (** Returns [true] if [var] is a memory variable and its offset is a constant
       numerical value. *)
   method has_constant_offset: variable_t -> bool
 
@@ -4468,7 +4478,7 @@ class type global_memory_map_int =
 (* =========================================================== Function info === *)
 
 
-(** @Deprecated Currenly used only for x86 *)
+(** @deprecated Currently used only for x86 *)
 class type argument_values_int =
 object
   method add_argument_values : variable_t -> xpr_t list -> unit
@@ -4653,7 +4663,7 @@ class type function_environment_int =
     (** [mk_offset_memory_variable memref memoff] returns a memory variable
         with [memref] as basis and a generic memory offset.
 
-        @raise [BCH_failure] if [memref] is an unknown memory reference.
+        raise BCH_failure if [memref] is an unknown memory reference.
 
         Note: eventually unknown memory references should be eliminated. *)
     method mk_offset_memory_variable:
@@ -4751,7 +4761,7 @@ class type function_environment_int =
 
     (** {2 Memory offsets} *)
 
-    (** Returns [true if [var] is a memory variable and its offset is a constant
+    (** Returns [true] if [var] is a memory variable and its offset is a constant
         numerical value. *)
     method has_constant_offset: variable_t -> bool
 
@@ -4877,7 +4887,7 @@ class type function_environment_int =
 
     (** {2 Other symbolic values} *)
 
-    (** {3 Function-call related) *)
+    (** {3 Function-call related} *)
 
     (** Returns [true] if [var] is the return value of a function call. *)
     method is_return_value: variable_t -> bool
@@ -5372,7 +5382,7 @@ object
       representation of the instruction at address [iaddr] with that address.*)
   method set_instruction_bytes: ctxt_iaddress_t -> string -> unit
 
-  (** finfo#get_instruction_bytes iaddr] returns the hexadecimal
+  (** [finfo#get_instruction_bytes iaddr] returns the hexadecimal
       representation of the instruction bytes for the instruction at address
       [iaddr].*)
   method get_instruction_bytes: ctxt_iaddress_t -> string
@@ -5392,7 +5402,7 @@ object
   (** [finfo#get_constant var] returns the constant value registered
       earlier for auxiliary variable [var].
 
-      @raise [Invocation_error] if no constant is associated with [var].
+      raise !Stdlib.Invocation_error if no constant is associated with [var].
    *)
   method get_constant: variable_t -> numerical_t
 
@@ -5536,7 +5546,7 @@ object
       instruction that sets the condition code used by the instruction at
       [iaddr].
 
-      @raise [BCH_failure] if the instruction at [iaddr] does not have an
+      raise BCH_failure if the instruction at [iaddr] does not have an
       associated setter.*)
   method get_associated_cc_setter: ctxt_iaddress_t -> ctxt_iaddress_t
 
@@ -5548,7 +5558,7 @@ object
   (** [finfo#get_associated_cc_user iaddr] returns the address of the instruction
       that uses the condition set by the instruction at [iaddr].
 
-      @raise [BCH_failure] if the instruction at [iaddr] does not have an
+      raise BCH_failure if the instruction at [iaddr] does not have an
       associated user.*)
   method get_associated_cc_user: ctxt_iaddress_t -> ctxt_iaddress_t
 

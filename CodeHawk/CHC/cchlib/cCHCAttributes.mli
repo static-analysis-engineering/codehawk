@@ -367,7 +367,7 @@ val convert_attribute_to_function_conditions:
     The [chkc_static] attribute specifies that the visibility of the global
     variable is limited to the current compilation unit.
 
-    {3 chkc_not_null__]}
+    {[chkc_not_null__]}
 
     The [chkc_not_null] attribute specifies that the value of the global 
     variable is not null.

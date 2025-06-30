@@ -604,7 +604,7 @@ class type bcfiles_int =
 
     (** [get_varinfo name] returns the varinfo with name [name].
 
-        @raise BCH_failure if no varinfo exists with name [name].*)
+        raise BCH_failure if no varinfo exists with name [name].*)
     method get_varinfo: ?prefix:bool -> string -> bvarinfo_t
 
     (** Returns all global varinfos (including functions) *)
@@ -622,7 +622,7 @@ class type bcfiles_int =
     (** [get_typedef name] returns the (not necessarily fully expanded) type
         definition associated with [name].
 
-        @raise BCH_failure if no typedef exists with name [name].
+        raise BCH_failure if no typedef exists with name [name].
      *)
     method get_typedef: string -> btype_t
 
@@ -640,7 +640,7 @@ class type bcfiles_int =
     (** [get_compinfo key] returns the compinfo structure associated with
         (CIL-assigned) key [key].
 
-        @raise BCH_failure if no compinfo definition or declaration exists
+        raise BCH_failure if no compinfo definition or declaration exists
         with key [key].
      *)
     method get_compinfo: int -> bcompinfo_t
@@ -655,7 +655,7 @@ class type bcfiles_int =
 
     (** [get_enuminfo name] returns the enuminfo structure with name [name].
 
-        @raise BCH_failure if no enuminfo definition or declaration exists with
+        raise BCH_failure if no enuminfo definition or declaration exists with
         name [name]
      *)
     method get_enuminfo: string -> benuminfo_t

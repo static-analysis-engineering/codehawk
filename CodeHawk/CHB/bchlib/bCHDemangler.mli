@@ -36,7 +36,7 @@ open BCHLibTypes
 
 
 (**
-   {[
+{v
    ==============================================================================
    Grammar
    ==============================================================================
@@ -164,13 +164,13 @@ open BCHLibTypes
      U    struct
      V    class
      W    enum
-  ]}
+v}
 
   currently not supported yet:
     - fields
     - function pointers
 
- *)
+*)
 
 val demangle: string -> string
 val has_demangled_name: string -> bool

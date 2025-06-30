@@ -138,7 +138,7 @@ val mkNumericalFromInt64 : int64 -> numerical_t
 val mkNumericalFromString: string -> numerical_t
 
 
-(** [mkNumericalPowerOf2 n] returns the numerical for 2^n] *)
+(** [mkNumericalPowerOf2 n] returns the numerical for [2^n] *)
 val mkNumericalPowerOf2: int -> numerical_t
 
 

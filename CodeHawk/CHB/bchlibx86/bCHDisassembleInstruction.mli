@@ -39,7 +39,7 @@ open BCHLibx86Types
     inputstream [ch]. The [base] argument is provided to enable the compuatation
     of an absolute target address for a relative jump or call, that is,
 
-    {absolute_address = base + position}
+    [absolute_address = base + position]
 
     so [base] should be the base of the code section being disassembled, not
     necessarily the code base, if there are multiple code sections.

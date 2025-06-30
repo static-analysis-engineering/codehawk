@@ -48,7 +48,7 @@ val assembly_instructions: assembly_instructions_int ref
 
 (** Create an array of the given size to hold the assembly instructions.
 
-    @raises [BCH_failure] if not sufficient array space is available to
+    raises BCH_failure if not sufficient array space is available to
     store all instructions.*)
 val initialize_instructions: int -> unit
 

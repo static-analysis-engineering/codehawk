@@ -50,10 +50,10 @@ open BCHLibx86Types
     instruction and branch instruction, None is returned for the predicate,
     and a message is logged about the missing predicate.
 
-    If the predicate constructed simplifies to {false], None is returned
+    If the predicate constructed simplifies to [false], None is returned
     and a message is logged that the condition is ignored.
 
-    @raises [BCH_failure] if [jumpopc] is not a jump instruction (i.e.,
+    raises BCH_failure if [jumpopc] is not a jump instruction (i.e.,
     [Jexz], [DirectLoop], or [Jcc]).
  *)
 val conditional_jump_expr:
@@ -70,7 +70,7 @@ val conditional_jump_expr:
     [setopc] at location [setloc]. If no condition can be established
     [random_constant_expr] is returned.
 
-    @raises [BCH_failure] if [setopc] is not a set instruction (i.e.,
+    raises BCH_failure if [setopc] is not a set instruction (i.e.,
     [Setcc]).
  *)
 val conditional_set_expr:

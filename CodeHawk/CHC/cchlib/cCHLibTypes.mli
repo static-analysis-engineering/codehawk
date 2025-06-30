@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -867,7 +867,7 @@ class type system_settings_int =
     method is_implementation_defined: bool
     method is_value_wrap_around: bool
 
-    (** {1 Other settings*)
+    (** {1 Other settings} *)
 
     method set_verbose: bool -> unit
     method verbose: bool

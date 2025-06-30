@@ -51,8 +51,8 @@ val rawdata_to_string:
 
 
 (** [write_xml_raw_data elt s dw] writes byte string [s] to the xml element
-    [elt] in the form of sub elements with tag {aline} and attributes
-    {bytes} and {print} that contain 4 space-separated groups of 4 bytes in
+    [elt] in the form of sub elements with tag [aline] and attributes
+    [bytes] and [print] that contain 4 space-separated groups of 4 bytes in
     hexadecimal and a print represenation of those 16 bytes, respectively.
 
     This format is used in saving binary content of the sections to xml.*)

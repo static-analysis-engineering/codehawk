@@ -127,13 +127,13 @@ val full_registers: cpureg_t list
 (** [mk_arm_sp_reg i] returns an ARM single-precision floating point register
     (S<i>)
 
-    @raise BCH_failure if [i] is negative or i is greater than 31.*)
+    raise BCHBasicTypes.BCH_failure if [i] is negative or i is greater than 31.*)
 val mk_arm_sp_reg: int -> arm_extension_register_t
 
 (** [mk_arm_dp_reg i] returns an ARM double-precision floating point register
     (D<i>)
 
-    @raise BCH_failure if [i] is negative or i is greater than 15.*)
+    raise BCH_failure if [i] is negative or i is greater than 15.*)
 val mk_arm_dp_reg: int -> arm_extension_register_t
 
 

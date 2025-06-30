@@ -212,7 +212,7 @@ type pwr_instruction_type_t = | PWR | VLE16 | VLE32
 
 (** {1 Operands}
 
-defined in {! bchlib/bCHLibTypes}:
+defined in bchlib/BCHLibTypes:
 
 {[
 type pwr_special_reg_t =

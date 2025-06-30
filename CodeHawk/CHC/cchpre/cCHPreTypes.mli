@@ -424,7 +424,7 @@ object
 
   method mk_symbolic_value: xpr_t -> typ -> c_variable_int
 
-  (** mk_memory_address memindex offset] returns a memory address from memory
+  (** mk_memory_address memindex [offset] returns a memory address from memory
       reference index [memindex] and an offset*)
   method mk_memory_address: int -> offset -> c_variable_int
 
@@ -484,21 +484,21 @@ object
       the initial-value variable with index [varindex] of either a local
       variable or a memory variable with an external base variable.
 
-      @raise CCHFailure if [varindex] does not belong to such a variable.
+      raise CCHFailure if [varindex] does not belong to such a variable.
    *)
   method get_parameter_exp: int -> exp
 
   (** [get_global_exp varindex] returns the expression associated with the
       initial-value variable with index [varindex] of a global variable.
 
-      @raise CCHFailure if [varindex] does not belong to such a variable.
+      raise CCHFailure if [varindex] does not belong to such a variable.
    *)
   method get_global_exp: int -> exp
 
   (** [get_callee varindex] returns the varinfo of the function belonging
       to the return variable or side-effect variable with index [varindex].
 
-      @raise CCHFailure if [varindex] does not belong to a function-return
+      raise CCHFailure if [varindex] does not belong to a function-return
       of function-side-effect variable.
    *)
   method get_callee: int -> varinfo
@@ -514,7 +514,7 @@ object
   (** [get_tainted_value_bounds varindex] returns the optional lower and upper
       bounds of a tainted variable with index index [varindex].
 
-      @raise CCHFailure if [varindex] does not belong to a tainted variable.
+      raise CCHFailure if [varindex] does not belong to a tainted variable.
    *)
   method get_tainted_value_bounds: int -> xpr_t option * xpr_t option
 
@@ -534,7 +534,7 @@ object
   (** [get_purpose varindex] returns the purpose associated with the
       augmentation variable with index [varindex]
 
-      @raise CCHFailure if [varindex] does not belong to an augmentation
+      raise CCHFailure if [varindex] does not belong to an augmentation
       variable.
    *)
   method get_purpose: int -> string
@@ -542,7 +542,7 @@ object
   (** [get_indicator varindex] returns the indicator associated with the
       augmentation variable with index [varindex]
 
-      @raise CCHFailure if [varindex] does not belong to an augmentation
+      raise CCHFailure if [varindex] does not belong to an augmentation
       variable.
    *)
   method get_indicator: int -> int
@@ -551,7 +551,7 @@ object
       represents the same function-return value or side-effect variable as the
       variable with [varindex], but without arguments.
 
-      @raise CCHFailure if [varindex] does not belong to a function-return or
+      raise CCHFailure if [varindex] does not belong to a function-return or
       side-effect value variable.
    *)
   method get_canonical_fnvar_index: int -> int
@@ -717,7 +717,7 @@ type po_predicate_t =
       equal to zero. *)
 
   | PUpperBound of typ * exp
-  (** {Pointer expression [exp] has a value that is less than or equal to the
+  (** Pointer expression [exp] has a value that is less than or equal to the
       highest address that can be dereferenced for type [typ].*)
 
   | PIndexLowerBound of exp

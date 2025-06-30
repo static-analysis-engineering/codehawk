@@ -39,7 +39,7 @@ open BCHMIPSTypes
 (** [select_mips_reg i] returns the MIPS register with sequence number [i]
     (e.g., [$a0] for [4], [$s0] for [16], etc.)
 
-    @raise [BCH_failure] if [i] is outside the range [0 - 31]
+    raise BCH_failure if [i] is outside the range [0 - 31]
 *)
 val select_mips_reg: int -> mips_reg_t
 

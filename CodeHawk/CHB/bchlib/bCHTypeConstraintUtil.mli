@@ -85,7 +85,7 @@ val join_integer_btypes: btype_t list -> btype_t option
 val mk_function_typevar: string -> type_variable_t
 
 
-(** mk_data_address_typevar gaddr] returns a type variable for the global
+(** [mk_data_address_typevar gaddr] returns a type variable for the global
     address [gaddr] (in hex).
 
     Note that this address may be either the address of a global variable,
