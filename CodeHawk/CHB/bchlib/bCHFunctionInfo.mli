@@ -60,7 +60,7 @@ val po_anchor_to_pretty: po_anchor_t -> pretty_t
       otherwise
     - a new function-info is created
 
-    @raise [BCH_failure] if
+    raise BCH_failure if
     - an error occurs when loading a function-info from file, or
     - address [dw] is not known to be a function entry point
  *)

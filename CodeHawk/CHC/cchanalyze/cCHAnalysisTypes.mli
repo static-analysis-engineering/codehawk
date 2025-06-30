@@ -543,7 +543,7 @@ class type po_query_int =
     (** [get_command_line_argument_index exp] returns the (0-based) function
         argument index if exp is a function argument.
 
-        @raise [CCHFailure] if [exp] is not a command-line argument.*)
+        raise [CCHFailure] if [exp] is not a command-line argument.*)
     method get_command_line_argument_index: exp -> int
 
 
@@ -681,7 +681,7 @@ class type po_query_int =
         otherwise the postconditions assumptions are retrieved from the proof
         callcontext in the proof scaffolding.
 
-        @raise [CCHFailure] if [var] is not a function return value variable.*)
+        raise [CCHFailure] if [var] is not a function return value variable.*)
     method get_postconditions:
              variable_t
              -> annotated_xpredicate_t list * annotated_xpredicate_t list
@@ -699,23 +699,23 @@ class type po_query_int =
         otherwise the postassumes are retrieved from the proof callcontext in
         the proof scaffolding.
 
-        @raise [CCHFailure] if [var] is not a function return value variable.*)
+        raise [CCHFailure] if [var] is not a function return value variable.*)
     method get_sideeffects: variable_t -> annotated_xpredicate_t list
 
-    (** [same as [get_sideeffects var] with the symbol component of [var].*)
+    (** same as [get_sideeffects var] with the symbol component of [var].*)
     method get_sym_sideeffects: symbol_t -> annotated_xpredicate_t list
 
     (** [get_function_return_callee xpr] returns the varinfo representing the
         callee associated with return value variable expression [xpr].
 
-        @raise [CCHFailure] if [xpr] is not a return value variable expression.*)
+        raise [CCHFailure] if [xpr] is not a return value variable expression.*)
     method get_function_return_callee: xpr_t -> varinfo
 
     (** [get_tainted_value_origin var] returns a tuple of an explanation, the
         vinfo for the callee that conferred the taint on [var] and the
         postcondition or sideeffect through which the taint was transmitted.
 
-        @raise [CCHFailure] if [var] is not a tainted value.*)
+        raise [CCHFailure] if [var] is not a tainted value.*)
     method get_tainted_value_origin:
              variable_t -> (string * varinfo * xpredicate_t)
 
@@ -750,7 +750,7 @@ class type po_query_int =
         returned.*)
     method e2x: exp -> xpr_t
 
-    (** [get_external_value exp] attempts to convert [exp to an [xpr_t] using
+    (** [get_external_value exp] attempts to convert [exp] to an [xpr_t] using
         the [num_exp_translator] with location invariants provided to aid in the
         conversion. If [exp] cannot be converted against the invariants, a random
         constant is returned.*)
@@ -765,7 +765,7 @@ class type po_query_int =
     (** [get_api_expression xpr] returns a c expression that can represent xpr
         in an api assumption.
 
-        @raise [CCHFailure] if [xpr] cannot be thus converted.*)
+        raise [CCHFailure] if [xpr] cannot be thus converted.*)
     method get_api_expression: xpr_t -> exp
 
     (** [x2global xpr] attempts to convert expression [xpr] into a global c
@@ -777,14 +777,14 @@ class type po_query_int =
         if [xpr] is a constant value or the initial value of a global variable (or
         some combination of the two).
 
-        @raise [CCHFailure if [xpr] is not a constant value or initial value of a
+        raise [CCHFailure] if [xpr] is not a constant value or initial value of a
         global variable.*)
     method get_global_expression: xpr_t -> exp
 
     (** [remove_null_syms syms] returns the sublist of memory region symbols
         [syms] that are not NULL.
 
-        @raise [CCHFailure] if one or more of the symbols in [syms] are not memory
+        raise [CCHFailure] if one or more of the symbols in [syms] are not memory
         region symbols.*)
     method remove_null_syms: symbol_t list -> symbol_t list
 

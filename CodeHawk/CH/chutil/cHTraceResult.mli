@@ -34,12 +34,12 @@ type 'a traceresult = ('a, string list) result
 
 
 (** [tget_ok r] is [v] if [r] is [Ok v] and
-    @raise [Invalid_argument] otherwise.*)
+    raise [Invalid_argument] otherwise.*)
 val tget_ok: 'a traceresult -> 'a
 
 
 (** [tget_error r] is [e] if [r] is [Error e] and
-    @raise [Invalid_argument] otherwise.*)
+    raise [Invalid_argument] otherwise.*)
 val tget_error: 'a traceresult -> string list
 
 

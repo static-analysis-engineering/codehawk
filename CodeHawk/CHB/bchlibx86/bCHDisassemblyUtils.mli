@@ -76,7 +76,7 @@ val get_jump_operand: opcode_t -> operand_int
        | 7     | Di              | Edi             |
     }
 
-    @raises [InconsistentInstruction] if [index] is outside the range
+    raises InconsistentInstruction if [index] is outside the range
     0 - 7.
  *)
 val select_word_or_dword_reg: bool -> int -> cpureg_t

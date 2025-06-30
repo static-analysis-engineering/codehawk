@@ -85,16 +85,16 @@ val t_charptr: btype_t
 val ptr_deref: btype_t -> btype_t
 
 
-(** {2 Array types)*)
+(** {2 Array types} *)
 
 val t_array: btype_t -> int -> btype_t
 
 
-(** {2 Type definition}*)
+(** {2 Type definition} *)
 
 val t_named: string -> btype_t
 
-(** {2 Composite types}*)
+(** {2 Composite types} *)
 
 val t_comp: ?name_space:string list -> string -> btype_t
 val t_enum: ?name_space:string list -> string -> btype_t

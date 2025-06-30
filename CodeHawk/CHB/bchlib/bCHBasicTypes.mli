@@ -40,6 +40,7 @@ open BCHLibTypes
 
 
 exception BCH_failure of pretty_t
+(** basic exception in all of CHB *)
 
 (* raised in cases an internal inconsistency is encountered *)
 exception Internal_error of string

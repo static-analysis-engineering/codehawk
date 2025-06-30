@@ -44,7 +44,7 @@ val make_immediate: bool -> int -> numerical_t -> immediate_result
 
 (** [signed_immedidate_from_int size v] returns an immediate value of [size]
     bytes and value [v]. If the value [v] is outside the range that can be
-    represented by a signed integer with width [size] bytes, {Error] is
+    represented by a signed integer with width [size] bytes, [Error] is
     returned.*)
 val signed_immediate_from_int: ?size:int -> int -> immediate_result
 

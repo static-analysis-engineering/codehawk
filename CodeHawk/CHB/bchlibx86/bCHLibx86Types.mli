@@ -96,9 +96,9 @@ object ('a)
   (** Returns true if a function argument has been recorded for this operand.*)
   method is_function_argument: bool
 
-  (** [Retrieves the address and argument index (starting at 1).
+  (** Retrieves the address and argument index (starting at 1).
 
-      @raises BCH_failure if no function argument has been set.*)
+      raises BCH_failure if no function argument has been set.*)
   method get_function_argument: ctxt_iaddress_t * int
 
   (** removes the function argument, if one is set.*)
@@ -118,29 +118,29 @@ object ('a)
 
   (** Returns the register.
 
-      @raises BCH_failure if this operand is not a register operand.*)
+      raises BCH_failure if this operand is not a register operand.*)
   method get_cpureg: cpureg_t
 
   (** Returns the absolute address associated with this operand.
 
-      @raises Invocation_error if this operand is not an absolute address
+      raises Invocation_error if this operand is not an absolute address
       operand.*)
   method get_absolute_address: doubleword_int
 
   (** Returns the immediate value associated with this operand.
 
-      @raises Invocation_error if this operand is not an immediate value.*)
+      raises Invocation_error if this operand is not an immediate value.*)
   method get_immediate_value: immediate_int
 
   (** Returns the offset part of an indirect register operand.
 
-      @raises Invocation_error if this operand is not an indirect register.*)
+      raises Invocation_error if this operand is not an indirect register.*)
   method get_esp_offset: numerical_t
 
   (** Returns the register and offset that may be used as the operand in a
       jumptable (scaled index register with scale 4).
 
-      @raises Invocation_error if this operand is not a scaled indirect
+      raises Invocation_error if this operand is not a scaled indirect
       register with scale factor 4.*)
   method get_jump_table_target: (numerical_t * register_t)
 
@@ -150,17 +150,17 @@ object ('a)
 
   (** Returns the base register of an indirect register operand.
 
-      @raises BCH_failure if this operand is not an indirect register.*)
+      raises BCH_failure if this operand is not an indirect register.*)
   method get_indirect_register: cpureg_t
 
   (** Returns the offset of indirect register operand.
 
-      @raises BCH_failure if this operand is not an indirect register.*)
+      raises BCH_failure if this operand is not an indirect register.*)
   method get_indirect_register_offset: numerical_t
 
   (** Returns the segment of a segment register operand.
 
-      @raises Invocation_error if this operand is not a segment register.*)
+      raises Invocation_error if this operand is not a segment register.*)
   method get_segment_register: segment_t
 
   (** {1 Converters}
@@ -172,7 +172,7 @@ object ('a)
       or a random constant if the address cannot be determined from the
       invariants available.
 
-      @raises Invocation_error if the operand is an immediate or register,
+      raises Invocation_error if the operand is an immediate or register,
       which do not have an address.*)
   method to_address: floc_int -> xpr_t
 
@@ -186,7 +186,7 @@ object ('a)
       determine the associated memory variable, an unknown memory variable
       is returned.
 
-      @raises Invocation_error if the operand is an immediate value, which
+      raises Invocation_error if the operand is an immediate value, which
       does not have an associated storage location (variable).*)
   method to_variable: floc_int -> variable_t
 
@@ -197,7 +197,7 @@ object ('a)
   (** Returns the lhs-variable (CHIF variable) associated with this operand
       together with the CHIF commands required to create this operand.
 
-      @raises Invocation_error if the operand is an immediate value, which
+      raises Invocation_error if the operand is an immediate value, which
       cannot be converted to a lhs.*)
   method to_lhs: ?_size:int -> floc_int -> variable_t * cmd_t list
 

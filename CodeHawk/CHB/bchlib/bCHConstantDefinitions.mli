@@ -76,7 +76,7 @@ val has_symbolic_address: string -> bool
 (** [get_symbolic_address name] returns the address associated with name
     [name].
 
-    @raise BCH_failure if no address exists with name [name].
+    raise BCH_failure if no address exists with name [name].
  *)
 val get_symbolic_address: string -> doubleword_int
 
@@ -96,20 +96,20 @@ val get_untyped_symbolic_address_names: unit -> string list
 val update_symbolic_address_btype: string -> btype_t -> unit
 
 (** [has_symbolic_address_name dw] returns true if the address [dw] is
-    associated with a name.]*)
+    associated with a name.*)
 val has_symbolic_address_name: doubleword_int -> bool
 
 (** [get_symbolic_address_name dw] returns the name associated with address
     [dw].
 
-    @raise BCH_failure if no name is associated with address [dw]
+    raise BCH_failure if no name is associated with address [dw]
  *)
 val get_symbolic_address_name: doubleword_int -> string
 
 (** [get_symbolic_address_type dw] returns the btype of the symbolic address
     associated with address value [dw].
 
-    @raise BCH_failure if no symbolic address is associated with address [dw].
+    raise BCH_failure if no symbolic address is associated with address [dw].
  *)
 val get_symbolic_address_type: doubleword_int -> btype_t
 

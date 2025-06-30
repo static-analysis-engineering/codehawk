@@ -237,7 +237,7 @@ val pld_position_to_string: pld_position_t -> string
 
 (** Returns a string representation of a parameter location detail, which,
     depending on what information is available, may include:
-    - location slice: {size[<start>, <size>]}
+    - location slice: [size\[<start>, <size>\]]
     - type of the location, if known
     - position list, in case of field positions or array positions.*)
 val parameter_location_detail_to_string: parameter_location_detail_t -> string

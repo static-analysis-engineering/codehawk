@@ -50,11 +50,12 @@ makes the call to the inlined function ([ctxt_callsite]), and the address
 of the instruction where the inlined function should return to (usually
 the instruction following the call) ([ctxt_returnsite]):
 
-[type fcontext_t = {
+{[type fcontext_t = {
     ctxt_faddr: doubleword_int;
     ctxt_callsite: doubleword_int;
     ctxt_returnsite: doubleword_int
-  }]
+  }
+]}
 
 A base location can also be wrapped into a block context to facilitate
 creating a delayed join by duplicating blocks. In this case the context
@@ -67,7 +68,7 @@ holds the address of the block that is duplicated.
 A [ctxt_iaddress_t] is a string representation of an instruction address with
 context, with spec
 
-[   i  ( [], { faddr,iaddr } ) = iaddr
+{v   i  ( [], { faddr,iaddr } ) = iaddr
    i  ( [ F{ fa,cs,rs } ], { faddr,iaddr }) = iaddr
    i  ( [ B{ js } ], { faddr,iaddr }) = iaddr
 
@@ -81,7 +82,7 @@ context, with spec
    ci ( [ F{ fa1,cs1,rs1 },F{ fa2,cs2,rs2 } ], { faddr,iaddr } ) = F:cs1_F:cs2_iaddr
    ci ( [ B{ js } ], { faddr,iaddr }) = B:js_iaddr
    ci ( [ B{ js1 }, B{ js2 } ], { faddr,iaddr }) = B:js1_B:js2_iaddr
-]
+v}
 
 where [fa], [faddr] stand for function address, [cs] stands for call-site address,
 [rs] stands for return-site address, [js] stands for jump-site address (the
@@ -99,7 +100,7 @@ val mk_function_context:
   -> context_t
 
 
-(** [mk_base_location [faddr] [iaddr] creates a base_location from function
+(** [mk_base_location faddr iaddr] creates a base_location from function
     address [faddr] and instruction address [iaddr] *)
 val mk_base_location: doubleword_int -> doubleword_int -> base_location_t
 
