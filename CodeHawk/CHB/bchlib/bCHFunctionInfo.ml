@@ -2021,7 +2021,21 @@ object (self)
   method set_test_variables
            (test_iaddr: ctxt_iaddress_t)
            (vars: (variable_t * variable_t) list) =
-    H.replace test_variables test_iaddr vars
+    (* Multiple jump (or other use) sites may be using the same test, so we
+       cannot just replace the set of test_variables, when a new set comes in.
+     *)
+    let entry =
+      if H.mem test_variables test_iaddr then
+        H.find test_variables test_iaddr
+      else
+        [] in
+    let newentry =
+      List.fold_left (fun acc (v1, v2) ->
+          if (List.exists (fun (v1', v2') -> v1#equal v1' && v2#equal v2') acc) then
+            acc
+          else
+            (v1, v2) :: acc) entry vars in
+    H.replace test_variables test_iaddr newentry
 
   method get_test_variables (test_iaddr:ctxt_iaddress_t) =
     if H.mem test_variables test_iaddr then
