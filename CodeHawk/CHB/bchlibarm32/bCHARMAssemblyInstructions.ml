@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024  Aarno Labs, LLC
+   Copyright (c) 2021-2025  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1138,3 +1138,24 @@ let get_aggregate (iaddr: doubleword_int): arm_instruction_aggregate_int =
 
 let get_arm_jumptables (): (doubleword_int * arm_jumptable_int) list =
   !arm_assembly_instructions#get_jumptables
+
+
+let get_associated_test_instr
+      (finfo: function_info_int)
+      (ctxtiaddr: ctxt_iaddress_t)
+    : (location_int * arm_assembly_instruction_int) option =
+  if finfo#has_associated_cc_setter ctxtiaddr then
+    let faddr = finfo#get_address in
+    let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
+    let testloc = BCHLocation.ctxt_string_to_location faddr testiaddr in
+    let testaddr = testloc#i in
+    TR.tfold
+      ~ok:(fun testinstr -> Some (testloc, testinstr))
+      ~error:(fun e ->
+        begin
+          log_error_result __FILE__ __LINE__ e;
+          None
+        end)
+      (get_arm_assembly_instruction testaddr)
+  else
+    None

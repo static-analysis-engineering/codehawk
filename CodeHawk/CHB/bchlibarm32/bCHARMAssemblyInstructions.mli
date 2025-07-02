@@ -102,9 +102,20 @@ val has_aggregate: doubleword_int -> bool
 
 (** [get_aggregate iaddr] returns the aggregate registered at virtual address [iaddr].
 
-    @raises [BCH_failure] if no aggregate is registered at [iaddr].*)
+    raise BCH_failure if no aggregate is registered at [iaddr].*)
 val get_aggregate: doubleword_int -> arm_instruction_aggregate_int
 
 
 
 val get_arm_jumptables: unit -> (doubleword_int * arm_jumptable_int) list
+
+
+(** [get_associated_test_instr finfo iaddr] returns the location and instruction
+    that provides the test that is associated with the condition code of the
+    instruction at address [iaddr]
+
+    If no test instruction is associated with the instruction at [iaddr] [None]
+    is returned.
+ *)
+val get_associated_test_instr:
+  function_info_int -> ctxt_iaddress_t -> (location_int * arm_assembly_instruction_int) option
