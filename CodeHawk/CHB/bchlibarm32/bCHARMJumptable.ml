@@ -240,6 +240,40 @@ let ldrtest
   | _ -> false
 
 
+let ldrs2test
+      (tmpreg: arm_reg_t)
+      (basereg: arm_reg_t)
+      (indexreg: arm_reg_t)
+      (instr: arm_assembly_instruction_int) =
+  match instr#get_opcode with
+  | LoadRegister (ACCAlways, rt, rn, rm, mem, false) ->
+     let _ =
+       chlog#add "ldrs2-test"
+         (LBLOCK [instr#get_address#toPretty;
+                  STR ": ";
+                  STR (BCHARMOpcodeRecords.arm_opcode_to_string instr#get_opcode);
+                  STR " with ";
+                  STR (BCHCPURegisters.armreg_to_string tmpreg);
+                  STR ", ";
+                  STR (BCHCPURegisters.armreg_to_string basereg);
+                  STR ", ";
+                  STR (BCHCPURegisters.armreg_to_string indexreg)
+         ]) in
+     rt#is_register
+     && rt#get_register = tmpreg
+     && rn#is_register
+     && rn#get_register = basereg
+     && rm#is_register
+     && rm#get_register = indexreg
+     && (match mem#get_kind with
+         | ARMOffsetAddress (_, _, offset, _, _, _, _) ->
+            (match offset with
+             | ARMShiftedIndexOffset (_, ARMImmSRT (SRType_LSL, 2), _) -> true
+             | _ -> false)
+         | _ -> false)
+  | _ -> false
+
+
 let ldrbtest
       (basereg: arm_reg_t)
       (indexreg: arm_reg_t)
@@ -898,6 +932,140 @@ let create_arm_add_pc_jumptable
   | _ ->
      create_arm_add_pc_h_jumptable ch addpcinstr
 
+
+(* ADD-PC-LDR patterns (in ARM)
+
+   size is obtained from CMP instruction's immediate value
+   table start address is obtained from the ADR instruction
+
+   [4 bytes] CMP indexreg, maxcase
+   [4 bytes] BHI default address
+   [4 bytes] ADR basereg, start_address
+   [4 bytes] LDR scindexreg, [basereg, indexreg, LSL#2]
+   [4 bytes] ADD PC, basereg, scindexreg
+
+   Notes: These instructions always appear in the same order, but they may
+   be arbitrarily interleaved with other instructions, hence the large number
+   of offsets in finding the various instructions below.
+
+   Notes: encountered in a binary compiled with clang 18.1.3 on an arm64 host,
+   cross-compiled to arm32.
+ *)
+let is_arm_add_pc_adr_jumptable
+      (addpcinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int               (* CMP instr *)
+       * arm_assembly_instruction_int             (* BHI instr *)
+       * arm_assembly_instruction_int             (* ADR instr *)
+       * arm_assembly_instruction_int) option =   (* LDR instr *)
+  match addpcinstr#get_opcode with
+  | Add (_, ACCAlways, rd, baseregop, scindexregop, false)
+       when rd#is_pc_register
+            && baseregop#is_register
+            && scindexregop#is_register ->
+     let addr = addpcinstr#get_address in
+     let basereg = baseregop#get_register in
+     let scindexreg = scindexregop#get_register in  (* scaled index register *)
+     let cmptestf (instr: arm_assembly_instruction_int) =
+       match instr#get_opcode with
+       | Compare (_, rn, imm, _) -> rn#is_register && imm#is_immediate
+       | _ -> false in
+     let cmpinstr_o =
+       find_instr cmptestf [(-16); (-20); (-24); (-28); (-32); (-36)] addr in
+     (match cmpinstr_o with
+      | Some cmpinstr ->
+         (match cmpinstr#get_opcode with
+          | Compare (_, indexregop, _imm, _)  ->
+             let indexreg = indexregop#get_register in
+             let adrtestf = adr_reg_test basereg in
+             let ldrs2testf = ldrs2test scindexreg basereg indexreg in
+             let adrinstr_o = find_instr adrtestf [(-8); (-12)] addr in
+             let bhiinstr_o = find_instr bhi_test [(-12); (-16)] addr in
+             let ldrs2instr_o = find_instr ldrs2testf [(-4); (-8)] addr in
+             let _ =
+               if Option.is_none adrinstr_o then
+                 chlog#add "adr-jump table failure"
+                   (LBLOCK [addpcinstr#get_address#toPretty; STR ": adrinstr"]) in
+             let _ =
+               if Option.is_none bhiinstr_o then
+                 chlog#add "adr-jump table failure"
+                   (LBLOCK [addpcinstr#get_address#toPretty; STR ": bhiinstr"]) in
+             let _ =
+               if Option.is_none ldrs2instr_o then
+                 chlog#add "adr-jump table failure"
+                   (LBLOCK [addpcinstr#get_address#toPretty; STR ": ldrs2instr"]) in
+             (match (bhiinstr_o, adrinstr_o, ldrs2instr_o) with
+              | (Some bhiinstr, Some adrinstr, Some ldrs2instr) ->
+                 Some (cmpinstr, bhiinstr, adrinstr, ldrs2instr)
+              | _ -> None)
+          | _ ->
+             let _ =
+               chlog#add "arm-jumptable cmpinstr failure"
+                 (LBLOCK [addpcinstr#get_address#toPretty]) in
+             None)
+      | _ ->
+         let _ =
+           chlog#add "arm-jumptable cmpinstr failure (not found)"
+             (LBLOCK [addpcinstr#get_address#toPretty]) in
+         None)
+  | _ -> None
+
+
+let create_arm_add_pc_adr_jumptable
+      (ch: pushback_stream_int)
+      (addpcinstr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int list * arm_jumptable_int) option =
+  match is_arm_add_pc_adr_jumptable addpcinstr with
+  | None ->
+     begin
+       chlog#add "arm-jumptable: add-pc-addr (None)"
+         (LBLOCK [addpcinstr#get_address#toPretty]);
+       None
+     end
+  | Some (cmpinstr, bhiinstr, adrinstr, ldrinstr) ->
+     match (cmpinstr#get_opcode,
+            bhiinstr#get_opcode,
+            adrinstr#get_opcode,
+            ldrinstr#get_opcode) with
+     | (Compare (_, _, imm, _),
+        Branch (_, tgtop, _),
+        Adr (_, _, adrop),
+        LoadRegister (_, dstregop, _, _, _, _))
+          when tgtop#is_absolute_address && adrop#is_absolute_address ->
+        let iaddr = addpcinstr#get_address in
+        let defaulttgt = tgtop#get_absolute_address in
+        let size = imm#to_numerical#toInt in
+        let jtaddr = adrop#get_absolute_address in
+        let targets = ref [] in
+        let _ =
+          for i = 0 to size do
+            let offset = ch#read_num_signed_doubleword in
+            targets := (iaddr#add_int (4 + offset#toInt), i) :: !targets
+          done in
+        let endaddr = jtaddr#add_int (4 + (4 * size)) in
+        let jt:arm_jumptable_int =
+          make_arm_jumptable
+            ~end_address:endaddr
+            ~start_address:jtaddr
+            ~default_target:defaulttgt
+            ~targets:(List.rev !targets)
+            ~index_operand:dstregop
+            () in
+        let instrs =
+          [cmpinstr; bhiinstr; adrinstr; ldrinstr; addpcinstr] in
+        begin
+          chlog#add "arm-jumptable: add_pc_addr"
+            (LBLOCK [addpcinstr#get_address#toPretty;
+                     STR ": of size: ";
+                     INT size]);
+          Some (instrs, jt)
+        end
+     | _ ->
+        begin
+          chlog#add "arm-jumptable: add_pc_addr"
+            (LBLOCK [addpcinstr#get_address#toPretty;
+                     STR ": unsuccesful"]);
+          None
+        end
 
 (* format of BX-based jumptable (in Thumb-22):
 

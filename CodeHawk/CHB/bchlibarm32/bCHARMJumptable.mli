@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -75,6 +75,12 @@ val create_addls_pc_jumptable:
     an ADD PC, PC, _ instruction [instr] by processing  the associated list of
     (byte-sized or halfword-sized) offsets from stream [ch] (Thumb-2 pattern).*)
 val create_arm_add_pc_jumptable:
+  pushback_stream_int
+  -> arm_assembly_instruction_int
+  -> (arm_assembly_instruction_int list * arm_jumptable_int) option
+
+
+val create_arm_add_pc_adr_jumptable:
   pushback_stream_int
   -> arm_assembly_instruction_int
   -> (arm_assembly_instruction_int list * arm_jumptable_int) option
