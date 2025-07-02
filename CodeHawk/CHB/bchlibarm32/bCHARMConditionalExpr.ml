@@ -433,7 +433,11 @@ let arm_conditional_expr
        else
 	 begin
            (if collect_diagnostics () then
-              ch_diagnostics_log#add "condition" (x2p expr));
+              ch_diagnostics_log#add
+                "condition"
+                (LBLOCK [condloc#toPretty; STR ": "; (x2p expr); STR ". ";
+                         pretty_print_list frozenVars#listOfValues
+                           (fun v -> v#toPretty) "[" ", " "]" ]));
 	   condfloc#set_test_expr expr;
 	   testfloc#set_test_variables frozenVars#listOfPairs;
 	   (frozenVars#listOfValues, (Some expr), opsused)
@@ -504,7 +508,8 @@ let arm_conditional_conditional_expr
                 STR "; cond3: ";
                 x2p cond3]) in
 
-     let xpr = XOp (XLOr, [XOp (XLAnd, [XOp (XLNot, [cond1]); cond3]); cond2]) in
+     let xpr = XOp (XLOr, [XOp (XLAnd, [XOp (XLNot, [cond1]); cond3]);
+                           XOp (XLAnd, [cond1; cond2])]) in
      begin
        (if collect_diagnostics () then
           ch_diagnostics_log#add "condition" (x2p xpr));
