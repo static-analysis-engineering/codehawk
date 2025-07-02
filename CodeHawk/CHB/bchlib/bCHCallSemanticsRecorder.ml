@@ -99,6 +99,7 @@ object (self)
     | XPONotNull x ->
        (match x with
         | XConst (IntConst n) when n#gt numerical_zero ->
+           let n = n#modulo numerical_e32 in
            Discharged
              ("non-null constant address: "
               ^ TR.tget_ok (numerical_to_hex_string n))
@@ -109,7 +110,7 @@ object (self)
     | XPONullTerminated x ->
        (match x with
         | XConst (IntConst n) ->
-           let dw = TR.tget_ok (numerical_to_doubleword n) in
+           let dw = numerical_mod_to_doubleword n in
            if string_table#has_string dw then
              Discharged ("constant string: " ^ (string_table#get_string dw))
            else
@@ -119,7 +120,7 @@ object (self)
        (match (ptr, size) with
         | (XConst (IntConst n1), XOp ((Xf "ntpos"), [XConst (IntConst n2)]))
              when n1#equal n2 ->
-           let dw = TR.tget_ok (numerical_to_doubleword n1) in
+           let dw = numerical_mod_to_doubleword n1 in
            if string_table#has_string dw then
              Discharged ("constant string: " ^ (string_table#get_string dw))
            else
@@ -129,7 +130,7 @@ object (self)
        (match (ptr, size) with
         | (XConst (IntConst n1), XOp ((Xf "ntpos"), [XConst (IntConst n2)]))
              when n1#equal n2 ->
-           let dw = TR.tget_ok (numerical_to_doubleword n1) in
+           let dw = numerical_mod_to_doubleword n1 in
            if string_table#has_string dw then
              Discharged ("constant string: " ^ (string_table#get_string dw))
            else
@@ -138,7 +139,7 @@ object (self)
     | XPOOutputFormatString x ->
        (match x with
         | XConst (IntConst n) ->
-           let dw = TR.tget_ok (numerical_to_doubleword n) in
+           let dw = numerical_mod_to_doubleword n in
            if string_table#has_string dw then
              Discharged ("constant string: " ^ (string_table#get_string dw))
            else
@@ -170,7 +171,7 @@ object (self)
        let x = simplify_xpr x in
        (match self#xprxt#xpr_to_bterm t_voidptr x with
         | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = TR.tget_ok (numerical_to_doubleword n) in
+           let dw = numerical_mod_to_doubleword n in
            DelegatedGlobal (dw, XXNotNull (NumConstant n))
         | Some t -> Delegated (XXNotNull t)
         | _ -> Open)
@@ -178,14 +179,14 @@ object (self)
        let x = simplify_xpr x in
        (match self#xprxt#xpr_to_bterm t_voidptr x with
         | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = TR.tget_ok (numerical_to_doubleword n) in
+           let dw = numerical_mod_to_doubleword n in
            DelegatedGlobal (dw, XXNullTerminated (NumConstant n))
         | Some t -> Delegated (XXNullTerminated t)
         | _ -> Open)
     | XPOBlockWrite (ty, ptr, size) ->
        (match self#xprxt#xpr_to_bterm t_voidptr ptr with
         | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = TR.tget_ok (numerical_to_doubleword n) in
+           let dw = numerical_mod_to_doubleword n in
            (match self#xprxt#xpr_to_bterm t_int size with
             | Some (NumConstant ns) ->
                DelegatedGlobal
@@ -200,7 +201,7 @@ object (self)
     | XPOBuffer (ty, ptr, size) ->
        (match self#xprxt#xpr_to_bterm t_voidptr ptr with
         | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = TR.tget_ok (numerical_to_doubleword n) in
+           let dw = numerical_mod_to_doubleword n in
            (match self#xprxt#xpr_to_bterm t_int size with
             | Some (NumConstant ns) ->
                DelegatedGlobal
@@ -215,7 +216,7 @@ object (self)
     | XPOInitializedRange (ty, ptr, size) ->
        (match self#xprxt#xpr_to_bterm t_voidptr ptr with
         | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = TR.tget_ok (numerical_to_doubleword n) in
+           let dw = numerical_mod_to_doubleword n in
            (match self#xprxt#xpr_to_bterm t_int size with
             | Some (NumConstant ns) ->
                DelegatedGlobal
