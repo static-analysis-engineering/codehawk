@@ -234,6 +234,23 @@ object (self)
           xpr in
       simplify_xpr xpr in
 
+    let rewrite_in_cc_context
+          (floc: floc_int) (cc: arm_opcode_cc_t) (x: xpr_t): xpr_t =
+      let xx = rewrite_expr x in
+      match cc with
+      | ACCAlways -> xx
+      | _ when instr#is_condition_covered -> xx
+      | _ when is_cond_conditional cc && floc#has_test_expr ->
+         let txpr = floc#get_test_expr in
+         let tcond = rewrite_expr txpr in
+         (match tcond with
+          | XOp (XEq, [XVar vr; XConst (IntConst n)]) ->
+             let subst v =
+               if v#equal vr then XConst (IntConst n) else XVar vr in
+             simplify_xpr (substitute_expr subst xx)
+          | _ -> xx)
+      | _ -> xx in
+
     let flagrdefs: int list =
       let flags_used = get_arm_flags_used instr#get_opcode in
       List.concat
@@ -536,8 +553,10 @@ object (self)
          let csetter = floc#f#get_associated_cc_setter floc#cia in
          let txpr = floc#get_test_expr in
          let fxpr = simplify_xpr (XOp (XLNot, [txpr])) in
-         let tcond = rewrite_test_expr csetter txpr in
-         let fcond = rewrite_test_expr csetter fxpr in
+         (* we can rewrite with invariants at this address, since the expression
+            should have been made position independent for local variables.*)
+         let tcond = rewrite_expr txpr in
+         let fcond = rewrite_expr fxpr in
          let ctcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) tcond in
          let cfcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) fcond in
          let rdefs = (get_all_rdefs txpr) @ (get_all_rdefs tcond) in
@@ -554,7 +573,8 @@ object (self)
          let icrtag = "icr:" ^ (string_of_int (argslen + 1)) in
          let icctag = "icc:" ^ (string_of_int (argslen + 2)) in
          let iccrtag = "iccr:" ^ (string_of_int (argslen + 3)) in
-         let tags = xtag :: [ictag; icrtag; icctag; iccrtag] in
+         let icsetter = "icsetter:" ^ csetter in
+         let tags = xtag :: [ictag; icrtag; icctag; iccrtag; icsetter] in
          let args = args @ newargs in
          (tags, args)
       | _ -> (tagstring :: ["uc"], args) in
@@ -965,6 +985,14 @@ object (self)
            mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
+
+      | BitwiseNot _ when (Option.is_some instr#is_in_aggregate) ->
+         (* TODO: add output for the case where BitwiseNot is the anchor *)
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
 
       | BitwiseNot (_, c, rd, rm, _) ->
          let vrd_r = rd#to_variable floc in
@@ -2009,6 +2037,8 @@ object (self)
          let result_r =
            TR.tmap2 (fun xrn xrm -> XOp (XLsl, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
+         let cresult_r =
+           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -2017,6 +2047,7 @@ object (self)
            mk_instrx_data_r
              ~vars_r:[vrd_r]
              ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~cxprs_r:[cresult_r]
              ~rdefs
              ~uses
              ~useshigh
@@ -2032,6 +2063,8 @@ object (self)
          let result_r =
            TR.tmap2 (fun xrn xrm -> XOp (XLsr, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
+         let cresult_r =
+           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -2040,6 +2073,7 @@ object (self)
            mk_instrx_data_r
              ~vars_r:[vrd_r]
              ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~cxprs_r:[cresult_r]
              ~rdefs
              ~uses
              ~useshigh
@@ -2050,52 +2084,99 @@ object (self)
       | Move _ when instr#is_aggregate_anchor ->
          let finfo = floc#f in
          let ctxtiaddr = floc#l#ci in
-         if finfo#has_associated_cc_setter ctxtiaddr then
-           let testiaddr = finfo#get_associated_cc_setter ctxtiaddr in
-           let testloc = ctxt_string_to_location faddr testiaddr in
-           let testaddr = testloc#i in
-           let testinstr =
-             fail_tvalue
-               (trerror_record
-                  (LBLOCK [
-                       STR "FnDictionary: predicate assignment"; floc#ia#toPretty]))
-               (get_arm_assembly_instruction testaddr) in
-           let agg = get_aggregate floc#ia in
+         let agg = get_aggregate floc#ia in
+         let (tags, args) =
            (match agg#kind with
-            | ARMPredicateAssignment (inverse, dstop) ->
-               let (_, optpredicate, _) =
-                 arm_conditional_expr
-                   ~condopc:instr#get_opcode
-                   ~testopc:testinstr#get_opcode
-                   ~condloc:floc#l
-                   ~testloc:testloc in
-               let (tags, args) =
-                 (match optpredicate with
-                  | Some p ->
-                     let p = if inverse then XOp (XLNot, [p]) else p in
-                     let lhs_r = dstop#to_variable floc in
-                     let rdefs = get_all_rdefs p in
-                     let xp = rewrite_expr p in
-                     let (tagstring, args) =
-                       mk_instrx_data_r
-                         ~vars_r:[lhs_r]
-                         ~xprs_r:[Ok p; Ok xp]
-                         ~rdefs
-                         ~uses:[get_def_use_r lhs_r]
-                         ~useshigh:[get_def_use_high_r lhs_r]
-                         () in
-                     ([tagstring], args)
-                  | _ ->
-                     ([], [])) in
-               let dependents =
-                 List.map (fun d ->
-                     (make_i_location floc#l d#get_address)#ci) agg#instrs in
-               let tags = tags @ ["subsumes"] @ dependents in
-               (tags, args)
+            | ARMPredicateAssignment (_, dstop)
+              | ARMTernaryAssignment (dstop, _, _) ->
+               let lhs_r = dstop#to_variable floc in
+               let uses = [get_def_use_r lhs_r] in
+               let useshigh = [get_def_use_high_r lhs_r] in
+               (match get_associated_test_instr finfo ctxtiaddr with
+                | Some (testloc, testinstr) ->
+                   let (_, optpredicate, _) =
+                     arm_conditional_expr
+                       ~condopc:instr#get_opcode
+                       ~testopc:testinstr#get_opcode
+                       ~condloc:floc#l
+                       ~testloc in
+                   (match agg#kind with
+                    | ARMPredicateAssignment (inverse, _) ->
+                       (match optpredicate with
+                        | Some p ->
+                           let p = if inverse then XOp (XLNot, [p]) else p in
+                           let rdefs = get_all_rdefs p in
+                           let xp = rewrite_expr p in
+                           let cxp_r = floc#convert_xpr_to_c_expr ~size:(Some 4) xp in
+                           let (tagstring, args) =
+                             mk_instrx_data_r
+                               ~vars_r:[lhs_r]
+                               ~xprs_r:[Ok p; Ok xp]
+                               ~cxprs_r:[cxp_r]
+                               ~rdefs
+                               ~uses
+                               ~useshigh
+                               () in
+                           ([tagstring; "agg:predassign"], args)
+                        | _ ->
+                           let (tagstring, args) =
+                             mk_instrx_data_r ~vars_r:[lhs_r] ~uses ~useshigh () in
+                           ([tagstring; "agg:predassign:nd"], args))
+                    | ARMTernaryAssignment (_, n1, n2) ->
+                       let xp1 = num_constant_expr n1 in
+                       let xp2 = num_constant_expr n2 in
+                       (match optpredicate with
+                        | Some p ->
+                           let xp = rewrite_expr p in
+                           let cxp_r = floc#convert_xpr_to_c_expr ~size:(Some 4) xp in
+                           let rdefs = get_all_rdefs p in
+                           let (tagstring, args) =
+                             mk_instrx_data_r
+                               ~vars_r:[lhs_r]
+                               ~xprs_r:[Ok p; Ok xp; Ok xp1; Ok xp2]
+                               ~cxprs_r: [cxp_r]
+                               ~rdefs
+                               ~uses
+                               ~useshigh
+                               () in
+                           ([tagstring; "agg:ternassign"], args)
+                        | _ ->
+                           let (tagstring, args) =
+                             mk_instrx_data_r
+                               ~vars_r:[lhs_r]
+                               ~xprs_r:[Ok xp1; Ok xp2]
+                               ~uses
+                               ~useshigh
+                               () in
+                           ([tagstring; "agg:ternassign:nd"], args))
+                    | _ ->
+                       raise
+                         (BCH_failure
+                            (LBLOCK [
+                                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                                 floc#l#toPretty;
+                                 STR ": unknown MOV aggregate"])))
+                | _ ->
+                   (* no associated test instr found *)
+                   let (tagstring, args) =
+                     mk_instrx_data_r ~vars_r:[lhs_r] ~uses ~useshigh () in
+                   let tags = match agg#kind with
+                     | ARMPredicateAssignment _ -> [tagstring; "agg:predassign:nd"]
+                     | ARMTernaryAssignment _ -> [tagstring; "agg:ternassign:nd"]
+                     | _ -> [tagstring] in
+                   (tags, args))
             | _ ->
-               ([], []))
-         else
-           ([], [])
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR __FILE__; STR ":"; INT __LINE__; STR ": ";
+                         floc#l#toPretty;
+                         STR ": unknown MOV aggregate"]))) in
+         let dependents =
+           List.map (fun d ->
+               (make_i_location floc#l d#get_address)#ci) agg#instrs in
+         let tags = tags @ ["subsumes"] @ dependents in
+         (tags, args)
 
       | Move _ when (Option.is_some instr#is_in_aggregate) ->
          (match instr#is_in_aggregate with
@@ -3067,7 +3148,7 @@ object (self)
          let xrm_r = rm#to_expr floc in
          let result_r =
            TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
-         let rresult_r = TR.tmap rewrite_expr result_r in
+         let rresult_r = TR.tmap (rewrite_in_cc_context floc c) result_r in
          let cresult_r =
            TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
          let rdefs =

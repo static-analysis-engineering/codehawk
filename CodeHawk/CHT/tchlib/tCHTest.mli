@@ -51,7 +51,7 @@ open TCHTestApi
 val return: 'a -> (unit -> 'a)
 
 
-(** {6 Assertion-based tests} *)
+(** {1 Assertion-based tests} *)
 
 
 (** [make_assert_test ~title:t set_up f tear_down] constructs a test running the
@@ -70,7 +70,7 @@ val make_assert_test:
 val make_simple_test: ?title:string -> (unit -> unit) -> testcase_t
   
   
-(** {6 Generator-based tests} *)
+(** {1 Generator-based tests} *)
 
 (** [make_random_test ~title:t ~nb_runs:nb ~nb_tries:nt ~classifier:c ~reducer:red
     ~random_src:rnd gen f spec] constructs a random test. [f] is the function to
