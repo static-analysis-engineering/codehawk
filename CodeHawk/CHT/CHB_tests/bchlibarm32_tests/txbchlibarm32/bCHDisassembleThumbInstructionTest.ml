@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,7 @@ let thumb_2_basic () =
       ("ADDS-I-T2",  "0132", "ADDS           R2, R2, #1");
       ("ADDS-R-T2",  "7c44", "ADDS           R4, R4, PC");
       ("ADD-SPI-T2", "0ab0", "ADD            SP, SP, #0x28");
-      ("AND-R-T1",   "1e40", "AND            R6, R6, R3");
+      ("AND-R-T1",   "1e40", "ANDS           R6, R6, R3");
       ("ASRS-I-T1",  "4910", "ASRS           R1, R1, #1");
       ("BKPT",       "fbbe", "BKPT           #0xfb");
       ("BLX-R-T1",   "9847", "BLX            R3");
