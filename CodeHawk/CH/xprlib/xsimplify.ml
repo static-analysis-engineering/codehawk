@@ -175,7 +175,8 @@ and reduce_neg (m: bool) (e1: xpr_t): (bool * xpr_t) =
   | _ -> default ()
 
 
-(* Note that for values other than zero the result depends on word size.*)
+(* Note that, in general, for values other than zero the result depends on word
+   size. Here we assume that the word is at least 8 bits wide. *)
 and reduce_bitwise_not (m: bool) (e1: xpr_t): (bool * xpr_t) =
   let default () = (m, XOp (XBNot, [e1])) in
   match e1 with
@@ -183,6 +184,8 @@ and reduce_bitwise_not (m: bool) (e1: xpr_t): (bool * xpr_t) =
      (true, XConst (IntConst numerical_one#neg))
   | XConst (IntConst num) when num#equal numerical_one ->
      (true, XConst (IntConst (mkNumerical 2)#neg))
+  | XConst (IntConst n) when n#lt numerical_e8 ->
+     (true, XConst (IntConst (n#neg#sub numerical_one)))
   | _ -> default ()
 
 

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024 Aarno Labs, LLC
+   Copyright (c) 2021-2025 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1449,6 +1449,20 @@ class type arm_assembly_instruction_int =
   end
 
 
+(** {1 Instruction aggregates} *)
+
+(** An instruction aggregate is a (usually, but not always, contiguous)
+    sequence of two or more instructions that is treate as a single
+    semantic unit. The semantics for the entire sequence is assigned to
+    one of the instructions (often the last one in the sequence) and all
+    other instructions are considere no-ops by all subsequent analyses.
+
+    Instruction aggregates cover a variety of constructs ranging from
+    predicate and ternary assignments to jump tables.
+
+    A more detailed description is provided in [bCHARMInstructionAggregate].
+ *)
+
 type arm_assembly_instruction_result = arm_assembly_instruction_int traceresult
 
 
@@ -1534,6 +1548,7 @@ type arm_aggregate_kind_t =
       * arm_assembly_instruction_int
       * arm_assembly_instruction_int
   | ARMPredicateAssignment of bool * arm_operand_int
+  | ARMTernaryAssignment of arm_operand_int * numerical_t * numerical_t
   | BXCall of arm_assembly_instruction_int * arm_assembly_instruction_int
 
 
@@ -1560,6 +1575,7 @@ class type arm_instruction_aggregate_int =
     method is_pseudo_ldrsh: bool
     method is_pseudo_ldrsb: bool
     method is_predicate_assign: bool
+    method is_ternary_assign: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit

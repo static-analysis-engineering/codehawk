@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs, LLC
+   Copyright (c) 2022-2025  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -66,6 +66,13 @@ let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
   | ARMPredicateAssignment (inverse, op) ->
      let inv = if inverse then " (inverse)" else "" in
      "predicate assignment to " ^ op#toString ^ inv
+  | ARMTernaryAssignment (dst, op1, op2) ->
+     "ternary assignment: "
+     ^ dst#toString
+     ^ " = cond ? "
+     ^ op1#toString
+     ^ " : "
+     ^ op2#toString
   | BXCall (_, i2) -> "BXCall at " ^ i2#get_address#to_hex_string
 
 
@@ -138,6 +145,11 @@ object (self)
   method is_predicate_assign =
     match self#kind with
     | ARMPredicateAssignment _ -> true
+    | _ -> false
+
+  method is_ternary_assign =
+    match self#kind with
+    | ARMTernaryAssignment _ -> true
     | _ -> false
 
   method write_xml (_node: xml_element_int) = ()
@@ -258,6 +270,21 @@ let make_predassign_aggregate
     ~anchor:mov2
 
 
+let make_ternassign_aggregate
+      (mov1: arm_assembly_instruction_int)
+      (mov2: arm_assembly_instruction_int)
+      (dstop: arm_operand_int)
+      (n1: numerical_t)
+      (n2: numerical_t): arm_instruction_aggregate_int =
+  let kind = ARMTernaryAssignment(dstop, n1, n2) in
+  make_arm_instruction_aggregate
+    ~kind
+    ~instrs:[mov1; mov2]
+    ~entry:mov1
+    ~exitinstr:mov2
+    ~anchor:mov2
+
+
 let disassemble_arm_instructions
       (ch: pushback_stream_int) (iaddr: doubleword_int) (n: int) =
   for _i = 1 to n do
@@ -293,6 +320,8 @@ let identify_jumptable
   | Add (_, ACCNotUnsignedHigher, rd, rn, _, false)
        when rd#is_pc_register && rn#is_pc_register ->
      create_addls_pc_jumptable ch instr
+  | Add (_, ACCAlways, rd, _, _, false) when rd#is_pc_register ->
+     create_arm_add_pc_adr_jumptable ch instr
   | BranchExchange (ACCAlways, regop) when regop#is_register ->
      create_arm_bx_jumptable ch instr
   | _ -> None
@@ -494,6 +523,67 @@ let identify_predicate_assignment
   | _ -> None
 
 
+(* format of ternary assignment (in ARM): assigns one value or another depending
+   on the result of a test:
+
+  MOVNE Rx, imm1
+  MOVEQ Rx, imm2
+
+or
+
+  MVNEQ Rx, imm1
+  MOVNE Rx, imm2
+ *)
+let identify_ternary_assignment
+      (_ch: pushback_stream_int)
+      (instr: arm_assembly_instruction_int):
+      (arm_assembly_instruction_int
+       * arm_assembly_instruction_int
+       * arm_operand_int
+       * numerical_t
+       * numerical_t) option =
+  let negval (n: numerical_t) =
+    match Xsimplify.simplify_xpr (XOp (XBNot, [Xprt.num_constant_expr n])) with
+    | XConst (IntConst nn) -> Some nn
+    | _ -> None in
+  match instr#get_opcode with
+  | Move (false, c2, rd, imm2, _, _)
+    | BitwiseNot (false, c2, rd, imm2, _)
+       when imm2#is_immediate && (has_inverse_cc c2) ->
+     let optn2 =
+       let n2 = imm2#to_numerical in
+       match instr#get_opcode with
+       | Move _ -> Some n2
+       | BitwiseNot _ -> negval n2
+       | _ -> None in
+     (match optn2 with
+      | Some n2 ->
+         let rdreg = rd#get_register in
+         let addr = instr#get_address in
+         let movinstr_r = get_arm_assembly_instruction (addr#add_int (-4)) in
+         (match TR.to_option movinstr_r with
+          | Some movinstr ->
+             (match movinstr#get_opcode with
+              | Move (false, c1, rd, imm1, _, _)
+                   when imm1#is_immediate
+                        && (rd#get_register = rdreg)
+                        && (has_inverse_cc c1)
+                        && ((Option.get (get_inverse_cc c1)) = c2) ->
+                 Some (movinstr, instr, rd, imm1#to_numerical, n2)
+              | BitwiseNot (false, c1, rd, imm1, _)
+                   when imm1#is_immediate
+                        && (rd#get_register = rdreg)
+                        && (has_inverse_cc c1)
+                        && ((Option.get (get_inverse_cc c1)) = c2) ->
+                 (match (negval imm1#to_numerical) with
+                  | Some n1 -> Some (movinstr, instr, rd, n1, n2)
+                  | _ -> None)
+              | _ -> None)
+          | _ -> None)
+      | _ -> None)
+  | _ -> None
+
+
 let identify_arm_aggregate
       (ch: pushback_stream_int)
       (instr: arm_assembly_instruction_int):
@@ -557,5 +647,13 @@ let identify_arm_aggregate
        match identify_predicate_assignment ch instr with
        | Some (inverse, mov1, mov2, dstop) ->
           Some (make_predassign_aggregate inverse mov1 mov2 dstop)
+       | _ -> None in
+  let result =
+    match result with
+    | Some _ -> result
+    | _ ->
+       match identify_ternary_assignment ch instr with
+       | Some (mov1, mov2, dstop, n1, n2) ->
+          Some (make_ternassign_aggregate mov1 mov2 dstop n1 n2)
        | _ -> None in
   result

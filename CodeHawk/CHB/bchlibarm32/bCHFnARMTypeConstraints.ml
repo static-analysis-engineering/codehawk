@@ -1300,7 +1300,20 @@ object (self)
              begin
                log_subtype_constraint __LINE__ "SUB-rdef-1" rntypeterm lhstypeterm;
                store#add_subtype_constraint rntypeterm lhstypeterm
-             end) rndefs
+             end) rndefs;
+
+         (* propagate function return type *)
+         (if rd#get_register = AR0 && (has_exit_use_r (rd#to_variable floc)) then
+            let regvar = mk_reglhs_typevar rdreg faddr iaddr in
+            let fvar = mk_function_typevar faddr in
+            let fvar = add_return_capability fvar in
+            let regterm = mk_vty_term regvar in
+            let fterm = mk_vty_term fvar in
+            begin
+              log_subtype_constraint __LINE__ "SUB-freturn" regterm fterm;
+              store#add_subtype_constraint regterm fterm
+            end);
+
        end
 
     | UnsignedBitFieldExtract (_, _, rn) ->
