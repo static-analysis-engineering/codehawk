@@ -153,6 +153,7 @@ let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
        | XAsr -> reduce_asr m s1 s2
        | XLsl -> reduce_lsl m s1 s2
        | XBAnd -> reduce_bitwiseand m s1 s2
+       | XLAnd -> reduce_and m s1 s2
        | XDisjoint -> reduce_disjoint m s1 s2
        | XSubset -> reduce_subset m s1 s2
        | XNumJoin -> reduce_binary_numjoin m s1 s2
@@ -1091,9 +1092,14 @@ and reduce_bor m e1 e2 =
 
 and reduce_or m e1 e2 =
   let default = (m, XOp (XLOr, [e1 ; e2])) in
-  if is_true e1 || is_true e2 then (true, true_constant_expr)
-  else if is_false e1 then (true, e2)
-  else if is_false e2 then (true, e1)
+  if is_true e1 || is_true e2 then
+    (true, true_constant_expr)
+  else if is_false e1 then
+    (true, e2)
+  else if is_false e2 then
+    (true, e1)
+  else if syntactically_equal e1 e2 then
+    (true, e1)
   else match (e1,e2) with
        | (XConst XRandom, XOp (XLOr, [XConst XRandom; b]))
          | (XConst XRandom, XOp (XLOr, [b; XConst XRandom]))
@@ -1144,6 +1150,19 @@ and reduce_bitwiseand m e1 e2 =
               p]);
        default
      end
+
+and reduce_and m e1 e2 =
+  let default = (m, XOp (XLAnd, [e1; e2])) in
+  if is_true e1 && is_true e2 then
+    (true, true_constant_expr)
+  else if is_true e1 then
+    (true, e2)
+  else if is_true e2 then
+    (true, e1)
+  else if syntactically_equal e1 e2 then
+    (true, e1)
+  else
+    default
 
 
 and reduce_shiftleft (m: bool) (e1: xpr_t) (e2: xpr_t): bool * xpr_t =
