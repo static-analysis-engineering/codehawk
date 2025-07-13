@@ -437,7 +437,6 @@ object (self)
   method resolve_reglhs_type
            (reg: register_t) (faddr: string) (iaddr: string): btype_t option =
     let evaluation = self#evaluate_reglhs_type reg faddr iaddr in
-    let logresults = iaddr = "0xffffffff" in
     let log_evaluation () =
       log_diagnostics_result
         ~tag:("reglhs resolution not successfull for " ^ faddr)
@@ -463,9 +462,17 @@ object (self)
       List.iter (fun (vars, consts) ->
           let jointy = type_constant_join consts in
           let _ =
-            if logresults then
-              log_result __FILE__ __LINE__
-                ["jointy: " ^ (type_constant_to_string jointy)] in
+            log_diagnostics_result
+              ~tag:("result of type_constant_join for " ^ faddr)
+              __FILE__ __LINE__
+              [iaddr
+               ^ ": jointy: "
+               ^ (type_constant_to_string jointy)
+               ^ " from "
+               ^ (p2s (pretty_print_list
+                         consts
+                         (fun c -> STR (type_constant_to_string c))
+                         "[" ", " "]"))] in
           List.iter (fun v ->
               let optty =
                 match jointy with

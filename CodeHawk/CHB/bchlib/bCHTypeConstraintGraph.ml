@@ -56,7 +56,7 @@ object (self: 'a)
      Update for constraint of type (v, c) or (c, w), v in V, c in C:
 
      tvars'(w) = tvars(w) u {c}, tvreps' = tvreps           if w = tvreps(v)
-     tvars'(w) = tvars(w), tvreps' = tvresp                 otherwise
+     tvars'(w) = tvars(w), tvreps' = tvreps                 otherwise
 
      Update for constraint of type (v1, v2), v1, v2 in V:
 

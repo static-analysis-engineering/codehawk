@@ -277,11 +277,6 @@ let mk_global_variable_typevar (gaddr: string): type_variable_t =
   mk_type_basevar (GlobalVariableType gaddr)
 
 
-let mk_reglhs_typevar (reg: register_t) (faddr: string) (iaddr: string)
-    : type_variable_t =
-  mk_type_basevar (RegisterLhsType (reg, faddr, iaddr))
-
-
 let mk_localstack_lhs_typevar (off: int) (faddr: string) (iaddr: string)
     : type_variable_t =
   mk_type_basevar (LocalStackLhsType (off, faddr, iaddr))
@@ -354,6 +349,15 @@ let add_fstack_param_capability ?(size = 4) (offset: int) (tv: type_variable_t)
 let add_stack_address_capability (offset: int) (tv: type_variable_t)
     : type_variable_t =
   add_capability [FLocStackAddress offset] tv
+
+
+let mk_reglhs_typevar (reg: register_t) (faddr: string) (iaddr: string)
+    : type_variable_t =
+  if iaddr = "init" then
+    let ftypevar = mk_function_typevar faddr in
+    add_freg_param_capability reg ftypevar
+  else
+    mk_type_basevar (RegisterLhsType (reg, faddr, iaddr))
 
 
 let mk_cty_term (c: type_constant_t): type_term_t = TyConstant c
