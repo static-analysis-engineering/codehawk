@@ -1133,7 +1133,13 @@ let record_function_interface_type_constraints
         let fretvar = add_return_capability ftypevar in
         begin
           (match mk_btype_constraint fretvar returntype with
-           | Some tyc -> store#add_constraint tyc
+           | Some tyc ->
+              let _ =
+                log_diagnostics_result
+                  ~tag:("function-interface type constraint")
+                  __FILE__ __LINE__
+                  [faddr ^ ": " ^ (type_constraint_to_string tyc)] in
+              store#add_constraint tyc
            | _ -> ());
           (match fargs with
            | None ->
