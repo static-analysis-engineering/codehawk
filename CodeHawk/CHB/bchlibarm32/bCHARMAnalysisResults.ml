@@ -76,6 +76,7 @@ object (self)
       instr#has_opcode_condition
       && (match instr#get_opcode with
           | Branch _ | BranchExchange _ -> false
+          | Compare _ | CompareNegative _ -> false
           | _ -> true)
       && (Option.is_none instr#is_in_aggregate) in
     begin
