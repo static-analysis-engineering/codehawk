@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024  Aarno Labs LLC
+   Copyright (c) 2021-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -211,9 +211,9 @@ let cc_expr
 
     (* ---------------------------------------------------------- Compare --- *)
 
-    | (Compare (ACCAlways, x, y, _), ACCEqual) ->
+    | (Compare (_, x, y, _), ACCEqual) ->
        (XOp (XEq, [v x; v y]), [x; y])
-    | (Compare (ACCAlways, x, y, _), ACCNotEqual) ->
+    | (Compare (_, x, y, _), ACCNotEqual) ->
        (XOp (XNe, [v x; v y]), [x; y])
 
     (* Occasionally the compiler will generate a a carryset condition for
@@ -292,19 +292,19 @@ let cc_expr
        (XOp (XLAnd, [XOp (XLt, [vu x; vu y]);
                      XOp (XGe, [vu x; zero_constant_expr])]), [x; y])
 
-    | (Compare (ACCAlways, x, y, _), ACCUnsignedHigher) ->
+    | (Compare (_, x, y, _), ACCUnsignedHigher) ->
        (XOp (XGt, [vu x; vu y]), [x; y])
-    | (Compare (ACCAlways, x, y, _), ACCNotUnsignedHigher) ->
+    | (Compare (_, x, y, _), ACCNotUnsignedHigher) ->
        (XOp (XLe, [vu x; vu y]), [x; y])
 
-    | (Compare (ACCAlways, x, y, _), ACCSignedGE) ->
+    | (Compare (_, x, y, _), ACCSignedGE) ->
        (XOp (XGe, [v x; v y]), [x; y])
-    | (Compare (ACCAlways, x, y, _), ACCSignedLT) ->
+    | (Compare (_, x, y, _), ACCSignedLT) ->
        (XOp (XLt, [v x; v y]), [x; y])
 
-    | (Compare (ACCAlways, x, y, _), ACCSignedLE) ->
+    | (Compare (_, x, y, _), ACCSignedLE) ->
        (XOp (XLe, [v x; v y]), [x; y])
-    | (Compare (ACCAlways, x, y, _), ACCSignedGT) ->
+    | (Compare (_, x, y, _), ACCSignedGT) ->
        (XOp (XGt, [v x; v y]), [x; y])
 
     | (LogicalShiftLeft (true, ACCAlways, _, x, y, _), ACCNonNegative) ->
@@ -315,7 +315,7 @@ let cc_expr
     | (CompareNegative (ACCAlways, x, y), ACCEqual) ->
        (XOp (XEq, [XOp (XPlus, [v x; v y]); zero_constant_expr]), [x; y])
 
-    | (CompareNegative (ACCAlways, x, y), ACCNotEqual) ->
+    | (CompareNegative (_, x, y), ACCNotEqual) ->
        (XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr]), [x; y])
 
     | (CompareNegative (ACCAlways, x, y), ACCCarrySet) ->
@@ -516,4 +516,16 @@ let arm_conditional_conditional_expr
        condfloc#set_test_expr xpr;
        (frozenVars#toList, Some xpr, opsused)
      end
-  | _ -> (frozenVars#toList, None, opsused)
+  | _ ->
+     let _ =
+       if collect_diagnostics () then
+         ch_diagnostics_log#add
+           "unused conditional condition expression"
+           (LBLOCK [
+                STR (arm_opcode_to_string condopc);
+                STR "; ";
+                STR (arm_opcode_to_string testopc);
+                STR "; ";
+                STR (arm_opcode_to_string testtestopc)
+              ]) in
+     (frozenVars#toList, None, opsused)
