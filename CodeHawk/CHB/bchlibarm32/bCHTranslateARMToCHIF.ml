@@ -4626,8 +4626,13 @@ object (self)
             (["defusehigh"],
              {op_name = new symbol_t ~atts:["exit"] "use_high";
               op_args = [("dst", v, WRITE)]})) symvars in
+    let exitname = new symbol_t ~atts:["exit"] "invariant" in
+    let cmdinvop = OPERATION {op_name = exitname; op_args = []} in
     let constantAssigns = env#end_transaction in
-    let cmds = constantAssigns @ cmds @ cmdshigh in
+    let cmds = constantAssigns @ [cmdinvop] @ cmds @ cmdshigh in
+    let returnvar = finfo#env#mk_arm_register_variable AR0 in
+    let _ = finfo#add_use_loc returnvar "exit" in
+    let _ = finfo#add_use_high_loc returnvar "exit" in
     TRANSACTION (new symbol_t "exit", LF.mkCode cmds, None)
 
   method translate =
