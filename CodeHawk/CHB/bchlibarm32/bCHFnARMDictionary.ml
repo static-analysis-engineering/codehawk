@@ -1128,8 +1128,10 @@ object (self)
          let txpr = floc#get_test_expr in
          let fxpr = simplify_xpr (XOp (XLNot, [txpr])) in
          let csetter = floc#f#get_associated_cc_setter floc#cia in
-         let tcond = rewrite_test_expr csetter txpr in
-         let fcond = rewrite_test_expr csetter fxpr in
+         (* we can rewrite with invariants at this address, since the expression
+            should have been made position independent for local variables.*)
+         let tcond = rewrite_expr txpr in
+         let fcond = rewrite_expr fxpr in
          let ctcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) tcond in
          let cfcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) fcond in
          let csetter_addr_r = string_to_doubleword csetter in
@@ -2193,6 +2195,7 @@ object (self)
          let vrd_r = rd#to_variable floc in
          let xrm_r = rm#to_expr floc in
          let result_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) xrm_r in
+         let result_r = TR.tmap (rewrite_in_cc_context floc c) result_r in
          let cresult_r =
            TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) result_r in
          let rdefs = (get_rdef_r xrm_r) :: (get_all_rdefs_r result_r) in
