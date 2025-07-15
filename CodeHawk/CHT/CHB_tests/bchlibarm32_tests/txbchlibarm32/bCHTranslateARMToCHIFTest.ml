@@ -73,7 +73,7 @@ let codemax = make_dw "0x400000"
 let translate_store () =
   let tests = [
       ("PUSHLR", "0x1b960", "04e02de500",
-       [("var_0004", "LR_in"); ("SP", "sv__5__sv")]);
+       [("var_0004", "LR_in"); ("SP", "sv__3__sv")]);
       ("PUSHR0_3", "0x19470", "0f002de900",
        [("var_0016", "R0_in");
         ("var_0012", "R1_in");
