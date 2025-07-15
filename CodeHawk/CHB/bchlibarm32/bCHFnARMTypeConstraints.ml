@@ -36,6 +36,7 @@ open CHTraceResult
 
 (* xprlib *)
 open XprTypes
+open XprUtil
 open Xsimplify
 
 (* bchlib *)
@@ -255,6 +256,43 @@ object (self)
         linenumber
         [(p2s floc#l#toPretty) ^ ": " ^ (btype_to_string ty)] in
 
+    let operand_is_zero (op: arm_operand_int): bool =
+      (* Returns true if the value of the operand is known to be zero at
+         this location. This result is primarily intended to avoid spurious
+         typing relationships in cases where the compiler 'knows' that the value
+         is zero, and may use it as an alternate for the the immediate value zero
+         in certain instructions, like ADD, MOV, or SUB. *)
+      TR.tfold_default
+        (fun v ->
+          match v with
+          | XConst (IntConst n) -> n#equal numerical_zero
+          | _ -> false)
+        false
+        (TR.tmap rewrite_expr (op#to_expr floc)) in
+
+    let operand_is_zero_in_cc_context
+          (cc: arm_opcode_cc_t) (op: arm_operand_int): bool =
+      match cc with
+      | ACCAlways -> operand_is_zero op
+      | _ when instr#is_condition_covered -> operand_is_zero op
+      | _ when is_cond_conditional cc && floc#has_test_expr ->
+         TR.tfold_default
+           (fun xx ->
+             let txpr = floc#get_test_expr in
+             let tcond = rewrite_expr txpr in
+             (match tcond with
+              | XOp (XEq, [XVar vr; XConst (IntConst n)]) ->
+                 let subst v =
+                   if v#equal vr then XConst (IntConst n) else XVar vr in
+                 let result = simplify_xpr (substitute_expr subst xx) in
+                 (match result with
+                  | XConst (IntConst n) -> n#equal numerical_zero
+                  | _ -> operand_is_zero op)
+              | _ -> operand_is_zero op))
+           (operand_is_zero op)
+           (TR.tmap rewrite_expr (op#to_expr floc))
+      | _ -> operand_is_zero op in
+
     match instr#get_opcode with
 
     | Add (_, _, rd, rn, rm, _) ->
@@ -275,7 +313,26 @@ object (self)
              | _ -> ())
           | _ -> ());
 
-         (if rm#is_immediate && (rm#to_numerical#toInt < 256) then
+         (* Heuristic: if a small number (taken here as < 256) is added to
+            a register value it is assumed that the value in the destination
+            register has the same type as the value in the source register.
+
+            The case where the value of the source register is known to be zero
+            is excluded, because this construct, rd = rn (=0) + imm, is often
+            used as an alternate for MOV rd, #imm, in which case the type of
+            the source value may be entirely related to the type of the type of
+            the destination value (giving rise to very hard to diagnose typing
+            errors)
+
+            This heuristic also fails when applied to pointers to access
+            different fields in a struct. Although this case is not so common,
+            (ARM allows offsets to be specified as part of memory accesses),
+            it does happen (it has been observed), and hence this heuristic
+            is disabled for now, until we have a way to explicitly exclude
+            this case.
+         (if rm#is_immediate
+             && (rm#to_numerical#toInt < 256)
+             && (not (operand_is_zero rn)) then
             let rdreg = rd#to_register in
             let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
             let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
@@ -288,7 +345,7 @@ object (self)
                 begin
                   log_subtype_constraint __LINE__ "ADD-imm" rntypeterm lhstypeterm;
                   store#add_subtype_constraint rntypeterm lhstypeterm
-                end) rndefs);
+                end) rndefs); *)
 
          (match getopt_global_address_r (rn#to_expr floc) with
           | Some gaddr ->
@@ -389,7 +446,19 @@ object (self)
           begin
             log_subtype_constraint __LINE__ "MVN" tctypeterm lhstypeterm;
             store#add_subtype_constraint tctypeterm lhstypeterm
-          end)
+          end);
+
+         (* propagate function return type *)
+         (if rd#get_register = AR0 && (has_exit_use_r (rd#to_variable floc)) then
+            let regvar = mk_reglhs_typevar rdreg faddr iaddr in
+            let fvar = mk_function_typevar faddr in
+            let fvar = add_return_capability fvar in
+            let regterm = mk_vty_term regvar in
+            let fterm = mk_vty_term fvar in
+            begin
+              log_subtype_constraint __LINE__ "MVN-freturn" regterm fterm;
+              store#add_subtype_constraint regterm fterm
+            end);
 
        end
 
@@ -399,15 +468,28 @@ object (self)
        let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
        let rmreg = rm#to_register in
        begin
-         List.iter (fun rmsym ->
-             let rmaddr = rmsym#getBaseName in
-             let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
-             let rmtypeterm = mk_vty_term rmtypevar in
-             let lhstypeterm = mk_vty_term lhstypevar in
-             begin
-               log_subtype_constraint __LINE__ "MVN-rdef" rmtypeterm lhstypeterm;
-               store#add_subtype_constraint rmtypeterm lhstypeterm
-             end) rmdefs
+         (List.iter (fun rmsym ->
+              let rmaddr = rmsym#getBaseName in
+              let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+              let rmtypeterm = mk_vty_term rmtypevar in
+              let lhstypeterm = mk_vty_term lhstypevar in
+              begin
+                log_subtype_constraint __LINE__ "MVN-rdef" rmtypeterm lhstypeterm;
+                store#add_subtype_constraint rmtypeterm lhstypeterm
+              end) rmdefs);
+
+         (* propagate function return type *)
+         (if rd#get_register = AR0 && (has_exit_use_r (rd#to_variable floc)) then
+            let regvar = mk_reglhs_typevar rdreg faddr iaddr in
+            let fvar = mk_function_typevar faddr in
+            let fvar = add_return_capability fvar in
+            let regterm = mk_vty_term regvar in
+            let fterm = mk_vty_term fvar in
+            begin
+              log_subtype_constraint __LINE__ "MVN-freturn" regterm fterm;
+              store#add_subtype_constraint regterm fterm
+            end);
+
        end
 
     | BitwiseOr (_, _, rd, rn, _, _) ->
@@ -962,6 +1044,7 @@ object (self)
               store#add_subtype_constraint tctypeterm rntypeterm
             end) rndefs)
 
+       (*
     | LogicalShiftRight (_, _, rd, rn, rm, _) when rm#is_immediate ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
@@ -988,29 +1071,45 @@ object (self)
               log_subtype_constraint __LINE__ "LSR-rhs" tctypeterm rntypeterm;
               store#add_subtype_constraint tctypeterm rntypeterm
             end) rndefs)
-
+        *)
     | Move (_, _, rd, rm, _, _) when rm#is_immediate ->
-       let rmval = rm#to_numerical#toInt in
-       (* 0 provides no information about the type *)
-       if rmval = 0 then
-         ()
-       else
-         let rdreg = rd#to_register in
-         let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-         let tyc = get_intvalue_type_constant rmval in
-         let lhstypeterm = mk_vty_term lhstypevar in
-         let tctypeterm = mk_cty_term tyc in
-         begin
-           log_subtype_constraint __LINE__ "MOV-imm" tctypeterm lhstypeterm;
-           store#add_subtype_constraint tctypeterm lhstypeterm
-         end
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       begin
+
+         (* variable introduction for lhs with type *)
+         (match get_regvar_type_annotation () with
+          | Some t ->
+             let opttc = mk_btype_constraint lhstypevar t in
+             (match opttc with
+              | Some tc ->
+                 begin
+                   log_type_constraint __LINE__ "MOV-rvintro" tc;
+                   store#add_constraint tc
+                 end
+              | _ -> ())
+          | _ -> ());
+
+         (let rmval = rm#to_numerical#toInt in
+          (* 0 provides no information about the type *)
+          if rmval = 0 then
+            ()
+          else
+            let tyc = get_intvalue_type_constant rmval in
+            let lhstypeterm = mk_vty_term lhstypevar in
+            let tctypeterm = mk_cty_term tyc in
+            begin
+              log_subtype_constraint __LINE__ "MOV-imm" tctypeterm lhstypeterm;
+              store#add_subtype_constraint tctypeterm lhstypeterm
+            end)
+       end
 
     | Move (_, _, rd, rm, _, _) when rd#get_register = rm#get_register ->
     (* exclude to avoid spurious rdefs to get involved *)
        ()
 
     (* Move x, y  ---  x := y  --- Y <: X *)
-    | Move (_, _, rd, rm, _, _) when rm#is_register ->
+    | Move (_, c, rd, rm, _, _) when rm#is_register ->
        let xrm_r = rm#to_expr floc in
        let rdreg = rd#to_register in
        let rdtypevar = mk_reglhs_typevar rdreg faddr iaddr in
@@ -1058,19 +1157,28 @@ object (self)
 
          (* use reaching defs *)
          (let rmreg = rm#to_register in
-          let rmvar_r = rm#to_variable floc in
-          let rmrdefs = get_variable_rdefs_r rmvar_r in
-          let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-          List.iter (fun rmrdef ->
-              let rmaddr = rmrdef#getBaseName in
-              if rmaddr != "init" then
-                let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
-                let rmtypeterm = mk_vty_term rmtypevar in
-                let lhstypeterm = mk_vty_term lhstypevar in
-                begin
-                  log_subtype_constraint __LINE__ "MOV-reg" rmtypeterm lhstypeterm;
-                  store#add_subtype_constraint rmtypeterm lhstypeterm
-                end) rmrdefs)
+          if operand_is_zero_in_cc_context c rm then
+            (* This case is excluded, because the move from a register
+               that contains zero can be done as a substitute for the
+               move of an immediate value, without any relationships in
+               types between the source and destination register. It is
+               often used by compilers as a convenience, if the register
+               is known to have the value zero at this point. *)
+            ()
+          else
+            let rmvar_r = rm#to_variable floc in
+            let rmrdefs = get_variable_rdefs_r rmvar_r in
+            let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+            List.iter (fun rmrdef ->
+                let rmaddr = rmrdef#getBaseName in
+                if rmaddr != "init" then
+                  let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+                  let rmtypeterm = mk_vty_term rmtypevar in
+                  let lhstypeterm = mk_vty_term lhstypevar in
+                  begin
+                    log_subtype_constraint __LINE__ "MOV-reg" rmtypeterm lhstypeterm;
+                    store#add_subtype_constraint rmtypeterm lhstypeterm
+                  end) rmrdefs)
        end
 
     | Pop (_, _, rl, _) when rl#includes_pc ->
@@ -1283,7 +1391,7 @@ object (self)
 
        end
 
-    | Subtract (_, _, rd, rn, _, _, _) ->
+    | Subtract (_, _, rd, rn, rm, _, _) ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
@@ -1292,15 +1400,19 @@ object (self)
 
          (* Note: Does not take into consideration the possibility of the
             subtraction of two pointers *)
-         List.iter (fun rnsym ->
-             let rnaddr = rnsym#getBaseName in
-             let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
-             let rntypeterm = mk_vty_term rntypevar in
-             let lhstypeterm = mk_vty_term lhstypevar in
-             begin
-               log_subtype_constraint __LINE__ "SUB-rdef-1" rntypeterm lhstypeterm;
-               store#add_subtype_constraint rntypeterm lhstypeterm
-             end) rndefs;
+         (if rm#is_immediate && (rm#to_numerical#toInt = 0) then
+            ()
+          else
+            List.iter (fun rnsym ->
+                let rnaddr = rnsym#getBaseName in
+                let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+                let rntypeterm = mk_vty_term rntypevar in
+                let lhstypeterm = mk_vty_term lhstypevar in
+                begin
+                  log_subtype_constraint
+                    __LINE__ "SUB-rdef-1" rntypeterm lhstypeterm;
+                  store#add_subtype_constraint rntypeterm lhstypeterm
+                end) rndefs);
 
          (* propagate function return type *)
          (if rd#get_register = AR0 && (has_exit_use_r (rd#to_variable floc)) then
