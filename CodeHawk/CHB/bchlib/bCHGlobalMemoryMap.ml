@@ -152,6 +152,9 @@ object (self)
 
   method is_initialized: bool = grec.gloc_is_initialized
 
+  method is_function_address: bool =
+    BCHFunctionData.functions_data#is_function_entry_point self#address
+
   method contains_address (addr: doubleword_int): bool =
     (self#address#equal addr)
     || (match self#size with

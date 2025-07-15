@@ -1420,6 +1420,7 @@ object (self)
        let memref_r = self#env#mk_base_variable_reference base in
        let memoff_r =
          match offset with
+         | XConst (IntConst n) when n#equal numerical_zero -> Ok NoOffset
          | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
          | _ ->
             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
@@ -1497,6 +1498,7 @@ object (self)
        let memref_r = self#env#mk_base_variable_reference base in
        let memoff_r =
          match offset with
+         | XConst (IntConst n) when n#equal numerical_zero -> Ok NoOffset
          | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
          | _ ->
             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
@@ -1704,7 +1706,24 @@ object (self)
              __FILE__ __LINE__
              ["x: " ^ (x2s x) ^ "; exp: " ^ (x2s exp)] in
          Ok exp in
-    aux x
+    let result = aux x in
+    match result with
+    | Ok okresult ->
+       let _ =
+         log_diagnostics_result
+           ~msg:(p2s self#l#toPretty)
+           ~tag:"convert-xpr-offsets:result"
+           __FILE__ __LINE__
+           ["x: " ^ (x2s x) ^ "; exp: " ^ (x2s okresult)] in
+       result
+    | Error e ->
+       let _ =
+         log_diagnostics_result
+           ~msg:(p2s self#l#toPretty)
+           ~tag:"convert-xpr-offsets:failure"
+           __FILE__ __LINE__
+           ["x: " ^ (x2s x) ^ "; " ^ (String.concat "; " e)] in
+       result
 
   method get_xpr_type (x: xpr_t): btype_t traceresult =
     match x with
@@ -1726,6 +1745,7 @@ object (self)
        (* let memoff_r = address_memory_offset t_unknown offset in *)
        let memoff_r =
          match offset with
+         | XConst (IntConst n) when n#equal numerical_zero -> Ok NoOffset
          | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
          | _ ->
             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
@@ -1745,6 +1765,7 @@ object (self)
          let offset = simplify_xpr (XOp (XMinus, [x; num_constant_expr maxC])) in
          let gmemoff_r =
            match offset with
+           | XConst (IntConst n) when n#equal numerical_zero -> Ok NoOffset
            | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
            | XOp (XMult, [XConst (IntConst n); XVar v]) ->
               Ok (IndexOffset (v, n#toInt, NoOffset))
@@ -1775,6 +1796,7 @@ object (self)
              let memref_r = self#env#mk_base_variable_reference base in
              let memoff_r =
                match offset with
+               | XConst (IntConst n) when n#equal numerical_zero -> Ok NoOffset
                | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
                | XOp (XMult, [XConst (IntConst n); XVar v]) ->
                   Ok (IndexOffset (v, n#toInt, NoOffset))
@@ -1805,6 +1827,7 @@ object (self)
                  (fun base ->
                    let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
                    match offset with
+                   | XConst (IntConst n) when n#equal numerical_zero -> Ok NoOffset
                    | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
                    | XOp (XMult, [XConst (IntConst n); XVar v]) ->
                       Ok (IndexOffset (v, n#toInt, NoOffset))
@@ -1967,6 +1990,7 @@ object (self)
             (log_error "decompose_address" "invalid memref")
             ~ok:(fun memref ->
               let offset = match xoffset with
+                | XConst (IntConst n) when n#equal numerical_zero -> NoOffset
                 | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
                 | XOp (XMult, [XConst (IntConst n); XVar v]) ->
                    IndexOffset (v, n#toInt, NoOffset)
@@ -1976,6 +2000,7 @@ object (self)
             (self#env#mk_base_variable_reference v)
        | Some (XConst (IntConst n), xoffset) ->
           let offset = match xoffset with
+            | XConst (IntConst n) when n#equal numerical_zero -> NoOffset
             | XConst (IntConst n) -> ConstantOffset (n, NoOffset)
             | XOp (XMult, [XConst (IntConst n); XVar v]) ->
                IndexOffset (v, n#toInt, NoOffset)
