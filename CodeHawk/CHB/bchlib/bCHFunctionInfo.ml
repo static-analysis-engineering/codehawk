@@ -765,7 +765,11 @@ object (self)
         | BaseVar v when variable_names#has v#getName#getSeqNumber ->
 	   Some (variable_names#get v#getName#getSeqNumber)
         | _ -> None in
-      let offset = ConstantOffset (offset, NoOffset) in
+      let offset =
+        if offset#equal numerical_zero then
+          NoOffset
+        else
+          ConstantOffset (offset, NoOffset) in
       let avar = varmgr#make_memory_variable ~size memref offset in
       let v = self#mk_variable avar in
       let _ = match optName with

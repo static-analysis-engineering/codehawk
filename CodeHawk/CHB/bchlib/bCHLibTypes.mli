@@ -4332,6 +4332,7 @@ class type global_location_int =
     method is_typed: bool
     method is_struct: bool
     method is_array: bool
+    method is_function_address: bool
     method initialvalue: globalvalue_t option
     method desc: string option
     method contains_address: doubleword_int -> bool
