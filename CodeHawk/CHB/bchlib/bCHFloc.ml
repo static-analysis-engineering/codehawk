@@ -1259,6 +1259,10 @@ object (self)
             memref_r memoff_r
 
   method private get_variable_type (v: variable_t): btype_t traceresult =
+    let is_zero (x: xpr_t) =
+      match x with
+      | XConst (IntConst n) -> n#equal numerical_zero
+      | _ -> false in
     if self#f#env#is_initial_register_value v then
       let reg_r = self#f#env#get_initial_register_value_register v in
       TR.tbind
@@ -1348,6 +1352,43 @@ object (self)
                         let cinfo = get_compinfo_by_key ckey in
                         let finfo = get_compinfo_field cinfo fname in
                         Ok finfo.bftype
+                     | IndexOffset (v, i, memsuboff) ->
+                        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                               ^ "index offset: "
+                               ^ (memory_offset_to_string memoff)
+                               ^ " with "
+                               ^ (p2s v#toPretty)
+                               ^ ", index: "
+                               ^ (string_of_int i)
+                               ^ "; and "
+                               ^ (memory_offset_to_string memsuboff)]
+                     | ArrayIndexOffset (x, memsuboff) ->
+                        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                               ^ "array index offset: "
+                               ^ (memory_offset_to_string memoff)
+                               ^ " with "
+                               ^ (x2s x)
+                               ^ "; and "
+                               ^ (memory_offset_to_string memsuboff)]
+                     | BasePtrArrayIndexOffset (x, _) when is_zero x ->
+                        (match basevartype with
+                         | TPtr (t, _) -> Ok t
+                         | _ ->
+                            Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                   ^ "array index offset: "
+                                   ^ (memory_offset_to_string memoff)
+                                   ^ " with basevar type: "
+                                   ^ (btype_to_string basevartype)
+                                   ^ " not yet handled"])
+                     | BasePtrArrayIndexOffset (x, memsuboff) ->
+                        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                               ^ "base-ptr array index offset: "
+                               ^ (memory_offset_to_string memoff)
+                               ^ " with "
+                               ^ (x2s x)
+                               ^ "; and "
+                               ^ (memory_offset_to_string memsuboff)]
+
                      | _ ->
                         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                                ^ "memoff: " ^ (memory_offset_to_string memoff)
