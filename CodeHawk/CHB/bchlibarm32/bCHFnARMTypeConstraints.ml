@@ -293,25 +293,49 @@ object (self)
            (TR.tmap rewrite_expr (op#to_expr floc))
       | _ -> operand_is_zero op in
 
+    let regvar_type_introduction (mnem: string) (op: arm_operand_int) =
+      if op#is_register then
+        (match get_regvar_type_annotation () with
+         | Some t ->
+            let reg = op#to_register in
+            let tv_z = mk_reglhs_typevar reg faddr iaddr in
+            let opttc = mk_btype_constraint tv_z t in
+            (match opttc with
+             | Some tc ->
+                begin
+                  log_type_constraint __LINE__ (mnem ^ "-rvintro") tc;
+                  store#add_constraint tc
+                end
+             | _ -> ())
+         | _ -> ())
+      else
+        ch_error_log#add
+          "regvar-type-introduction"
+          (LBLOCK [STR faddr; STR ":"; STR iaddr; STR ": ";
+                   op#toPretty; STR " is not a register"]) in
+
+    let regvar_linked_to_exit (mnem: string) (op: arm_operand_int) =
+      if op#is_register then
+        (if op#get_register = AR0 && (has_exit_use_r (op#to_variable floc)) then
+           let reg = op#to_register in
+           let tv_z = mk_reglhs_typevar reg faddr iaddr in
+           let fvar = add_return_capability (mk_function_typevar faddr) in
+           let tt_z = mk_vty_term tv_z in
+           let fterm = mk_vty_term fvar in
+           begin
+             log_subtype_constraint __LINE__ (mnem ^ "-freturn") tt_z fterm;
+             store#add_subtype_constraint tt_z fterm
+           end)
+      else
+        () in
+
     match instr#get_opcode with
 
     | Add (_, _, rd, rn, rm, _) ->
        let xrn_r = rn#to_expr floc in
        begin
-
-         (match get_regvar_type_annotation () with
-          | Some t ->
-            let rdreg = rd#to_register in
-            let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-            let opttc = mk_btype_constraint lhstypevar t in
-            (match opttc with
-             | Some tc ->
-                begin
-                  log_type_constraint __LINE__ "ADD-rvintro" tc;
-                  store#add_constraint tc
-                end
-             | _ -> ())
-          | _ -> ());
+         (regvar_type_introduction "ADD" rd);
+         (regvar_linked_to_exit "ADD" rd);
 
          (* Heuristic: if a small number (taken here as < 256) is added to
             a register value it is assumed that the value in the destination
@@ -349,7 +373,8 @@ object (self)
 
          (match getopt_global_address_r (rn#to_expr floc) with
           | Some gaddr ->
-             if BCHConstantDefinitions.is_in_global_arrayvar gaddr then
+             if rm#is_register
+                && BCHConstantDefinitions.is_in_global_arrayvar gaddr then
                (match (BCHConstantDefinitions.get_arrayvar_base_offset gaddr) with
                 | Some _ ->
                    let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
@@ -392,6 +417,8 @@ object (self)
        let rnreg = rn#to_register in
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        begin
+         (regvar_type_introduction "ASR" rd);
+         (regvar_linked_to_exit "ASR" rd);
 
          (* ASR results in a signed integer *)
          (let tc = mk_int_type_constant Signed 32 in
@@ -421,6 +448,8 @@ object (self)
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        let rnreg = rn#to_register in
        begin
+         (regvar_type_introduction "AND" rd);
+         (regvar_linked_to_exit "AND" rd);
 
          List.iter (fun rnsym ->
              let rnaddr = rnsym#getBaseName in
@@ -439,6 +468,8 @@ object (self)
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let tyc = get_intvalue_type_constant rmval in
        begin
+         (regvar_type_introduction "MVN" rd);
+         (regvar_linked_to_exit "MVN" rd);
 
          (* destination is an integer type *)
          (let tctypeterm = mk_cty_term tyc in
@@ -447,19 +478,6 @@ object (self)
             log_subtype_constraint __LINE__ "MVN" tctypeterm lhstypeterm;
             store#add_subtype_constraint tctypeterm lhstypeterm
           end);
-
-         (* propagate function return type *)
-         (if rd#get_register = AR0 && (has_exit_use_r (rd#to_variable floc)) then
-            let regvar = mk_reglhs_typevar rdreg faddr iaddr in
-            let fvar = mk_function_typevar faddr in
-            let fvar = add_return_capability fvar in
-            let regterm = mk_vty_term regvar in
-            let fterm = mk_vty_term fvar in
-            begin
-              log_subtype_constraint __LINE__ "MVN-freturn" regterm fterm;
-              store#add_subtype_constraint regterm fterm
-            end);
-
        end
 
     | BitwiseNot (_, _, rd, rm, _) ->
@@ -468,6 +486,9 @@ object (self)
        let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
        let rmreg = rm#to_register in
        begin
+         (regvar_type_introduction "MVN" rd);
+         (regvar_linked_to_exit "MVN" rd);
+
          (List.iter (fun rmsym ->
               let rmaddr = rmsym#getBaseName in
               let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
@@ -478,18 +499,6 @@ object (self)
                 store#add_subtype_constraint rmtypeterm lhstypeterm
               end) rmdefs);
 
-         (* propagate function return type *)
-         (if rd#get_register = AR0 && (has_exit_use_r (rd#to_variable floc)) then
-            let regvar = mk_reglhs_typevar rdreg faddr iaddr in
-            let fvar = mk_function_typevar faddr in
-            let fvar = add_return_capability fvar in
-            let regterm = mk_vty_term regvar in
-            let fterm = mk_vty_term fvar in
-            begin
-              log_subtype_constraint __LINE__ "MVN-freturn" regterm fterm;
-              store#add_subtype_constraint regterm fterm
-            end);
-
        end
 
     | BitwiseOr (_, _, rd, rn, _, _) ->
@@ -498,6 +507,8 @@ object (self)
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        let rnreg = rn#to_register in
        begin
+         (regvar_type_introduction "ORR" rd);
+         (regvar_linked_to_exit "ORR" rd);
 
          List.iter (fun rnsym ->
              let rnaddr = rnsym#getBaseName in
@@ -505,7 +516,7 @@ object (self)
              let rntypeterm = mk_vty_term rntypevar in
              let lhstypeterm = mk_vty_term lhstypevar in
              begin
-               log_subtype_constraint __LINE__ "AND-rdef-1" rntypeterm lhstypeterm;
+               log_subtype_constraint __LINE__ "ORR-rdef-1" rntypeterm lhstypeterm;
                store#add_subtype_constraint rntypeterm lhstypeterm
              end) rndefs
        end
@@ -737,19 +748,8 @@ object (self)
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
-
-         (* variable introduction for lhs with type *)
-         (match get_regvar_type_annotation () with
-          | Some t ->
-             let opttc = mk_btype_constraint rttypevar t in
-             (match opttc with
-              | Some tc ->
-                 begin
-                   log_type_constraint __LINE__ "LDR-rvintro" tc;
-                   store#add_constraint tc
-                 end
-              | _ -> ())
-          | _ -> ());
+         (regvar_type_introduction "LDR" rt);
+         (regvar_linked_to_exit "LDR" rt);
 
          (* loaded type may be known *)
          (let xmem_r = memop#to_expr floc in
@@ -762,7 +762,7 @@ object (self)
               (match opttc with
                | Some tc ->
                   begin
-                    log_type_constraint __LINE__ "LDR-var" tc;
+                    log_type_constraint __LINE__ "LDR-memop-tc" tc;
                     store#add_constraint tc
                   end
                | _ -> ()))
@@ -783,22 +783,6 @@ object (self)
                 log_subtype_constraint __LINE__ "LDR-imm-off" rdtypeterm rttypeterm;
                 store#add_subtype_constraint rdtypeterm rttypeterm
               end) xrdef);
-
-         (match TR.tmap rewrite_expr (memop#to_expr floc) with
-          | Error _ -> ()
-          | Ok (XVar v) ->
-             (match floc#f#env#get_variable_type v with
-              | Some ty ->
-                 let opttc = mk_btype_constraint rttypevar ty in
-                 (match opttc with
-                  | Some tc ->
-                     begin
-                       log_type_constraint __LINE__ "LDR-memop" tc;
-                       store#add_constraint tc
-                     end
-                  | _ -> ())
-              | _ -> ())
-          | _ -> ());
 
          (* if the address to load from is the address of a global struct field,
             assign the type of that field to the destination register. *)
@@ -905,20 +889,8 @@ object (self)
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
-
-         (match get_regvar_type_annotation () with
-          | Some t ->
-            let rtreg = rt#to_register in
-            let lhstypevar = mk_reglhs_typevar rtreg faddr iaddr in
-            let opttc = mk_btype_constraint lhstypevar t in
-            (match opttc with
-             | Some tc ->
-                begin
-                  log_type_constraint __LINE__ "LDRB-rvintro" tc;
-                  store#add_constraint tc
-                end
-             | _ -> ())
-          | _ -> ());
+         (regvar_type_introduction "LDRB" rt);
+         (regvar_linked_to_exit "LDRB" rt);
 
          (* LDRB rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdefs = get_variable_rdefs_r (rn#to_variable floc) in
@@ -950,6 +922,8 @@ object (self)
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
+         (regvar_type_introduction "LDRB" rt);
+         (regvar_linked_to_exit "LDRB" rt);
 
          (* LDRB rt, ...  : X_rt <: integer type *)
          (let tc = mk_int_type_constant SignedNeutral 8 in
@@ -966,6 +940,8 @@ object (self)
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
+         (regvar_type_introduction "LDRH" rt);
+         (regvar_linked_to_exit "LDRH" rt);
 
          (* loaded type may be known *)
          (let xmem_r = memop#to_expr floc in
@@ -1005,6 +981,8 @@ object (self)
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
+         (regvar_type_introduction "LDRH" rt);
+         (regvar_linked_to_exit "LDRH" rt);
 
        (* LDRH rt, ...  : X_rt <: integer type *)
          (let tc = mk_int_type_constant SignedNeutral 16 in
@@ -1022,73 +1000,73 @@ object (self)
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rnreg = rn#to_register in
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
+       begin
+         (regvar_type_introduction "LSL" rd);
+         (regvar_linked_to_exit "LSL" rd);
 
-       (* LSL results in an unsigned integer *)
-       (let tc = mk_int_type_constant Unsigned 32 in
-        let tcterm = mk_cty_term tc in
-        let lhstypeterm = mk_vty_term lhstypevar in
-        begin
-          log_subtype_constraint __LINE__ "LSL-lhs" tcterm lhstypeterm;
-          store#add_subtype_constraint tcterm lhstypeterm
-        end);
+         (* LSL results in an unsigned integer *)
+         (let tc = mk_int_type_constant Unsigned 32 in
+          let tcterm = mk_cty_term tc in
+          let lhstypeterm = mk_vty_term lhstypevar in
+          begin
+            log_subtype_constraint __LINE__ "LSL-lhs" tcterm lhstypeterm;
+            store#add_subtype_constraint tcterm lhstypeterm
+          end);
 
-       (* LSL is applied to an unsigned integer *)
-       (List.iter (fun rnrdef ->
-            let rnaddr = rnrdef#getBaseName in
-            let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
-            let tyc = mk_int_type_constant Unsigned 32 in
-            let tctypeterm = mk_cty_term tyc in
-            let rntypeterm = mk_vty_term rntypevar in
-            begin
-              log_subtype_constraint __LINE__ "LSL-rhs" tctypeterm rntypeterm;
-              store#add_subtype_constraint tctypeterm rntypeterm
-            end) rndefs)
+         (* LSL is applied to an unsigned integer *)
+         (List.iter (fun rnrdef ->
+              let rnaddr = rnrdef#getBaseName in
+              let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+              let tyc = mk_int_type_constant Unsigned 32 in
+              let tctypeterm = mk_cty_term tyc in
+              let rntypeterm = mk_vty_term rntypevar in
+              begin
+                log_subtype_constraint __LINE__ "LSL-rhs" tctypeterm rntypeterm;
+                store#add_subtype_constraint tctypeterm rntypeterm
+              end) rndefs)
+       end
 
+
+    | LogicalShiftRight (_, _, rd, _rn, rm, _) when rm#is_immediate ->
        (*
-    | LogicalShiftRight (_, _, rd, rn, rm, _) when rm#is_immediate ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rnreg = rn#to_register in
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
-
-       (* LSR results in an unsigned integer *)
-       (let tc = mk_int_type_constant Unsigned 32 in
-        let tcterm = mk_cty_term tc in
-        let lhstypeterm = mk_vty_term lhstypevar in
-        begin
-          log_subtype_constraint __LINE__ "LSR-lhs" tcterm lhstypeterm;
-          store#add_subtype_constraint tcterm lhstypeterm
-        end);
-
-       (* LSR is applied to an unsigned integer *)
-       (List.iter (fun rnrdef ->
-            let rnaddr = rnrdef#getBaseName in
-            let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
-            let tyc = mk_int_type_constant Unsigned 32 in
-            let tctypeterm = mk_cty_term tyc in
-            let rntypeterm = mk_vty_term rntypevar in
-            begin
-              log_subtype_constraint __LINE__ "LSR-rhs" tctypeterm rntypeterm;
-              store#add_subtype_constraint tctypeterm rntypeterm
-            end) rndefs)
         *)
+       begin
+         (regvar_type_introduction "LSR" rd);
+         (regvar_linked_to_exit "LSR" rd);
+         (*
+         (* LSR results in an unsigned integer *)
+         (let tc = mk_int_type_constant Unsigned 32 in
+          let tcterm = mk_cty_term tc in
+          let lhstypeterm = mk_vty_term lhstypevar in
+          begin
+            log_subtype_constraint __LINE__ "LSR-lhs" tcterm lhstypeterm;
+            store#add_subtype_constraint tcterm lhstypeterm
+          end);
+
+         (* LSR is applied to an unsigned integer *)
+         (List.iter (fun rnrdef ->
+              let rnaddr = rnrdef#getBaseName in
+              let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+              let tyc = mk_int_type_constant Unsigned 32 in
+              let tctypeterm = mk_cty_term tyc in
+              let rntypeterm = mk_vty_term rntypevar in
+              begin
+                log_subtype_constraint __LINE__ "LSR-rhs" tctypeterm rntypeterm;
+                store#add_subtype_constraint tctypeterm rntypeterm
+              end) rndefs)
+          *)
+       end
+
     | Move (_, _, rd, rm, _, _) when rm#is_immediate ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        begin
-
-         (* variable introduction for lhs with type *)
-         (match get_regvar_type_annotation () with
-          | Some t ->
-             let opttc = mk_btype_constraint lhstypevar t in
-             (match opttc with
-              | Some tc ->
-                 begin
-                   log_type_constraint __LINE__ "MOV-rvintro" tc;
-                   store#add_constraint tc
-                 end
-              | _ -> ())
-          | _ -> ());
+         (regvar_type_introduction "MOV" rd);
+         (regvar_linked_to_exit "MOV" rd);
 
          (let rmval = rm#to_numerical#toInt in
           (* 0 provides no information about the type *)
@@ -1112,21 +1090,9 @@ object (self)
     | Move (_, c, rd, rm, _, _) when rm#is_register ->
        let xrm_r = rm#to_expr floc in
        let rdreg = rd#to_register in
-       let rdtypevar = mk_reglhs_typevar rdreg faddr iaddr in
        begin
-
-         (* variable introduction for lhs with type *)
-         (match get_regvar_type_annotation () with
-          | Some t ->
-             let opttc = mk_btype_constraint rdtypevar t in
-             (match opttc with
-              | Some tc ->
-                 begin
-                   log_type_constraint __LINE__ "MOV-rvintro" tc;
-                   store#add_constraint tc
-                 end
-              | _ -> ())
-          | _ -> ());
+         (regvar_type_introduction "MOV" rd);
+         (regvar_linked_to_exit "MOV" rd);
 
          (* propagate function argument type *)
          (match getopt_initial_argument_value_r xrm_r with
@@ -1142,18 +1108,6 @@ object (self)
                store#add_subtype_constraint rhstypeterm lhstypeterm
              end
           | _ -> ());
-
-         (* propagate function return type *)
-         (if rd#get_register = AR0 && (has_exit_use_r (rd#to_variable floc)) then
-            let regvar = mk_reglhs_typevar rdreg faddr iaddr in
-            let fvar = mk_function_typevar faddr in
-            let fvar = add_return_capability fvar in
-            let regterm = mk_vty_term regvar in
-            let fterm = mk_vty_term fvar in
-            begin
-              log_subtype_constraint __LINE__ "MOV-freturn" regterm fterm;
-              store#add_subtype_constraint regterm fterm
-            end);
 
          (* use reaching defs *)
          (let rmreg = rm#to_register in
@@ -1229,6 +1183,27 @@ object (self)
       | Pop _ ->
        (* no type information gained *)
        ()
+
+    | ReverseSubtract (_, _, rd, _, rm, _) ->
+       let rdreg = rd#to_register in
+       let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
+       let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
+       let rmreg = rm#to_register in
+       begin
+         (regvar_type_introduction "RSB" rd);
+         (regvar_linked_to_exit "RSB" rd);
+
+         (List.iter (fun rmsym ->
+              let rmaddr = rmsym#getBaseName in
+              let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+              let rmtypeterm = mk_vty_term rmtypevar in
+              let lhstypeterm = mk_vty_term lhstypevar in
+              begin
+                log_subtype_constraint
+                  __LINE__ "RSB-rdef-1" rmtypeterm lhstypeterm;
+                store#add_subtype_constraint rmtypeterm lhstypeterm
+              end) rmdefs);
+       end
 
     | SignedMultiplyLong (_, _, rdlo, rdhi, rn, rm) ->
        let rdloreg = rdlo#to_register in
@@ -1397,6 +1372,8 @@ object (self)
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        let rnreg = rn#to_register in
        begin
+         (regvar_type_introduction "SUB" rd);
+         (regvar_linked_to_exit "SUB" rd);
 
          (* Note: Does not take into consideration the possibility of the
             subtraction of two pointers *)
@@ -1413,18 +1390,6 @@ object (self)
                     __LINE__ "SUB-rdef-1" rntypeterm lhstypeterm;
                   store#add_subtype_constraint rntypeterm lhstypeterm
                 end) rndefs);
-
-         (* propagate function return type *)
-         (if rd#get_register = AR0 && (has_exit_use_r (rd#to_variable floc)) then
-            let regvar = mk_reglhs_typevar rdreg faddr iaddr in
-            let fvar = mk_function_typevar faddr in
-            let fvar = add_return_capability fvar in
-            let regterm = mk_vty_term regvar in
-            let fterm = mk_vty_term fvar in
-            begin
-              log_subtype_constraint __LINE__ "SUB-freturn" regterm fterm;
-              store#add_subtype_constraint regterm fterm
-            end);
 
        end
 
