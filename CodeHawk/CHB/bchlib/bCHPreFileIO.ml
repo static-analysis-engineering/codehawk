@@ -439,6 +439,13 @@ let get_resultdata_filename () =
   Filename.concat fdir (exename ^ "_data.xml")
 
 
+let get_typeconstraintstore_filename () =
+  let exename = get_filename () in
+  let fdir = get_results_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_tcstore.xml")
+
+
 let get_x86dictionary_filename  () =
   let exename = get_filename () in
   let fdir = get_results_dir () in
@@ -656,6 +663,18 @@ let save_resultdata_file (node:xml_element_int) =
     root#appendChildren [ node ] ;
     file_output#saveFile filename doc#toPretty
   end
+
+
+let save_typeconstraintstore (node: xml_element_int) =
+  let filename = get_typeconstraintstore_filename () in
+  let doc = xmlDocument () in
+  let root = get_bch_root "type-constraint-store" in
+  begin
+    doc#setNode root;
+    root#appendChildren [node];
+    file_output#saveFile filename doc#toPretty
+  end
+
 
 let save_cfgs (node:xml_element_int) =
   let filename = get_cfgs_filename () in

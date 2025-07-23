@@ -1511,10 +1511,17 @@ type stackvar_intro_t = {
     svi_cast: bool
   }
 
+type typing_rule_t = {
+    tra_action: string;
+    tra_name: string;
+    tra_locations: string list
+  }
+
 
 type function_annotation_t = {
     regvarintros: regvar_intro_t list;
-    stackvarintros: stackvar_intro_t list
+    stackvarintros: stackvar_intro_t list;
+    typingrules: typing_rule_t list
   }
 
 class type function_data_int =
@@ -1567,6 +1574,8 @@ class type function_data_int =
     method has_regvar_type_cast: doubleword_int -> bool
     method has_stackvar_type_annotation: int -> bool
     method has_stackvar_type_cast: int -> bool
+    method is_typing_rule_enabled: string -> string -> bool
+    method is_typing_rule_disabled: string -> string -> bool
     method has_class_info: bool
     method has_callsites: bool
     method has_path_contexts: bool
@@ -3188,6 +3197,14 @@ type type_constraint_t =
   | TyZeroCheck of type_term_t
 
 
+type type_inference_rule_application_t = {
+    tir_faddr: string;
+    tir_loc: string;
+    tir_rule: string;
+    tir_constraint_ix: int
+  }
+
+
 class type type_constraint_dictionary_int =
   object
 
@@ -3246,17 +3263,21 @@ class type type_constraint_store_int =
 
     method reset: unit
 
-    method add_constraint: type_constraint_t -> unit
+    method add_constraint:
+             string -> string -> string -> type_constraint_t -> unit
 
-    method add_var_constraint: type_variable_t -> unit
+    method add_var_constraint:
+             string -> string -> string -> type_variable_t -> unit
 
-    method add_term_constraint: type_term_t -> unit
+    method add_term_constraint:
+             string -> string -> string -> type_term_t -> unit
 
-    method add_zerocheck_constraint: type_variable_t -> unit
+    (* method add_zerocheck_constraint: type_variable_t -> unit *)
 
-    method add_subtype_constraint: type_term_t -> type_term_t -> unit
+    method add_subtype_constraint:
+             string -> string -> string -> type_term_t -> type_term_t -> unit
 
-    method add_ground_constraint: type_term_t -> type_term_t -> unit
+    (* method add_ground_constraint: type_term_t -> type_term_t -> unit *)
 
     method get_function_type_constraints: string -> type_constraint_t list
 
@@ -3286,6 +3307,8 @@ class type type_constraint_store_int =
              string -> (register_t * string * btype_t option) list
 
     method resolve_local_stack_lhs_types: string -> (int * btype_t option) list
+
+    method write_xml: xml_element_int -> unit
 
     method toPretty: pretty_t
 
