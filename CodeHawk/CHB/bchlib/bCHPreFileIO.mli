@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -117,7 +117,8 @@ val save_userdata_function_summary_file: string -> xml_element_int -> unit
 val save_userdata_function_summaries_file: xml_element_int -> unit
 
 val load_export_ordinal_table: string -> xml_element_int option
-val save_resultdata_file    : xml_element_int -> unit
+val save_resultdata_file: xml_element_int -> unit
+val save_typeconstraintstore: xml_element_int -> unit
 val save_cfgs: xml_element_int -> unit
 
 val save_executable_dump: xml_element_int -> unit

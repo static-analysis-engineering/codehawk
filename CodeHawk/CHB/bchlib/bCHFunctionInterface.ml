@@ -1139,7 +1139,7 @@ let record_function_interface_type_constraints
                   ~tag:("function-interface type constraint")
                   __FILE__ __LINE__
                   [faddr ^ ": " ^ (type_constraint_to_string tyc)] in
-              store#add_constraint tyc
+              store#add_constraint faddr "exit" "INTF-freturn" tyc
            | _ -> ());
           (match fargs with
            | None ->
@@ -1160,7 +1160,7 @@ let record_function_interface_type_constraints
                                ~tag:("function-interface type constraint")
                                __FILE__ __LINE__
                                [faddr ^ ": " ^ (type_constraint_to_string tyc)] in
-                           store#add_constraint tyc
+                           store#add_constraint faddr "init" "INTF-fparam" tyc
                         | _ ->
                            chlog#add
                              "function interface type constraints"

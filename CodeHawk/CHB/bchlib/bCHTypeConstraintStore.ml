@@ -31,6 +31,7 @@ open CHUtils
 
 (* chutil *)
 open CHLogger
+open CHXmlDocument
 
 (* bchlib *)
 open BCHBCTypePretty
@@ -72,6 +73,8 @@ object (self)
   (* constraints that involve a global variable *)
   val gvartypes = H.create 5
 
+  val rules_applied = H.create 5
+
   method reset =
     begin
       H.clear store;
@@ -81,9 +84,28 @@ object (self)
       H.clear gvartypes
     end
 
-  method add_constraint (c: type_constraint_t) =
+  method private add_rule_applied
+                   (faddr: string)
+                   (loc: string)
+                   (rule: string)
+                   (ix: int) =
+    let tir = {
+        tir_faddr = faddr;
+        tir_loc = loc;
+        tir_rule = rule;
+        tir_constraint_ix = ix
+      } in
+    let entry =
+      if H.mem rules_applied faddr then
+        H.find rules_applied faddr
+      else
+        [] in
+    H.replace rules_applied faddr (tir :: entry)
+
+  method add_constraint
+           (faddr: string) (loc: string) (rule: string) (c: type_constraint_t) =
     let index = tcd#index_type_constraint c in
-    (* index the constraint *)
+    let _ = self#add_rule_applied faddr loc rule index in
     if H.mem store index then
       ()
     else
@@ -188,33 +210,50 @@ object (self)
       if H.mem iaddrentry iaddr then H.find iaddrentry iaddr else [] in
     H.replace iaddrentry iaddr (c :: entry)
 
-  method add_var_constraint (tyvar: type_variable_t) =
-    self#add_constraint (TyVar (TyVariable tyvar))
+  method add_var_constraint
+           (faddr: string)
+           (loc: string)
+           (rule: string)
+           (tyvar: type_variable_t) =
+    self#add_constraint faddr loc rule (TyVar (TyVariable tyvar))
 
-  method add_term_constraint (t: type_term_t) =
+  method add_term_constraint
+           (faddr: string)
+           (loc: string)
+           (rule: string)
+           (t: type_term_t) =
     match t with
-    | TyVariable tv -> self#add_var_constraint tv
+    | TyVariable tv -> self#add_var_constraint faddr loc rule tv
     | _ -> ()
 
+  (*
   method add_zerocheck_constraint (tyvar: type_variable_t) =
     begin
       self#add_var_constraint tyvar;
       self#add_constraint (TyZeroCheck (TyVariable tyvar))
     end
+   *)
 
-  method add_subtype_constraint (t1: type_term_t) (t2: type_term_t) =
+  method add_subtype_constraint
+           (faddr: string)
+           (loc: string)
+           (rule: string)
+           (t1: type_term_t)
+           (t2: type_term_t) =
     begin
-      self#add_term_constraint t1;
-      self#add_term_constraint t2;
-      self#add_constraint (TySub (t1, t2))
+      self#add_term_constraint faddr loc rule t1;
+      self#add_term_constraint faddr loc rule t2;
+      self#add_constraint faddr loc rule (TySub (t1, t2))
     end
 
+  (*
   method add_ground_constraint (t1: type_term_t) (t2: type_term_t) =
     begin
       self#add_term_constraint t1;
       self#add_term_constraint t2;
       self#add_constraint (TyGround (t1, t2))
     end
+   *)
 
   method get_function_type_constraints (faddr: string): type_constraint_t list =
     if H.mem functiontypes faddr then
@@ -703,6 +742,31 @@ object (self)
       else
         () in
     !result
+
+  method private write_xml_rules_applied (node: xml_element_int) =
+    let ranode = xmlElement "rules-applied" in
+    begin
+      H.iter (fun faddr rules ->
+          let fnode = xmlElement "function" in
+          let _ = fnode#setAttribute "faddr" faddr in
+          begin
+            List.iter (fun rule ->
+                let rnode = xmlElement "rule" in
+                begin
+                  rnode#setAttribute "loc" rule.tir_loc;
+                  rnode#setAttribute "rule" rule.tir_rule;
+                  rnode#setIntAttribute "tc-ix" rule.tir_constraint_ix;
+                  fnode#appendChildren [rnode]
+                end) rules;
+            ranode#appendChildren [fnode]
+          end) rules_applied;
+      node#appendChildren [ranode]
+    end
+
+  method write_xml (node: xml_element_int) =
+    begin
+      self#write_xml_rules_applied (node)
+    end
 
   method toPretty =
     let constraints = ref [] in

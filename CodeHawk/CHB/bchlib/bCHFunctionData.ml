@@ -280,6 +280,32 @@ object (self)
            __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
            ^ "No stackvar annotation found at offset " ^ (string_of_int offset)]
 
+  method is_typing_rule_enabled (loc: string) (name: string): bool =
+    match self#get_function_annotation with
+    | None -> false
+    | Some a ->
+       List.fold_left
+         (fun acc tra ->
+           acc ||
+             (if tra.tra_action = "enable" && tra.tra_name = name then
+                (List.mem "all" tra.tra_locations)
+                || (List.mem loc tra.tra_locations)
+              else
+                false)) false a.typingrules
+
+  method is_typing_rule_disabled (loc: string) (name: string): bool =
+    match self#get_function_annotation with
+    | None -> false
+    | Some a ->
+       List.fold_left
+         (fun acc tra ->
+           acc ||
+             (if tra.tra_action = "disable" && tra.tra_name = name then
+                (List.mem "all" tra.tra_locations)
+                || (List.mem loc tra.tra_locations)
+              else
+                false)) false a.typingrules
+
   method add_inlined_block (baddr:doubleword_int) =
     inlined_blocks <- baddr :: inlined_blocks
 
@@ -592,6 +618,25 @@ let read_xml_stackvar_intro (node: xml_element_int): stackvar_intro_t traceresul
         svi_cast = svi_cast}
 
 
+let read_xml_typing_rule (node: xml_element_int): typing_rule_t traceresult =
+  let get = node#getAttribute in
+  let has = node#hasNamedAttribute in
+  if not (has "name") then
+    Error ["typingrule without name"]
+  else if not (has "locs") then
+    Error ["typingrule without location"]
+  else if not (has "action") then
+    Error ["typingrule without action"]
+  else
+    let name = get "name" in
+    let action = get "action" in
+    let locs = get "locs" in
+    let locs = String.split_on_char ',' locs in
+    Ok {tra_name = name;
+        tra_action = action;
+        tra_locations = locs}
+
+
 let read_xml_function_annotation (node: xml_element_int) =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
@@ -635,8 +680,27 @@ let read_xml_function_annotation (node: xml_element_int) =
               (rvintros#getTaggedChildren "vintro")
           else
             [] in
+        let typingrules =
+          if hasc "typing-rules" then
+            let trules = getc "typing-rules" in
+            List.fold_left
+              (fun acc n ->
+                TR.tfold
+                  ~ok:(fun tr -> tr :: acc)
+                  ~error:(fun e ->
+                    begin
+                      log_error_result __FILE__ __LINE__ e;
+                      acc
+                    end)
+                  (read_xml_typing_rule n))
+              []
+              (trules#getTaggedChildren "typingrule")
+          else
+            [] in
         fndata#set_function_annotation
-          {regvarintros = regvintros; stackvarintros = stackvintros}
+          {regvarintros = regvintros;
+           stackvarintros = stackvintros;
+          typingrules = typingrules}
       else
         log_error_result
           ~tag:"function annotation faddr not found"
