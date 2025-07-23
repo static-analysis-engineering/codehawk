@@ -1040,6 +1040,10 @@ and reduce_ne m e1 e2 =
      (* (a - b) != 0  ===>  a != b *)
      | (XOp (XMinus, [x; y]), SConst a) when zero_num a -> (true, XOp (XNe, [x; y]))
 
+     (* (a + b) != 0 ====> a != -b *)
+     | (XOp (XPlus, [x; y]), SConst a) when zero_num a ->
+        (true, XOp (XNe, [x; (XOp (XNeg, [y]))]))
+
      | _ -> default
 
 

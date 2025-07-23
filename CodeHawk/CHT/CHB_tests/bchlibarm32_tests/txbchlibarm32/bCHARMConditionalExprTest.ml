@@ -149,7 +149,7 @@ let compare_negative_tests () =
       ("cmn-bcs", "0x18620", "0x18624", "010572e30100002a", 3, "(R2 >= 4290772992)");
       ("cmn-beq", "0x170d0", "0x170d4", "010073e30100000a", 3, "(R3 = -1)");
       ("cmn-bhi", "0x1f9b0", "0x1f9b4", "1f0270e30100008a", 3, "(R0 > 268435455)");
-      ("cmn-bne", "0x10a0c", "0x10a10", "010072e30100001a", 3, "((R2 + 1) != 0)")
+      ("cmn-bne", "0x10a0c", "0x10a10", "010072e30100001a", 3, "(R2 != (-1))")
     ] in
   begin
     TS.new_testsuite (testname ^ "_compare_negative_tests") lastupdated;

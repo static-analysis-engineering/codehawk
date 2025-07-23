@@ -304,8 +304,7 @@ object (self)
            save_vars faddr vard
          end );
            (* (if save then fndata#save); *)
-      H.add table fn#get_address#to_hex_string fn;
-      typeconstraints#record_type_constraints;
+      H.add table fn#get_address#to_hex_string fn
     end
 
   method write_xml (node:xml_element_int) =
@@ -325,9 +324,12 @@ object (self)
 
   method save =
     let node = xmlElement "application-results" in
+    let tcnode = xmlElement "type-constraint-store" in
     begin
       self#write_xml node;
-      save_resultdata_file node
+      save_resultdata_file node;
+      typeconstraintstore#write_xml tcnode;
+      save_typeconstraintstore tcnode
     end
 
 end

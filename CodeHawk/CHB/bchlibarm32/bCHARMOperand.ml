@@ -735,6 +735,9 @@ object (self:'a)
   method is_pc_register =
     match kind with ARMReg ARPC -> true | _ -> false
 
+  method is_sp_register =
+    match kind with ARMReg ARSP -> true | _ -> false
+
   method is_double_register =
     match kind with ARMDoubleReg _ -> true | _ -> false
 
