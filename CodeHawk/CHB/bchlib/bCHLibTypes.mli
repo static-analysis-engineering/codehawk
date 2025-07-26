@@ -1443,6 +1443,7 @@ object
   method is_elf: bool
   method is_pe: bool
   method is_verbose: bool
+  method is_typing_rule_enabled: string -> bool
   method is_debug_excluded: bool
   method is_sideeffects_on_global_enabled: string -> bool
   method is_abstract_stackvars_disabled: bool
@@ -1574,8 +1575,7 @@ class type function_data_int =
     method has_regvar_type_cast: doubleword_int -> bool
     method has_stackvar_type_annotation: int -> bool
     method has_stackvar_type_cast: int -> bool
-    method is_typing_rule_enabled: string -> string -> bool
-    method is_typing_rule_disabled: string -> string -> bool
+    method is_typing_rule_enabled: ?rdef:string option -> string -> string -> bool
     method has_class_info: bool
     method has_callsites: bool
     method has_path_contexts: bool
