@@ -280,31 +280,39 @@ object (self)
            __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
            ^ "No stackvar annotation found at offset " ^ (string_of_int offset)]
 
-  method is_typing_rule_enabled (loc: string) (name: string): bool =
+  method is_typing_rule_enabled ?(rdef=None) (loc: string) (name: string): bool =
+    let rdefloc =
+      match rdef with
+      | None -> loc
+      | Some rdefaddr -> loc ^ ":" ^ rdefaddr in
     match self#get_function_annotation with
-    | None -> false
+    | None -> BCHSystemSettings.system_settings#is_typing_rule_enabled name
     | Some a ->
-       List.fold_left
-         (fun acc tra ->
-           acc ||
-             (if tra.tra_action = "enable" && tra.tra_name = name then
-                (List.mem "all" tra.tra_locations)
-                || (List.mem loc tra.tra_locations)
-              else
-                false)) false a.typingrules
-
-  method is_typing_rule_disabled (loc: string) (name: string): bool =
-    match self#get_function_annotation with
-    | None -> false
-    | Some a ->
-       List.fold_left
-         (fun acc tra ->
-           acc ||
-             (if tra.tra_action = "disable" && tra.tra_name = name then
-                (List.mem "all" tra.tra_locations)
-                || (List.mem loc tra.tra_locations)
-              else
-                false)) false a.typingrules
+       let is_user_enabled () =
+         List.fold_left
+           (fun acc tra ->
+             acc ||
+               (if tra.tra_action = "enable" && tra.tra_name = name then
+                  (List.mem "all" tra.tra_locations)
+                  || (List.mem loc tra.tra_locations)
+                else
+                  false)) false a.typingrules in
+       let is_user_disabled () =
+         List.fold_left
+           (fun acc tra ->
+             acc ||
+               (if tra.tra_action = "disable" && tra.tra_name = name then
+                  (List.mem "all" tra.tra_locations)
+                  || (List.mem loc tra.tra_locations)
+                  || (List.mem rdefloc tra.tra_locations)
+                else
+                  false)) false a.typingrules in
+       if is_user_enabled () then
+         true
+       else if is_user_disabled () then
+         false
+       else
+         BCHSystemSettings.system_settings#is_typing_rule_enabled name
 
   method add_inlined_block (baddr:doubleword_int) =
     inlined_blocks <- baddr :: inlined_blocks

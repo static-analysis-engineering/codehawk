@@ -175,6 +175,7 @@ object (self)
     let has_exit_use_r (v_r: variable_t traceresult): bool =
       TR.tfold_default has_exit_use false v_r in
 
+    (*
     let getopt_initial_argument_value (x: xpr_t): (register_t * int) option =
       match (rewrite_expr x) with
       | XVar v when floc#f#env#is_initial_arm_argument_value v ->
@@ -185,10 +186,13 @@ object (self)
            (TR.tget_ok (floc#f#env#get_initial_register_value_register v),
             n#toInt)
       | _ -> None in
+     *)
 
+    (*
     let getopt_initial_argument_value_r
           (x_r: xpr_t traceresult): (register_t * int) option =
       TR.tfold_default getopt_initial_argument_value None x_r in
+     *)
 
     let getopt_stackaddress (x: xpr_t): int option =
       match (rewrite_expr x) with
@@ -267,12 +271,13 @@ object (self)
          ^ " <: "
          ^ (type_term_to_string ty2)] in
 
-    let _log_rule_enabled (linenumber: int) (name: string) =
+    let log_type_constraint_rule_disabled
+          (linenumber: int) (name: string) (tc: type_constraint_t) =
       log_diagnostics_result
-        ~tag:("typing rule " ^ name ^ " enabled")
+        ~tag:("typing rule " ^ name ^ " disabled")
         __FILE__
         linenumber
-        [(p2s floc#l#toPretty)] in
+        [(p2s floc#l#toPretty) ^ ": " ^ (type_constraint_to_string tc)] in
 
     let operand_is_zero (op: arm_operand_int): bool =
       (* Returns true if the value of the operand is known to be zero at
@@ -341,7 +346,7 @@ object (self)
            let fvar = add_return_capability (mk_function_typevar faddr) in
            let tt_z = mk_vty_term tv_z in
            let fterm = mk_vty_term fvar in
-           let rule = mnem ^ "-freturn" in
+           let rule = mnem ^ "-exituse" in
            begin
              log_subtype_constraint __LINE__ rule tt_z fterm;
              store#add_subtype_constraint faddr iaddr rule tt_z fterm
@@ -352,7 +357,6 @@ object (self)
     match instr#get_opcode with
 
     | Add (_, _, rd, rn, rm, _) ->
-       let xrn_r = rn#to_expr floc in
        begin
          (regvar_type_introduction "ADD" rd);
          (regvar_linked_to_exit "ADD" rd);
@@ -387,13 +391,15 @@ object (self)
                 let rntypeterm = mk_vty_term rntypevar in
                 let lhstypeterm = mk_vty_term lhstypevar in
                 let rule = "ADD-c" in
-                if fndata#is_typing_rule_disabled iaddr rule then
-                  log_subtype_rule_disabled __LINE__ rule rntypeterm lhstypeterm
-                else
+                if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
                   begin
                     log_subtype_constraint __LINE__ rule rntypeterm lhstypeterm;
-                    store#add_subtype_constraint faddr iaddr rule rntypeterm lhstypeterm
-                  end) rndefs);
+                    store#add_subtype_constraint
+                      faddr iaddr rule rntypeterm lhstypeterm
+                  end
+                else
+                  log_subtype_rule_disabled __LINE__ rule rntypeterm lhstypeterm
+              ) rndefs);
 
          (match getopt_global_address_r (rn#to_expr floc) with
           | Some gaddr ->
@@ -410,31 +416,22 @@ object (self)
                        let rmtypeterm = mk_vty_term rmtypevar in
                        let ctypeterm = mk_cty_term tyc in
                        let rule = "ADD-global" in
-                       begin
-                         log_subtype_constraint
-                           __LINE__ rule rmtypeterm ctypeterm;
-                         store#add_subtype_constraint
-                           faddr iaddr rule rmtypeterm ctypeterm
-                       end) rmdefs
+                       if fndata#is_typing_rule_enabled
+                            ~rdef:(Some rmaddr) iaddr rule then
+                         begin
+                           log_subtype_constraint
+                             __LINE__ rule rmtypeterm ctypeterm;
+                           store#add_subtype_constraint
+                             faddr iaddr rule rmtypeterm ctypeterm
+                         end
+                       else
+                         log_subtype_rule_disabled __LINE__ rule rmtypeterm ctypeterm
+                     ) rmdefs
                 | _ -> ())
              else
                ()
-          | _ -> ());
-
-         (match getopt_initial_argument_value_r xrn_r with
-          | Some (reg, _) ->
-             let ftvar = mk_function_typevar faddr in
-             let ftvar = add_freg_param_capability reg ftvar in
-             let rdreg = rd#to_register in
-             let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-             let fttypeterm = mk_vty_term ftvar in
-             let lhstypeterm = mk_vty_term lhstypevar in
-             let rule = "ADD-initv" in
-             begin
-               log_subtype_constraint __LINE__ rule fttypeterm lhstypeterm;
-               store#add_subtype_constraint faddr iaddr rule fttypeterm lhstypeterm
-             end
           | _ -> ())
+
        end
 
     | ArithmeticShiftRight (_, _, rd, rn, rm, _) when rm#is_immediate ->
@@ -450,11 +447,14 @@ object (self)
          (let tc = mk_int_type_constant Signed 32 in
           let tctypeterm = mk_cty_term tc in
           let lhstypeterm = mk_vty_term lhstypevar in
-          let rule = "ASR-lhs-default" in
-          begin
-            log_subtype_constraint __LINE__ rule tctypeterm lhstypeterm;
-            store#add_subtype_constraint faddr iaddr rule tctypeterm lhstypeterm
-          end);
+          let rule = "ASR-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tctypeterm lhstypeterm;
+              store#add_subtype_constraint faddr iaddr rule tctypeterm lhstypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tctypeterm lhstypeterm);
 
          (* ASR is applied to a signed integer *)
          (List.iter (fun rnrdef ->
@@ -464,10 +464,14 @@ object (self)
               let tctypeterm = mk_cty_term tyc in
               let rntypeterm = mk_vty_term rntypevar in
               let rule = "ASR-rdef" in
-              begin
-                log_subtype_constraint __LINE__ rule tctypeterm rntypeterm;
-                store#add_subtype_constraint faddr iaddr rule tctypeterm rntypeterm
-              end) rndefs)
+              if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
+                begin
+                  log_subtype_constraint __LINE__ rule tctypeterm rntypeterm;
+                  store#add_subtype_constraint faddr iaddr rule tctypeterm rntypeterm
+                end
+              else
+                log_subtype_rule_disabled __LINE__ rule tctypeterm rntypeterm
+            ) rndefs)
        end
 
     | BitwiseAnd (_, _, rd, rn, _, _) ->
@@ -485,10 +489,14 @@ object (self)
              let rntypeterm = mk_vty_term rntypevar in
              let lhstypeterm = mk_vty_term lhstypevar in
              let rule = "AND-rdef" in
-             begin
-               log_subtype_constraint __LINE__ rule rntypeterm lhstypeterm;
-               store#add_subtype_constraint faddr iaddr rule rntypeterm lhstypeterm
-             end) rndefs
+             if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
+               begin
+                 log_subtype_constraint __LINE__ rule rntypeterm lhstypeterm;
+                 store#add_subtype_constraint faddr iaddr rule rntypeterm lhstypeterm
+               end
+             else
+               log_subtype_rule_disabled __LINE__ rule rntypeterm lhstypeterm
+           ) rndefs
        end
 
     | BitwiseNot(_, _, rd, rm, _) when rm#is_immediate ->
@@ -503,11 +511,14 @@ object (self)
          (* destination is an integer type *)
          (let tctypeterm = mk_cty_term tyc in
           let lhstypeterm = mk_vty_term lhstypevar in
-          let rule = "MVN-default" in
-          begin
-            log_subtype_constraint __LINE__ rule tctypeterm lhstypeterm;
-            store#add_subtype_constraint faddr iaddr rule tctypeterm lhstypeterm
-          end);
+          let rule = "MVN-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tctypeterm lhstypeterm;
+              store#add_subtype_constraint faddr iaddr rule tctypeterm lhstypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tctypeterm lhstypeterm)
        end
 
     | BitwiseNot (_, _, rd, rm, _) ->
@@ -525,14 +536,17 @@ object (self)
               let rmtypeterm = mk_vty_term rmtypevar in
               let lhstypeterm = mk_vty_term lhstypevar in
               let rule = "MVN-rdef" in
-              begin
-                log_subtype_constraint __LINE__ rule rmtypeterm lhstypeterm;
-                store#add_subtype_constraint faddr iaddr rule rmtypeterm lhstypeterm
-              end) rmdefs);
-
+              if fndata#is_typing_rule_enabled ~rdef:(Some rmaddr) iaddr rule then
+                begin
+                  log_subtype_constraint __LINE__ rule rmtypeterm lhstypeterm;
+                  store#add_subtype_constraint faddr iaddr rule rmtypeterm lhstypeterm
+                end
+              else
+                log_subtype_rule_disabled __LINE__ rule rmtypeterm lhstypeterm
+            ) rmdefs)
        end
 
-    | BitwiseOr (_, _, rd, rn, _, _) ->
+    | BitwiseOr (_, _, rd, rn, rm, _) when rm#is_immediate ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
@@ -547,10 +561,14 @@ object (self)
              let rntypeterm = mk_vty_term rntypevar in
              let lhstypeterm = mk_vty_term lhstypevar in
              let rule = "ORR-rdef" in
-             begin
-               log_subtype_constraint __LINE__ rule rntypeterm lhstypeterm;
-               store#add_subtype_constraint faddr iaddr rule rntypeterm lhstypeterm
-             end) rndefs
+             if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
+               begin
+                 log_subtype_constraint __LINE__ rule rntypeterm lhstypeterm;
+                 store#add_subtype_constraint faddr iaddr rule rntypeterm lhstypeterm
+               end
+             else
+               log_subtype_rule_disabled __LINE__ rule rntypeterm lhstypeterm
+           ) rndefs
        end
 
     | Branch _ ->
@@ -605,10 +623,13 @@ object (self)
                let rule = "BL-rv" in
                match opttc with
                | Some tc ->
-                  begin
-                    log_type_constraint __LINE__ rule tc;
-                    store#add_constraint faddr iaddr rule tc
-                  end
+                  if fndata#is_typing_rule_enabled iaddr rule then
+                    begin
+                      log_type_constraint __LINE__ rule tc;
+                      store#add_constraint faddr iaddr rule tc
+                    end
+                  else
+                    log_type_constraint_rule_disabled __LINE__ rule tc
                | _ ->
                   begin
                     log_no_type_constraint __LINE__ rule rtype;
@@ -628,23 +649,26 @@ object (self)
                         let typevar =
                           mk_reglhs_typevar regarg faddr rdsym#getBaseName in
                         let opttc = mk_btype_constraint typevar ptype in
-                        let rule = "BL-regarg" in
-                        match opttc with
-                        | Some tc ->
-                           begin
-                             log_type_constraint __LINE__ rule tc;
-                             store#add_constraint faddr iaddr rule tc
-                           end
-                        | _ ->
-                           begin
-                             log_no_type_constraint __LINE__ rule ptype;
-                             ()
-                           end) rdefs
+                        let rule = "BL-sig-regarg" in
+                          match opttc with
+                          | Some tc ->
+                             if fndata#is_typing_rule_enabled iaddr rule then
+                               begin
+                                 log_type_constraint __LINE__ rule tc;
+                                 store#add_constraint faddr iaddr rule tc
+                               end
+                             else
+                               log_type_constraint_rule_disabled __LINE__ rule tc
+                          | _ ->
+                             begin
+                               log_no_type_constraint __LINE__ rule ptype;
+                               ()
+                             end) rdefs
                   else
                     ()
 
                 else if is_stack_parameter p then
-                  let rule = "BL-stackarg" in
+                  let rule = "BL-sig-stackarg" in
                   (log_tfold_default
                      (log_error
                         ("Unable to retrieve stack offset from "
@@ -661,10 +685,13 @@ object (self)
                             let opttc = mk_btype_constraint typevar ptype in
                             match opttc with
                             | Some tc ->
-                               begin
-                                 log_type_constraint __LINE__ rule tc;
-                                 store#add_constraint faddr iaddr rule tc
-                               end
+                               if fndata#is_typing_rule_enabled iaddr rule then
+                                 begin
+                                   log_type_constraint __LINE__ rule tc;
+                                   store#add_constraint faddr iaddr rule tc
+                                 end
+                               else
+                                 log_type_constraint_rule_disabled __LINE__ rule tc
                             | _ -> ())
                           ()
                           (floc#get_singleton_stackpointer_offset)))
@@ -695,13 +722,16 @@ object (self)
                         let eltype = ptr_deref ptype in
                         let atype = t_array eltype 1 in
                         let opttc = mk_btype_constraint lhstypevar atype in
-                        let rule = "BL-stackarg" in
+                        let rule = "BL-sig-stackarg" in
                         match opttc with
                         | Some tc ->
-                           begin
-                             log_type_constraint __LINE__ rule tc;
-                             store#add_constraint faddr iaddr rule tc
-                           end
+                           if fndata#is_typing_rule_enabled iaddr rule then
+                             begin
+                               log_type_constraint __LINE__ rule tc;
+                               store#add_constraint faddr iaddr rule tc
+                             end
+                           else
+                             log_type_constraint_rule_disabled __LINE__ rule tc
                         | _ -> ())
              end
            ) callargs
@@ -722,10 +752,14 @@ object (self)
              let rntypeterm = mk_vty_term rntypevar in
              let immtypeterm = mk_cty_term immtypeconst in
              let rule = "CMP-rdef" in
-             begin
-               log_subtype_constraint __LINE__ rule rntypeterm immtypeterm;
-               store#add_subtype_constraint faddr iaddr rule rntypeterm immtypeterm
-             end) rndefs
+             if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
+               begin
+                 log_subtype_constraint __LINE__ rule rntypeterm immtypeterm;
+                 store#add_subtype_constraint faddr iaddr rule rntypeterm immtypeterm
+               end
+             else
+               log_subtype_rule_disabled __LINE__ rule rntypeterm immtypeterm
+           ) rndefs
 
     | Compare (_, rn, rm, _) when rm#is_register ->
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
@@ -746,44 +780,18 @@ object (self)
               let rntypeterm = mk_vty_term rntypevar in
               let rmtypeterm = mk_vty_term rmtypevar in
               let rule = "CMP-rdef" in
-              begin
-                log_subtype_constraint __LINE__ rule rntypeterm rmtypeterm;
-                store#add_subtype_constraint faddr iaddr rule rntypeterm rmtypeterm
-              end) pairs);
-
-         (let xrn_r = rn#to_expr floc in
-          match getopt_initial_argument_value_r xrn_r with
-          | Some (reg, _) ->
-             let ftvar = mk_function_typevar faddr in
-             let ftvar = add_freg_param_capability reg ftvar in
-             List.iter (fun rmsym ->
-                 let rmaddr = rmsym#getBaseName in
-                 let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
-                 let ftterm = mk_vty_term ftvar in
-                 let rmtypeterm = mk_vty_term rmtypevar in
-                 let rule = "CMP-init" in
-                 begin
-                   log_subtype_constraint __LINE__ rule ftterm rmtypeterm;
-                   store#add_subtype_constraint faddr iaddr rule ftterm rmtypeterm
-                 end) rmdefs
-          | _ -> ());
-
-         (let xrm_r = rm#to_expr floc in
-          match getopt_initial_argument_value_r xrm_r with
-          | Some (reg, _) ->
-             let ftvar = mk_function_typevar faddr in
-             let ftvar = add_freg_param_capability reg ftvar in
-             List.iter (fun rnsym ->
-                 let rnaddr = rnsym#getBaseName in
-                 let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
-                 let ftterm = mk_vty_term ftvar in
-                 let rntypeterm = mk_vty_term rntypevar in
-                 let rule = "CMP-init" in
-                 begin
-                   log_subtype_constraint __LINE__ rule ftterm rntypeterm;
-                   store#add_subtype_constraint faddr iaddr rule ftterm rntypeterm
-                 end) rndefs
-          | _ -> ())
+              if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
+                if fndata#is_typing_rule_enabled ~rdef:(Some rmaddr) iaddr rule then
+                  begin
+                    log_subtype_constraint __LINE__ rule rntypeterm rmtypeterm;
+                    store#add_subtype_constraint
+                      faddr iaddr rule rntypeterm rmtypeterm
+                  end
+                else
+                  log_subtype_rule_disabled __LINE__ rule rntypeterm rmtypeterm
+              else
+                log_subtype_rule_disabled __LINE__ rule rntypeterm rmtypeterm
+            ) pairs);
        end
 
     | LoadRegister (_, rt, rn, rm, memop, _) when rm#is_immediate ->
@@ -804,10 +812,13 @@ object (self)
               let opttc = mk_btype_constraint rttypevar t in
               (match opttc with
                | Some tc ->
-                  begin
-                    log_type_constraint __LINE__ rule tc;
-                    store#add_constraint faddr iaddr rule tc
-                  end
+                  if fndata#is_typing_rule_enabled iaddr rule then
+                    begin
+                      log_type_constraint __LINE__ rule tc;
+                      store#add_constraint faddr iaddr rule tc
+                    end
+                  else
+                    log_type_constraint_rule_disabled __LINE__ rule tc
                | _ -> ()))
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             xtype_r);
@@ -828,10 +839,16 @@ object (self)
                    let rdtypeterm = mk_vty_term rdtypevar in
                    let rttypeterm = mk_vty_term rttypevar in
                    let rule = "LDR-load" in
-                   begin
-                     log_subtype_constraint __LINE__ rule rdtypeterm rttypeterm;
-                     store#add_subtype_constraint faddr iaddr rule rdtypeterm rttypeterm
-                   end) xrdef);
+                   if fndata#is_typing_rule_enabled
+                        ~rdef:(Some ldaddr) iaddr rule then
+                     begin
+                       log_subtype_constraint __LINE__ rule rdtypeterm rttypeterm;
+                       store#add_subtype_constraint
+                         faddr iaddr rule rdtypeterm rttypeterm
+                     end
+                   else
+                     log_subtype_rule_disabled __LINE__ rule rdtypeterm rttypeterm
+                 ) xrdef);
 
             (* if the address to load from is the address of a global struct field,
             assign the type of that field to the destination register. *)
@@ -859,10 +876,13 @@ object (self)
                              let rule = "LDR-struct-field" in
                              (match opttc with
                               | Some tc ->
-                                 begin
-                                   log_type_constraint __LINE__ rule tc;
-                                   store#add_constraint faddr iaddr rule tc
-                                 end
+                                 if fndata#is_typing_rule_enabled iaddr rule then
+                                   begin
+                                     log_type_constraint __LINE__ rule tc;
+                                     store#add_constraint faddr iaddr rule tc
+                                   end
+                                 else
+                                   log_type_constraint_rule_disabled __LINE__ rule tc
                               | _ -> ())
                           | _ ->
                              chlog#add
@@ -903,10 +923,13 @@ object (self)
                             let rule = "LDR-array" in
                             (match opttc with
                              | Some tc ->
-                                begin
-                                  log_type_constraint __LINE__ rule tc;
-                                  store#add_constraint faddr iaddr rule tc
-                                end
+                                if fndata#is_typing_rule_enabled iaddr rule then
+                                  begin
+                                    log_type_constraint __LINE__ rule tc;
+                                    store#add_constraint faddr iaddr rule tc
+                                  end
+                                else
+                                  log_type_constraint_rule_disabled __LINE__ rule tc
                              | _ -> ())
                           else
                             ()
@@ -930,11 +953,15 @@ object (self)
                 let rhstypeterm = mk_vty_term rhstypevar in
                 let rttypeterm = mk_vty_term rttypevar in
                 let rule = "LDR-stack-addr" in
-                begin
-                  log_subtype_constraint
-                    __LINE__ rule rhstypeterm rttypeterm;
-                  store#add_subtype_constraint faddr iaddr rule rhstypeterm rttypeterm
-                end)
+                if fndata#is_typing_rule_enabled iaddr rule then
+                  begin
+                    log_subtype_constraint
+                      __LINE__ rule rhstypeterm rttypeterm;
+                    store#add_subtype_constraint
+                      faddr iaddr rule rhstypeterm rttypeterm
+                  end
+                else
+                  log_subtype_rule_disabled __LINE__ rule rhstypeterm rttypeterm)
           end)
        end
 
@@ -956,20 +983,27 @@ object (self)
               let rdtypeterm = mk_vty_term rdtypevar in
               let rttypeterm = mk_vty_term rttypevar in
               let rule = "LDRB-load" in
-              begin
-                log_subtype_constraint __LINE__ rule rdtypeterm rttypeterm;
-                store#add_subtype_constraint faddr iaddr rule rdtypeterm rttypeterm
-              end) xrdefs);
+              if fndata#is_typing_rule_enabled ~rdef:(Some ldaddr) iaddr rule then
+                begin
+                  log_subtype_constraint __LINE__ rule rdtypeterm rttypeterm;
+                  store#add_subtype_constraint faddr iaddr rule rdtypeterm rttypeterm
+                end
+              else
+                log_subtype_rule_disabled __LINE__ rule rdtypeterm rttypeterm
+            ) xrdefs);
 
          (* LDRB rt, ...  : X_rt <: integer type *)
          (let tc = mk_int_type_constant Unsigned 8 in
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
-          let rule = "LDRB-default" in
-          begin
-            log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
-            store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
-          end)
+          let rule = "LDRB-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
+              store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tctypeterm rttypeterm)
 
        end
 
@@ -984,11 +1018,14 @@ object (self)
          (let tc = mk_int_type_constant SignedNeutral 8 in
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
-          let rule = "LDRB-default" in
-          begin
-            log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
-            store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
-          end)
+          let rule = "LDRB-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
+              store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tctypeterm rttypeterm)
 
        end
 
@@ -1010,10 +1047,13 @@ object (self)
               let rule = "LDRH-memop-tc" in
               (match opttc with
                | Some tc ->
-                  begin
-                    log_type_constraint __LINE__ rule tc;
-                    store#add_constraint faddr iaddr rule tc
-                  end
+                  if fndata#is_typing_rule_enabled iaddr rule then
+                    begin
+                      log_type_constraint __LINE__ rule tc;
+                      store#add_constraint faddr iaddr rule tc
+                    end
+                  else
+                    log_type_constraint_rule_disabled __LINE__ rule tc
                | _ -> ()))
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             xtype_r);
@@ -1029,10 +1069,14 @@ object (self)
               let rdtypeterm = mk_vty_term rdtypevar in
               let rttypeterm = mk_vty_term rttypevar in
               let rule = "LDRH-load" in
-              begin
-                log_subtype_constraint __LINE__ rule rdtypeterm rttypeterm;
-                store#add_subtype_constraint faddr iaddr rule rdtypeterm rttypeterm
-              end) xrdef)
+              if fndata#is_typing_rule_enabled ~rdef:(Some ldaddr) iaddr rule then
+                begin
+                  log_subtype_constraint __LINE__ rule rdtypeterm rttypeterm;
+                  store#add_subtype_constraint faddr iaddr rule rdtypeterm rttypeterm
+                end
+              else
+                log_subtype_rule_disabled __LINE__ rule rdtypeterm rttypeterm
+            ) xrdef)
        end
 
     | LoadRegisterHalfword (_, rt, _, _, _, _) ->
@@ -1046,12 +1090,14 @@ object (self)
          (let tc = mk_int_type_constant SignedNeutral 16 in
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
-          let rule = "LDRH-default" in
-          begin
-            log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
-            store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
-          end)
-
+          let rule = "LDRH-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
+              store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tctypeterm rttypeterm)
        end
 
     | LogicalShiftLeft (_, _, rd, rn, rm, _) when rm#is_immediate ->
@@ -1067,46 +1113,54 @@ object (self)
          (let tc = mk_int_type_constant Unsigned 32 in
           let tcterm = mk_cty_term tc in
           let lhstypeterm = mk_vty_term lhstypevar in
-          let rule = "LSL-default" in
-          begin
-            log_subtype_constraint __LINE__ rule tcterm lhstypeterm;
-            store#add_subtype_constraint faddr iaddr rule tcterm lhstypeterm
-          end);
+          let rule = "LSL-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tcterm lhstypeterm;
+              store#add_subtype_constraint faddr iaddr rule tcterm lhstypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tcterm lhstypeterm);
 
          (* LSL is applied to an unsigned integer *)
-         (let rule = "LSL-default" in
+         (let rule = "LSL-rdef" in
           List.iter (fun rnrdef ->
               let rnaddr = rnrdef#getBaseName in
               let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
               let tyc = mk_int_type_constant Unsigned 32 in
               let tctypeterm = mk_cty_term tyc in
               let rntypeterm = mk_vty_term rntypevar in
-              begin
-                log_subtype_constraint __LINE__ rule tctypeterm rntypeterm;
-                store#add_subtype_constraint faddr iaddr rule tctypeterm rntypeterm
-              end) rndefs)
+              if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
+                begin
+                  log_subtype_constraint __LINE__ rule tctypeterm rntypeterm;
+                  store#add_subtype_constraint faddr iaddr rule tctypeterm rntypeterm
+                end
+              else
+                log_subtype_rule_disabled __LINE__ rule tctypeterm rntypeterm
+            ) rndefs)
        end
 
-
-    | LogicalShiftRight (_, _, rd, _rn, rm, _) when rm#is_immediate ->
-       (*
+    | LogicalShiftRight (_, _, rd, rn, rm, _) when rm#is_immediate ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rnreg = rn#to_register in
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
-        *)
        begin
          (regvar_type_introduction "LSR" rd);
          (regvar_linked_to_exit "LSR" rd);
-         (*
+
          (* LSR results in an unsigned integer *)
          (let tc = mk_int_type_constant Unsigned 32 in
           let tcterm = mk_cty_term tc in
           let lhstypeterm = mk_vty_term lhstypevar in
-          begin
-            log_subtype_constraint __LINE__ "LSR-lhs" tcterm lhstypeterm;
-            store#add_subtype_constraint tcterm lhstypeterm
-          end);
+          let rule = "LSR-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tcterm lhstypeterm;
+              store#add_subtype_constraint faddr iaddr rule tcterm lhstypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tcterm lhstypeterm);
 
          (* LSR is applied to an unsigned integer *)
          (List.iter (fun rnrdef ->
@@ -1115,11 +1169,16 @@ object (self)
               let tyc = mk_int_type_constant Unsigned 32 in
               let tctypeterm = mk_cty_term tyc in
               let rntypeterm = mk_vty_term rntypevar in
-              begin
-                log_subtype_constraint __LINE__ "LSR-rhs" tctypeterm rntypeterm;
-                store#add_subtype_constraint tctypeterm rntypeterm
-              end) rndefs)
-          *)
+              let rule = "LSR-rdef" in
+              if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
+                begin
+                  log_subtype_constraint __LINE__ rule tctypeterm rntypeterm;
+                  store#add_subtype_constraint faddr iaddr rule tctypeterm rntypeterm
+                end
+              else
+                log_subtype_rule_disabled __LINE__ rule tctypeterm rntypeterm
+            ) rndefs)
+
        end
 
     | Move (_, _, rd, rm, _, _) when rm#is_immediate ->
@@ -1138,10 +1197,13 @@ object (self)
             let lhstypeterm = mk_vty_term lhstypevar in
             let tctypeterm = mk_cty_term tyc in
             let rule = "MOV-c" in
-            begin
-              log_subtype_constraint __LINE__ rule tctypeterm lhstypeterm;
-              store#add_subtype_constraint faddr iaddr rule tctypeterm lhstypeterm
-            end)
+            if fndata#is_typing_rule_enabled iaddr rule then
+              begin
+                log_subtype_constraint __LINE__ rule tctypeterm lhstypeterm;
+                store#add_subtype_constraint faddr iaddr rule tctypeterm lhstypeterm
+              end
+            else
+              log_subtype_rule_disabled __LINE__ rule tctypeterm lhstypeterm)
        end
 
     | Move (_, _, rd, rm, _, _) when rd#get_register = rm#get_register ->
@@ -1173,15 +1235,18 @@ object (self)
             let rule = "MOV-rdef" in
             List.iter (fun rmrdef ->
                 let rmaddr = rmrdef#getBaseName in
-                if rmaddr != "init" then
-                  let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
-                  let rmtypeterm = mk_vty_term rmtypevar in
-                  let lhstypeterm = mk_vty_term lhstypevar in
+                let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
+                let rmtypeterm = mk_vty_term rmtypevar in
+                let lhstypeterm = mk_vty_term lhstypevar in
+                if fndata#is_typing_rule_enabled ~rdef:(Some rmaddr) iaddr rule then
                   begin
                     log_subtype_constraint __LINE__ rule rmtypeterm lhstypeterm;
                     store#add_subtype_constraint
                       faddr iaddr rule rmtypeterm lhstypeterm
-                  end) rmrdefs)
+                  end
+                else
+                  log_subtype_rule_disabled __LINE__ rule rmtypeterm lhstypeterm
+              ) rmrdefs)
        end
 
     | Pop (_, _, rl, _) when rl#includes_pc ->
@@ -1200,13 +1265,16 @@ object (self)
            begin
              (* use function return type *)
              (let opttc = mk_btype_constraint typevar rtype in
-              let rule = "POP-rv" in
+              let rule = "POP-sig-rv" in
               match opttc with
               | Some tc ->
-                 begin
-                   log_type_constraint __LINE__ rule tc;
-                   store#add_constraint faddr iaddr rule tc
-                 end
+                 if fndata#is_typing_rule_enabled iaddr rule then
+                   begin
+                     log_type_constraint __LINE__ rule tc;
+                     store#add_constraint faddr iaddr rule tc
+                   end
+                 else
+                   log_type_constraint_rule_disabled __LINE__ rule tc
               | _ ->
                  begin
                    log_no_type_constraint __LINE__ rule rtype;
@@ -1219,15 +1287,18 @@ object (self)
               let rule = "POP-rdef" in
               List.iter (fun r0def ->
                   let r0addr = r0def#getBaseName in
-                  if r0addr != "init" then
-                    let r0typevar = mk_reglhs_typevar reg faddr r0addr in
-                    let r0typeterm = mk_vty_term r0typevar in
-                    let lhstypeterm = mk_vty_term typevar in
+                  let r0typevar = mk_reglhs_typevar reg faddr r0addr in
+                  let r0typeterm = mk_vty_term r0typevar in
+                  let lhstypeterm = mk_vty_term typevar in
+                  if fndata#is_typing_rule_enabled ~rdef:(Some r0addr) iaddr rule then
                     begin
                       log_subtype_constraint __LINE__ rule r0typeterm lhstypeterm;
                       store#add_subtype_constraint
                         faddr iaddr rule r0typeterm lhstypeterm
-                    end) r0defs)
+                    end
+                  else
+                    log_subtype_rule_disabled __LINE__ rule r0typeterm lhstypeterm
+                ) r0defs)
              end)
 
     | Push _
@@ -1235,7 +1306,7 @@ object (self)
        (* no type information gained *)
        ()
 
-    | ReverseSubtract (_, _, rd, _, rm, _) ->
+    | ReverseSubtract (_, _, rd, _, rm, _) when rm#is_register ->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
@@ -1250,10 +1321,14 @@ object (self)
               let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
               let rmtypeterm = mk_vty_term rmtypevar in
               let lhstypeterm = mk_vty_term lhstypevar in
-              begin
-                log_subtype_constraint __LINE__ rule rmtypeterm lhstypeterm;
-                store#add_subtype_constraint faddr iaddr rule rmtypeterm lhstypeterm
-              end) rmdefs);
+              if fndata#is_typing_rule_enabled ~rdef:(Some rmaddr) iaddr rule then
+                begin
+                  log_subtype_constraint __LINE__ rule rmtypeterm lhstypeterm;
+                  store#add_subtype_constraint faddr iaddr rule rmtypeterm lhstypeterm
+                end
+              else
+                log_subtype_rule_disabled __LINE__ rule rmtypeterm lhstypeterm
+            ) rmdefs);
        end
 
     | SignedMultiplyLong (_, _, rdlo, rdhi, rn, rm) ->
@@ -1270,31 +1345,51 @@ object (self)
        let tctypeterm = mk_cty_term tc in
        let lhslotypeterm = mk_vty_term lhslotypevar in
        let lhshitypeterm = mk_vty_term lhshitypevar in
-       let rule1 = "SMULL-default" in
+       let rule1 = "SMULL-def-lhs" in
        let rule2 = "SMULL-rdef" in
        begin
-         log_subtype_constraint __LINE__ rule1 tctypeterm lhslotypeterm;
-         log_subtype_constraint __LINE__ rule1 tctypeterm lhshitypeterm;
-         store#add_subtype_constraint faddr iaddr rule1 tctypeterm lhslotypeterm;
-         store#add_subtype_constraint faddr iaddr rule1 tctypeterm lhshitypeterm;
+
+         (if fndata#is_typing_rule_enabled iaddr rule1 then
+            begin
+              log_subtype_constraint __LINE__ rule1 tctypeterm lhslotypeterm;
+              store#add_subtype_constraint faddr iaddr rule1 tctypeterm lhslotypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule1 tctypeterm lhslotypeterm);
+
+         (if fndata#is_typing_rule_enabled iaddr rule1 then
+            begin
+              log_subtype_constraint __LINE__ rule1 tctypeterm lhshitypeterm;
+              store#add_subtype_constraint faddr iaddr rule1 tctypeterm lhshitypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule1 tctypeterm lhshitypeterm);
 
          (List.iter (fun rnrdef ->
               let rnaddr = rnrdef#getBaseName in
               let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
               let rntypeterm = mk_vty_term rntypevar in
-              begin
-                log_subtype_constraint __LINE__ rule2 tctypeterm rntypeterm;
-                store#add_subtype_constraint faddr iaddr rule2 tctypeterm rntypeterm
-              end) rndefs);
+              if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule2 then
+                begin
+                  log_subtype_constraint __LINE__ rule2 tctypeterm rntypeterm;
+                  store#add_subtype_constraint faddr iaddr rule2 tctypeterm rntypeterm
+                end
+              else
+                log_subtype_rule_disabled __LINE__ rule2 tctypeterm rntypeterm
+            ) rndefs);
 
          (List.iter (fun rmrdef ->
               let rmaddr = rmrdef#getBaseName in
               let rmtypevar = mk_reglhs_typevar rmreg faddr rmaddr in
               let rmtypeterm = mk_vty_term rmtypevar in
-              begin
-                log_subtype_constraint __LINE__ rule2 tctypeterm rmtypeterm;
-                store#add_subtype_constraint faddr iaddr rule2 tctypeterm rmtypeterm
-              end) rmdefs)
+              if fndata#is_typing_rule_enabled ~rdef:(Some rmaddr) iaddr rule2 then
+                begin
+                  log_subtype_constraint __LINE__ rule2 tctypeterm rmtypeterm;
+                  store#add_subtype_constraint faddr iaddr rule2 tctypeterm rmtypeterm
+                end
+              else
+                log_subtype_rule_disabled __LINE__ rule2 tctypeterm rmtypeterm
+            ) rmdefs)
        end
 
     (* Store x in y  ---  *y := x  --- X <: Y.store *)
@@ -1305,28 +1400,13 @@ object (self)
        let rtrdefs = get_variable_rdefs_r (rt#to_variable floc) in
        let rtreg = rt#to_register in
        let xaddr_r = memvarop#to_address floc in
-       let xrt_r = rt#to_expr floc in
        begin
 
          (match getopt_stackaddress_r xaddr_r with
           | None -> ()
-          | Some offset ->
-             let lhstypevar = mk_localstack_lhs_typevar offset faddr iaddr in
+          | Some spoffset ->
+             let lhstypevar = mk_localstack_lhs_typevar spoffset faddr iaddr in
              begin
-               (* propagate function argument type *)
-               (match getopt_initial_argument_value_r xrt_r with
-                | Some (rtreg, off) when off = 0 ->
-                   let rhstypevar = mk_function_typevar faddr in
-                   let rhstypevar = add_freg_param_capability rtreg rhstypevar in
-                   let rhstypeterm = mk_vty_term rhstypevar in
-                   let lhstypeterm = mk_vty_term lhstypevar in
-                   let rule = "STR-init" in
-                   begin
-                     log_subtype_constraint __LINE__ rule rhstypeterm lhstypeterm;
-                     store#add_subtype_constraint
-                       faddr iaddr rule rhstypeterm lhstypeterm
-                   end
-                | _ -> ());
 
                (* propagate src register type from rdefs *)
                (let rtreg = rt#to_register in
@@ -1335,49 +1415,58 @@ object (self)
                 let rule = "STR-rdef" in
                 List.iter (fun rtrdef ->
                     let rtaddr = rtrdef#getBaseName in
-                    if rtaddr != "init" then
-                      let rttypevar = mk_reglhs_typevar rtreg faddr rtaddr in
-                      let rttypeterm = mk_vty_term rttypevar in
-                      let lhstypeterm = mk_vty_term lhstypevar in
+                    let rttypevar = mk_reglhs_typevar rtreg faddr rtaddr in
+                    let rttypeterm = mk_vty_term rttypevar in
+                    let lhstypeterm = mk_vty_term lhstypevar in
+                    if fndata#is_typing_rule_enabled
+                         ~rdef:(Some rtaddr) iaddr rule then
                       begin
                         log_subtype_constraint
                           __LINE__ rule rttypeterm lhstypeterm;
                         store#add_subtype_constraint
                           faddr iaddr rule rttypeterm lhstypeterm
-                      end) rtrdefs);
+                      end
+                    else
+                      log_subtype_rule_disabled __LINE__ rule rttypeterm lhstypeterm
+                  ) rtrdefs);
 
-                 (* import type from stackvar-introductions *)
-                 (match get_stackvar_type_annotation offset with
-                  | None -> ()
-                  | Some t ->
-                     let lhstypevar =
-                       mk_localstack_lhs_typevar offset faddr iaddr in
-                     let opttc = mk_btype_constraint lhstypevar t in
-                     (match opttc with
-                      | Some tc ->
-                         let rule = "STR-svintro" in
-                         begin
-                           log_type_constraint __LINE__ rule tc;
-                           store#add_constraint faddr iaddr rule tc
-                         end
-                      | _ -> ()))
+               (* import type from stackvar-introductions *)
+               (match get_stackvar_type_annotation offset with
+                | None -> ()
+                | Some t ->
+                   let lhstypevar =
+                     mk_localstack_lhs_typevar offset faddr iaddr in
+                   let opttc = mk_btype_constraint lhstypevar t in
+                   (match opttc with
+                    | Some tc ->
+                       let rule = "STR-svintro" in
+                       begin
+                         log_type_constraint __LINE__ rule tc;
+                         store#add_constraint faddr iaddr rule tc
+                       end
+                    | _ -> ()))
              end);
 
-         (let rule = "STR-store" in
-          List.iter (fun rndsym ->
-              let straddr = rndsym#getBaseName in
-              let rntypevar = mk_reglhs_typevar rnreg faddr straddr in
-              let rntypevar = add_store_capability ~size:4 ~offset rntypevar in
-              List.iter (fun rtdsym ->
-                  let rtdloc = rtdsym#getBaseName in
-                  let rttypevar = mk_reglhs_typevar rtreg faddr rtdloc in
-                  let rttypeterm = mk_vty_term rttypevar in
-                  let rntypeterm = mk_vty_term rntypevar in
-                  begin
-                    log_subtype_constraint __LINE__ rule rttypeterm rntypeterm;
-                    store#add_subtype_constraint
-                      faddr iaddr rule rttypeterm rntypeterm
-                  end) rtrdefs) rnrdefs)
+           (let rule = "STR-store" in
+            List.iter (fun rndsym ->
+                let straddr = rndsym#getBaseName in
+                let rntypevar = mk_reglhs_typevar rnreg faddr straddr in
+                let rntypevar = add_store_capability ~size:4 ~offset rntypevar in
+                List.iter (fun rtdsym ->
+                    let rtdloc = rtdsym#getBaseName in
+                    let rttypevar = mk_reglhs_typevar rtreg faddr rtdloc in
+                    let rttypeterm = mk_vty_term rttypevar in
+                    let rntypeterm = mk_vty_term rntypevar in
+                    if fndata#is_typing_rule_enabled
+                         ~rdef:(Some rtdloc) iaddr rule then
+                      begin
+                        log_subtype_constraint __LINE__ rule rttypeterm rntypeterm;
+                        store#add_subtype_constraint
+                          faddr iaddr rule rttypeterm rntypeterm
+                      end
+                    else
+                      log_subtype_rule_disabled __LINE__ rule rttypeterm rntypeterm
+                  ) rtrdefs) rnrdefs)
        end
 
     | StoreRegisterByte (_, rt, rn, rm, _memvarop, _) when rm#is_immediate ->
@@ -1394,11 +1483,14 @@ object (self)
           let tc = mk_int_type_constant SignedNeutral 8 in
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
-          let rule = "STRB-default" in
-          begin
-            log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
-            store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
-          end);
+          let rule = "STRB-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
+              store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tctypeterm rttypeterm);
 
          (let rule = "STRB-rdef" in
           List.iter (fun rndsym ->
@@ -1410,11 +1502,21 @@ object (self)
                   let rttypevar = mk_reglhs_typevar rtreg faddr rtdloc in
                   let rttypeterm = mk_vty_term rttypevar in
                   let rntypeterm = mk_vty_term rntypevar in
-                  begin
-                    log_subtype_constraint __LINE__ rule rttypeterm rntypeterm;
-                    store#add_subtype_constraint
-                      faddr iaddr rule rttypeterm rntypeterm
-                  end) rtrdefs) rnrdefs)
+                  if fndata#is_typing_rule_enabled
+                       ~rdef:(Some straddr) iaddr rule then
+                    if fndata#is_typing_rule_enabled
+                         ~rdef:(Some rtdloc) iaddr rule then
+                      begin
+                        log_subtype_constraint __LINE__ rule rttypeterm rntypeterm;
+                        store#add_subtype_constraint
+                          faddr iaddr rule rttypeterm rntypeterm
+                      end
+                    else
+                      log_subtype_rule_disabled __LINE__ rule rttypeterm rntypeterm
+                  else
+                    log_subtype_rule_disabled __LINE__ rule rttypeterm rntypeterm
+                ) rtrdefs
+            ) rnrdefs)
 
        end
 
@@ -1427,11 +1529,14 @@ object (self)
          (let tc = mk_int_type_constant SignedNeutral 8 in
           let tctypeterm = mk_cty_term tc in
           let rttypeterm = mk_vty_term rttypevar in
-          let rule = "STRB-default" in
-          begin
-            log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
-            store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
-          end)
+          let rule = "STRB-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
+              store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tctypeterm rttypeterm)
 
        end
 
@@ -1458,11 +1563,15 @@ object (self)
                 let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
                 let rntypeterm = mk_vty_term rntypevar in
                 let lhstypeterm = mk_vty_term lhstypevar in
-                begin
-                  log_subtype_constraint __LINE__ rule rntypeterm lhstypeterm;
-                  store#add_subtype_constraint
-                    faddr iaddr rule rntypeterm lhstypeterm
-                end) rndefs);
+                if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
+                  begin
+                    log_subtype_constraint __LINE__ rule rntypeterm lhstypeterm;
+                    store#add_subtype_constraint
+                      faddr iaddr rule rntypeterm lhstypeterm
+                  end
+                else
+                  log_subtype_rule_disabled __LINE__ rule rntypeterm lhstypeterm
+              ) rndefs);
 
        end
 
@@ -1482,12 +1591,17 @@ object (self)
                     let tyc = mk_int_type_constant Unsigned 32 in
                     let tctypeterm = mk_cty_term tyc in
                     let rntypeterm = mk_vty_term rntypevar in
-                    let rule = "UBFX-default" in
-                    begin
-                      log_subtype_constraint __LINE__ rule tctypeterm rntypeterm;
-                      store#add_subtype_constraint
-                        faddr iaddr rule tctypeterm rntypeterm
-                    end) rndefs)
+                    let rule = "UBFX-rdef" in
+                    if fndata#is_typing_rule_enabled
+                         ~rdef:(Some rnaddr) iaddr rule then
+                      begin
+                        log_subtype_constraint __LINE__ rule tctypeterm rntypeterm;
+                        store#add_subtype_constraint
+                          faddr iaddr rule tctypeterm rntypeterm
+                      end
+                    else
+                      log_subtype_rule_disabled __LINE__ rule tctypeterm rntypeterm
+                  ) rndefs)
              end
           | _ -> ())
        end
@@ -1500,13 +1614,16 @@ object (self)
          (regvar_linked_to_exit "UXTH" rd);
 
          (let opttc = mk_btype_constraint rdtypevar t_short in
-          let rule = "UBFX-default" in
+          let rule = "UBFX-def-lhs" in
           (match opttc with
            | Some tc ->
-              begin
-                log_type_constraint __LINE__ rule tc;
-                store#add_constraint faddr iaddr rule tc
-              end
+              if fndata#is_typing_rule_enabled iaddr rule then
+                begin
+                  log_type_constraint __LINE__ rule tc;
+                  store#add_constraint faddr iaddr rule tc
+                end
+              else
+                log_type_constraint_rule_disabled __LINE__ rule tc
            | _ -> ()));
        end
 

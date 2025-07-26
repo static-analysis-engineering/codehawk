@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ open BCHBasicTypes
 open BCHLibTypes
 open BCHUtilities
 
+module H = Hashtbl
 
 let fns_included = ref []
 let include_function (s: string) = fns_included := s :: !fns_included
@@ -47,6 +48,76 @@ let included_functions () = !fns_included
 let fns_excluded = ref []
 let exclude_function (s: string) = fns_excluded := s :: !fns_excluded
 let excluded_functions () = !fns_excluded
+
+
+let arm_typingrules_settings = H.create 23
+
+let _ =
+  List.iter (fun (r, s) ->
+      H.add arm_typingrules_settings r s)
+    [(* propagation rules *)
+      ("ADD-c", "enable");
+      ("AND-rdef", "enable");      
+      ("ASR-rdef", "enable");
+      ("CMP-rdef", "enable");
+      ("LSL_rdef", "enable");
+      ("LSR_rdef", "enable");
+      ("MOV-c", "enable");
+      ("MOV-rdef", "enable");
+      ("MVN-rdef", "enable");
+      ("ORR-rdef", "enable");
+      ("POP-rdef", "enable");
+      ("RSB-rdef", "enable");
+      ("SMULL-rdef", "enable");
+      ("STR-rdef", "enable");
+      ("SUB-rdef", "enable");
+      ("UBFX-rdef", "enable");
+
+      (* load/store rules *)
+      ("LDR-load", "enable");
+      ("LDRB-load", "enable");
+      ("LDRH-load", "enable");
+      ("STR-store", "enable");
+      ("STRB-store", "enable");
+      ("STRH-store", "enable");
+
+      (* function return type back propagation *)
+      ("ADD-exituse", "enable");
+      ("AND-exituse", "enable");
+      ("ASR-exituse", "enable");
+      ("LDR-exituse", "enable");
+      ("LDRB-exituse", "enable");
+      ("LDRH-exituse", "enable");
+      ("LSL-exituse", "enable");
+      ("LSR-exituse", "enable");
+      ("MOV-exituse", "enable");
+      ("MVN-exituse", "enable");
+      ("ORR-exituse", "enable");
+      ("RSB-exituse", "enable");
+      ("SUB-exituse", "enable");
+      ("UBFX-exituse", "enable");
+      ("UXTH-exituse", "enable");
+
+      (* default setting of lhs *)
+      ("ASR-def-lhs", "enable");
+      ("LDRB-def-lhs", "enable");
+      ("LDRH-def-lhs", "enable");
+      ("MVN-def-lhs", "enable");
+      ("SMULL-def-lhs", "enable");
+      ("UXTH-def-lhs", "enable");
+
+      (* misc rules *)
+      ("ADD-global", "enable");
+      ("BL-sig-regarg", "enable");
+      ("BL-sig-stackarg", "enable");
+      ("BL-sig-rv", "enable");
+      ("LDR-array", "enable");
+      ("LDR-memop-tc", "enable");
+      ("LDR-stack-addr", "enable");
+      ("LDR-struct-field", "enable");
+      ("LDRH-memop-tc", "enable");
+      ("POP-sig-rv", "enable")
+    ]
 
 
 (* -------------------------------------------------------------------------
@@ -312,6 +383,13 @@ object (self)
     && (match record_sideeffects_on_globals with
         | [] -> not (List.mem gv not_record_sideeffects_on_globals)
         | l -> List.mem gv l)
+
+  method is_typing_rule_enabled (name: string) =
+    match self#get_architecture with
+    | "arm" ->
+       (H.mem arm_typingrules_settings name)
+       && (H.find arm_typingrules_settings name) == "enable"
+    | _ -> false
 
 end
 
