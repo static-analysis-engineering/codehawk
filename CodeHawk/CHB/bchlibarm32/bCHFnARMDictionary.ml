@@ -1178,6 +1178,7 @@ object (self)
          let r0_op = arm_register_op AR0 RD in
          let xr0_r = r0_op#to_expr floc in
          let xxr0_r = TR.tmap rewrite_expr xr0_r in
+         let xxr0_r = TR.tmap (rewrite_in_cc_context floc c) xxr0_r in
          let cxr0_r = TR.tbind floc#convert_xpr_to_c_expr xxr0_r in
          let (tagstring, args) = mk_instrx_data_r () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
