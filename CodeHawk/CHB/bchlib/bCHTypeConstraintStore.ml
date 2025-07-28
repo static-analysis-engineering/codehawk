@@ -543,6 +543,10 @@ object (self)
            match result#toList with
            | [ixty1; ixty2] ->
               (match (bcd#get_typ ixty1), (bcd#get_typ ixty2) with
+               | TPtr (TVoid _, _), TPtr _ ->
+                  Some (bcd#get_typ ixty2)
+               | TPtr _, TPtr (TVoid _, _) ->
+                  Some (bcd#get_typ ixty1)
                | TPtr (tty1, _), TPtr (tty2, _)
                     when is_struct_type tty1 && is_scalar tty2 ->
                   Some (bcd#get_typ ixty1)

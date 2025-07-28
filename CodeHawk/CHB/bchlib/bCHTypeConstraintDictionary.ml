@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -171,6 +171,7 @@ object (self)
       | TyTInt (sg, si) -> (tags @ [signedness_mfts#ts sg], [si])
       | TyTStruct (key, name) -> (tags @ [name], [key])
       | TyTFloat k -> (tags @ [fkind_mfts#ts k], [])
+      | TyVoidPtr -> (tags, [])
       | TyBottom -> (tags, [])
       | TyTUnknown -> (tags, []) in
     type_constant_table#add key
@@ -192,6 +193,7 @@ object (self)
     | "ti" -> TyTInt (signedness_mfts#fs (t 1), a 0)
     | "tf" -> TyTFloat (fkind_mfts#fs (t 1))
     | "ts" -> TyTStruct (a 0, t 1)
+    | "vp" -> TyVoidPtr
     | "b" -> TyBottom
     | "u" -> TyTUnknown
     | s -> raise_tag_error name s type_constant_mcts#tags

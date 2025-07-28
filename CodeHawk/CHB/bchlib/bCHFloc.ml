@@ -1258,7 +1258,7 @@ object (self)
               self#f#env#mk_offset_memory_variable memref memoff)
             memref_r memoff_r
 
-  method private get_variable_type (v: variable_t): btype_t traceresult =
+  method get_variable_type (v: variable_t): btype_t traceresult =
     let is_zero (x: xpr_t) =
       match x with
       | XConst (IntConst n) -> n#equal numerical_zero

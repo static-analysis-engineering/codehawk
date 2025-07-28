@@ -140,6 +140,7 @@ let type_constant_to_string (c: type_constant_t) =
        ^ "(" ^ (string_of_int si) ^ ")"
   | TyTStruct (_, name) -> "t_struct_" ^ name
   | TyTFloat k -> float_type_to_string k
+  | TyVoidPtr -> "t_voidptr"
   | TyTUnknown -> "t_top"
   | TyBottom -> "t_bottom"
 
@@ -442,6 +443,8 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
      | TComp (key, _) ->
         let cinfo = bcfiles#get_compinfo key in
         Some (TyGround (TyVariable tv, TyConstant (TyTStruct (key, cinfo.bcname))))
+     | TPtr (TVoid _, _) ->
+        Some (TyGround (TyVariable tv, TyConstant TyVoidPtr))
      | TPtr (pty, _) ->
         let ptv = add_deref_capability tv in
         mk_btype_constraint ptv pty
@@ -461,6 +464,10 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
                 "Unable to create array access capability (no size): %s [%s:%d]"
                 (String.concat "; " e)
                 __FILE__ __LINE__;
+              log_diagnostics_result
+                __FILE__ __LINE__
+                ["Unable to create array access capability (no size): "
+                 ^ (String.concat "; " e)];
               None
             end)
      | rty ->
@@ -514,6 +521,7 @@ let type_constant_to_btype (tc: type_constant_t) =
      TInt (ikind, [])
   | TyTStruct (key, _) -> get_compinfo_struct_type (bcfiles#get_compinfo key)
   | TyTFloat fkind -> TFloat (fkind, FScalar, [])
+  | TyVoidPtr -> t_voidptr
   | TyBottom -> t_unknown
   | TyTUnknown -> t_unknown
 

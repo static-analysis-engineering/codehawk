@@ -116,7 +116,8 @@ let _ =
       ("LDR-stack-addr", "enable");
       ("LDR-struct-field", "enable");
       ("LDRH-memop-tc", "enable");
-      ("POP-sig-rv", "enable")
+      ("POP-sig-rv", "enable");
+      ("STR-memop-tc", "enable")
     ]
 
 
