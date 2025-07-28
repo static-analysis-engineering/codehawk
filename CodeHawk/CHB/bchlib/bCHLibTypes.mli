@@ -3181,6 +3181,7 @@ type type_constant_t =
   | TyTInt of signedness_t * int
   | TyTStruct of int * string  (** bckey, bcname *)
   | TyTFloat of fkind_t
+  | TyVoidPtr   (** only to be used in the context of a void pointer *)
   | TyTUnknown  (** top in type lattice *)
   | TyBottom  (** bottom in type lattice *)
 
@@ -6019,6 +6020,8 @@ class type floc_int =
              -> ?btype:btype_t      (** type of argument *)
              -> xpr_t               (** address value *)
              -> variable_t traceresult
+
+    method get_variable_type: variable_t -> btype_t traceresult
 
     method get_xpr_type: xpr_t -> btype_t traceresult
 

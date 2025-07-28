@@ -559,11 +559,13 @@ object
     | TyTInt _ -> "ti"
     | TyTStruct _ -> "ts"
     | TyTFloat _ -> "tf"
+    | TyVoidPtr -> "vp"
     | TyTUnknown -> "u"
     | TyBottom -> "b"
 
   method !tags = [
-      "a"; "ac"; "acl"; "ap"; "asl"; "ax"; "b"; "i"; "s"; "ti"; "tf"; "ts"; "u"; "z"]
+      "a"; "ac"; "acl"; "ap"; "asl"; "ax"; "b"; "i";
+      "s"; "ti"; "tf"; "ts"; "u"; "vp"; "z"]
 
 end
 
