@@ -1603,6 +1603,7 @@ end
 
 class function_info_t
         (faddr: doubleword_int)
+        (fndata: function_data_int)
         (varmgr: variable_manager_int)
         (invio: invariant_io_int)
         (varinvio: var_invariant_io_int):function_info_int =
@@ -1650,7 +1651,7 @@ object (self)
   val mutable call_targets_set = false
   val nonreturning_calls = new StringCollections.set_t
   val mutable invariants_to_be_reset = false
-  val stackframe = mk_function_stackframe varmgr
+  val stackframe = mk_function_stackframe fndata varmgr
   val proofobligations =
     mk_proofobligations faddr (mk_xpodictionary varmgr#vard#xd)
 
@@ -2610,7 +2611,8 @@ let load_function_info ?(reload=false) (faddr:doubleword_int) =
       let varmgr = make_variable_manager faddr xvard in
       let invio = read_invs fname varmgr#vard in
       let varinvio = read_varinvs fname varmgr#vard in
-      let finfo = new function_info_t faddr varmgr invio varinvio in
+      let fndata = functions_data#get_function faddr in
+      let finfo = new function_info_t faddr fndata varmgr invio varinvio in
       let _ =
         match extract_function_info_file fname with
         | Some node -> finfo#read_xml node

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,9 +25,13 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHPretty
 
 (* bchlib *)
 open BCHLibTypes
 
+val stackslot_rec_to_pretty: stackslot_rec_t -> pretty_t
 
-val mk_function_stackframe: variable_manager_int -> stackframe_int
+val mk_function_stackframe:
+  function_data_int -> variable_manager_int -> stackframe_int
