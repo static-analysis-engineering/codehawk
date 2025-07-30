@@ -5189,6 +5189,41 @@ class type xpodictionary_int =
   end
 
 
+type stackslot_rec_t = {
+    sslot_name: string;
+    sslot_offset: int;
+    sslot_btype: btype_t;
+    sslot_size: int option;
+    sslot_desc: string option
+  }
+
+
+class type stackslot_int =
+  object
+
+    method sslot_rec: stackslot_rec_t
+    method name: string
+    method offset: int
+    method btype: btype_t
+    method size: int option
+    method desc: string option
+    method contains_offset: int -> bool
+    method frame2object_offset_value: xpr_t -> xpr_t traceresult
+    method frame_offset_memory_offset:
+             ?tgtsize:int option
+             -> ?tgtbtype:btype_t
+             -> xpr_t
+             -> memory_offset_t traceresult
+    method object_offset_memory_offset:
+             ?tgtsize:int option
+             -> ?tgtbtype:btype_t
+             -> xpr_t
+             -> memory_offset_t traceresult
+
+    method write_xml: xml_element_int -> unit
+  end
+
+
 class type stackframe_int =
   object
 
@@ -5196,6 +5231,16 @@ class type stackframe_int =
              offset:int -> register_t -> ctxt_iaddress_t -> unit
     method add_register_restore:
              offset:int -> register_t -> ctxt_iaddress_t -> unit
+
+    method add_stackslot:
+             ?name: string option
+             -> ?btype: btype_t
+             -> ?size: int option
+             -> ?desc: string option
+             -> int
+             -> stackslot_int traceresult
+
+    method containing_stackslot: int -> stackslot_int option
 
     method add_load:
              offset:int

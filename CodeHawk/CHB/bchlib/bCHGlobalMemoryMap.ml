@@ -541,12 +541,12 @@ object (self)
              ^ "Illegal global address: " ^ address#to_hex_string]
     else if H.mem locations address#index then
       begin
-        ch_error_log#add
-          "duplicate global location"
-          (LBLOCK [
-               STR "Global location at address ";
-               address#toPretty;
-               STR " already exists"]);
+        log_error_result
+          ~tag:"duplicate global location"
+          ~msg:("Global location at address "
+                ^ address#to_hex_string
+                ^ "already exists")
+          __FILE__ __LINE__ [];
         Ok (H.find locations address#index)
       end
     else

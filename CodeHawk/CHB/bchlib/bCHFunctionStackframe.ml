@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023  Aarno Labs LLC
+   Copyright (c) 2023-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open CHUtils
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
@@ -40,12 +41,14 @@ open XprTypes
 
 (* bchlib *)
 open BCHBasicTypes
+open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHLibTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let bd = BCHDictionary.bdictionary
@@ -117,11 +120,98 @@ object (_self:'a)
 end
 
 
-class stackframe_t (varmgr: variable_manager_int):stackframe_int =
+let stackslot_rec_to_pretty (sslot: stackslot_rec_t): pretty_t =
+  LBLOCK [
+      STR "offset: "; INT sslot.sslot_offset; NL;
+      STR "name  : "; STR sslot.sslot_name; NL;
+      STR "type  : "; STR (btype_to_string sslot.sslot_btype); NL;
+      (match sslot.sslot_size with
+       | Some s -> LBLOCK [STR "size  : "; INT s; NL]
+       | _ -> STR "");
+      (match sslot.sslot_desc with
+       | Some desc -> LBLOCK [STR "desc  : "; STR desc; NL]
+       | _ -> STR "")
+    ]
+
+
+let opt_size_to_string (optsize: int option): string =
+  match optsize with
+  | Some s -> (string_of_int s)
+  | _ -> "?"
+
+
+class stackslot_t (sslot: stackslot_rec_t): stackslot_int =
+object
+
+  method sslot_rec = sslot
+
+  method name = sslot.sslot_name
+
+  method offset = sslot.sslot_offset
+
+  method btype = sslot.sslot_btype
+
+  method size = sslot.sslot_size
+
+  method desc = sslot.sslot_desc
+
+  method contains_offset (_offset: int) = false
+
+  method frame2object_offset_value (_xpr: xpr_t) = Error ["Not yet implemenented"]
+
+  method frame_offset_memory_offset
+           ?(tgtsize=None)
+           ?(tgtbtype=t_unknown)
+           (_xpr: xpr_t): memory_offset_t traceresult =
+    Error ["Not yet implemented for btype: "
+           ^ (btype_to_string tgtbtype)
+           ^  " and size "
+           ^ (opt_size_to_string tgtsize)]
+
+  method object_offset_memory_offset
+           ?(tgtsize=None)
+           ?(tgtbtype=t_unknown)
+           (_xpr: xpr_t): memory_offset_t traceresult =
+    Error ["Not yet implemented: "
+           ^ (btype_to_string tgtbtype)
+           ^ " and size "
+           ^ (opt_size_to_string tgtsize)]
+
+  method write_xml(_node: xml_element_int) = ()
+
+end
+
+
+class stackframe_t
+        (fndata: function_data_int)
+        (varmgr: variable_manager_int):stackframe_int =
 object (self)
 
   val saved_registers = H.create 3   (* reg -> saved_register_t *)
   val accesses = H.create 3      (* offset -> (iaddr, stack_access_t) list *)
+  val stackslots =
+    let slots = H.create 3 in    (* offset -> stackslot *)
+    begin
+      (match fndata#get_function_annotation with
+       | Some fnannot ->
+          List.iter (fun svintro ->
+              let ty = match svintro.svi_vartype with
+                | Some ty -> ty
+                | _ -> t_unknown in
+              let size = TR.to_option (size_of_btype ty) in
+              let sslot = {
+                  sslot_offset = svintro.svi_offset;
+                  sslot_name = svintro.svi_name;
+                  sslot_btype = ty;
+                  sslot_desc = Some ("svintro");
+                  sslot_size = size} in
+              let stackslot = new stackslot_t sslot in
+              let _ =
+                chlog#add "stack slot added" (stackslot_rec_to_pretty sslot) in
+              H.add slots svintro.svi_offset stackslot) fnannot.stackvarintros
+       | _ -> ());
+      slots
+    end
 
   method private vard = varmgr#vard
 
@@ -135,6 +225,79 @@ object (self)
       else
         [] in
     H.replace accesses offset ((iaddr, acc) :: entry)
+
+  method containing_stackslot (offset: int): stackslot_int option =
+    H.fold (fun _ sslot acc ->
+        match acc with
+        | Some _ -> acc
+        | _ -> if sslot#contains_offset offset then Some sslot else None)
+      stackslots None
+
+  method add_stackslot
+           ?(name = None)
+           ?(btype = t_unknown)
+           ?(size = None)
+           ?(desc = None)
+           (offset: int): stackslot_int traceresult =
+    if offset <= 0 then
+      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+             ^ "Illegal offset for stack slot: "
+             ^ (string_of_int offset)
+             ^ ". Offset should be greater than zero."]
+    else if H.mem stackslots offset then
+      begin
+        log_error_result
+          ~tag:"duplicate stack slot"
+          ~msg:("Stack slot at offset "
+                ^ (string_of_int offset)
+                ^ "already exists")
+          __FILE__ __LINE__ [];
+        Ok (H.find stackslots offset)
+      end
+    else
+      match self#containing_stackslot offset with
+      | Some sslot ->
+         let msg =
+           "Stackslot at offset "
+           ^ (string_of_int offset)
+           ^ " overlaps with "
+           ^ sslot#name
+           ^ " ("
+           ^ (string_of_int sslot#offset)
+           ^ (match sslot#size with
+              | Some s -> ", size: " ^ (string_of_int s)
+              | _ -> "")
+           ^ ")" in
+         begin
+           log_error_result
+             ~tag:"overlapping stackslot"
+             ~msg
+             __FILE__ __LINE__ [];
+           Error [msg]
+         end
+      | _ ->
+         let sname =
+           match name with
+           | Some name -> name
+           | _ -> "var_" ^ (string_of_int offset) in
+         let ssrec = {
+             sslot_name = sname;
+             sslot_offset = offset;
+             sslot_btype = btype;
+             sslot_size = size;
+             sslot_desc = desc
+           } in
+         let sslot = new stackslot_t ssrec in
+         begin
+           H.add stackslots offset sslot;
+           chlog#add
+             "stackframe:add stackslot"
+             (LBLOCK [
+                  INT offset;
+                  STR ": ";
+                  STR sslot#name]);
+           Ok sslot
+         end
 
   method add_register_spill
            ~(offset: int) (reg: register_t) (iaddr:ctxt_iaddress_t) =
