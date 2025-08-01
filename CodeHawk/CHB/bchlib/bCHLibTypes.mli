@@ -3844,6 +3844,17 @@ object
            -> numerical_t
            -> assembly_variable_int
 
+  (** [make_stack_variable ?size ?offset stackoffset] returns the stack variable
+      with base offset [stackoffset] and optional offset [offset] from the base.
+
+      raise BCH_failure if [stackoffset >= 0].
+   *)
+  method make_local_stack_variable:
+           ?size:int
+           -> ?offset:memory_offset_t
+           -> numerical_t
+           -> assembly_variable_int
+
 
   (** {2 Auxiliary variables}*)
 
@@ -4515,6 +4526,103 @@ end
 
 (** {1 Functions} *)
 
+  type stackslot_rec_t = {
+    sslot_name: string;
+    sslot_offset: int;
+    sslot_btype: btype_t;
+    sslot_size: int option;
+    sslot_spill: register_t option;
+    sslot_desc: string option
+  }
+
+
+class type stackslot_int =
+  object
+
+    method sslot_rec: stackslot_rec_t
+    method name: string
+    method offset: int
+    method btype: btype_t
+    method spill: register_t option
+    method size: int option
+    method desc: string option
+    method contains_offset: int -> bool
+    method frame2object_offset_value: xpr_t -> xpr_t traceresult
+    method frame_offset_memory_offset:
+             ?tgtsize:int option
+             -> ?tgtbtype:btype_t
+             -> xpr_t
+             -> memory_offset_t traceresult
+    method object_offset_memory_offset:
+             ?tgtsize:int option
+             -> ?tgtbtype:btype_t
+             -> xpr_t
+             -> memory_offset_t traceresult
+
+    method is_typed: bool
+    method is_struct: bool
+    method is_array: bool
+    method is_spill: bool
+
+    method write_xml: xml_element_int -> unit
+  end
+
+
+class type stackframe_int =
+  object
+
+    method add_register_spill:
+             offset:int -> register_t -> ctxt_iaddress_t -> unit
+    method add_register_restore:
+             offset:int -> register_t -> ctxt_iaddress_t -> unit
+
+    method add_stackslot:
+             ?name: string option
+             -> ?btype: btype_t
+             -> ?spill: register_t option
+             -> ?size: int option
+             -> ?desc: string option
+             -> int
+             -> stackslot_int traceresult
+
+    method containing_stackslot: int -> stackslot_int option
+
+    method add_load:
+             offset:int
+             -> size:int option
+             -> typ:btype_t option
+             -> variable_t
+             -> ctxt_iaddress_t
+             -> unit
+
+    method add_store:
+             offset:int
+             -> size:int option
+             -> typ:btype_t option
+             -> xpr:xpr_t option
+             -> variable_t
+             -> ctxt_iaddress_t
+             -> unit
+
+    method add_block_read:
+             offset:int
+             -> size:int option
+             -> typ:btype_t option
+             -> ctxt_iaddress_t
+             -> unit
+    method add_block_write:
+             offset:int
+             -> size:int option
+             -> typ:btype_t option
+             -> xpr:xpr_t option
+             -> ctxt_iaddress_t
+             -> unit
+
+    method write_xml: xml_element_int -> unit
+
+  end
+
+
 (** {2 Function symbol table} *)
 
 (** Function environment: function symbol table that keeps track of all
@@ -4655,6 +4763,8 @@ class type function_environment_int =
      *)
     method mk_gloc_variable:
              global_location_int -> memory_offset_t -> variable_t
+
+    method mk_stack_variable: stackframe_int -> numerical_t -> variable_t traceresult
 
     (** [mk_initial_memory_value var] returns an auxiliary variable that
         represents the initial value of [var] at function entry.
@@ -5189,93 +5299,6 @@ class type xpodictionary_int =
   end
 
 
-type stackslot_rec_t = {
-    sslot_name: string;
-    sslot_offset: int;
-    sslot_btype: btype_t;
-    sslot_size: int option;
-    sslot_desc: string option
-  }
-
-
-class type stackslot_int =
-  object
-
-    method sslot_rec: stackslot_rec_t
-    method name: string
-    method offset: int
-    method btype: btype_t
-    method size: int option
-    method desc: string option
-    method contains_offset: int -> bool
-    method frame2object_offset_value: xpr_t -> xpr_t traceresult
-    method frame_offset_memory_offset:
-             ?tgtsize:int option
-             -> ?tgtbtype:btype_t
-             -> xpr_t
-             -> memory_offset_t traceresult
-    method object_offset_memory_offset:
-             ?tgtsize:int option
-             -> ?tgtbtype:btype_t
-             -> xpr_t
-             -> memory_offset_t traceresult
-
-    method write_xml: xml_element_int -> unit
-  end
-
-
-class type stackframe_int =
-  object
-
-    method add_register_spill:
-             offset:int -> register_t -> ctxt_iaddress_t -> unit
-    method add_register_restore:
-             offset:int -> register_t -> ctxt_iaddress_t -> unit
-
-    method add_stackslot:
-             ?name: string option
-             -> ?btype: btype_t
-             -> ?size: int option
-             -> ?desc: string option
-             -> int
-             -> stackslot_int traceresult
-
-    method containing_stackslot: int -> stackslot_int option
-
-    method add_load:
-             offset:int
-             -> size:int option
-             -> typ:btype_t option
-             -> variable_t
-             -> ctxt_iaddress_t
-             -> unit
-
-    method add_store:
-             offset:int
-             -> size:int option
-             -> typ:btype_t option
-             -> xpr:xpr_t option
-             -> variable_t
-             -> ctxt_iaddress_t
-             -> unit
-
-    method add_block_read:
-             offset:int
-             -> size:int option
-             -> typ:btype_t option
-             -> ctxt_iaddress_t
-             -> unit
-    method add_block_write:
-             offset:int
-             -> size:int option
-             -> typ:btype_t option
-             -> xpr:xpr_t option
-             -> ctxt_iaddress_t
-             -> unit
-
-    method write_xml: xml_element_int -> unit
-
-  end
 
 
 type po_status_t =

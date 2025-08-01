@@ -666,6 +666,11 @@ object (self)
     let memref = memrefmgr#mk_global_reference in
     self#make_memory_variable ~size memref offset
 
+  method make_local_stack_variable ?(size=4) ?(offset=NoOffset) (n:numerical_t) =
+    let offset = ConstantOffset (n, offset) in
+    let memref = memrefmgr#mk_local_stack_reference in
+    self#make_memory_variable ~size memref offset
+
   method make_frozen_test_value
            (var:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FrozenTestValue (var, taddr, jaddr)))
