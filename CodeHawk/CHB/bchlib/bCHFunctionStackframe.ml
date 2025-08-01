@@ -28,8 +28,8 @@
 
 (* chlib *)
 open CHLanguage
+open CHNumerical
 open CHPretty
-open CHUtils
 
 (* chutil *)
 open CHLogger
@@ -37,6 +37,7 @@ open CHTraceResult
 open CHXmlDocument
 
 (* xprlib *)
+open Xprt
 open XprTypes
 
 (* bchlib *)
@@ -51,73 +52,13 @@ module H = Hashtbl
 module TR = CHTraceResult
 
 
+let x2p = XprToPretty.xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
+
+
+let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
-
-
-class saved_register_t (reg:register_t) =
-object (_self:'a)
-
-  val mutable save_address = None
-  val restore_addresses = new StringCollections.set_t
-
-  method compare (other:'a) = Stdlib.compare reg other#get_register
-
-  method set_save_address (a:ctxt_iaddress_t) = save_address <- Some a
-  method add_restore_address (a:ctxt_iaddress_t) = restore_addresses#add a
-
-  method get_register = reg
-
-  method get_save_address =
-    match save_address with
-      Some a -> a
-    | _ ->
-      let msg = (LBLOCK [ STR "saved_register.get_save_address " ;
-			  STR (register_to_string reg) ]) in
-      begin
-	ch_error_log#add "invocation error" msg ;
-	raise (Invocation_error
-                 ("saved_register.get_save_address " ^ (register_to_string reg)))
-      end
-
-  method get_restore_addresses = restore_addresses#toList
-
-  method has_save_address =
-    match save_address with Some _ -> true | _ -> false
-
-  method has_restore_addresses = not restore_addresses#isEmpty
-
-  method is_save_or_restore_address (iaddr:ctxt_iaddress_t) =
-    (match save_address with Some a -> a = iaddr | _ -> false) ||
-      (List.mem iaddr restore_addresses#toList)
-
-  method write_xml (node:xml_element_int) =
-    begin
-      bd#write_xml_register node reg ;
-      (match save_address with
-       | Some a -> node#setAttribute "save" a ;
-       | _ -> ()) ;
-      (if restore_addresses#isEmpty then () else
-         node#setAttribute "restore" (String.concat ";" restore_addresses#toList))
-    end
-
-  method toPretty =
-    let pSaved = match save_address with
-      | Some a -> LBLOCK [ STR "saved: " ; STR a ]
-      | _ -> STR "not saved" in
-    let pRestored = match restore_addresses#toList with
-      | [] -> STR "not restored"
-      | l ->
-         LBLOCK [
-             STR "restored: ";
-	     pretty_print_list l (fun a -> STR a) "[" ", " "]" ] in
-    LBLOCK [
-        STR (register_to_string reg);
-        STR ". ";
-        pSaved;
-        STR "; ";
-        pRestored]
-
-end
 
 
 let stackslot_rec_to_pretty (sslot: stackslot_rec_t): pretty_t =
@@ -134,14 +75,8 @@ let stackslot_rec_to_pretty (sslot: stackslot_rec_t): pretty_t =
     ]
 
 
-let opt_size_to_string (optsize: int option): string =
-  match optsize with
-  | Some s -> (string_of_int s)
-  | _ -> "?"
-
-
 class stackslot_t (sslot: stackslot_rec_t): stackslot_int =
-object
+object (self)
 
   method sslot_rec = sslot
 
@@ -151,33 +86,221 @@ object
 
   method btype = sslot.sslot_btype
 
+  method is_typed: bool = not (btype_equal self#btype t_unknown)
+
+  method spill: register_t option = sslot.sslot_spill
+
+  method is_spill: bool = Option.is_some self#spill
+
+  method is_struct: bool =
+    match resolve_type self#btype with
+    | Ok (TComp _) -> true
+    | _ -> false
+
+  method is_array: bool =
+    match resolve_type self#btype with
+    | Ok (TArray _) -> true
+    | _ -> false
+
   method size = sslot.sslot_size
 
   method desc = sslot.sslot_desc
 
-  method contains_offset (_offset: int) = false
+  method contains_offset (offset: int) =
+    let size = match self#size with
+      | Some s -> s
+      | _ -> 4 in
+    offset >= self#offset && offset < self#offset + size
 
-  method frame2object_offset_value (_xpr: xpr_t) = Error ["Not yet implemenented"]
+  method frame2object_offset_value (xpr: xpr_t) =
+    match xpr with
+    | XConst (IntConst n) ->
+       let numoffset = mkNumerical self#offset in
+       Ok (num_constant_expr (n#sub numoffset))
+    | _ ->
+       Error [
+           __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+           ^ "Offset expression "
+           ^ (x2s xpr)
+           ^ " not yet handled"]
 
   method frame_offset_memory_offset
            ?(tgtsize=None)
            ?(tgtbtype=t_unknown)
-           (_xpr: xpr_t): memory_offset_t traceresult =
-    Error ["Not yet implemented for btype: "
-           ^ (btype_to_string tgtbtype)
-           ^  " and size "
-           ^ (opt_size_to_string tgtsize)]
+           (xpr: xpr_t): memory_offset_t traceresult =
+    TR.tbind
+      (self#object_offset_memory_offset ~tgtsize ~tgtbtype)
+      (self#frame2object_offset_value xpr)
 
   method object_offset_memory_offset
            ?(tgtsize=None)
            ?(tgtbtype=t_unknown)
-           (_xpr: xpr_t): memory_offset_t traceresult =
-    Error ["Not yet implemented: "
-           ^ (btype_to_string tgtbtype)
-           ^ " and size "
-           ^ (opt_size_to_string tgtsize)]
+           (xoffset: xpr_t): memory_offset_t traceresult =
+    match xoffset with
+    | XConst (IntConst n) when n#equal CHNumerical.numerical_zero ->
+       Ok NoOffset
+    | XConst (IntConst n) when not self#is_typed ->
+       Ok (ConstantOffset (n, NoOffset))
+    | _ ->
+       let tgtbtype =
+         if is_unknown_type tgtbtype then None else Some tgtbtype in
+       if self#is_array then
+         let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+         self#arrayvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
+       else if self#is_struct then
+         let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+         self#structvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
+       else
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ (btype_to_string self#btype)
+                ^ " not yet handled"]
 
-  method write_xml(_node: xml_element_int) = ()
+  method private arrayvar_memory_offset
+                   ~(tgtsize: int option)
+                   ~(tgtbtype: btype_t option)
+                   (btype: btype_t)
+                   (xoffset: xpr_t): memory_offset_t traceresult =
+    let iszero x =
+      match x with
+      | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
+      | _ -> false in
+    match xoffset with
+    | XConst (IntConst n) when
+           n#equal CHNumerical.numerical_zero
+           && Option.is_none tgtsize
+           && Option.is_none tgtbtype ->
+       Ok NoOffset
+    | _ ->
+       if is_array_type btype then
+         let eltty = get_element_type btype in
+         tbind
+           (fun elsize ->
+             let optindex = BCHXprUtil.get_array_index_offset xoffset elsize in
+             match optindex with
+             | None ->
+                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                       ^ "Unable to extract index from " ^ (x2s xoffset)]
+             | Some (indexxpr, xrem) when
+                    iszero xrem
+                    && Option.is_none tgtsize
+                    && Option.is_none tgtbtype ->
+                Ok (ArrayIndexOffset (indexxpr, NoOffset))
+             | Some (indexxpr, xrem) ->
+                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                       ^ "Unable to handle remainder "
+                       ^ (x2s xrem)
+                       ^ " with index expression "
+                       ^ (x2s indexxpr)])
+           (size_of_btype eltty)
+       else
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "xoffset: " ^ (x2s xoffset)
+                ^ "; btype: " ^ (btype_to_string btype)]
+
+  method private structvar_memory_offset
+                   ~(tgtsize: int option)
+                   ~(tgtbtype: btype_t option)
+                   (btype: btype_t)
+                   (xoffset: xpr_t): memory_offset_t traceresult =
+    match xoffset with
+    | XConst (IntConst n) when
+           n#equal CHNumerical.numerical_zero
+           && Option.is_none tgtsize
+           && Option.is_none tgtbtype ->
+       Ok NoOffset
+    | XConst (IntConst _) ->
+       if is_struct_type btype then
+         let compinfo = get_struct_type_compinfo btype in
+         (self#get_field_memory_offset_at ~tgtsize ~tgtbtype compinfo xoffset)
+       else
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "xoffset: " ^ (x2s xoffset)
+                ^ "; btype: " ^ (btype_to_string btype)]
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "xoffset: " ^ (x2s xoffset)
+              ^ "; btype: " ^ (btype_to_string btype)]
+
+  method private get_field_memory_offset_at
+                   ~(tgtsize: int option)
+                   ~(tgtbtype: btype_t option)
+                   (c: bcompinfo_t)
+                   (xoffset: xpr_t): memory_offset_t traceresult =
+    let is_void_tgtbtype =
+      match tgtbtype with
+      | Some (TVoid _) -> true
+      | _ -> false in
+    let pr_tgtsize =
+      match tgtsize with
+      | Some s -> string_of_int s
+      | _ -> "?" in
+    match xoffset with
+    | XConst (IntConst n) ->
+       let offset = n#toInt in
+       let finfos = c.bcfields in
+       let optfield_r =
+         List.fold_left (fun acc_r finfo ->
+             match acc_r with
+             (* Error has been detected earlier *)
+             | Error e -> Error e
+             (* Result has already been determined *)
+             | Ok (Some _) -> acc_r
+             (* Still looking for a result *)
+             | Ok _ ->
+                match finfo.bfieldlayout with
+                | None ->
+                   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                          ^ "No field layout for field " ^ finfo.bfname]
+                | Some (foff, sz) ->
+                   if offset < foff then
+                     Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                            ^ "Skipped over field: "
+                            ^ (string_of_int offset)]
+                   else if offset >= (foff + sz) then
+                     Ok None
+                   else
+                     let offset = offset - foff in
+                     tbind
+                       (fun fldtype ->
+                         if offset = 0 && is_void_tgtbtype then
+                           Ok (Some (FieldOffset
+                                       ((finfo.bfname, finfo.bfckey), NoOffset)))
+                         else if offset = 0
+                                 && (is_scalar fldtype) then
+                           Ok (Some (FieldOffset
+                                       ((finfo.bfname, finfo.bfckey), NoOffset)))
+                         else
+                           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                  ^ "Field offset "
+                                  ^ (x2s xoffset)
+                                  ^ " not yet handled"])
+                       (resolve_type finfo.bftype)) (Ok None) finfos in
+       (match optfield_r with
+        | Error e -> Error e
+        | Ok (Some offset) -> Ok offset
+        | Ok None ->
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "Unable to find field at offset " ^ (string_of_int offset)])
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ "Unable to determine field for xoffset: " ^ (x2s xoffset)
+              ^ " and tgtsize: " ^ pr_tgtsize ]
+
+  method write_xml(node: xml_element_int) =
+    begin
+      node#setAttribute "name" self#name;
+      node#setIntAttribute "offset" self#offset;
+      (match self#size with
+       | Some s -> node#setIntAttribute "size" s
+       | _ -> ());
+      (if is_known_type self#btype then
+         node#setIntAttribute "tix" (bcd#index_typ self#btype));
+      (if self#is_spill then
+         node#setIntAttribute "srix" (bd#index_register (Option.get self#spill)));
+      (match self#desc with
+       | Some d -> node#setAttribute "desc" d
+       | _ -> ());
+    end
 
 end
 
@@ -187,7 +310,7 @@ class stackframe_t
         (varmgr: variable_manager_int):stackframe_int =
 object (self)
 
-  val saved_registers = H.create 3   (* reg -> saved_register_t *)
+  (* val saved_registers = H.create 3   (* reg -> saved_register_t *) *)
   val accesses = H.create 3      (* offset -> (iaddr, stack_access_t) list *)
   val stackslots =
     let slots = H.create 3 in    (* offset -> stackslot *)
@@ -195,20 +318,22 @@ object (self)
       (match fndata#get_function_annotation with
        | Some fnannot ->
           List.iter (fun svintro ->
+              let negoffset = -svintro.svi_offset in
               let ty = match svintro.svi_vartype with
                 | Some ty -> ty
                 | _ -> t_unknown in
               let size = TR.to_option (size_of_btype ty) in
               let sslot = {
-                  sslot_offset = svintro.svi_offset;
+                  sslot_offset = negoffset;
                   sslot_name = svintro.svi_name;
                   sslot_btype = ty;
+                  sslot_spill = None;
                   sslot_desc = Some ("svintro");
                   sslot_size = size} in
               let stackslot = new stackslot_t sslot in
               let _ =
                 chlog#add "stack slot added" (stackslot_rec_to_pretty sslot) in
-              H.add slots svintro.svi_offset stackslot) fnannot.stackvarintros
+              H.add slots negoffset stackslot) fnannot.stackvarintros
        | _ -> ());
       slots
     end
@@ -236,14 +361,15 @@ object (self)
   method add_stackslot
            ?(name = None)
            ?(btype = t_unknown)
+           ?(spill = None)
            ?(size = None)
            ?(desc = None)
            (offset: int): stackslot_int traceresult =
-    if offset <= 0 then
+    if offset >= 0 then
       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
              ^ "Illegal offset for stack slot: "
              ^ (string_of_int offset)
-             ^ ". Offset should be greater than zero."]
+             ^ ". Offset should be less than zero."]
     else if H.mem stackslots offset then
       begin
         log_error_result
@@ -284,6 +410,7 @@ object (self)
              sslot_name = sname;
              sslot_offset = offset;
              sslot_btype = btype;
+             sslot_spill = spill;
              sslot_size = size;
              sslot_desc = desc
            } in
@@ -302,30 +429,48 @@ object (self)
   method add_register_spill
            ~(offset: int) (reg: register_t) (iaddr:ctxt_iaddress_t) =
     let spill = RegisterSpill (offset, reg) in
-    let _ = self#add_access offset iaddr spill in
-    let regstr = register_to_string reg in
-    if H.mem saved_registers regstr then
-      (H.find saved_registers regstr)#set_save_address iaddr
-    else
-      let savedreg = new saved_register_t reg in
-      begin
-        savedreg#set_save_address iaddr;
-        H.add saved_registers regstr savedreg
-      end
+    begin
+      (if H.mem stackslots offset then
+        if (H.find stackslots offset)#is_spill then
+          ()
+        else
+          raise (BCH_failure (LBLOCK [STR "Stackslot already taken"]))
+      else
+        let ssrec = {
+            sslot_name = (register_to_string reg) ^ "_spill";
+            sslot_offset = offset;
+            sslot_btype = t_unknown;
+            sslot_spill = Some reg;
+            sslot_size = Some 4;
+            sslot_desc = Some "register spill"
+          } in
+        let sslot = new stackslot_t ssrec in
+        H.add stackslots offset sslot);
+        self#add_access offset iaddr spill
+    end
 
   method add_register_restore
            ~(offset: int) (reg: register_t) (iaddr: ctxt_iaddress_t) =
     let restore = RegisterRestore (offset, reg) in
-    let _ = self#add_access offset iaddr restore in
-    let regstr = register_to_string reg in
-    if H.mem saved_registers regstr then
-      (H.find saved_registers regstr)#add_restore_address iaddr
-    else
-      let savedreg = new saved_register_t reg in
-      begin
-        savedreg#add_restore_address iaddr;
-        H.add saved_registers regstr savedreg
-      end
+    begin
+      (if H.mem stackslots offset then
+        if (H.find stackslots offset)#is_spill then
+          ()
+        else
+          raise (BCH_failure (LBLOCK [STR "Stackslot already taken"]))
+      else
+        let ssrec = {
+            sslot_name = (register_to_string reg) ^ "_spill";
+            sslot_offset = offset;
+            sslot_btype = t_unknown;
+            sslot_spill = Some reg;
+            sslot_size = Some 4;
+            sslot_desc = Some "register_spill"
+          } in
+        let sslot = new stackslot_t ssrec in
+        H.add stackslots offset sslot);
+      self#add_access offset iaddr restore
+    end
 
   method add_load
            ~(offset:int)
@@ -367,15 +512,17 @@ object (self)
     let store = StackBlockWrite (offset, size, ty, xpr) in
     self#add_access offset iaddr store
 
-  method private write_xml_saved_registers (node:xml_element_int) =
-    let savedregs = H.fold (fun _ v a -> v::a) saved_registers [] in
-    node#appendChildren
-      (List.map (fun s ->
-           let n = xmlElement "sr" in
-           begin
-             s#write_xml n;
-             n
-           end) savedregs)
+  method private write_xml_stack_slots (node: xml_element_int) =
+    let slotsnode = xmlElement "stack-slots" in
+    begin
+      H.iter (fun _ slot ->
+          let slotnode = xmlElement "slot" in
+          begin
+            slot#write_xml slotnode;
+            slotsnode#appendChildren [slotnode]
+          end) stackslots;
+      node#appendChildren [slotsnode]
+    end
 
   method private write_xml_stack_accesses (node: xml_element_int) =
     let slist = ref [] in
@@ -396,12 +543,13 @@ object (self)
 
   method write_xml (node: xml_element_int) =
     let append = node#appendChildren in
-    let srNode = xmlElement "saved-registers" in
+    (* let srNode = xmlElement "saved-registers" in *)
+    let sNode = xmlElement "stack-slots" in
     let saNode = xmlElement "stack-accesses" in
     begin
-      self#write_xml_saved_registers srNode;
+      self#write_xml_stack_slots sNode;
       self#write_xml_stack_accesses saNode;
-      append [srNode; saNode]
+      append [sNode; saNode]
     end
 
 

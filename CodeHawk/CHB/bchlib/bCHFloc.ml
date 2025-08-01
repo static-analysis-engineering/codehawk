@@ -664,6 +664,20 @@ object (self)
                   self#env#mk_global_variable
                   (get_total_constant_offset memoff))
               memoffset_r
+          else if memref#is_stack_reference then
+            TR.tbind
+              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:stack")
+              (fun memoff ->
+                TR.tbind
+                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                  (fun numoff ->
+                    if Option.is_some
+                         (self#f#stackframe#containing_stackslot numoff#toInt) then
+                      (self#env#mk_stack_variable finfo#stackframe numoff)
+                    else
+                      Ok (self#env#mk_offset_memory_variable memref memoff))
+                  (get_total_constant_offset memoff))
+              memoffset_r
           else
             TR.tmap
               ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))

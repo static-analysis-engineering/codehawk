@@ -2523,6 +2523,11 @@ let translate_arm_instruction
            let cmds =
              TR.tfold
                ~ok:(fun rhsvar ->
+                 let rhsreg = TR.tget_ok (finfo#env#get_register rhsvar) in
+                 let _ =
+                   if floc#has_initial_value rhsvar then
+                     finfo#stackframe#add_register_spill
+                       ~offset:off rhsreg floc#cia in
                  let stackop = arm_sp_deref ~with_offset:off WR in
                  TR.tfold
                    ~ok:(fun (stacklhs, stacklhscmds) ->

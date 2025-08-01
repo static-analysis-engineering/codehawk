@@ -128,36 +128,6 @@ let po_anchor_to_pretty a =
   | IndirectAccess n -> LBLOCK [ STR "indirect ( " ; bterm_to_pretty n ; STR " )" ]
 
 
-class type saved_register_int =
-object ('a)
-
-  method compare              : 'a -> int
-
-  method set_save_address     : ctxt_iaddress_t -> unit
-  method add_restore_address  : ctxt_iaddress_t -> unit
-
-  method get_register         : register_t
-  method get_save_address     : ctxt_iaddress_t
-  method get_restore_addresses: ctxt_iaddress_t list
-
-  method has_save_address     : bool
-  method has_restore_addresses: bool
-
-  method is_save_or_restore_address: ctxt_iaddress_t -> bool
-
-  method write_xml: xml_element_int -> unit
-  method toPretty: pretty_t
-end
-
-
-module SavedRegistersCollections = CHCollections.Make
-  (struct
-    type t = saved_register_int
-    let compare r1 r2 = r1#compare r2
-    let toPretty r = r#toPretty
-   end)
-
-
 let pr_expr = xpr_formatter#pr_expr
 
 
@@ -906,6 +876,29 @@ object (self)
     | _ ->
        let _ = memmap#add_location ~size:(Some size) ~btype dw in
        Ok (self#mk_variable (self#varmgr#make_global_variable dw#to_numerical))
+
+  method mk_stack_variable
+           (stackframe: stackframe_int)
+           (offset: numerical_t): variable_t traceresult =
+    match stackframe#containing_stackslot offset#toInt with
+    | Some stackslot ->
+       tmap
+         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:stack")
+         (fun memoffset ->
+           let svar =
+             self#mk_variable
+               (self#varmgr#make_local_stack_variable
+                  ~offset:memoffset (mkNumerical stackslot#offset)) in
+           let name = stackslot#name ^ (memory_offset_to_string memoffset) in
+           begin
+             self#set_variable_name svar name;
+             svar
+           end)
+         (stackslot#frame_offset_memory_offset (num_constant_expr offset))
+    | _ ->
+       Error [
+           __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+           ^ "No stack slot found at offset " ^ offset#toString]
 
   method mk_register_variable (register:register_t) =
     self#mk_variable (varmgr#make_register_variable register)
