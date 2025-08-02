@@ -3736,9 +3736,10 @@ type stack_access_t =
   (** stack offset *)
   | RegisterRestore of int * register_t
   (** stack offset *)
-  | StackLoad of variable_t * int * int option * btype_t
+  | StackLoad of variable_t * memory_offset_t * int option * btype_t
   (** variable, offset, size *)
-  | StackStore of variable_t * int * int option * btype_t * xpr_t option
+  | StackStore of
+      variable_t * memory_offset_t * int option * btype_t * xpr_t option
   (** variable, offset, size, value *)
   | StackBlockRead of int * int option * btype_t
   (** offset, size *)
@@ -4560,6 +4561,7 @@ class type stackslot_int =
              -> memory_offset_t traceresult
 
     method is_typed: bool
+    method is_scalar: bool
     method is_struct: bool
     method is_array: bool
     method is_spill: bool
@@ -4588,7 +4590,8 @@ class type stackframe_int =
     method containing_stackslot: int -> stackslot_int option
 
     method add_load:
-             offset:int
+             baseoffset:int
+             -> offset: memory_offset_t
              -> size:int option
              -> typ:btype_t option
              -> variable_t
@@ -4596,7 +4599,8 @@ class type stackframe_int =
              -> unit
 
     method add_store:
-             offset:int
+             baseoffset:int
+             -> offset: memory_offset_t
              -> size:int option
              -> typ:btype_t option
              -> xpr:xpr_t option
@@ -4764,7 +4768,8 @@ class type function_environment_int =
     method mk_gloc_variable:
              global_location_int -> memory_offset_t -> variable_t
 
-    method mk_stack_variable: stackframe_int -> numerical_t -> variable_t traceresult
+    method mk_stack_variable:
+             ?size: int -> stackframe_int -> numerical_t -> variable_t traceresult
 
     (** [mk_initial_memory_value var] returns an auxiliary variable that
         represents the initial value of [var] at function entry.

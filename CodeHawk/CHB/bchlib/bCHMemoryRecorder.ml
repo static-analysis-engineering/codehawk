@@ -147,11 +147,17 @@ object (self)
     else if self#env#is_stack_variable lhs then
       log_tfold
         (log_error "record_assignment_lhs" "invalid offset")
-        ~ok:(fun offset ->
-          match offset with
-          | ConstantOffset (n, NoOffset) ->
+        ~ok:(fun stackoffset ->
+          match stackoffset with
+          | ConstantOffset (n, offset) ->
              self#finfo#stackframe#add_store
-               ~offset:n#toInt ~size ~typ:(Some vtype) ~xpr:(Some rhs) lhs iaddr
+               ~baseoffset:n#toInt
+               ~offset
+               ~size
+               ~typ:(Some vtype)
+               ~xpr:(Some rhs)
+               lhs
+               iaddr
           | _ ->
              chlog#add
                "stack assignment lhs not recorded"
@@ -178,11 +184,16 @@ object (self)
         else if self#env#is_stack_variable v then
           log_tfold
             (log_error "record_assignment_rhs" "invalid offset")
-            ~ok:(fun offset ->
-              match offset with
-              | ConstantOffset (n, NoOffset) ->
+            ~ok:(fun stackoffset ->
+              match stackoffset with
+              | ConstantOffset (n, offset) ->
                  self#finfo#stackframe#add_load
-                   ~offset:n#toInt ~size ~typ:(Some vtype) v iaddr
+                   ~baseoffset:n#toInt
+                   ~offset
+                   ~size
+                   ~typ:(Some vtype)
+                   v
+                   iaddr
               | _ ->
                  chlog#add
                    "stack assignment rhs not recorded"
@@ -203,11 +214,16 @@ object (self)
     if self#env#is_stack_variable var then
       log_tfold
         (log_error "record_load" "invalid offset")
-        ~ok:(fun offset ->
-          match offset with
-          | ConstantOffset (n, NoOffset) ->
+        ~ok:(fun stackoffset ->
+          match stackoffset with
+          | ConstantOffset (n, offset) ->
              self#finfo#stackframe#add_load
-               ~offset:n#toInt ~size:(Some size) ~typ:(Some vtype) var iaddr
+               ~baseoffset:n#toInt
+               ~offset
+               ~size:(Some size)
+               ~typ:(Some vtype)
+               var
+               iaddr
           | _ ->
              chlog#add
                "stack load not recorded"
@@ -246,14 +262,22 @@ object (self)
       ~ok:(fun var ->
         if self#env#is_stack_variable var then
           TR.tfold
-            ~ok:(fun offset ->
-              match offset with
-              | ConstantOffset (n, NoOffset) ->
+            ~ok:(fun stackoffset ->
+              match stackoffset with
+              | ConstantOffset (n, offset) ->
                  self#finfo#stackframe#add_load
-                   ~offset:n#toInt ~size:(Some size) ~typ:(Some vtype) var iaddr
+                   ~baseoffset:n#toInt
+                   ~offset
+                   ~size:(Some size)
+                   ~typ:(Some vtype)
+                   var
+                   iaddr
               | _ ->
                  log_error_result __FILE__ __LINE__
-                   ["memrecorder:stack"; p2s self#loc#toPretty])
+                   ["memrecorder:stack-load";
+                    p2s self#loc#toPretty;
+                    "offset: "
+                    ^ (BCHMemoryReference.memory_offset_to_string stackoffset)])
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             (self#env#get_memvar_offset var)
         else
@@ -287,11 +311,12 @@ object (self)
     if self#env#is_stack_variable var then
       log_tfold
         (log_error "record_store" "invalid offset")
-        ~ok:(fun offset ->
-          match offset with
-          | ConstantOffset (n, NoOffset) ->
+        ~ok:(fun stackoffset ->
+          match stackoffset with
+          | ConstantOffset (n, offset) ->
              self#finfo#stackframe#add_store
-               ~offset:n#toInt
+               ~baseoffset:n#toInt
+               ~offset
                ~size:(Some size)
                ~typ:(Some vtype)
                ~xpr:(Some xpr)
@@ -341,11 +366,12 @@ object (self)
       ~ok:(fun var ->
         if self#env#is_stack_variable var then
           TR.tfold
-            ~ok:(fun offset ->
-              match offset with
-              | ConstantOffset (n, NoOffset) ->
+            ~ok:(fun stackoffset ->
+              match stackoffset with
+              | ConstantOffset (n, offset) ->
                  self#finfo#stackframe#add_store
-                   ~offset:n#toInt
+                   ~baseoffset:n#toInt
+                   ~offset
                    ~size:(Some size)
                    ~typ:(Some vtype)
                    ~xpr:(TR.tfold_default (fun x -> Some x) None xpr_r)
@@ -353,7 +379,10 @@ object (self)
                    iaddr
               | _ ->
                  log_error_result __FILE__ __LINE__
-                   ["memrecorder:stack"; p2s self#loc#toPretty])
+                   ["memrecorder:stack-store";
+                    p2s self#loc#toPretty;
+                    "offset: "
+                    ^ BCHMemoryReference.memory_offset_to_string stackoffset])
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             (self#env#get_memvar_offset var)
         else
