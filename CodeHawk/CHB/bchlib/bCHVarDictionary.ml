@@ -252,11 +252,15 @@ object (self)
       | RegisterSpill (offset, reg) -> (tags, [offset; bd#index_register reg])
       | RegisterRestore (offset, reg) -> (tags, [offset; bd#index_register reg])
       | StackLoad (var, offset, optsize, ty) ->
-         (tags, [self#xd#index_variable var; offset; oi optsize; bcd#index_typ ty])
+         (tags,
+          [self#xd#index_variable var;
+           self#index_memory_offset offset;
+           oi optsize;
+           bcd#index_typ ty])
       | StackStore (var, offset, optsize, ty, optxpr) ->
          (tags,
           [self#xd#index_variable var;
-           offset;
+           self#index_memory_offset offset;
            oi optsize;
            bcd#index_typ ty;
            ox optxpr])

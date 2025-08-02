@@ -1445,11 +1445,11 @@ object (self)
                   ) rtrdefs);
 
                (* import type from stackvar-introductions *)
-               (match get_stackvar_type_annotation offset with
+               (match get_stackvar_type_annotation spoffset with
                 | None -> ()
                 | Some t ->
                    let lhstypevar =
-                     mk_localstack_lhs_typevar offset faddr iaddr in
+                     mk_localstack_lhs_typevar spoffset faddr iaddr in
                    let opttc = mk_btype_constraint lhstypevar t in
                    let rule = "STR-svintro" in
                    (match opttc with

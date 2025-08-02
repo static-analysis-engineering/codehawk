@@ -102,7 +102,12 @@ object (self)
     | Ok (TArray _) -> true
     | _ -> false
 
-  method size = sslot.sslot_size
+  method is_scalar: bool =
+    match resolve_type self#btype with
+    | Ok t -> is_scalar t
+    | _ -> false
+
+  method size: int option = sslot.sslot_size
 
   method desc = sslot.sslot_desc
 
@@ -137,7 +142,9 @@ object (self)
            ?(tgtbtype=t_unknown)
            (xoffset: xpr_t): memory_offset_t traceresult =
     match xoffset with
-    | XConst (IntConst n) when n#equal CHNumerical.numerical_zero ->
+    | XConst (IntConst n)
+         when n#equal CHNumerical.numerical_zero
+              && (not self#is_typed || self#is_scalar) ->
        Ok NoOffset
     | XConst (IntConst n) when not self#is_typed ->
        Ok (ConstantOffset (n, NoOffset))
@@ -234,6 +241,31 @@ object (self)
       match tgtsize with
       | Some s -> string_of_int s
       | _ -> "?" in
+    let check_tgttype_compliance (t: btype_t) (s: int) =
+      match tgtsize, tgtbtype with
+      | None, None -> true
+      | Some size, None -> size = s
+      | Some size, Some (TVoid _) -> size = s
+      | None, Some (TVoid _) -> true
+      | None, Some ty -> btype_equal ty t
+      | Some size, Some ty -> size = s && btype_equal ty t in
+    let compliance_failure (t: btype_t) (s: int) =
+      let size_discrepancy size s =
+         "size discrepancy between tgtsize: "
+         ^ (string_of_int size)
+         ^ " and field size: "
+         ^ (string_of_int s) in
+      let type_discrepancy ty t =
+         "type discrepancy between tgttype: "
+         ^ (btype_to_string ty)
+         ^ " and field type: "
+         ^ (btype_to_string t) in
+      match tgtsize, tgtbtype with
+      | Some size, Some ty when (size != s) && (not (btype_equal ty t)) ->
+         (size_discrepancy size s) ^ " and " ^ (type_discrepancy ty t)
+      | Some size, _ when size != s -> size_discrepancy size s
+      | _, Some ty when not (btype_equal ty t) -> type_discrepancy ty t
+      | _ -> "" in
     match xoffset with
     | XConst (IntConst n) ->
        let offset = n#toInt in
@@ -266,9 +298,14 @@ object (self)
                            Ok (Some (FieldOffset
                                        ((finfo.bfname, finfo.bfckey), NoOffset)))
                          else if offset = 0
-                                 && (is_scalar fldtype) then
+                                 && (is_scalar fldtype)
+                                 && (check_tgttype_compliance fldtype sz) then
                            Ok (Some (FieldOffset
                                        ((finfo.bfname, finfo.bfckey), NoOffset)))
+                         else if offset = 0 && is_scalar fldtype then
+                           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                  ^ "Scalar type or size is not consistent: "
+                                  ^ (compliance_failure fldtype sz)]
                          else
                            Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                                   ^ "Field offset "
@@ -473,17 +510,19 @@ object (self)
     end
 
   method add_load
-           ~(offset:int)
+           ~(baseoffset:int)
+           ~(offset:memory_offset_t)
            ~(size:int option)
            ~(typ:btype_t option)
            (var: variable_t)
            (iaddr:ctxt_iaddress_t) =
     let ty = match typ with Some t -> t  | _ -> t_unknown in
     let load = StackLoad (var, offset, size, ty) in
-    self#add_access offset iaddr load
+    self#add_access baseoffset iaddr load
 
   method add_store
-           ~(offset:int)
+           ~(baseoffset:int)
+           ~(offset:memory_offset_t)
            ~(size:int option)
            ~(typ:btype_t option)
            ~(xpr:xpr_t option)
@@ -491,7 +530,7 @@ object (self)
            (iaddr:ctxt_iaddress_t) =
     let ty = match typ with Some t -> t | _ -> t_unknown in
     let store = StackStore (var, offset, size, ty, xpr) in
-    self#add_access offset iaddr store
+    self#add_access baseoffset iaddr store
 
   method add_block_read
            ~(offset:int)
@@ -513,15 +552,13 @@ object (self)
     self#add_access offset iaddr store
 
   method private write_xml_stack_slots (node: xml_element_int) =
-    let slotsnode = xmlElement "stack-slots" in
     begin
       H.iter (fun _ slot ->
           let slotnode = xmlElement "slot" in
           begin
             slot#write_xml slotnode;
-            slotsnode#appendChildren [slotnode]
+            node#appendChildren [slotnode]
           end) stackslots;
-      node#appendChildren [slotsnode]
     end
 
   method private write_xml_stack_accesses (node: xml_element_int) =
