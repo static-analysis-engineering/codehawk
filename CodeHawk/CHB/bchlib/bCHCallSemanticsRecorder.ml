@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -252,14 +252,27 @@ object (self)
           self#add_po xpo status
 
   method private record_blockreads (pre: xxpredicate_t) =
+    let _ =
+      ch_diagnostics_log#add
+        "record blockread"
+        (LBLOCK [loc#toPretty; STR ": ";
+                 xxpredicate_to_pretty pre]) in
     let xpo = xxp_to_xpo_predicate self#termev self#loc pre in
     match xpo with
     | XPOBuffer (ty, addr, size) ->
        (match self#termev#xpr_local_stack_address addr with
         | Some offset ->
+           let _ =
+             ch_diagnostics_log#add
+               "record blockread"
+               (LBLOCK [loc#toPretty; STR ": ";
+                        STR "offset: ";
+                        INT offset]) in
            let csize =
              match size with
-             | XConst (IntConst n) -> Some n#toInt | _ -> None in
+             | XConst (IntConst n) -> Some n#toInt
+             | _ ->
+                TR.tfold_default (fun s -> Some s) None (size_of_btype ty) in
            self#finfo#stackframe#add_block_read
              ~offset:(-offset) ~size:csize ~typ:(Some ty) self#loc#ci
         | _ -> ())
@@ -286,7 +299,9 @@ object (self)
         | Some offset ->
            let csize =
              match size with
-             | XConst (IntConst n) -> Some n#toInt | _ -> None in
+             | XConst (IntConst n) -> Some n#toInt
+             | _ ->
+                TR.tfold_default (fun s -> Some s) None (size_of_btype ty) in
            let sevalue =
              self#finfo#env#mk_side_effect_value
                self#loc#ci (bterm_to_string taddr) in

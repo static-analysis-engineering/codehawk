@@ -131,7 +131,6 @@ SOURCES := \
 	bCHBCDictionary \
 	bCHBCFunDeclarations \
 	bCHBCWriteXml \
-	bCHBCAttributes \
 	bCHBCFiles \
 	bCHBCTypeUtil \
 	bCHBCTypeXml \
@@ -174,6 +173,7 @@ SOURCES := \
 	bCHPrecondition \
 	bCHPostcondition \
 	bCHSideeffect \
+	bCHBCAttributes \
 	bCHFunctionSemantics \
 	bCHFunctionSummary \
 	bCHVariable \

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -264,6 +264,9 @@ object (self)
         if bcfiles#has_varinfo fname then
           let varinfo = bcfiles#get_varinfo fname in
           let fsum = function_summary_of_bvarinfo varinfo in
+          let _ =
+            ch_diagnostics_log#add "load-so-function"
+              (LBLOCK [STR fname; STR ": "; fsum#toPretty]) in
           begin
             chlog#add "summary from function prototype" (STR fname);
             bc_so_summaries#add fname;

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -329,7 +329,7 @@ let function_summary_of_bvarinfo (vinfo: bvarinfo_t): function_summary_int =
   let fintf = bvarinfo_to_function_interface vinfo in
   let sem = bvarinfo_to_function_semantics vinfo fintf in
   let _ =
-    chlog#add
+    ch_diagnostics_log#add
       "function semantics of bvarinfo"
       (LBLOCK [
            STR vinfo.bvname;

@@ -25,79 +25,91 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHPretty
+
+(* chutil *)
+open CHLogger
+
+(* bchlib *)
+open BCHBasicTypes
 open BCHBCTypes
+open BCHBCTypePretty
+open BCHBCTypeUtil
+open BCHFtsParameter
+open BCHFunctionInterface
+open BCHLibTypes
 
 
-let gcc_attributes_to_precondition_attributes
-      (attrs: b_attributes_t): precondition_attribute_t list =
-  List.fold_left (fun acc a ->
-      match a with
-      | Attr ("access", params) ->
-         (match params with
-          | [ACons ("read_only", []); AInt refindex] ->
-             (APCReadOnly (refindex, None)) :: acc
-          | [ACons ("read_only", []); AInt refindex; AInt sizeindex] ->
-             (APCReadOnly (refindex, Some sizeindex)) :: acc
-          | [ACons ("write_only", []); AInt refindex] ->
-             (APCWriteOnly (refindex, None)) :: acc
-          | [ACons ("write_only", []); AInt refindex; AInt sizeindex] ->
-             (APCWriteOnly (refindex, Some sizeindex)) :: acc
-          | [ACons ("read_write", []); AInt refindex] ->
-             (APCReadWrite (refindex, None)) :: acc
-          | [ACons ("read_write", []); AInt refindex; AInt sizeindex] ->
-             (APCReadWrite (refindex, Some sizeindex)) :: acc
-          | _ -> acc)
-      | _ -> acc) [] attrs
+let convert_b_attributes_to_function_conditions
+      (name: string)
+      (fintf: function_interface_t)
+      (attrs: b_attributes_t):
+      (xxpredicate_t list * xxpredicate_t list * xxpredicate_t list) =
+  let parameters = get_fts_parameters fintf in
+  let get_par (n: int) =
+    try
+      List.find (fun p ->
+          match p.apar_index with Some ix -> ix = n | _ -> false) parameters
+    with
+    | Not_found ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "No parameter with index ";
+                 INT n;
+                 pretty_print_list (List.map (fun p -> p.apar_name) parameters)
+                   (fun s -> STR s) "[" "," "]"])) in
+  let get_derefty (par: fts_parameter_t): btype_t =
+    if is_pointer par.apar_type then
+      ptr_deref par.apar_type
+    else
+      raise
+        (BCH_failure
+           (LBLOCK [
+                STR "parameter is not a pointer type: ";
+                fts_parameter_to_pretty par])) in
+  List.fold_left (fun ((xpre, xside, xpost) as acc) attr ->
+      match attr with
+      | Attr (("access" | "chk_access"), params) ->
+         let (pre, side) =
+           (match params with
+            | [ACons ("read_only", []); AInt refindex] ->
+               let par = get_par refindex in
+               let ty = get_derefty par in
+               ([XXBuffer (ty, ArgValue par, RunTimeValue)], [])
 
+            | [ACons ("read_only", []); AInt refindex; AInt sizeindex] ->
+               let rpar = get_par refindex in
+               let spar = get_par sizeindex in
+               let ty = get_derefty rpar in
+               ([XXBuffer (ty, ArgValue rpar, ArgValue spar)], [])
 
-let gcc_attributes_to_srcmapinfo
-      (attrs: b_attributes_t): srcmapinfo_t option =
-  let optsrcloc =
-    List.fold_left (fun acc a ->
-        match acc with
-        | Some _ -> acc
-        | _ ->
-           match a with
-           | Attr ("chkc_srcloc", params) ->
-              (match params with
-               | [AStr filename; AInt linenumber] ->
-                  Some {srcloc_filename=filename;
-                        srcloc_linenumber=linenumber;
-                        srcloc_notes=[]}
-               | _ -> None)
-           | _ -> None) None attrs in
-  match optsrcloc with
-  | Some srcloc ->
-     let binloc =
-       List.fold_left (fun acc a ->
-           match acc with
-           | Some _ -> acc
-           | _ ->
-              match a with
-              | Attr ("chkx_binloc", params) ->
-                 (match params with
-                  | [AStr address] -> Some address
-                  | _ -> None)
-              | _ -> None) None attrs in
-     Some {srcmap_srcloc = srcloc; srcmap_binloc = binloc}
-  | _ -> None
+            | [ACons (("write_only" | "read_write"), []); AInt refindex] ->
+               let par = get_par refindex in
+               let ty = get_derefty par in
+               ([XXBuffer (ty, ArgValue par, RunTimeValue)],
+                [XXBlockWrite (ty, ArgValue par, RunTimeValue)])
 
+            | [ACons (("write_only" | "read_write"), []);
+               AInt refindex; AInt sizeindex] ->
+               let rpar = get_par refindex in
+               let spar = get_par sizeindex in
+               let ty = get_derefty rpar in
+               ([XXBuffer (ty, ArgValue rpar, ArgValue spar)],
+                [XXBlockWrite (ty, ArgValue rpar, ArgValue spar)])
 
-
-let precondition_attributes_t_to_gcc_attributes
-      (preattrs: precondition_attribute_t list): b_attributes_t =
-  let get_params (refindex: int) (optsizeindex: int option) =
-    match optsizeindex with
-    | Some sizeindex -> [AInt refindex; AInt sizeindex]
-    | _ -> [AInt refindex] in
-  let get_access (mode: string) (params: b_attrparam_t list) =
-    Attr ("access", [ACons (mode, [])] @ params) in
-  List.fold_left (fun acc p ->
-      match p with
-      | APCReadOnly (refindex, optsizeindex) ->
-         (get_access "read_only" (get_params refindex optsizeindex)) :: acc
-      | APCWriteOnly (refindex, optsizeindex) ->
-         (get_access "write_only" (get_params refindex optsizeindex)) :: acc
-      | APCReadWrite (refindex, optsizeindex) ->
-         (get_access "read_write" (get_params refindex optsizeindex)) :: acc
-      | _ -> acc) [] preattrs
+            | _ ->
+               begin
+                 log_error_result
+                   ~msg:("attribute conversion for " ^ name ^ ": "
+                         ^ "attribute parameters "
+                         ^ (String.concat
+                              ", " (List.map b_attrparam_to_string params)))
+                   ~tag:"attribute conversion"
+                   __FILE__ __LINE__ [];
+                 ([], [])
+               end) in
+         (pre @ xpre, side @ xside, xpost)
+      | _ ->
+         acc) ([], [], []) attrs

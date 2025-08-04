@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2023 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -48,12 +48,6 @@ val join_semantics:
 
 val bvarinfo_to_function_semantics:
   bvarinfo_t -> function_interface_t -> function_semantics_t
-
-
-(** {1 Conversion} *)
-
-val function_semantics_to_precondition_attributes:
-  function_semantics_t -> precondition_attribute_t list
 
 
 (** {1 Modification}*)

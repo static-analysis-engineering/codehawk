@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,10 +37,7 @@ open CHXmlDocument
 open CHXmlReader
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHBCTypePretty
-open BCHBCTypes
-open BCHBCTypeUtil
 open BCHBCTypeXml
 open BCHBTerm
 open BCHFtsParameter
@@ -180,37 +177,3 @@ let read_xml_sideeffects
     (parameters: fts_parameter_t list): xxpredicate_t list =
   let getcc = node#getTaggedChildren in
   List.map (fun n -> read_xml_sideeffect n thisf parameters) (getcc "sideeffect")
-
-
-let make_attribute_sideeffects
-      (attrs: precondition_attribute_t list)
-      (parameters: fts_parameter_t list): xxpredicate_t list =
-  let get_par (n: int) =
-    try
-      List.find (fun p ->
-          match p.apar_index with Some ix -> ix = n | _ -> false) parameters
-    with
-    | Not_found ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "No parameter with index ";
-                 INT n;
-	         pretty_print_list (List.map (fun p -> p.apar_name) parameters)
-	           (fun s -> STR s) "[" "," "]" ])) in
-  let get_derefty (par: fts_parameter_t): btype_t =
-    if is_pointer par.apar_type then
-      ptr_deref par.apar_type
-    else
-      raise
-        (BCH_failure
-           (LBLOCK [
-                STR "parameter is not a pointer type: ";
-                fts_parameter_to_pretty par])) in
-  List.fold_left (fun acc attr ->
-      match attr with
-      | (APCWriteOnly (n, None)) ->
-         let par = get_par n in
-         let ty = get_derefty par in
-         (XXBlockWrite (ty, ArgValue par, RunTimeValue)) :: acc
-      | _ -> acc) [] attrs
