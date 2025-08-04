@@ -228,6 +228,22 @@ object (self)
 end
 
 
+class default_bterm_evaluator_t
+        (finfo: function_info_int)
+        (_callargs: (fts_parameter_t * xpr_t) list): bterm_evaluator_int =
+object
+
+  method finfo = finfo
+  method bterm_xpr (_t: bterm_t) = None
+  method xpr_local_stack_address (_x: xpr_t) = None
+  method bterm_stack_address (_t: bterm_t) = None
+  method constant_bterm (_t: bterm_t) = None
+
+end
+
+let default_bterm_evaluator = new default_bterm_evaluator_t
+
+
 class arm_bterm_evaluator_t
         (finfo: function_info_int)
         (callargs: (fts_parameter_t * xpr_t) list): bterm_evaluator_int =
@@ -2725,12 +2741,14 @@ object (self)
        end
      | _ -> ()
 
-   method private get_sideeffect_assign (side_effect: xxpredicate_t) =
+   method private get_sideeffect_assign
+                    (termev: bterm_evaluator_int) (side_effect: xxpredicate_t) =
      let msg =
        LBLOCK [
            self#l#toPretty; STR ": "; xxpredicate_to_pretty side_effect] in
-     match side_effect with
-     | XXBlockWrite (ty, dest, size) ->
+     let xpo = BCHXPOPredicate.xxp_to_xpo_predicate termev self#l side_effect in
+     match (side_effect, xpo) with
+     | (XXBlockWrite (_, dest, size), XPOBlockWrite (ty, adest, _)) ->
        let get_index_size k =
 	 match get_size_of_type ty with
 	 | Ok s -> num_constant_expr (k#mult (mkNumerical s))
@@ -2774,7 +2792,13 @@ object (self)
                     end)
                   (numerical_to_doubleword n)
 	     | _ ->
-	        self#env#mk_side_effect_value self#cia (bterm_to_string dest) in
+                (match termev#xpr_local_stack_address adest with
+                 | Some offset ->
+                    let numoffset = (CHNumerical.mkNumerical offset)#neg in
+                    self#env#mk_stack_sideeffect_value
+                      ~btype:(Some ty) self#cia numoffset (bterm_to_string dest)
+                 | _ ->
+	            self#env#mk_side_effect_value self#cia (bterm_to_string dest)) in
 	   let seAssign =
              let _ =
                chlog#add
@@ -2799,7 +2823,7 @@ object (self)
               []
 	    end
        end
-     | XXStartsThread (sa, _pars) ->
+     | (XXStartsThread (sa, _pars), _) ->
        let _ =
 	 match self#evaluate_summary_term sa self#env#mk_num_temp with
 	 | XConst (IntConst n) ->
@@ -2825,8 +2849,9 @@ object (self)
    method private record_precondition_effects (sem:function_semantics_t) =
      List.iter self#record_precondition_effect sem.fsem_pre
 
-   method get_sideeffect_assigns  (sem:function_semantics_t) =
-     List.concat (List.map self#get_sideeffect_assign sem.fsem_sideeffects)
+   method get_sideeffect_assigns
+            (termev: bterm_evaluator_int) (sem:function_semantics_t) =
+     List.concat (List.map (self#get_sideeffect_assign termev) sem.fsem_sideeffects)
 
    (* Records reads of global memory *)
    method private record_memory_reads (pres:xxpredicate_t list) =
@@ -2896,7 +2921,8 @@ object (self)
 
      (* ------------------------------------------------- assign side effects *)
      let sideEffectAssigns =
-	 self#get_sideeffect_assigns self#get_call_target#get_semantics  in
+       let termev = default_bterm_evaluator self#f [] in
+	 self#get_sideeffect_assigns termev self#get_call_target#get_semantics  in
      let _ =
 	 self#record_precondition_effects self#get_call_target#get_semantics in
 
@@ -3032,7 +3058,7 @@ object (self)
          List.filter self#env#is_global_variable self#env#get_variables in
        [ABSTRACT_VARS globals] in
      let sideeffect_assigns =
-       self#get_sideeffect_assigns self#get_call_target#get_semantics in
+       self#get_sideeffect_assigns termev self#get_call_target#get_semantics in
      let _ =
        self#record_memory_reads self#get_call_target#get_semantics.fsem_pre in
      let defClobbered = List.map (fun r -> (ARMRegister r)) arm_temporaries in

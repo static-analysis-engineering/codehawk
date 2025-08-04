@@ -3563,6 +3563,7 @@ and constant_value_variable_t =
   | SideEffectValue of
       ctxt_iaddress_t                    (* callsite *)
       * string                           (* name of parameter *)
+      * btype_t option                   (* type of value *)
       * sideeffect_argument_location_t   (* location of argument passed *)
   (** [SideEffectValue (iaddr, name, seloc] represents the value
   assigned by the callee at call site [iaddr] to the parameter with
@@ -3932,9 +3933,17 @@ object
   method make_function_pointer_value:
            string -> string -> ctxt_iaddress_t -> assembly_variable_int
   method make_global_sideeffect_value:
-           ctxt_iaddress_t -> string -> doubleword_int -> assembly_variable_int
+           ?btype:btype_t option
+           -> ctxt_iaddress_t
+           -> string
+           -> doubleword_int
+           -> assembly_variable_int
   method make_stack_sideeffect_value:
-           ctxt_iaddress_t -> string -> numerical_t -> assembly_variable_int
+           ?btype:btype_t option
+           -> ctxt_iaddress_t
+           -> string
+           -> numerical_t
+           -> assembly_variable_int
   method make_side_effect_value:
            ctxt_iaddress_t -> string -> string -> assembly_variable_int
   method make_field_value: string -> int -> string -> assembly_variable_int
@@ -4852,9 +4861,17 @@ class type function_environment_int =
     method mk_function_pointer_value:
              string -> string -> ctxt_iaddress_t -> variable_t
     method mk_global_sideeffect_value:
-             ctxt_iaddress_t -> doubleword_int -> string -> variable_t
+             ?btype:btype_t option
+             -> ctxt_iaddress_t
+             -> doubleword_int
+             -> string
+             -> variable_t
     method mk_stack_sideeffect_value:
-             ctxt_iaddress_t -> numerical_t -> string -> variable_t
+             ?btype:btype_t option
+             -> ctxt_iaddress_t
+             -> numerical_t
+             -> string
+             -> variable_t
     method mk_side_effect_value: ctxt_iaddress_t -> string -> variable_t
     method mk_field_value: string -> int -> string -> variable_t
     method mk_symbolic_value: xpr_t -> variable_t
@@ -6266,7 +6283,8 @@ class type floc_int =
     method get_conditional_assign_commands:
              xpr_t -> variable_t -> xpr_t -> cmd_t list
 
-    method get_sideeffect_assigns: function_semantics_t -> cmd_t list
+    method get_sideeffect_assigns:
+             bterm_evaluator_int -> function_semantics_t -> cmd_t list
 
     (** {2 Variable abstraction}*)
 

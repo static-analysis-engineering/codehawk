@@ -297,14 +297,15 @@ object (self)
        XPOBlockWrite (ty, addr, size)) ->
        (match self#termev#xpr_local_stack_address addr with
         | Some offset ->
+           let numoffset = (CHNumerical.mkNumerical offset)#neg in
            let csize =
              match size with
              | XConst (IntConst n) -> Some n#toInt
              | _ ->
                 TR.tfold_default (fun s -> Some s) None (size_of_btype ty) in
            let sevalue =
-             self#finfo#env#mk_side_effect_value
-               self#loc#ci (bterm_to_string taddr) in
+             self#finfo#env#mk_stack_sideeffect_value
+               ~btype:(Some ty) self#loc#ci numoffset (bterm_to_string taddr) in
            self#finfo#stackframe#add_block_write
              ~offset:(-offset)
              ~size:csize

@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,9 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
+
+(* xprlib *)
+open XprTypes
 
 (* bchlib *)
 open BCHLibTypes
@@ -60,3 +63,5 @@ val get_i_floc:
   -> floc_int
 
 
+val default_bterm_evaluator:
+  function_info_int -> (fts_parameter_t * xpr_t) list -> bterm_evaluator_int
