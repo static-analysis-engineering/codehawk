@@ -44,6 +44,8 @@ open BCHBasicTypes
 open BCHLibTypes
 open BCHSumTypeSerializer
 
+module TR = CHTraceResult
+
 
 let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
@@ -74,6 +76,8 @@ object (self)
   val xd = xd
   val memory_base_table = mk_index_table "memory-base-table"
   val memory_offset_table = mk_index_table "memory-offset-table"
+  val sideeffect_argument_location_table =
+    mk_index_table "sideeffect-argument-location-table"
   val assembly_variable_denotation_table =
     mk_index_table "assembly-variable-denotation-table"
   val constant_value_variable_table =
@@ -172,6 +176,38 @@ object (self)
     | "u" -> UnknownOffset
     | s -> raise_tag_error name s memory_offset_mcts#tags
 
+  method index_sideeffect_argument_location (s: sideeffect_argument_location_t) =
+    let tags = [sideeffect_argument_location_mcts#ts s] in
+    let key = match s with
+      | SEGlobal a -> (tags @ [a#to_hex_string], [])
+      | SEStack s -> (tags @ [s#toString], [])
+      | SEDescr d -> (tags @ [d], []) in
+    sideeffect_argument_location_table#add key
+
+  method get_sideeffect_argument_location (index: int) =
+    let name = "sideeffect_location" in
+    let (tags, _) = sideeffect_argument_location_table#retrieve index in
+    let t = t name tags in
+    match (t 0) with
+    | "d" -> SEDescr (t 1)
+    | "g" ->
+       TR.tfold
+         ~ok:(fun dw -> SEGlobal dw)
+         ~error:(fun e ->
+           begin
+             log_error_result
+               ~msg:"get_sideeffect_location"
+               ~tag:"vardictionary error"
+               __FILE__ __LINE__ e;
+             raise
+               (BCH_failure
+                  (LBLOCK [STR "Vardictionary: get_sideeffect_location: ";
+                           STR (String.concat "; " e)]))
+           end)
+         (BCHDoubleword.string_to_doubleword (t 1))
+    | "s" -> SEStack (CHNumerical.mkNumericalFromString (t 1))
+    | s -> raise_tag_error name s sideeffect_argument_location_mcts#tags
+
   method index_assembly_variable_denotation (v:assembly_variable_denotation_t) =
     let tags = [ assembly_variable_denotation_mcts#ts v ] in
     let key = match v with
@@ -182,7 +218,7 @@ object (self)
     assembly_variable_denotation_table#add key
 
   method get_assembly_variable_denotation (index:int) =
-    let name =  "assembly_variable_denotation" in
+    let name = "assembly_variable_denotation" in
     let (tags,args) = assembly_variable_denotation_table#retrieve index in
     let t = t name tags in
     let a = a name args in
@@ -207,8 +243,9 @@ object (self)
       | FunctionPointer (s1, s2, a) ->
          (tags @ [a], [bd#index_string s1; bd#index_string s2])
       | CallTargetValue t -> (tags, [id#index_call_target t])
-      | SideEffectValue  (a, name, isglobal) ->
-         (tags @  [a ], [bd#index_string name; (if isglobal then 1 else 0)])
+      | SideEffectValue  (a, name, seloc) ->
+         (tags @  [a],
+          [bd#index_string name; self#index_sideeffect_argument_location seloc])
       | BridgeVariable (a,i) -> (tags @ [a], [i])
       | FieldValue (sname,offset,fname) ->
          (tags, [bd#index_string sname; offset; bd#index_string fname])
@@ -233,7 +270,9 @@ object (self)
     | "ev" -> SyscallErrorReturnValue (t 1)
     | "fp" -> FunctionPointer (bd#get_string (a 0), bd#get_string (a 1), t 1)
     | "ct" -> CallTargetValue (id#get_call_target (a 0))
-    | "se" -> SideEffectValue (t 1, bd#get_string (a 0), (a 1) = 1)
+    | "se" ->
+       SideEffectValue
+         (t 1, bd#get_string (a 0), self#get_sideeffect_argument_location (a 1))
     | "bv" -> BridgeVariable (t 1, a 0)
     | "fv" -> FieldValue (bd#get_string (a 0), a 1, bd#get_string  (a 2))
     | "sv" -> SymbolicValue (xd#get_xpr (a 0))

@@ -653,6 +653,25 @@ end
 let memory_offset_mcts: memory_offset_t mfts_int = new memory_offset_mcts_t
 
 
+class sideeffect_argument_location_mcts_t:[sideeffect_argument_location_t] mfts_int =
+object
+
+  inherit [sideeffect_argument_location_t] mcts_t "sideeffect_argument_location"
+
+  method !ts (s: sideeffect_argument_location_t) =
+    match s with
+    | SEGlobal _ -> "g"
+    | SEStack _ -> "s"
+    | SEDescr _ -> "d"
+
+  method !tags = ["d"; "g"; "s"]
+
+end
+
+let sideeffect_argument_location_mcts: sideeffect_argument_location_t mfts_int =
+  new sideeffect_argument_location_mcts_t
+
+
 class assembly_variable_denotation_mcts_t:[assembly_variable_denotation_t] mfts_int =
 object
 

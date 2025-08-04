@@ -3477,6 +3477,12 @@ end
 
 (** {2 Assembly variable} *)
 
+type sideeffect_argument_location_t =
+  | SEGlobal of doubleword_int
+  | SEStack of numerical_t
+  | SEDescr of string                   (* default value, uninterpreted *)
+
+
 (** Assembly variable denotations.*)
 type assembly_variable_denotation_t =
   (* size (bytes) memory reference index *)
@@ -3555,11 +3561,11 @@ and constant_value_variable_t =
   | CallTargetValue of call_target_t
 
   | SideEffectValue of
-      ctxt_iaddress_t       (* callsite *)
-      * string              (* argument description *)
-      * bool                (* is-global address *)
-  (** [SideEffectValue (iaddr, name, is_global)] represents the value
-  assigned by the callee at call site [iaddr] to the argument with
+      ctxt_iaddress_t                    (* callsite *)
+      * string                           (* name of parameter *)
+      * sideeffect_argument_location_t   (* location of argument passed *)
+  (** [SideEffectValue (iaddr, name, seloc] represents the value
+  assigned by the callee at call site [iaddr] to the parameter with
   name [name].*)
 
   | BridgeVariable of ctxt_iaddress_t * int      (* call site, argument index *)
@@ -3758,12 +3764,14 @@ class type vardictionary_int =
 
     method index_memory_offset: memory_offset_t -> int
     method index_memory_base: memory_base_t -> int
+    method index_sideeffect_argument_location: sideeffect_argument_location_t -> int
     method index_assembly_variable_denotation: assembly_variable_denotation_t -> int
     method index_constant_value_variable: constant_value_variable_t -> int
     method index_stack_access: stack_access_t -> int
 
     method get_memory_offset: int -> memory_offset_t
     method get_memory_base: int -> memory_base_t
+    method get_sideeffect_argument_location: int -> sideeffect_argument_location_t
     method get_assembly_variable_denotation: int -> assembly_variable_denotation_t
     method get_constant_value_variable: int -> constant_value_variable_t
 
@@ -3923,8 +3931,12 @@ object
   method make_calltarget_value: call_target_t -> assembly_variable_int
   method make_function_pointer_value:
            string -> string -> ctxt_iaddress_t -> assembly_variable_int
+  method make_global_sideeffect_value:
+           ctxt_iaddress_t -> string -> doubleword_int -> assembly_variable_int
+  method make_stack_sideeffect_value:
+           ctxt_iaddress_t -> string -> numerical_t -> assembly_variable_int
   method make_side_effect_value:
-           ctxt_iaddress_t -> ?global:bool -> string -> assembly_variable_int
+           ctxt_iaddress_t -> string -> string -> assembly_variable_int
   method make_field_value: string -> int -> string -> assembly_variable_int
 
   (** {2 Memory references}*)
@@ -4839,8 +4851,11 @@ class type function_environment_int =
     method mk_calltarget_value: call_target_t -> variable_t
     method mk_function_pointer_value:
              string -> string -> ctxt_iaddress_t -> variable_t
-    method mk_side_effect_value:
-             ctxt_iaddress_t -> ?global:bool-> string -> variable_t
+    method mk_global_sideeffect_value:
+             ctxt_iaddress_t -> doubleword_int -> string -> variable_t
+    method mk_stack_sideeffect_value:
+             ctxt_iaddress_t -> numerical_t -> string -> variable_t
+    method mk_side_effect_value: ctxt_iaddress_t -> string -> variable_t
     method mk_field_value: string -> int -> string -> variable_t
     method mk_symbolic_value: xpr_t -> variable_t
     method mk_signed_symbolic_value: xpr_t -> int -> int -> variable_t

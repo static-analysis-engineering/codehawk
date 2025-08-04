@@ -2761,14 +2761,17 @@ object (self)
 	   let rhs =
  	     match dest with
  	     | NumConstant n ->
-                log_tfold_default
-                  (mk_tracelog_spec
-                     ~tag:"get_sideeffect_assign:BlockWrite"
-                     (self#cia ^ ": constant: " ^ n#toString))
-                  (fun dw ->
-	            let argDescr = dw#to_hex_string in
-	            self#env#mk_side_effect_value self#cia ~global:true argDescr)
-                  (self#env#mk_side_effect_value self#cia (bterm_to_string dest))
+                TR.tfold
+                  ~ok:(fun dw ->
+                    self#env#mk_global_sideeffect_value self#cia dw "dest")
+                  ~error:(fun e ->
+                    begin
+                      log_error_result
+                        ~msg:(p2s (xxpredicate_to_pretty side_effect))
+                        ~tag:"get_sideeffect_assign"
+                        __FILE__ __LINE__ e;
+                      self#env#mk_side_effect_value self#cia "dest"
+                    end)
                   (numerical_to_doubleword n)
 	     | _ ->
 	        self#env#mk_side_effect_value self#cia (bterm_to_string dest) in
