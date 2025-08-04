@@ -235,14 +235,12 @@ object (self:'a)
 
   method is_global_sideeffect =
     match denotation with
-    | AuxiliaryVariable (SideEffectValue (_, _, isglobal)) -> isglobal
+    | AuxiliaryVariable (SideEffectValue (_, _, SEGlobal _)) -> true
     | _ -> false
 
   method get_global_sideeffect_target_address: doubleword_result =
     match denotation with
-    | AuxiliaryVariable (SideEffectValue (_, arg, true)) ->
-       let addr_r = string_to_doubleword arg in
-       tprop addr_r (__FILE__ ^ ":" ^ (string_of_int __LINE__))
+    | AuxiliaryVariable (SideEffectValue (_, _, SEGlobal dw)) -> Ok dw
     | _ ->
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
               ^ "Variable is not a global sideeffect value: "
@@ -698,9 +696,19 @@ object (self)
   method make_calltarget_value (tgt:call_target_t) =
     self#mk_variable (AuxiliaryVariable (CallTargetValue tgt))
 
-  method make_side_effect_value
-           (iaddr:ctxt_iaddress_t) ?(global=false) (arg:string) =
-    self#mk_variable (AuxiliaryVariable (SideEffectValue (iaddr,arg,global)))
+  method make_global_sideeffect_value
+           (iaddr: ctxt_iaddress_t) (arg: string) (gaddr: doubleword_int) =
+    let sev = SideEffectValue (iaddr, arg, SEGlobal gaddr) in
+    self#mk_variable (AuxiliaryVariable sev)
+
+  method make_stack_sideeffect_value
+           (iaddr: ctxt_iaddress_t) (arg: string) (stackoffset: numerical_t) =
+    let sev = SideEffectValue (iaddr, arg, SEStack stackoffset) in
+    self#mk_variable (AuxiliaryVariable sev)
+
+  method make_side_effect_value (iaddr:ctxt_iaddress_t) (descr: string) (arg:string) =
+    let sev = SideEffectValue (iaddr, arg, SEDescr descr) in
+    self#mk_variable (AuxiliaryVariable sev)
 
   method make_field_value (sname:string) (offset:int) (fname:string) =
     self#mk_variable (AuxiliaryVariable (FieldValue (sname,offset,fname)))

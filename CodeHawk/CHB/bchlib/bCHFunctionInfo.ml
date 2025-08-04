@@ -994,8 +994,16 @@ object (self)
   method mk_calltarget_value (tgt:call_target_t) =
     self#mk_variable (varmgr#make_calltarget_value tgt)
 
-  method mk_side_effect_value (iaddr:ctxt_iaddress_t) ?(global=false) (arg:string) =
-    self#mk_variable (varmgr#make_side_effect_value iaddr ~global arg)
+  method mk_global_sideeffect_value
+           (iaddr: ctxt_iaddress_t) (gaddr: doubleword_int) (arg: string) =
+    self#mk_variable (varmgr#make_global_sideeffect_value iaddr arg gaddr)
+
+  method mk_stack_sideeffect_value
+           (iaddr: ctxt_iaddress_t) (offset: numerical_t) (arg: string) =
+    self#mk_variable (varmgr#make_stack_sideeffect_value iaddr arg offset)
+
+  method mk_side_effect_value (iaddr:ctxt_iaddress_t) (arg:string) =
+    self#mk_variable (varmgr#make_side_effect_value iaddr "sev" arg)
 
   method mk_field_value (sname:string) (offset:int) (fname:string) =
     self#mk_variable (varmgr#make_field_value sname offset fname)

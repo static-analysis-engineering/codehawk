@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -96,6 +96,7 @@ val type_constraint_mcts: type_constraint_t mfts_int
 
 val memory_base_mcts: memory_base_t mfts_int
 val memory_offset_mcts: memory_offset_t mfts_int
+val sideeffect_argument_location_mcts: sideeffect_argument_location_t mfts_int
 val assembly_variable_denotation_mcts: assembly_variable_denotation_t mfts_int
 val constant_value_variable_mcts: constant_value_variable_t mfts_int
 val stack_access_mcts: stack_access_t mfts_int
