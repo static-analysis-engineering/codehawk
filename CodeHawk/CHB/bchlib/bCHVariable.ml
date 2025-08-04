@@ -121,7 +121,7 @@ object (self:'a)
              "staticstub_" ^ (function_stub_to_string fs)
 	  | AppTarget a -> "tgt_" ^ a#to_hex_string
 	  | _ -> "tgt_qq_")
-	| SideEffectValue (address,arg,_) -> "se_" ^ address ^ "_" ^ arg
+	| SideEffectValue (address, arg, _, _) -> "se_" ^ address ^ "_" ^ arg
 	| FieldValue (sname,offset,fname) ->
 	   sname ^ "." ^ fname ^ "_amp_" ^ (string_of_int offset)
         | SymbolicValue x -> "sv__" ^ (string_of_int (vard#xd#index_xpr x)) ^ "__sv"
@@ -191,6 +191,7 @@ object (self:'a)
          | TypeCastValue (_, _, ty, _) -> Some ty
          | SyscallErrorReturnValue _ -> None
          | CallTargetValue _ -> None
+         | SideEffectValue (_, _, Some ty, _) -> Some ty
          | SideEffectValue _ -> None
          | FieldValue _ -> None
          | SymbolicValue _ -> None
@@ -235,12 +236,12 @@ object (self:'a)
 
   method is_global_sideeffect =
     match denotation with
-    | AuxiliaryVariable (SideEffectValue (_, _, SEGlobal _)) -> true
+    | AuxiliaryVariable (SideEffectValue (_, _, _, SEGlobal _)) -> true
     | _ -> false
 
   method get_global_sideeffect_target_address: doubleword_result =
     match denotation with
-    | AuxiliaryVariable (SideEffectValue (_, _, SEGlobal dw)) -> Ok dw
+    | AuxiliaryVariable (SideEffectValue (_, _, _, SEGlobal dw)) -> Ok dw
     | _ ->
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
               ^ "Variable is not a global sideeffect value: "
@@ -278,7 +279,7 @@ object (self:'a)
   method get_call_site: ctxt_iaddress_t traceresult =
     match denotation with
     | (AuxiliaryVariable (FunctionReturnValue a))
-    | (AuxiliaryVariable (SideEffectValue (a, _, _))) -> Ok a
+    | (AuxiliaryVariable (SideEffectValue (a, _, _, _))) -> Ok a
     | _ ->
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
               ^ "Variable is not a function return value or sideeffect value: "
@@ -286,7 +287,7 @@ object (self:'a)
 
   method get_se_argument_descriptor: string traceresult =
     match denotation with
-    | (AuxiliaryVariable (SideEffectValue (_, name, _))) -> Ok name
+    | (AuxiliaryVariable (SideEffectValue (_, name, _, _))) -> Ok name
     | _ -> Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                   ^ "Variable is not a sideeffect value: " ^ self#get_name]
 
@@ -641,6 +642,7 @@ object (self)
                   | InitialRegisterValue (PowerSPRegister _, _)
                   | InitialMemoryValue _
                   | FunctionReturnValue _
+                  | SideEffectValue _
                   | TypeCastValue _ ->
                    Ok (memrefmgr#mk_basevar_reference v)
                 | _ ->
@@ -697,17 +699,23 @@ object (self)
     self#mk_variable (AuxiliaryVariable (CallTargetValue tgt))
 
   method make_global_sideeffect_value
-           (iaddr: ctxt_iaddress_t) (arg: string) (gaddr: doubleword_int) =
-    let sev = SideEffectValue (iaddr, arg, SEGlobal gaddr) in
+           ?(btype=None)
+           (iaddr: ctxt_iaddress_t)
+           (arg: string)
+           (gaddr: doubleword_int) =
+    let sev = SideEffectValue (iaddr, arg, btype, SEGlobal gaddr) in
     self#mk_variable (AuxiliaryVariable sev)
 
   method make_stack_sideeffect_value
-           (iaddr: ctxt_iaddress_t) (arg: string) (stackoffset: numerical_t) =
-    let sev = SideEffectValue (iaddr, arg, SEStack stackoffset) in
+           ?(btype=None)
+           (iaddr: ctxt_iaddress_t)
+           (arg: string)
+           (stackoffset: numerical_t) =
+    let sev = SideEffectValue (iaddr, arg, btype, SEStack stackoffset) in
     self#mk_variable (AuxiliaryVariable sev)
 
   method make_side_effect_value (iaddr:ctxt_iaddress_t) (descr: string) (arg:string) =
-    let sev = SideEffectValue (iaddr, arg, SEDescr descr) in
+    let sev = SideEffectValue (iaddr, arg, None, SEDescr descr) in
     self#mk_variable (AuxiliaryVariable sev)
 
   method make_field_value (sname:string) (offset:int) (fname:string) =

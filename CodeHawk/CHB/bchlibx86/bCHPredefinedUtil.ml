@@ -514,7 +514,8 @@ let get_esp_adjustment_assign (summary: function_summary_int) (floc: floc_int) =
 
 
 let get_side_effects summary floc =
-  floc#get_sideeffect_assigns summary#get_function_semantics
+  let termev = BCHFloc.default_bterm_evaluator floc#f [] in
+  floc#get_sideeffect_assigns termev summary#get_function_semantics
 
 
 class virtual predefined_callsemantics_base_t (md5hash:string) (instrs:int) =

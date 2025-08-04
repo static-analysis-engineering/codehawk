@@ -91,6 +91,7 @@ object (self)
     tables <- [
       memory_base_table;
       memory_offset_table;
+      sideeffect_argument_location_table;
       assembly_variable_denotation_table;
       constant_value_variable_table;
       stack_access_table
@@ -243,9 +244,11 @@ object (self)
       | FunctionPointer (s1, s2, a) ->
          (tags @ [a], [bd#index_string s1; bd#index_string s2])
       | CallTargetValue t -> (tags, [id#index_call_target t])
-      | SideEffectValue  (a, name, seloc) ->
+      | SideEffectValue  (a, name, optty, seloc) ->
          (tags @  [a],
-          [bd#index_string name; self#index_sideeffect_argument_location seloc])
+          [bd#index_string name;
+           (match optty with Some ty -> bcd#index_typ ty | _ -> (-1));
+           self#index_sideeffect_argument_location seloc])
       | BridgeVariable (a,i) -> (tags @ [a], [i])
       | FieldValue (sname,offset,fname) ->
          (tags, [bd#index_string sname; offset; bd#index_string fname])
@@ -272,7 +275,10 @@ object (self)
     | "ct" -> CallTargetValue (id#get_call_target (a 0))
     | "se" ->
        SideEffectValue
-         (t 1, bd#get_string (a 0), self#get_sideeffect_argument_location (a 1))
+         (t 1,
+          bd#get_string (a 0),
+          (if (a 1) > 0 then Some (bcd#get_typ (a 1)) else None),
+          self#get_sideeffect_argument_location (a 2))
     | "bv" -> BridgeVariable (t 1, a 0)
     | "fv" -> FieldValue (bd#get_string (a 0), a 1, bd#get_string  (a 2))
     | "sv" -> SymbolicValue (xd#get_xpr (a 0))
