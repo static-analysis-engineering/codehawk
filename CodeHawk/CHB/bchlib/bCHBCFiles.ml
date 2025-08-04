@@ -47,6 +47,40 @@ module H = Hashtbl
 let bcd = BCHBCDictionary.bcdictionary
 
 
+let gcc_attributes_to_srcmapinfo
+      (attrs: b_attributes_t): srcmapinfo_t option =
+  let optsrcloc =
+    List.fold_left (fun acc a ->
+        match acc with
+        | Some _ -> acc
+        | _ ->
+           match a with
+           | Attr ("chkc_srcloc", params) ->
+              (match params with
+               | [AStr filename; AInt linenumber] ->
+                  Some {srcloc_filename=filename;
+                        srcloc_linenumber=linenumber;
+                        srcloc_notes=[]}
+               | _ -> None)
+           | _ -> None) None attrs in
+  match optsrcloc with
+  | Some srcloc ->
+     let binloc =
+       List.fold_left (fun acc a ->
+           match acc with
+           | Some _ -> acc
+           | _ ->
+              match a with
+              | Attr ("chkx_binloc", params) ->
+                 (match params with
+                  | [AStr address] -> Some address
+                  | _ -> None)
+              | _ -> None) None attrs in
+     Some {srcmap_srcloc = srcloc; srcmap_binloc = binloc}
+  | _ -> None
+
+
+
 class bcfiles_t: bcfiles_int =
 object (self)
 
@@ -75,7 +109,7 @@ object (self)
     let i = bcd#index_location in
 
     let add_srcmapinfo (vinfo: bvarinfo_t) =
-      match BCHBCAttributes.gcc_attributes_to_srcmapinfo vinfo.bvattr with
+      match gcc_attributes_to_srcmapinfo vinfo.bvattr with
       | Some srcmap ->
          let vix = bcd#index_varinfo vinfo in
          if H.mem vinfo_srcmap vix then

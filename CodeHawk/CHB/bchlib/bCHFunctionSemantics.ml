@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,6 @@ open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
-open BCHBasicTypes
 open BCHBCAttributes
 open BCHBCTypePretty
 open BCHBCTypes
@@ -319,12 +318,8 @@ let default_function_semantics = {
 let bvarinfo_to_function_semantics
            (vinfo: bvarinfo_t) (fintf: function_interface_t): function_semantics_t =
   if (List.length vinfo.bvattr) > 0 then
-    let preconditions =
-      let preattrs = gcc_attributes_to_precondition_attributes vinfo.bvattr in
-      make_attribute_preconditions preattrs (get_fts_parameters fintf) in
-    let sideeffects =
-      let sideattrs = gcc_attributes_to_precondition_attributes vinfo.bvattr in
-      make_attribute_sideeffects sideattrs (get_fts_parameters fintf) in
+    let (preconditions, sideeffects, _) =
+      convert_b_attributes_to_function_conditions vinfo.bvname fintf vinfo.bvattr in
     let _ =
       chlog#add
         "bvarinfo attributes"
@@ -332,32 +327,14 @@ let bvarinfo_to_function_semantics
              STR vinfo.bvname;
              STR ": ";
              STR (attributes_to_string vinfo.bvattr)]) in
-    {default_function_semantics with
-      fsem_pre = preconditions; fsem_sideeffects = sideeffects}
+    let fsem =
+      {default_function_semantics with
+        fsem_pre = preconditions; fsem_sideeffects = sideeffects} in
+    let _ =
+      ch_diagnostics_log#add
+        "function semantics"
+        (LBLOCK [STR vinfo.bvname; STR ": ";
+                 function_semantics_to_pretty fsem]) in
+    fsem
   else
     default_function_semantics
-
-
-let function_semantics_to_precondition_attributes
-      (sem: function_semantics_t): precondition_attribute_t list =
-  let has_index (p: fts_parameter_t) =
-    match p.apar_index with Some _ -> true | _ -> false in
-  let get_index (p: fts_parameter_t) =
-    match p.apar_index with
-    | Some index -> index
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [
-                 STR "Error in function_semantics_to_precondition_attributes"])) in
-  List.fold_left (fun acc pc ->
-      match pc with
-      | XXBuffer (_, ArgValue refpar, ArgValue sizepar) when has_index refpar ->
-         (APCReadOnly (get_index refpar, sizepar.apar_index)) :: acc
-      | XXBuffer (_, ArgValue refpar, _) when has_index refpar ->
-         (APCReadOnly (get_index refpar, None)) :: acc
-      | XXBlockWrite (_, ArgValue refpar, ArgValue sizepar) when has_index refpar ->
-         (APCWriteOnly (get_index refpar, sizepar.apar_index)) :: acc
-      | XXBlockWrite (_, ArgValue refpar, _) when has_index refpar ->
-         (APCWriteOnly (get_index refpar, None)) :: acc
-      | _ -> acc) [] sem.fsem_pre

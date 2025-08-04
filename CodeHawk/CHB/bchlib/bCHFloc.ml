@@ -2409,7 +2409,7 @@ object (self)
      let _ = List.iter (fun v -> self#f#add_use_high_loc v iaddr) usehigh in
      useops @ usehighops @ defops @ clobberops @ flagdefops
 
-   method private evaluate_fts_argument (p: fts_parameter_t) =
+   method private evaluate_fts_argument (p: fts_parameter_t): xpr_t =
      match p.apar_location with
      | [StackParameter (offset, _)] ->
         let index = offset / 4 in
@@ -2434,7 +2434,7 @@ object (self)
             self#rewrite_variable_to_external argvar)
      | _ -> random_constant_expr
 
-   method evaluate_summary_term (t:bterm_t) (returnvar:variable_t) =
+   method evaluate_summary_term (t:bterm_t) (returnvar:variable_t): xpr_t =
      match t with
      | ArgValue p -> self#evaluate_fts_argument p
      | ReturnValue _ -> XVar returnvar
@@ -2447,15 +2447,46 @@ object (self)
        XOp (arithmetic_op_to_xop op, [xpr1; xpr2])
      | _ -> random_constant_expr
 
-   method private evaluate_fts_address_argument (p: fts_parameter_t) =
-     let _ =
-       chlog#add
-         "evaluate-fts-address-argument: failure"
-         (LBLOCK [
-              STR self#cia;
-              STR ": ";
-              fts_parameter_to_pretty p]) in
-     None
+   method private evaluate_fts_address_argument
+                    (p: fts_parameter_t):variable_t option =
+     match p.apar_location with
+     | [RegisterParameter (r, _)] ->
+        let argvar = self#env#mk_register_variable r in
+        let xpr = self#rewrite_variable_to_external argvar in
+        (match xpr with
+         | XOp (XMinus, [XVar _v; XConst (IntConst n)]) when n#geq numerical_zero ->
+            let spoffset = n#neg in
+            if Option.is_some
+                 (self#f#stackframe#containing_stackslot spoffset#toInt) then
+              TR.tfold_default
+                (fun s -> Some s)
+                None
+                (self#env#mk_stack_variable finfo#stackframe spoffset)
+            else
+              let _ =
+                ch_diagnostics_log#add "evaluate-fts-address-argument:reg"
+                  (LBLOCK [self#l#toPretty; STR ": ";
+                           STR (fts_parameter_to_string p); STR ": ";
+                           (x2p xpr); STR ": ";
+                           INT spoffset#toInt]) in
+              None
+
+         | _ ->
+            let _ =
+              ch_diagnostics_log#add "evaluate-fts-address-argument: reg"
+                (LBLOCK [self#l#toPretty; STR ": ";
+                         STR (fts_parameter_to_string p); STR ": ";
+                         (x2p xpr)]) in
+            None)
+     | _ ->
+        let _ =
+          chlog#add
+            "evaluate-fts-address-argument: failure"
+            (LBLOCK [
+                 STR self#cia;
+                 STR ": ";
+                 fts_parameter_to_pretty p]) in
+        None
 
    method evaluate_summary_address_term (t:bterm_t) =
      match t with
@@ -2757,9 +2788,12 @@ object (self)
 	   let fldAssigns = [] in
 	   seAssign @ fldAssigns
 	 | _ ->
-	    begin
-	      chlog#add "side-effect ignored" msg;
-	      []
+            begin
+              log_error_result
+                ~msg:(p2s msg)
+                ~tag:"side-effect ignored"
+                __FILE__ __LINE__ [];
+              []
 	    end
        end
      | XXStartsThread (sa, _pars) ->
@@ -2777,10 +2811,13 @@ object (self)
 	 | _ -> () in
        []
      | _ ->
-       begin
-	 chlog#add "side-effect ignored" msg;
-	 []
-       end
+        begin
+          log_error_result
+            ~msg:(p2s msg)
+            ~tag:"side-effect ignored"
+            __FILE__ __LINE__ [];
+	  []
+        end
 
    method private record_precondition_effects (sem:function_semantics_t) =
      List.iter self#record_precondition_effect sem.fsem_pre
