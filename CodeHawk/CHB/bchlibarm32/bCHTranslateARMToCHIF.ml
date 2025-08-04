@@ -711,22 +711,45 @@ let translate_arm_instruction
       else
         register_of_arm_register AR0 in
     let returnvar = floc#f#env#mk_register_variable returnreg in
-    let (usecmds, use) =
-      List.fold_left (fun (acccmds, accuse) (p, _x) ->
+    let (usecmds, use, usehigh) =
+      List.fold_left (fun (acccmds, accuse, accusehigh) (p, x) ->
+          let ptype = get_parameter_type p in
+          let addressedvars =
+            if is_pointer ptype then
+              let xx = rewrite_expr floc x in
+              match BCHARMDisassemblyUtils.get_string_reference floc xx with
+              | Some _ -> []
+              | _ ->
+                 match xx with
+                 | XVar _ -> []
+                 | _ ->
+                    TR.tfold
+                      ~ok:(fun v -> [v])
+                      ~error:(fun e ->
+                        let _ = log_dc_error_result __FILE__ __LINE__ e in
+                        [])
+                      (floc#get_var_at_address ~btype:(ptr_deref ptype) xx)
+            else
+              [] in
           if is_register_parameter p then
             let regarg = TR.tget_ok (get_register_parameter_register p) in
             let pvar = floc#f#env#mk_register_variable regarg in
-            (acccmds, pvar :: accuse)
+            (acccmds,
+             pvar :: (addressedvars @ accuse),
+             addressedvars @ accusehigh)
+
           else if is_stack_parameter p then
             let p_offset = TR.tget_ok (get_stack_parameter_offset p) in
             let stackop = arm_sp_deref ~with_offset:p_offset RD in
             TR.tfold
               ~ok:(fun (stacklhs, stacklhscmds) ->
-                (stacklhscmds @ acccmds, stacklhs :: accuse))
+                (stacklhscmds @ acccmds,
+                 stacklhs :: (addressedvars @ accuse),
+                 addressedvars @ accusehigh))
               ~error:(fun e ->
                 begin
                   log_error_result __FILE__ __LINE__ e;
-                  (acccmds, accuse)
+                  (acccmds, accuse, accusehigh)
                 end)
               (stackop#to_lhs floc)
           else
@@ -735,8 +758,8 @@ let translate_arm_instruction
                  (LBLOCK [
                       floc#l#toPretty;
                       STR "  Parameter type not recognized in call translation"])))
-        ([], []) callargs in
-    let usehigh = get_use_high_vars (List.map snd callargs) in
+        ([], [], []) callargs in
+    let usehigh = usehigh @ (get_use_high_vars (List.map snd callargs)) in
     let vr1 = floc#f#env#mk_arm_register_variable AR1 in
     let vr2 = floc#f#env#mk_arm_register_variable AR2 in
     let vr3 = floc#f#env#mk_arm_register_variable AR3 in
