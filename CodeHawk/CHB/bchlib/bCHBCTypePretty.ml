@@ -165,15 +165,87 @@ let constant_to_string (c: bconstant_t) =
   | _ -> cil_constant_to_string c
 
 
-let attributes_to_string attrs =
+let rec attributes_to_string (attrs: b_attributes_t) =
   match attrs with
   | [] -> ""
-  | l ->
+  | _ ->
      (String.concat
-        "," (List.map (fun attr -> match attr with Attr (s, _) -> s) l)) ^ " "
+        "\n"
+        (List.map
+           (fun attr ->
+             match attr with
+             | Attr (s, params) ->
+                "__attribute__((__" ^ s ^ "__,"
+                ^ (String.concat
+                     ", "
+                     (List.map b_attrparam_to_string params))
+                ^ "__))") attrs))
+
+and b_attrparam_to_string (param: b_attrparam_t) =
+  match param with
+  | AInt i -> string_of_int i
+  | AStr s -> s
+  | ACons (s, []) -> "__" ^ s ^ "__"
+  | ACons (s, params) ->
+     "__"
+     ^ s
+     ^ "__("
+     ^ (String.concat ", " (List.map b_attrparam_to_string params)) ^ ")"
+  | ASizeOf t -> "__sizeof__(" ^ (typ_to_string t) ^ ")"
+  | ASizeOfE p -> "__sizeofE__(" ^ (b_attrparam_to_string p) ^ ")"
+  | ASizeOfS ts -> "__sizeofS__(" ^ (btypsig_to_string ts) ^ ")"
+  | AAlignOf t -> "__alignof__(" ^ (typ_to_string t) ^ ")"
+  | AAlignOfE p -> "__alignofE__(" ^ (b_attrparam_to_string p) ^ ")"
+  | AAlignOfS ts -> "__alignofS__(" ^ (btypsig_to_string ts) ^ ")"
+  | AUnOp (unop, p) ->
+     (unop_to_print_string unop) ^ " " ^ (b_attrparam_to_string p)
+  | ABinOp (binop, p1, p2) ->
+     (b_attrparam_to_string p1)
+     ^ " "
+     ^ (binop_to_print_string binop)
+     ^ " "
+     ^ (b_attrparam_to_string p2)
+  | ADot (p, s) -> (b_attrparam_to_string p) ^ "." ^ s
+  | AStar p -> "*" ^ (b_attrparam_to_string p)
+  | AAddrOf p -> "&" ^ (b_attrparam_to_string p)
+  | AIndex (p1, p2) ->
+     (b_attrparam_to_string p1) ^ "[" ^ (b_attrparam_to_string p2) ^ "]"
+  | AQuestion (p1, p2, p3) ->
+     (b_attrparam_to_string p1)
+     ^ " ? "
+     ^ (b_attrparam_to_string p2)
+     ^ " : "
+     ^ (b_attrparam_to_string p3)
+  | AAssign (p1, p2) ->
+     (b_attrparam_to_string p1) ^ " = " ^ (b_attrparam_to_string p2)
 
 
-let rec typ_to_string (t: btype_t) =
+and btypsig_to_string (ts: btypsig_t) =
+  let s_attrs (attrs: b_attributes_t) =
+      match attrs with
+      | [] -> ""
+      | _ -> " " ^ (attributes_to_string attrs) in
+  match ts with
+  | TSArray (tts, Some i64, attrs) ->
+     (btypsig_to_string tts) ^ "[" ^ (Int64.to_string i64) ^ "]" ^ (s_attrs attrs)
+  | TSArray (tts, None, attrs) ->
+     (btypsig_to_string tts) ^ "[]" ^ (s_attrs attrs)
+  | TSPtr (tts, attrs) ->
+     "( " ^ (btypsig_to_string tts) ^ " *)" ^ (s_attrs attrs)
+  | TSComp (is_struct, name, attrs) ->
+     (if is_struct then "struct " else "union ") ^ name ^ (s_attrs attrs)
+  | TSFun (rts, Some tslist, _is_vararg, attrs) ->
+     (btypsig_to_string rts)
+     ^ " ("
+     ^ (String.concat ", " (List.map btypsig_to_string tslist))
+     ^ (s_attrs attrs)
+  | TSFun (rts, None, _is_vararg, attrs) ->
+     (btypsig_to_string rts) ^ "(?)" ^ (s_attrs attrs)
+  | TSEnum (name, attrs) -> "enum " ^ name ^ (s_attrs attrs)
+  | TSBase t -> typ_to_string t
+
+
+and typ_to_string (t: btype_t) =
   let ns_to_string ns =
     String.concat "" (List.map (fun n -> (tname_to_string n) ^ "::") ns) in
   let a = attributes_to_string in
