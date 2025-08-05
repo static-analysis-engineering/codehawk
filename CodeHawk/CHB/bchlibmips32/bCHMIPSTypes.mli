@@ -649,6 +649,13 @@ type mips_opcode_t =
   | TrapIfEqualImmediate of                           (* TEQI; I-type: memory *)
       mips_operand_int   (* rs: source *)
       * mips_operand_int (* imm: constant to compare against *)
+  | TrapIfLessThanUnsigned of
+      int                (* code: ignored by hardware *)
+      * mips_operand_int (* rs: source 1 *)
+      * mips_operand_int (* rt: source 2 *)
+  | TrapIfNotEqualImmediate of
+      mips_operand_int   (* rs: source *)
+      * mips_operand_int (* imm: constant to compare against *)
   | Xor of                                                     (* XOR; R-type *)
       mips_operand_int   (* rd: destination *)
       * mips_operand_int (* rs: source 1 *)

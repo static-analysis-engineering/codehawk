@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,7 +38,7 @@ open BCHBasicTypes
 
 (* bchlibmips32 *)
 open BCHMIPSTypes
-   
+
 
 let mips_fp_format_to_string f =
   match f with
@@ -61,7 +61,7 @@ let mips_fp_predicate_to_string p =
   | _ ->
      raise (BCH_failure
               (LBLOCK [STR "FP predicate code "; INT p; STR " not recognized"]))
-   
+
 
 class type ['a]  opcode_formatter_int =
 object
@@ -70,7 +70,7 @@ object
   method int_ops: string -> mips_operand_int list -> int list -> 'a
   method pre_int_ops: string -> int list -> mips_operand_int list -> 'a
   method no_ops: string -> 'a
-end 
+end
 
 
 type 'a opcode_record_t = {
@@ -146,13 +146,13 @@ let get_record (opc:mips_opcode_t) =
 
   (* ---------------------------------------------------------------------------
    * Format: B offset
-   * Description: 
-   * B offset is the assembly idiom used to denote an unconditional branch. The 
+   * Description:
+   * B offset is the assembly idiom used to denote an unconditional branch. The
    * actual instruction is interpreted by the hardware as BEQ r0, r0, offset.
    * ---------------------------------------------------------------------------
-   * An 18-bit signed offset (the 16-bit offset field shifted left 2 bits) is 
-   * added to the address of the instruction following the branch (not the 
-   * branch itself), in the branch delay slot, to form a PC-relative effective 
+   * An 18-bit signed offset (the 16-bit offset field shifted left 2 bits) is
+   * added to the address of the instruction following the branch (not the
+   * branch itself), in the branch delay slot, to form a PC-relative effective
    * target address.
    * ---------------------------------------------------------------------------
    * Operation
@@ -169,19 +169,19 @@ let get_record (opc:mips_opcode_t) =
   (* ---------------------------------------------------------------------------
    * Format: BAL offset
    * Description: procedure call
-   * Pre-Release 6: BAL offset is the assembly idiom used to denote an 
-   * unconditional branch. The actual instruction is interpreted by the hardware 
+   * Pre-Release 6: BAL offset is the assembly idiom used to denote an
+   * unconditional branch. The actual instruction is interpreted by the hardware
    * as BGEZAL r0, offset.
-   * Release 6 keeps the BAL special case of BGEZAL, but removes all other 
-   * instances of BGEZAL. BGEZAL with rs any register other than GPR[0] is 
+   * Release 6 keeps the BAL special case of BGEZAL, but removes all other
+   * instances of BGEZAL. BGEZAL with rs any register other than GPR[0] is
    * required to signal a Reserved Instruction exception.
    * ---------------------------------------------------------------------------
-   * Place the return address link in GPR 31. The return link is the address of 
-   * the second instruction following the branch, where execution continues 
+   * Place the return address link in GPR 31. The return link is the address of
+   * the second instruction following the branch, where execution continues
    * after a procedure call.
-   * An 18-bit signed offset (the 16-bit offset field shifted left 2-bits) is 
-   * added to the address of the instruction following the branch (not the branch 
-   * itself), in the branch delay slot, to form a PC-relative effective target 
+   * An 18-bit signed offset (the 16-bit offset field shifted left 2-bits) is
+   * added to the address of the instruction following the branch (not the branch
+   * itself), in the branch delay slot, to form a PC-relative effective target
    * address.
    * ---------------------------------------------------------------------------
    * Operation
@@ -198,13 +198,13 @@ let get_record (opc:mips_opcode_t) =
 
   (* ---------------------------------------------------------------------------
    * Format: BEQ rs, rt, offset
-   * Description: if GPR[rs] = GPR[rt] then branch  
+   * Description: if GPR[rs] = GPR[rt] then branch
    * ---------------------------------------------------------------------------
-   * An 18-bit signed offset (the 16-bit offset field shifted left 2 bits) is 
-   * added to the address of the instruction following the branch (not the 
-   * branch itself), in the branch delay slot, to form a PC-relative effective 
+   * An 18-bit signed offset (the 16-bit offset field shifted left 2 bits) is
+   * added to the address of the instruction following the branch (not the
+   * branch itself), in the branch delay slot, to form a PC-relative effective
    * target address.
-   * If the contents of GPR rs and GPR rt are equal, branch to the effective 
+   * If the contents of GPR rs and GPR rt are equal, branch to the effective
    * target address after the instruction in the delay slot is executed.
    * ---------------------------------------------------------------------------
    * Operation
@@ -237,7 +237,7 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = true;
       ida_asm = (fun f -> f#ops "bnel" [src1; src2; target])
     }
-                                   
+
   (* ----------------------------------------------- I-type arithmetic/logic  *)
   | AddImmediate (dest, src, imm) -> {
       mnemonic = "addi";
@@ -245,12 +245,12 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false;
       ida_asm = (fun f -> f#ops "addi" [dest; src; imm])
     }
-                                 
+
   (* ---------------------------------------------------------------------------
    * Format: ADDIU rt, rs, immediate
    * Description: GPR[rt] <- GPR[rs] + immediate
    * ---------------------------------------------------------------------------
-   * The 16-bit signed immediate is added to the 32-bit value in GPR rs and the 
+   * The 16-bit signed immediate is added to the 32-bit value in GPR rs and the
    * 32-bit arithmetic result is placed into GPR rt.
    * No Integer Overflow exception occurs under any circumstances.
    * ---------------------------------------------------------------------------
@@ -258,9 +258,9 @@ let get_record (opc:mips_opcode_t) =
    *   temp <- GPR[rs] + sign_extend(immediate)
    *   GPR[rt] <- temp
    * ---------------------------------------------------------------------------
-   * The term "unsigned" in the instruction name is a misnomer; this operation 
-   * is 32-bit modulo arithmetic that does not trap on overflow. This instruction 
-   * is appropriate for unsigned arithmetic, such as address arithmetic, or 
+   * The term "unsigned" in the instruction name is a misnomer; this operation
+   * is 32-bit modulo arithmetic that does not trap on overflow. This instruction
+   * is appropriate for unsigned arithmetic, such as address arithmetic, or
    * integer arith- metic environments that ignore overflow, such as C language
    * arithmetic.
    * --------------------------------------------------------------------------- *)
@@ -275,10 +275,10 @@ let get_record (opc:mips_opcode_t) =
    * Format: SLTI rt, rs, immediate
    * Description: GPR[rt] <- (GPR[rs] < sign_extend(immediate) )
    * ---------------------------------------------------------------------------
-   * Compare the contents of GPR rs and the 16-bit signed immediate as signed 
-   * integers; record the Boolean result of the comparison in GPR rt. If GPR 
-   * rs is less than immediate, the result is 1 (true); otherwise, it is 0 
-   * (false). 
+   * Compare the contents of GPR rs and the 16-bit signed immediate as signed
+   * integers; record the Boolean result of the comparison in GPR rt. If GPR
+   * rs is less than immediate, the result is 1 (true); otherwise, it is 0
+   * (false).
    * The arithmetic comparison does not cause an Integer Overflow exception.
    * ---------------------------------------------------------------------------
    * Operation
@@ -286,7 +286,7 @@ let get_record (opc:mips_opcode_t) =
    *      GPR[rt] <- 1
    *  else
    *      GPR[rt] <- 0
-   * --------------------------------------------------------------------------- *)       
+   * --------------------------------------------------------------------------- *)
   | SetLTImmediate (rt,rs,imm) -> {
       mnemonic   = "slti";
       operands   = [rt; rs; imm];
@@ -298,18 +298,18 @@ let get_record (opc:mips_opcode_t) =
    * Format: SLTIU rt, rs, immediate
    * Description: GPR[rt] <- (GPR[rs] < sign_extend(immediate))
    * ---------------------------------------------------------------------------
-   * Compare the contents of GPR rs and the sign-extended 16-bit immediate 
-   * as unsigned integers; record the Boolean result of the comparison in 
-   * GPR rt. If GPR rs is less than immediate, the result is 1 (true); 
+   * Compare the contents of GPR rs and the sign-extended 16-bit immediate
+   * as unsigned integers; record the Boolean result of the comparison in
+   * GPR rt. If GPR rs is less than immediate, the result is 1 (true);
    * otherwise, it is 0 (false).
-   * Because the 16-bit immediate is sign-extended before comparison, the 
-   * instruction can represent the smallest or largest unsigned numbers. 
-   * The representable values are at the minimum [0, 32767] or maximum 
+   * Because the 16-bit immediate is sign-extended before comparison, the
+   * instruction can represent the smallest or largest unsigned numbers.
+   * The representable values are at the minimum [0, 32767] or maximum
    * [max_unsigned-32767, max_unsigned] end of the unsigned range.
    * The arithmetic comparison does not cause an Integer Overflow exception.
    * ---------------------------------------------------------------------------
    * Operation
-   *   if (0 || GPR[rs]) < (0 || sign_extend(immediate)) then 
+   *   if (0 || GPR[rs]) < (0 || sign_extend(immediate)) then
    *      GPR[rt] <- 1
    *   else
    *      GPR[rt] <- 0
@@ -325,8 +325,8 @@ let get_record (opc:mips_opcode_t) =
    * Format: ANDI rt, rs, immediate
    * Description: GPR[rt] <- GPR[rs] and zero_extend(immediate)
    * ---------------------------------------------------------------------------
-   * The 16-bit immediate is zero-extended to the left and combined with the 
-   * contents of GPR rs in a bitwise logical AND operation. The result is placed 
+   * The 16-bit immediate is zero-extended to the left and combined with the
+   * contents of GPR rs in a bitwise logical AND operation. The result is placed
    * into GPR rt.
    * ---------------------------------------------------------------------------
    * Operation
@@ -343,8 +343,8 @@ let get_record (opc:mips_opcode_t) =
    * Format: ORI rt, rs, immediate
    * Description: GPR[rt] <- GPR[rs] or zero_extend(immediate)
    * ---------------------------------------------------------------------------
-   * The 16-bit immediate is zero-extended to the left and combined with the 
-   * contents of GPR rs in a bitwise logical OR operation. The result is placed 
+   * The 16-bit immediate is zero-extended to the left and combined with the
+   * contents of GPR rs in a bitwise logical OR operation. The result is placed
    * into GPR rt.
    * ---------------------------------------------------------------------------
    * Operation
@@ -361,8 +361,8 @@ let get_record (opc:mips_opcode_t) =
    * Format: XORI rt, rs, immediate
    * Description: GPR[rt] <- GPR[rs] xor zero_extend(immediate)
    * ---------------------------------------------------------------------------
-   * The 16-bit immediate is zero-extended to the left and combined with the 
-   * contents of GPR rs in a bitwise logical exclusive OR operation. The result 
+   * The 16-bit immediate is zero-extended to the left and combined with the
+   * contents of GPR rs in a bitwise logical exclusive OR operation. The result
    * is placed into GPR rt.
    * ---------------------------------------------------------------------------
    * Operation
@@ -381,8 +381,8 @@ let get_record (opc:mips_opcode_t) =
    * Format: AUI rt, rs immediate
    * Description: GPR[rt] <- GPR[rs] + sign_extend(immediate << 16)
    * ---------------------------------------------------------------------------
-   * The 16 bit immediate is shifted left 16 bits, sign-extended, and added to 
-   * the register rs, storing the result in rt. 
+   * The 16 bit immediate is shifted left 16 bits, sign-extended, and added to
+   * the register rs, storing the result in rt.
    * In Release 6, LUI is an assembly idiom for AUI with rs=0.
    * ---------------------------------------------------------------------------
    * Operation
@@ -399,7 +399,7 @@ let get_record (opc:mips_opcode_t) =
    * Format: LUI rt, immediate
    * Description: GPR[rt] <- immediate || 0[16]
    * ---------------------------------------------------------------------------
-   * The 16-bit immediate is shifted left 16 bits and concatenated with 16 bits 
+   * The 16-bit immediate is shifted left 16 bits and concatenated with 16 bits
    * of low-order zeros. The 32-bit result is placed into GPR rt.
    * ---------------------------------------------------------------------------
    * Operation
@@ -420,8 +420,8 @@ let get_record (opc:mips_opcode_t) =
    * Description: GPR[rt]   memory[GPR[base] + offset]
    * ---------------------------------------------------------------------------
    * The contents of the 8-bit byte at the memory location specified by the
-   * effective address are fetched, sign-extended, and placed in GPR rt. The 
-   * 16-bit signed offset is added to the contents of GPR base to form the 
+   * effective address are fetched, sign-extended, and placed in GPR rt. The
+   * 16-bit signed offset is added to the contents of GPR base to form the
    * effective address.
    * ---------------------------------------------------------------------------
    * Operation
@@ -441,9 +441,9 @@ let get_record (opc:mips_opcode_t) =
    * Format: LH rt, offset(base)
    * Description: GPR[rt] <- memory[GPR[base] + offset]
    * ---------------------------------------------------------------------------
-   * The contents of the 16-bit halfword at the memory location specified by the 
-   * aligned effective address are fetched, sign-extended, and placed in GPR rt. 
-   * The 16-bit signed offset is added to the contents of GPR base to form the 
+   * The contents of the 16-bit halfword at the memory location specified by the
+   * aligned effective address are fetched, sign-extended, and placed in GPR rt.
+   * The 16-bit signed offset is added to the contents of GPR base to form the
    * effective address.
    * ---------------------------------------------------------------------------
    * Operation
@@ -469,9 +469,9 @@ let get_record (opc:mips_opcode_t) =
    * Format: LW rt, offset(base)
    * Description: GPR[rt] <- memory[GPR[base] + offset]
    * ------------------------------------------------------------------------
-   * The contents of the 32-bit word at the memory location specified by the 
-   * aligned effective address are fetched, sign-extended to the GPR register 
-   * length if necessary, and placed in GPR rt. The 16-bit signed offset is 
+   * The contents of the 32-bit word at the memory location specified by the
+   * aligned effective address are fetched, sign-extended to the GPR register
+   * length if necessary, and placed in GPR rt. The 16-bit signed offset is
    * added to the contents of GPR base to form the effective address.
    * ------------------------------------------------------------------------ *)
   | LoadWord (dest,src) -> {
@@ -485,23 +485,23 @@ let get_record (opc:mips_opcode_t) =
    * Description: GPR[rt] <- memory[GPR[base] + offset]
    * ------------------------------------------------------------------------
    * Purpose: To load a word from memory for an atomic read-modify-write
-   * The LL and SC instructions provide the primitives to implement atomic 
+   * The LL and SC instructions provide the primitives to implement atomic
    * read-modify-write (RMW) operations for synchronizable memory locations.
    *
-   * The contents of the 32-bit word at the memory location specified by the 
-   * aligned effective address are fetched and written into GPR rt. The signed 
+   * The contents of the 32-bit word at the memory location specified by the
+   * aligned effective address are fetched and written into GPR rt. The signed
    * offset is added to the contents of GPR base to form an effective address.
    *
-   * This begins a RMW sequence on the current processor. There can be only one 
-   * active RMW sequence per processor. When an LL is executed it starts an 
-   * active RMW sequence replacing any other sequence that was active. The RMW 
+   * This begins a RMW sequence on the current processor. There can be only one
+   * active RMW sequence per processor. When an LL is executed it starts an
+   * active RMW sequence replacing any other sequence that was active. The RMW
    * sequence is completed by a subsequent SC instruction that either completes
    * the RMW sequence atomically and succeeds, or does not and fails.
    *
-   * Executing LL on one processor does not cause an action that, by itself, 
+   * Executing LL on one processor does not cause an action that, by itself,
    * causes an SC for the same block to fail on another processor.
    *
-   * An execution of LL does not have to be followed by execution of SC; a program 
+   * An execution of LL does not have to be followed by execution of SC; a program
    * is free to abandon the RMW sequence without attempting a write.
    * ------------------------------------------------------------------------ *)
   | LoadLinkedWord (dest,src) -> {
@@ -533,8 +533,8 @@ let get_record (opc:mips_opcode_t) =
    * Format: SB rt, offset(base)
    * Description: memory[GPR[base] + offset] <- GPR[rt]
    * ------------------------------------------------------------------------
-   * The least-significant 8-bit byte of GPR rt is stored in memory at the 
-   * location specified by the effective address. The 16-bit signed offset 
+   * The least-significant 8-bit byte of GPR rt is stored in memory at the
+   * location specified by the effective address. The 16-bit signed offset
    * is added to the contents of GPR base to form the effective address.
    * ------------------------------------------------------------------------ *)
   | StoreByte (dest,src) -> {
@@ -569,24 +569,24 @@ let get_record (opc:mips_opcode_t) =
     }
   (* ------------------------------------------------------------------------
    * Format: SC rt, offset(base)
-   * Description: if atomic_update then memory[GPR[base] + offset] <- GPR[rt], 
+   * Description: if atomic_update then memory[GPR[base] + offset] <- GPR[rt],
    *              GPR[rt] <- 1 else GPR[rt] <- 0
    * ------------------------------------------------------------------------
-   * The LL and SC instructions provide primitives to implement atomic 
+   * The LL and SC instructions provide primitives to implement atomic
    * read-modify-write (RMW) operations on synchronizable memory locations.
    * In Release 5, the behavior of SC is modified when Config5LLB=1.
    *
-   * The 32-bit word in GPR rt is conditionally stored in memory at the location 
-   * specified by the aligned effective address. The signed offset is added to 
+   * The 32-bit word in GPR rt is conditionally stored in memory at the location
+   * specified by the aligned effective address. The signed offset is added to
    * the contents of GPR base to form an effective address.
    *
-   * The SC completes the RMW sequence begun by the preceding LL instruction 
-   * executed on the processor. To complete the RMW sequence atomically, the 
+   * The SC completes the RMW sequence begun by the preceding LL instruction
+   * executed on the processor. To complete the RMW sequence atomically, the
    * following occur:
-   * - The 32-bit word of GPR rt is stored to memory at the location specified 
+   * - The 32-bit word of GPR rt is stored to memory at the location specified
    *   by the aligned effective address.
    * - A one, indicating success, is written into GPR rt.
-   * Otherwise, memory is not modified and a 0, indicating failure, is written 
+   * Otherwise, memory is not modified and a 0, indicating failure, is written
    * into GPR rt.
    * ------------------------------------------------------------------------ *)
   | StoreConditionalWord (dest, src) -> {
@@ -599,9 +599,9 @@ let get_record (opc:mips_opcode_t) =
    * Format: LWC1 ft, offset(base)
    * Description: FPR[ft] <- memory[GPR[base] + offset]
    * ------------------------------------------------------------------------
-   * The contents of the 32-bit word at the memory location specified by the 
-   * aligned effective address are fetched and placed into the low word of 
-   * FPR ft. If FPRs are 64 bits wide, bits 63..32 of FPR ft become 
+   * The contents of the 32-bit word at the memory location specified by the
+   * aligned effective address are fetched and placed into the low word of
+   * FPR ft. If FPRs are 64 bits wide, bits 63..32 of FPR ft become
    * UNPREDICTABLE. The 16-bit signed offset is added to the contents of GPR
    * base to form the effective address.
    * ------------------------------------------------------------------------ *)
@@ -621,8 +621,8 @@ let get_record (opc:mips_opcode_t) =
    * Format: SWC1 ft, offset(base)
    * Description: memory[GPR[base] + offset] <- FPR[ft]
    * ------------------------------------------------------------------------
-   * The low 32-bit word from FPR ft is stored in memory at the location 
-   * specified by the aligned effective address. The 16-bit signed offset is 
+   * The low 32-bit word from FPR ft is stored in memory at the location
+   * specified by the aligned effective address. The 16-bit signed offset is
    * added to the contents of GPR base to form the effective address.
    * ------------------------------------------------------------------------ *)
   | StoreWordFromFP (dest, src) -> {
@@ -721,13 +721,13 @@ let get_record (opc:mips_opcode_t) =
    * Format: J target
    * Description: To branch within the current 256 MB-aligned region.
    * ------------------------------------------------------------------------
-   * This is a PC-region branch (not PC-relative); the effective target 
-   * address is in the "current" 256 MB-aligned region. The low 28 bits of 
-   * the target address is the instr_index field shifted left 2bits. The 
-   * remaining upper bits are the corre- sponding bits of the address of 
+   * This is a PC-region branch (not PC-relative); the effective target
+   * address is in the "current" 256 MB-aligned region. The low 28 bits of
+   * the target address is the instr_index field shifted left 2bits. The
+   * remaining upper bits are the corre- sponding bits of the address of
    * the instruction in the delay slot (not the branch itself).
-   * Jump to the effective target address. Execute the instruction that 
-   * follows the jump, in the branch delay slot, before executing the jump 
+   * Jump to the effective target address. Execute the instruction that
+   * follows the jump, in the branch delay slot, before executing the jump
    * itself.
    * ------------------------------------------------------------------------
    * Operation
@@ -769,13 +769,13 @@ let get_record (opc:mips_opcode_t) =
    * Format: SLLV rd, rt, rs
    * Description: GPR[rd] <-  GPR[rt] << GPR[rs]
    * ---------------------------------------------------------------------------
-   * The contents of the low-order 32-bit word of GPR rt are shifted left, 
-   * inserting zeros into the emptied bits. The resulting word is placed in GPR 
+   * The contents of the low-order 32-bit word of GPR rt are shifted left,
+   * inserting zeros into the emptied bits. The resulting word is placed in GPR
    * rd. The bit-shift amount is specified by the low-order 5 bits of GPR rs.
    * ---------------------------------------------------------------------------
    * Operation
-   *   s <- GPR[rs][4..0] 
-   *   temp <- GPR[rt][(31-s)..0] || 0[s] 
+   *   s <- GPR[rs][4..0]
+   *   temp <- GPR[rt][(31-s)..0] || 0[s]
    *   GPR[rd] <- temp
    * --------------------------------------------------------------------------- *)
   | ShiftLeftLogicalVariable (rd, rt, rs) -> {
@@ -832,8 +832,8 @@ let get_record (opc:mips_opcode_t) =
    * The contents of GPR rs are loaded into special register HI.
    * ---------------------------------------------------------------------------
    * Restrictions:
-   * If an MTHI instruction is executed following one of these arithmetic 
-   * instructions, but before an MFLO or MFHI instruction, the contents of LO 
+   * If an MTHI instruction is executed following one of these arithmetic
+   * instructions, but before an MFLO or MFHI instruction, the contents of LO
    * are UNPREDICTABLE.
    * ---------------------------------------------------------------------------
    * Operation
@@ -862,7 +862,7 @@ let get_record (opc:mips_opcode_t) =
    * Format: MOVN rd,rs,rt
    * Description: if GPR[rt] != 0 then GPR[rd] <- GPR[rs]
    * ---------------------------------------------------------------------------
-   * If the value in GPR rt is not equal to zero, then the contents of GPR rs 
+   * If the value in GPR rt is not equal to zero, then the contents of GPR rs
    * are placed into GPR rd.
    * --------------------------------------------------------------------------- *)
   | MoveConditionalNotZero (rd, rs, rt) -> {
@@ -876,7 +876,7 @@ let get_record (opc:mips_opcode_t) =
    * Format: MOVZ rd,rs,rt
    * Description: if GPR[rt] = 0 then GPR[rd] <- GPR[rs]
    * ---------------------------------------------------------------------------
-   * If the value in GPR rt is equal to zero, then the contents of GPR rs 
+   * If the value in GPR rt is equal to zero, then the contents of GPR rs
    * are placed into GPR rd.
    * --------------------------------------------------------------------------- *)
   | MoveConditionalZero (rd, rs, rt) -> {
@@ -903,9 +903,9 @@ let get_record (opc:mips_opcode_t) =
    * Format: MULT rs, rt
    * Description: (HI, LO) <- GPR[rs] x GPR[rt]
    * ---------------------------------------------------------------------------
-   * The 32-bit word value in GPR rt is multiplied by the 32-bit value in GPR rs, 
-   * treating both operands as signed values, to produce a 64-bit result. The 
-   * low-order 32-bit word of the result is placed into special register LO, and 
+   * The 32-bit word value in GPR rt is multiplied by the 32-bit value in GPR rs,
+   * treating both operands as signed values, to produce a 64-bit result. The
+   * low-order 32-bit word of the result is placed into special register LO, and
    * the high- order 32-bit word is placed into special register HI.
    * No arithmetic exception occurs under any circumstances.
    * ---------------------------------------------------------------------------
@@ -924,15 +924,15 @@ let get_record (opc:mips_opcode_t) =
    * Format: MADD rs, rt
    * Description: (HI, LO) <- (HI, LO) + GPR[rs] x GPR[rt]
    * ---------------------------------------------------------------------------
-   * The 32-bit word value in GPR rs is multiplied by the 32-bit word value in 
+   * The 32-bit word value in GPR rs is multiplied by the 32-bit word value in
    * GPR rt, treating both operands as signed values, to produce a 64-bit result.
-   * The product is added to the 64-bit concatenated values of HI and LO. The 
-   * most sig- nificant 32 bits of the result are written into HI and the least 
-   * significant 32 bits are written into LO. No arithmetic exception occurs 
+   * The product is added to the 64-bit concatenated values of HI and LO. The
+   * most sig- nificant 32 bits of the result are written into HI and the least
+   * significant 32 bits are written into LO. No arithmetic exception occurs
    * under any circumstances.
    * ---------------------------------------------------------------------------
    * Operation
-   *   temp <- (HI || LO) + (GPR[rs] x GPR[rt]) 
+   *   temp <- (HI || LO) + (GPR[rs] x GPR[rt])
    * HI <- temp[63..32]
    * LO <- temp[31..0]
    * --------------------------------------------------------------------------- *)
@@ -964,15 +964,15 @@ let get_record (opc:mips_opcode_t) =
       operands = [hi; lo; rs; rt];
       delay_slot = false;
       ida_asm = (fun f -> f#ops "maddu" [rs; rt])
-    } 
+    }
 
   (* ---------------------------------------------------------------------------
    * Format: MULTU rs, rt
    * Description: (HI, LO) <- GPR[rs] x GPR[rt]
    * ---------------------------------------------------------------------------
-   * The 32-bit word value in GPR rt is multiplied by the 32-bit value in GPR rs, 
-   * treating both operands as unsigned val- ues, to produce a 64-bit result. The 
-   * low-order 32-bit word of the result is placed into special register LO, and 
+   * The 32-bit word value in GPR rt is multiplied by the 32-bit value in GPR rs,
+   * treating both operands as unsigned val- ues, to produce a 64-bit result. The
+   * low-order 32-bit word of the result is placed into special register LO, and
    * the high- order 32-bit word is placed into special register HI.
    * No arithmetic exception occurs under any circumstances.
    * ---------------------------------------------------------------------------
@@ -992,9 +992,9 @@ let get_record (opc:mips_opcode_t) =
    * Format: DIV rs, rt
    * Description: (HI, LO) <- GPR[rs] / GPR[rt]
    * ---------------------------------------------------------------------------
-   * The 32-bit word value in GPR rs is divided by the 32-bit value in GPR rt, 
-   * treating both operands as signed values. The 32-bit quotient is placed into 
-   * special register LO and the 32-bit remainder isplaced into special register 
+   * The 32-bit word value in GPR rs is divided by the 32-bit value in GPR rt,
+   * treating both operands as signed values. The 32-bit quotient is placed into
+   * special register LO and the 32-bit remainder isplaced into special register
    * HI. No arithmetic exception occurs under any circumstances.
    * ---------------------------------------------------------------------------
    * Operation
@@ -1061,7 +1061,7 @@ let get_record (opc:mips_opcode_t) =
    * Format: NOR rd, rs, rt
    * Description: GPR[rd] <- GPR[rs] nor GPR[rt]
    * ---------------------------------------------------------------------------
-   * The contents of GPR rs are combined with the contents of GPR rt in a bitwise 
+   * The contents of GPR rs are combined with the contents of GPR rt in a bitwise
    * logical NOR operation. The result is placed into GPR rd.
    * ---------------------------------------------------------------------------
    * Operation
@@ -1077,9 +1077,9 @@ let get_record (opc:mips_opcode_t) =
    * Format: SLT rd, rs, rt
    * Description: GPR[rd] <- (GPR[rs] < GPR[rt])
    * ---------------------------------------------------------------------------
-   * Compare the contents of GPR rs and GPR rt as signed integers; record the 
-   * Boolean result of the comparison in GPR rd. If GPR rs is less than GPR rt, 
-   * the result is 1 (true); otherwise, it is 0 (false). 
+   * Compare the contents of GPR rs and GPR rt as signed integers; record the
+   * Boolean result of the comparison in GPR rd. If GPR rs is less than GPR rt,
+   * the result is 1 (true); otherwise, it is 0 (false).
    * The arithmetic comparison does not cause an Integer Overflow exception.
    * ---------------------------------------------------------------------------
    * Operation
@@ -1087,7 +1087,7 @@ let get_record (opc:mips_opcode_t) =
    *      GPR[rt] <- 1
    *  else
    *      GPR[rt] <- 0
-   * --------------------------------------------------------------------------- *)       
+   * --------------------------------------------------------------------------- *)
   | SetLT (rd, rs, rt) -> {
       mnemonic = "slt";
       operands = [rd; rs; rt];
@@ -1099,9 +1099,9 @@ let get_record (opc:mips_opcode_t) =
    * Format: SLTU rd, rs, rt
    * Description: GPR[rd] <- (GPR[rs] < GPR[rt])
    * ---------------------------------------------------------------------------
-   * Compare the contents of GPR rs and GPR rt as unsigned integers; record the 
-   * Boolean result of the comparison in GPR rd. If GPR rs is less than GPR rt, 
-   * the result is 1 (true); otherwise, it is 0 (false). 
+   * Compare the contents of GPR rs and GPR rt as unsigned integers; record the
+   * Boolean result of the comparison in GPR rd. If GPR rs is less than GPR rt,
+   * the result is 1 (true); otherwise, it is 0 (false).
    * The arithmetic comparison does not cause an Integer Overflow exception.
    * ---------------------------------------------------------------------------
    * Operation
@@ -1109,7 +1109,7 @@ let get_record (opc:mips_opcode_t) =
    *      GPR[rt] <- 1
    *  else
    *      GPR[rt] <- 0
-   * --------------------------------------------------------------------------- *)       
+   * --------------------------------------------------------------------------- *)
   | SetLTUnsigned (rd, rs, rt) -> {
       mnemonic = "sltu";
       operands = [rd; rs; rt];
@@ -1155,11 +1155,11 @@ let get_record (opc:mips_opcode_t) =
    * Format: TEQ rs, rt
    * Description: if GPR[rs] = GPR[rt] then Trap
    * ---------------------------------------------------------------------------
-   * Compare the contents of GPR rs and GPR rt as signed integers. If GPR rs is 
+   * Compare the contents of GPR rs and GPR rt as signed integers. If GPR rs is
    * equal to GPR rt, then take a Trap exception.
-   * The contents of the code field are ignored by hardware and may be used to 
-   * encode information for system software. To retrieve the information, system 
-   * software may load the instruction word from memory. Alternatively, if CP0 
+   * The contents of the code field are ignored by hardware and may be used to
+   * encode information for system software. To retrieve the information, system
+   * software may load the instruction word from memory. Alternatively, if CP0
    * BadInstr is implemented, the code field may be obtained from BadInstr.
    * ---------------------------------------------------------------------------
    * Operation
@@ -1191,16 +1191,55 @@ let get_record (opc:mips_opcode_t) =
       ida_asm = (fun f -> f#ops "teqi" [rs; imm])
     }
 
+  (* ---------------------------------------------------------------------------
+   * Format: TLTU rs, rt
+   * Description: if GPR[rs] < GPR[rt] then Trap
+   * ---------------------------------------------------------------------------
+   * compre the contents of GPR rs and GPR rt as unsigned integers; if GPR rs
+   * is less than GPR rt, then take a Trap exception.
+   * The contents of the code field are ignored by hardware and may be used to
+   * encode information for system software. To retrieve the information, system
+   * software must load the instruction word from memory.
+   * ---------------------------------------------------------------------------
+   * Operation:
+   *   if (0 || GPR[rs]) < (0 || GPR[rt]) then
+   *      SignalException(Trap)
+   * -------------------------------------------------------------------------- *)
+  | TrapIfLessThanUnsigned (_code, rs, rt) -> {
+      mnemonic = "tltu";
+      operands = [rs; rt];
+      delay_slot = false;
+      ida_asm = (fun f -> f#ops "tltu" [rs; rt])
+    }
+
+  (* ---------------------------------------------------------------------------
+   * Format: TNEI rs, immediate
+   * Description: if GPR[rs] != immediate then Trap
+   * ---------------------------------------------------------------------------
+   * Compare the contents of GPR rs and the 16-bit signed immediate as signed
+   * integers; if GPR rs is not equal to immediate then take a Trap exception.
+   * ---------------------------------------------------------------------------
+   * Operation
+   *   if GPR[rs] != sign_extend(immediate) then
+   *      SignalException(Trap)
+   * --------------------------------------------------------------------------- *)
+  | TrapIfNotEqualImmediate (rs, imm) -> {
+      mnemonic = "tnei";
+      operands = [rs; imm];
+      delay_slot = false;
+      ida_asm = (fun f -> f#ops "tnei" [rs; imm])
+    }
+
   (* ------------------------------------------------------------ R2Type  --- *)
 
   (* ---------------------------------------------------------------------------
    * Format: MUL rd, rs, rt
    * Description: GPR[rd] <- GPR[rs] x GPR[rt]
    * ---------------------------------------------------------------------------
-   * The 32-bit word value in GPR rs is multiplied by the 32-bit value in GPR rt, 
-   * treating both operands as signed values, to produce a 64-bit result. The least 
-   * significant 32 bits of the product are written to GPR rd. The contents of HI 
-   * and LO are UNPREDICTABLE after the operation. No arithmetic exception occurs 
+   * The 32-bit word value in GPR rs is multiplied by the 32-bit value in GPR rt,
+   * treating both operands as signed values, to produce a 64-bit result. The least
+   * significant 32 bits of the product are written to GPR rd. The contents of HI
+   * and LO are UNPREDICTABLE after the operation. No arithmetic exception occurs
    * under any circumstances.
    * ---------------------------------------------------------------------------
    * Operation
@@ -1368,10 +1407,10 @@ let get_record (opc:mips_opcode_t) =
    *         ADD.PS fd, fs, ft
    * Description: FPR[fd] <- FPR[fs] + FPR[ft]
    * ---------------------------------------------------------------------------
-   * The value in FPR ft is added to the value in FPR fs. The result is 
-   * calculated to infinite precision, rounded by using to the current rounding 
-   * mode in FCSR, and placed into FPR fd. The operands and result are values 
-   * in format fmt. ADD.PS adds the upper and lower halves of FPR fs and FPR ft 
+   * The value in FPR ft is added to the value in FPR fs. The result is
+   * calculated to infinite precision, rounded by using to the current rounding
+   * mode in FCSR, and placed into FPR fd. The operands and result are values
+   * in format fmt. ADD.PS adds the upper and lower halves of FPR fs and FPR ft
    * independently, and ORs together any generated exceptions.
    * The Cause bits are ORed into the Flag bits if no exception is taken.
    * ---------------------------------------------------------------------------
@@ -1395,17 +1434,17 @@ let get_record (opc:mips_opcode_t) =
        delay_slot = false;
        ida_asm    = (fun f -> f#ops mnemonic [fd; fs; ft])
      }
-     
+
   (* ---------------------------------------------------------------------------
    * Format: MUL.S fd, fs, ft
    *         MUL.D fd, fs, ft
    *         MUL.PS fd, fs, ft
    * Description: FPR[fd] <- FPR[fs] x FPR[ft]
    * ---------------------------------------------------------------------------
-   * The value in FPR fs is multiplied by the value in FPR ft. The result is 
-   * calculated to infinite precision, rounded accord- ing to the current rounding 
-   * mode in FCSR, and placed into FPR fd. The operands and result are values in 
-   * format fmt. MUL.PS multiplies the upper and lower halves of FPR fs and FPR 
+   * The value in FPR fs is multiplied by the value in FPR ft. The result is
+   * calculated to infinite precision, rounded accord- ing to the current rounding
+   * mode in FCSR, and placed into FPR fd. The operands and result are values in
+   * format fmt. MUL.PS multiplies the upper and lower halves of FPR fs and FPR
    * ft independently, and ORs together any generated exceptional conditions.
    * ---------------------------------------------------------------------------
    * Operation
@@ -1441,9 +1480,9 @@ let get_record (opc:mips_opcode_t) =
    *         ABS.PS fd, fs
    * Description: FPR[fd] <- abs(FPR[fs])
    * ---------------------------------------------------------------------------
-   * The absolute value of the value in FPR fs is placed in FPR fd. The operand 
-   * and result are values in format fmt. ABS.PS takes the absolute value of the 
-   * two values in FPR fs independently, and ORs together any generated 
+   * The absolute value of the value in FPR fs is placed in FPR fd. The operand
+   * and result are values in format fmt. ABS.PS takes the absolute value of the
+   * two values in FPR fs independently, and ORs together any generated
    * exceptions.
    * The Cause bits are ORed into the Flag bits if no exception is taken.
    * ---------------------------------------------------------------------------
@@ -1458,17 +1497,17 @@ let get_record (opc:mips_opcode_t) =
        delay_slot = false;
        ida_asm    = (fun f -> f#ops mnemonic [fd; fs])
      }
-     
+
   (* ---------------------------------------------------------------------------
    * Format: MOV.S fd, fs
    *         MOV.D fd, fs
    *         MOV.PS fd, fs
    * Description: FPR[fd] <- FPR[fs]
    * ---------------------------------------------------------------------------
-   * The value in FPR fs is placed into FPR fd. The source and destination are 
-   * values in format fmt. In paired-single format, both the halves of the pair 
+   * The value in FPR fs is placed into FPR fd. The source and destination are
+   * values in format fmt. In paired-single format, both the halves of the pair
    * are copied to fd.
-   * The move is non-arithmetic; it causes no IEEE 754 exceptions, and the 
+   * The move is non-arithmetic; it causes no IEEE 754 exceptions, and the
    * FCSRCause and FCSRFlags fields are not modified.
    * ---------------------------------------------------------------------------
    * Operation
@@ -1779,12 +1818,12 @@ let get_record (opc:mips_opcode_t) =
    *         BC1F cc, offset
    * Description: if FPConditionCode(cc) = 0 then branch
    * ---------------------------------------------------------------------------
-   * An 18-bit signed offset (the 16-bit offset field shifted left 2 bits) is 
-   * added to the address of the instruction following the branch (not the branch 
-   * itself) in the branch delay slot to form a PC-relative effective target 
-   * address. If the FP con- dition code bit cc is false (0), the program 
-   * branches to the effective target address after the instruction in the delay 
-   * slot is executed. An FP condition code is set by the FP compare instruction, 
+   * An 18-bit signed offset (the 16-bit offset field shifted left 2 bits) is
+   * added to the address of the instruction following the branch (not the branch
+   * itself) in the branch delay slot to form a PC-relative effective target
+   * address. If the FP con- dition code bit cc is false (0), the program
+   * branches to the effective target address after the instruction in the delay
+   * slot is executed. An FP condition code is set by the FP compare instruction,
    * C.cond fmt.
    * ---------------------------------------------------------------------------
    * Operation
@@ -1834,7 +1873,7 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false;
       ida_asm = (fun f -> f#cc_ops "movt" cc [rd; rs])
     }
-      
+
   (* ---------------------------------------------------- Pseudo instructions *)
 
   | Move (dst,src) -> {
@@ -1850,7 +1889,7 @@ let get_record (opc:mips_opcode_t) =
       delay_slot = false;
       ida_asm    = (fun f -> f#ops "li" [dst; imm])
     }
-                                    
+
   | NoOperation  -> {
       mnemonic   = "nop";
       operands   = [];
@@ -1885,11 +1924,11 @@ let get_record (opc:mips_opcode_t) =
 
 class string_formatter_t (width:int): [string] opcode_formatter_int =
 object (self)
-     
+
   method ops s operands =
     let s = fixed_length_string s width in
-    let (_,result) = List.fold_left 
-      (fun (isfirst,a) op -> if isfirst 
+    let (_,result) = List.fold_left
+      (fun (isfirst,a) op -> if isfirst
 	then (false,s ^ " " ^ op#toString)
 	else
 	  (false, a ^ ", " ^ op#toString)) (true,s) operands in

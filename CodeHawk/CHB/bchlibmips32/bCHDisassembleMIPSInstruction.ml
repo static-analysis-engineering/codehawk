@@ -77,6 +77,7 @@ let parse_branch
   | 2 -> BranchLTZeroLikely (r_op rs RD, tgtop)
   | 3 -> BranchGEZeroLikely (r_op rs RD, tgtop)
   | 12 -> TrapIfEqualImmediate (r_op rs RD, mips_immediate_op true 2 imm)
+  | 14 -> TrapIfNotEqualImmediate (r_op rs RD, mips_immediate_op true 2 imm)
   | 16 -> BranchLTZeroLink (r_op rs RD, tgtop)
   | 17 when rrs = 0 -> BranchLink tgtop
   | 17 -> BranchGEZeroLink (r_op rs RD, tgtop)
@@ -213,6 +214,7 @@ let parse_R_opcode
   | 39 -> Nor (r_op rd WR, r_op rs RD, r_op rt RD)
   | 42 -> SetLT (r_op rd WR, r_op rs RD, r_op rt RD)
   | 43 -> SetLTUnsigned (r_op rd WR,r_op rs RD,r_op rt RD)
+  | 51 -> TrapIfLessThanUnsigned ((rrd lsl 5) + samt, r_op rs RD, r_op rt RD)
   | 52 -> TrapIfEqual ((rrd lsl 5) + samt, r_op rs RD, r_op rt RD)
   | _ -> NotRecognized ("parse_R_opcode:" ^ (stri fnct), instr)
 
