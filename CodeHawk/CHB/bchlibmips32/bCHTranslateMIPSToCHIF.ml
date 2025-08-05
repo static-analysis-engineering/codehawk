@@ -1584,6 +1584,23 @@ let translate_mips_instruction
      let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
      default defcmds
 
+  (* TODO: add an ASSERT on the condition *)
+  | TrapIfLessThanUnsigned (_, rs, rt) ->
+     let use = get_register_vars [rs; rt] in
+     let xrs = rs#to_expr floc in
+     let xrt = rt#to_expr floc in
+     let usehigh = get_use_high_vars [xrs; xrt] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
+  (* TODO: add an ASSERT on the condition *)
+  | TrapIfNotEqualImmediate (rs, _imm) ->
+     let use = get_register_vars [rs] in
+     let xrs = rs#to_expr floc in
+     let usehigh = get_use_high_vars [xrs] in
+     let defcmds = floc#get_vardef_commands ~use ~usehigh ctxtiaddr in
+     default defcmds
+
   | Xor (rd, rs, rt) ->
      let rdreg = rd#to_register in
      let use = get_register_vars [rs; rt] in

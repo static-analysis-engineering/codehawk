@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -2016,6 +2016,26 @@ object (self)
          let xrs = rs#to_expr floc in
          let ximm = imm#to_expr floc in
          let result = XOp (XEq, [xrs; ximm]) in
+         let rresult = rewrite_expr result in
+         let rdefs = [get_rdef xrs] @ (get_all_rdefs rresult) in
+         let (tagstring, args) =
+           mk_instrx_data ~xprs:[xrs; ximm; result; rresult] ~rdefs () in
+         ([tagstring], args)
+
+      | TrapIfLessThanUnsigned (_, rs, rt) ->
+         let xrs = rs#to_expr floc in
+         let xrt = rt#to_expr floc in
+         let result = XOp (XLt, [xrs; xrt]) in
+         let rresult = rewrite_expr result in
+         let rdefs = [get_rdef xrs; get_rdef xrt] @ (get_all_rdefs rresult) in
+         let (tagstring, args) =
+           mk_instrx_data ~xprs:[xrs; xrt; result; rresult] ~rdefs () in
+         ([tagstring], args)
+
+      | TrapIfNotEqualImmediate (rs, imm) ->
+         let xrs = rs#to_expr floc in
+         let ximm = imm#to_expr floc in
+         let result = XOp (XNe, [xrs; ximm]) in
          let rresult = rewrite_expr result in
          let rdefs = [get_rdef xrs] @ (get_all_rdefs rresult) in
          let (tagstring, args) =

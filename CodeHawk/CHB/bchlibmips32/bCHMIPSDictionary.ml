@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -183,7 +183,8 @@ object (self)
         | MoveWordToFP (op1, op2)
         | ControlWordFromFP (op1,op2)
         | ControlWordToFP (op1,op2)
-        | TrapIfEqualImmediate (op1,op2)
+        | TrapIfEqualImmediate (op1, op2)
+        | TrapIfNotEqualImmediate (op1, op2)
       -> (tags, [oi op1; oi op2])
       (* 3 operands *)
       | BranchEqual (op1,op2,op3)
@@ -236,6 +237,7 @@ object (self)
       | MovF (cc,op1,op2)
         | MovT (cc,op1,op2)
         | TrapIfEqual (cc, op1, op2)
+        | TrapIfLessThanUnsigned (cc, op1, op2)
         -> (tags, [cc; oi op1; oi op2])
       (* fmt, 2 operands  *)
       | FPSqrtfmt (fmt,op1,op2)

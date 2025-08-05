@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,7 @@ module TR = CHTraceResult
 
 
 let testname = "bCHDisassembleMIPSInstructionTest"
-let lastupdated = "2023-03-10"
+let lastupdated = "2025-08-05"
 
 
 let make_dw (s: string) = TR.tget_ok (D.string_to_doubleword s)
@@ -68,7 +68,6 @@ let _missing_I_opcodes = [
 let _missing_I_opcode_branches = [
     "bgezal";
     "bltzal";
-    "teqi";
     "blezl";
   ]
 
@@ -156,6 +155,8 @@ let mips_I_opcode_be_branch () =
       ("bltzl", "0x46d864", "04620005", "bltzl    $v1, 0x46d87c");
       ("bne",   "0x405560", "1615ffdf", "bne      $s0, $s5, 0x4054e0");
       ("bnel",  "0x46dd90", "5462000a", "bnel     $v1, $v0, 0x46ddbc");
+      ("teqi",  "0x105f8",  "046c0000", "teqi     $v1, 0");
+      ("tnei",  "0x10810",  "06ce0000", "tnei     $s6, 0");
     ] in
   begin
     TS.new_testsuite (testname ^ "_mips_I_opcode_be_branch") lastupdated;
@@ -225,6 +226,7 @@ let mips_R_opcode_be () =
       ("srl",     "0x40b290", "00032e02", "srl      $a1, $v1, 0x18");
       ("srlv",    "0x46d804", "00851806", "srlv     $v1, $a1, $a0");
       ("teq",     "0x415748", "006001f4", "teq      $v1, $zero");
+      ("tltu",    "0xc7c8",   "02820033", "tltu     $s4, $v0");
       ("xor",     "0x40b29c", "00451026", "xor      $v0, $v0, $a1");
     ] in
   begin
