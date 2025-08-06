@@ -667,6 +667,16 @@ object (self)
            (numoffset: numerical_t): variable_t traceresult =
     let inv = self#inv in
     let mk_memvar memref_r memoffset_r =
+      let _ =
+        log_diagnostics_result
+          ~msg:(p2s self#l#toPretty)
+          ~tag:"get_memory_variable_numoffset:mk_memvar"
+          __FILE__ __LINE__
+          ["var: " ^ (p2s var#toPretty);
+           "memref_r: "
+           ^ (TR.tfold_default (fun memref -> p2s memref#toPretty) "error" memref_r);
+           "memoff_r: "
+           ^ (TR.tfold_default memory_offset_to_string "error" memoffset_r)] in
       TR.tbind
         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
         (fun memref ->
@@ -1250,21 +1260,44 @@ object (self)
            ?(size=None)
            ?(btype=t_unknown)
            (addrvalue: xpr_t): variable_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"get_var_at_address"
+        __FILE__ __LINE__
+        ["addrvalue: " ^ (x2s addrvalue);
+         "btype: " ^ (btype_to_string btype)] in
+
     match self#normalize_addrvalue addrvalue with
     | XOp ((Xf "addressofvar"), [XVar v]) -> Ok v
     | XOp (XPlus, [XOp ((Xf "addressofvar"), [XVar v]); xoff])
          when self#f#env#is_global_variable v ->
        let gvaddr_r = self#f#env#get_global_variable_address v in
+       let cxoff_r = self#convert_xpr_to_c_expr xoff in
        TR.tbind
          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
          (fun gvaddr ->
            if memmap#has_location gvaddr then
              let gloc = memmap#get_location gvaddr in
-             TR.tmap
-               ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-               (fun offset -> self#f#env#mk_gloc_variable gloc offset)
-               (gloc#address_offset_memory_offset
-                  ~tgtsize:size ~tgtbtype:btype xoff)
+             let varresult =
+               TR.tmap
+                 ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                 (fun offset -> self#f#env#mk_gloc_variable gloc offset)
+                 (TR.tbind
+                    (fun xoff ->
+                      gloc#address_offset_memory_offset
+                        ~tgtsize:size ~tgtbtype:btype xoff)
+                    cxoff_r) in
+             let _ =
+               log_diagnostics_result
+                 ~msg:(p2s self#l#toPretty)
+                 ~tag:"normalized global address"
+                 __FILE__ __LINE__
+                 ["varresult: "
+                  ^ (TR.tfold_default (fun v -> p2s v#toPretty) "error" varresult);
+                  "gloc: " ^ gloc#name] in
+             varresult
+
            else
              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                     ^ (p2s self#l#toPretty)
@@ -1805,6 +1838,12 @@ object (self)
 
   method decompose_memaddr (x: xpr_t):
            (memory_reference_int traceresult * memory_offset_t traceresult) =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"decompose_memaddr"
+        __FILE__ __LINE__
+        ["x: " ^ (x2s x)] in
     let is_external (v: variable_t) = self#env#is_function_initial_value v in
     let vars = vars_as_positive_terms x in
     let knownpointers = List.filter self#f#is_base_pointer vars in
