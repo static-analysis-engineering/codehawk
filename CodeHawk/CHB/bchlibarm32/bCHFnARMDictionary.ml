@@ -1105,10 +1105,13 @@ object (self)
            let indexregop = jt#index_operand in
            let xrn_r = indexregop#to_expr floc in
            let xxrn_r = TR.tmap rewrite_expr xrn_r in
+           let cxrn_r =
+             TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xxrn_r in
            let rdefs = (get_rdef_r xrn_r) :: (get_all_rdefs_r xxrn_r) in
            let (tagstring, args) =
              mk_instrx_data_r
                ~xprs_r:[xrn_r; xxrn_r]
+               ~cxprs_r:[cxrn_r]
                ~rdefs
                () in
            let tags = tagstring :: ["agg-jt"] in
