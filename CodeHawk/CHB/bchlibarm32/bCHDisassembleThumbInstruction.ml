@@ -3141,7 +3141,7 @@ let parse_thumb32_31_0
      let offset = arm_shifted_index_offset (get_arm_reg (b 3 0)) reg_srt in
      let mem =
        mk_arm_offset_address_op
-         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:1 ~isadd:true ~isindex:true ~iswback:false in
      (* STRB<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
      StoreRegisterByte (cc, rt RD, rn RD, rm RD, mem WR, true)
 
@@ -3152,7 +3152,8 @@ let parse_thumb32_31_0
      let isindex = (b 10 10) = 1 in
      let isadd = (b 9 9) = 1 in
      let iswback = (b 8 8) = 1 in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
+     let mem =
+       mk_arm_offset_address_op ~size:1 rnreg offset ~isadd ~isindex ~iswback in
      (* STRB<c> <Rt>, [<Rn>, #-<imm8>]
         STRB<c> <Rt>, [<Rn>], #+/-<imm8>
         STRB<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
@@ -3199,7 +3200,7 @@ let parse_thumb32_31_0
      let offset = arm_shifted_index_offset (get_arm_reg (b 3 0)) reg_srt in
      let mem =
        mk_arm_offset_address_op
-         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:2 ~isadd:true ~isindex:true ~iswback:false in
      (* STRH<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
      StoreRegisterHalfword (cc, rt RD, rn RD, rm RD,  mem WR, true)
 
@@ -3209,7 +3210,8 @@ let parse_thumb32_31_0
      let isindex = (b 10 10) = 1 in
      let isadd = (b 9 9) = 1 in
      let iswback = (b 8 8) = 1 in
-     let mem = mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
+     let mem =
+       mk_arm_offset_address_op ~size:2 rnreg offset ~isadd ~isindex ~iswback in
      (* STRH<c> <Rt>, [<Rn>, #-<imm8>]
         STRH<c> <Rt>, [<Rn>], #+/-<imm8>
         STRH<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
@@ -3222,7 +3224,7 @@ let parse_thumb32_31_0
      let offset = arm_shifted_index_offset (get_arm_reg (b 3 0)) reg_srt in
      let mem =
        mk_arm_offset_address_op
-         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:2 ~isadd:true ~isindex:true ~iswback:false in
      (* LDRH<c>.W <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
      LoadRegisterHalfword (cc, rt WR, rn RD, rm RD, mem RD, true)
 
@@ -3234,7 +3236,7 @@ let parse_thumb32_31_0
      let iswback = (b 8 8) = 1 in
      let imm = arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 7 0))) in
      let mem =
-       mk_arm_offset_address_op rnreg offset ~isadd ~isindex ~iswback in
+       mk_arm_offset_address_op ~size:2 rnreg offset ~isadd ~isindex ~iswback in
      (* LDRH<c>.W <Rt>, [<Rn>{, #+/-<imm8>}]    Offset: (index,wback) = (T,F)
       * LDRH<c>.W <Rt>, [<Rn>, #+/-<imm8>]!     Pre-x : (index,wback) = (T,T)
       * LDRH<c>.W <Rt>, [<Rn>], #+/-<imm8>      Post-x: (index,wback) = (F,T)  *)
@@ -3319,7 +3321,7 @@ let parse_thumb32_31_0
        TR.tget_ok (mk_arm_immediate_op false 4 (mkNumerical (b 11 0))) in
      let mem =
        mk_arm_offset_address_op
-         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:1 ~isadd:true ~isindex:true ~iswback:false in
      StoreRegisterByte (cc, rt RD, rn RD, immop, mem WR, true)
 
   (* < 31>00010W1<rn><15><--imm12--->   PLD (immediate, T1) *)
@@ -3345,7 +3347,7 @@ let parse_thumb32_31_0
      (* STRH<c>.W <Rt>, [<Rn>, #<imm12>] *)
      let mem =
        mk_arm_offset_address_op
-         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:2 ~isadd:true ~isindex:true ~iswback:false in
      StoreRegisterHalfword (cc, rt RD, rn RD, rm RD, mem WR, true)
 
   (* < 31>00< 11><rn><rt><--imm12--->   LDRH (immediate) - T2 *)
@@ -3353,7 +3355,7 @@ let parse_thumb32_31_0
      (* LDRH<c>.W <Rt>, [<Rn>{, #<imm12>} *)
      let mem =
        mk_arm_offset_address_op
-         rnreg offset ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:2 ~isadd:true ~isindex:true ~iswback:false in
      LoadRegisterHalfword (cc, rt WR, rn RD, rm RD, mem RD, true)
 
   (* < 31>00< 12><rn><rt><--imm12--->   STR (immediate) - T3 *)
@@ -3395,7 +3397,7 @@ let parse_thumb32_31_0
      let offset = arm_shifted_index_offset rmreg reg_srt in
      let memi =
        mk_arm_offset_address_op
-         rnreg offset ~align:1 ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:1 ~align:1 ~isadd:true ~isindex:true ~iswback:false in
      (* LDRSB<c>.W, <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
      LoadRegisterSignedByte (cc, rt WR, rn RD, rm RD, memi RD, true)
 
@@ -3408,7 +3410,8 @@ let parse_thumb32_31_0
      let imm =
        arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 7 0))) in
      let mem =
-       mk_arm_offset_address_op ~align:1 rnreg offset ~isadd ~isindex ~iswback in
+       mk_arm_offset_address_op
+         ~size:1 ~align:1 rnreg offset ~isadd ~isindex ~iswback in
      (* LDRSB<c> <Rt>, [<Rn>, #-<imm8>]
         LDRSB<c> <Rt>, [<Rn>], #+/-<imm8>
         LDRSB<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
@@ -3532,7 +3535,7 @@ let parse_thumb32_31_0
      let offset = arm_shifted_index_offset rmreg reg_srt in
      let memi =
        mk_arm_offset_address_op
-         rnreg offset ~align:1 ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:2 ~align:2 ~isadd:true ~isindex:true ~iswback:false in
      (* LDRSH<c>.W, <Rt>, [<Rn>, <Rm>{, LSL #<imm2>}] *)
      LoadRegisterSignedHalfword (cc, rt WR, rn RD, rm RD, memi RD, true)
 
@@ -3545,7 +3548,8 @@ let parse_thumb32_31_0
      let imm =
        arm_immediate_op (TR.tget_ok (signed_immediate_from_int (b 7 0))) in
      let mem =
-       mk_arm_offset_address_op ~align:1 rnreg offset ~isadd ~isindex ~iswback in
+       mk_arm_offset_address_op
+         ~size:2 ~align:2 rnreg offset ~isadd ~isindex ~iswback in
      (* LDRSH<c> <Rt>, [<Rn>, #-<imm8>]
         LDRSH<c> <Rt>, [<Rn>], #+/-<imm8>
         LDRSH<c> <Rt>, [<Rn>, #+/-<imm8>]! *)
@@ -3558,7 +3562,7 @@ let parse_thumb32_31_0
      let offset = ARMImmOffset imm12 in
      let mem =
        mk_arm_offset_address_op
-         rnreg offset ~align:1 ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:2 ~align:1 ~isadd:true ~isindex:true ~iswback:false in
      (* LDRSB<c> <Rt>, [<Rn>, #<imm12>] *)
      LoadRegisterSignedByte (cc, rt WR, rn RD, imm, mem RD, false)
 
@@ -3737,7 +3741,7 @@ let parse_thumb32_31_0
      let offset = ARMImmOffset imm12 in
      let mem =
        mk_arm_offset_address_op
-         rnreg offset ~align:1 ~isadd:true ~isindex:true ~iswback:false in
+         rnreg offset ~size:2 ~align:2 ~isadd:true ~isindex:true ~iswback:false in
      (* LDRSH<c> <Rt>, [<Rn>, #<imm12>] *)
      LoadRegisterSignedHalfword (cc, rt WR, rn RD, imm, mem RD, false)
 
@@ -5288,9 +5292,9 @@ let parse_t16_load_store_reg
   let rt = regop rtreg in
   let reg_srt = ARMImmSRT (SRType_LSL, 0) in
   let offset = arm_shifted_index_offset rmreg reg_srt in
-  let mem ?(size=4) m =
+  let mem ?(size=4) (mode: arm_operand_mode_t) =
     mk_arm_offset_address_op
-      ~size rnreg offset ~isadd:true ~isindex:true ~iswback:false m in
+      ~size rnreg offset ~isadd:true ~isindex:true ~iswback:false mode in
 
   match (b 11 9) with
 
@@ -5302,17 +5306,17 @@ let parse_t16_load_store_reg
   (* 0101001<r><r><r>  STRH (register) - T1 *)
   | 1 ->
      (* STRH<c> <Rt>, [<Rn>, <Rm>] *)
-     StoreRegisterHalfword (cc, rt RD, rn RD, rm RD, mem WR, false)
+     StoreRegisterHalfword (cc, rt RD, rn RD, rm RD, mem ~size:2 WR, false)
 
   (* 0101010<r><r><r>  STRB (register) - T1 *)
   | 2 ->
      (* STRB<c> <Rt>, [<Rn>, <Rm>] *)
-     StoreRegisterByte (cc, rt RD, rn RD, rm RD, mem WR, false)
+     StoreRegisterByte (cc, rt RD, rn RD, rm RD, mem ~size:1 WR, false)
 
   (* 0101011<r><r><r>  LDRSB (register) - T1 *)
   | 3 ->
      (* LDRSB<c> <Rt>, [<Rn>, <Rm>] *)
-     LoadRegisterSignedByte (cc, rt WR, rn RD, rm RD, mem RD, false)
+     LoadRegisterSignedByte (cc, rt WR, rn RD, rm RD, mem ~size:1 RD, false)
 
   (* 0101100<r><r><r>  LDR (register) - T1 *)
   | 4 ->
@@ -5332,7 +5336,7 @@ let parse_t16_load_store_reg
   (* 0101111<r><r><r>  LDRSH (register) - T1 *)
   | 7 ->
      (* LDRSH<c> <Rt>, [<Rn>, <Rm>] *)
-     LoadRegisterSignedHalfword (cc, rt WR, rn RD, rm RD, mem RD, false)
+     LoadRegisterSignedHalfword (cc, rt WR, rn RD, rm RD, mem ~size:2 RD, false)
 
   | tag -> NotRecognized ("t16_load_store_reg:" ^ (stri tag), instr)
 
@@ -5370,16 +5374,16 @@ let parse_t16_load_store_imm
     arm_immediate_op
       (TR.tget_ok (signed_immediate_from_int (mult * (b 10 6)))) in
   let offset (m:int) = ARMImmOffset (m * (b 10 6)) in
-  let mem (mult: int) m =
+  let mem (mult: int) ?(size=4) (mode: arm_operand_mode_t) =
     mk_arm_offset_address_op
-      rnreg (offset mult) ~isadd:true ~isindex:true ~iswback:false m in
+      rnreg (offset mult) ~size ~isadd:true ~isindex:true ~iswback:false mode in
 
   match (b 12 11) with
   (* 10000<imm><r><r>  STRH (immediate) - T1 *)
   | 0 when hw ->
      let immop = imm 2 in
      (* STRH<c> <Rt>, [<Rn>, #<imm>] *)
-     StoreRegisterHalfword (cc, rt RD, rn RD, immop, mem 2 WR, false)
+     StoreRegisterHalfword (cc, rt RD, rn RD, immop, mem 2 ~size:2 WR, false)
 
   (* 01100<imm><r><r>  STR (immediate) - T1 *)
   | 0 ->
@@ -5391,7 +5395,7 @@ let parse_t16_load_store_imm
   | 1 when hw ->
      let immop = imm 2 in
      (* LDRH<c> <Rt>, [<Rn>, #<imm>] - T1 *)
-     LoadRegisterHalfword (cc, rt WR, rn RD, immop, mem 2 RD, false)
+     LoadRegisterHalfword (cc, rt WR, rn RD, immop, mem 2 ~size:2 RD, false)
 
   (* 01101<imm><r><r>  LDR (immediate) - T1 *)
   | 1 ->
@@ -5403,13 +5407,13 @@ let parse_t16_load_store_imm
   | 2 ->
      let immop = imm 1 in
      (* STRB<c> <Rt>, [<Rn>, #<imm5>] *)
-     StoreRegisterByte (cc, rt RD, rn RD, immop, mem 1 WR, false)
+     StoreRegisterByte (cc, rt RD, rn RD, immop, mem 1 ~size:1 WR, false)
 
   (* 01111<imm><r><r>  LDRB (immediate) - T1*)
   | 3 ->
      let immop = imm 1 in
      (* LDRB<c> <Rt>, [<Rn>, #<imm5>] *)
-     LoadRegisterByte (cc, rt WR, rn RD, immop, mem 1 RD, false)
+     LoadRegisterByte (cc, rt WR, rn RD, immop, mem 1 ~size:1 RD, false)
 
   | tag -> NotRecognized ("t16_load_store_imm:" ^ (stri tag), instr)
 
