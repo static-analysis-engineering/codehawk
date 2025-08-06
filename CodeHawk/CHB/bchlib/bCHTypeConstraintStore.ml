@@ -692,8 +692,8 @@ object (self)
                        Some (t_ptrto (type_constant_to_btype c))
                     | [Store; OffsetAccess _] ->
                        Some (t_ptrto (type_constant_to_btype c))
-                    | [OffsetAccessA (_size, _)] ->
-                       Some (t_array (type_constant_to_btype c) 1)
+                    | [OffsetAccessA (size, _)] ->
+                       Some (t_array (type_constant_to_btype c) size)
                     | _ -> None in
                   match optty with
                   | Some ty -> result#add (bcd#index_typ ty)
