@@ -59,6 +59,7 @@ let _ =
       ("ADD-c", "enable");
       ("AND-rdef", "enable");      
       ("ASR-rdef", "enable");
+      ("BXLR-rdef", "enable");
       ("CMP-rdef", "enable");
       ("LSL_rdef", "enable");
       ("LSR_rdef", "enable");
@@ -111,6 +112,7 @@ let _ =
       ("BL-sig-regarg", "enable");
       ("BL-sig-stackarg", "enable");
       ("BL-sig-rv", "enable");
+      ("BXLR-sig-rv", "enable");
       ("LDR-array", "enable");
       ("LDR-memop-tc", "enable");
       ("LDR-stack-addr", "enable");

@@ -256,7 +256,23 @@ and structvar_memory_offset
 ~(tgtbtype: btype_t option)
 (btype: btype_t)
 (xoffset: xpr_t): memory_offset_t traceresult =
+  let _ =
+    log_diagnostics_result
+      ~tag:"structvar-memory-offset"
+      __FILE__ __LINE__
+      ["tgtsize: "
+       ^ (if Option.is_some tgtsize then (string_of_int (Option.get tgtsize)) else "?");
+       "tgtbtype: "
+       ^ (if Option.is_some tgtbtype then (btype_to_string (Option.get tgtbtype))
+          else "?");
+       "btype: " ^ (btype_to_string btype);
+       "xoffset: " ^ (x2s xoffset)] in
   match xoffset with
+  | XConst (IntConst n)
+       when n#equal numerical_zero
+            && (Option.is_some tgtbtype)
+            && (btype_equal (Option.get tgtbtype) btype) ->
+     Ok NoOffset
   | XConst (IntConst _) ->
      if is_struct_type btype then
        let compinfo = get_struct_type_compinfo btype in
