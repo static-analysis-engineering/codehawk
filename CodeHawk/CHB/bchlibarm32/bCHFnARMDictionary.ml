@@ -685,7 +685,14 @@ object (self)
                    | XVar _ -> xx
                    | _ ->
                       TR.tfold
-                        ~ok:(fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
+                        ~ok:(fun v ->
+                          let _ =
+                            log_diagnostics_result
+                              ~msg:(p2s floc#l#toPretty)
+                              ~tag:"callinstr-key:get-var-at-address"
+                              __FILE__ __LINE__
+                              ["xx: " ^ (x2s xx); "v: " ^ (p2s v#toPretty)] in
+                          XOp ((Xf "addressofvar"), [(XVar v)]))
                         ~error:(fun e ->
                           let _ = log_dc_error_result __FILE__ __LINE__ e in
                           xx)
@@ -2787,10 +2794,20 @@ object (self)
            let xdst_r = dstop#to_expr floc in
            let xxsrc_r = TR.tmap (rewrite_floc_expr srcfloc) xsrc_r in
            let xxdst_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) xdst_r in
+           let xxdst_r =
+             TR.tmap
+               (fun x ->
+                 TR.tfold
+                   ~ok:(fun v -> XOp ((Xf "addressofvar"), [(XVar v)]))
+                   ~error:(fun e ->
+                     let _ = log_dc_error_result __FILE__ __LINE__ e in
+                     x)
+                   (floc#get_var_at_address ~btype:t_int x))
+               xxdst_r in
            let csrc_r =
              TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xxsrc_r in
            let cdst_r =
-             TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xdst_r in
+             TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xxdst_r in
            let rdefs = [(get_rdef_r xsrc_r); (get_rdef_r xdst_r)] in
            let xprs_r = [xdst_r; xsrc_r; xxdst_r; xxsrc_r] in
            let cxprs_r = [cdst_r; csrc_r] in
