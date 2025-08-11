@@ -1499,7 +1499,7 @@ object (self)
        | XConst (IntConst n)
             when n#equal (mkNumerical 0xffffffff) && is_int t ->
           Ok (int_constant_expr (-1))
-       | _ -> self#convert_xpr_offsets ~size x
+       | _ -> self#convert_xpr_offsets ~xtype ~size x
 
   method convert_addr_to_c_pointed_to_expr
            ?(size=None) ?(xtype=None) (a: xpr_t): xpr_t traceresult =
@@ -1656,12 +1656,13 @@ object (self)
 
 
   method convert_variable_offsets
-           ?(size=None) (v: variable_t): variable_t traceresult =
+           ?(vtype=None) ?(size=None) (v: variable_t): variable_t traceresult =
     if self#env#is_basevar_memory_variable v then
       let basevar_r = self#env#get_memvar_basevar v in
       let offset_r = self#env#get_memvar_offset v in
       let cbasevar_r = TR.tbind self#convert_value_offsets basevar_r in
       let basetype_r = TR.tbind self#get_variable_type cbasevar_r in
+      let optvtype = match vtype with Some t -> t | _ -> t_unknown in
       let tgttype_r =
         TR.tbind
           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
@@ -1682,8 +1683,18 @@ object (self)
                  ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
                  (fun tgttype ->
                    address_memory_offset
-                     ~tgtsize:size tgttype (num_constant_expr n)) tgttype_r
+                     ~tgtbtype:optvtype ~tgtsize:size tgttype (num_constant_expr n))
+                 tgttype_r
             | _ -> Ok offset) offset_r in
+      let _ =
+        log_diagnostics_result
+          ~msg:(p2s self#l#toPretty)
+          ~tag:"convert-variable-offsets"
+          __FILE__ __LINE__
+          ["tgttype: " ^ (TR.tfold_default btype_to_string "?" tgttype_r);
+           "tgtbtype: " ^ (btype_to_string optvtype);
+           "offset : " ^ (TR.tfold_default memory_offset_to_string "?" offset_r);
+           "coffset: " ^ (TR.tfold_default memory_offset_to_string "?" coffset_r)] in
       TR.tbind
         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": " ^ (p2s v#toPretty))
         (fun cbasevar ->
@@ -1776,7 +1787,8 @@ object (self)
           ["v: " ^ (p2s v#toPretty)] in
       Ok v
 
-  method convert_xpr_offsets ?(size=None) (x: xpr_t): xpr_t traceresult =
+  method convert_xpr_offsets
+           ?(xtype=None) ?(size=None) (x: xpr_t): xpr_t traceresult =
     let rec aux exp =
       match exp with
       | XVar v when self#env#is_basevar_memory_value v ->
@@ -1789,10 +1801,16 @@ object (self)
            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
            (fun v -> XVar v) (self#convert_variable_offsets ~size v)
       | XOp ((Xf "addressofvar"), [XVar v]) ->
+         let derefty =
+           match xtype with
+           | None -> None
+           | Some (TPtr (ty, _)) -> Some ty
+           | _ -> None in
          let newx_r =
            TR.tmap
              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-             (fun v -> XVar v) (self#convert_variable_offsets ~size v) in
+             (fun v ->
+               XVar v) (self#convert_variable_offsets ~vtype:derefty ~size v) in
          TR.tmap
            (fun newx ->
              match newx with

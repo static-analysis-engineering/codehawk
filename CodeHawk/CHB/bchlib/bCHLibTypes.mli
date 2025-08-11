@@ -1518,11 +1518,18 @@ type typing_rule_t = {
     tra_locations: string list
   }
 
+type reachingdef_spec_t = {
+    rds_variable: string;
+    rds_uselocs: string list;
+    rds_rdeflocs: string list
+  }
+
 
 type function_annotation_t = {
     regvarintros: regvar_intro_t list;
     stackvarintros: stackvar_intro_t list;
-    typingrules: typing_rule_t list
+    typingrules: typing_rule_t list;
+    reachingdefspecs: reachingdef_spec_t list
   }
 
 class type function_data_int =
@@ -1575,6 +1582,7 @@ class type function_data_int =
     method has_regvar_type_cast: doubleword_int -> bool
     method has_stackvar_type_annotation: int -> bool
     method has_stackvar_type_cast: int -> bool
+    method filter_deflocs: string -> variable_t -> symbol_t list -> symbol_t list
     method is_typing_rule_enabled: ?rdef:string option -> string -> string -> bool
     method has_class_info: bool
     method has_callsites: bool
@@ -6102,9 +6110,13 @@ class type floc_int =
              ?size:int option -> variable_t -> variable_t traceresult
 
     method convert_variable_offsets:
-             ?size:int option -> variable_t -> variable_t traceresult
+             ?vtype:btype_t option
+             -> ?size:int option
+             -> variable_t
+             -> variable_t traceresult
 
-    method convert_xpr_offsets: ?size:int option -> xpr_t -> xpr_t traceresult
+    method convert_xpr_offsets:
+             ?xtype:btype_t option -> ?size:int option -> xpr_t -> xpr_t traceresult
 
     (* returns the variable associated with the address expression *)
     method get_lhs_from_address: xpr_t -> variable_t

@@ -50,6 +50,8 @@ open BCHThumbITSequence
 
 module TR = CHTraceResult
 
+let p2s = CHPrettyUtil.pretty_to_string
+
 
 let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
   match k with
@@ -180,7 +182,11 @@ let make_arm_instruction_aggregate
   let agg =
     new arm_instruction_aggregate_t ~kind ~instrs ~entry ~exitinstr ~anchor in
   begin
-    chlog#add "aggregate instruction" agg#toPretty;
+    log_diagnostics_result
+      ~msg:(anchor#get_address#to_hex_string)
+      ~tag:"aggregate instruction"
+      __FILE__ __LINE__
+      [(p2s agg#toPretty)];
     agg
   end
 

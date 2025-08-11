@@ -198,6 +198,18 @@ object (self)
                    ~(tgtbtype: btype_t option)
                    (c: bcompinfo_t)
                    (xoffset: xpr_t): memory_offset_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~tag:"global:get-field-memory-offset-at"
+        __FILE__ __LINE__
+        ["tgtsize: "
+         ^ (if Option.is_some tgtsize then
+              string_of_int (Option.get tgtsize) else "?");
+         "tgtbtype: "
+         ^ (if Option.is_some tgtbtype then
+              btype_to_string (Option.get tgtbtype) else "?");
+         "compinfo: " ^ c.bcname;
+         "xoffset: " ^ (x2s xoffset)] in
     let is_void_tgtbtype =
       match tgtbtype with
       | Some (TVoid _) -> true
@@ -368,6 +380,20 @@ object (self)
                    ~(tgtbtype: btype_t option)
                    (btype: btype_t)
                    (xoffset: xpr_t): memory_offset_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~tag:"global:arrayvar-memory-offset"
+        __FILE__ __LINE__
+        ["tgtsize: " ^ (if (Option.is_some tgtsize) then
+                          string_of_int (Option.get tgtsize)
+                        else
+                          "?");
+         "tgtbtype: " ^ (if (Option.is_some tgtbtype) then
+                           btype_to_string (Option.get tgtbtype)
+                         else
+                           "?");
+         "btype: " ^ (btype_to_string btype);
+         "xoffset: " ^ (x2s xoffset)] in
     let iszero x =
       match x with
       | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero

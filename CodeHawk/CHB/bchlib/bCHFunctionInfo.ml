@@ -1718,6 +1718,11 @@ object (self)
   method add_reaching_def
            (iaddr: string) (v: variable_t) (deflocs: symbol_t list) =
     begin
+      let deflocs =
+        if fndata#has_function_annotation then
+          fndata#filter_deflocs iaddr v deflocs
+        else
+          deflocs in
       self#fvarinv#add_reaching_def iaddr v deflocs;
       List.iter (fun s ->
           if (List.length s#getAttributes) = 0 then
