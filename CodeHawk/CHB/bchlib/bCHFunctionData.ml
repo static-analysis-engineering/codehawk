@@ -28,6 +28,7 @@
    ============================================================================= *)
 
 (* chlib *)
+open CHLanguage
 open CHPretty
 
 (* chutil *)
@@ -50,6 +51,7 @@ open BCHLibTypes
 module H = Hashtbl
 module TR = CHTraceResult
 
+let p2s = CHPrettyUtil.pretty_to_string
 
 let bd = BCHDictionary.bdictionary
 
@@ -76,10 +78,41 @@ let stackvar_intro_to_string (svi: stackvar_intro_t) =
   (string_of_int svi.svi_offset) ^ ": " ^ svi.svi_name ^ ptype
 
 
+let reachingdef_spec_to_string (rds: reachingdef_spec_t) =
+  let uselocs = "[" ^ (String.concat ", " rds.rds_uselocs) ^ "]" in
+  let rdeflocs =  "[" ^ (String.concat ", " rds.rds_rdeflocs) ^ "]" in
+  rds.rds_variable ^ ": use: " ^ uselocs ^ "; remove-rdefs: " ^ rdeflocs
+
+
 let function_annotation_to_string (a: function_annotation_t) =
-  (String.concat "\n" (List.map regvar_intro_to_string a.regvarintros))
-  ^ "\n"
-  ^ (String.concat "\n" (List.map stackvar_intro_to_string a.stackvarintros))
+  let rvintros =
+    if (List.length a.regvarintros) > 0 then
+      ("Register-variable-introductions: ["
+       ^ (String.concat "; " (List.map regvar_intro_to_string a.regvarintros))
+       ^ "]")
+    else
+      "" in
+  let svintros =
+    if (List.length a.stackvarintros) > 0 then
+      ("Stack-variable-introductions: ["
+       ^ (String.concat "; " (List.map stackvar_intro_to_string a.stackvarintros))
+       ^ "]")
+    else
+      "" in
+  let rdefspecs =
+    if (List.length a.reachingdefspecs) > 0 then
+      ("Reaching-def-specs: ["
+       ^ (String.concat "; " (List.map reachingdef_spec_to_string a.reachingdefspecs))
+       ^ "]")
+    else
+      "" in
+  List.fold_left (fun acc s ->
+      if s = "" then
+        acc
+      else if acc = "" then
+        s
+      else
+        acc ^ "\n" ^ s) "" [rvintros; svintros; rdefspecs]
 
 
 class function_data_t (fa:doubleword_int) =
@@ -156,7 +189,8 @@ object (self)
       functionannotation <- Some a;
       chlog#add
         "function annotation"
-        (LBLOCK [faddr#toPretty; NL; STR (function_annotation_to_string a)])
+        (LBLOCK [STR "function "; faddr#toPretty; STR ": ";
+                 STR (function_annotation_to_string a)])
     end
 
   method has_function_annotation: bool =
@@ -313,6 +347,36 @@ object (self)
          false
        else
          BCHSystemSettings.system_settings#is_typing_rule_enabled name
+
+  method filter_deflocs
+           (iaddr: string) (v: variable_t) (deflocs: symbol_t list): symbol_t list =
+    match self#get_function_annotation with
+    | None -> deflocs
+    | Some a when (List.length a.reachingdefspecs) > 0 ->
+       let vname = v#getName#getBaseName in
+       let deflocs =
+         List.fold_left
+           (fun acc sym ->
+             let symname = sym#getBaseName in
+             if (List.fold_left
+                   (fun filteracc rds ->
+                     filteracc ||
+                       (if rds.rds_variable = vname then
+                          (List.mem iaddr rds.rds_uselocs)
+                          && (List.mem symname rds.rds_rdeflocs)
+                        else
+                          false)) false a.reachingdefspecs) then
+               let _ =
+                 log_result
+                   ~msg:("iaddr: " ^ iaddr)
+                   ~tag:"filter out reaching def"
+                   __FILE__ __LINE__
+                   ["v: " ^ (p2s v#toPretty); "s; " ^ symname] in
+               acc
+             else
+               sym :: acc) [] deflocs in
+       List.rev deflocs
+    | _ -> deflocs
 
   method add_inlined_block (baddr:doubleword_int) =
     inlined_blocks <- baddr :: inlined_blocks
@@ -645,6 +709,28 @@ let read_xml_typing_rule (node: xml_element_int): typing_rule_t traceresult =
         tra_locations = locs}
 
 
+let read_xml_reachingdef_spec
+      (node: xml_element_int): reachingdef_spec_t traceresult =
+  let get = node#getAttribute in
+  let has = node#hasNamedAttribute in
+  if not (has "var") then
+    Error ["rdefspec without var"]
+  else if not (has "uselocs") then
+    Error ["rdefspec without uselocs"]
+  else if not (has "rdeflocs") then
+    Error ["rdefspec without rdeflocs"]
+  else
+    let var = get "var" in
+    let uselocs = get "uselocs" in
+    let uselocs = String.split_on_char ','  uselocs in
+    let rdeflocs = get "rdeflocs" in
+    let rdeflocs = String.split_on_char ',' rdeflocs in
+    Ok {rds_variable = var;
+        rds_uselocs = uselocs;
+        rds_rdeflocs = rdeflocs
+      }
+
+
 let read_xml_function_annotation (node: xml_element_int) =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
@@ -705,10 +791,29 @@ let read_xml_function_annotation (node: xml_element_int) =
               (trules#getTaggedChildren "typingrule")
           else
             [] in
+        let rdefspecs =
+          if hasc "remove-rdefs" then
+            let rrds = getc "remove-rdefs" in
+            List.fold_left
+              (fun acc n ->
+                TR.tfold
+                  ~ok:(fun rds -> rds :: acc)
+                  ~error:(fun e ->
+                    begin
+                      log_error_result __FILE__ __LINE__ e;
+                      acc
+                    end)
+                  (read_xml_reachingdef_spec n))
+              []
+              (rrds#getTaggedChildren "remove-var-rdefs")
+          else
+            [] in
         fndata#set_function_annotation
           {regvarintros = regvintros;
            stackvarintros = stackvintros;
-          typingrules = typingrules}
+           typingrules = typingrules;
+           reachingdefspecs = rdefspecs
+          }
       else
         log_error_result
           ~tag:"function annotation faddr not found"
