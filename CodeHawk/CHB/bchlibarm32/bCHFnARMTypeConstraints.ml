@@ -280,6 +280,16 @@ object (self)
         linenumber
         [(p2s floc#l#toPretty) ^ ": " ^ (type_constraint_to_string tc)] in
 
+    let operand_is_stackpointer (op: arm_operand_int): bool =
+      TR.tfold_default
+        (fun v ->
+          match v with
+          | XVar v when finfo#env#is_initial_stackpointer_value v -> true
+          | XOp (XMinus, [XVar v; _]) -> finfo#env#is_initial_stackpointer_value v
+          | _ -> false)
+        false
+      (TR.tmap rewrite_expr (op#to_expr floc)) in
+
     let operand_is_zero (op: arm_operand_int): bool =
       (* Returns true if the value of the operand is known to be zero at
          this location. This result is primarily intended to avoid spurious
@@ -508,10 +518,9 @@ object (self)
        end
 
     | BitwiseNot(_, _, rd, rm, _) when rm#is_immediate ->
-       let rmval = rm#to_numerical#toInt in
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
-       let tyc = get_intvalue_type_constant rmval in
+       let tyc = mk_int_type_constant Signed 32 in
        begin
          (regvar_type_introduction "MVN" rd);
          (regvar_linked_to_exit "MVN" rd);
@@ -582,6 +591,53 @@ object (self)
     | Branch _ ->
        (* no type information gained *)
        ()
+
+    | BranchExchange (ACCAlways, op)
+         when op#is_register && op#get_register = ARLR ->
+       let returntype = finfo#get_summary#get_returntype in
+       (match returntype with
+        | TVoid _ -> ()
+        | _ ->
+           let reg = register_of_arm_register AR0 in
+           let typevar = mk_reglhs_typevar reg faddr iaddr in
+           begin
+             (* use function return type *)
+             (let opttc = mk_btype_constraint typevar returntype in
+              let rule = "BXLR-sig-rv" in
+              match opttc with
+              | Some tc ->
+                 if fndata#is_typing_rule_enabled iaddr rule then
+                   begin
+                     log_type_constraint __LINE__ rule tc;
+                     store#add_constraint faddr iaddr rule tc
+                   end
+                 else
+                   log_type_constraint_rule_disabled __LINE__ rule tc
+              | _ ->
+                 begin
+                   log_no_type_constraint __LINE__ rule returntype;
+                   ()
+                 end);
+
+             (* propagate via reaching defs *)
+             (let r0var = floc#env#mk_arm_register_variable AR0 in
+              let r0defs = get_variable_rdefs r0var in
+              let rule = "BXLR-rdef" in
+              List.iter (fun r0def ->
+                  let r0addr = r0def#getBaseName in
+                  let r0typevar = mk_reglhs_typevar reg faddr r0addr in
+                  let r0typeterm = mk_vty_term r0typevar in
+                  let lhstypeterm = mk_vty_term typevar in
+                  if fndata#is_typing_rule_enabled ~rdef:(Some r0addr) iaddr rule then
+                    begin
+                      log_subtype_constraint __LINE__ rule r0typeterm lhstypeterm;
+                      store#add_subtype_constraint
+                        faddr iaddr rule r0typeterm lhstypeterm
+                    end
+                  else
+                    log_subtype_rule_disabled __LINE__ rule r0typeterm lhstypeterm
+                ) r0defs)
+             end)
 
     | BranchLink _ | BranchLinkExchange _
          when floc#has_call_target && floc#get_call_target#is_signature_valid ->
@@ -1597,6 +1653,9 @@ object (self)
             ()
           else if rd#is_sp_register && rn#is_sp_register then
             (* no type information to be gained from stackpointer manipulations *)
+            ()
+          else if operand_is_stackpointer rn then
+            (* idem for pointers to the stack in other registers *)
             ()
           else
             let rule = "SUB-rdef" in
