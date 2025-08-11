@@ -867,11 +867,16 @@ let translate_arm_instruction
   | Branch (_, op, _)
     | BranchExchange (ACCAlways, op)
        when op#is_register && op#get_register = ARLR ->
-     let r0_op = arm_register_op AR0 RD in
-     let usevars = get_register_vars [r0_op] in
-     let xr0 = r0_op#to_expr floc in
-     let usehigh = get_use_high_vars_r [xr0] in
-     let defcmds = floc#get_vardef_commands ~use:usevars ~usehigh ctxtiaddr in
+     let returntype = finfo#get_summary#get_returntype in
+     let defcmds =
+       match returntype with
+       | TVoid _ -> []
+       | _ ->
+          let r0_op = arm_register_op AR0 RD in
+          let usevars = get_register_vars [r0_op] in
+          let xr0 = r0_op#to_expr floc in
+          let usehigh = get_use_high_vars_r [xr0] in
+          floc#get_vardef_commands ~use:usevars ~usehigh ctxtiaddr in
      default defcmds
 
   | Branch (_, op, _)
