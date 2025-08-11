@@ -443,8 +443,7 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
      | TComp (key, _) ->
         let cinfo = bcfiles#get_compinfo key in
         Some (TyGround (TyVariable tv, TyConstant (TyTStruct (key, cinfo.bcname))))
-     | TPtr (TVoid _, _) ->
-        Some (TyGround (TyVariable tv, TyConstant TyVoidPtr))
+     | TPtr (TVoid _, _) -> None
      | TPtr (pty, _) ->
         let ptv = add_deref_capability tv in
         mk_btype_constraint ptv pty
