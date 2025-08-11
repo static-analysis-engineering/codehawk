@@ -71,6 +71,7 @@ let _ =
       ("RSB-rdef", "enable");
       ("SMULL-rdef", "enable");
       ("STR-rdef", "enable");
+      ("STRB-rdef", "enable");
       ("SUB-rdef", "enable");
       ("UBFX-rdef", "enable");
 
@@ -105,6 +106,7 @@ let _ =
       ("LDRH-def-lhs", "enable");
       ("MVN-def-lhs", "enable");
       ("SMULL-def-lhs", "enable");
+      ("STRB-def-lhs", "enable");
       ("UXTH-def-lhs", "enable");
 
       (* misc rules *)
