@@ -624,6 +624,9 @@ object (self:'a)
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, n)) ->
        let vreg = floc#env#mk_arm_register_variable r in
        Ok (XOp (XLsl, [XVar vreg; int_constant_expr n]))
+    | ARMShiftedReg (r, ARMImmSRT (SRType_ROR, n)) ->
+       let vreg = floc#env#mk_arm_register_variable r in
+       Ok (XOp ((Xf "ror"), [XVar vreg; int_constant_expr n]))
     | ARMShiftedReg (r, ARMRegSRT (SRType_LSL, sr)) ->
        let vsreg = floc#env#mk_arm_register_variable sr in
        let vreg = floc#env#mk_arm_register_variable r in
@@ -633,6 +636,14 @@ object (self:'a)
        let vsreg = floc#env#mk_arm_register_variable sr in
        let vreg = floc#env#mk_arm_register_variable r in
        Ok (XOp (XLsr, [XVar vreg; XVar vsreg]))
+    | ARMShiftedReg (r, ARMRegSRT (SRType_ASR, sr)) ->
+       let vsreg = floc#env#mk_arm_register_variable sr in
+       let vreg = floc#env#mk_arm_register_variable r in
+       Ok (XOp (XAsr, [XVar vreg; XVar vsreg]))
+    | ARMShiftedReg (r, ARMRegSRT (SRType_ROR, sr)) ->
+       let vsreg = floc#env#mk_arm_register_variable sr in
+       let vreg = floc#env#mk_arm_register_variable r in
+       Ok (XOp ((Xf "ror"), [XVar vreg; XVar vsreg]))
     | ARMShiftedReg (_, srt) ->
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
               ^ "Shifted reg: " ^ (register_shift_to_string srt)
