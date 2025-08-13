@@ -1825,36 +1825,33 @@ object (self)
 
   method save_register
            (vmem: variable_t) (iaddr: ctxt_iaddress_t) (reg: register_t) =
-    if BCHCPURegisters.is_temporary_register reg then
-      ()
+    if self#env#is_stack_variable vmem then
+      TR.tfold
+        ~ok:(fun offset ->
+          match offset with
+          | ConstantOffset (n, NoOffset) ->
+             self#stackframe#add_register_spill ~offset:n#toInt reg iaddr
+          | _ ->
+             log_error_result
+               ~msg:"save_register:not a constant offset"
+               __FILE__ __LINE__
+               ["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ "): ";
+                (p2s vmem#toPretty) ^ " with " ^ (register_to_string reg)
+                ^ " and offset " ^ (memory_offset_to_string offset)])
+        ~error:(fun e ->
+          log_error_result
+            ~msg:"save_register"
+            __FILE__ __LINE__
+            (["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ "): ";
+              (p2s vmem#toPretty) ^ " with " ^ (register_to_string reg)] @ e))
+        (self#env#get_memvar_offset vmem)
     else
-      if self#env#is_stack_variable vmem then
-        TR.tfold
-          ~ok:(fun offset ->
-            match offset with
-            | ConstantOffset (n, NoOffset) ->
-               self#stackframe#add_register_spill ~offset:n#toInt reg iaddr
-            | _ ->
-               log_error_result
-                 ~msg:"save_register:not a constant offset"
-                 __FILE__ __LINE__
-                 ["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ "): ";
-                  (p2s vmem#toPretty) ^ " with " ^ (register_to_string reg)
-                  ^ " and offset " ^ (memory_offset_to_string offset)])
-          ~error:(fun e ->
-            log_error_result
-              ~msg:"save_register"
-              __FILE__ __LINE__
-              (["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ "): ";
-                (p2s vmem#toPretty) ^ " with " ^ (register_to_string reg)] @ e))
-          (self#env#get_memvar_offset vmem)
-      else
-        log_error_result
-          ~msg:"save register:not a stack variable"
-          __FILE__ __LINE__
-          ["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ "): ";
-           "not a stack variable: "
-           ^ (p2s vmem#toPretty) ^ " with " ^ (register_to_string reg)]
+      log_error_result
+        ~msg:"save register:not a stack variable"
+        __FILE__ __LINE__
+        ["(" ^ (p2s self#get_address#toPretty) ^ "," ^ iaddr ^ "): ";
+         "not a stack variable: "
+         ^ (p2s vmem#toPretty) ^ " with " ^ (register_to_string reg)]
 
   method restore_register
            (memaddr: xpr_t) (iaddr:ctxt_iaddress_t) (reg:register_t) =

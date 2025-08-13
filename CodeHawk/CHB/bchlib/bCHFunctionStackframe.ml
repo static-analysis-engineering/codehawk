@@ -465,75 +465,81 @@ object (self)
 
   method add_register_spill
            ~(offset: int) (reg: register_t) (iaddr:ctxt_iaddress_t) =
-    let spill = RegisterSpill (offset, reg) in
-    begin
-      (if H.mem stackslots offset then
-        if (H.find stackslots offset)#is_spill then
-          ()
-        else
-          let sslot = H.find stackslots offset in
-          raise
-            (BCH_failure
-               (LBLOCK [
-                    STR "Add register spill at address ";
-                    STR iaddr;
-                    STR " for register ";
-                    STR (register_to_string reg);
-                    STR " at offset ";
-                    INT offset;
-                    STR " cannot be completed, because another stackslot ";
-                    STR "at this offset, with name: ";
-                    STR sslot#name;
-                    STR " already exists"]))
-      else
-        let ssrec = {
-            sslot_name = (register_to_string reg) ^ "_spill";
-            sslot_offset = offset;
-            sslot_btype = t_unknown;
-            sslot_spill = Some reg;
-            sslot_size = Some 4;
-            sslot_desc = Some "register spill"
-          } in
-        let sslot = new stackslot_t ssrec in
-        H.add stackslots offset sslot);
+    if BCHCPURegisters.is_temporary_register reg then
+      ()
+    else
+      let spill = RegisterSpill (offset, reg) in
+      begin
+        (if H.mem stackslots offset then
+           if (H.find stackslots offset)#is_spill then
+             ()
+           else
+             let sslot = H.find stackslots offset in
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Add register spill at address ";
+                       STR iaddr;
+                       STR " for register ";
+                       STR (register_to_string reg);
+                       STR " at offset ";
+                       INT offset;
+                       STR " cannot be completed, because another stackslot ";
+                       STR "at this offset, with name: ";
+                       STR sslot#name;
+                       STR " already exists"]))
+         else
+           let ssrec = {
+               sslot_name = (register_to_string reg) ^ "_spill";
+               sslot_offset = offset;
+               sslot_btype = t_unknown;
+               sslot_spill = Some reg;
+               sslot_size = Some 4;
+               sslot_desc = Some "register spill"
+             } in
+           let sslot = new stackslot_t ssrec in
+           H.add stackslots offset sslot);
         self#add_access offset iaddr spill
-    end
+      end
 
   method add_register_restore
            ~(offset: int) (reg: register_t) (iaddr: ctxt_iaddress_t) =
-    let restore = RegisterRestore (offset, reg) in
-    begin
-      (if H.mem stackslots offset then
-        if (H.find stackslots offset)#is_spill then
-          ()
-        else
-          let sslot = H.find stackslots offset in
-          raise
-            (BCH_failure
-               (LBLOCK [
-                    STR "Add register restore at address ";
-                    STR iaddr;
-                    STR " for register ";
-                    STR (register_to_string reg);
-                    STR " at offset ";
-                    INT offset;
-                    STR " cannot be completed, because another stackslot ";
-                    STR "at this offset, with name: ";
-                    STR sslot#name;
-                    STR " already exists"]))
-      else
-        let ssrec = {
-            sslot_name = (register_to_string reg) ^ "_spill";
-            sslot_offset = offset;
-            sslot_btype = t_unknown;
-            sslot_spill = Some reg;
-            sslot_size = Some 4;
-            sslot_desc = Some "register_spill"
-          } in
-        let sslot = new stackslot_t ssrec in
-        H.add stackslots offset sslot);
-      self#add_access offset iaddr restore
-    end
+    if BCHCPURegisters.is_temporary_register reg then
+      ()
+    else
+      let restore = RegisterRestore (offset, reg) in
+      begin
+        (if H.mem stackslots offset then
+           if (H.find stackslots offset)#is_spill then
+             ()
+           else
+             let sslot = H.find stackslots offset in
+             raise
+               (BCH_failure
+                  (LBLOCK [
+                       STR "Add register restore at address ";
+                       STR iaddr;
+                       STR " for register ";
+                       STR (register_to_string reg);
+                       STR " at offset ";
+                       INT offset;
+                       STR " cannot be completed, because another stackslot ";
+                       STR "at this offset, with name: ";
+                       STR sslot#name;
+                       STR " already exists"]))
+         else
+           let ssrec = {
+               sslot_name = (register_to_string reg) ^ "_spill";
+               sslot_offset = offset;
+               sslot_btype = t_unknown;
+               sslot_spill = Some reg;
+               sslot_size = Some 4;
+               sslot_desc = Some "register_spill"
+             } in
+           let sslot = new stackslot_t ssrec in
+           H.add stackslots offset sslot);
+        self#add_access offset iaddr restore
+      end
 
   method add_load
            ~(baseoffset:int)
