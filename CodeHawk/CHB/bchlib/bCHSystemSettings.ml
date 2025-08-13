@@ -181,8 +181,13 @@ object (self)
   val mutable ssa = false
   val mutable collectdata = false
   val mutable generate_varinvs = true
+  val mutable fail_on_function_failure = false
 
   method set_collect_data = collectdata <- true
+
+  method set_fail_on_function_failure = fail_on_function_failure <- true
+
+  method fail_on_function_failure = fail_on_function_failure
 
   method set_no_varinvs = generate_varinvs <- false
 

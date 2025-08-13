@@ -1417,6 +1417,7 @@ object
   method enable_sideeffects_on_globals : string list -> unit
   method disable_sideeffects_on_globals: string list -> unit
   method set_no_varinvs: unit
+  method set_fail_on_function_failure: unit
   method set_abstract_stackvars_disabled: unit
   method set_apps_dir: string -> unit
   method set_app_summary_jars: string -> unit   (* application name *)
@@ -1451,6 +1452,7 @@ object
   method has_thumb: bool
   method use_ssa: bool
   method collect_data: bool
+  method fail_on_function_failure: bool
   method generate_varinvs: bool
   method include_arm_extension_registers: bool
   method show_function_timing: bool

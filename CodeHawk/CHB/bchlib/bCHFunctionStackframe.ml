@@ -471,7 +471,20 @@ object (self)
         if (H.find stackslots offset)#is_spill then
           ()
         else
-          raise (BCH_failure (LBLOCK [STR "Stackslot already taken"]))
+          let sslot = H.find stackslots offset in
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "Add register spill at address ";
+                    STR iaddr;
+                    STR " for register ";
+                    STR (register_to_string reg);
+                    STR " at offset ";
+                    INT offset;
+                    STR " cannot be completed, because another stackslot ";
+                    STR "at this offset, with name: ";
+                    STR sslot#name;
+                    STR " already exists"]))
       else
         let ssrec = {
             sslot_name = (register_to_string reg) ^ "_spill";
@@ -494,7 +507,20 @@ object (self)
         if (H.find stackslots offset)#is_spill then
           ()
         else
-          raise (BCH_failure (LBLOCK [STR "Stackslot already taken"]))
+          let sslot = H.find stackslots offset in
+          raise
+            (BCH_failure
+               (LBLOCK [
+                    STR "Add register restore at address ";
+                    STR iaddr;
+                    STR " for register ";
+                    STR (register_to_string reg);
+                    STR " at offset ";
+                    INT offset;
+                    STR " cannot be completed, because another stackslot ";
+                    STR "at this offset, with name: ";
+                    STR sslot#name;
+                    STR " already exists"]))
       else
         let ssrec = {
             sslot_name = (register_to_string reg) ^ "_spill";
