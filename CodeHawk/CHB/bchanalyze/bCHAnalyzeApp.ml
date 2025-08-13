@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -184,7 +184,12 @@ let analyze starttime =
              faddr#toPretty;
              STR ": ";
              p]);
-      failedfunctions := faddr :: !failedfunctions
+      if system_settings#fail_on_function_failure then
+        raise
+          (BCH_failure
+             (LBLOCK [STR "Function failure of "; faddr#toPretty; STR ": "; p]))
+      else
+        failedfunctions := faddr :: !failedfunctions
     end in
 
   begin
@@ -414,7 +419,12 @@ let analyze_mips starttime =
              faddr#toPretty;
              STR ": ";
              p]);
-      failedfunctions := faddr :: !failedfunctions
+      if system_settings#fail_on_function_failure then
+        raise
+          (BCH_failure
+             (LBLOCK [STR "Function failure of "; faddr#toPretty; STR "; "; p]))
+      else
+        failedfunctions := faddr :: !failedfunctions
     end in
   begin
     (if (List.length fns_included) > 0 then
@@ -566,7 +576,12 @@ let analyze_arm starttime =
              faddr#toPretty;
              STR ": ";
              p]);
-      failedfunctions := faddr :: !failedfunctions
+      if system_settings#fail_on_function_failure then
+        raise
+          (BCH_failure
+             (LBLOCK [STR "Function failure of "; faddr#toPretty; STR ": "; p]))
+      else
+        failedfunctions := faddr :: !failedfunctions
     end in
   begin
     (if (List.length fns_included) > 0 then
@@ -606,9 +621,11 @@ let analyze_arm starttime =
                pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
              with
 	       | Failure s -> functionfailure "Failure" faddr (STR s)
-	       | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
+	       | Invalid_argument s ->
+                  functionfailure "Invalid argument" faddr (STR s)
 	       | Internal_error s -> functionfailure "Internal error" faddr (STR s)
-	       | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
+	       | Invocation_error s ->
+                  functionfailure "Invocation error" faddr (STR s)
 	       | CHFailure p -> functionfailure "CHFailure" faddr p
 	       | BCH_failure p -> functionfailure "BCHFailure" faddr p));
     file_metrics#record_runtime ((Unix.gettimeofday ()) -. starttime)

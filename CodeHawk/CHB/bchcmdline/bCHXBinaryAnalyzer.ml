@@ -119,11 +119,14 @@ let show_chif = ref None
 let set_chif s = show_chif := Some s
 
 let speclist =
-  [ ("-version", Arg.Unit (fun () -> ()), "show version information and exit") ;
+  [ ("-version", Arg.Unit (fun () -> ()), "show version information and exit");
     ("-gc", Arg.Unit (fun () -> cmd := "gc"),
-     "show ocaml garbage collector settings and exit") ;
+     "show ocaml garbage collector settings and exit");
+    ("-fail_on_function_failure",
+     Arg.Unit (fun () -> system_settings#set_fail_on_function_failure),
+     "fail immediately if analysis of one of the functions fails");
     ("-set_vftables",Arg.Unit  (fun () -> system_settings#set_vftables),
-     "declare jumptable targets as funcion entry points") ;
+     "declare jumptable targets as funcion entry points");
     ("-extracthex", Arg.Unit (fun () -> cmd := "extracthex"),
      "extract executable content from lisphex encoded executable");
     ("-ssa", Arg.Unit (fun () -> system_settings#set_ssa),
@@ -878,6 +881,7 @@ let main () =
       (* function annotations in userdata should be loaded after the header
          files are parsed, so types in the function annotations can be resolved.*)
       let _ = system_info#initialize_function_annotations in
+      let _ = pr_timing [STR "function annotations initialized"] in
 
       let index = file_metrics#get_index in
       let logcmd = "analyze_" ^ (string_of_int index) in
