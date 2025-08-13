@@ -738,87 +738,85 @@ let read_xml_function_annotation (node: xml_element_int) =
   let faddr = get "faddr" in
   TR.titer
     ~ok:(fun dw ->
-      if functions_data#has_function dw then
-        let fndata = functions_data#get_function dw in
-        let stackvintros =
-          if hasc "stackvar-intros" then
-            let svintros = getc "stackvar-intros" in
-            List.fold_left
-              (fun acc n ->
-                TR.tfold
-                  ~ok:(fun svi -> svi :: acc)
-                  ~error:(fun e ->
-                    begin
-                      log_error_result __FILE__ __LINE__ e;
-                      acc
-                    end)
-                  (read_xml_stackvar_intro n))
-              []
-              (svintros#getTaggedChildren "vintro")
-          else
-            [] in
-        let regvintros =
-          if hasc "regvar-intros" then
-            let rvintros = getc "regvar-intros" in
-            List.fold_left
-              (fun acc n ->
-                TR.tfold
-                  ~ok:(fun rvi -> rvi :: acc)
-                  ~error:(fun e ->
-                    begin
-                      log_error_result __FILE__ __LINE__ e;
-                      acc
-                    end)
-                  (read_xml_regvar_intro n))
-              []
-              (rvintros#getTaggedChildren "vintro")
-          else
-            [] in
-        let typingrules =
-          if hasc "typing-rules" then
-            let trules = getc "typing-rules" in
-            List.fold_left
-              (fun acc n ->
-                TR.tfold
-                  ~ok:(fun tr -> tr :: acc)
-                  ~error:(fun e ->
-                    begin
-                      log_error_result __FILE__ __LINE__ e;
-                      acc
-                    end)
-                  (read_xml_typing_rule n))
-              []
-              (trules#getTaggedChildren "typingrule")
-          else
-            [] in
-        let rdefspecs =
-          if hasc "remove-rdefs" then
-            let rrds = getc "remove-rdefs" in
-            List.fold_left
-              (fun acc n ->
-                TR.tfold
-                  ~ok:(fun rds -> rds :: acc)
-                  ~error:(fun e ->
-                    begin
-                      log_error_result __FILE__ __LINE__ e;
-                      acc
-                    end)
-                  (read_xml_reachingdef_spec n))
-              []
-              (rrds#getTaggedChildren "remove-var-rdefs")
-          else
-            [] in
-        fndata#set_function_annotation
-          {regvarintros = regvintros;
-           stackvarintros = stackvintros;
-           typingrules = typingrules;
-           reachingdefspecs = rdefspecs
-          }
-      else
-        log_error_result
-          ~tag:"function annotation faddr not found"
-          __FILE__ __LINE__
-          ["Function annotation address: " ^ faddr ^ " not known"])
+      let fndata =
+        if functions_data#has_function dw then
+          functions_data#get_function dw
+        else
+          functions_data#add_function dw in
+      let stackvintros =
+        if hasc "stackvar-intros" then
+          let svintros = getc "stackvar-intros" in
+          List.fold_left
+            (fun acc n ->
+              TR.tfold
+                ~ok:(fun svi -> svi :: acc)
+                ~error:(fun e ->
+                  begin
+                    log_error_result __FILE__ __LINE__ e;
+                    acc
+                  end)
+                (read_xml_stackvar_intro n))
+            []
+            (svintros#getTaggedChildren "vintro")
+        else
+          [] in
+      let regvintros =
+        if hasc "regvar-intros" then
+          let rvintros = getc "regvar-intros" in
+          List.fold_left
+            (fun acc n ->
+              TR.tfold
+                ~ok:(fun rvi -> rvi :: acc)
+                ~error:(fun e ->
+                  begin
+                    log_error_result __FILE__ __LINE__ e;
+                    acc
+                  end)
+                (read_xml_regvar_intro n))
+            []
+            (rvintros#getTaggedChildren "vintro")
+        else
+          [] in
+      let typingrules =
+        if hasc "typing-rules" then
+          let trules = getc "typing-rules" in
+          List.fold_left
+            (fun acc n ->
+              TR.tfold
+                ~ok:(fun tr -> tr :: acc)
+                ~error:(fun e ->
+                  begin
+                    log_error_result __FILE__ __LINE__ e;
+                    acc
+                  end)
+                (read_xml_typing_rule n))
+            []
+            (trules#getTaggedChildren "typingrule")
+        else
+          [] in
+      let rdefspecs =
+        if hasc "remove-rdefs" then
+          let rrds = getc "remove-rdefs" in
+          List.fold_left
+            (fun acc n ->
+              TR.tfold
+                ~ok:(fun rds -> rds :: acc)
+                ~error:(fun e ->
+                  begin
+                    log_error_result __FILE__ __LINE__ e;
+                    acc
+                  end)
+                (read_xml_reachingdef_spec n))
+            []
+            (rrds#getTaggedChildren "remove-var-rdefs")
+        else
+          [] in
+      fndata#set_function_annotation
+        {regvarintros = regvintros;
+         stackvarintros = stackvintros;
+         typingrules = typingrules;
+         reachingdefspecs = rdefspecs
+        })
     ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
     (string_to_doubleword faddr)
 
