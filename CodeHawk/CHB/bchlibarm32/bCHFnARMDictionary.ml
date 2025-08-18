@@ -1856,7 +1856,21 @@ object (self)
            @ (get_all_rdefs_r xmem_r) in
          let uses = [get_def_use_r vrt_r] in
          let useshigh = [get_def_use_high_r vrt_r] in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
+         let cxrmem_r = TR.tbind floc#convert_xpr_to_c_expr xrmem_r in
+         let cxrmem_r =
+           if Result.is_ok cxrmem_r then
+             cxrmem_r
+           else
+             let _ =
+               log_diagnostics_result
+                 ~msg:(p2s floc#l#toPretty)
+                 ~tag:"LDREX:fall-back address conversion"
+                 __FILE__ __LINE__
+                 ["xxaddr: " ^ (x_r2s xxaddr_r)] in
+             TR.tbind floc#convert_addr_to_c_pointed_to_expr xxaddr_r in
          let _ =
            TR.tfold_default
              (fun xrmem -> ignore (get_string_reference floc xrmem)) () xrmem_r in
@@ -1870,7 +1884,8 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data_r
              ~vars_r:[vrt_r; vmem_r]
-             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r]
+             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xaddr_r; xxaddr_r]
+             ~cxprs_r:[cxrmem_r; cxaddr_r]
              ~rdefs
              ~uses
              ~useshigh
@@ -2751,34 +2766,57 @@ object (self)
          let regcount = rl#get_register_count in
          let rhss_rl = rl#to_multiple_expr floc in
          let rrhss_rl = List.map (TR.tmap rewrite_expr) rhss_rl in
-         let (memlhss_rl, _) =
+         let crhss_rl =
+           List.map (fun rrhs_r ->
+               TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rrhs_r)
+           rrhss_rl in
+         let (memlhss_rl, cmemlhss_rl, _) =
            List.fold_left
-             (fun (acc, off) _reg ->
+             (fun (lhss, clhss, off) _reg ->
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs_r = memop#to_variable floc in
-               (acc @ [memlhs_r], off + 4))
-             ([], - (4 * regcount)) rl#get_register_op_list in
+               let cmemlhs_r =
+                 TR.tbind
+                   (floc#convert_var_to_c_variable ~size:(Some 4)) memlhs_r in
+               (lhss @ [memlhs_r],
+                clhss @ [cmemlhs_r],
+                off + 4)) ([], [], - (4 * regcount)) rl#get_register_op_list in
+         let xaddrs_r =
+           List.init
+             rl#get_register_count
+             (fun i ->
+               let xaddr_r =
+                 TR.tmap
+                   (fun baserhs ->
+                     XOp (XPlus, [baserhs;
+                                  int_constant_expr ((i + 4) - (4 * regcount))]))
+                   baserhs_r in
+               TR.tmap rewrite_expr xaddr_r) in
+         let cxaddrs_r =
+           List.map (fun xaddr_r ->
+               TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xaddr_r)
+           xaddrs_r in
          let rdefs = List.map get_rdef_r (baserhs_r :: rrhss_rl) in
          let uses = List.map get_def_use_r (baselhs_r :: memlhss_rl) in
          let useshigh = List.map get_def_use_high_r (baselhs_r :: memlhss_rl) in
-         let wbackresults_r =
-           if wback then
-             let decrem = int_constant_expr (4 * regcount) in
-             let baseresult_r =
-               TR.tmap (fun baserhs -> XOp (XMinus, [baserhs; decrem])) baserhs_r in
-             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
-             [baseresult_r; rbaseresult_r]
-           else
-             [baserhs_r; baserhs_r] in
+         let vars_r = baselhs_r :: memlhss_rl in
+         let cvars_r = cmemlhss_rl in
+         let xprs_r = (baserhs_r :: rhss_rl) @ rrhss_rl @ xaddrs_r in
+         let cxprs_r = crhss_rl @ cxaddrs_r in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:(baselhs_r :: memlhss_rl)
-             ~xprs_r:((baserhs_r :: wbackresults_r) @ rrhss_rl)
-             ~rdefs
-             ~uses
-             ~useshigh
-             () in
+             ~vars_r ~cvars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let (tags, args) =
+           if wback then
+             let decrem = 4 * regcount in
+             let xdecrem = int_constant_expr decrem in
+             let baseresult_r =
+               TR.tmap (fun baserhs -> XOp (XMinus, [baserhs; xdecrem])) baserhs_r in
+             let rbaseresult_r = TR.tmap rewrite_expr baseresult_r in
+             add_base_update tags args baselhs_r decrem rbaseresult_r
+           else
+             (tags, args) in
          (tags, args)
 
       | StoreMultipleIncrementAfter _ when instr#is_aggregate_anchor ->
@@ -3637,10 +3675,24 @@ object (self)
          let vvd_r = vd#to_variable floc in
          let xbase_r = base#to_expr floc in
          let xaddr_r = mem#to_address floc in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
          let vmem_r = mem#to_variable floc in
          let xmem_r = mem#to_expr floc in
          let rxbase_r = TR.tmap rewrite_expr xbase_r in
          let rxmem_r = TR.tmap rewrite_expr xmem_r in
+         let cxmem_r = TR.tbind floc#convert_xpr_to_c_expr rxmem_r in
+         let cxmem_r =
+           if Result.is_ok cxmem_r then
+             cxmem_r
+           else
+             let _ =
+               log_diagnostics_result
+                 ~msg:(p2s floc#l#toPretty)
+                 ~tag:"VLDR:fall-back address conversion"
+                 __FILE__ __LINE__
+                 ["xxaddr: " ^ (x_r2s xxaddr_r)] in
+             TR.tbind floc#convert_addr_to_c_pointed_to_expr xxaddr_r in
          let rdefs =
            [get_rdef_memvar_r vmem_r; get_rdef_r xmem_r]
            @ (get_all_rdefs_r rxmem_r) in
@@ -3649,7 +3701,8 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data_r
              ~vars_r:[vvd_r; vmem_r]
-             ~xprs_r:[xmem_r; rxmem_r; xbase_r; rxbase_r; xaddr_r]
+             ~xprs_r:[xmem_r; rxmem_r; xbase_r; rxbase_r; xaddr_r; xxaddr_r]
+             ~cxprs_r:[cxmem_r; cxaddr_r]
              ~rdefs
              ~uses
              ~useshigh
@@ -3888,8 +3941,13 @@ object (self)
          (tags, args)
 
       | VStoreRegister (c, src, base, mem) ->
+         let size = src#get_size in
          let vmem_r = mem#to_variable floc in
+         let cvmem_r =
+           TR.tbind (floc#convert_var_to_c_variable ~size:(Some size)) vmem_r in
          let xaddr_r = mem#to_address floc in
+         let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
+         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
          let xsrc_r = src#to_expr floc in
          let xbase_r = base#to_expr floc in
          let rxsrc_r = TR.tmap rewrite_expr xsrc_r in
@@ -3900,7 +3958,9 @@ object (self)
          let (tagstring, args) =
            mk_instrx_data_r
              ~vars_r:[vmem_r]
-             ~xprs_r:[xsrc_r; rxsrc_r; xbase_r; rxbase_r; xaddr_r]
+             ~xprs_r:[xsrc_r; rxsrc_r; xbase_r; rxbase_r; xaddr_r; xxaddr_r]
+             ~cvars_r:[cvmem_r]
+             ~cxprs_r:[cxaddr_r]
              ~rdefs
              ~uses
              ~useshigh

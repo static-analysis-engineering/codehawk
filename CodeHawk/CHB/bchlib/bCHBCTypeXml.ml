@@ -69,6 +69,7 @@ let get_standard_txt_type (t: string): btype_t option =
   | "byte" -> Some (TInt (IUChar, []))
   | "BYTE" -> Some (TInt (IUChar, []))
   | "char" -> Some (TInt (IChar, []))
+  | "float" -> Some (TFloat (FFloat, FScalar, []))
   | "double" -> Some (TFloat (FDouble, FScalar, []))
   | "DWORD" -> Some (TInt (IUInt, []))
   | "int" -> Some (TInt (IInt, []))
