@@ -4524,8 +4524,8 @@ object (self)
           (trerror_record
              (LBLOCK [STR "create_arg_asserts: "; STR name]))
           (string_to_doubleword name) in
-      let gv = TR.tget_ok (finfo#env#mk_global_variable namedw#to_numerical) in
-      (* let gv_in = finfo#env#mk_initial_memory_value gv in *)
+      let loc = BCHLocation.make_location_by_address finfo#a finfo#a in
+      let gv = TR.tget_ok (finfo#env#mk_global_variable loc namedw#to_numerical) in
       self#create_arg_scalar_asserts finfo gv optlb optub
     else
       let reg = armreg_from_string name in

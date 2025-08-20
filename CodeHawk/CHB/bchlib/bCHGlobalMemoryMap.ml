@@ -52,6 +52,14 @@ let x2p = XprToPretty.xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
 let x2s x = p2s (x2p x)
 
+let opti2s (i: int option) =
+  if Option.is_some i then string_of_int (Option.get i) else "?"
+
+let ty2s (ty: btype_t) =
+  if is_unknown_type ty then "?" else btype_to_string ty
+let optty2s (ty: btype_t option) =
+  if Option.is_some ty then btype_to_string (Option.get ty) else "?"
+
 let bcd = BCHBCDictionary.bcdictionary
 
 
@@ -144,6 +152,11 @@ object (self)
     | Ok (TArray _) -> true
     | _ -> false
 
+  method is_scalar: bool =
+    match resolve_type self#btype with
+    | Ok ty -> is_scalar ty
+    | _ -> false
+
   method is_typed: bool = not (btype_equal self#btype t_unknown)
 
   method size: int option = grec.gloc_size
@@ -196,18 +209,16 @@ object (self)
   method private get_field_memory_offset_at
                    ~(tgtsize: int option)
                    ~(tgtbtype: btype_t option)
+                   (loc: location_int)
                    (c: bcompinfo_t)
                    (xoffset: xpr_t): memory_offset_t traceresult =
     let _ =
       log_diagnostics_result
+        ~msg:(p2s loc#toPretty)
         ~tag:"global:get-field-memory-offset-at"
         __FILE__ __LINE__
-        ["tgtsize: "
-         ^ (if Option.is_some tgtsize then
-              string_of_int (Option.get tgtsize) else "?");
-         "tgtbtype: "
-         ^ (if Option.is_some tgtbtype then
-              btype_to_string (Option.get tgtbtype) else "?");
+        ["tgtsize: " ^ (opti2s tgtsize);
+         "tgtbtype: " ^ (optty2s tgtbtype);
          "compinfo: " ^ c.bcname;
          "xoffset: " ^ (x2s xoffset)] in
     let is_void_tgtbtype =
@@ -286,14 +297,22 @@ object (self)
                                  Some (FieldOffset
                                          ((finfo.bfname, finfo.bfckey), suboff)))
                                (self#structvar_memory_offset
-                                  ~tgtsize ~tgtbtype fldtype (int_constant_expr offset))
+                                  ~tgtsize
+                                  ~tgtbtype
+                                  loc
+                                  fldtype
+                                  (int_constant_expr offset))
                            else if is_array_type fldtype then
                              tmap
                                (fun suboff ->
                                  Some (FieldOffset
                                          ((finfo.bfname, finfo.bfckey), suboff)))
                                (self#arrayvar_memory_offset
-                                  ~tgtsize ~tgtbtype fldtype (int_constant_expr offset))
+                                  ~tgtsize
+                                  ~tgtbtype
+                                  loc
+                                  fldtype
+                                  (int_constant_expr offset))
                            else
                              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                                     ^ "Nonzero offset: " ^ (string_of_int offset)
@@ -313,8 +332,18 @@ object (self)
   method private structvar_memory_offset
                    ~(tgtsize: int option)
                    ~(tgtbtype: btype_t option)
+                   (loc: location_int)
                    (btype: btype_t)
                    (xoffset: xpr_t): memory_offset_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s loc#toPretty)
+        ~tag:"mmap:structvar-memory-offset"
+        __FILE__ __LINE__
+        ["tgtsize: " ^ (opti2s tgtsize);
+         "tgtbtype: " ^ (optty2s tgtbtype);
+         "btype: " ^ (btype_to_string btype);
+         "xoffset: " ^ (x2s xoffset)] in
     match xoffset with
     | XConst (IntConst n) when
            n#equal CHNumerical.numerical_zero
@@ -324,7 +353,7 @@ object (self)
     | XConst (IntConst _) ->
        if is_struct_type btype then
          let compinfo = get_struct_type_compinfo btype in
-         (self#get_field_memory_offset_at ~tgtsize ~tgtbtype compinfo xoffset)
+         (self#get_field_memory_offset_at ~tgtsize ~tgtbtype loc compinfo xoffset)
        else
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
                 ^ " xoffset: " ^ (x2s xoffset)
@@ -335,7 +364,7 @@ object (self)
        let fldoffset = XConst (IntConst m) in
        let memoffset_r =
          self#get_field_memory_offset_at
-           ~tgtsize:None ~tgtbtype:None compinfo fldoffset in
+           ~tgtsize:None ~tgtbtype:None loc compinfo fldoffset in
        TR.tbind
          (fun memoffset ->
            match memoffset with
@@ -378,20 +407,16 @@ object (self)
   method private arrayvar_memory_offset
                    ~(tgtsize: int option)
                    ~(tgtbtype: btype_t option)
+                   (loc: location_int)
                    (btype: btype_t)
                    (xoffset: xpr_t): memory_offset_t traceresult =
     let _ =
       log_diagnostics_result
-        ~tag:"global:arrayvar-memory-offset"
+        ~msg:(p2s loc#toPretty)
+        ~tag:"mmap:arrayvar-memory-offset"
         __FILE__ __LINE__
-        ["tgtsize: " ^ (if (Option.is_some tgtsize) then
-                          string_of_int (Option.get tgtsize)
-                        else
-                          "?");
-         "tgtbtype: " ^ (if (Option.is_some tgtbtype) then
-                           btype_to_string (Option.get tgtbtype)
-                         else
-                           "?");
+        ["tgtsize: " ^ (opti2s tgtsize);
+         "tgtbtype: " ^ (optty2s tgtbtype);
          "btype: " ^ (btype_to_string btype);
          "xoffset: " ^ (x2s xoffset)] in
     let iszero x =
@@ -424,11 +449,11 @@ object (self)
                   let eltty = TR.tvalue (resolve_type eltty) ~default:t_unknown in
                   tbind
                     (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
-                    (self#structvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
+                    (self#structvar_memory_offset ~tgtsize ~tgtbtype loc eltty rem)
                 else if is_array_type eltty then
                  tbind
                    (fun suboff -> Ok (ArrayIndexOffset (indexxpr, suboff)))
-                   (self#arrayvar_memory_offset ~tgtsize ~tgtbtype eltty rem)
+                   (self#arrayvar_memory_offset ~tgtsize ~tgtbtype loc eltty rem)
                 else if is_scalar eltty then
                   if iszero rem then
                     Ok (ArrayIndexOffset (indexxpr, NoOffset))
@@ -452,7 +477,16 @@ object (self)
   method address_offset_memory_offset
            ?(tgtsize=None)
            ?(tgtbtype=t_unknown)
+           (loc: location_int)
            (xoffset: xpr_t): memory_offset_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s loc#toPretty)
+        ~tag:"mmap:address-offset-memory-offset"
+        __FILE__ __LINE__
+        ["xoffset: " ^ (x2s xoffset)
+         ^ "; tgtsize: " ^ (opti2s tgtsize)
+         ^ "; tgtbtype: " ^ (ty2s tgtbtype)] in
     match xoffset with
     | XConst (IntConst n)
          when n#equal CHNumerical.numerical_zero
@@ -462,6 +496,13 @@ object (self)
     | XConst (IntConst n)
          when n#equal CHNumerical.numerical_zero && (not self#is_typed) ->
        Ok NoOffset
+    | XConst (IntConst n)
+         when n#equal CHNumerical.numerical_zero
+              && self#is_scalar
+              && Option.is_some tgtsize
+              && Option.is_some self#size
+              && (Option.get tgtsize) = (Option.get self#size) ->
+       Ok NoOffset
     | XConst (IntConst n) when not self#is_typed ->
        Ok (ConstantOffset (n, NoOffset))
     | _ ->
@@ -469,10 +510,10 @@ object (self)
          if is_unknown_type tgtbtype then None else Some tgtbtype in
        if self#is_struct then
          let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
-         self#structvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
+         self#structvar_memory_offset ~tgtsize ~tgtbtype loc btype xoffset
        else if self#is_array then
          let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
-         self#arrayvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
+         self#arrayvar_memory_offset ~tgtsize ~tgtbtype loc btype xoffset
        else
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
                 ^ (btype_to_string self#btype)
@@ -481,9 +522,10 @@ object (self)
   method address_memory_offset
            ?(tgtsize=None)
            ?(tgtbtype=t_unknown)
+           (loc: location_int)
            (xpr: xpr_t): memory_offset_t traceresult =
     TR.tbind
-      (self#address_offset_memory_offset ~tgtsize ~tgtbtype)
+      (self#address_offset_memory_offset ~tgtsize ~tgtbtype loc)
       (self#address_offset xpr)
 
   method initialvalue: globalvalue_t option = grec.gloc_initialvalue
@@ -703,7 +745,8 @@ object (self)
            (btype: btype_t) =
     match self#xpr_containing_location gxpr with
     | Some gloc ->
-       let memoff = TR.to_option (gloc#address_memory_offset gxpr) in
+       let loc = BCHLocation.ctxt_string_to_location faddr iaddr in
+       let memoff = TR.to_option (gloc#address_memory_offset loc gxpr) in
        let garg =
          GAddressArgument (gloc#address, iaddr, argindex, gxpr, btype, memoff) in
        begin

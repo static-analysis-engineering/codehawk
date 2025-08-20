@@ -843,6 +843,7 @@ object (self)
   method mk_global_variable
            ?(size=4)
            ?(btype=t_unknown)
+           (loc: location_int)
            (base: numerical_t): variable_t traceresult =
     let dw = numerical_mod_to_doubleword base in
     match memmap#containing_location dw with
@@ -872,7 +873,7 @@ object (self)
                self#set_variable_name ivar (name ^ "_in");
                gvar
              end)
-           (gloc#address_memory_offset ~tgtbtype:btype (num_constant_expr base))
+           (gloc#address_memory_offset ~tgtbtype:btype loc (num_constant_expr base))
     | _ ->
        let _ = memmap#add_location ~size:(Some size) ~btype dw in
        Ok (self#mk_variable (self#varmgr#make_global_variable dw#to_numerical))

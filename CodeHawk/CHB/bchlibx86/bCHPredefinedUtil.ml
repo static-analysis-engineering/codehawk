@@ -254,7 +254,7 @@ let get_reg_value (reg:cpureg_t) (floc:floc_int) =
 
 
 let get_gv_value (gv:doubleword_int) (floc:floc_int) =
-  let v = floc#env#mk_global_variable gv#to_numerical in
+  let v = floc#env#mk_global_variable floc#l gv#to_numerical in
   match v with
   | Error e ->
      raise

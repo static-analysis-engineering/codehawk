@@ -606,6 +606,7 @@ object (self)
         "" in
     let memorymap = BCHGlobalMemoryMap.global_memory_map in
     let get_memory_offset (gloc: global_location_int) (offset: xpr_t) =
+      let zeroloc = BCHLocation.make_location_by_address wordzero wordzero in
       TR.tfold
         ~ok:(fun memoffset ->
           "  (" ^ (BCHMemoryReference.memory_offset_to_string memoffset) ^ ")"
@@ -615,7 +616,7 @@ object (self)
             log_diagnostics_result __FILE__ __LINE__ e;
             ""
           end)
-        (gloc#address_memory_offset ~tgtsize:(Some 4) offset) in
+        (gloc#address_memory_offset ~tgtsize:(Some 4) zeroloc offset) in
     let vm1 (v: doubleword_int) = TR.to_option (v#subtract_int 1) in
     let render_gloc (a: doubleword_int) (v: doubleword_int): string =
       let addrprefix = "  " ^ (fixed_length_string a#to_hex_string 10) in

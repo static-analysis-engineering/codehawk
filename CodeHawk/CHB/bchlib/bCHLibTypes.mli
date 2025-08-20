@@ -4399,6 +4399,7 @@ class type global_location_int =
     method is_typed: bool
     method is_struct: bool
     method is_array: bool
+    method is_scalar: bool
     method is_function_address: bool
     method initialvalue: globalvalue_t option
     method desc: string option
@@ -4450,12 +4451,14 @@ class type global_location_int =
     method address_memory_offset:
              ?tgtsize:int option
              -> ?tgtbtype:btype_t
+             -> location_int
              -> xpr_t
              -> memory_offset_t traceresult
 
     method address_offset_memory_offset:
              ?tgtsize:int option
              -> ?tgtbtype:btype_t
+             -> location_int
              -> xpr_t
              -> memory_offset_t traceresult
 
@@ -4787,6 +4790,7 @@ class type function_environment_int =
     method mk_global_variable:
              ?size:int
              -> ?btype:btype_t
+             -> location_int
              -> numerical_t
              -> variable_t traceresult
 

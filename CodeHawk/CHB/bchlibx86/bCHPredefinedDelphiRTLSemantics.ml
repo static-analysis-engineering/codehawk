@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -951,7 +951,7 @@ object (self)
 
   method! get_commands (floc:floc_int) =
     let eaxv = get_reg_value Eax floc in
-    let vgv = TR.tget_ok (floc#env#mk_global_variable gv#to_numerical) in
+    let vgv = TR.tget_ok (floc#env#mk_global_variable floc#l gv#to_numerical) in
     floc#get_assign_commands vgv eaxv
 
   method get_parametercount = 0
@@ -1819,7 +1819,7 @@ object (self)
     let eaxv = get_reg_value Eax floc in
     let (eaxdlhs,eaxdlhscmds) = get_reg_deref_lhs Eax 0 floc in
     let gval = get_gv_value gv floc in
-    let gvar = TR.tget_ok (floc#env#mk_global_variable gv#to_numerical) in
+    let gvar = TR.tget_ok (floc#env#mk_global_variable floc#l gv#to_numerical) in
     let cmds1 = floc#get_assign_commands eaxdlhs gval in
     let cmds2 = floc#get_assign_commands gvar eaxv in
     let cmds3 = [floc#get_abstract_cpu_registers_command [Edx]] in
