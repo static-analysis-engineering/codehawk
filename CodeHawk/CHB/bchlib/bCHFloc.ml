@@ -687,7 +687,7 @@ object (self)
               (fun memoff ->
                 TR.tbind
                   ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-                  self#env#mk_global_variable
+                  (self#env#mk_global_variable self#l)
                   (get_total_constant_offset memoff))
               memoffset_r
           else if memref#is_stack_reference then
@@ -736,7 +736,7 @@ object (self)
          let dw = numerical_mod_to_doubleword n in
          if system_info#get_image_base#le dw then
            tprop
-             (self#env#mk_global_variable ~size n)
+             (self#env#mk_global_variable self#l ~size n)
              (__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
          else
            Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
@@ -791,7 +791,7 @@ object (self)
                     (self#cia ^ " : constant: " ^ n#toString))
                  (fun v -> v)
                  (default ())
-                 (self#env#mk_global_variable ~size n)
+                 (self#env#mk_global_variable ~size self#l n)
              else
                default ())
            (default ())
@@ -809,7 +809,7 @@ object (self)
                  (default ())
                  (TR.tbind
                     ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-                    self#env#mk_global_variable
+                    (self#env#mk_global_variable self#l)
                     (get_total_constant_offset memoffset))
              else
                (TR.tfold_default
@@ -845,7 +845,7 @@ object (self)
             (fun memoff ->
               TR.tbind
                 ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-                (self#env#mk_global_variable ~size)
+                (self#env#mk_global_variable ~size self#l)
                 (get_total_constant_offset memoff))
             memoff_r
         else
@@ -946,7 +946,7 @@ object (self)
           (default ())
           (TR.tbind
              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-             self#env#mk_global_variable
+             (self#env#mk_global_variable self#l)
              (get_total_constant_offset memoffset))
       else
         TR.tfold_default
@@ -983,7 +983,7 @@ object (self)
                   (self#cia ^ "; constant: " ^ n#toString))
                (fun v -> v)
                (default ())
-               (self#env#mk_global_variable n)
+               (self#env#mk_global_variable self#l n)
            else
              default ())
          (default ())
@@ -1002,7 +1002,7 @@ object (self)
                   (self#cia ^ ": constant: " ^ n#toString))
                (fun v -> v)
                (default ())
-               (self#env#mk_global_variable n)
+               (self#env#mk_global_variable self#l n)
            else
              default ())
          (default ())
@@ -1266,9 +1266,32 @@ object (self)
         ~tag:"get_var_at_address"
         __FILE__ __LINE__
         ["addrvalue: " ^ (x2s addrvalue);
-         "btype: " ^ (btype_to_string btype)] in
+         "btype: " ^ (btype_to_string btype);
+         "size: " ^ (if Option.is_some size then (string_of_int (Option.get size)) else "?")] in
 
     match self#normalize_addrvalue addrvalue with
+    | XOp ((Xf "addressofvar"), [XVar v]) when self#env#is_global_variable v ->
+       let gvaddr_r = self#f#env#get_global_variable_address v in
+       TR.tbind
+         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         (fun gvaddr ->
+           if memmap#has_location gvaddr then
+             let gloc = memmap#get_location gvaddr in
+             let varresult =
+               TR.tmap
+                 ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+                 (fun offset -> self#f#env#mk_gloc_variable gloc offset)
+                 (gloc#address_offset_memory_offset
+                    ~tgtsize:size ~tgtbtype:btype self#l zero_constant_expr) in
+             varresult
+           else
+             Error[__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                   ^ (p2s self#l#toPretty)
+                   ^ ": "
+                   ^ "Global location at address "
+                   ^ gvaddr#to_hex_string
+                   ^ " not found"])
+         gvaddr_r
     | XOp ((Xf "addressofvar"), [XVar v]) -> Ok v
     | XOp (XPlus, [XOp ((Xf "addressofvar"), [XVar v]); xoff])
          when self#f#env#is_global_variable v ->
@@ -1286,7 +1309,7 @@ object (self)
                  (TR.tbind
                     (fun xoff ->
                       gloc#address_offset_memory_offset
-                        ~tgtsize:size ~tgtbtype:btype xoff)
+                        ~tgtsize:size ~tgtbtype:btype self#l xoff)
                     cxoff_r) in
              let _ =
                log_diagnostics_result
@@ -1312,7 +1335,7 @@ object (self)
           (TR.tmap
              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
              (fun offset -> self#f#env#mk_gloc_variable gloc offset)
-             (gloc#address_memory_offset ~tgtsize:size ~tgtbtype:btype addrvalue))
+             (gloc#address_memory_offset ~tgtsize:size ~tgtbtype:btype self#l addrvalue))
        | _ ->
           let (memref_r, memoff_r) = self#decompose_memaddr addrvalue in
           TR.tmap2
@@ -2024,6 +2047,12 @@ object (self)
    * if not, identify the variable most likely to be the base pointer.
    *)
   method decompose_address (x:xpr_t):(memory_reference_int * memory_offset_t) =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"decompose-address"
+        __FILE__ __LINE__
+        ["x: " ^ (x2s x)] in
     let default () =
       (self#env#mk_unknown_memory_reference (x2s x), UnknownOffset) in
      let is_external_constant v = self#env#is_function_initial_value v in
@@ -2184,7 +2213,7 @@ object (self)
                    (self#cia ^ ": constant: " ^ n#toString))
                 (fun v -> v)
                 (default ())
-	        (self#env#mk_global_variable n)
+	        (self#env#mk_global_variable self#l n)
             else
               default ())
           (default ())
@@ -2315,7 +2344,7 @@ object (self)
                       ~tag:"assign global variable address" __FILE__ __LINE__ e;
                     rhs
                   end)
-                (self#f#env#mk_global_variable n)
+                (self#f#env#mk_global_variable self#l n)
             else
               rhs
          | _ -> rhs in
@@ -2492,7 +2521,7 @@ object (self)
         let argvar = self#env#mk_register_variable r in
         self#rewrite_variable_to_external argvar
      | [GlobalParameter (a, _)] when not (a#equal wordzero) ->
-        let argvar = self#env#mk_global_variable a#to_numerical in
+        let argvar = self#env#mk_global_variable self#l a#to_numerical in
         (match argvar with
          | Error e ->
             raise
@@ -2577,7 +2606,7 @@ object (self)
                    (self#cia ^ ": constant: " ^ num#toString))
                 (fun v -> Some v)
                 None
-	        (self#env#mk_global_variable num)
+	        (self#env#mk_global_variable self#l num)
             else
               None)
           None

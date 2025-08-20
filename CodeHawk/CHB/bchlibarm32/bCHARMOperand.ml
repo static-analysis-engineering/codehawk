@@ -471,7 +471,7 @@ object (self:'a)
        Ok (env#mk_arm_special_register_variable r)
     | ARMLiteralAddress dw ->
        TR.tprop
-         (floc#env#mk_global_variable dw#to_numerical)
+         (floc#env#mk_global_variable floc#l dw#to_numerical)
          (__FILE__ ^ ":" ^ (string_of_int __LINE__))
     | ARMOffsetAddress (r, align, offset, isadd, _iswback, isindex, size) ->
        (match offset with
@@ -506,7 +506,7 @@ object (self:'a)
                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                         ^ "Illegal address (zero) for ARMOffsetAddress"]
               | (XConst (IntConst n), 0) ->
-                 floc#env#mk_global_variable ~size n
+                 floc#env#mk_global_variable ~size floc#l n
               | _ ->
                  floc#get_memory_variable_varoffset
                    ~size rvar ivar (mkNumerical i))
@@ -534,7 +534,7 @@ object (self:'a)
                      let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
                      (match (xoffset, i) with
                       | (XConst (IntConst n), 0) ->
-                         floc#env#mk_global_variable ~size n
+                         floc#env#mk_global_variable ~size floc#l n
                       | _ ->
                          floc#get_memory_variable_varoffset
                            ~size rvar ivar (mkNumerical i))

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2024 Aarno Labs LLC
+   Copyright (c) 2022-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -376,7 +376,7 @@ object (self:'a)
     | XmmReg regIndex -> env#mk_xmm_register_variable regIndex
     | DoubleReg (reg1,reg2) -> env#mk_double_register_variable reg1 reg2
     | Absolute address ->
-       (match env#mk_global_variable address#to_numerical with
+       (match env#mk_global_variable floc#l address#to_numerical with
         | Error e ->
            raise
              (BCH_failure
@@ -385,7 +385,7 @@ object (self:'a)
                      STR (String.concat "; " e)]))
         | Ok var -> var)
     | FarAbsolute (_, addr) ->
-       (match env#mk_global_variable addr#to_numerical with
+       (match env#mk_global_variable floc#l addr#to_numerical with
         | Error e ->
            raise
              (BCH_failure

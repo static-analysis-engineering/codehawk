@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -303,7 +303,7 @@ object (self)
   method get_name = "__set_gv_" ^ gv#to_hex_string
 
   method! get_annotation (floc:floc_int) =
-    let v = TR.tget_ok (floc#env#mk_global_variable gv#to_numerical) in
+    let v = TR.tget_ok (floc#env#mk_global_variable floc#l gv#to_numerical) in
     let args = floc#get_call_args in
     let xrhs = get_patternrhs_value ~args rhs floc in
     LBLOCK [v#toPretty; STR " := "; xpr_to_pretty floc xrhs]

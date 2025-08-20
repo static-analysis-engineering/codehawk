@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,7 +51,7 @@ let mmap = BCHGlobalMemoryMap.global_memory_map
 
 
 let testname = "bCHFlocTest"
-let lastupdated = "2024-08-20"
+let lastupdated = "2025-08-19"
 
 
 let get_var_at_address_test () =
@@ -64,6 +64,7 @@ let get_var_at_address_test () =
   let dwfaddr = TR.tget_ok (string_to_doubleword faddr) in
   let dwiaddr = TR.tget_ok (string_to_doubleword iaddr) in
   let dwgvaddr = TR.tget_ok (string_to_doubleword gvaddr) in
+  let loc = BCHLocation.make_location_by_address dwfaddr dwiaddr in
   let dwgvxpr = num_constant_expr dwgvaddr#to_numerical in
   begin
     TS.new_testsuite
@@ -74,7 +75,7 @@ let get_var_at_address_test () =
     let compinfo = bcfiles#get_compinfo_by_name "x44_struct_t" in
     let finfo = get_function_info dwfaddr in
     let floc = get_floc_by_address dwfaddr dwiaddr in
-    let gvar = TR.tget_ok (finfo#env#mk_global_variable dwgvaddr#to_numerical) in
+    let gvar = TR.tget_ok (finfo#env#mk_global_variable loc dwgvaddr#to_numerical) in
     let indexvar = finfo#env#mk_initial_register_value (ARMRegister AR0) in
     let indexxpr1 = XOp (XMinus, [XVar indexvar; int_constant_expr 1]) in
 
@@ -214,7 +215,7 @@ let get_var_at_address_test () =
              ~received:(Some received)
              ()
         | Error e -> A.fail_msg ("Error: " ^ (String.concat "; " e)));
- 
+
     TS.launch_tests ()
   end
 
