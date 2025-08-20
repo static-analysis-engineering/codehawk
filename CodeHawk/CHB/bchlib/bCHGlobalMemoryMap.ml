@@ -491,7 +491,7 @@ object (self)
     | XConst (IntConst n)
          when n#equal CHNumerical.numerical_zero
               && Option.is_none tgtsize
-              && is_unknown_type tgtbtype ->
+              && ((is_unknown_type tgtbtype) || (is_void tgtbtype)) ->
        Ok NoOffset
     | XConst (IntConst n)
          when n#equal CHNumerical.numerical_zero && (not self#is_typed) ->
