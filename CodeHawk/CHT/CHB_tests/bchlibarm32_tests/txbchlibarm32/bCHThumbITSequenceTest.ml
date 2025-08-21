@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,7 @@ open BCHAnalyzeApp
 
 
 let testname = "bCHThumbITSequenceTest"
-let lastupdated = "2024-05-25"
+let lastupdated = "2025-08-20"
 
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
@@ -148,9 +148,11 @@ let thumb_ite_predicates () =
       ("ite-cmp-ne",
        "0xd00", "0xd02", "002b14bf0123002300", "(R3_in != 0)");
       ("ite-cmp-hi",
-       "0x1eb1c", "0x1eb1e", "a3428cbf0120002000", "(R3_in > R4_in)");
+       "0x1eb1c", "0x1eb1e", "a3428cbf0120002000",
+       "((R3_in > R4_in) or (R3_in < 0))");
       ("ite-cmp-hi-r",
-       "0x11abc", "0x11abe", "85428cbf0025012500", "(R5_in <= R0_in)");
+       "0x11abc", "0x11abe", "85428cbf0025012500",
+       "((R5_in <= R0_in) and (R5_in >= 0))");
       ("ite-cmp-ls",
        "0x21ee0", "0x21ee2", "032b94bf0123002300", "(R3_in <= 3)");
       ("ite-cmp-ls-r",

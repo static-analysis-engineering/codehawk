@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ open BCHAnalyzeApp
 
 
 let testname = "bCHARMConditionalExprTest"
-let lastupdated = "2024-10-31"
+let lastupdated = "2025-08-20"
 
 
 let make_dw (s: string) = TR.tget_ok (string_to_doubleword s)
@@ -95,7 +95,8 @@ let compare_tests () =
       ("cmp-beq", "0x10184", "0x10188", "000053e30100000a", 3, "(R3 = 0)");
       ("cmp-bge", "0x10418", "0x1041c", "000053e3010000aa", 3, "(R3 >= 0)");
       ("cmp-bgt", "0x10380", "0x10384", "000053e3010000ca", 3, "(R3 > 0)");
-      ("cmp-bhi", "0x10cf4", "0x10cf8", "020051e10100008a", 3, "(R1 > R2)");
+      ("cmp-bhi", "0x10cf4", "0x10cf8", "020051e10100008a", 3,
+       "((R1 > R2) or (R1 < 0))");
       ("cmp-ble", "0x100e8", "0x100ec", "000053e3010000da", 3, "(R3 <= 0)");
       ("cmp-bls", "0x195f4", "0x195f8", "2f0054e30100009a", 3, "(R4 <= 47)");
       ("cmp-blt", "0x10c44", "0x10c48", "000053e3010000ba", 3, "(R3 < 0)");
