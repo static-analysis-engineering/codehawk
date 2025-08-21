@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -91,7 +91,7 @@ let equal_chif_conditionxprs
      if List.mem expected xs then
        ()
      else
-       A.fail expected (String.concat "," xs) msg
+       A.fail expected ("[" ^ (String.concat "," xs) ^ "]") msg
 
 
 let equal_arm_conditional_expr
