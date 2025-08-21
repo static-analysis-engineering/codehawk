@@ -293,7 +293,9 @@ let cc_expr
                      XOp (XGe, [vu x; zero_constant_expr])]), [x; y])
 
     | (Compare (_, x, y, _), ACCUnsignedHigher) ->
-       (XOp (XGt, [vu x; vu y]), [x; y])
+       (XOp (XLOr, [XOp (XGt, [vu x; vu y]);
+                    XOp (XLt, [vu x; zero_constant_expr])]), [x; y])
+
     | (Compare (_, x, y, _), ACCNotUnsignedHigher) ->
        (XOp (XLe, [vu x; vu y]), [x; y])
 
