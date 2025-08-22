@@ -51,7 +51,7 @@ let mmap = BCHGlobalMemoryMap.global_memory_map
 
 
 let testname = "bCHFlocTest"
-let lastupdated = "2025-08-19"
+let lastupdated = "2025-08-21"
 
 
 let get_var_at_address_test () =
@@ -64,7 +64,6 @@ let get_var_at_address_test () =
   let dwfaddr = TR.tget_ok (string_to_doubleword faddr) in
   let dwiaddr = TR.tget_ok (string_to_doubleword iaddr) in
   let dwgvaddr = TR.tget_ok (string_to_doubleword gvaddr) in
-  let loc = BCHLocation.make_location_by_address dwfaddr dwiaddr in
   let dwgvxpr = num_constant_expr dwgvaddr#to_numerical in
   begin
     TS.new_testsuite
@@ -75,7 +74,8 @@ let get_var_at_address_test () =
     let compinfo = bcfiles#get_compinfo_by_name "x44_struct_t" in
     let finfo = get_function_info dwfaddr in
     let floc = get_floc_by_address dwfaddr dwiaddr in
-    let gvar = TR.tget_ok (finfo#env#mk_global_variable loc dwgvaddr#to_numerical) in
+    let gloc =
+      TR.tget_ok (BCHGlobalMemoryMap.global_memory_map#add_location dwgvaddr) in
     let indexvar = finfo#env#mk_initial_register_value (ARMRegister AR0) in
     let indexxpr1 = XOp (XMinus, [XVar indexvar; int_constant_expr 1]) in
 
@@ -87,8 +87,7 @@ let get_var_at_address_test () =
         let xprvar = floc#get_var_at_address ~btype:BCHBCTypeUtil.t_int xpr in
         let xpoffset = FieldOffset (("field0", compinfo.bckey), NoOffset) in
         let xpoffset = ArrayIndexOffset(int_constant_expr 1, xpoffset) in
-        let expected_r = finfo#env#add_memory_offset gvar xpoffset in
-        let expected = TR.to_option expected_r in
+        let expected = Some (finfo#env#mk_gloc_variable gloc xpoffset) in
         match xprvar with
           Ok received ->
            XBA.equal_opt_variable
@@ -105,8 +104,7 @@ let get_var_at_address_test () =
         let xprvar = floc#get_var_at_address ~btype:BCHBCTypeUtil.t_int xpr in
         let xpoffset = FieldOffset (("field4", compinfo.bckey), NoOffset) in
         let xpoffset = ArrayIndexOffset(int_constant_expr 1, xpoffset) in
-        let expected_r = finfo#env#add_memory_offset gvar xpoffset in
-        let expected = TR.to_option expected_r in
+        let expected = Some (finfo#env#mk_gloc_variable gloc xpoffset) in
         match xprvar with
           Ok received ->
           XBA.equal_opt_variable
@@ -124,8 +122,7 @@ let get_var_at_address_test () =
         let xprvar = floc#get_var_at_address ~btype:BCHBCTypeUtil.t_int xpr in
         let xpoffset = FieldOffset (("field0", compinfo.bckey), NoOffset) in
         let xpoffset = ArrayIndexOffset(XVar indexvar, xpoffset) in
-        let expected_r = finfo#env#add_memory_offset gvar xpoffset in
-        let expected = TR.to_option expected_r in
+        let expected = Some (finfo#env#mk_gloc_variable gloc xpoffset) in
         match xprvar with
         | Ok received ->
           XBA.equal_opt_variable
@@ -144,8 +141,7 @@ let get_var_at_address_test () =
         let xprvar = floc#get_var_at_address ~btype:BCHBCTypeUtil.t_int xpr in
         let xpoffset = FieldOffset (("field0", compinfo.bckey), NoOffset) in
         let xpoffset = ArrayIndexOffset(indexxpr1, xpoffset) in
-        let expected_r = finfo#env#add_memory_offset gvar xpoffset in
-        let expected = TR.to_option expected_r in
+        let expected = Some (finfo#env#mk_gloc_variable gloc xpoffset) in
         match xprvar with
         | Ok received ->
            XBA.equal_opt_variable
@@ -163,8 +159,7 @@ let get_var_at_address_test () =
         let xprvar = floc#get_var_at_address ~btype:BCHBCTypeUtil.t_int xpr in
         let xpoffset = FieldOffset (("field4", compinfo.bckey), NoOffset) in
         let xpoffset = ArrayIndexOffset(indexxpr1, xpoffset) in
-        let expected_r = finfo#env#add_memory_offset gvar xpoffset in
-        let expected = TR.to_option expected_r in
+        let expected = Some (finfo#env#mk_gloc_variable gloc xpoffset) in
         match xprvar with
         | Ok received ->
            XBA.equal_opt_variable
@@ -183,8 +178,7 @@ let get_var_at_address_test () =
         let xpoffset = ArrayIndexOffset (int_constant_expr 0, NoOffset) in
         let xpoffset = FieldOffset (("buffer", compinfo.bckey), xpoffset) in
         let xpoffset = ArrayIndexOffset(indexxpr1, xpoffset) in
-        let expected_r = finfo#env#add_memory_offset gvar xpoffset in
-        let expected = TR.to_option expected_r in
+        let expected = Some (finfo#env#mk_gloc_variable gloc xpoffset) in
         match xprvar with
         | Ok received ->
            XBA.equal_opt_variable
@@ -206,8 +200,7 @@ let get_var_at_address_test () =
         let xprvar = floc#get_var_at_address xpr in
         let xpoffset = FieldOffset (("field4", compinfo.bckey), NoOffset) in
         let xpoffset = ArrayIndexOffset(indexxpr1, xpoffset) in
-        let expected_r = finfo#env#add_memory_offset gvar xpoffset in
-        let expected = TR.to_option expected_r in
+        let expected = Some (finfo#env#mk_gloc_variable gloc xpoffset) in
         match xprvar with
         | Ok received ->
            XBA.equal_opt_variable

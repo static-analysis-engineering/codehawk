@@ -851,29 +851,23 @@ object (self)
        let gvar =
          self#mk_variable
            (self#varmgr#make_global_variable gloc#address#to_numerical) in
-       let ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
-       if dw#equal gloc#address then
-         begin
-           self#set_variable_name gvar gloc#name;
-           self#set_variable_name ivar (gloc#name ^ "_in");
-           Ok gvar
-         end
-       else
-         tmap
-           ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
-           (fun offset ->
-             let gvar =
-               self#mk_variable
-                 (self#varmgr#make_global_variable
-                    ~size ~offset gloc#address#to_numerical) in
-             let ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
-             let name = gloc#name ^ (memory_offset_to_string offset) in
-             begin
-               self#set_variable_name gvar name;
-               self#set_variable_name ivar (name ^ "_in");
-               gvar
-             end)
-           (gloc#address_memory_offset ~tgtbtype:btype loc (num_constant_expr base))
+       let _ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
+       tmap
+         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
+         (fun offset ->
+           let gvar =
+             self#mk_variable
+               (self#varmgr#make_global_variable
+                  ~size ~offset gloc#address#to_numerical) in
+           let ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
+           let name = gloc#name ^ (memory_offset_to_string offset) in
+           begin
+             self#set_variable_name gvar name;
+             self#set_variable_name ivar (name ^ "_in");
+             gvar
+           end)
+         (gloc#address_memory_offset
+            ~tgtsize:(Some size) ~tgtbtype:btype loc (num_constant_expr base))
     | _ ->
        let _ = memmap#add_location ~size:(Some size) ~btype dw in
        Ok (self#mk_variable (self#varmgr#make_global_variable dw#to_numerical))
@@ -1222,6 +1216,9 @@ object (self)
 
   method get_memval_offset (v:variable_t): memory_offset_t traceresult =
     varmgr#get_memval_offset v
+
+  method get_memvar_dependencies (v: variable_t): variable_t list =
+    varmgr#get_memvar_dependencies v
 
   method get_constant_offsets (v: variable_t): numerical_t list traceresult =
     let offset_r =

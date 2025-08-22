@@ -154,7 +154,7 @@ let thumb_chif_conditionxprs () =
        "0x4f12",
        "44f6251393f87094b9f1910ff94602d8a9f6e1594847a9f6e769484700",
        3,
-       "(gv_0x4d95_in >= 0)")
+       "(gvb_0x4d95_in >= 0)")
     ] in
   begin
     TS.new_testsuite (testname ^ "_thumb_chif_conditionxprs") lastupdated;
@@ -208,7 +208,7 @@ let thumb_instrxdata_conditionxprs () =
        "0x4f12",
        "44f6251393f87094b9f1910ff94602d8a9f6e1594847a9f6e769484700",
        3,
-       "((gv_0x4d95_in <= 145) and (gv_0x4d95_in >= 0))")
+       "((gvb_0x4d95_in <= 145) and (gvb_0x4d95_in >= 0))")
     ] in
   begin
     TS.new_testsuite (testname ^ "_thumb_instrxdata_conditionxprs") lastupdated;

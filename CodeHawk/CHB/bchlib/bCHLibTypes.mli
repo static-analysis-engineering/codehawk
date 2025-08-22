@@ -3618,6 +3618,8 @@ object ('a)
       Returns [Error] if this variable is not a register variable. *)
   method get_register: register_t traceresult
 
+  method get_memvar_dependencies: variable_t list
+
   (** Returns the memory reference associated with this memory variable.
 
       Returns [Error] if this variable is not a memory variable. *)
@@ -4062,6 +4064,8 @@ object
       Returns [Error] if the variable is not found or [var] is not an
       initial-value memory variable. *)
   method get_initial_memory_value_variable: variable_t -> variable_t traceresult
+
+  method get_memvar_dependencies: variable_t -> variable_t list
 
 
   (** {2 Memory offsets} *)
@@ -4943,6 +4947,8 @@ class type function_environment_int =
     method is_unknown_reference: int -> bool traceresult
 
     method has_variable_index_offset: variable_t -> bool
+
+    method get_memvar_dependencies: variable_t -> variable_t list
 
 
     (** {2 Memory offsets} *)

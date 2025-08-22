@@ -3172,7 +3172,24 @@ let translate_arm_instruction
        TR.tfold
          ~ok:(fun (memlhs, memcmds) ->
            let cmds = floc#get_assign_commands_r (Ok memlhs) xrt_r in
-           let defcmds = floc#get_vardef_commands ~defs:[memlhs] ctxtiaddr in
+           let memvardeps = floc#f#env#get_memvar_dependencies memlhs in
+           let usehigh =
+             List.filter (fun v -> not (floc#f#env#is_function_initial_value v))
+               memvardeps in
+           let _ =
+             log_diagnostics_result
+               ~msg:(p2s floc#l#toPretty)
+               ~tag:"translate memlhs storeregister"
+               __FILE__ __LINE__
+               ["memlhs: " ^ (p2s memlhs#toPretty);
+                "memvardeps: "
+                ^ (String.concat
+                     ", " (List.map (fun v -> p2s v#toPretty) memvardeps));
+                "usehigh: "
+                ^ (String.concat
+                     ", " (List.map (fun v -> p2s v#toPretty) usehigh))] in
+           let defcmds =
+             floc#get_vardef_commands ~defs:[memlhs] ~usehigh ctxtiaddr in
            memcmds @ cmds @ defcmds)
          ~error:(fun e ->
            let xrn_r = rn#to_expr floc in
