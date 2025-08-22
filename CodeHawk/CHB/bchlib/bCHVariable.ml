@@ -155,6 +155,16 @@ object (self:'a)
     else
       name
 
+  method get_memvar_dependencies: variable_t list =
+    match denotation with
+    | MemoryVariable (_, _, offset) ->
+       (match offset with
+        | ArrayIndexOffset (x, _) -> Xprt.variables_in_expr x
+        | BasePtrArrayIndexOffset (x, _) -> Xprt.variables_in_expr x
+        | ConstantOffset (_, ArrayIndexOffset (x, _)) -> Xprt.variables_in_expr x
+        | _ -> [])
+    | _ -> []
+
   method private get_memref_type (index: int) (_size: int): btype_t option =
     memrefmgr#get_memory_reference_type index
 
@@ -560,6 +570,12 @@ object (self)
     tfold_default
       (fun var -> var#get_type)
       None
+      (self#get_variable v)
+
+  method get_memvar_dependencies (v: variable_t): variable_t list =
+    tfold_default
+      (fun var -> var#get_memvar_dependencies)
+      []
       (self#get_variable v)
 
   method get_memvar_reference (v: variable_t): memory_reference_int traceresult =

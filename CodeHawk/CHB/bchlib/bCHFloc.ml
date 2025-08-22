@@ -90,15 +90,13 @@ let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
 
-let opt_size_to_string (s: int option) =
-  match s with
-  | Some i -> "size:" ^ (string_of_int i)
-  | _ -> "size:None"
+let opti2s (i: int option) =
+  if Option.is_some i then string_of_int (Option.get i) else "?"
 
-let opt_type_to_string (t: btype_t option) =
-  match t with
-  | Some t -> "btype:" ^ (btype_to_string t)
-  | _ -> "btype:None"
+let _ty2s (ty: btype_t) =
+  if is_unknown_type ty then "?" else btype_to_string ty
+let optty2s (ty: btype_t option) =
+  if Option.is_some ty then btype_to_string (Option.get ty) else "?"
 
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
@@ -665,6 +663,14 @@ object (self)
            ?(size=4)
            (var: variable_t)
            (numoffset: numerical_t): variable_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"get-memory-variable-numoffset"
+        __FILE__ __LINE__
+        ["size: " ^ (string_of_int size);
+         "var: " ^ (p2s var#toPretty);
+         "numoffset: " ^ (numoffset#toString)] in
     let inv = self#inv in
     let mk_memvar memref_r memoffset_r =
       let _ =
@@ -1512,9 +1518,9 @@ object (self)
         ~msg:(p2s self#l#toPretty)
         ~tag:"convert_xpr_to_c_expr"
         __FILE__ __LINE__
-        [(opt_size_to_string size) ^ "; "
-         ^ (opt_type_to_string xtype) ^ "; "
-         ^ "x: " ^ (x2s x)] in
+        ["size: " ^ (opti2s size);
+         "xtype: " ^ (optty2s xtype);
+         "x: " ^ (x2s x)] in
     match xtype with
     | None -> self#convert_xpr_offsets ~size x
     | Some t ->
@@ -1598,8 +1604,8 @@ object (self)
        TR.tmap (fun v -> XVar v) var_r
     | _ ->
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ (opt_size_to_string size) ^ "; "
-              ^ (opt_type_to_string xtype) ^ "; "
+              ^ "size: " ^ (opti2s size) ^ "; "
+              ^ "type: " ^ (optty2s xtype) ^ "; "
               ^ "addr: " ^ (x2s a)
               ^ ": Not yet handled"]
 
@@ -1609,8 +1615,8 @@ object (self)
     | None -> self#convert_variable_offsets ~size v
     | _ ->
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ (opt_size_to_string size) ^ "; "
-              ^ (opt_type_to_string vtype) ^ "; "
+              ^ "size: " ^ (opti2s size) ^ "; "
+              ^ "type: " ^ (optty2s vtype) ^ "; "
               ^ "v: " ^ (p2s v#toPretty)
               ^ ": Not yet implemented"]
 
@@ -1672,14 +1678,22 @@ object (self)
          memref_r memoff_r
     | _ ->
        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ (opt_size_to_string size) ^ "; "
-              ^ (opt_type_to_string vtype) ^ "; "
+              ^ "size: " ^ (opti2s size) ^ "; "
+              ^ "vtype: " ^ (optty2s vtype) ^ "; "
               ^ "addr: " ^ (x2s a)
               ^ ": Not yet handled"]
 
 
   method convert_variable_offsets
            ?(vtype=None) ?(size=None) (v: variable_t): variable_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"convert-variable-offsets"
+        __FILE__ __LINE__
+        ["vtype: " ^ (optty2s vtype);
+         "size: " ^ (opti2s size);
+         "v: " ^ (p2s v#toPretty)] in
     if self#env#is_basevar_memory_variable v then
       let basevar_r = self#env#get_memvar_basevar v in
       let offset_r = self#env#get_memvar_offset v in
@@ -1737,6 +1751,12 @@ object (self)
 
   method convert_value_offsets
            ?(size=None) (v: variable_t): variable_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"convert-value-offsets"
+        __FILE__ __LINE__
+        ["size: " ^ (opti2s size); "v: " ^ (p2s v#toPretty)] in
     if self#env#is_basevar_memory_value v then
       let basevar_r = self#env#get_memval_basevar v in
       let offset_r = self#env#get_memval_offset v in
@@ -1812,6 +1832,12 @@ object (self)
 
   method convert_xpr_offsets
            ?(xtype=None) ?(size=None) (x: xpr_t): xpr_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"convert-xpr-offsets"
+        __FILE__ __LINE__
+        ["xtype: " ^ (optty2s xtype); "size: " ^ (opti2s size); "x: " ^ (x2s x)] in
     let rec aux exp =
       match exp with
       | XVar v when self#env#is_basevar_memory_value v ->
@@ -2349,41 +2375,51 @@ object (self)
               rhs
          | _ -> rhs in
 
-       let rhs =
-         (* if rhs is a composite symbolic expression, create a new variable
+       if self#f#env#is_global_variable lhs then
+         let _ =
+           log_diagnostics_result
+             ~msg:(p2s self#l#toPretty)
+             ~tag:("get_assign_cmds_r: abstract global variable")
+             __FILE__ __LINE__
+             ["lhs: " ^ (p2s lhs#toPretty); "rhs: " ^ (x2s rhs)] in
+         [ABSTRACT_VARS [lhs]]
+
+       else
+         let rhs =
+           (* if rhs is a composite symbolic expression, create a new variable
             for it *)
-         if self#is_composite_symbolic_value rhs then
-           XVar (self#env#mk_symbolic_value rhs)
-         else
-           rhs in
-       let reqN () = self#env#mk_num_temp in
-       let reqC = self#env#request_num_constant in
-       let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
-       let cmds = rhscmds @ [ASSIGN_NUM (lhs, rhs_c)] in
-       let fndata = self#f#get_function_data in
-       match fndata#get_regvar_intro self#ia with
-       | Some rvi when rvi.rvi_cast && Option.is_some rvi.rvi_vartype ->
-          TR.tfold
-            ~ok:(fun reg ->
-              let ty = Option.get rvi.rvi_vartype in
-              let tcvar =
-                self#f#env#mk_typecast_value self#cia rvi.rvi_name ty reg in
-              begin
-                log_result __FILE__ __LINE__
-                  ["Create typecast var for "
-                   ^ (register_to_string reg)
-                   ^ " at "
-                   ^ self#cia];
-                cmds @ [ASSIGN_NUM (lhs, NUM_VAR tcvar)]
-              end)
-            ~error:(fun e ->
-              begin
-                log_error_result __FILE__ __LINE__
-                  ("expected a register variable" :: e);
-                cmds
-              end)
-            (self#f#env#get_register lhs)
-       | _ -> cmds
+           if self#is_composite_symbolic_value rhs then
+             XVar (self#env#mk_symbolic_value rhs)
+           else
+             rhs in
+         let reqN () = self#env#mk_num_temp in
+         let reqC = self#env#request_num_constant in
+         let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
+         let cmds = rhscmds @ [ASSIGN_NUM (lhs, rhs_c)] in
+         let fndata = self#f#get_function_data in
+         match fndata#get_regvar_intro self#ia with
+         | Some rvi when rvi.rvi_cast && Option.is_some rvi.rvi_vartype ->
+            TR.tfold
+              ~ok:(fun reg ->
+                let ty = Option.get rvi.rvi_vartype in
+                let tcvar =
+                  self#f#env#mk_typecast_value self#cia rvi.rvi_name ty reg in
+                begin
+                  log_result __FILE__ __LINE__
+                    ["Create typecast var for "
+                     ^ (register_to_string reg)
+                     ^ " at "
+                     ^ self#cia];
+                  cmds @ [ASSIGN_NUM (lhs, NUM_VAR tcvar)]
+                end)
+              ~error:(fun e ->
+                begin
+                  log_error_result __FILE__ __LINE__
+                    ("expected a register variable" :: e);
+                  cmds
+                end)
+              (self#f#env#get_register lhs)
+         | _ -> cmds
 
    (* Note: recording of loads and stores is performed by the different
       architectures directly in FnXXXDictionary.*)
@@ -2447,6 +2483,15 @@ object (self)
        let op_args = get_rhs_op_args rhs in
        [OPERATION ({ op_name = unknown_write_symbol; op_args = op_args});
 	ASSIGN_NUM (lhs, rhs)]
+
+     else if self#f#env#is_global_variable lhs then
+       let _ =
+         log_diagnostics_result
+           ~msg:(p2s self#l#toPretty)
+           ~tag:("get_assign_cmds: abstract global variable")
+           __FILE__ __LINE__
+           ["lhs: " ^ (p2s lhs#toPretty); "rhs: " ^ (x2s rhs_expr)] in
+       [ABSTRACT_VARS [lhs]]
 
      else
        rhsCmds @ [ASSIGN_NUM (lhs, rhs)]
