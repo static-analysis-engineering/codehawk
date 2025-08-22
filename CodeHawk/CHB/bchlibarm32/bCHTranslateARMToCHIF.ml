@@ -2552,13 +2552,12 @@ let translate_arm_instruction
              TR.tfold
                ~ok:(fun rhsvar ->
                  let rhsreg = TR.tget_ok (finfo#env#get_register rhsvar) in
-                 let _ =
-                   if floc#has_initial_value rhsvar then
-                     finfo#stackframe#add_register_spill
-                       ~offset:off rhsreg floc#cia in
                  let stackop = arm_sp_deref ~with_offset:off WR in
                  TR.tfold
                    ~ok:(fun (stacklhs, stacklhscmds) ->
+                     let _ =
+                       if floc#has_initial_value rhsvar then
+                         finfo#save_register stacklhs floc#cia rhsreg in
                      let rhsexpr = rewrite_expr floc (XVar rhsvar) in
                      let cmds1 = floc#get_assign_commands stacklhs rhsexpr in
                      let usehigh = get_use_high_vars [rhsexpr] in
