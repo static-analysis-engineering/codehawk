@@ -4778,6 +4778,8 @@ class type function_environment_int =
 
     (** {2 Memory variables} *)
 
+    method mk_global_variable_address: doubleword_int -> xpr_t traceresult
+
     (** [mk_global_variable offset] attempts to find a containing global
         location for [offset]. If successful a memory offset will be computed
         for that offset relative to the address of the containing location

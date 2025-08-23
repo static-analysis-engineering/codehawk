@@ -840,6 +840,22 @@ object (self)
          end
     end
 
+  method mk_global_variable_address (dw: doubleword_int): xpr_t traceresult =
+    match memmap#containing_location dw with
+    | Some gloc when dw#equal gloc#address ->
+       let gvar =
+         self#mk_variable (self#varmgr#make_global_variable dw#to_numerical) in
+       let ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
+       begin
+         self#set_variable_name gvar gloc#name;
+         self#set_variable_name ivar (gloc#name ^ "_in");
+         Ok (XOp ((Xf "addressofvar"), [XVar gvar]))
+       end
+    | _ ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              ^ dw#to_hex_string
+              ^ " is not the address of a known global variable"]
+
   method mk_global_variable
            ?(size=4)
            ?(btype=t_unknown)
@@ -848,10 +864,6 @@ object (self)
     let dw = numerical_mod_to_doubleword base in
     match memmap#containing_location dw with
     | Some gloc ->
-       let gvar =
-         self#mk_variable
-           (self#varmgr#make_global_variable gloc#address#to_numerical) in
-       let _ivar = self#mk_variable (varmgr#make_initial_memory_value gvar) in
        tmap
          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
          (fun offset ->

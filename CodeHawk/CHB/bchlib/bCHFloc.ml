@@ -1273,7 +1273,7 @@ object (self)
         __FILE__ __LINE__
         ["addrvalue: " ^ (x2s addrvalue);
          "btype: " ^ (btype_to_string btype);
-         "size: " ^ (if Option.is_some size then (string_of_int (Option.get size)) else "?")] in
+         "size: " ^ (opti2s size)] in
 
     match self#normalize_addrvalue addrvalue with
     | XOp ((Xf "addressofvar"), [XVar v]) when self#env#is_global_variable v ->
@@ -1341,7 +1341,8 @@ object (self)
           (TR.tmap
              ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
              (fun offset -> self#f#env#mk_gloc_variable gloc offset)
-             (gloc#address_memory_offset ~tgtsize:size ~tgtbtype:btype self#l addrvalue))
+             (gloc#address_memory_offset
+                ~tgtsize:size ~tgtbtype:btype self#l addrvalue))
        | _ ->
           let (memref_r, memoff_r) = self#decompose_memaddr addrvalue in
           TR.tmap2
@@ -2362,15 +2363,7 @@ object (self)
          | XConst (IntConst n) when n#gt CHNumerical.numerical_zero ->
             let dw = numerical_mod_to_doubleword n in
             if memmap#has_location dw then
-              TR.tfold
-                ~ok:(fun gv -> XOp ((Xf "addressofvar"), [XVar gv]))
-                ~error:(fun e ->
-                  begin
-                    log_result
-                      ~tag:"assign global variable address" __FILE__ __LINE__ e;
-                    rhs
-                  end)
-                (self#f#env#mk_global_variable self#l n)
+              TR.tvalue (self#f#env#mk_global_variable_address dw) ~default:rhs
             else
               rhs
          | _ -> rhs in
