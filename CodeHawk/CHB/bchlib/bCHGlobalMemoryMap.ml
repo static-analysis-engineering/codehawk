@@ -484,7 +484,8 @@ object (self)
         ~msg:(p2s loc#toPretty)
         ~tag:"mmap:address-offset-memory-offset"
         __FILE__ __LINE__
-        ["xoffset: " ^ (x2s xoffset)
+        ["gloc: " ^ self#address#to_hex_string
+         ^ "; xoffset: " ^ (x2s xoffset)
          ^ "; tgtsize: " ^ (opti2s tgtsize)
          ^ "; tgtbtype: " ^ (ty2s tgtbtype)] in
     match xoffset with
@@ -517,7 +518,9 @@ object (self)
        else
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
                 ^ (btype_to_string self#btype)
-                ^ " is not known to be a struct or array"]
+                ^ " is not known to be a struct or array";
+                "gloc_address: " ^ self#address#to_hex_string;
+                "xoffset: " ^ (x2s xoffset)]
 
   method address_memory_offset
            ?(tgtsize=None)
