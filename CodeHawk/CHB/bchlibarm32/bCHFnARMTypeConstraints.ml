@@ -1684,7 +1684,8 @@ object (self)
          (match rn#get_kind with
           | ARMRegBitSequence (r, _, _) ->
              let rnreg = register_of_arm_register r in
-             let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
+             let rnvar = Ok (floc#env#mk_arm_register_variable r) in
+             let rndefs = get_variable_rdefs_r rnvar in
              begin
                (List.iter (fun rnrdef ->
                     let rnaddr = rnrdef#getBaseName in
