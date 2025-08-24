@@ -116,7 +116,7 @@ let _ =
       ("BL-sig-rv", "enable");
       ("BXLR-sig-rv", "enable");
       ("LDR-array", "enable");
-      ("LDR-memop-tc", "disable");
+      ("LDR-memop-tc", "enable");
       ("LDR-stack-addr", "enable");
       ("LDR-struct-field", "enable");
       ("LDRH-memop-tc", "disable");
