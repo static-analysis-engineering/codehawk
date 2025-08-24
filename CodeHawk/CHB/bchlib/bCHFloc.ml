@@ -2368,11 +2368,36 @@ object (self)
               rhs
          | _ -> rhs in
 
+       let is_rhs_volatile =
+         let rhsvars = Xprt.variables_in_expr rhs in
+         List.exists (fun v ->
+             if self#f#env#is_global_variable v then
+               TR.tfold_default
+                 (fun gvaddr ->
+                   if memmap#has_location gvaddr then
+                     let gloc = memmap#get_location gvaddr in
+                     gloc#is_volatile
+                   else
+                     false)
+                 false
+                 (self#f#env#get_global_variable_address v)
+             else
+               false) rhsvars in
+
        if self#f#env#is_global_variable lhs then
          let _ =
            log_diagnostics_result
              ~msg:(p2s self#l#toPretty)
              ~tag:("get_assign_cmds_r: abstract global variable")
+             __FILE__ __LINE__
+             ["lhs: " ^ (p2s lhs#toPretty); "rhs: " ^ (x2s rhs)] in
+         [ABSTRACT_VARS [lhs]]
+
+       else if is_rhs_volatile then
+         let _ =
+           log_diagnostics_result
+             ~msg:(p2s self#l#toPretty)
+             ~tag:("get_assign_cmds_r: abstract volatile assignment")
              __FILE__ __LINE__
              ["lhs: " ^ (p2s lhs#toPretty); "rhs: " ^ (x2s rhs)] in
          [ABSTRACT_VARS [lhs]]

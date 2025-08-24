@@ -157,6 +157,8 @@ object (self)
     | Ok ty -> is_scalar ty
     | _ -> false
 
+  method is_volatile: bool = BCHBCTypeUtil.is_volatile self#btype
+
   method is_typed: bool = not (btype_equal self#btype t_unknown)
 
   method size: int option = grec.gloc_size

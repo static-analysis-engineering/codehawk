@@ -116,10 +116,10 @@ let _ =
       ("BL-sig-rv", "enable");
       ("BXLR-sig-rv", "enable");
       ("LDR-array", "enable");
-      ("LDR-memop-tc", "enable");
+      ("LDR-memop-tc", "disable");
       ("LDR-stack-addr", "enable");
       ("LDR-struct-field", "enable");
-      ("LDRH-memop-tc", "enable");
+      ("LDRH-memop-tc", "disable");
       ("POP-sig-rv", "enable");
       ("STR-memop-tc", "enable")
     ]

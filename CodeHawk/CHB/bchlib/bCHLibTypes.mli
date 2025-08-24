@@ -4398,6 +4398,7 @@ class type global_location_int =
     method address: doubleword_int
     method btype: btype_t
     method size: int option
+    method is_volatile: bool
     method is_readonly: bool
     method is_initialized: bool
     method is_typed: bool
