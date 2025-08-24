@@ -1128,6 +1128,19 @@ object (self)
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             xtype_r);
 
+       (* LDRH rt, ...  : X_rt <: integer type *)
+         (let tc = mk_int_type_constant SignedNeutral 16 in
+          let tctypeterm = mk_cty_term tc in
+          let rttypeterm = mk_vty_term rttypevar in
+          let rule = "LDRH-def-lhs" in
+          if fndata#is_typing_rule_enabled iaddr rule then
+            begin
+              log_subtype_constraint __LINE__ rule tctypeterm rttypeterm;
+              store#add_subtype_constraint faddr iaddr rule tctypeterm rttypeterm
+            end
+          else
+            log_subtype_rule_disabled __LINE__ rule tctypeterm rttypeterm);
+
          (* LDRH rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdef = get_variable_rdefs_r (rn#to_variable floc) in
           let rnreg = rn#to_register in
