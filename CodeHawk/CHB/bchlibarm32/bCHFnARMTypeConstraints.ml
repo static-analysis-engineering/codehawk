@@ -1715,8 +1715,8 @@ object (self)
          (regvar_type_introduction "UXTH" rd);
          (regvar_linked_to_exit "UXTH" rd);
 
-         (let opttc = mk_btype_constraint rdtypevar t_short in
-          let rule = "UBFX-def-lhs" in
+         (let opttc = mk_btype_constraint rdtypevar t_ushort in
+          let rule = "UXTH-def-lhs" in
           (match opttc with
            | Some tc ->
               if fndata#is_typing_rule_enabled iaddr rule then
