@@ -1564,6 +1564,10 @@ class type function_data_int =
         returns the number of remaining call sites.*)
     method remove_callsite: int
 
+    method set_reglhs_types: ((register_t * string * btype_t option) list) -> unit
+
+    method set_stack_offset_types: ((int * btype_t option) list) -> unit
+
     (* accessors *)
     method get_names: string list  (* raw names *)
     method get_function_name: string  (* demangled or combination of all names *)
@@ -1575,6 +1579,10 @@ class type function_data_int =
     method get_inlined_blocks: doubleword_int list
     method get_function_type: btype_t
     method get_path_contexts: (string * string list) list
+    method get_reglhs_types: (register_t * string * btype_t option) list
+    method get_reglhs_type: register_t -> string -> btype_t option
+    method get_stack_offset_types: (int * btype_t option) list
+    method get_stack_offset_type: int -> btype_t option
 
     (* predicates *)
     method has_function_type: bool
