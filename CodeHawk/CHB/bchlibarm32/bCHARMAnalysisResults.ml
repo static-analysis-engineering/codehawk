@@ -284,7 +284,7 @@ object (self)
   val typeconstraintstore = mk_type_constraint_store ()
 
   method record_results ?(save=true) (fn:arm_assembly_function_int) =
-    let fndata = new fn_analysis_results_t fn in
+    let fnadata = new fn_analysis_results_t fn in
     let vard = (get_function_info fn#get_address)#env#varmgr#vard in
     let typeconstraints =
       mk_arm_fn_type_constraints typeconstraintstore fn in
@@ -292,18 +292,20 @@ object (self)
     begin
       (if save then
          let faddr = fn#get_address#to_hex_string in
+         let fndata = BCHFunctionData.functions_data#get_function fn#get_address in
          begin
-           fndata#write_xml node;
            typeconstraints#record_type_constraints;
-           fndata#write_xml_register_types node
-             (typeconstraintstore#resolve_reglhs_types faddr);
-           fndata#write_xml_stack_types node
+           fndata#set_reglhs_types (typeconstraintstore#resolve_reglhs_types faddr);
+           fndata#set_stack_offset_types
              (typeconstraintstore#resolve_local_stack_lhs_types faddr);
+           fnadata#write_xml_register_types node fndata#get_reglhs_types;
+           fnadata#write_xml_stack_types node fndata#get_stack_offset_types;
+           fnadata#write_xml node;
            node#setAttribute "a" faddr;
            save_app_function_results_file faddr node;
            save_vars faddr vard
          end );
-           (* (if save then fndata#save); *)
+           (* (if save then fnadata#save); *)
       H.add table fn#get_address#to_hex_string fn
     end
 
