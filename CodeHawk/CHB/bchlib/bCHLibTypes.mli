@@ -6123,11 +6123,13 @@ class type floc_int =
              -> variable_t
              -> variable_t traceresult
 
+         (*
     method convert_addr_to_c_pointed_to_variable:
              ?size:int option
              -> ?vtype:btype_t option
              -> xpr_t
              -> variable_t traceresult
+          *)
 
     method convert_value_offsets:
              ?size:int option -> variable_t -> variable_t traceresult
