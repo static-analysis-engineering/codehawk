@@ -6111,41 +6111,6 @@ class type floc_int =
      *)
     method decompose_address: xpr_t -> (memory_reference_int * memory_offset_t)
 
-    method convert_xpr_to_c_expr:
-             ?size:int option -> ?xtype:btype_t option -> xpr_t -> xpr_t traceresult
-
-    method convert_addr_to_c_pointed_to_expr:
-             ?size:int option -> ?xtype:btype_t option -> xpr_t -> xpr_t traceresult
-
-    method convert_var_to_c_variable:
-             ?size:int option
-             -> ?vtype:btype_t option
-             -> variable_t
-             -> variable_t traceresult
-
-         (*
-    method convert_addr_to_c_pointed_to_variable:
-             ?size:int option
-             -> ?vtype:btype_t option
-             -> xpr_t
-             -> variable_t traceresult
-          *)
-
-    method convert_value_offsets:
-             ?size:int option -> variable_t -> variable_t traceresult
-
-    method convert_variable_offsets:
-             ?vtype:btype_t option
-             -> ?size:int option
-             -> variable_t
-             -> variable_t traceresult
-
-    method convert_xpr_offsets:
-             ?xtype:btype_t option -> ?size:int option -> xpr_t -> xpr_t traceresult
-
-    (* returns the variable associated with the address expression *)
-    method get_lhs_from_address: xpr_t -> variable_t
-
     (* returns the value of the bridge variable for a given stack
        parameter at this instruction *)
     method get_bridge_variable_value: int -> variable_t -> xpr_t
@@ -6163,9 +6128,16 @@ class type floc_int =
              -> xpr_t               (** address value *)
              -> variable_t traceresult
 
+    (* returns the variable associated with the address expression
+       Deprecated. To be merged with get_var_at_address
+     *)
+    method get_lhs_from_address: xpr_t -> variable_t
+
     method get_variable_type: variable_t -> btype_t traceresult
 
     method get_xpr_type: xpr_t -> btype_t traceresult
+
+
 
     (** {2 Predicates on variables}*)
 
@@ -6185,6 +6157,33 @@ class type floc_int =
     (* returns true if the given variable evaluates to an initial value of a
        register *)
     method has_initial_value: variable_t -> bool
+
+
+    (** {1 Conversion to c expressions / variables}*)
+
+    method xpr_to_cxpr:
+             ?size:int option -> ?xtype:btype_t option -> xpr_t -> xpr_t traceresult
+
+    method addr_to_ctgt_xpr:
+             ?size:int option -> ?xtype:btype_t option -> xpr_t -> xpr_t traceresult
+
+    method var_to_cvar:
+             ?size:int option
+             -> ?vtype:btype_t option
+             -> variable_t
+             -> variable_t traceresult
+
+    method convert_value_offsets:
+             ?size:int option -> variable_t -> variable_t traceresult
+
+    method convert_variable_offsets:
+             ?vtype:btype_t option
+             -> ?size:int option
+             -> variable_t
+             -> variable_t traceresult
+
+    method convert_xpr_offsets:
+             ?xtype:btype_t option -> ?size:int option -> xpr_t -> xpr_t traceresult
 
 
     (** {1 Conditional jumps}*)
