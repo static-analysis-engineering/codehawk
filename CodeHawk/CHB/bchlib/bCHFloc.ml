@@ -1303,7 +1303,7 @@ object (self)
     | XOp (XPlus, [XOp ((Xf "addressofvar"), [XVar v]); xoff])
          when self#f#env#is_global_variable v ->
        let gvaddr_r = self#f#env#get_global_variable_address v in
-       let cxoff_r = self#convert_xpr_to_c_expr xoff in
+       let cxoff_r = self#xpr_to_cxpr xoff in
        TR.tbind
          ~msg:(eloc __LINE__)
          (fun gvaddr ->
@@ -1351,6 +1351,35 @@ object (self)
             (fun memref memoff ->
               self#f#env#mk_offset_memory_variable memref memoff)
             memref_r memoff_r
+
+  (* deprecated. to be merged with get_var_at_address *)
+   method get_lhs_from_address (xpr:xpr_t) =
+     let xpr = self#inv#rewrite_expr xpr in
+     let default () =
+       self#env#mk_memory_variable
+         (self#env#mk_unknown_memory_reference "lhs-from-address")
+         numerical_zero in
+     match xpr with
+     | XConst (IntConst n) when n#gt numerical_zero ->
+        log_tfold_default
+          (mk_tracelog_spec
+             ~tag:"get_lhs_from_address"
+             (self#cia ^ ": constant: " ^ n#toString))
+          (fun base ->
+            if system_info#get_image_base#le base then
+              log_tfold_default
+                (log_error
+                   "get_lhs_from_address"
+                   (self#cia ^ ": constant: " ^ n#toString))
+                (fun v -> v)
+                (default ())
+	        (self#env#mk_global_variable self#l n)
+            else
+              default ())
+          (default ())
+          (numerical_to_doubleword n)
+     | _ ->
+        default ()          
 
   method get_variable_type (v: variable_t): btype_t traceresult =
     let is_zero (x: xpr_t) =
@@ -1504,12 +1533,12 @@ object (self)
       | None -> Error [(elocm __LINE__) ^ "variable: " ^ (x2s (XVar v))]
       | Some t -> Ok t
 
-  method convert_xpr_to_c_expr
+  method xpr_to_cxpr
            ?(size=None) ?(xtype=None) (x: xpr_t): xpr_t traceresult =
     let _ =
       log_diagnostics_result
         ~msg:(p2s self#l#toPretty)
-        ~tag:"convert_xpr_to_c_expr"
+        ~tag:"xpr_to_cxpr"
         __FILE__ __LINE__
         ["size: " ^ (opti2s size);
          "xtype: " ^ (optty2s xtype);
@@ -1523,7 +1552,7 @@ object (self)
           Ok (int_constant_expr (-1))
        | _ -> self#convert_xpr_offsets ~xtype ~size x
 
-  method convert_addr_to_c_pointed_to_expr
+  method addr_to_ctgt_xpr
            ?(size=None) ?(xtype=None) (a: xpr_t): xpr_t traceresult =
     let vars = vars_as_positive_terms a in
     let knownpointers =
@@ -1533,7 +1562,7 @@ object (self)
         ) vars in
     let _ =
       log_diagnostics_result
-        ~tag:"convert_addr_to_c_pointed_to_expr"
+        ~tag:"addr_to_ctgt_xpr"
         __FILE__ __LINE__
         [(p2s self#l#toPretty);
          "known pointers: ";
@@ -1597,7 +1626,7 @@ object (self)
               ^ "addr: " ^ (x2s a)
               ^ ": Not yet handled"]
 
-  method convert_var_to_c_variable
+  method var_to_cvar
            ?(size=None) ?(vtype=None) (v: variable_t): variable_t traceresult =
     match vtype with
     | None -> self#convert_variable_offsets ~size v
@@ -2136,34 +2165,6 @@ object (self)
                 STR ")"]);
 	 default ()
        end
-
-   method get_lhs_from_address (xpr:xpr_t) =
-     let xpr = self#inv#rewrite_expr xpr in
-     let default () =
-       self#env#mk_memory_variable
-         (self#env#mk_unknown_memory_reference "lhs-from-address")
-         numerical_zero in
-     match xpr with
-     | XConst (IntConst n) when n#gt numerical_zero ->
-        log_tfold_default
-          (mk_tracelog_spec
-             ~tag:"get_lhs_from_address"
-             (self#cia ^ ": constant: " ^ n#toString))
-          (fun base ->
-            if system_info#get_image_base#le base then
-              log_tfold_default
-                (log_error
-                   "get_lhs_from_address"
-                   (self#cia ^ ": constant: " ^ n#toString))
-                (fun v -> v)
-                (default ())
-	        (self#env#mk_global_variable self#l n)
-            else
-              default ())
-          (default ())
-          (numerical_to_doubleword n)
-     | _ ->
-        default ()
 
    method get_bridge_variable_value (par_index:int) (var:variable_t) =
      if self#f#has_constant var then

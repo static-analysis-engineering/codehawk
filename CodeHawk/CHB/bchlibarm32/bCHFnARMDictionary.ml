@@ -380,7 +380,7 @@ object (self)
       let cbutag = "cbu:" ^ (string_of_int (argslen + 4)) in
       let tags = xtag :: ((List.tl tags) @ [vbutag; xbutag; cbutag]) in
       let xx = TR.tmap rewrite_expr x in
-      let cx = TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xx in
+      let cx = TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) xx in
       let args =
         args
         @ [index_variable v;
@@ -557,8 +557,8 @@ object (self)
             should have been made position independent for local variables.*)
          let tcond = rewrite_expr txpr in
          let fcond = rewrite_expr fxpr in
-         let ctcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) tcond in
-         let cfcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) fcond in
+         let ctcond_r = floc#xpr_to_cxpr ~size:(Some 4) tcond in
+         let cfcond_r = floc#xpr_to_cxpr ~size:(Some 4) fcond in
          let rdefs = (get_all_rdefs txpr) @ (get_all_rdefs tcond) in
          let argslen = List.length args in
          let xtag = "xxcc" ^ (string_repeat "r" (List.length rdefs)) in
@@ -699,7 +699,7 @@ object (self)
                         (floc#get_var_at_address ~btype:(ptr_deref ptype) xx)
               else
                 xx in
-            let cx_r = floc#convert_xpr_to_c_expr ~xtype:(Some ptype) xx in
+            let cx_r = floc#xpr_to_cxpr ~xtype:(Some ptype) xx in
             let rdef = get_rdef_r xvar_r in
             (xx :: xprs,
              cx_r :: cxprs_r,
@@ -796,7 +796,7 @@ object (self)
          let xxrm_r = TR.tmap rewrite_expr xrm_r in
          let rresult_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let _ =
            TR.tfold_default
              (fun r -> ignore (get_string_reference floc r)) () rresult_r in
@@ -829,7 +829,7 @@ object (self)
          let xxrm_r = TR.tmap rewrite_expr xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let _ =
            TR.tfold_default
              (fun r -> ignore (get_string_reference floc r)) () rresult_r in
@@ -849,7 +849,7 @@ object (self)
          let vrd_r = rd#to_variable floc in
          let ximm_r = imm#to_expr floc in
          let caddr_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) ximm_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) ximm_r in
          let _ =
            TR.tfold_default
              (fun x -> ignore (get_string_reference floc x)) () ximm_r in
@@ -878,7 +878,7 @@ object (self)
              xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -935,7 +935,7 @@ object (self)
            TR.tmap2 (fun xrn xrm -> XOp (XBAnd, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -958,7 +958,7 @@ object (self)
              xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -980,7 +980,7 @@ object (self)
            TR.tmap2 (fun xrn xrm -> XOp (XBXor, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -1007,7 +1007,7 @@ object (self)
          let result_r = TR.tmap (fun xrm -> XOp (XBNot, [xrm])) xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs = [get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
          let useshigh = [get_def_use_high_r vrd_r] in
@@ -1027,7 +1027,7 @@ object (self)
          let result_r =
            TR.tmap2 (fun xrn xrm -> XOp (XBOr, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
-         let cresult_r = TR.tbind floc#convert_xpr_to_c_expr rresult_r in
+         let cresult_r = TR.tbind floc#xpr_to_cxpr rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -1113,7 +1113,7 @@ object (self)
            let xrn_r = indexregop#to_expr floc in
            let xxrn_r = TR.tmap rewrite_expr xrn_r in
            let cxrn_r =
-             TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xxrn_r in
+             TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) xxrn_r in
            let rdefs = (get_rdef_r xrn_r) :: (get_all_rdefs_r xxrn_r) in
            let (tagstring, args) =
              mk_instrx_data_r
@@ -1142,8 +1142,8 @@ object (self)
             should have been made position independent for local variables.*)
          let tcond = rewrite_expr txpr in
          let fcond = rewrite_expr fxpr in
-         let ctcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) tcond in
-         let cfcond_r = floc#convert_xpr_to_c_expr ~size:(Some 4) fcond in
+         let ctcond_r = floc#xpr_to_cxpr ~size:(Some 4) tcond in
+         let cfcond_r = floc#xpr_to_cxpr ~size:(Some 4) fcond in
          let csetter_addr_r = string_to_doubleword csetter in
          let csetter_instr_r =
            TR.tbind get_arm_assembly_instruction csetter_addr_r in
@@ -1189,7 +1189,7 @@ object (self)
          let xr0_r = r0_op#to_expr floc in
          let xxr0_r = TR.tmap rewrite_expr xr0_r in
          let xxr0_r = TR.tmap (rewrite_in_cc_context floc c) xxr0_r in
-         let cxr0_r = TR.tbind floc#convert_xpr_to_c_expr xxr0_r in
+         let cxr0_r = TR.tbind floc#xpr_to_cxpr xxr0_r in
          let (tagstring, args) = mk_instrx_data_r () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) = add_return_value tags args xr0_r xxr0_r cxr0_r in
@@ -1267,7 +1267,7 @@ object (self)
            TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
          let result_r = TR.tmap rewrite_expr xresult_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) result_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) result_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r result_r) in
          let xprs_r = [xrn_r; xrm_r; xresult_r; result_r] in
@@ -1503,7 +1503,7 @@ object (self)
                let memrhs_r = memop#to_expr floc in
                let rmemrhs_r = TR.tmap rewrite_expr memrhs_r in
                let cmemrhs_r =
-                 TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rmemrhs_r in
+                 TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rmemrhs_r in
                (mems @ [memrhs_r],
                 rmems @ [rmemrhs_r],
                 cmems @ [cmemrhs_r],
@@ -1520,7 +1520,7 @@ object (self)
                TR.tmap rewrite_expr xaddr_r) in
          let cxaddrs_r =
            List.map (fun xaddr_r ->
-               TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xaddr_r)
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) xaddr_r)
              xaddrs_r in
          let rdefs = List.map get_rdef_r (baserhs_r :: memrhss_r) in
          let uses = List.map get_def_use_high_r (baselhs_r :: lhsvars_rl) in
@@ -1558,7 +1558,7 @@ object (self)
                let memrhs_r = memop#to_expr floc in
                let rmemrhs_r = TR.tmap rewrite_expr memrhs_r in
                let cmemrhs_r =
-                 TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rmemrhs_r in
+                 TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rmemrhs_r in
                (mems @ [memrhs_r],
                 rmems @ [rmemrhs_r],
                 cmems @ [cmemrhs_r],
@@ -1575,7 +1575,7 @@ object (self)
                TR.tmap rewrite_expr xaddr_r) in
          let cxaddrs_r =
            List.map (fun xaddr_r ->
-               TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xaddr_r)
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) xaddr_r)
              xaddrs_r in
          let rdefs = List.map get_rdef_r (baserhs_r :: memrhss_r) in
          let uses = List.map get_def_use_high_r (baselhs_r :: lhsvars_rl) in
@@ -1665,9 +1665,9 @@ object (self)
          let uses = [get_def_use_r vrt_r] in
          let useshigh = [get_def_use_high_r vrt_r] in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
-         let cxrmem_r = TR.tbind floc#convert_xpr_to_c_expr xrmem_r in
+         let cxrmem_r = TR.tbind floc#xpr_to_cxpr xrmem_r in
          let cxrmem_r =
            if Result.is_ok cxrmem_r then
              cxrmem_r
@@ -1678,7 +1678,7 @@ object (self)
                  ~tag:"LDR:fall-back address conversion"
                  __FILE__ __LINE__
                  ["xxaddr: " ^ (x_r2s xxaddr_r)] in
-             TR.tbind floc#convert_addr_to_c_pointed_to_expr xxaddr_r in
+             TR.tbind floc#addr_to_ctgt_xpr xxaddr_r in
          let _ =
            TR.tfold_default
              (fun xrmem -> ignore (get_string_reference floc xrmem)) () xrmem_r in
@@ -1729,10 +1729,10 @@ object (self)
          let uses = [get_def_use_r vrt_r] in
          let useshigh = [get_def_use_high_r vrt_r] in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
          let cxrmem_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 1)) xrmem_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 1)) xrmem_r in
          let cxrmem_r =
            if Result.is_ok cxrmem_r then
              cxrmem_r
@@ -1744,7 +1744,7 @@ object (self)
                  __FILE__ __LINE__
                  ["xxaddr: " ^ (x_r2s xxaddr_r)] in
              TR.tbind
-               (floc#convert_addr_to_c_pointed_to_expr ~size:(Some 1)) xxaddr_r in
+               (floc#addr_to_ctgt_xpr ~size:(Some 1)) xxaddr_r in
          let _ =
            floc#memrecorder#record_load_r
              ~signed:false
@@ -1857,9 +1857,9 @@ object (self)
          let uses = [get_def_use_r vrt_r] in
          let useshigh = [get_def_use_high_r vrt_r] in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
-         let cxrmem_r = TR.tbind floc#convert_xpr_to_c_expr xrmem_r in
+         let cxrmem_r = TR.tbind floc#xpr_to_cxpr xrmem_r in
          let cxrmem_r =
            if Result.is_ok cxrmem_r then
              cxrmem_r
@@ -1870,7 +1870,7 @@ object (self)
                  ~tag:"LDREX:fall-back address conversion"
                  __FILE__ __LINE__
                  ["xxaddr: " ^ (x_r2s xxaddr_r)] in
-             TR.tbind floc#convert_addr_to_c_pointed_to_expr xxaddr_r in
+             TR.tbind floc#addr_to_ctgt_xpr xxaddr_r in
          let _ =
            TR.tfold_default
              (fun xrmem -> ignore (get_string_reference floc xrmem)) () xrmem_r in
@@ -1920,15 +1920,15 @@ object (self)
          let uses = [get_def_use_r vrt_r] in
          let useshigh = [get_def_use_high_r vrt_r] in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
          let cxrmem_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 2)) xrmem_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 2)) xrmem_r in
          let cxrmem_r =
            if Result.is_ok cxrmem_r then
              cxrmem_r
            else
-             TR.tbind floc#convert_addr_to_c_pointed_to_expr xxaddr_r in
+             TR.tbind floc#addr_to_ctgt_xpr xxaddr_r in
          let _ =
            floc#memrecorder#record_load_r
              ~signed:false
@@ -2066,7 +2066,7 @@ object (self)
            TR.tmap2 (fun xrn xrm -> XOp (XLsl, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -2092,7 +2092,7 @@ object (self)
            TR.tmap2 (fun xrn xrm -> XOp (XLsr, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -2135,7 +2135,7 @@ object (self)
                            let p = if inverse then XOp (XLNot, [p]) else p in
                            let rdefs = get_all_rdefs p in
                            let xp = rewrite_expr p in
-                           let cxp_r = floc#convert_xpr_to_c_expr ~size:(Some 4) xp in
+                           let cxp_r = floc#xpr_to_cxpr ~size:(Some 4) xp in
                            let (tagstring, args) =
                              mk_instrx_data_r
                                ~vars_r:[lhs_r]
@@ -2156,7 +2156,7 @@ object (self)
                        (match optpredicate with
                         | Some p ->
                            let xp = rewrite_expr p in
-                           let cxp_r = floc#convert_xpr_to_c_expr ~size:(Some 4) xp in
+                           let cxp_r = floc#xpr_to_cxpr ~size:(Some 4) xp in
                            let rdefs = get_all_rdefs p in
                            let (tagstring, args) =
                              mk_instrx_data_r
@@ -2223,7 +2223,7 @@ object (self)
          let result_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) xrm_r in
          let result_r = TR.tmap (rewrite_in_cc_context floc c) result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) result_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) result_r in
          let rdefs = (get_rdef_r xrm_r) :: (get_all_rdefs_r result_r) in
          let uses = [get_def_use_r vrd_r] in
          let useshigh = [get_def_use_high_r vrd_r] in
@@ -2297,7 +2297,7 @@ object (self)
            TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -2412,7 +2412,7 @@ object (self)
              let xr0_r = r0_op#to_expr floc in
              let xxr0_r = TR.tmap rewrite_expr xr0_r in
              let xxr0_r = TR.tmap (rewrite_in_cc_context floc c) xxr0_r in
-             let cxr0_r = TR.tbind floc#convert_xpr_to_c_expr xxr0_r in
+             let cxr0_r = TR.tbind floc#xpr_to_cxpr xxr0_r in
              add_return_value tags args xr0_r xxr0_r cxr0_r
            else
              (tags, args) in
@@ -2480,7 +2480,7 @@ object (self)
          let xxrm_r = TR.tmap rewrite_expr xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -2768,7 +2768,7 @@ object (self)
          let rrhss_rl = List.map (TR.tmap rewrite_expr) rhss_rl in
          let crhss_rl =
            List.map (fun rrhs_r ->
-               TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rrhs_r)
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rrhs_r)
            rrhss_rl in
          let (memlhss_rl, cmemlhss_rl, _) =
            List.fold_left
@@ -2776,8 +2776,7 @@ object (self)
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs_r = memop#to_variable floc in
                let cmemlhs_r =
-                 TR.tbind
-                   (floc#convert_var_to_c_variable ~size:(Some 4)) memlhs_r in
+                 TR.tbind (floc#var_to_cvar ~size:(Some 4)) memlhs_r in
                (lhss @ [memlhs_r],
                 clhss @ [cmemlhs_r],
                 off + 4)) ([], [], - (4 * regcount)) rl#get_register_op_list in
@@ -2794,7 +2793,7 @@ object (self)
                TR.tmap rewrite_expr xaddr_r) in
          let cxaddrs_r =
            List.map (fun xaddr_r ->
-               TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xaddr_r)
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) xaddr_r)
            xaddrs_r in
          let rdefs = List.map get_rdef_r (baserhs_r :: rrhss_rl) in
          let uses = List.map get_def_use_r (baselhs_r :: memlhss_rl) in
@@ -2843,9 +2842,9 @@ object (self)
                    (floc#get_var_at_address ~btype:t_int x))
                xxdst_r in
            let csrc_r =
-             TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xxsrc_r in
+             TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) xxsrc_r in
            let cdst_r =
-             TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xxdst_r in
+             TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) xxdst_r in
            let rdefs = [(get_rdef_r xsrc_r); (get_rdef_r xdst_r)] in
            let xprs_r = [xdst_r; xsrc_r; xxdst_r; xxsrc_r] in
            let cxprs_r = [cdst_r; csrc_r] in
@@ -2879,7 +2878,7 @@ object (self)
          let rrhss_rl = List.map (TR.tmap rewrite_expr) rhss_rl in
          let crhss_rl =
            List.map (fun rrhs_r ->
-               TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rrhs_r)
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rrhs_r)
              rrhss_rl in
          let (memlhss_rl, cmemlhss_rl, _) =
            List.fold_left
@@ -2887,8 +2886,7 @@ object (self)
                let memop = arm_reg_deref ~with_offset:off basereg WR in
                let memlhs_r = memop#to_variable floc in
                let cmemlhs_r =
-                 TR.tbind
-                   (floc#convert_var_to_c_variable ~size:(Some 4)) memlhs_r in
+                 TR.tbind (floc#var_to_cvar ~size:(Some 4)) memlhs_r in
                (lhss @ [memlhs_r],
                 clhss @ [cmemlhs_r],
                 off + 4)) ([], [], 0) rl#get_register_op_list in
@@ -2904,7 +2902,7 @@ object (self)
                TR.tmap rewrite_expr xaddr_r) in
          let cxaddrs_r =
            List.map (fun xaddr_r ->
-               TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xaddr_r)
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) xaddr_r)
              xaddrs_r in
          let rdefs = List.map get_rdef_r (baserhs_r :: rrhss_rl) in
          let uses = List.map get_def_use_r (baselhs_r :: memlhss_rl) in
@@ -2967,17 +2965,16 @@ object (self)
 
       | StoreRegister (c, rt, rn, rm, mem, _) ->
          let vmem_r = mem#to_variable floc in
-         let cvmem_r =
-           TR.tbind (floc#convert_var_to_c_variable ~size:(Some 4)) vmem_r in
+         let cvmem_r = TR.tbind (floc#var_to_cvar ~size:(Some 4)) vmem_r in
          let xaddr_r = mem#to_address floc in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
          let xrt_r = rt#to_expr floc in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
          let cxrt_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) xxrt_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) xxrt_r in
          let rdefs =
            [get_rdef_r xrn_r;
             get_rdef_r xrm_r;
@@ -3018,17 +3015,16 @@ object (self)
 
       | StoreRegisterByte (c, rt, rn, rm, mem, _) ->
          let vmem_r = mem#to_variable floc in
-         let cvmem_r =
-           TR.tbind (floc#convert_var_to_c_variable ~size:(Some 1)) vmem_r in
+         let cvmem_r = TR.tbind (floc#var_to_cvar ~size:(Some 1)) vmem_r in
          let xaddr_r = mem#to_address floc in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
          let xrt_r = rt#to_expr floc in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
          let cxrt_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 1)) xxrt_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 1)) xxrt_r in
          let rdefs =
            [get_rdef_r xrn_r;
             get_rdef_r xrm_r;
@@ -3156,17 +3152,16 @@ object (self)
 
       | StoreRegisterHalfword (c, rt, rn, rm, mem, _) ->
          let vmem_r = mem#to_variable floc in
-         let cvmem_r =
-           TR.tbind (floc#convert_var_to_c_variable ~size:(Some 2)) vmem_r in
+         let cvmem_r = TR.tbind (floc#var_to_cvar ~size:(Some 2)) vmem_r in
          let xaddr_r = mem#to_address floc in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
          let xrt_r = rt#to_expr floc in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let xxrt_r = TR.tmap rewrite_expr xrt_r in
          let cxrt_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 2)) xxrt_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 2)) xxrt_r in
          let rdefs =
            [get_rdef_r xrn_r;
             get_rdef_r xrm_r;
@@ -3213,7 +3208,7 @@ object (self)
            TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap (rewrite_in_cc_context floc c) result_r in
          let cresult_r =
-           TR.tbind (floc#convert_xpr_to_c_expr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -3676,12 +3671,12 @@ object (self)
          let xbase_r = base#to_expr floc in
          let xaddr_r = mem#to_address floc in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
          let vmem_r = mem#to_variable floc in
          let xmem_r = mem#to_expr floc in
          let rxbase_r = TR.tmap rewrite_expr xbase_r in
          let rxmem_r = TR.tmap rewrite_expr xmem_r in
-         let cxmem_r = TR.tbind floc#convert_xpr_to_c_expr rxmem_r in
+         let cxmem_r = TR.tbind floc#xpr_to_cxpr rxmem_r in
          let cxmem_r =
            if Result.is_ok cxmem_r then
              cxmem_r
@@ -3692,7 +3687,7 @@ object (self)
                  ~tag:"VLDR:fall-back address conversion"
                  __FILE__ __LINE__
                  ["xxaddr: " ^ (x_r2s xxaddr_r)] in
-             TR.tbind floc#convert_addr_to_c_pointed_to_expr xxaddr_r in
+             TR.tbind floc#addr_to_ctgt_xpr xxaddr_r in
          let rdefs =
            [get_rdef_memvar_r vmem_r; get_rdef_r xmem_r]
            @ (get_all_rdefs_r rxmem_r) in
@@ -3943,11 +3938,10 @@ object (self)
       | VStoreRegister (c, src, base, mem) ->
          let size = src#get_size in
          let vmem_r = mem#to_variable floc in
-         let cvmem_r =
-           TR.tbind (floc#convert_var_to_c_variable ~size:(Some size)) vmem_r in
+         let cvmem_r = TR.tbind (floc#var_to_cvar ~size:(Some size)) vmem_r in
          let xaddr_r = mem#to_address floc in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#convert_xpr_to_c_expr xxaddr_r in
+         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
          let xsrc_r = src#to_expr floc in
          let xbase_r = base#to_expr floc in
          let rxsrc_r = TR.tmap rewrite_expr xsrc_r in
