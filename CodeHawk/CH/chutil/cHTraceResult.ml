@@ -87,6 +87,19 @@ let tbind ?(msg="") (f: 'a -> 'c traceresult) (r: 'a traceresult) =
   | Error e -> Error (msg :: e)
 
 
+let tbind2
+      ?(msg1="")
+      ?(msg2="")
+      (f: 'a -> 'b -> 'c traceresult)
+      (r1: 'a traceresult)
+      (r2: 'b traceresult): 'c traceresult =
+  match r1, r2 with
+  | Ok v1, Ok v2 -> f v1 v2
+  | Error e1, Ok _ -> Error (msg1 :: e1)
+  | Ok _, Error e2 -> Error (msg2 :: e2)
+  | Error e1, Error e2 -> Error (msg1 :: msg2 :: (e1 @ e2))
+
+
 let tfold ~(ok:'a -> 'c) ~(error:string list -> 'c) (r: 'a traceresult): 'c =
   match r with
   | Ok v -> ok v

@@ -100,6 +100,15 @@ val tbind:
   ?msg:string -> ('a -> 'c traceresult) -> ('a traceresult) -> 'c traceresult
 
 
+val tbind2:
+  ?msg1:string
+  -> ?msg2:string
+  -> ('a -> 'b -> 'c traceresult)
+  -> 'a traceresult
+  -> 'b traceresult
+  -> 'c traceresult
+
+
 (** [titer ~ok ~error r] is [ok v] if [r] is [Ok v] and [error e] if [r] is
     [Error e].*)
 val titer: ok:('a -> unit) -> error:(string list -> unit) -> ('a traceresult) -> unit
