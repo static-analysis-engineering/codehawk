@@ -89,11 +89,12 @@ module POAnchorCollections = CHCollections.Make
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
+let i2s i = string_of_int i
 
 let opti2s (i: int option) =
   if Option.is_some i then string_of_int (Option.get i) else "?"
 
-let _ty2s (ty: btype_t) =
+let ty2s (ty: btype_t) =
   if is_unknown_type ty then "?" else btype_to_string ty
 let optty2s (ty: btype_t option) =
   if Option.is_some ty then btype_to_string (Option.get ty) else "?"
@@ -1379,8 +1380,31 @@ object (self)
           (default ())
           (numerical_to_doubleword n)
      | _ ->
-        default ()          
+        default ()
 
+   (* Handles the following cases:
+      - initial_register_value:
+         if the register is a function parameter: get parameter type
+         otherwise: Error
+
+      - initial_memory_value:
+         get type of corresponding memory variable
+
+      - memory_variable:
+         separate base from offset
+         * global: retrieve type from global-memory-map if addresses match
+           otherwise: Error
+           Note: this may lead to confusion between type of first field and
+               type of struct
+
+         * basevar:
+           if no-offset: type-of *basevar
+           otherwise: type dependent on offset
+
+      - return_value:
+        if callsite has a typed var-intro: retrieve type of var-intro
+        otherwise: Error (not yet handled)
+    *)
   method get_variable_type (v: variable_t): btype_t traceresult =
     let is_zero (x: xpr_t) =
       match x with
@@ -1527,14 +1551,52 @@ object (self)
                    ^ " at address " ^ loc#i#to_hex_string
                    ^ " not yet handled"])
         (self#f#env#get_call_site v)
+    else if self#f#env#is_register_variable v then
+      let vrdefs = self#get_variable_rdefs v in
+      let fndata = self#f#get_function_data in
+      match vrdefs with
+      | h :: _ ->
+         let optty_r =
+           TR.tmap
+             (fun r -> fndata#get_reglhs_type r h#getBaseName)
+             (self#f#env#get_register v) in
+         TR.tfold
+           ~ok:(fun optty ->
+             match optty with
+             | Some ty -> Ok ty
+             | _ ->
+                Error [
+                    (elocm __LINE__)
+                    ^ "No reglhs type assignment found for variable "
+                    ^ (p2s v#toPretty)
+                    ^ " at location "
+                    ^ h#getBaseName])
+           ~error:(fun e -> Error ((elocm __LINE__) :: e))
+         optty_r
+      | _ ->
+         Error [
+             (elocm __LINE__)
+             ^ "Unable to find reachingdefs for variable "
+             ^ (p2s v#toPretty)]
     else
       let ty = self#env#get_variable_type v in
       match ty with
       | None -> Error [(elocm __LINE__) ^ "variable: " ^ (x2s (XVar v))]
       | Some t -> Ok t
 
+  method private get_variable_rdefs (v: variable_t): symbol_t list =
+    let symvar = self#f#env#mk_symbolic_variable v in
+    let varinvs = self#varinv#get_var_reaching_defs symvar in
+    (match varinvs with
+     | [vinv] -> vinv#get_reaching_defs
+     | _ ->
+        List.concat (List.map (fun vinv -> vinv#get_reaching_defs) varinvs))
+
   method xpr_to_cxpr
-           ?(size=None) ?(xtype=None) (x: xpr_t): xpr_t traceresult =
+           ?(arithm=false)
+           ?(size=None)
+           ?(xtype=None)
+           (x: xpr_t): xpr_t traceresult =
     let _ =
       log_diagnostics_result
         ~msg:(p2s self#l#toPretty)
@@ -1543,14 +1605,45 @@ object (self)
         ["size: " ^ (opti2s size);
          "xtype: " ^ (optty2s xtype);
          "x: " ^ (x2s x)] in
-    match xtype with
-    | None -> self#convert_xpr_offsets ~size x
-    | Some t ->
-       match x with
-       | XConst (IntConst n)
-            when n#equal (mkNumerical 0xffffffff) && is_int t ->
-          Ok (int_constant_expr (-1))
-       | _ -> self#convert_xpr_offsets ~xtype ~size x
+    let is_pointer (y: xpr_t) =
+      TR.tfold_default BCHBCTypeUtil.is_pointer false (self#get_xpr_type y) in
+    let default () = self#convert_xpr_offsets ~xtype ~size x in
+    match x with
+    | XOp (XPlus, [y; XConst (IntConst n)]) when is_pointer y && arithm ->
+       let derefty = BCHBCTypeUtil.ptr_deref (TR.tget_ok (self#get_xpr_type y)) in
+       let _ =
+         log_diagnostics_result
+           ~msg:(p2s self#l#toPretty)
+           ~tag:"xpr_to_cxpr:pointer expression"
+           __FILE__ __LINE__
+           ["x: " ^ (x2s x); "*ty: " ^ (ty2s derefty)] in
+       TR.tmap2
+         ~msg1:(eloc __LINE__)
+         ~msg2:(eloc __LINE__)
+         (fun cy size ->
+           let scaledincr = XConst (IntConst (n#div (mkNumerical size))) in
+           let result = XOp (XPlus, [cy; scaledincr]) in
+           let _ =
+             log_diagnostics_result
+               ~msg:(p2s self#l#toPretty)
+               ~tag:"xpr_to_cxpr:pointer expression"
+               __FILE__ __LINE__
+               ["x: " ^ (x2s x);
+                "cy: " ^ (x2s cy);
+                "size: " ^ (i2s size);
+                "result: " ^ (x2s result)] in
+           result)
+         (self#xpr_to_cxpr y)
+         (BCHBCTypeUtil.size_of_btype derefty)
+    | _ ->
+       match xtype with
+       | None -> default ()
+       | Some t ->
+          match x with
+          | XConst (IntConst n)
+               when n#equal (mkNumerical 0xffffffff) && is_int t ->
+             Ok (int_constant_expr (-1))
+          | _ -> default ()
 
   method addr_to_ctgt_xpr
            ?(size=None) ?(xtype=None) (a: xpr_t): xpr_t traceresult =
@@ -1852,6 +1945,7 @@ object (self)
   method get_xpr_type (x: xpr_t): btype_t traceresult =
     match x with
     | XVar v -> self#get_variable_type v
+    | XOp (XPlus, [XVar v; XConst (IntConst _)]) -> self#get_variable_type v
     | _ -> Error [(elocm __LINE__) ^ "xpr: " ^ (x2s x)]
 
   method decompose_memaddr (x: xpr_t):
