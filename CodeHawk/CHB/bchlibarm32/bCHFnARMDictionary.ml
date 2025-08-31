@@ -796,7 +796,7 @@ object (self)
          let xxrm_r = TR.tmap rewrite_expr xrm_r in
          let rresult_r = TR.tmap (rewrite_expr ?restrict:(Some 4)) result_r in
          let cresult_r =
-           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
+           TR.tbind (floc#xpr_to_cxpr ~arithm:true ~size:(Some 4)) rresult_r in
          let _ =
            TR.tfold_default
              (fun r -> ignore (get_string_reference floc r)) () rresult_r in

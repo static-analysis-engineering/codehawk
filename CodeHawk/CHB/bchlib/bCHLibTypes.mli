@@ -6162,7 +6162,11 @@ class type floc_int =
     (** {1 Conversion to c expressions / variables}*)
 
     method xpr_to_cxpr:
-             ?size:int option -> ?xtype:btype_t option -> xpr_t -> xpr_t traceresult
+             ?arithm:bool
+             -> ?size:int option
+             -> ?xtype:btype_t option
+             -> xpr_t
+             -> xpr_t traceresult
 
     method addr_to_ctgt_xpr:
              ?size:int option -> ?xtype:btype_t option -> xpr_t -> xpr_t traceresult
