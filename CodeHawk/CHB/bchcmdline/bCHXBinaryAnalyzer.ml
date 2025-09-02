@@ -107,6 +107,14 @@ let export_directory = ref ""
 let savecfgs = ref false
 let save_xml = ref false  (* save disassembly status in xml *)
 let save_asm = ref false
+
+let print_datasections = ref []
+let add_print_datasection (s: string) =
+  if List.mem s !print_datasections then
+    ()
+  else
+    print_datasections := s :: !print_datasections
+
 let save_asm_cfg_info = ref false  (* save functions list with cfg info in xml *)
 let set_datablocks = ref false   (* only supported for arm *)
 let construct_all_functions = ref false
@@ -210,6 +218,8 @@ let speclist =
      "save assembly listing in the analysis directory");
     ("-save_asm_cfg_info", Arg.Unit (fun () -> save_asm_cfg_info := true),
      "save list of functions with cfg info to xml file (may be slow)");
+    ("-print_datasection", Arg.String (fun s -> add_print_datasection s),
+     "print the data sections as part of the assembly listing");
     ("-construct_all_functions",
      Arg.Unit (fun () -> construct_all_functions := true),
      "construct all functions even if analyzing only a few of them");
@@ -579,13 +589,13 @@ let main () =
        *)
       begin
         if !save_asm then
+          let datarefs = get_arm_data_references () in
           begin
-            let datarefs = get_arm_data_references () in
             file_output#saveFile
               (get_asm_listing_filename ())
               (let instrs = !BCHARMAssemblyInstructions.arm_assembly_instructions in
                (LBLOCK [
-                    STR (instrs#toString ~datarefs ());
+                    STR (instrs#toString ~datarefs ~datasections:!print_datasections ());
                     arm_callsites_records#toPretty;
                     arm_callsites_records#summary_to_pretty]));
             pr_timing [STR "assembly listing saved"];

@@ -77,6 +77,8 @@ let arrayLength = 100000
 
 let initialized_length = ref 0
 
+let memorymap = BCHGlobalMemoryMap.global_memory_map
+
 
 let arm_instructions =
   Array.make
@@ -588,8 +590,315 @@ object (self)
             (!bnode)#appendChildren [inode]
           end)
 
+  method private not_code_to_string
+                   (datarefstr: doubleword_int -> string) (nc: not_code_t): string =
+    match nc with
+    | JumpTable jt ->
+         let s =
+           jt#toString
+             ~is_function_entry_point:(fun _ -> false)
+             ~get_opt_function_name:(fun _ -> None) in
+         ("\n" ^ s ^ "\n")
+    | DataBlock db ->
+       let s = db#get_data_string in
+       let len = String.length s in
+       let (alignedaddr, prefix) = db#get_start_address#to_aligned ~up:true 4 in
+       try
+         self#datablock_to_string datarefstr s alignedaddr prefix
+       with
+       | _ ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Error in printing data block. ";
+                     STR "Address: ";
+                     db#get_start_address#toPretty;
+                     STR "; Aligned address: ";
+                     alignedaddr#toPretty;
+                     STR "; Prefix: ";
+                     INT prefix;
+                     STR "; Length: ";
+                     INT len]))
+
+  method private datablock_to_string
+                   ?(disassemble=true)
+                   (datarefstr: (doubleword_int -> string))
+                   (s: string)
+                   (startaddr: doubleword_int)
+                   (prefix: int): string =
+    let ch = make_pushback_stream s in
+    let len = String.length s in
+    let addr = ref startaddr in
+    let contents = ref [] in
+    let addrstr_end = ref wordzero in
+    let pprefix =
+      if prefix > 0 then
+        "  " ^ (fixed_length_string !addr#to_hex_string 10) ^ "  align\n"
+      else
+        "" in
+    let _ =
+      if prefix > 0 && (String.length s) >= prefix then
+        ch#skip_bytes prefix in
+    for _i = 0 to (((len - prefix)/4) - 1) do
+      begin
+        contents := (!addr, ch#read_doubleword) :: !contents;
+        addr := !addr#add_int 4
+      end
+    done;
+    ("\n" ^ (string_repeat "~" 80) ^ "\nData block (size: "
+     ^ (string_of_int len) ^ " bytes)\n\n"
+     ^ pprefix
+     ^ (String.concat
+          "\n"
+          (List.map
+             (fun (a, v) ->
+               let (strend, s) =
+                 self#render_datablock_line
+                   (datarefstr a) ~disassemble !addrstr_end a v in
+               let _ = if strend != !addrstr_end then addrstr_end := strend in
+               s)
+             (List.rev !contents)))
+     ^ "\n" ^ (string_repeat "=" 80) ^ "\n")
+
+  method private render_gloc
+                   (datarefstr: string)
+                   (a: doubleword_int)
+                   (v: doubleword_int): string =
+    let fls = fixed_length_string in
+    let vhex = v#to_hex_string in
+    let vm1 (v: doubleword_int) = TR.to_option (v#subtract_int 1) in
+    let get_fname (addr: doubleword_int) =
+      if functions_data#has_function_name addr then
+        let fndata = functions_data#get_function addr in
+        ":" ^ fndata#get_function_name
+      else
+        "" in
+    let get_string (v: doubleword_int) =
+      match elf_header#get_string_at_address v with
+      | Some s ->
+         let len = String.length s in
+         if len < 50 then
+           ":\"" ^ s ^ "\""
+         else
+           ":\"" ^ (String.sub s 0 50) ^ "...\""
+      | _ -> "" in
+    let get_memory_offset (gloc: global_location_int) (offset: xpr_t) =
+      let zeroloc = BCHLocation.make_location_by_address wordzero wordzero in
+      TR.tfold
+        ~ok:(fun memoffset ->
+          "  (" ^ (BCHMemoryReference.memory_offset_to_string memoffset) ^ ")"
+          ^ "")
+        ~error:(fun e ->
+          begin
+            log_diagnostics_result __FILE__ __LINE__ e;
+            ""
+          end)
+        (gloc#address_memory_offset ~tgtsize:(Some 4) zeroloc offset) in
+    let addrprefix = "  " ^ (fls a#to_hex_string 10) in
+    let p_value =
+      if v#equal wordzero then
+        "<0x0>"
+
+      else if v#equal wordmax then
+        "<0xffffffff>"
+
+      else if functions_data#is_function_entry_point v then
+        "FAddr:<" ^ vhex ^ (get_fname v) ^ ">"
+
+      else if (Option.is_some (vm1 v))
+              && functions_data#is_function_entry_point (Option.get (vm1 v)) then
+        let fentry = Option.get (vm1 v) in
+        "FAddr:<" ^ vhex ^ (get_fname fentry) ^ "(T)>"
+
+      else if memorymap#has_location v then
+        let gloc = memorymap#get_location v in
+        "GVAddr:<" ^ vhex ^ ":" ^ gloc#name ^ ">"
+
+      else if elf_header#is_code_address v then
+        "Code:<" ^ vhex ^ (get_string v) ^ ">"
+
+      else if elf_header#is_data_address v then
+        "Data:<" ^ vhex ^ (get_string v) ^ ">"
+
+      else
+        vhex in
+
+    match memorymap#containing_location a with
+    | None -> ""     (* should not be reachable *)
+    | Some gloc ->
+       let xprv = num_constant_expr a#to_numerical in
+       TR.tfold_default
+         (fun offset ->
+           let p_memoff = get_memory_offset gloc xprv in
+           match offset with
+           | XConst (IntConst n) when n#equal numerical_zero ->
+              addrprefix ^ "\n"
+              ^ addrprefix
+              ^ "  Global variable:<"
+              ^ gloc#name ^ ": "
+              ^ (btype_to_string gloc#btype) ^ ">\n"
+              ^ addrprefix
+              ^ "    GV:<"
+              ^ gloc#name ^ ":0  >: "
+              ^ p_value
+              ^ p_memoff
+              ^ datarefstr
+           | XConst (IntConst n) ->
+              addrprefix
+              ^ "    GV:<"
+              ^ gloc#name ^ ":"
+              ^ (fls n#toString 3) ^ ">: "
+              ^ p_value
+              ^ p_memoff
+              ^ datarefstr
+           | _ -> "")
+         (addrprefix ^ "  GV:<" ^ gloc#name ^ ":?>:" ^ p_value)
+         (gloc#address_offset xprv)
+
+  method private render_datablock_line
+                   ?(disassemble=true)
+                   (datarefstr: string)
+                   (addrstr_end: doubleword_int)
+                   (a: doubleword_int)
+                   (v: doubleword_int): (doubleword_int * string) =
+    let vm1 (v: doubleword_int) = TR.to_option (v#subtract_int 1) in
+    let get_fname (addr: doubleword_int) =
+      if functions_data#has_function_name addr then
+        let fndata = functions_data#get_function addr in
+        ":" ^ fndata#get_function_name
+      else
+        "" in
+    let render_string (s: string): string =
+      let len = String.length s in
+      if len <= 40 then
+        s
+      else
+        (String.sub s 0 40) ^ "... (length: " ^ (string_of_int len) ^ ")" in
+    let addrprefix = "  " ^ (fixed_length_string a#to_hex_string 10) in
+    let vhex = v#to_hex_string in
+    let fls = fixed_length_string in
+    if a#lt addrstr_end then
+      (addrstr_end,
+       addrprefix ^ "  <String:<" ^ (fls v#to_hex_string 12) ^ "> ... (cont'd)")
+
+    else if Option.is_some (memorymap#containing_location a) then
+      (addrstr_end, self#render_gloc datarefstr a v)
+
+    else if memorymap#has_elf_symbol v then
+      let name = memorymap#get_elf_symbol v in
+      let memline = addrprefix ^ "  Sym:<" ^ vhex ^ ":" ^ name ^ ">" ^ datarefstr in
+      (addrstr_end, memline)
+
+    else if v#equal wordzero then
+      (addrstr_end, addrprefix ^ "  <0x0>")
+
+    else if v#equal wordmax then
+      (addrstr_end, addrprefix ^ "  <0xffffffff>")
+
+    else if functions_data#is_function_entry_point v then
+      let l = addrprefix ^ "  FAddr:<" ^ vhex ^ (get_fname v) ^ ">" ^ datarefstr in
+      (addrstr_end, l)
+
+    else if (Option.is_some (vm1 v))
+            && functions_data#is_function_entry_point (Option.get (vm1 v)) then
+      let fentry = Option.get (vm1 v) in
+      let l =
+        addrprefix
+          ^ "  FAddr:<" ^ vhex ^ (get_fname fentry) ^ "(T)>" ^ datarefstr in
+      (addrstr_end, l)
+
+    else if memorymap#has_location v then
+      let gloc = memorymap#get_location v in
+      let l = addrprefix ^ "  GVAddr:<" ^ vhex ^ ":" ^ gloc#name ^ ">" ^ datarefstr in
+      (addrstr_end, l)
+
+    else if elf_header#is_code_address v then
+      let s =
+        match elf_header#get_string_at_address v with
+        | Some s ->
+           let len = String.length s in
+           if len < 50 then
+             ":\""  ^ s ^ "\""
+           else
+             ":\"" ^ (String.sub s 0 50) ^ "...\""
+        | _ -> "" in
+      let l = addrprefix ^ "  Code:<" ^ vhex ^ s ^ ">" ^ datarefstr in
+      (addrstr_end, l)
+
+    else if elf_header#is_data_address v then
+      let s =
+        match elf_header#get_string_at_address v with
+        | Some s ->
+           let len = String.length s in
+           if len < 50 then
+             ":\"" ^ s ^ "\""
+           else
+             ":\"" ^ (String.sub s 0 50) ^ "...\""
+        | _ -> "" in
+      let l = addrprefix ^ "  Data:<" ^ vhex ^ s ^ ">" ^ datarefstr in
+      (addrstr_end, l)
+
+    else if elf_header#is_uninitialized_data_address v then
+      let l = addrprefix ^ "  Bss:<" ^ vhex ^ ">" ^ datarefstr in
+      (addrstr_end, l)
+
+    else if Option.is_some (elf_header#get_string_at_address a) then
+      let s = Option.get (elf_header#get_string_at_address a) in
+      let slen = String.length s in
+      let slen = if slen > 40 then 40 else slen in
+      let l =
+        addrprefix ^ "  <String:<" ^ (fls vhex 12) ^ ">: \""
+        ^ (render_string s) ^ "\""
+        ^ datarefstr in
+      (a#add_int slen, l)
+
+    else if (String.length datarefstr) > 0 then
+      let l = addrprefix ^ "  Value<" ^ vhex ^ ">" ^ datarefstr in
+      (addrstr_end, l)
+
+    else if disassemble then
+      let p_opcode = self#db_opcode_to_string a v in
+      let l = addrprefix ^ "  " ^ (fls vhex 14) ^ "  " ^ p_opcode in
+      (addrstr_end, l)
+
+    else
+      (addrstr_end, addrprefix ^ "  " ^ (fls vhex 14))
+
+  method private db_opcode_to_string
+                   (addr: doubleword_int) (v: doubleword_int): string =
+    let make_stream (v: doubleword_int) =
+      let bytestring =
+        write_hex_bytes_to_bytestring v#to_fixed_length_hex_string_le in
+      make_pushback_stream ~little_endian:true bytestring in
+    try
+      let cha = make_stream v in
+      if system_info#is_thumb addr then
+        let instrbytes = cha#read_ui16 in
+        let opcode = disassemble_thumb_instruction cha addr instrbytes in
+        let opcodetxt =
+          match opcode with
+          | NotRecognized _ -> "not-recognized"
+          | _ -> arm_opcode_to_string opcode in
+        let xtra =
+          if cha#pos = 2 then
+            " ++ "
+          else
+            "" in
+        "T:" ^ opcodetxt ^ xtra
+      else
+        let instrbytes = cha#read_doubleword in
+        let opcode = disassemble_arm_instruction cha addr instrbytes in
+        let opcodetxt =
+          match opcode with
+          | NotRecognized _ -> "not-recognized"
+          | _ -> arm_opcode_to_string opcode in
+        "A:" ^ opcodetxt
+    with
+      _ -> " --error"
+
   method toString
            ?(datarefs:((string * arm_assembly_instruction_int list) list) = [])
+           ?(datasections:(string list) = [])
            ?(filter = fun _ -> true) () =
     let lines = ref [] in
     let firstNew = ref true in
@@ -604,369 +913,6 @@ object (self)
         ^ ")"
       else
         "" in
-    let memorymap = BCHGlobalMemoryMap.global_memory_map in
-    let get_memory_offset (gloc: global_location_int) (offset: xpr_t) =
-      let zeroloc = BCHLocation.make_location_by_address wordzero wordzero in
-      TR.tfold
-        ~ok:(fun memoffset ->
-          "  (" ^ (BCHMemoryReference.memory_offset_to_string memoffset) ^ ")"
-          ^ "")
-        ~error:(fun e ->
-          begin
-            log_diagnostics_result __FILE__ __LINE__ e;
-            ""
-          end)
-        (gloc#address_memory_offset ~tgtsize:(Some 4) zeroloc offset) in
-    let vm1 (v: doubleword_int) = TR.to_option (v#subtract_int 1) in
-    let render_gloc (a: doubleword_int) (v: doubleword_int): string =
-      let addrprefix = "  " ^ (fixed_length_string a#to_hex_string 10) in
-      let p_value =
-        if v#equal wordzero then
-          "<0x0>"
-        else if v#equal wordmax then
-          "<0xffffffff>"
-        else if functions_data#is_function_entry_point v then
-          let name =
-            if functions_data#has_function_name v then
-              let fndata = functions_data#get_function v in
-              ":" ^ fndata#get_function_name
-            else
-              "" in
-          "FAddr:<"
-          ^ v#to_hex_string
-          ^ name
-          ^ ">"
-        else if (Option.is_some (vm1 v))
-                && functions_data#is_function_entry_point (Option.get (vm1 v)) then
-          let fentry = Option.get (vm1 v) in
-          let name =
-            if functions_data#has_function_name fentry then
-              let fndata = functions_data#get_function fentry in
-              ":" ^ fndata#get_function_name
-            else
-              "" in
-          "Faddr:<"
-          ^ v#to_hex_string
-          ^ name
-          ^ "(T)>"
-        else if memorymap#has_location v then
-          let gloc = memorymap#get_location v in
-          "GVAddr:<"
-          ^ v#to_hex_string
-          ^ ":"
-          ^ gloc#name
-          ^ ">"
-
-        else if elf_header#is_code_address v then
-          let s =
-            match elf_header#get_string_at_address v with
-            | Some s ->
-               let len = String.length s in
-               if len < 50 then
-                 ":\"" ^ s ^ "\""
-               else
-                 ":\"" ^ (String.sub s 0 50) ^ "...\""
-            | _ -> "" in
-          "Code:<"
-          ^ v#to_hex_string
-          ^ s
-          ^ ">"
-        else if elf_header#is_data_address v then
-          let s =
-            match elf_header#get_string_at_address v with
-            | Some s ->
-               let len = String.length s in
-               if len < 50 then
-                 ":\"" ^ s ^ "\""
-               else
-                 ":\"" ^ (String.sub s 0 50) ^ "...\""
-            | _ -> "" in
-          "Data:<"
-          ^ v#to_hex_string
-          ^ s
-          ^ ">"
-        else
-          v#to_hex_string in
-      match memorymap#containing_location a with
-      | None -> ""            (* should not be reachable *)
-      | Some gloc ->
-         let xprv = num_constant_expr a#to_numerical in
-         TR.tfold_default
-           (fun offset ->
-             let p_memoff = get_memory_offset gloc xprv in
-             match offset with
-             | XConst (IntConst n) when n#equal numerical_zero ->
-                addrprefix
-                ^ "\n"
-                ^ addrprefix
-                ^ "  Global variable:<"
-                ^ gloc#name
-                ^ ": "
-                ^ (btype_to_string gloc#btype)
-                ^ ">\n"
-                ^ addrprefix
-                ^ "    GV:<"
-                ^ gloc#name
-                ^ ":0  >: "
-                ^ p_value
-                ^ p_memoff
-                ^ (datarefstr a)
-             | XConst (IntConst n) ->
-                addrprefix
-                ^ "    GV:<"
-                ^ gloc#name
-                ^ ":"
-                ^ (fixed_length_string n#toString 3)
-                ^ ">: "
-                ^ p_value
-                ^ p_memoff
-                ^ (datarefstr a)
-             | _ -> ""      (* should not be reachable *)
-           )
-           (addrprefix ^ "  GV:<" ^ gloc#name ^ ":?>:" ^ p_value)
-           (gloc#address_offset xprv) in
-
-    let not_code_to_string nc =
-      match nc with
-      | JumpTable jt ->
-         let s =
-           jt#toString
-             ~is_function_entry_point:(fun _ -> false)
-             ~get_opt_function_name:(fun _ -> None) in
-         ("\n" ^ s ^ "\n")
-      | DataBlock db ->
-         let s = db#get_data_string in
-         let ch = make_pushback_stream s in
-         let len = String.length s in
-         let (alignedaddr, prefix) = db#get_start_address#to_aligned ~up:true 4 in
-         let addr = ref alignedaddr in
-         let contents = ref [] in
-         let stringend = ref wordzero in
-         let make_stream (v: doubleword_int) =
-           let bytestring =
-             write_hex_bytes_to_bytestring v#to_fixed_length_hex_string_le in
-           make_pushback_stream ~little_endian:true bytestring in
-         let opcode_string (addr: doubleword_int) (v: doubleword_int) =
-           try
-             let cha = make_stream v in
-             if system_info#is_thumb addr then
-               let instrbytes = cha#read_ui16 in
-               let opcode = disassemble_thumb_instruction cha addr instrbytes in
-               let opcodetxt =
-                 match opcode with
-                 | NotRecognized _ -> "not-recognized"
-                 | _ -> arm_opcode_to_string opcode in
-               let xtra =
-                 if cha#pos = 2 then
-                   " ++ "
-                 else
-                   "" in
-               "T:" ^ opcodetxt ^ xtra
-             else
-               let instrbytes = cha#read_doubleword in
-               let opcode = disassemble_arm_instruction cha addr instrbytes in
-               let opcodetxt =
-                 match opcode with
-                 | NotRecognized _ -> "not-recognized"
-                 | _ -> arm_opcode_to_string opcode in
-              "A:" ^ opcodetxt
-           with
-             _ -> " --error--" in
-
-         let pprefix =
-           if prefix > 0 then
-             "  " ^ (fixed_length_string !addr#to_hex_string 10) ^ "  align\n"
-           else
-             "" in
-         let render_string (s: string): string =
-           let len = String.length s in
-           if len <= 40 then
-             s
-           else
-             (String.sub s 0 40) ^ "... (length: " ^ (string_of_int len) ^ ")" in
-
-         let _ =
-           if prefix > 0 && (String.length s) >= prefix then
-             ch#skip_bytes prefix in
-         try
-           begin
-             for _i = 0 to (((len - prefix)/4) - 1) do
-               begin
-                 contents := (!addr, ch#read_doubleword) :: !contents;
-                 addr := !addr#add_int 4
-               end
-             done;
-             let addrstr_end = ref wordzero in
-             ("\n" ^ (string_repeat "~" 80) ^ "\nData block (size: "
-              ^ (string_of_int len) ^ " bytes)\n\n"
-              ^ pprefix
-              ^ (String.concat
-                   "\n"
-                   (List.map
-                      (fun (a, v) ->
-                        let addrprefix =
-                          "  " ^ (fixed_length_string a#to_hex_string 10) in
-                        let addr = a#to_hex_string in
-                        let pdatarefstr = datarefstr a in
-                        if a#lt !stringend then
-                          "  "
-                          ^ (fixed_length_string addr 10)
-                          ^ "  String:<"
-                          ^ (fixed_length_string v#to_hex_string 12)
-                          ^ "> ... (cont'd)"
-
-                        else if a#lt !addrstr_end then
-                          addrprefix
-                          ^ "  <String:<"
-                          ^ (fixed_length_string v#to_hex_string 12)
-                          ^ "> ... (cont'd)"
-
-                        else if Option.is_some (memorymap#containing_location a) then
-                          render_gloc a v
-
-                        else if memorymap#has_elf_symbol v then
-                          let name = memorymap#get_elf_symbol v in
-                          addrprefix
-                          ^ "  Sym:<"
-                          ^ v#to_hex_string
-                          ^ ":"
-                          ^ name
-                          ^ ">"
-                          ^ pdatarefstr
-
-                        else if v#equal wordzero then
-                          addrprefix ^ "  <0x0>"
-                        else if v#equal wordmax then
-                          addrprefix ^  " <0xffffffff>"
-
-                        else if functions_data#is_function_entry_point v then
-                          let name =
-                            if functions_data#has_function_name v then
-                              let fndata = functions_data#get_function v in
-                              ":" ^ fndata#get_function_name
-                            else
-                              "" in
-                          addrprefix
-                          ^ "  Faddr:<"
-                          ^ v#to_hex_string
-                          ^ name
-                          ^ ">"
-                          ^ pdatarefstr
-
-                              (* handle thumb function addresses (+1) *)
-                        else if (Option.is_some (vm1 v))
-                                && functions_data#is_function_entry_point
-                                     (Option.get (vm1 v)) then
-                          let fentry = Option.get (vm1 v) in
-                          let name =
-                            if functions_data#has_function_name fentry then
-                              let fndata = functions_data#get_function fentry in
-                              ":" ^ fndata#get_function_name
-                            else
-                              "" in
-                          addrprefix
-                          ^ "  Faddr:<"
-                          ^ v#to_hex_string
-                          ^ name
-                          ^ "(T)>"
-                          ^ pdatarefstr
-
-                        else if memorymap#has_location v then
-                          let gloc = memorymap#get_location v in
-                          addrprefix
-                          ^ "  GVAddr:<"
-                          ^ v#to_hex_string
-                          ^ ":"
-                          ^ gloc#name
-                          ^ ">"
-                          ^ pdatarefstr
-
-                        else if elf_header#is_code_address v then
-                          let s =
-                            match elf_header#get_string_at_address v with
-                            | Some s ->
-                               let len = String.length s in
-                               if len < 50 then
-                                 ":\"" ^ s ^ "\""
-                               else
-                                 ":\"" ^ (String.sub s 0 50) ^ "...\""
-                            | _ -> "" in
-
-                          addrprefix
-                          ^ "  Code:<"
-                          ^ v#to_hex_string
-                          ^ s
-                          ^ ">"
-                          ^ (datarefstr a)
-
-                        else if elf_header#is_data_address v then
-                          let s =
-                            match elf_header#get_string_at_address v with
-                            | Some s ->
-                               let len = String.length s in
-                               if len < 50 then
-                                 ":\"" ^ s ^ "\""
-                               else
-                                 ":\"" ^ (String.sub s 0 50) ^ "...\""
-                            | _ -> "" in
-                          addrprefix
-                          ^ "  Data:<"
-                          ^ v#to_hex_string
-                          ^ s
-                          ^ ">"
-                          ^ pdatarefstr
-
-                        else if elf_header#is_uninitialized_data_address v then
-                          addrprefix
-                          ^ "  Bss:<"
-                          ^ v#to_hex_string
-                          ^ ">"
-                          ^ (datarefstr a)
-                        else if Option.is_some
-                                  (elf_header#get_string_at_address a) then
-                          let s =
-                            Option.get (elf_header#get_string_at_address a) in
-                          let slen = String.length s in
-                          let slen = if slen > 40 then 40 else slen in
-                          let _ = addrstr_end := a#add_int slen in
-                          begin
-                            (addrprefix
-                             ^ "  String:<"
-                             ^ (fixed_length_string v#to_hex_string 12)
-                             ^ ">: \""
-                             ^ (render_string s)
-                             ^ "\"")
-                            ^ pdatarefstr
-                          end
-                        else if (String.length (datarefstr a)) > 0 then
-                          addrprefix
-                          ^ "  Value<"
-                          ^ v#to_hex_string
-                          ^ ">"
-                          ^ pdatarefstr
-                        else
-                          addrprefix
-                          ^ "  "
-                          ^ (fixed_length_string v#to_hex_string 14)
-                          ^ "  "
-                          ^ (opcode_string a v))
-                      (List.rev !contents)))
-              ^ "\n" ^ (string_repeat "=" 80) ^ "\n")
-           end
-         with
-         | _ ->
-            raise
-              (BCH_failure
-                 (LBLOCK [
-                      STR "Error in printing data block. ";
-                      STR "Address: ";
-                      db#get_start_address#toPretty;
-                      STR "; Aligned address: ";
-                      alignedaddr#toPretty;
-                      STR "; Prefix: ";
-                      INT prefix;
-                      STR "; Length: ";
-                      INT len])) in
     let add_function_names va =
       if functions_data#is_function_entry_point va then
         if functions_data#has_function_name va then
@@ -986,6 +932,7 @@ object (self)
           lines := line :: !lines
         else
           lines := "\n" :: !lines in
+
     begin
       self#itera
         (fun va instr ->
@@ -994,7 +941,8 @@ object (self)
               match instr#get_opcode with
               | OpInvalid -> ()
               | NotCode None -> ()
-              | NotCode (Some b) -> lines := (not_code_to_string b) :: !lines
+              | NotCode (Some b) ->
+                 lines := (self#not_code_to_string datarefstr b) :: !lines
               | _ ->
                  let statusString = Bytes.make 4 ' ' in
                  let _ =
@@ -1042,7 +990,34 @@ object (self)
                     va#toPretty;
                     STR ": ";
                     STR instr#toString]));
-      String.concat "\n" (List.rev !lines)
+
+      (if (List.length datasections) > 0 then
+         let printsections =
+           List.fold_left (fun acc (_, sh, _) ->
+               if List.mem sh#get_section_name datasections
+                  || List.mem sh#get_addr#to_hex_string datasections then
+                 match BCHELFHeader.elf_header#get_containing_section sh#get_addr with
+                 | Some sec -> (sh, sec) :: acc
+                 | _ -> acc
+               else
+                 acc) [] BCHELFHeader.elf_header#get_sections in
+         begin
+           lines := "\n\n==== Data sections ====\n\n" :: !lines;
+           List.iter (fun (sh, sec) ->
+               let psection =
+                    self#datablock_to_string
+                      ~disassemble:false datarefstr sec#get_xstring sh#get_addr 0 in
+               begin
+                 lines :=
+                   ("\n\nData section "
+                    ^ sh#get_section_name
+                    ^ " (" ^ sh#get_addr#to_hex_string ^ ")\n") :: !lines;
+                 lines := psection :: !lines
+               end) printsections;
+           lines := "\n\n ==== End of Data sections ====\n\n" :: !lines
+         end);
+
+      String.concat "\n" (List.rev !lines);
     end
 
 end

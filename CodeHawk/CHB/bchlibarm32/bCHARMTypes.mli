@@ -1745,6 +1745,7 @@ class type arm_assembly_instructions_int =
     method write_xml: xml_element_int -> unit
     method toString:
              ?datarefs:((string * arm_assembly_instruction_int list) list)
+             -> ?datasections:string list
              -> ?filter:(arm_assembly_instruction_int -> bool)
              -> unit
              -> string
