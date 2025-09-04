@@ -83,23 +83,6 @@ let _ =
       ("STRB-store", "enable");
       ("STRH-store", "enable");
 
-      (* function return type back propagation *)
-      ("ADD-exituse", "enable");
-      ("AND-exituse", "enable");
-      ("ASR-exituse", "enable");
-      ("LDR-exituse", "enable");
-      ("LDRB-exituse", "enable");
-      ("LDRH-exituse", "enable");
-      ("LSL-exituse", "enable");
-      ("LSR-exituse", "enable");
-      ("MOV-exituse", "enable");
-      ("MVN-exituse", "enable");
-      ("ORR-exituse", "enable");
-      ("RSB-exituse", "enable");
-      ("SUB-exituse", "enable");
-      ("UBFX-exituse", "enable");
-      ("UXTH-exituse", "enable");
-
       (* default setting of lhs *)
       ("ASR-def-lhs", "enable");
       ("LDRB-def-lhs", "enable");

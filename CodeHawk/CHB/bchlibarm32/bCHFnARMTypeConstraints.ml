@@ -162,20 +162,6 @@ object (self)
     let get_variable_rdefs_r (v_r: variable_t traceresult): symbol_t list =
       TR.tfold_default get_variable_rdefs [] v_r in
 
-    let get_variable_defuses (v: variable_t): symbol_t list =
-      let symvar = floc#f#env#mk_symbolic_variable v in
-      let varinvs = floc#varinv#get_var_def_uses symvar in
-      (match varinvs with
-       | [vinv] -> vinv#get_def_uses
-       | _ -> []) in
-
-    let has_exit_use (v: variable_t): bool =
-      let defuses = get_variable_defuses v in
-      List.exists (fun s -> s#getBaseName = "exit") defuses in
-
-    let has_exit_use_r (v_r: variable_t traceresult): bool =
-      TR.tfold_default has_exit_use false v_r in
-
     (*
     let getopt_initial_argument_value (x: xpr_t): (register_t * int) option =
       match (rewrite_expr x) with
@@ -349,31 +335,11 @@ object (self)
           (LBLOCK [STR faddr; STR ":"; STR iaddr; STR ": ";
                    op#toPretty; STR " is not a register"]) in
 
-    let regvar_linked_to_exit (mnem: string) (op: arm_operand_int) =
-      if op#is_register then
-        (if op#get_register = AR0 && (has_exit_use_r (op#to_variable floc)) then
-           let reg = op#to_register in
-           let tv_z = mk_reglhs_typevar reg faddr iaddr in
-           let fvar = add_return_capability (mk_function_typevar faddr) in
-           let tt_z = mk_vty_term tv_z in
-           let fterm = mk_vty_term fvar in
-           let rule = mnem ^ "-exituse" in
-           if fndata#is_typing_rule_enabled iaddr rule then
-             begin
-               log_subtype_constraint __LINE__ rule tt_z fterm;
-               store#add_subtype_constraint faddr iaddr rule tt_z fterm
-             end
-           else
-             log_subtype_rule_disabled __LINE__ rule tt_z fterm)
-      else
-        () in
-
     match instr#get_opcode with
 
     | Add (_, _, rd, rn, rm, _) ->
        begin
          (regvar_type_introduction "ADD" rd);
-         (regvar_linked_to_exit "ADD" rd);
 
          (* Heuristic: if a small number (taken here as < 256) is added to
             a register value it is assumed that the value in the destination
@@ -459,7 +425,6 @@ object (self)
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        begin
          (regvar_type_introduction "ASR" rd);
-         (regvar_linked_to_exit "ASR" rd);
 
          (* ASR results in a signed integer *)
          (let tc = mk_int_type_constant Signed 32 in
@@ -499,7 +464,6 @@ object (self)
        let rnreg = rn#to_register in
        begin
          (regvar_type_introduction "AND" rd);
-         (regvar_linked_to_exit "AND" rd);
 
          List.iter (fun rnsym ->
              let rnaddr = rnsym#getBaseName in
@@ -523,7 +487,6 @@ object (self)
        let tyc = mk_int_type_constant Signed 32 in
        begin
          (regvar_type_introduction "MVN" rd);
-         (regvar_linked_to_exit "MVN" rd);
 
          (* destination is an integer type *)
          (let tctypeterm = mk_cty_term tyc in
@@ -545,7 +508,6 @@ object (self)
        let rmreg = rm#to_register in
        begin
          (regvar_type_introduction "MVN" rd);
-         (regvar_linked_to_exit "MVN" rd);
 
          (List.iter (fun rmsym ->
               let rmaddr = rmsym#getBaseName in
@@ -570,7 +532,6 @@ object (self)
        let rnreg = rn#to_register in
        begin
          (regvar_type_introduction "ORR" rd);
-         (regvar_linked_to_exit "ORR" rd);
 
          List.iter (fun rnsym ->
              let rnaddr = rnsym#getBaseName in
@@ -865,7 +826,6 @@ object (self)
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
          (regvar_type_introduction "LDR" rt);
-         (regvar_linked_to_exit "LDR" rt);
 
          (* loaded type may be known *)
          (let xmem_r = memop#to_expr floc in
@@ -1036,7 +996,6 @@ object (self)
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
          (regvar_type_introduction "LDRB" rt);
-         (regvar_linked_to_exit "LDRB" rt);
 
          (* LDRB rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (if rn#is_sp_register then
@@ -1082,7 +1041,6 @@ object (self)
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
          (regvar_type_introduction "LDRB" rt);
-         (regvar_linked_to_exit "LDRB" rt);
 
          (* LDRB rt, ...  : X_rt <: integer type *)
          (let tc = mk_int_type_constant SignedNeutral 8 in
@@ -1104,7 +1062,6 @@ object (self)
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
          (regvar_type_introduction "LDRH" rt);
-         (regvar_linked_to_exit "LDRH" rt);
 
          (* loaded type may be known *)
          (let xmem_r = memop#to_expr floc in
@@ -1167,7 +1124,6 @@ object (self)
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
          (regvar_type_introduction "LDRH" rt);
-         (regvar_linked_to_exit "LDRH" rt);
 
        (* LDRH rt, ...  : X_rt <: integer type *)
          (let tc = mk_int_type_constant SignedNeutral 16 in
@@ -1190,7 +1146,6 @@ object (self)
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        begin
          (regvar_type_introduction "LSL" rd);
-         (regvar_linked_to_exit "LSL" rd);
 
          (* LSL results in an unsigned integer *)
          (let tc = mk_int_type_constant Unsigned 32 in
@@ -1230,7 +1185,6 @@ object (self)
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
        begin
          (regvar_type_introduction "LSR" rd);
-         (regvar_linked_to_exit "LSR" rd);
 
          (* LSR results in an unsigned integer *)
          (let tc = mk_int_type_constant Unsigned 32 in
@@ -1269,7 +1223,6 @@ object (self)
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        begin
          (regvar_type_introduction "MOV" rd);
-         (regvar_linked_to_exit "MOV" rd);
 
          (let rmval = rm#to_numerical#toInt in
           (* 0 provides no information about the type *)
@@ -1299,7 +1252,6 @@ object (self)
        let rdreg = rd#to_register in
        begin
          (regvar_type_introduction "MOV" rd);
-         (regvar_linked_to_exit "MOV" rd);
 
          (* use reaching defs *)
          (let rmreg = rm#to_register in
@@ -1396,7 +1348,6 @@ object (self)
        let rmreg = rm#to_register in
        begin
          (regvar_type_introduction "RSB" rd);
-         (regvar_linked_to_exit "RSB" rd);
 
          (let rule = "RSB-rdef" in
           List.iter (fun rmsym ->
@@ -1658,7 +1609,6 @@ object (self)
        let rnreg = rn#to_register in
        begin
          (regvar_type_introduction "SUB" rd);
-         (regvar_linked_to_exit "SUB" rd);
 
          (* Note: Does not take into consideration the possibility of the
             subtraction of two pointers *)
@@ -1692,7 +1642,6 @@ object (self)
     | UnsignedBitFieldExtract (_, rd, rn) ->
        begin
          (regvar_type_introduction "UBFX" rd);
-         (regvar_linked_to_exit "UBFX" rd);
 
          (match rn#get_kind with
           | ARMRegBitSequence (r, _, _) ->
@@ -1726,7 +1675,6 @@ object (self)
        let rdtypevar = mk_reglhs_typevar rdreg faddr iaddr in
        begin
          (regvar_type_introduction "UXTH" rd);
-         (regvar_linked_to_exit "UXTH" rd);
 
          (let opttc = mk_btype_constraint rdtypevar t_ushort in
           let rule = "UXTH-def-lhs" in
