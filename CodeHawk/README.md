@@ -52,7 +52,7 @@ git clone https://github.com/static-analysis-engineering/codehawk.git
 cd codehawk/CodeHawk
 opam switch create . 5.2.0
 eval $(opam env)
-opam install dune ocamlfind zarith camlzip extlib goblint-cil.2.0.6
+opam install --deps-only ./codehawk.opam
 
 dune build @install
 ```
