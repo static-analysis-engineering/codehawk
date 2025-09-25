@@ -1,0 +1,20 @@
+opam-version: "2.0"
+maintainer: "hsipma@aarno-labs.com"
+authors: ["Henny B. Sipma" "A. Cody Schuffelen" "Anca Browne"
+          "Andrew McGraw" "Arnaud Venet" "Aarno Labs LLC"]
+synopsis: "CodeHawk Abstract Interpretation Engine and Analyzers"
+license: "MIT"
+homepage: "https://github.com/static-analysis-engineering/codehawk"
+bug-reports: "https://github.com/static-analysis-engineering/codehawk/issues"
+dev-repo: "git+https://github.com/static-analysis-engineering/codehawk.git"
+
+depends: [
+  "ocaml"         {< "5.3.0"}
+  "dune"          {>= "3.0"}
+  "ocamlfind"
+  "zarith"
+  "camlzip"
+  "extlib"
+  "goblint-cil"   {= "2.0.6"}
+]
+
