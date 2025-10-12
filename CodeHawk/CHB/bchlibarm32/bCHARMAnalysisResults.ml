@@ -77,6 +77,8 @@ object (self)
       && (match instr#get_opcode with
           | Branch _ | BranchExchange _ -> false
           | Compare _ | CompareNegative _ -> false
+          | Move (_, _, rd, rm, _, _) when rm#is_register ->
+             not (rd#get_register = rm#get_register)
           | _ -> true)
       && (Option.is_none instr#is_in_aggregate) in
     begin

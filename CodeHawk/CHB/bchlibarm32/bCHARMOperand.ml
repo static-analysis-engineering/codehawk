@@ -443,7 +443,7 @@ object (self:'a)
              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                     ^ "offset type "
                     ^ (arm_memory_offset_to_string offset)
-                    ^ "not covered for offset address update"]
+                    ^ " not covered for offset address update"]
           | Some inc ->
              TR.tmap
                ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))

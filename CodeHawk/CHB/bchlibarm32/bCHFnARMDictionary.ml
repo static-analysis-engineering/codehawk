@@ -1770,9 +1770,11 @@ object (self)
                ~ok:(fun (inc, xaddr) ->
                  add_base_update tags args vrn_r inc (Ok xaddr))
                ~error:(fun e ->
+                 let xaddr_r =
+                   Error (e @ [__FILE__ ^ ":" ^ (string_of_int __LINE__)]) in
                  begin
                    log_dc_error_result __FILE__ __LINE__ e;
-                   (tags, args)
+                   add_base_update tags args vrn_r 0 xaddr_r
                  end)
                (mem#to_updated_offset_address floc)
            else
@@ -1920,7 +1922,7 @@ object (self)
          let uses = [get_def_use_r vrt_r] in
          let useshigh = [get_def_use_high_r vrt_r] in
          let xxaddr_r = TR.tmap rewrite_expr xaddr_r in
-         let cxaddr_r = TR.tbind floc#xpr_to_cxpr xxaddr_r in
+         let cxaddr_r = TR.tbind (floc#xpr_to_cxpr ~size:(Some 2)) xxaddr_r in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
          let cxrmem_r =
            TR.tbind (floc#xpr_to_cxpr ~size:(Some 2)) xrmem_r in
@@ -3054,9 +3056,11 @@ object (self)
                ~ok:(fun (inc, xaddr) ->
                  add_base_update tags args vrn_r inc (Ok xaddr))
                ~error:(fun e ->
+                 let xaddr_r =
+                   Error (e @ [__FILE__ ^ ":" ^ (string_of_int __LINE__)]) in
                  begin
                    log_dc_error_result __FILE__ __LINE__ e;
-                   (tags, args)
+                   add_base_update tags args vrn_r 0 xaddr_r
                  end)
                (mem#to_updated_offset_address floc)
            else

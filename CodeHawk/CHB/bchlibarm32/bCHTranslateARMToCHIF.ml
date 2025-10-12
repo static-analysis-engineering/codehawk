@@ -2059,7 +2059,7 @@ let translate_arm_instruction
    *    APSR.N = result<31>;
    *    APSR.Z = IsZeroBit(result);
    * ------------------------------------------------------------------------ *)
-  | Move _ when instr#is_aggregate_anchor ->
+  | Move (_, _, rd, _, _, _) when instr#is_aggregate_anchor ->
      (match get_associated_test_instr finfo ctxtiaddr with
       | Some (testloc, testinstr) ->
          let movagg = get_aggregate loc#i in
@@ -2145,11 +2145,17 @@ let translate_arm_instruction
                (BCH_failure
                   (LBLOCK [floc#l#toPretty; STR ": Unknown MOV aggregate kind"])))
       | _ ->
+         (* no predicate found *)
+         let vrd = floc#env#mk_register_variable rd#to_register in
+         let lhs_r = TR.tmap fst (rd#to_lhs floc) in
+         let cmds = floc#get_abstract_commands_r lhs_r in
+         let defcmds = floc#get_vardef_commands ~defs:[vrd] ctxtiaddr in
+         let cmds = defcmds @ cmds in
          let _ =
            chlog#add
              "predicate assignment aggregate without predicate"
              (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
-         default [])
+         default cmds)
 
   | Move _ when Option.is_some instr#is_in_aggregate ->
      default []
