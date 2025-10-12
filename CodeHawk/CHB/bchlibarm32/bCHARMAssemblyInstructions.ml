@@ -573,22 +573,27 @@ object (self)
     end
 
   method write_xml (node:xml_element_int) =
+    let subnodes = ref [] in
     let bnode = ref (xmlElement "b") in
-    self#itera
-      (fun va instr ->
-        if instr#is_valid_instruction then
-          let _ =
-            if instr#is_block_entry then
-              begin
-                bnode := xmlElement "b";
-                (!bnode)#setAttribute "ba" va#to_hex_string;
-                node#appendChildren [!bnode]
-              end in
-          let inode = xmlElement "i" in
-          begin
-            instr#write_xml inode;
-            (!bnode)#appendChildren [inode]
-          end)
+    begin
+      self#itera
+        (fun va instr ->
+          if instr#is_valid_instruction then
+            let _ =
+              if instr#is_block_entry then
+                begin
+                  bnode := xmlElement "b";
+                  (!bnode)#setAttribute "ba" va#to_hex_string;
+                  (* node#appendChildren [!bnode] *)
+                  subnodes := !bnode :: !subnodes
+                end in
+            let inode = xmlElement "i" in
+            begin
+              instr#write_xml inode;
+              (!bnode)#appendChildren [inode]
+            end);
+      node#appendChildren (List.rev !subnodes)
+    end
 
   method private not_code_to_string
                    (datarefstr: doubleword_int -> string) (nc: not_code_t): string =

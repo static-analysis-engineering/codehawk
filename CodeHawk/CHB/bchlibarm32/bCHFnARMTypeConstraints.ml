@@ -501,7 +501,7 @@ object (self)
             log_subtype_rule_disabled __LINE__ rule tctypeterm lhstypeterm)
        end
 
-    | BitwiseNot (_, _, rd, rm, _) ->
+    | BitwiseNot (_, _, rd, rm, _) when rm#is_register->
        let rdreg = rd#to_register in
        let lhstypevar = mk_reglhs_typevar rdreg faddr iaddr in
        let rmdefs = get_variable_rdefs_r (rm#to_variable floc) in
