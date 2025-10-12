@@ -522,21 +522,29 @@ and size_of_btype_array (t: btype_t) (len: bexp_t): int traceresult =
 
 
 and size_of_btype_comp (comp: bcompinfo_t): int traceresult =
-  if comp.bcstruct then
-    let lastoff =
-      List.fold_left (fun acc_r finfo ->
-          tbind (fun acc -> offset_of_field_acc ~finfo ~acc) acc_r)
-        (Ok start_oa) comp.bcfields in
-    let size =
-      tmap2 (fun o a -> add_trailing o.oa_first_free a)
-        lastoff (align_of_btype (TComp (comp.bckey, []))) in
-    size
-  else    (* union *)
-    let fieldsizes =
-      List.map (fun finfo -> size_of_btype finfo.bftype) comp.bcfields in
-    let size =
-      tfold_list_fail (fun mx a -> if a > mx then a else mx) (Ok 0) fieldsizes in
-    size
+  let size =
+    if comp.bcstruct then
+      let lastoff =
+        List.fold_left (fun acc_r finfo ->
+            tbind (fun acc -> offset_of_field_acc ~finfo ~acc) acc_r)
+          (Ok start_oa) comp.bcfields in
+      let size =
+        tmap2 (fun o a -> add_trailing o.oa_first_free a)
+          lastoff (align_of_btype (TComp (comp.bckey, []))) in
+      size
+    else    (* union *)
+      let fieldsizes =
+        List.map (fun finfo -> size_of_btype finfo.bftype) comp.bcfields in
+      let size =
+        tfold_list_fail (fun mx a -> if a > mx then a else mx) (Ok 0) fieldsizes in
+      size in
+  tbind
+    (fun size ->
+      if size = 0 then
+        Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+               ^ "zero size for compinfo: " ^ comp.bcname]
+      else
+        Ok size) size
 
 
 and offset_of_field_acc
