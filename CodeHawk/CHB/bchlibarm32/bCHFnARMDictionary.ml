@@ -1762,7 +1762,11 @@ object (self)
              ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
-         let tags = add_optional_subsumption tags in
+         let tags =
+           match instr#is_in_aggregate with
+           | Some dw when (get_aggregate dw)#is_pseudo_ldrsb ->
+              add_subsumption_dependents (get_aggregate dw) tags
+           | _ -> add_optional_subsumption tags in
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn_r = rn#to_variable floc in
@@ -1779,11 +1783,6 @@ object (self)
                (mem#to_updated_offset_address floc)
            else
              (tags, args) in
-         let tags =
-           match instr#is_in_aggregate with
-           | Some dw when (get_aggregate dw)#is_pseudo_ldrsb ->
-              add_subsumption_dependents (get_aggregate dw) tags
-           | _ -> tags in
          (tags, args)
 
       | LoadRegisterDual (c, rt, rt2, rn, rm, mem, mem2) ->
@@ -1948,6 +1947,11 @@ object (self)
              ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
+         let tags =
+           match instr#is_in_aggregate with
+           | Some dw when (get_aggregate dw)#is_pseudo_ldrsh ->
+              add_subsumption_dependents (get_aggregate dw) tags
+           | _ -> add_optional_subsumption tags in
          let (tags, args) =
            if mem#is_offset_address_writeback then
              let vrn_r = rn#to_variable floc in
@@ -1962,11 +1966,6 @@ object (self)
                (mem#to_updated_offset_address floc)
            else
              (tags, args) in
-         let tags =
-           match instr#is_in_aggregate with
-           | Some dw when (get_aggregate dw)#is_pseudo_ldrsh ->
-              add_subsumption_dependents (get_aggregate dw) tags
-           | _ -> tags in
          (tags, args)
 
       | LoadRegisterSignedByte (c, rt, rn, rm, mem, _) ->

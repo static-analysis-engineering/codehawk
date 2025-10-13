@@ -141,7 +141,7 @@ object (self)
 
   method is_pseudo_ldrsb =
     match self#kind with
-    | PseudoLDRSH _ -> true
+    | PseudoLDRSB _ -> true
     | _ -> false
 
   method is_predicate_assign =
