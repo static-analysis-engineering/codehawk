@@ -159,7 +159,7 @@ object (self)
         () in
     let rewrite_expr ?(restrict:int option) (x: xpr_t): xpr_t =
       try
-        let xpr = floc#inv#rewrite_expr x in
+        let xpr = floc#inv#rewrite_expr ~loopcounter:true x in
         let xpr = simplify_xpr xpr in
         let xpr =
           let vars = variables_in_expr xpr in

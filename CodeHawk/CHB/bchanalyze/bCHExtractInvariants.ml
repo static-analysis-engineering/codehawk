@@ -232,6 +232,16 @@ let extract_external_value_equalities
 
 
 let extract_relational_facts finfo iaddr domain =
+  let vars = domain#observer#getObservedVariables in
+  let lcs =
+    List.filter (fun v -> match v#getType with NUM_LOOP_COUNTER_TYPE -> true | _ -> false)
+      vars in
+  let _ =
+    ch_diagnostics_log#add
+      "project out loopcounters"
+      (LBLOCK [STR iaddr; STR ": ";
+               pretty_print_list lcs (fun v -> v#toPretty) "[" ", " "]"]) in
+  let domain = domain#projectOut lcs in
   let constraints = domain#observer#getNumericalConstraints ~variables:None () in
   List.iter (finfo#finv#add_lineq iaddr) constraints
 
