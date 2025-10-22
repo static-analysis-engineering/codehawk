@@ -1511,7 +1511,8 @@ type stackvar_intro_t = {
     svi_offset: int;
     svi_name: string;
     svi_vartype: btype_t option;
-    svi_cast: bool
+    svi_cast: bool;
+    svi_loopcounter: bool
   }
 
 type typing_rule_t = {
@@ -1531,7 +1532,8 @@ type function_annotation_t = {
     regvarintros: regvar_intro_t list;
     stackvarintros: stackvar_intro_t list;
     typingrules: typing_rule_t list;
-    reachingdefspecs: reachingdef_spec_t list
+    reachingdefspecs: reachingdef_spec_t list;
+    constglobalvars: string list
   }
 
 class type function_data_int =
@@ -1592,6 +1594,7 @@ class type function_data_int =
     method has_regvar_type_cast: doubleword_int -> bool
     method has_stackvar_type_annotation: int -> bool
     method has_stackvar_type_cast: int -> bool
+    method is_const_global_variable: string -> bool
     method filter_deflocs: string -> variable_t -> symbol_t list -> symbol_t list
     method is_typing_rule_enabled: ?rdef:string option -> string -> string -> bool
     method has_class_info: bool
@@ -1858,11 +1861,13 @@ object ('a)
   method get_fact: invariant_fact_t
   method get_variables: variable_t list
   method get_variable_equality_variables: variable_t list
+  method get_var_loopcounter_expr: variable_t -> xpr_t option
   method is_constant: bool
   method is_interval: bool
   method is_base_offset_value: bool
   method is_symbolic_expr: bool
   method is_linear_equality: bool
+  method is_loopcounter_equality: bool
   method is_variable_equality: bool
   method is_smaller: 'a -> bool
   method write_xml: xml_element_int -> unit
@@ -1893,7 +1898,7 @@ object
   method get_known_initial_values: variable_t list
   method get_init_disequalities: variable_t list (* initial values *)
   method get_init_equalities: variable_t list (* initial values *)
-  method rewrite_expr: xpr_t ->  xpr_t
+  method rewrite_expr: ?loopcounter:bool -> xpr_t ->  xpr_t
 
   (* predicates *)
   method is_unreachable: bool
@@ -1907,6 +1912,7 @@ object
            variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t -> bool
   method var_has_initial_value: variable_t -> bool
   method var_has_symbolic_expr: variable_t -> bool
+  method has_loop_counter_equality: bool
 
   (* xml *)
   method write_xml: xml_element_int -> unit
@@ -3780,6 +3786,10 @@ class type vardictionary_int =
     method xd: xprdictionary_int
     method faddr: doubleword_int
     method reset: unit
+
+    method set_av_attributes: int -> string list -> unit
+    method get_av_attributes: int -> string list
+
     method get_indexed_variables: (int * assembly_variable_denotation_t) list
     method get_indexed_bases: (int * memory_base_t) list
 
@@ -3839,6 +3849,9 @@ object
 
   (** Returns the memory reference manager for this function.*)
   method memrefmgr: memory_reference_manager_int
+
+  method set_av_attributes: int -> string list -> unit
+  method get_av_attributes: int -> string list
 
   (** {1 Creating variables}*)
 
@@ -4580,6 +4593,7 @@ end
     sslot_btype: btype_t;
     sslot_size: int option;
     sslot_spill: register_t option;
+    sslot_loopcounter: bool;
     sslot_desc: string option
   }
 
@@ -4612,6 +4626,7 @@ class type stackslot_int =
     method is_struct: bool
     method is_array: bool
     method is_spill: bool
+    method is_loopcounter: bool
 
     method write_xml: xml_element_int -> unit
   end
@@ -5017,6 +5032,15 @@ class type function_environment_int =
     (** [is_global_variable var] returns [true] if [var] is a global variable
         or if [var] is the initial value of a global variable. *)
     method is_global_variable: variable_t -> bool
+
+    (** [is_mutable_global_variable var] returns [true] if [var] is a global
+        variable, but not an initial memory value and not a const global variable
+        (as annotated in the function annotations).
+
+        Note: non-mutability is asserted only in the context of a given function
+        (as derived from the function annotations).
+     *)
+    method is_mutable_global_variable: variable_t -> bool
 
     (** Returns true if [var] is a global variable with a constant offset
         (i.e., a numerical value). *)

@@ -107,6 +107,8 @@ object (self)
     | Ok t -> is_scalar t
     | _ -> false
 
+  method is_loopcounter: bool = sslot.sslot_loopcounter
+
   method size: int option = sslot.sslot_size
 
   method desc = sslot.sslot_desc
@@ -365,6 +367,7 @@ object (self)
                   sslot_name = svintro.svi_name;
                   sslot_btype = ty;
                   sslot_spill = None;
+                  sslot_loopcounter = svintro.svi_loopcounter;
                   sslot_desc = Some ("svintro");
                   sslot_size = size} in
               let stackslot = new stackslot_t sslot in
@@ -449,6 +452,7 @@ object (self)
              sslot_btype = btype;
              sslot_spill = spill;
              sslot_size = size;
+             sslot_loopcounter = false;
              sslot_desc = desc
            } in
          let sslot = new stackslot_t ssrec in
@@ -495,6 +499,7 @@ object (self)
                sslot_btype = t_unknown;
                sslot_spill = Some reg;
                sslot_size = Some 4;
+               sslot_loopcounter = false;
                sslot_desc = Some "register spill"
              } in
            let sslot = new stackslot_t ssrec in
@@ -534,6 +539,7 @@ object (self)
                sslot_btype = t_unknown;
                sslot_spill = Some reg;
                sslot_size = Some 4;
+               sslot_loopcounter = false;
                sslot_desc = Some "register_spill"
              } in
            let sslot = new stackslot_t ssrec in
@@ -571,7 +577,20 @@ object (self)
            (iaddr:ctxt_iaddress_t) =
     let ty = match typ with Some t -> t | _ -> t_unknown in
     let blread = StackBlockRead (offset, size, ty) in
-    self#add_access offset iaddr blread
+    let ssrec = {
+        sslot_name = "blockread";
+        sslot_offset = offset;
+        sslot_btype = ty;
+        sslot_size = size;
+        sslot_spill = None;
+        sslot_loopcounter = false;
+        sslot_desc = None
+      } in
+    let sslot = new stackslot_t ssrec in
+    begin
+      self#add_access offset iaddr blread;
+      H.add stackslots offset sslot
+    end
 
   method add_block_write
            ~(offset:int)
