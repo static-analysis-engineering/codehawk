@@ -726,7 +726,7 @@ object (self:'a)
     | ARMImmediate _ ->
        let num = self#to_numerical in
        (try
-          num#toInt >= 0 && num#toInt < 5
+          num#toInt >= 0 && num#toInt < 7
         with
         | _ -> false)
     | _ -> false

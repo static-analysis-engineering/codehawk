@@ -1987,6 +1987,8 @@ let translate_arm_instruction
        | 2 -> 4
        | 3 -> 8
        | 4 -> 16
+       | 5 -> 32
+       | 6 -> 64
        | _ -> 1 in  (* not reachable by small immediate *)
      let usevars = get_register_vars [rn] in
      let usehigh = get_use_high_vars_r [xxrn_r] in

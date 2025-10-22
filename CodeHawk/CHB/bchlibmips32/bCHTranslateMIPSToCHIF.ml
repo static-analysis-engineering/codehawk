@@ -268,7 +268,7 @@ let translate_mips_instruction
   let frozenasserts =
     List.map (fun (v, fv) -> ASSERT (EQ (v, fv)))
       (finfo#get_test_variables ctxtiaddr) in
-  let rewrite_expr floc x:xpr_t =
+  let rewrite_expr (floc: floc_int) (x: xpr_t):xpr_t =
     let rec expand x =
       match x with
       | XVar v

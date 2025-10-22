@@ -91,7 +91,7 @@ let analyze_procedure_with_linear_equalities
   begin
     analysis_setup#addLinearEqualities;
     analysis_setup#setOpSemantics (default_opsemantics "karr");
-    analysis_setup#analyze_procedure system proc
+    analysis_setup#analyze_procedure system ~do_loop_counters:true proc
   end
 
 let analyze_procedure_with_intervals (proc:procedure_int) (system:system_int) =
