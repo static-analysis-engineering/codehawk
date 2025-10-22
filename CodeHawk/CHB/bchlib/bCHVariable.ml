@@ -543,6 +543,12 @@ object (self)
 
   method memrefmgr = memrefmgr
 
+  method set_av_attributes (avindex: int) (atts: string list) =
+    self#vard#set_av_attributes avindex atts
+
+  method get_av_attributes (avindex: int): string list =
+    self#vard#get_av_attributes avindex
+
   method private mk_variable (denotation:assembly_variable_denotation_t) =
     let index = vard#index_assembly_variable_denotation denotation in
     if  H.mem vartable index then

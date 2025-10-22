@@ -44,6 +44,7 @@ open BCHBasicTypes
 open BCHLibTypes
 open BCHSumTypeSerializer
 
+module H = Hashtbl
 module TR = CHTraceResult
 
 
@@ -74,6 +75,9 @@ object (self)
 
   val faddr = faddr
   val xd = xd
+
+  val assembly_variable_attributes = H.create 5   (* avar#index -> atts *)
+
   val memory_base_table = mk_index_table "memory-base-table"
   val memory_offset_table = mk_index_table "memory-offset-table"
   val sideeffect_argument_location_table =
@@ -105,6 +109,18 @@ object (self)
   method faddr = faddr
 
   method xd = xd
+
+  method set_av_attributes (index: int) (atts: string list) =
+    H.replace assembly_variable_attributes index atts
+
+  method get_av_attributes (index: int): string list =
+    if H.mem assembly_variable_attributes index then
+      H.find assembly_variable_attributes index
+    else
+      []
+
+  method private list_av_attributes: (int * string list) list =
+    H.fold (fun k v a -> (k, v) :: a) assembly_variable_attributes []
 
   method get_indexed_variables =
     List.map (fun (_,index) -> (index,self#get_assembly_variable_denotation index))
@@ -346,10 +362,27 @@ object (self)
            ?(tag="isa") (node: xml_element_int) (sa: stack_access_t) =
     node#setIntAttribute tag (self#index_stack_access sa)
 
+  method private read_xml_av_attributes (node: xml_element_int) =
+    List.iter (fun avnode ->
+        let index = avnode#getIntAttribute "ix" in
+        let atts = avnode#getAttribute "atts" in
+        let atts = String.split_on_char ',' atts in
+        self#set_av_attributes index atts) (node#getTaggedChildren "av")
+
   method write_xml (node:xml_element_int) =
+    let anode = xmlElement "av-attributes" in
     let vnode = xmlElement "var-dictionary" in
     let xnode = xmlElement "xpr-dictionary" in
     begin
+      anode#appendChildren
+        (List.map
+           (fun (k, v) ->
+             let avnode = xmlElement "av" in
+             begin
+               avnode#setIntAttribute "ix" k;
+               avnode#setAttribute "atts" (String.concat "," v);
+               avnode
+             end) self#list_av_attributes);
       vnode#appendChildren
         (List.map
            (fun t ->
@@ -360,13 +393,15 @@ object (self)
              end) tables);
       xd#write_xml xnode;
       vnode#appendChildren [xnode];
-      node#appendChildren [vnode]
+      node#appendChildren [anode; vnode]
     end
 
   method read_xml (node:xml_element_int) =
     let vnode = node#getTaggedChild "var-dictionary" in
     let getc = vnode#getTaggedChild in
     begin
+      (if node#hasOneTaggedChild "av-attributes" then
+         self#read_xml_av_attributes (node#getTaggedChild "av-attributes"));
       xd#read_xml (getc "xpr-dictionary");
       List.iter (fun t -> t#read_xml (getc t#get_name)) tables
     end
