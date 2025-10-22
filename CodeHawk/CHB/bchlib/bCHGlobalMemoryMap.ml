@@ -440,7 +440,8 @@ object (self)
              match optindex with
              | None ->
                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                       ^ "Unable to extract index from " ^ (x2s xoffset)]
+                       ^ "Unable to extract index from " ^ (x2s xoffset)
+                       ^ " with element size " ^ (string_of_int elsize)]
              | Some (indexxpr, xrem) when
                     iszero xrem
                     && Option.is_none tgtsize

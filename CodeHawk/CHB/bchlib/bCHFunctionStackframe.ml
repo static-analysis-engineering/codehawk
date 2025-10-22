@@ -578,7 +578,7 @@ object (self)
     let ty = match typ with Some t -> t | _ -> t_unknown in
     let blread = StackBlockRead (offset, size, ty) in
     let ssrec = {
-        sslot_name = "blockread";
+        sslot_name = "localvar_" ^ (string_of_int (-offset));
         sslot_offset = offset;
         sslot_btype = ty;
         sslot_size = size;
