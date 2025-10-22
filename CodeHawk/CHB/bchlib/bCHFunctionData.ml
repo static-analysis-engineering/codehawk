@@ -75,7 +75,8 @@ let stackvar_intro_to_string (svi: stackvar_intro_t) =
     match svi.svi_vartype with
     | Some t -> " (" ^ (btype_to_string t) ^ ")"
     | _ -> "" in
-  (string_of_int svi.svi_offset) ^ ": " ^ svi.svi_name ^ ptype
+  let lc_p = if svi.svi_loopcounter then " (lc)" else "" in
+  (string_of_int svi.svi_offset) ^ ": " ^ svi.svi_name ^ ptype ^ lc_p
 
 
 let reachingdef_spec_to_string (rds: reachingdef_spec_t) =
@@ -373,6 +374,11 @@ object (self)
          false
        else
          BCHSystemSettings.system_settings#is_typing_rule_enabled name
+
+  method is_const_global_variable (name: string): bool =
+    match self#get_function_annotation with
+    | None -> false
+    | Some a -> List.mem name a.constglobalvars
 
   method filter_deflocs
            (iaddr: string) (v: variable_t) (deflocs: symbol_t list): symbol_t list =
@@ -689,6 +695,7 @@ let read_xml_stackvar_intro (node: xml_element_int): stackvar_intro_t traceresul
   else
     let svi_offset = (-(geti "offset")) in
     let svi_name = get "name" in
+    let svi_loopcounter = has "loopcounter" && (get "loopcounter") = "yes" in
     let (svi_vartype, svi_cast) =
       if has "typename" then
         let typename = get "typename" in
@@ -712,6 +719,7 @@ let read_xml_stackvar_intro (node: xml_element_int): stackvar_intro_t traceresul
         (None, false) in
     Ok {svi_offset = svi_offset;
         svi_name = svi_name;
+        svi_loopcounter = svi_loopcounter;
         svi_vartype = svi_vartype;
         svi_cast = svi_cast}
 
@@ -757,6 +765,66 @@ let read_xml_reachingdef_spec
       }
 
 
+let read_xml_stackvarintros (node: xml_element_int): stackvar_intro_t list =
+  List.fold_left
+    (fun acc n ->
+      TR.tfold
+        ~ok:(fun svi -> svi :: acc)
+        ~error:(fun e ->
+          begin
+            log_error_result __FILE__ __LINE__ e;
+            acc
+          end)
+        (read_xml_stackvar_intro n))
+    []
+    (node#getTaggedChildren "vintro")
+
+
+let read_xml_regvarintros (node: xml_element_int): regvar_intro_t list =
+  List.fold_left
+    (fun acc n ->
+      TR.tfold
+        ~ok:(fun rvi -> rvi :: acc)
+        ~error:(fun e ->
+          begin
+            log_error_result __FILE__ __LINE__ e;
+            acc
+          end)
+        (read_xml_regvar_intro n))
+    []
+    (node#getTaggedChildren "vintro")
+
+
+let read_xml_typingrules (node: xml_element_int): typing_rule_t list =
+  List.fold_left
+    (fun acc n ->
+      TR.tfold
+        ~ok:(fun tr -> tr :: acc)
+        ~error:(fun e ->
+          begin
+            log_error_result __FILE__ __LINE__ e;
+            acc
+          end)
+        (read_xml_typing_rule n))
+    []
+    (node#getTaggedChildren "typingrule")
+
+
+let read_xml_removerdefs (node: xml_element_int): reachingdef_spec_t list =
+  List.fold_left
+    (fun acc n ->
+      TR.tfold
+        ~ok:(fun rds -> rds :: acc)
+        ~error:(fun e ->
+          begin
+            log_error_result __FILE__ __LINE__ e;
+            acc
+          end)
+        (read_xml_reachingdef_spec n))
+    []
+    (node#getTaggedChildren "remove-var-rdefs")
+
+
 let read_xml_function_annotation (node: xml_element_int) =
   let get = node#getAttribute in
   let getc = node#getTaggedChild in
@@ -771,77 +839,37 @@ let read_xml_function_annotation (node: xml_element_int) =
           functions_data#add_function dw in
       let stackvintros =
         if hasc "stackvar-intros" then
-          let svintros = getc "stackvar-intros" in
-          List.fold_left
-            (fun acc n ->
-              TR.tfold
-                ~ok:(fun svi -> svi :: acc)
-                ~error:(fun e ->
-                  begin
-                    log_error_result __FILE__ __LINE__ e;
-                    acc
-                  end)
-                (read_xml_stackvar_intro n))
-            []
-            (svintros#getTaggedChildren "vintro")
+          read_xml_stackvarintros (getc "stackvar-intros")
         else
           [] in
       let regvintros =
         if hasc "regvar-intros" then
-          let rvintros = getc "regvar-intros" in
-          List.fold_left
-            (fun acc n ->
-              TR.tfold
-                ~ok:(fun rvi -> rvi :: acc)
-                ~error:(fun e ->
-                  begin
-                    log_error_result __FILE__ __LINE__ e;
-                    acc
-                  end)
-                (read_xml_regvar_intro n))
-            []
-            (rvintros#getTaggedChildren "vintro")
+          read_xml_regvarintros (getc "regvar-intros")
         else
           [] in
       let typingrules =
         if hasc "typing-rules" then
-          let trules = getc "typing-rules" in
-          List.fold_left
-            (fun acc n ->
-              TR.tfold
-                ~ok:(fun tr -> tr :: acc)
-                ~error:(fun e ->
-                  begin
-                    log_error_result __FILE__ __LINE__ e;
-                    acc
-                  end)
-                (read_xml_typing_rule n))
-            []
-            (trules#getTaggedChildren "typingrule")
+          read_xml_typingrules (getc "typing-rules")
         else
           [] in
       let rdefspecs =
         if hasc "remove-rdefs" then
-          let rrds = getc "remove-rdefs" in
-          List.fold_left
-            (fun acc n ->
-              TR.tfold
-                ~ok:(fun rds -> rds :: acc)
-                ~error:(fun e ->
-                  begin
-                    log_error_result __FILE__ __LINE__ e;
-                    acc
-                  end)
-                (read_xml_reachingdef_spec n))
-            []
-            (rrds#getTaggedChildren "remove-var-rdefs")
+          read_xml_removerdefs (getc "remove-rdefs")
+        else
+          [] in
+      let constglobals =
+        if hasc "const-global-variables" then
+          let gnode = getc "const-global-variables" in
+          List.map
+            (fun n -> n#getAttribute "name") (gnode#getTaggedChildren "gvar")
         else
           [] in
       fndata#set_function_annotation
         {regvarintros = regvintros;
          stackvarintros = stackvintros;
          typingrules = typingrules;
-         reachingdefspecs = rdefspecs
+         reachingdefspecs = rdefspecs;
+         constglobalvars = constglobals
         })
     ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
     (string_to_doubleword faddr)
