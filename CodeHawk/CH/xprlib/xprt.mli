@@ -53,6 +53,8 @@ val get_disjuncts: xpr_t -> xpr_t list
 val variables_in_expr: xpr_t -> variable_t list
 val vars_in_expr_list: xpr_t list -> variable_t list
 
+val loop_counters_in_expr: xpr_t -> variable_t list
+
 val is_zero: xpr_t -> bool
 val is_one: xpr_t -> bool
 val is_intconst: xpr_t -> bool

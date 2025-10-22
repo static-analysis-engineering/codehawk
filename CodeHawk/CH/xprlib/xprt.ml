@@ -254,6 +254,13 @@ let vars_in_expr (expr:xpr_t):VariableCollections.set_t =
 let variables_in_expr (x:xpr_t):variable_t list = (vars_in_expr x)#toList
 
 
+let loop_counters_in_expr (x: xpr_t): variable_t list =
+  List.filter (fun v ->
+      match v#getType with
+      | NUM_LOOP_COUNTER_TYPE -> true
+      | _ -> false) (variables_in_expr x)
+
+
 let vars_in_expr_list (exprs:xpr_t list) =
   let s = new VariableCollections.set_t in
     begin
