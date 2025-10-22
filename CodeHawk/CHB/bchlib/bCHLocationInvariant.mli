@@ -46,7 +46,7 @@ val numerical_constraint_to_linear_equality:
 
 val linear_equality_get_vars: linear_equality_t -> variable_t list
 
-val linear_equality_get_expr: linear_equality_t -> variable_t -> xpr_t
+val linear_equality_get_expr: linear_equality_t -> variable_t -> xpr_t option
 
 val mk_invariant_io:
   xml_element_int option -> vardictionary_int ->  string -> invariant_io_int

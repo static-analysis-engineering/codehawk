@@ -231,38 +231,34 @@ let get_variable_equality_variables (lineq: linear_equality_t) =
     []
 
 
-let linear_equality_get_expr e v =
+(* Note: the signature of this function should be changed into a result
+   type; the function should not raise an exception.
+ *)
+let linear_equality_get_expr (lineq: linear_equality_t) (v: variable_t): xpr_t option =
   let make_factor c f =
     if c#equal numerical_one then
       XVar f
     else
       XOp (XMult, [num_constant_expr c; XVar f]) in
   try
-    let (c, _f) = List.find (fun (_, f) -> f#equal v) e.leq_factors in
-    let xfactors = List.filter (fun (_, f) -> not (f#equal v)) e.leq_factors in
+    let (c, _f) = List.find (fun (_, f) -> f#equal v) lineq.leq_factors in
+    let xfactors = List.filter (fun (_, f) -> not (f#equal v)) lineq.leq_factors in
     let x =
       if c#equal numerical_one then
 	List.fold_left (fun a (c,f) -> XOp (XPlus, [a; make_factor c#neg f]))
-	  (num_constant_expr e.leq_constant) xfactors
+	  (num_constant_expr lineq.leq_constant) xfactors
       else if c#equal numerical_one#neg then
 	List.fold_left (fun a (c,f) -> XOp (XPlus, [a; make_factor c f]))
-	  (num_constant_expr e.leq_constant#neg) xfactors
+	  (num_constant_expr lineq.leq_constant#neg) xfactors
       else
-	raise
+        raise
           (BCH_failure
-	     (LBLOCK [
-                  STR "Case with higher coefficients not yet handled: ";
-		  linear_equality_to_pretty e])) in
-    simplify_xpr x
+            (LBLOCK [STR "Case with higher coefficients not yet handled: ";
+                     linear_equality_to_pretty lineq])) in
+    Some (simplify_xpr x)
   with
-    Not_found ->
-    raise
-      (BCH_failure
-	 (LBLOCK [
-              STR "Variable ";
-              v#toPretty;
-	      STR " not found in linear equality ";
-	      linear_equality_to_pretty e]))
+  | Not_found ->
+     None
 
 
 let linear_equality_compare e1 e2 =
@@ -416,6 +412,13 @@ object (self:'a)
        is_variable_equality lineq
     | _ -> false
 
+  method is_loopcounter_equality =
+    match fact with
+    | RelationalFact lineq ->
+       List.exists (fun (_, f) -> List.mem "lc" f#getName#getAttributes)
+         lineq.leq_factors
+    | _ -> false
+
   method get_variable_equality_variables =
     match fact with
     | RelationalFact lineq when is_variable_equality lineq ->
@@ -424,6 +427,14 @@ object (self:'a)
        raise
          (BCH_failure
             (LBLOCK [STR "Not a variable-equality: "; self#toPretty]))
+
+  method get_var_loopcounter_expr (v: variable_t): xpr_t option =
+    if self#is_loopcounter_equality then
+      match fact with
+      | RelationalFact lineq -> linear_equality_get_expr lineq v
+      | _ -> None
+    else
+      None
 
   method is_smaller (other:'a) =
     match (fact, other#get_fact) with
@@ -643,7 +654,13 @@ object (self)
 	| NonRelationalFact (w, FSymbolicExpr x) when w#equal v -> Some x
 	| _ -> None) None (self#get_var_facts v)
 
-  method rewrite_expr (x:xpr_t) =
+  method private get_var_loopcounter_expr (v: variable_t): xpr_t option =
+    List.fold_left (fun acc inv ->
+        match acc with
+        | Some _ -> acc
+        | _ -> inv#get_var_loopcounter_expr v) None self#get_facts
+
+  method rewrite_expr ?(loopcounter=false) (x:xpr_t) =
     let subst1 v =
       if self#is_constant v then
         XConst (IntConst (self#get_constant v))
@@ -662,7 +679,19 @@ object (self)
       match self#get_external_exprs v with
       | [] -> XVar v
       | x :: _tl -> x in
-    let x1 = simplify_xpr (substitute_expr subst1 x) in
+    let subst_lc v =
+      (* For now only user-designated loop counter variables are annotated
+         with the lc attribute. Loop counter does not refer to the engine
+         loop-counter variable. *)
+      if loopcounter && (not (List.mem "lc" v#getName#getAttributes)) then
+        let eq = self#get_var_loopcounter_expr v in
+        match eq with
+        | Some x -> x
+        | _ -> XVar v
+      else
+        XVar v in
+    let x0 = simplify_xpr (substitute_expr subst_lc x) in
+    let x1 = simplify_xpr (substitute_expr subst1 x0) in
     let x2 = simplify_xpr (substitute_expr subst2 x1) in
     let x3 = simplify_xpr (substitute_expr subst3 x2) in
     let x4 = simplify_xpr (substitute_expr subst4 x3) in
@@ -920,6 +949,9 @@ object (self)
 	  | NonRelationalFact (w, FSymbolicExpr _) when v#equal w -> true
 	  | _ -> false) false (self#get_var_facts v)
 
+  method has_loop_counter_equality: bool =
+    List.exists (fun inv -> inv#is_loopcounter_equality) self#get_facts
+
   method write_xml (node:xml_element_int) =
     let invs = List.sort Stdlib.compare (H.fold (fun k _ a -> k::a) facts []) in
     if (List.length invs) > 0  then
@@ -1134,7 +1166,9 @@ object (self)
     self#add iaddr (TestVarEquality (tvar,tval,taddr,jaddr))
 
   method add_lineq (iaddr:string) (nc:numerical_constraint_t) =
-    self#add iaddr (RelationalFact (numerical_constraint_to_linear_equality nc))
+    let lineq = numerical_constraint_to_linear_equality nc in
+    let fact = RelationalFact lineq in
+    self#add iaddr fact
 
   method get_location_invariant (iaddr:string) =
     match invariants#get iaddr with
