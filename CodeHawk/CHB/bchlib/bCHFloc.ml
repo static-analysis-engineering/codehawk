@@ -1609,6 +1609,32 @@ object (self)
       TR.tfold_default BCHBCTypeUtil.is_pointer false (self#get_xpr_type y) in
     let default () = self#convert_xpr_offsets ~xtype ~size x in
     match x with
+    | XOp (XPlus, [y; XOp (XMult, [XConst (IntConst n); XVar v])]) ->
+       let _ =
+         log_diagnostics_result
+           ~msg:(p2s self#l#toPretty)
+           ~tag:"xpr_to_cxpr:scaled expr"
+           __FILE__ __LINE__
+           ["y: " ^ (x2s y);
+            "var: " ^ (p2s v#toPretty);
+            "n: " ^ n#toString] in
+       let gloc_o = memmap#xpr_containing_location x in
+       (match gloc_o with
+        | Some gloc ->
+           let memoff_o = TR.to_option (gloc#address_memory_offset self#l x) in
+           (match memoff_o with
+            | Some memoff ->
+               let _ =
+                 log_diagnostics_result
+                   ~msg:(p2s self#l#toPretty)
+                   ~tag:"xpr_to_cxpr:scaled gloc expr"
+                   __FILE__ __LINE__
+                   [(x2s x); gloc#name; memory_offset_to_string memoff] in
+               Ok (XOp ((Xf "addressofvar"),
+                        [XVar (self#f#env#mk_gloc_variable gloc memoff)]))
+           | _ -> default ())
+        | _ -> default ())
+
     | XOp (XPlus, [y; XConst (IntConst n)]) when is_pointer y && arithm ->
        let derefty = BCHBCTypeUtil.ptr_deref (TR.tget_ok (self#get_xpr_type y)) in
        let _ =
@@ -2374,8 +2400,20 @@ object (self)
          match rhs with
          | XConst (IntConst n) when n#gt CHNumerical.numerical_zero ->
             let dw = numerical_mod_to_doubleword n in
-            if memmap#has_location dw then
-              TR.tvalue (self#f#env#mk_global_variable_address dw) ~default:rhs
+            (* do not rewrite to global addresses in the presence of loop counter
+               equalities, because the presence of symbolic constants derails the
+               generation of loop invariants. *)
+            if (memmap#has_location dw)
+               && (not (self#inv#has_loop_counter_equality)) then
+              let newrhs =
+                TR.tvalue (self#f#env#mk_global_variable_address dw) ~default:rhs in
+              let _ =
+                ch_diagnostics_log#add
+                  "rewrite constant to global address"
+                  (LBLOCK [
+                       self#l#toPretty; STR ": ";
+                       dw#toPretty; STR " ==> "; (x2p newrhs)]) in
+              newrhs
             else
               rhs
          | _ -> rhs in
@@ -2426,6 +2464,7 @@ object (self)
          let reqC = self#env#request_num_constant in
          let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
          let cmds = rhscmds @ [ASSIGN_NUM (lhs, rhs_c)] in
+
          let fndata = self#f#get_function_data in
          match fndata#get_regvar_intro self#ia with
          | Some rvi when rvi.rvi_cast && Option.is_some rvi.rvi_vartype ->
@@ -3216,7 +3255,16 @@ object (self)
      let bridgeVars = self#env#get_bridge_values_at self#cia in
      let abstractglobals =
        let globals =
-         List.filter self#env#is_global_variable self#env#get_variables in
+         List.filter self#f#env#is_mutable_global_variable self#env#get_variables in
+       let _ =
+         ch_diagnostics_log#add
+           "call: abstract globals"
+           (LBLOCK [
+                self#l#toPretty; STR ": ";
+                pretty_print_list
+                  globals
+                  (fun v -> STR (self#f#env#variable_name_to_string v))
+                  "[" ", " "]"]) in
        [ABSTRACT_VARS globals] in
      let sideeffect_assigns =
        self#get_sideeffect_assigns termev self#get_call_target#get_semantics in
