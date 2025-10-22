@@ -133,6 +133,7 @@ let pr_expr = xpr_formatter#pr_expr
 
 class function_environment_t
         (faddr:doubleword_int)
+        (fndata: function_data_int)
         (varmgr:variable_manager_int):function_environment_int =
 object (self)
 
@@ -142,7 +143,8 @@ object (self)
 
   initializer
     List.iter (fun av ->
-        ignore (self#mk_variable av)) varmgr#get_assembly_variables
+        let atts = self#varmgr#get_av_attributes av#index in
+        ignore (self#mk_variable ~atts av)) varmgr#get_assembly_variables
 
   method get_variable_comparator = varmgr#get_external_variable_comparator
 
@@ -161,7 +163,7 @@ object (self)
 
   method variable_names = variable_names
 
-  method varmgr = varmgr
+  method varmgr: variable_manager_int = varmgr
 
   method set_variable_name (v:variable_t) (name:string) =
     variable_names#add v#getName#getSeqNumber name
@@ -578,19 +580,21 @@ object (self)
   (* Keep a separate map of symbolic variables per domain *)
   val dom_symchifvars = H.create 5
 
-  method private add_chifvar (v:assembly_variable_int) (vt:variable_type_t) =
+  method private add_chifvar
+                   ?(atts = []) (v:assembly_variable_int) (vt:variable_type_t) =
     if H.mem chifvars v#index then
       H.find chifvars v#index
     else
-      let vname = new symbol_t ~seqnr:v#index v#get_name in
+      let vname = new symbol_t ~atts ~seqnr:v#index v#get_name in
       let chifvar = scope#mkVariable vname vt in
       begin
-        H.add chifvars v#index chifvar ;
+        H.add chifvars v#index chifvar;
+        (if (List.length atts) > 0 then self#varmgr#set_av_attributes v#index atts);
         chifvar
       end
 
-  method private mk_variable (v:assembly_variable_int) =
-    self#add_chifvar v NUM_VAR_TYPE
+  method private mk_variable ?(atts = []) (v:assembly_variable_int) =
+    self#add_chifvar ~atts v NUM_VAR_TYPE
 
   method private add_domain_symchifvar
                    (domain: string) (seqnr: int) (v: variable_t) =
@@ -772,7 +776,12 @@ object (self)
            (LBLOCK [STR "Unknown memory reference in mk_offset_memory_variable"]))
     else
       let avar = varmgr#make_memory_variable memref ~size offset in
-      self#mk_variable avar
+      let var = self#mk_variable avar in
+      let _ =
+        ch_diagnostics_log#add
+          "mk_offset_memory_variable"
+          (LBLOCK [var#toPretty]) in
+      var
 
   method mk_basevar_memory_variable
            ?(size=4)
@@ -893,11 +902,21 @@ object (self)
        tmap
          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:stack")
          (fun memoffset ->
+           let atts: string list = if stackslot#is_loopcounter then ["lc"] else [] in
            let svar =
              self#mk_variable
+               ~atts
                (self#varmgr#make_local_stack_variable
                   ~offset:memoffset (mkNumerical stackslot#offset)) in
            let name = stackslot#name ^ (memory_offset_to_string memoffset) in
+           let _ =
+             match atts with
+             | [] -> ()
+             | _ ->
+                ch_diagnostics_log#add
+                  "loopcounter variable on the stack"
+                  (LBLOCK [STR "Offset: "; offset#toPretty; STR ": "; STR name;
+                           STR "; "; svar#toPretty]) in
            begin
              self#set_variable_name svar name;
              svar
@@ -1290,13 +1309,17 @@ object (self)
   method get_sideeffvar_count =
     List.length (List.filter self#is_sideeffect_value self#get_variables)
 
-  method is_global_variable (v:variable_t) =
+  method is_global_variable (v: variable_t) =
     (varmgr#is_global_variable v) ||
       ((varmgr#is_initial_memory_value v) &&
          (tfold_default
             self#is_global_variable
             false
 	    (varmgr#get_initial_memory_value_variable v)))
+
+  method is_mutable_global_variable (v: variable_t): bool =
+    (varmgr#is_global_variable v)
+    && (not (fndata#is_const_global_variable (self#variable_name_to_string v)))
 
   method has_global_variable_address (v: variable_t): bool =
     varmgr#has_global_variable_address v
@@ -1632,7 +1655,7 @@ object (self)
    * These data items are saved and reloaded as part of the intermediate       *
    * analysis results.                                                         *
    * ------------------------------------------------------------------------- *)
-  val env = new function_environment_t faddr varmgr
+  val env = new function_environment_t faddr fndata varmgr
   val constant_table = new VariableCollections.table_t          (* constants *)
   val calltargets = H.create 5                               (* call-targets *)
 
