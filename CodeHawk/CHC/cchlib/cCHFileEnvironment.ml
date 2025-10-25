@@ -98,10 +98,11 @@ object (self)
   method initialize (f:file) =
     let _ = self#reset in
     let is_application_function (v:varinfo) =
-      if system_settings#filterabspathfiles then
-        not ((String.get v.vdecl.file 0) = '/')
+      if system_settings#keep_system_includes then
+        true
       else
-        true in
+        (* filter out functions originating from files from system path *)
+        not ((String.get v.vdecl.file 0) = '/') in
     begin
       List.iter (fun g ->
           match g with

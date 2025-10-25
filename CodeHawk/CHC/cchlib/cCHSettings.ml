@@ -46,7 +46,7 @@ object
   val mutable contractpath = ""
 
   val mutable verbose = false
-  val mutable filterabspathfiles = true
+  val mutable keep_system_includes = false
   val mutable wordsize = Some 32
   val mutable use_unreachability = false
   val mutable analysis_level = ImplementationDefinedBehavior
@@ -78,7 +78,8 @@ object
 
   method set_verbose (v:bool) = verbose <- v
 
-  method set_filterabspathfiles (v:bool) = filterabspathfiles <- v
+  method set_keep_system_includes (v:bool) = keep_system_includes <- v
+  method keep_system_includes = keep_system_includes
 
   method set_wordsize (v:int) = wordsize <- Some v
 
@@ -98,7 +99,7 @@ object
 
   method use_unreachability = use_unreachability
   method verbose = verbose
-  method filterabspathfiles = filterabspathfiles
+
   method has_wordsize = match wordsize with Some _ -> true | _ -> false
 
 

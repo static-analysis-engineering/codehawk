@@ -33,6 +33,7 @@ open CHPretty
 (* chutil *)
 open CHGc
 open CHLogger
+open CHTiming
 open CHTimingLog
 open CHXmlDocument
 
@@ -128,14 +129,15 @@ let speclist = [
    "print status on proof obligations and invariants");
   ("-projectname", Arg.String system_settings#set_projectname,
    "name of the project (determines name of results directory)");
-   ("-nofilter", Arg.Unit (fun () -> system_settings#set_filterabspathfiles false),
-    "do not filter out functions in files with absolute path names");
-   ("-unreachability", Arg.Unit (fun () -> system_settings#set_use_unreachability),
-    "use unreachability as a justification for discharging proof obligations");
-   ("-wordsize", Arg.Int system_settings#set_wordsize,
-    "set word size (e.g., 16, 32, or 64)");
-   ("-contractpath", Arg.String system_settings#set_contractpath,
-    "path to contract files")
+  ("-keep_system_includes",
+   Arg.Unit (fun () -> system_settings#set_keep_system_includes true),
+   "do not filter out functions in files with absolute path names");
+  ("-unreachability", Arg.Unit (fun () -> system_settings#set_use_unreachability),
+   "use unreachability as a justification for discharging proof obligations");
+  ("-wordsize", Arg.Int system_settings#set_wordsize,
+   "set word size (e.g., 16, 32, or 64)");
+  ("-contractpath", Arg.String system_settings#set_contractpath,
+   "path to contract files")
 ]
 
 let usage_msg = "chc_analyze <options> <path to analysis directory>"
@@ -153,10 +155,11 @@ let save_log_files (contenttype:string) =
 
 let main () =
   try
-    let _ = set_log_level "DEBUG" in
+    let _ = set_log_level "WARNING" in
     let _ = read_args () in
     let _ = chlog#set_max_entry_size 1000 in
     let _ = log_info "AIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAI" in
+    let cfilename = system_settings#get_cfilename in
     if !cmd = "version" then
       begin
 	pr_debug [version#toPretty; NL];
@@ -201,13 +204,15 @@ let main () =
     else if !cmd = "generate_and_check" then
       begin
         generate_and_check_process_file (List.rev !domains);
+        pr_timing [STR cfilename; STR ": finished generate_and_check"];
         log_info
           "Invariants generated and proof obligations checked [%s:%d]"
           __FILE__ __LINE__;
         save_log_files "gencheck";
         log_info
           "Invariant generation and proof obligation check log files saved [%s:%d]"
-          __FILE__ __LINE__
+          __FILE__ __LINE__;
+        pr_timing [STR cfilename; STR ": finished saving log files"]
       end
 
     else

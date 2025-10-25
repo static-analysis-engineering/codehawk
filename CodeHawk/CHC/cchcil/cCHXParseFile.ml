@@ -52,7 +52,7 @@ open CHCilWriteXml
 let projectpath = ref ""
 let targetdirectory = ref ""
 let filename = ref ""
-let filterfiles = ref true
+let keep_system_includes = ref false
 let keepUnused = ref false
 
 let version = "CP1.1"
@@ -70,8 +70,8 @@ let speclist = [
      "path to the project base directory");
     ("-targetdirectory", Arg.String set_targetdirectory,
      "directory to store the generated xml files");
-    ("-nofilter", Arg.Unit (fun () -> filterfiles := false),
-     "don't filter out functions in files starting with slash");
+    ("-keep_system_includes", Arg.Unit (fun () -> keep_system_includes := true),
+     "don't filter out functions in files with an absolute path name");
     ("-keepUnused",
      Arg.Set keepUnused, "keep unused type and function definitions")]
 
@@ -241,11 +241,12 @@ let save_xml_file f =
           match g with
           | GFun (fdec, _loc) -> fdec :: a | _ -> a) [] f.globals in
     let fns =
-      if !filterfiles then
-        List.filter (fun fdec ->
-            not ((String.get fdec.svar.vdecl.file 0) = '/')) fns
+      if !keep_system_includes then
+        fns
       else
-        fns in
+        (* filter out functions with an absolute path names *)
+        List.filter (fun fdec ->
+            not ((String.get fdec.svar.vdecl.file 0) = '/')) fns in
     let fnsTarget = Filename.concat (Filename.dirname absoluteTarget) "functions" in
     begin
       List.iter (fun f -> cil_function_to_file target f fnsTarget) fns;
