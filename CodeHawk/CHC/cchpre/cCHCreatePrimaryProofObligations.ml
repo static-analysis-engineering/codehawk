@@ -93,6 +93,7 @@ let process_function (fname:string) =
 
 let primary_process_file () =
   try
+    let cfilename = system_settings#get_cfilename in
     let _ = read_cfile_dictionary () in
     let _ = read_cfile_interface_dictionary () in
     let cfile = read_cfile () in
@@ -101,8 +102,8 @@ let primary_process_file () =
     let functions = fenv#get_application_functions in
     let _ =
       log_info
-        "Cfile initialized with %d functions [%s:%d]"
-        (List.length functions)
+        "Cfile %s initialized with %d functions [%s:%d]"
+        cfilename (List.length functions)
         __FILE__ __LINE__ in
     let _ = read_cfile_contract () in
     let _ = file_contract#collect_file_attributes in

@@ -872,8 +872,13 @@ class type system_settings_int =
     method set_verbose: bool -> unit
     method verbose: bool
 
-    method set_filterabspathfiles: bool -> unit
-    method filterabspathfiles: bool
+    (* The [keep_system_includes] is set to false by default. If set to [true]
+       (by command-line option), it assumes that functions from system includes
+       (specifically, functions from include files whose path starts with '/')
+       have been parsed by CIL and are to be included in the analysis.
+     *)
+    method set_keep_system_includes: bool -> unit
+    method keep_system_includes: bool
 
     method set_wordsize: int -> unit
     method get_wordsize: int

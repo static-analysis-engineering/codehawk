@@ -35,6 +35,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTiming
 open CHTimingLog
 
 (* cchlib *)
@@ -160,6 +161,7 @@ let make_invariant_generation_spec t =
 
 
 let process_function gspecs fname =
+  let cfilename = system_settings#get_cfilename in
   try
     if !function_to_be_analyzed = fname || !function_to_be_analyzed = "" then
       let _ = log_info "analyze function %s [%s:%d]" fname __FILE__ __LINE__ in
@@ -180,6 +182,10 @@ let process_function gspecs fname =
           (List.length openpos)
           __FILE__ __LINE__ in
       if (List.length openpos) > 0 then
+        let _ =
+          pr_timing [
+              STR cfilename; STR ": ===analyze function=== "; STR fname;
+              STR " with "; INT (List.length openpos); STR " open pos"] in
         let callcount = proof_scaffolding#get_call_count fname in
         let _ =
           List.iter
@@ -209,6 +215,10 @@ let process_function gspecs fname =
                   begin
 	            gspec.ig_invariant_extractor env invio invariants;
                     record_postconditions fname env invio;
+                    pr_timing [
+                        STR cfilename; STR ":"; STR fname;
+                        STR ": Finished analyzing with domain ";
+                        STR gspec.ig_domain]
                   end
 	        with
 	        | CCHFailure p | CHFailure p ->
@@ -342,6 +352,7 @@ let process_function gspecs fname =
 let generate_and_check_process_file (domains: string list) =
   let gspecs = List.map make_invariant_generation_spec domains in
   try
+    let cfilename = system_settings#get_cfilename in
     let _ = read_cfile_dictionary () in
     let cfile = read_cfile () in
     let _ = fenv#initialize cfile in
@@ -352,7 +363,14 @@ let generate_and_check_process_file (domains: string list) =
     let _ = read_cfile_contract () in
     let _ = file_contract#collect_file_attributes in
     let _ = log_info "Read file-level xml files [%s:%d]" __FILE__ __LINE__ in
+    let _ = pr_timing [STR cfilename; STR ": finished loading files"] in
     let functions = fenv#get_application_functions in
+    let _ =
+      pr_timing [
+          STR cfilename;
+          STR ": Analyzing ";
+          INT (List.length functions);
+          STR " functions"] in
     let _ =
       log_info "Processing %d functions [%s:%d]"
         (List.length functions) __FILE__ __LINE__ in
@@ -363,6 +381,7 @@ let generate_and_check_process_file (domains: string list) =
     let _ = save_cfile_interface_dictionary () in
     let _ = save_cfile_predicate_dictionary () in
     let _ = log_info "Saved file-level xml files [%s:%d]" __FILE__ __LINE__ in
+    let _ = pr_timing [STR cfilename; STR ": finished saving files"] in
     ()
   with
   | CHXmlReader.IllFormed ->
