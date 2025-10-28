@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,9 @@ open CHLanguage
 open CHNumerical
 open CHPretty
 
+(* chutil *)
+open CHLogger
+
 (* xprlib *)
 open Xprt
 open XprTypes
@@ -58,7 +61,10 @@ open CCHCommand
 
 module B = Big_int_Z
 
-let pr2s = CHPrettyUtil.pretty_to_string
+let p2s = CHPrettyUtil.pretty_to_string
+let x2p = XprToPretty.xpr_formatter#pr_expr
+let x2s x = p2s (x2p x)
+
 let fenv = CCHFileEnvironment.file_environment
 
 
@@ -318,6 +324,9 @@ object (self)
   val memregmgr = env#get_variable_manager#memregmgr
   val fdecls = env#get_fdecls
 
+  method private dmsg (ctxt: program_context_int): string =
+    env#get_functionname ^ ":" ^ ctxt#to_string
+
   (* --------------------------- lhs translation ---------------------------- *)
 
   method translate_lhs (ctxt:program_context_int) (lval:lval):variable_t =
@@ -523,8 +532,17 @@ object (self)
 
   (* --------------------------- rhs translation ---------------------------- *)
 
-  method translate_exp (ctxt:program_context_int) (e:exp) =
-    begin context <- ctxt; self#translate_rhs_expr e end
+  method translate_exp (ctxt:program_context_int) (e:exp): xpr_t =
+    let _ = context <- ctxt in
+    let result = self#translate_rhs_expr e in
+    let _ =
+      log_diagnostics_result
+        ~msg:(self#dmsg ctxt)
+        ~tag:"sym_pointersets:translate_exp"
+        __FILE__ __LINE__
+        ["exp: " ^ (p2s (exp_to_pretty e));
+         "result: " ^ (x2s result)] in
+    result
 
   method private translate_rhs_const_expr (c:constant) =
     match c with
@@ -535,7 +553,7 @@ object (self)
     let null_sym = memregmgr#mk_null_sym (-1) in
     let null_constant_expr = XConst (SymSet [null_sym]) in
     let default () =
-      let s = memregmgr#mk_uninterpreted_sym (pr2s (exp_to_pretty x)) in
+      let s = memregmgr#mk_uninterpreted_sym (p2s (exp_to_pretty x)) in
       sym_constant_expr s in
     let xpr =
       try

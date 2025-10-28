@@ -125,6 +125,8 @@ let speclist = [
    "base filename of c source code file without extension");
   ("-cfilepath", Arg.String system_settings#set_cfilepath,
    "path relative to project path");
+  ("-diagnostics", Arg.Unit (fun () -> activate_diagnostics ()),
+   "collect diagnostics messages and save in diagnostics log");
   ("-verbose", Arg.Unit (fun () -> system_settings#set_verbose true),
    "print status on proof obligations and invariants");
   ("-projectname", Arg.String system_settings#set_projectname,
@@ -149,7 +151,9 @@ let save_log_files (contenttype:string) =
   begin
     save_logfile ch_info_log contenttype "infolog";
     append_to_logfile ch_error_log contenttype "errorlog";
-    save_logfile chlog contenttype "chlog"
+    save_logfile chlog contenttype "chlog";
+    (if collect_diagnostics () then
+       save_logfile ch_diagnostics_log contenttype "ch_diagnostics_log")
   end
 
 
