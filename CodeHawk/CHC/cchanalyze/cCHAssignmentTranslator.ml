@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,6 +55,8 @@ open CCHUtilities
 (* cchanalyze *)
 open CCHAnalysisTypes
 open CCHCommand
+
+let p2s = CHPrettyUtil.pretty_to_string
 
 
 class num_assignment_translator_t
@@ -235,12 +237,17 @@ end
 class sym_pointersets_assignment_translator_t
         (env:c_environment_int)
         (exp_translator:exp_translator_int):assignment_translator_int =
-object
+object (self)
 
   val fdecls = env#get_fdecls
 
+  method private dmsg (ctxt: program_context_int) (loc: location): string =
+    env#get_functionname ^ ":"
+    ^ (ctxt#to_string)
+    ^ " (line: " ^ (string_of_int loc.line) ^ ")"
+
   method translate
-           (context:program_context_int) (_loc:location) (lhs:lval) (rhs:exp) =
+           (context:program_context_int) (loc:location) (lhs:lval) (rhs:exp) =
     try
       let chifVar = exp_translator#translate_lhs context lhs in
       let rhsExpr = exp_translator#translate_exp context rhs in
@@ -262,6 +269,14 @@ object
           | _ -> make_c_cmd (ASSIGN_SYM (chifVar, SYM (new symbol_t "unknown")))
         else
           make_c_cmd SKIP in
+      let _ =
+        log_diagnostics_result
+          ~msg:(self#dmsg context loc)
+          ~tag:"sym_pointersets:translate assignment"
+          __FILE__ __LINE__
+          ["lhs: " ^ (p2s (lval_to_pretty lhs));
+           "rhs: " ^ (p2s (exp_to_pretty rhs));
+           "result: " ^ (p2s (c_cmd_to_pretty assign))] in
       [assign]
     with
     | CCHFailure p ->
