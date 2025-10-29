@@ -59,6 +59,7 @@ open CCHPOCheckStackAddressEscape
 open CCHPOCheckIndexLowerBound
 open CCHPOCheckIndexUpperBound
 open CCHPOCheckInitialized
+open CCHPOCheckLocallyInitialized
 open CCHPOCheckInitializedRange
 open CCHPOCheckIntOverflow
 open CCHPOCheckIntUnderflow
@@ -71,6 +72,8 @@ open CCHPOCheckNotZero
 open CCHPOCheckNonNegative
 open CCHPOCheckWidthOverflow
 open CCHPOCheckNullTerminated
+open CCHPOCheckOutputParameterInitialized
+open CCHPOCheckOutputParameterUnaltered
 open CCHPOCheckPointerCast
 open CCHPOCheckPreservedAllMemory
 open CCHPOCheckPtrLowerBound
@@ -148,6 +151,7 @@ object
     | PIndexLowerBound e -> check_index_lower_bound poq e
     | PIndexUpperBound (e1,e2) -> check_index_upper_bound poq e1 e2
     | PInitialized lval -> check_initialized poq lval
+    | PLocallyInitialized (vinfo, lval) -> check_locally_initialized poq vinfo lval
     | PInitializedRange (e1,e2) -> check_initialized_range poq e1 e2
     | PIntOverflow (op,e1,e2,k) -> check_signed_int_overflow poq op e1 e2 k
     | PUIntOverflow (op,e1,e2,k) -> check_unsigned_int_overflow poq op e1 e2 k
@@ -182,6 +186,8 @@ object
     | PValueConstraint e -> check_value_constraint poq e
     | PValuePreserved e -> check_value_preserved poq e
     | PPreservedAllMemory -> check_preserved_all_memory poq
+    | POutputParameterInitialized v -> check_outputparameter_initialized poq v
+    | POutputParameterUnaltered v -> check_outputparameter_unaltered poq v
     | _ -> false
 
 end

@@ -4,9 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2025  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,40 +25,42 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
+(* cchlib *)
+open CCHBasicTypes
 
-(* chutil *)
-open CHPrettyUtil
+(* cchpre *)
+open CCHPreTypes
 
-class type version_info_int =
+(* cchanalyze *)
+open CCHAnalysisTypes
+
+
+let x2p = XprToPretty.xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
+let _x2s x = p2s (x2p x)
+let _e2s e = p2s (CCHTypesToPretty.exp_to_pretty e)
+
+
+let _fenv = CCHFileEnvironment.file_environment
+
+
+class outputparameter_initialized_checker_t
+        (_poq: po_query_int)
+        (vinfo: varinfo)
+        (_invs: invariant_int list) =
 object
-  method get_version: string
-  method get_description: string
-  method get_date: string
-  method toPretty:pretty_t
-end
 
+  method private vinfo = vinfo
 
-class version_info_t
-  ~(version:string)
-  ~(date:string) =
-object (self)
+  method check_safe = false
 
-  method get_version = version
-
-  method get_date = date
-
-  method toPretty =
-    LBLOCK [
-        STR (string_repeat "=" 80); NL;
-	STR "* CodeHawk C Analyzer. Version ";
-        STR self#get_version; NL;
-	STR "* Date: "; STR self#get_date; NL;
-	STR (string_repeat "=" 80); NL]
+  method check_violation = false
 
 end
 
-let version = new version_info_t
-  ~version:"0.3.0"
-  ~date:"2025-10-28"
+
+let check_outputparameter_initialized (poq:po_query_int) (vinfo: varinfo) =
+  let invs = poq#get_invariants 1 in
+  let _ = poq#set_diagnostic_invariants 1 in
+  let checker = new outputparameter_initialized_checker_t poq vinfo invs in
+  checker#check_safe || checker#check_violation
