@@ -61,8 +61,8 @@ let _ = CHPretty.set_trace_level 0
 let cmds = [
     "version";
     "gc";
-    "primary";
-    "secondary";
+    "undefined-behavior-primary";
+    "outputparameters-primary";
     "localinvs";
     "globalinvs";
     "check";
@@ -176,9 +176,18 @@ let main () =
 	exit 0
       end
 
-    else if !cmd = "primary" then
+    else if !cmd = "undefined-behavior-primary" then
       begin
 	primary_process_file ();
+        log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;
+	save_log_files "primary";
+        log_info
+          "primary proof obligations log files saved [%s:%d]" __FILE__ __LINE__
+      end
+
+    else if !cmd = "outputparameters-primary" then
+      begin
+	CCHCreateOutputParameterPOs.output_parameter_po_process_file ();
         log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;
 	save_log_files "primary";
         log_info
